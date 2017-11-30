@@ -87,20 +87,18 @@ void IceModel::energy_step() {
  * The sub shelf mass flux provided by an ocean model is in [kg m-2
  * s-1], so we divide by the ice density to convert to [m second-1].
  */
-void IceModel::combine_basal_melt_rate(IceModelVec2S &result) {
-
-  IceModelVec2S &shelf_base_mass_flux = m_work2d[0];
-  assert(m_ocean);
-  m_ocean->shelf_base_mass_flux(shelf_base_mass_flux);
+void IceModel::combine_basal_melt_rate(const Geometry &geometry,
+                                       const IceModelVec2S &shelf_base_mass_flux,
+                                       const IceModelVec2S &grounded_basal_melt_rate,
+                                       IceModelVec2S &result) {
 
   const bool sub_gl = (m_config->get_boolean("geometry.grounded_cell_fraction") and
                        m_config->get_boolean("energy.basal_melt.use_grounded_cell_fraction"));
 
-  const IceModelVec2S &M_grounded = m_energy_model->basal_melt_rate();
-
-  IceModelVec::AccessList list{&m_geometry.cell_type, &M_grounded, &shelf_base_mass_flux, &result};
+  IceModelVec::AccessList list{&geometry.cell_type,
+      &grounded_basal_melt_rate, &shelf_base_mass_flux, &result};
   if (sub_gl) {
-    list.add(m_geometry.cell_grounded_fraction);
+    list.add(geometry.cell_grounded_fraction);
   }
 
   double ice_density = m_config->get_double("constants.ice.density");
@@ -116,11 +114,11 @@ void IceModel::combine_basal_melt_rate(IceModelVec2S &result) {
     // Use the fractional floatation mask to adjust the basal melt
     // rate near the grounding line:
     if (sub_gl) {
-      lambda = m_geometry.cell_grounded_fraction(i,j);
-    } else if (m_geometry.cell_type.ocean(i,j)) {
+      lambda = geometry.cell_grounded_fraction(i,j);
+    } else if (geometry.cell_type.ocean(i,j)) {
       lambda = 0.0;
     }
-    result(i,j) = lambda * M_grounded(i, j) + (1.0 - lambda) * M_shelf_base;
+    result(i,j) = lambda * grounded_basal_melt_rate(i, j) + (1.0 - lambda) * M_shelf_base;
   }
 }
 

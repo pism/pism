@@ -7,19 +7,15 @@ length=10
 
 infile=circular_withshelf.nc
 
-if [[ ! -r $infile ]]
-then
-    echo "generating the input file..."
-    ./circular_ice_sheet.py -o $infile
-fi
+./circular_ice_sheet.py -Mx $xx -My $yy -o $infile
 
-grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 4500 -Lbz 1000"
+grid="-Mx $xx -My $yy -Mz 31 -Mbz 1 -Lz 4500 -Lbz 1000"
 
 pismopts="-y $length -i $infile -bootstrap $grid -stress_balance ssa+sia -ssa_method fd"
 
 doit="mpiexec -n $N pismr $pismopts"
 
-extra="-extra_times 1 -extra_vars thk,mask,velbar_mag,Href,velbar -extra_file"
+extra="-extra_times 1 -extra_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar -extra_file"
 
 # run with strength extension and part_grid but no CFBC
 # this could be a regression for the option combination "-part_grid"

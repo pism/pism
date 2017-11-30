@@ -7,11 +7,7 @@ length=1
 
 infile="test_iceberg_removal.nc"
 
-if [[ ! -r $infile ]]
-then
-    echo "generating the input file..."
-    ./test_iceberg_removal.py -o $infile -shelf -square
-fi
+./test_iceberg_removal.py -Mx $xx -My $yy -o $infile -shelf -square
 
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 1500 -Lbz 1000"
 
@@ -22,7 +18,7 @@ pismopts="-i $infile -bootstrap $grid -stress_balance ssa+sia -ssa_dirichlet_bc 
 
 doit="mpiexec -n $N pismr $pismopts"
 
-extra="-extra_times 0.05 -extra_vars thk,mask,velbar_mag,Href,velbar,discharge_flux_cumulative -extra_file iceberg_ex.nc"
+extra="-extra_times 0.05 -extra_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar,mass_fluxes -extra_file iceberg_ex.nc"
 
 # run with CFBC and part_grid
 $doit -y $length -ssa_method fd -cfbc -part_grid -o iceberg_o.nc $extra

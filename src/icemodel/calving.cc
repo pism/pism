@@ -83,34 +83,6 @@ void IceModel::do_calving() {
 }
 
 /**
- * Clean up the Href field.
- *
- * Href(i,j) > 0 is allowed only if ice_thickness(i,j) == 0 and (i,j) has a
- * floating ice neighbor.
- */
-void IceModel::Href_cleanup() {
-
-  IceModelVec2S
-    &V = m_geometry.ice_area_specific_volume,
-    &H = m_geometry.ice_thickness;
-
-  IceModelVec::AccessList list{&H, &V, &m_geometry.cell_type};
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (H(i, j) > 0 and V(i, j) > 0) {
-      H(i, j) += V(i, j);
-      V(i, j) = 0.0;
-    }
-
-    if (V(i, j) > 0.0 and not m_geometry.cell_type.next_to_ice(i, j)) {
-      V(i, j) = 0.0;
-    }
-  }
-}
-
-/**
  * Compute the ice discharge into the ocean during the current time step.
  *
  * Units: ice equivalent meters.
@@ -119,13 +91,13 @@ void IceModel::Href_cleanup() {
  * @param Href current "reference ice thickness"
  * @param thickness_old old ice thickness
  * @param Href_old old "reference ice thickness"
- * @param[out] output computed discharge during the current time step
+ * @param[in,out] output computed discharge during the current time step
  */
-void IceModel::compute_discharge(const IceModelVec2S &thickness,
-                                 const IceModelVec2S &Href,
-                                 const IceModelVec2S &thickness_old,
-                                 const IceModelVec2S &Href_old,
-                                 IceModelVec2S &output) {
+void IceModel::accumulate_discharge(const IceModelVec2S &thickness,
+                                    const IceModelVec2S &Href,
+                                    const IceModelVec2S &thickness_old,
+                                    const IceModelVec2S &Href_old,
+                                    IceModelVec2S &output) {
 
   IceModelVec::AccessList list{&thickness, &thickness_old,
       &Href, &Href_old, &output};
@@ -134,10 +106,9 @@ void IceModel::compute_discharge(const IceModelVec2S &thickness,
     const int i = p.i(), j = p.j();
 
     const double
-      H_old     = thickness_old(i, j) + Href_old(i, j),
-      H_new     = thickness(i, j) + Href(i, j);
-
-    output(i, j) = H_new - H_old;
+      H_old       = thickness_old(i, j) + Href_old(i, j),
+      H_new       = thickness(i, j) + Href(i, j);
+    output(i, j) += H_new - H_old;
   }
 }
 

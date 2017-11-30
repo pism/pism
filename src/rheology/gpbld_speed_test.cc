@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
 
     // check that they produce almost identical results
     for (int j = 0; j < N; ++j) {
-      if(fabs(result[j] - result3[j]) > 1e15) {
+      if(fabs(result[j] - result3[j]) > 1e-15) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "results at j are different");
       }
     }

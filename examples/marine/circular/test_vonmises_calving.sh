@@ -8,11 +8,7 @@ length=400
 
 infile="circular_noshelf.nc"
 
-if [[ ! -r $infile ]]
-then
-    echo "generating the input file..."
-    ./circular_dirichlet.py -o $infile
-fi
+./circular_dirichlet.py -Mx $xx -My $yy -o $infile
 
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 1 -Lz 1500 -Lbz 1000"
 
@@ -22,7 +18,7 @@ output_basename="test_vonmisescalving"
 
 calving="-calving vonmises_calving"
 
-diagnostics="thk,mask,velbar_mag,ice_area_specific_volume,velbar,tendency_of_ice_mass_due_to_discharge"
+diagnostics="thk,mask,velbar_mag,ice_area_specific_volume,velbar,tendency_of_ice_mass_due_to_discharge,mass_fluxes"
 
 viewers="-view $diagnostics"
 
