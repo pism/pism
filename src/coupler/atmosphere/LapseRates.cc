@@ -145,7 +145,7 @@ void LapseRates::precip_time_series_impl(int i, int j, std::vector<double> &resu
   for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
 
     if (do_precip_scale) {
-      result[m] *= exp(m_precip_lapse_rate * ((*m_surface)(i, j) - usurf[m]));
+      result[m] *= exp(m_precip_scale_factor * ((*m_surface)(i, j) - usurf[m]));
     } else {
       result[m] -= m_precip_lapse_rate * ((*m_surface)(i, j) - usurf[m]);
     }
