@@ -70,23 +70,23 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
     input_file.close();
   } else {
     // Bootstrapping or initializing without an input file.
-    options::Integer Mbz("-Mbz", "number of levels in bedrock thermal layer",
-                         result.Mbz);
+    options::Integer M("-Mbz", "number of levels in bedrock thermal layer",
+                       result.Mbz);
 
-    options::Real Lbz("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
-                      result.Lbz);
+    options::Real L("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
+                    result.Lbz);
 
-    if (Mbz.is_set() and Mbz == 1) {
+    if (M.is_set() and M == 1) {
       options::ignored(log, "-Lbz");
       result.Lbz = 0;
       result.Mbz = 1;
     } else {
-      if (Mbz.is_set() ^ Lbz.is_set()) {
+      if (M.is_set() ^ L.is_set()) {
         throw RuntimeError(PISM_ERROR_LOCATION, "please specify both -Mbz and -Lbz");
       }
 
-      result.Lbz = Lbz;
-      result.Mbz = Mbz;
+      result.Lbz = L;
+      result.Mbz = M;
     }
   }
 
