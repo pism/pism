@@ -173,6 +173,13 @@ void GivenTH::update_impl(double my_t, double my_dt) {
 
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
   m_shelfbmassflux.scale(m_config->get_double("constants.ice.density"));
+
+  //Is used only for test purposes...
+  bool no_shelfb_melt = options::Bool("-no_shelfb_melt","Sets shelfbmassflux to 0.0");
+  if (no_shelfb_melt){
+    m_shelfbmassflux.set(0.0);
+  }
+
 }
 
 

@@ -399,6 +399,13 @@ void Cavity::update_impl(double my_t, double my_dt) {
   m_shelfbtemp.copy_from(T_pressure_melting); // in-situ freezing point at the ice shelf base
   m_shelfbmassflux.copy_from(basalmeltrate_shelf); 
   m_shelfbmassflux.scale(cc.rhoi);
+
+  //Is used only for test purposes...
+  bool no_shelfb_melt = options::Bool("-no_shelfb_melt","Sets shelfbmassflux to 0.0");
+  if (no_shelfb_melt){
+    m_shelfbmassflux.set(0.0);
+  }
+
 }
 
 // To be used solely in round_basins()
