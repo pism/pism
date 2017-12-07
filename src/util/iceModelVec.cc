@@ -920,6 +920,7 @@ AccessList::~AccessList() {
 
 AccessList::AccessList(std::initializer_list<const PetscAccessible *> vecs) {
   for (auto j : vecs) {
+    assert(j != nullptr);
     add(*j);
   }
 }
@@ -935,6 +936,7 @@ void AccessList::add(const PetscAccessible &vec) {
 
 void AccessList::add(const std::vector<const PetscAccessible*> vecs) {
   for (auto v : vecs) {
+    assert(v != nullptr);
     add(*v);
   }
 }
