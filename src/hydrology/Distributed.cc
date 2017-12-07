@@ -359,7 +359,7 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
 
   const double
     t_final = m_t + m_dt,
-    dt_max  = m_config->get_double("hydrology.maximum_time_step");
+    dt_max  = m_config->get_double("hydrology.maximum_time_step", "seconds");
 
   unsigned int step_counter = 0;
   while (ht < t_final) {
