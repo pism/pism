@@ -350,10 +350,10 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
   const IceModelVec2S        &ice_thickness = *inputs.ice_thickness;
   const IceModelVec2S        &sliding_speed = *inputs.ice_sliding_speed;
 
-  get_input_rate(*inputs.basal_melt_rate,
-                 *inputs.surface_input_rate,
-                 cell_type,
-                 m_total_input);
+  compute_input_rate(cell_type,
+                     *inputs.basal_melt_rate,
+                     inputs.surface_input_rate,
+                     m_total_input);
 
   compute_overburden_pressure(ice_thickness, m_Pover);
 

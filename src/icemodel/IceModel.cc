@@ -546,16 +546,6 @@ void IceModel::step(bool do_mass_continuity,
     m_stdout_flags += "$";
   }
 
-  //! \li update the state variables in the subglacial hydrology model (typically
-  //!  water thickness and sometimes pressure)
-  {
-    hydrology::Inputs inputs;
-
-    profiling.begin("basal_hydrology");
-    m_subglacial_hydrology->update(current_time, m_dt, inputs);
-    profiling.end("basal_hydrology");
-  }
-
   //! \li update the fracture density field; see update_fracture_density()
   if (m_config->get_boolean("fracture_density.enabled")) {
     profiling.begin("fracture_density");
@@ -698,6 +688,30 @@ void IceModel::step(bool do_mass_continuity,
                          m_geometry.ice_area_specific_volume,
                          old_H, old_Href,
                          m_discharge);
+  }
+
+  //! \li update the state variables in the subglacial hydrology model (typically
+  //!  water thickness and sometimes pressure)
+  {
+    hydrology::Inputs inputs;
+
+    // use the combined basal melt rate updated above (even though the melt rate in
+    // floating and ice-free areas is ignored).
+
+    IceModelVec2S &sliding_speed = m_work2d[0];
+
+    sliding_speed.set_to_magnitude(m_stress_balance->advective_velocity());
+
+    inputs.surface_input_rate = NULL;
+    inputs.basal_melt_rate    = &m_basal_melt_rate;
+    inputs.cell_type          = &m_geometry.cell_type;
+    inputs.ice_thickness      = &m_geometry.ice_thickness;
+    inputs.bed_elevation      = &m_geometry.bed_elevation;
+    inputs.ice_sliding_speed  = &sliding_speed;
+
+    profiling.begin("basal_hydrology");
+    m_subglacial_hydrology->update(current_time, m_dt, inputs);
+    profiling.end("basal_hydrology");
   }
 
   //! \li compute the bed deformation, which only depends on current thickness

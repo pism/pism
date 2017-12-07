@@ -206,19 +206,36 @@ void Hydrology::check_Wtil_bounds() {
 //! region.
 /*!
   This method ignores the input rate in the ice-free region.
- */
-void Hydrology::get_input_rate(const IceModelVec2S &basal_melt_rate,
-                               const IceModelVec2S &surface_input_rate,
-                               const IceModelVec2CellType &mask,
-                               IceModelVec2S &result) {
 
-  IceModelVec::AccessList list{&basal_melt_rate, &surface_input_rate, &mask, &result};
+  @param[in] mask cell type mask
+  @param[in] basal melt rate (ice thickness per time)
+  @param[in] surface_input_rate surface input rate (water thickness per time); set to NULL to ignore
+  @param[out] result resulting input rate (water thickness per time)
+ */
+void Hydrology::compute_input_rate(const IceModelVec2CellType &mask,
+                                   const IceModelVec2S &basal_melt_rate,
+                                   const IceModelVec2S *surface_input_rate,
+                                   IceModelVec2S &result) {
+
+  IceModelVec::AccessList list{&basal_melt_rate, &mask, &result};
+
+  if (surface_input_rate) {
+    list.add(*surface_input_rate);
+  }
+
+  const double
+    ice_density   = m_config->get_double("constants.ice.density"),
+    water_density = m_config->get_double("constants.fresh_water.density"),
+    C             = ice_density / water_density;
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
-      result(i,j) = basal_melt_rate(i, j) + surface_input_rate(i, j);
+
+      double surface_input = surface_input_rate ? (*surface_input_rate)(i, j) : 0.0;
+
+      result(i,j) = C * basal_melt_rate(i, j) + surface_input;
     } else {
       result(i,j) = 0.0;
     }

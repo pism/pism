@@ -128,10 +128,10 @@ protected:
   void compute_overburden_pressure(const IceModelVec2S &ice_thickness,
                                    IceModelVec2S &result) const;
 
-  void get_input_rate(const IceModelVec2S &basal_melt_rate,
-                      const IceModelVec2S &surface_input_rate,
-                      const IceModelVec2CellType &mask,
-                      IceModelVec2S &result);
+  void compute_input_rate(const IceModelVec2CellType &mask,
+                          const IceModelVec2S &basal_melt_rate,
+                          const IceModelVec2S *surface_input_rate,
+                          IceModelVec2S &result);
 
   void check_Wtil_bounds();
 protected:

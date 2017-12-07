@@ -843,10 +843,10 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
   const IceModelVec2CellType &cell_type = *inputs.cell_type;
   const IceModelVec2S &bed_elevation = *inputs.bed_elevation;
 
-  get_input_rate(*inputs.basal_melt_rate,
-                 *inputs.surface_input_rate,
-                 cell_type,
-                 m_total_input);
+  compute_input_rate(cell_type,
+                     *inputs.basal_melt_rate,
+                     inputs.surface_input_rate,
+                     m_total_input);
 
   const double
     t_final = m_t + m_dt,

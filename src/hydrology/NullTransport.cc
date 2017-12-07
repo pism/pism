@@ -98,10 +98,10 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   m_t = t;
   m_dt = dt;
 
-  get_input_rate(*inputs.basal_melt_rate,
-                 *inputs.surface_input_rate,
-                 *inputs.cell_type,
-                 m_total_input);
+  compute_input_rate(*inputs.cell_type,
+                     *inputs.basal_melt_rate,
+                     inputs.surface_input_rate,
+                     m_total_input);
 
   const IceModelVec2CellType &cell_type = *inputs.cell_type;
 
