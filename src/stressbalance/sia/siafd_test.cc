@@ -397,7 +397,8 @@ int main(int argc, char *argv[]) {
     geometry.ice_thickness.write(file);
     geometry.cell_type.write(file);
     geometry.bed_elevation.write(file);
-    
+
+    sia->diffusivity().write(file);
     u3.write(file);
     v3.write(file);
     w3.write(file);
