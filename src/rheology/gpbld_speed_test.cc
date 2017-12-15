@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include <petscsys.h>           // PETSC_COMM_WORLD
+#include <cassert>
 
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/error_handling.hh"
@@ -24,10 +25,10 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/pism_options.hh"
 
 #include "GPBLD.hh"
 #include "GPBLD3.hh"
-
 
 using namespace pism;
 
@@ -58,28 +59,79 @@ int BlastCache(void)
   PetscFunctionReturn(0);
 }
 
-int main(int argc, char **argv) {
+static std::vector<double> linspace(double a, double b, size_t N) {
+  std::vector<double> result(N);
+  assert(a < b);
+  assert(N > 1);
 
-  MPI_Comm com = MPI_COMM_WORLD;
-  petsc::Initializer petsc(argc, argv, "GPBLD3 speed test");
+  double delta = (b - a) / (N - 1);
 
-  com = PETSC_COMM_WORLD;
+  for (unsigned int k = 0; k < N; ++k) {
+    result[k] = a + delta * k;
+  }
 
-  try {
-    Context::Ptr ctx = context_from_options(com, "gpbld_speed_test");
-    Logger::Ptr log = ctx->log();
-    EnthalpyConverter::Ptr EC = ctx->enthalpy_converter();
-    Config::ConstPtr config = ctx->config();
+  result.back() = b;
 
-    rheology::GPBLD gpbld("stress_balance.sia.", *config, EC);
-    rheology::GPBLD3 gpbld3("stress_balance.sia.", *config, EC);
+  return result;
+}
+
+void compare(const Logger &log,
+             const EnthalpyConverter &EC,
+             const rheology::GPBLD &gpbld,
+             const rheology::GPBLD3 &gpbld3) {
+
+  log.message(1, "Comparing GPBLD::flow() to GPBLD3::flow()... ");
+
+  static const int N = 101;
+
+  std::vector<double>
+    T_pa  = linspace(-30.0, 0, N),
+    depth = linspace(0.0, 4000.0, N),
+    omega = linspace(0.0, 0.02, N),
+    sigma = {1e4, 5e4, 1e5, 1.5e5};
+
+  double gs = 1e-3;
+
+  for (double d : depth) {
+    double
+      p  = EC.pressure(d),
+      Tm = EC.melting_temperature(p);
+
+    for (double Tpa : T_pa) {
+      double T = Tm + Tpa;
+
+      for (double o : omega) {
+        double E = EC.enthalpy(T, T >= Tm ? o : 0.0, p);
+
+        for (double s : sigma) {
+          double
+            regular   = gpbld.flow(s, E, p, gs),
+            optimized = gpbld3.flow(s, E, p, gs);
+
+          assert(regular != 0.0);
+
+          if (fabs((regular - optimized) / regular) >= 2e-14) {
+            throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                          "GPBLD and GPBLD3 flow() results are different");
+          }
+        } // sigma
+      } // omega
+    } // T_pa
+  } // depth
+  log.message(1, "OK\n");
+}
+
+static void speed_test(const Logger &log,
+                       const EnthalpyConverter &EC,
+                       const rheology::GPBLD &gpbld,
+                       const rheology::GPBLD3 &gpbld3) {
 
     // "column" size
     int N = 100 * 100 * 100;
     // number of tries
     int M = 100;
 
-    log->message(1,
+    log.message(1,
                  "Comparing GPBLD and GPBLD3: %d repetitions, column size %d...\n",
                  M, N);
 
@@ -95,13 +147,13 @@ int main(int argc, char **argv) {
       const double
         z     = k * dz,
         depth = H - z,
-        p = EC->pressure(depth),
-        T = EC->melting_temperature(p);
+        p = EC.pressure(depth),
+        T = EC.melting_temperature(p);
 
-      E[k]          = EC->enthalpy(T, omega, p);
+      E[k]          = EC.enthalpy(T, omega, p);
       P[k]          = p;
       stress[k]     = p;
-      grain_size[k] = config->get_double("constants.ice.grain_size");
+      grain_size[k] = 1e-3;
     }
 
     double times[2] = {0.0, 0.0};
@@ -122,19 +174,46 @@ int main(int argc, char **argv) {
       }
     }
 
-    // check that they produce almost identical results
-    for (int j = 0; j < N; ++j) {
-      if(fabs(result[j] - result3[j]) > 1e-15) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "results at j are different");
-      }
-    }
-
-    log->message(1,
+    log.message(1,
                  "GPBLD:  %f seconds.\n"
                  "GPBLD3: %f seconds.\n"
                  "Ratio:  %f\n",
                  times[0], times[1], times[0] / times[1]);
 
+}
+
+int main(int argc, char **argv) {
+
+  MPI_Comm com = MPI_COMM_WORLD;
+  petsc::Initializer petsc(argc, argv, "GPBLD3 speed test");
+
+  com = PETSC_COMM_WORLD;
+
+  try {
+    Context::Ptr ctx = context_from_options(com, "gpbld_speed_test");
+    Logger::Ptr log = ctx->log();
+    EnthalpyConverter::Ptr EC = ctx->enthalpy_converter();
+    Config::ConstPtr config = ctx->config();
+
+    rheology::GPBLD gpbld("stress_balance.sia.", *config, EC);
+    rheology::GPBLD3 gpbld3("stress_balance.sia.", *config, EC);
+
+    options::Keyword key("-test", "choose the test", "speed,results", "results");
+
+    if (not key.is_set()) {
+      log->message(1,
+                   "Usage: gpbld_test -test speed   - to compare computational costs of GPBLD and GPBLD3\n"
+                   "       gpbld_test -test results - to compare results of GPBLD::flow() and GPBLD3::flow()\n");
+      return 0;
+    }
+
+    if (key == "speed") {
+      speed_test(*log, *EC, gpbld, gpbld3);
+    } else if (key == "results") {
+      compare(*log, *EC, gpbld, gpbld3);
+    } else {
+      // can't happen
+    }
   }
   catch (...) {
     handle_fatal_errors(com);
