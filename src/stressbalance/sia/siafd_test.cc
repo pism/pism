@@ -284,6 +284,8 @@ int main(int argc, char *argv[]) {
     config->set_boolean("stress_balance.sia.grain_size_age_coupling", false);
     config->set_string("stress_balance.sia.flow_law", "arr");
 
+    set_config_from_options(*config);
+
     bool
       usage_set = options::Bool("-usage", "print usage info"),
       help_set  = options::Bool("-help", "print help info");
