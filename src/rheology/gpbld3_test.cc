@@ -202,8 +202,9 @@ int main(int argc, char **argv) {
 
     if (not key.is_set()) {
       log->message(1,
-                   "Usage: gpbld_test -test speed   - to compare computational costs of GPBLD and GPBLD3\n"
-                   "       gpbld_test -test results - to compare results of GPBLD::flow() and GPBLD3::flow()\n");
+                   "Usage: %s -test speed   - to compare computational costs of GPBLD and GPBLD3\n"
+                   "       %s -test results - to compare results of GPBLD::flow() and GPBLD3::flow()\n",
+                   argv[0], argv[0]);
       return 0;
     }
 
