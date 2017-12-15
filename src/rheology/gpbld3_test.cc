@@ -78,11 +78,10 @@ static std::vector<double> linspace(double a, double b, size_t N) {
 void compare(const Logger &log,
              const EnthalpyConverter &EC,
              const rheology::GPBLD &gpbld,
-             const rheology::GPBLD3 &gpbld3) {
+             const rheology::GPBLD3 &gpbld3,
+             unsigned int N) {
 
   log.message(1, "Comparing GPBLD::flow() to GPBLD3::flow()... ");
-
-  static const int N = 101;
 
   std::vector<double>
     T_pa  = linspace(-30.0, 0, N),
@@ -124,10 +123,9 @@ void compare(const Logger &log,
 static void speed_test(const Logger &log,
                        const EnthalpyConverter &EC,
                        const rheology::GPBLD &gpbld,
-                       const rheology::GPBLD3 &gpbld3) {
+                       const rheology::GPBLD3 &gpbld3,
+                       unsigned int N) {
 
-    // "column" size
-    int N = 100 * 100 * 100;
     // number of tries
     int M = 100;
 
@@ -208,10 +206,12 @@ int main(int argc, char **argv) {
       return 0;
     }
 
+    options::Integer N("-N", "number of samples (column size)", 101);
+
     if (key == "speed") {
-      speed_test(*log, *EC, gpbld, gpbld3);
+      speed_test(*log, *EC, gpbld, gpbld3, N);
     } else if (key == "results") {
-      compare(*log, *EC, gpbld, gpbld3);
+      compare(*log, *EC, gpbld, gpbld3, N);
     } else {
       // can't happen
     }
