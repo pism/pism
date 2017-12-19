@@ -1803,8 +1803,6 @@ IceModelVec::Ptr IceAreaFractionGrounded::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, grounded_ice_sheet_area_fraction_name, WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
-  const double sea_level = model->ocean_model()->sea_level_elevation();
-
   const double
     ice_density   = m_config->get_double("constants.ice.density"),
     ocean_density = m_config->get_double("constants.sea_water.density");
@@ -1814,6 +1812,7 @@ IceModelVec::Ptr IceAreaFractionGrounded::compute_impl() const {
     &bed_topography = model->geometry().bed_elevation;
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const IceModelVec2S &sea_level = model->geometry().sea_level_elevation;
 
   compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
                                  ice_thickness, bed_topography, cell_type,
