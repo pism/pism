@@ -139,7 +139,7 @@ static inline double gl_position(double mu,
  */
 void compute_grounded_cell_fraction(double ice_density,
                              double ocean_density,
-                             double sea_level,
+                             const IceModelVec2S &sea_level,
                              const IceModelVec2S &ice_thickness,
                              const IceModelVec2S &bed_topography,
                              const IceModelVec2CellType &mask,
@@ -149,7 +149,7 @@ void compute_grounded_cell_fraction(double ice_density,
 
   const double mu = ice_density / ocean_density;
 
-  IceModelVec::AccessList list{&ice_thickness, &bed_topography, &mask, &result};
+  IceModelVec::AccessList list{&sea_level, &ice_thickness, &bed_topography, &mask, &result};
 
   if (result_x != NULL) {
     list.add(*result_x);
@@ -184,7 +184,7 @@ void compute_grounded_cell_fraction(double ice_density,
           if (mask::grounded(m[direction])) {
             lambda[k] = 0.5;
           } else {
-            const double L = gl_position(mu, sea_level, H.ij, b.ij, H[direction], b[direction]);
+            const double L = gl_position(mu, sea_level(i,j), H.ij, b.ij, H[direction], b[direction]);
             lambda[k] = std::min(L, 0.5);
           }
         }
@@ -195,7 +195,7 @@ void compute_grounded_cell_fraction(double ice_density,
           const Direction direction = dirs[k];
 
           if (mask::grounded(m[direction])) {
-            const double L = gl_position(mu, sea_level, H[direction], b[direction], H.ij, b.ij);
+            const double L = gl_position(mu, sea_level(i,j), H[direction], b[direction], H.ij, b.ij);
             lambda[k] = std::max(L - 0.5, 0.0);
           } else {
             lambda[k] = 0.0;
