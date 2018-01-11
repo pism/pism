@@ -40,6 +40,6 @@ void gpbld_flow_n(const double *stress, const double *E, const double *P,
                   unsigned int n, double *result) {
 #pragma ivdep
   for (unsigned int k = 0; k < n; ++k) {
-    result[k] = gpbld_flow(stress[k], E[k], P[k]);
+    result[k] = gpbld_flow_inlined(stress[k], E[k], P[k]);
   }
 }
