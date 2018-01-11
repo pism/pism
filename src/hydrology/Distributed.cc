@@ -145,27 +145,31 @@ const IceModelVec2S& Distributed::subglacial_water_pressure() const {
 /*!
 The bounds are \f$0 \le P \le P_o\f$ where \f$P_o\f$ is the overburden pressure.
  */
-void Distributed::check_P_bounds(bool enforce_upper) {
+void Distributed::check_P_bounds(IceModelVec2S &P,
+                                 const IceModelVec2S &P_o,
+                                 bool enforce_upper) {
 
-  IceModelVec::AccessList list{&m_P, &m_Pover};
+  IceModelVec::AccessList list{&P, &P_o};
 
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (m_P(i,j) < 0.0) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "disallowed negative subglacial water pressure\n"
-                                      "P = %.6f Pa at (i,j)=(%d,%d)",
-                                      m_P(i, j), i, j);
+      if (P(i,j) < 0.0) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "negative subglacial water pressure\n"
+                                      "P(%d, %d) = %.6f Pa",
+                                      i, j, P(i, j));
       }
 
       if (enforce_upper) {
-        m_P(i,j) = std::min(m_P(i,j), m_Pover(i,j));
-      } else if (m_P(i,j) > m_Pover(i,j) + 0.001) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "subglacial water pressure P = %.16f Pa exceeds\n"
+        P(i,j) = std::min(P(i,j), P_o(i,j));
+      } else if (P(i,j) > P_o(i,j) + 0.001) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "subglacial water pressure P = %.16f Pa exceeds\n"
                                       "overburden pressure Po = %.16f Pa at (i,j)=(%d,%d)",
-                                      m_P(i, j), m_Pover(i, j), i, j);
+                                      P(i, j), P_o(i, j), i, j);
       }
     }
   } catch (...) {

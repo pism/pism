@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2017 PISM Authors
+// Copyright (C) 2012-2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -59,7 +59,9 @@ protected:
   void define_model_state_impl(const PIO &output) const;
   void write_model_state_impl(const PIO &output) const;
 
-  void check_P_bounds(bool enforce_upper);
+  void check_P_bounds(IceModelVec2S &P,
+                      const IceModelVec2S &P_o,
+                      bool enforce_upper);
 
   // initialization
   void init_bwp();
