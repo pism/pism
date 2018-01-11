@@ -47,11 +47,6 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
                          "hydrology model workspace for total input rate into subglacial water layer",
                          "m s-1", "");
 
-  m_bmelt_local.create(m_grid, "basal_melt_rate_grounded", WITHOUT_GHOSTS);
-  m_bmelt_local.set_attrs("internal",
-                          "hydrology model workspace for basal_melt_rate_grounded",
-                          "m s-1", "");
-
   // *all* Hydrology classes have layer of water stored in till as a state variable
   m_Wtil.create(m_grid, "tillwat", WITHOUT_GHOSTS);
   m_Wtil.set_attrs("model_state",
@@ -72,9 +67,6 @@ Hydrology::~Hydrology() {
 
 void Hydrology::init() {
 
-  options::String bmelt_file("-hydrology_bmelt_file",
-                             "Read time-independent values for basal_melt_rate_grounded from a file;"
-                             " replaces basal_melt_rate_grounded computed through conservation of energy");
   // itb = input_to_bed
   options::String itb_file("-hydrology_input_to_bed_file",
                            "A time- and space-dependent file with amount of water"
@@ -92,13 +84,6 @@ void Hydrology::init() {
 
   // the following are IceModelVec pointers into IceModel generally and are read by code in the
   // update() method at the current Hydrology time
-
-  if (bmelt_file.is_set()) {
-    m_log->message(2,
-               "  option -hydrology_bmelt_file seen; reading basal_melt_rate_grounded from '%s'.\n", bmelt_file->c_str());
-    m_bmelt_local.regrid(bmelt_file, CRITICAL);
-    m_hold_bmelt = true;
-  }
 
   InputOptions opts = process_input_options(m_grid->com);
 

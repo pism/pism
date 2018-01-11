@@ -143,7 +143,6 @@ protected:
 
   // work space
   IceModelVec2S m_input_rate;
-  IceModelVec2S m_bmelt_local;
 
   bool m_hold_bmelt;
 };
