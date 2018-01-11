@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2017 PISM Authors
+// Copyright (C) 2012-2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -353,7 +353,7 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
   compute_input_rate(cell_type,
                      *inputs.basal_melt_rate,
                      inputs.surface_input_rate,
-                     m_total_input);
+                     m_input_rate);
 
   compute_overburden_pressure(ice_thickness, m_Pover);
 
@@ -415,11 +415,11 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
     // update Wtilnew from Wtil
     update_Wtil(hdt,
                 m_Wtil,
-                m_total_input,
+                m_input_rate,
                 m_Wtilnew);
     // correct water thickness and account for the changes
 
-    update_P(hdt, cell_type, sliding_speed, m_total_input, m_Pover,
+    update_P(hdt, cell_type, sliding_speed, m_input_rate, m_Pover,
              m_Wtil, m_Wtilnew,
              subglacial_water_pressure(),
              m_W, m_Wstag,
@@ -428,7 +428,7 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
 
     // update Wnew from W, Wtil, Wtilnew, Wstag, Qstag, total_input
     update_W(hdt,
-             m_total_input,
+             m_input_rate,
              m_W, m_Wstag,
              m_Wtil, m_Wtilnew,
              m_K, m_Q,

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2017 PISM Authors
+// Copyright (C) 2012-2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -846,7 +846,7 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
   compute_input_rate(cell_type,
                      *inputs.basal_melt_rate,
                      inputs.surface_input_rate,
-                     m_total_input);
+                     m_input_rate);
 
   const double
     t_final = m_t + m_dt,
@@ -894,13 +894,13 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
     // update Wtilnew from Wtil
     update_Wtil(hdt,
                 m_Wtil,
-                m_total_input,
+                m_input_rate,
                 m_Wtilnew);
     // remove water in ice-free areas and account for changes
 
     // update Wnew from W, Wtil, Wtilnew, Wstag, Q, total_input
     update_W(hdt,
-             m_total_input,
+             m_input_rate,
              m_W, m_Wstag,
              m_Wtil, m_Wtilnew,
              m_K, m_Q,

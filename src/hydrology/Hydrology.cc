@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2017 PISM Authors
+// Copyright (C) 2012-2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -42,10 +42,10 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
   : Component(g) {
   m_hold_bmelt = false;
 
-  m_total_input.create(m_grid, "total_input", WITHOUT_GHOSTS);
-  m_total_input.set_attrs("internal",
-                          "hydrology model workspace for total input rate into subglacial water layer",
-                          "m s-1", "");
+  m_input_rate.create(m_grid, "total_input", WITHOUT_GHOSTS);
+  m_input_rate.set_attrs("internal",
+                         "hydrology model workspace for total input rate into subglacial water layer",
+                         "m s-1", "");
 
   m_bmelt_local.create(m_grid, "basal_melt_rate_grounded", WITHOUT_GHOSTS);
   m_bmelt_local.set_attrs("internal",

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2017 PISM Authors
+// Copyright (C) 2012-2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -101,18 +101,18 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   compute_input_rate(*inputs.cell_type,
                      *inputs.basal_melt_rate,
                      inputs.surface_input_rate,
-                     m_total_input);
+                     m_input_rate);
 
   const IceModelVec2CellType &cell_type = *inputs.cell_type;
 
-  IceModelVec::AccessList list{&cell_type, &m_Wtil, &m_total_input};
+  IceModelVec::AccessList list{&cell_type, &m_Wtil, &m_input_rate};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ocean(i,j) || cell_type.ice_free(i,j)) {
       m_Wtil(i, j) = 0.0;
     } else {
-      m_Wtil(i, j) += dt * (m_total_input(i, j) - m_tillwat_decay_rate);
+      m_Wtil(i, j) += dt * (m_input_rate(i, j) - m_tillwat_decay_rate);
       m_Wtil(i, j) = std::min(std::max(0.0, m_Wtil(i, j)), m_tillwat_max);
     }
   }

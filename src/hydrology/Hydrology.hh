@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2017 PISM Authors
+// Copyright (C) 2012-2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -142,7 +142,7 @@ protected:
   IceModelVec2S m_Pover;
 
   // work space
-  IceModelVec2S m_total_input;
+  IceModelVec2S m_input_rate;
   IceModelVec2S m_bmelt_local;
 
   bool m_hold_bmelt;
