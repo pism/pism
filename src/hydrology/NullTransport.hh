@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2017 PISM Authors
+// Copyright (C) 2012-2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -60,6 +60,7 @@ private:
   double m_tillwat_decay_rate;
 
   IceModelVec2S m_Wtil_old;
+  IceModelVec2S m_conservation_error;
 };
 
 } // end of namespace hydrology

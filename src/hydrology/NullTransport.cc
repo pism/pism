@@ -40,6 +40,8 @@ NullTransport::NullTransport(IceGrid::ConstPtr g)
   if (m_diffuse_tillwat) {
     m_Wtil_old.create(m_grid, "Wtil_old", WITH_GHOSTS);
   }
+
+  m_conservation_error.create(m_grid, "conservation_error", WITHOUT_GHOSTS);
 }
 
 NullTransport::~NullTransport() {
@@ -105,16 +107,50 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
 
   const IceModelVec2CellType &cell_type = *inputs.cell_type;
 
-  IceModelVec::AccessList list{&cell_type, &m_Wtil, &m_input_rate};
+  IceModelVec::AccessList list{&cell_type, &m_Wtil, &m_input_rate, &m_conservation_error};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.ocean(i,j) || cell_type.ice_free(i,j)) {
-      m_Wtil(i, j) = 0.0;
-    } else {
-      m_Wtil(i, j) += dt * (m_input_rate(i, j) - m_tillwat_decay_rate);
-      m_Wtil(i, j) = std::min(std::max(0.0, m_Wtil(i, j)), m_tillwat_max);
+    const double
+      W_old      = m_Wtil(i, j),
+      input_rate = m_input_rate(i, j),
+      dW_input   = dt * input_rate;
+
+    if (input_rate < 0.0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "negative subglacial water input rate of %f m/s at (%d, %d)",
+                                    input_rate, i, j);
     }
+
+    if (W_old < 0.0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "negative subglacial water thickness of %f m at (%d, %d)",
+                                    W_old, i, j);
+    }
+
+    // tentative decay rate in areas under grounded ice
+    double dW_decay = 0.0;
+
+    if (cell_type.grounded_ice(i, j)) {
+      dW_decay = dt * (- m_tillwat_decay_rate);
+    } else {
+      // use this decay mechanism to remove all water in ice-free and ocean areas
+      dW_decay = -(W_old + dW_input);
+    }
+
+    // cap the decay rate to preserve non-negativity
+    if ((W_old + dW_input) + dW_decay < 0.0) {
+      dW_decay = -(W_old + dW_input);
+    }
+
+    double W_new = (W_old + dW_input) + dW_decay;
+
+    // enforce bounds
+    m_Wtil(i, j) = std::min(std::max(0.0, W_new), m_tillwat_max);
+
+    // dW_decay is always a "conservation error", and the second term reflects the change
+    // needed to keep till water thickness within bounds.
+    m_conservation_error(i, j) += dW_decay + (m_Wtil(i, j) - W_new);
   }
 
   if (m_diffuse_tillwat) {
@@ -122,7 +158,7 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   }
 }
 
-void NullTransport::diffuse_till_water(double dt, const IceModelVec2CellType &mask) {
+void NullTransport::diffuse_till_water(double dt, const IceModelVec2CellType &cell_type) {
   // note: this call updates ghosts of m_Wtil_old
   m_Wtil_old.copy_from(m_Wtil);
 
@@ -135,24 +171,25 @@ void NullTransport::diffuse_till_water(double dt, const IceModelVec2CellType &ma
     Rx = K * dt / (dx * dx),
     Ry = K * dt / (dy * dy);
 
-  IceModelVec::AccessList list{&mask, &m_Wtil, &m_Wtil_old};
+  IceModelVec::AccessList list{&cell_type, &m_Wtil, &m_Wtil_old, &m_conservation_error};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const StarStencil<double> W = m_Wtil_old.star(i, j);
+    auto W = m_Wtil_old.star(i, j);
 
-    // diffuse Wtil
-    m_Wtil(i, j) = ((1.0 - 2.0 * Rx - 2.0 * Ry) * W.ij + Rx * (W.w + W.e) + Ry * (W.s + W.n));
+    double W_new = ((1.0 - 2.0 * Rx - 2.0 * Ry) * W.ij + Rx * (W.w + W.e) + Ry * (W.s + W.n));
 
     // enforce bounds
-    m_Wtil(i, j) = std::min(std::max(0.0, m_Wtil(i, j)), m_tillwat_max);
+    m_Wtil(i, j) = std::min(std::max(0.0, W_new), m_tillwat_max);
+
+    m_conservation_error(i, j) += m_Wtil(i, j) - W_new;
 
     // set to zero in ocean and ice-free areas
-    if (mask.ocean(i, j) or mask.ice_free(i, j)) {
+    if (cell_type.ocean(i, j) or cell_type.ice_free(i, j)) {
+      m_conservation_error(i, j) += -m_Wtil(i, j);
       m_Wtil(i, j) = 0.0;
     }
   }
-
 }
 
 } // end of namespace hydrology
