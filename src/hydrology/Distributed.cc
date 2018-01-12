@@ -323,50 +323,38 @@ own shorter time steps, perhaps hours to weeks.
 void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
 
   // if asked for the identical time interval versus last time, then
-  //   do nothing; otherwise assume that [my_t,my_t+my_dt] is the time
+  //   do nothing; otherwise assume that [my_t, my_t+my_dt] is the time
   //   interval on which we are solving
   if ((fabs(icet - m_t) < 1e-12) && (fabs(icedt - m_dt) < 1e-12)) {
     return;
   }
+
   // update Component times: t = current time, t+dt = target time
-  m_t = icet;
+  m_t  = icet;
   m_dt = icedt;
+
+  double
+    ht  = m_t,
+    hdt = 0.0;
+
+  compute_input_rate(*inputs.cell_type,
+                     *inputs.basal_melt_rate,
+                     inputs.surface_input_rate,
+                     m_input_rate);
+
+  compute_overburden_pressure(*inputs.ice_thickness, m_Pover);
+
+  const double
+    t_final = m_t + m_dt,
+    dt_max  = m_config->get_double("hydrology.maximum_time_step", "seconds"),
+    phi0    = m_config->get_double("hydrology.regularizing_porosity");
 
   // make sure W,P have valid ghosts before starting hydrology steps
   m_W.update_ghosts();
   m_P.update_ghosts();
 
-  const double
-    phi0 = m_config->get_double("hydrology.regularizing_porosity");
-
-  double
-    ht    = m_t,
-    hdt   = 0.0,                  // hydrology model time and time step
-    maxV  = 0.0,
-    maxD  = 0.0;
-
-  double
-    PtoCFLratio = 0.0,          // for reporting ratio of dtCFL to dtDIFFP
-    cumratio    = 0.0;
-
-  const IceModelVec2CellType &cell_type     = *inputs.cell_type;
-  const IceModelVec2S        &bed_elevation = *inputs.bed_elevation;
-  const IceModelVec2S        &ice_thickness = *inputs.ice_thickness;
-  const IceModelVec2S        &sliding_speed = *inputs.ice_sliding_speed;
-
-  compute_input_rate(cell_type,
-                     *inputs.basal_melt_rate,
-                     inputs.surface_input_rate,
-                     m_input_rate);
-
-  compute_overburden_pressure(ice_thickness, m_Pover);
-
-  const double
-    t_final = m_t + m_dt,
-    dt_max  = m_config->get_double("hydrology.maximum_time_step", "seconds");
-
   unsigned int step_counter = 0;
-  while (ht < t_final) {
+  for (; ht < t_final; ht += hdt) {
     step_counter++;
 
 #if (PISM_DEBUG==1)
@@ -377,21 +365,21 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
     // note that ice dynamics can change overburden pressure, so we can only check P
     // bounds if thk has not changed; if thk could have just changed, such as in the first
     // time through the current loop, we enforce them
-    check_P_bounds((step_counter == 1));
+    check_P_bounds(m_P, m_Pover, (step_counter == 1));
 
     water_thickness_staggered(m_W,
-                              cell_type,
+                              *inputs.cell_type,
                               m_Wstag);
 
     double maxKW = 0.0;
     compute_conductivity(m_Wstag,
                          subglacial_water_pressure(),
-                         bed_elevation,
+                         *inputs.bed_elevation,
                          m_K, maxKW);
 
     compute_velocity(m_Wstag,
                      subglacial_water_pressure(),
-                     bed_elevation,
+                     *inputs.bed_elevation,
                      m_K,
                      m_V);
 
@@ -408,12 +396,6 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
       hdt = std::min(hdt, dt_cfl);
       hdt = std::min(hdt, dt_diff_w);
       hdt = std::min(hdt, dt_diff_p);
-
-      if (dt_diff_p > 0.0) {
-        PtoCFLratio = std::max(1.0, dt_cfl / dt_diff_p);
-      } else {
-        PtoCFLratio = 1.0;
-      }
     }
 
     // update Wtilnew from Wtil
@@ -421,40 +403,39 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
                 m_Wtil,
                 m_input_rate,
                 m_Wtilnew);
-    // correct water thickness and account for the changes
+    // remove water in ice-free areas and account for changes
 
-    update_P(hdt, cell_type, sliding_speed, m_input_rate, m_Pover,
+    update_P(hdt,
+             *inputs.cell_type,
+             *inputs.ice_sliding_speed,
+             m_input_rate,
+             m_Pover,
              m_Wtil, m_Wtilnew,
              subglacial_water_pressure(),
              m_W, m_Wstag,
              m_K, m_Q,
              m_Pnew);
 
-    // update Wnew from W, Wtil, Wtilnew, Wstag, Qstag, total_input
+    // update Wnew from W, Wtil, Wtilnew, Wstag, Q, input_rate
     update_W(hdt,
              m_input_rate,
              m_W, m_Wstag,
              m_Wtil, m_Wtilnew,
              m_K, m_Q,
              m_Wnew);
-    // correct water thickness and account for the changes
+    // remove water in ice-free areas and account for changes
 
     // transfer new into old
-    m_Wnew.update_ghosts(m_W);
+    m_W.copy_from(m_Wnew);
     m_Wtil.copy_from(m_Wtilnew);
-    m_Pnew.update_ghosts(m_P);
-
-    ht += hdt;
+    m_P.copy_from(m_Pnew);
   } // end of hydrology model time-stepping loop
 
   m_log->message(2,
-             "  'distributed' hydrology took %d hydrology sub-steps"
-             " with average dt = %.6f years\n",
-             step_counter, units::convert(m_sys, m_dt/step_counter, "seconds", "years"));
-  m_log->message(3,
-             "  (hydrology info: dt = %.2f s,  av %.2f steps per CFL,  max |V| = %.2e m s-1,"
-             "  max D = %.2e m^2 s-1)\n",
-             m_dt/step_counter, cumratio/step_counter, maxV, maxD);
+                 "  took %d hydrology sub-steps with average dt = %.6f years (%.6f s)\n",
+                 step_counter,
+                 units::convert(m_sys, m_dt/step_counter, "seconds", "years"),
+                 m_dt/step_counter);
 }
 
 } // end of namespace hydrology

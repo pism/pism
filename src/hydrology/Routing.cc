@@ -830,30 +830,31 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
   if ((fabs(icet - m_t) < 1e-12) && (fabs(icedt - m_dt) < 1e-12)) {
     return;
   }
+
   // update Component times: t = current time, t+dt = target time
-  m_t = icet;
+  m_t  = icet;
   m_dt = icedt;
 
-  // make sure W has valid ghosts before starting hydrology steps
-  m_W.update_ghosts();
+  double
+    ht  = m_t,
+    hdt = 0.0;
 
-  // hydrology model time and time step
-  double ht = m_t, hdt = 0.0;
-
-  const IceModelVec2CellType &cell_type = *inputs.cell_type;
-  const IceModelVec2S &bed_elevation = *inputs.bed_elevation;
-
-  compute_input_rate(cell_type,
+  compute_input_rate(*inputs.cell_type,
                      *inputs.basal_melt_rate,
                      inputs.surface_input_rate,
                      m_input_rate);
+
+  compute_overburden_pressure(*inputs.ice_thickness, m_Pover);
 
   const double
     t_final = m_t + m_dt,
     dt_max  = m_config->get_double("hydrology.maximum_time_step");
 
+  // make sure W has valid ghosts before starting hydrology steps
+  m_W.update_ghosts();
+
   unsigned int step_counter = 0;
-  while (ht < t_final) {
+  for (; ht < t_final; ht += hdt) {
     step_counter++;
 
 #if (PISM_DEBUG==1)
@@ -862,18 +863,18 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
 #endif
 
     water_thickness_staggered(m_W,
-                              cell_type,
+                              *inputs.cell_type,
                               m_Wstag);
 
     double maxKW = 0.0;
     compute_conductivity(m_Wstag,
                          subglacial_water_pressure(),
-                         bed_elevation,
+                         *inputs.bed_elevation,
                          m_K, maxKW);
 
     compute_velocity(m_Wstag,
                      subglacial_water_pressure(),
-                     bed_elevation,
+                     *inputs.bed_elevation,
                      m_K,
                      m_V);
 
@@ -885,7 +886,6 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
         dt_cfl    = max_timestep_W_cfl(),
         dt_diff_w = max_timestep_W_diff(maxKW);
 
-      // dt = min {dt_max, dtCFL, dtDIFFW}
       hdt = std::min(t_final - ht, dt_max);
       hdt = std::min(hdt, dt_cfl);
       hdt = std::min(hdt, dt_diff_w);
@@ -898,7 +898,7 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
                 m_Wtilnew);
     // remove water in ice-free areas and account for changes
 
-    // update Wnew from W, Wtil, Wtilnew, Wstag, Q, total_input
+    // update Wnew from W, Wtil, Wtilnew, Wstag, Q, input_rate
     update_W(hdt,
              m_input_rate,
              m_W, m_Wstag,
@@ -908,18 +908,14 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
     // remove water in ice-free areas and account for changes
 
     // transfer new into old
-    m_Wnew.update_ghosts(m_W);
+    m_W.copy_from(m_Wnew);
     m_Wtil.copy_from(m_Wtilnew);
-
-    ht += hdt;
   } // end of hydrology model time-stepping loop
 
   m_log->message(2,
-             "  'routing' hydrology took %d hydrology sub-steps with average dt = %.6f years\n",
-             step_counter, units::convert(m_sys, m_dt/step_counter, "seconds", "years"));
-
-  m_log->message(3,
-                 "  (hydrology info: dt = %.2f s)\n",
+                 "  took %d hydrology sub-steps with average dt = %.6f years (%.6f s)\n",
+                 step_counter,
+                 units::convert(m_sys, m_dt/step_counter, "seconds", "years"),
                  m_dt/step_counter);
 }
 
