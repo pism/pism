@@ -750,11 +750,6 @@ double Routing::max_timestep_W_cfl() const {
   return 0.5 / (tmp[0]/m_dx + tmp[1]/m_dy); // FIXME: is regularization needed?
 }
 
-double Routing::max_timestep_P_diff(double phi0, double dt_W_diff) const {
-  (void) phi0;
-  return dt_W_diff;
-}
-
 
 //! The computation of Wtillnew, called by update().
 /*!
