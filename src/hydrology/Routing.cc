@@ -255,37 +255,35 @@ Routing::~Routing() {
   // empty
 }
 
-void Routing::init() {
+void Routing::initialization_message() const {
   m_log->message(2,
                  "* Initializing the routing subglacial hydrology model ...\n");
-
-  Hydrology::init();
-
-  init_bwat();
 }
 
-void Routing::init_bwat() {
+void Routing::restart_impl(const PIO &input_file, int record) {
+  Hydrology::restart_impl(input_file, record);
 
-  // initialize water layer thickness from the context if present, otherwise from -i file,
-  // otherwise with constant value
+  m_W.read(input_file, record);
 
-  InputOptions opts = process_input_options(m_grid->com);
+  regrid("Hydrology", m_W);
+}
 
-  const double bwatdefault = m_config->get_double("bootstrapping.defaults.bwat");
+void Routing::bootstrap_impl(const PIO &input_file,
+                             const IceModelVec2S &ice_thickness) {
+  Hydrology::bootstrap_impl(input_file, ice_thickness);
 
-  switch (opts.type) {
-  case INIT_RESTART:
-    m_W.read(opts.filename, opts.record);
-    break;
-  case INIT_BOOTSTRAP:
-    m_W.regrid(opts.filename, OPTIONAL, bwatdefault);
-    break;
-  default:
-    m_W.set(bwatdefault);
-  }
+  double bwat_default = m_config->get_double("bootstrapping.defaults.bwat");
+  m_W.regrid(input_file, OPTIONAL, bwat_default);
 
-  // however we initialized it, we could be asked to regrid from file
-  regrid("hydrology::Routing", m_W);
+  regrid("Hydrology", m_W);
+}
+
+void Routing::initialize_impl(const IceModelVec2S &W_till,
+                              const IceModelVec2S &W,
+                              const IceModelVec2S &P) {
+  Hydrology::initialize_impl(W_till, W, P);
+
+  m_W.copy_from(W);
 }
 
 void Routing::define_model_state_impl(const PIO &output) const {

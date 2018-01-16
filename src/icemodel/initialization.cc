@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -198,7 +198,18 @@ void IceModel::model_state_setup() {
   m_surface->init();
 
   if (m_subglacial_hydrology) {
-    m_subglacial_hydrology->init();
+
+    switch (input.type) {
+    case INIT_RESTART:
+      m_subglacial_hydrology->restart(*input_file, input.record);
+      break;
+    case INIT_BOOTSTRAP:
+      m_subglacial_hydrology->bootstrap(*input_file,
+                                        m_geometry.ice_thickness);
+    case INIT_OTHER:
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Cannot initialize hydrology models from formulas.");
+    }
   }
 
   // basal_yield_stress_model->init() needs bwat so this must happen

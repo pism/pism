@@ -65,45 +65,47 @@ Hydrology::~Hydrology() {
   // empty
 }
 
+void Hydrology::restart(const PIO &input_file, int record) {
+  initialization_message();
+  this->restart_impl(input_file, record);
+}
 
-void Hydrology::init() {
+void Hydrology::bootstrap(const PIO &input_file,
+                          const IceModelVec2S &ice_thickness) {
+  initialization_message();
+  this->bootstrap_impl(input_file, ice_thickness);
+}
 
-  // itb = input_to_bed
-  options::String itb_file("-hydrology_input_to_bed_file",
-                           "A time- and space-dependent file with amount of water"
-                           " (depth per time) which should be added to the amount of water"
-                           " at the ice sheet bed at the given location at the given time;"
-                           " adds to basal_melt_rate_grounded");
+void Hydrology::initialize(const IceModelVec2S &W_till,
+                           const IceModelVec2S &W,
+                           const IceModelVec2S &P) {
+  this->initialize_impl(W_till, W, P);
+}
 
-  options::Real itb_period_years("-hydrology_input_to_bed_period",
-                                 "The period (i.e. duration before repeat), in years,"
-                                 " of -hydrology_input_to_bed_file data", 0.0);
-
-  options::Real itb_reference_year("-hydrology_input_to_bed_reference_year",
-                                   "The reference year for periodizing the"
-                                   " -hydrology_input_to_bed_file data", 0.0);
-
-  // the following are IceModelVec pointers into IceModel generally and are read by code in the
-  // update() method at the current Hydrology time
-
-  InputOptions opts = process_input_options(m_grid->com);
-
-  double tillwat_default = m_config->get_double("bootstrapping.defaults.tillwat");
-
-  switch (opts.type) {
-  case INIT_RESTART:
-    m_Wtill.read(opts.filename, opts.record);
-    break;
-  case INIT_BOOTSTRAP:
-    m_Wtill.regrid(opts.filename, OPTIONAL, tillwat_default);
-    break;
-  case INIT_OTHER:
-  default:
-    m_Wtill.set(tillwat_default);
-  }
+void Hydrology::restart_impl(const PIO &input_file, int record) {
+  m_Wtill.read(input_file, record);
 
   // whether or not we could initialize from file, we could be asked to regrid from file
   regrid("Hydrology", m_Wtill);
+}
+
+void Hydrology::bootstrap_impl(const PIO &input_file,
+                               const IceModelVec2S &ice_thickness) {
+  (void) ice_thickness;
+
+  double tillwat_default = m_config->get_double("bootstrapping.defaults.tillwat");
+  m_Wtill.regrid(input_file, OPTIONAL, tillwat_default);
+
+  // whether or not we could initialize from file, we could be asked to regrid from file
+  regrid("Hydrology", m_Wtill);
+}
+
+void Hydrology::initialize_impl(const IceModelVec2S &W_till,
+                                const IceModelVec2S &W,
+                                const IceModelVec2S &P) {
+  (void) W;
+  (void) P;
+  m_Wtill.copy_from(W_till);
 }
 
 void Hydrology::update(double t, double dt, const Inputs& inputs) {

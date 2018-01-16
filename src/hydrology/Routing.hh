@@ -84,8 +84,6 @@ public:
   Routing(IceGrid::ConstPtr g);
   virtual ~Routing();
 
-  virtual void init();
-
   const IceModelVec2S& subglacial_water_thickness() const;
 
   const IceModelVec2S& subglacial_water_pressure() const;
@@ -93,6 +91,15 @@ public:
   const IceModelVec2Stag& velocity_staggered() const;
 
 protected:
+  virtual void restart_impl(const PIO &input_file, int record);
+
+  virtual void bootstrap_impl(const PIO &input_file,
+                              const IceModelVec2S &ice_thickness);
+
+  virtual void initialize_impl(const IceModelVec2S &W_till,
+                               const IceModelVec2S &W,
+                               const IceModelVec2S &P);
+
   virtual void update_impl(double icet, double icedt, const Inputs& inputs);
 
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
@@ -125,8 +132,6 @@ protected:
 
   // ghosted temporary storage; modified in compute_conductivity and compute_velocity
   mutable IceModelVec2S m_R;
-
-  virtual void init_bwat();
 
   // when we update the water amounts, careful mass accounting at the boundary
   // is needed; we update the new thickness variable, a temporary during update
@@ -181,6 +186,8 @@ protected:
   double m_dx, m_dy;
 
   double m_rg;
+private:
+  virtual void initialization_message() const;
 };
 
 void wall_melt(const Routing &model,

@@ -50,7 +50,7 @@ NullTransport::NullTransport(IceGrid::ConstPtr g)
 NullTransport::~NullTransport() {
 }
 
-void NullTransport::init() {
+void NullTransport::initialization_message() const {
   m_log->message(2,
                  "* Initializing the null-transport (till only) subglacial hydrology model ...\n");
 
@@ -58,8 +58,21 @@ void NullTransport::init() {
     m_log->message(2,
                    "  [using lateral diffusion of stored till water as in Bueler and Brown, 2009]\n");
   }
+}
 
-  Hydrology::init();
+void NullTransport::restart_impl(const PIO &input_file, int record) {
+  Hydrology::restart_impl(input_file, record);
+}
+
+void NullTransport::bootstrap_impl(const PIO &input_file,
+                                   const IceModelVec2S &ice_thickness) {
+  Hydrology::bootstrap_impl(input_file, ice_thickness);
+}
+
+void NullTransport::initialize_impl(const IceModelVec2S &W_till,
+                                    const IceModelVec2S &W,
+                                    const IceModelVec2S &P) {
+  Hydrology::initialize_impl(W_till, W, P);
 }
 
 MaxTimestep NullTransport::max_timestep_impl(double t) const {
@@ -134,7 +147,7 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
     if (cell_type.grounded_ice(i, j)) {
       dW_decay = dt * (- m_tillwat_decay_rate);
     } else {
-      // use this decay mechanism to remove all water in ice-free and ocean areas
+      // use the decay mechanism to remove all water in ice-free and ocean areas
       dW_decay = -(W_old + dW_input);
     }
 

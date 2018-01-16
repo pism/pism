@@ -42,9 +42,16 @@ public:
   NullTransport(IceGrid::ConstPtr g);
   virtual ~NullTransport();
 
-  virtual void init();
-
 protected:
+  virtual void restart_impl(const PIO &input_file, int record);
+
+  virtual void bootstrap_impl(const PIO &input_file,
+                              const IceModelVec2S &ice_thickness);
+
+  virtual void initialize_impl(const IceModelVec2S &W_till,
+                               const IceModelVec2S &W,
+                               const IceModelVec2S &P);
+
   virtual MaxTimestep max_timestep_impl(double t) const;
 
   //! Solves an implicit step of a highly-simplified ODE.
@@ -61,6 +68,8 @@ private:
 
   IceModelVec2S m_Wtill_old;
   IceModelVec2S m_conservation_error;
+
+  void initialization_message() const;
 };
 
 } // end of namespace hydrology

@@ -51,66 +51,59 @@ Distributed::~Distributed() {
   // empty
 }
 
-void Distributed::init() {
+void Distributed::initialization_message() const {
   m_log->message(2,
                  "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
+}
+
+void Distributed::restart_impl(const PIO &input_file, int record) {
+  Routing::restart_impl(input_file, record);
+
+  m_P.read(input_file, record);
+
+  regrid("Hydrology", m_P);
+}
+
+void Distributed::bootstrap_impl(const PIO &input_file,
+                                 const IceModelVec2S &ice_thickness) {
+  Routing::bootstrap_impl(input_file, ice_thickness);
+
+  double bwp_default = m_config->get_double("bootstrapping.defaults.bwp");
+  m_P.regrid(input_file, OPTIONAL, bwp_default);
+
+  regrid("Hydrology", m_P);
 
   bool init_P_from_steady = options::Bool("-init_P_from_steady",
-                                          "initialize P from formula P(W) which applies in steady state");
-
-  options::String
-    hydrology_velbase_mag_file("-hydrology_velbase_mag_file",
-                               "Specifies a file to get velbase_mag from,"
-                               " for 'distributed' hydrology model");
-
-  Hydrology::init();
-
-  Routing::init_bwat();
-
-  init_bwp();
+                                          "initialize P from formula P(W) "
+                                          "which applies in steady state");
 
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
     m_log->message(2,
                    "  option -init_P_from_steady seen ...\n"
                    "  initializing P from P(W) formula which applies in steady state\n");
-    const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
     compute_overburden_pressure(ice_thickness, m_Pover);
 
-    IceModelVec2S velbase_mag;  // FIXME: pass this is as an argument
+    IceModelVec2S sliding_speed;
+    sliding_speed.create(m_grid, "sliding_speed", WITHOUT_GHOSTS);
+    sliding_speed.set_attrs("internal", "basal sliding speed", "m s-1", "");
+    sliding_speed.metadata().set_string("glaciological_units", "m year-1");
 
-    P_from_W_steady(m_W, m_Pover, velbase_mag,
+    // FIXME: read sliding speed from a file
+
+    P_from_W_steady(m_W, m_Pover, sliding_speed,
                     m_P);
   }
+
 }
 
+void Distributed::initialize_impl(const IceModelVec2S &W_till,
+                              const IceModelVec2S &W,
+                              const IceModelVec2S &P) {
+  Routing::initialize_impl(W_till, W, P);
 
-void Distributed::init_bwp() {
-
-  // initialize water layer thickness from the context if present, otherwise from -i
-  // otherwise with constant value
-
-  InputOptions opts = process_input_options(m_grid->com);
-
-  // initialize P: present or -i file or -bootstrap file or set to constant;
-  //   then overwrite by regrid; then overwrite by -init_P_from_steady
-  const double bwp_default = m_config->get_double("bootstrapping.defaults.bwp");
-
-  switch (opts.type) {
-  case INIT_RESTART:
-  case INIT_BOOTSTRAP:
-    // regridding is equivalent to reading in if grids match, but this way we can start
-    // from a file that does not have 'bwp', setting it to bwp_default
-    m_P.regrid(opts.filename, OPTIONAL, bwp_default);
-    break;
-  case INIT_OTHER:
-  default:
-    m_P.set(bwp_default);
-  }
-
-  regrid("hydrology::Distributed", m_P); //  we could be asked to regrid from file
+  m_P.copy_from(P);
 }
-
 
 void Distributed::define_model_state_impl(const PIO &output) const {
   Routing::define_model_state_impl(output);
@@ -134,7 +127,8 @@ const IceModelVec2S& Distributed::subglacial_water_pressure() const {
   return m_P;
 }
 
-//! Check bounds on P and fail with message if not satisfied.  Optionally, enforces the upper bound instead of checking it.
+//! Check bounds on P and fail with message if not satisfied. Optionally, enforces the
+//! upper bound instead of checking it.
 /*!
   The bounds are \f$0 \le P \le P_o\f$ where \f$P_o\f$ is the overburden pressure.
 */

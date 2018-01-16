@@ -45,14 +45,21 @@ public:
   Distributed(IceGrid::ConstPtr g);
   virtual ~Distributed();
 
-  virtual void init();
-
   const IceModelVec2S& subglacial_water_pressure() const;
 
 protected:
+  virtual void restart_impl(const PIO &input_file, int record);
+
+  virtual void bootstrap_impl(const PIO &input_file,
+                              const IceModelVec2S &ice_thickness);
+
+  virtual void initialize_impl(const IceModelVec2S &W_till,
+                               const IceModelVec2S &W,
+                               const IceModelVec2S &P);
+
   virtual double max_timestep_P_diff(double phi0, double dt_diff_w) const;
 
-  void update_impl(double icet, double icedt, const Inputs& inputs);
+  void update_impl(double t, double dt, const Inputs& inputs);
 
   std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 
@@ -63,13 +70,11 @@ protected:
                       const IceModelVec2S &P_o,
                       bool enforce_upper);
 
-  // initialization
-  void init_bwp();
-
   void P_from_W_steady(const IceModelVec2S &W,
                        const IceModelVec2S &P_overburden,
                        const IceModelVec2S &sliding_speed,
                        IceModelVec2S &result);
+
   void update_P(double dt,
                 const IceModelVec2CellType &cell_type,
                 const IceModelVec2S &sliding_speed,
@@ -86,6 +91,8 @@ protected:
 protected:
   IceModelVec2S m_P;
   IceModelVec2S m_Pnew;
+private:
+  void initialization_message() const;
 };
 
 } // end of namespace hydrology

@@ -112,7 +112,14 @@ public:
   Hydrology(IceGrid::ConstPtr g);
   virtual ~Hydrology();
 
-  virtual void init();
+  void restart(const PIO &input_file, int record);
+
+  void bootstrap(const PIO &input_file,
+                 const IceModelVec2S &ice_thickness);
+
+  void initialize(const IceModelVec2S &W_till,
+                  const IceModelVec2S &W,
+                  const IceModelVec2S &P);
 
   void update(double t, double dt, const Inputs& inputs);
 
@@ -120,6 +127,15 @@ public:
   const IceModelVec2S& overburden_pressure() const;
 
 protected:
+  virtual void restart_impl(const PIO &input_file, int record);
+
+  virtual void bootstrap_impl(const PIO &input_file,
+                              const IceModelVec2S &ice_thickness);
+
+  virtual void initialize_impl(const IceModelVec2S &W_till,
+                               const IceModelVec2S &W,
+                               const IceModelVec2S &P);
+
   virtual void update_impl(double icet, double icedt, const Inputs& inputs) = 0;
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
@@ -146,6 +162,8 @@ protected:
   IceModelVec2S m_input_rate;
 
   bool m_hold_bmelt;
+private:
+  virtual void initialization_message() const = 0;
 };
 
 } // end of namespace hydrology
