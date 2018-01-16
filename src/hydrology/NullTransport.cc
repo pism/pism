@@ -33,7 +33,8 @@ NullTransport::NullTransport(IceGrid::ConstPtr g)
   m_tillwat_decay_rate = m_config->get_double("hydrology.tillwat_decay_rate");
 
   if (m_tillwat_max < 0.0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "hydrology::NullTransport: hydrology_tillwat_max is negative.\n"
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "hydrology::NullTransport: hydrology_tillwat_max is negative.\n"
                        "This is not allowed.");
   }
 
@@ -78,13 +79,15 @@ MaxTimestep NullTransport::max_timestep_impl(double t) const {
 //! Update the till water thickness by simply integrating the melt input.
 /*!
   Does a step of the trivial integration
+
   \f[ \frac{\partial W_{till}}{\partial t} = \frac{m}{\rho_w} - C\f]
+
   where \f$C=\f$`hydrology_tillwat_decay_rate`.  Enforces bounds
   \f$0 \le W_{till} \le W_{till}^{max}\f$ where the upper bound is
   `hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
 
   Uses the current mass-continuity timestep `dt`.  (Compare
-  hydrology::Routing::raw_update_Wtill() which will generally be taking time steps
+  hydrology::Routing::update_Wtill() which will generally be taking time steps
   determined by the evolving transportable water layer in that model.)
 
   There is no attempt to report on conservation errors because this
@@ -177,6 +180,8 @@ void NullTransport::diffuse_till_water(double dt, const IceModelVec2CellType &ce
     // enforce bounds
     m_Wtill(i, j) = std::min(std::max(0.0, W_new), m_tillwat_max);
 
+    // the RHS is zero if enforcing bounds did not modify the result, otherwise it is the
+    // amount of water *added* to stay within bounds
     m_conservation_error(i, j) += m_Wtill(i, j) - W_new;
 
     // set to zero in ocean and ice-free areas

@@ -50,7 +50,7 @@ protected:
   //! Solves an implicit step of a highly-simplified ODE.
   virtual void update_impl(double icet, double icedt, const Inputs& inputs);
 
-  void diffuse_till_water(double dt, const IceModelVec2CellType &mask);
+  void diffuse_till_water(double dt, const IceModelVec2CellType &cell_type);
 
 private:
   double m_diffuse_tillwat;

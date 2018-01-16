@@ -279,7 +279,7 @@ void Distributed::update_P(double dt,
         Open  = c1 * sliding_speed(i, j) * std::max(0.0, Wr - w.ij),
         Close = c2 * A * pow(P_o - P(i, j), n) * w.ij;
 
-      // compute the flux divergence the same way as in raw_update_W()
+      // compute the flux divergence the same way as in update_W()
       const double divadflux = (q.e - q.w) / m_dx + (q.n - q.s) / m_dy;
       const double
         De = m_rg * k.e * ws.e,

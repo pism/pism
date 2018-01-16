@@ -180,8 +180,8 @@ protected:
 } // end of namespace diagnostics
 
 Routing::Routing(IceGrid::ConstPtr g)
-  : Hydrology(g), m_dx(g->dx()), m_dy(g->dy())
-{
+  : Hydrology(g), m_dx(g->dx()), m_dy(g->dy()) {
+
   m_rg    = (m_config->get_double("constants.fresh_water.density") *
              m_config->get_double("constants.standard_gravity"));
 
@@ -198,15 +198,18 @@ Routing::Routing(IceGrid::ConstPtr g)
                     "cell face-centered (staggered) values of water layer thickness",
                     "m", "");
   m_Wstag.metadata().set_double("valid_min", 0.0);
+
   m_K.create(m_grid, "K_staggered", WITH_GHOSTS, 1);
   m_K.set_attrs("internal",
                 "cell face-centered (staggered) values of nonlinear conductivity",
                 "", "");
   m_K.metadata().set_double("valid_min", 0.0);
+
   m_Q.create(m_grid, "advection_flux", WITH_GHOSTS, 1);
   m_Q.set_attrs("internal",
                 "cell face-centered (staggered) components of advective subglacial water flux",
                 "m2 s-1", "");
+
   m_R.create(m_grid, "potential_workspace", WITH_GHOSTS, 1); // box stencil used
   m_R.set_attrs("internal",
                 "work space for modeled subglacial water hydraulic potential",
@@ -221,12 +224,13 @@ Routing::Routing(IceGrid::ConstPtr g)
                 "m s-1", "");
 
   // temporaries during update; do not need ghosts
-  m_Wnew.create(m_grid, "Wnew_internal", WITHOUT_GHOSTS);
+  m_Wnew.create(m_grid, "W_new", WITHOUT_GHOSTS);
   m_Wnew.set_attrs("internal",
                    "new thickness of transportable subglacial water layer during update",
                    "m", "");
   m_Wnew.metadata().set_double("valid_min", 0.0);
-  m_Wtillnew.create(m_grid, "Wtillnew_internal", WITHOUT_GHOSTS);
+
+  m_Wtillnew.create(m_grid, "Wtill_new", WITHOUT_GHOSTS);
   m_Wtillnew.set_attrs("internal",
                        "new thickness of till (subglacial) water layer during update",
                        "m", "");
@@ -267,7 +271,7 @@ void Routing::init_bwat() {
 
   InputOptions opts = process_input_options(m_grid->com);
 
-  const PetscReal bwatdefault = m_config->get_double("bootstrapping.defaults.bwat");
+  const double bwatdefault = m_config->get_double("bootstrapping.defaults.bwat");
 
   switch (opts.type) {
   case INIT_RESTART:
@@ -510,13 +514,14 @@ void Routing::compute_conductivity(const IceModelVec2Stag &W,
       dRdx = (m_R(i + 1, j) - m_R(i, j)) / m_dx;
       dRdy = (m_R(i + 1, j + 1) + m_R(i, j + 1) - m_R(i + 1, j - 1) - m_R(i, j - 1)) / (4.0 * m_dy);
       result(i, j, 0) = dRdx * dRdx + dRdy * dRdy;
+
       dRdx = (m_R(i + 1, j + 1) + m_R(i + 1, j) - m_R(i - 1, j + 1) - m_R(i - 1, j)) / (4.0 * m_dx);
       dRdy = (m_R(i, j + 1) - m_R(i, j)) / m_dy;
       result(i, j, 1) = dRdx * dRdx + dRdy * dRdy;
     }
   }
 
-  const double betapow = (beta-2.0)/2.0;
+  const double betapow = (beta - 2.0) / 2.0;
 
   list.add(W);
 
@@ -585,7 +590,8 @@ void wall_melt(const Routing &model,
 
   // FIXME:  could be scaled with overall factor hydrology_coefficient_wall_melt ?
   if (alpha < 1.0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "alpha = %f < 1 which is not allowed", alpha);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "alpha = %f < 1 which is not allowed", alpha);
   }
 
   IceModelVec2S R;
@@ -639,15 +645,16 @@ void wall_melt(const Routing &model,
   <code> result(i, j, 1) = v(i, j+1/2) </code>
 
   The advection velocity is given by the formula
+
   @f[ \mathbf{V} = - K \left(\nabla P + \rho_w g \nabla b\right) @f]
+
   where @f$\mathbf{V}@f$ is the water velocity, @f$P@f$ is the water
   pressure, and @f$b@f$ is the bedrock elevation.
 
-  If the corresponding staggered grid value of the water thickness is zero then
-  that component of V is set to zero.  This does not change the flux value (which
-  would be zero anyway) but it does provide the correct max velocity in the
-  CFL calculation.  We assume Wstag and K are up-to-date.  We assume P and b
-  have valid ghosts.
+  If the corresponding staggered grid value of the water thickness is zero then that
+  component of V is set to zero. This does not change the flux value (which would be zero
+  anyway) but it does provide the correct max velocity in the CFL calculation. We assume
+  bed has valid ghosts.
 */
 void Routing::compute_velocity(const IceModelVec2Stag &W,
                                const IceModelVec2S &P,
@@ -717,8 +724,8 @@ void Routing::advective_fluxes(const IceModelVec2Stag &V,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    result(i, j, 0) = V(i, j, 0) * (V(i, j, 0) >= 0.0 ? W(i, j) :  W(i+1, j));
-    result(i, j, 1) = V(i, j, 1) * (V(i, j, 1) >= 0.0 ? W(i, j) :  W(i, j+1));
+    result(i, j, 0) = V(i, j, 0) * (V(i, j, 0) >= 0.0 ? W(i, j) :  W(i + 1, j));
+    result(i, j, 1) = V(i, j, 1) * (V(i, j, 1) >= 0.0 ? W(i, j) :  W(i, j + 1));
   }
 
   result.update_ghosts();
@@ -831,8 +838,8 @@ void Routing::update_W(double dt,
   is generally on the order of months to years.  This hydrology model will take its
   own shorter time steps, perhaps hours to weeks.
 
-  To update W = `bwat` we call raw_update_W(), and to update Wtill = `tillwat` we
-  call raw_update_Wtill().
+  To update W = `bwat` we call update_W(), and to update Wtill = `tillwat` we
+  call update_Wtill().
 */
 void Routing::update_impl(double t, double dt, const Inputs& inputs) {
 
