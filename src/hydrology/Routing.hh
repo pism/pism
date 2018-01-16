@@ -124,17 +124,16 @@ protected:
   // work space
   IceModelVec2S m_Wnew, m_Wtilnew;
 
+  // ghosted temporary storage; modified in compute_conductivity and compute_velocity
   mutable IceModelVec2S m_R;
-
-  double m_stripwidth; // width in m of strip around margin where V and W are set to zero;
-  // if negative then the strip mechanism is inactive inactive
 
   virtual void init_bwat();
 
   // when we update the water amounts, careful mass accounting at the boundary
   // is needed; we update the new thickness variable, a temporary during update
   void boundary_mass_changes(const IceModelVec2S &cell_area,
-                             const IceModelVec2CellType &mask,
+                             const IceModelVec2CellType &cell_type,
+                             const IceModelVec2Int *no_model_mask,
                              IceModelVec2S &water_thickness);
 
   void water_thickness_staggered(const IceModelVec2S &W,
@@ -158,6 +157,7 @@ protected:
                         const IceModelVec2S &P,
                         const IceModelVec2S &bed,
                         const IceModelVec2Stag &K,
+                        const IceModelVec2Int *no_model_mask,
                         IceModelVec2Stag &result) const;
 
   void advective_fluxes(const IceModelVec2Stag &V,

@@ -53,15 +53,6 @@ void Distributed::init() {
   m_log->message(2,
              "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
 
-  {
-    m_stripwidth = units::convert(m_sys, m_stripwidth, "m", "km");
-    options::Real hydrology_null_strip("-hydrology_null_strip",
-                                       "set the width, in km, of the strip around the edge "
-                                       "of the computational domain in which hydrology is inactivated",
-                                       m_stripwidth);
-    m_stripwidth = units::convert(m_sys, hydrology_null_strip, "km", "m");
-  }
-
   bool init_P_from_steady = options::Bool("-init_P_from_steady",
                                           "initialize P from formula P(W) which applies in steady state");
 
@@ -381,6 +372,7 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
                      subglacial_water_pressure(),
                      *inputs.bed_elevation,
                      m_K,
+                     inputs.no_model_mask,
                      m_V);
 
     // to get Q, W needs valid ghosts

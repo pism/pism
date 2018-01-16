@@ -185,8 +185,6 @@ Routing::Routing(IceGrid::ConstPtr g)
   m_rg    = (m_config->get_double("constants.fresh_water.density") *
              m_config->get_double("constants.standard_gravity"));
 
-  m_stripwidth = m_config->get_double("hydrology.null_strip_width");
-
   // model state variables; need ghosts
   m_W.create(m_grid, "bwat", WITH_GHOSTS, 1);
   m_W.set_attrs("model_state",
@@ -256,14 +254,6 @@ Routing::~Routing() {
 void Routing::init() {
   m_log->message(2,
                  "* Initializing the routing subglacial hydrology model ...\n");
-  // initialize water layer thickness from the context if present,
-  //   otherwise from -i file, otherwise with constant value
-
-  options::Real hydrology_null_strip("-hydrology_null_strip",
-                                     "set the width, in km, of the strip around the edge"
-                                     " of the computational domain in which hydrology is inactivated",
-                                     units::convert(m_sys, m_stripwidth, "m", "km"));
-  m_stripwidth = units::convert(m_sys, hydrology_null_strip, "km", "m");
 
   Hydrology::init();
 
@@ -342,16 +332,19 @@ This method should be called once for each thickness field which needs to be
 processed.  This method alters the field water_thickness in-place.
  */
 void Routing::boundary_mass_changes(const IceModelVec2S &cell_area,
-                                    const IceModelVec2CellType &mask,
+                                    const IceModelVec2CellType &cell_type,
+                                    const IceModelVec2Int *no_model_mask,
                                     IceModelVec2S &water_thickness) {
   const double fresh_water_density = m_config->get_double("constants.fresh_water.density");
 
+  // FIXME: these should be 2D fields
   double
     my_icefreelost  = 0.0,
     my_oceanlost    = 0.0,
-    my_negativegain = 0.0;
+    my_negativegain = 0.0,
+    my_nullstriplost = 0.0;
 
-  IceModelVec::AccessList list{&water_thickness, &cell_area, &mask};
+  IceModelVec::AccessList list{&water_thickness, &cell_area, &cell_type};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -361,28 +354,33 @@ void Routing::boundary_mass_changes(const IceModelVec2S &cell_area,
       my_negativegain += -water_thickness(i, j) * dmassdz;
       water_thickness(i, j) = 0.0;
     }
-    if (mask.ice_free_land(i, j) and (water_thickness(i, j) > 0.0)) {
+
+    if (cell_type.ice_free_land(i, j)) {
       my_icefreelost += water_thickness(i, j) * dmassdz;
       water_thickness(i, j) = 0.0;
     }
-    if (mask.ocean(i, j) and (water_thickness(i, j) > 0.0)) {
+
+    if (cell_type.ocean(i, j)) {
       my_oceanlost += water_thickness(i, j) * dmassdz;
       water_thickness(i, j) = 0.0;
     }
   }
 
-  if (m_stripwidth <= 0.0) {
-    return;
-  }
+  if (no_model_mask) {
+    const IceModelVec2Int &M = *no_model_mask;
 
-  double my_nullstriplost = 0.0;
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+    list.add(M);
 
-    const double dmassdz = cell_area(i, j) * fresh_water_density; // kg m-1
-    if (in_null_strip(*m_grid, i, j, m_stripwidth)) {
-      my_nullstriplost += water_thickness(i, j) * dmassdz;
-      water_thickness(i, j) = 0.0;
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (M(i, j)) {
+        const double dmassdz = cell_area(i, j) * fresh_water_density; // kg m-1
+
+        my_nullstriplost += water_thickness(i, j) * dmassdz;
+
+        water_thickness(i, j) = 0.0;
+      }
     }
   }
 }
@@ -655,6 +653,7 @@ void Routing::compute_velocity(const IceModelVec2Stag &W,
                                const IceModelVec2S &P,
                                const IceModelVec2S &bed,
                                const IceModelVec2Stag &K,
+                               const IceModelVec2Int *no_model_mask,
                                IceModelVec2Stag &result) const {
   double dbdx, dbdy, dPdx, dPdy;
 
@@ -681,15 +680,22 @@ void Routing::compute_velocity(const IceModelVec2Stag &W,
     } else {
       result(i, j, 1) = 0.0;
     }
+  }
 
-    if (in_null_strip(*m_grid, i, j, m_stripwidth) or
-        in_null_strip(*m_grid, i + 1, j, m_stripwidth)) {
-      result(i, j, 0) = 0.0;
-    }
+  if (no_model_mask) {
+    const IceModelVec2Int &M = *no_model_mask;
+    list.add(M);
 
-    if (in_null_strip(*m_grid, i, j, m_stripwidth) or
-        in_null_strip(*m_grid, i, j + 1, m_stripwidth)) {
-      result(i, j, 1) = 0.0;
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (M(i, j) or M(i + 1, j)) {
+        result(i, j, 0) = 0.0;
+      }
+
+      if (M(i, j) or M(i, j + 1)) {
+        result(i, j, 1) = 0.0;
+      }
     }
   }
 }
@@ -882,6 +888,7 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
                      subglacial_water_pressure(),
                      *inputs.bed_elevation,
                      m_K,
+                     inputs.no_model_mask,
                      m_V);
 
     // to get Q, W needs valid ghosts
