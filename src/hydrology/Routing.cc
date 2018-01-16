@@ -302,18 +302,21 @@ void Routing::write_model_state_impl(const PIO &output) const {
 }
 
 //! Check thk >= 0 and fails with message if not satisfied.
-void Routing::check_water_thickness_nonnegative(const IceModelVec2S &waterthk) {
-  IceModelVec::AccessList list{&waterthk};
+void check_water_thickness_nonnegative(const IceModelVec2S &W) {
+  IceModelVec::AccessList list{&W};
 
-  ParallelSection loop(m_grid->com);
+  IceGrid::ConstPtr grid = W.grid();
+
+  ParallelSection loop(grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (waterthk(i, j) < 0.0) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "hydrology::Routing: disallowed negative water layer thickness\n"
-                                      "waterthk(i, j) = %.6f m at (i, j)=(%d, %d)",
-                                      waterthk(i, j), i, j);
+      if (W(i, j) < 0.0) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "detected negative water layer thickness "
+                                      "W(i, j) = %.6f m at (i, j)=(%d, %d)",
+                                      W(i, j), i, j);
       }
     }
   } catch (...) {

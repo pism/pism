@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2017 PISM Authors
+// Copyright (C) 2012-2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -137,8 +137,6 @@ protected:
                              const IceModelVec2CellType &mask,
                              IceModelVec2S &water_thickness);
 
-  void check_water_thickness_nonnegative(const IceModelVec2S &thk);
-
   void water_thickness_staggered(const IceModelVec2S &W,
                                  const IceModelVec2CellType &mask,
                                  IceModelVec2Stag &result);
@@ -189,6 +187,8 @@ protected:
 void wall_melt(const Routing &model,
                const IceModelVec2S &bed_elevation,
                IceModelVec2S &result);
+
+void check_water_thickness_nonnegative(const IceModelVec2S &W);
 
 } // end of namespace hydrology
 } // end of namespace pism
