@@ -51,8 +51,8 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
   // *all* Hydrology classes have layer of water stored in till as a state variable
   m_Wtill.create(m_grid, "tillwat", WITHOUT_GHOSTS);
   m_Wtill.set_attrs("model_state",
-                   "effective thickness of subglacial water stored in till",
-                   "m", "");
+                    "effective thickness of subglacial water stored in till",
+                    "m", "");
   m_Wtill.metadata().set_double("valid_min", 0.0);
 
   m_Pover.create(m_grid, "overburden_pressure", WITHOUT_GHOSTS);
@@ -124,9 +124,9 @@ void Hydrology::write_model_state_impl(const PIO &output) const {
 
 //! Update the overburden pressure from ice thickness.
 /*!
-Uses the standard hydrostatic (shallow) approximation of overburden pressure,
+  Uses the standard hydrostatic (shallow) approximation of overburden pressure,
   \f[ P_0 = \rho_i g H \f]
- */
+*/
 void Hydrology::compute_overburden_pressure(const IceModelVec2S &ice_thickness,
                                             IceModelVec2S &result) const {
   // FIXME issue #15
@@ -154,8 +154,8 @@ const IceModelVec2S& Hydrology::till_water_thickness() const {
 }
 
 /*!
-Checks \f$0 \le W_{till} \le W_{till}^{max} =\f$hydrology_tillwat_max.
- */
+  Checks \f$0 \le W_{till} \le W_{till}^{max} =\f$hydrology_tillwat_max.
+*/
 void Hydrology::check_Wtill_bounds() {
   double tillwat_max = m_config->get_double("hydrology.tillwat_max");
 
@@ -197,7 +197,7 @@ void Hydrology::check_Wtill_bounds() {
   @param[in] basal melt rate (ice thickness per time)
   @param[in] surface_input_rate surface input rate (water thickness per time); set to NULL to ignore
   @param[out] result resulting input rate (water thickness per time)
- */
+*/
 void Hydrology::compute_input_rate(const IceModelVec2CellType &mask,
                                    const IceModelVec2S &basal_melt_rate,
                                    const IceModelVec2S *surface_input_rate,

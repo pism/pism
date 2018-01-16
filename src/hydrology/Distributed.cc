@@ -34,14 +34,14 @@ Distributed::Distributed(IceGrid::ConstPtr g)
   // additional variables beyond hydrology::Routing
   m_P.create(m_grid, "bwp", WITH_GHOSTS, 1);
   m_P.set_attrs("model_state",
-              "pressure of transportable water in subglacial layer",
-              "Pa", "");
+                "pressure of transportable water in subglacial layer",
+                "Pa", "");
   m_P.metadata().set_double("valid_min", 0.0);
 
   m_Pnew.create(m_grid, "Pnew_internal", WITHOUT_GHOSTS);
   m_Pnew.set_attrs("internal",
-                 "new transportable subglacial water pressure during update",
-                 "Pa", "");
+                   "new transportable subglacial water pressure during update",
+                   "Pa", "");
   m_Pnew.metadata().set_double("valid_min", 0.0);
 }
 
@@ -51,7 +51,7 @@ Distributed::~Distributed() {
 
 void Distributed::init() {
   m_log->message(2,
-             "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
+                 "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
 
   bool init_P_from_steady = options::Bool("-init_P_from_steady",
                                           "initialize P from formula P(W) which applies in steady state");
@@ -69,8 +69,8 @@ void Distributed::init() {
 
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
     m_log->message(2,
-               "  option -init_P_from_steady seen ...\n"
-               "  initializing P from P(W) formula which applies in steady state\n");
+                   "  option -init_P_from_steady seen ...\n"
+                   "  initializing P from P(W) formula which applies in steady state\n");
     const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
     compute_overburden_pressure(ice_thickness, m_Pover);
@@ -134,8 +134,8 @@ const IceModelVec2S& Distributed::subglacial_water_pressure() const {
 
 //! Check bounds on P and fail with message if not satisfied.  Optionally, enforces the upper bound instead of checking it.
 /*!
-The bounds are \f$0 \le P \le P_o\f$ where \f$P_o\f$ is the overburden pressure.
- */
+  The bounds are \f$0 \le P \le P_o\f$ where \f$P_o\f$ is the overburden pressure.
+*/
 void Distributed::check_P_bounds(IceModelVec2S &P,
                                  const IceModelVec2S &P_o,
                                  bool enforce_upper) {
@@ -173,13 +173,13 @@ void Distributed::check_P_bounds(IceModelVec2S &P,
 
 //! Compute functional relationship P(W) which applies only in steady state.
 /*!
-In steady state in this model, water pressure is determined by a balance of
-cavitation (opening) caused by sliding and creep closure.
+  In steady state in this model, water pressure is determined by a balance of
+  cavitation (opening) caused by sliding and creep closure.
 
-This will be used in initialization when P is otherwise unknown, and
-in verification and/or reporting.  It is not used during time-dependent
-model runs.  To be more complete, \f$P = P(W,P_o,|v_b|)\f$.
- */
+  This will be used in initialization when P is otherwise unknown, and
+  in verification and/or reporting.  It is not used during time-dependent
+  model runs.  To be more complete, \f$P = P(W,P_o,|v_b|)\f$.
+*/
 void Distributed::P_from_W_steady(const IceModelVec2S &W,
                                   const IceModelVec2S &P_overburden,
                                   const IceModelVec2S &sliding_speed,
@@ -307,10 +307,10 @@ void Distributed::update_P(double dt,
 
 //! Update the model state variables W,P by running the subglacial hydrology model.
 /*!
-Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
-is generally on the order of months to years.  This hydrology model will take its
-own shorter time steps, perhaps hours to weeks.
- */
+  Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
+  is generally on the order of months to years.  This hydrology model will take its
+  own shorter time steps, perhaps hours to weeks.
+*/
 void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
 
   // if asked for the identical time interval versus last time, then
@@ -392,9 +392,9 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
 
     // update Wtillnew from Wtil
     update_Wtill(hdt,
-                m_Wtill,
-                m_input_rate,
-                m_Wtillnew);
+                 m_Wtill,
+                 m_input_rate,
+                 m_Wtillnew);
     // remove water in ice-free areas and account for changes
 
     update_P(hdt,

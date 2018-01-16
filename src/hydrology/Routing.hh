@@ -175,9 +175,9 @@ protected:
                 IceModelVec2S &W_new);
 
   void update_Wtill(double hdt,
-                   const IceModelVec2S &Wtill,
-                   const IceModelVec2S &input_rate,
-                   IceModelVec2S &Wtill_new);
+                    const IceModelVec2S &Wtill,
+                    const IceModelVec2S &input_rate,
+                    IceModelVec2S &Wtill_new);
 protected:
   double m_dx, m_dy;
 

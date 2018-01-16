@@ -49,7 +49,7 @@ NullTransport::~NullTransport() {
 
 void NullTransport::init() {
   m_log->message(2,
-             "* Initializing the null-transport (till only) subglacial hydrology model ...\n");
+                 "* Initializing the null-transport (till only) subglacial hydrology model ...\n");
 
   if (m_diffuse_tillwat) {
     m_log->message(2,
@@ -77,21 +77,21 @@ MaxTimestep NullTransport::max_timestep_impl(double t) const {
 
 //! Update the till water thickness by simply integrating the melt input.
 /*!
-Does a step of the trivial integration
+  Does a step of the trivial integration
   \f[ \frac{\partial W_{till}}{\partial t} = \frac{m}{\rho_w} - C\f]
-where \f$C=\f$`hydrology_tillwat_decay_rate`.  Enforces bounds
-\f$0 \le W_{till} \le W_{till}^{max}\f$ where the upper bound is
-`hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
+  where \f$C=\f$`hydrology_tillwat_decay_rate`.  Enforces bounds
+  \f$0 \le W_{till} \le W_{till}^{max}\f$ where the upper bound is
+  `hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
 
-Uses the current mass-continuity timestep `dt`.  (Compare
-hydrology::Routing::raw_update_Wtill() which will generally be taking time steps
-determined by the evolving transportable water layer in that model.)
+  Uses the current mass-continuity timestep `dt`.  (Compare
+  hydrology::Routing::raw_update_Wtill() which will generally be taking time steps
+  determined by the evolving transportable water layer in that model.)
 
-There is no attempt to report on conservation errors because this
-hydrology::NullTransport model does not conserve water.
+  There is no attempt to report on conservation errors because this
+  hydrology::NullTransport model does not conserve water.
 
-There is no tranportable water thickness variable and no interaction with it.
- */
+  There is no tranportable water thickness variable and no interaction with it.
+*/
 void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   // if asked for the identical time interval as last time, then do nothing
   if ((fabs(t - m_t) < 1e-6) and (fabs(dt - m_dt) < 1e-6)) {

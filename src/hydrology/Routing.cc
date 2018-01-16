@@ -188,29 +188,29 @@ Routing::Routing(IceGrid::ConstPtr g)
   // model state variables; need ghosts
   m_W.create(m_grid, "bwat", WITH_GHOSTS, 1);
   m_W.set_attrs("model_state",
-              "thickness of transportable subglacial water layer",
-              "m", "");
+                "thickness of transportable subglacial water layer",
+                "m", "");
   m_W.metadata().set_double("valid_min", 0.0);
 
   // auxiliary variables which NEED ghosts
   m_Wstag.create(m_grid, "W_staggered", WITH_GHOSTS, 1);
   m_Wstag.set_attrs("internal",
-                  "cell face-centered (staggered) values of water layer thickness",
-                  "m", "");
+                    "cell face-centered (staggered) values of water layer thickness",
+                    "m", "");
   m_Wstag.metadata().set_double("valid_min", 0.0);
   m_K.create(m_grid, "K_staggered", WITH_GHOSTS, 1);
   m_K.set_attrs("internal",
-                  "cell face-centered (staggered) values of nonlinear conductivity",
-                  "", "");
+                "cell face-centered (staggered) values of nonlinear conductivity",
+                "", "");
   m_K.metadata().set_double("valid_min", 0.0);
   m_Q.create(m_grid, "advection_flux", WITH_GHOSTS, 1);
   m_Q.set_attrs("internal",
-                  "cell face-centered (staggered) components of advective subglacial water flux",
-                  "m2 s-1", "");
+                "cell face-centered (staggered) components of advective subglacial water flux",
+                "m2 s-1", "");
   m_R.create(m_grid, "potential_workspace", WITH_GHOSTS, 1); // box stencil used
   m_R.set_attrs("internal",
-              "work space for modeled subglacial water hydraulic potential",
-              "Pa", "");
+                "work space for modeled subglacial water hydraulic potential",
+                "Pa", "");
 
   // auxiliary variables which do not need ghosts
 
@@ -223,13 +223,13 @@ Routing::Routing(IceGrid::ConstPtr g)
   // temporaries during update; do not need ghosts
   m_Wnew.create(m_grid, "Wnew_internal", WITHOUT_GHOSTS);
   m_Wnew.set_attrs("internal",
-                 "new thickness of transportable subglacial water layer during update",
-                 "m", "");
+                   "new thickness of transportable subglacial water layer during update",
+                   "m", "");
   m_Wnew.metadata().set_double("valid_min", 0.0);
   m_Wtillnew.create(m_grid, "Wtillnew_internal", WITHOUT_GHOSTS);
   m_Wtillnew.set_attrs("internal",
-                    "new thickness of till (subglacial) water layer during update",
-                    "m", "");
+                       "new thickness of till (subglacial) water layer during update",
+                       "m", "");
   m_Wtillnew.metadata().set_double("valid_min", 0.0);
 
   {
@@ -322,15 +322,15 @@ void check_water_thickness_nonnegative(const IceModelVec2S &W) {
 
 //! Correct the new water thickness based on boundary requirements.
 /*!
-At ice free locations and ocean locations we require that water thicknesses
-(i.e. both the transportable water thickness \f$W\f$ and the till water
-thickness \f$W_{till}\f$) be zero at the end of each time step.  Also we require
-that any negative water thicknesses be set to zero (i.e. we do projection to
-enforce lower bound).  This method does not enforce any upper bounds.
+  At ice free locations and ocean locations we require that water thicknesses
+  (i.e. both the transportable water thickness \f$W\f$ and the till water
+  thickness \f$W_{till}\f$) be zero at the end of each time step.  Also we require
+  that any negative water thicknesses be set to zero (i.e. we do projection to
+  enforce lower bound).  This method does not enforce any upper bounds.
 
-This method should be called once for each thickness field which needs to be
-processed.  This method alters the field water_thickness in-place.
- */
+  This method should be called once for each thickness field which needs to be
+  processed.  This method alters the field water_thickness in-place.
+*/
 void Routing::boundary_mass_changes(const IceModelVec2S &cell_area,
                                     const IceModelVec2CellType &cell_type,
                                     const IceModelVec2Int *no_model_mask,
@@ -554,17 +554,17 @@ void Routing::compute_conductivity(const IceModelVec2Stag &W,
 
 //! Compute the wall melt rate which comes from (turbulent) dissipation of flow energy.
 /*!
-This code fills `result` with
-    \f[ \frac{m_{wall}}{\rho_w} = - \frac{1}{L \rho_w} \mathbf{q} \cdot \nabla \psi = \left(\frac{k}{L \rho_w}\right) W^\alpha |\nabla R|^\beta \f]
-where \f$R = P+\rho_w g b\f$.
+  This code fills `result` with
+  \f[ \frac{m_{wall}}{\rho_w} = - \frac{1}{L \rho_w} \mathbf{q} \cdot \nabla \psi = \left(\frac{k}{L \rho_w}\right) W^\alpha |\nabla R|^\beta \f]
+  where \f$R = P+\rho_w g b\f$.
 
-Note that conductivity_staggered() computes the related quantity
-\f$K = k W^{\alpha-1} |\nabla R|^{\beta-2}\f$ on the staggered grid, but
-contriving to reuse that code would be inefficient because of the
-staggered-versus-regular change.
+  Note that conductivity_staggered() computes the related quantity
+  \f$K = k W^{\alpha-1} |\nabla R|^{\beta-2}\f$ on the staggered grid, but
+  contriving to reuse that code would be inefficient because of the
+  staggered-versus-regular change.
 
-At the current state of the code, this is a diagnostic calculation only.
- */
+  At the current state of the code, this is a diagnostic calculation only.
+*/
 void wall_melt(const Routing &model,
                const IceModelVec2S &bed_elevation,
                IceModelVec2S &result) {
@@ -633,22 +633,22 @@ void wall_melt(const Routing &model,
 
 //! Get the advection velocity V at the center of cell edges.
 /*!
-Computes the advection velocity @f$\mathbf{V}@f$ on the staggered
-(edge-centered) grid.  If V = (u, v) in components then we have
-<code> result(i, j, 0) = u(i+1/2, j) </code> and
-<code> result(i, j, 1) = v(i, j+1/2) </code>
+  Computes the advection velocity @f$\mathbf{V}@f$ on the staggered
+  (edge-centered) grid.  If V = (u, v) in components then we have
+  <code> result(i, j, 0) = u(i+1/2, j) </code> and
+  <code> result(i, j, 1) = v(i, j+1/2) </code>
 
-The advection velocity is given by the formula
+  The advection velocity is given by the formula
   @f[ \mathbf{V} = - K \left(\nabla P + \rho_w g \nabla b\right) @f]
-where @f$\mathbf{V}@f$ is the water velocity, @f$P@f$ is the water
-pressure, and @f$b@f$ is the bedrock elevation.
+  where @f$\mathbf{V}@f$ is the water velocity, @f$P@f$ is the water
+  pressure, and @f$b@f$ is the bedrock elevation.
 
-If the corresponding staggered grid value of the water thickness is zero then
-that component of V is set to zero.  This does not change the flux value (which
-would be zero anyway) but it does provide the correct max velocity in the
-CFL calculation.  We assume Wstag and K are up-to-date.  We assume P and b
-have valid ghosts.
- */
+  If the corresponding staggered grid value of the water thickness is zero then
+  that component of V is set to zero.  This does not change the flux value (which
+  would be zero anyway) but it does provide the correct max velocity in the
+  CFL calculation.  We assume Wstag and K are up-to-date.  We assume P and b
+  have valid ghosts.
+*/
 void Routing::compute_velocity(const IceModelVec2Stag &W,
                                const IceModelVec2S &P,
                                const IceModelVec2S &bed,
@@ -703,10 +703,10 @@ void Routing::compute_velocity(const IceModelVec2Stag &W,
 
 //! Compute Q = V W at edge-centers (staggered grid) by first-order upwinding.
 /*!
-The field W must have valid ghost values, but V does not need them.
+  The field W must have valid ghost values, but V does not need them.
 
-FIXME:  This could be re-implemented using the Koren (1993) flux-limiter.
- */
+  FIXME:  This could be re-implemented using the Koren (1993) flux-limiter.
+*/
 void Routing::advective_fluxes(const IceModelVec2Stag &V,
                                const IceModelVec2S &W,
                                IceModelVec2Stag &result) const {
@@ -751,23 +751,23 @@ double Routing::max_timestep_P_diff(double phi0, double dt_W_diff) const {
 
 //! The computation of Wtillnew, called by update().
 /*!
-Does a step of the trivial integration
+  Does a step of the trivial integration
   \f[ \frac{\partial W_{till}}{\partial t} = \frac{m}{\rho_w} - C\f]
-where \f$C=\f$`hydrology_tillwat_decay_rate`.  Enforces bounds
-\f$0 \le W_{till} \le W_{till}^{max}\f$ where the upper bound is
-`hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
+  where \f$C=\f$`hydrology_tillwat_decay_rate`.  Enforces bounds
+  \f$0 \le W_{till} \le W_{till}^{max}\f$ where the upper bound is
+  `hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
 
-Compare hydrology::NullTransport::update().  The current code is not quite "code
-duplication" because the code here: (1) computes `Wtillnew` instead of updating
-`Wtill` in place; (2) uses time steps determined by the rest of the
-hydrology::Routing model; (3) does not check mask because the boundary_mass_changes()
-call addresses that.  Otherwise this is the same physical model with the
-same configurable parameters.
- */
+  Compare hydrology::NullTransport::update().  The current code is not quite "code
+  duplication" because the code here: (1) computes `Wtillnew` instead of updating
+  `Wtill` in place; (2) uses time steps determined by the rest of the
+  hydrology::Routing model; (3) does not check mask because the boundary_mass_changes()
+  call addresses that.  Otherwise this is the same physical model with the
+  same configurable parameters.
+*/
 void Routing::update_Wtill(double hdt,
-                          const IceModelVec2S &Wtill,
-                          const IceModelVec2S &input_rate,
-                          IceModelVec2S &Wtill_new) {
+                           const IceModelVec2S &Wtill,
+                           const IceModelVec2S &input_rate,
+                           IceModelVec2S &Wtill_new) {
   const double
     tillwat_max = m_config->get_double("hydrology.tillwat_max"),
     C           = m_config->get_double("hydrology.tillwat_decay_rate");
@@ -827,13 +827,13 @@ void Routing::update_W(double dt,
 
 //! Update the model state variables W and Wtill by applying the subglacial hydrology model equations.
 /*!
-Runs the hydrology model from time icet to time icet + icedt.  Here [icet, icedt]
-is generally on the order of months to years.  This hydrology model will take its
-own shorter time steps, perhaps hours to weeks.
+  Runs the hydrology model from time icet to time icet + icedt.  Here [icet, icedt]
+  is generally on the order of months to years.  This hydrology model will take its
+  own shorter time steps, perhaps hours to weeks.
 
-To update W = `bwat` we call raw_update_W(), and to update Wtill = `tillwat` we
-call raw_update_Wtill().
- */
+  To update W = `bwat` we call raw_update_W(), and to update Wtill = `tillwat` we
+  call raw_update_Wtill().
+*/
 void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
 
   // if asked for the identical time interval versus last time, then
@@ -906,9 +906,9 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
 
     // update Wtillnew from Wtil
     update_Wtill(hdt,
-                m_Wtill,
-                m_input_rate,
-                m_Wtillnew);
+                 m_Wtill,
+                 m_input_rate,
+                 m_Wtillnew);
     // remove water in ice-free areas and account for changes
 
     // update Wnew from W, Wtill, Wtillnew, Wstag, Q, input_rate
