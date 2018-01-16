@@ -49,7 +49,7 @@ namespace hydrology {
 
   This model should generally be tested using static ice geometry first.
 
-  The state space includes both the till water effective thickness \f$W_{til}\f$,
+  The state space includes both the till water effective thickness \f$W_{till}\f$,
   which is in Hydrology, and the transportable water layer thickness \f$W\f$.
 
   For more complete modeling where the water pressure is determined by a
@@ -122,7 +122,7 @@ protected:
   IceModelVec2Stag m_Q;
 
   // work space
-  IceModelVec2S m_Wnew, m_Wtilnew;
+  IceModelVec2S m_Wnew, m_Wtillnew;
 
   // ghosted temporary storage; modified in compute_conductivity and compute_velocity
   mutable IceModelVec2S m_R;
@@ -168,16 +168,16 @@ protected:
                 const IceModelVec2S &input_rate,
                 const IceModelVec2S &W,
                 const IceModelVec2Stag &Wstag,
-                const IceModelVec2S &Wtil,
-                const IceModelVec2S &Wtil_new,
+                const IceModelVec2S &Wtill,
+                const IceModelVec2S &Wtill_new,
                 const IceModelVec2Stag &K,
                 const IceModelVec2Stag &Q,
                 IceModelVec2S &W_new);
 
-  void update_Wtil(double hdt,
-                   const IceModelVec2S &Wtil,
+  void update_Wtill(double hdt,
+                   const IceModelVec2S &Wtill,
                    const IceModelVec2S &input_rate,
-                   IceModelVec2S &Wtil_new);
+                   IceModelVec2S &Wtill_new);
 protected:
   double m_dx, m_dy;
 

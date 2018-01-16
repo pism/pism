@@ -38,7 +38,7 @@ NullTransport::NullTransport(IceGrid::ConstPtr g)
   }
 
   if (m_diffuse_tillwat) {
-    m_Wtil_old.create(m_grid, "Wtil_old", WITH_GHOSTS);
+    m_Wtill_old.create(m_grid, "Wtill_old", WITH_GHOSTS);
   }
 
   m_conservation_error.create(m_grid, "conservation_error", WITHOUT_GHOSTS);
@@ -78,13 +78,13 @@ MaxTimestep NullTransport::max_timestep_impl(double t) const {
 //! Update the till water thickness by simply integrating the melt input.
 /*!
 Does a step of the trivial integration
-  \f[ \frac{\partial W_{til}}{\partial t} = \frac{m}{\rho_w} - C\f]
+  \f[ \frac{\partial W_{till}}{\partial t} = \frac{m}{\rho_w} - C\f]
 where \f$C=\f$`hydrology_tillwat_decay_rate`.  Enforces bounds
-\f$0 \le W_{til} \le W_{til}^{max}\f$ where the upper bound is
+\f$0 \le W_{till} \le W_{till}^{max}\f$ where the upper bound is
 `hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
 
 Uses the current mass-continuity timestep `dt`.  (Compare
-hydrology::Routing::raw_update_Wtil() which will generally be taking time steps
+hydrology::Routing::raw_update_Wtill() which will generally be taking time steps
 determined by the evolving transportable water layer in that model.)
 
 There is no attempt to report on conservation errors because this
@@ -107,12 +107,12 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
 
   const IceModelVec2CellType &cell_type = *inputs.cell_type;
 
-  IceModelVec::AccessList list{&cell_type, &m_Wtil, &m_input_rate, &m_conservation_error};
+  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_input_rate, &m_conservation_error};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double
-      W_old      = m_Wtil(i, j),
+      W_old      = m_Wtill(i, j),
       input_rate = m_input_rate(i, j),
       dW_input   = dt * input_rate;
 
@@ -146,11 +146,11 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
     double W_new = (W_old + dW_input) + dW_decay;
 
     // enforce bounds
-    m_Wtil(i, j) = std::min(std::max(0.0, W_new), m_tillwat_max);
+    m_Wtill(i, j) = std::min(std::max(0.0, W_new), m_tillwat_max);
 
     // dW_decay is always a "conservation error", and the second term reflects the change
     // needed to keep till water thickness within bounds.
-    m_conservation_error(i, j) += dW_decay + (m_Wtil(i, j) - W_new);
+    m_conservation_error(i, j) += dW_decay + (m_Wtill(i, j) - W_new);
   }
 
   if (m_diffuse_tillwat) {
@@ -159,8 +159,8 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
 }
 
 void NullTransport::diffuse_till_water(double dt, const IceModelVec2CellType &cell_type) {
-  // note: this call updates ghosts of m_Wtil_old
-  m_Wtil_old.copy_from(m_Wtil);
+  // note: this call updates ghosts of m_Wtill_old
+  m_Wtill_old.copy_from(m_Wtill);
 
   const double
     dx = m_grid->dx(),
@@ -171,23 +171,23 @@ void NullTransport::diffuse_till_water(double dt, const IceModelVec2CellType &ce
     Rx = K * dt / (dx * dx),
     Ry = K * dt / (dy * dy);
 
-  IceModelVec::AccessList list{&cell_type, &m_Wtil, &m_Wtil_old, &m_conservation_error};
+  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_Wtill_old, &m_conservation_error};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    auto W = m_Wtil_old.star(i, j);
+    auto W = m_Wtill_old.star(i, j);
 
     double W_new = ((1.0 - 2.0 * Rx - 2.0 * Ry) * W.ij + Rx * (W.w + W.e) + Ry * (W.s + W.n));
 
     // enforce bounds
-    m_Wtil(i, j) = std::min(std::max(0.0, W_new), m_tillwat_max);
+    m_Wtill(i, j) = std::min(std::max(0.0, W_new), m_tillwat_max);
 
-    m_conservation_error(i, j) += m_Wtil(i, j) - W_new;
+    m_conservation_error(i, j) += m_Wtill(i, j) - W_new;
 
     // set to zero in ocean and ice-free areas
     if (cell_type.ocean(i, j) or cell_type.ice_free(i, j)) {
-      m_conservation_error(i, j) += -m_Wtil(i, j);
-      m_Wtil(i, j) = 0.0;
+      m_conservation_error(i, j) += -m_Wtill(i, j);
+      m_Wtill(i, j) = 0.0;
     }
   }
 }

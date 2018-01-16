@@ -226,11 +226,11 @@ Routing::Routing(IceGrid::ConstPtr g)
                  "new thickness of transportable subglacial water layer during update",
                  "m", "");
   m_Wnew.metadata().set_double("valid_min", 0.0);
-  m_Wtilnew.create(m_grid, "Wtilnew_internal", WITHOUT_GHOSTS);
-  m_Wtilnew.set_attrs("internal",
+  m_Wtillnew.create(m_grid, "Wtillnew_internal", WITHOUT_GHOSTS);
+  m_Wtillnew.set_attrs("internal",
                     "new thickness of till (subglacial) water layer during update",
                     "m", "");
-  m_Wtilnew.metadata().set_double("valid_min", 0.0);
+  m_Wtillnew.metadata().set_double("valid_min", 0.0);
 
   {
     double alpha = m_config->get_double("hydrology.thickness_power_in_flux");
@@ -324,7 +324,7 @@ void check_water_thickness_nonnegative(const IceModelVec2S &W) {
 /*!
 At ice free locations and ocean locations we require that water thicknesses
 (i.e. both the transportable water thickness \f$W\f$ and the till water
-thickness \f$W_{til}\f$) be zero at the end of each time step.  Also we require
+thickness \f$W_{till}\f$) be zero at the end of each time step.  Also we require
 that any negative water thicknesses be set to zero (i.e. we do projection to
 enforce lower bound).  This method does not enforce any upper bounds.
 
@@ -749,36 +749,36 @@ double Routing::max_timestep_P_diff(double phi0, double dt_W_diff) const {
 }
 
 
-//! The computation of Wtilnew, called by update().
+//! The computation of Wtillnew, called by update().
 /*!
 Does a step of the trivial integration
-  \f[ \frac{\partial W_{til}}{\partial t} = \frac{m}{\rho_w} - C\f]
+  \f[ \frac{\partial W_{till}}{\partial t} = \frac{m}{\rho_w} - C\f]
 where \f$C=\f$`hydrology_tillwat_decay_rate`.  Enforces bounds
-\f$0 \le W_{til} \le W_{til}^{max}\f$ where the upper bound is
+\f$0 \le W_{till} \le W_{till}^{max}\f$ where the upper bound is
 `hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
 
 Compare hydrology::NullTransport::update().  The current code is not quite "code
-duplication" because the code here: (1) computes `Wtilnew` instead of updating
-`Wtil` in place; (2) uses time steps determined by the rest of the
+duplication" because the code here: (1) computes `Wtillnew` instead of updating
+`Wtill` in place; (2) uses time steps determined by the rest of the
 hydrology::Routing model; (3) does not check mask because the boundary_mass_changes()
 call addresses that.  Otherwise this is the same physical model with the
 same configurable parameters.
  */
-void Routing::update_Wtil(double hdt,
-                          const IceModelVec2S &Wtil,
+void Routing::update_Wtill(double hdt,
+                          const IceModelVec2S &Wtill,
                           const IceModelVec2S &input_rate,
-                          IceModelVec2S &Wtil_new) {
+                          IceModelVec2S &Wtill_new) {
   const double
     tillwat_max = m_config->get_double("hydrology.tillwat_max"),
     C           = m_config->get_double("hydrology.tillwat_decay_rate");
 
-  IceModelVec::AccessList list{&Wtil, &Wtil_new, &input_rate};
+  IceModelVec::AccessList list{&Wtill, &Wtill_new, &input_rate};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    Wtil_new(i, j) = Wtil(i, j) + hdt * (input_rate(i, j) - C);
-    Wtil_new(i, j) = std::min(std::max(0.0, Wtil_new(i, j)), tillwat_max);
+    Wtill_new(i, j) = Wtill(i, j) + hdt * (input_rate(i, j) - C);
+    Wtill_new(i, j) = std::min(std::max(0.0, Wtill_new(i, j)), tillwat_max);
   }
 }
 
@@ -788,8 +788,8 @@ void Routing::update_W(double dt,
                        const IceModelVec2S &input_rate,
                        const IceModelVec2S &W,
                        const IceModelVec2Stag &Wstag,
-                       const IceModelVec2S &Wtil,
-                       const IceModelVec2S &Wtil_new,
+                       const IceModelVec2S &Wtill,
+                       const IceModelVec2S &Wtill_new,
                        const IceModelVec2Stag &K,
                        const IceModelVec2Stag &Q,
                        IceModelVec2S &W_new) {
@@ -797,7 +797,7 @@ void Routing::update_W(double dt,
     wux = 1.0 / (m_dx * m_dx),
     wuy = 1.0 / (m_dy * m_dy);
 
-  IceModelVec::AccessList list{&W, &Wtil, &Wtil_new, &Wstag, &K, &Q,
+  IceModelVec::AccessList list{&W, &Wtill, &Wtill_new, &Wstag, &K, &Q,
       &input_rate, &W_new};
 
   for (Points p(*m_grid); p; p.next()) {
@@ -819,20 +819,20 @@ void Routing::update_W(double dt,
     const double diffW = (wux * (De * (w.e - w.ij) - Dw * (w.ij - w.w)) +
                           wuy * (Dn * (w.n - w.ij) - Ds * (w.ij - w.s)));
 
-    double Wtil_change = Wtil(i, j) - Wtil_new(i, j);
-    W_new(i, j) = w.ij + Wtil_change + dt * (- divQ + diffW + input_rate(i, j));
+    double Wtill_change = Wtill(i, j) - Wtill_new(i, j);
+    W_new(i, j) = w.ij + Wtill_change + dt * (- divQ + diffW + input_rate(i, j));
   }
 }
 
 
-//! Update the model state variables W and Wtil by applying the subglacial hydrology model equations.
+//! Update the model state variables W and Wtill by applying the subglacial hydrology model equations.
 /*!
 Runs the hydrology model from time icet to time icet + icedt.  Here [icet, icedt]
 is generally on the order of months to years.  This hydrology model will take its
 own shorter time steps, perhaps hours to weeks.
 
-To update W = `bwat` we call raw_update_W(), and to update Wtil = `tillwat` we
-call raw_update_Wtil().
+To update W = `bwat` we call raw_update_W(), and to update Wtill = `tillwat` we
+call raw_update_Wtill().
  */
 void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
 
@@ -871,7 +871,7 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
 
 #if (PISM_DEBUG==1)
     check_water_thickness_nonnegative(m_W);
-    check_Wtil_bounds();
+    check_Wtill_bounds();
 #endif
 
     water_thickness_staggered(m_W,
@@ -904,25 +904,25 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
       hdt = std::min(hdt, dt_diff_w);
     }
 
-    // update Wtilnew from Wtil
-    update_Wtil(hdt,
-                m_Wtil,
+    // update Wtillnew from Wtil
+    update_Wtill(hdt,
+                m_Wtill,
                 m_input_rate,
-                m_Wtilnew);
+                m_Wtillnew);
     // remove water in ice-free areas and account for changes
 
-    // update Wnew from W, Wtil, Wtilnew, Wstag, Q, input_rate
+    // update Wnew from W, Wtill, Wtillnew, Wstag, Q, input_rate
     update_W(hdt,
              m_input_rate,
              m_W, m_Wstag,
-             m_Wtil, m_Wtilnew,
+             m_Wtill, m_Wtillnew,
              m_K, m_Q,
              m_Wnew);
     // remove water in ice-free areas and account for changes
 
     // transfer new into old
     m_W.copy_from(m_Wnew);
-    m_Wtil.copy_from(m_Wtilnew);
+    m_Wtill.copy_from(m_Wtillnew);
   } // end of hydrology model time-stepping loop
 
   m_log->message(2,

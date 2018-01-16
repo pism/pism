@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2017 PISM Authors
+// Copyright (C) 2004--2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -100,8 +100,8 @@ See also IceBasalResistancePlasticLaw::drag().
 
 The strength of the saturated till material, the yield stress, is modeled by a
 Mohr-Coulomb relation [\ref Paterson, \ref SchoofStream],
-    \f[   \tau_c = c_0 + (\tan \varphi) N_{til}, \f]
-where \f$N_{til}\f$ is the effective pressure of the glacier on the mineral
+    \f[   \tau_c = c_0 + (\tan \varphi) N_{till}, \f]
+where \f$N_{till}\f$ is the effective pressure of the glacier on the mineral
 till.
 
 The determination of the till friction angle \f$\varphi(x,y)\f$  is important.
@@ -229,16 +229,16 @@ from a Hydrology object.  We implement the Mohr-Coulomb criterion allowing
 a (typically small) till cohesion  @f$ c_0 @f$
 and by expressing the coefficient as the tangent of a till friction angle
  @f$ \varphi @f$ :
-    @f[   \tau_c = c_0 + (\tan \varphi) N_{til}. @f]
+    @f[   \tau_c = c_0 + (\tan \varphi) N_{till}. @f]
 See [@ref Paterson] table 8.1 regarding values.
 
 The effective pressure on the till is empirically-related
 to the amount of water in the till.  We use this formula derived from
 [@ref Tulaczyketal2000] and documented in [@ref BuelervanPeltDRAFT]:
 
-@f[ N_{til} = \min\left\{P_o, N_0 \left(\frac{\delta P_o}{N_0}\right)^s 10^{(e_0/C_c) (1 - s)}\right\} @f]
+@f[ N_{till} = \min\left\{P_o, N_0 \left(\frac{\delta P_o}{N_0}\right)^s 10^{(e_0/C_c) (1 - s)}\right\} @f]
 
-where  @f$ s = W_{til} / W_{til}^{max} @f$,  @f$ W_{til}^{max} @f$ =`hydrology_tillwat_max`,
+where  @f$ s = W_{till} / W_{till}^{max} @f$,  @f$ W_{till}^{max} @f$ =`hydrology_tillwat_max`,
 @f$ \delta @f$ =`basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden`,  @f$ P_o @f$  is the
 overburden pressure,  @f$ N_0 @f$ =`basal_yield_stress.mohr_coulomb.till_reference_effective_pressure` is a
 reference effective pressure,   @f$ e_0 @f$ =`basal_yield_stress.mohr_coulomb.till_reference_void_ratio` is the void ratio
@@ -248,8 +248,8 @@ found by [@ref Tulaczyketal2000] from laboratory experiments on samples of
 till.
 
 If `basal_yield_stress.add_transportable_water` is yes then @f$ s @f$ in the above formula
-becomes @f$ s = (W + W_{til}) / W_{til}^{max} @f$,
-that is, the water amount is the sum @f$ W+W_{til} @f$.  This only works
+becomes @f$ s = (W + W_{till}) / W_{till}^{max} @f$,
+that is, the water amount is the sum @f$ W+W_{till} @f$.  This only works
 if @f$ W @f$ is present, that is, if `hydrology` points to a
 hydrology::Routing (or derived class thereof).
  */
@@ -311,10 +311,10 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
       }
       double
         s    = water / tillwat_max,
-        Ntil = N0 * pow(delta * Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
-      Ntil = std::min(Po(i,j), Ntil);
+        Ntill = N0 * pow(delta * Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
+      Ntill = std::min(Po(i,j), Ntill);
 
-      m_basal_yield_stress(i, j) = c0 + Ntil * tan((M_PI/180.0) * m_till_phi(i, j));
+      m_basal_yield_stress(i, j) = c0 + Ntill * tan((M_PI/180.0) * m_till_phi(i, j));
     }
   }
 
@@ -434,11 +434,11 @@ void MohrCoulombYieldStress::tauc_to_phi(const IceModelVec2CellType &mask) {
     } else { // grounded and there is some ice
       const double s = tillwat(i, j) / tillwat_max;
 
-      double Ntil = 0.0;
-      Ntil = N0 * pow(delta * Po(i, j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
-      Ntil = std::min(Po(i, j), Ntil);
+      double Ntill = 0.0;
+      Ntill = N0 * pow(delta * Po(i, j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
+      Ntill = std::min(Po(i, j), Ntill);
 
-      m_till_phi(i, j) = 180.0/M_PI * atan((m_basal_yield_stress(i, j) - c0) / Ntil);
+      m_till_phi(i, j) = 180.0/M_PI * atan((m_basal_yield_stress(i, j) - c0) / Ntill);
     }
   }
 

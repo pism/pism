@@ -232,8 +232,8 @@ void Distributed::update_P(double dt,
                            const IceModelVec2S &sliding_speed,
                            const IceModelVec2S &total_input,
                            const IceModelVec2S &P_overburden,
-                           const IceModelVec2S &Wtil,
-                           const IceModelVec2S &Wtil_new,
+                           const IceModelVec2S &Wtill,
+                           const IceModelVec2S &Wtill_new,
                            const IceModelVec2S &P,
                            const IceModelVec2S &W,
                            const IceModelVec2Stag &Ws,
@@ -255,7 +255,7 @@ void Distributed::update_P(double dt,
     wux = 1.0 / (m_dx * m_dx),
     wuy = 1.0 / (m_dy * m_dy);
 
-  IceModelVec::AccessList list{&P, &W, &Wtil, &Wtil_new, &sliding_speed, &Ws,
+  IceModelVec::AccessList list{&P, &W, &Wtill, &Wtill_new, &sliding_speed, &Ws,
       &K, &Q, &total_input, &cell_type, &P_overburden, &P_new};
 
   for (Points p(*m_grid); p; p.next()) {
@@ -293,8 +293,8 @@ void Distributed::update_P(double dt,
       double divflux = -divadflux + diffW;
 
       // pressure update equation
-      double Wtil_change = Wtil_new(i, j) - Wtil(i, j);
-      double ZZ = Close - Open + total_input(i, j) - Wtil_change / dt;
+      double Wtill_change = Wtill_new(i, j) - Wtill(i, j);
+      double ZZ = Close - Open + total_input(i, j) - Wtill_change / dt;
 
       P_new(i, j) = P(i, j) + CC * (divflux + ZZ);
 
@@ -350,7 +350,7 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
 
 #if (PISM_DEBUG==1)
     check_water_thickness_nonnegative(m_W);
-    check_Wtil_bounds();
+    check_Wtill_bounds();
 #endif
 
     // note that ice dynamics can change overburden pressure, so we can only check P
@@ -390,11 +390,11 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
       hdt = std::min(hdt, dt_diff_p);
     }
 
-    // update Wtilnew from Wtil
-    update_Wtil(hdt,
-                m_Wtil,
+    // update Wtillnew from Wtil
+    update_Wtill(hdt,
+                m_Wtill,
                 m_input_rate,
-                m_Wtilnew);
+                m_Wtillnew);
     // remove water in ice-free areas and account for changes
 
     update_P(hdt,
@@ -402,24 +402,24 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
              *inputs.ice_sliding_speed,
              m_input_rate,
              m_Pover,
-             m_Wtil, m_Wtilnew,
+             m_Wtill, m_Wtillnew,
              subglacial_water_pressure(),
              m_W, m_Wstag,
              m_K, m_Q,
              m_Pnew);
 
-    // update Wnew from W, Wtil, Wtilnew, Wstag, Q, input_rate
+    // update Wnew from W, Wtill, Wtillnew, Wstag, Q, input_rate
     update_W(hdt,
              m_input_rate,
              m_W, m_Wstag,
-             m_Wtil, m_Wtilnew,
+             m_Wtill, m_Wtillnew,
              m_K, m_Q,
              m_Wnew);
     // remove water in ice-free areas and account for changes
 
     // transfer new into old
     m_W.copy_from(m_Wnew);
-    m_Wtil.copy_from(m_Wtilnew);
+    m_Wtill.copy_from(m_Wtillnew);
     m_P.copy_from(m_Pnew);
   } // end of hydrology model time-stepping loop
 

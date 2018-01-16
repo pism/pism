@@ -59,7 +59,7 @@ private:
   double m_tillwat_max;
   double m_tillwat_decay_rate;
 
-  IceModelVec2S m_Wtil_old;
+  IceModelVec2S m_Wtill_old;
   IceModelVec2S m_conservation_error;
 };
 

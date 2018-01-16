@@ -52,7 +52,7 @@ public:
   subglacial_water_pressure(IceModelVec2S &result)
   till_water_thickness(IceModelVec2S &result)
   \endcode
-  These correspond to state variables \f$W\f$, \f$P\f$, and \f$W_{\text{til}}\f$
+  These correspond to state variables \f$W\f$, \f$P\f$, and \f$W_{\text{till}}\f$
   in [\ref BuelervanPeltDRAFT], though not all derived classes of Hydrology
   have all of them as state variables.
 
@@ -134,10 +134,10 @@ protected:
                           const IceModelVec2S *surface_input_rate,
                           IceModelVec2S &result);
 
-  void check_Wtil_bounds();
+  void check_Wtill_bounds();
 protected:
   //! effective thickness of basal water stored in till
-  IceModelVec2S m_Wtil;
+  IceModelVec2S m_Wtill;
 
   //! overburden pressure
   IceModelVec2S m_Pover;

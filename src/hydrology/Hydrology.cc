@@ -49,11 +49,11 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
                          "m s-1", "");
 
   // *all* Hydrology classes have layer of water stored in till as a state variable
-  m_Wtil.create(m_grid, "tillwat", WITHOUT_GHOSTS);
-  m_Wtil.set_attrs("model_state",
+  m_Wtill.create(m_grid, "tillwat", WITHOUT_GHOSTS);
+  m_Wtill.set_attrs("model_state",
                    "effective thickness of subglacial water stored in till",
                    "m", "");
-  m_Wtil.metadata().set_double("valid_min", 0.0);
+  m_Wtill.metadata().set_double("valid_min", 0.0);
 
   m_Pover.create(m_grid, "overburden_pressure", WITHOUT_GHOSTS);
   m_Pover.set_attrs("internal", "overburden pressure", "Pa", "");
@@ -92,18 +92,18 @@ void Hydrology::init() {
 
   switch (opts.type) {
   case INIT_RESTART:
-    m_Wtil.read(opts.filename, opts.record);
+    m_Wtill.read(opts.filename, opts.record);
     break;
   case INIT_BOOTSTRAP:
-    m_Wtil.regrid(opts.filename, OPTIONAL, tillwat_default);
+    m_Wtill.regrid(opts.filename, OPTIONAL, tillwat_default);
     break;
   case INIT_OTHER:
   default:
-    m_Wtil.set(tillwat_default);
+    m_Wtill.set(tillwat_default);
   }
 
   // whether or not we could initialize from file, we could be asked to regrid from file
-  regrid("Hydrology", m_Wtil);
+  regrid("Hydrology", m_Wtill);
 }
 
 void Hydrology::update(double t, double dt, const Inputs& inputs) {
@@ -111,15 +111,15 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
 }
 
 std::map<std::string, Diagnostic::Ptr> Hydrology::diagnostics_impl() const {
-  return {{"tillwat", Diagnostic::wrap(m_Wtil)}};
+  return {{"tillwat", Diagnostic::wrap(m_Wtill)}};
 }
 
 void Hydrology::define_model_state_impl(const PIO &output) const {
-  m_Wtil.define(output);
+  m_Wtill.define(output);
 }
 
 void Hydrology::write_model_state_impl(const PIO &output) const {
-  m_Wtil.write(output);
+  m_Wtill.write(output);
 }
 
 //! Update the overburden pressure from ice thickness.
@@ -150,34 +150,34 @@ const IceModelVec2S& Hydrology::overburden_pressure() const {
 
 //! Return the effective thickness of the water stored in till.
 const IceModelVec2S& Hydrology::till_water_thickness() const {
-  return m_Wtil;
+  return m_Wtill;
 }
 
 /*!
-Checks \f$0 \le W_{til} \le W_{til}^{max} =\f$hydrology_tillwat_max.
+Checks \f$0 \le W_{till} \le W_{till}^{max} =\f$hydrology_tillwat_max.
  */
-void Hydrology::check_Wtil_bounds() {
+void Hydrology::check_Wtill_bounds() {
   double tillwat_max = m_config->get_double("hydrology.tillwat_max");
 
-  IceModelVec::AccessList list(m_Wtil);
+  IceModelVec::AccessList list(m_Wtill);
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (m_Wtil(i,j) < 0.0) {
+      if (m_Wtill(i,j) < 0.0) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                       "Hydrology: negative till water effective layer thickness"
-                                      " Wtil(i,j) = %.6f m\n"
-                                      "at (i,j)=(%d,%d)", m_Wtil(i,j), i, j);
+                                      " Wtill(i,j) = %.6f m\n"
+                                      "at (i,j)=(%d,%d)", m_Wtill(i,j), i, j);
       }
 
-      if (m_Wtil(i,j) > tillwat_max) {
+      if (m_Wtill(i,j) > tillwat_max) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                       "Hydrology: till water effective layer thickness"
-                                      " Wtil(i,j) = %.6f m exceeds\n"
+                                      " Wtill(i,j) = %.6f m exceeds\n"
                                       "hydrology_tillwat_max = %.6f at (i,j)=(%d,%d)",
-                                      m_Wtil(i,j), tillwat_max, i, j);
+                                      m_Wtill(i,j), tillwat_max, i, j);
       }
     }
   } catch (...) {
