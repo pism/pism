@@ -83,7 +83,8 @@ public:
   RelativeBasalWaterPressure(const Routing *m)
     : Diag<Routing>(m) {
     m_vars = {SpatialVariableMetadata(m_sys, "bwprel")};
-    set_attrs("pressure of transportable water in subglacial layer as fraction of the overburden pressure", "",
+    set_attrs("pressure of transportable water in subglacial layer"
+              " as fraction of the overburden pressure", "",
               "", "", 0);
     m_vars[0].set_double("_FillValue", m_fill_value);
   }
@@ -217,8 +218,9 @@ Routing::Routing(IceGrid::ConstPtr g)
 
   m_V.create(m_grid, "water_velocity", WITHOUT_GHOSTS);
   m_V.set_attrs("internal",
-              "cell face-centered (staggered) components of water velocity in subglacial water layer",
-              "m s-1", "");
+                "cell face-centered (staggered) components of water velocity"
+                " in subglacial water layer",
+                "m s-1", "");
 
   // temporaries during update; do not need ghosts
   m_Wnew.create(m_grid, "Wnew_internal", WITHOUT_GHOSTS);
@@ -240,7 +242,8 @@ Routing::Routing(IceGrid::ConstPtr g)
     }
 
     if (m_config->get_double("hydrology.tillwat_max") < 0.0) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "hydrology::Routing: hydrology.tillwat_max is negative.\n"
+      throw RuntimeError(PISM_ERROR_LOCATION,
+                         "hydrology::Routing: hydrology.tillwat_max is negative.\n"
                          "This is not allowed.");
     }
   }
@@ -252,7 +255,7 @@ Routing::~Routing() {
 
 void Routing::init() {
   m_log->message(2,
-             "* Initializing the routing subglacial hydrology model ...\n");
+                 "* Initializing the routing subglacial hydrology model ...\n");
   // initialize water layer thickness from the context if present,
   //   otherwise from -i file, otherwise with constant value
 

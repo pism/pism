@@ -134,7 +134,7 @@ void Hydrology::compute_overburden_pressure(const IceModelVec2S &ice_thickness,
     ice_density      = m_config->get_double("constants.ice.density"),
     standard_gravity = m_config->get_double("constants.standard_gravity");
 
-  IceModelVec::AccessList list{&ice_thickness, &m_Pover};
+  IceModelVec::AccessList list{&ice_thickness, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
