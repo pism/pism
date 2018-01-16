@@ -36,6 +36,7 @@ Inputs::Inputs() {
   ice_thickness      = NULL;
   bed_elevation      = NULL;
   ice_sliding_speed  = NULL;
+  no_model_mask      = NULL;
 }
 
 Hydrology::Hydrology(IceGrid::ConstPtr g)

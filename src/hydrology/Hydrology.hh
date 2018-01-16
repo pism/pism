@@ -39,6 +39,7 @@ public:
   const IceModelVec2S        *ice_thickness;
   const IceModelVec2S        *bed_elevation;
   const IceModelVec2S        *ice_sliding_speed;
+  const IceModelVec2Int      *no_model_mask;
 };
 
 //! \brief The PISM subglacial hydrology model interface.
