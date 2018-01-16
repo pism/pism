@@ -93,12 +93,7 @@ MaxTimestep NullTransport::max_timestep_impl(double t) const {
   There is no tranportable water thickness variable and no interaction with it.
 */
 void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
-  // if asked for the identical time interval as last time, then do nothing
-  if ((fabs(t - m_t) < 1e-6) and (fabs(dt - m_dt) < 1e-6)) {
-    return;
-  }
-  m_t = t;
-  m_dt = dt;
+  (void) t;
 
   compute_input_rate(*inputs.cell_type,
                      *inputs.basal_melt_rate,

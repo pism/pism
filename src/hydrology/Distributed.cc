@@ -311,21 +311,10 @@ void Distributed::update_P(double dt,
   is generally on the order of months to years.  This hydrology model will take its
   own shorter time steps, perhaps hours to weeks.
 */
-void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
-
-  // if asked for the identical time interval versus last time, then
-  //   do nothing; otherwise assume that [my_t, my_t+my_dt] is the time
-  //   interval on which we are solving
-  if ((fabs(icet - m_t) < 1e-12) && (fabs(icedt - m_dt) < 1e-12)) {
-    return;
-  }
-
-  // update Component times: t = current time, t+dt = target time
-  m_t  = icet;
-  m_dt = icedt;
+void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
 
   double
-    ht  = m_t,
+    ht  = t,
     hdt = 0.0;
 
   compute_input_rate(*inputs.cell_type,
@@ -336,7 +325,7 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
   compute_overburden_pressure(*inputs.ice_thickness, m_Pover);
 
   const double
-    t_final = m_t + m_dt,
+    t_final = t + dt,
     dt_max  = m_config->get_double("hydrology.maximum_time_step", "seconds"),
     phi0    = m_config->get_double("hydrology.regularizing_porosity");
 
@@ -426,8 +415,8 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
   m_log->message(2,
                  "  took %d hydrology sub-steps with average dt = %.6f years (%.6f s)\n",
                  step_counter,
-                 units::convert(m_sys, m_dt/step_counter, "seconds", "years"),
-                 m_dt/step_counter);
+                 units::convert(m_sys, dt/step_counter, "seconds", "years"),
+                 dt/step_counter);
 }
 
 } // end of namespace hydrology
