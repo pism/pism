@@ -822,8 +822,8 @@ void Routing::update_W(double dt,
     const double diffW = (wux * (De * (w.e - w.ij) - Dw * (w.ij - w.w)) +
                           wuy * (Dn * (w.n - w.ij) - Ds * (w.ij - w.s)));
 
-    double Wtill_change = Wtill(i, j) - Wtill_new(i, j);
-    W_new(i, j) = w.ij + Wtill_change + dt * (- divQ + diffW + input_rate(i, j));
+    double Wtill_change = Wtill_new(i, j) - Wtill(i, j);
+    W_new(i, j) = w.ij - Wtill_change + dt * (- divQ + diffW + input_rate(i, j));
   }
 }
 
