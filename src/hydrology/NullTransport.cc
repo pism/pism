@@ -16,12 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <algorithm>            // std::min, std::max
-
 #include "NullTransport.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/pism_utilities.hh" // clip
 
 namespace pism {
 namespace hydrology {
@@ -159,7 +158,7 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
     double W_new = (W_old + dW_input) + dW_decay;
 
     // enforce bounds
-    m_Wtill(i, j) = std::min(std::max(0.0, W_new), m_tillwat_max);
+    m_Wtill(i, j) = clip(W_new, 0.0, m_tillwat_max);
 
     // dW_decay is always a "conservation error", and the second term reflects the change
     // needed to keep till water thickness within bounds.
@@ -193,7 +192,7 @@ void NullTransport::diffuse_till_water(double dt, const IceModelVec2CellType &ce
     double W_new = ((1.0 - 2.0 * Rx - 2.0 * Ry) * W.ij + Rx * (W.w + W.e) + Ry * (W.s + W.n));
 
     // enforce bounds
-    m_Wtill(i, j) = std::min(std::max(0.0, W_new), m_tillwat_max);
+    m_Wtill(i, j) = clip(W_new, 0.0, m_tillwat_max);
 
     // the RHS is zero if enforcing bounds did not modify the result, otherwise it is the
     // amount of water *added* to stay within bounds

@@ -781,8 +781,8 @@ void Routing::update_Wtill(double dt,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    Wtill_new(i, j) = Wtill(i, j) + dt * (input_rate(i, j) - C);
-    Wtill_new(i, j) = std::min(std::max(0.0, Wtill_new(i, j)), tillwat_max);
+    Wtill_new(i, j) = clip(Wtill(i, j) + dt * (input_rate(i, j) - C),
+                           0, tillwat_max);
   }
 }
 

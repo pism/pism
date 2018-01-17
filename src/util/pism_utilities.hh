@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,7 @@
 #ifndef _PISM_UTILITIES_H_
 #define _PISM_UTILITIES_H_
 
+#include <algorithm>            // std::min, std::max
 #include <string>
 #include <vector>
 #include <set>
@@ -88,6 +89,10 @@ T combine(const T &a, const T&b) {
     result.insert(element);
   }
   return result;
+}
+
+inline double clip(double x, double a, double b) {
+  return std::min(std::max(a, x), b);
 }
 
 // parallel

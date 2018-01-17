@@ -221,10 +221,6 @@ double Distributed::max_timestep_P_diff(double phi0, double dt_diff_w) const {
   return 2.0 * phi0 * dt_diff_w;
 }
 
-static inline double clip(double x, double a, double b) {
-  return std::min(std::max(a, x), b);
-}
-
 void Distributed::update_P(double dt,
                            const IceModelVec2CellType &cell_type,
                            const IceModelVec2S &sliding_speed,
