@@ -753,18 +753,22 @@ double Routing::max_timestep_W_cfl() const {
 /*!
   Does a step of the trivial integration
   \f[ \frac{\partial W_{till}}{\partial t} = \frac{m}{\rho_w} - C\f]
+
   where \f$C=\f$`hydrology_tillwat_decay_rate`.  Enforces bounds
   \f$0 \le W_{till} \le W_{till}^{max}\f$ where the upper bound is
   `hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
 
-  Compare hydrology::NullTransport::update().  The current code is not quite "code
-  duplication" because the code here: (1) computes `Wtillnew` instead of updating
-  `Wtill` in place; (2) uses time steps determined by the rest of the
-  hydrology::Routing model; (3) does not check mask because the boundary_mass_changes()
-  call addresses that.  Otherwise this is the same physical model with the
-  same configurable parameters.
+  Compare hydrology::NullTransport::update_impl().
+
+  The current code is not quite "code duplication" because the code here:
+
+  1. computes `Wtill_new` instead of updating `Wtill` in place;
+  2. uses time steps determined by the rest of the hydrology::Routing model;
+  3. does not check mask because the boundary_mass_changes() call addresses that.
+
+  Otherwise this is the same physical model with the same configurable parameters.
 */
-void Routing::update_Wtill(double hdt,
+void Routing::update_Wtill(double dt,
                            const IceModelVec2S &Wtill,
                            const IceModelVec2S &input_rate,
                            IceModelVec2S &Wtill_new) {
@@ -777,19 +781,18 @@ void Routing::update_Wtill(double hdt,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    Wtill_new(i, j) = Wtill(i, j) + hdt * (input_rate(i, j) - C);
+    Wtill_new(i, j) = Wtill(i, j) + dt * (input_rate(i, j) - C);
     Wtill_new(i, j) = std::min(std::max(0.0, Wtill_new(i, j)), tillwat_max);
   }
 }
 
-
 //! The computation of Wnew, called by update().
 void Routing::update_W(double dt,
-                       const IceModelVec2S &input_rate,
-                       const IceModelVec2S &W,
+                       const IceModelVec2S    &input_rate,
+                       const IceModelVec2S    &W,
                        const IceModelVec2Stag &Wstag,
-                       const IceModelVec2S &Wtill,
-                       const IceModelVec2S &Wtill_new,
+                       const IceModelVec2S    &Wtill,
+                       const IceModelVec2S    &Wtill_new,
                        const IceModelVec2Stag &K,
                        const IceModelVec2Stag &Q,
                        IceModelVec2S &W_new) {
