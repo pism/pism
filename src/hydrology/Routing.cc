@@ -235,6 +235,27 @@ Routing::Routing(IceGrid::ConstPtr g)
                        "m", "");
   m_Wtillnew.metadata().set_double("valid_min", 0.0);
 
+  // storage for water conservation reporting quantities
+  {
+    m_grounded_margin_change.create(m_grid, "grounded_margin_change", WITHOUT_GHOSTS);
+    m_grounded_margin_change.set_attrs("diagnostic",
+                                       "changes in subglacial water thickness at the grounded margin",
+                                       "kg", "");
+    m_grounding_line_change.create(m_grid, "grounding_line_change", WITHOUT_GHOSTS);
+    m_grounding_line_change.set_attrs("diagnostic",
+                                      "changes in subglacial water thickness at the grounding line",
+                                      "kg", "");
+    m_conservation_error_change.create(m_grid, "conservation_error_change", WITHOUT_GHOSTS);
+    m_conservation_error_change.set_attrs("diagnostic",
+                                          "changes in subglacial water thickness needed to preserve non-negativity",
+                                          "kg", "");
+    m_no_model_mask_change.create(m_grid, "no_model_mask_change", WITHOUT_GHOSTS);
+    m_no_model_mask_change.set_attrs("diagnostic",
+                                     "changes in subglacial water thickness at the edge of the modeling domain"
+                                     " (regional models)",
+                                     "kg", "");
+  }
+
   {
     double alpha = m_config->get_double("hydrology.thickness_power_in_flux");
     if (alpha < 1.0) {
@@ -331,38 +352,48 @@ void check_water_thickness_nonnegative(const IceModelVec2S &W) {
 
   This method should be called once for each thickness field which needs to be
   processed.  This method alters the field water_thickness in-place.
+
+  @param[in] cell_area cell areas
+  @param[in] cell_type cell type mask
+  @param[in] no_model_mask (optional) mask of zeros and ones, zero within the modeling
+                           domain, one outside
+  @param[in,out] water_thickness adjusted water thickness (till storage or the transport system)
+  @param[in,out] grounded_margin_change change in water thickness at the grounded margin
+  @param[in,out] grounding_line_change change in water thickness at the grounding line
+  @param[in,out] conservation_error_change change in water thickness due to mass conservation errors
+  @param[in,out] no_model_mask_change change in water thickness outside the modeling domain (regional models)
 */
 void Routing::boundary_mass_changes(const IceModelVec2S &cell_area,
                                     const IceModelVec2CellType &cell_type,
                                     const IceModelVec2Int *no_model_mask,
-                                    IceModelVec2S &water_thickness) {
+                                    IceModelVec2S &water_thickness,
+                                    IceModelVec2S &grounded_margin_change,
+                                    IceModelVec2S &grounding_line_change,
+                                    IceModelVec2S &conservation_error_change,
+                                    IceModelVec2S &no_model_mask_change) {
   const double fresh_water_density = m_config->get_double("constants.fresh_water.density");
 
-  // FIXME: these should be 2D fields
-  double
-    my_icefreelost  = 0.0,
-    my_oceanlost    = 0.0,
-    my_negativegain = 0.0,
-    my_nullstriplost = 0.0;
-
-  IceModelVec::AccessList list{&water_thickness, &cell_area, &cell_type};
+  IceModelVec::AccessList list{&water_thickness, &cell_area, &cell_type,
+      &grounded_margin_change, &grounding_line_change, &conservation_error_change,
+      &no_model_mask_change};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double dmassdz = cell_area(i, j) * fresh_water_density; // kg m-1
+    const double kg_per_m = cell_area(i, j) * fresh_water_density; // kg m-1
+
     if (water_thickness(i, j) < 0.0) {
-      my_negativegain += -water_thickness(i, j) * dmassdz;
+      conservation_error_change(i, j) += -water_thickness(i, j) * kg_per_m;
       water_thickness(i, j) = 0.0;
     }
 
     if (cell_type.ice_free_land(i, j)) {
-      my_icefreelost += water_thickness(i, j) * dmassdz;
+      grounded_margin_change(i, j) += -water_thickness(i, j) * kg_per_m;
       water_thickness(i, j) = 0.0;
     }
 
     if (cell_type.ocean(i, j)) {
-      my_oceanlost += water_thickness(i, j) * dmassdz;
+      grounding_line_change(i, j) += -water_thickness(i, j) * kg_per_m;
       water_thickness(i, j) = 0.0;
     }
   }
@@ -376,9 +407,9 @@ void Routing::boundary_mass_changes(const IceModelVec2S &cell_area,
       const int i = p.i(), j = p.j();
 
       if (M(i, j)) {
-        const double dmassdz = cell_area(i, j) * fresh_water_density; // kg m-1
+        const double kg_per_m = cell_area(i, j) * fresh_water_density; // kg m-1
 
-        my_nullstriplost += water_thickness(i, j) * dmassdz;
+        no_model_mask_change(i, j) += -water_thickness(i, j) * kg_per_m;
 
         water_thickness(i, j) = 0.0;
       }
@@ -855,6 +886,14 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
 
   // make sure W has valid ghosts before starting hydrology steps
   m_W.update_ghosts();
+
+  // reset water thickness changes
+  {
+    m_grounded_margin_change.set(0.0);
+    m_grounding_line_change.set(0.0);
+    m_conservation_error_change.set(0.0);
+    m_no_model_mask_change.set(0.0);
+  }
 
   unsigned int step_counter = 0;
   for (; ht < t_final; ht += hdt) {

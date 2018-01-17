@@ -130,6 +130,14 @@ protected:
   // work space
   IceModelVec2S m_Wnew, m_Wtillnew;
 
+  // changes in water thickness at the margins (mass conservation reporting)
+  //
+  // these quantities are re-set to zero at the beginning of the PISM time step
+  IceModelVec2S m_grounded_margin_change;
+  IceModelVec2S m_grounding_line_change;
+  IceModelVec2S m_conservation_error_change;
+  IceModelVec2S m_no_model_mask_change;
+
   // ghosted temporary storage; modified in compute_conductivity and compute_velocity
   mutable IceModelVec2S m_R;
 
@@ -138,7 +146,11 @@ protected:
   void boundary_mass_changes(const IceModelVec2S &cell_area,
                              const IceModelVec2CellType &cell_type,
                              const IceModelVec2Int *no_model_mask,
-                             IceModelVec2S &water_thickness);
+                             IceModelVec2S &water_thickness,
+                             IceModelVec2S &grounded_margin_change,
+                             IceModelVec2S &grounding_line_change,
+                             IceModelVec2S &conservation_error_change,
+                             IceModelVec2S &no_model_mask_change);
 
   void water_thickness_staggered(const IceModelVec2S &W,
                                  const IceModelVec2CellType &mask,

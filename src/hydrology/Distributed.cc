@@ -327,6 +327,14 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
   m_W.update_ghosts();
   m_P.update_ghosts();
 
+  // reset water thickness changes
+  {
+    m_grounded_margin_change.set(0.0);
+    m_grounding_line_change.set(0.0);
+    m_conservation_error_change.set(0.0);
+    m_no_model_mask_change.set(0.0);
+  }
+
   unsigned int step_counter = 0;
   for (; ht < t_final; ht += hdt) {
     step_counter++;
