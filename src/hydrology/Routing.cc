@@ -852,7 +852,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
 
   const double
     t_final = t + dt,
-    dt_max  = m_config->get_double("hydrology.maximum_time_step");
+    dt_max  = m_config->get_double("hydrology.maximum_time_step", "seconds");
 
   // make sure W has valid ghosts before starting hydrology steps
   m_W.update_ghosts();
