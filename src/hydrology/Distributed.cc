@@ -73,28 +73,30 @@ void Distributed::bootstrap_impl(const PIO &input_file,
 
   regrid("Hydrology", m_P);
 
-  bool init_P_from_steady = options::Bool("-init_P_from_steady",
-                                          "initialize P from formula P(W) "
-                                          "which applies in steady state");
+  bool init_P_from_steady = m_config->get_boolean("hydrology.distributed.init_p_from_steady");
 
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
     m_log->message(2,
-                   "  option -init_P_from_steady seen ...\n"
                    "  initializing P from P(W) formula which applies in steady state\n");
 
     compute_overburden_pressure(ice_thickness, m_Pover);
 
     IceModelVec2S sliding_speed;
-    sliding_speed.create(m_grid, "sliding_speed", WITHOUT_GHOSTS);
+    sliding_speed.create(m_grid, "velbase_mag", WITHOUT_GHOSTS);
     sliding_speed.set_attrs("internal", "basal sliding speed", "m s-1", "");
-    sliding_speed.metadata().set_string("glaciological_units", "m year-1");
 
-    // FIXME: read sliding speed from a file
+    std::string filename = m_config->get_string("hydrology.distributed.sliding_speed_file");
+
+    if (filename.empty()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "hydrology.distributed.sliding_speed_file is not set");
+    }
+
+    sliding_speed.regrid(filename, CRITICAL);
 
     P_from_W_steady(m_W, m_Pover, sliding_speed,
                     m_P);
   }
-
 }
 
 void Distributed::initialize_impl(const IceModelVec2S &W_till,
