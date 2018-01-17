@@ -136,7 +136,7 @@ protected:
                                const IceModelVec2S &W,
                                const IceModelVec2S &P);
 
-  virtual void update_impl(double icet, double icedt, const Inputs& inputs) = 0;
+  virtual void update_impl(double t, double dt, const Inputs& inputs) = 0;
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
   virtual void define_model_state_impl(const PIO &output) const;

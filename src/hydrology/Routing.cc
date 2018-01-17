@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cassert>
-#include <algorithm>            // std::min, std::max
 
 #include "Routing.hh"
 #include "pism/util/IceModelVec2CellType.hh"
@@ -830,7 +829,7 @@ void Routing::update_W(double dt,
 
 //! Update the model state variables W and Wtill by applying the subglacial hydrology model equations.
 /*!
-  Runs the hydrology model from time icet to time icet + icedt.  Here [icet, icedt]
+  Runs the hydrology model from time t to time t + dt.  Here [t, dt]
   is generally on the order of months to years.  This hydrology model will take its
   own shorter time steps, perhaps hours to weeks.
 
@@ -896,7 +895,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
       hdt = std::min(hdt, dt_diff_w);
     }
 
-    // update Wtillnew from Wtil
+    // update Wtillnew from Wtill and input_rate
     update_Wtill(hdt,
                  m_Wtill,
                  m_input_rate,
@@ -915,7 +914,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     // transfer new into old
     m_W.copy_from(m_Wnew);
     m_Wtill.copy_from(m_Wtillnew);
-  } // end of hydrology model time-stepping loop
+  } // end of the time-stepping loop
 
   m_log->message(2,
                  "  took %d hydrology sub-steps with average dt = %.6f years (%.6f s)\n",

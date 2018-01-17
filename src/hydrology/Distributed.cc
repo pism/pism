@@ -214,7 +214,7 @@ void Distributed::P_from_W_steady(const IceModelVec2S &W,
       // otherwise we should get underpressure P=0, and that is what it yields
       result(i, j) = std::max(0.0, P_overburden(i, j) - sb * pow(Wratio, 1.0 / Glen_exponent));
     }
-  }
+  } // end of the loop over grid points
 }
 
 double Distributed::max_timestep_P_diff(double phi0, double dt_diff_w) const {
@@ -295,13 +295,13 @@ void Distributed::update_P(double dt,
       // projection to enforce  0 <= P <= P_o
       P_new(i, j) = clip(P_new(i, j), 0.0, P_o);
     }
-  }
+  } // end of the loop over grid points
 }
 
 
 //! Update the model state variables W,P by running the subglacial hydrology model.
 /*!
-  Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
+  Runs the hydrology model from time t to time t + dt.  Here [t,dt]
   is generally on the order of months to years.  This hydrology model will take its
   own shorter time steps, perhaps hours to weeks.
 */
@@ -339,7 +339,8 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     // note that ice dynamics can change overburden pressure, so we can only check P
     // bounds if thk has not changed; if thk could have just changed, such as in the first
     // time through the current loop, we enforce them
-    check_P_bounds(m_P, m_Pover, (step_counter == 1));
+    bool enforce_upper = (step_counter == 1);
+    check_P_bounds(m_P, m_Pover, enforce_upper);
 
     water_thickness_staggered(m_W,
                               *inputs.cell_type,
@@ -373,7 +374,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
       hdt = std::min(hdt, dt_diff_p);
     }
 
-    // update Wtillnew from Wtil
+    // update Wtillnew from Wtill and input_rate
     update_Wtill(hdt,
                  m_Wtill,
                  m_input_rate,
@@ -404,7 +405,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     m_W.copy_from(m_Wnew);
     m_Wtill.copy_from(m_Wtillnew);
     m_P.copy_from(m_Pnew);
-  } // end of hydrology model time-stepping loop
+  } // end of the time-stepping loop
 
   m_log->message(2,
                  "  took %d hydrology sub-steps with average dt = %.6f years (%.6f s)\n",
