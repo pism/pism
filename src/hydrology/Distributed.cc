@@ -388,6 +388,14 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
                  m_input_rate,
                  m_Wtillnew);
     // remove water in ice-free areas and account for changes
+    boundary_mass_changes(*inputs.cell_area,
+                          *inputs.cell_type,
+                          inputs.no_model_mask,
+                          m_Wtillnew,
+                          m_grounded_margin_change,
+                          m_grounding_line_change,
+                          m_conservation_error_change,
+                          m_no_model_mask_change);
 
     update_P(hdt,
              *inputs.cell_type,
@@ -408,6 +416,14 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
              m_K, m_Q,
              m_Wnew);
     // remove water in ice-free areas and account for changes
+    boundary_mass_changes(*inputs.cell_area,
+                          *inputs.cell_type,
+                          inputs.no_model_mask,
+                          m_Wnew,
+                          m_grounded_margin_change,
+                          m_grounding_line_change,
+                          m_conservation_error_change,
+                          m_no_model_mask_change);
 
     // transfer new into old
     m_W.copy_from(m_Wnew);

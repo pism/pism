@@ -33,13 +33,17 @@ class Inputs {
 public:
   Inputs();
 
-  const IceModelVec2S        *surface_input_rate;
-  const IceModelVec2S        *basal_melt_rate;
+  // modeling domain (set to NULL in whole-ice-sheet configurations)
+  const IceModelVec2Int      *no_model_mask;
+  // geometry
   const IceModelVec2CellType *cell_type;
+  const IceModelVec2S        *cell_area;
   const IceModelVec2S        *ice_thickness;
   const IceModelVec2S        *bed_elevation;
+  // hydrological inputs
+  const IceModelVec2S        *surface_input_rate;
+  const IceModelVec2S        *basal_melt_rate;
   const IceModelVec2S        *ice_sliding_speed;
-  const IceModelVec2Int      *no_model_mask;
 };
 
 //! \brief The PISM subglacial hydrology model interface.
