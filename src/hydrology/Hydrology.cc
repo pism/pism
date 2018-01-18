@@ -79,6 +79,7 @@ void Hydrology::bootstrap(const PIO &input_file,
 void Hydrology::initialize(const IceModelVec2S &W_till,
                            const IceModelVec2S &W,
                            const IceModelVec2S &P) {
+  initialization_message();
   this->initialize_impl(W_till, W, P);
 }
 
