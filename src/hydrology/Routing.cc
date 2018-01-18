@@ -176,6 +176,144 @@ protected:
   }
 };
 
+/*! @brief Report water flux at the grounded margin. */
+class GroundedMarginFlux : public DiagAverageRate<Routing>
+{
+public:
+  GroundedMarginFlux(const Routing *m)
+    : DiagAverageRate<Routing>(m, "subglacial_water_flux_at_grounded_margins", TOTAL_CHANGE) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_at_grounded_margins")};
+    m_accumulator.metadata().set_string("units", "kg");
+
+    set_attrs("subglacial water flux at grounded ice margins", "",
+              "kg second-1", "Gt year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+  }
+
+protected:
+  const IceModelVec2S& model_input() {
+    return model->water_thickness_change_at_grounded_margin();
+  }
+};
+
+/*! @brief Report subglacial water flux at grounding lines. */
+class GroundingLineFlux : public DiagAverageRate<Routing>
+{
+public:
+  GroundingLineFlux(const Routing *m)
+    : DiagAverageRate<Routing>(m, "subglacial_water_flux_at_grounding_line", TOTAL_CHANGE) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_at_grounding_line")};
+    m_accumulator.metadata().set_string("units", "kg");
+
+    set_attrs("subglacial water flux at grounding lines", "",
+              "kg second-1", "Gt year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+  }
+
+protected:
+  const IceModelVec2S& model_input() {
+    return model->water_thickness_change_at_grounding_line();
+  }
+};
+
+/*! @brief Report subglacial water conservation error flux (mass added to preserve non-negativity). */
+class ConservationErrorFlux : public DiagAverageRate<Routing>
+{
+public:
+  ConservationErrorFlux(const Routing *m)
+    : DiagAverageRate<Routing>(m, "subglacial_water_flux_due_to_conservation_error", TOTAL_CHANGE) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_due_to_conservation_error")};
+    m_accumulator.metadata().set_string("units", "kg");
+
+    set_attrs("subglacial water flux due to conservation error (mass added to preserve non-negativity)", "",
+              "kg second-1", "Gt year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+  }
+
+protected:
+  const IceModelVec2S& model_input() {
+    return model->water_thickness_change_due_to_conservation_error();
+  }
+};
+
+/*! @brief Report subglacial water flux at domain boundary (in regional model configurations). */
+class DomainBoundaryFlux : public DiagAverageRate<Routing>
+{
+public:
+  DomainBoundaryFlux(const Routing *m)
+    : DiagAverageRate<Routing>(m, "subglacial_water_flux_at_domain_boundary", TOTAL_CHANGE) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_at_domain_boundary")};
+    m_accumulator.metadata().set_string("units", "kg");
+
+    set_attrs("subglacial water flux at domain boundary (in regional model configurations)", "",
+              "kg second-1", "Gt year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+  }
+
+protected:
+  const IceModelVec2S& model_input() {
+    return model->water_thickness_change_at_domain_boundary();
+  }
+};
+
+//! @brief Diagnostically reports the staggered-grid components of the velocity of the
+//! water in the subglacial layer.
+class BasalWaterVelocity : public Diag<Routing>
+{
+public:
+  BasalWaterVelocity(const Routing *m)
+    : Diag<Routing>(m) {
+
+    // set metadata:
+    m_vars = {SpatialVariableMetadata(m_sys, "bwatvel[0]"),
+              SpatialVariableMetadata(m_sys, "bwatvel[1]")};
+
+    set_attrs("velocity of water in subglacial layer, i-offset", "",
+              "m s-1", "m year-1", 0);
+    set_attrs("velocity of water in subglacial layer, j-offset", "",
+              "m s-1", "m year-1", 1);
+  }
+protected:
+  virtual IceModelVec::Ptr compute_impl() const {
+    IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
+    result->create(m_grid, "bwatvel", WITHOUT_GHOSTS);
+    result->metadata(0) = m_vars[0];
+    result->metadata(1) = m_vars[1];
+
+    result->copy_from(model->velocity_staggered());
+
+    return result;
+  }
+};
+
 } // end of namespace diagnostics
 
 Routing::Routing(IceGrid::ConstPtr g)
@@ -329,8 +467,9 @@ void check_water_thickness_nonnegative(const IceModelVec2S &W) {
 
       if (W(i, j) < 0.0) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "detected negative water layer thickness "
+                                      "detected negative %s "
                                       "W(i, j) = %.6f m at (i, j)=(%d, %d)",
+                                      W.metadata().get_string("long_name").c_str(),
                                       W(i, j), i, j);
       }
     }
@@ -429,6 +568,21 @@ const IceModelVec2S& Routing::subglacial_water_pressure() const {
   return m_Pover;
 }
 
+const IceModelVec2S& Routing::water_thickness_change_at_grounded_margin() const {
+  return m_grounded_margin_change;
+}
+
+const IceModelVec2S& Routing::water_thickness_change_at_grounding_line() const {
+  return m_grounding_line_change;
+}
+
+const IceModelVec2S& Routing::water_thickness_change_due_to_conservation_error() const {
+  return m_conservation_error_change;
+}
+
+const IceModelVec2S& Routing::water_thickness_change_at_domain_boundary() const {
+  return m_no_model_mask_change;
+}
 
 //! Get the hydraulic potential from bedrock topography and current state variables.
 /*!
@@ -981,36 +1135,6 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
 const IceModelVec2Stag& Routing::velocity_staggered() const {
   return m_V;
 }
-
-//! \brief Diagnostically reports the staggered-grid components of the velocity of the water in the subglacial layer.
-/*! Only available for hydrology::Routing and its derived classes. */
-class BasalWaterVelocity : public Diag<Routing>
-{
-public:
-  BasalWaterVelocity(const Routing *m)
-    : Diag<Routing>(m) {
-
-    // set metadata:
-    m_vars = {SpatialVariableMetadata(m_sys, "bwatvel[0]"),
-              SpatialVariableMetadata(m_sys, "bwatvel[1]")};
-
-    set_attrs("velocity of water in subglacial layer, i-offset", "",
-              "m s-1", "m year-1", 0);
-    set_attrs("velocity of water in subglacial layer, j-offset", "",
-              "m s-1", "m year-1", 1);
-  }
-protected:
-  virtual IceModelVec::Ptr compute_impl() const {
-    IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
-    result->create(m_grid, "bwatvel", WITHOUT_GHOSTS);
-    result->metadata(0) = m_vars[0];
-    result->metadata(1) = m_vars[1];
-
-    result->copy_from(model->velocity_staggered());
-
-    return result;
-  }
-};
 
 std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
   using namespace diagnostics;
