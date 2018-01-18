@@ -129,6 +129,7 @@ public:
 
   const IceModelVec2S& till_water_thickness() const;
   const IceModelVec2S& overburden_pressure() const;
+  const IceModelVec2S& total_input_rate() const;
 
 protected:
   virtual void restart_impl(const PIO &input_file, int record);
@@ -162,7 +163,7 @@ protected:
   //! overburden pressure
   IceModelVec2S m_Pover;
 
-  // work space
+  // total input rate, combining basal melt rate and the input from the surface
   IceModelVec2S m_input_rate;
 
   bool m_hold_bmelt;

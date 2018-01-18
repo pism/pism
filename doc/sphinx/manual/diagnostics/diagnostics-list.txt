@@ -474,6 +474,11 @@ Spatially-variable fields
    :Description: subglacial water flux due to conservation error (mass added to preserve non-negativity)
    :Comment: positive flux corresponds to water gain
 
+#. ``subglacial_water_input_rate``
+
+   :Units: m year-1
+   :Description: total input rate of subglacial water (basal melt rate plus input from the surface)
+   :Comment: positive flux corresponds to water gain
 
 #. ``surface_accumulation_flux``
 

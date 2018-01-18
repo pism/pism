@@ -29,6 +29,40 @@
 namespace pism {
 namespace hydrology {
 
+namespace diagnostics {
+
+/*! @brief Report total input rate of subglacial water (basal melt rate plus input from
+  the surface).
+ */
+class TotalInputRate : public DiagAverageRate<Hydrology>
+{
+public:
+  TotalInputRate(const Hydrology *m)
+    : DiagAverageRate<Hydrology>(m, "subglacial_water_input_rate", RATE) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_input_rate")};
+    m_accumulator.metadata().set_string("units", "m");
+
+    set_attrs("total input rate of subglacial water "
+              "(basal melt rate plus input from the surface)", "",
+              "m second-1", "m year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+  }
+
+protected:
+  const IceModelVec2S& model_input() {
+    return model->total_input_rate();
+  }
+};
+
+} // end of namespace diagnostics
+
 Inputs::Inputs() {
   surface_input_rate = NULL;
   basal_melt_rate    = NULL;
@@ -125,7 +159,9 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
 }
 
 std::map<std::string, Diagnostic::Ptr> Hydrology::diagnostics_impl() const {
-  return {{"tillwat", Diagnostic::wrap(m_Wtill)}};
+  using namespace diagnostics;
+  return {{"tillwat", Diagnostic::wrap(m_Wtill)},
+      {"subglacial_water_input_rate", Diagnostic::Ptr(new TotalInputRate(this))}};
 }
 
 void Hydrology::define_model_state_impl(const PIO &output) const {
@@ -165,6 +201,10 @@ const IceModelVec2S& Hydrology::overburden_pressure() const {
 //! Return the effective thickness of the water stored in till.
 const IceModelVec2S& Hydrology::till_water_thickness() const {
   return m_Wtill;
+}
+
+const IceModelVec2S& Hydrology::total_input_rate() const {
+  return m_input_rate;
 }
 
 /*!
