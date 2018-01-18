@@ -1140,12 +1140,16 @@ std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
   using namespace diagnostics;
 
   std::map<std::string, Diagnostic::Ptr> result = {
-    {"bwat",       Diagnostic::Ptr(new BasalWaterThickness(this))},
-    {"bwatvel",    Diagnostic::Ptr(new BasalWaterVelocity(this))},
-    {"bwp",        Diagnostic::Ptr(new BasalWaterPressure(this))},
-    {"bwprel",     Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},
-    {"effbwp",     Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
-    {"wallmelt",   Diagnostic::Ptr(new WallMelt(this))},
+    {"bwat",                                            Diagnostic::Ptr(new BasalWaterThickness(this))},
+    {"bwatvel",                                         Diagnostic::Ptr(new BasalWaterVelocity(this))},
+    {"bwp",                                             Diagnostic::Ptr(new BasalWaterPressure(this))},
+    {"bwprel",                                          Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},
+    {"effbwp",                                          Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
+    {"wallmelt",                                        Diagnostic::Ptr(new WallMelt(this))},
+    {"subglacial_water_flux_at_grounded_margins",       Diagnostic::Ptr(new GroundedMarginFlux(this))},
+    {"subglacial_water_flux_at_grounding_line",         Diagnostic::Ptr(new GroundingLineFlux(this))},
+    {"subglacial_water_flux_at_domain_boundary",        Diagnostic::Ptr(new DomainBoundaryFlux(this))},
+    {"subglacial_water_flux_due_to_conservation_error", Diagnostic::Ptr(new ConservationErrorFlux(this))},
   };
   return combine(result, Hydrology::diagnostics_impl());
 }
