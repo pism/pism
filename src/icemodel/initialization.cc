@@ -206,9 +206,21 @@ void IceModel::model_state_setup() {
     case INIT_BOOTSTRAP:
       m_subglacial_hydrology->bootstrap(*input_file,
                                         m_geometry.ice_thickness);
+      break;
     case INIT_OTHER:
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Cannot initialize hydrology models from formulas.");
+      {
+        IceModelVec2S
+          &W_till = m_work2d[0],
+          &W      = m_work2d[1],
+          &P      = m_work2d[2];
+
+        W_till.set(m_config->get_double("bootstrapping.defaults.tillwat"));
+        W.set(m_config->get_double("bootstrapping.defaults.bwat"));
+        P.set(m_config->get_double("bootstrapping.defaults.bwp"));
+
+        m_subglacial_hydrology->initialize(W_till, W, P);
+        break;
+      }
     }
   }
 
