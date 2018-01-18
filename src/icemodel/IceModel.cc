@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -695,18 +695,16 @@ void IceModel::step(bool do_mass_continuity,
   {
     hydrology::Inputs inputs;
 
-    // use the combined basal melt rate updated above (even though the melt rate in
-    // floating and ice-free areas is ignored).
-
     IceModelVec2S &sliding_speed = m_work2d[0];
-
     sliding_speed.set_to_magnitude(m_stress_balance->advective_velocity());
 
-    inputs.surface_input_rate = NULL;
-    inputs.basal_melt_rate    = &m_basal_melt_rate;
+    inputs.no_model_mask      = NULL;
     inputs.cell_type          = &m_geometry.cell_type;
+    inputs.cell_area          = &m_geometry.cell_area;
     inputs.ice_thickness      = &m_geometry.ice_thickness;
     inputs.bed_elevation      = &m_geometry.bed_elevation;
+    inputs.surface_input_rate = NULL;
+    inputs.basal_melt_rate    = &m_basal_melt_rate;
     inputs.ice_sliding_speed  = &sliding_speed;
 
     profiling.begin("basal_hydrology");
