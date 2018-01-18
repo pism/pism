@@ -454,25 +454,26 @@ Spatially-variable fields
 
    :Units: Gt year-1
    :Description: subglacial water flux at domain boundary (in regional model configurations)
-   :Comment: positive flux corresponds to ice gain
+   :Comment: positive flux corresponds to water gain
 
 #. ``subglacial_water_flux_at_grounded_margins``
 
    :Units: Gt year-1
    :Description: subglacial water flux at grounded ice margins
-   :Comment: positive flux corresponds to ice gain
+   :Comment: positive flux corresponds to water gain
 
 #. ``subglacial_water_flux_at_grounding_line``
 
    :Units: Gt year-1
    :Description: subglacial water flux at grounding lines
-   :Comment: positive flux corresponds to ice gain
+   :Comment: positive flux corresponds to water gain
 
 #. ``subglacial_water_flux_due_to_conservation_error``
 
    :Units: Gt year-1
    :Description: subglacial water flux due to conservation error (mass added to preserve non-negativity)
-   :Comment: positive flux corresponds to ice gain
+   :Comment: positive flux corresponds to water gain
+
 
 #. ``surface_accumulation_flux``
 

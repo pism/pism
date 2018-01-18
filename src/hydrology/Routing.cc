@@ -194,7 +194,7 @@ public:
                                        m_vars[0].get_string("glaciological_units"),
                                        m_vars[0].get_string("units"));
     m_vars[0].set_double("_FillValue", fill_value);
-    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
 protected:
@@ -221,7 +221,7 @@ public:
                                        m_vars[0].get_string("glaciological_units"),
                                        m_vars[0].get_string("units"));
     m_vars[0].set_double("_FillValue", fill_value);
-    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
 protected:
@@ -248,7 +248,7 @@ public:
                                        m_vars[0].get_string("glaciological_units"),
                                        m_vars[0].get_string("units"));
     m_vars[0].set_double("_FillValue", fill_value);
-    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
 protected:
@@ -275,7 +275,7 @@ public:
                                        m_vars[0].get_string("glaciological_units"),
                                        m_vars[0].get_string("units"));
     m_vars[0].set_double("_FillValue", fill_value);
-    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
 protected:
