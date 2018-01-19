@@ -208,37 +208,36 @@ const IceModelVec2S& Hydrology::total_input_rate() const {
 }
 
 /*!
-  Checks \f$0 \le W_{till} \le W_{till}^{max} =\f$hydrology_tillwat_max.
+  Checks @f$ 0 \le W \le W^{max} @f$.
 */
-void Hydrology::check_Wtill_bounds() {
-  double tillwat_max = m_config->get_double("hydrology.tillwat_max");
+void check_bounds(const IceModelVec2S& W, double W_max) {
 
-  IceModelVec::AccessList list(m_Wtill);
-  ParallelSection loop(m_grid->com);
+  std::string name = W.metadata().get_string("long_name");
+
+  IceGrid::ConstPtr grid = W.grid();
+
+  IceModelVec::AccessList list(W);
+  ParallelSection loop(grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (m_Wtill(i,j) < 0.0) {
+      if (W(i,j) < 0.0) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "Hydrology: negative till water effective layer thickness"
-                                      " Wtill(i,j) = %.6f m\n"
-                                      "at (i,j)=(%d,%d)", m_Wtill(i,j), i, j);
+                                      "Hydrology: negative %s of %.6f m at (i, j) = (%d, %d)",
+                                      name.c_str(), W(i, j), i, j);
       }
 
-      if (m_Wtill(i,j) > tillwat_max) {
+      if (W(i,j) > W_max) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "Hydrology: till water effective layer thickness"
-                                      " Wtill(i,j) = %.6f m exceeds\n"
-                                      "hydrology_tillwat_max = %.6f at (i,j)=(%d,%d)",
-                                      m_Wtill(i,j), tillwat_max, i, j);
+                                      "Hydrology: %s of %.6f m exceeds the maximum value %.6f at (i, j) = (%d, %d)",
+                                      name.c_str(), W(i, j), W_max, i, j);
       }
     }
   } catch (...) {
     loop.failed();
   }
   loop.check();
-
 }
 
 

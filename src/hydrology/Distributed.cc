@@ -335,13 +335,16 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     m_no_model_mask_change.set(0.0);
   }
 
+  double tillwat_max = m_config->get_double("hydrology.tillwat_max");
+
   unsigned int step_counter = 0;
   for (; ht < t_final; ht += hdt) {
     step_counter++;
 
 #if (PISM_DEBUG==1)
-    check_water_thickness_nonnegative(m_W);
-    check_Wtill_bounds();
+    double huge_number = 1e6;
+    check_bounds(m_W, huge_number);
+    check_bounds(m_Wtill, tillwat_max);
 #endif
 
     // note that ice dynamics can change overburden pressure, so we can only check P

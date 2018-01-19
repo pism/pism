@@ -154,8 +154,6 @@ protected:
                           const IceModelVec2S &basal_melt_rate,
                           const IceModelVec2S *surface_input_rate,
                           IceModelVec2S &result);
-
-  void check_Wtill_bounds();
 protected:
   //! effective thickness of basal water stored in till
   IceModelVec2S m_Wtill;
@@ -170,6 +168,8 @@ protected:
 private:
   virtual void initialization_message() const = 0;
 };
+
+void check_bounds(const IceModelVec2S& W, double W_max);
 
 } // end of namespace hydrology
 } // end of namespace pism

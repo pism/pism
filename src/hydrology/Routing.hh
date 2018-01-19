@@ -215,8 +215,6 @@ void wall_melt(const Routing &model,
                const IceModelVec2S &bed_elevation,
                IceModelVec2S &result);
 
-void check_water_thickness_nonnegative(const IceModelVec2S &W);
-
 } // end of namespace hydrology
 } // end of namespace pism
 

@@ -454,33 +454,6 @@ void Routing::write_model_state_impl(const PIO &output) const {
   m_W.write(output);
 }
 
-//! Check thk >= 0 and fails with message if not satisfied.
-void check_water_thickness_nonnegative(const IceModelVec2S &W) {
-  IceModelVec::AccessList list{&W};
-
-  IceGrid::ConstPtr grid = W.grid();
-
-  ParallelSection loop(grid->com);
-  try {
-    for (Points p(*grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      if (W(i, j) < 0.0) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "detected negative %s "
-                                      "W(i, j) = %.6f m at (i, j)=(%d, %d)",
-                                      W.metadata().get_string("long_name").c_str(),
-                                      W(i, j), i, j);
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-}
-
-
 //! Correct the new water thickness based on boundary requirements.
 /*!
   At ice free locations and ocean locations we require that water thicknesses
@@ -1049,13 +1022,16 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     m_no_model_mask_change.set(0.0);
   }
 
+  double tillwat_max = m_config->get_double("hydrology.tillwat_max");
+
   unsigned int step_counter = 0;
   for (; ht < t_final; ht += hdt) {
     step_counter++;
 
 #if (PISM_DEBUG==1)
-    check_water_thickness_nonnegative(m_W);
-    check_Wtill_bounds();
+    double huge_number = 1e6;
+    check_bounds(m_W, huge_number);
+    check_bounds(m_Wtill, tillwat_max);
 #endif
 
     water_thickness_staggered(m_W,
