@@ -128,12 +128,6 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
       input_rate = m_input_rate(i, j),
       dW_input   = dt * input_rate;
 
-    if (input_rate < 0.0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "negative subglacial water input rate of %f m/s at (%d, %d)",
-                                    input_rate, i, j);
-    }
-
     if (W_old < 0.0) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "negative subglacial water thickness of %f m at (%d, %d)",
@@ -147,11 +141,6 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
       dW_decay = dt * (- m_tillwat_decay_rate);
     } else {
       // use the decay mechanism to remove all water in ice-free and ocean areas
-      dW_decay = -(W_old + dW_input);
-    }
-
-    // cap the decay rate to preserve non-negativity
-    if ((W_old + dW_input) + dW_decay < 0.0) {
       dW_decay = -(W_old + dW_input);
     }
 
