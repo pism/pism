@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -111,7 +111,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
   inputs.check();
 
-  // give them names that a bit shorter...
+  // give them names that are a bit shorter...
   const IceModelVec3
     &strain_heating3 = *inputs.strain_heating3,
     &u3              = *inputs.u3,
