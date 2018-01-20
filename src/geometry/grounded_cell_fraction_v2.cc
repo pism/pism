@@ -201,6 +201,20 @@ double grounded_area_fraction_square(double A, double B, double C, double D) {
 // This structure extracts the box stencil information from an IceModelVec2S.
 struct Box {
   double ij, n, nw, w, sw, s, se, e, ne;
+
+  Box(double ij_,
+      double n_, double nw_, double w_, double sw_,
+      double s_, double se_, double e_, double ne_) {
+    ij = ij_;
+    n  = n_;
+    nw = nw_;
+    w  = w_;
+    sw = sw_;
+    s  = s_;
+    se = se_;
+    e  = e_;
+    ne = ne_;
+  }
   Box(const IceModelVec2S &X, int i, int j) {
     ij = X(i, j);
     n  = X(i, j + 1);
@@ -222,6 +236,19 @@ static double F(double SL, double B, double H, double alpha) {
     water_depth = SL - B,
     shelf_depth = H * alpha;
   return shelf_depth - water_depth;
+}
+
+Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
+  return {F(SL.ij, B.ij, H.ij, alpha),
+      F(SL.n, B.n, H.n, alpha),
+      F(SL.nw, B.nw, H.nw, alpha),
+      F(SL.w, B.w, H.w, alpha),
+      F(SL.sw, B.sw, H.sw, alpha),
+      F(SL.s, B.s, H.s, alpha),
+      F(SL.se, B.se, H.se, alpha),
+      F(SL.e, B.e, H.e, alpha),
+      F(SL.ne, B.ne, H.ne, alpha)
+  };
 }
 
 /*!
@@ -253,6 +280,8 @@ void compute_grounded_cell_fraction_v2(double ice_density,
         H(ice_thickness, i, j),
         B(bed_topography, i, j);
 
+      Box f = F(S, B, H, alpha);
+
       /*
      NW-----------------N-----------------NE
       |                 |                 |
@@ -272,15 +301,22 @@ void compute_grounded_cell_fraction_v2(double ice_density,
       */
 
       double
-        S_e = 0.5 * (S.ij + S.e),
-        S_w = 0.5 * (S.ij + S.w),
-        S_n = 0.5 *
+        f_o  = f.ij,
+        f_sw = 0.25 + (f.sw + f.s + f.ij + f.w),
+        f_se = 0.25 * (f.s + f.se + f.e + f.ij),
+        f_ne = 0.25 * (f.ij + f.e + f.ne + f.n),
+        f_nw = 0.25 * (f.w + f.ij + f.n + f.nw);
 
       double
-        F_ij = F(S.ij, B.ij, H.ij, alpha),
-        F_e  = F(0.5 * (S.ij + S.e),
-                 0.5 * (B.ij + B.e),
-                 0.5)
+        f_s = 0.5 * (f.ij + f.s),
+        f_e = 0.5 * (f.ij + f.e),
+        f_n = 0.5 * (f.ij + f.n),
+        f_w = 0.5 * (f.ij + f.w);
+
+      result(i, j) = 0.25 * (grounded_area_fraction_square() +
+                             grounded_area_fraction_square() +
+                             grounded_area_fraction_square() +
+                             grounded_area_fraction_square());
 
     }
   } catch (...) {
