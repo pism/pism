@@ -216,15 +216,20 @@ struct Box {
     ne = ne_;
   }
   Box(const IceModelVec2S &X, int i, int j) {
+    const int
+      E = i + 1,
+      W = i - 1,
+      N = j + 1,
+      S = j - 1;
     ij = X(i, j);
-    n  = X(i, j + 1);
-    nw = X(i - 1, j + 1);
-    w  = X(i - 1, j);
-    sw = X(i - 1, j - 1);
-    s  = X(i, j - 1);
-    se = X(i + 1, j - 1);
-    e  = X(i + 1, j);
-    ne = X(i + 1, j + 1);
+    n  = X(i, N);
+    nw = X(W, N);
+    w  = X(W, j);
+    sw = X(W, S);
+    s  = X(i, S);
+    se = X(E, S);
+    e  = X(E, j);
+    ne = X(E, N);
   }
 };
 
@@ -240,13 +245,13 @@ static double F(double SL, double B, double H, double alpha) {
 
 Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
   return {F(SL.ij, B.ij, H.ij, alpha),
-      F(SL.n, B.n, H.n, alpha),
+      F(SL.n,  B.n,  H.n,  alpha),
       F(SL.nw, B.nw, H.nw, alpha),
-      F(SL.w, B.w, H.w, alpha),
+      F(SL.w,  B.w,  H.w,  alpha),
       F(SL.sw, B.sw, H.sw, alpha),
-      F(SL.s, B.s, H.s, alpha),
+      F(SL.s,  B.s,  H.s,  alpha),
       F(SL.se, B.se, H.se, alpha),
-      F(SL.e, B.e, H.e, alpha),
+      F(SL.e,  B.e,  H.e,  alpha),
       F(SL.ne, B.ne, H.ne, alpha)
   };
 }
@@ -276,8 +281,8 @@ void compute_grounded_cell_fraction_v2(double ice_density,
       const int i = p.i(), j = p.j();
 
       Box
-        S(sea_level, i, j),
-        H(ice_thickness, i, j),
+        S(sea_level,      i, j),
+        H(ice_thickness,  i, j),
         B(bed_topography, i, j);
 
       Box f = F(S, B, H, alpha);
