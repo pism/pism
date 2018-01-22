@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cassert>
 #include <cmath>                // fabs
 
 #include "grounded_cell_fraction_v2.hh"
@@ -37,20 +38,21 @@ struct Point {
  * Define a linear function z = a + (b - a) * x + (c - a) * y, where a, b, and c are its
  * values at points A, B, and C, respectively.
  *
- * Our goal is to find the fraction of the triangle ABC in where z > 0.
+ * Our goal is to find the fraction of the area of ABC in where z > 0.
  *
  * We note that z(x,y) is continuous, so unless a, b, and c have the same sign the line
  *
  * z = 0
  *
- * will intersect exactly two of the sides (possibly at a node of the triangle ABC).
+ * will intersect exactly two of the sides (possibly at a node of ABC).
  *
  * So, if the line (z = 0) does not intersect BC, for example, then it has to intersect AB
  * and AC.
  *
- * This method can be applied to arbitrary triangles as long as their nodes are listed in
- * the correct order. (For any two triangles on a plane there exists an affine map that
- * takes one to the other. Also, affine maps preserve ratios of areas of figures.)
+ * This method can be applied to arbitrary triangles. It does not even matter if values at
+ * triangle nodes (a, b, c) are listed in the same order. (For any two triangles on a
+ * plane there exists an affine map that takes one to the other. Also, affine maps
+ * preserve ratios of areas of figures.)
  */
 
 /*!
@@ -131,7 +133,7 @@ double grounded_area_fraction(double a, double b, double c) {
     return 1.0;
   }
 
-  if (a < 0.0 and b < 0.0 and c < 0.0) {
+  if (a <= 0.0 and b <= 0.0 and c <= 0.0) {
     return 0.0;
   }
 
@@ -144,6 +146,8 @@ double grounded_area_fraction(double a, double b, double c) {
     ac = intersect_ac(a, c);
 
   if (invalid(bc)) {
+    assert(not (invalid(ab) or invalid(ac)));
+
     double ratio = triangle_area({0.0, 0.0}, ab, ac) / total_area;
 
     if (a > 0.0) {
@@ -154,6 +158,8 @@ double grounded_area_fraction(double a, double b, double c) {
   }
 
   if (invalid(ac)) {
+    assert(not (invalid(ab) or invalid(bc)));
+
     double ratio = triangle_area({1.0, 0.0}, bc, ab) / total_area;
 
     if (b > 0.0) {
@@ -164,6 +170,8 @@ double grounded_area_fraction(double a, double b, double c) {
   }
 
   if (invalid(ab)) {
+    assert(not (invalid(bc) or invalid(ac)));
+
     double ratio = triangle_area({0.0, 1.0}, ac, bc) / total_area;
 
     if (c > 0.0) {
@@ -175,27 +183,6 @@ double grounded_area_fraction(double a, double b, double c) {
 
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "the logic in grounded_area_fraction failed!");
-}
-
-/*!
- * Compute the grounded area fraction for a square cell by splitting it into 4 triangles.
- *
- * We split into 4 triangles instead of 2 to preserve symmetry.
- *
- * Triangles:
- *
- * EAB, EBC, ECD, EDA, where E is the center of the cell.
- *
- * The value at E is computed by averaging A, B, C, and D.
- */
-double grounded_area_fraction_square(double A, double B, double C, double D) {
-
-  double E = 0.25 * (A + B + C + D);
-
-  return 0.25 * (grounded_area_fraction(E, A, B),
-                 grounded_area_fraction(E, B, C),
-                 grounded_area_fraction(E, C, D),
-                 grounded_area_fraction(E, D, A));
 }
 
 // This structure extracts the box stencil information from an IceModelVec2S.
@@ -243,17 +230,19 @@ static double F(double SL, double B, double H, double alpha) {
   return shelf_depth - water_depth;
 }
 
-Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
-  return {F(SL.ij, B.ij, H.ij, alpha),
-      F(SL.n,  B.n,  H.n,  alpha),
-      F(SL.nw, B.nw, H.nw, alpha),
-      F(SL.w,  B.w,  H.w,  alpha),
-      F(SL.sw, B.sw, H.sw, alpha),
-      F(SL.s,  B.s,  H.s,  alpha),
-      F(SL.se, B.se, H.se, alpha),
-      F(SL.e,  B.e,  H.e,  alpha),
-      F(SL.ne, B.ne, H.ne, alpha)
-  };
+/*!
+ * Compute the flotation criterion at all the points in the box stencil.
+ */
+static Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
+  return Box(F(SL.ij, B.ij, H.ij, alpha),
+             F(SL.n,  B.n,  H.n,  alpha),
+             F(SL.nw, B.nw, H.nw, alpha),
+             F(SL.w,  B.w,  H.w,  alpha),
+             F(SL.sw, B.sw, H.sw, alpha),
+             F(SL.s,  B.s,  H.s,  alpha),
+             F(SL.se, B.se, H.se, alpha),
+             F(SL.e,  B.e,  H.e,  alpha),
+             F(SL.ne, B.ne, H.ne, alpha));
 }
 
 /*!
@@ -291,7 +280,6 @@ void compute_grounded_cell_fraction_v2(double ice_density,
      NW-----------------N-----------------NE
       |                 |                 |
       |                 |                 |
-      |                 |                 |
       |       nw--------n--------ne       |
       |        |        |        |        |
       |        |        |        |        |
@@ -299,7 +287,6 @@ void compute_grounded_cell_fraction_v2(double ice_density,
       |        |        |        |        |
       |        |        |        |        |
       |       sw--------s--------se       |
-      |                 |                 |
       |                 |                 |
       |                 |                 |
      SW-----------------S-----------------SE
@@ -318,17 +305,20 @@ void compute_grounded_cell_fraction_v2(double ice_density,
         f_n = 0.5 * (f.ij + f.n),
         f_w = 0.5 * (f.ij + f.w);
 
-      result(i, j) = 0.25 * (grounded_area_fraction_square() +
-                             grounded_area_fraction_square() +
-                             grounded_area_fraction_square() +
-                             grounded_area_fraction_square());
+      result(i, j) = 0.125 * (grounded_area_fraction(f_o, f_ne, f_n) +
+                              grounded_area_fraction(f_o, f_n,  f_nw) +
+                              grounded_area_fraction(f_o, f_nw, f_w) +
+                              grounded_area_fraction(f_o, f_w,  f_sw) +
+                              grounded_area_fraction(f_o, f_sw, f_s) +
+                              grounded_area_fraction(f_o, f_s,  f_se) +
+                              grounded_area_fraction(f_o, f_se, f_e) +
+                              grounded_area_fraction(f_o, f_e,  f_ne));
 
     }
   } catch (...) {
     loop.failed();
   }
   loop.check();
-
 }
 
 } // end of namespace pism
