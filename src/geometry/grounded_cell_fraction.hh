@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -36,7 +36,8 @@ void compute_grounded_cell_fraction(double ice_density,
                              IceModelVec2S *result_y);
 
 /*!
- * Compute grounded cell fractions using quadratures.
+ * Compute grounded cell fractions by splitting control volumes into triangles and
+ * treating the flotation criterion as a linear function on each triangle.
  */
 void compute_grounded_cell_fraction(double ice_density,
                                     double ocean_density,

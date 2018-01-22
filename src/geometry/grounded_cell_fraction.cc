@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -138,14 +138,14 @@ static inline double gl_position(double mu,
    @param[out] result_y grounding line position in the y direction (1D parameterization, for debugging)
  */
 void compute_grounded_cell_fraction(double ice_density,
-                             double ocean_density,
-                             double sea_level,
-                             const IceModelVec2S &ice_thickness,
-                             const IceModelVec2S &bed_topography,
-                             const IceModelVec2CellType &mask,
-                             IceModelVec2S &result,
-                             IceModelVec2S *result_x,
-                             IceModelVec2S *result_y) {
+                                    double ocean_density,
+                                    double sea_level,
+                                    const IceModelVec2S &ice_thickness,
+                                    const IceModelVec2S &bed_topography,
+                                    const IceModelVec2CellType &mask,
+                                    IceModelVec2S &result,
+                                    IceModelVec2S *result_x,
+                                    IceModelVec2S *result_y) {
 
   const double mu = ice_density / ocean_density;
 
@@ -227,119 +227,6 @@ void compute_grounded_cell_fraction(double ice_density,
     loop.failed();
   }
   loop.check();
-
-}
-
-void compute_grounded_cell_fraction(double ice_density, double ocean_density,
-                                    const IceModelVec2S &sea_level,
-                                    const IceModelVec2S &ice_thickness,
-                                    const IceModelVec2S &bed_topography,
-                                    IceModelVec2S &result) {
-
-  IceGrid::ConstPtr grid = ice_thickness.grid();
-
-  GeometryCalculator gc(*grid->ctx()->config());
-
-  const double
-    dx = grid->dx(),
-    dy = grid->dy();
-
-  fem::ElementIterator element_index(*grid);
-  fem::ElementMap element(*grid);
-
-  // The quadrature used to approximate the integral.
-  fem::Q0Quadrature1e4 Q0(dx, dy, 1.0);
-  // Quadrature-point values of the basis functions used to approximate the integrand.
-  fem::Q1Quadrature1e4 Q1(dx, dy, 1.0);
-
-  const unsigned int Nk = fem::q1::n_chi;
-  const unsigned int Nq = Q1.n();
-  // Jacobian times weights for quadrature.
-  const double* W = Q1.weights();
-
-  IceModelVec::AccessList list{&sea_level, &ice_thickness, &bed_topography, &result};
-
-  // Iterate over the elements.
-  const int
-    xs = element_index.xs,
-    xm = element_index.xm,
-    ys = element_index.ys,
-    ym = element_index.ym;
-
-  // An Nq by Nk array of test function values.
-  const fem::Germs *psi = Q0.test_function_values();
-
-  const double alpha = ice_density / ocean_density;
-
-  ParallelSection loop(grid->com);
-  try {
-    int M[Nk];
-    double grounded_area[Nk], sl_nodal[Nk], b_nodal[Nk], H_nodal[Nk];
-    std::vector<double> sl(Nq), b(Nq), H(Nq);
-
-    for (int j = ys; j < ys + ym; j++) {
-      for (int i = xs; i < xs + xm; i++) {
-        // Initialize the map from global to element degrees of freedom.
-        element.reset(i, j);
-
-        element.nodal_values(sea_level,      sl_nodal);
-        element.nodal_values(bed_topography, b_nodal);
-        element.nodal_values(ice_thickness,  H_nodal);
-
-        for (unsigned int k = 0; k < Nk; ++k) {
-          M[k] = gc.mask(sl_nodal[k], b_nodal[k], H_nodal[k]);
-        }
-
-        const bool fully_floating = (mask::ocean(M[0]) and mask::ocean(M[1]) and
-                                     mask::ocean(M[2]) and mask::ocean(M[3]));
-
-        const bool fully_grounded = (mask::grounded(M[0]) and mask::grounded(M[1]) and
-                                     mask::grounded(M[2]) and mask::grounded(M[3]));
-
-        // zero out contributions in preparation
-        for (unsigned int k = 0; k < Nk; k++) {
-          grounded_area[k] = 0.0;
-        }
-
-        if (fully_grounded) {
-          // contribute 1/4 to all the cell-centered cells corresponding to the nodes of this
-          // element
-          for (unsigned int k = 0; k < Nk; k++) {
-            grounded_area[k] = 0.25 * dx * dy;
-          }
-        } else if (fully_floating) {
-          // no contribution
-        } else {
-          quadrature_point_values(Q1, sl_nodal, &sl[0]);
-          quadrature_point_values(Q1, b_nodal,  &b[0]);
-          quadrature_point_values(Q1, H_nodal,  &H[0]);
-
-          for (unsigned int q = 0; q < Nq; q++) {
-
-            // Here F is the indicator function of the "grounded" subset of the plane.
-            const double
-              water_depth = sl[q] - b[q],
-              shelf_depth = H[q] * alpha,
-              F           = shelf_depth >= water_depth ? 1.0 : 0.0,
-              WF          = W[q] * F;
-
-            // Loop over test functions.
-            for (unsigned int k = 0; k < Nk; k++) {
-              grounded_area[k] += WF * psi[q][k].val;
-            } // k (test functions)
-          }   // q (quadrature points)
-        }
-
-        element.add_contribution(grounded_area, result);
-      } // i-loop
-    }   // j-loop
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  // divide grounded area by the cell area to get area fractions
-  result.scale(1.0 / (dx * dy));
 }
 
 } // end of namespace pism

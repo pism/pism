@@ -20,7 +20,7 @@
 #include <cassert>
 #include <cmath>                // fabs
 
-#include "grounded_cell_fraction_v2.hh"
+#include "grounded_cell_fraction.hh"
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/iceModelVec.hh"
@@ -253,12 +253,12 @@ static Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
  * @param[in] bed_topography bed elevation, m
  * @param[out] result grounded cell fraction, between 0 (floating) and 1 (grounded)
  */
-void compute_grounded_cell_fraction_v2(double ice_density,
-                                       double ocean_density,
-                                       const IceModelVec2S &sea_level,
-                                       const IceModelVec2S &ice_thickness,
-                                       const IceModelVec2S &bed_topography,
-                                       IceModelVec2S &result) {
+void compute_grounded_cell_fraction(double ice_density,
+                                    double ocean_density,
+                                    const IceModelVec2S &sea_level,
+                                    const IceModelVec2S &ice_thickness,
+                                    const IceModelVec2S &bed_topography,
+                                    IceModelVec2S &result) {
   IceGrid::ConstPtr grid = result.grid();
   double alpha = ice_density / ocean_density;
 
@@ -277,19 +277,19 @@ void compute_grounded_cell_fraction_v2(double ice_density,
       Box f = F(S, B, H, alpha);
 
       /*
-     NW-----------------N-----------------NE
-      |                 |                 |
-      |                 |                 |
-      |       nw--------n--------ne       |
-      |        |        |        |        |
-      |        |        |        |        |
-      W--------w--------o--------e--------E
-      |        |        |        |        |
-      |        |        |        |        |
-      |       sw--------s--------se       |
-      |                 |                 |
-      |                 |                 |
-     SW-----------------S-----------------SE
+        NW-----------------N-----------------NE
+        |                 |                 |
+        |                 |                 |
+        |       nw--------n--------ne       |
+        |        |        |        |        |
+        |        |        |        |        |
+        W--------w--------o--------e--------E
+        |        |        |        |        |
+        |        |        |        |        |
+        |       sw--------s--------se       |
+        |                 |                 |
+        |                 |                 |
+        SW-----------------S-----------------SE
       */
 
       double
