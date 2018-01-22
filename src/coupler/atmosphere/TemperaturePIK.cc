@@ -186,10 +186,14 @@ void TemperaturePIK::update_impl(double my_t, double my_dt) {
       m_air_temp_mean_summer(i,j)   = 273.15 + 3.2 -0.0067*h(i,j) +  8.3 * (sin(3.1415*lat_degN(i,j)/180.0)+0.8910)/(1-0.8910);
     }
     else if (temp_era_interim_lon_set){  // parametrization based on multiple regression analysis of ERA INTERIM data with cos(lon)
-      double hmod = std::max(500.0,h(i,j));  //FIXME: if icefree ocean, hmod=0
-      m_air_temp_mean_annual(i,j) = 273.15 + 36.81 -0.00797*hmod -0.688*lat_degN(i,j)*(-1.0) + 2.574*cos(3.1415*(lon_degE(i,j)-110.0)/180.0);
-      m_air_temp_mean_summer(i,j)   = 273.15 + 22.58 -0.00940*hmod -0.234*lat_degN(i,j)*(-1.0) + 0.828*cos(3.1415*(lon_degE(i,j)-110.0)/180.0);
+      //double hmod = std::max(500.0,h(i,j));  //FIXME: if icefree ocean, hmod=0
+      //m_air_temp_mean_annual(i,j) = 273.15 + 36.81 -0.00797*hmod -0.688*lat_degN(i,j)*(-1.0) + 2.574*cos(3.1415*(lon_degE(i,j)-110.0)/180.0);
+      //m_air_temp_mean_summer(i,j)   = 273.15 + 22.58 -0.00940*hmod -0.234*lat_degN(i,j)*(-1.0) + 0.828*cos(3.1415*(lon_degE(i,j)-110.0)/180.0);
+      double hmod = std::max(1000.0,h(i,j));  //FIXME: if icefree ocean, hmod=0
+      m_air_temp_mean_annual(i,j) = 273.15 + 37.49 -0.0095*hmod -0.644*lat_degN(i,j)*(-1.0) + 2.146*cos(3.1415*(lon_degE(i,j)-110.0)/180.0);
+      m_air_temp_mean_summer(i,j)   = 273.15 + 15.74 -0.0083*hmod -0.196*lat_degN(i,j)*(-1.0) + 0.225*cos(3.1415*(lon_degE(i,j)-110.0)/180.0);
     }
+
     else {
 
     // annual mean temperature = Martin et al. (2011) parametrization
