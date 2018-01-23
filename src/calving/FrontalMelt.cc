@@ -59,7 +59,7 @@ void FrontalMelt::compute_calving_rate(const IceModelVec2CellType &mask,
     &ice_thickness     = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   const double
-    sea_level   = m_ocean->sea_level_elevation(),
+    sea_level   = m_ocean->sea_level_elevation(), // FIXME: use 2D sea level; make it one of inputs
     ice_density = m_config->get_double("constants.ice.density"),
     alpha       = ice_density / m_config->get_double("constants.sea_water.density");
 
