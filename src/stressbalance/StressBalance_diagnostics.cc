@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -693,42 +693,52 @@ PSB_uvel::PSB_uvel(const StressBalance *m)
             "m s-1", "m year-1", 0);
 }
 
-IceModelVec::Ptr PSB_uvel::compute_impl() const {
+/*!
+ * Copy F to result and set it to zero above the surface of the ice.
+ */
+static void zero_above_ice(const IceModelVec3 &F, const IceModelVec2S &H,
+                           IceModelVec3 &result) {
 
-  IceModelVec3::Ptr result(new IceModelVec3);
-  result->create(m_grid, "uvel", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
+  IceModelVec::AccessList list{&F, &H, &result};
 
-  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  IceGrid::ConstPtr grid = result.grid();
 
-  const IceModelVec3
-    &u3 = model->velocity_u();
+  auto Mz = grid->Mz();
 
-  IceModelVec::AccessList list{&u3, thickness, result.get()};
-
-  ParallelSection loop(m_grid->com);
+  ParallelSection loop(grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      int ks = m_grid->kBelowHeight((*thickness)(i,j));
+      int ks = grid->kBelowHeight(H(i,j));
 
-      const double *u_ij = u3.get_column(i,j);
-      double *u_out_ij = result->get_column(i,j);
+      const double *F_ij = F.get_column(i,j);
+      double *F_out_ij = result.get_column(i,j);
 
       // in the ice:
       for (int k = 0; k <= ks ; k++) {
-        u_out_ij[k] = u_ij[k];
+        F_out_ij[k] = F_ij[k];
       }
       // above the ice:
-      for (unsigned int k = ks+1; k < m_grid->Mz() ; k++) {
-        u_out_ij[k] = 0.0;
+      for (unsigned int k = ks+1; k < Mz ; k++) {
+        F_out_ij[k] = 0.0;
       }
     }
   } catch (...) {
     loop.failed();
   }
   loop.check();
+}
+
+IceModelVec::Ptr PSB_uvel::compute_impl() const {
+
+  IceModelVec3::Ptr result(new IceModelVec3);
+  result->create(m_grid, "uvel", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
+
+  zero_above_ice(model->velocity_u(),
+                 *m_grid->variables().get_2d_scalar("land_ice_thickness"),
+                 *result);
 
   return result;
 }
@@ -749,36 +759,9 @@ IceModelVec::Ptr PSB_vvel::compute_impl() const {
   result->create(m_grid, "vvel", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
-
-  const IceModelVec3
-    &v3 = model->velocity_v();
-
-  IceModelVec::AccessList list{&v3, thickness, result.get()};
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      int ks = m_grid->kBelowHeight((*thickness)(i,j));
-
-      const double *v_ij = v3.get_column(i,j);
-      double *v_out_ij = result->get_column(i,j);
-
-      // in the ice:
-      for (int k = 0; k <= ks ; k++) {
-        v_out_ij[k] = v_ij[k];
-      }
-      // above the ice:
-      for (unsigned int k = ks+1; k < m_grid->Mz() ; k++) {
-        v_out_ij[k] = 0.0;
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
+  zero_above_ice(model->velocity_v(),
+                 *m_grid->variables().get_2d_scalar("land_ice_thickness"),
+                 *result);
 
   return result;
 }
@@ -799,37 +782,9 @@ IceModelVec::Ptr PSB_wvel_rel::compute_impl() const {
   result->create(m_grid, "wvel_rel", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
-
-  const IceModelVec3
-    &w3 = model->velocity_w();
-
-  IceModelVec::AccessList list{&w3, thickness, result.get()};
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      int ks = m_grid->kBelowHeight((*thickness)(i,j));
-
-      const double *w_ij = w3.get_column(i,j);
-      double *w_out_ij = result->get_column(i,j);
-
-      // in the ice:
-      for (int k = 0; k <= ks ; k++) {
-        w_out_ij[k] = w_ij[k];
-      }
-      // above the ice:
-      for (unsigned int k = ks+1; k < m_grid->Mz() ; k++) {
-        w_out_ij[k] = 0.0;
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
+  zero_above_ice(model->velocity_w(),
+                 *m_grid->variables().get_2d_scalar("land_ice_thickness"),
+                 *result);
 
   return result;
 }
