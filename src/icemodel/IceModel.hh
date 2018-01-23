@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -433,7 +433,7 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
 void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness);
 bool check_maximum_ice_thickness(const IceModelVec2S &ice_thickness);
 
-void bedrock_surface_temperature(double sea_level,
+void bedrock_surface_temperature(const IceModelVec2S &sea_level,
                                  const IceModelVec2CellType &cell_type,
                                  const IceModelVec2S &bed_topography,
                                  const IceModelVec2S &ice_thickness,
