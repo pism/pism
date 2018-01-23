@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2017 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2018 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -175,7 +175,7 @@ void SSA::update(const Inputs &inputs, bool full_update) {
     GeometryCalculator gc(*m_config);
     gc.set_icefree_thickness(H_threshold);
 
-    gc.compute_mask(inputs.sea_level,
+    gc.compute_mask(inputs.geometry->sea_level_elevation,
                     inputs.geometry->bed_elevation,
                     inputs.geometry->ice_thickness,
                     m_mask);

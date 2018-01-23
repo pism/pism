@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -35,7 +35,6 @@ namespace pism {
 namespace stressbalance {
 
 Inputs::Inputs() {
-  sea_level = 0.0;
   geometry = NULL;
   new_bed_elevation = true;
 

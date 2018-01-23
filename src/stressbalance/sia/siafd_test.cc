@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -322,6 +322,7 @@ int main(int argc, char *argv[]) {
     const int WIDE_STENCIL = config->get_double("grid.max_stencil_width");
 
     Geometry geometry(grid);
+    geometry.sea_level_elevation.set(0.0);
 
     // age of the ice; is not used here
     age.create(grid, "age", WITHOUT_GHOSTS);
@@ -370,7 +371,6 @@ int main(int argc, char *argv[]) {
 
     stressbalance::Inputs inputs;
     inputs.geometry              = &geometry;
-    inputs.sea_level             = 0.0;
     inputs.melange_back_pressure = &melange_back_pressure;
     inputs.enthalpy              = &enthalpy;
     inputs.age                   = &age;

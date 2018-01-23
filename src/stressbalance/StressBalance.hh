@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -38,7 +38,6 @@ class Inputs {
 public:
   Inputs();
 
-  double sea_level;             // FIXME: use the 2D field in Geometry
   const Geometry *geometry;
   bool new_bed_elevation;
 

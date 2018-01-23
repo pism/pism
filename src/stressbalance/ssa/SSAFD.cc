@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2017 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2018 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -249,6 +249,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   const IceModelVec2S
     &thickness             = inputs.geometry->ice_thickness,
     &bed                   = inputs.geometry->bed_elevation,
+    &sea_level             = inputs.geometry->sea_level_elevation,
     *melange_back_pressure = inputs.melange_back_pressure;
 
   const double
@@ -338,7 +339,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
         }
 
         double ocean_pressure = ocean_pressure_difference(ocean(M_ij), is_dry_simulation,
-                                                          H_ij, bed(i,j), inputs.sea_level,
+                                                          H_ij, bed(i,j), sea_level(i, j),
                                                           rho_ice, rho_ocean, standard_gravity);
 
         if (melange_back_pressure != NULL) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -389,7 +389,6 @@ stressbalance::Inputs IceModel::stress_balance_inputs() {
 
   m_ocean->melange_back_pressure_fraction(melange_back_pressure);
 
-  result.sea_level             = m_ocean->sea_level_elevation();
   result.basal_yield_stress    = &m_basal_yield_stress;
   result.melange_back_pressure = &melange_back_pressure;
   result.geometry              = &m_geometry;

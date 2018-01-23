@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -53,7 +53,7 @@ void FrontalMelt::compute_calving_rate(const IceModelVec2CellType &mask,
   IceModelVec2S &shelf_base_mass_flux = m_tmp;
   m_ocean->shelf_base_mass_flux(shelf_base_mass_flux);
 
-  const IceModelVec2S
+  const IceModelVec2S           // FIXME: remove get_2d_scalar()
     &bed_elevation     = *m_grid->variables().get_2d_scalar("bedrock_altitude"),
     &surface_elevation = *m_grid->variables().get_2d_scalar("surface_altitude"),
     &ice_thickness     = *m_grid->variables().get_2d_scalar("land_ice_thickness");
