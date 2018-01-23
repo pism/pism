@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,7 +38,7 @@ public:
   virtual ~CalvingFrontRetreat();
 
   void update(double dt,
-              double sea_level,
+              const IceModelVec2S &sea_level,
               const IceModelVec2Int &ice_thickness_bc_mask,
               const IceModelVec2S &bed_topography,
               IceModelVec2CellType &pism_mask,

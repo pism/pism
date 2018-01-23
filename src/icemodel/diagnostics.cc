@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -86,9 +86,10 @@ IceModelVec::Ptr CalvingFrontPressureDifference::compute_impl() const {
   IceModelVec2CellType mask;
   mask.create(m_grid, "mask", WITH_GHOSTS);
 
-  const IceModelVec2S &H   = model->geometry().ice_thickness;
-  const IceModelVec2S &bed = model->geometry().bed_elevation;
-  const double sea_level = model->ocean_model()->sea_level_elevation(); // FIXME: use 2D sea level
+  auto
+    &H         = model->geometry().ice_thickness,
+    &bed       = model->geometry().bed_elevation,
+    &sea_level = model->geometry().sea_level_elevation;
 
   {
     const double H_threshold = m_config->get_double("stress_balance.ice_free_thickness_standard");
@@ -114,7 +115,7 @@ IceModelVec::Ptr CalvingFrontPressureDifference::compute_impl() const {
 
       if (mask.icy(i, j) and mask.next_to_ice_free_ocean(i, j)) {
         (*result)(i, j) = stressbalance::ocean_pressure_difference(mask.ocean(i, j), dry_mode,
-                                                                   H(i, j), bed(i, j), sea_level,
+                                                                   H(i, j), bed(i, j), sea_level(i, j),
                                                                    rho_ice, rho_ocean, g);
       } else {
         (*result)(i, j) = m_fill_value;
