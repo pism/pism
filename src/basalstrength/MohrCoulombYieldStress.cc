@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2017 PISM Authors
+// Copyright (C) 2004--2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -299,9 +299,10 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
 
   const IceModelVec2CellType &mask           = inputs.geometry->cell_type;
   const IceModelVec2S        &bed_topography = inputs.geometry->bed_elevation;
+  const IceModelVec2S        &sea_level      = inputs.geometry->sea_level_elevation;
 
   IceModelVec::AccessList list{&m_tillwat, &m_till_phi, &m_basal_yield_stress, &mask,
-      &bed_topography, &m_Po};
+      &bed_topography, &sea_level, &m_Po};
   if (add_transportable_water) {
     list.add(m_bwat);
   }
@@ -315,10 +316,9 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
       m_basal_yield_stress(i, j) = high_tauc;  // large yield stress if grounded and ice-free
     } else { // grounded and there is some ice
       // user can ask that marine grounding lines get special treatment
-      const double sea_level = 0.0; // FIXME: get sea-level from correct PISM source
       double water = m_tillwat(i,j); // usual case
       if (slippery_grounding_lines and
-          bed_topography(i,j) <= sea_level and
+          bed_topography(i,j) <= sea_level(i, j) and
           (mask.next_to_floating_ice(i,j) or mask.next_to_ice_free_ocean(i,j))) {
         water = tillwat_max;
       } else if (add_transportable_water) {
