@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -356,7 +356,7 @@ protected:
   virtual void update_run_stats();
 
   // working space (a convenience)
-  static const int m_n_work2d = 4;
+  static const int m_n_work2d = 3;
   mutable IceModelVec2S m_work2d[m_n_work2d];
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
