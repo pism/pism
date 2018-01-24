@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -85,11 +85,6 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                             "salinity of the adjacent ocean",
                             "g/kg", "");
 
-  m_shelfbtemp.create(m_grid, "shelfbtemp", WITHOUT_GHOSTS);
-  m_shelfbtemp.set_attrs("climate_forcing",
-                       "absolute temperature at ice shelf base",
-                       "Kelvin", "");
-
   m_shelfbmassflux.create(m_grid, "shelfbmassflux", WITHOUT_GHOSTS);
   m_shelfbmassflux.set_attrs("climate_forcing",
                            "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
@@ -118,10 +113,6 @@ void GivenTH::init_impl() {
   }
 }
 
-void GivenTH::shelf_base_temperature_impl(IceModelVec2S &result) const {
-  result.copy_from(m_shelfbtemp);
-}
-
 void GivenTH::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_shelfbmassflux);
 }
@@ -140,7 +131,7 @@ void GivenTH::update_impl(double my_t, double my_dt) {
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   IceModelVec::AccessList list{ice_thickness, m_theta_ocean, m_salinity_ocean,
-      &m_shelfbtemp, &m_shelfbmassflux};
+      &m_shelf_base_temperature, &m_shelfbmassflux};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -159,7 +150,7 @@ void GivenTH::update_impl(double my_t, double my_dt) {
                      &shelf_base_massflux);
 
     // Convert from Celsius to Kelvin:
-    m_shelfbtemp(i,j)     = shelf_base_temp_celsius + 273.15;
+    m_shelf_base_temperature(i,j)     = shelf_base_temp_celsius + 273.15;
     m_shelfbmassflux(i,j) = shelf_base_massflux;
   }
 

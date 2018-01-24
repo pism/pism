@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -78,12 +78,9 @@ void Given::update_impl(double my_t, double my_dt) {
 
   m_shelfbmassflux->average(m_t, m_dt);
   m_shelfbtemp->average(m_t, m_dt);
-}
 
-void Given::shelf_base_temperature_impl(IceModelVec2S &result) const {
-  result.copy_from(*m_shelfbtemp);
+  m_shelf_base_temperature.copy_from(*m_shelfbtemp);
 }
-
 
 void Given::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(*m_shelfbmassflux);

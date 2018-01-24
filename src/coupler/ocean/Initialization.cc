@@ -34,12 +34,10 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, OceanModel* in)
                          m_sys) {
 
   m_melange_back_pressure_fraction.set_name("effective_melange_back_pressure_fraction");
+  m_melange_back_pressure_fraction.metadata().set_string("pism_intent", "model_state");
 
-  m_shelf_base_temperature.create(m_grid, "effective_shelf_base_temperature", WITHOUT_GHOSTS);
-  m_shelf_base_temperature.set_attrs("model_state",
-                                     "effective shelf base temperature,"
-                                     " as seen by the ice dynamics code (for re-starting)",
-                                     "Kelvin", "");
+  m_shelf_base_temperature.set_name("effective_shelf_base_temperature");
+  m_shelf_base_temperature.metadata().set_string("pism_intent", "model_state");
 
   m_shelf_base_mass_flux.create(m_grid, "effective_shelf_base_mass_flux", WITHOUT_GHOSTS);
   m_shelf_base_mass_flux.set_attrs("model_state",
@@ -58,14 +56,10 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, OceanModel* in)
 }
 
 void InitializationHelper::update_impl(double t, double dt) {
-  m_input_model->update(t, dt);
 
-  m_melange_back_pressure_fraction.copy_from(m_input_model->melange_back_pressure_fraction());
+  OceanModifier::update_impl(t, dt);
 
   m_input_model->shelf_base_mass_flux(m_shelf_base_mass_flux);
-  m_input_model->shelf_base_temperature(m_shelf_base_temperature);
-
-  m_sea_level = m_input_model->sea_level_elevation();
 }
 
 void InitializationHelper::init_impl() {
@@ -110,10 +104,6 @@ void InitializationHelper::init_impl() {
            REGRID_WITHOUT_REGRID_VARS);
   }
   // FIXME: fake "regridding" of sea level
-}
-
-void InitializationHelper::shelf_base_temperature_impl(IceModelVec2S &result) const {
-  result.copy_from(m_shelf_base_temperature);
 }
 
 void InitializationHelper::shelf_base_mass_flux_impl(IceModelVec2S &result) const {

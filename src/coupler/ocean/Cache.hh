@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -35,10 +35,9 @@ protected:
   virtual void update_impl(double my_t, double my_dt);
 
   virtual void init_impl();
-  virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 protected:
-  IceModelVec2S m_shelf_base_temperature, m_shelf_base_mass_flux;
+  IceModelVec2S m_shelf_base_mass_flux;
 
   double m_next_update_time;
   unsigned int m_update_interval_years;

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -50,7 +50,7 @@ void Delta_T::init_impl() {
   m_input_model->init();
 
   m_log->message(2,
-             "* Initializing ice shelf base temperature forcing using scalar offsets...\n");
+                 "* Initializing ice shelf base temperature forcing using scalar offsets...\n");
 
   init_internal();
 }
@@ -60,9 +60,10 @@ MaxTimestep Delta_T::max_timestep_impl(double t) const {
   return MaxTimestep("ocean delta_T");
 }
 
-void Delta_T::shelf_base_temperature_impl(IceModelVec2S &result) const {
-  m_input_model->shelf_base_temperature(result);
-  offset_data(result);
+void Delta_T::update_impl(double t, double dt) {
+  OceanModifier::update_impl(t, dt);
+
+  offset_data(m_shelf_base_temperature);
 }
 
 } // end of namespace ocean

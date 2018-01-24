@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -411,20 +411,17 @@ energy::Inputs IceModel::energy_model_inputs() {
   IceModelVec2S &ice_surface_temperature           = m_work2d[0];
   IceModelVec2S &ice_surface_liquid_water_fraction = m_work2d[1];
   IceModelVec2S &till_water_thickness              = m_work2d[2];
-  IceModelVec2S &shelf_base_temperature            = m_work2d[3];
 
   m_surface->temperature(ice_surface_temperature);
   m_surface->liquid_water_fraction(ice_surface_liquid_water_fraction);
-
-  m_ocean->shelf_base_temperature(shelf_base_temperature);
 
   m_subglacial_hydrology->till_water_thickness(till_water_thickness);
 
   result.basal_frictional_heating = &m_stress_balance->basal_frictional_heating();
   result.basal_heat_flux          = &m_btu->flux_through_top_surface(); // bedrock thermal layer
-  result.cell_type                = &m_geometry.cell_type;            // geometry
-  result.ice_thickness            = &m_geometry.ice_thickness;        // geometry
-  result.shelf_base_temp          = &shelf_base_temperature;            // ocean model
+  result.cell_type                = &m_geometry.cell_type;              // geometry
+  result.ice_thickness            = &m_geometry.ice_thickness;          // geometry
+  result.shelf_base_temp          = &m_ocean->shelf_base_temperature(); // ocean model
   result.surface_liquid_fraction  = &ice_surface_liquid_water_fraction; // surface model
   result.surface_temp             = &ice_surface_temperature;           // surface model
   result.till_water_thickness     = &till_water_thickness;              // hydrology model

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,8 +28,14 @@ OceanModel::OceanModel(IceGrid::ConstPtr g)
   m_melange_back_pressure_fraction.create(m_grid,
                                           "melange_back_pressure_fraction", WITHOUT_GHOSTS);
   m_melange_back_pressure_fraction.set_attrs("diagnostic",
-                                             "melange back pressure fraction", "1", "");
+                                             "melange back pressure fraction",
+                                             "1", "");
   m_melange_back_pressure_fraction.set(0.0);
+
+  m_shelf_base_temperature.create(m_grid, "shelfbtemp", WITHOUT_GHOSTS);
+  m_shelf_base_temperature.set_attrs("diagnostic",
+                                     "ice temperature at the bottom of floating ice",
+                                     "Kelvin", "");
 }
 
 OceanModel::~OceanModel() {
@@ -44,16 +50,16 @@ void OceanModel::update(double t, double dt) {
   this->update_impl(t, dt);
 }
 
+void OceanModel::shelf_base_mass_flux(IceModelVec2S &result) const {
+  this->shelf_base_mass_flux_impl(result);
+}
+
 double OceanModel::sea_level_elevation() const {
   return m_sea_level;
 }
 
-void OceanModel::shelf_base_temperature(IceModelVec2S &result) const {
-  this->shelf_base_temperature_impl(result);
-}
-
-void OceanModel::shelf_base_mass_flux(IceModelVec2S &result) const {
-  this->shelf_base_mass_flux_impl(result);
+const IceModelVec2S& OceanModel::shelf_base_temperature() const {
+  return m_shelf_base_temperature;
 }
 
 const IceModelVec2S& OceanModel::melange_back_pressure_fraction() const {
@@ -105,7 +111,7 @@ IceModelVec::Ptr PO_shelf_base_temperature::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "shelfbtemp", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  model->shelf_base_temperature(*result);
+  result->copy_from(model->shelf_base_temperature());
 
   return result;
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011, 2013, 2014, 2015, 2016, 2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2011, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -41,7 +41,7 @@ public:
 
   double sea_level_elevation() const;
 
-  void shelf_base_temperature(IceModelVec2S &result) const;
+  const IceModelVec2S& shelf_base_temperature() const;
 
   void shelf_base_mass_flux(IceModelVec2S &result) const;
 
@@ -54,12 +54,12 @@ protected:
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const = 0;
-  virtual void shelf_base_temperature_impl(IceModelVec2S &result) const = 0;
 
 protected:
   double m_sea_level;
 
   IceModelVec2S m_melange_back_pressure_fraction;
+  IceModelVec2S m_shelf_base_temperature;
 };
 
 /*! @brief Sea level elevation. */

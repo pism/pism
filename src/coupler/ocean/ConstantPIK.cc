@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
 //
 // This file is part of PISM.
@@ -59,12 +59,14 @@ MaxTimestep PIK::max_timestep_impl(double t) const {
   return MaxTimestep("ocean PIK");
 }
 
-void PIK::update_impl(double my_t, double my_dt) {
-  m_t = my_t;
-  m_dt = my_dt;
+void PIK::update_impl(double t, double dt) {
+  m_t = t;
+  m_dt = dt;
+
+  melting_point_temperature(m_shelf_base_temperature);
 }
 
-void PIK::shelf_base_temperature_impl(IceModelVec2S &result) const {
+void PIK::melting_point_temperature(IceModelVec2S &result) const {
   const double
     T0          = m_config->get_double("constants.fresh_water.melting_point_temperature"), // K
     beta_CC     = m_config->get_double("constants.ice.beta_Clausius_Clapeyron"),
@@ -78,7 +80,7 @@ void PIK::shelf_base_temperature_impl(IceModelVec2S &result) const {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     const double pressure = ice_density * g * H(i,j); // FIXME task #7297
-    // temp is set to melting point at depth
+    // result is set to melting point at depth
     result(i,j) = T0 - beta_CC * pressure;
   }
 }

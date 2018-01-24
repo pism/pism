@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -43,11 +43,6 @@ Cache::Cache(IceGrid::ConstPtr g, OceanModel* in)
                                    " (positive flux is loss from ice shelf)",
                                    "kg m-2 s-1", "");
   m_shelf_base_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
-
-  m_shelf_base_temperature.create(m_grid, "effective_shelf_base_temperature", WITHOUT_GHOSTS);
-  m_shelf_base_temperature.set_attrs("climate_state",
-                                     "absolute temperature at ice shelf base",
-                                     "K", "");
 }
 
 Cache::~Cache() {
@@ -97,13 +92,10 @@ void Cache::update_impl(double my_t, double my_dt) {
     m_sea_level = m_input_model->sea_level_elevation();
     m_melange_back_pressure_fraction.copy_from(m_input_model->melange_back_pressure_fraction());
 
-    m_input_model->shelf_base_temperature(m_shelf_base_temperature);
+    m_shelf_base_temperature.copy_from(m_input_model->shelf_base_temperature());
+
     m_input_model->shelf_base_mass_flux(m_shelf_base_mass_flux);
   }
-}
-
-void Cache::shelf_base_temperature_impl(IceModelVec2S &result) const {
-  result.copy_from(m_shelf_base_temperature);
 }
 
 void Cache::shelf_base_mass_flux_impl(IceModelVec2S &result) const {

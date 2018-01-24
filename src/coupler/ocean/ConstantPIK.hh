@@ -46,9 +46,9 @@ protected:
   virtual void update_impl(double my_t, double my_dt);
   virtual void init_impl();
 
-  virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 private:
+  void melting_point_temperature(IceModelVec2S &result) const;
   //! @f$ F_{\text{melt}} @f$ of [@ref Martinetal2011]
   double m_meltfactor;
 };

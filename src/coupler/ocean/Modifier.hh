@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,9 +32,12 @@ public:
   virtual ~OceanModifier() {}
 
 protected:
-  virtual void shelf_base_temperature_impl(IceModelVec2S &result) const
-  {
-    m_input_model->shelf_base_temperature(result);
+  void update_impl(double t, double dt) {
+    m_input_model->update(t, dt);
+
+    m_sea_level = m_input_model->sea_level_elevation();
+    m_melange_back_pressure_fraction.copy_from(m_input_model->melange_back_pressure_fraction());
+    m_shelf_base_temperature.copy_from(m_input_model->shelf_base_temperature());
   }
 
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const

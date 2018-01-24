@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -70,16 +70,17 @@ Constant::~Constant() {
 }
 
 void Constant::update_impl(double my_t, double my_dt) {
-  // do nothing
   m_t = my_t;
   m_dt = my_dt;
+
+  melting_point_temperature(m_shelf_base_temperature);
 }
 
 void Constant::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  if (!m_config->get_boolean("ocean.always_grounded")) {
+  if (not m_config->get_boolean("ocean.always_grounded")) {
     m_log->message(2, "* Initializing the constant ocean model...\n");
   }
 }
@@ -89,7 +90,7 @@ MaxTimestep Constant::max_timestep_impl(double t) const {
   return MaxTimestep("ocean constant");
 }
 
-void Constant::shelf_base_temperature_impl(IceModelVec2S &result) const {
+void Constant::melting_point_temperature(IceModelVec2S &result) const {
   const double T0 = m_config->get_double("constants.fresh_water.melting_point_temperature"), // K
     beta_CC       = m_config->get_double("constants.ice.beta_Clausius_Clapeyron"),
     g             = m_config->get_double("constants.standard_gravity"),
@@ -102,7 +103,7 @@ void Constant::shelf_base_temperature_impl(IceModelVec2S &result) const {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     const double pressure = ice_density * g * (*ice_thickness)(i,j); // FIXME issue #15
-    // temp is set to melting point at depth
+    // result is set to melting point at depth
     result(i,j) = T0 - beta_CC * pressure;
   }
 }
