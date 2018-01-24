@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,8 @@
 #ifndef _MODIFIER_H_
 #define _MODIFIER_H_
 
+#include <memory>
+
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
 
@@ -38,17 +40,12 @@ class Modifier : public Model
 public:
   Modifier(IceGrid::ConstPtr g, Model* in)
     : Model(g), m_input_model(in) {}
-  virtual ~Modifier()
-  {
-    if (m_input_model != NULL) {
-      delete m_input_model;
-    }
-  }
+  virtual ~Modifier() {}
 
 protected:
   virtual MaxTimestep max_timestep_impl(double my_t) const
   {
-    if (m_input_model != NULL) {
+    if (m_input_model) {
       return m_input_model->max_timestep(my_t);
     } else {
       return MaxTimestep();
@@ -59,7 +56,7 @@ protected:
   {
     Model::m_t = t;
     Model::m_dt = dt;
-    if (m_input_model != NULL) {
+    if (m_input_model) {
       m_input_model->update(t, dt);
     }
   }
@@ -70,7 +67,7 @@ protected:
     std::map<std::string, Diagnostic::Ptr> result = Model::diagnostics_impl();
 
     // add diagnostics from an input model, if it exists
-    if (m_input_model != NULL) {
+    if (m_input_model) {
       result = pism::combine(result, m_input_model->diagnostics());
     }
     return result;
@@ -82,25 +79,25 @@ protected:
     std::map<std::string, TSDiagnostic::Ptr> result = Model::ts_diagnostics_impl();
 
     // add diagnostics from an input model, if it exists
-    if (m_input_model != NULL) {
+    if (m_input_model) {
       result = pism::combine(result, m_input_model->ts_diagnostics());
     }
     return result;
   }
 
   virtual void define_model_state_impl(const PIO &output) const {
-    if (m_input_model != NULL) {
+    if (m_input_model) {
       m_input_model->define_model_state(output);
     }
   }
 
   virtual void write_model_state_impl(const PIO &output) const {
-    if (m_input_model != NULL) {
+    if (m_input_model) {
       m_input_model->write_model_state(output);
     }
   }
 protected:
-  Model *m_input_model;
+  std::unique_ptr<Model> m_input_model;
 };  
 } // end of namespace pism
 
