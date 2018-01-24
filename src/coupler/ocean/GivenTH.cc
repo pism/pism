@@ -92,8 +92,6 @@ GivenTH::~GivenTH() {
 
 void GivenTH::init_impl() {
 
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
   m_log->message(2,
              "* Initializing the 3eqn melting parameterization ocean model\n"
              "  reading ocean temperature and salinity from a file...\n");
@@ -107,14 +105,14 @@ void GivenTH::init_impl() {
   }
 }
 
-void GivenTH::update_impl(double my_t, double my_dt) {
+void GivenTH::update_impl(double t, double dt) {
 
   // Make sure that sea water salinity and sea water potential
   // temperature fields are up to date:
-  update_internal(my_t, my_dt);
+  update_internal(t, dt);
 
-  m_theta_ocean->average(m_t, m_dt);
-  m_salinity_ocean->average(m_t, m_dt);
+  m_theta_ocean->average(t, dt);
+  m_salinity_ocean->average(t, dt);
 
   Constants c(*m_config);
 

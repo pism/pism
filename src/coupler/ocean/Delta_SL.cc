@@ -48,8 +48,6 @@ Delta_SL::~Delta_SL() {
 
 void Delta_SL::init_impl() {
 
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
   m_input_model->init();
 
   m_log->message(2, "* Initializing sea level forcing...\n");

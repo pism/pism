@@ -70,21 +70,21 @@ void Cache::init_impl() {
   m_next_update_time = m_grid->ctx()->time()->current();
 }
 
-void Cache::update_impl(double my_t, double my_dt) {
-  // ignore my_dt and always use 1 year long time-steps when updating
+void Cache::update_impl(double t, double dt) {
+  // ignore dt and always use 1 year long time-steps when updating
   // an input model
-  (void) my_dt;
+  (void) dt;
 
-  if (my_t >= m_next_update_time ||
-      fabs(my_t - m_next_update_time) < 1.0) {
+  if (t >= m_next_update_time ||
+      fabs(t - m_next_update_time) < 1.0) {
 
     double
-      one_year_from_now = m_grid->ctx()->time()->increment_date(my_t, 1.0),
-      update_dt         = one_year_from_now - my_t;
+      one_year_from_now = m_grid->ctx()->time()->increment_date(t, 1.0),
+      update_dt         = one_year_from_now - t;
 
     assert(update_dt > 0.0);
 
-    m_input_model->update(my_t, update_dt);
+    m_input_model->update(t, update_dt);
 
     m_next_update_time = m_grid->ctx()->time()->increment_date(m_next_update_time,
                                                    m_update_interval_years);

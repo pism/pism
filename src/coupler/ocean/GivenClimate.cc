@@ -58,8 +58,6 @@ Given::~Given() {
 
 void Given::init_impl() {
 
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
   m_log->message(2,
              "* Initializing the ocean model reading base of the shelf temperature\n"
              "  and sub-shelf mass flux from a file...\n");
@@ -73,11 +71,11 @@ void Given::init_impl() {
   }
 }
 
-void Given::update_impl(double my_t, double my_dt) {
-  update_internal(my_t, my_dt);
+void Given::update_impl(double t, double dt) {
+  update_internal(t, dt);
 
-  m_shelfbmassflux->average(m_t, m_dt);
-  m_shelfbtemp->average(m_t, m_dt);
+  m_shelfbmassflux->average(t, dt);
+  m_shelfbtemp->average(t, dt);
 
   m_shelf_base_temperature.copy_from(*m_shelfbtemp);
   m_shelf_base_mass_flux.copy_from(*m_shelfbmassflux);

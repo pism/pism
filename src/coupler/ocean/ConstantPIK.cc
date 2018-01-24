@@ -43,8 +43,6 @@ PIK::~PIK() {
 
 void PIK::init_impl() {
 
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
   m_log->message(2,
              "* Initializing the constant (PIK) ocean model...\n");
 
@@ -60,8 +58,6 @@ MaxTimestep PIK::max_timestep_impl(double t) const {
 }
 
 void PIK::update_impl(double t, double dt) {
-  m_t = t;
-  m_dt = dt;
 
   melting_point_temperature(m_shelf_base_temperature);
   mass_flux(m_shelf_base_mass_flux);

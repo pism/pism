@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <gsl/gsl_math.h>       // GSL_NAN
+
 #include "pism/coupler/OceanModel.hh"
 #include "pism/util/iceModelVec.hh"
 
@@ -49,10 +51,22 @@ OceanModel::~OceanModel() {
 }
 
 void OceanModel::init() {
+  // every re-init restarts the clock
+  m_t  = GSL_NAN;
+  m_dt = GSL_NAN;
+
   this->init_impl();
 }
 
 void OceanModel::update(double t, double dt) {
+  // stop if this time step was taken care of by an earlier call
+  if ((fabs(t - m_t) < 1e-12) and (fabs(dt - m_dt) < 1e-12)) {
+    return;
+  }
+
+  m_t  = t;
+  m_dt = dt;
+
   this->update_impl(t, dt);
 }
 

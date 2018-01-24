@@ -70,17 +70,12 @@ Constant::~Constant() {
 }
 
 void Constant::update_impl(double my_t, double my_dt) {
-  m_t = my_t;
-  m_dt = my_dt;
-
   melting_point_temperature(m_shelf_base_temperature);
 
   m_shelf_base_mass_flux.set(m_meltrate);
 }
 
 void Constant::init_impl() {
-
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   if (not m_config->get_boolean("ocean.always_grounded")) {
     m_log->message(2, "* Initializing the constant ocean model...\n");
