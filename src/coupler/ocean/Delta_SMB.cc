@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -61,9 +61,10 @@ MaxTimestep Delta_SMB::max_timestep_impl(double t) const {
   return MaxTimestep("ocean delta_SMB");
 }
 
-void Delta_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
-  m_input_model->shelf_base_mass_flux(result);
-  offset_data(result);
+void Delta_SMB::update_impl(double t, double dt) {
+  super::update_impl(t, dt);
+
+  offset_data(m_shelf_base_mass_flux);
 }
 
 } // end of namespace ocean

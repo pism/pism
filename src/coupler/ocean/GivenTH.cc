@@ -84,12 +84,6 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
   m_salinity_ocean->set_attrs("climate_forcing",
                             "salinity of the adjacent ocean",
                             "g/kg", "");
-
-  m_shelfbmassflux.create(m_grid, "shelfbmassflux", WITHOUT_GHOSTS);
-  m_shelfbmassflux.set_attrs("climate_forcing",
-                           "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                           "kg m-2 s-1", "");
-  m_shelfbmassflux.metadata().set_string("glaciological_units", "kg m-2 year-1");
 }
 
 GivenTH::~GivenTH() {
@@ -113,10 +107,6 @@ void GivenTH::init_impl() {
   }
 }
 
-void GivenTH::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
-  result.copy_from(m_shelfbmassflux);
-}
-
 void GivenTH::update_impl(double my_t, double my_dt) {
 
   // Make sure that sea water salinity and sea water potential
@@ -131,7 +121,7 @@ void GivenTH::update_impl(double my_t, double my_dt) {
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   IceModelVec::AccessList list{ice_thickness, m_theta_ocean, m_salinity_ocean,
-      &m_shelf_base_temperature, &m_shelfbmassflux};
+      &m_shelf_base_temperature, &m_shelf_base_mass_flux};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -150,12 +140,12 @@ void GivenTH::update_impl(double my_t, double my_dt) {
                      &shelf_base_massflux);
 
     // Convert from Celsius to Kelvin:
-    m_shelf_base_temperature(i,j)     = shelf_base_temp_celsius + 273.15;
-    m_shelfbmassflux(i,j) = shelf_base_massflux;
+    m_shelf_base_temperature(i,j) = shelf_base_temp_celsius + 273.15;
+    m_shelf_base_mass_flux(i,j)   = shelf_base_massflux;
   }
 
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
-  m_shelfbmassflux.scale(m_config->get_double("constants.ice.density"));
+  m_shelf_base_mass_flux.scale(m_config->get_double("constants.ice.density"));
 }
 
 

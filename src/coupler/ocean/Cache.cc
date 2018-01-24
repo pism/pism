@@ -90,16 +90,13 @@ void Cache::update_impl(double my_t, double my_dt) {
                                                    m_update_interval_years);
 
     m_sea_level = m_input_model->sea_level_elevation();
+
     m_melange_back_pressure_fraction.copy_from(m_input_model->melange_back_pressure_fraction());
 
     m_shelf_base_temperature.copy_from(m_input_model->shelf_base_temperature());
 
-    m_input_model->shelf_base_mass_flux(m_shelf_base_mass_flux);
+    m_shelf_base_mass_flux.copy_from(m_input_model->shelf_base_mass_flux());
   }
-}
-
-void Cache::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
-  result.copy_from(m_shelf_base_mass_flux);
 }
 
 MaxTimestep Cache::max_timestep_impl(double t) const {

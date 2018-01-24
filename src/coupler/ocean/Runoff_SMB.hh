@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -57,7 +57,10 @@ public:
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void init_impl();
-  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
+
+  void update_impl(double t, double dt);
+
+  void mass_flux(IceModelVec2S &result) const;
 
   // @brief constant in the parameterization of the subglacial
   // runoff flux as a function of air temperature
@@ -67,6 +70,8 @@ protected:
   double m_runoff_to_ocean_melt_b;
   double m_runoff_to_ocean_melt_power_alpha;
   double m_runoff_to_ocean_melt_power_beta;
+private:
+  typedef PScalarForcing<OceanModel,OceanModifier> super;
 };
 
 } // end of namespace ocean

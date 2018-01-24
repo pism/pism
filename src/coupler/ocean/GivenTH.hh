@@ -62,9 +62,7 @@ protected:
   virtual void update_impl(double my_t, double my_dt);
   virtual void init_impl();
 
-  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 private:
-  IceModelVec2S m_shelfbmassflux;
   IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
 
   void pointwise_update(const Constants &constants,

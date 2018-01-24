@@ -34,7 +34,6 @@ protected:
   virtual void update_impl(double my_t, double my_dt);
   virtual void init_impl();
 
-  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 protected:
   IceModelVec2T *m_shelfbtemp, *m_shelfbmassflux;
 };

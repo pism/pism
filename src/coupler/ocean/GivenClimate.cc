@@ -80,10 +80,8 @@ void Given::update_impl(double my_t, double my_dt) {
   m_shelfbtemp->average(m_t, m_dt);
 
   m_shelf_base_temperature.copy_from(*m_shelfbtemp);
+  m_shelf_base_mass_flux.copy_from(*m_shelfbmassflux);
 }
 
-void Given::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
-  result.copy_from(*m_shelfbmassflux);
-}
 } // end of namespace ocean
 } // end of namespace pism

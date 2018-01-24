@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -36,7 +36,10 @@ public:
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void init_impl();
-  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
+
+  virtual void update_impl(double t, double dt);
+private:
+  typedef PScalarForcing<OceanModel,OceanModifier> super;
 };
 
 } // end of namespace ocean

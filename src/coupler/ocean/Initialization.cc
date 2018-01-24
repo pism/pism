@@ -39,13 +39,8 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, OceanModel* in)
   m_shelf_base_temperature.set_name("effective_shelf_base_temperature");
   m_shelf_base_temperature.metadata().set_string("pism_intent", "model_state");
 
-  m_shelf_base_mass_flux.create(m_grid, "effective_shelf_base_mass_flux", WITHOUT_GHOSTS);
-  m_shelf_base_mass_flux.set_attrs("model_state",
-                                   "effective shelf base mass flux"
-                                   " (positive flux is loss from ice shelf),"
-                                   " as seen by the ice dynamics code (for re-starting)",
-                                   "kg m-2 s-1", "");
-  m_shelf_base_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_shelf_base_mass_flux.set_name("effective_shelf_base_mass_flux");
+  m_shelf_base_mass_flux.metadata().set_string("pism_intent", "model_state");
 
   m_sea_level = 0.0;
 
@@ -56,10 +51,7 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, OceanModel* in)
 }
 
 void InitializationHelper::update_impl(double t, double dt) {
-
   OceanModifier::update_impl(t, dt);
-
-  m_input_model->shelf_base_mass_flux(m_shelf_base_mass_flux);
 }
 
 void InitializationHelper::init_impl() {
@@ -105,11 +97,6 @@ void InitializationHelper::init_impl() {
   }
   // FIXME: fake "regridding" of sea level
 }
-
-void InitializationHelper::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
-  result.copy_from(m_shelf_base_mass_flux);
-}
-
 
 void InitializationHelper::define_model_state_impl(const PIO &output) const {
   m_melange_back_pressure_fraction.define(output);

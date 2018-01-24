@@ -74,6 +74,8 @@ void Constant::update_impl(double my_t, double my_dt) {
   m_dt = my_dt;
 
   melting_point_temperature(m_shelf_base_temperature);
+
+  m_shelf_base_mass_flux.set(m_meltrate);
 }
 
 void Constant::init_impl() {
@@ -106,12 +108,6 @@ void Constant::melting_point_temperature(IceModelVec2S &result) const {
     // result is set to melting point at depth
     result(i,j) = T0 - beta_CC * pressure;
   }
-}
-
-//! @brief Computes mass flux in [kg m-2 s-1], from assumption that
-//! basal heat flux rate converts to mass flux.
-void Constant::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
-  result.set(m_meltrate);
 }
 
 } // end of namespape ocean

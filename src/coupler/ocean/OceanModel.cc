@@ -36,6 +36,12 @@ OceanModel::OceanModel(IceGrid::ConstPtr g)
   m_shelf_base_temperature.set_attrs("diagnostic",
                                      "ice temperature at the bottom of floating ice",
                                      "Kelvin", "");
+
+  m_shelf_base_mass_flux.create(m_grid, "m_shelf_base_mass_flux", WITHOUT_GHOSTS);
+  m_shelf_base_mass_flux.set_attrs("diagnostic",
+                                   "shelf base mass flux",
+                                   "kg m-2 s-1", "");
+  m_shelf_base_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
 }
 
 OceanModel::~OceanModel() {
@@ -50,8 +56,8 @@ void OceanModel::update(double t, double dt) {
   this->update_impl(t, dt);
 }
 
-void OceanModel::shelf_base_mass_flux(IceModelVec2S &result) const {
-  this->shelf_base_mass_flux_impl(result);
+const IceModelVec2S& OceanModel::shelf_base_mass_flux() const {
+  return m_shelf_base_mass_flux;
 }
 
 double OceanModel::sea_level_elevation() const {
@@ -131,7 +137,7 @@ IceModelVec::Ptr PO_shelf_base_mass_flux::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "shelfbmassflux", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  model->shelf_base_mass_flux(*result);
+  result->copy_from(model->shelf_base_mass_flux());
 
   return result;
 }

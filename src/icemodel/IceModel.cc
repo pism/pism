@@ -653,8 +653,7 @@ void IceModel::step(bool do_mass_continuity,
   // Combine basal melt rate in grounded (computed during the energy
   // step) and floating (provided by an ocean model) areas.
   {
-    IceModelVec2S &shelf_base_mass_flux = m_work2d[0];
-    m_ocean->shelf_base_mass_flux(shelf_base_mass_flux);
+    const IceModelVec2S &shelf_base_mass_flux = m_ocean->shelf_base_mass_flux();
 
     combine_basal_melt_rate(m_geometry,
                             shelf_base_mass_flux,

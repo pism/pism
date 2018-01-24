@@ -46,12 +46,7 @@ protected:
 
   void update_impl(double t, double dt);
   void init_impl();
-
-  void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
-
 private:
-  IceModelVec2S m_shelf_base_mass_flux;
-
   TimeseriesMetadata m_sea_level_metadata;
 };
 

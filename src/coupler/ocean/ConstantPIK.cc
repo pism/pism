@@ -64,6 +64,7 @@ void PIK::update_impl(double t, double dt) {
   m_dt = dt;
 
   melting_point_temperature(m_shelf_base_temperature);
+  mass_flux(m_shelf_base_mass_flux);
 }
 
 void PIK::melting_point_temperature(IceModelVec2S &result) const {
@@ -89,7 +90,7 @@ void PIK::melting_point_temperature(IceModelVec2S &result) const {
 /*!
  * Assumes that mass flux is proportional to the shelf-base heat flux.
  */
-void PIK::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
+void PIK::mass_flux(IceModelVec2S &result) const {
   const double
     L                 = m_config->get_double("constants.fresh_water.latent_heat_of_fusion"),
     sea_water_density = m_config->get_double("constants.sea_water.density"),
