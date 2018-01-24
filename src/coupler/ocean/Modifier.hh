@@ -32,10 +32,6 @@ public:
   virtual ~OceanModifier() {}
 
 protected:
-  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const
-  {
-    m_input_model->melange_back_pressure_fraction(result);
-  }
   virtual void shelf_base_temperature_impl(IceModelVec2S &result) const
   {
     m_input_model->shelf_base_temperature(result);

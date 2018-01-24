@@ -126,10 +126,6 @@ void GivenTH::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_shelfbmassflux);
 }
 
-void GivenTH::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
-  result.set(0.0);
-}
-
 void GivenTH::update_impl(double my_t, double my_dt) {
 
   // Make sure that sea water salinity and sea water potential

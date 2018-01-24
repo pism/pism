@@ -48,11 +48,6 @@ Cache::Cache(IceGrid::ConstPtr g, OceanModel* in)
   m_shelf_base_temperature.set_attrs("climate_state",
                                      "absolute temperature at ice shelf base",
                                      "K", "");
-  m_melange_back_pressure_fraction.create(m_grid,"melange_back_pressure_fraction",
-                                          WITHOUT_GHOSTS);
-  m_melange_back_pressure_fraction.set_attrs("climate_state",
-                                             "melange back pressure fraction",
-                                             "1", "");
 }
 
 Cache::~Cache() {
@@ -100,9 +95,10 @@ void Cache::update_impl(double my_t, double my_dt) {
                                                    m_update_interval_years);
 
     m_sea_level = m_input_model->sea_level_elevation();
+    m_melange_back_pressure_fraction.copy_from(m_input_model->melange_back_pressure_fraction());
+
     m_input_model->shelf_base_temperature(m_shelf_base_temperature);
     m_input_model->shelf_base_mass_flux(m_shelf_base_mass_flux);
-    m_input_model->melange_back_pressure_fraction(m_melange_back_pressure_fraction);
   }
 }
 
@@ -112,10 +108,6 @@ void Cache::shelf_base_temperature_impl(IceModelVec2S &result) const {
 
 void Cache::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_shelf_base_mass_flux);
-}
-
-void Cache::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
-  result.copy_from(m_melange_back_pressure_fraction);
 }
 
 MaxTimestep Cache::max_timestep_impl(double t) const {

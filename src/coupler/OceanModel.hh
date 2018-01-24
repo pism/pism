@@ -40,9 +40,12 @@ public:
   void update(double t, double dt);
 
   double sea_level_elevation() const;
+
   void shelf_base_temperature(IceModelVec2S &result) const;
+
   void shelf_base_mass_flux(IceModelVec2S &result) const;
-  void melange_back_pressure_fraction(IceModelVec2S &result) const;
+
+  const IceModelVec2S& melange_back_pressure_fraction() const;
 
 protected:
   virtual void init_impl() = 0;
@@ -50,12 +53,13 @@ protected:
 
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
-  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const ;
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const = 0;
   virtual void shelf_base_temperature_impl(IceModelVec2S &result) const = 0;
 
 protected:
   double m_sea_level;
+
+  IceModelVec2S m_melange_back_pressure_fraction;
 };
 
 /*! @brief Sea level elevation. */

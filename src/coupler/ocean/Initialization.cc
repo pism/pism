@@ -33,12 +33,7 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, OceanModel* in)
                          m_config->get_string("time.dimension_name"),
                          m_sys) {
 
-  m_melange_back_pressure_fraction.create(m_grid, "effective_melange_back_pressure_fraction",
-                                          WITHOUT_GHOSTS);
-  m_melange_back_pressure_fraction.set_attrs("model_state",
-                                             "effective melange back pressure fraction,"
-                                             " as seen by the ice dynamics code (for re-starting)",
-                                             "1", "");
+  m_melange_back_pressure_fraction.set_name("effective_melange_back_pressure_fraction");
 
   m_shelf_base_temperature.create(m_grid, "effective_shelf_base_temperature", WITHOUT_GHOSTS);
   m_shelf_base_temperature.set_attrs("model_state",
@@ -54,7 +49,7 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, OceanModel* in)
                                    "kg m-2 s-1", "");
   m_shelf_base_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
 
-  m_sea_level_elevation = 0.0;
+  m_sea_level = 0.0;
 
   m_sea_level_metadata.set_string("pism_intent", "model_state");
   m_sea_level_metadata.set_string("units", "meters");
@@ -65,11 +60,12 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, OceanModel* in)
 void InitializationHelper::update_impl(double t, double dt) {
   m_input_model->update(t, dt);
 
-  m_input_model->melange_back_pressure_fraction(m_melange_back_pressure_fraction);
+  m_melange_back_pressure_fraction.copy_from(m_input_model->melange_back_pressure_fraction());
+
   m_input_model->shelf_base_mass_flux(m_shelf_base_mass_flux);
   m_input_model->shelf_base_temperature(m_shelf_base_temperature);
 
-  m_sea_level_elevation = m_input_model->sea_level_elevation();
+  m_sea_level = m_input_model->sea_level_elevation();
 }
 
 void InitializationHelper::init_impl() {
@@ -93,7 +89,7 @@ void InitializationHelper::init_impl() {
       file.get_1d_var(m_sea_level_metadata.get_name(),
                       last_record, 1, // start, count
                       data);
-      m_sea_level_elevation = data[0];
+      m_sea_level = data[0];
     }
 
     file.close();
@@ -116,10 +112,6 @@ void InitializationHelper::init_impl() {
   // FIXME: fake "regridding" of sea level
 }
 
-void InitializationHelper::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
-  result.copy_from(m_melange_back_pressure_fraction);
-}
-
 void InitializationHelper::shelf_base_temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_shelf_base_temperature);
 }
@@ -133,7 +125,6 @@ void InitializationHelper::define_model_state_impl(const PIO &output) const {
   m_melange_back_pressure_fraction.define(output);
   m_shelf_base_mass_flux.define(output);
   m_shelf_base_temperature.define(output);
-  m_melange_back_pressure_fraction.define(output);
 
   io::define_timeseries(m_sea_level_metadata, output, PISM_DOUBLE);
 
@@ -144,12 +135,11 @@ void InitializationHelper::write_model_state_impl(const PIO &output) const {
   m_melange_back_pressure_fraction.write(output);
   m_shelf_base_mass_flux.write(output);
   m_shelf_base_temperature.write(output);
-  m_melange_back_pressure_fraction.write(output);
 
   const unsigned int
     time_length = output.inq_dimlen(m_sea_level_metadata.get_dimension_name()),
     t_start = time_length > 0 ? time_length - 1 : 0;
-  io::write_timeseries(output, m_sea_level_metadata, t_start, m_sea_level_elevation,
+  io::write_timeseries(output, m_sea_level_metadata, t_start, m_sea_level,
                        PISM_DOUBLE);
 
   m_input_model->write_model_state(output);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -59,10 +59,12 @@ MaxTimestep Delta_MBP::max_timestep_impl(double t) const {
   return MaxTimestep("ocean frac_MBP");
 }
 
-void Delta_MBP::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
-  m_input_model->melange_back_pressure_fraction(result);
+void Delta_MBP::update_impl(double t, double dt) {
+  super::update_impl(t, dt);
 
-  offset_data(result);
+  m_melange_back_pressure_fraction.copy_from(m_input_model->melange_back_pressure_fraction());
+
+  offset_data(m_melange_back_pressure_fraction);
 }
 
 } // end of namespace ocean

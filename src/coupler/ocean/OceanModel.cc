@@ -24,7 +24,12 @@ namespace pism {
 namespace ocean {
 OceanModel::OceanModel(IceGrid::ConstPtr g)
   : Component(g), m_sea_level(0) {
-  // empty
+
+  m_melange_back_pressure_fraction.create(m_grid,
+                                          "melange_back_pressure_fraction", WITHOUT_GHOSTS);
+  m_melange_back_pressure_fraction.set_attrs("diagnostic",
+                                             "melange back pressure fraction", "1", "");
+  m_melange_back_pressure_fraction.set(0.0);
 }
 
 OceanModel::~OceanModel() {
@@ -51,20 +56,8 @@ void OceanModel::shelf_base_mass_flux(IceModelVec2S &result) const {
   this->shelf_base_mass_flux_impl(result);
 }
 
-void OceanModel::melange_back_pressure_fraction(IceModelVec2S &result) const {
-  this->melange_back_pressure_fraction_impl(result);
-}
-
-/** Set `result` to the melange back pressure fraction.
- *
- * This default implementation sets `result` to 0.0.
- *
- * @param[out] result back pressure fraction
- *
- * @return 0 on success
- */
-void OceanModel::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
-  result.set(0.0);
+const IceModelVec2S& OceanModel::melange_back_pressure_fraction() const {
+  return m_melange_back_pressure_fraction;
 }
 
 std::map<std::string, Diagnostic::Ptr> OceanModel::diagnostics_impl() const {
@@ -152,7 +145,7 @@ IceModelVec::Ptr PO_melange_back_pressure_fraction::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "melange_back_pressure_fraction", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  model->melange_back_pressure_fraction(*result);
+  result->copy_from(model->melange_back_pressure_fraction());
 
   return result;
 }

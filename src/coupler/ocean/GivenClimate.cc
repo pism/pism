@@ -88,9 +88,5 @@ void Given::shelf_base_temperature_impl(IceModelVec2S &result) const {
 void Given::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(*m_shelfbmassflux);
 }
-
-void Given::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
-  result.set(0.0);
-}
 } // end of namespace ocean
 } // end of namespace pism

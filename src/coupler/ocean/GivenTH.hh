@@ -61,7 +61,7 @@ public:
 protected:
   virtual void update_impl(double my_t, double my_dt);
   virtual void init_impl();
-  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const;
+
   virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 private:

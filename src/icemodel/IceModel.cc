@@ -385,13 +385,9 @@ stressbalance::Inputs IceModel::stress_balance_inputs() {
     result.basal_melt_rate = &m_basal_melt_rate;
   }
 
-  IceModelVec2S &melange_back_pressure = m_work2d[0];
-
-  m_ocean->melange_back_pressure_fraction(melange_back_pressure);
-
   result.sea_level             = m_ocean->sea_level_elevation();
   result.basal_yield_stress    = &m_basal_yield_stress;
-  result.melange_back_pressure = &melange_back_pressure;
+  result.melange_back_pressure = &m_ocean->melange_back_pressure_fraction();
   result.geometry              = &m_geometry;
   result.new_bed_elevation     = m_new_bed_elevation;
   result.enthalpy              = &m_energy_model->enthalpy();
