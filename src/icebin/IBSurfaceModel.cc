@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 PISM Authors
+// Copyright (C) 2008-2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -45,8 +45,6 @@ IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g) : SurfaceModel(g) {
       "climate_state", "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
       "W m-2", "");
   icebin_deltah.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  //	icebin_deltah.write_in_glaciological_units = true;
-
 
   icebin_massxfer.create(m_grid, "icebin_massxfer", WITHOUT_GHOSTS);
   icebin_massxfer.set_attrs(
