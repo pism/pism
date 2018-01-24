@@ -106,11 +106,6 @@ void Cache::update_impl(double my_t, double my_dt) {
   }
 }
 
-
-void Cache::sea_level_elevation_impl(double &result) const {
-  result = m_sea_level;
-}
-
 void Cache::shelf_base_temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_shelf_base_temperature);
 }

@@ -43,6 +43,7 @@ public:
   void shelf_base_temperature(IceModelVec2S &result) const;
   void shelf_base_mass_flux(IceModelVec2S &result) const;
   void melange_back_pressure_fraction(IceModelVec2S &result) const;
+
 protected:
   virtual void init_impl() = 0;
   virtual void update_impl(double t, double dt) = 0;
@@ -52,7 +53,6 @@ protected:
   virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const ;
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const = 0;
   virtual void shelf_base_temperature_impl(IceModelVec2S &result) const = 0;
-  virtual void sea_level_elevation_impl(double &result) const = 0;
 
 protected:
   double m_sea_level;

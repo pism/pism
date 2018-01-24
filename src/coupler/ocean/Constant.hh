@@ -34,7 +34,6 @@ protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(double my_t, double my_dt);
   virtual void init_impl();
-  virtual void sea_level_elevation_impl(double &result) const;
   virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 protected:

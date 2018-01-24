@@ -89,10 +89,6 @@ MaxTimestep Constant::max_timestep_impl(double t) const {
   return MaxTimestep("ocean constant");
 }
 
-void Constant::sea_level_elevation_impl(double &result) const{
-  result = m_sea_level;
-}
-
 void Constant::shelf_base_temperature_impl(IceModelVec2S &result) const {
   const double T0 = m_config->get_double("constants.fresh_water.melting_point_temperature"), // K
     beta_CC       = m_config->get_double("constants.ice.beta_Clausius_Clapeyron"),

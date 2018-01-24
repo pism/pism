@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -48,7 +48,6 @@ protected:
   void init_impl();
 
   void melange_back_pressure_fraction_impl(IceModelVec2S &result) const;
-  void sea_level_elevation_impl(double &result) const;
   void shelf_base_temperature_impl(IceModelVec2S &result) const;
   void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 
@@ -56,8 +55,6 @@ private:
   IceModelVec2S m_melange_back_pressure_fraction;
   IceModelVec2S m_shelf_base_temperature;
   IceModelVec2S m_shelf_base_mass_flux;
-
-  double m_sea_level_elevation;
 
   TimeseriesMetadata m_sea_level_metadata;
 };

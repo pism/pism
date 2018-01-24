@@ -36,13 +36,11 @@ protected:
 
   virtual void init_impl();
   virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const;
-  virtual void sea_level_elevation_impl(double &result) const;
   virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 protected:
   IceModelVec2S m_shelf_base_temperature, m_shelf_base_mass_flux,
     m_melange_back_pressure_fraction;
-  double m_sea_level;
   double m_next_update_time;
   unsigned int m_update_interval_years;
 };

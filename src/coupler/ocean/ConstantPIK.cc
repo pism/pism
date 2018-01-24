@@ -64,10 +64,6 @@ void PIK::update_impl(double my_t, double my_dt) {
   m_dt = my_dt;
 }
 
-void PIK::sea_level_elevation_impl(double &result) const {
-  result = m_sea_level;
-}
-
 void PIK::shelf_base_temperature_impl(IceModelVec2S &result) const {
   const double
     T0          = m_config->get_double("constants.fresh_water.melting_point_temperature"), // K

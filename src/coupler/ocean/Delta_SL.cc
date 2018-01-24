@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -62,8 +62,9 @@ MaxTimestep Delta_SL::max_timestep_impl(double t) const {
   return MaxTimestep("ocean delta_SL");
 }
 
-void Delta_SL::sea_level_elevation_impl(double &result) const {
-  result = m_input_model->sea_level_elevation() + m_current_forcing;
+void Delta_SL::update_impl(double t, double dt) {
+  super::update_impl(t, dt);
+  m_sea_level = m_input_model->sea_level_elevation() + m_current_forcing;
 }
 
 } // end of namespace ocean

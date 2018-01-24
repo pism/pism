@@ -41,10 +41,6 @@ protected:
     m_input_model->shelf_base_temperature(result);
   }
 
-  virtual void sea_level_elevation_impl(double &result) const
-  {
-    result = m_input_model->sea_level_elevation();
-  }
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const
   {
     m_input_model->shelf_base_mass_flux(result);

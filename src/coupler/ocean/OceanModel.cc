@@ -40,9 +40,7 @@ void OceanModel::update(double t, double dt) {
 }
 
 double OceanModel::sea_level_elevation() const {
-  double result;
-  this->sea_level_elevation_impl(result);
-  return result;
+  return m_sea_level;
 }
 
 void OceanModel::shelf_base_temperature(IceModelVec2S &result) const {
