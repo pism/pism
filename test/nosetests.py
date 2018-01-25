@@ -959,53 +959,6 @@ def regridding_test():
     import os
     os.remove("thk1.nc")
 
-def po_constant_test():
-    """Test that the basal melt rate computed by ocean::Constant is the
-    same regardless of whether it is set using
-    ocean.sub_shelf_heat_flux_into_ice or the command-line option."""
-
-    grid = create_dummy_grid()
-    config = grid.ctx().config()
-
-
-    ice_thickness = PISM.model.createIceThicknessVec(grid)
-    ice_thickness.set(1000.0)
-    grid.variables().add(ice_thickness)
-
-    L = config.get_double("constants.fresh_water.latent_heat_of_fusion")
-    rho = config.get_double("constants.ice.density")
-
-    # prescribe a heat flux that corresponds to a mass flux which is
-    # an integer multiple of m / year so that we can easily specify it
-    # using a command-line option
-    M = PISM.convert(grid.ctx().unit_system(), 1, "m / year", "m / second")
-    Q_default = config.get_double("ocean.sub_shelf_heat_flux_into_ice")
-    Q = M * L * rho
-    config.set_double("ocean.sub_shelf_heat_flux_into_ice", Q)
-
-    # without the command-line option
-    ocean_constant_1 = PISM.OceanConstant(grid)
-    ocean_constant_1.init()
-    ocean_constant_1.update(0, 1)
-    mass_flux_1 = ocean_constant_1.shelf_base_mass_flux()
-
-    # reset Q
-    config.set_double("ocean.sub_shelf_heat_flux_into_ice", Q_default)
-
-    # with the command-line option
-    o = PISM.PETSc.Options()
-    o.setValue("-shelf_base_melt_rate", 1.0)
-
-    ocean_constant_2 = PISM.OceanConstant(grid)
-    ocean_constant_2.init()
-    ocean_constant_2.update(0, 1)
-    mass_flux_2 = ocean_constant_2.shelf_base_mass_flux()
-
-    import numpy as np
-    with PISM.vec.Access(nocomm=[mass_flux_1, mass_flux_2]):
-        assert np.fabs(mass_flux_1[0, 0] - M * rho) < 1e-16
-        assert np.fabs(mass_flux_2[0, 0] - M * rho) < 1e-16
-
 def netcdf_string_attribute_test():
     "Test reading a NetCDF-4 string attribute."
     import os
