@@ -35,7 +35,13 @@ Cache::Cache(IceGrid::ConstPtr g, OceanModel* in)
   : OceanModifier(g, in) {
 
   m_next_update_time = m_grid->ctx()->time()->current();
-  m_update_interval_years = 10;
+  m_update_interval_years = m_config->get_double("ocean.cache.update_interval");
+
+  if (m_update_interval_years < 1) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "ocean.cache.update_interval has to be strictly positive (got %d)",
+                                  m_update_interval_years);
+  }
 
   m_shelf_base_mass_flux.create(m_grid, "effective_shelf_base_mass_flux", WITHOUT_GHOSTS);
   m_shelf_base_mass_flux.set_attrs("climate_state",
@@ -56,17 +62,8 @@ void Cache::init_impl() {
   m_input_model->init();
 
   m_log->message(2,
-             "* Initializing the 'caching' ocean model modifier...\n");
+                 "* Initializing the 'caching' ocean model modifier...\n");
 
-  update_interval = options::Integer("-ocean_cache_update_interval",
-                                     "Interval (in years) between ocean model updates",
-                                     update_interval);
-
-  if (update_interval <= 0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "-ocean_cache_update_interval has to be strictly positive.");
-  }
-
-  m_update_interval_years = update_interval;
   m_next_update_time = m_grid->ctx()->time()->current();
 }
 

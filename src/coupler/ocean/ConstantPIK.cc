@@ -45,11 +45,6 @@ void PIK::init_impl() {
 
   m_log->message(2,
              "* Initializing the constant (PIK) ocean model...\n");
-
-  m_meltfactor = options::Real("-meltfactor_pik",
-                             "Use as a melt factor as in sub-shelf-melting"
-                             " parameterization of [@ref Martinetal2011]",
-                             m_meltfactor);
 }
 
 MaxTimestep PIK::max_timestep_impl(double t) const {

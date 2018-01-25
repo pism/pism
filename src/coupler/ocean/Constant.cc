@@ -34,35 +34,11 @@ namespace ocean {
 Constant::Constant(IceGrid::ConstPtr g)
   : OceanModel(g) {
 
-  {
-    const double
-      Q           = m_config->get_double("ocean.sub_shelf_heat_flux_into_ice"),
-      L           = m_config->get_double("constants.fresh_water.latent_heat_of_fusion"),
-      ice_density = m_config->get_double("constants.ice.density");
+  m_meltrate = m_config->get_double("ocean.constant.melt_rate", "m second-1");
 
-    // Set default melt rate using configuration parameters
-    // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
-    m_meltrate = Q / (L * ice_density);
-
-    // check the command-line option
-    options::Real meltrate("-shelf_base_melt_rate",
-                           "Specifies a sub shelf ice-equivalent melt rate in meters year-1",
-                           units::convert(m_sys, m_meltrate, "m second-1", "m year-1"));
-
-    // tell the user that we're using it
-    if (meltrate.is_set()) {
-      m_log->message(2,
-                     "    - option '-shelf_base_melt_rate' seen, "
-                     "setting basal sub shelf basal melt rate to %.2f m year-1 ... \n",
-                     (double)meltrate);
-    }
-
-    // here meltrate was set using the command-line option OR the default provided above
-    m_meltrate = units::convert(m_sys, meltrate, "m year-1", "m second-1");
-
-    // convert to [kg m-2 s-1] = [m s-1] * [kg m-3]
-    m_meltrate = m_meltrate * ice_density;
-  }
+  // convert to [kg m-2 s-1] = [m s-1] * [kg m-3]
+  double ice_density = m_config->get_double("constants.ice.density");
+  m_meltrate = m_meltrate * ice_density;
 }
 
 Constant::~Constant() {
@@ -79,6 +55,9 @@ void Constant::init_impl() {
 
   if (not m_config->get_boolean("ocean.always_grounded")) {
     m_log->message(2, "* Initializing the constant ocean model...\n");
+    m_log->message(2, "  Sub-shelf melt rate set to %f m/year.\n",
+                   units::convert(m_sys, m_meltrate, "m second-1", "m year-1"));
+
   }
 }
 
