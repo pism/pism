@@ -32,12 +32,12 @@ public:
   virtual ~Constant();
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(double my_t, double my_dt);
+  virtual void update_impl(double t, double dt);
   virtual void init_impl();
 
 protected:
-  void melting_point_temperature(IceModelVec2S &result) const;
-
+  void melting_point_temperature(const IceModelVec2S& depth,
+                                 IceModelVec2S &result) const;
   double m_meltrate;
 };
 
