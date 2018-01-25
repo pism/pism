@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <algorithm>
+#include <algorithm>            // std::min
 #include <cassert>
+#include <cmath>
 
 #include "Cache.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/IceGrid.hh"
 
 #include "pism/util/error_handling.hh"
@@ -42,23 +42,13 @@ Cache::Cache(IceGrid::ConstPtr g, OceanModel* in)
                                   "ocean.cache.update_interval has to be strictly positive (got %d)",
                                   m_update_interval_years);
   }
-
-  m_shelf_base_mass_flux.create(m_grid, "effective_shelf_base_mass_flux", WITHOUT_GHOSTS);
-  m_shelf_base_mass_flux.set_attrs("climate_state",
-                                   "ice mass flux from ice shelf base"
-                                   " (positive flux is loss from ice shelf)",
-                                   "kg m-2 s-1", "");
-  m_shelf_base_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
 }
 
 Cache::~Cache() {
   // empty
 }
 
-
 void Cache::init_impl() {
-  int update_interval = m_update_interval_years;
-
   m_input_model->init();
 
   m_log->message(2,
@@ -72,7 +62,7 @@ void Cache::update_impl(double t, double dt) {
   // an input model
   (void) dt;
 
-  if (t >= m_next_update_time ||
+  if (t >= m_next_update_time or
       fabs(t - m_next_update_time) < 1.0) {
 
     double
@@ -84,7 +74,7 @@ void Cache::update_impl(double t, double dt) {
     m_input_model->update(t, update_dt);
 
     m_next_update_time = m_grid->ctx()->time()->increment_date(m_next_update_time,
-                                                   m_update_interval_years);
+                                                               m_update_interval_years);
 
     m_sea_level = m_input_model->sea_level_elevation();
 
