@@ -34,7 +34,7 @@ namespace ocean {
 
 PIK::PIK(IceGrid::ConstPtr g)
   : OceanModel(g) {
-  m_meltfactor = m_config->get_double("ocean.pik_melt_factor");
+  // empty
 }
 
 PIK::~PIK() {
@@ -42,9 +42,8 @@ PIK::~PIK() {
 }
 
 void PIK::init_impl() {
-
   m_log->message(2,
-             "* Initializing the constant (PIK) ocean model...\n");
+                 "* Initializing the constant (PIK) ocean model...\n");
 }
 
 MaxTimestep PIK::max_timestep_impl(double t) const {
@@ -53,25 +52,33 @@ MaxTimestep PIK::max_timestep_impl(double t) const {
 }
 
 void PIK::update_impl(double t, double dt) {
+  (void) t;
+  (void) dt;
 
-  melting_point_temperature(m_shelf_base_temperature);
-  mass_flux(m_shelf_base_mass_flux);
+  const IceModelVec2S &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+
+  melting_point_temperature(H, m_shelf_base_temperature);
+
+  mass_flux(H, m_shelf_base_mass_flux);
+
+  m_melange_back_pressure_fraction.set(0.0);
+
+  m_sea_level = 0.0;
 }
 
-void PIK::melting_point_temperature(IceModelVec2S &result) const {
+void PIK::melting_point_temperature(const IceModelVec2S &depth,
+                                    IceModelVec2S &result) const {
   const double
     T0          = m_config->get_double("constants.fresh_water.melting_point_temperature"), // K
     beta_CC     = m_config->get_double("constants.ice.beta_Clausius_Clapeyron"),
     g           = m_config->get_double("constants.standard_gravity"),
     ice_density = m_config->get_double("constants.ice.density");
 
-  const IceModelVec2S &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-
-  IceModelVec::AccessList list{&H, &result};
+  IceModelVec::AccessList list{&depth, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    const double pressure = ice_density * g * H(i,j); // FIXME task #7297
+    const double pressure = ice_density * g * depth(i,j); // FIXME task #7297
     // result is set to melting point at depth
     result(i,j) = T0 - beta_CC * pressure;
   }
@@ -81,21 +88,20 @@ void PIK::melting_point_temperature(IceModelVec2S &result) const {
 /*!
  * Assumes that mass flux is proportional to the shelf-base heat flux.
  */
-void PIK::mass_flux(IceModelVec2S &result) const {
+void PIK::mass_flux(const IceModelVec2S &depth, IceModelVec2S &result) const {
   const double
+    melt_factor       = m_config->get_double("ocean.pik_melt_factor"),
     L                 = m_config->get_double("constants.fresh_water.latent_heat_of_fusion"),
     sea_water_density = m_config->get_double("constants.sea_water.density"),
     ice_density       = m_config->get_double("constants.ice.density"),
     c_p_ocean         = 3974.0, // J/(K*kg), specific heat capacity of ocean mixed layer
     gamma_T           = 1e-4,   // m/s, thermal exchange velocity
     ocean_salinity    = 35.0,   // g/kg
-    T_ocean           = units::convert(m_sys, -1.7, "Celsius", "Kelvin");   //Default in PISM-PIK
+    T_ocean           = units::convert(m_sys, -1.7, "Celsius", "Kelvin"); //Default in PISM-PIK
 
   //FIXME: gamma_T should be a function of the friction velocity, not a const
 
-  const IceModelVec2S &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-
-  IceModelVec::AccessList list{&H, &result};
+  IceModelVec::AccessList list{&depth, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -106,13 +112,13 @@ void PIK::mass_flux(IceModelVec2S &result) const {
     // Pressure Melting Temperature, see beckmann_goosse03 eq. 2 for
     // details]
     double
-      shelfbaseelev = - (ice_density / sea_water_density) * H(i,j),
+      shelfbaseelev = - (ice_density / sea_water_density) * depth(i,j),
       T_f           = 273.15 + (0.0939 -0.057 * ocean_salinity + 7.64e-4 * shelfbaseelev);
     // add 273.15 to convert from Celsius to Kelvin
 
     // compute ocean_heat_flux according to beckmann_goosse03
     // positive, if T_oc > T_ice ==> heat flux FROM ocean TO ice
-    double ocean_heat_flux = m_meltfactor * sea_water_density * c_p_ocean * gamma_T * (T_ocean - T_f); // in W/m^2
+    double ocean_heat_flux = melt_factor * sea_water_density * c_p_ocean * gamma_T * (T_ocean - T_f); // in W/m^2
 
     // TODO: T_ocean -> field!
 

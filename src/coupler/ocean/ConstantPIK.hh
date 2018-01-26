@@ -47,10 +47,8 @@ protected:
   virtual void init_impl();
 
 private:
-  void melting_point_temperature(IceModelVec2S &result) const;
-  void mass_flux(IceModelVec2S &result) const;
-  //! @f$ F_{\text{melt}} @f$ of [@ref Martinetal2011]
-  double m_meltfactor;
+  void melting_point_temperature(const IceModelVec2S &depth, IceModelVec2S &result) const;
+  void mass_flux(const IceModelVec2S &depth, IceModelVec2S &result) const;
 };
 
 } // end of namespace ocean
