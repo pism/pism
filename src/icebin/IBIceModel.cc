@@ -73,7 +73,7 @@ void IBIceModel::createVecs() {
 
   // Sent back to IceBin
   ice_top_senth.create(m_grid, "ice_top_senth", pism::WITHOUT_GHOSTS);
-  elevI.create(m_grid, "elevI", pism::WITHOUT_GHOSTS);
+  elevmaskI.create(m_grid, "elevmaskI", pism::WITHOUT_GHOSTS);
 
   std::cout << "IBIceModel Conservation Formulas:" << std::endl;
   cur.print_formulas(std::cout);
@@ -329,7 +329,7 @@ void IBIceModel::prepare_outputs(double time_s) {
   AccessList access{
     &m_ice_enthalpy, &m_ice_thickness,        // INPUTS
     &ice_surface_elevation, &cell_type,
-    &ice_top_senth, &elevI };                 // OUTPUT
+    &ice_top_senth, &elevmaskI };                 // OUTPUT
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
       double const *Enth = m_ice_enthalpy.get_column(i, j);
@@ -339,12 +339,12 @@ void IBIceModel::prepare_outputs(double time_s) {
       double senth = Enth[ks];   // [J kg-1]
       ice_top_senth(i,j) = senth;
 
-      // elevI: Used by IceBin for elevation and masking
+      // elevmaskI: Used by IceBin for elevation and masking
       auto ct(cell_type(i,j));
       if (ct == MASK_GROUNDED || ct == MASK_FLOATING) {
-        elevI(i,j) = ice_surface_elevation(i,j);
+        elevmaskI(i,j) = ice_surface_elevation(i,j);
       } else {
-        elevI(i,j) = nan;
+        elevmaskI(i,j) = nan;
       }
     }
   }

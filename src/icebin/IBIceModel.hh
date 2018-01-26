@@ -69,7 +69,7 @@ protected:
 
 public:
   // Elevation of grid cells, with NaN off the ice sheet [m]
-  pism::IceModelVec2S elevI;
+  pism::IceModelVec2S elevmaskI;
 
 protected:
   // see iceModel.cc
