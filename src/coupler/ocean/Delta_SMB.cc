@@ -32,7 +32,7 @@ Delta_SMB::Delta_SMB(IceGrid::ConstPtr g, OceanModel* in)
   m_option_prefix = "-ocean_delta_mass_flux";
   m_offset_name   = "delta_mass_flux";
 
-  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
+  m_offset.reset(new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name")));
 
   m_offset->variable().set_string("units", "kg m-2 second-1");
   m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());

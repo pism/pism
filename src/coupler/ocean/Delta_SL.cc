@@ -34,7 +34,7 @@ Delta_SL::Delta_SL(IceGrid::ConstPtr g, OceanModel* in)
   m_option_prefix = "-ocean_delta_SL";
   m_offset_name   = "delta_SL";
 
-  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
+  m_offset.reset(new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name")));
 
   m_offset->variable().set_string("units", "m");
   m_offset->variable().set_string("long_name", "sea level elevation offsets");

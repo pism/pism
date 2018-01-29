@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -34,7 +34,7 @@ Delta_T::Delta_T(IceGrid::ConstPtr g, SurfaceModel* in)
   m_option_prefix = "-surface_delta_T";
   m_offset_name   = "delta_T";
 
-  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
+  m_offset.reset(new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name")));
 
   m_offset->variable().set_string("units", "Kelvin");
   m_offset->variable().set_string("long_name", "ice-surface temperature offsets");
