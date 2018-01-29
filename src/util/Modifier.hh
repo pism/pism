@@ -20,7 +20,7 @@
 #ifndef _MODIFIER_H_
 #define _MODIFIER_H_
 
-#include <memory>
+#include <memory>               // std::unique_ptr
 
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
