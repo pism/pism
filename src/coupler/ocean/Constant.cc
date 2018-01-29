@@ -37,7 +37,10 @@ Constant::~Constant() {
   // empty
 }
 
-void Constant::update_impl(double my_t, double my_dt) {
+void Constant::update_impl(double t, double dt) {
+  (void) t;
+  (void) dt;
+
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   const double
