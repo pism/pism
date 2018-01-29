@@ -86,8 +86,8 @@ const IceModelVec2S& OceanModel::melange_back_pressure_fraction() const {
   return m_melange_back_pressure_fraction;
 }
 
-std::map<std::string, Diagnostic::Ptr> OceanModel::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = {
+DiagnosticList OceanModel::diagnostics_impl() const {
+  DiagnosticList result = {
     {"sea_level",                      Diagnostic::Ptr(new PO_sea_level(this))},
     {"shelfbtemp",                     Diagnostic::Ptr(new PO_shelf_base_temperature(this))},
     {"shelfbmassflux",                 Diagnostic::Ptr(new PO_shelf_base_mass_flux(this))},

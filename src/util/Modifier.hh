@@ -61,10 +61,10 @@ protected:
     }
   }
 
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const
+  virtual DiagnosticList diagnostics_impl() const
   {
     // give the model class a chance to add diagnostics
-    std::map<std::string, Diagnostic::Ptr> result = Model::diagnostics_impl();
+    DiagnosticList result = Model::diagnostics_impl();
 
     // add diagnostics from an input model, if it exists
     if (m_input_model) {
@@ -73,10 +73,10 @@ protected:
     return result;
   }
 
-  virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const
+  virtual TSDiagnosticList ts_diagnostics_impl() const
   {
     // give the model class a chance to add diagnostics
-    std::map<std::string, TSDiagnostic::Ptr> result = Model::ts_diagnostics_impl();
+    TSDiagnosticList result = Model::ts_diagnostics_impl();
 
     // add diagnostics from an input model, if it exists
     if (m_input_model) {

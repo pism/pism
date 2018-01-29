@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -32,8 +32,8 @@ namespace stressbalance {
 
 using units::convert;
 
-std::map<std::string, Diagnostic::Ptr> StressBalance::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = {
+DiagnosticList StressBalance::diagnostics_impl() const {
+  DiagnosticList result = {
     {"bfrict",              Diagnostic::Ptr(new PSB_bfrict(this))},
     {"velbar_mag",          Diagnostic::Ptr(new PSB_velbar_mag(this))},
     {"flux",                Diagnostic::Ptr(new PSB_flux(this))},
@@ -65,7 +65,7 @@ std::map<std::string, Diagnostic::Ptr> StressBalance::diagnostics_impl() const {
   return result;
 }
 
-std::map<std::string, TSDiagnostic::Ptr> StressBalance::ts_diagnostics_impl() const {
+TSDiagnosticList StressBalance::ts_diagnostics_impl() const {
   return pism::combine(m_shallow_stress_balance->ts_diagnostics(),
                        m_modifier->ts_diagnostics());
 }

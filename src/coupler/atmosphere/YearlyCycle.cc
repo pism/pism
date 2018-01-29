@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -150,8 +150,8 @@ void YearlyCycle::end_pointwise_access_impl() const {
   m_air_temp_mean_july.end_access();
   m_precipitation.end_access();
 }
-std::map<std::string, Diagnostic::Ptr> YearlyCycle::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = AtmosphereModel::diagnostics_impl();
+DiagnosticList YearlyCycle::diagnostics_impl() const {
+  DiagnosticList result = AtmosphereModel::diagnostics_impl();
 
   result["air_temp_mean_july"] = Diagnostic::Ptr(new PA_mean_july_temp(this));
 

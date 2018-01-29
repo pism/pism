@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2017 PISM Authors
+// Copyright (C) 2012-2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -153,8 +153,8 @@ void Hydrology::update(double t, double dt) {
   this->update_impl(t, dt);
 }
 
-std::map<std::string, Diagnostic::Ptr> Hydrology::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = {
+DiagnosticList Hydrology::diagnostics_impl() const {
+  DiagnosticList result = {
     {"bwat",       Diagnostic::Ptr(new Hydrology_bwat(this))},
     {"bwp",        Diagnostic::Ptr(new Hydrology_bwp(this))},
     {"bwprel",     Diagnostic::Ptr(new Hydrology_bwprel(this))},

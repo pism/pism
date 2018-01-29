@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2017 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2018 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -367,8 +367,8 @@ void SSA::write_model_state_impl(const PIO &output) const {
   m_velocity.write(output);
 }
 
-std::map<std::string, Diagnostic::Ptr> SSA::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = ShallowStressBalance::diagnostics_impl();
+DiagnosticList SSA::diagnostics_impl() const {
+  DiagnosticList result = ShallowStressBalance::diagnostics_impl();
 
   // replace these diagnostics
   result["taud"] = Diagnostic::Ptr(new SSA_taud(this));

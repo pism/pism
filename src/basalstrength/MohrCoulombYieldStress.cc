@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2017 PISM Authors
+// Copyright (C) 2004--2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -465,7 +465,7 @@ void MohrCoulombYieldStress::tauc_to_phi(const IceModelVec2CellType &mask) {
   }
 }
 
-std::map<std::string, Diagnostic::Ptr> MohrCoulombYieldStress::diagnostics_impl() const {
+DiagnosticList MohrCoulombYieldStress::diagnostics_impl() const {
   return combine({{"tillphi", Diagnostic::wrap(m_till_phi)}},
                  YieldStress::diagnostics_impl());
 }

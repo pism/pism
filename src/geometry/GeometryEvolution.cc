@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -1135,7 +1135,7 @@ protected:
 
 } // end of namespace diagnostics
 
-std::map<std::string, Diagnostic::Ptr> GeometryEvolution::diagnostics_impl() const {
+DiagnosticList GeometryEvolution::diagnostics_impl() const {
   using namespace diagnostics;
   typedef Diagnostic::Ptr Ptr;
 

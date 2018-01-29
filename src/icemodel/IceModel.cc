@@ -1039,7 +1039,7 @@ void IceModel::prune_diagnostics() {
   if (not m_ts_filename.empty() and vars.empty()) {
     // use all diagnostics
   } else {
-    std::map<std::string, TSDiagnostic::Ptr> diagnostics;
+    TSDiagnosticList diagnostics;
     for (auto v : vars) {
       if (m_ts_diagnostics.find(v) != m_ts_diagnostics.end()) {
         diagnostics[v] = m_ts_diagnostics[v];

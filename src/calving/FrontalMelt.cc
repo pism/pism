@@ -40,7 +40,7 @@ void FrontalMelt::init() {
                  "  using sub-shelf mass flux from an ocean model...\n");
 }
 
-std::map<std::string, Diagnostic::Ptr> FrontalMelt::diagnostics_impl() const {
+DiagnosticList FrontalMelt::diagnostics_impl() const {
   return {{"frontal_melt_rate",
         Diagnostic::Ptr(new CalvingRate(this, "frontal_melt_rate",
                                         "horizontal front retreat rate due to melt"))}};

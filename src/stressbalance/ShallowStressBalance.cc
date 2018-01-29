@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -118,8 +118,8 @@ const IceModelVec2S& ShallowStressBalance::basal_frictional_heating() {
 }
 
 
-std::map<std::string, Diagnostic::Ptr> ShallowStressBalance::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = {
+DiagnosticList ShallowStressBalance::diagnostics_impl() const {
+  DiagnosticList result = {
     {"beta",     Diagnostic::Ptr(new SSB_beta(this))},
     {"taub",     Diagnostic::Ptr(new SSB_taub(this))},
     {"taub_mag", Diagnostic::Ptr(new SSB_taub_mag(this))},

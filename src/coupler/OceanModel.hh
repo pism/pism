@@ -51,7 +51,7 @@ protected:
   virtual void init_impl() = 0;
   virtual void update_impl(double t, double dt) = 0;
 
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
 
 protected:
   double m_sea_level;
