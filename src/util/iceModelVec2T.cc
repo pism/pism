@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Constantine Khroulev
+// Copyright (C) 2009--2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,8 @@
 
 #include <petsc.h>
 #include <algorithm>
+#include <cassert>
+
 #include "iceModelVec2T.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism_utilities.hh"
@@ -502,8 +504,12 @@ void IceModelVec2T::average(double t, double dt) {
  *
  */
 void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
-  unsigned int index = 0,
-    last = m_first + m_N - 1;
+
+  assert(m_first >= 0);
+
+  unsigned int
+    index = 0,
+    last  = m_first + m_N - 1;
 
   size_t ts_length = ts.size();
 
