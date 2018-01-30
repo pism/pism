@@ -59,7 +59,9 @@ GivenTH::Constants::Constants(const Config &config) {
 }
 
 GivenTH::GivenTH(IceGrid::ConstPtr g)
-  : PGivenClimate<OceanModel,OceanModel>(g, NULL) {
+  : PGivenClimate<CompleteOceanModel,CompleteOceanModel>(g, NULL) {
+
+  m_sea_level = 0.0;
 
   m_option_prefix   = "-ocean_th";
 
@@ -147,6 +149,10 @@ void GivenTH::update_impl(double t, double dt) {
 
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
   m_shelf_base_mass_flux->scale(m_config->get_double("constants.ice.density"));
+}
+
+double GivenTH::sea_level_elevation_impl() const {
+  return m_sea_level;
 }
 
 

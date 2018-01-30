@@ -33,7 +33,7 @@ namespace pism {
 namespace ocean {
 
 Cache::Cache(IceGrid::ConstPtr g, OceanModel* in)
-  : OceanModel(g, in) {
+  : CompleteOceanModel(g, in) {
 
   m_next_update_time = m_grid->ctx()->time()->current();
   m_update_interval_years = m_config->get_double("ocean.cache.update_interval");

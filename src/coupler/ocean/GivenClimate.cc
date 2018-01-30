@@ -23,14 +23,21 @@
 
 namespace pism {
 namespace ocean {
+
 Given::Given(IceGrid::ConstPtr g)
   : PGivenClimate<OceanModel,OceanModel>(g, NULL) {
+
+  m_sea_level = 0.0;
 
   m_option_prefix   = "-ocean_given";
 
   // will be de-allocated by the parent's destructor
   m_shelfbtemp     = new IceModelVec2T;
   m_shelfbmassflux = new IceModelVec2T;
+
+  m_shelf_base_temperature = allocate_shelf_base_temperature(g);
+  m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);
+  m_sea_level              = 0.0;
 
   m_fields["shelfbtemp"]     = m_shelfbtemp;
   m_fields["shelfbmassflux"] = m_shelfbmassflux;
@@ -80,6 +87,19 @@ void Given::update_impl(double t, double dt) {
   m_shelf_base_temperature->copy_from(*m_shelfbtemp);
   m_shelf_base_mass_flux->copy_from(*m_shelfbmassflux);
 }
+
+const IceModelVec2S& Given::shelf_base_temperature_impl() const {
+  return *m_shelf_base_temperature;
+}
+
+const IceModelVec2S& Given::shelf_base_mass_flux_impl() const {
+  return *m_shelf_base_mass_flux;
+}
+
+double Given::sea_level_elevation_impl() const {
+  return m_sea_level;
+}
+
 
 } // end of namespace ocean
 } // end of namespace pism

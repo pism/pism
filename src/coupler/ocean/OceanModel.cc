@@ -21,6 +21,8 @@
 
 #include "pism/coupler/OceanModel.hh"
 #include "pism/util/iceModelVec.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace ocean {
@@ -96,14 +98,6 @@ void OceanModel::update(double t, double dt) {
   this->update_impl(t, dt);
 }
 
-void OceanModel::update_impl(double t, double dt) {
-  if (m_input_model) {
-    m_input_model->update(t, dt);
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
-  }
-}
-
 
 const IceModelVec2S& OceanModel::shelf_base_mass_flux() const {
   return shelf_base_mass_flux_impl();
@@ -120,6 +114,25 @@ const IceModelVec2S& OceanModel::shelf_base_temperature() const {
 const IceModelVec2S& OceanModel::melange_back_pressure_fraction() const {
   return melange_back_pressure_fraction_impl();
 }
+
+// pass-through default implementations for "modifiers"
+
+void OceanModel::update_impl(double t, double dt) {
+  if (m_input_model) {
+    m_input_model->update(t, dt);
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
+MaxTimestep OceanModel::max_timestep_impl(double t) const {
+  if (m_input_model) {
+    return m_input_model->max_timestep(t);
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
 
 double OceanModel::sea_level_elevation_impl() const {
   if (m_input_model) {
@@ -272,8 +285,22 @@ DiagnosticList OceanModel::diagnostics_impl() const {
     {"shelfbmassflux",                 Diagnostic::Ptr(new PO_shelf_base_mass_flux(this))},
     {"melange_back_pressure_fraction", Diagnostic::Ptr(new PO_melange_back_pressure_fraction(this))}
   };
-  return result;
+
+  if (m_input_model) {
+    return combine(m_input_model->diagnostics(), result);
+  } else {
+    return result;
+  }
 }
+
+TSDiagnosticList OceanModel::ts_diagnostics_impl() const {
+  if (m_input_model) {
+    return m_input_model->ts_diagnostics();
+  } else {
+    return {};
+  }
+}
+
 
 } // end of namespace ocean
 } // end of namespace pism

@@ -51,9 +51,12 @@ public:
 
 protected:
   virtual void init_impl() = 0;
+  // provides default (pass-through) implementations for "modifiers"
   virtual void update_impl(double t, double dt);
+  virtual MaxTimestep max_timestep_impl(double t) const;
 
   virtual DiagnosticList diagnostics_impl() const;
+  virtual TSDiagnosticList ts_diagnostics_impl() const;
 
   virtual double sea_level_elevation_impl() const;
   virtual const IceModelVec2S& shelf_base_temperature_impl() const;
@@ -68,7 +71,6 @@ protected:
   static IceModelVec2S::Ptr allocate_shelf_base_mass_flux(IceGrid::ConstPtr g);
   static IceModelVec2S::Ptr allocate_melange_back_pressure(IceGrid::ConstPtr g);
 };
-
 
 } // end of namespace ocean
 } // end of namespace pism

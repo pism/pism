@@ -15,6 +15,7 @@ add_library (pismboundary OBJECT
   ./atmosphere/WeatherStation.cc
   ./atmosphere/Factory.cc
   ./ocean/OceanModel.cc
+  ./ocean/CompleteOceanModel.cc
   ./ocean/Cache.cc
   ./ocean/ConstantPIK.cc
   ./ocean/Constant.cc
