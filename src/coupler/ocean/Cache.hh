@@ -20,12 +20,12 @@
 #ifndef _POCACHE_H_
 #define _POCACHE_H_
 
-#include "Modifier.hh"
+#include "pism/coupler/OceanModel.hh"
 #include "pism/util/iceModelVec.hh"
 
 namespace pism {
 namespace ocean {
-class Cache : public OceanModifier {
+class Cache : public OceanModel {
 public:
   Cache(IceGrid::ConstPtr g, OceanModel* in);
   virtual ~Cache();
@@ -38,6 +38,10 @@ protected:
 protected:
   double m_next_update_time;
   unsigned int m_update_interval_years;
+protected:
+  IceModelVec2S::Ptr m_shelf_base_temperature;
+  IceModelVec2S::Ptr m_shelf_base_mass_flux;
+  double m_sea_level;
 };
 
 } // end of namespace ocean

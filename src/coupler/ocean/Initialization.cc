@@ -28,19 +28,22 @@ namespace pism {
 namespace ocean {
 
 InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, OceanModel* in)
-  : OceanModifier(g, in),
+  : OceanModel(g, in),
     m_sea_level_metadata("effective_sea_level_elevation",
                          m_config->get_string("time.dimension_name"),
                          m_sys) {
 
-  m_melange_back_pressure_fraction.set_name("effective_melange_back_pressure_fraction");
-  m_melange_back_pressure_fraction.metadata().set_string("pism_intent", "model_state");
+  m_melange_back_pressure_fraction = allocate_melange_back_pressure(g);
+  m_melange_back_pressure_fraction->set_name("effective_melange_back_pressure_fraction");
+  m_melange_back_pressure_fraction->metadata().set_string("pism_intent", "model_state");
 
-  m_shelf_base_temperature.set_name("effective_shelf_base_temperature");
-  m_shelf_base_temperature.metadata().set_string("pism_intent", "model_state");
+  m_shelf_base_temperature = allocate_shelf_base_temperature(g);
+  m_shelf_base_temperature->set_name("effective_shelf_base_temperature");
+  m_shelf_base_temperature->metadata().set_string("pism_intent", "model_state");
 
-  m_shelf_base_mass_flux.set_name("effective_shelf_base_mass_flux");
-  m_shelf_base_mass_flux.metadata().set_string("pism_intent", "model_state");
+  m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
+  m_shelf_base_mass_flux->set_name("effective_shelf_base_mass_flux");
+  m_shelf_base_mass_flux->metadata().set_string("pism_intent", "model_state");
 
   m_sea_level = 0.0;
 
@@ -51,7 +54,7 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, OceanModel* in)
 }
 
 void InitializationHelper::update_impl(double t, double dt) {
-  OceanModifier::update_impl(t, dt);
+  OceanModel::update_impl(t, dt);
 }
 
 void InitializationHelper::init_impl() {
@@ -67,9 +70,9 @@ void InitializationHelper::init_impl() {
     const unsigned int time_length = file.inq_nrecords();
     const unsigned int last_record = time_length > 0 ? time_length - 1 : 0;
 
-    m_melange_back_pressure_fraction.read(file, last_record);
-    m_shelf_base_mass_flux.read(file, last_record);
-    m_shelf_base_temperature.read(file, last_record);
+    m_melange_back_pressure_fraction->read(file, last_record);
+    m_shelf_base_mass_flux->read(file, last_record);
+    m_shelf_base_temperature->read(file, last_record);
     {
       std::vector<double> data;
       file.get_1d_var(m_sea_level_metadata.get_name(),
@@ -88,20 +91,20 @@ void InitializationHelper::init_impl() {
   // Support regridding. This is needed to ensure that initialization using "-i" is equivalent to
   // "-i ... -bootstrap -regrid_file ..."
   {
-    regrid("ocean model initialization helper", m_melange_back_pressure_fraction,
+    regrid("ocean model initialization helper", *m_melange_back_pressure_fraction,
            REGRID_WITHOUT_REGRID_VARS);
-    regrid("ocean model initialization helper", m_shelf_base_mass_flux,
+    regrid("ocean model initialization helper", *m_shelf_base_mass_flux,
            REGRID_WITHOUT_REGRID_VARS);
-    regrid("ocean model initialization helper", m_shelf_base_temperature,
+    regrid("ocean model initialization helper", *m_shelf_base_temperature,
            REGRID_WITHOUT_REGRID_VARS);
   }
   // FIXME: fake "regridding" of sea level
 }
 
 void InitializationHelper::define_model_state_impl(const PIO &output) const {
-  m_melange_back_pressure_fraction.define(output);
-  m_shelf_base_mass_flux.define(output);
-  m_shelf_base_temperature.define(output);
+  m_melange_back_pressure_fraction->define(output);
+  m_shelf_base_mass_flux->define(output);
+  m_shelf_base_temperature->define(output);
 
   io::define_timeseries(m_sea_level_metadata, output, PISM_DOUBLE);
 
@@ -109,9 +112,9 @@ void InitializationHelper::define_model_state_impl(const PIO &output) const {
 }
 
 void InitializationHelper::write_model_state_impl(const PIO &output) const {
-  m_melange_back_pressure_fraction.write(output);
-  m_shelf_base_mass_flux.write(output);
-  m_shelf_base_temperature.write(output);
+  m_melange_back_pressure_fraction->write(output);
+  m_shelf_base_mass_flux->write(output);
+  m_shelf_base_temperature->write(output);
 
   const unsigned int
     time_length = output.inq_dimlen(m_sea_level_metadata.get_dimension_name()),

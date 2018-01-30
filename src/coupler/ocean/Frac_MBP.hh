@@ -21,7 +21,7 @@
 #define _PO_DELTA_MBP_H_
 
 #include "pism/coupler/util/PScalarForcing.hh"
-#include "Modifier.hh"
+#include "pism/coupler/OceanModel.hh"
 
 namespace pism {
 namespace ocean {
@@ -30,7 +30,7 @@ namespace ocean {
  * Scalar melange back-pressure fraction forcing.
  * 
  */
-class Delta_MBP : public PScalarForcing<OceanModel,OceanModifier>
+class Delta_MBP : public PScalarForcing<OceanModel,OceanModel>
 {
 public:
   Delta_MBP(IceGrid::ConstPtr g, OceanModel* in);
@@ -42,7 +42,7 @@ protected:
 
   virtual void update_impl(double t, double dt);
 private:
-  typedef PScalarForcing<OceanModel,OceanModifier> super;
+  typedef PScalarForcing<OceanModel,OceanModel> super;
 };
 
 } // end of namespace ocean

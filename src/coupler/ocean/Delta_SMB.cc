@@ -22,12 +22,13 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace ocean {
 
 Delta_SMB::Delta_SMB(IceGrid::ConstPtr g, OceanModel* in)
-  : PScalarForcing<OceanModel,OceanModifier>(g, in) {
+  : PScalarForcing<OceanModel,OceanModel>(g, in) {
 
   m_option_prefix = "-ocean_delta_mass_flux";
   m_offset_name   = "delta_mass_flux";
@@ -62,7 +63,7 @@ MaxTimestep Delta_SMB::max_timestep_impl(double t) const {
 void Delta_SMB::update_impl(double t, double dt) {
   super::update_impl(t, dt);
 
-  offset_data(m_shelf_base_mass_flux);
+  offset_data(*m_shelf_base_mass_flux);
 }
 
 } // end of namespace ocean

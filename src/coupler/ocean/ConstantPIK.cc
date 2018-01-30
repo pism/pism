@@ -57,11 +57,11 @@ void PIK::update_impl(double t, double dt) {
 
   const IceModelVec2S &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  melting_point_temperature(H, m_shelf_base_temperature);
+  melting_point_temperature(H, *m_shelf_base_temperature);
 
-  mass_flux(H, m_shelf_base_mass_flux);
+  mass_flux(H, *m_shelf_base_mass_flux);
 
-  m_melange_back_pressure_fraction.set(0.0);
+  m_melange_back_pressure_fraction->set(0.0);
 
   m_sea_level = 0.0;
 }

@@ -37,7 +37,9 @@ protected:
   virtual void mean_annual_temp_impl(IceModelVec2S &result) const;
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
   virtual MaxTimestep max_timestep_impl(double t) const;
-protected:
+private:
+  IceModelVec2S::Ptr m_shelf_base_temperature;
+
   mutable std::vector<double> m_offset_values;
 };
 

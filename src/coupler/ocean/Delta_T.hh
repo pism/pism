@@ -21,12 +21,11 @@
 
 #include "pism/coupler/util/PScalarForcing.hh"
 #include "pism/coupler/OceanModel.hh"
-#include "Modifier.hh"
 
 namespace pism {
 namespace ocean {
 //! \brief Forcing using shelf base temperature scalar time-dependent offsets.
-class Delta_T : public PScalarForcing<OceanModel,OceanModifier>
+class Delta_T : public PScalarForcing<OceanModel,OceanModel>
 {
 public:
   Delta_T(IceGrid::ConstPtr g, OceanModel* in);
@@ -37,6 +36,8 @@ protected:
   virtual void init_impl();
 
   virtual void update_impl(double t, double dt);
+
+  IceModelVec2S::Ptr m_shelf_base_temperature;
 };
 
 } // end of namespace ocean

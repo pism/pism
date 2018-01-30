@@ -20,7 +20,7 @@
 #define _PO_RUNOFF_SMB_H_
 
 #include "pism/coupler/util/PScalarForcing.hh"
-#include "Modifier.hh"
+#include "pism/coupler/OceanModel.hh"
 
 namespace pism {
 namespace ocean {
@@ -48,7 +48,7 @@ namespace ocean {
  * negligible and a change in air temperature is directly translated
  * into a change in ocean temperature.
  */
-class Runoff_SMB : public PScalarForcing<OceanModel,OceanModifier>
+class Runoff_SMB : public PScalarForcing<OceanModel,OceanModel>
 {
 public:
   Runoff_SMB(IceGrid::ConstPtr g, OceanModel* in);
@@ -71,7 +71,9 @@ protected:
   double m_runoff_to_ocean_melt_power_alpha;
   double m_runoff_to_ocean_melt_power_beta;
 private:
-  typedef PScalarForcing<OceanModel,OceanModifier> super;
+  IceModelVec2S::Ptr m_shelf_base_mass_flux;
+
+  typedef PScalarForcing<OceanModel,OceanModel> super;
 };
 
 } // end of namespace ocean

@@ -32,7 +32,11 @@ namespace ocean {
 //! A very rudimentary PISM ocean model.
 class OceanModel : public Component {
 public:
+  // "modifier" constructor
+  OceanModel(IceGrid::ConstPtr g, OceanModel* input);
+  // "model" constructor
   OceanModel(IceGrid::ConstPtr g);
+
   virtual ~OceanModel();
 
   void init();
@@ -42,60 +46,29 @@ public:
   double sea_level_elevation() const;
 
   const IceModelVec2S& shelf_base_temperature() const;
-
   const IceModelVec2S& shelf_base_mass_flux() const;
-
   const IceModelVec2S& melange_back_pressure_fraction() const;
 
 protected:
   virtual void init_impl() = 0;
-  virtual void update_impl(double t, double dt) = 0;
+  virtual void update_impl(double t, double dt);
 
   virtual DiagnosticList diagnostics_impl() const;
 
-protected:
-  double m_sea_level;
+  virtual double sea_level_elevation_impl() const;
+  virtual const IceModelVec2S& shelf_base_temperature_impl() const;
+  virtual const IceModelVec2S& shelf_base_mass_flux_impl() const;
+  virtual const IceModelVec2S& melange_back_pressure_fraction_impl() const;
 
-  IceModelVec2S m_melange_back_pressure_fraction;
-  IceModelVec2S m_shelf_base_temperature;
-  IceModelVec2S m_shelf_base_mass_flux;
+protected:
+  OceanModel *m_input_model;
+  IceModelVec2S::Ptr m_melange_back_pressure_fraction;
+
+  static IceModelVec2S::Ptr allocate_shelf_base_temperature(IceGrid::ConstPtr g);
+  static IceModelVec2S::Ptr allocate_shelf_base_mass_flux(IceGrid::ConstPtr g);
+  static IceModelVec2S::Ptr allocate_melange_back_pressure(IceGrid::ConstPtr g);
 };
 
-/*! @brief Sea level elevation. */
-class PO_sea_level : public Diag<OceanModel>
-{
-public:
-  PO_sea_level(const OceanModel *m);
-protected:
-  IceModelVec::Ptr compute_impl() const;
-};
-
-/*! @brief Shelf base temperature. */
-class PO_shelf_base_temperature : public Diag<OceanModel>
-{
-public:
-  PO_shelf_base_temperature(const OceanModel *m);
-protected:
-  IceModelVec::Ptr compute_impl() const;
-};
-
-/*! @brief Shelf base mass flux. */
-class PO_shelf_base_mass_flux : public Diag<OceanModel>
-{
-public:
-  PO_shelf_base_mass_flux(const OceanModel *m);
-protected:
-  IceModelVec::Ptr compute_impl() const;
-};
-
-/*! @brief Melange back pressure fraction. */
-class PO_melange_back_pressure_fraction : public Diag<OceanModel>
-{
-public:
-  PO_melange_back_pressure_fraction(const OceanModel *m);
-protected:
-  IceModelVec::Ptr compute_impl() const;
-};
 
 } // end of namespace ocean
 } // end of namespace pism

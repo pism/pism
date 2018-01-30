@@ -36,9 +36,17 @@ protected:
   virtual void init_impl();
 
 protected:
+  double sea_level_elevation_impl() const;
+  const IceModelVec2S& shelf_base_temperature_impl() const;
+  const IceModelVec2S& shelf_base_mass_flux_impl() const;
+
   void melting_point_temperature(const IceModelVec2S& depth,
                                  IceModelVec2S &result) const;
   double m_meltrate;
+private:
+  IceModelVec2S::Ptr m_shelf_base_temperature;
+  IceModelVec2S::Ptr m_shelf_base_mass_flux;
+  double m_sea_level;
 };
 
 } // end of namespace ocean

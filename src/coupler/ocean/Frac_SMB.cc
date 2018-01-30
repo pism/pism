@@ -22,12 +22,13 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace ocean {
 
 Frac_SMB::Frac_SMB(IceGrid::ConstPtr g, OceanModel* in)
-  : PScalarForcing<OceanModel,OceanModifier>(g, in) {
+  : PScalarForcing<OceanModel,OceanModel>(g, in) {
 
   m_option_prefix = "-ocean_frac_mass_flux";
   m_offset_name   = "frac_mass_flux";
@@ -61,7 +62,7 @@ MaxTimestep Frac_SMB::max_timestep_impl(double t) const {
 void Frac_SMB::update_impl(double t, double dt) {
   super::update_impl(t, dt);
 
-  scale_data(m_shelf_base_mass_flux);
+  scale_data(*m_shelf_base_mass_flux);
 }
 
 } // end of namespace ocean

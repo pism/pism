@@ -22,12 +22,13 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace ocean {
 
 Delta_T::Delta_T(IceGrid::ConstPtr g, OceanModel* in)
-  : PScalarForcing<OceanModel,OceanModifier>(g, in) {
+  : PScalarForcing<OceanModel,OceanModel>(g, in) {
 
   m_option_prefix = "-ocean_delta_T";
   m_offset_name   = "delta_T";
@@ -60,9 +61,9 @@ MaxTimestep Delta_T::max_timestep_impl(double t) const {
 }
 
 void Delta_T::update_impl(double t, double dt) {
-  OceanModifier::update_impl(t, dt);
+  OceanModel::update_impl(t, dt);
 
-  offset_data(m_shelf_base_temperature);
+  offset_data(*m_shelf_base_temperature);
 }
 
 } // end of namespace ocean

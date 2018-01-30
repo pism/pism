@@ -24,7 +24,7 @@
 namespace pism {
 namespace ocean {
 Given::Given(IceGrid::ConstPtr g)
-  : PGivenClimate<OceanModifier,OceanModel>(g, NULL) {
+  : PGivenClimate<OceanModel,OceanModel>(g, NULL) {
 
   m_option_prefix   = "-ocean_given";
 
@@ -77,8 +77,8 @@ void Given::update_impl(double t, double dt) {
   m_shelfbmassflux->average(t, dt);
   m_shelfbtemp->average(t, dt);
 
-  m_shelf_base_temperature.copy_from(*m_shelfbtemp);
-  m_shelf_base_mass_flux.copy_from(*m_shelfbmassflux);
+  m_shelf_base_temperature->copy_from(*m_shelfbtemp);
+  m_shelf_base_mass_flux->copy_from(*m_shelfbmassflux);
 }
 
 } // end of namespace ocean

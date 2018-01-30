@@ -18,13 +18,14 @@
 
 #include "Runoff_SMB.hh"
 #include "pism/util/ConfigInterface.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace ocean {
 
 
 Runoff_SMB::Runoff_SMB(IceGrid::ConstPtr g, OceanModel* in)
-  : PScalarForcing<OceanModel,OceanModifier>(g, in) {
+  : PScalarForcing<OceanModel,OceanModel>(g, in) {
 
   m_option_prefix = "-ocean_runoff_smb";
   m_offset_name = "delta_T";
@@ -64,7 +65,7 @@ MaxTimestep Runoff_SMB::max_timestep_impl(double t) const {
 void Runoff_SMB::update_impl(double t, double dt) {
   super::update_impl(t, dt);
 
-  mass_flux(m_shelf_base_mass_flux);
+  mass_flux(*m_shelf_base_mass_flux);
 }
 
 void Runoff_SMB::mass_flux(IceModelVec2S &result) const {

@@ -27,12 +27,13 @@
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace ocean {
 
 Cache::Cache(IceGrid::ConstPtr g, OceanModel* in)
-  : OceanModifier(g, in) {
+  : OceanModel(g, in) {
 
   m_next_update_time = m_grid->ctx()->time()->current();
   m_update_interval_years = m_config->get_double("ocean.cache.update_interval");
@@ -78,11 +79,11 @@ void Cache::update_impl(double t, double dt) {
 
     m_sea_level = m_input_model->sea_level_elevation();
 
-    m_melange_back_pressure_fraction.copy_from(m_input_model->melange_back_pressure_fraction());
+    m_melange_back_pressure_fraction->copy_from(m_input_model->melange_back_pressure_fraction());
 
-    m_shelf_base_temperature.copy_from(m_input_model->shelf_base_temperature());
+    m_shelf_base_temperature->copy_from(m_input_model->shelf_base_temperature());
 
-    m_shelf_base_mass_flux.copy_from(m_input_model->shelf_base_mass_flux());
+    m_shelf_base_mass_flux->copy_from(m_input_model->shelf_base_mass_flux());
   }
 }
 

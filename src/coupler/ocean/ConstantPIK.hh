@@ -49,6 +49,10 @@ protected:
 private:
   void melting_point_temperature(const IceModelVec2S &depth, IceModelVec2S &result) const;
   void mass_flux(const IceModelVec2S &depth, IceModelVec2S &result) const;
+
+  IceModelVec2S::Ptr m_shelf_base_temperature;
+  IceModelVec2S::Ptr m_shelf_base_mass_flux;
+  double m_sea_level;
 };
 
 } // end of namespace ocean

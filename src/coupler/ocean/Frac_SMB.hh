@@ -21,13 +21,12 @@
 
 #include "pism/coupler/util/PScalarForcing.hh"
 #include "pism/coupler/OceanModel.hh"
-#include "Modifier.hh"
 
 namespace pism {
 namespace ocean {
 
 //! \brief Forcing using shelf base mass flux fractions (scalar, time-dependent).
-class Frac_SMB : public PScalarForcing<OceanModel,OceanModifier>
+class Frac_SMB : public PScalarForcing<OceanModel,OceanModel>
 {
 public:
   Frac_SMB(IceGrid::ConstPtr g, OceanModel* in);
@@ -39,7 +38,9 @@ protected:
 
   virtual void update_impl(double t, double dt);
 private:
-  typedef PScalarForcing<OceanModel,OceanModifier> super;
+  IceModelVec2S::Ptr m_shelf_base_mass_flux;
+
+  typedef PScalarForcing<OceanModel,OceanModel> super;
 };
 
 } // end of namespace ocean

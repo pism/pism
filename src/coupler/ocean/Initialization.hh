@@ -20,7 +20,7 @@
 #ifndef POINITIALIZATION_H
 #define POINITIALIZATION_H
 
-#include "Modifier.hh"
+#include "pism/coupler/OceanModel.hh"
 
 namespace pism {
 namespace ocean {
@@ -37,7 +37,7 @@ namespace ocean {
  * - is added automatically, and
  * - does not have a corresponding "keyword" in ocean::Factory.
  */
-class InitializationHelper : public OceanModifier {
+class InitializationHelper : public OceanModel {
 public:
   InitializationHelper(IceGrid::ConstPtr g, OceanModel* in);
 protected:
@@ -47,6 +47,10 @@ protected:
   void update_impl(double t, double dt);
   void init_impl();
 private:
+  IceModelVec2S::Ptr m_shelf_base_temperature;
+  IceModelVec2S::Ptr m_shelf_base_mass_flux;
+  double m_sea_level;
+
   TimeseriesMetadata m_sea_level_metadata;
 };
 

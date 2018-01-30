@@ -20,11 +20,11 @@
 #define _PODIRECTFORCING_H_
 
 #include "pism/coupler/util/PGivenClimate.hh"
-#include "Modifier.hh"
+#include "pism/coupler/OceanModel.hh"
 
 namespace pism {
 namespace ocean {
-class Given : public PGivenClimate<OceanModifier,OceanModel>
+class Given : public PGivenClimate<OceanModel,OceanModel>
 {
 public:
   Given(IceGrid::ConstPtr g);
@@ -34,8 +34,12 @@ protected:
   virtual void update_impl(double my_t, double my_dt);
   virtual void init_impl();
 
-protected:
+private:
   IceModelVec2T *m_shelfbtemp, *m_shelfbmassflux;
+
+  IceModelVec2S::Ptr m_shelf_base_temperature;
+  IceModelVec2S::Ptr m_shelf_base_mass_flux;
+  double m_sea_level;
 };
 
 } // end of namespace ocean

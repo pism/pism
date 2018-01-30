@@ -59,7 +59,7 @@ GivenTH::Constants::Constants(const Config &config) {
 }
 
 GivenTH::GivenTH(IceGrid::ConstPtr g)
-  : PGivenClimate<OceanModifier,OceanModel>(g, NULL) {
+  : PGivenClimate<OceanModel,OceanModel>(g, NULL) {
 
   m_option_prefix   = "-ocean_th";
 
@@ -118,8 +118,11 @@ void GivenTH::update_impl(double t, double dt) {
 
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
+  IceModelVec2S &temperature = *m_shelf_base_temperature;
+  IceModelVec2S &mass_flux = *m_shelf_base_mass_flux;
+
   IceModelVec::AccessList list{ice_thickness, m_theta_ocean, m_salinity_ocean,
-      &m_shelf_base_temperature, &m_shelf_base_mass_flux};
+      &temperature, &mass_flux};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -138,12 +141,12 @@ void GivenTH::update_impl(double t, double dt) {
                      &shelf_base_massflux);
 
     // Convert from Celsius to Kelvin:
-    m_shelf_base_temperature(i,j) = shelf_base_temp_celsius + 273.15;
-    m_shelf_base_mass_flux(i,j)   = shelf_base_massflux;
+    temperature(i,j) = shelf_base_temp_celsius + 273.15;
+    mass_flux(i,j)   = shelf_base_massflux;
   }
 
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
-  m_shelf_base_mass_flux.scale(m_config->get_double("constants.ice.density"));
+  m_shelf_base_mass_flux->scale(m_config->get_double("constants.ice.density"));
 }
 
 

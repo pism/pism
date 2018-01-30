@@ -22,6 +22,7 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace ocean {
@@ -29,7 +30,7 @@ namespace ocean {
 /// -ocean_delta_SL_file, ...
 
 Delta_SL::Delta_SL(IceGrid::ConstPtr g, OceanModel* in)
-  : PScalarForcing<OceanModel,OceanModifier>(g, in) {
+  : PScalarForcing<OceanModel,OceanModel>(g, in) {
 
   m_option_prefix = "-ocean_delta_SL";
   m_offset_name   = "delta_SL";

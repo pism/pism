@@ -20,11 +20,11 @@
 #define _POGIVENTH_H_
 
 #include "pism/coupler/util/PGivenClimate.hh"
-#include "Modifier.hh"
+#include "pism/coupler/OceanModel.hh"
 
 namespace pism {
 namespace ocean {
-class GivenTH : public PGivenClimate<OceanModifier,OceanModel>
+class GivenTH : public PGivenClimate<OceanModel,OceanModel>
 {
 public:
   GivenTH(IceGrid::ConstPtr g);
@@ -63,6 +63,10 @@ protected:
   virtual void init_impl();
 
 private:
+  IceModelVec2S::Ptr m_shelf_base_temperature;
+  IceModelVec2S::Ptr m_shelf_base_mass_flux;
+  double m_sea_level;
+
   IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
 
   void pointwise_update(const Constants &constants,

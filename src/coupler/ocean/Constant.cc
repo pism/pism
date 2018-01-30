@@ -30,7 +30,8 @@ namespace ocean {
 
 Constant::Constant(IceGrid::ConstPtr g)
   : OceanModel(g) {
-  // empty
+  m_shelf_base_temperature = allocate_shelf_base_temperature(g);
+  m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
 }
 
 Constant::~Constant() {
@@ -48,11 +49,11 @@ void Constant::update_impl(double t, double dt) {
     ice_density = m_config->get_double("constants.ice.density"),
     mass_flux   = melt_rate * ice_density;
 
-  melting_point_temperature(*ice_thickness, m_shelf_base_temperature);
+  melting_point_temperature(*ice_thickness, *m_shelf_base_temperature);
 
-  m_shelf_base_mass_flux.set(mass_flux);
+  m_shelf_base_mass_flux->set(mass_flux);
 
-  m_melange_back_pressure_fraction.set(0.0);
+  m_melange_back_pressure_fraction->set(0.0);
 
   m_sea_level = 0.0;
 }
@@ -66,6 +67,19 @@ void Constant::init_impl() {
 
   }
 }
+
+double Constant::sea_level_elevation_impl() const {
+  return m_sea_level;
+}
+
+const IceModelVec2S& Constant::shelf_base_temperature_impl() const {
+  return *m_shelf_base_temperature;
+}
+
+const IceModelVec2S& Constant::shelf_base_mass_flux_impl() const {
+  return *m_shelf_base_mass_flux;
+}
+
 
 MaxTimestep Constant::max_timestep_impl(double t) const {
   (void) t;

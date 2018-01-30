@@ -23,12 +23,13 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace ocean {
 
 Delta_MBP::Delta_MBP(IceGrid::ConstPtr g, OceanModel* in)
-  : PScalarForcing<OceanModel,OceanModifier>(g, in) {
+  : PScalarForcing<OceanModel,OceanModel>(g, in) {
 
   m_option_prefix = "-ocean_frac_MBP";
   m_offset_name   = "frac_MBP";
@@ -61,9 +62,9 @@ MaxTimestep Delta_MBP::max_timestep_impl(double t) const {
 void Delta_MBP::update_impl(double t, double dt) {
   super::update_impl(t, dt);
 
-  m_melange_back_pressure_fraction.copy_from(m_input_model->melange_back_pressure_fraction());
+  m_melange_back_pressure_fraction->copy_from(m_input_model->melange_back_pressure_fraction());
 
-  offset_data(m_melange_back_pressure_fraction);
+  offset_data(*m_melange_back_pressure_fraction);
 }
 
 } // end of namespace ocean

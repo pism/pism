@@ -20,11 +20,11 @@
 #define _PODSLFORCING_H_
 
 #include "pism/coupler/util/PScalarForcing.hh"
-#include "Modifier.hh"
+#include "pism/coupler/OceanModel.hh"
 
 namespace pism {
 namespace ocean {
-class Delta_SL : public PScalarForcing<OceanModel,OceanModifier>
+class Delta_SL : public PScalarForcing<OceanModel,OceanModel>
 {
 public:
   Delta_SL(IceGrid::ConstPtr g, OceanModel* in);
@@ -35,7 +35,9 @@ protected:
   virtual void init_impl();
   virtual void update_impl(double t, double dt);
 private:
-  typedef PScalarForcing<OceanModel,OceanModifier> super;
+  typedef PScalarForcing<OceanModel,OceanModel> super;
+
+  double m_sea_level;
 };
 
 } // end of namespace ocean
