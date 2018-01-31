@@ -56,11 +56,6 @@ void Delta_SL::init_impl() {
   init_internal();
 }
 
-MaxTimestep Delta_SL::max_timestep_impl(double t) const {
-  (void) t;
-  return MaxTimestep("ocean delta_SL");
-}
-
 void Delta_SL::update_impl(double t, double dt) {
   super::update_impl(t, dt);
   m_sea_level = m_input_model->sea_level_elevation() + m_current_forcing;

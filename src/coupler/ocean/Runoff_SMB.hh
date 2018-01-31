@@ -55,7 +55,6 @@ public:
   virtual ~Runoff_SMB();
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void init_impl();
 
   void update_impl(double t, double dt);

@@ -37,7 +37,6 @@ public:
   virtual ~Frac_MBP();
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void init_impl();
 
   virtual void update_impl(double t, double dt);

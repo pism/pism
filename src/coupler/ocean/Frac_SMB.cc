@@ -56,11 +56,6 @@ void Frac_SMB::init_impl() {
   init_internal();
 }
 
-MaxTimestep Frac_SMB::max_timestep_impl(double t) const {
-  (void) t;
-  return MaxTimestep("ocean frac_SMB");
-}
-
 void Frac_SMB::update_impl(double t, double dt) {
   super::update_impl(t, dt);
 

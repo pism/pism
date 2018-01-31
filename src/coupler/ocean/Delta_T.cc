@@ -56,11 +56,6 @@ void Delta_T::init_impl() {
   init_internal();
 }
 
-MaxTimestep Delta_T::max_timestep_impl(double t) const {
-  (void) t;
-  return MaxTimestep("ocean delta_T");
-}
-
 void Delta_T::update_impl(double t, double dt) {
   OceanModel::update_impl(t, dt);
 

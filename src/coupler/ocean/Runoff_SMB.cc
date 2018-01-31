@@ -57,11 +57,6 @@ void Runoff_SMB::init_impl() {
   init_internal();
 }
 
-MaxTimestep Runoff_SMB::max_timestep_impl(double t) const {
-  (void) t;
-  return MaxTimestep("ocean runoff_SMB");
-}
-
 void Runoff_SMB::update_impl(double t, double dt) {
   super::update_impl(t, dt);
 

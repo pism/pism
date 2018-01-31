@@ -56,11 +56,6 @@ void Frac_MBP::init_impl() {
   init_internal();
 }
 
-MaxTimestep Frac_MBP::max_timestep_impl(double t) const {
-  (void) t;
-  return MaxTimestep("ocean frac_MBP");
-}
-
 void Frac_MBP::update_impl(double t, double dt) {
   super::update_impl(t, dt);
 
