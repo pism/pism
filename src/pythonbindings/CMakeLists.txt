@@ -55,6 +55,10 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     SET_SOURCE_FILES_PROPERTIES(${swig_generated_file_fullname}
       PROPERTIES COMPILE_FLAGS "-w")
 
+    add_custom_target(clean_swig
+      COMMAND rm -f ${swig_generated_file_fullname}
+      VERBATIM)
+
     if (${CMAKE_VERSION} VERSION_LESS "3.8.0")
       SWIG_ADD_MODULE(petsc_version python petsc_version.i petsc_version.cc)
     else()
