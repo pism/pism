@@ -40,6 +40,7 @@ Delta_SMB::Delta_SMB(IceGrid::ConstPtr g, OceanModel* in)
   m_offset->variable().set_string("long_name",
                                   "ice-shelf-base mass flux offsets");
 
+  m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
 }
 
 Delta_SMB::~Delta_SMB() {
@@ -64,6 +65,10 @@ void Delta_SMB::update_impl(double t, double dt) {
   super::update_impl(t, dt);
 
   offset_data(*m_shelf_base_mass_flux);
+}
+
+const IceModelVec2S& Delta_SMB::shelf_base_mass_flux_impl() const {
+  return *m_shelf_base_mass_flux;
 }
 
 } // end of namespace ocean

@@ -20,23 +20,33 @@
 #ifndef _POCACHE_H_
 #define _POCACHE_H_
 
-#include "CompleteOceanModel.hh"
+#include "pism/coupler/OceanModel.hh"
 
 namespace pism {
 namespace ocean {
-class Cache : public CompleteOceanModel {
+
+class Cache : public OceanModel {
 public:
   Cache(IceGrid::ConstPtr g, OceanModel* in);
   virtual ~Cache();
 
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(double my_t, double my_dt);
 
+  virtual void update_impl(double my_t, double my_dt);
   virtual void init_impl();
-protected:
+
+  virtual double sea_level_elevation_impl() const;
+  virtual const IceModelVec2S& shelf_base_temperature_impl() const;
+  virtual const IceModelVec2S& shelf_base_mass_flux_impl() const;
+  virtual const IceModelVec2S& melange_back_pressure_fraction_impl() const;
+private:
   double m_next_update_time;
   unsigned int m_update_interval_years;
+
+  IceModelVec2S::Ptr m_shelf_base_temperature;
+  IceModelVec2S::Ptr m_shelf_base_mass_flux;
+  double m_sea_level;
 };
 
 } // end of namespace ocean

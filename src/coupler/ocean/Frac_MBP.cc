@@ -28,7 +28,7 @@
 namespace pism {
 namespace ocean {
 
-Delta_MBP::Delta_MBP(IceGrid::ConstPtr g, OceanModel* in)
+Frac_MBP::Frac_MBP(IceGrid::ConstPtr g, OceanModel* in)
   : PScalarForcing<OceanModel,OceanModel>(g, in) {
 
   m_option_prefix = "-ocean_frac_MBP";
@@ -39,13 +39,15 @@ Delta_MBP::Delta_MBP(IceGrid::ConstPtr g, OceanModel* in)
   m_offset->variable().set_string("units", "1");
   m_offset->variable().set_string("long_name", "melange back pressure fraction");
   m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
+
+  m_melange_back_pressure_fraction = allocate_melange_back_pressure(g);
 }
 
-Delta_MBP::~Delta_MBP() {
+Frac_MBP::~Frac_MBP() {
   // empty
 }
 
-void Delta_MBP::init_impl() {
+void Frac_MBP::init_impl() {
 
   m_input_model->init();
 
@@ -54,18 +56,23 @@ void Delta_MBP::init_impl() {
   init_internal();
 }
 
-MaxTimestep Delta_MBP::max_timestep_impl(double t) const {
+MaxTimestep Frac_MBP::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep("ocean frac_MBP");
 }
 
-void Delta_MBP::update_impl(double t, double dt) {
+void Frac_MBP::update_impl(double t, double dt) {
   super::update_impl(t, dt);
 
   m_melange_back_pressure_fraction->copy_from(m_input_model->melange_back_pressure_fraction());
 
   offset_data(*m_melange_back_pressure_fraction);
 }
+
+const IceModelVec2S& Frac_MBP::melange_back_pressure_fraction_impl() const {
+  return *m_melange_back_pressure_fraction;
+}
+
 
 } // end of namespace ocean
 } // end of namespace pism

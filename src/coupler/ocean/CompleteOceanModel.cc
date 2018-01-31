@@ -25,9 +25,10 @@ namespace ocean {
 // "modifier" constructor
 CompleteOceanModel::CompleteOceanModel(IceGrid::ConstPtr g, OceanModel* input)
   : OceanModel(g, input) {
+  m_sea_level = 0.0;
+
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
   m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
-  m_sea_level = 0.0;
 }
 
 // "model" constructor

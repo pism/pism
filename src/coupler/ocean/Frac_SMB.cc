@@ -38,6 +38,8 @@ Frac_SMB::Frac_SMB(IceGrid::ConstPtr g, OceanModel* in)
   m_offset->variable().set_string("units", "1");
   m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
   m_offset->variable().set_string("long_name", "ice-shelf-base mass flux factor");
+
+  m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
 }
 
 Frac_SMB::~Frac_SMB() {
@@ -63,6 +65,10 @@ void Frac_SMB::update_impl(double t, double dt) {
   super::update_impl(t, dt);
 
   scale_data(*m_shelf_base_mass_flux);
+}
+
+const IceModelVec2S& Frac_SMB::shelf_base_mass_flux_impl() const {
+  return *m_shelf_base_mass_flux;
 }
 
 } // end of namespace ocean

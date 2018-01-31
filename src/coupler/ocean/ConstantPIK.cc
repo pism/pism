@@ -33,7 +33,7 @@ namespace pism {
 namespace ocean {
 
 PIK::PIK(IceGrid::ConstPtr g)
-  : OceanModel(g) {
+  : CompleteOceanModel(g) {
   // empty
 }
 

@@ -37,6 +37,9 @@ protected:
   virtual void init_impl();
 
   virtual void update_impl(double t, double dt);
+
+  const IceModelVec2S& shelf_base_mass_flux_impl() const;
+
 private:
   IceModelVec2S::Ptr m_shelf_base_mass_flux;
 

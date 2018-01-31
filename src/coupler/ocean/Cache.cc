@@ -33,7 +33,7 @@ namespace pism {
 namespace ocean {
 
 Cache::Cache(IceGrid::ConstPtr g, OceanModel* in)
-  : CompleteOceanModel(g, in) {
+  : OceanModel(g, in) {
 
   m_next_update_time = m_grid->ctx()->time()->current();
   m_update_interval_years = m_config->get_double("ocean.cache.update_interval");
@@ -42,6 +42,14 @@ Cache::Cache(IceGrid::ConstPtr g, OceanModel* in)
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "ocean.cache.update_interval has to be strictly positive (got %d)",
                                   m_update_interval_years);
+  }
+
+  {
+    m_sea_level = 0.0;
+
+    m_shelf_base_temperature         = allocate_shelf_base_temperature(g);
+    m_shelf_base_mass_flux           = allocate_shelf_base_mass_flux(g);
+    m_melange_back_pressure_fraction = allocate_melange_back_pressure(g);
   }
 }
 
@@ -109,6 +117,23 @@ MaxTimestep Cache::max_timestep_impl(double t) const {
     return cache_dt;
   }
 }
+
+double Cache::sea_level_elevation_impl() const {
+  return m_sea_level;
+}
+
+const IceModelVec2S& Cache::shelf_base_temperature_impl() const {
+  return *m_shelf_base_temperature;
+}
+
+const IceModelVec2S& Cache::shelf_base_mass_flux_impl() const {
+  return *m_shelf_base_mass_flux;
+}
+
+const IceModelVec2S& Cache::melange_back_pressure_fraction_impl() const {
+  return *m_melange_back_pressure_fraction;
+}
+
 
 } // end of namespace ocean
 } // end of namespace pism

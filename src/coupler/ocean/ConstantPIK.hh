@@ -19,7 +19,7 @@
 #ifndef _POCONSTANTPIK_H_
 #define _POCONSTANTPIK_H_
 
-#include "pism/coupler/OceanModel.hh"
+#include "CompleteOceanModel.hh"
 
 namespace pism {
 namespace ocean {
@@ -36,7 +36,7 @@ namespace ocean {
 //! @f$T_{o}@f$ are the heat capacity and temperature of the ocean mixed
 //! layer, @f$T_{f}@f$ is the freezing temperature of ocean water at the
 //! shelf bottom.
-class PIK : public OceanModel {
+class PIK : public CompleteOceanModel {
 public:
   PIK(IceGrid::ConstPtr g);
   virtual ~PIK();
@@ -49,10 +49,6 @@ protected:
 private:
   void melting_point_temperature(const IceModelVec2S &depth, IceModelVec2S &result) const;
   void mass_flux(const IceModelVec2S &depth, IceModelVec2S &result) const;
-
-  IceModelVec2S::Ptr m_shelf_base_temperature;
-  IceModelVec2S::Ptr m_shelf_base_mass_flux;
-  double m_sea_level;
 };
 
 } // end of namespace ocean

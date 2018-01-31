@@ -36,7 +36,7 @@ IceModelVec2S::Ptr OceanModel::allocate_shelf_base_temperature(IceGrid::ConstPtr
 }
 
 IceModelVec2S::Ptr OceanModel::allocate_shelf_base_mass_flux(IceGrid::ConstPtr g) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(g, "shelf_base_mass_flux", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(g, "shelfbmassflux", WITHOUT_GHOSTS));
 
   result->set_attrs("diagnostic", "shelf base mass flux",
                     "kg m-2 s-1", "");
@@ -87,15 +87,9 @@ void OceanModel::init() {
 }
 
 void OceanModel::update(double t, double dt) {
-  // stop if this time step was taken care of by an earlier call
-  if ((fabs(t - m_t) < 1e-12) and (fabs(dt - m_dt) < 1e-12)) {
-    return;
-  }
-
+  this->update_impl(t, dt);
   m_t  = t;
   m_dt = dt;
-
-  this->update_impl(t, dt);
 }
 
 

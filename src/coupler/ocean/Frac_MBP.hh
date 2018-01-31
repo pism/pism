@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _PO_DELTA_MBP_H_
-#define _PO_DELTA_MBP_H_
+#ifndef _FRAC_MBP_H_
+#define _FRAC_MBP_H_
 
 #include "pism/coupler/util/PScalarForcing.hh"
 #include "pism/coupler/OceanModel.hh"
@@ -30,17 +30,19 @@ namespace ocean {
  * Scalar melange back-pressure fraction forcing.
  * 
  */
-class Delta_MBP : public PScalarForcing<OceanModel,OceanModel>
+class Frac_MBP : public PScalarForcing<OceanModel,OceanModel>
 {
 public:
-  Delta_MBP(IceGrid::ConstPtr g, OceanModel* in);
-  virtual ~Delta_MBP();
+  Frac_MBP(IceGrid::ConstPtr g, OceanModel* in);
+  virtual ~Frac_MBP();
 
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void init_impl();
 
   virtual void update_impl(double t, double dt);
+
+  const IceModelVec2S& melange_back_pressure_fraction_impl() const;
 private:
   typedef PScalarForcing<OceanModel,OceanModel> super;
 };
@@ -48,4 +50,4 @@ private:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _PO_DELTA_MBP_H_ */
+#endif /* _FRAC_MBP_H_ */

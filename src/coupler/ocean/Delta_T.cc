@@ -39,6 +39,7 @@ Delta_T::Delta_T(IceGrid::ConstPtr g, OceanModel* in)
   m_offset->variable().set_string("long_name", "ice-shelf-base temperature offsets");
   m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
 
+  m_shelf_base_temperature = allocate_shelf_base_temperature(g);
 }
 
 Delta_T::~Delta_T() {
