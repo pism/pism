@@ -44,6 +44,7 @@ private:
   double m_next_update_time;
   unsigned int m_update_interval_years;
 
+  // storage for melange_back_pressure_fraction is inherited from OceanModel
   IceModelVec2S::Ptr m_shelf_base_temperature;
   IceModelVec2S::Ptr m_shelf_base_mass_flux;
   double m_sea_level;
