@@ -46,7 +46,14 @@ protected:
 
   void update_impl(double t, double dt);
   void init_impl();
+
+  double sea_level_elevation_impl() const;
+  const IceModelVec2S& shelf_base_temperature_impl() const;
+  const IceModelVec2S& shelf_base_mass_flux_impl() const;
+  const IceModelVec2S& melange_back_pressure_fraction_impl() const;
+
 private:
+  // storage for melange_back_pressure_fraction is inherited from OceanModel
   IceModelVec2S::Ptr m_shelf_base_temperature;
   IceModelVec2S::Ptr m_shelf_base_mass_flux;
   double m_sea_level;

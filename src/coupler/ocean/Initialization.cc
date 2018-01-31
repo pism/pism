@@ -125,5 +125,21 @@ void InitializationHelper::write_model_state_impl(const PIO &output) const {
   m_input_model->write_model_state(output);
 }
 
+double InitializationHelper::sea_level_elevation_impl() const {
+  return m_sea_level;
+}
+
+const IceModelVec2S& InitializationHelper::shelf_base_temperature_impl() const {
+  return *m_shelf_base_temperature;
+}
+
+const IceModelVec2S& InitializationHelper::shelf_base_mass_flux_impl() const {
+  return *m_shelf_base_mass_flux;
+}
+
+const IceModelVec2S& InitializationHelper::melange_back_pressure_fraction_impl() const {
+  return *m_melange_back_pressure_fraction;
+}
+
 } // end of namespace ocean
 } // end of namespace pism
