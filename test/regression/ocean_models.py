@@ -6,6 +6,7 @@ import PISM
 import sys, os
 import numpy as np
 from unittest import TestCase
+import netCDF4
 
 def create_dummy_grid():
     "Create a dummy grid"
@@ -16,6 +17,7 @@ def create_dummy_grid():
 
 config = PISM.Context().config
 log = PISM.Context().log
+options = PISM.PETSc.Options()
 
 def check(vec, value):
     "Check if values of vec are almost equal to value."
@@ -26,7 +28,7 @@ def check(vec, value):
 
 def check_difference(A, B, value):
     "Check if the difference between A and B is almost equal to value."
-    grid = vec.grid()
+    grid = A.grid()
     with PISM.vec.Access(nocomm=[A, B]):
         for (i, j) in grid.points():
             np.testing.assert_almost_equal(A[i, j] - B[i, j], value)
@@ -143,8 +145,7 @@ class GivenTest(TestCase):
 
         create_given_input_file(self.filename, self.grid, self.temperature, self.mass_flux)
 
-        o = PISM.PETSc.Options()
-        o.setValue("-ocean_given_file", self.filename)
+        options.setValue("-ocean_given_file", self.filename)
 
     def runTest(self):
         "ocean::Given"
@@ -192,8 +193,7 @@ class GivenTHTest(TestCase):
         S.set(salinity)
         S.write(filename)
 
-        o = PISM.PETSc.Options()
-        o.setValue("-ocean_th_file", self.filename)
+        options.setValue("-ocean_th_file", self.filename)
 
     def runTest(self):
         "ocean::GivenTH"
@@ -225,31 +225,45 @@ class DeltaT(TestCase):
         model = PISM.OceanConstant(grid)
         self.model = model
 
+        f = netCDF4.Dataset(self.filename, "w")
+        f.createDimension("time", 1)
+        t = f.createVariable("time", "d", ("time",))
+        t.units = "seconds"
+        delta_T = f.createVariable("delta_T", "d", ("time",))
+        delta_T.units = "Kelvin"
+        t[0] = 0.0
+        delta_T[0] = -5.0
+        f.close()
+
     def runTest(self):
         "ocean::Delta_T"
 
         delta_t = PISM.OceanDeltaT(self.grid, self.model)
 
-        o = PISM.PETSc.Options()
-        o.setValue("-ocean_delta_T_file", self.filename)
+        options.setValue("-ocean_delta_T_file", self.filename)
 
+        log.message(1, "\n")
         delta_t.init()
         delta_t.update(0, 1)
 
         model = self.model
 
-        check_difference(model.sea_level_elevation(),
-                         delta_t.sea_level_elevation(),
+        np.testing.assert_almost_equal(model.sea_level_elevation(),
+                                       delta_t.sea_level_elevation())
+
+        check_difference(delta_t.shelf_base_temperature(),
+                         model.shelf_base_temperature(),
+                         -5.0)
+
+        check_difference(delta_t.shelf_base_mass_flux(),
+                         model.shelf_base_mass_flux(),
                          0.0)
 
-        check_difference(model.shelf_base_temperature(),
-                         delta_t.shelf_base_temperature(),
-                         5.0)
-
-        check_difference(model.shelf_base_mass_flux(),
-                         delta_t.shelf_base_mass_flux(),
+        check_difference(delta_t.melange_back_pressure_fraction(),
+                         model.melange_back_pressure_fraction(),
                          0.0)
+    def tearDown(self):
+        os.remove(self.filename)
 
-        check_difference(model.melange_back_pressure_fraction(),
-                         delta_t.melange_back_pressure_fraction(),
-                         0.0)
+if __name__ == "__main__":
+    pass

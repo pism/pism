@@ -32,11 +32,15 @@ public:
   virtual ~Delta_T();
 
 protected:
-  virtual void init_impl();
+  void init_impl();
 
-  virtual void update_impl(double t, double dt);
+  void update_impl(double t, double dt);
 
+  const IceModelVec2S& shelf_base_temperature_impl() const;
+
+private:
   IceModelVec2S::Ptr m_shelf_base_temperature;
+  typedef PScalarForcing<OceanModel,OceanModel> super;
 };
 
 } // end of namespace ocean

@@ -57,9 +57,14 @@ void Delta_T::init_impl() {
 }
 
 void Delta_T::update_impl(double t, double dt) {
-  OceanModel::update_impl(t, dt);
+  super::update_impl(t, dt);
 
-  offset_data(*m_shelf_base_temperature);
+  m_shelf_base_temperature->copy_from(m_input_model->shelf_base_temperature());
+  m_shelf_base_temperature->shift(m_current_forcing);
+}
+
+const IceModelVec2S& Delta_T::shelf_base_temperature_impl() const {
+  return *m_shelf_base_temperature;
 }
 
 } // end of namespace ocean
