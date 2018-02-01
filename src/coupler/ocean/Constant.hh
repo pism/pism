@@ -30,12 +30,12 @@ class Constant : public CompleteOceanModel {
 public:
   Constant(IceGrid::ConstPtr g);
   virtual ~Constant();
-protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(double t, double dt);
-  virtual void init_impl();
 
 private:
+  MaxTimestep max_timestep_impl(double t) const;
+  void update_impl(double t, double dt);
+  void init_impl();
+
   void melting_point_temperature(const IceModelVec2S& depth,
                                  IceModelVec2S &result) const;
 };

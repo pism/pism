@@ -32,14 +32,13 @@ public:
   Delta_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
   virtual ~Delta_SMB();
 
-protected:
+private:
   void init_impl();
 
   void update_impl(double t, double dt);
 
   const IceModelVec2S& shelf_base_mass_flux_impl() const;
 
-private:
   IceModelVec2S::Ptr m_shelf_base_mass_flux;
 
   typedef PScalarForcing<OceanModel,OceanModel> super;

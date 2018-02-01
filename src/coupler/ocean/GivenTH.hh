@@ -58,12 +58,12 @@ public:
     double ice_thermal_diffusivity;
     bool limit_salinity_range;
   };
-protected:
-  virtual void update_impl(double my_t, double my_dt);
-  virtual void init_impl();
+private:
+  void update_impl(double my_t, double my_dt);
+  void init_impl();
 
   double sea_level_elevation_impl() const;
-private:
+
   double m_sea_level;
   IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
 

@@ -54,8 +54,8 @@ public:
   Runoff_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
   virtual ~Runoff_SMB();
 
-protected:
-  virtual void init_impl();
+private:
+  void init_impl();
 
   void update_impl(double t, double dt);
 
@@ -69,7 +69,7 @@ protected:
   double m_runoff_to_ocean_melt_b;
   double m_runoff_to_ocean_melt_power_alpha;
   double m_runoff_to_ocean_melt_power_beta;
-private:
+
   IceModelVec2S::Ptr m_shelf_base_mass_flux;
 
   typedef PScalarForcing<OceanModel,OceanModel> super;

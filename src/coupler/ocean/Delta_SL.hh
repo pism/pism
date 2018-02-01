@@ -30,12 +30,13 @@ public:
   Delta_SL(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
   virtual ~Delta_SL();
 
-protected:
+private:
+
+  typedef PScalarForcing<OceanModel,OceanModel> super;
+
   void init_impl();
   void update_impl(double t, double dt);
   double sea_level_elevation_impl() const;
-private:
-  typedef PScalarForcing<OceanModel,OceanModel> super;
 
   double m_sea_level;
 };

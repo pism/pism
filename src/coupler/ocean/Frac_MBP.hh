@@ -36,13 +36,13 @@ public:
   Frac_MBP(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
   virtual ~Frac_MBP();
 
-protected:
-  virtual void init_impl();
+private:
+  void init_impl();
 
-  virtual void update_impl(double t, double dt);
+  void update_impl(double t, double dt);
 
   const IceModelVec2S& melange_back_pressure_fraction_impl() const;
-private:
+
   typedef PScalarForcing<OceanModel,OceanModel> super;
 };
 

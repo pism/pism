@@ -41,12 +41,11 @@ public:
   PIK(IceGrid::ConstPtr g);
   virtual ~PIK();
 
-protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(double my_t, double my_dt);
-  virtual void init_impl();
-
 private:
+  MaxTimestep max_timestep_impl(double t) const;
+  void update_impl(double my_t, double my_dt);
+  void init_impl();
+
   void melting_point_temperature(const IceModelVec2S &depth, IceModelVec2S &result) const;
   void mass_flux(const IceModelVec2S &depth, IceModelVec2S &result) const;
 };

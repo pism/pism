@@ -30,14 +30,14 @@ public:
   Given(IceGrid::ConstPtr g);
   virtual ~Given();
 
-protected:
-  virtual void update_impl(double my_t, double my_dt);
-  virtual void init_impl();
+private:
+  void update_impl(double my_t, double my_dt);
+  void init_impl();
 
   double sea_level_elevation_impl() const;
-  virtual const IceModelVec2S& shelf_base_temperature_impl() const;
-  virtual const IceModelVec2S& shelf_base_mass_flux_impl() const;
-private:
+  const IceModelVec2S& shelf_base_temperature_impl() const;
+  const IceModelVec2S& shelf_base_mass_flux_impl() const;
+
   IceModelVec2T *m_shelfbtemp, *m_shelfbmassflux;
 
   IceModelVec2S::Ptr m_shelf_base_temperature;

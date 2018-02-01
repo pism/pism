@@ -40,7 +40,8 @@ namespace ocean {
 class InitializationHelper : public OceanModel {
 public:
   InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
-protected:
+
+private:
   void define_model_state_impl(const PIO &output) const;
   void write_model_state_impl(const PIO &output) const;
 
@@ -52,7 +53,6 @@ protected:
   const IceModelVec2S& shelf_base_mass_flux_impl() const;
   const IceModelVec2S& melange_back_pressure_fraction_impl() const;
 
-private:
   // storage for melange_back_pressure_fraction is inherited from OceanModel
   IceModelVec2S::Ptr m_shelf_base_temperature;
   IceModelVec2S::Ptr m_shelf_base_mass_flux;
