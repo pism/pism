@@ -20,6 +20,8 @@
 #ifndef __PISMOceanModel_hh
 #define __PISMOceanModel_hh
 
+#include <memory>
+
 #include "pism/util/Component.hh"
 
 namespace pism {
@@ -64,7 +66,7 @@ protected:
   virtual const IceModelVec2S& melange_back_pressure_fraction_impl() const;
 
 protected:
-  OceanModel *m_input_model;
+  std::shared_ptr<OceanModel> m_input_model;
   IceModelVec2S::Ptr m_melange_back_pressure_fraction;
 
   static IceModelVec2S::Ptr allocate_shelf_base_temperature(IceGrid::ConstPtr g);

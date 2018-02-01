@@ -73,9 +73,7 @@ OceanModel::OceanModel(IceGrid::ConstPtr g)
 
 
 OceanModel::~OceanModel() {
-  if (m_input_model) {
-    delete m_input_model;
-  }
+  // empty
 }
 
 void OceanModel::init() {
