@@ -20,7 +20,7 @@
 #ifndef _MODIFIER_H_
 #define _MODIFIER_H_
 
-#include <memory>               // std::unique_ptr
+#include <memory>               // std::shared_ptr
 
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
@@ -38,7 +38,7 @@ template<class Model>
 class Modifier : public Model
 {
 public:
-  Modifier(IceGrid::ConstPtr g, Model* in)
+  Modifier(IceGrid::ConstPtr g, std::shared_ptr<Model> in)
     : Model(g), m_input_model(in) {}
   virtual ~Modifier() {}
 
@@ -97,7 +97,7 @@ protected:
     }
   }
 protected:
-  std::unique_ptr<Model> m_input_model;
+  std::shared_ptr<Model> m_input_model;
 };  
 } // end of namespace pism
 

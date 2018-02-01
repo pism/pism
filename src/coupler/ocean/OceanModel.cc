@@ -57,7 +57,8 @@ IceModelVec2S::Ptr OceanModel::allocate_melange_back_pressure(IceGrid::ConstPtr 
   return result;
 }
 
-OceanModel::OceanModel(IceGrid::ConstPtr g, OceanModel* input)
+// "modifier" constructor
+OceanModel::OceanModel(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> input)
   : Component(g), m_input_model(input) {
 
   if (not input) {

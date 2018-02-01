@@ -62,8 +62,8 @@ IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g) : SurfaceModel(g) {
   printf("END IBSurfaceModel::allocate_IBSurfaceModel()\n");
 }
 
-void IBSurfaceModel::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input) {
-  delete input;
+void IBSurfaceModel::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input) {
+  (void) input;
 }
 
 void IBSurfaceModel::init_impl() {

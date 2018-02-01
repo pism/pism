@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,7 +26,7 @@
 namespace pism {
 namespace surface {
 
-InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, SurfaceModel* in)
+InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   : SurfaceModifier(g, in) {
 
   if (in == NULL) {
@@ -76,7 +76,7 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, SurfaceModel* in
                  &m_surface_layer_thickness};
 }
 
-void InitializationHelper::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *in) {
+void InitializationHelper::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> in) {
   m_input_model->attach_atmosphere_model(in);
 }
 

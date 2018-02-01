@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -39,7 +39,7 @@ public:
   // in the same dictionary
   class ModelCreator {
   public:
-    virtual Model* create(IceGrid::ConstPtr g) = 0;
+    virtual std::shared_ptr<Model> create(IceGrid::ConstPtr g) = 0;
     virtual ~ModelCreator() {}
   };
 
@@ -47,8 +47,8 @@ public:
   template <class M>
   class SpecificModelCreator : public ModelCreator {
   public:
-    M* create(IceGrid::ConstPtr g) {
-      return new M(g);
+    std::shared_ptr<Model> create(IceGrid::ConstPtr g) {
+      return std::shared_ptr<Model>(new M(g));
     }
   };
 
@@ -56,7 +56,7 @@ public:
   // creators in the same dictionary
   class ModifierCreator {
   public:
-    virtual Modifier* create(IceGrid::ConstPtr g, Model* input) = 0;
+    virtual std::shared_ptr<Modifier> create(IceGrid::ConstPtr g, std::shared_ptr<Model> input) = 0;
     virtual ~ModifierCreator() {}
   };
 
@@ -64,8 +64,8 @@ public:
   template <class M>
   class SpecificModifierCreator : public ModifierCreator {
   public:
-    M* create(IceGrid::ConstPtr g, Model* input) {
-      return new M(g, input);
+    std::shared_ptr<Modifier> create(IceGrid::ConstPtr g, std::shared_ptr<Model> input) {
+      return std::shared_ptr<Modifier>(new M(g, input));
     }
   };
 
@@ -86,9 +86,9 @@ public:
   }
 
   //! Creates a boundary model. Processes command-line options.
-  Model* create() {
+  std::shared_ptr<Model> create() {
     std::string model_list, modifier_list, description;
-    Model* result = NULL;
+    std::shared_ptr<Model> result;
 
     // build a list of available models:
     auto k = m_models.begin();

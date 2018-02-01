@@ -33,7 +33,7 @@ namespace ocean {
 class Frac_MBP : public PScalarForcing<OceanModel,OceanModel>
 {
 public:
-  Frac_MBP(IceGrid::ConstPtr g, OceanModel* in);
+  Frac_MBP(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
   virtual ~Frac_MBP();
 
 protected:

@@ -51,7 +51,7 @@ namespace ocean {
 class Runoff_SMB : public PScalarForcing<OceanModel,OceanModel>
 {
 public:
-  Runoff_SMB(IceGrid::ConstPtr g, OceanModel* in);
+  Runoff_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
   virtual ~Runoff_SMB();
 
 protected:

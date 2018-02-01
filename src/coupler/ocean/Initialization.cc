@@ -27,7 +27,7 @@
 namespace pism {
 namespace ocean {
 
-InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, OceanModel* in)
+InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in),
     m_sea_level_metadata("effective_sea_level_elevation",
                          m_config->get_string("time.dimension_name"),

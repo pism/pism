@@ -29,7 +29,7 @@ namespace ocean {
 
 /// -ocean_delta_SL_file, ...
 
-Delta_SL::Delta_SL(IceGrid::ConstPtr g, OceanModel* in)
+Delta_SL::Delta_SL(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : PScalarForcing<OceanModel,OceanModel>(g, in) {
 
   m_option_prefix = "-ocean_delta_SL";

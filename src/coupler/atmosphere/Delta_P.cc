@@ -26,7 +26,7 @@
 namespace pism {
 namespace atmosphere {
 
-Delta_P::Delta_P(IceGrid::ConstPtr g, AtmosphereModel* in)
+Delta_P::Delta_P(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in) {
   m_offset = NULL;
 

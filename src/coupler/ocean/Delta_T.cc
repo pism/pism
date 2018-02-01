@@ -27,7 +27,7 @@
 namespace pism {
 namespace ocean {
 
-Delta_T::Delta_T(IceGrid::ConstPtr g, OceanModel* in)
+Delta_T::Delta_T(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : PScalarForcing<OceanModel,OceanModel>(g, in) {
 
   m_option_prefix = "-ocean_delta_T";

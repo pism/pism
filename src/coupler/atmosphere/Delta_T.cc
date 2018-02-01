@@ -28,7 +28,7 @@ namespace atmosphere {
 
 /// delta_T forcing of near-surface air temperatures
 
-Delta_T::Delta_T(IceGrid::ConstPtr g, AtmosphereModel* in)
+Delta_T::Delta_T(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in) {
   m_option_prefix = "-atmosphere_delta_T";
   m_offset_name   = "delta_T";

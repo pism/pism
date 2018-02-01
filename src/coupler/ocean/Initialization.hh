@@ -39,7 +39,7 @@ namespace ocean {
  */
 class InitializationHelper : public OceanModel {
 public:
-  InitializationHelper(IceGrid::ConstPtr g, OceanModel* in);
+  InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
 protected:
   void define_model_state_impl(const PIO &output) const;
   void write_model_state_impl(const PIO &output) const;

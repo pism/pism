@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -33,7 +33,7 @@ namespace pism {
 template <class Model, class Mod>
 class PLapseRates : public Mod {
 public:
-  PLapseRates(IceGrid::ConstPtr g, Model* in)
+  PLapseRates(IceGrid::ConstPtr g, std::shared_ptr<Model> in)
     : Mod(g, in) {
     m_temp_lapse_rate = 0.0;
   }

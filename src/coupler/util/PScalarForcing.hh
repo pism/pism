@@ -36,7 +36,7 @@ template<class Model, class Mod>
 class PScalarForcing : public Mod
 {
 public:
-  PScalarForcing(IceGrid::ConstPtr g, Model* in)
+  PScalarForcing(IceGrid::ConstPtr g, std::shared_ptr<Model> in)
     : Mod(g, in), m_current_forcing(NAN) {
     // empty
   }

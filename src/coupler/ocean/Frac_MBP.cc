@@ -28,7 +28,7 @@
 namespace pism {
 namespace ocean {
 
-Frac_MBP::Frac_MBP(IceGrid::ConstPtr g, OceanModel* in)
+Frac_MBP::Frac_MBP(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : PScalarForcing<OceanModel,OceanModel>(g, in) {
 
   m_option_prefix = "-ocean_frac_MBP";

@@ -203,10 +203,6 @@ IceModel::~IceModel() {
 
   delete m_age_model;
 
-  delete m_ocean;
-
-  delete m_surface;
-
   delete m_beddef;
 
   delete m_subglacial_hydrology;
@@ -942,7 +938,7 @@ const stressbalance::StressBalance* IceModel::stress_balance() const {
 }
 
 const ocean::OceanModel* IceModel::ocean_model() const {
-  return this->m_ocean;
+  return m_ocean.get();
 }
 
 const bed::BedDef* IceModel::bed_model() const {

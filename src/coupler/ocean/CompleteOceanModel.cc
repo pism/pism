@@ -23,7 +23,7 @@ namespace pism {
 namespace ocean {
 
 // "modifier" constructor
-CompleteOceanModel::CompleteOceanModel(IceGrid::ConstPtr g, OceanModel* input)
+CompleteOceanModel::CompleteOceanModel(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> input)
   : OceanModel(g, input) {
   m_sea_level = 0.0;
 

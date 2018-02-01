@@ -24,7 +24,7 @@ namespace pism {
 namespace ocean {
 
 
-Runoff_SMB::Runoff_SMB(IceGrid::ConstPtr g, OceanModel* in)
+Runoff_SMB::Runoff_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : PScalarForcing<OceanModel,OceanModel>(g, in) {
 
   m_option_prefix = "-ocean_runoff_smb";

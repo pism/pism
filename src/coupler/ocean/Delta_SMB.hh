@@ -29,7 +29,7 @@ namespace ocean {
 class Delta_SMB : public PScalarForcing<OceanModel,OceanModel>
 {
 public:
-  Delta_SMB(IceGrid::ConstPtr g, OceanModel* in);
+  Delta_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
   virtual ~Delta_SMB();
 
 protected:

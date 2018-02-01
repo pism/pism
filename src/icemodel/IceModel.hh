@@ -270,9 +270,10 @@ protected:
   calving::vonMisesCalving    *m_vonmises_calving;
   FrontalMelt                 *m_frontal_melt;
 
-  surface::SurfaceModel *m_surface;
-  ocean::OceanModel     *m_ocean;
-  bed::BedDef           *m_beddef;
+  std::shared_ptr<surface::SurfaceModel> m_surface;
+  std::shared_ptr<ocean::OceanModel>     m_ocean;
+
+  bed::BedDef *m_beddef;
 
   // state variables and some diagnostics/internals
 

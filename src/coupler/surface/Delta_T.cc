@@ -28,7 +28,7 @@ namespace surface {
 
 /// -surface ...,delta_T (scalar forcing of ice surface temperatures)
 
-Delta_T::Delta_T(IceGrid::ConstPtr g, SurfaceModel* in)
+Delta_T::Delta_T(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   : PScalarForcing<SurfaceModel,SurfaceModifier>(g, in) {
 
   m_option_prefix = "-surface_delta_T";

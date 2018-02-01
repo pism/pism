@@ -89,7 +89,7 @@ SurfaceModel::SurfaceModel(IceGrid::ConstPtr g)
 }
 
 SurfaceModel::~SurfaceModel() {
-  delete m_atmosphere;
+  // empty
 }
 
 void SurfaceModel::mass_flux(IceModelVec2S &result) const {
@@ -120,14 +120,11 @@ TSDiagnosticList SurfaceModel::ts_diagnostics_impl() const {
   }
 }
 
-void SurfaceModel::attach_atmosphere_model(atmosphere::AtmosphereModel *input) {
+void SurfaceModel::attach_atmosphere_model(std::shared_ptr<atmosphere::AtmosphereModel> input) {
   this->attach_atmosphere_model_impl(input);
 }
 
-void SurfaceModel::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input) {
-  if (m_atmosphere != NULL) {
-    delete m_atmosphere;
-  }
+void SurfaceModel::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input) {
   m_atmosphere = input;
 }
 

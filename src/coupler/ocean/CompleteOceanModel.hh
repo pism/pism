@@ -33,7 +33,7 @@ namespace ocean {
 class CompleteOceanModel : public OceanModel {
 public:
   // "modifier" constructor
-  CompleteOceanModel(IceGrid::ConstPtr g, OceanModel* input);
+  CompleteOceanModel(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> input);
   // "model" constructor
   CompleteOceanModel(IceGrid::ConstPtr g);
 
