@@ -8,6 +8,11 @@ import numpy as np
 from unittest import TestCase
 import netCDF4
 
+config = PISM.Context().config
+log = PISM.Context().log
+log.set_threshold(1)
+options = PISM.PETSc.Options()
+
 def create_dummy_grid():
     "Create a dummy grid"
     ctx = PISM.Context()
@@ -15,9 +20,18 @@ def create_dummy_grid():
     params.ownership_ranges_from_options(ctx.size)
     return PISM.IceGrid(ctx.ctx, params)
 
-config = PISM.Context().config
-log = PISM.Context().log
-options = PISM.PETSc.Options()
+def create_given_input_file(filename, grid, temperature, mass_flux):
+    PISM.util.prepare_output(filename)
+
+    T = PISM.IceModelVec2S(grid, "shelfbtemp", PISM.WITHOUT_GHOSTS)
+    T.set_attrs("climate", "shelf base temperature", "Kelvin", "")
+    T.set(temperature)
+    T.write(filename)
+
+    M = PISM.IceModelVec2S(grid, "shelfbmassflux", PISM.WITHOUT_GHOSTS)
+    M.set_attrs("climate", "shelf base mass flux", "kg m-2 s-1", "")
+    M.set(mass_flux)
+    M.write(filename)
 
 def check(vec, value):
     "Check if values of vec are almost equal to value."
@@ -33,16 +47,43 @@ def check_difference(A, B, value):
         for (i, j) in grid.points():
             np.testing.assert_almost_equal(A[i, j] - B[i, j], value)
 
-def ocean_model_outputs(model):
+def check_model(model, T, SMB, SL, MBP):
+    check(model.shelf_base_temperature(), T)
+    check(model.shelf_base_mass_flux(), SMB)
+    np.testing.assert_almost_equal(model.sea_level_elevation(), SL)
+    check(model.melange_back_pressure_fraction(), MBP)
 
-    return (model.sea_level_elevation(),
-            model.shelf_base_temperature(),
-            model.shelf_base_mass_flux(),
-            model.melange_back_pressure_fraction())
+def check_modifier(model, modifier, dT, dSMB, dSL, dMBP, difference=True):
+
+    assert difference == True
+
+    np.testing.assert_almost_equal(modifier.sea_level_elevation() - model.sea_level_elevation(),
+                                   dSL)
+
+    check_difference(modifier.shelf_base_temperature(),
+                     model.shelf_base_temperature(),
+                     dT)
+
+    check_difference(modifier.shelf_base_mass_flux(),
+                     model.shelf_base_mass_flux(),
+                     dSMB)
+
+    check_difference(modifier.melange_back_pressure_fraction(),
+                     model.melange_back_pressure_fraction(),
+                     dMBP)
+
+def create_ocean_constant(grid, depth=1000.0):
+    try:
+        grid.variables.get_2d_scalar("thk")
+    except:
+        ice_thickness = PISM.model.createIceThicknessVec(grid)
+        ice_thickness.set(depth)
+        grid.variables().add(ice_thickness)
+
+    return PISM.OceanConstant(grid)
 
 def constant_test():
     "ocean::Constant"
-    grid = create_dummy_grid()
 
     depth = 1000.0                  # meters
 
@@ -63,22 +104,13 @@ def constant_test():
 
     sea_level = 0.0
 
-    # create the model
-    ice_thickness = PISM.model.createIceThicknessVec(grid)
-    ice_thickness.set(depth)
-    grid.variables().add(ice_thickness)
+    grid = create_dummy_grid()
+    model = create_ocean_constant(grid, depth)
 
-    model = PISM.OceanConstant(grid)
-
-    log.message(1, "\n")
     model.init()
     model.update(0, 1)
 
-    assert model.sea_level_elevation() == sea_level
-
-    check(model.shelf_base_temperature(), T_melting)
-    check(model.shelf_base_mass_flux(), mass_flux)
-    check(model.melange_back_pressure_fraction(), melange_back_pressure)
+    check_model(model, T_melting, mass_flux, sea_level, melange_back_pressure)
 
 def pik_test():
     "ocean::PIK"
@@ -108,33 +140,18 @@ def pik_test():
 
     model = PISM.OceanPIK(grid)
 
-    log.message(1, "\n")
     model.init()
     model.update(0, 1)
 
-    assert model.sea_level_elevation() == sea_level
+    check_model(model, T_melting, mass_flux, sea_level, melange_back_pressure)
 
-    check(model.shelf_base_temperature(), T_melting)
-    check(model.shelf_base_mass_flux(), mass_flux)
-    check(model.melange_back_pressure_fraction(), melange_back_pressure)
-
-def create_given_input_file(filename, grid, temperature, mass_flux):
-    PISM.util.prepare_output(filename)
-
-    T = PISM.IceModelVec2S(grid, "shelfbtemp", PISM.WITHOUT_GHOSTS)
-    T.set_attrs("climate", "shelf base temperature", "Kelvin", "")
-    T.set(temperature)
-    T.write(filename)
-
-    M = PISM.IceModelVec2S(grid, "shelfbmassflux", PISM.WITHOUT_GHOSTS)
-    M.set_attrs("climate", "shelf base mass flux", "kg m-2 s-1", "")
-    M.set(mass_flux)
-    M.write(filename)
 
 class GivenTest(TestCase):
     "Test the ocean::Given class"
 
     def setUp(self):
+        self.sea_level = 0.0
+
         grid = create_dummy_grid()
         self.grid = grid
         self.filename = "given_input.nc"
@@ -149,20 +166,20 @@ class GivenTest(TestCase):
 
     def runTest(self):
         "ocean::Given"
-        log.message(1, "\n")
+
         model = PISM.OceanGiven(self.grid)
         model.init()
         model.update(0, 1)
 
-        check(model.shelf_base_temperature(), self.temperature)
-        check(model.shelf_base_mass_flux(), self.mass_flux)
-        check(model.melange_back_pressure_fraction(), self.melange_back_pressure)
+        check_model(model, self.temperature, self.mass_flux, self.sea_level, self.melange_back_pressure)
 
     def tearDown(self):
         os.remove(self.filename)
 
 class GivenTHTest(TestCase):
     def setUp(self):
+
+        self.sea_level = 0.0
 
         depth                      = 1000.0
         salinity                   = 35.0
@@ -197,14 +214,12 @@ class GivenTHTest(TestCase):
 
     def runTest(self):
         "ocean::GivenTH"
-        log.message(1, "\n")
+
         model = PISM.OceanGivenTH(self.grid)
         model.init()
         model.update(0, 1)
 
-        check(model.shelf_base_temperature(), self.temperature)
-        check(model.shelf_base_mass_flux(), self.mass_flux)
-        check(model.melange_back_pressure_fraction(), self.melange_back_pressure)
+        check_model(model, self.temperature, self.mass_flux, self.sea_level, self.melange_back_pressure)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -212,18 +227,9 @@ class GivenTHTest(TestCase):
 class DeltaT(TestCase):
     def setUp(self):
         self.filename = "delta_T_input.nc"
-
-        depth = 1000.0
-
-        grid = create_dummy_grid()
-        self.grid = grid
-
-        ice_thickness = PISM.model.createIceThicknessVec(grid)
-        ice_thickness.set(depth)
-        grid.variables().add(ice_thickness)
-
-        model = PISM.OceanConstant(grid)
-        self.model = model
+        self.grid = create_dummy_grid()
+        self.model = create_ocean_constant(self.grid)
+        self.dT = -5.0
 
         f = netCDF4.Dataset(self.filename, "w")
         f.createDimension("time", 1)
@@ -232,7 +238,7 @@ class DeltaT(TestCase):
         delta_T = f.createVariable("delta_T", "d", ("time",))
         delta_T.units = "Kelvin"
         t[0] = 0.0
-        delta_T[0] = -5.0
+        delta_T[0] = self.dT
         f.close()
 
     def runTest(self):
@@ -242,28 +248,54 @@ class DeltaT(TestCase):
 
         options.setValue("-ocean_delta_T_file", self.filename)
 
-        log.message(1, "\n")
         delta_t.init()
         delta_t.update(0, 1)
 
-        model = self.model
+        check_modifier(self.model, delta_t, self.dT, 0.0, 0.0, 0.0)
 
-        np.testing.assert_almost_equal(model.sea_level_elevation(),
-                                       delta_t.sea_level_elevation())
-
-        check_difference(delta_t.shelf_base_temperature(),
-                         model.shelf_base_temperature(),
-                         -5.0)
-
-        check_difference(delta_t.shelf_base_mass_flux(),
-                         model.shelf_base_mass_flux(),
-                         0.0)
-
-        check_difference(delta_t.melange_back_pressure_fraction(),
-                         model.melange_back_pressure_fraction(),
-                         0.0)
     def tearDown(self):
         os.remove(self.filename)
 
+class DeltaSL(TestCase):
+    def setUp(self):
+        self.filename = "delta_SL_input.nc"
+        self.grid = create_dummy_grid()
+        self.model = create_ocean_constant(self.grid)
+        self.dSL = -5.0
+
+        f = netCDF4.Dataset(self.filename, "w")
+        f.createDimension("time", 1)
+        t = f.createVariable("time", "d", ("time",))
+        t.units = "seconds"
+        delta_SL = f.createVariable("delta_SL", "d", ("time",))
+        delta_SL.units = "m"
+        t[0] = 0.0
+        delta_SL[0] = self.dSL
+        f.close()
+
+    def runTest(self):
+        "ocean::Delta_SL"
+
+        delta_sl = PISM.OceanDeltaSL(self.grid, self.model)
+
+        options.setValue("-ocean_delta_SL_file", self.filename)
+
+        delta_sl.init()
+        delta_sl.update(0, 1)
+
+        check_modifier(self.model, delta_sl, 0.0, 0.0, self.dSL, 0.0)
+
+    def tearDown(self):
+        os.remove(self.filename)
+
+
 if __name__ == "__main__":
-    pass
+    t = DeltaSL()
+    t.setUp()
+    t.runTest()
+    t.tearDown()
+
+# add_modifier<Cache>("cache");
+# add_modifier<Delta_SMB>("delta_SMB");
+# add_modifier<Frac_SMB>("frac_SMB");
+# add_modifier<Frac_MBP>("frac_MBP");

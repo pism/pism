@@ -31,8 +31,9 @@ public:
   virtual ~Delta_SL();
 
 protected:
-  virtual void init_impl();
-  virtual void update_impl(double t, double dt);
+  void init_impl();
+  void update_impl(double t, double dt);
+  double sea_level_elevation_impl() const;
 private:
   typedef PScalarForcing<OceanModel,OceanModel> super;
 

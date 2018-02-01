@@ -61,5 +61,9 @@ void Delta_SL::update_impl(double t, double dt) {
   m_sea_level = m_input_model->sea_level_elevation() + m_current_forcing;
 }
 
+double Delta_SL::sea_level_elevation_impl() const {
+  return m_sea_level;
+}
+
 } // end of namespace ocean
 } // end of namespace pism
