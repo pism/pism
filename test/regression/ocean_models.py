@@ -392,8 +392,13 @@ class FracSMB(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
+class Cache(TestCase):
+    def setUp(self):
+        pass
 
-if __name__ == "__main__":
-    pass
+    def runTest(self):
+        "ocean::Cache"
+        raise NotImplementedError("FIX ME!")
 
-# add_modifier<Cache>("cache");
+    def tearDown(self):
+        pass
