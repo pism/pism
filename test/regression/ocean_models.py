@@ -9,11 +9,26 @@ from unittest import TestCase
 import netCDF4
 
 config = PISM.Context().config
+# change the default melange back pressure fraction from 0 to 1. The default of zero makes
+# it hard to test the modifier that scales the value.
+
+config.set_double("ocean.constant.melange_back_pressure_fraction", 1.0)
 log = PISM.Context().log
 log.set_threshold(1)
 options = PISM.PETSc.Options()
 
-def create_dummy_grid():
+def create_dummy_forcing_file(filename, variable_name, units, value):
+    f = netCDF4.Dataset(filename, "w")
+    f.createDimension("time", 1)
+    t = f.createVariable("time", "d", ("time",))
+    t.units = "seconds"
+    delta_T = f.createVariable(variable_name, "d", ("time",))
+    delta_T.units = units
+    t[0] = 0.0
+    delta_T[0] = value
+    f.close()
+
+def dummy_grid():
     "Create a dummy grid"
     ctx = PISM.Context()
     params = PISM.GridParameters(ctx.config)
@@ -47,16 +62,21 @@ def check_difference(A, B, value):
         for (i, j) in grid.points():
             np.testing.assert_almost_equal(A[i, j] - B[i, j], value)
 
+def check_ratio(A, B, value):
+    "Check if the difference between A and B is almost equal to value."
+    grid = A.grid()
+    with PISM.vec.Access(nocomm=[A, B]):
+        for (i, j) in grid.points():
+            if B[i, j] != 0:
+                np.testing.assert_almost_equal(A[i, j] / B[i, j], value)
+
 def check_model(model, T, SMB, SL, MBP):
     check(model.shelf_base_temperature(), T)
     check(model.shelf_base_mass_flux(), SMB)
     np.testing.assert_almost_equal(model.sea_level_elevation(), SL)
     check(model.melange_back_pressure_fraction(), MBP)
 
-def check_modifier(model, modifier, dT, dSMB, dSL, dMBP, difference=True):
-
-    assert difference == True
-
+def check_modifier(model, modifier, dT, dSMB, dSL, dMBP):
     np.testing.assert_almost_equal(modifier.sea_level_elevation() - model.sea_level_elevation(),
                                    dSL)
 
@@ -72,7 +92,7 @@ def check_modifier(model, modifier, dT, dSMB, dSL, dMBP, difference=True):
                      model.melange_back_pressure_fraction(),
                      dMBP)
 
-def create_ocean_constant(grid, depth=1000.0):
+def ocean_constant(grid, depth=1000.0):
     try:
         grid.variables.get_2d_scalar("thk")
     except:
@@ -100,12 +120,12 @@ def constant_test():
     pressure  = ice_density * g * depth
     T_melting = T0 - beta_CC * pressure
 
-    melange_back_pressure = 0.0
+    melange_back_pressure = 1.0
 
     sea_level = 0.0
 
-    grid = create_dummy_grid()
-    model = create_ocean_constant(grid, depth)
+    grid = dummy_grid()
+    model = ocean_constant(grid, depth)
 
     model.init()
     model.update(0, 1)
@@ -114,7 +134,7 @@ def constant_test():
 
 def pik_test():
     "ocean::PIK"
-    grid = create_dummy_grid()
+    grid = dummy_grid()
 
     depth = 1000.0                  # meters
 
@@ -152,8 +172,7 @@ class GivenTest(TestCase):
     def setUp(self):
         self.sea_level = 0.0
 
-        grid = create_dummy_grid()
-        self.grid = grid
+        self.grid = dummy_grid()
         self.filename = "given_input.nc"
 
         self.temperature           = 263.0
@@ -188,24 +207,23 @@ class GivenTHTest(TestCase):
         self.temperature           = 270.17909999999995
         self.mass_flux             = -6.489250000000001e-05
 
-        grid = create_dummy_grid()
-        self.grid = grid
+        self.grid = dummy_grid()
 
-        ice_thickness = PISM.model.createIceThicknessVec(grid)
+        ice_thickness = PISM.model.createIceThicknessVec(self.grid)
         ice_thickness.set(depth)
-        grid.variables().add(ice_thickness)
+        self.grid.variables().add(ice_thickness)
 
         filename = "given_th_input.nc"
         self.filename = filename
 
         PISM.util.prepare_output(filename)
 
-        Th = PISM.IceModelVec2S(grid, "theta_ocean", PISM.WITHOUT_GHOSTS)
+        Th = PISM.IceModelVec2S(self.grid, "theta_ocean", PISM.WITHOUT_GHOSTS)
         Th.set_attrs("climate", "potential temperature", "Kelvin", "")
         Th.set(potential_temperature)
         Th.write(filename)
 
-        S = PISM.IceModelVec2S(grid, "salinity_ocean", PISM.WITHOUT_GHOSTS)
+        S = PISM.IceModelVec2S(self.grid, "salinity_ocean", PISM.WITHOUT_GHOSTS)
         S.set_attrs("climate", "ocean salinity", "g/kg", "")
         S.set(salinity)
         S.write(filename)
@@ -227,31 +245,23 @@ class GivenTHTest(TestCase):
 class DeltaT(TestCase):
     def setUp(self):
         self.filename = "delta_T_input.nc"
-        self.grid = create_dummy_grid()
-        self.model = create_ocean_constant(self.grid)
+        self.grid = dummy_grid()
+        self.model = ocean_constant(self.grid)
         self.dT = -5.0
 
-        f = netCDF4.Dataset(self.filename, "w")
-        f.createDimension("time", 1)
-        t = f.createVariable("time", "d", ("time",))
-        t.units = "seconds"
-        delta_T = f.createVariable("delta_T", "d", ("time",))
-        delta_T.units = "Kelvin"
-        t[0] = 0.0
-        delta_T[0] = self.dT
-        f.close()
+        create_dummy_forcing_file(self.filename, "delta_T", "Kelvin", self.dT)
 
     def runTest(self):
         "ocean::Delta_T"
 
-        delta_t = PISM.OceanDeltaT(self.grid, self.model)
+        modifier = PISM.OceanDeltaT(self.grid, self.model)
 
         options.setValue("-ocean_delta_T_file", self.filename)
 
-        delta_t.init()
-        delta_t.update(0, 1)
+        modifier.init()
+        modifier.update(0, 1)
 
-        check_modifier(self.model, delta_t, self.dT, 0.0, 0.0, 0.0)
+        check_modifier(self.model, modifier, self.dT, 0.0, 0.0, 0.0)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -259,43 +269,131 @@ class DeltaT(TestCase):
 class DeltaSL(TestCase):
     def setUp(self):
         self.filename = "delta_SL_input.nc"
-        self.grid = create_dummy_grid()
-        self.model = create_ocean_constant(self.grid)
+        self.grid = dummy_grid()
+        self.model = ocean_constant(self.grid)
         self.dSL = -5.0
 
-        f = netCDF4.Dataset(self.filename, "w")
-        f.createDimension("time", 1)
-        t = f.createVariable("time", "d", ("time",))
-        t.units = "seconds"
-        delta_SL = f.createVariable("delta_SL", "d", ("time",))
-        delta_SL.units = "m"
-        t[0] = 0.0
-        delta_SL[0] = self.dSL
-        f.close()
+        create_dummy_forcing_file(self.filename, "delta_SL", "meters", self.dSL)
 
     def runTest(self):
         "ocean::Delta_SL"
 
-        delta_sl = PISM.OceanDeltaSL(self.grid, self.model)
+        modifier = PISM.OceanDeltaSL(self.grid, self.model)
 
         options.setValue("-ocean_delta_SL_file", self.filename)
 
-        delta_sl.init()
-        delta_sl.update(0, 1)
+        modifier.init()
+        modifier.update(0, 1)
 
-        check_modifier(self.model, delta_sl, 0.0, 0.0, self.dSL, 0.0)
+        check_modifier(self.model, modifier, 0.0, 0.0, self.dSL, 0.0)
+
+    def tearDown(self):
+        os.remove(self.filename)
+
+class DeltaSMB(TestCase):
+    def setUp(self):
+        self.filename = "delta_SMB_input.nc"
+        self.grid = dummy_grid()
+        self.model = ocean_constant(self.grid)
+        self.dSMB = -5.0
+
+        create_dummy_forcing_file(self.filename, "delta_mass_flux", "kg m-2 s-1", self.dSMB)
+
+    def runTest(self):
+        "ocean::Delta_SMB"
+
+        modifier = PISM.OceanDeltaSMB(self.grid, self.model)
+
+        options.setValue("-ocean_delta_mass_flux_file", self.filename)
+
+        modifier.init()
+        modifier.update(0, 1)
+
+        check_modifier(self.model, modifier, 0.0, self.dSMB, 0.0, 0.0)
+
+    def tearDown(self):
+        os.remove(self.filename)
+
+class FracMBP(TestCase):
+    def setUp(self):
+        self.filename = "frac_MBP_input.nc"
+        self.grid = dummy_grid()
+        self.model = ocean_constant(self.grid)
+        self.dMBP = 0.5
+
+        create_dummy_forcing_file(self.filename, "frac_MBP", "1", self.dMBP)
+
+    def runTest(self):
+        "ocean::Frac_MBP"
+
+        modifier = PISM.OceanFracMBP(self.grid, self.model)
+
+        options.setValue("-ocean_frac_MBP_file", self.filename)
+
+        modifier.init()
+        modifier.update(0, 1)
+
+        model = self.model
+
+        np.testing.assert_almost_equal(modifier.sea_level_elevation(),
+                                       model.sea_level_elevation())
+
+        check_difference(modifier.shelf_base_temperature(),
+                         model.shelf_base_temperature(),
+                         0.0)
+
+        check_difference(modifier.shelf_base_mass_flux(),
+                         model.shelf_base_mass_flux(),
+                         0.0)
+
+        check_ratio(modifier.melange_back_pressure_fraction(),
+                    model.melange_back_pressure_fraction(),
+                    self.dMBP)
+
+    def tearDown(self):
+        os.remove(self.filename)
+
+class FracSMB(TestCase):
+    def setUp(self):
+        self.filename = "frac_SMB_input.nc"
+        self.grid = dummy_grid()
+        self.model = ocean_constant(self.grid)
+        self.dSMB = 0.5
+
+        create_dummy_forcing_file(self.filename, "frac_mass_flux", "1", self.dSMB)
+
+    def runTest(self):
+        "ocean::Frac_SMB"
+
+        modifier = PISM.OceanFracSMB(self.grid, self.model)
+
+        options.setValue("-ocean_frac_mass_flux_file", self.filename)
+
+        modifier.init()
+        modifier.update(0, 1)
+
+        model = self.model
+
+        np.testing.assert_almost_equal(modifier.sea_level_elevation(),
+                                       model.sea_level_elevation())
+
+        check_difference(modifier.shelf_base_temperature(),
+                         model.shelf_base_temperature(),
+                         0.0)
+
+        check_ratio(modifier.shelf_base_mass_flux(),
+                    model.shelf_base_mass_flux(),
+                    self.dSMB)
+
+        check_difference(modifier.melange_back_pressure_fraction(),
+                         model.melange_back_pressure_fraction(),
+                         0.0)
 
     def tearDown(self):
         os.remove(self.filename)
 
 
 if __name__ == "__main__":
-    t = DeltaSL()
-    t.setUp()
-    t.runTest()
-    t.tearDown()
+    pass
 
 # add_modifier<Cache>("cache");
-# add_modifier<Delta_SMB>("delta_SMB");
-# add_modifier<Frac_SMB>("frac_SMB");
-# add_modifier<Frac_MBP>("frac_MBP");

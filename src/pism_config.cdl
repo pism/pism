@@ -991,6 +991,11 @@ netcdf pism_config {
     pism_config:ocean.constant.melt_rate_option = "shelf_base_melt_rate";
     pism_config:ocean.constant.melt_rate_type = "scalar";
 
+    pism_config:ocean.constant.melange_back_pressure_fraction = 0.0;
+    pism_config:ocean.constant.melange_back_pressure_fraction_units = "1";
+    pism_config:ocean.constant.melange_back_pressure_fraction_doc = "default melange back pressure fraction in the 'contant' ocean model";
+    pism_config:ocean.constant.melange_back_pressure_fraction_type = "scalar";
+
     pism_config:ocean.cache.update_interval = 10;
     pism_config:ocean.cache.update_interval_units = "years";
     pism_config:ocean.cache.update_interval_doc = "update interval of the 'cache' ocean modifier";

@@ -51,7 +51,7 @@ void Frac_SMB::init_impl() {
   m_input_model->init();
 
   m_log->message(2,
-             "* Initializing ice shelf base mass flux forcing using scalar offsets...\n");
+                 "* Initializing ice shelf base mass flux forcing using scalar offsets...\n");
 
   init_internal();
 }
@@ -59,7 +59,8 @@ void Frac_SMB::init_impl() {
 void Frac_SMB::update_impl(double t, double dt) {
   super::update_impl(t, dt);
 
-  scale_data(*m_shelf_base_mass_flux);
+  m_shelf_base_mass_flux->copy_from(m_input_model->shelf_base_mass_flux());
+  m_shelf_base_mass_flux->scale(m_current_forcing);
 }
 
 const IceModelVec2S& Frac_SMB::shelf_base_mass_flux_impl() const {

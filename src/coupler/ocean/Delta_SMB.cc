@@ -58,8 +58,8 @@ void Delta_SMB::init_impl() {
 
 void Delta_SMB::update_impl(double t, double dt) {
   super::update_impl(t, dt);
-
-  offset_data(*m_shelf_base_mass_flux);
+  m_shelf_base_mass_flux->copy_from(m_input_model->shelf_base_mass_flux());
+  m_shelf_base_mass_flux->shift(m_current_forcing);
 }
 
 const IceModelVec2S& Delta_SMB::shelf_base_mass_flux_impl() const {

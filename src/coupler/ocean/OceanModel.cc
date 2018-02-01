@@ -63,6 +63,8 @@ OceanModel::OceanModel(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> input)
 
   if (not input) {
     m_melange_back_pressure_fraction = allocate_melange_back_pressure(g);
+    // set the default value
+    m_melange_back_pressure_fraction->set(0.0);
   }
 }
 

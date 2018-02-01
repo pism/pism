@@ -52,7 +52,7 @@ void Constant::update_impl(double t, double dt) {
 
   m_shelf_base_mass_flux->set(mass_flux);
 
-  m_melange_back_pressure_fraction->set(0.0);
+  m_melange_back_pressure_fraction->set(m_config->get_double("ocean.constant.melange_back_pressure_fraction"));
 
   m_sea_level = 0.0;
 }

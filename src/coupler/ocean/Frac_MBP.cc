@@ -60,8 +60,7 @@ void Frac_MBP::update_impl(double t, double dt) {
   super::update_impl(t, dt);
 
   m_melange_back_pressure_fraction->copy_from(m_input_model->melange_back_pressure_fraction());
-
-  offset_data(*m_melange_back_pressure_fraction);
+  m_melange_back_pressure_fraction->scale(m_current_forcing);
 }
 
 const IceModelVec2S& Frac_MBP::melange_back_pressure_fraction_impl() const {
