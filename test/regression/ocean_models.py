@@ -5,7 +5,7 @@ Tests of PISM's ocean models and modifiers.
 import PISM
 import sys, os
 import numpy as np
-import unittest
+from unittest import TestCase
 
 def create_dummy_grid():
     "Create a dummy grid"
@@ -23,6 +23,20 @@ def check(vec, value):
     with PISM.vec.Access(nocomm=[vec]):
         for (i, j) in grid.points():
             np.testing.assert_almost_equal(vec[i, j], value)
+
+def check_difference(A, B, value):
+    "Check if the difference between A and B is almost equal to value."
+    grid = vec.grid()
+    with PISM.vec.Access(nocomm=[A, B]):
+        for (i, j) in grid.points():
+            np.testing.assert_almost_equal(A[i, j] - B[i, j], value)
+
+def ocean_model_outputs(model):
+
+    return (model.sea_level_elevation(),
+            model.shelf_base_temperature(),
+            model.shelf_base_mass_flux(),
+            model.melange_back_pressure_fraction())
 
 def constant_test():
     "ocean::Constant"
@@ -115,19 +129,8 @@ def create_given_input_file(filename, grid, temperature, mass_flux):
     M.set(mass_flux)
     M.write(filename)
 
-class GivenTest(unittest.TestCase):
+class GivenTest(TestCase):
     "Test the ocean::Given class"
-
-    def runTest(self):
-        "ocean::Given"
-        log.message(1, "\n")
-        model = PISM.OceanGiven(self.grid)
-        model.init()
-        model.update(0, 1)
-
-        check(model.shelf_base_temperature(), self.temperature)
-        check(model.shelf_base_mass_flux(), self.mass_flux)
-        check(model.melange_back_pressure_fraction(), self.melange_back_pressure)
 
     def setUp(self):
         grid = create_dummy_grid()
@@ -143,18 +146,29 @@ class GivenTest(unittest.TestCase):
         o = PISM.PETSc.Options()
         o.setValue("-ocean_given_file", self.filename)
 
+    def runTest(self):
+        "ocean::Given"
+        log.message(1, "\n")
+        model = PISM.OceanGiven(self.grid)
+        model.init()
+        model.update(0, 1)
+
+        check(model.shelf_base_temperature(), self.temperature)
+        check(model.shelf_base_mass_flux(), self.mass_flux)
+        check(model.melange_back_pressure_fraction(), self.melange_back_pressure)
+
     def tearDown(self):
         os.remove(self.filename)
 
-class GivenTHTest(unittest.TestCase):
+class GivenTHTest(TestCase):
     def setUp(self):
 
-        depth = 1000.0
-        salinity = 35.0
-        potential_temperature = 270.0
+        depth                      = 1000.0
+        salinity                   = 35.0
+        potential_temperature      = 270.0
         self.melange_back_pressure = 0.0
-        self.temperature = 270.17909999999995
-        self.mass_flux = -6.489250000000001e-05
+        self.temperature           = 270.17909999999995
+        self.mass_flux             = -6.489250000000001e-05
 
         grid = create_dummy_grid()
         self.grid = grid
@@ -194,3 +208,48 @@ class GivenTHTest(unittest.TestCase):
 
     def tearDown(self):
         os.remove(self.filename)
+
+class DeltaT(TestCase):
+    def setUp(self):
+        self.filename = "delta_T_input.nc"
+
+        depth = 1000.0
+
+        grid = create_dummy_grid()
+        self.grid = grid
+
+        ice_thickness = PISM.model.createIceThicknessVec(grid)
+        ice_thickness.set(depth)
+        grid.variables().add(ice_thickness)
+
+        model = PISM.OceanConstant(grid)
+        self.model = model
+
+    def runTest(self):
+        "ocean::Delta_T"
+
+        delta_t = PISM.OceanDeltaT(self.grid, self.model)
+
+        o = PISM.PETSc.Options()
+        o.setValue("-ocean_delta_T_file", self.filename)
+
+        delta_t.init()
+        delta_t.update(0, 1)
+
+        model = self.model
+
+        check_difference(model.sea_level_elevation(),
+                         delta_t.sea_level_elevation(),
+                         0.0)
+
+        check_difference(model.shelf_base_temperature(),
+                         delta_t.shelf_base_temperature(),
+                         5.0)
+
+        check_difference(model.shelf_base_mass_flux(),
+                         delta_t.shelf_base_mass_flux(),
+                         0.0)
+
+        check_difference(model.melange_back_pressure_fraction(),
+                         delta_t.melange_back_pressure_fraction(),
+                         0.0)
