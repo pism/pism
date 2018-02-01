@@ -21,14 +21,14 @@
 
 %include "coupler/util/PScalarForcing.hh"
 %shared_ptr(pism::PScalarForcing< pism::ocean::OceanModel,pism::ocean::OceanModel >)
-%template(ScalarOceanForcing) pism::PScalarForcing<pism::ocean::OceanModel,pism::ocean::OceanModel>;
+%template(_ScalarOceanForcing) pism::PScalarForcing<pism::ocean::OceanModel,pism::ocean::OceanModel>;
 
 %include "coupler/util/PGivenClimate.hh"
 %shared_ptr(pism::PGivenClimate< pism::ocean::OceanModel,pism::ocean::OceanModel >)
-%template(GivenOcean1) pism::PGivenClimate<pism::ocean::OceanModel,pism::ocean::OceanModel>;
+%template(_GivenOcean1) pism::PGivenClimate<pism::ocean::OceanModel,pism::ocean::OceanModel>;
 
 %shared_ptr(pism::PGivenClimate< pism::ocean::CompleteOceanModel,pism::ocean::CompleteOceanModel >)
-%template(GivenOcean2) pism::PGivenClimate<pism::ocean::CompleteOceanModel,pism::ocean::CompleteOceanModel>;
+%template(_GivenOcean2) pism::PGivenClimate<pism::ocean::CompleteOceanModel,pism::ocean::CompleteOceanModel>;
 
 %shared_ptr(pism::ocean::Constant)
 %rename(OceanConstant) pism::ocean::Constant;

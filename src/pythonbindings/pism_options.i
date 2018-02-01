@@ -4,13 +4,13 @@
 
 %include "util/options.hh"
 // instantiate templates used by option processing classes below
-%template(OptionStdString) pism::options::Option<std::string>;
-%template(OptionStdVectorStdString) pism::options::Option<std::vector<std::string> >;
-%template(OptionStdSetStdString) pism::options::Option<std::set<std::string> >;
-%template(OptionInt) pism::options::Option<int>;
-%template(OptionStdVectorInt) pism::options::Option<std::vector<int> >;
-%template(OptionDouble) pism::options::Option<double>;
-%template(OptionStdVectorDouble) pism::options::Option<std::vector<double> >;
+%template(_OptionStdString) pism::options::Option<std::string>;
+%template(_OptionStdVectorStdString) pism::options::Option<std::vector<std::string> >;
+%template(_OptionStdSetStdString) pism::options::Option<std::set<std::string> >;
+%template(_OptionInt) pism::options::Option<int>;
+%template(_OptionStdVectorInt) pism::options::Option<std::vector<int> >;
+%template(_OptionDouble) pism::options::Option<double>;
+%template(_OptionStdVectorDouble) pism::options::Option<std::vector<double> >;
 
 // rename classes in pism::options (SWIG flattens namespaces)
 %rename(OptionString) pism::options::String;
