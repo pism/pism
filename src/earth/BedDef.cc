@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -71,8 +71,8 @@ void BedDef::write_model_state_impl(const PIO &output) const {
   m_topg.write(output);
 }
 
-std::map<std::string, Diagnostic::Ptr> BedDef::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result;
+DiagnosticList BedDef::diagnostics_impl() const {
+  DiagnosticList result;
   result = {
     {"dbdt", Diagnostic::wrap(m_uplift)},
     {"topg", Diagnostic::wrap(m_topg)}

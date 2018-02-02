@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -70,7 +70,7 @@ protected:
   virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) const = 0;
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) const = 0;
 
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
 protected:
   mutable std::vector<double> m_ts_times;
 };

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,8 @@
 #ifndef _PSCALARFORCING_H_
 #define _PSCALARFORCING_H_
 
+#include <memory>               // std::unique_ptr
+
 #include "pism/util/IceGrid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
@@ -34,25 +36,24 @@ template<class Model, class Mod>
 class PScalarForcing : public Mod
 {
 public:
-  PScalarForcing(IceGrid::ConstPtr g, Model* in)
-    : Mod(g, in), m_input(in) {
-    m_current_forcing = NAN;
+  PScalarForcing(IceGrid::ConstPtr g, std::shared_ptr<Model> in)
+    : Mod(g, in), m_current_forcing(NAN) {
+    // empty
   }
 
   virtual ~PScalarForcing()
   {
-    if (m_offset) {
-      delete m_offset;
-    }
+    // empty
   }
 
 protected:
-  virtual void update_impl(double my_t, double my_dt)
+  virtual void update_impl(double t, double dt)
   {
-    Mod::m_t  = Mod::m_grid->ctx()->time()->mod(my_t - m_bc_reference_time, m_bc_period);
-    Mod::m_dt = my_dt;
+    Mod::m_t  = Mod::m_grid->ctx()->time()->mod(t - m_bc_reference_time, m_bc_period);
+    Mod::m_dt = dt;
 
-    Mod::m_input_model->update(my_t, my_dt);
+    // this call will update the input model, too
+    Mod::update_impl(t, dt);
 
     m_current_forcing = (*m_offset)(Mod::m_t + 0.5*Mod::m_dt);
   }
@@ -104,8 +105,7 @@ protected:
     result.scale(m_current_forcing);
   }
 
-  Model *m_input;
-  Timeseries *m_offset;
+  std::unique_ptr<Timeseries> m_offset;
   std::string m_filename, m_offset_name, m_option_prefix;
 
   unsigned int m_bc_period;       // in years

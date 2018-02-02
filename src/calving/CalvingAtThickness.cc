@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -108,7 +108,7 @@ const IceModelVec2S& CalvingAtThickness::threshold() const {
   return m_calving_threshold;
 }
 
-std::map<std::string, Diagnostic::Ptr> CalvingAtThickness::diagnostics_impl() const {
+DiagnosticList CalvingAtThickness::diagnostics_impl() const {
   return {{"calving_threshold", Diagnostic::wrap(m_calving_threshold)}};
 }
 

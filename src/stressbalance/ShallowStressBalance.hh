@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -82,7 +82,7 @@ public:
 protected:
   virtual void init_impl();
   
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
 
   IceBasalResistancePlasticLaw *m_basal_sliding_law;
   rheology::FlowLaw *m_flow_law;

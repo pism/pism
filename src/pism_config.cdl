@@ -985,6 +985,23 @@ netcdf pism_config {
     pism_config:ocean.pik_melt_factor_type = "scalar";
     pism_config:ocean.pik_melt_factor_units = "1";
 
+    pism_config:ocean.constant.melt_rate = 0.05191419359084029;
+    pism_config:ocean.constant.melt_rate_units = "m / year";
+    pism_config:ocean.constant.melt_rate_doc = "default melt rate used by the 'constant' ocean model (computed as `Q / (L \\rho_i)`)";
+    pism_config:ocean.constant.melt_rate_option = "shelf_base_melt_rate";
+    pism_config:ocean.constant.melt_rate_type = "scalar";
+
+    pism_config:ocean.constant.melange_back_pressure_fraction = 0.0;
+    pism_config:ocean.constant.melange_back_pressure_fraction_units = "1";
+    pism_config:ocean.constant.melange_back_pressure_fraction_doc = "default melange back pressure fraction in the 'contant' ocean model";
+    pism_config:ocean.constant.melange_back_pressure_fraction_type = "scalar";
+
+    pism_config:ocean.cache.update_interval = 10;
+    pism_config:ocean.cache.update_interval_units = "years";
+    pism_config:ocean.cache.update_interval_doc = "update interval of the 'cache' ocean modifier";
+    pism_config:ocean.cache.update_interval_option = "ocean_cache_update_interval";
+    pism_config:ocean.cache.update_interval_type = "integer";
+
     pism_config:ocean.runoff_to_ocean_melt_b = 0.15;
     pism_config:ocean.runoff_to_ocean_melt_b_doc = "parameter B in eqn. 1 in :cite:`Aschwanden`";
     pism_config:ocean.runoff_to_ocean_melt_b_type = "scalar";

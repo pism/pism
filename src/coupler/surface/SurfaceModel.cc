@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -89,15 +89,15 @@ SurfaceModel::SurfaceModel(IceGrid::ConstPtr g)
 }
 
 SurfaceModel::~SurfaceModel() {
-  delete m_atmosphere;
+  // empty
 }
 
 void SurfaceModel::mass_flux(IceModelVec2S &result) const {
   this->mass_flux_impl(result);
 }
 
-std::map<std::string, Diagnostic::Ptr> SurfaceModel::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = {
+DiagnosticList SurfaceModel::diagnostics_impl() const {
+  DiagnosticList result = {
     {"climatic_mass_balance",             Diagnostic::Ptr(new PS_climatic_mass_balance(this))},
     {"ice_surface_temp",                  Diagnostic::Ptr(new PS_ice_surface_temp(this))},
     {"ice_surface_liquid_water_fraction", Diagnostic::Ptr(new PS_liquid_water_fraction(this))},
@@ -112,7 +112,7 @@ std::map<std::string, Diagnostic::Ptr> SurfaceModel::diagnostics_impl() const {
   return result;
 }
 
-std::map<std::string, TSDiagnostic::Ptr> SurfaceModel::ts_diagnostics_impl() const {
+TSDiagnosticList SurfaceModel::ts_diagnostics_impl() const {
   if (m_atmosphere) {
     return m_atmosphere->ts_diagnostics();
   } else {
@@ -120,14 +120,11 @@ std::map<std::string, TSDiagnostic::Ptr> SurfaceModel::ts_diagnostics_impl() con
   }
 }
 
-void SurfaceModel::attach_atmosphere_model(atmosphere::AtmosphereModel *input) {
+void SurfaceModel::attach_atmosphere_model(std::shared_ptr<atmosphere::AtmosphereModel> input) {
   this->attach_atmosphere_model_impl(input);
 }
 
-void SurfaceModel::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input) {
-  if (m_atmosphere != NULL) {
-    delete m_atmosphere;
-  }
+void SurfaceModel::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input) {
   m_atmosphere = input;
 }
 

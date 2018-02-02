@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -122,7 +122,7 @@ const IceModelVec2Int& OceanKill::mask() const {
   return m_ocean_kill_mask;
 }
 
-std::map<std::string, Diagnostic::Ptr> OceanKill::diagnostics_impl() const {
+DiagnosticList OceanKill::diagnostics_impl() const {
   return {{"ocean_kill_mask", Diagnostic::wrap(m_ocean_kill_mask)}};
 }
 

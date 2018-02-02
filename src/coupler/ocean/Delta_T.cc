@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,22 +22,24 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace ocean {
 
-Delta_T::Delta_T(IceGrid::ConstPtr g, OceanModel* in)
-  : PScalarForcing<OceanModel,OceanModifier>(g, in) {
+Delta_T::Delta_T(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
+  : PScalarForcing<OceanModel,OceanModel>(g, in) {
 
   m_option_prefix = "-ocean_delta_T";
   m_offset_name   = "delta_T";
 
-  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
+  m_offset.reset(new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name")));
 
   m_offset->variable().set_string("units", "Kelvin");
   m_offset->variable().set_string("long_name", "ice-shelf-base temperature offsets");
   m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
 
+  m_shelf_base_temperature = allocate_shelf_base_temperature(g);
 }
 
 Delta_T::~Delta_T() {
@@ -45,24 +47,24 @@ Delta_T::~Delta_T() {
 }
 
 void Delta_T::init_impl() {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_input_model->init();
 
   m_log->message(2,
-             "* Initializing ice shelf base temperature forcing using scalar offsets...\n");
+                 "* Initializing ice shelf base temperature forcing using scalar offsets...\n");
 
   init_internal();
 }
 
-MaxTimestep Delta_T::max_timestep_impl(double t) const {
-  (void) t;
-  return MaxTimestep("ocean delta_T");
+void Delta_T::update_impl(double t, double dt) {
+  super::update_impl(t, dt);
+
+  m_shelf_base_temperature->copy_from(m_input_model->shelf_base_temperature());
+  m_shelf_base_temperature->shift(m_current_forcing);
 }
 
-void Delta_T::shelf_base_temperature_impl(IceModelVec2S &result) const {
-  m_input_model->shelf_base_temperature(result);
-  offset_data(result);
+const IceModelVec2S& Delta_T::shelf_base_temperature_impl() const {
+  return *m_shelf_base_temperature;
 }
 
 } // end of namespace ocean

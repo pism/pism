@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -53,7 +53,7 @@ namespace atmosphere {
 class PaleoPrecip : public PScalarForcing<AtmosphereModel,PAModifier>
 {
 public:
-  PaleoPrecip(IceGrid::ConstPtr g, AtmosphereModel* in);
+  PaleoPrecip(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
   virtual ~PaleoPrecip();
 
 protected:

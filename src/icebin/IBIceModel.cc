@@ -44,18 +44,18 @@ void IBIceModel::allocate_couplers() {
   // Initialize boundary models:
   atmosphere::Factory pa(m_grid);
   ocean::Factory po(m_grid);
-  atmosphere::AtmosphereModel *atmosphere;
+  std::shared_ptr<atmosphere::AtmosphereModel> atmosphere;
 
   if (m_surface == NULL) {
 
     m_log->message(2, "# Allocating a surface process model or coupler...\n");
 
-    m_surface                = new IBSurfaceModel(m_grid);
+    m_surface.reset(new IBSurfaceModel(m_grid));
 
     atmosphere = pa.create();
     m_surface->attach_atmosphere_model(atmosphere);
 
-    m_submodels["surface process model"] = m_surface;
+    m_submodels["surface process model"] = m_surface.get();
   }
 
   if (m_ocean == NULL) {
@@ -63,7 +63,7 @@ void IBIceModel::allocate_couplers() {
 
     m_ocean = po.create();
 
-    m_submodels["ocean model"] = m_ocean;
+    m_submodels["ocean model"] = m_ocean.get();
   }
 }
 

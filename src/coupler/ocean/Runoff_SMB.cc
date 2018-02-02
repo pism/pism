@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,22 +16,21 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>       // GSL_NAN
-
 #include "Runoff_SMB.hh"
 #include "pism/util/ConfigInterface.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace ocean {
 
-  
-Runoff_SMB::Runoff_SMB(IceGrid::ConstPtr g, OceanModel* in)
-  : PScalarForcing<OceanModel,OceanModifier>(g, in) {
+
+Runoff_SMB::Runoff_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
+  : PScalarForcing<OceanModel,OceanModel>(g, in) {
 
   m_option_prefix = "-ocean_runoff_smb";
   m_offset_name = "delta_T";
-  
-  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
+
+  m_offset.reset(new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name")));
   m_offset->variable().set_string("units", "Kelvin");
   m_offset->variable().set_string("long_name", "air temperature offsets");
   m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
@@ -48,7 +47,6 @@ Runoff_SMB::~Runoff_SMB() {
 }
 
 void Runoff_SMB::init_impl() {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_input_model->init();
 
@@ -59,14 +57,13 @@ void Runoff_SMB::init_impl() {
   init_internal();
 }
 
-MaxTimestep Runoff_SMB::max_timestep_impl(double t) const {
-  (void) t;
-  return MaxTimestep("ocean runoff_SMB");
-}
-  
-void Runoff_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
-  m_input_model->shelf_base_mass_flux(result);
+void Runoff_SMB::update_impl(double t, double dt) {
+  super::update_impl(t, dt);
 
+  mass_flux(*m_shelf_base_mass_flux);
+}
+
+void Runoff_SMB::mass_flux(IceModelVec2S &result) const {
   // m_current_forcing is set by PScalarForcing::update_impl()
   double delta_T = m_current_forcing;
 
@@ -78,7 +75,7 @@ void Runoff_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
     beta = m_runoff_to_ocean_melt_power_beta,
     scale_factor = 1.0;
 
-  /* 
+  /*
      This parameterization only works if delta_T > 0 because
      negative numbers cannot be raised to a fractional power
      so we do not scale the forcing if delta_T < 0

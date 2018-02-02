@@ -270,9 +270,10 @@ protected:
   calving::vonMisesCalving    *m_vonmises_calving;
   FrontalMelt                 *m_frontal_melt;
 
-  surface::SurfaceModel *m_surface;
-  ocean::OceanModel     *m_ocean;
-  bed::BedDef           *m_beddef;
+  std::shared_ptr<surface::SurfaceModel> m_surface;
+  std::shared_ptr<ocean::OceanModel>     m_ocean;
+
+  bed::BedDef *m_beddef;
 
   // state variables and some diagnostics/internals
 
@@ -356,7 +357,7 @@ protected:
   virtual void update_run_stats();
 
   // working space (a convenience)
-  static const int m_n_work2d = 4;
+  static const int m_n_work2d = 3;
   mutable IceModelVec2S m_work2d[m_n_work2d];
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2017 PISM Authors
+// Copyright (C) 2012-2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -144,8 +144,8 @@ void Distributed::write_model_state_impl(const PIO &output) const {
   m_P.write(output);
 }
 
-std::map<std::string, Diagnostic::Ptr> Distributed::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = {
+DiagnosticList Distributed::diagnostics_impl() const {
+  DiagnosticList result = {
     {"bwprel",           Diagnostic::Ptr(new Hydrology_bwprel(this))},
     {"effbwp",           Diagnostic::Ptr(new Hydrology_effbwp(this))},
     {"hydrobmelt",       Diagnostic::Ptr(new Hydrology_hydrobmelt(this))},
@@ -157,8 +157,8 @@ std::map<std::string, Diagnostic::Ptr> Distributed::diagnostics_impl() const {
   return combine(result, Routing::diagnostics_impl());
 }
 
-std::map<std::string, TSDiagnostic::Ptr> Distributed::ts_diagnostics_impl() const {
-  std::map<std::string, TSDiagnostic::Ptr> result = {
+TSDiagnosticList Distributed::ts_diagnostics_impl() const {
+  TSDiagnosticList result = {
     // add mass-conservation time-series diagnostics
     {"hydro_ice_free_land_loss",                 TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss(this))},
     {"hydro_ocean_loss",                         TSDiagnostic::Ptr(new MCHydrology_ocean_loss(this))},

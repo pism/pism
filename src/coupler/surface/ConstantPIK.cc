@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 PISM Authors
+// Copyright (C) 2008-2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -48,9 +48,9 @@ PIK::PIK(IceGrid::ConstPtr g)
                              "K", "");
 }
 
-void PIK::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input)
+void PIK::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input)
 {
-  delete input;
+  (void) input;
 }
 
 void PIK::init_impl() {

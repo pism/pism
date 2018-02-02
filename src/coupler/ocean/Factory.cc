@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017 PISM Authors
+/* Copyright (C) 2015, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -36,7 +36,7 @@ namespace pism {
 namespace ocean {
 // Ocean
 Factory::Factory(IceGrid::ConstPtr g)
-  : PCFactory<OceanModel,OceanModifier>(g) {
+  : PCFactory<OceanModel,OceanModel>(g) {
   m_option = "ocean";
 
   add_model<GivenTH>("th");
@@ -50,7 +50,7 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_modifier<Frac_SMB>("frac_SMB");
   add_modifier<Delta_T>("delta_T");
   add_modifier<Runoff_SMB>("runoff_SMB");
-  add_modifier<Delta_MBP>("frac_MBP");
+  add_modifier<Frac_MBP>("frac_MBP");
   add_modifier<Delta_SL>("delta_SL");
 }
 

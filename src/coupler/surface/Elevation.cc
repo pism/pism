@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -170,9 +170,9 @@ MaxTimestep Elevation::max_timestep_impl(double t) const {
   return MaxTimestep("surface 'elevation'");
 }
 
-void Elevation::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input)
+void Elevation::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input)
 {
-  delete input;
+  (void) input;
 }
 
 void Elevation::update_impl(double my_t, double my_dt)

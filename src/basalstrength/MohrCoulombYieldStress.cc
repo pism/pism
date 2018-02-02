@@ -465,7 +465,7 @@ void MohrCoulombYieldStress::tauc_to_phi(const IceModelVec2CellType &mask) {
   }
 }
 
-std::map<std::string, Diagnostic::Ptr> MohrCoulombYieldStress::diagnostics_impl() const {
+DiagnosticList MohrCoulombYieldStress::diagnostics_impl() const {
   return combine({{"tillphi", Diagnostic::wrap(m_till_phi)}},
                  YieldStress::diagnostics_impl());
 }

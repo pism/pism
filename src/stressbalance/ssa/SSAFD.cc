@@ -1678,8 +1678,8 @@ IceModelVec::Ptr SSAFD_nuH::compute_impl() const {
   return result;
 }
 
-std::map<std::string, Diagnostic::Ptr> SSAFD::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = SSA::diagnostics_impl();
+DiagnosticList SSAFD::diagnostics_impl() const {
+  DiagnosticList result = SSA::diagnostics_impl();
 
   result["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));
 

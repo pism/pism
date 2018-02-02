@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -91,19 +91,19 @@ Component::~Component() {
   // empty
 }
 
-std::map<std::string, Diagnostic::Ptr> Component::diagnostics() const {
+DiagnosticList Component::diagnostics() const {
   return this->diagnostics_impl();
 }
 
-std::map<std::string, TSDiagnostic::Ptr> Component::ts_diagnostics() const {
+TSDiagnosticList Component::ts_diagnostics() const {
   return this->ts_diagnostics_impl();
 }
 
-std::map<std::string, Diagnostic::Ptr> Component::diagnostics_impl() const {
+DiagnosticList Component::diagnostics_impl() const {
   return {};
 }
 
-std::map<std::string, TSDiagnostic::Ptr> Component::ts_diagnostics_impl() const {
+TSDiagnosticList Component::ts_diagnostics_impl() const {
   return {};
 }
 

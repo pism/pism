@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,21 +22,24 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace ocean {
 
-Frac_SMB::Frac_SMB(IceGrid::ConstPtr g, OceanModel* in)
-  : PScalarForcing<OceanModel,OceanModifier>(g, in) {
+Frac_SMB::Frac_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
+  : PScalarForcing<OceanModel,OceanModel>(g, in) {
 
   m_option_prefix = "-ocean_frac_mass_flux";
   m_offset_name   = "frac_mass_flux";
 
-  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
+  m_offset.reset(new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name")));
 
   m_offset->variable().set_string("units", "1");
   m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
   m_offset->variable().set_string("long_name", "ice-shelf-base mass flux factor");
+
+  m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
 }
 
 Frac_SMB::~Frac_SMB() {
@@ -44,25 +47,24 @@ Frac_SMB::~Frac_SMB() {
 }
 
 void Frac_SMB::init_impl() {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_input_model->init();
 
   m_log->message(2,
-             "* Initializing ice shelf base mass flux forcing using scalar offsets...\n");
+                 "* Initializing ice shelf base mass flux forcing using scalar offsets...\n");
 
   init_internal();
-
 }
 
-MaxTimestep Frac_SMB::max_timestep_impl(double t) const {
-  (void) t;
-  return MaxTimestep("ocean frac_SMB");
+void Frac_SMB::update_impl(double t, double dt) {
+  super::update_impl(t, dt);
+
+  m_shelf_base_mass_flux->copy_from(m_input_model->shelf_base_mass_flux());
+  m_shelf_base_mass_flux->scale(m_current_forcing);
 }
 
-void Frac_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
-  m_input_model->shelf_base_mass_flux(result);
-  scale_data(result);
+const IceModelVec2S& Frac_SMB::shelf_base_mass_flux_impl() const {
+  return *m_shelf_base_mass_flux;
 }
 
 } // end of namespace ocean

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,11 +26,11 @@
 namespace pism {
 namespace atmosphere {
 
-Frac_P::Frac_P(IceGrid::ConstPtr g, AtmosphereModel* in)
+Frac_P::Frac_P(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in) {
   m_option_prefix = "-atmosphere_frac_P";
   m_offset_name = "frac_P";
-  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
+  m_offset.reset(new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name")));
   m_offset->variable().set_string("units", "1");
   m_offset->variable().set_string("long_name", "precipitation multiplier, pure fraction");
   m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -107,8 +107,8 @@ public:
   Component(IceGrid::ConstPtr g);
   virtual ~Component();
 
-  std::map<std::string, Diagnostic::Ptr> diagnostics() const;
-  std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics() const;
+  DiagnosticList diagnostics() const;
+  TSDiagnosticList ts_diagnostics() const;
 
   IceGrid::ConstPtr grid() const;
 
@@ -123,8 +123,8 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
-  virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
+  virtual TSDiagnosticList ts_diagnostics_impl() const;
 
   /** @brief This flag determines whether a variable is read from the
       `-regrid_file` file even if it is not listed among variables in

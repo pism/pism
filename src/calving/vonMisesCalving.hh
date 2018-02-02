@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,7 +38,7 @@ public:
 
   // empty methods that we're required to implement:
 protected:
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
 
   void compute_calving_rate(const IceModelVec2CellType &mask,
                             IceModelVec2S &result) const;

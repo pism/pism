@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -15,41 +15,42 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ */
 
-#ifndef _POCACHE_H_
-#define _POCACHE_H_
+#ifndef COMPLETEOCEANMODEL_H
+#define COMPLETEOCEANMODEL_H
 
 #include "pism/coupler/OceanModel.hh"
 
 namespace pism {
 namespace ocean {
 
-class Cache : public OceanModel {
+/*!
+ * Base lass for ocean models with dedicated storage for output fields.
+ *
+ * All ocean models have storage for melange back pressure. (All but one set it to zero.)
+ */
+class CompleteOceanModel : public OceanModel {
 public:
-  Cache(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
-  virtual ~Cache();
+  // "modifier" constructor
+  CompleteOceanModel(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> input);
+  // "model" constructor
+  CompleteOceanModel(IceGrid::ConstPtr g);
 
+  virtual ~CompleteOceanModel();
 protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
-
-  virtual void update_impl(double my_t, double my_dt);
-  virtual void init_impl();
-
   virtual const IceModelVec2S& sea_level_elevation_impl() const;
   virtual const IceModelVec2S& shelf_base_temperature_impl() const;
   virtual const IceModelVec2S& shelf_base_mass_flux_impl() const;
-  virtual const IceModelVec2S& melange_back_pressure_fraction_impl() const;
-private:
-  double m_next_update_time;
-  unsigned int m_update_interval_years;
+  // getter for melange_back_pressure_fraction is inherited from OceanModel
 
   // storage for melange_back_pressure_fraction is inherited from OceanModel
   IceModelVec2S::Ptr m_shelf_base_temperature;
   IceModelVec2S::Ptr m_shelf_base_mass_flux;
   IceModelVec2S::Ptr m_sea_level_elevation;
 };
-
+;
 } // end of namespace ocean
 } // end of namespace pism
-#endif /* _POCACHE_H_ */
+
+#endif /* COMPLETEOCEANMODEL_H */

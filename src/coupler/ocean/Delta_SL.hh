@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,20 +20,25 @@
 #define _PODSLFORCING_H_
 
 #include "pism/coupler/util/PScalarForcing.hh"
-#include "Modifier.hh"
+#include "pism/coupler/OceanModel.hh"
 
 namespace pism {
 namespace ocean {
-class Delta_SL : public PScalarForcing<OceanModel,OceanModifier>
+class Delta_SL : public PScalarForcing<OceanModel,OceanModel>
 {
 public:
-  Delta_SL(IceGrid::ConstPtr g, OceanModel* in);
+  Delta_SL(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
   virtual ~Delta_SL();
 
-protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void init_impl();
-  virtual void sea_level_elevation_impl(double &result) const;
+private:
+
+  typedef PScalarForcing<OceanModel,OceanModel> super;
+
+  void init_impl();
+  void update_impl(double t, double dt);
+  const IceModelVec2S& sea_level_elevation_impl() const;
+
+  IceModelVec2S::Ptr m_sea_level_elevation;
 };
 
 } // end of namespace ocean

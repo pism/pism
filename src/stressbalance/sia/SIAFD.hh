@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -67,7 +67,7 @@ public:
   const IceModelVec2Stag& diffusivity() const;
 
 protected:
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
 
   virtual void compute_surface_gradient(const Inputs &inputs,
                                         IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;

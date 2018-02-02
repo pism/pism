@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 namespace pism {
 namespace atmosphere {
 
-Anomaly::Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in)
+Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
   : PGivenClimate<PAModifier,AtmosphereModel>(g, in) {
   m_option_prefix  = "-atmosphere_anomaly";
 

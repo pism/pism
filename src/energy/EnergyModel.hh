@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -126,8 +126,8 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const = 0;
   virtual void write_model_state_impl(const PIO &output) const = 0;
 
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
-  virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
+  virtual TSDiagnosticList ts_diagnostics_impl() const;
 
   /*! @brief Initialize enthalpy by reading it from a file, or by reading temperature and liquid
       water fraction, or by reading the temperature field alone. */

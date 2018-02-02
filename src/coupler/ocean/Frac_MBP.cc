@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,29 +23,31 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace ocean {
 
-Delta_MBP::Delta_MBP(IceGrid::ConstPtr g, OceanModel* in)
-  : PScalarForcing<OceanModel,OceanModifier>(g, in) {
+Frac_MBP::Frac_MBP(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
+  : PScalarForcing<OceanModel,OceanModel>(g, in) {
 
   m_option_prefix = "-ocean_frac_MBP";
   m_offset_name   = "frac_MBP";
 
-  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
+  m_offset.reset(new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name")));
 
   m_offset->variable().set_string("units", "1");
   m_offset->variable().set_string("long_name", "melange back pressure fraction");
   m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
+
+  m_melange_back_pressure_fraction = allocate_melange_back_pressure(g);
 }
 
-Delta_MBP::~Delta_MBP() {
+Frac_MBP::~Frac_MBP() {
   // empty
 }
 
-void Delta_MBP::init_impl() {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
+void Frac_MBP::init_impl() {
 
   m_input_model->init();
 
@@ -54,16 +56,17 @@ void Delta_MBP::init_impl() {
   init_internal();
 }
 
-MaxTimestep Delta_MBP::max_timestep_impl(double t) const {
-  (void) t;
-  return MaxTimestep("ocean frac_MBP");
+void Frac_MBP::update_impl(double t, double dt) {
+  super::update_impl(t, dt);
+
+  m_melange_back_pressure_fraction->copy_from(m_input_model->melange_back_pressure_fraction());
+  m_melange_back_pressure_fraction->scale(m_current_forcing);
 }
 
-void Delta_MBP::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
-  m_input_model->melange_back_pressure_fraction(result);
-
-  offset_data(result);
+const IceModelVec2S& Frac_MBP::melange_back_pressure_fraction_impl() const {
+  return *m_melange_back_pressure_fraction;
 }
+
 
 } // end of namespace ocean
 } // end of namespace pism

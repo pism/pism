@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -35,7 +35,7 @@ namespace pism {
 namespace surface {
 
 ///// "Force-to-thickness" mechanism
-ForceThickness::ForceThickness(IceGrid::ConstPtr g, SurfaceModel *input)
+ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
   : SurfaceModifier(g, input) {
 
   m_alpha = m_config->get_double("surface.force_to_thickness.alpha", "s-1");

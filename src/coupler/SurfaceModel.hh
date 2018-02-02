@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -48,7 +48,7 @@ public:
 
   void init();
 
-  void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
+  void attach_atmosphere_model(std::shared_ptr<atmosphere::AtmosphereModel> input);
 
   // the interface:
   void mass_flux(IceModelVec2S &result) const;
@@ -64,7 +64,7 @@ protected:
   virtual void init_impl();
   virtual void update_impl(double t, double dt) = 0;
 
-  virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
+  virtual void attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input);
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
@@ -79,10 +79,10 @@ protected:
 
   virtual void mass_flux_impl(IceModelVec2S &result) const = 0;
 
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
-  virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
+  virtual TSDiagnosticList ts_diagnostics_impl() const;
 protected:
-  atmosphere::AtmosphereModel *m_atmosphere;
+  std::shared_ptr<atmosphere::AtmosphereModel> m_atmosphere;
 };
 
 } // end of namespace surface

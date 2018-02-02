@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,14 +23,19 @@
 
 namespace pism {
 namespace ocean {
+
 Given::Given(IceGrid::ConstPtr g)
-  : PGivenClimate<OceanModifier,OceanModel>(g, NULL) {
+  : PGivenClimate<OceanModel,OceanModel>(g, NULL) {
 
   m_option_prefix   = "-ocean_given";
 
   // will be de-allocated by the parent's destructor
   m_shelfbtemp     = new IceModelVec2T;
   m_shelfbmassflux = new IceModelVec2T;
+
+  m_sea_level_elevation = allocate_sea_level_elevation(g);
+  m_shelf_base_temperature = allocate_shelf_base_temperature(g);
+  m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);
 
   m_fields["shelfbtemp"]     = m_shelfbtemp;
   m_fields["shelfbmassflux"] = m_shelfbmassflux;
@@ -58,8 +63,6 @@ Given::~Given() {
 
 void Given::init_impl() {
 
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
   m_log->message(2,
              "* Initializing the ocean model reading base of the shelf temperature\n"
              "  and sub-shelf mass flux from a file...\n");
@@ -73,28 +76,27 @@ void Given::init_impl() {
   }
 }
 
-void Given::update_impl(double my_t, double my_dt) {
-  update_internal(my_t, my_dt);
+void Given::update_impl(double t, double dt) {
+  update_internal(t, dt);
 
-  m_shelfbmassflux->average(m_t, m_dt);
-  m_shelfbtemp->average(m_t, m_dt);
+  m_shelfbmassflux->average(t, dt);
+  m_shelfbtemp->average(t, dt);
+
+  m_shelf_base_temperature->copy_from(*m_shelfbtemp);
+  m_shelf_base_mass_flux->copy_from(*m_shelfbmassflux);
 }
 
-void Given::sea_level_elevation_impl(double &result) const {
-  result = m_sea_level;
+const IceModelVec2S& Given::shelf_base_temperature_impl() const {
+  return *m_shelf_base_temperature;
 }
 
-void Given::shelf_base_temperature_impl(IceModelVec2S &result) const {
-  result.copy_from(*m_shelfbtemp);
+const IceModelVec2S& Given::shelf_base_mass_flux_impl() const {
+  return *m_shelf_base_mass_flux;
 }
 
-
-void Given::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
-  result.copy_from(*m_shelfbmassflux);
+const IceModelVec2S& Given::sea_level_elevation_impl() const {
+  return *m_sea_level_elevation;
 }
 
-void Given::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
-  result.set(0.0);
-}
 } // end of namespace ocean
 } // end of namespace pism
