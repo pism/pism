@@ -58,7 +58,7 @@ Geometry::Geometry(IceGrid::ConstPtr grid) {
   bed_elevation.set_attrs("model_state", "bedrock surface elevation",
                           "m", "bedrock_altitude");
 
-  sea_level_elevation.create(grid, "sea_level_elevation", WITH_GHOSTS);
+  sea_level_elevation.create(grid, "sea_level", WITH_GHOSTS);
   sea_level_elevation.set_attrs("model_state",
                                 "sea level elevation above reference ellipsoid", "meters",
                                 "sea_surface_height_above_reference_ellipsoid");

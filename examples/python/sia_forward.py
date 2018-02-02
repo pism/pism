@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2018 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -76,7 +76,8 @@ for v in [vecs.thk, vecs.topg, vecs.enthalpy]:
     v.regrid(input_file, critical=True)
 
 # variables mask and surface are computed from the geometry previously read
-sea_level = 0  # FIXME setFromOption?
+sea_level = PISM.model.createSeaLevelVec(grid)
+sea_level.set(0.0)
 gc = PISM.GeometryCalculator(config)
 gc.compute(sea_level, vecs.topg, vecs.thk, vecs.mask, vecs.surface_altitude)
 

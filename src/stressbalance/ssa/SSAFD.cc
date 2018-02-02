@@ -276,7 +276,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   }
 
   if (use_cfbc) {
-    list.add({&thickness, &bed, &m_mask});
+    list.add({&thickness, &bed, &m_mask, &sea_level});
   }
 
   if (use_cfbc && melange_back_pressure != NULL) {
