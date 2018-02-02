@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Tests of PISM's ocean models and modifiers.
 """
@@ -9,13 +10,29 @@ from unittest import TestCase
 import netCDF4
 
 config = PISM.Context().config
-# change the default melange back pressure fraction from 0 to 1. The default of zero makes
-# it hard to test the modifier that scales the value.
 
+# reduce the grid size to speed this up
+config.set_double("grid.Mx", 3)
+config.set_double("grid.My", 3)
+config.set_double("grid.Mz", 5)
+
+seconds_per_year = 365 * 86400
+# ensure that this is the correct year length
+config.set_string("time.calendar", "365_day")
+
+# change the default melange back pressure fraction from 0 to 1. The default of zero makes
+# it hard to test the modifier that scales this value.
 config.set_double("ocean.constant.melange_back_pressure_fraction", 1.0)
+
 log = PISM.Context().log
+# silence models' initialization messages
 log.set_threshold(1)
+
 options = PISM.PETSc.Options()
+
+def sample(vec):
+    with PISM.vec.Access(nocomm=[vec]):
+        return vec[0, 0]
 
 def create_dummy_forcing_file(filename, variable_name, units, value):
     f = netCDF4.Dataset(filename, "w")
@@ -50,25 +67,19 @@ def create_given_input_file(filename, grid, temperature, mass_flux):
 
 def check(vec, value):
     "Check if values of vec are almost equal to value."
-    grid = vec.grid()
-    with PISM.vec.Access(nocomm=[vec]):
-        for (i, j) in grid.points():
-            np.testing.assert_almost_equal(vec[i, j], value)
+    np.testing.assert_almost_equal(sample(vec), value)
 
 def check_difference(A, B, value):
     "Check if the difference between A and B is almost equal to value."
-    grid = A.grid()
-    with PISM.vec.Access(nocomm=[A, B]):
-        for (i, j) in grid.points():
-            np.testing.assert_almost_equal(A[i, j] - B[i, j], value)
+    np.testing.assert_almost_equal(sample(A) - sample(B), value)
 
 def check_ratio(A, B, value):
-    "Check if the difference between A and B is almost equal to value."
-    grid = A.grid()
-    with PISM.vec.Access(nocomm=[A, B]):
-        for (i, j) in grid.points():
-            if B[i, j] != 0:
-                np.testing.assert_almost_equal(A[i, j] / B[i, j], value)
+    "Check if the ratio of A and B is almost equal to value."
+    b = sample(B)
+    if b != 0:
+        np.testing.assert_almost_equal(sample(A) / b, value)
+    else:
+        np.testing.assert_almost_equal(sample(A), 0.0)
 
 def check_model(model, T, SMB, SL, MBP):
     check(model.shelf_base_temperature(), T)
@@ -103,7 +114,7 @@ def ocean_constant(grid, depth=1000.0):
     return PISM.OceanConstant(grid)
 
 def constant_test():
-    "ocean::Constant"
+    "Model Constant"
 
     depth = 1000.0                  # meters
 
@@ -132,8 +143,10 @@ def constant_test():
 
     check_model(model, T_melting, mass_flux, sea_level, melange_back_pressure)
 
+    assert model.max_timestep(0).infinite() == True
+
 def pik_test():
-    "ocean::PIK"
+    "Model PIK"
     grid = dummy_grid()
 
     depth = 1000.0                  # meters
@@ -165,9 +178,10 @@ def pik_test():
 
     check_model(model, T_melting, mass_flux, sea_level, melange_back_pressure)
 
+    assert model.max_timestep(0).infinite() == True
 
 class GivenTest(TestCase):
-    "Test the ocean::Given class"
+    "Test the Given class"
 
     def setUp(self):
         self.sea_level = 0.0
@@ -184,11 +198,13 @@ class GivenTest(TestCase):
         options.setValue("-ocean_given_file", self.filename)
 
     def runTest(self):
-        "ocean::Given"
+        "Model Given"
 
         model = PISM.OceanGiven(self.grid)
         model.init()
         model.update(0, 1)
+
+        assert model.max_timestep(0).infinite() == True
 
         check_model(model, self.temperature, self.mass_flux, self.sea_level, self.melange_back_pressure)
 
@@ -231,11 +247,13 @@ class GivenTHTest(TestCase):
         options.setValue("-ocean_th_file", self.filename)
 
     def runTest(self):
-        "ocean::GivenTH"
+        "Model GivenTH"
 
         model = PISM.OceanGivenTH(self.grid)
         model.init()
         model.update(0, 1)
+
+        assert model.max_timestep(0).infinite() == True
 
         check_model(model, self.temperature, self.mass_flux, self.sea_level, self.melange_back_pressure)
 
@@ -252,7 +270,7 @@ class DeltaT(TestCase):
         create_dummy_forcing_file(self.filename, "delta_T", "Kelvin", self.dT)
 
     def runTest(self):
-        "ocean::Delta_T"
+        "Modifier Delta_T"
 
         modifier = PISM.OceanDeltaT(self.grid, self.model)
 
@@ -276,7 +294,7 @@ class DeltaSL(TestCase):
         create_dummy_forcing_file(self.filename, "delta_SL", "meters", self.dSL)
 
     def runTest(self):
-        "ocean::Delta_SL"
+        "Modifier Delta_SL"
 
         modifier = PISM.OceanDeltaSL(self.grid, self.model)
 
@@ -300,7 +318,7 @@ class DeltaSMB(TestCase):
         create_dummy_forcing_file(self.filename, "delta_mass_flux", "kg m-2 s-1", self.dSMB)
 
     def runTest(self):
-        "ocean::Delta_SMB"
+        "Modifier Delta_SMB"
 
         modifier = PISM.OceanDeltaSMB(self.grid, self.model)
 
@@ -324,7 +342,7 @@ class FracMBP(TestCase):
         create_dummy_forcing_file(self.filename, "frac_MBP", "1", self.dMBP)
 
     def runTest(self):
-        "ocean::Frac_MBP"
+        "Modifier Frac_MBP"
 
         modifier = PISM.OceanFracMBP(self.grid, self.model)
 
@@ -363,7 +381,7 @@ class FracSMB(TestCase):
         create_dummy_forcing_file(self.filename, "frac_mass_flux", "1", self.dSMB)
 
     def runTest(self):
-        "ocean::Frac_SMB"
+        "Modifier Frac_SMB"
 
         modifier = PISM.OceanFracSMB(self.grid, self.model)
 
@@ -392,13 +410,63 @@ class FracSMB(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
+def create_delta_T_file(filename):
+    """Create a delta_T input file covering the interval [0, 4] years. When used with the
+    'Cache' modifier with the update interval of 2, this data will be sampled every 2
+    years, producing [1, 1, 3, 3].
+    """
+    f = netCDF4.Dataset(filename, "w")
+    f.createDimension("time", 4)
+    f.createDimension("bnds", 2)
+    t = f.createVariable("time", "d", ("time",))
+    t.units = "seconds"
+    t.bounds = "time_bounds"
+    t_bnds = f.createVariable("time_bounds", "d", ("time", "bnds"))
+    delta_T = f.createVariable("delta_T", "d", ("time",))
+    delta_T.units = "Kelvin"
+    t[:] = [0.5, 1.5, 2.5, 3.5]
+    t[:] *= seconds_per_year
+    t_bnds[:,0] = [0, 1, 2, 3]
+    t_bnds[:,1] = [1, 2, 3, 4]
+    t_bnds[:,:] *= seconds_per_year
+    delta_T[:] = [1, 2, 3, 4]
+    f.close()
+
 class Cache(TestCase):
     def setUp(self):
-        pass
+        self.filename = "dT.nc"
+        self.grid = dummy_grid()
+
+        self.constant = ocean_constant(self.grid)
+        self.delta_T  = PISM.OceanDeltaT(self.grid, self.constant)
+
+        create_delta_T_file(self.filename)
+        options.setValue("-ocean_delta_T_file", self.filename)
+
+        config.set_double("ocean.cache.update_interval", 2.0)
 
     def runTest(self):
-        "ocean::Cache"
-        raise NotImplementedError("FIX ME!")
+        "Modifier Cache"
+
+        modifier = PISM.OceanCache(self.grid, self.delta_T)
+
+        modifier.init()
+
+        t  = 0
+        dt = seconds_per_year
+
+        diff = []
+        while t < 4 * seconds_per_year:
+            modifier.update(t, dt)
+
+            original = sample(self.constant.shelf_base_temperature())
+            cached   = sample(modifier.shelf_base_temperature())
+
+            diff.append(cached - original)
+
+            t += dt
+
+        np.testing.assert_almost_equal(diff, [1, 1, 3, 3])
 
     def tearDown(self):
-        pass
+        os.remove(self.filename)
