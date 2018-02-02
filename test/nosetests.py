@@ -539,7 +539,6 @@ def column_interpolation_test(plot=False):
 
         def plot():
             plt.figure()
-            plt.hold(True)
             plt.plot(z, f, 'o-', label="original coarse-grid data")
             plt.plot(z_fine, f_fine, 'o-', label="interpolated onto the fine grid")
             plt.plot(z, f_roundtrip, 'o-', label="interpolated back onto the coarse grid")
