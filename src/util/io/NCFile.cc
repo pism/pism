@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -198,6 +198,7 @@ void NCFile::inq_ndims(int &result) const {
 
 void NCFile::def_var(const std::string &name, IO_Type nctype,
                     const std::vector<std::string> &dims) const {
+  redef();
   int stat = this->def_var_impl(name, nctype, dims); check(PISM_ERROR_LOCATION, stat);
 }
 

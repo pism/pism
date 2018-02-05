@@ -580,6 +580,7 @@ void PIO::get_dim(const string &name, vector<double> &data) const {
 void PIO::append_history(const string &history) const {
   try {
     string old_history = get_att_text("PISM_GLOBAL", "history");
+    redef();
     put_att_text("PISM_GLOBAL", "history", history + old_history);
   } catch (RuntimeError &e) {
     e.add_context("appending to the history attribute in \"" + inq_filename() + "\"");

@@ -745,6 +745,7 @@ class ISMIP6(TestCase):
             for v in [aSMB, dSMBdz, aT, dTdz]:
                 v.write(out)
 
+        out.redef()
         out.put_att_text("time", "bounds", "time_bounds")
         out.put_att_text("time", "units", "seconds since 2000-1-1")
 
