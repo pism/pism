@@ -148,6 +148,8 @@ protected:
 
   //! upward heat flux through the top surface of the bed thermal layer
   IceModelVec2S m_top_surface_flux;
+
+  double m_t, m_dt;
 };
 
 class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {

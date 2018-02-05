@@ -83,6 +83,7 @@ protected:
   virtual TSDiagnosticList ts_diagnostics_impl() const;
 protected:
   std::shared_ptr<atmosphere::AtmosphereModel> m_atmosphere;
+  double m_t, m_dt;
 };
 
 } // end of namespace surface

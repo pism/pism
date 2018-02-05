@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>
+#include <gsl/gsl_math.h>       // GSL_NAN
 
 #include "BedDef.hh"
 #include "pism/util/pism_utilities.hh"
@@ -108,9 +108,6 @@ void BedDef::update(const IceModelVec2S &ice_thickness, double t, double dt) {
 //! Initialize from the context (input file and the "variables" database).
 void BedDef::init_impl(const InputOptions &opts) {
   m_t_beddef_last = m_grid->ctx()->time()->start();
-
-  m_t  = GSL_NAN;
-  m_dt = GSL_NAN;
 
   switch (opts.type) {
   case INIT_RESTART:

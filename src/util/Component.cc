@@ -84,7 +84,7 @@ InputOptions process_input_options(MPI_Comm com) {
 Component::Component(IceGrid::ConstPtr g)
   : m_grid(g), m_config(g->ctx()->config()), m_sys(g->ctx()->unit_system()),
     m_log(g->ctx()->log()) {
-  m_t = m_dt = GSL_NAN;
+  // empty
 }
 
 Component::~Component() {

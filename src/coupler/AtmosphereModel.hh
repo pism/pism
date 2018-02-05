@@ -73,6 +73,8 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
 protected:
   mutable std::vector<double> m_ts_times;
+  double m_t;
+  double m_dt;
 };
 
 /*! @brief Instantaneous near-surface air temperature. */

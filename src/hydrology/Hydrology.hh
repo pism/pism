@@ -144,6 +144,7 @@ protected:
   unsigned int m_inputtobed_period;      // in years
   double m_inputtobed_reference_time; // in seconds
 
+  double m_t, m_dt;
 };
 
 

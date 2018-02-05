@@ -142,12 +142,6 @@ protected:
   const units::System::Ptr m_sys;
   //! logger (for easy access)
   const Logger::ConstPtr m_log;
-
-  // FIXME: these should go away eventually
-  //! Last time used as an argument for the update() method.
-  double m_t;
-  //! Last time-step used as an argument for the update() method.
-  double m_dt;
 };
 
 } // end of namespace pism

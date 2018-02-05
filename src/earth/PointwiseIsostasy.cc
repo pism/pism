@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -53,16 +53,9 @@ MaxTimestep PointwiseIsostasy::max_timestep_impl(double t) const {
 
 //! Updates the pointwise isostasy model.
 void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
-                                    double my_t, double my_dt) {
-  if ((fabs(my_t - m_t)   < 1e-12) &&
-      (fabs(my_dt - m_dt) < 1e-12)) {
-    return;
-  }
+                                    double t, double dt) {
 
-  m_t  = my_t;
-  m_dt = my_dt;
-
-  double t_final = m_t + m_dt;
+  double t_final = t + dt;
 
   // Check if it's time to update:
   double dt_beddef = t_final - m_t_beddef_last; // in seconds
