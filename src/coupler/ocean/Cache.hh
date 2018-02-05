@@ -31,15 +31,15 @@ public:
   virtual ~Cache();
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t) const;
 
-  virtual void update_impl(double my_t, double my_dt);
-  virtual void init_impl();
+  void update_impl(double my_t, double my_dt);
+  void init_impl();
 
-  virtual const IceModelVec2S& sea_level_elevation_impl() const;
-  virtual const IceModelVec2S& shelf_base_temperature_impl() const;
-  virtual const IceModelVec2S& shelf_base_mass_flux_impl() const;
-  virtual const IceModelVec2S& melange_back_pressure_fraction_impl() const;
+  const IceModelVec2S& sea_level_elevation_impl() const;
+  const IceModelVec2S& shelf_base_temperature_impl() const;
+  const IceModelVec2S& shelf_base_mass_flux_impl() const;
+  const IceModelVec2S& melange_back_pressure_fraction_impl() const;
 private:
   double m_next_update_time;
   unsigned int m_update_interval_years;

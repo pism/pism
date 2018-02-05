@@ -45,7 +45,7 @@ public:
 protected:
   virtual DiagnosticList diagnostics_impl() const;
 
-  IceModelVec2Int m_ocean_kill_mask;
+  IceModelVec2Int m_mask;
 };
 
 } // end of namespace calving

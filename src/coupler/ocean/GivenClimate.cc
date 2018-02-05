@@ -33,7 +33,7 @@ Given::Given(IceGrid::ConstPtr g)
   m_shelfbtemp     = new IceModelVec2T;
   m_shelfbmassflux = new IceModelVec2T;
 
-  m_sea_level_elevation = allocate_sea_level_elevation(g);
+  m_sea_level_elevation    = allocate_sea_level_elevation(g);
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
   m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);
 
