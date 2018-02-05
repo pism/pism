@@ -21,6 +21,7 @@
 
 #include "pism/util/Vars.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"
+#include "pism/coupler/OceanModel.hh"
 
 namespace pism {
 

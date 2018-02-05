@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,24 +18,18 @@
 
 #include <cstring>
 #include <cstdlib>
-#include <cassert>
 
 #include <petscsys.h>
 
 #include "IceModel.hh"
 
 #include "pism/stressbalance/StressBalance.hh"
+
 #include "pism/util/IceGrid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/coupler/OceanModel.hh"
-#include "pism/earth/BedDef.hh"
-#include "pism/util/EnthalpyConverter.hh"
+
 #include "pism/util/pism_utilities.hh"
-#include "pism/age/AgeModel.hh"
-#include "pism/energy/EnergyModel.hh"
 
 namespace pism {
 

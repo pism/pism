@@ -22,7 +22,6 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/coupler/OceanModel.hh"
 
 #include "pism/calving/CalvingAtThickness.hh"
 #include "pism/calving/EigenCalving.hh"

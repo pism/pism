@@ -22,9 +22,11 @@
 
 #include "CalvingFrontRetreat.hh"
 
-#include "pism/coupler/OceanModel.hh"
-
 namespace pism {
+
+namespace ocean {
+class OceanModel;
+} // end of namespace ocean
 
 class FrontalMelt : public CalvingFrontRetreat {
 public:

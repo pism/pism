@@ -26,9 +26,7 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/earth/BedDef.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Profiling.hh"
 

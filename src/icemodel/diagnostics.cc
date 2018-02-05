@@ -36,7 +36,6 @@
 #include "pism/util/iceModelVec3Custom.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
-#include "pism/coupler/OceanModel.hh"
 #include "pism/earth/BedDef.hh"
 
 #if (PISM_USE_PROJ4==1)
