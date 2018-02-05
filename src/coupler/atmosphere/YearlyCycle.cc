@@ -20,7 +20,7 @@
 // Implementation of the atmosphere model using constant-in-time precipitation
 // and a cosine yearly cycle for near-surface air temperatures.
 
-#include <gsl/gsl_math.h>       // M_PI, GSL_NAN
+#include <gsl/gsl_math.h>       // M_PI
 
 #include "YearlyCycle.hh"
 #include "pism/util/Time.hh"
@@ -65,7 +65,6 @@ YearlyCycle::~YearlyCycle() {
 
 //! Reads in the precipitation data from the input file.
 void YearlyCycle::init_impl() {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   InputOptions opts = process_input_options(m_grid->com);
   init_internal(opts.filename, opts.type == INIT_BOOTSTRAP, opts.record);

@@ -18,7 +18,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cassert>
-#include <gsl/gsl_math.h>
+#include <gsl/gsl_math.h>       // GSL_NAN
 
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/AtmosphereModel.hh"

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -84,8 +84,6 @@ void PIK::write_model_state_impl(const PIO &output) const {
 }
 
 void PIK::init_impl() {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
   m_log->message(2,
              "* Initializing the constant-in-time atmosphere model PIK.\n"
              "  It reads a precipitation field directly from the file and holds it constant.\n"

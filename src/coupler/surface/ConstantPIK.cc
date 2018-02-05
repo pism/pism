@@ -54,8 +54,6 @@ void PIK::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereMod
 }
 
 void PIK::init_impl() {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
   m_log->message(2,
                  "* Initializing the constant-in-time surface processes model PIK.\n"
                  "  It reads surface mass balance directly from the file and holds it constant.\n"

@@ -41,8 +41,6 @@ Delta_T::Delta_T(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
 
 void Delta_T::init_impl() {
 
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
   m_input_model->init();
 
   m_log->message(2, "* Initializing near-surface air temperature forcing using scalar offsets...\n");

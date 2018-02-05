@@ -45,8 +45,6 @@ void Elevation::init_impl() {
 
   using units::convert;
 
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
   m_log->message(2,
              "* Initializing the constant-in-time surface processes model Elevation. Setting...\n");
 

@@ -60,8 +60,6 @@ Anomaly::~Anomaly()
 }
 
 void Anomaly::init_impl() {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
   m_input_model->init();
 
   m_log->message(2,

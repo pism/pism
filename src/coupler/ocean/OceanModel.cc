@@ -88,10 +88,7 @@ OceanModel::~OceanModel() {
 }
 
 void OceanModel::init() {
-  // every re-init restarts the clock
-  m_t  = GSL_NAN;
-  m_dt = GSL_NAN;
-
+  m_t  = m_dt = GSL_NAN;        // every re-init restarts the clock
   this->init_impl();
 }
 
