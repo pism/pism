@@ -158,4 +158,52 @@ inline double gpbld_flow(double stress, double E, double P) {
   return gpbld_softness(E, P) * (stress * stress);
 }
 
+// Same as gpbld_flow, but with all the function calls (except for vdt::fast_exp())
+// inlined to help less capable optimizing compilers.
+inline double gpbld_flow_inlined(double stress, double E, double P) {
+  double softness = 0.0;
+  {
+    const double
+      T_melting = enth.T_melting - enth.beta * P,
+      T_pa      = ((1.0 / enth.c_i) * E + enth.T_0) - T_melting + enth.T_melting,
+      E_cts     = enth.c_i * (T_melting - enth.T_0);
+
+    double softness_cold = 0.0;
+    {
+      double
+        QR = gpbld.Q_cold / gpbld.ideal_gas_constant,
+        A  = gpbld.A_cold;
+
+      if (T_pa >= gpbld.T_critical) {
+        QR = gpbld.Q_warm / gpbld.ideal_gas_constant;
+        A  = gpbld.A_warm;
+      }
+
+      softness_cold = A * vdt::fast_exp(-QR / T_pa);
+    }
+
+    double softness_temp = 0.0;
+    {
+      const double L = enth.L0 + (enth.c_w - enth.c_i) * (T_melting - enth.T_melting);
+
+      double omega = (E - E_cts) / L;
+
+      if (omega > gpbld.water_frac_observed_limit) {
+        omega = gpbld.water_frac_observed_limit;
+      }
+
+      return softness_cold * (1.0 + gpbld.water_fraction_coeff * omega);
+    }
+
+    if (E < E_cts) {
+      softness = softness_cold;
+    } else {
+      softness = softness_temp;
+    }
+  }
+
+  return softness * (stress * stress);
+}
+
+
 #endif /* _GPBLD_APPROXIMATE_H_ */

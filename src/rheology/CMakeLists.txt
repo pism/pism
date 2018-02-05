@@ -13,6 +13,6 @@ add_library (flowlaws OBJECT
   approximate/gpbld_n.cc
   )
 
-add_executable(gpbld_speed_test
-  gpbld_speed_test.cc)
-target_link_libraries (gpbld_speed_test pism)
+add_executable(gpbld3_test
+  gpbld3_test.cc)
+target_link_libraries (gpbld3_test pism)
