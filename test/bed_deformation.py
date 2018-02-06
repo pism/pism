@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """Solves equation (16) of BuelerLingleBrown to obtain the steady
-state viscous plate deflection corresponding to a diven disc load.
+state viscous plate deflection corresponding to a given disc load.
 
 Used as a verification (and regression) test for BedDeformLC::bootstrap().
 """
