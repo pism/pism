@@ -19,10 +19,6 @@
 %shared_ptr(pism::ocean::CompleteOceanModel)
 %include "coupler/ocean/CompleteOceanModel.hh"
 
-%include "coupler/util/PScalarForcing.hh"
-%shared_ptr(pism::PScalarForcing< pism::ocean::OceanModel,pism::ocean::OceanModel >)
-%template(_ScalarOceanForcing) pism::PScalarForcing<pism::ocean::OceanModel,pism::ocean::OceanModel>;
-
 %include "coupler/util/PGivenClimate.hh"
 %shared_ptr(pism::PGivenClimate< pism::ocean::OceanModel,pism::ocean::OceanModel >)
 %template(_GivenOcean1) pism::PGivenClimate<pism::ocean::OceanModel,pism::ocean::OceanModel>;

@@ -124,7 +124,8 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
              exists, name_found, found_by_standard_name);
   if (not exists) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "can't find %s (%s) in %s.",
-                                  m_metadata[0].get_string("long_name").c_str(), m_metadata[0].get_name().c_str(),
+                                  m_metadata[0].get_string("long_name").c_str(),
+                                  m_metadata[0].get_name().c_str(),
                                   m_filename.c_str());
   }
 
@@ -171,7 +172,8 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
         }
       } else {
         // no time bounds attribute
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Variable '%s' does not have the time_bounds attribute.\n"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "Variable '%s' does not have the time_bounds attribute.\n"
                                       "Cannot use time-dependent forcing data '%s' (%s) without time bounds.",
                                       dimname.c_str(),  m_metadata[0].get_string("long_name").c_str(),
                                       m_metadata[0].get_name().c_str());
@@ -196,13 +198,15 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   }
 
   if (not is_increasing(m_time)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "times have to be strictly increasing (read from '%s').",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "times have to be strictly increasing (read from '%s').",
                                   m_filename.c_str());
   }
 
   if (m_period != 0) {
     if ((size_t)m_n_records < m_time.size()) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "buffer has to be big enough to hold all records of periodic data");
+      throw RuntimeError(PISM_ERROR_LOCATION,
+                         "buffer has to be big enough to hold all records of periodic data");
     }
 
     // read periodic data right away (we need to hold it all in memory anyway)

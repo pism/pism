@@ -82,15 +82,15 @@ MaxTimestep PIK::max_timestep_impl(double t) const {
   return MaxTimestep("surface PIK");
 }
 
-void PIK::update_impl(double my_t, double my_dt)
+void PIK::update_impl(double t, double dt)
 {
-  if ((fabs(my_t - m_t) < 1e-12) &&
-      (fabs(my_dt - m_dt) < 1e-12)) {
+  if ((fabs(t - m_t) < 1e-12) &&
+      (fabs(dt - m_dt) < 1e-12)) {
     return;
   }
 
-  m_t  = my_t;
-  m_dt = my_dt;
+  m_t  = t;
+  m_dt = dt;
 
   const IceModelVec2S
     &usurf = *m_grid->variables().get_2d_scalar("surface_altitude"),
