@@ -51,15 +51,21 @@ public:
   void attach_atmosphere_model(std::shared_ptr<atmosphere::AtmosphereModel> input);
 
   // the interface:
-  void mass_flux(IceModelVec2S &result) const;
-
   void update(double t, double dt);
 
+  void mass_flux(IceModelVec2S &result) const;
   void temperature(IceModelVec2S &result) const;
   void liquid_water_fraction(IceModelVec2S &result) const;
-
   void layer_mass(IceModelVec2S &result) const;
   void layer_thickness(IceModelVec2S &result) const;
+
+  // debugging methods (do not use these in production code: they are slow because they
+  // allocate a new field every time they are called)
+  IceModelVec2S::Ptr mass_flux() const;
+  IceModelVec2S::Ptr temperature() const;
+  IceModelVec2S::Ptr liquid_water_fraction() const;
+  IceModelVec2S::Ptr layer_mass() const;
+  IceModelVec2S::Ptr layer_thickness() const;
 protected:
   virtual void init_impl();
   virtual void update_impl(double t, double dt) = 0;

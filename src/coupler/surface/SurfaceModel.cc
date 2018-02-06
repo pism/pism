@@ -205,6 +205,36 @@ MaxTimestep SurfaceModel::max_timestep_impl(double my_t) const {
   }
 }
 
+IceModelVec2S::Ptr SurfaceModel::mass_flux() const {
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "mass_flux", WITHOUT_GHOSTS));
+  mass_flux(*result);
+  return result;
+}
+
+IceModelVec2S::Ptr SurfaceModel::temperature() const {
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "temperature", WITHOUT_GHOSTS));
+  temperature(*result);
+  return result;
+}
+
+IceModelVec2S::Ptr SurfaceModel::liquid_water_fraction() const {
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "liquid_water_fraction", WITHOUT_GHOSTS));
+  liquid_water_fraction(*result);
+  return result;
+}
+
+IceModelVec2S::Ptr SurfaceModel::layer_mass() const {
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "layer_mass", WITHOUT_GHOSTS));
+  layer_mass(*result);
+  return result;
+}
+
+IceModelVec2S::Ptr SurfaceModel::layer_thickness() const {
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "layer_thickness", WITHOUT_GHOSTS));
+  layer_thickness(*result);
+  return result;
+}
+
 PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
