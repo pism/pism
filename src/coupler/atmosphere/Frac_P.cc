@@ -67,7 +67,7 @@ void Frac_P::init_timeseries_impl(const std::vector<double> &ts) const {
 
 void Frac_P::mean_precipitation_impl(IceModelVec2S &result) const {
   m_input_model->mean_precipitation(result);
-  scale_data(result);
+  result.scale(m_current_forcing);
 }
 
 void Frac_P::precip_time_series_impl(int i, int j, std::vector<double> &result) const {

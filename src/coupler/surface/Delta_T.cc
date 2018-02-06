@@ -61,7 +61,7 @@ MaxTimestep Delta_T::max_timestep_impl(double t) const {
 
 void Delta_T::temperature_impl(IceModelVec2S &result) const {
   m_input_model->temperature(result);
-  offset_data(result);
+  result.shift(m_current_forcing);
 }
 
 } // end of namespace surface

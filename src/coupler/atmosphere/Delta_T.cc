@@ -65,7 +65,7 @@ void Delta_T::init_timeseries_impl(const std::vector<double> &ts) const {
 void Delta_T::mean_annual_temp_impl(IceModelVec2S &result) const {
 
   m_input_model->mean_annual_temp(result);
-  offset_data(result);
+  result.shift(m_current_forcing);
 }
 
 void Delta_T::temp_time_series_impl(int i, int j, std::vector<double> &result) const {

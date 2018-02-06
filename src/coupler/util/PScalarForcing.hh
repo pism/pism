@@ -95,16 +95,6 @@ protected:
     }
   }
 
-  //! Apply the current forcing as an offset.
-  void offset_data(IceModelVec2S &result) const {
-    result.shift(m_current_forcing);
-  }
-
-  //! Apply the current forcing as a scaling factor.
-  void scale_data(IceModelVec2S &result) const {
-    result.scale(m_current_forcing);
-  }
-
   std::unique_ptr<Timeseries> m_offset;
   std::string m_filename, m_offset_name, m_option_prefix;
 
