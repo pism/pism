@@ -16,12 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>
-
 #include "Delta_T.hh"
-#include "pism/util/ConfigInterface.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/pism_utilities.hh"
+#include "pism/coupler/util/ScalarForcing.hh"
 
 namespace pism {
 namespace surface {
@@ -29,16 +25,14 @@ namespace surface {
 /// -surface ...,delta_T (scalar forcing of ice surface temperatures)
 
 Delta_T::Delta_T(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
-  : PScalarForcing<SurfaceModel,SurfaceModifier>(g, in) {
+  : SurfaceModifier(g, in) {
 
-  m_option_prefix = "-surface_delta_T";
-  m_offset_name   = "delta_T";
-
-  m_offset.reset(new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name")));
-
-  m_offset->variable().set_string("units", "Kelvin");
-  m_offset->variable().set_string("long_name", "ice-surface temperature offsets");
-  m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
+  m_forcing.reset(new ScalarForcing(g->ctx(),
+                                    "-surface_delta_T",
+                                    "delta_T",
+                                    "Kelvin",
+                                    "Kelvin",
+                                    "ice-surface temperature offsets"));
 }
 
 Delta_T::~Delta_T() {
@@ -49,19 +43,19 @@ void Delta_T::init_impl() {
   m_input_model->init();
 
   m_log->message(2,
-             "* Initializing ice-surface temperature forcing using scalar offsets...\n");
+                 "* Initializing ice-surface temperature forcing using scalar offsets...\n");
 
-  init_internal();
+  m_forcing->init();
 }
 
-MaxTimestep Delta_T::max_timestep_impl(double t) const {
-  (void) t;
-  return MaxTimestep("surface delta_T");
+void Delta_T::update_impl(double t, double dt) {
+  m_input_model->update(t, dt);
+  m_forcing->update(t, dt);
 }
 
 void Delta_T::temperature_impl(IceModelVec2S &result) const {
   m_input_model->temperature(result);
-  result.shift(m_current_forcing);
+  result.shift(m_forcing->value());
 }
 
 } // end of namespace surface
