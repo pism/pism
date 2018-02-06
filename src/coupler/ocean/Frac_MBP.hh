@@ -20,17 +20,19 @@
 #ifndef _FRAC_MBP_H_
 #define _FRAC_MBP_H_
 
-#include "pism/coupler/util/PScalarForcing.hh"
 #include "pism/coupler/OceanModel.hh"
 
 namespace pism {
+
+class ScalarForcing;
+
 namespace ocean {
 
 /**
  * Scalar melange back-pressure fraction forcing.
  * 
  */
-class Frac_MBP : public PScalarForcing<OceanModel,OceanModel>
+class Frac_MBP : public OceanModel
 {
 public:
   Frac_MBP(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
@@ -43,7 +45,7 @@ private:
 
   const IceModelVec2S& melange_back_pressure_fraction_impl() const;
 
-  typedef PScalarForcing<OceanModel,OceanModel> super;
+  std::unique_ptr<ScalarForcing> m_forcing;
 };
 
 } // end of namespace ocean

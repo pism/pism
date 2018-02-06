@@ -16,13 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>
-
 #include "Delta_SL.hh"
-#include "pism/util/ConfigInterface.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/MaxTimestep.hh"
+#include "pism/coupler/util/ScalarForcing.hh"
 
 namespace pism {
 namespace ocean {
@@ -30,16 +25,12 @@ namespace ocean {
 /// -ocean_delta_SL_file, ...
 
 Delta_SL::Delta_SL(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
-  : PScalarForcing<OceanModel,OceanModel>(g, in) {
+  : OceanModel(g, in) {
 
-  m_option_prefix = "-ocean_delta_SL";
-  m_offset_name   = "delta_SL";
-
-  m_offset.reset(new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name")));
-
-  m_offset->variable().set_string("units", "m");
-  m_offset->variable().set_string("long_name", "sea level elevation offsets");
-  m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
+  m_forcing.reset(new ScalarForcing(g->ctx(),
+                                    "-ocean_delta_SL", "delta_SL",
+                                    "m", "m",
+                                    "sea level elevation offsets"));
 
   m_sea_level_elevation = allocate_sea_level_elevation(g);
 }
@@ -54,13 +45,16 @@ void Delta_SL::init_impl() {
 
   m_log->message(2, "* Initializing sea level forcing...\n");
 
-  init_internal();
+  m_forcing->init();
 }
 
 void Delta_SL::update_impl(double t, double dt) {
-  super::update_impl(t, dt);
+  m_input_model->update(t, dt);
+
+  m_forcing->update(t, dt);
+
   m_sea_level_elevation->copy_from(m_input_model->sea_level_elevation());
-  m_sea_level_elevation->shift(m_current_forcing);
+  m_sea_level_elevation->shift(m_forcing->value());
 }
 
 const IceModelVec2S& Delta_SL::sea_level_elevation_impl() const {

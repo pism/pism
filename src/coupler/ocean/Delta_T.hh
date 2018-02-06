@@ -19,13 +19,15 @@
 #ifndef _PODTFORCING_H_
 #define _PODTFORCING_H_
 
-#include "pism/coupler/util/PScalarForcing.hh"
 #include "pism/coupler/OceanModel.hh"
 
 namespace pism {
+
+class ScalarForcing;
+
 namespace ocean {
 //! \brief Forcing using shelf base temperature scalar time-dependent offsets.
-class Delta_T : public PScalarForcing<OceanModel,OceanModel>
+class Delta_T : public OceanModel
 {
 public:
   Delta_T(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
@@ -39,7 +41,7 @@ private:
   const IceModelVec2S& shelf_base_temperature_impl() const;
 
   IceModelVec2S::Ptr m_shelf_base_temperature;
-  typedef PScalarForcing<OceanModel,OceanModel> super;
+  std::unique_ptr<ScalarForcing> m_forcing;
 };
 
 } // end of namespace ocean

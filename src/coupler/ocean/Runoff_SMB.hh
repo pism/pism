@@ -19,10 +19,12 @@
 #ifndef _PO_RUNOFF_SMB_H_
 #define _PO_RUNOFF_SMB_H_
 
-#include "pism/coupler/util/PScalarForcing.hh"
 #include "pism/coupler/OceanModel.hh"
 
 namespace pism {
+
+class ScalarForcing;
+
 namespace ocean {
 
 /** Modify the shelf base mass flux using a function of air temperature changes.
@@ -48,7 +50,7 @@ namespace ocean {
  * negligible and a change in air temperature is directly translated
  * into a change in ocean temperature.
  */
-class Runoff_SMB : public PScalarForcing<OceanModel,OceanModel>
+class Runoff_SMB : public OceanModel
 {
 public:
   Runoff_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
@@ -59,7 +61,7 @@ private:
 
   void update_impl(double t, double dt);
 
-  void mass_flux(IceModelVec2S &result) const;
+  void mass_flux(double delta_T, IceModelVec2S &result) const;
 
   // @brief constant in the parameterization of the subglacial
   // runoff flux as a function of air temperature
@@ -71,8 +73,7 @@ private:
   double m_runoff_to_ocean_melt_power_beta;
 
   IceModelVec2S::Ptr m_shelf_base_mass_flux;
-
-  typedef PScalarForcing<OceanModel,OceanModel> super;
+  std::unique_ptr<ScalarForcing> m_forcing;
 };
 
 } // end of namespace ocean

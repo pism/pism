@@ -19,14 +19,16 @@
 #ifndef _POFSBMFFORCING_H_
 #define _POFSBMFFORCING_H_
 
-#include "pism/coupler/util/PScalarForcing.hh"
 #include "pism/coupler/OceanModel.hh"
 
 namespace pism {
+
+class ScalarForcing;
+
 namespace ocean {
 
 //! \brief Forcing using shelf base mass flux fractions (scalar, time-dependent).
-class Frac_SMB : public PScalarForcing<OceanModel,OceanModel>
+class Frac_SMB : public OceanModel
 {
 public:
   Frac_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
@@ -41,7 +43,7 @@ private:
 
   IceModelVec2S::Ptr m_shelf_base_mass_flux;
 
-  typedef PScalarForcing<OceanModel,OceanModel> super;
+  std::unique_ptr<ScalarForcing> m_forcing;
 };
 
 } // end of namespace ocean

@@ -17,23 +17,20 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Runoff_SMB.hh"
-#include "pism/util/ConfigInterface.hh"
-#include "pism/util/MaxTimestep.hh"
+#include "pism/coupler/util/ScalarForcing.hh"
 
 namespace pism {
 namespace ocean {
 
-
 Runoff_SMB::Runoff_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
-  : PScalarForcing<OceanModel,OceanModel>(g, in) {
+  : OceanModel(g, in) {
 
-  m_option_prefix = "-ocean_runoff_smb";
-  m_offset_name = "delta_T";
-
-  m_offset.reset(new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name")));
-  m_offset->variable().set_string("units", "Kelvin");
-  m_offset->variable().set_string("long_name", "air temperature offsets");
-  m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
+  m_forcing.reset(new ScalarForcing(g->ctx(),
+                                    "-ocean_runoff_smb",
+                                    "delta_T",
+                                    "Kelvin",
+                                    "Kelvin",
+                                    "air temperature offsets"));
 
   m_temp_to_runoff_a       = m_config->get_double("surface.temp_to_runoff_a");
   m_runoff_to_ocean_melt_b = m_config->get_double("ocean.runoff_to_ocean_melt_b");
@@ -54,36 +51,36 @@ void Runoff_SMB::init_impl() {
                  "* Initializing ice shelf base mass flux forcing using scalar multiplier...\n"
                  "*   derived from delta_T air temperature modifier\n");
 
-  init_internal();
+  m_forcing->init();
 }
 
 void Runoff_SMB::update_impl(double t, double dt) {
-  super::update_impl(t, dt);
+  m_input_model->update(t, dt);
 
-  mass_flux(*m_shelf_base_mass_flux);
+  m_forcing->update(t, dt);
+
+  mass_flux(m_forcing->value(), *m_shelf_base_mass_flux);
 }
 
-void Runoff_SMB::mass_flux(IceModelVec2S &result) const {
-  // m_current_forcing is set by PScalarForcing::update_impl()
-  double delta_T = m_current_forcing;
+void Runoff_SMB::mass_flux(double delta_T, IceModelVec2S &result) const {
 
   // short-cuts, just to make the formula below easier to read
   double
-    a     = m_temp_to_runoff_a,
-    B     = m_runoff_to_ocean_melt_b,
-    alpha = m_runoff_to_ocean_melt_power_alpha,
-    beta = m_runoff_to_ocean_melt_power_beta,
+    a            = m_temp_to_runoff_a,
+    B            = m_runoff_to_ocean_melt_b,
+    alpha        = m_runoff_to_ocean_melt_power_alpha,
+    beta         = m_runoff_to_ocean_melt_power_beta,
     scale_factor = 1.0;
 
   /*
-     This parameterization only works if delta_T > 0 because
-     negative numbers cannot be raised to a fractional power
-     so we do not scale the forcing if delta_T < 0
+    This parameterization only works if delta_T > 0 because
+    negative numbers cannot be raised to a fractional power
+    so we do not scale the forcing if delta_T < 0
   */
   if (delta_T > 0.0) {
     scale_factor = 1 + B * pow(a * delta_T, alpha) * pow(delta_T, beta);
   }
-    result.scale(scale_factor);
+  result.scale(scale_factor);
 }
 
 } // end of namespace ocean

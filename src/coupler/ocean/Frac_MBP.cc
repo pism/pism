@@ -17,28 +17,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <gsl/gsl_math.h>
-
 #include "Frac_MBP.hh"
-#include "pism/util/ConfigInterface.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/MaxTimestep.hh"
+#include "pism/coupler/util/ScalarForcing.hh"
 
 namespace pism {
 namespace ocean {
 
 Frac_MBP::Frac_MBP(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
-  : PScalarForcing<OceanModel,OceanModel>(g, in) {
+  : OceanModel(g, in) {
 
-  m_option_prefix = "-ocean_frac_MBP";
-  m_offset_name   = "frac_MBP";
-
-  m_offset.reset(new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name")));
-
-  m_offset->variable().set_string("units", "1");
-  m_offset->variable().set_string("long_name", "melange back pressure fraction");
-  m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
+  m_forcing.reset(new ScalarForcing(g->ctx(),
+                                    "-ocean_frac_MBP",
+                                    "frac_MBP",
+                                    "1", "1",
+                                    "melange back pressure fraction"));
 
   m_melange_back_pressure_fraction = allocate_melange_back_pressure(g);
 }
@@ -53,14 +45,16 @@ void Frac_MBP::init_impl() {
 
   m_log->message(2, "* Initializing melange back pressure fraction forcing...\n");
 
-  init_internal();
+  m_forcing->init();
 }
 
 void Frac_MBP::update_impl(double t, double dt) {
-  super::update_impl(t, dt);
+  m_input_model->update(t, dt);
+
+  m_forcing->update(t, dt);
 
   m_melange_back_pressure_fraction->copy_from(m_input_model->melange_back_pressure_fraction());
-  m_melange_back_pressure_fraction->scale(m_current_forcing);
+  m_melange_back_pressure_fraction->scale(m_forcing->value());
 }
 
 const IceModelVec2S& Frac_MBP::melange_back_pressure_fraction_impl() const {

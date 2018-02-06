@@ -19,14 +19,16 @@
 #ifndef _PODSBMFFORCING_H_
 #define _PODSBMFFORCING_H_
 
-#include "pism/coupler/util/PScalarForcing.hh"
 #include "pism/coupler/OceanModel.hh"
 
 namespace pism {
+
+class ScalarForcing;
+
 namespace ocean {
 
 //! \brief Forcing using shelf base mass flux offsets (scalar, time-dependent).
-class Delta_SMB : public PScalarForcing<OceanModel,OceanModel>
+class Delta_SMB : public OceanModel
 {
 public:
   Delta_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
@@ -41,7 +43,7 @@ private:
 
   IceModelVec2S::Ptr m_shelf_base_mass_flux;
 
-  typedef PScalarForcing<OceanModel,OceanModel> super;
+  std::unique_ptr<ScalarForcing> m_forcing;
 };
 
 } // end of namespace ocean
