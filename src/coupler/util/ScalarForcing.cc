@@ -94,13 +94,17 @@ void ScalarForcing::init() {
 }
 
 void ScalarForcing::update(double t, double dt) {
-  t = m_ctx->time()->mod(t - m_bc_reference_time, m_bc_period);
-
-  m_current = (*m_offset)(t + 0.5 * dt);
+  m_current = value(t + 0.5 * dt);
 }
 
 double ScalarForcing::value() const {
   return m_current;
+}
+
+double ScalarForcing::value(double t) const {
+  t = m_ctx->time()->mod(t - m_bc_reference_time, m_bc_period);
+
+  return (*m_offset)(t);
 }
 
 } // end of namespace pism

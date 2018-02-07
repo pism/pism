@@ -48,6 +48,7 @@ public:
   void update(double t, double dt);
 
   double value() const;
+  double value(double t) const;
 protected:
   Context::ConstPtr m_ctx;
 
