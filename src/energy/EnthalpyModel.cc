@@ -239,13 +239,14 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
               depth = H - k * dz,
               p     = EC->pressure(depth), // FIXME issue #15
               T_m   = EC->melting_temperature(p),
-              L     = EC->L(T_m),
-              omega = EC->water_fraction(Enthnew[k], p);
+              L     = EC->L(T_m);
 
             if (Enthnew[k] >= system.Enth_s(k) + 0.5 * L) {
               liquifiedCount++; // count these rare events...
               Enthnew[k] = system.Enth_s(k) + 0.5 * L; //  but lose the energy
             }
+
+            double omega = EC->water_fraction(Enthnew[k], p);
 
             if (omega > 0.01) {                          // FIXME: make "0.01" configurable here
               double fractiondrained = dc.get_drainage_rate(omega) * dt; // pure number
