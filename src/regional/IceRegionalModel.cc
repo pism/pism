@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -107,6 +107,28 @@ void IceRegionalModel::model_state_setup() {
   // initialize the model state (including special fields)
   IceModel::model_state_setup();
 
+  InputOptions input = process_input_options(m_ctx->com());
+
+  // Initialize stored ice thickness and surface elevation. This goes here and not in
+  // bootstrap_2d because bed topography is not initialized at the time bootstrap_2d is
+  // called.
+  if (input.type == INIT_BOOTSTRAP) {
+
+    if (m_config->get_boolean("regional.zero_gradient")) {
+      m_usurf_stored.set(0.0);
+      m_thk_stored.set(0.0);
+    } else {
+      GeometryCalculator gc(*m_config);
+      // Use values set by IceModel::bootstrap_2d() to initialize usurf_stored and thk_stored.
+      gc.compute_surface(m_ocean->sea_level_elevation(),
+                         m_geometry.bed_elevation,
+                         m_geometry.ice_thickness,
+                         m_usurf_stored);
+
+      m_thk_stored.copy_from(m_geometry.ice_thickness);
+    }
+  }
+
   // initialize the no_model_mask
   m_geometry_evolution->set_no_model_mask(m_no_model_mask);
 }
@@ -203,20 +225,6 @@ void IceRegionalModel::bootstrap_2d(const PIO &input_file) {
 
     // m_no_model_mask was added to m_model_state, so
     // IceModel::regrid() will take care of regridding it, if necessary.
-  }
-
-  if (m_config->get_boolean("regional.zero_gradient")) {
-    m_usurf_stored.set(0.0);
-    m_thk_stored.set(0.0);
-  } else {
-    GeometryCalculator gc(*m_config);
-    // Use values set by IceModel::bootstrap_2d() to initialize usurf_stored and thk_stored.
-    gc.compute_surface(m_ocean->sea_level_elevation(),
-                       m_geometry.bed_elevation,
-                       m_geometry.ice_thickness,
-                       m_usurf_stored);
-
-    m_thk_stored.copy_from(m_geometry.ice_thickness);
   }
 
   if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
