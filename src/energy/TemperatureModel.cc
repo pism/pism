@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -75,12 +75,15 @@ void TemperatureModel::bootstrap_impl(const PIO &input_file,
 
   m_basal_melt_rate.regrid(input_file, OPTIONAL,
                            m_config->get_double("bootstrapping.defaults.bmelt"));
-
-  bootstrap_ice_temperature(ice_thickness, surface_temperature, climatic_mass_balance,
-                            basal_heat_flux, m_ice_temperature);
-
   regrid("Temperature-based energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
+
+  int temp_revision = m_ice_temperature.get_state_counter();
   regrid("Temperature-based energy balance model", m_ice_temperature, REGRID_WITHOUT_REGRID_VARS);
+
+  if (temp_revision == m_ice_temperature.get_state_counter()) {
+    bootstrap_ice_temperature(ice_thickness, surface_temperature, climatic_mass_balance,
+                              basal_heat_flux, m_ice_temperature);
+  }
 
   compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
 }
@@ -94,12 +97,15 @@ void TemperatureModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
   m_log->message(2, "* Bootstrapping the temperature-based energy balance model...\n");
 
   m_basal_melt_rate.copy_from(basal_melt_rate);
-
-  bootstrap_ice_temperature(ice_thickness, surface_temperature, climatic_mass_balance,
-                            basal_heat_flux, m_ice_temperature);
-
   regrid("Temperature-based energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
+
+  int temp_revision = m_ice_temperature.get_state_counter();
   regrid("Temperature-based energy balance model", m_ice_temperature, REGRID_WITHOUT_REGRID_VARS);
+
+  if (temp_revision == m_ice_temperature.get_state_counter()) {
+    bootstrap_ice_temperature(ice_thickness, surface_temperature, climatic_mass_balance,
+                              basal_heat_flux, m_ice_temperature);
+  }
 
   compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
 }

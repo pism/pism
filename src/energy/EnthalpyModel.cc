@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -60,11 +60,15 @@ void EnthalpyModel::bootstrap_impl(const PIO &input_file,
   m_basal_melt_rate.regrid(input_file, OPTIONAL,
                            m_config->get_double("bootstrapping.defaults.bmelt"));
 
-  bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
-                         basal_heat_flux, m_ice_enthalpy);
-
   regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
+
+  int enthalpy_revision = m_ice_enthalpy.get_state_counter();
   regrid_enthalpy();
+
+  if (enthalpy_revision == m_ice_enthalpy.get_state_counter()) {
+    bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
+                           basal_heat_flux, m_ice_enthalpy);
+  }
 }
 
 void EnthalpyModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
@@ -77,11 +81,15 @@ void EnthalpyModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
 
   m_basal_melt_rate.copy_from(basal_melt_rate);
 
-  bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
-                         basal_heat_flux, m_ice_enthalpy);
-
   regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
+
+  int enthalpy_revision = m_ice_enthalpy.get_state_counter();
   regrid_enthalpy();
+
+  if (enthalpy_revision == m_ice_enthalpy.get_state_counter()) {
+    bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
+                           basal_heat_flux, m_ice_enthalpy);
+  }
 }
 
 //! Update ice enthalpy field based on conservation of energy.
