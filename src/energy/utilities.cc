@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -356,7 +356,10 @@ void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
     ice_k       = config->get_double("constants.ice.thermal_conductivity"),
     ice_density = config->get_double("constants.ice.density"),
     ice_c       = config->get_double("constants.ice.specific_heat_capacity"),
-    K           = ice_k / (ice_density * ice_c);
+    K           = ice_k / (ice_density * ice_c),
+    T_min       = config->get_double("energy.minimum_allowed_temperature"),
+    T_melting   = config->get_double("constants.fresh_water.melting_point_temperature",
+                                     "Kelvin");
 
   IceModelVec::AccessList list{&ice_surface_temp, &surface_mass_balance,
       &ice_thickness, &basal_heat_flux, &result};
@@ -367,9 +370,22 @@ void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
       const int i = p.i(), j = p.j();
 
       const double
-        T_surface = ice_surface_temp(i, j),
+        T_surface = std::min(ice_surface_temp(i, j), T_melting),
         H         = ice_thickness(i, j),
         G         = basal_heat_flux(i, j);
+
+      if (G < 0.0) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "geothermal flux G(%d,%d) = %f < 0.0 %s",
+                                      i, j, G,
+                                      basal_heat_flux.metadata().get_string("units").c_str());
+      }
+
+      if (T_surface < T_min) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "T_surface(%d,%d) = %f < T_min = %f Kelvin",
+                                      i, j, T_surface, T_min);
+      }
 
       const unsigned int ks = grid->kBelowHeight(H);
 
@@ -393,6 +409,15 @@ void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
           T[k] = ice_temperature_guess(EC, H, z, T_surface, G, ice_k);
         }
 
+      }
+
+      // Make sure that resulting temperatures are not too low.
+      for (unsigned int k = 0; k < ks; k++) {
+        if (T[k] < T_min) {
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "T(%d,%d,%d) = %f < T_min = %f Kelvin",
+                                        i, j, k, T[k], T_min);
+        }
       }
 
       // above ice
