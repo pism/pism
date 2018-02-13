@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2017 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -81,6 +81,10 @@ LingleClark::LingleClark(IceGrid::ConstPtr g)
   // coordinate variables of the extended grid should have different names
   m_viscous_bed_displacement.metadata().get_x().set_name("x_lc");
   m_viscous_bed_displacement.metadata().get_y().set_name("y_lc");
+
+  // do not point to auxiliary coordinates "lon" and "lat".
+  m_viscous_bed_displacement.metadata().set_string("coordinates", "");
+
   m_viscous_bed_displacement0 = m_viscous_bed_displacement.allocate_proc0_copy();
 
   ParallelSection rank0(m_grid->com);
