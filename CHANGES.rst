@@ -1,3 +1,12 @@
+Changes since v1.0
+==================
+
+- Fix `issue 400`_.
+- Support older (< 1.7) OpenMPI versions.
+- Add a work-around needed to use old-ish NetCDF (4.0 - 4.1) with OpenMPI.
+- Fix `issue 222`_.
+- Fix a bug in ``pismr -regional`` (stored surface elevation was not initialized correctly)
+
 Changes from v0.7 to v1.0
 =========================
 
@@ -401,6 +410,7 @@ Miscellaneous
 .. _issue 166: https://github.com/pism/pism/issues/166
 .. _issue 181: https://github.com/pism/pism/issues/181
 .. _issue 201: https://github.com/pism/pism/issues/201
+.. _issue 222: https://github.com/pism/pism/issues/222
 .. _issue 237: https://github.com/pism/pism/issues/237
 .. _issue 292: https://github.com/pism/pism/issues/292
 .. _issue 302: https://github.com/pism/pism/issues/302
@@ -422,6 +432,7 @@ Miscellaneous
 .. _issue 351: https://github.com/pism/pism/issues/351
 .. _issue 370: https://github.com/pism/pism/issues/370
 .. _issue 390: https://github.com/pism/pism/issues/390
+.. _issue 400: https://github.com/pism/pism/issues/400
 
 ..
    Local Variables:
