@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -270,9 +270,10 @@ protected:
   calving::vonMisesCalving    *m_vonmises_calving;
   FrontalMelt                 *m_frontal_melt;
 
-  surface::SurfaceModel *m_surface;
-  ocean::OceanModel     *m_ocean;
-  bed::BedDef           *m_beddef;
+  std::shared_ptr<surface::SurfaceModel> m_surface;
+  std::shared_ptr<ocean::OceanModel>     m_ocean;
+
+  bed::BedDef *m_beddef;
 
   // state variables and some diagnostics/internals
 
@@ -356,7 +357,7 @@ protected:
   virtual void update_run_stats();
 
   // working space (a convenience)
-  static const int m_n_work2d = 4;
+  static const int m_n_work2d = 3;
   mutable IceModelVec2S m_work2d[m_n_work2d];
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
@@ -433,7 +434,7 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
 void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness);
 bool check_maximum_ice_thickness(const IceModelVec2S &ice_thickness);
 
-void bedrock_surface_temperature(double sea_level,
+void bedrock_surface_temperature(const IceModelVec2S &sea_level,
                                  const IceModelVec2CellType &cell_type,
                                  const IceModelVec2S &bed_topography,
                                  const IceModelVec2S &ice_thickness,

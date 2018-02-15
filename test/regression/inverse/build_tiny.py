@@ -16,7 +16,6 @@ My = 13
 Mx = 23
 Mz = 21
 
-sea_level = 0      # m sea level elevation
 H0 = 60.           # ice thickness at cliff
 alpha = 0.008       # constant surface slope
 Lext = 15e3          # width of strip beyond cliff
@@ -81,6 +80,7 @@ if __name__ == '__main__':
     vecs.add(PISM.model.createIceMaskVec(grid))
     vecs.add(PISM.model.createNoModelMaskVec(grid), 'no_model_mask')
     vecs.add(PISM.model.create2dVelocityVec(grid,  name='_ssa_bc', desc='SSA Dirichlet BC'))
+    vecs.add(PISM.model.createSeaLevelVec(grid))
 
     # Set constant coefficients.
     vecs.enthalpy.set(enth0)
@@ -88,14 +88,16 @@ if __name__ == '__main__':
     # Build the continent
     bed = vecs.bedrock_altitude
     thickness = vecs.land_ice_thickness
+    sea_level = vecs.sea_level
 
-    with PISM.vec.Access(comm=[bed, thickness]):
+    with PISM.vec.Access(comm=[bed, thickness, sea_level]):
         for (i, j) in grid.points():
             x = grid.x(i)
             y = grid.y(j)
             (b, t) = geometry(x, y)
             bed[i, j] = b
             thickness[i, j] = t
+            sea_level[i, j] = 0.0
 
     # Compute mask and surface elevation from geometry variables.
     gc = PISM.GeometryCalculator(grid.ctx().config())

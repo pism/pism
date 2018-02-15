@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -129,7 +129,7 @@ void EigenCalving::compute_calving_rate(const IceModelVec2CellType &mask,
 
 }
 
-std::map<std::string, Diagnostic::Ptr> EigenCalving::diagnostics_impl() const {
+DiagnosticList EigenCalving::diagnostics_impl() const {
   return {{"eigen_calving_rate",
         Diagnostic::Ptr(new CalvingRate(this, "eigen_calving_rate",
                                         "horizontal calving rate due to eigen-calving"))}};

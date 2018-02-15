@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -39,12 +39,12 @@ namespace surface {
 class SurfaceModifier : public Modifier<SurfaceModel>
 {
 public:
-  SurfaceModifier(IceGrid::ConstPtr g, SurfaceModel* in)
+  SurfaceModifier(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
     : Modifier<SurfaceModel>(g, in) {}
   virtual ~SurfaceModifier() {}
 protected:
-  virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *in) {
-    if (m_input_model != NULL) {
+  virtual void attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> in) {
+    if (m_input_model) {
       m_input_model->attach_atmosphere_model(in);
     }
   }

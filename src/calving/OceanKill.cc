@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,13 +33,13 @@ namespace calving {
 OceanKill::OceanKill(IceGrid::ConstPtr g)
   : Component(g) {
 
-  m_ocean_kill_mask.create(m_grid, "ocean_kill_mask", WITH_GHOSTS,
-                           m_config->get_double("grid.max_stencil_width"));
+  m_mask.create(m_grid, "ocean_kill_mask", WITH_GHOSTS,
+                m_config->get_double("grid.max_stencil_width"));
 
-  m_ocean_kill_mask.set_attrs("internal",
-                              "mask specifying fixed calving front locations",
-                              "", "");
-  m_ocean_kill_mask.set_time_independent(true);
+  m_mask.set_attrs("internal",
+                   "mask specifying fixed calving front locations",
+                   "", "");
+  m_mask.set_time_independent(true);
 }
 
 OceanKill::~OceanKill() {
@@ -78,7 +78,7 @@ void OceanKill::init() {
     bed.regrid(ocean_kill_file, CRITICAL);
   }
 
-  IceModelVec::AccessList list{&m_ocean_kill_mask, &thickness, &bed};
+  IceModelVec::AccessList list{&m_mask, &thickness, &bed};
 
   GeometryCalculator gc(*m_config);
 
@@ -91,27 +91,27 @@ void OceanKill::init() {
     int M = gc.mask(sea_level, bed(i, j), thickness(i, j));
 
     if (thickness(i, j) > 0 or mask::grounded(M)) {
-      m_ocean_kill_mask(i, j) = 0;
+      m_mask(i, j) = 0;
     } else {
-      m_ocean_kill_mask(i, j) = 1;
+      m_mask(i, j) = 1;
     }
   }
 
-  m_ocean_kill_mask.update_ghosts();
+  m_mask.update_ghosts();
 }
 
 // Updates mask and ice thickness, including ghosts.
 void OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness) {
-  IceModelVec::AccessList list{&m_ocean_kill_mask, &pism_mask, &ice_thickness};
+  IceModelVec::AccessList list{&m_mask, &pism_mask, &ice_thickness};
 
   unsigned int GHOSTS = pism_mask.stencil_width();
-  assert(m_ocean_kill_mask.stencil_width() >= GHOSTS);
+  assert(m_mask.stencil_width() >= GHOSTS);
   assert(ice_thickness.stencil_width()     >= GHOSTS);
 
   for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_ocean_kill_mask(i, j) > 0.5) {
+    if (m_mask(i, j) > 0.5) {
       pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;
       ice_thickness(i, j) = 0.0;
     }
@@ -119,11 +119,11 @@ void OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness)
 }
 
 const IceModelVec2Int& OceanKill::mask() const {
-  return m_ocean_kill_mask;
+  return m_mask;
 }
 
-std::map<std::string, Diagnostic::Ptr> OceanKill::diagnostics_impl() const {
-  return {{"ocean_kill_mask", Diagnostic::wrap(m_ocean_kill_mask)}};
+DiagnosticList OceanKill::diagnostics_impl() const {
+  return {{"ocean_kill_mask", Diagnostic::wrap(m_mask)}};
 }
 
 } // end of namespace calving

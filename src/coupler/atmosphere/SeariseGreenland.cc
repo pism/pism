@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -48,8 +48,6 @@ SeaRISEGreenland::~SeaRISEGreenland() {
 }
 
 void SeaRISEGreenland::init_impl() {
-
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_log->message(2,
              "* Initializing SeaRISE-Greenland atmosphere model based on the Fausto et al (2009)\n"

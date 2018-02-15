@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -240,11 +240,11 @@ void IceCompModel::allocate_couplers() {
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   // Climate will always come from verification test formulas.
-  m_surface = new surface::Verification(m_grid, EC, m_testname);
-  m_submodels["surface process model"] = m_surface;
+  m_surface.reset(new surface::Verification(m_grid, EC, m_testname));
+  m_submodels["surface process model"] = m_surface.get();
 
-  m_ocean   = new ocean::Constant(m_grid);
-  m_submodels["ocean model"] = m_ocean;
+  m_ocean.reset(new ocean::Constant(m_grid));
+  m_submodels["ocean model"] = m_ocean.get();
 }
 
 void IceCompModel::bootstrap_2d(const PIO &input_file) {

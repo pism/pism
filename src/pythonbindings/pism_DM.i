@@ -7,6 +7,6 @@
 %shared_ptr(pism::petsc::Wrapper< ::DM >)
 
 %include "util/petscwrappers/Wrapper.hh"
-%template(DMWrapper) pism::petsc::Wrapper< ::DM >;
+%template(_DMWrapper) pism::petsc::Wrapper< ::DM >;
 
 %include "util/petscwrappers/DM.hh"

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 PISM Authors
+// Copyright (C) 2008-2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -48,14 +48,12 @@ PIK::PIK(IceGrid::ConstPtr g)
                              "K", "");
 }
 
-void PIK::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input)
+void PIK::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input)
 {
-  delete input;
+  (void) input;
 }
 
 void PIK::init_impl() {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
   m_log->message(2,
                  "* Initializing the constant-in-time surface processes model PIK.\n"
                  "  It reads surface mass balance directly from the file and holds it constant.\n"
@@ -84,15 +82,15 @@ MaxTimestep PIK::max_timestep_impl(double t) const {
   return MaxTimestep("surface PIK");
 }
 
-void PIK::update_impl(double my_t, double my_dt)
+void PIK::update_impl(double t, double dt)
 {
-  if ((fabs(my_t - m_t) < 1e-12) &&
-      (fabs(my_dt - m_dt) < 1e-12)) {
+  if ((fabs(t - m_t) < 1e-12) &&
+      (fabs(dt - m_dt) < 1e-12)) {
     return;
   }
 
-  m_t  = my_t;
-  m_dt = my_dt;
+  m_t  = t;
+  m_dt = dt;
 
   const IceModelVec2S
     &usurf = *m_grid->variables().get_2d_scalar("surface_altitude"),

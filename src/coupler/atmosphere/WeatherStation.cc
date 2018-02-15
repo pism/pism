@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -55,8 +55,6 @@ WeatherStation::~WeatherStation() {
 }
 
 void WeatherStation::init_impl() {
-
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_log->message(2,
              "* Initializing the constant-in-space atmosphere model\n"

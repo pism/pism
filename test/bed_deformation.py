@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """Solves equation (16) of BuelerLingleBrown to obtain the steady
-state viscous plate deflection corresponding to a diven disc load.
+state viscous plate deflection corresponding to a given disc load.
 
 Used as a verification (and regression) test for BedDeformLC::bootstrap().
 """
@@ -59,14 +59,11 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
 
     bed_model = PISM.LingleClark(grid)
 
-    ice_thickness = PISM.IceModelVec2S()
-    ice_thickness.create(grid, "thk", PISM.WITHOUT_GHOSTS)
+    ice_thickness = PISM.IceModelVec2S(grid, "thk", PISM.WITHOUT_GHOSTS)
 
-    bed = PISM.IceModelVec2S()
-    bed.create(grid, "topg", PISM.WITHOUT_GHOSTS)
+    bed = PISM.IceModelVec2S(grid, "topg", PISM.WITHOUT_GHOSTS)
 
-    bed_uplift = PISM.IceModelVec2S()
-    bed_uplift.create(grid, "uplift", PISM.WITHOUT_GHOSTS)
+    bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
 
     # start with a flat bed, no ice, and no uplift
     bed.set(0.0)
@@ -112,15 +109,12 @@ def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
 
     bed_model = PISM.LingleClark(grid)
 
-    ice_thickness = PISM.IceModelVec2S()
-    ice_thickness.create(grid, "thk", PISM.WITHOUT_GHOSTS)
+    ice_thickness = PISM.IceModelVec2S(grid, "thk", PISM.WITHOUT_GHOSTS)
 
-    bed = PISM.IceModelVec2S()
-    bed.create(grid, "topg", PISM.WITHOUT_GHOSTS)
+    bed = PISM.IceModelVec2S(grid, "topg", PISM.WITHOUT_GHOSTS)
     bed.set(0.0)
 
-    bed_uplift = PISM.IceModelVec2S()
-    bed_uplift.create(grid, "uplift", PISM.WITHOUT_GHOSTS)
+    bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
     bed_uplift.set(0.0)
 
     with PISM.vec.Access(nocomm=ice_thickness):

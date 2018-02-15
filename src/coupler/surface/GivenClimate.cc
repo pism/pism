@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -64,14 +64,11 @@ Given::~Given() {
   // empty
 }
 
-void Given::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input) {
-  delete input;
-  input = NULL;
+void Given::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input) {
+  (void) input;
 }
 
 void Given::init_impl() {
-
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_log->message(2,
              "* Initializing the surface model reading temperature at the top of the ice\n"

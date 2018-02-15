@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2017 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2004--2018 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,6 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/coupler/OceanModel.hh"
 
 #include "pism/calving/CalvingAtThickness.hh"
 #include "pism/calving/EigenCalving.hh"
@@ -41,7 +40,7 @@ void IceModel::do_calving() {
   // of a time-step.
   if (m_eigen_calving) {
     m_eigen_calving->update(m_dt,
-                            m_ocean->sea_level_elevation(),
+                            m_geometry.sea_level_elevation,
                             m_ssa_dirichlet_bc_mask,
                             m_geometry.bed_elevation,
                             m_geometry.cell_type,
@@ -51,7 +50,7 @@ void IceModel::do_calving() {
 
   if (m_vonmises_calving) {
     m_vonmises_calving->update(m_dt,
-                               m_ocean->sea_level_elevation(),
+                               m_geometry.sea_level_elevation,
                                m_ssa_dirichlet_bc_mask,
                                m_geometry.bed_elevation,
                                m_geometry.cell_type,
@@ -61,7 +60,7 @@ void IceModel::do_calving() {
 
   if (m_frontal_melt) {
     m_frontal_melt->update(m_dt,
-                           m_ocean->sea_level_elevation(),
+                           m_geometry.sea_level_elevation,
                            m_ssa_dirichlet_bc_mask,
                            m_geometry.bed_elevation,
                            m_geometry.cell_type,

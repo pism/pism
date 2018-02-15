@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -39,11 +39,11 @@ namespace surface {
  */
 class InitializationHelper : public SurfaceModifier {
 public:
-  InitializationHelper(IceGrid::ConstPtr g, SurfaceModel* in);
+  InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
 protected:
   void init_impl();
   void update_impl(double my_t, double my_dt);
-  void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *in);
+  void attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> in);
 
   void mass_flux_impl(IceModelVec2S &result) const;
   void temperature_impl(IceModelVec2S &result) const;

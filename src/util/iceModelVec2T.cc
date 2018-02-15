@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Constantine Khroulev
+// Copyright (C) 2009--2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,8 @@
 
 #include <petsc.h>
 #include <algorithm>
+#include <cassert>
+
 #include "iceModelVec2T.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism_utilities.hh"
@@ -122,7 +124,8 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
              exists, name_found, found_by_standard_name);
   if (not exists) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "can't find %s (%s) in %s.",
-                                  m_metadata[0].get_string("long_name").c_str(), m_metadata[0].get_name().c_str(),
+                                  m_metadata[0].get_string("long_name").c_str(),
+                                  m_metadata[0].get_name().c_str(),
                                   m_filename.c_str());
   }
 
@@ -169,7 +172,8 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
         }
       } else {
         // no time bounds attribute
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Variable '%s' does not have the time_bounds attribute.\n"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "Variable '%s' does not have the time_bounds attribute.\n"
                                       "Cannot use time-dependent forcing data '%s' (%s) without time bounds.",
                                       dimname.c_str(),  m_metadata[0].get_string("long_name").c_str(),
                                       m_metadata[0].get_name().c_str());
@@ -194,13 +198,15 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   }
 
   if (not is_increasing(m_time)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "times have to be strictly increasing (read from '%s').",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "times have to be strictly increasing (read from '%s').",
                                   m_filename.c_str());
   }
 
   if (m_period != 0) {
     if ((size_t)m_n_records < m_time.size()) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "buffer has to be big enough to hold all records of periodic data");
+      throw RuntimeError(PISM_ERROR_LOCATION,
+                         "buffer has to be big enough to hold all records of periodic data");
     }
 
     // read periodic data right away (we need to hold it all in memory anyway)
@@ -502,8 +508,12 @@ void IceModelVec2T::average(double t, double dt) {
  *
  */
 void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
-  unsigned int index = 0,
-    last = m_first + m_N - 1;
+
+  assert(m_first >= 0);
+
+  unsigned int
+    index = 0,
+    last  = m_first + m_N - 1;
 
   size_t ts_length = ts.size();
 

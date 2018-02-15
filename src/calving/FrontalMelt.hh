@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,9 +22,11 @@
 
 #include "CalvingFrontRetreat.hh"
 
-#include "pism/coupler/OceanModel.hh"
-
 namespace pism {
+
+namespace ocean {
+class OceanModel;
+} // end of namespace ocean
 
 class FrontalMelt : public CalvingFrontRetreat {
 public:
@@ -34,7 +36,7 @@ public:
   void init();
 
 protected:
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
 
   void compute_calving_rate(const IceModelVec2CellType &mask,
                             IceModelVec2S &result) const;

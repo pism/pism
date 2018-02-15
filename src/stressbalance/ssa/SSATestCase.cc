@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2009--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -115,7 +115,6 @@ void SSATestCase::run() {
   m_geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
 
   Inputs inputs;
-  inputs.sea_level             = 0.0;
   inputs.melange_back_pressure = &m_melange_back_pressure;
   inputs.geometry              = &m_geometry;
   inputs.enthalpy              = &m_ice_enthalpy;

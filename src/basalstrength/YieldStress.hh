@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012, 2014, 2015, 2016, 2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2012, 2014, 2015, 2016, 2017, 2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -49,7 +49,7 @@ protected:
   virtual void init_impl() = 0;
   virtual void update_impl(const YieldStressInputs &inputs) = 0;
 
-  std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  DiagnosticList diagnostics_impl() const;
 
   IceModelVec2S m_basal_yield_stress;
 };

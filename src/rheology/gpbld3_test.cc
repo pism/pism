@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 PISM Authors
+/* Copyright (C) 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -141,7 +141,7 @@ static void speed_test(const Logger &log,
       H     = 1000.0,           // slab thickness
       dz    = H / (N - 1);      // grid spacing
 
-    for (int k = 0; k < N; ++k) {
+    for (unsigned int k = 0; k < N; ++k) {
       const double
         z     = k * dz,
         depth = H - z,

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -203,10 +203,6 @@ IceModel::~IceModel() {
 
   delete m_age_model;
 
-  delete m_ocean;
-
-  delete m_surface;
-
   delete m_beddef;
 
   delete m_subglacial_hydrology;
@@ -362,7 +358,7 @@ void IceModel::allocate_storage() {
 void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
 
   m_geometry.bed_elevation.copy_from(m_beddef->bed_elevation());
-  m_geometry.sea_level_elevation.set(m_ocean->sea_level_elevation());
+  m_geometry.sea_level_elevation.copy_from(m_ocean->sea_level_elevation());
 
   if (m_iceberg_remover and flag == REMOVE_ICEBERGS) {
     // The iceberg remover has to use the same mask as the stress balance code, hence the
@@ -385,13 +381,8 @@ stressbalance::Inputs IceModel::stress_balance_inputs() {
     result.basal_melt_rate = &m_basal_melt_rate;
   }
 
-  IceModelVec2S &melange_back_pressure = m_work2d[0];
-
-  m_ocean->melange_back_pressure_fraction(melange_back_pressure);
-
-  result.sea_level             = m_ocean->sea_level_elevation();
   result.basal_yield_stress    = &m_basal_yield_stress;
-  result.melange_back_pressure = &melange_back_pressure;
+  result.melange_back_pressure = &m_ocean->melange_back_pressure_fraction();
   result.geometry              = &m_geometry;
   result.new_bed_elevation     = m_new_bed_elevation;
   result.enthalpy              = &m_energy_model->enthalpy();
@@ -415,20 +406,17 @@ energy::Inputs IceModel::energy_model_inputs() {
   IceModelVec2S &ice_surface_temperature           = m_work2d[0];
   IceModelVec2S &ice_surface_liquid_water_fraction = m_work2d[1];
   IceModelVec2S &till_water_thickness              = m_work2d[2];
-  IceModelVec2S &shelf_base_temperature            = m_work2d[3];
 
   m_surface->temperature(ice_surface_temperature);
   m_surface->liquid_water_fraction(ice_surface_liquid_water_fraction);
-
-  m_ocean->shelf_base_temperature(shelf_base_temperature);
 
   m_subglacial_hydrology->till_water_thickness(till_water_thickness);
 
   result.basal_frictional_heating = &m_stress_balance->basal_frictional_heating();
   result.basal_heat_flux          = &m_btu->flux_through_top_surface(); // bedrock thermal layer
-  result.cell_type                = &m_geometry.cell_type;            // geometry
-  result.ice_thickness            = &m_geometry.ice_thickness;        // geometry
-  result.shelf_base_temp          = &shelf_base_temperature;            // ocean model
+  result.cell_type                = &m_geometry.cell_type;              // geometry
+  result.ice_thickness            = &m_geometry.ice_thickness;          // geometry
+  result.shelf_base_temp          = &m_ocean->shelf_base_temperature(); // ocean model
   result.surface_liquid_fraction  = &ice_surface_liquid_water_fraction; // surface model
   result.surface_temp             = &ice_surface_temperature;           // surface model
   result.till_water_thickness     = &till_water_thickness;              // hydrology model
@@ -660,8 +648,7 @@ void IceModel::step(bool do_mass_continuity,
   // Combine basal melt rate in grounded (computed during the energy
   // step) and floating (provided by an ocean model) areas.
   {
-    IceModelVec2S &shelf_base_mass_flux = m_work2d[0];
-    m_ocean->shelf_base_mass_flux(shelf_base_mass_flux);
+    const IceModelVec2S &shelf_base_mass_flux = m_ocean->shelf_base_mass_flux();
 
     combine_basal_melt_rate(m_geometry,
                             shelf_base_mass_flux,
@@ -950,7 +937,7 @@ const stressbalance::StressBalance* IceModel::stress_balance() const {
 }
 
 const ocean::OceanModel* IceModel::ocean_model() const {
-  return this->m_ocean;
+  return m_ocean.get();
 }
 
 const bed::BedDef* IceModel::bed_model() const {
@@ -1047,7 +1034,7 @@ void IceModel::prune_diagnostics() {
   if (not m_ts_filename.empty() and vars.empty()) {
     // use all diagnostics
   } else {
-    std::map<std::string, TSDiagnostic::Ptr> diagnostics;
+    TSDiagnosticList diagnostics;
     for (auto v : vars) {
       if (m_ts_diagnostics.find(v) != m_ts_diagnostics.end()) {
         diagnostics[v] = m_ts_diagnostics[v];

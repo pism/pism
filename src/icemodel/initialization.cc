@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -642,20 +642,20 @@ void IceModel::allocate_couplers() {
     m_log->message(2,
              "# Allocating a surface process model or coupler...\n");
 
-    m_surface = new surface::InitializationHelper(m_grid, ps.create());
+    m_surface.reset(new surface::InitializationHelper(m_grid, ps.create()));
 
     m_surface->attach_atmosphere_model(pa.create());
 
-    m_submodels["surface process model"] = m_surface;
+    m_submodels["surface process model"] = m_surface.get();
   }
 
   if (m_ocean == NULL) {
     m_log->message(2,
              "# Allocating an ocean model or coupler...\n");
 
-    m_ocean = new ocean::InitializationHelper(m_grid, po.create());
+    m_ocean.reset(new ocean::InitializationHelper(m_grid, po.create()));
 
-    m_submodels["ocean model"] = m_ocean;
+    m_submodels["ocean model"] = m_ocean.get();
   }
 }
 
@@ -832,7 +832,7 @@ void IceModel::init_calving() {
   if (methods.find("frontal_melt") != methods.end()) {
 
     if (m_frontal_melt == NULL) {
-      m_frontal_melt = new FrontalMelt(m_grid, m_ocean);
+      m_frontal_melt = new FrontalMelt(m_grid, m_ocean.get());
     }
 
     m_frontal_melt->init();

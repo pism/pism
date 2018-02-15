@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,8 @@
 #define __Diagnostic_hh
 
 #include <memory>
+#include <map>
+#include <string>
 
 #include "VariableMetadata.hh"
 #include "Timeseries.hh"        // inline code and a member of TSDiagnostic
@@ -107,6 +109,8 @@ protected:
   //! fill value (used often enough to justify storing it)
   double m_fill_value;
 };
+
+typedef std::map<std::string, Diagnostic::Ptr> DiagnosticList;
 
 /*!
  * Helper template wrapping quantities with dedicated storage in diagnostic classes.
@@ -317,6 +321,8 @@ protected:
   //! size of the buffer used to store data
   size_t m_buffer_size;
 };
+
+typedef std::map<std::string, TSDiagnostic::Ptr> TSDiagnosticList;
 
 //! Scalar diagnostic reporting a snapshot of a quantity modeled by PISM.
 /*!

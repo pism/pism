@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -84,26 +84,26 @@ InputOptions process_input_options(MPI_Comm com) {
 Component::Component(IceGrid::ConstPtr g)
   : m_grid(g), m_config(g->ctx()->config()), m_sys(g->ctx()->unit_system()),
     m_log(g->ctx()->log()) {
-  m_t = m_dt = GSL_NAN;
+  // empty
 }
 
 Component::~Component() {
   // empty
 }
 
-std::map<std::string, Diagnostic::Ptr> Component::diagnostics() const {
+DiagnosticList Component::diagnostics() const {
   return this->diagnostics_impl();
 }
 
-std::map<std::string, TSDiagnostic::Ptr> Component::ts_diagnostics() const {
+TSDiagnosticList Component::ts_diagnostics() const {
   return this->ts_diagnostics_impl();
 }
 
-std::map<std::string, Diagnostic::Ptr> Component::diagnostics_impl() const {
+DiagnosticList Component::diagnostics_impl() const {
   return {};
 }
 
-std::map<std::string, TSDiagnostic::Ptr> Component::ts_diagnostics_impl() const {
+TSDiagnosticList Component::ts_diagnostics_impl() const {
   return {};
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,7 +28,7 @@ namespace surface {
 
 class Cache : public SurfaceModifier {
 public:
-  Cache(IceGrid::ConstPtr g, SurfaceModel* in);
+  Cache(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
   virtual ~Cache();
 protected:
   virtual void init_impl();

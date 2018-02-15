@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 PISM Authors
+/* Copyright (C) 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,6 +18,7 @@
  */
 
 #include "pism/util/Time.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 

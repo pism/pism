@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -172,7 +172,6 @@ TemperatureIndex::~TemperatureIndex() {
 }
 
 void TemperatureIndex::init_impl() {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   // call the default implementation (not the interface method init())
   SurfaceModel::init_impl();
@@ -827,10 +826,10 @@ public:
 
 } // end of namespace diagnostics
 
-std::map<std::string, Diagnostic::Ptr> TemperatureIndex::diagnostics_impl() const {
+DiagnosticList TemperatureIndex::diagnostics_impl() const {
   using namespace diagnostics;
 
-  std::map<std::string, Diagnostic::Ptr> result = {
+  DiagnosticList result = {
     {"surface_accumulation_flux", Diagnostic::Ptr(new Accumulation(this, AMOUNT))},
     {"surface_accumulation_rate", Diagnostic::Ptr(new Accumulation(this, MASS))},
     {"surface_melt_flux",         Diagnostic::Ptr(new SurfaceMelt(this, AMOUNT))},
@@ -847,10 +846,10 @@ std::map<std::string, Diagnostic::Ptr> TemperatureIndex::diagnostics_impl() cons
   return result;
 }
 
-std::map<std::string, TSDiagnostic::Ptr> TemperatureIndex::ts_diagnostics_impl() const {
+TSDiagnosticList TemperatureIndex::ts_diagnostics_impl() const {
   using namespace diagnostics;
 
-  std::map<std::string, TSDiagnostic::Ptr> result = {
+  TSDiagnosticList result = {
     {"surface_accumulation_rate", TSDiagnostic::Ptr(new TotalSurfaceAccumulation(this))},
     {"surface_melt_rate",         TSDiagnostic::Ptr(new TotalSurfaceMelt(this))},
     {"surface_runoff_rate",       TSDiagnostic::Ptr(new TotalSurfaceRunoff(this))},

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,8 +23,8 @@
 namespace pism {
 namespace stressbalance {
 
-std::map<std::string, Diagnostic::Ptr> SIAFD::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = {
+DiagnosticList SIAFD::diagnostics_impl() const {
+  DiagnosticList result = {
     {"diffusivity",           Diagnostic::Ptr(new SIAFD_diffusivity(this))},
     {"diffusivity_staggered", Diagnostic::Ptr(new SIAFD_diffusivity_staggered(this))},
     {"schoofs_theta",         Diagnostic::Ptr(new SIAFD_schoofs_theta(this))},

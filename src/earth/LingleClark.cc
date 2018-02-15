@@ -18,12 +18,9 @@
 
 #include "LingleClark.hh"
 
-#include <gsl/gsl_math.h>       // GSL_NAN
-
 #include "pism/util/io/PIO.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Vars.hh"
@@ -119,9 +116,6 @@ void LingleClark::bootstrap_impl(const IceModelVec2S &bed,
                                    const IceModelVec2S &bed_uplift,
                                    const IceModelVec2S &ice_thickness) {
   m_t_beddef_last = m_grid->ctx()->time()->start();
-
-  m_t  = GSL_NAN;
-  m_dt = GSL_NAN;
 
   m_topg_last.copy_from(bed);
 
@@ -238,15 +232,7 @@ const IceModelVec2S& LingleClark::total_displacement() const {
 void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
                               double t, double dt) {
 
-  if ((fabs(t - m_t)   < 1e-12) &&
-      (fabs(dt - m_dt) < 1e-12)) {
-    return;
-  }
-
-  m_t  = t;
-  m_dt = dt;
-
-  double t_final = m_t + m_dt;
+  double t_final = t + dt;
 
   // Check if it's time to update:
   double dt_beddef = t_final - m_t_beddef_last; // in seconds

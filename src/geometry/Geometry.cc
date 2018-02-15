@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 PISM Authors
+/* Copyright (C) 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -58,7 +58,7 @@ Geometry::Geometry(IceGrid::ConstPtr grid) {
   bed_elevation.set_attrs("model_state", "bedrock surface elevation",
                           "m", "bedrock_altitude");
 
-  sea_level_elevation.create(grid, "sea_level_elevation", WITHOUT_GHOSTS);
+  sea_level_elevation.create(grid, "sea_level", WITH_GHOSTS);
   sea_level_elevation.set_attrs("model_state",
                                 "sea level elevation above reference ellipsoid", "meters",
                                 "sea_surface_height_above_reference_ellipsoid");
@@ -180,17 +180,14 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
 
   const double
     ice_density = config->get_double("constants.ice.density"),
-    ocean_density = config->get_double("constants.sea_water.density"),
-    sea_level = 0;              // FIXME: use the 2D field
+    ocean_density = config->get_double("constants.sea_water.density");
 
   compute_grounded_cell_fraction(ice_density,
                                  ocean_density,
-                                 sea_level,
+                                 sea_level_elevation,
                                  ice_thickness,
                                  bed_elevation,
-                                 cell_type,
-                                 cell_grounded_fraction,
-                                 NULL, NULL);
+                                 cell_grounded_fraction);
 }
 
 } // end of namespace pism

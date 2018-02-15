@@ -131,6 +131,20 @@ void IceRegionalModel::model_state_setup() {
 
   // initialize the no_model_mask
   m_geometry_evolution->set_no_model_mask(m_no_model_mask);
+
+  InputOptions input = process_input_options(m_ctx->com());
+
+  // set usurf_stored and thk_stored
+  if (input.type == INIT_BOOTSTRAP) {
+    if (m_config->get_boolean("regional.zero_gradient")) {
+      m_usurf_stored.set(0.0);
+      m_thk_stored.set(0.0);
+    } else {
+      m_usurf_stored.copy_from(m_geometry.ice_surface_elevation);
+      m_thk_stored.copy_from(m_geometry.ice_thickness);
+    }
+  }
+
 }
 
 void IceRegionalModel::allocate_geometry_evolution() {

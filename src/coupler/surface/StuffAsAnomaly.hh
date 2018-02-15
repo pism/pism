@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@ namespace surface {
 class StuffAsAnomaly : public SurfaceModifier
 {
 public:
-  StuffAsAnomaly(IceGrid::ConstPtr g, SurfaceModel *input);
+  StuffAsAnomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input);
   virtual ~StuffAsAnomaly();
 protected:
   virtual void init_impl();

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2017 PISM Authors
+// Copyright (C) 2012-2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -171,8 +171,8 @@ void Routing::write_model_state_impl(const PIO &output) const {
   m_W.write(output);
 }
 
-std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = {
+DiagnosticList Routing::diagnostics_impl() const {
+  DiagnosticList result = {
     {"bwp",             Diagnostic::Ptr(new Hydrology_bwp(this))},
     {"bwprel",          Diagnostic::Ptr(new Hydrology_bwprel(this))},
     {"effbwp",          Diagnostic::Ptr(new Hydrology_effbwp(this))},
@@ -184,8 +184,8 @@ std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
   return combine(result, Hydrology::diagnostics_impl());
 }
 
-std::map<std::string, TSDiagnostic::Ptr> Routing::ts_diagnostics_impl() const {
-  std::map<std::string, TSDiagnostic::Ptr> result = {
+TSDiagnosticList Routing::ts_diagnostics_impl() const {
+  TSDiagnosticList result = {
     {"hydro_ice_free_land_loss",                 TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss(this))},
     {"hydro_ocean_loss",                         TSDiagnostic::Ptr(new MCHydrology_ocean_loss(this))},
     {"hydro_negative_thickness_gain",            TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain(this))},

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,7 +30,7 @@
 namespace pism {
 namespace surface {
 
-Cache::Cache(IceGrid::ConstPtr g, SurfaceModel* in)
+Cache::Cache(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   : SurfaceModifier(g, in) {
 
   m_next_update_time = m_grid->ctx()->time()->current();

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -54,7 +54,7 @@ const IceModelVec2S& YieldStress::basal_material_yield_stress() {
   return m_basal_yield_stress;
 }
 
-std::map<std::string, Diagnostic::Ptr> YieldStress::diagnostics_impl() const {
+DiagnosticList YieldStress::diagnostics_impl() const {
   return {{"tauc", Diagnostic::wrap(m_basal_yield_stress)}};
 }
 
