@@ -113,29 +113,6 @@ void IceRegionalModel::model_state_setup() {
   // bootstrap_2d because bed topography is not initialized at the time bootstrap_2d is
   // called.
   if (input.type == INIT_BOOTSTRAP) {
-
-    if (m_config->get_boolean("regional.zero_gradient")) {
-      m_usurf_stored.set(0.0);
-      m_thk_stored.set(0.0);
-    } else {
-      GeometryCalculator gc(*m_config);
-      // Use values set by IceModel::bootstrap_2d() to initialize usurf_stored and thk_stored.
-      gc.compute_surface(m_ocean->sea_level_elevation(),
-                         m_geometry.bed_elevation,
-                         m_geometry.ice_thickness,
-                         m_usurf_stored);
-
-      m_thk_stored.copy_from(m_geometry.ice_thickness);
-    }
-  }
-
-  // initialize the no_model_mask
-  m_geometry_evolution->set_no_model_mask(m_no_model_mask);
-
-  InputOptions input = process_input_options(m_ctx->com());
-
-  // set usurf_stored and thk_stored
-  if (input.type == INIT_BOOTSTRAP) {
     if (m_config->get_boolean("regional.zero_gradient")) {
       m_usurf_stored.set(0.0);
       m_thk_stored.set(0.0);
@@ -144,7 +121,6 @@ void IceRegionalModel::model_state_setup() {
       m_thk_stored.copy_from(m_geometry.ice_thickness);
     }
   }
-
 }
 
 void IceRegionalModel::allocate_geometry_evolution() {
