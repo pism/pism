@@ -51,8 +51,6 @@ LingleClark::LingleClark(IceGrid::ConstPtr g)
 
   bool use_elastic_model = m_config->get_boolean("bed_deformation.lc.elastic_model");
 
-  m_bdLC = NULL;
-
   const int
     Mx = m_grid->Mx(),
     My = m_grid->My(),
@@ -88,10 +86,10 @@ LingleClark::LingleClark(IceGrid::ConstPtr g)
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {
-      m_bdLC = new BedDeformLC(*m_config, use_elastic_model,
-                               Mx, My,
-                               m_grid->dx(), m_grid->dy(),
-                               Nx, Ny);
+      m_bdLC.reset(new BedDeformLC(*m_config, use_elastic_model,
+                                   Mx, My,
+                                   m_grid->dx(), m_grid->dy(),
+                                   Nx, Ny));
     }
   } catch (...) {
     rank0.failed();
@@ -100,10 +98,7 @@ LingleClark::LingleClark(IceGrid::ConstPtr g)
 }
 
 LingleClark::~LingleClark() {
-  if (m_bdLC != NULL) {
-    delete m_bdLC;
-    m_bdLC = NULL;
-  }
+  // empty
 }
 
 /*!
@@ -113,8 +108,8 @@ LingleClark::~LingleClark() {
  * Then compute the bed relief as the difference between bed elevation and total bed displacement.
  */
 void LingleClark::bootstrap_impl(const IceModelVec2S &bed,
-                                   const IceModelVec2S &bed_uplift,
-                                   const IceModelVec2S &ice_thickness) {
+                                 const IceModelVec2S &bed_uplift,
+                                 const IceModelVec2S &ice_thickness) {
   m_t_beddef_last = m_grid->ctx()->time()->start();
 
   m_topg_last.copy_from(bed);

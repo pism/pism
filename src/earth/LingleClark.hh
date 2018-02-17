@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,8 @@
 #ifndef _PBLINGLECLARK_H_
 #define _PBLINGLECLARK_H_
 
+#include <memory>               // std::unique_ptr
+
 #include "BedDef.hh"
 
 namespace pism {
@@ -35,7 +37,7 @@ public:
 
   const IceModelVec2S& total_displacement() const;
 
-protected:
+private:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
@@ -58,7 +60,7 @@ protected:
   IceModelVec2S m_relief;
 
   //! Serial viscoelastic bed deformation model.
-  BedDeformLC *m_bdLC;
+  std::unique_ptr<BedDeformLC> m_bdLC;
 
   //! extended grid for the viscous plate displacement
   IceGrid::Ptr m_extended_grid;
