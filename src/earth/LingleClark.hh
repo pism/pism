@@ -38,8 +38,10 @@ public:
   const IceModelVec2S& total_displacement() const;
 
 private:
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  void define_model_state_impl(const PIO &output) const;
+  void write_model_state_impl(const PIO &output) const;
+
+  DiagnosticList diagnostics_impl() const;
 
   MaxTimestep max_timestep_impl(double t) const;
   void init_impl(const InputOptions &opts);

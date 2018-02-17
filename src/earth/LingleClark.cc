@@ -286,5 +286,12 @@ void LingleClark::write_model_state_impl(const PIO &output) const {
   m_viscous_bed_displacement.write(output);
 }
 
+DiagnosticList LingleClark::diagnostics_impl() const {
+  DiagnosticList result = {
+    {"viscous_bed_displacement", Diagnostic::wrap(m_viscous_bed_displacement)},
+  };
+  return combine(result, BedDef::diagnostics_impl());
+}
+
 } // end of namespace bed
 } // end of namespace pism
