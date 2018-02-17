@@ -423,6 +423,8 @@ protected:
   virtual void view_field(const IceModelVec *field);
   std::map<std::string,petsc::Viewer::Ptr> m_viewers;
 
+  void compute_load(const Geometry &geometry, IceModelVec2S &result);
+
 private:
   TimeseriesMetadata m_timestamp;
   double m_start_time;    // this is used in the wall-clock-time backup code

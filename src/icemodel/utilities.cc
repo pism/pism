@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -151,6 +151,25 @@ IceGrid::Ptr IceModel::grid() const {
 //! Return the context this model is running in.
 Context::Ptr IceModel::ctx() const {
   return m_ctx;
+}
+
+/*!
+ * Compute the thickness of the load on the bedrock, distributing the mass of the floating
+ * ice over the whole area of the ocean in PISM's computational domain.
+ */
+void IceModel::compute_load(const Geometry &geometry, IceModelVec2S &result) {
+
+  IceModelVec::AccessList list{&geometry.cell_type, &geometry.ice_thickness, &result};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (geometry.cell_type.ocean(i, j)) {
+      result(i, j) = 0.0;
+    } else {
+      result(i, j) = geometry.ice_thickness(i, j);
+    }
+  }
 }
 
 } // end of namespace pism
