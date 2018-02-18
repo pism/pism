@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015, 2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015, 2017, 2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -47,7 +47,7 @@ namespace bed {
 
   The class assumes that the supplied Petsc Vecs are *sequential*.  It is expected to be
   run only on processor zero (or possibly by each processor once each processor
-  owns the entire 2D gridded ice thicknesses and bed elevations.)
+  owns the entire 2D gridded load thicknesses and bed elevations.)
 
   This model always assumes that we start with no load. Note that this does not mean that we
   starting state is the equilibrium: the viscous plate may be "pre-bent" by using a provided
@@ -74,7 +74,7 @@ public:
 private:
   void compute_elastic_response(Vec H, Vec dE);
 
-  void uplift_problem(Vec ice_thickness, Vec bed_uplift, Vec output);
+  void uplift_problem(Vec load_thickness, Vec bed_uplift, Vec output);
 
   void precompute_coefficients();
 

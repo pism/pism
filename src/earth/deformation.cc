@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -248,10 +248,10 @@ void BedDeformLC::precompute_coefficients() {
  *
  * for @f$ U @f$, treating @f$ \diff{u}{t} @f$ and @f$ \sigma_{zz} @f$ as known.
  *
- * @param[in] ice_thickness ice thickness, meters
+ * @param[in] load_thickness load thickness, meters
  * @param[in] bed_uplift bed uplift, m/second
  *
- * Here `ice_thickness` is used to compute the load @f$ \sigma_{zz} @f$ and `bed_uplift` is
+ * Here `load_thickness` is used to compute the load @f$ \sigma_{zz} @f$ and `bed_uplift` is
  * @f$ \diff{u}{t} @f$ itself.
  *
  */
