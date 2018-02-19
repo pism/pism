@@ -43,8 +43,10 @@ void PointwiseIsostasy::init_impl(const InputOptions &opts, const IceModelVec2S 
 
   BedDef::init_impl(opts, ice_thickness, sea_level_elevation);
 
+  bool add_ocean = m_config->get_boolean("bed_deformation.add_ocean_load");
+
   // store the initial load
-  compute_load(m_topg, ice_thickness, sea_level_elevation, m_load_last);
+  compute_load(m_topg, ice_thickness, sea_level_elevation, add_ocean, m_load_last);
 }
 
 MaxTimestep PointwiseIsostasy::max_timestep_impl(double t) const {
@@ -76,6 +78,8 @@ void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
     ice_density    = m_config->get_double("constants.ice.density"),
     f              = load_density / mantle_density;
 
+  bool add_ocean = m_config->get_boolean("bed_deformation.add_ocean_load");
+
   //! Our goal: topg = topg_last - f*(load - load_last)
 
   IceModelVec::AccessList list{&m_topg, &ice_thickness, &sea_level_elevation, &m_load_last};
@@ -88,7 +92,7 @@ void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
       double load = compute_load(m_topg(i, j),
                                  ice_thickness(i, j),
                                  sea_level_elevation(i, j),
-                                 ice_density, ocean_density);
+                                 ice_density, ocean_density, add_ocean);
 
       m_topg(i, j) = m_topg_last(i, j) - f * (load - m_load_last(i, j));
       m_load_last(i, j) = load;

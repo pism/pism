@@ -188,10 +188,10 @@ void BedDef::compute_uplift(double dt_beddef) {
 }
 
 double compute_load(double bed, double ice_thickness, double sea_level,
-                    double ice_density, double ocean_density) {
+                    double ice_density, double ocean_density, bool add_ocean) {
   double
     ocean_depth = std::max(sea_level - bed, 0.0),
-    ocean_load  = (ocean_density / ice_density) * ocean_depth;
+    ocean_load  = add_ocean ? (ocean_density / ice_density) * ocean_depth : 0.0;
 
   return std::max(ice_thickness - ocean_load, 0.0) + ocean_load;
 }
@@ -202,6 +202,7 @@ double compute_load(double bed, double ice_thickness, double sea_level,
 void compute_load(const IceModelVec2S &bed_elevation,
                   const IceModelVec2S &ice_thickness,
                   const IceModelVec2S &sea_level_elevation,
+                  bool add_ocean,
                   IceModelVec2S &result) {
 
   Config::ConstPtr config = result.grid()->ctx()->config();
@@ -218,7 +219,7 @@ void compute_load(const IceModelVec2S &bed_elevation,
     result(i, j) = compute_load(bed_elevation(i, j),
                                 ice_thickness(i, j),
                                 sea_level_elevation(i, j),
-                                ice_density, ocean_density);
+                                ice_density, ocean_density, add_ocean);
   }
 }
 
