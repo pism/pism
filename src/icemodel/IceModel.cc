@@ -691,11 +691,10 @@ void IceModel::step(bool do_mass_continuity,
   if (m_beddef) {
     int topg_state_counter = m_beddef->bed_elevation().state_counter();
 
-    IceModelVec2S &load = m_work2d[0];
-    compute_load(m_geometry, load);
-
     profiling.begin("bed_deformation");
-    m_beddef->update(load, current_time, m_dt);
+    m_beddef->update(m_geometry.ice_thickness,
+                     m_geometry.sea_level_elevation,
+                     current_time, m_dt);
     profiling.end("bed_deformation");
 
     if (m_beddef->bed_elevation().state_counter() != topg_state_counter) {

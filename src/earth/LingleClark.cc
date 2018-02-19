@@ -32,7 +32,7 @@ namespace pism {
 namespace bed {
 
 LingleClark::LingleClark(IceGrid::ConstPtr g)
-  : BedDef(g) {
+  : BedDef(g), m_load_thickness(g, "load_thickness", WITHOUT_GHOSTS) {
 
   // A work vector. This storage is used to put thickness change on rank 0 and to get the plate
   // displacement change back.
@@ -107,19 +107,22 @@ LingleClark::~LingleClark() {
  *
  * Then compute the bed relief as the difference between bed elevation and total bed displacement.
  */
-void LingleClark::bootstrap_impl(const IceModelVec2S &bed,
+void LingleClark::bootstrap_impl(const IceModelVec2S &bed_elevation,
                                  const IceModelVec2S &bed_uplift,
-                                 const IceModelVec2S &ice_thickness) {
+                                 const IceModelVec2S &ice_thickness,
+                                 const IceModelVec2S &sea_level_elevation) {
   m_t_beddef_last = m_grid->ctx()->time()->start();
 
-  m_topg_last.copy_from(bed);
+  m_topg_last.copy_from(bed_elevation);
 
-  petsc::Vec::Ptr thickness0 = ice_thickness.allocate_proc0_copy();
+  compute_load(bed_elevation, ice_thickness, sea_level_elevation, m_load_thickness);
+
+  petsc::Vec::Ptr thickness0 = m_load_thickness.allocate_proc0_copy();
 
   // initialize the plate displacement
   {
     bed_uplift.put_on_proc0(*m_work0);
-    ice_thickness.put_on_proc0(*thickness0);
+    m_load_thickness.put_on_proc0(*thickness0);
 
     ParallelSection rank0(m_grid->com);
     try {
@@ -157,13 +160,12 @@ void LingleClark::bootstrap_impl(const IceModelVec2S &bed,
  * - plate displacement (either read from a file or bootstrapped using uplift) and
  *   possibly re-gridded.
  */
-void LingleClark::init_impl(const InputOptions &opts) {
+void LingleClark::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
+                            const IceModelVec2S &sea_level_elevation) {
   m_log->message(2, "* Initializing the Lingle-Clark bed deformation model...\n");
 
   // Initialize bed topography and uplift maps.
-  BedDef::init_impl(opts);
-
-  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  BedDef::init_impl(opts, ice_thickness, sea_level_elevation);
 
   m_topg_last.copy_from(m_topg);
 
@@ -171,7 +173,7 @@ void LingleClark::init_impl(const InputOptions &opts) {
     // Set m_viscous_bed_displacement by reading from the input file.
     m_viscous_bed_displacement.read(opts.filename, opts.record);
   } else if (opts.type == INIT_BOOTSTRAP) {
-    this->bootstrap(m_topg, m_uplift, *ice_thickness);
+    this->bootstrap(m_topg, m_uplift, ice_thickness, sea_level_elevation);
   } else {
     // do nothing
   }
@@ -180,10 +182,12 @@ void LingleClark::init_impl(const InputOptions &opts) {
   regrid("Lingle-Clark bed deformation model",
          m_viscous_bed_displacement, REGRID_WITHOUT_REGRID_VARS);
 
+  compute_load(m_topg, ice_thickness, sea_level_elevation, m_load_thickness);
+
   // Now that m_viscous_bed_displacement is finally initialized, put it on rank 0 and initialize
   // m_bdLC itself.
   {
-    ice_thickness->put_on_proc0(*m_work0);
+    m_load_thickness.put_on_proc0(*m_work0);
     m_viscous_bed_displacement.put_on_proc0(*m_viscous_bed_displacement0);
 
     ParallelSection rank0(m_grid->com);
@@ -225,6 +229,7 @@ const IceModelVec2S& LingleClark::total_displacement() const {
 
 //! Update the Lingle-Clark bed deformation model.
 void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
+                              const IceModelVec2S &sea_level_elevation,
                               double t, double dt) {
 
   double t_final = t + dt;
@@ -239,7 +244,10 @@ void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
 
   m_t_beddef_last = t_final;
 
-  ice_thickness.put_on_proc0(*m_work0);
+  compute_load(m_topg, ice_thickness, sea_level_elevation,
+               m_load_thickness);
+
+  m_load_thickness.put_on_proc0(*m_work0);
 
   ParallelSection rank0(m_grid->com);
   try {

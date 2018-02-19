@@ -44,12 +44,15 @@ private:
   DiagnosticList diagnostics_impl() const;
 
   MaxTimestep max_timestep_impl(double t) const;
-  void init_impl(const InputOptions &opts);
+  void init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
+                 const IceModelVec2S &sea_level_elevation);
   void bootstrap_impl(const IceModelVec2S &bed_elevation,
                       const IceModelVec2S &bed_uplift,
-                      const IceModelVec2S &ice_thickness);
+                      const IceModelVec2S &ice_thickness,
+                      const IceModelVec2S &sea_level_elevation);
   void update_impl(const IceModelVec2S &ice_thickness,
-                   double my_t, double my_dt);
+                   const IceModelVec2S &sea_level_elevation,
+                   double t, double dt);
 
   //! Total (viscous and elastic) bed displacement.
   IceModelVec2S m_bed_displacement;
@@ -60,6 +63,9 @@ private:
 
   //! Bed relief relative to the bed displacement.
   IceModelVec2S m_relief;
+
+  //! Ice-equivalent load thickness.
+  IceModelVec2S m_load_thickness;
 
   //! Serial viscoelastic bed deformation model.
   std::unique_ptr<BedDeformLC> m_bdLC;
