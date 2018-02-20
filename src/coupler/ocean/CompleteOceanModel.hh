@@ -49,7 +49,7 @@ protected:
   IceModelVec2S::Ptr m_shelf_base_mass_flux;
   IceModelVec2S::Ptr m_sea_level_elevation;
 };
-;
+
 } // end of namespace ocean
 } // end of namespace pism
 
