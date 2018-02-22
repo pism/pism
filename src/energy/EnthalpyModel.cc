@@ -158,7 +158,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
       const double H = ice_thickness(i, j);
 
-      system.init(i, j, H);
+      system.init(i, j, false, H);
 
       // enthalpy and pressures at top of ice
       const double

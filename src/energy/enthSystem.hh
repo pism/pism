@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2017 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2017, 2018 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -51,7 +51,7 @@ public:
                 EnthalpyConverter::Ptr EC);
   ~enthSystemCtx();
 
-  void init(int i, int j, double ice_thickness);
+  void init(int i, int j, bool ismarginal, double ice_thickness);
 
   double k_from_T(double T) const;
 
