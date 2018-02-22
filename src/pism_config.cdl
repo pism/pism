@@ -453,6 +453,11 @@ netcdf pism_config {
     pism_config:energy.enthalpy_cold_bulge_max_type = "scalar";
     pism_config:energy.enthalpy_cold_bulge_max_units = "Joule / kg";
 
+    pism_config:energy.advection_ice_thickness_limit = 100.0;
+    pism_config:energy.advection_ice_thickness_limit_doc = "ignore energy advection and strain heating in at grid points with a neighbor with the thickness below this limit.";
+    pism_config:energy.advection_ice_thickness_limit_type = "scalar";
+    pism_config:energy.advection_ice_thickness_limit_units = "meters";
+
     pism_config:energy.max_low_temperature_count = 10;
     pism_config:energy.max_low_temperature_count_doc = "Maximum number of grid points with ice temperature below energy.minimum_allowed_temperature.";
     pism_config:energy.max_low_temperature_count_option = "max_low_temps";
