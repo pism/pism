@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015, 2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -818,6 +818,10 @@ petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {
                                      &m_impl->procs_y[0], &m_impl->procs_x[0], // ly, lx
                                      &result);
   PISM_CHK(ierr,"DMDACreate2d");
+
+#if PETSC_VERSION_GE(3,8,0)
+  ierr = DMSetUp(result); PISM_CHK(ierr,"DMSetUp");
+#endif
 
   return petsc::DM::Ptr(new petsc::DM(result));
 }

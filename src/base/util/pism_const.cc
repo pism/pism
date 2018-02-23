@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2015, 2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@
 #include <cstring>
 #include <cassert>
 #include <cstdarg>
-
+#include <cstdio>               // vfprintf
 
 #include "pism_const.hh"
 #include "error_handling.hh"
@@ -85,9 +85,7 @@ void verbPrintf(const int threshold,
     va_list Argp;
     if (verbosityLevel >= threshold) {
       va_start(Argp, format);
-      ierr = PetscVFPrintf(PETSC_STDOUT, format, Argp);
-      PISM_CHK(ierr, "PetscVFPrintf");
-
+      vfprintf(stdout, format, Argp);
       va_end(Argp);
     }
   }
