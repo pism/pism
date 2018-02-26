@@ -147,6 +147,11 @@ private:
   stressbalance::StressBalance *m_stress_balance;
 };
 
+/*!
+ * Return true if the grid point (i,j) is near the margin of the ice.
+ */
+bool marginal(const IceModelVec2S &thickness, int i, int j, double threshold);
+
 } // end of namespace energy
 } // end of namespace pism
 
