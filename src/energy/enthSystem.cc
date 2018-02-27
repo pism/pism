@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2017 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2018 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -238,10 +238,12 @@ void enthSystemCtx::set_surface_neumann_bc(double G) {
 
 void enthSystemCtx::checkReadyToSolve() {
   if (m_nu < 0.0 || m_R_cold < 0.0 || m_R_temp < 0.0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "not ready to solve: need initAllColumns() in enthSystemCtx");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "not ready to solve: need initAllColumns() in enthSystemCtx");
   }
   if (m_lambda < 0.0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "not ready to solve: need setSchemeParamsThisColumn() in enthSystemCtx");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "not ready to solve: need setSchemeParamsThisColumn() in enthSystemCtx");
   }
 }
 
@@ -449,7 +451,8 @@ void enthSystemCtx::solve(std::vector<double> &x) {
 #if (PISM_DEBUG==1)
   checkReadyToSolve();
   if (gsl_isnan(m_D0) || gsl_isnan(m_U0) || gsl_isnan(m_B0)) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "solveThisColumn() should only be called after\n"
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "solveThisColumn() should only be called after\n"
                        "  setting basal boundary condition in enthSystemCtx");
   }
 #endif
