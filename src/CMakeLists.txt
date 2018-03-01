@@ -132,7 +132,7 @@ add_library (pism
   energy/utilities.cc
   geometry/Geometry.cc
   geometry/GeometryEvolution.cc
-  geometry/grounded_cell_fraction_v2.cc
+  geometry/grounded_cell_fraction.cc
   geometry/part_grid_threshold_thickness.cc
   hydrology/DistributedHydrology.cc
   hydrology/Hydrology.cc
