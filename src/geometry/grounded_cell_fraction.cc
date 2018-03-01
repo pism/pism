@@ -148,7 +148,7 @@ double grounded_area_fraction(double a, double b, double c) {
   // the area of the triangle (0,0)-(1,0)-(0,1)
   const double total_area = 0.5;
 
-  Point
+  const Point
     ab = intersect_ab(a, b),
     bc = intersect_bc(b, c),
     ac = intersect_ac(a, c);
@@ -212,6 +212,9 @@ double grounded_area_fraction(double a, double b, double c) {
       return 1.0 - ratio;
     }
   }
+
+  // FIXME: we need to cover the case of the line F=0 intersecting *two* nodes of the
+  // triangle, i.e. coinciding with a side of the triangle.
 
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "the logic in grounded_area_fraction failed! Please submit a bug report.");
@@ -309,7 +312,7 @@ void compute_grounded_cell_fraction(double ice_density,
       Box f = F(S, B, H, alpha);
 
       /*
-        NW-----------------N-----------------NE
+        NW----------------N----------------NE
         |                 |                 |
         |                 |                 |
         |       nw--------n--------ne       |
@@ -321,7 +324,7 @@ void compute_grounded_cell_fraction(double ice_density,
         |       sw--------s--------se       |
         |                 |                 |
         |                 |                 |
-        SW-----------------S-----------------SE
+        SW----------------S----------------SE
       */
 
       double
