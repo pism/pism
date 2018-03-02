@@ -8,9 +8,8 @@ namespace pism {
 namespace ocean {
 
 void Pico::test() {
-	// TEST FUNCTION  
-	m_log->message(2, "TEST...\n");
-
+  // TEST FUNCTION
+  m_log->message(2, "TEST...\n");
 }
 
 
@@ -21,26 +20,21 @@ const int Pico::imask_exclude      = 1;
 const int Pico::imask_unidentified = -1;
 
 
-
-
 // To be used solely in round_basins()
-double Pico::most_frequent_element(const std::vector<double> &v)
-  {   // Precondition: v is not empty
-      std::map<double, double> frequencyMap;
-      int maxFrequency = 0;
-      double mostFrequentElement = 0;
-      for (double x : v)
-      {
-          double f = ++frequencyMap[x];
-          if (f > maxFrequency)
-          {
-              maxFrequency = f;
-              mostFrequentElement = x;
-          }
-      }
-
-      return mostFrequentElement;
+double Pico::most_frequent_element(const std::vector<double> &v) { // Precondition: v is not empty
+  std::map<double, double> frequencyMap;
+  int maxFrequency           = 0;
+  double mostFrequentElement = 0;
+  for (double x : v) {
+    double f = ++frequencyMap[x];
+    if (f > maxFrequency) {
+      maxFrequency        = f;
+      mostFrequentElement = x;
+    }
   }
+
+  return mostFrequentElement;
+}
 
 //! Round non-integer basin mask values to integers.
 
@@ -53,7 +47,7 @@ void Pico::round_basins() {
   // be stored as field (assumed the basins do not change with time).
 
   double id_fractional;
-  std::vector<double> neighbours = {0,0,0,0};
+  std::vector<double> neighbours = { 0, 0, 0, 0 };
 
   IceModelVec::AccessList list(m_cbasins);
 
@@ -61,34 +55,29 @@ void Pico::round_basins() {
     const int i = p.i(), j = p.j();
 
     // do not consider domain boundaries (they should be far from the shelves.)
-    if ((i==0) | (j==0) | (i>(m_Mx-2)) | (j>(m_My-2))){
+    if ((i == 0) | (j == 0) | (i > (m_Mx - 2)) | (j > (m_My - 2))) {
       id_fractional = 0.;
     } else {
-      id_fractional = m_cbasins(i,j);
-      neighbours[0] = m_cbasins(i+1,j+1);
-      neighbours[1] = m_cbasins(i-1,j+1);
-      neighbours[2] = m_cbasins(i-1,j-1);
-      neighbours[3] = m_cbasins(i+1,j-1);
+      id_fractional = m_cbasins(i, j);
+      neighbours[0] = m_cbasins(i + 1, j + 1);
+      neighbours[1] = m_cbasins(i - 1, j + 1);
+      neighbours[2] = m_cbasins(i - 1, j - 1);
+      neighbours[3] = m_cbasins(i + 1, j - 1);
 
       // check if this is an interpolated number:
       // first condition: not an integer
       // second condition: has no neighbour with same value
       if ((id_fractional != round(id_fractional)) ||
-          ((id_fractional != neighbours[0]) &&
-          (id_fractional != neighbours[1]) &&
-          (id_fractional != neighbours[2]) &&
-          (id_fractional != neighbours[3]))){
+          ((id_fractional != neighbours[0]) && (id_fractional != neighbours[1]) && (id_fractional != neighbours[2]) &&
+           (id_fractional != neighbours[3]))) {
 
         double most_frequent_neighbour = most_frequent_element(neighbours);
-        m_cbasins(i,j) = most_frequent_neighbour;
+        m_cbasins(i, j) = most_frequent_neighbour;
         // m_log->message(2, "most frequent: %f at %d,%d\n",most_frequent_neighbour,i,j);
       }
     }
-
   }
 }
-
-
 
 
 //! Create masks that indicate ocean on continental shelf, ice rises as well as open ocean.
@@ -104,30 +93,27 @@ void Pico::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
   m_log->message(5, "starting identifyMASK routine\n");
 
   // Assume that the center of the domain belongs to main ice body.
-  int seed_x = (m_Mx - 1)/2,
-      seed_y = (m_My - 1)/2;
+  int seed_x = (m_Mx - 1) / 2, seed_y = (m_My - 1) / 2;
 
-  double linner_identified = 0.0,
-         all_inner_identified = 1.0,
-         previous_step_identified = 0.0;
+  double linner_identified = 0.0, all_inner_identified = 1.0, previous_step_identified = 0.0;
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
-  const IceModelVec2S &bed = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+  const IceModelVec2S &bed         = *m_grid->variables().get_2d_scalar("bedrock_altitude");
 
-  IceModelVec::AccessList list{&inputmask, &mask, &bed};
+  IceModelVec::AccessList list{ &inputmask, &mask, &bed };
 
   inputmask.set(imask_unidentified);
 
   // Find starting points for iteration.
-  if ((masktype=="ocean_continental_shelf" || masktype=="icerises") && (seed_x >= m_grid->xs()) && (seed_x < m_grid->xs()+m_grid->xm()) && (seed_y >= m_grid->ys())&& (seed_y < m_grid->ys()+m_grid->ym())){
-    inputmask(seed_x,seed_y)=imask_inner;
-  }
-  else if (masktype=="ocean" || masktype=="lakes"){
+  if ((masktype == "ocean_continental_shelf" || masktype == "icerises") && (seed_x >= m_grid->xs()) &&
+      (seed_x < m_grid->xs() + m_grid->xm()) && (seed_y >= m_grid->ys()) && (seed_y < m_grid->ys() + m_grid->ym())) {
+    inputmask(seed_x, seed_y) = imask_inner;
+  } else if (masktype == "ocean" || masktype == "lakes") {
     //assume that some point on the domain boundary belongs to the open ocean
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
-      if ((i==0) | (j==0) | (i>(m_Mx-2)) | (j>(m_My-2))){
-        inputmask(i,j)=imask_inner;
+      if ((i == 0) | (j == 0) | (i > (m_Mx - 2)) | (j > (m_My - 2))) {
+        inputmask(i, j) = imask_inner;
       }
     }
   }
@@ -135,9 +121,9 @@ void Pico::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
   // Iteratively find region which satisfies condition for coninental shelf ocean,
   // ice rise or open ocean.
   int iteration_round = 0;
-  while(all_inner_identified > previous_step_identified){
+  while (all_inner_identified > previous_step_identified) {
 
-    iteration_round+=1;
+    iteration_round += 1;
     previous_step_identified = all_inner_identified;
 
     for (Points p(*m_grid); p; p.next()) {
@@ -145,33 +131,29 @@ void Pico::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
       const int i = p.i(), j = p.j();
       bool masktype_condition = false;
 
-      if (masktype=="ocean_continental_shelf"){
-        masktype_condition = (mask(i,j)!=maskocean || bed(i,j) >= m_continental_shelf_depth);}
-      else if (masktype=="icerises"){
-        masktype_condition = (mask(i,j)==maskgrounded);
-      }
-      else if (masktype=="ocean"){
-        masktype_condition = (mask(i,j)==maskocean);
-      }
-      else if (masktype=="lakes"){
-        masktype_condition = (mask(i,j)==maskocean || mask(i,j)==maskfloating);
+      if (masktype == "ocean_continental_shelf") {
+        masktype_condition = (mask(i, j) != maskocean || bed(i, j) >= m_continental_shelf_depth);
+      } else if (masktype == "icerises") {
+        masktype_condition = (mask(i, j) == maskgrounded);
+      } else if (masktype == "ocean") {
+        masktype_condition = (mask(i, j) == maskocean);
+      } else if (masktype == "lakes") {
+        masktype_condition = (mask(i, j) == maskocean || mask(i, j) == maskfloating);
       }
 
-      if (masktype_condition && inputmask(i,j)==imask_unidentified &&
-        (inputmask(i,j+1)==imask_inner || inputmask(i,j-1)==imask_inner ||
-         inputmask(i+1,j)==imask_inner || inputmask(i-1,j)==imask_inner)){
-         inputmask(i,j)=imask_inner;
-         linner_identified+=1;
-      }
-      else if (masktype_condition == false){
-        inputmask(i,j)=imask_outer;
+      if (masktype_condition && inputmask(i, j) == imask_unidentified &&
+          (inputmask(i, j + 1) == imask_inner || inputmask(i, j - 1) == imask_inner ||
+           inputmask(i + 1, j) == imask_inner || inputmask(i - 1, j) == imask_inner)) {
+        inputmask(i, j) = imask_inner;
+        linner_identified += 1;
+      } else if (masktype_condition == false) {
+        inputmask(i, j) = imask_outer;
       }
     }
 
     inputmask.update_ghosts();
 
     all_inner_identified = GlobalSum(m_grid->com, linner_identified);
-
   }
 
   // Set all unidentified grid cells to value for excluded areas (ice rises
@@ -179,24 +161,22 @@ void Pico::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (inputmask(i,j)==imask_unidentified){
-      inputmask(i,j)=imask_exclude;
+    if (inputmask(i, j) == imask_unidentified) {
+      inputmask(i, j) = imask_exclude;
     }
 
-    if (masktype=="ocean_continental_shelf"){ //exclude ice covered parts
-      if (mask(i,j)!=maskocean && inputmask(i,j) == imask_inner){
-        inputmask(i,j) = imask_outer;
+    if (masktype == "ocean_continental_shelf") { //exclude ice covered parts
+      if (mask(i, j) != maskocean && inputmask(i, j) == imask_inner) {
+        inputmask(i, j) = imask_outer;
       }
     }
   }
-
 }
-
 
 
 //! Create mask that indicates indicidual ice shelves
 
-// FIXME, this is ugly code, would be nicer and faster to use a breadth/depth first search here 
+// FIXME, this is ugly code, would be nicer and faster to use a breadth/depth first search here
 // some attempt made below, but I do not know how to access the neighboring Points...
 void Pico::identify_shelf_mask() {
 
@@ -204,7 +184,7 @@ void Pico::identify_shelf_mask() {
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{&m_shelf_mask, &mask, &m_lake_mask};
+  IceModelVec::AccessList list{ &m_shelf_mask, &mask, &m_lake_mask };
 
   if (m_exicerises_set) {
     list.add(m_icerise_mask);
@@ -213,14 +193,16 @@ void Pico::identify_shelf_mask() {
 
   m_shelf_mask.set(0);
 
-  std::vector<double> labels_counter (m_Mx*m_My,0);// labels_couter[i] = number of ice shelf cells with the number i, at maxim
-  std::vector<double> labels_counter_global (m_Mx*m_My,0);// labels_couter[i] = number of ice shelf cells with the number i, a
+  std::vector<double> labels_counter(m_Mx * m_My,
+                                     0); // labels_couter[i] = number of ice shelf cells with the number i, at maxim
+  std::vector<double> labels_counter_global(m_Mx * m_My,
+                                            0); // labels_couter[i] = number of ice shelf cells with the number i, a
 
   double global_continue_loop = 1;
   double local_continue_loop  = 0;
 
   // label all shelf cells
-  while( global_continue_loop !=0 ) { 
+  while (global_continue_loop != 0) {
     local_continue_loop = 0;
 
     for (Points p(*m_grid); p; p.next()) {
@@ -228,127 +210,153 @@ void Pico::identify_shelf_mask() {
 
       bool condition;
       if (m_exicerises_set) { // either floating or an ice rise..
-        condition = ( (mask(i,j)==maskfloating  && m_lake_mask(i,j)!=1) || m_icerise_mask(i,j)==imask_exclude );
-      }
-      else {
-        condition = (mask(i,j)==maskfloating && m_lake_mask(i,j)!=1);
+        condition = ((mask(i, j) == maskfloating && m_lake_mask(i, j) != 1) || m_icerise_mask(i, j) == imask_exclude);
+      } else {
+        condition = (mask(i, j) == maskfloating && m_lake_mask(i, j) != 1);
       }
 
       if (condition) {
-        
-        if (m_shelf_mask(i,j)==0) { // if not labeled yet, set to the minimum label of any neighbor
-          
-          if ( m_shelf_mask(i-1,j)>0 && (m_shelf_mask(i+1,j)>0 && m_shelf_mask(i+1,j)>=m_shelf_mask(i-1,j) || m_shelf_mask(i+1,j)==0) && (m_shelf_mask(i,j-1)>0 && m_shelf_mask(i,j-1)>=m_shelf_mask(i-1,j) || m_shelf_mask(i,j-1)==0) && (m_shelf_mask(i,j+1)>0 && m_shelf_mask(i,j+1)>=m_shelf_mask(i-1,j) || m_shelf_mask(i,j+1)==0)) {
-            m_shelf_mask(i,j) = m_shelf_mask(i-1,j);
-            labels_counter[static_cast<int>(m_shelf_mask(i-1,j))]++;
-            local_continue_loop = 1;
-          }
-          if ( m_shelf_mask(i+1,j)>0 && (m_shelf_mask(i-1,j)>0 && m_shelf_mask(i-1,j)> m_shelf_mask(i+1,j) || m_shelf_mask(i-1,j)==0) && (m_shelf_mask(i,j-1)>0 && m_shelf_mask(i,j-1)>=m_shelf_mask(i+1,j) || m_shelf_mask(i,j-1)==0) && (m_shelf_mask(i,j+1)>0 && m_shelf_mask(i,j+1)>=m_shelf_mask(i+1,j) || m_shelf_mask(i,j+1)==0)){
 
-            m_shelf_mask(i,j) = m_shelf_mask(i+1,j);
-            labels_counter[static_cast<int>(m_shelf_mask(i+1,j))]++;
-            local_continue_loop = 1;
-          }
-          if (m_shelf_mask(i,j-1)>0 && (m_shelf_mask(i-1,j)>0 && m_shelf_mask(i-1,j)>m_shelf_mask(i,j-1) || m_shelf_mask(i-1,j)==0) && (m_shelf_mask(i+1,j)>0 && m_shelf_mask(i+1,j)>m_shelf_mask(i,j-1) || m_shelf_mask(i+1,j)==0) && (m_shelf_mask(i,j+1)>0 && m_shelf_mask(i,j+1)>=m_shelf_mask(i,j-1) || m_shelf_mask(i,j+1)==0)){
-            m_shelf_mask(i,j) = m_shelf_mask(i,j-1);
-            labels_counter[static_cast<int>(m_shelf_mask(i,j-1))]++;
-            local_continue_loop = 1;
-          }
-          if (m_shelf_mask(i,j+1)>0 && (m_shelf_mask(i-1,j)>0 && m_shelf_mask(i-1,j)>m_shelf_mask(i,j+1) || m_shelf_mask(i-1,j)==0) && (m_shelf_mask(i+1,j)>0 && m_shelf_mask(i+1,j)>m_shelf_mask(i,j+1) || m_shelf_mask(i+1,j)==0) && (m_shelf_mask(i,j-1)>0 && m_shelf_mask(i,j-1)>m_shelf_mask(i,j+1) || m_shelf_mask(i,j-1)==0)){
+        if (m_shelf_mask(i, j) == 0) { // if not labeled yet, set to the minimum label of any neighbor
 
-            m_shelf_mask(i,j) = m_shelf_mask(i,j+1);
-            labels_counter[static_cast<int>(m_shelf_mask(i,j+1))]++;
+          if (m_shelf_mask(i - 1, j) > 0 &&
+              (m_shelf_mask(i + 1, j) > 0 && m_shelf_mask(i + 1, j) >= m_shelf_mask(i - 1, j) ||
+               m_shelf_mask(i + 1, j) == 0) &&
+              (m_shelf_mask(i, j - 1) > 0 && m_shelf_mask(i, j - 1) >= m_shelf_mask(i - 1, j) ||
+               m_shelf_mask(i, j - 1) == 0) &&
+              (m_shelf_mask(i, j + 1) > 0 && m_shelf_mask(i, j + 1) >= m_shelf_mask(i - 1, j) ||
+               m_shelf_mask(i, j + 1) == 0)) {
+            m_shelf_mask(i, j) = m_shelf_mask(i - 1, j);
+            labels_counter[static_cast<int>(m_shelf_mask(i - 1, j))]++;
             local_continue_loop = 1;
           }
-          if (m_shelf_mask(i-1,j)==0 && m_shelf_mask(i+1,j)==0 && m_shelf_mask(i,j-1)==0 && m_shelf_mask(i,j+1)==0 ) {
-            m_shelf_mask(i,j) = m_Mx*i + j; //just make sure that each shelf cell is initialized to a different value
-            labels_counter[static_cast<int>(m_shelf_mask(i,j))]++;
+          if (m_shelf_mask(i + 1, j) > 0 &&
+              (m_shelf_mask(i - 1, j) > 0 && m_shelf_mask(i - 1, j) > m_shelf_mask(i + 1, j) ||
+               m_shelf_mask(i - 1, j) == 0) &&
+              (m_shelf_mask(i, j - 1) > 0 && m_shelf_mask(i, j - 1) >= m_shelf_mask(i + 1, j) ||
+               m_shelf_mask(i, j - 1) == 0) &&
+              (m_shelf_mask(i, j + 1) > 0 && m_shelf_mask(i, j + 1) >= m_shelf_mask(i + 1, j) ||
+               m_shelf_mask(i, j + 1) == 0)) {
+
+            m_shelf_mask(i, j) = m_shelf_mask(i + 1, j);
+            labels_counter[static_cast<int>(m_shelf_mask(i + 1, j))]++;
+            local_continue_loop = 1;
+          }
+          if (m_shelf_mask(i, j - 1) > 0 &&
+              (m_shelf_mask(i - 1, j) > 0 && m_shelf_mask(i - 1, j) > m_shelf_mask(i, j - 1) ||
+               m_shelf_mask(i - 1, j) == 0) &&
+              (m_shelf_mask(i + 1, j) > 0 && m_shelf_mask(i + 1, j) > m_shelf_mask(i, j - 1) ||
+               m_shelf_mask(i + 1, j) == 0) &&
+              (m_shelf_mask(i, j + 1) > 0 && m_shelf_mask(i, j + 1) >= m_shelf_mask(i, j - 1) ||
+               m_shelf_mask(i, j + 1) == 0)) {
+            m_shelf_mask(i, j) = m_shelf_mask(i, j - 1);
+            labels_counter[static_cast<int>(m_shelf_mask(i, j - 1))]++;
+            local_continue_loop = 1;
+          }
+          if (m_shelf_mask(i, j + 1) > 0 &&
+              (m_shelf_mask(i - 1, j) > 0 && m_shelf_mask(i - 1, j) > m_shelf_mask(i, j + 1) ||
+               m_shelf_mask(i - 1, j) == 0) &&
+              (m_shelf_mask(i + 1, j) > 0 && m_shelf_mask(i + 1, j) > m_shelf_mask(i, j + 1) ||
+               m_shelf_mask(i + 1, j) == 0) &&
+              (m_shelf_mask(i, j - 1) > 0 && m_shelf_mask(i, j - 1) > m_shelf_mask(i, j + 1) ||
+               m_shelf_mask(i, j - 1) == 0)) {
+
+            m_shelf_mask(i, j) = m_shelf_mask(i, j + 1);
+            labels_counter[static_cast<int>(m_shelf_mask(i, j + 1))]++;
+            local_continue_loop = 1;
+          }
+          if (m_shelf_mask(i - 1, j) == 0 && m_shelf_mask(i + 1, j) == 0 && m_shelf_mask(i, j - 1) == 0 &&
+              m_shelf_mask(i, j + 1) == 0) {
+            m_shelf_mask(i, j) = m_Mx * i + j; //just make sure that each shelf cell is initialized to a different value
+            labels_counter[static_cast<int>(m_shelf_mask(i, j))]++;
             local_continue_loop = 1;
           }
 
         } else { // if there is a neighbor with label smaller than (i,j)
-          
-          if ( m_shelf_mask(i-1,j)>0 && m_shelf_mask(i-1,j)<m_shelf_mask(i,j) ){
-            labels_counter[static_cast<int>(m_shelf_mask(i,j))]--;
-            m_shelf_mask(i,j) = m_shelf_mask(i-1,j);
-            labels_counter[static_cast<int>(m_shelf_mask(i-1,j))]++;
+
+          if (m_shelf_mask(i - 1, j) > 0 && m_shelf_mask(i - 1, j) < m_shelf_mask(i, j)) {
+            labels_counter[static_cast<int>(m_shelf_mask(i, j))]--;
+            m_shelf_mask(i, j) = m_shelf_mask(i - 1, j);
+            labels_counter[static_cast<int>(m_shelf_mask(i - 1, j))]++;
             local_continue_loop = 1;
-          }          
-          if ( m_shelf_mask(i+1,j)>0 && m_shelf_mask(i+1,j)<m_shelf_mask(i,j) ){
-            labels_counter[static_cast<int>(m_shelf_mask(i,j))]--;
-            m_shelf_mask(i,j) = m_shelf_mask(i+1,j);
-            labels_counter[static_cast<int>(m_shelf_mask(i+1,j))]++;
+          }
+          if (m_shelf_mask(i + 1, j) > 0 && m_shelf_mask(i + 1, j) < m_shelf_mask(i, j)) {
+            labels_counter[static_cast<int>(m_shelf_mask(i, j))]--;
+            m_shelf_mask(i, j) = m_shelf_mask(i + 1, j);
+            labels_counter[static_cast<int>(m_shelf_mask(i + 1, j))]++;
             local_continue_loop = 1;
-          } 
-          if ( m_shelf_mask(i,j-1)>0 && m_shelf_mask(i,j-1)<m_shelf_mask(i,j) ){
-            labels_counter[static_cast<int>(m_shelf_mask(i,j))]--;
-            m_shelf_mask(i,j) = m_shelf_mask(i,j-1);
-            labels_counter[static_cast<int>(m_shelf_mask(i,j-1))]++;
+          }
+          if (m_shelf_mask(i, j - 1) > 0 && m_shelf_mask(i, j - 1) < m_shelf_mask(i, j)) {
+            labels_counter[static_cast<int>(m_shelf_mask(i, j))]--;
+            m_shelf_mask(i, j) = m_shelf_mask(i, j - 1);
+            labels_counter[static_cast<int>(m_shelf_mask(i, j - 1))]++;
             local_continue_loop = 1;
-          } 
-          if ( m_shelf_mask(i,j+1)>0 && m_shelf_mask(i,j+1)<m_shelf_mask(i,j) ){
-            labels_counter[static_cast<int>(m_shelf_mask(i,j))]--;
-            m_shelf_mask(i,j) = m_shelf_mask(i,j+1);
-            labels_counter[static_cast<int>(m_shelf_mask(i,j+1))]++;
+          }
+          if (m_shelf_mask(i, j + 1) > 0 && m_shelf_mask(i, j + 1) < m_shelf_mask(i, j)) {
+            labels_counter[static_cast<int>(m_shelf_mask(i, j))]--;
+            m_shelf_mask(i, j) = m_shelf_mask(i, j + 1);
+            labels_counter[static_cast<int>(m_shelf_mask(i, j + 1))]++;
             local_continue_loop = 1;
-          } 
+          }
           // full eight neigbors, could also be done above but should not make a difference
-          if ( m_shelf_mask(i-1,j-1)>0 && m_shelf_mask(i-1,j-1)<m_shelf_mask(i,j) ){
-            labels_counter[static_cast<int>(m_shelf_mask(i,j))]--;
-            m_shelf_mask(i,j) = m_shelf_mask(i-1,j-1);
-            labels_counter[static_cast<int>(m_shelf_mask(i-1,j-1))]++;
+          if (m_shelf_mask(i - 1, j - 1) > 0 && m_shelf_mask(i - 1, j - 1) < m_shelf_mask(i, j)) {
+            labels_counter[static_cast<int>(m_shelf_mask(i, j))]--;
+            m_shelf_mask(i, j) = m_shelf_mask(i - 1, j - 1);
+            labels_counter[static_cast<int>(m_shelf_mask(i - 1, j - 1))]++;
             local_continue_loop = 1;
-          } 
-          if ( m_shelf_mask(i-1,j+1)>0 && m_shelf_mask(i-1,j+1)<m_shelf_mask(i,j) ){
-            labels_counter[static_cast<int>(m_shelf_mask(i,j))]--;
-            m_shelf_mask(i,j) = m_shelf_mask(i-1,j+1);
-            labels_counter[static_cast<int>(m_shelf_mask(i-1,j+1))]++;
+          }
+          if (m_shelf_mask(i - 1, j + 1) > 0 && m_shelf_mask(i - 1, j + 1) < m_shelf_mask(i, j)) {
+            labels_counter[static_cast<int>(m_shelf_mask(i, j))]--;
+            m_shelf_mask(i, j) = m_shelf_mask(i - 1, j + 1);
+            labels_counter[static_cast<int>(m_shelf_mask(i - 1, j + 1))]++;
             local_continue_loop = 1;
-          } 
-          if ( m_shelf_mask(i+1,j-1)>0 && m_shelf_mask(i+1,j-1)<m_shelf_mask(i,j) ){
-            labels_counter[static_cast<int>(m_shelf_mask(i,j))]--;
-            m_shelf_mask(i,j) = m_shelf_mask(i+1,j-1);
-            labels_counter[static_cast<int>(m_shelf_mask(i+1,j-1))]++;
+          }
+          if (m_shelf_mask(i + 1, j - 1) > 0 && m_shelf_mask(i + 1, j - 1) < m_shelf_mask(i, j)) {
+            labels_counter[static_cast<int>(m_shelf_mask(i, j))]--;
+            m_shelf_mask(i, j) = m_shelf_mask(i + 1, j - 1);
+            labels_counter[static_cast<int>(m_shelf_mask(i + 1, j - 1))]++;
             local_continue_loop = 1;
-          } 
-          if ( m_shelf_mask(i+1,j+1)>0 && m_shelf_mask(i+1,j+1)<m_shelf_mask(i,j) ){
-            labels_counter[static_cast<int>(m_shelf_mask(i,j))]--;
-            m_shelf_mask(i,j) = m_shelf_mask(i+1,j+1);
-            labels_counter[static_cast<int>(m_shelf_mask(i+1,j+1))]++;
+          }
+          if (m_shelf_mask(i + 1, j + 1) > 0 && m_shelf_mask(i + 1, j + 1) < m_shelf_mask(i, j)) {
+            labels_counter[static_cast<int>(m_shelf_mask(i, j))]--;
+            m_shelf_mask(i, j) = m_shelf_mask(i + 1, j + 1);
+            labels_counter[static_cast<int>(m_shelf_mask(i + 1, j + 1))]++;
             local_continue_loop = 1;
-          } 
+          }
         } // check whether labeled or neighboring a cell with smaller label
-      } // if condition  
-    } // grid
-    
+      }   // if condition
+    }     // grid
+
     m_shelf_mask.update_ghosts();
     global_continue_loop = GlobalMax(m_grid->com, local_continue_loop);
 
-  } // while 
-  
-  
-  for (int k=0;k<m_Mx*m_My;k++){ labels_counter_global[k] = GlobalSum(m_grid->com, labels_counter[k]);}
-  
+  } // while
+
+
+  for (int k = 0; k < m_Mx * m_My; k++) {
+    labels_counter_global[k] = GlobalSum(m_grid->com, labels_counter[k]);
+  }
+
   // remove non-existing labels
   double new_label_current = 1;
-  std::vector<double> new_labels (m_Mx*m_My,0);
-  
-  for (int k=0;k<m_Mx*m_My;k++){
-    if (labels_counter_global[k] != 0){
+  std::vector<double> new_labels(m_Mx * m_My, 0);
+
+  for (int k = 0; k < m_Mx * m_My; k++) {
+    if (labels_counter_global[k] != 0) {
       new_labels[k] = new_label_current;
       new_label_current++;
-    } // no else case, skip 
+    } // no else case, skip
   }
 
   // set the new shelf mask labels
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    int label = static_cast<int>(m_shelf_mask(i,j));
-    m_shelf_mask(i,j) = new_labels[label];
+    int label = static_cast<int>(m_shelf_mask(i, j));
+    m_shelf_mask(i, j) = new_labels[label];
   }
 
-  m_numberOfShelves = new_label_current; // total numer of shelves +1
-  m_log->message(5, "Number of shelves = %d\n", m_numberOfShelves-1); // internally calculated with +1
+  m_numberOfShelves = new_label_current;                                // total numer of shelves +1
+  m_log->message(5, "Number of shelves = %d\n", m_numberOfShelves - 1); // internally calculated with +1
 }
 
 
@@ -382,7 +390,6 @@ void Pico::identify_shelf_mask() {
 */
 
 
-
 //! Compute for each ice shelf cell distance to grounding line and ice front
 
 //! DistGL: distance to grounding line
@@ -402,9 +409,11 @@ void Pico::compute_distances() {
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{&mask, &m_DistIF, &m_cbasins, &m_DistGL, &m_ocean_mask};
+  IceModelVec::AccessList list{ &mask, &m_DistIF, &m_cbasins, &m_DistGL, &m_ocean_mask };
 
-  if (m_exicerises_set) { list.add(m_icerise_mask); }
+  if (m_exicerises_set) {
+    list.add(m_icerise_mask);
+  }
 
   m_DistGL.set(0);
   m_DistIF.set(0);
@@ -419,10 +428,10 @@ void Pico::compute_distances() {
 
     bool condition;
     if (m_exicerises_set) {
-      condition = (mask(i,j)==maskfloating || m_icerise_mask(i,j)==imask_exclude || m_ocean_mask(i,j)==imask_exclude);
-    }
-    else {
-      condition = (mask(i,j)==maskfloating || m_ocean_mask(i,j)==imask_exclude);
+      condition =
+          (mask(i, j) == maskfloating || m_icerise_mask(i, j) == imask_exclude || m_ocean_mask(i, j) == imask_exclude);
+    } else {
+      condition = (mask(i, j) == maskfloating || m_ocean_mask(i, j) == imask_exclude);
     }
 
     if (condition) { //if this is an ice shelf cell (or an ice rise) or a hole in an ice shelf
@@ -430,31 +439,32 @@ void Pico::compute_distances() {
       // label the shelf cells adjacent to the grounding line with DistGL = 1
       bool neighbor_to_land;
       if (m_exicerises_set) {
-        neighbor_to_land = (  m_icerise_mask(i,j+1)==imask_inner || m_icerise_mask(i,j-1)==imask_inner ||
-          m_icerise_mask(i+1,j)==imask_inner || m_icerise_mask(i-1,j)==imask_inner ||
-           m_icerise_mask(i+1,j+1)==imask_inner || m_icerise_mask(i+1,j-1)==imask_inner ||
-           m_icerise_mask(i-1,j+1)==imask_inner || m_icerise_mask(i-1,j-1)==imask_inner );
+        neighbor_to_land =
+            (m_icerise_mask(i, j + 1) == imask_inner || m_icerise_mask(i, j - 1) == imask_inner ||
+             m_icerise_mask(i + 1, j) == imask_inner || m_icerise_mask(i - 1, j) == imask_inner ||
+             m_icerise_mask(i + 1, j + 1) == imask_inner || m_icerise_mask(i + 1, j - 1) == imask_inner ||
+             m_icerise_mask(i - 1, j + 1) == imask_inner || m_icerise_mask(i - 1, j - 1) == imask_inner);
       } else {
-        neighbor_to_land = (  mask(i,j+1)<maskfloating || mask(i,j-1)<maskfloating ||
-           mask(i+1,j)<maskfloating || mask(i-1,j)<maskfloating ||
-          mask(i+1,j+1)<maskfloating || mask(i+1,j-1)<maskfloating ||
-          mask(i-1,j+1)<maskfloating || mask(i-1,j-1)<maskfloating );
+        neighbor_to_land =
+            (mask(i, j + 1) < maskfloating || mask(i, j - 1) < maskfloating || mask(i + 1, j) < maskfloating ||
+             mask(i - 1, j) < maskfloating || mask(i + 1, j + 1) < maskfloating || mask(i + 1, j - 1) < maskfloating ||
+             mask(i - 1, j + 1) < maskfloating || mask(i - 1, j - 1) < maskfloating);
       }
 
-      if (neighbor_to_land ){
+      if (neighbor_to_land) {
         // i.e. there is a grounded neighboring cell (which is not ice rise!)
-        m_DistGL(i,j) = currentLabelGL;
+        m_DistGL(i, j) = currentLabelGL;
       } // no else
 
       // label the shelf cells adjacent to the calving front with DistIF = 1,
       // we do not need to exclude ice rises in this case.
       bool neighbor_to_ocean;
-      neighbor_to_ocean = (m_ocean_mask(i,j+1)==imask_inner || m_ocean_mask(i,j-1)==imask_inner || m_ocean_mask(i+1,j)==imask_inner || m_ocean_mask(i-1,j)==imask_inner);
+      neighbor_to_ocean = (m_ocean_mask(i, j + 1) == imask_inner || m_ocean_mask(i, j - 1) == imask_inner ||
+                           m_ocean_mask(i + 1, j) == imask_inner || m_ocean_mask(i - 1, j) == imask_inner);
 
       if (neighbor_to_ocean) {
-        m_DistIF(i,j) = currentLabelIF;
+        m_DistIF(i, j) = currentLabelIF;
       }
-
     }
   }
 
@@ -466,7 +476,7 @@ void Pico::compute_distances() {
   // Ice holes within the shelf are treated like ice shelf cells,
   // if exicerises_set, also ice rises are treated like ice shelf cells.
   global_continue_loop = 1;
-  while( global_continue_loop !=0 ) {
+  while (global_continue_loop != 0) {
 
     local_continue_loop = 0;
 
@@ -475,18 +485,18 @@ void Pico::compute_distances() {
 
       bool condition; // this cell is floating or an hole in the ice shelf (or an ice rise)
       if (m_exicerises_set) {
-        condition = (mask(i,j)==maskfloating || m_icerise_mask(i,j)==imask_exclude || m_ocean_mask(i,j)==imask_exclude);
-      }
-      else {
-        condition = (mask(i,j)==maskfloating || m_ocean_mask(i,j)==imask_exclude);
+        condition = (mask(i, j) == maskfloating || m_icerise_mask(i, j) == imask_exclude ||
+                     m_ocean_mask(i, j) == imask_exclude);
+      } else {
+        condition = (mask(i, j) == maskfloating || m_ocean_mask(i, j) == imask_exclude);
       }
 
-      if ( condition && m_DistGL(i,j)==0 &&
-        (m_DistGL(i,j+1)==currentLabelGL || m_DistGL(i,j-1)==currentLabelGL ||
-        m_DistGL(i+1,j)==currentLabelGL || m_DistGL(i-1,j)==currentLabelGL) ) {
+      if (condition && m_DistGL(i, j) == 0 &&
+          (m_DistGL(i, j + 1) == currentLabelGL || m_DistGL(i, j - 1) == currentLabelGL ||
+           m_DistGL(i + 1, j) == currentLabelGL || m_DistGL(i - 1, j) == currentLabelGL)) {
         // i.e. this is an shelf cell with no distance assigned yet and with a neighbor that has a distance assigned
-          m_DistGL(i,j) = currentLabelGL+1;
-          local_continue_loop = 1;
+        m_DistGL(i, j) = currentLabelGL + 1;
+        local_continue_loop = 1;
       } //if
 
     } // for
@@ -503,7 +513,7 @@ void Pico::compute_distances() {
   // Ice holes within the shelf are treated like ice shelf cells,
   // if exicerises_set, also ice rises are treated like ice shelf cells.
   global_continue_loop = 1; // start loop
-  while( global_continue_loop !=0  ) {
+  while (global_continue_loop != 0) {
 
     local_continue_loop = 0;
 
@@ -512,18 +522,18 @@ void Pico::compute_distances() {
 
       bool condition; // this cell is floating or an hole in the ice shelf (or an ice rise)
       if (m_exicerises_set) {
-        condition = (mask(i,j)==maskfloating || m_icerise_mask(i,j)==imask_exclude || m_ocean_mask(i,j)==imask_exclude);
-      }
-      else {
-        condition = (mask(i,j)==maskfloating || m_ocean_mask(i,j)==imask_exclude);
+        condition = (mask(i, j) == maskfloating || m_icerise_mask(i, j) == imask_exclude ||
+                     m_ocean_mask(i, j) == imask_exclude);
+      } else {
+        condition = (mask(i, j) == maskfloating || m_ocean_mask(i, j) == imask_exclude);
       }
 
-      if ( condition && m_DistIF(i,j)==0 &&
-        (m_DistIF(i,j+1)==currentLabelIF || m_DistIF(i,j-1)==currentLabelIF ||
-        m_DistIF(i+1,j)==currentLabelIF || m_DistIF(i-1,j)==currentLabelIF) ) {
+      if (condition && m_DistIF(i, j) == 0 &&
+          (m_DistIF(i, j + 1) == currentLabelIF || m_DistIF(i, j - 1) == currentLabelIF ||
+           m_DistIF(i + 1, j) == currentLabelIF || m_DistIF(i - 1, j) == currentLabelIF)) {
         // i.e. this is an shelf cell with no distance assigned yet and with a neighbor that has a distance assigned
-          m_DistIF(i,j)=currentLabelIF+1;
-          local_continue_loop = 1;
+        m_DistIF(i, j) = currentLabelIF + 1;
+        local_continue_loop = 1;
       } //if
 
     } // for
@@ -533,11 +543,7 @@ void Pico::compute_distances() {
     global_continue_loop = GlobalMax(m_grid->com, local_continue_loop);
 
   } // while: find DistIF
-
 }
-
-
-
 
 
 //! Compute the ocean_box_mask
@@ -556,37 +562,41 @@ void Pico::identify_ocean_box_mask(const Constants &cc) {
   std::vector<double> lmax_distGL(m_numberOfShelves);
   std::vector<double> lmax_distIF(m_numberOfShelves);
 
-  double lmax_distGL_ref = 0.0; 
-  double max_distGL_ref = 0.0; 
+  double lmax_distGL_ref = 0.0;
+  double max_distGL_ref  = 0.0;
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  for(int shelf_id=0;shelf_id<m_numberOfShelves;shelf_id++){ max_distGL[shelf_id]=0.0; max_distIF[shelf_id]=0.0;lmax_distGL[shelf_id]=0.0; lmax_distIF[shelf_id]=0.0;}
+  for (int shelf_id = 0; shelf_id < m_numberOfShelves; shelf_id++) {
+    max_distGL[shelf_id]  = 0.0;
+    max_distIF[shelf_id]  = 0.0;
+    lmax_distGL[shelf_id] = 0.0;
+    lmax_distIF[shelf_id] = 0.0;
+  }
 
-  IceModelVec::AccessList list{&m_shelf_mask, &m_DistGL, &m_DistIF, &m_ocean_box_mask,
-      &m_lake_mask, &mask};
+  IceModelVec::AccessList list{ &m_shelf_mask, &m_DistGL, &m_DistIF, &m_ocean_box_mask, &m_lake_mask, &mask };
 
   for (Points p(*m_grid); p; p.next()) {
-  const int i = p.i(), j = p.j();
-    int shelf_id = m_shelf_mask(i,j);
+    const int i = p.i(), j = p.j();
+    int shelf_id = m_shelf_mask(i, j);
 
-    if ( m_DistGL(i,j)> lmax_distGL[shelf_id] ) {
-      lmax_distGL[shelf_id] = m_DistGL(i,j);
+    if (m_DistGL(i, j) > lmax_distGL[shelf_id]) {
+      lmax_distGL[shelf_id] = m_DistGL(i, j);
     }
-    if ( m_DistIF(i,j)> lmax_distIF[shelf_id] ) {
-      lmax_distIF[shelf_id] = m_DistIF(i,j);
+    if (m_DistIF(i, j) > lmax_distIF[shelf_id]) {
+      lmax_distIF[shelf_id] = m_DistIF(i, j);
     }
-    if (m_DistGL(i,j)>lmax_distGL_ref){
-      lmax_distGL_ref = m_DistGL(i,j);
+    if (m_DistGL(i, j) > lmax_distGL_ref) {
+      lmax_distGL_ref = m_DistGL(i, j);
     }
   }
 
 
-  for (int l=0;l<m_numberOfShelves;l++){
+  for (int l = 0; l < m_numberOfShelves; l++) {
     max_distGL[l] = GlobalMax(m_grid->com, lmax_distGL[l]);
     max_distIF[l] = GlobalMax(m_grid->com, lmax_distIF[l]);
   }
-  max_distGL_ref = GlobalMax(m_grid->com, lmax_distGL_ref);  
+  max_distGL_ref = GlobalMax(m_grid->com, lmax_distGL_ref);
 
   // Compute the number of boxes for each basin
   // based on maximum distance between calving front and grounding line (in DistGL)
@@ -595,14 +605,14 @@ void Pico::identify_ocean_box_mask(const Constants &cc) {
 
   std::vector<int> lnumberOfBoxes_perShelf(m_numberOfShelves);
 
-  int n_min = 1; //
+  int n_min   = 1;   //
   double zeta = 0.5; // hard coded for now
 
-  for (int l=0;l<m_numberOfShelves;l++){
+  for (int l = 0; l < m_numberOfShelves; l++) {
     lnumberOfBoxes_perShelf[l] = 0;
-    lnumberOfBoxes_perShelf[l] = n_min + static_cast<int>( 
-    		round(pow((max_distGL[l]/max_distGL_ref), zeta) *(m_numberOfBoxes-n_min)));
-    lnumberOfBoxes_perShelf[l] = PetscMin(lnumberOfBoxes_perShelf[l],cc.default_numberOfBoxes);
+    lnumberOfBoxes_perShelf[l] =
+        n_min + static_cast<int>(round(pow((max_distGL[l] / max_distGL_ref), zeta) * (m_numberOfBoxes - n_min)));
+    lnumberOfBoxes_perShelf[l] = PetscMin(lnumberOfBoxes_perShelf[l], cc.default_numberOfBoxes);
     m_log->message(5, "lnumberOfShelves[%d]=%d \n", l, lnumberOfBoxes_perShelf[l]);
   }
 
@@ -615,75 +625,74 @@ void Pico::identify_ocean_box_mask(const Constants &cc) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask(i,j)==maskfloating && m_DistGL(i,j)>0 && m_DistIF(i,j)>0 && m_ocean_box_mask(i,j)==0){
-      int shelf_id = m_shelf_mask(i,j);
-      int n = lnumberOfBoxes_perShelf[shelf_id];
+    if (mask(i, j) == maskfloating && m_DistGL(i, j) > 0 && m_DistIF(i, j) > 0 && m_ocean_box_mask(i, j) == 0) {
+      int shelf_id = m_shelf_mask(i, j);
+      int n        = lnumberOfBoxes_perShelf[shelf_id];
       // relative distance between grounding line and ice front
-      double r = m_DistGL(i,j)*1.0/(m_DistGL(i,j)*1.0+m_DistIF(i,j)*1.0);
+      double r = m_DistGL(i, j) * 1.0 / (m_DistGL(i, j) * 1.0 + m_DistIF(i, j) * 1.0);
 
-      for(int k=0;k<n;++k){
+      for (int k = 0; k < n; ++k) {
 
         // define the ocean_box_mask using rule (n-k)/n< (1-r)**2 <(n-k+1)/n
         // FIXME: is there a more elegant way to ensure float?
-        if ( ((n*1.0-k*1.0-1.0)/(n*1.0) <= pow((1.0-r),2)) && (pow((1.0-r), 2) <= (n*1.0-k*1.0)/n*1.0) ){
+        if (((n * 1.0 - k * 1.0 - 1.0) / (n * 1.0) <= pow((1.0 - r), 2)) &&
+            (pow((1.0 - r), 2) <= (n * 1.0 - k * 1.0) / n * 1.0)) {
 
           // ensure that boxnumber of a cell cannot be bigger than the distance to the grounding line
-          if (m_DistGL(i,j) < k+1) {
-            m_ocean_box_mask(i,j) = m_DistGL(i,j);
-          // if smaller or equal, use default case: set to current box number
-          } else{
-            m_ocean_box_mask(i,j) = k+1;
+          if (m_DistGL(i, j) < k + 1) {
+            m_ocean_box_mask(i, j) = m_DistGL(i, j);
+            // if smaller or equal, use default case: set to current box number
+          } else {
+            m_ocean_box_mask(i, j) = k + 1;
           }
-        }//if
+        } //if
 
       } //for
     }
   } // for
 
   // set all floating cells which have no ocean_box_mask value to numberOfBoxes+1.
-  // do not apply this to cells that are subglacial lakes, 
+  // do not apply this to cells that are subglacial lakes,
   // since they are not accessible for ocean waters and hence should not be treated in this model
   // For these, beckmann-goose melting will be applied, see calculate_basal_melt_missing_cells
   // those are the cells which are not reachable from grounding line or calving front.
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    if (mask(i,j)==maskfloating && m_ocean_box_mask(i,j)==0 && m_lake_mask(i,j)!=1){ // floating, no sub-glacial lake
-      m_ocean_box_mask(i,j) = m_numberOfBoxes + 1;
+    if (mask(i, j) == maskfloating && m_ocean_box_mask(i, j) == 0 &&
+        m_lake_mask(i, j) != 1) { // floating, no sub-glacial lake
+      m_ocean_box_mask(i, j) = m_numberOfBoxes + 1;
     }
-
   }
 
   // Compute the number of cells per box and shelf and save to counter_boxes.
-  const int nBoxes = m_numberOfBoxes+2;
+  const int nBoxes = m_numberOfBoxes + 2;
 
   // Compute the number of cells per box and shelf and save to counter_boxes.
-  counter_boxes.resize(m_numberOfShelves, std::vector<double>(2,0));
+  counter_boxes.resize(m_numberOfShelves, std::vector<double>(2, 0));
   std::vector<std::vector<int> > lcounter_boxes(m_numberOfShelves, std::vector<int>(nBoxes));
 
-  for (int shelf_id=0;shelf_id<m_numberOfShelves;shelf_id++){
-    for (int l=0;l<nBoxes;l++){
-      lcounter_boxes[shelf_id][l]=0;
+  for (int shelf_id = 0; shelf_id < m_numberOfShelves; shelf_id++) {
+    for (int l = 0; l < nBoxes; l++) {
+      lcounter_boxes[shelf_id][l] = 0;
     }
   }
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    int box_id = static_cast<int>(round(m_ocean_box_mask(i,j)));
-    if (box_id > 0){ // floating
-      int shelf_id = m_shelf_mask(i,j);
+    int box_id = static_cast<int>(round(m_ocean_box_mask(i, j)));
+    if (box_id > 0) { // floating
+      int shelf_id = m_shelf_mask(i, j);
       lcounter_boxes[shelf_id][box_id]++;
     }
   }
 
-  for (int shelf_id=0;shelf_id<m_numberOfShelves;shelf_id++){
+  for (int shelf_id = 0; shelf_id < m_numberOfShelves; shelf_id++) {
     counter_boxes[shelf_id].resize(nBoxes);
-    for (int l=0;l<nBoxes;l++){
+    for (int l = 0; l < nBoxes; l++) {
       counter_boxes[shelf_id][l] = GlobalSum(m_grid->com, lcounter_boxes[shelf_id][l]);
     }
   }
-
 }
-
 
 
 } // end of namespace ocean

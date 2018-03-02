@@ -32,7 +32,7 @@ namespace ocean {
 //! Generalizes the two dimensional ocean box model of [@ref OlbersHellmer2010] for
 //! use in PISM, i.e. three dimensions.
 //!
-class Pico : public PGivenClimate<CompleteOceanModel,CompleteOceanModel> {
+class Pico : public PGivenClimate<CompleteOceanModel, CompleteOceanModel> {
 public:
   Pico(IceGrid::ConstPtr g);
   virtual ~Pico();
@@ -41,20 +41,14 @@ public:
   public:
     Constants(const Config &config);
 
-      double        earth_grav,
-                    rhoi, rhow, rho_star, nu,
-                    latentHeat, c_p_ocean, lambda,
-                    a, b, c, as, bs, cs,
-                    alpha, beta;
+    double earth_grav, rhoi, rhow, rho_star, nu, latentHeat, c_p_ocean, lambda, a, b, c, as, bs, cs, alpha, beta;
 
-      double        default_gamma_T, default_overturning_coeff,
-                    T_dummy, S_dummy;
+    double default_gamma_T, default_overturning_coeff, T_dummy, S_dummy;
 
-      double        gamma_T_o, meltFactor, meltSalinity, b2;
-      double        continental_shelf_depth;
+    double gamma_T_o, meltFactor, meltSalinity, b2;
+    double continental_shelf_depth;
 
-      int           default_numberOfBasins, default_numberOfBoxes;
-
+    int default_numberOfBasins, default_numberOfBoxes;
   };
 
 protected:
@@ -67,29 +61,15 @@ protected:
 
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
-  bool   m_exicerises_set; // FIXME shouldn't this be always used?
+  bool m_exicerises_set; // FIXME shouldn't this be always used?
 
 private:
-  IceModelVec2S   m_cbasins, // a basin defines the domain where one box model instance is solved
-                  m_icerise_mask,
-                  m_ocean_box_mask,
-                  m_shelf_mask,
-                  m_ocean_contshelf_mask,
-                  m_ocean_mask,
-                  m_lake_mask,
-                  m_DistGL,
-                  m_DistIF,
-                  m_Soc,
-                  m_Soc_box0,
-                  m_Toc,
-                  m_Toc_box0,
-                  m_T_star,
-                  m_overturning,
-                  m_basalmeltrate_shelf,
-                  m_T_pressure_melting;
+  IceModelVec2S m_cbasins, // a basin defines the domain where one box model instance is solved
+      m_icerise_mask, m_ocean_box_mask, m_shelf_mask, m_ocean_contshelf_mask, m_ocean_mask, m_lake_mask, m_DistGL,
+      m_DistIF, m_Soc, m_Soc_box0, m_Toc, m_Toc_box0, m_T_star, m_overturning, m_basalmeltrate_shelf,
+      m_T_pressure_melting;
 
-  IceModelVec2T   *m_theta_ocean,
-                  *m_salinity_ocean;
+  IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
 
   void initBasinsOptions(const Constants &constants);
   void round_basins();
@@ -102,33 +82,29 @@ private:
   void calculate_basal_melt_box1(const Constants &constants);
   void calculate_basal_melt_other_boxes(const Constants &constants);
   void calculate_basal_melt_missing_cells(const Constants &constants);
-  double most_frequent_element(const std::vector<double>&);
+  double most_frequent_element(const std::vector<double> &);
 
-  static const int  maskfloating,
-                    maskocean,
-                    maskgrounded,
+  static const int maskfloating, maskocean, maskgrounded,
 
-                    imask_inner, // used in IdentifyMask
-                    imask_outer, // used in IdentifyMask
-                    imask_exclude, // used in IdentifyMask
-                    imask_unidentified; // used in IdentifyMask
+      imask_inner,        // used in IdentifyMask
+      imask_outer,        // used in IdentifyMask
+      imask_exclude,      // used in IdentifyMask
+      imask_unidentified; // used in IdentifyMask
 
-  std::vector<double> m_Toc_box0_vec, // temperature input for box 1 per basin
-                      m_Soc_box0_vec, // salinity input for box 1 per basin
-                      m_mean_salinity_boundary_vector, // salinity input for box i>1 per basin
-                      m_mean_temperature_boundary_vector, // temperature input for box i>1 per basin
-                      m_mean_overturning_box1_vector; // mean overturning, computed in box 1, as input for box i>1 per basin
+  std::vector<double> m_Toc_box0_vec,     // temperature input for box 1 per basin
+      m_Soc_box0_vec,                     // salinity input for box 1 per basin
+      m_mean_salinity_boundary_vector,    // salinity input for box i>1 per basin
+      m_mean_temperature_boundary_vector, // temperature input for box i>1 per basin
+      m_mean_overturning_box1_vector;     // mean overturning, computed in box 1, as input for box i>1 per basin
 
-  std::vector< std::vector<double> >  counter_boxes; // matrix containing the number of shelf cells per basin and box
-                                                     // used for area calculation
+  std::vector<std::vector<double> > counter_boxes; // matrix containing the number of shelf cells per basin and box
+                                                   // used for area calculation
 
   // standard values are defined in Constants
   // here needed to store custom values from user options.
-  double        m_gamma_T, m_overturning_coeff,
-                m_continental_shelf_depth;
+  double m_gamma_T, m_overturning_coeff, m_continental_shelf_depth;
 
-  int      m_numberOfBasins, m_numberOfBoxes, m_numberOfShelves,
-           m_Mx, m_My, m_dx, m_dy;
+  int m_numberOfBasins, m_numberOfBoxes, m_numberOfShelves, m_Mx, m_My, m_dx, m_dy;
 };
 
 
