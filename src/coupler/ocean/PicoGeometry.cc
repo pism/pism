@@ -1,9 +1,11 @@
 // THIS IS A TEST FILE TO SEPARATE THE GEOMETRY FROM THE REST OF PICO
 
+#include "Pico.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/Vars.hh"
 
 namespace pism {
 namespace ocean {
-
 
 void Pico::test() {
 	// TEST FUNCTION  

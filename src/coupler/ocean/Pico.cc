@@ -40,8 +40,6 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 
-#include "PicoGeometry.cc"
-
 namespace pism {
 namespace ocean {
 
