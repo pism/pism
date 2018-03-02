@@ -52,14 +52,14 @@ public:
   };
 
 protected:
-  virtual void update_impl(double t, double dt);
-  virtual void init_impl();
+  void update_impl(double t, double dt);
+  void init_impl();
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
-  virtual void test();
+  void define_model_state_impl(const PIO &output) const;
+  void write_model_state_impl(const PIO &output) const;
+  void test();
 
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
   bool m_exicerises_set; // FIXME shouldn't this be always used?
 
