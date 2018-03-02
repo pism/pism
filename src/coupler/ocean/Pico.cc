@@ -365,22 +365,9 @@ void Pico::compute_ocean_input_per_basin(const Constants &cc) {
 
   m_log->message(5, "starting compute_ocean_input_per_basin routine \n");
 
-  std::vector<double> lm_count(m_numberOfBasins); //count cells to take mean over for each basin
-  std::vector<double> m_count(m_numberOfBasins);
-  std::vector<double> lm_Sval(m_numberOfBasins); //add salinity for each basin
-  std::vector<double> lm_Tval(m_numberOfBasins); //add temperature for each basin
-  std::vector<double> m_Tval(m_numberOfBasins);
-  std::vector<double> m_Sval(m_numberOfBasins);
-
-  // initalize to zero per basin
-  for (int shelf_id = 0; shelf_id < m_numberOfBasins; shelf_id++) {
-    m_count[shelf_id]  = 0.0;
-    lm_count[shelf_id] = 0.0;
-    lm_Sval[shelf_id]  = 0.0;
-    lm_Tval[shelf_id]  = 0.0;
-    m_Tval[shelf_id]   = 0.0;
-    m_Sval[shelf_id]   = 0.0;
-  }
+  std::vector<double> count(m_numberOfBasins, 0.0);
+  std::vector<double> Tval(m_numberOfBasins, 0.0);
+  std::vector<double> Sval(m_numberOfBasins, 0.0);
 
   IceModelVec::AccessList list{ m_theta_ocean, m_salinity_ocean, &m_cbasins, &m_ocean_contshelf_mask };
 
@@ -389,10 +376,10 @@ void Pico::compute_ocean_input_per_basin(const Constants &cc) {
     const int i = p.i(), j = p.j();
 
     if (m_ocean_contshelf_mask(i, j) == INNER) {
-      int shelf_id = (m_cbasins)(i, j);
-      lm_count[shelf_id] += 1;
-      lm_Sval[shelf_id] += (*m_salinity_ocean)(i, j);
-      lm_Tval[shelf_id] += (*m_theta_ocean)(i, j);
+      int shelf_id = m_cbasins(i, j);
+      count[shelf_id] += 1;
+      Sval[shelf_id] += (*m_salinity_ocean)(i, j);
+      Tval[shelf_id] += (*m_theta_ocean)(i, j);
     }
   }
 
@@ -402,14 +389,14 @@ void Pico::compute_ocean_input_per_basin(const Constants &cc) {
   // example, if the ice shelf front advances beyond the continental shelf break.
   for (int shelf_id = 0; shelf_id < m_numberOfBasins; shelf_id++) {
 
-    m_count[shelf_id] = GlobalSum(m_grid->com, lm_count[shelf_id]);
-    m_Sval[shelf_id]  = GlobalSum(m_grid->com, lm_Sval[shelf_id]);
-    m_Tval[shelf_id]  = GlobalSum(m_grid->com, lm_Tval[shelf_id]);
+    count[shelf_id] = GlobalSum(m_grid->com, count[shelf_id]);
+    Sval[shelf_id]  = GlobalSum(m_grid->com, Sval[shelf_id]);
+    Tval[shelf_id]  = GlobalSum(m_grid->com, Tval[shelf_id]);
 
     // if basin is not dummy basin 0 or there are no ocean cells in this basin to take the mean over.
     // FIXME: the following warning occurs once at initialization before input is available.
     // Please ignore this very first warning for now.
-    if (shelf_id > 0 && m_count[shelf_id] == 0) {
+    if (shelf_id > 0 && count[shelf_id] == 0) {
       m_log->message(2, "PICO ocean WARNING: basin %d contains no cells with ocean data on continental shelf\n"
                         "(no values with ocean_contshelf_mask=2).\n"
                         "No mean salinity or temperature values are computed, instead using\n"
@@ -419,11 +406,11 @@ void Pico::compute_ocean_input_per_basin(const Constants &cc) {
       m_Toc_box0_vec[shelf_id] = cc.T_dummy;
       m_Soc_box0_vec[shelf_id] = cc.S_dummy;
     } else {
-      m_Sval[shelf_id] = m_Sval[shelf_id] / m_count[shelf_id];
-      m_Tval[shelf_id] = m_Tval[shelf_id] / m_count[shelf_id];
+      Sval[shelf_id] = Sval[shelf_id] / count[shelf_id];
+      Tval[shelf_id] = Tval[shelf_id] / count[shelf_id];
 
-      m_Toc_box0_vec[shelf_id] = m_Tval[shelf_id];
-      m_Soc_box0_vec[shelf_id] = m_Sval[shelf_id];
+      m_Toc_box0_vec[shelf_id] = Tval[shelf_id];
+      m_Soc_box0_vec[shelf_id] = Sval[shelf_id];
       m_log->message(5, "  %d: temp =%.3f, salinity=%.3f\n", shelf_id, m_Toc_box0_vec[shelf_id],
                      m_Soc_box0_vec[shelf_id]);
     }
@@ -468,7 +455,7 @@ void Pico::set_ocean_input_fields(const Constants &cc) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     int shelf_id = m_shelf_mask(i, j);
-    int basin_id = (m_cbasins)(i, j);
+    int basin_id = m_cbasins(i, j);
     lcounter_shelf_cells_in_basin[shelf_id][basin_id]++;
     lcounter_shelf_cells[shelf_id]++;
   }
