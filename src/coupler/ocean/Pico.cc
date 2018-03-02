@@ -30,8 +30,7 @@
 // Ocean Dynamics (2010), Volume 60, Issue 1, pp 141–153
 // DOI: 10.1007/s10236-009-0252-z
 
-#include <gsl/gsl_math.h>
-#include <gsl/gsl_poly.h>
+#include <gsl/gsl_math.h>       // GSL_NAN
 
 #include "Pico.hh"
 #include "pism/util/ConfigInterface.hh"
