@@ -72,7 +72,6 @@ private:
   IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
 
   void initBasinsOptions(const Constants &constants);
-  void round_basins();
   void identifyMASK(IceModelVec2S &inputmask, std::string masktype);
   void identify_shelf_mask();
   void compute_ocean_input_per_basin(const Constants &constants);
@@ -82,7 +81,6 @@ private:
   void calculate_basal_melt_box1(const Constants &constants);
   void calculate_basal_melt_other_boxes(const Constants &constants);
   void calculate_basal_melt_missing_cells(const Constants &constants);
-  double most_frequent_element(const std::vector<double> &);
 
   enum IdentifyMaskFlags {INNER = 2, OUTER = 0, EXCLUDE = 1, UNIDENTIFIED = -1};
 
@@ -101,6 +99,8 @@ private:
 
   int m_numberOfBasins, m_numberOfBoxes, m_numberOfShelves, m_Mx, m_My, m_dx, m_dy;
 };
+
+void round_basins(IceModelVec2S &basin_mask);
 
 
 } // end of namespace ocean

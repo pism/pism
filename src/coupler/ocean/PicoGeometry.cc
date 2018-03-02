@@ -13,7 +13,7 @@ void Pico::test() {
 }
 
 // To be used solely in round_basins()
-double Pico::most_frequent_element(const std::vector<double> &v) { // Precondition: v is not empty
+static double most_frequent_element(const std::vector<double> &v) { // Precondition: v is not empty
   std::map<double, double> frequencyMap;
   int maxFrequency           = 0;
   double mostFrequentElement = 0;
@@ -33,28 +33,34 @@ double Pico::most_frequent_element(const std::vector<double> &v) { // Preconditi
 //! Basin mask can have non-integer values from PISM regridding for points that lie at
 //! basin boundaries.
 //! Find such point here and set them to the integer value that is most frequent next to it.
-void Pico::round_basins() {
+void round_basins(IceModelVec2S &basin_mask) {
 
   // FIXME: THIS routine should be applied once in init, and roundbasins should
   // be stored as field (assumed the basins do not change with time).
 
+  IceGrid::ConstPtr grid = basin_mask.grid();
+
+  int
+    Mx = grid->Mx(),
+    My = grid->My();
+
   double id_fractional;
   std::vector<double> neighbours = { 0, 0, 0, 0 };
 
-  IceModelVec::AccessList list(m_cbasins);
+  IceModelVec::AccessList list(basin_mask);
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // do not consider domain boundaries (they should be far from the shelves.)
-    if ((i == 0) | (j == 0) | (i > (m_Mx - 2)) | (j > (m_My - 2))) {
-      id_fractional = 0.;
+    if ((i == 0) | (j == 0) | (i > (Mx - 2)) | (j > (My - 2))) {
+      id_fractional = 0.0;
     } else {
-      id_fractional = m_cbasins(i, j);
-      neighbours[0] = m_cbasins(i + 1, j + 1);
-      neighbours[1] = m_cbasins(i - 1, j + 1);
-      neighbours[2] = m_cbasins(i - 1, j - 1);
-      neighbours[3] = m_cbasins(i + 1, j - 1);
+      id_fractional = basin_mask(i, j);
+      neighbours[0] = basin_mask(i + 1, j + 1);
+      neighbours[1] = basin_mask(i - 1, j + 1);
+      neighbours[2] = basin_mask(i - 1, j - 1);
+      neighbours[3] = basin_mask(i + 1, j - 1);
 
       // check if this is an interpolated number:
       // first condition: not an integer
@@ -63,8 +69,7 @@ void Pico::round_basins() {
           ((id_fractional != neighbours[0]) && (id_fractional != neighbours[1]) && (id_fractional != neighbours[2]) &&
            (id_fractional != neighbours[3]))) {
 
-        double most_frequent_neighbour = most_frequent_element(neighbours);
-        m_cbasins(i, j) = most_frequent_neighbour;
+        basin_mask(i, j) = most_frequent_element(neighbours);
         // m_log->message(2, "most frequent: %f at %d,%d\n",most_frequent_neighbour,i,j);
       }
     }

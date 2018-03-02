@@ -222,7 +222,7 @@ void Pico::init_impl() {
   Constants cc(*m_config);
   initBasinsOptions(cc);
 
-  round_basins();
+  round_basins(m_cbasins);
 
   // Range basins_range = cbasins.range();
 
@@ -330,7 +330,7 @@ void Pico::update_impl(double my_t, double my_dt) {
   identifyMASK(m_ocean_mask, "ocean");
   identifyMASK(m_lake_mask, "lakes");
   identify_shelf_mask();
-  round_basins();
+  round_basins(m_cbasins);
   compute_distances();
   identify_ocean_box_mask(cc);
 
