@@ -11,3 +11,6 @@
 %shared_ptr(pism::hydrology::Routing)
 %shared_ptr(pism::hydrology::Distributed)
 %include "hydrology/Hydrology.hh"
+%include "hydrology/NullTransport.hh"
+%include "hydrology/Routing.hh"
+%include "hydrology/Distributed.hh"
