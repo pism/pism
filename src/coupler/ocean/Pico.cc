@@ -97,12 +97,6 @@ Pico::Constants::Constants(const Config &config) {
   meltFactor = config.get_double("ocean.pik_melt_factor");
 }
 
-
-const int Pico::maskfloating = MASK_FLOATING;
-const int Pico::maskocean    = MASK_ICE_FREE_OCEAN;
-const int Pico::maskgrounded = MASK_GROUNDED;
-
-
 Pico::Pico(IceGrid::ConstPtr g) : PGivenClimate<CompleteOceanModel, CompleteOceanModel>(g, NULL) {
 
   m_option_prefix = "-ocean_pico";
@@ -394,7 +388,7 @@ void Pico::compute_ocean_input_per_basin(const Constants &cc) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_ocean_contshelf_mask(i, j) == imask_inner) {
+    if (m_ocean_contshelf_mask(i, j) == INNER) {
       int shelf_id = (m_cbasins)(i, j);
       lm_count[shelf_id] += 1;
       lm_Sval[shelf_id] += (*m_salinity_ocean)(i, j);
@@ -500,7 +494,7 @@ void Pico::set_ocean_input_fields(const Constants &cc) {
     m_Soc_box0(i, j) = 0.0;    // in psu
 
 
-    if (mask(i, j) == maskfloating && m_shelf_mask(i, j) > 0) { // shelf_mask = 0 in lakes
+    if (mask(i, j) == MASK_FLOATING && m_shelf_mask(i, j) > 0) { // shelf_mask = 0 in lakes
 
       int shelf_id = m_shelf_mask(i, j);
       // weighted input depending on the number of shelf cells in each basin

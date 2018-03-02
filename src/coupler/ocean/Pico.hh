@@ -84,12 +84,7 @@ private:
   void calculate_basal_melt_missing_cells(const Constants &constants);
   double most_frequent_element(const std::vector<double> &);
 
-  static const int maskfloating, maskocean, maskgrounded,
-
-      imask_inner,        // used in IdentifyMask
-      imask_outer,        // used in IdentifyMask
-      imask_exclude,      // used in IdentifyMask
-      imask_unidentified; // used in IdentifyMask
+  enum IdentifyMaskFlags {INNER = 2, OUTER = 0, EXCLUDE = 1, UNIDENTIFIED = -1};
 
   std::vector<double> m_Toc_box0_vec,     // temperature input for box 1 per basin
       m_Soc_box0_vec,                     // salinity input for box 1 per basin

@@ -12,14 +12,6 @@ void Pico::test() {
   m_log->message(2, "TEST...\n");
 }
 
-
-// used in IdentifyMask
-const int Pico::imask_inner        = 2;
-const int Pico::imask_outer        = 0;
-const int Pico::imask_exclude      = 1;
-const int Pico::imask_unidentified = -1;
-
-
 // To be used solely in round_basins()
 double Pico::most_frequent_element(const std::vector<double> &v) { // Precondition: v is not empty
   std::map<double, double> frequencyMap;
@@ -102,18 +94,18 @@ void Pico::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
 
   IceModelVec::AccessList list{ &inputmask, &mask, &bed };
 
-  inputmask.set(imask_unidentified);
+  inputmask.set(UNIDENTIFIED);
 
   // Find starting points for iteration.
   if ((masktype == "ocean_continental_shelf" || masktype == "icerises") && (seed_x >= m_grid->xs()) &&
       (seed_x < m_grid->xs() + m_grid->xm()) && (seed_y >= m_grid->ys()) && (seed_y < m_grid->ys() + m_grid->ym())) {
-    inputmask(seed_x, seed_y) = imask_inner;
+    inputmask(seed_x, seed_y) = INNER;
   } else if (masktype == "ocean" || masktype == "lakes") {
     //assume that some point on the domain boundary belongs to the open ocean
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
       if ((i == 0) | (j == 0) | (i > (m_Mx - 2)) | (j > (m_My - 2))) {
-        inputmask(i, j) = imask_inner;
+        inputmask(i, j) = INNER;
       }
     }
   }
@@ -132,22 +124,22 @@ void Pico::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
       bool masktype_condition = false;
 
       if (masktype == "ocean_continental_shelf") {
-        masktype_condition = (mask(i, j) != maskocean || bed(i, j) >= m_continental_shelf_depth);
+        masktype_condition = (mask(i, j) != MASK_ICE_FREE_OCEAN || bed(i, j) >= m_continental_shelf_depth);
       } else if (masktype == "icerises") {
-        masktype_condition = (mask(i, j) == maskgrounded);
+        masktype_condition = (mask(i, j) == MASK_GROUNDED);
       } else if (masktype == "ocean") {
-        masktype_condition = (mask(i, j) == maskocean);
+        masktype_condition = (mask(i, j) == MASK_ICE_FREE_OCEAN);
       } else if (masktype == "lakes") {
-        masktype_condition = (mask(i, j) == maskocean || mask(i, j) == maskfloating);
+        masktype_condition = (mask(i, j) == MASK_ICE_FREE_OCEAN || mask(i, j) == MASK_FLOATING);
       }
 
-      if (masktype_condition && inputmask(i, j) == imask_unidentified &&
-          (inputmask(i, j + 1) == imask_inner || inputmask(i, j - 1) == imask_inner ||
-           inputmask(i + 1, j) == imask_inner || inputmask(i - 1, j) == imask_inner)) {
-        inputmask(i, j) = imask_inner;
+      if (masktype_condition && inputmask(i, j) == UNIDENTIFIED &&
+          (inputmask(i, j + 1) == INNER || inputmask(i, j - 1) == INNER ||
+           inputmask(i + 1, j) == INNER || inputmask(i - 1, j) == INNER)) {
+        inputmask(i, j) = INNER;
         linner_identified += 1;
       } else if (masktype_condition == false) {
-        inputmask(i, j) = imask_outer;
+        inputmask(i, j) = OUTER;
       }
     }
 
@@ -161,13 +153,13 @@ void Pico::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (inputmask(i, j) == imask_unidentified) {
-      inputmask(i, j) = imask_exclude;
+    if (inputmask(i, j) == UNIDENTIFIED) {
+      inputmask(i, j) = EXCLUDE;
     }
 
     if (masktype == "ocean_continental_shelf") { //exclude ice covered parts
-      if (mask(i, j) != maskocean && inputmask(i, j) == imask_inner) {
-        inputmask(i, j) = imask_outer;
+      if (mask(i, j) != MASK_ICE_FREE_OCEAN && inputmask(i, j) == INNER) {
+        inputmask(i, j) = OUTER;
       }
     }
   }
@@ -210,9 +202,9 @@ void Pico::identify_shelf_mask() {
 
       bool condition;
       if (m_exicerises_set) { // either floating or an ice rise..
-        condition = ((mask(i, j) == maskfloating && m_lake_mask(i, j) != 1) || m_icerise_mask(i, j) == imask_exclude);
+        condition = ((mask(i, j) == MASK_FLOATING && m_lake_mask(i, j) != 1) || m_icerise_mask(i, j) == EXCLUDE);
       } else {
-        condition = (mask(i, j) == maskfloating && m_lake_mask(i, j) != 1);
+        condition = (mask(i, j) == MASK_FLOATING && m_lake_mask(i, j) != 1);
       }
 
       if (condition) {
@@ -366,7 +358,7 @@ void Pico::identify_shelf_mask() {
    for (Points p(*m_grid); p; p.next()) { //FIXME correct? or do we need PointsWithGhosts?
     const int i = p.i(), j = p.j();
     // if current cell is floating and not labeled...
-    if (mask(i,j) == maskfloating && shelf_mask(i,j)==0){
+    if (mask(i,j) == MASK_FLOATING && shelf_mask(i,j)==0){
       m_log->message(5, "starting a depth-first search... \n");
       std::vector<Points> stack; // create a stack for the queue
       stack.push_back(p); // add current grid point to the stack
@@ -374,10 +366,10 @@ void Pico::identify_shelf_mask() {
         Points q = stack.back(); // get the last element and
         stack.pop_back(); // remove the last element on the stack
         const int k = q.i(), l = q.j(); // get the coordinates of q 
-        if (mask(k,l) == maskfloating && shelf_mask(k,l)==0){
+        if (mask(k,l) == MASK_FLOATING && shelf_mask(k,l)==0){
           shelf_mask(k,l) = label_current; // label as current
           // all all neigbors that are floating and not labeled to the stack
-          //if (k>=1 && shelf_mask(k-1,l)==0 && mask(k-1,l)==maskfloating){
+          //if (k>=1 && shelf_mask(k-1,l)==0 && mask(k-1,l)==MASK_FLOATING){
           Points q_new;
           q_new.i = k-1; 
           q_new.j = l;  
@@ -429,9 +421,9 @@ void Pico::compute_distances() {
     bool condition;
     if (m_exicerises_set) {
       condition =
-          (mask(i, j) == maskfloating || m_icerise_mask(i, j) == imask_exclude || m_ocean_mask(i, j) == imask_exclude);
+          (mask(i, j) == MASK_FLOATING || m_icerise_mask(i, j) == EXCLUDE || m_ocean_mask(i, j) == EXCLUDE);
     } else {
-      condition = (mask(i, j) == maskfloating || m_ocean_mask(i, j) == imask_exclude);
+      condition = (mask(i, j) == MASK_FLOATING || m_ocean_mask(i, j) == EXCLUDE);
     }
 
     if (condition) { //if this is an ice shelf cell (or an ice rise) or a hole in an ice shelf
@@ -440,15 +432,15 @@ void Pico::compute_distances() {
       bool neighbor_to_land;
       if (m_exicerises_set) {
         neighbor_to_land =
-            (m_icerise_mask(i, j + 1) == imask_inner || m_icerise_mask(i, j - 1) == imask_inner ||
-             m_icerise_mask(i + 1, j) == imask_inner || m_icerise_mask(i - 1, j) == imask_inner ||
-             m_icerise_mask(i + 1, j + 1) == imask_inner || m_icerise_mask(i + 1, j - 1) == imask_inner ||
-             m_icerise_mask(i - 1, j + 1) == imask_inner || m_icerise_mask(i - 1, j - 1) == imask_inner);
+            (m_icerise_mask(i, j + 1) == INNER || m_icerise_mask(i, j - 1) == INNER ||
+             m_icerise_mask(i + 1, j) == INNER || m_icerise_mask(i - 1, j) == INNER ||
+             m_icerise_mask(i + 1, j + 1) == INNER || m_icerise_mask(i + 1, j - 1) == INNER ||
+             m_icerise_mask(i - 1, j + 1) == INNER || m_icerise_mask(i - 1, j - 1) == INNER);
       } else {
         neighbor_to_land =
-            (mask(i, j + 1) < maskfloating || mask(i, j - 1) < maskfloating || mask(i + 1, j) < maskfloating ||
-             mask(i - 1, j) < maskfloating || mask(i + 1, j + 1) < maskfloating || mask(i + 1, j - 1) < maskfloating ||
-             mask(i - 1, j + 1) < maskfloating || mask(i - 1, j - 1) < maskfloating);
+            (mask(i, j + 1) < MASK_FLOATING || mask(i, j - 1) < MASK_FLOATING || mask(i + 1, j) < MASK_FLOATING ||
+             mask(i - 1, j) < MASK_FLOATING || mask(i + 1, j + 1) < MASK_FLOATING || mask(i + 1, j - 1) < MASK_FLOATING ||
+             mask(i - 1, j + 1) < MASK_FLOATING || mask(i - 1, j - 1) < MASK_FLOATING);
       }
 
       if (neighbor_to_land) {
@@ -459,8 +451,8 @@ void Pico::compute_distances() {
       // label the shelf cells adjacent to the calving front with DistIF = 1,
       // we do not need to exclude ice rises in this case.
       bool neighbor_to_ocean;
-      neighbor_to_ocean = (m_ocean_mask(i, j + 1) == imask_inner || m_ocean_mask(i, j - 1) == imask_inner ||
-                           m_ocean_mask(i + 1, j) == imask_inner || m_ocean_mask(i - 1, j) == imask_inner);
+      neighbor_to_ocean = (m_ocean_mask(i, j + 1) == INNER || m_ocean_mask(i, j - 1) == INNER ||
+                           m_ocean_mask(i + 1, j) == INNER || m_ocean_mask(i - 1, j) == INNER);
 
       if (neighbor_to_ocean) {
         m_DistIF(i, j) = currentLabelIF;
@@ -485,10 +477,10 @@ void Pico::compute_distances() {
 
       bool condition; // this cell is floating or an hole in the ice shelf (or an ice rise)
       if (m_exicerises_set) {
-        condition = (mask(i, j) == maskfloating || m_icerise_mask(i, j) == imask_exclude ||
-                     m_ocean_mask(i, j) == imask_exclude);
+        condition = (mask(i, j) == MASK_FLOATING || m_icerise_mask(i, j) == EXCLUDE ||
+                     m_ocean_mask(i, j) == EXCLUDE);
       } else {
-        condition = (mask(i, j) == maskfloating || m_ocean_mask(i, j) == imask_exclude);
+        condition = (mask(i, j) == MASK_FLOATING || m_ocean_mask(i, j) == EXCLUDE);
       }
 
       if (condition && m_DistGL(i, j) == 0 &&
@@ -522,10 +514,10 @@ void Pico::compute_distances() {
 
       bool condition; // this cell is floating or an hole in the ice shelf (or an ice rise)
       if (m_exicerises_set) {
-        condition = (mask(i, j) == maskfloating || m_icerise_mask(i, j) == imask_exclude ||
-                     m_ocean_mask(i, j) == imask_exclude);
+        condition = (mask(i, j) == MASK_FLOATING || m_icerise_mask(i, j) == EXCLUDE ||
+                     m_ocean_mask(i, j) == EXCLUDE);
       } else {
-        condition = (mask(i, j) == maskfloating || m_ocean_mask(i, j) == imask_exclude);
+        condition = (mask(i, j) == MASK_FLOATING || m_ocean_mask(i, j) == EXCLUDE);
       }
 
       if (condition && m_DistIF(i, j) == 0 &&
@@ -625,7 +617,7 @@ void Pico::identify_ocean_box_mask(const Constants &cc) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask(i, j) == maskfloating && m_DistGL(i, j) > 0 && m_DistIF(i, j) > 0 && m_ocean_box_mask(i, j) == 0) {
+    if (mask(i, j) == MASK_FLOATING && m_DistGL(i, j) > 0 && m_DistIF(i, j) > 0 && m_ocean_box_mask(i, j) == 0) {
       int shelf_id = m_shelf_mask(i, j);
       int n        = lnumberOfBoxes_perShelf[shelf_id];
       // relative distance between grounding line and ice front
@@ -658,7 +650,7 @@ void Pico::identify_ocean_box_mask(const Constants &cc) {
   // those are the cells which are not reachable from grounding line or calving front.
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    if (mask(i, j) == maskfloating && m_ocean_box_mask(i, j) == 0 &&
+    if (mask(i, j) == MASK_FLOATING && m_ocean_box_mask(i, j) == 0 &&
         m_lake_mask(i, j) != 1) { // floating, no sub-glacial lake
       m_ocean_box_mask(i, j) = m_numberOfBoxes + 1;
     }
