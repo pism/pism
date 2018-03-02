@@ -430,10 +430,10 @@ void Pico::set_ocean_input_fields(const Constants &cc) {
 
   m_log->message(5, "starting set_ocean_input_fields routine\n");
 
-  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2CellType &mask   = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{ ice_thickness, &m_cbasins, &m_Soc_box0, &m_Toc_box0, &m_Toc, &mask, &m_shelf_mask };
+  IceModelVec::AccessList list{ &ice_thickness, &m_cbasins, &m_Soc_box0, &m_Toc_box0, &m_Toc, &mask, &m_shelf_mask };
 
   // compute for each shelf the number of cells  within each basin
   std::vector<std::vector<double> > lcounter_shelf_cells_in_basin(m_numberOfShelves,
@@ -494,7 +494,7 @@ void Pico::set_ocean_input_fields(const Constants &cc) {
 
 
       // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
-      const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i, j) * 1e-4;
+      const double pressure = cc.rhoi * cc.earth_grav * ice_thickness(i, j) * 1e-4;
       const double T_pmt = cc.a * m_Soc_box0(i, j) + cc.b - cc.c * pressure; // in Kelvin, here potential freezing point
 
       // temperature input for grounding line box should not be below pressure melting point
@@ -545,10 +545,10 @@ void Pico::calculate_basal_melt_box1(const Constants &cc) {
   m_mean_overturning_box1_vector.resize(m_numberOfShelves);
 
 
-  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   IceModelVec::AccessList list{
-    ice_thickness,  &m_shelf_mask,          &m_ocean_box_mask,    &m_T_star, &m_Toc_box0, &m_Toc, &m_Soc_box0, &m_Soc,
+    &ice_thickness, &m_shelf_mask, &m_ocean_box_mask, &m_T_star, &m_Toc_box0, &m_Toc, &m_Soc_box0, &m_Soc,
     &m_overturning, &m_basalmeltrate_shelf, &m_T_pressure_melting
   };
 
@@ -576,7 +576,7 @@ void Pico::calculate_basal_melt_box1(const Constants &cc) {
     if ((m_ocean_box_mask(i, j) == 1) && (shelf_id > 0.0)) {
 
       // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
-      const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i, j) * 1e-4;
+      const double pressure = cc.rhoi * cc.earth_grav * ice_thickness(i, j) * 1e-4;
       m_T_star(i, j) = cc.a * m_Soc_box0(i, j) + cc.b - cc.c * pressure - m_Toc_box0(i, j); // in Kelvin
 
       //FIXME this assumes rectangular cell areas, adjust with real areas from projection
@@ -690,10 +690,10 @@ void Pico::calculate_basal_melt_other_boxes(const Constants &cc) {
 
   int nBoxes = static_cast<int>(round(m_numberOfBoxes + 1));
 
-  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   IceModelVec::AccessList list{
-    ice_thickness,  &m_shelf_mask,          &m_ocean_box_mask,    &m_T_star, &m_Toc_box0, &m_Toc, &m_Soc_box0, &m_Soc,
+    &ice_thickness, &m_shelf_mask, &m_ocean_box_mask, &m_T_star, &m_Toc_box0, &m_Toc, &m_Soc_box0, &m_Soc,
     &m_overturning, &m_basalmeltrate_shelf, &m_T_pressure_melting
   };
 
@@ -750,7 +750,7 @@ void Pico::calculate_basal_melt_other_boxes(const Constants &cc) {
 
           // solve the SIMPLE physical model equations for boxes with boxi > 1
           // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
-          const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i, j) * 1e-4;
+          const double pressure = cc.rhoi * cc.earth_grav * ice_thickness(i, j) * 1e-4;
           m_T_star(i, j) =
               cc.a * mean_salinity_in_boundary + cc.b - cc.c * pressure - mean_temperature_in_boundary; // in Kelvin
 
@@ -844,12 +844,11 @@ void Pico::calculate_basal_melt_missing_cells(const Constants &cc) {
 
   m_log->message(5, "starting calculate_basal_melt_missing_cells routine\n");
 
-  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   IceModelVec::AccessList list{
-    ice_thickness,        &m_shelf_mask,          &m_ocean_box_mask, &m_Toc_box0, &m_Toc, &m_Soc_box0, &m_Soc,
-    &m_overturning,       &m_basalmeltrate_shelf, /* in m/s */
-    &m_T_pressure_melting
+    &ice_thickness, &m_shelf_mask, &m_ocean_box_mask, &m_Toc_box0, &m_Toc, &m_Soc_box0, &m_Soc,
+    &m_overturning, &m_basalmeltrate_shelf, &m_T_pressure_melting
   };
 
   for (Points p(*m_grid); p; p.next()) {
@@ -860,7 +859,6 @@ void Pico::calculate_basal_melt_missing_cells(const Constants &cc) {
     // mainly at the boundary of computational domain,
     // or through erroneous basin mask
     if (shelf_id == 0) {
-
       m_basalmeltrate_shelf(i, j) = 0.0;
     }
 
@@ -871,7 +869,7 @@ void Pico::calculate_basal_melt_missing_cells(const Constants &cc) {
       m_Soc(i, j) = m_Soc_box0(i, j); // in psu
 
       // in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
-      const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i, j) * 1e-4;
+      const double pressure = cc.rhoi * cc.earth_grav * ice_thickness(i, j) * 1e-4;
 
       // potential pressure melting point needed to calculate thermal driving
       // using coefficients for potential temperature
@@ -894,23 +892,23 @@ void Pico::calculate_basal_melt_missing_cells(const Constants &cc) {
 std::map<std::string, Diagnostic::Ptr> Pico::diagnostics_impl() const {
 
   DiagnosticList result = {
-    { "basins", Diagnostic::wrap(m_cbasins) },
-    { "pico_overturning", Diagnostic::wrap(m_overturning) },
-    { "pico_salinity_box0", Diagnostic::wrap(m_Soc_box0) },
-    { "pico_temperature_box0", Diagnostic::wrap(m_Toc_box0) },
-    { "pico_ocean_box_mask", Diagnostic::wrap(m_ocean_box_mask) },
-    { "pico_shelf_mask", Diagnostic::wrap(m_shelf_mask) },
-    { "pico_bmelt_shelf", Diagnostic::wrap(m_basalmeltrate_shelf) },
-    { "pico_icerise_mask", Diagnostic::wrap(m_icerise_mask) },
+    { "basins",                    Diagnostic::wrap(m_cbasins) },
+    { "pico_overturning",          Diagnostic::wrap(m_overturning) },
+    { "pico_salinity_box0",        Diagnostic::wrap(m_Soc_box0) },
+    { "pico_temperature_box0",     Diagnostic::wrap(m_Toc_box0) },
+    { "pico_ocean_box_mask",       Diagnostic::wrap(m_ocean_box_mask) },
+    { "pico_shelf_mask",           Diagnostic::wrap(m_shelf_mask) },
+    { "pico_bmelt_shelf",          Diagnostic::wrap(m_basalmeltrate_shelf) },
+    { "pico_icerise_mask",         Diagnostic::wrap(m_icerise_mask) },
     { "pico_ocean_contshelf_mask", Diagnostic::wrap(m_ocean_contshelf_mask) },
-    { "pico_ocean_mask", Diagnostic::wrap(m_ocean_mask) },
-    { "pico_lake_mask", Diagnostic::wrap(m_lake_mask) },
-    { "pico_dist_grounding_line", Diagnostic::wrap(m_DistGL) },
-    { "pico_dist_iceshelf_front", Diagnostic::wrap(m_DistIF) },
-    { "pico_salinity", Diagnostic::wrap(m_Soc) },
-    { "pico_temperature", Diagnostic::wrap(m_Toc) },
-    { "pico_T_star", Diagnostic::wrap(m_T_star) },
-    { "pico_T_pressure_melting", Diagnostic::wrap(m_T_pressure_melting) },
+    { "pico_ocean_mask",           Diagnostic::wrap(m_ocean_mask) },
+    { "pico_lake_mask",            Diagnostic::wrap(m_lake_mask) },
+    { "pico_dist_grounding_line",  Diagnostic::wrap(m_DistGL) },
+    { "pico_dist_iceshelf_front",  Diagnostic::wrap(m_DistIF) },
+    { "pico_salinity",             Diagnostic::wrap(m_Soc) },
+    { "pico_temperature",          Diagnostic::wrap(m_Toc) },
+    { "pico_T_star",               Diagnostic::wrap(m_T_star) },
+    { "pico_T_pressure_melting",   Diagnostic::wrap(m_T_pressure_melting) },
   };
 
   return combine(result, OceanModel::diagnostics_impl());

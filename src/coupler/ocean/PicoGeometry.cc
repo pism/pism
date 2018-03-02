@@ -554,22 +554,15 @@ void Pico::identify_ocean_box_mask(const Constants &cc) {
   m_log->message(5, "starting identify_ocean_box_mask routine\n");
 
   // Find the maximal DistGL and DistIF for each basin
-  std::vector<double> max_distGL(m_numberOfShelves);
-  std::vector<double> max_distIF(m_numberOfShelves);
-  std::vector<double> lmax_distGL(m_numberOfShelves);
-  std::vector<double> lmax_distIF(m_numberOfShelves);
+  std::vector<double> max_distGL(m_numberOfShelves, 0.0);
+  std::vector<double> max_distIF(m_numberOfShelves, 0.0);
+  std::vector<double> lmax_distGL(m_numberOfShelves, 0.0);
+  std::vector<double> lmax_distIF(m_numberOfShelves, 0.0);
 
   double lmax_distGL_ref = 0.0;
   double max_distGL_ref  = 0.0;
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
-
-  for (int shelf_id = 0; shelf_id < m_numberOfShelves; shelf_id++) {
-    max_distGL[shelf_id]  = 0.0;
-    max_distIF[shelf_id]  = 0.0;
-    lmax_distGL[shelf_id] = 0.0;
-    lmax_distIF[shelf_id] = 0.0;
-  }
 
   IceModelVec::AccessList list{ &m_shelf_mask, &m_DistGL, &m_DistIF, &m_ocean_box_mask, &m_lake_mask, &mask };
 
