@@ -12,6 +12,7 @@
 #include "coupler/ocean/GivenClimate.hh"
 #include "coupler/ocean/GivenTH.hh"
 #include "coupler/ocean/Pico.hh"
+#include "coupler/ocean/pico_old/Pico.hh"
 %}
 
 %shared_ptr(pism::ocean::OceanModel)
@@ -70,3 +71,7 @@
 %shared_ptr(pism::ocean::Pico)
 %rename(OceanPico) pism::ocean::Pico;
 %include "coupler/ocean/Pico.hh"
+
+%shared_ptr(pism::ocean::PicoOld)
+%rename(OceanPicoOld) pism::ocean::PicoOld;
+%include "coupler/ocean/pico_old/Pico.hh"

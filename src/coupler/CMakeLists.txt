@@ -32,6 +32,8 @@ add_library (pismboundary OBJECT
   ./ocean/Initialization.cc
   ./ocean/Pico.cc
   ./ocean/PicoGeometry.cc
+  ./ocean/pico_old/Pico.cc
+  ./ocean/pico_old/PicoGeometry.cc
   ./surface/Initialization.cc
   ./surface/localMassBalance.cc
   ./surface/SurfaceModel.cc
