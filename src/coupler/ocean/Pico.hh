@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
+// Copyright (C) 2012-2016, 2018 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
 // and Matthias Mengel
 //
 // This file is part of PISM.
@@ -20,11 +20,10 @@
 #ifndef _POPICO_H_
 #define _POPICO_H_
 
-#include "pism/coupler/OceanModel.hh"
+#include "CompleteOceanModel.hh"
 
 #include "pism/coupler/util/PGivenClimate.hh"
 #include "pism/util/IceModelVec2CellType.hh"
-#include "Modifier.hh"
 
 namespace pism {
 namespace ocean {
@@ -33,7 +32,7 @@ namespace ocean {
 //! Generalizes the two dimensional ocean box model of [@ref OlbersHellmer2010] for
 //! use in PISM, i.e. three dimensions.
 //!
-class Pico : public PGivenClimate<OceanModifier,OceanModel> {
+class Pico : public PGivenClimate<CompleteOceanModel,CompleteOceanModel> {
 public:
   Pico(IceGrid::ConstPtr g);
   virtual ~Pico();
@@ -59,12 +58,8 @@ public:
   };
 
 protected:
-  virtual void update_impl(double my_t, double my_dt);
+  virtual void update_impl(double t, double dt);
   virtual void init_impl();
-  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const;
-  virtual void sea_level_elevation_impl(double &result) const;
-  virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
-  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
@@ -72,14 +67,10 @@ protected:
 
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
-  std::vector<IceModelVec*> m_variables;
-
   bool   exicerises_set; // FIXME shouldn't this be always used?
 
 private:
-  IceModelVec2S   m_shelfbtemp,
-                  m_shelfbmassflux,
-                  cbasins, // a basin defines the domain where one box model instance is solved
+  IceModelVec2S   cbasins, // a basin defines the domain where one box model instance is solved
                   icerise_mask,
                   ocean_box_mask,
                   shelf_mask,

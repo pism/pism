@@ -1,4 +1,4 @@
- // Copyright (C) 2012-2017 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
+ // Copyright (C) 2012-2018 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
 // and Matthias Mengel
 //
 // This file is part of PISM.
@@ -109,7 +109,7 @@ const int Pico::maskgrounded = MASK_GROUNDED;
 
 
 Pico::Pico(IceGrid::ConstPtr g)
-  : PGivenClimate<OceanModifier,OceanModel>(g, NULL) {
+  : PGivenClimate<CompleteOceanModel,CompleteOceanModel>(g, NULL) {
 
   m_option_prefix   = "-ocean_pico";
 
@@ -142,108 +142,76 @@ Pico::Pico(IceGrid::ConstPtr g)
                                    "salinity of the adjacent ocean",
                                    "g/kg", "");
 
-  m_shelfbtemp.create(m_grid, "shelfbtemp", WITHOUT_GHOSTS);
-  m_shelfbtemp.set_attrs("climate_forcing",
-                              "absolute temperature at ice shelf base",
-                              "Kelvin", "");
-  m_variables.push_back(&m_shelfbtemp);
-
-  m_shelfbmassflux.create(m_grid, "shelfbmassflux", WITHOUT_GHOSTS);
-  m_shelfbmassflux.set_attrs("climate_forcing",
-                                  "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                                  "kg m-2 s-1", "");
-  m_shelfbmassflux.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_variables.push_back(&m_shelfbmassflux);
-
-
   cbasins.create(m_grid, "basins", WITH_GHOSTS);
   cbasins.set_attrs("climate_forcing","mask determines basins for PICO",
                     "", "");
-  m_variables.push_back(&cbasins);
-
 
   // mask to identify ice shelves
   shelf_mask.create(m_grid, "pico_shelf_mask", WITH_GHOSTS);
   shelf_mask.set_attrs("model_state", "mask for individual ice shelves","", "");
-  m_variables.push_back(&shelf_mask);
 
   // mask to identify the ocean boxes
   ocean_box_mask.create(m_grid, "pico_ocean_box_mask", WITH_GHOSTS);
   ocean_box_mask.set_attrs("model_state", "mask displaying ocean box model grid","", "");
-  m_variables.push_back(&ocean_box_mask);
 
   // mask to identify the ice rises
   icerise_mask.create(m_grid, "pico_icerise_mask", WITH_GHOSTS);
   icerise_mask.set_attrs("model_state", "mask displaying ice rises","", "");
-  m_variables.push_back(&icerise_mask);
 
   // mask displaying continental shelf - region where mean salinity and ocean temperature is calculated
   ocean_contshelf_mask.create(m_grid, "pico_ocean_contshelf_mask", WITH_GHOSTS);
   ocean_contshelf_mask.set_attrs("model_state", "mask displaying ocean region for parameter input","", "");
-  m_variables.push_back(&ocean_contshelf_mask);
 
   // mask displaying open ocean - ice-free regions below sea-level except 'holes' in ice shelves
   ocean_mask.create(m_grid, "pico_ocean_mask", WITH_GHOSTS);
   ocean_mask.set_attrs("model_state", "mask displaying open ocean","", "");
-  m_variables.push_back(&ocean_mask);
 
   // mask displaying subglacial lakes - floating regions with no connection to the ocean
   lake_mask.create(m_grid, "pico_lake_mask", WITH_GHOSTS);
   lake_mask.set_attrs("model_state", "mask displaying subglacial lakes","", "");
-  m_variables.push_back(&lake_mask);
 
   // mask with distance (in boxes) to grounding line
   DistGL.create(m_grid, "pico_dist_grounding_line", WITH_GHOSTS);
   DistGL.set_attrs("model_state", "mask displaying distance to grounding line","", "");
-  m_variables.push_back(&DistGL);
 
   // mask with distance (in boxes) to ice front
   DistIF.create(m_grid, "pico_dist_iceshelf_front", WITH_GHOSTS);
   DistIF.set_attrs("model_state", "mask displaying distance to ice shelf calving front","", "");
-  m_variables.push_back(&DistIF);
 
   // computed salinity in ocean boxes
   Soc.create(m_grid, "pico_Soc", WITHOUT_GHOSTS);
   Soc.set_attrs("model_state", "ocean salinity field","", "ocean salinity field");  //NOTE unit=psu
-  m_variables.push_back(&Soc);
 
   // salinity input for box 1
   Soc_box0.create(m_grid, "pico_salinity_box0", WITHOUT_GHOSTS);
   Soc_box0.set_attrs("model_state", "ocean base salinity field","", "ocean base salinity field");  //NOTE unit=psu
-  m_variables.push_back(&Soc_box0);
 
   // computed temperature in ocean boxes
   Toc.create(m_grid, "pico_Toc", WITHOUT_GHOSTS);
   Toc.set_attrs("model_state", "ocean temperature field","K", "ocean temperature field");
-  m_variables.push_back(&Toc);
 
   // temperature input for box 1
   Toc_box0.create(m_grid, "pico_temperature_box0", WITHOUT_GHOSTS);
   Toc_box0.set_attrs("model_state", "ocean base temperature","K", "ocean base temperature");
-  m_variables.push_back(&Toc_box0);
 
   // in ocean box i: T_star = aS_{i-1} + b -c p_i - T_{i-1} with T_{-1} = Toc_box0 and S_{-1}=Soc_box0
   // FIXME convert to internal field
   T_star.create(m_grid, "pico_T_star", WITHOUT_GHOSTS);
   T_star.set_attrs("model_state", "T_star field","degree C", "T_star field");
-  m_variables.push_back(&T_star);
 
   overturning.create(m_grid, "pico_overturning", WITHOUT_GHOSTS);
   overturning.set_attrs("model_state", "cavity overturning","m^3 s-1", "cavity overturning"); // no CF standard_name?
-  m_variables.push_back(&overturning);
 
   basalmeltrate_shelf.create(m_grid, "pico_bmelt_shelf", WITHOUT_GHOSTS);
   basalmeltrate_shelf.set_attrs("model_state", "PICO sub-shelf melt rate", "m/s",
                                 "PICO sub-shelf melt rate");
   basalmeltrate_shelf.metadata().set_string("glaciological_units", "m year-1");
   //basalmeltrate_shelf.write_in_glaciological_units = true;
-  m_variables.push_back(&basalmeltrate_shelf);
 
   // TODO: this may be initialized to NA, it should only have valid values below ice shelves.
   T_pressure_melting.create(m_grid, "pico_T_pressure_melting", WITHOUT_GHOSTS);
   T_pressure_melting.set_attrs("model_state", "pressure melting temperature at ice shelf base",
                         "Kelvin", "pressure melting temperature at ice shelf base"); // no CF standard_name? // This is the in-situ pressure melting point
-  m_variables.push_back(&T_pressure_melting);
 
 
   // Initialize this early so that we can check the validity of the "basins" mask read from a file
@@ -296,23 +264,6 @@ void Pico::init_impl() {
   }
 
 }
-
-void Pico::shelf_base_temperature_impl(IceModelVec2S &result) const {
-  result.copy_from(m_shelfbtemp);
-}
-
-void Pico::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
-  result.copy_from(m_shelfbmassflux);
-}
-
-void Pico::sea_level_elevation_impl(double &result) const {
-  result = m_sea_level;
-}
-
-void Pico::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
-  result.set(0.0);
-}
-
 
 void Pico::define_model_state_impl(const PIO &output) const {
   
@@ -420,12 +371,13 @@ void Pico::update_impl(double my_t, double my_dt) {
   calculate_basal_melt_other_boxes(cc);
   calculate_basal_melt_missing_cells(cc);  //Assumes that mass flux is proportional to the shelf-base heat flux.
 
-  m_shelfbtemp.copy_from(T_pressure_melting); // in-situ freezing point at the ice shelf base
-  m_shelfbmassflux.copy_from(basalmeltrate_shelf); 
-  m_shelfbmassflux.scale(cc.rhoi);
+  m_shelf_base_temperature->copy_from(T_pressure_melting); // in-situ freezing point at the ice shelf base
+  m_shelf_base_mass_flux->copy_from(basalmeltrate_shelf);
+  m_shelf_base_mass_flux->scale(cc.rhoi);
+
+  m_sea_level_elevation->set(0.0);
+  m_melange_back_pressure_fraction->set(0.0);
 }
-
-
 
 
 //! Compute temperature and salinity input from ocean data by averaging.
