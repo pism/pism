@@ -257,6 +257,10 @@ public:
   virtual void  update_ghosts();
   virtual void  update_ghosts(IceModelVec &destination) const;
 
+  petsc::Vec::Ptr allocate_proc0_copy() const;
+  void put_on_proc0(Vec onp0) const;
+  void get_from_proc0(Vec onp0);
+
   void  set(double c);
 
   SpatialVariableMetadata& metadata(unsigned int N = 0);
@@ -267,10 +271,10 @@ public:
   void inc_state_counter();
   void set_time_independent(bool flag);
 
+protected:
+
   //! If true, report range when regridding.
   bool m_report_range;
-
-protected:
 
   void global_to_local(petsc::DM::Ptr dm, Vec source, Vec destination) const;
   virtual void read_impl(const PIO &nc, unsigned int time);
@@ -327,6 +331,9 @@ public:
   void dump(const char filename[]) const;
 
   typedef pism::AccessList AccessList;
+protected:
+  void put_on_proc0(Vec parallel, Vec onp0) const;
+  void get_from_proc0(Vec onp0, Vec parallel);
 };
 
 bool set_contains(const std::set<std::string> &S, const IceModelVec &field);
@@ -427,9 +434,6 @@ public:
   using IceModelVec2::create;
   void create(IceGrid::ConstPtr grid, const std::string &name,
               IceModelVecKind ghostedp, int width = 1);
-  petsc::Vec::Ptr allocate_proc0_copy() const;
-  void put_on_proc0(Vec onp0) const;
-  void get_from_proc0(Vec onp0);
   virtual void copy_from(const IceModelVec &source);
   double** get_array();
   virtual void set_to_magnitude(const IceModelVec2S &v_x, const IceModelVec2S &v_y);
@@ -457,9 +461,6 @@ public:
   inline double& operator() (int i, int j);
   inline const double& operator()(int i, int j) const;
   inline StarStencil<double> star(int i, int j) const;
-protected:
-  void put_on_proc0(Vec parallel, Vec onp0) const;
-  void get_from_proc0(Vec onp0, Vec parallel);
 };
 
 
