@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -112,6 +112,19 @@ unsigned int IceModelVec::ndims() const {
   }
 
   return 2;
+}
+
+std::vector<int> IceModelVec::shape() const {
+
+  if (ndims() == 3) {
+    return {(int)m_grid->My(), (int)m_grid->Mx(), (int)levels().size()};
+  } else {
+    if (ndof() == 1) {
+      return {(int)m_grid->My(), (int)m_grid->Mx()};
+    } else {
+      return {(int)m_grid->My(), (int)m_grid->Mx(), (int)ndof()};
+    }
+  }
 }
 
 //! Set the time independent flag for all variables corresponding to this IceModelVec instance.

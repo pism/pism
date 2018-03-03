@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -213,6 +213,7 @@ public:
   virtual bool was_created() const;
   IceGrid::ConstPtr grid() const;
   unsigned int ndims() const;
+  std::vector<int> shape() const;
   //! \brief Returns the number of degrees of freedom per grid point.
   unsigned int ndof() const;
   unsigned int stencil_width() const;
