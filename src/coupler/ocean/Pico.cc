@@ -197,6 +197,9 @@ Pico::Pico(IceGrid::ConstPtr g) : PGivenClimate<CompleteOceanModel, CompleteOcea
   // in Pico::init_impl(). This number is hard-wired, so I don't think it matters that it did not
   // come from Pico::Constants.
   m_numberOfBasins = 20;
+
+  // This will be re-set by identify_shelf_mask()
+  m_numberOfShelves = 1;
 }
 
 

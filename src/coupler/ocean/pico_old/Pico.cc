@@ -216,6 +216,9 @@ PicoOld::PicoOld(IceGrid::ConstPtr g)
   // in PicoOld::init_impl(). This number is hard-wired, so I don't think it matters that it did not
   // come from PicoOld::Constants.
   numberOfBasins = 20;
+
+  // This will be re-set by identify_shelf_mask()
+  numberOfShelves = 1;
 }
 
 
