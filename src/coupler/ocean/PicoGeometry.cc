@@ -85,6 +85,16 @@ void round_basins(IceModelVec2S &basin_mask) {
 //! lakes: subglacial lakes without access to the ocean
 //! We here use a search algorithm, starting at the center or the boundary of the domain.
 //! We iteratively look for regions which satisfy one of the three types named above.
+
+//! look for connected region to a certain seed grid point or region that is set at
+//! the beginning. Seed can be the center fo the domain or the domain boundary.
+//! this connected region will be identified with the INNER mask value.
+//! all regions that are not reached by connectedness of an INNER point are set to
+//! EXCLUDE. These regions are the ones of interest at the end (i think), like lakes
+//! that are not connected to the ocean, or ice rises that are not connceted to the main ice sheet.
+//!
+//!
+
 void Pico::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
 
   m_log->message(5, "starting identifyMASK routine\n");
@@ -99,12 +109,18 @@ void Pico::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
 
   IceModelVec::AccessList list{ &inputmask, &mask, &bed };
 
+  // the algorithm will work through all unidentified grid points, until all are set with
+  // some other mask value
   inputmask.set(UNIDENTIFIED);
 
   // Find starting points for iteration.
+  // for the two mask types of ocean continental shelf or ice rises, set the point at the center
+  // of the domain to the value INNER
+  // the extra conditions with m_grid are not fully clear to me.
   if ((masktype == "ocean_continental_shelf" || masktype == "icerises") && (seed_x >= m_grid->xs()) &&
       (seed_x < m_grid->xs() + m_grid->xm()) && (seed_y >= m_grid->ys()) && (seed_y < m_grid->ys() + m_grid->ym())) {
     inputmask(seed_x, seed_y) = INNER;
+  // for the two mask types of ocean or lakes, set all domain boundary values to INNER
   } else if (masktype == "ocean" || masktype == "lakes") {
     //assume that some point on the domain boundary belongs to the open ocean
     for (Points p(*m_grid); p; p.next()) {
@@ -118,6 +134,9 @@ void Pico::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
   // Iteratively find region which satisfies condition for coninental shelf ocean,
   // ice rise or open ocean.
   int iteration_round = 0;
+
+
+  // continue as long as new grid cells are found for which values are set
   while (all_inner_identified > previous_step_identified) {
 
     iteration_round += 1;
@@ -128,21 +147,41 @@ void Pico::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
       const int i = p.i(), j = p.j();
       bool masktype_condition = false;
 
+      // masktype==true seems to indicate a grid point that could
+      // potentially belong to the inner part of a certain region.
+
       if (masktype == "ocean_continental_shelf") {
+        // true if not being open ocean or being less deep than continential shelf depth
+        // so all the ice sheet plus shelves plus shallower ocean
         masktype_condition = (mask(i, j) != MASK_ICE_FREE_OCEAN || bed(i, j) >= m_continental_shelf_depth);
       } else if (masktype == "icerises") {
+        // true for grounded ice
         masktype_condition = (mask(i, j) == MASK_GROUNDED);
       } else if (masktype == "ocean") {
+        // true for open ocean
         masktype_condition = (mask(i, j) == MASK_ICE_FREE_OCEAN);
       } else if (masktype == "lakes") {
+        // true for open ocean or for floating ice
+        // combinded with the domain boundary being set to INNER before,
+        // lake inputmask seem to be INNER for all open ocean and all ice shelf,
+        // and exclude for floating ice that could not be reached through connectedness
+        // from open ocean or ice shelves.
         masktype_condition = (mask(i, j) == MASK_ICE_FREE_OCEAN || mask(i, j) == MASK_FLOATING);
       }
 
+      // in unidentified regions with true masktype, look for neighbours that belong
+      // to the inner part of a region. set to inner if at least one neighbour is inner.
+      // this is '4 dot connectedness'.
+      // as only here inputmask is set to inner, inner points always require
+      // masktype condition true
       if (masktype_condition && inputmask(i, j) == UNIDENTIFIED &&
           (inputmask(i, j + 1) == INNER || inputmask(i, j - 1) == INNER ||
            inputmask(i + 1, j) == INNER || inputmask(i - 1, j) == INNER)) {
         inputmask(i, j) = INNER;
         linner_identified += 1;
+
+      // next condition needs inputmask(i, j) == UNIDENTIFIED
+      // so set all UNIDENTIFIED point with masktype_condition false to OUTER
       } else if (masktype_condition == false) {
         inputmask(i, j) = OUTER;
       }
@@ -150,11 +189,15 @@ void Pico::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
 
     inputmask.update_ghosts();
 
+    // add if new grid points were hit that were UNIDENTIFIED before.
     all_inner_identified = GlobalSum(m_grid->com, linner_identified);
   }
 
   // Set all unidentified grid cells to value for excluded areas (ice rises
   // or submarine islands)
+  // I think this means excluded areas are basically that what we look for.
+  // (we may change naming here). They were not reached by connectedness,
+  // nor were they set to OUTER before.
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -162,6 +205,7 @@ void Pico::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
       inputmask(i, j) = EXCLUDE;
     }
 
+    // regions that are not ice free ocean
     if (masktype == "ocean_continental_shelf") { //exclude ice covered parts
       if (mask(i, j) != MASK_ICE_FREE_OCEAN && inputmask(i, j) == INNER) {
         inputmask(i, j) = OUTER;
@@ -357,7 +401,7 @@ void Pico::identify_shelf_mask() {
 }
 
 
-/*  // NOTE: This was the try to use a depth-search to identify the connected components, does not work this way... 
+/*  // NOTE: This was the try to use a depth-search to identify the connected components, does not work this way...
   // NOTE: This does not work since accessing the physical neighbors of a grid point is not possible...
   // using own points instead (i,j) will probably be problematic with parallel computing...
    for (Points p(*m_grid); p; p.next()) { //FIXME correct? or do we need PointsWithGhosts?
@@ -370,15 +414,15 @@ void Pico::identify_shelf_mask() {
       while (!stack.empty()) { // as long as the stack is non-empty
         Points q = stack.back(); // get the last element and
         stack.pop_back(); // remove the last element on the stack
-        const int k = q.i(), l = q.j(); // get the coordinates of q 
+        const int k = q.i(), l = q.j(); // get the coordinates of q
         if (mask(k,l) == MASK_FLOATING && shelf_mask(k,l)==0){
           shelf_mask(k,l) = label_current; // label as current
           // all all neigbors that are floating and not labeled to the stack
           //if (k>=1 && shelf_mask(k-1,l)==0 && mask(k-1,l)==MASK_FLOATING){
           Points q_new;
-          q_new.i = k-1; 
-          q_new.j = l;  
-          stack.push_back(q_new); 
+          q_new.i = k-1;
+          q_new.j = l;
+          stack.push_back(q_new);
         }
       }
       label_current++;
