@@ -105,14 +105,14 @@ void PicoGeometry::relabel_by_size(IceModelVec2Int &mask) {
     }
     loop.check();
 
-    for (int k = 0; k < max_index + 1; ++k) {
+    for (unsigned int k = 0; k < area.size(); ++k) {
       area[k] = GlobalSum(m_grid->com, area[k]);
     }
   }
 
   // find the biggest component
   int biggest_component = 0;
-  for (int k = 0; k < max_index; ++k) {
+  for (unsigned int k = 0; k < area.size(); ++k) {
     if (area[k] > area[biggest_component]) {
       biggest_component = k;
     }
