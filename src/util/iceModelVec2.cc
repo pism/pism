@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -605,5 +605,18 @@ std::vector<double> IceModelVec2Stag::absmaxcomponents() const {
 
   return z;
 }
+
+IceModelVec2Int::IceModelVec2Int()
+  : IceModelVec2S() {
+  // empty
+}
+
+
+IceModelVec2Int::IceModelVec2Int(IceGrid::ConstPtr grid, const std::string &name,
+                                 IceModelVecKind ghostedp, int width)
+  : IceModelVec2S(grid, name, ghostedp, width) {
+  // empty
+}
+
 
 } // end of namespace pism

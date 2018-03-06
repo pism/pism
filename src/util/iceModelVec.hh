@@ -468,6 +468,9 @@ public:
 //! floating-point scalars (instead of integers).
 class IceModelVec2Int : public IceModelVec2S {
 public:
+  IceModelVec2Int();
+  IceModelVec2Int(IceGrid::ConstPtr grid, const std::string &name,
+                  IceModelVecKind ghostedp, int width = 1);
 
   typedef std::shared_ptr<IceModelVec2Int> Ptr;
   typedef std::shared_ptr<const IceModelVec2Int> ConstPtr;
