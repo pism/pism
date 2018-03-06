@@ -46,7 +46,11 @@ public:
   const IceModelVec2Int& ice_shelf_mask() const;
 
   void compute_ice_rises(const IceModelVec2CellType &cell_type, IceModelVec2Int &result);
+  void compute_lakes(const IceModelVec2CellType &cell_type, IceModelVec2Int &result);
 private:
+  void label_tmp();
+  void relabel_by_size(IceModelVec2S &mask);
+
   IceModelVec2Int m_continental_shelf;
   IceModelVec2Int m_boxes;
   IceModelVec2Int m_ice_shelves;
