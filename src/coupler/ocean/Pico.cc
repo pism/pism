@@ -349,15 +349,19 @@ void Pico::update_impl(double my_t, double my_dt) {
 
     const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-    //basal melt rates underneath ice shelves
     calculate_basal_melt_box1(ice_thickness, m_shelf_mask, m_ocean_box_mask, // inputs
                               m_Toc_box0, m_Soc_box0, cc,                    // inputs
                               m_T_star, m_Toc, m_Soc, m_basalmeltrate_shelf, // outputs
                               m_overturning, m_T_pressure_melting);          // outputs
+
     calculate_basal_melt_other_boxes(ice_thickness, m_shelf_mask, cc,        // inputs
                                      m_ocean_box_mask, m_T_star, m_Toc,      // outputs
                                      m_Soc, m_basalmeltrate_shelf, m_T_pressure_melting); // outputs
-    calculate_basal_melt_missing_cells(cc); //Assumes that mass flux is proportional to the shelf-base heat flux.
+
+    //Assumes that mass flux is proportional to the shelf-base heat flux.
+    calculate_basal_melt_missing_cells(cc, m_shelf_mask, m_ocean_box_mask, ice_thickness, // inputs
+                                       m_Toc_box0, m_Soc_box0, // inputs
+                                       m_Toc, m_Soc, m_basalmeltrate_shelf, m_T_pressure_melting); // outputs
 
   }
 
@@ -870,33 +874,40 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
 //! Also set basal melt rate to zero if shelf_id is zero, which is mainly
 //! at the computational domain boundary.
 
-void Pico::calculate_basal_melt_missing_cells(const Constants &cc) {
+void Pico::calculate_basal_melt_missing_cells(const Constants &cc,
+                                              const IceModelVec2Int &shelf_mask,
+                                              const IceModelVec2Int &box_mask,
+                                              const IceModelVec2S &ice_thickness,
+                                              const IceModelVec2S &Toc_box0,
+                                              const IceModelVec2S &Soc_box0,
+                                              IceModelVec2S &Toc,
+                                              IceModelVec2S &Soc,
+                                              IceModelVec2S &basal_melt_rate,
+                                              IceModelVec2S &T_pressure_melting) {
 
   m_log->message(5, "starting calculate_basal_melt_missing_cells routine\n");
 
-  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-
   IceModelVec::AccessList list{
-    &ice_thickness, &m_shelf_mask, &m_ocean_box_mask, &m_Toc_box0, &m_Toc, &m_Soc_box0, &m_Soc,
-    &m_overturning, &m_basalmeltrate_shelf, &m_T_pressure_melting
+    &ice_thickness, &shelf_mask, &box_mask, &Toc_box0, &Toc, &Soc_box0, &Soc,
+    &basal_melt_rate, &T_pressure_melting
   };
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    int shelf_id = m_shelf_mask(i, j);
+    int shelf_id = shelf_mask(i, j);
 
     // mainly at the boundary of computational domain,
     // or through erroneous basin mask
     if (shelf_id == 0) {
-      m_basalmeltrate_shelf(i, j) = 0.0;
+      basal_melt_rate(i, j) = 0.0;
     }
 
     // cell with missing data identifier numberOfBoxes+1, as set in routines before
-    if ((shelf_id > 0) && (m_ocean_box_mask(i, j) == (m_numberOfBoxes + 1))) {
+    if ((shelf_id > 0) && (box_mask(i, j) == (m_numberOfBoxes + 1))) {
 
-      m_Toc(i, j) = m_Toc_box0(i, j); // in Kelvin
-      m_Soc(i, j) = m_Soc_box0(i, j); // in psu
+      Toc(i, j) = Toc_box0(i, j); // in Kelvin
+      Soc(i, j) = Soc_box0(i, j); // in psu
 
       // in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
       const double pressure = cc.rhoi * cc.earth_grav * ice_thickness(i, j) * 1e-4;
@@ -904,16 +915,16 @@ void Pico::calculate_basal_melt_missing_cells(const Constants &cc) {
       // potential pressure melting point needed to calculate thermal driving
       // using coefficients for potential temperature
       // these are different to the ones used in POConstantPIK
-      double potential_pressure_melting_point = cc.a * m_Soc(i, j) + cc.b - cc.c * pressure;
+      double potential_pressure_melting_point = cc.a * Soc(i, j) + cc.b - cc.c * pressure;
 
       double heatflux = cc.meltFactor * cc.rhow * cc.c_p_ocean * cc.default_gamma_T *
-                        (m_Toc(i, j) - potential_pressure_melting_point); // in W/m^2
+                        (Toc(i, j) - potential_pressure_melting_point); // in W/m^2
 
-      m_basalmeltrate_shelf(i, j) = heatflux / (cc.latentHeat * cc.rhoi); // in m s-1
+      basal_melt_rate(i, j) = heatflux / (cc.latentHeat * cc.rhoi); // in m s-1
 
       // in situ pressure melting point in Kelvin
       // this will be the temperature boundary condition at the ice at the shelf base
-      m_T_pressure_melting(i, j) = cc.as * m_Soc(i, j) + cc.bs - cc.cs * pressure;
+      T_pressure_melting(i, j) = cc.as * Soc(i, j) + cc.bs - cc.cs * pressure;
     }
   }
 }

@@ -106,7 +106,16 @@ private:
                                         IceModelVec2S &Soc,
                                         IceModelVec2S &basal_melt_rate,
                                         IceModelVec2S &T_pressure_melting);
-  void calculate_basal_melt_missing_cells(const Constants &constants);
+  void calculate_basal_melt_missing_cells(const Constants &cc,
+                                          const IceModelVec2Int &shelf_mask,
+                                          const IceModelVec2Int &box_mask,
+                                          const IceModelVec2S &ice_thickness,
+                                          const IceModelVec2S &Toc_box0,
+                                          const IceModelVec2S &Soc_box0,
+                                          IceModelVec2S &Toc,
+                                          IceModelVec2S &Soc,
+                                          IceModelVec2S &basal_melt_rate,
+                                          IceModelVec2S &T_pressure_melting);
 
   enum IdentifyMaskFlags {INNER = 2, OUTER = 0, EXCLUDE = 1, UNIDENTIFIED = -1};
 
