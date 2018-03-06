@@ -168,7 +168,7 @@ void PicoGeometry::compute_lakes(const IceModelVec2CellType &cell_type,
                                  IceModelVec2Int &result) {
   IceModelVec::AccessList list{&cell_type, &m_tmp};
 
-  // mask of zeros and ones: one if grounded ice, zero otherwise
+  // mask of zeros and ones: one if floating ice, zero otherwise
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
