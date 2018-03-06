@@ -290,5 +290,42 @@ void PicoGeometry::compute_continental_shelf_mask(const IceModelVec2S &bed_eleva
   result.copy_from(m_tmp);
 }
 
+/*!
+ * Compute the mask identifying ice shelves.
+ *
+ * Each shelf gets an individual integer label.
+ *
+ * Two shelves connected by an ice rise are considered to be parts of the same shelf.
+ */
+void PicoGeometry::compute_ice_shelf_mask(const IceModelVec2Int &ice_rises_mask,
+                                          IceModelVec2Int &result) {
+  IceModelVec::AccessList list{&ice_rises_mask, &m_tmp};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    int M = ice_rises_mask.as_int(i, j);
+
+    if (M == 1 or M == 3) {
+      m_tmp(i, j) = 1.0;
+    } else {
+      m_tmp(i, j) = 0.0;
+    }
+  }
+
+  label_tmp();
+
+  // remove ice rises
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (ice_rises_mask.as_int(i, j) == 1) {
+      m_tmp(i, j) = 0.0;
+    }
+  }
+
+  result.copy_from(m_tmp);
+}
+
 } // end of namespace ocean
 } // end of namespace pism

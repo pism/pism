@@ -51,6 +51,8 @@ public:
                                       const IceModelVec2Int &ice_rises_mask,
                                       double bed_elevation_threshold,
                                       IceModelVec2Int &result);
+  void compute_ice_shelf_mask(const IceModelVec2Int &ice_rises_mask,
+                              IceModelVec2Int &result);
 private:
   void label_tmp();
   void relabel_by_size(IceModelVec2S &mask);
