@@ -332,5 +332,79 @@ void PicoGeometry::compute_ice_shelf_mask(const IceModelVec2Int &ice_rises_mask,
   result.copy_from(m_tmp);
 }
 
+/*!
+ * Compute the mask identifying ice-free ocean and "holes" in ice shelves.
+ *
+ * Resulting mask contains:
+ *
+ * - 0 - icy cells
+ * - 1 - ice-free ocean which is not connected to the open ocean
+ * - 2 - open ocean
+ *
+ */
+void PicoGeometry::compute_ocean_mask(const IceModelVec2CellType &cell_type,
+                                      IceModelVec2Int &result) {
+  IceModelVec::AccessList list{&cell_type, &m_tmp};
+
+  // mask of zeros and ones: one if ice-free ocean, zero otherwise
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (cell_type.ice_free_ocean(i, j)) {
+      m_tmp(i, j) = 1.0;
+    } else {
+      m_tmp(i, j) = 0.0;
+    }
+  }
+
+  label_tmp();
+
+  relabel_by_size(m_tmp);
+
+  result.copy_from(m_tmp);
+}
+
+/*!
+ * Solve the eikonal equation (crudely).
+ *
+ * Initial state of the input:
+ *
+ * - the domain is filled with zeros,
+ * - the initial wave front is marked with ones
+ * - points outside the domain are marked with -1
+ *
+ * Assumes that the input (mask) has ghosts of width 1.
+
+void PicoGeometry::eikonal_equation(IceModelVec2Int &mask) {
+  IceModelVec::AccessList list(mask);
+
+  const Direction dirs[] = {North, East, South, West};
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      auto M = mask.star(i, j);
+
+      if (mask.ij > 0) {
+        // this point was processed already; proceed to the next one
+        continue;
+      }
+
+      int min_distance = 0;
+      for (int n = 0; n < 4; ++n) {
+        Direction direction = dirs[n];
+
+        if (M[direction] > 0 and M[direction] < min_)
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+}
+*/
 } // end of namespace ocean
 } // end of namespace pism
