@@ -731,8 +731,6 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
     &basal_melt_rate, &T_pressure_melting
   };
 
-  box_mask.update_ghosts();
-
   // Iterate over all Boxes i for i > 1
   // box number = numberOfBoxes+1 is used as identifier for Beckmann Goose calculation
   // for cells with missing input and excluded in loop here, i.e. boxi <nBoxes.
@@ -860,6 +858,8 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
     }
 
   } // boxi
+
+  box_mask.update_ghosts();
 }
 
 
