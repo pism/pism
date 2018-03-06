@@ -63,7 +63,8 @@ private:
   IceModelVec2Int m_boxes;
   IceModelVec2Int m_ice_shelves;
 
-  IceModelVec2S m_tmp;
+  IceModelVec2Int m_ice_rises;
+  IceModelVec2Int m_tmp;
   petsc::Vec::Ptr m_tmp_p0;
 };
 

@@ -30,6 +30,7 @@ PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
     m_continental_shelf(grid, "pico_ocean_contshelf_mask", WITHOUT_GHOSTS),
     m_boxes(grid, "pico_ocean_box_mask", WITHOUT_GHOSTS),
     m_ice_shelves(grid, "pico_shelf_mask", WITHOUT_GHOSTS),
+    m_ice_rises(grid, "ice_rises", WITHOUT_GHOSTS),
     m_tmp(grid, "temporary_storage", WITHOUT_GHOSTS) {
 
   m_tmp_p0 = m_tmp.allocate_proc0_copy();
@@ -53,7 +54,13 @@ const IceModelVec2Int& PicoGeometry::ice_shelf_mask() const {
 
 void PicoGeometry::update(const IceModelVec2S &bed_elevation,
                           const IceModelVec2CellType &cell_type) {
+  compute_ice_rises(cell_type, m_ice_rises);
 
+  compute_continental_shelf_mask(bed_elevation, m_ice_rises,
+                                 m_config->get_double("ocean.pico.continental_shelf_depth"),
+                                 m_continental_shelf);
+
+  compute_ice_shelf_mask(m_ice_rises, m_ice_shelves);
 }
 
 /*!
