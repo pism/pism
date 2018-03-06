@@ -65,9 +65,11 @@ protected:
 
 private:
   IceModelVec2S m_cbasins, // a basin defines the domain where one box model instance is solved
-      m_icerise_mask, m_ocean_box_mask, m_shelf_mask, m_ocean_contshelf_mask, m_ocean_mask, m_lake_mask, m_DistGL,
+      m_icerise_mask, m_ocean_contshelf_mask, m_ocean_mask, m_lake_mask, m_DistGL,
       m_DistIF, m_Soc, m_Soc_box0, m_Toc, m_Toc_box0, m_T_star, m_overturning, m_basalmeltrate_shelf,
       m_T_pressure_melting;
+
+  IceModelVec2Int m_shelf_mask, m_ocean_box_mask;
 
   IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
 
@@ -78,7 +80,18 @@ private:
   void compute_distances();
   void identify_ocean_box_mask(const Constants &constants);
   void set_ocean_input_fields(const Constants &constants);
-  void calculate_basal_melt_box1(const Constants &constants);
+  void calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
+                                 const IceModelVec2Int &shelf_mask,
+                                 const IceModelVec2Int &box_mask,
+                                 const IceModelVec2S &Toc_box0,
+                                 const IceModelVec2S &Soc_box0,
+                                 const Constants &cc,
+                                 IceModelVec2S &T_star,
+                                 IceModelVec2S &Toc,
+                                 IceModelVec2S &Soc,
+                                 IceModelVec2S &basal_melt_rate,
+                                 IceModelVec2S &overturning,
+                                 IceModelVec2S &T_pressure_melting);
   void calculate_basal_melt_other_boxes(const Constants &constants);
   void calculate_basal_melt_missing_cells(const Constants &constants);
 
