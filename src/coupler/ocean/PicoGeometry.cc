@@ -603,6 +603,8 @@ void Pico::identify_ocean_box_mask(const Constants &cc) {
   std::vector<double> lmax_distGL(m_numberOfShelves, 0.0);
   std::vector<double> lmax_distIF(m_numberOfShelves, 0.0);
 
+  // distGL describes distance to the ice front
+  // distIF describes distance to the calving front
   double lmax_distGL_ref = 0.0;
   double max_distGL_ref  = 0.0;
 
@@ -610,6 +612,8 @@ void Pico::identify_ocean_box_mask(const Constants &cc) {
 
   IceModelVec::AccessList list{ &m_shelf_mask, &m_DistGL, &m_DistIF, &m_ocean_box_mask, &m_lake_mask, &mask };
 
+  // find the maximum distance to the grounding line and the maximum
+  // distance to the calving for each ice shelf (identified by shelf_id).
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     int shelf_id = m_shelf_mask(i, j);
@@ -620,6 +624,8 @@ void Pico::identify_ocean_box_mask(const Constants &cc) {
     if (m_DistIF(i, j) > lmax_distIF[shelf_id]) {
       lmax_distIF[shelf_id] = m_DistIF(i, j);
     }
+    // find lmax_distGL_ref as the maximum distance to the grounding line
+    // per processor domain.
     if (m_DistGL(i, j) > lmax_distGL_ref) {
       lmax_distGL_ref = m_DistGL(i, j);
     }
@@ -630,6 +636,7 @@ void Pico::identify_ocean_box_mask(const Constants &cc) {
     max_distGL[l] = GlobalMax(m_grid->com, lmax_distGL[l]);
     max_distIF[l] = GlobalMax(m_grid->com, lmax_distIF[l]);
   }
+  // find the maximum grounding line distance the whole domain.
   max_distGL_ref = GlobalMax(m_grid->com, lmax_distGL_ref);
 
   // Compute the number of boxes for each basin
@@ -644,8 +651,12 @@ void Pico::identify_ocean_box_mask(const Constants &cc) {
 
   for (int l = 0; l < m_numberOfShelves; l++) {
     lnumberOfBoxes_perShelf[l] = 0;
+
+    // equation (9) of PICO paper https://doi.org/10.5194/tc-2017-70
     lnumberOfBoxes_perShelf[l] =
         n_min + static_cast<int>(round(pow((max_distGL[l] / max_distGL_ref), zeta) * (m_numberOfBoxes - n_min)));
+
+    // never have more boxes than default number of boxes
     lnumberOfBoxes_perShelf[l] = PetscMin(lnumberOfBoxes_perShelf[l], cc.default_numberOfBoxes);
     m_log->message(5, "lnumberOfShelves[%d]=%d \n", l, lnumberOfBoxes_perShelf[l]);
   }
@@ -659,16 +670,25 @@ void Pico::identify_ocean_box_mask(const Constants &cc) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
+
+    // only enter calculation if ice is floating, grounding line and ice front distance are larger zero,
+    // and the ocean box mask has not been changed from zero before.
     if (mask(i, j) == MASK_FLOATING && m_DistGL(i, j) > 0 && m_DistIF(i, j) > 0 && m_ocean_box_mask(i, j) == 0) {
       int shelf_id = m_shelf_mask(i, j);
       int n        = lnumberOfBoxes_perShelf[shelf_id];
       // relative distance between grounding line and ice front
+      // this distance is non-dimensional
+      // equation (10) of PICO paper https://doi.org/10.5194/tc-2017-70
       double r = m_DistGL(i, j) * 1.0 / (m_DistGL(i, j) * 1.0 + m_DistIF(i, j) * 1.0);
 
+      // loop over number of boxes for this shelf.
       for (int k = 0; k < n; ++k) {
 
         // define the ocean_box_mask using rule (n-k)/n< (1-r)**2 <(n-k+1)/n
         // FIXME: is there a more elegant way to ensure float?
+        // equation (11) of PICO paper https://doi.org/10.5194/tc-2017-70
+        // (minus 1 an squared of the version written in the paper.)
+        // see also Appendix B of the paper, which motivates equation 11.
         if (((n * 1.0 - k * 1.0 - 1.0) / (n * 1.0) <= pow((1.0 - r), 2)) &&
             (pow((1.0 - r), 2) <= (n * 1.0 - k * 1.0) / n * 1.0)) {
 
@@ -702,6 +722,8 @@ void Pico::identify_ocean_box_mask(const Constants &cc) {
   const int nBoxes = m_numberOfBoxes + 2;
 
   // Compute the number of cells per box and shelf and save to counter_boxes.
+  // counter_boxes is used in Pico.cc to determine the area covered by a certain box by
+  // counber_boxes * dx * dy
   counter_boxes.resize(m_numberOfShelves, std::vector<double>(2, 0));
   std::vector<std::vector<int> > lcounter_boxes(m_numberOfShelves, std::vector<int>(nBoxes));
 
