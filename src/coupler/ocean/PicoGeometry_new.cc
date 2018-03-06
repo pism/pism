@@ -217,7 +217,7 @@ void PicoGeometry::compute_ice_rises(const IceModelVec2CellType &cell_type,
     const int i = p.i(), j = p.j();
 
     if (m_tmp(i, j) == 0.0 and cell_type.icy(i, j)) {
-      m_tmp(i, j) = 3.0;
+      m_tmp(i, j) = FLOATING;
     }
   }
 
@@ -248,7 +248,7 @@ void PicoGeometry::compute_continental_shelf_mask(const IceModelVec2S &bed_eleva
       m_tmp(i, j) = 1.0;
     }
 
-    if (ice_rises_mask.as_int(i, j) == 2) {
+    if (ice_rises_mask.as_int(i, j) == CONTINENTAL) {
       m_tmp(i, j) = 2.0;
     }
   }
@@ -282,7 +282,8 @@ void PicoGeometry::compute_continental_shelf_mask(const IceModelVec2S &bed_eleva
       continue;
     }
 
-    if (bed_elevation(i, j) > bed_elevation_threshold and ice_rises_mask.as_int(i, j) == 0) {
+    if (bed_elevation(i, j) > bed_elevation_threshold and
+        ice_rises_mask.as_int(i, j) == OCEAN) {
       m_tmp(i, j) = 2.0;
     }
   }
@@ -306,7 +307,7 @@ void PicoGeometry::compute_ice_shelf_mask(const IceModelVec2Int &ice_rises_mask,
 
     int M = ice_rises_mask.as_int(i, j);
 
-    if (M == 1 or M == 3) {
+    if (M == RISE or M == FLOATING) {
       m_tmp(i, j) = 1.0;
     } else {
       m_tmp(i, j) = 0.0;
@@ -319,7 +320,7 @@ void PicoGeometry::compute_ice_shelf_mask(const IceModelVec2Int &ice_rises_mask,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (ice_rises_mask.as_int(i, j) == 1) {
+    if (ice_rises_mask.as_int(i, j) == RISE) {
       m_tmp(i, j) = 0.0;
     }
   }

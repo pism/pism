@@ -45,6 +45,8 @@ public:
   const IceModelVec2Int& box_mask() const;
   const IceModelVec2Int& ice_shelf_mask() const;
 
+  enum IceRiseMask {OCEAN = 0, RISE = 1, CONTINENTAL = 2, FLOATING = 3};
+
   void compute_ice_rises(const IceModelVec2CellType &cell_type, IceModelVec2Int &result);
   void compute_lakes(const IceModelVec2CellType &cell_type, IceModelVec2Int &result);
   void compute_continental_shelf_mask(const IceModelVec2S &bed_elevation,
