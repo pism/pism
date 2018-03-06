@@ -15,7 +15,7 @@ def imshow(self):
     except:
         raise RuntimeError("Failed to import matplotlib.pylab. Please make sure that matplotlib is installed!")
 
-    m = plt.imshow(self.numpy())
+    m = plt.imshow(self.numpy(), origin="lower")
     plt.colorbar(m)
     md = self.metadata()
     plt.title("{}, {}".format(md.get_string("long_name"), md.get_string("units")))
