@@ -64,19 +64,24 @@ protected:
   bool m_exicerises_set; // FIXME shouldn't this be always used?
 
 private:
-  IceModelVec2S m_cbasins, // a basin defines the domain where one box model instance is solved
-      m_icerise_mask, m_ocean_contshelf_mask, m_ocean_mask, m_lake_mask, m_DistGL,
+  IceModelVec2S m_DistGL,
       m_DistIF, m_Soc, m_Soc_box0, m_Toc, m_Toc_box0, m_T_star, m_overturning, m_basalmeltrate_shelf,
       m_T_pressure_melting;
 
-  IceModelVec2Int m_shelf_mask, m_ocean_box_mask;
+  // a basin defines the domain where one box model instance is solved
+  IceModelVec2Int m_icerise_mask, m_cbasins, m_shelf_mask, m_lake_mask,
+    m_ocean_box_mask, m_ocean_mask, m_ocean_contshelf_mask;
 
   IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
 
   void initBasinsOptions(const Constants &constants);
   void identifyMASK(IceModelVec2S &inputmask, std::string masktype);
   void identify_shelf_mask();
-  void compute_ocean_input_per_basin(const Constants &constants);
+  void compute_ocean_input_per_basin(const Constants &cc,
+                                     const IceModelVec2Int &basin_mask,
+                                     const IceModelVec2Int &continental_shelf_mask,
+                                     const IceModelVec2S &salinity_ocean,
+                                     const IceModelVec2S &theta_ocean);
   void compute_distances();
   void identify_ocean_box_mask(const Constants &constants);
   void set_ocean_input_fields(const Constants &constants);
@@ -92,7 +97,15 @@ private:
                                  IceModelVec2S &basal_melt_rate,
                                  IceModelVec2S &overturning,
                                  IceModelVec2S &T_pressure_melting);
-  void calculate_basal_melt_other_boxes(const Constants &constants);
+  void calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
+                                        const IceModelVec2Int &shelf_mask,
+                                        const Constants &cc,
+                                        IceModelVec2Int &box_mask,
+                                        IceModelVec2S &T_star,
+                                        IceModelVec2S &Toc,
+                                        IceModelVec2S &Soc,
+                                        IceModelVec2S &basal_melt_rate,
+                                        IceModelVec2S &T_pressure_melting);
   void calculate_basal_melt_missing_cells(const Constants &constants);
 
   enum IdentifyMaskFlags {INNER = 2, OUTER = 0, EXCLUDE = 1, UNIDENTIFIED = -1};
