@@ -57,7 +57,7 @@ public:
                               IceModelVec2Int &result);
 private:
   void label_tmp();
-  void relabel_by_size(IceModelVec2S &mask);
+  void relabel_by_size(IceModelVec2Int &mask);
 
   IceModelVec2Int m_continental_shelf;
   IceModelVec2Int m_boxes;

@@ -69,8 +69,8 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation,
  * The biggest one gets the value of 2, all the other ones 1, the background is set to
  * zero.
  */
-void PicoGeometry::relabel_by_size(IceModelVec2S &mask) {
-  // compute areas of components identified above
+void PicoGeometry::relabel_by_size(IceModelVec2Int &mask) {
+
   int max_index = mask.range().max;
 
   if (max_index < 1) {
@@ -79,7 +79,7 @@ void PicoGeometry::relabel_by_size(IceModelVec2S &mask) {
     return;
   }
 
-  std::vector<double> areas(max_index + 1, 0.0);
+  std::vector<double> area(max_index + 1, 0.0);
   {
 
     ParallelSection loop(m_grid->com);
@@ -96,7 +96,7 @@ void PicoGeometry::relabel_by_size(IceModelVec2S &mask) {
 
         if (index > 0) {
           // count areas of actual components, ignoring the background (index == 0)
-          areas[index] += 1.0;
+          area[index] += 1.0;
         }
 
       }
@@ -105,18 +105,15 @@ void PicoGeometry::relabel_by_size(IceModelVec2S &mask) {
     }
     loop.check();
 
-    for (int k = 0; k < max_index; ++k) {
-      areas[k] = GlobalSum(m_grid->com, areas[k]);
+    for (int k = 0; k < max_index + 1; ++k) {
+      area[k] = GlobalSum(m_grid->com, area[k]);
     }
   }
 
   // find the biggest component
-  int
-    biggest_component = 0,
-    biggest_area      = 0;
+  int biggest_component = 0;
   for (int k = 0; k < max_index; ++k) {
-    if (areas[k] > biggest_area) {
-      biggest_area      = areas[k];
+    if (area[k] > area[biggest_component]) {
       biggest_component = k;
     }
   }
@@ -125,7 +122,7 @@ void PicoGeometry::relabel_by_size(IceModelVec2S &mask) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    int component_index = mask(i, j);
+    int component_index = mask.as_int(i, j);
 
     if (component_index == biggest_component) {
       mask(i, j) = 2.0;
