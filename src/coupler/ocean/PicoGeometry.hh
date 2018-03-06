@@ -47,6 +47,10 @@ public:
 
   void compute_ice_rises(const IceModelVec2CellType &cell_type, IceModelVec2Int &result);
   void compute_lakes(const IceModelVec2CellType &cell_type, IceModelVec2Int &result);
+  void compute_continental_shelf_mask(const IceModelVec2S &bed_elevation,
+                                      const IceModelVec2Int &ice_rises_mask,
+                                      double bed_elevation_threshold,
+                                      IceModelVec2Int &result);
 private:
   void label_tmp();
   void relabel_by_size(IceModelVec2S &mask);

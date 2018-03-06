@@ -131,7 +131,7 @@ void PicoGeometry::relabel_by_size(IceModelVec2S &mask) {
 }
 
 /*!
- * Run the connected-component labeling algorithm on m_tmp.
+ * Run the serial connected-component labeling algorithm on m_tmp.
  */
 void PicoGeometry::label_tmp() {
   m_tmp.put_on_proc0(*m_tmp_p0);
@@ -153,6 +153,12 @@ void PicoGeometry::label_tmp() {
 /*!
  * Compute the mask identifying "subglacial lakes", i.e. floating ice areas that are not
  * connected to the open ocean.
+ *
+ * Resulting mask contains:
+ *
+ * 0 - grounded ice
+ * 1 - floating ice not connected to the open ocean
+ * 2 - floating ice or ice-free ocean connected to the open ocean
  */
 void PicoGeometry::compute_lakes(const IceModelVec2CellType &cell_type,
                                  IceModelVec2Int &result) {
@@ -179,6 +185,13 @@ void PicoGeometry::compute_lakes(const IceModelVec2CellType &cell_type,
 /*!
  * Compute the mask identifying "ice rises", i.e. grounded ice areas not connected to the
  * continental ice sheet.
+ *
+ * Resulting mask contains:
+ *
+ * 0 - ocean
+ * 1 - ice rises
+ * 2 - continental ice sheet
+ * 3 - floating ice
  */
 void PicoGeometry::compute_ice_rises(const IceModelVec2CellType &cell_type,
                                      IceModelVec2Int &result) {
@@ -199,9 +212,83 @@ void PicoGeometry::compute_ice_rises(const IceModelVec2CellType &cell_type,
 
   relabel_by_size(m_tmp);
 
+  // mark floating ice areas in this mask (reduces the number of masks we need later)
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (m_tmp(i, j) == 0.0 and cell_type.icy(i, j)) {
+      m_tmp(i, j) = 3.0;
+    }
+  }
+
   result.copy_from(m_tmp);
 }
 
+/*!
+ * Compute the continental ice shelf mask.
+ *
+ * Resulting mask contains:
+ *
+ * 0 - ocean or icy
+ * 1 - ice-free areas with bed elevation > threshold and not connected to the continental ice sheet
+ * 2 - ice-free areas with bed elevation > threshold, connected to the continental ice sheet
+ */
+void PicoGeometry::compute_continental_shelf_mask(const IceModelVec2S &bed_elevation,
+                                                  const IceModelVec2Int &ice_rises_mask,
+                                                  double bed_elevation_threshold,
+                                                  IceModelVec2Int &result) {
+  IceModelVec::AccessList list{&bed_elevation, &ice_rises_mask, &m_tmp};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    m_tmp(i, j) = 0.0;
+
+    if (bed_elevation(i, j) > bed_elevation_threshold) {
+      m_tmp(i, j) = 1.0;
+    }
+
+    if (ice_rises_mask.as_int(i, j) == 2) {
+      m_tmp(i, j) = 2.0;
+    }
+  }
+
+  // use "iceberg identification" to label parts *not* connected to the continental ice
+  // sheet
+  {
+    m_tmp.put_on_proc0(*m_tmp_p0);
+
+    ParallelSection rank0(m_grid->com);
+    try {
+      if (m_grid->rank() == 0) {
+        petsc::VecArray mask_p0(*m_tmp_p0);
+        label_connected_components(mask_p0.get(), m_grid->My(), m_grid->Mx(), true, 2.0);
+      }
+    } catch (...) {
+      rank0.failed();
+    }
+    rank0.check();
+
+    m_tmp.get_from_proc0(*m_tmp_p0);
+  }
+
+  // At this point areas with bed > threshold are 1, everything else is zero.
+  //
+  // Now we need to mark the continental shelf itself.
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (m_tmp(i, j) > 0.0) {
+      continue;
+    }
+
+    if (bed_elevation(i, j) > bed_elevation_threshold and ice_rises_mask.as_int(i, j) == 0) {
+      m_tmp(i, j) = 2.0;
+    }
+  }
+
+  result.copy_from(m_tmp);
+}
 
 } // end of namespace ocean
 } // end of namespace pism
