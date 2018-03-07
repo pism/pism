@@ -594,7 +594,7 @@ void Pico::compute_distances() {
 //! Use a relative distance to the grounding line determine the ocean_box_mask
 //! Finally, compute the extent of each ocean box in each basin.
 
-void Pico::identify_ocean_box_mask(const Constants &cc) {
+void Pico::identify_ocean_box_mask(const PicoConstants &cc) {
 
   m_log->message(5, "starting identify_ocean_box_mask routine\n");
 

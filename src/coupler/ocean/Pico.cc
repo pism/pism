@@ -42,7 +42,7 @@
 namespace pism {
 namespace ocean {
 
-Pico::Constants::Constants(const Config &config) {
+PicoConstants::PicoConstants(const Config &config) {
 
   // standard value for Antarctic basin mask
   default_numberOfBasins = static_cast<int>(config.get_double("ocean.pico.number_of_basins"));
@@ -222,7 +222,7 @@ void Pico::init_impl() {
 
   m_log->message(4, "PICO basin min=%f,max=%f\n", m_cbasins.min(), m_cbasins.max());
 
-  Constants cc(*m_config);
+  PicoConstants cc(*m_config);
   initBasinsOptions(cc);
 
   round_basins(m_cbasins);
@@ -282,7 +282,7 @@ void Pico::write_model_state_impl(const PIO &output) const {
 //! continental_shelf_depth: threshold for definition of continental shelf area
 //!                          area shallower than threshold is used for ocean input
 
-void Pico::initBasinsOptions(const Constants &cc) {
+void Pico::initBasinsOptions(const PicoConstants &cc) {
 
   m_log->message(5, "starting initBasinOptions\n");
 
@@ -317,7 +317,7 @@ void Pico::update_impl(double my_t, double my_dt) {
   m_theta_ocean->average(m_t, m_dt);
   m_salinity_ocean->average(m_t, m_dt);
 
-  Constants cc(*m_config);
+  PicoConstants cc(*m_config);
 
   test();
 
@@ -378,7 +378,7 @@ void Pico::update_impl(double my_t, double my_dt) {
 //! We use dummy ocean data if no such average can be calculated.
 //!
 
-void Pico::compute_ocean_input_per_basin(const Constants &cc,
+void Pico::compute_ocean_input_per_basin(const PicoConstants &cc,
                                          const IceModelVec2Int &basin_mask,
                                          const IceModelVec2Int &continental_shelf_mask,
                                          const IceModelVec2S &salinity_ocean,
@@ -447,7 +447,7 @@ void Pico::compute_ocean_input_per_basin(const Constants &cc,
 //! Toc_box0 and Soc_box0 were computed in function compute_ocean_input_per_basin.
 //! We enforce that Toc_box0 is always at least the local pressure melting point.
 
-void Pico::set_ocean_input_fields(const Constants &cc) {
+void Pico::set_ocean_input_fields(const PicoConstants &cc) {
 
   m_log->message(5, "starting set_ocean_input_fields routine\n");
 
@@ -537,13 +537,13 @@ void Pico::set_ocean_input_fields(const Constants &cc) {
 }
 
 
-double f_pressure(const Pico::Constants &cc, double ice_thickness){
+double f_pressure(const PicoConstants &cc, double ice_thickness){
       // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
       return cc.rhoi * cc.earth_grav * ice_thickness * 1e-4;
 }
 
   //! See equation A6 and lines before in PICO paper
-double f_T_star(const Pico::Constants &cc, double salinity, double temperature, double pressure){
+double f_T_star(const PicoConstants &cc, double salinity, double temperature, double pressure){
        // in Kelvin
       return cc.a * salinity + cc.b - cc.c * pressure - temperature;
 }
@@ -554,7 +554,7 @@ double f_area(double counter_boxes, double m_dx, double m_dy){
       return counter_boxes * m_dx * m_dy;
 }
 
-double f_Toc_other_boxes(const Pico::Constants &cc, double area, double gamma_T,
+double f_Toc_other_boxes(const PicoConstants &cc, double area, double gamma_T,
   double temp_in_boundary, double T_star,
     double overturning, double salinity_in_boundary){
 
@@ -566,12 +566,12 @@ double f_Toc_other_boxes(const Pico::Constants &cc, double area, double gamma_T,
       cc.a * salinity_in_boundary); // K
 }
 
-double f_Soc_box1(const Pico::Constants &cc, double Toc_box0, double Soc_box0, double Toc){
+double f_Soc_box1(const PicoConstants &cc, double Toc_box0, double Soc_box0, double Toc){
 
     return Soc_box0 - (Soc_box0 / (cc.nu * cc.lambda)) * (Toc_box0 - Toc);
 }
 
-double f_Soc_other_boxes(const Pico::Constants &cc, double salinity_in_boundary, double temperature_in_boundary, double Toc){
+double f_Soc_other_boxes(const PicoConstants &cc, double salinity_in_boundary, double temperature_in_boundary, double Toc){
 
     return salinity_in_boundary - salinity_in_boundary * (temperature_in_boundary -
       Toc) / (cc.nu * cc.lambda); // psu;
@@ -580,26 +580,26 @@ double f_Soc_other_boxes(const Pico::Constants &cc, double salinity_in_boundary,
 
 //! equation 5 in the PICO paper.
 //! calculate pressure melting point from potential temperature
-double f_pot_pressure_melting(const Pico::Constants &cc, double salinity, double pressure){
+double f_pot_pressure_melting(const PicoConstants &cc, double salinity, double pressure){
     // using coefficients for potential temperature
     return cc.a * salinity + cc.b - cc.c * pressure;
 }
 
 //! equation 5 in the PICO paper.
 //! calculate pressure melting point from in-situ temperature
-double f_pressure_melting(const Pico::Constants &cc, double salinity, double pressure){
+double f_pressure_melting(const PicoConstants &cc, double salinity, double pressure){
     // using coefficients for potential temperature
     return cc.as * salinity + cc.bs - cc.cs * pressure;
 }
 
 //! equation 8 in the PICO paper.
-double f_bmelt_rate(const Pico::Constants &cc, double m_gamma_T, double pm_point, double Toc){
+double f_bmelt_rate(const PicoConstants &cc, double m_gamma_T, double pm_point, double Toc){
     // in m/s
     return m_gamma_T / (cc.nu * cc.lambda) * (Toc - pm_point);
 }
 
 //! Beckmann & Goose meltrate
-double f_bmelt_rate_beckm_goose(const Pico::Constants &cc, double Toc, double pot_pm_point){
+double f_bmelt_rate_beckm_goose(const PicoConstants &cc, double Toc, double pot_pm_point){
       // in W/m^2
       double heatflux = cc.meltFactor * cc.rhow * cc.c_p_ocean * cc.gamma_T *
                         (Toc - pot_pm_point); // in W/m^2
@@ -608,7 +608,7 @@ double f_bmelt_rate_beckm_goose(const Pico::Constants &cc, double Toc, double po
 }
 
 //! equation 3 in the PICO paper. See also equation 4.
-double f_overturning(const Pico::Constants &cc, double overturning_coeff, double Soc_box0,
+double f_overturning(const PicoConstants &cc, double overturning_coeff, double Soc_box0,
     double Soc, double Toc_box0, double Toc){
  // in m^3/s
     return overturning_coeff * cc.rho_star * (cc.beta * (Soc_box0 - Soc) - cc.alpha * (
@@ -618,7 +618,7 @@ double f_overturning(const Pico::Constants &cc, double overturning_coeff, double
 //! calculate p coefficent for solving the quadratic temperature equation
 //! trough the p-q formula. See equation A12 in the PICO paper.
 //! is only used once in f_Toc_box1(...)
-double f_p_coeff(const Pico::Constants &cc, double g1, double overturning_coeff,
+double f_p_coeff(const PicoConstants &cc, double g1, double overturning_coeff,
     double s1){
     // in 1 / (1/K) = K
     return g1 / (overturning_coeff * cc.rho_star * (cc.beta * s1 - cc.alpha));
@@ -627,14 +627,14 @@ double f_p_coeff(const Pico::Constants &cc, double g1, double overturning_coeff,
 //! calculate q coefficent for solving the quadratic temperature equation
 //! trough the p-q formula. See equation A12 in the PICO paper.
 //! is only used once in f_Toc_box1(...)
-double f_q_coeff(const Pico::Constants &cc, double g1, double overturning_coeff,
+double f_q_coeff(const PicoConstants &cc, double g1, double overturning_coeff,
     double s1, double T_star){
     // in K / (1/K) = K^2
     return (g1 * T_star) / (overturning_coeff * cc.rho_star * (cc.beta * s1 - cc.alpha));
 }
 
 
-double f_Toc_box1(const Pico::Constants &cc, double area, double T_star, double Soc_box0, double Toc_box0,
+double f_Toc_box1(const PicoConstants &cc, double area, double T_star, double Soc_box0, double Toc_box0,
              bool *success) {
 
   double g1 = area * cc.gamma_T;
@@ -676,7 +676,7 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
                                      const IceModelVec2Int &box_mask,
                                      const IceModelVec2S &Toc_box0,
                                      const IceModelVec2S &Soc_box0,
-                                     const Constants &cc,
+                                     const PicoConstants &cc,
                                      IceModelVec2S &T_star,
                                      IceModelVec2S &Toc,
                                      IceModelVec2S &Soc,
@@ -820,7 +820,7 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
 
 void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
                                             const IceModelVec2Int &shelf_mask,
-                                            const Constants &cc,
+                                            const PicoConstants &cc,
                                             IceModelVec2Int &box_mask,
                                             IceModelVec2S &T_star,
                                             IceModelVec2S &Toc,
@@ -972,7 +972,7 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
 //! Also set basal melt rate to zero if shelf_id is zero, which is mainly
 //! at the computational domain boundary.
 
-void Pico::calculate_basal_melt_missing_cells(const Constants &cc,
+void Pico::calculate_basal_melt_missing_cells(const PicoConstants &cc,
                                               const IceModelVec2Int &shelf_mask,
                                               const IceModelVec2Int &box_mask,
                                               const IceModelVec2S &ice_thickness,
