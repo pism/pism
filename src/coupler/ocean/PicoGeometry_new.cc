@@ -425,10 +425,8 @@ void PicoGeometry::compute_distances_gl(const IceModelVec2CellType &mask,
 
   result.update_ghosts();
 
-  // DistGL calculation: Derive the distance from the grounding line for
-  // all ice shelf cells iteratively.
-  // Ice holes within the shelf are treated like ice shelf cells,
-  // if exicerises_set, also ice rises are treated like ice shelf cells.
+  // Derive the distance from the grounding line for all ice shelf cells iteratively.
+  double current_label = 1;
   double continue_loop = 1;
   while (continue_loop != 0) {
 
@@ -437,16 +435,12 @@ void PicoGeometry::compute_distances_gl(const IceModelVec2CellType &mask,
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (mask(i, j) == MASK_FLOATING or
-          ocean_mask(i, j) == EXCLUDE or
-          (exclude_rises and ice_rises(i, j) == EXCLUDE)) {
-        // this cell is floating or an hole in the ice shelf (or an ice rise)
+      if (result.as_int(i, j) == 0) {
 
         auto R = result.int_star(i, j);
 
         if (R.ij == 0 and
-            (R.n == current_label or R.s == current_label or
-             R.e == current_label or R.w == current_label)) {
+            (R.n == current_label or R.s == current_label or R.e == current_label or R.w == current_label)) {
           // i.e. this is an shelf cell with no distance assigned yet and with a neighbor
           // that has a distance assigned
           result(i, j) = current_label + 1;
