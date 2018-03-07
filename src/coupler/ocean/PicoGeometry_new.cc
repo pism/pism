@@ -367,18 +367,16 @@ void PicoGeometry::compute_ocean_mask(const IceModelVec2CellType &cell_type,
 void PicoGeometry::compute_distances_gl(const IceModelVec2CellType &mask,
                                         const IceModelVec2Int &ocean_mask,
                                         const IceModelVec2Int &ice_rises,
-                                        IceModelVec2Int &dist_gl) {
+                                        IceModelVec2Int &result) {
 
  // to find DistGL, 1 if floating and directly adjacent to a grounded cell
-  double currentLabelGL = 1;
-  double global_continue_loop = 1;
-  double local_continue_loop  = 0;
+  double current_label = 1;
 
-  IceModelVec::AccessList list{ &mask, &ice_rises, &ocean_mask, &dist_gl };
+  IceModelVec::AccessList list{ &mask, &ice_rises, &ocean_mask, &result };
 
   bool exclude_rises = true;
 
-  dist_gl.set(0);
+  result.set(0);
 
   const int EXCLUDE = 1;
   const int INNER = 2;
@@ -417,50 +415,49 @@ void PicoGeometry::compute_distances_gl(const IceModelVec2CellType &mask,
 
       if (neighbor_to_land) {
         // i.e. there is a grounded neighboring cell (which is not ice rise!)
-        dist_gl(i, j) = currentLabelGL;
+        result(i, j) = current_label;
       } // no else
 
     }
   }
 
-  dist_gl.update_ghosts();
+  result.update_ghosts();
 
   // DistGL calculation: Derive the distance from the grounding line for
   // all ice shelf cells iteratively.
   // Ice holes within the shelf are treated like ice shelf cells,
   // if exicerises_set, also ice rises are treated like ice shelf cells.
-  global_continue_loop = 1;
-  while (global_continue_loop != 0) {
+  double continue_loop = 1;
+  while (continue_loop != 0) {
 
-    local_continue_loop = 0;
+    continue_loop = 0;
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      bool condition; // this cell is floating or an hole in the ice shelf (or an ice rise)
-      if (exclude_rises) {
-        condition = (mask(i, j) == MASK_FLOATING || ice_rises(i, j) == EXCLUDE ||
-                     ocean_mask(i, j) == EXCLUDE);
-      } else {
-        condition = (mask(i, j) == MASK_FLOATING || ocean_mask(i, j) == EXCLUDE);
+      if (mask(i, j) == MASK_FLOATING or
+          ocean_mask(i, j) == EXCLUDE or
+          (exclude_rises and ice_rises(i, j) == EXCLUDE)) {
+        // this cell is floating or an hole in the ice shelf (or an ice rise)
+
+        auto R = result.int_star(i, j);
+
+        if (R.ij == 0 and
+            (R.n == current_label or R.s == current_label or
+             R.e == current_label or R.w == current_label)) {
+          // i.e. this is an shelf cell with no distance assigned yet and with a neighbor
+          // that has a distance assigned
+          result(i, j) = current_label + 1;
+          continue_loop = 1;
+        }
       }
+    } // loop over grid points
 
-      if (condition && dist_gl(i, j) == 0 &&
-          (dist_gl(i, j + 1) == currentLabelGL || dist_gl(i, j - 1) == currentLabelGL ||
-           dist_gl(i + 1, j) == currentLabelGL || dist_gl(i - 1, j) == currentLabelGL)) {
-        // i.e. this is an shelf cell with no distance assigned yet and with a neighbor that has a distance assigned
-        dist_gl(i, j) = currentLabelGL + 1;
-        local_continue_loop = 1;
-      } //if
+    current_label++;
+    result.update_ghosts();
 
-    } // for
-
-    currentLabelGL++;
-    dist_gl.update_ghosts();
-
-    global_continue_loop = GlobalMax(m_grid->com, local_continue_loop);
-
-  } // while: find DistGL
+    continue_loop = GlobalMax(m_grid->com, continue_loop);
+  }
 }
 
 void PicoGeometry::compute_distances_if(const IceModelVec2CellType &mask,
