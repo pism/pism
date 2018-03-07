@@ -212,7 +212,9 @@ void PicoGeometry::compute_ice_rises(const IceModelVec2CellType &cell_type,
     }
   }
 
-  label_tmp();
+  if (m_config->get_boolean("ocean.pico.exclude_icerises")) {
+    label_tmp();
+  }
 
   relabel_by_size(m_tmp);
 
