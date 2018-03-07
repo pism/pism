@@ -629,6 +629,35 @@ double f_overturning(const Pico::Constants &cc, double overturning_coeff, double
         Toc_box0 - Toc));
 }
 
+double f_Toc(const Pico::Constants &cc, double area, double T_star, double Soc_box0, double Toc_box0,
+             bool *success) {
+  double g1 = area * cc.gamma_T;
+  double s1 = Soc_box0 / (cc.nu * cc.lambda);
+
+  // These are the coefficients for solving the quadratic temperature equation
+  // trough the p-q formula.
+  double p_coeff = f_p_coeff(cc, g1, cc.overturning_coeff, s1);
+  double q_coeff = f_q_coeff(cc, g1, cc.overturning_coeff, s1, T_star);
+
+  // This can only happen if T_star > 0.25*p_coeff, in particular T_star > 0
+  // which can only happen for values of Toc_box0 close to the local pressure melting point
+  if ((0.25 * p_coeff * p_coeff - q_coeff) < 0.0) {
+    q_coeff = 0.25 * p_coeff * p_coeff;
+
+    if (success) {
+      *success = false;
+    }
+  }
+
+  if (success) {
+    *success = true;
+  }
+
+  // temperature for box 1, p-q formula
+  return f_Toc_box1(cc, Toc_box0, p_coeff, q_coeff); // in Kelvin
+}
+
+
 
 //! Compute the basal melt for each ice shelf cell in box 1
 
@@ -700,30 +729,13 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
 
       double area_box1 = f_area(counter_boxes[shelf_id][1], m_dx, m_dy);
 
-      {
-        double g1 = area_box1 * cc.gamma_T;
-        double s1 = Soc_box0(i, j) / (cc.nu * cc.lambda);
+      bool success = false;
+      Toc(i, j) = f_Toc(cc, area_box1, T_star(i, j), Soc_box0(i, j), Toc_box0(i, j), &success);
 
-        // These are the coefficients for solving the quadratic temperature equation
-        // trough the p-q formula.
-        double p_coeff = f_p_coeff(cc, g1, cc.overturning_coeff, s1);
-        double q_coeff = f_q_coeff(cc, g1, cc.overturning_coeff, s1, T_star(i, j));
-
-        // This can only happen if T_star > 0.25*p_coeff, in particular T_star > 0
-        // which can only happen for values of Toc_box0 close to the local pressure melting point
-        if ((0.25 * PetscSqr(p_coeff) - q_coeff) < 0.0) {
-
-          m_log->message(5, "PICO ocean WARNING: negative square root argument at %d, %d\n"
-                         "probably because of positive T_star=%f \n"
-                         "Not aborting, but setting square root to 0... \n",
-                         i, j, T_star(i, j));
-
-          q_coeff = 0.25 * PetscSqr(p_coeff);
-          lcountHelpterm += 1;
-        }
-
-        // temperature for box 1, p-q formula
-        Toc(i, j) = f_Toc_box1(cc, Toc_box0(i, j), p_coeff, q_coeff); // in Kelvin
+      if (success == false) {
+        m_log->message(5, "PICO ocean WARNING: negative square root argument at %d, %d\n"
+                       "Not aborting, but setting square root to 0... \n",
+                       i, j);
       }
 
       // salinity for box 1
