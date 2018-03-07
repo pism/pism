@@ -896,11 +896,11 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
 
           // temperature for Box i > 1
           Toc(i, j) = f_Toc_other_boxes(cc, area_boxi, cc.gamma_T, mean_temperature_in_boundary,
-            T_star(i, j), mean_overturning_in_box1, mean_salinity_in_boundary);
+                        T_star(i, j), mean_overturning_in_box1, mean_salinity_in_boundary);
 
           // salinity for Box i > 1
           Soc(i, j) = f_Soc_other_boxes(cc, mean_salinity_in_boundary, mean_temperature_in_boundary,
-            Toc(i, j)); // psu
+                        Toc(i, j)); // psu
 
           // potential pressure melting point needed to calculate thermal driving
           // using coefficients for potential temperature
