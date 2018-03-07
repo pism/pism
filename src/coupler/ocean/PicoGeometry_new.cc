@@ -513,48 +513,5 @@ void PicoGeometry::compute_distances(const IceModelVec2CellType &mask,
   } // while: find DistIF
 }
 
-
-/*!
- * Solve the eikonal equation (crudely).
- *
- * Initial state of the input:
- *
- * - the domain is filled with zeros,
- * - the initial wave front is marked with ones
- * - points outside the domain are marked with -1
- *
- * Assumes that the input (mask) has ghosts of width 1.
-
-void PicoGeometry::eikonal_equation(IceModelVec2Int &mask) {
-  IceModelVec::AccessList list(mask);
-
-  const Direction dirs[] = {North, East, South, West};
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      auto M = mask.star(i, j);
-
-      if (mask.ij > 0) {
-        // this point was processed already; proceed to the next one
-        continue;
-      }
-
-      int min_distance = 0;
-      for (int n = 0; n < 4; ++n) {
-        Direction direction = dirs[n];
-
-        if (M[direction] > 0 and M[direction] < min_)
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-}
-*/
 } // end of namespace ocean
 } // end of namespace pism
