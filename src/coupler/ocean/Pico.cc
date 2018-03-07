@@ -539,6 +539,80 @@ void Pico::set_ocean_input_fields(const Constants &cc) {
 }
 
 
+double f_pressure(const Pico::Constants &cc, double ice_thickness){
+      // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
+      return cc.rhoi * cc.earth_grav * ice_thickness * 1e-4;
+}
+
+  //! See equation A6 and lines before in PICO paper
+double f_T_star(const Pico::Constants &cc, double Soc_box0, double Toc_box0, double pressure){
+       // in Kelvin
+      return cc.a * Soc_box0 + cc.b - cc.c * pressure - Toc_box0;
+}
+
+// FIXME: check types of the input arguments.
+double f_area(double counter_boxes, double m_dx, double m_dy){
+      //FIXME this assumes rectangular cell areas, adjust with real areas from projection
+      return counter_boxes * m_dx * m_dy;
+}
+
+//! calculate p coefficent for solving the quadratic temperature equation
+//! trough the p-q formula. See equation A12 in the PICO paper.
+double f_p_coeff(const Pico::Constants &cc, double g1, double overturning_coeff,
+    double s1){
+    // in 1 / (1/K) = K
+    return g1 / (overturning_coeff * cc.rho_star * (cc.beta * s1 - cc.alpha));
+}
+
+//! calculate q coefficent for solving the quadratic temperature equation
+//! trough the p-q formula. See equation A12 in the PICO paper.
+double f_q_coeff(const Pico::Constants &cc, double g1, double overturning_coeff,
+    double s1, double T_star){
+    // in K / (1/K) = K^2
+    return (g1 * T_star) / (overturning_coeff * cc.rho_star * (cc.beta * s1 - cc.alpha));
+}
+
+//! equation A12 in the PICO paper.
+double f_Toc(const Pico::Constants &cc, double Toc_box0, double p_coeff,
+    double q_coeff){
+    // in K / (1/K) = K^2
+    return Toc_box0 - (-0.5 * p_coeff + sqrt(0.25 * PetscSqr(p_coeff) - q_coeff));
+}
+
+double f_Soc(const Pico::Constants &cc, double Toc_box0, double Soc_box0, double Toc){
+
+    return Soc_box0 - (Soc_box0 / (cc.nu * cc.lambda)) * (Toc_box0 - Toc);
+}
+
+//! equation 5 in the PICO paper.
+//! calculate pressure melting point from potential temperature
+double f_pot_pressure_melting(const Pico::Constants &cc, double Soc, double pressure){
+    // using coefficients for potential temperature
+    return cc.a * Soc + cc.b - cc.c * pressure;
+}
+
+//! equation 5 in the PICO paper.
+//! calculate pressure melting point from in-situ temperature
+double f_pressure_melting(const Pico::Constants &cc, double Soc, double pressure){
+    // using coefficients for potential temperature
+    return cc.as * Soc + cc.bs - cc.cs * pressure;
+}
+
+//! equation 8 in the PICO paper.
+double f_bmelt_rate(const Pico::Constants &cc, double m_gamma_T, double pm_point, double Toc){
+    // in m/s
+    return (-m_gamma_T / (cc.nu * cc.lambda)) * (pm_point - Toc);
+}
+
+//! equation 3 in the PICO paper. See also equation 4.
+double f_overturning(const Pico::Constants &cc, double overturning_coeff, double Soc_box0,
+    double Soc, double Toc_box0, double Toc){
+ // in m^3/s
+    return overturning_coeff * cc.rho_star * (cc.beta * (Soc_box0 - Soc) - cc.alpha * (
+        Toc_box0 - Toc));
+}
+
+
 //! Compute the basal melt for each ice shelf cell in box 1
 
 //! Here are the core physical equations of the PICO model (for box1):
@@ -603,21 +677,20 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
 
     if ((box_mask(i, j) == 1) && (shelf_id > 0.0)) {
 
-      // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
-      const double pressure = cc.rhoi * cc.earth_grav * ice_thickness(i, j) * 1e-4;
-      T_star(i, j) = cc.a * Soc_box0(i, j) + cc.b - cc.c * pressure - Toc_box0(i, j); // in Kelvin
+      double pressure = f_pressure(cc, ice_thickness(i, j));
+
+      T_star(i, j) = f_T_star(cc, Soc_box0(i, j), Toc_box0(i, j), pressure);
 
       //FIXME this assumes rectangular cell areas, adjust with real areas from projection
-      double area_box1 = (counter_boxes[shelf_id][1] * m_dx * m_dy);
+      double area_box1 = f_area(counter_boxes[shelf_id][1], m_dx, m_dy);
 
       double g1 = area_box1 * m_gamma_T;
       double s1 = Soc_box0(i, j) / (cc.nu * cc.lambda);
 
       // These are the coefficients for solving the quadratic temperature equation
       // trough the p-q formula.
-      double p_coeff = g1 / (m_overturning_coeff * cc.rho_star * (cc.beta * s1 - cc.alpha)); // in 1 / (1/K) = K
-      double q_coeff =
-          (g1 * T_star(i, j)) / (m_overturning_coeff * cc.rho_star * (cc.beta * s1 - cc.alpha)); // in K / (1/K) = K^2
+      double p_coeff = f_p_coeff(cc, g1, m_overturning_coeff, s1);
+      double q_coeff = f_q_coeff(cc, g1, m_overturning_coeff, s1, T_star(i, j));
 
       // This can only happen if T_star > 0.25*p_coeff, in particular T_star > 0
       // which can only happen for values of Toc_box0 close to the local pressure melting point
@@ -633,22 +706,18 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
       }
 
       // temperature for box 1, p-q formula
-      Toc(i, j) = Toc_box0(i, j) - (-0.5 * p_coeff + sqrt(0.25 * PetscSqr(p_coeff) - q_coeff)); // in Kelvin
+      Toc(i, j) = f_Toc(cc, Toc_box0(i, j), p_coeff, q_coeff); // in Kelvin
       // salinity for box 1
-      Soc(i, j) =
-          Soc_box0(i, j) - (Soc_box0(i, j) / (cc.nu * cc.lambda)) * (Toc_box0(i, j) - Toc(i, j)); // in psu
+      Soc(i, j) = f_Soc(cc, Toc_box0(i, j), Soc_box0(i, j), Toc(i, j)); // in psu
 
-      // potential pressure melting pointneeded to calculate thermal driving
-      // using coefficients for potential temperature
-      double potential_pressure_melting_point = cc.a * Soc(i, j) + cc.b - cc.c * pressure;
+      // potential pressure melting point needed to calculate thermal driving
+      double pot_pm_point = f_pot_pressure_melting(cc, Soc(i, j), pressure);
 
       // basal melt rate for box 1
-      basal_melt_rate(i, j) =
-          (-m_gamma_T / (cc.nu * cc.lambda)) * (potential_pressure_melting_point - Toc(i, j)); // in m/s
+      basal_melt_rate(i, j) = f_bmelt_rate(cc, m_gamma_T, pot_pm_point, Toc(i,j));
 
-      overturning(i, j) =
-          m_overturning_coeff * cc.rho_star *
-          (cc.beta * (Soc_box0(i, j) - Soc(i, j)) - cc.alpha * (Toc_box0(i, j) - Toc(i, j))); // in m^3/s
+      overturning(i, j) = f_overturning(cc, m_overturning_coeff, Soc_box0(i,j),
+       Soc(i,j), Toc_box0(i,j), Toc(i,j));
 
       // average the temperature, salinity and overturning over the entire box1
       // this is used as input for box 2
@@ -660,7 +729,7 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
       lmean_overturning_box1_vector[shelf_id] += overturning(i, j);
 
       // in situ pressure melting point
-      T_pressure_melting(i, j) = cc.as * Soc(i, j) + cc.bs - cc.cs * pressure; //  in Kelvin
+      T_pressure_melting(i, j) = f_pressure_melting(cc, Soc(i, j), pressure);//  in Kelvin
 
     } else { // i.e., not GL_box
       basal_melt_rate(i, j) = 0.0;
