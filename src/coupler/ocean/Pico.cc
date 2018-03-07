@@ -109,7 +109,7 @@ Pico::Pico(IceGrid::ConstPtr g) : PGivenClimate<CompleteOceanModel, CompleteOcea
 
   process_options();
 
-  m_exicerises_set = options::Bool("-exclude_icerises", "exclude ice rises in PICO");
+  m_exicerises_set = m_config->get_boolean("ocean.pico.exclude_icerises");
 
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
