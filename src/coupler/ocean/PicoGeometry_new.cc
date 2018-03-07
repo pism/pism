@@ -364,6 +364,153 @@ void PicoGeometry::compute_ocean_mask(const IceModelVec2CellType &cell_type,
   result.copy_from(m_tmp);
 }
 
+void PicoGeometry::compute_distances(const IceModelVec2CellType &mask,
+                                     const IceModelVec2Int &ocean_mask,
+                                     const IceModelVec2Int &ice_rises,
+                                     IceModelVec2Int &dist_if,
+                                     IceModelVec2Int &dist_gl) {
+
+  double currentLabelGL = 1; // to find DistGL, 1 if floating and directly adjacent to a grounded cell
+  double currentLabelIF = 1; // to find DistIF, 1 if floating and directly adjacent to an ocean cell
+
+  double global_continue_loop = 1;
+  double local_continue_loop  = 0;
+
+  IceModelVec::AccessList list{ &mask, &ice_rises, &ocean_mask, &dist_if, &dist_gl };
+
+  bool exclude_rises = true;
+
+  dist_gl.set(0);
+  dist_if.set(0);
+
+  // Find the grounding line and the ice front and
+  // set DistGL to 1 if ice shelf cell is next to the grounding line,
+  // set DistIF to 1 if ice shelf cell is next to the calving front.
+  // Ice holes within the shelf are treated like ice shelf cells,
+  // if exicerises_set, also ice rises are treated like ice shelf cells.
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    bool condition;
+    if (exclude_rises) {
+      condition =
+          (mask(i, j) == MASK_FLOATING || ice_rises(i, j) == EXCLUDE || ocean_mask(i, j) == EXCLUDE);
+    } else {
+      condition = (mask(i, j) == MASK_FLOATING || ocean_mask(i, j) == EXCLUDE);
+    }
+
+    if (condition) { //if this is an ice shelf cell (or an ice rise) or a hole in an ice shelf
+
+      // label the shelf cells adjacent to the grounding line with DistGL = 1
+      bool neighbor_to_land;
+      if (exclude_rises) {
+        neighbor_to_land =
+            (ice_rises(i, j + 1) == INNER || ice_rises(i, j - 1) == INNER ||
+             ice_rises(i + 1, j) == INNER || ice_rises(i - 1, j) == INNER ||
+             ice_rises(i + 1, j + 1) == INNER || ice_rises(i + 1, j - 1) == INNER ||
+             ice_rises(i - 1, j + 1) == INNER || ice_rises(i - 1, j - 1) == INNER);
+      } else {
+        neighbor_to_land =
+            (mask(i, j + 1) < MASK_FLOATING || mask(i, j - 1) < MASK_FLOATING || mask(i + 1, j) < MASK_FLOATING ||
+             mask(i - 1, j) < MASK_FLOATING || mask(i + 1, j + 1) < MASK_FLOATING || mask(i + 1, j - 1) < MASK_FLOATING ||
+             mask(i - 1, j + 1) < MASK_FLOATING || mask(i - 1, j - 1) < MASK_FLOATING);
+      }
+
+      if (neighbor_to_land) {
+        // i.e. there is a grounded neighboring cell (which is not ice rise!)
+        dist_gl(i, j) = currentLabelGL;
+      } // no else
+
+      // label the shelf cells adjacent to the calving front with DistIF = 1,
+      // we do not need to exclude ice rises in this case.
+      bool neighbor_to_ocean;
+      neighbor_to_ocean = (ocean_mask(i, j + 1) == INNER || ocean_mask(i, j - 1) == INNER ||
+                           ocean_mask(i + 1, j) == INNER || ocean_mask(i - 1, j) == INNER);
+
+      if (neighbor_to_ocean) {
+        dist_if(i, j) = currentLabelIF;
+      }
+    }
+  }
+
+  dist_gl.update_ghosts();
+  dist_if.update_ghosts();
+
+  // DistGL calculation: Derive the distance from the grounding line for
+  // all ice shelf cells iteratively.
+  // Ice holes within the shelf are treated like ice shelf cells,
+  // if exicerises_set, also ice rises are treated like ice shelf cells.
+  global_continue_loop = 1;
+  while (global_continue_loop != 0) {
+
+    local_continue_loop = 0;
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      bool condition; // this cell is floating or an hole in the ice shelf (or an ice rise)
+      if (exclude_rises) {
+        condition = (mask(i, j) == MASK_FLOATING || ice_rises(i, j) == EXCLUDE ||
+                     ocean_mask(i, j) == EXCLUDE);
+      } else {
+        condition = (mask(i, j) == MASK_FLOATING || ocean_mask(i, j) == EXCLUDE);
+      }
+
+      if (condition && dist_gl(i, j) == 0 &&
+          (dist_gl(i, j + 1) == currentLabelGL || dist_gl(i, j - 1) == currentLabelGL ||
+           dist_gl(i + 1, j) == currentLabelGL || dist_gl(i - 1, j) == currentLabelGL)) {
+        // i.e. this is an shelf cell with no distance assigned yet and with a neighbor that has a distance assigned
+        dist_gl(i, j) = currentLabelGL + 1;
+        local_continue_loop = 1;
+      } //if
+
+    } // for
+
+    currentLabelGL++;
+    dist_gl.update_ghosts();
+
+    global_continue_loop = GlobalMax(m_grid->com, local_continue_loop);
+
+  } // while: find DistGL
+
+  // DistIF calculation: Derive the distance from the calving front for
+  // all ice shelf cells iteratively.
+  // Ice holes within the shelf are treated like ice shelf cells,
+  // if exicerises_set, also ice rises are treated like ice shelf cells.
+  global_continue_loop = 1; // start loop
+  while (global_continue_loop != 0) {
+
+    local_continue_loop = 0;
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      bool condition; // this cell is floating or an hole in the ice shelf (or an ice rise)
+      if (exclude_rises) {
+        condition = (mask(i, j) == MASK_FLOATING || ice_rises(i, j) == EXCLUDE ||
+                     ocean_mask(i, j) == EXCLUDE);
+      } else {
+        condition = (mask(i, j) == MASK_FLOATING || ocean_mask(i, j) == EXCLUDE);
+      }
+
+      if (condition && dist_if(i, j) == 0 &&
+          (dist_if(i, j + 1) == currentLabelIF || dist_if(i, j - 1) == currentLabelIF ||
+           dist_if(i + 1, j) == currentLabelIF || dist_if(i - 1, j) == currentLabelIF)) {
+        // i.e. this is an shelf cell with no distance assigned yet and with a neighbor that has a distance assigned
+        dist_if(i, j) = currentLabelIF + 1;
+        local_continue_loop = 1;
+      } //if
+
+    } // for
+
+    currentLabelIF++;
+    dist_if.update_ghosts();
+    global_continue_loop = GlobalMax(m_grid->com, local_continue_loop);
+
+  } // while: find DistIF
+}
+
+
 /*!
  * Solve the eikonal equation (crudely).
  *
