@@ -135,6 +135,7 @@ void Pico::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
   // ice rise or open ocean.
   int iteration_round = 0;
 
+  double continental_shelf_depth = m_config->get_double("ocean.pico.continental_shelf_depth");
 
   // continue as long as new grid cells are found for which values are set
   while (all_inner_identified > previous_step_identified) {
@@ -153,7 +154,7 @@ void Pico::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
       if (masktype == "ocean_continental_shelf") {
         // true if not being open ocean or being less deep than continential shelf depth
         // so all the ice sheet plus shelves plus shallower ocean
-        masktype_condition = (mask(i, j) != MASK_ICE_FREE_OCEAN || bed(i, j) >= m_continental_shelf_depth);
+        masktype_condition = (mask(i, j) != MASK_ICE_FREE_OCEAN || bed(i, j) >= continental_shelf_depth);
       } else if (masktype == "icerises") {
         // true for grounded ice
         masktype_condition = (mask(i, j) == MASK_GROUNDED);

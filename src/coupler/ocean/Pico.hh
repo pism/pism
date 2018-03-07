@@ -43,7 +43,7 @@ public:
 
     double earth_grav, rhoi, rhow, rho_star, nu, latentHeat, c_p_ocean, lambda, a, b, c, as, bs, cs, alpha, beta;
 
-    double default_gamma_T, default_overturning_coeff, T_dummy, S_dummy;
+    double gamma_T, overturning_coeff, T_dummy, S_dummy;
 
     double gamma_T_o, meltFactor, meltSalinity, b2;
     double continental_shelf_depth;
@@ -127,10 +127,6 @@ private:
 
   std::vector<std::vector<double> > counter_boxes; // matrix containing the number of shelf cells per basin and box
                                                    // used for area calculation
-
-  // standard values are defined in Constants
-  // here needed to store custom values from user options.
-  double m_gamma_T, m_overturning_coeff, m_continental_shelf_depth;
 
   int m_numberOfBasins, m_numberOfBoxes, m_numberOfShelves, m_Mx, m_My, m_dx, m_dy;
 };

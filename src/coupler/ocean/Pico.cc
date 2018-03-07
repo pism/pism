@@ -85,9 +85,10 @@ Pico::Constants::Constants(const Config &config) {
   alpha = 7.5e-5; // 1/K
   beta  = 7.7e-4; // 1/psu
 
-  default_gamma_T = config.get_double("ocean.pico.heat_exchange_coefficent"); // m s-1, best fit value in paper
-  default_overturning_coeff =
-      config.get_double("ocean.pico.overturning_coefficent"); // m6 kg−1 s−1, best fit value in paper
+  // m s-1, best fit value in paper
+  gamma_T = config.get_double("ocean.pico.heat_exchange_coefficent");
+  // m6 kg−1 s−1, best fit value in paper
+  overturning_coeff = config.get_double("ocean.pico.overturning_coefficent");
 
   // for shelf cells where normal box model is not calculated,
   // used in calculate_basal_melt_missing_cells(), compare POConstantPIK
@@ -298,16 +299,13 @@ void Pico::initBasinsOptions(const Constants &cc) {
   m_mean_temperature_boundary_vector.resize(m_numberOfBasins);
   m_mean_overturning_box1_vector.resize(m_numberOfBasins);
 
-  m_gamma_T           = cc.default_gamma_T;
-  m_overturning_coeff = cc.default_overturning_coeff;
   m_log->message(2, "  -Using %d drainage basins and values: \n"
                     "   gamma_T= %.2e, overturning_coeff = %.2e... \n",
-                 m_numberOfBasins, m_gamma_T, m_overturning_coeff);
+                 m_numberOfBasins, cc.gamma_T, cc.overturning_coeff);
 
-  m_continental_shelf_depth = cc.continental_shelf_depth;
   m_log->message(2, "  -Depth of continental shelf for computation of temperature and salinity input\n"
                     "   is set for whole domain to continental_shelf_depth=%.0f meter\n",
-                 m_continental_shelf_depth);
+                 cc.continental_shelf_depth);
 }
 
 void Pico::update_impl(double my_t, double my_dt) {
@@ -702,29 +700,32 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
 
       double area_box1 = f_area(counter_boxes[shelf_id][1], m_dx, m_dy);
 
-      double g1 = area_box1 * m_gamma_T;
-      double s1 = Soc_box0(i, j) / (cc.nu * cc.lambda);
+      {
+        double g1 = area_box1 * cc.gamma_T;
+        double s1 = Soc_box0(i, j) / (cc.nu * cc.lambda);
 
-      // These are the coefficients for solving the quadratic temperature equation
-      // trough the p-q formula.
-      double p_coeff = f_p_coeff(cc, g1, m_overturning_coeff, s1);
-      double q_coeff = f_q_coeff(cc, g1, m_overturning_coeff, s1, T_star(i, j));
+        // These are the coefficients for solving the quadratic temperature equation
+        // trough the p-q formula.
+        double p_coeff = f_p_coeff(cc, g1, cc.overturning_coeff, s1);
+        double q_coeff = f_q_coeff(cc, g1, cc.overturning_coeff, s1, T_star(i, j));
 
-      // This can only happen if T_star > 0.25*p_coeff, in particular T_star > 0
-      // which can only happen for values of Toc_box0 close to the local pressure melting point
-      if ((0.25 * PetscSqr(p_coeff) - q_coeff) < 0.0) {
+        // This can only happen if T_star > 0.25*p_coeff, in particular T_star > 0
+        // which can only happen for values of Toc_box0 close to the local pressure melting point
+        if ((0.25 * PetscSqr(p_coeff) - q_coeff) < 0.0) {
 
-        m_log->message(5, "PICO ocean WARNING: negative square root argument at %d, %d\n"
-                          "probably because of positive T_star=%f \n"
-                          "Not aborting, but setting square root to 0... \n",
-                       i, j, T_star(i, j));
+          m_log->message(5, "PICO ocean WARNING: negative square root argument at %d, %d\n"
+                         "probably because of positive T_star=%f \n"
+                         "Not aborting, but setting square root to 0... \n",
+                         i, j, T_star(i, j));
 
-        q_coeff = 0.25 * PetscSqr(p_coeff);
-        lcountHelpterm += 1;
+          q_coeff = 0.25 * PetscSqr(p_coeff);
+          lcountHelpterm += 1;
+        }
+
+        // temperature for box 1, p-q formula
+        Toc(i, j) = f_Toc_box1(cc, Toc_box0(i, j), p_coeff, q_coeff); // in Kelvin
       }
 
-      // temperature for box 1, p-q formula
-      Toc(i, j) = f_Toc_box1(cc, Toc_box0(i, j), p_coeff, q_coeff); // in Kelvin
       // salinity for box 1
       Soc(i, j) = f_Soc_box1(cc, Toc_box0(i, j), Soc_box0(i, j), Toc(i, j)); // in psu
 
@@ -732,9 +733,9 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
       double pot_pm_point = f_pot_pressure_melting(cc, Soc(i, j), pressure);
 
       // basal melt rate for box 1
-      basal_melt_rate(i, j) = f_bmelt_rate(cc, m_gamma_T, pot_pm_point, Toc(i,j));
+      basal_melt_rate(i, j) = f_bmelt_rate(cc, cc.gamma_T, pot_pm_point, Toc(i,j));
 
-      overturning(i, j) = f_overturning(cc, m_overturning_coeff, Soc_box0(i,j),
+      overturning(i, j) = f_overturning(cc, cc.overturning_coeff, Soc_box0(i,j),
        Soc(i,j), Toc_box0(i,j), Toc(i,j));
 
       // average the temperature, salinity and overturning over the entire box1
@@ -847,7 +848,7 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
 
       if (box_mask(i, j) == boxi && shelf_id > 0.0) {
 
-        double area_boxi, mean_salinity_in_boundary, mean_temperature_in_boundary, mean_overturning_in_box1;
+        double mean_salinity_in_boundary, mean_temperature_in_boundary, mean_overturning_in_box1;
 
         // get the input from previous box (is from box 1 if boxi=2)
         // overturning is only solved in box 1 and same for other boxes
@@ -876,7 +877,7 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
           double area_boxi = f_area(counter_boxes[shelf_id][boxi], m_dx, m_dy);
 
           // temperature for Box i > 1
-          Toc(i, j) = f_Toc_other_boxes(cc, area_boxi, m_gamma_T, mean_temperature_in_boundary,
+          Toc(i, j) = f_Toc_other_boxes(cc, area_boxi, cc.gamma_T, mean_temperature_in_boundary,
             T_star(i, j), mean_overturning_in_box1, mean_salinity_in_boundary);
 
           // salinity for Box i > 1
@@ -888,7 +889,7 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
           double pot_pm_point = f_pot_pressure_melting(cc, Soc(i, j), pressure);
 
           // basal melt rate for Box i > 1 in m/s
-          basal_melt_rate(i, j) = f_bmelt_rate(cc, m_gamma_T, pot_pm_point, Toc(i,j));
+          basal_melt_rate(i, j) = f_bmelt_rate(cc, cc.gamma_T, pot_pm_point, Toc(i,j));
 
           // in situ pressure melting point in Kelvin
           T_pressure_melting(i, j) = f_pressure_melting(cc, Soc(i, j), pressure);
@@ -985,25 +986,26 @@ void Pico::calculate_basal_melt_missing_cells(const Constants &cc,
     // cell with missing data identifier numberOfBoxes+1, as set in routines before
     if ((shelf_id > 0) && (box_mask(i, j) == (m_numberOfBoxes + 1))) {
 
-      Toc(i, j) = Toc_box0(i, j); // in Kelvin
-      Soc(i, j) = Soc_box0(i, j); // in psu
-
       // in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
       const double pressure = cc.rhoi * cc.earth_grav * ice_thickness(i, j) * 1e-4;
 
       // potential pressure melting point needed to calculate thermal driving
       // using coefficients for potential temperature
       // these are different to the ones used in POConstantPIK
-      double potential_pressure_melting_point = cc.a * Soc(i, j) + cc.b - cc.c * pressure;
+      double potential_pressure_melting_point = cc.a * Soc_box0(i, j) + cc.b - cc.c * pressure;
 
-      double heatflux = cc.meltFactor * cc.rhow * cc.c_p_ocean * cc.default_gamma_T *
-                        (Toc(i, j) - potential_pressure_melting_point); // in W/m^2
+      double heatflux = cc.meltFactor * cc.rhow * cc.c_p_ocean * cc.gamma_T *
+                        (Toc_box0(i, j) - potential_pressure_melting_point); // in W/m^2
 
       basal_melt_rate(i, j) = heatflux / (cc.latentHeat * cc.rhoi); // in m s-1
 
       // in situ pressure melting point in Kelvin
       // this will be the temperature boundary condition at the ice at the shelf base
-      T_pressure_melting(i, j) = cc.as * Soc(i, j) + cc.bs - cc.cs * pressure;
+      T_pressure_melting(i, j) = cc.as * Soc_box0(i, j) + cc.bs - cc.cs * pressure;
+
+      // diagnostic outputs
+      Toc(i, j) = Toc_box0(i, j); // in Kelvin
+      Soc(i, j) = Soc_box0(i, j); // in psu
     }
   }
 }
