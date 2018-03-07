@@ -383,6 +383,9 @@ void PicoGeometry::compute_distances(const IceModelVec2CellType &mask,
   dist_gl.set(0);
   dist_if.set(0);
 
+  const int EXCLUDE = 1;
+  const int INNER = 2;
+
   // Find the grounding line and the ice front and
   // set DistGL to 1 if ice shelf cell is next to the grounding line,
   // set DistIF to 1 if ice shelf cell is next to the calving front.
