@@ -57,11 +57,14 @@ public:
                                       IceModelVec2Int &result);
   void compute_ice_shelf_mask(const IceModelVec2Int &ice_rises_mask,
                               IceModelVec2Int &result);
-  void compute_distances(const IceModelVec2CellType &mask,
-                         const IceModelVec2Int &ocean_mask,
-                         const IceModelVec2Int &ice_rises,
-                         IceModelVec2Int &dist_if,
-                         IceModelVec2Int &dist_gl);
+  void compute_distances_if(const IceModelVec2CellType &mask,
+                            const IceModelVec2Int &ocean_mask,
+                            const IceModelVec2Int &ice_rises,
+                            IceModelVec2Int &dist_if);
+  void compute_distances_gl(const IceModelVec2CellType &mask,
+                            const IceModelVec2Int &ocean_mask,
+                            const IceModelVec2Int &ice_rises,
+                            IceModelVec2Int &dist_gl);
 private:
   void label_tmp();
   void relabel_by_size(IceModelVec2Int &mask);
