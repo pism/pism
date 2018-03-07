@@ -545,9 +545,9 @@ double f_pressure(const Pico::Constants &cc, double ice_thickness){
 }
 
   //! See equation A6 and lines before in PICO paper
-double f_T_star(const Pico::Constants &cc, double Soc_box0, double Toc_box0, double pressure){
+double f_T_star(const Pico::Constants &cc, double salinity, double temperature, double pressure){
        // in Kelvin
-      return cc.a * Soc_box0 + cc.b - cc.c * pressure - Toc_box0;
+      return cc.a * salinity + cc.b - cc.c * pressure - temperature;
 }
 
 // FIXME: check types of the input arguments.
@@ -573,29 +573,48 @@ double f_q_coeff(const Pico::Constants &cc, double g1, double overturning_coeff,
 }
 
 //! equation A12 in the PICO paper.
-double f_Toc(const Pico::Constants &cc, double Toc_box0, double p_coeff,
+double f_Toc_box1(const Pico::Constants &cc, double Toc_box0, double p_coeff,
     double q_coeff){
     // in K / (1/K) = K^2
     return Toc_box0 - (-0.5 * p_coeff + sqrt(0.25 * PetscSqr(p_coeff) - q_coeff));
 }
 
-double f_Soc(const Pico::Constants &cc, double Toc_box0, double Soc_box0, double Toc){
+double f_Toc_other_boxes(const Pico::Constants &cc, double area, double gamma_T,
+  double temp_in_boundary, double T_star,
+    double overturning, double salinity_in_boundary){
+
+    double g1 = area* gamma_T;
+    double g2 = g1 / (cc.nu * cc.lambda);
+
+    // temperature for Box i > 1
+    return temp_in_boundary + g1 * T_star / (overturning + g1 - g2 *
+      cc.a * salinity_in_boundary); // K
+}
+
+double f_Soc_box1(const Pico::Constants &cc, double Toc_box0, double Soc_box0, double Toc){
 
     return Soc_box0 - (Soc_box0 / (cc.nu * cc.lambda)) * (Toc_box0 - Toc);
 }
 
+double f_Soc_other_boxes(const Pico::Constants &cc, double salinity_in_boundary, double temperature_in_boundary, double Toc){
+
+    return salinity_in_boundary - salinity_in_boundary * (temperature_in_boundary -
+      Toc) / (cc.nu * cc.lambda); // psu;
+}
+
+
 //! equation 5 in the PICO paper.
 //! calculate pressure melting point from potential temperature
-double f_pot_pressure_melting(const Pico::Constants &cc, double Soc, double pressure){
+double f_pot_pressure_melting(const Pico::Constants &cc, double salinity, double pressure){
     // using coefficients for potential temperature
-    return cc.a * Soc + cc.b - cc.c * pressure;
+    return cc.a * salinity + cc.b - cc.c * pressure;
 }
 
 //! equation 5 in the PICO paper.
 //! calculate pressure melting point from in-situ temperature
-double f_pressure_melting(const Pico::Constants &cc, double Soc, double pressure){
+double f_pressure_melting(const Pico::Constants &cc, double salinity, double pressure){
     // using coefficients for potential temperature
-    return cc.as * Soc + cc.bs - cc.cs * pressure;
+    return cc.as * salinity + cc.bs - cc.cs * pressure;
 }
 
 //! equation 8 in the PICO paper.
@@ -681,7 +700,6 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
 
       T_star(i, j) = f_T_star(cc, Soc_box0(i, j), Toc_box0(i, j), pressure);
 
-      //FIXME this assumes rectangular cell areas, adjust with real areas from projection
       double area_box1 = f_area(counter_boxes[shelf_id][1], m_dx, m_dy);
 
       double g1 = area_box1 * m_gamma_T;
@@ -706,9 +724,9 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
       }
 
       // temperature for box 1, p-q formula
-      Toc(i, j) = f_Toc(cc, Toc_box0(i, j), p_coeff, q_coeff); // in Kelvin
+      Toc(i, j) = f_Toc_box1(cc, Toc_box0(i, j), p_coeff, q_coeff); // in Kelvin
       // salinity for box 1
-      Soc(i, j) = f_Soc(cc, Toc_box0(i, j), Soc_box0(i, j), Toc(i, j)); // in psu
+      Soc(i, j) = f_Soc_box1(cc, Toc_box0(i, j), Soc_box0(i, j), Toc(i, j)); // in psu
 
       // potential pressure melting point needed to calculate thermal driving
       double pot_pm_point = f_pot_pressure_melting(cc, Soc(i, j), pressure);
@@ -850,38 +868,30 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
         } else {
 
           // solve the SIMPLE physical model equations for boxes with boxi > 1
-          // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
-          const double pressure = cc.rhoi * cc.earth_grav * ice_thickness(i, j) * 1e-4;
-          T_star(i, j) =
-              cc.a * mean_salinity_in_boundary + cc.b - cc.c * pressure - mean_temperature_in_boundary; // in Kelvin
+          double pressure = f_pressure(cc, ice_thickness(i, j));
 
-          //FIXME this assumes rectangular cell areas, adjust with real areas from projection
-          area_boxi = (counter_boxes[shelf_id][boxi] * m_dx * m_dy);
+          T_star(i, j) = f_T_star(cc, mean_salinity_in_boundary,
+            mean_temperature_in_boundary, pressure);
 
-          // compute melt rates
-          double g1 = area_boxi * m_gamma_T;
-          double g2 = g1 / (cc.nu * cc.lambda);
+          double area_boxi = f_area(counter_boxes[shelf_id][boxi], m_dx, m_dy);
 
           // temperature for Box i > 1
-          Toc(i, j) =
-              mean_temperature_in_boundary +
-              g1 * T_star(i, j) / (mean_overturning_in_box1 + g1 - g2 * cc.a * mean_salinity_in_boundary); // K
+          Toc(i, j) = f_Toc_other_boxes(cc, area_boxi, m_gamma_T, mean_temperature_in_boundary,
+            T_star(i, j), mean_overturning_in_box1, mean_salinity_in_boundary);
 
           // salinity for Box i > 1
-          Soc(i, j) =
-              mean_salinity_in_boundary -
-              mean_salinity_in_boundary * (mean_temperature_in_boundary - Toc(i, j)) / (cc.nu * cc.lambda); // psu
+          Soc(i, j) = f_Soc_other_boxes(cc, mean_salinity_in_boundary, mean_temperature_in_boundary,
+            Toc(i, j)); // psu
 
-          // potential pressure melting pointneeded to calculate thermal driving
+          // potential pressure melting point needed to calculate thermal driving
           // using coefficients for potential temperature
-          double potential_pressure_melting_point = cc.a * Soc(i, j) + cc.b - cc.c * pressure;
+          double pot_pm_point = f_pot_pressure_melting(cc, Soc(i, j), pressure);
 
-          // basal melt rate for Box i > 1
-          basal_melt_rate(i, j) =
-              (-m_gamma_T / (cc.nu * cc.lambda)) * (potential_pressure_melting_point - Toc(i, j)); // in m/s
+          // basal melt rate for Box i > 1 in m/s
+          basal_melt_rate(i, j) = f_bmelt_rate(cc, m_gamma_T, pot_pm_point, Toc(i,j));
 
           // in situ pressure melting point in Kelvin
-          T_pressure_melting(i, j) = cc.as * Soc(i, j) + cc.bs - cc.cs * pressure;
+          T_pressure_melting(i, j) = f_pressure_melting(cc, Soc(i, j), pressure);
 
           // average the temperature, salinity over the entire box i
           // this is used as input for box i+1
