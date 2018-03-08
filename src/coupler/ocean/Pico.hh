@@ -53,22 +53,29 @@ public:
                        double Toc) const;
   double p_coeff(double g1, double s1) const;
   double q_coeff(double g1, double s1, double T_star) const;
-public:
-  // FIXME: make these private again
-  double gamma_T, overturning_coeff, T_dummy, S_dummy;
-  double rhoi, continental_shelf_depth;
-private:
-  double earth_grav, rhow, rho_star, nu, latentHeat, c_p_ocean, alpha, beta;
 
-  double lambda;
+  double gamma_T() const;
+  double overturning_coeff() const;
+  double T_dummy() const;
+  double S_dummy() const;
+  double ice_density() const;
+  double continental_shelf_depth() const;
+private:
+  double m_gamma_T, m_overturning_coeff, m_T_dummy, m_S_dummy;
+  double m_ice_density, m_continental_shelf_depth;
+
+
+  double m_earth_grav, m_sea_water_density, m_rho_star, m_nu, m_latentHeat, m_c_p_ocean, m_alpha, m_beta;
+
+  double m_lambda;
 
   // coefficients of the parameterization of the potential temperature
-  double a_pot, b_pot, c_pot;
+  double m_a_pot, m_b_pot, m_c_pot;
 
   // coefficients of the parameterization of the in situ temperature
-  double b_in_situ, c_in_situ, a_in_situ;
+  double m_b_in_situ, m_c_in_situ, m_a_in_situ;
 
-  double meltFactor;
+  double m_meltFactor;
 };
 
 //! \brief Implements the PICO ocean model as submitted to The Cryosphere (March 2017).

@@ -167,8 +167,8 @@ void Pico::init_impl() {
 
   m_log->message(4, "PICO basin min=%f,max=%f\n", m_cbasins.min(), m_cbasins.max());
 
-  BoxModel cc(*m_config);
-  initBasinsOptions(cc);
+  BoxModel model(*m_config);
+  initBasinsOptions(model);
 
   round_basins(m_cbasins);
 
@@ -246,11 +246,11 @@ void Pico::initBasinsOptions(const BoxModel &cc) {
 
   m_log->message(2, "  -Using %d drainage basins and values: \n"
                     "   gamma_T= %.2e, overturning_coeff = %.2e... \n",
-                 m_numberOfBasins, cc.gamma_T, cc.overturning_coeff);
+                 m_numberOfBasins, cc.gamma_T(), cc.overturning_coeff());
 
   m_log->message(2, "  -Depth of continental shelf for computation of temperature and salinity input\n"
                     "   is set for whole domain to continental_shelf_depth=%.0f meter\n",
-                 cc.continental_shelf_depth);
+                 cc.continental_shelf_depth());
 }
 
 void Pico::update_impl(double my_t, double my_dt) {
@@ -262,7 +262,7 @@ void Pico::update_impl(double my_t, double my_dt) {
   m_theta_ocean->average(m_t, m_dt);
   m_salinity_ocean->average(m_t, m_dt);
 
-  BoxModel cc(*m_config);
+  BoxModel model(*m_config);
 
   test();
 
@@ -277,7 +277,7 @@ void Pico::update_impl(double my_t, double my_dt) {
   identify_shelf_mask();
   round_basins(m_cbasins);
   compute_distances();
-  identify_ocean_box_mask(cc);
+  identify_ocean_box_mask(model);
 
   m_ocean_box_mask.update_ghosts();
 
@@ -285,28 +285,28 @@ void Pico::update_impl(double my_t, double my_dt) {
 
   // prepare ocean input temperature and salinity
   {
-    compute_ocean_input_per_basin(cc,
+    compute_ocean_input_per_basin(model,
                                   m_cbasins, m_ocean_contshelf_mask,
                                   *m_salinity_ocean, *m_theta_ocean); // per basin
 
     const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
     const IceModelVec2CellType &mask   = *m_grid->variables().get_2d_cell_type("mask");
 
-    set_ocean_input_fields(ice_thickness, mask, m_cbasins, m_shelf_mask, cc,
+    set_ocean_input_fields(ice_thickness, mask, m_cbasins, m_shelf_mask, model,
                            m_Toc_box0, m_Soc_box0);        // per shelf
 
 
     calculate_basal_melt_box1(ice_thickness, m_shelf_mask, m_ocean_box_mask, // inputs
-                              m_Toc_box0, m_Soc_box0, cc,                    // inputs
+                              m_Toc_box0, m_Soc_box0, model,                    // inputs
                               m_T_star, m_Toc, m_Soc, m_basalmeltrate_shelf, // outputs
                               m_overturning, m_T_pressure_melting);          // outputs
 
-    calculate_basal_melt_other_boxes(ice_thickness, m_shelf_mask, cc,        // inputs
+    calculate_basal_melt_other_boxes(ice_thickness, m_shelf_mask, model,        // inputs
                                      m_ocean_box_mask, m_T_star, m_Toc,      // outputs
                                      m_Soc, m_basalmeltrate_shelf, m_T_pressure_melting); // outputs
 
     //Assumes that mass flux is proportional to the shelf-base heat flux.
-    calculate_basal_melt_missing_cells(cc, m_shelf_mask, m_ocean_box_mask, ice_thickness, // inputs
+    calculate_basal_melt_missing_cells(model, m_shelf_mask, m_ocean_box_mask, ice_thickness, // inputs
                                        m_Toc_box0, m_Soc_box0, // inputs
                                        m_Toc, m_Soc, m_basalmeltrate_shelf, m_T_pressure_melting); // outputs
 
@@ -314,7 +314,7 @@ void Pico::update_impl(double my_t, double my_dt) {
 
   m_shelf_base_temperature->copy_from(m_T_pressure_melting); // in-situ freezing point at the ice shelf base
   m_shelf_base_mass_flux->copy_from(m_basalmeltrate_shelf);
-  m_shelf_base_mass_flux->scale(cc.rhoi);
+  m_shelf_base_mass_flux->scale(model.ice_density());
 
   m_sea_level_elevation->set(0.0);
   m_melange_back_pressure_fraction->set(0.0);
@@ -372,9 +372,9 @@ void Pico::compute_ocean_input_per_basin(const BoxModel &cc,
                         "No mean salinity or temperature values are computed, instead using\n"
                         "the standard values T_dummy =%.3f, S_dummy=%.3f.\n"
                         "This might bias your basal melt rates, check your input data carefully.\n",
-                     basin_id, cc.T_dummy, cc.S_dummy);
-      m_Toc_box0_vec[basin_id] = cc.T_dummy;
-      m_Soc_box0_vec[basin_id] = cc.S_dummy;
+                     basin_id, cc.T_dummy(), cc.S_dummy());
+      m_Toc_box0_vec[basin_id] = cc.T_dummy();
+      m_Soc_box0_vec[basin_id] = cc.S_dummy();
     } else {
       Sval[basin_id] = Sval[basin_id] / count[basin_id];
       Tval[basin_id] = Tval[basin_id] / count[basin_id];
