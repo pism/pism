@@ -28,13 +28,39 @@
 namespace pism {
 namespace ocean {
 
-class PicoConstants {
+double f_area(double counter_boxes, double m_dx, double m_dy);
+
+class BoxModel {
 public:
-  PicoConstants(const Config &config);
+  BoxModel(const Config &config);
 
-  double earth_grav, rhoi, rhow, rho_star, nu, latentHeat, c_p_ocean, alpha, beta;
+  double pressure(double ice_thickness) const;
+  double T_star(double salinity, double temperature, double pressure) const;
 
-  double lambda_;
+  double Toc_box1(double area, double T_star, double Soc_box0, double Toc_box0, bool *success) const;
+  double Toc_other_boxes(double area,
+                         double temp_in_boundary, double T_star,
+                         double overturning, double salinity_in_boundary) const;
+
+  double Soc_box1(double Toc_box0, double Soc_box0, double Toc) const;
+  double Soc_other_boxes(double salinity_in_boundary, double temperature_in_boundary, double Toc) const;
+
+  double pot_pressure_melting(double salinity, double pressure) const;
+  double pressure_melting(double salinity, double pressure) const;
+  double bmelt_rate(double m_gamma_T, double pm_point, double Toc) const;
+  double bmelt_rate_beckm_goose(double Toc, double pot_pm_point) const;
+  double overturning(double Soc_box0, double Soc, double Toc_box0,
+                       double Toc) const;
+  double p_coeff(double g1, double s1) const;
+  double q_coeff(double g1, double s1, double T_star) const;
+public:
+  // FIXME: make these private again
+  double gamma_T, overturning_coeff, T_dummy, S_dummy;
+  double rhoi, continental_shelf_depth;
+private:
+  double earth_grav, rhow, rho_star, nu, latentHeat, c_p_ocean, alpha, beta;
+
+  double lambda;
 
   // coefficients of the parameterization of the potential temperature
   double a_pot, b_pot, c_pot;
@@ -42,12 +68,7 @@ public:
   // coefficients of the parameterization of the in situ temperature
   double b_in_situ, c_in_situ, a_in_situ;
 
-  double gamma_T, overturning_coeff, T_dummy, S_dummy;
-
-  double gamma_T_o, meltFactor, meltSalinity, b2;
-  double continental_shelf_depth;
-
-  int default_numberOfBasins, default_numberOfBoxes;
+  double meltFactor;
 };
 
 //! \brief Implements the PICO ocean model as submitted to The Cryosphere (March 2017).
@@ -83,21 +104,21 @@ private:
 
   IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
 
-  void initBasinsOptions(const PicoConstants &constants);
+  void initBasinsOptions(const BoxModel &constants);
   void identifyMASK(IceModelVec2S &inputmask, std::string masktype);
   void identify_shelf_mask();
-  void compute_ocean_input_per_basin(const PicoConstants &cc,
+  void compute_ocean_input_per_basin(const BoxModel &cc,
                                      const IceModelVec2Int &basin_mask,
                                      const IceModelVec2Int &continental_shelf_mask,
                                      const IceModelVec2S &salinity_ocean,
                                      const IceModelVec2S &theta_ocean);
   void compute_distances();
-  void identify_ocean_box_mask(const PicoConstants &constants);
+  void identify_ocean_box_mask(const BoxModel &constants);
   void set_ocean_input_fields(const IceModelVec2S &ice_thickness,
                               const IceModelVec2CellType &mask,
                               const IceModelVec2Int &m_cbasins,
                               const IceModelVec2Int &m_shelf_mask,
-                              const PicoConstants &cc,
+                              const BoxModel &cc,
                               IceModelVec2S &Toc_box0,
                               IceModelVec2S &Soc_box0
                               );
@@ -106,7 +127,7 @@ private:
                                  const IceModelVec2Int &box_mask,
                                  const IceModelVec2S &Toc_box0,
                                  const IceModelVec2S &Soc_box0,
-                                 const PicoConstants &cc,
+                                 const BoxModel &cc,
                                  IceModelVec2S &T_star,
                                  IceModelVec2S &Toc,
                                  IceModelVec2S &Soc,
@@ -115,14 +136,14 @@ private:
                                  IceModelVec2S &T_pressure_melting);
   void calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
                                         const IceModelVec2Int &shelf_mask,
-                                        const PicoConstants &cc,
+                                        const BoxModel &cc,
                                         IceModelVec2Int &box_mask,
                                         IceModelVec2S &T_star,
                                         IceModelVec2S &Toc,
                                         IceModelVec2S &Soc,
                                         IceModelVec2S &basal_melt_rate,
                                         IceModelVec2S &T_pressure_melting);
-  void calculate_basal_melt_missing_cells(const PicoConstants &cc,
+  void calculate_basal_melt_missing_cells(const BoxModel &cc,
                                           const IceModelVec2Int &shelf_mask,
                                           const IceModelVec2Int &box_mask,
                                           const IceModelVec2S &ice_thickness,
@@ -148,27 +169,6 @@ private:
 };
 
 void round_basins(IceModelVec2S &basin_mask);
-
-double f_pressure(const PicoConstants &cc, double ice_thickness);
-double f_T_star(const PicoConstants &cc, double salinity, double temperature, double pressure);
-double f_area(double counter_boxes, double m_dx, double m_dy);
-
-double f_Toc_box1(const PicoConstants &cc, double area, double T_star, double Soc_box0, double Toc_box0, bool *success);
-double f_Toc_other_boxes(const PicoConstants &cc, double area, double gamma_T,
-  double temp_in_boundary, double T_star,
-    double overturning, double salinity_in_boundary);
-
-double f_Soc_box1(const PicoConstants &cc, double Toc_box0, double Soc_box0, double Toc);
-double f_Soc_other_boxes(const PicoConstants &cc, double salinity_in_boundary, double temperature_in_boundary, double Toc);
-
-double f_pot_pressure_melting(const PicoConstants &cc, double salinity, double pressure);
-double f_pressure_melting(const PicoConstants &cc, double salinity, double pressure);
-double f_bmelt_rate(const PicoConstants &cc, double m_gamma_T, double pm_point, double Toc);
-double f_bmelt_rate_beckm_goose(const PicoConstants &cc, double Toc, double pot_pm_point);
-double f_overturning(const PicoConstants &cc, double Soc_box0, double Soc, double Toc_box0,
-                     double Toc);
-double f_p_coeff(const PicoConstants &cc, double g1, double s1);
-double f_q_coeff(const PicoConstants &cc, double g1, double s1, double T_star);
 
 } // end of namespace ocean
 } // end of namespace pism

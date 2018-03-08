@@ -594,7 +594,7 @@ void Pico::compute_distances() {
 //! Use a relative distance to the grounding line determine the ocean_box_mask
 //! Finally, compute the extent of each ocean box in each basin.
 
-void Pico::identify_ocean_box_mask(const PicoConstants &cc) {
+void Pico::identify_ocean_box_mask(const BoxModel &cc) {
 
   m_log->message(5, "starting identify_ocean_box_mask routine\n");
 
@@ -650,6 +650,8 @@ void Pico::identify_ocean_box_mask(const PicoConstants &cc) {
   int n_min   = 1;   //
   double zeta = 0.5; // hard coded for now
 
+  int number_of_boxes = m_config->get_double("ocean.pico.number_of_boxes");
+
   for (int l = 0; l < m_numberOfShelves; l++) {
     lnumberOfBoxes_perShelf[l] = 0;
 
@@ -658,7 +660,7 @@ void Pico::identify_ocean_box_mask(const PicoConstants &cc) {
         n_min + static_cast<int>(round(pow((max_distGL[l] / max_distGL_ref), zeta) * (m_numberOfBoxes - n_min)));
 
     // never have more boxes than default number of boxes
-    lnumberOfBoxes_perShelf[l] = PetscMin(lnumberOfBoxes_perShelf[l], cc.default_numberOfBoxes);
+    lnumberOfBoxes_perShelf[l] = PetscMin(lnumberOfBoxes_perShelf[l], number_of_boxes);
     m_log->message(5, "lnumberOfShelves[%d]=%d \n", l, lnumberOfBoxes_perShelf[l]);
   }
 
