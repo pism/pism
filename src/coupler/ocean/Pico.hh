@@ -165,12 +165,10 @@ double f_pot_pressure_melting(const PicoConstants &cc, double salinity, double p
 double f_pressure_melting(const PicoConstants &cc, double salinity, double pressure);
 double f_bmelt_rate(const PicoConstants &cc, double m_gamma_T, double pm_point, double Toc);
 double f_bmelt_rate_beckm_goose(const PicoConstants &cc, double Toc, double pot_pm_point);
-double f_overturning(const PicoConstants &cc, double overturning_coeff, double Soc_box0,
-    double Soc, double Toc_box0, double Toc);
-double f_p_coeff(const PicoConstants &cc, double g1, double overturning_coeff,
-    double s1);
-double f_q_coeff(const PicoConstants &cc, double g1, double overturning_coeff,
-    double s1, double T_star);
+double f_overturning(const PicoConstants &cc, double Soc_box0, double Soc, double Toc_box0,
+                     double Toc);
+double f_p_coeff(const PicoConstants &cc, double g1, double s1);
+double f_q_coeff(const PicoConstants &cc, double g1, double s1, double T_star);
 
 } // end of namespace ocean
 } // end of namespace pism

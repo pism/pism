@@ -620,10 +620,10 @@ double f_bmelt_rate_beckm_goose(const PicoConstants &cc, double Toc, double pot_
 }
 
 //! equation 3 in the PICO paper. See also equation 4.
-double f_overturning(const PicoConstants &cc, double overturning_coeff, double Soc_box0,
+double f_overturning(const PicoConstants &cc, double Soc_box0,
     double Soc, double Toc_box0, double Toc){
  // in m^3/s
-    return overturning_coeff * cc.rho_star * (cc.beta * (Soc_box0 - Soc) - cc.alpha * (
+    return cc.overturning_coeff * cc.rho_star * (cc.beta * (Soc_box0 - Soc) - cc.alpha * (
         Toc_box0 - Toc));
 }
 
@@ -641,22 +641,20 @@ double f_T_star(const PicoConstants &cc, double salinity, double temperature, do
 //! calculate p coefficent for solving the quadratic temperature equation
 //! trough the p-q formula. See equation A12 in the PICO paper.
 //! is only used once in f_Toc_box1(...)
-double f_p_coeff(const PicoConstants &cc, double g1, double overturning_coeff,
-    double s1){
+double f_p_coeff(const PicoConstants &cc, double g1, double s1){
     // in 1 / (1/K) = K
     // inputs g1 and overturning coefficicient are always positive
     // so output is positive if beta*s1 > alpha
     // which is shown in the text following equation A12
-    return g1 / (overturning_coeff * cc.rho_star * (cc.beta * s1 - cc.alpha));
+    return g1 / (cc.overturning_coeff * cc.rho_star * (cc.beta * s1 - cc.alpha));
 }
 
 //! calculate q coefficent for solving the quadratic temperature equation
 //! trough the p-q formula. See equation A12 in the PICO paper.
 //! is only used once in f_Toc_box1(...)
-double f_q_coeff(const PicoConstants &cc, double g1, double overturning_coeff,
-    double s1, double T_star){
+double f_q_coeff(const PicoConstants &cc, double g1, double s1, double T_star){
     // in K / (1/K) = K^2
-    return T_star * f_p_coeff(cc, g1, cc.overturning_coeff, s1);
+    return T_star * f_p_coeff(cc, g1, s1);
 }
 
 
@@ -668,8 +666,8 @@ double f_Toc_box1(const PicoConstants &cc, double area, double T_star, double So
 
   // These are the coefficients for solving the quadratic temperature equation
   // trough the p-q formula.
-  double p_coeff = f_p_coeff(cc, g1, cc.overturning_coeff, s1);
-  double q_coeff = f_q_coeff(cc, g1, cc.overturning_coeff, s1, T_star);
+  double p_coeff = f_p_coeff(cc, g1, s1);
+  double q_coeff = f_q_coeff(cc, g1, s1, T_star);
 
   // This can only happen if T_star > 0.25*p_coeff, in particular T_star > 0
   // which can only happen for values of Toc_box0 close to the local pressure melting point
@@ -780,7 +778,7 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
       // basal melt rate for box 1
       basal_melt_rate(i, j) = f_bmelt_rate(cc, cc.gamma_T, pot_pm_point, Toc(i,j));
 
-      overturning(i, j) = f_overturning(cc, cc.overturning_coeff, Soc_box0(i,j),
+      overturning(i, j) = f_overturning(cc, Soc_box0(i,j),
        Soc(i,j), Toc_box0(i,j), Toc(i,j));
 
       // average the temperature, salinity and overturning over the entire box1
