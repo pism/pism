@@ -513,15 +513,14 @@ void Pico::set_ocean_input_fields(const PicoConstants &cc) {
             m_Soc_box0_vec[basin_id] * counter_shelf_cells_in_basin[shelf_id][basin_id] / counter_shelf_cells[shelf_id];
       }
 
-
-      // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
-      const double pressure = cc.rhoi * cc.earth_grav * ice_thickness(i, j) * 1e-4;
-      const double T_pmt = cc.a_pot * m_Soc_box0(i, j) + cc.b_pot - cc.c_pot * pressure; // in Kelvin, here potential freezing point
+      double pressure = f_pressure(cc, ice_thickness(i, j));
+      // pressure melting point for potential temperature, in Kelvin
+      double pot_pm_point = f_pot_pressure_melting(cc, m_Soc_box0(i, j), pressure);
 
       // temperature input for grounding line box should not be below pressure melting point
-      if (m_Toc_box0(i, j) < T_pmt) {
-        // Setting Toc_box0 a little higher than T_pmt ensures that later equations are well solvable.
-        m_Toc_box0(i, j) = T_pmt + 0.001;
+      if (m_Toc_box0(i, j) < pot_pm_point) {
+        // Setting Toc_box0 a little higher than pot_pm_point ensures that later equations are well solvable.
+        m_Toc_box0(i, j) = pot_pm_point + 0.001;
         lcounterTpmp += 1;
       }
 
@@ -542,23 +541,16 @@ double f_pressure(const PicoConstants &cc, double ice_thickness){
       return cc.rhoi * cc.earth_grav * ice_thickness * 1e-4;
 }
 
-  //! See equation A6 and lines before in PICO paper
-double f_T_star(const PicoConstants &cc, double salinity, double temperature, double pressure){
-       // in Kelvin
-      return cc.a_pot * salinity + cc.b_pot - cc.c_pot * pressure - temperature;
-}
-
 // FIXME: check types of the input arguments.
 double f_area(double counter_boxes, double m_dx, double m_dy){
       //FIXME this assumes rectangular cell areas, adjust with real areas from projection
       return counter_boxes * m_dx * m_dy;
 }
 
-double f_Toc_other_boxes(const PicoConstants &cc, double area, double gamma_T,
-  double temp_in_boundary, double T_star,
-    double overturning, double salinity_in_boundary){
+double f_Toc_other_boxes(const PicoConstants &cc, double area, double temp_in_boundary,
+  double T_star, double overturning, double salinity_in_boundary){
 
-    double g1 = area* gamma_T;
+    double g1 = area* cc.gamma_T;
     double g2 = g1 / (cc.nu * cc.lambda_);
 
     // temperature for Box i > 1
@@ -615,12 +607,26 @@ double f_overturning(const PicoConstants &cc, double overturning_coeff, double S
         Toc_box0 - Toc));
 }
 
+  //! See equation A6 and lines before in PICO paper
+double f_T_star(const PicoConstants &cc, double salinity, double temperature, double pressure){
+       // in Kelvin
+      // FIXME: check that this stays always negative.
+      // positive values are unphysical as colder temperatures
+      // than pressure melting point would be ice, but we are in the ocean.
+      // this should not occur as set_ocean_input_fields(...) sets
+      // sets too cold temperatures to pressure melting point + 0.001
+      return f_pot_pressure_melting(cc, salinity, pressure) - temperature;
+}
+
 //! calculate p coefficent for solving the quadratic temperature equation
 //! trough the p-q formula. See equation A12 in the PICO paper.
 //! is only used once in f_Toc_box1(...)
 double f_p_coeff(const PicoConstants &cc, double g1, double overturning_coeff,
     double s1){
     // in 1 / (1/K) = K
+    // inputs g1 and overturning coefficicient are always positive
+    // so output is positive if beta*s1 > alpha
+    // which is shown in the text following equation A12
     return g1 / (overturning_coeff * cc.rho_star * (cc.beta * s1 - cc.alpha));
 }
 
@@ -630,7 +636,7 @@ double f_p_coeff(const PicoConstants &cc, double g1, double overturning_coeff,
 double f_q_coeff(const PicoConstants &cc, double g1, double overturning_coeff,
     double s1, double T_star){
     // in K / (1/K) = K^2
-    return (g1 * T_star) / (overturning_coeff * cc.rho_star * (cc.beta * s1 - cc.alpha));
+    return T_star * f_p_coeff(cc, g1, cc.overturning_coeff, s1);
 }
 
 
@@ -740,6 +746,7 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
 
       if (success == false) {
         m_log->message(5, "PICO ocean WARNING: negative square root argument at %d, %d\n"
+                       "probably because of positive T_star\n"
                        "Not aborting, but setting square root to 0... \n",
                        i, j);
       }
@@ -895,7 +902,7 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
           double area_boxi = f_area(counter_boxes[shelf_id][boxi], m_dx, m_dy);
 
           // temperature for Box i > 1
-          Toc(i, j) = f_Toc_other_boxes(cc, area_boxi, cc.gamma_T, mean_temperature_in_boundary,
+          Toc(i, j) = f_Toc_other_boxes(cc, area_boxi, mean_temperature_in_boundary,
                         T_star(i, j), mean_overturning_in_box1, mean_salinity_in_boundary);
 
           // salinity for Box i > 1
