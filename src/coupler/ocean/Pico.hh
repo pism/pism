@@ -93,7 +93,14 @@ private:
                                      const IceModelVec2S &theta_ocean);
   void compute_distances();
   void identify_ocean_box_mask(const PicoConstants &constants);
-  void set_ocean_input_fields(const PicoConstants &constants);
+  void set_ocean_input_fields(const IceModelVec2S &ice_thickness,
+                              const IceModelVec2CellType &mask,
+                              const IceModelVec2Int &m_cbasins,
+                              const IceModelVec2Int &m_shelf_mask,
+                              const PicoConstants &cc,
+                              IceModelVec2S &Toc_box0,
+                              IceModelVec2S &Soc_box0
+                              );
   void calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
                                  const IceModelVec2Int &shelf_mask,
                                  const IceModelVec2Int &box_mask,

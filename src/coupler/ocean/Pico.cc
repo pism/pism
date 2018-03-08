@@ -343,9 +343,13 @@ void Pico::update_impl(double my_t, double my_dt) {
     compute_ocean_input_per_basin(cc,
                                   m_cbasins, m_ocean_contshelf_mask,
                                   *m_salinity_ocean, *m_theta_ocean); // per basin
-    set_ocean_input_fields(cc);        // per shelf
 
     const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+    const IceModelVec2CellType &mask   = *m_grid->variables().get_2d_cell_type("mask");
+
+    set_ocean_input_fields(ice_thickness, mask, m_cbasins, m_shelf_mask, cc,
+                           m_Toc_box0, m_Soc_box0);        // per shelf
+
 
     calculate_basal_melt_box1(ice_thickness, m_shelf_mask, m_ocean_box_mask, // inputs
                               m_Toc_box0, m_Soc_box0, cc,                    // inputs
@@ -439,6 +443,18 @@ void Pico::compute_ocean_input_per_basin(const PicoConstants &cc,
 }
 
 
+double f_weight_by_shelf_area_per_basin(double property_in_basin, double ice_shelf_cells_in_basin, double
+                               total_cells_of_ice_shelf){
+
+    return property_in_basin * (ice_shelf_cells_in_basin / total_cells_of_ice_shelf);
+}
+
+double f_pressure(const PicoConstants &cc, double ice_thickness){
+      // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
+      return cc.rhoi * cc.earth_grav * ice_thickness * 1e-4;
+}
+
+
 //! Set ocean ocean input from box 0 as boundary condition for box 1.
 
 //! Set ocean temperature and salinity (Toc_box0, Soc_box0)
@@ -447,14 +463,19 @@ void Pico::compute_ocean_input_per_basin(const PicoConstants &cc,
 //! Toc_box0 and Soc_box0 were computed in function compute_ocean_input_per_basin.
 //! We enforce that Toc_box0 is always at least the local pressure melting point.
 
-void Pico::set_ocean_input_fields(const PicoConstants &cc) {
+void Pico::set_ocean_input_fields(const IceModelVec2S &ice_thickness,
+                                  const IceModelVec2CellType &mask,
+                                  const IceModelVec2Int &m_cbasins,
+                                  const IceModelVec2Int &m_shelf_mask,
+                                  const PicoConstants &cc,
+                                  IceModelVec2S &Toc_box0,
+                                  IceModelVec2S &Soc_box0
+                                  ) {
 
   m_log->message(5, "starting set_ocean_input_fields routine\n");
 
-  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2CellType &mask   = *m_grid->variables().get_2d_cell_type("mask");
-
-  IceModelVec::AccessList list{ &ice_thickness, &m_cbasins, &m_Soc_box0, &m_Toc_box0, &m_Toc, &mask, &m_shelf_mask };
+  IceModelVec::AccessList list{ &ice_thickness, &mask, &m_cbasins, &m_shelf_mask, &m_Soc_box0,
+                                &m_Toc_box0};
 
   // compute for each shelf the number of cells  within each basin
   std::vector<std::vector<double> > lcounter_shelf_cells_in_basin(m_numberOfShelves,
@@ -466,6 +487,7 @@ void Pico::set_ocean_input_fields(const PicoConstants &cc) {
   std::vector<double> lcounter_shelf_cells(m_numberOfShelves);
   std::vector<double> counter_shelf_cells(m_numberOfShelves);
 
+  // initialize all array entries to zero
   for (int shelf_id = 0; shelf_id < m_numberOfShelves; shelf_id++) {
     lcounter_shelf_cells[shelf_id] = 0;
     for (int basin_id = 0; basin_id < m_numberOfBasins; basin_id++) {
@@ -496,21 +518,27 @@ void Pico::set_ocean_input_fields(const PicoConstants &cc) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    // make sure all temperatures are zero at the beginning of each timestep
-    m_Toc(i, j)      = 273.15; // in K
+    // make sure all temperatures and salinities are zero at the beginning of each timestep
     m_Toc_box0(i, j) = 0.0;    // in K
     m_Soc_box0(i, j) = 0.0;    // in psu
-
 
     if (mask(i, j) == MASK_FLOATING && m_shelf_mask(i, j) > 0) { // shelf_mask = 0 in lakes
 
       int shelf_id = m_shelf_mask(i, j);
       // weighted input depending on the number of shelf cells in each basin
       for (int basin_id = 1; basin_id < m_numberOfBasins; basin_id++) { //Note: basin_id=0 yields nan
-        m_Toc_box0(i, j) +=
-            m_Toc_box0_vec[basin_id] * counter_shelf_cells_in_basin[shelf_id][basin_id] / counter_shelf_cells[shelf_id];
-        m_Soc_box0(i, j) +=
-            m_Soc_box0_vec[basin_id] * counter_shelf_cells_in_basin[shelf_id][basin_id] / counter_shelf_cells[shelf_id];
+
+        // calculate  Toc_box0 and Soc_box0 where shelf mask > 0 and for basins > 0
+        m_Toc_box0(i, j) += f_weight_by_shelf_area_per_basin(m_Toc_box0_vec[basin_id],
+                                    counter_shelf_cells_in_basin[shelf_id][basin_id],
+                                    counter_shelf_cells[shelf_id]);
+
+        m_Soc_box0(i, j) += f_weight_by_shelf_area_per_basin(m_Soc_box0_vec[basin_id],
+                                    counter_shelf_cells_in_basin[shelf_id][basin_id],
+                                    counter_shelf_cells[shelf_id]);
+        //     m_Toc_box0_vec[basin_id] * counter_shelf_cells_in_basin[shelf_id][basin_id] / counter_shelf_cells[shelf_id];
+        // m_Soc_box0(i, j) +=
+        //     m_Soc_box0_vec[basin_id] * counter_shelf_cells_in_basin[shelf_id][basin_id] / counter_shelf_cells[shelf_id];
       }
 
       double pressure = f_pressure(cc, ice_thickness(i, j));
@@ -535,11 +563,6 @@ void Pico::set_ocean_input_fields(const PicoConstants &cc) {
   }
 }
 
-
-double f_pressure(const PicoConstants &cc, double ice_thickness){
-      // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
-      return cc.rhoi * cc.earth_grav * ice_thickness * 1e-4;
-}
 
 // FIXME: check types of the input arguments.
 double f_area(double counter_boxes, double m_dx, double m_dy){
