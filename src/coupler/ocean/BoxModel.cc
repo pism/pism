@@ -117,9 +117,9 @@ double BoxModel::pressure_melting(double salinity, double pressure) const {
 }
 
 //! equation 8 in the PICO paper.
-double BoxModel::bmelt_rate(double m_gamma_T, double pm_point, double Toc) const {
+double BoxModel::bmelt_rate(double pm_point, double Toc) const {
     // in m/s
-    return m_gamma_T / (this->nu * this->lambda) * (Toc - pm_point);
+    return this->gamma_T / (this->nu * this->lambda) * (Toc - pm_point);
 }
 
 //! Beckmann & Goose meltrate

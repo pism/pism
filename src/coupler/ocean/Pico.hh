@@ -47,7 +47,7 @@ public:
 
   double pot_pressure_melting(double salinity, double pressure) const;
   double pressure_melting(double salinity, double pressure) const;
-  double bmelt_rate(double m_gamma_T, double pm_point, double Toc) const;
+  double bmelt_rate(double pm_point, double Toc) const;
   double bmelt_rate_beckm_goose(double Toc, double pot_pm_point) const;
   double overturning(double Soc_box0, double Soc, double Toc_box0,
                        double Toc) const;

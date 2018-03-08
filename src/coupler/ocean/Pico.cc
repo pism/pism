@@ -595,7 +595,7 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
       double pot_pm_point = cc.pot_pressure_melting(Soc(i, j), pressure);
 
       // basal melt rate for box 1
-      basal_melt_rate(i, j) = cc.bmelt_rate(cc.gamma_T, pot_pm_point, Toc(i,j));
+      basal_melt_rate(i, j) = cc.bmelt_rate(pot_pm_point, Toc(i,j));
 
       overturning(i, j) = cc.overturning(Soc_box0(i,j), Soc(i,j), Toc_box0(i,j), Toc(i,j));
 
@@ -751,7 +751,7 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
           double pot_pm_point = cc.pot_pressure_melting(Soc(i, j), pressure);
 
           // basal melt rate for Box i > 1 in m/s
-          basal_melt_rate(i, j) = cc.bmelt_rate(cc.gamma_T, pot_pm_point, Toc(i,j));
+          basal_melt_rate(i, j) = cc.bmelt_rate(pot_pm_point, Toc(i,j));
 
           // in situ pressure melting point in Kelvin
           T_pressure_melting(i, j) = cc.pressure_melting(Soc(i, j), pressure);
