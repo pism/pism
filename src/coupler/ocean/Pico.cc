@@ -65,17 +65,17 @@ PicoConstants::PicoConstants(const Config &config) {
 
   latentHeat = config.get_double("constants.fresh_water.latent_heat_of_fusion"); //Joule / kg
   c_p_ocean  = 3974.0;                 // J/(K*kg), specific heat capacity of ocean mixed layer
-  lambda     = latentHeat / c_p_ocean; // °C, NOTE K vs °C
+  lambda_     = latentHeat / c_p_ocean; // °C, NOTE K vs °C
 
   // Valus for linearized potential freezing point (from Xylar Asay-Davis, should be in Asay-Davis et al 2016, but not correct in there )
-  a = -0.0572;         // K/psu
-  b = 0.0788 + 273.15; // K
-  c = 7.77e-4;         // K/dbar
+  a_pot = -0.0572;         // K/psu
+  b_pot = 0.0788 + 273.15; // K
+  c_pot = 7.77e-4;         // K/dbar
 
   // in-situ pressure melting point from Jenkins et al. 2010 paper
-  as = -0.0573;         // K/psu
-  bs = 0.0832 + 273.15; // K
-  cs = 7.53e-4;         // K/dbar
+  a_in_situ = -0.0573;         // K/p_in_situu
+  b_in_situ = 0.0832 + 273.15; // K
+  c_in_situ = 7.53e-4;         // K/dbar
 
   // in-situ pressure melting point from Olbers & Hellmer 2010 paper
   // as          = -0.057;       // K/psu
@@ -516,7 +516,7 @@ void Pico::set_ocean_input_fields(const PicoConstants &cc) {
 
       // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
       const double pressure = cc.rhoi * cc.earth_grav * ice_thickness(i, j) * 1e-4;
-      const double T_pmt = cc.a * m_Soc_box0(i, j) + cc.b - cc.c * pressure; // in Kelvin, here potential freezing point
+      const double T_pmt = cc.a_pot * m_Soc_box0(i, j) + cc.b_pot - cc.c_pot * pressure; // in Kelvin, here potential freezing point
 
       // temperature input for grounding line box should not be below pressure melting point
       if (m_Toc_box0(i, j) < T_pmt) {
@@ -545,7 +545,7 @@ double f_pressure(const PicoConstants &cc, double ice_thickness){
   //! See equation A6 and lines before in PICO paper
 double f_T_star(const PicoConstants &cc, double salinity, double temperature, double pressure){
        // in Kelvin
-      return cc.a * salinity + cc.b - cc.c * pressure - temperature;
+      return cc.a_pot * salinity + cc.b_pot - cc.c_pot * pressure - temperature;
 }
 
 // FIXME: check types of the input arguments.
@@ -559,22 +559,22 @@ double f_Toc_other_boxes(const PicoConstants &cc, double area, double gamma_T,
     double overturning, double salinity_in_boundary){
 
     double g1 = area* gamma_T;
-    double g2 = g1 / (cc.nu * cc.lambda);
+    double g2 = g1 / (cc.nu * cc.lambda_);
 
     // temperature for Box i > 1
     return temp_in_boundary + g1 * T_star / (overturning + g1 - g2 *
-      cc.a * salinity_in_boundary); // K
+      cc.a_pot * salinity_in_boundary); // K
 }
 
 double f_Soc_box1(const PicoConstants &cc, double Toc_box0, double Soc_box0, double Toc){
 
-    return Soc_box0 - (Soc_box0 / (cc.nu * cc.lambda)) * (Toc_box0 - Toc);
+    return Soc_box0 - (Soc_box0 / (cc.nu * cc.lambda_)) * (Toc_box0 - Toc);
 }
 
 double f_Soc_other_boxes(const PicoConstants &cc, double salinity_in_boundary, double temperature_in_boundary, double Toc){
 
     return salinity_in_boundary - salinity_in_boundary * (temperature_in_boundary -
-      Toc) / (cc.nu * cc.lambda); // psu;
+      Toc) / (cc.nu * cc.lambda_); // psu;
 }
 
 
@@ -582,20 +582,20 @@ double f_Soc_other_boxes(const PicoConstants &cc, double salinity_in_boundary, d
 //! calculate pressure melting point from potential temperature
 double f_pot_pressure_melting(const PicoConstants &cc, double salinity, double pressure){
     // using coefficients for potential temperature
-    return cc.a * salinity + cc.b - cc.c * pressure;
+    return cc.a_pot * salinity + cc.b_pot - cc.c_pot * pressure;
 }
 
 //! equation 5 in the PICO paper.
 //! calculate pressure melting point from in-situ temperature
 double f_pressure_melting(const PicoConstants &cc, double salinity, double pressure){
     // using coefficients for potential temperature
-    return cc.as * salinity + cc.bs - cc.cs * pressure;
+    return cc.a_in_situ * salinity + cc.b_in_situ - cc.c_in_situ * pressure;
 }
 
 //! equation 8 in the PICO paper.
 double f_bmelt_rate(const PicoConstants &cc, double m_gamma_T, double pm_point, double Toc){
     // in m/s
-    return m_gamma_T / (cc.nu * cc.lambda) * (Toc - pm_point);
+    return m_gamma_T / (cc.nu * cc.lambda_) * (Toc - pm_point);
 }
 
 //! Beckmann & Goose meltrate
@@ -638,7 +638,7 @@ double f_Toc_box1(const PicoConstants &cc, double area, double T_star, double So
              bool *success) {
 
   double g1 = area * cc.gamma_T;
-  double s1 = Soc_box0 / (cc.nu * cc.lambda);
+  double s1 = Soc_box0 / (cc.nu * cc.lambda_);
 
   // These are the coefficients for solving the quadratic temperature equation
   // trough the p-q formula.

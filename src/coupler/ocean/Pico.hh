@@ -32,7 +32,15 @@ class PicoConstants {
 public:
   PicoConstants(const Config &config);
 
-  double earth_grav, rhoi, rhow, rho_star, nu, latentHeat, c_p_ocean, lambda, a, b, c, as, bs, cs, alpha, beta;
+  double earth_grav, rhoi, rhow, rho_star, nu, latentHeat, c_p_ocean, alpha, beta;
+
+  double lambda_;
+
+  // coefficients of the parameterization of the potential temperature
+  double a_pot, b_pot, c_pot;
+
+  // coefficients of the parameterization of the in situ temperature
+  double b_in_situ, c_in_situ, a_in_situ;
 
   double gamma_T, overturning_coeff, T_dummy, S_dummy;
 
