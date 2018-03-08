@@ -34,17 +34,17 @@ BoxModel::BoxModel(const Config &config) {
   // conditions)
   m_S_dummy = 34.7;
 
-  m_earth_grav = config.get_double("constants.standard_gravity");
+  m_earth_grav        = config.get_double("constants.standard_gravity");
   m_ice_density       = config.get_double("constants.ice.density");
-  m_sea_water_density       = config.get_double("constants.sea_water.density");
-  m_rho_star   = 1033;        // kg/m^3
-  m_nu         = m_ice_density / m_sea_water_density; // no unit
+  m_sea_water_density = config.get_double("constants.sea_water.density");
+  m_rho_star          = 1033;                                // kg/m^3
+  m_nu                = m_ice_density / m_sea_water_density; // no unit
 
   //Joule / kg
   m_latentHeat = config.get_double("constants.fresh_water.latent_heat_of_fusion");
 
   // J/(K*kg), specific heat capacity of ocean mixed layer
-  m_c_p_ocean  = 3974.0;
+  m_c_p_ocean = 3974.0;
 
   m_lambda = m_latentHeat / m_c_p_ocean; // °C, NOTE K vs °C
 
@@ -82,12 +82,11 @@ BoxModel::BoxModel(const Config &config) {
 
 
 double BoxModel::pressure(double ice_thickness) const {
-      // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
-      return m_ice_density * m_earth_grav * ice_thickness * 1e-4;
+  // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
+  return m_ice_density * m_earth_grav * ice_thickness * 1e-4;
 }
 
-double BoxModel::Toc_box1(double area, double T_star, double Soc_box0, double Toc_box0,
-                          bool *success) const {
+double BoxModel::Toc_box1(double area, double T_star, double Soc_box0, double Toc_box0, bool *success) const {
 
   double g1 = area * m_gamma_T;
   double s1 = Soc_box0 / (m_nu * m_lambda);
@@ -116,25 +115,22 @@ double BoxModel::Toc_box1(double area, double T_star, double Soc_box0, double To
   return Toc_box0 - (-0.5 * p + sqrt(0.25 * p * p - q));
 }
 
-double BoxModel::Toc_other_boxes(double area, double temp_in_boundary,
-                                 double T_star, double overturning,
+double BoxModel::Toc_other_boxes(double area, double temp_in_boundary, double T_star, double overturning,
                                  double salinity_in_boundary) const {
 
   double g1 = area * m_gamma_T;
   double g2 = g1 / (m_nu * m_lambda);
 
   // temperature for Box i > 1
-  return temp_in_boundary + g1 * T_star / (overturning + g1 - g2 *
-                                           m_a_pot * salinity_in_boundary); // K
+  return temp_in_boundary + g1 * T_star / (overturning + g1 - g2 * m_a_pot * salinity_in_boundary); // K
 }
 
 double BoxModel::Soc_box1(double Toc_box0, double Soc_box0, double Toc) const {
 
-    return Soc_box0 - (Soc_box0 / (m_nu * m_lambda)) * (Toc_box0 - Toc);
+  return Soc_box0 - (Soc_box0 / (m_nu * m_lambda)) * (Toc_box0 - Toc);
 }
 
-double BoxModel::Soc_other_boxes(double salinity_in_boundary,
-                                 double temperature_in_boundary, double Toc) const {
+double BoxModel::Soc_other_boxes(double salinity_in_boundary, double temperature_in_boundary, double Toc) const {
 
   return salinity_in_boundary - salinity_in_boundary * (temperature_in_boundary - Toc) / (m_nu * m_lambda); // psu;
 }
@@ -143,21 +139,21 @@ double BoxModel::Soc_other_boxes(double salinity_in_boundary,
 //! equation 5 in the PICO paper.
 //! calculate pressure melting point from potential temperature
 double BoxModel::pot_pressure_melting(double salinity, double pressure) const {
-    // using coefficients for potential temperature
-    return m_a_pot * salinity + m_b_pot - m_c_pot * pressure;
+  // using coefficients for potential temperature
+  return m_a_pot * salinity + m_b_pot - m_c_pot * pressure;
 }
 
 //! equation 5 in the PICO paper.
 //! calculate pressure melting point from in-situ temperature
 double BoxModel::pressure_melting(double salinity, double pressure) const {
-    // using coefficients for potential temperature
-    return m_a_in_situ * salinity + m_b_in_situ - m_c_in_situ * pressure;
+  // using coefficients for potential temperature
+  return m_a_in_situ * salinity + m_b_in_situ - m_c_in_situ * pressure;
 }
 
 //! equation 8 in the PICO paper.
 double BoxModel::bmelt_rate(double pm_point, double Toc) const {
-    // in m/s
-    return m_gamma_T / (m_nu * m_lambda) * (Toc - pm_point);
+  // in m/s
+  return m_gamma_T / (m_nu * m_lambda) * (Toc - pm_point);
 }
 
 //! Beckmann & Goose meltrate
@@ -169,13 +165,12 @@ double BoxModel::bmelt_rate_beckm_goose(double Toc, double pot_pm_point) const {
 }
 
 //! equation 3 in the PICO paper. See also equation 4.
-double BoxModel::overturning(double Soc_box0,
-                             double Soc, double Toc_box0, double Toc) const {
+double BoxModel::overturning(double Soc_box0, double Soc, double Toc_box0, double Toc) const {
   // in m^3/s
   return m_overturning_coeff * m_rho_star * (m_beta * (Soc_box0 - Soc) - m_alpha * (Toc_box0 - Toc));
 }
 
-  //! See equation A6 and lines before in PICO paper
+//! See equation A6 and lines before in PICO paper
 double BoxModel::T_star(double salinity, double temperature, double pressure) const {
   // in Kelvin
   // FIXME: check that this stays always negative.
