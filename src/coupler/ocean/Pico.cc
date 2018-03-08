@@ -323,9 +323,9 @@ void Pico::update_impl(double my_t, double my_dt) {
 
 //! Compute temperature and salinity input from ocean data by averaging.
 
-//! We average over ocean_contshelf_mask for each basin.
+//! We average the ocean data over the continental shelf reagion for each basin.
 //! We use dummy ocean data if no such average can be calculated.
-//!
+
 
 void Pico::compute_ocean_input_per_basin(const BoxModel &cc,
                                          const IceModelVec2Int &basin_mask,
@@ -341,7 +341,9 @@ void Pico::compute_ocean_input_per_basin(const BoxModel &cc,
 
   IceModelVec::AccessList list{&theta_ocean, &salinity_ocean, &basin_mask, &continental_shelf_mask };
 
-  // compute the sum for each basin
+  // compute the sum for each basin for region that intersects with the
+  // continental shelf area and is not covered by an ice shelf.
+  // (continental shelf mask excludes ice shelf areas)
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -355,7 +357,7 @@ void Pico::compute_ocean_input_per_basin(const BoxModel &cc,
 
   // Divide by number of grid cells if more than zero cells belong to the basin.
   // if no ocean_contshelf_mask values intersect with the basin, m_count is zero.
-  // in such case, use dummy temperature and salinity. This could happen, for
+  // In such case, use dummy temperature and salinity. This could happen, for
   // example, if the ice shelf front advances beyond the continental shelf break.
   for (int basin_id = 0; basin_id < m_numberOfBasins; basin_id++) {
 
@@ -466,6 +468,12 @@ void Pico::set_ocean_input_fields(const IceModelVec2S &ice_thickness,
 
       int shelf_id = shelf_mask(i, j);
       // weighted input depending on the number of shelf cells in each basin
+      // Though this runs over all ocean basins, most of the summands are zero because
+      // an ice shelf has grid cells only in a few basins.
+      // The weighing assumes that the fraction of ice shelf area per basin is a good
+      // proxy for continental-shelf open-ocean area per basin. We here weigh with the
+      // first, but the second is the physically correct quantity to weigh the ocean
+      // properties.
       for (int basin_id = 1; basin_id < m_numberOfBasins; basin_id++) { //Note: basin_id=0 yields nan
 
         // calculate  Toc_box0 and Soc_box0 where shelf mask > 0 and for basins > 0
@@ -482,9 +490,10 @@ void Pico::set_ocean_input_fields(const IceModelVec2S &ice_thickness,
       // pressure melting point for potential temperature, in Kelvin
       double pot_pm_point = cc.pot_pressure_melting(Soc_box0(i, j), pressure);
 
-      // temperature input for grounding line box should not be below pressure melting point
+      // Temperature input for grounding line box should not be below pressure melting point.
+      // Depending on local ice thickness, we set this temperature slightly above pressure
+      // melting point at each grid cell.
       if (Toc_box0(i, j) < pot_pm_point) {
-        // Setting Toc_box0 a little higher than pot_pm_point ensures that later equations are well solvable.
         Toc_box0(i, j) = pot_pm_point + 0.001;
         lcounterTpmp += 1;
       }
