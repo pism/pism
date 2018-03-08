@@ -465,8 +465,8 @@ double f_pressure(const PicoConstants &cc, double ice_thickness){
 
 void Pico::set_ocean_input_fields(const IceModelVec2S &ice_thickness,
                                   const IceModelVec2CellType &mask,
-                                  const IceModelVec2Int &m_cbasins,
-                                  const IceModelVec2Int &m_shelf_mask,
+                                  const IceModelVec2Int &cbasins,
+                                  const IceModelVec2Int &shelf_mask,
                                   const PicoConstants &cc,
                                   IceModelVec2S &Toc_box0,
                                   IceModelVec2S &Soc_box0
@@ -474,8 +474,8 @@ void Pico::set_ocean_input_fields(const IceModelVec2S &ice_thickness,
 
   m_log->message(5, "starting set_ocean_input_fields routine\n");
 
-  IceModelVec::AccessList list{ &ice_thickness, &mask, &m_cbasins, &m_shelf_mask, &m_Soc_box0,
-                                &m_Toc_box0};
+  IceModelVec::AccessList list{ &ice_thickness, &mask, &cbasins, &shelf_mask, &Soc_box0,
+                                &Toc_box0};
 
   // compute for each shelf the number of cells  within each basin
   std::vector<std::vector<double> > lcounter_shelf_cells_in_basin(m_numberOfShelves,
@@ -497,8 +497,8 @@ void Pico::set_ocean_input_fields(const IceModelVec2S &ice_thickness,
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    int shelf_id = m_shelf_mask(i, j);
-    int basin_id = m_cbasins(i, j);
+    int shelf_id = shelf_mask(i, j);
+    int basin_id = cbasins(i, j);
     lcounter_shelf_cells_in_basin[shelf_id][basin_id]++;
     lcounter_shelf_cells[shelf_id]++;
   }
@@ -519,36 +519,33 @@ void Pico::set_ocean_input_fields(const IceModelVec2S &ice_thickness,
     const int i = p.i(), j = p.j();
 
     // make sure all temperatures and salinities are zero at the beginning of each timestep
-    m_Toc_box0(i, j) = 0.0;    // in K
-    m_Soc_box0(i, j) = 0.0;    // in psu
+    Toc_box0(i, j) = 0.0;    // in K
+    Soc_box0(i, j) = 0.0;    // in psu
 
-    if (mask(i, j) == MASK_FLOATING && m_shelf_mask(i, j) > 0) { // shelf_mask = 0 in lakes
+    if (mask(i, j) == MASK_FLOATING && shelf_mask(i, j) > 0) { // shelf_mask = 0 in lakes
 
-      int shelf_id = m_shelf_mask(i, j);
+      int shelf_id = shelf_mask(i, j);
       // weighted input depending on the number of shelf cells in each basin
       for (int basin_id = 1; basin_id < m_numberOfBasins; basin_id++) { //Note: basin_id=0 yields nan
 
         // calculate  Toc_box0 and Soc_box0 where shelf mask > 0 and for basins > 0
-        m_Toc_box0(i, j) += f_weight_by_shelf_area_per_basin(m_Toc_box0_vec[basin_id],
-                                    counter_shelf_cells_in_basin[shelf_id][basin_id],
-                                    counter_shelf_cells[shelf_id]);
+        Toc_box0(i, j) += f_weight_by_shelf_area_per_basin(m_Toc_box0_vec[basin_id],
+                                                           counter_shelf_cells_in_basin[shelf_id][basin_id],
+                                                           counter_shelf_cells[shelf_id]);
 
-        m_Soc_box0(i, j) += f_weight_by_shelf_area_per_basin(m_Soc_box0_vec[basin_id],
-                                    counter_shelf_cells_in_basin[shelf_id][basin_id],
-                                    counter_shelf_cells[shelf_id]);
-        //     m_Toc_box0_vec[basin_id] * counter_shelf_cells_in_basin[shelf_id][basin_id] / counter_shelf_cells[shelf_id];
-        // m_Soc_box0(i, j) +=
-        //     m_Soc_box0_vec[basin_id] * counter_shelf_cells_in_basin[shelf_id][basin_id] / counter_shelf_cells[shelf_id];
+        Soc_box0(i, j) += f_weight_by_shelf_area_per_basin(m_Soc_box0_vec[basin_id],
+                                                           counter_shelf_cells_in_basin[shelf_id][basin_id],
+                                                           counter_shelf_cells[shelf_id]);
       }
 
       double pressure = f_pressure(cc, ice_thickness(i, j));
       // pressure melting point for potential temperature, in Kelvin
-      double pot_pm_point = f_pot_pressure_melting(cc, m_Soc_box0(i, j), pressure);
+      double pot_pm_point = f_pot_pressure_melting(cc, Soc_box0(i, j), pressure);
 
       // temperature input for grounding line box should not be below pressure melting point
-      if (m_Toc_box0(i, j) < pot_pm_point) {
+      if (Toc_box0(i, j) < pot_pm_point) {
         // Setting Toc_box0 a little higher than pot_pm_point ensures that later equations are well solvable.
-        m_Toc_box0(i, j) = pot_pm_point + 0.001;
+        Toc_box0(i, j) = pot_pm_point + 0.001;
         lcounterTpmp += 1;
       }
 
