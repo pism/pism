@@ -424,34 +424,58 @@ void PicoGeometry::compute_distances_gl(const IceModelVec2CellType &mask,
 
   result.update_ghosts();
 
-  // Derive the distance from the grounding line for all ice shelf cells iteratively.
+  eikonal_equation(result);
+}
+
+/*!
+ * Find an approximate solution of the Eikonal equation on a given domain.
+ *
+ * To specify the problem, the input field (mask) should be filled with
+ *
+ * - values outside the domain
+ * - zeros within the domain
+ * - ones at "wave front" locations
+ *
+ * For example, to compute distances from the grounding line within ice shelves, fill
+ * generic ice shelf locations with zeros, set neighbors of the grounding line to 1, and
+ * the rest of the grid with -1 or some other negative number.
+ *
+ * Note 1: that this implementation updates ghosts *every* iteration. We could speed this
+ * up by checking if a point at a boundary of the processor sub-domain was updated and
+ * update ghosts in those cases only.
+ */
+void eikonal_equation(IceModelVec2Int &mask) {
+
+  IceGrid::ConstPtr grid = mask.grid();
+
   double current_label = 1;
   double continue_loop = 1;
   while (continue_loop != 0) {
 
     continue_loop = 0;
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (result.as_int(i, j) == 0) {
+      if (mask.as_int(i, j) == 0) {
 
-        auto R = result.int_star(i, j);
+        auto R = mask.int_star(i, j);
 
         if (R.ij == 0 and
-            (R.n == current_label or R.s == current_label or R.e == current_label or R.w == current_label)) {
+            (R.n == current_label or R.s == current_label or
+             R.e == current_label or R.w == current_label)) {
           // i.e. this is an shelf cell with no distance assigned yet and with a neighbor
           // that has a distance assigned
-          result(i, j) = current_label + 1;
+          mask(i, j) = current_label + 1;
           continue_loop = 1;
         }
       }
     } // loop over grid points
 
     current_label++;
-    result.update_ghosts();
+    mask.update_ghosts();
 
-    continue_loop = GlobalMax(m_grid->com, continue_loop);
+    continue_loop = GlobalMax(grid->com, continue_loop);
   }
 }
 

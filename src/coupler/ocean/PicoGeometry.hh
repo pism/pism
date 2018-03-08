@@ -30,6 +30,8 @@ class IceModelVec2CellType;
 
 namespace ocean {
 
+void eikonal_equation(IceModelVec2Int &mask);
+
 /*!
  * This class isolates geometric computations performed by the PICO ocean model.
  */
@@ -65,6 +67,7 @@ public:
                             const IceModelVec2Int &ocean_mask,
                             const IceModelVec2Int &ice_rises,
                             IceModelVec2Int &dist_gl);
+
 private:
   void label_tmp();
   void relabel_by_size(IceModelVec2Int &mask);
