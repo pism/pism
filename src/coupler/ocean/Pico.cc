@@ -401,10 +401,10 @@ void Pico::compute_ocean_input_per_basin(const PicoConstants &cc,
     const int i = p.i(), j = p.j();
 
     if (continental_shelf_mask(i, j) == INNER) {
-      int shelf_id = basin_mask(i, j);
-      count[shelf_id] += 1;
-      Sval[shelf_id] += salinity_ocean(i, j);
-      Tval[shelf_id] += theta_ocean(i, j);
+      int basin_id = basin_mask(i, j);
+      count[basin_id] += 1;
+      Sval[basin_id] += salinity_ocean(i, j);
+      Tval[basin_id] += theta_ocean(i, j);
     }
   }
 
@@ -412,32 +412,32 @@ void Pico::compute_ocean_input_per_basin(const PicoConstants &cc,
   // if no ocean_contshelf_mask values intersect with the basin, m_count is zero.
   // in such case, use dummy temperature and salinity. This could happen, for
   // example, if the ice shelf front advances beyond the continental shelf break.
-  for (int shelf_id = 0; shelf_id < m_numberOfBasins; shelf_id++) {
+  for (int basin_id = 0; basin_id < m_numberOfBasins; basin_id++) {
 
-    count[shelf_id] = GlobalSum(m_grid->com, count[shelf_id]);
-    Sval[shelf_id]  = GlobalSum(m_grid->com, Sval[shelf_id]);
-    Tval[shelf_id]  = GlobalSum(m_grid->com, Tval[shelf_id]);
+    count[basin_id] = GlobalSum(m_grid->com, count[basin_id]);
+    Sval[basin_id]  = GlobalSum(m_grid->com, Sval[basin_id]);
+    Tval[basin_id]  = GlobalSum(m_grid->com, Tval[basin_id]);
 
     // if basin is not dummy basin 0 or there are no ocean cells in this basin to take the mean over.
     // FIXME: the following warning occurs once at initialization before input is available.
     // Please ignore this very first warning for now.
-    if (shelf_id > 0 && count[shelf_id] == 0) {
+    if (basin_id > 0 && count[basin_id] == 0) {
       m_log->message(2, "PICO ocean WARNING: basin %d contains no cells with ocean data on continental shelf\n"
                         "(no values with ocean_contshelf_mask=2).\n"
                         "No mean salinity or temperature values are computed, instead using\n"
                         "the standard values T_dummy =%.3f, S_dummy=%.3f.\n"
                         "This might bias your basal melt rates, check your input data carefully.\n",
-                     shelf_id, cc.T_dummy, cc.S_dummy);
-      m_Toc_box0_vec[shelf_id] = cc.T_dummy;
-      m_Soc_box0_vec[shelf_id] = cc.S_dummy;
+                     basin_id, cc.T_dummy, cc.S_dummy);
+      m_Toc_box0_vec[basin_id] = cc.T_dummy;
+      m_Soc_box0_vec[basin_id] = cc.S_dummy;
     } else {
-      Sval[shelf_id] = Sval[shelf_id] / count[shelf_id];
-      Tval[shelf_id] = Tval[shelf_id] / count[shelf_id];
+      Sval[basin_id] = Sval[basin_id] / count[basin_id];
+      Tval[basin_id] = Tval[basin_id] / count[basin_id];
 
-      m_Toc_box0_vec[shelf_id] = Tval[shelf_id];
-      m_Soc_box0_vec[shelf_id] = Sval[shelf_id];
-      m_log->message(5, "  %d: temp =%.3f, salinity=%.3f\n", shelf_id, m_Toc_box0_vec[shelf_id],
-                     m_Soc_box0_vec[shelf_id]);
+      m_Toc_box0_vec[basin_id] = Tval[basin_id];
+      m_Soc_box0_vec[basin_id] = Sval[basin_id];
+      m_log->message(5, "  %d: temp =%.3f, salinity=%.3f\n", basin_id, m_Toc_box0_vec[basin_id],
+                     m_Soc_box0_vec[basin_id]);
     }
   }
 }
