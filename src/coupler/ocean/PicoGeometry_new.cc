@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <algorithm>            // max_element
+
 #include "PicoGeometry.hh"
 #include "pism/calving/connected_components.hh"
 #include "pism/util/IceModelVec2CellType.hh"
