@@ -855,13 +855,13 @@ void Pico::calculate_basal_melt_missing_cells(const BoxModel &cc,
     }
 
     // cell with missing data identifier numberOfBoxes+1, as set in routines before
-    if ((shelf_id > 0) && (box_mask(i, j) == (m_numberOfBoxes + 1))) {
+    if (shelf_id > 0 and box_mask.as_int(i, j) == (m_numberOfBoxes + 1)) {
 
       double pressure = cc.pressure(ice_thickness(i, j));
 
-      // potential pressure melting point needed to calculate thermal driving
-      // using coefficients for potential temperature
-      // these are different to the ones used in POConstantPIK
+      // Potential pressure melting point needed to calculate thermal driving using
+      // coefficients for potential temperature. (These are different compared to the ones
+      // used in ocean::PIK.)
       double pot_pm_point = cc.pot_pressure_melting(Soc_box0(i, j), pressure);
 
       basal_melt_rate(i, j) = cc.bmelt_rate_beckm_goose(Toc_box0(i, j), pot_pm_point);
