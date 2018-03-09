@@ -390,7 +390,7 @@ void PicoGeometry::compute_distances_gl(const IceModelVec2CellType &mask,
       // if this is an ice shelf cell (or an ice rise) or a hole in an ice shelf
 
       // label the shelf cells adjacent to the grounding line with 1
-      bool neighbor_to_land;
+      bool neighbor_to_land = false;
       if (exclude_rises) {
         neighbor_to_land =
             (ice_rises(i, j + 1) == CONTINENTAL or
@@ -415,6 +415,42 @@ void PicoGeometry::compute_distances_gl(const IceModelVec2CellType &mask,
 
       if (neighbor_to_land) {
         // i.e. there is a grounded neighboring cell (which is not ice rise!)
+        result(i, j) = 1;
+      } else {
+        result(i, j) = 0;
+      }
+    }
+  }
+
+  result.update_ghosts();
+
+  eikonal_equation(result);
+}
+
+void PicoGeometry::compute_distances_if(const IceModelVec2CellType &mask,
+                                        const IceModelVec2Int &ocean_mask,
+                                        const IceModelVec2Int &ice_rises,
+                                        IceModelVec2Int &result) {
+
+  IceModelVec::AccessList list{ &mask, &ice_rises, &ocean_mask, &result };
+
+  bool exclude_rises = m_config->get_boolean("ocean.pico.exclude_icerises");
+
+  result.set(-1);
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.as_int(i, j) == MASK_FLOATING or
+        ocean_mask.as_int(i, j) == 1 or
+        (exclude_rises and ice_rises.as_int(i, j) == RISE)) {
+      // if this is an ice shelf cell (or an ice rise) or a hole in an ice shelf
+
+      // label the shelf cells adjacent to the ice front with 1
+      auto M = ocean_mask.int_star(i, j);
+
+      if (M.n == 2 or M.e == 2 or M.s == 2 or M.w == 2) {
+        // i.e. there is a neighboring open ocean cell
         result(i, j) = 1;
       } else {
         result(i, j) = 0;
@@ -479,91 +515,100 @@ void eikonal_equation(IceModelVec2Int &mask) {
   }
 }
 
-void PicoGeometry::compute_distances_if(const IceModelVec2CellType &mask,
-                                        const IceModelVec2Int &ocean_mask,
-                                        const IceModelVec2Int &ice_rises,
-                                        IceModelVec2Int &dist_if) {
+void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl,
+                                    const IceModelVec2Int &D_cf,
+                                    const IceModelVec2Int &shelf_mask,
+                                    const IceModelVec2Int &lake_mask,
+                                    const IceModelVec2CellType &cell_type,
+                                    IceModelVec2Int &result) {
 
-  double currentLabelIF = 1; // to find DistIF, 1 if floating and directly adjacent to an ocean cell
+  IceModelVec::AccessList list {&D_gl, &D_cf, &shelf_mask, &lake_mask, &cell_type, &result};
 
-  double global_continue_loop = 1;
-  double local_continue_loop  = 0;
+  int n_shelves = shelf_mask.range().max + 1;
 
-  IceModelVec::AccessList list{ &mask, &ice_rises, &ocean_mask, &dist_if };
+  std::vector<double> GL_distance_max(n_shelves, 0.0);
+  std::vector<double> CF_distance_max(n_shelves, 0.0);
 
-  bool exclude_rises = true;
-
-  dist_if.set(0);
-
-  const int EXCLUDE = 1;
-  const int INNER = 2;
-
-  // Find the grounding line and the ice front and
-  // set DistIF to 1 if ice shelf cell is next to the calving front.
-  // Ice holes within the shelf are treated like ice shelf cells,
-  // if exicerises_set, also ice rises are treated like ice shelf cells.
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    bool condition;
-    if (exclude_rises) {
-      condition =
-          (mask(i, j) == MASK_FLOATING || ice_rises(i, j) == EXCLUDE || ocean_mask(i, j) == EXCLUDE);
-    } else {
-      condition = (mask(i, j) == MASK_FLOATING || ocean_mask(i, j) == EXCLUDE);
+    int shelf_id = shelf_mask(i, j);
+    assert(shelf_id >= 0);
+    assert(shelf_id < n_shelves + 1);
+
+    if (shelf_id == 0) {
+      // not at a shelf; skip to the next grid point
+      continue;
     }
 
-    if (condition) { //if this is an ice shelf cell (or an ice rise) or a hole in an ice shelf
+    if (D_gl(i, j) > GL_distance_max[shelf_id]) {
+      GL_distance_max[shelf_id] = D_gl(i, j);
+    }
 
-      // label the shelf cells adjacent to the calving front with DistIF = 1,
-      // we do not need to exclude ice rises in this case.
-      bool neighbor_to_ocean;
-      neighbor_to_ocean = (ocean_mask(i, j + 1) == INNER || ocean_mask(i, j - 1) == INNER ||
-                           ocean_mask(i + 1, j) == INNER || ocean_mask(i - 1, j) == INNER);
+    if (D_cf(i, j) > CF_distance_max[shelf_id]) {
+      CF_distance_max[shelf_id] = D_cf(i, j);
+    }
+  }
 
-      if (neighbor_to_ocean) {
-        dist_if(i, j) = currentLabelIF;
+  // compute global maximums
+  for (int k = 0; k < n_shelves; ++k) {
+    GL_distance_max[k] = GlobalMax(m_grid->com, GL_distance_max[k]);
+    CF_distance_max[k] = GlobalMax(m_grid->com, CF_distance_max[k]);
+  }
+
+  double GL_distance_ref = *std::max_element(GL_distance_max.begin(),
+                                             GL_distance_max.end());
+
+  // compute the number of boxes in each shelf
+
+  std::vector<int> n_boxes(n_shelves, 0);
+  int n_min = 1;
+  int number_of_boxes = m_config->get_double("ocean.pico.number_of_boxes");
+  double zeta = 0.5;
+
+  for (int k = 0; k < n_shelves; ++k) {
+    n_boxes[k] = n_min + round(pow((GL_distance_max[k] / GL_distance_ref), zeta) *
+                               (number_of_boxes - n_min));
+
+    n_boxes[k] = std::min(n_boxes[k], number_of_boxes);
+  }
+
+  result.set(0.0);
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    int d_gl = D_gl.as_int(i, j);
+    int d_cf = D_cf.as_int(i, j);
+
+    if (cell_type.as_int(i, j) == MASK_FLOATING and d_gl > 0.0 and d_cf > 0.0 and
+        result.as_int(i, j) == 0) {
+      int shelf_id = shelf_mask(i, j);
+      int n = n_boxes[shelf_id];
+
+      // relative position on the shelf (ranges from 0 to 1), increasing towards the
+      // calving front (see equation 10 in the PICO paper)
+      double r = d_gl / (double)(d_gl + d_cf);
+
+      double C = pow(1.0 - r, 2.0);
+      for (int k = 0; k < n; ++k) {
+        if ((n - k - 1) / (double)n <= C and C <= (n - k) / (double)n) {
+          result(i, j) = std::min(d_gl, k + 1);
+        }
       }
     }
   }
 
-  dist_if.update_ghosts();
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    if (cell_type.as_int(i, j) == MASK_FLOATING and result.as_int(i, j) == 0 and
+        lake_mask.as_int(i, j) != 1) {
+      // floating, no box number assigned, and not a sub-glacial lake
+      result(i, j) = -1;
+    }
+  }
 
-  // DistIF calculation: Derive the distance from the calving front for
-  // all ice shelf cells iteratively.
-  // Ice holes within the shelf are treated like ice shelf cells,
-  // if exicerises_set, also ice rises are treated like ice shelf cells.
-  global_continue_loop = 1; // start loop
-  while (global_continue_loop != 0) {
-
-    local_continue_loop = 0;
-
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      bool condition; // this cell is floating or an hole in the ice shelf (or an ice rise)
-      if (exclude_rises) {
-        condition = (mask(i, j) == MASK_FLOATING || ice_rises(i, j) == EXCLUDE ||
-                     ocean_mask(i, j) == EXCLUDE);
-      } else {
-        condition = (mask(i, j) == MASK_FLOATING || ocean_mask(i, j) == EXCLUDE);
-      }
-
-      if (condition && dist_if(i, j) == 0 &&
-          (dist_if(i, j + 1) == currentLabelIF || dist_if(i, j - 1) == currentLabelIF ||
-           dist_if(i + 1, j) == currentLabelIF || dist_if(i - 1, j) == currentLabelIF)) {
-        // i.e. this is an shelf cell with no distance assigned yet and with a neighbor that has a distance assigned
-        dist_if(i, j) = currentLabelIF + 1;
-        local_continue_loop = 1;
-      } //if
-
-    } // for
-
-    currentLabelIF++;
-    dist_if.update_ghosts();
-    global_continue_loop = GlobalMax(m_grid->com, local_continue_loop);
-
-  } // while: find DistIF
 }
+
 } // end of namespace ocean
 } // end of namespace pism

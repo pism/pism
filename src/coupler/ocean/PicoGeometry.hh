@@ -68,6 +68,12 @@ public:
                             const IceModelVec2Int &ice_rises,
                             IceModelVec2Int &dist_gl);
 
+  void compute_box_mask(const IceModelVec2Int &D_gl,
+                        const IceModelVec2Int &D_cf,
+                        const IceModelVec2Int &shelf_mask,
+                        const IceModelVec2Int &lake_mask,
+                        const IceModelVec2CellType &cell_type,
+                        IceModelVec2Int &result);
 private:
   void label_tmp();
   void relabel_by_size(IceModelVec2Int &mask);
