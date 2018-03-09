@@ -868,7 +868,7 @@ void Pico::calculate_basal_melt_missing_cells(const BoxModel &cc,
 
       // in situ pressure melting point in Kelvin
       // this will be the temperature boundary condition at the ice at the shelf base
-      T_pressure_melting(i, j) = cc.pressure_melting(Soc(i, j), pressure);
+      T_pressure_melting(i, j) = cc.pressure_melting(Soc_box0(i, j), pressure);
 
       // diagnostic outputs
       Toc(i, j) = Toc_box0(i, j); // in Kelvin
