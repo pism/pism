@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,13 +20,12 @@
 #ifndef _PBLINGLECLARK_H_
 #define _PBLINGLECLARK_H_
 
-#include <fftw3.h>
-
 #include "PISMBedDef.hh"
-#include "deformation.hh"
 
 namespace pism {
 namespace bed {
+
+class BedDeformLC;
 
 //! A wrapper class around BedDeformLC.
 class PBLingleClark : public BedDef {
@@ -34,29 +33,44 @@ public:
   PBLingleClark(IceGrid::ConstPtr g);
   virtual ~PBLingleClark();
 
-protected:
+  const IceModelVec2S& total_displacement() const;
+
+private:
   MaxTimestep max_timestep_impl(double t);
+
+  void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
+                                  double my_t, double my_dt);
+
   void init_impl();
   void init_with_inputs_impl(const IceModelVec2S &bed_elevation,
                              const IceModelVec2S &bed_uplift,
                              const IceModelVec2S &ice_thickness);
-  void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
-                                  double my_t, double my_dt);
-  void correct_topg();
-  void allocate();
+private:
+  void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                             IO_Type nctype);
+private:
+  //! Total (viscous and elastic) bed displacement.
+  IceModelVec2S m_bed_displacement;
 
-  // Vecs on processor 0:
-  //! ice thickness
-  petsc::Vec::Ptr m_Hp0;
-  //! bed elevation
-  petsc::Vec::Ptr m_bedp0;
-  //! initial (start-of-the-run) thickness
-  petsc::Vec::Ptr m_Hstartp0;
-  //! initial bed elevation
-  petsc::Vec::Ptr m_bedstartp0;
-  //! bed uplift
-  petsc::Vec::Ptr m_upliftp0;
+  //! Storage on rank zero. Used to pass the load to the serial deformation model and get
+  //! bed displacement back.
+  petsc::Vec::Ptr m_work0;
+
+  //! Bed relief relative to the bed displacement.
+  IceModelVec2S m_relief;
+
+  //! Serial viscoelastic bed deformation model.
   BedDeformLC *m_bdLC;
+
+  //! extended grid for the viscous plate displacement
+  IceGrid::Ptr m_extended_grid;
+
+  //! Viscous displacement on the extended grid (part of the model state).
+  IceModelVec2S m_viscous_bed_displacement;
+  //! rank 0 storage using the extended grid
+  petsc::Vec::Ptr m_viscous_bed_displacement0;
 };
 
 } // end of namespace bed

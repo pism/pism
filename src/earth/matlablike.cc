@@ -1,4 +1,4 @@
-/* Copyright (C) 2004-2009, 2014, 2015 Ed Bueler
+/* Copyright (C) 2004-2009, 2014, 2015, 2017 Ed Bueler and Constantine Khroulev
 
  This file is part of PISM.
 
@@ -32,8 +32,8 @@ void conv2_same(Vec vA, int mA, int nA,  Vec vB, int mB, int nB,
     B(vB, mB, nB),
     result(vresult, mA, nA);
 
-  for (int i=0; i < mA; i++) {
-    for (int j=0; j < nA; j++) {
+  for (int j=0; j < nA; j++) {
+    for (int i=0; i < mA; i++) {
       double sum = 0.0;
       for (int r = std::max(0, i - mB + 1); r < std::min(mA, i); r++) {
         for (int s = std::max(0, j - nB + 1); s < std::min(nA, j); s++) {
@@ -66,11 +66,11 @@ double dblquad_cubature(integrand f, double ax, double bx, double ay, double by,
   double   xmin[2] = {ax, ay};
   double   xmax[2] = {bx, by};
   unsigned maxEval = 5000;
-  double   val, estimated_error;
+  double   result = 0.0, estimated_error = 0.0;
 
   /* see cubature.h: */
   adapt_integrate(f, fdata, 2, xmin, xmax, 
-                  maxEval, 0.0, reqRelError, &val, &estimated_error);
-  return val;
+                  maxEval, 0.0, reqRelError, &result, &estimated_error);
+  return result;
 }
 

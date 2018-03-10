@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015 Ed Bueler
+// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015, 2017, 2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,7 @@
 
 #include <petscvec.h>
 #include <fftw3.h>
+#include <vector>
 
 #include "base/util/petscwrappers/Vec.hh"
 
@@ -32,7 +33,7 @@ namespace bed {
 
 //! Class implementing the bed deformation model described in [\ref BLKfastearth].
 /*!
-  This class implements the [\ref LingleClark] bed deformation model by a Fourier 
+  This class implements the [\ref LingleClark] bed deformation model by a Fourier
   spectral collocation method, as described in [\ref BLKfastearth].  (The former
   reference is where the continuum model arose, and a flow-line application is given.
   The latter reference describes a new, fast method and gives verification results.
@@ -42,65 +43,99 @@ namespace bed {
   lithosphere) and a spherical elastic model are computed.  They are superposed
   because the underlying earth model is linear.
 
-  The class assumes that the supplied Petsc Vecs are *sequential*.  It is expected to be 
-  run only on processor zero (or possibly by each processor once each processor 
+  The class assumes that the supplied Petsc Vecs are *sequential*.  It is expected to be
+  run only on processor zero (or possibly by each processor once each processor
   owns the entire 2D gridded ice thicknesses and bed elevations.)
 
-  A test program for this class is pism/src/verif/tryLCbd.cc.
+  This model always assumes that we start with no load. Note that this does not mean that we
+  starting state is the equilibrium: the viscous plate may be "pre-bent" by using a provided
+  displacement field or by computing its displacement using an uplift field.
 */
 class BedDeformLC {
 public:
   BedDeformLC(const Config &config,
-                bool myinclude_elastic,
-                int myMx, int myMy, double mydx, double mydy,
-                int myZ,
-                Vec myHstart, Vec mybedstart, Vec myuplift,  // initial state
-                Vec myH,     // generally gets changed by calling program
-                // before each call to step
-                Vec mybed);  // mybed gets modified by step()
+              bool include_elastic,
+              int Mx, int My,
+              double dx, double dy,
+              int Nx, int Ny);
   ~BedDeformLC();
 
-  void uplift_init();
-  void step(double dtyear, double yearFromStart);
+  void init(Vec thickness, Vec viscous_displacement);
 
-protected:
-  void precompute_coefficients();
-protected:
-  bool        m_include_elastic;
-  int         m_Mx, m_My;
-  double   m_dx, m_dy;
-  //! Factor by which fat FFT domain is larger than region of physical
-  //! interest.
-  int m_Z;
-  double m_icerho,           // ice density (for computing load from volume)
-    m_rho,                        // earth density
-    m_eta,                        // mantle viscosity
-    m_D;                          // lithosphere flexural rigidity
+  void bootstrap(Vec thickness, Vec uplift);
 
+  void step(double dt_seconds, Vec H);
+
+  Vec total_displacement() const;
+
+  Vec viscous_displacement() const;
 private:
+  void compute_elastic_response(Vec H, Vec dE);
+
+  void uplift_problem(Vec ice_thickness, Vec bed_uplift, Vec output);
+
+  void precompute_coefficients();
+
+  void update_displacement(Vec V, Vec dE, Vec dU);
+
+  bool m_include_elastic;
+  // grid size
+  int m_Mx;
+  int m_My;
+  // grid spacing
+  double m_dx;
+  double m_dy;
+  //! load density (for computing load from its thickness)
+  double m_load_density;
+  //! mantle density
+  double m_mantle_density;
+  //! mantle viscosity
+  double m_eta;
+  //! lithosphere flexural rigidity
+  double m_D;
+
+  // acceleration due to gravity
   double m_standard_gravity;
-  int m_Nx, m_Ny,         // fat sizes
-    m_Nxge, m_Nyge;     // fat with boundary sizes
-  int      m_i0_plate,  m_j0_plate; // indices into fat array for corner of thin
-  double   m_Lx, m_Ly;         // half-lengths of the physical domain
-  double   m_Lx_fat, m_Ly_fat; // half-lengths of the FFT (spectral) computational domain
-  std::vector<double>  m_cx, m_cy;        // coeffs of derivatives in Fourier space
 
-  // point to storage owned elsewhere
-  Vec m_H, m_bed, m_H_start, m_bed_start, m_uplift;
+  // size of the extended grid
+  int m_Nx;
+  int m_Ny;
 
-  petsc::Vec m_Hdiff, m_dbedElastic, // sequential; working space
-    m_U, m_U_start,     // sequential and fat
-    m_vleft, m_vright,  // coefficients; sequential and fat
-    m_lrmE;           // load response matrix (elastic); sequential and fat *with* boundary
+  // size of the extended grid with boundary points
+  int m_Nxge;
+  int m_Nyge;
 
-  fftw_complex *m_fftw_input, *m_fftw_output, *m_loadhat; // 2D sequential
-  fftw_plan m_dft_forward, m_dft_inverse;
+  // indices into extended grid for the corner of the physical grid
+  int m_i0_offset;
+  int m_j0_offset;
 
-  void tweak(double seconds_from_start);
+  // half-lengths of the extended (FFT, spectral) computational domain
+  double m_Lx;
+  double m_Ly;
 
-  void clear_fftw_input();
-  void copy_fftw_output(fftw_complex *buffer);
+  // Coefficients of derivatives in Fourier space
+  std::vector<double> m_cx, m_cy;
+
+  // viscous displacement on the extended grid
+  petsc::Vec m_Uv;
+
+  // load response matrix (elastic); sequential and fat *with* boundary
+  petsc::Vec m_load_response_matrix;
+  // elastic plate displacement
+  petsc::Vec m_Ue;
+
+  // total (viscous and elastic) plate displacement
+  petsc::Vec m_U;
+
+  fftw_complex *m_fftw_input;
+  fftw_complex *m_fftw_output;
+  fftw_complex *m_loadhat;
+
+  fftw_plan m_dft_forward;
+  fftw_plan m_dft_inverse;
+
+  void tweak(Vec load_thickness, Vec U, int Nx, int Ny, double time);
+
   void set_fftw_input(Vec input, double normalization, int M, int N, int i0, int j0);
   void get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0);
 };
@@ -109,4 +144,3 @@ private:
 } // end of namespace pism
 
 #endif  /* __deformation_hh */
-
