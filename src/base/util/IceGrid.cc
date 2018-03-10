@@ -35,7 +35,7 @@ namespace pism {
 
 //! Internal structures of IceGrid.
 struct IceGrid::Impl {
-  Context::Ptr ctx;
+  Context::ConstPtr ctx;
 
   // int to match types used by MPI
   int rank;
@@ -148,7 +148,7 @@ std::string spacing_to_string(SpacingType s) {
 /*! @brief Initialize a uniform, shallow (3 z-levels) grid with half-widths (Lx,Ly) and Mx by My
  * nodes.
  */
-IceGrid::Ptr IceGrid::Shallow(Context::Ptr ctx,
+IceGrid::Ptr IceGrid::Shallow(Context::ConstPtr ctx,
                               double Lx, double Ly,
                               double x0, double y0,
                               unsigned int Mx, unsigned int My,
@@ -193,7 +193,7 @@ IceGrid::Ptr IceGrid::Shallow(Context::Ptr ctx,
   @note PETSc order: x in columns, y in rows, indexing as array[y][x]. PISM
   order: x in rows, y in columns, indexing as array[x][y].
  */
-IceGrid::IceGrid(Context::Ptr context, const GridParameters &p)
+IceGrid::IceGrid(Context::ConstPtr context, const GridParameters &p)
   : com(context->com()), m_impl(new Impl) {
 
   try {  m_impl->ctx = context;
@@ -253,7 +253,7 @@ IceGrid::IceGrid(Context::Ptr context, const GridParameters &p)
 }
 
 //! Create a grid using one of variables in `var_names` in `file`.
-IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
+IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
                                const std::string &filename,
                                const std::vector<std::string> &var_names,
                                Periodicity periodicity) {
@@ -273,7 +273,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
 }
 
 //! Create a grid from a file, get information from variable `var_name`.
-IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
+IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
                                const std::string &filename,
                                const std::string &var_name,
                                Periodicity periodicity) {
@@ -1162,7 +1162,7 @@ void GridParameters::init_from_config(Config::ConstPtr config) {
   // does not set ownership ranges because we don't know if these settings are final
 }
 
-void GridParameters::init_from_file(Context::Ptr ctx,
+void GridParameters::init_from_file(Context::ConstPtr ctx,
                                     const PIO &file,
                                     const std::string &variable_name,
                                     Periodicity p) {
@@ -1184,14 +1184,14 @@ void GridParameters::init_from_file(Context::Ptr ctx,
   z = input_grid.z;
 }
 
-GridParameters::GridParameters(Context::Ptr ctx,
+GridParameters::GridParameters(Context::ConstPtr ctx,
                                const PIO &file,
                                const std::string &variable_name,
                                Periodicity p) {
   init_from_file(ctx, file, variable_name, p);
 }
 
-GridParameters::GridParameters(Context::Ptr ctx,
+GridParameters::GridParameters(Context::ConstPtr ctx,
                                const std::string &filename,
                                const std::string &variable_name,
                                Periodicity p) {
@@ -1294,7 +1294,7 @@ void GridParameters::validate() const {
 //! Create a grid using command-line options and (possibly) an input file.
 /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
  */
-IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
+IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
   options::String input_file("-i", "Specifies a PISM input file");
   bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
