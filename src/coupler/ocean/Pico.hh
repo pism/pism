@@ -56,8 +56,6 @@ public:
   double bmelt_rate_beckm_goose(double Toc, double pot_pm_point) const;
   double overturning(double Soc_box0, double Soc, double Toc_box0,
                        double Toc) const;
-  double p_coeff(double g1, double s1) const;
-  double q_coeff(double g1, double s1, double T_star) const;
 
   double gamma_T() const;
   double overturning_coeff() const;
@@ -66,6 +64,8 @@ public:
   double ice_density() const;
   double continental_shelf_depth() const;
 private:
+  double p_coeff(double g1, double s1) const;
+  double q_coeff(double g1, double s1, double T_star) const;
 private:
   double m_gamma_T, m_overturning_coeff, m_T_dummy, m_S_dummy;
   double m_ice_density, m_continental_shelf_depth;
