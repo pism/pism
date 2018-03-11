@@ -49,7 +49,9 @@ public:
 
   enum IceRiseMask {OCEAN = 0, RISE = 1, CONTINENTAL = 2, FLOATING = 3};
 
-  void compute_ice_rises(const IceModelVec2CellType &cell_type, IceModelVec2Int &result);
+  void compute_ice_rises(const IceModelVec2CellType &cell_type,
+                         bool exclude_ice_rises,
+                         IceModelVec2Int &result);
   void compute_lakes(const IceModelVec2CellType &cell_type, IceModelVec2Int &result);
   void compute_ocean_mask(const IceModelVec2CellType &cell_type,
                           IceModelVec2Int &result);
@@ -62,10 +64,12 @@ public:
   void compute_distances_if(const IceModelVec2CellType &mask,
                             const IceModelVec2Int &ocean_mask,
                             const IceModelVec2Int &ice_rises,
+                            bool exclude_ice_rises,
                             IceModelVec2Int &dist_if);
   void compute_distances_gl(const IceModelVec2CellType &mask,
                             const IceModelVec2Int &ocean_mask,
                             const IceModelVec2Int &ice_rises,
+                            bool exclude_ice_rises,
                             IceModelVec2Int &dist_gl);
 
   void compute_box_mask(const IceModelVec2Int &D_gl,

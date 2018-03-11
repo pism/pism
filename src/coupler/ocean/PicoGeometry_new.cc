@@ -56,7 +56,9 @@ const IceModelVec2Int& PicoGeometry::ice_shelf_mask() const {
 
 void PicoGeometry::update(const IceModelVec2S &bed_elevation,
                           const IceModelVec2CellType &cell_type) {
-  compute_ice_rises(cell_type, m_ice_rises);
+  compute_ice_rises(cell_type,
+                    m_config->get_boolean("ocean.pico.exclude_icerises"),
+                    m_ice_rises);
 
   compute_continental_shelf_mask(bed_elevation, m_ice_rises,
                                  m_config->get_double("ocean.pico.continental_shelf_depth"),
@@ -200,6 +202,7 @@ void PicoGeometry::compute_lakes(const IceModelVec2CellType &cell_type,
  * 3 - floating ice
  */
 void PicoGeometry::compute_ice_rises(const IceModelVec2CellType &cell_type,
+                                     bool exclude_ice_rises,
                                      IceModelVec2Int &result) {
   IceModelVec::AccessList list{&cell_type, &m_tmp};
 
@@ -214,7 +217,7 @@ void PicoGeometry::compute_ice_rises(const IceModelVec2CellType &cell_type,
     }
   }
 
-  if (m_config->get_boolean("ocean.pico.exclude_icerises")) {
+  if (exclude_ice_rises) {
     label_tmp();
   }
 
@@ -371,29 +374,28 @@ void PicoGeometry::compute_ocean_mask(const IceModelVec2CellType &cell_type,
 void PicoGeometry::compute_distances_gl(const IceModelVec2CellType &mask,
                                         const IceModelVec2Int &ocean_mask,
                                         const IceModelVec2Int &ice_rises,
+                                        bool exclude_ice_rises,
                                         IceModelVec2Int &result) {
 
   IceModelVec::AccessList list{ &mask, &ice_rises, &ocean_mask, &result };
-
-  bool exclude_rises = m_config->get_boolean("ocean.pico.exclude_icerises");
 
   result.set(-1);
 
   // Find the grounding line and the ice front and set result to 1 if ice shelf cell is
   // next to the grounding line, Ice holes within the shelf are treated like ice shelf
-  // cells, if exclude_rises is set then ice rises are also treated as ice shelf cells.
+  // cells, if exclude_ice_rises is set then ice rises are also treated as ice shelf cells.
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.as_int(i, j) == MASK_FLOATING or
         ocean_mask.as_int(i, j) == 1 or
-        (exclude_rises and ice_rises.as_int(i, j) == RISE)) {
+        (exclude_ice_rises and ice_rises.as_int(i, j) == RISE)) {
       // if this is an ice shelf cell (or an ice rise) or a hole in an ice shelf
 
       // label the shelf cells adjacent to the grounding line with 1
       bool neighbor_to_land = false;
-      if (exclude_rises) {
+      if (exclude_ice_rises) {
         neighbor_to_land =
             (ice_rises(i, j + 1) == CONTINENTAL or
              ice_rises(i, j - 1) == CONTINENTAL or
@@ -432,11 +434,10 @@ void PicoGeometry::compute_distances_gl(const IceModelVec2CellType &mask,
 void PicoGeometry::compute_distances_if(const IceModelVec2CellType &mask,
                                         const IceModelVec2Int &ocean_mask,
                                         const IceModelVec2Int &ice_rises,
+                                        bool exclude_ice_rises,
                                         IceModelVec2Int &result) {
 
   IceModelVec::AccessList list{ &mask, &ice_rises, &ocean_mask, &result };
-
-  bool exclude_rises = m_config->get_boolean("ocean.pico.exclude_icerises");
 
   result.set(-1);
 
@@ -445,7 +446,7 @@ void PicoGeometry::compute_distances_if(const IceModelVec2CellType &mask,
 
     if (mask.as_int(i, j) == MASK_FLOATING or
         ocean_mask.as_int(i, j) == 1 or
-        (exclude_rises and ice_rises.as_int(i, j) == RISE)) {
+        (exclude_ice_rises and ice_rises.as_int(i, j) == RISE)) {
       // if this is an ice shelf cell (or an ice rise) or a hole in an ice shelf
 
       // label the shelf cells adjacent to the ice front with 1
