@@ -566,14 +566,14 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl,
 
   std::vector<int> n_boxes(n_shelves, 0);
   int n_min = 1;
-  int number_of_boxes = m_config->get_double("ocean.pico.number_of_boxes");
+  int max_number_of_boxes = m_config->get_double("ocean.pico.number_of_boxes");
   double zeta = 0.5;
 
   for (int k = 0; k < n_shelves; ++k) {
     n_boxes[k] = n_min + round(pow((GL_distance_max[k] / GL_distance_ref), zeta) *
-                               (number_of_boxes - n_min));
+                               (max_number_of_boxes - n_min));
 
-    n_boxes[k] = std::min(n_boxes[k], number_of_boxes);
+    n_boxes[k] = std::min(n_boxes[k], max_number_of_boxes);
   }
 
   result.set(0.0);
