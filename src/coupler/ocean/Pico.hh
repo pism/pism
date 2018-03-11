@@ -43,19 +43,23 @@ public:
   double T_star(double salinity, double temperature, double pressure) const;
 
   TocBox1 Toc_box1(double area, double T_star, double Soc_box0, double Toc_box0) const;
-  double Toc_other_boxes(double area,
-                         double temp_in_boundary, double T_star,
-                         double overturning, double salinity_in_boundary) const;
-
   double Soc_box1(double Toc_box0, double Soc_box0, double Toc) const;
-  double Soc_other_boxes(double salinity_in_boundary, double temperature_in_boundary, double Toc) const;
 
-  double pot_pressure_melting(double salinity, double pressure) const;
-  double pressure_melting(double salinity, double pressure) const;
-  double bmelt_rate(double pm_point, double Toc) const;
-  double bmelt_rate_beckm_goose(double Toc, double pot_pm_point) const;
-  double overturning(double Soc_box0, double Soc, double Toc_box0,
-                       double Toc) const;
+  double Toc_other_boxes(double area,
+                         double temperature, double T_star,
+                         double overturning, double salinity) const;
+
+  double Soc_other_boxes(double salinity, double temperature, double Toc) const;
+
+  double theta_pm(double salinity, double pressure) const;
+  double T_pm(double salinity, double pressure) const;
+
+  double melt_rate(double pm_point, double Toc) const;
+
+  double melt_rate_beckmann_goose(double pot_pm_point, double Toc) const;
+
+  double overturning(double Soc_box0, double Soc,
+                     double Toc_box0, double Toc) const;
 
   double gamma_T() const;
   double overturning_coeff() const;
@@ -66,12 +70,12 @@ public:
 private:
   double p_coeff(double g1, double s1) const;
   double q_coeff(double g1, double s1, double T_star) const;
-private:
+
   double m_gamma_T, m_overturning_coeff, m_T_dummy, m_S_dummy;
   double m_ice_density, m_continental_shelf_depth;
 
-
-  double m_earth_grav, m_sea_water_density, m_rho_star, m_nu, m_latentHeat, m_c_p_ocean, m_alpha, m_beta;
+  double m_earth_grav, m_sea_water_density, m_rho_star, m_nu, m_latentHeat,
+    m_c_p_ocean, m_alpha, m_beta;
 
   double m_lambda;
 
@@ -79,7 +83,7 @@ private:
   double m_a_pot, m_b_pot, m_c_pot;
 
   // coefficients of the parameterization of the in situ temperature
-  double m_b_in_situ, m_c_in_situ, m_a_in_situ;
+  double m_a_in_situ, m_b_in_situ, m_c_in_situ;
 
   double m_meltFactor;
 };

@@ -455,7 +455,7 @@ void Pico::set_ocean_input_fields(const IceModelVec2S &ice_thickness,
 
 
   // now set temp and salinity box 0:
-  double counterTpmp = 0.0, lcounterTpmp = 0.0;
+  int low_temperature_counter = 0;
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -486,34 +486,34 @@ void Pico::set_ocean_input_fields(const IceModelVec2S &ice_thickness,
                                                            counter_shelf_cells[shelf_id]);
       }
 
-      double pressure = cc.pressure(ice_thickness(i, j));
       // pressure melting point for potential temperature, in Kelvin
-      double pot_pm_point = cc.pot_pressure_melting(Soc_box0(i, j), pressure);
+      double theta_pm = cc.theta_pm(Soc_box0(i, j),
+                                    cc.pressure(ice_thickness(i, j)));
 
       // Temperature input for grounding line box should not be below pressure melting point.
       // Depending on local ice thickness, we set this temperature slightly above pressure
       // melting point at each grid cell.
-      if (Toc_box0(i, j) < pot_pm_point) {
-        Toc_box0(i, j) = pot_pm_point + 0.001;
-        lcounterTpmp += 1;
+      if (Toc_box0(i, j) < theta_pm) {
+        Toc_box0(i, j) = theta_pm + 0.001;
+        low_temperature_counter += 1;
       }
 
     } // end if herefloating
   }
 
-  counterTpmp = GlobalSum(m_grid->com, lcounterTpmp);
-  if (counterTpmp > 0) {
-    m_log->message(2, "PICO ocean warning: temperature has been below pressure melting temperature in %.0f cases,\n"
+  low_temperature_counter = GlobalSum(m_grid->com, low_temperature_counter);
+  if (low_temperature_counter > 0) {
+    m_log->message(2, "PICO ocean warning: temperature has been below pressure melting temperature in %d cases,\n"
                       "setting it to pressure melting temperature\n",
-                   counterTpmp);
+                   low_temperature_counter);
   }
 }
 
 
-// FIXME: check types of the input arguments.
-double f_area(double counter_boxes, double m_dx, double m_dy){
-      //FIXME this assumes rectangular cell areas, adjust with real areas from projection
-      return counter_boxes * m_dx * m_dy;
+//! compute the area of a box consisting of N cells dx by dy meters in size
+double f_area(double N, double dx, double dy){
+  //FIXME this assumes rectangular cell areas, adjust with real areas from projection
+  return N * dx * dy;
 }
 
 
@@ -600,11 +600,8 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
       // salinity for box 1
       Soc(i, j) = cc.Soc_box1(Toc_box0(i, j), Soc_box0(i, j), Toc(i, j)); // in psu
 
-      // potential pressure melting point needed to calculate thermal driving
-      double pot_pm_point = cc.pot_pressure_melting(Soc(i, j), pressure);
-
       // basal melt rate for box 1
-      basal_melt_rate(i, j) = cc.bmelt_rate(pot_pm_point, Toc(i,j));
+      basal_melt_rate(i, j) = cc.melt_rate(cc.theta_pm(Soc(i, j), pressure), Toc(i,j));
 
       overturning(i, j) = cc.overturning(Soc_box0(i,j), Soc(i,j), Toc_box0(i,j), Toc(i,j));
 
@@ -618,13 +615,12 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
       lmean_overturning_box1_vector[shelf_id] += overturning(i, j);
 
       // in situ pressure melting point
-      T_pressure_melting(i, j) = cc.pressure_melting(Soc(i, j), pressure);//  in Kelvin
+      T_pressure_melting(i, j) = cc.T_pm(Soc(i, j), pressure);//  in Kelvin
 
     } else { // i.e., not GL_box
       basal_melt_rate(i, j) = 0.0;
     }
   }
-
 
   // average the temperature, salinity and overturning over box1
   // (here we divide)
@@ -755,15 +751,11 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
           Soc(i, j) = cc.Soc_other_boxes(mean_salinity_in_boundary, mean_temperature_in_boundary,
                                          Toc(i, j)); // psu
 
-          // potential pressure melting point needed to calculate thermal driving
-          // using coefficients for potential temperature
-          double pot_pm_point = cc.pot_pressure_melting(Soc(i, j), pressure);
-
           // basal melt rate for Box i > 1 in m/s
-          basal_melt_rate(i, j) = cc.bmelt_rate(pot_pm_point, Toc(i,j));
+          basal_melt_rate(i, j) = cc.melt_rate(cc.theta_pm(Soc(i, j), pressure), Toc(i,j));
 
           // in situ pressure melting point in Kelvin
-          T_pressure_melting(i, j) = cc.pressure_melting(Soc(i, j), pressure);
+          T_pressure_melting(i, j) = cc.T_pm(Soc(i, j), pressure);
 
           // average the temperature, salinity over the entire box i
           // this is used as input for box i+1
@@ -862,13 +854,12 @@ void Pico::calculate_basal_melt_missing_cells(const BoxModel &cc,
       // Potential pressure melting point needed to calculate thermal driving using
       // coefficients for potential temperature. (These are different compared to the ones
       // used in ocean::PIK.)
-      double pot_pm_point = cc.pot_pressure_melting(Soc_box0(i, j), pressure);
-
-      basal_melt_rate(i, j) = cc.bmelt_rate_beckm_goose(Toc_box0(i, j), pot_pm_point);
+      basal_melt_rate(i, j) = cc.melt_rate_beckmann_goose(cc.theta_pm(Soc_box0(i, j), pressure),
+                                                          Toc_box0(i, j));
 
       // in situ pressure melting point in Kelvin
       // this will be the temperature boundary condition at the ice at the shelf base
-      T_pressure_melting(i, j) = cc.pressure_melting(Soc_box0(i, j), pressure);
+      T_pressure_melting(i, j) = cc.T_pm(Soc_box0(i, j), pressure);
 
       // diagnostic outputs
       Toc(i, j) = Toc_box0(i, j); // in Kelvin

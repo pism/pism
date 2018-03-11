@@ -113,14 +113,14 @@ TocBox1 BoxModel::Toc_box1(double area, double T_star, double Soc_box0, double T
   return result;
 }
 
-double BoxModel::Toc_other_boxes(double area, double temp_in_boundary, double T_star, double overturning,
-                                 double salinity_in_boundary) const {
+double BoxModel::Toc_other_boxes(double area, double temperature, double T_star, double overturning,
+                                 double salinity) const {
 
   double g1 = area * m_gamma_T;
   double g2 = g1 / (m_nu * m_lambda);
 
   // temperature for Box i > 1
-  return temp_in_boundary + g1 * T_star / (overturning + g1 - g2 * m_a_pot * salinity_in_boundary); // K
+  return temperature + g1 * T_star / (overturning + g1 - g2 * m_a_pot * salinity); // K
 }
 
 double BoxModel::Soc_box1(double Toc_box0, double Soc_box0, double Toc) const {
@@ -128,34 +128,34 @@ double BoxModel::Soc_box1(double Toc_box0, double Soc_box0, double Toc) const {
   return Soc_box0 - (Soc_box0 / (m_nu * m_lambda)) * (Toc_box0 - Toc);
 }
 
-double BoxModel::Soc_other_boxes(double salinity_in_boundary, double temperature_in_boundary, double Toc) const {
+double BoxModel::Soc_other_boxes(double salinity, double temperature_in_boundary, double Toc) const {
 
-  return salinity_in_boundary - salinity_in_boundary * (temperature_in_boundary - Toc) / (m_nu * m_lambda); // psu;
+  return salinity - salinity * (temperature_in_boundary - Toc) / (m_nu * m_lambda); // psu;
 }
 
 
 //! equation 5 in the PICO paper.
 //! calculate pressure melting point from potential temperature
-double BoxModel::pot_pressure_melting(double salinity, double pressure) const {
+double BoxModel::theta_pm(double salinity, double pressure) const {
   // using coefficients for potential temperature
   return m_a_pot * salinity + m_b_pot - m_c_pot * pressure;
 }
 
 //! equation 5 in the PICO paper.
 //! calculate pressure melting point from in-situ temperature
-double BoxModel::pressure_melting(double salinity, double pressure) const {
+double BoxModel::T_pm(double salinity, double pressure) const {
   // using coefficients for potential temperature
   return m_a_in_situ * salinity + m_b_in_situ - m_c_in_situ * pressure;
 }
 
 //! equation 8 in the PICO paper.
-double BoxModel::bmelt_rate(double pm_point, double Toc) const {
+double BoxModel::melt_rate(double pm_point, double Toc) const {
   // in m/s
   return m_gamma_T / (m_nu * m_lambda) * (Toc - pm_point);
 }
 
 //! Beckmann & Goose meltrate
-double BoxModel::bmelt_rate_beckm_goose(double Toc, double pot_pm_point) const {
+double BoxModel::melt_rate_beckmann_goose(double pot_pm_point, double Toc) const {
   // in W/m^2
   double heat_flux = m_meltFactor * m_sea_water_density * m_c_p_ocean * m_gamma_T * (Toc - pot_pm_point);
   // in m s-1
@@ -176,7 +176,7 @@ double BoxModel::T_star(double salinity, double temperature, double pressure) co
   // than pressure melting point would be ice, but we are in the ocean.
   // this should not occur as set_ocean_input_fields(...) sets
   // sets too cold temperatures to pressure melting point + 0.001
-  return pot_pressure_melting(salinity, pressure) - temperature;
+  return theta_pm(salinity, pressure) - temperature;
 }
 
 //! calculate p coefficent for solving the quadratic temperature equation
