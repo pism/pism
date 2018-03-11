@@ -265,10 +265,6 @@ if (Pism_BUILD_EXTRA_EXECS)
     target_link_libraries (${EXEC} pismverif)
   endforeach (EXEC)
 
-  add_executable (tryLCbd earth/tryLCbd.cc)
-  target_link_libraries (tryLCbd pismearth pismrevision)
-  list (APPEND EXTRA_EXECS tryLCbd)
-
   add_executable (btutest base/energy/btutest.cc base/energy/bedrockThermalUnit.cc verif/tests/exactTestK.c)
   target_link_libraries (btutest pismutil pismrevision)
   list (APPEND EXTRA_EXECS btutest)
