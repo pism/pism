@@ -86,7 +86,9 @@ double BoxModel::pressure(double ice_thickness) const {
   return m_ice_density * m_earth_grav * ice_thickness * 1e-4;
 }
 
-double BoxModel::Toc_box1(double area, double T_star, double Soc_box0, double Toc_box0, bool *success) const {
+TocBox1 BoxModel::Toc_box1(double area, double T_star, double Soc_box0, double Toc_box0) const {
+
+  TocBox1 result = {false, 0.0};
 
   double g1 = area * m_gamma_T;
   double s1 = Soc_box0 / (m_nu * m_lambda);
@@ -101,18 +103,14 @@ double BoxModel::Toc_box1(double area, double T_star, double Soc_box0, double To
   if ((0.25 * p * p - q) < 0.0) {
     q = 0.25 * p * p;
 
-    if (success) {
-      *success = false;
-    }
-  }
-
-  if (success) {
-    *success = true;
+    result.failed = true;
   }
 
   // temperature for box 1, p-q formula
   // equation A12 in the PICO paper.
-  return Toc_box0 - (-0.5 * p + sqrt(0.25 * p * p - q));
+  result.value = Toc_box0 - (-0.5 * p + sqrt(0.25 * p * p - q));
+
+  return result;
 }
 
 double BoxModel::Toc_other_boxes(double area, double temp_in_boundary, double T_star, double overturning,

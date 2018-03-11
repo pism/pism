@@ -30,6 +30,11 @@ namespace ocean {
 
 double f_area(double counter_boxes, double m_dx, double m_dy);
 
+struct TocBox1 {
+  bool failed;
+  double value;
+};
+
 class BoxModel {
 public:
   BoxModel(const Config &config);
@@ -37,7 +42,7 @@ public:
   double pressure(double ice_thickness) const;
   double T_star(double salinity, double temperature, double pressure) const;
 
-  double Toc_box1(double area, double T_star, double Soc_box0, double Toc_box0, bool *success) const;
+  TocBox1 Toc_box1(double area, double T_star, double Soc_box0, double Toc_box0) const;
   double Toc_other_boxes(double area,
                          double temp_in_boundary, double T_star,
                          double overturning, double salinity_in_boundary) const;
@@ -60,6 +65,7 @@ public:
   double S_dummy() const;
   double ice_density() const;
   double continental_shelf_depth() const;
+private:
 private:
   double m_gamma_T, m_overturning_coeff, m_T_dummy, m_S_dummy;
   double m_ice_density, m_continental_shelf_depth;

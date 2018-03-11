@@ -587,10 +587,10 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
 
       double area_box1 = f_area(counter_boxes[shelf_id][1], m_dx, m_dy);
 
-      bool success = false;
-      Toc(i, j) = cc.Toc_box1(area_box1, T_star(i, j), Soc_box0(i, j), Toc_box0(i, j), &success);
+      auto Toc_box1 = cc.Toc_box1(area_box1, T_star(i, j), Soc_box0(i, j), Toc_box0(i, j));
+      Toc(i, j) = Toc_box1.value;
 
-      if (success == false) {
+      if (Toc_box1.failed) {
         m_log->message(5, "PICO ocean WARNING: negative square root argument at %d, %d\n"
                        "probably because of positive T_star\n"
                        "Not aborting, but setting square root to 0... \n",
