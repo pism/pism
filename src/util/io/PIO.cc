@@ -54,7 +54,10 @@ struct PIO::Impl {
 };
 
 static io::NCFile::Ptr create_backend(MPI_Comm com, string mode) {
-  if (mode == "netcdf3") {
+  int size = 1;
+  MPI_Comm_size(com, &size);
+
+  if (mode == "netcdf3" or size == 1) {
     return io::NCFile::Ptr(new io::NC3File(com));
   }
 #if (PISM_USE_PARALLEL_NETCDF4==1)
