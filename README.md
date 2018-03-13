@@ -13,6 +13,8 @@ The Parallel Ice Sheet Model is an open source, parallel, high-resolution ice sh
 * reads and writes [CF-compliant](http://cf-pcmdi.llnl.gov/) [NetCDF](http://www.unidata.ucar.edu/software/netcdf/) files
 
 
+Latest PIK code improvements
+=========
 
 The **pik/paleo_07dev** branch is based on the development version [e9d2d1f8](https://github.com/pism/pism/commit/e9d2d1f8b5cba9d0fc47d13753d838aa6b49bf01) from March 7th, 2017 
 and adds methods that are used in paleo simulations of the Antarctic Ice Sheet
@@ -27,8 +29,9 @@ kill ocean
 
 You find in the examples/paleo-antarctica folder a working example of a paleo spin-up using all added functionality. 
 
-
-
+Code release `pik-holocene-gl-rebound` was used for simulations in 
+Kingslake, Scherer, Albrecht et al., *Nature* (2018), forthcoming. 
+If you make use of this code, please cite the respective paper.
 
 
 
@@ -46,7 +49,7 @@ Homepage
 Download and Install
 --------------------
 
-See [instructions for getting the latest release](http://www.pism-docs.org/wiki/doku.php?id=stable_version).
+See [instructions for getting the latest PISM release](http://www.pism-docs.org/wiki/doku.php?id=stable_version) or other tagged source code releases, such as the `pik-holocene-gl-rebound`.
 
 
 Generating Documentation
@@ -58,3 +61,4 @@ Contributing
 ------------
 
 Want to contribute? Great! See [Committing to PISM](http://www.pism-docs.org/wiki/doku.php?id=committing).
+
