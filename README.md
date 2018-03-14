@@ -27,7 +27,7 @@ kill ocean
 * reads ocean_kill_mask from file to constrain maximum ice extent
 * fix of the calculation of sea-level relevant volume in the output timeseries
 
-You find in the examples/paleo-antarctica folder a working example of a paleo spin-up using all added functionality. 
+You find in the `examples/paleo-antarctica` folder a working example of a paleo spin-up using all added functionality. 
 
 Code release `pik-holocene-gl-rebound` was used for simulations in 
 Kingslake, Scherer, Albrecht et al., *Nature* (2018), forthcoming. 
