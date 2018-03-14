@@ -67,7 +67,7 @@ def init(mu, L, sea_level, vec, type="box"):
     H0 = (8.0 / k[L]) * (sea_level / mu)
     H1 = 0.5 * H0
 
-    grid = vec.get_grid()
+    grid = vec.grid()
 
     with PISM.vec.Access(nocomm=[vec]):
         for (i, j) in grid.points():
