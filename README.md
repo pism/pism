@@ -16,7 +16,7 @@ The Parallel Ice Sheet Model is an open source, parallel, high-resolution ice sh
 Latest PIK code improvements
 =========
 
-The **pik/paleo_07dev** branch is based on the development version [e9d2d1f8](https://github.com/pism/pism/commit/e9d2d1f8b5cba9d0fc47d13753d838aa6b49bf01) from March 7th, 2017 
+The **pik/paleo_07dev** branch is based on the development version [e9d2d1f8](https://github.com/pism/pism/commit/e9d2d1f8b5cba9d0fc47d13753d838aa6b49bf01) from March 7th, 2017 (after the v0.7 release but before v1.0) 
 and adds methods that are used in paleo simulations of the Antarctic Ice Sheet
 
 * sub-ice shelf melting calculations with [PICO](https://www.the-cryosphere-discuss.net/tc-2017-70/) 
