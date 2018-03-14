@@ -8,7 +8,7 @@ These scripts produce one selected simulation out of a parameter ensemble (in pr
 which has been used as reference simulation in
 
 * J. Kingslake, R. Scherer, T. Albrecht, J. Coenen, R. Powell, R. Reese, N. Stansell, S. Tulaczyk, M. Wearing, P. L. Whitehouse. 
-_Extensive Holocene ice sheet grounding line retreat and uplift-driven re-advance in West Antarctica_, **final review**
+_Extensive Holocene ice sheet retreat and rebound-driven re-advance in West Antarctica_, **forthcoming**
 
 
 

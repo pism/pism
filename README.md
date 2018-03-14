@@ -52,6 +52,16 @@ Download and Install
 See [instructions for getting the latest PISM release](http://www.pism-docs.org/wiki/doku.php?id=stable_version) or other tagged source code releases, such as the `pik-holocene-gl-rebound`.
 
 
+License
+--------------------
+
+PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2 of the License, or (at your option) any later version.
+
+PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the [GNU General Public License](https://www.gnu.org/licenses/gpl-3.0.en.html) for more details.
+
+You find a copy of the GNU General Public License along with PISM in the file COPYING;
+
+
 Generating Documentation
 ------------------------
 
