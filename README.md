@@ -21,7 +21,7 @@ and adds methods that are used in paleo simulations of the Antarctic Ice Sheet
 
 * sub-ice shelf melting calculations with [PICO](https://www.the-cryosphere-discuss.net/tc-2017-70/) 
 * iterative optimization of till-friction angle to present-day grounded surface elevation
-* air temperature paramterization based on a multiregression fit to [ERA-Interim](https://www.ecmwf.int/en/forecasts/datasets/reanalysis-datasets/era-interim) reanalysis data
+* air temperature parameterization based on a multiregression fit to [ERA-Interim](https://www.ecmwf.int/en/forecasts/datasets/reanalysis-datasets/era-interim) reanalysis data
 kill ocean
 * non-linear lapse rate scaling for precipitation
 * reads ocean_kill_mask from file to constrain maximum ice extent
