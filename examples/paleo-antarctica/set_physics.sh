@@ -53,7 +53,7 @@ export ocean_opts="-ocean cavity,delta_SL -ocean_cavity_file $toforcefile \
 
 export pre_calv_opts="-calving ocean_kill -ocean_kill_file $origfile"
 
-export calv_opt="-calving eigen_calving,thickness_calving,ocean_kill \
+export calv_opts="-calving eigen_calving,thickness_calving,ocean_kill \
            -ocean_kill_file $OKMASK -ocean_kill_mask \
            -eigen_calving_K 1.0e17 -thickness_calving_threshold 75.0"
 
