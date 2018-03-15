@@ -159,11 +159,8 @@ def average_error(N):
 
     grid = geometry.ice_thickness.grid()
 
-    diff = PISM.IceModelVec2S()
-    diff.create(grid, "difference", PISM.WITHOUT_GHOSTS)
-
-    exact = PISM.IceModelVec2S()
-    exact.create(grid, "thk", PISM.WITHOUT_GHOSTS)
+    diff = PISM.IceModelVec2S(grid, "difference", PISM.WITHOUT_GHOSTS)
+    exact = PISM.IceModelVec2S(grid, "thk", PISM.WITHOUT_GHOSTS)
 
     L = min(grid.Lx(), grid.Ly())
     R_inner = 0.25 * L
