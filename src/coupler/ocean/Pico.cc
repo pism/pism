@@ -404,111 +404,78 @@ double f_weight_by_shelf_area_per_basin(double property_in_basin, double ice_she
 //! box 1, which is the ocean box adjacent to the grounding line.
 //! Toc_box0 and Soc_box0 were computed in function compute_ocean_input_per_basin.
 //! We enforce that Toc_box0 is always at least the local pressure melting point.
-
 void Pico::set_ocean_input_fields(const IceModelVec2S &ice_thickness,
                                   const IceModelVec2CellType &mask,
-                                  const IceModelVec2Int &cbasins,
+                                  const IceModelVec2Int &basin_mask,
                                   const IceModelVec2Int &shelf_mask,
                                   const BoxModel &cc,
                                   IceModelVec2S &Toc_box0,
-                                  IceModelVec2S &Soc_box0
-                                  ) {
+                                  IceModelVec2S &Soc_box0) {
 
-  m_log->message(5, "starting set_ocean_input_fields routine\n");
+  IceModelVec::AccessList list{ &ice_thickness, &basin_mask, &Soc_box0, &Toc_box0, &mask, &shelf_mask };
 
-  IceModelVec::AccessList list{ &ice_thickness, &mask, &cbasins, &shelf_mask, &Soc_box0,
-                                &Toc_box0};
+  std::vector<std::vector<int> > n_shelf_cells_per_basin(m_numberOfShelves,
+                                                         std::vector<int>(m_numberOfBasins, 0));
+  std::vector<int> n_shelf_cells(m_numberOfShelves, 0);
 
-  // compute for each shelf the number of cells  within each basin
-  std::vector<std::vector<double> > lcounter_shelf_cells_in_basin(m_numberOfShelves,
-                                                                  std::vector<double>(m_numberOfBasins));
-  std::vector<std::vector<double> > counter_shelf_cells_in_basin(m_numberOfShelves,
-                                                                 std::vector<double>(m_numberOfBasins));
+  // 1) count the number of cells in each shelf
+  // 2) count the number of cells in the intersection of each shelf with all the basins
+  {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+      int s = shelf_mask.as_int(i, j);
+      int b = basin_mask.as_int(i, j);
+      n_shelf_cells_per_basin[s][b]++;
+      n_shelf_cells[s]++;
+    }
 
-  // compute the number of all shelf cells
-  std::vector<double> lcounter_shelf_cells(m_numberOfShelves);
-  std::vector<double> counter_shelf_cells(m_numberOfShelves);
-
-  // initialize all array entries to zero
-  for (int shelf_id = 0; shelf_id < m_numberOfShelves; shelf_id++) {
-    lcounter_shelf_cells[shelf_id] = 0;
-    for (int basin_id = 0; basin_id < m_numberOfBasins; basin_id++) {
-      lcounter_shelf_cells_in_basin[shelf_id][basin_id] = 0;
+    for (int s = 0; s < m_numberOfShelves; s++) {
+      n_shelf_cells[s] = GlobalSum(m_grid->com, n_shelf_cells[s]);
+      for (int b = 0; b < m_numberOfBasins; b++) {
+        n_shelf_cells_per_basin[s][b] = GlobalSum(m_grid->com, n_shelf_cells_per_basin[s][b]);
+      }
     }
   }
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    int shelf_id = shelf_mask(i, j);
-    int basin_id = cbasins(i, j);
-    lcounter_shelf_cells_in_basin[shelf_id][basin_id]++;
-    lcounter_shelf_cells[shelf_id]++;
-  }
+  // now set potential temperature and salinity box 0:
 
-  for (int shelf_id = 0; shelf_id < m_numberOfShelves; shelf_id++) {
-    counter_shelf_cells[shelf_id] = GlobalSum(m_grid->com, lcounter_shelf_cells[shelf_id]);
-    for (int basin_id = 0; basin_id < m_numberOfBasins; basin_id++) {
-      counter_shelf_cells_in_basin[shelf_id][basin_id] =
-          GlobalSum(m_grid->com, lcounter_shelf_cells_in_basin[shelf_id][basin_id]);
-    }
-  }
-
-
-  // now set temp and salinity box 0:
   int low_temperature_counter = 0;
-
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    // make sure all temperatures and salinities are zero at the beginning of each timestep
-    Toc_box0(i, j) = 0.0;    // in K
-    Soc_box0(i, j) = 0.0;    // in psu
+    // make sure all temperatures are zero at the beginning of each time step
+    Toc_box0(i, j) = 0.0; // in K
+    Soc_box0(i, j) = 0.0; // in psu
 
-    if (mask(i, j) == MASK_FLOATING && shelf_mask(i, j) > 0) { // shelf_mask = 0 in lakes
+    if (mask.as_int(i, j) == MASK_FLOATING and shelf_mask.as_int(i, j) > 0) {
+      // note: shelf_mask = 0 in lakes
 
-      int shelf_id = shelf_mask(i, j);
+      int s = shelf_mask.as_int(i, j);
       // weighted input depending on the number of shelf cells in each basin
-      // Though this runs over all ocean basins, most of the summands are zero because
-      // an ice shelf has grid cells only in a few basins.
-      // The weighing assumes that the fraction of ice shelf area per basin is a good
-      // proxy for continental-shelf open-ocean area per basin. We here weigh with the
-      // first, but the second is the physically correct quantity to weigh the ocean
-      // properties.
-      for (int basin_id = 1; basin_id < m_numberOfBasins; basin_id++) { //Note: basin_id=0 yields nan
-
-        // calculate  Toc_box0 and Soc_box0 where shelf mask > 0 and for basins > 0
-        Toc_box0(i, j) += f_weight_by_shelf_area_per_basin(m_Toc_box0_vec[basin_id],
-                                                           counter_shelf_cells_in_basin[shelf_id][basin_id],
-                                                           counter_shelf_cells[shelf_id]);
-
-        Soc_box0(i, j) += f_weight_by_shelf_area_per_basin(m_Soc_box0_vec[basin_id],
-                                                           counter_shelf_cells_in_basin[shelf_id][basin_id],
-                                                           counter_shelf_cells[shelf_id]);
+      for (int b = 1; b < m_numberOfBasins; b++) { //Note: b=0 yields nan
+        Toc_box0(i, j) += m_Toc_box0_vec[b] * n_shelf_cells_per_basin[s][b] / (double)n_shelf_cells[s];
+        Soc_box0(i, j) += m_Soc_box0_vec[b] * n_shelf_cells_per_basin[s][b] / (double)n_shelf_cells[s];
       }
 
-      // pressure melting point for potential temperature, in Kelvin
-      double theta_pm = cc.theta_pm(Soc_box0(i, j),
-                                    cc.pressure(ice_thickness(i, j)));
+      double theta_pm = cc.theta_pm(Soc_box0(i, j), cc.pressure(ice_thickness(i, j)));
 
-      // Temperature input for grounding line box should not be below pressure melting point.
-      // Depending on local ice thickness, we set this temperature slightly above pressure
-      // melting point at each grid cell.
+      // temperature input for grounding line box should not be below pressure melting point
       if (Toc_box0(i, j) < theta_pm) {
+        // Setting Toc_box0 a little higher than theta_pm ensures that later equations are well solvable.
         Toc_box0(i, j) = theta_pm + 0.001;
         low_temperature_counter += 1;
       }
-
-    } // end if herefloating
+    }
   }
 
   low_temperature_counter = GlobalSum(m_grid->com, low_temperature_counter);
   if (low_temperature_counter > 0) {
-    m_log->message(2, "PICO ocean warning: temperature has been below pressure melting temperature in %d cases,\n"
-                      "setting it to pressure melting temperature\n",
+    m_log->message(2,
+                   "PICO ocean warning: temperature has been below pressure melting temperature in %d cases,\n"
+                   "setting it to pressure melting temperature\n",
                    low_temperature_counter);
   }
 }
-
 
 //! compute the area of a box consisting of N cells dx by dy meters in size
 double f_area(double N, double dx, double dy){

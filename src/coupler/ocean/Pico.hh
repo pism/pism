@@ -137,8 +137,7 @@ private:
                               const IceModelVec2Int &m_shelf_mask,
                               const BoxModel &cc,
                               IceModelVec2S &Toc_box0,
-                              IceModelVec2S &Soc_box0
-                              );
+                              IceModelVec2S &Soc_box0);
   void calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
                                  const IceModelVec2Int &shelf_mask,
                                  const IceModelVec2Int &box_mask,
