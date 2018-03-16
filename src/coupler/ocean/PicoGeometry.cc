@@ -397,8 +397,8 @@ void Pico::identify_shelf_mask() {
     m_shelf_mask(i, j) = new_labels[label];
   }
 
-  m_numberOfShelves = new_label_current;                                // total numer of shelves +1
-  m_log->message(5, "Number of shelves = %d\n", m_numberOfShelves - 1); // internally calculated with +1
+  m_n_shelves = new_label_current;                                // total numer of shelves +1
+  m_log->message(5, "Number of shelves = %d\n", m_n_shelves - 1); // internally calculated with +1
 }
 
 
@@ -599,10 +599,10 @@ void Pico::identify_ocean_box_mask(const BoxModel &cc) {
   m_log->message(5, "starting identify_ocean_box_mask routine\n");
 
   // Find the maximal DistGL and DistIF for each basin
-  std::vector<double> max_distGL(m_numberOfShelves, 0.0);
-  std::vector<double> max_distIF(m_numberOfShelves, 0.0);
-  std::vector<double> lmax_distGL(m_numberOfShelves, 0.0);
-  std::vector<double> lmax_distIF(m_numberOfShelves, 0.0);
+  std::vector<double> max_distGL(m_n_shelves, 0.0);
+  std::vector<double> max_distIF(m_n_shelves, 0.0);
+  std::vector<double> lmax_distGL(m_n_shelves, 0.0);
+  std::vector<double> lmax_distIF(m_n_shelves, 0.0);
 
   // distGL describes distance to the ice front
   // distIF describes distance to the calving front
@@ -633,7 +633,7 @@ void Pico::identify_ocean_box_mask(const BoxModel &cc) {
   }
 
 
-  for (int l = 0; l < m_numberOfShelves; l++) {
+  for (int l = 0; l < m_n_shelves; l++) {
     max_distGL[l] = GlobalMax(m_grid->com, lmax_distGL[l]);
     max_distIF[l] = GlobalMax(m_grid->com, lmax_distIF[l]);
   }
@@ -645,14 +645,14 @@ void Pico::identify_ocean_box_mask(const BoxModel &cc) {
   // this is done by interpolating between nmin=1 and nmax=numberOfBoxes
   // this will be equal to numberOfBoxes for a 'large' ice shelf
 
-  std::vector<int> lnumberOfBoxes_perShelf(m_numberOfShelves);
+  std::vector<int> lnumberOfBoxes_perShelf(m_n_shelves);
 
   int n_min   = 1;   //
   double zeta = 0.5; // hard coded for now
 
   int number_of_boxes = m_config->get_double("ocean.pico.number_of_boxes");
 
-  for (int l = 0; l < m_numberOfShelves; l++) {
+  for (int l = 0; l < m_n_shelves; l++) {
     lnumberOfBoxes_perShelf[l] = 0;
 
     // equation (9) of PICO paper https://doi.org/10.5194/tc-2017-70
@@ -727,10 +727,10 @@ void Pico::identify_ocean_box_mask(const BoxModel &cc) {
   // Compute the number of cells per box and shelf and save to counter_boxes.
   // counter_boxes is used in Pico.cc to determine the area covered by a certain box by
   // counber_boxes * dx * dy
-  counter_boxes.resize(m_numberOfShelves, std::vector<double>(2, 0));
-  std::vector<std::vector<int> > lcounter_boxes(m_numberOfShelves, std::vector<int>(nBoxes));
+  counter_boxes.resize(m_n_shelves, std::vector<double>(2, 0));
+  std::vector<std::vector<int> > lcounter_boxes(m_n_shelves, std::vector<int>(nBoxes));
 
-  for (int shelf_id = 0; shelf_id < m_numberOfShelves; shelf_id++) {
+  for (int shelf_id = 0; shelf_id < m_n_shelves; shelf_id++) {
     for (int l = 0; l < nBoxes; l++) {
       lcounter_boxes[shelf_id][l] = 0;
     }
@@ -745,7 +745,7 @@ void Pico::identify_ocean_box_mask(const BoxModel &cc) {
     }
   }
 
-  for (int shelf_id = 0; shelf_id < m_numberOfShelves; shelf_id++) {
+  for (int shelf_id = 0; shelf_id < m_n_shelves; shelf_id++) {
     counter_boxes[shelf_id].resize(nBoxes);
     for (int l = 0; l < nBoxes; l++) {
       counter_boxes[shelf_id][l] = GlobalSum(m_grid->com, lcounter_boxes[shelf_id][l]);

@@ -142,10 +142,10 @@ Pico::Pico(IceGrid::ConstPtr g) : PGivenClimate<CompleteOceanModel, CompleteOcea
   // Initialize this early so that we can check the validity of the "basins" mask read from a file
   // in Pico::init_impl(). This number is hard-wired, so I don't think it matters that it did not
   // come from Pico::Constants.
-  m_numberOfBasins = 20;
+  m_n_basins = 20;
 
   // This will be re-set by identify_shelf_mask()
-  m_numberOfShelves = 1;
+  m_n_shelves = 1;
 }
 
 
@@ -231,22 +231,22 @@ void Pico::initBasinsOptions(const BoxModel &cc) {
 
   m_log->message(5, "starting initBasinOptions\n");
 
-  m_numberOfBasins = m_config->get_double("ocean.pico.number_of_basins");
+  m_n_basins = m_config->get_double("ocean.pico.number_of_basins");
   m_numberOfBoxes  = m_config->get_double("ocean.pico.number_of_boxes");
 
-  m_Toc_box0_vec.resize(m_numberOfBasins);
-  m_Soc_box0_vec.resize(m_numberOfBasins);
+  m_Toc_box0_vec.resize(m_n_basins);
+  m_Soc_box0_vec.resize(m_n_basins);
 
-  counter_boxes.resize(m_numberOfShelves, std::vector<double>(2, 0));
+  counter_boxes.resize(m_n_shelves, std::vector<double>(2, 0));
   // FIXME: the three vectors below will later on be resized to numberOfShelves,
   // is the line here still necessary?
-  m_mean_salinity_boundary_vector.resize(m_numberOfBasins);
-  m_mean_temperature_boundary_vector.resize(m_numberOfBasins);
-  m_mean_overturning_box1_vector.resize(m_numberOfBasins);
+  m_mean_salinity_boundary_vector.resize(m_n_basins);
+  m_mean_temperature_boundary_vector.resize(m_n_basins);
+  m_mean_overturning_box1_vector.resize(m_n_basins);
 
   m_log->message(2, "  -Using %d drainage basins and values: \n"
                     "   gamma_T= %.2e, overturning_coeff = %.2e... \n",
-                 m_numberOfBasins, cc.gamma_T(), cc.overturning_coeff());
+                 m_n_basins, cc.gamma_T(), cc.overturning_coeff());
 
   m_log->message(2, "  -Depth of continental shelf for computation of temperature and salinity input\n"
                     "   is set for whole domain to continental_shelf_depth=%.0f meter\n",
@@ -335,9 +335,9 @@ void Pico::compute_ocean_input_per_basin(const BoxModel &cc,
 
   m_log->message(5, "starting compute_ocean_input_per_basin routine \n");
 
-  std::vector<double> count(m_numberOfBasins, 0.0);
-  std::vector<double> Tval(m_numberOfBasins, 0.0);
-  std::vector<double> Sval(m_numberOfBasins, 0.0);
+  std::vector<double> count(m_n_basins, 0.0);
+  std::vector<double> Tval(m_n_basins, 0.0);
+  std::vector<double> Sval(m_n_basins, 0.0);
 
   IceModelVec::AccessList list{&theta_ocean, &salinity_ocean, &basin_mask, &continental_shelf_mask };
 
@@ -359,7 +359,7 @@ void Pico::compute_ocean_input_per_basin(const BoxModel &cc,
   // if no ocean_contshelf_mask values intersect with the basin, m_count is zero.
   // In such case, use dummy temperature and salinity. This could happen, for
   // example, if the ice shelf front advances beyond the continental shelf break.
-  for (int basin_id = 0; basin_id < m_numberOfBasins; basin_id++) {
+  for (int basin_id = 0; basin_id < m_n_basins; basin_id++) {
 
     count[basin_id] = GlobalSum(m_grid->com, count[basin_id]);
     Sval[basin_id]  = GlobalSum(m_grid->com, Sval[basin_id]);
@@ -414,9 +414,9 @@ void Pico::set_ocean_input_fields(const IceModelVec2S &ice_thickness,
 
   IceModelVec::AccessList list{ &ice_thickness, &basin_mask, &Soc_box0, &Toc_box0, &mask, &shelf_mask };
 
-  std::vector<std::vector<int> > n_shelf_cells_per_basin(m_numberOfShelves,
-                                                         std::vector<int>(m_numberOfBasins, 0));
-  std::vector<int> n_shelf_cells(m_numberOfShelves, 0);
+  std::vector<std::vector<int> > n_shelf_cells_per_basin(m_n_shelves,
+                                                         std::vector<int>(m_n_basins, 0));
+  std::vector<int> n_shelf_cells(m_n_shelves, 0);
 
   // 1) count the number of cells in each shelf
   // 2) count the number of cells in the intersection of each shelf with all the basins
@@ -429,9 +429,9 @@ void Pico::set_ocean_input_fields(const IceModelVec2S &ice_thickness,
       n_shelf_cells[s]++;
     }
 
-    for (int s = 0; s < m_numberOfShelves; s++) {
+    for (int s = 0; s < m_n_shelves; s++) {
       n_shelf_cells[s] = GlobalSum(m_grid->com, n_shelf_cells[s]);
-      for (int b = 0; b < m_numberOfBasins; b++) {
+      for (int b = 0; b < m_n_basins; b++) {
         n_shelf_cells_per_basin[s][b] = GlobalSum(m_grid->com, n_shelf_cells_per_basin[s][b]);
       }
     }
@@ -452,7 +452,7 @@ void Pico::set_ocean_input_fields(const IceModelVec2S &ice_thickness,
 
       int s = shelf_mask.as_int(i, j);
       // weighted input depending on the number of shelf cells in each basin
-      for (int b = 1; b < m_numberOfBasins; b++) { //Note: b=0 yields nan
+      for (int b = 1; b < m_n_basins; b++) { //Note: b=0 yields nan
         Toc_box0(i, j) += m_Toc_box0_vec[b] * n_shelf_cells_per_basin[s][b] / (double)n_shelf_cells[s];
         Soc_box0(i, j) += m_Soc_box0_vec[b] * n_shelf_cells_per_basin[s][b] / (double)n_shelf_cells[s];
       }
@@ -505,13 +505,13 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
 
   m_log->message(5, "starting basal calculate_basal_melt_box1 routine\n");
 
-  std::vector<double> lcounter_edge_of_box1_vector(m_numberOfShelves);
-  std::vector<double> lmean_salinity_box1_vector(m_numberOfShelves);
-  std::vector<double> lmean_temperature_box1_vector(m_numberOfShelves);
-  std::vector<double> lmean_meltrate_box1_vector(m_numberOfShelves);
-  std::vector<double> lmean_overturning_box1_vector(m_numberOfShelves);
+  std::vector<double> lcounter_edge_of_box1_vector(m_n_shelves);
+  std::vector<double> lmean_salinity_box1_vector(m_n_shelves);
+  std::vector<double> lmean_temperature_box1_vector(m_n_shelves);
+  std::vector<double> lmean_meltrate_box1_vector(m_n_shelves);
+  std::vector<double> lmean_overturning_box1_vector(m_n_shelves);
 
-  for (int shelf_id = 0; shelf_id < m_numberOfShelves; shelf_id++) {
+  for (int shelf_id = 0; shelf_id < m_n_shelves; shelf_id++) {
     lcounter_edge_of_box1_vector[shelf_id]  = 0.0;
     lmean_salinity_box1_vector[shelf_id]    = 0.0;
     lmean_temperature_box1_vector[shelf_id] = 0.0;
@@ -519,9 +519,9 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
     lmean_overturning_box1_vector[shelf_id] = 0.0;
   }
 
-  m_mean_salinity_boundary_vector.resize(m_numberOfShelves);
-  m_mean_temperature_boundary_vector.resize(m_numberOfShelves);
-  m_mean_overturning_box1_vector.resize(m_numberOfShelves);
+  m_mean_salinity_boundary_vector.resize(m_n_shelves);
+  m_mean_temperature_boundary_vector.resize(m_n_shelves);
+  m_mean_overturning_box1_vector.resize(m_n_shelves);
 
   IceModelVec::AccessList list{
     &ice_thickness, &shelf_mask, &box_mask, &T_star, &Toc_box0, &Toc, &Soc_box0, &Soc,
@@ -591,7 +591,7 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
 
   // average the temperature, salinity and overturning over box1
   // (here we divide)
-  for (int shelf_id = 0; shelf_id < m_numberOfShelves; shelf_id++) {
+  for (int shelf_id = 0; shelf_id < m_n_shelves; shelf_id++) {
     double counter_edge_of_box1_vector = 0.0;
 
     counter_edge_of_box1_vector                  = GlobalSum(m_grid->com, lcounter_edge_of_box1_vector[shelf_id]);
@@ -662,11 +662,11 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
     double countGl0 = 0, lcountGl0 = 0;
 
     // averages over the current box, input for the subsequent box
-    std::vector<double> lmean_salinity_boxi_vector(m_numberOfShelves);    // in psu
-    std::vector<double> lmean_temperature_boxi_vector(m_numberOfShelves); // in Kelvin
-    std::vector<double> lcounter_edge_of_boxi_vector(m_numberOfShelves);
+    std::vector<double> lmean_salinity_boxi_vector(m_n_shelves);    // in psu
+    std::vector<double> lmean_temperature_boxi_vector(m_n_shelves); // in Kelvin
+    std::vector<double> lcounter_edge_of_boxi_vector(m_n_shelves);
 
-    for (int shelf_id = 0; shelf_id < m_numberOfShelves; shelf_id++) {
+    for (int shelf_id = 0; shelf_id < m_n_shelves; shelf_id++) {
       lcounter_edge_of_boxi_vector[shelf_id]  = 0.0;
       lmean_salinity_boxi_vector[shelf_id]    = 0.0;
       lmean_temperature_boxi_vector[shelf_id] = 0.0;
@@ -736,7 +736,7 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
 
     // average the temperature and salinity over box i
     // (here we divide)
-    for (int shelf_id = 0; shelf_id < m_numberOfShelves; shelf_id++) {
+    for (int shelf_id = 0; shelf_id < m_n_shelves; shelf_id++) {
       // overturning should not be changed, fixed from box 1
       double counter_edge_of_boxi_vector        = 0.0;
       counter_edge_of_boxi_vector               = GlobalSum(m_grid->com, lcounter_edge_of_boxi_vector[shelf_id]);

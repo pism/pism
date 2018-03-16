@@ -181,7 +181,7 @@ private:
   std::vector<std::vector<double> > counter_boxes; // matrix containing the number of shelf cells per basin and box
                                                    // used for area calculation
 
-  int m_numberOfBasins, m_numberOfBoxes, m_numberOfShelves, m_Mx, m_My, m_dx, m_dy;
+  int m_n_basins, m_numberOfBoxes, m_n_shelves, m_Mx, m_My, m_dx, m_dy;
 };
 
 void round_basins(IceModelVec2S &basin_mask);
