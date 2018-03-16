@@ -51,8 +51,6 @@ LingleClark::LingleClark(IceGrid::ConstPtr g)
 
   bool use_elastic_model = m_config->get_boolean("bed_deformation.lc.elastic_model");
 
-  m_bdLC = NULL;
-
   const int
     Mx = m_grid->Mx(),
     My = m_grid->My(),
@@ -88,10 +86,10 @@ LingleClark::LingleClark(IceGrid::ConstPtr g)
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {
-      m_bdLC = new BedDeformLC(*m_config, use_elastic_model,
-                               Mx, My,
-                               m_grid->dx(), m_grid->dy(),
-                               Nx, Ny);
+      m_serial_model.reset(new BedDeformLC(*m_config, use_elastic_model,
+                                           Mx, My,
+                                           m_grid->dx(), m_grid->dy(),
+                                           Nx, Ny));
     }
   } catch (...) {
     rank0.failed();
@@ -100,10 +98,7 @@ LingleClark::LingleClark(IceGrid::ConstPtr g)
 }
 
 LingleClark::~LingleClark() {
-  if (m_bdLC != NULL) {
-    delete m_bdLC;
-    m_bdLC = NULL;
-  }
+  // empty
 }
 
 /*!
@@ -131,12 +126,12 @@ void LingleClark::bootstrap_impl(const IceModelVec2S &bed,
       if (m_grid->rank() == 0) {
         PetscErrorCode ierr = 0;
 
-        m_bdLC->bootstrap(*thickness0, *m_work0);
+        m_serial_model->bootstrap(*thickness0, *m_work0);
 
-        ierr = VecCopy(m_bdLC->total_displacement(), *m_work0);
+        ierr = VecCopy(m_serial_model->total_displacement(), *m_work0);
         PISM_CHK(ierr, "VecCopy");
 
-        ierr = VecCopy(m_bdLC->viscous_displacement(), *m_viscous_bed_displacement0);
+        ierr = VecCopy(m_serial_model->viscous_displacement(), *m_viscous_bed_displacement0);
         PISM_CHK(ierr, "VecCopy");
       }
     } catch (...) {
@@ -186,7 +181,7 @@ void LingleClark::init_impl(const InputOptions &opts) {
          m_viscous_bed_displacement, REGRID_WITHOUT_REGRID_VARS);
 
   // Now that m_viscous_bed_displacement is finally initialized, put it on rank 0 and initialize
-  // m_bdLC itself.
+  // m_serial_model itself.
   {
     ice_thickness->put_on_proc0(*m_work0);
     m_viscous_bed_displacement.put_on_proc0(*m_viscous_bed_displacement0);
@@ -196,9 +191,9 @@ void LingleClark::init_impl(const InputOptions &opts) {
       if (m_grid->rank() == 0) {  // only processor zero does the step
         PetscErrorCode ierr = 0;
 
-        m_bdLC->init(*m_work0, *m_viscous_bed_displacement0);
+        m_serial_model->init(*m_work0, *m_viscous_bed_displacement0);
 
-        ierr = VecCopy(m_bdLC->total_displacement(), *m_work0);
+        ierr = VecCopy(m_serial_model->total_displacement(), *m_work0);
         PISM_CHK(ierr, "VecCopy");
       }
     } catch (...) {
@@ -228,21 +223,16 @@ const IceModelVec2S& LingleClark::total_displacement() const {
   return m_bed_displacement;
 }
 
-//! Update the Lingle-Clark bed deformation model.
-void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
-                              double t, double dt) {
+const IceModelVec2S& LingleClark::viscous_displacement() const {
+  return m_viscous_bed_displacement;
+}
 
-  double t_final = t + dt;
+const IceModelVec2S& LingleClark::relief() const {
+  return m_relief;
+}
 
-  // Check if it's time to update:
-  double dt_beddef = t_final - m_t_beddef_last; // in seconds
-  if ((dt_beddef < m_config->get_double("bed_deformation.update_interval", "seconds") and
-       t_final < m_grid->ctx()->time()->end()) or
-      dt_beddef < 1e-12) {
-    return;
-  }
-
-  m_t_beddef_last = t_final;
+void LingleClark::step(const IceModelVec2S &ice_thickness,
+                       double dt) {
 
   ice_thickness.put_on_proc0(*m_work0);
 
@@ -251,12 +241,12 @@ void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
     if (m_grid->rank() == 0) {  // only processor zero does the step
       PetscErrorCode ierr = 0;
 
-      m_bdLC->step(dt_beddef, *m_work0);
+      m_serial_model->step(dt, *m_work0);
 
-      ierr = VecCopy(m_bdLC->total_displacement(), *m_work0);
+      ierr = VecCopy(m_serial_model->total_displacement(), *m_work0);
       PISM_CHK(ierr, "VecCopy");
 
-      ierr = VecCopy(m_bdLC->viscous_displacement(), *m_viscous_bed_displacement0);
+      ierr = VecCopy(m_serial_model->viscous_displacement(), *m_viscous_bed_displacement0);
       PISM_CHK(ierr, "VecCopy");
     }
   } catch (...) {
@@ -276,8 +266,27 @@ void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
   }
 
   //! Finally, we need to update bed uplift and topg_last.
-  compute_uplift(dt_beddef);
+  compute_uplift(m_topg, m_topg_last, dt, m_uplift);
   m_topg_last.copy_from(m_topg);
+}
+
+//! Update the Lingle-Clark bed deformation model.
+void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
+                              double t, double dt) {
+
+  double t_final = t + dt;
+
+  // Check if it's time to update:
+  double dt_beddef = t_final - m_t_beddef_last; // in seconds
+  if ((dt_beddef < m_config->get_double("bed_deformation.update_interval", "seconds") and
+       t_final < m_grid->ctx()->time()->end()) or
+      dt_beddef < 1e-12) {
+    return;
+  }
+
+  step(ice_thickness, dt_beddef);
+
+  m_t_beddef_last = t_final;
 }
 
 void LingleClark::define_model_state_impl(const PIO &output) const {
