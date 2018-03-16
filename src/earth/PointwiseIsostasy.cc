@@ -80,7 +80,7 @@ void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
   //! This code is written this way to avoid allocating temp. storage for (thk - thk_last).
 
   //! Finally, we need to update bed uplift, topg_last and thk_last.
-  compute_uplift(dt_beddef);
+  compute_uplift(m_topg, m_topg_last, dt_beddef, m_uplift);
 
   m_thk_last.copy_from(ice_thickness);
   m_topg_last.copy_from(m_topg);
