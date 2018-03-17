@@ -266,7 +266,9 @@ void Pico::update_impl(double my_t, double my_dt) {
                                   *m_salinity_ocean, *m_theta_ocean,
                                   m_Toc_box0_vec, m_Soc_box0_vec); // per basin
 
-    set_ocean_input_fields(ice_thickness, mask, m_cbasins, m_shelf_mask, model,
+    set_ocean_input_fields(model,
+                           ice_thickness, mask, m_cbasins, m_shelf_mask,
+                           m_Toc_box0_vec, m_Soc_box0_vec,
                            m_Toc_box0, m_Soc_box0);        // per shelf
 
 
@@ -377,11 +379,13 @@ void Pico::compute_ocean_input_per_basin(const BoxModel &box_model,
 //! box 1, which is the ocean box adjacent to the grounding line.
 //! Toc_box0 and Soc_box0 were computed in function compute_ocean_input_per_basin.
 //! We enforce that Toc_box0 is always at least the local pressure melting point.
-void Pico::set_ocean_input_fields(const IceModelVec2S &ice_thickness,
+void Pico::set_ocean_input_fields(const BoxModel &box_model,
+                                  const IceModelVec2S &ice_thickness,
                                   const IceModelVec2CellType &mask,
                                   const IceModelVec2Int &basin_mask,
                                   const IceModelVec2Int &shelf_mask,
-                                  const BoxModel &box_model,
+                                  const std::vector<double> basin_temperature,
+                                  const std::vector<double> basin_salinity,
                                   IceModelVec2S &Toc_box0,
                                   IceModelVec2S &Soc_box0) {
 
@@ -420,14 +424,15 @@ void Pico::set_ocean_input_fields(const IceModelVec2S &ice_thickness,
     Toc_box0(i, j) = 0.0; // in K
     Soc_box0(i, j) = 0.0; // in psu
 
-    if (mask.as_int(i, j) == MASK_FLOATING and shelf_mask.as_int(i, j) > 0) {
+    int s = shelf_mask.as_int(i, j);
+
+    if (mask.as_int(i, j) == MASK_FLOATING and s > 0) {
       // note: shelf_mask = 0 in lakes
 
-      int s = shelf_mask.as_int(i, j);
       // weighted input depending on the number of shelf cells in each basin
       for (int b = 1; b < m_n_basins; b++) { //Note: b=0 yields nan
-        Toc_box0(i, j) += m_Toc_box0_vec[b] * n_shelf_cells_per_basin[s][b] / (double)n_shelf_cells[s];
-        Soc_box0(i, j) += m_Soc_box0_vec[b] * n_shelf_cells_per_basin[s][b] / (double)n_shelf_cells[s];
+        Toc_box0(i, j) += basin_temperature[b] * n_shelf_cells_per_basin[s][b] / (double)n_shelf_cells[s];
+        Soc_box0(i, j) += basin_salinity[b] * n_shelf_cells_per_basin[s][b] / (double)n_shelf_cells[s];
       }
 
       double theta_pm = box_model.theta_pm(Soc_box0(i, j), box_model.pressure(ice_thickness(i, j)));

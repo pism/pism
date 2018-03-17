@@ -131,15 +131,18 @@ private:
                                      const IceModelVec2S &theta_ocean,
                                      std::vector<double> &temperature,
                                      std::vector<double> &salinity);
-  void compute_distances();
-  void identify_ocean_box_mask(const BoxModel &constants);
-  void set_ocean_input_fields(const IceModelVec2S &ice_thickness,
+  void set_ocean_input_fields(const BoxModel &box_model,
+                              const IceModelVec2S &ice_thickness,
                               const IceModelVec2CellType &mask,
-                              const IceModelVec2Int &m_cbasins,
-                              const IceModelVec2Int &m_shelf_mask,
-                              const BoxModel &cc,
+                              const IceModelVec2Int &basin_mask,
+                              const IceModelVec2Int &shelf_mask,
+                              const std::vector<double> basin_temperature,
+                              const std::vector<double> basin_salinity,
                               IceModelVec2S &Toc_box0,
                               IceModelVec2S &Soc_box0);
+
+  void compute_distances();
+  void identify_ocean_box_mask(const BoxModel &constants);
 
   void process_box1(const IceModelVec2S &ice_thickness,
                     const IceModelVec2Int &shelf_mask,
