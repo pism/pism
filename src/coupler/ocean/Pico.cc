@@ -127,9 +127,9 @@ Pico::Pico(IceGrid::ConstPtr g) : PGivenClimate<CompleteOceanModel, CompleteOcea
   m_overturning.create(m_grid, "pico_overturning", WITHOUT_GHOSTS);
   m_overturning.set_attrs("model_state", "cavity overturning", "m^3 s-1", "cavity overturning"); // no CF standard_name?
 
-  m_basalmeltrate_shelf.create(m_grid, "pico_bmelt_shelf", WITHOUT_GHOSTS);
-  m_basalmeltrate_shelf.set_attrs("model_state", "PICO sub-shelf melt rate", "m/s", "PICO sub-shelf melt rate");
-  m_basalmeltrate_shelf.metadata().set_string("glaciological_units", "m year-1");
+  m_basal_melt_rate.create(m_grid, "pico_bmelt_shelf", WITHOUT_GHOSTS);
+  m_basal_melt_rate.set_attrs("model_state", "PICO sub-shelf melt rate", "m/s", "PICO sub-shelf melt rate");
+  m_basal_melt_rate.metadata().set_string("glaciological_units", "m year-1");
   //basalmeltrate_shelf.write_in_glaciological_units = true;
 
   // Initialize this early so that we can check the validity of the "basins" mask read from a file
@@ -267,21 +267,21 @@ void Pico::update_impl(double my_t, double my_dt) {
 
     process_box1(ice_thickness, m_shelf_mask, m_ocean_box_mask, // inputs
                  m_Toc_box0, m_Soc_box0, model,                    // inputs
-                 m_T_star, m_Toc, m_Soc, m_basalmeltrate_shelf, // outputs
+                 m_T_star, m_Toc, m_Soc, m_basal_melt_rate, // outputs
                  m_overturning, *m_shelf_base_temperature);          // outputs
 
     process_other_boxes(ice_thickness, m_shelf_mask, model,        // inputs
                         m_ocean_box_mask, m_T_star, m_Toc,      // outputs
-                        m_Soc, m_basalmeltrate_shelf, *m_shelf_base_temperature); // outputs
+                        m_Soc, m_basal_melt_rate, *m_shelf_base_temperature); // outputs
 
     //Assumes that mass flux is proportional to the shelf-base heat flux.
     process_missing_cells(model, m_shelf_mask, m_ocean_box_mask, ice_thickness, // inputs
                           m_Toc_box0, m_Soc_box0, // inputs
-                          m_Toc, m_Soc, m_basalmeltrate_shelf, *m_shelf_base_temperature); // outputs
+                          m_Toc, m_Soc, m_basal_melt_rate, *m_shelf_base_temperature); // outputs
 
   }
 
-  m_shelf_base_mass_flux->copy_from(m_basalmeltrate_shelf);
+  m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
   m_shelf_base_mass_flux->scale(model.ice_density());
 
   m_sea_level_elevation->set(0.0);
@@ -783,7 +783,7 @@ std::map<std::string, Diagnostic::Ptr> Pico::diagnostics_impl() const {
     { "pico_temperature_box0",     Diagnostic::wrap(m_Toc_box0) },
     { "pico_ocean_box_mask",       Diagnostic::wrap(m_ocean_box_mask) },
     { "pico_shelf_mask",           Diagnostic::wrap(m_shelf_mask) },
-    { "pico_bmelt_shelf",          Diagnostic::wrap(m_basalmeltrate_shelf) },
+    { "pico_bmelt_shelf",          Diagnostic::wrap(m_basal_melt_rate) },
     { "pico_icerise_mask",         Diagnostic::wrap(m_icerise_mask) },
     { "pico_ocean_contshelf_mask", Diagnostic::wrap(m_ocean_contshelf_mask) },
     { "pico_ocean_mask",           Diagnostic::wrap(m_ocean_mask) },

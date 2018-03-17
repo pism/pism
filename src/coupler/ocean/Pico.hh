@@ -114,7 +114,7 @@ private:
   IceModelVec2S m_Soc, m_Soc_box0;
   IceModelVec2S m_Toc, m_Toc_box0, m_T_star;
   IceModelVec2S m_overturning;
-  IceModelVec2S m_basalmeltrate_shelf;
+  IceModelVec2S m_basal_melt_rate;
 
   // a basin defines the domain where one box model instance is solved
   IceModelVec2Int m_DistGL, m_DistIF, m_icerise_mask, m_cbasins, m_shelf_mask, m_lake_mask,
