@@ -591,6 +591,40 @@ void Pico::compute_box_average(int box_id,
   }
 }
 
+/*!
+ * For all shelves compute areas of boxes with id `box_id`.
+ *
+ * @param[in] box_mask box index mask
+ * @param[in] cell_area cell area, m^2
+ * @param[out] result resulting box areas.
+ *
+ * Note: shelf and box indexes start from 1.
+ */
+void Pico::compute_box_area(int box_id,
+                            const IceModelVec2Int &shelf_mask,
+                            const IceModelVec2Int &box_mask,
+                            const IceModelVec2S &cell_area,
+                            std::vector<double> &result) {
+  result.resize(m_n_shelves);
+
+  IceModelVec::AccessList list{&shelf_mask, &box_mask, &cell_area};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    int shelf_id = shelf_mask.as_int(i, j);
+
+    if (shelf_id > 0 and box_mask.as_int(i, j) == box_id) {
+      result[shelf_id] += cell_area(i, j);
+    }
+  }
+
+  // compute global sums
+  for (int s = 1; s < m_n_shelves; ++s) {
+    result[s] = GlobalSum(m_grid->com, result[s]);
+  }
+}
+
 void Pico::process_other_boxes(const IceModelVec2S &ice_thickness,
                                const IceModelVec2Int &shelf_mask,
                                const BoxModel &box_model,
