@@ -105,11 +105,11 @@ Pico::Pico(IceGrid::ConstPtr g) : PGivenClimate<CompleteOceanModel, CompleteOcea
 
   // computed salinity in ocean boxes
   m_Soc.create(m_grid, "pico_Soc", WITHOUT_GHOSTS);
-  m_Soc.set_attrs("model_state", "ocean salinity field", "", "ocean salinity field"); //NOTE unit=psu
+  m_Soc.set_attrs("model_state", "ocean salinity field", "g/kg", "ocean salinity field");
 
   // salinity input for box 1
   m_Soc_box0.create(m_grid, "pico_salinity_box0", WITHOUT_GHOSTS);
-  m_Soc_box0.set_attrs("model_state", "ocean base salinity field", "", "ocean base salinity field"); //NOTE unit=psu
+  m_Soc_box0.set_attrs("model_state", "ocean base salinity field", "g/kg", "ocean base salinity field");
 
   // computed temperature in ocean boxes
   m_Toc.create(m_grid, "pico_Toc", WITHOUT_GHOSTS);
@@ -515,9 +515,9 @@ void Pico::process_box1(const IceModelVec2S &ice_thickness,
       T_pressure_melting(i, j) = box_model.T_pm(Soc(i, j), pressure);
 
     } else {
-      T_star(i, j)      = 0.0;  // in Kelvin
+      T_star(i, j)      = 0.0;    // in Kelvin
       Toc(i, j)         = 273.15; // in Kelvin
-      Soc(i, j)         = 0.0;  // in psu
+      Soc(i, j)         = 0.0;    // in psu
       overturning(i, j) = 0.0;
 
       basal_melt_rate(i, j)    = 0.0;
