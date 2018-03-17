@@ -60,7 +60,7 @@ Pico::Pico(IceGrid::ConstPtr g) : PGivenClimate<CompleteOceanModel, CompleteOcea
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  m_Mx = m_grid->Mx(), m_My = m_grid->My(), m_dx = m_grid->dx(), m_dy = m_grid->dy();
+  m_Mx = m_grid->Mx(), m_My = m_grid->My();
 
   m_theta_ocean->create(m_grid, "theta_ocean");
   m_theta_ocean->set_attrs("climate_forcing", "absolute potential temperature of the adjacent ocean", "Kelvin", "");
@@ -491,7 +491,7 @@ void Pico::process_box1(const IceModelVec2S &ice_thickness,
     overturning(i, j)        = 0.0;
     T_pressure_melting(i, j) = 0.0;
 
-    if ((box_mask.as_int(i, j) == 1) && (shelf_id > 0.0)) {
+    if (box_mask.as_int(i, j) == 1 and shelf_id > 0.0) {
 
       // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
       const double pressure = box_model.pressure(ice_thickness(i, j));
@@ -524,7 +524,7 @@ void Pico::process_box1(const IceModelVec2S &ice_thickness,
       // in situ pressure melting point
       T_pressure_melting(i, j) = box_model.T_pm(Soc(i, j), pressure);
 
-    } else { // i.e., not GL_box
+    } else {
       basal_melt_rate(i, j) = 0.0;
     }
   }

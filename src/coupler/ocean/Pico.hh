@@ -190,10 +190,7 @@ private:
   std::vector<double> m_Toc_box0_vec,     // temperature input for box 1 per basin
     m_Soc_box0_vec;                     // salinity input for box 1 per basin
 
-  std::vector<std::vector<double> > counter_boxes; // matrix containing the number of shelf cells per basin and box
-                                                   // used for area calculation
-
-  int m_n_basins, m_n_boxes, m_n_shelves, m_Mx, m_My, m_dx, m_dy;
+  int m_n_basins, m_n_boxes, m_n_shelves, m_Mx, m_My;
 };
 
 void round_basins(IceModelVec2S &basin_mask);

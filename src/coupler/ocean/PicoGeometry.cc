@@ -715,37 +715,6 @@ void Pico::identify_ocean_box_mask(const BoxModel &cc) {
       m_ocean_box_mask(i, j) = m_n_boxes + 1;
     }
   }
-
-  // Compute the number of cells per box and shelf and save to counter_boxes.
-  const int nBoxes = m_n_boxes + 2;
-
-  // Compute the number of cells per box and shelf and save to counter_boxes.
-  // counter_boxes is used in Pico.cc to determine the area covered by a certain box by
-  // counber_boxes * dx * dy
-  counter_boxes.resize(m_n_shelves, std::vector<double>(2, 0));
-  std::vector<std::vector<int> > lcounter_boxes(m_n_shelves, std::vector<int>(nBoxes));
-
-  for (int shelf_id = 0; shelf_id < m_n_shelves; shelf_id++) {
-    for (int l = 0; l < nBoxes; l++) {
-      lcounter_boxes[shelf_id][l] = 0;
-    }
-  }
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    int box_id = static_cast<int>(round(m_ocean_box_mask(i, j)));
-    if (box_id > 0) { // floating
-      int shelf_id = m_shelf_mask(i, j);
-      lcounter_boxes[shelf_id][box_id]++;
-    }
-  }
-
-  for (int shelf_id = 0; shelf_id < m_n_shelves; shelf_id++) {
-    counter_boxes[shelf_id].resize(nBoxes);
-    for (int l = 0; l < nBoxes; l++) {
-      counter_boxes[shelf_id][l] = GlobalSum(m_grid->com, lcounter_boxes[shelf_id][l]);
-    }
-  }
 }
 
 
