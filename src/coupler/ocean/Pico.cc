@@ -256,14 +256,15 @@ void Pico::update_impl(double my_t, double my_dt) {
 
   // Physical part of PICO
 
-  // prepare ocean input temperature and salinity
   {
-    compute_ocean_input_per_basin(model,
-                                  m_cbasins, m_ocean_contshelf_mask,
-                                  *m_salinity_ocean, *m_theta_ocean); // per basin
-
     const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
     const IceModelVec2CellType &mask   = *m_grid->variables().get_2d_cell_type("mask");
+
+    // prepare ocean input temperature and salinity
+    compute_ocean_input_per_basin(model,
+                                  m_cbasins, m_ocean_contshelf_mask,
+                                  *m_salinity_ocean, *m_theta_ocean,
+                                  m_Toc_box0_vec, m_Soc_box0_vec); // per basin
 
     set_ocean_input_fields(ice_thickness, mask, m_cbasins, m_shelf_mask, model,
                            m_Toc_box0, m_Soc_box0);        // per shelf
@@ -304,25 +305,33 @@ void Pico::compute_ocean_input_per_basin(const BoxModel &box_model,
                                          const IceModelVec2Int &basin_mask,
                                          const IceModelVec2Int &continental_shelf_mask,
                                          const IceModelVec2S &salinity_ocean,
-                                         const IceModelVec2S &theta_ocean) {
+                                         const IceModelVec2S &theta_ocean,
+                                         std::vector<double> &temperature,
+                                         std::vector<double> &salinity) {
 
   std::vector<double> count(m_n_basins, 0.0);
-  std::vector<double> Tval(m_n_basins, 0.0);
-  std::vector<double> Sval(m_n_basins, 0.0);
 
-  IceModelVec::AccessList list{&theta_ocean, &salinity_ocean, &basin_mask, &continental_shelf_mask };
+  temperature.resize(m_n_basins);
+  salinity.resize(m_n_basins);
+  for (int basin_id = 0; basin_id < m_n_basins; basin_id++) {
+    temperature[basin_id] = 0.0;
+    salinity[basin_id]    = 0.0;
+  }
 
-  // compute the sum for each basin for region that intersects with the
-  // continental shelf area and is not covered by an ice shelf.
-  // (continental shelf mask excludes ice shelf areas)
+  IceModelVec::AccessList list{ &theta_ocean, &salinity_ocean, &basin_mask, &continental_shelf_mask };
+
+  // compute the sum for each basin for region that intersects with the continental shelf
+  // area and is not covered by an ice shelf. (continental shelf mask excludes ice shelf
+  // areas)
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (continental_shelf_mask(i, j) == INNER) {
+    if (continental_shelf_mask.as_int(i, j) == INNER) {
       int basin_id = basin_mask.as_int(i, j);
-      count[basin_id] += 1;
-      Sval[basin_id] += salinity_ocean(i, j);
-      Tval[basin_id] += theta_ocean(i, j);
+
+      count[basin_id]       += 1;
+      salinity[basin_id]    += salinity_ocean(i, j);
+      temperature[basin_id] += theta_ocean(i, j);
     }
   }
 
@@ -332,9 +341,9 @@ void Pico::compute_ocean_input_per_basin(const BoxModel &box_model,
   // example, if the ice shelf front advances beyond the continental shelf break.
   for (int basin_id = 0; basin_id < m_n_basins; basin_id++) {
 
-    count[basin_id] = GlobalSum(m_grid->com, count[basin_id]);
-    Sval[basin_id]  = GlobalSum(m_grid->com, Sval[basin_id]);
-    Tval[basin_id]  = GlobalSum(m_grid->com, Tval[basin_id]);
+    count[basin_id]       = GlobalSum(m_grid->com, count[basin_id]);
+    salinity[basin_id]    = GlobalSum(m_grid->com, salinity[basin_id]);
+    temperature[basin_id] = GlobalSum(m_grid->com, temperature[basin_id]);
 
     // if basin is not dummy basin 0 or there are no ocean cells in this basin to take the mean over.
     // FIXME: the following warning occurs once at initialization before input is available.
@@ -346,16 +355,17 @@ void Pico::compute_ocean_input_per_basin(const BoxModel &box_model,
                         "the standard values T_dummy =%.3f, S_dummy=%.3f.\n"
                         "This might bias your basal melt rates, check your input data carefully.\n",
                      basin_id, box_model.T_dummy(), box_model.S_dummy());
-      m_Toc_box0_vec[basin_id] = box_model.T_dummy();
-      m_Soc_box0_vec[basin_id] = box_model.S_dummy();
-    } else {
-      Sval[basin_id] = Sval[basin_id] / count[basin_id];
-      Tval[basin_id] = Tval[basin_id] / count[basin_id];
 
-      m_Toc_box0_vec[basin_id] = Tval[basin_id];
-      m_Soc_box0_vec[basin_id] = Sval[basin_id];
-      m_log->message(5, "  %d: temp =%.3f, salinity=%.3f\n", basin_id, m_Toc_box0_vec[basin_id],
-                     m_Soc_box0_vec[basin_id]);
+      temperature[basin_id] = box_model.T_dummy();
+      salinity[basin_id]    = box_model.S_dummy();
+
+    } else {
+
+      salinity[basin_id]    /= count[basin_id];
+      temperature[basin_id] /= count[basin_id];
+
+      m_log->message(5, "  %d: temp =%.3f, salinity=%.3f\n", basin_id, temperature[basin_id],
+                     salinity[basin_id]);
     }
   }
 }

@@ -124,11 +124,13 @@ private:
 
   void identifyMASK(IceModelVec2S &inputmask, std::string masktype);
   void identify_shelf_mask();
-  void compute_ocean_input_per_basin(const BoxModel &cc,
+  void compute_ocean_input_per_basin(const BoxModel &box_model,
                                      const IceModelVec2Int &basin_mask,
                                      const IceModelVec2Int &continental_shelf_mask,
                                      const IceModelVec2S &salinity_ocean,
-                                     const IceModelVec2S &theta_ocean);
+                                     const IceModelVec2S &theta_ocean,
+                                     std::vector<double> &temperature,
+                                     std::vector<double> &salinity);
   void compute_distances();
   void identify_ocean_box_mask(const BoxModel &constants);
   void set_ocean_input_fields(const IceModelVec2S &ice_thickness,
