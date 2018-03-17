@@ -90,25 +90,23 @@ TocBox1 BoxModel::Toc_box1(double area, double T_star, double Soc_box0, double T
 
   TocBox1 result = {false, 0.0};
 
-  double g1 = area * m_gamma_T;
-  double s1 = Soc_box0 / (m_nu * m_lambda);
-
-  // These are the coefficients for solving the quadratic temperature equation trough the
-  // p-q formula.
-  double p = p_coeff(g1, s1);
-  double q = q_coeff(g1, s1, T_star);
+  const double
+    g1 = area * m_gamma_T,
+    s1 = Soc_box0 / (m_nu * m_lambda),
+    p  = p_coeff(g1, s1),
+    q  = q_coeff(g1, s1, T_star);
 
   // This can only happen if T_star > 0.25*p, in particular T_star > 0 which can only
   // happen for values of Toc_box0 close to the local pressure melting point
-  if ((0.25 * p * p - q) < 0.0) {
-    q = 0.25 * p * p;
-
+  double D = 0.25 * p * p - q;
+  if (D < 0.0) {
+    D = 0.0;
     result.failed = true;
   }
 
   // temperature for box 1, p-q formula
   // equation A12 in the PICO paper.
-  result.value = Toc_box0 - (-0.5 * p + sqrt(0.25 * p * p - q));
+  result.value = Toc_box0 - (-0.5 * p + sqrt(D));
 
   return result;
 }

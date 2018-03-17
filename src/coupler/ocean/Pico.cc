@@ -523,10 +523,20 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
   m_mean_temperature_boundary_vector.resize(m_n_shelves);
   m_mean_overturning_box1_vector.resize(m_n_shelves);
 
-  IceModelVec::AccessList list{
-    &ice_thickness, &shelf_mask, &box_mask, &T_star, &Toc_box0, &Toc, &Soc_box0, &Soc,
-    &overturning, &basal_melt_rate, &T_pressure_melting
-  };
+  double dx = m_grid->dx(), dy = m_grid->dy();
+
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(shelf_mask);
+  list.add(box_mask);
+  list.add(T_star);
+  list.add(Toc_box0);
+  list.add(Toc);
+  list.add(Soc_box0);
+  list.add(Soc);
+  list.add(overturning);
+  list.add(basal_melt_rate);
+  list.add(T_pressure_melting);
 
   double countHelpterm = 0, lcountHelpterm = 0;
 
@@ -542,35 +552,58 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
     Toc(i, j)    = 273.15; // in Kelvin
     Soc(i, j)    = 0.0;    // in psu
 
-    basal_melt_rate(i, j) = 0.0;
-    overturning(i, j)         = 0.0;
-    T_pressure_melting(i, j)  = 0.0;
+    basal_melt_rate(i, j)    = 0.0;
+    overturning(i, j)        = 0.0;
+    T_pressure_melting(i, j) = 0.0;
 
-    if ((box_mask(i, j) == 1) && (shelf_id > 0.0)) {
+    if ((box_mask.as_int(i, j) == 1) && (shelf_id > 0.0)) {
 
-      double pressure = cc.pressure(ice_thickness(i, j));
+      // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
+      const double pressure = cc.m_ice_density * cc.m_earth_grav * ice_thickness(i, j) * 1e-4;
+      T_star(i, j) = cc.m_a_pot * Soc_box0(i, j) + cc.m_b_pot - cc.m_c_pot * pressure - Toc_box0(i, j); // in Kelvin
 
-      T_star(i, j) = cc.T_star(Soc_box0(i, j), Toc_box0(i, j), pressure);
+      //FIXME this assumes rectangular cell areas, adjust with real areas from projection
+      double area_box1 = (counter_boxes[shelf_id][1] * dx * dy);
 
-      double area_box1 = f_area(counter_boxes[shelf_id][1], m_dx, m_dy);
+      double g1 = area_box1 * cc.gamma_T();
+      double s1 = Soc_box0(i, j) / (cc.m_nu * cc.m_lambda);
 
-      auto Toc_box1 = cc.Toc_box1(area_box1, T_star(i, j), Soc_box0(i, j), Toc_box0(i, j));
-      Toc(i, j) = Toc_box1.value;
+      // These are the coefficients for solving the quadratic temperature equation
+      // trough the p-q formula.
+      double p_coeff =
+          g1 / (cc.m_overturning_coeff * cc.m_rho_star * (cc.m_beta * s1 - cc.m_alpha)); // in 1 / (1/K) = K
+      double q_coeff = (g1 * T_star(i, j)) /
+                       (cc.m_overturning_coeff * cc.m_rho_star * (cc.m_beta * s1 - cc.m_alpha)); // in K / (1/K) = K^2
 
-      if (Toc_box1.failed) {
+      // This can only happen if T_star > 0.25*p_coeff, in particular T_star > 0
+      // which can only happen for values of Toc_box0 close to the local pressure melting point
+      if ((0.25 * PetscSqr(p_coeff) - q_coeff) < 0.0) {
+
         m_log->message(5, "PICO ocean WARNING: negative square root argument at %d, %d\n"
-                       "probably because of positive T_star\n"
-                       "Not aborting, but setting square root to 0... \n",
-                       i, j);
+                          "probably because of positive T_star=%f \n"
+                          "Not aborting, but setting square root to 0... \n",
+                       i, j, T_star(i, j));
+
+        q_coeff = 0.25 * PetscSqr(p_coeff);
+        lcountHelpterm += 1;
       }
 
+      // temperature for box 1, p-q formula
+      Toc(i, j) = Toc_box0(i, j) - (-0.5 * p_coeff + sqrt(0.25 * PetscSqr(p_coeff) - q_coeff)); // in Kelvin
       // salinity for box 1
-      Soc(i, j) = cc.Soc_box1(Toc_box0(i, j), Soc_box0(i, j), Toc(i, j)); // in psu
+      Soc(i, j) = Soc_box0(i, j) - (Soc_box0(i, j) / (cc.m_nu * cc.m_lambda)) * (Toc_box0(i, j) - Toc(i, j)); // in psu
+
+      // potential pressure melting pointneeded to calculate thermal driving
+      // using coefficients for potential temperature
+      double potential_pressure_melting_point = cc.m_a_pot * Soc(i, j) + cc.m_b_pot - cc.m_c_pot * pressure;
 
       // basal melt rate for box 1
-      basal_melt_rate(i, j) = cc.melt_rate(cc.theta_pm(Soc(i, j), pressure), Toc(i,j));
+      basal_melt_rate(i, j) =
+          (-cc.gamma_T() / (cc.m_nu * cc.m_lambda)) * (potential_pressure_melting_point - Toc(i, j)); // in m/s
 
-      overturning(i, j) = cc.overturning(Soc_box0(i,j), Soc(i,j), Toc_box0(i,j), Toc(i,j));
+      overturning(i, j) =
+          cc.m_overturning_coeff * cc.m_rho_star *
+          (cc.m_beta * (Soc_box0(i, j) - Soc(i, j)) - cc.m_alpha * (Toc_box0(i, j) - Toc(i, j))); // in m^3/s
 
       // average the temperature, salinity and overturning over the entire box1
       // this is used as input for box 2
@@ -582,12 +615,13 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
       lmean_overturning_box1_vector[shelf_id] += overturning(i, j);
 
       // in situ pressure melting point
-      T_pressure_melting(i, j) = cc.T_pm(Soc(i, j), pressure);//  in Kelvin
+      T_pressure_melting(i, j) = cc.m_a_in_situ * Soc(i, j) + cc.m_b_in_situ - cc.m_c_in_situ * pressure; //  in Kelvin
 
     } else { // i.e., not GL_box
       basal_melt_rate(i, j) = 0.0;
     }
   }
+
 
   // average the temperature, salinity and overturning over box1
   // (here we divide)
