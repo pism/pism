@@ -362,14 +362,6 @@ void Pico::compute_ocean_input_per_basin(const BoxModel &box_model,
   }
 }
 
-
-double f_weight_by_shelf_area_per_basin(double property_in_basin, double ice_shelf_cells_in_basin, double
-                               total_cells_of_ice_shelf){
-
-    return property_in_basin * (ice_shelf_cells_in_basin / total_cells_of_ice_shelf);
-}
-
-
 //! Set ocean ocean input from box 0 as boundary condition for box 1.
 
 //! Set ocean temperature and salinity (Toc_box0, Soc_box0)
