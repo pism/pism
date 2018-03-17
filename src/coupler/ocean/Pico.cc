@@ -175,8 +175,6 @@ void Pico::init_impl() {
   m_Toc_box0_vec.resize(m_n_basins);
   m_Soc_box0_vec.resize(m_n_basins);
 
-  counter_boxes.resize(m_n_shelves, std::vector<double>(2, 0));
-
   m_log->message(2, "  -Using %d drainage basins and values: \n"
                     "   gamma_T= %.2e, overturning_coeff = %.2e... \n",
                  m_n_basins, box_model.gamma_T(), box_model.overturning_coeff());
@@ -468,7 +466,9 @@ void Pico::process_box1(const IceModelVec2S &ice_thickness,
                         IceModelVec2S &overturning,
                         IceModelVec2S &T_pressure_melting) {
 
-  double dx = m_grid->dx(), dy = m_grid->dy();
+  std::vector<double> box1_area(m_n_shelves);
+  const IceModelVec2S *cell_area = m_grid->variables().get_2d_scalar("cell_area");
+  compute_box_area(1, shelf_mask, box_mask, *cell_area, box1_area);
 
   IceModelVec::AccessList list{&ice_thickness, &shelf_mask, &box_mask, &T_star,
       &Toc_box0, &Toc, &Soc_box0, &Soc, &overturning, &basal_melt_rate, &T_pressure_melting};
@@ -498,10 +498,8 @@ void Pico::process_box1(const IceModelVec2S &ice_thickness,
 
       T_star(i, j) = box_model.T_star(Soc_box0(i, j), Toc_box0(i, j), pressure);
 
-      //FIXME this assumes rectangular cell areas, adjust with real areas from projection
-      double area_box1 = counter_boxes[shelf_id][1] * dx * dy;
-
-      auto Toc_box1 = box_model.Toc_box1(area_box1, T_star(i, j), Soc_box0(i, j), Toc_box0(i, j));
+      auto Toc_box1 = box_model.Toc_box1(box1_area[shelf_id],
+                                         T_star(i, j), Soc_box0(i, j), Toc_box0(i, j));
 
       // This can only happen if T_star > 0.25*p_coeff, in particular T_star > 0
       // which can only happen for values of Toc_box0 close to the local pressure melting point
@@ -642,10 +640,11 @@ void Pico::process_other_boxes(const IceModelVec2S &ice_thickness,
   // get average overturning from box 1 that is used as input later
   compute_box_average(1, m_overturning, shelf_mask, box_mask, overturning);
 
+  const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
+
   IceModelVec::AccessList list{
     &ice_thickness, &shelf_mask, &box_mask, &T_star, &Toc, &Soc,
-      &basal_melt_rate, &T_pressure_melting
-      };
+      &basal_melt_rate, &T_pressure_melting, &cell_area};
 
   // Iterate over all boxes i for i > 1
   // box number = numberOfBoxes+1 is used as identifier for Beckmann Goose calculation
@@ -654,6 +653,9 @@ void Pico::process_other_boxes(const IceModelVec2S &ice_thickness,
 
     compute_box_average(box - 1, Toc, shelf_mask, box_mask, temperature);
     compute_box_average(box - 1, Soc, shelf_mask, box_mask, salinity);
+
+    std::vector<double> box_area;
+    compute_box_area(box, shelf_mask, box_mask, cell_area, box_area);
 
     int countGl0 = 0;
 
@@ -682,14 +684,12 @@ void Pico::process_other_boxes(const IceModelVec2S &ice_thickness,
           countGl0 += 1;
 
         } else {
-          // FIXME: compute box areas using projection information
-          double box_area = f_area(counter_boxes[shelf_id][box], m_dx, m_dy);
 
           double pressure = box_model.pressure(ice_thickness(i, j));
 
           // diagnostic outputs
           T_star(i, j) = box_model.T_star(S_previous, T_previous, pressure);
-          Toc(i, j)    = box_model.Toc(box_area, T_previous, T_star(i, j), overturning_box1, S_previous);
+          Toc(i, j)    = box_model.Toc(box_area[shelf_id], T_previous, T_star(i, j), overturning_box1, S_previous);
           Soc(i, j)    = box_model.Soc(S_previous, T_previous, Toc(i, j));
 
           // main outputs: basal melt rate and temperature
