@@ -105,15 +105,16 @@ protected:
 
   void define_model_state_impl(const PIO &output) const;
   void write_model_state_impl(const PIO &output) const;
-  void test();
 
   std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
   bool m_exicerises_set; // FIXME shouldn't this be always used?
 
 private:
-  IceModelVec2S m_Soc, m_Soc_box0, m_Toc, m_Toc_box0, m_T_star, m_overturning, m_basalmeltrate_shelf,
-      m_T_pressure_melting;
+  IceModelVec2S m_Soc, m_Soc_box0;
+  IceModelVec2S m_Toc, m_Toc_box0, m_T_star;
+  IceModelVec2S m_overturning;
+  IceModelVec2S m_basalmeltrate_shelf;
 
   // a basin defines the domain where one box model instance is solved
   IceModelVec2Int m_DistGL, m_DistIF, m_icerise_mask, m_cbasins, m_shelf_mask, m_lake_mask,
