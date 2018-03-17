@@ -122,7 +122,6 @@ private:
 
   IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
 
-  void initBasinsOptions(const BoxModel &constants);
   void identifyMASK(IceModelVec2S &inputmask, std::string masktype);
   void identify_shelf_mask();
   void compute_ocean_input_per_basin(const BoxModel &cc,
@@ -183,9 +182,7 @@ private:
   enum IdentifyMaskFlags {INNER = 2, OUTER = 0, EXCLUDE = 1, UNIDENTIFIED = -1};
 
   std::vector<double> m_Toc_box0_vec,     // temperature input for box 1 per basin
-    m_Soc_box0_vec,                     // salinity input for box 1 per basin
-    m_mean_salinity_boundary_vector,    // salinity input for box i>1 per basin
-    m_mean_temperature_boundary_vector; // temperature input for box i>1 per basin
+    m_Soc_box0_vec;                     // salinity input for box 1 per basin
 
   std::vector<std::vector<double> > counter_boxes; // matrix containing the number of shelf cells per basin and box
                                                    // used for area calculation

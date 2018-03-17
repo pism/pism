@@ -167,8 +167,23 @@ void Pico::init_impl() {
 
   m_log->message(4, "PICO basin min=%f,max=%f\n", m_cbasins.min(), m_cbasins.max());
 
-  BoxModel model(*m_config);
-  initBasinsOptions(model);
+  BoxModel box_model(*m_config);
+
+  m_n_basins = m_config->get_double("ocean.pico.number_of_basins");
+  m_n_boxes  = m_config->get_double("ocean.pico.number_of_boxes");
+
+  m_Toc_box0_vec.resize(m_n_basins);
+  m_Soc_box0_vec.resize(m_n_basins);
+
+  counter_boxes.resize(m_n_shelves, std::vector<double>(2, 0));
+
+  m_log->message(2, "  -Using %d drainage basins and values: \n"
+                    "   gamma_T= %.2e, overturning_coeff = %.2e... \n",
+                 m_n_basins, box_model.gamma_T(), box_model.overturning_coeff());
+
+  m_log->message(2, "  -Depth of continental shelf for computation of temperature and salinity input\n"
+                    "   is set for whole domain to continental_shelf_depth=%.0f meter\n",
+                 box_model.continental_shelf_depth());
 
   round_basins(m_cbasins);
 
@@ -213,41 +228,6 @@ void Pico::write_model_state_impl(const PIO &output) const {
   //basalmeltrate_shelf.write(output);
 
   OceanModel::define_model_state_impl(output);
-}
-
-
-//! initialize PICO model variables, can be user-defined.
-
-//! numberOfBasins: number of drainage basins for PICO model
-//!                 FIXME: we should infer that from the read-in basin mask
-//! numberOfBoxes: maximum number of ocean boxes for PICO model
-//!                for smaller shelves, the model may use less.
-//! gamma_T: turbulent heat exchange coefficient for ice-ocean boundary layer
-//! overturning_coeff: coefficient that scales strength of overturning circulation
-//! continental_shelf_depth: threshold for definition of continental shelf area
-//!                          area shallower than threshold is used for ocean input
-
-void Pico::initBasinsOptions(const BoxModel &box_model) {
-
-  m_n_basins = m_config->get_double("ocean.pico.number_of_basins");
-  m_n_boxes  = m_config->get_double("ocean.pico.number_of_boxes");
-
-  m_Toc_box0_vec.resize(m_n_basins);
-  m_Soc_box0_vec.resize(m_n_basins);
-
-  counter_boxes.resize(m_n_shelves, std::vector<double>(2, 0));
-  // FIXME: the three vectors below will later on be resized to numberOfShelves,
-  // is the line here still necessary?
-  m_mean_salinity_boundary_vector.resize(m_n_basins);
-  m_mean_temperature_boundary_vector.resize(m_n_basins);
-
-  m_log->message(2, "  -Using %d drainage basins and values: \n"
-                    "   gamma_T= %.2e, overturning_coeff = %.2e... \n",
-                 m_n_basins, box_model.gamma_T(), box_model.overturning_coeff());
-
-  m_log->message(2, "  -Depth of continental shelf for computation of temperature and salinity input\n"
-                    "   is set for whole domain to continental_shelf_depth=%.0f meter\n",
-                 box_model.continental_shelf_depth());
 }
 
 void Pico::update_impl(double my_t, double my_dt) {
@@ -630,6 +610,8 @@ void Pico::process_other_boxes(const IceModelVec2S &ice_thickness,
                                IceModelVec2S &T_pressure_melting) {
 
   std::vector<double> overturning(m_n_shelves, 0.0);
+  std::vector<double> salinity(m_n_shelves, 0.0);
+  std::vector<double> temperature(m_n_shelves, 0.0);
 
   // get average overturning from box 1 that is used as input later
   compute_box_average(1, m_overturning, shelf_mask, box_mask, overturning);
@@ -644,8 +626,8 @@ void Pico::process_other_boxes(const IceModelVec2S &ice_thickness,
   // for cells with missing input and excluded in loop here, i.e. box <= m_n_boxes.
   for (int box = 2; box <= m_n_boxes; ++box) {
 
-    compute_box_average(box - 1, Toc, shelf_mask, box_mask, m_mean_temperature_boundary_vector);
-    compute_box_average(box - 1, Soc, shelf_mask, box_mask, m_mean_salinity_boundary_vector);
+    compute_box_average(box - 1, Toc, shelf_mask, box_mask, temperature);
+    compute_box_average(box - 1, Soc, shelf_mask, box_mask, salinity);
 
     int countGl0 = 0;
 
@@ -660,8 +642,8 @@ void Pico::process_other_boxes(const IceModelVec2S &ice_thickness,
         //
         // Note: overturning is only computed in box 1
         const double
-          S_previous       = m_mean_salinity_boundary_vector[shelf_id],
-          T_previous       = m_mean_temperature_boundary_vector[shelf_id],
+          S_previous       = salinity[shelf_id],
+          T_previous       = temperature[shelf_id],
           overturning_box1 = overturning[shelf_id];
 
         // if there are no boundary values from the box before
