@@ -639,6 +639,51 @@ void Pico::calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
 //! Overturning is only calculated for box 1.
 //! We calculate the average values over box i as input for box i+1.
 
+/*!
+ * For each shelf, compute average of a given field over the box with id `box_id`.
+ *
+ * This method is used to get inputs from a previous box for the next one.
+ */
+void Pico::compute_box_average(int box_id,
+                               const IceModelVec2S &field,
+                               const IceModelVec2Int &shelf_mask,
+                               const IceModelVec2Int &box_mask,
+                               std::vector<double> &result) {
+
+  IceModelVec::AccessList list{ &field, &shelf_mask, &box_mask };
+
+  std::vector<int> n_cells_per_box(m_n_shelves, 0);
+
+  // fill results with zeros
+  result.resize(m_n_shelves);
+  for (int s = 0; s < m_n_shelves; ++s) {
+    result[s] = 0.0;
+  }
+
+  // compute the sum of field in each shelf's box box_id
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    int shelf_id = shelf_mask.as_int(i, j);
+
+    if (box_mask.as_int(i, j) == box_id) {
+      n_cells_per_box[shelf_id] += 1;
+      result[shelf_id] += field(i, j);
+    }
+  }
+
+  // compute the global sum and average
+  for (int s = 0; s < m_n_shelves; ++s) {
+    auto n_cells = GlobalSum(m_grid->com, n_cells_per_box[s]);
+
+    result[s] = GlobalSum(m_grid->com, result[s]);
+
+    if (n_cells > 0) {
+      result[s] /= (double)n_cells;
+    }
+  }
+}
+
 void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
                                             const IceModelVec2Int &shelf_mask,
                                             const BoxModel &cc,

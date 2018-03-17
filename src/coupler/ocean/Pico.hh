@@ -170,6 +170,12 @@ private:
                                           IceModelVec2S &basal_melt_rate,
                                           IceModelVec2S &T_pressure_melting);
 
+  void compute_box_average(int box_id,
+                           const IceModelVec2S &field,
+                           const IceModelVec2Int &shelf_mask,
+                           const IceModelVec2Int &box_mask,
+                           std::vector<double> &result);
+
   enum IdentifyMaskFlags {INNER = 2, OUTER = 0, EXCLUDE = 1, UNIDENTIFIED = -1};
 
   std::vector<double> m_Toc_box0_vec,     // temperature input for box 1 per basin
