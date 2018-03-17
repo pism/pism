@@ -482,15 +482,6 @@ void Pico::process_box1(const IceModelVec2S &ice_thickness,
 
     int shelf_id = shelf_mask.as_int(i, j);
 
-    // Make sure everything is at default values at the beginning of each timestep
-    T_star(i, j) = 0.0;    // in Kelvin
-    Toc(i, j)    = 273.15; // in Kelvin
-    Soc(i, j)    = 0.0;    // in psu
-
-    basal_melt_rate(i, j)    = 0.0;
-    overturning(i, j)        = 0.0;
-    T_pressure_melting(i, j) = 0.0;
-
     if (box_mask.as_int(i, j) == 1 and shelf_id > 0.0) {
 
       // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
@@ -515,17 +506,22 @@ void Pico::process_box1(const IceModelVec2S &ice_thickness,
       Toc(i, j) = Toc_box1.value;
       Soc(i, j) = box_model.Soc_box1(Toc_box0(i, j), Soc_box0(i, j), Toc(i, j)); // in psu
 
-      basal_melt_rate(i, j) = box_model.melt_rate(box_model.theta_pm(Soc(i, j), pressure),
-                                                  Toc(i, j));
-
       overturning(i, j) = box_model.overturning(Soc_box0(i, j), Soc(i, j),
                                                 Toc_box0(i, j), Toc(i, j));
 
-      // in situ pressure melting point
+      // main outputs
+      basal_melt_rate(i, j) = box_model.melt_rate(box_model.theta_pm(Soc(i, j), pressure),
+                                                  Toc(i, j));
       T_pressure_melting(i, j) = box_model.T_pm(Soc(i, j), pressure);
 
     } else {
-      basal_melt_rate(i, j) = 0.0;
+      T_star(i, j)      = 0.0;  // in Kelvin
+      Toc(i, j)         = 273.15; // in Kelvin
+      Soc(i, j)         = 0.0;  // in psu
+      overturning(i, j) = 0.0;
+
+      basal_melt_rate(i, j)    = 0.0;
+      T_pressure_melting(i, j) = 0.0;
     }
   }
 
