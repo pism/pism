@@ -321,7 +321,7 @@ void Pico::compute_ocean_input_per_basin(const BoxModel &box_model,
     const int i = p.i(), j = p.j();
 
     if (continental_shelf_mask(i, j) == INNER) {
-      int basin_id = basin_mask(i, j);
+      int basin_id = basin_mask.as_int(i, j);
       count[basin_id] += 1;
       Sval[basin_id] += salinity_ocean(i, j);
       Tval[basin_id] += theta_ocean(i, j);
@@ -480,7 +480,7 @@ void Pico::process_box1(const IceModelVec2S &ice_thickness,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    int shelf_id = shelf_mask(i, j);
+    int shelf_id = shelf_mask.as_int(i, j);
 
     // Make sure everything is at default values at the beginning of each timestep
     T_star(i, j) = 0.0;    // in Kelvin
@@ -628,7 +628,7 @@ void Pico::process_other_boxes(const IceModelVec2S &ice_thickness,
 
       int shelf_id = shelf_mask.as_int(i, j);
 
-      if (box_mask(i, j) == box and shelf_id > 0) {
+      if (box_mask.as_int(i, j) == box and shelf_id > 0) {
 
         // Get the input from previous box
         //
