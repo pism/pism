@@ -172,9 +172,6 @@ void Pico::init_impl() {
   m_n_basins = m_config->get_double("ocean.pico.number_of_basins");
   m_n_boxes  = m_config->get_double("ocean.pico.number_of_boxes");
 
-  m_Toc_box0_vec.resize(m_n_basins);
-  m_Soc_box0_vec.resize(m_n_basins);
-
   m_log->message(2, "  -Using %d drainage basins and values: \n"
                     "   gamma_T= %.2e, overturning_coeff = %.2e... \n",
                  m_n_basins, box_model.gamma_T(), box_model.overturning_coeff());
@@ -260,15 +257,18 @@ void Pico::update_impl(double my_t, double my_dt) {
     const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
     const IceModelVec2CellType &mask   = *m_grid->variables().get_2d_cell_type("mask");
 
+    std::vector<double> basin_temperature(m_n_basins);
+    std::vector<double> basin_salinity(m_n_basins);
+
     // prepare ocean input temperature and salinity
     compute_ocean_input_per_basin(model,
                                   m_cbasins, m_ocean_contshelf_mask,
                                   *m_salinity_ocean, *m_theta_ocean,
-                                  m_Toc_box0_vec, m_Soc_box0_vec); // per basin
+                                  basin_temperature, basin_salinity); // per basin
 
     set_ocean_input_fields(model,
                            ice_thickness, mask, m_cbasins, m_shelf_mask,
-                           m_Toc_box0_vec, m_Soc_box0_vec,
+                           basin_temperature, basin_salinity,
                            m_Toc_box0, m_Soc_box0);        // per shelf
 
 

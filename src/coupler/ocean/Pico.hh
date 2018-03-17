@@ -112,12 +112,11 @@ protected:
   bool m_exicerises_set; // FIXME shouldn't this be always used?
 
 private:
-  IceModelVec2S m_DistGL,
-      m_DistIF, m_Soc, m_Soc_box0, m_Toc, m_Toc_box0, m_T_star, m_overturning, m_basalmeltrate_shelf,
+  IceModelVec2S m_Soc, m_Soc_box0, m_Toc, m_Toc_box0, m_T_star, m_overturning, m_basalmeltrate_shelf,
       m_T_pressure_melting;
 
   // a basin defines the domain where one box model instance is solved
-  IceModelVec2Int m_icerise_mask, m_cbasins, m_shelf_mask, m_lake_mask,
+  IceModelVec2Int m_DistGL, m_DistIF, m_icerise_mask, m_cbasins, m_shelf_mask, m_lake_mask,
     m_ocean_box_mask, m_ocean_mask, m_ocean_contshelf_mask;
 
   IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
@@ -191,9 +190,6 @@ private:
                         std::vector<double> &result);
 
   enum IdentifyMaskFlags {INNER = 2, OUTER = 0, EXCLUDE = 1, UNIDENTIFIED = -1};
-
-  std::vector<double> m_Toc_box0_vec,     // temperature input for box 1 per basin
-    m_Soc_box0_vec;                     // salinity input for box 1 per basin
 
   int m_n_basins, m_n_boxes, m_n_shelves, m_Mx, m_My;
 };
