@@ -193,7 +193,7 @@ double BoxModel::p_coeff(double g1, double s1) const {
 //! is only used once in Toc_box1(...)
 double BoxModel::q_coeff(double g1, double s1, double T_star) const {
   // in K / (1/K) = K^2
-  return T_star * p_coeff(g1, s1);
+  return (g1 * T_star) / (m_overturning_coeff * m_rho_star * (m_beta * s1 - m_alpha));
 }
 
 double BoxModel::gamma_T() const {

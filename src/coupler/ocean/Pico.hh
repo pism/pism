@@ -70,7 +70,7 @@ public:
 private:
   double p_coeff(double g1, double s1) const;
   double q_coeff(double g1, double s1, double T_star) const;
-public:
+
   double m_gamma_T, m_overturning_coeff, m_T_dummy, m_S_dummy;
   double m_ice_density, m_continental_shelf_depth;
 
