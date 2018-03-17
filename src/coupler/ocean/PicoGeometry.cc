@@ -7,11 +7,6 @@
 namespace pism {
 namespace ocean {
 
-void Pico::test() {
-  // TEST FUNCTION
-  m_log->message(2, "TEST...\n");
-}
-
 // To be used solely in round_basins()
 static double most_frequent_element(const std::vector<double> &v) { // Precondition: v is not empty
   std::map<double, double> frequencyMap;
@@ -657,7 +652,7 @@ void Pico::identify_ocean_box_mask(const BoxModel &cc) {
 
     // equation (9) of PICO paper https://doi.org/10.5194/tc-2017-70
     lnumberOfBoxes_perShelf[l] =
-        n_min + static_cast<int>(round(pow((max_distGL[l] / max_distGL_ref), zeta) * (m_numberOfBoxes - n_min)));
+        n_min + static_cast<int>(round(pow((max_distGL[l] / max_distGL_ref), zeta) * (m_n_boxes - n_min)));
 
     // never have more boxes than default number of boxes
     lnumberOfBoxes_perShelf[l] = PetscMin(lnumberOfBoxes_perShelf[l], number_of_boxes);
@@ -717,12 +712,12 @@ void Pico::identify_ocean_box_mask(const BoxModel &cc) {
     const int i = p.i(), j = p.j();
     if (mask(i, j) == MASK_FLOATING && m_ocean_box_mask(i, j) == 0 &&
         m_lake_mask(i, j) != 1) { // floating, no sub-glacial lake
-      m_ocean_box_mask(i, j) = m_numberOfBoxes + 1;
+      m_ocean_box_mask(i, j) = m_n_boxes + 1;
     }
   }
 
   // Compute the number of cells per box and shelf and save to counter_boxes.
-  const int nBoxes = m_numberOfBoxes + 2;
+  const int nBoxes = m_n_boxes + 2;
 
   // Compute the number of cells per box and shelf and save to counter_boxes.
   // counter_boxes is used in Pico.cc to determine the area covered by a certain box by

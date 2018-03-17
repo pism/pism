@@ -42,14 +42,15 @@ public:
   double pressure(double ice_thickness) const;
   double T_star(double salinity, double temperature, double pressure) const;
 
-  TocBox1 Toc_box1(double area, double T_star, double Soc_box0, double Toc_box0) const;
+  TocBox1 Toc_box1(double area, double T_star,
+                   double Soc_box0, double Toc_box0) const;
   double Soc_box1(double Toc_box0, double Soc_box0, double Toc) const;
 
-  double Toc_other_boxes(double area,
-                         double temperature, double T_star,
-                         double overturning, double salinity) const;
+  double Toc(double box_area,
+             double temperature, double T_star,
+             double overturning, double salinity) const;
 
-  double Soc_other_boxes(double salinity, double temperature, double Toc) const;
+  double Soc(double salinity, double temperature, double Toc) const;
 
   double theta_pm(double salinity, double pressure) const;
   double T_pm(double salinity, double pressure) const;
@@ -138,37 +139,40 @@ private:
                               const BoxModel &cc,
                               IceModelVec2S &Toc_box0,
                               IceModelVec2S &Soc_box0);
-  void calculate_basal_melt_box1(const IceModelVec2S &ice_thickness,
-                                 const IceModelVec2Int &shelf_mask,
-                                 const IceModelVec2Int &box_mask,
-                                 const IceModelVec2S &Toc_box0,
-                                 const IceModelVec2S &Soc_box0,
-                                 const BoxModel &cc,
-                                 IceModelVec2S &T_star,
-                                 IceModelVec2S &Toc,
-                                 IceModelVec2S &Soc,
-                                 IceModelVec2S &basal_melt_rate,
-                                 IceModelVec2S &overturning,
-                                 IceModelVec2S &T_pressure_melting);
-  void calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
-                                        const IceModelVec2Int &shelf_mask,
-                                        const BoxModel &cc,
-                                        IceModelVec2Int &box_mask,
-                                        IceModelVec2S &T_star,
-                                        IceModelVec2S &Toc,
-                                        IceModelVec2S &Soc,
-                                        IceModelVec2S &basal_melt_rate,
-                                        IceModelVec2S &T_pressure_melting);
-  void calculate_basal_melt_missing_cells(const BoxModel &cc,
-                                          const IceModelVec2Int &shelf_mask,
-                                          const IceModelVec2Int &box_mask,
-                                          const IceModelVec2S &ice_thickness,
-                                          const IceModelVec2S &Toc_box0,
-                                          const IceModelVec2S &Soc_box0,
-                                          IceModelVec2S &Toc,
-                                          IceModelVec2S &Soc,
-                                          IceModelVec2S &basal_melt_rate,
-                                          IceModelVec2S &T_pressure_melting);
+
+  void process_box1(const IceModelVec2S &ice_thickness,
+                    const IceModelVec2Int &shelf_mask,
+                    const IceModelVec2Int &box_mask,
+                    const IceModelVec2S &Toc_box0,
+                    const IceModelVec2S &Soc_box0,
+                    const BoxModel &cc,
+                    IceModelVec2S &T_star,
+                    IceModelVec2S &Toc,
+                    IceModelVec2S &Soc,
+                    IceModelVec2S &basal_melt_rate,
+                    IceModelVec2S &overturning,
+                    IceModelVec2S &T_pressure_melting);
+
+  void process_other_boxes(const IceModelVec2S &ice_thickness,
+                           const IceModelVec2Int &shelf_mask,
+                           const BoxModel &cc,
+                           IceModelVec2Int &box_mask,
+                           IceModelVec2S &T_star,
+                           IceModelVec2S &Toc,
+                           IceModelVec2S &Soc,
+                           IceModelVec2S &basal_melt_rate,
+                           IceModelVec2S &T_pressure_melting);
+
+  void process_missing_cells(const BoxModel &cc,
+                             const IceModelVec2Int &shelf_mask,
+                             const IceModelVec2Int &box_mask,
+                             const IceModelVec2S &ice_thickness,
+                             const IceModelVec2S &Toc_box0,
+                             const IceModelVec2S &Soc_box0,
+                             IceModelVec2S &Toc,
+                             IceModelVec2S &Soc,
+                             IceModelVec2S &basal_melt_rate,
+                             IceModelVec2S &T_pressure_melting);
 
   void compute_box_average(int box_id,
                            const IceModelVec2S &field,
@@ -179,15 +183,14 @@ private:
   enum IdentifyMaskFlags {INNER = 2, OUTER = 0, EXCLUDE = 1, UNIDENTIFIED = -1};
 
   std::vector<double> m_Toc_box0_vec,     // temperature input for box 1 per basin
-      m_Soc_box0_vec,                     // salinity input for box 1 per basin
-      m_mean_salinity_boundary_vector,    // salinity input for box i>1 per basin
-      m_mean_temperature_boundary_vector, // temperature input for box i>1 per basin
-      m_mean_overturning_box1_vector;     // mean overturning, computed in box 1, as input for box i>1 per basin
+    m_Soc_box0_vec,                     // salinity input for box 1 per basin
+    m_mean_salinity_boundary_vector,    // salinity input for box i>1 per basin
+    m_mean_temperature_boundary_vector; // temperature input for box i>1 per basin
 
   std::vector<std::vector<double> > counter_boxes; // matrix containing the number of shelf cells per basin and box
                                                    // used for area calculation
 
-  int m_n_basins, m_numberOfBoxes, m_n_shelves, m_Mx, m_My, m_dx, m_dy;
+  int m_n_basins, m_n_boxes, m_n_shelves, m_Mx, m_My, m_dx, m_dy;
 };
 
 void round_basins(IceModelVec2S &basin_mask);

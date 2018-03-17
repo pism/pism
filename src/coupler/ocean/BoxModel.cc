@@ -111,8 +111,8 @@ TocBox1 BoxModel::Toc_box1(double area, double T_star, double Soc_box0, double T
   return result;
 }
 
-double BoxModel::Toc_other_boxes(double area, double temperature, double T_star, double overturning,
-                                 double salinity) const {
+double BoxModel::Toc(double area, double temperature, double T_star, double overturning,
+                     double salinity) const {
 
   double g1 = area * m_gamma_T;
   double g2 = g1 / (m_nu * m_lambda);
@@ -126,7 +126,7 @@ double BoxModel::Soc_box1(double Toc_box0, double Soc_box0, double Toc) const {
   return Soc_box0 - (Soc_box0 / (m_nu * m_lambda)) * (Toc_box0 - Toc);
 }
 
-double BoxModel::Soc_other_boxes(double salinity, double temperature_in_boundary, double Toc) const {
+double BoxModel::Soc(double salinity, double temperature_in_boundary, double Toc) const {
 
   return salinity - salinity * (temperature_in_boundary - Toc) / (m_nu * m_lambda); // psu;
 }
