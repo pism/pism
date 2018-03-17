@@ -640,9 +640,7 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
 
   int nBoxes = static_cast<int>(round(m_numberOfBoxes + 1));
 
-  // get averages from box 1 that are used as inputs for box 2
-  compute_box_average(1, Toc, shelf_mask, box_mask, m_mean_temperature_boundary_vector);
-  compute_box_average(1, Soc, shelf_mask, box_mask, m_mean_salinity_boundary_vector);
+  // get average overturning from box 1 that is used as input later
   compute_box_average(1, m_overturning, shelf_mask, box_mask, m_mean_overturning_box1_vector);
 
   IceModelVec::AccessList list{
@@ -655,20 +653,12 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
   // for cells with missing input and excluded in loop here, i.e. boxi <nBoxes.
   for (int boxi = 2; boxi < nBoxes; ++boxi) {
 
+    compute_box_average(boxi - 1, Toc, shelf_mask, box_mask, m_mean_temperature_boundary_vector);
+    compute_box_average(boxi - 1, Soc, shelf_mask, box_mask, m_mean_salinity_boundary_vector);
+
     m_log->message(5, "computing basal melt rate, temperature and salinity for box i = %d \n", boxi);
 
     double countGl0 = 0, lcountGl0 = 0;
-
-    // averages over the current box, input for the subsequent box
-    std::vector<double> lmean_salinity_boxi_vector(m_n_shelves);    // in psu
-    std::vector<double> lmean_temperature_boxi_vector(m_n_shelves); // in Kelvin
-    std::vector<double> lcounter_edge_of_boxi_vector(m_n_shelves);
-
-    for (int shelf_id = 0; shelf_id < m_n_shelves; shelf_id++) {
-      lcounter_edge_of_boxi_vector[shelf_id]  = 0.0;
-      lmean_salinity_boxi_vector[shelf_id]    = 0.0;
-      lmean_temperature_boxi_vector[shelf_id] = 0.0;
-    }
 
     // for box i compute the melt rates.
 
@@ -721,42 +711,9 @@ void Pico::calculate_basal_melt_other_boxes(const IceModelVec2S &ice_thickness,
 
           // in situ pressure melting point in Kelvin
           T_pressure_melting(i, j) = cc.T_pm(Soc(i, j), pressure);
-
-          // average the temperature, salinity over the entire box i
-          // this is used as input for box i+1
-          // (here we sum up)
-          lcounter_edge_of_boxi_vector[shelf_id]++;
-          lmean_salinity_boxi_vector[shelf_id] += Soc(i, j);
-          lmean_temperature_boxi_vector[shelf_id] += Toc(i, j);
         }
       } // no else-case, since  calculate_basal_melt_box1() and calculate_basal_melt_missing_cells() cover all other cases and we would overwrite those results here.
     }
-
-    // average the temperature and salinity over box i
-    // (here we divide)
-    for (int shelf_id = 0; shelf_id < m_n_shelves; shelf_id++) {
-      // overturning should not be changed, fixed from box 1
-      double counter_edge_of_boxi_vector        = 0.0;
-      counter_edge_of_boxi_vector               = GlobalSum(m_grid->com, lcounter_edge_of_boxi_vector[shelf_id]);
-      m_mean_salinity_boundary_vector[shelf_id] = GlobalSum(m_grid->com, lmean_salinity_boxi_vector[shelf_id]);
-      m_mean_temperature_boundary_vector[shelf_id] =
-          GlobalSum(m_grid->com, lmean_temperature_boxi_vector[shelf_id]); // in Kelvin
-
-      if (counter_edge_of_boxi_vector > 0.0) {
-        m_mean_salinity_boundary_vector[shelf_id] =
-            m_mean_salinity_boundary_vector[shelf_id] / counter_edge_of_boxi_vector;
-        m_mean_temperature_boundary_vector[shelf_id] =
-            m_mean_temperature_boundary_vector[shelf_id] / counter_edge_of_boxi_vector; // in Kelvin
-      } else {
-        // This means that there is no cell in box i
-        m_mean_salinity_boundary_vector[shelf_id]    = 0.0;
-        m_mean_temperature_boundary_vector[shelf_id] = 0.0;
-      }
-
-      m_log->message(5, "  %d: cnt=%.0f, sal=%.3f, temp=%.3f, over=%.1e \n", shelf_id, counter_edge_of_boxi_vector,
-                     m_mean_salinity_boundary_vector[shelf_id], m_mean_temperature_boundary_vector[shelf_id],
-                     m_mean_overturning_box1_vector[shelf_id]);
-    } // shelves
 
     countGl0 = GlobalSum(m_grid->com, lcountGl0);
     if (countGl0 > 0) {
