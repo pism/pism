@@ -930,7 +930,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
     // be in PISM (MKS) units.
 
     std::string input_units = file.get_att_text(name_found, "units");
-    std::string &internal_units = variable.get_string("units");
+    std::string internal_units = variable.get_string("units");
 
     if (input_units.empty() and not internal_units.empty()) {
       log.message(2,
