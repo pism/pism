@@ -712,7 +712,7 @@ void Pico::identify_ocean_box_mask(const BoxModel &cc) {
     const int i = p.i(), j = p.j();
     if (mask(i, j) == MASK_FLOATING && m_ocean_box_mask(i, j) == 0 &&
         m_lake_mask(i, j) != 1) { // floating, no sub-glacial lake
-      m_ocean_box_mask(i, j) = m_n_boxes + 1;
+      m_ocean_box_mask(i, j) = -1;
     }
   }
 }

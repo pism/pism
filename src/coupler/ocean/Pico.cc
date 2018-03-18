@@ -646,7 +646,7 @@ void Pico::process_other_boxes(const IceModelVec2S &ice_thickness,
       &basal_melt_rate, &T_pressure_melting, &cell_area};
 
   // Iterate over all boxes i for i > 1
-  // box number = numberOfBoxes+1 is used as identifier for Beckmann Goose calculation
+  // box number = -1 is used as identifier for Beckmann Goose calculation
   // for cells with missing input and excluded in loop here, i.e. box <= m_n_boxes.
   for (int box = 2; box <= m_n_boxes; ++box) {
 
@@ -677,7 +677,7 @@ void Pico::process_other_boxes(const IceModelVec2S &ice_thickness,
         if (S_previous == 0.0 or overturning_box1 == 0.0 or T_previous == 0.0) {
 
           // set mask to Beckmann Goose identifier, will be handled in process_missing_cells
-          box_mask(i, j) = m_n_boxes + 1;
+          box_mask(i, j) = -1;
 
           // flag to print warning later
           countGl0 += 1;
@@ -754,7 +754,7 @@ void Pico::process_missing_cells(const BoxModel &box_model,
     }
 
     // cell with missing data identifier numberOfBoxes+1, as set in routines before
-    if (shelf_id > 0 and box_mask.as_int(i, j) == (m_n_boxes + 1)) {
+    if (shelf_id > 0 and box_mask.as_int(i, j) == -1) {
 
       double pressure = box_model.pressure(ice_thickness(i, j));
 
