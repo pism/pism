@@ -76,7 +76,6 @@ public:
                         const IceModelVec2Int &D_cf,
                         const IceModelVec2Int &shelf_mask,
                         const IceModelVec2Int &lake_mask,
-                        const IceModelVec2CellType &cell_type,
                         IceModelVec2Int &result);
 private:
   void label_tmp();

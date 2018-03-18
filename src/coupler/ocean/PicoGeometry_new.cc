@@ -522,10 +522,9 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl,
                                     const IceModelVec2Int &D_cf,
                                     const IceModelVec2Int &shelf_mask,
                                     const IceModelVec2Int &lake_mask,
-                                    const IceModelVec2CellType &cell_type,
                                     IceModelVec2Int &result) {
 
-  IceModelVec::AccessList list {&D_gl, &D_cf, &shelf_mask, &lake_mask, &cell_type, &result};
+  IceModelVec::AccessList list {&D_gl, &D_cf, &shelf_mask, &lake_mask, &result};
 
   int n_shelves = shelf_mask.range().max + 1;
 
@@ -584,7 +583,7 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl,
     int d_gl = D_gl.as_int(i, j);
     int d_cf = D_cf.as_int(i, j);
 
-    if (cell_type.as_int(i, j) == MASK_FLOATING and d_gl > 0.0 and d_cf > 0.0 and
+    if (shelf_mask.as_int(i, j) > 0 and d_gl > 0.0 and d_cf > 0.0 and
         result.as_int(i, j) == 0) {
       int shelf_id = shelf_mask(i, j);
       int n = n_boxes[shelf_id];
@@ -604,7 +603,7 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl,
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    if (cell_type.as_int(i, j) == MASK_FLOATING and result.as_int(i, j) == 0 and
+    if (shelf_mask.as_int(i, j) > 0 and result.as_int(i, j) == 0 and
         lake_mask.as_int(i, j) != 1) {
       // floating, no box number assigned, and not a sub-glacial lake
       result(i, j) = -1;
