@@ -61,13 +61,11 @@ public:
                                       IceModelVec2Int &result);
   void compute_ice_shelf_mask(const IceModelVec2Int &ice_rises_mask,
                               IceModelVec2Int &result);
-  void compute_distances_if(const IceModelVec2CellType &mask,
-                            const IceModelVec2Int &ocean_mask,
+  void compute_distances_if(const IceModelVec2Int &ocean_mask,
                             const IceModelVec2Int &ice_rises,
                             bool exclude_ice_rises,
                             IceModelVec2Int &dist_if);
-  void compute_distances_gl(const IceModelVec2CellType &mask,
-                            const IceModelVec2Int &ocean_mask,
+  void compute_distances_gl(const IceModelVec2Int &ocean_mask,
                             const IceModelVec2Int &ice_rises,
                             bool exclude_ice_rises,
                             IceModelVec2Int &dist_gl);
