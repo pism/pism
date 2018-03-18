@@ -28,8 +28,6 @@
 namespace pism {
 namespace ocean {
 
-double f_area(double counter_boxes, double m_dx, double m_dy);
-
 struct TocBox1 {
   bool failed;
   double value;

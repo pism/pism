@@ -250,20 +250,21 @@ void Pico::update_impl(double my_t, double my_dt) {
     const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
     const IceModelVec2CellType &mask   = *m_grid->variables().get_2d_cell_type("mask");
 
-    std::vector<double> basin_temperature(m_n_basins);
-    std::vector<double> basin_salinity(m_n_basins);
-
     // prepare ocean input temperature and salinity
-    compute_ocean_input_per_basin(model,
-                                  m_cbasins, m_ocean_contshelf_mask,
-                                  *m_salinity_ocean, *m_theta_ocean,
-                                  basin_temperature, basin_salinity); // per basin
+    {
+      std::vector<double> basin_temperature(m_n_basins);
+      std::vector<double> basin_salinity(m_n_basins);
 
-    set_ocean_input_fields(model,
-                           ice_thickness, mask, m_cbasins, m_shelf_mask,
-                           basin_temperature, basin_salinity,
-                           m_Toc_box0, m_Soc_box0);        // per shelf
+      compute_ocean_input_per_basin(model,
+                                    m_cbasins, m_ocean_contshelf_mask,
+                                    *m_salinity_ocean, *m_theta_ocean,
+                                    basin_temperature, basin_salinity); // per basin
 
+      set_ocean_input_fields(model,
+                             ice_thickness, mask, m_cbasins, m_shelf_mask,
+                             basin_temperature, basin_salinity,
+                             m_Toc_box0, m_Soc_box0);        // per shelf
+    }
 
     process_box1(ice_thickness, m_shelf_mask, m_ocean_box_mask, // inputs
                  m_Toc_box0, m_Soc_box0, model,                    // inputs
@@ -272,12 +273,14 @@ void Pico::update_impl(double my_t, double my_dt) {
 
     process_other_boxes(ice_thickness, m_shelf_mask, model,        // inputs
                         m_ocean_box_mask, m_T_star, m_Toc,      // outputs
-                        m_Soc, m_basal_melt_rate, *m_shelf_base_temperature); // outputs
+                        m_Soc,
+                        m_basal_melt_rate, *m_shelf_base_temperature); // outputs
 
     //Assumes that mass flux is proportional to the shelf-base heat flux.
     process_missing_cells(model, m_shelf_mask, m_ocean_box_mask, ice_thickness, // inputs
                           m_Toc_box0, m_Soc_box0, // inputs
-                          m_Toc, m_Soc, m_basal_melt_rate, *m_shelf_base_temperature); // outputs
+                          m_Toc, m_Soc,
+                          m_basal_melt_rate, *m_shelf_base_temperature); // outputs
 
   }
 
@@ -303,7 +306,7 @@ void Pico::compute_ocean_input_per_basin(const BoxModel &box_model,
                                          std::vector<double> &temperature,
                                          std::vector<double> &salinity) {
 
-  std::vector<double> count(m_n_basins, 0.0);
+  std::vector<int> count(m_n_basins, 0);
 
   temperature.resize(m_n_basins);
   salinity.resize(m_n_basins);
@@ -329,10 +332,10 @@ void Pico::compute_ocean_input_per_basin(const BoxModel &box_model,
     }
   }
 
-  // Divide by number of grid cells if more than zero cells belong to the basin.
-  // if no ocean_contshelf_mask values intersect with the basin, m_count is zero.
-  // In such case, use dummy temperature and salinity. This could happen, for
-  // example, if the ice shelf front advances beyond the continental shelf break.
+  // Divide by number of grid cells if more than zero cells belong to the basin. if no
+  // ocean_contshelf_mask values intersect with the basin, count is zero. In such case,
+  // use dummy temperature and salinity. This could happen, for example, if the ice shelf
+  // front advances beyond the continental shelf break.
   for (int basin_id = 0; basin_id < m_n_basins; basin_id++) {
 
     count[basin_id]       = GlobalSum(m_grid->com, count[basin_id]);
@@ -367,9 +370,9 @@ void Pico::compute_ocean_input_per_basin(const BoxModel &box_model,
 //! Set ocean ocean input from box 0 as boundary condition for box 1.
 
 //! Set ocean temperature and salinity (Toc_box0, Soc_box0)
-//! from box 0 (in front of the ice shelf) as boundary condition for
+//! from box 0 (in front of the ice shelf) as inputs for
 //! box 1, which is the ocean box adjacent to the grounding line.
-//! Toc_box0 and Soc_box0 were computed in function compute_ocean_input_per_basin.
+//!
 //! We enforce that Toc_box0 is always at least the local pressure melting point.
 void Pico::set_ocean_input_fields(const BoxModel &box_model,
                                   const IceModelVec2S &ice_thickness,
@@ -446,13 +449,6 @@ void Pico::set_ocean_input_fields(const BoxModel &box_model,
                    low_temperature_counter);
   }
 }
-
-//! compute the area of a box consisting of N cells dx by dy meters in size
-double f_area(double N, double dx, double dy){
-  //FIXME this assumes rectangular cell areas, adjust with real areas from projection
-  return N * dx * dy;
-}
-
 
 //! Compute the basal melt for each ice shelf cell in box 1
 
