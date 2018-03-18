@@ -676,7 +676,7 @@ void Pico::process_other_boxes(const IceModelVec2S &ice_thickness,
         // if there are no boundary values from the box before
         if (S_previous == 0.0 or overturning_box1 == 0.0 or T_previous == 0.0) {
 
-          // set mask to Beckmann Goose identifier, will be handled in calculate_basal_melt_missing_cells
+          // set mask to Beckmann Goose identifier, will be handled in process_missing_cells
           box_mask(i, j) = m_n_boxes + 1;
 
           // flag to print warning later
