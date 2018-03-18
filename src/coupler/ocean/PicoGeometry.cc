@@ -446,7 +446,7 @@ void Pico::compute_distances() {
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{ &mask, &m_DistIF, &m_cbasins, &m_DistGL, &m_ocean_mask };
+  IceModelVec::AccessList list{ &mask, &m_DistIF, &m_basin_mask, &m_DistGL, &m_ocean_mask };
 
   if (m_exicerises_set) {
     list.add(m_icerise_mask);

@@ -115,8 +115,8 @@ private:
   IceModelVec2S m_basal_melt_rate;
 
   // a basin defines the domain where one box model instance is solved
-  IceModelVec2Int m_DistGL, m_DistIF, m_icerise_mask, m_cbasins, m_shelf_mask, m_lake_mask,
-    m_ocean_box_mask, m_ocean_mask, m_ocean_contshelf_mask;
+  IceModelVec2Int m_DistGL, m_DistIF, m_icerise_mask, m_basin_mask, m_shelf_mask, m_lake_mask,
+    m_ocean_box_mask, m_ocean_mask, m_continental_shelf_mask;
 
   IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
 

@@ -68,8 +68,8 @@ Pico::Pico(IceGrid::ConstPtr g) : PGivenClimate<CompleteOceanModel, CompleteOcea
   m_salinity_ocean->create(m_grid, "salinity_ocean");
   m_salinity_ocean->set_attrs("climate_forcing", "salinity of the adjacent ocean", "g/kg", "");
 
-  m_cbasins.create(m_grid, "basins", WITH_GHOSTS);
-  m_cbasins.set_attrs("climate_forcing", "mask determines basins for PICO", "", "");
+  m_basin_mask.create(m_grid, "basins", WITH_GHOSTS);
+  m_basin_mask.set_attrs("climate_forcing", "mask determines basins for PICO", "", "");
 
   // mask to identify ice shelves
   m_shelf_mask.create(m_grid, "pico_shelf_mask", WITH_GHOSTS);
@@ -84,8 +84,8 @@ Pico::Pico(IceGrid::ConstPtr g) : PGivenClimate<CompleteOceanModel, CompleteOcea
   m_icerise_mask.set_attrs("model_state", "mask displaying ice rises", "", "");
 
   // mask displaying continental shelf - region where mean salinity and ocean temperature is calculated
-  m_ocean_contshelf_mask.create(m_grid, "pico_ocean_contshelf_mask", WITH_GHOSTS);
-  m_ocean_contshelf_mask.set_attrs("model_state", "mask displaying ocean region for parameter input", "", "");
+  m_continental_shelf_mask.create(m_grid, "pico_ocean_contshelf_mask", WITH_GHOSTS);
+  m_continental_shelf_mask.set_attrs("model_state", "mask displaying ocean region for parameter input", "", "");
 
   // mask displaying open ocean - ice-free regions below sea-level except 'holes' in ice shelves
   m_ocean_mask.create(m_grid, "pico_ocean_mask", WITH_GHOSTS);
@@ -156,9 +156,9 @@ void Pico::init_impl() {
   m_theta_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
   m_salinity_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
 
-  m_cbasins.regrid(m_filename, CRITICAL);
+  m_basin_mask.regrid(m_filename, CRITICAL);
 
-  m_log->message(4, "PICO basin min=%f,max=%f\n", m_cbasins.min(), m_cbasins.max());
+  m_log->message(4, "PICO basin min=%f,max=%f\n", m_basin_mask.min(), m_basin_mask.max());
 
   BoxModel box_model(*m_config);
 
@@ -173,7 +173,7 @@ void Pico::init_impl() {
                     "   is set for whole domain to continental_shelf_depth=%.0f meter\n",
                  box_model.continental_shelf_depth());
 
-  round_basins(m_cbasins);
+  round_basins(m_basin_mask);
 
   // Range basins_range = cbasins.range();
 
@@ -194,7 +194,7 @@ void Pico::init_impl() {
 
 void Pico::define_model_state_impl(const PIO &output) const {
 
-  m_cbasins.define(output);
+  m_basin_mask.define(output);
   m_ocean_box_mask.define(output);
   m_shelf_mask.define(output);
   m_Soc_box0.define(output);
@@ -207,7 +207,7 @@ void Pico::define_model_state_impl(const PIO &output) const {
 
 void Pico::write_model_state_impl(const PIO &output) const {
 
-  m_cbasins.write(output);
+  m_basin_mask.write(output);
   m_ocean_box_mask.write(output);
   m_shelf_mask.write(output);
   m_Soc_box0.write(output);
@@ -231,14 +231,14 @@ void Pico::update_impl(double my_t, double my_dt) {
 
   // Geometric part of PICO
   // define the ocean boxes below the ice shelves
-  identifyMASK(m_ocean_contshelf_mask, "ocean_continental_shelf");
+  identifyMASK(m_continental_shelf_mask, "ocean_continental_shelf");
   if (m_exicerises_set) {
     identifyMASK(m_icerise_mask, "icerises");
   }
   identifyMASK(m_ocean_mask, "ocean");
   identifyMASK(m_lake_mask, "lakes");
   identify_shelf_mask();
-  round_basins(m_cbasins);
+  round_basins(m_basin_mask);
   compute_distances();
   identify_ocean_box_mask(model);
 
@@ -256,12 +256,12 @@ void Pico::update_impl(double my_t, double my_dt) {
       std::vector<double> basin_salinity(m_n_basins);
 
       compute_ocean_input_per_basin(model,
-                                    m_cbasins, m_ocean_contshelf_mask,
+                                    m_basin_mask, m_continental_shelf_mask,
                                     *m_salinity_ocean, *m_theta_ocean,
                                     basin_temperature, basin_salinity); // per basin
 
       set_ocean_input_fields(model,
-                             ice_thickness, mask, m_cbasins, m_shelf_mask,
+                             ice_thickness, mask, m_basin_mask, m_shelf_mask,
                              basin_temperature, basin_salinity,
                              m_Toc_box0, m_Soc_box0);        // per shelf
     }
@@ -773,7 +773,7 @@ void Pico::process_missing_cells(const BoxModel &box_model,
 std::map<std::string, Diagnostic::Ptr> Pico::diagnostics_impl() const {
 
   DiagnosticList result = {
-    { "basins",                    Diagnostic::wrap(m_cbasins) },
+    { "basins",                    Diagnostic::wrap(m_basin_mask) },
     { "pico_overturning",          Diagnostic::wrap(m_overturning) },
     { "pico_salinity_box0",        Diagnostic::wrap(m_Soc_box0) },
     { "pico_temperature_box0",     Diagnostic::wrap(m_Toc_box0) },
@@ -781,7 +781,7 @@ std::map<std::string, Diagnostic::Ptr> Pico::diagnostics_impl() const {
     { "pico_shelf_mask",           Diagnostic::wrap(m_shelf_mask) },
     { "pico_bmelt_shelf",          Diagnostic::wrap(m_basal_melt_rate) },
     { "pico_icerise_mask",         Diagnostic::wrap(m_icerise_mask) },
-    { "pico_ocean_contshelf_mask", Diagnostic::wrap(m_ocean_contshelf_mask) },
+    { "pico_ocean_contshelf_mask", Diagnostic::wrap(m_continental_shelf_mask) },
     { "pico_ocean_mask",           Diagnostic::wrap(m_ocean_mask) },
     { "pico_lake_mask",            Diagnostic::wrap(m_lake_mask) },
     { "pico_dist_grounding_line",  Diagnostic::wrap(m_DistGL) },
