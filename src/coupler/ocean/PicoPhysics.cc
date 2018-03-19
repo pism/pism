@@ -172,7 +172,7 @@ double PicoPhysics::overturning(double Soc_box0, double Soc, double Toc_box0, do
 //! See equation A6 and lines before in PICO paper
 double PicoPhysics::T_star(double salinity, double temperature, double pressure) const {
   // in Kelvin
-  // FIXME: check that this stays always negative.
+  // FIXME: check that this always stays negative.
   // positive values are unphysical as colder temperatures
   // than pressure melting point would be ice, but we are in the ocean.
   // this should not occur as set_ocean_input_fields(...) sets

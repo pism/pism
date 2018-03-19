@@ -486,7 +486,7 @@ void PicoGeometry::compute_distances_cf(const IceModelVec2Int &ocean_mask, const
  *
  * To specify the problem, the input field (mask) should be filled with
  *
- * - values outside the domain
+ * - negative values outside the domain
  * - zeros within the domain
  * - ones at "wave front" locations
  *
@@ -494,7 +494,7 @@ void PicoGeometry::compute_distances_cf(const IceModelVec2Int &ocean_mask, const
  * generic ice shelf locations with zeros, set neighbors of the grounding line to 1, and
  * the rest of the grid with -1 or some other negative number.
  *
- * Note 1: that this implementation updates ghosts *every* iteration. We could speed this
+ * Note that this implementation updates ghosts *every* iteration. We could speed this
  * up by checking if a point at a boundary of the processor sub-domain was updated and
  * update ghosts in those cases only.
  */
