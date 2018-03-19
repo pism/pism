@@ -32,7 +32,11 @@ PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
     m_continental_shelf(grid, "pico_ocean_contshelf_mask", WITHOUT_GHOSTS),
     m_boxes(grid, "pico_ocean_box_mask", WITHOUT_GHOSTS),
     m_ice_shelves(grid, "pico_shelf_mask", WITHOUT_GHOSTS),
-    m_ice_rises(grid, "ice_rises", WITHOUT_GHOSTS),
+    m_distance_gl(grid, "pico_distance_gl", WITH_GHOSTS),
+    m_distance_cf(grid, "pico_distance_cf", WITH_GHOSTS),
+    m_ocean_mask(grid, "pico_ocean_mask", WITHOUT_GHOSTS),
+    m_lake_mask(grid, "pico_lake_mask", WITHOUT_GHOSTS),
+    m_ice_rises(grid, "ice_rises", WITH_GHOSTS),
     m_tmp(grid, "temporary_storage", WITHOUT_GHOSTS) {
 
   m_tmp_p0 = m_tmp.allocate_proc0_copy();
@@ -56,15 +60,40 @@ const IceModelVec2Int& PicoGeometry::ice_shelf_mask() const {
 
 void PicoGeometry::update(const IceModelVec2S &bed_elevation,
                           const IceModelVec2CellType &cell_type) {
-  compute_ice_rises(cell_type,
-                    m_config->get_boolean("ocean.pico.exclude_icerises"),
-                    m_ice_rises);
+  bool exclude_rises = m_config->get_boolean("ocean.pico.exclude_icerises");
 
-  compute_continental_shelf_mask(bed_elevation, m_ice_rises,
-                                 m_config->get_double("ocean.pico.continental_shelf_depth"),
-                                 m_continental_shelf);
+  int n_boxes = m_config->get_double("ocean.pico.number_of_boxes");
 
-  compute_ice_shelf_mask(m_ice_rises, m_ice_shelves);
+  // these three could be done at the same time
+  {
+    compute_ice_rises(cell_type, exclude_rises, m_ice_rises);
+
+    compute_ocean_mask(cell_type, m_ocean_mask);
+
+    compute_lakes(cell_type, m_lake_mask);
+  }
+
+  // these two could be optimized by trying to reduce the number of times we update ghosts
+  {
+
+    m_ice_rises.update_ghosts();
+
+    compute_distances_gl(m_ocean_mask, m_ice_rises, exclude_rises, m_distance_gl);
+
+    compute_distances_cf(m_ocean_mask, m_ice_rises, exclude_rises, m_distance_cf);
+  }
+
+  // these two could be done at the same time
+  {
+    compute_ice_shelf_mask(m_ice_rises, m_ice_shelves);
+
+    compute_continental_shelf_mask(bed_elevation, m_ice_rises,
+                                   m_config->get_double("ocean.pico.continental_shelf_depth"),
+                                   m_continental_shelf);
+  }
+
+  compute_box_mask(m_distance_gl, m_distance_cf, m_ice_shelves, m_lake_mask, n_boxes,
+                   m_boxes);
 }
 
 /*!
@@ -420,7 +449,7 @@ void PicoGeometry::compute_distances_gl(const IceModelVec2Int &ocean_mask,
   eikonal_equation(result);
 }
 
-void PicoGeometry::compute_distances_if(const IceModelVec2Int &ocean_mask,
+void PicoGeometry::compute_distances_cf(const IceModelVec2Int &ocean_mask,
                                         const IceModelVec2Int &ice_rises,
                                         bool exclude_ice_rises,
                                         IceModelVec2Int &result) {
@@ -473,6 +502,8 @@ void PicoGeometry::compute_distances_if(const IceModelVec2Int &ocean_mask,
  */
 void eikonal_equation(IceModelVec2Int &mask) {
 
+  assert(mask.stencil_width() > 0);
+
   IceGrid::ConstPtr grid = mask.grid();
 
   double current_label = 1;
@@ -510,6 +541,7 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl,
                                     const IceModelVec2Int &D_cf,
                                     const IceModelVec2Int &shelf_mask,
                                     const IceModelVec2Int &lake_mask,
+                                    int max_number_of_boxes,
                                     IceModelVec2Int &result) {
 
   IceModelVec::AccessList list {&D_gl, &D_cf, &shelf_mask, &lake_mask, &result};
@@ -553,7 +585,6 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl,
 
   std::vector<int> n_boxes(n_shelves, 0);
   int n_min = 1;
-  int max_number_of_boxes = m_config->get_double("ocean.pico.number_of_boxes");
   double zeta = 0.5;
 
   for (int k = 0; k < n_shelves; ++k) {

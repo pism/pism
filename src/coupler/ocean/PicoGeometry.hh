@@ -61,10 +61,10 @@ public:
                                       IceModelVec2Int &result);
   void compute_ice_shelf_mask(const IceModelVec2Int &ice_rises_mask,
                               IceModelVec2Int &result);
-  void compute_distances_if(const IceModelVec2Int &ocean_mask,
+  void compute_distances_cf(const IceModelVec2Int &ocean_mask,
                             const IceModelVec2Int &ice_rises,
                             bool exclude_ice_rises,
-                            IceModelVec2Int &dist_if);
+                            IceModelVec2Int &dist_cf);
   void compute_distances_gl(const IceModelVec2Int &ocean_mask,
                             const IceModelVec2Int &ice_rises,
                             bool exclude_ice_rises,
@@ -74,16 +74,25 @@ public:
                         const IceModelVec2Int &D_cf,
                         const IceModelVec2Int &shelf_mask,
                         const IceModelVec2Int &lake_mask,
+                        int n_boxes,
                         IceModelVec2Int &result);
 private:
   void label_tmp();
   void relabel_by_size(IceModelVec2Int &mask);
 
+  // storage for outputs
   IceModelVec2Int m_continental_shelf;
   IceModelVec2Int m_boxes;
   IceModelVec2Int m_ice_shelves;
 
+  // storage for intermediate fields
+  IceModelVec2Int m_distance_gl;
+  IceModelVec2Int m_distance_cf;
+  IceModelVec2Int m_ocean_mask;
+  IceModelVec2Int m_lake_mask;
   IceModelVec2Int m_ice_rises;
+
+  // temporary storage
   IceModelVec2Int m_tmp;
   petsc::Vec::Ptr m_tmp_p0;
 };
