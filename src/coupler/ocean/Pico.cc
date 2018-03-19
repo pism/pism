@@ -32,16 +32,19 @@
 
 #include <gsl/gsl_math.h>       // GSL_NAN
 
-#include "Pico.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/iceModelVec.hh"
+
+#include "Pico.hh"
 #include "PicoGeometry.hh"
+#include "PicoPhysics.hh"
 
 namespace pism {
 namespace ocean {
+
 // To be used solely in round_basins()
 static double most_frequent_element(const std::vector<double> &v) { // Precondition: v is not empty
   std::map<double, double> frequencyMap;
@@ -121,12 +124,8 @@ Pico::Pico(IceGrid::ConstPtr g)
 
   process_options();
 
-  m_exicerises_set = m_config->get_boolean("ocean.pico.exclude_icerises");
-
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
-
-  m_Mx = m_grid->Mx(), m_My = m_grid->My();
 
   m_theta_ocean->create(m_grid, "theta_ocean");
   m_theta_ocean->set_attrs("climate_forcing", "absolute potential temperature of the adjacent ocean", "Kelvin", "");
@@ -264,7 +263,7 @@ void Pico::update_impl(double my_t, double my_dt) {
   m_theta_ocean->average(m_t, m_dt);
   m_salinity_ocean->average(m_t, m_dt);
 
-  PicoPhysics model(*m_config);
+  PicoPhysics physics(*m_config);
 
   const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2CellType &cell_type   = *m_grid->variables().get_2d_cell_type("mask");
@@ -284,12 +283,12 @@ void Pico::update_impl(double my_t, double my_dt) {
       std::vector<double> basin_temperature(m_n_basins);
       std::vector<double> basin_salinity(m_n_basins);
 
-      compute_ocean_input_per_basin(model,
+      compute_ocean_input_per_basin(physics,
                                     m_basin_mask, m_geometry->continental_shelf_mask(),
                                     *m_salinity_ocean, *m_theta_ocean,
                                     basin_temperature, basin_salinity); // per basin
 
-      set_ocean_input_fields(model,
+      set_ocean_input_fields(physics,
                              ice_thickness, cell_type, m_basin_mask,
                              m_geometry->ice_shelf_mask(),
                              basin_temperature, basin_salinity,
@@ -298,7 +297,7 @@ void Pico::update_impl(double my_t, double my_dt) {
 
     // Use the Beckmann-Goosse parameterization to set reasonable values throughout the
     // domain.
-    beckmann_goosse(model,
+    beckmann_goosse(physics,
                     ice_thickness, // inputs
                     cell_type,
                     m_geometry->ice_shelf_mask(),
@@ -312,13 +311,13 @@ void Pico::update_impl(double my_t, double my_dt) {
                  m_geometry->box_mask(),                    // input
                  m_Toc_box0,                                // input
                  m_Soc_box0,                                // input
-                 model,                                     // input
+                 physics,                                     // input
                  m_T_star, m_Toc, m_Soc, m_basal_melt_rate, // outputs
                  m_overturning, *m_shelf_base_temperature); // outputs
 
     process_other_boxes(ice_thickness,                           // input
                         m_geometry->ice_shelf_mask(),            // input
-                        model,                                   // input
+                        physics,                                   // input
                         m_geometry->box_mask(),                  // input
                         m_T_star,                                // output
                         m_Toc,                                   // output
@@ -328,7 +327,7 @@ void Pico::update_impl(double my_t, double my_dt) {
   }
 
   m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
-  m_shelf_base_mass_flux->scale(model.ice_density());
+  m_shelf_base_mass_flux->scale(physics.ice_density());
 
   m_sea_level_elevation->set(0.0);
   m_melange_back_pressure_fraction->set(0.0);
@@ -366,7 +365,7 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (continental_shelf_mask.as_int(i, j) == INNER) {
+    if (continental_shelf_mask.as_int(i, j) == 2) {
       int basin_id = basin_mask.as_int(i, j);
 
       count[basin_id]       += 1;
@@ -734,9 +733,6 @@ void Pico::process_other_boxes(const IceModelVec2S &ice_thickness,
           T_pressure_melting(i, j) = physics.T_pm(Soc(i, j), pressure);
         }
       }
-      // no else-case, since calculate_basal_melt_box1() and
-      // calculate_basal_melt_missing_cells() cover all other cases and we would overwrite
-      // those results here.
     }   // loop over grid points
 
     n_beckmann_goosse_cells = GlobalSum(m_grid->com, n_beckmann_goosse_cells);
@@ -747,9 +743,6 @@ void Pico::process_other_boxes(const IceModelVec2S &ice_thickness,
     }
 
   } // loop over boxes
-
-  // FIXME: we should not modify the box mask here
-  // box_mask.update_ghosts();
 }
 
 

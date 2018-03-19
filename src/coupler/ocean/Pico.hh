@@ -29,67 +29,9 @@ namespace pism {
 namespace ocean {
 
 class PicoGeometry;
+class PicoPhysics;
 
-struct TocBox1 {
-  bool failed;
-  double value;
-};
-
-class PicoPhysics {
-public:
-  PicoPhysics(const Config &config);
-
-  double pressure(double ice_thickness) const;
-  double T_star(double salinity, double temperature, double pressure) const;
-
-  TocBox1 Toc_box1(double area, double T_star,
-                   double Soc_box0, double Toc_box0) const;
-  double Soc_box1(double Toc_box0, double Soc_box0, double Toc) const;
-
-  double Toc(double box_area,
-             double temperature, double T_star,
-             double overturning, double salinity) const;
-
-  double Soc(double salinity, double temperature, double Toc) const;
-
-  double theta_pm(double salinity, double pressure) const;
-  double T_pm(double salinity, double pressure) const;
-
-  double melt_rate(double pm_point, double Toc) const;
-
-  double melt_rate_beckmann_goosse(double pot_pm_point, double Toc) const;
-
-  double overturning(double Soc_box0, double Soc,
-                     double Toc_box0, double Toc) const;
-
-  double gamma_T() const;
-  double overturning_coeff() const;
-  double T_dummy() const;
-  double S_dummy() const;
-  double ice_density() const;
-  double continental_shelf_depth() const;
-private:
-  double p_coeff(double g1, double s1) const;
-  double q_coeff(double g1, double s1, double T_star) const;
-
-  double m_gamma_T, m_overturning_coeff, m_T_dummy, m_S_dummy;
-  double m_ice_density, m_continental_shelf_depth;
-
-  double m_earth_grav, m_sea_water_density, m_rho_star, m_nu, m_latentHeat,
-    m_c_p_ocean, m_alpha, m_beta;
-
-  double m_lambda;
-
-  // coefficients of the parameterization of the potential temperature
-  double m_a_pot, m_b_pot, m_c_pot;
-
-  // coefficients of the parameterization of the in situ temperature
-  double m_a_in_situ, m_b_in_situ, m_c_in_situ;
-
-  double m_meltFactor;
-};
-
-//! \brief Implements the PICO ocean model as submitted to The Cryosphere (March 2017).
+//! Implements the PICO ocean model as submitted to The Cryosphere (March 2017).
 //!
 //! Generalizes the two dimensional ocean box model of [@ref OlbersHellmer2010] for
 //! use in PISM, i.e. three dimensions.
@@ -108,15 +50,12 @@ protected:
 
   std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
-  bool m_exicerises_set; // FIXME shouldn't this be always used?
-
 private:
   IceModelVec2S m_Soc, m_Soc_box0;
   IceModelVec2S m_Toc, m_Toc_box0, m_T_star;
   IceModelVec2S m_overturning;
   IceModelVec2S m_basal_melt_rate;
 
-  // a basin defines the domain where one box model instance is solved
   IceModelVec2Int m_basin_mask;
 
   std::unique_ptr<PicoGeometry> m_geometry;
@@ -186,9 +125,7 @@ private:
                         const IceModelVec2S &cell_area,
                         std::vector<double> &result);
 
-  enum IdentifyMaskFlags {INNER = 2, OUTER = 0, EXCLUDE = 1, UNIDENTIFIED = -1};
-
-  int m_n_basins, m_n_boxes, m_n_shelves, m_Mx, m_My;
+  int m_n_basins, m_n_boxes, m_n_shelves;
 };
 
 } // end of namespace ocean
