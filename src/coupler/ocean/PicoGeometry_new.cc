@@ -58,15 +58,22 @@ const IceModelVec2Int& PicoGeometry::ice_shelf_mask() const {
   return m_ice_shelves;
 }
 
+/*!
+ * Compute masks needed by the PICO physics code.
+ *
+ * After this call
+ */
 void PicoGeometry::update(const IceModelVec2S &bed_elevation,
                           const IceModelVec2CellType &cell_type) {
-  bool exclude_rises = m_config->get_boolean("ocean.pico.exclude_icerises");
+  bool exclude_ice_rises = m_config->get_boolean("ocean.pico.exclude_icerises");
 
   int n_boxes = m_config->get_double("ocean.pico.number_of_boxes");
 
+  double continental_shelf_depth = m_config->get_double("ocean.pico.continental_shelf_depth");
+
   // these three could be done at the same time
   {
-    compute_ice_rises(cell_type, exclude_rises, m_ice_rises);
+    compute_ice_rises(cell_type, exclude_ice_rises, m_ice_rises);
 
     compute_ocean_mask(cell_type, m_ocean_mask);
 
@@ -78,17 +85,16 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation,
 
     m_ice_rises.update_ghosts();
 
-    compute_distances_gl(m_ocean_mask, m_ice_rises, exclude_rises, m_distance_gl);
+    compute_distances_gl(m_ocean_mask, m_ice_rises, exclude_ice_rises, m_distance_gl);
 
-    compute_distances_cf(m_ocean_mask, m_ice_rises, exclude_rises, m_distance_cf);
+    compute_distances_cf(m_ocean_mask, m_ice_rises, exclude_ice_rises, m_distance_cf);
   }
 
   // these two could be done at the same time
   {
     compute_ice_shelf_mask(m_ice_rises, m_ice_shelves);
 
-    compute_continental_shelf_mask(bed_elevation, m_ice_rises,
-                                   m_config->get_double("ocean.pico.continental_shelf_depth"),
+    compute_continental_shelf_mask(bed_elevation, m_ice_rises, continental_shelf_depth,
                                    m_continental_shelf);
   }
 
@@ -223,7 +229,7 @@ void PicoGeometry::compute_lakes(const IceModelVec2CellType &cell_type,
 }
 
 /*!
- * Compute the mask identifying "ice rises", i.e. grounded ice areas not connected to the
+ * Compute the mask identifying ice rises, i.e. grounded ice areas not connected to the
  * continental ice sheet.
  *
  * Resulting mask contains:
@@ -243,7 +249,7 @@ void PicoGeometry::compute_ice_rises(const IceModelVec2CellType &cell_type,
     const int i = p.i(), j = p.j();
 
     if (cell_type.grounded(i, j)) {
-      m_tmp(i, j) = 1.0;
+      m_tmp(i, j) = 2.0;
     } else {
       m_tmp(i, j) = 0.0;
     }
@@ -251,9 +257,9 @@ void PicoGeometry::compute_ice_rises(const IceModelVec2CellType &cell_type,
 
   if (exclude_ice_rises) {
     label_tmp();
-  }
 
-  relabel_by_size(m_tmp);
+    relabel_by_size(m_tmp);
+  }
 
   // mark floating ice areas in this mask (reduces the number of masks we need later)
   for (Points p(*m_grid); p; p.next()) {
@@ -277,10 +283,10 @@ void PicoGeometry::compute_ice_rises(const IceModelVec2CellType &cell_type,
  * 2 - ice-free areas with bed elevation > threshold, connected to the continental ice sheet
  */
 void PicoGeometry::compute_continental_shelf_mask(const IceModelVec2S &bed_elevation,
-                                                  const IceModelVec2Int &ice_rises_mask,
+                                                  const IceModelVec2Int &ice_rise_mask,
                                                   double bed_elevation_threshold,
                                                   IceModelVec2Int &result) {
-  IceModelVec::AccessList list{&bed_elevation, &ice_rises_mask, &m_tmp};
+  IceModelVec::AccessList list{&bed_elevation, &ice_rise_mask, &m_tmp};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -291,7 +297,7 @@ void PicoGeometry::compute_continental_shelf_mask(const IceModelVec2S &bed_eleva
       m_tmp(i, j) = 1.0;
     }
 
-    if (ice_rises_mask.as_int(i, j) == CONTINENTAL) {
+    if (ice_rise_mask.as_int(i, j) == CONTINENTAL) {
       m_tmp(i, j) = 2.0;
     }
   }
@@ -326,7 +332,7 @@ void PicoGeometry::compute_continental_shelf_mask(const IceModelVec2S &bed_eleva
     }
 
     if (bed_elevation(i, j) > bed_elevation_threshold and
-        ice_rises_mask.as_int(i, j) == OCEAN) {
+        ice_rise_mask.as_int(i, j) == OCEAN) {
       m_tmp(i, j) = 2.0;
     }
   }
@@ -341,14 +347,14 @@ void PicoGeometry::compute_continental_shelf_mask(const IceModelVec2S &bed_eleva
  *
  * Two shelves connected by an ice rise are considered to be parts of the same shelf.
  */
-void PicoGeometry::compute_ice_shelf_mask(const IceModelVec2Int &ice_rises_mask,
+void PicoGeometry::compute_ice_shelf_mask(const IceModelVec2Int &ice_rise_mask,
                                           IceModelVec2Int &result) {
-  IceModelVec::AccessList list{&ice_rises_mask, &m_tmp};
+  IceModelVec::AccessList list{&ice_rise_mask, &m_tmp};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    int M = ice_rises_mask.as_int(i, j);
+    int M = ice_rise_mask.as_int(i, j);
 
     if (M == RISE or M == FLOATING) {
       m_tmp(i, j) = 1.0;
@@ -363,7 +369,7 @@ void PicoGeometry::compute_ice_shelf_mask(const IceModelVec2Int &ice_rises_mask,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (ice_rises_mask.as_int(i, j) == RISE) {
+    if (ice_rise_mask.as_int(i, j) == RISE) {
       m_tmp(i, j) = 0.0;
     }
   }
@@ -436,7 +442,7 @@ void PicoGeometry::compute_distances_gl(const IceModelVec2Int &ocean_mask,
          ice_rises(i - 1, j - 1) == CONTINENTAL);
 
       if (neighbor_to_land) {
-        // i.e. there is a grounded neighboring cell (which is not ice rise!)
+        // i.e. there is a grounded neighboring cell (which is not an ice rise!)
         result(i, j) = 1;
       } else {
         result(i, j) = 0;
