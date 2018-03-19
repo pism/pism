@@ -682,8 +682,6 @@ void Pico::process_other_boxes(const IceModelVec2S &ice_thickness,
       &basal_melt_rate, &T_pressure_melting, &cell_area};
 
   // Iterate over all boxes i for i > 1
-  // box number = -1 is used as identifier for Beckmann Goosse calculation
-  // for cells with missing input and excluded in loop here, i.e. box <= m_n_boxes.
   for (int box = 2; box <= m_n_boxes; ++box) {
 
     compute_box_average(box - 1, Toc, shelf_mask, box_mask, temperature);
