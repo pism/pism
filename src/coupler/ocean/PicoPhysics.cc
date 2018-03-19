@@ -16,7 +16,7 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include <cmath>                // sqrt
+#include <cmath> // sqrt
 
 #include "PicoPhysics.hh"
 
@@ -92,7 +92,7 @@ double PicoPhysics::pressure(double ice_thickness) const {
 
 TocBox1 PicoPhysics::Toc_box1(double area, double T_star, double Soc_box0, double Toc_box0) const {
 
-  TocBox1 result = {false, 0.0};
+  TocBox1 result = { false, 0.0 };
 
   const double
     g1 = area * m_gamma_T,
@@ -104,7 +104,7 @@ TocBox1 PicoPhysics::Toc_box1(double area, double T_star, double Soc_box0, doubl
   // happen for values of Toc_box0 close to the local pressure melting point
   double D = 0.25 * p * p - q;
   if (D < 0.0) {
-    D = 0.0;
+    D             = 0.0;
     result.failed = true;
   }
 
@@ -115,8 +115,7 @@ TocBox1 PicoPhysics::Toc_box1(double area, double T_star, double Soc_box0, doubl
   return result;
 }
 
-double PicoPhysics::Toc(double area, double temperature, double T_star, double overturning,
-                     double salinity) const {
+double PicoPhysics::Toc(double area, double temperature, double T_star, double overturning, double salinity) const {
 
   double g1 = area * m_gamma_T;
   double g2 = g1 / (m_nu * m_lambda);

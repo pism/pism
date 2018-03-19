@@ -20,8 +20,8 @@
 #ifndef PICOGEOMETRY_H
 #define PICOGEOMETRY_H
 
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/Component.hh"
+#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 
@@ -40,42 +40,29 @@ public:
   PicoGeometry(IceGrid::ConstPtr grid);
   virtual ~PicoGeometry();
 
-  void update(const IceModelVec2S &bed_elevation,
-              const IceModelVec2CellType &cell_type);
+  void update(const IceModelVec2S &bed_elevation, const IceModelVec2CellType &cell_type);
 
-  const IceModelVec2Int& continental_shelf_mask() const;
-  const IceModelVec2Int& box_mask() const;
-  const IceModelVec2Int& ice_shelf_mask() const;
+  const IceModelVec2Int &continental_shelf_mask() const;
+  const IceModelVec2Int &box_mask() const;
+  const IceModelVec2Int &ice_shelf_mask() const;
 
-  enum IceRiseMask {OCEAN = 0, RISE = 1, CONTINENTAL = 2, FLOATING = 3};
+  enum IceRiseMask { OCEAN = 0, RISE = 1, CONTINENTAL = 2, FLOATING = 3 };
 
-  void compute_ice_rises(const IceModelVec2CellType &cell_type,
-                         bool exclude_ice_rises,
-                         IceModelVec2Int &result);
+  void compute_ice_rises(const IceModelVec2CellType &cell_type, bool exclude_ice_rises, IceModelVec2Int &result);
   void compute_lakes(const IceModelVec2CellType &cell_type, IceModelVec2Int &result);
-  void compute_ocean_mask(const IceModelVec2CellType &cell_type,
-                          IceModelVec2Int &result);
-  void compute_continental_shelf_mask(const IceModelVec2S &bed_elevation,
-                                      const IceModelVec2Int &ice_rises_mask,
-                                      double bed_elevation_threshold,
-                                      IceModelVec2Int &result);
-  void compute_ice_shelf_mask(const IceModelVec2Int &ice_rises_mask,
-                              const IceModelVec2Int &lake_mask,
+  void compute_ocean_mask(const IceModelVec2CellType &cell_type, IceModelVec2Int &result);
+  void compute_continental_shelf_mask(const IceModelVec2S &bed_elevation, const IceModelVec2Int &ice_rises_mask,
+                                      double bed_elevation_threshold, IceModelVec2Int &result);
+  void compute_ice_shelf_mask(const IceModelVec2Int &ice_rises_mask, const IceModelVec2Int &lake_mask,
                               IceModelVec2Int &result);
-  void compute_distances_cf(const IceModelVec2Int &ocean_mask,
-                            const IceModelVec2Int &ice_rises,
-                            bool exclude_ice_rises,
+  void compute_distances_cf(const IceModelVec2Int &ocean_mask, const IceModelVec2Int &ice_rises, bool exclude_ice_rises,
                             IceModelVec2Int &dist_cf);
-  void compute_distances_gl(const IceModelVec2Int &ocean_mask,
-                            const IceModelVec2Int &ice_rises,
-                            bool exclude_ice_rises,
+  void compute_distances_gl(const IceModelVec2Int &ocean_mask, const IceModelVec2Int &ice_rises, bool exclude_ice_rises,
                             IceModelVec2Int &dist_gl);
 
-  void compute_box_mask(const IceModelVec2Int &D_gl,
-                        const IceModelVec2Int &D_cf,
-                        const IceModelVec2Int &shelf_mask,
-                        int n_boxes,
-                        IceModelVec2Int &result);
+  void compute_box_mask(const IceModelVec2Int &D_gl, const IceModelVec2Int &D_cf, const IceModelVec2Int &shelf_mask,
+                        int n_boxes, IceModelVec2Int &result);
+
 private:
   void label_tmp();
   void relabel_by_size(IceModelVec2Int &mask);
