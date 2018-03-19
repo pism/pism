@@ -28,6 +28,8 @@
 namespace pism {
 namespace ocean {
 
+class PicoGeometry;
+
 struct TocBox1 {
   bool failed;
   double value;
@@ -115,13 +117,12 @@ private:
   IceModelVec2S m_basal_melt_rate;
 
   // a basin defines the domain where one box model instance is solved
-  IceModelVec2Int m_DistGL, m_DistIF, m_icerise_mask, m_basin_mask, m_shelf_mask, m_lake_mask,
-    m_ocean_box_mask, m_ocean_mask, m_continental_shelf_mask;
+  IceModelVec2Int m_basin_mask;
+
+  std::unique_ptr<PicoGeometry> m_geometry;
 
   IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
 
-  void identifyMASK(IceModelVec2S &inputmask, std::string masktype);
-  void identify_shelf_mask();
   void compute_ocean_input_per_basin(const BoxModel &box_model,
                                      const IceModelVec2Int &basin_mask,
                                      const IceModelVec2Int &continental_shelf_mask,
@@ -139,9 +140,6 @@ private:
                               IceModelVec2S &Toc_box0,
                               IceModelVec2S &Soc_box0);
 
-  void compute_distances();
-  void identify_ocean_box_mask(const BoxModel &constants);
-
   void process_box1(const IceModelVec2S &ice_thickness,
                     const IceModelVec2Int &shelf_mask,
                     const IceModelVec2Int &box_mask,
@@ -158,7 +156,7 @@ private:
   void process_other_boxes(const IceModelVec2S &ice_thickness,
                            const IceModelVec2Int &shelf_mask,
                            const BoxModel &cc,
-                           IceModelVec2Int &box_mask,
+                           const IceModelVec2Int &box_mask,
                            IceModelVec2S &T_star,
                            IceModelVec2S &Toc,
                            IceModelVec2S &Soc,
@@ -192,8 +190,6 @@ private:
 
   int m_n_basins, m_n_boxes, m_n_shelves, m_Mx, m_My;
 };
-
-void round_basins(IceModelVec2S &basin_mask);
 
 } // end of namespace ocean
 } // end of namespace pism

@@ -39,6 +39,8 @@ PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
     m_ice_rises(grid, "ice_rises", WITH_GHOSTS),
     m_tmp(grid, "temporary_storage", WITHOUT_GHOSTS) {
 
+  m_boxes.metadata().set_double("_FillValue", 0.0);
+
   m_tmp_p0 = m_tmp.allocate_proc0_copy();
 }
 
@@ -61,7 +63,8 @@ const IceModelVec2Int& PicoGeometry::ice_shelf_mask() const {
 /*!
  * Compute masks needed by the PICO physics code.
  *
- * After this call
+ * After this call box_mask(), ice_shelf_mask(), and continental_shelf_mask() will be up
+ * to date.
  */
 void PicoGeometry::update(const IceModelVec2S &bed_elevation,
                           const IceModelVec2CellType &cell_type) {
