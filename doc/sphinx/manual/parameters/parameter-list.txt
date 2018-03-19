@@ -1035,6 +1035,23 @@
    :Option: :opt:`-meltfactor_pik`
    :Description: dimensionless tuning parameter in the '-ocean pik' ocean heat flux parameterization; see :cite:`Martinetal2011`
 
+#. :config:`ocean.constant.melt_rate` (*scalar*)
+
+   :Value: 0.051914 (m / year)
+   :Option: :opt:`-shelf_base_melt_rate`
+   :Description: default melt rate used by the 'constant' ocean model (computed as `Q / (L \rho_i)`)
+
+#. :config:`ocean.constant.melange_back_pressure_fraction` (*scalar*)
+
+   :Value: 0 (1)
+   :Description: default melange back pressure fraction in the 'contant' ocean model
+
+#. :config:`ocean.cache.update_interval` (*integer*)
+
+   :Value: 10
+   :Option: :opt:`-ocean_cache_update_interval`
+   :Description: update interval of the 'cache' ocean modifier
+
 #. :config:`ocean.runoff_to_ocean_melt_b` (*scalar*)
 
    :Value: 0.150000 (1)
@@ -1060,6 +1077,42 @@
    :Value: yes
    :Option: :opt:`-clip_shelf_base_salinity`
    :Description: Clip shelf base salinity so that it is in the range [4, 40] k/kg. See :cite:`HollandJenkins1999`.
+
+#. :config:`ocean.pico.number_of_basins` (*integer*)
+
+   :Value: 20
+   :Option: :opt:`-number_of_basins`
+   :Description: Default number of basins (according to basins mask)
+
+#. :config:`ocean.pico.number_of_boxes` (*integer*)
+
+   :Value: 5
+   :Option: :opt:`-number_of_boxes`
+   :Description: Default maximum number of boxes (for the largest ice shelves)
+
+#. :config:`ocean.pico.continental_shelf_depth` (*scalar*)
+
+   :Value: -800 (meters)
+   :Option: :opt:`-continental_shelf_depth`
+   :Description: Determines the edge of the continental shelf to calculate mean ocean properties
+
+#. :config:`ocean.pico.overturning_coefficent` (*scalar*)
+
+   :Value: 1000000 (meters6 seconds-1 kg-1)
+   :Option: :opt:`-overturning_coeff`
+   :Description: Overturning stregth coefficient
+
+#. :config:`ocean.pico.heat_exchange_coefficent` (*scalar*)
+
+   :Value: 0.000020 (meters second-1)
+   :Option: :opt:`-gamma_T`
+   :Description: Turbulent heat exchange coefficient
+
+#. :config:`ocean.pico.exclude_icerises` (*boolean*)
+
+   :Value: no
+   :Option: :opt:`-exclude_icerises`
+   :Description: Exclude ice rises for box calculation in PICO
 
 #. :config:`output.backup_interval` (*scalar*)
 
