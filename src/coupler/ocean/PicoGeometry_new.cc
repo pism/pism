@@ -72,6 +72,9 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation,
  *
  * The biggest one gets the value of 2, all the other ones 1, the background is set to
  * zero.
+ *
+ * FIXME: instead of re-labeling by size we should have an area threshold: areas above the
+ * threshold get 2, the rest get 1, the background is zero.
  */
 void PicoGeometry::relabel_by_size(IceModelVec2Int &mask) {
 
