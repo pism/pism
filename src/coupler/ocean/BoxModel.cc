@@ -75,7 +75,7 @@ BoxModel::BoxModel(const Config &config) {
 
   // for shelf cells where normal box model is not calculated, used in
   // calculate_basal_melt_missing_cells(), compare POConstantPIK m/s, thermal exchange
-  // velocity for Beckmann-Goose parameterization this is the same meltFactor as in
+  // velocity for Beckmann-Goosse parameterization this is the same meltFactor as in
   // POConstantPIK
   m_meltFactor = config.get_double("ocean.pik_melt_factor");
 }
@@ -152,8 +152,8 @@ double BoxModel::melt_rate(double pm_point, double Toc) const {
   return m_gamma_T / (m_nu * m_lambda) * (Toc - pm_point);
 }
 
-//! Beckmann & Goose meltrate
-double BoxModel::melt_rate_beckmann_goose(double pot_pm_point, double Toc) const {
+//! Beckmann & Goosse meltrate
+double BoxModel::melt_rate_beckmann_goosse(double pot_pm_point, double Toc) const {
   // in W/m^2
   double heat_flux = m_meltFactor * m_sea_water_density * m_c_p_ocean * m_gamma_T * (Toc - pot_pm_point);
   // in m s-1

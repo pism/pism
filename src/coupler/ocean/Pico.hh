@@ -57,7 +57,7 @@ public:
 
   double melt_rate(double pm_point, double Toc) const;
 
-  double melt_rate_beckmann_goose(double pot_pm_point, double Toc) const;
+  double melt_rate_beckmann_goosse(double pot_pm_point, double Toc) const;
 
   double overturning(double Soc_box0, double Soc,
                      double Toc_box0, double Toc) const;
@@ -163,16 +163,15 @@ private:
                            IceModelVec2S &basal_melt_rate,
                            IceModelVec2S &T_pressure_melting);
 
-  void process_missing_cells(const BoxModel &cc,
-                             const IceModelVec2Int &shelf_mask,
-                             const IceModelVec2Int &box_mask,
-                             const IceModelVec2S &ice_thickness,
-                             const IceModelVec2S &Toc_box0,
-                             const IceModelVec2S &Soc_box0,
-                             IceModelVec2S &Toc,
-                             IceModelVec2S &Soc,
-                             IceModelVec2S &basal_melt_rate,
-                             IceModelVec2S &T_pressure_melting);
+  void beckmann_goosse(const BoxModel &cc,
+                       const IceModelVec2S &ice_thickness,
+                       const IceModelVec2CellType &cell_type,
+                       const IceModelVec2S &Toc_box0,
+                       const IceModelVec2S &Soc_box0,
+                       IceModelVec2S &Toc,
+                       IceModelVec2S &Soc,
+                       IceModelVec2S &basal_melt_rate,
+                       IceModelVec2S &T_pressure_melting);
 
   void compute_box_average(int box_id,
                            const IceModelVec2S &field,
