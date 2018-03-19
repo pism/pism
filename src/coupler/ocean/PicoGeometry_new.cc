@@ -85,7 +85,6 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation,
 
   // these two could be optimized by trying to reduce the number of times we update ghosts
   {
-
     m_ice_rises.update_ghosts();
 
     compute_distances_gl(m_ocean_mask, m_ice_rises, exclude_ice_rises, m_distance_gl);
@@ -95,13 +94,13 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation,
 
   // these two could be done at the same time
   {
-    compute_ice_shelf_mask(m_ice_rises, m_ice_shelves);
+    compute_ice_shelf_mask(m_ice_rises, m_lake_mask, m_ice_shelves);
 
     compute_continental_shelf_mask(bed_elevation, m_ice_rises, continental_shelf_depth,
                                    m_continental_shelf);
   }
 
-  compute_box_mask(m_distance_gl, m_distance_cf, m_ice_shelves, m_lake_mask, n_boxes,
+  compute_box_mask(m_distance_gl, m_distance_cf, m_ice_shelves, n_boxes,
                    m_boxes);
 }
 
@@ -349,10 +348,14 @@ void PicoGeometry::compute_continental_shelf_mask(const IceModelVec2S &bed_eleva
  * Each shelf gets an individual integer label.
  *
  * Two shelves connected by an ice rise are considered to be parts of the same shelf.
+ *
+ * Floating ice cells that are not connected to the ocean ("subglacial lakes") are
+ * excluded.
  */
 void PicoGeometry::compute_ice_shelf_mask(const IceModelVec2Int &ice_rise_mask,
+                                          const IceModelVec2Int &lake_mask,
                                           IceModelVec2Int &result) {
-  IceModelVec::AccessList list{&ice_rise_mask, &m_tmp};
+  IceModelVec::AccessList list{&ice_rise_mask, &lake_mask, &m_tmp};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -368,11 +371,11 @@ void PicoGeometry::compute_ice_shelf_mask(const IceModelVec2Int &ice_rise_mask,
 
   label_tmp();
 
-  // remove ice rises
+  // remove ice rises and lakes
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (ice_rise_mask.as_int(i, j) == RISE) {
+    if (ice_rise_mask.as_int(i, j) == RISE or lake_mask.as_int(i, j) == 1) {
       m_tmp(i, j) = 0.0;
     }
   }
@@ -549,11 +552,10 @@ void eikonal_equation(IceModelVec2Int &mask) {
 void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl,
                                     const IceModelVec2Int &D_cf,
                                     const IceModelVec2Int &shelf_mask,
-                                    const IceModelVec2Int &lake_mask,
                                     int max_number_of_boxes,
                                     IceModelVec2Int &result) {
 
-  IceModelVec::AccessList list {&D_gl, &D_cf, &shelf_mask, &lake_mask, &result};
+  IceModelVec::AccessList list {&D_gl, &D_cf, &shelf_mask, &result};
 
   int n_shelves = shelf_mask.range().max + 1;
 
@@ -628,16 +630,6 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl,
       }
     }
   }
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    if (shelf_mask.as_int(i, j) > 0 and result.as_int(i, j) == 0 and
-        lake_mask.as_int(i, j) != 1) {
-      // floating, no box number assigned, and not a sub-glacial lake
-      result(i, j) = -1;
-    }
-  }
-
 }
 
 } // end of namespace ocean

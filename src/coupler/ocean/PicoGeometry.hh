@@ -60,6 +60,7 @@ public:
                                       double bed_elevation_threshold,
                                       IceModelVec2Int &result);
   void compute_ice_shelf_mask(const IceModelVec2Int &ice_rises_mask,
+                              const IceModelVec2Int &lake_mask,
                               IceModelVec2Int &result);
   void compute_distances_cf(const IceModelVec2Int &ocean_mask,
                             const IceModelVec2Int &ice_rises,
@@ -73,7 +74,6 @@ public:
   void compute_box_mask(const IceModelVec2Int &D_gl,
                         const IceModelVec2Int &D_cf,
                         const IceModelVec2Int &shelf_mask,
-                        const IceModelVec2Int &lake_mask,
                         int n_boxes,
                         IceModelVec2Int &result);
 private:
