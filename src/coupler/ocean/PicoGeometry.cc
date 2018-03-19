@@ -595,8 +595,7 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl, const IceModelV
     int d_gl = D_gl.as_int(i, j);
     int d_cf = D_cf.as_int(i, j);
 
-    if (shelf_mask.as_int(i, j) > 0 and d_gl > 0.0 and d_cf > 0.0 and
-        result.as_int(i, j) == 0) {
+    if (shelf_mask.as_int(i, j) > 0 and d_gl > 0.0 and d_cf > 0.0) {
       int shelf_id = shelf_mask(i, j);
       int n = n_boxes[shelf_id];
 
