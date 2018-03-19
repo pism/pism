@@ -301,6 +301,7 @@ void Pico::update_impl(double my_t, double my_dt) {
     beckmann_goosse(model,
                     ice_thickness, // inputs
                     cell_type,
+                    m_geometry->ice_shelf_mask(),
                     m_Toc_box0, m_Soc_box0, // inputs
                     m_Toc, m_Soc,
                     m_basal_melt_rate, *m_shelf_base_temperature); // outputs
@@ -756,12 +757,13 @@ void Pico::process_other_boxes(const IceModelVec2S &ice_thickness,
  * Use the simpler parameterization due to [@ref BeckmannGoosse2003] to set default
  * sub-shelf temperature and melt rate values.
  *
- * In the end these values end up being used at floating cells that are not connected to
- * the ocean and where ocean input data is missing.
+ * At grid points containing floating ice not connected to the ocean, set the basal melt
+ * rate to zero and set basal temperature to the pressure melting point.
  */
 void Pico::beckmann_goosse(const BoxModel &box_model,
                            const IceModelVec2S &ice_thickness,
                            const IceModelVec2CellType &cell_type,
+                           const IceModelVec2Int &shelf_mask,
                            const IceModelVec2S &Toc_box0,
                            const IceModelVec2S &Soc_box0,
                            IceModelVec2S &Toc,
@@ -769,24 +771,36 @@ void Pico::beckmann_goosse(const BoxModel &box_model,
                            IceModelVec2S &basal_melt_rate,
                            IceModelVec2S &T_pressure_melting) {
 
-  IceModelVec::AccessList list{ &ice_thickness, &cell_type, &Toc_box0, &Soc_box0,
-      &Toc, &Soc, &basal_melt_rate, &T_pressure_melting
-      };
+  const double
+    T0          = m_config->get_double("constants.fresh_water.melting_point_temperature"),
+    beta_CC     = m_config->get_double("constants.ice.beta_Clausius_Clapeyron"),
+    g           = m_config->get_double("constants.standard_gravity"),
+    ice_density = m_config->get_double("constants.ice.density");
+
+  IceModelVec::AccessList list{ &ice_thickness, &cell_type, &shelf_mask, &Toc_box0, &Soc_box0,
+      &Toc, &Soc, &basal_melt_rate, &T_pressure_melting };
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.floating_ice(i, j)) {
+      if (shelf_mask.as_int(i, j) > 0) {
+        double pressure = box_model.pressure(ice_thickness(i, j));
 
-      double pressure = box_model.pressure(ice_thickness(i, j));
+        basal_melt_rate(i, j) = box_model.melt_rate_beckmann_goosse(box_model.theta_pm(Soc_box0(i, j), pressure),
+                                                                    Toc_box0(i, j));
+        T_pressure_melting(i, j) = box_model.T_pm(Soc_box0(i, j), pressure);
 
-      basal_melt_rate(i, j) = box_model.melt_rate_beckmann_goosse(box_model.theta_pm(Soc_box0(i, j), pressure),
-                                                                 Toc_box0(i, j));
-      T_pressure_melting(i, j) = box_model.T_pm(Soc_box0(i, j), pressure);
+        // diagnostic outputs
+        Toc(i, j) = Toc_box0(i, j); // in Kelvin
+        Soc(i, j) = Soc_box0(i, j); // in psu
+      } else {
+        // Floating ice cells not connected to the ocean.
+        const double pressure = ice_density * g * ice_thickness(i, j); // FIXME issue #15
 
-      // diagnostic outputs
-      Toc(i, j) = Toc_box0(i, j); // in Kelvin
-      Soc(i, j) = Soc_box0(i, j); // in psu
+        T_pressure_melting(i, j) = T0 - beta_CC * pressure;
+        basal_melt_rate(i, j)    = 0.0;
+      }
     }
   }
 }

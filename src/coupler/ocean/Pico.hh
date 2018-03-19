@@ -163,9 +163,10 @@ private:
                            IceModelVec2S &basal_melt_rate,
                            IceModelVec2S &T_pressure_melting);
 
-  void beckmann_goosse(const BoxModel &cc,
+  void beckmann_goosse(const BoxModel &box_model,
                        const IceModelVec2S &ice_thickness,
                        const IceModelVec2CellType &cell_type,
+                       const IceModelVec2Int &shelf_mask,
                        const IceModelVec2S &Toc_box0,
                        const IceModelVec2S &Soc_box0,
                        IceModelVec2S &Toc,
