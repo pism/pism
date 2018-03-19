@@ -35,9 +35,9 @@ struct TocBox1 {
   double value;
 };
 
-class BoxModel {
+class PicoPhysics {
 public:
-  BoxModel(const Config &config);
+  PicoPhysics(const Config &config);
 
   double pressure(double ice_thickness) const;
   double T_star(double salinity, double temperature, double pressure) const;
@@ -123,14 +123,14 @@ private:
 
   IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
 
-  void compute_ocean_input_per_basin(const BoxModel &box_model,
+  void compute_ocean_input_per_basin(const PicoPhysics &physics,
                                      const IceModelVec2Int &basin_mask,
                                      const IceModelVec2Int &continental_shelf_mask,
                                      const IceModelVec2S &salinity_ocean,
                                      const IceModelVec2S &theta_ocean,
                                      std::vector<double> &temperature,
                                      std::vector<double> &salinity);
-  void set_ocean_input_fields(const BoxModel &box_model,
+  void set_ocean_input_fields(const PicoPhysics &physics,
                               const IceModelVec2S &ice_thickness,
                               const IceModelVec2CellType &mask,
                               const IceModelVec2Int &basin_mask,
@@ -145,7 +145,7 @@ private:
                     const IceModelVec2Int &box_mask,
                     const IceModelVec2S &Toc_box0,
                     const IceModelVec2S &Soc_box0,
-                    const BoxModel &cc,
+                    const PicoPhysics &cc,
                     IceModelVec2S &T_star,
                     IceModelVec2S &Toc,
                     IceModelVec2S &Soc,
@@ -155,7 +155,7 @@ private:
 
   void process_other_boxes(const IceModelVec2S &ice_thickness,
                            const IceModelVec2Int &shelf_mask,
-                           const BoxModel &cc,
+                           const PicoPhysics &cc,
                            const IceModelVec2Int &box_mask,
                            IceModelVec2S &T_star,
                            IceModelVec2S &Toc,
@@ -163,7 +163,7 @@ private:
                            IceModelVec2S &basal_melt_rate,
                            IceModelVec2S &T_pressure_melting);
 
-  void beckmann_goosse(const BoxModel &box_model,
+  void beckmann_goosse(const PicoPhysics &physics,
                        const IceModelVec2S &ice_thickness,
                        const IceModelVec2CellType &cell_type,
                        const IceModelVec2Int &shelf_mask,

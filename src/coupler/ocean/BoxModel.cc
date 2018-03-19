@@ -21,7 +21,7 @@
 namespace pism {
 namespace ocean {
 
-BoxModel::BoxModel(const Config &config) {
+PicoPhysics::PicoPhysics(const Config &config) {
 
   // threshold between deep ocean and continental shelf
   m_continental_shelf_depth = config.get_double("ocean.pico.continental_shelf_depth");
@@ -81,12 +81,12 @@ BoxModel::BoxModel(const Config &config) {
 }
 
 
-double BoxModel::pressure(double ice_thickness) const {
+double PicoPhysics::pressure(double ice_thickness) const {
   // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
   return m_ice_density * m_earth_grav * ice_thickness * 1e-4;
 }
 
-TocBox1 BoxModel::Toc_box1(double area, double T_star, double Soc_box0, double Toc_box0) const {
+TocBox1 PicoPhysics::Toc_box1(double area, double T_star, double Soc_box0, double Toc_box0) const {
 
   TocBox1 result = {false, 0.0};
 
@@ -111,7 +111,7 @@ TocBox1 BoxModel::Toc_box1(double area, double T_star, double Soc_box0, double T
   return result;
 }
 
-double BoxModel::Toc(double area, double temperature, double T_star, double overturning,
+double PicoPhysics::Toc(double area, double temperature, double T_star, double overturning,
                      double salinity) const {
 
   double g1 = area * m_gamma_T;
@@ -121,12 +121,12 @@ double BoxModel::Toc(double area, double temperature, double T_star, double over
   return temperature + g1 * T_star / (overturning + g1 - g2 * m_a_pot * salinity); // K
 }
 
-double BoxModel::Soc_box1(double Toc_box0, double Soc_box0, double Toc) const {
+double PicoPhysics::Soc_box1(double Toc_box0, double Soc_box0, double Toc) const {
 
   return Soc_box0 - (Soc_box0 / (m_nu * m_lambda)) * (Toc_box0 - Toc);
 }
 
-double BoxModel::Soc(double salinity, double temperature_in_boundary, double Toc) const {
+double PicoPhysics::Soc(double salinity, double temperature_in_boundary, double Toc) const {
 
   return salinity - salinity * (temperature_in_boundary - Toc) / (m_nu * m_lambda); // psu;
 }
@@ -134,26 +134,26 @@ double BoxModel::Soc(double salinity, double temperature_in_boundary, double Toc
 
 //! equation 5 in the PICO paper.
 //! calculate pressure melting point from potential temperature
-double BoxModel::theta_pm(double salinity, double pressure) const {
+double PicoPhysics::theta_pm(double salinity, double pressure) const {
   // using coefficients for potential temperature
   return m_a_pot * salinity + m_b_pot - m_c_pot * pressure;
 }
 
 //! equation 5 in the PICO paper.
 //! calculate pressure melting point from in-situ temperature
-double BoxModel::T_pm(double salinity, double pressure) const {
+double PicoPhysics::T_pm(double salinity, double pressure) const {
   // using coefficients for potential temperature
   return m_a_in_situ * salinity + m_b_in_situ - m_c_in_situ * pressure;
 }
 
 //! equation 8 in the PICO paper.
-double BoxModel::melt_rate(double pm_point, double Toc) const {
+double PicoPhysics::melt_rate(double pm_point, double Toc) const {
   // in m/s
   return m_gamma_T / (m_nu * m_lambda) * (Toc - pm_point);
 }
 
 //! Beckmann & Goosse meltrate
-double BoxModel::melt_rate_beckmann_goosse(double pot_pm_point, double Toc) const {
+double PicoPhysics::melt_rate_beckmann_goosse(double pot_pm_point, double Toc) const {
   // in W/m^2
   double heat_flux = m_meltFactor * m_sea_water_density * m_c_p_ocean * m_gamma_T * (Toc - pot_pm_point);
   // in m s-1
@@ -161,13 +161,13 @@ double BoxModel::melt_rate_beckmann_goosse(double pot_pm_point, double Toc) cons
 }
 
 //! equation 3 in the PICO paper. See also equation 4.
-double BoxModel::overturning(double Soc_box0, double Soc, double Toc_box0, double Toc) const {
+double PicoPhysics::overturning(double Soc_box0, double Soc, double Toc_box0, double Toc) const {
   // in m^3/s
   return m_overturning_coeff * m_rho_star * (m_beta * (Soc_box0 - Soc) - m_alpha * (Toc_box0 - Toc));
 }
 
 //! See equation A6 and lines before in PICO paper
-double BoxModel::T_star(double salinity, double temperature, double pressure) const {
+double PicoPhysics::T_star(double salinity, double temperature, double pressure) const {
   // in Kelvin
   // FIXME: check that this stays always negative.
   // positive values are unphysical as colder temperatures
@@ -180,7 +180,7 @@ double BoxModel::T_star(double salinity, double temperature, double pressure) co
 //! calculate p coefficent for solving the quadratic temperature equation
 //! trough the p-q formula. See equation A12 in the PICO paper.
 //! is only used once in Toc_box1(...)
-double BoxModel::p_coeff(double g1, double s1) const {
+double PicoPhysics::p_coeff(double g1, double s1) const {
   // in 1 / (1/K) = K
   // inputs g1 and overturning coefficicient are always positive
   // so output is positive if beta*s1 > alpha
@@ -191,32 +191,32 @@ double BoxModel::p_coeff(double g1, double s1) const {
 //! calculate q coefficent for solving the quadratic temperature equation
 //! trough the p-q formula. See equation A12 in the PICO paper.
 //! is only used once in Toc_box1(...)
-double BoxModel::q_coeff(double g1, double s1, double T_star) const {
+double PicoPhysics::q_coeff(double g1, double s1, double T_star) const {
   // in K / (1/K) = K^2
   return (g1 * T_star) / (m_overturning_coeff * m_rho_star * (m_beta * s1 - m_alpha));
 }
 
-double BoxModel::gamma_T() const {
+double PicoPhysics::gamma_T() const {
   return m_gamma_T;
 }
 
-double BoxModel::overturning_coeff() const {
+double PicoPhysics::overturning_coeff() const {
   return m_overturning_coeff;
 }
 
-double BoxModel::T_dummy() const {
+double PicoPhysics::T_dummy() const {
   return m_T_dummy;
 }
 
-double BoxModel::S_dummy() const {
+double PicoPhysics::S_dummy() const {
   return m_S_dummy;
 }
 
-double BoxModel::ice_density() const {
+double PicoPhysics::ice_density() const {
   return m_ice_density;
 }
 
-double BoxModel::continental_shelf_depth() const {
+double PicoPhysics::continental_shelf_depth() const {
   return m_continental_shelf_depth;
 }
 
