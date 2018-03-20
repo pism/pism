@@ -153,14 +153,12 @@ Pico::Pico(IceGrid::ConstPtr g)
   m_Toc_box0.set_attrs("model_state", "ocean base temperature", "K", "ocean base temperature");
   m_Toc_box0.metadata().set_double("_FillValue", 0.0);
 
-  // in ocean box i: T_star = aS_{i-1} + b -c p_i - T_{i-1} with T_{-1} = Toc_box0 and S_{-1}=Soc_box0
-  // FIXME convert to internal field
   m_T_star.create(m_grid, "pico_T_star", WITHOUT_GHOSTS);
   m_T_star.set_attrs("model_state", "T_star field", "degree C", "T_star field");
   m_T_star.metadata().set_double("_FillValue", 0.0);
 
   m_overturning.create(m_grid, "pico_overturning", WITHOUT_GHOSTS);
-  m_overturning.set_attrs("model_state", "cavity overturning", "m^3 s-1", "cavity overturning"); // no CF standard_name?
+  m_overturning.set_attrs("model_state", "cavity overturning", "m^3 s-1", "cavity overturning");
   m_overturning.metadata().set_double("_FillValue", 0.0);
 
   m_basal_melt_rate.create(m_grid, "pico_bmelt_shelf", WITHOUT_GHOSTS);
@@ -211,8 +209,8 @@ void Pico::init_impl() {
   round_basins(m_basin_mask);
 
   // read time-independent data right away:
-  if (m_theta_ocean->get_n_records() == 1 && m_salinity_ocean->get_n_records() == 1) {
-    update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
+  if (m_theta_ocean->get_n_records() == 1 and m_salinity_ocean->get_n_records() == 1) {
+    update_internal(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }
 
@@ -236,11 +234,11 @@ void Pico::write_model_state_impl(const PIO &output) const {
   OceanModel::define_model_state_impl(output);
 }
 
-void Pico::update_impl(double my_t, double my_dt) {
+void Pico::update_impl(double t, double dt) {
 
   // Make sure that sea water salinity and sea water potential temperature fields are up
   // to date:
-  update_internal(my_t, my_dt);
+  update_internal(t, dt);
 
   m_theta_ocean->average(m_t, m_dt);
   m_salinity_ocean->average(m_t, m_dt);
