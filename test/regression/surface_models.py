@@ -26,6 +26,23 @@ log.set_threshold(1)
 
 options = PISM.PETSc.Options()
 
+def create_geometry(grid):
+    geometry = PISM.Geometry(grid)
+
+    geometry.cell_area.set(grid.dx() * grid.dy())
+    geometry.latitude.set(0.0)
+    geometry.longitude.set(0.0)
+
+    geometry.bed_elevation.set(0.0)
+    geometry.sea_level_elevation.set(0.0)
+
+    geometry.ice_thickness.set(0.0)
+    geometry.ice_area_specific_volume.set(0.0)
+
+    geometry.ensure_consistency(0.0)
+
+    return geometry
+
 def sample(vec):
     with PISM.vec.Access(nocomm=[vec]):
         return vec[0, 0]
@@ -103,6 +120,7 @@ class DeltaT(TestCase):
         self.grid = dummy_grid()
         self.model = PISM.SurfaceEISMINTII(self.grid, ord('A'))
         self.dT = -5.0
+        self.geometry = create_geometry(self.grid)
 
         create_dummy_forcing_file(self.filename, "delta_T", "Kelvin", self.dT)
 
@@ -113,8 +131,8 @@ class DeltaT(TestCase):
 
         options.setValue("-surface_delta_T_file", self.filename)
 
-        modifier.init()
-        modifier.update(0, 1)
+        modifier.init(self.geometry)
+        modifier.update(self.geometry, 0, 1)
 
         check_modifier(self.model, modifier, T=self.dT)
 

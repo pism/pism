@@ -33,8 +33,8 @@ public:
   Given(IceGrid::ConstPtr g);
   virtual ~Given();
 protected:
-  void init_impl();
-  void update_impl(double my_t, double my_dt);
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
   void attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input);
 
   void mass_flux_impl(IceModelVec2S &result) const;

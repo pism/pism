@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,8 +32,8 @@ public:
   Verification(IceGrid::ConstPtr g, EnthalpyConverter::Ptr EC, int test);
   ~Verification();
 private:
-  void init_impl();
-  void update_impl(PetscReal t, PetscReal dt);
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
 
   void define_model_state_impl(const PIO &output) const;
   void write_model_state_impl(const PIO &output) const;

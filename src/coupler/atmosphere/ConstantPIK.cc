@@ -25,6 +25,7 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -83,7 +84,9 @@ void PIK::write_model_state_impl(const PIO &output) const {
   m_precipitation.write(output);
 }
 
-void PIK::init_impl() {
+void PIK::init_impl(const Geometry &geometry) {
+  (void) geometry;
+
   m_log->message(2,
              "* Initializing the constant-in-time atmosphere model PIK.\n"
              "  It reads a precipitation field directly from the file and holds it constant.\n"
@@ -108,13 +111,13 @@ MaxTimestep PIK::max_timestep_impl(double t) const {
   return MaxTimestep("atmosphere PIK");
 }
 
-void PIK::update_impl(double, double) {
+void PIK::update_impl(const Geometry &geometry, double, double) {
   // Compute near-surface air temperature using a latitude- and
   // elevation-dependent parameterization:
 
   const IceModelVec2S
-    &elevation = *m_grid->variables().get_2d_scalar("surface_altitude"),
-    &latitude  = *m_grid->variables().get_2d_scalar("latitude");
+    &elevation = geometry.ice_surface_elevation,
+    &latitude  = geometry.latitude;
 
   IceModelVec::AccessList list{&m_air_temp, &elevation, &latitude};
   for (Points p(*m_grid); p; p.next()) {

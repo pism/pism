@@ -30,6 +30,7 @@
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace surface {
@@ -37,10 +38,12 @@ namespace surface {
 ///// Elevation-dependent temperature and surface mass balance.
 Elevation::Elevation(IceGrid::ConstPtr g)
   : SurfaceModel(g) {
-  // empty
+  m_surface = nullptr;
 }
 
-void Elevation::init_impl() {
+void Elevation::init_impl(const Geometry &geometry) {
+  (void) geometry;
+
   bool m_limits_set = false;
 
   using units::convert;
@@ -168,32 +171,29 @@ MaxTimestep Elevation::max_timestep_impl(double t) const {
   return MaxTimestep("surface 'elevation'");
 }
 
-void Elevation::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input)
-{
+void Elevation::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input) {
   (void) input;
 }
 
-void Elevation::update_impl(double my_t, double my_dt)
-{
-  m_t = my_t;
-  m_dt = my_dt;
+void Elevation::update_impl(const Geometry &geometry, double t, double dt) {
+  m_surface = &geometry.ice_surface_elevation;
+
+  m_t = t;
+  m_dt = dt;
 }
 
 void Elevation::mass_flux_impl(IceModelVec2S &result) const {
   double dabdz = -m_M_min/(m_z_ELA - m_z_M_min);
   double dacdz = m_M_max/(m_z_M_max - m_z_ELA);
 
-  // get access to ice upper surface elevation
-  const IceModelVec2S *usurf = m_grid->variables().get_2d_scalar("surface_altitude");
-
-  IceModelVec::AccessList list{&result, usurf};
+  IceModelVec::AccessList list{&result, m_surface};
 
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double z = (*usurf)(i, j);
+      double z = (*m_surface)(i, j);
       if (z < m_z_M_min) {
         result(i, j) = m_M_limit_min;
       }
@@ -221,9 +221,7 @@ void Elevation::mass_flux_impl(IceModelVec2S &result) const {
 
 void Elevation::temperature_impl(IceModelVec2S &result) const {
 
-  const IceModelVec2S *usurf = m_grid->variables().get_2d_scalar("surface_altitude");
-
-  IceModelVec::AccessList list{&result, &*usurf};
+  IceModelVec::AccessList list{&result, m_surface};
 
   double dTdz = (m_T_max - m_T_min)/(m_z_T_max - m_z_T_min);
   ParallelSection loop(m_grid->com);
@@ -231,7 +229,7 @@ void Elevation::temperature_impl(IceModelVec2S &result) const {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double z = (*usurf)(i, j);
+      double z = (*m_surface)(i, j);
       if (z <= m_z_T_min) {
         result(i, j) = m_T_min;
       }

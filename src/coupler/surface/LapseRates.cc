@@ -35,8 +35,8 @@ LapseRates::~LapseRates() {
   // empty
 }
 
-void LapseRates::init_impl() {
-  m_input_model->init();
+void LapseRates::init_impl(const Geometry &geometry) {
+  m_input_model->init(geometry);
 
   m_log->message(2,
              "  [using temperature and mass balance lapse corrections]\n");

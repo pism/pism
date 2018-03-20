@@ -32,6 +32,8 @@
 
 namespace pism {
 
+class Geometry;
+
 template<class Model, class Mod>
 class PScalarForcing : public Mod
 {
@@ -47,13 +49,13 @@ public:
   }
 
 protected:
-  virtual void update_impl(double t, double dt)
+  virtual void update_impl(const Geometry &geometry, double t, double dt)
   {
     Mod::m_t  = Mod::m_grid->ctx()->time()->mod(t - m_bc_reference_time, m_bc_period);
     Mod::m_dt = dt;
 
     // this call will update the input model, too
-    Mod::update_impl(t, dt);
+    Mod::update_impl(geometry, t, dt);
 
     m_current_forcing = (*m_offset)(Mod::m_t + 0.5*Mod::m_dt);
   }

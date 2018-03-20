@@ -57,7 +57,7 @@ public:
   virtual ~PaleoPrecip();
 
 protected:
-  virtual void init_impl();
+  virtual void init_impl(const Geometry &geometry);
 
   virtual void init_timeseries_impl(const std::vector<double> &ts) const;
 

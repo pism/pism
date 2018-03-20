@@ -31,8 +31,8 @@ public:
   virtual ~Given();
 
 private:
-  void update_impl(double my_t, double my_dt);
-  void init_impl();
+  void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Geometry &geometry);
 
   const IceModelVec2S& sea_level_elevation_impl() const;
   const IceModelVec2S& shelf_base_temperature_impl() const;

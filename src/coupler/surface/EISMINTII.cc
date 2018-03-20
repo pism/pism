@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,7 +37,8 @@ EISMINTII::~EISMINTII() {
   // empty
 }
 
-void EISMINTII::init_impl() {
+void EISMINTII::init_impl(const Geometry &geometry) {
+  (void) geometry;
 
   using units::convert;
 
@@ -136,9 +137,10 @@ void EISMINTII::initialize_using_formulas() {
   m_climatic_mass_balance.scale(m_config->get_double("constants.ice.density"));
 }
 
-void EISMINTII::update_impl(PetscReal t, PetscReal dt) {
+void EISMINTII::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
+  (void) geometry;
 
   // do nothing (but an implementation is required)
 }

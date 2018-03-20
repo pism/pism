@@ -45,8 +45,8 @@ private:
   void define_model_state_impl(const PIO &output) const;
   void write_model_state_impl(const PIO &output) const;
 
-  void update_impl(double t, double dt);
-  void init_impl();
+  void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Geometry &geometry);
 
   const IceModelVec2S& sea_level_elevation_impl() const;
   const IceModelVec2S& shelf_base_temperature_impl() const;

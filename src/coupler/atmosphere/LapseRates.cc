@@ -22,6 +22,7 @@
 #include "LapseRates.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -37,9 +38,9 @@ LapseRates::~LapseRates() {
   // empty
 }
 
-void LapseRates::init_impl() {
+void LapseRates::init_impl(const Geometry &geometry) {
 
-  m_input_model->init();
+  m_input_model->init(geometry);
 
   m_log->message(2,
              "  [using air temperature and precipitation lapse corrections]\n");
@@ -60,7 +61,7 @@ void LapseRates::init_impl() {
 
   m_precip_lapse_rate = units::convert(m_sys, m_precip_lapse_rate, "m year-1 / km", "m second-1 / m");
 
-  m_surface = m_grid->variables().get_2d_scalar("surface_altitude");
+  m_surface = &geometry.ice_surface_elevation;
 }
 
 void LapseRates::mean_precipitation_impl(IceModelVec2S &result) const {

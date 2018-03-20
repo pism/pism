@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@ class PIK : public AtmosphereModel {
 public:
   PIK(IceGrid::ConstPtr g);
 protected:
-  virtual void init_impl();
+  virtual void init_impl(const Geometry &geometry);
 
   virtual void mean_precipitation_impl(IceModelVec2S &result) const;
   virtual void mean_annual_temp_impl(IceModelVec2S &result) const;
@@ -47,7 +47,7 @@ protected:
 
   virtual MaxTimestep max_timestep_impl(double t) const;
 
-  virtual void update_impl(double my_t, double my_dt);
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
 protected:
   IceModelVec2S m_precipitation, m_air_temp;
 };

@@ -33,6 +33,7 @@ namespace atmosphere {
 class AtmosphereModel;
 }
 
+class Geometry;
 class IceModelVec2S;
 
 //! @brief Surface models and modifiers: provide top-surface
@@ -46,12 +47,12 @@ public:
   SurfaceModel(IceGrid::ConstPtr g);
   virtual ~SurfaceModel();
 
-  void init();
+  void init(const Geometry &geometry);
 
   void attach_atmosphere_model(std::shared_ptr<atmosphere::AtmosphereModel> input);
 
   // the interface:
-  void update(double t, double dt);
+  void update(const Geometry &geometry, double t, double dt);
 
   void mass_flux(IceModelVec2S &result) const;
   void temperature(IceModelVec2S &result) const;
@@ -67,8 +68,8 @@ public:
   IceModelVec2S::Ptr layer_mass() const;
   IceModelVec2S::Ptr layer_thickness() const;
 protected:
-  virtual void init_impl();
-  virtual void update_impl(double t, double dt) = 0;
+  virtual void init_impl(const Geometry &geometry);
+  virtual void update_impl(const Geometry &geometry, double t, double dt) = 0;
 
   virtual void attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input);
 

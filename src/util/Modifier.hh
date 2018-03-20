@@ -26,6 +26,9 @@
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
+
+class Geometry;
+
 //! \brief This template allows creating Component (AtmosphereModel,
 //! SurfaceModel and OceanModel) modifiers with minimum effort.
 /*!
@@ -52,12 +55,12 @@ protected:
     }
   }
 
-  virtual void update_impl(double t, double dt)
+  virtual void update_impl(const Geometry &geometry, double t, double dt)
   {
     Model::m_t = t;
     Model::m_dt = dt;
     if (m_input_model) {
-      m_input_model->update(t, dt);
+      m_input_model->update(geometry, t, dt);
     }
   }
 

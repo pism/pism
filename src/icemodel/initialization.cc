@@ -171,8 +171,9 @@ void IceModel::model_state_setup() {
 
   // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
   // which may need ice thickness to bootstrap.
+  // FIXME: ocean models may need bed elevation, which is not available yet.
   {
-    m_ocean->init();
+    m_ocean->init(m_geometry);
   }
 
   // Initialize a bed deformation model. This may use ice thickness initialized above.
@@ -193,7 +194,7 @@ void IceModel::model_state_setup() {
 
   // Now surface elevation is initialized, so we can initialize surface models (some use
   // elevation-based parameterizations of surface temperature and/or mass balance).
-  m_surface->init();
+  m_surface->init(m_geometry);
 
   if (m_subglacial_hydrology) {
     m_subglacial_hydrology->init();

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -57,11 +57,11 @@ Verification::~Verification() {
   // empty
 }
 
-void Verification::init_impl() {
+void Verification::init_impl(const Geometry &geometry) {
   // Make sure that ice surface temperature and climatic mass balance
   // get initialized at the beginning of the run (as far as I can tell
   // this affects zero-length runs only).
-  update(m_grid->ctx()->time()->current(), 0);
+  update(geometry, m_grid->ctx()->time()->current(), 0);
 }
 
 void Verification::define_model_state_impl(const PIO &output) const {
@@ -134,8 +134,8 @@ void Verification::update_V() {
   m_climatic_mass_balance.set(0.0);
 }
 
-void Verification::update_impl(PetscReal t, PetscReal dt) {
-
+void Verification::update_impl(const Geometry &geometry, double t, double dt) {
+  (void) geometry;
   (void) dt;
 
   switch (m_testname) {

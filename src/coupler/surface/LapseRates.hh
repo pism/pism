@@ -32,7 +32,7 @@ public:
   LapseRates(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
   virtual ~LapseRates();
 protected:
-  virtual void init_impl();
+  virtual void init_impl(const Geometry &geometry);
 
   virtual void mass_flux_impl(IceModelVec2S &result) const;
   virtual void temperature_impl(IceModelVec2S &result) const;

@@ -25,7 +25,10 @@
 #include "pism/util/Component.hh"
 
 namespace pism {
+
+class Geometry;
 class IceModelVec2S;
+
 //! @brief Atmosphere models and modifiers: provide precipitation and
 //! temperature to a surface::SurfaceModel below
 namespace atmosphere {
@@ -35,9 +38,9 @@ public:
   AtmosphereModel(IceGrid::ConstPtr g);
   virtual ~AtmosphereModel();
 
-  void init();
+  void init(const Geometry &geometry);
 
-  void update(double t, double dt);
+  void update(const Geometry &geometry, double t, double dt);
 
   //! \brief Sets result to the mean precipitation, in m/s ice equivalent.
   void mean_precipitation(IceModelVec2S &result) const;
@@ -60,8 +63,8 @@ public:
   //! begin_pointwise_access() and end_pointwise_access()
   void temp_time_series(int i, int j, std::vector<double> &result) const;
 protected:
-  virtual void init_impl() = 0;
-  virtual void update_impl(double t, double dt) = 0;
+  virtual void init_impl(const Geometry &geometry) = 0;
+  virtual void update_impl(const Geometry &geometry, double t, double dt) = 0;
   virtual void mean_precipitation_impl(IceModelVec2S &result) const = 0;
   virtual void mean_annual_temp_impl(IceModelVec2S &result) const = 0;
   virtual void begin_pointwise_access_impl() const = 0;

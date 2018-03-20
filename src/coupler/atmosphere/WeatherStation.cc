@@ -54,7 +54,8 @@ WeatherStation::~WeatherStation() {
   // empty
 }
 
-void WeatherStation::init_impl() {
+void WeatherStation::init_impl(const Geometry &geometry) {
+  (void) geometry;
 
   m_log->message(2,
              "* Initializing the constant-in-space atmosphere model\n"
@@ -87,7 +88,9 @@ MaxTimestep WeatherStation::max_timestep_impl(double t) const {
   return MaxTimestep("atmosphere weather_station");
 }
 
-void WeatherStation::update_impl(double t, double dt) {
+void WeatherStation::update_impl(const Geometry &geometry, double t, double dt) {
+  (void) geometry;
+
   m_t = t;
   m_dt = dt;
 }

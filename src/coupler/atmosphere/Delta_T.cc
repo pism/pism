@@ -39,9 +39,9 @@ Delta_T::Delta_T(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
   m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
 }
 
-void Delta_T::init_impl() {
+void Delta_T::init_impl(const Geometry &geometry) {
 
-  m_input_model->init();
+  m_input_model->init(geometry);
 
   m_log->message(2, "* Initializing near-surface air temperature forcing using scalar offsets...\n");
 

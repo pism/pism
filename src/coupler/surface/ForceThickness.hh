@@ -23,6 +23,9 @@
 #include "pism/util/iceModelVec.hh"
 
 namespace pism {
+
+class IceModelVec2CellType;
+
 namespace surface {
 
 //! A class implementing a modified surface mass balance which forces
@@ -32,7 +35,7 @@ public:
   ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input);
   virtual ~ForceThickness();
 protected:
-  virtual void init_impl();
+  virtual void init_impl(const Geometry &geometry);
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
@@ -45,6 +48,9 @@ private:
   double m_start_time;
   IceModelVec2S m_target_thickness;
   IceModelVec2S m_ftt_mask;
+
+  const IceModelVec2S *m_ice_thickness;
+  const IceModelVec2CellType *m_cell_type;
 };
 
 } // end of namespace surface

@@ -633,7 +633,7 @@ void IceModel::step(bool do_mass_continuity,
   }
 
   profiling.begin("ocean");
-  m_ocean->update(current_time, m_dt);
+  m_ocean->update(m_geometry, current_time, m_dt);
   profiling.end("ocean");
 
   // The sea level elevation might have changed, so we need to update the mask, etc. Note
@@ -642,7 +642,7 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li Update surface and ocean models.
   profiling.begin("surface");
-  m_surface->update(current_time, m_dt);
+  m_surface->update(m_geometry, current_time, m_dt);
   profiling.end("surface");
 
   // Combine basal melt rate in grounded (computed during the energy

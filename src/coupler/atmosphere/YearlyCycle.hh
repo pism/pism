@@ -39,7 +39,7 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual void init_impl();
+  virtual void init_impl(const Geometry &geometry);
 
   virtual void mean_precipitation_impl(IceModelVec2S &result) const;
   virtual void mean_annual_temp_impl(IceModelVec2S &result) const;
@@ -51,7 +51,7 @@ protected:
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) const;
   virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) const;
 
-  virtual void update_impl(double my_t, double my_dt) = 0;
+  virtual void update_impl(const Geometry &geometry, double t, double dt) = 0;
 
   virtual DiagnosticList diagnostics_impl() const;
 protected:

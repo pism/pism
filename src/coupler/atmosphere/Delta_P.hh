@@ -31,7 +31,7 @@ public:
   Delta_P(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
   virtual ~Delta_P();
 protected:
-  virtual void init_impl();
+  virtual void init_impl(const Geometry &geometry);
 
   virtual void init_timeseries_impl(const std::vector<double> &ts) const;
   virtual void mean_precipitation_impl(IceModelVec2S &result) const;

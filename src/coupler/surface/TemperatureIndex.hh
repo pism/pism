@@ -52,8 +52,8 @@ public:
   const IceModelVec2S& runoff() const;
 
 protected:
-  virtual void init_impl();
-  virtual void update_impl(double my_t, double my_dt);
+  virtual void init_impl(const Geometry &geometry);
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;

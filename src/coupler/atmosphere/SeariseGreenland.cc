@@ -33,6 +33,7 @@
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -47,7 +48,7 @@ SeaRISEGreenland::SeaRISEGreenland(IceGrid::ConstPtr g)
 SeaRISEGreenland::~SeaRISEGreenland() {
 }
 
-void SeaRISEGreenland::init_impl() {
+void SeaRISEGreenland::init_impl(const Geometry &geometry) {
 
   m_log->message(2,
              "* Initializing SeaRISE-Greenland atmosphere model based on the Fausto et al (2009)\n"
@@ -70,7 +71,7 @@ void SeaRISEGreenland::init_impl() {
                                true, /* do regrid */
                                0 /* start (irrelevant) */);
   } else {
-    YearlyCycle::init_impl();
+    YearlyCycle::init_impl(geometry);
   }
 }
 
@@ -89,15 +90,15 @@ MaxTimestep SeaRISEGreenland::max_timestep_impl(double t) const {
 //! \brief Updates mean annual and mean July near-surface air temperatures.
 //! Note that the precipitation rate is time-independent and does not need
 //! to be updated.
-void SeaRISEGreenland::update_impl(double my_t, double my_dt) {
+void SeaRISEGreenland::update_impl(const Geometry &geometry, double t, double dt) {
 
-  if ((fabs(my_t - m_t) < 1e-12) &&
-      (fabs(my_dt - m_dt) < 1e-12)) {
+  if ((fabs(t - m_t) < 1e-12) &&
+      (fabs(dt - m_dt) < 1e-12)) {
     return;
   }
 
-  m_t  = my_t;
-  m_dt = my_dt;
+  m_t  = t;
+  m_dt = dt;
 
   const double
     d_ma     = m_config->get_double("atmosphere.fausto_air_temp.d_ma"),      // K
@@ -112,9 +113,9 @@ void SeaRISEGreenland::update_impl(double my_t, double my_dt) {
 
   // initialize pointers to fields the parameterization depends on:
   const IceModelVec2S
-    &h        = *m_grid->variables().get_2d_scalar("surface_altitude"),
-    &lat_degN = *m_grid->variables().get_2d_scalar("latitude"),
-    &lon_degE = *m_grid->variables().get_2d_scalar("longitude");
+    &h        = geometry.ice_surface_elevation,
+    &lat_degN = geometry.latitude,
+    &lon_degE = geometry.longitude;
 
   if (lat_degN.metadata().has_attribute("missing_at_bootstrap")) {
     throw RuntimeError(PISM_ERROR_LOCATION, "latitude variable was missing at bootstrap;\n"

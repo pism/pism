@@ -30,6 +30,8 @@
 
 namespace pism {
 
+class Geometry;
+
 template <class Model, class Mod>
 class PLapseRates : public Mod {
 public:
@@ -57,7 +59,7 @@ protected:
     }
   }
 
-  virtual void update_impl(double my_t, double my_dt) {
+  virtual void update_impl(const Geometry &geometry, double my_t, double my_dt) {
     // a convenience
     double &t = Mod::m_t;
     double &dt = Mod::m_dt;
@@ -74,7 +76,7 @@ protected:
     dt = my_dt;
 
     // NB! Input model uses original t and dt
-    Mod::m_input_model->update(my_t, my_dt);
+    Mod::m_input_model->update(geometry, my_t, my_dt);
 
     m_reference_surface.update(t, dt);
 

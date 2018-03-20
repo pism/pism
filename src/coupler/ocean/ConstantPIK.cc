@@ -28,6 +28,7 @@
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace ocean {
@@ -41,7 +42,9 @@ PIK::~PIK() {
   // empty
 }
 
-void PIK::init_impl() {
+void PIK::init_impl(const Geometry &geometry) {
+  (void) geometry;
+
   m_log->message(2,
                  "* Initializing the constant (PIK) ocean model...\n");
 }
@@ -51,11 +54,11 @@ MaxTimestep PIK::max_timestep_impl(double t) const {
   return MaxTimestep("ocean PIK");
 }
 
-void PIK::update_impl(double t, double dt) {
+void PIK::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
 
-  const IceModelVec2S &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S &H = geometry.ice_thickness;
 
   melting_point_temperature(H, *m_shelf_base_temperature);
 

@@ -40,8 +40,8 @@ public:
   Delta_T(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
   virtual ~Delta_T();
 protected:
-  void update_impl(double t, double dt);
-  void init_impl();
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
   void temperature_impl(IceModelVec2S &result) const;
 
   std::unique_ptr<ScalarForcing> m_forcing;

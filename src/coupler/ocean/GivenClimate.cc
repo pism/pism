@@ -61,7 +61,7 @@ Given::~Given() {
   // empty
 }
 
-void Given::init_impl() {
+void Given::init_impl(const Geometry &geometry) {
 
   m_log->message(2,
              "* Initializing the ocean model reading base of the shelf temperature\n"
@@ -72,12 +72,12 @@ void Given::init_impl() {
 
   // read time-independent data right away:
   if (m_shelfbtemp->get_n_records() == 1 && m_shelfbmassflux->get_n_records() == 1) {
-    update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
+    update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }
 
-void Given::update_impl(double t, double dt) {
-  update_internal(t, dt);
+void Given::update_impl(const Geometry &geometry, double t, double dt) {
+  update_internal(geometry, t, dt);
 
   m_shelfbmassflux->average(t, dt);
   m_shelfbtemp->average(t, dt);

@@ -44,9 +44,9 @@ Delta_P::~Delta_P()
   // empty
 }
 
-void Delta_P::init_impl() {
+void Delta_P::init_impl(const Geometry &geometry) {
 
-  m_input_model->init();
+  m_input_model->init(geometry);
 
   m_log->message(2, "* Initializing precipitation forcing using scalar offsets...\n");
 

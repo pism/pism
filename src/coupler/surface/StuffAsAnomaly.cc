@@ -62,9 +62,9 @@ StuffAsAnomaly::~StuffAsAnomaly() {
   // empty
 }
 
-void StuffAsAnomaly::init_impl() {
+void StuffAsAnomaly::init_impl(const Geometry &geometry) {
   if (m_input_model != NULL) {
-    m_input_model->init();
+    m_input_model->init(geometry);
   }
 
   InputOptions opts = process_input_options(m_grid->com);
@@ -88,7 +88,7 @@ MaxTimestep StuffAsAnomaly::max_timestep_impl(double t) const {
   return MaxTimestep("surface turn_into_anomaly");
 }
 
-void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
+void StuffAsAnomaly::update_impl(const Geometry &geometry, double my_t, double my_dt) {
   if ((fabs(my_t - m_t) < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {
     return;
@@ -98,7 +98,7 @@ void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
   m_dt = my_dt;
 
   if (m_input_model != NULL) {
-    m_input_model->update(m_t, m_dt);
+    m_input_model->update(geometry, m_t, m_dt);
     m_input_model->temperature(m_temp);
     m_input_model->mass_flux(m_mass_flux);
 

@@ -30,6 +30,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/io/PIO.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace surface {
@@ -54,15 +55,21 @@ ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel
   m_ftt_mask.set(1.0); // default: applied in whole domain
   m_ftt_mask.metadata().set_output_type(PISM_BYTE);
   m_ftt_mask.metadata().set_time_independent(true);
+
+  m_ice_thickness = nullptr;
+  m_cell_type = nullptr;
 }
 
 ForceThickness::~ForceThickness() {
   // empty
 }
 
-void ForceThickness::init_impl() {
+void ForceThickness::init_impl(const Geometry &geometry) {
 
-  m_input_model->init();
+  m_ice_thickness = &geometry.ice_thickness;
+  m_cell_type     = &geometry.cell_type;
+
+  m_input_model->init(geometry);
 
   m_log->message(2,
              "* Initializing force-to-thickness mass-balance modifier...\n");
@@ -262,8 +269,8 @@ void ForceThickness::mass_flux_impl(IceModelVec2S &result) const {
 
   double ice_density = m_config->get_double("constants.ice.density");
 
-  const IceModelVec2S        &H    = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const IceModelVec2S        &H    = *m_ice_thickness;
+  const IceModelVec2CellType &mask = *m_cell_type;;
 
   IceModelVec::AccessList list{&mask, &H, &m_target_thickness, &m_ftt_mask, &result};
 

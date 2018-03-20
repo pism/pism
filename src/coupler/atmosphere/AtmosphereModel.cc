@@ -35,13 +35,13 @@ AtmosphereModel::~AtmosphereModel() {
   // empty
 }
 
-void AtmosphereModel::init() {
+void AtmosphereModel::init(const Geometry &geometry) {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-  this->init_impl();
+  this->init_impl(geometry);
 }
 
-void AtmosphereModel::update(double t, double dt) {
-  this->update_impl(t, dt);
+void AtmosphereModel::update(const Geometry &geometry, double t, double dt) {
+  this->update_impl(geometry, t, dt);
 }
 
 void AtmosphereModel::mean_precipitation(IceModelVec2S &result) const {

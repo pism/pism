@@ -128,18 +128,18 @@ void SurfaceModel::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::Atmo
   m_atmosphere = input;
 }
 
-void SurfaceModel::init() {
+void SurfaceModel::init(const Geometry &geometry) {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-  this->init_impl();
+  this->init_impl(geometry);
 }
 
-void SurfaceModel::init_impl() {
+void SurfaceModel::init_impl(const Geometry &geometry) {
   assert(m_atmosphere != NULL);
-  m_atmosphere->init();
+  m_atmosphere->init(geometry);
 }
 
-void SurfaceModel::update(double t, double dt) {
-  this->update_impl(t, dt);
+void SurfaceModel::update(const Geometry &geometry, double t, double dt) {
+  this->update_impl(geometry, t, dt);
 }
 
 //! \brief Returns mass held in the surface layer.

@@ -66,10 +66,10 @@ Cache::~Cache() {
 }
 
 
-void Cache::init_impl() {
+void Cache::init_impl(const Geometry &geometry) {
   int update_interval = m_update_interval_years;
 
-  m_input_model->init();
+  m_input_model->init(geometry);
 
   m_log->message(2,
              "* Initializing the 'caching' surface model modifier...\n");
@@ -86,7 +86,7 @@ void Cache::init_impl() {
   m_next_update_time = m_grid->ctx()->time()->current();
 }
 
-void Cache::update_impl(double t, double dt) {
+void Cache::update_impl(const Geometry &geometry, double t, double dt) {
   // ignore dt and always use 1 year long time-steps when updating
   // an input model
   (void) dt;
@@ -99,7 +99,7 @@ void Cache::update_impl(double t, double dt) {
 
     assert(update_dt > 0.0);
 
-    m_input_model->update(t, update_dt);
+    m_input_model->update(geometry, t, update_dt);
 
     m_next_update_time = m_grid->ctx()->time()->increment_date(m_next_update_time,
                                                                m_update_interval_years);

@@ -24,6 +24,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/ConfigInterface.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace ocean {
@@ -90,7 +91,7 @@ GivenTH::~GivenTH() {
   // empty
 }
 
-void GivenTH::init_impl() {
+void GivenTH::init_impl(const Geometry &geometry) {
 
   m_log->message(2,
              "* Initializing the 3eqn melting parameterization ocean model\n"
@@ -101,27 +102,27 @@ void GivenTH::init_impl() {
 
   // read time-independent data right away:
   if (m_theta_ocean->get_n_records() == 1 && m_salinity_ocean->get_n_records() == 1) {
-    update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
+    update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }
 
-void GivenTH::update_impl(double t, double dt) {
+void GivenTH::update_impl(const Geometry &geometry, double t, double dt) {
 
   // Make sure that sea water salinity and sea water potential
   // temperature fields are up to date:
-  update_internal(t, dt);
+  update_internal(geometry, t, dt);
 
   m_theta_ocean->average(t, dt);
   m_salinity_ocean->average(t, dt);
 
   Constants c(*m_config);
 
-  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S &ice_thickness = geometry.ice_thickness;
 
   IceModelVec2S &temperature = *m_shelf_base_temperature;
   IceModelVec2S &mass_flux = *m_shelf_base_mass_flux;
 
-  IceModelVec::AccessList list{ice_thickness, m_theta_ocean, m_salinity_ocean,
+  IceModelVec::AccessList list{ &ice_thickness, m_theta_ocean, m_salinity_ocean,
       &temperature, &mass_flux};
 
   for (Points p(*m_grid); p; p.next()) {
@@ -136,7 +137,7 @@ void GivenTH::update_impl(double t, double dt) {
     pointwise_update(c,
                      (*m_salinity_ocean)(i,j),
                      potential_temperature_celsius,
-                     (*ice_thickness)(i,j),
+                     ice_thickness(i,j),
                      &shelf_base_temp_celsius,
                      &shelf_base_massflux);
 

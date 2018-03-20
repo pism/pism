@@ -32,8 +32,8 @@ public:
   Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
   virtual ~Anomaly();
 protected:
-  virtual void init_impl();
-  virtual void update_impl(double my_t, double my_dt);
+  virtual void init_impl(const Geometry &geometry);
+  virtual void update_impl(const Geometry &geometry, double my_t, double my_dt);
 
   virtual void mass_flux_impl(IceModelVec2S &result) const;
   virtual void temperature_impl(IceModelVec2S &result) const;

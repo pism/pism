@@ -24,6 +24,7 @@
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace ocean {
@@ -37,18 +38,18 @@ Constant::~Constant() {
   // empty
 }
 
-void Constant::update_impl(double t, double dt) {
+void Constant::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
 
-  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S &ice_thickness = geometry.ice_thickness;
 
   const double
     melt_rate   = m_config->get_double("ocean.constant.melt_rate", "m second-1"),
     ice_density = m_config->get_double("constants.ice.density"),
     mass_flux   = melt_rate * ice_density;
 
-  melting_point_temperature(*ice_thickness, *m_shelf_base_temperature);
+  melting_point_temperature(ice_thickness, *m_shelf_base_temperature);
 
   m_shelf_base_mass_flux->set(mass_flux);
 
@@ -57,7 +58,8 @@ void Constant::update_impl(double t, double dt) {
   m_sea_level_elevation->set(0.0);
 }
 
-void Constant::init_impl() {
+void Constant::init_impl(const Geometry &geometry) {
+  (void) geometry;
 
   if (not m_config->get_boolean("ocean.always_grounded")) {
     m_log->message(2, "* Initializing the constant ocean model...\n");

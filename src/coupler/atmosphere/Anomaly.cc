@@ -59,8 +59,8 @@ Anomaly::~Anomaly()
   // empty
 }
 
-void Anomaly::init_impl() {
-  m_input_model->init();
+void Anomaly::init_impl(const Geometry &geometry) {
+  m_input_model->init(geometry);
 
   m_log->message(2,
              "* Initializing the -atmosphere ...,anomaly code...\n");
@@ -73,8 +73,8 @@ void Anomaly::init_impl() {
   m_precipitation_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
 }
 
-void Anomaly::update_impl(double my_t, double my_dt) {
-  update_internal(my_t, my_dt);
+void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
+  update_internal(geometry, t, dt);
 
   m_precipitation_anomaly->average(m_t, m_dt);
   m_air_temp_anomaly->average(m_t, m_dt);

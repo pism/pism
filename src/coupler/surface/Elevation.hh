@@ -30,9 +30,9 @@ class Elevation : public SurfaceModel {
 public:
   Elevation(IceGrid::ConstPtr g);
 protected:
-  virtual void init_impl();
+  virtual void init_impl(const Geometry &geometry);
   virtual void attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input);
-  virtual void update_impl(double my_t, double my_dt);
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
 
   virtual void mass_flux_impl(IceModelVec2S &result) const;
   virtual void temperature_impl(IceModelVec2S &result) const;
@@ -40,6 +40,8 @@ protected:
 protected:
   double m_T_min, m_T_max, m_z_T_min, m_z_T_max;
   double m_M_min, m_M_max, m_M_limit_min, m_M_limit_max, m_z_M_min, m_z_ELA, m_z_M_max;
+
+  const IceModelVec2S *m_surface;
 };
 
 } // end of namespace surface

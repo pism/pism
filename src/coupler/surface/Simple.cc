@@ -35,9 +35,9 @@ Simple::Simple(IceGrid::ConstPtr g)
   : SurfaceModel(g) {
 }
 
-void Simple::init_impl() {
+void Simple::init_impl(const Geometry &geometry) {
   assert(m_atmosphere != NULL);
-  m_atmosphere->init();
+  m_atmosphere->init(geometry);
 
   m_log->message(2,
              "* Initializing the simplest PISM surface (snow) processes model Simple.\n"
@@ -55,11 +55,11 @@ MaxTimestep Simple::max_timestep_impl(double t) const {
   }
 }
 
-void Simple::update_impl(double my_t, double my_dt) {
-  m_t = my_t;
-  m_dt = my_dt;
+void Simple::update_impl(const Geometry &geometry, double t, double dt) {
+  m_t = t;
+  m_dt = dt;
   if (m_atmosphere) {
-    m_atmosphere->update(my_t, my_dt);
+    m_atmosphere->update(geometry, t, dt);
   }
 }
 

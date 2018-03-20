@@ -64,7 +64,8 @@ YearlyCycle::~YearlyCycle() {
 }
 
 //! Reads in the precipitation data from the input file.
-void YearlyCycle::init_impl() {
+void YearlyCycle::init_impl(const Geometry &geometry) {
+  (void) geometry;
 
   InputOptions opts = process_input_options(m_grid->com);
   init_internal(opts.filename, opts.type == INIT_BOOTSTRAP, opts.record);

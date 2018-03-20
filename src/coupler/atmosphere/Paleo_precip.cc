@@ -44,9 +44,9 @@ PaleoPrecip::~PaleoPrecip()
   // empty
 }
 
-void PaleoPrecip::init_impl() {
+void PaleoPrecip::init_impl(const Geometry &geometry) {
 
-  m_input_model->init();
+  m_input_model->init(geometry);
 
   m_log->message(2,
              "* Initializing paleo-precipitation correction using temperature offsets...\n");

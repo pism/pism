@@ -66,7 +66,9 @@ void IBSurfaceModel::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::At
   (void) input;
 }
 
-void IBSurfaceModel::init_impl() {
+void IBSurfaceModel::init_impl(const Geometry &geometry) {
+  (void) geometry;
+
   m_t = m_dt = GSL_NAN; // every re-init restarts the clock
 
   m_log->message(2, "* Initializing the IceBin interface surface model IBSurfaceModel.\n"
@@ -90,7 +92,9 @@ MaxTimestep IBSurfaceModel::max_timestep_impl(double t) const {
   return MaxTimestep("surface icebin");
 }
 
-void IBSurfaceModel::update_impl(double my_t, double my_dt) {
+void IBSurfaceModel::update_impl(const Geometry &geometry, double my_t, double my_dt) {
+  (void) geometry;
+
   if ((fabs(my_t - m_t) < 1e-12) && (fabs(my_dt - m_dt) < 1e-12)) {
     return;
   }

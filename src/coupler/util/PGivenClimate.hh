@@ -30,6 +30,8 @@
 
 namespace pism {
 
+class Geometry;
+
 template <class Model, class Input>
 class PGivenClimate : public Model
 {
@@ -137,7 +139,7 @@ protected:
     nc.close();
   }
 
-  virtual void update_internal(double my_t, double my_dt)
+  virtual void update_internal(const Geometry &geometry, double my_t, double my_dt)
   {
     // "Periodize" the climate:
     my_t = Model::m_grid->ctx()->time()->mod(my_t - m_bc_reference_time, m_bc_period);
@@ -151,7 +153,7 @@ protected:
     Model::m_dt = my_dt;
 
     if (Model::m_input_model != NULL) {
-      Model::m_input_model->update(Model::m_t, Model::m_dt);
+      Model::m_input_model->update(geometry, Model::m_t, Model::m_dt);
     }
 
     for (auto f : m_fields) {

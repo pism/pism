@@ -80,8 +80,8 @@ void InitializationHelper::attach_atmosphere_model_impl(std::shared_ptr<atmosphe
   m_input_model->attach_atmosphere_model(in);
 }
 
-void InitializationHelper::init_impl() {
-  m_input_model->init();
+void InitializationHelper::init_impl(const Geometry &geometry) {
+  m_input_model->init(geometry);
 
   InputOptions opts = process_input_options(m_grid->com);
 
@@ -97,7 +97,7 @@ void InitializationHelper::init_impl() {
   } else {
     m_log->message(2, "* Performing a 'fake' surface model time-step for bootstrapping...\n");
 
-    init_step(this, *m_grid->ctx()->time());
+    init_step(this, geometry, *m_grid->ctx()->time());
   }
 
   // Support regridding. This is needed to ensure that initialization using "-i" is equivalent to
@@ -107,9 +107,9 @@ void InitializationHelper::init_impl() {
   }
 }
 
-void InitializationHelper::update_impl(double t, double dt) {
+void InitializationHelper::update_impl(const Geometry &geometry, double t, double dt) {
   // update the input model
-  SurfaceModifier::update_impl(t, dt);
+  SurfaceModifier::update_impl(geometry, t, dt);
 
   // store outputs of the input model
   m_input_model->mass_flux(m_ice_surface_mass_flux);

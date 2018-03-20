@@ -24,6 +24,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace surface {
@@ -53,7 +54,9 @@ void PIK::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereMod
   (void) input;
 }
 
-void PIK::init_impl() {
+void PIK::init_impl(const Geometry &geometry) {
+  (void) geometry;
+
   m_log->message(2,
                  "* Initializing the constant-in-time surface processes model PIK.\n"
                  "  It reads surface mass balance directly from the file and holds it constant.\n"
@@ -82,7 +85,7 @@ MaxTimestep PIK::max_timestep_impl(double t) const {
   return MaxTimestep("surface PIK");
 }
 
-void PIK::update_impl(double t, double dt)
+void PIK::update_impl(const Geometry &geometry, double t, double dt)
 {
   if ((fabs(t - m_t) < 1e-12) &&
       (fabs(dt - m_dt) < 1e-12)) {
@@ -93,8 +96,8 @@ void PIK::update_impl(double t, double dt)
   m_dt = dt;
 
   const IceModelVec2S
-    &usurf = *m_grid->variables().get_2d_scalar("surface_altitude"),
-    &lat   = *m_grid->variables().get_2d_scalar("latitude");
+    &usurf = geometry.ice_surface_elevation,
+    &lat   = geometry.latitude;
 
   IceModelVec::AccessList list{&m_ice_surface_temp, &usurf, &lat};
 

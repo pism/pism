@@ -39,17 +39,17 @@ Delta_SL::~Delta_SL() {
   // empty
 }
 
-void Delta_SL::init_impl() {
+void Delta_SL::init_impl(const Geometry &geometry) {
 
-  m_input_model->init();
+  m_input_model->init(geometry);
 
   m_log->message(2, "* Initializing sea level forcing...\n");
 
   m_forcing->init();
 }
 
-void Delta_SL::update_impl(double t, double dt) {
-  m_input_model->update(t, dt);
+void Delta_SL::update_impl(const Geometry &geometry, double t, double dt) {
+  m_input_model->update(geometry, t, dt);
 
   m_forcing->update(t, dt);
 

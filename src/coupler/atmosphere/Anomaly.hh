@@ -33,8 +33,8 @@ public:
   virtual ~Anomaly();
 
 protected:
-  virtual void init_impl();
-  virtual void update_impl(double my_t, double my_dt);
+  virtual void init_impl(const Geometry &geometry);
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
 
   virtual void mean_precipitation_impl(IceModelVec2S &result) const;
   virtual void mean_annual_temp_impl(IceModelVec2S &result) const;

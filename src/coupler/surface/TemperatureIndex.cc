@@ -33,6 +33,7 @@
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace surface {
@@ -171,10 +172,10 @@ TemperatureIndex::~TemperatureIndex() {
   // empty
 }
 
-void TemperatureIndex::init_impl() {
+void TemperatureIndex::init_impl(const Geometry &geometry) {
 
   // call the default implementation (not the interface method init())
-  SurfaceModel::init_impl();
+  SurfaceModel::init_impl(geometry);
 
   // report user's modeling choices
   {
@@ -288,7 +289,7 @@ double TemperatureIndex::compute_next_balance_year_start(double time) {
   return m_grid->ctx()->time()->increment_date(balance_year_start, 1);
 }
 
-void TemperatureIndex::update_impl(double t, double dt) {
+void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt) {
 
   if ((fabs(t - m_t) < 1e-12) &&
       (fabs(dt - m_dt) < 1e-12)) {
@@ -304,7 +305,7 @@ void TemperatureIndex::update_impl(double t, double dt) {
   m_dt = dt;
 
   // update to ensure that temperature and precipitation time series are correct:
-  m_atmosphere->update(t, dt);
+  m_atmosphere->update(geometry, t, dt);
 
   // set up air temperature and precipitation time series
   int N = m_mbscheme->get_timeseries_length(dt);
@@ -321,8 +322,8 @@ void TemperatureIndex::update_impl(double t, double dt) {
     m_air_temp_sd.init_interpolation(ts);
   }
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
-  const IceModelVec2S &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2CellType &mask = geometry.cell_type;
+  const IceModelVec2S        &H    = geometry.ice_thickness;
 
   IceModelVec::AccessList list{&mask, &H, &m_air_temp_sd, &m_climatic_mass_balance,
       &m_firn_depth, &m_snow_depth, &m_accumulation, &m_melt, &m_runoff};
@@ -331,17 +332,17 @@ void TemperatureIndex::update_impl(double t, double dt) {
     sigmalapserate = m_config->get_double("surface.pdd.std_dev_lapse_lat_rate"),
     sigmabaselat   = m_config->get_double("surface.pdd.std_dev_lapse_lat_base");
 
-  const IceModelVec2S *latitude = NULL;
+  const IceModelVec2S *latitude = nullptr;
   if (aschwanden or fausto_greve or sigmalapserate != 0.0) {
-    latitude = m_grid->variables().get_2d_scalar("latitude");
+    latitude = &geometry.latitude;
 
-    list.add({latitude});
+    list.add(*latitude);
   }
 
   if (fausto_greve) {
     const IceModelVec2S
-      *longitude        = m_grid->variables().get_2d_scalar("longitude"),
-      *surface_altitude = m_grid->variables().get_2d_scalar("surface_altitude");
+      *longitude        = &geometry.latitude,
+      *surface_altitude = &geometry.ice_surface_elevation;
 
     fausto_greve->update_temp_mj(*surface_altitude, *latitude, *longitude);
   }

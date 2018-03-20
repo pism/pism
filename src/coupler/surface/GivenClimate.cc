@@ -68,7 +68,7 @@ void Given::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereM
   (void) input;
 }
 
-void Given::init_impl() {
+void Given::init_impl(const Geometry &geometry) {
 
   m_log->message(2,
              "* Initializing the surface model reading temperature at the top of the ice\n"
@@ -79,12 +79,12 @@ void Given::init_impl() {
 
   // read time-independent data right away:
   if (m_ice_surface_temp->get_n_records() == 1 && m_climatic_mass_balance->get_n_records() == 1) {
-    update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
+    update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }
 
-void Given::update_impl(double my_t, double my_dt) {
-  update_internal(my_t, my_dt);
+void Given::update_impl(const Geometry &geometry, double t, double dt) {
+  update_internal(geometry, t, dt);
 
   m_climatic_mass_balance->average(m_t, m_dt);
   m_ice_surface_temp->average(m_t, m_dt);

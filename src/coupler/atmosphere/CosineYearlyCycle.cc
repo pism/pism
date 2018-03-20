@@ -40,7 +40,8 @@ CosineYearlyCycle::~CosineYearlyCycle() {
   }
 }
 
-void CosineYearlyCycle::init_impl() {
+void CosineYearlyCycle::init_impl(const Geometry &geometry) {
+  (void) geometry;
 
   m_log->message(2,
              "* Initializing the 'cosine yearly cycle' atmosphere model (-atmosphere yearly_cycle)...\n");
@@ -97,9 +98,11 @@ MaxTimestep CosineYearlyCycle::max_timestep_impl(double t) const {
   return MaxTimestep("atmosphere cosine_yearly_cycle");
 }
 
-void CosineYearlyCycle::update_impl(double my_t, double my_dt) {
-  m_t = my_t;
-  m_dt = my_dt;
+void CosineYearlyCycle::update_impl(const Geometry &geometry, double t, double dt) {
+  (void) geometry;
+
+  m_t = t;
+  m_dt = dt;
 }
 
 void CosineYearlyCycle::init_timeseries_impl(const std::vector<double> &ts) const {

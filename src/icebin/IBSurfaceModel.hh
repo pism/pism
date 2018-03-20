@@ -38,8 +38,8 @@ public:
   IBSurfaceModel(IceGrid::ConstPtr g);
 
 protected:
-  virtual void init_impl();
-  virtual void update_impl(double my_t, double my_dt);
+  virtual void init_impl(const Geometry &geometry);
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
   virtual void attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input);
 
   virtual void define_model_state_impl(const PIO &output) const;

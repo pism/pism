@@ -32,7 +32,7 @@ public:
   virtual ~LapseRates();
 
 protected:
-  virtual void init_impl();
+  virtual void init_impl(const Geometry &geometry);
 
   virtual void mean_precipitation_impl(IceModelVec2S &result) const;
   virtual void mean_annual_temp_impl(IceModelVec2S &result) const;
