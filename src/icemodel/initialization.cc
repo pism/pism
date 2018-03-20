@@ -169,17 +169,17 @@ void IceModel::model_state_setup() {
     regrid();
   }
 
-  // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
-  // which may need ice thickness to bootstrap.
-  {
-    m_ocean->init();
-  }
-
   // Initialize a bed deformation model. This may use ice thickness initialized above.
   if (m_beddef) {
     m_beddef->init(input);
     m_grid->variables().add(m_beddef->bed_elevation());
     m_grid->variables().add(m_beddef->uplift());
+  }
+
+  // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
+  // which may need ice thickness to bootstrap.
+  {
+    m_ocean->init();
   }
 
   // Now ice thickness, bed elevation, and sea level are available, so we can compute the ice
