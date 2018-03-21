@@ -20,13 +20,14 @@
 #ifndef _PSCACHE_H_
 #define _PSCACHE_H_
 
-#include "Modifier.hh"
+#include "pism/coupler/SurfaceModel.hh"
+
 #include "pism/util/iceModelVec.hh"
 
 namespace pism {
 namespace surface {
 
-class Cache : public SurfaceModifier {
+class Cache : public SurfaceModel {
 public:
   Cache(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
   virtual ~Cache();
@@ -34,19 +35,20 @@ protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual void layer_thickness_impl(IceModelVec2S &result) const;
-  virtual void layer_mass_impl(IceModelVec2S &result) const;
-  virtual void mass_flux_impl(IceModelVec2S &result) const;
-  virtual void temperature_impl(IceModelVec2S &result) const;
-  virtual void liquid_water_fraction_impl(IceModelVec2S &result) const;
+  const IceModelVec2S &layer_mass_impl() const;
+  const IceModelVec2S &liquid_water_fraction_impl() const;
+  const IceModelVec2S &temperature_impl() const;
+  const IceModelVec2S &mass_flux_impl() const;
+  const IceModelVec2S &layer_thickness_impl() const;
 
   virtual MaxTimestep max_timestep_impl(double t) const;
 protected:
   IceModelVec2S m_mass_flux;
   IceModelVec2S m_temperature;
   IceModelVec2S m_liquid_water_fraction;
-  IceModelVec2S m_surface_layer_mass;
-  IceModelVec2S m_surface_layer_thickness;
+  IceModelVec2S m_layer_mass;
+  IceModelVec2S m_layer_thickness;
+
   double m_next_update_time;
   unsigned int m_update_interval_years;
 };
