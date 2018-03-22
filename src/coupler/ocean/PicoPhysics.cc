@@ -98,7 +98,7 @@ TocBox1 PicoPhysics::Toc_box1(double area, double T_star, double Soc_box0, doubl
     g1 = area * m_gamma_T,
     s1 = Soc_box0 / (m_nu * m_lambda),
     p  = p_coeff(g1, s1),
-    q  = q_coeff(g1, s1, T_star);
+    q  = p * T_star;
 
   // This can only happen if T_star > 0.25*p, in particular T_star > 0 which can only
   // happen for values of Toc_box0 close to the local pressure melting point
@@ -145,7 +145,7 @@ double PicoPhysics::theta_pm(double salinity, double pressure) const {
 //! equation 5 in the PICO paper.
 //! calculate pressure melting point from in-situ temperature
 double PicoPhysics::T_pm(double salinity, double pressure) const {
-  // using coefficients for potential temperature
+  // using coefficients for in-situ temperature
   return m_a_in_situ * salinity + m_b_in_situ - m_c_in_situ * pressure;
 }
 
@@ -189,14 +189,6 @@ double PicoPhysics::p_coeff(double g1, double s1) const {
   // so output is positive if beta*s1 > alpha
   // which is shown in the text following equation A12
   return g1 / (m_overturning_coeff * m_rho_star * (m_beta * s1 - m_alpha));
-}
-
-//! calculate q coefficent for solving the quadratic temperature equation
-//! trough the p-q formula. See equation A12 in the PICO paper.
-//! is only used once in Toc_box1(...)
-double PicoPhysics::q_coeff(double g1, double s1, double T_star) const {
-  // in K / (1/K) = K^2
-  return (g1 * T_star) / (m_overturning_coeff * m_rho_star * (m_beta * s1 - m_alpha));
 }
 
 double PicoPhysics::gamma_T() const {
