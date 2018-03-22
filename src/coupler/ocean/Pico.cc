@@ -134,7 +134,7 @@ Pico::Pico(IceGrid::ConstPtr g)
   m_basin_mask.set_attrs("climate_forcing", "mask determines basins for PICO", "", "");
 
   // computed salinity in ocean boxes
-  m_Soc.create(m_grid, "pico_Soc", WITHOUT_GHOSTS);
+  m_Soc.create(m_grid, "pico_salinity", WITHOUT_GHOSTS);
   m_Soc.set_attrs("model_state", "ocean salinity field", "g/kg", "ocean salinity field");
   m_Soc.metadata().set_double("_FillValue", 0.0);
 
@@ -144,7 +144,7 @@ Pico::Pico(IceGrid::ConstPtr g)
   m_Soc_box0.metadata().set_double("_FillValue", 0.0);
 
   // computed temperature in ocean boxes
-  m_Toc.create(m_grid, "pico_Toc", WITHOUT_GHOSTS);
+  m_Toc.create(m_grid, "pico_temperature", WITHOUT_GHOSTS);
   m_Toc.set_attrs("model_state", "ocean temperature field", "K", "ocean temperature field");
   m_Toc.metadata().set_double("_FillValue", 0.0);
 

@@ -149,7 +149,7 @@ PicoOld::PicoOld(IceGrid::ConstPtr g)
   shelf_mask.set_attrs("model_state", "mask for individual ice shelves","", "");
 
   // mask to identify the ocean boxes
-  ocean_box_mask.create(m_grid, "pico_ocean_box_mask", WITH_GHOSTS);
+  ocean_box_mask.create(m_grid, "pico_box_mask", WITH_GHOSTS);
   ocean_box_mask.set_attrs("model_state", "mask displaying ocean box model grid","", "");
 
   // mask to identify the ice rises
@@ -157,7 +157,7 @@ PicoOld::PicoOld(IceGrid::ConstPtr g)
   icerise_mask.set_attrs("model_state", "mask displaying ice rises","", "");
 
   // mask displaying continental shelf - region where mean salinity and ocean temperature is calculated
-  ocean_contshelf_mask.create(m_grid, "pico_ocean_contshelf_mask", WITH_GHOSTS);
+  ocean_contshelf_mask.create(m_grid, "pico_contshelf_mask", WITH_GHOSTS);
   ocean_contshelf_mask.set_attrs("model_state", "mask displaying ocean region for parameter input","", "");
 
   // mask displaying open ocean - ice-free regions below sea-level except 'holes' in ice shelves
@@ -177,7 +177,7 @@ PicoOld::PicoOld(IceGrid::ConstPtr g)
   DistIF.set_attrs("model_state", "mask displaying distance to ice shelf calving front","", "");
 
   // computed salinity in ocean boxes
-  Soc.create(m_grid, "pico_Soc", WITHOUT_GHOSTS);
+  Soc.create(m_grid, "pico_salinity", WITHOUT_GHOSTS);
   Soc.set_attrs("model_state", "ocean salinity field","", "ocean salinity field");  //NOTE unit=psu
 
   // salinity input for box 1
@@ -185,7 +185,7 @@ PicoOld::PicoOld(IceGrid::ConstPtr g)
   Soc_box0.set_attrs("model_state", "ocean base salinity field","", "ocean base salinity field");  //NOTE unit=psu
 
   // computed temperature in ocean boxes
-  Toc.create(m_grid, "pico_Toc", WITHOUT_GHOSTS);
+  Toc.create(m_grid, "pico_temperature", WITHOUT_GHOSTS);
   Toc.set_attrs("model_state", "ocean temperature field","K", "ocean temperature field");
 
   // temperature input for box 1
@@ -200,14 +200,14 @@ PicoOld::PicoOld(IceGrid::ConstPtr g)
   overturning.create(m_grid, "pico_overturning", WITHOUT_GHOSTS);
   overturning.set_attrs("model_state", "cavity overturning","m^3 s-1", "cavity overturning"); // no CF standard_name?
 
-  basalmeltrate_shelf.create(m_grid, "pico_bmelt_shelf", WITHOUT_GHOSTS);
+  basalmeltrate_shelf.create(m_grid, "pico_basal_melt_rate", WITHOUT_GHOSTS);
   basalmeltrate_shelf.set_attrs("model_state", "PICO sub-shelf melt rate", "m/s",
                                 "PICO sub-shelf melt rate");
   basalmeltrate_shelf.metadata().set_string("glaciological_units", "m year-1");
   //basalmeltrate_shelf.write_in_glaciological_units = true;
 
   // TODO: this may be initialized to NA, it should only have valid values below ice shelves.
-  T_pressure_melting.create(m_grid, "pico_T_pressure_melting", WITHOUT_GHOSTS);
+  T_pressure_melting.create(m_grid, "pico_basal_temperature", WITHOUT_GHOSTS);
   T_pressure_melting.set_attrs("model_state", "pressure melting temperature at ice shelf base",
                         "Kelvin", "pressure melting temperature at ice shelf base"); // no CF standard_name? // This is the in-situ pressure melting point
 
@@ -966,12 +966,12 @@ std::map<std::string, Diagnostic::Ptr> PicoOld::diagnostics_impl() const {
   result["pico_overturning"] = Diagnostic::wrap(overturning);
   result["pico_salinity_box0"] = Diagnostic::wrap(Soc_box0);
   result["pico_temperature_box0"] = Diagnostic::wrap(Toc_box0); 
-  result["pico_ocean_box_mask"] = Diagnostic::wrap(ocean_box_mask);  
+  result["pico_box_mask"] = Diagnostic::wrap(ocean_box_mask);
   result["pico_shelf_mask"] = Diagnostic::wrap(shelf_mask);
 
-  result["pico_bmelt_shelf"] = Diagnostic::wrap(basalmeltrate_shelf);
+  result["pico_basal_melt_rate"] = Diagnostic::wrap(basalmeltrate_shelf);
   result["pico_icerise_mask"] = Diagnostic::wrap(icerise_mask);
-  result["pico_ocean_contshelf_mask"] = Diagnostic::wrap(ocean_contshelf_mask);
+  result["pico_contshelf_mask"] = Diagnostic::wrap(ocean_contshelf_mask);
   result["pico_ocean_mask"] = Diagnostic::wrap(ocean_mask);
   result["pico_lake_mask"] = Diagnostic::wrap(lake_mask);
   result["pico_dist_grounding_line"] = Diagnostic::wrap(DistGL);
@@ -979,7 +979,7 @@ std::map<std::string, Diagnostic::Ptr> PicoOld::diagnostics_impl() const {
   result["pico_salinity"] = Diagnostic::wrap(Soc);
   result["pico_temperature"] = Diagnostic::wrap(Toc);
   result["pico_T_star"] = Diagnostic::wrap(T_star);
-  result["pico_T_pressure_melting"] = Diagnostic::wrap(T_pressure_melting);
+  result["pico_basal_temperature"] = Diagnostic::wrap(T_pressure_melting);
 
   return result;
 }
