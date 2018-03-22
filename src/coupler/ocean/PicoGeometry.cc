@@ -34,7 +34,7 @@ PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
       m_ice_shelves(grid, "pico_shelf_mask", WITHOUT_GHOSTS),
       m_distance_gl(grid, "pico_distance_gl", WITH_GHOSTS),
       m_distance_cf(grid, "pico_distance_cf", WITH_GHOSTS),
-      m_ocean_mask(grid, "pico_ocean_mask", WITHOUT_GHOSTS),
+      m_ocean_mask(grid, "pico_ocean_mask", WITH_GHOSTS),
       m_lake_mask(grid, "pico_lake_mask", WITHOUT_GHOSTS),
       m_ice_rises(grid, "ice_rises", WITH_GHOSTS),
       m_tmp(grid, "temporary_storage", WITHOUT_GHOSTS) {
@@ -85,6 +85,7 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2
   // these two could be optimized by trying to reduce the number of times we update ghosts
   {
     m_ice_rises.update_ghosts();
+    m_ocean_mask.update_ghosts();
 
     compute_distances_gl(m_ocean_mask, m_ice_rises, exclude_ice_rises, m_distance_gl);
 
