@@ -405,8 +405,10 @@ void PicoGeometry::compute_ocean_mask(const IceModelVec2CellType &cell_type, Ice
   result.copy_from(m_tmp);
 }
 
-void PicoGeometry::compute_distances_gl(const IceModelVec2Int &ocean_mask, const IceModelVec2Int &ice_rises,
-                                        bool exclude_ice_rises, IceModelVec2Int &result) {
+void PicoGeometry::compute_distances_gl(const IceModelVec2Int &ocean_mask,
+                                        const IceModelVec2Int &ice_rises,
+                                        bool exclude_ice_rises,
+                                        IceModelVec2Int &result) {
 
   IceModelVec::AccessList list{ &ice_rises, &ocean_mask, &result };
 
@@ -416,65 +418,79 @@ void PicoGeometry::compute_distances_gl(const IceModelVec2Int &ocean_mask, const
   // next to the grounding line, Ice holes within the shelf are treated like ice shelf
   // cells, if exclude_ice_rises is set then ice rises are also treated as ice shelf cells.
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (ice_rises.as_int(i, j) == FLOATING or
-        ocean_mask.as_int(i, j) == 1 or
-        (exclude_ice_rises and ice_rises.as_int(i, j) == RISE)) {
-      // if this is an ice shelf cell (or an ice rise) or a hole in an ice shelf
+      if (ice_rises.as_int(i, j) == FLOATING or
+          ocean_mask.as_int(i, j) == 1 or
+          (exclude_ice_rises and ice_rises.as_int(i, j) == RISE)) {
+        // if this is an ice shelf cell (or an ice rise) or a hole in an ice shelf
 
-      // label the shelf cells adjacent to the grounding line with 1
-      bool neighbor_to_land =
-        (ice_rises(i, j + 1) == CONTINENTAL or
-         ice_rises(i, j - 1) == CONTINENTAL or
-         ice_rises(i + 1, j) == CONTINENTAL or
-         ice_rises(i - 1, j) == CONTINENTAL or
-         ice_rises(i + 1, j + 1) == CONTINENTAL or
-         ice_rises(i + 1, j - 1) == CONTINENTAL or
-         ice_rises(i - 1, j + 1) == CONTINENTAL or
-         ice_rises(i - 1, j - 1) == CONTINENTAL);
+        // label the shelf cells adjacent to the grounding line with 1
+        bool neighbor_to_land =
+          (ice_rises(i, j + 1) == CONTINENTAL or
+           ice_rises(i, j - 1) == CONTINENTAL or
+           ice_rises(i + 1, j) == CONTINENTAL or
+           ice_rises(i - 1, j) == CONTINENTAL or
+           ice_rises(i + 1, j + 1) == CONTINENTAL or
+           ice_rises(i + 1, j - 1) == CONTINENTAL or
+           ice_rises(i - 1, j + 1) == CONTINENTAL or
+           ice_rises(i - 1, j - 1) == CONTINENTAL);
 
-      if (neighbor_to_land) {
-        // i.e. there is a grounded neighboring cell (which is not an ice rise!)
-        result(i, j) = 1;
-      } else {
-        result(i, j) = 0;
+        if (neighbor_to_land) {
+          // i.e. there is a grounded neighboring cell (which is not an ice rise!)
+          result(i, j) = 1;
+        } else {
+          result(i, j) = 0;
+        }
       }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   result.update_ghosts();
 
   eikonal_equation(result);
 }
 
-void PicoGeometry::compute_distances_cf(const IceModelVec2Int &ocean_mask, const IceModelVec2Int &ice_rises,
-                                        bool exclude_ice_rises, IceModelVec2Int &result) {
+void PicoGeometry::compute_distances_cf(const IceModelVec2Int &ocean_mask,
+                                        const IceModelVec2Int &ice_rises,
+                                        bool exclude_ice_rises,
+                                        IceModelVec2Int &result) {
 
   IceModelVec::AccessList list{ &ice_rises, &ocean_mask, &result };
 
   result.set(-1);
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (ice_rises.as_int(i, j) == FLOATING or
-        ocean_mask.as_int(i, j) == 1 or
-        (exclude_ice_rises and ice_rises.as_int(i, j) == RISE)) {
-      // if this is an ice shelf cell (or an ice rise) or a hole in an ice shelf
+      if (ice_rises.as_int(i, j) == FLOATING or
+          ocean_mask.as_int(i, j) == 1 or
+          (exclude_ice_rises and ice_rises.as_int(i, j) == RISE)) {
+        // if this is an ice shelf cell (or an ice rise) or a hole in an ice shelf
 
-      // label the shelf cells adjacent to the ice front with 1
-      auto M = ocean_mask.int_star(i, j);
+        // label the shelf cells adjacent to the ice front with 1
+        auto M = ocean_mask.int_star(i, j);
 
-      if (M.n == 2 or M.e == 2 or M.s == 2 or M.w == 2) {
-        // i.e. there is a neighboring open ocean cell
-        result(i, j) = 1;
-      } else {
-        result(i, j) = 0;
+        if (M.n == 2 or M.e == 2 or M.s == 2 or M.w == 2) {
+          // i.e. there is a neighboring open ocean cell
+          result(i, j) = 1;
+        } else {
+          result(i, j) = 0;
+        }
       }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
   result.update_ghosts();
 
