@@ -25,7 +25,7 @@ namespace surface {
 /// -surface ...,delta_T (scalar forcing of ice surface temperatures)
 
 Delta_T::Delta_T(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
-  : SurfaceModifier(g, in) {
+  : SurfaceModel(g, in) {
 
   m_forcing.reset(new ScalarForcing(g->ctx(),
                                     "-surface_delta_T",
@@ -33,6 +33,8 @@ Delta_T::Delta_T(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
                                     "Kelvin",
                                     "Kelvin",
                                     "ice-surface temperature offsets"));
+
+  m_temperature = allocate_temperature(g);
 }
 
 Delta_T::~Delta_T() {
@@ -51,11 +53,13 @@ void Delta_T::init_impl(const Geometry &geometry) {
 void Delta_T::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
   m_forcing->update(t, dt);
+
+  m_temperature->copy_from(m_input_model->temperature());
+  m_temperature->shift(m_forcing->value());
 }
 
-void Delta_T::temperature_impl(IceModelVec2S &result) const {
-  m_input_model->temperature(result);
-  result.shift(m_forcing->value());
+const IceModelVec2S &Delta_T::temperature_impl() const {
+  return *m_temperature;
 }
 
 } // end of namespace surface

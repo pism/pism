@@ -49,28 +49,23 @@ void IceCompModel::energy_step() {
 
   energy::EnergyModelStats stats;
 
-  IceModelVec2S &ice_surface_temperature = m_work2d[0];
   IceModelVec2S &bedtoptemp              = m_work2d[1];
   IceModelVec2S &basal_enthalpy          = m_work2d[2];
   m_energy_model->enthalpy().getHorSlice(basal_enthalpy, 0.0);
-  m_surface->temperature(ice_surface_temperature);
+
   bedrock_surface_temperature(m_geometry.sea_level_elevation,
                               m_geometry.cell_type,
                               m_geometry.bed_elevation,
                               m_geometry.ice_thickness,
                               basal_enthalpy,
-                              ice_surface_temperature,
+                              m_surface->temperature(),
                               bedtoptemp);
 
   m_btu->update(bedtoptemp, t_TempAge, dt_TempAge);
 
   energy::Inputs inputs;
   {
-    IceModelVec2S &ice_surface_liquid_water_fraction = m_work2d[1];
-    IceModelVec2S &till_water_thickness              = m_work2d[2];
-
-    m_surface->temperature(ice_surface_temperature);
-    m_surface->liquid_water_fraction(ice_surface_liquid_water_fraction);
+    IceModelVec2S &till_water_thickness = m_work2d[2];
 
     m_subglacial_hydrology->till_water_thickness(till_water_thickness);
 
@@ -79,9 +74,9 @@ void IceCompModel::energy_step() {
     inputs.cell_type                = &m_geometry.cell_type;              // geometry
     inputs.ice_thickness            = &m_geometry.ice_thickness;          // geometry
     inputs.shelf_base_temp          = &m_ocean->shelf_base_temperature(); // ocean model
-    inputs.surface_liquid_fraction  = &ice_surface_liquid_water_fraction; // surface model
-    inputs.surface_temp             = &ice_surface_temperature;           // surface model
-    inputs.till_water_thickness     = &till_water_thickness;              // hydrology model
+    inputs.surface_liquid_fraction  = &m_surface->liquid_water_fraction(); // surface model
+    inputs.surface_temp             = &m_surface->temperature(); // surface model
+    inputs.till_water_thickness     = &till_water_thickness;     // hydrology model
 
     inputs.strain_heating3          = &m_stress_balance->volumetric_strain_heating();
     inputs.u3                       = &m_stress_balance->velocity_u();

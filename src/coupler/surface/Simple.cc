@@ -31,8 +31,11 @@ namespace pism {
 namespace surface {
 
 ///// Simple PISM surface model.
-Simple::Simple(IceGrid::ConstPtr g)
-  : SurfaceModel(g) {
+Simple::Simple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
+  : SurfaceModel(g, atmosphere) {
+
+  m_temperature = allocate_temperature(g);
+  m_mass_flux = allocate_mass_flux(g);
 }
 
 void Simple::init_impl(const Geometry &geometry) {
@@ -61,14 +64,17 @@ void Simple::update_impl(const Geometry &geometry, double t, double dt) {
   if (m_atmosphere) {
     m_atmosphere->update(geometry, t, dt);
   }
+
+  m_atmosphere->mean_precipitation(*m_mass_flux);
+  m_atmosphere->mean_annual_temp(*m_temperature);
 }
 
-void Simple::mass_flux_impl(IceModelVec2S &result) const {
-  m_atmosphere->mean_precipitation(result);
+const IceModelVec2S &Simple::mass_flux_impl() const {
+  return *m_mass_flux;
 }
 
-void Simple::temperature_impl(IceModelVec2S &result) const {
-  m_atmosphere->mean_annual_temp(result);
+const IceModelVec2S &Simple::temperature_impl() const {
+  return *m_temperature;
 }
 
 } // end of namespace surface

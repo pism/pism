@@ -21,13 +21,12 @@
 
 #include "pism/coupler/util/PGivenClimate.hh"
 #include "pism/coupler/SurfaceModel.hh"
-#include "Modifier.hh"
 #include "pism/coupler/AtmosphereModel.hh"
 
 namespace pism {
 namespace surface {
 
-class Given : public PGivenClimate<SurfaceModifier,SurfaceModel>
+class Given : public PGivenClimate<SurfaceModel,SurfaceModel>
 {
 public:
   Given(IceGrid::ConstPtr g);
@@ -35,13 +34,12 @@ public:
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
-  void attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input);
 
-  void mass_flux_impl(IceModelVec2S &result) const;
-  void temperature_impl(IceModelVec2S &result) const;
+  const IceModelVec2S &temperature_impl() const;
+  const IceModelVec2S &mass_flux_impl() const;
 
-  IceModelVec2T *m_climatic_mass_balance;
-  IceModelVec2T *m_ice_surface_temp;
+  IceModelVec2T *m_mass_flux;
+  IceModelVec2T *m_temperature;
 };
 
 } // end of namespace surface

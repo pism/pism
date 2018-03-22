@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014, 2015, 2017 PISM Authors
+// Copyright (C) 2011, 2014, 2015, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,12 +19,12 @@
 #ifndef _PSFACTORY_H_
 #define _PSFACTORY_H_
 
-#include "Modifier.hh"
+#include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/util/PCFactory.hh"
 
 namespace pism {
 namespace surface {
-class Factory : public PCFactory<SurfaceModel,SurfaceModifier> {
+class Factory : public PCFactory<SurfaceModel,SurfaceModel> {
 public:
   Factory(IceGrid::ConstPtr  g);
   ~Factory();

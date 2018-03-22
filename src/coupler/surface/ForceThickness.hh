@@ -19,7 +19,7 @@
 #ifndef _PSFORCETHICKNESS_H_
 #define _PSFORCETHICKNESS_H_
 
-#include "Modifier.hh"
+#include "pism/coupler/SurfaceModel.hh"
 #include "pism/util/iceModelVec.hh"
 
 namespace pism {
@@ -30,27 +30,31 @@ namespace surface {
 
 //! A class implementing a modified surface mass balance which forces
 //! ice thickness to a given target by the end of the run.
-class ForceThickness : public SurfaceModifier {
+class ForceThickness : public SurfaceModel {
 public:
   ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input);
   virtual ~ForceThickness();
 protected:
   virtual void init_impl(const Geometry &geometry);
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual void mass_flux_impl(IceModelVec2S &result) const;
+  virtual const IceModelVec2S& mass_flux_impl() const;
 
-  virtual MaxTimestep max_timestep_impl(double my_t) const;
+  virtual MaxTimestep max_timestep_impl(double t) const;
 private:
+  void adjust_mass_flux(const IceModelVec2S &ice_thickness,
+                        const IceModelVec2CellType &cell_type,
+                        IceModelVec2S &result) const;
+
   double m_alpha, m_alpha_ice_free_factor,  m_ice_free_thickness_threshold;
   double m_start_time;
   IceModelVec2S m_target_thickness;
   IceModelVec2S m_ftt_mask;
 
-  const IceModelVec2S *m_ice_thickness;
-  const IceModelVec2CellType *m_cell_type;
+  IceModelVec2S::Ptr m_mass_flux;
 };
 
 } // end of namespace surface

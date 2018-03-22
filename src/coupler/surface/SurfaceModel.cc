@@ -34,6 +34,76 @@
 namespace pism {
 namespace surface {
 
+IceModelVec2S::Ptr SurfaceModel::allocate_layer_mass(IceGrid::ConstPtr grid) {
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_layer_mass", WITHOUT_GHOSTS));
+
+  result->set_attrs("climate_forcing", "mass held in the surface layer", "kg", "");
+
+  result->metadata().set_double("valid_min", 0.0);
+
+  return result;
+}
+
+IceModelVec2S::Ptr SurfaceModel::allocate_layer_thickness(IceGrid::ConstPtr grid) {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_layer_thickness", WITHOUT_GHOSTS));
+
+  result->set_attrs("climate_forcing",
+                    "thickness of the surface process layer at the top surface of the ice",
+                    "m", "");
+
+  result->metadata().set_double("valid_min", 0.0);
+
+  return result;
+}
+
+IceModelVec2S::Ptr SurfaceModel::allocate_liquid_water_fraction(IceGrid::ConstPtr grid) {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid,
+                                              "ice_surface_liquid_water_fraction", WITHOUT_GHOSTS));
+
+  result->create(grid, "", WITHOUT_GHOSTS);
+  result->set_attrs("climate_forcing",
+                    "liquid water fraction of the ice at the top surface",
+                    "1", "");
+
+  result->metadata().set_doubles("valid_range", {0.0, 1.0});
+
+  return result;
+}
+
+IceModelVec2S::Ptr SurfaceModel::allocate_mass_flux(IceGrid::ConstPtr grid) {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "climatic_mass_balance", WITHOUT_GHOSTS));
+
+  result->set_attrs("climate_forcing",
+                    "surface mass balance (accumulation/ablation) rate",
+                    "kg m-2 second-1", "land_ice_surface_specific_mass_balance_flux");
+  result->metadata().set_string("glaciological_units", "kg m-2 year-1");
+
+  Config::ConstPtr config = grid->ctx()->config();
+  const double smb_max = config->get_double("surface.given.smb_max", "kg m-2 second-1");
+
+  result->metadata().set_double("valid_min", -smb_max);
+  result->metadata().set_double("valid_max", smb_max);
+
+  return result;
+}
+
+IceModelVec2S::Ptr SurfaceModel::allocate_temperature(IceGrid::ConstPtr grid) {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "ice_surface_temp", WITHOUT_GHOSTS));
+
+  result->set_attrs("climate_forcing",
+                    "temperature of the ice at the ice surface but below firn processes",
+                    "Kelvin", "");
+
+  result->metadata().set_doubles("valid_range", {0.0, 323.15}); // [0C, 50C]
+
+  return result;
+}
+
+
 const IceModelVec2S& SurfaceModel::mass_flux() const {
   return mass_flux_impl();
 }
@@ -158,22 +228,21 @@ protected:
 };
 
 ///// PISMSurfaceModel base class:
-
 SurfaceModel::SurfaceModel(IceGrid::ConstPtr g)
   : Component(g) {
-  m_atmosphere = nullptr;
   m_input_model = nullptr;
+  m_atmosphere = nullptr;
 }
 
 SurfaceModel::SurfaceModel(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
-  : SurfaceModel(g) {
+  : Component(g) {
   m_input_model = input;
   m_atmosphere = nullptr;
 }
 
 SurfaceModel::SurfaceModel(IceGrid::ConstPtr g,
                            std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
-  : SurfaceModel(g) {
+  : Component(g) {
   m_input_model = nullptr;
   m_atmosphere = atmosphere;
 }

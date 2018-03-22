@@ -132,13 +132,13 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
                           "standard deviation of near-surface air temperature",
                           "Kelvin", "");
 
-  m_climatic_mass_balance.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
-  m_climatic_mass_balance.set_attrs("diagnostic",
+  m_mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  m_mass_flux.set_attrs("diagnostic",
                                     "instantaneous surface mass balance (accumulation/ablation) rate",
                                     "kg m-2 s-1",
                                     "land_ice_surface_specific_mass_balance_flux");
-  m_climatic_mass_balance.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
+  m_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_mass_flux.metadata().set_string("comment", "positive values correspond to ice gain");
 
   // diagnostic fields:
 
@@ -166,6 +166,8 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
                          "firn cover depth",
                          "m", "");
   m_firn_depth.set(0.0);
+
+  m_temperature = allocate_temperature(g);
 }
 
 TemperatureIndex::~TemperatureIndex() {
@@ -307,6 +309,8 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   // update to ensure that temperature and precipitation time series are correct:
   m_atmosphere->update(geometry, t, dt);
 
+  m_atmosphere->mean_annual_temp(*m_temperature);
+
   // set up air temperature and precipitation time series
   int N = m_mbscheme->get_timeseries_length(dt);
 
@@ -325,7 +329,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   const IceModelVec2CellType &mask = geometry.cell_type;
   const IceModelVec2S        &H    = geometry.ice_thickness;
 
-  IceModelVec::AccessList list{&mask, &H, &m_air_temp_sd, &m_climatic_mass_balance,
+  IceModelVec::AccessList list{&mask, &H, &m_air_temp_sd, &m_mass_flux,
       &m_firn_depth, &m_snow_depth, &m_accumulation, &m_melt, &m_runoff};
 
   const double
@@ -491,9 +495,9 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
           m_accumulation(i, j)          = A * ice_density;
           m_melt(i, j)                  = M * ice_density;
           m_runoff(i, j)                = R * ice_density;
-          // m_climatic_mass_balance (unlike m_accumulation, m_melt, and m_runoff), is a
+          // m_mass_flux (unlike m_accumulation, m_melt, and m_runoff), is a
           // rate. m * (kg / m^3) / second = kg / m^2 / second
-          m_climatic_mass_balance(i, j) = SMB * ice_density / m_dt;
+          m_mass_flux(i, j) = SMB * ice_density / m_dt;
         }
       }
 
@@ -512,12 +516,12 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
 }
 
-void TemperatureIndex::mass_flux_impl(IceModelVec2S &result) const {
-  result.copy_from(m_climatic_mass_balance);
+const IceModelVec2S &TemperatureIndex::mass_flux_impl() const {
+  return m_mass_flux;
 }
 
-void TemperatureIndex::temperature_impl(IceModelVec2S &result) const {
-  m_atmosphere->mean_annual_temp(result);
+const IceModelVec2S &TemperatureIndex::temperature_impl() const {
+  return *m_temperature;
 }
 
 const IceModelVec2S& TemperatureIndex::accumulation() const {

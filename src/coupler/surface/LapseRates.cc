@@ -21,14 +21,18 @@
 #include "LapseRates.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace surface {
 
 LapseRates::LapseRates(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
-  : PLapseRates<SurfaceModel,SurfaceModifier>(g, in) {
+  : PLapseRates<SurfaceModel,SurfaceModel>(g, in) {
   m_smb_lapse_rate = 0;
   m_option_prefix = "-surface_lapse_rate";
+
+  m_mass_flux   = allocate_mass_flux(g);
+  m_temperature = allocate_temperature(g);
 }
 
 LapseRates::~LapseRates() {
@@ -61,15 +65,28 @@ void LapseRates::init_impl(const Geometry &geometry) {
                                     "(kg m-2) year-1 / km", "(kg m-2) second-1 / m");
 }
 
-void LapseRates::mass_flux_impl(IceModelVec2S &result) const {
-  m_input_model->mass_flux(result);
-  lapse_rate_correction(result, m_smb_lapse_rate);
+void LapseRates::update_impl(const Geometry &geometry, double t, double dt) {
+  super::update_impl(geometry, t, dt);
+
+  const IceModelVec2S &surface = geometry.ice_surface_elevation;
+
+  m_mass_flux->copy_from(m_input_model->mass_flux());
+  lapse_rate_correction(surface, m_reference_surface,
+                        m_smb_lapse_rate, *m_mass_flux);
+
+  m_temperature->copy_from(m_input_model->temperature());
+  lapse_rate_correction(surface, m_reference_surface,
+                        m_temp_lapse_rate, *m_temperature);
 }
 
-void LapseRates::temperature_impl(IceModelVec2S &result) const {
-  m_input_model->temperature(result);
-  lapse_rate_correction(result, m_temp_lapse_rate);
+const IceModelVec2S &LapseRates::mass_flux_impl() const {
+  return *m_mass_flux;
 }
+
+const IceModelVec2S &LapseRates::temperature_impl() const {
+  return *m_temperature;
+}
+
 
 } // end of namespace surface
 } // end of namespace pism

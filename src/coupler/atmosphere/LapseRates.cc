@@ -66,12 +66,22 @@ void LapseRates::init_impl(const Geometry &geometry) {
 
 void LapseRates::mean_precipitation_impl(IceModelVec2S &result) const {
   m_input_model->mean_precipitation(result);
-  lapse_rate_correction(result, m_precip_lapse_rate);
+
+  const IceModelVec2S
+      &surface = *m_grid->variables().get_2d_scalar("surface_altitude");
+
+  lapse_rate_correction(surface, m_reference_surface,
+                        m_precip_lapse_rate, result);
 }
 
 void LapseRates::mean_annual_temp_impl(IceModelVec2S &result) const {
   m_input_model->mean_annual_temp(result);
-  lapse_rate_correction(result, m_temp_lapse_rate);
+
+  const IceModelVec2S
+      &surface = *m_grid->variables().get_2d_scalar("surface_altitude");
+
+  lapse_rate_correction(surface, m_reference_surface,
+                        m_temp_lapse_rate, result);
 }
 
 void LapseRates::begin_pointwise_access_impl() const {

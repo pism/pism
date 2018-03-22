@@ -153,20 +153,20 @@ protected:
     m_reference_surface.init(file, m_bc_period, m_bc_reference_time);
   }
 
-  void lapse_rate_correction(IceModelVec2S &result, double lapse_rate) const {
+  void lapse_rate_correction(const IceModelVec2S &surface,
+                             const IceModelVec2S &reference_surface,
+                             double lapse_rate,
+                             IceModelVec2S &result) const {
     if (fabs(lapse_rate) < 1e-12) {
       return;
     }
 
-    const IceModelVec2S
-      &surface = *Mod::m_grid->variables().get_2d_scalar("surface_altitude");
-
-    IceModelVec::AccessList list{&surface, &m_reference_surface, &result};
+    IceModelVec::AccessList list{&surface, &reference_surface, &result};
 
     for (Points p(*Mod::m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      result(i, j) -= lapse_rate * (surface(i,j) - m_reference_surface(i, j));
+      result(i, j) -= lapse_rate * (surface(i,j) - reference_surface(i, j));
     }
   }
 protected:

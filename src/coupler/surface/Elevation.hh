@@ -20,7 +20,6 @@
 #define _PSELEVATION_H_
 
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/coupler/AtmosphereModel.hh"
 
 namespace pism {
 namespace surface {
@@ -31,17 +30,22 @@ public:
   Elevation(IceGrid::ConstPtr g);
 protected:
   virtual void init_impl(const Geometry &geometry);
-  virtual void attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual void mass_flux_impl(IceModelVec2S &result) const;
-  virtual void temperature_impl(IceModelVec2S &result) const;
   virtual MaxTimestep max_timestep_impl(double t) const;
-protected:
+
+  virtual const IceModelVec2S& mass_flux_impl() const;
+  virtual const IceModelVec2S& temperature_impl() const;
+
+private:
+  void compute_mass_flux(const IceModelVec2S &surface, IceModelVec2S &result) const;
+  void compute_temperature(const IceModelVec2S &surface, IceModelVec2S &result) const;
+
   double m_T_min, m_T_max, m_z_T_min, m_z_T_max;
   double m_M_min, m_M_max, m_M_limit_min, m_M_limit_max, m_z_M_min, m_z_ELA, m_z_M_max;
 
-  const IceModelVec2S *m_surface;
+  IceModelVec2S::Ptr m_mass_flux;
+  IceModelVec2S::Ptr m_temperature;
 };
 
 } // end of namespace surface

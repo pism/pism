@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include "Modifier.hh"
+#include "pism/coupler/SurfaceModel.hh"
 
 namespace pism {
 
@@ -34,7 +34,7 @@ namespace surface {
  *
  * Other fields are passed through without change.
  */
-class Delta_T : public SurfaceModifier
+class Delta_T : public SurfaceModel
 {
 public:
   Delta_T(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
@@ -42,9 +42,12 @@ public:
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
-  void temperature_impl(IceModelVec2S &result) const;
+
+  virtual const IceModelVec2S& temperature_impl() const;
 
   std::unique_ptr<ScalarForcing> m_forcing;
+
+  IceModelVec2S::Ptr m_temperature;
 };
 
 } // end of namespace surface

@@ -26,7 +26,7 @@ namespace pism {
 namespace surface {
 
 Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
-  : PGivenClimate<SurfaceModifier,SurfaceModel>(g, in) {
+  : PGivenClimate<SurfaceModel,SurfaceModel>(g, in) {
 
   m_option_prefix  = "-surface_anomaly";
 
@@ -53,6 +53,9 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
                                            "anomaly of the surface mass balance (accumulation/ablation) rate",
                                            "kg m-2 s-1", "");
   m_climatic_mass_balance_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
+
+  m_mass_flux = allocate_mass_flux(g);
+  m_temperature = allocate_temperature(g);
 }
 
 Anomaly::~Anomaly() {
@@ -61,15 +64,15 @@ Anomaly::~Anomaly() {
 
 void Anomaly::init_impl(const Geometry &geometry) {
 
-  if (m_input_model != NULL) {
+  if (m_input_model) {
     m_input_model->init(geometry);
   }
 
   m_log->message(2,
-             "* Initializing the '-surface ...,anomaly' modifier...\n");
+                 "* Initializing the '-surface ...,anomaly' modifier...\n");
 
   m_log->message(2,
-             "    reading anomalies from %s ...\n", m_filename.c_str());
+                 "    reading anomalies from %s ...\n", m_filename.c_str());
 
   m_ice_surface_temp_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
   m_climatic_mass_balance_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
@@ -80,16 +83,20 @@ void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
 
   m_climatic_mass_balance_anomaly->average(m_t, m_dt);
   m_ice_surface_temp_anomaly->average(m_t, m_dt);
+
+  m_mass_flux->copy_from(m_input_model->mass_flux());
+  m_mass_flux->add(1.0, *m_climatic_mass_balance_anomaly);
+
+  m_temperature->copy_from(m_input_model->temperature());
+  m_temperature->add(1.0, *m_ice_surface_temp_anomaly);
 }
 
-void Anomaly::mass_flux_impl(IceModelVec2S &result) const {
-  m_input_model->mass_flux(result);
-  result.add(1.0, *m_climatic_mass_balance_anomaly);
+const IceModelVec2S &Anomaly::mass_flux_impl() const {
+  return *m_mass_flux;
 }
 
-void Anomaly::temperature_impl(IceModelVec2S &result) const {
-  m_input_model->temperature(result);
-  result.add(1.0, *m_ice_surface_temp_anomaly);
+const IceModelVec2S &Anomaly::temperature_impl() const {
+  return *m_temperature;
 }
 
 } // end of namespace surface

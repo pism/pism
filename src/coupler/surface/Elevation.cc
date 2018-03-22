@@ -38,7 +38,9 @@ namespace surface {
 ///// Elevation-dependent temperature and surface mass balance.
 Elevation::Elevation(IceGrid::ConstPtr g)
   : SurfaceModel(g) {
-  m_surface = nullptr;
+
+  m_temperature = allocate_temperature(g);
+  m_mass_flux = allocate_mass_flux(g);
 }
 
 void Elevation::init_impl(const Geometry &geometry) {
@@ -171,29 +173,35 @@ MaxTimestep Elevation::max_timestep_impl(double t) const {
   return MaxTimestep("surface 'elevation'");
 }
 
-void Elevation::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input) {
-  (void) input;
-}
-
 void Elevation::update_impl(const Geometry &geometry, double t, double dt) {
-  m_surface = &geometry.ice_surface_elevation;
-
   m_t = t;
   m_dt = dt;
+
+  compute_mass_flux(geometry.ice_surface_elevation, *m_mass_flux);
+  compute_temperature(geometry.ice_surface_elevation, *m_temperature);
 }
 
-void Elevation::mass_flux_impl(IceModelVec2S &result) const {
+const IceModelVec2S &Elevation::mass_flux_impl() const {
+  return *m_mass_flux;
+}
+
+const IceModelVec2S &Elevation::temperature_impl() const {
+  return *m_temperature;
+}
+
+void Elevation::compute_mass_flux(const IceModelVec2S &surface, IceModelVec2S &result) const {
   double dabdz = -m_M_min/(m_z_ELA - m_z_M_min);
   double dacdz = m_M_max/(m_z_M_max - m_z_ELA);
 
-  IceModelVec::AccessList list{&result, m_surface};
+  IceModelVec::AccessList list{&result, &surface};
 
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double z = (*m_surface)(i, j);
+      double z = surface(i, j);
+
       if (z < m_z_M_min) {
         result(i, j) = m_M_limit_min;
       }
@@ -207,7 +215,8 @@ void Elevation::mass_flux_impl(IceModelVec2S &result) const {
         result(i, j) = m_M_limit_max;
       }
       else {
-        throw RuntimeError(PISM_ERROR_LOCATION, "Elevation::mass_flux: HOW DID I GET HERE?");
+        throw RuntimeError(PISM_ERROR_LOCATION,
+                           "Elevation::compute_mass_flux: HOW DID I GET HERE?");
       }
     }
   } catch (...) {
@@ -219,9 +228,9 @@ void Elevation::mass_flux_impl(IceModelVec2S &result) const {
   result.scale(m_config->get_double("constants.ice.density"));
 }
 
-void Elevation::temperature_impl(IceModelVec2S &result) const {
+void Elevation::compute_temperature(const IceModelVec2S &surface, IceModelVec2S &result) const {
 
-  IceModelVec::AccessList list{&result, m_surface};
+  IceModelVec::AccessList list{&result, &surface};
 
   double dTdz = (m_T_max - m_T_min)/(m_z_T_max - m_z_T_min);
   ParallelSection loop(m_grid->com);
@@ -229,7 +238,8 @@ void Elevation::temperature_impl(IceModelVec2S &result) const {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double z = (*m_surface)(i, j);
+      double z = surface(i, j);
+
       if (z <= m_z_T_min) {
         result(i, j) = m_T_min;
       }
@@ -240,7 +250,8 @@ void Elevation::temperature_impl(IceModelVec2S &result) const {
         result(i, j) = m_T_max;
       }
       else {
-        throw RuntimeError(PISM_ERROR_LOCATION, "Elevation::temperature: HOW DID I GET HERE?");
+        throw RuntimeError(PISM_ERROR_LOCATION,
+                           "Elevation::compute_temperature: HOW DID I GET HERE?");
       }
     }
   } catch (...) {

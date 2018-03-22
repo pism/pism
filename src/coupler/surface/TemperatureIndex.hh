@@ -54,6 +54,7 @@ public:
 protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
+  virtual MaxTimestep max_timestep_impl(double t) const;
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
@@ -61,9 +62,8 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;
 
-  virtual void mass_flux_impl(IceModelVec2S &result) const;
-  virtual void temperature_impl(IceModelVec2S &result) const;
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  virtual const IceModelVec2S& mass_flux_impl() const;
+  virtual const IceModelVec2S& temperature_impl() const;
 
   double compute_next_balance_year_start(double time);
 protected:
@@ -86,7 +86,9 @@ protected:
   double m_next_balance_year_start;
 
   //! cached surface mass balance rate
-  IceModelVec2S m_climatic_mass_balance;
+  IceModelVec2S m_mass_flux;
+
+  IceModelVec2S::Ptr m_temperature;
 
   //! firn depth
   IceModelVec2S m_firn_depth;

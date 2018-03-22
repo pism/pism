@@ -20,14 +20,13 @@
 #define _PSSTUFFASANOMALY_H_
 
 #include "pism/coupler/SurfaceModel.hh"
-#include "Modifier.hh"
 #include "pism/util/iceModelVec.hh"
 
 namespace pism {
 namespace surface {
 
 //! \brief A surface modifier class applying its input as anomalies.
-class StuffAsAnomaly : public SurfaceModifier
+class StuffAsAnomaly : public SurfaceModel
 {
 public:
   StuffAsAnomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input);
@@ -36,8 +35,9 @@ protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual void mass_flux_impl(IceModelVec2S &result) const;
-  virtual void temperature_impl(IceModelVec2S &result) const;
+  const IceModelVec2S &temperature_impl() const;
+  const IceModelVec2S &mass_flux_impl() const;
+
   virtual MaxTimestep max_timestep_impl(double t) const;
 
 protected:

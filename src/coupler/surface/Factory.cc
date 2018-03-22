@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,7 +37,7 @@ namespace pism {
 namespace surface {
 // Surface
 Factory::Factory(IceGrid::ConstPtr  g)
-  : PCFactory<SurfaceModel,SurfaceModifier>(g) {
+  : PCFactory<SurfaceModel,SurfaceModel>(g) {
   m_option = "surface";
 
   add_model<Elevation>("elevation");

@@ -26,18 +26,18 @@ namespace surface {
 
 PSFormulas::PSFormulas(IceGrid::ConstPtr g)
   : SurfaceModel(g) {
-  m_climatic_mass_balance.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
-  m_climatic_mass_balance.set_attrs("internal",
+  m_mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  m_mass_flux.set_attrs("internal",
                                     "ice-equivalent surface mass balance (accumulation/ablation) rate",
                                     "kg m-2 s-1",
                                     "land_ice_surface_specific_mass_balance_flux");
-  m_climatic_mass_balance.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
+  m_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_mass_flux.metadata().set_string("comment", "positive values correspond to ice gain");
 
   // annual mean air temperature at "ice surface", at level below all
   // firn processes (e.g. "10 m" or ice temperatures)
-  m_ice_surface_temp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
-  m_ice_surface_temp.set_attrs("internal",
+  m_temperature.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  m_temperature.set_attrs("internal",
                                "annual average ice surface temperature, below firn processes",
                                "K", "");
 }
@@ -51,26 +51,26 @@ void PSFormulas::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::Atmosp
   (void) input;
 }
 
-void PSFormulas::mass_flux_impl(IceModelVec2S &result) const {
-  result.copy_from(m_climatic_mass_balance);
+const IceModelVec2S &PSFormulas::mass_flux_impl() const {
+  return m_mass_flux;
 }
 
-void PSFormulas::temperature_impl(IceModelVec2S &result) const {
-  result.copy_from(m_ice_surface_temp);
+const IceModelVec2S & PSFormulas::temperature_impl() const {
+  return m_temperature;
 }
 
 void PSFormulas::define_model_state_impl(const PIO &output) const {
   // these are *not* model state, but I want to be able to re-start from a file produced using this
   // class
-  m_climatic_mass_balance.define(output);
-  m_ice_surface_temp.define(output);
+  m_mass_flux.define(output);
+  m_temperature.define(output);
 }
 
 void PSFormulas::write_model_state_impl(const PIO &output) const {
   // these are *not* model state, but I want to be able to re-start from a file produced using this
   // class
-  m_climatic_mass_balance.write(output);
-  m_ice_surface_temp.write(output);
+  m_mass_flux.write(output);
+  m_temperature.write(output);
 }
 
 } // end of namespace surface

@@ -29,6 +29,7 @@
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/MaxTimestep.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism/geometry/Geometry.hh"
 
@@ -37,7 +38,7 @@ namespace surface {
 
 ///// "Force-to-thickness" mechanism
 ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
-  : SurfaceModifier(g, input) {
+  : SurfaceModel(g, input) {
 
   m_alpha = m_config->get_double("surface.force_to_thickness.alpha", "s-1");
   m_alpha_ice_free_factor = m_config->get_double("surface.force_to_thickness.ice_free_alpha_factor");
@@ -56,8 +57,7 @@ ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel
   m_ftt_mask.metadata().set_output_type(PISM_BYTE);
   m_ftt_mask.metadata().set_time_independent(true);
 
-  m_ice_thickness = nullptr;
-  m_cell_type = nullptr;
+  m_mass_flux = allocate_mass_flux(g);
 }
 
 ForceThickness::~ForceThickness() {
@@ -65,9 +65,6 @@ ForceThickness::~ForceThickness() {
 }
 
 void ForceThickness::init_impl(const Geometry &geometry) {
-
-  m_ice_thickness = &geometry.ice_thickness;
-  m_cell_type     = &geometry.cell_type;
 
   m_input_model->init(geometry);
 
@@ -255,37 +252,48 @@ $PISM_DO $cmd
 The script also has a run with no forcing, one with forcing at a lower alpha value,
 a factor of five smaller than the default, and one with a forcing at a higher alpha value, a factor of five higher.
  */
-void ForceThickness::mass_flux_impl(IceModelVec2S &result) const {
-
-  // get the surface mass balance result from the next level up
-  m_input_model->mass_flux(result);
+void ForceThickness::adjust_mass_flux(const IceModelVec2S &ice_thickness,
+                                      const IceModelVec2CellType &cell_type,
+                                      IceModelVec2S &result) const {
 
   if (m_t < m_start_time) {
     return;
   }
 
   m_log->message(5,
-             "    updating surface mass balance using -force_to_thickness mechanism ...");
+                 "    updating surface mass balance using -force_to_thickness mechanism ...");
 
   double ice_density = m_config->get_double("constants.ice.density");
 
-  const IceModelVec2S        &H    = *m_ice_thickness;
-  const IceModelVec2CellType &mask = *m_cell_type;;
-
-  IceModelVec::AccessList list{&mask, &H, &m_target_thickness, &m_ftt_mask, &result};
+  IceModelVec::AccessList list{&cell_type, &ice_thickness,
+      &m_target_thickness, &m_ftt_mask, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_ftt_mask(i,j) > 0.5 and mask.grounded(i, j)) {
+    if (m_ftt_mask(i,j) > 0.5 and cell_type.grounded(i, j)) {
       if (m_target_thickness(i,j) >= m_ice_free_thickness_threshold) {
-        result(i,j) += ice_density * m_alpha * (m_target_thickness(i,j) - H(i,j));
+        result(i,j) += ice_density * m_alpha * (m_target_thickness(i,j) - ice_thickness(i,j));
       } else {
-        result(i,j) += ice_density * m_alpha * m_alpha_ice_free_factor * (m_target_thickness(i,j) - H(i,j));
+        result(i,j) += ice_density * m_alpha * m_alpha_ice_free_factor * (m_target_thickness(i,j) - ice_thickness(i,j));
       }
     }
   }
   // no communication needed
+}
+
+void ForceThickness::update_impl(const Geometry &geometry, double t, double dt) {
+  m_input_model->update(geometry, t, dt);
+
+  m_mass_flux->copy_from(m_input_model->mass_flux());
+
+  adjust_mass_flux(geometry.ice_thickness,
+                   geometry.cell_type,
+                   *m_mass_flux);
+}
+
+const IceModelVec2S &ForceThickness::mass_flux_impl() const {
+  return *m_mass_flux;
 }
 
 /*!

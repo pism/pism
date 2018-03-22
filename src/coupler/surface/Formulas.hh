@@ -41,11 +41,12 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  void mass_flux_impl(IceModelVec2S &result) const;
-  void temperature_impl(IceModelVec2S &result) const;
+  virtual const IceModelVec2S& mass_flux_impl() const;
+  virtual const IceModelVec2S& temperature_impl() const;
+
 protected:
-  IceModelVec2S m_climatic_mass_balance;
-  IceModelVec2S m_ice_surface_temp;
+  IceModelVec2S m_mass_flux;
+  IceModelVec2S m_temperature;
 };
 
 

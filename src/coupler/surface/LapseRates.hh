@@ -21,23 +21,28 @@
 
 #include "pism/coupler/util/PLapseRates.hh"
 #include "pism/coupler/SurfaceModel.hh"
-#include "Modifier.hh"
 
 namespace pism {
 namespace surface {
 
-class LapseRates : public PLapseRates<SurfaceModel,SurfaceModifier>
+class LapseRates : public PLapseRates<SurfaceModel,SurfaceModel>
 {
 public:
   LapseRates(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
   virtual ~LapseRates();
 protected:
   virtual void init_impl(const Geometry &geometry);
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual void mass_flux_impl(IceModelVec2S &result) const;
-  virtual void temperature_impl(IceModelVec2S &result) const;
+  virtual const IceModelVec2S& mass_flux_impl() const;
+  virtual const IceModelVec2S& temperature_impl() const;
 protected:
   double m_smb_lapse_rate;
+
+  IceModelVec2S::Ptr m_mass_flux;
+  IceModelVec2S::Ptr m_temperature;
+
+  typedef PLapseRates<SurfaceModel,SurfaceModel> super;
 };
 
 } // end of namespace surface

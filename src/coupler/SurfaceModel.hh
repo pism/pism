@@ -79,6 +79,13 @@ protected:
 
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;
+
+  static IceModelVec2S::Ptr allocate_layer_mass(IceGrid::ConstPtr grid);
+  static IceModelVec2S::Ptr allocate_layer_thickness(IceGrid::ConstPtr grid);
+  static IceModelVec2S::Ptr allocate_liquid_water_fraction(IceGrid::ConstPtr grid);
+  static IceModelVec2S::Ptr allocate_mass_flux(IceGrid::ConstPtr grid);
+  static IceModelVec2S::Ptr allocate_temperature(IceGrid::ConstPtr grid);
+
 protected:
   std::shared_ptr<SurfaceModel> m_input_model;
   std::shared_ptr<atmosphere::AtmosphereModel> m_atmosphere;
