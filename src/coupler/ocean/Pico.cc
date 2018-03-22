@@ -161,7 +161,7 @@ Pico::Pico(IceGrid::ConstPtr g)
   m_overturning.set_attrs("model_state", "cavity overturning", "m^3 s-1", "cavity overturning");
   m_overturning.metadata().set_double("_FillValue", 0.0);
 
-  m_basal_melt_rate.create(m_grid, "pico_bmelt_shelf", WITHOUT_GHOSTS);
+  m_basal_melt_rate.create(m_grid, "pico_basal_melt_rate", WITHOUT_GHOSTS);
   m_basal_melt_rate.set_attrs("model_state", "PICO sub-shelf melt rate", "m/s", "PICO sub-shelf melt rate");
   m_basal_melt_rate.metadata().set_string("glaciological_units", "m year-1");
   m_basal_melt_rate.metadata().set_double("_FillValue", 0.0);
@@ -673,7 +673,7 @@ void Pico::process_other_boxes(const PicoPhysics &physics,
 
 
 // Write diagnostic variables to extra files if requested
-std::map<std::string, Diagnostic::Ptr> Pico::diagnostics_impl() const {
+DiagnosticList Pico::diagnostics_impl() const {
 
   DiagnosticList result = {
     { "basins",                 Diagnostic::wrap(m_basin_mask) },

@@ -29,8 +29,8 @@ namespace ocean {
 
 PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
     : Component(grid),
-      m_continental_shelf(grid, "pico_ocean_contshelf_mask", WITHOUT_GHOSTS),
-      m_boxes(grid, "pico_ocean_box_mask", WITHOUT_GHOSTS),
+      m_continental_shelf(grid, "pico_contshelf_mask", WITHOUT_GHOSTS),
+      m_boxes(grid, "pico_box_mask", WITHOUT_GHOSTS),
       m_ice_shelves(grid, "pico_shelf_mask", WITHOUT_GHOSTS),
       m_distance_gl(grid, "pico_distance_gl", WITH_GHOSTS),
       m_distance_cf(grid, "pico_distance_cf", WITH_GHOSTS),
