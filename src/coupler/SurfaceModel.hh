@@ -87,6 +87,10 @@ protected:
   static IceModelVec2S::Ptr allocate_temperature(IceGrid::ConstPtr grid);
 
 protected:
+  IceModelVec2S::Ptr m_liquid_water_fraction;
+  IceModelVec2S::Ptr m_layer_mass;
+  IceModelVec2S::Ptr m_layer_thickness;
+
   std::shared_ptr<SurfaceModel> m_input_model;
   std::shared_ptr<atmosphere::AtmosphereModel> m_atmosphere;
   double m_t, m_dt;

@@ -35,88 +35,9 @@ template <class Model, class Modifier>
 class PCFactory {
 public:
 
-  // virtual base class that allows storing different model creators
-  // in the same dictionary
-  class ModelCreator {
-  public:
-    virtual std::shared_ptr<Model> create(IceGrid::ConstPtr g) = 0;
-    virtual ~ModelCreator() {}
-  };
-
-  // Creator for a specific model class M.
-  template <class M>
-  class SpecificModelCreator : public ModelCreator {
-  public:
-    std::shared_ptr<Model> create(IceGrid::ConstPtr g) {
-      return std::shared_ptr<Model>(new M(g));
-    }
-  };
-
-  // virtual base class that allows storing different modifier
-  // creators in the same dictionary
-  class ModifierCreator {
-  public:
-    virtual std::shared_ptr<Modifier> create(IceGrid::ConstPtr g, std::shared_ptr<Model> input) = 0;
-    virtual ~ModifierCreator() {}
-  };
-
-  // Creator for a specific modifier class M.
-  template <class M>
-  class SpecificModifierCreator : public ModifierCreator {
-  public:
-    std::shared_ptr<Modifier> create(IceGrid::ConstPtr g, std::shared_ptr<Model> input) {
-      return std::shared_ptr<Modifier>(new M(g, input));
-    }
-  };
-
   PCFactory<Model,Modifier>(IceGrid::ConstPtr g)
   : m_grid(g) {}
   ~PCFactory<Model,Modifier>() {}
-
-  //! Sets the default type name.
-  void set_default(std::string name) {
-    if (m_models.find(name) == m_models.end()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "type %s is not registered", name.c_str());
-    } else {
-      m_default_type = name;
-    }
-  }
-
-  template<typename T>
-  std::string key_list(std::map<std::string, T> list) {
-    std::string result;
-    auto k = list.begin();
-    result = "[" + (k++)->first;
-    for (; k != list.end(); k++) {
-      result += ", " + k->first;
-    }
-    result += "]";
-
-    return result;
-  }
-
-  std::shared_ptr<Model> model(const std::string &type) {
-    if (m_models.find(type) == m_models.end()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s model \"%s\" is not available.\n"
-                                    "Available models:    %s\n",
-                                    m_option.c_str(), type.c_str(),
-                                    key_list(m_models).c_str());
-    }
-
-    return m_models[type]->create(m_grid);
-  }
-
-  template<class T>
-  std::shared_ptr<Model> modifier(const std::string &type, std::shared_ptr<T> input) {
-    if (m_modifiers.find(type) == m_modifiers.end()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s modifier \"%s\" is not available.\n"
-                                    "Available modifiers:    %s\n",
-                                    m_option.c_str(), type.c_str(),
-                                    key_list(m_modifiers).c_str());
-    }
-
-    return m_modifiers[type]->create(m_grid, input);
-  }
 
   //! Creates a boundary model. Processes command-line options.
   std::shared_ptr<Model> create() {
@@ -156,6 +77,17 @@ public:
     return result;
   }
 
+  //! Sets the default type name.
+  void set_default(std::string name) {
+    if (m_models.find(name) == m_models.end()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "type %s is not registered", name.c_str());
+    } else {
+      m_default_type = name;
+    }
+  }
+
+protected:
+
   //! Adds a boundary model to the dictionary.
   template <class M>
   void add_model(const std::string &name) {
@@ -166,7 +98,77 @@ public:
   void add_modifier(const std::string &name) {
     m_modifiers[name].reset(new SpecificModifierCreator<M>);
   }
-protected:
+
+  template<typename T>
+  std::string key_list(std::map<std::string, T> list) {
+    std::string result;
+    auto k = list.begin();
+    result = "[" + (k++)->first;
+    for (; k != list.end(); k++) {
+      result += ", " + k->first;
+    }
+    result += "]";
+
+    return result;
+  }
+
+  std::shared_ptr<Model> model(const std::string &type) {
+    if (m_models.find(type) == m_models.end()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s model \"%s\" is not available.\n"
+                                    "Available models:    %s\n",
+                                    m_option.c_str(), type.c_str(),
+                                    key_list(m_models).c_str());
+    }
+
+    return m_models[type]->create(m_grid);
+  }
+
+  template<class T>
+  std::shared_ptr<Model> modifier(const std::string &type, std::shared_ptr<T> input) {
+    if (m_modifiers.find(type) == m_modifiers.end()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s modifier \"%s\" is not available.\n"
+                                    "Available modifiers:    %s\n",
+                                    m_option.c_str(), type.c_str(),
+                                    key_list(m_modifiers).c_str());
+    }
+
+    return m_modifiers[type]->create(m_grid, input);
+  }
+
+  // virtual base class that allows storing different model creators
+  // in the same dictionary
+  class ModelCreator {
+  public:
+    virtual std::shared_ptr<Model> create(IceGrid::ConstPtr g) = 0;
+    virtual ~ModelCreator() {}
+  };
+
+  // Creator for a specific model class M.
+  template <class M>
+  class SpecificModelCreator : public ModelCreator {
+  public:
+    std::shared_ptr<Model> create(IceGrid::ConstPtr g) {
+      return std::shared_ptr<Model>(new M(g));
+    }
+  };
+
+  // virtual base class that allows storing different modifier
+  // creators in the same dictionary
+  class ModifierCreator {
+  public:
+    virtual std::shared_ptr<Modifier> create(IceGrid::ConstPtr g, std::shared_ptr<Model> input) = 0;
+    virtual ~ModifierCreator() {}
+  };
+
+  // Creator for a specific modifier class M.
+  template <class M>
+  class SpecificModifierCreator : public ModifierCreator {
+  public:
+    std::shared_ptr<Modifier> create(IceGrid::ConstPtr g, std::shared_ptr<Model> input) {
+      return std::shared_ptr<Modifier>(new M(g, input));
+    }
+  };
+
   std::string m_default_type, m_option;
   std::map<std::string, std::shared_ptr<ModelCreator> > m_models;
   std::map<std::string, std::shared_ptr<ModifierCreator> > m_modifiers;

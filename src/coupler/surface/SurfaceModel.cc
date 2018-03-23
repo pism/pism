@@ -62,7 +62,6 @@ IceModelVec2S::Ptr SurfaceModel::allocate_liquid_water_fraction(IceGrid::ConstPt
   IceModelVec2S::Ptr result(new IceModelVec2S(grid,
                                               "ice_surface_liquid_water_fraction", WITHOUT_GHOSTS));
 
-  result->create(grid, "", WITHOUT_GHOSTS);
   result->set_attrs("climate_forcing",
                     "liquid water fraction of the ice at the top surface",
                     "1", "");
@@ -140,7 +139,7 @@ const IceModelVec2S& SurfaceModel::liquid_water_fraction_impl() const {
   if (m_input_model) {
     return m_input_model->liquid_water_fraction();
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+    return *m_liquid_water_fraction;
   }
 }
 
@@ -157,7 +156,7 @@ const IceModelVec2S& SurfaceModel::layer_mass_impl() const {
   if (m_input_model) {
     return m_input_model->layer_mass();
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+    return *m_layer_mass;
   }
 }
 
@@ -176,7 +175,7 @@ const IceModelVec2S& SurfaceModel::layer_thickness_impl() const {
   if (m_input_model) {
     return m_input_model->layer_thickness();
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+    return *m_layer_thickness;
   }
 }
 
@@ -228,10 +227,19 @@ protected:
 };
 
 ///// PISMSurfaceModel base class:
-SurfaceModel::SurfaceModel(IceGrid::ConstPtr g)
-  : Component(g) {
+SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid)
+  : Component(grid) {
   m_input_model = nullptr;
   m_atmosphere = nullptr;
+
+  m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
+  m_liquid_water_fraction->set(0.0);
+
+  m_layer_mass = allocate_layer_mass(grid);
+  m_layer_mass->set(0.0);
+
+  m_layer_thickness = allocate_layer_thickness(grid);
+  m_layer_thickness->set(0.0);
 }
 
 SurfaceModel::SurfaceModel(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
