@@ -48,18 +48,6 @@ Cache::Cache(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   m_temperature.set_attrs("climate_state",
                           "ice temperature at the ice surface",
                           "K", "");
-
-  m_liquid_water_fraction.create(m_grid, "ice_surface_liquid_water_fraction", WITHOUT_GHOSTS);
-  m_liquid_water_fraction.set_attrs("diagnostic",
-                                    "ice surface liquid water fraction", "1", "");
-
-  m_layer_mass.create(m_grid, "surface_layer_mass", WITHOUT_GHOSTS);
-  m_layer_mass.set_attrs("diagnostic",
-                         "mass held in surface layer", "kg", "");
-
-  m_layer_thickness.create(m_grid, "surface_layer_thickness", WITHOUT_GHOSTS);
-  m_layer_thickness.set_attrs("diagnostic",
-                              "surface layer thickness", "1", "");
 }
 
 Cache::~Cache() {
@@ -108,9 +96,9 @@ void Cache::update_impl(const Geometry &geometry, double t, double dt) {
     // store outputs of the input model
     m_mass_flux.copy_from(m_input_model->mass_flux());
     m_temperature.copy_from(m_input_model->temperature());
-    m_liquid_water_fraction.copy_from(m_input_model->liquid_water_fraction());
-    m_layer_mass.copy_from(m_input_model->layer_mass());
-    m_layer_thickness.copy_from(m_input_model->layer_thickness());
+    m_liquid_water_fraction->copy_from(m_input_model->liquid_water_fraction());
+    m_layer_mass->copy_from(m_input_model->layer_mass());
+    m_layer_thickness->copy_from(m_input_model->layer_thickness());
   }
 }
 
@@ -140,7 +128,7 @@ MaxTimestep Cache::max_timestep_impl(double t) const {
 }
 
 const IceModelVec2S &Cache::layer_thickness_impl() const {
-  return m_layer_thickness;
+  return *m_layer_thickness;
 }
 
 const IceModelVec2S &Cache::mass_flux_impl() const {
@@ -152,11 +140,11 @@ const IceModelVec2S &Cache::temperature_impl() const {
 }
 
 const IceModelVec2S &Cache::liquid_water_fraction_impl() const {
-  return m_liquid_water_fraction;
+  return *m_liquid_water_fraction;
 }
 
 const IceModelVec2S &Cache::layer_mass_impl() const {
-  return m_layer_mass;
+  return *m_layer_mass;
 }
 
 } // end of namespace surface

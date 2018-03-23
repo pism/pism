@@ -61,6 +61,32 @@ Factory::~Factory() {
   // empty
 }
 
+void Factory::set_default(const std::string &name) {
+  if (m_surface_models.find(name) == m_surface_models.end()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "type %s is not registered", name.c_str());
+  } else {
+    m_default_type = name;
+  }
+}
+
+std::shared_ptr<SurfaceModel> Factory::create() {
+  // build a list of available models:
+  auto model_list = key_list(m_surface_models);
+
+  // build a list of available modifiers:
+  auto modifier_list = key_list(m_modifiers);
+
+  std::string description = ("Sets up the PISM " + m_option + " model."
+                             " Available models: " + model_list +
+                             " Available modifiers: " + modifier_list);
+
+  // Get the command-line option:
+  options::StringList choices("-" + m_option, description, m_default_type);
+
+  return create(choices.to_string());
+}
+
+
 std::shared_ptr<SurfaceModel> Factory::create(const std::string &type) {
 
   std::vector<std::string> choices = split(type, ',');

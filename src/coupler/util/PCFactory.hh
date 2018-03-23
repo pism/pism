@@ -40,7 +40,7 @@ public:
   ~PCFactory<Model,Modifier>() {}
 
   //! Creates a boundary model. Processes command-line options.
-  std::shared_ptr<Model> create() {
+  virtual std::shared_ptr<Model> create() {
     // build a list of available models:
     auto model_list = key_list(m_models);
 
@@ -78,7 +78,7 @@ public:
   }
 
   //! Sets the default type name.
-  void set_default(std::string name) {
+  virtual void set_default(const std::string &name) {
     if (m_models.find(name) == m_models.end()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "type %s is not registered", name.c_str());
     } else {

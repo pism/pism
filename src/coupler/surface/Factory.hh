@@ -31,9 +31,10 @@ public:
   Factory(IceGrid::ConstPtr g, std::shared_ptr<InputModel> input);
   ~Factory();
 
-  using PCFactory<SurfaceModel,SurfaceModel>::create;
+  std::shared_ptr<SurfaceModel> create();
   std::shared_ptr<SurfaceModel> create(const std::string &type);
 
+  void set_default(const std::string &type);
 private:
   class SurfaceModelCreator {
   public:

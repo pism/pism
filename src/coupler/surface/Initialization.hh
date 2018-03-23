@@ -59,9 +59,6 @@ private:
   // storage
   IceModelVec2S m_mass_flux;
   IceModelVec2S m_temperature;
-  IceModelVec2S m_liquid_water_fraction;
-  IceModelVec2S m_layer_mass;
-  IceModelVec2S m_layer_thickness;
 };
 
 } // end of namespace surface

@@ -24,15 +24,15 @@
 namespace pism {
 namespace surface {
 
-Given::Given(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : PGivenClimate<SurfaceModel,SurfaceModel>(g, NULL)
+Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
+  : PGivenClimate<SurfaceModel,SurfaceModel>(grid, NULL)
 {
   (void) input;
 
   m_option_prefix = "-surface_given";
 
-  m_temperature      = new IceModelVec2T;
-  m_mass_flux = new IceModelVec2T;
+  m_temperature = new IceModelVec2T;
+  m_mass_flux   = new IceModelVec2T;
 
   m_fields["ice_surface_temp"]      = m_temperature;
   m_fields["climatic_mass_balance"] = m_mass_flux;
@@ -47,8 +47,8 @@ Given::Given(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> i
   m_mass_flux->create(m_grid, "climatic_mass_balance");
 
   m_temperature->set_attrs("climate_forcing",
-                                "temperature of the ice at the ice surface but below firn processes",
-                                "Kelvin", "");
+                           "temperature of the ice at the ice surface but below firn processes",
+                           "Kelvin", "");
   m_temperature->metadata().set_doubles("valid_range", {0.0, 323.15}); // [0C, 50C]
 
   const double smb_max = m_config->get_double("surface.given.smb_max", "kg m-2 second-1");
@@ -59,6 +59,17 @@ Given::Given(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> i
   m_mass_flux->metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_mass_flux->metadata().set_double("valid_min", -smb_max);
   m_mass_flux->metadata().set_double("valid_max", smb_max);
+
+  {
+    m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
+    m_layer_mass            = allocate_layer_mass(grid);
+    m_layer_thickness       = allocate_layer_thickness(grid);
+
+    // default values
+    m_layer_thickness->set(0.0);
+    m_layer_mass->set(0.0);
+    m_liquid_water_fraction->set(0.0);
+  }
 }
 
 Given::~Given() {

@@ -26,8 +26,8 @@
 namespace pism {
 namespace surface {
 
-InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
-  : SurfaceModel(g, input) {
+InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid, std::shared_ptr<SurfaceModel> input)
+  : SurfaceModel(grid, input) {
 
   if (not input) {
     throw RuntimeError(PISM_ERROR_LOCATION, "pism::surface::InitializationHelper got a NULL input model");
@@ -48,32 +48,35 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<
                             "Kelvin", "");
     m_temperature.set_time_independent(false);
 
-    m_liquid_water_fraction.create(m_grid, "effective_ice_surface_liquid_water_fraction", WITHOUT_GHOSTS);
-    m_liquid_water_fraction.set_attrs("model_state",
-                                      "liquid water fraction of the ice at the top surface, as seen by the ice dynamics code (used for restarting)",
-                                      "1", "");
-    m_liquid_water_fraction.set_time_independent(false);
+    m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
+    m_liquid_water_fraction->metadata().set_name("effective_ice_surface_liquid_water_fraction");
+    m_liquid_water_fraction->set_attrs("model_state",
+                                       "liquid water fraction of the ice at the top surface, as seen by the ice dynamics code (used for restarting)",
+                                       "1", "");
+    m_liquid_water_fraction->set_time_independent(false);
 
-    m_layer_mass.create(m_grid, "effective_surface_layer_mass", WITHOUT_GHOSTS);
-    m_layer_mass.set_attrs("model_state",
-                           "mass held in the surface layer, as seen by the ice dynamics code (used for restarting)",
-                           "kg",
-                           "");
-    m_layer_mass.set_time_independent(false);
+    m_layer_mass = allocate_layer_mass(grid);
+    m_layer_mass->metadata().set_name("effective_surface_layer_mass");
+    m_layer_mass->set_attrs("model_state",
+                            "mass held in the surface layer, as seen by the ice dynamics code (used for restarting)",
+                            "kg",
+                            "");
+    m_layer_mass->set_time_independent(false);
 
-    m_layer_thickness.create(m_grid, "effective_surface_layer_thickness", WITHOUT_GHOSTS);
-    m_layer_thickness.set_attrs("model_state",
-                                "thickness of the surface layer, as seen by the ice dynamics code (used for restarting)",
-                                "meters", "");
-    m_layer_thickness.set_time_independent(false);
+    m_layer_thickness = allocate_layer_thickness(grid);
+    m_layer_thickness->metadata().set_name("effective_surface_layer_thickness");
+    m_layer_thickness->set_attrs("model_state",
+                                 "thickness of the surface layer, as seen by the ice dynamics code (used for restarting)",
+                                 "meters", "");
+    m_layer_thickness->set_time_independent(false);
   }
 
   // collect pointers
   m_variables = {&m_mass_flux,
                  &m_temperature,
-                 &m_liquid_water_fraction,
-                 &m_layer_mass,
-                 &m_layer_thickness};
+                 m_liquid_water_fraction.get(),
+                 m_layer_mass.get(),
+                 m_layer_thickness.get()};
 }
 
 void InitializationHelper::init_impl(const Geometry &geometry) {
@@ -109,13 +112,13 @@ void InitializationHelper::update_impl(const Geometry &geometry, double t, doubl
   // store outputs of the input model
   m_mass_flux.copy_from(m_input_model->mass_flux());
   m_temperature.copy_from(m_input_model->temperature());
-  m_liquid_water_fraction.copy_from(m_input_model->liquid_water_fraction());
-  m_layer_mass.copy_from(m_input_model->layer_mass());
-  m_layer_thickness.copy_from(m_input_model->layer_thickness());
+  m_liquid_water_fraction->copy_from(m_input_model->liquid_water_fraction());
+  m_layer_mass->copy_from(m_input_model->layer_mass());
+  m_layer_thickness->copy_from(m_input_model->layer_thickness());
 }
 
 const IceModelVec2S &InitializationHelper::layer_thickness_impl() const {
-  return m_layer_thickness;
+  return *m_layer_thickness;
 }
 
 const IceModelVec2S &InitializationHelper::mass_flux_impl() const {
@@ -127,11 +130,11 @@ const IceModelVec2S &InitializationHelper::temperature_impl() const {
 }
 
 const IceModelVec2S &InitializationHelper::liquid_water_fraction_impl() const {
-  return m_liquid_water_fraction;
+  return *m_liquid_water_fraction;
 }
 
 const IceModelVec2S &InitializationHelper::layer_mass_impl() const {
-  return m_layer_mass;
+  return *m_layer_mass;
 }
 
 void InitializationHelper::define_model_state_impl(const PIO &output) const {
