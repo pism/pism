@@ -252,11 +252,12 @@ $PISM_DO $cmd
 The script also has a run with no forcing, one with forcing at a lower alpha value,
 a factor of five smaller than the default, and one with a forcing at a higher alpha value, a factor of five higher.
  */
-void ForceThickness::adjust_mass_flux(const IceModelVec2S &ice_thickness,
+void ForceThickness::adjust_mass_flux(double time,
+                                      const IceModelVec2S &ice_thickness,
                                       const IceModelVec2CellType &cell_type,
                                       IceModelVec2S &result) const {
 
-  if (m_t < m_start_time) {
+  if (time < m_start_time) {
     return;
   }
 
@@ -287,7 +288,8 @@ void ForceThickness::update_impl(const Geometry &geometry, double t, double dt) 
 
   m_mass_flux->copy_from(m_input_model->mass_flux());
 
-  adjust_mass_flux(geometry.ice_thickness,
+  adjust_mass_flux(t,
+                   geometry.ice_thickness,
                    geometry.cell_type,
                    *m_mass_flux);
 }
@@ -313,7 +315,6 @@ MaxTimestep ForceThickness::max_timestep_impl(double my_t) const {
 
   return std::min(input_max_dt, MaxTimestep(max_dt, "surface forcing"));
 }
-
 
 void ForceThickness::define_model_state_impl(const PIO &output) const {
   m_ftt_mask.define(output);

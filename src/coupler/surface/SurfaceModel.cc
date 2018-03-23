@@ -229,19 +229,6 @@ protected:
 ///// PISMSurfaceModel base class:
 SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid)
   : Component(grid), m_input_model(nullptr), m_atmosphere(nullptr) {
-  // empty
-}
-
-SurfaceModel::SurfaceModel(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
-  : SurfaceModel(g) {
-  m_input_model = input;
-}
-
-SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid,
-                           std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
-  : SurfaceModel(grid) {
-
-  m_atmosphere = atmosphere;
 
   m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
   m_layer_mass            = allocate_layer_mass(grid);
@@ -251,6 +238,19 @@ SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid,
   m_layer_thickness->set(0.0);
   m_layer_mass->set(0.0);
   m_liquid_water_fraction->set(0.0);
+}
+
+SurfaceModel::SurfaceModel(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
+  : Component(g) {
+  m_input_model = input;
+  // this is a modifier: allocate storage only if necessary (in derived classes)
+}
+
+SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid,
+                           std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
+  : SurfaceModel(grid) {        // this constructor will allocate storage
+
+  m_atmosphere = atmosphere;
 }
 
 
@@ -271,15 +271,23 @@ DiagnosticList SurfaceModel::diagnostics_impl() const {
     result = pism::combine(result, m_atmosphere->diagnostics());
   }
 
+  if (m_input_model) {
+    result = pism::combine(result, m_input_model->diagnostics());
+  }
+
   return result;
 }
 
 TSDiagnosticList SurfaceModel::ts_diagnostics_impl() const {
   if (m_atmosphere) {
     return m_atmosphere->ts_diagnostics();
-  } else {
-    return {};
   }
+
+  if (m_input_model) {
+    return m_input_model->ts_diagnostics();
+  }
+
+  return {};
 }
 
 void SurfaceModel::init(const Geometry &geometry) {

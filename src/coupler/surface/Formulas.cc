@@ -38,17 +38,6 @@ PSFormulas::PSFormulas(IceGrid::ConstPtr grid)
   m_temperature.set_attrs("internal",
                           "annual average ice surface temperature, below firn processes",
                           "K", "");
-
-  {
-    m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
-    m_layer_mass            = allocate_layer_mass(grid);
-    m_layer_thickness       = allocate_layer_thickness(grid);
-
-    // default values
-    m_layer_thickness->set(0.0);
-    m_layer_mass->set(0.0);
-    m_liquid_water_fraction->set(0.0);
-  }
 }
 
 PSFormulas::~PSFormulas() {

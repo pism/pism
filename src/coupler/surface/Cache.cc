@@ -31,8 +31,8 @@
 namespace pism {
 namespace surface {
 
-Cache::Cache(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
-  : SurfaceModel(g, in) {
+Cache::Cache(IceGrid::ConstPtr grid, std::shared_ptr<SurfaceModel> in)
+  : SurfaceModel(grid, in) {
 
   m_next_update_time = m_grid->ctx()->time()->current();
   m_update_interval_years = 10;
@@ -48,6 +48,16 @@ Cache::Cache(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   m_temperature.set_attrs("climate_state",
                           "ice temperature at the ice surface",
                           "K", "");
+  {
+    m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
+    m_layer_mass            = allocate_layer_mass(grid);
+    m_layer_thickness       = allocate_layer_thickness(grid);
+
+    // default values
+    m_layer_thickness->set(0.0);
+    m_layer_mass->set(0.0);
+    m_liquid_water_fraction->set(0.0);
+  }
 }
 
 Cache::~Cache() {

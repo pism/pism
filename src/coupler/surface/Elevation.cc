@@ -36,12 +36,12 @@ namespace pism {
 namespace surface {
 
 ///// Elevation-dependent temperature and surface mass balance.
-Elevation::Elevation(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : SurfaceModel(g) {
+Elevation::Elevation(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
+  : SurfaceModel(grid) {
   (void) input;
 
-  m_temperature = allocate_temperature(g);
-  m_mass_flux = allocate_mass_flux(g);
+  m_temperature = allocate_temperature(grid);
+  m_mass_flux   = allocate_mass_flux(grid);
 }
 
 void Elevation::init_impl(const Geometry &geometry) {
@@ -52,7 +52,7 @@ void Elevation::init_impl(const Geometry &geometry) {
   using units::convert;
 
   m_log->message(2,
-             "* Initializing the constant-in-time surface processes model Elevation. Setting...\n");
+                 "* Initializing the constant-in-time surface processes model Elevation. Setting...\n");
 
   // options
   {

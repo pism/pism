@@ -45,7 +45,8 @@ protected:
 
   virtual MaxTimestep max_timestep_impl(double t) const;
 private:
-  void adjust_mass_flux(const IceModelVec2S &ice_thickness,
+  void adjust_mass_flux(double time,
+                        const IceModelVec2S &ice_thickness,
                         const IceModelVec2CellType &cell_type,
                         IceModelVec2S &result) const;
 

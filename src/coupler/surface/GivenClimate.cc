@@ -60,6 +60,8 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
   m_mass_flux->metadata().set_double("valid_min", -smb_max);
   m_mass_flux->metadata().set_double("valid_max", smb_max);
 
+  // this class uses the "modifier" version of the SurfaceModel constructor, so we need to
+  // allocate these here
   {
     m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
     m_layer_mass            = allocate_layer_mass(grid);
