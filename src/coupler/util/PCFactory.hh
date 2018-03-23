@@ -69,9 +69,6 @@ public:
     }
   };
 
-  typedef std::shared_ptr<ModelCreator> ModelCreatorPtr;
-  typedef std::shared_ptr<ModifierCreator> ModifierCreatorPtr;
-
   PCFactory<Model,Modifier>(IceGrid::ConstPtr g)
   : m_grid(g) {}
   ~PCFactory<Model,Modifier>() {}
@@ -85,60 +82,75 @@ public:
     }
   }
 
+  template<typename T>
+  std::string key_list(std::map<std::string, T> list) {
+    std::string result;
+    auto k = list.begin();
+    result = "[" + (k++)->first;
+    for (; k != list.end(); k++) {
+      result += ", " + k->first;
+    }
+    result += "]";
+
+    return result;
+  }
+
+  std::shared_ptr<Model> model(const std::string &type) {
+    if (m_models.find(type) == m_models.end()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s model \"%s\" is not available.\n"
+                                    "Available models:    %s\n",
+                                    m_option.c_str(), type.c_str(),
+                                    key_list(m_models).c_str());
+    }
+
+    return m_models[type]->create(m_grid);
+  }
+
+  template<class T>
+  std::shared_ptr<Model> modifier(const std::string &type, std::shared_ptr<T> input) {
+    if (m_modifiers.find(type) == m_modifiers.end()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s modifier \"%s\" is not available.\n"
+                                    "Available modifiers:    %s\n",
+                                    m_option.c_str(), type.c_str(),
+                                    key_list(m_modifiers).c_str());
+    }
+
+    return m_modifiers[type]->create(m_grid, input);
+  }
+
   //! Creates a boundary model. Processes command-line options.
   std::shared_ptr<Model> create() {
-    std::string model_list, modifier_list, description;
-    std::shared_ptr<Model> result;
-
     // build a list of available models:
-    auto k = m_models.begin();
-    model_list = "[" + (k++)->first;
-    for (; k != m_models.end(); k++) {
-      model_list += ", " + k->first;
-    }
-    model_list += "]";
+    auto model_list = key_list(m_models);
 
     // build a list of available modifiers:
-    auto p = m_modifiers.begin();
-    modifier_list = "[" + (p++)->first;
-    for (; p != m_modifiers.end(); p++) {
-      modifier_list += ", " + p->first;
-    }
-    modifier_list += "]";
+    auto modifier_list = key_list(m_modifiers);
 
-    description =  "Sets up the PISM " + m_option + " model. Available models: " + model_list +
-      " Available modifiers: " + modifier_list;
+    std::string description = ("Sets up the PISM " + m_option + " model."
+                               " Available models: " + model_list +
+                               " Available modifiers: " + modifier_list);
 
     // Get the command-line option:
     options::StringList choices("-" + m_option, description, m_default_type);
 
-    // the first element has to be an *actual* model (not a modifier), so we
-    // create it:
-    auto j = choices->begin();
+    return create(choices.to_string());
+  }
 
-    if (m_models.find(*j) == m_models.end()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s model \"%s\" is not available.\n"
-                                    "Available models:    %s\n"
-                                    "Available modifiers: %s",
-                                    m_option.c_str(), j->c_str(),
-                                    model_list.c_str(), modifier_list.c_str());
-    }
+  //! Creates a boundary model.
+  virtual std::shared_ptr<Model> create(const std::string &type) {
 
-    result = m_models[*j]->create(m_grid);
+    std::vector<std::string> choices = split(type, ',');
+
+    // the first element has to be an *actual* model (not a modifier)
+    auto j = choices.begin();
+
+    std::shared_ptr<Model> result = model(*j);
 
     ++j;
 
     // process remaining arguments:
-    while (j != choices->end()) {
-      if (m_modifiers.find(*j) == m_modifiers.end()) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s modifier \"%s\" is not available.\n"
-                                      "Available modifiers: %s",
-                                      m_option.c_str(), j->c_str(), modifier_list.c_str());
-      }
-
-      result =  m_modifiers[*j]->create(m_grid, result);
-
-      ++j;
+    for (;j != choices.end(); ++j) {
+      result = modifier(*j, result);
     }
 
     return result;
@@ -147,12 +159,12 @@ public:
   //! Adds a boundary model to the dictionary.
   template <class M>
   void add_model(const std::string &name) {
-    m_models[name] = ModelCreatorPtr(new SpecificModelCreator<M>);
+    m_models[name].reset(new SpecificModelCreator<M>);
   }
 
   template <class M>
   void add_modifier(const std::string &name) {
-    m_modifiers[name] = ModifierCreatorPtr(new SpecificModifierCreator<M>);
+    m_modifiers[name].reset(new SpecificModifierCreator<M>);
   }
 
   //! Removes a boundary model from the dictionary.
@@ -174,8 +186,8 @@ public:
   }
 protected:
   std::string m_default_type, m_option;
-  std::map<std::string, ModelCreatorPtr> m_models;
-  std::map<std::string, ModifierCreatorPtr> m_modifiers;
+  std::map<std::string, std::shared_ptr<ModelCreator> > m_models;
+  std::map<std::string, std::shared_ptr<ModifierCreator> > m_modifiers;
   IceGrid::ConstPtr m_grid;
 };
 
