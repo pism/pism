@@ -83,8 +83,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_mass_flux(IceGrid::ConstPtr grid) {
   Config::ConstPtr config = grid->ctx()->config();
   const double smb_max = config->get_double("surface.given.smb_max", "kg m-2 second-1");
 
-  result->metadata().set_double("valid_min", -smb_max);
-  result->metadata().set_double("valid_max", smb_max);
+  result->metadata().set_doubles("valid_range", {-smb_max, smb_max});
 
   return result;
 }
@@ -102,29 +101,43 @@ IceModelVec2S::Ptr SurfaceModel::allocate_temperature(IceGrid::ConstPtr grid) {
   return result;
 }
 
+SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid)
+  : Component(grid), m_input_model(nullptr), m_atmosphere(nullptr) {
+
+  m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
+  m_layer_mass            = allocate_layer_mass(grid);
+  m_layer_thickness       = allocate_layer_thickness(grid);
+
+  // default values
+  m_layer_thickness->set(0.0);
+  m_layer_mass->set(0.0);
+  m_liquid_water_fraction->set(0.0);
+}
+
+SurfaceModel::SurfaceModel(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
+  : Component(g) {
+  m_input_model = input;
+  // this is a modifier: allocate storage only if necessary (in derived classes)
+}
+
+SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid,
+                           std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
+  : SurfaceModel(grid) {        // this constructor will allocate storage
+
+  m_atmosphere = atmosphere;
+}
+
+SurfaceModel::~SurfaceModel() {
+  // empty
+}
+
 
 const IceModelVec2S& SurfaceModel::mass_flux() const {
   return mass_flux_impl();
 }
 
-const IceModelVec2S& SurfaceModel::mass_flux_impl() const {
-  if (m_input_model) {
-    return m_input_model->mass_flux();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
-  }
-}
-
 const IceModelVec2S& SurfaceModel::temperature() const {
   return temperature_impl();
-}
-
-const IceModelVec2S& SurfaceModel::temperature_impl() const {
-  if (m_input_model) {
-    return m_input_model->temperature();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
-  }
 }
 
 //! \brief Returns the liquid water fraction of the ice at the top ice surface.
@@ -133,14 +146,6 @@ const IceModelVec2S& SurfaceModel::temperature_impl() const {
  */
 const IceModelVec2S& SurfaceModel::liquid_water_fraction() const {
   return liquid_water_fraction_impl();
-}
-
-const IceModelVec2S& SurfaceModel::liquid_water_fraction_impl() const {
-  if (m_input_model) {
-    return m_input_model->liquid_water_fraction();
-  } else {
-    return *m_liquid_water_fraction;
-  }
 }
 
 //! \brief Returns mass held in the surface layer.
@@ -152,23 +157,47 @@ const IceModelVec2S& SurfaceModel::layer_mass() const {
   return layer_mass_impl();
 }
 
-const IceModelVec2S& SurfaceModel::layer_mass_impl() const {
-  if (m_input_model) {
-    return m_input_model->layer_mass();
-  } else {
-    return *m_layer_mass;
-  }
-}
-
-//! \brief Returns thickness of the surface layer. Used to compute surface
-//! elevation as a sum of elevation of the top surface of the ice and surface
-//! layer (firn, etc) thickness.
+//! \brief Returns thickness of the surface layer. Could be used to compute surface
+//! elevation as a sum of elevation of the top surface of the ice and surface layer (firn,
+//! etc) thickness.
 /*!
  * Basic surface models currently implemented in PISM do not model surface
  * layer thickness.
  */
 const IceModelVec2S& SurfaceModel::layer_thickness() const {
   return layer_thickness_impl();
+}
+
+const IceModelVec2S& SurfaceModel::mass_flux_impl() const {
+  if (m_input_model) {
+    return m_input_model->mass_flux();
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
+const IceModelVec2S& SurfaceModel::temperature_impl() const {
+  if (m_input_model) {
+    return m_input_model->temperature();
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
+const IceModelVec2S& SurfaceModel::liquid_water_fraction_impl() const {
+  if (m_input_model) {
+    return m_input_model->liquid_water_fraction();
+  } else {
+    return *m_liquid_water_fraction;
+  }
+}
+
+const IceModelVec2S& SurfaceModel::layer_mass_impl() const {
+  if (m_input_model) {
+    return m_input_model->layer_mass();
+  } else {
+    return *m_layer_mass;
+  }
 }
 
 const IceModelVec2S& SurfaceModel::layer_thickness_impl() const {
@@ -178,6 +207,81 @@ const IceModelVec2S& SurfaceModel::layer_thickness_impl() const {
     return *m_layer_thickness;
   }
 }
+
+TSDiagnosticList SurfaceModel::ts_diagnostics_impl() const {
+  if (m_atmosphere) {
+    return m_atmosphere->ts_diagnostics();
+  }
+
+  if (m_input_model) {
+    return m_input_model->ts_diagnostics();
+  }
+
+  return {};
+}
+
+void SurfaceModel::init(const Geometry &geometry) {
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
+  this->init_impl(geometry);
+}
+
+void SurfaceModel::init_impl(const Geometry &geometry) {
+  if (m_atmosphere) {
+    m_atmosphere->init(geometry);
+  }
+
+  if (m_input_model) {
+    m_input_model->init(geometry);
+  }
+}
+
+void SurfaceModel::update(const Geometry &geometry, double t, double dt) {
+  this->update_impl(geometry, t, dt);
+}
+
+void SurfaceModel::update_impl(const Geometry &geometry, double t, double dt) {
+  if (m_atmosphere) {
+    m_atmosphere->update(geometry, t, dt);
+  }
+
+  if (m_input_model) {
+    m_input_model->update(geometry, t, dt);
+  }
+}
+
+void SurfaceModel::define_model_state_impl(const PIO &output) const {
+  if (m_atmosphere) {
+    m_atmosphere->define_model_state(output);
+  }
+
+  if (m_input_model) {
+    m_input_model->define_model_state(output);
+  }
+}
+
+void SurfaceModel::write_model_state_impl(const PIO &output) const {
+  if (m_atmosphere) {
+    m_atmosphere->write_model_state(output);
+  }
+
+  if (m_input_model) {
+    m_input_model->write_model_state(output);
+  }
+}
+
+MaxTimestep SurfaceModel::max_timestep_impl(double t) const {
+  if (m_atmosphere) {
+    return m_atmosphere->max_timestep(t);
+  }
+
+  if (m_input_model) {
+    return m_input_model->max_timestep(t);
+  }
+
+  return MaxTimestep("surface model");
+}
+
+namespace diagnostics {
 
 // SurfaceModel diagnostics (these don't need to be in the header)
 
@@ -225,104 +329,6 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const;
 };
-
-///// PISMSurfaceModel base class:
-SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid)
-  : Component(grid), m_input_model(nullptr), m_atmosphere(nullptr) {
-
-  m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
-  m_layer_mass            = allocate_layer_mass(grid);
-  m_layer_thickness       = allocate_layer_thickness(grid);
-
-  // default values
-  m_layer_thickness->set(0.0);
-  m_layer_mass->set(0.0);
-  m_liquid_water_fraction->set(0.0);
-}
-
-SurfaceModel::SurfaceModel(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
-  : Component(g) {
-  m_input_model = input;
-  // this is a modifier: allocate storage only if necessary (in derived classes)
-}
-
-SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid,
-                           std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
-  : SurfaceModel(grid) {        // this constructor will allocate storage
-
-  m_atmosphere = atmosphere;
-}
-
-
-SurfaceModel::~SurfaceModel() {
-  // empty
-}
-
-DiagnosticList SurfaceModel::diagnostics_impl() const {
-  DiagnosticList result = {
-    {"climatic_mass_balance",             Diagnostic::Ptr(new PS_climatic_mass_balance(this))},
-    {"ice_surface_temp",                  Diagnostic::Ptr(new PS_ice_surface_temp(this))},
-    {"ice_surface_liquid_water_fraction", Diagnostic::Ptr(new PS_liquid_water_fraction(this))},
-    {"surface_layer_mass",                Diagnostic::Ptr(new PS_layer_mass(this))},
-    {"surface_layer_thickness",           Diagnostic::Ptr(new PS_layer_thickness(this))}
-  };
-
-  if (m_atmosphere) {
-    result = pism::combine(result, m_atmosphere->diagnostics());
-  }
-
-  if (m_input_model) {
-    result = pism::combine(result, m_input_model->diagnostics());
-  }
-
-  return result;
-}
-
-TSDiagnosticList SurfaceModel::ts_diagnostics_impl() const {
-  if (m_atmosphere) {
-    return m_atmosphere->ts_diagnostics();
-  }
-
-  if (m_input_model) {
-    return m_input_model->ts_diagnostics();
-  }
-
-  return {};
-}
-
-void SurfaceModel::init(const Geometry &geometry) {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-  this->init_impl(geometry);
-}
-
-void SurfaceModel::init_impl(const Geometry &geometry) {
-  assert(m_atmosphere != NULL);
-  m_atmosphere->init(geometry);
-}
-
-void SurfaceModel::update(const Geometry &geometry, double t, double dt) {
-  this->update_impl(geometry, t, dt);
-}
-
-void SurfaceModel::define_model_state_impl(const PIO &output) const {
-  if (m_atmosphere != NULL) {
-    m_atmosphere->define_model_state(output);
-  }
-}
-
-void SurfaceModel::write_model_state_impl(const PIO &output) const {
-  if (m_atmosphere != NULL) {
-    m_atmosphere->write_model_state(output);
-  }
-}
-
-MaxTimestep SurfaceModel::max_timestep_impl(double my_t) const {
-  if (m_atmosphere != NULL) {
-    return m_atmosphere->max_timestep(my_t);
-  } else {
-    return MaxTimestep("surface model");
-  }
-}
 
 PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
@@ -421,6 +427,29 @@ IceModelVec::Ptr PS_layer_thickness::compute_impl() const {
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->layer_thickness());
+
+  return result;
+}
+} // end of namespace diagnostics
+
+DiagnosticList SurfaceModel::diagnostics_impl() const {
+  using namespace diagnostics;
+
+  DiagnosticList result = {
+    {"climatic_mass_balance",             Diagnostic::Ptr(new PS_climatic_mass_balance(this))},
+    {"ice_surface_temp",                  Diagnostic::Ptr(new PS_ice_surface_temp(this))},
+    {"ice_surface_liquid_water_fraction", Diagnostic::Ptr(new PS_liquid_water_fraction(this))},
+    {"surface_layer_mass",                Diagnostic::Ptr(new PS_layer_mass(this))},
+    {"surface_layer_thickness",           Diagnostic::Ptr(new PS_layer_thickness(this))}
+  };
+
+  if (m_atmosphere) {
+    result = pism::combine(result, m_atmosphere->diagnostics());
+  }
+
+  if (m_input_model) {
+    result = pism::combine(result, m_input_model->diagnostics());
+  }
 
   return result;
 }

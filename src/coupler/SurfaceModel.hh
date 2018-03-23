@@ -70,7 +70,7 @@ protected:
   virtual const IceModelVec2S& temperature_impl() const;
 
   virtual void init_impl(const Geometry &geometry);
-  virtual void update_impl(const Geometry &geometry, double t, double dt) = 0;
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
