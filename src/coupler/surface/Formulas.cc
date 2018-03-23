@@ -24,22 +24,31 @@
 namespace pism {
 namespace surface {
 
-PSFormulas::PSFormulas(IceGrid::ConstPtr g)
-  : SurfaceModel(g) {
+PSFormulas::PSFormulas(IceGrid::ConstPtr grid)
+  : SurfaceModel(grid) {
   m_mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   m_mass_flux.set_attrs("internal",
-                                    "ice-equivalent surface mass balance (accumulation/ablation) rate",
-                                    "kg m-2 s-1",
-                                    "land_ice_surface_specific_mass_balance_flux");
+                        "ice-equivalent surface mass balance (accumulation/ablation) rate",
+                        "kg m-2 s-1",
+                        "land_ice_surface_specific_mass_balance_flux");
   m_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_mass_flux.metadata().set_string("comment", "positive values correspond to ice gain");
 
-  // annual mean air temperature at "ice surface", at level below all
-  // firn processes (e.g. "10 m" or ice temperatures)
   m_temperature.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
   m_temperature.set_attrs("internal",
-                               "annual average ice surface temperature, below firn processes",
-                               "K", "");
+                          "annual average ice surface temperature, below firn processes",
+                          "K", "");
+
+  {
+    m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
+    m_layer_mass            = allocate_layer_mass(grid);
+    m_layer_thickness       = allocate_layer_thickness(grid);
+
+    // default values
+    m_layer_thickness->set(0.0);
+    m_layer_mass->set(0.0);
+    m_liquid_water_fraction->set(0.0);
+  }
 }
 
 PSFormulas::~PSFormulas() {
