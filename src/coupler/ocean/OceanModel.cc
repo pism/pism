@@ -133,6 +133,21 @@ MaxTimestep OceanModel::max_timestep_impl(double t) const {
   }
 }
 
+void OceanModel::define_model_state_impl(const PIO &output) const {
+  if (m_input_model) {
+    return m_input_model->define_model_state(output);
+  } else {
+    // no state to define
+  }
+}
+
+void OceanModel::write_model_state_impl(const PIO &output) const {
+  if (m_input_model) {
+    return m_input_model->write_model_state(output);
+  } else {
+    // no state to write
+  }
+}
 
 const IceModelVec2S& OceanModel::sea_level_elevation_impl() const {
   if (m_input_model) {
