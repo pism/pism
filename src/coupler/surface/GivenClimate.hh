@@ -29,7 +29,7 @@ namespace surface {
 class Given : public PGivenClimate<SurfaceModel,SurfaceModel>
 {
 public:
-  Given(IceGrid::ConstPtr g);
+  Given(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input);
   virtual ~Given();
 protected:
   void init_impl(const Geometry &geometry);

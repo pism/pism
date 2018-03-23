@@ -24,9 +24,11 @@
 namespace pism {
 namespace surface {
 
-Given::Given(IceGrid::ConstPtr g)
+Given::Given(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
   : PGivenClimate<SurfaceModel,SurfaceModel>(g, NULL)
 {
+  (void) input;
+
   m_option_prefix = "-surface_given";
 
   m_temperature      = new IceModelVec2T;

@@ -237,9 +237,6 @@ void IceModel::model_state_setup() {
 
   // Initialize the energy balance sub-model.
   {
-    IceModelVec2S &ice_surface_temperature = m_work2d[0];
-    IceModelVec2S &climatic_mass_balance   = m_work2d[1];
-
     switch (input.type) {
     case INIT_RESTART:
       {
@@ -248,12 +245,11 @@ void IceModel::model_state_setup() {
       }
     case INIT_BOOTSTRAP:
       {
-        m_surface->temperature(ice_surface_temperature);
-        m_surface->mass_flux(climatic_mass_balance);
+
         m_energy_model->bootstrap(*input_file,
                                   m_geometry.ice_thickness,
-                                  ice_surface_temperature,
-                                  climatic_mass_balance,
+                                  m_surface->temperature(),
+                                  m_surface->mass_flux(),
                                   m_btu->flux_through_top_surface());
         break;
       }
@@ -261,12 +257,11 @@ void IceModel::model_state_setup() {
     default:
       {
         m_basal_melt_rate.set(m_config->get_double("bootstrapping.defaults.bmelt"));
-        m_surface->temperature(ice_surface_temperature);
-        m_surface->mass_flux(climatic_mass_balance);
+
         m_energy_model->initialize(m_basal_melt_rate,
                                    m_geometry.ice_thickness,
-                                   ice_surface_temperature,
-                                   climatic_mass_balance,
+                                   m_surface->temperature(),
+                                   m_surface->mass_flux(),
                                    m_btu->flux_through_top_surface());
 
       }
@@ -634,18 +629,15 @@ void IceModel::allocate_submodels() {
 
 void IceModel::allocate_couplers() {
   // Initialize boundary models:
-  atmosphere::Factory pa(m_grid);
-  surface::Factory ps(m_grid);
-  ocean::Factory po(m_grid);
 
   if (m_surface == NULL) {
 
     m_log->message(2,
              "# Allocating a surface process model or coupler...\n");
 
-    m_surface.reset(new surface::InitializationHelper(m_grid, ps.create()));
+    surface::Factory ps(m_grid, atmosphere::Factory(m_grid).create());
 
-    m_surface->attach_atmosphere_model(pa.create());
+    m_surface.reset(new surface::InitializationHelper(m_grid, ps.create()));
 
     m_submodels["surface process model"] = m_surface.get();
   }
@@ -653,6 +645,8 @@ void IceModel::allocate_couplers() {
   if (m_ocean == NULL) {
     m_log->message(2,
              "# Allocating an ocean model or coupler...\n");
+
+    ocean::Factory po(m_grid);
 
     m_ocean.reset(new ocean::InitializationHelper(m_grid, po.create()));
 

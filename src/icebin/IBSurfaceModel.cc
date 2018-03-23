@@ -32,7 +32,9 @@ namespace icebin {
 ///// ice surface temperature parameterized as in PISM-IBSurfaceModel dependent on latitude and surface elevation
 
 
-IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g) : SurfaceModel(g) {
+IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g)
+  : SurfaceModel(g) {
+
   printf("BEGIN IBSurfaceModel::allocate_IBSurfaceModel()\n");
   icebin_wflux.create(m_grid, "icebin_wflux", WITHOUT_GHOSTS);
   icebin_wflux.set_attrs("climate_state",
@@ -60,10 +62,6 @@ IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g) : SurfaceModel(g) {
   surface_temp.set_attrs("climate_state", "Temperature to use for Dirichlet B.C. at surface", "K", "");
 
   printf("END IBSurfaceModel::allocate_IBSurfaceModel()\n");
-}
-
-void IBSurfaceModel::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input) {
-  (void) input;
 }
 
 void IBSurfaceModel::init_impl(const Geometry &geometry) {
@@ -103,12 +101,12 @@ void IBSurfaceModel::update_impl(const Geometry &geometry, double my_t, double m
   m_dt = my_dt;
 }
 
-void IBSurfaceModel::mass_flux_impl(IceModelVec2S &result) const {
-  result.copy_from(icebin_massxfer);
+const IceModelVec2S &IBSurfaceModel::mass_flux_impl() const {
+  return icebin_massxfer;
 }
 
-void IBSurfaceModel::temperature_impl(IceModelVec2S &result) const {
-  result.copy_from(surface_temp);
+const IceModelVec2S &IBSurfaceModel::temperature_impl() const {
+  return surface_temp;
 }
 
 void IBSurfaceModel::define_model_state_impl(const PIO &output) const {

@@ -39,7 +39,6 @@ public:
 protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
-  virtual void attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input);
 
   virtual const IceModelVec2S& mass_flux_impl() const;
   virtual const IceModelVec2S& temperature_impl() const;

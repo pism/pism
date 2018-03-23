@@ -144,7 +144,7 @@ public:
     // the first element has to be an *actual* model (not a modifier)
     auto j = choices.begin();
 
-    std::shared_ptr<Model> result = model(*j);
+    auto result = model(*j);
 
     ++j;
 
@@ -165,24 +165,6 @@ public:
   template <class M>
   void add_modifier(const std::string &name) {
     m_modifiers[name].reset(new SpecificModifierCreator<M>);
-  }
-
-  //! Removes a boundary model from the dictionary.
-  void remove_model(const std::string &name) {
-    m_models.erase(name);
-  }
-
-  void remove_modifier(const std::string &name) {
-    m_modifiers.erase(name);
-  }
-
-  //! Clears the dictionary.
-  void clear_models() {
-    m_models.clear();
-  }
-
-  void clear_modifiers() {
-    m_modifiers.clear();
   }
 protected:
   std::string m_default_type, m_option;

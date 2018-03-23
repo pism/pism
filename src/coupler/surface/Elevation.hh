@@ -27,7 +27,7 @@ namespace surface {
 //! \brief A class implementing a elevation-dependent temperature and mass balance model.
 class Elevation : public SurfaceModel {
 public:
-  Elevation(IceGrid::ConstPtr g);
+  Elevation(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> input);
 protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);

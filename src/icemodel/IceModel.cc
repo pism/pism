@@ -403,12 +403,7 @@ stressbalance::Inputs IceModel::stress_balance_inputs() {
 energy::Inputs IceModel::energy_model_inputs() {
   energy::Inputs result;
 
-  IceModelVec2S &ice_surface_temperature           = m_work2d[0];
-  IceModelVec2S &ice_surface_liquid_water_fraction = m_work2d[1];
   IceModelVec2S &till_water_thickness              = m_work2d[2];
-
-  m_surface->temperature(ice_surface_temperature);
-  m_surface->liquid_water_fraction(ice_surface_liquid_water_fraction);
 
   m_subglacial_hydrology->till_water_thickness(till_water_thickness);
 
@@ -417,8 +412,8 @@ energy::Inputs IceModel::energy_model_inputs() {
   result.cell_type                = &m_geometry.cell_type;              // geometry
   result.ice_thickness            = &m_geometry.ice_thickness;          // geometry
   result.shelf_base_temp          = &m_ocean->shelf_base_temperature(); // ocean model
-  result.surface_liquid_fraction  = &ice_surface_liquid_water_fraction; // surface model
-  result.surface_temp             = &ice_surface_temperature;           // surface model
+  result.surface_liquid_fraction  = &m_surface->liquid_water_fraction(); // surface model
+  result.surface_temp             = &m_surface->temperature();           // surface model
   result.till_water_thickness     = &till_water_thickness;              // hydrology model
 
   result.strain_heating3          = &m_stress_balance->volumetric_strain_heating();
@@ -659,12 +654,9 @@ void IceModel::step(bool do_mass_continuity,
   if (do_mass_continuity) {
     // compute and apply effective surface and basal mass balance
 
-    IceModelVec2S &surface_mass_flux = m_work2d[0];
-    m_surface->mass_flux(surface_mass_flux);
-
     m_geometry_evolution->source_term_step(m_geometry, m_dt,
                                            thickness_bc_mask,
-                                           surface_mass_flux,
+                                           m_surface->mass_flux(),
                                            m_basal_melt_rate);
     m_geometry_evolution->apply_mass_fluxes(m_geometry);
 

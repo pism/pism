@@ -35,19 +35,18 @@ namespace icebin {
 
 class IBSurfaceModel : public pism::surface::SurfaceModel {
 public:
-  IBSurfaceModel(IceGrid::ConstPtr g);
+  IBSurfaceModel(IceGrid::ConstPtr grid);
 
 protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
-  virtual void attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input);
+  virtual MaxTimestep max_timestep_impl(double t) const;
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual void mass_flux_impl(IceModelVec2S &result) const;
-  virtual void temperature_impl(IceModelVec2S &result) const;
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  virtual const IceModelVec2S& mass_flux_impl() const;
+  virtual const IceModelVec2S& temperature_impl() const;
 
 protected:
   bool _initialized;

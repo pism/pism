@@ -40,8 +40,9 @@ namespace surface {
 
 ///// PISM surface model implementing a PDD scheme.
 
-TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
-  : SurfaceModel(g) {
+TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
+                                   std::shared_ptr<atmosphere::AtmosphereModel> input)
+  : SurfaceModel(g, input) {
 
   m_sd_period                  = 0;
   m_base_ddf.snow              = m_config->get_double("surface.pdd.factor_snow");

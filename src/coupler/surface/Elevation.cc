@@ -36,8 +36,9 @@ namespace pism {
 namespace surface {
 
 ///// Elevation-dependent temperature and surface mass balance.
-Elevation::Elevation(IceGrid::ConstPtr g)
+Elevation::Elevation(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
   : SurfaceModel(g) {
+  (void) input;
 
   m_temperature = allocate_temperature(g);
   m_mass_flux = allocate_mass_flux(g);

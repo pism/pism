@@ -25,9 +25,44 @@
 namespace pism {
 namespace surface {
 class Factory : public PCFactory<SurfaceModel,SurfaceModel> {
+  typedef atmosphere::AtmosphereModel InputModel;
+
 public:
-  Factory(IceGrid::ConstPtr  g);
+  Factory(IceGrid::ConstPtr g, std::shared_ptr<InputModel> input);
   ~Factory();
+
+  using PCFactory<SurfaceModel,SurfaceModel>::create;
+  std::shared_ptr<SurfaceModel> create(const std::string &type);
+
+private:
+  class SurfaceModelCreator {
+  public:
+    virtual std::shared_ptr<SurfaceModel> create(IceGrid::ConstPtr grid,
+                                                 std::shared_ptr<InputModel> input) = 0;
+    virtual ~SurfaceModelCreator() {}
+  };
+
+  // Creator for a specific model class M.
+  template <class M>
+  class SpecificSurfaceModelCreator : public SurfaceModelCreator {
+  public:
+    std::shared_ptr<SurfaceModel> create(IceGrid::ConstPtr grid,
+                                         std::shared_ptr<InputModel> input) {
+      return std::shared_ptr<SurfaceModel>(new M(grid, input));
+    }
+  };
+
+  template <class M>
+  void add_surface_model(const std::string &name) {
+    m_surface_models[name].reset(new SpecificSurfaceModelCreator<M>);
+  }
+
+  std::shared_ptr<SurfaceModel> surface_model(const std::string &type,
+                                              std::shared_ptr<InputModel> input);
+
+  std::shared_ptr<InputModel> m_input;
+
+  std::map<std::string, std::shared_ptr<SurfaceModelCreator> > m_surface_models;
 };
 } // end of namespace surface
 } // end of namespace pism

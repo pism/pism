@@ -46,11 +46,6 @@ PSFormulas::~PSFormulas() {
   // empty
 }
 
-
-void PSFormulas::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input) {
-  (void) input;
-}
-
 const IceModelVec2S &PSFormulas::mass_flux_impl() const {
   return m_mass_flux;
 }
