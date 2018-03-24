@@ -59,6 +59,7 @@ private:
   // storage
   IceModelVec2S m_mass_flux;
   IceModelVec2S m_temperature;
+  // the rest of the field are inherited from SurfaceModel
 };
 
 } // end of namespace surface
