@@ -21,7 +21,6 @@
 #define _PSFORMULAS_H_
 
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 namespace surface {
@@ -44,8 +43,8 @@ protected:
   virtual const IceModelVec2S& temperature_impl() const;
 
 protected:
-  IceModelVec2S m_mass_flux;
-  IceModelVec2S m_temperature;
+  IceModelVec2S::Ptr m_mass_flux;
+  IceModelVec2S::Ptr m_temperature;
 };
 
 
