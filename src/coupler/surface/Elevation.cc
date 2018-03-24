@@ -129,12 +129,13 @@ void Elevation::init_impl(const Geometry &geometry) {
                  "     mass balance at  %.0f m a.s.l. = %.2f m year-1\n"
                  "     mass balance above %.0f m a.s.l. = %.2f m year-1\n"
                  "     equilibrium line altitude z_ELA = %.2f m a.s.l.\n",
-                 m_z_T_min, m_T_min, m_z_T_max, m_T_max, m_z_M_min,
-                 meter_per_year(m_M_limit_min),
-                 m_z_M_min, m_M_min, m_z_M_max,
-                 meter_per_year(m_M_max),
-                 m_z_M_max,
-                 meter_per_year(m_M_limit_max));
+                 m_z_T_min, m_T_min,
+                 m_z_T_max, m_T_max,
+                 m_z_M_min, meter_per_year(m_M_limit_min),
+                 m_z_M_min, m_M_min,
+                 m_z_M_max, meter_per_year(m_M_max),
+                 m_z_M_max, meter_per_year(m_M_limit_max),
+                 m_z_ELA);
 
   // parameterizing the ice surface temperature 'ice_surface_temp'
   m_log->message(2, "    - parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
