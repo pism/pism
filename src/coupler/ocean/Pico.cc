@@ -45,68 +45,6 @@
 namespace pism {
 namespace ocean {
 
-// To be used solely in round_basins()
-static double most_frequent_element(const std::vector<double> &v) { // Precondition: v is not empty
-  std::map<double, double> frequencyMap;
-  int maxFrequency           = 0;
-  double mostFrequentElement = 0;
-  for (double x : v) {
-    double f = ++frequencyMap[x];
-    if (f > maxFrequency) {
-      maxFrequency        = f;
-      mostFrequentElement = x;
-    }
-  }
-
-  return mostFrequentElement;
-}
-
-//! Round non-integer basin mask values to integers.
-
-//! Basin mask can have non-integer values from PISM regridding for points that lie at
-//! basin boundaries.
-//! Find such point here and set them to the integer value that is most frequent next to it.
-void round_basins(IceModelVec2S &basin_mask) {
-
-  // FIXME: THIS routine should be applied once in init, and roundbasins should
-  // be stored as field (assumed the basins do not change with time).
-
-  IceGrid::ConstPtr grid = basin_mask.grid();
-
-  int Mx = grid->Mx(), My = grid->My();
-
-  double id_fractional;
-  std::vector<double> neighbours = { 0, 0, 0, 0 };
-
-  IceModelVec::AccessList list(basin_mask);
-
-  for (Points p(*grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    // do not consider domain boundaries (they should be far from the shelves.)
-    if ((i == 0) | (j == 0) | (i > (Mx - 2)) | (j > (My - 2))) {
-      id_fractional = 0.0;
-    } else {
-      id_fractional = basin_mask(i, j);
-      neighbours[0] = basin_mask(i + 1, j + 1);
-      neighbours[1] = basin_mask(i - 1, j + 1);
-      neighbours[2] = basin_mask(i - 1, j - 1);
-      neighbours[3] = basin_mask(i + 1, j - 1);
-
-      // check if this is an interpolated number:
-      // first condition: not an integer
-      // second condition: has no neighbour with same value
-      if ((id_fractional != round(id_fractional)) ||
-          ((id_fractional != neighbours[0]) && (id_fractional != neighbours[1]) && (id_fractional != neighbours[2]) &&
-           (id_fractional != neighbours[3]))) {
-
-        basin_mask(i, j) = most_frequent_element(neighbours);
-        // m_log->message(2, "most frequent: %f at %d,%d\n",most_frequent_neighbour,i,j);
-      }
-    }
-  }
-}
-
 Pico::Pico(IceGrid::ConstPtr g)
     : PGivenClimate<CompleteOceanModel, CompleteOceanModel>(g, NULL), m_geometry(new PicoGeometry(g)) {
 
@@ -205,8 +143,6 @@ void Pico::init_impl() {
   m_log->message(2, "  -Depth of continental shelf for computation of temperature and salinity input\n"
                     "   is set for whole domain to continental_shelf_depth=%.0f meter\n",
                  physics.continental_shelf_depth());
-
-  round_basins(m_basin_mask);
 
   // read time-independent data right away:
   if (m_theta_ocean->get_n_records() == 1 and m_salinity_ocean->get_n_records() == 1) {
