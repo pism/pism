@@ -20,7 +20,6 @@
 #define _PSSIMPLE_H_
 
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/coupler/AtmosphereModel.hh"
 
 namespace pism {
 namespace surface {
@@ -47,8 +46,6 @@ protected:
 
   virtual const IceModelVec2S& mass_flux_impl() const;
   virtual const IceModelVec2S& temperature_impl() const;
-
-  virtual MaxTimestep max_timestep_impl(double t) const;
 
   IceModelVec2S::Ptr m_mass_flux;
   IceModelVec2S::Ptr m_temperature;
