@@ -28,16 +28,15 @@ namespace surface {
 class Elevation : public SurfaceModel {
 public:
   Elevation(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> input);
-protected:
-  virtual void init_impl(const Geometry &geometry);
-  virtual void update_impl(const Geometry &geometry, double t, double dt);
-
-  virtual MaxTimestep max_timestep_impl(double t) const;
-
-  virtual const IceModelVec2S& mass_flux_impl() const;
-  virtual const IceModelVec2S& temperature_impl() const;
-
 private:
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
+
+  MaxTimestep max_timestep_impl(double t) const;
+
+  const IceModelVec2S& mass_flux_impl() const;
+  const IceModelVec2S& temperature_impl() const;
+
   void compute_mass_flux(const IceModelVec2S &surface, IceModelVec2S &result) const;
   void compute_temperature(const IceModelVec2S &surface, IceModelVec2S &result) const;
 
