@@ -20,8 +20,6 @@
 #define _PSCONSTANTPIK_H_
 
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/util/iceModelVec.hh"
-#include "pism/coupler/AtmosphereModel.hh"
 
 namespace pism {
 namespace surface {
@@ -37,20 +35,20 @@ class PIK : public SurfaceModel {
 public:
   PIK(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere);
 protected:
-  virtual void init_impl(const Geometry &geometry);
-  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual const IceModelVec2S& mass_flux_impl() const;
-  virtual const IceModelVec2S& temperature_impl() const;
+  const IceModelVec2S& mass_flux_impl() const;
+  const IceModelVec2S& temperature_impl() const;
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  void define_model_state_impl(const PIO &output) const;
+  void write_model_state_impl(const PIO &output) const;
 
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t) const;
 
 protected:
-  IceModelVec2S m_mass_flux;
-  IceModelVec2S m_temperature;
+  IceModelVec2S::Ptr m_mass_flux;
+  IceModelVec2S::Ptr m_temperature;
 };
 
 } // end of namespace surface

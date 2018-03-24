@@ -33,21 +33,12 @@ namespace surface {
 ///// ice surface temperature parameterized as in PISM-PIK dependent on latitude and surface elevation
 
 
-PIK::PIK(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
-  : SurfaceModel(g) {
+PIK::PIK(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
+  : SurfaceModel(grid) {
   (void) atmosphere;
 
-  m_mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
-  m_mass_flux.set_attrs("climate_state",
-                                  "constant-in-time surface mass balance (accumulation/ablation) rate",
-                                  "kg m-2 s-1",
-                                  "land_ice_surface_specific_mass_balance_flux");
-  m_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
-
-  m_temperature.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
-  m_temperature.set_attrs("climate_state",
-                             "constant-in-time ice temperature at the ice surface",
-                             "K", "");
+  m_mass_flux   = allocate_mass_flux(grid);
+  m_temperature = allocate_temperature(grid);
 }
 
 void PIK::init_impl(const Geometry &geometry) {
@@ -66,9 +57,9 @@ void PIK::init_impl(const Geometry &geometry) {
                  "    reading surface mass balance rate 'climatic_mass_balance' from %s ... \n",
                  opts.filename.c_str());
   if (opts.type == INIT_BOOTSTRAP) {
-    m_mass_flux.regrid(opts.filename, CRITICAL); // fails if not found!
+    m_mass_flux->regrid(opts.filename, CRITICAL); // fails if not found!
   } else {
-    m_mass_flux.read(opts.filename, opts.record); // fails if not found!
+    m_mass_flux->read(opts.filename, opts.record); // fails if not found!
   }
 
   // parameterizing the ice surface temperature 'ice_surface_temp'
@@ -82,40 +73,36 @@ MaxTimestep PIK::max_timestep_impl(double t) const {
 }
 
 void PIK::update_impl(const Geometry &geometry, double t, double dt) {
-  if ((fabs(t - m_t) < 1e-12) and (fabs(dt - m_dt) < 1e-12)) {
-    return;
-  }
-
-  m_t  = t;
-  m_dt = dt;
+  (void) t;
+  (void) dt;
 
   const IceModelVec2S
-    &usurf = geometry.ice_surface_elevation,
-    &lat   = geometry.latitude;
+    &surface_elevation = geometry.ice_surface_elevation,
+    &latitude          = geometry.latitude;
 
-  IceModelVec::AccessList list{ &m_temperature, &usurf, &lat };
+  IceModelVec::AccessList list{ m_temperature.get(), &surface_elevation, &latitude };
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j   = p.j();
-    m_temperature(i, j) = 273.15 + 30 - 0.0075 * usurf(i, j) - 0.68775 * lat(i, j) * (-1.0);
+    (*m_temperature)(i, j) = 273.15 + 30 - 0.0075 * surface_elevation(i, j) - 0.68775 * latitude(i, j) * (-1.0);
   }
 }
 
 const IceModelVec2S &PIK::mass_flux_impl() const {
-  return m_mass_flux;
+  return *m_mass_flux;
 }
 
 const IceModelVec2S &PIK::temperature_impl() const {
-  return m_temperature;
+  return *m_temperature;
 }
 
 void PIK::define_model_state_impl(const PIO &output) const {
-  m_mass_flux.define(output);
+  m_mass_flux->define(output);
   SurfaceModel::define_model_state_impl(output);
 }
 
 void PIK::write_model_state_impl(const PIO &output) const {
-  m_mass_flux.write(output);
+  m_mass_flux->write(output);
   SurfaceModel::write_model_state_impl(output);
 }
 
