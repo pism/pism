@@ -1333,6 +1333,11 @@ netcdf pism_config {
     pism_config:stress_balance.vertical_velocity_approximation_option = "vertical_velocity_approximation";
     pism_config:stress_balance.vertical_velocity_approximation_type = "keyword";
 
+    pism_config:surface.cache.update_interval = 10;
+    pism_config:surface.cache.update_interval_doc = "Update interval (in years) for the `-surface cache` modifier.";
+    pism_config:surface.cache.update_interval_type = "integer";
+    pism_config:surface.cache.update_interval_units = "year";
+
     pism_config:surface.force_to_thickness.alpha = 0.01;
     pism_config:surface.force_to_thickness.alpha_doc = "exponential coefficient in force-to-thickness mechanism";
     pism_config:surface.force_to_thickness.alpha_type = "scalar";

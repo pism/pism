@@ -22,8 +22,6 @@
 
 #include "pism/coupler/SurfaceModel.hh"
 
-#include "pism/util/iceModelVec.hh"
-
 namespace pism {
 namespace surface {
 
@@ -32,8 +30,8 @@ public:
   Cache(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
   virtual ~Cache();
 protected:
-  virtual void init_impl(const Geometry &geometry);
-  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
 
   const IceModelVec2S &layer_mass_impl() const;
   const IceModelVec2S &liquid_water_fraction_impl() const;
@@ -41,10 +39,11 @@ protected:
   const IceModelVec2S &mass_flux_impl() const;
   const IceModelVec2S &layer_thickness_impl() const;
 
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t) const;
 protected:
-  IceModelVec2S m_mass_flux;
-  IceModelVec2S m_temperature;
+  // storage for the rest of the fields is inherited from SurfaceModel
+  IceModelVec2S::Ptr m_mass_flux;
+  IceModelVec2S::Ptr m_temperature;
 
   double m_next_update_time;
   unsigned int m_update_interval_years;

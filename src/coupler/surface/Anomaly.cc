@@ -84,11 +84,10 @@ void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
   m_climatic_mass_balance_anomaly->average(m_t, m_dt);
   m_ice_surface_temp_anomaly->average(m_t, m_dt);
 
-  m_mass_flux->copy_from(m_input_model->mass_flux());
-  m_mass_flux->add(1.0, *m_climatic_mass_balance_anomaly);
-
-  m_temperature->copy_from(m_input_model->temperature());
-  m_temperature->add(1.0, *m_ice_surface_temp_anomaly);
+  m_input_model->mass_flux().add(1.0, *m_climatic_mass_balance_anomaly,
+                                 *m_mass_flux);
+  m_input_model->temperature().add(1.0, *m_ice_surface_temp_anomaly,
+                                   *m_temperature);
 }
 
 const IceModelVec2S &Anomaly::mass_flux_impl() const {

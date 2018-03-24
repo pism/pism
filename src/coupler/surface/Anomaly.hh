@@ -25,7 +25,8 @@
 namespace pism {
 namespace surface {
 
-//! \brief Reads and uses climatic_mass_balance and ice_surface_temp \b anomalies from a file.
+//! @brief Reads and uses climatic_mass_balance and ice_surface_temp *anomalies* from a
+//! file.
 class Anomaly : public PGivenClimate<SurfaceModel,SurfaceModel>
 {
 public:

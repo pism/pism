@@ -35,28 +35,19 @@ Cache::Cache(IceGrid::ConstPtr grid, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(grid, in) {
 
   m_next_update_time = m_grid->ctx()->time()->current();
-  m_update_interval_years = 10;
+  m_update_interval_years = m_config->get_double("surface.cache.update_interval", "years");
 
-  m_mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
-  m_mass_flux.set_attrs("climate_state",
-                        "surface mass balance (accumulation/ablation) rate",
-                        "kg m-2 s-1",
-                        "land_ice_surface_specific_mass_balance_flux");
-  m_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
+  if (m_update_interval_years <= 0) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "surface.cache.update_interval has to be strictly positive.");
+  }
 
-  m_temperature.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
-  m_temperature.set_attrs("climate_state",
-                          "ice temperature at the ice surface",
-                          "K", "");
   {
+    m_mass_flux             = allocate_mass_flux(grid);
+    m_temperature           = allocate_temperature(grid);
     m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
     m_layer_mass            = allocate_layer_mass(grid);
     m_layer_thickness       = allocate_layer_thickness(grid);
-
-    // default values
-    m_layer_thickness->set(0.0);
-    m_layer_mass->set(0.0);
-    m_liquid_water_fraction->set(0.0);
   }
 }
 
@@ -64,30 +55,17 @@ Cache::~Cache() {
   // empty
 }
 
-
 void Cache::init_impl(const Geometry &geometry) {
-  int update_interval = m_update_interval_years;
-
   m_input_model->init(geometry);
 
-  m_log->message(2,
-             "* Initializing the 'caching' surface model modifier...\n");
+  m_log->message(2, "* Initializing the 'caching' surface model modifier...\n");
 
-  update_interval = options::Integer("-surface_cache_update_interval",
-                                     "Interval (in years) between surface model updates",
-                                     update_interval);
-
-  if (update_interval <= 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "-surface_cache_update_interval has to be strictly positive.");
-  }
-
-  m_update_interval_years = update_interval;
   m_next_update_time = m_grid->ctx()->time()->current();
 }
 
 void Cache::update_impl(const Geometry &geometry, double t, double dt) {
   // ignore dt and always use 1 year long time-steps when updating
-  // an input model
+  // the input model
   (void) dt;
 
   if (t >= m_next_update_time or fabs(t - m_next_update_time) < 1.0) {
@@ -104,8 +82,8 @@ void Cache::update_impl(const Geometry &geometry, double t, double dt) {
                                                                m_update_interval_years);
 
     // store outputs of the input model
-    m_mass_flux.copy_from(m_input_model->mass_flux());
-    m_temperature.copy_from(m_input_model->temperature());
+    m_mass_flux->copy_from(m_input_model->mass_flux());
+    m_temperature->copy_from(m_input_model->temperature());
     m_liquid_water_fraction->copy_from(m_input_model->liquid_water_fraction());
     m_layer_mass->copy_from(m_input_model->layer_mass());
     m_layer_thickness->copy_from(m_input_model->layer_thickness());
@@ -142,11 +120,11 @@ const IceModelVec2S &Cache::layer_thickness_impl() const {
 }
 
 const IceModelVec2S &Cache::mass_flux_impl() const {
-  return m_mass_flux;
+  return *m_mass_flux;
 }
 
 const IceModelVec2S &Cache::temperature_impl() const {
-  return m_temperature;
+  return *m_temperature;
 }
 
 const IceModelVec2S &Cache::liquid_water_fraction_impl() const {
