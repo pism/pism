@@ -32,6 +32,7 @@
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/IceGrid.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 
@@ -308,6 +309,8 @@ protected:
 
   mutable int m_access_counter;           // used in begin_access() and end_access()
   int m_state_counter;            //!< Internal IceModelVec "revision number"
+
+  InterpolationType m_interpolation_type;
 
   virtual void checkCompatibility(const char *function, const IceModelVec &other) const;
 

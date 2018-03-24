@@ -53,6 +53,7 @@ IceModelVec::IceModelVec() {
   reset_attrs(0);
 
   m_state_counter = 0;
+  m_interpolation_type = BILINEAR;
 
   m_zlevels.resize(1);
   m_zlevels[0] = 0.0;
@@ -441,14 +442,14 @@ void IceModelVec::regrid_impl(const PIO &file, RegriddingFlag flag,
 
     io::regrid_spatial_variable(metadata(0), *m_grid, file, flag,
                                 m_report_range, allow_extrapolation,
-                                default_value, tmp_array.get());
+                                default_value, m_interpolation_type, tmp_array.get());
 
     global_to_local(m_da, tmp, m_v);
   } else {
     petsc::VecArray v_array(m_v);
     io::regrid_spatial_variable(metadata(0), *m_grid,  file, flag,
                                 m_report_range, allow_extrapolation,
-                                default_value, v_array.get());
+                                default_value, m_interpolation_type, v_array.get());
   }
 }
 

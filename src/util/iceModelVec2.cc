@@ -227,7 +227,7 @@ void IceModelVec2::regrid_impl(const PIO &file, RegriddingFlag flag,
       petsc::VecArray tmp_array(tmp);
       io::regrid_spatial_variable(m_metadata[j], *m_grid,  file, flag,
                                   m_report_range, allow_extrapolation,
-                                  default_value, tmp_array.get());
+                                  default_value, m_interpolation_type, tmp_array.get());
     }
 
     IceModelVec2::set_dof(da2, tmp, j);
@@ -608,14 +608,14 @@ std::vector<double> IceModelVec2Stag::absmaxcomponents() const {
 
 IceModelVec2Int::IceModelVec2Int()
   : IceModelVec2S() {
-  // empty
+  m_interpolation_type = NEAREST;
 }
 
 
 IceModelVec2Int::IceModelVec2Int(IceGrid::ConstPtr grid, const std::string &name,
                                  IceModelVecKind ghostedp, int width)
   : IceModelVec2S(grid, name, ghostedp, width) {
-  // empty
+  m_interpolation_type = NEAREST;
 }
 
 
