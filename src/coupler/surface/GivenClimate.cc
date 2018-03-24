@@ -57,8 +57,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
                          "surface mass balance (accumulation/ablation) rate",
                          "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
   m_mass_flux->metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_mass_flux->metadata().set_double("valid_min", -smb_max);
-  m_mass_flux->metadata().set_double("valid_max", smb_max);
+  m_mass_flux->metadata().set_doubles("valid_range", {-smb_max, smb_max});
 
   // this class uses the "modifier" version of the SurfaceModel constructor, so we need to
   // allocate these here
