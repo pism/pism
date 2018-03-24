@@ -92,6 +92,12 @@ void OceanModel::init(const Geometry &geometry) {
   this->init_impl(geometry);
 }
 
+void OceanModel::init_impl(const Geometry &geometry) {
+  if (m_input_model) {
+    m_input_model->init(geometry);
+  }
+}
+
 void OceanModel::update(const Geometry &geometry, double t, double dt) {
   this->update_impl(geometry, t, dt);
   m_t  = t;

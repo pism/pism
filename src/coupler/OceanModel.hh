@@ -54,7 +54,7 @@ public:
   const IceModelVec2S& melange_back_pressure_fraction() const;
 
 protected:
-  virtual void init_impl(const Geometry &geometry) = 0;
+  virtual void init_impl(const Geometry &geometry);
   // provides default (pass-through) implementations for "modifiers"
   virtual void update_impl(const Geometry &geometry, double t, double dt);
   virtual MaxTimestep max_timestep_impl(double t) const;
