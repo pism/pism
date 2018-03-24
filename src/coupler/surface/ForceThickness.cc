@@ -40,11 +40,10 @@ namespace surface {
 ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
   : SurfaceModel(g, input) {
 
-  m_alpha = m_config->get_double("surface.force_to_thickness.alpha", "s-1");
-  m_alpha_ice_free_factor = m_config->get_double("surface.force_to_thickness.ice_free_alpha_factor");
+  m_alpha                        = m_config->get_double("surface.force_to_thickness.alpha", "s-1");
+  m_alpha_ice_free_factor        = m_config->get_double("surface.force_to_thickness.ice_free_alpha_factor");
   m_ice_free_thickness_threshold = m_config->get_double("surface.force_to_thickness.ice_free_thickness_threshold");
-
-  m_start_time = m_config->get_double("surface.force_to_thickness.start_time", "seconds");
+  m_start_time                   = m_config->get_double("surface.force_to_thickness.start_time", "seconds");
 
   m_target_thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
   // will set attributes in init()
@@ -69,52 +68,28 @@ void ForceThickness::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
   m_log->message(2,
-             "* Initializing force-to-thickness mass-balance modifier...\n");
+                 "* Initializing force-to-thickness mass-balance modifier...\n");
 
-  options::String input_file("-force_to_thickness_file",
-                             "Specifies the target thickness file for the"
-                             " force-to-thickness mechanism");
+  std::string input_file = m_config->get_string("surface.force_to_thickness_file");
 
-  if (not input_file.is_set()) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "surface model forcing requires the -force_to_thickness_file option.");
-  }
-
-  options::Real ftt_alpha("-force_to_thickness_alpha",
-                          "Specifies the value of force-to-thickness alpha in per-year units",
-                          units::convert(m_sys, m_alpha, "s-1", "year-1"));
-
-  m_alpha_ice_free_factor = options::Real("-force_to_thickness_ice_free_alpha_factor",
-                                          "Set the multiplicative factor for alpha to use in ice-free areas",
-                                          m_alpha_ice_free_factor);
-
-  m_ice_free_thickness_threshold = options::Real("-force_to_thickness_ice_free_thickness_threshold",
-                                                 "Specifies the ice thickness threshold"
-                                                 " used to determine whether a location is ice-free, in m",
-                                                 m_ice_free_thickness_threshold);
-
-  // determine exponential rate alpha from user option or from factor; option
-  // is given in a^{-1}
-  if (ftt_alpha.is_set()) {
-    m_log->message(3, "    option -force_to_thickness_alpha seen\n");
-    m_alpha = units::convert(m_sys, ftt_alpha, "year-1", "s-1");
+  if (input_file.empty()) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "surface.force_to_thickness_file cannot be empty");
   }
 
   m_log->message(2,
-             "    alpha = %.6f year-1 for -force_to_thickness mechanism\n"
-             "    alpha = %.6f year-1 in areas with target ice thickness of less than %.3f meters\n",
-             units::convert(m_sys, m_alpha, "s-1", "year-1"),
-             m_alpha_ice_free_factor * units::convert(m_sys, m_alpha, "s-1", "year-1"),
-             m_ice_free_thickness_threshold);
+                 "    alpha = %.6f year-1 for -force_to_thickness mechanism\n"
+                 "    alpha = %.6f year-1 in areas with target ice thickness of less than %.3f meters\n",
+                 units::convert(m_sys, m_alpha, "s-1", "year-1"),
+                 m_alpha_ice_free_factor * units::convert(m_sys, m_alpha, "s-1", "year-1"),
+                 m_ice_free_thickness_threshold);
 
-  // input_file now contains name of -force_to_thickness file; now check
-  // it is really there; and regrid the target thickness
-  PIO nc(m_grid->com, "guess_mode", input_file, PISM_READONLY);
-  bool mask_exists = nc.inq_var("ftt_mask");
+  // check of the input file is really there and regrid the target thickness
+  PIO file(m_grid->com, "guess_mode", input_file, PISM_READONLY);
 
   m_log->message(2,
-             "    reading target thickness 'thk' from %s ...\n"
-             "    (this field will appear in output file as 'ftt_target_thk')\n",
-             input_file->c_str());
+                 "    reading target thickness 'thk' from %s ...\n"
+                 "    (this field will appear in output file as 'ftt_target_thk')\n",
+                 input_file.c_str());
   {
     m_target_thickness.metadata(0).set_name("thk"); // name to read by
     // set attributes for the read stage; see below for reset
@@ -133,14 +108,11 @@ void ForceThickness::init_impl(const Geometry &geometry) {
                                  "");  // no CF standard_name, to put it mildly
   }
 
-  if (mask_exists) {
+  {
     m_log->message(2,
-               "    reading force-to-thickness mask 'ftt_mask' from %s ...\n",
-               input_file->c_str());
+                   "    reading force-to-thickness mask 'ftt_mask' from %s ...\n",
+                   input_file.c_str());
     m_ftt_mask.regrid(input_file, CRITICAL);
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable 'ftt_mask' was not found in '%s'",
-                                  input_file->c_str());
   }
 }
 
