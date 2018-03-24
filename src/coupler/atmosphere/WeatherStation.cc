@@ -17,8 +17,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <gsl/gsl_math.h>
-
 #include "WeatherStation.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_utilities.hh"

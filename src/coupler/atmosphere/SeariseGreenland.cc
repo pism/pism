@@ -22,8 +22,6 @@
 
 // This includes the SeaRISE Greenland parameterization.
 
-#include <gsl/gsl_math.h>
-
 #include "SeariseGreenland.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/IceGrid.hh"

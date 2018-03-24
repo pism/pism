@@ -23,7 +23,6 @@
 #include <memory>
 using std::dynamic_pointer_cast;
 
-#include <gsl/gsl_math.h>
 #include <petscdmda.h>
 
 #include "pism/util/io/PIO.hh"
