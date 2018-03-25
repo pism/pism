@@ -1096,6 +1096,11 @@
    :Option: :opt:`-continental_shelf_depth`
    :Description: Determines the edge of the continental shelf to calculate mean ocean properties
 
+#. :config:`ocean.pico.maximum_ice_rise_area` (*scalar*)
+
+   :Value: 100000 (km2)
+   :Description: Maximum ice rise area. Patches of grounded ice that are bugger than this are treated as continental ice sheets.
+
 #. :config:`ocean.pico.overturning_coefficent` (*scalar*)
 
    :Value: 1000000 (meters6 seconds-1 kg-1)
@@ -1108,7 +1113,7 @@
    :Option: :opt:`-gamma_T`
    :Description: Turbulent heat exchange coefficient
 
-#. :config:`ocean.pico.exclude_icerises` (*boolean*)
+#. :config:`ocean.pico.exclude_ice_rises` (*boolean*)
 
    :Value: no
    :Option: :opt:`-exclude_icerises`

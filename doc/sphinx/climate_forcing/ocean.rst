@@ -152,7 +152,7 @@ shelves, which extends to a specified continental shelf depth. Limiting to such 
 avoids forcing with warm deeper-ocean water layers that are not in close contact with the
 circulation on the continental shelf.
 
-PICO has one command-line option and 6 configuration parameters:
+PICO has one command-line option and 7 configuration parameters:
 
 - :opt:`-ocean_pico_file`: specifies the NetCDF file providing potential temperature,
   salinity and ocean basins as fields.
@@ -161,8 +161,9 @@ PICO has one command-line option and 6 configuration parameters:
 - :config:`ocean.pico.overturning_coefficent`
 - :config:`ocean.pico.number_of_boxes`
 - :config:`ocean.pico.number_of_basins`
-- :config:`ocean.pico.exclude_icerises`
+- :config:`ocean.pico.exclude_ice_rises`
 - :config:`ocean.pico.continental_shelf_depth`
+- :config:`ocean.pico.maximum_ice_rise_area`
 
 .. _sec-ocean-delta-sl:
 
