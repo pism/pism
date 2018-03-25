@@ -45,6 +45,7 @@ public:
   const IceModelVec2Int &continental_shelf_mask() const;
   const IceModelVec2Int &box_mask() const;
   const IceModelVec2Int &ice_shelf_mask() const;
+  const IceModelVec2Int &ice_rise_mask() const;
 
   enum IceRiseMask { OCEAN = 0, RISE = 1, CONTINENTAL = 2, FLOATING = 3 };
 

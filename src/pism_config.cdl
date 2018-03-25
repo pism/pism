@@ -1045,6 +1045,11 @@ netcdf pism_config {
     pism_config:ocean.pico.continental_shelf_depth_type = "scalar";
     pism_config:ocean.pico.continental_shelf_depth_units = "meters";
 
+    pism_config:ocean.pico.maximum_ice_rise_area = 1e5;
+    pism_config:ocean.pico.maximum_ice_rise_area_doc = "Maximum ice rise area. Patches of grounded ice that are bugger than this are treated as continental ice sheets.";
+    pism_config:ocean.pico.maximum_ice_rise_area_type = "scalar";
+    pism_config:ocean.pico.maximum_ice_rise_area_units = "km2";
+
     pism_config:ocean.pico.overturning_coefficent = 1e6;
     pism_config:ocean.pico.overturning_coefficent_doc = "Overturning stregth coefficient";
     pism_config:ocean.pico.overturning_coefficent_option = "overturning_coeff";

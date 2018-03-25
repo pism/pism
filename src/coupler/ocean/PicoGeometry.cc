@@ -36,10 +36,15 @@ PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
       m_distance_cf(grid, "pico_distance_cf", WITH_GHOSTS),
       m_ocean_mask(grid, "pico_ocean_mask", WITH_GHOSTS),
       m_lake_mask(grid, "pico_lake_mask", WITHOUT_GHOSTS),
-      m_ice_rises(grid, "ice_rises", WITH_GHOSTS),
+      m_ice_rises(grid, "pico_ice_rise_mask", WITH_GHOSTS),
       m_tmp(grid, "temporary_storage", WITHOUT_GHOSTS) {
 
   m_boxes.metadata().set_double("_FillValue", 0.0);
+
+  m_ice_rises.metadata().set_doubles("flag_values",
+                                     {OCEAN, RISE, CONTINENTAL, FLOATING});
+  m_ice_rises.metadata().set_string("flag_meanings",
+                                     "ocean ice_rise continental_ice_sheet, floating_ice");
 
   m_tmp_p0 = m_tmp.allocate_proc0_copy();
 }
@@ -58,6 +63,10 @@ const IceModelVec2Int &PicoGeometry::box_mask() const {
 
 const IceModelVec2Int &PicoGeometry::ice_shelf_mask() const {
   return m_ice_shelves;
+}
+
+const IceModelVec2Int &PicoGeometry::ice_rise_mask() const {
+  return m_ice_rises;
 }
 
 /*!
@@ -102,16 +111,23 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2
   compute_box_mask(m_distance_gl, m_distance_cf, m_ice_shelves, n_boxes, m_boxes);
 }
 
+
+enum RelabelingType {BY_AREA, AREA_THRESHOLD};
+
 /*!
  * Re-label components in a mask processed by label_connected_components.
  *
- * The biggest one gets the value of 2, all the other ones 1, the background is set to
- * zero.
+ * If type is `BY_AREA`, the biggest one gets the value of 2, all the other ones 1, the
+ * background is set to zero.
  *
- * FIXME: instead of re-labeling by size we should have an area threshold: areas above the
- * threshold get 2, the rest get 1, the background is zero.
+ * If type is `AREA_THRESHOLD`, patches with areas above `threshold` get the value of 2,
+ * all the other ones 1, the background is set to zero.
  */
-void PicoGeometry::relabel_by_size(IceModelVec2Int &mask) {
+static void relabel(RelabelingType type,
+                    double threshold,
+                    IceModelVec2Int &mask) {
+
+  IceGrid::ConstPtr grid = mask.grid();
 
   int max_index = mask.range().max;
 
@@ -124,9 +140,9 @@ void PicoGeometry::relabel_by_size(IceModelVec2Int &mask) {
   std::vector<double> area(max_index + 1, 0.0);
   {
 
-    ParallelSection loop(m_grid->com);
+    ParallelSection loop(grid->com);
     try {
-      for (Points p(*m_grid); p; p.next()) {
+      for (Points p(*grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
         int index = mask(i, j);
@@ -146,30 +162,46 @@ void PicoGeometry::relabel_by_size(IceModelVec2Int &mask) {
     loop.check();
 
     for (unsigned int k = 0; k < area.size(); ++k) {
-      area[k] = GlobalSum(m_grid->com, area[k]);
+      area[k] = grid->dx() * grid->dy() * GlobalSum(grid->com, area[k]);
     }
   }
 
-  // find the biggest component
-  int biggest_component = 0;
-  for (unsigned int k = 0; k < area.size(); ++k) {
-    if (area[k] > area[biggest_component]) {
-      biggest_component = k;
+  if (type == BY_AREA) {
+    // find the biggest component
+    int biggest_component = 0;
+    for (unsigned int k = 0; k < area.size(); ++k) {
+      if (area[k] > area[biggest_component]) {
+        biggest_component = k;
+      }
     }
-  }
 
-  // re-label
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+    // re-label
+    for (Points p(*grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    int component_index = mask.as_int(i, j);
+      int component_index = mask.as_int(i, j);
 
-    if (component_index == biggest_component) {
-      mask(i, j) = 2.0;
-    } else if (component_index > 0) {
-      mask(i, j) = 1.0;
-    } else {
-      mask(i, j) = 0.0;
+      if (component_index == biggest_component) {
+        mask(i, j) = 2.0;
+      } else if (component_index > 0) {
+        mask(i, j) = 1.0;
+      } else {
+        mask(i, j) = 0.0;
+      }
+    }
+  } else {
+    for (Points p(*grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      int component_index = mask.as_int(i, j);
+
+      if (area[component_index] > threshold) {
+        mask(i, j) = 2.0;
+      } else if (component_index > 0) {
+        mask(i, j) = 1.0;
+      } else {
+        mask(i, j) = 0.0;
+      }
     }
   }
 }
@@ -220,7 +252,7 @@ void PicoGeometry::compute_lakes(const IceModelVec2CellType &cell_type, IceModel
 
   label_tmp();
 
-  relabel_by_size(m_tmp);
+  relabel(BY_AREA, 0.0, m_tmp);
 
   result.copy_from(m_tmp);
 }
@@ -254,7 +286,9 @@ void PicoGeometry::compute_ice_rises(const IceModelVec2CellType &cell_type, bool
   if (exclude_ice_rises) {
     label_tmp();
 
-    relabel_by_size(m_tmp);
+    relabel(AREA_THRESHOLD,
+            m_config->get_double("ocean.pico.maximum_ice_rise_area", "m2"),
+            m_tmp);
   }
 
   // mark floating ice areas in this mask (reduces the number of masks we need later)
@@ -401,7 +435,7 @@ void PicoGeometry::compute_ocean_mask(const IceModelVec2CellType &cell_type, Ice
 
   label_tmp();
 
-  relabel_by_size(m_tmp);
+  relabel(BY_AREA, 0.0, m_tmp);
 
   result.copy_from(m_tmp);
 }

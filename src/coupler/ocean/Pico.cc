@@ -618,6 +618,7 @@ DiagnosticList Pico::diagnostics_impl() const {
     { "pico_temperature_box0",  Diagnostic::wrap(m_Toc_box0) },
     { "pico_box_mask",          Diagnostic::wrap(m_geometry->box_mask()) },
     { "pico_shelf_mask",        Diagnostic::wrap(m_geometry->ice_shelf_mask()) },
+    { "pico_ice_rise_mask",     Diagnostic::wrap(m_geometry->ice_rise_mask()) },
     { "pico_basal_melt_rate",   Diagnostic::wrap(m_basal_melt_rate) },
     { "pico_contshelf_mask",    Diagnostic::wrap(m_geometry->continental_shelf_mask()) },
     { "pico_salinity",          Diagnostic::wrap(m_Soc) },
