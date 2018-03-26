@@ -31,6 +31,12 @@ AtmosphereModel::AtmosphereModel(IceGrid::ConstPtr g)
   // empty
 }
 
+AtmosphereModel::AtmosphereModel(IceGrid::ConstPtr g,
+                                 std::shared_ptr<AtmosphereModel> input)
+  :Component(g), m_input_model(input) {
+  // empty
+}
+
 AtmosphereModel::~AtmosphereModel() {
   // empty
 }

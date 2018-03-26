@@ -36,6 +36,7 @@ namespace atmosphere {
 class AtmosphereModel : public Component {
 public:
   AtmosphereModel(IceGrid::ConstPtr g);
+  AtmosphereModel(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> input);
   virtual ~AtmosphereModel();
 
   void init(const Geometry &geometry);
@@ -78,6 +79,8 @@ protected:
   mutable std::vector<double> m_ts_times;
   double m_t;
   double m_dt;
+
+  std::shared_ptr<AtmosphereModel> m_input_model;
 };
 
 } // end of namespace atmosphere
