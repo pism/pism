@@ -72,96 +72,114 @@ void AtmosphereModel::temp_time_series(int i, int j, std::vector<double> &result
   this->temp_time_series_impl(i, j, result);
 }
 
-DiagnosticList AtmosphereModel::diagnostics_impl() const {
-  DiagnosticList result = {
-    {"air_temp_snapshot",       Diagnostic::Ptr(new PA_air_temp_snapshot(this))},
-    {"effective_air_temp",      Diagnostic::Ptr(new PA_air_temp(this))},
-    {"effective_precipitation", Diagnostic::Ptr(new PA_precipitation(this))},
-  };
-  return result;
-}
+namespace diagnostics {
 
-PA_air_temp_snapshot::PA_air_temp_snapshot(const AtmosphereModel *m)
-  : Diag<AtmosphereModel>(m) {
+/*! @brief Instantaneous near-surface air temperature. */
+class AirTemperatureSnapshot : public Diag<AtmosphereModel> {
+public:
+  AirTemperatureSnapshot(const AtmosphereModel *m)
+    : Diag<AtmosphereModel>(m) {
 
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "air_temp_snapshot")};
+    /* set metadata: */
+    m_vars = {SpatialVariableMetadata(m_sys, "air_temp_snapshot")};
 
-  set_attrs("instantaneous value of the near-surface air temperature",
-            "",                 // no standard name
-            "Kelvin", "Kelvin", 0);
-}
-
-IceModelVec::Ptr PA_air_temp_snapshot::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_snapshot", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-
-  std::vector<double> current_time(1, m_grid->ctx()->time()->current());
-  std::vector<double> temperature(1, 0.0);
-
-  model->init_timeseries(current_time);
-
-  model->begin_pointwise_access();
-
-  IceModelVec::AccessList list(*result);
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      model->temp_time_series(i, j, temperature);
-
-      (*result)(i, j) = temperature[0];
-    }
-  } catch (...) {
-    loop.failed();
+    set_attrs("instantaneous value of the near-surface air temperature",
+              "",                 // no standard name
+              "Kelvin", "Kelvin", 0);
   }
-  loop.check();
+protected:
+  IceModelVec::Ptr compute_impl() const {
 
-  model->end_pointwise_access();
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_snapshot", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
 
-  return result;
-}
+    std::vector<double> current_time(1, m_grid->ctx()->time()->current());
+    std::vector<double> temperature(1, 0.0);
 
-PA_air_temp::PA_air_temp(const AtmosphereModel *m)
-  : Diag<AtmosphereModel>(m) {
+    model->init_timeseries(current_time);
 
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "effective_air_temp")};
+    model->begin_pointwise_access();
 
-  set_attrs("effective mean-annual near-surface air temperature", "",
-            "Kelvin", "Kelvin", 0);
-}
+    IceModelVec::AccessList list(*result);
+    ParallelSection loop(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
 
-IceModelVec::Ptr PA_air_temp::compute_impl() const {
+        model->temp_time_series(i, j, temperature);
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effective_air_temp", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
+        (*result)(i, j) = temperature[0];
+      }
+    } catch (...) {
+      loop.failed();
+    }
+    loop.check();
 
-  model->mean_annual_temp(*result);
+    model->end_pointwise_access();
 
-  return result;
-}
+    return result;
+  }
+};
 
-PA_precipitation::PA_precipitation(const AtmosphereModel *m)
-  : Diag<AtmosphereModel>(m) {
+/*! @brief Effective near-surface mean-annual air temperature. */
+class AirTemperature : public Diag<AtmosphereModel> {
+public:
+  AirTemperature(const AtmosphereModel *m)
+    : Diag<AtmosphereModel>(m) {
 
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "effective_precipitation")};
+    /* set metadata: */
+    m_vars = {SpatialVariableMetadata(m_sys, "effective_air_temp")};
 
-  set_attrs("effective precipitation rate",
-            "",                 // no standard name, as far as I know
-            "kg m-2 second-1", "kg m-2 year-1", 0);
-}
+    set_attrs("effective mean-annual near-surface air temperature", "",
+              "Kelvin", "Kelvin", 0);
+  }
+protected:
+  IceModelVec::Ptr compute_impl() const {
 
-IceModelVec::Ptr PA_precipitation::compute_impl() const {
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effective_air_temp", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effective_precipitation", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
+    model->mean_annual_temp(*result);
 
-  model->mean_precipitation(*result);
+    return result;
+  }
+};
 
+/*! @brief Effective precipitation rate (average over time step). */
+class Precipitation : public Diag<AtmosphereModel> {
+public:
+  Precipitation(const AtmosphereModel *m)
+    : Diag<AtmosphereModel>(m) {
+
+    /* set metadata: */
+    m_vars = {SpatialVariableMetadata(m_sys, "effective_precipitation")};
+
+    set_attrs("effective precipitation rate",
+              "",                 // no standard name, as far as I know
+              "kg m-2 second-1", "kg m-2 year-1", 0);
+  }
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effective_precipitation", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+
+    model->mean_precipitation(*result);
+
+    return result;
+  }
+};
+
+} // end of namespace diagnostics
+
+DiagnosticList AtmosphereModel::diagnostics_impl() const {
+  using namespace diagnostics;
+
+  DiagnosticList result = {
+    {"air_temp_snapshot",       Diagnostic::Ptr(new AirTemperatureSnapshot(this))},
+    {"effective_air_temp",      Diagnostic::Ptr(new AirTemperature(this))},
+    {"effective_precipitation", Diagnostic::Ptr(new Precipitation(this))},
+  };
   return result;
 }
 
