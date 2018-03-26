@@ -95,18 +95,18 @@ void YearlyCycle::write_model_state_impl(const PIO &output) const {
 }
 
 //! Copies the stored precipitation field into result.
-void YearlyCycle::mean_precipitation_impl(IceModelVec2S &result) const {
-  result.copy_from(m_precipitation);
+const IceModelVec2S& YearlyCycle::mean_precipitation_impl() const {
+  return m_precipitation;
 }
 
 //! Copies the stored mean annual near-surface air temperature field into result.
-void YearlyCycle::mean_annual_temp_impl(IceModelVec2S &result) const {
-  result.copy_from(m_air_temp_mean_annual);
+const IceModelVec2S& YearlyCycle::mean_annual_temp_impl() const {
+  return m_air_temp_mean_annual;
 }
 
 //! Copies the stored mean July near-surface air temperature field into result.
-void YearlyCycle::mean_july_temp(IceModelVec2S &result) const {
-  result.copy_from(m_air_temp_mean_july);
+const IceModelVec2S& YearlyCycle::mean_july_temp() const {
+  return m_air_temp_mean_july;
 }
 
 void YearlyCycle::init_timeseries_impl(const std::vector<double> &ts) const {
@@ -150,6 +150,7 @@ void YearlyCycle::end_pointwise_access_impl() const {
   m_air_temp_mean_july.end_access();
   m_precipitation.end_access();
 }
+
 DiagnosticList YearlyCycle::diagnostics_impl() const {
   DiagnosticList result = AtmosphereModel::diagnostics_impl();
 
@@ -173,7 +174,7 @@ IceModelVec::Ptr PA_mean_july_temp::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_mean_july", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  model->mean_july_temp(*result);
+  result->copy_from(model->mean_july_temp());
 
   return result;
 }

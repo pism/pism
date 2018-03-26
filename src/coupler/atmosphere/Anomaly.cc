@@ -50,6 +50,9 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
                                    "anomaly of the ice-equivalent precipitation rate",
                                    "kg m-2 second-1", "");
   m_precipitation_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
+
+  m_precipitation = allocate_precipitation(g);
+  m_temperature   = allocate_temperature(g);
 }
 
 Anomaly::~Anomaly()
@@ -90,7 +93,6 @@ void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
   }
 
 }
-
 
 const IceModelVec2S& Anomaly::mean_precipitation_impl() const {
   return *m_precipitation;
