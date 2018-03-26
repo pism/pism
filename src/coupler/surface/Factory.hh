@@ -24,7 +24,7 @@
 
 namespace pism {
 namespace surface {
-class Factory : public PCFactory<SurfaceModel,SurfaceModel> {
+class Factory : public PCFactory<SurfaceModel> {
   typedef atmosphere::AtmosphereModel InputModel;
 
 public:

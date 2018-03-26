@@ -37,7 +37,7 @@ namespace pism {
 namespace surface {
 
 Factory::Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : PCFactory<SurfaceModel,SurfaceModel>(g),
+  : PCFactory<SurfaceModel>(g),
   m_input(input) {
 
   m_option = "surface";

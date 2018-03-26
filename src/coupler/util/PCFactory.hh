@@ -31,13 +31,13 @@ namespace pism {
 
 class Config;
 
-template <class Model, class Modifier>
+template <class Model>
 class PCFactory {
 public:
 
-  PCFactory<Model,Modifier>(IceGrid::ConstPtr g)
+  PCFactory<Model>(IceGrid::ConstPtr g)
   : m_grid(g) {}
-  ~PCFactory<Model,Modifier>() {}
+  ~PCFactory<Model>() {}
 
   //! Creates a boundary model. Processes command-line options.
   virtual std::shared_ptr<Model> create() {
@@ -156,7 +156,7 @@ protected:
   // creators in the same dictionary
   class ModifierCreator {
   public:
-    virtual std::shared_ptr<Modifier> create(IceGrid::ConstPtr g, std::shared_ptr<Model> input) = 0;
+    virtual std::shared_ptr<Model> create(IceGrid::ConstPtr g, std::shared_ptr<Model> input) = 0;
     virtual ~ModifierCreator() {}
   };
 
@@ -164,8 +164,8 @@ protected:
   template <class M>
   class SpecificModifierCreator : public ModifierCreator {
   public:
-    std::shared_ptr<Modifier> create(IceGrid::ConstPtr g, std::shared_ptr<Model> input) {
-      return std::shared_ptr<Modifier>(new M(g, input));
+    std::shared_ptr<Model> create(IceGrid::ConstPtr g, std::shared_ptr<Model> input) {
+      return std::shared_ptr<Model>(new M(g, input));
     }
   };
 
