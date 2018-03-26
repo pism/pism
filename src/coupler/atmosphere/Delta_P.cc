@@ -17,62 +17,54 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Delta_P.hh"
+
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/MaxTimestep.hh"
+#include "pism/coupler/util/ScalarForcing.hh"
 
 namespace pism {
 namespace atmosphere {
 
-Delta_P::Delta_P(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
-  : PScalarForcing<AtmosphereModel,AtmosphereModel>(g, in) {
-  m_offset = NULL;
+Delta_P::Delta_P(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
+  : AtmosphereModel(grid, in) {
 
-  m_option_prefix = "-atmosphere_delta_P";
-  m_offset_name = "delta_P";
-  m_offset.reset(new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name")));
-  m_offset->variable().set_string("units", "kg m-2 second-1");
-  m_offset->variable().set_string("glaciological_units", "kg m-2 year-1");
-  m_offset->variable().set_string("long_name", "precipitation offsets");
-  m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
+  m_forcing.reset(new ScalarForcing(grid->ctx(),
+                                    "-atmosphere_delta_P",
+                                    "delta_P",
+                                    "kg m-2 second-1",
+                                    "kg m-2 year-1",
+                                    "precipitation offsets"));
+
+  m_precipitation = allocate_precipitation(grid);
 }
 
-Delta_P::~Delta_P()
-{
+Delta_P::~Delta_P() {
   // empty
 }
 
 void Delta_P::init_impl(const Geometry &geometry) {
-
   m_input_model->init(geometry);
 
   m_log->message(2, "* Initializing precipitation forcing using scalar offsets...\n");
 
-  init_internal();
-}
-
-MaxTimestep Delta_P::max_timestep_impl(double t) const {
-  (void) t;
-  return MaxTimestep("atmosphere delta_P");
+  m_forcing->init();
 }
 
 void Delta_P::init_timeseries_impl(const std::vector<double> &ts) const {
   AtmosphereModel::init_timeseries_impl(ts);
 
-  m_offset_values.resize(m_ts_times.size());
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
-    m_offset_values[k] = (*m_offset)(m_ts_times[k]);
+  m_offset_values.resize(ts.size());
+  for (unsigned int k = 0; k < ts.size(); ++k) {
+    m_offset_values[k] = m_forcing->value(ts[k]);
   }
 }
 
 void Delta_P::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
+  m_forcing->update(t, dt);
 
   m_precipitation->copy_from(m_input_model->mean_precipitation());
-  m_precipitation->shift(m_current_forcing);
+  m_precipitation->shift(m_forcing->value());
 }
-
 
 const IceModelVec2S& Delta_P::mean_precipitation_impl() const {
   return *m_precipitation;
@@ -81,7 +73,7 @@ const IceModelVec2S& Delta_P::mean_precipitation_impl() const {
 void Delta_P::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   m_input_model->precip_time_series(i, j, result);
   
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
+  for (unsigned int k = 0; k < m_offset_values.size(); ++k) {
     result[k] += m_offset_values[k];
   }
 }

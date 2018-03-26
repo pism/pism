@@ -19,13 +19,15 @@
 #ifndef _PAFPFORCING_H_
 #define _PAFPFORCING_H_
 
-#include "pism/coupler/util/PScalarForcing.hh"
 #include "pism/coupler/AtmosphereModel.hh"
 
 namespace pism {
+
+class ScalarForcing;
+
 namespace atmosphere {
 
-class Frac_P : public PScalarForcing<AtmosphereModel,AtmosphereModel> {
+class Frac_P : public AtmosphereModel {
 public:
   Frac_P(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
   virtual ~Frac_P();
@@ -40,9 +42,9 @@ private:
 
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 
-  MaxTimestep max_timestep_impl(double t) const;
-
   mutable std::vector<double> m_offset_values;
+
+  std::unique_ptr<ScalarForcing> m_forcing;
 
   IceModelVec2S::Ptr m_precipitation;
 };
