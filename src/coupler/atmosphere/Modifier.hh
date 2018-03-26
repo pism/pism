@@ -35,49 +35,49 @@ public:
 protected:
   virtual void mean_precipitation_impl(IceModelVec2S &result) const
   {
-    if (m_input_model != NULL) {
+    if (m_input_model) {
       m_input_model->mean_precipitation(result);
     }
   }
 
   virtual void mean_annual_temp_impl(IceModelVec2S &result) const
   {
-    if (m_input_model != NULL) {
+    if (m_input_model) {
       m_input_model->mean_annual_temp(result);
     }
   }
 
   virtual void begin_pointwise_access_impl() const
   {
-    if (m_input_model != NULL) {
+    if (m_input_model) {
       m_input_model->begin_pointwise_access();
     }
   }
 
   virtual void end_pointwise_access_impl() const
   {
-    if (m_input_model != NULL) {
+    if (m_input_model) {
       m_input_model->end_pointwise_access();
     }
   }
 
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) const
   {
-    if (m_input_model != NULL) {
+    if (m_input_model) {
       m_input_model->temp_time_series(i, j, result);
     }
   }
 
   virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) const
   {
-    if (m_input_model != NULL) {
+    if (m_input_model) {
       m_input_model->precip_time_series(i, j, result);
     }
   }
 
   virtual void init_timeseries_impl(const std::vector<double> &ts) const
   {
-    if (m_input_model != NULL) {
+    if (m_input_model) {
       m_input_model->init_timeseries(ts);
     }
 
