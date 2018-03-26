@@ -23,7 +23,7 @@ namespace pism {
 namespace ocean {
 
 Given::Given(IceGrid::ConstPtr g)
-  : PGivenClimate<OceanModel,OceanModel>(g, NULL) {
+  : PGivenClimate<OceanModel>(g, nullptr) {
 
   m_option_prefix   = "-ocean_given";
 

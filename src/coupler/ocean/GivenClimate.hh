@@ -24,7 +24,7 @@
 
 namespace pism {
 namespace ocean {
-class Given : public PGivenClimate<OceanModel,OceanModel>
+class Given : public PGivenClimate<OceanModel>
 {
 public:
   Given(IceGrid::ConstPtr g);

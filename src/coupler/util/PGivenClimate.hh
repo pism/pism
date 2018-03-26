@@ -32,11 +32,11 @@ namespace pism {
 
 class Geometry;
 
-template <class Model, class Input>
+template <class Model>
 class PGivenClimate : public Model
 {
 public:
-  PGivenClimate(IceGrid::ConstPtr g, std::shared_ptr<Input> in)
+  PGivenClimate(IceGrid::ConstPtr g, std::shared_ptr<Model> in)
     : Model(g, in) {}
 
   virtual ~PGivenClimate() {

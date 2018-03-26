@@ -25,7 +25,7 @@ namespace pism {
 namespace atmosphere {
 
 Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
-  : PGivenClimate<AtmosphereModel,AtmosphereModel>(g, in) {
+  : PGivenClimate<AtmosphereModel>(g, in) {
   m_option_prefix  = "-atmosphere_anomaly";
 
   // will be de-allocated by the parent's destructor

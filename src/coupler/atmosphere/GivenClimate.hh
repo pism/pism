@@ -28,7 +28,7 @@ class Geometry;
 
 namespace atmosphere {
 
-class Given : public PGivenClimate<AtmosphereModel,AtmosphereModel>
+class Given : public PGivenClimate<AtmosphereModel>
 {
 public:
   Given(IceGrid::ConstPtr g);

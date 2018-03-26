@@ -24,7 +24,7 @@ namespace pism {
 namespace surface {
 
 Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
-  : PGivenClimate<SurfaceModel,SurfaceModel>(g, in) {
+  : PGivenClimate<SurfaceModel>(g, in) {
 
   m_option_prefix  = "-surface_anomaly";
 

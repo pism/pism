@@ -59,7 +59,7 @@ GivenTH::Constants::Constants(const Config &config) {
 }
 
 GivenTH::GivenTH(IceGrid::ConstPtr g)
-  : PGivenClimate<CompleteOceanModel,CompleteOceanModel>(g, NULL) {
+  : PGivenClimate<CompleteOceanModel>(g, nullptr) {
 
   m_option_prefix   = "-ocean_th";
 

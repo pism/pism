@@ -26,7 +26,7 @@ namespace pism {
 namespace atmosphere {
 
 //! \brief Reads and uses air_temp and precipitation anomalies from a file.
-class Anomaly : public PGivenClimate<AtmosphereModel,AtmosphereModel>
+class Anomaly : public PGivenClimate<AtmosphereModel>
 {
 public:
   Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
