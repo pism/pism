@@ -25,7 +25,7 @@ namespace pism {
 namespace atmosphere {
 
 Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
-  : PGivenClimate<PAModifier,AtmosphereModel>(g, in) {
+  : PGivenClimate<AtmosphereModel,AtmosphereModel>(g, in) {
   m_option_prefix  = "-atmosphere_anomaly";
 
   // will be de-allocated by the parent's destructor
@@ -76,19 +76,28 @@ void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
 
   m_precipitation_anomaly->average(m_t, m_dt);
   m_air_temp_anomaly->average(m_t, m_dt);
+
+  // precipitation
+  {
+    m_precipitation->copy_from(m_input_model->mean_precipitation());
+    m_precipitation->add(1.0, *m_precipitation_anomaly);
+  }
+
+  // temperature
+  {
+    m_temperature->copy_from(m_input_model->mean_annual_temp());
+    m_temperature->add(1.0, *m_air_temp_anomaly);
+  }
+
 }
 
 
-void Anomaly::mean_precipitation_impl(IceModelVec2S &result) const {
-  m_input_model->mean_precipitation(result);
-
-  result.add(1.0, *m_precipitation_anomaly);
+const IceModelVec2S& Anomaly::mean_precipitation_impl() const {
+  return *m_precipitation;
 }
 
-void Anomaly::mean_annual_temp_impl(IceModelVec2S &result) const {
-  m_input_model->mean_annual_temp(result);
-
-  result.add(1.0, *m_air_temp_anomaly);
+const IceModelVec2S& Anomaly::mean_annual_temp_impl() const {
+  return *m_temperature;
 }
 
 void Anomaly::begin_pointwise_access_impl() const {
@@ -104,7 +113,7 @@ void Anomaly::end_pointwise_access_impl() const {
 }
 
 void Anomaly::init_timeseries_impl(const std::vector<double> &ts) const {
-  PAModifier::init_timeseries_impl(ts);
+  AtmosphereModel::init_timeseries_impl(ts);
 
   m_air_temp_anomaly->init_interpolation(ts);
 

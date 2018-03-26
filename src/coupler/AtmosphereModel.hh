@@ -44,10 +44,10 @@ public:
   void update(const Geometry &geometry, double t, double dt);
 
   //! \brief Sets result to the mean precipitation, in m/s ice equivalent.
-  void mean_precipitation(IceModelVec2S &result) const;
+  const IceModelVec2S& mean_precipitation() const;
 
   //! \brief Sets result to the mean annual near-surface air temperature, in degrees Kelvin.
-  void mean_annual_temp(IceModelVec2S &result) const;
+  const IceModelVec2S& mean_annual_temp() const;
 
   void begin_pointwise_access() const;
   void end_pointwise_access() const;
@@ -71,8 +71,9 @@ protected:
 
   virtual MaxTimestep max_timestep_impl(double my_t) const;
 
-  virtual void mean_precipitation_impl(IceModelVec2S &result) const;
-  virtual void mean_annual_temp_impl(IceModelVec2S &result) const;
+  virtual const IceModelVec2S& mean_precipitation_impl() const;
+  virtual const IceModelVec2S& mean_annual_temp_impl() const;
+
   virtual void begin_pointwise_access_impl() const;
   virtual void end_pointwise_access_impl() const;
   virtual void init_timeseries_impl(const std::vector<double> &ts) const;

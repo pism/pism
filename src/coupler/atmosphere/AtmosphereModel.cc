@@ -70,12 +70,12 @@ void AtmosphereModel::update(const Geometry &geometry, double t, double dt) {
   this->update_impl(geometry, t, dt);
 }
 
-void AtmosphereModel::mean_precipitation(IceModelVec2S &result) const {
-  this->mean_precipitation_impl(result);
+const IceModelVec2S& AtmosphereModel::mean_precipitation() const {
+  return this->mean_precipitation_impl();
 }
 
-void AtmosphereModel::mean_annual_temp(IceModelVec2S &result) const {
-  this->mean_annual_temp_impl(result);
+const IceModelVec2S& AtmosphereModel::mean_annual_temp() const {
+  return this->mean_annual_temp_impl();
 }
 
 void AtmosphereModel::begin_pointwise_access() const {
@@ -165,7 +165,7 @@ protected:
     IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effective_air_temp", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
 
-    model->mean_annual_temp(*result);
+    result->copy_from(model->mean_annual_temp());
 
     return result;
   }
@@ -190,7 +190,7 @@ protected:
     IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effective_precipitation", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
 
-    model->mean_precipitation(*result);
+    result->copy_from(model->mean_precipitation());
 
     return result;
   }
@@ -248,15 +248,17 @@ void AtmosphereModel::write_model_state_impl(const PIO &output) const {
   }
 }
 
-void AtmosphereModel::mean_precipitation_impl(IceModelVec2S &result) const {
+const IceModelVec2S& AtmosphereModel::mean_precipitation_impl() const {
   if (m_input_model) {
-    m_input_model->mean_precipitation(result);
+    return m_input_model->mean_precipitation();
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
 }
 
-void AtmosphereModel::mean_annual_temp_impl(IceModelVec2S &result) const {
+const IceModelVec2S& AtmosphereModel::mean_annual_temp_impl() const {
   if (m_input_model) {
-    m_input_model->mean_annual_temp(result);
+    return m_input_model->mean_annual_temp();
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }

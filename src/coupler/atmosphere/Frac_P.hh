@@ -20,28 +20,31 @@
 #define _PAFPFORCING_H_
 
 #include "pism/coupler/util/PScalarForcing.hh"
-#include "Modifier.hh"
+#include "pism/coupler/AtmosphereModel.hh"
 
 namespace pism {
 namespace atmosphere {
 
-class Frac_P : public PScalarForcing<AtmosphereModel,PAModifier>
-{
+class Frac_P : public PScalarForcing<AtmosphereModel,AtmosphereModel> {
 public:
   Frac_P(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
   virtual ~Frac_P();
 
-  virtual void init_impl(const Geometry &geometry);
-  virtual void init_timeseries_impl(const std::vector<double> &ts) const;
+private:
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual void mean_precipitation_impl(IceModelVec2S &result) const;
+  void init_timeseries_impl(const std::vector<double> &ts) const;
 
-  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
+  const IceModelVec2S& mean_precipitation_impl() const;
 
-protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
-protected:
+  void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
+
+  MaxTimestep max_timestep_impl(double t) const;
+
   mutable std::vector<double> m_offset_values;
+
+  IceModelVec2S::Ptr m_precipitation;
 };
 
 } // end of namespace atmosphere

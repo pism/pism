@@ -20,12 +20,13 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace atmosphere {
 
 PaleoPrecip::PaleoPrecip(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
-  : PScalarForcing<AtmosphereModel,PAModifier>(g, in) {
+  : PScalarForcing<AtmosphereModel,AtmosphereModel>(g, in) {
   m_option_prefix = "-atmosphere_paleo_precip";
 
   m_offset_name = "delta_T";
@@ -58,7 +59,7 @@ MaxTimestep PaleoPrecip::max_timestep_impl(double t) const {
 }
 
 void PaleoPrecip::init_timeseries_impl(const std::vector<double> &ts) const {
-  PAModifier::init_timeseries_impl(ts);
+  AtmosphereModel::init_timeseries_impl(ts);
 
   size_t N = ts.size();
 
@@ -68,9 +69,16 @@ void PaleoPrecip::init_timeseries_impl(const std::vector<double> &ts) const {
   }
 }
 
-void PaleoPrecip::mean_precipitation_impl(IceModelVec2S &result) const {
-  m_input_model->mean_precipitation(result);
-  result.scale(exp(m_precipexpfactor * m_current_forcing));
+void PaleoPrecip::update_impl(const Geometry &geometry, double t, double dt) {
+  m_input_model->update(geometry, t, dt);
+
+  m_precipitation->copy_from(m_input_model->mean_precipitation());
+  m_precipitation->scale(exp(m_precipexpfactor * m_current_forcing));
+}
+
+
+const IceModelVec2S& PaleoPrecip::mean_precipitation_impl() const {
+  return *m_precipitation;
 }
 
 void PaleoPrecip::precip_time_series_impl(int i, int j, std::vector<double> &result) const {

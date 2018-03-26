@@ -24,7 +24,7 @@ namespace pism {
 namespace atmosphere {
 
 Given::Given(IceGrid::ConstPtr g)
-  : PGivenClimate<PAModifier,AtmosphereModel>(g, NULL)
+  : PGivenClimate<AtmosphereModel,AtmosphereModel>(g, NULL)
 {
   m_option_prefix = "-atmosphere_given";
   m_air_temp      = NULL;

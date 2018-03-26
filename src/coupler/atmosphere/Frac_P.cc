@@ -20,12 +20,13 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace atmosphere {
 
 Frac_P::Frac_P(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
-  : PScalarForcing<AtmosphereModel,PAModifier>(g, in) {
+  : PScalarForcing<AtmosphereModel,AtmosphereModel>(g, in) {
   m_option_prefix = "-atmosphere_frac_P";
   m_offset_name = "frac_P";
   m_offset.reset(new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name")));
@@ -55,7 +56,7 @@ MaxTimestep Frac_P::max_timestep_impl(double t) const {
 }
 
 void Frac_P::init_timeseries_impl(const std::vector<double> &ts) const {
-  PAModifier::init_timeseries_impl(ts);
+  AtmosphereModel::init_timeseries_impl(ts);
 
   m_offset_values.resize(m_ts_times.size());
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
@@ -63,9 +64,16 @@ void Frac_P::init_timeseries_impl(const std::vector<double> &ts) const {
   }
 }
 
-void Frac_P::mean_precipitation_impl(IceModelVec2S &result) const {
-  m_input_model->mean_precipitation(result);
-  result.scale(m_current_forcing);
+void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
+  m_input_model->update(geometry, t, dt);
+
+  m_precipitation->copy_from(m_input_model->mean_precipitation());
+  m_precipitation->scale(m_current_forcing);
+}
+
+
+const IceModelVec2S& Frac_P::mean_precipitation_impl() const {
+  return *m_precipitation;
 }
 
 void Frac_P::precip_time_series_impl(int i, int j, std::vector<double> &result) const {

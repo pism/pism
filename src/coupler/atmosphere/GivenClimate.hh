@@ -19,7 +19,7 @@
 #ifndef _PAGIVEN_H_
 #define _PAGIVEN_H_
 
-#include "Modifier.hh"
+#include "pism/coupler/AtmosphereModel.hh"
 #include "pism/coupler/util/PGivenClimate.hh"
 
 namespace pism {
@@ -28,7 +28,7 @@ class Geometry;
 
 namespace atmosphere {
 
-class Given : public PGivenClimate<PAModifier,AtmosphereModel>
+class Given : public PGivenClimate<AtmosphereModel,AtmosphereModel>
 {
 public:
   Given(IceGrid::ConstPtr g);

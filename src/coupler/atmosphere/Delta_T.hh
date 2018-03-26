@@ -20,25 +20,27 @@
 #define _PADTFORCING_H_
 
 #include "pism/coupler/util/PScalarForcing.hh"
-#include "Modifier.hh"
+#include "pism/coupler/AtmosphereModel.hh"
 
 namespace pism {
 namespace atmosphere {
 
-class Delta_T : public PScalarForcing<AtmosphereModel,PAModifier>
+class Delta_T : public PScalarForcing<AtmosphereModel,AtmosphereModel>
 {
 public:
   Delta_T(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
   virtual ~Delta_T() {}
 protected:
-  virtual void init_impl(const Geometry &geometry);
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual void init_timeseries_impl(const std::vector<double> &ts) const;
-  virtual void mean_annual_temp_impl(IceModelVec2S &result) const;
-  virtual void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  const IceModelVec2S& mean_annual_temp_impl() const;
+
+  void init_timeseries_impl(const std::vector<double> &ts) const;
+  void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
+  MaxTimestep max_timestep_impl(double t) const;
 private:
-  IceModelVec2S::Ptr m_shelf_base_temperature;
+  IceModelVec2S::Ptr m_temperature;
 
   mutable std::vector<double> m_offset_values;
 };
