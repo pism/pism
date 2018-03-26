@@ -14,6 +14,7 @@
 #include "coupler/ocean/Pico.hh"
 #include "coupler/ocean/pico_old/Pico.hh"
 #include "coupler/ocean/PicoGeometry.hh"
+#include "coupler/ocean/PicoPhysics.hh"
 %}
 
 %shared_ptr(pism::ocean::OceanModel)
@@ -79,3 +80,6 @@
 
 %shared_ptr(pism::ocean::PicoGeometry)
 %include "coupler/ocean/PicoGeometry.hh"
+
+%shared_ptr(pism::ocean::PicoPhysics)
+%include "coupler/ocean/PicoPhysics.hh"
