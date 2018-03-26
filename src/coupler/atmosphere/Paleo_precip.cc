@@ -56,7 +56,7 @@ void PaleoPrecip::init_timeseries_impl(const std::vector<double> &ts) const {
 
   m_scaling_values.resize(ts.size());
   for (unsigned int k = 0; k < ts.size(); ++k) {
-    m_scaling_values[k] = exp(m_exp_factor * m_forcing->value(m_ts_times[k]));
+    m_scaling_values[k] = exp(m_exp_factor * m_forcing->value(ts[k]));
   }
 }
 
@@ -75,7 +75,7 @@ const IceModelVec2S& PaleoPrecip::mean_precipitation_impl() const {
 void PaleoPrecip::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   m_input_model->precip_time_series(i, j, result);
 
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
+  for (unsigned int k = 0; k < m_scaling_values.size(); ++k) {
     result[k] *= m_scaling_values[k];
   }
 }
