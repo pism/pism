@@ -66,21 +66,30 @@ public:
 protected:
   virtual void init_impl(const Geometry &geometry) = 0;
   virtual void update_impl(const Geometry &geometry, double t, double dt) = 0;
-  virtual void mean_precipitation_impl(IceModelVec2S &result) const = 0;
-  virtual void mean_annual_temp_impl(IceModelVec2S &result) const = 0;
-  virtual void begin_pointwise_access_impl() const = 0;
-  virtual void end_pointwise_access_impl() const = 0;
-  virtual void init_timeseries_impl(const std::vector<double> &ts) const = 0;
-  virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) const = 0;
-  virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) const = 0;
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
+
+  virtual MaxTimestep max_timestep_impl(double my_t) const;
+
+  virtual void mean_precipitation_impl(IceModelVec2S &result) const;
+  virtual void mean_annual_temp_impl(IceModelVec2S &result) const;
+  virtual void begin_pointwise_access_impl() const;
+  virtual void end_pointwise_access_impl() const;
+  virtual void init_timeseries_impl(const std::vector<double> &ts) const;
+  virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) const;
+  virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) const;
 
   virtual DiagnosticList diagnostics_impl() const;
+  virtual TSDiagnosticList ts_diagnostics_impl() const;
 protected:
   mutable std::vector<double> m_ts_times;
   double m_t;
   double m_dt;
 
   std::shared_ptr<AtmosphereModel> m_input_model;
+
+  static IceModelVec2S::Ptr allocate_temperature(IceGrid::ConstPtr grid);
+  static IceModelVec2S::Ptr allocate_precipitation(IceGrid::ConstPtr grid);
 };
 
 } // end of namespace atmosphere

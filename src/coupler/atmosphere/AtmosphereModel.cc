@@ -22,9 +22,29 @@
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace atmosphere {
+
+IceModelVec2S::Ptr AtmosphereModel::allocate_temperature(IceGrid::ConstPtr grid) {
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "air_temp", WITHOUT_GHOSTS));
+
+  result->set_attrs("climate_forcing", "mean annual near-surface air temperature",
+                    "Kelvin", "");
+
+  return result;
+}
+
+IceModelVec2S::Ptr AtmosphereModel::allocate_precipitation(IceGrid::ConstPtr grid) {
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "precipitation", WITHOUT_GHOSTS));
+  result->set_attrs("climate_forcing", "precipitation rate",
+                    "kg m-2 second-1",
+                    "precipitation_flux");
+  result->metadata(0).set_string("glaciological_units", "kg m-2 year-1");
+
+  return result;
+}
 
 AtmosphereModel::AtmosphereModel(IceGrid::ConstPtr g)
   : Component(g) {
@@ -178,6 +198,20 @@ protected:
 
 } // end of namespace diagnostics
 
+void AtmosphereModel::update_impl(const Geometry &geometry, double t, double dt) {
+  if (m_input_model) {
+    m_input_model->update_impl(geometry, t, dt);
+  }
+}
+
+MaxTimestep AtmosphereModel::max_timestep_impl(double my_t) const {
+  if (m_input_model) {
+    return m_input_model->max_timestep(my_t);
+  } else {
+    return MaxTimestep("atmosphere model");
+  }
+}
+
 DiagnosticList AtmosphereModel::diagnostics_impl() const {
   using namespace diagnostics;
 
@@ -186,7 +220,87 @@ DiagnosticList AtmosphereModel::diagnostics_impl() const {
     {"effective_air_temp",      Diagnostic::Ptr(new AirTemperature(this))},
     {"effective_precipitation", Diagnostic::Ptr(new Precipitation(this))},
   };
+
+  if (m_input_model) {
+    result = combine(result, m_input_model->diagnostics());
+  }
+
   return result;
+}
+
+TSDiagnosticList AtmosphereModel::ts_diagnostics_impl() const {
+  if (m_input_model) {
+    return m_input_model->ts_diagnostics();
+  }
+
+  return {};
+}
+
+void AtmosphereModel::define_model_state_impl(const PIO &output) const {
+  if (m_input_model) {
+    m_input_model->define_model_state(output);
+  }
+}
+
+void AtmosphereModel::write_model_state_impl(const PIO &output) const {
+  if (m_input_model) {
+    m_input_model->write_model_state(output);
+  }
+}
+
+void AtmosphereModel::mean_precipitation_impl(IceModelVec2S &result) const {
+  if (m_input_model) {
+    m_input_model->mean_precipitation(result);
+  }
+}
+
+void AtmosphereModel::mean_annual_temp_impl(IceModelVec2S &result) const {
+  if (m_input_model) {
+    m_input_model->mean_annual_temp(result);
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
+void AtmosphereModel::begin_pointwise_access_impl() const {
+  if (m_input_model) {
+    m_input_model->begin_pointwise_access();
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
+void AtmosphereModel::end_pointwise_access_impl() const {
+  if (m_input_model) {
+    m_input_model->end_pointwise_access();
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
+void AtmosphereModel::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
+  if (m_input_model) {
+    m_input_model->temp_time_series(i, j, result);
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
+void AtmosphereModel::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
+  if (m_input_model) {
+    m_input_model->precip_time_series(i, j, result);
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
+void AtmosphereModel::init_timeseries_impl(const std::vector<double> &ts) const {
+  if (m_input_model) {
+    m_input_model->init_timeseries(ts);
+    m_ts_times = ts;
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
 }
 
 } // end of namespace atmosphere
