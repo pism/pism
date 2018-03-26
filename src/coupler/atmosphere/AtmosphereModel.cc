@@ -161,7 +161,7 @@ public:
     m_vars = {SpatialVariableMetadata(m_sys, "effective_precipitation")};
 
     set_attrs("effective precipitation rate",
-              "",                 // no standard name, as far as I know
+              "precipitation_flux",
               "kg m-2 second-1", "kg m-2 year-1", 0);
   }
 protected:
