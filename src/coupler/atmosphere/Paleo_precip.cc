@@ -46,8 +46,7 @@ PaleoPrecip::~PaleoPrecip() {
 void PaleoPrecip::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
-  m_log->message(2,
-                 "* Initializing paleo-precipitation correction using temperature offsets...\n");
+  m_log->message(2, "* Initializing paleo-precipitation correction using temperature offsets...\n");
 
   m_forcing->init();
 }
@@ -55,10 +54,8 @@ void PaleoPrecip::init_impl(const Geometry &geometry) {
 void PaleoPrecip::init_timeseries_impl(const std::vector<double> &ts) const {
   AtmosphereModel::init_timeseries_impl(ts);
 
-  size_t N = ts.size();
-
-  m_scaling_values.resize(N);
-  for (unsigned int k = 0; k < N; ++k) {
+  m_scaling_values.resize(ts.size());
+  for (unsigned int k = 0; k < ts.size(); ++k) {
     m_scaling_values[k] = exp(m_exp_factor * m_forcing->value(m_ts_times[k]));
   }
 }
