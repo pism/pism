@@ -67,8 +67,6 @@ IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g)
 void IBSurfaceModel::init_impl(const Geometry &geometry) {
   (void) geometry;
 
-  m_t = m_dt = GSL_NAN; // every re-init restarts the clock
-
   m_log->message(2, "* Initializing the IceBin interface surface model IBSurfaceModel.\n"
                     "  IceBin changes its state when surface conditions change.\n");
 
@@ -90,15 +88,10 @@ MaxTimestep IBSurfaceModel::max_timestep_impl(double t) const {
   return MaxTimestep("surface icebin");
 }
 
-void IBSurfaceModel::update_impl(const Geometry &geometry, double my_t, double my_dt) {
+void IBSurfaceModel::update_impl(const Geometry &geometry, double t, double dt) {
   (void) geometry;
-
-  if ((fabs(my_t - m_t) < 1e-12) && (fabs(my_dt - m_dt) < 1e-12)) {
-    return;
-  }
-
-  m_t  = my_t;
-  m_dt = my_dt;
+  (void) t;
+  (void) dt;
 }
 
 const IceModelVec2S &IBSurfaceModel::mass_flux_impl() const {

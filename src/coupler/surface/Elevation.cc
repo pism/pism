@@ -176,9 +176,6 @@ MaxTimestep Elevation::max_timestep_impl(double t) const {
 }
 
 void Elevation::update_impl(const Geometry &geometry, double t, double dt) {
-  m_t = t;
-  m_dt = dt;
-
   compute_mass_flux(geometry.ice_surface_elevation, *m_mass_flux);
   compute_temperature(geometry.ice_surface_elevation, *m_temperature);
 }

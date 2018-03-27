@@ -62,7 +62,6 @@ AtmosphereModel::~AtmosphereModel() {
 }
 
 void AtmosphereModel::init(const Geometry &geometry) {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
   this->init_impl(geometry);
 }
 

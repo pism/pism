@@ -87,24 +87,16 @@ MaxTimestep StuffAsAnomaly::max_timestep_impl(double t) const {
   return MaxTimestep("surface turn_into_anomaly");
 }
 
-void StuffAsAnomaly::update_impl(const Geometry &geometry, double my_t, double my_dt) {
-  if ((fabs(my_t - m_t) < 1e-12) &&
-      (fabs(my_dt - m_dt) < 1e-12)) {
-    return;
-  }
-
-  m_t  = my_t;
-  m_dt = my_dt;
+void StuffAsAnomaly::update_impl(const Geometry &geometry, double t, double dt) {
 
   if (m_input_model != NULL) {
-    m_input_model->update(geometry, m_t, m_dt);
+    m_input_model->update(geometry, t, dt);
     m_temp.copy_from(m_input_model->temperature());
     m_mass_flux.copy_from(m_input_model->mass_flux());
 
     // if we are at the beginning of the run...
-    if (m_t < m_grid->ctx()->time()->start() + 1) { // this is goofy, but time-steps are
-                                      // usually longer than 1 second, so it
-                                      // should work
+    if (t < m_grid->ctx()->time()->start() + 1) {
+      // this is goofy, but time-steps are usually longer than 1 second, so it should work
       m_temp_0.copy_from(m_temp);
       m_mass_flux_0.copy_from(m_mass_flux);
     }

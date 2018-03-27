@@ -43,8 +43,6 @@ void Simple::init_impl(const Geometry &geometry) {
 }
 
 void Simple::update_impl(const Geometry &geometry, double t, double dt) {
-  m_t = t;
-  m_dt = dt;
   if (m_atmosphere) {
     m_atmosphere->update(geometry, t, dt);
   }

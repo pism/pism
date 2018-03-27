@@ -93,8 +93,8 @@ void Given::init_impl(const Geometry &geometry) {
 void Given::update_impl(const Geometry &geometry, double t, double dt) {
   update_internal(geometry, t, dt);
 
-  m_mass_flux->average(m_t, m_dt);
-  m_temperature->average(m_t, m_dt);
+  m_mass_flux->average(t, dt);
+  m_temperature->average(t, dt);
 }
 
 const IceModelVec2S &Given::mass_flux_impl() const {

@@ -89,14 +89,8 @@ MaxTimestep SeaRISEGreenland::max_timestep_impl(double t) const {
 //! Note that the precipitation rate is time-independent and does not need
 //! to be updated.
 void SeaRISEGreenland::update_impl(const Geometry &geometry, double t, double dt) {
-
-  if ((fabs(t - m_t) < 1e-12) &&
-      (fabs(dt - m_dt) < 1e-12)) {
-    return;
-  }
-
-  m_t  = t;
-  m_dt = dt;
+  (void) t;
+  (void) dt;
 
   const double
     d_ma     = m_config->get_double("atmosphere.fausto_air_temp.d_ma"),      // K

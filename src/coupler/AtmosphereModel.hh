@@ -84,8 +84,6 @@ protected:
   virtual TSDiagnosticList ts_diagnostics_impl() const;
 protected:
   mutable std::vector<double> m_ts_times;
-  double m_t;
-  double m_dt;
 
   std::shared_ptr<AtmosphereModel> m_input_model;
 

@@ -79,8 +79,8 @@ void Anomaly::init_impl(const Geometry &geometry) {
 void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
   update_internal(geometry, t, dt);
 
-  m_climatic_mass_balance_anomaly->average(m_t, m_dt);
-  m_ice_surface_temp_anomaly->average(m_t, m_dt);
+  m_climatic_mass_balance_anomaly->average(t, dt);
+  m_ice_surface_temp_anomaly->average(t, dt);
 
   m_input_model->mass_flux().add(1.0, *m_climatic_mass_balance_anomaly,
                                  *m_mass_flux);

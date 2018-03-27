@@ -77,8 +77,6 @@ protected:
   static IceModelVec2S::Ptr allocate_shelf_base_temperature(IceGrid::ConstPtr g);
   static IceModelVec2S::Ptr allocate_shelf_base_mass_flux(IceGrid::ConstPtr g);
   static IceModelVec2S::Ptr allocate_melange_back_pressure(IceGrid::ConstPtr g);
-
-  double m_t, m_dt;             // these are used by the Modifier template, but should be removed
 };
 
 } // end of namespace ocean

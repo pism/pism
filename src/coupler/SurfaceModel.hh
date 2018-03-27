@@ -93,7 +93,6 @@ protected:
 
   std::shared_ptr<SurfaceModel> m_input_model;
   std::shared_ptr<atmosphere::AtmosphereModel> m_atmosphere;
-  double m_t, m_dt;
 };
 
 } // end of namespace surface

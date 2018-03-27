@@ -78,8 +78,8 @@ void Given::init_impl(const Geometry &geometry) {
 void Given::update_impl(const Geometry &geometry, double t, double dt) {
   update_internal(geometry, t, dt);
 
-  m_precipitation->average(m_t, m_dt);
-  m_air_temp->average(m_t, m_dt);
+  m_precipitation->average(t, dt);
+  m_air_temp->average(t, dt);
 }
 
 const IceModelVec2S& Given::mean_precipitation_impl() const {

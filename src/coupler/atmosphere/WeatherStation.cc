@@ -92,15 +92,12 @@ MaxTimestep WeatherStation::max_timestep_impl(double t) const {
 void WeatherStation::update_impl(const Geometry &geometry, double t, double dt) {
   (void) geometry;
 
-  m_t = t;
-  m_dt = dt;
-
   double one_week = 7 * 24 * 60 * 60;
-  unsigned int N = (unsigned int)(ceil(m_dt / one_week)); // one point per week
+  unsigned int N = (unsigned int)(ceil(dt / one_week)); // one point per week
 
-  m_precipitation->set(m_precipitation_timeseries.average(m_t, m_dt, N));
+  m_precipitation->set(m_precipitation_timeseries.average(t, dt, N));
 
-  m_temperature->set(m_air_temp_timeseries.average(m_t, m_dt, N));
+  m_temperature->set(m_air_temp_timeseries.average(t, dt, N));
 }
 
 const IceModelVec2S& WeatherStation::mean_precipitation_impl() const {

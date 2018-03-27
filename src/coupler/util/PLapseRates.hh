@@ -45,38 +45,9 @@ public:
   }
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t) const {
-    // "Periodize" the climate:
-    t = Model::m_grid->ctx()->time()->mod(t - m_bc_reference_time, m_bc_period);
 
-    MaxTimestep input_max_dt = Model::m_input_model->max_timestep(t);
-    MaxTimestep surface_max_dt = m_reference_surface.max_timestep(t);
-
-    if (input_max_dt.finite()) {
-      return std::min(surface_max_dt, input_max_dt);
-    } else {
-      return surface_max_dt;
-    }
-  }
-
-  virtual void update_impl(const Geometry &geometry, double my_t, double my_dt) {
-    // a convenience
-    double &t = Model::m_t;
-    double &dt = Model::m_dt;
-
-    // "Periodize" the climate:
-    my_t = Model::m_grid->ctx()->time()->mod(my_t - m_bc_reference_time,  m_bc_period);
-
-    if ((fabs(my_t - t) < 1e-12) &&
-        (fabs(my_dt - dt) < 1e-12)) {
-      return;
-    }
-
-    t  = my_t;
-    dt = my_dt;
-
-    // NB! Input model uses original t and dt
-    Model::m_input_model->update(geometry, my_t, my_dt);
+  virtual void update_impl(const Geometry &geometry, double t, double dt) {
+    Model::m_input_model->update(geometry, t, dt);
 
     m_reference_surface.update(t, dt);
 
@@ -84,7 +55,7 @@ protected:
   }
 
   virtual void init_internal() {
-    IceGrid::ConstPtr g = Model::m_grid;
+    IceGrid::ConstPtr grid = Model::m_grid;
 
     options::String file(m_option_prefix + "_file",
                          "Specifies a file with top-surface boundary conditions");
@@ -121,7 +92,7 @@ protected:
       unsigned int buffer_size = (unsigned int) Model::m_config->get_double("climate_forcing.buffer_size"),
         ref_surface_n_records = 1;
 
-      PIO nc(g->com, "netcdf3", file, PISM_READONLY);
+      PIO nc(grid->com, "netcdf3", file, PISM_READONLY);
       ref_surface_n_records = nc.inq_nrecords("usurf", "surface_altitude",
                                               Model::m_sys);
       nc.close();
@@ -139,7 +110,7 @@ protected:
       }
 
       m_reference_surface.set_n_records(ref_surface_n_records);
-      m_reference_surface.create(g, "usurf");
+      m_reference_surface.create(grid, "usurf");
       m_reference_surface.set_attrs("climate_forcing",
                                   "reference surface for lapse rate corrections",
                                   "m", "surface_altitude");

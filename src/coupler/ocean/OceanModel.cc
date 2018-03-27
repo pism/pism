@@ -88,7 +88,6 @@ OceanModel::~OceanModel() {
 }
 
 void OceanModel::init(const Geometry &geometry) {
-  m_t  = m_dt = GSL_NAN;        // every re-init restarts the clock
   this->init_impl(geometry);
 }
 
@@ -100,8 +99,6 @@ void OceanModel::init_impl(const Geometry &geometry) {
 
 void OceanModel::update(const Geometry &geometry, double t, double dt) {
   this->update_impl(geometry, t, dt);
-  m_t  = t;
-  m_dt = dt;
 }
 
 

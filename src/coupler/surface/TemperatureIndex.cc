@@ -293,18 +293,10 @@ double TemperatureIndex::compute_next_balance_year_start(double time) {
 
 void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt) {
 
-  if ((fabs(t - m_t) < 1e-12) &&
-      (fabs(dt - m_dt) < 1e-12)) {
-    return;
-  }
-
   // make a copy of the pointer to convince clang static analyzer that its value does not
   // change during the call
   FaustoGrevePDDObject *fausto_greve = m_faustogreve.get();
   AschwandenPDDObject *aschwanden = m_aschwanden.get();
-
-  m_t  = t;
-  m_dt = dt;
 
   // update to ensure that temperature and precipitation time series are correct:
   m_atmosphere->update(geometry, t, dt);
@@ -497,7 +489,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
           m_runoff(i, j)                = R * ice_density;
           // m_mass_flux (unlike m_accumulation, m_melt, and m_runoff), is a
           // rate. m * (kg / m^3) / second = kg / m^2 / second
-          m_mass_flux(i, j) = SMB * ice_density / m_dt;
+          m_mass_flux(i, j) = SMB * ice_density / dt;
         }
       }
 

@@ -19,6 +19,8 @@
 #ifndef _PAGENERICYEARLYCYCLE_H_
 #define _PAGENERICYEARLYCYCLE_H_
 
+#include <memory>               // unique_ptr
+
 #include "YearlyCycle.hh"
 
 namespace pism {
@@ -36,7 +38,8 @@ public:
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(const Geometry &geometry, double t, double dt);
-  Timeseries *m_A;                 // amplitude scaling
+
+  std::unique_ptr<Timeseries> m_A;                 // amplitude scaling
 };
 
 } // end of namespace atmosphere

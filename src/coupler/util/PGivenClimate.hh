@@ -139,25 +139,14 @@ protected:
     nc.close();
   }
 
-  virtual void update_internal(const Geometry &geometry, double my_t, double my_dt)
+  virtual void update_internal(const Geometry &geometry, double t, double dt)
   {
-    // "Periodize" the climate:
-    my_t = Model::m_grid->ctx()->time()->mod(my_t - m_bc_reference_time, m_bc_period);
-
-    if ((fabs(my_t - Model::m_t) < 1e-12) &&
-        (fabs(my_dt - Model::m_dt) < 1e-12)) {
-      return;
-    }
-
-    Model::m_t  = my_t;
-    Model::m_dt = my_dt;
-
-    if (Model::m_input_model != NULL) {
-      Model::m_input_model->update(geometry, Model::m_t, Model::m_dt);
+    if (Model::m_input_model) {
+      Model::m_input_model->update(geometry, t, dt);
     }
 
     for (auto f : m_fields) {
-      f.second->update(Model::m_t, Model::m_dt);
+      f.second->update(t, dt);
     }
   }
 protected:

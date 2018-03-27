@@ -77,8 +77,8 @@ void Anomaly::init_impl(const Geometry &geometry) {
 void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
   update_internal(geometry, t, dt);
 
-  m_precipitation_anomaly->average(m_t, m_dt);
-  m_air_temp_anomaly->average(m_t, m_dt);
+  m_precipitation_anomaly->average(t, dt);
+  m_air_temp_anomaly->average(t, dt);
 
   // precipitation
   {
@@ -91,7 +91,6 @@ void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
     m_temperature->copy_from(m_input_model->mean_annual_temp());
     m_temperature->add(1.0, *m_air_temp_anomaly);
   }
-
 }
 
 const IceModelVec2S& Anomaly::mean_precipitation_impl() const {
