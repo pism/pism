@@ -25,7 +25,7 @@
 namespace pism {
 namespace surface {
 
-class LapseRates : public PLapseRates<SurfaceModel,SurfaceModel>
+class LapseRates : public PLapseRates<SurfaceModel>
 {
 public:
   LapseRates(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
@@ -42,7 +42,7 @@ protected:
   IceModelVec2S::Ptr m_mass_flux;
   IceModelVec2S::Ptr m_temperature;
 
-  typedef PLapseRates<SurfaceModel,SurfaceModel> super;
+  typedef PLapseRates<SurfaceModel> super;
 };
 
 } // end of namespace surface

@@ -25,7 +25,7 @@ namespace pism {
 namespace surface {
 
 LapseRates::LapseRates(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
-  : PLapseRates<SurfaceModel,SurfaceModel>(g, in) {
+  : PLapseRates<SurfaceModel>(g, in) {
   m_smb_lapse_rate = 0;
   m_option_prefix = "-surface_lapse_rate";
 

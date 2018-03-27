@@ -32,11 +32,11 @@ namespace pism {
 
 class Geometry;
 
-template <class Model, class Mod>
-class PLapseRates : public Mod {
+template <class Model>
+class PLapseRates : public Model {
 public:
   PLapseRates(IceGrid::ConstPtr g, std::shared_ptr<Model> in)
-    : Mod(g, in) {
+    : Model(g, in) {
     m_temp_lapse_rate = 0.0;
   }
 
@@ -47,9 +47,9 @@ public:
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const {
     // "Periodize" the climate:
-    t = Mod::m_grid->ctx()->time()->mod(t - m_bc_reference_time, m_bc_period);
+    t = Model::m_grid->ctx()->time()->mod(t - m_bc_reference_time, m_bc_period);
 
-    MaxTimestep input_max_dt = Mod::m_input_model->max_timestep(t);
+    MaxTimestep input_max_dt = Model::m_input_model->max_timestep(t);
     MaxTimestep surface_max_dt = m_reference_surface.max_timestep(t);
 
     if (input_max_dt.finite()) {
@@ -61,11 +61,11 @@ protected:
 
   virtual void update_impl(const Geometry &geometry, double my_t, double my_dt) {
     // a convenience
-    double &t = Mod::m_t;
-    double &dt = Mod::m_dt;
+    double &t = Model::m_t;
+    double &dt = Model::m_dt;
 
     // "Periodize" the climate:
-    my_t = Mod::m_grid->ctx()->time()->mod(my_t - m_bc_reference_time,  m_bc_period);
+    my_t = Model::m_grid->ctx()->time()->mod(my_t - m_bc_reference_time,  m_bc_period);
 
     if ((fabs(my_t - t) < 1e-12) &&
         (fabs(my_dt - dt) < 1e-12)) {
@@ -76,7 +76,7 @@ protected:
     dt = my_dt;
 
     // NB! Input model uses original t and dt
-    Mod::m_input_model->update(geometry, my_t, my_dt);
+    Model::m_input_model->update(geometry, my_t, my_dt);
 
     m_reference_surface.update(t, dt);
 
@@ -84,7 +84,7 @@ protected:
   }
 
   virtual void init_internal() {
-    IceGrid::ConstPtr g = Mod::m_grid;
+    IceGrid::ConstPtr g = Model::m_grid;
 
     options::String file(m_option_prefix + "_file",
                          "Specifies a file with top-surface boundary conditions");
@@ -118,12 +118,12 @@ protected:
     m_bc_period = (unsigned int)period;
 
     if (not m_reference_surface.was_created()) {
-      unsigned int buffer_size = (unsigned int) Mod::m_config->get_double("climate_forcing.buffer_size"),
+      unsigned int buffer_size = (unsigned int) Model::m_config->get_double("climate_forcing.buffer_size"),
         ref_surface_n_records = 1;
 
       PIO nc(g->com, "netcdf3", file, PISM_READONLY);
       ref_surface_n_records = nc.inq_nrecords("usurf", "surface_altitude",
-                                              Mod::m_sys);
+                                              Model::m_sys);
       nc.close();
 
       // if -..._period is not set, make n_records the minimum of the
@@ -143,10 +143,10 @@ protected:
       m_reference_surface.set_attrs("climate_forcing",
                                   "reference surface for lapse rate corrections",
                                   "m", "surface_altitude");
-      m_reference_surface.set_n_evaluations_per_year((unsigned int)Mod::m_config->get_double("climate_forcing.evaluations_per_year"));
+      m_reference_surface.set_n_evaluations_per_year((unsigned int)Model::m_config->get_double("climate_forcing.evaluations_per_year"));
     }
 
-    Mod::m_log->message(2,
+    Model::m_log->message(2,
                "    reading reference surface elevation from %s ...\n",
                file->c_str());
 
@@ -163,7 +163,7 @@ protected:
 
     IceModelVec::AccessList list{&surface, &reference_surface, &result};
 
-    for (Points p(*Mod::m_grid); p; p.next()) {
+    for (Points p(*Model::m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       result(i, j) -= lapse_rate * (surface(i,j) - reference_surface(i, j));

@@ -25,7 +25,7 @@
 namespace pism {
 namespace atmosphere {
 
-class LapseRates : public PLapseRates<AtmosphereModel,AtmosphereModel>
+class LapseRates : public PLapseRates<AtmosphereModel>
 {
 public:
   LapseRates(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);

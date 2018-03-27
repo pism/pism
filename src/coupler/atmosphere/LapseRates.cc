@@ -26,7 +26,7 @@ namespace pism {
 namespace atmosphere {
 
 LapseRates::LapseRates(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
-  : PLapseRates<AtmosphereModel,AtmosphereModel>(grid, in),
+  : PLapseRates<AtmosphereModel>(grid, in),
   m_surface(grid, "ice_surface_elevation", WITHOUT_GHOSTS) {
 
   m_precip_lapse_rate = m_config->get_double("atmosphere.lapse_rate.precipitation_lapse_rate",
