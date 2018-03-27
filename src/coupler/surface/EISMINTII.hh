@@ -21,7 +21,6 @@
 #define _PS_EISMINTII_H_
 
 #include "Formulas.hh"
-#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 namespace surface {

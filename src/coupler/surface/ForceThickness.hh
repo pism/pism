@@ -20,7 +20,6 @@
 #define _PSFORCETHICKNESS_H_
 
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 
@@ -53,7 +52,7 @@ private:
   double m_alpha, m_alpha_ice_free_factor,  m_ice_free_thickness_threshold;
   double m_start_time;
   IceModelVec2S m_target_thickness;
-  IceModelVec2S m_ftt_mask;
+  IceModelVec2Int m_ftt_mask;
 
   IceModelVec2S::Ptr m_mass_flux;
 };

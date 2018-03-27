@@ -19,7 +19,7 @@
 #ifndef _PS_DELTA_T_H_
 #define _PS_DELTA_T_H_
 
-#include <memory>
+#include <memory>               // std::unique_ptr
 
 #include "pism/coupler/SurfaceModel.hh"
 

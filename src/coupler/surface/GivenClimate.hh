@@ -21,7 +21,6 @@
 
 #include "pism/coupler/util/PGivenClimate.hh"
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/coupler/AtmosphereModel.hh"
 
 namespace pism {
 namespace surface {
