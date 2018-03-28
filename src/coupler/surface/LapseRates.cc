@@ -69,11 +69,11 @@ void LapseRates::update_impl(const Geometry &geometry, double t, double dt) {
   const IceModelVec2S &surface = geometry.ice_surface_elevation;
 
   m_mass_flux->copy_from(m_input_model->mass_flux());
-  lapse_rate_correction(surface, m_reference_surface,
+  lapse_rate_correction(surface, *m_reference_surface,
                         m_smb_lapse_rate, *m_mass_flux);
 
   m_temperature->copy_from(m_input_model->temperature());
-  lapse_rate_correction(surface, m_reference_surface,
+  lapse_rate_correction(surface, *m_reference_surface,
                         m_temp_lapse_rate, *m_temperature);
 }
 

@@ -125,11 +125,11 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
     n_records = 1;
   }
 
-  m_air_temp_sd.create(m_grid, "air_temp_sd", n_records,
-                       m_config->get_double("climate_forcing.evaluations_per_year"));
-  m_air_temp_sd.set_attrs("climate_forcing",
-                          "standard deviation of near-surface air temperature",
-                          "Kelvin", "");
+  m_air_temp_sd.reset(new IceModelVec2T(m_grid, "air_temp_sd", n_records,
+                                        m_config->get_double("climate_forcing.evaluations_per_year")));
+  m_air_temp_sd->set_attrs("climate_forcing",
+                           "standard deviation of near-surface air temperature",
+                           "Kelvin", "");
 
   m_mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   m_mass_flux.set_attrs("diagnostic",
@@ -208,7 +208,7 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
     if (sd_file.empty()) {
       m_log->message(2,
                      "  Using constant standard deviation of near-surface temperature.\n");
-      m_air_temp_sd.init_constant(m_base_pddStdDev);
+      m_air_temp_sd->init_constant(m_base_pddStdDev);
     } else {
       m_log->message(2,
                      "  Reading standard deviation of near-surface temperature from '%s'...\n",
@@ -219,7 +219,7 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
 
       double sd_ref_time = units::convert(m_sys, sd_ref_year, "years", "seconds");
 
-      m_air_temp_sd.init(sd_file, m_sd_period, sd_ref_time);
+      m_air_temp_sd->init(sd_file, m_sd_period, sd_ref_time);
     }
   }
 
@@ -313,14 +313,14 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
 
   // update standard deviation time series
   if (m_sd_file_set) {
-    m_air_temp_sd.update(t, dt);
-    m_air_temp_sd.init_interpolation(ts);
+    m_air_temp_sd->update(t, dt);
+    m_air_temp_sd->init_interpolation(ts);
   }
 
   const IceModelVec2CellType &mask = geometry.cell_type;
   const IceModelVec2S        &H    = geometry.ice_thickness;
 
-  IceModelVec::AccessList list{&mask, &H, &m_air_temp_sd, &m_mass_flux,
+  IceModelVec::AccessList list{&mask, &H, m_air_temp_sd.get(), &m_mass_flux,
       &m_firn_depth, &m_snow_depth, &m_accumulation, &m_melt, &m_runoff};
 
   const double
@@ -377,9 +377,9 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
 
       // interpolate temperature standard deviation time series
       if (m_sd_file_set) {
-        m_air_temp_sd.interp(i, j, S);
+        m_air_temp_sd->interp(i, j, S);
       } else {
-        double tmp = m_air_temp_sd(i, j);
+        double tmp = (*m_air_temp_sd)(i, j);
         for (int k = 0; k < N; ++k) {
           S[k] = tmp;
         }
@@ -403,7 +403,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
         for (int k = 0; k < N; ++k) {
           S[k] += sigmalapserate * (lat - sigmabaselat);
         }
-        m_air_temp_sd(i, j) = S[0]; // ensure correct SD reporting
+        (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
       }
 
       // apply standard deviation param over ice if in use
@@ -414,7 +414,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
             S[k] = 0.0 ;
           }
         }
-        m_air_temp_sd(i, j) = S[0]; // ensure correct SD reporting
+        (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
       }
 
       // Use temperature time series, the "positive" threshhold, and
@@ -536,7 +536,7 @@ const IceModelVec2S& TemperatureIndex::snow_depth() const {
 }
 
 const IceModelVec2S& TemperatureIndex::air_temp_sd() const {
-  return m_air_temp_sd;
+  return *m_air_temp_sd;
 }
 
 void TemperatureIndex::define_model_state_impl(const PIO &output) const {
@@ -832,7 +832,7 @@ DiagnosticList TemperatureIndex::diagnostics_impl() const {
     {"surface_melt_rate",         Diagnostic::Ptr(new SurfaceMelt(this, MASS))},
     {"surface_runoff_flux",       Diagnostic::Ptr(new SurfaceRunoff(this, AMOUNT))},
     {"surface_runoff_rate",       Diagnostic::Ptr(new SurfaceRunoff(this, MASS))},
-    {"air_temp_sd",               Diagnostic::wrap(m_air_temp_sd)},
+    {"air_temp_sd",               Diagnostic::wrap(*m_air_temp_sd)},
     {"snow_depth",                Diagnostic::wrap(m_snow_depth)},
     {"firn_depth",                Diagnostic::wrap(m_firn_depth)},
   };

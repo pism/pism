@@ -21,10 +21,9 @@
 
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/Component.hh"
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
-
-class IceModelVec2T;
 
 namespace stressbalance {
 class StressBalance;
@@ -140,7 +139,7 @@ protected:
 
   bool m_hold_bmelt;
 
-  IceModelVec2T *m_inputtobed;// time dependent input of water to bed, in addition to bmelt
+  IceModelVec2T::Ptr m_inputtobed;// time dependent input of water to bed, in addition to bmelt
   unsigned int m_inputtobed_period;      // in years
   double m_inputtobed_reference_time; // in seconds
 

@@ -42,14 +42,17 @@ namespace pism {
 */
 class IceModelVec2T : public IceModelVec2S {
 public:
-  IceModelVec2T();
+  typedef std::shared_ptr<IceModelVec2T> Ptr;
+
+  IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name, unsigned int n_records,
+                unsigned int n_evaluations_per_year);
   virtual ~IceModelVec2T();
 
   unsigned int n_records();
-  void create(IceGrid::ConstPtr grid, const std::string &short_name, unsigned int n_records,
-              unsigned int n_evaluations_per_year);
+
   void init(const std::string &filename, unsigned int period, double reference_time);
   void init_constant(double value);
+
   void update(double t, double dt);
   MaxTimestep max_timestep(double t) const;
 

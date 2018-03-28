@@ -97,7 +97,7 @@ protected:
   IceModelVec2S m_snow_depth;
 
   //! standard deviation of the daily variability of the air temperature
-  IceModelVec2T m_air_temp_sd;
+  IceModelVec2T::Ptr m_air_temp_sd;
 
   //! total accumulation during the last time step
   IceModelVec2S m_accumulation;

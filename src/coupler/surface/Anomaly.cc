@@ -26,16 +26,16 @@ namespace surface {
 Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   : PGivenClimate<SurfaceModel>(g, in) {
 
-  // will be de-allocated by the parent's destructor
-  m_climatic_mass_balance_anomaly = new IceModelVec2T;
-  m_ice_surface_temp_anomaly      = new IceModelVec2T;
-
-  m_fields["climatic_mass_balance_anomaly"] = m_climatic_mass_balance_anomaly;
-  m_fields["ice_surface_temp_anomaly"] = m_ice_surface_temp_anomaly;
+  m_fields["climatic_mass_balance_anomaly"] = nullptr;
+  m_fields["ice_surface_temp_anomaly"]      = nullptr;
 
   process_options("-surface_anomaly");
 
   set_vec_parameters(m_filename, {});
+
+  // will be de-allocated by the parent's destructor
+  m_climatic_mass_balance_anomaly = m_fields["climatic_mass_balance_anomaly"].get();
+  m_ice_surface_temp_anomaly      = m_fields["ice_surface_temp_anomaly"].get();
 
   m_ice_surface_temp_anomaly->set_attrs("climate_forcing",
                                         "anomaly of the temperature of the ice at the ice surface"

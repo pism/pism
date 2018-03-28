@@ -33,31 +33,19 @@
 
 namespace pism {
 
-IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
+IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name,
+                             unsigned int n_records,
+                             unsigned int n_evaluations_per_year)
+  : IceModelVec2S() {
   m_has_ghosts           = false;
   m_array3                 = NULL;
   m_first                  = -1;
   m_N                      = 0;
-  m_n_records              = 50;  // just a default
   m_report_range         = false;
   m_period               = 0;
   m_reference_time       = 0.0;
   m_n_evaluations_per_year = 53;
 
-  m_da3.reset();
-}
-
-IceModelVec2T::~IceModelVec2T() {
-  // empty
-}
-
-unsigned int IceModelVec2T::n_records() {
-  return m_n_records;
-}
-
-void IceModelVec2T::create(IceGrid::ConstPtr grid, const std::string &short_name,
-                           unsigned int n_records,
-                           unsigned int n_evaluations_per_year) {
   m_n_evaluations_per_year = n_evaluations_per_year;
 
   const unsigned int width = 1;
@@ -71,6 +59,14 @@ void IceModelVec2T::create(IceGrid::ConstPtr grid, const std::string &short_name
   // allocate the 3D Vec:
   PetscErrorCode ierr = DMCreateGlobalVector(*m_da3, m_v3.rawptr());
   PISM_CHK(ierr, "DMCreateGlobalVector");
+}
+
+IceModelVec2T::~IceModelVec2T() {
+  // empty
+}
+
+unsigned int IceModelVec2T::n_records() {
+  return m_n_records;
 }
 
 double*** IceModelVec2T::get_array3() {

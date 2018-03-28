@@ -19,6 +19,8 @@
 #ifndef _PGIVENCLIMATE_H_
 #define _PGIVENCLIMATE_H_
 
+#include <memory>
+
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
@@ -40,9 +42,7 @@ public:
     : Model(g, in) {}
 
   virtual ~PGivenClimate() {
-    for (auto f : m_fields) {
-      delete f.second;
-    }
+    // empty
   }
 
 protected:
@@ -100,42 +100,23 @@ protected:
   void set_vec_parameters(const std::string &filename,
                           const std::map<std::string, std::string> &standard_names)
   {
-    unsigned int buffer_size = (unsigned int) Model::m_config->get_double("climate_forcing.buffer_size");
+    unsigned int buffer_size = Model::m_config->get_double("climate_forcing.buffer_size");
 
-    PIO nc(Model::m_grid->com, "netcdf3", filename, PISM_READONLY);
+    PIO file(Model::m_grid->com, "netcdf3", filename, PISM_READONLY);
 
-    for (auto f : m_fields) {
-      unsigned int n_records = 0;
+    for (auto &f : m_fields) {
+
       const std::string &short_name = f.first;
       std::string standard_name;
       if (standard_names.find(short_name) != standard_names.end()) {
         standard_name = standard_names.find(short_name)->second;
       }
-      // else leave standard_name empty
 
-      n_records = nc.inq_nrecords(short_name, standard_name,
-                                  Model::m_grid->ctx()->unit_system());
-
-      // If -..._period is not set, make ..._n_records the minimum of the
-      // buffer size and the number of available records. Otherwise try
-      // to keep all available records in memory.
-      if (m_bc_period == 0) {
-        n_records = std::min(n_records, buffer_size);
-      }
-
-      if (n_records < 1) {
-        // If the variable was not found we allocate storage for one
-        // record. This is needed to be able to allocate and then
-        // discard an "-atmosphere given" model (atmosphere::Given) when
-        // "-surface given" (Given) is selected.
-        n_records = 1;
-      }
-
-      f.second->create(Model::m_grid, short_name, n_records,
-                       Model::m_config->get_double("climate_forcing.evaluations_per_year"));
+      f.second = allocate(file, Model::m_sys, short_name, standard_name,
+                          buffer_size, m_bc_period > 0);
     }
 
-    nc.close();
+    file.close();
   }
 
   virtual void update_internal(const Geometry &geometry, double t, double dt)
@@ -149,7 +130,7 @@ protected:
     }
   }
 protected:
-  std::map<std::string, IceModelVec2T*> m_fields;
+  std::map<std::string, std::shared_ptr<IceModelVec2T> > m_fields;
   std::string m_filename;
 
   unsigned int m_bc_period;       // in (integer) years

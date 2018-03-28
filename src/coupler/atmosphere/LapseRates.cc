@@ -68,7 +68,7 @@ void LapseRates::update_impl(const Geometry &geometry, double t, double dt) {
   {
     m_precipitation->copy_from(m_input_model->mean_precipitation());
 
-    lapse_rate_correction(m_surface, m_reference_surface,
+    lapse_rate_correction(m_surface, *m_reference_surface,
                           m_precip_lapse_rate, *m_precipitation);
   }
 
@@ -76,7 +76,7 @@ void LapseRates::update_impl(const Geometry &geometry, double t, double dt) {
   {
     m_temperature->copy_from(m_input_model->mean_annual_temp());
 
-    lapse_rate_correction(m_surface, m_reference_surface,
+    lapse_rate_correction(m_surface, *m_reference_surface,
                           m_temp_lapse_rate, *m_temperature);
   }
 }
@@ -92,21 +92,21 @@ const IceModelVec2S& LapseRates::mean_precipitation_impl() const {
 void LapseRates::begin_pointwise_access_impl() const {
   m_input_model->begin_pointwise_access();
 
-  m_reference_surface.begin_access();
+  m_reference_surface->begin_access();
   m_surface.begin_access();
 }
 
 void LapseRates::end_pointwise_access_impl() const {
   m_input_model->end_pointwise_access();
 
-  m_reference_surface.end_access();
+  m_reference_surface->end_access();
   m_surface.end_access();
 }
 
 void LapseRates::init_timeseries_impl(const std::vector<double> &ts) const {
   AtmosphereModel::init_timeseries_impl(ts);
 
-  m_reference_surface.init_interpolation(ts);
+  m_reference_surface->init_interpolation(ts);
 }
 
 void LapseRates::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
@@ -114,7 +114,7 @@ void LapseRates::temp_time_series_impl(int i, int j, std::vector<double> &result
 
   m_input_model->temp_time_series(i, j, result);
 
-  m_reference_surface.interp(i, j, usurf);
+  m_reference_surface->interp(i, j, usurf);
 
   for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
     result[m] -= m_temp_lapse_rate * (m_surface(i, j) - usurf[m]);
@@ -126,7 +126,7 @@ void LapseRates::precip_time_series_impl(int i, int j, std::vector<double> &resu
 
   m_input_model->precip_time_series(i, j, result);
 
-  m_reference_surface.interp(i, j, usurf);
+  m_reference_surface->interp(i, j, usurf);
 
   for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
     result[m] -= m_precip_lapse_rate * (m_surface(i, j) - usurf[m]);

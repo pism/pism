@@ -26,19 +26,15 @@ namespace atmosphere {
 Given::Given(IceGrid::ConstPtr g)
   : PGivenClimate<AtmosphereModel>(g, nullptr)
 {
-  m_air_temp      = NULL;
-  m_precipitation = NULL;
-
-  // will be de-allocated by the parent's destructor
-  m_precipitation = new IceModelVec2T;
-  m_air_temp      = new IceModelVec2T;
-
-  m_fields["precipitation"] = m_precipitation;
-  m_fields["air_temp"]      = m_air_temp;
+  m_fields["precipitation"] = nullptr;
+  m_fields["air_temp"]      = nullptr;
 
   process_options("-atmosphere_given");
 
   set_vec_parameters(m_filename, {});
+
+  m_precipitation = m_fields["precipitation"].get();
+  m_air_temp      = m_fields["air_temp"].get();
 
   {
     m_air_temp->set_attrs("diagnostic", "mean annual near-surface air temperature",

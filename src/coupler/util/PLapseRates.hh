@@ -49,9 +49,9 @@ protected:
   virtual void update_impl(const Geometry &geometry, double t, double dt) {
     Model::m_input_model->update(geometry, t, dt);
 
-    m_reference_surface.update(t, dt);
+    m_reference_surface->update(t, dt);
 
-    m_reference_surface.interp(t + 0.5*dt);
+    m_reference_surface->interp(t + 0.5*dt);
   }
 
   virtual void init_internal() {
@@ -88,7 +88,7 @@ protected:
     }
     m_bc_period = (unsigned int)period;
 
-    if (not m_reference_surface.was_created()) {
+    if (not m_reference_surface) {
       unsigned int buffer_size = (unsigned int) Model::m_config->get_double("climate_forcing.buffer_size"),
         ref_surface_n_records = 1;
 
@@ -109,9 +109,12 @@ protected:
                                       file->c_str());
       }
 
-      m_reference_surface.create(grid, "usurf", ref_surface_n_records,
-                                 Model::m_config->get_double("climate_forcing.evaluations_per_year"));
-      m_reference_surface.set_attrs("climate_forcing",
+      int evaluations_per_year = Model::m_config->get_double("climate_forcing.evaluations_per_year");
+
+      m_reference_surface.reset(new IceModelVec2T(grid, "usurf", ref_surface_n_records,
+                                                  evaluations_per_year));
+
+      m_reference_surface->set_attrs("climate_forcing",
                                   "reference surface for lapse rate corrections",
                                   "m", "surface_altitude");
     }
@@ -120,7 +123,7 @@ protected:
                "    reading reference surface elevation from %s ...\n",
                file->c_str());
 
-    m_reference_surface.init(file, m_bc_period, m_bc_reference_time);
+    m_reference_surface->init(file, m_bc_period, m_bc_reference_time);
   }
 
   void lapse_rate_correction(const IceModelVec2S &surface,
@@ -140,9 +143,7 @@ protected:
     }
   }
 protected:
-  // "mutable" is needed here because some methods (average, interp) change the state of an
-  // "IceModelVec2T"
-  mutable IceModelVec2T m_reference_surface;
+  IceModelVec2T::Ptr m_reference_surface;
   unsigned int m_bc_period;
   double m_bc_reference_time,          // in seconds
     m_temp_lapse_rate;
