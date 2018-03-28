@@ -26,7 +26,6 @@ namespace atmosphere {
 
 Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
   : PGivenClimate<AtmosphereModel>(g, in) {
-  m_option_prefix  = "-atmosphere_anomaly";
 
   // will be de-allocated by the parent's destructor
   m_air_temp_anomaly      = new IceModelVec2T;
@@ -35,9 +34,9 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
   m_fields["air_temp_anomaly"]      = m_air_temp_anomaly;
   m_fields["precipitation_anomaly"] = m_precipitation_anomaly;
 
-  process_options();
+  process_options("-atmosphere_anomaly");
 
-  set_vec_parameters({});
+  set_vec_parameters(m_filename, {});
 
   m_air_temp_anomaly->set_attrs("climate_forcing",
                               "anomaly of the near-surface air temperature",

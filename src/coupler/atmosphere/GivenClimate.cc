@@ -26,7 +26,6 @@ namespace atmosphere {
 Given::Given(IceGrid::ConstPtr g)
   : PGivenClimate<AtmosphereModel>(g, nullptr)
 {
-  m_option_prefix = "-atmosphere_given";
   m_air_temp      = NULL;
   m_precipitation = NULL;
 
@@ -37,9 +36,9 @@ Given::Given(IceGrid::ConstPtr g)
   m_fields["precipitation"] = m_precipitation;
   m_fields["air_temp"]      = m_air_temp;
 
-  process_options();
+  process_options("-atmosphere_given");
 
-  set_vec_parameters({});
+  set_vec_parameters(m_filename, {});
 
   {
     m_air_temp->set_attrs("diagnostic", "mean annual near-surface air temperature",

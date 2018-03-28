@@ -63,9 +63,9 @@ protected:
     }
   }
 
-  void process_options()
+  void process_options(const std::string &option_prefix)
   {
-    options::String file(m_option_prefix + "_file",
+    options::String file(option_prefix + "_file",
                          "Specifies a file with boundary conditions");
     if (file.is_set()) {
       m_filename = file;
@@ -77,18 +77,18 @@ protected:
 
       Model::m_log->message(2,
                             "  - Option %s_file is not set. Trying the input file '%s'...\n",
-                            m_option_prefix.c_str(), m_filename.c_str());
+                            option_prefix.c_str(), m_filename.c_str());
     }
 
-    options::Integer period(m_option_prefix + "_period",
+    options::Integer period(option_prefix + "_period",
                             "Specifies the length of the climate data period (in years)", 0);
     if (period.value() < 0.0) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid %s_period %d (period length cannot be negative)",
-                                    m_option_prefix.c_str(), period.value());
+                                    option_prefix.c_str(), period.value());
     }
     m_bc_period = (unsigned int)period;
 
-    options::Integer ref_year(m_option_prefix + "_reference_year",
+    options::Integer ref_year(option_prefix + "_reference_year",
                               "Boundary condition reference year", 0);
     if (ref_year.is_set()) {
       m_bc_reference_time = units::convert(Model::m_sys, ref_year, "years", "seconds");
@@ -97,11 +97,12 @@ protected:
     }
   }
 
-  void set_vec_parameters(const std::map<std::string, std::string> &standard_names)
+  void set_vec_parameters(const std::string &filename,
+                          const std::map<std::string, std::string> &standard_names)
   {
     unsigned int buffer_size = (unsigned int) Model::m_config->get_double("climate_forcing.buffer_size");
 
-    PIO nc(Model::m_grid->com, "netcdf3", m_filename, PISM_READONLY);
+    PIO nc(Model::m_grid->com, "netcdf3", filename, PISM_READONLY);
 
     for (auto f : m_fields) {
       unsigned int n_records = 0;
@@ -151,7 +152,7 @@ protected:
   }
 protected:
   std::map<std::string, IceModelVec2T*> m_fields;
-  std::string m_filename, m_option_prefix;
+  std::string m_filename;
 
   unsigned int m_bc_period;       // in (integer) years
   double m_bc_reference_time;  // in seconds

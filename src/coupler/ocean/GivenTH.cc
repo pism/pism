@@ -61,8 +61,6 @@ GivenTH::Constants::Constants(const Config &config) {
 GivenTH::GivenTH(IceGrid::ConstPtr g)
   : PGivenClimate<CompleteOceanModel>(g, nullptr) {
 
-  m_option_prefix   = "-ocean_th";
-
   // will be de-allocated by the parent's destructor
   m_theta_ocean    = new IceModelVec2T;
   m_salinity_ocean = new IceModelVec2T;
@@ -70,9 +68,9 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
   m_fields["theta_ocean"]     = m_theta_ocean;
   m_fields["salinity_ocean"]  = m_salinity_ocean;
 
-  process_options();
+  process_options("-ocean_th");
 
-  set_vec_parameters({});
+  set_vec_parameters(m_filename, {});
 
   m_theta_ocean->set_attrs("climate_forcing",
                          "absolute potential temperature of the adjacent ocean",

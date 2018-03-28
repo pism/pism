@@ -25,8 +25,6 @@ namespace ocean {
 Given::Given(IceGrid::ConstPtr g)
   : PGivenClimate<OceanModel>(g, nullptr) {
 
-  m_option_prefix   = "-ocean_given";
-
   // will be de-allocated by the parent's destructor
   m_shelfbtemp     = new IceModelVec2T;
   m_shelfbmassflux = new IceModelVec2T;
@@ -38,9 +36,9 @@ Given::Given(IceGrid::ConstPtr g)
   m_fields["shelfbtemp"]     = m_shelfbtemp;
   m_fields["shelfbmassflux"] = m_shelfbmassflux;
 
-  process_options();
+  process_options("-ocean_given");
 
-  set_vec_parameters({});
+  set_vec_parameters(m_filename, {});
 
   m_shelfbtemp->set_attrs("climate_forcing",
                         "absolute temperature at ice shelf base",
