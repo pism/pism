@@ -45,9 +45,9 @@ public:
   IceModelVec2T();
   virtual ~IceModelVec2T();
 
-  void set_n_evaluations_per_year(unsigned int N);
-  unsigned int get_n_records();
-  void create(IceGrid::ConstPtr grid, const std::string &short_name, unsigned int n_records);
+  unsigned int n_records();
+  void create(IceGrid::ConstPtr grid, const std::string &short_name, unsigned int n_records,
+              unsigned int n_evaluations_per_year);
   void init(const std::string &filename, unsigned int period, double reference_time);
   void init_constant(double value);
   void update(double t, double dt);

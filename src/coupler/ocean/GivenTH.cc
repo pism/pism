@@ -95,7 +95,7 @@ void GivenTH::init_impl(const Geometry &geometry) {
   m_salinity_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
 
   // read time-independent data right away:
-  if (m_theta_ocean->get_n_records() == 1 && m_salinity_ocean->get_n_records() == 1) {
+  if (m_theta_ocean->n_records() == 1 && m_salinity_ocean->n_records() == 1) {
     update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }

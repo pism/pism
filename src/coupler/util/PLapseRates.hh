@@ -109,11 +109,11 @@ protected:
                                       file->c_str());
       }
 
-      m_reference_surface.create(grid, "usurf", ref_surface_n_records);
+      m_reference_surface.create(grid, "usurf", ref_surface_n_records,
+                                 Model::m_config->get_double("climate_forcing.evaluations_per_year"));
       m_reference_surface.set_attrs("climate_forcing",
                                   "reference surface for lapse rate corrections",
                                   "m", "surface_altitude");
-      m_reference_surface.set_n_evaluations_per_year((unsigned int)Model::m_config->get_double("climate_forcing.evaluations_per_year"));
     }
 
     Model::m_log->message(2,

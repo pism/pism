@@ -66,7 +66,7 @@ void Given::init_impl(const Geometry &geometry) {
   m_precipitation->init(m_filename, m_bc_period, m_bc_reference_time);
 
   // read time-independent data right away:
-  if (m_air_temp->get_n_records() == 1 && m_precipitation->get_n_records() == 1) {
+  if (m_air_temp->n_records() == 1 && m_precipitation->n_records() == 1) {
     update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }

@@ -51,16 +51,15 @@ IceModelVec2T::~IceModelVec2T() {
   // empty
 }
 
-void IceModelVec2T::set_n_evaluations_per_year(unsigned int M) {
-  m_n_evaluations_per_year = M;
-}
-
-unsigned int IceModelVec2T::get_n_records() {
+unsigned int IceModelVec2T::n_records() {
   return m_n_records;
 }
 
 void IceModelVec2T::create(IceGrid::ConstPtr grid, const std::string &short_name,
-                           unsigned int n_records) {
+                           unsigned int n_records,
+                           unsigned int n_evaluations_per_year) {
+  m_n_evaluations_per_year = n_evaluations_per_year;
+
   const unsigned int width = 1;
 
   IceModelVec2S::create(grid, short_name, WITHOUT_GHOSTS, width);
@@ -331,7 +330,7 @@ void IceModelVec2T::update(unsigned int start) {
   Time::ConstPtr t = m_grid->ctx()->time();
 
   Logger::ConstPtr log = m_grid->ctx()->log();
-  if (this->get_n_records() > 1) {
+  if (this->n_records() > 1) {
     log->message(4,
                "  reading \"%s\" into buffer\n"
                "          (short_name = %s): %d records, time intervals (%s, %s) through (%s, %s)...\n",

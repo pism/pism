@@ -131,10 +131,8 @@ protected:
         n_records = 1;
       }
 
-      f.second->create(Model::m_grid, short_name, n_records);
-
-      f.second->set_n_evaluations_per_year((unsigned int)Model::m_config->get_double("climate_forcing.evaluations_per_year"));
-
+      f.second->create(Model::m_grid, short_name, n_records,
+                       Model::m_config->get_double("climate_forcing.evaluations_per_year"));
     }
 
     nc.close();

@@ -78,7 +78,7 @@ void Given::init_impl(const Geometry &geometry) {
   m_mass_flux->init(m_filename, m_bc_period, m_bc_reference_time);
 
   // read time-independent data right away:
-  if (m_temperature->get_n_records() == 1 && m_mass_flux->get_n_records() == 1) {
+  if (m_temperature->n_records() == 1 && m_mass_flux->n_records() == 1) {
     update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }

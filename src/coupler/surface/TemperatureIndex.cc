@@ -125,7 +125,8 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
     n_records = 1;
   }
 
-  m_air_temp_sd.create(m_grid, "air_temp_sd", n_records);
+  m_air_temp_sd.create(m_grid, "air_temp_sd", n_records,
+                       m_config->get_double("climate_forcing.evaluations_per_year"));
   m_air_temp_sd.set_attrs("climate_forcing",
                           "standard deviation of near-surface air temperature",
                           "Kelvin", "");
