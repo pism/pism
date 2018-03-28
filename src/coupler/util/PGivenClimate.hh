@@ -63,60 +63,71 @@ protected:
     }
   }
 
-  void process_options(const std::string &option_prefix)
+  std::string process_options(const std::string &option_prefix)
   {
-    options::String file(option_prefix + "_file",
-                         "Specifies a file with boundary conditions");
-    if (file.is_set()) {
-      m_filename = file;
-      Model::m_log->message(2,
-                 "  - Reading boundary conditions from '%s'...\n",
-                 m_filename.c_str());
-    } else {
-      m_filename = process_input_options(Model::m_grid->com).filename;
+    std::string filename;
+    {
+      options::String file(option_prefix + "_file",
+                           "Specifies a file with boundary conditions");
+      if (file.is_set()) {
+        filename = file;
+        Model::m_log->message(2,
+                              "  - Reading boundary conditions from '%s'...\n",
+                              filename.c_str());
+      } else {
+        filename = process_input_options(Model::m_grid->com).filename;
 
-      Model::m_log->message(2,
-                            "  - Option %s_file is not set. Trying the input file '%s'...\n",
-                            option_prefix.c_str(), m_filename.c_str());
+        Model::m_log->message(2,
+                              "  - Option %s_file is not set. Trying the input file '%s'...\n",
+                              option_prefix.c_str(), filename.c_str());
+      }
     }
 
-    options::Integer period(option_prefix + "_period",
-                            "Specifies the length of the climate data period (in years)", 0);
-    if (period.value() < 0.0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid %s_period %d (period length cannot be negative)",
-                                    option_prefix.c_str(), period.value());
+    {
+      options::Integer period(option_prefix + "_period",
+                              "Specifies the length of the climate data period (in years)", 0);
+      if (period.value() < 0.0) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid %s_period %d (period length cannot be negative)",
+                                      option_prefix.c_str(), period.value());
+      }
+      m_bc_period = (unsigned int)period;
     }
-    m_bc_period = (unsigned int)period;
 
-    options::Integer ref_year(option_prefix + "_reference_year",
-                              "Boundary condition reference year", 0);
-    if (ref_year.is_set()) {
-      m_bc_reference_time = units::convert(Model::m_sys, ref_year, "years", "seconds");
-    } else {
-      m_bc_reference_time = 0;
+    {
+      options::Integer ref_year(option_prefix + "_reference_year",
+                                "Boundary condition reference year", 0);
+      if (ref_year.is_set()) {
+        m_bc_reference_time = units::convert(Model::m_sys, ref_year, "years", "seconds");
+      } else {
+        m_bc_reference_time = 0;
+      }
     }
+
+    return filename;
   }
 
-  void set_vec_parameters(const std::string &filename,
-                          const std::map<std::string, std::string> &standard_names)
-  {
-    unsigned int buffer_size = Model::m_config->get_double("climate_forcing.buffer_size");
+  IceModelVec2T::Ptr allocate(const PIO &file,
+                              units::System::Ptr unit_system,
+                              const std::string &short_name,
+                              const std::string &standard_name,
+                              int max_buffer_size,
+                              bool periodic) {
+    int evaluations_per_year = Model::m_config->get_double("climate_forcing.evaluations_per_year");
 
-    PIO file(Model::m_grid->com, "netcdf3", filename, PISM_READONLY);
+    int n_records = file.inq_nrecords(short_name, standard_name, unit_system);
 
-    for (auto &f : m_fields) {
-
-      const std::string &short_name = f.first;
-      std::string standard_name;
-      if (standard_names.find(short_name) != standard_names.end()) {
-        standard_name = standard_names.find(short_name)->second;
-      }
-
-      f.second = allocate(file, Model::m_sys, short_name, standard_name,
-                          buffer_size, m_bc_period > 0);
+    if (not periodic) {
+      n_records = std::min(n_records, max_buffer_size);
     }
+    // In the periodic case we try to keep all the records in RAM.
 
-    file.close();
+    // Allocate storage for one record if the variable was not found. This is needed to be
+    // able to cheaply allocate and then discard an "-atmosphere given" model
+    // (atmosphere::Given) when "-surface given" (Given) is selected.
+    n_records = std::max(n_records, 1);
+
+    return IceModelVec2T::Ptr(new IceModelVec2T(Model::m_grid, short_name, n_records,
+                                                evaluations_per_year));
   }
 
   virtual void update_internal(const Geometry &geometry, double t, double dt)

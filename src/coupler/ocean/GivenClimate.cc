@@ -29,12 +29,22 @@ Given::Given(IceGrid::ConstPtr g)
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
   m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);
 
-  m_fields["shelfbtemp"]     = nullptr;
-  m_fields["shelfbmassflux"] = nullptr;
+  m_filename = process_options("-ocean_given");
 
-  process_options("-ocean_given");
+  {
+    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
+    PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
-  set_vec_parameters(m_filename, {});
+    for (auto name : {"shelfbtemp", "shelfbmassflux"}) {
+      m_fields[name] = allocate(file,
+                                m_sys,
+                                name,
+                                "", // no standard name
+                                buffer_size,
+                                m_bc_period > 0);
+
+    }
+  }
 
   m_shelfbtemp     = m_fields["shelfbtemp"].get();
   m_shelfbmassflux = m_fields["shelfbmassflux"].get();

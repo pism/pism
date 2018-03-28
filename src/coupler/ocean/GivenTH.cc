@@ -61,23 +61,33 @@ GivenTH::Constants::Constants(const Config &config) {
 GivenTH::GivenTH(IceGrid::ConstPtr g)
   : PGivenClimate<CompleteOceanModel>(g, nullptr) {
 
-  m_fields["theta_ocean"]    = nullptr;
-  m_fields["salinity_ocean"] = nullptr;
+  m_filename = process_options("-ocean_th");
 
-  process_options("-ocean_th");
+  {
+    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
+    PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
-  set_vec_parameters(m_filename, {});
+    for (auto name : {"theta_ocean", "salinity_ocean"}) {
+      m_fields[name] = allocate(file,
+                                m_sys,
+                                name,
+                                "", // no standard name
+                                buffer_size,
+                                m_bc_period > 0);
+
+    }
+  }
 
   m_theta_ocean    = m_fields["theta_ocean"].get();
   m_salinity_ocean = m_fields["salinity_ocean"].get();
 
   m_theta_ocean->set_attrs("climate_forcing",
-                         "absolute potential temperature of the adjacent ocean",
-                         "Kelvin", "");
+                           "absolute potential temperature of the adjacent ocean",
+                           "Kelvin", "");
 
   m_salinity_ocean->set_attrs("climate_forcing",
-                            "salinity of the adjacent ocean",
-                            "g/kg", "");
+                              "salinity of the adjacent ocean",
+                              "g/kg", "");
 }
 
 GivenTH::~GivenTH() {

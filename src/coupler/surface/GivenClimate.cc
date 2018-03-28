@@ -27,13 +27,24 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
 {
   (void) input;
 
-  m_fields["ice_surface_temp"]      = nullptr;
-  m_fields["climatic_mass_balance"] = nullptr;
+  m_filename = process_options("-surface_given");
 
-  process_options("-surface_given");
+  {
+    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
+    PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
-  set_vec_parameters(m_filename,
-                     {{"climatic_mass_balance", "land_ice_surface_specific_mass_balance_flux"}});
+    m_fields["ice_surface_temp"] = allocate(file,
+                                            m_sys,
+                                            "ice_surface_temp",
+                                            "", // no standard name
+                                            buffer_size, m_bc_period > 0);
+
+    m_fields["climatic_mass_balance"] = allocate(file,
+                                                 m_sys,
+                                                 "climatic_mass_balance",
+                                                 "land_ice_surface_specific_mass_balance_flux",
+                                                 buffer_size, m_bc_period > 0);
+  }
 
   m_temperature = m_fields["ice_surface_temp"].get();
   m_mass_flux   = m_fields["climatic_mass_balance"].get();

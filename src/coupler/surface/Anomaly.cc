@@ -26,14 +26,22 @@ namespace surface {
 Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   : PGivenClimate<SurfaceModel>(g, in) {
 
-  m_fields["climatic_mass_balance_anomaly"] = nullptr;
-  m_fields["ice_surface_temp_anomaly"]      = nullptr;
+  m_filename = process_options("-surface_anomaly");
 
-  process_options("-surface_anomaly");
+  {
+    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
+    PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
-  set_vec_parameters(m_filename, {});
+    for (auto name : {"ice_surface_temp_anomaly", "climatic_mass_balance_anomaly"}) {
+      m_fields[name] = allocate(file,
+                                m_sys,
+                                name,
+                                "", // no standard name
+                                buffer_size, m_bc_period > 0);
 
-  // will be de-allocated by the parent's destructor
+    }
+  }
+
   m_climatic_mass_balance_anomaly = m_fields["climatic_mass_balance_anomaly"].get();
   m_ice_surface_temp_anomaly      = m_fields["ice_surface_temp_anomaly"].get();
 
