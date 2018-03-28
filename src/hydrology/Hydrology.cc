@@ -117,8 +117,7 @@ void Hydrology::init() {
     m_log->message(2,
                "    allocating buffer space for n = %d 'inputtobed' records ...\n", n_records);
     m_inputtobed = new IceModelVec2T;
-    m_inputtobed->set_n_records(n_records);
-    m_inputtobed->create(m_grid, "inputtobed");
+    m_inputtobed->create(m_grid, "inputtobed", n_records);
     m_inputtobed->set_attrs("climate_forcing",
                             "amount of water (depth per time like basal_melt_rate_grounded)"
                             " which should be put at the ice sheet bed",

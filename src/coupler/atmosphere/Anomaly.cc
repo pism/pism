@@ -37,15 +37,12 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
 
   process_options();
 
-  std::map<std::string, std::string> standard_names;
-  set_vec_parameters(standard_names);
+  set_vec_parameters({});
 
-  m_air_temp_anomaly->create(m_grid, "air_temp_anomaly");
   m_air_temp_anomaly->set_attrs("climate_forcing",
                               "anomaly of the near-surface air temperature",
                               "Kelvin", "");
 
-  m_precipitation_anomaly->create(m_grid, "precipitation_anomaly");
   m_precipitation_anomaly->set_attrs("climate_forcing",
                                    "anomaly of the ice-equivalent precipitation rate",
                                    "kg m-2 second-1", "");

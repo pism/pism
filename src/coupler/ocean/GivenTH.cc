@@ -72,15 +72,12 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
 
   process_options();
 
-  std::map<std::string, std::string> standard_names;
-  set_vec_parameters(standard_names);
+  set_vec_parameters({});
 
-  m_theta_ocean->create(m_grid, "theta_ocean");
   m_theta_ocean->set_attrs("climate_forcing",
                          "absolute potential temperature of the adjacent ocean",
                          "Kelvin", "");
 
-  m_salinity_ocean->create(m_grid, "salinity_ocean");
   m_salinity_ocean->set_attrs("climate_forcing",
                             "salinity of the adjacent ocean",
                             "g/kg", "");

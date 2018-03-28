@@ -51,13 +51,6 @@ IceModelVec2T::~IceModelVec2T() {
   // empty
 }
 
-
-//! Sets the number of records to store in memory. Call it before calling create().
-// FIXME: This is bad. Make N an argument of the constructor.
-void IceModelVec2T::set_n_records(unsigned int N) {
-  m_n_records = N;
-}
-
 void IceModelVec2T::set_n_evaluations_per_year(unsigned int M) {
   m_n_evaluations_per_year = M;
 }
@@ -66,13 +59,15 @@ unsigned int IceModelVec2T::get_n_records() {
   return m_n_records;
 }
 
-void IceModelVec2T::create(IceGrid::ConstPtr grid, const std::string &short_name) {
+void IceModelVec2T::create(IceGrid::ConstPtr grid, const std::string &short_name,
+                           unsigned int n_records) {
   const unsigned int width = 1;
 
   IceModelVec2S::create(grid, short_name, WITHOUT_GHOSTS, width);
 
   // initialize the m_da3 member:
-  m_da3 = m_grid->get_dm(this->m_n_records, this->m_da_stencil_width);
+  m_da3 = m_grid->get_dm(n_records, this->m_da_stencil_width);
+  m_n_records = n_records;
 
   // allocate the 3D Vec:
   PetscErrorCode ierr = DMCreateGlobalVector(*m_da3, m_v3.rawptr());
@@ -92,7 +87,7 @@ void IceModelVec2T::begin_access() const {
 
   // this call will increment the m_access_counter
   IceModelVec2S::begin_access();
-  
+
 }
 
 void IceModelVec2T::end_access() const {
@@ -110,7 +105,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
 
   const Logger &log = *m_grid->ctx()->log();
 
-  m_filename         = fname;
+  m_filename       = fname;
   m_period         = period;
   m_reference_time = reference_time;
 

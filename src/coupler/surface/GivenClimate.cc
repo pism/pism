@@ -37,12 +37,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
 
   process_options();
 
-  std::map<std::string, std::string> standard_names;
-  standard_names["climatic_mass_balance"] = "land_ice_surface_specific_mass_balance_flux";
-  set_vec_parameters(standard_names);
-
-  m_temperature->create(m_grid, "ice_surface_temp");
-  m_mass_flux->create(m_grid, "climatic_mass_balance");
+  set_vec_parameters({{"climatic_mass_balance", "land_ice_surface_specific_mass_balance_flux"}});
 
   m_temperature->set_attrs("climate_forcing",
                            "temperature of the ice at the ice surface but below firn processes",

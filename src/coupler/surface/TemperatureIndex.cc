@@ -95,11 +95,11 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   }
 
 
+  unsigned int n_records = 0;
   if (m_sd_file_set) {
     // find out how many records there are in the file and set the
     // air_temp_sd buffer size
 
-    unsigned int n_records = 0;
     std::string short_name = "air_temp_sd";
     unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing.buffer_size");
 
@@ -120,14 +120,12 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
                                     short_name.c_str(), sd_file.c_str());
     }
 
-    m_air_temp_sd.set_n_records(n_records);
-
   } else {
     // using constant standard deviation, so set buffer size to 1
-    m_air_temp_sd.set_n_records(1);
+    n_records = 1;
   }
 
-  m_air_temp_sd.create(m_grid, "air_temp_sd");
+  m_air_temp_sd.create(m_grid, "air_temp_sd", n_records);
   m_air_temp_sd.set_attrs("climate_forcing",
                           "standard deviation of near-surface air temperature",
                           "Kelvin", "");

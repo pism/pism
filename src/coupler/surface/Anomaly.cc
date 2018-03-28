@@ -37,11 +37,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
 
   process_options();
 
-  std::map<std::string, std::string> standard_names;
-  set_vec_parameters(standard_names);
-
-  m_ice_surface_temp_anomaly->create(m_grid, "ice_surface_temp_anomaly");
-  m_climatic_mass_balance_anomaly->create(m_grid, "climatic_mass_balance_anomaly");
+  set_vec_parameters({});
 
   m_ice_surface_temp_anomaly->set_attrs("climate_forcing",
                                         "anomaly of the temperature of the ice at the ice surface"

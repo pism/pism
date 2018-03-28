@@ -40,11 +40,7 @@ Given::Given(IceGrid::ConstPtr g)
 
   process_options();
 
-  std::map<std::string, std::string> standard_names;
-  set_vec_parameters(standard_names);
-
-  m_shelfbtemp->create(m_grid, "shelfbtemp");
-  m_shelfbmassflux->create(m_grid, "shelfbmassflux");
+  set_vec_parameters({});
 
   m_shelfbtemp->set_attrs("climate_forcing",
                         "absolute temperature at ice shelf base",
