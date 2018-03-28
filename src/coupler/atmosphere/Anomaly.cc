@@ -34,18 +34,19 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
     PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
-    for (auto name : {"air_temp_anomaly", "precipitation_anomaly"}) {
-      m_fields[name] = allocate(file,
-                                m_sys,
-                                name,
-                                "", // no standard name
-                                buffer_size, m_bc_period > 0);
+    m_air_temp_anomaly = allocate(file,
+                                  m_sys,
+                                  "air_temp_anomaly",
+                                  "", // no standard name
+                                  buffer_size, m_bc_period > 0);
 
-    }
+    m_precipitation_anomaly = allocate(file,
+                                       m_sys,
+                                       "precipitation_anomaly",
+                                       "", // no standard name
+                                       buffer_size, m_bc_period > 0);
+
   }
-
-  m_air_temp_anomaly      = m_fields["air_temp_anomaly"].get();
-  m_precipitation_anomaly = m_fields["precipitation_anomaly"].get();
 
   m_air_temp_anomaly->set_attrs("climate_forcing",
                               "anomaly of the near-surface air temperature",
@@ -80,7 +81,7 @@ void Anomaly::init_impl(const Geometry &geometry) {
 }
 
 void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
-  update_internal(geometry, t, dt);
+  update__internal(geometry, t, dt);
 
   m_precipitation_anomaly->average(t, dt);
   m_air_temp_anomaly->average(t, dt);

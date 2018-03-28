@@ -64,7 +64,8 @@ private:
 
   const IceModelVec2S& sea_level_elevation_impl() const;
 
-  IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
+  IceModelVec2T::Ptr m_theta_ocean;
+  IceModelVec2T::Ptr m_salinity_ocean;
 
   void pointwise_update(const Constants &constants,
                         double sea_water_salinity,

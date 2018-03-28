@@ -33,21 +33,18 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
     PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
-    m_fields["ice_surface_temp"] = allocate(file,
-                                            m_sys,
-                                            "ice_surface_temp",
-                                            "", // no standard name
-                                            buffer_size, m_bc_period > 0);
+    m_temperature = allocate(file,
+                             m_sys,
+                             "ice_surface_temp",
+                             "", // no standard name
+                             buffer_size, m_bc_period > 0);
 
-    m_fields["climatic_mass_balance"] = allocate(file,
-                                                 m_sys,
-                                                 "climatic_mass_balance",
-                                                 "land_ice_surface_specific_mass_balance_flux",
-                                                 buffer_size, m_bc_period > 0);
+    m_mass_flux = allocate(file,
+                           m_sys,
+                           "climatic_mass_balance",
+                           "land_ice_surface_specific_mass_balance_flux",
+                           buffer_size, m_bc_period > 0);
   }
-
-  m_temperature = m_fields["ice_surface_temp"].get();
-  m_mass_flux   = m_fields["climatic_mass_balance"].get();
 
   m_temperature->set_attrs("climate_forcing",
                            "temperature of the ice at the ice surface but below firn processes",
@@ -96,7 +93,7 @@ void Given::init_impl(const Geometry &geometry) {
 }
 
 void Given::update_impl(const Geometry &geometry, double t, double dt) {
-  update_internal(geometry, t, dt);
+  update__internal(geometry, t, dt);
 
   m_mass_flux->average(t, dt);
   m_temperature->average(t, dt);

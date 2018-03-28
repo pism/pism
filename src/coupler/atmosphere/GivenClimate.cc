@@ -32,18 +32,18 @@ Given::Given(IceGrid::ConstPtr g)
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
     PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
-    for (auto name : {"air_temp", "precipitation"}) {
-      m_fields[name] = allocate(file,
-                                m_sys,
-                                name,
-                                "", // no standard name
-                                buffer_size, m_bc_period > 0);
+    m_air_temp = allocate(file,
+                               m_sys,
+                               "air_temp",
+                               "", // no standard name
+                               buffer_size, m_bc_period > 0);
 
-    }
+    m_precipitation = allocate(file,
+                               m_sys,
+                               "precipitation",
+                               "", // no standard name
+                               buffer_size, m_bc_period > 0);
   }
-
-  m_precipitation = m_fields["precipitation"].get();
-  m_air_temp      = m_fields["air_temp"].get();
 
   {
     m_air_temp->set_attrs("diagnostic", "mean annual near-surface air temperature",
@@ -77,7 +77,7 @@ void Given::init_impl(const Geometry &geometry) {
 }
 
 void Given::update_impl(const Geometry &geometry, double t, double dt) {
-  update_internal(geometry, t, dt);
+  update__internal(geometry, t, dt);
 
   m_precipitation->average(t, dt);
   m_air_temp->average(t, dt);

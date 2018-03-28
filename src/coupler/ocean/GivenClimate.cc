@@ -35,19 +35,20 @@ Given::Given(IceGrid::ConstPtr g)
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
     PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
-    for (auto name : {"shelfbtemp", "shelfbmassflux"}) {
-      m_fields[name] = allocate(file,
-                                m_sys,
-                                name,
-                                "", // no standard name
-                                buffer_size,
-                                m_bc_period > 0);
+    m_shelfbtemp = allocate(file,
+                            m_sys,
+                            "shelfbtemp",
+                            "", // no standard name
+                            buffer_size,
+                            m_bc_period > 0);
 
-    }
+    m_shelfbmassflux = allocate(file,
+                            m_sys,
+                            "shelfbmassflux",
+                            "", // no standard name
+                            buffer_size,
+                            m_bc_period > 0);
   }
-
-  m_shelfbtemp     = m_fields["shelfbtemp"].get();
-  m_shelfbmassflux = m_fields["shelfbmassflux"].get();
 
   m_shelfbtemp->set_attrs("climate_forcing",
                         "absolute temperature at ice shelf base",
@@ -78,7 +79,7 @@ void Given::init_impl(const Geometry &geometry) {
 }
 
 void Given::update_impl(const Geometry &geometry, double t, double dt) {
-  update_internal(geometry, t, dt);
+  update__internal(geometry, t, dt);
 
   m_shelfbmassflux->average(t, dt);
   m_shelfbtemp->average(t, dt);

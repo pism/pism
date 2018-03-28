@@ -67,19 +67,20 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
     PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
-    for (auto name : {"theta_ocean", "salinity_ocean"}) {
-      m_fields[name] = allocate(file,
+    m_theta_ocean = allocate(file,
+                             m_sys,
+                             "theta_ocean",
+                             "", // no standard name
+                             buffer_size,
+                             m_bc_period > 0);
+
+    m_salinity_ocean = allocate(file,
                                 m_sys,
-                                name,
+                                "salinity_ocean",
                                 "", // no standard name
                                 buffer_size,
                                 m_bc_period > 0);
-
-    }
   }
-
-  m_theta_ocean    = m_fields["theta_ocean"].get();
-  m_salinity_ocean = m_fields["salinity_ocean"].get();
 
   m_theta_ocean->set_attrs("climate_forcing",
                            "absolute potential temperature of the adjacent ocean",
@@ -113,7 +114,7 @@ void GivenTH::update_impl(const Geometry &geometry, double t, double dt) {
 
   // Make sure that sea water salinity and sea water potential
   // temperature fields are up to date:
-  update_internal(geometry, t, dt);
+  update__internal(geometry, t, dt);
 
   m_theta_ocean->average(t, dt);
   m_salinity_ocean->average(t, dt);
@@ -125,7 +126,7 @@ void GivenTH::update_impl(const Geometry &geometry, double t, double dt) {
   IceModelVec2S &temperature = *m_shelf_base_temperature;
   IceModelVec2S &mass_flux = *m_shelf_base_mass_flux;
 
-  IceModelVec::AccessList list{ &ice_thickness, m_theta_ocean, m_salinity_ocean,
+  IceModelVec::AccessList list{ &ice_thickness, m_theta_ocean.get(), m_salinity_ocean.get(),
       &temperature, &mass_flux};
 
   for (Points p(*m_grid); p; p.next()) {

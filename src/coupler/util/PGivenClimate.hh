@@ -51,18 +51,6 @@ protected:
     return MaxTimestep();
   }
 
-  virtual void define_model_state_impl(const PIO &output) const {
-    for (auto f : m_fields) {
-      f.second->define(output);
-    }
-  }
-
-  virtual void write_model_state_impl(const PIO &output) const {
-    for (auto f : m_fields) {
-      f.second->write(output);
-    }
-  }
-
   std::string process_options(const std::string &option_prefix)
   {
     std::string filename;
@@ -130,7 +118,7 @@ protected:
                                                 evaluations_per_year));
   }
 
-  virtual void update_internal(const Geometry &geometry, double t, double dt)
+  virtual void update__internal(const Geometry &geometry, double t, double dt)
   {
     if (Model::m_input_model) {
       Model::m_input_model->update(geometry, t, dt);

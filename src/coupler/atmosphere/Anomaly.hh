@@ -45,8 +45,10 @@ protected:
   void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 protected:
-  IceModelVec2T *m_air_temp_anomaly, *m_precipitation_anomaly;
   mutable std::vector<double> m_mass_flux_anomaly, m_temp_anomaly;
+
+  IceModelVec2T::Ptr m_air_temp_anomaly;
+  IceModelVec2T::Ptr m_precipitation_anomaly;
 
   IceModelVec2S::Ptr m_precipitation;
   IceModelVec2S::Ptr m_temperature;

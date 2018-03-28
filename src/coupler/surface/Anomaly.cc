@@ -32,18 +32,19 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
     PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
-    for (auto name : {"ice_surface_temp_anomaly", "climatic_mass_balance_anomaly"}) {
-      m_fields[name] = allocate(file,
-                                m_sys,
-                                name,
-                                "", // no standard name
-                                buffer_size, m_bc_period > 0);
 
-    }
+    m_ice_surface_temp_anomaly = allocate(file,
+                                          m_sys,
+                                          "ice_surface_temp_anomaly",
+                                          "", // no standard name
+                                          buffer_size, m_bc_period > 0);
+
+    m_climatic_mass_balance_anomaly = allocate(file,
+                                               m_sys,
+                                               "climatic_mass_balance_anomaly",
+                                               "", // no standard name
+                                               buffer_size, m_bc_period > 0);
   }
-
-  m_climatic_mass_balance_anomaly = m_fields["climatic_mass_balance_anomaly"].get();
-  m_ice_surface_temp_anomaly      = m_fields["ice_surface_temp_anomaly"].get();
 
   m_ice_surface_temp_anomaly->set_attrs("climate_forcing",
                                         "anomaly of the temperature of the ice at the ice surface"
@@ -79,7 +80,7 @@ void Anomaly::init_impl(const Geometry &geometry) {
 }
 
 void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
-  update_internal(geometry, t, dt);
+  update__internal(geometry, t, dt);
 
   m_climatic_mass_balance_anomaly->average(t, dt);
   m_ice_surface_temp_anomaly->average(t, dt);

@@ -37,8 +37,8 @@ protected:
   const IceModelVec2S &temperature_impl() const;
   const IceModelVec2S &mass_flux_impl() const;
 
-  IceModelVec2T *m_mass_flux;
-  IceModelVec2T *m_temperature;
+  IceModelVec2T::Ptr m_mass_flux;
+  IceModelVec2T::Ptr m_temperature;
 };
 
 } // end of namespace surface

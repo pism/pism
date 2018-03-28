@@ -47,7 +47,8 @@ private:
   void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 
-  IceModelVec2T *m_precipitation, *m_air_temp;
+  IceModelVec2T::Ptr m_precipitation;
+  IceModelVec2T::Ptr m_air_temp;
 };
 
 } // end of namespace atmosphere
