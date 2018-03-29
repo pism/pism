@@ -111,10 +111,8 @@ void GivenTH::init_impl(const Geometry &geometry) {
 }
 
 void GivenTH::update_impl(const Geometry &geometry, double t, double dt) {
-
-  // Make sure that sea water salinity and sea water potential
-  // temperature fields are up to date:
-  update__internal(geometry, t, dt);
+  m_theta_ocean->update(t, dt);
+  m_salinity_ocean->update(t, dt);
 
   m_theta_ocean->average(t, dt);
   m_salinity_ocean->average(t, dt);

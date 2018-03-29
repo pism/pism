@@ -46,10 +46,6 @@ public:
   }
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t) const {
-    (void) t;
-    return MaxTimestep();
-  }
 
   std::string process_options(const std::string &option_prefix)
   {
@@ -118,18 +114,7 @@ protected:
                                                 evaluations_per_year));
   }
 
-  virtual void update__internal(const Geometry &geometry, double t, double dt)
-  {
-    if (Model::m_input_model) {
-      Model::m_input_model->update(geometry, t, dt);
-    }
-
-    for (auto f : m_fields) {
-      f.second->update(t, dt);
-    }
-  }
 protected:
-  std::map<std::string, std::shared_ptr<IceModelVec2T> > m_fields;
   std::string m_filename;
 
   unsigned int m_bc_period;       // in (integer) years

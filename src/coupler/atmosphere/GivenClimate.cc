@@ -77,7 +77,10 @@ void Given::init_impl(const Geometry &geometry) {
 }
 
 void Given::update_impl(const Geometry &geometry, double t, double dt) {
-  update__internal(geometry, t, dt);
+  (void) geometry;
+
+  m_precipitation->update(t, dt);
+  m_air_temp->update(t, dt);
 
   m_precipitation->average(t, dt);
   m_air_temp->average(t, dt);

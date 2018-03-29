@@ -79,7 +79,10 @@ void Given::init_impl(const Geometry &geometry) {
 }
 
 void Given::update_impl(const Geometry &geometry, double t, double dt) {
-  update__internal(geometry, t, dt);
+  (void) geometry;
+
+  m_shelfbmassflux->update(t, dt);
+  m_shelfbtemp->update(t, dt);
 
   m_shelfbmassflux->average(t, dt);
   m_shelfbtemp->average(t, dt);

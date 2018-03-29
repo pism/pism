@@ -93,7 +93,10 @@ void Given::init_impl(const Geometry &geometry) {
 }
 
 void Given::update_impl(const Geometry &geometry, double t, double dt) {
-  update__internal(geometry, t, dt);
+  (void) geometry;
+
+  m_mass_flux->update(t, dt);
+  m_temperature->update(t, dt);
 
   m_mass_flux->average(t, dt);
   m_temperature->average(t, dt);
