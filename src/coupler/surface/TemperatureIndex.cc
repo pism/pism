@@ -94,39 +94,20 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
                                   "Choose one or the other.\n");
   }
 
-
-  unsigned int n_records = 0;
   if (m_sd_file_set) {
-    // find out how many records there are in the file and set the
-    // air_temp_sd buffer size
+    int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    int max_buffer_size = (unsigned int) m_config->get_double("climate_forcing.buffer_size");
 
-    std::string short_name = "air_temp_sd";
-    unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing.buffer_size");
-
-    {
-      PIO nc(m_grid->com, "netcdf3", sd_file, PISM_READONLY);
-      n_records = nc.inq_nrecords(short_name, "", m_grid->ctx()->unit_system());
-    }
-
-    // If -..._period is not set, make ..._n_records the minimum of the
-    // buffer size and the number of available records. Otherwise try
-    // to keep all available records in memory.
-    if (m_sd_period == 0) {
-      n_records = std::min(n_records, buffer_size);
-    }
-
-    if (n_records < 1) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in %s.",
-                                    short_name.c_str(), sd_file.c_str());
-    }
-
+    PIO file(m_grid->com, "netcdf3", sd_file, PISM_READONLY);
+    m_air_temp_sd = IceModelVec2T::ForcingField(m_grid, file,
+                                                "air_temp_sd", "",
+                                                max_buffer_size,
+                                                evaluations_per_year,
+                                                m_sd_period > 0);
   } else {
-    // using constant standard deviation, so set buffer size to 1
-    n_records = 1;
+    m_air_temp_sd.reset(new IceModelVec2T(m_grid, "air_temp_sd", 1, 1));
   }
 
-  m_air_temp_sd.reset(new IceModelVec2T(m_grid, "air_temp_sd", n_records,
-                                        m_config->get_double("climate_forcing.evaluations_per_year")));
   m_air_temp_sd->set_attrs("climate_forcing",
                            "standard deviation of near-surface air temperature",
                            "Kelvin", "");
