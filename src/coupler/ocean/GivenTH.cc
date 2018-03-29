@@ -65,21 +65,25 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+
     PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
-    m_theta_ocean = allocate(file,
-                             m_sys,
-                             "theta_ocean",
-                             "", // no standard name
-                             buffer_size,
-                             m_bc_period > 0);
+    m_theta_ocean = IceModelVec2T::ForcingField(m_grid,
+                                                file,
+                                                "theta_ocean",
+                                                "", // no standard name
+                                                buffer_size,
+                                                evaluations_per_year,
+                                                m_bc_period > 0);
 
-    m_salinity_ocean = allocate(file,
-                                m_sys,
-                                "salinity_ocean",
-                                "", // no standard name
-                                buffer_size,
-                                m_bc_period > 0);
+    m_salinity_ocean = IceModelVec2T::ForcingField(m_grid,
+                                                   file,
+                                                   "salinity_ocean",
+                                                   "", // no standard name
+                                                   buffer_size,
+                                                   evaluations_per_year,
+                                                   m_bc_period > 0);
   }
 
   m_theta_ocean->set_attrs("climate_forcing",

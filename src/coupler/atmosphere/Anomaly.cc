@@ -32,29 +32,35 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+
     PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
-    m_air_temp_anomaly = allocate(file,
-                                  m_sys,
-                                  "air_temp_anomaly",
-                                  "", // no standard name
-                                  buffer_size, m_bc_period > 0);
+    m_air_temp_anomaly = IceModelVec2T::ForcingField(m_grid,
+                                                     file,
+                                                     "air_temp_anomaly",
+                                                     "", // no standard name
+                                                     buffer_size,
+                                                     evaluations_per_year,
+                                                     m_bc_period > 0);
 
-    m_precipitation_anomaly = allocate(file,
-                                       m_sys,
-                                       "precipitation_anomaly",
-                                       "", // no standard name
-                                       buffer_size, m_bc_period > 0);
+    m_precipitation_anomaly = IceModelVec2T::ForcingField(m_grid,
+                                                          file,
+                                                          "precipitation_anomaly",
+                                                          "", // no standard name
+                                                          buffer_size,
+                                                          evaluations_per_year,
+                                                          m_bc_period > 0);
 
   }
 
   m_air_temp_anomaly->set_attrs("climate_forcing",
-                              "anomaly of the near-surface air temperature",
-                              "Kelvin", "");
+                                "anomaly of the near-surface air temperature",
+                                "Kelvin", "");
 
   m_precipitation_anomaly->set_attrs("climate_forcing",
-                                   "anomaly of the ice-equivalent precipitation rate",
-                                   "kg m-2 second-1", "");
+                                     "anomaly of the ice-equivalent precipitation rate",
+                                     "kg m-2 second-1", "");
   m_precipitation_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
 
   m_precipitation = allocate_precipitation(g);

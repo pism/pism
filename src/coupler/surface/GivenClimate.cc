@@ -31,19 +31,25 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+
     PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
-    m_temperature = allocate(file,
-                             m_sys,
-                             "ice_surface_temp",
-                             "", // no standard name
-                             buffer_size, m_bc_period > 0);
+    m_temperature = IceModelVec2T::ForcingField(m_grid,
+                                                file,
+                                                "ice_surface_temp",
+                                                "", // no standard name
+                                                buffer_size,
+                                                evaluations_per_year,
+                                                m_bc_period > 0);
 
-    m_mass_flux = allocate(file,
-                           m_sys,
-                           "climatic_mass_balance",
-                           "land_ice_surface_specific_mass_balance_flux",
-                           buffer_size, m_bc_period > 0);
+    m_mass_flux = IceModelVec2T::ForcingField(m_grid,
+                                              file,
+                                              "climatic_mass_balance",
+                                              "land_ice_surface_specific_mass_balance_flux",
+                                              buffer_size,
+                                              evaluations_per_year,
+                                              m_bc_period > 0);
   }
 
   m_temperature->set_attrs("climate_forcing",

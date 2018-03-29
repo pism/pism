@@ -30,20 +30,26 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+
     PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
 
-    m_ice_surface_temp_anomaly = allocate(file,
-                                          m_sys,
-                                          "ice_surface_temp_anomaly",
-                                          "", // no standard name
-                                          buffer_size, m_bc_period > 0);
+    m_ice_surface_temp_anomaly = IceModelVec2T::ForcingField(m_grid,
+                                                             file,
+                                                             "ice_surface_temp_anomaly",
+                                                             "", // no standard name
+                                                             buffer_size,
+                                                             evaluations_per_year,
+                                                             m_bc_period > 0);
 
-    m_climatic_mass_balance_anomaly = allocate(file,
-                                               m_sys,
-                                               "climatic_mass_balance_anomaly",
-                                               "", // no standard name
-                                               buffer_size, m_bc_period > 0);
+    m_climatic_mass_balance_anomaly = IceModelVec2T::ForcingField(m_grid,
+                                                                  file,
+                                                                  "climatic_mass_balance_anomaly",
+                                                                  "", // no standard name
+                                                                  buffer_size,
+                                                                  evaluations_per_year,
+                                                                  m_bc_period > 0);
   }
 
   m_ice_surface_temp_anomaly->set_attrs("climate_forcing",

@@ -90,30 +90,6 @@ protected:
     return filename;
   }
 
-  IceModelVec2T::Ptr allocate(const PIO &file,
-                              units::System::Ptr unit_system,
-                              const std::string &short_name,
-                              const std::string &standard_name,
-                              int max_buffer_size,
-                              bool periodic) {
-    int evaluations_per_year = Model::m_config->get_double("climate_forcing.evaluations_per_year");
-
-    int n_records = file.inq_nrecords(short_name, standard_name, unit_system);
-
-    if (not periodic) {
-      n_records = std::min(n_records, max_buffer_size);
-    }
-    // In the periodic case we try to keep all the records in RAM.
-
-    // Allocate storage for one record if the variable was not found. This is needed to be
-    // able to cheaply allocate and then discard an "-atmosphere given" model
-    // (atmosphere::Given) when "-surface given" (Given) is selected.
-    n_records = std::max(n_records, 1);
-
-    return IceModelVec2T::Ptr(new IceModelVec2T(Model::m_grid, short_name, n_records,
-                                                evaluations_per_year));
-  }
-
 protected:
   std::string m_filename;
 

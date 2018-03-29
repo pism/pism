@@ -30,19 +30,25 @@ Given::Given(IceGrid::ConstPtr g)
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+
     PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
-    m_air_temp = allocate(file,
-                               m_sys,
-                               "air_temp",
-                               "", // no standard name
-                               buffer_size, m_bc_period > 0);
+    m_air_temp = IceModelVec2T::ForcingField(m_grid,
+                                             file,
+                                             "air_temp",
+                                             "", // no standard name
+                                             buffer_size,
+                                             evaluations_per_year,
+                                             m_bc_period > 0);
 
-    m_precipitation = allocate(file,
-                               m_sys,
-                               "precipitation",
-                               "", // no standard name
-                               buffer_size, m_bc_period > 0);
+    m_precipitation = IceModelVec2T::ForcingField(m_grid,
+                                                  file,
+                                                  "precipitation",
+                                                  "", // no standard name
+                                                  buffer_size,
+                                                  evaluations_per_year,
+                                                  m_bc_period > 0);
   }
 
   {

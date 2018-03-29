@@ -33,6 +33,49 @@
 
 namespace pism {
 
+
+/*!
+ * Allocate an instance that will be used to load and use a forcing field from a file.
+ *
+ * Checks the number of records in a file and allocates storage accordingly.
+ *
+ * If `periodic` is true, allocate enough storage to hold all the records, otherwise
+ * allocate storage for at most `max_buffer_size` records.
+ *
+ * @param[in] grid computational grid
+ * @param[in] file input file
+ * @param[in] short_name variable name in `file`
+ * @param[in] standard_name standard name (if available); leave blank to ignore
+ * @param[in] max_buffer_size maximum buffer size for non-periodic fields
+ * @param[in] evaluations_per_year number of evaluations per year to use when averaging
+ * @param[in] periodic true if this forcing field should be interpreted as periodic
+ */
+IceModelVec2T::Ptr IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
+                                               const PIO &file,
+                                               const std::string &short_name,
+                                               const std::string &standard_name,
+                                               int max_buffer_size,
+                                               int evaluations_per_year,
+                                               bool periodic) {
+
+  int n_records = file.inq_nrecords(short_name, standard_name,
+                                    grid->ctx()->unit_system());
+
+  if (not periodic) {
+    n_records = std::min(n_records, max_buffer_size);
+  }
+  // In the periodic case we try to keep all the records in RAM.
+
+  // Allocate storage for one record if the variable was not found. This is needed to be
+  // able to cheaply allocate and then discard an "-atmosphere given" model
+  // (atmosphere::Given) when "-surface given" (Given) is selected.
+  n_records = std::max(n_records, 1);
+
+  return IceModelVec2T::Ptr(new IceModelVec2T(grid, short_name, n_records,
+                                              evaluations_per_year));
+}
+
+
 IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name,
                              unsigned int n_records,
                              unsigned int n_evaluations_per_year)

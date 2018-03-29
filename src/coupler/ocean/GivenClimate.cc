@@ -33,29 +33,33 @@ Given::Given(IceGrid::ConstPtr g)
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+
     PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
-    m_shelfbtemp = allocate(file,
-                            m_sys,
-                            "shelfbtemp",
-                            "", // no standard name
-                            buffer_size,
-                            m_bc_period > 0);
+    m_shelfbtemp = IceModelVec2T::ForcingField(m_grid,
+                                               file,
+                                               "shelfbtemp",
+                                               "", // no standard name
+                                               buffer_size,
+                                               evaluations_per_year,
+                                               m_bc_period > 0);
 
-    m_shelfbmassflux = allocate(file,
-                            m_sys,
-                            "shelfbmassflux",
-                            "", // no standard name
-                            buffer_size,
-                            m_bc_period > 0);
+    m_shelfbmassflux = IceModelVec2T::ForcingField(m_grid,
+                                                   file,
+                                                   "shelfbmassflux",
+                                                   "", // no standard name
+                                                   buffer_size,
+                                                   evaluations_per_year,
+                                                   m_bc_period > 0);
   }
 
   m_shelfbtemp->set_attrs("climate_forcing",
-                        "absolute temperature at ice shelf base",
-                        "Kelvin", "");
+                          "absolute temperature at ice shelf base",
+                          "Kelvin", "");
   m_shelfbmassflux->set_attrs("climate_forcing",
-                            "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                            "kg m-2 s-1", "");
+                              "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
+                              "kg m-2 s-1", "");
   m_shelfbmassflux->metadata().set_string("glaciological_units", "kg m-2 year-1");
 }
 
