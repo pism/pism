@@ -33,6 +33,7 @@ public:
 private:
   void update_impl(const Geometry &geometry, double t, double dt);
   void init_impl(const Geometry &geometry);
+  MaxTimestep max_timestep_impl(double t) const;
 
   const IceModelVec2S& sea_level_elevation_impl() const;
   const IceModelVec2S& shelf_base_temperature_impl() const;

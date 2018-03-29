@@ -91,6 +91,12 @@ void Given::update_impl(const Geometry &geometry, double t, double dt) {
   m_shelf_base_mass_flux->copy_from(*m_shelfbmassflux);
 }
 
+MaxTimestep Given::max_timestep_impl(double t) const {
+  (void) t;
+
+  return MaxTimestep("ocean th");
+}
+
 const IceModelVec2S& Given::shelf_base_temperature_impl() const {
   return *m_shelf_base_temperature;
 }

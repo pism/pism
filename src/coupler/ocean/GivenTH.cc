@@ -152,6 +152,13 @@ void GivenTH::update_impl(const Geometry &geometry, double t, double dt) {
   m_shelf_base_mass_flux->scale(m_config->get_double("constants.ice.density"));
 }
 
+MaxTimestep GivenTH::max_timestep_impl(double t) const {
+  (void) t;
+
+  return MaxTimestep("ocean th");
+}
+
+
 const IceModelVec2S& GivenTH::sea_level_elevation_impl() const {
   return *m_sea_level_elevation;
 }
