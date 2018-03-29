@@ -18,6 +18,7 @@
 
 #include "GivenClimate.hh"
 #include "pism/util/IceGrid.hh"
+#include "pism/coupler/util/options.hh"
 
 namespace pism {
 namespace surface {
@@ -27,7 +28,11 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
 {
   (void) input;
 
-  m_filename = process_options("-surface_given");
+  ForcingOptions options(m_grid->com, *m_log, m_sys, "-surface_given");
+
+  m_filename          = options.filename;
+  m_bc_period         = options.period;
+  m_bc_reference_time = options.reference_time;
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");

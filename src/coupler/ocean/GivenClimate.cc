@@ -18,6 +18,7 @@
 
 #include "GivenClimate.hh"
 #include "pism/util/IceGrid.hh"
+#include "pism/coupler/util/options.hh"
 
 namespace pism {
 namespace ocean {
@@ -29,7 +30,11 @@ Given::Given(IceGrid::ConstPtr g)
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
   m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);
 
-  m_filename = process_options("-ocean_given");
+  ForcingOptions options(m_grid->com, *m_log, m_sys, "-ocean_given");
+
+  m_filename          = options.filename;
+  m_bc_period         = options.period;
+  m_bc_reference_time = options.reference_time;
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");

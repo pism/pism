@@ -19,6 +19,7 @@
 #include "Anomaly.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/coupler/util/options.hh"
 
 namespace pism {
 namespace surface {
@@ -26,7 +27,11 @@ namespace surface {
 Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   : PGivenClimate<SurfaceModel>(g, in) {
 
-  m_filename = process_options("-surface_anomaly");
+  ForcingOptions options(m_grid->com, *m_log, m_sys, "-surface_anomaly");
+
+  m_filename          = options.filename;
+  m_bc_period         = options.period;
+  m_bc_reference_time = options.reference_time;
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");

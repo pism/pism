@@ -20,6 +20,7 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/coupler/util/options.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -27,8 +28,11 @@ namespace atmosphere {
 Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
   : PGivenClimate<AtmosphereModel>(g, in) {
 
-  // sets m_bc_period, m_bc_reference_time
-  m_filename = process_options("-atmosphere_anomaly");
+  ForcingOptions options(m_grid->com, *m_log, m_sys, "-atmosphere_anomaly");
+
+  m_filename          = options.filename;
+  m_bc_period         = options.period;
+  m_bc_reference_time = options.reference_time;
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");

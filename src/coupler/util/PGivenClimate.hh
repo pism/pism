@@ -47,48 +47,6 @@ public:
 
 protected:
 
-  std::string process_options(const std::string &option_prefix)
-  {
-    std::string filename;
-    {
-      options::String file(option_prefix + "_file",
-                           "Specifies a file with boundary conditions");
-      if (file.is_set()) {
-        filename = file;
-        Model::m_log->message(2,
-                              "  - Reading boundary conditions from '%s'...\n",
-                              filename.c_str());
-      } else {
-        filename = process_input_options(Model::m_grid->com).filename;
-
-        Model::m_log->message(2,
-                              "  - Option %s_file is not set. Trying the input file '%s'...\n",
-                              option_prefix.c_str(), filename.c_str());
-      }
-    }
-
-    {
-      options::Integer period(option_prefix + "_period",
-                              "Specifies the length of the climate data period (in years)", 0);
-      if (period.value() < 0.0) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid %s_period %d (period length cannot be negative)",
-                                      option_prefix.c_str(), period.value());
-      }
-      m_bc_period = (unsigned int)period;
-    }
-
-    {
-      options::Integer ref_year(option_prefix + "_reference_year",
-                                "Boundary condition reference year", 0);
-      if (ref_year.is_set()) {
-        m_bc_reference_time = units::convert(Model::m_sys, ref_year, "years", "seconds");
-      } else {
-        m_bc_reference_time = 0;
-      }
-    }
-
-    return filename;
-  }
 
 protected:
   std::string m_filename;

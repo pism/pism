@@ -19,14 +19,18 @@
 #include "GivenClimate.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/ConfigInterface.hh"
+#include "pism/coupler/util/options.hh"
 
 namespace pism {
 namespace atmosphere {
 
 Given::Given(IceGrid::ConstPtr g)
-  : PGivenClimate<AtmosphereModel>(g, nullptr)
-{
-  m_filename = process_options("-atmosphere_given");
+  : PGivenClimate<AtmosphereModel>(g, nullptr) {
+  ForcingOptions options(m_grid->com, *m_log, m_sys, "-atmosphere_given");
+
+  m_filename          = options.filename;
+  m_bc_period         = options.period;
+  m_bc_reference_time = options.reference_time;
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");

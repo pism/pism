@@ -24,6 +24,7 @@
 #include "pism/util/Vars.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/coupler/util/options.hh"
 
 namespace pism {
 namespace ocean {
@@ -61,7 +62,11 @@ GivenTH::Constants::Constants(const Config &config) {
 GivenTH::GivenTH(IceGrid::ConstPtr g)
   : PGivenClimate<CompleteOceanModel>(g, nullptr) {
 
-  m_filename = process_options("-ocean_th");
+  ForcingOptions options(m_grid->com, *m_log, m_sys, "-ocean_th");
+
+  m_filename          = options.filename;
+  m_bc_period         = options.period;
+  m_bc_reference_time = options.reference_time;
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
