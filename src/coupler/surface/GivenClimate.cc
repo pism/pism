@@ -110,5 +110,15 @@ const IceModelVec2S &Given::temperature_impl() const {
   return *m_temperature;
 }
 
+void Given::define_model_state_impl(const PIO &output) const {
+  m_mass_flux->define(output);
+  m_temperature->define(output);
+}
+
+void Given::write_model_state_impl(const PIO &output) const {
+  m_mass_flux->write(output);
+  m_temperature->write(output);
+}
+
 } // end of namespace surface
 } // end of namespace pism

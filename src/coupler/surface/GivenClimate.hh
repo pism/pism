@@ -39,6 +39,9 @@ protected:
 
   IceModelVec2T::Ptr m_mass_flux;
   IceModelVec2T::Ptr m_temperature;
+
+  void define_model_state_impl(const PIO &output) const;
+  void write_model_state_impl(const PIO &output) const;
 };
 
 } // end of namespace surface
