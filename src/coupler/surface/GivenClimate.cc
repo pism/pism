@@ -17,6 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "GivenClimate.hh"
+
+#include "pism/util/Time.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/coupler/util/options.hh"
 
@@ -24,21 +26,18 @@ namespace pism {
 namespace surface {
 
 Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : PGivenClimate<SurfaceModel>(grid, nullptr)
+  : SurfaceModel(grid)
 {
   (void) input;
 
-  ForcingOptions options(m_grid->com, *m_log, m_sys, "-surface_given");
-
-  m_filename          = options.filename;
-  m_bc_period         = options.period;
-  m_bc_reference_time = options.reference_time;
+  ForcingOptions options(*m_grid->ctx(), "-surface_given");
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    bool periodic = options.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
+    PIO file(m_grid->com, "netcdf3", options.filename, PISM_READONLY);
 
     m_temperature = IceModelVec2T::ForcingField(m_grid,
                                                 file,
@@ -46,7 +45,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
                                                 "", // no standard name
                                                 buffer_size,
                                                 evaluations_per_year,
-                                                m_bc_period > 0);
+                                                periodic);
 
     m_mass_flux = IceModelVec2T::ForcingField(m_grid,
                                               file,
@@ -54,7 +53,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
                                               "land_ice_surface_specific_mass_balance_flux",
                                               buffer_size,
                                               evaluations_per_year,
-                                              m_bc_period > 0);
+                                              periodic);
   }
 
   m_temperature->set_attrs("climate_forcing",
@@ -94,8 +93,10 @@ void Given::init_impl(const Geometry &geometry) {
                  "* Initializing the surface model reading temperature at the top of the ice\n"
                  "  and ice surface mass flux from a file...\n");
 
-  m_temperature->init(m_filename, m_bc_period, m_bc_reference_time);
-  m_mass_flux->init(m_filename, m_bc_period, m_bc_reference_time);
+  ForcingOptions options(*m_grid->ctx(), "-surface_given");
+
+  m_temperature->init(options.filename, options.period, options.reference_time);
+  m_mass_flux->init(options.filename, options.period, options.reference_time);
 
   // read time-independent data right away:
   if (m_temperature->n_records() == 1 && m_mass_flux->n_records() == 1) {

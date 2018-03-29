@@ -19,12 +19,14 @@
 #ifndef _PODIRECTFORCING_H_
 #define _PODIRECTFORCING_H_
 
-#include "pism/coupler/util/PGivenClimate.hh"
 #include "pism/coupler/OceanModel.hh"
+
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace ocean {
-class Given : public PGivenClimate<OceanModel>
+
+class Given : public OceanModel
 {
 public:
   Given(IceGrid::ConstPtr g);

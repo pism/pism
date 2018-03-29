@@ -20,17 +20,14 @@
 #include <mpi.h>
 #include <string>
 
-#include "pism/util/Units.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 
 class Logger;
 
 struct ForcingOptions {
-  ForcingOptions(MPI_Comm com,
-                 const Logger &log,
-                 units::System::Ptr unit_system,
-                 const std::string &option_prefix);
+  ForcingOptions(const Context &ctx, const std::string &option_prefix);
   std::string filename;
   unsigned int period;
   double reference_time;

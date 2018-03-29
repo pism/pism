@@ -19,16 +19,17 @@
 
 #include "options.hh"
 
+#include "pism/util/Context.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Component.hh"
 
 namespace pism {
 
-ForcingOptions::ForcingOptions(MPI_Comm com,
-                               const Logger &log,
-                               units::System::Ptr unit_system,
+ForcingOptions::ForcingOptions(const Context &ctx,
                                const std::string &option_prefix) {
+
+  const Logger &log = *ctx.log();
 
   {
     options::String file(option_prefix + "_file",
@@ -39,7 +40,7 @@ ForcingOptions::ForcingOptions(MPI_Comm com,
                   "  - Reading boundary conditions from '%s'...\n",
                   file->c_str());
     } else {
-      this->filename = process_input_options(com).filename;
+      this->filename = process_input_options(ctx.com()).filename;
 
       log.message(2,
                   "  - Option %s_file is not set. Trying the input file '%s'...\n",
@@ -61,7 +62,7 @@ ForcingOptions::ForcingOptions(MPI_Comm com,
     options::Integer ref_year(option_prefix + "_reference_year",
                               "Boundary condition reference year", 0);
     if (ref_year.is_set()) {
-      this->reference_time = units::convert(unit_system, ref_year, "years", "seconds");
+      this->reference_time = units::convert(ctx.unit_system(), ref_year, "years", "seconds");
     } else {
       this->reference_time = 0;
     }

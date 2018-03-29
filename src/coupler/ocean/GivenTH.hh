@@ -19,12 +19,12 @@
 #ifndef _POGIVENTH_H_
 #define _POGIVENTH_H_
 
-#include "pism/coupler/util/PGivenClimate.hh"
 #include "CompleteOceanModel.hh"
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace ocean {
-class GivenTH : public PGivenClimate<CompleteOceanModel>
+class GivenTH : public CompleteOceanModel
 {
 public:
   GivenTH(IceGrid::ConstPtr g);

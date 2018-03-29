@@ -19,15 +19,15 @@
 #ifndef _PSANOMALY_H_
 #define _PSANOMALY_H_
 
-#include "pism/coupler/util/PGivenClimate.hh"
 #include "pism/coupler/SurfaceModel.hh"
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace surface {
 
 //! @brief Reads and uses climatic_mass_balance and ice_surface_temp *anomalies* from a
 //! file.
-class Anomaly : public PGivenClimate<SurfaceModel>
+class Anomaly : public SurfaceModel
 {
 public:
   Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);

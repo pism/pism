@@ -34,11 +34,6 @@
 %rename(SurfaceCache) pism::surface::Cache;
 %include "coupler/surface/Cache.hh"
 
-%include "coupler/util/PGivenClimate.hh"
-%shared_ptr(pism::PGivenClimate< pism::surface::SurfaceModel >)
-
-%template(_SurfaceGivenClimate) pism::PGivenClimate<pism::surface::SurfaceModel>;
-
 %shared_ptr(pism::surface::Anomaly)
 %rename(SurfaceAnomaly) pism::surface::Anomaly;
 %include "coupler/surface/Anomaly.hh"

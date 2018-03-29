@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Anomaly.hh"
+
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/io/io_helpers.hh"
@@ -26,19 +27,16 @@ namespace pism {
 namespace atmosphere {
 
 Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
-  : PGivenClimate<AtmosphereModel>(g, in) {
+  : AtmosphereModel(g, in) {
 
-  ForcingOptions options(m_grid->com, *m_log, m_sys, "-atmosphere_anomaly");
-
-  m_filename          = options.filename;
-  m_bc_period         = options.period;
-  m_bc_reference_time = options.reference_time;
+  ForcingOptions options(*m_grid->ctx(), "-atmosphere_anomaly");
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    bool periodic = options.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
+    PIO file(m_grid->com, "netcdf3", options.filename, PISM_READONLY);
 
     m_air_temp_anomaly = IceModelVec2T::ForcingField(m_grid,
                                                      file,
@@ -46,7 +44,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
                                                      "", // no standard name
                                                      buffer_size,
                                                      evaluations_per_year,
-                                                     m_bc_period > 0);
+                                                     periodic);
 
     m_precipitation_anomaly = IceModelVec2T::ForcingField(m_grid,
                                                           file,
@@ -54,8 +52,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
                                                           "", // no standard name
                                                           buffer_size,
                                                           evaluations_per_year,
-                                                          m_bc_period > 0);
-
+                                                          periodic);
   }
 
   m_air_temp_anomaly->set_attrs("climate_forcing",
@@ -79,15 +76,17 @@ Anomaly::~Anomaly()
 void Anomaly::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
-  m_log->message(2,
-             "* Initializing the -atmosphere ...,anomaly code...\n");
+  ForcingOptions options(*m_grid->ctx(), "-atmosphere_anomaly");
 
   m_log->message(2,
-             "    reading anomalies from %s ...\n",
-             m_filename.c_str());
+                 "* Initializing the -atmosphere ...,anomaly code...\n");
 
-  m_air_temp_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
-  m_precipitation_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
+  m_log->message(2,
+                 "    reading anomalies from %s ...\n",
+                 options.filename.c_str());
+
+  m_air_temp_anomaly->init(options.filename, options.period, options.reference_time);
+  m_precipitation_anomaly->init(options.filename, options.period, options.reference_time);
 }
 
 void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {

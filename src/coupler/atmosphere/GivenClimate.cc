@@ -17,26 +17,25 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "GivenClimate.hh"
+
+#include "pism/coupler/util/options.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/coupler/util/options.hh"
+#include "pism/util/Time.hh"
 
 namespace pism {
 namespace atmosphere {
 
 Given::Given(IceGrid::ConstPtr g)
-  : PGivenClimate<AtmosphereModel>(g, nullptr) {
-  ForcingOptions options(m_grid->com, *m_log, m_sys, "-atmosphere_given");
-
-  m_filename          = options.filename;
-  m_bc_period         = options.period;
-  m_bc_reference_time = options.reference_time;
+  : AtmosphereModel(g, nullptr) {
+  ForcingOptions options(*m_grid->ctx(), "-atmosphere_given");
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    bool periodic = options.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
+    PIO file(m_grid->com, "netcdf3", options.filename, PISM_READONLY);
 
     m_air_temp = IceModelVec2T::ForcingField(m_grid,
                                              file,
@@ -44,7 +43,7 @@ Given::Given(IceGrid::ConstPtr g)
                                              "", // no standard name
                                              buffer_size,
                                              evaluations_per_year,
-                                             m_bc_period > 0);
+                                             periodic);
 
     m_precipitation = IceModelVec2T::ForcingField(m_grid,
                                                   file,
@@ -52,7 +51,7 @@ Given::Given(IceGrid::ConstPtr g)
                                                   "", // no standard name
                                                   buffer_size,
                                                   evaluations_per_year,
-                                                  m_bc_period > 0);
+                                                  periodic);
   }
 
   {
@@ -77,8 +76,10 @@ void Given::init_impl(const Geometry &geometry) {
              "* Initializing the atmosphere model reading near-surface air temperature\n"
              "  and ice-equivalent precipitation from a file...\n");
 
-  m_air_temp->init(m_filename, m_bc_period, m_bc_reference_time);
-  m_precipitation->init(m_filename, m_bc_period, m_bc_reference_time);
+  ForcingOptions options(*m_grid->ctx(), "-atmosphere_given");
+
+  m_air_temp->init(options.filename, options.period, options.reference_time);
+  m_precipitation->init(options.filename, options.period, options.reference_time);
 
   // read time-independent data right away:
   if (m_air_temp->n_records() == 1 && m_precipitation->n_records() == 1) {

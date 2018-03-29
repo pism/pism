@@ -19,14 +19,14 @@
 #ifndef _PAANOMALY_H_
 #define _PAANOMALY_H_
 
-#include "pism/coupler/util/PGivenClimate.hh"
 #include "pism/coupler/AtmosphereModel.hh"
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace atmosphere {
 
 //! \brief Reads and uses air_temp and precipitation anomalies from a file.
-class Anomaly : public PGivenClimate<AtmosphereModel>
+class Anomaly : public AtmosphereModel
 {
 public:
   Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);

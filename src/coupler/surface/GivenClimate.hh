@@ -19,14 +19,13 @@
 #ifndef _PSGIVEN_H_
 #define _PSGIVEN_H_
 
-#include "pism/coupler/util/PGivenClimate.hh"
 #include "pism/coupler/SurfaceModel.hh"
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace surface {
 
-class Given : public PGivenClimate<SurfaceModel>
-{
+class Given : public SurfaceModel {
 public:
   Given(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input);
   virtual ~Given();
@@ -37,11 +36,11 @@ protected:
   const IceModelVec2S &temperature_impl() const;
   const IceModelVec2S &mass_flux_impl() const;
 
-  IceModelVec2T::Ptr m_mass_flux;
-  IceModelVec2T::Ptr m_temperature;
-
   void define_model_state_impl(const PIO &output) const;
   void write_model_state_impl(const PIO &output) const;
+
+  IceModelVec2T::Ptr m_mass_flux;
+  IceModelVec2T::Ptr m_temperature;
 };
 
 } // end of namespace surface

@@ -22,6 +22,7 @@
 #include "GivenTH.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Vars.hh"
+#include "pism/util/Time.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/coupler/util/options.hh"
@@ -60,19 +61,16 @@ GivenTH::Constants::Constants(const Config &config) {
 }
 
 GivenTH::GivenTH(IceGrid::ConstPtr g)
-  : PGivenClimate<CompleteOceanModel>(g, nullptr) {
+  : CompleteOceanModel(g, nullptr) {
 
-  ForcingOptions options(m_grid->com, *m_log, m_sys, "-ocean_th");
-
-  m_filename          = options.filename;
-  m_bc_period         = options.period;
-  m_bc_reference_time = options.reference_time;
+  ForcingOptions options(*m_grid->ctx(), "-ocean_th");
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    bool periodic = options.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", m_filename, PISM_READONLY);
+    PIO file(m_grid->com, "netcdf3", options.filename, PISM_READONLY);
 
     m_theta_ocean = IceModelVec2T::ForcingField(m_grid,
                                                 file,
@@ -80,7 +78,7 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                                                 "", // no standard name
                                                 buffer_size,
                                                 evaluations_per_year,
-                                                m_bc_period > 0);
+                                                periodic);
 
     m_salinity_ocean = IceModelVec2T::ForcingField(m_grid,
                                                    file,
@@ -88,7 +86,7 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                                                    "", // no standard name
                                                    buffer_size,
                                                    evaluations_per_year,
-                                                   m_bc_period > 0);
+                                                   periodic);
   }
 
   m_theta_ocean->set_attrs("climate_forcing",
@@ -110,8 +108,10 @@ void GivenTH::init_impl(const Geometry &geometry) {
              "* Initializing the 3eqn melting parameterization ocean model\n"
              "  reading ocean temperature and salinity from a file...\n");
 
-  m_theta_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
-  m_salinity_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
+  ForcingOptions options(*m_grid->ctx(), "-ocean_th");
+
+  m_theta_ocean->init(options.filename, options.period, options.reference_time);
+  m_salinity_ocean->init(options.filename, options.period, options.reference_time);
 
   // read time-independent data right away:
   if (m_theta_ocean->n_records() == 1 && m_salinity_ocean->n_records() == 1) {
