@@ -447,6 +447,9 @@ void Pico::beckmann_goosse(const PicoPhysics &physics,
         basal_temperature(i, j) = T0 - beta_CC * pressure;
         basal_melt_rate(i, j)   = 0.0;
       }
+    } else {
+      basal_melt_rate(i, j)   = 0.0;
+      basal_temperature(i, j) = T0;
     }
   }
 }
