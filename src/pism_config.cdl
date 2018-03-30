@@ -91,6 +91,23 @@ netcdf pism_config {
     pism_config:atmosphere.anomaly.reference_year_type = "integer";
     pism_config:atmosphere.anomaly.reference_year_units = "years";
 
+    pism_config:atmosphere.lapse_rate.file = "";
+    pism_config:atmosphere.lapse_rate.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
+    pism_config:atmosphere.lapse_rate.file_type = "string";
+    pism_config:atmosphere.lapse_rate.file_option = "atmosphere_lapse_rate_file";
+
+    pism_config:atmosphere.lapse_rate.period = 0;
+    pism_config:atmosphere.lapse_rate.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:atmosphere.lapse_rate.period_type = "integer";
+    pism_config:atmosphere.lapse_rate.period_option = "atmosphere_lapse_rate_period";
+    pism_config:atmosphere.lapse_rate.period_units = "years";
+
+    pism_config:atmosphere.lapse_rate.reference_year = 0;
+    pism_config:atmosphere.lapse_rate.reference_year_doc = "Reference year to use when ``atmosphere.lapse_rate.period`` is active.";
+    pism_config:atmosphere.lapse_rate.reference_year_option = "atmosphere_lapse_rate_reference_year";
+    pism_config:atmosphere.lapse_rate.reference_year_type = "integer";
+    pism_config:atmosphere.lapse_rate.reference_year_units = "years";
+
     pism_config:atmosphere.precip_exponential_factor_for_temperature = 0.07041666667;
     pism_config:atmosphere.precip_exponential_factor_for_temperature_doc = "= 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`";
     pism_config:atmosphere.precip_exponential_factor_for_temperature_type = "scalar";
@@ -1031,6 +1048,23 @@ netcdf pism_config {
     pism_config:ocean.given.reference_year_type = "integer";
     pism_config:ocean.given.reference_year_units = "years";
 
+    pism_config:ocean.th.file = "";
+    pism_config:ocean.th.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:ocean.th.file_type = "string";
+    pism_config:ocean.th.file_option = "ocean_th_file";
+
+    pism_config:ocean.th.period = 0;
+    pism_config:ocean.th.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:ocean.th.period_type = "integer";
+    pism_config:ocean.th.period_option = "ocean_th_period";
+    pism_config:ocean.th.period_units = "years";
+
+    pism_config:ocean.th.reference_year = 0;
+    pism_config:ocean.th.reference_year_doc = "Reference year to use when ``ocean.th.period`` is active.";
+    pism_config:ocean.th.reference_year_option = "ocean_th_reference_year";
+    pism_config:ocean.th.reference_year_type = "integer";
+    pism_config:ocean.th.reference_year_units = "years";
+
     pism_config:ocean.always_grounded = "no";
     pism_config:ocean.always_grounded_doc = "Dry (ocean-less) simulation; ice is considered grounded regardless of ice thickness, bed elevation, and sea level.";
     pism_config:ocean.always_grounded_option = "dry";
@@ -1444,6 +1478,23 @@ netcdf pism_config {
     pism_config:surface.given.reference_year_option = "surface_given_reference_year";
     pism_config:surface.given.reference_year_type = "integer";
     pism_config:surface.given.reference_year_units = "years";
+
+    pism_config:surface.lapse_rate.file = "";
+    pism_config:surface.lapse_rate.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
+    pism_config:surface.lapse_rate.file_type = "string";
+    pism_config:surface.lapse_rate.file_option = "surface_lapse_rate_file";
+
+    pism_config:surface.lapse_rate.period = 0;
+    pism_config:surface.lapse_rate.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:surface.lapse_rate.period_type = "integer";
+    pism_config:surface.lapse_rate.period_option = "surface_lapse_rate_period";
+    pism_config:surface.lapse_rate.period_units = "years";
+
+    pism_config:surface.lapse_rate.reference_year = 0;
+    pism_config:surface.lapse_rate.reference_year_doc = "Reference year to use when ``surface.lapse_rate.period`` is active.";
+    pism_config:surface.lapse_rate.reference_year_option = "surface_lapse_rate_reference_year";
+    pism_config:surface.lapse_rate.reference_year_type = "integer";
+    pism_config:surface.lapse_rate.reference_year_units = "years";
 
     pism_config:surface.anomaly.file = "";
     pism_config:surface.anomaly.file_doc = "Name of the file containing climate forcing fields.";
