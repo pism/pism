@@ -20,52 +20,50 @@
 #include "options.hh"
 
 #include "pism/util/Context.hh"
-#include "pism/util/pism_options.hh"
+#include "pism/util/ConfigInterface.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Component.hh"
 
 namespace pism {
 
 ForcingOptions::ForcingOptions(const Context &ctx,
-                               const std::string &option_prefix) {
+                               const std::string &prefix) {
 
   const Logger &log = *ctx.log();
+  const Config &config = *ctx.config();
 
   {
-    options::String file(option_prefix + "_file",
-                         "Specifies a file with boundary conditions");
-    if (file.is_set()) {
+    auto file = config.get_string(prefix + ".file");
+
+    if (not file.empty()) {
       this->filename = file;
       log.message(2,
                   "  - Reading boundary conditions from '%s'...\n",
-                  file->c_str());
+                  file.c_str());
     } else {
       this->filename = process_input_options(ctx.com()).filename;
 
       log.message(2,
                   "  - Option %s_file is not set. Trying the input file '%s'...\n",
-                  option_prefix.c_str(), this->filename.c_str());
+                  prefix.c_str(), this->filename.c_str());
     }
   }
 
   {
-    options::Integer P(option_prefix + "_period",
-                       "Specifies the length of the climate data period (in years)", 0);
-    if (P.value() < 0.0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid %s_period %d (period length cannot be negative)",
-                                    option_prefix.c_str(), P.value());
+    auto P = config.get_double(prefix + ".period");
+
+    if (P < 0.0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "invalid %s_period %d (period length cannot be negative)",
+                                    prefix.c_str(), (int)P);
     }
     this->period = P;
   }
 
   {
-    options::Integer ref_year(option_prefix + "_reference_year",
-                              "Boundary condition reference year", 0);
-    if (ref_year.is_set()) {
-      this->reference_time = units::convert(ctx.unit_system(), ref_year, "years", "seconds");
-    } else {
-      this->reference_time = 0;
-    }
+    auto ref_year = config.get_double(prefix + ".reference_year");
+
+    this->reference_time = units::convert(ctx.unit_system(), ref_year, "years", "seconds");
   }
 }
 

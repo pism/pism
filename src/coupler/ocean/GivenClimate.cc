@@ -33,7 +33,7 @@ Given::Given(IceGrid::ConstPtr g)
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
   m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);
 
-  ForcingOptions opt(*m_grid->ctx(), "-ocean_given");
+  ForcingOptions opt(*m_grid->ctx(), "ocean.given");
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
@@ -78,7 +78,7 @@ void Given::init_impl(const Geometry &geometry) {
              "* Initializing the ocean model reading base of the shelf temperature\n"
              "  and sub-shelf mass flux from a file...\n");
 
-  ForcingOptions opt(*m_grid->ctx(), "-ocean_given");
+  ForcingOptions opt(*m_grid->ctx(), "ocean.given");
 
   m_shelfbtemp->init(opt.filename, opt.period, opt.reference_time);
   m_shelfbmassflux->init(opt.filename, opt.period, opt.reference_time);

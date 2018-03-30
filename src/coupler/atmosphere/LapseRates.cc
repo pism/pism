@@ -43,7 +43,7 @@ LapseRates::LapseRates(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> 
   }
 
   {
-    ForcingOptions opt(*m_grid->ctx(), "-atmosphere_lapse_rate");
+    ForcingOptions opt(*m_grid->ctx(), "atmosphere.lapse_rate");
 
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");

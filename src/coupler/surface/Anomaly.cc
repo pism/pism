@@ -27,7 +27,7 @@ namespace surface {
 Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(g, in) {
 
-  ForcingOptions opt(*m_grid->ctx(), "-surface_anomaly");
+  ForcingOptions opt(*m_grid->ctx(), "surface.anomaly");
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
@@ -80,7 +80,7 @@ void Anomaly::init_impl(const Geometry &geometry) {
   m_log->message(2,
                  "* Initializing the '-surface ...,anomaly' modifier...\n");
 
-  ForcingOptions opt(*m_grid->ctx(), "-surface_anomaly");
+  ForcingOptions opt(*m_grid->ctx(), "surface.anomaly");
 
   m_log->message(2,
                  "    reading anomalies from %s ...\n", opt.filename.c_str());

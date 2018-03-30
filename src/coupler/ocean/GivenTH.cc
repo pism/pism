@@ -63,7 +63,7 @@ GivenTH::Constants::Constants(const Config &config) {
 GivenTH::GivenTH(IceGrid::ConstPtr g)
   : CompleteOceanModel(g, nullptr) {
 
-  ForcingOptions opt(*m_grid->ctx(), "-ocean_th");
+  ForcingOptions opt(*m_grid->ctx(), "ocean.th");
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
@@ -108,7 +108,7 @@ void GivenTH::init_impl(const Geometry &geometry) {
              "* Initializing the 3eqn melting parameterization ocean model\n"
              "  reading ocean temperature and salinity from a file...\n");
 
-  ForcingOptions opt(*m_grid->ctx(), "-ocean_th");
+  ForcingOptions opt(*m_grid->ctx(), "ocean.th");
 
   m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
   m_salinity_ocean->init(opt.filename, opt.period, opt.reference_time);

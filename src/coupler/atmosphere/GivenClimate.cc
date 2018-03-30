@@ -28,7 +28,7 @@ namespace atmosphere {
 
 Given::Given(IceGrid::ConstPtr g)
   : AtmosphereModel(g, nullptr) {
-  ForcingOptions opt(*m_grid->ctx(), "-atmosphere_given");
+  ForcingOptions opt(*m_grid->ctx(), "atmosphere.given");
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
@@ -76,7 +76,7 @@ void Given::init_impl(const Geometry &geometry) {
              "* Initializing the atmosphere model reading near-surface air temperature\n"
              "  and ice-equivalent precipitation from a file...\n");
 
-  ForcingOptions opt(*m_grid->ctx(), "-atmosphere_given");
+  ForcingOptions opt(*m_grid->ctx(), "atmosphere.given");
 
   m_air_temp->init(opt.filename, opt.period, opt.reference_time);
   m_precipitation->init(opt.filename, opt.period, opt.reference_time);

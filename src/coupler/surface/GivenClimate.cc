@@ -30,7 +30,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
 {
   (void) input;
 
-  ForcingOptions opt(*m_grid->ctx(), "-surface_given");
+  ForcingOptions opt(*m_grid->ctx(), "surface.given");
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
@@ -93,7 +93,7 @@ void Given::init_impl(const Geometry &geometry) {
                  "* Initializing the surface model reading temperature at the top of the ice\n"
                  "  and ice surface mass flux from a file...\n");
 
-  ForcingOptions opt(*m_grid->ctx(), "-surface_given");
+  ForcingOptions opt(*m_grid->ctx(), "surface.given");
 
   m_temperature->init(opt.filename, opt.period, opt.reference_time);
   m_mass_flux->init(opt.filename, opt.period, opt.reference_time);

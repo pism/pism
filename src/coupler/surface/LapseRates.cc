@@ -50,7 +50,7 @@ LapseRates::LapseRates(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   }
 
   {
-    ForcingOptions opt(*m_grid->ctx(), "-surface_lapse_rate");
+    ForcingOptions opt(*m_grid->ctx(), "surface.lapse_rate");
 
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
@@ -92,7 +92,7 @@ void LapseRates::init_impl(const Geometry &geometry) {
                  convert(m_sys, m_temp_lapse_rate, "K / m", "K / km"),
                  convert(m_sys, m_smb_lapse_rate, "kg / (m2 second)", "kg / (m2 year)") / ice_density);
 
-  ForcingOptions opt(*m_grid->ctx(), "-surface_lapse_rate");
+  ForcingOptions opt(*m_grid->ctx(), "surface.lapse_rate");
   m_reference_surface->init(opt.filename, opt.period, opt.reference_time);
 }
 
