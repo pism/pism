@@ -33,14 +33,14 @@ Given::Given(IceGrid::ConstPtr g)
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
   m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);
 
-  ForcingOptions options(*m_grid->ctx(), "-ocean_given");
+  ForcingOptions opt(*m_grid->ctx(), "-ocean_given");
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
-    bool periodic = options.period > 0;
+    bool periodic = opt.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", options.filename, PISM_READONLY);
+    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
 
     m_shelfbtemp = IceModelVec2T::ForcingField(m_grid,
                                                file,
@@ -78,10 +78,10 @@ void Given::init_impl(const Geometry &geometry) {
              "* Initializing the ocean model reading base of the shelf temperature\n"
              "  and sub-shelf mass flux from a file...\n");
 
-  ForcingOptions options(*m_grid->ctx(), "-ocean_given");
+  ForcingOptions opt(*m_grid->ctx(), "-ocean_given");
 
-  m_shelfbtemp->init(options.filename, options.period, options.reference_time);
-  m_shelfbmassflux->init(options.filename, options.period, options.reference_time);
+  m_shelfbtemp->init(opt.filename, opt.period, opt.reference_time);
+  m_shelfbmassflux->init(opt.filename, opt.period, opt.reference_time);
 
   // read time-independent data right away:
   if (m_shelfbtemp->n_records() == 1 && m_shelfbmassflux->n_records() == 1) {

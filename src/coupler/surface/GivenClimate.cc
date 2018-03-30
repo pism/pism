@@ -30,14 +30,14 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
 {
   (void) input;
 
-  ForcingOptions options(*m_grid->ctx(), "-surface_given");
+  ForcingOptions opt(*m_grid->ctx(), "-surface_given");
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
-    bool periodic = options.period > 0;
+    bool periodic = opt.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", options.filename, PISM_READONLY);
+    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
 
     m_temperature = IceModelVec2T::ForcingField(m_grid,
                                                 file,
@@ -93,10 +93,10 @@ void Given::init_impl(const Geometry &geometry) {
                  "* Initializing the surface model reading temperature at the top of the ice\n"
                  "  and ice surface mass flux from a file...\n");
 
-  ForcingOptions options(*m_grid->ctx(), "-surface_given");
+  ForcingOptions opt(*m_grid->ctx(), "-surface_given");
 
-  m_temperature->init(options.filename, options.period, options.reference_time);
-  m_mass_flux->init(options.filename, options.period, options.reference_time);
+  m_temperature->init(opt.filename, opt.period, opt.reference_time);
+  m_mass_flux->init(opt.filename, opt.period, opt.reference_time);
 
   // read time-independent data right away:
   if (m_temperature->n_records() == 1 && m_mass_flux->n_records() == 1) {

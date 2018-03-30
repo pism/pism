@@ -17,24 +17,29 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <string>
+#include <cmath>                // fabs
 
-#include "pism/util/Context.hh"
-
-#ifndef COUPLER_OPTIONS_H
-#define COUPLER_OPTIONS_H
+#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 
-class Logger;
+void lapse_rate_correction(const IceModelVec2S &surface,
+                           const IceModelVec2S &reference_surface,
+                           double lapse_rate,
+                           IceModelVec2S &result) {
+  IceGrid::ConstPtr grid = result.grid();
 
-struct ForcingOptions {
-  ForcingOptions(const Context &ctx, const std::string &option_prefix);
-  std::string filename;
-  unsigned int period;
-  double reference_time;
-};
+  if (fabs(lapse_rate) < 1e-12) {
+    return;
+  }
+
+  IceModelVec::AccessList list{&surface, &reference_surface, &result};
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    result(i, j) -= lapse_rate * (surface(i,j) - reference_surface(i, j));
+  }
+}
 
 } // end of namespace pism
-
-#endif /* COUPLER_OPTIONS_H */

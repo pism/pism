@@ -17,24 +17,18 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <string>
-
-#include "pism/util/Context.hh"
-
-#ifndef COUPLER_OPTIONS_H
-#define COUPLER_OPTIONS_H
+#ifndef LAPSE_RATES_H
+#define LAPSE_RATES_H
 
 namespace pism {
 
-class Logger;
+class IceModelVec2S;
 
-struct ForcingOptions {
-  ForcingOptions(const Context &ctx, const std::string &option_prefix);
-  std::string filename;
-  unsigned int period;
-  double reference_time;
-};
+void lapse_rate_correction(const IceModelVec2S &surface,
+                           const IceModelVec2S &reference_surface,
+                           double lapse_rate,
+                           IceModelVec2S &result);
 
 } // end of namespace pism
 
-#endif /* COUPLER_OPTIONS_H */
+#endif /* LAPSE_RATES_H */

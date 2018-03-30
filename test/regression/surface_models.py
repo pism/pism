@@ -138,3 +138,45 @@ class DeltaT(TestCase):
 
     def tearDown(self):
         os.remove(self.filename)
+
+class LapseRates(TestCase):
+    def setUp(self):
+        self.filename = "reference_surface.nc"
+        self.grid = dummy_grid()
+        self.model = PISM.SurfaceEISMINTII(self.grid, ord('A'))
+        self.dTdz = 1.0         # 1 Kelvin per km
+        self.dT = -1.0
+        self.dz = 1000.0
+
+        self.geometry = create_geometry(self.grid)
+
+        # save current surface elevation to use it as a "reference" surface elevation
+        self.geometry.ice_surface_elevation.dump(self.filename)
+
+    def runTest(self):
+        "Modifier lapse_rate"
+
+        options.setValue("-surface_lapse_rate_file", self.filename)
+        options.setValue("-temp_lapse_rate", self.dTdz)
+
+        modifier = PISM.SurfaceLapseRates(self.grid, self.model)
+
+        modifier.init(self.geometry)
+
+        # change surface elevation
+        self.geometry.ice_surface_elevation.shift(self.dz)
+
+        # check that the temperature changed accordingly
+        modifier.update(self.geometry, 0, 1)
+        check_modifier(self.model, modifier, T=self.dT)
+
+    def tearDown(self):
+        os.remove(self.filename)
+
+if __name__ == "__main__":
+
+    t = LapseRates()
+
+    t.setUp()
+    t.runTest()
+    t.tearDown()

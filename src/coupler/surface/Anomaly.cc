@@ -27,14 +27,14 @@ namespace surface {
 Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(g, in) {
 
-  ForcingOptions options(*m_grid->ctx(), "-surface_anomaly");
+  ForcingOptions opt(*m_grid->ctx(), "-surface_anomaly");
 
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
-    bool periodic = options.period > 0;
+    bool periodic = opt.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", options.filename, PISM_READONLY);
+    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
 
 
     m_ice_surface_temp_anomaly = IceModelVec2T::ForcingField(m_grid,
@@ -80,13 +80,13 @@ void Anomaly::init_impl(const Geometry &geometry) {
   m_log->message(2,
                  "* Initializing the '-surface ...,anomaly' modifier...\n");
 
-  ForcingOptions options(*m_grid->ctx(), "-surface_anomaly");
+  ForcingOptions opt(*m_grid->ctx(), "-surface_anomaly");
 
   m_log->message(2,
-                 "    reading anomalies from %s ...\n", options.filename.c_str());
+                 "    reading anomalies from %s ...\n", opt.filename.c_str());
 
-  m_ice_surface_temp_anomaly->init(options.filename, options.period, options.reference_time);
-  m_climatic_mass_balance_anomaly->init(options.filename, options.period, options.reference_time);
+  m_ice_surface_temp_anomaly->init(opt.filename, opt.period, opt.reference_time);
+  m_climatic_mass_balance_anomaly->init(opt.filename, opt.period, opt.reference_time);
 }
 
 void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {

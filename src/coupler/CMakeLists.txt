@@ -2,6 +2,7 @@
 add_library (pismboundary OBJECT
   ./util/ScalarForcing.cc
   ./util/options.cc
+  ./util/lapse_rates.cc
   ./atmosphere/AtmosphereModel.cc
   ./atmosphere/ConstantPIK.cc
   ./atmosphere/SeariseGreenland.cc
