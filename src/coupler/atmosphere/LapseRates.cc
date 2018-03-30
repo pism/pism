@@ -58,6 +58,8 @@ LapseRates::LapseRates(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> 
                                                       buffer_size,
                                                       evaluations_per_year,
                                                       periodic);
+    m_reference_surface->set_attrs("climate_forcing", "ice surface elevation", "m",
+                                   "surface_altitude", 0);
   }
 
   m_precipitation = allocate_precipitation(grid);
@@ -81,6 +83,10 @@ void LapseRates::init_impl(const Geometry &geometry) {
                  "   precipitation lapse rate:   %3.3f m year-1 per km\n",
                  convert(m_sys, m_temp_lapse_rate, "K / m", "K / km"),
                  convert(m_sys, m_precip_lapse_rate, "(m / s) / m", "(m / year) / km"));
+
+  ForcingOptions opt(*m_grid->ctx(), "atmosphere.lapse_rate");
+
+  m_reference_surface->init(opt.filename, opt.period, opt.reference_time);
 }
 
 void LapseRates::update_impl(const Geometry &geometry, double t, double dt) {
