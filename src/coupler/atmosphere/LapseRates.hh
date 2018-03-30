@@ -19,13 +19,14 @@
 #ifndef _PALAPSERATES_H_
 #define _PALAPSERATES_H_
 
-#include "pism/coupler/util/PLapseRates.hh"
 #include "pism/coupler/AtmosphereModel.hh"
+
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace atmosphere {
 
-class LapseRates : public PLapseRates<AtmosphereModel>
+class LapseRates : public AtmosphereModel
 {
 public:
   LapseRates(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
@@ -47,6 +48,7 @@ protected:
 
 protected:
   double m_precip_lapse_rate;
+  double m_temp_lapse_rate;
 
   IceModelVec2T::Ptr m_reference_surface;
 

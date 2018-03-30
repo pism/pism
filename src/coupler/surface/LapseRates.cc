@@ -21,13 +21,14 @@
 #include "pism/coupler/util/lapse_rates.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/pism_options.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace surface {
 
 LapseRates::LapseRates(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
-  : PLapseRates<SurfaceModel>(g, in) {
+  : SurfaceModel(g, in) {
 
   {
     m_smb_lapse_rate = 0;

@@ -19,13 +19,14 @@
 #ifndef _PSLAPSERATES_H_
 #define _PSLAPSERATES_H_
 
-#include "pism/coupler/util/PLapseRates.hh"
 #include "pism/coupler/SurfaceModel.hh"
+
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace surface {
 
-class LapseRates : public PLapseRates<SurfaceModel>
+class LapseRates : public SurfaceModel
 {
 public:
   LapseRates(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
@@ -38,13 +39,12 @@ protected:
   virtual const IceModelVec2S& temperature_impl() const;
 protected:
   double m_smb_lapse_rate;
+  double m_temp_lapse_rate;
 
   IceModelVec2T::Ptr m_reference_surface;
 
   IceModelVec2S::Ptr m_mass_flux;
   IceModelVec2S::Ptr m_temperature;
-
-  typedef PLapseRates<SurfaceModel> super;
 };
 
 } // end of namespace surface

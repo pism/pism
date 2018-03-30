@@ -22,13 +22,14 @@
 #include "pism/coupler/util/lapse_rates.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/pism_options.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace atmosphere {
 
 LapseRates::LapseRates(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
-  : PLapseRates<AtmosphereModel>(grid, in),
+  : AtmosphereModel(grid, in),
   m_surface(grid, "ice_surface_elevation", WITHOUT_GHOSTS) {
 
   m_precip_lapse_rate = m_config->get_double("atmosphere.lapse_rate.precipitation_lapse_rate",

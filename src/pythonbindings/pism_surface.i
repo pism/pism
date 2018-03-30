@@ -46,10 +46,6 @@
 %rename(SurfaceElevation) pism::surface::Elevation;
 %include "coupler/surface/Elevation.hh"
 
-%include "coupler/util/PLapseRates.hh"
-%shared_ptr(pism::PLapseRates< pism::surface::SurfaceModel >)
-%template(_SurfaceLapseRates) pism::PLapseRates< pism::surface::SurfaceModel >;
-
 %shared_ptr(pism::surface::LapseRates)
 %rename(SurfaceLapseRates) pism::surface::LapseRates;
 %include "coupler/surface/LapseRates.hh"
