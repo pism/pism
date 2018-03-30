@@ -1377,6 +1377,12 @@ netcdf pism_config {
     pism_config:surface.given.smb_max_type = "scalar";
     pism_config:surface.given.smb_max_units = "kg m-2 year-1";
 
+    pism_config:surface.pdd.method = "expectation_integral";
+    pism_config:surface.pdd.method_choices = "expectation_integral,repeatable_random_process,random_process";
+    pism_config:surface.pdd.method_doc = "PDD implementation method";
+    pism_config:surface.pdd.method_option = "pdd_method";
+    pism_config:surface.pdd.method_type = "keyword";
+
     pism_config:surface.pdd.air_temp_all_precip_as_rain = 275.15;
     pism_config:surface.pdd.air_temp_all_precip_as_rain_doc = "threshold temperature above which all precipitation is rain; must exceed surface.pdd.air_temp_all_precip_as_snow to avoid division by zero, because difference is in a denominator";
     pism_config:surface.pdd.air_temp_all_precip_as_rain_type = "scalar";

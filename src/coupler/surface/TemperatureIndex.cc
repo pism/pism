@@ -52,28 +52,21 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   m_sd_param_a                 = m_config->get_double("surface.pdd.std_dev_param_a");
   m_sd_param_b                 = m_config->get_double("surface.pdd.std_dev_param_b");
 
-  bool randomized = options::Bool("-pdd_rand",
-                                  "Use a PDD implementation based on simulating a random process");
-  bool randomized_repeatable = options::Bool("-pdd_rand_repeatable",
-                                             "Use a PDD implementation based on simulating a"
-                                             " repeatable random process");
   bool use_fausto_params = options::Bool("-pdd_fausto",
                                          "Set PDD parameters using formulas (6) and (7)"
                                          " in [Faustoetal2009]");
 
   bool use_aschwanden_params = options::Bool("-pdd_aschwanden", "Use Aschwanden's PDD parameters");
 
-  std::string sd_file = m_config->get_string("surface.pdd.temperature_standard_deviation_file");
-
-  m_sd_file_set = not sd_file.empty();
-
   options::Integer period("-pdd_sd_period",
                           "Length of the standard deviation data period in years", 0);
   m_sd_period = period;
 
-  if (randomized_repeatable) {
+  std::string method = m_config->get_string("surface.pdd.method");
+
+  if (method == "repeatable_random_process") {
     m_mbscheme.reset(new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::REPEATABLE));
-  } else if (randomized) {
+  } else if (method == "random_process") {
     m_mbscheme.reset(new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::NOT_REPEATABLE));
   } else {
     m_mbscheme.reset(new PDDMassBalance(m_config, m_sys));
@@ -94,7 +87,9 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
                                   "Choose one or the other.\n");
   }
 
-  if (m_sd_file_set) {
+  std::string sd_file = m_config->get_string("surface.pdd.temperature_standard_deviation_file");
+
+  if (not sd_file.empty()) {
     int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
     int max_buffer_size = (unsigned int) m_config->get_double("climate_forcing.buffer_size");
 
@@ -104,8 +99,10 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
                                                 max_buffer_size,
                                                 evaluations_per_year,
                                                 m_sd_period > 0);
+    m_sd_file_set = true;
   } else {
     m_air_temp_sd.reset(new IceModelVec2T(m_grid, "air_temp_sd", 1, 1));
+    m_sd_file_set = false;
   }
 
   m_air_temp_sd->set_attrs("climate_forcing",
