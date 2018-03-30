@@ -206,7 +206,7 @@ class GivenTest(TestCase):
 
         create_given_input_file(self.filename, self.grid, self.temperature, self.mass_flux)
 
-        options.setValue("-ocean_given_file", self.filename)
+        config.set_string("ocean.given.file", self.filename)
 
     def runTest(self):
         "Model Given"
@@ -254,7 +254,7 @@ class GivenTHTest(TestCase):
         S.set(salinity)
         S.write(filename)
 
-        options.setValue("-ocean_th_file", self.filename)
+        config.set_string("ocean.th.file", self.filename)
 
     def runTest(self):
         "Model GivenTH"

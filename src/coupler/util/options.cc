@@ -47,6 +47,12 @@ ForcingOptions::ForcingOptions(const Context &ctx,
                   "  - Option %s_file is not set. Trying the input file '%s'...\n",
                   prefix.c_str(), this->filename.c_str());
     }
+
+    if (this->filename.empty()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "PISM ERROR: %s.file is empty and no input ('-i') file found.",
+                                    prefix.c_str());
+    }
   }
 
   {

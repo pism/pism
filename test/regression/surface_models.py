@@ -153,11 +153,12 @@ class LapseRates(TestCase):
         # save current surface elevation to use it as a "reference" surface elevation
         self.geometry.ice_surface_elevation.dump(self.filename)
 
+        config.set_string("surface.lapse_rate.file", self.filename)
+
+        options.setValue("-temp_lapse_rate", self.dTdz)
+
     def runTest(self):
         "Modifier lapse_rate"
-
-        options.setValue("-surface_lapse_rate_file", self.filename)
-        options.setValue("-temp_lapse_rate", self.dTdz)
 
         modifier = PISM.SurfaceLapseRates(self.grid, self.model)
 
