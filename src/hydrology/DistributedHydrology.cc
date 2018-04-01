@@ -112,7 +112,7 @@ void Distributed::init_bwp() {
   // initialize water layer thickness from the context if present, otherwise from -i otherwise with
   // constant value
 
-  InputOptions opts = process_input_options(m_grid->com);
+  InputOptions opts = process_input_options(m_grid->com, m_config);
 
   // initialize P: present or -i file or -bootstrap file or set to constant;
   //   then overwrite by regrid; then overwrite by -init_P_from_steady

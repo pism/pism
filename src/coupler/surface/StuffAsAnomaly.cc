@@ -67,7 +67,7 @@ void StuffAsAnomaly::init_impl() {
     m_input_model->init();
   }
 
-  InputOptions opts = process_input_options(m_grid->com);
+  InputOptions opts = process_input_options(m_grid->com, m_config);
 
   m_log->message(2,
              "* Initializing the 'turn_into_anomaly' modifier\n"

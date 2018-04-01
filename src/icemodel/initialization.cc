@@ -117,7 +117,7 @@ void IceModel::time_setup() {
 void IceModel::model_state_setup() {
 
   // Check if we are initializing from a PISM output file:
-  InputOptions input = process_input_options(m_ctx->com());
+  InputOptions input = process_input_options(m_ctx->com(), m_config);
 
   const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
 
@@ -663,7 +663,7 @@ void IceModel::allocate_couplers() {
 void IceModel::misc_setup() {
 
   m_log->message(3, "Finishing initialization...\n");
-  InputOptions opts = process_input_options(m_ctx->com());
+  InputOptions opts = process_input_options(m_ctx->com(), m_config);
 
   if (not (opts.type == INIT_OTHER)) {
     // initializing from a file

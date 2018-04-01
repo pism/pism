@@ -2,6 +2,16 @@ netcdf pism_config {
     variables:
     byte pism_config;
 
+    pism_config:input.file = "";
+    pism_config:input.file_doc = "Input file name";
+    pism_config:input.file_type = "string";
+    pism_config:input.file_option = "i";
+
+    pism_config:input.bootstrap = "no";
+    pism_config:input.bootstrap_doc = "It true, use bootstrapping heuristics when initializing PISM.";
+    pism_config:input.bootstrap_option = "bootstrap";
+    pism_config:input.bootstrap_type = "boolean";
+
     pism_config:age.enabled = "no";
     pism_config:age.enabled_doc = "Solve age equation (advection equation for ice age).";
     pism_config:age.enabled_option = "age";

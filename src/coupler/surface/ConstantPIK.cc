@@ -60,7 +60,7 @@ void PIK::init_impl() {
                  "  Ice upper-surface temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"
                  "  Any choice of atmosphere coupler (option '-atmosphere') is ignored.\n");
 
-  InputOptions opts = process_input_options(m_grid->com);
+  InputOptions opts = process_input_options(m_grid->com, m_config);
 
   // read snow precipitation rate from file
   m_log->message(2,

@@ -43,7 +43,7 @@ BTUGrid::BTUGrid(Context::ConstPtr ctx) {
 BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
   BTUGrid result(ctx);
 
-  InputOptions opts = process_input_options(ctx->com());
+  InputOptions opts = process_input_options(ctx->com(), ctx->config());
 
   const Logger &log = *ctx->log();
 

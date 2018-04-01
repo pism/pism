@@ -107,7 +107,7 @@ void IceRegionalModel::model_state_setup() {
   // initialize the model state (including special fields)
   IceModel::model_state_setup();
 
-  InputOptions input = process_input_options(m_ctx->com());
+  InputOptions input = process_input_options(m_ctx->com(), m_config);
 
   // Initialize stored ice thickness and surface elevation. This goes here and not in
   // bootstrap_2d because bed topography is not initialized at the time bootstrap_2d is

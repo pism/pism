@@ -222,7 +222,7 @@ void TemperatureIndex::init_impl() {
   }
 
   // initializing the model state
-  InputOptions input = process_input_options(m_grid->com);
+  InputOptions input = process_input_options(m_grid->com, m_config);
 
   std::string firn_file = m_config->get_string("surface.pdd.firn_depth_file");
 

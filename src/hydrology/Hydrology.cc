@@ -129,7 +129,7 @@ void Hydrology::init() {
     m_inputtobed->init(itb_file, m_inputtobed_period, m_inputtobed_reference_time);
   }
 
-  InputOptions opts = process_input_options(m_grid->com);
+  InputOptions opts = process_input_options(m_grid->com, m_config);
 
   double tillwat_default = m_config->get_double("bootstrapping.defaults.tillwat");
 

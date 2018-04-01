@@ -159,7 +159,7 @@ void MohrCoulombYieldStress::init_impl() {
 
   const double till_phi_default = m_config->get_double("basal_yield_stress.mohr_coulomb.till_phi_default");
 
-  InputOptions opts = process_input_options(m_grid->com);
+  InputOptions opts = process_input_options(m_grid->com, m_config);
 
   if (options::Bool("-topg_to_phi", "compute tillphi as a function of bed elevation")) {
 

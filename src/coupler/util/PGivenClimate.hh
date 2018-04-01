@@ -71,7 +71,7 @@ protected:
                  "  - Reading boundary conditions from '%s'...\n",
                  m_filename.c_str());
     } else {
-      m_filename = process_input_options(Model::m_grid->com).filename;
+      m_filename = process_input_options(Model::m_grid->com, Model::m_config).filename;
 
       Model::m_log->message(2,
                             "  - Option %s_file is not set. Trying the input file '%s'...\n",
