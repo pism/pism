@@ -82,7 +82,7 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid, std::shared_p
 void InitializationHelper::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
-  InputOptions opts = process_input_options(m_grid->com);
+  InputOptions opts = process_input_options(m_grid->com, m_config);
 
   if (opts.type == INIT_RESTART) {
     m_log->message(2, "* Reading effective surface model outputs from '%s' for re-starting...\n",

@@ -89,7 +89,7 @@ def run(dt, restart=False):
 
             # initialize
             PISM.PETSc.Options().setValue("-i", filename)
-            options = PISM.process_input_options(grid.com)
+            options = PISM.process_input_options(grid.com, ctx.config)
             model.init(options)
         finally:
             os.remove(filename)

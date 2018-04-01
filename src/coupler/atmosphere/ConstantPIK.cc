@@ -90,7 +90,7 @@ void PIK::init_impl(const Geometry &geometry) {
                  "  It reads a precipitation field directly from the file and holds it constant.\n"
                  "  Near-surface air temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n");
 
-  InputOptions opts = process_input_options(m_grid->com);
+  InputOptions opts = process_input_options(m_grid->com, m_config);
 
   // read snow precipitation rate and air_temps from file
   m_log->message(2,

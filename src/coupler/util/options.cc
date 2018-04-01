@@ -41,7 +41,7 @@ ForcingOptions::ForcingOptions(const Context &ctx,
                   "  - Reading boundary conditions from '%s'...\n",
                   file.c_str());
     } else {
-      this->filename = process_input_options(ctx.com()).filename;
+      this->filename = process_input_options(ctx.com(), ctx.config()).filename;
 
       log.message(2,
                   "  - Option %s_file is not set. Trying the input file '%s'...\n",

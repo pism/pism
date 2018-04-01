@@ -71,7 +71,7 @@ void IBSurfaceModel::init_impl(const Geometry &geometry) {
                     "  IceBin changes its state when surface conditions change.\n");
 
   // find PISM input file to read data from:
-  m_input_file = process_input_options(m_grid->com).filename;
+  m_input_file = process_input_options(m_grid->com, m_config).filename;
 
   // It doesn't matter what we set this to, it will be re-set later.
   icebin_wflux.set(0.0);

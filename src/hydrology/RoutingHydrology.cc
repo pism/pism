@@ -141,7 +141,7 @@ void Routing::init_bwat() {
   // initialize water layer thickness from the context if present, otherwise from -i file, otherwise
   // with constant value
 
-  InputOptions opts = process_input_options(m_grid->com);
+  InputOptions opts = process_input_options(m_grid->com, m_config);
 
   const PetscReal bwatdefault = m_config->get_double("bootstrapping.defaults.bwat");
 
