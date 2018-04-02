@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -59,7 +59,7 @@ GivenTH::Constants::Constants(const Config &config) {
 }
 
 GivenTH::GivenTH(IceGrid::ConstPtr g)
-  : PGivenClimate<OceanModifier,OceanModel>(g, NULL) {
+  : PGivenClimate<CompleteOceanModel,CompleteOceanModel>(g, NULL) {
 
   m_option_prefix   = "-ocean_th";
 
@@ -84,17 +84,6 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
   m_salinity_ocean->set_attrs("climate_forcing",
                             "salinity of the adjacent ocean",
                             "g/kg", "");
-
-  m_shelfbtemp.create(m_grid, "shelfbtemp", WITHOUT_GHOSTS);
-  m_shelfbtemp.set_attrs("climate_forcing",
-                       "absolute temperature at ice shelf base",
-                       "Kelvin", "");
-
-  m_shelfbmassflux.create(m_grid, "shelfbmassflux", WITHOUT_GHOSTS);
-  m_shelfbmassflux.set_attrs("climate_forcing",
-                           "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                           "kg m-2 s-1", "");
-  m_shelfbmassflux.metadata().set_string("glaciological_units", "kg m-2 year-1");
 }
 
 GivenTH::~GivenTH() {
@@ -102,8 +91,6 @@ GivenTH::~GivenTH() {
 }
 
 void GivenTH::init_impl() {
-
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_log->message(2,
              "* Initializing the 3eqn melting parameterization ocean model\n"
@@ -118,37 +105,24 @@ void GivenTH::init_impl() {
   }
 }
 
-void GivenTH::shelf_base_temperature_impl(IceModelVec2S &result) const {
-  result.copy_from(m_shelfbtemp);
-}
-
-void GivenTH::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
-  result.copy_from(m_shelfbmassflux);
-}
-
-void GivenTH::sea_level_elevation_impl(double &result) const {
-  result = m_sea_level;
-}
-
-void GivenTH::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
-  result.set(0.0);
-}
-
-void GivenTH::update_impl(double my_t, double my_dt) {
+void GivenTH::update_impl(double t, double dt) {
 
   // Make sure that sea water salinity and sea water potential
   // temperature fields are up to date:
-  update_internal(my_t, my_dt);
+  update_internal(t, dt);
 
-  m_theta_ocean->average(m_t, m_dt);
-  m_salinity_ocean->average(m_t, m_dt);
+  m_theta_ocean->average(t, dt);
+  m_salinity_ocean->average(t, dt);
 
   Constants c(*m_config);
 
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
+  IceModelVec2S &temperature = *m_shelf_base_temperature;
+  IceModelVec2S &mass_flux = *m_shelf_base_mass_flux;
+
   IceModelVec::AccessList list{ice_thickness, m_theta_ocean, m_salinity_ocean,
-      &m_shelfbtemp, &m_shelfbmassflux};
+      &temperature, &mass_flux};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -167,14 +141,17 @@ void GivenTH::update_impl(double my_t, double my_dt) {
                      &shelf_base_massflux);
 
     // Convert from Celsius to Kelvin:
-    m_shelfbtemp(i,j)     = shelf_base_temp_celsius + 273.15;
-    m_shelfbmassflux(i,j) = shelf_base_massflux;
+    temperature(i,j) = shelf_base_temp_celsius + 273.15;
+    mass_flux(i,j)   = shelf_base_massflux;
   }
 
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
-  m_shelfbmassflux.scale(m_config->get_double("constants.ice.density"));
+  m_shelf_base_mass_flux->scale(m_config->get_double("constants.ice.density"));
 }
 
+const IceModelVec2S& GivenTH::sea_level_elevation_impl() const {
+  return *m_sea_level_elevation;
+}
 
 //* Evaluate the parameterization of the melting point temperature.
 /** The value returned is in degrees Celsius.

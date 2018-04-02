@@ -1,5 +1,8 @@
 %{
 #include "hydrology/Hydrology.hh"
+#include "hydrology/NullTransport.hh"
+#include "hydrology/Routing.hh"
+#include "hydrology/Distributed.hh"
 %}
 
 %rename(DistributedHydrology) pism::hydrology::Distributed;

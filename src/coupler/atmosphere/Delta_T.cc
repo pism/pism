@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,20 +28,18 @@ namespace atmosphere {
 
 /// delta_T forcing of near-surface air temperatures
 
-Delta_T::Delta_T(IceGrid::ConstPtr g, AtmosphereModel* in)
+Delta_T::Delta_T(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in) {
   m_option_prefix = "-atmosphere_delta_T";
   m_offset_name   = "delta_T";
 
-  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
+  m_offset.reset(new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name")));
   m_offset->variable().set_string("units", "Kelvin");
   m_offset->variable().set_string("long_name", "near-surface air temperature offsets");
   m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
 }
 
 void Delta_T::init_impl() {
-
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_input_model->init();
 
@@ -67,7 +65,7 @@ void Delta_T::init_timeseries_impl(const std::vector<double> &ts) const {
 void Delta_T::mean_annual_temp_impl(IceModelVec2S &result) const {
 
   m_input_model->mean_annual_temp(result);
-  offset_data(result);
+  result.shift(m_current_forcing);
 }
 
 void Delta_T::temp_time_series_impl(int i, int j, std::vector<double> &result) const {

@@ -1,5 +1,6 @@
 # Boundary models (surface, atmosphere, ocean).
 add_library (boundary OBJECT
+  ./util/ScalarForcing.cc
   ./atmosphere/AtmosphereModel.cc
   ./atmosphere/ConstantPIK.cc
   ./atmosphere/SeariseGreenland.cc
@@ -15,6 +16,7 @@ add_library (boundary OBJECT
   ./atmosphere/WeatherStation.cc
   ./atmosphere/Factory.cc
   ./ocean/OceanModel.cc
+  ./ocean/CompleteOceanModel.cc
   ./ocean/Cache.cc
   ./ocean/ConstantPIK.cc
   ./ocean/Constant.cc

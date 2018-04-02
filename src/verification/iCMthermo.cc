@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -54,7 +54,7 @@ void IceCompModel::energy_step() {
   IceModelVec2S &basal_enthalpy          = m_work2d[2];
   m_energy_model->enthalpy().getHorSlice(basal_enthalpy, 0.0);
   m_surface->temperature(ice_surface_temperature);
-  bedrock_surface_temperature(m_ocean->sea_level_elevation(),
+  bedrock_surface_temperature(m_geometry.sea_level_elevation,
                               m_geometry.cell_type,
                               m_geometry.bed_elevation,
                               m_geometry.ice_thickness,
@@ -67,18 +67,15 @@ void IceCompModel::energy_step() {
   energy::Inputs inputs;
   {
     IceModelVec2S &ice_surface_liquid_water_fraction = m_work2d[1];
-    IceModelVec2S &shelf_base_temperature            = m_work2d[3];
 
     m_surface->temperature(ice_surface_temperature);
     m_surface->liquid_water_fraction(ice_surface_liquid_water_fraction);
 
-    m_ocean->shelf_base_temperature(shelf_base_temperature);
-
     inputs.basal_frictional_heating = &m_stress_balance->basal_frictional_heating();
     inputs.basal_heat_flux          = &m_btu->flux_through_top_surface(); // bedrock thermal layer
-    inputs.cell_type                = &m_geometry.cell_type;            // geometry
-    inputs.ice_thickness            = &m_geometry.ice_thickness;        // geometry
-    inputs.shelf_base_temp          = &shelf_base_temperature;            // ocean model
+    inputs.cell_type                = &m_geometry.cell_type;              // geometry
+    inputs.ice_thickness            = &m_geometry.ice_thickness;          // geometry
+    inputs.shelf_base_temp          = &m_ocean->shelf_base_temperature(); // ocean model
     inputs.surface_liquid_fraction  = &ice_surface_liquid_water_fraction; // surface model
     inputs.surface_temp             = &ice_surface_temperature;           // surface model
     inputs.till_water_thickness     = &m_subglacial_hydrology->till_water_thickness();

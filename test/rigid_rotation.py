@@ -15,7 +15,7 @@ def disc(thickness, x0, y0, H, R):
     radius R and 0 elsewhere.
     """
 
-    grid = thickness.get_grid()
+    grid = thickness.grid()
 
     with PISM.vec.Access(nocomm=thickness):
         for (i, j) in grid.points():
@@ -34,7 +34,7 @@ def set_ice_thickness(output, time):
     """Exact solution at time time. Corresponds to a disc that is rotated
     around the origin (one revolution per time unit)."""
 
-    grid = output.get_grid()
+    grid = output.grid()
 
     L = min(grid.Lx(), grid.Ly())
 
@@ -45,7 +45,7 @@ def set_ice_thickness(output, time):
                    [np.sin(phi),  np.cos(phi)]])
 
     # center coordinates at time 0
-    x0, y0 = 0.25 * L, 0.0
+    x0, y0 = 0.5 * L, 0.0
 
     R = 0.25 * L
     x,y = M * np.matrix([x0, y0]).T
@@ -57,7 +57,7 @@ def set_velocity(v):
     origin.
 
     """
-    grid = v.get_grid()
+    grid = v.grid()
 
     radial_velocity = 2 * np.pi
 
@@ -71,102 +71,123 @@ def set_velocity(v):
 
     v.update_ghosts()
 
-def mass_transport_test(t_final, C=1.0):
-    "Test GeometryEvolution::step()"
+def quiver(v, **kwargs):
+    a = v.numpy()
+    plt.quiver(a[:,:,0], a[:,:,1], **kwargs)
 
-    ctx = PISM.Context().ctx
+class MassTransport(object):
 
-    config = PISM.Context().config
+    def __init__(self, grid, part_grid=False):
 
-    # config.set_boolean("geometry.part_grid.enabled", True)
+        self.grid = grid
 
-    Mx = 101
-    My = 101
+        if part_grid:
+            grid.ctx().config().set_boolean("geometry.part_grid.enabled", True)
 
-    grid = PISM.IceGrid_Shallow(ctx, 1, 1, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+        self.v = PISM.model.create2dVelocityVec(grid)
 
-    geometry = PISM.Geometry(grid)
+        self.Q = PISM.IceModelVec2Stag()
+        self.Q.create(grid, "Q", PISM.WITHOUT_GHOSTS)
 
-    v = PISM.model.create2dVelocityVec(grid)
+        self.v_bc_mask = PISM.IceModelVec2Int()
+        self.v_bc_mask.create(grid, "v_bc_mask", PISM.WITHOUT_GHOSTS)
 
-    Q = PISM.IceModelVec2Stag()
-    Q.create(grid, "Q", PISM.WITHOUT_GHOSTS)
+        self.H_bc_mask = PISM.IceModelVec2Int()
+        self.H_bc_mask.create(grid, "H_bc_mask", PISM.WITHOUT_GHOSTS)
 
-    v_bc_mask = PISM.IceModelVec2Int()
-    v_bc_mask.create(grid, "v_bc_mask", PISM.WITHOUT_GHOSTS)
+        self.ge = PISM.GeometryEvolution(grid)
 
-    H_bc_mask = PISM.IceModelVec2Int()
-    H_bc_mask.create(grid, "H_bc_mask", PISM.WITHOUT_GHOSTS)
+        geometry = PISM.Geometry(grid)
+        self.geometry = geometry
 
-    SMB = PISM.IceModelVec2S()
-    SMB.create(grid, "SMB", PISM.WITHOUT_GHOSTS)
+        self.reset()
 
-    BMR = PISM.IceModelVec2S()
-    BMR.create(grid, "BMR", PISM.WITHOUT_GHOSTS)
+    def reset(self):
+        geometry = self.geometry
+        # grid info
+        geometry.cell_area.set(self.grid.dx() * self.grid.dy())
+        geometry.latitude.set(0.0)
+        geometry.longitude.set(0.0)
+        # environment
+        geometry.bed_elevation.set(-10.0)
+        geometry.sea_level_elevation.set(0.0)
+        # ice
+        set_ice_thickness(geometry.ice_thickness, time=1)
+        geometry.ice_area_specific_volume.set(0.0)
 
-    ge = PISM.GeometryEvolution(grid)
-
-    # grid info
-    geometry.cell_area().set(grid.dx() * grid.dy())
-    geometry.latitude().set(0.0)
-    geometry.longitude().set(0.0)
-    # environment
-    geometry.bed_elevation().set(-10.0)
-    geometry.sea_level_elevation().set(0.0)
-    # ice
-    set_ice_thickness(geometry.ice_thickness(), time=1)
-    geometry.ice_area_specific_volume().set(0.0)
-
-    geometry.ensure_consistency(0.0)
-
-    set_velocity(v)
-    v_bc_mask.set(0.0)          # all points are velocity B.C. points (but it does not matter)
-    H_bc_mask.set(0.0)
-    SMB.set(0.0)
-    BMR.set(0.0)
-
-    profiling = ctx.profiling()
-    profiling.start()
-
-    t = 0.0
-    j = 0
-    profiling.stage_begin("ge");
-    while t < t_final:
-
-        dt = PISM.max_timestep_cfl_2d(geometry.ice_thickness(),
-                                      geometry.cell_type(),
-                                      v).dt_max.value() * C
-
-        if t + dt > t_final:
-            dt = t_final - t
-
-        log.message(2, "{}, {}\n".format(t, dt))
-
-        profiling.begin("dump");
-        geometry.ice_thickness().dump("thk-%05d.nc" % (j+1))
-        geometry.ice_area_specific_volume().dump("Href-%05d.nc" % (j+1))
-        profiling.end("dump")
-
-        profiling.begin("step")
-        ge.step(geometry, dt,
-                v,
-                Q,
-                v_bc_mask,
-                H_bc_mask,
-                SMB,
-                BMR)
-        profiling.end("step")
-
-        profiling.begin("modify")
-        geometry.ice_thickness().add(1.0, ge.thickness_change_due_to_flow())
-        geometry.ice_area_specific_volume().add(1.0, ge.area_specific_volume_change_due_to_flow())
         geometry.ensure_consistency(0.0)
-        profiling.end("modify")
 
-        t += dt
-        j += 1
-    profiling.stage_end("ge");
+        set_velocity(self.v)
 
-    profiling.report("profiling.py")
+    def plot_thickness(self, levels, title):
+        import pylab as plt
+        cm = plt.contour(self.grid.x(), self.grid.y(),
+                         self.geometry.ice_thickness.numpy(), levels=levels)
+        plt.clabel(cm)
+        plt.grid()
+        plt.title(title)
 
-    return geometry, dt
+    def step(self, t_final, C=1):
+        geometry = self.geometry
+        t = 0.0
+        j = 0
+        while t < t_final:
+
+            dt = PISM.max_timestep_cfl_2d(geometry.ice_thickness,
+                                          geometry.cell_type,
+                                          self.v).dt_max.value() * C
+
+            if t + dt > t_final:
+                dt = t_final - t
+
+            log.message(2, "{}, {}\n".format(t, dt))
+
+            self.ge.flow_step(geometry, dt,
+                              self.v,
+                              self.Q,
+                              self.v_bc_mask,
+                              self.H_bc_mask)
+
+            geometry.ice_thickness.add(1.0, self.ge.thickness_change_due_to_flow())
+            geometry.ice_area_specific_volume.add(1.0, self.ge.area_specific_volume_change_due_to_flow())
+            geometry.ensure_consistency(0.0)
+
+            t += dt
+            j += 1
+
+def test():
+    ctx = PISM.Context()
+    Mx = 50
+    My = 50
+    grid = PISM.IceGrid_Shallow(ctx.ctx, 1, 1, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+
+    import pylab as plt
+    plt.rcParams['figure.figsize'] = (8.0, 8.0)
+
+    mt = MassTransport(grid)
+
+    mt.reset()
+    levels = np.linspace(0, 1, 11)
+
+    plt.subplot(2,2,1)
+    mt.plot_thickness(levels, "time=0")
+
+    mt.step(0.333)
+
+    plt.subplot(2,2,2)
+    mt.plot_thickness(levels, "time=0.333")
+
+    mt.step(0.333)
+
+    plt.subplot(2,2,3)
+    mt.plot_thickness(levels, "time=0.666")
+
+    mt.step(0.333)
+
+    plt.subplot(2,2,4)
+    mt.plot_thickness(levels, "time=0.999")
+
+    plt.show()
+
+if __name__ == "__main__":
+    test()

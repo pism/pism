@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2017 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2018 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -140,7 +140,7 @@ void SSA::init_impl() {
   m_log->message(2,
              "  [using the %s flow law]\n", m_flow_law->name().c_str());
 
-  InputOptions opts = process_input_options(m_grid->com);
+  InputOptions opts = process_input_options(m_grid->com, m_config);
 
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).
@@ -175,7 +175,7 @@ void SSA::update(const Inputs &inputs, bool full_update) {
     GeometryCalculator gc(*m_config);
     gc.set_icefree_thickness(H_threshold);
 
-    gc.compute_mask(inputs.sea_level,
+    gc.compute_mask(inputs.geometry->sea_level_elevation,
                     inputs.geometry->bed_elevation,
                     inputs.geometry->ice_thickness,
                     m_mask);
@@ -367,8 +367,8 @@ void SSA::write_model_state_impl(const PIO &output) const {
   m_velocity.write(output);
 }
 
-std::map<std::string, Diagnostic::Ptr> SSA::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = ShallowStressBalance::diagnostics_impl();
+DiagnosticList SSA::diagnostics_impl() const {
+  DiagnosticList result = ShallowStressBalance::diagnostics_impl();
 
   // replace these diagnostics
   result["taud"] = Diagnostic::Ptr(new SSA_taud(this));

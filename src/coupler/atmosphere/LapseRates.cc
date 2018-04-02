@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 namespace pism {
 namespace atmosphere {
 
-LapseRates::LapseRates(IceGrid::ConstPtr g, AtmosphereModel* in)
+LapseRates::LapseRates(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
   : PLapseRates<AtmosphereModel,PAModifier>(g, in) {
   m_precip_lapse_rate = 0.0;
   m_option_prefix     = "-atmosphere_lapse_rate";
@@ -38,8 +38,6 @@ LapseRates::~LapseRates() {
 }
 
 void LapseRates::init_impl() {
-
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_input_model->init();
 

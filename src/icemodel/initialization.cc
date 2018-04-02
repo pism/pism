@@ -119,7 +119,7 @@ void IceModel::time_setup() {
 void IceModel::model_state_setup() {
 
   // Check if we are initializing from a PISM output file:
-  InputOptions input = process_input_options(m_ctx->com());
+  InputOptions input = process_input_options(m_ctx->com(), m_config);
 
   const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
 
@@ -666,20 +666,20 @@ void IceModel::allocate_couplers() {
     m_log->message(2,
              "# Allocating a surface process model or coupler...\n");
 
-    m_surface = new surface::InitializationHelper(m_grid, ps.create());
+    m_surface.reset(new surface::InitializationHelper(m_grid, ps.create()));
 
     m_surface->attach_atmosphere_model(pa.create());
 
-    m_submodels["surface process model"] = m_surface;
+    m_submodels["surface process model"] = m_surface.get();
   }
 
   if (m_ocean == NULL) {
     m_log->message(2,
              "# Allocating an ocean model or coupler...\n");
 
-    m_ocean = new ocean::InitializationHelper(m_grid, po.create());
+    m_ocean.reset(new ocean::InitializationHelper(m_grid, po.create()));
 
-    m_submodels["ocean model"] = m_ocean;
+    m_submodels["ocean model"] = m_ocean.get();
   }
 }
 
@@ -687,7 +687,7 @@ void IceModel::allocate_couplers() {
 void IceModel::misc_setup() {
 
   m_log->message(3, "Finishing initialization...\n");
-  InputOptions opts = process_input_options(m_ctx->com());
+  InputOptions opts = process_input_options(m_ctx->com(), m_config);
 
   if (not (opts.type == INIT_OTHER)) {
     // initializing from a file
@@ -856,7 +856,7 @@ void IceModel::init_calving() {
   if (methods.find("frontal_melt") != methods.end()) {
 
     if (m_frontal_melt == NULL) {
-      m_frontal_melt = new FrontalMelt(m_grid, m_ocean);
+      m_frontal_melt = new FrontalMelt(m_grid, m_ocean.get());
     }
 
     m_frontal_melt->init();

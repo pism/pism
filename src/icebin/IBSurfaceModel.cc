@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 PISM Authors
+// Copyright (C) 2008-2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -45,8 +45,6 @@ IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g) : SurfaceModel(g) {
       "climate_state", "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
       "W m-2", "");
   icebin_deltah.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  //	icebin_deltah.write_in_glaciological_units = true;
-
 
   icebin_massxfer.create(m_grid, "icebin_massxfer", WITHOUT_GHOSTS);
   icebin_massxfer.set_attrs(
@@ -64,8 +62,8 @@ IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g) : SurfaceModel(g) {
   printf("END IBSurfaceModel::allocate_IBSurfaceModel()\n");
 }
 
-void IBSurfaceModel::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input) {
-  delete input;
+void IBSurfaceModel::attach_atmosphere_model_impl(std::shared_ptr<atmosphere::AtmosphereModel> input) {
+  (void) input;
 }
 
 void IBSurfaceModel::init_impl() {
@@ -75,7 +73,7 @@ void IBSurfaceModel::init_impl() {
                     "  IceBin changes its state when surface conditions change.\n");
 
   // find PISM input file to read data from:
-  m_input_file = process_input_options(m_grid->com).filename;
+  m_input_file = process_input_options(m_grid->com, m_config).filename;
 
   // It doesn't matter what we set this to, it will be re-set later.
   icebin_wflux.set(0.0);

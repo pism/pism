@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -36,7 +36,6 @@
 #include "pism/util/iceModelVec3Custom.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
-#include "pism/coupler/OceanModel.hh"
 #include "pism/earth/BedDef.hh"
 
 #if (PISM_USE_PROJ4==1)
@@ -86,9 +85,10 @@ IceModelVec::Ptr CalvingFrontPressureDifference::compute_impl() const {
   IceModelVec2CellType mask;
   mask.create(m_grid, "mask", WITH_GHOSTS);
 
-  const IceModelVec2S &H   = model->geometry().ice_thickness;
-  const IceModelVec2S &bed = model->geometry().bed_elevation;
-  const double sea_level = model->ocean_model()->sea_level_elevation(); // FIXME: use 2D sea level
+  auto
+    &H         = model->geometry().ice_thickness,
+    &bed       = model->geometry().bed_elevation,
+    &sea_level = model->geometry().sea_level_elevation;
 
   {
     const double H_threshold = m_config->get_double("stress_balance.ice_free_thickness_standard");
@@ -114,7 +114,7 @@ IceModelVec::Ptr CalvingFrontPressureDifference::compute_impl() const {
 
       if (mask.icy(i, j) and mask.next_to_ice_free_ocean(i, j)) {
         (*result)(i, j) = stressbalance::ocean_pressure_difference(mask.ocean(i, j), dry_mode,
-                                                                   H(i, j), bed(i, j), sea_level,
+                                                                   H(i, j), bed(i, j), sea_level(i, j),
                                                                    rho_ice, rho_ocean, g);
       } else {
         (*result)(i, j) = m_fill_value;
@@ -1803,21 +1803,20 @@ IceModelVec::Ptr IceAreaFractionGrounded::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, grounded_ice_sheet_area_fraction_name, WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
-  const double sea_level = model->ocean_model()->sea_level_elevation();
-
   const double
     ice_density   = m_config->get_double("constants.ice.density"),
     ocean_density = m_config->get_double("constants.sea_water.density");
 
-  const IceModelVec2S
+  auto
     &ice_thickness  = model->geometry().ice_thickness,
+    &sea_level      = model->geometry().sea_level_elevation,
     &bed_topography = model->geometry().bed_elevation;
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
 
   compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
-                                 ice_thickness, bed_topography, cell_type,
-                                 *result, NULL, NULL);
+                                 ice_thickness, bed_topography,
+                                 *result);
 
   // All grounded areas have the grounded cell fraction of one, so now we make sure that ice-free
   // areas get the value of 0 (they are grounded but not covered by a grounded ice sheet).
@@ -1887,14 +1886,14 @@ IceModelVec::Ptr HeightAboveFloatation::compute_impl() const {
 
   const double
     ice_density   = m_config->get_double("constants.ice.density"),
-    ocean_density = m_config->get_double("constants.sea_water.density"),
-    sea_level     = model->ocean_model()->sea_level_elevation();
+    ocean_density = m_config->get_double("constants.sea_water.density");
 
-  const IceModelVec2S
+  auto
+    &sea_level      = model->geometry().sea_level_elevation,
     &ice_thickness  = model->geometry().ice_thickness,
     &bed_topography = model->geometry().bed_elevation;
 
-  IceModelVec::AccessList list{&cell_type, result.get(), &ice_thickness, &bed_topography};
+  IceModelVec::AccessList list{&cell_type, result.get(), &ice_thickness, &bed_topography, &sea_level};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1904,7 +1903,7 @@ IceModelVec::Ptr HeightAboveFloatation::compute_impl() const {
       const double
         thickness   = ice_thickness(i, j),
         bed         = bed_topography(i, j),
-        ocean_depth = sea_level - bed;
+        ocean_depth = sea_level(i, j) - bed;
 
       if (cell_type.icy(i, j) and ocean_depth > 0.0) {
         const double max_floating_thickness = ocean_depth * (ocean_density / ice_density);
@@ -1999,9 +1998,17 @@ IceModelVec::Ptr BedTopographySeaLevelAdjusted::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "topg_sl_adjusted", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  result->copy_from(model->bed_model()->bed_elevation());
-  // result = topg - sea_level
-  result->shift(-model->ocean_model()->sea_level_elevation());
+  auto
+    &bed       = model->geometry().bed_elevation,
+    &sea_level = model->geometry().sea_level_elevation;
+
+  IceModelVec::AccessList list{&bed, &sea_level, result.get()};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    (*result)(i, j) = bed(i, j) - sea_level(i, j);
+  }
 
   return result;
 }

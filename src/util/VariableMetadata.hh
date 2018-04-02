@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Constantine Khroulev
+// Copyright (C) 2009--2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -39,10 +39,10 @@ class Logger;
 
   - units: specifies internal units. When read, a variable is
   converted to these units. When written, it is converted from these
-  to glaciological_units if write_in_glaciological_units is true.
+  to glaciological_units.
 
   - glaciological_units: is never written to a file; replaces 'units'
-  in the output if write_in_glaciological_units is true.
+  in the output file.
 
   - valid_min, valid_max: specify the valid range of a variable. Are
   read from an input file *only* if not specified previously. If

@@ -144,7 +144,7 @@ void MohrCoulombYieldStress::init_impl() {
 
   const double till_phi_default = m_config->get_double("basal_yield_stress.mohr_coulomb.till_phi_default");
 
-  InputOptions opts = process_input_options(m_grid->com);
+  InputOptions opts = process_input_options(m_grid->com, m_config);
 
   if (options::Bool("-topg_to_phi", "compute tillphi as a function of bed elevation")) {
 
@@ -284,9 +284,10 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
 
   const IceModelVec2CellType &mask           = inputs.geometry->cell_type;
   const IceModelVec2S        &bed_topography = inputs.geometry->bed_elevation;
+  const IceModelVec2S        &sea_level      = inputs.geometry->sea_level_elevation;
 
   IceModelVec::AccessList list{&tillwat, &m_till_phi, &m_basal_yield_stress, &mask,
-      &bed_topography, &Po};
+      &bed_topography, &sea_level, &Po};
   if (add_transportable_water) {
     list.add(m_bwat);
   }
@@ -300,10 +301,9 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
       m_basal_yield_stress(i, j) = high_tauc;  // large yield stress if grounded and ice-free
     } else { // grounded and there is some ice
       // user can ask that marine grounding lines get special treatment
-      const double sea_level = 0.0; // FIXME: get sea-level from correct PISM source
       double water = tillwat(i,j); // usual case
       if (slippery_grounding_lines and
-          bed_topography(i,j) <= sea_level and
+          bed_topography(i,j) <= sea_level(i, j) and
           (mask.next_to_floating_ice(i,j) or mask.next_to_ice_free_ocean(i,j))) {
         water = tillwat_max;
       } else if (add_transportable_water) {
@@ -445,7 +445,7 @@ void MohrCoulombYieldStress::tauc_to_phi(const IceModelVec2CellType &mask) {
   m_till_phi.update_ghosts();
 }
 
-std::map<std::string, Diagnostic::Ptr> MohrCoulombYieldStress::diagnostics_impl() const {
+DiagnosticList MohrCoulombYieldStress::diagnostics_impl() const {
   return combine({{"tillphi", Diagnostic::wrap(m_till_phi)}},
                  YieldStress::diagnostics_impl());
 }

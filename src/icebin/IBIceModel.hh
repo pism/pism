@@ -119,7 +119,7 @@ public:
 
   /** @return Our instance of IBSurfaceModel */
   pism::icebin::IBSurfaceModel *ib_surface_model() {
-    return dynamic_cast<IBSurfaceModel *>(m_surface);
+    return dynamic_cast<IBSurfaceModel *>(m_surface.get());
   }
   pism::hydrology::NullTransport* null_hydrology() {
     return dynamic_cast<hydrology::NullTransport *>(pism::IceModel::m_subglacial_hydrology);

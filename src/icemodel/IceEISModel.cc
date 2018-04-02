@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -73,13 +73,15 @@ void IceEISModel::allocate_couplers() {
 
   // Climate will always come from intercomparison formulas.
   if (m_surface == NULL) {
-    m_surface = new surface::InitializationHelper(m_grid, new surface::EISMINTII(m_grid, m_experiment));
-    m_submodels["surface process model"] = m_surface;
+    std::shared_ptr<surface::SurfaceModel> surface(new surface::EISMINTII(m_grid, m_experiment));
+    m_surface.reset(new surface::InitializationHelper(m_grid, surface));
+    m_submodels["surface process model"] = m_surface.get();
   }
 
   if (m_ocean == NULL) {
-    m_ocean = new ocean::InitializationHelper(m_grid, new ocean::Constant(m_grid));
-    m_submodels["ocean model"] = m_ocean;
+    std::shared_ptr<ocean::OceanModel> ocean(new ocean::Constant(m_grid));
+    m_ocean.reset(new ocean::InitializationHelper(m_grid, ocean));
+    m_submodels["ocean model"] = m_ocean.get();
   }
 }
 

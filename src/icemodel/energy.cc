@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,9 +26,7 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/earth/BedDef.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Profiling.hh"
 
@@ -58,7 +56,7 @@ void IceModel::energy_step() {
   IceModelVec2S &basal_enthalpy          = m_work2d[2];
   m_energy_model->enthalpy().getHorSlice(basal_enthalpy, 0.0);
   m_surface->temperature(ice_surface_temperature);
-  bedrock_surface_temperature(m_ocean->sea_level_elevation(),
+  bedrock_surface_temperature(m_geometry.sea_level_elevation,
                               m_geometry.cell_type,
                               m_geometry.bed_elevation,
                               m_geometry.ice_thickness,
@@ -123,7 +121,7 @@ void IceModel::combine_basal_melt_rate(const Geometry &geometry,
 }
 
 //! @brief Compute the temperature seen by the top of the bedrock thermal layer.
-void bedrock_surface_temperature(double sea_level,
+void bedrock_surface_temperature(const IceModelVec2S &sea_level,
                                  const IceModelVec2CellType &cell_type,
                                  const IceModelVec2S &bed_topography,
                                  const IceModelVec2S &ice_thickness,
@@ -142,7 +140,7 @@ void bedrock_surface_temperature(double sea_level,
 
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
-  IceModelVec::AccessList list{&cell_type, &bed_topography, &ice_thickness,
+  IceModelVec::AccessList list{&cell_type, &bed_topography, &sea_level, &ice_thickness,
       &ice_surface_temperature, &basal_enthalpy, &result};
   ParallelSection loop(grid->com);
   try {
@@ -157,7 +155,7 @@ void bedrock_surface_temperature(double sea_level,
           result(i,j) = EC->temperature(basal_enthalpy(i,j), pressure);
         }
       } else { // floating: apply pressure melting temp as top of bedrock temp
-        result(i,j) = T0 - (sea_level - bed_topography(i,j)) * beta_CC_grad_sea_water;
+        result(i,j) = T0 - (sea_level(i, j) - bed_topography(i,j)) * beta_CC_grad_sea_water;
       }
     }
   } catch (...) {

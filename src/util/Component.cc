@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -42,15 +42,14 @@ InputOptions::InputOptions(InitializationType t, const std::string &file, unsign
 /*! Process command-line options -i and -bootstrap.
  *
  */
-InputOptions process_input_options(MPI_Comm com) {
+InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config) {
   InitializationType type   = INIT_OTHER;
   unsigned int       record = 0;
 
-  options::String input_filename("-i", "Specifies the PISM input file");
-  bool bootstrap_is_set = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+  std::string input_filename = config->get_string("input.file");
 
-  const bool bootstrap = input_filename.is_set() and bootstrap_is_set;
-  const bool restart   = input_filename.is_set() and not bootstrap_is_set;
+  bool bootstrap = config->get_boolean("input.bootstrap") and (not input_filename.empty());
+  bool restart   = (not config->get_boolean("input.bootstrap")) and (not input_filename.empty());
 
   if (restart) {
     // re-start a run by initializing from an input file
@@ -64,7 +63,7 @@ InputOptions process_input_options(MPI_Comm com) {
   }
 
   // get the index of the last record in the input file
-  if (input_filename.is_set()) {
+  if (not input_filename.empty()) {
     PIO input_file(com, "guess_mode", input_filename, PISM_READONLY);
 
     // Find the index of the last record in the input file.
@@ -84,26 +83,26 @@ InputOptions process_input_options(MPI_Comm com) {
 Component::Component(IceGrid::ConstPtr g)
   : m_grid(g), m_config(g->ctx()->config()), m_sys(g->ctx()->unit_system()),
     m_log(g->ctx()->log()) {
-  m_t = m_dt = GSL_NAN;
+  // empty
 }
 
 Component::~Component() {
   // empty
 }
 
-std::map<std::string, Diagnostic::Ptr> Component::diagnostics() const {
+DiagnosticList Component::diagnostics() const {
   return this->diagnostics_impl();
 }
 
-std::map<std::string, TSDiagnostic::Ptr> Component::ts_diagnostics() const {
+TSDiagnosticList Component::ts_diagnostics() const {
   return this->ts_diagnostics_impl();
 }
 
-std::map<std::string, Diagnostic::Ptr> Component::diagnostics_impl() const {
+DiagnosticList Component::diagnostics_impl() const {
   return {};
 }
 
-std::map<std::string, TSDiagnostic::Ptr> Component::ts_diagnostics_impl() const {
+TSDiagnosticList Component::ts_diagnostics_impl() const {
   return {};
 }
 

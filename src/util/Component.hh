@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -48,7 +48,7 @@ struct InputOptions {
   unsigned int record;
 };
 
-InputOptions process_input_options(MPI_Comm com);
+InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config);
 
 //! \brief A class defining a common interface for most PISM sub-models.
 /*!
@@ -107,8 +107,8 @@ public:
   Component(IceGrid::ConstPtr g);
   virtual ~Component();
 
-  std::map<std::string, Diagnostic::Ptr> diagnostics() const;
-  std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics() const;
+  DiagnosticList diagnostics() const;
+  TSDiagnosticList ts_diagnostics() const;
 
   IceGrid::ConstPtr grid() const;
 
@@ -123,8 +123,8 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
-  virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
+  virtual TSDiagnosticList ts_diagnostics_impl() const;
 
   /** @brief This flag determines whether a variable is read from the
       `-regrid_file` file even if it is not listed among variables in
@@ -142,12 +142,6 @@ protected:
   const units::System::Ptr m_sys;
   //! logger (for easy access)
   const Logger::ConstPtr m_log;
-
-  // FIXME: these should go away eventually
-  //! Last time used as an argument for the update() method.
-  double m_t;
-  //! Last time-step used as an argument for the update() method.
-  double m_dt;
 };
 
 } // end of namespace pism

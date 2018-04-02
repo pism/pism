@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -375,8 +375,8 @@ protected:
 
 } // end of namespace diagnostics
 
-std::map<std::string, Diagnostic::Ptr> EnergyModel::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result;
+DiagnosticList EnergyModel::diagnostics_impl() const {
+  DiagnosticList result;
   result = {
     {"enthalpy",                 Diagnostic::Ptr(new diagnostics::Enthalpy(this))},
     {"basal_melt_rate_grounded", Diagnostic::wrap(m_basal_melt_rate)}
@@ -384,7 +384,7 @@ std::map<std::string, Diagnostic::Ptr> EnergyModel::diagnostics_impl() const {
   return result;
 }
 
-std::map<std::string, TSDiagnostic::Ptr> EnergyModel::ts_diagnostics_impl() const {
+TSDiagnosticList EnergyModel::ts_diagnostics_impl() const {
   return {
     {"liquified_ice_flux", TSDiagnostic::Ptr(new LiquifiedIceFlux(this))}
   };

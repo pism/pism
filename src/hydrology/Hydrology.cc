@@ -144,17 +144,6 @@ void Hydrology::initialize_impl(const IceModelVec2S &W_till,
 }
 
 void Hydrology::update(double t, double dt, const Inputs& inputs) {
-  // if asked for the identical time interval versus last time, then
-  //   do nothing; otherwise assume that [my_t, my_t+my_dt] is the time
-  //   interval on which we are solving
-  if ((fabs(t - m_t) < 1e-12) && (fabs(dt - m_dt) < 1e-12)) {
-    return;
-  }
-
-  // update Component times: t = current time, t+dt = target time
-  m_t  = t;
-  m_dt = dt;
-
   this->update_impl(t, dt, inputs);
 }
 

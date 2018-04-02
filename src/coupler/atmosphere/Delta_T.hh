@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ namespace atmosphere {
 class Delta_T : public PScalarForcing<AtmosphereModel,PAModifier>
 {
 public:
-  Delta_T(IceGrid::ConstPtr g, AtmosphereModel* in);
+  Delta_T(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
   virtual ~Delta_T() {}
 protected:
   virtual void init_impl();
@@ -37,7 +37,9 @@ protected:
   virtual void mean_annual_temp_impl(IceModelVec2S &result) const;
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
   virtual MaxTimestep max_timestep_impl(double t) const;
-protected:
+private:
+  IceModelVec2S::Ptr m_shelf_base_temperature;
+
   mutable std::vector<double> m_offset_values;
 };
 

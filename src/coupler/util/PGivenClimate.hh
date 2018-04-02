@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -34,7 +34,7 @@ template <class Model, class Input>
 class PGivenClimate : public Model
 {
 public:
-  PGivenClimate(IceGrid::ConstPtr g, Input *in)
+  PGivenClimate(IceGrid::ConstPtr g, std::shared_ptr<Input> in)
     : Model(g, in) {}
 
   virtual ~PGivenClimate() {
@@ -71,7 +71,7 @@ protected:
                  "  - Reading boundary conditions from '%s'...\n",
                  m_filename.c_str());
     } else {
-      m_filename = process_input_options(Model::m_grid->com).filename;
+      m_filename = process_input_options(Model::m_grid->com, Model::m_config).filename;
 
       Model::m_log->message(2,
                             "  - Option %s_file is not set. Trying the input file '%s'...\n",

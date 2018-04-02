@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -695,24 +695,23 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
   get_vec(nc, grid, name_found, nlevels, time, output);
 
   std::string input_units = nc.get_att_text(name_found, "units");
+  const std::string &internal_units = var.get_string("units");
 
-  if (var.has_attribute("units") && input_units.empty()) {
-    const std::string &units_string = var.get_string("units"),
-      &long_name = var.get_string("long_name");
+  if (input_units.empty() and not internal_units.empty()) {
+    const std::string &long_name = var.get_string("long_name");
     log.message(2,
                "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
                "              Assuming that it is in '%s'.\n",
                var.get_name().c_str(), long_name.c_str(),
-               units_string.c_str());
-    input_units = units_string;
+               internal_units.c_str());
+    input_units = internal_units;
   }
 
   // Convert data:
   size_t size = grid.xm() * grid.ym() * nlevels;
 
   units::Converter(var.unit_system(),
-                input_units,
-                var.get_string("units")).convert_doubles(output, size);
+                   input_units, internal_units).convert_doubles(output, size);
 }
 
 //! \brief Write a double array to a file.
@@ -931,24 +930,20 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
     // be in PISM (MKS) units.
 
     std::string input_units = file.get_att_text(name_found, "units");
+    std::string internal_units = variable.get_string("units");
 
-    if (input_units.empty()) {
-      std::string internal_units = variable.get_string("units");
+    if (input_units.empty() and not internal_units.empty()) {
+      log.message(2,
+                  "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+                  "              Assuming that it is in '%s'.\n",
+                  variable.get_name().c_str(),
+                  variable.get_string("long_name").c_str(),
+                  internal_units.c_str());
       input_units = internal_units;
-      if (not internal_units.empty()) {
-        log.message(2,
-                    "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-                    "              Assuming that it is in '%s'.\n",
-                    variable.get_name().c_str(),
-                    variable.get_string("long_name").c_str(),
-                    internal_units.c_str());
-      }
     }
 
     // Convert data:
-    units::Converter(sys,
-                     input_units,
-                     variable.get_string("units")).convert_doubles(output, data_size);
+    units::Converter(sys, input_units, internal_units).convert_doubles(output, data_size);
 
     // Check the range and report it if necessary.
     {

@@ -175,4 +175,3 @@ void check_bounds(const IceModelVec2S& W, double W_max);
 } // end of namespace pism
 
 #endif /* _PISMHYDROLOGY_H_ */
-

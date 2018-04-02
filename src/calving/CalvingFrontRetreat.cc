@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -142,7 +142,7 @@ MaxTimestep CalvingFrontRetreat::max_timestep_impl(double t) const {
  * with a frontal melt parameterization.
  */
 void CalvingFrontRetreat::update(double dt,
-                                 double sea_level,
+                                 const IceModelVec2S &sea_level,
                                  const IceModelVec2Int &ice_thickness_bc_mask,
                                  const IceModelVec2S &bed_topography,
                                  IceModelVec2CellType &mask,
@@ -187,7 +187,7 @@ void CalvingFrontRetreat::update(double dt,
   m_tmp.set(0.0);
 
   IceModelVec::AccessList list{&ice_thickness, &ice_thickness_bc_mask,
-      &bed_topography, &mask, &Href, &m_tmp, &m_horizontal_calving_rate,
+      &bed_topography, &sea_level, &mask, &Href, &m_tmp, &m_horizontal_calving_rate,
       &m_surface_topography};
 
   // Prepare to loop over neighbors: directions
@@ -232,18 +232,22 @@ void CalvingFrontRetreat::update(double dt,
         // termini.
         int N = 0;
         {
-          StarStencil<int> M_star = mask.int_star(i, j);
-          StarStencil<int> bc_star = ice_thickness_bc_mask.int_star(i, j);
-          StarStencil<double> bed_star = bed_topography.star(i, j);
+          auto
+            M  = mask.int_star(i, j),
+            BC = ice_thickness_bc_mask.int_star(i, j);
+
+          auto
+            bed = bed_topography.star(i, j),
+            sl  = sea_level.star(i, j);
 
           for (int n = 0; n < 4; ++n) {
-            const Direction direction = dirs[n];
-            const int M = M_star[direction];
-            const int BC = bc_star[direction];
+            Direction direction = dirs[n];
+            int m = M[direction];
+            int bc = BC[direction];
 
-            if (BC == 0 and     // distribute to regular (*not* Dirichlet B.C.) neighbors only
-                (mask::floating_ice(M) or
-                 (mask::grounded_ice(M) and bed_star[direction] < sea_level))) {
+            if (bc == 0 and     // distribute to regular (*not* Dirichlet B.C.) neighbors only
+                (mask::floating_ice(m) or
+                 (mask::grounded_ice(m) and bed[direction] < sl[direction]))) {
               N += 1;
             }
           }
@@ -270,7 +274,7 @@ void CalvingFrontRetreat::update(double dt,
     // Note: this condition has to match the one in step 1 above.
     if (ice_thickness_bc_mask.as_int(i, j) == 0 and
         (mask.floating_ice(i, j) or
-         (mask.grounded_ice(i, j) and bed_topography(i, j) < sea_level))) {
+         (mask.grounded_ice(i, j) and bed_topography(i, j) < sea_level(i, j)))) {
 
       const double delta_H = (m_tmp(i + 1, j) + m_tmp(i - 1, j) +
                               m_tmp(i, j + 1) + m_tmp(i, j - 1));

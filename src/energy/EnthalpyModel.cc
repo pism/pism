@@ -60,11 +60,15 @@ void EnthalpyModel::bootstrap_impl(const PIO &input_file,
   m_basal_melt_rate.regrid(input_file, OPTIONAL,
                            m_config->get_double("bootstrapping.defaults.bmelt"));
 
-  bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
-                         basal_heat_flux, m_ice_enthalpy);
-
   regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
+
+  int enthalpy_revision = m_ice_enthalpy.state_counter();
   regrid_enthalpy();
+
+  if (enthalpy_revision == m_ice_enthalpy.state_counter()) {
+    bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
+                           basal_heat_flux, m_ice_enthalpy);
+  }
 }
 
 void EnthalpyModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
@@ -77,11 +81,15 @@ void EnthalpyModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
 
   m_basal_melt_rate.copy_from(basal_melt_rate);
 
-  bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
-                         basal_heat_flux, m_ice_enthalpy);
-
   regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
+
+  int enthalpy_revision = m_ice_enthalpy.state_counter();
   regrid_enthalpy();
+
+  if (enthalpy_revision == m_ice_enthalpy.state_counter()) {
+    bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
+                           basal_heat_flux, m_ice_enthalpy);
+  }
 }
 
 //! Update ice enthalpy field based on conservation of energy.
@@ -231,13 +239,14 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
               depth = H - k * dz,
               p     = EC->pressure(depth), // FIXME issue #15
               T_m   = EC->melting_temperature(p),
-              L     = EC->L(T_m),
-              omega = EC->water_fraction(Enthnew[k], p);
+              L     = EC->L(T_m);
 
             if (Enthnew[k] >= system.Enth_s(k) + 0.5 * L) {
               liquifiedCount++; // count these rare events...
               Enthnew[k] = system.Enth_s(k) + 0.5 * L; //  but lose the energy
             }
+
+            double omega = EC->water_fraction(Enthnew[k], p);
 
             if (omega > 0.01) {                          // FIXME: make "0.01" configurable here
               double fractiondrained = dc.get_drainage_rate(omega) * dt; // pure number

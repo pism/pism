@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>
+#include <gsl/gsl_math.h>       // GSL_NAN
 
 #include "BedDef.hh"
 #include "pism/util/pism_utilities.hh"
@@ -71,8 +71,8 @@ void BedDef::write_model_state_impl(const PIO &output) const {
   m_topg.write(output);
 }
 
-std::map<std::string, Diagnostic::Ptr> BedDef::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result;
+DiagnosticList BedDef::diagnostics_impl() const {
+  DiagnosticList result;
   result = {
     {"dbdt", Diagnostic::wrap(m_uplift)},
     {"topg", Diagnostic::wrap(m_topg)}
@@ -108,9 +108,6 @@ void BedDef::update(const IceModelVec2S &ice_thickness, double t, double dt) {
 //! Initialize from the context (input file and the "variables" database).
 void BedDef::init_impl(const InputOptions &opts) {
   m_t_beddef_last = m_grid->ctx()->time()->start();
-
-  m_t  = GSL_NAN;
-  m_dt = GSL_NAN;
 
   switch (opts.type) {
   case INIT_RESTART:
@@ -175,11 +172,12 @@ void BedDef::apply_topg_offset(const std::string &filename) {
   m_topg.add(1.0, topg_delta);
 }
 
-//! Compute bed uplift (dt_beddef is in seconds).
-void BedDef::compute_uplift(double dt_beddef) {
-  m_topg.add(-1, m_topg_last, m_uplift);
+//! Compute bed uplift (dt is in seconds).
+void BedDef::compute_uplift(const IceModelVec2S &bed, const IceModelVec2S &bed_last,
+                            double dt, IceModelVec2S &result) {
+  bed.add(-1, bed_last, result);
   //! uplift = (topg - topg_last) / dt
-  m_uplift.scale(1.0 / dt_beddef);
+  result.scale(1.0 / dt);
 }
 
 } // end of namespace bed

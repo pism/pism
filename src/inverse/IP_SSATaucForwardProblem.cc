@@ -105,7 +105,6 @@ void IP_SSATaucForwardProblem::init() {
 
     stressbalance::Inputs inputs;
 
-    inputs.sea_level             = 0.0;
     inputs.geometry              = &geometry;
     inputs.basal_melt_rate       = NULL;
     inputs.melange_back_pressure = NULL;

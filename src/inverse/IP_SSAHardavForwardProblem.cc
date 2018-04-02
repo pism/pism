@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -93,14 +93,13 @@ void IP_SSAHardavForwardProblem::init() {
     geometry.cell_area.set(m_grid->dx() * m_grid->dy());
     geometry.ice_thickness.copy_from(*m_grid->variables().get_2d_scalar("land_ice_thickness"));
     geometry.bed_elevation.copy_from(*m_grid->variables().get_2d_scalar("bedrock_altitude"));
-    geometry.sea_level_elevation.set(0.0);
+    geometry.sea_level_elevation.set(0.0); // FIXME: this should be an input
     geometry.ice_area_specific_volume.set(0.0);
 
     geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
 
     stressbalance::Inputs inputs;
 
-    inputs.sea_level             = 0.0;
     inputs.geometry              = &geometry;
     inputs.basal_melt_rate       = NULL;
     inputs.melange_back_pressure = NULL;

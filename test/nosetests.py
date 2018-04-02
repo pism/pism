@@ -539,7 +539,6 @@ def column_interpolation_test(plot=False):
 
         def plot():
             plt.figure()
-            plt.hold(True)
             plt.plot(z, f, 'o-', label="original coarse-grid data")
             plt.plot(z_fine, f_fine, 'o-', label="interpolated onto the fine grid")
             plt.plot(z, f_roundtrip, 'o-', label="interpolated back onto the coarse grid")
@@ -958,47 +957,6 @@ def regridding_test():
 
     import os
     os.remove("thk1.nc")
-def po_constant_test():
-    """Test that the basal melt rate computed by ocean::Constant is the
-    same regardless of whether it is set using
-    ocean.sub_shelf_heat_flux_into_ice or the command-line option."""
-
-    grid = create_dummy_grid()
-    config = grid.ctx().config()
-
-    L = config.get_double("constants.fresh_water.latent_heat_of_fusion")
-    rho = config.get_double("constants.ice.density")
-
-    # prescribe a heat flux that corresponds to a mass flux which is
-    # an integer multiple of m / year so that we can easily specify it
-    # using a command-line option
-    M = PISM.convert(grid.ctx().unit_system(), 1, "m / year", "m / second")
-    Q_default = config.get_double("ocean.sub_shelf_heat_flux_into_ice")
-    Q = M * L * rho
-    config.set_double("ocean.sub_shelf_heat_flux_into_ice", Q)
-
-    # without the command-line option
-    ocean_constant = PISM.OceanConstant(grid)
-    ocean_constant.init()
-    mass_flux_1 = PISM.model.createIceThicknessVec(grid)
-    ocean_constant.shelf_base_mass_flux(mass_flux_1)
-
-    # reset Q
-    config.set_double("ocean.sub_shelf_heat_flux_into_ice", Q_default)
-
-    # with the command-line option
-    o = PISM.PETSc.Options()
-    o.setValue("-shelf_base_melt_rate", 1.0)
-
-    ocean_constant = PISM.OceanConstant(grid)
-    ocean_constant.init()
-    mass_flux_2 = PISM.model.createIceThicknessVec(grid)
-    ocean_constant.shelf_base_mass_flux(mass_flux_2)
-
-    import numpy as np
-    with PISM.vec.Access(nocomm=[mass_flux_1, mass_flux_2]):
-        assert np.fabs(mass_flux_1[0, 0] - M * rho) < 1e-16
-        assert np.fabs(mass_flux_2[0, 0] - M * rho) < 1e-16
 
 def netcdf_string_attribute_test():
     "Test reading a NetCDF-4 string attribute."

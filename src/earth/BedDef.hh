@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -49,7 +49,7 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
 
   virtual void update_impl(const IceModelVec2S &ice_thickness,
                            double my_t, double my_dt) = 0;
@@ -59,7 +59,8 @@ protected:
                               const IceModelVec2S &ice_thickness);
   virtual void apply_topg_offset(const std::string &filename);
 
-  void compute_uplift(double dt_beddef);
+  void compute_uplift(const IceModelVec2S &bed, const IceModelVec2S &bed_last,
+                            double dt, IceModelVec2S &result);
 protected:
   //! time of the last bed deformation update
   double m_t_beddef_last;

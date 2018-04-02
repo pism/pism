@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include <gsl/gsl_math.h>       // GSL_NAN
+
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
@@ -34,6 +36,7 @@ AtmosphereModel::~AtmosphereModel() {
 }
 
 void AtmosphereModel::init() {
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
   this->init_impl();
 }
 
@@ -69,8 +72,8 @@ void AtmosphereModel::temp_time_series(int i, int j, std::vector<double> &result
   this->temp_time_series_impl(i, j, result);
 }
 
-std::map<std::string, Diagnostic::Ptr> AtmosphereModel::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = {
+DiagnosticList AtmosphereModel::diagnostics_impl() const {
+  DiagnosticList result = {
     {"air_temp_snapshot",       Diagnostic::Ptr(new PA_air_temp_snapshot(this))},
     {"effective_air_temp",      Diagnostic::Ptr(new PA_air_temp(this))},
     {"effective_precipitation", Diagnostic::Ptr(new PA_precipitation(this))},

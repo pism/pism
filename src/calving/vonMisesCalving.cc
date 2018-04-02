@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -155,7 +155,7 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
   }   // end of loop over grid points
 }
 
-std::map<std::string, Diagnostic::Ptr> vonMisesCalving::diagnostics_impl() const {
+DiagnosticList vonMisesCalving::diagnostics_impl() const {
   return {{"vonmises_calving_rate",
         Diagnostic::Ptr(new CalvingRate(this, "vonmises_calving_rate",
                                         "horizontal calving rate due to von Mises calving"))}};
