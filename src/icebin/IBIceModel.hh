@@ -122,7 +122,7 @@ public:
     return dynamic_cast<IBSurfaceModel *>(m_surface.get());
   }
   pism::hydrology::NullTransport* null_hydrology() {
-    return dynamic_cast<hydrology::NullTransport *>(pism::IceModel::m_subglacial_hydrology);
+    return dynamic_cast<hydrology::NullTransport *>(pism::IceModel::m_subglacial_hydrology.get());
   }
 
 

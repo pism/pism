@@ -570,24 +570,24 @@ void IceModel::allocate_subglacial_hydrology() {
 
   std::string hydrology_model = m_config->get_string("hydrology.model");
 
-  if (m_subglacial_hydrology != NULL) { // indicates it has already been allocated
+  if (m_subglacial_hydrology) { // indicates it has already been allocated
     return;
   }
 
   m_log->message(2, "# Allocating a subglacial hydrology model...\n");
 
   if (hydrology_model == "null") {
-    m_subglacial_hydrology = new NullTransport(m_grid);
+    m_subglacial_hydrology.reset(new NullTransport(m_grid));
   } else if (hydrology_model == "routing") {
-    m_subglacial_hydrology = new Routing(m_grid);
+    m_subglacial_hydrology.reset(new Routing(m_grid));
   } else if (hydrology_model == "distributed") {
-    m_subglacial_hydrology = new Distributed(m_grid);
+    m_subglacial_hydrology.reset(new Distributed(m_grid));
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "unknown 'hydrology.model': %s", hydrology_model.c_str());
   }
 
-  m_submodels["subglacial hydrology"] = m_subglacial_hydrology;
+  m_submodels["subglacial hydrology"] = m_subglacial_hydrology.get();
 }
 
 //! \brief Decide which basal yield stress model to use.
@@ -609,7 +609,8 @@ void IceModel::allocate_basal_yield_stress() {
     if (yield_stress_model == "constant") {
       m_basal_yield_stress_model = new ConstantYieldStress(m_grid);
     } else if (yield_stress_model == "mohr_coulomb") {
-      m_basal_yield_stress_model = new MohrCoulombYieldStress(m_grid, m_subglacial_hydrology);
+      m_basal_yield_stress_model = new MohrCoulombYieldStress(m_grid,
+                                                              m_subglacial_hydrology.get());
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());

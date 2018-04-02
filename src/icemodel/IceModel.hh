@@ -37,6 +37,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <memory>
 
 // IceModel owns a bunch of fields, so we have to include this.
 #include "pism/util/iceModelVec.hh"
@@ -254,7 +255,7 @@ protected:
   //! the list of sub-models, for writing model states and obtaining diagnostics
   std::map<std::string,const Component*> m_submodels;
 
-  hydrology::Hydrology   *m_subglacial_hydrology;
+  std::unique_ptr<hydrology::Hydrology> m_subglacial_hydrology;
   YieldStress *m_basal_yield_stress_model;
 
   energy::BedThermalUnit *m_btu;

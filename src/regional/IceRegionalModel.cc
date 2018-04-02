@@ -186,7 +186,8 @@ void IceRegionalModel::allocate_basal_yield_stress() {
     if (yield_stress_model == "constant") {
       m_basal_yield_stress_model = new ConstantYieldStress(m_grid);
     } else if (yield_stress_model == "mohr_coulomb") {
-      m_basal_yield_stress_model = new RegionalDefaultYieldStress(m_grid, m_subglacial_hydrology);
+      m_basal_yield_stress_model = new RegionalDefaultYieldStress(m_grid,
+                                                                  m_subglacial_hydrology.get());
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "yield stress model '%s' is not supported.",
