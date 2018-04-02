@@ -39,9 +39,9 @@ Delta_T::~Delta_T() {
   // empty
 }
 
-void Delta_T::init_impl() {
+void Delta_T::init_impl(const Geometry &geometry) {
 
-  m_input_model->init();
+  m_input_model->init(geometry);
 
   m_log->message(2,
                  "* Initializing ice shelf base temperature forcing using scalar offsets...\n");
@@ -49,8 +49,8 @@ void Delta_T::init_impl() {
   m_forcing->init();
 }
 
-void Delta_T::update_impl(double t, double dt) {
-  m_input_model->update(t, dt);
+void Delta_T::update_impl(const Geometry &geometry, double t, double dt) {
+  m_input_model->update(geometry, t, dt);
 
   m_forcing->update(t, dt);
 

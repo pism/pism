@@ -17,8 +17,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <gsl/gsl_math.h>
-
 #include "WeatherStation.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_utilities.hh"
@@ -34,27 +32,31 @@
 namespace pism {
 namespace atmosphere {
 
-WeatherStation::WeatherStation(IceGrid::ConstPtr g)
-  : AtmosphereModel(g),
-    m_precipitation_timeseries(*g, "precipitation", m_config->get_string("time.dimension_name")),
-    m_air_temp_timeseries(*g, "air_temp", m_config->get_string("time.dimension_name"))
+WeatherStation::WeatherStation(IceGrid::ConstPtr grid)
+  : AtmosphereModel(grid),
+    m_precipitation_timeseries(*grid, "precipitation", m_config->get_string("time.dimension_name")),
+    m_air_temp_timeseries(*grid, "air_temp", m_config->get_string("time.dimension_name"))
 {
-  m_precipitation_timeseries.dimension().set_string("units", m_grid->ctx()->time()->units_string());
+  m_precipitation_timeseries.dimension().set_string("units", grid->ctx()->time()->units_string());
   m_precipitation_timeseries.variable().set_string("units", "kg m-2 second-1");
   m_precipitation_timeseries.variable().set_string("long_name",
                                         "ice-equivalent precipitation rate");
 
-  m_air_temp_timeseries.dimension().set_string("units", m_grid->ctx()->time()->units_string());
+  m_air_temp_timeseries.dimension().set_string("units", grid->ctx()->time()->units_string());
   m_air_temp_timeseries.variable().set_string("units", "Kelvin");
   m_air_temp_timeseries.variable().set_string("long_name",
                                           "near-surface air temperature");
+
+  m_precipitation = allocate_precipitation(grid);
+  m_temperature   = allocate_temperature(grid);
 }
 
 WeatherStation::~WeatherStation() {
   // empty
 }
 
-void WeatherStation::init_impl() {
+void WeatherStation::init_impl(const Geometry &geometry) {
+  (void) geometry;
 
   m_log->message(2,
              "* Initializing the constant-in-space atmosphere model\n"
@@ -87,25 +89,23 @@ MaxTimestep WeatherStation::max_timestep_impl(double t) const {
   return MaxTimestep("atmosphere weather_station");
 }
 
-void WeatherStation::update_impl(double t, double dt) {
-  m_t = t;
-  m_dt = dt;
+void WeatherStation::update_impl(const Geometry &geometry, double t, double dt) {
+  (void) geometry;
+
+  double one_week = 7 * 24 * 60 * 60;
+  unsigned int N = (unsigned int)(ceil(dt / one_week)); // one point per week
+
+  m_precipitation->set(m_precipitation_timeseries.average(t, dt, N));
+
+  m_temperature->set(m_air_temp_timeseries.average(t, dt, N));
 }
 
-void WeatherStation::mean_precipitation_impl(IceModelVec2S &result) const {
-  const double one_week = 7 * 24 * 60 * 60;
-
-  unsigned int N = (unsigned int)(ceil(m_dt / one_week)); // one point per week
-
-  result.set(m_precipitation_timeseries.average(m_t, m_dt, N));
+const IceModelVec2S& WeatherStation::mean_precipitation_impl() const {
+  return *m_precipitation;
 }
 
-void WeatherStation::mean_annual_temp_impl(IceModelVec2S &result) const {
-  const double one_week = 7 * 24 * 60 * 60;
-
-  unsigned int N = (unsigned int)(ceil(m_dt / one_week)); // one point per week
-
-  result.set(m_air_temp_timeseries.average(m_t, m_dt, N));
+const IceModelVec2S& WeatherStation::mean_annual_temp_impl() const {
+  return *m_temperature;
 }
 
 void WeatherStation::begin_pointwise_access_impl() const {

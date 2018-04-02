@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,10 +23,8 @@
 #include <memory>
 using std::dynamic_pointer_cast;
 
-#include <gsl/gsl_math.h>
 #include <petscdmda.h>
 
-#include "pism/util/io/PIO.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
 #include "ConfigInterface.hh"

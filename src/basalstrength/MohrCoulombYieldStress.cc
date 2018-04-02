@@ -18,7 +18,6 @@
 
 #include <cmath>
 #include <cassert>
-#include <gsl/gsl_math.h>
 
 #include "MohrCoulombYieldStress.hh"
 

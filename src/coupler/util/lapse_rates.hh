@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -15,35 +15,20 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ */
 
-#ifndef _PS_EISMINTII_H_
-#define _PS_EISMINTII_H_
-
-#include "Formulas.hh"
+#ifndef LAPSE_RATES_H
+#define LAPSE_RATES_H
 
 namespace pism {
-namespace surface {
 
-/** EISMINT II climate inputs.
- *
- * This class should be removed together with the pisms executable
- * (once I get to that).
- */
-class EISMINTII : public PSFormulas {
-public:
-  EISMINTII(IceGrid::ConstPtr g, int experiment);
-  ~EISMINTII();
-protected:
-  void init_impl(const Geometry &geometry);
-  virtual MaxTimestep max_timestep_impl(double t) const;
-  void update_impl(const Geometry &geometry, double t, double dt);
-  void initialize_using_formulas();
-  int m_experiment;
-  double m_M_max, m_R_el, m_S_T, m_S_b, m_T_min;
-};
+class IceModelVec2S;
 
-} // end of namespace surface
+void lapse_rate_correction(const IceModelVec2S &surface,
+                           const IceModelVec2S &reference_surface,
+                           double lapse_rate,
+                           IceModelVec2S &result);
+
 } // end of namespace pism
 
-#endif /* _PS_EISMINTII_H_ */
+#endif /* LAPSE_RATES_H */

@@ -67,10 +67,67 @@ netcdf pism_config {
     pism_config:atmosphere.fausto_air_temp.summer_peak_day_type = "integer";
     pism_config:atmosphere.fausto_air_temp.summer_peak_day_units = "ordinal day number";
 
+    pism_config:atmosphere.given.file = "";
+    pism_config:atmosphere.given.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:atmosphere.given.file_type = "string";
+    pism_config:atmosphere.given.file_option = "atmosphere_given_file";
+
+    pism_config:atmosphere.given.period = 0;
+    pism_config:atmosphere.given.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:atmosphere.given.period_type = "integer";
+    pism_config:atmosphere.given.period_option = "atmosphere_given_period";
+    pism_config:atmosphere.given.period_units = "years";
+
+    pism_config:atmosphere.given.reference_year = 0;
+    pism_config:atmosphere.given.reference_year_doc = "Reference year to use when ``atmosphere.given.period`` is active.";
+    pism_config:atmosphere.given.reference_year_option = "atmosphere_given_reference_year";
+    pism_config:atmosphere.given.reference_year_type = "integer";
+    pism_config:atmosphere.given.reference_year_units = "years";
+
+    pism_config:atmosphere.anomaly.file = "";
+    pism_config:atmosphere.anomaly.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:atmosphere.anomaly.file_type = "string";
+    pism_config:atmosphere.anomaly.file_option = "atmosphere_anomaly_file";
+
+    pism_config:atmosphere.anomaly.period = 0;
+    pism_config:atmosphere.anomaly.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:atmosphere.anomaly.period_type = "integer";
+    pism_config:atmosphere.anomaly.period_option = "atmosphere_anomaly_period";
+    pism_config:atmosphere.anomaly.period_units = "years";
+
+    pism_config:atmosphere.anomaly.reference_year = 0;
+    pism_config:atmosphere.anomaly.reference_year_doc = "Reference year to use when ``atmosphere.anomaly.period`` is active.";
+    pism_config:atmosphere.anomaly.reference_year_option = "atmosphere_anomaly_reference_year";
+    pism_config:atmosphere.anomaly.reference_year_type = "integer";
+    pism_config:atmosphere.anomaly.reference_year_units = "years";
+
+    pism_config:atmosphere.lapse_rate.file = "";
+    pism_config:atmosphere.lapse_rate.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
+    pism_config:atmosphere.lapse_rate.file_type = "string";
+    pism_config:atmosphere.lapse_rate.file_option = "atmosphere_lapse_rate_file";
+
+    pism_config:atmosphere.lapse_rate.period = 0;
+    pism_config:atmosphere.lapse_rate.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:atmosphere.lapse_rate.period_type = "integer";
+    pism_config:atmosphere.lapse_rate.period_option = "atmosphere_lapse_rate_period";
+    pism_config:atmosphere.lapse_rate.period_units = "years";
+
+    pism_config:atmosphere.lapse_rate.reference_year = 0;
+    pism_config:atmosphere.lapse_rate.reference_year_doc = "Reference year to use when ``atmosphere.lapse_rate.period`` is active.";
+    pism_config:atmosphere.lapse_rate.reference_year_option = "atmosphere_lapse_rate_reference_year";
+    pism_config:atmosphere.lapse_rate.reference_year_type = "integer";
+    pism_config:atmosphere.lapse_rate.reference_year_units = "years";
+
     pism_config:atmosphere.precip_exponential_factor_for_temperature = 0.07041666667;
     pism_config:atmosphere.precip_exponential_factor_for_temperature_doc = "= 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`";
     pism_config:atmosphere.precip_exponential_factor_for_temperature_type = "scalar";
     pism_config:atmosphere.precip_exponential_factor_for_temperature_units = "Kelvin-1";
+
+    pism_config:atmosphere.lapse_rate.precipitation_lapse_rate = 0.0;
+    pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_doc = "Elevation lapse rate for the surface mass balance";
+    pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_type = "scalar";
+    pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_units = "(m / year) / km";
+    pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_option = "precip_lapse_rate";
 
     pism_config:basal_resistance.beta_ice_free_bedrock = 1.8e9;
     pism_config:basal_resistance.beta_ice_free_bedrock_doc = "value is for ice stream E from :cite:`HulbeMacAyeal`; thus sliding velocity, but we hope it doesn't matter much; at 100 m/year the linear sliding law gives 57040 Pa basal shear stress";
@@ -994,6 +1051,40 @@ netcdf pism_config {
     pism_config:inverse.tikhonov.rtol_type = "scalar";
     pism_config:inverse.tikhonov.rtol_units = "1";
 
+    pism_config:ocean.given.file = "";
+    pism_config:ocean.given.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:ocean.given.file_type = "string";
+    pism_config:ocean.given.file_option = "ocean_given_file";
+
+    pism_config:ocean.given.period = 0;
+    pism_config:ocean.given.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:ocean.given.period_type = "integer";
+    pism_config:ocean.given.period_option = "ocean_given_period";
+    pism_config:ocean.given.period_units = "years";
+
+    pism_config:ocean.given.reference_year = 0;
+    pism_config:ocean.given.reference_year_doc = "Reference year to use when ``ocean.given.period`` is active.";
+    pism_config:ocean.given.reference_year_option = "ocean_given_reference_year";
+    pism_config:ocean.given.reference_year_type = "integer";
+    pism_config:ocean.given.reference_year_units = "years";
+
+    pism_config:ocean.th.file = "";
+    pism_config:ocean.th.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:ocean.th.file_type = "string";
+    pism_config:ocean.th.file_option = "ocean_th_file";
+
+    pism_config:ocean.th.period = 0;
+    pism_config:ocean.th.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:ocean.th.period_type = "integer";
+    pism_config:ocean.th.period_option = "ocean_th_period";
+    pism_config:ocean.th.period_units = "years";
+
+    pism_config:ocean.th.reference_year = 0;
+    pism_config:ocean.th.reference_year_doc = "Reference year to use when ``ocean.th.period`` is active.";
+    pism_config:ocean.th.reference_year_option = "ocean_th_reference_year";
+    pism_config:ocean.th.reference_year_type = "integer";
+    pism_config:ocean.th.reference_year_units = "years";
+
     pism_config:ocean.always_grounded = "no";
     pism_config:ocean.always_grounded_doc = "Dry (ocean-less) simulation; ice is considered grounded regardless of ice thickness, bed elevation, and sea level.";
     pism_config:ocean.always_grounded_option = "dry";
@@ -1353,20 +1444,33 @@ netcdf pism_config {
     pism_config:stress_balance.vertical_velocity_approximation_option = "vertical_velocity_approximation";
     pism_config:stress_balance.vertical_velocity_approximation_type = "keyword";
 
+    pism_config:surface.cache.update_interval = 10;
+    pism_config:surface.cache.update_interval_doc = "Update interval (in years) for the `-surface cache` modifier.";
+    pism_config:surface.cache.update_interval_type = "integer";
+    pism_config:surface.cache.update_interval_units = "year";
+
+    pism_config:surface.force_to_thickness_file = "";
+    pism_config:surface.force_to_thickness_file_option = "force_to_thickness_file";
+    pism_config:surface.force_to_thickness_file_doc = "The name of the file to read the target ice thickness from.";
+    pism_config:surface.force_to_thickness_file_type = "string";
+
     pism_config:surface.force_to_thickness.alpha = 0.01;
     pism_config:surface.force_to_thickness.alpha_doc = "exponential coefficient in force-to-thickness mechanism";
     pism_config:surface.force_to_thickness.alpha_type = "scalar";
     pism_config:surface.force_to_thickness.alpha_units = "year-1";
+    pism_config:surface.force_to_thickness.alpha_option = "force_to_thickness_alpha";
 
     pism_config:surface.force_to_thickness.ice_free_alpha_factor = 1.0;
     pism_config:surface.force_to_thickness.ice_free_alpha_factor_doc = "surface.force_to_thickness.alpha is multiplied by this factor in areas that are ice-free according to the target ice thickness and surface.force_to_thickness.ice_free_thickness_threshold";
     pism_config:surface.force_to_thickness.ice_free_alpha_factor_type = "scalar";
     pism_config:surface.force_to_thickness.ice_free_alpha_factor_units = "1";
+    pism_config:surface.force_to_thickness.ice_free_alpha_factor_option = "force_to_thickness_ice_free_alpha_factor";
 
     pism_config:surface.force_to_thickness.ice_free_thickness_threshold = 1.0;
     pism_config:surface.force_to_thickness.ice_free_thickness_threshold_doc = "threshold of ice thickness in the force-to-thickness target field. Used to determine whether to use surface.force_to_thickness.ice_free_alpha_factor.";
     pism_config:surface.force_to_thickness.ice_free_thickness_threshold_type = "scalar";
     pism_config:surface.force_to_thickness.ice_free_thickness_threshold_units = "meters";
+    pism_config:surface.force_to_thickness.ice_free_thickness_threshold_option = "force_to_thickness_ice_free_thickness_threshold";
 
     pism_config:surface.force_to_thickness.start_time = -4.54e9;
     pism_config:surface.force_to_thickness.start_time_doc = "Starting time for the \"force to thickness\" modifier; the default is \"start from the creation of the Earth.\"";
@@ -1377,6 +1481,63 @@ netcdf pism_config {
     pism_config:surface.given.smb_max_doc = "Maximum climatic mass balance value (used to check input data). Corresponds to 100 m/year ice equivalent.";
     pism_config:surface.given.smb_max_type = "scalar";
     pism_config:surface.given.smb_max_units = "kg m-2 year-1";
+
+    pism_config:surface.given.file = "";
+    pism_config:surface.given.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:surface.given.file_type = "string";
+    pism_config:surface.given.file_option = "surface_given_file";
+
+    pism_config:surface.given.period = 0;
+    pism_config:surface.given.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:surface.given.period_type = "integer";
+    pism_config:surface.given.period_option = "surface_given_period";
+    pism_config:surface.given.period_units = "years";
+
+    pism_config:surface.given.reference_year = 0;
+    pism_config:surface.given.reference_year_doc = "Reference year to use when ``surface.given.period`` is active.";
+    pism_config:surface.given.reference_year_option = "surface_given_reference_year";
+    pism_config:surface.given.reference_year_type = "integer";
+    pism_config:surface.given.reference_year_units = "years";
+
+    pism_config:surface.lapse_rate.file = "";
+    pism_config:surface.lapse_rate.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
+    pism_config:surface.lapse_rate.file_type = "string";
+    pism_config:surface.lapse_rate.file_option = "surface_lapse_rate_file";
+
+    pism_config:surface.lapse_rate.period = 0;
+    pism_config:surface.lapse_rate.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:surface.lapse_rate.period_type = "integer";
+    pism_config:surface.lapse_rate.period_option = "surface_lapse_rate_period";
+    pism_config:surface.lapse_rate.period_units = "years";
+
+    pism_config:surface.lapse_rate.reference_year = 0;
+    pism_config:surface.lapse_rate.reference_year_doc = "Reference year to use when ``surface.lapse_rate.period`` is active.";
+    pism_config:surface.lapse_rate.reference_year_option = "surface_lapse_rate_reference_year";
+    pism_config:surface.lapse_rate.reference_year_type = "integer";
+    pism_config:surface.lapse_rate.reference_year_units = "years";
+
+    pism_config:surface.anomaly.file = "";
+    pism_config:surface.anomaly.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:surface.anomaly.file_type = "string";
+    pism_config:surface.anomaly.file_option = "surface_anomaly_file";
+
+    pism_config:surface.anomaly.period = 0;
+    pism_config:surface.anomaly.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:surface.anomaly.period_type = "integer";
+    pism_config:surface.anomaly.period_option = "surface_anomaly_period";
+    pism_config:surface.anomaly.period_units = "years";
+
+    pism_config:surface.anomaly.reference_year = 0;
+    pism_config:surface.anomaly.reference_year_doc = "Reference year to use when ``surface.anomaly.period`` is active.";
+    pism_config:surface.anomaly.reference_year_option = "surface_anomaly_reference_year";
+    pism_config:surface.anomaly.reference_year_type = "integer";
+    pism_config:surface.anomaly.reference_year_units = "years";
+
+    pism_config:surface.pdd.method = "expectation_integral";
+    pism_config:surface.pdd.method_choices = "expectation_integral,repeatable_random_process,random_process";
+    pism_config:surface.pdd.method_doc = "PDD implementation method";
+    pism_config:surface.pdd.method_option = "pdd_method";
+    pism_config:surface.pdd.method_type = "keyword";
 
     pism_config:surface.pdd.air_temp_all_precip_as_rain = 275.15;
     pism_config:surface.pdd.air_temp_all_precip_as_rain_doc = "threshold temperature above which all precipitation is rain; must exceed surface.pdd.air_temp_all_precip_as_snow to avoid division by zero, because difference is in a denominator";

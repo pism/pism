@@ -403,20 +403,14 @@ stressbalance::Inputs IceModel::stress_balance_inputs() {
 energy::Inputs IceModel::energy_model_inputs() {
   energy::Inputs result;
 
-  IceModelVec2S &ice_surface_temperature           = m_work2d[0];
-  IceModelVec2S &ice_surface_liquid_water_fraction = m_work2d[1];
-
-  m_surface->temperature(ice_surface_temperature);
-  m_surface->liquid_water_fraction(ice_surface_liquid_water_fraction);
-
   result.basal_frictional_heating = &m_stress_balance->basal_frictional_heating();
   result.basal_heat_flux          = &m_btu->flux_through_top_surface(); // bedrock thermal layer
   result.cell_type                = &m_geometry.cell_type;              // geometry
   result.ice_thickness            = &m_geometry.ice_thickness;          // geometry
   result.shelf_base_temp          = &m_ocean->shelf_base_temperature(); // ocean model
-  result.surface_liquid_fraction  = &ice_surface_liquid_water_fraction; // surface model
-  result.surface_temp             = &ice_surface_temperature;           // surface model
   result.till_water_thickness     = &m_subglacial_hydrology->till_water_thickness();
+  result.surface_liquid_fraction  = &m_surface->liquid_water_fraction(); // surface model
+  result.surface_temp             = &m_surface->temperature();           // surface model
 
   result.strain_heating3          = &m_stress_balance->volumetric_strain_heating();
   result.u3                       = &m_stress_balance->velocity_u();
@@ -624,7 +618,7 @@ void IceModel::step(bool do_mass_continuity,
   }
 
   profiling.begin("ocean");
-  m_ocean->update(current_time, m_dt);
+  m_ocean->update(m_geometry, current_time, m_dt);
   profiling.end("ocean");
 
   // The sea level elevation might have changed, so we need to update the mask, etc. Note
@@ -633,7 +627,7 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li Update surface and ocean models.
   profiling.begin("surface");
-  m_surface->update(current_time, m_dt);
+  m_surface->update(m_geometry, current_time, m_dt);
   profiling.end("surface");
 
   // Combine basal melt rate in grounded (computed during the energy
@@ -650,12 +644,9 @@ void IceModel::step(bool do_mass_continuity,
   if (do_mass_continuity) {
     // compute and apply effective surface and basal mass balance
 
-    IceModelVec2S &surface_mass_flux = m_work2d[0];
-    m_surface->mass_flux(surface_mass_flux);
-
     m_geometry_evolution->source_term_step(m_geometry, m_dt,
                                            thickness_bc_mask,
-                                           surface_mass_flux,
+                                           m_surface->mass_flux(),
                                            m_basal_melt_rate);
     m_geometry_evolution->apply_mass_fluxes(m_geometry);
 

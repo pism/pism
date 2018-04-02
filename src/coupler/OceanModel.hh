@@ -25,7 +25,9 @@
 #include "pism/util/Component.hh"
 
 namespace pism {
+
 class IceModelVec2S;
+class Geometry;
 
 //! @brief Ocean models and modifiers: provide sea level elevation,
 //! melange back pressure, shelf base mass flux and shelf base
@@ -41,9 +43,9 @@ public:
 
   virtual ~OceanModel();
 
-  void init();
+  void init(const Geometry &geometry);
 
-  void update(double t, double dt);
+  void update(const Geometry &geometry, double t, double dt);
 
   const IceModelVec2S& sea_level_elevation() const;
 
@@ -52,10 +54,12 @@ public:
   const IceModelVec2S& melange_back_pressure_fraction() const;
 
 protected:
-  virtual void init_impl() = 0;
+  virtual void init_impl(const Geometry &geometry);
   // provides default (pass-through) implementations for "modifiers"
-  virtual void update_impl(double t, double dt);
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
   virtual MaxTimestep max_timestep_impl(double t) const;
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;
@@ -73,8 +77,6 @@ protected:
   static IceModelVec2S::Ptr allocate_shelf_base_temperature(IceGrid::ConstPtr g);
   static IceModelVec2S::Ptr allocate_shelf_base_mass_flux(IceGrid::ConstPtr g);
   static IceModelVec2S::Ptr allocate_melange_back_pressure(IceGrid::ConstPtr g);
-
-  double m_t, m_dt;             // these are used by the Modifier template, but should be removed
 };
 
 } // end of namespace ocean

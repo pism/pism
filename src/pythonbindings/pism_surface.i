@@ -14,13 +14,6 @@
 %shared_ptr(pism::surface::SurfaceModel)
 %include "coupler/SurfaceModel.hh"
 
-%include "util/Modifier.hh"
-%shared_ptr(pism::Modifier< pism::surface::SurfaceModel >)
-%template(_SurfaceMod) pism::Modifier<pism::surface::SurfaceModel>;
-
-%shared_ptr(pism::surface::SurfaceModifier)
-%include "coupler/surface/Modifier.hh"
-
 %shared_ptr(pism::surface::Delta_T)
 %rename(SurfaceDeltaT) pism::surface::Delta_T;
 %include "coupler/surface/Delta_T.hh"
@@ -41,11 +34,6 @@
 %rename(SurfaceCache) pism::surface::Cache;
 %include "coupler/surface/Cache.hh"
 
-%include "coupler/util/PGivenClimate.hh"
-%shared_ptr(pism::PGivenClimate< pism::surface::SurfaceModifier,pism::surface::SurfaceModel >)
-
-%template(_SurfaceGivenClimate) pism::PGivenClimate<pism::surface::SurfaceModifier,pism::surface::SurfaceModel >;
-
 %shared_ptr(pism::surface::Anomaly)
 %rename(SurfaceAnomaly) pism::surface::Anomaly;
 %include "coupler/surface/Anomaly.hh"
@@ -57,10 +45,6 @@
 %shared_ptr(pism::surface::Elevation)
 %rename(SurfaceElevation) pism::surface::Elevation;
 %include "coupler/surface/Elevation.hh"
-
-%include "coupler/util/PLapseRates.hh"
-%shared_ptr(pism::PLapseRates< pism::surface::SurfaceModel,pism::surface::SurfaceModifier >)
-%template(_SurfaceLapseRates) pism::PLapseRates< pism::surface::SurfaceModel,pism::surface::SurfaceModifier >;
 
 %shared_ptr(pism::surface::LapseRates)
 %rename(SurfaceLapseRates) pism::surface::LapseRates;

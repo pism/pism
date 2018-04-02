@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -15,40 +15,31 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ */
 
-#ifndef _FRAC_MBP_H_
-#define _FRAC_MBP_H_
+#include <cmath>                // fabs
 
-#include "pism/coupler/OceanModel.hh"
+#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 
-class ScalarForcing;
+void lapse_rate_correction(const IceModelVec2S &surface,
+                           const IceModelVec2S &reference_surface,
+                           double lapse_rate,
+                           IceModelVec2S &result) {
+  IceGrid::ConstPtr grid = result.grid();
 
-namespace ocean {
+  if (fabs(lapse_rate) < 1e-12) {
+    return;
+  }
 
-/**
- * Scalar melange back-pressure fraction forcing.
- * 
- */
-class Frac_MBP : public OceanModel
-{
-public:
-  Frac_MBP(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
-  virtual ~Frac_MBP();
+  IceModelVec::AccessList list{&surface, &reference_surface, &result};
 
-private:
-  void init_impl(const Geometry &geometry);
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-  void update_impl(const Geometry &geometry, double t, double dt);
+    result(i, j) -= lapse_rate * (surface(i,j) - reference_surface(i, j));
+  }
+}
 
-  const IceModelVec2S& melange_back_pressure_fraction_impl() const;
-
-  std::unique_ptr<ScalarForcing> m_forcing;
-};
-
-} // end of namespace ocean
 } // end of namespace pism
-
-#endif /* _FRAC_MBP_H_ */

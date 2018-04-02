@@ -16,8 +16,6 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>
-
 #include "ConstantPIK.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Vars.hh"
@@ -25,6 +23,7 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -34,7 +33,8 @@ PIK::PIK(IceGrid::ConstPtr g)
 
   m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
   m_precipitation.set_attrs("model_state", "precipitation rate",
-                                "kg m-2 second-1", "", 0);
+                            "kg m-2 second-1",
+                            "precipitation_flux", 0);
   m_precipitation.metadata(0).set_string("glaciological_units", "kg m-2 year-1");
   m_precipitation.set_time_independent(true);
 
@@ -44,12 +44,12 @@ PIK::PIK(IceGrid::ConstPtr g)
   m_air_temp.set_time_independent(true);
 }
 
-void PIK::mean_precipitation_impl(IceModelVec2S &result) const {
-  result.copy_from(m_precipitation);
+const IceModelVec2S& PIK::mean_precipitation_impl() const {
+  return m_precipitation;
 }
 
-void PIK::mean_annual_temp_impl(IceModelVec2S &result) const {
-  result.copy_from(m_air_temp);
+const IceModelVec2S& PIK::mean_annual_temp_impl() const {
+  return m_air_temp;
 }
 
 void PIK::begin_pointwise_access_impl() const {
@@ -74,7 +74,6 @@ void PIK::precip_time_series_impl(int i, int j, std::vector<double> &result) con
   }
 }
 
-
 void PIK::define_model_state_impl(const PIO &output) const {
   m_precipitation.define(output);
 }
@@ -83,19 +82,21 @@ void PIK::write_model_state_impl(const PIO &output) const {
   m_precipitation.write(output);
 }
 
-void PIK::init_impl() {
+void PIK::init_impl(const Geometry &geometry) {
+  (void) geometry;
+
   m_log->message(2,
-             "* Initializing the constant-in-time atmosphere model PIK.\n"
-             "  It reads a precipitation field directly from the file and holds it constant.\n"
-             "  Near-surface air temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n");
+                 "* Initializing the constant-in-time atmosphere model PIK.\n"
+                 "  It reads a precipitation field directly from the file and holds it constant.\n"
+                 "  Near-surface air temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n");
 
   InputOptions opts = process_input_options(m_grid->com, m_config);
 
   // read snow precipitation rate and air_temps from file
   m_log->message(2,
-             "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
-             "    from %s ... \n",
-             opts.filename.c_str());
+                 "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
+                 "    from %s ... \n",
+                 opts.filename.c_str());
   if (opts.type == INIT_BOOTSTRAP) {
     m_precipitation.regrid(opts.filename, CRITICAL);
   } else {
@@ -108,13 +109,13 @@ MaxTimestep PIK::max_timestep_impl(double t) const {
   return MaxTimestep("atmosphere PIK");
 }
 
-void PIK::update_impl(double, double) {
+void PIK::update_impl(const Geometry &geometry, double, double) {
   // Compute near-surface air temperature using a latitude- and
   // elevation-dependent parameterization:
 
   const IceModelVec2S
-    &elevation = *m_grid->variables().get_2d_scalar("surface_altitude"),
-    &latitude  = *m_grid->variables().get_2d_scalar("latitude");
+    &elevation = geometry.ice_surface_elevation,
+    &latitude  = geometry.latitude;
 
   IceModelVec::AccessList list{&m_air_temp, &elevation, &latitude};
   for (Points p(*m_grid); p; p.next()) {

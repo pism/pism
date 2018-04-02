@@ -434,7 +434,7 @@ The caching modifier
 :|seealso|: :ref:`sec-ocean-cache`
     
 This modifier skips surface model updates, so that a surface model is called no more than
-every :opt:`-surface_cache_update_interval` years. A time-step of `1` year is used every
+every :opt:`-surface.cache.update_interval` years. A time-step of `1` year is used every
 time a surface model is updated.
 
 This is useful in cases when inter-annual climate variability is important, but one year
@@ -442,7 +442,7 @@ differs little from the next. (Coarse-grid paleo-climate runs, for example.)
 
 It takes the following options:
 
-- :opt:`-surface_cache_update_interval` (*years*) Specifies the minimum interval between
+- :opt:`-surface.cache.update_interval` (*years*) Specifies the minimum interval between
   updates. PISM may take longer time-steps if the adaptive scheme allows it, though.
 
 .. rubric:: Footnotes
