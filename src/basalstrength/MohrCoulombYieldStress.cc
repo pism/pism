@@ -132,9 +132,9 @@ void MohrCoulombYieldStress::init_impl() {
 
   InputOptions opts = process_input_options(m_grid->com, m_config);
 
-  if (options::Bool("-topg_to_phi", "compute tillphi as a function of bed elevation")) {
+  if (m_config->get_boolean("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled")) {
 
-    m_log->message(2, "  option -topg_to_phi seen; creating tillphi map from bed elevation...\n");
+    m_log->message(2, "  creating till friction angle map from bed elevation...\n");
 
     if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
 
@@ -318,32 +318,16 @@ The default values are vaguely suitable for Antarctica.  See src/pism_config.cdl
 */
 void MohrCoulombYieldStress::topg_to_phi(const IceModelVec2S &bed_topography) {
 
-  options::RealList option("-topg_to_phi",
-                           "Turn on, and specify, the till friction angle parameterization"
-                           " based on bedrock elevation (topg)");
-
-  if (not option.is_set()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "-topg_to_phi is not set");
-  }
-
-  if (option->size() != 4) {
+  if (not m_config->get_boolean("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled")) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "invalid -topg_to_phi arguments: has to be a list"
-                                  " of 4 numbers, got %d", (int)option->size());
+                                  "basal_yield_stress.mohr_coulomb.topg_to_phi.enabled is not set");
   }
 
   const double
-    phi_min  = option[0],
-    phi_max  = option[1],
-    topg_min = option[2],
-    topg_max = option[3];
-
-  // FIXME: these parameters aren't actually used
-  // const double
-  //   phi_min  = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
-  //   phi_max  = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max"),
-  //   topg_min = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min"),
-  //   topg_max = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max");
+    phi_min  = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
+    phi_max  = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max"),
+    topg_min = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min"),
+    topg_max = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max");
 
   m_log->message(2,
                  "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"

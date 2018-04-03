@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2017 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2011-2018 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -82,10 +82,10 @@ void IceModel::update_fracture_density() {
   // 165-176, DOI: 10.3189/2012JoG11J191.
 
   double gamma = 1.0, initThreshold = 7.0e4, gammaheal = 0.0, healThreshold = 2.0e-10;
-
-  options::RealList fractures("-fracture_parameters", "gamma, initThreshold, gammaheal, healThreshold");
-
-  if (fractures.is_set()) {
+  {
+    options::RealList fractures("-fracture_parameters",
+                                "gamma, initThreshold, gammaheal, healThreshold",
+                                {gamma, initThreshold, gammaheal, healThreshold});
     if (fractures->size() != 4) {
       throw RuntimeError(PISM_ERROR_LOCATION, "option -fracture_parameters requires exactly 4 arguments");
     }

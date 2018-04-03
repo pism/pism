@@ -55,54 +55,40 @@ void Elevation::init_impl(const Geometry &geometry) {
   {
     // ice surface temperature
     {
-      // set defaults:
-      m_T_min   = K(-5.0);
-      m_T_max   = K(0.0);
-      m_z_T_min = 1325.0;
-      m_z_T_max = 1350.0;
+      options::RealList IST("-ice_surface_temp", "ice surface temperature parameterization",
+                            {-5.0, 0.0, 1325.0, 1350.0});
 
-      options::RealList IST("-ice_surface_temp", "ice surface temperature parameterization");
-      if (IST.is_set()) {
-        if (IST->size() != 4) {
-          throw RuntimeError(PISM_ERROR_LOCATION, "option -ice_surface_temp requires an argument"
-                             " (comma-separated list of 4 numbers)");
-        }
-        m_T_min   = K(IST[0]);
-        m_T_max   = K(IST[1]);
-        m_z_T_min = IST[2];
-        m_z_T_max = IST[3];
+      if (IST->size() != 4) {
+        throw RuntimeError(PISM_ERROR_LOCATION, "option -ice_surface_temp requires an argument"
+                           " (comma-separated list of 4 numbers)");
       }
+      m_T_min   = K(IST[0]);
+      m_T_max   = K(IST[1]);
+      m_z_T_min = IST[2];
+      m_z_T_max = IST[3];
     }
 
     // climatic mass balance
     units::Converter meter_per_second(m_sys, "m year-1", "m second-1");
     {
-      // set defaults:
-      m_M_min   = meter_per_second(-3.0);
-      m_M_max   = meter_per_second(4.0);
-      m_z_M_min = 1100.0;
-      m_z_ELA   = 1450.0;
-      m_z_M_max = 1700.0;
-
       options::RealList CMB("-climatic_mass_balance",
-                            "climatic mass balance parameterization");
-      if (CMB.is_set()) {
-        if (CMB->size() != 5) {
-          throw RuntimeError(PISM_ERROR_LOCATION, "-climatic_mass_balance requires an argument"
-                             " (comma-separated list of 5 numbers)");
-        }
-        m_M_min   = meter_per_second(CMB[0]);
-        m_M_max   = meter_per_second(CMB[1]);
-        m_z_M_min = CMB[2];
-        m_z_ELA   = CMB[3];
-        m_z_M_max = CMB[4];
+                            "climatic mass balance parameterization",
+                            {-3.0, 4.0, 1100.0, 1450.0, 1700.0});
+      if (CMB->size() != 5) {
+        throw RuntimeError(PISM_ERROR_LOCATION, "-climatic_mass_balance requires an argument"
+                           " (comma-separated list of 5 numbers)");
       }
+      m_M_min   = meter_per_second(CMB[0]);
+      m_M_max   = meter_per_second(CMB[1]);
+      m_z_M_min = CMB[2];
+      m_z_ELA   = CMB[3];
+      m_z_M_max = CMB[4];
     }
 
     // limits of the climatic mass balance
     {
       options::RealList limits("-climatic_mass_balance_limits",
-                               "lower and upper limits of the climatic mass balance");
+                               "lower and upper limits of the climatic mass balance", {});
       limits_set = limits.is_set();
       if (limits.is_set()) {
         if (limits->size() != 2) {
