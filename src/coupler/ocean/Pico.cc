@@ -106,10 +106,11 @@ Pico::Pico(IceGrid::ConstPtr g)
 
   m_shelf_base_temperature->metadata().set_double("_FillValue", 0.0);
 
-  // Initialize this early so that we can check the validity of the "basins" mask read from a file
-  // in Pico::init_impl(). This number is hard-wired, so I don't think it matters that it did not
-  // come from Pico::Constants.
-  m_n_basins = 20;
+  // Initialize this early so that we can check the validity of the "basins" mask read
+  // from a file in Pico::init_impl().
+  m_n_basins = m_config->get_double("ocean.pico.number_of_basins");
+
+  m_n_boxes  = m_config->get_double("ocean.pico.number_of_boxes");
 }
 
 
@@ -132,9 +133,6 @@ void Pico::init_impl() {
   m_log->message(4, "PICO basin min=%f,max=%f\n", m_basin_mask.min(), m_basin_mask.max());
 
   PicoPhysics physics(*m_config);
-
-  m_n_basins = m_config->get_double("ocean.pico.number_of_basins");
-  m_n_boxes  = m_config->get_double("ocean.pico.number_of_boxes");
 
   m_log->message(2, "  -Using %d drainage basins and values: \n"
                     "   gamma_T= %.2e, overturning_coeff = %.2e... \n",
