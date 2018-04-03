@@ -256,7 +256,7 @@ protected:
   std::map<std::string,const Component*> m_submodels;
 
   std::unique_ptr<hydrology::Hydrology> m_subglacial_hydrology;
-  YieldStress *m_basal_yield_stress_model;
+  std::unique_ptr<YieldStress> m_basal_yield_stress_model;
 
   energy::BedThermalUnit *m_btu;
   energy::EnergyModel *m_energy_model;

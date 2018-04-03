@@ -141,8 +141,6 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   signal(SIGUSR1, pism_signal_handler);
   signal(SIGUSR2, pism_signal_handler);
 
-  m_basal_yield_stress_model = NULL;
-
   m_surface = NULL;
   m_ocean   = NULL;
   m_beddef  = NULL;
@@ -204,7 +202,6 @@ IceModel::~IceModel() {
 
   delete m_beddef;
 
-  delete m_basal_yield_stress_model;
   delete m_btu;
   delete m_energy_model;
 

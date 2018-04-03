@@ -593,7 +593,7 @@ void IceModel::allocate_subglacial_hydrology() {
 //! \brief Decide which basal yield stress model to use.
 void IceModel::allocate_basal_yield_stress() {
 
-  if (m_basal_yield_stress_model != NULL) {
+  if (m_basal_yield_stress_model) {
     return;
   }
 
@@ -607,16 +607,16 @@ void IceModel::allocate_basal_yield_stress() {
     std::string yield_stress_model = m_config->get_string("basal_yield_stress.model");
 
     if (yield_stress_model == "constant") {
-      m_basal_yield_stress_model = new ConstantYieldStress(m_grid);
+      m_basal_yield_stress_model.reset(new ConstantYieldStress(m_grid));
     } else if (yield_stress_model == "mohr_coulomb") {
-      m_basal_yield_stress_model = new MohrCoulombYieldStress(m_grid,
-                                                              m_subglacial_hydrology.get());
+      m_basal_yield_stress_model.reset(new MohrCoulombYieldStress(m_grid,
+                                                                  m_subglacial_hydrology.get()));
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
     }
 
-    m_submodels["basal yield stress"] = m_basal_yield_stress_model;
+    m_submodels["basal yield stress"] = m_basal_yield_stress_model.get();
   }
 }
 
