@@ -424,6 +424,9 @@ YieldStressInputs IceModel::yield_stress_inputs() {
   YieldStressInputs result;
 
   result.geometry = &m_geometry;
+  result.till_water_thickness     = &m_subglacial_hydrology->till_water_thickness();
+  result.overburden_pressure = &m_subglacial_hydrology->overburden_pressure();
+  result.subglacial_water_thickness = &m_subglacial_hydrology->subglacial_water_thickness();
 
   return result;
 }

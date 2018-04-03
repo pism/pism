@@ -126,19 +126,6 @@ void MohrCoulombYieldStress::init_impl() {
     }
   }
 
-  {
-    const std::string flag_name = "basal_yield_stress.add_transportable_water";
-    hydrology::Routing *hydrology_routing = dynamic_cast<hydrology::Routing*>(m_hydrology);
-    if (m_config->get_boolean(flag_name) == true && hydrology_routing == NULL) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Flag %s is set.\n"
-                                    "Thus the Mohr-Coulomb yield stress model needs a hydrology::Routing\n"
-                                    "(or derived like hydrology::Distributed) object with transportable water.\n"
-                                    "The current Hydrology instance is not suitable.  Set flag\n"
-                                    "%s to 'no' or choose a different yield stress model.",
-                                    flag_name.c_str(), flag_name.c_str());
-    }
-  }
-
   m_log->message(2, "* Initializing the Mohr-Coulomb basal yield stress model...\n");
 
   const double till_phi_default = m_config->get_double("basal_yield_stress.mohr_coulomb.till_phi_default");
@@ -257,35 +244,28 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
   bool slippery_grounding_lines = m_config->get_boolean("basal_yield_stress.slippery_grounding_lines"),
        add_transportable_water  = m_config->get_boolean("basal_yield_stress.add_transportable_water");
 
-  hydrology::Routing* hydrowithtransport = dynamic_cast<hydrology::Routing*>(m_hydrology);
-
-  if (add_transportable_water and not hydrowithtransport) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "add_transportable_water requires a routing hydrology model");
-  }
-
-  const double high_tauc   = m_config->get_double("basal_yield_stress.ice_free_bedrock"),
-               tillwat_max = m_config->get_double("hydrology.tillwat_max"),
-               c0          = m_config->get_double("basal_yield_stress.mohr_coulomb.till_cohesion"),
-               N0          = m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure"),
-               e0overCc    = (m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_void_ratio") /
-                              m_config->get_double("basal_yield_stress.mohr_coulomb.till_compressibility_coefficient")),
-               delta       = m_config->get_double("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"),
-               tlftw       = m_config->get_double("basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water");
+  const double high_tauc  = m_config->get_double("basal_yield_stress.ice_free_bedrock"),
+               W_till_max = m_config->get_double("hydrology.tillwat_max"),
+               c0         = m_config->get_double("basal_yield_stress.mohr_coulomb.till_cohesion"),
+               N0         = m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure"),
+               e0overCc   = (m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_void_ratio") /
+                             m_config->get_double("basal_yield_stress.mohr_coulomb.till_compressibility_coefficient")),
+               delta      = m_config->get_double("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"),
+               tlftw      = m_config->get_double("basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water");
 
   const IceModelVec2S
-    &tillwat = m_hydrology->till_water_thickness(),
-    &Po      = m_hydrology->overburden_pressure();
+    &W_till = *inputs.till_water_thickness,
+    &Po     = *inputs.overburden_pressure;
 
   if (add_transportable_water) {
-    m_bwat.copy_from(hydrowithtransport->subglacial_water_thickness());
+    m_bwat.copy_from(*inputs.subglacial_water_thickness);
   }
 
   const IceModelVec2CellType &mask           = inputs.geometry->cell_type;
   const IceModelVec2S        &bed_topography = inputs.geometry->bed_elevation;
   const IceModelVec2S        &sea_level      = inputs.geometry->sea_level_elevation;
 
-  IceModelVec::AccessList list{&tillwat, &m_till_phi, &m_basal_yield_stress, &mask,
+  IceModelVec::AccessList list{&W_till, &m_till_phi, &m_basal_yield_stress, &mask,
       &bed_topography, &sea_level, &Po};
   if (add_transportable_water) {
     list.add(m_bwat);
@@ -300,16 +280,16 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
       m_basal_yield_stress(i, j) = high_tauc;  // large yield stress if grounded and ice-free
     } else { // grounded and there is some ice
       // user can ask that marine grounding lines get special treatment
-      double water = tillwat(i,j); // usual case
+      double water = W_till(i,j); // usual case
       if (slippery_grounding_lines and
           bed_topography(i,j) <= sea_level(i, j) and
           (mask.next_to_floating_ice(i,j) or mask.next_to_ice_free_ocean(i,j))) {
-        water = tillwat_max;
+        water = W_till_max;
       } else if (add_transportable_water) {
-        water = tillwat(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);
+        water = W_till(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);
       }
       double
-        s    = water / tillwat_max,
+        s    = water / W_till_max,
         Ntill = N0 * pow(delta * Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
       Ntill = std::min(Po(i,j), Ntill);
 
@@ -408,6 +388,7 @@ void MohrCoulombYieldStress::topg_to_phi(const IceModelVec2S &bed_topography) {
 
 
 void MohrCoulombYieldStress::tauc_to_phi(const IceModelVec2CellType &mask) {
+
   const double c0 = m_config->get_double("basal_yield_stress.mohr_coulomb.till_cohesion"),
     N0            = m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure"),
     e0overCc      = (m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_void_ratio") /
