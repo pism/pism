@@ -243,6 +243,9 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
 
   bool slippery_grounding_lines = m_config->get_boolean("basal_yield_stress.slippery_grounding_lines"),
        add_transportable_water  = m_config->get_boolean("basal_yield_stress.add_transportable_water");
+  const double
+    ice_density      = m_config->get_double("constants.ice.density"),
+    standard_gravity = m_config->get_double("constants.standard_gravity");
 
   const double high_tauc  = m_config->get_double("basal_yield_stress.ice_free_bedrock"),
                W_till_max = m_config->get_double("hydrology.tillwat_max"),
@@ -254,8 +257,8 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
                tlftw      = m_config->get_double("basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water");
 
   const IceModelVec2S
-    &W_till = *inputs.till_water_thickness,
-    &Po     = *inputs.overburden_pressure;
+    &W_till        = *inputs.till_water_thickness,
+    &ice_thickness = inputs.geometry->ice_thickness;
 
   if (add_transportable_water) {
     m_bwat.copy_from(*inputs.subglacial_water_thickness);
@@ -266,7 +269,7 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
   const IceModelVec2S        &sea_level      = inputs.geometry->sea_level_elevation;
 
   IceModelVec::AccessList list{&W_till, &m_till_phi, &m_basal_yield_stress, &mask,
-      &bed_topography, &sea_level, &Po};
+      &bed_topography, &sea_level, &ice_thickness};
   if (add_transportable_water) {
     list.add(m_bwat);
   }
@@ -290,8 +293,9 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
       }
       double
         s    = water / W_till_max,
-        Ntill = N0 * pow(delta * Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
-      Ntill = std::min(Po(i,j), Ntill);
+        P_overburden = ice_density * standard_gravity * ice_thickness(i, j),
+        Ntill = N0 * pow(delta * P_overburden / N0, s) * pow(10.0, e0overCc * (1.0 - s));
+      Ntill = std::min(P_overburden, Ntill);
 
       m_basal_yield_stress(i, j) = c0 + Ntill * tan((M_PI/180.0) * m_till_phi(i, j));
     }

@@ -118,6 +118,8 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
                      inputs.surface_input_rate,
                      m_input_rate);
 
+  compute_overburden_pressure(*inputs.ice_thickness, m_Pover);
+
   const IceModelVec2CellType &cell_type = *inputs.cell_type;
 
   IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_input_rate, &m_conservation_error};
