@@ -35,7 +35,7 @@ NullTransport::NullTransport(IceGrid::ConstPtr g)
 
   if (m_tillwat_max < 0.0) {
     throw RuntimeError(PISM_ERROR_LOCATION,
-                       "hydrology::NullTransport: hydrology_tillwat_max is negative.\n"
+                       "hydrology::NullTransport: hydrology.tillwat_max is negative.\n"
                        "This is not allowed.");
   }
 
@@ -47,6 +47,7 @@ NullTransport::NullTransport(IceGrid::ConstPtr g)
 }
 
 NullTransport::~NullTransport() {
+  // empty
 }
 
 void NullTransport::initialization_message() const {
@@ -157,6 +158,9 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   if (m_diffuse_tillwat) {
     diffuse_till_water(dt, *inputs.cell_type);
   }
+
+  // no transportable basal water
+  m_W.set(0.0);
 }
 
 void NullTransport::diffuse_till_water(double dt, const IceModelVec2CellType &cell_type) {

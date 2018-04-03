@@ -319,15 +319,10 @@ protected:
 Routing::Routing(IceGrid::ConstPtr g)
   : Hydrology(g), m_dx(g->dx()), m_dy(g->dy()) {
 
+  m_W.metadata().set_string("pism_intent", "model_state");
+
   m_rg    = (m_config->get_double("constants.fresh_water.density") *
              m_config->get_double("constants.standard_gravity"));
-
-  // model state variables; need ghosts
-  m_W.create(m_grid, "bwat", WITH_GHOSTS, 1);
-  m_W.set_attrs("model_state",
-                "thickness of transportable subglacial water layer",
-                "m", "");
-  m_W.metadata().set_double("valid_min", 0.0);
 
   // auxiliary variables which NEED ghosts
   m_Wstag.create(m_grid, "W_staggered", WITH_GHOSTS, 1);
@@ -528,12 +523,6 @@ void Routing::boundary_mass_changes(const IceModelVec2S &cell_area,
     }
   }
 }
-
-//! Copies the W variable, the modeled transportable water layer thickness.
-const IceModelVec2S& Routing::subglacial_water_thickness() const {
-  return m_W;
-}
-
 
 //! Returns the (trivial) overburden pressure as the pressure of the transportable water,
 //! because this is the model.

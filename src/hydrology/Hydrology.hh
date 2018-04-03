@@ -53,9 +53,9 @@ public:
 
   The purpose of this class and its derived classes is to provide
   \code
-  subglacial_water_thickness(IceModelVec2S &result)
-  subglacial_water_pressure(IceModelVec2S &result)
-  till_water_thickness(IceModelVec2S &result)
+  subglacial_water_thickness()
+  subglacial_water_pressure()
+  till_water_thickness()
   \endcode
   These correspond to state variables \f$W\f$, \f$P\f$, and \f$W_{\text{till}}\f$
   in [\ref BuelervanPeltDRAFT], though not all derived classes of Hydrology
@@ -129,6 +129,7 @@ public:
   void update(double t, double dt, const Inputs& inputs);
 
   const IceModelVec2S& till_water_thickness() const;
+  const IceModelVec2S& subglacial_water_thickness() const;
   const IceModelVec2S& overburden_pressure() const;
   const IceModelVec2S& total_input_rate() const;
 
@@ -158,6 +159,9 @@ protected:
 protected:
   //! effective thickness of basal water stored in till
   IceModelVec2S m_Wtill;
+
+  //! effective thickness of transportable basal water
+  IceModelVec2S m_W;
 
   //! overburden pressure
   IceModelVec2S m_Pover;

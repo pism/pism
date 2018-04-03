@@ -84,8 +84,6 @@ public:
   Routing(IceGrid::ConstPtr g);
   virtual ~Routing();
 
-  const IceModelVec2S& subglacial_water_thickness() const;
-
   const IceModelVec2S& subglacial_water_pressure() const;
 
   const IceModelVec2Stag& velocity_staggered() const;
@@ -120,9 +118,6 @@ protected:
   double max_timestep_W_diff(double KW_max) const;
   double max_timestep_W_cfl() const;
 protected:
-  // this model's state
-  // water layer thickness
-  IceModelVec2S m_W;
 
   // this model's auxiliary variables
   IceModelVec2Stag m_V;
