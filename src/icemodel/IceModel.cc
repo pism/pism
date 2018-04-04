@@ -142,21 +142,21 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   signal(SIGUSR1, pism_signal_handler);
   signal(SIGUSR2, pism_signal_handler);
 
-  m_surface = NULL;
-  m_ocean   = NULL;
-  m_beddef  = NULL;
+  m_surface = nullptr;
+  m_ocean   = nullptr;
+  m_beddef  = nullptr;
 
-  m_age_model = NULL;
-  m_btu = NULL;
-  m_energy_model = NULL;
+  m_age_model = nullptr;
+  m_btu = nullptr;
+  m_energy_model = nullptr;
 
-  m_iceberg_remover             = NULL;
-  m_ocean_kill_calving          = NULL;
-  m_float_kill_calving          = NULL;
-  m_thickness_threshold_calving = NULL;
-  m_eigen_calving               = NULL;
-  m_vonmises_calving            = NULL;
-  m_frontal_melt                = NULL;
+  m_iceberg_remover             = nullptr;
+  m_ocean_kill_calving          = nullptr;
+  m_float_kill_calving          = nullptr;
+  m_thickness_threshold_calving = nullptr;
+  m_eigen_calving               = nullptr;
+  m_vonmises_calving            = nullptr;
+  m_frontal_melt                = nullptr;
 
   m_output_global_attributes.set_string("Conventions", "CF-1.5");
   m_output_global_attributes.set_string("source", pism::version());
@@ -166,7 +166,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   // Do not save time-series by default:
   m_save_extra     = false;
 
-  m_fracture = NULL;
+  m_fracture = nullptr;
 
   reset_counters();
 
@@ -403,7 +403,7 @@ stressbalance::Inputs IceModel::stress_balance_inputs() {
   result.geometry              = &m_geometry;
   result.new_bed_elevation     = m_new_bed_elevation;
   result.enthalpy              = &m_energy_model->enthalpy();
-  result.age                   = m_age_model ? &m_age_model->age() : NULL;
+  result.age                   = m_age_model ? &m_age_model->age() : nullptr;
 
   if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
     result.bc_mask   = &m_ssa_dirichlet_bc_mask;
@@ -695,12 +695,12 @@ void IceModel::step(bool do_mass_continuity,
     IceModelVec2S &sliding_speed = m_work2d[0];
     sliding_speed.set_to_magnitude(m_stress_balance->advective_velocity());
 
-    inputs.no_model_mask      = NULL;
+    inputs.no_model_mask      = nullptr;
     inputs.cell_type          = &m_geometry.cell_type;
     inputs.cell_area          = &m_geometry.cell_area;
     inputs.ice_thickness      = &m_geometry.ice_thickness;
     inputs.bed_elevation      = &m_geometry.bed_elevation;
-    inputs.surface_input_rate = NULL;
+    inputs.surface_input_rate = nullptr;
     inputs.basal_melt_rate    = &m_basal_melt_rate;
     inputs.ice_sliding_speed  = &sliding_speed;
 
