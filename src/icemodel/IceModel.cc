@@ -52,6 +52,7 @@
 #include "pism/age/AgeModel.hh"
 #include "pism/energy/EnergyModel.hh"
 #include "pism/util/io/PIO.hh"
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 
@@ -180,6 +181,27 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
       snprintf(namestr, sizeof(namestr), "work_vector_%d", j);
       m_work2d[j].create(m_grid, namestr, WITH_GHOSTS, WIDE_STENCIL);
     }
+  }
+
+  auto surface_input_file = m_config->get_string("hydrology.surface_input_file");
+  if (not surface_input_file.empty()) {
+    int buffer_size = m_config->get_double("climate_forcing.buffer_size");
+    int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+
+    PIO file(m_grid->com, "netcdf3", surface_input_file, PISM_READONLY);
+
+    m_surface_input_for_hydrology = IceModelVec2T::ForcingField(m_grid,
+                                                                file,
+                                                                "water_input_rate",
+                                                                "", // no standard name
+                                                                buffer_size,
+                                                                evaluations_per_year,
+                                                                false); // not periodic
+    m_surface_input_for_hydrology->set_attrs("diagnostic",
+                                             "water input rate for the subglacial hydrology model",
+                                             "m s-1", "");
+    m_surface_input_for_hydrology->metadata().set_double("valid_min", 0.0);
+    m_surface_input_for_hydrology->metadata().set_string("glaciological_units", "m year-1");
   }
 }
 
@@ -681,6 +703,12 @@ void IceModel::step(bool do_mass_continuity,
     inputs.surface_input_rate = NULL;
     inputs.basal_melt_rate    = &m_basal_melt_rate;
     inputs.ice_sliding_speed  = &sliding_speed;
+
+    if (m_surface_input_for_hydrology) {
+      m_surface_input_for_hydrology->update(current_time, m_dt);
+      m_surface_input_for_hydrology->average(current_time, m_dt);
+      inputs.surface_input_rate = m_surface_input_for_hydrology.get();
+    }
 
     profiling.begin("basal_hydrology");
     m_subglacial_hydrology->update(current_time, m_dt, inputs);

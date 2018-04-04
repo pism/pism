@@ -793,6 +793,11 @@ void IceModel::misc_setup() {
       }
     }
   }
+
+  if (m_surface_input_for_hydrology) {
+    m_surface_input_for_hydrology->init(m_config->get_string("hydrology.surface_input_file"),
+                                        0, 0);
+  }
 }
 
 //! \brief Initialize calving mechanisms.
