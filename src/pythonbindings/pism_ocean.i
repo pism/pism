@@ -1,6 +1,4 @@
 %{
-#include "coupler/util/PScalarForcing.hh"
-
 #include "coupler/ocean/Constant.hh"
 #include "coupler/ocean/Cache.hh"
 #include "coupler/ocean/ConstantPIK.hh"
@@ -18,13 +16,6 @@
 
 %shared_ptr(pism::ocean::CompleteOceanModel)
 %include "coupler/ocean/CompleteOceanModel.hh"
-
-%include "coupler/util/PGivenClimate.hh"
-%shared_ptr(pism::PGivenClimate< pism::ocean::OceanModel,pism::ocean::OceanModel >)
-%template(_GivenOcean1) pism::PGivenClimate<pism::ocean::OceanModel,pism::ocean::OceanModel>;
-
-%shared_ptr(pism::PGivenClimate< pism::ocean::CompleteOceanModel,pism::ocean::CompleteOceanModel >)
-%template(_GivenOcean2) pism::PGivenClimate<pism::ocean::CompleteOceanModel,pism::ocean::CompleteOceanModel>;
 
 %shared_ptr(pism::ocean::Constant)
 %rename(OceanConstant) pism::ocean::Constant;

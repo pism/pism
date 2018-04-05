@@ -428,10 +428,11 @@ double IceModelVec2S::max() const {
 //! Finds maximum over all the absolute values in an IceModelVec2S object.  Ignores ghosts.
 double IceModelVec2S::absmax() const {
 
-  IceModelVec::AccessList list(*this);
   double result = 0.0;
+
+  IceModelVec::AccessList list(*this);
   for (Points p(*m_grid); p; p.next()) {
-    result = std::max(result,fabs((*this)(p.i(), p.j())));
+    result = std::max(result, fabs((*this)(p.i(), p.j())));
   }
 
   return GlobalMax(m_grid->com, result);
@@ -442,7 +443,7 @@ double IceModelVec2S::absmax() const {
 double IceModelVec2S::min() const {
   IceModelVec::AccessList list(*this);
 
-  double result = (*this)(m_grid->xs(),m_grid->ys());
+  double result = (*this)(m_grid->xs(), m_grid->ys());
   for (Points p(*m_grid); p; p.next()) {
     result = std::min(result,(*this)(p.i(), p.j()));
   }
@@ -586,9 +587,6 @@ void IceModelVec2Stag::staggered_to_regular(IceModelVec2V &result) const {
 
 
 //! For each component, finds the maximum over all the absolute values.  Ignores ghosts.
-/*!
-Assumes z is allocated.
- */
 std::vector<double> IceModelVec2Stag::absmaxcomponents() const {
   std::vector<double> z(2, 0.0);
 
@@ -596,8 +594,8 @@ std::vector<double> IceModelVec2Stag::absmaxcomponents() const {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    z[0] = std::max(z[0],fabs((*this)(i,j,0)));
-    z[1] = std::max(z[1],fabs((*this)(i,j,1)));
+    z[0] = std::max(z[0], fabs((*this)(i, j, 0)));
+    z[1] = std::max(z[1], fabs((*this)(i, j, 1)));
   }
 
   z[0] = GlobalMax(m_grid->com, z[0]);

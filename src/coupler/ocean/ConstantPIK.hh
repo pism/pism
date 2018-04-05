@@ -43,8 +43,8 @@ public:
 
 private:
   MaxTimestep max_timestep_impl(double t) const;
-  void update_impl(double my_t, double my_dt);
-  void init_impl();
+  void update_impl(const Geometry &geometry, double my_t, double my_dt);
+  void init_impl(const Geometry &geometry);
 
   void melting_point_temperature(const IceModelVec2S &depth, IceModelVec2S &result) const;
   void mass_flux(const IceModelVec2S &depth, IceModelVec2S &result) const;

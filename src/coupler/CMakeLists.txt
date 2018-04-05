@@ -1,6 +1,8 @@
 # Boundary models (surface, atmosphere, ocean).
-add_library (pismboundary OBJECT
+add_library (boundary OBJECT
   ./util/ScalarForcing.cc
+  ./util/options.cc
+  ./util/lapse_rates.cc
   ./atmosphere/AtmosphereModel.cc
   ./atmosphere/ConstantPIK.cc
   ./atmosphere/SeariseGreenland.cc

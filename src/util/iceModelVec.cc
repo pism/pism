@@ -652,17 +652,17 @@ void  IceModelVec::update_ghosts(IceModelVec &destination) const {
   assert(destination.m_has_ghosts);
 
   if (m_has_ghosts and destination.m_has_ghosts) {
-    ierr = DMLocalToLocalBegin(*m_da, m_v, INSERT_VALUES, destination.m_v);
+    ierr = DMLocalToLocalBegin(*m_da, m_v, INSERT_VALUES, destination.vec());
     PISM_CHK(ierr, "DMLocalToLocalBegin");
 
-    ierr = DMLocalToLocalEnd(*m_da, m_v, INSERT_VALUES, destination.m_v);
+    ierr = DMLocalToLocalEnd(*m_da, m_v, INSERT_VALUES, destination.vec());
     PISM_CHK(ierr, "DMLocalToLocalEnd");
 
     return;
   }
 
   if (not m_has_ghosts and destination.m_has_ghosts) {
-    global_to_local(destination.m_da, m_v, destination.m_v);
+    global_to_local(destination.dm(), m_v, destination.vec());
 
     return;
   }
@@ -934,6 +934,7 @@ AccessList::~AccessList() {
 
 AccessList::AccessList(std::initializer_list<const PetscAccessible *> vecs) {
   for (auto j : vecs) {
+    assert(j != nullptr);
     add(*j);
   }
 }
@@ -949,6 +950,7 @@ void AccessList::add(const PetscAccessible &vec) {
 
 void AccessList::add(const std::vector<const PetscAccessible*> vecs) {
   for (auto v : vecs) {
+    assert(v != nullptr);
     add(*v);
   }
 }

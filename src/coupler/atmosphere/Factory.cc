@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017 PISM Authors
+/* Copyright (C) 2015, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,7 +38,7 @@ namespace atmosphere {
 // Atmosphere
 
 Factory::Factory(IceGrid::ConstPtr g)
-  : PCFactory<AtmosphereModel,PAModifier>(g) {
+  : PCFactory<AtmosphereModel>(g) {
   m_option = "atmosphere";
 
   add_model<PIK>("pik");

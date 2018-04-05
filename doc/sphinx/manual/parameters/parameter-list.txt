@@ -786,9 +786,9 @@
 
 #. :config:`hydrology.const_bmelt` (*scalar*)
 
-   :Value: 3.168876e-10 (meter / second)
+   :Value: 1 (cm / year)
    :Option: :opt:`-hydrology_const_bmelt`
-   :Description: default value is equivalent to 1 cm per year of melt; only used if hydrology.use_const_bmelt = 'yes'
+   :Description: only used if hydrology.use_const_bmelt = 'yes'
 
 #. :config:`hydrology.creep_closure_coefficient` (*scalar*)
 
@@ -875,6 +875,18 @@
    :Value: no
    :Option: :opt:`-hydrology_use_const_bmelt`
    :Description: if 'yes', subglacial hydrology model sees basal melt rate which is constant and given by hydrology.const_bmelt
+
+#. :config:`hydrology.distributed.init_p_from_steady` (*boolean*)
+
+   :Value: no
+   :Option: :opt:`-hydrology_init_p_form_steady`
+   :Description: if 'yes', initialize subglacial water pressure from P(W) formula that applies in steady state
+
+#. :config:`hydrology.distributed.sliding_speed_file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-hydrology_sliding_speed_file`
+   :Description: name of the file containing velbase_mag, the basal sliding speed to use with :literal:`hydrology.distributed.init_p_from_steady`
 
 #. :config:`inverse.design.cH1` (*scalar*)
 

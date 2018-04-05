@@ -47,8 +47,8 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<
   m_shelf_base_mass_flux->metadata().set_string("pism_intent", "model_state");
 }
 
-void InitializationHelper::update_impl(double t, double dt) {
-  OceanModel::update_impl(t, dt);
+void InitializationHelper::update_impl(const Geometry &geometry, double t, double dt) {
+  OceanModel::update_impl(geometry, t, dt);
 
   m_sea_level_elevation->copy_from(m_input_model->sea_level_elevation());
   m_melange_back_pressure_fraction->copy_from(m_input_model->melange_back_pressure_fraction());
@@ -56,8 +56,8 @@ void InitializationHelper::update_impl(double t, double dt) {
   m_shelf_base_mass_flux->copy_from(m_input_model->shelf_base_mass_flux());
 }
 
-void InitializationHelper::init_impl() {
-  m_input_model->init();
+void InitializationHelper::init_impl(const Geometry &geometry) {
+  m_input_model->init(geometry);
 
   InputOptions opts = process_input_options(m_grid->com, m_config);
 
@@ -78,7 +78,7 @@ void InitializationHelper::init_impl() {
   } else {
     m_log->message(2, "* Performing a 'fake' ocean model time-step for bootstrapping...\n");
 
-    init_step(this, *m_grid->ctx()->time());
+    init_step(this, geometry, *m_grid->ctx()->time());
   }
 
   // Support regridding. This is needed to ensure that initialization using "-i" is equivalent to

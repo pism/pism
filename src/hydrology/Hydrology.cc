@@ -23,34 +23,82 @@
 #include "pism/util/iceModelVec2T.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism/util/pism_options.hh"
-#include "hydrology_diagnostics.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace hydrology {
 
+namespace diagnostics {
+
+/*! @brief Report total input rate of subglacial water (basal melt rate plus input from
+  the surface).
+ */
+class TotalInputRate : public DiagAverageRate<Hydrology>
+{
+public:
+  TotalInputRate(const Hydrology *m)
+    : DiagAverageRate<Hydrology>(m, "subglacial_water_input_rate", RATE) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_input_rate")};
+    m_accumulator.metadata().set_string("units", "m");
+
+    set_attrs("total input rate of subglacial water "
+              "(basal melt rate plus input from the surface)", "",
+              "m second-1", "m year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+  }
+
+protected:
+  const IceModelVec2S& model_input() {
+    return model->total_input_rate();
+  }
+};
+
+} // end of namespace diagnostics
+
+Inputs::Inputs() {
+  surface_input_rate = NULL;
+  basal_melt_rate    = NULL;
+  cell_type          = NULL;
+  ice_thickness      = NULL;
+  bed_elevation      = NULL;
+  ice_sliding_speed  = NULL;
+  no_model_mask      = NULL;
+}
+
 Hydrology::Hydrology(IceGrid::ConstPtr g)
   : Component(g) {
-  m_inputtobed = NULL;
   m_hold_bmelt = false;
 
-  m_total_input.create(m_grid, "total_input", WITHOUT_GHOSTS);
-  m_total_input.set_attrs("internal",
-                          "hydrology model workspace for total input rate into subglacial water layer",
-                          "m s-1", "");
-
-  m_bmelt_local.create(m_grid, "basal_melt_rate_grounded", WITHOUT_GHOSTS);
-  m_bmelt_local.set_attrs("internal",
-                          "hydrology model workspace for basal_melt_rate_grounded",
-                          "m s-1", "");
+  m_input_rate.create(m_grid, "total_input", WITHOUT_GHOSTS);
+  m_input_rate.set_attrs("internal",
+                         "hydrology model workspace for total input rate into subglacial water layer",
+                         "m s-1", "");
 
   // *all* Hydrology classes have layer of water stored in till as a state variable
-  m_Wtil.create(m_grid, "tillwat", WITHOUT_GHOSTS);
-  m_Wtil.set_attrs("model_state",
-                   "effective thickness of subglacial water stored in till",
-                   "m", "");
-  m_Wtil.metadata().set_double("valid_min", 0.0);
+  m_Wtill.create(m_grid, "tillwat", WITHOUT_GHOSTS);
+  m_Wtill.set_attrs("model_state",
+                    "effective thickness of subglacial water stored in till",
+                    "m", "");
+  m_Wtill.metadata().set_double("valid_min", 0.0);
+
+  m_Pover.create(m_grid, "overburden_pressure", WITHOUT_GHOSTS);
+  m_Pover.set_attrs("internal", "overburden pressure", "Pa", "");
+  m_Pover.metadata().set_double("valid_min", 0.0);
+
+  // needs ghosts in Routing and Distributed
+  m_W.create(m_grid, "bwat", WITH_GHOSTS, 1);
+  m_W.set_attrs("diagnostic",
+                "thickness of transportable subglacial water layer",
+                "m", "");
+  m_W.metadata().set_double("valid_min", 0.0);
 }
 
 
@@ -58,222 +106,176 @@ Hydrology::~Hydrology() {
   // empty
 }
 
+void Hydrology::restart(const PIO &input_file, int record) {
+  initialization_message();
+  this->restart_impl(input_file, record);
+}
 
-void Hydrology::init() {
+void Hydrology::bootstrap(const PIO &input_file,
+                          const IceModelVec2S &ice_thickness) {
+  initialization_message();
+  this->bootstrap_impl(input_file, ice_thickness);
+}
 
-  options::String bmelt_file("-hydrology_bmelt_file",
-                             "Read time-independent values for basal_melt_rate_grounded from a file;"
-                             " replaces basal_melt_rate_grounded computed through conservation of energy");
-  // itb = input_to_bed
-  options::String itb_file("-hydrology_input_to_bed_file",
-                           "A time- and space-dependent file with amount of water"
-                           " (depth per time) which should be added to the amount of water"
-                           " at the ice sheet bed at the given location at the given time;"
-                           " adds to basal_melt_rate_grounded");
+void Hydrology::initialize(const IceModelVec2S &W_till,
+                           const IceModelVec2S &W,
+                           const IceModelVec2S &P) {
+  initialization_message();
+  this->initialize_impl(W_till, W, P);
+}
 
-  options::Real itb_period_years("-hydrology_input_to_bed_period",
-                                 "The period (i.e. duration before repeat), in years,"
-                                 " of -hydrology_input_to_bed_file data", 0.0);
-
-  options::Real itb_reference_year("-hydrology_input_to_bed_reference_year",
-                                   "The reference year for periodizing the"
-                                   " -hydrology_input_to_bed_file data", 0.0);
-
-  // the following are IceModelVec pointers into IceModel generally and are read by code in the
-  // update() method at the current Hydrology time
-
-  if (bmelt_file.is_set()) {
-    m_log->message(2,
-               "  option -hydrology_bmelt_file seen; reading basal_melt_rate_grounded from '%s'.\n", bmelt_file->c_str());
-    m_bmelt_local.regrid(bmelt_file, CRITICAL);
-    m_hold_bmelt = true;
-  }
-
-
-  if (itb_file.is_set()) {
-    m_inputtobed_period = itb_period_years;
-    m_inputtobed_reference_time = units::convert(m_sys, itb_reference_year, "years", "seconds");
-
-    unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing.buffer_size");
-
-    PIO nc(m_grid->com, "netcdf3", itb_file, PISM_READONLY);
-    unsigned int n_records = nc.inq_nrecords("inputtobed", "", m_sys);
-
-    // if -..._period is not set, make n_records the minimum of the
-    // buffer size and the number of available records. Otherwise try
-    // to keep all available records in memory.
-    if (not itb_period_years.is_set()) {
-      n_records = std::min(n_records, buffer_size);
-    }
-
-    if (n_records == 0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "can't find 'inputtobed' in -hydrology_input_to_bed"
-                                    " file with name '%s'",
-                                    itb_file->c_str());
-    }
-
-    m_log->message(2,
-               "    option -hydrology_input_to_bed_file seen ... creating 'inputtobed' variable ...\n");
-    m_log->message(2,
-               "    allocating buffer space for n = %d 'inputtobed' records ...\n", n_records);
-    m_inputtobed = new IceModelVec2T;
-    m_inputtobed->set_n_records(n_records);
-    m_inputtobed->create(m_grid, "inputtobed");
-    m_inputtobed->set_attrs("climate_forcing",
-                            "amount of water (depth per time like basal_melt_rate_grounded)"
-                            " which should be put at the ice sheet bed",
-                            "m s-1", "");
-    m_log->message(2,
-               "    reading 'inputtobed' variable from file '%s' ...\n",
-               itb_file->c_str());
-    m_inputtobed->init(itb_file, m_inputtobed_period, m_inputtobed_reference_time);
-  }
-
-  InputOptions opts = process_input_options(m_grid->com, m_config);
-
-  double tillwat_default = m_config->get_double("bootstrapping.defaults.tillwat");
-
-  switch (opts.type) {
-  case INIT_RESTART:
-    m_Wtil.read(opts.filename, opts.record);
-    break;
-  case INIT_BOOTSTRAP:
-    m_Wtil.regrid(opts.filename, OPTIONAL, tillwat_default);
-    break;
-  case INIT_OTHER:
-  default:
-    m_Wtil.set(tillwat_default);
-  }
+void Hydrology::restart_impl(const PIO &input_file, int record) {
+  m_Wtill.read(input_file, record);
 
   // whether or not we could initialize from file, we could be asked to regrid from file
-  regrid("Hydrology", m_Wtil);
+  regrid("Hydrology", m_Wtill);
 }
 
-void Hydrology::update(double t, double dt) {
-  this->update_impl(t, dt);
+void Hydrology::bootstrap_impl(const PIO &input_file,
+                               const IceModelVec2S &ice_thickness) {
+  (void) ice_thickness;
+
+  double tillwat_default = m_config->get_double("bootstrapping.defaults.tillwat");
+  m_Wtill.regrid(input_file, OPTIONAL, tillwat_default);
+
+  // whether or not we could initialize from file, we could be asked to regrid from file
+  regrid("Hydrology", m_Wtill);
 }
 
-DiagnosticList Hydrology::diagnostics_impl() const {
-  DiagnosticList result = {
-    {"bwat",       Diagnostic::Ptr(new Hydrology_bwat(this))},
-    {"bwp",        Diagnostic::Ptr(new Hydrology_bwp(this))},
-    {"bwprel",     Diagnostic::Ptr(new Hydrology_bwprel(this))},
-    {"effbwp",     Diagnostic::Ptr(new Hydrology_effbwp(this))},
-    {"hydrobmelt", Diagnostic::Ptr(new Hydrology_hydrobmelt(this))},
-    {"hydroinput", Diagnostic::Ptr(new Hydrology_hydroinput(this))},
-    {"wallmelt",   Diagnostic::Ptr(new Hydrology_wallmelt(this))},
-    {"tillwat",    Diagnostic::wrap(m_Wtil)},
-  };
-  return result;
+void Hydrology::initialize_impl(const IceModelVec2S &W_till,
+                                const IceModelVec2S &W,
+                                const IceModelVec2S &P) {
+  (void) W;
+  (void) P;
+  m_Wtill.copy_from(W_till);
+}
+
+void Hydrology::update(double t, double dt, const Inputs& inputs) {
+  this->update_impl(t, dt, inputs);
+}
+
+std::map<std::string, Diagnostic::Ptr> Hydrology::diagnostics_impl() const {
+  using namespace diagnostics;
+  return {{"tillwat", Diagnostic::wrap(m_Wtill)},
+      {"subglacial_water_input_rate", Diagnostic::Ptr(new TotalInputRate(this))}};
 }
 
 void Hydrology::define_model_state_impl(const PIO &output) const {
-  m_Wtil.define(output);
+  m_Wtill.define(output);
 }
 
 void Hydrology::write_model_state_impl(const PIO &output) const {
-  m_Wtil.write(output);
+  m_Wtill.write(output);
 }
 
 //! Update the overburden pressure from ice thickness.
 /*!
-Uses the standard hydrostatic (shallow) approximation of overburden pressure,
+  Uses the standard hydrostatic (shallow) approximation of overburden pressure,
   \f[ P_0 = \rho_i g H \f]
-Accesses H=thk from Vars, which points into IceModel.
- */
-void Hydrology::overburden_pressure(IceModelVec2S &result) const {
+*/
+void Hydrology::compute_overburden_pressure(const IceModelVec2S &ice_thickness,
+                                            IceModelVec2S &result) const {
   // FIXME issue #15
-  const IceModelVec2S *thk = m_grid->variables().get_2d_scalar("thk");
 
-  result.copy_from(*thk);  // copies into ghosts if result has them
-  result.scale(m_config->get_double("constants.ice.density") * m_config->get_double("constants.standard_gravity"));
+  const double
+    ice_density      = m_config->get_double("constants.ice.density"),
+    standard_gravity = m_config->get_double("constants.standard_gravity");
+
+  IceModelVec::AccessList list{&ice_thickness, &result};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    result(i, j) = ice_density * standard_gravity * ice_thickness(i, j);
+  }
 }
 
+const IceModelVec2S& Hydrology::overburden_pressure() const {
+  return m_Pover;
+}
 
 //! Return the effective thickness of the water stored in till.
-void Hydrology::till_water_thickness(IceModelVec2S &result) const {
-  result.copy_from(m_Wtil);
+const IceModelVec2S& Hydrology::till_water_thickness() const {
+  return m_Wtill;
 }
 
-
-//! Set the wall melt rate to zero.  (The most basic subglacial hydrologies have no lateral flux or potential gradient.)
-void Hydrology::wall_melt(IceModelVec2S &result) const {
-  result.set(0.0);
+//! Return the effective thickness of the transportable basal water layer.
+const IceModelVec2S& Hydrology::subglacial_water_thickness() const {
+  return m_W;
 }
 
+const IceModelVec2S& Hydrology::total_input_rate() const {
+  return m_input_rate;
+}
 
 /*!
-Checks \f$0 \le W_{til} \le W_{til}^{max} =\f$hydrology_tillwat_max.
- */
-void Hydrology::check_Wtil_bounds() {
-  double tillwat_max = m_config->get_double("hydrology.tillwat_max");
+  Checks @f$ 0 \le W \le W^{max} @f$.
+*/
+void check_bounds(const IceModelVec2S& W, double W_max) {
 
-  IceModelVec::AccessList list(m_Wtil);
-  ParallelSection loop(m_grid->com);
+  std::string name = W.metadata().get_string("long_name");
+
+  IceGrid::ConstPtr grid = W.grid();
+
+  IceModelVec::AccessList list(W);
+  ParallelSection loop(grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (m_Wtil(i,j) < 0.0) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Hydrology: negative till water effective layer thickness Wtil(i,j) = %.6f m\n"
-                                      "at (i,j)=(%d,%d)", m_Wtil(i,j), i, j);
+      if (W(i,j) < 0.0) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "Hydrology: negative %s of %.6f m at (i, j) = (%d, %d)",
+                                      name.c_str(), W(i, j), i, j);
       }
 
-      if (m_Wtil(i,j) > tillwat_max) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Hydrology: till water effective layer thickness Wtil(i,j) = %.6f m exceeds\n"
-                                      "hydrology_tillwat_max = %.6f at (i,j)=(%d,%d)",
-                                      m_Wtil(i,j), tillwat_max, i, j);
+      if (W(i,j) > W_max) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "Hydrology: %s of %.6f m exceeds the maximum value %.6f at (i, j) = (%d, %d)",
+                                      name.c_str(), W(i, j), W_max, i, j);
       }
     }
   } catch (...) {
     loop.failed();
   }
   loop.check();
-
 }
 
 
-//! Compute the total water input rate into the basal hydrology layer in the ice-covered region, allowing time-varying input from a file.
+//! Compute the total water input rate into the basal hydrology layer in the ice-covered
+//! region.
 /*!
-The user can specify the total of en- and supra-glacial drainage contributions
-to subglacial hydrology in a time-dependent input file using option -hydrology_input_to_bed.
-This method includes that possible input along with `basal_melt_rate_grounded` to get the total water
-input into the subglacial hydrology.
+  This method ignores the input rate in the ice-free region.
 
-This method crops the input rate to the ice-covered region.  It
-also uses hydrology_const_bmelt if that is requested.
+  @param[in] mask cell type mask
+  @param[in] basal melt rate (ice thickness per time)
+  @param[in] surface_input_rate surface input rate (water thickness per time); set to NULL to ignore
+  @param[out] result resulting input rate (water thickness per time)
+*/
+void Hydrology::compute_input_rate(const IceModelVec2CellType &mask,
+                                   const IceModelVec2S &basal_melt_rate,
+                                   const IceModelVec2S *surface_input_rate,
+                                   IceModelVec2S &result) {
 
-Call this method using the current \e hydrology time step.  This method
-may be called many times per IceModel time step.  See update() method
-in derived classes of Hydrology.
- */
-void Hydrology::get_input_rate(double hydro_t, double hydro_dt,
-                               IceModelVec2S &result) {
-  bool   use_const   = m_config->get_boolean("hydrology.use_const_bmelt");
-  double const_bmelt = m_config->get_double("hydrology.const_bmelt");
+  IceModelVec::AccessList list{&basal_melt_rate, &mask, &result};
 
-  const IceModelVec2S        &bmelt = *m_grid->variables().get_2d_scalar("bmelt");
-  const IceModelVec2CellType &mask  = *m_grid->variables().get_2d_cell_type("mask");
-
-  if (not m_hold_bmelt) {
-    m_bmelt_local.copy_from(bmelt);
+  if (surface_input_rate) {
+    list.add(*surface_input_rate);
   }
 
-  IceModelVec::AccessList list{&m_bmelt_local, &mask, &result};
-  if (m_inputtobed != NULL) {
-    m_inputtobed->update(hydro_t, hydro_dt);
-    m_inputtobed->interp(hydro_t + hydro_dt/2.0);
-    list.add(*m_inputtobed);
-  }
+  const double
+    ice_density   = m_config->get_double("constants.ice.density"),
+    water_density = m_config->get_double("constants.fresh_water.density"),
+    C             = ice_density / water_density;
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
-      result(i,j) = (use_const) ? const_bmelt : m_bmelt_local(i,j);
-      if (m_inputtobed != NULL) {
-        result(i,j) += (*m_inputtobed)(i,j);
-      }
+
+      double surface_input = surface_input_rate ? (*surface_input_rate)(i, j) : 0.0;
+
+      result(i,j) = C * basal_melt_rate(i, j) + surface_input;
     } else {
       result(i,j) = 0.0;
     }

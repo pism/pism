@@ -86,17 +86,17 @@ conserved in the sense that water above the ``hydrology_tillwat_max`` level is l
 permanently. This model is based on the "undrained plastic bed" concept of
 :cite:`Tulaczyketal2000b`; see also :cite:`BBssasliding`.
 
-In particular, denoting ``tillwat`` by `W_{til}`, the till-stored water layer effective
+In particular, denoting ``tillwat`` by `W_{till}`, the till-stored water layer effective
 thickness evolves by the simple equation
 
 .. math::
    :name: eq-tillwatevolve
 
-   \frac{\partial W_{til}}{\partial t} = \frac{m}{\rho_w} - C
+   \frac{\partial W_{till}}{\partial t} = \frac{m}{\rho_w} - C
 
 where `m=` :var:`basal_melt_rate_grounded` (kg `\text{m}^{-2}\,\text{s}^{-1}`), `\rho_w`
 is the density of fresh water, and `C` :var:`hydrology_tillwat_decay_rate`. At all times
-bounds `0 \le W_{til} \le W_{til}^{max}` are satisfied.
+bounds `0 \le W_{till} \le W_{till}^{max}` are satisfied.
 
 This ``-hydrology null`` model has been extensively tested in combination with the
 Mohr-Coulomb till (section :ref:`sec-basestrength` above) for modelling ice streaming (see

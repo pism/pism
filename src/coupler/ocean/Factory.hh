@@ -24,7 +24,7 @@
 
 namespace pism {
 namespace ocean {
-class Factory : public PCFactory<ocean::OceanModel,ocean::OceanModel> {
+class Factory : public PCFactory<ocean::OceanModel> {
 public:
   Factory(IceGrid::ConstPtr g);
   ~Factory();

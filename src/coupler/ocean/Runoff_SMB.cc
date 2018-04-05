@@ -43,9 +43,9 @@ Runoff_SMB::~Runoff_SMB() {
   // empty
 }
 
-void Runoff_SMB::init_impl() {
+void Runoff_SMB::init_impl(const Geometry &geometry) {
 
-  m_input_model->init();
+  m_input_model->init(geometry);
 
   m_log->message(2,
                  "* Initializing ice shelf base mass flux forcing using scalar multiplier...\n"
@@ -54,8 +54,8 @@ void Runoff_SMB::init_impl() {
   m_forcing->init();
 }
 
-void Runoff_SMB::update_impl(double t, double dt) {
-  m_input_model->update(t, dt);
+void Runoff_SMB::update_impl(const Geometry &geometry, double t, double dt) {
+  m_input_model->update(geometry, t, dt);
 
   m_forcing->update(t, dt);
 

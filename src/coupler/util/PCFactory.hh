@@ -31,55 +31,72 @@ namespace pism {
 
 class Config;
 
-template <class Model, class Modifier>
+template <class Model>
 class PCFactory {
 public:
 
-  // virtual base class that allows storing different model creators
-  // in the same dictionary
-  class ModelCreator {
-  public:
-    virtual std::shared_ptr<Model> create(IceGrid::ConstPtr g) = 0;
-    virtual ~ModelCreator() {}
-  };
-
-  // Creator for a specific model class M.
-  template <class M>
-  class SpecificModelCreator : public ModelCreator {
-  public:
-    std::shared_ptr<Model> create(IceGrid::ConstPtr g) {
-      return std::shared_ptr<Model>(new M(g));
-    }
-  };
-
-  // virtual base class that allows storing different modifier
-  // creators in the same dictionary
-  class ModifierCreator {
-  public:
-    virtual std::shared_ptr<Modifier> create(IceGrid::ConstPtr g, std::shared_ptr<Model> input) = 0;
-    virtual ~ModifierCreator() {}
-  };
-
-  // Creator for a specific modifier class M.
-  template <class M>
-  class SpecificModifierCreator : public ModifierCreator {
-  public:
-    std::shared_ptr<Modifier> create(IceGrid::ConstPtr g, std::shared_ptr<Model> input) {
-      return std::shared_ptr<Modifier>(new M(g, input));
-    }
-  };
-
-  PCFactory<Model,Modifier>(IceGrid::ConstPtr g)
+  PCFactory<Model>(IceGrid::ConstPtr g)
   : m_grid(g) {}
-  ~PCFactory<Model,Modifier>() {}
+  ~PCFactory<Model>() {}
+
+  //! Creates a boundary model. Processes command-line options.
+  virtual std::shared_ptr<Model> create() {
+    // build a list of available models:
+    auto model_list = key_list(m_models);
+
+    // build a list of available modifiers:
+    auto modifier_list = key_list(m_modifiers);
+
+    std::string description = ("Sets up the PISM " + m_option + " model."
+                               " Available models: " + model_list +
+                               " Available modifiers: " + modifier_list);
+
+    // Get the command-line option:
+    options::StringList choices("-" + m_option, description, m_default_type);
+
+    return create(choices.to_string());
+  }
+
+  //! Creates a boundary model.
+  virtual std::shared_ptr<Model> create(const std::string &type) {
+
+    std::vector<std::string> choices = split(type, ',');
+
+    // the first element has to be an *actual* model (not a modifier)
+    auto j = choices.begin();
+
+    auto result = model(*j);
+
+    ++j;
+
+    // process remaining arguments:
+    for (;j != choices.end(); ++j) {
+      result = modifier(*j, result);
+    }
+
+    return result;
+  }
 
   //! Sets the default type name.
-  void set_default(std::string name) {
+  virtual void set_default(const std::string &name) {
     if (m_models.find(name) == m_models.end()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "type %s is not registered", name.c_str());
     } else {
       m_default_type = name;
     }
+  }
+
+protected:
+
+  //! Adds a boundary model to the dictionary.
+  template <class M>
+  void add_model(const std::string &name) {
+    m_models[name].reset(new SpecificModelCreator<M>);
+  }
+
+  template <class M>
+  void add_modifier(const std::string &name) {
+    m_modifiers[name].reset(new SpecificModifierCreator<M>);
   }
 
   template<typename T>
@@ -118,73 +135,40 @@ public:
     return m_modifiers[type]->create(m_grid, input);
   }
 
-  //! Creates a boundary model. Processes command-line options.
-  std::shared_ptr<Model> create() {
-    // build a list of available models:
-    auto model_list = key_list(m_models);
+  // virtual base class that allows storing different model creators
+  // in the same dictionary
+  class ModelCreator {
+  public:
+    virtual std::shared_ptr<Model> create(IceGrid::ConstPtr g) = 0;
+    virtual ~ModelCreator() {}
+  };
 
-    // build a list of available modifiers:
-    auto modifier_list = key_list(m_modifiers);
-
-    std::string description = ("Sets up the PISM " + m_option + " model."
-                               " Available models: " + model_list +
-                               " Available modifiers: " + modifier_list);
-
-    // Get the command-line option:
-    options::StringList choices("-" + m_option, description, m_default_type);
-
-    return create(choices.to_string());
-  }
-
-  //! Creates a boundary model.
-  virtual std::shared_ptr<Model> create(const std::string &type) {
-
-    std::vector<std::string> choices = split(type, ',');
-
-    // the first element has to be an *actual* model (not a modifier)
-    auto j = choices.begin();
-
-    std::shared_ptr<Model> result = model(*j);
-
-    ++j;
-
-    // process remaining arguments:
-    for (;j != choices.end(); ++j) {
-      result = modifier(*j, result);
+  // Creator for a specific model class M.
+  template <class M>
+  class SpecificModelCreator : public ModelCreator {
+  public:
+    std::shared_ptr<Model> create(IceGrid::ConstPtr g) {
+      return std::shared_ptr<Model>(new M(g));
     }
+  };
 
-    return result;
-  }
+  // virtual base class that allows storing different modifier
+  // creators in the same dictionary
+  class ModifierCreator {
+  public:
+    virtual std::shared_ptr<Model> create(IceGrid::ConstPtr g, std::shared_ptr<Model> input) = 0;
+    virtual ~ModifierCreator() {}
+  };
 
-  //! Adds a boundary model to the dictionary.
+  // Creator for a specific modifier class M.
   template <class M>
-  void add_model(const std::string &name) {
-    m_models[name].reset(new SpecificModelCreator<M>);
-  }
+  class SpecificModifierCreator : public ModifierCreator {
+  public:
+    std::shared_ptr<Model> create(IceGrid::ConstPtr g, std::shared_ptr<Model> input) {
+      return std::shared_ptr<Model>(new M(g, input));
+    }
+  };
 
-  template <class M>
-  void add_modifier(const std::string &name) {
-    m_modifiers[name].reset(new SpecificModifierCreator<M>);
-  }
-
-  //! Removes a boundary model from the dictionary.
-  void remove_model(const std::string &name) {
-    m_models.erase(name);
-  }
-
-  void remove_modifier(const std::string &name) {
-    m_modifiers.erase(name);
-  }
-
-  //! Clears the dictionary.
-  void clear_models() {
-    m_models.clear();
-  }
-
-  void clear_modifiers() {
-    m_modifiers.clear();
-  }
-protected:
   std::string m_default_type, m_option;
   std::map<std::string, std::shared_ptr<ModelCreator> > m_models;
   std::map<std::string, std::shared_ptr<ModifierCreator> > m_modifiers;

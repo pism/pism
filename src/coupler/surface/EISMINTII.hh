@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,6 @@
 #define _PS_EISMINTII_H_
 
 #include "Formulas.hh"
-#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 namespace surface {
@@ -36,9 +35,9 @@ public:
   EISMINTII(IceGrid::ConstPtr g, int experiment);
   ~EISMINTII();
 protected:
-  void init_impl();
+  void init_impl(const Geometry &geometry);
   virtual MaxTimestep max_timestep_impl(double t) const;
-  void update_impl(PetscReal t, PetscReal dt);
+  void update_impl(const Geometry &geometry, double t, double dt);
   void initialize_using_formulas();
   int m_experiment;
   double m_M_max, m_R_el, m_S_T, m_S_b, m_T_min;

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Constantine Khroulev
+// Copyright (C) 2009--2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <algorithm>            // min_element and max_element
-#include <gsl/gsl_math.h>
 
 #include "Timeseries.hh"
 #include "pism_utilities.hh"
