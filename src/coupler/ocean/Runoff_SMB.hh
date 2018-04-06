@@ -57,9 +57,9 @@ public:
   virtual ~Runoff_SMB();
 
 private:
-  void init_impl();
+  void init_impl(const Geometry &geometry);
 
-  void update_impl(double t, double dt);
+  void update_impl(const Geometry &geometry, double t, double dt);
 
   void mass_flux(double delta_T, IceModelVec2S &result) const;
 

@@ -31,7 +31,9 @@
 #include "pism/calving/OceanKill.hh"
 #include "pism/calving/FrontalMelt.hh"
 #include "pism/energy/BedThermalUnit.hh"
-#include "pism/hydrology/Hydrology.hh"
+#include "pism/hydrology/NullTransport.hh"
+#include "pism/hydrology/Routing.hh"
+#include "pism/hydrology/Distributed.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/stressbalance/sia/SIAFD.hh"
 #include "pism/stressbalance/ssa/SSAFD.hh"
@@ -117,7 +119,7 @@ void IceModel::time_setup() {
 void IceModel::model_state_setup() {
 
   // Check if we are initializing from a PISM output file:
-  InputOptions input = process_input_options(m_ctx->com());
+  InputOptions input = process_input_options(m_ctx->com(), m_config);
 
   const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
 
@@ -169,6 +171,13 @@ void IceModel::model_state_setup() {
     regrid();
   }
 
+  // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
+  // which may need ice thickness to bootstrap.
+  // FIXME: ocean models may need bed elevation, which is not available yet.
+  {
+    m_ocean->init(m_geometry);
+  }
+
   // Initialize a bed deformation model. This may use ice thickness initialized above.
   if (m_beddef) {
     m_beddef->init(input);
@@ -178,8 +187,12 @@ void IceModel::model_state_setup() {
 
   // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
   // which may need ice thickness to bootstrap.
+  //
+  // FIXME: some ocean models may need both bed elevation and the cell type mask, and the
+  // cell type mask cannot be computed without the sea level, which is provided by ocean
+  // model.
   {
-    m_ocean->init();
+    m_ocean->init(m_geometry);
   }
 
   // Now ice thickness, bed elevation, and sea level are available, so we can compute the ice
@@ -193,10 +206,33 @@ void IceModel::model_state_setup() {
 
   // Now surface elevation is initialized, so we can initialize surface models (some use
   // elevation-based parameterizations of surface temperature and/or mass balance).
-  m_surface->init();
+  m_surface->init(m_geometry);
 
   if (m_subglacial_hydrology) {
-    m_subglacial_hydrology->init();
+
+    switch (input.type) {
+    case INIT_RESTART:
+      m_subglacial_hydrology->restart(*input_file, input.record);
+      break;
+    case INIT_BOOTSTRAP:
+      m_subglacial_hydrology->bootstrap(*input_file,
+                                        m_geometry.ice_thickness);
+      break;
+    case INIT_OTHER:
+      {
+        IceModelVec2S
+          &W_till = m_work2d[0],
+          &W      = m_work2d[1],
+          &P      = m_work2d[2];
+
+        W_till.set(m_config->get_double("bootstrapping.defaults.tillwat"));
+        W.set(m_config->get_double("bootstrapping.defaults.bwat"));
+        P.set(m_config->get_double("bootstrapping.defaults.bwp"));
+
+        m_subglacial_hydrology->initialize(W_till, W, P);
+        break;
+      }
+    }
   }
 
   // basal_yield_stress_model->init() needs bwat so this must happen
@@ -236,9 +272,6 @@ void IceModel::model_state_setup() {
 
   // Initialize the energy balance sub-model.
   {
-    IceModelVec2S &ice_surface_temperature = m_work2d[0];
-    IceModelVec2S &climatic_mass_balance   = m_work2d[1];
-
     switch (input.type) {
     case INIT_RESTART:
       {
@@ -247,12 +280,11 @@ void IceModel::model_state_setup() {
       }
     case INIT_BOOTSTRAP:
       {
-        m_surface->temperature(ice_surface_temperature);
-        m_surface->mass_flux(climatic_mass_balance);
+
         m_energy_model->bootstrap(*input_file,
                                   m_geometry.ice_thickness,
-                                  ice_surface_temperature,
-                                  climatic_mass_balance,
+                                  m_surface->temperature(),
+                                  m_surface->mass_flux(),
                                   m_btu->flux_through_top_surface());
         break;
       }
@@ -260,12 +292,11 @@ void IceModel::model_state_setup() {
     default:
       {
         m_basal_melt_rate.set(m_config->get_double("bootstrapping.defaults.bmelt"));
-        m_surface->temperature(ice_surface_temperature);
-        m_surface->mass_flux(climatic_mass_balance);
+
         m_energy_model->initialize(m_basal_melt_rate,
                                    m_geometry.ice_thickness,
-                                   ice_surface_temperature,
-                                   climatic_mass_balance,
+                                   m_surface->temperature(),
+                                   m_surface->mass_flux(),
                                    m_btu->flux_through_top_surface());
 
       }
@@ -549,31 +580,30 @@ void IceModel::allocate_subglacial_hydrology() {
 
   std::string hydrology_model = m_config->get_string("hydrology.model");
 
-  if (m_subglacial_hydrology != NULL) { // indicates it has already been allocated
+  if (m_subglacial_hydrology) { // indicates it has already been allocated
     return;
   }
 
-  m_log->message(2,
-                 "# Allocating a subglacial hydrology model...\n");
+  m_log->message(2, "# Allocating a subglacial hydrology model...\n");
 
   if (hydrology_model == "null") {
-    m_subglacial_hydrology = new NullTransport(m_grid);
+    m_subglacial_hydrology.reset(new NullTransport(m_grid));
   } else if (hydrology_model == "routing") {
-    m_subglacial_hydrology = new Routing(m_grid);
+    m_subglacial_hydrology.reset(new Routing(m_grid));
   } else if (hydrology_model == "distributed") {
-    m_subglacial_hydrology = new Distributed(m_grid, m_stress_balance.get());
+    m_subglacial_hydrology.reset(new Distributed(m_grid));
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown value for configuration string 'hydrology.model':\n"
-                                  "has value '%s'", hydrology_model.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "unknown 'hydrology.model': %s", hydrology_model.c_str());
   }
 
-  m_submodels["subglacial hydrology"] = m_subglacial_hydrology;
+  m_submodels["subglacial hydrology"] = m_subglacial_hydrology.get();
 }
 
 //! \brief Decide which basal yield stress model to use.
 void IceModel::allocate_basal_yield_stress() {
 
-  if (m_basal_yield_stress_model != NULL) {
+  if (m_basal_yield_stress_model) {
     return;
   }
 
@@ -587,15 +617,16 @@ void IceModel::allocate_basal_yield_stress() {
     std::string yield_stress_model = m_config->get_string("basal_yield_stress.model");
 
     if (yield_stress_model == "constant") {
-      m_basal_yield_stress_model = new ConstantYieldStress(m_grid);
+      m_basal_yield_stress_model.reset(new ConstantYieldStress(m_grid));
     } else if (yield_stress_model == "mohr_coulomb") {
-      m_basal_yield_stress_model = new MohrCoulombYieldStress(m_grid, m_subglacial_hydrology);
+      m_basal_yield_stress_model.reset(new MohrCoulombYieldStress(m_grid,
+                                                                  m_subglacial_hydrology.get()));
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
     }
 
-    m_submodels["basal yield stress"] = m_basal_yield_stress_model;
+    m_submodels["basal yield stress"] = m_basal_yield_stress_model.get();
   }
 }
 
@@ -633,18 +664,15 @@ void IceModel::allocate_submodels() {
 
 void IceModel::allocate_couplers() {
   // Initialize boundary models:
-  atmosphere::Factory pa(m_grid);
-  surface::Factory ps(m_grid);
-  ocean::Factory po(m_grid);
 
   if (m_surface == NULL) {
 
     m_log->message(2,
              "# Allocating a surface process model or coupler...\n");
 
-    m_surface.reset(new surface::InitializationHelper(m_grid, ps.create()));
+    surface::Factory ps(m_grid, atmosphere::Factory(m_grid).create());
 
-    m_surface->attach_atmosphere_model(pa.create());
+    m_surface.reset(new surface::InitializationHelper(m_grid, ps.create()));
 
     m_submodels["surface process model"] = m_surface.get();
   }
@@ -652,6 +680,8 @@ void IceModel::allocate_couplers() {
   if (m_ocean == NULL) {
     m_log->message(2,
              "# Allocating an ocean model or coupler...\n");
+
+    ocean::Factory po(m_grid);
 
     m_ocean.reset(new ocean::InitializationHelper(m_grid, po.create()));
 
@@ -663,7 +693,7 @@ void IceModel::allocate_couplers() {
 void IceModel::misc_setup() {
 
   m_log->message(3, "Finishing initialization...\n");
-  InputOptions opts = process_input_options(m_ctx->com());
+  InputOptions opts = process_input_options(m_ctx->com(), m_config);
 
   if (not (opts.type == INIT_OTHER)) {
     // initializing from a file
@@ -772,6 +802,11 @@ void IceModel::misc_setup() {
         d.second->init(file, opts.record);
       }
     }
+  }
+
+  if (m_surface_input_for_hydrology) {
+    m_surface_input_for_hydrology->init(m_config->get_string("hydrology.surface_input_file"),
+                                        0, 0);
   }
 }
 

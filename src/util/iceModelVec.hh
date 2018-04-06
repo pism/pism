@@ -23,7 +23,7 @@
 #include <memory>
 
 #include <petscvec.h>
-#include <gsl/gsl_interp.h>
+#include <gsl/gsl_interp.h>     // gsl_interp_accel
 
 #include "VariableMetadata.hh"
 #include "pism/util/petscwrappers/Viewer.hh"

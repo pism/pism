@@ -34,8 +34,8 @@ public:
   virtual ~Delta_SL();
 
 private:
-  void init_impl();
-  void update_impl(double t, double dt);
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
   const IceModelVec2S& sea_level_elevation_impl() const;
 
   IceModelVec2S::Ptr m_sea_level_elevation;

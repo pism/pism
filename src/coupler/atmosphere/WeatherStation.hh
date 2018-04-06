@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -41,11 +41,11 @@ public:
   virtual ~WeatherStation();
 
 protected:
-  virtual void init_impl();
-  virtual void update_impl(double t, double dt);
+  virtual void init_impl(const Geometry &geometry);
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual void mean_precipitation_impl(IceModelVec2S &result) const;
-  virtual void mean_annual_temp_impl(IceModelVec2S &result) const;
+  virtual const IceModelVec2S& mean_precipitation_impl() const;
+  virtual const IceModelVec2S& mean_annual_temp_impl() const;
 
   virtual void begin_pointwise_access_impl() const;
   virtual void end_pointwise_access_impl() const;
@@ -57,9 +57,12 @@ protected:
 protected:
   Timeseries m_precipitation_timeseries, m_air_temp_timeseries;
   mutable std::vector<double> m_precip_values, m_air_temp_values;
+
+  IceModelVec2S::Ptr m_temperature;
+  IceModelVec2S::Ptr m_precipitation;
 };
 
 } // end of namespace atmosphere
-}      // end of namespace pism
+} // end of namespace pism
 
 #endif /* _PAWEATHERSTATION_H_ */

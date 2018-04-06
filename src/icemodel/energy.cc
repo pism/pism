@@ -52,16 +52,16 @@ void IceModel::energy_step() {
   //   the z=0 value of geothermal flux when called inside temperatureStep() or
   //   enthalpyStep()
 
-  IceModelVec2S &ice_surface_temperature = m_work2d[0];
-  IceModelVec2S &basal_enthalpy          = m_work2d[2];
+  IceModelVec2S &basal_enthalpy = m_work2d[2];
+
   m_energy_model->enthalpy().getHorSlice(basal_enthalpy, 0.0);
-  m_surface->temperature(ice_surface_temperature);
+
   bedrock_surface_temperature(m_geometry.sea_level_elevation,
                               m_geometry.cell_type,
                               m_geometry.bed_elevation,
                               m_geometry.ice_thickness,
                               basal_enthalpy,
-                              ice_surface_temperature,
+                              m_surface->temperature(),
                               m_bedtoptemp);
 
   profiling.begin("btu");

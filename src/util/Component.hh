@@ -48,7 +48,7 @@ struct InputOptions {
   unsigned int record;
 };
 
-InputOptions process_input_options(MPI_Comm com);
+InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config);
 
 //! \brief A class defining a common interface for most PISM sub-models.
 /*!

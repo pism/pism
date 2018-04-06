@@ -37,6 +37,10 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/iceModelVec.hh"
+#include "pism/util/Time.hh"
+#include "pism/geometry/Geometry.hh"
+
+#include "pism/coupler/util/options.hh"
 
 #include "Pico.hh"
 #include "PicoGeometry.hh"
@@ -46,27 +50,41 @@ namespace pism {
 namespace ocean {
 
 Pico::Pico(IceGrid::ConstPtr g)
-    : PGivenClimate<CompleteOceanModel, CompleteOceanModel>(g, NULL), m_geometry(new PicoGeometry(g)) {
+    : CompleteOceanModel(g, NULL), m_geometry(new PicoGeometry(g)) {
 
-  m_option_prefix = "-ocean_pico";
+  ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
 
-  // will be de-allocated by the parent's destructor
-  m_theta_ocean    = new IceModelVec2T;
-  m_salinity_ocean = new IceModelVec2T;
+  {
+    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    bool periodic = opt.period > 0;
 
-  m_fields["theta_ocean"]    = m_theta_ocean;
-  m_fields["salinity_ocean"] = m_salinity_ocean;
+    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
 
-  process_options();
+    m_theta_ocean = IceModelVec2T::ForcingField(m_grid,
+                                                file,
+                                                "theta_ocean",
+                                                "", // no standard name
+                                                buffer_size,
+                                                evaluations_per_year,
+                                                periodic);
 
-  set_vec_parameters({});
+    m_salinity_ocean = IceModelVec2T::ForcingField(m_grid,
+                                                   file,
+                                                   "salinity_ocean",
+                                                   "", // no standard name
+                                                   buffer_size,
+                                                   evaluations_per_year,
+                                                   periodic);
+  }
 
-  m_theta_ocean->create(m_grid, "theta_ocean");
-  m_theta_ocean->set_attrs("climate_forcing", "absolute potential temperature of the adjacent ocean", "Kelvin", "");
+  m_theta_ocean->set_attrs("climate_forcing",
+                           "potential temperature of the adjacent ocean",
+                           "Kelvin", "");
 
-  m_salinity_ocean->create(m_grid, "salinity_ocean");
-  m_salinity_ocean->set_attrs("climate_forcing", "salinity of the adjacent ocean", "g/kg", "");
-  m_salinity_ocean->metadata().set_double("_FillValue", 0.0);
+  m_salinity_ocean->set_attrs("climate_forcing",
+                              "salinity of the adjacent ocean",
+                              "g/kg", "");
 
   m_basin_mask.create(m_grid, "basins", WITH_GHOSTS);
   m_basin_mask.set_attrs("climate_forcing", "mask determines basins for PICO", "", "");
@@ -119,16 +137,17 @@ Pico::~Pico() {
 }
 
 
-void Pico::init_impl() {
-
-  m_t = m_dt = GSL_NAN; // every re-init restarts the clock
+void Pico::init_impl(const Geometry &geometry) {
+  (void) geometry;
 
   m_log->message(2, "* Initializing the Potsdam Ice-shelf Cavity mOdel for the ocean ...\n");
 
-  m_theta_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
-  m_salinity_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
+  ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
 
-  m_basin_mask.regrid(m_filename, CRITICAL);
+  m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
+  m_salinity_ocean->init(opt.filename, opt.period, opt.reference_time);
+
+  m_basin_mask.regrid(opt.filename, CRITICAL);
 
   m_log->message(4, "PICO basin min=%f,max=%f\n", m_basin_mask.min(), m_basin_mask.max());
 
@@ -143,8 +162,9 @@ void Pico::init_impl() {
                  physics.continental_shelf_depth());
 
   // read time-independent data right away:
-  if (m_theta_ocean->get_n_records() == 1 and m_salinity_ocean->get_n_records() == 1) {
-    update_internal(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
+  if (m_theta_ocean->n_records() == 1 and m_salinity_ocean->n_records() == 1) {
+    m_theta_ocean->update(m_grid->ctx()->time()->current(), 0.0);
+    m_salinity_ocean->update(m_grid->ctx()->time()->current(), 0.0);
   }
 }
 
@@ -168,20 +188,19 @@ void Pico::write_model_state_impl(const PIO &output) const {
   OceanModel::define_model_state_impl(output);
 }
 
-void Pico::update_impl(double t, double dt) {
+void Pico::update_impl(const Geometry &geometry, double t, double dt) {
 
-  // Make sure that sea water salinity and sea water potential temperature fields are up
-  // to date:
-  update_internal(t, dt);
+  m_theta_ocean->update(t, dt);
+  m_salinity_ocean->update(t, dt);
 
-  m_theta_ocean->average(m_t, m_dt);
-  m_salinity_ocean->average(m_t, m_dt);
+  m_theta_ocean->average(t, dt);
+  m_salinity_ocean->average(t, dt);
 
   PicoPhysics physics(*m_config);
 
-  const IceModelVec2S &ice_thickness    = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2CellType &cell_type = *m_grid->variables().get_2d_cell_type("mask");
-  const IceModelVec2S &bed_elevation    = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+  const IceModelVec2S &ice_thickness    = geometry.ice_thickness;
+  const IceModelVec2CellType &cell_type = geometry.cell_type;
+  const IceModelVec2S &bed_elevation    = geometry.bed_elevation;
 
   // Geometric part of PICO
   m_geometry->update(bed_elevation, cell_type);

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
       btu.reset(new energy::BTU_Minimal(grid));
     }
 
-    InputOptions opts = process_input_options(com);
+    InputOptions opts = process_input_options(com, config);
     btu->init(opts);
 
     double dt_seconds = units::convert(ctx->unit_system(), dt_years, "years", "seconds");

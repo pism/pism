@@ -29,7 +29,7 @@ namespace pism {
  * This is sometimes necessary during initialization, but should be avoided if possible.
  */
 template<class M>
-void init_step(M *model, const Time& time) {
+void init_step(M *model, const Geometry &geometry, const Time& time) {
   const double
     now               = time.current(),
     one_year_from_now = time.increment_date(now, 1.0);
@@ -46,7 +46,7 @@ void init_step(M *model, const Time& time) {
 
   assert(max_dt.finite());
 
-  model->update(now, max_dt.value());
+  model->update(geometry, now, max_dt.value());
 }
 
 } // end of namespace pism

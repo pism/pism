@@ -32,20 +32,18 @@
 #include "Cache.hh"
 #include "GivenTH.hh"
 #include "Pico.hh"
-#include "pico_old/Pico.hh"
 
 namespace pism {
 namespace ocean {
 // Ocean
 Factory::Factory(IceGrid::ConstPtr g)
-  : PCFactory<OceanModel,OceanModel>(g) {
+  : PCFactory<OceanModel>(g) {
   m_option = "ocean";
 
   add_model<GivenTH>("th");
   add_model<PIK>("pik");
   add_model<Constant>("constant");
   add_model<Pico>("pico");
-  add_model<PicoOld>("pico_old");
   add_model<Given>("given");
   set_default("constant");
 

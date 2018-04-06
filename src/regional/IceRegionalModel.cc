@@ -107,7 +107,7 @@ void IceRegionalModel::model_state_setup() {
   // initialize the model state (including special fields)
   IceModel::model_state_setup();
 
-  InputOptions input = process_input_options(m_ctx->com());
+  InputOptions input = process_input_options(m_ctx->com(), m_config);
 
   // Initialize stored ice thickness and surface elevation. This goes here and not in
   // bootstrap_2d because bed topography is not initialized at the time bootstrap_2d is
@@ -173,26 +173,27 @@ void IceRegionalModel::allocate_stressbalance() {
 
 void IceRegionalModel::allocate_basal_yield_stress() {
 
-  if (m_basal_yield_stress_model != NULL) {
+  if (m_basal_yield_stress_model) {
     return;
   }
 
   std::string model = m_config->get_string("stress_balance.model");
 
   // only these two use the yield stress (so far):
-  if (model == "ssa" || model == "ssa+sia") {
+  if (model == "ssa" or model == "ssa+sia") {
     std::string yield_stress_model = m_config->get_string("basal_yield_stress.model");
 
     if (yield_stress_model == "constant") {
-      m_basal_yield_stress_model = new ConstantYieldStress(m_grid);
+      m_basal_yield_stress_model.reset(new ConstantYieldStress(m_grid));
     } else if (yield_stress_model == "mohr_coulomb") {
-      m_basal_yield_stress_model = new RegionalDefaultYieldStress(m_grid, m_subglacial_hydrology);
+      m_basal_yield_stress_model.reset(new RegionalDefaultYieldStress(m_grid,
+                                                                      m_subglacial_hydrology.get()));
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
     }
-    m_submodels["basal yield stress"] = m_basal_yield_stress_model;
+    m_submodels["basal yield stress"] = m_basal_yield_stress_model.get();
   }
 }
 

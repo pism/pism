@@ -1,6 +1,7 @@
 %{
 /* Using directives needed to compile IceModelVec wrappers. */
 #include "util/IceModelVec2CellType.hh"
+#include "util/IceModelVec2T.hh"
 
 using namespace pism;
 %}
@@ -9,6 +10,7 @@ using namespace pism;
 %shared_ptr(pism::IceModelVec)
 %shared_ptr(pism::IceModelVec2)
 %shared_ptr(pism::IceModelVec2S)
+%shared_ptr(pism::IceModelVec2T)
 %shared_ptr(pism::IceModelVec2V)
 %shared_ptr(pism::IceModelVec2Int)
 %shared_ptr(pism::IceModelVec2CellType)
@@ -122,4 +124,5 @@ using namespace pism;
 %ignore pism::StarStencil::operator[];
 %include "util/iceModelVec.hh"
 %include "util/IceModelVec2CellType.hh"
+%include "util/IceModelVec2T.hh"
 %include "util/Vector2.hh"

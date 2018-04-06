@@ -22,8 +22,8 @@
 
 #include "CompleteOceanModel.hh"
 
-#include "pism/coupler/util/PGivenClimate.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/IceModelVec2T.hh"
 
 namespace pism {
 namespace ocean {
@@ -36,14 +36,14 @@ class PicoPhysics;
 //! Generalizes the two dimensional ocean box model of [@ref OlbersHellmer2010] for
 //! use in PISM, i.e. three dimensions.
 //!
-class Pico : public PGivenClimate<CompleteOceanModel, CompleteOceanModel> {
+class Pico : public CompleteOceanModel {
 public:
   Pico(IceGrid::ConstPtr g);
   virtual ~Pico();
 
 protected:
-  void update_impl(double t, double dt);
-  void init_impl();
+  void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Geometry &geometry);
 
   void define_model_state_impl(const PIO &output) const;
   void write_model_state_impl(const PIO &output) const;
@@ -60,7 +60,7 @@ private:
 
   std::unique_ptr<PicoGeometry> m_geometry;
 
-  IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
+  IceModelVec2T::Ptr m_theta_ocean, m_salinity_ocean;
 
   void compute_ocean_input_per_basin(const PicoPhysics &physics,
                                      const IceModelVec2Int &basin_mask,
