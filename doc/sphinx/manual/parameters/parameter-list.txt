@@ -3,6 +3,18 @@
 .. DO NOT EDIT: This file was automatically generated. Edit src/pism_config.cdl instead.
 
 
+#. :config:`input.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-i`
+   :Description: Input file name
+
+#. :config:`input.bootstrap` (*boolean*)
+
+   :Value: no
+   :Option: :opt:`-bootstrap`
+   :Description: It true, use bootstrapping heuristics when initializing PISM.
+
 #. :config:`age.enabled` (*boolean*)
 
    :Value: no
@@ -59,10 +71,70 @@
    :Value: 196
    :Description: day of year for July 15; used in corrected formula (4) in :cite:`Faustoetal2009`
 
+#. :config:`atmosphere.given.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_given_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`atmosphere.given.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_given_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`atmosphere.given.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_given_reference_year`
+   :Description: Reference year to use when ``atmosphere.given.period`` is active.
+
+#. :config:`atmosphere.anomaly.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_anomaly_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`atmosphere.anomaly.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_anomaly_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`atmosphere.anomaly.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_anomaly_reference_year`
+   :Description: Reference year to use when ``atmosphere.anomaly.period`` is active.
+
+#. :config:`atmosphere.lapse_rate.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_lapse_rate_file`
+   :Description: Name of the file containing the reference surface elevation field (variable ``usurf``).
+
+#. :config:`atmosphere.lapse_rate.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_lapse_rate_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`atmosphere.lapse_rate.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_lapse_rate_reference_year`
+   :Description: Reference year to use when ``atmosphere.lapse_rate.period`` is active.
+
 #. :config:`atmosphere.precip_exponential_factor_for_temperature` (*scalar*)
 
    :Value: 0.070417 (Kelvin-1)
    :Description: = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`
+
+#. :config:`atmosphere.lapse_rate.precipitation_lapse_rate` (*scalar*)
+
+   :Value: 0 ((m / year) / km)
+   :Option: :opt:`-precip_lapse_rate`
+   :Description: Elevation lapse rate for the surface mass balance
 
 #. :config:`basal_resistance.beta_ice_free_bedrock` (*scalar*)
 
@@ -888,6 +960,11 @@
    :Option: :opt:`-hydrology_sliding_speed_file`
    :Description: name of the file containing velbase_mag, the basal sliding speed to use with :literal:`hydrology.distributed.init_p_from_steady`
 
+#. :config:`hydrology.surface_input_file` (*string*)
+
+   :Value: *no default*
+   :Description: Basal hydrology sub.surface_input_file.
+
 #. :config:`inverse.design.cH1` (*scalar*)
 
    :Value: 0 (1)
@@ -1035,6 +1112,42 @@
    :Option: :opt:`-tikhonov_rtol`
    :Description: relative threshold for Tikhonov stopping criterion
 
+#. :config:`ocean.given.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ocean_given_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`ocean.given.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_given_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`ocean.given.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_given_reference_year`
+   :Description: Reference year to use when ``ocean.given.period`` is active.
+
+#. :config:`ocean.th.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ocean_th_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`ocean.th.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_th_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`ocean.th.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_th_reference_year`
+   :Description: Reference year to use when ``ocean.th.period`` is active.
+
 #. :config:`ocean.always_grounded` (*boolean*)
 
    :Value: no
@@ -1046,6 +1159,23 @@
    :Value: 0.005000 (1)
    :Option: :opt:`-meltfactor_pik`
    :Description: dimensionless tuning parameter in the '-ocean pik' ocean heat flux parameterization; see :cite:`Martinetal2011`
+
+#. :config:`ocean.constant.melt_rate` (*scalar*)
+
+   :Value: 0.051914 (m / year)
+   :Option: :opt:`-shelf_base_melt_rate`
+   :Description: default melt rate used by the 'constant' ocean model (computed as `Q / (L \rho_i)`)
+
+#. :config:`ocean.constant.melange_back_pressure_fraction` (*scalar*)
+
+   :Value: 0 (1)
+   :Description: default melange back pressure fraction in the 'contant' ocean model
+
+#. :config:`ocean.cache.update_interval` (*integer*)
+
+   :Value: 10
+   :Option: :opt:`-ocean_cache_update_interval`
+   :Description: update interval of the 'cache' ocean modifier
 
 #. :config:`ocean.runoff_to_ocean_melt_b` (*scalar*)
 
@@ -1411,19 +1541,33 @@
    :Option: :opt:`-vertical_velocity_approximation`
    :Description: Vertical velocity FD approximation. "Upstream" uses first-order finite difference to compute u_x and v_y. Uses basal velocity to make decisions.
 
+#. :config:`surface.cache.update_interval` (*integer*)
+
+   :Value: 10
+   :Description: Update interval (in years) for the `-surface cache` modifier.
+
+#. :config:`surface.force_to_thickness_file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-force_to_thickness_file`
+   :Description: The name of the file to read the target ice thickness from.
+
 #. :config:`surface.force_to_thickness.alpha` (*scalar*)
 
    :Value: 0.010000 (year-1)
+   :Option: :opt:`-force_to_thickness_alpha`
    :Description: exponential coefficient in force-to-thickness mechanism
 
 #. :config:`surface.force_to_thickness.ice_free_alpha_factor` (*scalar*)
 
    :Value: 1 (1)
+   :Option: :opt:`-force_to_thickness_ice_free_alpha_factor`
    :Description: surface.force_to_thickness.alpha is multiplied by this factor in areas that are ice-free according to the target ice thickness and surface.force_to_thickness.ice_free_thickness_threshold
 
 #. :config:`surface.force_to_thickness.ice_free_thickness_threshold` (*scalar*)
 
    :Value: 1 (meters)
+   :Option: :opt:`-force_to_thickness_ice_free_thickness_threshold`
    :Description: threshold of ice thickness in the force-to-thickness target field. Used to determine whether to use surface.force_to_thickness.ice_free_alpha_factor.
 
 #. :config:`surface.force_to_thickness.start_time` (*scalar*)
@@ -1435,6 +1579,67 @@
 
    :Value: 91000 (kg m-2 year-1)
    :Description: Maximum climatic mass balance value (used to check input data). Corresponds to 100 m/year ice equivalent.
+
+#. :config:`surface.given.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-surface_given_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`surface.given.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-surface_given_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`surface.given.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-surface_given_reference_year`
+   :Description: Reference year to use when ``surface.given.period`` is active.
+
+#. :config:`surface.lapse_rate.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-surface_lapse_rate_file`
+   :Description: Name of the file containing the reference surface elevation field (variable ``usurf``).
+
+#. :config:`surface.lapse_rate.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-surface_lapse_rate_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`surface.lapse_rate.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-surface_lapse_rate_reference_year`
+   :Description: Reference year to use when ``surface.lapse_rate.period`` is active.
+
+#. :config:`surface.anomaly.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-surface_anomaly_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`surface.anomaly.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-surface_anomaly_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`surface.anomaly.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-surface_anomaly_reference_year`
+   :Description: Reference year to use when ``surface.anomaly.period`` is active.
+
+#. :config:`surface.pdd.method` (*keyword*)
+
+   :Value: ``expectation_integral``
+   :Choices: ``expectation_integral, repeatable_random_process, random_process``
+   :Option: :opt:`-pdd_method`
+   :Description: PDD implementation method
 
 #. :config:`surface.pdd.air_temp_all_precip_as_rain` (*scalar*)
 

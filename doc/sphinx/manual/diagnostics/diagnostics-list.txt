@@ -183,6 +183,7 @@ Spatially-variable fields
 
    :Units: kg m-2 year-1
    :Description: effective precipitation rate
+   :Standard name: ``precipitation_flux``
 
 #. ``effective_viscosity``
 
