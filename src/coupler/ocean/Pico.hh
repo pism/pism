@@ -42,8 +42,9 @@ public:
   virtual ~Pico();
 
 protected:
-  void update_impl(const Geometry &geometry, double t, double dt);
   void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
+  MaxTimestep max_timestep_impl(double t) const;
 
   void define_model_state_impl(const PIO &output) const;
   void write_model_state_impl(const PIO &output) const;

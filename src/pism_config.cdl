@@ -1089,6 +1089,23 @@ netcdf pism_config {
     pism_config:ocean.th.reference_year_type = "integer";
     pism_config:ocean.th.reference_year_units = "years";
 
+    pism_config:ocean.pico.file = "";
+    pism_config:ocean.pico.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:ocean.pico.file_type = "string";
+    pism_config:ocean.pico.file_option = "ocean_pico_file";
+
+    pism_config:ocean.pico.period = 0;
+    pism_config:ocean.pico.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:ocean.pico.period_type = "integer";
+    pism_config:ocean.pico.period_option = "ocean_pico_period";
+    pism_config:ocean.pico.period_units = "years";
+
+    pism_config:ocean.pico.reference_year = 0;
+    pism_config:ocean.pico.reference_year_doc = "Reference year to use when ``ocean.pico.period`` is active.";
+    pism_config:ocean.pico.reference_year_option = "ocean_pico_reference_year";
+    pism_config:ocean.pico.reference_year_type = "integer";
+    pism_config:ocean.pico.reference_year_units = "years";
+
     pism_config:ocean.always_grounded = "no";
     pism_config:ocean.always_grounded_doc = "Dry (ocean-less) simulation; ice is considered grounded regardless of ice thickness, bed elevation, and sea level.";
     pism_config:ocean.always_grounded_option = "dry";
