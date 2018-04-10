@@ -32,6 +32,7 @@ add_library (boundary OBJECT
   ./ocean/Runoff_SMB.cc
   ./ocean/Factory.cc
   ./ocean/Initialization.cc
+  ./ocean/sea_level/SeaLevel.cc
   ./surface/Initialization.cc
   ./surface/localMassBalance.cc
   ./surface/SurfaceModel.cc
