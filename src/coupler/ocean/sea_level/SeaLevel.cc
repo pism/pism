@@ -25,27 +25,20 @@
 
 namespace pism {
 namespace ocean {
+namespace sea_level {
 
-IceModelVec2S::Ptr SeaLevel::allocate_sea_level(IceGrid::ConstPtr grid) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "sea_level", WITHOUT_GHOSTS));
-  result->set_attrs("diagnostic",
-                    "sea level elevation, relative to the geoid",
-                    "meter", "");
-  return result;
-}
-
-// "modifier" constructor
+// "Modifier" constructor.
 SeaLevel::SeaLevel(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> input)
-  : Component(grid), m_input_model(input) {
+  : Component(grid),
+    m_input_model(input),
+    m_sea_level(grid, "sea_level", WITHOUT_GHOSTS) {
 
-  if (not input) {
-    m_sea_level = allocate_sea_level(grid);
-    // set the default value
-    m_sea_level->set(0.0);
-  }
+  m_sea_level.set_attrs("diagnostic",
+                        "sea level elevation, relative to the geoid",
+                        "meter", "");
 }
 
-// "model" constructor
+// "Model" constructor (returns sea level is zero).
 SeaLevel::SeaLevel(IceGrid::ConstPtr g)
   : SeaLevel(g, nullptr) {
   // empty
@@ -59,28 +52,21 @@ void SeaLevel::init(const Geometry &geometry) {
   init_impl(geometry);
 }
 
+void SeaLevel::init_impl(const Geometry &geometry) {
+  if (m_input_model) {
+    m_input_model->init(geometry);
+  } else {
+    // set the default value
+    m_sea_level.set(0.0);
+  }
+}
+
 void SeaLevel::update(const Geometry &geometry, double t, double dt) {
   update_impl(geometry, t, dt);
 }
 
 const IceModelVec2S& SeaLevel::sea_level_elevation() const {
-  if (m_input_model) {
-    return m_input_model->sea_level_elevation();
-  }
-  return *m_sea_level;
-}
-
-void SeaLevel::init_impl(const Geometry &geometry) {
-  if (m_input_model) {
-    m_input_model->init(geometry);
-  }
-}
-
-  // provides default (pass-through) implementations for "modifiers"
-void SeaLevel::update_impl(const Geometry &geometry, double t, double dt) {
-  if (m_input_model) {
-    m_input_model->update(geometry, t, dt);
-  }
+  return m_sea_level;
 }
 
 MaxTimestep SeaLevel::max_timestep_impl(double t) const {
@@ -148,6 +134,6 @@ TSDiagnosticList SeaLevel::ts_diagnostics_impl() const {
   }
 }
 
-
+} // end of namespace sea_level
 } // end of namespace ocean
 } // end of namespace pism

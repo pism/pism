@@ -2,7 +2,6 @@
 #include "coupler/ocean/Constant.hh"
 #include "coupler/ocean/Cache.hh"
 #include "coupler/ocean/ConstantPIK.hh"
-#include "coupler/ocean/Delta_SL.hh"
 #include "coupler/ocean/Delta_SMB.hh"
 #include "coupler/ocean/Delta_T.hh"
 #include "coupler/ocean/Frac_SMB.hh"
@@ -28,10 +27,6 @@
 %shared_ptr(pism::ocean::PIK)
 %rename(OceanPIK) pism::ocean::PIK;
 %include "coupler/ocean/ConstantPIK.hh"
-
-%shared_ptr(pism::ocean::Delta_SL)
-%rename(OceanDeltaSL) pism::ocean::Delta_SL;
-%include "coupler/ocean/Delta_SL.hh"
 
 %shared_ptr(pism::ocean::Delta_SMB)
 %rename(OceanDeltaSMB) pism::ocean::Delta_SMB;

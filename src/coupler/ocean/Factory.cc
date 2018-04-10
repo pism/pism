@@ -23,7 +23,6 @@
 #include "Constant.hh"
 #include "ConstantPIK.hh"
 #include "GivenClimate.hh"
-#include "Delta_SL.hh"
 #include "Delta_T.hh"
 #include "Delta_SMB.hh"
 #include "Frac_MBP.hh"
@@ -51,7 +50,6 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_modifier<Delta_T>("delta_T");
   add_modifier<Runoff_SMB>("runoff_SMB");
   add_modifier<Frac_MBP>("frac_MBP");
-  add_modifier<Delta_SL>("delta_SL");
 }
 
 Factory::~Factory() {
