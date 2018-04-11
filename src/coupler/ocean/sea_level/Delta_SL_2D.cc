@@ -39,12 +39,15 @@ Delta_SL_2D::Delta_SL_2D(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> in)
 
 
     m_forcing = IceModelVec2T::ForcingField(m_grid,
-                                               file,
-                                               "delta_SL",
-                                               "", // no standard name
-                                               buffer_size,
-                                               evaluations_per_year,
-                                               periodic);
+                                            file,
+                                            "delta_SL",
+                                            "", // no standard name
+                                            buffer_size,
+                                            evaluations_per_year,
+                                            periodic);
+    m_forcing->set_attrs("climate_forcing",
+                         "two-dimensional sea level offsets",
+                         "meters", "");
   }
 }
 
@@ -58,7 +61,7 @@ void Delta_SL_2D::init_impl(const Geometry &geometry) {
 
   m_log->message(2, "* Initializing 2D sea level forcing...\n");
 
-  ForcingOptions opt(*m_grid->ctx(), "ocean.sea_level_anomaly");
+  ForcingOptions opt(*m_grid->ctx(), "ocean.delta_sl_2d");
 
   m_log->message(2,
                  "    reading anomalies from %s ...\n", opt.filename.c_str());

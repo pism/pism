@@ -32,7 +32,8 @@ Changes since v1.0
   position. (This code interprets ice thickness, bed elevation, and sea level as
   piecewise-linear functions on a specially-designed triangular mesh refining the regular
   grid used by PISM.)
-- Support 2D (spatially-variable) sea level elevation everywhere in PISM.
+- Support 2D (spatially-variable) sea level elevation everywhere in PISM, including 2D sea
+  level forcing. (See ``ocean.delta_sl_2d.file`` and related configuration parameters.)
 - Split sea level forcing from the ocean model so that the sea level is available when
   sub-shelf melt parameterizations are initialized.
 - Decouple calving law parameterization from ocean models and the stress balance code.

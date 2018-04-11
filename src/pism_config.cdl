@@ -1072,6 +1072,20 @@ netcdf pism_config {
     pism_config:ocean.given.reference_year_type = "integer";
     pism_config:ocean.given.reference_year_units = "years";
 
+    pism_config:ocean.delta_sl_2d.file = "";
+    pism_config:ocean.delta_sl_2d.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:ocean.delta_sl_2d.file_type = "string";
+
+    pism_config:ocean.delta_sl_2d.period = 0;
+    pism_config:ocean.delta_sl_2d.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:ocean.delta_sl_2d.period_type = "integer";
+    pism_config:ocean.delta_sl_2d.period_units = "years";
+
+    pism_config:ocean.delta_sl_2d.reference_year = 0;
+    pism_config:ocean.delta_sl_2d.reference_year_doc = "Reference year to use when ``ocean.delta_sl_2d.period`` is active.";
+    pism_config:ocean.delta_sl_2d.reference_year_type = "integer";
+    pism_config:ocean.delta_sl_2d.reference_year_units = "years";
+
     pism_config:ocean.th.file = "";
     pism_config:ocean.th.file_doc = "Name of the file containing climate forcing fields.";
     pism_config:ocean.th.file_type = "string";

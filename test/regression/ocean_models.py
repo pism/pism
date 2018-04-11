@@ -16,6 +16,8 @@ config.set_double("grid.Mx", 3)
 config.set_double("grid.My", 3)
 config.set_double("grid.Mz", 5)
 
+config.set_string("ocean.delta_sl_2d.file", "delta_SL_input.nc")
+
 seconds_per_year = 365 * 86400
 # ensure that this is the correct year length
 config.set_string("time.calendar", "365_day")
@@ -481,6 +483,39 @@ class DeltaSL(TestCase):
         modifier = PISM.SeaLevelDelta(self.grid, self.model)
 
         options.setValue("-ocean_delta_SL_file", self.filename)
+
+        modifier.init(self.geometry)
+        modifier.update(self.geometry, 0, 1)
+
+        check_difference(modifier.sea_level_elevation(),
+                         self.model.sea_level_elevation(),
+                         self.dSL)
+
+    def tearDown(self):
+        os.remove(self.filename)
+
+def create_delta_SL_file(filename, grid, sea_level_offset):
+    PISM.util.prepare_output(filename)
+
+    SL = PISM.IceModelVec2S(grid, "delta_SL", PISM.WITHOUT_GHOSTS)
+    SL.set_attrs("forcing", "sea level forcing", "meters", "")
+    SL.set(sea_level_offset)
+    SL.write(filename)
+
+class DeltaSL2D(TestCase):
+    def setUp(self):
+        self.filename = config.get_string("ocean.delta_sl_2d.file")
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
+        self.model = PISM.SeaLevel(self.grid)
+        self.dSL = -5.0
+
+        create_delta_SL_file(self.filename, self.grid, self.dSL)
+
+    def runTest(self):
+        "Modifier Delta_SL_2D"
+
+        modifier = PISM.SeaLevelDelta2D(self.grid, self.model)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
