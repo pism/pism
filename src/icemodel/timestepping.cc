@@ -27,6 +27,13 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Component.hh" // ...->max_timestep()
 
+#include "pism/calving/EigenCalving.hh"
+#include "pism/calving/vonMisesCalving.hh"
+#include "pism/calving/FrontalMelt.hh"
+
+#include "pism/energy/EnergyModel.hh"
+#include "pism/coupler/OceanModel.hh"
+
 namespace pism {
 
 //! Compute the maximum time step allowed by the diffusive SIA.
@@ -107,6 +114,33 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
   {
     for (auto m : m_submodels) {
       restrictions.push_back(m.second->max_timestep(current_time));
+    }
+  }
+
+  // calving code needs additional inputs to compute time step restrictions
+  {
+    CalvingInputs inputs;
+
+    inputs.bed_elevation         = &m_geometry.bed_elevation;
+    inputs.sea_level_elevation   = &m_geometry.sea_level_elevation;
+    inputs.ice_thickness         = &m_geometry.ice_thickness;
+    inputs.cell_type             = &m_geometry.cell_type;
+    inputs.ice_surface_elevation = &m_geometry.ice_surface_elevation;
+    inputs.ice_thickness_bc_mask = &m_ssa_dirichlet_bc_mask;
+
+    inputs.ice_enthalpy         = &m_energy_model->enthalpy();
+    inputs.shelf_base_mass_flux = &m_ocean->shelf_base_mass_flux();
+
+    if (m_eigen_calving) {
+      restrictions.push_back(m_eigen_calving->max_timestep(inputs, current_time));
+    }
+
+    if (m_vonmises_calving) {
+      restrictions.push_back(m_vonmises_calving->max_timestep(inputs, current_time));
+    }
+
+    if (m_frontal_melt) {
+      restrictions.push_back(m_frontal_melt->max_timestep(inputs, current_time));
     }
   }
 
