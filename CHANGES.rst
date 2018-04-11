@@ -33,6 +33,9 @@ Changes since v1.0
   piecewise-linear functions on a specially-designed triangular mesh refining the regular
   grid used by PISM.)
 - Support 2D (spatially-variable) sea level elevation everywhere in PISM.
+- Split sea level forcing from the ocean model so that the sea level is available when
+  sub-shelf melt parameterizations are initialized.
+- Decouple calving law parameterization from ocean models and the stress balance code.
 - Add regression tests for all ocean models.
 - Fix `issue 402`_: ensure reproducibility of ``-bed_def lc`` results.
 - Clean up PISM's ocean, surface, and atmosphere model code. (This makes them easier to
