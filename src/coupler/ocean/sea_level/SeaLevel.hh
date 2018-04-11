@@ -47,8 +47,7 @@ public:
 protected:
   virtual void init_impl(const Geometry &geometry);
 
-  // provides default (pass-through) implementations for "modifiers"
-  virtual void update_impl(const Geometry &geometry, double t, double dt) = 0;
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
 
   virtual MaxTimestep max_timestep_impl(double t) const;
 
@@ -61,8 +60,6 @@ protected:
 protected:
   std::shared_ptr<SeaLevel> m_input_model;
   IceModelVec2S m_sea_level;
-
-  static IceModelVec2S::Ptr allocate_sea_level(IceGrid::ConstPtr grid);
 };
 
 } // end of namespace sea_level

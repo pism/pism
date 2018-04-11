@@ -296,31 +296,6 @@ class DeltaT(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
-class DeltaSL(TestCase):
-    def setUp(self):
-        self.filename = "delta_SL_input.nc"
-        self.grid = dummy_grid()
-        self.geometry = create_geometry(self.grid)
-        self.model = PISM.OceanConstant(self.grid)
-        self.dSL = -5.0
-
-        create_dummy_forcing_file(self.filename, "delta_SL", "meters", self.dSL)
-
-    def runTest(self):
-        "Modifier Delta_SL"
-
-        modifier = PISM.OceanDeltaSL(self.grid, self.model)
-
-        options.setValue("-ocean_delta_SL_file", self.filename)
-
-        modifier.init(self.geometry)
-        modifier.update(self.geometry, 0, 1)
-
-        check_modifier(self.model, modifier, 0.0, 0.0, self.dSL, 0.0)
-
-    def tearDown(self):
-        os.remove(self.filename)
-
 class DeltaSMB(TestCase):
     def setUp(self):
         self.filename = "delta_SMB_input.nc"
@@ -486,6 +461,33 @@ class Cache(TestCase):
             t += dt
 
         np.testing.assert_almost_equal(diff, [1, 1, 3, 3])
+
+    def tearDown(self):
+        os.remove(self.filename)
+
+class DeltaSL(TestCase):
+    def setUp(self):
+        self.filename = "delta_SL_input.nc"
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
+        self.model = PISM.SeaLevel(self.grid)
+        self.dSL = -5.0
+
+        create_dummy_forcing_file(self.filename, "delta_SL", "meters", self.dSL)
+
+    def runTest(self):
+        "Modifier Delta_SL"
+
+        modifier = PISM.SeaLevelDelta(self.grid, self.model)
+
+        options.setValue("-ocean_delta_SL_file", self.filename)
+
+        modifier.init(self.geometry)
+        modifier.update(self.geometry, 0, 1)
+
+        check_difference(modifier.sea_level_elevation(),
+                         self.model.sea_level_elevation(),
+                         self.dSL)
 
     def tearDown(self):
         os.remove(self.filename)

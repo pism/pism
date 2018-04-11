@@ -8,6 +8,8 @@
 #include "coupler/ocean/Frac_MBP.hh"
 #include "coupler/ocean/GivenClimate.hh"
 #include "coupler/ocean/GivenTH.hh"
+#include "coupler/ocean/sea_level/Delta_SL.hh"
+#include "coupler/ocean/sea_level/Delta_SL_2D.hh"
 %}
 
 %shared_ptr(pism::ocean::OceanModel)
@@ -51,3 +53,14 @@
 %shared_ptr(pism::ocean::GivenTH)
 %rename(OceanGivenTH) pism::ocean::GivenTH;
 %include "coupler/ocean/GivenTH.hh"
+
+%shared_ptr(pism::ocean::sea_level::SeaLevel)
+%include "coupler/ocean/sea_level/SeaLevel.hh"
+
+%shared_ptr(pism::ocean::sea_level::Delta_SL)
+%rename(SeaLevelDelta) pism::ocean::sea_level::Delta_SL;
+%include "coupler/ocean/sea_level/Delta_SL.hh"
+
+%shared_ptr(pism::ocean::sea_level::Delta_SL_2D)
+%rename(SeaLevelDelta2D) pism::ocean::sea_level::Delta_SL_2D;
+%include "coupler/ocean/sea_level/Delta_SL_2D.hh"

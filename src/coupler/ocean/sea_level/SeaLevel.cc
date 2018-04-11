@@ -65,6 +65,14 @@ void SeaLevel::update(const Geometry &geometry, double t, double dt) {
   update_impl(geometry, t, dt);
 }
 
+void SeaLevel::update_impl(const Geometry &geometry, double t, double dt) {
+  if (m_input_model) {
+    m_input_model->update(geometry, t, dt);
+  } else {
+    m_sea_level.set(0.0);
+  }
+}
+
 const IceModelVec2S& SeaLevel::sea_level_elevation() const {
   return m_sea_level;
 }

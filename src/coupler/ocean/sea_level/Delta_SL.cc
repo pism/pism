@@ -22,6 +22,7 @@
 namespace pism {
 namespace ocean {
 namespace sea_level {
+
 Delta_SL::Delta_SL(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> in)
   : SeaLevel(grid, in) {
 
