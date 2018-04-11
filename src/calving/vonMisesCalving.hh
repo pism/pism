@@ -20,10 +20,11 @@
 #ifndef VONMISESCALVING_H
 #define VONMISESCALVING_H
 
-#include "pism/util/iceModelVec.hh"
 #include "StressCalving.hh"
 
 namespace pism {
+
+class IceModelVec2S;
 
 namespace rheology {
 class FlowLaw;

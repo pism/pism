@@ -65,12 +65,6 @@ CalvingFrontRetreat::~CalvingFrontRetreat() {
 /**
  * @brief Compute the maximum time-step length allowed by the CFL
  * condition applied to the calving rate.
- *
- * Note: this code uses the mask variable obtained from the Vars
- * dictionary. This is not the same mask that is used in the update()
- * call, since max_timestep() is called *before* the mass-continuity
- * time-step.
- *
  */
 MaxTimestep CalvingFrontRetreat::max_timestep(const CalvingInputs &inputs,
                                               double t) const {

@@ -19,9 +19,6 @@
 
 #include "StressCalving.hh"
 
-#include "pism/stressbalance/StressBalance.hh"
-#include "pism/util/Vars.hh"
-
 namespace pism {
 namespace calving {
 
