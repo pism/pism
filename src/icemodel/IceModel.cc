@@ -382,7 +382,9 @@ void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
     // stress-balance-related threshold here.
     m_geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
 
-    m_iceberg_remover->update(m_geometry.cell_type, m_geometry.ice_thickness);
+    m_iceberg_remover->update(m_ssa_dirichlet_bc_mask,
+                              m_geometry.cell_type,
+                              m_geometry.ice_thickness);
     // The call above modifies ice thickness and updates the mask accordingly, but we re-compute the
     // mask (we need to use a different threshold).
   }
