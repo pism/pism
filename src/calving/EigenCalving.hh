@@ -23,14 +23,11 @@
 
 namespace pism {
 
-class IceModelVec2S;
-class IceModelVec2CellType;
-
 namespace calving {
 
 class EigenCalving : public StressCalving {
 public:
-  EigenCalving(IceGrid::ConstPtr g, stressbalance::StressBalance *stress_balance);
+  EigenCalving(IceGrid::ConstPtr grid);
   virtual ~EigenCalving();
 
   void init();

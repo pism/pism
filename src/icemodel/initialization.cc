@@ -833,7 +833,7 @@ void IceModel::init_calving() {
   if (methods.find("eigen_calving") != methods.end()) {
 
     if (not m_eigen_calving) {
-      m_eigen_calving = new calving::EigenCalving(m_grid, m_stress_balance.get());
+      m_eigen_calving = new calving::EigenCalving(m_grid);
     }
 
     m_eigen_calving->init();
@@ -845,7 +845,8 @@ void IceModel::init_calving() {
   if (methods.find("vonmises_calving") != methods.end()) {
 
     if (not m_vonmises_calving) {
-      m_vonmises_calving = new calving::vonMisesCalving(m_grid, m_stress_balance.get());
+      m_vonmises_calving = new calving::vonMisesCalving(m_grid,
+                                                        m_stress_balance->shallow()->flow_law());
     }
 
     m_vonmises_calving->init();

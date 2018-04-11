@@ -35,6 +35,7 @@ CalvingInputs::CalvingInputs() {
   cell_type             = nullptr;
   ice_thickness_bc_mask = nullptr;
   ice_enthalpy          = nullptr;
+  ice_velocity          = nullptr;
   shelf_base_mass_flux  = nullptr;
 }
 

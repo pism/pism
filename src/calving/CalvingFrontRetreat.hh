@@ -43,6 +43,8 @@ public:
 
   const IceModelVec3 *ice_enthalpy;
 
+  const IceModelVec2V *ice_velocity;
+
   // frontal melt
   const IceModelVec2S *shelf_base_mass_flux;
 };

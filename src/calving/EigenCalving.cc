@@ -18,19 +18,17 @@
  */
 
 #include "EigenCalving.hh"
-#include "remove_narrow_tongues.hh"
 
 #include "pism/util/IceGrid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/stressbalance/StressBalance.hh"
 
 namespace pism {
 namespace calving {
 
-EigenCalving::EigenCalving(IceGrid::ConstPtr g,
-                           stressbalance::StressBalance *stress_balance)
-  : StressCalving(g, stress_balance, 2) {
+EigenCalving::EigenCalving(IceGrid::ConstPtr grid)
+  : StressCalving(grid, 2) {
 
   m_K = m_config->get_double("calving.eigen_calving.K");
 }
@@ -70,7 +68,10 @@ void EigenCalving::compute_calving_rate(const CalvingInputs &inputs,
   // compressive to extensive flow regime
   const double eigenCalvOffset = 0.0;
 
-  update_strain_rates();
+  stressbalance::compute_2D_principal_strain_rates(*inputs.ice_velocity,
+                                                   m_mask,
+                                                   m_strain_rates);
+  m_strain_rates.update_ghosts();
 
   IceModelVec::AccessList list{&m_mask, &result, &m_strain_rates};
 
