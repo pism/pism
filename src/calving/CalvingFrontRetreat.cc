@@ -22,21 +22,19 @@
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 
 CalvingInputs::CalvingInputs() {
-  bed_elevation         = nullptr;
-  sea_level_elevation   = nullptr;
-  ice_thickness         = nullptr;
-  cell_type             = nullptr;
-  ice_thickness_bc_mask = nullptr;
-  ice_enthalpy          = nullptr;
-  ice_velocity          = nullptr;
-  shelf_base_mass_flux  = nullptr;
+  geometry = nullptr;
+
+  bc_mask              = nullptr;
+  ice_enthalpy         = nullptr;
+  ice_velocity         = nullptr;
+  shelf_base_mass_flux = nullptr;
 }
 
 CalvingFrontRetreat::CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width)
@@ -187,9 +185,9 @@ void CalvingFrontRetreat::update(double dt,
                                  IceModelVec2S &Href,
                                  IceModelVec2S &ice_thickness) {
 
-  const IceModelVec2S   &sea_level      = *inputs.sea_level_elevation;
-  const IceModelVec2S   &bed_topography = *inputs.bed_elevation;
-  const IceModelVec2Int &bc_mask        = *inputs.ice_thickness_bc_mask;
+  const IceModelVec2S   &sea_level      = inputs.geometry->sea_level_elevation;
+  const IceModelVec2S   &bed_topography = inputs.geometry->bed_elevation;
+  const IceModelVec2Int &bc_mask        = *inputs.bc_mask;
 
   GeometryCalculator gc(*m_config);
   gc.compute_surface(sea_level, bed_topography, ice_thickness, m_surface_topography);

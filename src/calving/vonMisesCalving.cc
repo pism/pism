@@ -24,6 +24,7 @@
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/rheology/FlowLaw.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace calving {
@@ -62,16 +63,16 @@ void vonMisesCalving::init() {
 void vonMisesCalving::compute_calving_rate(const CalvingInputs &inputs,
                                            IceModelVec2S &result) const {
 
+  const IceModelVec2S &ice_thickness = inputs.geometry->ice_thickness;
   const IceModelVec2V &ice_velocity  = *inputs.ice_velocity;
   const IceModelVec3  *enthalpy      = inputs.ice_enthalpy;
-  const IceModelVec2S &ice_thickness = *inputs.ice_thickness;
 
   using std::max;
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
 
-  prepare_mask(*inputs.cell_type, m_mask);
+  prepare_mask(inputs.geometry->cell_type, m_mask);
 
   stressbalance::compute_2D_principal_strain_rates(ice_velocity,
                                                    m_mask,

@@ -24,7 +24,6 @@
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 
-
 namespace pism {
 
 class Geometry;
@@ -33,19 +32,19 @@ class CalvingInputs {
 public:
   CalvingInputs();
 
-  const IceModelVec2S *bed_elevation;
-  const IceModelVec2S *sea_level_elevation;
-  const IceModelVec2S *ice_thickness;
-  const IceModelVec2S *ice_surface_elevation;
+  const Geometry *geometry;
 
-  const IceModelVec2CellType *cell_type;
-  const IceModelVec2Int      *ice_thickness_bc_mask;
+  // specifies grid points that should not be affected by calving
+  const IceModelVec2Int *bc_mask;
 
+  // used by von Mises calving; could be replaced with a 2D map of vertically-averaged ice
+  // hardness
   const IceModelVec3 *ice_enthalpy;
 
+  // used by eigencalving and von Mises calving
   const IceModelVec2V *ice_velocity;
 
-  // frontal melt
+  // used by the frontal melt parameterization
   const IceModelVec2S *shelf_base_mass_flux;
 };
 

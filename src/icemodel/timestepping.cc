@@ -25,6 +25,7 @@
 #include "pism/util/Time.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/util/Component.hh" // ...->max_timestep()
 
 #include "pism/calving/EigenCalving.hh"
@@ -121,13 +122,10 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
   {
     CalvingInputs inputs;
 
-    inputs.bed_elevation         = &m_geometry.bed_elevation;
-    inputs.sea_level_elevation   = &m_geometry.sea_level_elevation;
-    inputs.ice_thickness         = &m_geometry.ice_thickness;
-    inputs.cell_type             = &m_geometry.cell_type;
-    inputs.ice_surface_elevation = &m_geometry.ice_surface_elevation;
-    inputs.ice_thickness_bc_mask = &m_ssa_dirichlet_bc_mask;
+    inputs.geometry = &m_geometry;
+    inputs.bc_mask  = &m_ssa_dirichlet_bc_mask;
 
+    inputs.ice_velocity         = &m_stress_balance->shallow()->velocity();
     inputs.ice_enthalpy         = &m_energy_model->enthalpy();
     inputs.shelf_base_mass_flux = &m_ocean->shelf_base_mass_flux();
 

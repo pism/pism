@@ -23,6 +23,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace calving {
@@ -59,7 +60,7 @@ void EigenCalving::init() {
 void EigenCalving::compute_calving_rate(const CalvingInputs &inputs,
                                         IceModelVec2S &result) const {
 
-  prepare_mask(*inputs.cell_type, m_mask);
+  prepare_mask(inputs.geometry->cell_type, m_mask);
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;

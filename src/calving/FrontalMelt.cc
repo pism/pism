@@ -19,8 +19,8 @@
 
 #include "FrontalMelt.hh"
 
-#include "pism/util/Vars.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 
@@ -48,17 +48,17 @@ DiagnosticList FrontalMelt::diagnostics_impl() const {
 void FrontalMelt::compute_calving_rate(const CalvingInputs &inputs,
                                        IceModelVec2S &result) const {
 
-  prepare_mask(*inputs.cell_type, m_mask);
+  prepare_mask(inputs.geometry->cell_type, m_mask);
 
   GeometryCalculator gc(*m_config);
 
   const IceModelVec2S &shelf_base_mass_flux = *inputs.shelf_base_mass_flux;
 
   const IceModelVec2S
-    &bed_elevation       = *inputs.bed_elevation,
-    &surface_elevation   = *inputs.ice_surface_elevation,
-    &ice_thickness       = *inputs.ice_thickness,
-    &sea_level_elevation = *inputs.sea_level_elevation;
+    &bed_elevation       = inputs.geometry->bed_elevation,
+    &surface_elevation   = inputs.geometry->ice_surface_elevation,
+    &ice_thickness       = inputs.geometry->ice_thickness,
+    &sea_level_elevation = inputs.geometry->sea_level_elevation;
 
   const double
     ice_density = m_config->get_double("constants.ice.density"),
