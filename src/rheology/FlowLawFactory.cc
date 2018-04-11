@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -118,7 +118,7 @@ void FlowLawFactory::set_default(const std::string &type) {
   m_type_name = type;
 }
 
-FlowLaw* FlowLawFactory::create() {
+std::shared_ptr<FlowLaw> FlowLawFactory::create() {
   // find the function that can create selected flow law:
   FlowLawCreator r = m_flow_laws[m_type_name];
   if (r == NULL) {
@@ -128,7 +128,7 @@ FlowLaw* FlowLawFactory::create() {
   }
 
   // create an FlowLaw instance:
-  return (*r)(m_prefix, *m_config, m_EC);
+  return std::shared_ptr<FlowLaw>((*r)(m_prefix, *m_config, m_EC));
 }
 
 } // end of namespace rheology

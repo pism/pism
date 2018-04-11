@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -48,7 +48,8 @@ void IcebergRemover::init() {
  * @param[in,out] pism_mask PISM's ice cover mask
  * @param[in,out] ice_thickness ice thickness
  */
-void IcebergRemover::update(IceModelVec2CellType &mask,
+void IcebergRemover::update(const IceModelVec2Int &bc_mask,
+                            IceModelVec2CellType &mask,
                             IceModelVec2S &ice_thickness) {
   const int
     mask_grounded_ice = 1,
@@ -59,7 +60,7 @@ void IcebergRemover::update(IceModelVec2CellType &mask,
   {
     m_iceberg_mask.set(0.0);
 
-    IceModelVec::AccessList list{&mask, &m_iceberg_mask};
+    IceModelVec::AccessList list{&mask, &m_iceberg_mask, &bc_mask};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -71,18 +72,12 @@ void IcebergRemover::update(IceModelVec2CellType &mask,
       }
     }
 
-    // Mark icy SSA Dirichlet B.C. cells as "grounded" because we
-    // don't want them removed.
-    if (m_grid->variables().is_available("bc_mask")) {
-      const IceModelVec2Int &bc_mask = *m_grid->variables().get_2d_mask("bc_mask");
-      list.add(bc_mask);
+    // Mark icy Dirichlet B.C. cells as "grounded" because we don't want them removed.
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-      for (Points p(*m_grid); p; p.next()) {
-        const int i = p.i(), j = p.j();
-
-        if (bc_mask(i,j) > 0.5 and mask.icy(i,j)) {
-          m_iceberg_mask(i,j) = mask_grounded_ice;
-        }
+      if (bc_mask(i, j) > 0.5 and mask.icy(i, j)) {
+        m_iceberg_mask(i, j) = mask_grounded_ice;
       }
     }
   }
@@ -108,31 +103,14 @@ void IcebergRemover::update(IceModelVec2CellType &mask,
   // correct ice thickness and the cell type mask using the resulting
   // "iceberg" mask:
   {
-    IceModelVec::AccessList list{&ice_thickness, &mask, &m_iceberg_mask};
+    IceModelVec::AccessList list{&ice_thickness, &mask, &m_iceberg_mask, &bc_mask};
 
-    if (m_grid->variables().is_available("bc_mask")) {
-      const IceModelVec2Int &bc_mask = *m_grid->variables().get_2d_mask("bc_mask");
-      // if SSA Dirichlet B.C. are in use, do not modify mask and ice
-      // thickness at Dirichlet B.C. locations
-      list.add(bc_mask);
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-      for (Points p(*m_grid); p; p.next()) {
-        const int i = p.i(), j = p.j();
-
-        if (m_iceberg_mask(i,j) > 0.5 && bc_mask(i,j) < 0.5) {
-          ice_thickness(i,j) = 0.0;
-          mask(i,j)     = MASK_ICE_FREE_OCEAN;
-        }
-      }
-    } else {
-
-      for (Points p(*m_grid); p; p.next()) {
-        const int i = p.i(), j = p.j();
-
-        if (m_iceberg_mask(i,j) > 0.5) {
-          ice_thickness(i,j) = 0.0;
-          mask(i,j)     = MASK_ICE_FREE_OCEAN;
-        }
+      if (m_iceberg_mask(i,j) > 0.5 && bc_mask(i,j) < 0.5) {
+        ice_thickness(i,j) = 0.0;
+        mask(i,j)     = MASK_ICE_FREE_OCEAN;
       }
     }
   }

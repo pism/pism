@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,26 +24,17 @@
 
 namespace pism {
 
-namespace stressbalance {
-class StressBalance;
-}
-
 namespace calving {
 
 /*! @brief An abstract class containing fields used by all stress-based calving methods. */
 class StressCalving : public CalvingFrontRetreat {
 public:
-  StressCalving(IceGrid::ConstPtr g, stressbalance::StressBalance *stress_balance,
-                unsigned int stencil_width);
+  StressCalving(IceGrid::ConstPtr grid, unsigned int stencil_width);
   virtual ~StressCalving();
-
-protected:
-  void update_strain_rates() const;
 
 protected:
   mutable IceModelVec2 m_strain_rates;
   const int m_stencil_width;
-  stressbalance::StressBalance *m_stress_balance;
 };
 
 

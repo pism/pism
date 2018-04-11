@@ -807,7 +807,7 @@ void IceModel::init_calving() {
 
   if (methods.find("ocean_kill") != methods.end()) {
 
-    if (m_ocean_kill_calving == NULL) {
+    if (not m_ocean_kill_calving) {
       m_ocean_kill_calving = new calving::OceanKill(m_grid);
     }
 
@@ -819,7 +819,7 @@ void IceModel::init_calving() {
 
   if (methods.find("thickness_calving") != methods.end()) {
 
-    if (m_thickness_threshold_calving == NULL) {
+    if (not m_thickness_threshold_calving) {
       m_thickness_threshold_calving = new calving::CalvingAtThickness(m_grid);
     }
 
@@ -832,8 +832,8 @@ void IceModel::init_calving() {
 
   if (methods.find("eigen_calving") != methods.end()) {
 
-    if (m_eigen_calving == NULL) {
-      m_eigen_calving = new calving::EigenCalving(m_grid, m_stress_balance.get());
+    if (not m_eigen_calving) {
+      m_eigen_calving = new calving::EigenCalving(m_grid);
     }
 
     m_eigen_calving->init();
@@ -844,8 +844,9 @@ void IceModel::init_calving() {
 
   if (methods.find("vonmises_calving") != methods.end()) {
 
-    if (m_vonmises_calving == NULL) {
-      m_vonmises_calving = new calving::vonMisesCalving(m_grid, m_stress_balance.get());
+    if (not m_vonmises_calving) {
+      m_vonmises_calving = new calving::vonMisesCalving(m_grid,
+                                                        m_stress_balance->shallow()->flow_law());
     }
 
     m_vonmises_calving->init();
@@ -856,8 +857,8 @@ void IceModel::init_calving() {
 
   if (methods.find("frontal_melt") != methods.end()) {
 
-    if (m_frontal_melt == NULL) {
-      m_frontal_melt = new FrontalMelt(m_grid, m_ocean.get());
+    if (not m_frontal_melt) {
+      m_frontal_melt = new FrontalMelt(m_grid);
     }
 
     m_frontal_melt->init();
@@ -867,7 +868,7 @@ void IceModel::init_calving() {
   }
 
   if (methods.find("float_kill") != methods.end()) {
-    if (m_float_kill_calving == NULL) {
+    if (not m_float_kill_calving) {
       m_float_kill_calving = new calving::FloatKill(m_grid);
     }
 

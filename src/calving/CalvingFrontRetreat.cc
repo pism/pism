@@ -22,11 +22,20 @@
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
+
+CalvingInputs::CalvingInputs() {
+  geometry = nullptr;
+
+  bc_mask              = nullptr;
+  ice_enthalpy         = nullptr;
+  ice_velocity         = nullptr;
+  shelf_base_mass_flux = nullptr;
+}
 
 CalvingFrontRetreat::CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width)
   : Component(g) {
@@ -56,15 +65,9 @@ CalvingFrontRetreat::~CalvingFrontRetreat() {
 /**
  * @brief Compute the maximum time-step length allowed by the CFL
  * condition applied to the calving rate.
- *
- * Note: this code uses the mask variable obtained from the Vars
- * dictionary. This is not the same mask that is used in the update()
- * call, since max_timestep() is called *before* the mass-continuity
- * time-step.
- *
- * @return 0 on success
  */
-MaxTimestep CalvingFrontRetreat::max_timestep_impl(double t) const {
+MaxTimestep CalvingFrontRetreat::max_timestep(const CalvingInputs &inputs,
+                                              double t) const {
   (void) t;
 
   if (not m_restrict_timestep) {
@@ -79,12 +82,9 @@ MaxTimestep CalvingFrontRetreat::max_timestep_impl(double t) const {
     calving_rate_mean = 0.0;
   int N_calving_cells = 0;
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
-
-  m_mask.copy_from(mask);
-
   IceModelVec2S &horizontal_calving_rate = m_tmp;
-  compute_calving_rate(m_mask, horizontal_calving_rate);
+
+  compute_calving_rate(inputs, horizontal_calving_rate);
 
   IceModelVec::AccessList list(horizontal_calving_rate);
 
@@ -128,6 +128,38 @@ MaxTimestep CalvingFrontRetreat::max_timestep_impl(double t) const {
   return MaxTimestep(std::max(dt, dt_min));
 }
 
+/*!
+ * Adjust the mask near domain boundaries to avoid "wrapping around."
+ */
+void CalvingFrontRetreat::prepare_mask(const IceModelVec2CellType &input,
+                                       IceModelVec2CellType &output) const {
+
+  output.copy_from(input);
+
+  if (m_config->get_boolean("calving.front_retreat.wrap_around")) {
+    return;
+  }
+
+  IceModelVec::AccessList list(output);
+
+  const int Mx = m_grid->Mx();
+  const int My = m_grid->My();
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (PointsWithGhosts p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (i < 0 or i >= Mx or j < 0 or j >= My) {
+        output(i, j) = MASK_ICE_FREE_OCEAN;
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+}
+
 /*! Update ice geometry and mask using the computed horizontal calving rate.
  * @param[in] dt time step, seconds
  * @param[in] sea_level sea level elevation, meters
@@ -142,51 +174,26 @@ MaxTimestep CalvingFrontRetreat::max_timestep_impl(double t) const {
  * with a frontal melt parameterization.
  */
 void CalvingFrontRetreat::update(double dt,
-                                 const IceModelVec2S &sea_level,
-                                 const IceModelVec2Int &ice_thickness_bc_mask,
-                                 const IceModelVec2S &bed_topography,
+                                 const CalvingInputs &inputs,
                                  IceModelVec2CellType &mask,
                                  IceModelVec2S &Href,
                                  IceModelVec2S &ice_thickness) {
 
+  const IceModelVec2S   &sea_level      = inputs.geometry->sea_level_elevation;
+  const IceModelVec2S   &bed_topography = inputs.geometry->bed_elevation;
+  const IceModelVec2Int &bc_mask        = *inputs.bc_mask;
+
   GeometryCalculator gc(*m_config);
   gc.compute_surface(sea_level, bed_topography, ice_thickness, m_surface_topography);
 
-  // copy mask to temporary storage to get more ghosts
-  m_mask.copy_from(mask);
-
-  // Set the mask to MASK_ICE_FREE_OCEAN outside the modeling domain. This is needed to avoid
-  // "wrapping around" in regional setups.
-  if (not m_config->get_boolean("calving.front_retreat.wrap_around")) {
-
-    IceModelVec::AccessList list(m_mask);
-
-    const int Mx = m_grid->Mx();
-    const int My = m_grid->My();
-
-    ParallelSection loop(m_grid->com);
-    try {
-      for (PointsWithGhosts p(*m_grid); p; p.next()) {
-        const int i = p.i(), j = p.j();
-
-        if (i < 0 or i >= Mx or j < 0 or j >= My) {
-          m_mask(i, j) = MASK_ICE_FREE_OCEAN;
-        }
-      }
-    } catch (...) {
-      loop.failed();
-    }
-    loop.check();
-  }
-
   // use mask with a wide stencil to compute the calving rate
-  compute_calving_rate(m_mask, m_horizontal_calving_rate);
+  compute_calving_rate(inputs, m_horizontal_calving_rate);
 
   const double dx = m_grid->dx();
 
   m_tmp.set(0.0);
 
-  IceModelVec::AccessList list{&ice_thickness, &ice_thickness_bc_mask,
+  IceModelVec::AccessList list{&ice_thickness, &bc_mask,
       &bed_topography, &sea_level, &mask, &Href, &m_tmp, &m_horizontal_calving_rate,
       &m_surface_topography};
 
@@ -197,7 +204,7 @@ void CalvingFrontRetreat::update(double dt,
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
-    if (ice_thickness_bc_mask(i, j) > 0.5) {
+    if (bc_mask(i, j) > 0.5) {
       // don't modify cells marked as Dirichlet B.C. locations
       continue;
     }
@@ -234,7 +241,7 @@ void CalvingFrontRetreat::update(double dt,
         {
           auto
             M  = mask.int_star(i, j),
-            BC = ice_thickness_bc_mask.int_star(i, j);
+            BC = bc_mask.int_star(i, j);
 
           auto
             bed = bed_topography.star(i, j),
@@ -272,7 +279,7 @@ void CalvingFrontRetreat::update(double dt,
     const int i = p.i(), j = p.j();
 
     // Note: this condition has to match the one in step 1 above.
-    if (ice_thickness_bc_mask.as_int(i, j) == 0 and
+    if (bc_mask.as_int(i, j) == 0 and
         (mask.floating_ice(i, j) or
          (mask.grounded_ice(i, j) and bed_topography(i, j) < sea_level(i, j)))) {
 

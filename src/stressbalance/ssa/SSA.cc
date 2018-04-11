@@ -120,10 +120,6 @@ SSA::SSA(IceGrid::ConstPtr g)
 }
 
 SSA::~SSA() {
-  if (m_flow_law != NULL) {
-    delete m_flow_law;
-    m_flow_law = NULL;
-  }
   if (strength_extension != NULL) {
     delete strength_extension;
     strength_extension = NULL;
