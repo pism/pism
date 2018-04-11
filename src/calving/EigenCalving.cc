@@ -58,8 +58,10 @@ void EigenCalving::init() {
 /*!
   See equation (26) in [\ref Winkelmannetal2011].
 */
-void EigenCalving::compute_calving_rate(const IceModelVec2CellType &mask,
+void EigenCalving::compute_calving_rate(const CalvingInputs &inputs,
                                         IceModelVec2S &result) const {
+
+  prepare_mask(*inputs.cell_type, m_mask);
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
@@ -70,7 +72,7 @@ void EigenCalving::compute_calving_rate(const IceModelVec2CellType &mask,
 
   update_strain_rates();
 
-  IceModelVec::AccessList list{&mask, &result, &m_strain_rates};
+  IceModelVec::AccessList list{&m_mask, &result, &m_strain_rates};
 
   // Compute the horizontal calving rate
   for (Points pt(*m_grid); pt; pt.next()) {
@@ -78,7 +80,7 @@ void EigenCalving::compute_calving_rate(const IceModelVec2CellType &mask,
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
     // have floating ice neighbors after the mass continuity step
-    if (mask.ice_free_ocean(i, j) and mask.next_to_floating_ice(i, j)) {
+    if (m_mask.ice_free_ocean(i, j) and m_mask.next_to_floating_ice(i, j)) {
 
       // Average of strain-rate eigenvalues in adjacent floating grid cells to be used for
       // eigen-calving:
@@ -89,7 +91,7 @@ void EigenCalving::compute_calving_rate(const IceModelVec2CellType &mask,
         int N = 0;
         for (int p = -1; p < 2; p += 2) {
           const int I = i + p * offset;
-          if (mask.floating_ice(I, j) and not mask.ice_margin(I, j)) {
+          if (m_mask.floating_ice(I, j) and not m_mask.ice_margin(I, j)) {
             eigen1 += m_strain_rates(I, j, 0);
             eigen2 += m_strain_rates(I, j, 1);
             N += 1;
@@ -98,7 +100,7 @@ void EigenCalving::compute_calving_rate(const IceModelVec2CellType &mask,
 
         for (int q = -1; q < 2; q += 2) {
           const int J = j + q * offset;
-          if (mask.floating_ice(i, J) and not mask.ice_margin(i, J)) {
+          if (m_mask.floating_ice(i, J) and not m_mask.ice_margin(i, J)) {
             eigen1 += m_strain_rates(i, J, 0);
             eigen2 += m_strain_rates(i, J, 1);
             N += 1;

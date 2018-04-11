@@ -31,18 +31,31 @@
 #include "pism/calving/IcebergRemover.hh"
 #include "pism/calving/OceanKill.hh"
 
+#include "pism/energy/EnergyModel.hh"
+#include "pism/coupler/OceanModel.hh"
+
 namespace pism {
 
 void IceModel::do_calving() {
+
+  CalvingInputs inputs;
+
+  inputs.bed_elevation         = &m_geometry.bed_elevation;
+  inputs.sea_level_elevation   = &m_geometry.sea_level_elevation;
+  inputs.ice_thickness         = &m_geometry.ice_thickness;
+  inputs.cell_type             = &m_geometry.cell_type;
+  inputs.ice_surface_elevation = &m_geometry.ice_surface_elevation;
+  inputs.ice_thickness_bc_mask = &m_ssa_dirichlet_bc_mask;
+
+  inputs.ice_enthalpy         = &m_energy_model->enthalpy();
+  inputs.shelf_base_mass_flux = &m_ocean->shelf_base_mass_flux();
 
   // eigen-calving should go first: it uses the ice velocity field,
   // which is defined at grid points that were icy at the *beginning*
   // of a time-step.
   if (m_eigen_calving) {
     m_eigen_calving->update(m_dt,
-                            m_geometry.sea_level_elevation,
-                            m_ssa_dirichlet_bc_mask,
-                            m_geometry.bed_elevation,
+                            inputs,
                             m_geometry.cell_type,
                             m_geometry.ice_area_specific_volume,
                             m_geometry.ice_thickness);
@@ -50,9 +63,7 @@ void IceModel::do_calving() {
 
   if (m_vonmises_calving) {
     m_vonmises_calving->update(m_dt,
-                               m_geometry.sea_level_elevation,
-                               m_ssa_dirichlet_bc_mask,
-                               m_geometry.bed_elevation,
+                               inputs,
                                m_geometry.cell_type,
                                m_geometry.ice_area_specific_volume,
                                m_geometry.ice_thickness);
@@ -60,9 +71,7 @@ void IceModel::do_calving() {
 
   if (m_frontal_melt) {
     m_frontal_melt->update(m_dt,
-                           m_geometry.sea_level_elevation,
-                           m_ssa_dirichlet_bc_mask,
-                           m_geometry.bed_elevation,
+                           inputs,
                            m_geometry.cell_type,
                            m_geometry.ice_area_specific_volume,
                            m_geometry.ice_thickness);

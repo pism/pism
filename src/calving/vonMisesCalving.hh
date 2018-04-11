@@ -40,7 +40,7 @@ public:
 protected:
   virtual DiagnosticList diagnostics_impl() const;
 
-  void compute_calving_rate(const IceModelVec2CellType &mask,
+  void compute_calving_rate(const CalvingInputs &inputs,
                             IceModelVec2S &result) const;
 
 protected:

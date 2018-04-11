@@ -856,8 +856,8 @@ void IceModel::init_calving() {
 
   if (methods.find("frontal_melt") != methods.end()) {
 
-    if (m_frontal_melt == NULL) {
-      m_frontal_melt = new FrontalMelt(m_grid, m_ocean.get());
+    if (not m_frontal_melt) {
+      m_frontal_melt = new FrontalMelt(m_grid);
     }
 
     m_frontal_melt->init();

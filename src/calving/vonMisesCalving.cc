@@ -62,8 +62,10 @@ void vonMisesCalving::init() {
 /*!
   See equation (26) in [\ref Winkelmannetal2011].
 */
-void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
+void vonMisesCalving::compute_calving_rate(const CalvingInputs &inputs,
                                            IceModelVec2S &result) const {
+
+  prepare_mask(*inputs.cell_type, m_mask);
 
   using std::max;
 
@@ -73,10 +75,10 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
   update_strain_rates();
 
   const IceModelVec2V &ssa_velocity  = m_stress_balance->advective_velocity();
-  const IceModelVec3  *enthalpy      = m_grid->variables().get_3d_scalar("enthalpy");
-  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec3  *enthalpy      = inputs.ice_enthalpy;
+  const IceModelVec2S &ice_thickness = *inputs.ice_thickness;
 
-  IceModelVec::AccessList list{enthalpy, &ice_thickness, &mask, &ssa_velocity,
+  IceModelVec::AccessList list{enthalpy, &ice_thickness, &m_mask, &ssa_velocity,
       &m_strain_rates, &result};
 
   const double *z = &m_grid->z()[0];
@@ -90,7 +92,7 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
     // have floating ice neighbors after the mass continuity step
-    if (mask.ice_free_ocean(i, j) and mask.next_to_floating_ice(i, j)) {
+    if (m_mask.ice_free_ocean(i, j) and m_mask.next_to_floating_ice(i, j)) {
 
       double
         velocity_magnitude = 0.0,
@@ -103,7 +105,7 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
         int N = 0;
         for (int p = -1; p < 2; p += 2) {
           const int I = i + p * offset;
-          if (mask.icy(I, j)) {
+          if (m_mask.icy(I, j)) {
             velocity_magnitude += ssa_velocity(I, j).magnitude();
             {
               double H = ice_thickness(I, j);
@@ -118,7 +120,7 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
 
         for (int q = -1; q < 2; q += 2) {
           const int J = j + q * offset;
-          if (mask.icy(i, J)) {
+          if (m_mask.icy(i, J)) {
             velocity_magnitude += ssa_velocity(i, J).magnitude();
             {
               double H = ice_thickness(i, J);
