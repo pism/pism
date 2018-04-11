@@ -82,10 +82,9 @@ void vonMisesCalving::compute_calving_rate(const CalvingInputs &inputs,
       &m_strain_rates, &result};
 
   const double *z = &m_grid->z()[0];
-  const rheology::FlowLaw*
-    flow_law = m_stress_balance->shallow()->flow_law();
+  const rheology::FlowLaw &flow_law = *m_stress_balance->shallow()->flow_law();
 
-  const double ssa_n = flow_law->exponent();
+  const double ssa_n = flow_law.exponent();
 
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
@@ -110,7 +109,7 @@ void vonMisesCalving::compute_calving_rate(const CalvingInputs &inputs,
             {
               double H = ice_thickness(I, j);
               unsigned int k = m_grid->kBelowHeight(H);
-              hardness += averaged_hardness(*flow_law, H, k, &z[0], enthalpy->get_column(I, j));
+              hardness += averaged_hardness(flow_law, H, k, &z[0], enthalpy->get_column(I, j));
             }
             eigen1 += m_strain_rates(I, j, 0);
             eigen2 += m_strain_rates(I, j, 1);
@@ -125,7 +124,7 @@ void vonMisesCalving::compute_calving_rate(const CalvingInputs &inputs,
             {
               double H = ice_thickness(i, J);
               unsigned int k = m_grid->kBelowHeight(H);
-              hardness += averaged_hardness(*flow_law, H, k, &z[0], enthalpy->get_column(i, J));
+              hardness += averaged_hardness(flow_law, H, k, &z[0], enthalpy->get_column(i, J));
             }
             eigen1 += m_strain_rates(i, J, 0);
             eigen2 += m_strain_rates(i, J, 1);

@@ -632,8 +632,8 @@ void IceCompModel::reportErrors() {
   double max_strain_heating_error, av_strain_heating_error;
   double maxUerr, avUerr, maxWerr, avWerr;
 
-  const rheology::FlowLaw* flow_law = m_stress_balance->modifier()->flow_law();
-  const double m = (2.0 * flow_law->exponent() + 2.0) / flow_law->exponent();
+  const rheology::FlowLaw &flow_law = *m_stress_balance->modifier()->flow_law();
+  const double m = (2.0 * flow_law.exponent() + 2.0) / flow_law.exponent();
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 

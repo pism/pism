@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -263,11 +263,11 @@ double averaged_hardness(const FlowLaw &ice,
   return B;
 }
 
-bool FlowLawUsesGrainSize(FlowLaw *flow_law) {
+bool FlowLawUsesGrainSize(const FlowLaw &flow_law) {
   static const double gs[] = {1e-4, 1e-3, 1e-2, 1}, s=1e4, E=400000, p=1e6;
-  double ref = flow_law->flow(s, E, p, gs[0]);
+  double ref = flow_law.flow(s, E, p, gs[0]);
   for (int i=1; i<4; i++) {
-    if (flow_law->flow(s, E, p, gs[i]) != ref) {
+    if (flow_law.flow(s, E, p, gs[i]) != ref) {
       return true;
     }
   }
