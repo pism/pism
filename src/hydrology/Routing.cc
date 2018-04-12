@@ -814,7 +814,7 @@ double Routing::max_timestep_W_cfl() const {
 
   1. computes `Wtill_new` instead of updating `Wtill` in place;
   2. uses time steps determined by the rest of the hydrology::Routing model;
-  3. does not check mask because the boundary_mass_changes() call addresses that.
+  3. does not check mask because the enforce_bounds() call addresses that.
 
   Otherwise this is the same physical model with the same configurable parameters.
 */
@@ -962,14 +962,15 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
                  m_input_rate,
                  m_Wtillnew);
     // remove water in ice-free areas and account for changes
-    boundary_mass_changes(*inputs.cell_area,
-                          *inputs.cell_type,
-                          inputs.no_model_mask,
-                          m_Wtillnew,
-                          m_grounded_margin_change,
-                          m_grounding_line_change,
-                          m_conservation_error_change,
-                          m_no_model_mask_change);
+    enforce_bounds(*inputs.cell_area,
+                   *inputs.cell_type,
+                   inputs.no_model_mask,
+                   -1.0,        // do not limit maximum thickness
+                   m_Wtillnew,
+                   m_grounded_margin_change,
+                   m_grounding_line_change,
+                   m_conservation_error_change,
+                   m_no_model_mask_change);
 
     // update Wnew from W, Wtill, Wtillnew, Wstag, Q, input_rate
     update_W(hdt,
@@ -979,14 +980,15 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
              m_K, m_Q,
              m_Wnew);
     // remove water in ice-free areas and account for changes
-    boundary_mass_changes(*inputs.cell_area,
-                          *inputs.cell_type,
-                          inputs.no_model_mask,
-                          m_Wnew,
-                          m_grounded_margin_change,
-                          m_grounding_line_change,
-                          m_conservation_error_change,
-                          m_no_model_mask_change);
+    enforce_bounds(*inputs.cell_area,
+                   *inputs.cell_type,
+                   inputs.no_model_mask,
+                   -1.0,        // do not limit maximum thickness
+                   m_Wnew,
+                   m_grounded_margin_change,
+                   m_grounding_line_change,
+                   m_conservation_error_change,
+                   m_no_model_mask_change);
 
     // transfer new into old
     m_W.copy_from(m_Wnew);

@@ -181,14 +181,15 @@ protected:
 
   // when we update the water amounts, careful mass accounting at the boundary
   // is needed
-  void boundary_mass_changes(const IceModelVec2S &cell_area,
-                             const IceModelVec2CellType &cell_type,
-                             const IceModelVec2Int *no_model_mask,
-                             IceModelVec2S &water_thickness,
-                             IceModelVec2S &grounded_margin_change,
-                             IceModelVec2S &grounding_line_change,
-                             IceModelVec2S &conservation_error_change,
-                             IceModelVec2S &no_model_mask_change);
+  void enforce_bounds(const IceModelVec2S &cell_area,
+                      const IceModelVec2CellType &cell_type,
+                      const IceModelVec2Int *no_model_mask,
+                      double max_thickness,
+                      IceModelVec2S &water_thickness,
+                      IceModelVec2S &grounded_margin_change,
+                      IceModelVec2S &grounding_line_change,
+                      IceModelVec2S &conservation_error_change,
+                      IceModelVec2S &no_model_mask_change);
 private:
   virtual void initialization_message() const = 0;
 };

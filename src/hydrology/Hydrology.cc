@@ -322,20 +322,22 @@ void Hydrology::compute_input_rate(const IceModelVec2CellType &mask,
   @param[in] cell_type cell type mask
   @param[in] no_model_mask (optional) mask of zeros and ones, zero within the modeling
                            domain, one outside
+  @param[in] max_thickness maximum allowed water thickness (use a negative value to disable)
   @param[in,out] water_thickness adjusted water thickness (till storage or the transport system)
   @param[in,out] grounded_margin_change change in water thickness at the grounded margin
   @param[in,out] grounding_line_change change in water thickness at the grounding line
   @param[in,out] conservation_error_change change in water thickness due to mass conservation errors
   @param[in,out] no_model_mask_change change in water thickness outside the modeling domain (regional models)
 */
-void Hydrology::boundary_mass_changes(const IceModelVec2S &cell_area,
-                                      const IceModelVec2CellType &cell_type,
-                                      const IceModelVec2Int *no_model_mask,
-                                      IceModelVec2S &water_thickness,
-                                      IceModelVec2S &grounded_margin_change,
-                                      IceModelVec2S &grounding_line_change,
-                                      IceModelVec2S &conservation_error_change,
-                                      IceModelVec2S &no_model_mask_change) {
+void Hydrology::enforce_bounds(const IceModelVec2S &cell_area,
+                               const IceModelVec2CellType &cell_type,
+                               const IceModelVec2Int *no_model_mask,
+                               double max_thickness,
+                               IceModelVec2S &water_thickness,
+                               IceModelVec2S &grounded_margin_change,
+                               IceModelVec2S &grounding_line_change,
+                               IceModelVec2S &conservation_error_change,
+                               IceModelVec2S &no_model_mask_change) {
   const double fresh_water_density = m_config->get_double("constants.fresh_water.density");
 
   IceModelVec::AccessList list{&water_thickness, &cell_area, &cell_type,
@@ -350,6 +352,13 @@ void Hydrology::boundary_mass_changes(const IceModelVec2S &cell_area,
     if (water_thickness(i, j) < 0.0) {
       conservation_error_change(i, j) += -water_thickness(i, j) * kg_per_m;
       water_thickness(i, j) = 0.0;
+    }
+
+    if (max_thickness > 0.0 and water_thickness(i, j) > max_thickness) {
+      double excess = water_thickness(i, j) - max_thickness;
+
+      conservation_error_change(i, j) += -excess * kg_per_m;
+      water_thickness(i, j) = max_thickness;
     }
 
     if (cell_type.ice_free_land(i, j)) {
