@@ -133,6 +133,11 @@ public:
   const IceModelVec2S& overburden_pressure() const;
   const IceModelVec2S& total_input_rate() const;
 
+  const IceModelVec2S& water_thickness_change_at_grounded_margin() const;
+  const IceModelVec2S& water_thickness_change_at_grounding_line() const;
+  const IceModelVec2S& water_thickness_change_at_domain_boundary() const;
+  const IceModelVec2S& water_thickness_change_due_to_conservation_error() const;
+
 protected:
   virtual void restart_impl(const PIO &input_file, int record);
 

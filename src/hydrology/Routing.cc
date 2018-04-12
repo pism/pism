@@ -176,114 +176,6 @@ protected:
   }
 };
 
-/*! @brief Report water flux at the grounded margin. */
-class GroundedMarginFlux : public DiagAverageRate<Routing>
-{
-public:
-  GroundedMarginFlux(const Routing *m)
-    : DiagAverageRate<Routing>(m, "subglacial_water_flux_at_grounded_margins", TOTAL_CHANGE) {
-
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_at_grounded_margins")};
-    m_accumulator.metadata().set_string("units", "kg");
-
-    set_attrs("subglacial water flux at grounded ice margins", "",
-              "kg second-1", "Gt year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
-
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
-    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
-  }
-
-protected:
-  const IceModelVec2S& model_input() {
-    return model->water_thickness_change_at_grounded_margin();
-  }
-};
-
-/*! @brief Report subglacial water flux at grounding lines. */
-class GroundingLineFlux : public DiagAverageRate<Routing>
-{
-public:
-  GroundingLineFlux(const Routing *m)
-    : DiagAverageRate<Routing>(m, "subglacial_water_flux_at_grounding_line", TOTAL_CHANGE) {
-
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_at_grounding_line")};
-    m_accumulator.metadata().set_string("units", "kg");
-
-    set_attrs("subglacial water flux at grounding lines", "",
-              "kg second-1", "Gt year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
-
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
-    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
-  }
-
-protected:
-  const IceModelVec2S& model_input() {
-    return model->water_thickness_change_at_grounding_line();
-  }
-};
-
-/*! @brief Report subglacial water conservation error flux (mass added to preserve non-negativity). */
-class ConservationErrorFlux : public DiagAverageRate<Routing>
-{
-public:
-  ConservationErrorFlux(const Routing *m)
-    : DiagAverageRate<Routing>(m, "subglacial_water_flux_due_to_conservation_error", TOTAL_CHANGE) {
-
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_due_to_conservation_error")};
-    m_accumulator.metadata().set_string("units", "kg");
-
-    set_attrs("subglacial water flux due to conservation error (mass added to preserve non-negativity)", "",
-              "kg second-1", "Gt year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
-
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
-    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
-  }
-
-protected:
-  const IceModelVec2S& model_input() {
-    return model->water_thickness_change_due_to_conservation_error();
-  }
-};
-
-/*! @brief Report subglacial water flux at domain boundary (in regional model configurations). */
-class DomainBoundaryFlux : public DiagAverageRate<Routing>
-{
-public:
-  DomainBoundaryFlux(const Routing *m)
-    : DiagAverageRate<Routing>(m, "subglacial_water_flux_at_domain_boundary", TOTAL_CHANGE) {
-
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_at_domain_boundary")};
-    m_accumulator.metadata().set_string("units", "kg");
-
-    set_attrs("subglacial water flux at domain boundary (in regional model configurations)", "",
-              "kg second-1", "Gt year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
-
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
-    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
-  }
-
-protected:
-  const IceModelVec2S& model_input() {
-    return model->water_thickness_change_at_domain_boundary();
-  }
-};
-
 //! @brief Diagnostically reports the staggered-grid components of the velocity of the
 //! water in the subglacial layer.
 class BasalWaterVelocity : public Diag<Routing>
@@ -432,22 +324,6 @@ void Routing::write_model_state_impl(const PIO &output) const {
 //! because this is the model.
 const IceModelVec2S& Routing::subglacial_water_pressure() const {
   return m_Pover;
-}
-
-const IceModelVec2S& Routing::water_thickness_change_at_grounded_margin() const {
-  return m_grounded_margin_change;
-}
-
-const IceModelVec2S& Routing::water_thickness_change_at_grounding_line() const {
-  return m_grounding_line_change;
-}
-
-const IceModelVec2S& Routing::water_thickness_change_due_to_conservation_error() const {
-  return m_conservation_error_change;
-}
-
-const IceModelVec2S& Routing::water_thickness_change_at_domain_boundary() const {
-  return m_no_model_mask_change;
 }
 
 //! Get the hydraulic potential from bedrock topography and current state variables.
@@ -1010,17 +886,13 @@ const IceModelVec2Stag& Routing::velocity_staggered() const {
 std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
   using namespace diagnostics;
 
-  std::map<std::string, Diagnostic::Ptr> result = {
-    {"bwat",                                            Diagnostic::Ptr(new BasalWaterThickness(this))},
-    {"bwatvel",                                         Diagnostic::Ptr(new BasalWaterVelocity(this))},
-    {"bwp",                                             Diagnostic::Ptr(new BasalWaterPressure(this))},
-    {"bwprel",                                          Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},
-    {"effbwp",                                          Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
-    {"wallmelt",                                        Diagnostic::Ptr(new WallMelt(this))},
-    {"subglacial_water_flux_at_grounded_margins",       Diagnostic::Ptr(new GroundedMarginFlux(this))},
-    {"subglacial_water_flux_at_grounding_line",         Diagnostic::Ptr(new GroundingLineFlux(this))},
-    {"subglacial_water_flux_at_domain_boundary",        Diagnostic::Ptr(new DomainBoundaryFlux(this))},
-    {"subglacial_water_flux_due_to_conservation_error", Diagnostic::Ptr(new ConservationErrorFlux(this))},
+  DiagnosticList result = {
+    {"bwat",     Diagnostic::Ptr(new BasalWaterThickness(this))},
+    {"bwatvel",  Diagnostic::Ptr(new BasalWaterVelocity(this))},
+    {"bwp",      Diagnostic::Ptr(new BasalWaterPressure(this))},
+    {"bwprel",   Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},
+    {"effbwp",   Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
+    {"wallmelt", Diagnostic::Ptr(new WallMelt(this))},
   };
   return combine(result, Hydrology::diagnostics_impl());
 }

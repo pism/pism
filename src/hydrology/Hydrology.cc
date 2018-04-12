@@ -61,6 +61,114 @@ protected:
   }
 };
 
+/*! @brief Report water flux at the grounded margin. */
+class GroundedMarginFlux : public DiagAverageRate<Hydrology>
+{
+public:
+  GroundedMarginFlux(const Hydrology *m)
+    : DiagAverageRate<Hydrology>(m, "subglacial_water_flux_at_grounded_margins", TOTAL_CHANGE) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_at_grounded_margins")};
+    m_accumulator.metadata().set_string("units", "kg");
+
+    set_attrs("subglacial water flux at grounded ice margins", "",
+              "kg second-1", "Gt year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+  }
+
+protected:
+  const IceModelVec2S& model_input() {
+    return model->water_thickness_change_at_grounded_margin();
+  }
+};
+
+/*! @brief Report subglacial water flux at grounding lines. */
+class GroundingLineFlux : public DiagAverageRate<Hydrology>
+{
+public:
+  GroundingLineFlux(const Hydrology *m)
+    : DiagAverageRate<Hydrology>(m, "subglacial_water_flux_at_grounding_line", TOTAL_CHANGE) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_at_grounding_line")};
+    m_accumulator.metadata().set_string("units", "kg");
+
+    set_attrs("subglacial water flux at grounding lines", "",
+              "kg second-1", "Gt year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+  }
+
+protected:
+  const IceModelVec2S& model_input() {
+    return model->water_thickness_change_at_grounding_line();
+  }
+};
+
+/*! @brief Report subglacial water conservation error flux (mass added to preserve non-negativity). */
+class ConservationErrorFlux : public DiagAverageRate<Hydrology>
+{
+public:
+  ConservationErrorFlux(const Hydrology *m)
+    : DiagAverageRate<Hydrology>(m, "subglacial_water_flux_due_to_conservation_error", TOTAL_CHANGE) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_due_to_conservation_error")};
+    m_accumulator.metadata().set_string("units", "kg");
+
+    set_attrs("subglacial water flux due to conservation error (mass added to preserve non-negativity)", "",
+              "kg second-1", "Gt year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+  }
+
+protected:
+  const IceModelVec2S& model_input() {
+    return model->water_thickness_change_due_to_conservation_error();
+  }
+};
+
+/*! @brief Report subglacial water flux at domain boundary (in regional model configurations). */
+class DomainBoundaryFlux : public DiagAverageRate<Hydrology>
+{
+public:
+  DomainBoundaryFlux(const Hydrology *m)
+    : DiagAverageRate<Hydrology>(m, "subglacial_water_flux_at_domain_boundary", TOTAL_CHANGE) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_at_domain_boundary")};
+    m_accumulator.metadata().set_string("units", "kg");
+
+    set_attrs("subglacial water flux at domain boundary (in regional model configurations)", "",
+              "kg second-1", "Gt year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+  }
+
+protected:
+  const IceModelVec2S& model_input() {
+    return model->water_thickness_change_at_domain_boundary();
+  }
+};
+
 } // end of namespace diagnostics
 
 Inputs::Inputs() {
@@ -179,10 +287,18 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
   this->update_impl(t, dt, inputs);
 }
 
-std::map<std::string, Diagnostic::Ptr> Hydrology::diagnostics_impl() const {
+DiagnosticList Hydrology::diagnostics_impl() const {
   using namespace diagnostics;
-  return {{"tillwat", Diagnostic::wrap(m_Wtill)},
-      {"subglacial_water_input_rate", Diagnostic::Ptr(new TotalInputRate(this))}};
+  DiagnosticList result = {
+    {"tillwat",                                         Diagnostic::wrap(m_Wtill)},
+    {"subglacial_water_input_rate",                     Diagnostic::Ptr(new TotalInputRate(this))},
+    {"subglacial_water_flux_at_grounded_margins",       Diagnostic::Ptr(new GroundedMarginFlux(this))},
+    {"subglacial_water_flux_at_grounding_line",         Diagnostic::Ptr(new GroundingLineFlux(this))},
+    {"subglacial_water_flux_at_domain_boundary",        Diagnostic::Ptr(new DomainBoundaryFlux(this))},
+    {"subglacial_water_flux_due_to_conservation_error", Diagnostic::Ptr(new ConservationErrorFlux(this))},
+  };
+
+  return result;
 }
 
 void Hydrology::define_model_state_impl(const PIO &output) const {
@@ -231,6 +347,22 @@ const IceModelVec2S& Hydrology::subglacial_water_thickness() const {
 
 const IceModelVec2S& Hydrology::total_input_rate() const {
   return m_input_rate;
+}
+
+const IceModelVec2S& Hydrology::water_thickness_change_at_grounded_margin() const {
+  return m_grounded_margin_change;
+}
+
+const IceModelVec2S& Hydrology::water_thickness_change_at_grounding_line() const {
+  return m_grounding_line_change;
+}
+
+const IceModelVec2S& Hydrology::water_thickness_change_due_to_conservation_error() const {
+  return m_conservation_error_change;
+}
+
+const IceModelVec2S& Hydrology::water_thickness_change_at_domain_boundary() const {
+  return m_no_model_mask_change;
 }
 
 /*!
@@ -308,15 +440,13 @@ void Hydrology::compute_input_rate(const IceModelVec2CellType &mask,
 }
 
 //! Correct the new water thickness based on boundary requirements.
-/*!
-  At ice free locations and ocean locations we require that water thicknesses
-  (i.e. both the transportable water thickness \f$W\f$ and the till water
-  thickness \f$W_{till}\f$) be zero at the end of each time step.  Also we require
-  that any negative water thicknesses be set to zero (i.e. we do projection to
-  enforce lower bound).  This method does not enforce any upper bounds.
+/*! At ice free locations and ocean locations we require that water thicknesses (i.e. both
+  the transportable water thickness \f$W\f$ and the till water thickness \f$W_{till}\f$)
+  be zero at the end of each time step. Also we require that any negative water
+  thicknesses be set to zero (i.e. we do projection to enforce lower bound).
 
-  This method should be called once for each thickness field which needs to be
-  processed.  This method alters the field water_thickness in-place.
+  This method should be called once for each thickness field which needs to be processed.
+  This method alters the field water_thickness in-place.
 
   @param[in] cell_area cell areas
   @param[in] cell_type cell type mask
