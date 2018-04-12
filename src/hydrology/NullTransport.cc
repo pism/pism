@@ -111,6 +111,14 @@ MaxTimestep NullTransport::max_timestep_impl(double t) const {
 void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   (void) t;
 
+  // reset water thickness changes
+  {
+    m_grounded_margin_change.set(0.0);
+    m_grounding_line_change.set(0.0);
+    m_conservation_error_change.set(0.0);
+    m_no_model_mask_change.set(0.0);
+  }
+
   compute_input_rate(*inputs.cell_type,
                      *inputs.basal_melt_rate,
                      inputs.surface_input_rate,
