@@ -20,7 +20,7 @@
 #include "Factory.hh"
 
 // ocean models:
-#include "SeaLevel.hh"
+#include "pism/coupler/SeaLevel.hh"
 #include "Delta_SL.hh"
 #include "Delta_SL_2D.hh"
 

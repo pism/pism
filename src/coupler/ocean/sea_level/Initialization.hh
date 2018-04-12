@@ -20,7 +20,7 @@
 #ifndef _SEA_LEVEL_INITIALIZATION_H_
 #define _SEA_LEVEL_INITIALIZATION_H_
 
-#include "SeaLevel.hh"
+#include "pism/coupler/SeaLevel.hh"
 
 namespace pism {
 namespace ocean {

@@ -55,7 +55,7 @@
 %include "coupler/ocean/GivenTH.hh"
 
 %shared_ptr(pism::ocean::sea_level::SeaLevel)
-%include "coupler/ocean/sea_level/SeaLevel.hh"
+%include "coupler/SeaLevel.hh"
 
 %shared_ptr(pism::ocean::sea_level::Delta_SL)
 %rename(SeaLevelDelta) pism::ocean::sea_level::Delta_SL;

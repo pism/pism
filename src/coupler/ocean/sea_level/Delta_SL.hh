@@ -19,7 +19,7 @@
 #ifndef _PODSLFORCING_H_
 #define _PODSLFORCING_H_
 
-#include "SeaLevel.hh"
+#include "pism/coupler/SeaLevel.hh"
 
 namespace pism {
 

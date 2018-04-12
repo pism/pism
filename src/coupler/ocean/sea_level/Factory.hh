@@ -20,7 +20,7 @@
 #define _SEA_LEVEL_FACTORY_
 
 #include "pism/coupler/util/PCFactory.hh"
-#include "SeaLevel.hh"
+#include "pism/coupler/SeaLevel.hh"
 
 namespace pism {
 namespace ocean {
