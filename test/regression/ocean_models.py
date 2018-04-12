@@ -482,7 +482,7 @@ class DeltaSL(TestCase):
 
         modifier = PISM.SeaLevelDelta(self.grid, self.model)
 
-        options.setValue("-ocean_delta_SL_file", self.filename)
+        options.setValue("-ocean_delta_sl_file", self.filename)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
