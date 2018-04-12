@@ -42,8 +42,6 @@ NullTransport::NullTransport(IceGrid::ConstPtr g)
   if (m_diffuse_tillwat) {
     m_Wtill_old.create(m_grid, "Wtill_old", WITH_GHOSTS);
   }
-
-  m_conservation_error.create(m_grid, "conservation_error", WITHOUT_GHOSTS);
 }
 
 NullTransport::~NullTransport() {
@@ -122,7 +120,7 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
 
   const IceModelVec2CellType &cell_type = *inputs.cell_type;
 
-  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_input_rate, &m_conservation_error};
+  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_input_rate, &m_conservation_error_change};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -154,7 +152,7 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
 
     // dW_decay is always a "conservation error", and the second term reflects the change
     // needed to keep till water thickness within bounds.
-    m_conservation_error(i, j) += dW_decay + (m_Wtill(i, j) - W_new);
+    m_conservation_error_change(i, j) += dW_decay + (m_Wtill(i, j) - W_new);
   }
 
   if (m_diffuse_tillwat) {
@@ -178,7 +176,7 @@ void NullTransport::diffuse_till_water(double dt, const IceModelVec2CellType &ce
     Rx = K * dt / (dx * dx),
     Ry = K * dt / (dy * dy);
 
-  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_Wtill_old, &m_conservation_error};
+  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_Wtill_old, &m_conservation_error_change};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -191,11 +189,11 @@ void NullTransport::diffuse_till_water(double dt, const IceModelVec2CellType &ce
 
     // the RHS is zero if enforcing bounds did not modify the result, otherwise it is the
     // amount of water *added* to stay within bounds
-    m_conservation_error(i, j) += m_Wtill(i, j) - W_new;
+    m_conservation_error_change(i, j) += m_Wtill(i, j) - W_new;
 
     // set to zero in ocean and ice-free areas
     if (cell_type.ocean(i, j) or cell_type.ice_free(i, j)) {
-      m_conservation_error(i, j) += -m_Wtill(i, j);
+      m_conservation_error_change(i, j) += -m_Wtill(i, j);
       m_Wtill(i, j) = 0.0;
     }
   }
