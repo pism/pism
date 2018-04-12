@@ -452,7 +452,8 @@ void Hydrology::compute_input_rate(const IceModelVec2CellType &mask,
   @param[in] cell_type cell type mask
   @param[in] no_model_mask (optional) mask of zeros and ones, zero within the modeling
                            domain, one outside
-  @param[in] max_thickness maximum allowed water thickness (use a negative value to disable)
+  @param[in] max_thickness maximum allowed water thickness (use a zero or a negative value
+                           to disable)
   @param[in,out] water_thickness adjusted water thickness (till storage or the transport system)
   @param[in,out] grounded_margin_change change in water thickness at the grounded margin
   @param[in,out] grounding_line_change change in water thickness at the grounding line

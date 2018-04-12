@@ -841,7 +841,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     enforce_bounds(*inputs.cell_area,
                    *inputs.cell_type,
                    inputs.no_model_mask,
-                   -1.0,        // do not limit maximum thickness
+                   0.0,        // do not limit maximum thickness
                    m_Wtillnew,
                    m_grounded_margin_change,
                    m_grounding_line_change,
@@ -859,7 +859,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     enforce_bounds(*inputs.cell_area,
                    *inputs.cell_type,
                    inputs.no_model_mask,
-                   -1.0,        // do not limit maximum thickness
+                   0.0,        // do not limit maximum thickness
                    m_Wnew,
                    m_grounded_margin_change,
                    m_grounding_line_change,
