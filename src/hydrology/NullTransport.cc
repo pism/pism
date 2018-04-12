@@ -119,23 +119,28 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
     m_no_model_mask_change.set(0.0);
   }
 
+  // no transportable basal water
+  m_W.set(0.0);
+
+  compute_overburden_pressure(*inputs.ice_thickness, m_Pover);
+
   compute_input_rate(*inputs.cell_type,
                      *inputs.basal_melt_rate,
                      inputs.surface_input_rate,
                      m_input_rate);
 
-  compute_overburden_pressure(*inputs.ice_thickness, m_Pover);
+  const double water_density = m_config->get_double("constants.fresh_water.density");
 
   const IceModelVec2CellType &cell_type = *inputs.cell_type;
+  const IceModelVec2S &cell_area = *inputs.cell_area;
 
-  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_input_rate, &m_conservation_error_change};
+  IceModelVec::AccessList list{&cell_type, &cell_area, &m_Wtill, &m_input_rate};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double
       W_old      = m_Wtill(i, j),
-      input_rate = m_input_rate(i, j),
-      dW_input   = dt * input_rate;
+      dW_input   = dt * m_input_rate(i, j);
 
     if (W_old < 0.0) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -143,35 +148,37 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
                                     W_old, i, j);
     }
 
-    // tentative decay rate in areas under grounded ice
-    double dW_decay = 0.0;
+    // decay rate in areas under grounded ice
+    double dW_decay = dt * (- m_tillwat_decay_rate);
 
-    if (cell_type.grounded_ice(i, j)) {
-      dW_decay = dt * (- m_tillwat_decay_rate);
-    } else {
-      // use the decay mechanism to remove all water in ice-free and ocean areas
-      dW_decay = -(W_old + dW_input);
+    if (not cell_type.grounded_ice(i, j)) {
+      dW_decay = 0.0;
     }
 
-    double W_new = (W_old + dW_input) + dW_decay;
+    m_Wtill(i, j) = (W_old + dW_input) + dW_decay;
 
-    // enforce bounds
-    m_Wtill(i, j) = clip(W_new, 0.0, m_tillwat_max);
-
-    // dW_decay is always a "conservation error", and the second term reflects the change
-    // needed to keep till water thickness within bounds.
-    m_conservation_error_change(i, j) += dW_decay + (m_Wtill(i, j) - W_new);
+    // dW_decay is a "conservation error"
+    const double kg_per_m = cell_area(i, j) * water_density; // kg m-1
+    m_conservation_error_change(i, j) += dW_decay * kg_per_m;
   }
 
   if (m_diffuse_tillwat) {
-    diffuse_till_water(dt, *inputs.cell_type);
+    diffuse_till_water(dt);
   }
 
-  // no transportable basal water
-  m_W.set(0.0);
+  // remove water in ice-free areas and account for changes
+  enforce_bounds(*inputs.cell_area,
+                 *inputs.cell_type,
+                 inputs.no_model_mask,
+                 m_tillwat_max,
+                 m_Wtill,
+                 m_grounded_margin_change,
+                 m_grounding_line_change,
+                 m_conservation_error_change,
+                 m_no_model_mask_change);
 }
 
-void NullTransport::diffuse_till_water(double dt, const IceModelVec2CellType &cell_type) {
+void NullTransport::diffuse_till_water(double dt) {
   // note: this call updates ghosts of m_Wtill_old
   m_Wtill_old.copy_from(m_Wtill);
 
@@ -184,26 +191,15 @@ void NullTransport::diffuse_till_water(double dt, const IceModelVec2CellType &ce
     Rx = K * dt / (dx * dx),
     Ry = K * dt / (dy * dy);
 
-  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_Wtill_old, &m_conservation_error_change};
+  IceModelVec::AccessList list{&m_Wtill, &m_Wtill_old};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto W = m_Wtill_old.star(i, j);
 
-    double W_new = ((1.0 - 2.0 * Rx - 2.0 * Ry) * W.ij + Rx * (W.w + W.e) + Ry * (W.s + W.n));
-
-    // enforce bounds
-    m_Wtill(i, j) = clip(W_new, 0.0, m_tillwat_max);
-
-    // the RHS is zero if enforcing bounds did not modify the result, otherwise it is the
-    // amount of water *added* to stay within bounds
-    m_conservation_error_change(i, j) += m_Wtill(i, j) - W_new;
-
-    // set to zero in ocean and ice-free areas
-    if (cell_type.ocean(i, j) or cell_type.ice_free(i, j)) {
-      m_conservation_error_change(i, j) += -m_Wtill(i, j);
-      m_Wtill(i, j) = 0.0;
-    }
+    m_Wtill(i, j) = ((1.0 - 2.0 * Rx - 2.0 * Ry) * W.ij
+                    + Rx * (W.w + W.e)
+                    + Ry * (W.s + W.n));
   }
 }
 
