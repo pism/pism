@@ -16,7 +16,8 @@ Changes since v1.0
 
   To save all these, use ``-extra_vars`` shortcuts ``pdd_fluxes`` and ``pdd_rates``.
 - PDD model: replace command-line options ``-pdd_rand``, ``-pdd_rand_repeatable`` with one
-  configuration parameter: ``surface.pdd.method``.
+  configuration parameter: ``surface.pdd.method`` (select from ``expectation_integral``,
+  ``repeatable_random_process``, ``random_process``).
 - Fix `issue 74`_. (Now ``basal_mass_flux_floating`` is zero with the ``float_kill`
   calving mechanism, i.e. when ``ice_area_glacierized_floating`` is zero.)
 - Refactor hydrology models, adding proper mass accounting.
@@ -25,7 +26,8 @@ Changes since v1.0
   ``subglacial_water_flux_at_grounding_line``,
   ``subglacial_water_flux_at_domain_boundary``,
   ``subglacial_water_flux_due_to_conservation_error``, and
-  ``subglacial_water_input_rate``.)
+  ``subglacial_water_input_rate``.) Use the shortcut ``hydrology_fluxes`` to save all
+  these in an "extra file."
 - Add ``hydrology.surface_input_file``: ``IceModel`` can read in time-dependent 2D water
   input rates for subglacial hydrology models.
 - Implement a proper generalization to 2D of the 1D parameterization of the grounding line
@@ -33,21 +35,23 @@ Changes since v1.0
   piecewise-linear functions on a specially-designed triangular mesh refining the regular
   grid used by PISM.)
 - Support 2D (spatially-variable) sea level elevation everywhere in PISM, including 2D sea
-  level forcing. (See ``ocean.delta_sl_2d.file`` and related configuration parameters.)
+  level forcing. (Use ``-sea_level constant,delta_sl_2d`` and search for
+  ``ocean.delta_sl_2d.file`` and related configuration parameters.)
 - Split sea level forcing from the ocean model so that the sea level is available when
-  sub-shelf melt parameterizations are initialized.
+  sub-shelf melt parameterizations are initialized. Use ``-sea_level constant,delta_sl``
+  instead of ``-ocean constant,delta_SL``.
 - Decouple calving law parameterization from ocean models and the stress balance code.
 - Add regression tests for all ocean models.
 - Fix `issue 402`_: ensure reproducibility of ``-bed_def lc`` results.
-- Clean up PISM's ocean, surface, and atmosphere model code. (This makes them easier to
-  test and debug.)
+- Clean up PISM's ocean, surface, and atmosphere model code, making it easier to test and
+  debug.
 - Make it easier to use scalar and 2D time-dependent forcing fields.
 - Add configuration parameters ``input.file`` and ``input.bootstrap``, corresponding to
   command-line options ``-i`` and ``-bootstrap``.
 - Add notes documenting the implementation of the calving front boundary condition to the
   manual.
 - Make it easier to "balance the books": 1) rename scalar diagnostics so that they match 2D
-  diagnostics and 2) report fluxes in Gt/year instead of kg/year.
+  diagnostics and 2) report fluxes in ``Gt/year`` instead of ``kg/year``.
 - Add ``geometry.part_grid.max_iterations`` and increase it to 10.
 - Update the Debian/Ubuntu section of the installation manual.
 
