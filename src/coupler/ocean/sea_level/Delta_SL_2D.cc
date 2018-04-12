@@ -59,12 +59,10 @@ void Delta_SL_2D::init_impl(const Geometry &geometry) {
 
   m_input_model->init(geometry);
 
-  m_log->message(2, "* Initializing 2D sea level forcing...\n");
-
   ForcingOptions opt(*m_grid->ctx(), "ocean.delta_sl_2d");
 
-  m_log->message(2,
-                 "    reading anomalies from %s ...\n", opt.filename.c_str());
+  m_log->message(2, "* Initializing 2D sea level forcing...\n");
+  m_log->message(2, "    reading anomalies from %s ...\n", opt.filename.c_str());
 
   m_forcing->init(opt.filename, opt.period, opt.reference_time);
 }

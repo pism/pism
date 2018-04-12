@@ -97,6 +97,7 @@ void SeaLevel::write_model_state_impl(const PIO &output) const {
 }
 
 namespace diagnostics {
+
 /*! @brief Sea level elevation. */
 class SL : public Diag<SeaLevel> {
 public:

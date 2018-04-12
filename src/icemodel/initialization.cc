@@ -655,10 +655,9 @@ void IceModel::allocate_submodels() {
 void IceModel::allocate_couplers() {
   // Initialize boundary models:
 
-  if (m_surface == NULL) {
+  if (not m_surface) {
 
-    m_log->message(2,
-             "# Allocating a surface process model or coupler...\n");
+    m_log->message(2, "# Allocating a surface process model or coupler...\n");
 
     surface::Factory ps(m_grid, atmosphere::Factory(m_grid).create());
 
@@ -667,9 +666,8 @@ void IceModel::allocate_couplers() {
     m_submodels["surface process model"] = m_surface.get();
   }
 
-  if (m_ocean == NULL) {
-    m_log->message(2,
-             "# Allocating an ocean model or coupler...\n");
+  if (not m_ocean) {
+    m_log->message(2, "# Allocating an ocean model or coupler...\n");
 
     ocean::Factory po(m_grid);
 
