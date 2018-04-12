@@ -35,6 +35,7 @@ add_library (boundary OBJECT
   ./ocean/sea_level/SeaLevel.cc
   ./ocean/sea_level/Delta_SL.cc
   ./ocean/sea_level/Delta_SL_2D.cc
+  ./ocean/sea_level/Factory.cc
   ./surface/Initialization.cc
   ./surface/localMassBalance.cc
   ./surface/SurfaceModel.cc

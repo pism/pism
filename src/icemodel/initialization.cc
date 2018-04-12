@@ -49,6 +49,8 @@
 #include "pism/coupler/atmosphere/Factory.hh"
 #include "pism/coupler/ocean/Factory.hh"
 #include "pism/coupler/ocean/Initialization.hh"
+#include "pism/coupler/ocean/sea_level/Factory.hh"
+#include "pism/coupler/ocean/sea_level/Initialization.hh"
 #include "pism/coupler/surface/Factory.hh"
 #include "pism/coupler/surface/Initialization.hh"
 #include "pism/earth/LingleClark.hh"
@@ -666,12 +668,22 @@ void IceModel::allocate_couplers() {
     m_submodels["surface process model"] = m_surface.get();
   }
 
+  if (not m_sea_level) {
+    m_log->message(2, "# Allocating sea level forcing...\n");
+
+    using namespace ocean::sea_level;
+
+    m_sea_level.reset(new InitializationHelper(m_grid, Factory(m_grid).create()));
+
+    m_submodels["sea level forcing"] = m_sea_level.get();
+  }
+
   if (not m_ocean) {
     m_log->message(2, "# Allocating an ocean model or coupler...\n");
 
-    ocean::Factory po(m_grid);
+    using namespace ocean;
 
-    m_ocean.reset(new ocean::InitializationHelper(m_grid, po.create()));
+    m_ocean.reset(new InitializationHelper(m_grid, Factory(m_grid).create()));
 
     m_submodels["ocean model"] = m_ocean.get();
   }

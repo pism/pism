@@ -57,6 +57,9 @@ namespace pism {
 
 namespace ocean {
 class OceanModel;
+namespace sea_level {
+class SeaLevel;
+}
 }
 
 namespace surface {
@@ -274,8 +277,9 @@ protected:
   calving::vonMisesCalving    *m_vonmises_calving;
   FrontalMelt                 *m_frontal_melt;
 
-  std::shared_ptr<surface::SurfaceModel> m_surface;
-  std::shared_ptr<ocean::OceanModel>     m_ocean;
+  std::shared_ptr<surface::SurfaceModel>      m_surface;
+  std::shared_ptr<ocean::OceanModel>          m_ocean;
+  std::shared_ptr<ocean::sea_level::SeaLevel> m_sea_level;
 
   bed::BedDef *m_beddef;
 
