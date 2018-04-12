@@ -50,7 +50,7 @@ void Delta_SL::update_impl(const Geometry &geometry, double t, double dt) {
 
   m_forcing->update(t, dt);
 
-  m_sea_level.copy_from(m_input_model->sea_level_elevation());
+  m_sea_level.copy_from(m_input_model->elevation());
   m_sea_level.shift(m_forcing->value());
 }
 

@@ -36,7 +36,7 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid,
 void InitializationHelper::update_impl(const Geometry &geometry, double t, double dt) {
   SeaLevel::update_impl(geometry, t, dt);
 
-  m_sea_level.copy_from(m_input_model->sea_level_elevation());
+  m_sea_level.copy_from(m_input_model->elevation());
 }
 
 void InitializationHelper::init_impl(const Geometry &geometry) {

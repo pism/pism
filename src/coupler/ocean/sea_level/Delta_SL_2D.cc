@@ -73,7 +73,7 @@ void Delta_SL_2D::update_impl(const Geometry &geometry, double t, double dt) {
   m_forcing->update(t, dt);
   m_forcing->average(t, dt);
 
-  m_input_model->sea_level_elevation().add(1.0, *m_forcing, m_sea_level);
+  m_input_model->elevation().add(1.0, *m_forcing, m_sea_level);
 }
 
 } // end of namespace sea_level

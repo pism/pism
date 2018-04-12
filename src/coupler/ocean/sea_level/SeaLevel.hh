@@ -42,7 +42,7 @@ public:
 
   void update(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& sea_level_elevation() const;
+  const IceModelVec2S& elevation() const;
 
 protected:
   virtual void init_impl(const Geometry &geometry);

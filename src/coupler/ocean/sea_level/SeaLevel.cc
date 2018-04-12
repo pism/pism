@@ -73,7 +73,7 @@ void SeaLevel::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const IceModelVec2S& SeaLevel::sea_level_elevation() const {
+const IceModelVec2S& SeaLevel::elevation() const {
   return m_sea_level;
 }
 
@@ -115,7 +115,7 @@ protected:
     IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "sea_level", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
 
-    result->copy_from(model->sea_level_elevation());
+    result->copy_from(model->elevation());
 
     return result;
   }

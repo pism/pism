@@ -487,8 +487,8 @@ class DeltaSL(TestCase):
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
 
-        check_difference(modifier.sea_level_elevation(),
-                         self.model.sea_level_elevation(),
+        check_difference(modifier.elevation(),
+                         self.model.elevation(),
                          self.dSL)
 
     def tearDown(self):
@@ -520,8 +520,8 @@ class DeltaSL2D(TestCase):
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
 
-        check_difference(modifier.sea_level_elevation(),
-                         self.model.sea_level_elevation(),
+        check_difference(modifier.elevation(),
+                         self.model.elevation(),
                          self.dSL)
 
     def tearDown(self):
