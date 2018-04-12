@@ -222,12 +222,12 @@ excursion above `0\!\phantom{|}^\circ \text{C}` multiplied by the duration (in d
 when it is above zero.
 
 In PISM there are two methods for computing the number of positive degree days. The first
-computes only the expected value, by the method described in :cite:`CalovGreve05`. This is the
-default when a PDD is chosen (i.e. option :opt:`-surface pdd`). The second is a Monte Carlo
-simulation of the white noise itself, chosen by adding the option :opt:`-pdd_rand`. This
-Monte Carlo simulation adds the same daily variation at every point, though the seasonal
-cycle is (generally) location dependent. If repeatable randomness is desired use
-:opt:`-pdd_rand_repeatable` instead of ``-pdd_rand``.
+computes only the expected value, by the method described in :cite:`CalovGreve05`. This is
+the default when a PDD is chosen (i.e. option :opt:`-surface pdd`). The second is a Monte
+Carlo simulation of the white noise itself, chosen by adding the option :opt:`-pdd_method
+random_process`. This Monte Carlo simulation adds the same daily variation at every point,
+though the seasonal cycle is (generally) location dependent. If repeatable randomness is
+desired use :opt:`-pdd_method repeatable_random_process` instead.
 
 .. figure:: figures/pdd-model-flowchart.png
    :name: fig-pdd-model
