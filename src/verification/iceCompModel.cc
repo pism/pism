@@ -36,6 +36,7 @@
 #include "pism/util/io/PIO.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/coupler/ocean/Constant.hh"
+#include "pism/coupler/SeaLevel.hh"
 #include "PSVerification.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/error_handling.hh"
@@ -245,6 +246,9 @@ void IceCompModel::allocate_couplers() {
 
   m_ocean.reset(new ocean::Constant(m_grid));
   m_submodels["ocean model"] = m_ocean.get();
+
+  m_sea_level.reset(new ocean::sea_level::SeaLevel(m_grid));
+  m_submodels["sea level forcing"] = m_sea_level.get();
 }
 
 void IceCompModel::bootstrap_2d(const PIO &input_file) {

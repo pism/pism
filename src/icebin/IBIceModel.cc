@@ -9,6 +9,8 @@
 #include "pism/icebin/IBIceModel.hh"
 #include "pism/icebin/IBSurfaceModel.hh"
 
+#include "pism/coupler/SeaLevel.hh"
+#include "pism/coupler/ocean/sea_level/Initialization.hh"
 
 namespace pism {
 namespace icebin {
@@ -43,7 +45,7 @@ void IBIceModel::allocate_subglacial_hydrology() {
 void IBIceModel::allocate_couplers() {
   // Initialize boundary models:
 
-  if (m_surface == NULL) {
+  if (not m_surface) {
 
     m_log->message(2, "# Allocating a surface process model or coupler...\n");
 
@@ -52,13 +54,20 @@ void IBIceModel::allocate_couplers() {
     m_submodels["surface process model"] = m_surface.get();
   }
 
-  if (m_ocean == NULL) {
+  if (not m_ocean) {
     m_log->message(2, "# Allocating an ocean model or coupler...\n");
 
     ocean::Factory po(m_grid);
     m_ocean = po.create();
 
     m_submodels["ocean model"] = m_ocean.get();
+  }
+
+  if (not m_sea_level) {
+    using namespace ocean::sea_level;
+    std::shared_ptr<SeaLevel> sea_level(new SeaLevel(m_grid));
+    m_sea_level.reset(new InitializationHelper(m_grid, sea_level));
+    m_submodels["sea level forcing"] = m_sea_level.get();
   }
 }
 
