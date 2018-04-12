@@ -40,7 +40,7 @@ void Delta_SL::init_impl(const Geometry &geometry) {
 
   m_input_model->init(geometry);
 
-  m_log->message(2, "* Initializing sea level forcing...\n");
+  m_log->message(2, "* Initializing scalar sea level forcing...\n");
 
   m_forcing->init();
 }

@@ -173,12 +173,7 @@ void IceModel::model_state_setup() {
     regrid();
   }
 
-  // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
-  // which may need ice thickness to bootstrap.
-  // FIXME: ocean models may need bed elevation, which is not available yet.
-  {
-    m_ocean->init(m_geometry);
-  }
+  m_sea_level->init(m_geometry);
 
   // Initialize a bed deformation model. This may use ice thickness initialized above.
   if (m_beddef) {
@@ -195,6 +190,12 @@ void IceModel::model_state_setup() {
   // guaranteed not to see "icebergs". Here we make sure that the first time step is OK
   // too.
   enforce_consistency_of_geometry(REMOVE_ICEBERGS);
+
+  // By now ice geometry is set and so we can initialize the ocean model, which may need
+  // geometric information (ice thickness, bed elevation, cell type) to bootstrap.
+  {
+    m_ocean->init(m_geometry);
+  }
 
   // Now surface elevation is initialized, so we can initialize surface models (some use
   // elevation-based parameterizations of surface temperature and/or mass balance).

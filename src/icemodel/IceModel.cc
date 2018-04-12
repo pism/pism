@@ -41,6 +41,7 @@
 #include "pism/util/Diagnostic.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_options.hh"
+#include "pism/coupler/SeaLevel.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/earth/BedDef.hh"
@@ -375,7 +376,7 @@ void IceModel::allocate_storage() {
 void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
 
   m_geometry.bed_elevation.copy_from(m_beddef->bed_elevation());
-  m_geometry.sea_level_elevation.copy_from(m_ocean->sea_level_elevation());
+  m_geometry.sea_level_elevation.copy_from(m_sea_level->elevation());
 
   if (m_iceberg_remover and flag == REMOVE_ICEBERGS) {
     // The iceberg remover has to use the same mask as the stress balance code, hence the
@@ -637,6 +638,10 @@ void IceModel::step(bool do_mass_continuity,
   } else {
     m_stdout_flags += "$";
   }
+
+  profiling.begin("sea_level");
+  m_sea_level->update(m_geometry, current_time, m_dt);
+  profiling.end("sea_level");
 
   profiling.begin("ocean");
   m_ocean->update(m_geometry, current_time, m_dt);

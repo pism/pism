@@ -58,6 +58,7 @@ void SeaLevel::init_impl(const Geometry &geometry) {
   } else {
     // set the default value
     m_sea_level.set(0.0);
+    m_log->message(2, "* Using constant (zero) sea level...\n");
   }
 }
 
