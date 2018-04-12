@@ -507,8 +507,8 @@ void wall_melt(const Routing &model,
     L     = config->get_double("constants.fresh_water.latent_heat_of_fusion"),
     alpha = config->get_double("hydrology.thickness_power_in_flux"),
     beta  = config->get_double("hydrology.gradient_power_in_flux"),
-    rhow  = config->get_double("constants.standard_gravity"),
-    g     = config->get_double("constants.fresh_water.density"),
+    g     = config->get_double("constants.standard_gravity"),
+    rhow  = config->get_double("constants.fresh_water.density"),
     rg    = rhow * g,
     CC    = k / (L * rhow);
 
