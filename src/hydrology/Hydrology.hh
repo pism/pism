@@ -138,6 +138,7 @@ public:
   const IceModelVec2S& mass_change_at_grounding_line() const;
   const IceModelVec2S& mass_change_at_domain_boundary() const;
   const IceModelVec2S& mass_change_due_to_conservation_error() const;
+  const IceModelVec2S& mass_change_due_to_input() const;
 
 protected:
   virtual void restart_impl(const PIO &input_file, int record);

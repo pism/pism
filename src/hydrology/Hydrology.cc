@@ -87,6 +87,35 @@ protected:
   }
 };
 
+/*! @brief Report water flux due to input (basal melt and drainage from the surface). */
+class WaterInputFlux : public DiagAverageRate<Hydrology>
+{
+public:
+  WaterInputFlux(const Hydrology *m)
+    : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_due_to_input",
+                                 TOTAL_CHANGE) {
+
+    m_vars = {SpatialVariableMetadata(m_sys,
+                                      "tendency_of_subglacial_water_mass_due_to_input")};
+    m_accumulator.metadata().set_string("units", "kg");
+
+    set_attrs("subglacial water flux due to input", "",
+              "kg second-1", "Gt year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+  }
+
+protected:
+  const IceModelVec2S& model_input() {
+    return model->mass_change_due_to_input();
+  }
+};
+
 /*! @brief Report water flux at the grounded margin. */
 class GroundedMarginFlux : public DiagAverageRate<Hydrology>
 {
@@ -376,6 +405,7 @@ DiagnosticList Hydrology::diagnostics_impl() const {
   using namespace diagnostics;
   DiagnosticList result = {
     {"tillwat",                                                     Diagnostic::wrap(m_Wtill)},
+    {"tendency_of_subglacial_water_mass_due_to_input",              Diagnostic::Ptr(new WaterInputFlux(this))},
     {"tendency_of_subglacial_water_mass",                           Diagnostic::Ptr(new TendencyOfWaterMass(this))},
     {"subglacial_water_input_rate",                                 Diagnostic::Ptr(new TotalInputRate(this))},
     {"tendency_of_subglacial_water_mass_at_grounded_margins",       Diagnostic::Ptr(new GroundedMarginFlux(this))},
@@ -453,6 +483,10 @@ const IceModelVec2S& Hydrology::mass_change_at_domain_boundary() const {
 
 const IceModelVec2S& Hydrology::mass_change() const {
   return m_total_change;
+}
+
+const IceModelVec2S& Hydrology::mass_change_due_to_input() const {
+  return m_input_change;
 }
 
 /*!
