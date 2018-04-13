@@ -133,10 +133,11 @@ public:
   const IceModelVec2S& overburden_pressure() const;
   const IceModelVec2S& total_input_rate() const;
 
-  const IceModelVec2S& water_thickness_change_at_grounded_margin() const;
-  const IceModelVec2S& water_thickness_change_at_grounding_line() const;
-  const IceModelVec2S& water_thickness_change_at_domain_boundary() const;
-  const IceModelVec2S& water_thickness_change_due_to_conservation_error() const;
+  const IceModelVec2S& mass_change() const;
+  const IceModelVec2S& mass_change_at_grounded_margin() const;
+  const IceModelVec2S& mass_change_at_grounding_line() const;
+  const IceModelVec2S& mass_change_at_domain_boundary() const;
+  const IceModelVec2S& mass_change_due_to_conservation_error() const;
 
 protected:
   virtual void restart_impl(const PIO &input_file, int record);
@@ -176,13 +177,14 @@ protected:
 
   bool m_hold_bmelt;
 
-  // changes in water thickness at the margins (mass conservation reporting)
+  // changes in water thickness
   //
   // these quantities are re-set to zero at the beginning of the PISM time step
   IceModelVec2S m_grounded_margin_change;
   IceModelVec2S m_grounding_line_change;
   IceModelVec2S m_no_model_mask_change;
   IceModelVec2S m_conservation_error_change;
+  IceModelVec2S m_total_change;
 
   // when we update the water amounts, careful mass accounting at the boundary
   // is needed

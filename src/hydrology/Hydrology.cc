@@ -84,7 +84,7 @@ public:
 
 protected:
   const IceModelVec2S& model_input() {
-    return model->water_thickness_change_at_grounded_margin();
+    return model->mass_change_at_grounded_margin();
   }
 };
 
@@ -111,7 +111,7 @@ public:
 
 protected:
   const IceModelVec2S& model_input() {
-    return model->water_thickness_change_at_grounding_line();
+    return model->mass_change_at_grounding_line();
   }
 };
 
@@ -138,7 +138,7 @@ public:
 
 protected:
   const IceModelVec2S& model_input() {
-    return model->water_thickness_change_due_to_conservation_error();
+    return model->mass_change_due_to_conservation_error();
   }
 };
 
@@ -165,7 +165,7 @@ public:
 
 protected:
   const IceModelVec2S& model_input() {
-    return model->water_thickness_change_at_domain_boundary();
+    return model->mass_change_at_domain_boundary();
   }
 };
 
@@ -284,7 +284,42 @@ void Hydrology::initialize_impl(const IceModelVec2S &W_till,
 }
 
 void Hydrology::update(double t, double dt, const Inputs& inputs) {
+
+  // reset water thickness changes
+  {
+    m_grounded_margin_change.set(0.0);
+    m_grounding_line_change.set(0.0);
+    m_conservation_error_change.set(0.0);
+    m_no_model_mask_change.set(0.0);
+  }
+
+  compute_overburden_pressure(*inputs.ice_thickness, m_Pover);
+
+  compute_input_rate(*inputs.cell_type,
+                     *inputs.basal_melt_rate,
+                     inputs.surface_input_rate,
+                     m_input_rate);
+
+  IceModelVec::AccessList list{&m_W, &m_Wtill, &m_total_change, inputs.cell_area};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    m_total_change(i, j) = m_W(i, j) + m_Wtill(i, j);
+  }
+
   this->update_impl(t, dt, inputs);
+
+  double water_density = m_config->get_double("constants.fresh_water.density");
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    // compute total change in meters
+    m_total_change(i, j) = (m_W(i, j) + m_Wtill(i, j)) - m_total_change(i, j);
+    m_total_change(i, j) *= (*inputs.cell_area)(i, j) * water_density;
+    // kg = m * (kg / m^3) * m^2
+  }
 }
 
 DiagnosticList Hydrology::diagnostics_impl() const {
@@ -349,20 +384,24 @@ const IceModelVec2S& Hydrology::total_input_rate() const {
   return m_input_rate;
 }
 
-const IceModelVec2S& Hydrology::water_thickness_change_at_grounded_margin() const {
+const IceModelVec2S& Hydrology::mass_change_at_grounded_margin() const {
   return m_grounded_margin_change;
 }
 
-const IceModelVec2S& Hydrology::water_thickness_change_at_grounding_line() const {
+const IceModelVec2S& Hydrology::mass_change_at_grounding_line() const {
   return m_grounding_line_change;
 }
 
-const IceModelVec2S& Hydrology::water_thickness_change_due_to_conservation_error() const {
+const IceModelVec2S& Hydrology::mass_change_due_to_conservation_error() const {
   return m_conservation_error_change;
 }
 
-const IceModelVec2S& Hydrology::water_thickness_change_at_domain_boundary() const {
+const IceModelVec2S& Hydrology::mass_change_at_domain_boundary() const {
   return m_no_model_mask_change;
+}
+
+const IceModelVec2S& Hydrology::mass_change() const {
+  return m_total_change;
 }
 
 /*!
