@@ -175,15 +175,14 @@ protected:
   // total input rate, combining basal melt rate and the input from the surface
   IceModelVec2S m_input_rate;
 
-  bool m_hold_bmelt;
-
   // changes in water thickness
   //
   // these quantities are re-set to zero at the beginning of the PISM time step
+  IceModelVec2S m_conservation_error_change;
   IceModelVec2S m_grounded_margin_change;
   IceModelVec2S m_grounding_line_change;
+  IceModelVec2S m_input_change;
   IceModelVec2S m_no_model_mask_change;
-  IceModelVec2S m_conservation_error_change;
   IceModelVec2S m_total_change;
 
   // when we update the water amounts, careful mass accounting at the boundary

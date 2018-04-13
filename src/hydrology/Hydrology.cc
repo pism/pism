@@ -31,6 +31,32 @@ namespace hydrology {
 
 namespace diagnostics {
 
+class TendencyOfWaterMass : public DiagAverageRate<Hydrology>
+{
+public:
+  TendencyOfWaterMass(const Hydrology *m)
+    : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass", TOTAL_CHANGE) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "tendency_of_subglacial_water_mass")};
+    m_accumulator.metadata().set_string("units", "kg");
+
+    set_attrs("rate of change of the total mass of subglacial water", "",
+              "kg second-1", "Gt year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+  }
+
+protected:
+  const IceModelVec2S& model_input() {
+    return model->mass_change();
+  }
+};
+
 /*! @brief Report total input rate of subglacial water (basal melt rate plus input from
   the surface).
  */
@@ -66,9 +92,11 @@ class GroundedMarginFlux : public DiagAverageRate<Hydrology>
 {
 public:
   GroundedMarginFlux(const Hydrology *m)
-    : DiagAverageRate<Hydrology>(m, "subglacial_water_flux_at_grounded_margins", TOTAL_CHANGE) {
+    : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_grounded_margins",
+                                 TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_at_grounded_margins")};
+    m_vars = {SpatialVariableMetadata(m_sys,
+                                      "tendency_of_subglacial_water_mass_at_grounded_margins")};
     m_accumulator.metadata().set_string("units", "kg");
 
     set_attrs("subglacial water flux at grounded ice margins", "",
@@ -93,9 +121,9 @@ class GroundingLineFlux : public DiagAverageRate<Hydrology>
 {
 public:
   GroundingLineFlux(const Hydrology *m)
-    : DiagAverageRate<Hydrology>(m, "subglacial_water_flux_at_grounding_line", TOTAL_CHANGE) {
+    : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_grounding_line", TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_at_grounding_line")};
+    m_vars = {SpatialVariableMetadata(m_sys, "tendency_of_subglacial_water_mass_at_grounding_line")};
     m_accumulator.metadata().set_string("units", "kg");
 
     set_attrs("subglacial water flux at grounding lines", "",
@@ -120,9 +148,11 @@ class ConservationErrorFlux : public DiagAverageRate<Hydrology>
 {
 public:
   ConservationErrorFlux(const Hydrology *m)
-    : DiagAverageRate<Hydrology>(m, "subglacial_water_flux_due_to_conservation_error", TOTAL_CHANGE) {
+    : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_due_to_conservation_error",
+                                 TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_due_to_conservation_error")};
+    m_vars = {SpatialVariableMetadata(m_sys,
+                                      "tendency_of_subglacial_water_mass_due_to_conservation_error")};
     m_accumulator.metadata().set_string("units", "kg");
 
     set_attrs("subglacial water flux due to conservation error (mass added to preserve non-negativity)", "",
@@ -147,9 +177,9 @@ class DomainBoundaryFlux : public DiagAverageRate<Hydrology>
 {
 public:
   DomainBoundaryFlux(const Hydrology *m)
-    : DiagAverageRate<Hydrology>(m, "subglacial_water_flux_at_domain_boundary", TOTAL_CHANGE) {
+    : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_domain_boundary", TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_at_domain_boundary")};
+    m_vars = {SpatialVariableMetadata(m_sys, "tendency_of_subglacial_water_mass_at_domain_boundary")};
     m_accumulator.metadata().set_string("units", "kg");
 
     set_attrs("subglacial water flux at domain boundary (in regional model configurations)", "",
@@ -183,7 +213,17 @@ Inputs::Inputs() {
 
 Hydrology::Hydrology(IceGrid::ConstPtr g)
   : Component(g) {
-  m_hold_bmelt = false;
+
+  m_total_change.create(m_grid, "water_mass_change", WITHOUT_GHOSTS);
+  m_total_change.set_attrs("internal",
+                           "total change in water mass over one time step",
+                           "kg", "");
+
+  m_input_change.create(m_grid, "total_input", WITHOUT_GHOSTS);
+  m_input_change.set_attrs("internal",
+                           "change in water mass over one time step due to the input "
+                           "(basal melt and surface drainage)",
+                           "kg", "");
 
   m_input_rate.create(m_grid, "total_input", WITHOUT_GHOSTS);
   m_input_rate.set_attrs("internal",
@@ -233,7 +273,6 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
                                           "kg", "");
   }
 }
-
 
 Hydrology::~Hydrology() {
   // empty
@@ -300,6 +339,19 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
                      inputs.surface_input_rate,
                      m_input_rate);
 
+  double water_density = m_config->get_double("constants.fresh_water.density");
+
+  {
+    IceModelVec::AccessList list{inputs.cell_area, &m_input_rate, &m_input_change};
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      // kg = s * (m / s) * (kg / m^3) * m^2
+      m_input_change(i, j) = dt * m_input_rate(i, j) * water_density * (*inputs.cell_area)(i, j);
+    }
+  }
+
   IceModelVec::AccessList list{&m_W, &m_Wtill, &m_total_change, inputs.cell_area};
 
   for (Points p(*m_grid); p; p.next()) {
@@ -309,8 +361,6 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
   }
 
   this->update_impl(t, dt, inputs);
-
-  double water_density = m_config->get_double("constants.fresh_water.density");
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -325,12 +375,13 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
 DiagnosticList Hydrology::diagnostics_impl() const {
   using namespace diagnostics;
   DiagnosticList result = {
-    {"tillwat",                                         Diagnostic::wrap(m_Wtill)},
-    {"subglacial_water_input_rate",                     Diagnostic::Ptr(new TotalInputRate(this))},
-    {"subglacial_water_flux_at_grounded_margins",       Diagnostic::Ptr(new GroundedMarginFlux(this))},
-    {"subglacial_water_flux_at_grounding_line",         Diagnostic::Ptr(new GroundingLineFlux(this))},
-    {"subglacial_water_flux_at_domain_boundary",        Diagnostic::Ptr(new DomainBoundaryFlux(this))},
-    {"subglacial_water_flux_due_to_conservation_error", Diagnostic::Ptr(new ConservationErrorFlux(this))},
+    {"tillwat",                                                     Diagnostic::wrap(m_Wtill)},
+    {"tendency_of_subglacial_water_mass",                           Diagnostic::Ptr(new TendencyOfWaterMass(this))},
+    {"subglacial_water_input_rate",                                 Diagnostic::Ptr(new TotalInputRate(this))},
+    {"tendency_of_subglacial_water_mass_at_grounded_margins",       Diagnostic::Ptr(new GroundedMarginFlux(this))},
+    {"tendency_of_subglacial_water_mass_at_grounding_line",         Diagnostic::Ptr(new GroundingLineFlux(this))},
+    {"tendency_of_subglacial_water_mass_at_domain_boundary",        Diagnostic::Ptr(new DomainBoundaryFlux(this))},
+    {"tendency_of_subglacial_water_mass_due_to_conservation_error", Diagnostic::Ptr(new ConservationErrorFlux(this))},
   };
 
   return result;
