@@ -34,26 +34,6 @@ namespace hydrology {
 
 namespace diagnostics {
 
-//! \brief Reports the thickness of the transportable water in the subglacial layer.
-class BasalWaterThickness : public Diag<Routing>
-{
-public:
-  BasalWaterThickness(const Routing *m)
-    : Diag<Routing>(m) {
-    m_vars = {SpatialVariableMetadata(m_sys, "bwat")};
-    set_attrs("thickness of transportable water in subglacial layer", "", "m", "m", 0);
-  }
-
-protected:
-  virtual IceModelVec::Ptr compute_impl() const {
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwat", WITHOUT_GHOSTS));
-    result->metadata() = m_vars[0];
-    result->copy_from(model->subglacial_water_thickness());
-    return result;
-  }
-};
-
-
 //! \brief Reports the pressure of the transportable water in the subglacial layer.
 class BasalWaterPressure : public Diag<Routing>
 {
@@ -872,7 +852,6 @@ std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
   using namespace diagnostics;
 
   DiagnosticList result = {
-    {"bwat",     Diagnostic::Ptr(new BasalWaterThickness(this))},
     {"bwatvel",  Diagnostic::Ptr(new BasalWaterVelocity(this))},
     {"bwp",      Diagnostic::Ptr(new BasalWaterPressure(this))},
     {"bwprel",   Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},

@@ -228,6 +228,35 @@ protected:
   }
 };
 
+/*! @brief Report water flux at the grounded margin. */
+class TendencyOfWaterMassDueToFlow : public DiagAverageRate<Hydrology>
+{
+public:
+  TendencyOfWaterMassDueToFlow(const Hydrology *m)
+    : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_due_to_flow",
+                                 TOTAL_CHANGE) {
+
+    m_vars = {SpatialVariableMetadata(m_sys,
+                                      "tendency_of_subglacial_water_mass_due_to_flow")};
+    m_accumulator.metadata().set_string("units", "kg");
+
+    set_attrs("rate of change subglacial water mass due to lateral flow", "",
+              "kg second-1", "Gt year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+  }
+
+protected:
+  const IceModelVec2S& model_input() {
+    return model->mass_change_due_to_lateral_flow();
+  }
+};
+
 } // end of namespace diagnostics
 
 Inputs::Inputs() {
@@ -248,13 +277,18 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
                            "total change in water mass over one time step",
                            "kg", "");
 
-  m_input_change.create(m_grid, "total_input", WITHOUT_GHOSTS);
+  m_input_change.create(m_grid, "water_mass_change_due_to_input", WITHOUT_GHOSTS);
   m_input_change.set_attrs("internal",
                            "change in water mass over one time step due to the input "
                            "(basal melt and surface drainage)",
                            "kg", "");
 
-  m_input_rate.create(m_grid, "total_input", WITHOUT_GHOSTS);
+  m_flow_change.create(m_grid, "water_mass_change_due_to_flow", WITHOUT_GHOSTS);
+  m_flow_change.set_attrs("internal",
+                          "change in water mass due to lateral flow (over one time step)",
+                           "kg", "");
+
+  m_input_rate.create(m_grid, "water_input_rate", WITHOUT_GHOSTS);
   m_input_rate.set_attrs("internal",
                          "hydrology model workspace for total input rate into subglacial water layer",
                          "m s-1", "");
@@ -404,14 +438,16 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
 DiagnosticList Hydrology::diagnostics_impl() const {
   using namespace diagnostics;
   DiagnosticList result = {
+    {"bwat",                                                        Diagnostic::wrap(m_W)},
     {"tillwat",                                                     Diagnostic::wrap(m_Wtill)},
-    {"tendency_of_subglacial_water_mass_due_to_input",              Diagnostic::Ptr(new WaterInputFlux(this))},
-    {"tendency_of_subglacial_water_mass",                           Diagnostic::Ptr(new TendencyOfWaterMass(this))},
     {"subglacial_water_input_rate",                                 Diagnostic::Ptr(new TotalInputRate(this))},
+    {"tendency_of_subglacial_water_mass_due_to_input",              Diagnostic::Ptr(new WaterInputFlux(this))},
+    {"tendency_of_subglacial_water_mass_due_to_flow",               Diagnostic::Ptr(new TendencyOfWaterMassDueToFlow(this))},
+    {"tendency_of_subglacial_water_mass_due_to_conservation_error", Diagnostic::Ptr(new ConservationErrorFlux(this))},
+    {"tendency_of_subglacial_water_mass",                           Diagnostic::Ptr(new TendencyOfWaterMass(this))},
     {"tendency_of_subglacial_water_mass_at_grounded_margins",       Diagnostic::Ptr(new GroundedMarginFlux(this))},
     {"tendency_of_subglacial_water_mass_at_grounding_line",         Diagnostic::Ptr(new GroundingLineFlux(this))},
     {"tendency_of_subglacial_water_mass_at_domain_boundary",        Diagnostic::Ptr(new DomainBoundaryFlux(this))},
-    {"tendency_of_subglacial_water_mass_due_to_conservation_error", Diagnostic::Ptr(new ConservationErrorFlux(this))},
   };
 
   return result;
@@ -487,6 +523,10 @@ const IceModelVec2S& Hydrology::mass_change() const {
 
 const IceModelVec2S& Hydrology::mass_change_due_to_input() const {
   return m_input_change;
+}
+
+const IceModelVec2S& Hydrology::mass_change_due_to_lateral_flow() const {
+  return m_flow_change;
 }
 
 /*!

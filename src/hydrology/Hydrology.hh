@@ -139,6 +139,7 @@ public:
   const IceModelVec2S& mass_change_at_domain_boundary() const;
   const IceModelVec2S& mass_change_due_to_conservation_error() const;
   const IceModelVec2S& mass_change_due_to_input() const;
+  const IceModelVec2S& mass_change_due_to_lateral_flow() const;
 
 protected:
   virtual void restart_impl(const PIO &input_file, int record);
@@ -185,6 +186,7 @@ protected:
   IceModelVec2S m_input_change;
   IceModelVec2S m_no_model_mask_change;
   IceModelVec2S m_total_change;
+  IceModelVec2S m_flow_change;
 
   // when we update the water amounts, careful mass accounting at the boundary
   // is needed

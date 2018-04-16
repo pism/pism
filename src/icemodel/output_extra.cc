@@ -78,10 +78,11 @@ static std::set<std::string> process_extra_shortcuts(const std::set<std::string>
     result.erase("hydrology_fluxes");
     result.insert("tendency_of_subglacial_water_mass");
     result.insert("tendency_of_subglacial_water_mass_due_to_input");
+    result.insert("tendency_of_subglacial_water_mass_due_to_flow");
+    result.insert("tendency_of_subglacial_water_mass_due_to_conservation_error");
     result.insert("tendency_of_subglacial_water_mass_at_grounded_margins");
     result.insert("tendency_of_subglacial_water_mass_at_grounding_line");
     result.insert("tendency_of_subglacial_water_mass_at_domain_boundary");
-    result.insert("tendency_of_subglacial_water_mass_due_to_conservation_error");
   }
 
   return result;
