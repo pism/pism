@@ -156,6 +156,12 @@ protected:
                         const IceModelVec2S &W,
                         IceModelVec2Stag &result) const;
 
+  void W_change_due_to_flow(double dt,
+                            const IceModelVec2S    &W,
+                            const IceModelVec2Stag &Wstag,
+                            const IceModelVec2Stag &K,
+                            const IceModelVec2Stag &Q,
+                            IceModelVec2S &result);
   void update_W(double dt,
                 const IceModelVec2S &input_rate,
                 const IceModelVec2S &W,

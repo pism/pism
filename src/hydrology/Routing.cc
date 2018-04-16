@@ -692,22 +692,17 @@ void Routing::update_Wtill(double dt,
   }
 }
 
-//! The computation of Wnew, called by update().
-void Routing::update_W(double dt,
-                       const IceModelVec2S    &input_rate,
-                       const IceModelVec2S    &W,
-                       const IceModelVec2Stag &Wstag,
-                       const IceModelVec2S    &Wtill,
-                       const IceModelVec2S    &Wtill_new,
-                       const IceModelVec2Stag &K,
-                       const IceModelVec2Stag &Q,
-                       IceModelVec2S &W_new) {
+void Routing::W_change_due_to_flow(double dt,
+                                   const IceModelVec2S    &W,
+                                   const IceModelVec2Stag &Wstag,
+                                   const IceModelVec2Stag &K,
+                                   const IceModelVec2Stag &Q,
+                                   IceModelVec2S &result) {
   const double
     wux = 1.0 / (m_dx * m_dx),
     wuy = 1.0 / (m_dy * m_dy);
 
-  IceModelVec::AccessList list{&W, &Wtill, &Wtill_new, &Wstag, &K, &Q,
-      &input_rate, &W_new};
+  IceModelVec::AccessList list{&W, &Wstag, &K, &Q, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -728,8 +723,32 @@ void Routing::update_W(double dt,
     const double diffW = (wux * (De * (w.e - w.ij) - Dw * (w.ij - w.w)) +
                           wuy * (Dn * (w.n - w.ij) - Ds * (w.ij - w.s)));
 
+    result(i, j) = dt * (- divQ + diffW);
+  }
+}
+
+
+//! The computation of Wnew, called by update().
+void Routing::update_W(double dt,
+                       const IceModelVec2S    &input_rate,
+                       const IceModelVec2S    &W,
+                       const IceModelVec2Stag &Wstag,
+                       const IceModelVec2S    &Wtill,
+                       const IceModelVec2S    &Wtill_new,
+                       const IceModelVec2Stag &K,
+                       const IceModelVec2Stag &Q,
+                       IceModelVec2S &W_new) {
+
+  W_change_due_to_flow(dt, W, Wstag, K, Q, m_flow_change_incremental);
+
+  IceModelVec::AccessList list{&W, &Wtill, &Wtill_new, &input_rate,
+      &m_flow_change_incremental, &W_new};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
     double Wtill_change = Wtill_new(i, j) - Wtill(i, j);
-    W_new(i, j) = w.ij - Wtill_change + dt * (- divQ + diffW + input_rate(i, j));
+    W_new(i, j) = W(i, j) - Wtill_change + dt * input_rate(i, j) + m_flow_change_incremental(i, j);
   }
 }
 
