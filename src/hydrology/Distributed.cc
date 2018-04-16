@@ -320,7 +320,9 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
   m_W.update_ghosts();
   m_P.update_ghosts();
 
+#if (PISM_DEBUG==1)
   double tillwat_max = m_config->get_double("hydrology.tillwat_max");
+#endif
 
   unsigned int step_counter = 0;
   for (; ht < t_final; ht += hdt) {
