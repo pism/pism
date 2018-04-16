@@ -177,6 +177,9 @@ protected:
   // total input rate, combining basal melt rate and the input from the surface
   IceModelVec2S m_input_rate;
 
+  // change due to flow for the current hydrology time step
+  IceModelVec2S m_flow_change_incremental;
+
   // changes in water thickness
   //
   // these quantities are re-set to zero at the beginning of the PISM time step
