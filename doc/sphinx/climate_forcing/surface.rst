@@ -178,9 +178,9 @@ The default PDD model used by PISM, turned on by option :opt:`-surface pdd`, is 
 
 Our model computes the solid (snow) precipitation rate using the air temperature threshold
 with a linear transition. All precipitation during periods with air temperatures above
-:config:`air_temp_all_precip_as_rain` (default of `2^\circ C`) is interpreted as
+:config:`surface.pdd.air_temp_all_precip_as_rain` (default of `2^\circ C`) is interpreted as
 rain; all precipitation during periods with air temperatures below
-:config:`air_temp_all_precip_as_snow` (default of `0^\circ C`) is interpreted as
+:config:`surface.pdd.air_temp_all_precip_as_snow` (default of `0^\circ C`) is interpreted as
 snow.
 
 For long-term simulations, a PDD model generally uses an idealized seasonal temperature

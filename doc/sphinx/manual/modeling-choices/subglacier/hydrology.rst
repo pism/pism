@@ -72,7 +72,7 @@ The default model: ``-hydrology null``
 In this model the water is *not* conserved but it is stored locally in the till up to a
 specified amount; the configuration parameter :config:`hydrology.tillwat_max` sets that
 amount. The water is not conserved in the sense that water above the
-:config:`hydrology_tillwat_max` level is lost permanently. This model is based on the
+:config:`hydrology.tillwat_max` level is lost permanently. This model is based on the
 "undrained plastic bed" concept of :cite:`Tulaczyketal2000b`; see also
 :cite:`BBssasliding`.
 

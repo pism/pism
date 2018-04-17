@@ -114,8 +114,8 @@ It takes two command-line option:
   salinity is clipped so that it stays in the `[4, 40]` psu range. This is done to
   ensure that we stay in the range of applicability of the melting point temperature
   parameterization; see :cite:`HollandJenkins1999`. To disable salinity clipping, use the
-  :opt:`-no_clip_shelf_base_salinity` option or set the
-  :config:`ocean_three_equation_model_clip_salinity` configuration parameter to "no".
+  :opt:`-no_clip_shelf_base_salinity` option or set the configuration parameter
+  :config:`ocean.three_equation_model_clip_salinity`  to "no".
 
 .. _sec-ocean-delta-sl:
 
