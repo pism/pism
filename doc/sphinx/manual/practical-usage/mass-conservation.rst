@@ -97,8 +97,10 @@ Comments
 - `tendency_of_ice_mass_due_to_conservation_error` should be zero (or close to zero) in
   most simulations
 
-Mass conservation in subglacial hydrology models
-------------------------------------------------
+.. _sec-mass-conservation-hydrology:
+
+Mass accounting in subglacial hydrology models
+----------------------------------------------
 
 PISM's hydrology models provide all the diagnostic fields needed to keep track of changes
 in subglacial water thickness. [#]_

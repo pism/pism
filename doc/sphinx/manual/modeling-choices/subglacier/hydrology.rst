@@ -17,6 +17,12 @@ pressure on the till (see :ref:`sec-basestrength`). The pressure of the transpor
 water ``bwat`` in the ``routing`` model does not relate directly to the effective pressure
 on the till.
 
+.. note::
+
+   Both models described here provide all diagnostic quantities needed for mass
+   accounting, even though the simpler model is not mass-conserving. See
+   :ref:`sec-mass-conservation-hydrology` for details.
+
 .. list-table:: Command-line options to choose the hydrology model
    :name: tab-hydrologychoice
    :header-rows: 1
