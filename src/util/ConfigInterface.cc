@@ -682,4 +682,22 @@ void ConfigWithPrefix::reset_prefix(const std::string &prefix) {
   m_prefix = prefix;
 }
 
+std::vector<std::string> Config::keys() const {
+  std::vector<std::string> result;
+
+  for (auto p : all_doubles()) {
+    result.push_back(p.first);
+  }
+
+  for (auto p : all_strings()) {
+    result.push_back(p.first);
+  }
+
+  for (auto p : all_booleans()) {
+    result.push_back(p.first);
+  }
+
+  return result;
+}
+
 } // end of namespace pism
