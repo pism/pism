@@ -114,12 +114,15 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   // no transportable basal water
   m_W.set(0.0);
 
+  m_input_change.add(dt, m_input_rate);
+
   const double water_density = m_config->get_double("constants.fresh_water.density");
 
   const IceModelVec2CellType &cell_type = *inputs.cell_type;
   const IceModelVec2S &cell_area = *inputs.cell_area;
 
-  IceModelVec::AccessList list{&cell_type, &cell_area, &m_Wtill, &m_input_rate};
+  IceModelVec::AccessList list{&cell_type, &cell_area, &m_Wtill, &m_input_rate,
+      &m_conservation_error_change};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -176,15 +179,17 @@ void NullTransport::diffuse_till_water(double dt) {
     Rx = K * dt / (dx * dx),
     Ry = K * dt / (dy * dy);
 
-  IceModelVec::AccessList list{&m_Wtill, &m_Wtill_old};
+  IceModelVec::AccessList list{&m_Wtill, &m_Wtill_old, &m_flow_change};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto W = m_Wtill_old.star(i, j);
 
-    m_Wtill(i, j) = ((1.0 - 2.0 * Rx - 2.0 * Ry) * W.ij
-                    + Rx * (W.w + W.e)
-                    + Ry * (W.s + W.n));
+    double dWtill = (Rx * (W.w - 2.0 * W.ij + W.e) + Ry * (W.s - 2.0 * W.ij + W.n));
+
+    m_Wtill(i, j) = W.ij + dWtill;
+
+    m_flow_change(i, j) = dWtill;
   }
 }
 
