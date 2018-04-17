@@ -809,12 +809,6 @@ netcdf pism_config {
     pism_config:hydrology.cavitation_opening_coefficient_type = "scalar";
     pism_config:hydrology.cavitation_opening_coefficient_units = "meter-1";
 
-    pism_config:hydrology.const_bmelt = 1.0;
-    pism_config:hydrology.const_bmelt_doc = "only used if hydrology.use_const_bmelt = 'yes'";
-    pism_config:hydrology.const_bmelt_option = "hydrology_const_bmelt";
-    pism_config:hydrology.const_bmelt_type = "scalar";
-    pism_config:hydrology.const_bmelt_units = "cm / year";
-
     pism_config:hydrology.creep_closure_coefficient = 0.04;
     pism_config:hydrology.creep_closure_coefficient_doc = "c_2 in notes; coefficient of creep closure term in evolution of layer thickness in hydrology::Distributed";
     pism_config:hydrology.creep_closure_coefficient_option = "hydrology_creep_closure_coefficient";
