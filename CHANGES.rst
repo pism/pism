@@ -7,6 +7,7 @@ Changes since v1.0
 - Add a work-around needed to use old-ish NetCDF (4.0 - 4.1) with OpenMPI.
 - Fix `issue 222`_ (``-part_grid`` residual redistribution code used to lose mass in
   parallel runs).
+- Add ``geometry.part_grid.max_iterations`` and increase it to 10.
 - Fix a bug in ``pismr -regional`` (stored surface elevation was not initialized correctly)
 - PDD model: add scalar diagnostics ``surface_accumulation_rate``, ``surface_melt_rate``,
   ``surface_runoff_rate``. See `issue 394`_. Also, rename ``saccum``, ``smelt``,
@@ -22,12 +23,14 @@ Changes since v1.0
   calving mechanism, i.e. when ``ice_area_glacierized_floating`` is zero.)
 - Refactor hydrology models, adding proper mass accounting.
 - Implement 2D diagnostics quantities needed for mass conservation accounting in hydrology
-  models. (See ``subglacial_water_flux_at_grounded_margins``,
-  ``subglacial_water_flux_at_grounding_line``,
-  ``subglacial_water_flux_at_domain_boundary``,
-  ``subglacial_water_flux_due_to_conservation_error``, and
-  ``subglacial_water_input_rate``.) Use the shortcut ``hydrology_fluxes`` to save all
-  these in an "extra file."
+  models. (See ``tendency_of_subglacial_water_mass``,
+  ``tendency_of_subglacial_water_mass_due_to_input``,
+  ``tendency_of_subglacial_water_mass_due_to_flow``,
+  ``tendency_of_subglacial_water_mass_due_to_conservation_error``,
+  ``tendency_of_subglacial_water_mass_at_grounded_margins``,
+  ``tendency_of_subglacial_water_mass_at_grounding_line``, and
+  ``tendency_of_subglacial_water_mass_at_domain_boundary``.) Use the shortcut
+  ``hydrology_fluxes`` to save all these in an "extra file."
 - Add ``hydrology.surface_input_file``: ``IceModel`` can read in time-dependent 2D water
   input rates for subglacial hydrology models.
 - Implement a proper generalization to 2D of the 1D parameterization of the grounding line
@@ -52,7 +55,6 @@ Changes since v1.0
   manual.
 - Make it easier to "balance the books": 1) rename scalar diagnostics so that they match 2D
   diagnostics and 2) report fluxes in ``Gt/year`` instead of ``kg/year``.
-- Add ``geometry.part_grid.max_iterations`` and increase it to 10.
 - Update the Debian/Ubuntu section of the installation manual.
 
 Changes from v0.7 to v1.0
