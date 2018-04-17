@@ -101,7 +101,7 @@ Mass conservation in subglacial hydrology models
 ------------------------------------------------
 
 PISM's hydrology models provide all the diagnostic fields needed to keep track of changes
-in subglacial water thickness.
+in subglacial water thickness. [#]_
 
 At every grid point we have
 
@@ -122,6 +122,12 @@ Use a shortcut
 
 to save all diagnostics mentioned above.
 
+See :ref:`sec-subhydro` for more information about hydrology models.
+
 .. [#] See :ref:`sec-diagnostics-list` for the full list of diagnostics.
 
 .. [#] `ncap2` is a part of NCO_.
+
+.. [#] We keep track of :math:`W_{\text{till}} + W`, i.e. the sum of the effective
+       thickness of subglacial water stored in till *and* the effective thickness of
+       subglacial water in the transport layer (if applicable).
