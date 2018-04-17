@@ -169,7 +169,7 @@ netcdf pism_config {
     pism_config:basal_yield_stress.add_transportable_water_type = "boolean";
 
     pism_config:basal_yield_stress.constant.value = 2e5;
-    pism_config:basal_yield_stress.constant.value_doc = "fill value for yield stress for basal till (plastic or pseudo-plastic model); note 2 x 10^5 Pa = 2.0 bar is quite strong and little sliding should occur without an explicit tauc choice altering this default";
+    pism_config:basal_yield_stress.constant.value_doc = "fill value for yield stress for basal till (plastic or pseudo-plastic model); note `2 \\times 10^5` Pa = 2 bar is quite strong and little sliding should occur";
     pism_config:basal_yield_stress.constant.value_option = "tauc";
     pism_config:basal_yield_stress.constant.value_type = "scalar";
     pism_config:basal_yield_stress.constant.value_units = "Pascal";
@@ -349,12 +349,12 @@ netcdf pism_config {
 
     pism_config:bootstrapping.temperature_heuristic = "smb";
     pism_config:bootstrapping.temperature_heuristic_choices = "smb,quartic_guess";
-    pism_config:bootstrapping.temperature_heuristic_doc = "The heuristic to use to initialize ice temperature during bootstrapping: 'sbm' uses the new method using the surface mass balance, surface temperature, and the geothermal flux, 'quartic_guess' uses the old method using the surface temperature and the geothermal flux.";
+    pism_config:bootstrapping.temperature_heuristic_doc = "The heuristic to use to initialize ice temperature during bootstrapping: 'smb' uses the surface mass balance, surface temperature, and the geothermal flux, 'quartic_guess' uses the surface temperature and the geothermal flux.";
     pism_config:bootstrapping.temperature_heuristic_option = "boot_temperature_heuristic";
     pism_config:bootstrapping.temperature_heuristic_type = "keyword";
 
     pism_config:calving.eigen_calving.K = 0.0;
-    pism_config:calving.eigen_calving.K_doc = "Set proportionality constant to determine calving rate from strain rates.  Note references :cite:`Levermannetal2012`, :cite:`Martinetal2011` use K in range 10^9 to 3 x 10^11 m a, that is, 3 x 10^16 to 10^19 m s.";
+    pism_config:calving.eigen_calving.K_doc = "Set proportionality constant to determine calving rate from strain rates.  Note references :cite:`Levermannetal2012`, :cite:`Martinetal2011` use K in range `10^{9}` to `3 \\times 10^{11}` m a, that is, `3 \\times 10^{16}` to `10^{19}` m s.";
     pism_config:calving.eigen_calving.K_option = "eigen_calving_K";
     pism_config:calving.eigen_calving.K_type = "scalar";
     pism_config:calving.eigen_calving.K_units = "meter second";

@@ -181,7 +181,7 @@
 
    :Value: 200000 (Pascal)
    :Option: :opt:`-tauc`
-   :Description: fill value for yield stress for basal till (plastic or pseudo-plastic model); note 2 x 10^5 Pa = 2.0 bar is quite strong and little sliding should occur without an explicit tauc choice altering this default
+   :Description: fill value for yield stress for basal till (plastic or pseudo-plastic model); note `2 \times 10^5` Pa = 2 bar is quite strong and little sliding should occur
 
 #. :config:`basal_yield_stress.ice_free_bedrock` (*scalar*)
 
@@ -368,13 +368,13 @@
    :Value: ``smb``
    :Choices: ``smb, quartic_guess``
    :Option: :opt:`-boot_temperature_heuristic`
-   :Description: The heuristic to use to initialize ice temperature during bootstrapping: 'sbm' uses the new method using the surface mass balance, surface temperature, and the geothermal flux, 'quartic_guess' uses the old method using the surface temperature and the geothermal flux.
+   :Description: The heuristic to use to initialize ice temperature during bootstrapping: 'smb' uses the surface mass balance, surface temperature, and the geothermal flux, 'quartic_guess' uses the surface temperature and the geothermal flux.
 
 #. :config:`calving.eigen_calving.K` (*scalar*)
 
    :Value: 0 (meter second)
    :Option: :opt:`-eigen_calving_K`
-   :Description: Set proportionality constant to determine calving rate from strain rates.  Note references :cite:`Levermannetal2012`, :cite:`Martinetal2011` use K in range 10^9 to 3 x 10^11 m a, that is, 3 x 10^16 to 10^19 m s.
+   :Description: Set proportionality constant to determine calving rate from strain rates.  Note references :cite:`Levermannetal2012`, :cite:`Martinetal2011` use K in range `10^{9}` to `3 \times 10^{11}` m a, that is, `3 \times 10^{16}` to `10^{19}` m s.
 
 #. :config:`calving.float_kill.margin_only` (*boolean*)
 
@@ -856,12 +856,6 @@
    :Option: :opt:`-hydrology_cavitation_opening_coefficient`
    :Description: c_1 in notes; coefficient of cavitation opening term in evolution of layer thickness in hydrology::Distributed
 
-#. :config:`hydrology.const_bmelt` (*scalar*)
-
-   :Value: 1 (cm / year)
-   :Option: :opt:`-hydrology_const_bmelt`
-   :Description: only used if hydrology.use_const_bmelt = 'yes'
-
 #. :config:`hydrology.creep_closure_coefficient` (*scalar*)
 
    :Value: 0.040000 (pure number)
@@ -932,9 +926,9 @@
 
 #. :config:`hydrology.tillwat_decay_rate` (*scalar*)
 
-   :Value: 3.168876e-11 (meter / second)
+   :Value: 1 (mm / year)
    :Option: :opt:`-hydrology_tillwat_decay_rate`
-   :Description: default value is equivalent to 1 mm per year; rate at which tillwat is reduced to zero, in absence of other effects like input
+   :Description: rate at which tillwat is reduced to zero, in absence of other effects like input
 
 #. :config:`hydrology.tillwat_max` (*scalar*)
 
