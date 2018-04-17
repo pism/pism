@@ -395,6 +395,8 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
     m_grounding_line_change.set(0.0);
     m_conservation_error_change.set(0.0);
     m_no_model_mask_change.set(0.0);
+    m_flow_change.set(0.0);
+    m_input_change.set(0.0);
   }
 
   compute_overburden_pressure(*inputs.ice_thickness, m_Pover);
@@ -404,20 +406,7 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
                      inputs.surface_input_rate,
                      m_input_rate);
 
-  double water_density = m_config->get_double("constants.fresh_water.density");
-
-  {
-    IceModelVec::AccessList list{inputs.cell_area, &m_input_rate, &m_input_change};
-
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      // kg = s * (m / s) * (kg / m^3) * m^2
-      m_input_change(i, j) = dt * m_input_rate(i, j) * water_density * (*inputs.cell_area)(i, j);
-    }
-  }
-
-  IceModelVec::AccessList list{&m_W, &m_Wtill, &m_total_change, inputs.cell_area};
+  IceModelVec::AccessList list{&m_W, &m_Wtill, &m_total_change};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -427,13 +416,22 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
 
   this->update_impl(t, dt, inputs);
 
+  // compute total change in meters
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-
-    // compute total change in meters
     m_total_change(i, j) = (m_W(i, j) + m_Wtill(i, j)) - m_total_change(i, j);
-    m_total_change(i, j) *= (*inputs.cell_area)(i, j) * water_density;
-    // kg = m * (kg / m^3) * m^2
+  }
+
+  // convert from m to kg
+  // kg = m * (kg / m^3) * m^2
+  list.add({&m_flow_change, &m_input_change, inputs.cell_area});
+  double water_density = m_config->get_double("constants.fresh_water.density");
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    double kg_per_m = (*inputs.cell_area)(i, j) * water_density;
+    m_total_change(i, j) *= kg_per_m;
+    m_input_change(i, j) *= kg_per_m;
+    m_flow_change(i, j) *= kg_per_m;
   }
 }
 

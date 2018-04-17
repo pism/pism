@@ -750,6 +750,9 @@ void Routing::update_W(double dt,
     double Wtill_change = Wtill_new(i, j) - Wtill(i, j);
     W_new(i, j) = W(i, j) - Wtill_change + dt * input_rate(i, j) + m_flow_change_incremental(i, j);
   }
+
+  m_flow_change.add(1.0, m_flow_change_incremental);
+  m_input_change.add(dt, input_rate);
 }
 
 
