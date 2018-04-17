@@ -31,7 +31,7 @@ NullTransport::NullTransport(IceGrid::ConstPtr g)
   m_diffusion_time     = m_config->get_double("hydrology.null_diffusion_time", "seconds");
   m_diffusion_distance = m_config->get_double("hydrology.null_diffusion_distance", "meters");
   m_tillwat_max        = m_config->get_double("hydrology.tillwat_max", "meters");
-  m_tillwat_decay_rate = m_config->get_double("hydrology.tillwat_decay_rate");
+  m_tillwat_decay_rate = m_config->get_double("hydrology.tillwat_decay_rate", "m / second");
 
   if (m_tillwat_max < 0.0) {
     throw RuntimeError(PISM_ERROR_LOCATION,

@@ -881,11 +881,11 @@ netcdf pism_config {
     pism_config:hydrology.thickness_power_in_flux_type = "scalar";
     pism_config:hydrology.thickness_power_in_flux_units = "1";
 
-    pism_config:hydrology.tillwat_decay_rate = 3.16887646154128e-11;
-    pism_config:hydrology.tillwat_decay_rate_doc = "default value is equivalent to 1 mm per year; rate at which tillwat is reduced to zero, in absence of other effects like input";
+    pism_config:hydrology.tillwat_decay_rate = 1.0;
+    pism_config:hydrology.tillwat_decay_rate_doc = "rate at which tillwat is reduced to zero, in absence of other effects like input";
     pism_config:hydrology.tillwat_decay_rate_option = "hydrology_tillwat_decay_rate";
     pism_config:hydrology.tillwat_decay_rate_type = "scalar";
-    pism_config:hydrology.tillwat_decay_rate_units = "meter / second";
+    pism_config:hydrology.tillwat_decay_rate_units = "mm / year";
 
     pism_config:hydrology.tillwat_max = 2.0;
     pism_config:hydrology.tillwat_max_doc = "maximum effective thickness of the water stored in till";

@@ -680,7 +680,7 @@ void Routing::update_Wtill(double dt,
                            IceModelVec2S &Wtill_new) {
   const double
     tillwat_max = m_config->get_double("hydrology.tillwat_max"),
-    C           = m_config->get_double("hydrology.tillwat_decay_rate");
+    C           = m_config->get_double("hydrology.tillwat_decay_rate", "m / second");
 
   IceModelVec::AccessList list{&Wtill, &Wtill_new, &input_rate};
 
