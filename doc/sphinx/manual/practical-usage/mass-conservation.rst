@@ -97,6 +97,39 @@ Comments
 - `tendency_of_ice_mass_due_to_conservation_error` should be zero (or close to zero) in
   most simulations
 
+.. _sec-mass-conservation-hydrology:
+
+Mass accounting in subglacial hydrology models
+----------------------------------------------
+
+PISM's hydrology models provide all the diagnostic fields needed to keep track of changes
+in subglacial water thickness. [#]_
+
+At every grid point we have
+
+.. literalinclude:: conservation/water_mass_accounting_error.txt
+
+.. only:: html
+
+   Click :download:`here <conservation/water_mass_accounting_error.txt>` to download this
+   `ncap2` script.
+
+All names on the right-hand side correspond to valid PISM diagnostic quantities.
+
+Use a shortcut
+
+.. code-block:: none
+
+   pismr -extra_file ex.nc -extra_times N -extra_vars hydrology_fluxes,...
+
+to save all diagnostics mentioned above.
+
+See :ref:`sec-subhydro` for more information about hydrology models.
+
 .. [#] See :ref:`sec-diagnostics-list` for the full list of diagnostics.
 
 .. [#] `ncap2` is a part of NCO_.
+
+.. [#] We keep track of :math:`W_{\text{till}} + W`, i.e. the sum of the effective
+       thickness of subglacial water stored in till *and* the effective thickness of
+       subglacial water in the transport layer (if applicable).

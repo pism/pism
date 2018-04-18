@@ -1,4 +1,4 @@
-add_library (pismstressbalance OBJECT
+add_library (stressbalance OBJECT
   StressBalance.cc
   StressBalance_diagnostics.cc
   ShallowStressBalance.cc

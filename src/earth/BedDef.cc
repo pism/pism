@@ -180,11 +180,12 @@ void BedDef::apply_topg_offset(const std::string &filename) {
   m_topg.add(1.0, topg_delta);
 }
 
-//! Compute bed uplift (dt_beddef is in seconds).
-void BedDef::compute_uplift(double dt_beddef) {
-  m_topg.add(-1, m_topg_last, m_uplift);
+//! Compute bed uplift (dt is in seconds).
+void BedDef::compute_uplift(const IceModelVec2S &bed, const IceModelVec2S &bed_last,
+                            double dt, IceModelVec2S &result) {
+  bed.add(-1, bed_last, result);
   //! uplift = (topg - topg_last) / dt
-  m_uplift.scale(1.0 / dt_beddef);
+  result.scale(1.0 / dt);
 }
 
 double compute_load(double bed, double ice_thickness, double sea_level,

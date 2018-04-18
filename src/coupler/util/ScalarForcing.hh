@@ -52,7 +52,7 @@ public:
 protected:
   Context::ConstPtr m_ctx;
 
-  std::unique_ptr<Timeseries> m_offset;
+  std::unique_ptr<Timeseries> m_data;
 
   std::string m_option_prefix;
 

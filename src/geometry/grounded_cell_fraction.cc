@@ -117,6 +117,14 @@ bool invalid(const Point &p) {
 }
 
 /*!
+ * Return true if two points are the same.
+ */
+static bool same(const Point &a, const Point &b) {
+  double threshold = 1e-12;
+  return fabs(a.x - b.x) < threshold and fabs(a.y - b.y) < threshold;
+}
+
+/*!
  * Consider the right triangle A(0,0) - B(1,0) - C(0,1).
  *
  * Define a linear function z = a + (b - a) * x + (c - a) * y, where a, b, and c are its
@@ -140,7 +148,7 @@ double grounded_area_fraction(double a, double b, double c) {
   // the area of the triangle (0,0)-(1,0)-(0,1)
   const double total_area = 0.5;
 
-  Point
+  const Point
     ab = intersect_ab(a, b),
     bc = intersect_bc(b, c),
     ac = intersect_ac(a, c);
@@ -181,8 +189,35 @@ double grounded_area_fraction(double a, double b, double c) {
     }
   }
 
+  // Note that we know that ab, bc, and ac are all valid.
+
+  // the a == 0 case, the line F = 0 goes through A
+  if (same(ab, ac)) {
+    double ratio = triangle_area({1.0, 0.0}, bc, ab) / total_area;
+
+    if (b > 0.0) {
+      return ratio;
+    } else {
+      return 1.0 - ratio;
+    }
+  }
+
+  // the b == 0 case and the c == 0 case
+  if (same(ab, bc) or same(ac, bc)) {
+    double ratio = triangle_area({0.0, 0.0}, ab, ac) / total_area;
+
+    if (a > 0.0) {
+      return ratio;
+    } else {
+      return 1.0 - ratio;
+    }
+  }
+
+  // FIXME: we need to cover the case of the line F=0 intersecting *two* nodes of the
+  // triangle, i.e. coinciding with a side of the triangle.
+
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "the logic in grounded_area_fraction failed!");
+                                "the logic in grounded_area_fraction failed! Please submit a bug report.");
 }
 
 // This structure extracts the box stencil information from an IceModelVec2S.
@@ -277,7 +312,7 @@ void compute_grounded_cell_fraction(double ice_density,
       Box f = F(S, B, H, alpha);
 
       /*
-        NW-----------------N-----------------NE
+        NW----------------N----------------NE
         |                 |                 |
         |                 |                 |
         |       nw--------n--------ne       |
@@ -289,7 +324,7 @@ void compute_grounded_cell_fraction(double ice_density,
         |       sw--------s--------se       |
         |                 |                 |
         |                 |                 |
-        SW-----------------S-----------------SE
+        SW----------------S----------------SE
       */
 
       double

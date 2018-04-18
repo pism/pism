@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,8 @@
 #ifndef _PAGENERICYEARLYCYCLE_H_
 #define _PAGENERICYEARLYCYCLE_H_
 
+#include <memory>               // unique_ptr
+
 #include "YearlyCycle.hh"
 
 namespace pism {
@@ -31,12 +33,13 @@ public:
   CosineYearlyCycle(IceGrid::ConstPtr g);
   virtual ~CosineYearlyCycle();
 
-  virtual void init_impl();
+  virtual void init_impl(const Geometry &geometry);
   virtual void init_timeseries_impl(const std::vector<double> &ts) const;
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(double my_t, double my_dt);
-  Timeseries *m_A;                 // amplitude scaling
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
+
+  std::unique_ptr<Timeseries> m_A;                 // amplitude scaling
 };
 
 } // end of namespace atmosphere

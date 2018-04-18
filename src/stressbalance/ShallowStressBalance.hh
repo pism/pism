@@ -74,7 +74,7 @@ public:
   //! \brief Produce a report string for the standard output.
   virtual std::string stdout_report() const;
 
-  const rheology::FlowLaw* flow_law() const;
+  std::shared_ptr<const rheology::FlowLaw> flow_law() const;
 
   EnthalpyConverter::Ptr enthalpy_converter() const;
 
@@ -85,7 +85,7 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
 
   IceBasalResistancePlasticLaw *m_basal_sliding_law;
-  rheology::FlowLaw *m_flow_law;
+  std::shared_ptr<rheology::FlowLaw> m_flow_law;
   EnthalpyConverter::Ptr m_EC;
 
   IceModelVec2V m_velocity;

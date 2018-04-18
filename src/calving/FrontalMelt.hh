@@ -24,13 +24,9 @@
 
 namespace pism {
 
-namespace ocean {
-class OceanModel;
-} // end of namespace ocean
-
 class FrontalMelt : public CalvingFrontRetreat {
 public:
-  FrontalMelt(IceGrid::ConstPtr g, const ocean::OceanModel *ocean_model);
+  FrontalMelt(IceGrid::ConstPtr grid);
   virtual ~FrontalMelt();
 
   void init();
@@ -38,11 +34,8 @@ public:
 protected:
   virtual DiagnosticList diagnostics_impl() const;
 
-  void compute_calving_rate(const IceModelVec2CellType &mask,
+  void compute_calving_rate(const CalvingInputs &inputs,
                             IceModelVec2S &result) const;
-
-  const ocean::OceanModel *m_ocean;
-  IceModelVec2S m_shelf_base_mass_flux;
 };
 
 } // end of namespace pism

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -35,16 +35,18 @@
 
 namespace pism {
 namespace surface {
-// Surface
-Factory::Factory(IceGrid::ConstPtr  g)
-  : PCFactory<SurfaceModel,SurfaceModifier>(g) {
+
+Factory::Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
+  : PCFactory<SurfaceModel>(g),
+  m_input(input) {
+
   m_option = "surface";
 
-  add_model<Elevation>("elevation");
-  add_model<Given>("given");
-  add_model<TemperatureIndex>("pdd");
-  add_model<PIK>("pik");
-  add_model<Simple>("simple");
+  add_surface_model<Elevation>("elevation");
+  add_surface_model<Given>("given");
+  add_surface_model<TemperatureIndex>("pdd");
+  add_surface_model<PIK>("pik");
+  add_surface_model<Simple>("simple");
   set_default("given");
 
   add_modifier<Anomaly>("anomaly");
@@ -57,6 +59,63 @@ Factory::Factory(IceGrid::ConstPtr  g)
 
 Factory::~Factory() {
   // empty
+}
+
+void Factory::set_default(const std::string &name) {
+  if (m_surface_models.find(name) == m_surface_models.end()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "type %s is not registered", name.c_str());
+  } else {
+    m_default_type = name;
+  }
+}
+
+std::shared_ptr<SurfaceModel> Factory::create() {
+  // build a list of available models:
+  auto model_list = key_list(m_surface_models);
+
+  // build a list of available modifiers:
+  auto modifier_list = key_list(m_modifiers);
+
+  std::string description = ("Sets up the PISM " + m_option + " model."
+                             " Available models: " + model_list +
+                             " Available modifiers: " + modifier_list);
+
+  // Get the command-line option:
+  options::StringList choices("-" + m_option, description, m_default_type);
+
+  return create(choices.to_string());
+}
+
+
+std::shared_ptr<SurfaceModel> Factory::create(const std::string &type) {
+
+  std::vector<std::string> choices = split(type, ',');
+
+  // the first element has to be an *actual* model (not a modifier)
+  auto j = choices.begin();
+
+  auto result = surface_model(*j, m_input);
+
+  ++j;
+
+  // process remaining arguments:
+  for (;j != choices.end(); ++j) {
+    result = modifier(*j, result);
+  }
+
+  return result;
+}
+
+std::shared_ptr<SurfaceModel> Factory::surface_model(const std::string &type,
+                                                     std::shared_ptr<InputModel> input) {
+  if (m_surface_models.find(type) == m_surface_models.end()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s model \"%s\" is not available.\n"
+                                  "Available models:    %s\n",
+                                  m_option.c_str(), type.c_str(),
+                                  key_list(m_surface_models).c_str());
+  }
+
+  return m_surface_models[type]->create(m_grid, input);
 }
 
 } // end of namespace surface

@@ -114,28 +114,50 @@ It takes two command-line option:
   salinity is clipped so that it stays in the `[4, 40]` psu range. This is done to
   ensure that we stay in the range of applicability of the melting point temperature
   parameterization; see :cite:`HollandJenkins1999`. To disable salinity clipping, use the
-  :opt:`-no_clip_shelf_base_salinity` option or set the
-  :config:`ocean_three_equation_model_clip_salinity` configuration parameter to "no".
+  :opt:`-no_clip_shelf_base_salinity` option or set the configuration parameter
+  :config:`ocean.three_equation_model_clip_salinity`  to "no".
 
 .. _sec-ocean-delta-sl:
 
 Scalar sea level offsets
 ++++++++++++++++++++++++
 
-:|options|: :opt:`-ocean ...,delta_SL`
+:|options|: :opt:`-sea_level ...,delta_sl`
 :|variables|: :var:`delta_SL` (meters)
-:|implementation|: ``pism::ocean::Delta_SL``
+:|implementation|: ``pism::ocean::sea_level::Delta_SL``
 
-The ``delta_SL`` modifier implements sea level forcing using scalar offsets.
+The ``delta_sl`` modifier implements sea level forcing using scalar offsets.
 
 It takes the following command-line options:
 
-- :opt:`-ocean_delta_SL_file`: specifies the name of the file containing forcing data.
+- :opt:`-ocean_delta_sl_file`: specifies the name of the file containing forcing data.
   This file has to contain the :var:`delta_SL` variable using units "meters" or
   equivalent.
-- :opt:`-ocean_delta_SL_period` specifies the length of the period of the forcing data, in
+- :opt:`-ocean_delta_sl_period` specifies the length of the period of the forcing data, in
   model years; see section :ref:`sec-periodic-forcing`.
-- :opt:`-ocean_delta_SL_reference_year` specifies the reference date; see section
+- :opt:`-ocean_delta_sl_reference_year` specifies the reference date; see section
+  :ref:`sec-periodic-forcing`.
+
+.. _sec-ocean-delta-sl-2d:
+
+Two-dimensional sea level offsets
++++++++++++++++++++++++++++++++++
+
+:|options|: :opt:`-sea_level ...,delta_sl_2d`
+:|variables|: :var:`delta_SL` (meters)
+:|implementation|: ``pism::ocean::sea_level::Delta_SL_2D``
+
+The ``delta_sl`` modifier implements sea level forcing using time-dependent and
+spatially-variable offsets.
+
+It uses the following configuration parameters:
+
+- :config:`ocean.delta_sl_2d.file`: specifies the name of the file containing forcing
+  data. This file has to contain the :var:`delta_SL` variable using units "meters" or
+  equivalent.
+- :config:`ocean.delta_sl_2d.period` specifies the length of the period of the forcing
+  data, in model years; see section :ref:`sec-periodic-forcing`.
+- :config:`ocean.delta_sl_2d.reference_year` specifies the reference date; see section
   :ref:`sec-periodic-forcing`.
 
 .. _sec-ocean-delta-t:

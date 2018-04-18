@@ -19,26 +19,30 @@
 #ifndef _PODIRECTFORCING_H_
 #define _PODIRECTFORCING_H_
 
-#include "pism/coupler/util/PGivenClimate.hh"
 #include "pism/coupler/OceanModel.hh"
+
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace ocean {
-class Given : public PGivenClimate<OceanModel,OceanModel>
+
+class Given : public OceanModel
 {
 public:
   Given(IceGrid::ConstPtr g);
   virtual ~Given();
 
 private:
-  void update_impl(double my_t, double my_dt);
-  void init_impl();
+  void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Geometry &geometry);
+  MaxTimestep max_timestep_impl(double t) const;
 
   const IceModelVec2S& sea_level_elevation_impl() const;
   const IceModelVec2S& shelf_base_temperature_impl() const;
   const IceModelVec2S& shelf_base_mass_flux_impl() const;
 
-  IceModelVec2T *m_shelfbtemp, *m_shelfbmassflux;
+  IceModelVec2T::Ptr m_shelfbtemp;
+  IceModelVec2T::Ptr m_shelfbmassflux;
 
   IceModelVec2S::Ptr m_shelf_base_temperature;
   IceModelVec2S::Ptr m_shelf_base_mass_flux;

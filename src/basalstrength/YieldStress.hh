@@ -32,6 +32,10 @@ public:
 
   const Geometry *geometry;
 
+  const IceModelVec2S *till_water_thickness;
+
+  const IceModelVec2S *subglacial_water_thickness;
+
   // inputs used by regional models
   const IceModelVec2Int *no_model_mask;
 };

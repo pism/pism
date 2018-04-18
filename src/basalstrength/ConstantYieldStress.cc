@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -38,7 +38,7 @@ ConstantYieldStress::~ConstantYieldStress () {
 void ConstantYieldStress::init_impl() {
   m_log->message(2, "* Initializing the constant basal yield stress model...\n");
 
-  InputOptions opts = process_input_options(m_grid->com);
+  InputOptions opts = process_input_options(m_grid->com, m_config);
   const double tauc = m_config->get_double("basal_yield_stress.constant.value");
 
   switch (opts.type) {

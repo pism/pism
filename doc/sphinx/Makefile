@@ -16,6 +16,8 @@ dummy.nc:
 	ncap2 -s "firn_depth=thk" -O dummy.nc dummy.nc
 	ncatted -a standard_name,firn_depth,d,, -O dummy.nc dummy.nc
 	ncap2 -s "snow_depth=firn_depth" -O dummy.nc dummy.nc
+	# create a dummy (zero) basal water thickness field
+	ncap2 -s "bwat=firn_depth" -O dummy.nc dummy.nc
 
 diagnostics.json: dummy.nc
 	pismr -i $^ \

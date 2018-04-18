@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -53,7 +53,9 @@ public:
   virtual ~IcebergRemover();
 
   virtual void init();
-  void update(IceModelVec2CellType &pism_mask, IceModelVec2S &ice_thickness);
+  void update(const IceModelVec2Int &bc_mask,
+              IceModelVec2CellType &pism_mask,
+              IceModelVec2S &ice_thickness);
 protected:
   IceModelVec2S m_iceberg_mask;
   petsc::Vec::Ptr m_mask_p0;

@@ -120,10 +120,6 @@ SSA::SSA(IceGrid::ConstPtr g)
 }
 
 SSA::~SSA() {
-  if (m_flow_law != NULL) {
-    delete m_flow_law;
-    m_flow_law = NULL;
-  }
   if (strength_extension != NULL) {
     delete strength_extension;
     strength_extension = NULL;
@@ -140,7 +136,7 @@ void SSA::init_impl() {
   m_log->message(2,
              "  [using the %s flow law]\n", m_flow_law->name().c_str());
 
-  InputOptions opts = process_input_options(m_grid->com);
+  InputOptions opts = process_input_options(m_grid->com, m_config);
 
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).

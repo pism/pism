@@ -16,7 +16,7 @@ Using Schoof's parameterized bed roughness technique in PISM
 An explanation
 --------------
 
-If the bed elevation \c topg is smoothed by preprocessing then we observe a reduction in
+If the bed elevation ``topg`` is smoothed by preprocessing then we observe a reduction in
 the peak values of the SIA diffusivities. From such smoothing there is (generically) also
 a reduction in the peak magnitudes of horizontal velocities from both the SIA and SSA
 models. The major consequence of these reductions, through the adaptive time-stepping
@@ -34,7 +34,7 @@ Here we are emphasizing the performance "hit" which the whole model experiences 
 small part of the ice sheet is on a rough bed. That part therefore is not well-modeled
 anyway, compared to the majority of the ice sheet. (Switching to full Stokes or Blatter
 higher order models without major spatial adaptivity would probably imply a gain in the
-balanced stress components \e and a loss of the ability to model the ice sheet at high
+balanced stress components *and* a loss of the ability to model the ice sheet at high
 resolution. There is a tradeoff between completeness of the continuum model and usable
 resolution needed to resolve the features of the real ice sheet.)
 
@@ -85,7 +85,7 @@ with zero basal sliding, the horizontal mass flux is
    
     \mathbf{q} = - D_{SIA} \nabla h, 
 
-where `D_{SIA}\ge 0` is given next. Thus the mass continuity equation is \e diffusive. The
+where `D_{SIA}\ge 0` is given next. Thus the mass continuity equation is *diffusive*. The
 diffusivity `D_{SIA}` is a function of the ice geometry and the ice flow law. In the
 isothermal Glen power law (power `= n`) case we recall
 
@@ -143,14 +143,14 @@ where `D_{SIA}` is defined by :eq:`siadiffusivity` earlier, and
    
     \theta(h,x_1,x_2) = \left[ \fint \left(1 - \frac{\tilde b(x_1,x_2,\xi_1,\xi_2)}{H}\right)^{-(n+2)/n}\,d\xi_1\,d\xi_2 \right]^{-n}
 
-Here the ice thickness and ice surface elevation are related to the \e smoothed bed
+Here the ice thickness and ice surface elevation are related to the *smoothed* bed
 topography, so that in PISM notation
 
 .. math::
    
     H(t,x_1,x_2) = h(t,x_1,x_2) - b_s(x_1,x_2). 
 
-This can be treated as the \e definition of the ice thickness `H` in the above formula for
+This can be treated as the *definition* of the ice thickness `H` in the above formula for
 `\theta`.
 
 The formula for `\theta` has additional terms if there is basal sliding, but we consider
@@ -184,14 +184,14 @@ the correction factor `\theta`." Thus in PISM we use `\lambda_1 = \lambda_2 = 5`
 km as the default. Naturally the values are configurable also.
 
 It is, of course, possible to have bed roughness of significant magnitude at essentially
-any wavelength. We make no claim that PISM results are good models of ice flow over \e
-arbitrary geometry; clearly the current models cannot come close to the non-shallow
+any wavelength. We make no claim that PISM results are good models of ice flow over
+*arbitrary* geometry; clearly the current models cannot come close to the non-shallow
 solution (Stokes) in such cases. Rather, the goal right now is to improve on the existing
 shallow models, the diffusive SIA specifically, while maintaining or increasing
 high-resolution performance and comprehensive model quality, which necessarily includes
 many other modeled physical processes like ice thermal state, basal lubrication, and so
 on. The desirable properties of the Schoof scheme are accepted not because the resulting
-model is perfect, but because we gain both a physical modeling improvement \e and a
+model is perfect, but because we gain both a physical modeling improvement *and* a
 computational performance improvement from its use.
 
 How do we actually compute expression :eq:`thetadefn` quickly? Schoof has this suggestion,

@@ -87,15 +87,18 @@ OceanModel::~OceanModel() {
   // empty
 }
 
-void OceanModel::init() {
-  m_t  = m_dt = GSL_NAN;        // every re-init restarts the clock
-  this->init_impl();
+void OceanModel::init(const Geometry &geometry) {
+  this->init_impl(geometry);
 }
 
-void OceanModel::update(double t, double dt) {
-  this->update_impl(t, dt);
-  m_t  = t;
-  m_dt = dt;
+void OceanModel::init_impl(const Geometry &geometry) {
+  if (m_input_model) {
+    m_input_model->init(geometry);
+  }
+}
+
+void OceanModel::update(const Geometry &geometry, double t, double dt) {
+  this->update_impl(geometry, t, dt);
 }
 
 
@@ -117,9 +120,9 @@ const IceModelVec2S& OceanModel::melange_back_pressure_fraction() const {
 
 // pass-through default implementations for "modifiers"
 
-void OceanModel::update_impl(double t, double dt) {
+void OceanModel::update_impl(const Geometry &geometry, double t, double dt) {
   if (m_input_model) {
-    m_input_model->update(t, dt);
+    m_input_model->update(geometry, t, dt);
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
@@ -133,6 +136,21 @@ MaxTimestep OceanModel::max_timestep_impl(double t) const {
   }
 }
 
+void OceanModel::define_model_state_impl(const PIO &output) const {
+  if (m_input_model) {
+    return m_input_model->define_model_state(output);
+  } else {
+    // no state to define
+  }
+}
+
+void OceanModel::write_model_state_impl(const PIO &output) const {
+  if (m_input_model) {
+    return m_input_model->write_model_state(output);
+  } else {
+    // no state to write
+  }
+}
 
 const IceModelVec2S& OceanModel::sea_level_elevation_impl() const {
   if (m_input_model) {

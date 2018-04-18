@@ -1,5 +1,5 @@
 # Subclasses for regional problems.
-add_library (pismregional OBJECT
+add_library (regional OBJECT
   SIAFD_Regional.cc
   SSAFD_Regional.cc
   RegionalDefaultYieldStress.cc

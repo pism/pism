@@ -29,7 +29,7 @@ v.set(0.0)
 w.set(0.0)
 
 model = PISM.AgeModel(grid, None)
-input_options = PISM.process_input_options(ctx.com)
+input_options = PISM.process_input_options(ctx.com, ctx.config)
 model.init(input_options)
 
 inputs = PISM.AgeModelInputs(ice_thickness, u, v, w)

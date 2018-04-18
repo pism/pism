@@ -37,9 +37,17 @@ public:
 
   const IceModelVec2S& total_displacement() const;
 
-private:
-  void define_model_state_impl(const PIO &output) const;
-  void write_model_state_impl(const PIO &output) const;
+  const IceModelVec2S& viscous_displacement() const;
+
+  const IceModelVec2S& relief() const;
+
+  void step(const IceModelVec2S &ice_thickness,
+            const IceModelVec2S &sea_level_elevation,
+            double dt);
+
+protected:
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
 
   DiagnosticList diagnostics_impl() const;
 
@@ -68,7 +76,7 @@ private:
   IceModelVec2S m_load_thickness;
 
   //! Serial viscoelastic bed deformation model.
-  std::unique_ptr<BedDeformLC> m_bdLC;
+  std::unique_ptr<BedDeformLC> m_serial_model;
 
   //! extended grid for the viscous plate displacement
   IceGrid::Ptr m_extended_grid;

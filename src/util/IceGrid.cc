@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -526,8 +526,8 @@ static OwnershipRanges compute_ownership_ranges(unsigned int Mx,
   }
 
   // check -procs_x and -procs_y
-  options::IntegerList procs_x("-procs_x", "Processor ownership ranges (x direction)");
-  options::IntegerList procs_y("-procs_y", "Processor ownership ranges (y direction)");
+  options::IntegerList procs_x("-procs_x", "Processor ownership ranges (x direction)", {});
+  options::IntegerList procs_y("-procs_y", "Processor ownership ranges (y direction)", {});
 
   if (procs_x.is_set()) {
     if (procs_x->size() != (unsigned int)Nx) {
@@ -1246,8 +1246,8 @@ void GridParameters::horizontal_extent_from_options() {
 
   // Alternatively: domain size and extent
   {
-    options::RealList x_range("-x_range", "min,max x coordinate values");
-    options::RealList y_range("-y_range", "min,max y coordinate values");
+    options::RealList x_range("-x_range", "min,max x coordinate values", {});
+    options::RealList y_range("-y_range", "min,max y coordinate values", {});
 
     if (x_range.is_set() and y_range.is_set()) {
       if (x_range->size() != 2 or y_range->size() != 2) {

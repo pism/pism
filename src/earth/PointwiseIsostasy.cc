@@ -103,7 +103,7 @@ void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
   loop.check();
 
   //! Finally, we need to update bed uplift, topg_last and load_last.
-  compute_uplift(dt_beddef);
+  compute_uplift(m_topg, m_topg_last, dt_beddef, m_uplift);
 
   m_topg_last.copy_from(m_topg);
 

@@ -116,7 +116,7 @@ scalar air temperature offsets :cite:`JohnsenetalGRIP`, precipitation adjustment
               :var:`lat`,
               :var:`lon`
 :|options|: :opt:`-atmosphere searise_greenland,delta_T -atmosphere_delta_T_file
-            delta_T.nc -surface pdd -ocean constant,delta_SL -ocean_delta_SL_file
+            delta_T.nc -surface pdd -sea_level constant,delta_sl -ocean_delta_sl_file
             delta_SL.nc`
 :|seealso|: :ref:`sec-atmosphere-searise-greenland`,
             :ref:`sec-atmosphere-delta-t`,
@@ -136,8 +136,8 @@ Antarctic paleo-climate runs
               :var:`air_temp`,
               :var:`delta_T`,
               :var:`delta_SL`
-:|options|: :opt:`-surface given,delta_T -surface_delta_T_file delta_T.nc -ocean
-            constant,delta_SL -ocean_delta_SL_file delta_SL.nc`
+:|options|: :opt:`-surface given,delta_T -surface_delta_T_file delta_T.nc -sea_level
+            constant,delta_sl -ocean_delta_sl_file delta_SL.nc`
 :|seealso|: :ref:`sec-surface-given`,
             :ref:`sec-surface-delta-t`,
             :ref:`sec-ocean-constant`,

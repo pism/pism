@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -558,20 +558,30 @@ void set_config_from_options(Config &config) {
     }
   }
 
-  // read the comma-separated list of four values
-  options::RealList topg_to_phi("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max");
-  if (topg_to_phi.is_set()) {
-    if (topg_to_phi->size() != 4) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "option -topg_to_phi requires a comma-separated list with 4 numbers; got %d",
-                                    (int)topg_to_phi->size());
-    }
-    config.set_boolean("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled", true);
-    config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min", topg_to_phi[0]);
-    config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max", topg_to_phi[1]);
-    config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min", topg_to_phi[2]);
-    config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max", topg_to_phi[3]);
-  }
+  // -topg_to_phi
+  {
+    std::vector<double> defaults = {
+      config.get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
+      config.get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max"),
+      config.get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min"),
+      config.get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max")
+    };
 
+    options::RealList topg_to_phi("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max",
+                                  defaults);
+    if (topg_to_phi.is_set()) {
+      if (topg_to_phi->size() != 4) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "option -topg_to_phi expected 4 numbers; got %d",
+                                      (int)topg_to_phi->size());
+      }
+      config.set_boolean("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled", true);
+      config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min", topg_to_phi[0]);
+      config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max", topg_to_phi[1]);
+      config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min", topg_to_phi[2]);
+      config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max", topg_to_phi[3]);
+    }
+  }
   // Ice shelves
 
   bool nu_bedrock = options::Bool("-nu_bedrock", "constant viscosity near margins");
@@ -670,6 +680,24 @@ bool ConfigWithPrefix::get_boolean(const std::string& name) const {
 
 void ConfigWithPrefix::reset_prefix(const std::string &prefix) {
   m_prefix = prefix;
+}
+
+std::vector<std::string> Config::keys() const {
+  std::vector<std::string> result;
+
+  for (auto p : all_doubles()) {
+    result.push_back(p.first);
+  }
+
+  for (auto p : all_strings()) {
+    result.push_back(p.first);
+  }
+
+  for (auto p : all_booleans()) {
+    result.push_back(p.first);
+  }
+
+  return result;
 }
 
 } // end of namespace pism

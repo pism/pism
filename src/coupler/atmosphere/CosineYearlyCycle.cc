@@ -31,16 +31,20 @@ namespace pism {
 namespace atmosphere {
 
 CosineYearlyCycle::CosineYearlyCycle(IceGrid::ConstPtr g)
-  : YearlyCycle(g), m_A(NULL) {
+  : YearlyCycle(g) {
+  m_A.reset(new Timeseries(*m_grid, "amplitude_scaling",
+                           m_config->get_string("time.dimension_name")));
+  m_A->variable().set_string("units", "1");
+  m_A->variable().set_string("long_name", "cosine yearly cycle amplitude scaling");
+  m_A->dimension().set_string("units", m_grid->ctx()->time()->units_string());
 }
 
 CosineYearlyCycle::~CosineYearlyCycle() {
-  if (m_A != NULL) {
-    delete m_A;
-  }
+  // empty
 }
 
-void CosineYearlyCycle::init_impl() {
+void CosineYearlyCycle::init_impl(const Geometry &geometry) {
+  (void) geometry;
 
   m_log->message(2,
              "* Initializing the 'cosine yearly cycle' atmosphere model (-atmosphere yearly_cycle)...\n");
@@ -65,18 +69,9 @@ void CosineYearlyCycle::init_impl() {
   m_precipitation.regrid(input_file, CRITICAL);
 
   if (scaling_file.is_set()) {
-
-    if (m_A == NULL) {
-      m_A = new Timeseries(*m_grid, "amplitude_scaling",
-                           m_config->get_string("time.dimension_name"));
-      m_A->variable().set_string("units", "1");
-      m_A->variable().set_string("long_name", "cosine yearly cycle amplitude scaling");
-      m_A->dimension().set_string("units", m_grid->ctx()->time()->units_string());
-    }
-
     m_log->message(2,
-               "  Reading cosine yearly cycle amplitude scaling from '%s'...\n",
-               scaling_file->c_str());
+                   "  Reading cosine yearly cycle amplitude scaling from '%s'...\n",
+                   scaling_file->c_str());
 
     PIO nc(m_grid->com, "netcdf3", scaling_file, PISM_READONLY);    // OK to use netcdf3
     {
@@ -84,11 +79,6 @@ void CosineYearlyCycle::init_impl() {
     }
     nc.close();
 
-  } else {
-    if (m_A != NULL) {
-      delete m_A;
-    }
-    m_A = NULL;
   }
 }
 
@@ -97,16 +87,18 @@ MaxTimestep CosineYearlyCycle::max_timestep_impl(double t) const {
   return MaxTimestep("atmosphere cosine_yearly_cycle");
 }
 
-void CosineYearlyCycle::update_impl(double my_t, double my_dt) {
-  m_t = my_t;
-  m_dt = my_dt;
+void CosineYearlyCycle::update_impl(const Geometry &geometry, double t, double dt) {
+  (void) geometry;
+  (void) t;
+  (void) dt;
+  // nothing to do here, but an implementation is required
 }
 
 void CosineYearlyCycle::init_timeseries_impl(const std::vector<double> &ts) const {
 
   YearlyCycle::init_timeseries_impl(ts);
 
-  if (m_A != NULL) {
+  if (m_A) {
     for (unsigned int k = 0; k < ts.size(); ++k) {
       m_cosine_cycle[k] *= (*m_A)(ts[k]);
     }
