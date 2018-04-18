@@ -67,6 +67,7 @@ std::string set_join(const std::set<std::string> &input, const std::string& sepa
 
 // set
 bool set_contains(const std::set<std::string> &S, const std::string &name);
+bool member(const std::string &string, const std::set<std::string> &set);
 
 /*! Helper template function for computing set unions.
  * Ensures that elements of a take precedence. For example, if
