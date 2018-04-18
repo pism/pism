@@ -31,7 +31,7 @@ namespace pism {
 
 ScalarForcing::ScalarForcing(Context::ConstPtr ctx,
                              const std::string &option_prefix,
-                             const std::string &offset_name,
+                             const std::string &variable_name,
                              const std::string &units,
                              const std::string &glaciological_units,
                              const std::string &long_name)
@@ -41,14 +41,14 @@ ScalarForcing::ScalarForcing(Context::ConstPtr ctx,
 
   m_option_prefix = option_prefix;
 
-  m_offset.reset(new Timeseries(ctx->com(), ctx->unit_system(),
-                                offset_name,
-                                config->get_string("time.dimension_name")));
-  m_offset->variable().set_string("units", units);
-  m_offset->variable().set_string("glaciological_units", glaciological_units);
-  m_offset->variable().set_string("long_name", long_name);
+  m_data.reset(new Timeseries(ctx->com(), ctx->unit_system(),
+                              variable_name,
+                              config->get_string("time.dimension_name")));
+  m_data->variable().set_string("units", units);
+  m_data->variable().set_string("glaciological_units", glaciological_units);
+  m_data->variable().set_string("long_name", long_name);
 
-  m_offset->dimension().set_string("units", ctx->time()->units_string());
+  m_data->dimension().set_string("units", ctx->time()->units_string());
 }
 
 ScalarForcing::~ScalarForcing() {
@@ -56,7 +56,7 @@ ScalarForcing::~ScalarForcing() {
 }
 
 void ScalarForcing::init() {
-  options::String file(m_option_prefix + "_file", "Specifies a file with scalar offsets");
+  options::String file(m_option_prefix + "_file", "Specifies a file with scalar forcing data");
   options::Integer period(m_option_prefix + "_period",
                           "Specifies the length of the climate data period", 0);
   options::Real bc_reference_year(m_option_prefix + "_reference_year",
@@ -85,11 +85,11 @@ void ScalarForcing::init() {
 
   m_ctx->log()->message(2,
                         "  reading %s data from forcing file %s...\n",
-                        m_offset->name().c_str(), file->c_str());
+                        m_data->name().c_str(), file->c_str());
 
   PIO nc(m_ctx->com(), "netcdf3", file, PISM_READONLY);
   {
-    m_offset->read(nc, *m_ctx->time(), *m_ctx->log());
+    m_data->read(nc, *m_ctx->time(), *m_ctx->log());
   }
 }
 
@@ -104,7 +104,7 @@ double ScalarForcing::value() const {
 double ScalarForcing::value(double t) const {
   t = m_ctx->time()->mod(t - m_bc_reference_time, m_bc_period);
 
-  return (*m_offset)(t);
+  return (*m_data)(t);
 }
 
 } // end of namespace pism

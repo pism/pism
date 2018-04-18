@@ -59,7 +59,8 @@ protected:
                               const IceModelVec2S &ice_thickness);
   virtual void apply_topg_offset(const std::string &filename);
 
-  void compute_uplift(double dt_beddef);
+  void compute_uplift(const IceModelVec2S &bed, const IceModelVec2S &bed_last,
+                            double dt, IceModelVec2S &result);
 protected:
   //! time of the last bed deformation update
   double m_t_beddef_last;

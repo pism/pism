@@ -119,7 +119,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
   inputs.check();
 
-  // give them names that a bit shorter...
+  // give them names that are a bit shorter...
   const IceModelVec3
     &strain_heating3 = *inputs.strain_heating3,
     &u3              = *inputs.u3,

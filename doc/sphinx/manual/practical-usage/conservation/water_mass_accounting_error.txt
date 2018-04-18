@@ -1,0 +1,9 @@
+water_mass_accounting_error = tendency_of_subglacial_water_mass -
+  (tendency_of_subglacial_water_mass_due_to_input +
+   tendency_of_subglacial_water_mass_due_to_flow +
+   tendency_of_subglacial_water_mass_due_to_conservation_error +
+   tendency_of_subglacial_water_mass_at_grounded_margins +
+   tendency_of_subglacial_water_mass_at_grounding_line +
+   tendency_of_subglacial_water_mass_at_domain_boundary);
+
+water_mass_accounting_error@long_name = "subglacial water mass accounting error";

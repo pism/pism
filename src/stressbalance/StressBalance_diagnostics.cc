@@ -1074,10 +1074,10 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
   const IceModelVec3 *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  const rheology::FlowLaw* flow_law = model->shallow()->flow_law();
+  const rheology::FlowLaw &flow_law = *model->shallow()->flow_law();
 
   const double *z = &m_grid->z()[0];
-  const double ssa_n = flow_law->exponent();
+  const double ssa_n = flow_law.exponent();
 
   IceModelVec::AccessList list{&vonmises_stress, &velocity, &strain_rates, &ice_thickness,
       enthalpy, &mask};
@@ -1094,7 +1094,7 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
 
       const double
         *enthalpy_column   = enthalpy->get_column(i, j),
-        hardness           = averaged_hardness(*flow_law, H, k, z, enthalpy_column),
+        hardness           = averaged_hardness(flow_law, H, k, z, enthalpy_column),
         eigen1             = strain_rates(i, j, 0),
         eigen2             = strain_rates(i, j, 1);
 

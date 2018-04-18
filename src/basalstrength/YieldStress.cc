@@ -24,8 +24,10 @@
 namespace pism {
 
 YieldStressInputs::YieldStressInputs() {
-  geometry      = NULL;
-  no_model_mask = NULL;
+  geometry                   = nullptr;
+  no_model_mask              = nullptr;
+  till_water_thickness       = nullptr;
+  subglacial_water_thickness = nullptr;
 }
 
 YieldStress::YieldStress(IceGrid::ConstPtr g)

@@ -24,8 +24,29 @@
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 
-
 namespace pism {
+
+class Geometry;
+
+class CalvingInputs {
+public:
+  CalvingInputs();
+
+  const Geometry *geometry;
+
+  // specifies grid points that should not be affected by calving
+  const IceModelVec2Int *bc_mask;
+
+  // used by von Mises calving; could be replaced with a 2D map of vertically-averaged ice
+  // hardness
+  const IceModelVec3 *ice_enthalpy;
+
+  // used by eigencalving and von Mises calving
+  const IceModelVec2V *ice_velocity;
+
+  // used by the frontal melt parameterization
+  const IceModelVec2S *shelf_base_mass_flux;
+};
 
 //! An abstract class implementing calving front retreat resulting from application of a
 //! spatially-variable horizontal retreat rate.
@@ -37,10 +58,11 @@ public:
   CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width);
   virtual ~CalvingFrontRetreat();
 
+  MaxTimestep max_timestep(const CalvingInputs &inputs,
+                           double t) const ;
+
   void update(double dt,
-              const IceModelVec2S &sea_level,
-              const IceModelVec2Int &ice_thickness_bc_mask,
-              const IceModelVec2S &bed_topography,
+              const CalvingInputs &inputs,
               IceModelVec2CellType &pism_mask,
               IceModelVec2S &Href,
               IceModelVec2S &ice_thickness);
@@ -48,10 +70,11 @@ public:
   const IceModelVec2S& calving_rate() const;
 
 protected:
-  MaxTimestep max_timestep_impl(double t) const ;
 
-  virtual void compute_calving_rate(const IceModelVec2CellType &mask,
+  virtual void compute_calving_rate(const CalvingInputs &inputs,
                                     IceModelVec2S &result) const = 0;
+
+  void prepare_mask(const IceModelVec2CellType &input, IceModelVec2CellType &output) const;
 
   mutable IceModelVec2CellType m_mask;
   mutable IceModelVec2S m_tmp;

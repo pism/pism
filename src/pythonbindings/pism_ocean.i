@@ -1,16 +1,15 @@
 %{
-#include "coupler/util/PScalarForcing.hh"
-
 #include "coupler/ocean/Constant.hh"
 #include "coupler/ocean/Cache.hh"
 #include "coupler/ocean/ConstantPIK.hh"
-#include "coupler/ocean/Delta_SL.hh"
 #include "coupler/ocean/Delta_SMB.hh"
 #include "coupler/ocean/Delta_T.hh"
 #include "coupler/ocean/Frac_SMB.hh"
 #include "coupler/ocean/Frac_MBP.hh"
 #include "coupler/ocean/GivenClimate.hh"
 #include "coupler/ocean/GivenTH.hh"
+#include "coupler/ocean/sea_level/Delta_SL.hh"
+#include "coupler/ocean/sea_level/Delta_SL_2D.hh"
 %}
 
 %shared_ptr(pism::ocean::OceanModel)
@@ -18,13 +17,6 @@
 
 %shared_ptr(pism::ocean::CompleteOceanModel)
 %include "coupler/ocean/CompleteOceanModel.hh"
-
-%include "coupler/util/PGivenClimate.hh"
-%shared_ptr(pism::PGivenClimate< pism::ocean::OceanModel,pism::ocean::OceanModel >)
-%template(_GivenOcean1) pism::PGivenClimate<pism::ocean::OceanModel,pism::ocean::OceanModel>;
-
-%shared_ptr(pism::PGivenClimate< pism::ocean::CompleteOceanModel,pism::ocean::CompleteOceanModel >)
-%template(_GivenOcean2) pism::PGivenClimate<pism::ocean::CompleteOceanModel,pism::ocean::CompleteOceanModel>;
 
 %shared_ptr(pism::ocean::Constant)
 %rename(OceanConstant) pism::ocean::Constant;
@@ -37,10 +29,6 @@
 %shared_ptr(pism::ocean::PIK)
 %rename(OceanPIK) pism::ocean::PIK;
 %include "coupler/ocean/ConstantPIK.hh"
-
-%shared_ptr(pism::ocean::Delta_SL)
-%rename(OceanDeltaSL) pism::ocean::Delta_SL;
-%include "coupler/ocean/Delta_SL.hh"
 
 %shared_ptr(pism::ocean::Delta_SMB)
 %rename(OceanDeltaSMB) pism::ocean::Delta_SMB;
@@ -65,3 +53,14 @@
 %shared_ptr(pism::ocean::GivenTH)
 %rename(OceanGivenTH) pism::ocean::GivenTH;
 %include "coupler/ocean/GivenTH.hh"
+
+%shared_ptr(pism::ocean::sea_level::SeaLevel)
+%include "coupler/SeaLevel.hh"
+
+%shared_ptr(pism::ocean::sea_level::Delta_SL)
+%rename(SeaLevelDelta) pism::ocean::sea_level::Delta_SL;
+%include "coupler/ocean/sea_level/Delta_SL.hh"
+
+%shared_ptr(pism::ocean::sea_level::Delta_SL_2D)
+%rename(SeaLevelDelta2D) pism::ocean::sea_level::Delta_SL_2D;
+%include "coupler/ocean/sea_level/Delta_SL_2D.hh"

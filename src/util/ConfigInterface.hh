@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -100,6 +100,8 @@ public:
   // booleans
   typedef std::map<std::string, bool> Booleans;
   Booleans all_booleans() const;
+
+  std::vector<std::string> keys() const;
 
   bool get_boolean(const std::string& name, UseFlag flag = REMEMBER_THIS_USE) const;
   void set_boolean(const std::string& name, bool value, SettingFlag flag = FORCE);

@@ -16,14 +16,16 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>
 #include <gsl/gsl_poly.h>
 #include <cassert>
 
 #include "GivenTH.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Vars.hh"
+#include "pism/util/Time.hh"
 #include "pism/util/ConfigInterface.hh"
+#include "pism/geometry/Geometry.hh"
+#include "pism/coupler/util/options.hh"
 
 namespace pism {
 namespace ocean {
@@ -59,69 +61,79 @@ GivenTH::Constants::Constants(const Config &config) {
 }
 
 GivenTH::GivenTH(IceGrid::ConstPtr g)
-  : PGivenClimate<CompleteOceanModel,CompleteOceanModel>(g, NULL) {
+  : CompleteOceanModel(g, nullptr) {
 
-  m_option_prefix   = "-ocean_th";
+  ForcingOptions opt(*m_grid->ctx(), "ocean.th");
 
-  // will be de-allocated by the parent's destructor
-  m_theta_ocean    = new IceModelVec2T;
-  m_salinity_ocean = new IceModelVec2T;
+  {
+    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    bool periodic = opt.period > 0;
 
-  m_fields["theta_ocean"]     = m_theta_ocean;
-  m_fields["salinity_ocean"]  = m_salinity_ocean;
+    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
 
-  process_options();
+    m_theta_ocean = IceModelVec2T::ForcingField(m_grid,
+                                                file,
+                                                "theta_ocean",
+                                                "", // no standard name
+                                                buffer_size,
+                                                evaluations_per_year,
+                                                periodic);
 
-  std::map<std::string, std::string> standard_names;
-  set_vec_parameters(standard_names);
+    m_salinity_ocean = IceModelVec2T::ForcingField(m_grid,
+                                                   file,
+                                                   "salinity_ocean",
+                                                   "", // no standard name
+                                                   buffer_size,
+                                                   evaluations_per_year,
+                                                   periodic);
+  }
 
-  m_theta_ocean->create(m_grid, "theta_ocean");
   m_theta_ocean->set_attrs("climate_forcing",
-                         "absolute potential temperature of the adjacent ocean",
-                         "Kelvin", "");
+                           "absolute potential temperature of the adjacent ocean",
+                           "Kelvin", "");
 
-  m_salinity_ocean->create(m_grid, "salinity_ocean");
   m_salinity_ocean->set_attrs("climate_forcing",
-                            "salinity of the adjacent ocean",
-                            "g/kg", "");
+                              "salinity of the adjacent ocean",
+                              "g/kg", "");
 }
 
 GivenTH::~GivenTH() {
   // empty
 }
 
-void GivenTH::init_impl() {
+void GivenTH::init_impl(const Geometry &geometry) {
 
   m_log->message(2,
              "* Initializing the 3eqn melting parameterization ocean model\n"
              "  reading ocean temperature and salinity from a file...\n");
 
-  m_theta_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
-  m_salinity_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
+  ForcingOptions opt(*m_grid->ctx(), "ocean.th");
+
+  m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
+  m_salinity_ocean->init(opt.filename, opt.period, opt.reference_time);
 
   // read time-independent data right away:
-  if (m_theta_ocean->get_n_records() == 1 && m_salinity_ocean->get_n_records() == 1) {
-    update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
+  if (m_theta_ocean->n_records() == 1 && m_salinity_ocean->n_records() == 1) {
+    update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }
 
-void GivenTH::update_impl(double t, double dt) {
-
-  // Make sure that sea water salinity and sea water potential
-  // temperature fields are up to date:
-  update_internal(t, dt);
+void GivenTH::update_impl(const Geometry &geometry, double t, double dt) {
+  m_theta_ocean->update(t, dt);
+  m_salinity_ocean->update(t, dt);
 
   m_theta_ocean->average(t, dt);
   m_salinity_ocean->average(t, dt);
 
   Constants c(*m_config);
 
-  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S &ice_thickness = geometry.ice_thickness;
 
   IceModelVec2S &temperature = *m_shelf_base_temperature;
   IceModelVec2S &mass_flux = *m_shelf_base_mass_flux;
 
-  IceModelVec::AccessList list{ice_thickness, m_theta_ocean, m_salinity_ocean,
+  IceModelVec::AccessList list{ &ice_thickness, m_theta_ocean.get(), m_salinity_ocean.get(),
       &temperature, &mass_flux};
 
   for (Points p(*m_grid); p; p.next()) {
@@ -136,7 +148,7 @@ void GivenTH::update_impl(double t, double dt) {
     pointwise_update(c,
                      (*m_salinity_ocean)(i,j),
                      potential_temperature_celsius,
-                     (*ice_thickness)(i,j),
+                     ice_thickness(i,j),
                      &shelf_base_temp_celsius,
                      &shelf_base_massflux);
 
@@ -148,6 +160,13 @@ void GivenTH::update_impl(double t, double dt) {
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
   m_shelf_base_mass_flux->scale(m_config->get_double("constants.ice.density"));
 }
+
+MaxTimestep GivenTH::max_timestep_impl(double t) const {
+  (void) t;
+
+  return MaxTimestep("ocean th");
+}
+
 
 const IceModelVec2S& GivenTH::sea_level_elevation_impl() const {
   return *m_sea_level_elevation;

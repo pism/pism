@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2014, 2016, 2017 The PISM Authors
+# Copyright (C) 2009-2014, 2016, 2017, 2018 The PISM Authors
 
 # Downloads SeaRISE "Present Day Greenland" master dataset NetCDF file, adjusts
 # metadata, and saves under new name ready for PISM.  See README.md.
@@ -75,7 +75,7 @@ echo "done."
 echo
 
 # extract paleo-climate time series into files suitable for option
-# -ocean ...,delta_SL
+# -sea_level ...,delta_SL
 SLSERIES=pism_dSL.nc
 echo -n "creating paleo-sea-level file $SLSERIES from $DATANAME ... "
 ncks -O -v sealeveltimes,sealevel_time_series $DATANAME $SLSERIES

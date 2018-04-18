@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -61,9 +61,10 @@ public:
 
   virtual std::string stdout_report() const;
 
-  const rheology::FlowLaw* flow_law() const;
+  std::shared_ptr<const rheology::FlowLaw> flow_law() const;
+
 protected:
-  rheology::FlowLaw *m_flow_law;
+  std::shared_ptr<rheology::FlowLaw> m_flow_law;
   EnthalpyConverter::Ptr m_EC;
   double m_D_max;
   IceModelVec2Stag m_diffusive_flux;
@@ -82,8 +83,6 @@ public:
   virtual void update(const IceModelVec2V &sliding_velocity,
                       const Inputs &inputs,
                       bool full_update);
-
-protected:
 };
 
 } // end of namespace stressbalance

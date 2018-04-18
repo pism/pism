@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Constantine Khroulev
+// Copyright (C) 2009--2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,9 +28,6 @@ namespace pism {
 /*! This class was created to read time-dependent and spatially-varying climate
   forcing data, in particular snow temperatures and precipitation.
 
-  It allocates a number (given as an argument to the set_n_records() method) of
-  records and reads them from a file if necessary.
-
   If requests (calls to update()) go in sequence, every records should be read
   only once.
 
@@ -45,53 +42,69 @@ namespace pism {
 */
 class IceModelVec2T : public IceModelVec2S {
 public:
-  IceModelVec2T();
+  typedef std::shared_ptr<IceModelVec2T> Ptr;
+
+  static Ptr ForcingField(IceGrid::ConstPtr grid,
+                          const PIO &file,
+                          const std::string &short_name,
+                          const std::string &standard_name,
+                          int max_buffer_size,
+                          int evaluations_per_year,
+                          bool periodic);
+
+  IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name, unsigned int n_records,
+                unsigned int n_evaluations_per_year);
   virtual ~IceModelVec2T();
 
-  virtual void set_n_records(unsigned int N);
-  virtual void set_n_evaluations_per_year(unsigned int N);
-  virtual unsigned int get_n_records();
-  void create(IceGrid::ConstPtr mygrid, const std::string &my_short_name);
-  virtual void init(const std::string &filename, unsigned int period,
-                    double reference_time);
-  virtual void init_constant(double value);
-  virtual void update(double my_t, double my_dt);
-  MaxTimestep max_timestep(double my_t) const;
+  unsigned int n_records();
 
-  virtual void interp(double my_t);
+  void init(const std::string &filename, unsigned int period, double reference_time);
+  void init_constant(double value);
 
-  virtual void interp(int i, int j, std::vector<double> &results);
+  void update(double t, double dt);
+  MaxTimestep max_timestep(double t) const;
 
-  virtual void average(double my_t, double my_dt);
+  void interp(double t);
 
-  virtual void begin_access() const;
-  virtual void end_access() const;
-  virtual void init_interpolation(const std::vector<double> &ts);
+  void interp(int i, int j, std::vector<double> &results);
 
-protected:
+  void average(double t, double dt);
+
+  void begin_access() const;
+  void end_access() const;
+  void init_interpolation(const std::vector<double> &ts);
+
+private:
   std::vector<double> m_time,             //!< all the times available in filename
     m_time_bounds;                //!< time bounds
   std::string m_filename;         //!< file to read (regrid) from
   petsc::DM::Ptr m_da3;
   petsc::Vec m_v3;                       //!< a 3D Vec used to store records
   mutable void ***m_array3;
-  unsigned int m_n_records, //!< maximum number of records to store in memory
-    m_N,                    //!< number of records kept in memory
-    m_n_evaluations_per_year;     //!< number of evaluations per year
-  //!< used to compute temporal averages
-  int m_first; //!< in-file index of the first record stored in memory
-  //!< ("int" to allow first==-1 as an "invalid" first value)
+
+  //! maximum number of records to store in memory
+  unsigned int m_n_records;
+
+  //! number of records kept in memory
+  unsigned int m_N;
+
+  //! number of evaluations per year used to compute temporal averages
+  unsigned int m_n_evaluations_per_year;
+
+  //! in-file index of the first record stored in memory ("int" to allow first==-1 as an
+  //! "invalid" first value)
+  int m_first;
 
   std::vector<unsigned int> m_interp_indices;
   unsigned int m_period;        // in years
   double m_reference_time;      // in seconds
 
   double*** get_array3();
-  virtual void update(unsigned int start);
-  virtual void discard(int N);
-  virtual double average(int i, int j);
-  virtual void set_record(int n);
-  virtual void get_record(int n);
+  void update(unsigned int start);
+  void discard(int N);
+  double average(int i, int j);
+  void set_record(int n);
+  void get_record(int n);
 };
 
 

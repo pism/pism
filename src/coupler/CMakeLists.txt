@@ -1,6 +1,8 @@
 # Boundary models (surface, atmosphere, ocean).
-add_library (pismboundary OBJECT
+add_library (boundary OBJECT
   ./util/ScalarForcing.cc
+  ./util/options.cc
+  ./util/lapse_rates.cc
   ./atmosphere/AtmosphereModel.cc
   ./atmosphere/ConstantPIK.cc
   ./atmosphere/SeariseGreenland.cc
@@ -22,7 +24,6 @@ add_library (pismboundary OBJECT
   ./ocean/Constant.cc
   ./ocean/GivenClimate.cc
   ./ocean/GivenTH.cc
-  ./ocean/Delta_SL.cc
   ./ocean/Delta_T.cc
   ./ocean/Delta_SMB.cc
   ./ocean/Frac_MBP.cc
@@ -30,6 +31,11 @@ add_library (pismboundary OBJECT
   ./ocean/Runoff_SMB.cc
   ./ocean/Factory.cc
   ./ocean/Initialization.cc
+  ./ocean/sea_level/Initialization.cc
+  ./ocean/sea_level/SeaLevel.cc
+  ./ocean/sea_level/Delta_SL.cc
+  ./ocean/sea_level/Delta_SL_2D.cc
+  ./ocean/sea_level/Factory.cc
   ./surface/Initialization.cc
   ./surface/localMassBalance.cc
   ./surface/SurfaceModel.cc

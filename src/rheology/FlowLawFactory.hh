@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2015, 2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2015, 2017, 2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,7 @@
 
 #include <map>
 #include <string>
+#include <memory>
 
 #include "FlowLaw.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -49,7 +50,7 @@ public:
   void set_default(const std::string &name);
   void add(const std::string &name, FlowLawCreator);
   void remove(const std::string &name);
-  FlowLaw* create();
+  std::shared_ptr<FlowLaw> create();
 private:
   std::string m_type_name, m_prefix;
   std::map<std::string, FlowLawCreator> m_flow_laws;

@@ -33,50 +33,83 @@
 
 namespace pism {
 
-IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
+
+/*!
+ * Allocate an instance that will be used to load and use a forcing field from a file.
+ *
+ * Checks the number of records in a file and allocates storage accordingly.
+ *
+ * If `periodic` is true, allocate enough storage to hold all the records, otherwise
+ * allocate storage for at most `max_buffer_size` records.
+ *
+ * @param[in] grid computational grid
+ * @param[in] file input file
+ * @param[in] short_name variable name in `file`
+ * @param[in] standard_name standard name (if available); leave blank to ignore
+ * @param[in] max_buffer_size maximum buffer size for non-periodic fields
+ * @param[in] evaluations_per_year number of evaluations per year to use when averaging
+ * @param[in] periodic true if this forcing field should be interpreted as periodic
+ */
+IceModelVec2T::Ptr IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
+                                               const PIO &file,
+                                               const std::string &short_name,
+                                               const std::string &standard_name,
+                                               int max_buffer_size,
+                                               int evaluations_per_year,
+                                               bool periodic) {
+
+  int n_records = file.inq_nrecords(short_name, standard_name,
+                                    grid->ctx()->unit_system());
+
+  if (not periodic) {
+    n_records = std::min(n_records, max_buffer_size);
+  }
+  // In the periodic case we try to keep all the records in RAM.
+
+  // Allocate storage for one record if the variable was not found. This is needed to be
+  // able to cheaply allocate and then discard an "-atmosphere given" model
+  // (atmosphere::Given) when "-surface given" (Given) is selected.
+  n_records = std::max(n_records, 1);
+
+  return IceModelVec2T::Ptr(new IceModelVec2T(grid, short_name, n_records,
+                                              evaluations_per_year));
+}
+
+
+IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name,
+                             unsigned int n_records,
+                             unsigned int n_evaluations_per_year)
+  : IceModelVec2S() {
   m_has_ghosts           = false;
   m_array3                 = NULL;
   m_first                  = -1;
   m_N                      = 0;
-  m_n_records              = 50;  // just a default
   m_report_range         = false;
   m_period               = 0;
   m_reference_time       = 0.0;
   m_n_evaluations_per_year = 53;
 
-  m_da3.reset();
+  m_n_evaluations_per_year = n_evaluations_per_year;
+
+  const unsigned int width = 1;
+
+  IceModelVec2S::create(grid, short_name, WITHOUT_GHOSTS, width);
+
+  // initialize the m_da3 member:
+  m_da3 = m_grid->get_dm(n_records, this->m_da_stencil_width);
+  m_n_records = n_records;
+
+  // allocate the 3D Vec:
+  PetscErrorCode ierr = DMCreateGlobalVector(*m_da3, m_v3.rawptr());
+  PISM_CHK(ierr, "DMCreateGlobalVector");
 }
 
 IceModelVec2T::~IceModelVec2T() {
   // empty
 }
 
-
-//! Sets the number of records to store in memory. Call it before calling create().
-// FIXME: This is bad. Make N an argument of the constructor.
-void IceModelVec2T::set_n_records(unsigned int N) {
-  m_n_records = N;
-}
-
-void IceModelVec2T::set_n_evaluations_per_year(unsigned int M) {
-  m_n_evaluations_per_year = M;
-}
-
-unsigned int IceModelVec2T::get_n_records() {
+unsigned int IceModelVec2T::n_records() {
   return m_n_records;
-}
-
-void IceModelVec2T::create(IceGrid::ConstPtr grid, const std::string &short_name) {
-  const unsigned int width = 1;
-
-  IceModelVec2S::create(grid, short_name, WITHOUT_GHOSTS, width);
-
-  // initialize the m_da3 member:
-  m_da3 = m_grid->get_dm(this->m_n_records, this->m_da_stencil_width);
-
-  // allocate the 3D Vec:
-  PetscErrorCode ierr = DMCreateGlobalVector(*m_da3, m_v3.rawptr());
-  PISM_CHK(ierr, "DMCreateGlobalVector");
 }
 
 double*** IceModelVec2T::get_array3() {
@@ -92,7 +125,7 @@ void IceModelVec2T::begin_access() const {
 
   // this call will increment the m_access_counter
   IceModelVec2S::begin_access();
-  
+
 }
 
 void IceModelVec2T::end_access() const {
@@ -110,7 +143,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
 
   const Logger &log = *m_grid->ctx()->log();
 
-  m_filename         = fname;
+  m_filename       = fname;
   m_period         = period;
   m_reference_time = reference_time;
 
@@ -336,7 +369,7 @@ void IceModelVec2T::update(unsigned int start) {
   Time::ConstPtr t = m_grid->ctx()->time();
 
   Logger::ConstPtr log = m_grid->ctx()->log();
-  if (this->get_n_records() > 1) {
+  if (this->n_records() > 1) {
     log->message(4,
                "  reading \"%s\" into buffer\n"
                "          (short_name = %s): %d records, time intervals (%s, %s) through (%s, %s)...\n",

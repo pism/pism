@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -168,7 +168,7 @@ void averaged_hardness_vec(const FlowLaw &ice,
                            IceModelVec2S &result);
 
 // Helper functions:
-bool FlowLawUsesGrainSize(FlowLaw *);
+bool FlowLawUsesGrainSize(const FlowLaw &flow_law);
 
 } // end of namespace rheology
 } // end of namespace pism

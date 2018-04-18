@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -340,7 +340,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
 void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
   (void) projection;
 
-  IceGrid::ConstPtr grid = result.get_grid();
+  IceGrid::ConstPtr grid = result.grid();
   result.set(grid->dx() * grid->dy());
 }
 

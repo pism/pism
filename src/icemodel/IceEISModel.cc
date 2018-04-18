@@ -27,6 +27,9 @@
 #include "pism/coupler/ocean/Constant.hh"
 #include "pism/coupler/ocean/Initialization.hh"
 
+#include "pism/coupler/SeaLevel.hh"
+#include "pism/coupler/ocean/sea_level/Initialization.hh"
+
 #include "pism/coupler/surface/EISMINTII.hh"
 #include "pism/coupler/surface/Initialization.hh"
 
@@ -72,16 +75,23 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
 void IceEISModel::allocate_couplers() {
 
   // Climate will always come from intercomparison formulas.
-  if (m_surface == NULL) {
+  if (not m_surface) {
     std::shared_ptr<surface::SurfaceModel> surface(new surface::EISMINTII(m_grid, m_experiment));
     m_surface.reset(new surface::InitializationHelper(m_grid, surface));
     m_submodels["surface process model"] = m_surface.get();
   }
 
-  if (m_ocean == NULL) {
+  if (not m_ocean) {
     std::shared_ptr<ocean::OceanModel> ocean(new ocean::Constant(m_grid));
     m_ocean.reset(new ocean::InitializationHelper(m_grid, ocean));
     m_submodels["ocean model"] = m_ocean.get();
+  }
+
+  if (not m_sea_level) {
+    using namespace ocean::sea_level;
+    std::shared_ptr<SeaLevel> sea_level(new SeaLevel(m_grid));
+    m_sea_level.reset(new InitializationHelper(m_grid, sea_level));
+    m_submodels["sea level forcing"] = m_sea_level.get();
   }
 }
 

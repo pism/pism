@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 PISM Authors
+/* Copyright (C) 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -72,6 +72,17 @@ static std::set<std::string> process_extra_shortcuts(const std::set<std::string>
     result.insert("surface_accumulation_rate");
     result.insert("surface_runoff_rate");
     result.insert("surface_melt_rate");
+  }
+
+  if (result.find("hydrology_fluxes") != result.end()) {
+    result.erase("hydrology_fluxes");
+    result.insert("tendency_of_subglacial_water_mass");
+    result.insert("tendency_of_subglacial_water_mass_due_to_input");
+    result.insert("tendency_of_subglacial_water_mass_due_to_flow");
+    result.insert("tendency_of_subglacial_water_mass_due_to_conservation_error");
+    result.insert("tendency_of_subglacial_water_mass_at_grounded_margins");
+    result.insert("tendency_of_subglacial_water_mass_at_grounding_line");
+    result.insert("tendency_of_subglacial_water_mass_at_domain_boundary");
   }
 
   return result;

@@ -23,14 +23,11 @@
 
 namespace pism {
 
-class IceModelVec2S;
-class IceModelVec2CellType;
-
 namespace calving {
 
 class EigenCalving : public StressCalving {
 public:
-  EigenCalving(IceGrid::ConstPtr g, stressbalance::StressBalance *stress_balance);
+  EigenCalving(IceGrid::ConstPtr grid);
   virtual ~EigenCalving();
 
   void init();
@@ -39,7 +36,7 @@ public:
 protected:
   virtual DiagnosticList diagnostics_impl() const;
 
-  void compute_calving_rate(const IceModelVec2CellType &mask,
+  void compute_calving_rate(const CalvingInputs &inputs,
                             IceModelVec2S &result) const;
 
 protected:

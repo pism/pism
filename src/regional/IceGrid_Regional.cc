@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -85,9 +85,9 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
   const options::String input_file("-i", "Specifies a PISM input file");
   const bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
   const options::RealList x_range("-x_range",
-                                  "range of X coordinates in the selected subset");
+                                  "range of X coordinates in the selected subset", {});
   const options::RealList y_range("-y_range",
-                                  "range of Y coordinates in the selected subset");
+                                  "range of Y coordinates in the selected subset", {});
 
   if (input_file.is_set() and bootstrap and x_range.is_set() and y_range.is_set()) {
     // bootstrapping; get domain size defaults from an input file, allow overriding all grid

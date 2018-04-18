@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,7 +37,8 @@ EISMINTII::~EISMINTII() {
   // empty
 }
 
-void EISMINTII::init_impl() {
+void EISMINTII::init_impl(const Geometry &geometry) {
+  (void) geometry;
 
   using units::convert;
 
@@ -118,7 +119,7 @@ void EISMINTII::initialize_using_formulas() {
     cy += 100.0e3;
   }
 
-  IceModelVec::AccessList list{&m_ice_surface_temp, &m_climatic_mass_balance};
+  IceModelVec::AccessList list{m_temperature.get(), m_mass_flux.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -126,19 +127,20 @@ void EISMINTII::initialize_using_formulas() {
     const double r = sqrt(PetscSqr(m_grid->x(i) - cx) + PetscSqr(m_grid->y(j) - cy));
 
     // accumulation (formula (7) in [Payne et al 2000])
-    m_climatic_mass_balance(i,j) = std::min(m_M_max, m_S_b * (m_R_el-r));
+    (*m_mass_flux)(i,j) = std::min(m_M_max, m_S_b * (m_R_el-r));
 
     // surface temperature (formula (8) in [Payne et al 2000])
-    m_ice_surface_temp(i,j) = m_T_min + m_S_T * r;
+    (*m_temperature)(i,j) = m_T_min + m_S_T * r;
   }
 
   // convert from "m second-1" to "kg m-2 s-1"
-  m_climatic_mass_balance.scale(m_config->get_double("constants.ice.density"));
+  m_mass_flux->scale(m_config->get_double("constants.ice.density"));
 }
 
-void EISMINTII::update_impl(PetscReal t, PetscReal dt) {
+void EISMINTII::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
+  (void) geometry;
 
   // do nothing (but an implementation is required)
 }

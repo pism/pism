@@ -72,7 +72,7 @@ Spatially-variable fields
 #. ``bwat``
 
    :Units: m
-   :Description: thickness of transportable water in subglacial layer
+   :Description: thickness of transportable subglacial water layer
 
 #. ``bwatvel``
 
@@ -183,6 +183,7 @@ Spatially-variable fields
 
    :Units: kg m-2 year-1
    :Description: effective precipitation rate
+   :Standard name: ``precipitation_flux``
 
 #. ``effective_viscosity``
 
@@ -292,16 +293,6 @@ Spatially-variable fields
    :Description: upward geothermal flux at the top bedrock surface
    :Standard name: ``upward_geothermal_heat_flux_at_ground_level``
    :Comment: positive values correspond to an upward flux
-
-#. ``hydrobmelt``
-
-   :Units: m year-1
-   :Description: the version of bmelt seen by the hydrology model
-
-#. ``hydroinput``
-
-   :Units: m year-1
-   :Description: total water input into subglacial hydrology layer
 
 #. ``ice_area_specific_volume``
 
@@ -459,6 +450,12 @@ Spatially-variable fields
 
    :Units: mW m-3
    :Description: rate of strain heating in ice (dissipation heating)
+
+#. ``subglacial_water_input_rate``
+
+   :Units: m year-1
+   :Description: total input rate of subglacial water (basal melt rate plus input from the surface)
+   :Comment: positive flux corresponds to water gain
 
 #. ``surface_accumulation_flux``
 
@@ -668,6 +665,48 @@ Spatially-variable fields
    :Description: average surface mass flux over reporting interval
    :Comment: positive flux corresponds to ice gain
 
+#. ``tendency_of_subglacial_water_mass``
+
+   :Units: Gt year-1
+   :Description: rate of change of the total mass of subglacial water
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_at_domain_boundary``
+
+   :Units: Gt year-1
+   :Description: subglacial water flux at domain boundary (in regional model configurations)
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_at_grounded_margins``
+
+   :Units: Gt year-1
+   :Description: subglacial water flux at grounded ice margins
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_at_grounding_line``
+
+   :Units: Gt year-1
+   :Description: subglacial water flux at grounding lines
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_due_to_conservation_error``
+
+   :Units: Gt year-1
+   :Description: subglacial water flux due to conservation error (mass added to preserve non-negativity)
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_due_to_flow``
+
+   :Units: Gt year-1
+   :Description: rate of change subglacial water mass due to lateral flow
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_due_to_input``
+
+   :Units: Gt year-1
+   :Description: subglacial water flux due to input
+   :Comment: positive flux corresponds to water gain
+
 #. ``thk``
 
    :Units: m
@@ -838,26 +877,6 @@ Scalar time-series
 
    :Units: year
    :Description: mass continuity time step
-
-#. ``hydro_ice_free_land_loss``
-
-   :Units: kg s-1
-   :Description: rate of liquid water loss from subglacial hydrology into cells with mask as ice free land
-
-#. ``hydro_negative_thickness_gain``
-
-   :Units: kg s-1
-   :Description: rate of non-conserving liquid water gain from subglacial hydrology transportable water thickness coming out negative during time step, and being projected up to zero
-
-#. ``hydro_null_strip_loss``
-
-   :Units: kg s-1
-   :Description: rate of liquid water loss from subglacial hydrology into cells inside the null strip
-
-#. ``hydro_ocean_loss``
-
-   :Units: kg s-1
-   :Description: rate of liquid water loss from subglacial hydrology into cells with mask as ocean
 
 #. ``ice_area_glacierized``
 

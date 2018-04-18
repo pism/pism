@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014, 2015, 2017 PISM Authors
+// Copyright (C) 2011, 2014, 2015, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,13 +19,12 @@
 #ifndef _PAFACTORY_H_
 #define _PAFACTORY_H_
 
-#include "pism/coupler/AtmosphereModel.hh"
-#include "Modifier.hh"
 #include "pism/coupler/util/PCFactory.hh"
+#include "pism/coupler/AtmosphereModel.hh"
 
 namespace pism {
 namespace atmosphere {
-class Factory : public PCFactory<AtmosphereModel,PAModifier> {
+class Factory : public PCFactory<AtmosphereModel> {
 public:
   Factory(IceGrid::ConstPtr g);
   ~Factory();

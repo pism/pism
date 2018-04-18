@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -87,7 +87,7 @@ std::string SSB_Modifier::stdout_report() const {
   return "";
 }
 
-const rheology::FlowLaw* SSB_Modifier::flow_law() const {
+std::shared_ptr<const rheology::FlowLaw> SSB_Modifier::flow_law() const {
   return m_flow_law;
 }
 
@@ -96,19 +96,14 @@ void ConstantInColumn::init() {
 }
 
 ConstantInColumn::ConstantInColumn(IceGrid::ConstPtr g)
-  : SSB_Modifier(g)
-{
+  : SSB_Modifier(g) {
   rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
 
   m_flow_law = ice_factory.create();
 }
 
-ConstantInColumn::~ConstantInColumn()
-{
-  if (m_flow_law != NULL) {
-    delete m_flow_law;
-    m_flow_law = NULL;
-  }
+ConstantInColumn::~ConstantInColumn() {
+  // empty
 }
 
 

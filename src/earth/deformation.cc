@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -139,24 +139,21 @@ BedDeformLC::BedDeformLC(const Config &config,
   m_fftw_output = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
   m_loadhat     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
 
-  // fftw manipulates the data in setting up a plan, so fill with non-constant junk
+  // fill m_fftw_input with zeros
   {
     VecAccessor2D<fftw_complex> tmp(m_fftw_input, m_Nx, m_Ny);
     for (int j = 0; j < m_Ny; j++) {
       for (int i = 0; i < m_Nx; i++) {
-        tmp(i, j)[0] = i - 3;
-        tmp(i, j)[1] = j*j + 2;
+        tmp(i, j)[0] = 0.0;
+        tmp(i, j)[1] = 0.0;
       }
     }
   }
 
-  // Limit the amount of time FFTW is allowed to spend choosing algorithms.
-  fftw_set_timelimit(60.0);
-
   m_dft_forward = fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output,
-                                   FFTW_FORWARD, FFTW_MEASURE);
+                                   FFTW_FORWARD, FFTW_ESTIMATE);
   m_dft_inverse = fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output,
-                                   FFTW_BACKWARD, FFTW_MEASURE);
+                                   FFTW_BACKWARD, FFTW_ESTIMATE);
 
   // Note: FFTW is weird. If a malloc() call fails it will just call
   // abort() on you without giving you a chance to recover or tell the

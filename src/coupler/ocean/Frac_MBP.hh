@@ -39,9 +39,9 @@ public:
   virtual ~Frac_MBP();
 
 private:
-  void init_impl();
+  void init_impl(const Geometry &geometry);
 
-  void update_impl(double t, double dt);
+  void update_impl(const Geometry &geometry, double t, double dt);
 
   const IceModelVec2S& melange_back_pressure_fraction_impl() const;
 
