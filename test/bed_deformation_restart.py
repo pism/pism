@@ -36,8 +36,9 @@ def allocate_storage(grid):
     ice_thickness.metadata().set_string("standard_name", "land_ice_thickness")
     bed           = PISM.IceModelVec2S(grid, "topg", PISM.WITHOUT_GHOSTS)
     bed_uplift    = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
+    sea_level     = PISM.IceModelVec2S(grid, "sea_level", PISM.WITHOUT_GHOSTS)
 
-    return ice_thickness, bed, bed_uplift
+    return ice_thickness, bed, bed_uplift, sea_level
 
 def add_disc_load(ice_thickness, radius, thickness):
     "Add a disc load with a given radius and thickness."
@@ -57,22 +58,23 @@ def run(dt, restart=False):
 
     model = PISM.LingleClark(grid)
 
-    ice_thickness, bed, bed_uplift = allocate_storage(grid)
+    ice_thickness, bed, bed_uplift, sea_level = allocate_storage(grid)
     grid.variables().add(ice_thickness)
 
     # start with a flat bed, no ice, and no uplift
     bed.set(0.0)
     bed_uplift.set(0.0)
     ice_thickness.set(0.0)
+    sea_level.set(0.0)
 
     # initialize the model
-    model.bootstrap(bed, bed_uplift, ice_thickness)
+    model.bootstrap(bed, bed_uplift, ice_thickness, sea_level)
 
     # add the disc load
     add_disc_load(ice_thickness, disc_radius, disc_thickness)
 
     # do 1 step
-    model.step(ice_thickness, dt)
+    model.step(ice_thickness, sea_level, dt)
 
     if restart:
         # save the model state
@@ -90,12 +92,12 @@ def run(dt, restart=False):
             # initialize
             PISM.PETSc.Options().setValue("-i", filename)
             options = PISM.process_input_options(grid.com, ctx.config)
-            model.init(options)
+            model.init(options, ice_thickness, sea_level)
         finally:
             os.remove(filename)
 
     # do 1 more step
-    model.step(ice_thickness, dt)
+    model.step(ice_thickness, sea_level, dt)
 
     return model
 
