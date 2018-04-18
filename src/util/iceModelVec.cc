@@ -1133,7 +1133,7 @@ bool set_contains(const std::set<std::string> &S, const IceModelVec &field) {
   // Note that this uses IceModelVec::get_name() and not IceModelVec::metadata() and
   // VariableMetadata::get_name(): this is used to check if a possibly multi-variable field was
   // requested.
-  return set_contains(S, field.get_name());
+  return member(field.get_name(), S);
 }
 
 } // end of namespace pism

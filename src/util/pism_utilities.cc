@@ -124,10 +124,6 @@ bool is_increasing(const std::vector<double> &a) {
   return true;
 }
 
-bool set_contains(const std::set<std::string> &S, const std::string &name) {
-  return (S.find(name) != S.end());
-}
-
 bool member(const std::string &string, const std::set<std::string> &set) {
   return (set.find(string) != set.end());
 }
