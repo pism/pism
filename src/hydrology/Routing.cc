@@ -400,58 +400,67 @@ void Routing::compute_conductivity(const IceModelVec2Stag &W,
   const double
     k     = m_config->get_double("hydrology.hydraulic_conductivity"),
     alpha = m_config->get_double("hydrology.thickness_power_in_flux"),
-    beta  = m_config->get_double("hydrology.gradient_power_in_flux");
+    beta  = m_config->get_double("hydrology.gradient_power_in_flux"),
+    betapow = (beta - 2.0) / 2.0;
 
-  IceModelVec::AccessList list(result);
-
-  // the following calculation is bypassed if beta == 2.0 exactly; it puts the squared
-  // norm of the gradient of the simplified hydrolic potential (Pi) in "result"
-  if (beta != 2.0) {
-    // R  <-- P + rhow g b
-    P.add(m_rg, bed_elevation, m_R);  // yes, it updates ghosts
-
-    list.add(m_R);
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      double dRdx, dRdy;
-      dRdx = (m_R(i + 1, j) - m_R(i, j)) / m_dx;
-      dRdy = (m_R(i + 1, j + 1) + m_R(i, j + 1) - m_R(i + 1, j - 1) - m_R(i, j - 1)) / (4.0 * m_dy);
-      result(i, j, 0) = dRdx * dRdx + dRdy * dRdy;
-
-      dRdx = (m_R(i + 1, j + 1) + m_R(i + 1, j) - m_R(i - 1, j + 1) - m_R(i - 1, j)) / (4.0 * m_dx);
-      dRdy = (m_R(i, j + 1) - m_R(i, j)) / m_dy;
-      result(i, j, 1) = dRdx * dRdx + dRdy * dRdy;
-    }
-  }
-
-  const double betapow = (beta - 2.0) / 2.0;
-
-  list.add(W);
+  IceModelVec::AccessList list({&result, &W});
 
   KW_max = 0.0;
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  if (beta != 2.0) {
+    // Put the squared norm of the gradient of the simplified hydrolic potential (Pi) in
+    // "result"
+    //
+    // FIXME: we don't need to re-compute this during every hydrology time step: the
+    // simplified hydrolic potential does not depend on the water amount and can be
+    // computed *once* in update_impl(), before entering the time-stepping loop
+    {
+      // R  <-- P + rhow g b
+      P.add(m_rg, bed_elevation, m_R);  // yes, it updates ghosts
 
-    for (int o = 0; o < 2; ++o) {
-      double B = 1.0;
+      list.add(m_R);
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
 
-      if (beta != 2.0) {
+        double dRdx, dRdy;
+        dRdx = (m_R(i + 1, j) - m_R(i, j)) / m_dx;
+        dRdy = (m_R(i + 1, j + 1) + m_R(i, j + 1) - m_R(i + 1, j - 1) - m_R(i, j - 1)) / (4.0 * m_dy);
+        result(i, j, 0) = dRdx * dRdx + dRdy * dRdy;
+
+        dRdx = (m_R(i + 1, j + 1) + m_R(i + 1, j) - m_R(i - 1, j + 1) - m_R(i - 1, j)) / (4.0 * m_dx);
+        dRdy = (m_R(i, j + 1) - m_R(i, j)) / m_dy;
+        result(i, j, 1) = dRdx * dRdx + dRdy * dRdy;
+      }
+    }
+
+    // We regularize negative power |\grad psi|^{beta-2} by adding eps because large
+    // head gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m.
+    const double eps = beta < 2.0 ? 1.0 : 0.0;
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      for (int o = 0; o < 2; ++o) {
         const double Pi = result(i, j, 0);
 
-        // We regularize negative power |\grad psi|^{beta-2} by adding eps because large
-        // head gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m.
-        const double eps = beta < 2.0 ? 1.0 : 0.0;
+        // FIXME: same as Pi above: we don't need to re-compute this each time we make a
+        // short hydrology time step
+        double B = pow(Pi + eps * eps, betapow);
 
-        B = pow(Pi + eps * eps, betapow);
-      } else {
-        B = 1.0;
+        result(i, j, o) = k * pow(W(i, j, o), alpha - 1.0) * B;
+
+        KW_max = std::max(KW_max, result(i, j, o) * W(i, j, o));
       }
+    }
+  } else {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-      result(i, j, o) = k * pow(W(i, j, o), alpha - 1.0) * B;
+      for (int o = 0; o < 2; ++o) {
+        result(i, j, o) = k * pow(W(i, j, o), alpha - 1.0);
 
-      KW_max = std::max(KW_max, result(i, j, o) * W(i, j, o));
+        KW_max = std::max(KW_max, result(i, j, o) * W(i, j, o));
+      }
     }
   }
 
