@@ -23,7 +23,7 @@
 #include "CompleteOceanModel.hh"
 
 #include "pism/util/IceModelVec2CellType.hh"
-#include "pism/util/IceModelVec2T.hh"
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace ocean {
