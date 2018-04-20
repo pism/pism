@@ -1384,7 +1384,7 @@
 #. :config:`stress_balance.model` (*keyword*)
 
    :Value: ``sia``
-   :Choices: ``none, prescribed_sliding, sia, ssa, prescribed_sliding+sia, ssa+sia``
+   :Choices: ``none, prescribed_sliding, weertman_sliding, sia, ssa, prescribed_sliding+sia, weertman_sliding+sia, ssa+sia``
    :Option: :opt:`-stress_balance`
    :Description: Stress balance model
 
@@ -1549,6 +1549,16 @@
    :Choices: ``centered, upstream``
    :Option: :opt:`-vertical_velocity_approximation`
    :Description: Vertical velocity FD approximation. "Upstream" uses first-order finite difference to compute u_x and v_y. Uses basal velocity to make decisions.
+
+#. :config:`stress_balance.weertman_sliding.A` (*scalar*)
+
+   :Value: 1.800000e-16 (Pa-3 year-1 m-2)
+   :Description: Sliding parameter in the Weertman-style sliding parameterization :cite:`Tomkin2007`
+
+#. :config:`stress_balance.weertman_sliding.k` (*scalar*)
+
+   :Value: 0.200000 (1)
+   :Description: The ratio of the basal water pressure and the ice overburden pressure in the Weertman-style sliding parameterization.
 
 #. :config:`surface.cache.update_interval` (*integer*)
 
