@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __deformation_hh
-#define __deformation_hh
+#ifndef LINGLECLARKSERIAL_H
+#define LINGLECLARKSERIAL_H
 
 #include <vector>
 
@@ -145,4 +145,4 @@ private:
 } // end of namespace bed
 } // end of namespace pism
 
-#endif  /* __deformation_hh */
+#endif /* LINGLECLARKSERIAL_H */

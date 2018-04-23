@@ -22,7 +22,7 @@
 
 #include "matlablike.hh"
 #include "greens.hh"
-#include "deformation.hh"
+#include "LingleClarkSerial.hh"
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/ConfigInterface.hh"

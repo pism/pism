@@ -26,7 +26,7 @@
 #include "pism/util/Vars.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
-#include "deformation.hh"
+#include "LingleClarkSerial.hh"
 
 namespace pism {
 namespace bed {
