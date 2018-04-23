@@ -29,12 +29,11 @@ namespace pism {
 namespace bed {
 
 double compute_load(double bed, double ice_thickness, double sea_level,
-                    double ice_density, double ocean_density, bool add_ocean);
+                    double ice_density, double ocean_density);
 
 void compute_load(const IceModelVec2S &bed_elevation,
                   const IceModelVec2S &ice_thickness,
                   const IceModelVec2S &sea_level_elevation,
-                  bool add_ocean,
                   IceModelVec2S &result);
 
 //! PISM bed deformation model (base class).

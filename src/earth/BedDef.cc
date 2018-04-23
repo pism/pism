@@ -189,12 +189,15 @@ void BedDef::compute_uplift(const IceModelVec2S &bed, const IceModelVec2S &bed_l
 }
 
 double compute_load(double bed, double ice_thickness, double sea_level,
-                    double ice_density, double ocean_density, bool add_ocean) {
-  double
-    ocean_depth = std::max(sea_level - bed, 0.0),
-    ocean_load  = add_ocean ? (ocean_density / ice_density) * ocean_depth : 0.0;
+                    double ice_density, double ocean_density) {
 
-  return std::max(ice_thickness - ocean_load, 0.0) + ocean_load;
+  double
+    ice_load    = ice_thickness,
+    ocean_depth = std::max(sea_level - bed, 0.0),
+    ocean_load  = (ocean_density / ice_density) * ocean_depth;
+
+  // this excludes the load of ice shelves
+  return ice_load > ocean_load ? ice_load : 0.0;
 }
 
 /*! Compute the load on the bedrock in units of ice-equivalent thickness.
@@ -203,7 +206,6 @@ double compute_load(double bed, double ice_thickness, double sea_level,
 void compute_load(const IceModelVec2S &bed_elevation,
                   const IceModelVec2S &ice_thickness,
                   const IceModelVec2S &sea_level_elevation,
-                  bool add_ocean,
                   IceModelVec2S &result) {
 
   Config::ConstPtr config = result.grid()->ctx()->config();
@@ -220,7 +222,7 @@ void compute_load(const IceModelVec2S &bed_elevation,
     result(i, j) = compute_load(bed_elevation(i, j),
                                 ice_thickness(i, j),
                                 sea_level_elevation(i, j),
-                                ice_density, ocean_density, add_ocean);
+                                ice_density, ocean_density);
   }
 }
 

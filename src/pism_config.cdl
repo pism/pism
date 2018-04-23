@@ -302,10 +302,6 @@ netcdf pism_config {
     pism_config:bed_deformation.bed_uplift_file_doc = "The name of the file to read the uplift (dbdt) from. Leave empty to read it from an input file or a regridding file.";
     pism_config:bed_deformation.bed_uplift_file_type = "string";
 
-    pism_config:bed_deformation.add_ocean_load = "false";
-    pism_config:bed_deformation.add_ocean_load_doc = "If true, include the influence of the ocean load in bed deformation models.";
-    pism_config:bed_deformation.add_ocean_load_type = "boolean";
-
     pism_config:bootstrapping.defaults.bed = 1.0;
     pism_config:bootstrapping.defaults.bed_doc = "bed elevation value to use if topg (bedrock_altitude) variable is absent in bootstrapping file";
     pism_config:bootstrapping.defaults.bed_type = "scalar";

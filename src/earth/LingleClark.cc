@@ -116,7 +116,6 @@ void LingleClark::bootstrap_impl(const IceModelVec2S &bed_elevation,
   m_topg_last.copy_from(bed_elevation);
 
   compute_load(bed_elevation, ice_thickness, sea_level_elevation,
-               m_config->get_boolean("bed_deformation.add_ocean_load"),
                m_load_thickness);
 
   petsc::Vec::Ptr thickness0 = m_load_thickness.allocate_proc0_copy();
@@ -185,7 +184,6 @@ void LingleClark::init_impl(const InputOptions &opts, const IceModelVec2S &ice_t
          m_viscous_bed_displacement, REGRID_WITHOUT_REGRID_VARS);
 
   compute_load(m_topg, ice_thickness, sea_level_elevation,
-               m_config->get_boolean("bed_deformation.add_ocean_load"),
                m_load_thickness);
 
   // Now that m_viscous_bed_displacement is finally initialized, put it on rank 0 and initialize
@@ -244,7 +242,6 @@ void LingleClark::step(const IceModelVec2S &ice_thickness,
                        double dt) {
 
   compute_load(m_topg, ice_thickness, sea_level_elevation,
-               m_config->get_boolean("bed_deformation.add_ocean_load"),
                m_load_thickness);
 
   m_load_thickness.put_on_proc0(*m_work0);
