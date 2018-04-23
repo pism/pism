@@ -86,7 +86,7 @@ LingleClark::LingleClark(IceGrid::ConstPtr g)
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {
-      m_serial_model.reset(new BedDeformLC(*m_config, use_elastic_model,
+      m_serial_model.reset(new LingleClarkSerial(*m_config, use_elastic_model,
                                            Mx, My,
                                            m_grid->dx(), m_grid->dy(),
                                            Nx, Ny));

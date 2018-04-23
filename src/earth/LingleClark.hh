@@ -27,9 +27,9 @@
 namespace pism {
 namespace bed {
 
-class BedDeformLC;
+class LingleClarkSerial;
 
-//! A wrapper class around BedDeformLC.
+//! A wrapper class around LingleClarkSerial.
 class LingleClark : public BedDef {
 public:
   LingleClark(IceGrid::ConstPtr g);
@@ -76,7 +76,7 @@ protected:
   IceModelVec2S m_load_thickness;
 
   //! Serial viscoelastic bed deformation model.
-  std::unique_ptr<BedDeformLC> m_serial_model;
+  std::unique_ptr<LingleClarkSerial> m_serial_model;
 
   //! extended grid for the viscous plate displacement
   IceGrid::Ptr m_extended_grid;

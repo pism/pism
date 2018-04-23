@@ -53,14 +53,14 @@ namespace bed {
   starting state is the equilibrium: the viscous plate may be "pre-bent" by using a provided
   displacement field or by computing its displacement using an uplift field.
 */
-class BedDeformLC {
+class LingleClarkSerial {
 public:
-  BedDeformLC(const Config &config,
-              bool include_elastic,
-              int Mx, int My,
-              double dx, double dy,
-              int Nx, int Ny);
-  ~BedDeformLC();
+  LingleClarkSerial(const Config &config,
+                    bool include_elastic,
+                    int Mx, int My,
+                    double dx, double dy,
+                    int Nx, int Ny);
+  ~LingleClarkSerial();
 
   void init(Vec thickness, Vec viscous_displacement);
 

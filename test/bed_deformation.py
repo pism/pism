@@ -3,7 +3,7 @@
 """Solves equation (16) of BuelerLingleBrown to obtain the steady
 state viscous plate deflection corresponding to a given disc load.
 
-Used as a verification (and regression) test for BedDeformLC::bootstrap().
+Used as a verification (and regression) test for LingleClarkSerial::bootstrap().
 """
 
 import PISM
