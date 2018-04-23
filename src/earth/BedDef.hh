@@ -28,19 +28,30 @@ namespace pism {
 //! and uplift) and (soon) bed erosion.
 namespace bed {
 
+double compute_load(double bed, double ice_thickness, double sea_level,
+                    double ice_density, double ocean_density);
+
+void compute_load(const IceModelVec2S &bed_elevation,
+                  const IceModelVec2S &ice_thickness,
+                  const IceModelVec2S &sea_level_elevation,
+                  IceModelVec2S &result);
+
 //! PISM bed deformation model (base class).
 class BedDef : public Component {
 public:
   BedDef(IceGrid::ConstPtr g);
   virtual ~BedDef();
 
-  void init(const InputOptions &opts);
+  void init(const InputOptions &opts, const IceModelVec2S &ice_thickness,
+            const IceModelVec2S &sea_level_elevation);
   void bootstrap(const IceModelVec2S &bed_elevation,
                  const IceModelVec2S &bed_uplift,
-                 const IceModelVec2S &ice_thickness);
+                 const IceModelVec2S &ice_thickness,
+                 const IceModelVec2S &sea_level_elevation);
 
   void update(const IceModelVec2S &ice_thickness,
-              double my_t, double my_dt);
+              const IceModelVec2S &sea_level_elevation,
+              double t, double dt);
 
   const IceModelVec2S& bed_elevation() const;
   const IceModelVec2S& uplift() const;
@@ -52,11 +63,14 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
 
   virtual void update_impl(const IceModelVec2S &ice_thickness,
-                           double my_t, double my_dt) = 0;
-  virtual void init_impl(const InputOptions &opts);
+                           const IceModelVec2S &sea_level_elevation,
+                           double t, double dt) = 0;
+  virtual void init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
+                         const IceModelVec2S &sea_level_elevation);
   virtual void bootstrap_impl(const IceModelVec2S &bed_elevation,
                               const IceModelVec2S &bed_uplift,
-                              const IceModelVec2S &ice_thickness);
+                              const IceModelVec2S &ice_thickness,
+                              const IceModelVec2S &sea_level_elevation);
   virtual void apply_topg_offset(const std::string &filename);
 
   void compute_uplift(const IceModelVec2S &bed, const IceModelVec2S &bed_last,
@@ -75,27 +89,34 @@ protected:
   IceModelVec2S m_uplift;
 };
 
+/*!
+ * The do-nothing bed deformation model.
+ */
 class Null : public BedDef {
 public:
   Null(IceGrid::ConstPtr g);
 protected:
   void update_impl(const IceModelVec2S &ice_thickness,
-                   double my_t, double my_dt);
+                   const IceModelVec2S &sea_level_elevation,
+                   double t, double dt);
   MaxTimestep max_timestep_impl(double t) const;
-  void init_impl(const InputOptions &opts);
+  void init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
+                 const IceModelVec2S &sea_level_elevation);
 };
 
-//! Pointwide isostasy bed deformation model.
+//! Point-wise isostasy bed deformation model.
 class PointwiseIsostasy : public BedDef {
 public:
   PointwiseIsostasy(IceGrid::ConstPtr g);
   virtual ~PointwiseIsostasy();
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void init_impl(const InputOptions &opts);
+  virtual void init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
+                         const IceModelVec2S &sea_level_elevation);
   void update_impl(const IceModelVec2S &ice_thickness,
-                   double my_t, double my_dt);
-  IceModelVec2S m_thk_last;       //!< last ice thickness
+                   const IceModelVec2S &sea_level_elevation,
+                   double t, double dt);
+  IceModelVec2S m_load_last;       //!< last ice load (ice-equivalent thickness)
 };
 
 } // end of namespace bed

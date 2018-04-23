@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015, 2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015, 2017, 2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __deformation_hh
-#define __deformation_hh
+#ifndef LINGLECLARKSERIAL_H
+#define LINGLECLARKSERIAL_H
 
 #include <vector>
 
@@ -47,20 +47,20 @@ namespace bed {
 
   The class assumes that the supplied Petsc Vecs are *sequential*.  It is expected to be
   run only on processor zero (or possibly by each processor once each processor
-  owns the entire 2D gridded ice thicknesses and bed elevations.)
+  owns the entire 2D gridded load thicknesses and bed elevations.)
 
   This model always assumes that we start with no load. Note that this does not mean that we
   starting state is the equilibrium: the viscous plate may be "pre-bent" by using a provided
   displacement field or by computing its displacement using an uplift field.
 */
-class BedDeformLC {
+class LingleClarkSerial {
 public:
-  BedDeformLC(const Config &config,
-              bool include_elastic,
-              int Mx, int My,
-              double dx, double dy,
-              int Nx, int Ny);
-  ~BedDeformLC();
+  LingleClarkSerial(const Config &config,
+                    bool include_elastic,
+                    int Mx, int My,
+                    double dx, double dy,
+                    int Nx, int Ny);
+  ~LingleClarkSerial();
 
   void init(Vec thickness, Vec viscous_displacement);
 
@@ -74,7 +74,7 @@ public:
 private:
   void compute_elastic_response(Vec H, Vec dE);
 
-  void uplift_problem(Vec ice_thickness, Vec bed_uplift, Vec output);
+  void uplift_problem(Vec load_thickness, Vec bed_uplift, Vec output);
 
   void precompute_coefficients();
 
@@ -145,4 +145,4 @@ private:
 } // end of namespace bed
 } // end of namespace pism
 
-#endif  /* __deformation_hh */
+#endif /* LINGLECLARKSERIAL_H */

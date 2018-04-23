@@ -3,7 +3,7 @@
 """Solves equation (16) of BuelerLingleBrown to obtain the steady
 state viscous plate deflection corresponding to a given disc load.
 
-Used as a verification (and regression) test for BedDeformLC::bootstrap().
+Used as a verification (and regression) test for LingleClarkSerial::bootstrap().
 """
 
 import PISM
@@ -65,12 +65,15 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
 
     bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
 
+    sea_level = PISM.IceModelVec2S(grid, "sea_level", PISM.WITHOUT_GHOSTS)
+
     # start with a flat bed, no ice, and no uplift
     bed.set(0.0)
     bed_uplift.set(0.0)
     ice_thickness.set(0.0)
+    sea_level.set(-1000.0)
 
-    bed_model.bootstrap(bed, bed_uplift, ice_thickness)
+    bed_model.bootstrap(bed, bed_uplift, ice_thickness, sea_level)
 
     # add the disc load
     with PISM.vec.Access(nocomm=ice_thickness):
@@ -85,7 +88,7 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
         if t + dt > t_end:
             dt = t_end - t
 
-        bed_model.update(ice_thickness, t, dt)
+        bed_model.update(ice_thickness, sea_level, t, dt)
 
         t += dt
         log.message(2, ".")
@@ -117,6 +120,9 @@ def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
     bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
     bed_uplift.set(0.0)
 
+    sea_level = PISM.IceModelVec2S(grid, "sea_level", PISM.WITHOUT_GHOSTS)
+    sea_level.set(-1000.0)
+
     with PISM.vec.Access(nocomm=ice_thickness):
         for (i, j) in grid.points():
             r = PISM.radius(grid, i, j)
@@ -125,7 +131,7 @@ def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
             else:
                 ice_thickness[i, j] = 0.0
 
-    bed_model.bootstrap(bed, bed_uplift, ice_thickness)
+    bed_model.bootstrap(bed, bed_uplift, ice_thickness, sea_level)
 
     p0 = PISM.vec.ToProcZero(grid)
 

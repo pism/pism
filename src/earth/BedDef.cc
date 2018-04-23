@@ -81,32 +81,40 @@ DiagnosticList BedDef::diagnostics_impl() const {
   return result;
 }
 
-void BedDef::init(const InputOptions &opts) {
-  this->init_impl(opts);
+void BedDef::init(const InputOptions &opts, const IceModelVec2S &ice_thickness,
+                  const IceModelVec2S &sea_level_elevation) {
+  this->init_impl(opts, ice_thickness, sea_level_elevation);
 }
 
 //! Initialize using provided bed elevation and uplift.
-void BedDef::bootstrap(const IceModelVec2S &bed,
+void BedDef::bootstrap(const IceModelVec2S &bed_elevation,
                        const IceModelVec2S &bed_uplift,
-                       const IceModelVec2S &ice_thickness) {
-  this->bootstrap_impl(bed, bed_uplift, ice_thickness);
+                       const IceModelVec2S &ice_thickness,
+                       const IceModelVec2S &sea_level_elevation) {
+  this->bootstrap_impl(bed_elevation, bed_uplift, ice_thickness, sea_level_elevation);
 }
 
-void BedDef::bootstrap_impl(const IceModelVec2S &bed,
+void BedDef::bootstrap_impl(const IceModelVec2S &bed_elevation,
                             const IceModelVec2S &bed_uplift,
-                            const IceModelVec2S &ice_thickness) {
-  m_topg.copy_from(bed);
+                            const IceModelVec2S &ice_thickness,
+                            const IceModelVec2S &sea_level_elevation) {
+  m_topg.copy_from(bed_elevation);
   m_uplift.copy_from(bed_uplift);
+
   // suppress a compiler warning:
   (void) ice_thickness;
+  (void) sea_level_elevation;
 }
 
-void BedDef::update(const IceModelVec2S &ice_thickness, double t, double dt) {
-  this->update_impl(ice_thickness, t, dt);
+void BedDef::update(const IceModelVec2S &ice_thickness,
+                    const IceModelVec2S &sea_level_elevation,
+                    double t, double dt) {
+  this->update_impl(ice_thickness, sea_level_elevation, t, dt);
 }
 
 //! Initialize from the context (input file and the "variables" database).
-void BedDef::init_impl(const InputOptions &opts) {
+void BedDef::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
+                       const IceModelVec2S &sea_level_elevation) {
   m_t_beddef_last = m_grid->ctx()->time()->start();
 
   switch (opts.type) {
@@ -178,6 +186,44 @@ void BedDef::compute_uplift(const IceModelVec2S &bed, const IceModelVec2S &bed_l
   bed.add(-1, bed_last, result);
   //! uplift = (topg - topg_last) / dt
   result.scale(1.0 / dt);
+}
+
+double compute_load(double bed, double ice_thickness, double sea_level,
+                    double ice_density, double ocean_density) {
+
+  double
+    ice_load    = ice_thickness,
+    ocean_depth = std::max(sea_level - bed, 0.0),
+    ocean_load  = (ocean_density / ice_density) * ocean_depth;
+
+  // this excludes the load of ice shelves
+  return ice_load > ocean_load ? ice_load : 0.0;
+}
+
+/*! Compute the load on the bedrock in units of ice-equivalent thickness.
+ *
+ */
+void compute_load(const IceModelVec2S &bed_elevation,
+                  const IceModelVec2S &ice_thickness,
+                  const IceModelVec2S &sea_level_elevation,
+                  IceModelVec2S &result) {
+
+  Config::ConstPtr config = result.grid()->ctx()->config();
+
+  const double
+    ice_density   = config->get_double("constants.ice.density"),
+    ocean_density = config->get_double("constants.sea_water.density");
+
+  IceModelVec::AccessList list{&bed_elevation, &ice_thickness, &sea_level_elevation, &result};
+
+  for (Points p(*result.grid()); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    result(i, j) = compute_load(bed_elevation(i, j),
+                                ice_thickness(i, j),
+                                sea_level_elevation(i, j),
+                                ice_density, ocean_density);
+  }
 }
 
 } // end of namespace bed
