@@ -14,7 +14,7 @@
 try:
     from netCDF4 import Dataset as CDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 import numpy as np
@@ -80,9 +80,9 @@ def open_ncfile(infile):
     try:
         nc = CDF(infile, 'r')
         try:
-            'time' in nc.variables.keys()
+            'time' in list(nc.variables.keys())
         except:
-            print('Variable t not found in file %s' % infile)
+            print(('Variable t not found in file %s' % infile))
     except IOError:
         pass
 
@@ -104,7 +104,7 @@ def getRateOfChange(t, X, p, varname):
         dXp = np.diff(X)
         dXpdt = dXp / dt
     elif Xdim == 3:
-        if 'mask' in nc.variables.keys():
+        if 'mask' in list(nc.variables.keys()):
             mask = np.array(nc.variables['mask'][::stride, :, :])  # (time,y,x)
             k = np.nonzero((mask == 1) ^ (mask == 2) ^ (mask == 3))
             mask2 = np.ones_like(mask)
@@ -122,8 +122,8 @@ def getRateOfChange(t, X, p, varname):
         dXp = (np.nansum(dX ** p, axis=1)) ** (1. / p)
         dXpdt = dXp / dt
     else:
-        print('error: dim n = %i of variable %s not supported, must be 1 or 3'
-              % (Xdim, varname))
+        print(('error: dim n = %i of variable %s not supported, must be 1 or 3'
+              % (Xdim, varname)))
 
     return dXpdt
 
@@ -188,10 +188,10 @@ if __name__ == "__main__":
     out_units = 'years ' + date_prefix + unit_array[1]
 
     t = unit_converter(nc.variables['time'][:], t_units, out_units)
-    if varname in nc.variables.keys():
+    if varname in list(nc.variables.keys()):
         var = nc.variables[varname]
     else:
-        print("error: variable '%s' not found in %s" % (varname, infile))
+        print(("error: variable '%s' not found in %s" % (varname, infile)))
         exit(0)
 
     # Calculate rate of change from time t, variable var,
