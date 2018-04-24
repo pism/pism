@@ -20,31 +20,32 @@
 #ifndef VONMISESCALVING_H
 #define VONMISESCALVING_H
 
-#include "pism/util/iceModelVec.hh"
 #include "StressCalving.hh"
 
 namespace pism {
 
-class IceModelVec2CellType;
+class IceModelVec2S;
+
+namespace rheology {
+class FlowLaw;
+} // end of namespace rheology
 
 namespace calving {
 
 class vonMisesCalving : public StressCalving {
 public:
-  vonMisesCalving(IceGrid::ConstPtr g, stressbalance::StressBalance *stress_balance);
+  vonMisesCalving(IceGrid::ConstPtr grid, std::shared_ptr<const rheology::FlowLaw> flow_law);
   virtual ~vonMisesCalving();
 
   void init();
 
-  // empty methods that we're required to implement:
 protected:
   virtual DiagnosticList diagnostics_impl() const;
 
-  void compute_calving_rate(const IceModelVec2CellType &mask,
+  void compute_calving_rate(const CalvingInputs &inputs,
                             IceModelVec2S &result) const;
 
-protected:
-  double m_sigma_max;
+  std::shared_ptr<const rheology::FlowLaw> m_flow_law;
 };
 
 } // end of namespace calving

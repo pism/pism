@@ -41,6 +41,7 @@
 #include "pism/util/Diagnostic.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_options.hh"
+#include "pism/coupler/SeaLevel.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/earth/BedDef.hh"
@@ -375,14 +376,16 @@ void IceModel::allocate_storage() {
 void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
 
   m_geometry.bed_elevation.copy_from(m_beddef->bed_elevation());
-  m_geometry.sea_level_elevation.copy_from(m_ocean->sea_level_elevation());
+  m_geometry.sea_level_elevation.copy_from(m_sea_level->elevation());
 
   if (m_iceberg_remover and flag == REMOVE_ICEBERGS) {
     // The iceberg remover has to use the same mask as the stress balance code, hence the
     // stress-balance-related threshold here.
     m_geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
 
-    m_iceberg_remover->update(m_geometry.cell_type, m_geometry.ice_thickness);
+    m_iceberg_remover->update(m_ssa_dirichlet_bc_mask,
+                              m_geometry.cell_type,
+                              m_geometry.ice_thickness);
     // The call above modifies ice thickness and updates the mask accordingly, but we re-compute the
     // mask (we need to use a different threshold).
   }
@@ -636,6 +639,10 @@ void IceModel::step(bool do_mass_continuity,
     m_stdout_flags += "$";
   }
 
+  profiling.begin("sea_level");
+  m_sea_level->update(m_geometry, current_time, m_dt);
+  profiling.end("sea_level");
+
   profiling.begin("ocean");
   m_ocean->update(m_geometry, current_time, m_dt);
   profiling.end("ocean");
@@ -721,7 +728,9 @@ void IceModel::step(bool do_mass_continuity,
     int topg_state_counter = m_beddef->bed_elevation().state_counter();
 
     profiling.begin("bed_deformation");
-    m_beddef->update(m_geometry.ice_thickness, current_time, m_dt);
+    m_beddef->update(m_geometry.ice_thickness,
+                     m_geometry.sea_level_elevation,
+                     current_time, m_dt);
     profiling.end("bed_deformation");
 
     if (m_beddef->bed_elevation().state_counter() != topg_state_counter) {

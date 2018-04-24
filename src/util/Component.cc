@@ -166,7 +166,7 @@ void Component::regrid(const std::string &module_name, IceModelVec &variable,
 
   SpatialVariableMetadata &m = variable.metadata();
 
-  if ((regrid_vars.is_set() and set_contains(regrid_vars, m.get_string("short_name"))) or
+  if ((regrid_vars.is_set() and member(m.get_string("short_name"), regrid_vars)) or
       (not regrid_vars.is_set() and flag == REGRID_WITHOUT_REGRID_VARS)) {
 
     m_log->message(2,

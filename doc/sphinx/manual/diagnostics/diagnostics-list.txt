@@ -72,7 +72,7 @@ Spatially-variable fields
 #. ``bwat``
 
    :Units: m
-   :Description: thickness of transportable water in subglacial layer
+   :Description: thickness of transportable subglacial water layer
 
 #. ``bwatvel``
 
@@ -451,30 +451,6 @@ Spatially-variable fields
    :Units: mW m-3
    :Description: rate of strain heating in ice (dissipation heating)
 
-#. ``subglacial_water_flux_at_domain_boundary``
-
-   :Units: Gt year-1
-   :Description: subglacial water flux at domain boundary (in regional model configurations)
-   :Comment: positive flux corresponds to water gain
-
-#. ``subglacial_water_flux_at_grounded_margins``
-
-   :Units: Gt year-1
-   :Description: subglacial water flux at grounded ice margins
-   :Comment: positive flux corresponds to water gain
-
-#. ``subglacial_water_flux_at_grounding_line``
-
-   :Units: Gt year-1
-   :Description: subglacial water flux at grounding lines
-   :Comment: positive flux corresponds to water gain
-
-#. ``subglacial_water_flux_due_to_conservation_error``
-
-   :Units: Gt year-1
-   :Description: subglacial water flux due to conservation error (mass added to preserve non-negativity)
-   :Comment: positive flux corresponds to water gain
-
 #. ``subglacial_water_input_rate``
 
    :Units: m year-1
@@ -688,6 +664,48 @@ Spatially-variable fields
    :Units: Gt year-1
    :Description: average surface mass flux over reporting interval
    :Comment: positive flux corresponds to ice gain
+
+#. ``tendency_of_subglacial_water_mass``
+
+   :Units: Gt year-1
+   :Description: rate of change of the total mass of subglacial water
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_at_domain_boundary``
+
+   :Units: Gt year-1
+   :Description: subglacial water flux at domain boundary (in regional model configurations)
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_at_grounded_margins``
+
+   :Units: Gt year-1
+   :Description: subglacial water flux at grounded ice margins
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_at_grounding_line``
+
+   :Units: Gt year-1
+   :Description: subglacial water flux at grounding lines
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_due_to_conservation_error``
+
+   :Units: Gt year-1
+   :Description: subglacial water flux due to conservation error (mass added to preserve non-negativity)
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_due_to_flow``
+
+   :Units: Gt year-1
+   :Description: rate of change subglacial water mass due to lateral flow
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_due_to_input``
+
+   :Units: Gt year-1
+   :Description: subglacial water flux due to input
+   :Comment: positive flux corresponds to water gain
 
 #. ``thk``
 

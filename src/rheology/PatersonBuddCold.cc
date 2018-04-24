@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -52,13 +52,13 @@ double PatersonBuddCold::flow_from_temp(double stress, double temp,
 
 
 // Rather than make this part of the base class, we just check at some reference values.
-bool FlowLawIsPatersonBuddCold(const FlowLaw *flow_law, const Config &config,
+bool FlowLawIsPatersonBuddCold(const FlowLaw &flow_law, const Config &config,
                                EnthalpyConverter::Ptr EC) {
   static const struct {double s, E, p, gs;} v[] = {
     {1e3, 223, 1e6, 1e-3}, {450000, 475000, 500000, 525000}, {5e4, 268, 5e6, 3e-3}, {1e5, 273, 8e6, 5e-3}};
   PatersonBuddCold cpb("stress_balance.sia.", config, EC); // This is unmodified cold Paterson-Budd
   for (int i=0; i<4; i++) {
-    const double left  = flow_law->flow(v[i].s, v[i].E, v[i].p, v[i].gs),
+    const double left  = flow_law.flow(v[i].s, v[i].E, v[i].p, v[i].gs),
       right =  cpb.flow(v[i].s, v[i].E, v[i].p, v[i].gs);
     if (fabs((left - right)/left)>1.0e-15) {
       return false;

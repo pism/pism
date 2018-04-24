@@ -2,6 +2,7 @@ add_library (stressbalance OBJECT
   StressBalance.cc
   StressBalance_diagnostics.cc
   ShallowStressBalance.cc
+  WeertmanSliding.cc
   SSB_Modifier.cc
   ssa/SSA.cc
   ssa/SSAFD.cc

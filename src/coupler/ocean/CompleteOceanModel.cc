@@ -26,7 +26,6 @@ namespace ocean {
 CompleteOceanModel::CompleteOceanModel(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> input)
   : OceanModel(g, input) {
 
-  m_sea_level_elevation = allocate_sea_level_elevation(g);
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
   m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
 }
@@ -39,10 +38,6 @@ CompleteOceanModel::CompleteOceanModel(IceGrid::ConstPtr g)
 
 CompleteOceanModel::~CompleteOceanModel() {
   // empty
-}
-
-const IceModelVec2S& CompleteOceanModel::sea_level_elevation_impl() const {
-  return *m_sea_level_elevation;
 }
 
 const IceModelVec2S& CompleteOceanModel::shelf_base_temperature_impl() const {

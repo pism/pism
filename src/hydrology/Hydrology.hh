@@ -133,6 +133,14 @@ public:
   const IceModelVec2S& overburden_pressure() const;
   const IceModelVec2S& total_input_rate() const;
 
+  const IceModelVec2S& mass_change() const;
+  const IceModelVec2S& mass_change_at_grounded_margin() const;
+  const IceModelVec2S& mass_change_at_grounding_line() const;
+  const IceModelVec2S& mass_change_at_domain_boundary() const;
+  const IceModelVec2S& mass_change_due_to_conservation_error() const;
+  const IceModelVec2S& mass_change_due_to_input() const;
+  const IceModelVec2S& mass_change_due_to_lateral_flow() const;
+
 protected:
   virtual void restart_impl(const PIO &input_file, int record);
 
@@ -169,7 +177,31 @@ protected:
   // total input rate, combining basal melt rate and the input from the surface
   IceModelVec2S m_input_rate;
 
-  bool m_hold_bmelt;
+  // change due to flow for the current hydrology time step
+  IceModelVec2S m_flow_change_incremental;
+
+  // changes in water thickness
+  //
+  // these quantities are re-set to zero at the beginning of the PISM time step
+  IceModelVec2S m_conservation_error_change;
+  IceModelVec2S m_grounded_margin_change;
+  IceModelVec2S m_grounding_line_change;
+  IceModelVec2S m_input_change;
+  IceModelVec2S m_no_model_mask_change;
+  IceModelVec2S m_total_change;
+  IceModelVec2S m_flow_change;
+
+  // when we update the water amounts, careful mass accounting at the boundary
+  // is needed
+  void enforce_bounds(const IceModelVec2S &cell_area,
+                      const IceModelVec2CellType &cell_type,
+                      const IceModelVec2Int *no_model_mask,
+                      double max_thickness,
+                      IceModelVec2S &water_thickness,
+                      IceModelVec2S &grounded_margin_change,
+                      IceModelVec2S &grounding_line_change,
+                      IceModelVec2S &conservation_error_change,
+                      IceModelVec2S &no_model_mask_change);
 private:
   virtual void initialization_message() const = 0;
 };

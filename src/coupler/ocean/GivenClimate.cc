@@ -29,7 +29,6 @@ namespace ocean {
 Given::Given(IceGrid::ConstPtr g)
   : OceanModel(g, nullptr) {
 
-  m_sea_level_elevation    = allocate_sea_level_elevation(g);
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
   m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);
 
@@ -114,10 +113,6 @@ const IceModelVec2S& Given::shelf_base_temperature_impl() const {
 
 const IceModelVec2S& Given::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
-}
-
-const IceModelVec2S& Given::sea_level_elevation_impl() const {
-  return *m_sea_level_elevation;
 }
 
 } // end of namespace ocean

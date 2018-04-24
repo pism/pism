@@ -181,7 +181,7 @@
 
    :Value: 200000 (Pascal)
    :Option: :opt:`-tauc`
-   :Description: fill value for yield stress for basal till (plastic or pseudo-plastic model); note 2 x 10^5 Pa = 2.0 bar is quite strong and little sliding should occur without an explicit tauc choice altering this default
+   :Description: fill value for yield stress for basal till (plastic or pseudo-plastic model); note `2 \times 10^5` Pa = 2 bar is quite strong and little sliding should occur
 
 #. :config:`basal_yield_stress.ice_free_bedrock` (*scalar*)
 
@@ -368,13 +368,13 @@
    :Value: ``smb``
    :Choices: ``smb, quartic_guess``
    :Option: :opt:`-boot_temperature_heuristic`
-   :Description: The heuristic to use to initialize ice temperature during bootstrapping: 'sbm' uses the new method using the surface mass balance, surface temperature, and the geothermal flux, 'quartic_guess' uses the old method using the surface temperature and the geothermal flux.
+   :Description: The heuristic to use to initialize ice temperature during bootstrapping: 'smb' uses the surface mass balance, surface temperature, and the geothermal flux, 'quartic_guess' uses the surface temperature and the geothermal flux.
 
 #. :config:`calving.eigen_calving.K` (*scalar*)
 
    :Value: 0 (meter second)
    :Option: :opt:`-eigen_calving_K`
-   :Description: Set proportionality constant to determine calving rate from strain rates.  Note references :cite:`Levermannetal2012`, :cite:`Martinetal2011` use K in range 10^9 to 3 x 10^11 m a, that is, 3 x 10^16 to 10^19 m s.
+   :Description: Set proportionality constant to determine calving rate from strain rates.  Note references :cite:`Levermannetal2012`, :cite:`Martinetal2011` use K in range `10^{9}` to `3 \times 10^{11}` m a, that is, `3 \times 10^{16}` to `10^{19}` m s.
 
 #. :config:`calving.float_kill.margin_only` (*boolean*)
 
@@ -856,12 +856,6 @@
    :Option: :opt:`-hydrology_cavitation_opening_coefficient`
    :Description: c_1 in notes; coefficient of cavitation opening term in evolution of layer thickness in hydrology::Distributed
 
-#. :config:`hydrology.const_bmelt` (*scalar*)
-
-   :Value: 1 (cm / year)
-   :Option: :opt:`-hydrology_const_bmelt`
-   :Description: only used if hydrology.use_const_bmelt = 'yes'
-
 #. :config:`hydrology.creep_closure_coefficient` (*scalar*)
 
    :Value: 0.040000 (pure number)
@@ -932,9 +926,9 @@
 
 #. :config:`hydrology.tillwat_decay_rate` (*scalar*)
 
-   :Value: 3.168876e-11 (meter / second)
+   :Value: 1 (mm / year)
    :Option: :opt:`-hydrology_tillwat_decay_rate`
-   :Description: default value is equivalent to 1 mm per year; rate at which tillwat is reduced to zero, in absence of other effects like input
+   :Description: rate at which tillwat is reduced to zero, in absence of other effects like input
 
 #. :config:`hydrology.tillwat_max` (*scalar*)
 
@@ -1129,6 +1123,21 @@
    :Value: 0
    :Option: :opt:`-ocean_given_reference_year`
    :Description: Reference year to use when ``ocean.given.period`` is active.
+
+#. :config:`ocean.delta_sl_2d.file` (*string*)
+
+   :Value: *no default*
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`ocean.delta_sl_2d.period` (*integer*)
+
+   :Value: 0
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`ocean.delta_sl_2d.reference_year` (*integer*)
+
+   :Value: 0
+   :Description: Reference year to use when ``ocean.delta_sl_2d.period`` is active.
 
 #. :config:`ocean.th.file` (*string*)
 
@@ -1416,7 +1425,7 @@
 #. :config:`stress_balance.model` (*keyword*)
 
    :Value: ``sia``
-   :Choices: ``none, prescribed_sliding, sia, ssa, prescribed_sliding+sia, ssa+sia``
+   :Choices: ``none, prescribed_sliding, weertman_sliding, sia, ssa, prescribed_sliding+sia, weertman_sliding+sia, ssa+sia``
    :Option: :opt:`-stress_balance`
    :Description: Stress balance model
 
@@ -1581,6 +1590,16 @@
    :Choices: ``centered, upstream``
    :Option: :opt:`-vertical_velocity_approximation`
    :Description: Vertical velocity FD approximation. "Upstream" uses first-order finite difference to compute u_x and v_y. Uses basal velocity to make decisions.
+
+#. :config:`stress_balance.weertman_sliding.A` (*scalar*)
+
+   :Value: 1.800000e-16 (Pa-3 year-1 m-2)
+   :Description: Sliding parameter in the Weertman-style sliding parameterization :cite:`Tomkin2007`
+
+#. :config:`stress_balance.weertman_sliding.k` (*scalar*)
+
+   :Value: 0.200000 (1)
+   :Description: The ratio of the basal water pressure and the ice overburden pressure in the Weertman-style sliding parameterization.
 
 #. :config:`surface.cache.update_interval` (*integer*)
 

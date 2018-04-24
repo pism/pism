@@ -1,6 +1,6 @@
 input=-i flood.nc -bootstrap -Mx 201 -My 101 -Mz 21 -Lz 1500
 ssa=-stress_balance ssa+sia -plastic_phi 15
-ocean=-ocean constant,delta_SL -ocean_delta_SL_file flood.nc
+ocean=-sea_level constant,delta_sl -ocean_delta_sl_file flood.nc
 misc=-energy none
 extra=-extra_vars thk,mask,velbar_mag -extra_times 10
 

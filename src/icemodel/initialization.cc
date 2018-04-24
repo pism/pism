@@ -49,6 +49,8 @@
 #include "pism/coupler/atmosphere/Factory.hh"
 #include "pism/coupler/ocean/Factory.hh"
 #include "pism/coupler/ocean/Initialization.hh"
+#include "pism/coupler/ocean/sea_level/Factory.hh"
+#include "pism/coupler/ocean/sea_level/Initialization.hh"
 #include "pism/coupler/surface/Factory.hh"
 #include "pism/coupler/surface/Initialization.hh"
 #include "pism/earth/LingleClark.hh"
@@ -171,16 +173,11 @@ void IceModel::model_state_setup() {
     regrid();
   }
 
-  // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
-  // which may need ice thickness to bootstrap.
-  // FIXME: ocean models may need bed elevation, which is not available yet.
-  {
-    m_ocean->init(m_geometry);
-  }
+  m_sea_level->init(m_geometry);
 
-  // Initialize a bed deformation model. This may use ice thickness initialized above.
+  // Initialize a bed deformation model.
   if (m_beddef) {
-    m_beddef->init(input);
+    m_beddef->init(input, m_geometry.ice_thickness, m_sea_level->elevation());
     m_grid->variables().add(m_beddef->bed_elevation());
     m_grid->variables().add(m_beddef->uplift());
   }
@@ -203,6 +200,12 @@ void IceModel::model_state_setup() {
   // guaranteed not to see "icebergs". Here we make sure that the first time step is OK
   // too.
   enforce_consistency_of_geometry(REMOVE_ICEBERGS);
+
+  // By now ice geometry is set and so we can initialize the ocean model, which may need
+  // geometric information (ice thickness, bed elevation, cell type) to bootstrap.
+  {
+    m_ocean->init(m_geometry);
+  }
 
   // Now surface elevation is initialized, so we can initialize surface models (some use
   // elevation-based parameterizations of surface temperature and/or mass balance).
@@ -665,10 +668,9 @@ void IceModel::allocate_submodels() {
 void IceModel::allocate_couplers() {
   // Initialize boundary models:
 
-  if (m_surface == NULL) {
+  if (not m_surface) {
 
-    m_log->message(2,
-             "# Allocating a surface process model or coupler...\n");
+    m_log->message(2, "# Allocating a surface process model or coupler...\n");
 
     surface::Factory ps(m_grid, atmosphere::Factory(m_grid).create());
 
@@ -677,13 +679,22 @@ void IceModel::allocate_couplers() {
     m_submodels["surface process model"] = m_surface.get();
   }
 
-  if (m_ocean == NULL) {
-    m_log->message(2,
-             "# Allocating an ocean model or coupler...\n");
+  if (not m_sea_level) {
+    m_log->message(2, "# Allocating sea level forcing...\n");
 
-    ocean::Factory po(m_grid);
+    using namespace ocean::sea_level;
 
-    m_ocean.reset(new ocean::InitializationHelper(m_grid, po.create()));
+    m_sea_level.reset(new InitializationHelper(m_grid, Factory(m_grid).create()));
+
+    m_submodels["sea level forcing"] = m_sea_level.get();
+  }
+
+  if (not m_ocean) {
+    m_log->message(2, "# Allocating an ocean model or coupler...\n");
+
+    using namespace ocean;
+
+    m_ocean.reset(new InitializationHelper(m_grid, Factory(m_grid).create()));
 
     m_submodels["ocean model"] = m_ocean.get();
   }
@@ -817,7 +828,7 @@ void IceModel::init_calving() {
 
   if (methods.find("ocean_kill") != methods.end()) {
 
-    if (m_ocean_kill_calving == NULL) {
+    if (not m_ocean_kill_calving) {
       m_ocean_kill_calving = new calving::OceanKill(m_grid);
     }
 
@@ -829,7 +840,7 @@ void IceModel::init_calving() {
 
   if (methods.find("thickness_calving") != methods.end()) {
 
-    if (m_thickness_threshold_calving == NULL) {
+    if (not m_thickness_threshold_calving) {
       m_thickness_threshold_calving = new calving::CalvingAtThickness(m_grid);
     }
 
@@ -842,8 +853,8 @@ void IceModel::init_calving() {
 
   if (methods.find("eigen_calving") != methods.end()) {
 
-    if (m_eigen_calving == NULL) {
-      m_eigen_calving = new calving::EigenCalving(m_grid, m_stress_balance.get());
+    if (not m_eigen_calving) {
+      m_eigen_calving = new calving::EigenCalving(m_grid);
     }
 
     m_eigen_calving->init();
@@ -854,8 +865,9 @@ void IceModel::init_calving() {
 
   if (methods.find("vonmises_calving") != methods.end()) {
 
-    if (m_vonmises_calving == NULL) {
-      m_vonmises_calving = new calving::vonMisesCalving(m_grid, m_stress_balance.get());
+    if (not m_vonmises_calving) {
+      m_vonmises_calving = new calving::vonMisesCalving(m_grid,
+                                                        m_stress_balance->shallow()->flow_law());
     }
 
     m_vonmises_calving->init();
@@ -866,8 +878,8 @@ void IceModel::init_calving() {
 
   if (methods.find("frontal_melt") != methods.end()) {
 
-    if (m_frontal_melt == NULL) {
-      m_frontal_melt = new FrontalMelt(m_grid, m_ocean.get());
+    if (not m_frontal_melt) {
+      m_frontal_melt = new FrontalMelt(m_grid);
     }
 
     m_frontal_melt->init();
@@ -877,7 +889,7 @@ void IceModel::init_calving() {
   }
 
   if (methods.find("float_kill") != methods.end()) {
-    if (m_float_kill_calving == NULL) {
+    if (not m_float_kill_calving) {
       m_float_kill_calving = new calving::FloatKill(m_grid);
     }
 

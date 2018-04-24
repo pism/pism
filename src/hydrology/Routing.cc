@@ -34,26 +34,6 @@ namespace hydrology {
 
 namespace diagnostics {
 
-//! \brief Reports the thickness of the transportable water in the subglacial layer.
-class BasalWaterThickness : public Diag<Routing>
-{
-public:
-  BasalWaterThickness(const Routing *m)
-    : Diag<Routing>(m) {
-    m_vars = {SpatialVariableMetadata(m_sys, "bwat")};
-    set_attrs("thickness of transportable water in subglacial layer", "", "m", "m", 0);
-  }
-
-protected:
-  virtual IceModelVec::Ptr compute_impl() const {
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwat", WITHOUT_GHOSTS));
-    result->metadata() = m_vars[0];
-    result->copy_from(model->subglacial_water_thickness());
-    return result;
-  }
-};
-
-
 //! \brief Reports the pressure of the transportable water in the subglacial layer.
 class BasalWaterPressure : public Diag<Routing>
 {
@@ -176,114 +156,6 @@ protected:
   }
 };
 
-/*! @brief Report water flux at the grounded margin. */
-class GroundedMarginFlux : public DiagAverageRate<Routing>
-{
-public:
-  GroundedMarginFlux(const Routing *m)
-    : DiagAverageRate<Routing>(m, "subglacial_water_flux_at_grounded_margins", TOTAL_CHANGE) {
-
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_at_grounded_margins")};
-    m_accumulator.metadata().set_string("units", "kg");
-
-    set_attrs("subglacial water flux at grounded ice margins", "",
-              "kg second-1", "Gt year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
-
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
-    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
-  }
-
-protected:
-  const IceModelVec2S& model_input() {
-    return model->water_thickness_change_at_grounded_margin();
-  }
-};
-
-/*! @brief Report subglacial water flux at grounding lines. */
-class GroundingLineFlux : public DiagAverageRate<Routing>
-{
-public:
-  GroundingLineFlux(const Routing *m)
-    : DiagAverageRate<Routing>(m, "subglacial_water_flux_at_grounding_line", TOTAL_CHANGE) {
-
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_at_grounding_line")};
-    m_accumulator.metadata().set_string("units", "kg");
-
-    set_attrs("subglacial water flux at grounding lines", "",
-              "kg second-1", "Gt year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
-
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
-    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
-  }
-
-protected:
-  const IceModelVec2S& model_input() {
-    return model->water_thickness_change_at_grounding_line();
-  }
-};
-
-/*! @brief Report subglacial water conservation error flux (mass added to preserve non-negativity). */
-class ConservationErrorFlux : public DiagAverageRate<Routing>
-{
-public:
-  ConservationErrorFlux(const Routing *m)
-    : DiagAverageRate<Routing>(m, "subglacial_water_flux_due_to_conservation_error", TOTAL_CHANGE) {
-
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_due_to_conservation_error")};
-    m_accumulator.metadata().set_string("units", "kg");
-
-    set_attrs("subglacial water flux due to conservation error (mass added to preserve non-negativity)", "",
-              "kg second-1", "Gt year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
-
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
-    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
-  }
-
-protected:
-  const IceModelVec2S& model_input() {
-    return model->water_thickness_change_due_to_conservation_error();
-  }
-};
-
-/*! @brief Report subglacial water flux at domain boundary (in regional model configurations). */
-class DomainBoundaryFlux : public DiagAverageRate<Routing>
-{
-public:
-  DomainBoundaryFlux(const Routing *m)
-    : DiagAverageRate<Routing>(m, "subglacial_water_flux_at_domain_boundary", TOTAL_CHANGE) {
-
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux_at_domain_boundary")};
-    m_accumulator.metadata().set_string("units", "kg");
-
-    set_attrs("subglacial water flux at domain boundary (in regional model configurations)", "",
-              "kg second-1", "Gt year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
-
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
-    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
-  }
-
-protected:
-  const IceModelVec2S& model_input() {
-    return model->water_thickness_change_at_domain_boundary();
-  }
-};
-
 //! @brief Diagnostically reports the staggered-grid components of the velocity of the
 //! water in the subglacial layer.
 class BasalWaterVelocity : public Diag<Routing>
@@ -368,27 +240,6 @@ Routing::Routing(IceGrid::ConstPtr g)
                        "m", "");
   m_Wtillnew.metadata().set_double("valid_min", 0.0);
 
-  // storage for water conservation reporting quantities
-  {
-    m_grounded_margin_change.create(m_grid, "grounded_margin_change", WITHOUT_GHOSTS);
-    m_grounded_margin_change.set_attrs("diagnostic",
-                                       "changes in subglacial water thickness at the grounded margin",
-                                       "kg", "");
-    m_grounding_line_change.create(m_grid, "grounding_line_change", WITHOUT_GHOSTS);
-    m_grounding_line_change.set_attrs("diagnostic",
-                                      "changes in subglacial water thickness at the grounding line",
-                                      "kg", "");
-    m_conservation_error_change.create(m_grid, "conservation_error_change", WITHOUT_GHOSTS);
-    m_conservation_error_change.set_attrs("diagnostic",
-                                          "changes in subglacial water thickness needed to preserve non-negativity",
-                                          "kg", "");
-    m_no_model_mask_change.create(m_grid, "no_model_mask_change", WITHOUT_GHOSTS);
-    m_no_model_mask_change.set_attrs("diagnostic",
-                                     "changes in subglacial water thickness at the edge of the modeling domain"
-                                     " (regional models)",
-                                     "kg", "");
-  }
-
   {
     double alpha = m_config->get_double("hydrology.thickness_power_in_flux");
     if (alpha < 1.0) {
@@ -449,101 +300,10 @@ void Routing::write_model_state_impl(const PIO &output) const {
   m_W.write(output);
 }
 
-//! Correct the new water thickness based on boundary requirements.
-/*!
-  At ice free locations and ocean locations we require that water thicknesses
-  (i.e. both the transportable water thickness \f$W\f$ and the till water
-  thickness \f$W_{till}\f$) be zero at the end of each time step.  Also we require
-  that any negative water thicknesses be set to zero (i.e. we do projection to
-  enforce lower bound).  This method does not enforce any upper bounds.
-
-  This method should be called once for each thickness field which needs to be
-  processed.  This method alters the field water_thickness in-place.
-
-  @param[in] cell_area cell areas
-  @param[in] cell_type cell type mask
-  @param[in] no_model_mask (optional) mask of zeros and ones, zero within the modeling
-                           domain, one outside
-  @param[in,out] water_thickness adjusted water thickness (till storage or the transport system)
-  @param[in,out] grounded_margin_change change in water thickness at the grounded margin
-  @param[in,out] grounding_line_change change in water thickness at the grounding line
-  @param[in,out] conservation_error_change change in water thickness due to mass conservation errors
-  @param[in,out] no_model_mask_change change in water thickness outside the modeling domain (regional models)
-*/
-void Routing::boundary_mass_changes(const IceModelVec2S &cell_area,
-                                    const IceModelVec2CellType &cell_type,
-                                    const IceModelVec2Int *no_model_mask,
-                                    IceModelVec2S &water_thickness,
-                                    IceModelVec2S &grounded_margin_change,
-                                    IceModelVec2S &grounding_line_change,
-                                    IceModelVec2S &conservation_error_change,
-                                    IceModelVec2S &no_model_mask_change) {
-  const double fresh_water_density = m_config->get_double("constants.fresh_water.density");
-
-  IceModelVec::AccessList list{&water_thickness, &cell_area, &cell_type,
-      &grounded_margin_change, &grounding_line_change, &conservation_error_change,
-      &no_model_mask_change};
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    const double kg_per_m = cell_area(i, j) * fresh_water_density; // kg m-1
-
-    if (water_thickness(i, j) < 0.0) {
-      conservation_error_change(i, j) += -water_thickness(i, j) * kg_per_m;
-      water_thickness(i, j) = 0.0;
-    }
-
-    if (cell_type.ice_free_land(i, j)) {
-      grounded_margin_change(i, j) += -water_thickness(i, j) * kg_per_m;
-      water_thickness(i, j) = 0.0;
-    }
-
-    if (cell_type.ocean(i, j)) {
-      grounding_line_change(i, j) += -water_thickness(i, j) * kg_per_m;
-      water_thickness(i, j) = 0.0;
-    }
-  }
-
-  if (no_model_mask) {
-    const IceModelVec2Int &M = *no_model_mask;
-
-    list.add(M);
-
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      if (M(i, j)) {
-        const double kg_per_m = cell_area(i, j) * fresh_water_density; // kg m-1
-
-        no_model_mask_change(i, j) += -water_thickness(i, j) * kg_per_m;
-
-        water_thickness(i, j) = 0.0;
-      }
-    }
-  }
-}
-
 //! Returns the (trivial) overburden pressure as the pressure of the transportable water,
 //! because this is the model.
 const IceModelVec2S& Routing::subglacial_water_pressure() const {
   return m_Pover;
-}
-
-const IceModelVec2S& Routing::water_thickness_change_at_grounded_margin() const {
-  return m_grounded_margin_change;
-}
-
-const IceModelVec2S& Routing::water_thickness_change_at_grounding_line() const {
-  return m_grounding_line_change;
-}
-
-const IceModelVec2S& Routing::water_thickness_change_due_to_conservation_error() const {
-  return m_conservation_error_change;
-}
-
-const IceModelVec2S& Routing::water_thickness_change_at_domain_boundary() const {
-  return m_no_model_mask_change;
 }
 
 //! Get the hydraulic potential from bedrock topography and current state variables.
@@ -640,58 +400,67 @@ void Routing::compute_conductivity(const IceModelVec2Stag &W,
   const double
     k     = m_config->get_double("hydrology.hydraulic_conductivity"),
     alpha = m_config->get_double("hydrology.thickness_power_in_flux"),
-    beta  = m_config->get_double("hydrology.gradient_power_in_flux");
+    beta  = m_config->get_double("hydrology.gradient_power_in_flux"),
+    betapow = (beta - 2.0) / 2.0;
 
-  IceModelVec::AccessList list(result);
-
-  // the following calculation is bypassed if beta == 2.0 exactly; it puts the squared
-  // norm of the gradient of the simplified hydrolic potential (Pi) in "result"
-  if (beta != 2.0) {
-    // R  <-- P + rhow g b
-    P.add(m_rg, bed_elevation, m_R);  // yes, it updates ghosts
-
-    list.add(m_R);
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      double dRdx, dRdy;
-      dRdx = (m_R(i + 1, j) - m_R(i, j)) / m_dx;
-      dRdy = (m_R(i + 1, j + 1) + m_R(i, j + 1) - m_R(i + 1, j - 1) - m_R(i, j - 1)) / (4.0 * m_dy);
-      result(i, j, 0) = dRdx * dRdx + dRdy * dRdy;
-
-      dRdx = (m_R(i + 1, j + 1) + m_R(i + 1, j) - m_R(i - 1, j + 1) - m_R(i - 1, j)) / (4.0 * m_dx);
-      dRdy = (m_R(i, j + 1) - m_R(i, j)) / m_dy;
-      result(i, j, 1) = dRdx * dRdx + dRdy * dRdy;
-    }
-  }
-
-  const double betapow = (beta - 2.0) / 2.0;
-
-  list.add(W);
+  IceModelVec::AccessList list({&result, &W});
 
   KW_max = 0.0;
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  if (beta != 2.0) {
+    // Put the squared norm of the gradient of the simplified hydrolic potential (Pi) in
+    // "result"
+    //
+    // FIXME: we don't need to re-compute this during every hydrology time step: the
+    // simplified hydrolic potential does not depend on the water amount and can be
+    // computed *once* in update_impl(), before entering the time-stepping loop
+    {
+      // R  <-- P + rhow g b
+      P.add(m_rg, bed_elevation, m_R);  // yes, it updates ghosts
 
-    for (int o = 0; o < 2; ++o) {
-      double B = 1.0;
+      list.add(m_R);
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
 
-      if (beta != 2.0) {
+        double dRdx, dRdy;
+        dRdx = (m_R(i + 1, j) - m_R(i, j)) / m_dx;
+        dRdy = (m_R(i + 1, j + 1) + m_R(i, j + 1) - m_R(i + 1, j - 1) - m_R(i, j - 1)) / (4.0 * m_dy);
+        result(i, j, 0) = dRdx * dRdx + dRdy * dRdy;
+
+        dRdx = (m_R(i + 1, j + 1) + m_R(i + 1, j) - m_R(i - 1, j + 1) - m_R(i - 1, j)) / (4.0 * m_dx);
+        dRdy = (m_R(i, j + 1) - m_R(i, j)) / m_dy;
+        result(i, j, 1) = dRdx * dRdx + dRdy * dRdy;
+      }
+    }
+
+    // We regularize negative power |\grad psi|^{beta-2} by adding eps because large
+    // head gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m.
+    const double eps = beta < 2.0 ? 1.0 : 0.0;
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      for (int o = 0; o < 2; ++o) {
         const double Pi = result(i, j, 0);
 
-        // We regularize negative power |\grad psi|^{beta-2} by adding eps because large
-        // head gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m.
-        const double eps = beta < 2.0 ? 1.0 : 0.0;
+        // FIXME: same as Pi above: we don't need to re-compute this each time we make a
+        // short hydrology time step
+        double B = pow(Pi + eps * eps, betapow);
 
-        B = pow(Pi + eps * eps, betapow);
-      } else {
-        B = 1.0;
+        result(i, j, o) = k * pow(W(i, j, o), alpha - 1.0) * B;
+
+        KW_max = std::max(KW_max, result(i, j, o) * W(i, j, o));
       }
+    }
+  } else {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-      result(i, j, o) = k * pow(W(i, j, o), alpha - 1.0) * B;
+      for (int o = 0; o < 2; ++o) {
+        result(i, j, o) = k * pow(W(i, j, o), alpha - 1.0);
 
-      KW_max = std::max(KW_max, result(i, j, o) * W(i, j, o));
+        KW_max = std::max(KW_max, result(i, j, o) * W(i, j, o));
+      }
     }
   }
 
@@ -727,8 +496,8 @@ void wall_melt(const Routing &model,
     L     = config->get_double("constants.fresh_water.latent_heat_of_fusion"),
     alpha = config->get_double("hydrology.thickness_power_in_flux"),
     beta  = config->get_double("hydrology.gradient_power_in_flux"),
-    rhow  = config->get_double("constants.standard_gravity"),
-    g     = config->get_double("constants.fresh_water.density"),
+    g     = config->get_double("constants.standard_gravity"),
+    rhow  = config->get_double("constants.fresh_water.density"),
     rg    = rhow * g,
     CC    = k / (L * rhow);
 
@@ -910,7 +679,7 @@ double Routing::max_timestep_W_cfl() const {
 
   1. computes `Wtill_new` instead of updating `Wtill` in place;
   2. uses time steps determined by the rest of the hydrology::Routing model;
-  3. does not check mask because the boundary_mass_changes() call addresses that.
+  3. does not check mask because the enforce_bounds() call addresses that.
 
   Otherwise this is the same physical model with the same configurable parameters.
 */
@@ -920,7 +689,7 @@ void Routing::update_Wtill(double dt,
                            IceModelVec2S &Wtill_new) {
   const double
     tillwat_max = m_config->get_double("hydrology.tillwat_max"),
-    C           = m_config->get_double("hydrology.tillwat_decay_rate");
+    C           = m_config->get_double("hydrology.tillwat_decay_rate", "m / second");
 
   IceModelVec::AccessList list{&Wtill, &Wtill_new, &input_rate};
 
@@ -932,22 +701,17 @@ void Routing::update_Wtill(double dt,
   }
 }
 
-//! The computation of Wnew, called by update().
-void Routing::update_W(double dt,
-                       const IceModelVec2S    &input_rate,
-                       const IceModelVec2S    &W,
-                       const IceModelVec2Stag &Wstag,
-                       const IceModelVec2S    &Wtill,
-                       const IceModelVec2S    &Wtill_new,
-                       const IceModelVec2Stag &K,
-                       const IceModelVec2Stag &Q,
-                       IceModelVec2S &W_new) {
+void Routing::W_change_due_to_flow(double dt,
+                                   const IceModelVec2S    &W,
+                                   const IceModelVec2Stag &Wstag,
+                                   const IceModelVec2Stag &K,
+                                   const IceModelVec2Stag &Q,
+                                   IceModelVec2S &result) {
   const double
     wux = 1.0 / (m_dx * m_dx),
     wuy = 1.0 / (m_dy * m_dy);
 
-  IceModelVec::AccessList list{&W, &Wtill, &Wtill_new, &Wstag, &K, &Q,
-      &input_rate, &W_new};
+  IceModelVec::AccessList list{&W, &Wstag, &K, &Q, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -968,9 +732,36 @@ void Routing::update_W(double dt,
     const double diffW = (wux * (De * (w.e - w.ij) - Dw * (w.ij - w.w)) +
                           wuy * (Dn * (w.n - w.ij) - Ds * (w.ij - w.s)));
 
-    double Wtill_change = Wtill_new(i, j) - Wtill(i, j);
-    W_new(i, j) = w.ij - Wtill_change + dt * (- divQ + diffW + input_rate(i, j));
+    result(i, j) = dt * (- divQ + diffW);
   }
+}
+
+
+//! The computation of Wnew, called by update().
+void Routing::update_W(double dt,
+                       const IceModelVec2S    &input_rate,
+                       const IceModelVec2S    &W,
+                       const IceModelVec2Stag &Wstag,
+                       const IceModelVec2S    &Wtill,
+                       const IceModelVec2S    &Wtill_new,
+                       const IceModelVec2Stag &K,
+                       const IceModelVec2Stag &Q,
+                       IceModelVec2S &W_new) {
+
+  W_change_due_to_flow(dt, W, Wstag, K, Q, m_flow_change_incremental);
+
+  IceModelVec::AccessList list{&W, &Wtill, &Wtill_new, &input_rate,
+      &m_flow_change_incremental, &W_new};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double Wtill_change = Wtill_new(i, j) - Wtill(i, j);
+    W_new(i, j) = W(i, j) - Wtill_change + dt * input_rate(i, j) + m_flow_change_incremental(i, j);
+  }
+
+  m_flow_change.add(1.0, m_flow_change_incremental);
+  m_input_change.add(dt, input_rate);
 }
 
 
@@ -989,27 +780,12 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     ht  = t,
     hdt = 0.0;
 
-  compute_input_rate(*inputs.cell_type,
-                     *inputs.basal_melt_rate,
-                     inputs.surface_input_rate,
-                     m_input_rate);
-
-  compute_overburden_pressure(*inputs.ice_thickness, m_Pover);
-
   const double
     t_final = t + dt,
     dt_max  = m_config->get_double("hydrology.maximum_time_step", "seconds");
 
   // make sure W has valid ghosts before starting hydrology steps
   m_W.update_ghosts();
-
-  // reset water thickness changes
-  {
-    m_grounded_margin_change.set(0.0);
-    m_grounding_line_change.set(0.0);
-    m_conservation_error_change.set(0.0);
-    m_no_model_mask_change.set(0.0);
-  }
 
   unsigned int step_counter = 0;
   for (; ht < t_final; ht += hdt) {
@@ -1058,14 +834,15 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
                  m_input_rate,
                  m_Wtillnew);
     // remove water in ice-free areas and account for changes
-    boundary_mass_changes(*inputs.cell_area,
-                          *inputs.cell_type,
-                          inputs.no_model_mask,
-                          m_Wtillnew,
-                          m_grounded_margin_change,
-                          m_grounding_line_change,
-                          m_conservation_error_change,
-                          m_no_model_mask_change);
+    enforce_bounds(*inputs.cell_area,
+                   *inputs.cell_type,
+                   inputs.no_model_mask,
+                   0.0,        // do not limit maximum thickness
+                   m_Wtillnew,
+                   m_grounded_margin_change,
+                   m_grounding_line_change,
+                   m_conservation_error_change,
+                   m_no_model_mask_change);
 
     // update Wnew from W, Wtill, Wtillnew, Wstag, Q, input_rate
     update_W(hdt,
@@ -1075,14 +852,15 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
              m_K, m_Q,
              m_Wnew);
     // remove water in ice-free areas and account for changes
-    boundary_mass_changes(*inputs.cell_area,
-                          *inputs.cell_type,
-                          inputs.no_model_mask,
-                          m_Wnew,
-                          m_grounded_margin_change,
-                          m_grounding_line_change,
-                          m_conservation_error_change,
-                          m_no_model_mask_change);
+    enforce_bounds(*inputs.cell_area,
+                   *inputs.cell_type,
+                   inputs.no_model_mask,
+                   0.0,        // do not limit maximum thickness
+                   m_Wnew,
+                   m_grounded_margin_change,
+                   m_grounding_line_change,
+                   m_conservation_error_change,
+                   m_no_model_mask_change);
 
     // transfer new into old
     m_W.copy_from(m_Wnew);
@@ -1104,17 +882,12 @@ const IceModelVec2Stag& Routing::velocity_staggered() const {
 std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
   using namespace diagnostics;
 
-  std::map<std::string, Diagnostic::Ptr> result = {
-    {"bwat",                                            Diagnostic::Ptr(new BasalWaterThickness(this))},
-    {"bwatvel",                                         Diagnostic::Ptr(new BasalWaterVelocity(this))},
-    {"bwp",                                             Diagnostic::Ptr(new BasalWaterPressure(this))},
-    {"bwprel",                                          Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},
-    {"effbwp",                                          Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
-    {"wallmelt",                                        Diagnostic::Ptr(new WallMelt(this))},
-    {"subglacial_water_flux_at_grounded_margins",       Diagnostic::Ptr(new GroundedMarginFlux(this))},
-    {"subglacial_water_flux_at_grounding_line",         Diagnostic::Ptr(new GroundingLineFlux(this))},
-    {"subglacial_water_flux_at_domain_boundary",        Diagnostic::Ptr(new DomainBoundaryFlux(this))},
-    {"subglacial_water_flux_due_to_conservation_error", Diagnostic::Ptr(new ConservationErrorFlux(this))},
+  DiagnosticList result = {
+    {"bwatvel",  Diagnostic::Ptr(new BasalWaterVelocity(this))},
+    {"bwp",      Diagnostic::Ptr(new BasalWaterPressure(this))},
+    {"bwprel",   Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},
+    {"effbwp",   Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
+    {"wallmelt", Diagnostic::Ptr(new WallMelt(this))},
   };
   return combine(result, Hydrology::diagnostics_impl());
 }

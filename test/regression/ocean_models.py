@@ -16,6 +16,8 @@ config.set_double("grid.Mx", 3)
 config.set_double("grid.My", 3)
 config.set_double("grid.Mz", 5)
 
+config.set_string("ocean.delta_sl_2d.file", "delta_SL_input.nc")
+
 seconds_per_year = 365 * 86400
 # ensure that this is the correct year length
 config.set_string("time.calendar", "365_day")
@@ -98,17 +100,12 @@ def check_ratio(A, B, value):
     else:
         np.testing.assert_almost_equal(sample(A), 0.0)
 
-def check_model(model, T, SMB, SL, MBP):
+def check_model(model, T, SMB, MBP):
     check(model.shelf_base_temperature(), T)
     check(model.shelf_base_mass_flux(), SMB)
-    check(model.sea_level_elevation(), SL)
     check(model.melange_back_pressure_fraction(), MBP)
 
-def check_modifier(model, modifier, dT, dSMB, dSL, dMBP):
-    check_difference(modifier.sea_level_elevation(),
-                     model.sea_level_elevation(),
-                     dSL)
-
+def check_modifier(model, modifier, dT, dSMB, dMBP):
     check_difference(modifier.shelf_base_temperature(),
                      model.shelf_base_temperature(),
                      dT)
@@ -141,8 +138,6 @@ def constant_test():
 
     melange_back_pressure = 1.0
 
-    sea_level = 0.0
-
     grid = dummy_grid()
     geometry = create_geometry(grid)
     geometry.ice_thickness.set(depth)
@@ -152,7 +147,7 @@ def constant_test():
     model.init(geometry)
     model.update(geometry, 0, 1)
 
-    check_model(model, T_melting, mass_flux, sea_level, melange_back_pressure)
+    check_model(model, T_melting, mass_flux, melange_back_pressure)
 
     assert model.max_timestep(0).infinite() == True
 
@@ -176,8 +171,6 @@ def pik_test():
 
     mass_flux = 5.36591610659e-06 # stored mass flux value returned by the model
 
-    sea_level = 0.0
-
     # create the model
     geometry.ice_thickness.set(depth)
 
@@ -186,7 +179,7 @@ def pik_test():
     model.init(geometry)
     model.update(geometry, 0, 1)
 
-    check_model(model, T_melting, mass_flux, sea_level, melange_back_pressure)
+    check_model(model, T_melting, mass_flux, melange_back_pressure)
 
     assert model.max_timestep(0).infinite() == True
 
@@ -194,8 +187,6 @@ class GivenTest(TestCase):
     "Test the Given class"
 
     def setUp(self):
-        self.sea_level = 0.0
-
         self.grid = dummy_grid()
         self.geometry = create_geometry(self.grid)
         self.filename = "given_input.nc"
@@ -217,15 +208,13 @@ class GivenTest(TestCase):
 
         assert model.max_timestep(0).infinite() == True
 
-        check_model(model, self.temperature, self.mass_flux, self.sea_level, self.melange_back_pressure)
+        check_model(model, self.temperature, self.mass_flux, self.melange_back_pressure)
 
     def tearDown(self):
         os.remove(self.filename)
 
 class GivenTHTest(TestCase):
     def setUp(self):
-
-        self.sea_level = 0.0
 
         depth                      = 1000.0
         salinity                   = 35.0
@@ -265,7 +254,7 @@ class GivenTHTest(TestCase):
 
         assert model.max_timestep(0).infinite() == True
 
-        check_model(model, self.temperature, self.mass_flux, self.sea_level, self.melange_back_pressure)
+        check_model(model, self.temperature, self.mass_flux, self.melange_back_pressure)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -291,32 +280,7 @@ class DeltaT(TestCase):
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
 
-        check_modifier(self.model, modifier, self.dT, 0.0, 0.0, 0.0)
-
-    def tearDown(self):
-        os.remove(self.filename)
-
-class DeltaSL(TestCase):
-    def setUp(self):
-        self.filename = "delta_SL_input.nc"
-        self.grid = dummy_grid()
-        self.geometry = create_geometry(self.grid)
-        self.model = PISM.OceanConstant(self.grid)
-        self.dSL = -5.0
-
-        create_dummy_forcing_file(self.filename, "delta_SL", "meters", self.dSL)
-
-    def runTest(self):
-        "Modifier Delta_SL"
-
-        modifier = PISM.OceanDeltaSL(self.grid, self.model)
-
-        options.setValue("-ocean_delta_SL_file", self.filename)
-
-        modifier.init(self.geometry)
-        modifier.update(self.geometry, 0, 1)
-
-        check_modifier(self.model, modifier, 0.0, 0.0, self.dSL, 0.0)
+        check_modifier(self.model, modifier, self.dT, 0.0, 0.0)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -341,7 +305,7 @@ class DeltaSMB(TestCase):
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
 
-        check_modifier(self.model, modifier, 0.0, self.dSMB, 0.0, 0.0)
+        check_modifier(self.model, modifier, 0.0, self.dSMB, 0.0)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -367,10 +331,6 @@ class FracMBP(TestCase):
         modifier.update(self.geometry, 0, 1)
 
         model = self.model
-
-        check_difference(modifier.sea_level_elevation(),
-                         model.sea_level_elevation(),
-                         0.0)
 
         check_difference(modifier.shelf_base_temperature(),
                          model.shelf_base_temperature(),
@@ -408,10 +368,6 @@ class FracSMB(TestCase):
         modifier.update(self.geometry, 0, 1)
 
         model = self.model
-
-        check_difference(modifier.sea_level_elevation(),
-                         model.sea_level_elevation(),
-                         0.0)
 
         check_difference(modifier.shelf_base_temperature(),
                          model.shelf_base_temperature(),
@@ -486,6 +442,66 @@ class Cache(TestCase):
             t += dt
 
         np.testing.assert_almost_equal(diff, [1, 1, 3, 3])
+
+    def tearDown(self):
+        os.remove(self.filename)
+
+class DeltaSL(TestCase):
+    def setUp(self):
+        self.filename = "delta_SL_input.nc"
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
+        self.model = PISM.SeaLevel(self.grid)
+        self.dSL = -5.0
+
+        create_dummy_forcing_file(self.filename, "delta_SL", "meters", self.dSL)
+
+    def runTest(self):
+        "Modifier Delta_SL"
+
+        modifier = PISM.SeaLevelDelta(self.grid, self.model)
+
+        options.setValue("-ocean_delta_sl_file", self.filename)
+
+        modifier.init(self.geometry)
+        modifier.update(self.geometry, 0, 1)
+
+        check_difference(modifier.elevation(),
+                         self.model.elevation(),
+                         self.dSL)
+
+    def tearDown(self):
+        os.remove(self.filename)
+
+def create_delta_SL_file(filename, grid, sea_level_offset):
+    PISM.util.prepare_output(filename)
+
+    SL = PISM.IceModelVec2S(grid, "delta_SL", PISM.WITHOUT_GHOSTS)
+    SL.set_attrs("forcing", "sea level forcing", "meters", "")
+    SL.set(sea_level_offset)
+    SL.write(filename)
+
+class DeltaSL2D(TestCase):
+    def setUp(self):
+        self.filename = config.get_string("ocean.delta_sl_2d.file")
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
+        self.model = PISM.SeaLevel(self.grid)
+        self.dSL = -5.0
+
+        create_delta_SL_file(self.filename, self.grid, self.dSL)
+
+    def runTest(self):
+        "Modifier Delta_SL_2D"
+
+        modifier = PISM.SeaLevelDelta2D(self.grid, self.model)
+
+        modifier.init(self.geometry)
+        modifier.update(self.geometry, 0, 1)
+
+        check_difference(modifier.elevation(),
+                         self.model.elevation(),
+                         self.dSL)
 
     def tearDown(self):
         os.remove(self.filename)

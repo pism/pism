@@ -311,13 +311,6 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     ht  = t,
     hdt = 0.0;
 
-  compute_input_rate(*inputs.cell_type,
-                     *inputs.basal_melt_rate,
-                     inputs.surface_input_rate,
-                     m_input_rate);
-
-  compute_overburden_pressure(*inputs.ice_thickness, m_Pover);
-
   const double
     t_final = t + dt,
     dt_max  = m_config->get_double("hydrology.maximum_time_step", "seconds"),
@@ -327,15 +320,9 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
   m_W.update_ghosts();
   m_P.update_ghosts();
 
-  // reset water thickness changes
-  {
-    m_grounded_margin_change.set(0.0);
-    m_grounding_line_change.set(0.0);
-    m_conservation_error_change.set(0.0);
-    m_no_model_mask_change.set(0.0);
-  }
-
+#if (PISM_DEBUG==1)
   double tillwat_max = m_config->get_double("hydrology.tillwat_max");
+#endif
 
   unsigned int step_counter = 0;
   for (; ht < t_final; ht += hdt) {
@@ -391,14 +378,15 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
                  m_input_rate,
                  m_Wtillnew);
     // remove water in ice-free areas and account for changes
-    boundary_mass_changes(*inputs.cell_area,
-                          *inputs.cell_type,
-                          inputs.no_model_mask,
-                          m_Wtillnew,
-                          m_grounded_margin_change,
-                          m_grounding_line_change,
-                          m_conservation_error_change,
-                          m_no_model_mask_change);
+    enforce_bounds(*inputs.cell_area,
+                   *inputs.cell_type,
+                   inputs.no_model_mask,
+                   0.0,        // do not limit maximum thickness
+                   m_Wtillnew,
+                   m_grounded_margin_change,
+                   m_grounding_line_change,
+                   m_conservation_error_change,
+                   m_no_model_mask_change);
 
     update_P(hdt,
              *inputs.cell_type,
@@ -419,14 +407,15 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
              m_K, m_Q,
              m_Wnew);
     // remove water in ice-free areas and account for changes
-    boundary_mass_changes(*inputs.cell_area,
-                          *inputs.cell_type,
-                          inputs.no_model_mask,
-                          m_Wnew,
-                          m_grounded_margin_change,
-                          m_grounding_line_change,
-                          m_conservation_error_change,
-                          m_no_model_mask_change);
+    enforce_bounds(*inputs.cell_area,
+                   *inputs.cell_type,
+                   inputs.no_model_mask,
+                   0.0, // do  not limit maximum thickness
+                   m_Wnew,
+                   m_grounded_margin_change,
+                   m_grounding_line_change,
+                   m_conservation_error_change,
+                   m_no_model_mask_change);
 
     // transfer new into old
     m_W.copy_from(m_Wnew);

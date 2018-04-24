@@ -213,11 +213,12 @@ HardnessAverage::HardnessAverage(const IceModel *m)
 //! \brief Computes vertically-averaged ice hardness.
 IceModelVec::Ptr HardnessAverage::compute_impl() const {
 
-  const rheology::FlowLaw *flow_law = model->stress_balance()->shallow()->flow_law();
+  const rheology::FlowLaw *flow_law = model->stress_balance()->shallow()->flow_law().get();
   if (flow_law == NULL) {
-    flow_law = model->stress_balance()->modifier()->flow_law();
+    flow_law = model->stress_balance()->modifier()->flow_law().get();
     if (flow_law == NULL) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "Can't compute vertically-averaged hardness: no flow law is used.");
+      throw RuntimeError(PISM_ERROR_LOCATION,
+                         "Can't compute vertically-averaged hardness: no flow law is used.");
     }
   }
 
@@ -2038,7 +2039,7 @@ IceModelVec::Ptr IceHardness::compute_impl() const {
   const IceModelVec3  &ice_enthalpy  = model->energy_balance_model()->enthalpy();
   const IceModelVec2S &ice_thickness = model->geometry().ice_thickness;
 
-  const rheology::FlowLaw *flow_law = model->stress_balance()->modifier()->flow_law();
+  const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier()->flow_law();
 
   IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness, result.get()};
 
@@ -2059,7 +2060,7 @@ IceModelVec::Ptr IceHardness::compute_impl() const {
         // EC->pressure() handles negative depths correctly
         const double pressure = EC->pressure(depth);
 
-        hardness[k] = flow_law->hardness(E[k], pressure);
+        hardness[k] = flow_law.hardness(E[k], pressure);
       }
     }
   } catch (...) {
@@ -2099,7 +2100,7 @@ IceModelVec::Ptr IceViscosity::compute_impl() const {
 
   EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
 
-  const rheology::FlowLaw *flow_law = model->stress_balance()->modifier()->flow_law();
+  const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier()->flow_law();
 
   const IceModelVec2S &ice_thickness = model->geometry().ice_thickness;
 
@@ -2175,7 +2176,7 @@ IceModelVec::Ptr IceViscosity::compute_impl() const {
         // EC->pressure() handles negative depths correctly
         const double pressure = EC->pressure(depth);
 
-        const double hardness = flow_law->hardness(E[k], pressure);
+        const double hardness = flow_law.hardness(E[k], pressure);
 
         double u_x = 0.0, v_x = 0.0, w_x = 0.0;
         if (west + east > 0) {
@@ -2236,7 +2237,7 @@ IceModelVec::Ptr IceViscosity::compute_impl() const {
 
         double nu = 0.0;
         // Note: in PISM gamma has an extra factor of 1/2; compare to
-        flow_law->effective_viscosity(hardness, 0.5 * gamma, &nu, NULL);
+        flow_law.effective_viscosity(hardness, 0.5 * gamma, &nu, NULL);
 
         viscosity[k] = nu;
       }

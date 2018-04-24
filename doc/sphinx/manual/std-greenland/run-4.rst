@@ -69,12 +69,11 @@ identified:
      -atmosphere searise_greenland,delta_T,paleo_precip -surface pdd \
      -atmosphere_paleo_precip_file pism_dT.nc -atmosphere_delta_T_file pism_dT.nc
 
-Then the ocean model, which provides both a subshelf melt rate and a time-dependent sea
-level to the ice dynamics core, is turned on with ``-ocean constant,delta_SL`` and the
-file it needs is identified with ``-ocean_delta_SL_file pism_dSL.nc``. For all of these
-"forcing" options, see the :ref:`Climate Forcing Manual <sec-climate-forcing>`. The
-remainder of the options are similar or identical to the run that created
-``g20km_10ka_hy.nc``.
+Then the sea level forcing module providing both a time-dependent sea level to the ice
+dynamics core, is turned on with ``-sea_level constant,delta_sl`` and the file it needs is
+identified with ``-ocean_delta_sl_file pism_dSL.nc``. For all of these "forcing" options,
+see the :ref:`Climate Forcing Manual <sec-climate-forcing>`. The remainder of the options
+are similar or identical to the run that created ``g20km_10ka_hy.nc``.
 
 To actually start the run, which we rather arbitrarily start at year `-25000`, essentially
 at the LGM, do:

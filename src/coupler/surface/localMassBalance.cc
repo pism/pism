@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -89,11 +89,10 @@ in the above integral is in degrees C.  Here we think of the argument `TacC`
 as temperature in Celsius, but really it is the temperature above a threshold
 at which it is "positive".
 
-This integral is used for the expected number of positive degree days, unless the
-user selects a random PDD implementation with `-pdd_rand` or
-`-pdd_rand_repeatable`.  The user can choose \f$\sigma\f$ by option
-`-pdd_std_dev`.  Note that the integral is over a time interval of length
-`dt` instead of a whole year as stated in \ref CalovGreve05 . If `sigma` is zero, return the positive part of `TacC`.
+This integral is used for the expected number of positive degree days. The user can choose
+\f$\sigma\f$ by option `-pdd_std_dev`. Note that the integral is over a time interval of
+length `dt` instead of a whole year as stated in \ref CalovGreve05 . If `sigma` is zero,
+return the positive part of `TacC`.
  */
 double PDDMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
 

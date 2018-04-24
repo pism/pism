@@ -27,14 +27,6 @@
 namespace pism {
 namespace ocean {
 
-IceModelVec2S::Ptr OceanModel::allocate_sea_level_elevation(IceGrid::ConstPtr g) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(g, "sea_level", WITHOUT_GHOSTS));
-  result->set_attrs("diagnostic",
-                    "sea level elevation, relative to the geoid",
-                    "meter", "");
-  return result;
-}
-
 IceModelVec2S::Ptr OceanModel::allocate_shelf_base_temperature(IceGrid::ConstPtr g) {
   IceModelVec2S::Ptr result(new IceModelVec2S(g, "shelfbtemp", WITHOUT_GHOSTS));
   result->set_attrs("diagnostic",
@@ -106,10 +98,6 @@ const IceModelVec2S& OceanModel::shelf_base_mass_flux() const {
   return shelf_base_mass_flux_impl();
 }
 
-const IceModelVec2S& OceanModel::sea_level_elevation() const {
-  return sea_level_elevation_impl();
-}
-
 const IceModelVec2S& OceanModel::shelf_base_temperature() const {
   return shelf_base_temperature_impl();
 }
@@ -152,14 +140,6 @@ void OceanModel::write_model_state_impl(const PIO &output) const {
   }
 }
 
-const IceModelVec2S& OceanModel::sea_level_elevation_impl() const {
-  if (m_input_model) {
-    return m_input_model->sea_level_elevation();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
-  }
-}
-
 const IceModelVec2S& OceanModel::shelf_base_temperature_impl() const {
   if (m_input_model) {
     return m_input_model->shelf_base_temperature();
@@ -185,33 +165,6 @@ const IceModelVec2S& OceanModel::melange_back_pressure_fraction_impl() const {
 }
 
 namespace diagnostics {
-
-/*! @brief Sea level elevation. */
-class PO_sea_level : public Diag<OceanModel>
-{
-public:
-  PO_sea_level(const OceanModel *m)
-    : Diag<OceanModel>(m) {
-
-    /* set metadata: */
-    m_vars = {SpatialVariableMetadata(m_sys, "sea_level")};
-
-    set_attrs("sea level elevation, relative to the geoid", "",
-              "meters", "meters", 0);
-  }
-
-protected:
-  IceModelVec::Ptr compute_impl() const {
-
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "sea_level", WITHOUT_GHOSTS));
-    result->metadata(0) = m_vars[0];
-
-    result->copy_from(model->sea_level_elevation());
-
-    return result;
-  }
-
-};
 
 /*! @brief Shelf base temperature. */
 class PO_shelf_base_temperature : public Diag<OceanModel>
@@ -298,7 +251,6 @@ protected:
 DiagnosticList OceanModel::diagnostics_impl() const {
   using namespace diagnostics;
   DiagnosticList result = {
-    {"sea_level",                      Diagnostic::Ptr(new PO_sea_level(this))},
     {"shelfbtemp",                     Diagnostic::Ptr(new PO_shelf_base_temperature(this))},
     {"shelfbmassflux",                 Diagnostic::Ptr(new PO_shelf_base_mass_flux(this))},
     {"melange_back_pressure_fraction", Diagnostic::Ptr(new PO_melange_back_pressure_fraction(this))}

@@ -19,29 +19,29 @@
 #ifndef _PODSLFORCING_H_
 #define _PODSLFORCING_H_
 
-#include "pism/coupler/OceanModel.hh"
+#include "pism/coupler/SeaLevel.hh"
 
 namespace pism {
 
 class ScalarForcing;
 
 namespace ocean {
+namespace sea_level {
 
-class Delta_SL : public OceanModel
-{
+class Delta_SL : public SeaLevel {
 public:
-  Delta_SL(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
+  Delta_SL(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> in);
   virtual ~Delta_SL();
 
 private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
-  const IceModelVec2S& sea_level_elevation_impl() const;
 
-  IceModelVec2S::Ptr m_sea_level_elevation;
   std::unique_ptr<ScalarForcing> m_forcing;
 };
 
+} // end of namespace sea_level
 } // end of namespace ocean
 } // end of namespace pism
+
 #endif /* _PODSLFORCING_H_ */

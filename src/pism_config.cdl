@@ -169,7 +169,7 @@ netcdf pism_config {
     pism_config:basal_yield_stress.add_transportable_water_type = "boolean";
 
     pism_config:basal_yield_stress.constant.value = 2e5;
-    pism_config:basal_yield_stress.constant.value_doc = "fill value for yield stress for basal till (plastic or pseudo-plastic model); note 2 x 10^5 Pa = 2.0 bar is quite strong and little sliding should occur without an explicit tauc choice altering this default";
+    pism_config:basal_yield_stress.constant.value_doc = "fill value for yield stress for basal till (plastic or pseudo-plastic model); note `2 \\times 10^5` Pa = 2 bar is quite strong and little sliding should occur";
     pism_config:basal_yield_stress.constant.value_option = "tauc";
     pism_config:basal_yield_stress.constant.value_type = "scalar";
     pism_config:basal_yield_stress.constant.value_units = "Pascal";
@@ -349,12 +349,12 @@ netcdf pism_config {
 
     pism_config:bootstrapping.temperature_heuristic = "smb";
     pism_config:bootstrapping.temperature_heuristic_choices = "smb,quartic_guess";
-    pism_config:bootstrapping.temperature_heuristic_doc = "The heuristic to use to initialize ice temperature during bootstrapping: 'sbm' uses the new method using the surface mass balance, surface temperature, and the geothermal flux, 'quartic_guess' uses the old method using the surface temperature and the geothermal flux.";
+    pism_config:bootstrapping.temperature_heuristic_doc = "The heuristic to use to initialize ice temperature during bootstrapping: 'smb' uses the surface mass balance, surface temperature, and the geothermal flux, 'quartic_guess' uses the surface temperature and the geothermal flux.";
     pism_config:bootstrapping.temperature_heuristic_option = "boot_temperature_heuristic";
     pism_config:bootstrapping.temperature_heuristic_type = "keyword";
 
     pism_config:calving.eigen_calving.K = 0.0;
-    pism_config:calving.eigen_calving.K_doc = "Set proportionality constant to determine calving rate from strain rates.  Note references :cite:`Levermannetal2012`, :cite:`Martinetal2011` use K in range 10^9 to 3 x 10^11 m a, that is, 3 x 10^16 to 10^19 m s.";
+    pism_config:calving.eigen_calving.K_doc = "Set proportionality constant to determine calving rate from strain rates.  Note references :cite:`Levermannetal2012`, :cite:`Martinetal2011` use K in range `10^{9}` to `3 \\times 10^{11}` m a, that is, `3 \\times 10^{16}` to `10^{19}` m s.";
     pism_config:calving.eigen_calving.K_option = "eigen_calving_K";
     pism_config:calving.eigen_calving.K_type = "scalar";
     pism_config:calving.eigen_calving.K_units = "meter second";
@@ -809,12 +809,6 @@ netcdf pism_config {
     pism_config:hydrology.cavitation_opening_coefficient_type = "scalar";
     pism_config:hydrology.cavitation_opening_coefficient_units = "meter-1";
 
-    pism_config:hydrology.const_bmelt = 1.0;
-    pism_config:hydrology.const_bmelt_doc = "only used if hydrology.use_const_bmelt = 'yes'";
-    pism_config:hydrology.const_bmelt_option = "hydrology_const_bmelt";
-    pism_config:hydrology.const_bmelt_type = "scalar";
-    pism_config:hydrology.const_bmelt_units = "cm / year";
-
     pism_config:hydrology.creep_closure_coefficient = 0.04;
     pism_config:hydrology.creep_closure_coefficient_doc = "c_2 in notes; coefficient of creep closure term in evolution of layer thickness in hydrology::Distributed";
     pism_config:hydrology.creep_closure_coefficient_option = "hydrology_creep_closure_coefficient";
@@ -881,11 +875,11 @@ netcdf pism_config {
     pism_config:hydrology.thickness_power_in_flux_type = "scalar";
     pism_config:hydrology.thickness_power_in_flux_units = "1";
 
-    pism_config:hydrology.tillwat_decay_rate = 3.16887646154128e-11;
-    pism_config:hydrology.tillwat_decay_rate_doc = "default value is equivalent to 1 mm per year; rate at which tillwat is reduced to zero, in absence of other effects like input";
+    pism_config:hydrology.tillwat_decay_rate = 1.0;
+    pism_config:hydrology.tillwat_decay_rate_doc = "rate at which tillwat is reduced to zero, in absence of other effects like input";
     pism_config:hydrology.tillwat_decay_rate_option = "hydrology_tillwat_decay_rate";
     pism_config:hydrology.tillwat_decay_rate_type = "scalar";
-    pism_config:hydrology.tillwat_decay_rate_units = "meter / second";
+    pism_config:hydrology.tillwat_decay_rate_units = "mm / year";
 
     pism_config:hydrology.tillwat_max = 2.0;
     pism_config:hydrology.tillwat_max_doc = "maximum effective thickness of the water stored in till";
@@ -1071,6 +1065,20 @@ netcdf pism_config {
     pism_config:ocean.given.reference_year_option = "ocean_given_reference_year";
     pism_config:ocean.given.reference_year_type = "integer";
     pism_config:ocean.given.reference_year_units = "years";
+
+    pism_config:ocean.delta_sl_2d.file = "";
+    pism_config:ocean.delta_sl_2d.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:ocean.delta_sl_2d.file_type = "string";
+
+    pism_config:ocean.delta_sl_2d.period = 0;
+    pism_config:ocean.delta_sl_2d.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:ocean.delta_sl_2d.period_type = "integer";
+    pism_config:ocean.delta_sl_2d.period_units = "years";
+
+    pism_config:ocean.delta_sl_2d.reference_year = 0;
+    pism_config:ocean.delta_sl_2d.reference_year_doc = "Reference year to use when ``ocean.delta_sl_2d.period`` is active.";
+    pism_config:ocean.delta_sl_2d.reference_year_type = "integer";
+    pism_config:ocean.delta_sl_2d.reference_year_units = "years";
 
     pism_config:ocean.th.file = "";
     pism_config:ocean.th.file_doc = "Name of the file containing climate forcing fields.";
@@ -1350,7 +1358,7 @@ netcdf pism_config {
     pism_config:stress_balance.ice_free_thickness_standard_units = "meters";
 
     pism_config:stress_balance.model = "sia";
-    pism_config:stress_balance.model_choices = "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia";
+    pism_config:stress_balance.model_choices = "none,prescribed_sliding,weertman_sliding,sia,ssa,prescribed_sliding+sia,weertman_sliding+sia,ssa+sia";
     pism_config:stress_balance.model_doc = "Stress balance model";
     pism_config:stress_balance.model_option = "stress_balance";
     pism_config:stress_balance.model_type = "keyword";
@@ -1504,6 +1512,16 @@ netcdf pism_config {
     pism_config:stress_balance.vertical_velocity_approximation_doc = "Vertical velocity FD approximation. \"Upstream\" uses first-order finite difference to compute u_x and v_y. Uses basal velocity to make decisions.";
     pism_config:stress_balance.vertical_velocity_approximation_option = "vertical_velocity_approximation";
     pism_config:stress_balance.vertical_velocity_approximation_type = "keyword";
+
+    pism_config:stress_balance.weertman_sliding.A = 1.8e-16;
+    pism_config:stress_balance.weertman_sliding.A_doc = "Sliding parameter in the Weertman-style sliding parameterization :cite:`Tomkin2007`";
+    pism_config:stress_balance.weertman_sliding.A_units = "Pa-3 year-1 m-2";
+    pism_config:stress_balance.weertman_sliding.A_type = "scalar";
+
+    pism_config:stress_balance.weertman_sliding.k = 0.2;
+    pism_config:stress_balance.weertman_sliding.k_doc = "The ratio of the basal water pressure and the ice overburden pressure in the Weertman-style sliding parameterization.";
+    pism_config:stress_balance.weertman_sliding.k_units = "1";
+    pism_config:stress_balance.weertman_sliding.k_type = "scalar";
 
     pism_config:surface.cache.update_interval = 10;
     pism_config:surface.cache.update_interval_doc = "Update interval (in years) for the `-surface cache` modifier.";

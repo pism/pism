@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2017 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2018 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -77,7 +77,7 @@ SIAFD::SIAFD(IceGrid::ConstPtr g)
   const bool e_age_coupling = m_config->get_boolean("stress_balance.sia.e_age_coupling");
 
   if (compute_grain_size_using_age) {
-    if (not FlowLawUsesGrainSize(m_flow_law)) {
+    if (not FlowLawUsesGrainSize(*m_flow_law)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "flow law %s does not use grain size "
                                     "but sia.grain_size_age_coupling was set",
                                     m_flow_law->name().c_str());
@@ -102,10 +102,6 @@ SIAFD::SIAFD(IceGrid::ConstPtr g)
 
 SIAFD::~SIAFD() {
   delete m_bed_smoother;
-  if (m_flow_law != NULL) {
-    delete m_flow_law;
-    m_flow_law = NULL;
-  }
 }
 
 //! \brief Initialize the SIA module.

@@ -95,7 +95,7 @@ std::string ShallowStressBalance::stdout_report() const {
   return "";
 }
 
-const rheology::FlowLaw* ShallowStressBalance::flow_law() const {
+std::shared_ptr<const rheology::FlowLaw> ShallowStressBalance::flow_law() const {
   return m_flow_law;
 }
 
@@ -139,7 +139,7 @@ ZeroSliding::ZeroSliding(IceGrid::ConstPtr g)
 }
 
 ZeroSliding::~ZeroSliding() {
-  delete m_flow_law;
+  // empty
 }
 
 //! \brief Update the trivial shallow stress balance object.
