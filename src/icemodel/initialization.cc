@@ -175,9 +175,9 @@ void IceModel::model_state_setup() {
 
   m_sea_level->init(m_geometry);
 
-  // Initialize a bed deformation model. This may use ice thickness initialized above.
+  // Initialize a bed deformation model.
   if (m_beddef) {
-    m_beddef->init(input);
+    m_beddef->init(input, m_geometry.ice_thickness, m_sea_level->elevation());
     m_grid->variables().add(m_beddef->bed_elevation());
     m_grid->variables().add(m_beddef->uplift());
   }

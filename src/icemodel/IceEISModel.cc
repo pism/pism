@@ -146,26 +146,26 @@ void IceEISModel::initialize_2d() {
                  "initializing variables from EISMINT II experiment %c formulas... \n",
                  m_experiment);
 
-  IceModelVec2S bed_topography, bed_uplift;
-  bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
-  bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
-
   // set bed topography
   if (m_experiment == 'I' or m_experiment == 'J') {
-    generate_trough_topography(bed_topography);
+    generate_trough_topography(m_geometry.bed_elevation);
   } else if (m_experiment == 'K' or m_experiment == 'L') {
-    generate_mound_topography(bed_topography);
+    generate_mound_topography(m_geometry.bed_elevation);
   } else {
-    bed_topography.set(0.0);
+    m_geometry.bed_elevation.set(0.0);
   }
 
+  m_geometry.sea_level_elevation.set(0.0);
+
   // set uplift
+  IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
   bed_uplift.set(0.0);
 
   // start with zero ice
   m_geometry.ice_thickness.set(0.0);
 
-  m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness);
+  m_beddef->bootstrap(m_geometry.bed_elevation, bed_uplift, m_geometry.ice_thickness,
+                      m_geometry.sea_level_elevation);
 }
 
 } // end of namespace pism

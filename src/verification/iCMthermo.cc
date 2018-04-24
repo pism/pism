@@ -121,27 +121,35 @@ void IceCompModel::initTestFG() {
   m_geometry.ice_thickness.update_ghosts();
 
   {
-    IceModelVec2S bed_topography, bed_uplift;
-    bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
+    IceModelVec2S bed_topography(m_grid, "topg", WITHOUT_GHOSTS);
     bed_topography.set(0.0);
-    bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
+
+    IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
     bed_uplift.set(0.0);
 
-    m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness);
+    IceModelVec2S sea_level(m_grid, "sea_level", WITHOUT_GHOSTS);
+    sea_level.set(0.0);
+
+    m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness,
+                        sea_level);
   }
 }
 
 void IceCompModel::initTestsKO() {
 
-  IceModelVec2S bed_topography, bed_uplift;
-  bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
+  IceModelVec2S bed_topography(m_grid, "topg", WITHOUT_GHOSTS);
   bed_topography.set(0.0);
-  bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
+
+  IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
   bed_uplift.set(0.0);
+
+  IceModelVec2S sea_level(m_grid, "sea_level", WITHOUT_GHOSTS);
+  sea_level.set(0.0);
 
   m_geometry.ice_thickness.set(3000.0);
 
-  m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness);
+  m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness,
+                      sea_level);
 }
 
 void IceCompModel::getCompSourcesTestFG() {

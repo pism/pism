@@ -26,6 +26,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 
 # Set the install prefix
 pism_set_install_prefix()
+set(CMAKE_INSTALL_MESSAGE "LAZY")
 
 # Set Pism_DEFAULT_CONFIG_FILE (*after* we set the CMAKE_INSTALL_PREFIX above).
 pism_check_build_dir_location()

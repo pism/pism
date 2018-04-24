@@ -167,11 +167,6 @@ MaxTimestep GivenTH::max_timestep_impl(double t) const {
   return MaxTimestep("ocean th");
 }
 
-
-const IceModelVec2S& GivenTH::sea_level_elevation_impl() const {
-  return *m_sea_level_elevation;
-}
-
 //* Evaluate the parameterization of the melting point temperature.
 /** The value returned is in degrees Celsius.
  */

@@ -63,8 +63,6 @@ void PIK::update_impl(const Geometry &geometry, double t, double dt) {
   mass_flux(H, *m_shelf_base_mass_flux);
 
   m_melange_back_pressure_fraction->set(0.0);
-
-  m_sea_level_elevation->set(0.0);
 }
 
 void PIK::melting_point_temperature(const IceModelVec2S &depth,
