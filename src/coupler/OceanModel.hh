@@ -47,8 +47,6 @@ public:
 
   void update(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& sea_level_elevation() const;
-
   const IceModelVec2S& shelf_base_temperature() const;
   const IceModelVec2S& shelf_base_mass_flux() const;
   const IceModelVec2S& melange_back_pressure_fraction() const;
@@ -64,7 +62,6 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;
 
-  virtual const IceModelVec2S& sea_level_elevation_impl() const;
   virtual const IceModelVec2S& shelf_base_temperature_impl() const;
   virtual const IceModelVec2S& shelf_base_mass_flux_impl() const;
   virtual const IceModelVec2S& melange_back_pressure_fraction_impl() const;
@@ -73,7 +70,6 @@ protected:
   std::shared_ptr<OceanModel> m_input_model;
   IceModelVec2S::Ptr m_melange_back_pressure_fraction;
 
-  static IceModelVec2S::Ptr allocate_sea_level_elevation(IceGrid::ConstPtr g);
   static IceModelVec2S::Ptr allocate_shelf_base_temperature(IceGrid::ConstPtr g);
   static IceModelVec2S::Ptr allocate_shelf_base_mass_flux(IceGrid::ConstPtr g);
   static IceModelVec2S::Ptr allocate_melange_back_pressure(IceGrid::ConstPtr g);

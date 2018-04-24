@@ -30,10 +30,6 @@ namespace ocean {
 InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
-  m_sea_level_elevation = allocate_sea_level_elevation(g);
-  m_sea_level_elevation->metadata().set_name("effective_sea_level_elevation");
-  m_sea_level_elevation->metadata().set_string("pism_intent", "model_state");
-
   m_melange_back_pressure_fraction = allocate_melange_back_pressure(g);
   m_melange_back_pressure_fraction->set_name("effective_melange_back_pressure_fraction");
   m_melange_back_pressure_fraction->metadata().set_string("pism_intent", "model_state");
@@ -50,7 +46,6 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<
 void InitializationHelper::update_impl(const Geometry &geometry, double t, double dt) {
   OceanModel::update_impl(geometry, t, dt);
 
-  m_sea_level_elevation->copy_from(m_input_model->sea_level_elevation());
   m_melange_back_pressure_fraction->copy_from(m_input_model->melange_back_pressure_fraction());
   m_shelf_base_temperature->copy_from(m_input_model->shelf_base_temperature());
   m_shelf_base_mass_flux->copy_from(m_input_model->shelf_base_mass_flux());
@@ -72,7 +67,6 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
     m_melange_back_pressure_fraction->read(file, last_record);
     m_shelf_base_mass_flux->read(file, last_record);
     m_shelf_base_temperature->read(file, last_record);
-    m_sea_level_elevation->read(file, last_record);
 
     file.close();
   } else {
@@ -90,8 +84,6 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
            REGRID_WITHOUT_REGRID_VARS);
     regrid("ocean model initialization helper", *m_shelf_base_temperature,
            REGRID_WITHOUT_REGRID_VARS);
-    regrid("ocean model initialization helper", *m_sea_level_elevation,
-           REGRID_WITHOUT_REGRID_VARS);
   }
 }
 
@@ -99,7 +91,6 @@ void InitializationHelper::define_model_state_impl(const PIO &output) const {
   m_melange_back_pressure_fraction->define(output);
   m_shelf_base_mass_flux->define(output);
   m_shelf_base_temperature->define(output);
-  m_sea_level_elevation->define(output);
 
   m_input_model->define_model_state(output);
 }
@@ -108,13 +99,8 @@ void InitializationHelper::write_model_state_impl(const PIO &output) const {
   m_melange_back_pressure_fraction->write(output);
   m_shelf_base_mass_flux->write(output);
   m_shelf_base_temperature->write(output);
-  m_sea_level_elevation->write(output);
 
   m_input_model->write_model_state(output);
-}
-
-const IceModelVec2S& InitializationHelper::sea_level_elevation_impl() const {
-  return *m_sea_level_elevation;
 }
 
 const IceModelVec2S& InitializationHelper::shelf_base_temperature_impl() const {

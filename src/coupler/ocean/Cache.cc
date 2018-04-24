@@ -45,7 +45,6 @@ Cache::Cache(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   }
 
   {
-    m_sea_level_elevation            = allocate_sea_level_elevation(g);
     m_shelf_base_temperature         = allocate_shelf_base_temperature(g);
     m_shelf_base_mass_flux           = allocate_shelf_base_mass_flux(g);
     m_melange_back_pressure_fraction = allocate_melange_back_pressure(g);
@@ -84,8 +83,6 @@ void Cache::update_impl(const Geometry &geometry, double t, double dt) {
     m_next_update_time = m_grid->ctx()->time()->increment_date(m_next_update_time,
                                                                m_update_interval_years);
 
-    m_sea_level_elevation->copy_from(m_input_model->sea_level_elevation());
-
     m_melange_back_pressure_fraction->copy_from(m_input_model->melange_back_pressure_fraction());
 
     m_shelf_base_temperature->copy_from(m_input_model->shelf_base_temperature());
@@ -115,10 +112,6 @@ MaxTimestep Cache::max_timestep_impl(double t) const {
   } else {
     return cache_dt;
   }
-}
-
-const IceModelVec2S& Cache::sea_level_elevation_impl() const {
-  return *m_sea_level_elevation;
 }
 
 const IceModelVec2S& Cache::shelf_base_temperature_impl() const {
