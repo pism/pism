@@ -31,6 +31,7 @@
 #include "ConstantPIK.hh"
 #include "ForceThickness.hh"
 #include "Cache.hh"
+#include "Avalanche.hh"
 
 
 namespace pism {
@@ -50,6 +51,7 @@ Factory::Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereMode
   set_default("given");
 
   add_modifier<Anomaly>("anomaly");
+  add_modifier<Avalanche>("avalanche");
   add_modifier<Cache>("cache");
   add_modifier<Delta_T>("delta_T");
   add_modifier<ForceThickness>("forcing");

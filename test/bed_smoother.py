@@ -123,7 +123,7 @@ def bed_smoother_test():
         R = f.range()
         computed_range[f.get_name()] = [R.min, R.max]
 
-    for name in stored_range.keys():
+    for name in list(stored_range.keys()):
         computed = computed_range[name]
         stored   = stored_range[name]
 

@@ -51,8 +51,8 @@ def algorithm_failure_exception_test():
         raise PISM.AlgorithmFailureException("no good reason")
         return False            # should not be reached
     except PISM.AlgorithmFailureException as e:
-        print "calling e.reason(): ", e.reason()
-        print "{}".format(e)
+        print("calling e.reason(): ", e.reason())
+        print("{}".format(e))
         return True
 
 
@@ -83,7 +83,7 @@ def vec_metadata_test():
 
     m.set_string("units", "kg")
 
-    print m.get_string("units")
+    print(m.get_string("units"))
 
 
 def vars_ownership_test():
@@ -91,15 +91,15 @@ def vars_ownership_test():
     grid = create_dummy_grid()
     variables = PISM.Vars()
 
-    print "Adding 'thk'..."
+    print("Adding 'thk'...")
     variables.add(PISM.model.createIceThicknessVec(grid))
-    print "Returned from add_thk()..."
+    print("Returned from add_thk()...")
 
-    print "Getting 'thk' from variables..."
+    print("Getting 'thk' from variables...")
     thk = variables.get("thk")
-    print thk
+    print(thk)
     thk.begin_access()
-    print "thickness at 0,0 is", thk[0, 0]
+    print("thickness at 0,0 is", thk[0, 0])
     thk.end_access()
 
 
@@ -238,7 +238,7 @@ def create_special_vecs_test():
 
     vecs.add(mask)
 
-    print vecs
+    print(vecs)
     # test getattr
     vecs.mask
 
@@ -311,10 +311,10 @@ def pism_vars_test():
     v.add(PISM.model.createIceThicknessVec(grid))
 
     # test getting by short name
-    print v.get("thk").metadata().get_string("units")
+    print(v.get("thk").metadata().get_string("units"))
 
     # test getting by standard name
-    print v.get("land_ice_thickness").metadata().get_string("units")
+    print(v.get("land_ice_thickness").metadata().get_string("units"))
 
 
 def modelvecs_test():
@@ -341,9 +341,9 @@ def modelvecs_test():
         pass
 
     # get a field:
-    print "get() method: ice mask: ", vecs.get("ice_mask").metadata().get_string("long_name")
+    print("get() method: ice mask: ", vecs.get("ice_mask").metadata().get_string("long_name"))
 
-    print "dot notation: ice mask: ", vecs.ice_mask.metadata().get_string("long_name")
+    print("dot notation: ice mask: ", vecs.ice_mask.metadata().get_string("long_name"))
 
     try:
         vecs.invalid
@@ -360,10 +360,10 @@ def modelvecs_test():
         pass
 
     # test __repr__
-    print vecs
+    print(vecs)
 
     # test has()
-    print "Has thickness?", vecs.has("thickness")
+    print("Has thickness?", vecs.has("thickness"))
 
     # test markForWriting
     vecs.markForWriting("ice_mask")
@@ -445,7 +445,7 @@ def util_test():
     b = PISM.util.Bunch(a=1, b="string")
     b.update(c=3.0)
 
-    print b.a, b["b"], b.has_key("b"), b
+    print(b.a, b["b"], "b" in b, b)
 
 
 def logging_test():
@@ -494,7 +494,7 @@ def column_interpolation_test(plot=False):
         "Compute levels of a quadratic coarse grid."
         result = np.zeros(Mz)
         z_lambda = 4.0
-        for k in xrange(Mz - 1):
+        for k in range(Mz - 1):
             zeta = float(k) / (Mz - 1)
             result[k] = Lz * ((zeta / z_lambda) * (1.0 + (z_lambda - 1.0) * zeta))
         result[Mz - 1] = Lz
@@ -517,7 +517,7 @@ def column_interpolation_test(plot=False):
         f_coarse = (z_coarse / Lz) ** 2
         z_fine = fine_grid(z_coarse)
 
-        print "Testing quadratic interpolation"
+        print("Testing quadratic interpolation")
         return test_interp(z_coarse, f_coarse, z_fine, "Quadratic interpolation")
 
     def test_linear_interp():
@@ -525,7 +525,7 @@ def column_interpolation_test(plot=False):
         f_coarse = (z_coarse / Lz) ** 2
         z_fine = fine_grid(z_coarse)
 
-        print "Testing linear interpolation"
+        print("Testing linear interpolation")
         return test_interp(z_coarse, f_coarse, z_fine, "Linear interpolation")
 
     def test_interp(z, f, z_fine, title):
@@ -552,8 +552,8 @@ def column_interpolation_test(plot=False):
 
         delta = np.linalg.norm(f - f_roundtrip, ord=1)
         delta_numpy = np.linalg.norm(f_fine - f_fine_numpy, ord=1)
-        print "norm1(fine_to_coarse(coarse_to_fine(f)) - f) = %f" % delta
-        print "norm1(PISM - NumPy) = %f" % delta_numpy
+        print("norm1(fine_to_coarse(coarse_to_fine(f)) - f) = %f" % delta)
+        print("norm1(PISM - NumPy) = %f" % delta_numpy)
 
         return delta, delta_numpy
 
@@ -643,12 +643,12 @@ def pism_context_test():
 
     ctx = PISM.cpp.Context(com, system, config, EC, time, logger, "greenland")
 
-    print ctx.com().Get_size()
-    print ctx.config().get_double("constants.standard_gravity")
-    print ctx.enthalpy_converter().L(273.15)
-    print ctx.time().current()
-    print PISM.convert(ctx.unit_system(), 1, "km", "m")
-    print ctx.prefix()
+    print(ctx.com().Get_size())
+    print(ctx.config().get_double("constants.standard_gravity"))
+    print(ctx.enthalpy_converter().L(273.15))
+    print(ctx.time().current())
+    print(PISM.convert(ctx.unit_system(), 1, "km", "m"))
+    print(ctx.prefix())
 
 def check_flow_law(factory, flow_law_name, EC, stored_data):
     factory.set_default(flow_law_name)
@@ -667,9 +667,9 @@ def check_flow_law(factory, flow_law_name, EC, stored_data):
     Tm = EC.melting_temperature(p)
 
     data = []
-    print "  Flow table for %s" % law.name()
-    print "| Sigma        | Temperature  | Omega        | Flow factor  |"
-    print "|--------------+--------------+--------------+--------------|"
+    print("  Flow table for %s" % law.name())
+    print("| Sigma        | Temperature  | Omega        | Flow factor  |")
+    print("|--------------+--------------+--------------+--------------|")
     for S in sigma:
         for Tpa, O in zip(T_pa, omega):
             T = Tm + Tpa
@@ -677,9 +677,9 @@ def check_flow_law(factory, flow_law_name, EC, stored_data):
             F = law.flow(S, E, p, gs)
             data.append(F)
 
-            print "| %e | %e | %e | %e |" % (S, T, O, F)
-    print "|--------------+--------------+--------------+--------------|"
-    print ""
+            print("| %e | %e | %e | %e |" % (S, T, O, F))
+    print("|--------------+--------------+--------------+--------------|")
+    print("")
 
     data = np.array(data)
 
@@ -724,7 +724,7 @@ def flowlaw_test():
     EC = ctx.enthalpy_converter()
     factory = PISM.FlowLawFactory("stress_balance.sia.", ctx.config(), EC)
 
-    for flow_law_name, data in data.iteritems():
+    for flow_law_name, data in data.items():
         check_flow_law(factory, flow_law_name, EC, np.array(data))
 
 
@@ -829,9 +829,9 @@ def gpbld3_error_report():
                         max_rel_difference = max(np.fabs(regular - optimized) / regular,
                                                  max_rel_difference)
 
-    print "%d (%e) samples" % (N**4, N**4)
-    print "max difference", max_difference
-    print "max relative difference", max_rel_difference
+    print("%d (%e) samples" % (N**4, N**4))
+    print("max difference", max_difference)
+    print("max relative difference", max_rel_difference)
 
 def ssa_trivial_test():
     "Test the SSA solver using a trivial setup."
@@ -892,7 +892,7 @@ def epsg_test():
 
     # test supported EPSG codes
     for code in [3413, 3031]:
-        print "Trying code {}".format(code)
+        print("Trying code {}".format(code))
         l.reset()
         # +init at the beginning
         v = PISM.epsg_to_cf(system, "+init=epsg:%d" % code)
@@ -901,15 +901,15 @@ def epsg_test():
         # +init followed by more options
         v = PISM.epsg_to_cf(system, "+init=epsg:%d +units=m" % code)
         v.report_to_stdout(l, 2)
-        print l.get(),
-        print "done."
+        print(l.get(), end=' ')
+        print("done.")
 
     # test that unsupported codes trigger an exception
     try:
         v = PISM.epsg_to_cf(system, "+init=epsg:3032")
         raise AssertionError("should fail with 3032: only 3413 and 3031 are supported")
     except RuntimeError as e:
-        print "unsupported codes trigger exceptions: {}".format(e)
+        print("unsupported codes trigger exceptions: {}".format(e))
 
     # test that an invalid PROJ.4 string (e.g. an EPSG code is not a
     # number) triggers an exception
@@ -917,7 +917,7 @@ def epsg_test():
         v = PISM.epsg_to_cf(system, "+init=epsg:not-a-number +units=m")
         # raise AssertionError("an invalid PROJ.4 string failed to trigger an exception")
     except RuntimeError as e:
-        print "invalid codes trigger exceptions: {}".format(e)
+        print("invalid codes trigger exceptions: {}".format(e))
 
 def regridding_test():
     "Test 2D regridding: same input and target grids."
@@ -994,9 +994,9 @@ netcdf string_attribute_test {
         read_text = pio.get_att_text("PISM_GLOBAL", "text_attribute")
 
         # check that written and read strings are the same
-        print "written string: '%s'" % attribute
-        print "read string:    '%s'" % read_string
-        print "read text:      '%s'" % read_text
+        print("written string: '%s'" % attribute)
+        print("read string:    '%s'" % read_string)
+        print("read text:      '%s'" % read_text)
         assert read_string == attribute
         assert read_text == attribute
 

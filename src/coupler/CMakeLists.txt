@@ -50,6 +50,7 @@ add_library (boundary OBJECT
   ./surface/TemperatureIndex.cc
   ./surface/ForceThickness.cc
   ./surface/Anomaly.cc
+  ./surface/Avalanche.cc
   ./surface/Factory.cc
   ./surface/Formulas.cc
   ./surface/EISMINTII.cc

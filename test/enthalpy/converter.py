@@ -8,11 +8,11 @@ converters = {"Default": PISM.EnthalpyConverter(config),
               "verification (cold)": PISM.ColdEnthalpyConverter(config)}
 
 def try_all_converters(test):
-    print ""
-    for name, converter in converters.items():
-        print "Testing '%s' converter..." % name,
+    print("")
+    for name, converter in list(converters.items()):
+        print("Testing '%s' converter..." % name, end=' ')
         test(name, converter)
-        print "done"
+        print("done")
 
 
 def reversibility_test():
@@ -133,7 +133,7 @@ def invalid_inputs_test():
 
         # don't test the converter that thinks this is cold:
         if not EC.is_temperate(E_cts, pressure):
-            print "skipped...",
+            print("skipped...", end=' ')
             return
 
         try:
@@ -249,7 +249,7 @@ def plot_converter(name, EC):
 
 
 def compare():
-    for name, converter in converters.items():
+    for name, converter in list(converters.items()):
         plot_converter(name, converter)
 
     plt.show()

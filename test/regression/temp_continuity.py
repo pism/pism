@@ -7,7 +7,7 @@ from numpy import squeeze, abs, diff
 try:
     from netCDF4 import Dataset as NC
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 pism_path = argv[1]
@@ -54,7 +54,7 @@ for (dt, delta) in zip(dts, deltas):
 
 # the only test is whether they decrease; no rate measured
 if any(diff(deltas) > 0):
-    print diff(deltas)
+    print(diff(deltas))
     exit(1)
 
 system("rm foo-temp-continuity.nc foo-temp-continuity.nc~ bar-temp-continuity.nc temp-temp-continuity.nc litho_temp-temp-continuity.nc")

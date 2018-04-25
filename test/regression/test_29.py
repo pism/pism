@@ -26,7 +26,7 @@ def copy_input(opts):
 def generate_config():
     """Generates the config file with custom ice softness and hydraulic conductivity."""
 
-    print "generating testPconfig.nc ..."
+    print("generating testPconfig.nc ...")
 
     nc = NC("testPconfig.nc", 'w')
     pism_overrides = nc.createVariable("pism_overrides", 'b')
@@ -66,7 +66,7 @@ def generate_config():
         "basal_yield_stress.constant.value_doc" : "set default to 'high tauc'"
     }
 
-    for k,v in attrs.iteritems():
+    for k,v in attrs.items():
         pism_overrides.setncattr(k,v)
 
     nc.close()
@@ -75,7 +75,7 @@ def generate_config():
 def run_pism(opts):
     cmd = "%s %s/pismr -config_override testPconfig.nc -i inputforP_regression.nc -bootstrap -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -energy none -stress_balance ssa+sia -ssa_dirichlet_bc -o end.nc" % (opts.MPIEXEC, opts.PISM_PATH, 21, 21)
 
-    print cmd
+    print(cmd)
     subprocess.call(shlex.split(cmd))
 
 
@@ -97,14 +97,14 @@ def check_drift(file1, file2):
         drift["%s_max" % name] = np.max(diff)
         drift["%s_avg" % name] = np.average(diff)
 
-    print "drift        = ", drift
-    print "stored_drift = ", stored_drift
+    print("drift        = ", drift)
+    print("stored_drift = ", stored_drift)
 
-    for name in drift.keys():
+    for name in list(drift.keys()):
         rel_diff = np.abs(stored_drift[name] - drift[name]) / stored_drift[name]
 
         if rel_diff > 1e-3:
-            print "Stored and computed drifts in %s differ: %f != %f" % (name, stored_drift[name], drift[name])
+            print("Stored and computed drifts in %s differ: %f != %f" % (name, stored_drift[name], drift[name]))
             exit(1)
 
 
@@ -115,17 +115,17 @@ def cleanup():
 if __name__ == "__main__":
     opts = process_arguments()
 
-    print "Copying input files..."
+    print("Copying input files...")
     copy_input(opts)
 
-    print "Generating the -config_override file..."
+    print("Generating the -config_override file...")
     generate_config()
 
-    print "Running PISM..."
+    print("Running PISM...")
     run_pism(opts)
 
-    print "Checking the drift..."
+    print("Checking the drift...")
     check_drift("inputforP_regression.nc", "end.nc")
 
-    print "Cleaning up..."
+    print("Cleaning up...")
     cleanup()
