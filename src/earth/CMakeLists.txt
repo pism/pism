@@ -4,7 +4,7 @@ add_library(earth OBJECT
   BedDef.cc
   LingleClark.cc
   Null.cc
-  deformation.cc
+  LingleClarkSerial.cc
   greens.cc
   matlablike.cc
   )

@@ -28,22 +28,23 @@ namespace bed {
 
 PointwiseIsostasy::PointwiseIsostasy(IceGrid::ConstPtr g)
   : BedDef(g) {
-  m_thk_last.create(m_grid, "thk_last", WITH_GHOSTS, m_config->get_double("grid.max_stencil_width"));
+  m_load_last.create(m_grid, "load_last", WITH_GHOSTS, m_config->get_double("grid.max_stencil_width"));
 }
 
 PointwiseIsostasy::~PointwiseIsostasy() {
   // empty
 }
 
-void PointwiseIsostasy::init_impl(const InputOptions &opts) {
+void PointwiseIsostasy::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
+                                  const IceModelVec2S &sea_level_elevation) {
 
   m_log->message(2,
-             "* Initializing the pointwise isostasy bed deformation model...\n");
+                 "* Initializing the pointwise isostasy bed deformation model...\n");
 
-  BedDef::init_impl(opts);
+  BedDef::init_impl(opts, ice_thickness, sea_level_elevation);
 
-  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
-  m_thk_last.copy_from(*ice_thickness);
+  // store the initial load
+  compute_load(m_topg, ice_thickness, sea_level_elevation, m_load_last);
 }
 
 MaxTimestep PointwiseIsostasy::max_timestep_impl(double t) const {
@@ -53,6 +54,7 @@ MaxTimestep PointwiseIsostasy::max_timestep_impl(double t) const {
 
 //! Updates the pointwise isostasy model.
 void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
+                                    const IceModelVec2S &sea_level_elevation,
                                     double t, double dt) {
 
   double t_final = t + dt;
@@ -67,22 +69,38 @@ void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
 
   m_t_beddef_last = t_final;
 
-  const double mantle_density = m_config->get_double("bed_deformation.mantle_density"),
-    ice_density = m_config->get_double("constants.ice.density"),
-    f = ice_density / mantle_density;
+  const double
+    mantle_density = m_config->get_double("bed_deformation.mantle_density"),
+    load_density   = m_config->get_double("constants.ice.density"),
+    ocean_density  = m_config->get_double("constants.sea_water.density"),
+    ice_density    = m_config->get_double("constants.ice.density"),
+    f              = load_density / mantle_density;
 
-  //! Our goal: topg = topg_last - f*(thk - thk_last)
+  //! Our goal: topg = topg_last - f*(load - load_last)
 
-  //! Step 1: topg = topg_last - f*thk
-  m_topg_last.add(-f, ice_thickness, m_topg);
-  //! Step 2: topg = topg + f*thk_last = (topg_last - f*thk) + f*thk_last = topg_last - f*(thk - thk_last)
-  m_topg.add(f, m_thk_last);
-  //! This code is written this way to avoid allocating temp. storage for (thk - thk_last).
+  IceModelVec::AccessList list{&m_topg, &ice_thickness, &sea_level_elevation, &m_load_last};
 
-  //! Finally, we need to update bed uplift, topg_last and thk_last.
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double load = compute_load(m_topg(i, j),
+                                 ice_thickness(i, j),
+                                 sea_level_elevation(i, j),
+                                 ice_density, ocean_density);
+
+      m_topg(i, j) = m_topg_last(i, j) - f * (load - m_load_last(i, j));
+      m_load_last(i, j) = load;
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  //! Finally, we need to update bed uplift, topg_last and load_last.
   compute_uplift(m_topg, m_topg_last, dt_beddef, m_uplift);
 
-  m_thk_last.copy_from(ice_thickness);
   m_topg_last.copy_from(m_topg);
 
   //! Increment the topg state counter. SIAFD relies on this!

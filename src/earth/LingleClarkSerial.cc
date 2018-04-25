@@ -22,7 +22,7 @@
 
 #include "matlablike.hh"
 #include "greens.hh"
-#include "deformation.hh"
+#include "LingleClarkSerial.hh"
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -83,11 +83,11 @@ static void copy_fftw_output(fftw_complex *source, fftw_complex *destination,
  * @param[in] Nx extended grid size in the X direction
  * @param[in] Ny extended grid size in the Y direction
  */
-BedDeformLC::BedDeformLC(const Config &config,
-                         bool include_elastic,
-                         int Mx, int My,
-                         double dx, double dy,
-                         int Nx, int Ny) {
+LingleClarkSerial::LingleClarkSerial(const Config &config,
+                                     bool include_elastic,
+                                     int Mx, int My,
+                                     double dx, double dy,
+                                     int Nx, int Ny) {
 
   // set parameters
   m_include_elastic = include_elastic;
@@ -165,7 +165,7 @@ BedDeformLC::BedDeformLC(const Config &config,
   precompute_coefficients();
 }
 
-BedDeformLC::~BedDeformLC() {
+LingleClarkSerial::~LingleClarkSerial() {
   fftw_destroy_plan(m_dft_forward);
   fftw_destroy_plan(m_dft_inverse);
   fftw_free(m_fftw_input);
@@ -176,21 +176,21 @@ BedDeformLC::~BedDeformLC() {
 /*!
  * Return total displacement.
  */
-Vec BedDeformLC::total_displacement() const {
+Vec LingleClarkSerial::total_displacement() const {
   return m_U;
 }
 
 /*!
  * Return viscous plate displacement.
  */
-Vec BedDeformLC::viscous_displacement() const {
+Vec LingleClarkSerial::viscous_displacement() const {
   return m_Uv;
 }
 
 /**
  * Pre-compute coefficients used by the model.
  */
-void BedDeformLC::precompute_coefficients() {
+void LingleClarkSerial::precompute_coefficients() {
   PetscErrorCode ierr = 0;
 
   m_cx.resize(m_Nx);
@@ -245,15 +245,15 @@ void BedDeformLC::precompute_coefficients() {
  *
  * for @f$ U @f$, treating @f$ \diff{u}{t} @f$ and @f$ \sigma_{zz} @f$ as known.
  *
- * @param[in] ice_thickness ice thickness, meters
+ * @param[in] load_thickness load thickness, meters
  * @param[in] bed_uplift bed uplift, m/second
  *
- * Here `ice_thickness` is used to compute the load @f$ \sigma_{zz} @f$ and `bed_uplift` is
+ * Here `load_thickness` is used to compute the load @f$ \sigma_{zz} @f$ and `bed_uplift` is
  * @f$ \diff{u}{t} @f$ itself.
  *
  */
-void BedDeformLC::uplift_problem(Vec load_thickness, Vec bed_uplift,
-                                 Vec output) {
+void LingleClarkSerial::uplift_problem(Vec load_thickness, Vec bed_uplift,
+                                       Vec output) {
 
   // Compute fft2(-load_density * g * load_thickness)
   {
@@ -315,7 +315,7 @@ void BedDeformLC::uplift_problem(Vec load_thickness, Vec bed_uplift,
  *
  * Sets m_Uv, m_Ue, m_U.
  */
-void BedDeformLC::bootstrap(Vec thickness, Vec uplift) {
+void LingleClarkSerial::bootstrap(Vec thickness, Vec uplift) {
 
   // compute viscous displacement
   uplift_problem(thickness, uplift, m_Uv);
@@ -336,7 +336,7 @@ void BedDeformLC::bootstrap(Vec thickness, Vec uplift) {
  *
  * Sets m_Uv, m_Ue, m_U.
  */
-void BedDeformLC::init(Vec thickness, Vec viscous_displacement) {
+void LingleClarkSerial::init(Vec thickness, Vec viscous_displacement) {
   PetscErrorCode ierr = 0;
 
   ierr = VecCopy(viscous_displacement, m_Uv);  PISM_CHK(ierr, "VecCopy");
@@ -356,7 +356,7 @@ void BedDeformLC::init(Vec thickness, Vec viscous_displacement) {
  * @param[in] dt_seconds time step length
  * @param[in] H load thickness on the physical (Mx*My) grid
  */
-void BedDeformLC::step(double dt_seconds, Vec H) {
+void LingleClarkSerial::step(double dt_seconds, Vec H) {
   // solves:
   //     (2 eta |grad| U^{n+1}) + (dt/2) * (rho_r g U^{n+1} + D grad^4 U^{n+1})
   //   = (2 eta |grad| U^n) - (dt/2) * (rho_r g U^n + D grad^4 U^n) - dt * rho g H_start
@@ -425,7 +425,7 @@ void BedDeformLC::step(double dt_seconds, Vec H) {
  * @param[in] H load thickness (ice equivalent meters)
  * @param[out] dE elastic plate displacement
  */
-void BedDeformLC::compute_elastic_response(Vec H, Vec dE) {
+void LingleClarkSerial::compute_elastic_response(Vec H, Vec dE) {
 
   conv2_same(H, m_Mx, m_My, m_load_response_matrix, m_Nxge, m_Nyge, dE);
 
@@ -438,7 +438,7 @@ void BedDeformLC::compute_elastic_response(Vec H, Vec dE) {
  * @param[in] dE elastic displacement
  * @param[out] dU total displacement
  */
-void BedDeformLC::update_displacement(Vec Uv, Vec Ue, Vec U) {
+void LingleClarkSerial::update_displacement(Vec Uv, Vec Ue, Vec U) {
   // PISM grid
   petsc::VecArray2D
     u(U, m_Mx, m_My),
@@ -467,7 +467,7 @@ void BedDeformLC::update_displacement(Vec Uv, Vec Ue, Vec U) {
  * @param[in] Ny grid size
  * @param[in] time time, seconds (usually 0 or a large number approximating \infty)
  */
-void BedDeformLC::tweak(Vec load_thickness, Vec U, int Nx, int Ny, double time) {
+void LingleClarkSerial::tweak(Vec load_thickness, Vec U, int Nx, int Ny, double time) {
   PetscErrorCode ierr = 0;
   petsc::VecArray2D u(U, Nx, Ny);
 
@@ -517,7 +517,8 @@ void BedDeformLC::tweak(Vec load_thickness, Vec U, int Nx, int Ny, double time) 
 /*!
  * Sets the imaginary part to zero.
  */
-void BedDeformLC::set_fftw_input(Vec vec_input, double normalization, int Mx, int My, int i0, int j0) {
+void LingleClarkSerial::set_fftw_input(Vec vec_input, double normalization,
+                                       int Mx, int My, int i0, int j0) {
   petsc::VecArray2D in(vec_input, Mx, My);
   VecAccessor2D<fftw_complex> input(m_fftw_input, m_Nx, m_Ny, i0, j0);
   for (int j = 0; j < My; ++j) {
@@ -529,7 +530,8 @@ void BedDeformLC::set_fftw_input(Vec vec_input, double normalization, int Mx, in
 }
 
 //! \brief Get the real part of fftw_output and put it in output.
-void BedDeformLC::get_fftw_output(Vec output, double normalization, int Mx, int My, int i0, int j0) {
+void LingleClarkSerial::get_fftw_output(Vec output, double normalization,
+                                        int Mx, int My, int i0, int j0) {
   petsc::VecArray2D out(output, Mx, My);
   VecAccessor2D<fftw_complex> fftw_out(m_fftw_output, m_Nx, m_Ny, i0, j0);
   for (int j = 0; j < My; ++j) {

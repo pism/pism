@@ -55,7 +55,9 @@ def allocate(grid):
     uplift.create(grid, "uplift", PISM.WITHOUT_GHOSTS)
     uplift.set_attrs("internal", "bed uplift", "m / second", "")
 
-    return H, bed, uplift
+    sea_level = PISM.IceModelVec2S(grid, "sea_level", PISM.WITHOUT_GHOSTS)
+
+    return H, bed, uplift, sea_level
 
 def create_grid():
     P = PISM.GridParameters(config)
@@ -91,11 +93,12 @@ def run(scenario, plot, pause, save):
 
     grid = create_grid()
 
-    thickness, bed, uplift = allocate(grid)
+    thickness, bed, uplift, sea_level = allocate(grid)
 
     # set initial geometry and uplift
     bed.set(0.0)
     thickness.set(0.0)
+    sea_level.set(0.0)
     if use_uplift:
         initialize_uplift(uplift)
 
@@ -105,7 +108,7 @@ def run(scenario, plot, pause, save):
 
     model = PISM.LingleClark(grid)
 
-    model.bootstrap(bed, uplift, thickness)
+    model.bootstrap(bed, uplift, thickness, sea_level)
 
     # now add the disc load
     initialize_thickness(thickness, H0)
@@ -117,7 +120,7 @@ def run(scenario, plot, pause, save):
         # don't go past the end of the run
         dt_current = min(dt, time.end() - time.current())
 
-        model.update(thickness, time.current(), dt_current)
+        model.update(thickness, sea_level, time.current(), dt_current)
 
         if plot:
             model.bed_elevation().view(400)
