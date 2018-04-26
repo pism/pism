@@ -60,6 +60,10 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_ice_k   = config.get_double("constants.ice.thermal_conductivity");
   m_p_air   = config.get_double("surface.pressure");
 
+  m_exclude_horizontal_advection = config.get_boolean("energy.margin_exclude_horizontal_advection");
+  m_exclude_vertical_advection   = config.get_boolean("energy.margin_exclude_vertical_advection");
+  m_exclude_strain_heat          = config.get_boolean("energy.margin_exclude_strain_heating");
+
   m_ice_K  = m_ice_k / m_ice_c;
   m_ice_K0 = m_ice_K * config.get_double("energy.temperate_ice_enthalpy_conductivity_ratio");
 
@@ -105,9 +109,10 @@ double enthSystemCtx::k_from_T(double T) const {
   return m_ice_k;
 }
 
-void enthSystemCtx::init(int i, int j, bool ismarginal, double ice_thickness) {
+void enthSystemCtx::init(int i, int j, bool marginal, double ice_thickness) {
   m_ice_thickness = ice_thickness;
-  m_ismarginal    = ismarginal;
+
+  m_marginal = marginal;
 
   init_column(i, j, m_ice_thickness);
 
@@ -117,7 +122,15 @@ void enthSystemCtx::init(int i, int j, bool ismarginal, double ice_thickness) {
 
   coarse_to_fine(m_u3, m_i, m_j, &m_u[0]);
   coarse_to_fine(m_v3, m_i, m_j, &m_v[0]);
-  coarse_to_fine(m_w3, m_i, m_j, &m_w[0]);
+
+  if (m_marginal and m_exclude_vertical_advection) {
+    for (unsigned int k = 0; k < m_w.size(); ++k) {
+      m_w[k] = 0.0;
+    }
+  } else {
+    coarse_to_fine(m_w3, m_i, m_j, &m_w[0]);
+  }
+
   coarse_to_fine(m_strain_heating3, m_i, m_j, &m_strain_heating[0]);
   coarse_to_fine(m_Enth3, m_i, m_j, &m_Enth[0]);
 
@@ -208,8 +221,8 @@ void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
     enthalpy flux even if K == 0, i.e. in a "pure advection" setup.
  */
 void enthSystemCtx::set_surface_neumann_bc(double G) {
-  const bool include_horizontal_advection = not m_ismarginal;
-  const bool include_strain_heating       = not m_ismarginal;
+  const bool include_horizontal_advection = not (m_marginal and m_exclude_horizontal_advection);
+  const bool include_strain_heating       = not (m_marginal and m_exclude_strain_heat);
 
   const double
     Rminus = 0.5 * (m_R[m_ks - 1] + m_R[m_ks]), // R_{ks-1/2}
@@ -327,8 +340,8 @@ void enthSystemCtx::set_basal_heat_flux(double heat_flux) {
     enthalpy flux even if K == 0, i.e. in a "pure advection" setup.
  */
 void enthSystemCtx::set_basal_neumann_bc(double G) {
-  const bool include_horizontal_advection = not m_ismarginal;
-  const bool include_strain_heating       = not m_ismarginal;
+  const bool include_horizontal_advection = not (m_marginal and m_exclude_horizontal_advection);
+  const bool include_strain_heating       = not (m_marginal and m_exclude_strain_heat);
 
   const double
     Rminus = m_R[0],                  // R_{-1/2}
@@ -487,8 +500,8 @@ void enthSystemCtx::solve(std::vector<double> &x) {
     Dx = 1.0 / m_dx,
     Dy = 1.0 / m_dy;
 
-  const bool include_horizontal_advection = not m_ismarginal;
-  const bool include_strain_heating       = not m_ismarginal;
+  const bool include_horizontal_advection = not (m_marginal and m_exclude_horizontal_advection);
+  const bool include_strain_heating       = not (m_marginal and m_exclude_strain_heat);
 
   // generic ice segment in k location (if any; only runs if m_ks >= 2)
   for (unsigned int k = 1; k < m_ks; k++) {

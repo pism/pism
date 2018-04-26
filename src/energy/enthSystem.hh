@@ -101,7 +101,11 @@ protected:
     m_lambda;              //!< implicit FD method parameter
   double m_D0, m_U0, m_B0;   // coefficients of the first (basal) equation
   double m_L_ks, m_D_ks, m_U_ks, m_B_ks;   // coefficients of the last (surface) equation
-  bool m_ismarginal, m_c_depends_on_T, m_k_depends_on_T;
+  bool m_marginal, m_c_depends_on_T, m_k_depends_on_T;
+
+  bool m_exclude_horizontal_advection;
+  bool m_exclude_vertical_advection;
+  bool m_exclude_strain_heat;
 
   const IceModelVec3 &m_Enth3, &m_strain_heating3;
   EnthalpyConverter::Ptr m_EC;  // conductivity has known dependence on T, not enthalpy

@@ -546,6 +546,11 @@
    :Value: 60270 (Joule / kg)
    :Description: = (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value
 
+#. :config:`energy.margin_ice_thickness_limit` (*scalar*)
+
+   :Value: 100 (meters)
+   :Description: use special margin treatment at grid points with a neighbor with the thickness below this limit.
+
 #. :config:`energy.max_low_temperature_count` (*integer*)
 
    :Value: 10

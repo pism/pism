@@ -219,7 +219,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   unsigned int maxLowTempCount = m_config->get_double("energy.max_low_temperature_count");
   const double T_minimum = m_config->get_double("energy.minimum_allowed_temperature");
 
-  double advection_threshold = m_config->get_double("energy.advection_ice_thickness_limit");
+  double margin_threshold = m_config->get_double("energy.margin_ice_thickness_limit");
 
   ParallelSection loop(m_grid->com);
   try {
@@ -232,7 +232,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
       const double T_surface = ice_surface_temp(i, j);
 
       system.initThisColumn(i, j,
-                            marginal(ice_thickness, i, j, advection_threshold),
+                            marginal(ice_thickness, i, j, margin_threshold),
                             mask, H);
 
       const int ks = system.ks();
