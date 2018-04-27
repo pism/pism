@@ -164,6 +164,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   m_firn_depth.set_attrs("diagnostic",
                          "firn cover depth",
                          "m", "");
+  m_firn_depth.metadata().set_double("valid_min", 0.0);
   m_firn_depth.set(0.0);
 }
 
