@@ -441,10 +441,15 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
 
           // update ice thickness
           ice += changes.smb;
+          assert(ice >= 0);
+
           // update firn depth
           firn += changes.firn_depth;
+          assert(firn >= 0);
+
           // update snow depth
           snow += changes.snow_depth;
+          assert(snow >= 0);
 
           // update total accumulation, melt, and runoff
           {
