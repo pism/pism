@@ -426,8 +426,14 @@ void TemperatureIndex::update_impl(double t, double dt) {
       // Use temperature time series, the "positive" threshhold, and
       // the standard deviation of the daily variability to get the
       // number of positive degree days (PDDs)
-      m_mbscheme->get_PDDs(dtseries, S, T, // inputs
-                           PDDs);          // output
+      if (mask.ice_free_ocean(i, j)) {
+        for (int k = 0; k < N; ++k) {
+          PDDs[k] = 0.0;
+        }
+      } else {
+        m_mbscheme->get_PDDs(dtseries, S, T, // inputs
+                             PDDs);          // output
+      }
 
       // Use temperature time series to remove rainfall from precipitation
       m_mbscheme->get_snow_accumulation(T,  // air temperature (input)
