@@ -37,6 +37,8 @@ Runoff_SMB::Runoff_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
 
   m_runoff_to_ocean_melt_power_alpha = m_config->get_double("ocean.runoff_to_ocean_melt_power_alpha");
   m_runoff_to_ocean_melt_power_beta  = m_config->get_double("ocean.runoff_to_ocean_melt_power_beta");
+
+  m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
 }
 
 Runoff_SMB::~Runoff_SMB() {
