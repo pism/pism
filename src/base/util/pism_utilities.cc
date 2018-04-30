@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -138,9 +138,11 @@ std::string version() {
   result += buffer;
   result += "\n";
 
+#ifdef PISM_PETSC_CONFIGURE_FLAGS
   snprintf(buffer, sizeof(buffer), "PETSc configure: %s\n",
            PISM_PETSC_CONFIGURE_FLAGS);
   result += buffer;
+#endif
 
   int string_length = TEMPORARY_STRING_LENGTH;
   MPI_Get_library_version(buffer, &string_length);
