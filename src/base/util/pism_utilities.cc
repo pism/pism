@@ -139,8 +139,9 @@ std::string version() {
   result += "\n";
 
 #ifdef PISM_PETSC_CONFIGURE_FLAGS
-  snprintf(buffer, sizeof(buffer), "PETSc configure: %s\n",
-           PISM_PETSC_CONFIGURE_FLAGS);
+//  snprintf(buffer, sizeof(buffer), "PETSc configure: %s\n",
+//           PISM_PETSC_CONFIGURE_FLAGS);
+  snprintf(buffer, sizeof(buffer), "PETSc configure: <hidden>\n");
   result += buffer;
 #endif
 
