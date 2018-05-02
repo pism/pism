@@ -275,8 +275,8 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
   // firn_depth -= accumulation *  m_config->get_double("surface.pdd.firn_compaction_to_accumulation_ratio");
 
   Changes result;
-  result.firn_depth    = std::max(firn_depth - old_firn_depth, 0.0);
-  result.snow_depth    = std::max(snow_depth - old_snow_depth, 0.0);
+  result.firn_depth    = firn_depth - old_firn_depth;
+  result.snow_depth    = snow_depth - old_snow_depth;
   result.melt          = melt;
   result.runoff        = runoff;
   result.smb           = accumulation - runoff;
