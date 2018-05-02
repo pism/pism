@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -276,8 +276,8 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
   // firn_depth -= accumulation *  m_config->get_double("surface.pdd.firn_compaction_to_accumulation_ratio");
 
   Changes result;
-  result.firn_depth    = std::max(firn_depth - old_firn_depth, 0.0);
-  result.snow_depth    = std::max(snow_depth - old_snow_depth, 0.0);
+  result.firn_depth    = firn_depth - old_firn_depth;
+  result.snow_depth    = snow_depth - old_snow_depth;
   result.melt          = melt;
   result.runoff        = runoff;
   result.smb           = accumulation - runoff;
