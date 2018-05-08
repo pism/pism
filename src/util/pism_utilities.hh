@@ -114,6 +114,10 @@ unsigned int GlobalSum(MPI_Comm comm, unsigned int input);
 
 int GlobalSum(MPI_Comm comm, int input);
 
+bool GlobalOr(MPI_Comm comm, bool input);
+
+bool GlobalAnd(MPI_Comm comm, bool input);
+
 std::string version();
 
 } // end of namespace pism

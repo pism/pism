@@ -159,6 +159,20 @@ int GlobalSum(MPI_Comm comm, int input) {
   return result;
 }
 
+bool GlobalOr(MPI_Comm comm, bool input) {
+  bool result;
+  int err = MPI_Allreduce(&input, &result, 1, MPI_CXX_BOOL, MPI_LOR, comm);
+  PISM_C_CHK(err, 0, "MPI_Allreduce");
+  return result;
+}
+
+bool GlobalAnd(MPI_Comm comm, bool input) {
+  bool result;
+  int err = MPI_Allreduce(&input, &result, 1, MPI_CXX_BOOL, MPI_LAND, comm);
+  PISM_C_CHK(err, 0, "MPI_Allreduce");
+  return result;
+}
+
 double GlobalMin(MPI_Comm comm, double local) {
   double result;
   GlobalMin(comm, &local, &result, 1);
