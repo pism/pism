@@ -77,6 +77,7 @@ struct GeometryEvolution::Impl {
   IceModelVec2V        input_velocity;       // ghosted copy; not modified
   IceModelVec2S        bed_elevation;        // ghosted copy; not modified
   IceModelVec2S        sea_level;            // ghosted copy; not modified
+  IceModelVec2S        lake_level;           // ghosted copy; not modified
   IceModelVec2S        ice_thickness;        // ghosted; updated in place
   IceModelVec2S        area_specific_volume; // ghosted; updated in place
   IceModelVec2S        surface_elevation;    // ghosted; updated to maintain consistency
@@ -149,6 +150,10 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
     sea_level.create(grid, "sea_level", WITH_GHOSTS);
     sea_level.set_attrs("internal", "ghosted copy of the sea level elevation",
                         "meters", "");
+
+    lake_level.create(grid, "lake_level", WITH_GHOSTS);
+    lake_level.set_attrs("internal", "ghosted copy of the lake level elevation",
+                         "meters", "");
 
     ice_thickness.create(grid, "ice_thickness", WITH_GHOSTS);
     ice_thickness.set_attrs("internal", "working (ghosted) copy of the ice thickness",
@@ -250,6 +255,7 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
     m_impl->ice_thickness.copy_from(geometry.ice_thickness);
     m_impl->area_specific_volume.copy_from(geometry.ice_area_specific_volume);
     m_impl->sea_level.copy_from(geometry.sea_level_elevation);
+    m_impl->lake_level.copy_from(geometry.lake_level_elevation);
     m_impl->bed_elevation.copy_from(geometry.bed_elevation);
     m_impl->input_velocity.copy_from(advective_velocity);
     m_impl->velocity_bc_mask.copy_from(velocity_bc_mask);

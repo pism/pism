@@ -60,6 +60,9 @@ class OceanModel;
 namespace sea_level {
 class SeaLevel;
 }
+namespace lake_level {
+class LakeLevel;
+}
 }
 
 namespace surface {
@@ -277,9 +280,10 @@ protected:
   calving::vonMisesCalving    *m_vonmises_calving;
   FrontalMelt                 *m_frontal_melt;
 
-  std::shared_ptr<surface::SurfaceModel>      m_surface;
-  std::shared_ptr<ocean::OceanModel>          m_ocean;
-  std::shared_ptr<ocean::sea_level::SeaLevel> m_sea_level;
+  std::shared_ptr<surface::SurfaceModel>        m_surface;
+  std::shared_ptr<ocean::OceanModel>            m_ocean;
+  std::shared_ptr<ocean::sea_level::SeaLevel>   m_sea_level;
+  std::shared_ptr<ocean::lake_level::LakeLevel> m_lake_level;
 
   bed::BedDef *m_beddef;
 

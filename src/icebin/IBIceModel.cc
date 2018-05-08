@@ -12,6 +12,9 @@
 #include "pism/coupler/SeaLevel.hh"
 #include "pism/coupler/ocean/sea_level/Initialization.hh"
 
+#include "pism/coupler/LakeLevel.hh"
+#include "pism/coupler/ocean/lake_level/Initialization.hh"
+
 namespace pism {
 namespace icebin {
 
@@ -68,6 +71,13 @@ void IBIceModel::allocate_couplers() {
     std::shared_ptr<SeaLevel> sea_level(new SeaLevel(m_grid));
     m_sea_level.reset(new InitializationHelper(m_grid, sea_level));
     m_submodels["sea level forcing"] = m_sea_level.get();
+  }
+
+  if (not m_lake_level) {
+    using namespace ocean::lake_level;
+    std::shared_ptr<LakeLevel> lake_level(new LakeLevel(m_grid));
+    m_lake_level.reset(new InitializationHelper(m_grid, lake_level));
+    m_submodels["lake level forcing"] = m_lake_level.get();
   }
 }
 

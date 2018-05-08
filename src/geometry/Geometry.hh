@@ -47,6 +47,7 @@ public:
   // passing a Geometry instance to the code that uses it.
   IceModelVec2S bed_elevation;
   IceModelVec2S sea_level_elevation;
+  IceModelVec2S lake_level_elevation;
 
   // the minimal "state"
   IceModelVec2S ice_thickness;

@@ -51,6 +51,8 @@
 #include "pism/coupler/ocean/Initialization.hh"
 #include "pism/coupler/ocean/sea_level/Factory.hh"
 #include "pism/coupler/ocean/sea_level/Initialization.hh"
+#include "pism/coupler/ocean/lake_level/Factory.hh"
+#include "pism/coupler/ocean/lake_level/Initialization.hh"
 #include "pism/coupler/surface/Factory.hh"
 #include "pism/coupler/surface/Initialization.hh"
 #include "pism/earth/LingleClark.hh"
@@ -174,6 +176,7 @@ void IceModel::model_state_setup() {
   }
 
   m_sea_level->init(m_geometry);
+  m_lake_level->init(m_geometry);
 
   // Initialize a bed deformation model.
   if (m_beddef) {
@@ -182,7 +185,7 @@ void IceModel::model_state_setup() {
     m_grid->variables().add(m_beddef->uplift());
   }
 
-  // Now ice thickness, bed elevation, and sea level are available, so we can compute the ice
+  // Now ice thickness, bed elevation, sea and lake level are available, so we can compute the ice
   // surface elevation and the cell type mask. This also ensures consistency of ice geometry.
   //
   // The stress balance code is executed near the beginning of a step and ice geometry is
@@ -677,6 +680,16 @@ void IceModel::allocate_couplers() {
     m_sea_level.reset(new InitializationHelper(m_grid, Factory(m_grid).create()));
 
     m_submodels["sea level forcing"] = m_sea_level.get();
+  }
+
+  if (not m_lake_level) {
+    m_log->message(2, "# Allocating lake level forcing...\n");
+
+    using namespace ocean::lake_level;
+
+    m_lake_level.reset(new InitializationHelper(m_grid, Factory(m_grid).create()));
+
+    m_submodels["lake level forcing"] = m_lake_level.get();
   }
 
   if (not m_ocean) {
