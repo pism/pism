@@ -3,6 +3,8 @@
 Changes since v1.0
 ==================
 
+- Exclude ice shelves from the ocean load provided to bed deformation models. See `issue
+  363`_.
 - Revert the change from v0.7 to v1.0 in the handling of energy conservation near ice
   margins. PISM v0.7 and earlier ignored horizontal advection and strain heating terms in
   the energy balance equation at grid points with neighbors below a given threshold ice
@@ -522,6 +524,7 @@ Miscellaneous
 .. _issue 394: https://github.com/pism/pism/issues/394
 .. _issue 400: https://github.com/pism/pism/issues/400
 .. _issue 402: https://github.com/pism/pism/issues/402
+.. _issue 363: https://github.com/pism/pism/issues/363
 
 ..
    Local Variables:
