@@ -84,7 +84,7 @@ class EnthalpyColumn(object):
 
     def init_column(self):
         ice_thickness = self.Lz
-        self.sys.init(1, 1, ice_thickness)
+        self.sys.init(1, 1, False, ice_thickness)
 
 def diffusion_convergence_rate_time(title, error_func):
     "Compute the convergence rate with refinement in time."
