@@ -149,6 +149,8 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
       &cell_type, &u3, &v3, &w3, &strain_heating3, &m_basal_melt_rate, &m_ice_enthalpy,
       &m_work};
 
+  double margin_threshold = m_config->get_double("energy.margin_ice_thickness_limit");
+
   unsigned int liquifiedCount = 0;
 
   ParallelSection loop(m_grid->com);
@@ -158,7 +160,9 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
       const double H = ice_thickness(i, j);
 
-      system.init(i, j, H);
+      system.init(i, j,
+                  marginal(ice_thickness, i, j, margin_threshold),
+                  H);
 
       // enthalpy and pressures at top of ice
       const double

@@ -5,6 +5,7 @@
  */
 
 %{
+#include "verification/tests/exactTestsABCD.h"
 #include "verification/tests/exactTestsFG.hh"
 #include "verification/tests/exactTestH.h"
 #include "verification/tests/exactTestsIJ.h"
@@ -16,6 +17,7 @@
 #include "verification/tests/exactTestP.hh"
 %}
 
+%include "verification/tests/exactTestsABCD.h"
 %include "verification/tests/exactTestsFG.hh"
 %include "verification/tests/exactTestH.h"
 %include "verification/tests/exactTestsIJ.h"
