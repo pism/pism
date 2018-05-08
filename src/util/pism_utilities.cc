@@ -191,9 +191,11 @@ std::string version() {
   result += buffer;
   result += "\n";
 
+#ifdef PISM_PETSC_CONFIGURE_FLAGS
   snprintf(buffer, sizeof(buffer), "PETSc configure: %s\n",
            PISM_PETSC_CONFIGURE_FLAGS);
   result += buffer;
+#endif
 
   // OpenMPI added MPI_Get_library_version in version 1.7 (relatively recently).
 #ifdef OPEN_MPI
