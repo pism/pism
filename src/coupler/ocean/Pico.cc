@@ -197,6 +197,22 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
   m_theta_ocean->average(t, dt);
   m_salinity_ocean->average(t, dt);
 
+  // set values that will be used outside of floating ice areas
+  {
+    double T_fill_value   = m_config->get_double("constants.fresh_water.melting_point_temperature");
+    double Toc_fill_value = m_Toc.metadata().get_double("_FillValue");
+    double Soc_fill_value = m_Soc.metadata().get_double("_FillValue");
+    double M_fill_value   = m_basal_melt_rate.metadata().get_double("_FillValue");
+    double O_fill_value   = m_overturning.metadata().get_double("_FillValue");
+
+    m_shelf_base_temperature->set(T_fill_value);
+    m_basal_melt_rate.set(M_fill_value);
+    m_Toc.set(Toc_fill_value);
+    m_Soc.set(Soc_fill_value);
+    m_overturning.set(O_fill_value);
+    m_T_star.set(Toc_fill_value);
+  }
+
   PicoPhysics physics(*m_config);
 
   const IceModelVec2S &ice_thickness    = geometry.ice_thickness;
@@ -470,9 +486,6 @@ void Pico::beckmann_goosse(const PicoPhysics &physics,
         basal_temperature(i, j) = T0 - beta_CC * pressure;
         basal_melt_rate(i, j)   = 0.0;
       }
-    } else {
-      basal_melt_rate(i, j)   = 0.0;
-      basal_temperature(i, j) = T0;
     }
   }
 }
