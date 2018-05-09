@@ -17,7 +17,7 @@ sub-shelf mass flux is a "melt rate".
 
 Constant in time and space
 ++++++++++++++++++++++++++
-    
+
 :|options|: ``-ocean constant``
 :|variables|: none
 :|implementation|: ``pism::ocean::Constant``
@@ -38,7 +38,7 @@ Alternatively, the sub-shelf melt rate in meters per year can be set using the
 
 Reading forcing data from a file
 ++++++++++++++++++++++++++++++++
-    
+
 :|options|: ``-ocean given``
 :|variables|: :var:`shelfbtemp` Kelvin,
               :var:`shelfbmassflux`  |flux|
@@ -62,7 +62,7 @@ given`` component is very similar to ``-surface given`` and ``-atmosphere given`
 
 PIK
 +++
-    
+
 :|options|: ``-ocean pik``
 :|variables|: none
 :|implementation|: ``pism::ocean::PIK``
@@ -116,6 +116,82 @@ It takes two command-line option:
   parameterization; see :cite:`HollandJenkins1999`. To disable salinity clipping, use the
   :opt:`-no_clip_shelf_base_salinity` option or set the configuration parameter
   :config:`ocean.three_equation_model_clip_salinity`  to "no".
+
+.. _sec-pico:
+
+PICO
+++++
+
+:|options|: ``-ocean pico``
+:|variables|: :var:`theta_ocean` (potential ocean temperature), [Kelvin],
+
+              :var:`salinity_ocean` (salinity of the adjacent ocean), [g/kg],
+
+              :var:`basins` (mask of large-scale ocean basins that ocean input is averaged over), [integer]
+:|implementation|: ``pism::ocean::Pico``
+
+The PICO model provides sub-shelf melt rates and temperatures consistent with the vertical
+overturning circulation in ice shelf cavities that drives the exchange with open ocean
+water masses. It is based on the ocean box model of :cite:`OlbersHellmer2010` and includes
+a geometric approach which makes it applicable to ice shelves that evolve in two
+horizontal dimensions. For each ice shelf, PICO solves the box model equations describing
+the transport between coarse ocean boxes. It applies a boundary layer melt formulation
+:cite:`HellmerOlbers1989`, :cite:`HollandJenkins1999`. The overturning circulation is
+driven by the ice-pump :cite:`LewisPerkin1986`: melting at the ice-shelf base reduces the
+density of ambient water masses. Buoyant water rising along the shelf base draws in ocean
+water at depth, which flows across the continental shelf towards the deep grounding lines.
+The model captures this circulation by defining consecutive boxes following the flow
+within the ice shelf cavity, with the first box adjacent to the grounding line. The
+extents of the ocean boxes are computed adjusting to the evolving grounding lines and
+calving fronts. Open ocean properties in front of the shelf as well as the geometry of the
+shelf determine basal melt rate and basal temperature at each grid point.
+
+The main equations reflect the
+
+#. heat and salt balance for each ocean box in contact with the ice shelf base,
+#. overturning flux driven by the density difference between open-ocean and grounding-line box,
+#. boundary layer melt formulation.
+
+The PICO model is described in detail in :cite:`ReeseAlbrecht2017`.
+
+Inputs are potential temperature (variable :var:`theta_ocean`), salinity (variable
+:var:`salinity_ocean`) and ocean basin mask (variable :var:`basins`). Variables
+:var:`theta_ocean` and :var:`salinity_ocean` may be time-dependent.
+
+Forcing ocean temperature and salinity are taken from the water masses that occupy the sea
+floor in front of the ice shelves, which extends down to a specified continental shelf
+depth (see :config:`ocean.pico.continental_shelf_depth`). These water masses are
+transported by the overturning circulation into the ice shelf cavity and towards the
+grounding line. The basin mask defines regions of similar, large-scale ocean conditions;
+each region is marked with a distinct positive integer. In PICO, ocean input temperature
+and salinity are averaged on the continental shelf within each basins. For each ice shelf,
+the input values of the overturning circulation are calculated as an area-weighted average
+over all basins that intersect the ice shelf. If ocean input parameters cannot be
+identified, standard values are used (**Warning:** this could strongly influence melt
+rates computed by PICO). In regions where the PICO geometry cannot be identified,
+:cite:`BeckmannGoosse2003` is applied.
+
+PICO has one command-line option and 7 configuration parameters:
+
+- :opt:`-ocean_pico_file`: specifies the NetCDF file containing potential temperature
+  (:var:`theta_ocean`), salinity (:var:`salinity_ocean`) and ocean basins (:var:`basins`).
+- :config:`ocean.pico.heat_exchange_coefficent` sets the coefficient for turbulent heat
+  exchange from the ambient ocean across the boundary layer beneath the ice shelf base.
+- :config:`ocean.pico.overturning_coefficent`: sets the coefficient in the overturning
+  parameterization.
+- :config:`ocean.pico.number_of_boxes`: For each ice shelf the number of ocean boxes is
+  determined by interpolating between 1 and number_of_boxes depending on its size and
+  geometry such that larger ice shelves are resolved with more boxes; a value of 5 is
+  suitable for the Antarctic setup.
+- :config:`ocean.pico.number_of_basins`
+- :config:`ocean.pico.exclude_ice_rises`: If set to true, grounding lines of ice rises are
+  excluded in the geometrical routines that determine the ocean boxes; using this option
+  is recommended.
+- :config:`ocean.pico.continental_shelf_depth`: specifies the depth up to which oceanic
+  input temperatures and salinities are averaged over the continental shelf areas in front
+  of the ice shelf cavities.
+- :config:`ocean.pico.maximum_ice_rise_area`: specifies an area threshold that separates
+  ice rises from continental regions.
 
 .. _sec-ocean-delta-sl:
 

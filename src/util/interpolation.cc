@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,15 +25,12 @@
 
 namespace pism {
 
-LinearInterpolation::LinearInterpolation(const std::vector<double> &input_x,
-                                         const std::vector<double> &output_x) {
-
-  this->init(&input_x[0], input_x.size(), &output_x[0], output_x.size());
+Interpolation::Interpolation() {
+  // empty
 }
 
-LinearInterpolation::LinearInterpolation(const double *input_x, unsigned int input_x_size,
-                                         const double *output_x, unsigned int output_x_size) {
-  this->init(input_x, input_x_size, output_x, output_x_size);
+Interpolation::~Interpolation() {
+  // empty
 }
 
 /**
@@ -44,8 +41,8 @@ LinearInterpolation::LinearInterpolation(const double *input_x, unsigned int inp
  * @param[in] output_x coordinates of the output grid
  * @param[in] output_x_size number of points in the output grid
  */
-void LinearInterpolation::init(const double *input_x, unsigned int input_x_size,
-                               const double *output_x, unsigned int output_x_size) {
+void Interpolation::init_linear(const double *input_x, unsigned int input_x_size,
+                                const double *output_x, unsigned int output_x_size) {
 
   m_left.resize(output_x_size);
   m_right.resize(output_x_size);
@@ -98,31 +95,41 @@ void LinearInterpolation::init(const double *input_x, unsigned int input_x_size,
   }
 }
 
-const std::vector<int>& LinearInterpolation::left() const {
+void Interpolation::init_nearest(const double *input_x, unsigned int input_x_size,
+                                 const double *output_x, unsigned int output_x_size) {
+
+  init_linear(input_x, input_x_size, output_x, output_x_size);
+
+  for (unsigned int j = 0; j < m_alpha.size(); ++j) {
+    m_alpha[j] = m_alpha[j] > 0.5 ? 1.0 : 0.0;
+  }
+}
+
+const std::vector<int>& Interpolation::left() const {
   return m_left;
 }
 
-const std::vector<int>& LinearInterpolation::right() const {
+const std::vector<int>& Interpolation::right() const {
   return m_right;
 }
 
-const std::vector<double>& LinearInterpolation::alpha() const {
+const std::vector<double>& Interpolation::alpha() const {
   return m_alpha;
 }
 
-int LinearInterpolation::left(size_t j) const {
+int Interpolation::left(size_t j) const {
   return m_left[j];
 }
 
-int LinearInterpolation::right(size_t j) const {
+int Interpolation::right(size_t j) const {
   return m_right[j];
 }
 
-double LinearInterpolation::alpha(size_t j) const {
+double Interpolation::alpha(size_t j) const {
   return m_alpha[j];
 }
 
-std::vector<double> LinearInterpolation::interpolate(const std::vector<double> &input_values) const {
+std::vector<double> Interpolation::interpolate(const std::vector<double> &input_values) const {
   std::vector<double> result(m_alpha.size());
 
   for (size_t k = 0; k < result.size(); ++k) {
@@ -135,5 +142,26 @@ std::vector<double> LinearInterpolation::interpolate(const std::vector<double> &
   return result;
 }
 
+LinearInterpolation::LinearInterpolation(const std::vector<double> &input_x,
+                                         const std::vector<double> &output_x) {
+
+  this->init_linear(&input_x[0], input_x.size(), &output_x[0], output_x.size());
+}
+
+LinearInterpolation::LinearInterpolation(const double *input_x, unsigned int input_x_size,
+                                         const double *output_x, unsigned int output_x_size) {
+  this->init_linear(input_x, input_x_size, output_x, output_x_size);
+}
+
+NearestNeighbor::NearestNeighbor(const std::vector<double> &input_x,
+                                 const std::vector<double> &output_x) {
+
+  this->init_nearest(&input_x[0], input_x.size(), &output_x[0], output_x.size());
+}
+
+NearestNeighbor::NearestNeighbor(const double *input_x, unsigned int input_x_size,
+                                 const double *output_x, unsigned int output_x_size) {
+  this->init_nearest(input_x, input_x_size, output_x, output_x_size);
+}
 
 } // end of namespace pism

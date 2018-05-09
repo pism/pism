@@ -32,6 +32,7 @@
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/IceGrid.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 
@@ -309,6 +310,8 @@ protected:
   mutable int m_access_counter;           // used in begin_access() and end_access()
   int m_state_counter;            //!< Internal IceModelVec "revision number"
 
+  InterpolationType m_interpolation_type;
+
   virtual void checkCompatibility(const char *function, const IceModelVec &other) const;
 
   //! \brief Check the array indices and warn if they are out of range.
@@ -468,6 +471,9 @@ public:
 //! floating-point scalars (instead of integers).
 class IceModelVec2Int : public IceModelVec2S {
 public:
+  IceModelVec2Int();
+  IceModelVec2Int(IceGrid::ConstPtr grid, const std::string &name,
+                  IceModelVecKind ghostedp, int width = 1);
 
   typedef std::shared_ptr<IceModelVec2Int> Ptr;
   typedef std::shared_ptr<const IceModelVec2Int> ConstPtr;

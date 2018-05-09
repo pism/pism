@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2011, 2013, 2014, 2015, 2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011, 2013, 2014, 2015, 2017, 2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -23,6 +23,7 @@
 #include <memory>
 
 #include "pism/util/interpolation.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 
@@ -49,11 +50,11 @@ class grid_info;
 class LocalInterpCtx {
 public:
   LocalInterpCtx(const grid_info &input, const IceGrid &grid,
-                 const std::vector<double> &z_output);
+                 const std::vector<double> &z_output, InterpolationType type);
   // Indices in netCDF file.
   unsigned int start[4], count[4];
   // indexes and coefficients for 1D linear interpolation
-  std::shared_ptr<LinearInterpolation> x, y, z;
+  std::shared_ptr<Interpolation> x, y, z;
   //! temporary storage
   std::vector<double> buffer;
 };

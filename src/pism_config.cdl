@@ -1114,6 +1114,23 @@ netcdf pism_config {
     pism_config:ocean.th.reference_year_type = "integer";
     pism_config:ocean.th.reference_year_units = "years";
 
+    pism_config:ocean.pico.file = "";
+    pism_config:ocean.pico.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:ocean.pico.file_type = "string";
+    pism_config:ocean.pico.file_option = "ocean_pico_file";
+
+    pism_config:ocean.pico.period = 0;
+    pism_config:ocean.pico.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:ocean.pico.period_type = "integer";
+    pism_config:ocean.pico.period_option = "ocean_pico_period";
+    pism_config:ocean.pico.period_units = "years";
+
+    pism_config:ocean.pico.reference_year = 0;
+    pism_config:ocean.pico.reference_year_doc = "Reference year to use when ``ocean.pico.period`` is active.";
+    pism_config:ocean.pico.reference_year_option = "ocean_pico_reference_year";
+    pism_config:ocean.pico.reference_year_type = "integer";
+    pism_config:ocean.pico.reference_year_units = "years";
+
     pism_config:ocean.always_grounded = "no";
     pism_config:ocean.always_grounded_doc = "Dry (ocean-less) simulation; ice is considered grounded regardless of ice thickness, bed elevation, and sea level.";
     pism_config:ocean.always_grounded_option = "dry";
@@ -1166,6 +1183,40 @@ netcdf pism_config {
     pism_config:ocean.three_equation_model_clip_salinity_doc = "Clip shelf base salinity so that it is in the range [4, 40] k/kg. See :cite:`HollandJenkins1999`.";
     pism_config:ocean.three_equation_model_clip_salinity_option = "clip_shelf_base_salinity";
     pism_config:ocean.three_equation_model_clip_salinity_type = "boolean";
+
+    pism_config:ocean.pico.number_of_boxes = 5;
+    pism_config:ocean.pico.number_of_boxes_doc = "Default maximum number of boxes (for the largest ice shelves)";
+    pism_config:ocean.pico.number_of_boxes_option = "number_of_boxes";
+    pism_config:ocean.pico.number_of_boxes_type = "integer";
+    pism_config:ocean.pico.number_of_boxes_units = "pure number";
+
+    pism_config:ocean.pico.continental_shelf_depth = -800.0;
+    pism_config:ocean.pico.continental_shelf_depth_doc = "Determines the edge of the continental shelf to calculate mean ocean properties";
+    pism_config:ocean.pico.continental_shelf_depth_option = "continental_shelf_depth";
+    pism_config:ocean.pico.continental_shelf_depth_type = "scalar";
+    pism_config:ocean.pico.continental_shelf_depth_units = "meters";
+
+    pism_config:ocean.pico.maximum_ice_rise_area = 1e5;
+    pism_config:ocean.pico.maximum_ice_rise_area_doc = "Maximum ice rise area. Patches of grounded ice that are bugger than this are treated as continental ice sheets.";
+    pism_config:ocean.pico.maximum_ice_rise_area_type = "scalar";
+    pism_config:ocean.pico.maximum_ice_rise_area_units = "km2";
+
+    pism_config:ocean.pico.overturning_coefficent = 1e6;
+    pism_config:ocean.pico.overturning_coefficent_doc = "Overturning stregth coefficient";
+    pism_config:ocean.pico.overturning_coefficent_option = "overturning_coeff";
+    pism_config:ocean.pico.overturning_coefficent_type = "scalar";
+    pism_config:ocean.pico.overturning_coefficent_units = "meters6 seconds-1 kg-1";
+
+    pism_config:ocean.pico.heat_exchange_coefficent = 2e-5;
+    pism_config:ocean.pico.heat_exchange_coefficent_doc = "Turbulent heat exchange coefficient";
+    pism_config:ocean.pico.heat_exchange_coefficent_option = "gamma_T";
+    pism_config:ocean.pico.heat_exchange_coefficent_type = "scalar";
+    pism_config:ocean.pico.heat_exchange_coefficent_units = "meters second-1";
+
+    pism_config:ocean.pico.exclude_ice_rises = "yes";
+    pism_config:ocean.pico.exclude_ice_rises_doc = "Exclude ice rises for box calculation in PICO";
+    pism_config:ocean.pico.exclude_ice_rises_option = "exclude_icerises";
+    pism_config:ocean.pico.exclude_ice_rises_type = "boolean";
 
     pism_config:output.backup_interval = 1.0;
     pism_config:output.backup_interval_doc = "wall-clock time between automatic backups";
