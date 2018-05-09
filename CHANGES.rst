@@ -3,6 +3,9 @@
 Changes since v1.0
 ==================
 
+- Added PICO, the *Potsdam Ice-shelf Cavity mOdel* (https://doi.org/10.5194/tc-2017-70).
+  Use `-ocean pico` to enable and see the documentation of PISM's `ocean models`_ in the User's
+  Manual for details.
 - Exclude ice shelves from the ocean load provided to bed deformation models. See `issue
   363`_.
 - Revert the change from v0.7 to v1.0 in the handling of energy conservation near ice
@@ -525,7 +528,7 @@ Miscellaneous
 .. _issue 400: https://github.com/pism/pism/issues/400
 .. _issue 402: https://github.com/pism/pism/issues/402
 .. _issue 363: https://github.com/pism/pism/issues/363
-
+.. _ocean models: http://pism-docs.org/sphinx/climate_forcing/ocean.html
 ..
    Local Variables:
    fill-column: 90
