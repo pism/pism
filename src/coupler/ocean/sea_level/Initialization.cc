@@ -31,6 +31,7 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid,
 
   m_sea_level.metadata().set_name("effective_sea_level_elevation");
   m_sea_level.metadata().set_string("pism_intent", "model_state");
+  m_sea_level.metadata().set_double("_FillValue", m_fill_value);
 }
 
 void InitializationHelper::update_impl(const Geometry &geometry, double t, double dt) {

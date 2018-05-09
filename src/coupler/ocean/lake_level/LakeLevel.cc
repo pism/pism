@@ -109,6 +109,7 @@ public:
     m_vars = {SpatialVariableMetadata(m_sys, "lake_level")};
 
     set_attrs("lake level elevation, relative to the geoid", "", "meters", "meters", 0);
+    metadata().set_double("_FillValue", m_fill_value);
   }
 
 protected:
