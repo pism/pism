@@ -197,13 +197,6 @@ void IceModel::model_state_setup() {
     m_ocean->init(m_geometry);
   }
 
-
-  // By now ice geometry is set and so we can initialize the ocean model, which may need
-  // geometric information (ice thickness, bed elevation, cell type) to bootstrap.
-  {
-    m_ocean->init(m_geometry);
-  }
-
   // Now surface elevation is initialized, so we can initialize surface models (some use
   // elevation-based parameterizations of surface temperature and/or mass balance).
   m_surface->init(m_geometry);
