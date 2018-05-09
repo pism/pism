@@ -1213,7 +1213,7 @@ netcdf pism_config {
     pism_config:ocean.pico.heat_exchange_coefficent_type = "scalar";
     pism_config:ocean.pico.heat_exchange_coefficent_units = "meters second-1";
 
-    pism_config:ocean.pico.exclude_ice_rises = "no";
+    pism_config:ocean.pico.exclude_ice_rises = "yes";
     pism_config:ocean.pico.exclude_ice_rises_doc = "Exclude ice rises for box calculation in PICO";
     pism_config:ocean.pico.exclude_ice_rises_option = "exclude_icerises";
     pism_config:ocean.pico.exclude_ice_rises_type = "boolean";

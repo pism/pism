@@ -1281,7 +1281,7 @@
 
 #. :config:`ocean.pico.exclude_ice_rises` (*boolean*)
 
-   :Value: no
+   :Value: yes
    :Option: :opt:`-exclude_icerises`
    :Description: Exclude ice rises for box calculation in PICO
 
