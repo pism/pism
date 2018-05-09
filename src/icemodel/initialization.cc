@@ -182,16 +182,6 @@ void IceModel::model_state_setup() {
     m_grid->variables().add(m_beddef->uplift());
   }
 
-  // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
-  // which may need ice thickness to bootstrap.
-  //
-  // FIXME: some ocean models may need both bed elevation and the cell type mask, and the
-  // cell type mask cannot be computed without the sea level, which is provided by ocean
-  // model.
-  {
-    m_ocean->init(m_geometry);
-  }
-
   // Now ice thickness, bed elevation, and sea level are available, so we can compute the ice
   // surface elevation and the cell type mask. This also ensures consistency of ice geometry.
   //
@@ -200,6 +190,13 @@ void IceModel::model_state_setup() {
   // guaranteed not to see "icebergs". Here we make sure that the first time step is OK
   // too.
   enforce_consistency_of_geometry(REMOVE_ICEBERGS);
+
+  // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
+  // which may need ice thickness, bed topography, and the cell type mask.
+  {
+    m_ocean->init(m_geometry);
+  }
+
 
   // By now ice geometry is set and so we can initialize the ocean model, which may need
   // geometric information (ice thickness, bed elevation, cell type) to bootstrap.
