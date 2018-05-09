@@ -339,8 +339,6 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics, const IceMo
     temperature[basin_id] = GlobalSum(m_grid->com, temperature[basin_id]);
 
     // if basin is not dummy basin 0 or there are no ocean cells in this basin to take the mean over.
-    // FIXME: the following warning occurs once at initialization before input is available.
-    // Please ignore this very first warning for now.
     if (basin_id > 0 && count[basin_id] == 0) {
       m_log->message(2, "PICO ocean WARNING: basin %d contains no cells with ocean data on continental shelf\n"
                         "(no values with ocean_contshelf_mask=2).\n"
