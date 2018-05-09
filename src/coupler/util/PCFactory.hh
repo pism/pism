@@ -101,11 +101,14 @@ protected:
 
   template<typename T>
   std::string key_list(std::map<std::string, T> list) {
-    std::string result;
-    auto k = list.begin();
-    result = "[" + (k++)->first;
-    for (; k != list.end(); k++) {
-      result += ", " + k->first;
+    std::string result = "[";
+
+    if (!list.empty()) {
+      auto k = list.begin();
+      result += (k++)->first;
+      for (; k != list.end(); k++) {
+        result += ", " + k->first;
+      }
     }
     result += "]";
 
