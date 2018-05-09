@@ -1177,6 +1177,24 @@
    :Option: :opt:`-ocean_th_reference_year`
    :Description: Reference year to use when ``ocean.th.period`` is active.
 
+#. :config:`ocean.pico.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ocean_pico_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`ocean.pico.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_pico_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`ocean.pico.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_pico_reference_year`
+   :Description: Reference year to use when ``ocean.pico.period`` is active.
+
 #. :config:`ocean.always_grounded` (*boolean*)
 
    :Value: no
@@ -1231,12 +1249,6 @@
    :Value: yes
    :Option: :opt:`-clip_shelf_base_salinity`
    :Description: Clip shelf base salinity so that it is in the range [4, 40] k/kg. See :cite:`HollandJenkins1999`.
-
-#. :config:`ocean.pico.number_of_basins` (*integer*)
-
-   :Value: 20
-   :Option: :opt:`-number_of_basins`
-   :Description: Default number of basins (according to basins mask)
 
 #. :config:`ocean.pico.number_of_boxes` (*integer*)
 

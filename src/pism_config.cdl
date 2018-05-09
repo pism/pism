@@ -1184,12 +1184,6 @@ netcdf pism_config {
     pism_config:ocean.three_equation_model_clip_salinity_option = "clip_shelf_base_salinity";
     pism_config:ocean.three_equation_model_clip_salinity_type = "boolean";
 
-    pism_config:ocean.pico.number_of_basins = 20;
-    pism_config:ocean.pico.number_of_basins_doc = "Default number of basins (according to basins mask)";
-    pism_config:ocean.pico.number_of_basins_option = "number_of_basins";
-    pism_config:ocean.pico.number_of_basins_type = "integer";
-    pism_config:ocean.pico.number_of_basins_units = "pure number";
-
     pism_config:ocean.pico.number_of_boxes = 5;
     pism_config:ocean.pico.number_of_boxes_doc = "Default maximum number of boxes (for the largest ice shelves)";
     pism_config:ocean.pico.number_of_boxes_option = "number_of_boxes";

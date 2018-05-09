@@ -124,9 +124,7 @@ Pico::Pico(IceGrid::ConstPtr g)
 
   m_shelf_base_temperature->metadata().set_double("_FillValue", 0.0);
 
-  // Initialize this early so that we can check the validity of the "basins" mask read
-  // from a file in Pico::init_impl().
-  m_n_basins = m_config->get_double("ocean.pico.number_of_basins");
+  m_n_basins = 0;
 
   m_n_boxes  = m_config->get_double("ocean.pico.number_of_boxes");
 }
@@ -148,6 +146,9 @@ void Pico::init_impl(const Geometry &geometry) {
   m_salinity_ocean->init(opt.filename, opt.period, opt.reference_time);
 
   m_basin_mask.regrid(opt.filename, CRITICAL);
+
+  // FIXME: m_n_basins is a misnomer
+  m_n_basins = m_basin_mask.max() + 1;
 
   m_log->message(4, "PICO basin min=%f,max=%f\n", m_basin_mask.min(), m_basin_mask.max());
 
