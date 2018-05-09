@@ -32,6 +32,28 @@ void GeometryCalculator::compute(const IceModelVec2S& sea_level,
   compute_surface(sea_level, bed, thickness, out_surface);
 }
 
+void GeometryCalculator::compute(const IceModelVec2S& sea_level,
+                                 const IceModelVec2S& bed,
+                                 const IceModelVec2S& thickness,
+                                 const IceModelVec2S& lake_level,
+                                 IceModelVec2Int& out_mask,
+                                 IceModelVec2S& out_surface) const {
+  compute_mask(sea_level, bed, thickness, lake_level, out_mask);
+  compute_surface(sea_level, bed, thickness, lake_level, out_surface);
+}
+
+void GeometryCalculator::compute(const IceModelVec2S& sea_level,
+                                 const IceModelVec2S& bed,
+                                 const IceModelVec2S& thickness,
+                                 const IceModelVec2S& lake_level,
+                                 IceModelVec2Int& out_mask,
+                                 IceModelVec2S& out_surface,
+                                 IceModelVec2Int& out_lake_mask) const {
+  compute_mask(sea_level, bed, thickness, lake_level, out_mask);
+  compute_surface(sea_level, bed, thickness, lake_level, out_surface);
+  compute_lake_mask(lake_level, out_lake_mask);
+}
+
 void GeometryCalculator::compute_mask(const IceModelVec2S &sea_level,
                                       const IceModelVec2S &bed,
                                       const IceModelVec2S &thickness,
@@ -48,7 +70,29 @@ void GeometryCalculator::compute_mask(const IceModelVec2S &sea_level,
   for (PointsWithGhosts p(grid, stencil); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    result(i,j) = this->mask(sea_level(i, j), bed(i, j), thickness(i, j));
+    result(i,j) = this->mask(sea_level(i, j), bed(i, j), thickness(i, j), m_fill_value);
+  }
+}
+
+void GeometryCalculator::compute_mask(const IceModelVec2S &sea_level,
+                                      const IceModelVec2S &bed,
+                                      const IceModelVec2S &thickness,
+                                      const IceModelVec2S &lake_level,
+                                      IceModelVec2Int &result) const {
+  IceModelVec::AccessList list{&sea_level, &bed, &thickness, &lake_level, &result};
+
+  const IceGrid &grid = *bed.grid();
+
+  const unsigned int stencil = result.stencil_width();
+  assert(sea_level.stencil_width()  >= stencil);
+  assert(bed.stencil_width()        >= stencil);
+  assert(thickness.stencil_width()  >= stencil);
+  assert(lake_level.stencil_width() >= stencil);
+
+  for (PointsWithGhosts p(grid, stencil); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    result(i,j) = this->mask(sea_level(i, j), bed(i, j), thickness(i, j), lake_level(i, j));
   }
 }
 
@@ -68,8 +112,54 @@ void GeometryCalculator::compute_surface(const IceModelVec2S &sea_level,
   for (PointsWithGhosts p(grid, stencil); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    result(i,j) = this->surface(sea_level(i, j), bed(i, j), thickness(i, j));
+    result(i,j) = this->surface(sea_level(i, j), bed(i, j), thickness(i, j), m_fill_value);
   }
+}
+
+void GeometryCalculator::compute_surface(const IceModelVec2S &sea_level,
+                                         const IceModelVec2S &bed,
+                                         const IceModelVec2S &thickness,
+                                         const IceModelVec2S &lake_level,
+                                         IceModelVec2S &result) const {
+  IceModelVec::AccessList list{&sea_level, &bed, &thickness, &lake_level, &result};
+
+  const IceGrid &grid = *bed.grid();
+
+  const unsigned int stencil = result.stencil_width();
+  assert(sea_level.stencil_width()  >= stencil);
+  assert(bed.stencil_width()        >= stencil);
+  assert(thickness.stencil_width()  >= stencil);
+  assert(lake_level.stencil_width() >= stencil);
+
+  for (PointsWithGhosts p(grid, stencil); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    result(i,j) = this->surface(sea_level(i, j), bed(i, j), thickness(i, j), lake_level(i, j));
+  }
+}
+
+void GeometryCalculator::compute_lake_mask(const IceModelVec2S &lake_level,
+                                           IceModelVec2Int &result) const {
+  IceModelVec::AccessList list{&lake_level, &result};
+
+  const IceGrid &grid = *lake_level.grid();
+
+  const unsigned int stencil = result.stencil_width();
+  assert(lake_level.stencil_width() >= stencil);
+
+  for (PointsWithGhosts p(grid, stencil); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    result(i,j) = this->lake_mask(lake_level(i, j));
+  }
+}
+
+int GeometryCalculator::mask(double sea_level, double bed, double thickness) const{
+  return mask(sea_level, bed, thickness, m_fill_value);
+}
+
+double GeometryCalculator::surface(double sea_level, double bed, double thickness) const{
+  return surface(sea_level, bed, thickness, m_fill_value);
 }
 
 } // end of namespace pism

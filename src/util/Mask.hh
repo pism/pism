@@ -67,8 +67,11 @@ namespace mask {
 
 class GeometryCalculator {
 public:
-  GeometryCalculator(const Config &config) {
+  GeometryCalculator(const Config &config):
+  m_fill_value(config.get_double("output.fill_value"))
+  {
     m_alpha = 1 - config.get_double("constants.ice.density") / config.get_double("constants.sea_water.density");
+    m_alpha_lake = 1 - config.get_double("constants.ice.density") / config.get_double("constants.fresh_water.density");
     m_is_dry_simulation = config.get_boolean("ocean.always_grounded");
     m_icefree_thickness = config.get_double("geometry.ice_free_thickness_standard");
     if (m_icefree_thickness < 0.0) {
@@ -87,16 +90,44 @@ public:
   void compute(const IceModelVec2S &sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
                IceModelVec2Int &out_mask, IceModelVec2S &out_surface) const;
 
+  void compute(const IceModelVec2S &sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
+               const IceModelVec2S &lake_level, IceModelVec2Int &out_mask, IceModelVec2S &out_surface) const;
+
+  void compute(const IceModelVec2S &sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
+               const IceModelVec2S &lake_level, IceModelVec2Int &out_mask, IceModelVec2S &out_surface,
+               IceModelVec2Int &out_lake_mask) const;
+
   void compute_mask(const IceModelVec2S& sea_level, const IceModelVec2S& bed,
                     const IceModelVec2S& thickness, IceModelVec2Int& result) const;
+
+  void compute_mask(const IceModelVec2S& sea_level, const IceModelVec2S& bed, const IceModelVec2S& thickness,
+                    const IceModelVec2S& lake_level, IceModelVec2Int& result) const;
 
   void compute_surface(const IceModelVec2S& sea_level, const IceModelVec2S& bed,
                        const IceModelVec2S& thickness, IceModelVec2S& result) const;
 
+  void compute_surface(const IceModelVec2S& sea_level, const IceModelVec2S& bed, const IceModelVec2S &thickness,
+                       const IceModelVec2S& lake_level, IceModelVec2S& result) const;
+
+  void compute_lake_mask(const IceModelVec2S& lake_level, IceModelVec2Int& result) const;
+
+  int mask(double sea_level, double bed, double thickness) const;
+
+  double surface(double sea_level, double bed, double thickness) const;
+
   inline void compute(double sea_level, double bed, double thickness,
                       int *out_mask, double *out_surface) const {
+    compute(sea_level, bed, thickness, m_fill_value, out_mask, out_surface);
+  }
+
+  inline void compute(double sea_level, double bed, double thickness, double lake_level,
+                      int *out_mask, double *out_surface) const {
+    const bool is_lake = islake(lake_level);
+    const double fl_level = water_level(sea_level, bed, lake_level);
+    const double alpha = !is_lake ? m_alpha : m_alpha_lake;
+
     const double hgrounded = bed + thickness; // FIXME issue #15
-    const double hfloating = sea_level + m_alpha*thickness;
+    const double hfloating = fl_level + alpha*thickness;
 
     const bool
       is_floating = (hfloating > hgrounded),
@@ -132,22 +163,39 @@ public:
     }
   }
 
-  inline int mask(double sea_level, double bed, double thickness) const {
+  inline int mask(double sea_level, double bed, double thickness, double lake_level) const {
     int result;
-    compute(sea_level, bed, thickness, &result, NULL);
+    compute(sea_level, bed, thickness, lake_level, &result, NULL);
     return result;
   }
 
-  inline double surface(double sea_level, double bed, double thickness) const {
+  inline double surface(double sea_level, double bed, double thickness, double lake_level) const {
     double result;
-    compute(sea_level, bed, thickness, NULL, &result);
+    compute(sea_level, bed, thickness, lake_level, NULL, &result);
     return result;
+  }
+
+  inline double valid_sea_level(double sea_level, double bed) const {
+    return (sea_level != m_fill_value) ? sea_level : bed;
+  }
+
+  inline double water_level(double sea_level, double bed, double lake_level) const {
+    return !islake(lake_level) ? valid_sea_level(sea_level, bed) : lake_level;
+  }
+
+  inline bool islake(double lake_level) const {
+    return (lake_level != m_fill_value);
+  }
+
+  inline int lake_mask(double lake_level) const {
+    return islake(lake_level) ? 1 : 0;
   }
 
 protected:
-  double m_alpha;
+  double m_alpha, m_alpha_lake;
   double m_icefree_thickness;
   bool m_is_dry_simulation;
+  const double m_fill_value;
 };
 
 } // end of namespace pism
