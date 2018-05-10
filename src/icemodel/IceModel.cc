@@ -159,7 +159,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   m_vonmises_calving            = nullptr;
   m_frontal_melt                = nullptr;
 
-  m_output_global_attributes.set_string("Conventions", "CF-1.5");
+  m_output_global_attributes.set_string("Conventions", "CF-1.6");
   m_output_global_attributes.set_string("source", pism::version());
 
   // Do not save snapshots by default:
