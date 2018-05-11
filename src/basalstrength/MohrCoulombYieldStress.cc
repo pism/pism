@@ -35,8 +35,8 @@
 
 namespace pism {
 
-//! \file PISMMohrCoulombYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
-/*! \file PISMMohrCoulombYieldStress.cc
+//! \file MohrCoulombYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
+/*! \file MohrCoulombYieldStress.cc
 The output variable of this submodel is `tauc`, the pseudo-plastic yield stress
 field that is used in the ShallowStressBalance objects.  This quantity is
 computed by the Mohr-Coulomb criterion [\ref SchoofTill], but using an empirical

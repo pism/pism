@@ -329,6 +329,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
  * Check if the storage order of a variable in the current file
  * matches the memory storage order used by PISM.
  *
+ * @param[in] nc input file
  * @param var_name name of the variable to check
  * @returns false if storage orders match, true otherwise
  */
@@ -525,6 +526,7 @@ static void regrid_vec(const PIO &nc, const IceGrid &grid, const std::string &va
 
 /** Regrid `var_name` from a file, replacing missing values with `default_value`.
  *
+ * @param[in] nc input file
  * @param grid computational grid; used to initialize interpolation
  * @param var_name variable to regrid
  * @param zlevels_out vertical levels of the resulting grid

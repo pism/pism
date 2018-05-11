@@ -37,7 +37,7 @@
 
 namespace pism {
 
-//! \file iMenergy.cc Methods of IceModel which address conservation of energy.
+//! \file energy.cc Methods of IceModel which address conservation of energy.
 //! Common to enthalpy (polythermal) and temperature (cold-ice) methods.
 
 //! Manage the solution of the energy equation, and related parallel communication.

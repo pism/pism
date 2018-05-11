@@ -19,8 +19,8 @@
 #ifndef __iceModel_hh
 #define __iceModel_hh
 
-//! \file iceModel.hh Definition of class IceModel.
-/*! \file iceModel.hh
+//! \file IceModel.hh Definition of class IceModel.
+/*! \file IceModel.hh
   IceModel is a big class which is an ice flow model.  It contains all parts that
   are not well-defined, separated components.  Such components are better places
   to put sub-models that have a clear, general interface to the rest of an ice
