@@ -97,6 +97,8 @@ Changes since v1.0
   #. rename scalar diagnostics so that they match 2D diagnostics and
   #. report fluxes in `Gt/year` instead of `kg/year`.
 - Update the Debian/Ubuntu section of the installation manual.
+- Move the documentation of the BOMBPROOF numerical scheme for energy conservation from
+  the source code browser into the manual.
 
 Changes from v0.7 to v1.0
 =========================
