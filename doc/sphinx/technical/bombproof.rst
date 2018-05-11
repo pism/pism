@@ -1,11 +1,16 @@
 .. include:: ../global.txt
 
+.. only:: html
+
+   .. When building PDFs this will be included already.
+
+   .. include:: ../math-definitions.txt
+
 .. _sec-bombproof:
 
 BOMBPROOF, PISM's numerical scheme for conservation of energy
 =============================================================
 
-.. contents::
 
 Introduction
 ------------
@@ -31,26 +36,29 @@ x,\Delta y, \Delta z^2)` in circumstances where the vertical ice flow velocity i
 enough, relative to conductivity, and otherwise reverts to
 `O(\Delta t,\Delta x,\Delta y, \Delta z^1)`.
 
-The conservation of energy problem for the ice is in terms of an enthalpy field :cite:`AschwandenBuelerKhroulevBlatter`. The current scheme supercedes the cold-ice,
-temperature-based scheme described in the appendices of :cite:`BBL` and in :cite:`BBssasliding`. Compared to a cold-ice scheme, the enthalpy formulation does a better job
-of conserving energy, has a more-physical model for basal melt rate and drainage, and can
-model polythermal ice with any CTS topology :cite:`AschwandenBuelerKhroulevBlatter`. The
-finite difference implementation of the enthalpy method is robust and avoids the CFL
-condition on vertical advection which was present in the older, cold-ice scheme.
+The conservation of energy problem for the ice is in terms of an enthalpy field
+:cite:`AschwandenBuelerKhroulevBlatter`. The current scheme supercedes the cold-ice,
+temperature-based scheme described in the appendices of :cite:`BBL` and in
+:cite:`BBssasliding`. Compared to a cold-ice scheme, the enthalpy formulation does a
+better job of conserving energy, has a more-physical model for basal melt rate and
+drainage, and can model polythermal ice with any CTS topology
+:cite:`AschwandenBuelerKhroulevBlatter`. The finite difference implementation of the
+enthalpy method is robust and avoids the CFL condition on vertical advection which was
+present in the older, cold-ice scheme.
 
 The bedrock thermal problem is solved by splitting the timestep into an update of the
 bedrock temperature field, assuming the ice base is as constant temperature, and an update
 of the ice enthalpy field, by the BOMBPROOF scheme here, assuming the upward heat flux
 from the bedrock layer is constant during the timestep. For more on the implementation,
-see the pism::BedThermalUnit class.
+see the ``BedThermalUnit`` class.
 
 The region in which the conservation of energy equation needs to be solved changes over
 time. This is an essential complicating factor in ice sheet modeling. Also relevant is
 that the velocity field has a complicated provenance as it comes from different stress
 balance equations chosen at runtime. These stress balances, especially with transitions in
 flow type, for instance at grounding lines, are incompletely understood when
-thermomechanically-coupled. (The ``pism::ShallowStressBalance`` instance owned by
-``pism::IceModel`` could be the SIA, the SSA, a hybrid of these, or other stress balances in
+thermomechanically-coupled. (The ``ShallowStressBalance`` instance owned by
+``IceModel`` could be the SIA, the SSA, a hybrid of these, or other stress balances in
 future PISM versions.) We will therefore not make, in proving stability, assumptions about
 the regularity of the velocity field in space or time other than boundedness.
 
@@ -70,7 +78,7 @@ Conservation of energy in a shallow ice sheet
 In an enthalpy formulation :cite:`AschwandenBuelerKhroulevBlatter` (and references therein),
 the ice sheet is regarded as a mixture of two phases, solid and liquid, so that both cold
 and temperate ice with liquid ice matrix can be modeled. The specific enthalpy field of
-the ice mixture is denoted `E(x,y,z,t)` and has units `\text{J}\,\text{kg}^{-1}`. (Within
+the ice mixture is denoted `E(x,y,z,t)` and has units `J / kg`. (Within
 the PISM documentation the symbol `H` is used for ice thickness so we use `E` for enthalpy
 here and in the PISM source code versus "H" in :cite:`AschwandenBuelerKhroulevBlatter`.)
 The conservation of energy equation is
@@ -86,15 +94,16 @@ incompressible :cite:`AschwandenBuelerKhroulevBlatter`. The left and right sides
 equation :eq:`basicEnergy`, and thus the quantity `Q`, have units
 `J\,\text{s}^{-1}\,\text{m}^{-3} = \text{W}\,\text{m}^{-3}`.
 
-Neglecting the dependence of conductivity and heat capacity on temperature :cite:`AschwandenBuelerKhroulevBlatter`, the heat flux in cold ice and temperate ice is
+Neglecting the dependence of conductivity and heat capacity on temperature
+:cite:`AschwandenBuelerKhroulevBlatter`, the heat flux in cold ice and temperate ice is
 
 .. math::
    :name: heatflux
 
    \mathbf{q} =
    \begin{cases}
-          - k_i c_i^{-1} \nabla E, & \text{cold ice}, \\
-          - K_0 \nabla E, & \text{temperate ice},\\
+      - \frac{k_i}{c_i} \nabla E, & \text{cold ice}, \\
+      - K_0 \nabla E, & \text{temperate ice},\\
    \end{cases}
 
 where `k_i,c_i,K_0` are constant :cite:`AschwandenBuelerKhroulevBlatter`. The nonzero flux
@@ -106,10 +115,10 @@ is
 .. math::
 
    \rho \left(\frac{\partial E}{\partial t} + \mathbf{U}\cdot \nabla E\right)
-   = \nabla \cdot \left(\left\{\begin{matrix} k_i c_i^{-1} \\ K_0 \end{matrix}\right\}
+   = \nabla \cdot \left(\left\{\begin{matrix} \frac{k_i}{c_i} \\ K_0 \end{matrix}\right\}
    \nabla E \right) + Q,
 
-where `\mathbf{U}` is the three dimensional velocity.  Thus advection is included.
+where `\mathbf{U}` is the three dimensional velocity, thus advection is included.
 
 The additive quantity `Q` is the dissipation (strain-rate) heating,
 
@@ -119,11 +128,11 @@ The additive quantity `Q` is the dissipation (strain-rate) heating,
 
 where `D_{ij}` is the strain rate tensor and `\tau_{ij}` is the deviatoric stress tensor.
 Reference :cite:`BBssasliding` addresses how this term is computed in PISM, according to
-the shallow stress balance approximations; see method
-pism::StressBalance::get_volumetric_strain_heating(). (`Q` is called `\Sigma` in
+the shallow stress balance approximations; see
+``StressBalance::compute_volumetric_strain_heating()``. (`Q` is called `\Sigma` in
 :cite:`BBL`, :cite:`BBssasliding` and in many places in the source code.)
 
-Friction from sliding also is a source of heating. It has units of W m-2 = J s-1 m-2, that
+Friction from sliding also is a source of heating. It has units of `W / m^2 = J / (m^2 s)`, that
 is, the same units as the heat flux `\mathbf{q}` above. In formulas we write
 
 .. math::
@@ -134,9 +143,9 @@ where `\tau_b` is the basal shear stress and `\mathbf{u}_b` is the basal sliding
 the basal shear stress is oppositely-directed to the basal velocity. For example, in the
 plastic case `\tau_b = - \tau_c \mathbf{u}_b / |\mathbf{u}_b|` where `\tau_c` is a
 positive scalar, the yield stress. See method
-``pism::StressBalance::basal_frictional_heating()``. The friction heating is concentrated
-at `z=0`, and it enters into the basal boundary condition and melt rate calculation,
-addressed in section @ref melt below.
+``StressBalance::basal_frictional_heating()``. The friction heating is concentrated at
+`z=0`, and it enters into the basal boundary condition and melt rate calculation,
+addressed in section :ref:`sec-melt` below.
 
 We use a shallow approximation of equation :eq:`basicEnergy` which lacks horizontal
 conduction terms  :cite:`Fowler`.  For the initial analysis of the core BOMBPROOF
@@ -145,15 +154,14 @@ flux is constant, so
 
 .. math::
 
-   \nabla \cdot \mathbf{q} = - k_i c_i^{-1} \frac{\partial^2 E}{\partial z^2}.
+   \nabla \cdot \mathbf{q} = - \frac{k_i}{c_i} \frac{\partial^2 E}{\partial z^2}.
 
 Therefore the equation we initially analyze is
 
 .. math::
    :name: basicShallow
 
-   \rho_i \left(\frac{\partial E}{\partial t} + \mathbf{U}\cdot \nabla E\right) = k_i
-   c_i^{-1} \frac{\partial^2 E}{\partial z^2} + Q,
+   \rho_i \left(\frac{\partial E}{\partial t} + \mathbf{U}\cdot \nabla E\right) = \frac{k_i}{c_i} \frac{\partial^2 E}{\partial z^2} + Q,
 
 We focus the analysis on the direction in which the enthalpy has largest derivative,
 namely with respect to the vertical coordinate `z`.  Rewriting equation
@@ -163,7 +171,7 @@ namely with respect to the vertical coordinate `z`.  Rewriting equation
    :name: vertProblem
 
     \rho_i \left(\frac{\partial E}{\partial t} + w \frac{\partial E}{\partial z}\right) 
-         = k_i c_i^{-1}  \frac{\partial^2 E}{\partial z^2} + \Phi
+         = \frac{k_i}{c_i}  \frac{\partial^2 E}{\partial z^2} + \Phi
 
 where
 
@@ -172,21 +180,22 @@ where
    \Phi = Q - \rho_i \left(u \frac{\partial E}{\partial x}
    + v \frac{\partial E}{\partial y}\right)
 
-We assume that the surface enthalpy `E_s(t,x,y)` (K) and the geothermal flux `G(t,x,y)` (W
-m-2) at `z=0` are given. (The latter is the output of the ``pism::energy::BedThermalUnit``
+We assume that the surface enthalpy `E_s(t,x,y)` (K) and the geothermal flux `G(t,x,y)`
+(`W / m^2`) at `z=0` are given. (The latter is the output of the ``energy::BedThermalUnit``
 object, and it may come from an evolving temperature field within the upper crust, the
 bedrock layer. If a surface temperature is given then it will be converted to enthalpy by
-the ``EnthalpyConverter`` class.) Thus the boundary conditions to problem :eq:`vertProblem`
+the ``EnthalpyConverter`` class.) The boundary conditions to problem :eq:`vertProblem`
 are, therefore,
 
 .. math::
    :name: columnbcs
 
-   E(t,x,y,z=H)=E_s(t,x,y), \qquad -k_i c_i^{-1} \frac{\partial E}{\partial z}\Big|_{z=0} = G.
+   E(t,x,y,z=H) &=E_s(t,x,y),\\
+   -\frac{k_i}{c_i} \frac{\partial E}{\partial z}\Big|_{z=0} &= G.
 
 For a temperate ice base, including any ice base below which there is liquid water,
 the lower boundary condition is more interesting.  It is addressed below in section
-@ref melt.
+:ref:`sec-melt`.
 
 The core BOMBPROOF scheme
 -------------------------
@@ -229,9 +238,9 @@ The CFL stability condition for this part of the scheme is
    \Delta t \,\left( \left|\frac{u_{ijk}^n}{\Delta x}\right|
    + \left|\frac{v_{ijk}^n}{\Delta y}\right| \right) \le 1.
 
-The routine ``IceModel::computeMax3DVelocities()`` computes the maximum of velocity
+The routine ``max_timestep_cfl_3d()`` computes the maximum of velocity
 magnitudes. This produces a time step restriction based on the above CFL condition. Then
-``IceModel::determineTimeStep()`` implements adaptive time-stepping based on this and
+``IceModel::max_timestep()`` implements adaptive time-stepping based on this and
 other stability criteria.
 
 In the analysis below we assume an equally-spaced grid `z_0,\dots,z_{M_z}`
@@ -239,8 +248,7 @@ with `\Delta z = z_{k+1} - z_k`.  In fact PISM has a remapping scheme in each
 column, wherein the enthalpy in a column of ice is stored on an unequally-spaced 
 vertical grid, but is mapped to a fine, equally-spaced grid for the conservation
 of energy computation described here.  (Similar structure applies to the age
-computation.  See procedures IceModel::enthalpyAndDrainageStep() and
-IceModel::ageStep().)
+computation.  See classes ``EnthalpyModel`` and ``AgeModel``.)
 
 The `z` derivative terms in :eq:`vertProblem` will be approximated implicitly. Let
 `\lambda` be in the interval `0 \le \lambda \le 1`. Suppressing indices `i,j`, the
@@ -250,14 +258,12 @@ approximation to :eq:`vertProblem` is
 .. math::
    :name: bombone
 
-    \begin{aligned}
-    \rho_i &\left( 
+    \rho_i &\left(
            \frac{E_k^{n+1} - E_k^n}{\Delta t}
            + \lambda w_k^n \frac{E_{k+1}^{n+1} - E_{k-1}^{n+1}}{2 \Delta z}
            + (1-\lambda) w_k^{n} \frac{\Up{E_{\bullet}^{n+1}}{w_k^{n}}}{\Delta z} \right) \\
-         &= k_i c_i^{-1}\, \frac{E_{k+1}^{n+1} - 2 E_{k}^{n+1} + E_{k-1}^{n+1}}{\Delta z^2} + \Phi_k^n.
-    \end{aligned}
-    
+         &= \frac{k_i}{c_i}\, \frac{E_{k+1}^{n+1} - 2 E_{k}^{n+1} + E_{k-1}^{n+1}}{\Delta z^2} + \Phi_k^n.
+
 Equation :eq:`bombone`, along with a determination of `\lambda` by
 :eq:`lambdachoice` below, is the scheme BOMBPROOF.  It includes two approximations
 of vertical advection,  implicit centered difference  (`\lambda = 1`) and
@@ -287,8 +293,8 @@ scaled so that the diagonal entries of the matrix have limit one as
 
 .. math::
 
-   \nu = \frac{\Delta t}{\Delta z},
-   \qquad \text{and} \qquad R = \frac{k_i \Delta t}{\rho_i c_i \Delta z^2}.
+   \nu &= \frac{\Delta t}{\Delta z},\\
+   R &= \frac{k_i \Delta t}{\rho_i c_i \Delta z^2}.
 
 Now multiply equation :eq:`bombone` by `\Delta t`, divide it by `\rho_i`,
 and rearrange:
@@ -296,17 +302,15 @@ and rearrange:
 .. math::
    :name: bombtwo
 
-    \begin{aligned}
-    &\left(-R - \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) E_{k-1}^{n+1}  
-       + \left(1 + 2 R + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right) E_k^{n+1} \tag{bombtwo} \\
-    &\qquad\qquad + \left(-R + \nu w_k^n \uppair{\lambda/2}{1-\lambda/2} \right) E_{k+1}^{n+1}
-        = E_k^n + \Delta t \rho_i^{-1}\Phi_k^n 
-    \end{aligned}
-    
+    \left(-R - \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) E_{k-1}^{n+1}\\ +
+    \left(1 + 2 R + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right) E_k^{n+1}\\ +
+    \left(-R + \nu w_k^n \uppair{\lambda/2}{1-\lambda/2} \right) E_{k+1}^{n+1}\\
+    = E_k^n + \Delta t \rho_i^{-1}\Phi_k^n
+
 Here `\uppair{a}{b} = a` when `w_k^n\ge 0` and `\uppair{a}{b} = b` when `w_k^n < 0`.
 
 Equation :eq:`bombtwo` has coefficients which are scaled to have no units.  It is
-ready to be put in the system managed by enthSystemCtx.
+ready to be put in the system managed by ``enthSystemCtx``.
 
 One way of stating the stability of first-order upwinding is to say it satisfies
 a  "maximum principle" :cite:`MortonMayers`.  An example of a maximum principle
@@ -335,12 +339,10 @@ However, the pure implicit centered difference scheme (`\lambda=1`), namely
 .. math::
    :name: centered
 
-   \begin{aligned}
     &\left(-R - \nu w_k^n/2\right) E_{k-1}^{n+1} + \left(1 + 2 R\right) E_k^{n+1} \\
-    &\qquad\qquad + \left(-R + \nu w_k^n/2\right) E_{k+1}^{n+1} 
-                  = E_k^n + \Delta t \rho_i^{-1}\Phi_k^n 
-    \end{aligned}
-    
+    &+ \left(-R + \nu w_k^n/2\right) E_{k+1}^{n+1}
+    = E_k^n + \Delta t \rho_i^{-1}\Phi_k^n
+
 is *less stable* than implicit first-order upwinding. It is less stable in the same sense
 that Crank-Nicolson is a less stable scheme than backwards Euler for the simplest heat
 equation `u_t = u_{xx}` :cite:`MortonMayers`. In fact, although oscillatory modes cannot
@@ -367,9 +369,10 @@ coincides with the surface of the ice. With these assumptions, if
 .. math::
    :name: lambdachoice
 
-   \lambda = \min\left\{1, \quad
-   \min_{k=0,\dots,N}\left\{\frac{2 k_i}{|w_k^n| \rho_i c_i \Delta z}\right\}
-   \quad \right\},
+   \lambda = \min
+   \left\{
+   1, \min_{k=0,\dots,N} \left\{ \frac{2 k_i}{|w_k^n| \rho_i c_i \Delta z} \right\}
+   \right\},
 
 reset at each time step `n`, then scheme :eq:`bombone`, :eq:`bombtwo` is
 unconditionally-stable in the following two senses:
@@ -409,12 +412,10 @@ we can rewrite :eq:`bombtwo` as
 .. math::
    :name: formax
 
-   \begin{aligned}
     &\left(1 + 2 R + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right) E_k^{n+1} \\
-    &\qquad = E_k^n + \left(R + \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) E_{k-1}^{n+1}
+    &= E_k^n + \left(R + \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) E_{k-1}^{n+1}
                     + \left(R - \nu w_k^n \uppair{\lambda/2}{1-\lambda/2}\right) E_{k+1}^{n+1}.
-    \end{aligned}
-    
+
 We claim that with choice :eq:`lambdachoice` for `0 \le \lambda \le 1`, all
 coefficients in :eq:`formax` are nonnegative.  At one extreme, in
 the upwinding case (`\lambda=0`), all the coefficients are nonnegative.  Otherwise, note that
@@ -431,13 +432,9 @@ coefficient of `E_{k+1}^{n+1}` when `w_k^n\ge 0`.  But if `\lambda` is smaller t
 
 .. math::
 
-   \begin{aligned}
-    R - \nu |w_k^n| (\lambda/2) &= \frac{k_i \Delta t}{\rho_i c_i \Delta z^2}
-    	                                       - \frac{\Delta t |w_k^n|}{\Delta z} \frac{\lambda}{2}
-    	        &\ge \frac{k_i \Delta t}{\rho_i c_i \Delta z^2}
-    	            - \frac{\Delta t |w_k^n|}{\Delta z} \frac{k_i}{|w_k^n| \rho_i c_i \Delta z} = 0.
-   \end{aligned}
-    
+   R - \nu |w_k^n| (\lambda/2) = \frac{k_i \Delta t}{\rho_i c_i \Delta z^2} - \frac{\Delta t |w_k^n|}{\Delta z} \frac{\lambda}{2} \ge \frac{k_i \Delta t}{\rho_i c_i \Delta z^2}
+    - \frac{\Delta t |w_k^n|}{\Delta z} \frac{k_i}{|w_k^n| \rho_i c_i \Delta z} = 0.
+
 Thus all the coefficients in :eq:`formax` are nonnegative.  On the other hand, in equation :eq:`formax`, all coefficients on the right side sum to
 
 .. math::
@@ -463,12 +460,10 @@ Let's assume the velocity is downward, `w_0<0`; the other case is similar.  Equa
 .. math::
    :name: prevon
 
-    \begin{aligned}
-    &\left(-R - \nu w_0 (\lambda/2)\right) E_{k-1}^{n+1}  
-       + \left(1 + 2 R - \nu w_0 (1-\lambda)\right) E_k^{n+1} \\
-    &\qquad\qquad + \left(-R + \nu w_0 (1-\lambda/2) \right) E_{k+1}^{n+1}  = E_k^n.
-    \end{aligned}
-    
+    &\left(-R - \nu w_0 (\lambda/2)\right) E_{k-1}^{n+1}
+    + \left(1 + 2 R - \nu w_0 (1-\lambda)\right) E_k^{n+1} \\
+    & + \left(-R + \nu w_0 (1-\lambda/2) \right) E_{k+1}^{n+1}  = E_k^n.
+
 The heart of the von Neumann analysis is the substitution of a growing or decaying
 (in time index `n`) oscillatory mode on the grid of spatial wave number `\mu`:
 
@@ -481,25 +476,27 @@ only if
 
 .. math::
 
-   \begin{aligned}
     \sigma\Big[  &(-R - \nu w_0(\lambda/2)) e^{-i\mu\Delta z}
-    	              + (1 + 2 R - \nu w_0 (1-\lambda)) \\
-    	           &\quad   + (-R  + \nu w_0 (\lambda/2)) e^{+i\mu\Delta z}
-    	                    + \nu w_0 (1-\lambda) e^{+i\mu\Delta z} \Big] = 1.
-   \end{aligned}
-    
+    + (1 + 2 R - \nu w_0 (1-\lambda)) \\
+    &+ (-R  + \nu w_0 (\lambda/2)) e^{+i\mu\Delta z}
+    + \nu w_0 (1-\lambda) e^{+i\mu\Delta z} \Big] = 1.
+
 This equation reduces by standard manipulations to
 
-	@f[\sigma = \frac{1}{1 + \left(4 R - 2 \nu w_0 (1-\lambda)\right)\cos^2(\mu \Delta z/2)
-	                      + i\,\nu w_0 (1-\lambda/2)\sin(\mu\Delta z)}.@f]
+.. math::
+
+   \sigma = \frac{1}{1 + \left(4 R - 2 \nu w_0 (1-\lambda)\right)\cos^2(\mu \Delta z/2)
+   + i\,\nu w_0 (1-\lambda/2)\sin(\mu\Delta z)}.
 
 Note `4 R - 2 \nu w_0 (1-\lambda) \ge 0` without restrictions on
 numerical parameters `\Delta t`, `\Delta z`, because `w_0<0` in the
 case under consideration.  Therefore
 
-	@f[|\sigma|^2 = \frac{1}{\left[1 + \left(4 R - 2 \nu w_0 (1-\lambda)\right)
-	                              \cos^2(\mu \Delta z/2)\right]^2
-	                      + \left[\nu w_0 (1-\lambda/2)\sin(\mu\Delta z)\right]^2}.@f]
+.. math::
+
+   |\sigma|^2 = \frac{1}{\left[1 + \left(4 R - 2 \nu w_0 (1-\lambda)\right)
+   \cos^2(\mu \Delta z/2)\right]^2
+   + \left[\nu w_0 (1-\lambda/2)\sin(\mu\Delta z)\right]^2}.
 
 This positive number is less than one, so `|\sigma| < 1`.  It follows that all
 modes decay exponentially.
@@ -529,7 +526,6 @@ then :eq:`formax` implies an equality of the form
 where `\tau_k^n` is the truncation error of the scheme and `A,B_\pm` are nonnegative
 coefficients, which need no detail for now other than to note that `1 + B_- + B_+ = A`.
 Letting `{\bar e}^n = \max_k |e_k^n|` we have, because of the positivity of coefficients,
-@anchor prebound
 
 .. math::
    :name: prebound
@@ -594,7 +590,7 @@ Temperate basal boundary condition, and computing the basal melt rate
 
 At the bottom of grounded ice, a certain amount of heat comes out of the earth and either
 enters the ice through conduction or melts the base of the ice. On the one hand, see the
-documentation for ``pism::BedThermalUnit`` for the model of how much comes out of the
+documentation for ``BedThermalUnit`` for the model of how much comes out of the
 earth. On the other hand, :cite:`AschwandenBuelerKhroulevBlatter` includes a careful
 analysis of the subglacial layer equation and the corresponding boundary conditions and
 basal melt rate calculation, and the reader should consult that reference.
@@ -602,12 +598,10 @@ basal melt rate calculation, and the reader should consult that reference.
 Regarding the floating case
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The shelf base temperature `T_{sb}` is supplied by
-``pism::OceanModel::shelf_base_temperature()``. The melt rate `M` is supplied as a
-boundary condition from the ocean model by ``pism::OceanModel::shelf_base_mass_flux()``.
+The shelf base temperature `T_{sb}` and the melt rate `M` are supplied by ``OceanModel``.
 Note that we make the possibly-peculiar physical choice that the shelf base temperature is
 used as the temperature at the *top of the bedrock*, which is actually the bottom of the
 ocean. This choice means that there should be no abrupt changes in top-of-bedrock heat
 flux as the grounding line moves. This choice also means that the conservation of energy
 code does not need to know about the bedrock topography or the elevation of sea level. (In
-the future there could be a ``pism::OceanModel::subshelf_bed_temperature()`` routine.)
+the future ``OceanModel`` could have a ``subshelf_bed_temperature()`` method.)
