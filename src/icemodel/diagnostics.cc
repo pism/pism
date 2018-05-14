@@ -86,26 +86,26 @@ IceModelVec::Ptr CalvingFrontPressureDifference::compute_impl() const {
   mask.create(m_grid, "mask", WITH_GHOSTS);
 
   auto
-    &H         = model->geometry().ice_thickness,
-    &bed       = model->geometry().bed_elevation,
-    &sea_level = model->geometry().sea_level_elevation;
+    &H          = model->geometry().ice_thickness,
+    &bed        = model->geometry().bed_elevation,
+    &sea_level  = model->geometry().sea_level_elevation,
+    &lake_level = model->geometry().lake_level_elevation;
 
-  {
-    const double H_threshold = m_config->get_double("stress_balance.ice_free_thickness_standard");
-    GeometryCalculator gc(*m_config);
-    gc.set_icefree_thickness(H_threshold);
+  const double H_threshold = m_config->get_double("stress_balance.ice_free_thickness_standard");
+  GeometryCalculator gc(*m_config);
+  gc.set_icefree_thickness(H_threshold);
 
-    gc.compute_mask(sea_level, bed, H, mask);
-  }
+  gc.compute_mask(sea_level, bed, H, lake_level, mask);
 
   const double
     rho_ice   = m_config->get_double("constants.ice.density"),
     rho_ocean = m_config->get_double("constants.sea_water.density"),
+    rho_fresh = m_config->get_double("constants.fresh_water.density"),
     g         = m_config->get_double("constants.standard_gravity");
 
   const bool dry_mode = m_config->get_boolean("ocean.always_grounded");
 
-  IceModelVec::AccessList list{&H, &bed, &mask, result.get()};
+  IceModelVec::AccessList list{&sea_level, &lake_level, &H, &bed, &mask, result.get()};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -113,9 +113,11 @@ IceModelVec::Ptr CalvingFrontPressureDifference::compute_impl() const {
       const int i = p.i(), j = p.j();
 
       if (mask.icy(i, j) and mask.next_to_ice_free_ocean(i, j)) {
+        const double water_level = gc.water_level(sea_level(i, j), bed(i,j), lake_level(i, j));
+        const double rho = !gc.islake(lake_level(i, j)) ? rho_ocean : rho_fresh;
         (*result)(i, j) = stressbalance::ocean_pressure_difference(mask.ocean(i, j), dry_mode,
-                                                                   H(i, j), bed(i, j), sea_level(i, j),
-                                                                   rho_ice, rho_ocean, g);
+                                                                   H(i, j), bed(i, j), water_level,
+                                                                   rho_ice, rho, g);
       } else {
         (*result)(i, j) = m_fill_value;
       }
@@ -1806,18 +1808,21 @@ IceModelVec::Ptr IceAreaFractionGrounded::compute_impl() const {
 
   const double
     ice_density   = m_config->get_double("constants.ice.density"),
-    ocean_density = m_config->get_double("constants.sea_water.density");
+    ocean_density = m_config->get_double("constants.sea_water.density"),
+    freshwater_density = m_config->get_double("constants.fresh_water.density");
 
   auto
     &ice_thickness  = model->geometry().ice_thickness,
     &sea_level      = model->geometry().sea_level_elevation,
+    &lake_level     = model->geometry().lake_level_elevation,
     &bed_topography = model->geometry().bed_elevation;
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
 
-  compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
-                                 ice_thickness, bed_topography,
-                                 *result);
+  compute_grounded_cell_fraction(ice_density, ocean_density,
+                                 freshwater_density, sea_level,
+                                 lake_level, ice_thickness,
+                                 bed_topography, *result);
 
   // All grounded areas have the grounded cell fraction of one, so now we make sure that ice-free
   // areas get the value of 0 (they are grounded but not covered by a grounded ice sheet).
@@ -1886,15 +1891,19 @@ IceModelVec::Ptr HeightAboveFloatation::compute_impl() const {
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
 
   const double
-    ice_density   = m_config->get_double("constants.ice.density"),
-    ocean_density = m_config->get_double("constants.sea_water.density");
+    ice_density        = m_config->get_double("constants.ice.density"),
+    ocean_density      = m_config->get_double("constants.sea_water.density"),
+    freshwater_density = m_config->get_double("constants.fresh_water.density");
 
   auto
     &sea_level      = model->geometry().sea_level_elevation,
+    &lake_level     = model->geometry().lake_level_elevation,
     &ice_thickness  = model->geometry().ice_thickness,
     &bed_topography = model->geometry().bed_elevation;
 
-  IceModelVec::AccessList list{&cell_type, result.get(), &ice_thickness, &bed_topography, &sea_level};
+  GeometryCalculator gc(*m_config);
+
+  IceModelVec::AccessList list{&cell_type, result.get(), &ice_thickness, &bed_topography, &sea_level, &lake_level};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1902,12 +1911,14 @@ IceModelVec::Ptr HeightAboveFloatation::compute_impl() const {
       const int i = p.i(), j = p.j();
 
       const double
-        thickness   = ice_thickness(i, j),
-        bed         = bed_topography(i, j),
-        ocean_depth = sea_level(i, j) - bed;
+        thickness     = ice_thickness(i, j),
+        bed           = bed_topography(i, j),
+        water_level   = gc.water_level(sea_level(i, j), bed, lake_level(i, j)),
+        water_depth   = water_level - bed,
+        water_density = !gc.islake(lake_level(i, j)) ? ocean_density : freshwater_density;
 
-      if (cell_type.icy(i, j) and ocean_depth > 0.0) {
-        const double max_floating_thickness = ocean_depth * (ocean_density / ice_density);
+      if (cell_type.icy(i, j) and water_depth > 0.0) {
+        const double max_floating_thickness = water_depth * (water_density / ice_density);
         (*result)(i, j) = thickness - max_floating_thickness;
       } else {
         (*result)(i, j) = m_fill_value;
@@ -2670,8 +2681,11 @@ double IceModel::ice_volume_not_displacing_seawater(double thickness_threshold) 
     sea_water_density = m_config->get_double("constants.sea_water.density"),
     ice_density       = m_config->get_double("constants.ice.density");
 
+  GeometryCalculator gc(*m_config);
+
   IceModelVec::AccessList list{&m_geometry.cell_type, &m_geometry.ice_thickness,
-      &m_geometry.bed_elevation, &m_geometry.cell_area, &m_geometry.sea_level_elevation};
+      &m_geometry.bed_elevation, &m_geometry.cell_area, &m_geometry.sea_level_elevation,
+      &m_geometry.lake_level_elevation};
 
   double volume = 0.0;
 
@@ -2679,9 +2693,10 @@ double IceModel::ice_volume_not_displacing_seawater(double thickness_threshold) 
     const int i = p.i(), j = p.j();
 
     const double
-      bed       = m_geometry.bed_elevation(i, j),
-      thickness = m_geometry.ice_thickness(i, j),
-      sea_level = m_geometry.sea_level_elevation(i, j);
+      bed        = m_geometry.bed_elevation(i, j),
+      thickness  = m_geometry.ice_thickness(i, j),
+      sea_level  = m_geometry.sea_level_elevation(i, j),
+      lake_level = m_geometry.lake_level_elevation(i, j);
 
     if (m_geometry.cell_type.grounded(i, j) and thickness > thickness_threshold) {
       const double cell_ice_volume = thickness * m_geometry.cell_area(i,j);
@@ -2691,6 +2706,9 @@ double IceModel::ice_volume_not_displacing_seawater(double thickness_threshold) 
         const double max_floating_volume = (sea_level - bed) * m_geometry.cell_area(i,j) * (sea_water_density / ice_density);
         volume += cell_ice_volume - max_floating_volume;
       }
+    } else if (m_geometry.cell_type.floating_ice(i, j) and gc.islake(lake_level) and thickness > thickness_threshold) {
+      const double cell_ice_volume = thickness * m_geometry.cell_area(i,j);
+      volume += cell_ice_volume;
     }
   } // end of the loop over grid points
 

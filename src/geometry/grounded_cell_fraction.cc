@@ -24,6 +24,7 @@
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/iceModelVec.hh"
+#include "pism/util/Mask.hh"
 
 namespace pism {
 
@@ -290,26 +291,40 @@ static Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
  */
 void compute_grounded_cell_fraction(double ice_density,
                                     double ocean_density,
+                                    double freshwater_density,
                                     const IceModelVec2S &sea_level,
+                                    const IceModelVec2S &lake_level,
                                     const IceModelVec2S &ice_thickness,
                                     const IceModelVec2S &bed_topography,
                                     IceModelVec2S &result) {
   IceGrid::ConstPtr grid = result.grid();
-  double alpha = ice_density / ocean_density;
+  GeometryCalculator gc(*grid->ctx()->config());
 
-  IceModelVec::AccessList list{&sea_level, &ice_thickness, &bed_topography, &result};
+  double alpha_ocean = ice_density / ocean_density,
+         alpha_fresh = ice_density / freshwater_density;
+
+  IceModelVec::AccessList list{&sea_level, &lake_level, &ice_thickness, &bed_topography, &result};
 
   ParallelSection loop(grid->com);
   try {
     for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
-
       Box
         S(sea_level,      i, j),
         H(ice_thickness,  i, j),
-        B(bed_topography, i, j);
+        B(bed_topography, i, j),
+        L(lake_level,     i, j);
 
-      Box f = F(S, B, H, alpha);
+      double *alpha;
+      Box *WL;
+      if (not gc.islake(lake_level(i, j))) {
+        alpha = &alpha_ocean;
+        WL = &S;
+      } else {
+        alpha = &alpha_fresh;
+        WL = &L;
+      }
+      Box f = F(*WL, B, H, *alpha);
 
       /*
         NW----------------N----------------NE

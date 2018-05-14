@@ -30,7 +30,9 @@ class IceModelVec2S;
  */
 void compute_grounded_cell_fraction(double ice_density,
                                     double ocean_density,
+                                    double freshwater_density,
                                     const IceModelVec2S &sea_level,
+                                    const IceModelVec2S &lake_level,
                                     const IceModelVec2S &ice_thickness,
                                     const IceModelVec2S &bed_topography,
                                     IceModelVec2S &result);

@@ -185,11 +185,14 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
 
   const double
     ice_density = config->get_double("constants.ice.density"),
-    ocean_density = config->get_double("constants.sea_water.density");
+    ocean_density = config->get_double("constants.sea_water.density"),
+    fresh_density = config->get_double("constants.fresh_water.density");
 
   compute_grounded_cell_fraction(ice_density,
                                  ocean_density,
+                                 fresh_density,
                                  sea_level_elevation,
+                                 lake_level_elevation,
                                  ice_thickness,
                                  bed_elevation,
                                  cell_grounded_fraction);
