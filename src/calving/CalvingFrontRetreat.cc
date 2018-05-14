@@ -180,11 +180,13 @@ void CalvingFrontRetreat::update(double dt,
                                  IceModelVec2S &ice_thickness) {
 
   const IceModelVec2S   &sea_level      = inputs.geometry->sea_level_elevation;
+  const IceModelVec2S   &lake_level     = inputs.geometry->lake_level_elevation;
   const IceModelVec2S   &bed_topography = inputs.geometry->bed_elevation;
   const IceModelVec2Int &bc_mask        = *inputs.bc_mask;
 
   GeometryCalculator gc(*m_config);
-  gc.compute_surface(sea_level, bed_topography, ice_thickness, m_surface_topography);
+  gc.compute_surface(sea_level, bed_topography, ice_thickness,
+                     lake_level, m_surface_topography);
 
   // use mask with a wide stencil to compute the calving rate
   compute_calving_rate(inputs, m_horizontal_calving_rate);
@@ -194,8 +196,8 @@ void CalvingFrontRetreat::update(double dt,
   m_tmp.set(0.0);
 
   IceModelVec::AccessList list{&ice_thickness, &bc_mask,
-      &bed_topography, &sea_level, &mask, &Href, &m_tmp, &m_horizontal_calving_rate,
-      &m_surface_topography};
+      &bed_topography, &sea_level, &lake_level, &mask, &Href,
+      &m_tmp, &m_horizontal_calving_rate, &m_surface_topography};
 
   // Prepare to loop over neighbors: directions
   const Direction dirs[] = {North, East, South, West};
@@ -245,16 +247,47 @@ void CalvingFrontRetreat::update(double dt,
 
           auto
             bed = bed_topography.star(i, j),
-            sl  = sea_level.star(i, j);
+            sl  = sea_level.star(i, j),
+            ll  = lake_level.star(i, j);
 
           for (int n = 0; n < 4; ++n) {
             Direction direction = dirs[n];
             int m = M[direction];
             int bc = BC[direction];
+            int in, jn;
+
+            switch (direction) {
+              default:                    // just to silence the warning
+              case North:
+                in = i;
+                jn = j + 1;
+              case East:
+                in = i + 1;
+                jn = j;
+              case South:
+                in = i;
+                jn = j - 1;
+              case West:
+                in = i - 1;
+                jn = j;
+            }
+
+            double water_level= gc.valid_sea_level(sea_level(in, jn), bed[direction]);
+            StarStencil<double> sl_n_star = sea_level.star(in, jn);
+            StarStencil<double> ll_n_star = lake_level.star(in, jn);
+
+            for (int nn = 0; nn < 4; ++nn) {
+              const Direction direction_n = dirs[nn];
+              const double sl_n = sl_n_star[direction_n];
+              const double ll_n = ll_n_star[direction_n];
+
+              const double water_level_nn = gc.water_level(sl_n, bed[direction], ll_n);
+              water_level = std::max(water_level, water_level_nn);
+            }
 
             if (bc == 0 and     // distribute to regular (*not* Dirichlet B.C.) neighbors only
                 (mask::floating_ice(m) or
-                 (mask::grounded_ice(m) and bed[direction] < sl[direction]))) {
+                 (mask::grounded_ice(m) and bed[direction] < water_level))) {
               N += 1;
             }
           }
@@ -304,13 +337,13 @@ void CalvingFrontRetreat::update(double dt,
 
   // update mask
   gc.set_icefree_thickness(m_config->get_double("stress_balance.ice_free_thickness_standard"));
-  gc.compute_mask(sea_level, bed_topography, ice_thickness, mask);
+  gc.compute_mask(sea_level, bed_topography, ice_thickness, lake_level, mask);
 
   // remove narrow ice tongues
   remove_narrow_tongues(mask, ice_thickness);
 
   // update mask again
-  gc.compute_mask(sea_level, bed_topography, ice_thickness, mask);
+  gc.compute_mask(sea_level, bed_topography, ice_thickness, lake_level, mask);
 }
 
 const IceModelVec2S& CalvingFrontRetreat::calving_rate() const {
