@@ -284,7 +284,9 @@ static Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
 /*!
  * @param[in] ice_density ice density, kg/m3
  * @param[in] ocean_density ocean_density, kg/m3
+ * @param[in] freshwater_density freshwater density, kg/m3
  * @param[in] sea_level sea level (flotation) elevation, m
+ * @param[in] lake_level lake level (flotation) elevation, m
  * @param[in] ice_thickness ice thickness, m
  * @param[in] bed_topography bed elevation, m
  * @param[out] result grounded cell fraction, between 0 (floating) and 1 (grounded)
