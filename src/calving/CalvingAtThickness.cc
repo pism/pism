@@ -23,6 +23,8 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/Vars.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"
 
 
@@ -60,6 +62,10 @@ void CalvingAtThickness::init() {
 
   m_calving_threshold.set(calving_threshold);
 
+  //Set default calving thickness threshold to negative value, i.e. use same value a for ocean
+  m_calving_threshold_lake = options::Real("-thickness_calving_threshold_lake",
+                                           "Threshold for thickness calving method used for lakes (m)", -1.0);
+
   if (not threshold_file.empty()) {
     m_log->message(2,
                    "  Reading thickness calving threshold from file '%s'...\n",
@@ -69,6 +75,11 @@ void CalvingAtThickness::init() {
   } else {
     m_log->message(2,
                    "  Thickness threshold: %3.3f meters.\n", calving_threshold);
+  }
+
+  if (m_calving_threshold_lake >= 0.0) {
+    m_log->message(2,
+                   "  Thickness threshold for lakes: %3.3f meters.\n", m_calving_threshold_lake);
   }
 }
 
@@ -88,13 +99,27 @@ void CalvingAtThickness::update(IceModelVec2CellType &pism_mask,
   // this call fills ghosts of m_old_mask
   m_old_mask.copy_from(pism_mask);
 
+  const IceModelVec2S *lake_level = m_grid->variables().get_2d_scalar("lake_level_elevation");
+  GeometryCalculator gc(*m_config);
+
   IceModelVec::AccessList list{&pism_mask, &ice_thickness, &m_old_mask, &m_calving_threshold};
+  if (m_calving_threshold_lake >= 0.0) {
+    list.add(*lake_level);
+  }
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
+    double threshold_ij;
+    if (m_calving_threshold_lake < 0.0) {
+      threshold_ij = m_calving_threshold(i, j);
+    } else {
+      threshold_ij = gc.islake((*lake_level)(i, j)) ? m_calving_threshold_lake : m_calving_threshold(i, j);
+    }
+
     if (m_old_mask.floating_ice(i, j)           &&
         m_old_mask.next_to_ice_free_ocean(i, j) &&
-        ice_thickness(i, j) < m_calving_threshold(i, j)) {
+        ice_thickness(i, j) < threshold_ij) {
       ice_thickness(i, j) = 0.0;
       pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;
     }

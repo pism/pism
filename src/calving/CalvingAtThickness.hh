@@ -43,6 +43,7 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
   IceModelVec2S m_calving_threshold;
   IceModelVec2CellType m_old_mask;
+  double m_calving_threshold_lake;
 };
 
 } // end of namespace calving
