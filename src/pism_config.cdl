@@ -549,10 +549,10 @@ netcdf pism_config {
     pism_config:energy.minimum_allowed_temperature_type = "scalar";
     pism_config:energy.minimum_allowed_temperature_units = "Kelvin";
 
-    pism_config:energy.temperate_ice_enthalpy_conductivity_ratio = 0.1;
-    pism_config:energy.temperate_ice_enthalpy_conductivity_ratio_doc = "K in cold ice is multiplied by this fraction to give K0 in :cite:`AschwandenBuelerKhroulevBlatter`";
-    pism_config:energy.temperate_ice_enthalpy_conductivity_ratio_type = "scalar";
-    pism_config:energy.temperate_ice_enthalpy_conductivity_ratio_units = "pure number";
+    pism_config:energy.enthalpy.temperate_ice_thermal_conductivity_ratio = 0.1;
+    pism_config:energy.enthalpy.temperate_ice_thermal_conductivity_ratio_doc = "K in cold ice is multiplied by this fraction to give K0 in :cite:`AschwandenBuelerKhroulevBlatter`";
+    pism_config:energy.enthalpy.temperate_ice_thermal_conductivity_ratio_type = "scalar";
+    pism_config:energy.enthalpy.temperate_ice_thermal_conductivity_ratio_units = "pure number";
 
     pism_config:energy.temperature_based = "no";
     pism_config:energy.temperature_based_doc = "Use cold ice (i.e. not polythermal) methods.";

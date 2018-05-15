@@ -11,7 +11,7 @@ config.set_string("grid.ice_vertical_spacing", "equal")
 # PISM's default ration between conductivities of cold and temperate
 # ice is 0.1. The Phillips et al paper makes decisions roughly
 # equivalent to setting it to 1.
-config.set_double("energy.temperate_ice_enthalpy_conductivity_ratio", 1.0)
+config.set_double("energy.enthalpy.temperate_ice_thermal_conductivity_ratio", 1.0)
 
 k         = config.get_double("constants.ice.thermal_conductivity")
 T_melting = config.get_double("constants.fresh_water.melting_point_temperature")

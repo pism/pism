@@ -94,7 +94,7 @@ protected:
   //! values of @f$ k \Delta t / (\rho c \Delta x^2) @f$
   std::vector<double> m_R;
 
-  double m_ice_density, m_ice_c, m_ice_k, m_ice_K, m_ice_K0, m_p_air,
+  double m_ice_density, m_ice_c, m_ice_k, m_p_air,
     m_nu, m_R_cold, m_R_temp, m_R_factor;
 
   double m_ice_thickness,

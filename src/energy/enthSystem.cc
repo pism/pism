@@ -64,9 +64,6 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_exclude_vertical_advection   = config.get_boolean("energy.margin_exclude_vertical_advection");
   m_exclude_strain_heat          = config.get_boolean("energy.margin_exclude_strain_heating");
 
-  m_ice_K  = m_ice_k / m_ice_c;
-  m_ice_K0 = m_ice_K * config.get_double("energy.temperate_ice_enthalpy_conductivity_ratio");
-
   size_t Mz = m_z.size();
   m_Enth.resize(Mz);
   m_Enth_s.resize(Mz);
@@ -80,9 +77,14 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
 
   m_nu = m_dt / m_dz;
 
+  double
+    ratio = config.get_double("energy.enthalpy.temperate_ice_thermal_conductivity_ratio"),
+    K     = m_ice_k / m_ice_c,
+    K0    = (ratio * m_ice_k) / m_ice_c;
+
   m_R_factor = m_dt / (PetscSqr(m_dz) * m_ice_density);
-  m_R_cold = m_ice_K * m_R_factor;
-  m_R_temp = m_ice_K0 * m_R_factor;
+  m_R_cold = K * m_R_factor;
+  m_R_temp = K0 * m_R_factor;
 
   if (config.get_boolean("energy.temperature_dependent_thermal_conductivity")) {
     m_k_depends_on_T = true;
