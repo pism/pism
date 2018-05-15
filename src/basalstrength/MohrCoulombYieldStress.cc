@@ -264,12 +264,16 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
     m_bwat.copy_from(*inputs.subglacial_water_thickness);
   }
 
+  // Prepare to loop over neighbors: directions
+  const Direction dirs[] = {North, East, South, West};
+
   const IceModelVec2CellType &mask           = inputs.geometry->cell_type;
   const IceModelVec2S        &bed_topography = inputs.geometry->bed_elevation;
   const IceModelVec2S        &sea_level      = inputs.geometry->sea_level_elevation;
+  const IceModelVec2S        &lake_level     = inputs.geometry->lake_level_elevation;
 
   IceModelVec::AccessList list{&W_till, &m_till_phi, &m_basal_yield_stress, &mask,
-      &bed_topography, &sea_level, &ice_thickness};
+      &bed_topography, &sea_level, &lake_level, &ice_thickness};
   if (add_transportable_water) {
     list.add(m_bwat);
   }
@@ -284,8 +288,23 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
     } else { // grounded and there is some ice
       // user can ask that marine grounding lines get special treatment
       double water = W_till(i,j); // usual case
+
+      GeometryCalculator gc(*m_config);
+      //Determine neighboring cell with highest water level
+      StarStencil<double> sl_star = sea_level.star(i, j);
+      StarStencil<double> ll_star = lake_level.star(i, j);
+      const double bed = bed_topography(i, j);
+      double max_water_level = gc.water_level(sl_star.ij, bed, ll_star.ij);
+
+      for (int n = 0; n < 4; ++n) {
+        const Direction direction = dirs[n];
+        const double sl = sl_star[direction];
+        const double ll = ll_star[direction];
+        const double water_level = gc.water_level(sl, bed, ll);
+        max_water_level = std::max(water_level, max_water_level);
+      }
       if (slippery_grounding_lines and
-          bed_topography(i,j) <= sea_level(i, j) and
+          bed_topography(i,j) <= max_water_level and
           (mask.next_to_floating_ice(i,j) or mask.next_to_ice_free_ocean(i,j))) {
         water = W_till_max;
       } else if (add_transportable_water) {
