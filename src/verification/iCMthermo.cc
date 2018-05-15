@@ -54,6 +54,7 @@ void IceCompModel::energy_step() {
   m_energy_model->enthalpy().getHorSlice(basal_enthalpy, 0.0);
 
   bedrock_surface_temperature(m_geometry.sea_level_elevation,
+                              m_geometry.lake_level_elevation,
                               m_geometry.cell_type,
                               m_geometry.bed_elevation,
                               m_geometry.ice_thickness,
