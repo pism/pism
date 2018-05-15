@@ -57,6 +57,7 @@ void IceModel::energy_step() {
   m_energy_model->enthalpy().getHorSlice(basal_enthalpy, 0.0);
 
   bedrock_surface_temperature(m_geometry.sea_level_elevation,
+                              m_geometry.lake_level_elevation,
                               m_geometry.cell_type,
                               m_geometry.bed_elevation,
                               m_geometry.ice_thickness,
@@ -122,6 +123,7 @@ void IceModel::combine_basal_melt_rate(const Geometry &geometry,
 
 //! @brief Compute the temperature seen by the top of the bedrock thermal layer.
 void bedrock_surface_temperature(const IceModelVec2S &sea_level,
+                                 const IceModelVec2S &lake_level,
                                  const IceModelVec2CellType &cell_type,
                                  const IceModelVec2S &bed_topography,
                                  const IceModelVec2S &ice_thickness,
@@ -131,17 +133,21 @@ void bedrock_surface_temperature(const IceModelVec2S &sea_level,
 
   IceGrid::ConstPtr grid  = result.grid();
   Config::ConstPtr config = grid->ctx()->config();
+  GeometryCalculator gc(*config);
 
   const double
-    T0                     = config->get_double("constants.fresh_water.melting_point_temperature"),
-    beta_CC_grad_sea_water = (config->get_double("constants.ice.beta_Clausius_Clapeyron") *
-                              config->get_double("constants.sea_water.density") *
-                              config->get_double("constants.standard_gravity")); // K m-1
+    T0                       =  config->get_double("constants.fresh_water.melting_point_temperature"),
+    beta_CC_grad_sea_water   = (config->get_double("constants.ice.beta_Clausius_Clapeyron") *
+                                config->get_double("constants.sea_water.density") *
+                                config->get_double("constants.standard_gravity")),
+    beta_CC_grad_fresh_water = (config->get_double("constants.ice.beta_Clausius_Clapeyron") *
+                                config->get_double("constants.fresh_water.density") *
+                                config->get_double("constants.standard_gravity")); // K m-1
 
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
-  IceModelVec::AccessList list{&cell_type, &bed_topography, &sea_level, &ice_thickness,
-      &ice_surface_temperature, &basal_enthalpy, &result};
+  IceModelVec::AccessList list{&cell_type, &bed_topography, &sea_level, &lake_level,
+      &ice_thickness, &ice_surface_temperature, &basal_enthalpy, &result};
   ParallelSection loop(grid->com);
   try {
     for (Points p(*grid); p; p.next()) {
@@ -155,7 +161,9 @@ void bedrock_surface_temperature(const IceModelVec2S &sea_level,
           result(i,j) = EC->temperature(basal_enthalpy(i,j), pressure);
         }
       } else { // floating: apply pressure melting temp as top of bedrock temp
-        result(i,j) = T0 - (sea_level(i, j) - bed_topography(i,j)) * beta_CC_grad_sea_water;
+        const double water_level = gc.water_level(sea_level(i,j), bed_topography(i,j), lake_level(i, j));
+        const double beta = !gc.islake(lake_level(i, j)) ? beta_CC_grad_sea_water : beta_CC_grad_fresh_water;
+        result(i,j) = T0 - (water_level - bed_topography(i,j)) * beta;
       }
     }
   } catch (...) {
