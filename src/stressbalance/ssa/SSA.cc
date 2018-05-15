@@ -174,6 +174,7 @@ void SSA::update(const Inputs &inputs, bool full_update) {
     gc.compute_mask(inputs.geometry->sea_level_elevation,
                     inputs.geometry->bed_elevation,
                     inputs.geometry->ice_thickness,
+                    inputs.geometry->lake_level_elevation,
                     m_mask);
   }
 

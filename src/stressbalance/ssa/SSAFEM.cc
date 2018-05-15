@@ -49,6 +49,7 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g)
 
   const double ice_density = m_config->get_double("constants.ice.density");
   m_alpha = 1 - ice_density / m_config->get_double("constants.sea_water.density");
+  m_alpha_lake = 1 - ice_density / m_config->get_double("constants.fresh_water.density");
   m_rho_g = ice_density * m_config->get_double("constants.standard_gravity");
 
   m_driving_stress_x = NULL;
@@ -273,6 +274,7 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
       &inputs.geometry->ice_thickness,
       &inputs.geometry->bed_elevation,
       &inputs.geometry->sea_level_elevation,
+      &inputs.geometry->lake_level_elevation,
       inputs.basal_yield_stress};
 
   bool use_explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
@@ -305,6 +307,7 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
       c.thickness      = thickness;
       c.bed            = inputs.geometry->bed_elevation(i, j);
       c.sea_level      = inputs.geometry->sea_level_elevation(i, j);
+      c.lake_level     = inputs.geometry->lake_level_elevation(i, j);
       c.tauc           = (*inputs.basal_yield_stress)(i, j);
       c.hardness       = hardness;
       c.driving_stress = tau_d;
@@ -344,8 +347,9 @@ void SSAFEM::quad_point_values(const fem::Quadrature &Q,
 
   for (unsigned int q = 0; q < n; q++) {
     double
-      bed       = 0.0,
-      sea_level = 0.0;
+      bed        = 0.0,
+      sea_level  = 0.0,
+      lake_level = 0.0;
 
     thickness[q] = 0.0;
     tauc[q]      = 0.0;
@@ -357,11 +361,12 @@ void SSAFEM::quad_point_values(const fem::Quadrature &Q,
       thickness[q] += psi.val * x[k].thickness;
       bed          += psi.val * x[k].bed;
       sea_level    += psi.val * x[k].sea_level;
+      lake_level   += psi.val * x[k].lake_level;
       tauc[q]      += psi.val * x[k].tauc;
       hardness[q]  += psi.val * x[k].hardness;
     }
 
-    mask[q] = m_gc.mask(sea_level, bed, thickness[q]);
+    mask[q] = m_gc.mask(sea_level, bed, thickness[q], lake_level);
   }
 }
 
@@ -436,13 +441,14 @@ void SSAFEM::driving_stress(const fem::Quadrature &Q,
 
   for (unsigned int q = 0; q < n; q++) {
     double
-      sea_level = 0.0,
-      b         = 0.0,
-      b_x       = 0.0,
-      b_y       = 0.0,
-      H         = 0.0,
-      H_x       = 0.0,
-      H_y       = 0.0;
+      sea_level  = 0.0,
+      lake_level = 0.0,
+      b          = 0.0,
+      b_x        = 0.0,
+      b_y        = 0.0,
+      H          = 0.0,
+      H_x        = 0.0,
+      H_y        = 0.0;
 
     result[q] = 0.0;
 
@@ -457,16 +463,19 @@ void SSAFEM::driving_stress(const fem::Quadrature &Q,
       H_x += psi.dx * x[k].thickness;
       H_y += psi.dy * x[k].thickness;
 
-      sea_level += psi.val * x[k].sea_level;
+      sea_level  += psi.val * x[k].sea_level;
+      lake_level += psi.val * x[k].lake_level;
     }
 
-    const int M = m_gc.mask(sea_level, b, H);
+    const int M = m_gc.mask(sea_level, b, H, lake_level);
     const bool grounded = mask::grounded(M);
+    const bool isLake = m_gc.islake(lake_level);
+    const double alpha = !isLake ? m_alpha : m_alpha_lake;
 
     const double
       pressure = m_rho_g * H,
-      h_x = grounded ? b_x + H_x : m_alpha * H_x,
-      h_y = grounded ? b_y + H_y : m_alpha * H_y;
+      h_x = grounded ? b_x + H_x : alpha * H_x,
+      h_y = grounded ? b_y + H_y : alpha * H_y;
 
     result[q].u = - pressure * h_x;
     result[q].v = - pressure * h_y;
@@ -559,6 +568,7 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
   const double
     ice_density      = m_config->get_double("constants.ice.density"),
     ocean_density    = m_config->get_double("constants.sea_water.density"),
+    fresh_water_density  = m_config->get_double("constants.fresh_water.density"),
     standard_gravity = m_config->get_double("constants.standard_gravity");
 
   // Reset the boundary integral so that all values are overwritten.
@@ -573,6 +583,7 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
       &inputs.geometry->ice_thickness,
       &inputs.geometry->bed_elevation,
       &inputs.geometry->sea_level_elevation,
+      &inputs.geometry->lake_level_elevation,
       &m_boundary_integral};
 
   // Iterate over the elements.
@@ -615,6 +626,9 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
         double sl_nodal[Nk];
         m_element.nodal_values(inputs.geometry->sea_level_elevation, sl_nodal);
 
+        double ll_nodal[Nk];
+        m_element.nodal_values(inputs.geometry->lake_level_elevation, ll_nodal);
+
         // storage for test function values psi[0] for the first "end" of a side, psi[1] for the
         // second
         double psi[2] = {0.0, 0.0};
@@ -646,16 +660,19 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
             // Compute ice thickness and bed elevation at a quadrature point. This uses a 1D basis
             // expansion on the side.
             const double
-              H         = H_nodal[n0]  * psi[0] + H_nodal[n1]  * psi[1],
-              bed       = b_nodal[n0]  * psi[0] + b_nodal[n1]  * psi[1],
-              sea_level = sl_nodal[n0] * psi[0] + sl_nodal[n1] * psi[1];
+              H          = H_nodal[n0]  * psi[0] + H_nodal[n1]  * psi[1],
+              bed        = b_nodal[n0]  * psi[0] + b_nodal[n1]  * psi[1],
+              sea_level  = sl_nodal[n0] * psi[0] + sl_nodal[n1] * psi[1],
+              lake_level = ll_nodal[n0] * psi[0] + ll_nodal[n1] * psi[1];
 
-            const bool floating = ocean(m_gc.mask(sea_level, bed, H));
+            const bool floating = ocean(m_gc.mask(sea_level, bed, H, lake_level));
+            const double water_level = m_gc.water_level(sea_level, bed, lake_level);
+            const double water_density = !m_gc.islake(lake_level) ? ocean_density : fresh_water_density;
 
             // ocean pressure difference at a quadrature point
             const double dP = ocean_pressure_difference(floating, is_dry_simulation,
-                                                        H, bed, sea_level,
-                                                        ice_density, ocean_density,
+                                                        H, bed, water_level,
+                                                        ice_density, water_density,
                                                         standard_gravity);
 
             // This integral contributes to the residual at 2 nodes (the ones incident to the

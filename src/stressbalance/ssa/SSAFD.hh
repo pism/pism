@@ -45,7 +45,7 @@ protected:
   virtual void pc_setup_bjacobi();
 
   virtual void pc_setup_asm();
-  
+
   virtual void solve(const Inputs &inputs);
 
   virtual void picard_iteration(const Inputs &inputs,
@@ -94,12 +94,13 @@ protected:
   petsc::Mat m_A;
   IceModelVec2V m_b;            // right hand side
   double m_scaling;
+  GeometryCalculator m_gc;
 
   IceModelVec2V m_velocity_old;
 
   unsigned int m_default_pc_failure_count,
     m_default_pc_failure_max_count;
-  
+
   bool m_view_nuh;
   petsc::Viewer::Ptr m_nuh_viewer;
   int m_nuh_viewer_size;

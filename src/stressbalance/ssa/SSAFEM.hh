@@ -58,6 +58,8 @@ protected:
     double bed;
     //! sea level
     double sea_level;
+    //! lake level
+    double lake_level;
     //! basal yield stress
     double tauc;
     //! ice hardness
@@ -71,6 +73,7 @@ protected:
 
   GeometryCalculator m_gc;
   double m_alpha;
+  double m_alpha_lake;
   double m_rho_g;
 
   IceModelVec2Fat<Coefficients> m_coefficients;

@@ -61,7 +61,8 @@ linear systems
 where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
  */
 SSAFD::SSAFD(IceGrid::ConstPtr g)
-  : SSA(g) {
+  : SSA(g),
+    m_gc(*m_config) {
   m_b.create(m_grid, "right_hand_side", WITHOUT_GHOSTS);
 
   m_velocity_old.create(m_grid, "velocity_old", WITH_GHOSTS);
@@ -250,6 +251,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     &thickness             = inputs.geometry->ice_thickness,
     &bed                   = inputs.geometry->bed_elevation,
     &sea_level             = inputs.geometry->sea_level_elevation,
+    &lake_level            = inputs.geometry->lake_level_elevation,
     *melange_back_pressure = inputs.melange_back_pressure;
 
   const double
@@ -258,6 +260,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     ice_free_default_velocity = 0.0,
     standard_gravity          = m_config->get_double("constants.standard_gravity"),
     rho_ocean                 = m_config->get_double("constants.sea_water.density"),
+    rho_fresh                 = m_config->get_double("constants.fresh_water.density"),
     rho_ice                   = m_config->get_double("constants.ice.density");
 
   const bool
@@ -276,7 +279,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   }
 
   if (use_cfbc) {
-    list.add({&thickness, &bed, &m_mask, &sea_level});
+    list.add({&thickness, &bed, &m_mask, &sea_level, &lake_level});
   }
 
   if (use_cfbc && melange_back_pressure != NULL) {
@@ -338,9 +341,13 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
             bMM = 0;
         }
 
+        const double water_level = m_gc.water_level(sea_level(i, j), bed(i, j), lake_level(i, j));
+        const bool isLake = m_gc.islake(lake_level(i, j));
+        const double rho_water = !isLake ? rho_ocean : rho_fresh;
+
         double ocean_pressure = ocean_pressure_difference(ocean(M_ij), is_dry_simulation,
-                                                          H_ij, bed(i,j), sea_level(i, j),
-                                                          rho_ice, rho_ocean, standard_gravity);
+                                                          H_ij, bed(i,j), water_level,
+                                                          rho_ice, rho_water, standard_gravity);
 
         if (melange_back_pressure != NULL) {
           double lambda = (*melange_back_pressure)(i, j);
