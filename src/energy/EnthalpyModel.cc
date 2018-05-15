@@ -137,7 +137,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
     &ice_surface_temp         = *inputs.surface_temp,
     &till_water_thickness     = *inputs.till_water_thickness;
 
-  energy::enthSystemCtx system(m_grid->z(), "enth", m_grid->dx(), m_grid->dy(), dt,
+  energy::enthSystemCtx system(m_grid->z(), "energy.enthalpy", m_grid->dx(), m_grid->dy(), dt,
                                *m_config, m_ice_enthalpy, u3, v3, w3, strain_heating3, EC);
 
   const size_t Mz_fine = system.z().size();

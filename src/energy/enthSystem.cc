@@ -78,7 +78,7 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_nu = m_dt / m_dz;
 
   double
-    ratio = config.get_double("energy.enthalpy.temperate_ice_thermal_conductivity_ratio"),
+    ratio = config.get_double(prefix + ".temperate_ice_thermal_conductivity_ratio"),
     K     = m_ice_k / m_ice_c,
     K0    = (ratio * m_ice_k) / m_ice_c;
 
