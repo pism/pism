@@ -36,7 +36,7 @@ public:
   virtual ~CalvingAtThickness();
 
   virtual void init();
-  void update(IceModelVec2CellType &pism_mask, IceModelVec2S &ice_thickness);
+  void update(IceModelVec2S &lake_level, IceModelVec2CellType &pism_mask, IceModelVec2S &ice_thickness);
   const IceModelVec2S& threshold() const;
 
 protected:

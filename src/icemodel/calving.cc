@@ -84,7 +84,8 @@ void IceModel::do_calving() {
   }
 
   if (m_thickness_threshold_calving) {
-    m_thickness_threshold_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
+    m_thickness_threshold_calving->update(m_geometry.lake_level_elevation,
+                                          m_geometry.cell_type, m_geometry.ice_thickness);
   }
 }
 

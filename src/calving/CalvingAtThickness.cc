@@ -88,23 +88,24 @@ void CalvingAtThickness::init() {
  * calving rule removing ice at the shelf front that is thinner than a
  * given threshold.
  *
+ * @param[in,out] lake_level lake level
  * @param[in,out] pism_mask ice cover mask
  * @param[in,out] ice_thickness ice thickness
  *
  * @return 0 on success
  */
-void CalvingAtThickness::update(IceModelVec2CellType &pism_mask,
+void CalvingAtThickness::update(IceModelVec2S &lake_level,
+                                IceModelVec2CellType &pism_mask,
                                 IceModelVec2S &ice_thickness) {
 
   // this call fills ghosts of m_old_mask
   m_old_mask.copy_from(pism_mask);
 
-  const IceModelVec2S *lake_level = m_grid->variables().get_2d_scalar("lake_level_elevation");
   GeometryCalculator gc(*m_config);
 
   IceModelVec::AccessList list{&pism_mask, &ice_thickness, &m_old_mask, &m_calving_threshold};
   if (m_calving_threshold_lake >= 0.0) {
-    list.add(*lake_level);
+    list.add(lake_level);
   }
 
   for (Points p(*m_grid); p; p.next()) {
@@ -114,7 +115,7 @@ void CalvingAtThickness::update(IceModelVec2CellType &pism_mask,
     if (m_calving_threshold_lake < 0.0) {
       threshold_ij = m_calving_threshold(i, j);
     } else {
-      threshold_ij = gc.islake((*lake_level)(i, j)) ? m_calving_threshold_lake : m_calving_threshold(i, j);
+      threshold_ij = gc.islake(lake_level(i, j)) ? m_calving_threshold_lake : m_calving_threshold(i, j);
     }
 
     if (m_old_mask.floating_ice(i, j)           &&

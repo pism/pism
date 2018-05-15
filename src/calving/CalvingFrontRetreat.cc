@@ -179,8 +179,18 @@ void CalvingFrontRetreat::update(double dt,
                                  IceModelVec2S &Href,
                                  IceModelVec2S &ice_thickness) {
 
-  const IceModelVec2S   &sea_level      = inputs.geometry->sea_level_elevation;
-  const IceModelVec2S   &lake_level     = inputs.geometry->lake_level_elevation;
+  IceModelVec2S sea_level,
+                lake_level;
+  sea_level.create(m_grid, "m_sea_level", WITH_GHOSTS, 2);
+  sea_level.set_attrs("internal", "sea level elevation", "m", "sea_level_elevation");
+  sea_level.copy_from(inputs.geometry->sea_level_elevation);
+
+  lake_level.create(m_grid, "m_lake_level", WITH_GHOSTS, 2);
+  lake_level.set_attrs("internal", "lake level elevation", "m", "lake_level_elevation");
+  lake_level.copy_from(inputs.geometry->lake_level_elevation);
+
+  //const IceModelVec2S   &sea_level      = inputs.geometry->sea_level_elevation;
+  //const IceModelVec2S   &lake_level     = inputs.geometry->lake_level_elevation;
   const IceModelVec2S   &bed_topography = inputs.geometry->bed_elevation;
   const IceModelVec2Int &bc_mask        = *inputs.bc_mask;
 
@@ -247,8 +257,7 @@ void CalvingFrontRetreat::update(double dt,
 
           auto
             bed = bed_topography.star(i, j),
-            sl  = sea_level.star(i, j),
-            ll  = lake_level.star(i, j);
+            sl  = sea_level.star(i, j);
 
           for (int n = 0; n < 4; ++n) {
             Direction direction = dirs[n];
