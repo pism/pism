@@ -135,9 +135,9 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
 
   check_minimum_ice_thickness(ice_thickness);
 
-  IceModelVec::AccessList list{&sea_level_elevation, &bed_elevation,
-      &ice_thickness, &ice_area_specific_volume,
-      &cell_type, &ice_surface_elevation};
+  IceModelVec::AccessList list{&sea_level_elevation,
+      &lake_level_elevation, &bed_elevation, &ice_thickness,
+      &ice_area_specific_volume, &cell_type, &ice_surface_elevation};
 
   // first ensure that ice_area_specific_volume is 0 if ice_thickness > 0.
   {
@@ -169,7 +169,7 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
 
         int mask = 0;
         gc.compute(sea_level_elevation(i, j), bed_elevation(i, j), ice_thickness(i, j),
-                   &mask, &ice_surface_elevation(i, j));
+                   lake_level_elevation(i, j), &mask, &ice_surface_elevation(i, j));
         cell_type(i, j) = mask;
       }
     } catch (...) {
