@@ -101,7 +101,7 @@ protected:
     m_lambda;              //!< implicit FD method parameter
   double m_D0, m_U0, m_B0;   // coefficients of the first (basal) equation
   double m_L_ks, m_D_ks, m_U_ks, m_B_ks;   // coefficients of the last (surface) equation
-  bool m_marginal, m_c_depends_on_T, m_k_depends_on_T;
+  bool m_marginal, m_k_depends_on_T;
 
   bool m_exclude_horizontal_advection;
   bool m_exclude_vertical_advection;

@@ -89,8 +89,6 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   } else {
     m_k_depends_on_T = false;
   }
-
-  m_c_depends_on_T = false;
 }
 
 
