@@ -320,10 +320,25 @@ void CalvingFrontRetreat::update(double dt,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
+    StarStencil<double> sl_star = sea_level.star(i, j);
+    StarStencil<double> ll_star = lake_level.star(i, j);
+    StarStencil<double> bed_star= bed_topography.star(i, j);
+    double water_level = gc.valid_sea_level(sl_star.ij, bed_star.ij);
+
+    for (int n = 0; n < 4; ++n) {
+      const Direction direction = dirs[n];
+      const double sl  = sl_star[direction];
+      const double ll  = ll_star[direction];
+      const double bed = bed_star[direction];
+
+      const double water_level_n = gc.water_level(sl, bed, ll);
+      water_level = std::max(water_level, water_level_n);
+    }
+
     // Note: this condition has to match the one in step 1 above.
     if (bc_mask.as_int(i, j) == 0 and
         (mask.floating_ice(i, j) or
-         (mask.grounded_ice(i, j) and bed_topography(i, j) < sea_level(i, j)))) {
+         (mask.grounded_ice(i, j) and bed_topography(i, j) < water_level))) {
 
       const double delta_H = (m_tmp(i + 1, j) + m_tmp(i - 1, j) +
                               m_tmp(i, j + 1) + m_tmp(i, j - 1));
