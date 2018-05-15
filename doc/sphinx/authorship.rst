@@ -66,11 +66,11 @@ Research (PIK), and several additional developers listed here.
      - hydrology analysis and design
    * - Ronja Reese (PIK)
      - sub-shelf mass balance
-   * - Julien Seguinot (INK)
+   * - Julien Seguinot (ETH)
      - bug fixes, temperature index model 
    * - Ricarda Winkelmann (PIK)
      - Antarctica processes, coupling, and modeling  
-   * - Florian Ziemen (UAF)
+   * - Florian Ziemen (MPI)
      - bug fixes, sliding 
 
 Email the **highlighted** UAF developers at |pism-email|.
