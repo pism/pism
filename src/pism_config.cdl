@@ -520,6 +520,16 @@ netcdf pism_config {
     pism_config:energy.enthalpy.cold_bulge_max_type = "scalar";
     pism_config:energy.enthalpy.cold_bulge_max_units = "Joule / kg";
 
+    pism_config:energy.ch_system.residual_water_fraction = 0.005;
+    pism_config:energy.ch_system.residual_water_fraction_units = "pure number";
+    pism_config:energy.ch_system.residual_water_fraction_doc = "residual water fraction in the cryo-hydrologic system at the end of a melt season";
+    pism_config:energy.ch_system.residual_water_fraction_type = "scalar";
+
+    pism_config:energy.ch_system.temperate_ice_thermal_conductivity_ratio = 1.0;
+    pism_config:energy.ch_system.temperate_ice_thermal_conductivity_ratio_doc = "ratio of thermal conductivities of temperate and cold ice in the cryo-hydrologic system";
+    pism_config:energy.ch_system.temperate_ice_thermal_conductivity_ratio_type = "scalar";
+    pism_config:energy.ch_system.temperate_ice_thermal_conductivity_ratio_units = "pure number";
+
     pism_config:energy.margin_ice_thickness_limit = 100.0;
     pism_config:energy.margin_ice_thickness_limit_doc = "use special margin treatment at grid points with a neighbor with the thickness below this limit.";
     pism_config:energy.margin_ice_thickness_limit_type = "scalar";
