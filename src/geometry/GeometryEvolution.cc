@@ -264,6 +264,7 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
     m_impl->gc.compute(m_impl->sea_level,          // in (uses ghosts)
                        m_impl->bed_elevation,      // in (uses ghosts)
                        m_impl->ice_thickness,      // in (uses ghosts)
+                       m_impl->lake_level,         // in (uses ghosts)
                        m_impl->cell_type,          // out (ghosts are updated)
                        m_impl->surface_elevation); // out (ghosts are updated)
   }
@@ -292,6 +293,7 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
   update_in_place(dt,                            // in
                   m_impl->bed_elevation,         // in
                   m_impl->sea_level,             // in
+                  m_impl->lake_level,             // in
                   m_impl->flux_divergence,       // in
                   m_impl->ice_thickness,         // in/out
                   m_impl->area_specific_volume); // in/out
@@ -689,6 +691,7 @@ void GeometryEvolution::compute_flux_divergence(const IceModelVec2Stag &flux,
  * @param[in] dt time step, seconds
  * @param[in] bed_elevation bed elevation, meters
  * @param[in] sea_level sea level elevation
+ * @param[in] lake_level lake level elevation
  * @param[in] ice_thickness ice thickness
  * @param[in] area_specific_volume area-specific volume (m3/m2)
  * @param[in] flux_divergence flux divergence
@@ -698,11 +701,12 @@ void GeometryEvolution::compute_flux_divergence(const IceModelVec2Stag &flux,
 void GeometryEvolution::update_in_place(double dt,
                                         const IceModelVec2S &bed_topography,
                                         const IceModelVec2S &sea_level,
+                                        const IceModelVec2S &lake_level,
                                         const IceModelVec2S &flux_divergence,
                                         IceModelVec2S &ice_thickness,
                                         IceModelVec2S &area_specific_volume) {
 
-  m_impl->gc.compute(sea_level, bed_topography, ice_thickness,
+  m_impl->gc.compute(sea_level, bed_topography, ice_thickness, lake_level,
                      m_impl->cell_type, m_impl->surface_elevation);
 
   IceModelVec::AccessList list{&ice_thickness, &flux_divergence};
@@ -776,7 +780,7 @@ void GeometryEvolution::update_in_place(double dt,
   ice_thickness.update_ghosts();
 
   // Compute the mask corresponding to the new thickness.
-  m_impl->gc.compute_mask(sea_level, bed_topography, ice_thickness, m_impl->cell_type);
+  m_impl->gc.compute_mask(sea_level, bed_topography, ice_thickness, lake_level, m_impl->cell_type);
 
   /*
     Redistribute residual ice mass from subgrid-scale parameterization.
@@ -793,6 +797,7 @@ void GeometryEvolution::update_in_place(double dt,
       // this call may set done to true
       residual_redistribution_iteration(bed_topography,
                                         sea_level,
+                                        lake_level,
                                         m_impl->surface_elevation,
                                         ice_thickness,
                                         m_impl->cell_type,
@@ -818,6 +823,7 @@ void GeometryEvolution::update_in_place(double dt,
 /*!
   @param[in] bed_topography bed elevation
   @param[in] sea_level sea level elevation
+  @param[in] lake_level lake level elevation
   @param[in,out] ice_surface_elevation surface elevation; used as temp. storage
   @param[in,out] ice_thickness ice thickness; updated
   @param[in,out] cell_type cell type mask; used as temp. storage
@@ -827,6 +833,7 @@ void GeometryEvolution::update_in_place(double dt,
  */
 void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &bed_topography,
                                                           const IceModelVec2S  &sea_level,
+                                                          const IceModelVec2S  &lake_level,
                                                           IceModelVec2S        &ice_surface_elevation,
                                                           IceModelVec2S        &ice_thickness,
                                                           IceModelVec2CellType &cell_type,
@@ -834,7 +841,7 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
                                                           IceModelVec2S        &residual,
                                                           bool &done) {
 
-  m_impl->gc.compute_mask(sea_level, bed_topography, ice_thickness, cell_type);
+  m_impl->gc.compute_mask(sea_level, bed_topography, ice_thickness, lake_level, cell_type);
 
   const Direction directions[4] = {North, East, South, West};
 
@@ -899,7 +906,7 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
   m_impl->thickness.copy_from(ice_thickness);
 
   // The loop above updated ice_thickness, so we need to re-calculate the mask and the surface elevation:
-  m_impl->gc.compute(sea_level, bed_topography, ice_thickness, cell_type, ice_surface_elevation);
+  m_impl->gc.compute(sea_level, bed_topography, ice_thickness, lake_level, cell_type, ice_surface_elevation);
 
   double remaining_residual = 0.0;
 

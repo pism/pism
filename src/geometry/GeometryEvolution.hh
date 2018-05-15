@@ -78,12 +78,14 @@ protected:
   void update_in_place(double dt,
                        const IceModelVec2S& bed_elevation,
                        const IceModelVec2S& sea_level,
+                       const IceModelVec2S& lake_level,
                        const IceModelVec2S& flux_divergence,
                        IceModelVec2S& ice_thickness,
                        IceModelVec2S& area_specific_volume);
 
   void residual_redistribution_iteration(const IceModelVec2S& bed_topography,
                                          const IceModelVec2S& sea_level,
+                                         const IceModelVec2S& lake_level,
                                          IceModelVec2S& ice_surface_elevation,
                                          IceModelVec2S& ice_thickness,
                                          IceModelVec2CellType& cell_type,
