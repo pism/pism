@@ -61,7 +61,7 @@ class EnthalpyColumn(object):
 
         self.u, self.v, self.w = PISM.model.create3DVelocityVecs(grid)
 
-        self.sys = PISM.enthSystemCtx(grid.z(), "enth",
+        self.sys = PISM.enthSystemCtx(grid.z(), "energy.enthalpy",
                                       grid.dx(), grid.dy(), self.dt,
                                       config,
                                       self.enthalpy,

@@ -8,11 +8,6 @@ config = ctx.config
 
 config.set_string("grid.ice_vertical_spacing", "equal")
 
-# PISM's default ration between conductivities of cold and temperate
-# ice is 0.1. The Phillips et al paper makes decisions roughly
-# equivalent to setting it to 1.
-config.set_double("energy.enthalpy.temperate_ice_thermal_conductivity_ratio", 1.0)
-
 k         = config.get_double("constants.ice.thermal_conductivity")
 T_melting = config.get_double("constants.fresh_water.melting_point_temperature")
 
@@ -26,7 +21,7 @@ water_fraction      = np.vectorize(EC.water_fraction)
 class EnthalpyColumn(object):
     "Set up the grid and arrays needed to run column solvers"
 
-    def __init__(self, Mz, dt, Lz=1000.0):
+    def __init__(self, prefix, Mz, dt, Lz=1000.0):
         self.Lz = Lz
         self.z = np.linspace(0, self.Lz, Mz)
 
@@ -55,7 +50,7 @@ class EnthalpyColumn(object):
         self.v.set(0.0)
         self.w.set(0.0)
 
-        self.sys = PISM.enthSystemCtx(grid.z(), "enth",
+        self.sys = PISM.enthSystemCtx(grid.z(), prefix,
                                       grid.dx(), grid.dy(), self.dt,
                                       config,
                                       self.enthalpy,
@@ -95,8 +90,8 @@ def run(T_final_years=10.0, dt_days=1, Lz=1000, Mz=101, R=20, omega=0.005):
     T_final = PISM.convert(unit_system, T_final_years, "years", "seconds")
     dt      = PISM.convert(unit_system, dt_days, "days", "seconds")
 
-    ice = EnthalpyColumn(Mz, dt, Lz=Lz)
-    ch  = EnthalpyColumn(Mz, dt, Lz=Lz)
+    ice = EnthalpyColumn("energy.enthalpy", Mz, dt, Lz=Lz)
+    ch  = EnthalpyColumn("energy.ch_system", Mz, dt, Lz=Lz)
 
     H = ice.Lz
 
