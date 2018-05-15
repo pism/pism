@@ -181,7 +181,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
 
   // this is bulge limit constant in K; is max amount by which ice
   //   or bedrock can be lower than surface temperature
-  const double bulge_max  = m_config->get_double("energy.enthalpy_cold_bulge_max") / ice_c;
+  const double bulge_max  = m_config->get_double("energy.enthalpy.cold_bulge_max") / ice_c;
 
   inputs.check();
   const IceModelVec3

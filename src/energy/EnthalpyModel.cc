@@ -113,7 +113,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
   const double
     ice_density  = m_config->get_double("constants.ice.density"),          // kg m-3
-    bulgeEnthMax = m_config->get_double("energy.enthalpy_cold_bulge_max"); // J kg-1
+    bulgeEnthMax = m_config->get_double("energy.enthalpy.cold_bulge_max"); // J kg-1
 
   energy::DrainageCalculator dc(*m_config);
 

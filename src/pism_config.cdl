@@ -515,10 +515,10 @@ netcdf pism_config {
     pism_config:energy.enabled_doc = "Solve energy conservation equations.";
     pism_config:energy.enabled_type = "boolean";
 
-    pism_config:energy.enthalpy_cold_bulge_max = 60270.0;
-    pism_config:energy.enthalpy_cold_bulge_max_doc = "= (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value";
-    pism_config:energy.enthalpy_cold_bulge_max_type = "scalar";
-    pism_config:energy.enthalpy_cold_bulge_max_units = "Joule / kg";
+    pism_config:energy.enthalpy.cold_bulge_max = 60270.0;
+    pism_config:energy.enthalpy.cold_bulge_max_doc = "= (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value";
+    pism_config:energy.enthalpy.cold_bulge_max_type = "scalar";
+    pism_config:energy.enthalpy.cold_bulge_max_units = "Joule / kg";
 
     pism_config:energy.margin_ice_thickness_limit = 100.0;
     pism_config:energy.margin_ice_thickness_limit_doc = "use special margin treatment at grid points with a neighbor with the thickness below this limit.";
