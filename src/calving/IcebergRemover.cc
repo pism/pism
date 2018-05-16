@@ -60,14 +60,14 @@ void IcebergRemover::update(const IceModelVec2Int &bc_mask,
   {
     m_iceberg_mask.set(0.0);
 
-    IceModelVec::AccessList list{&mask, &m_iceberg_mask, &bc_mask};
+    IceModelVec::AccessList list{&mask, &m_iceberg_mask, &bc_mask, &ice_thickness};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (mask.grounded_ice(i,j) == true) {
         m_iceberg_mask(i,j) = mask_grounded_ice;
-      } else if (mask.floating_ice(i,j) == true) {
+      } else if ((mask.floating_ice(i,j) == true) or (mask.ice_free_ocean(i,j) and (ice_thickness(i, j) > 0.0))) {
         m_iceberg_mask(i,j) = mask_floating_ice;
       }
     }
