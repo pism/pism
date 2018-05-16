@@ -144,7 +144,7 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
     &shelf_base_temp          = *inputs.shelf_base_temp,
     &ice_surface_temp         = *inputs.surface_temp;
 
-  energy::enthSystemCtx system(m_grid->z(), "energy.ch_system", m_grid->dx(), m_grid->dy(), dt,
+  energy::enthSystemCtx system(m_grid->z(), "energy.ch_warming", m_grid->dx(), m_grid->dy(), dt,
                                *m_config, m_ice_enthalpy, u3, v3, w3, volumetric_heat, EC);
 
   const size_t Mz_fine = system.z().size();
@@ -159,7 +159,7 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
   double
     margin_threshold = m_config->get_double("energy.margin_ice_thickness_limit"),
     T_pm = m_config->get_double("constants.fresh_water.melting_point_temperature"),
-    residual_water_fraction = m_config->get_double("energy.ch_system.residual_water_fraction");
+    residual_water_fraction = m_config->get_double("energy.ch_warming.residual_water_fraction");
 
   const std::vector<double> &z = m_grid->z();
   const unsigned int Mz = m_grid->Mz();

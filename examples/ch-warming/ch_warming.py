@@ -91,7 +91,7 @@ def run(T_final_years=10.0, dt_days=1, Lz=1000, Mz=101, R=20, omega=0.005):
     dt      = PISM.convert(unit_system, dt_days, "days", "seconds")
 
     ice = EnthalpyColumn("energy.enthalpy", Mz, dt, Lz=Lz)
-    ch  = EnthalpyColumn("energy.ch_system", Mz, dt, Lz=Lz)
+    ch  = EnthalpyColumn("energy.ch_warming", Mz, dt, Lz=Lz)
 
     H = ice.Lz
 

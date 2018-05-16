@@ -104,7 +104,7 @@ With default parameter values PISM "ignores" thermal conductivity of temperate i
 Specifically, the thermal conductivity of temperate ice is set to a given fraction of
 `k_i` (see ``energy.enthalpy.temperate_ice_thermal_conductivity_ratio``).
 
-This one-column setup uses ``energy.ch_system.temperate_ice_thermal_conductivity_ratio``
+This one-column setup uses ``energy.ch_warming.temperate_ice_thermal_conductivity_ratio``
 (equal to `1`) to get us close to the equation modeling |chs| enthalpy evolution in
 *Phillips et al*.
 

@@ -31,24 +31,24 @@ public:
   virtual ~CHSystem();
 
 protected:
-  virtual void restart_impl(const PIO &input_file, int record) = 0;
+  void restart_impl(const PIO &input_file, int record);
 
-  virtual void bootstrap_impl(const PIO &input_file,
-                              const IceModelVec2S &ice_thickness,
-                              const IceModelVec2S &surface_temperature,
-                              const IceModelVec2S &climatic_mass_balance,
-                              const IceModelVec2S &basal_heat_flux) = 0;
+  void bootstrap_impl(const PIO &input_file,
+                      const IceModelVec2S &ice_thickness,
+                      const IceModelVec2S &surface_temperature,
+                      const IceModelVec2S &climatic_mass_balance,
+                      const IceModelVec2S &basal_heat_flux);
 
-  virtual void initialize_impl(const IceModelVec2S &basal_melt_rate,
-                               const IceModelVec2S &ice_thickness,
-                               const IceModelVec2S &surface_temperature,
-                               const IceModelVec2S &climatic_mass_balance,
-                               const IceModelVec2S &basal_heat_flux) = 0;
+  void initialize_impl(const IceModelVec2S &basal_melt_rate,
+                       const IceModelVec2S &ice_thickness,
+                       const IceModelVec2S &surface_temperature,
+                       const IceModelVec2S &climatic_mass_balance,
+                       const IceModelVec2S &basal_heat_flux);
 
-  virtual void update_impl(double t, double dt, const Inputs &inputs);
+  void update_impl(double t, double dt, const Inputs &inputs);
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  void define_model_state_impl(const PIO &output) const;
+  void write_model_state_impl(const PIO &output) const;
 };
 
 void cryo_hydrologic_warming_flux(double k,
