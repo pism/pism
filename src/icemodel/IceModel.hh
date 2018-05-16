@@ -180,7 +180,10 @@ protected:
   virtual void allocate_iceberg_remover();
 
   virtual stressbalance::Inputs stress_balance_inputs();
+
+  virtual const IceModelVec3& energy_volumetric_heat();
   virtual energy::Inputs energy_model_inputs();
+
   virtual YieldStressInputs yield_stress_inputs();
 
   virtual void time_setup();
