@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
+// Copyright (C) 2012-2017 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
 // and Matthias Mengel
 //
 // This file is part of PISM.
@@ -17,6 +17,20 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// Please cite this model as 
+
+// Antarctic sub-shelf melt rates via PICO
+// R. Reese, T. Albrecht, M. Mengel, X. Asay-Davis and R. Winkelmann 
+// The Cryosphere (2018) 
+//
+// and 
+//
+// A box model of circulation and melting in ice shelf caverns
+// D. Olbers & H. Hellmer
+// Ocean Dynamics (2010), Volume 60, Issue 1, pp 141–153
+// DOI: 10.1007/s10236-009-0252-z
+
+
 #ifndef _POCAVITY_H_
 #define _POCAVITY_H_
 
@@ -26,7 +40,7 @@
 
 namespace pism {
 namespace ocean {
-//! \brief Implements the SIMPEL ocean model as submitted to The Cryosphere (March 2017).
+//! \brief Implements the PICO ocean model as accepted for The Cryosphere (Feb 2018).
 //!
 //! Generalizes the two dimensional ocean box model of [@ref OlbersHellmer2010] for
 //! use in PISM, i.e. three dimensions.
@@ -69,12 +83,12 @@ protected:
 
   std::vector<IceModelVec*> m_variables;
 
-  bool   exicerises_set; // FIXME shouldn't this be always used?
+  bool   exicerises_set; 
 
 private:
   IceModelVec2S   m_shelfbtemp,
                   m_shelfbmassflux,
-                  cbasins, // a basin defines the domain where one box model instance is solved
+                  cbasins, 
                   icerise_mask,
                   shelf_mask,
                   ocean_box_mask,
@@ -112,10 +126,11 @@ private:
                     maskocean,
                     maskgrounded,
 
-                    imask_inner, // used in IdentifyMask
-                    imask_outer, // used in IdentifyMask
-                    imask_exclude, // used in IdentifyMask
-                    imask_unidentified; // used in IdentifyMask
+                    // used in IdentifyMask
+                    imask_inner, 
+                    imask_outer, 
+                    imask_exclude, 
+                    imask_unidentified; 
 
   std::vector<double> Toc_box0_vec, // temperature input for box 1 per basin
                       Soc_box0_vec, // salinity input for box 1 per basin
@@ -126,8 +141,6 @@ private:
   std::vector< std::vector<double> >  counter_boxes; // matrix containing the number of shelf cells per basin and box
                                                      // used for area calculation
 
-  // standard values are defined in Constants
-  // here needed to store custom values from user options.
   double        gamma_T, overturning_coeff,
                 continental_shelf_depth;
 
