@@ -439,19 +439,24 @@ IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) const {
   bed    = m_grid->variables().get_2d_scalar("bedrock_altitude");
   uplift = m_grid->variables().get_2d_scalar("tendency_of_bedrock_altitude");
 
-  const IceModelVec2S        &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2CellType &mask      = *m_grid->variables().get_2d_cell_type("mask");
+  const IceModelVec2S        &thickness  = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S        &lake_level = *m_grid->variables().get_2d_scalar("lake_level");
+  const IceModelVec2CellType &mask       = *m_grid->variables().get_2d_cell_type("mask");
+
+  GeometryCalculator gc(*m_config);
 
   const IceModelVec3
     &u3 = model->velocity_u(),
     &v3 = model->velocity_v(),
     &w3 = model->velocity_w();
 
-  IceModelVec::AccessList list{&thickness, &mask, bed, &u3, &v3, &w3, uplift, result3.get()};
+  IceModelVec::AccessList list{&thickness, &lake_level, &mask, bed, &u3, &v3, &w3, uplift, result3.get()};
 
   const double ice_density = m_config->get_double("constants.ice.density"),
     sea_water_density = m_config->get_double("constants.sea_water.density"),
-    R = ice_density / sea_water_density;
+    fresh_water_density = m_config->get_double("constants.fresh_water.density"),
+    R_ocean = ice_density / sea_water_density,
+    R_lake  = ice_density / fresh_water_density;
 
   ParallelSection loop(m_grid->com);
   try {
@@ -478,6 +483,7 @@ IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) const {
 
       } else {                  // floating
         const double
+          R = !gc.islake(lake_level(i,j)) ? R_ocean : R_lake,
           z_sl = R * thickness(i,j),
           w_sl = w3.getValZ(i, j, z_sl);
 
