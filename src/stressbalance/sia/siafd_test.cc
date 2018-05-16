@@ -323,6 +323,7 @@ int main(int argc, char *argv[]) {
 
     Geometry geometry(grid);
     geometry.sea_level_elevation.set(0.0);
+    geometry.lake_level_elevation.set(config->get_double("output.fill_value"));
 
     // age of the ice; is not used here
     age.create(grid, "age", WITHOUT_GHOSTS);
