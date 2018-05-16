@@ -166,7 +166,7 @@ void IceEISModel::initialize_2d() {
   }
 
   m_geometry.sea_level_elevation.set(0.0);
-  m_geometry.sea_level_elevation.set(m_config->get_double("output.fill_value"));
+  m_geometry.lake_level_elevation.set(m_config->get_double("output.fill_value"));
 
   // set uplift
   IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
