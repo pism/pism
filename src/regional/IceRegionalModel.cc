@@ -30,6 +30,7 @@
 #include "pism/util/io/PIO.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "EnthalpyModel_Regional.hh"
+#include "pism/energy/CHSystem.hh"
 
 namespace pism {
 
@@ -155,6 +156,12 @@ void IceRegionalModel::allocate_energy_model() {
   }
 
   m_submodels["energy balance model"] = m_energy_model;
+
+  if (m_config->get_boolean("energy.ch_warming.enabled") and
+      m_ch_system == NULL) {
+
+    m_ch_system.reset(new energy::CHSystem(m_grid, m_stress_balance.get()));
+  }
 }
 
 void IceRegionalModel::allocate_stressbalance() {
