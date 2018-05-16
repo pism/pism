@@ -151,8 +151,8 @@ the ice:
 .. math::
 
    \begin{aligned}
-     H_{\text{steady\, state}} &= H(T_{\text{steady\, state}}, p)\\
-     T_{\text{steady\, state}} &= (h - z) \frac{G}{k_i}\\
+     H_{\text{steady state}} &= H(T_{\text{steady state}}, p)\\
+     T_{\text{steady state}} &= (h - z) \frac{G}{k_i}\\
    \end{aligned}
 
 where `h` is ice thickness and `p` is the hydrostatic pressure. We assume that the mean
