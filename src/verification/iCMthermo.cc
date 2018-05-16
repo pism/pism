@@ -131,6 +131,9 @@ void IceCompModel::initTestFG() {
     IceModelVec2S sea_level(m_grid, "sea_level", WITHOUT_GHOSTS);
     sea_level.set(0.0);
 
+    IceModelVec2S lake_level(m_grid, "lake_level", WITHOUT_GHOSTS);
+    lake_level.set(m_config->get_double("output.fill_value"));
+
     m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness,
                         sea_level);
   }
@@ -146,6 +149,9 @@ void IceCompModel::initTestsKO() {
 
   IceModelVec2S sea_level(m_grid, "sea_level", WITHOUT_GHOSTS);
   sea_level.set(0.0);
+
+  IceModelVec2S lake_level(m_grid, "lake_level", WITHOUT_GHOSTS);
+  lake_level.set(m_config->get_double("output.fill_value"));
 
   m_geometry.ice_thickness.set(3000.0);
 

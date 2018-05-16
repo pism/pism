@@ -37,6 +37,7 @@
 #include "pism/util/pism_options.hh"
 #include "pism/coupler/ocean/Constant.hh"
 #include "pism/coupler/SeaLevel.hh"
+#include "pism/coupler/LakeLevel.hh"
 #include "PSVerification.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/error_handling.hh"
@@ -249,6 +250,9 @@ void IceCompModel::allocate_couplers() {
 
   m_sea_level.reset(new ocean::sea_level::SeaLevel(m_grid));
   m_submodels["sea level forcing"] = m_sea_level.get();
+
+  m_lake_level.reset(new ocean::lake_level::LakeLevel(m_grid));
+  m_submodels["lake level forcing"] = m_lake_level.get();
 }
 
 void IceCompModel::bootstrap_2d(const PIO &input_file) {
@@ -261,6 +265,7 @@ void IceCompModel::initialize_2d() {
 
   m_geometry.bed_elevation.set(0.0);
   m_geometry.sea_level_elevation.set(0.0);
+  m_geometry.lake_level_elevation.set(m_config->get_double("output.fill_value"));
 
   IceModelVec2S uplift(m_grid, "uplift", WITHOUT_GHOSTS);
   uplift.set(0.0);
@@ -350,6 +355,7 @@ void IceCompModel::initTestABCDH() {
       m_geometry.bed_elevation.set(0.0);
     }
     m_geometry.sea_level_elevation.set(0.0);
+    m_geometry.lake_level_elevation.set(m_config->get_double("output.fill_value"));
     m_beddef->bootstrap(m_geometry.bed_elevation, bed_uplift, m_geometry.ice_thickness,
                         m_geometry.sea_level_elevation);
   }
