@@ -64,3 +64,6 @@
 %shared_ptr(pism::ocean::sea_level::Delta_SL_2D)
 %rename(SeaLevelDelta2D) pism::ocean::sea_level::Delta_SL_2D;
 %include "coupler/ocean/sea_level/Delta_SL_2D.hh"
+
+%shared_ptr(pism::ocean::lake_level::LakeLevel)
+%include "coupler/LakeLevel.hh"
