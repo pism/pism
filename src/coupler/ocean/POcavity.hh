@@ -17,8 +17,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+//
 // Please cite this model as 
-
+//
 // Antarctic sub-shelf melt rates via PICO
 // R. Reese, T. Albrecht, M. Mengel, X. Asay-Davis and R. Winkelmann 
 // The Cryosphere (2018) 
@@ -43,7 +44,7 @@ namespace ocean {
 //! \brief Implements the PICO ocean model as accepted for The Cryosphere (Feb 2018).
 //!
 //! Generalizes the two dimensional ocean box model of [@ref OlbersHellmer2010] for
-//! use in PISM, i.e. three dimensions.
+//! use in PISM.
 //!
 class Cavity : public PGivenClimate<OceanModifier,OceanModel> {
 public:

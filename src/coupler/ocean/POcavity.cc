@@ -16,9 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
 //
 // Please cite this model as 
-
+//
 // Antarctic sub-shelf melt rates via PICO
 // R. Reese, T. Albrecht, M. Mengel, X. Asay-Davis and R. Winkelmann 
 // The Cryosphere (2018) 
@@ -29,6 +30,7 @@
 // D. Olbers & H. Hellmer
 // Ocean Dynamics (2010), Volume 60, Issue 1, pp 141–153
 // DOI: 10.1007/s10236-009-0252-z
+
 
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_poly.h>
@@ -51,7 +53,7 @@ Cavity::Constants::Constants(const Config &config) {
   continental_shelf_depth = -800; // threshold between deep ocean and continental shelf
 
   T_dummy = -1.5 + 273.15; // used as ocean temperature around Antarctica if no other data available (cold conditions)
-  S_dummy = 34.7; // uased as ocean salinity around Antarctica if no other data available (cold conditions)
+  S_dummy = 34.7; // used as ocean salinity around Antarctica if no other data available (cold conditions)
 
   earth_grav = config.get_double("constants.standard_gravity");
   rhoi       = config.get_double("constants.ice.density");
@@ -80,7 +82,7 @@ Cavity::Constants::Constants(const Config &config) {
   default_overturning_coeff    = 1e6;         // kg−1 s−1, best fit value from PICO description paper  
 
   // for shelf cells where PICO is not calculated, use Beckmann-Gooosse 2003
-  // confer to calculate_basal_melt_missing_cells() and POConstantPIK
+  // see also calculate_basal_melt_missing_cells() and POConstantPIK
   meltFactor   = 0.01;
 }
 
