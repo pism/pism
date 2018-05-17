@@ -20,7 +20,7 @@ PISM development is supported by the [NASA Modeling, Analysis, and Prediction pr
 PICO, a model for sub-shelf melt rates 
 ================================
 
-The **pik/pico_dev** branch is based on the development version [b659de3](https://github.com/pism/pism/commit/80896b36f7444f78923a12d1c57cea47e30a6b08) from Feb 13th, 2017
+The **pik/pico_dev** branch is based on the development version [b659de3](https://github.com/pism/pism/commit/80896b36f7444f78923a12d1c57cea47e30a6b08) from Feb 13th, 2017 (after the v0.7 release but before v1.0) 
 and adds an implementation of the Potsdam Ice-Shelf Cavity mOdel 
 
 Code release `pik-pico-07` was used for Reese et al., The Cryosphere (2018), forthcoming.
