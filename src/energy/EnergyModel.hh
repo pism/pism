@@ -48,7 +48,7 @@ public:
   const IceModelVec2S *surface_temp;
   const IceModelVec2S *till_water_thickness;
 
-  const IceModelVec3 *strain_heating3;
+  const IceModelVec3 *volumetric_heating_rate;
   const IceModelVec3 *u3;
   const IceModelVec3 *v3;
   const IceModelVec3 *w3;

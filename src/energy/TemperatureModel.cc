@@ -185,7 +185,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
 
   inputs.check();
   const IceModelVec3
-    &strain_heating3 = *inputs.strain_heating3,
+    &strain_heating3 = *inputs.volumetric_heating_rate,
     &u3              = *inputs.u3,
     &v3              = *inputs.v3,
     &w3              = *inputs.w3;

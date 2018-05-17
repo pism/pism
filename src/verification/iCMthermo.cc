@@ -74,7 +74,7 @@ void IceCompModel::energy_step() {
     inputs.surface_temp             = &m_surface->temperature(); // surface model
     inputs.till_water_thickness     = &m_subglacial_hydrology->till_water_thickness();
 
-    inputs.strain_heating3          = &m_stress_balance->volumetric_strain_heating();
+    inputs.volumetric_heating_rate  = &m_stress_balance->volumetric_strain_heating();
     inputs.u3                       = &m_stress_balance->velocity_u();
     inputs.v3                       = &m_stress_balance->velocity_v();
     inputs.w3                       = &m_stress_balance->velocity_w();
@@ -87,10 +87,10 @@ void IceCompModel::energy_step() {
     getCompSourcesTestFG();
 
     // Add computed strain heating to the compensatory part.
-    m_strain_heating3_comp.add(1.0, *inputs.strain_heating3);
+    m_strain_heating3_comp.add(1.0, *inputs.volumetric_heating_rate);
 
     // Use the result.
-    inputs.strain_heating3 = &m_strain_heating3_comp;
+    inputs.volumetric_heating_rate = &m_strain_heating3_comp;
   }
 
   m_energy_model->update(t_TempAge, dt_TempAge, inputs);

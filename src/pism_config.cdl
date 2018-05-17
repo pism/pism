@@ -520,7 +520,7 @@ netcdf pism_config {
     pism_config:energy.enthalpy.cold_bulge_max_type = "scalar";
     pism_config:energy.enthalpy.cold_bulge_max_units = "Joule / kg";
 
-    pism_config:energy.ch_warming.enabled = "yes";
+    pism_config:energy.ch_warming.enabled = "no";
     pism_config:energy.ch_warming.enabled_doc = "Enable the cryo-hydrologic warming model";
     pism_config:energy.ch_warming.enabled_type = "boolean";
 

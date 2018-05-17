@@ -420,10 +420,6 @@ stressbalance::Inputs IceModel::stress_balance_inputs() {
   return result;
 }
 
-const IceModelVec3& IceModel::energy_volumetric_heat() {
-  return m_stress_balance->volumetric_strain_heating();
-}
-
 energy::Inputs IceModel::energy_model_inputs() {
   energy::Inputs result;
 
@@ -436,7 +432,7 @@ energy::Inputs IceModel::energy_model_inputs() {
   result.surface_liquid_fraction  = &m_surface->liquid_water_fraction(); // surface model
   result.surface_temp             = &m_surface->temperature();           // surface model
 
-  result.strain_heating3          = &energy_volumetric_heat();
+  result.volumetric_heating_rate  = &m_stress_balance->volumetric_strain_heating();
   result.u3                       = &m_stress_balance->velocity_u();
   result.v3                       = &m_stress_balance->velocity_v();
   result.w3                       = &m_stress_balance->velocity_w();

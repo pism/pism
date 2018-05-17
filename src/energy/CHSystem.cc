@@ -16,6 +16,7 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <algorithm>            // std::max
 
 #include "CHSystem.hh"
 
@@ -85,7 +86,7 @@ void CHSystem::bootstrap_impl(const PIO &input_file,
                               const IceModelVec2S &climatic_mass_balance,
                               const IceModelVec2S &basal_heat_flux) {
 
-  m_log->message(2, "* Bootstrapping the cryo-hydrologic system from %s...\n",
+  m_log->message(2, "* Bootstrapping the cryo-hydrologic warming model from %s...\n",
                  input_file.inq_filename().c_str());
 
   int enthalpy_revision = m_ice_enthalpy.state_counter();
@@ -104,7 +105,7 @@ void CHSystem::initialize_impl(const IceModelVec2S &basal_melt_rate,
                                const IceModelVec2S &basal_heat_flux) {
   (void) basal_melt_rate;
 
-  m_log->message(2, "* Bootstrapping the cryo-hydrologic system...\n");
+  m_log->message(2, "* Bootstrapping the cryo-hydrologic warming model...\n");
 
   int enthalpy_revision = m_ice_enthalpy.state_counter();
   regrid_enthalpy();
@@ -129,7 +130,7 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
 
   // give them names that are a bit shorter...
   const IceModelVec3
-    &volumetric_heat = *inputs.strain_heating3,
+    &volumetric_heat = *inputs.volumetric_heating_rate,
     &u3              = *inputs.u3,
     &v3              = *inputs.v3,
     &w3              = *inputs.w3;
@@ -178,9 +179,9 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
         double *column = m_work.get_column(i, j);
         for (unsigned int k = 0; k < Mz; ++k) {
           double
-            depth = H - z[k],
+            depth = std::max(H - z[k], 0.0),
             P     = EC->pressure(depth);
-            column[k] = EC->enthalpy(EC->melting_temperature(depth),
+            column[k] = EC->enthalpy(EC->melting_temperature(P),
                                      residual_water_fraction,
                                      P);
         }
@@ -195,6 +196,10 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
       const double Enth_ks = EC->enthalpy_permissive(ice_surface_temp(i, j),
                                                      surface_liquid_fraction(i, j), p_ks);
 
+      system.init(i, j,
+                  marginal(ice_thickness, i, j, margin_threshold),
+                  H);
+
       const bool ice_free_column = (system.ks() == 0);
 
       // deal completely with columns with no ice
@@ -202,10 +207,6 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
         m_work.set_column(i, j, Enth_ks);
         continue;
       } // end of if (ice_free_column)
-
-      system.init(i, j,
-                  marginal(ice_thickness, i, j, margin_threshold),
-                  H);
 
       if (system.lambda() < 1.0) {
         m_stats.reduced_accuracy_counter += 1; // count columns with lambda < 1

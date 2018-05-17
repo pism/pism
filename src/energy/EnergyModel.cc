@@ -50,7 +50,7 @@ Inputs::Inputs() {
   surface_temp             = NULL;
   till_water_thickness     = NULL;
 
-  strain_heating3          = NULL;
+  volumetric_heating_rate  = NULL;
   u3                       = NULL;
   v3                       = NULL;
   w3                       = NULL;
@@ -68,7 +68,7 @@ void Inputs::check() const {
   check_input(surface_temp,             "surface_temp");
   check_input(till_water_thickness,     "till_water_thickness");
 
-  check_input(strain_heating3, "strain_heating3");
+  check_input(volumetric_heating_rate, "volumetric_heating_rate");
   check_input(u3, "u3");
   check_input(v3, "v3");
   check_input(w3, "w3");

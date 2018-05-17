@@ -53,6 +53,7 @@ protected:
 
 void cryo_hydrologic_warming_flux(double k,
                                   double R,
+                                  const IceModelVec2S &ice_thickness,
                                   const IceModelVec3 &ice_enthalpy,
                                   const IceModelVec3 &ch_enthalpy,
                                   IceModelVec3 &result);

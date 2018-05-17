@@ -181,7 +181,6 @@ protected:
 
   virtual stressbalance::Inputs stress_balance_inputs();
 
-  virtual const IceModelVec3& energy_volumetric_heat();
   virtual energy::Inputs energy_model_inputs();
 
   virtual YieldStressInputs yield_stress_inputs();
@@ -327,7 +326,8 @@ protected:
   virtual void max_timestep(double &dt_result, unsigned int &skip_counter);
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
-  // see iMenergy.cc
+  // see energy.cc
+  virtual void bedrock_thermal_model_step();
   virtual void energy_step();
 
   virtual void combine_basal_melt_rate(const Geometry &geometry,
