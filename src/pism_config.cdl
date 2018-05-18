@@ -1399,11 +1399,11 @@ netcdf pism_config {
     pism_config:stress_balance.sia.Glen_exponent_type = "scalar";
     pism_config:stress_balance.sia.Glen_exponent_units = "pure number";
 
-    pism_config:stress_balance.sia.bed_smoother_range = 5.0e3;
-    pism_config:stress_balance.sia.bed_smoother_range_doc = "half-width of smoothing domain for stressbalance::BedSmoother, in implementing :cite:`Schoofbasaltopg2003` bed roughness parameterization for SIA; set value to zero to turn off mechanism";
-    pism_config:stress_balance.sia.bed_smoother_range_option = "bed_smoother_range";
-    pism_config:stress_balance.sia.bed_smoother_range_type = "scalar";
-    pism_config:stress_balance.sia.bed_smoother_range_units = "meters";
+    pism_config:stress_balance.sia.bed_smoother.range = 5.0e3;
+    pism_config:stress_balance.sia.bed_smoother.range_doc = "half-width of smoothing domain for stressbalance::BedSmoother, in implementing :cite:`Schoofbasaltopg2003` bed roughness parameterization for SIA; set value to zero to turn off mechanism";
+    pism_config:stress_balance.sia.bed_smoother.range_option = "bed_smoother_range";
+    pism_config:stress_balance.sia.bed_smoother.range_type = "scalar";
+    pism_config:stress_balance.sia.bed_smoother.range_units = "meters";
 
     pism_config:stress_balance.sia.e_age_coupling = "no";
     pism_config:stress_balance.sia.e_age_coupling_doc = "Couple the SIA enhancement factor to age as in :cite:`Greve`.";

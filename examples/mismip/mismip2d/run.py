@@ -160,7 +160,7 @@ class Experiment:
                  }
 
         if self.model != 1:
-            attrs["stress_balance.sia.bed_smoother_range"] = 0.0
+            attrs["stress_balance.sia.bed_smoother.range"] = 0.0
 
         for name, value in attrs.iteritems():
             var.setncattr(name, value)

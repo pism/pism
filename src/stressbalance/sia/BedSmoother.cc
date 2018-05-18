@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -70,7 +70,7 @@ BedSmoother::BedSmoother(IceGrid::ConstPtr g, int MAX_GHOSTS)
   }
 
   m_Glen_exponent = m_config->get_double("stress_balance.sia.Glen_exponent"); // choice is SIA; see #285
-  m_smoothing_range = m_config->get_double("stress_balance.sia.bed_smoother_range");
+  m_smoothing_range = m_config->get_double("stress_balance.sia.bed_smoother.range");
 
   if (m_smoothing_range > 0.0) {
     log.message(2,

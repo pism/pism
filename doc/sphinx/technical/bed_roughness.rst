@@ -181,7 +181,7 @@ than the size of the ice sheet." Furthermore he recommends that, because of the 
 aspect ratio of ice sheets, "Bed topography on much larger length scales than 10 km should
 then be resolved explicitly through the smoothed bed height `b_s` rather than the
 correction factor `\theta`." Thus in PISM we use `\lambda_1 = \lambda_2 = 5` km as the
-default (set :config:`stress_balance.sia.bed_smoother_range` to change this value).
+default (set :config:`stress_balance.sia.bed_smoother.range` to change this value).
 
 It is, of course, possible to have bed roughness of significant magnitude at essentially
 any wavelength. We make no claim that PISM results are good models of ice flow over

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2013, 2014, 2016 the PISM Authors
+# Copyright (C) 2013, 2014, 2016, 2018 the PISM Authors
 
 # This script sets up the bootstrap file.
 # See also preprocess.sh.
@@ -38,8 +38,8 @@ def create_config():
         "constants.ice.density" : 1000.0,
         "constants.ice.density_doc" : "kg m-3; 1% Xanthan gum in water has same density as water",
 
-        "stress_balance.sia.bed_smoother_range" : -1.0,
-        "stress_balance.sia.bed_smoother_range_doc" : "m; negative value de-activates bed smoother",
+        "stress_balance.sia.bed_smoother.range" : -1.0,
+        "stress_balance.sia.bed_smoother.range_doc" : "m; negative value de-activates bed smoother",
 
         "bootstrapping.defaults.geothermal_flux" : 0.0,
         "bootstrapping.defaults.geothermal_flux_doc" : "W m-2; no geothermal",
