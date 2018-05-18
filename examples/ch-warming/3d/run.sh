@@ -19,6 +19,7 @@ pismr -bootstrap -i input.nc \
 
 # bootstrap again and bring in the enthalpy field computed by the run above
 pismr -bootstrap -i input.nc -regrid_file in.nc -regrid_vars enthalpy \
+      -bootstrapping.defaults.geothermal_flux 0 \
       -regional \
       -regional.no_model_strip 0 \
       -Lz 200 -Mz 201 -grid.ice_vertical_spacing equal \
@@ -44,7 +45,10 @@ variables=temp,temp_pa,ice_surface_temp
 run no_warming False ${variables}
 
 # run with cryo-hydrologic warming
-run warming True ${variables},ch_warming_rate
+run warming True ${variables},ch_warming_rate,ch_temperature,ch_liqfrac
+
+ncpdq -a time,z,y,x -O ex_no_warming.nc ex_no_warming.nc
+ncpdq -a time,z,y,x -O ex_warming.nc ex_warming.nc
 
 # compare temperature fields
 ncdiff -O -v temp ex_warming.nc ex_no_warming.nc temp_difference.nc
