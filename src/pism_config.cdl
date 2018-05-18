@@ -1405,6 +1405,11 @@ netcdf pism_config {
     pism_config:stress_balance.sia.bed_smoother.range_type = "scalar";
     pism_config:stress_balance.sia.bed_smoother.range_units = "meters";
 
+    pism_config:stress_balance.sia.bed_smoother.theta_min = 0.0;
+    pism_config:stress_balance.sia.bed_smoother.theta_min_doc = "minimum value of `\\theta` in :cite:`Schoofbasaltopg2003` bed roughness parameterization for SIA";
+    pism_config:stress_balance.sia.bed_smoother.theta_min_type = "scalar";
+    pism_config:stress_balance.sia.bed_smoother.theta_min_units = "1";
+
     pism_config:stress_balance.sia.e_age_coupling = "no";
     pism_config:stress_balance.sia.e_age_coupling_doc = "Couple the SIA enhancement factor to age as in :cite:`Greve`.";
     pism_config:stress_balance.sia.e_age_coupling_option = "e_age_coupling";
