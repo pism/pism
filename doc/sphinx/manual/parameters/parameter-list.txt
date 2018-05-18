@@ -541,10 +541,30 @@
    :Value: yes
    :Description: Solve energy conservation equations.
 
-#. :config:`energy.enthalpy_cold_bulge_max` (*scalar*)
+#. :config:`energy.enthalpy.cold_bulge_max` (*scalar*)
 
    :Value: 60270 (Joule / kg)
    :Description: = (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value
+
+#. :config:`energy.ch_warming.enabled` (*boolean*)
+
+   :Value: no
+   :Description: Enable the cryo-hydrologic warming model
+
+#. :config:`energy.ch_warming.residual_water_fraction` (*scalar*)
+
+   :Value: 0.005000 (pure number)
+   :Description: residual water fraction in the cryo-hydrologic system at the end of a melt season
+
+#. :config:`energy.ch_warming.temperate_ice_thermal_conductivity_ratio` (*scalar*)
+
+   :Value: 1 (pure number)
+   :Description: ratio of thermal conductivities of temperate and cold ice in the cryo-hydrologic system
+
+#. :config:`energy.ch_warming.average_channel_spacing` (*scalar*)
+
+   :Value: 20 (meters)
+   :Description: Average spacing between elements of the cryo-hydrologic system (controls the rate of heat transfer from the CH system into the ice).
 
 #. :config:`energy.margin_ice_thickness_limit` (*scalar*)
 
@@ -578,7 +598,7 @@
    :Option: :opt:`-low_temp`
    :Description: Minimum allowed ice temperature
 
-#. :config:`energy.temperate_ice_enthalpy_conductivity_ratio` (*scalar*)
+#. :config:`energy.enthalpy.temperate_ice_thermal_conductivity_ratio` (*scalar*)
 
    :Value: 0.100000 (pure number)
    :Description: K in cold ice is multiplied by this fraction to give K0 in :cite:`AschwandenBuelerKhroulevBlatter`
@@ -1467,11 +1487,16 @@
    :Option: :opt:`-sia_n`
    :Description: Glen exponent in ice flow law for SIA
 
-#. :config:`stress_balance.sia.bed_smoother_range` (*scalar*)
+#. :config:`stress_balance.sia.bed_smoother.range` (*scalar*)
 
    :Value: 5000 (meters)
    :Option: :opt:`-bed_smoother_range`
    :Description: half-width of smoothing domain for stressbalance::BedSmoother, in implementing :cite:`Schoofbasaltopg2003` bed roughness parameterization for SIA; set value to zero to turn off mechanism
+
+#. :config:`stress_balance.sia.bed_smoother.theta_min` (*scalar*)
+
+   :Value: 0 (1)
+   :Description: minimum value of `\theta` in :cite:`Schoofbasaltopg2003` bed roughness parameterization for SIA
 
 #. :config:`stress_balance.sia.e_age_coupling` (*boolean*)
 
