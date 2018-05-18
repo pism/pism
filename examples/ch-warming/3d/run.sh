@@ -15,7 +15,9 @@ pismr -bootstrap -i input.nc \
       -Lz 200 -Mz 201 -grid.ice_vertical_spacing equal \
       -surface given \
       -y 0 \
-      -o in.nc
+      -o in.nc -verbose 1
+
+echo "running PISM (${suffix})..."
 
 # bootstrap again and bring in the enthalpy field computed by the run above
 pismr -bootstrap -i input.nc -regrid_file in.nc -regrid_vars enthalpy \
@@ -34,9 +36,9 @@ pismr -bootstrap -i input.nc -regrid_file in.nc -regrid_vars enthalpy \
       -extra_times 10days \
       -y 10 \
       -calendar 360_day \
-      -o o_${suffix}.nc
+      -o o_${suffix}.nc -verbose 1
 
-rm -v in.nc
+rm in.nc
 }
 
 variables=temp,temp_pa,ice_surface_temp
@@ -45,10 +47,10 @@ variables=temp,temp_pa,ice_surface_temp
 run no_warming False ${variables}
 
 # run with cryo-hydrologic warming
-run warming True ${variables},ch_warming_rate,ch_temperature,ch_liqfrac
+run warming True ${variables},ch_heat_flux,ch_temp,ch_liqfrac
 
-ncpdq -a time,z,y,x -O ex_no_warming.nc ex_no_warming.nc
-ncpdq -a time,z,y,x -O ex_warming.nc ex_warming.nc
+ncpdq -a z,time,y,x -O ex_no_warming.nc ex_no_warming.nc
+ncpdq -a z,time,y,x -O ex_warming.nc ex_warming.nc
 
 # compare temperature fields
 ncdiff -O -v temp ex_warming.nc ex_no_warming.nc temp_difference.nc
