@@ -33,6 +33,7 @@
 #include "EnthalpyModel_Regional.hh"
 #include "pism/energy/CHSystem.hh"
 #include "pism/energy/BedThermalUnit.hh"
+#include "pism/energy/utilities.hh"
 
 namespace pism {
 
@@ -350,14 +351,68 @@ const energy::CHSystem* IceRegionalModel::cryo_hydrologic_system() const {
   return m_ch_system.get();
 }
 
-/*! @brief Report rate of cryo-hydrologic warming */
-class ChwarmingRate : public Diag<IceRegionalModel>
+/*! @brief Report temperature of the cryo-hydrologic system */
+class CHTemperature : public Diag<IceRegionalModel>
 {
 public:
-  ChwarmingRate(const IceRegionalModel *m)
+  CHTemperature(const IceRegionalModel *m)
     : Diag<IceRegionalModel>(m) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "ch_warming_rate", m_grid->z())};
+    m_vars = {SpatialVariableMetadata(m_sys, "ch_temp", m_grid->z())};
+
+    set_attrs("temperature of the cryo-hydrologic system", "",
+              "Kelvin", "Kelvin", 0);
+  }
+
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "ch_temp", WITHOUT_GHOSTS));
+
+    energy::compute_temperature(model->cryo_hydrologic_system()->enthalpy(),
+                                model->geometry().ice_thickness,
+                                *result);
+    result->metadata(0) = m_vars[0];
+
+    return result;
+  }
+};
+
+/*! @brief Report liquid water fraction in the cryo-hydrologic system */
+class CHLiquidWaterFraction : public Diag<IceRegionalModel>
+{
+public:
+  CHLiquidWaterFraction(const IceRegionalModel *m)
+    : Diag<IceRegionalModel>(m) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "ch_liqfrac", m_grid->z())};
+
+    set_attrs("liquid water fraction in the cryo-hydrologic system", "",
+              "1", "1", 0);
+  }
+
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "ch_liqfrac", WITHOUT_GHOSTS));
+
+    energy::compute_liquid_water_fraction(model->cryo_hydrologic_system()->enthalpy(),
+                                          model->geometry().ice_thickness,
+                                          *result);
+    result->metadata(0) = m_vars[0];
+    return result;
+  }
+};
+
+
+/*! @brief Report rate of cryo-hydrologic warming */
+class CHHeatFlux : public Diag<IceRegionalModel>
+{
+public:
+  CHHeatFlux(const IceRegionalModel *m)
+    : Diag<IceRegionalModel>(m) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "ch_heat_flux", m_grid->z())};
 
     set_attrs("rate of cryo-hydrologic warming", "",
               "W m-3", "W m-3", 0);
@@ -366,7 +421,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "ch_warming_rate", WITHOUT_GHOSTS));
+    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "ch_heat_flux", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
 
     energy::cryo_hydrologic_warming_flux(m_config->get_double("constants.ice.thermal_conductivity"),
@@ -383,7 +438,9 @@ void IceRegionalModel::init_diagnostics() {
   IceModel::init_diagnostics();
 
   if (m_ch_system) {
-    m_diagnostics["ch_warming_rate"] = Diagnostic::Ptr(new ChwarmingRate(this));
+    m_diagnostics["ch_temp"]      = Diagnostic::Ptr(new CHTemperature(this));
+    m_diagnostics["ch_liqfrac"]   = Diagnostic::Ptr(new CHLiquidWaterFraction(this));
+    m_diagnostics["ch_heat_flux"] = Diagnostic::Ptr(new CHHeatFlux(this));
   }
 }
 
