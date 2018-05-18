@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2010-2015 Andy Aschwanden
+# Copyright (C) 2010-2015, 2018 Andy Aschwanden
 
 
 if [ -n "${SCRIPTNAME:+1}" ] ; then
@@ -153,9 +153,13 @@ OUTNAME=ssa_ftt_${RUNLENGTH}a.nc
 OUTNAMEFULL=$PREFIX${GS}m_$OUTNAME
 TSNAME=ts_${OUTNAME}
 TSTIMES=$STARTYEAR:$STEP:$ENDTIME
+
+# create the force-to-thickness mask
+ncap2 -O -s "ftt_mask = 0*mask+1" $INNAME $INNAME
+
 echo
 echo "$SCRIPTNAME  SSA run with force-to-thickness for $RUNLENGTH years on ${GS}m grid"
-cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -i $INNAME $COUPLER_FORCING $FULLPHYS\
+cmd="$PISM_MPIDO $NN $PISM -bootstrap $GRID -i $INNAME -regrid_file $INNAME $EB -skip -skip_max $SKIP $COUPLER_FORCING $FULLPHYS\
      -force_to_thickness_file $INNAME -force_to_thickness_alpha $FTALPHA \
      -ts_file $TSNAME -ts_times $TSTIMES \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
@@ -164,7 +168,7 @@ echo
 $PISM_DO flowline.py -c -o $OUTNAME $OUTNAMEFULL
 
 
-COUPLER_ELEV="-surface elevation -ice_surface_temp -6,0,1395,1400 -climatic_mass_balance -3,2.5.,1200,1450,1615 -climatic_mass_balance_limits -3,0"
+COUPLER_ELEV="-surface elevation -ice_surface_temp -6,0,1395,1400 -climatic_mass_balance -3,2.5,1200,1450,1615 -climatic_mass_balance_limits -3,0"
 
 STARTYEAR=0
 RUNLENGTH=25
