@@ -1305,6 +1305,36 @@
    :Option: :opt:`-exclude_icerises`
    :Description: Exclude ice rises for box calculation in PICO
 
+#. :config:`output.extra.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-extra_file`
+   :Description: Name of the output file containing spatially-variable diagnostics.
+
+#. :config:`output.extra.times` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-extra_times`
+   :Description: List or a range of times defining reporting intervals for spatially-variable diagnostics.
+
+#. :config:`output.extra.vars` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-extra_vars`
+   :Description: Comma-separated list of spatially-variable diagnostics.
+
+#. :config:`output.extra.split` (*boolean*)
+
+   :Value: no
+   :Option: :opt:`-extra_split`
+   :Description: Save spatially-variable diagnostics to separate files (one per time record).
+
+#. :config:`output.extra.append` (*boolean*)
+
+   :Value: no
+   :Option: :opt:`-extra_append`
+   :Description: Append to an existing output file.
+
 #. :config:`output.backup_interval` (*scalar*)
 
    :Value: 1 (hours)

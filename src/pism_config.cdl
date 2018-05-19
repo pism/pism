@@ -1237,6 +1237,31 @@ netcdf pism_config {
     pism_config:ocean.pico.exclude_ice_rises_option = "exclude_icerises";
     pism_config:ocean.pico.exclude_ice_rises_type = "boolean";
 
+    pism_config:output.extra.file = "";
+    pism_config:output.extra.file_doc = "Name of the output file containing spatially-variable diagnostics.";
+    pism_config:output.extra.file_type = "string";
+    pism_config:output.extra.file_option = "extra_file";
+
+    pism_config:output.extra.times = "";
+    pism_config:output.extra.times_doc = "List or a range of times defining reporting intervals for spatially-variable diagnostics.";
+    pism_config:output.extra.times_type = "string";
+    pism_config:output.extra.times_option = "extra_times";
+
+    pism_config:output.extra.vars = "";
+    pism_config:output.extra.vars_doc = "Comma-separated list of spatially-variable diagnostics.";
+    pism_config:output.extra.vars_type = "string";
+    pism_config:output.extra.vars_option = "extra_vars";
+
+    pism_config:output.extra.split = "no";
+    pism_config:output.extra.split_doc = "Save spatially-variable diagnostics to separate files (one per time record).";
+    pism_config:output.extra.split_type = "boolean";
+    pism_config:output.extra.split_option = "extra_split";
+
+    pism_config:output.extra.append = "no";
+    pism_config:output.extra.append_doc = "Append to an existing output file.";
+    pism_config:output.extra.append_type = "boolean";
+    pism_config:output.extra.append_option = "extra_append";
+
     pism_config:output.backup_interval = 1.0;
     pism_config:output.backup_interval_doc = "wall-clock time between automatic backups";
     pism_config:output.backup_interval_type = "scalar";
