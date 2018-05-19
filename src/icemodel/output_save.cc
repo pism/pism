@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 PISM Authors
+/* Copyright (C) 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,6 @@
 
 #include "IceModel.hh"
 
-#include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
 
@@ -40,22 +39,23 @@ MaxTimestep IceModel::save_max_timestep(double my_t) {
 void IceModel::init_snapshots() {
   m_current_snapshot = 0;
 
-  options::String save_file("-save_file", "Specifies a snapshot filename",
-                            m_snapshots_filename);
-  m_snapshots_filename = save_file;
+  m_snapshots_filename = m_config->get_string("output.snapshot.file");
+  bool filename_set = not m_snapshots_filename.empty();
 
-  options::String save_times("-save_times",
-                             "Gives a list or a MATLAB-style range of times to save snapshots at");
+  auto save_times = m_config->get_string("output.snapshot.times");
+  bool times_set = not save_times.empty();
 
-  bool split = options::Bool("-save_split", "Specifies whether to save snapshots to separate files");
+  bool split = m_config->get_boolean("output.snapshot.split");
 
-  m_snapshot_vars = output_variables(m_config->get_string("output.save_size"));
+  m_snapshot_vars = output_variables(m_config->get_string("output.snapshot.size"));
 
-  if (save_file.is_set() ^ save_times.is_set()) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "you need to specify both -save_file and -save_times to save snapshots.");
+  if (filename_set ^ times_set) {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "you need to set both output.snapshot.file and output.snapshot.times"
+                       " to save snapshots.");
   }
 
-  if (!save_file.is_set() && !save_times.is_set()) {
+  if (not filename_set and not times_set) {
     m_save_snapshots = false;
     return;
   }
@@ -77,7 +77,7 @@ void IceModel::init_snapshots() {
 
   if (split) {
     m_split_snapshots = true;
-  } else if (!ends_with(m_snapshots_filename, ".nc")) {
+  } else if (not ends_with(m_snapshots_filename, ".nc")) {
     m_log->message(2,
                "PISM WARNING: snapshots file name does not have the '.nc' suffix!\n");
   }
@@ -90,7 +90,7 @@ void IceModel::init_snapshots() {
                m_snapshots_filename.c_str());
   }
 
-  m_log->message(2, "times requested: %s\n", save_times->c_str());
+  m_log->message(2, "times requested: %s\n", save_times.c_str());
 }
 
   //! Writes a snapshot of the model state (if necessary)

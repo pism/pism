@@ -1336,11 +1336,26 @@ netcdf pism_config {
     pism_config:output.runtime.volume_scale_factor_log10_type = "integer";
     pism_config:output.runtime.volume_scale_factor_log10_units = "pure number";
 
-    pism_config:output.save_size = "small";
-    pism_config:output.save_size_choices = "none,small,medium,big_2d,big";
-    pism_config:output.save_size_doc = "The 'size' of a snapshot file. See configuration parameters output.sizes.medium, output.sizes.big_2d, output.sizes.big";
-    pism_config:output.save_size_option = "save_size";
-    pism_config:output.save_size_type = "keyword";
+    pism_config:output.snapshot.file = "";
+    pism_config:output.snapshot.file_doc = "Snapshot (output) file name (or prefix, if saving to individual files).";
+    pism_config:output.snapshot.file_type = "string";
+    pism_config:output.snapshot.file_option = "save_file";
+
+    pism_config:output.snapshot.times = "";
+    pism_config:output.snapshot.times_doc = "List or a range of times to save model state snapshots at.";
+    pism_config:output.snapshot.times_type = "string";
+    pism_config:output.snapshot.times_option = "save_times";
+
+    pism_config:output.snapshot.split = "no";
+    pism_config:output.snapshot.split_doc = "Save model state snapshots to separate files (one per time record).";
+    pism_config:output.snapshot.split_type = "boolean";
+    pism_config:output.snapshot.split_option = "save_split";
+
+    pism_config:output.snapshot.size = "small";
+    pism_config:output.snapshot.size_choices = "none,small,medium,big_2d,big";
+    pism_config:output.snapshot.size_doc = "The 'size' of a snapshot file. See configuration parameters output.sizes.medium, output.sizes.big_2d, output.sizes.big";
+    pism_config:output.snapshot.size_option = "save_size";
+    pism_config:output.snapshot.size_type = "keyword";
 
     pism_config:output.size = "medium";
     pism_config:output.size_choices = "none,small,medium,big_2d,big";
