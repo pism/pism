@@ -12,6 +12,16 @@ netcdf pism_config {
     pism_config:input.bootstrap_option = "bootstrap";
     pism_config:input.bootstrap_type = "boolean";
 
+    pism_config:input.regrid.file = "";
+    pism_config:input.regrid.file_doc = "Regridding (input) file name";
+    pism_config:input.regrid.file_type = "string";
+    pism_config:input.regrid.file_option = "regrid_file";
+
+    pism_config:input.regrid.vars = "";
+    pism_config:input.regrid.vars_doc = "Comma-separated list of variables to regrid. Leave empty to regrid all model state variables.";
+    pism_config:input.regrid.vars_type = "string";
+    pism_config:input.regrid.vars_option = "regrid_vars";
+
     pism_config:age.enabled = "no";
     pism_config:age.enabled_doc = "Solve age equation (advection equation for ice age).";
     pism_config:age.enabled_option = "age";
