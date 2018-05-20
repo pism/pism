@@ -142,6 +142,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   m_firn_depth.set_attrs("diagnostic",
                          "firn cover depth",
                          "m", "");
+  m_firn_depth.metadata().set_double("valid_min", 0.0);
   m_firn_depth.set(0.0);
 
   m_temperature = allocate_temperature(g);
@@ -398,8 +399,14 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
       // Use temperature time series, the "positive" threshhold, and
       // the standard deviation of the daily variability to get the
       // number of positive degree days (PDDs)
-      m_mbscheme->get_PDDs(dtseries, S, T, // inputs
-                           PDDs);          // output
+      if (mask.ice_free_ocean(i, j)) {
+        for (int k = 0; k < N; ++k) {
+          PDDs[k] = 0.0;
+        }
+      } else {
+        m_mbscheme->get_PDDs(dtseries, S, T, // inputs
+                             PDDs);          // output
+      }
 
       // Use temperature time series to remove rainfall from precipitation
       m_mbscheme->get_snow_accumulation(T,  // air temperature (input)
@@ -440,10 +447,15 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
 
           // update ice thickness
           ice += changes.smb;
+          assert(ice >= 0);
+
           // update firn depth
           firn += changes.firn_depth;
+          assert(firn >= 0);
+
           // update snow depth
           snow += changes.snow_depth;
+          assert(snow >= 0);
 
           // update total accumulation, melt, and runoff
           {

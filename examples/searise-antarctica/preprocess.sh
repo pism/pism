@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2016  PISM authors
+# Copyright (C) 2009-2018  PISM authors
 
 # downloads development version of SeaRISE "Present Day Antarctica" master
 # dataset NetCDF file, adjusts metadata, breaks up, saves under new names,
@@ -54,6 +54,5 @@ ncks -O -x -v t $PISMVERSION $PISMVERSION
 echo "  PISM-readable file $PISMVERSION created; only has fields"
 echo "    used in bootstrapping."
 
-echo "now run spin-up script 'antspinCC.sh'"
+echo "now run spin-up script 'antspin-coarse.sh'"
 echo
-

@@ -196,7 +196,7 @@ void PDDMassBalance::get_snow_accumulation(const std::vector<double> &T,
  */
 PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
                                              double PDDs,
-                                             double ice_thickness,
+                                             double thickness,
                                              double old_firn_depth,
                                              double old_snow_depth,
                                              double accumulation) {
@@ -208,11 +208,21 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
     snow_melted     = 0.0,
     excess_pdds     = 0.0;
 
-  // snow depth cannot exceed ice thickness
-  snow_depth = std::min(snow_depth, ice_thickness);
+  assert(thickness >= 0);
 
-  // firn depth cannot exceed ice_thickness - snow_depth
-  firn_depth = std::min(firn_depth, ice_thickness - snow_depth);
+  // snow depth cannot exceed total thickness
+  snow_depth = std::min(snow_depth, thickness);
+
+  assert(snow_depth >= 0);
+
+  // firn depth cannot exceed thickness - snow_depth
+  firn_depth = std::min(firn_depth, thickness - snow_depth);
+
+  assert(firn_depth >= 0);
+
+  double ice_thickness = thickness - snow_depth - firn_depth;
+
+  assert(ice_thickness >= 0);
 
   snow_depth += accumulation;
 
@@ -270,6 +280,8 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
   result.melt          = melt;
   result.runoff        = runoff;
   result.smb           = accumulation - runoff;
+
+  assert(thickness + result.smb >= 0);
 
   return result;
 }

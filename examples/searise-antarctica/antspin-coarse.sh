@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2015, 2017  PISM authors
+# Copyright (C) 2009-2018  PISM authors
 ##################################################################################
 # Coarse grid spinup of Antarctic ice sheet model using data from Anne Le Brocq
 # (see SeaRISE wiki).  Uses PIK physics and enthalpy model
@@ -23,7 +23,7 @@ echo "$SCRIPTNAME   Run as './antspinCC.sh NN' for NN procs and 30km grid"
 # naming files, directories, executables
 RESDIR=
 BOOTDIR=
-PISM_EXEC=pismr
+PISM_EXEC=${PISM_EXEC:=pismr}
 PISM_MPIDO="mpiexec -n "
 
 # input data:
@@ -128,4 +128,3 @@ $DO $cmd
 
 echo
 echo "$SCRIPTNAME  coarse-grid part of spinup done"
-

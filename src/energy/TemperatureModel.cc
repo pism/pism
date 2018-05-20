@@ -181,11 +181,11 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
 
   // this is bulge limit constant in K; is max amount by which ice
   //   or bedrock can be lower than surface temperature
-  const double bulge_max  = m_config->get_double("energy.enthalpy_cold_bulge_max") / ice_c;
+  const double bulge_max  = m_config->get_double("energy.enthalpy.cold_bulge_max") / ice_c;
 
   inputs.check();
   const IceModelVec3
-    &strain_heating3 = *inputs.strain_heating3,
+    &strain_heating3 = *inputs.volumetric_heating_rate,
     &u3              = *inputs.u3,
     &v3              = *inputs.v3,
     &w3              = *inputs.w3;
@@ -219,6 +219,8 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   unsigned int maxLowTempCount = m_config->get_double("energy.max_low_temperature_count");
   const double T_minimum = m_config->get_double("energy.minimum_allowed_temperature");
 
+  double margin_threshold = m_config->get_double("energy.margin_ice_thickness_limit");
+
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -229,8 +231,9 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
       const double H = ice_thickness(i, j);
       const double T_surface = ice_surface_temp(i, j);
 
-      // false means "don't ignore horizontal advection and strain heating near margins"
-      system.initThisColumn(i, j, false, mask, H);
+      system.initThisColumn(i, j,
+                            marginal(ice_thickness, i, j, margin_threshold),
+                            mask, H);
 
       const int ks = system.ks();
 

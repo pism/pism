@@ -45,6 +45,7 @@ add_library (pism
   energy/DummyEnergyModel.cc
   energy/EnergyModel.cc
   energy/EnthalpyModel.cc
+  energy/CHSystem.cc
   energy/TemperatureModel.cc
   energy/bootstrapping.cc
   energy/enthSystem.cc

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017 PISM Authors
+/* Copyright (C) 2015, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -67,12 +67,10 @@ namespace pism {
  * result[k] = input_values[L] + Alpha * (input_values[R] - input_values[L]);
  * ~~~
  */
-class LinearInterpolation {
+class Interpolation {
 public:
-  LinearInterpolation(const std::vector<double> &input_x,
-                      const std::vector<double> &output_x);
-  LinearInterpolation(const double *input_x, unsigned int input_x_size,
-                      const double *output_x, unsigned int output_x_size);
+  virtual ~Interpolation();
+
   const std::vector<int>& left() const;
   const std::vector<int>& right() const;
   const std::vector<double>& alpha() const;
@@ -85,11 +83,36 @@ public:
   /** This is used for testing. (Regular code calls left(), right(), and alpha().)
    */
   std::vector<double> interpolate(const std::vector<double> &input_values) const;
-private:
+protected:
   std::vector<int> m_left, m_right;
   std::vector<double> m_alpha;
-  void init(const double *input_x, unsigned int input_x_size,
-            const double *output_x, unsigned int output_x_size);
+  void init_linear(const double *input_x, unsigned int input_x_size,
+                   const double *output_x, unsigned int output_x_size);
+  void init_nearest(const double *input_x, unsigned int input_x_size,
+                    const double *output_x, unsigned int output_x_size);
+  Interpolation();
+};
+
+class LinearInterpolation : public Interpolation {
+public:
+  LinearInterpolation(const std::vector<double> &input_x,
+                      const std::vector<double> &output_x);
+  LinearInterpolation(const double *input_x, unsigned int input_x_size,
+                      const double *output_x, unsigned int output_x_size);
+};
+
+/*!
+ * Nearest neighbor interpolation.
+ *
+ * Implemented as a modification of linear interpolation by adjusting interpolation
+ * weights.
+ */
+class NearestNeighbor : public Interpolation {
+public:
+  NearestNeighbor(const std::vector<double> &input_x,
+                      const std::vector<double> &output_x);
+  NearestNeighbor(const double *input_x, unsigned int input_x_size,
+                  const double *output_x, unsigned int output_x_size);
 };
 
 } // end of namespace pism

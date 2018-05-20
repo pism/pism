@@ -37,20 +37,12 @@
 
 namespace pism {
 
-//! \file iMenergy.cc Methods of IceModel which address conservation of energy.
+//! \file energy.cc Methods of IceModel which address conservation of energy.
 //! Common to enthalpy (polythermal) and temperature (cold-ice) methods.
 
-//! Manage the solution of the energy equation, and related parallel communication.
-void IceModel::energy_step() {
+void IceModel::bedrock_thermal_model_step() {
 
   const Profiling &profiling = m_ctx->profiling();
-
-  energy::EnergyModelStats stats;
-
-  // operator-splitting occurs here (ice and bedrock energy updates are split):
-  //   tell BedThermalUnit* btu that we have an ice base temp; it will return
-  //   the z=0 value of geothermal flux when called inside temperatureStep() or
-  //   enthalpyStep()
 
   IceModelVec2S &basal_enthalpy = m_work2d[2];
 
@@ -67,6 +59,16 @@ void IceModel::energy_step() {
   profiling.begin("btu");
   m_btu->update(m_bedtoptemp, t_TempAge, dt_TempAge);
   profiling.end("btu");
+}
+
+//! Manage the solution of the energy equation, and related parallel communication.
+void IceModel::energy_step() {
+
+  // operator-splitting occurs here (ice and bedrock energy updates are split):
+  //   tell BedThermalUnit* btu that we have an ice base temp; it will return
+  //   the z=0 value of geothermal flux when called inside temperatureStep() or
+  //   enthalpyStep()
+  bedrock_thermal_model_step();
 
   m_energy_model->update(t_TempAge, dt_TempAge, energy_model_inputs());
 

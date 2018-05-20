@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -61,6 +61,8 @@ enum Fill_Mode {
 };
 
 enum RegriddingFlag {OPTIONAL, OPTIONAL_FILL_MISSING, CRITICAL, CRITICAL_FILL_MISSING};
+
+enum InterpolationType {BILINEAR, NEAREST};
 
 } // end of namespace pism
 

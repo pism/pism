@@ -113,7 +113,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
   const double
     ice_density  = m_config->get_double("constants.ice.density"),          // kg m-3
-    bulgeEnthMax = m_config->get_double("energy.enthalpy_cold_bulge_max"); // J kg-1
+    bulgeEnthMax = m_config->get_double("energy.enthalpy.cold_bulge_max"); // J kg-1
 
   energy::DrainageCalculator dc(*m_config);
 
@@ -121,7 +121,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
   // give them names that are a bit shorter...
   const IceModelVec3
-    &strain_heating3 = *inputs.strain_heating3,
+    &strain_heating3 = *inputs.volumetric_heating_rate,
     &u3              = *inputs.u3,
     &v3              = *inputs.v3,
     &w3              = *inputs.w3;
@@ -137,7 +137,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
     &ice_surface_temp         = *inputs.surface_temp,
     &till_water_thickness     = *inputs.till_water_thickness;
 
-  energy::enthSystemCtx system(m_grid->z(), "enth", m_grid->dx(), m_grid->dy(), dt,
+  energy::enthSystemCtx system(m_grid->z(), "energy.enthalpy", m_grid->dx(), m_grid->dy(), dt,
                                *m_config, m_ice_enthalpy, u3, v3, w3, strain_heating3, EC);
 
   const size_t Mz_fine = system.z().size();
@@ -149,6 +149,8 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
       &cell_type, &u3, &v3, &w3, &strain_heating3, &m_basal_melt_rate, &m_ice_enthalpy,
       &m_work};
 
+  double margin_threshold = m_config->get_double("energy.margin_ice_thickness_limit");
+
   unsigned int liquifiedCount = 0;
 
   ParallelSection loop(m_grid->com);
@@ -158,7 +160,9 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
       const double H = ice_thickness(i, j);
 
-      system.init(i, j, H);
+      system.init(i, j,
+                  marginal(ice_thickness, i, j, margin_threshold),
+                  H);
 
       // enthalpy and pressures at top of ice
       const double

@@ -191,8 +191,8 @@ void IceModel::model_state_setup() {
   // too.
   enforce_consistency_of_geometry(REMOVE_ICEBERGS);
 
-  // By now ice geometry is set and so we can initialize the ocean model, which may need
-  // geometric information (ice thickness, bed elevation, cell type) to bootstrap.
+  // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
+  // which may need ice thickness, bed topography, and the cell type mask.
   {
     m_ocean->init(m_geometry);
   }

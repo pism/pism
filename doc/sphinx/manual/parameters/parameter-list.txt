@@ -546,6 +546,26 @@
    :Value: 60270 (Joule / kg)
    :Description: = (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value
 
+#. :config:`energy.margin_ice_thickness_limit` (*scalar*)
+
+   :Value: 100 (meters)
+   :Description: use special margin treatment at grid points with a neighbor with the thickness below this limit.
+
+#. :config:`energy.margin_exclude_horizontal_advection` (*boolean*)
+
+   :Value: yes
+   :Description: Exclude horizontal advection of energy at grid points near ice margins. See :config:`energy.margin_ice_thickness_limit`.
+
+#. :config:`energy.margin_exclude_vertical_advection` (*boolean*)
+
+   :Value: yes
+   :Description: Exclude vertical advection of energy at grid points near ice margins. See :config:`energy.margin_ice_thickness_limit`.
+
+#. :config:`energy.margin_exclude_strain_heating` (*boolean*)
+
+   :Value: yes
+   :Description: Exclude strain heating at grid points near ice margins. See :config:`energy.margin_ice_thickness_limit`.
+
 #. :config:`energy.max_low_temperature_count` (*integer*)
 
    :Value: 10
@@ -1157,6 +1177,24 @@
    :Option: :opt:`-ocean_th_reference_year`
    :Description: Reference year to use when ``ocean.th.period`` is active.
 
+#. :config:`ocean.pico.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ocean_pico_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`ocean.pico.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_pico_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`ocean.pico.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_pico_reference_year`
+   :Description: Reference year to use when ``ocean.pico.period`` is active.
+
 #. :config:`ocean.always_grounded` (*boolean*)
 
    :Value: no
@@ -1211,6 +1249,41 @@
    :Value: yes
    :Option: :opt:`-clip_shelf_base_salinity`
    :Description: Clip shelf base salinity so that it is in the range [4, 40] k/kg. See :cite:`HollandJenkins1999`.
+
+#. :config:`ocean.pico.number_of_boxes` (*integer*)
+
+   :Value: 5
+   :Option: :opt:`-number_of_boxes`
+   :Description: Default maximum number of boxes (for the largest ice shelves)
+
+#. :config:`ocean.pico.continental_shelf_depth` (*scalar*)
+
+   :Value: -800 (meters)
+   :Option: :opt:`-continental_shelf_depth`
+   :Description: Determines the edge of the continental shelf to calculate mean ocean properties
+
+#. :config:`ocean.pico.maximum_ice_rise_area` (*scalar*)
+
+   :Value: 100000 (km2)
+   :Description: Maximum ice rise area. Patches of grounded ice that are bugger than this are treated as continental ice sheets.
+
+#. :config:`ocean.pico.overturning_coefficent` (*scalar*)
+
+   :Value: 1000000 (meters6 seconds-1 kg-1)
+   :Option: :opt:`-overturning_coeff`
+   :Description: Overturning stregth coefficient
+
+#. :config:`ocean.pico.heat_exchange_coefficent` (*scalar*)
+
+   :Value: 0.000020 (meters second-1)
+   :Option: :opt:`-gamma_T`
+   :Description: Turbulent heat exchange coefficient
+
+#. :config:`ocean.pico.exclude_ice_rises` (*boolean*)
+
+   :Value: yes
+   :Option: :opt:`-exclude_icerises`
+   :Description: Exclude ice rises for box calculation in PICO
 
 #. :config:`output.backup_interval` (*scalar*)
 

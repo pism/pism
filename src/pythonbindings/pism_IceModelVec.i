@@ -1,7 +1,7 @@
 %{
 /* Using directives needed to compile IceModelVec wrappers. */
 #include "util/IceModelVec2CellType.hh"
-#include "util/IceModelVec2T.hh"
+#include "util/iceModelVec2T.hh"
 
 using namespace pism;
 %}
@@ -124,5 +124,5 @@ using namespace pism;
 %ignore pism::StarStencil::operator[];
 %include "util/iceModelVec.hh"
 %include "util/IceModelVec2CellType.hh"
-%include "util/IceModelVec2T.hh"
+%include "util/iceModelVec2T.hh"
 %include "util/Vector2.hh"

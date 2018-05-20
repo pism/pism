@@ -50,7 +50,7 @@ Inputs::Inputs() {
   surface_temp             = NULL;
   till_water_thickness     = NULL;
 
-  strain_heating3          = NULL;
+  volumetric_heating_rate  = NULL;
   u3                       = NULL;
   v3                       = NULL;
   w3                       = NULL;
@@ -68,7 +68,7 @@ void Inputs::check() const {
   check_input(surface_temp,             "surface_temp");
   check_input(till_water_thickness,     "till_water_thickness");
 
-  check_input(strain_heating3, "strain_heating3");
+  check_input(volumetric_heating_rate, "volumetric_heating_rate");
   check_input(u3, "u3");
   check_input(v3, "v3");
   check_input(w3, "w3");
@@ -87,6 +87,34 @@ EnergyModelStats& EnergyModelStats::operator+=(const EnergyModelStats &other) {
   low_temperature_counter  += other.low_temperature_counter;
   liquified_ice_volume     += other.liquified_ice_volume;
   return *this;
+}
+
+
+bool marginal(const IceModelVec2S &thickness, int i, int j, double threshold) {
+  int
+    n = j + 1,
+    e = i + 1,
+    s = j - 1,
+    w = i - 1;
+
+  const double
+    N  = thickness(i, n),
+    E  = thickness(e, j),
+    S  = thickness(i, s),
+    W  = thickness(w, j),
+    NW = thickness(w, n),
+    SW = thickness(w, s),
+    NE = thickness(e, n),
+    SE = thickness(e, s);
+
+  return ((E  < threshold) or
+          (NE < threshold) or
+          (N  < threshold) or
+          (NW < threshold) or
+          (W  < threshold) or
+          (SW < threshold) or
+          (S  < threshold) or
+          (SE < threshold));
 }
 
 

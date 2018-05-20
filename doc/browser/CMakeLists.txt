@@ -16,7 +16,6 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
   set (browser_helpers
     doxybib.bst
     doxybib.py
-    bombproof_enth.md
     mainpage.md
     petsc.md
     pism.sty

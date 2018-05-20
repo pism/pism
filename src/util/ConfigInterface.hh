@@ -24,6 +24,7 @@
 #include <set>
 #include <map>
 #include <string>
+#include <vector>
 
 #include <mpi.h>
 

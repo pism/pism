@@ -53,6 +53,7 @@ IceModelVec::IceModelVec() {
   reset_attrs(0);
 
   m_state_counter = 0;
+  m_interpolation_type = BILINEAR;
 
   m_zlevels.resize(1);
   m_zlevels[0] = 0.0;
@@ -441,14 +442,14 @@ void IceModelVec::regrid_impl(const PIO &file, RegriddingFlag flag,
 
     io::regrid_spatial_variable(metadata(0), *m_grid, file, flag,
                                 m_report_range, allow_extrapolation,
-                                default_value, tmp_array.get());
+                                default_value, m_interpolation_type, tmp_array.get());
 
     global_to_local(m_da, tmp, m_v);
   } else {
     petsc::VecArray v_array(m_v);
     io::regrid_spatial_variable(metadata(0), *m_grid,  file, flag,
                                 m_report_range, allow_extrapolation,
-                                default_value, v_array.get());
+                                default_value, m_interpolation_type, v_array.get());
   }
 }
 
@@ -969,6 +970,116 @@ size_t IceModelVec::size() const {
     dof = m_dof;
 
   return Mx * My * Mz * dof;
+}
+
+struct VecAndScatter {
+  VecScatter scatter;
+  Vec v;
+};
+
+/*!
+ * Allocate the scatter from a part of a parallel Vec to a target rank.
+ *
+ * The caller is responsible for de-allocating both the scatter and the target Vec.
+ */
+VecAndScatter scatter_part(Vec v_in, int start, int length, int target_rank) {
+  PetscErrorCode ierr;
+  int rank;
+  VecAndScatter result;
+  IS is;
+
+  MPI_Comm_rank(PetscObjectComm((PetscObject)v_in), &rank);
+
+  if (rank != target_rank) {
+    length = 0;
+  }
+
+  ierr = VecCreateSeq(PETSC_COMM_SELF, length, &result.v);
+  PISM_CHK(ierr, "VecCreateSeq");
+
+  ierr = ISCreateStride(PETSC_COMM_SELF, length, start, 1, &is);
+  PISM_CHK(ierr, "ISCreateStride");
+
+  ierr = VecScatterCreate(v_in, is, result.v, NULL, &result.scatter);
+  PISM_CHK(ierr, "VecScatterCreate");
+
+  ierr = ISDestroy(&is);
+  PISM_CHK(ierr, "ISDestroy");
+
+  return result;
+}
+
+/*!
+ * Allocate a natural Vec for a given DM.
+ *
+ * The caller is responsible for de-allocating the Vec returned by this function.
+ */
+Vec get_natural_work(DM dm) {
+  PetscErrorCode ierr;
+  Vec result;
+
+  ierr = PetscObjectQuery((PetscObject)dm, "natural_work", (PetscObject*)&result);
+  PISM_CHK(ierr, "PetscObjectQuery");
+
+  if (result == NULL) {
+    Vec v = NULL;
+    ierr = DMDACreateNaturalVector(dm, &v);
+    PISM_CHK(ierr, "DMDACreateNaturalVector");
+
+    ierr = PetscObjectCompose((PetscObject)dm, "natural_work", (PetscObject)(v));
+    PISM_CHK(ierr, "PetscObjectCompose");
+
+    result = v;
+
+    ierr = VecDestroy(&v);
+    PISM_CHK(ierr, "VecDestroy");
+  }
+
+  return result;
+}
+
+/*!
+ * Given a DM, allocate a rank 0 target Vec that can be used to gather a part of a
+ * "global" Vec on rank 0. Arguments "start" and "length" define the part in question.
+ *
+ * The caller is responsible for de-allocating the Vec returned by this function.
+ */
+Vec proc0_copy(DM dm, int start, int length) {
+  Vec v_proc0 = NULL;
+  PetscErrorCode ierr = 0;
+
+  ierr = PetscObjectQuery((PetscObject)dm, "v_proc0", (PetscObject*)&v_proc0);
+  PISM_CHK(ierr, "PetscObjectQuery");
+                                                                                          ;
+  if (v_proc0 == NULL) {
+
+    // natural_work will be destroyed at the end of scope, but it will
+    // only decrement the reference counter incremented by
+    // PetscObjectCompose below.
+    auto natural_work = get_natural_work(dm);
+
+    // scatter_to_zero will be destroyed at the end of scope, but it
+    // will only decrement the reference counter incremented by
+    // PetscObjectCompose below.
+    auto vs = scatter_part(natural_work, start, length, 0);
+
+    // this increments the reference counter of scatter_to_zero
+    ierr = PetscObjectCompose((PetscObject)dm, "scatter_to_zero",
+                              (PetscObject)(vs.scatter));
+    PISM_CHK(ierr, "PetscObjectCompose");
+
+    // this increments the reference counter of v_proc0
+    ierr = PetscObjectCompose((PetscObject)dm, "v_proc0",
+                              (PetscObject)vs.v);
+    PISM_CHK(ierr, "PetscObjectCompose");
+
+    VecScatterDestroy(&vs.scatter);
+
+    // We DO NOT call VecDestroy(v_proc0): the petsc::Vec wrapper will
+    // take care of this.
+    return vs.v;
+  }
+  return v_proc0;
 }
 
 /*! Allocate a copy on processor zero and the scatter needed to move data.
