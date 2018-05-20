@@ -394,6 +394,11 @@ netcdf pism_config {
     pism_config:calving.methods_option = "calving";
     pism_config:calving.methods_type = "string";
 
+    pism_config:calving.ocean_kill.file = "";
+    pism_config:calving.ocean_kill.file_doc = "Input file containing ice thickness and bed elevation used to compute maximum ice extent.";
+    pism_config:calving.ocean_kill.file_type = "string";
+    pism_config:calving.ocean_kill.file_option = "ocean_kill_file";
+
     pism_config:calving.thickness_calving.threshold = 50.0;
     pism_config:calving.thickness_calving.threshold_doc = "When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
     pism_config:calving.thickness_calving.threshold_option = "thickness_calving_threshold";
