@@ -298,7 +298,7 @@ int main(int argc, char *argv[]) {
       PISM_CHK(ierr, "PetscPrintf");
     }
 
-    options::String output_file("-o", "Set the output file name", "siafd_test_F.nc");
+    auto output_file = config->get_string("output.file_name");
 
     GridParameters P(config);
     P.Lx = 900e3;

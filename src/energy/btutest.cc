@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
 
     ctx->time()->init(*log);
 
-    options::String outname("-o", "Output file name", "unnamed_btutest.nc");
+    auto outname = config->get_string("output.file_name");
 
     options::Real dt_years("-dt", "Time-step, in years", 1.0);
 

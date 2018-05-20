@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -172,10 +172,9 @@ int main(int argc, char *argv[]) {
     // Parameters that can be overridden by command line options
     unsigned int Mx = config->get_double("grid.Mx");
     unsigned int My = config->get_double("grid.My");
-    options::Keyword method("-ssa_method", "Algorithm for computing the SSA solution",
-                            "fem,fd", "fem");
 
-    options::String output_file("-o", "Set the output file name", "ssa_test_i.nc");
+    auto method = config->get_string("stress_balance.ssa.method");
+    auto output_file = config->get_string("output.file_name");
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
