@@ -156,7 +156,6 @@ int main(int argc, char *argv[]) {
 
   MPI_Comm com = MPI_COMM_WORLD;  // won't be used except for rank,size
   petsc::Initializer petsc(argc, argv, help);
-  PetscErrorCode ierr;
 
   com = PETSC_COMM_WORLD;
 
@@ -165,15 +164,15 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = context_from_options(com, "ssa_test_const");
     Config::Ptr config = ctx->config();
 
-    bool usage_set = options::Bool("-usage", "show the usage info");
-    bool help_set = options::Bool("-help", "show the help message");
-    if (usage_set or help_set) {
-      ierr = PetscPrintf(com,
-                         "\n"
-                         "usage of SSA_TEST_CONST:\n"
-                         "  run ssa_test_const -Mx <number> -My <number> -ssa_method <fd|fem>\n"
-                         "\n");
-      PISM_CHK(ierr, "PetscPrintf");
+    std::string usage = "\n"
+      "usage of SSA_TEST_CONST:\n"
+      "  run ssa_test_const -Mx <number> -My <number> -ssa_method <fd|fem>\n"
+      "\n";
+
+    bool stop = show_usage_check_req_opts(*ctx->log(), "ssa_test_const", {}, usage);
+
+    if (stop) {
+      return 0;
     }
 
     // Parameters that can be overridden by command line options

@@ -172,7 +172,6 @@ int main(int argc, char *argv[]) {
 
   MPI_Comm com = MPI_COMM_WORLD;
   petsc::Initializer petsc(argc, argv, help);
-  PetscErrorCode ierr;
 
   com = PETSC_COMM_WORLD;
 
@@ -181,16 +180,15 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = context_from_options(com, "ssa_test_cfbc");
     Config::Ptr config = ctx->config();
 
-    bool
-      usage_set = options::Bool("-usage", "print usage info"),
-      help_set  = options::Bool("-help", "print help info");
-    if (usage_set or help_set) {
-      ierr = PetscPrintf(com,
-                         "\n"
-                         "usage of SSA_TEST_CFBC:\n"
-                         "  run ssa_test_cfbc -Mx <number> -My <number>\n"
-                         "\n");
-      PISM_CHK(ierr, "PetscPrintf");
+    std::string usage = "\n"
+      "usage of SSA_TEST_CFBC:\n"
+      "  run ssa_test_cfbc -Mx <number> -My <number>\n"
+      "\n";
+
+    bool stop = show_usage_check_req_opts(*ctx->log(), "ssa_test_cfbc", {}, usage);
+
+    if (stop) {
+      return 0;
     }
 
     // Parameters that can be overridden by command line options
