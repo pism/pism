@@ -3,6 +3,9 @@
 Changes since v1.0
 ==================
 
+- Discard requested snapshot times that are outside of the modeled time interval. (This
+  keeps PISM from overwriting a snapshot file written by one of the previous runs in a
+  re-started simulation.)
 - Add a new configuration parameter `stress_balance.sia.bed_smoother.theta_min` for the
   bed roughness parameterization in the SIA stress balance model.
 - Added PICO, the *Potsdam Ice-shelf Cavity mOdel* (https://doi.org/10.5194/tc-2017-70).

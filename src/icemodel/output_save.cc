@@ -61,14 +61,26 @@ void IceModel::init_snapshots() {
   }
 
   try {
-    m_time->parse_times(save_times, m_snapshot_times);
+    // parse
+    std::vector<double> times;
+    m_time->parse_times(save_times, times);
+
+    // discard times before the beginning and after the end of the run
+    m_snapshot_times.clear();
+    for (const auto &t : times) {
+      if (t >= m_time->start() and t <= m_time->end()) {
+        m_snapshot_times.push_back(t);
+      }
+    }
   } catch (RuntimeError &e) {
-    e.add_context("parsing the -save_times argument");
+    e.add_context("processing output.snapshot.times");
     throw;
   }
 
   if (m_snapshot_times.size() == 0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "no argument for -save_times option.");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "output.snapshot.times was set, but all requested times"
+                       " are outside of the modeled time interval");
   }
 
   m_save_snapshots = true;
