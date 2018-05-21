@@ -1400,6 +1400,11 @@ netcdf pism_config {
     pism_config:output.timeseries.filename_option = "ts_file";
     pism_config:output.timeseries.filename_doc = "Name of the file to save scalar time series to. Leave empty to disable reporting scalar time-series.";
 
+    pism_config:output.timeseries.times = "";
+    pism_config:output.timeseries.times_type = "string";
+    pism_config:output.timeseries.times_option = "ts_times";
+    pism_config:output.timeseries.times_doc = "List or range of times defining reporting time intervals.";
+
     pism_config:output.variable_order = "yxz";
     pism_config:output.variable_order_choices = "xyz,yxz,zyx";
     pism_config:output.variable_order_doc = "Variable order to use in output files.";
