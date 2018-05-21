@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2016 PISM Authors
+/* Copyright (C) 2014, 2016, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -53,6 +53,55 @@ static json_t* find_json_value(json_t *root, const std::string &name) {
   return object;
 }
 
+/*!
+ * Convert an STL vector to a JSON array.
+ */
+static json_t* pack_json_array(const std::vector<double> &data) {
+  json_t *array = json_array();
+  if (array == NULL) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to create an empty JSON array");
+  }
+
+  for (const auto &v : data) {
+    json_t *value = json_pack("f", v);
+    if (value == NULL) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "failed to pack a JSON number");
+    }
+    if (json_array_append_new(array, value) != 0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "failed to add an element to a JSON array");
+    }
+  }
+
+  return array;
+}
+
+/*!
+ * Convert a JSON array to an STL vector.
+ */
+std::vector<double> unpack_json_array(const json_t *array) {
+  std::vector<double> result;
+
+  size_t N = json_array_size(array);
+
+  for (size_t k = 0; k < N; ++k) {
+    json_t *value = json_array_get(array, k);
+    if (value == NULL) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to get an array element");
+    }
+
+    double v = 0.0;
+    if (json_unpack(value, "F", &v) == 0) {
+      result.push_back(v);
+    } else {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to unpack an array element");
+    }
+  }
+
+  return result;
+}
+
 
 template<typename PISMType, typename TMPType>
 static void get_all_values(json_t *root, const std::string &path,
@@ -77,6 +126,26 @@ static void get_all_values(json_t *root, const std::string &path,
   }
 }
 
+static void get_all_arrays(json_t *root, const std::string &path,
+                           std::map<std::string, std::vector<double> > &accum) {
+  const char *key;
+  json_t *value;
+
+  json_object_foreach(root, key, value) {
+    std::string parameter = path + key;
+
+    switch (json_typeof(value)) {
+    case JSON_ARRAY:
+      accum[parameter] = unpack_json_array(value);
+      break;
+    case JSON_OBJECT:
+      get_all_arrays(value, parameter + ".", accum);
+      break;
+    default:
+      break;
+    }
+  }
+}
 
 template<typename PISMType, typename TMPType>
 static PISMType get_value(json_t *object, const std::string &name,
@@ -195,7 +264,16 @@ std::string ConfigJSON::dump() const {
 
 Config::Doubles ConfigJSON::all_doubles_impl() const {
   Config::Doubles result;
-  get_all_values<double, double>(m_data, "", JSON_REAL, "F", result);
+
+  std::map<std::string, double> scalars;
+  get_all_values<double, double>(m_data, "", JSON_REAL, "F", scalars);
+
+  for (const auto &p : scalars) {
+    result[p.first] = {p.second};
+  }
+
+  get_all_arrays(m_data, "", result);
+
   return result;
 }
 
@@ -214,6 +292,11 @@ Config::Booleans ConfigJSON::all_booleans_impl() const {
 
 void ConfigJSON::set_double_impl(const std::string &name, double value) {
   set_value(m_data, name, json_pack("f", value));
+}
+
+void ConfigJSON::set_doubles_impl(const std::string &name,
+                                  const std::vector<double> &values) {
+  set_value(m_data, name, pack_json_array(values));
 }
 
 void ConfigJSON::set_boolean_impl(const std::string &name, bool value) {

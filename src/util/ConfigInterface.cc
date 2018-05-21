@@ -96,7 +96,7 @@ void Config::import_from(const Config &other) {
 
   for (auto p : other.all_doubles()) {
     if (member(p.first, parameters)) {
-      this->set_double(p.first, p.second, CONFIG_USER);
+      this->set_doubles(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "unrecognized parameter %s in %s",
@@ -178,6 +178,24 @@ void Config::set_double(const std::string &name, double value,
   }
 
   this->set_double_impl(name, value);
+}
+
+void Config::set_doubles(const std::string &name,
+                         const std::vector<double> &values,
+                         ConfigSettingFlag flag) {
+  std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
+
+  if (flag == CONFIG_USER) {
+    set_by_user.insert(name);
+  }
+
+  // stop if we're setting the default value and this parameter was set by user already
+  if (flag == CONFIG_DEFAULT and
+      set_by_user.find(name) != set_by_user.end()) {
+    return;
+  }
+
+  this->set_doubles_impl(name, values);
 }
 
 Config::Strings Config::all_strings() const {
@@ -295,7 +313,7 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
   // print doubles
   for (auto d : config.all_doubles()) {
     std::string name  = d.first;
-    double      value = d.second;
+    double      value = d.second[0];
 
     std::string units = strings[name + "_units"]; // will be empty if not set
     std::string padding(max_name_size - name.size(), ' ');

@@ -59,7 +59,7 @@ Config::Doubles NetCDFConfig::all_doubles_impl() const {
   Doubles result;
 
   for (auto d : m_data.get_all_doubles()) {
-    result[d.first] = d.second[0];
+    result[d.first] = d.second;
   }
   return result;
 }
@@ -67,6 +67,11 @@ Config::Doubles NetCDFConfig::all_doubles_impl() const {
 
 void NetCDFConfig::set_double_impl(const std::string &name, double value) {
   m_data.set_double(name, value);
+}
+
+void NetCDFConfig::set_doubles_impl(const std::string &name,
+                                    const std::vector<double> &values) {
+  m_data.set_doubles(name, values);
 }
 
 // strings

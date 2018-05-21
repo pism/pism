@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -47,6 +47,8 @@ private:
   virtual Doubles all_doubles_impl() const;
   virtual double get_double_impl(const std::string &name) const;
   virtual void set_double_impl(const std::string &name, double value);
+  virtual void set_doubles_impl(const std::string &name,
+                                const std::vector<double> &values);
 
   virtual Strings all_strings_impl() const;
   virtual std::string get_string_impl(const std::string &name) const;
