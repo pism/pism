@@ -37,8 +37,7 @@ namespace pism {
 namespace ocean {
 // Ocean
 Factory::Factory(IceGrid::ConstPtr g)
-  : PCFactory<OceanModel>(g) {
-  m_option = "ocean";
+  : PCFactory<OceanModel>(g, "ocean.model") {
 
   add_model<GivenTH>("th");
   add_model<PIK>("pik");

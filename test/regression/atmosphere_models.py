@@ -173,7 +173,7 @@ class DeltaT(TestCase):
 
         modifier = PISM.AtmosphereDeltaT(self.grid, self.model)
 
-        options.setValue("-atmosphere_delta_T_file", self.filename)
+        config.set_string("atmosphere.delta_T.file", self.filename)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
@@ -191,7 +191,7 @@ class DeltaP(TestCase):
 
         create_scalar_forcing(self.filename, "delta_P", "kg m-2 s-1", [self.dP], [0])
 
-        options.setValue("-atmosphere_delta_P_file", self.filename)
+        config.set_string("atmosphere.delta_P.file", self.filename)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -289,7 +289,7 @@ class YearlyCycle(TestCase):
         T_summer.set(self.T_summer)
         T_summer.write(output)
 
-        options.setValue("-atmosphere_yearly_cycle_file", self.filename)
+        config.set_string("atmosphere.yearly_cycle.file", self.filename)
 
         # FIXME: test "-atmosphere_yearly_cycle_scaling_file", too
 
@@ -426,7 +426,7 @@ class PaleoPrecip(TestCase):
 
         create_scalar_forcing(self.filename, "delta_T", "Kelvin", [self.dT], [0])
 
-        options.setValue("-atmosphere_paleo_precip_file", self.filename)
+        config.set_string("atmosphere.paleo_precip.file", self.filename)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -454,7 +454,7 @@ class FracP(TestCase):
 
         create_scalar_forcing(self.filename, "frac_P", "1", [self.P_ratio], [0])
 
-        options.setValue("-atmosphere_frac_P_file", self.filename)
+        config.set_string("atmosphere.frac_P.file", self.filename)
 
     def tearDown(self):
         os.remove(self.filename)
