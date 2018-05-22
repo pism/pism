@@ -2574,7 +2574,7 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
 
   double result = -1.0;  // result value if not age.enabled
 
-  if (m_age_model == NULL) {
+  if (not m_age_model) {
     return result;  // leave now
   }
 

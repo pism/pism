@@ -261,7 +261,7 @@ void IceModel::model_state_setup() {
     m_btu->init(input);
   }
 
-  if (m_age_model != NULL) {
+  if (m_age_model) {
     m_age_model->init(input);
     m_grid->variables().add(m_age_model->age());
   }
@@ -520,7 +520,7 @@ void IceModel::allocate_iceberg_remover() {
 
 void IceModel::allocate_age_model() {
 
-  if (m_age_model != NULL) {
+  if (m_age_model) {
     return;
   }
 
@@ -532,8 +532,8 @@ void IceModel::allocate_age_model() {
                                     "Cannot allocate an age model: m_stress_balance == NULL.");
     }
 
-    m_age_model = new AgeModel(m_grid, m_stress_balance.get());
-    m_submodels["age model"] = m_age_model;
+    m_age_model.reset(new AgeModel(m_grid, m_stress_balance.get()));
+    m_submodels["age model"] = m_age_model.get();
   }
 }
 

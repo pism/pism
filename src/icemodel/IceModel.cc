@@ -141,7 +141,6 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   m_ocean   = nullptr;
   m_beddef  = nullptr;
 
-  m_age_model = nullptr;
   m_btu = nullptr;
   m_energy_model = nullptr;
 
@@ -214,8 +213,6 @@ void IceModel::reset_counters() {
 
 
 IceModel::~IceModel() {
-
-  delete m_age_model;
 
   delete m_beddef;
 
