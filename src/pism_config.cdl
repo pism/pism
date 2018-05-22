@@ -77,6 +77,74 @@ netcdf pism_config {
     pism_config:atmosphere.fausto_air_temp.summer_peak_day_type = "integer";
     pism_config:atmosphere.fausto_air_temp.summer_peak_day_units = "ordinal day number";
 
+    pism_config:atmosphere.delta_T.file = "";
+    pism_config:atmosphere.delta_T.file_doc = "Name of the file containing temperature offsets.";
+    pism_config:atmosphere.delta_T.file_type = "string";
+    pism_config:atmosphere.delta_T.file_option = "atmosphere_delta_T_file";
+
+    pism_config:atmosphere.delta_T.period = 0;
+    pism_config:atmosphere.delta_T.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:atmosphere.delta_T.period_type = "integer";
+    pism_config:atmosphere.delta_T.period_option = "atmosphere_delta_T_period";
+    pism_config:atmosphere.delta_T.period_units = "years";
+
+    pism_config:atmosphere.delta_T.reference_year = 0;
+    pism_config:atmosphere.delta_T.reference_year_doc = "Reference year to use when ``atmosphere.delta_T.period`` is active.";
+    pism_config:atmosphere.delta_T.reference_year_option = "atmosphere_delta_T_reference_year";
+    pism_config:atmosphere.delta_T.reference_year_type = "integer";
+    pism_config:atmosphere.delta_T.reference_year_units = "years";
+
+    pism_config:atmosphere.delta_P.file = "";
+    pism_config:atmosphere.delta_P.file_doc = "Name of the file containing scalar precipitation offsets.";
+    pism_config:atmosphere.delta_P.file_type = "string";
+    pism_config:atmosphere.delta_P.file_option = "atmosphere_delta_P_file";
+
+    pism_config:atmosphere.delta_P.period = 0;
+    pism_config:atmosphere.delta_P.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:atmosphere.delta_P.period_type = "integer";
+    pism_config:atmosphere.delta_P.period_option = "atmosphere_delta_P_period";
+    pism_config:atmosphere.delta_P.period_units = "years";
+
+    pism_config:atmosphere.delta_P.reference_year = 0;
+    pism_config:atmosphere.delta_P.reference_year_doc = "Reference year to use when ``atmosphere.delta_P.period`` is active.";
+    pism_config:atmosphere.delta_P.reference_year_option = "atmosphere_delta_P_reference_year";
+    pism_config:atmosphere.delta_P.reference_year_type = "integer";
+    pism_config:atmosphere.delta_P.reference_year_units = "years";
+
+    pism_config:atmosphere.frac_P.file = "";
+    pism_config:atmosphere.frac_P.file_doc = "Name of the file containing scalar precipitation scaling.";
+    pism_config:atmosphere.frac_P.file_type = "string";
+    pism_config:atmosphere.frac_P.file_option = "atmosphere_frac_P_file";
+
+    pism_config:atmosphere.frac_P.period = 0;
+    pism_config:atmosphere.frac_P.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:atmosphere.frac_P.period_type = "integer";
+    pism_config:atmosphere.frac_P.period_option = "atmosphere_frac_P_period";
+    pism_config:atmosphere.frac_P.period_units = "years";
+
+    pism_config:atmosphere.frac_P.reference_year = 0;
+    pism_config:atmosphere.frac_P.reference_year_doc = "Reference year to use when ``atmosphere.frac_P.period`` is active.";
+    pism_config:atmosphere.frac_P.reference_year_option = "atmosphere_frac_P_reference_year";
+    pism_config:atmosphere.frac_P.reference_year_type = "integer";
+    pism_config:atmosphere.frac_P.reference_year_units = "years";
+
+    pism_config:atmosphere.paleo_precip.file = "";
+    pism_config:atmosphere.paleo_precip.file_doc = "Name of the file containing temperature offsets to use for a precipitation correction.";
+    pism_config:atmosphere.paleo_precip.file_type = "string";
+    pism_config:atmosphere.paleo_precip.file_option = "atmosphere_paleo_precip_file";
+
+    pism_config:atmosphere.paleo_precip.period = 0;
+    pism_config:atmosphere.paleo_precip.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:atmosphere.paleo_precip.period_type = "integer";
+    pism_config:atmosphere.paleo_precip.period_option = "atmosphere_paleo_precip_period";
+    pism_config:atmosphere.paleo_precip.period_units = "years";
+
+    pism_config:atmosphere.paleo_precip.reference_year = 0;
+    pism_config:atmosphere.paleo_precip.reference_year_doc = "Reference year to use when ``atmosphere.paleo_precip.period`` is active.";
+    pism_config:atmosphere.paleo_precip.reference_year_option = "atmosphere_paleo_precip_reference_year";
+    pism_config:atmosphere.paleo_precip.reference_year_type = "integer";
+    pism_config:atmosphere.paleo_precip.reference_year_units = "years";
+
     pism_config:atmosphere.given.file = "";
     pism_config:atmosphere.given.file_doc = "Name of the file containing climate forcing fields.";
     pism_config:atmosphere.given.file_type = "string";
@@ -111,20 +179,30 @@ netcdf pism_config {
     pism_config:atmosphere.anomaly.reference_year_type = "integer";
     pism_config:atmosphere.anomaly.reference_year_units = "years";
 
-    pism_config:atmosphere.lapse_rate.file = "";
-    pism_config:atmosphere.lapse_rate.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
-    pism_config:atmosphere.lapse_rate.file_type = "string";
-    pism_config:atmosphere.lapse_rate.file_option = "atmosphere_lapse_rate_file";
-
     pism_config:atmosphere.yearly_cycle.file = "";
     pism_config:atmosphere.yearly_cycle.file_doc = "Name of the file containing mean annual and mean July temperatures (`air_temp_mean_annual` and `air_temp_mean_summer`) and the `precipitation` field.";
     pism_config:atmosphere.yearly_cycle.file_type = "string";
     pism_config:atmosphere.yearly_cycle.file_option = "atmosphere_yearly_cycle_file";
 
-    pism_config:atmosphere.yearly_cycle.scaling_file = "";
-    pism_config:atmosphere.yearly_cycle.scaling_file_doc = "Name of the file containing amplitude scaling (`amplitude_scaling`) for the near-surface air temperature.";
-    pism_config:atmosphere.yearly_cycle.scaling_file_type = "string";
-    pism_config:atmosphere.yearly_cycle.scaling_file_option = "atmosphere_yearly_cycle_scaling_file";
+    pism_config:atmosphere.yearly_cycle.scaling.file = "";
+    pism_config:atmosphere.yearly_cycle.scaling.file_doc = "Name of the file containing amplitude scaling (`amplitude_scaling`) for the near-surface air temperature.";
+    pism_config:atmosphere.yearly_cycle.scaling.file_type = "string";
+    pism_config:atmosphere.yearly_cycle.scaling.file_option = "atmosphere_yearly_cycle_scaling_file";
+
+    pism_config:atmosphere.yearly_cycle.scaling.period = 0;
+    pism_config:atmosphere.yearly_cycle.scaling.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:atmosphere.yearly_cycle.scaling.period_type = "integer";
+    pism_config:atmosphere.yearly_cycle.scaling.period_units = "years";
+
+    pism_config:atmosphere.yearly_cycle.scaling.reference_year = 0;
+    pism_config:atmosphere.yearly_cycle.scaling.reference_year_doc = "Reference year to use when ``atmosphere.yearly_cycle.scaling.period`` is active.";
+    pism_config:atmosphere.yearly_cycle.scaling.reference_year_type = "integer";
+    pism_config:atmosphere.yearly_cycle.scaling.reference_year_units = "years";
+
+    pism_config:atmosphere.lapse_rate.file = "";
+    pism_config:atmosphere.lapse_rate.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
+    pism_config:atmosphere.lapse_rate.file_type = "string";
+    pism_config:atmosphere.lapse_rate.file_option = "atmosphere_lapse_rate_file";
 
     pism_config:atmosphere.lapse_rate.period = 0;
     pism_config:atmosphere.lapse_rate.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
@@ -257,6 +335,11 @@ netcdf pism_config {
     pism_config:atmosphere.orographic_precipitation.truncate_doc = "Truncate precipitation at 0";
     pism_config:atmosphere.orographic_precipitation.truncate_type = "boolean";
     pism_config:atmosphere.orographic_precipitation.truncate_option = "truncate";
+
+    pism_config:atmosphere.paleo_precip.exp_factor_for_temperature = 0.07041666667;
+    pism_config:atmosphere.paleo_precip.exp_factor_for_temperature_doc = "= 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`";
+    pism_config:atmosphere.paleo_precip.exp_factor_for_temperature_type = "scalar";
+    pism_config:atmosphere.paleo_precip.exp_factor_for_temperature_units = "Kelvin-1";
 
     pism_config:basal_resistance.beta_ice_free_bedrock = 1.8e9;
     pism_config:basal_resistance.beta_ice_free_bedrock_doc = "value is for ice stream E from :cite:`HulbeMacAyeal`; thus sliding velocity, but we hope it doesn't matter much; at 100 m/year the linear sliding law gives 57040 Pa basal shear stress";
@@ -1020,7 +1103,7 @@ netcdf pism_config {
     pism_config:hydrology.model_type = "keyword";
 
     pism_config:hydrology.null_diffuse_till_water = "no";
-    pism_config:hydrology.null_diffuse_till_water_doc = "Diffuse stored till water laterally. See equation (11) of :cite:`BBssasliding`"; 
+    pism_config:hydrology.null_diffuse_till_water_doc = "Diffuse stored till water laterally. See equation (11) of :cite:`BBssasliding`";
     pism_config:hydrology.null_diffuse_till_water_type = "boolean";
 
     pism_config:hydrology.null_diffusion_distance = 2e4;
@@ -1262,6 +1345,91 @@ netcdf pism_config {
     pism_config:ocean.anomaly.reference_year_option = "ocean_anomaly_reference_year";
     pism_config:ocean.anomaly.reference_year_type = "integer";
     pism_config:ocean.anomaly.reference_year_units = "years";
+
+    pism_config:ocean.delta_sl.file = "";
+    pism_config:ocean.delta_sl.file_doc = "Name of the file containing sea level offsets.";
+    pism_config:ocean.delta_sl.file_type = "string";
+    pism_config:ocean.delta_sl.file_option = "ocean_delta_sl_file";
+
+    pism_config:ocean.delta_sl.period = 0;
+    pism_config:ocean.delta_sl.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:ocean.delta_sl.period_type = "integer";
+    pism_config:ocean.delta_sl.period_option = "ocean_delta_sl_period";
+    pism_config:ocean.delta_sl.period_units = "years";
+
+    pism_config:ocean.delta_sl.reference_year = 0;
+    pism_config:ocean.delta_sl.reference_year_doc = "Reference year to use when ``ocean.delta_sl.period`` is active.";
+    pism_config:ocean.delta_sl.reference_year_option = "ocean_delta_sl_reference_year";
+    pism_config:ocean.delta_sl.reference_year_type = "integer";
+    pism_config:ocean.delta_sl.reference_year_units = "years";
+
+    pism_config:ocean.delta_mass_flux.file = "";
+    pism_config:ocean.delta_mass_flux.file_doc = "Name of the file containing sub-shelf mass flux offsets.";
+    pism_config:ocean.delta_mass_flux.file_type = "string";
+    pism_config:ocean.delta_mass_flux.file_option = "ocean_delta_mass_flux_file";
+
+    pism_config:ocean.delta_mass_flux.period = 0;
+    pism_config:ocean.delta_mass_flux.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:ocean.delta_mass_flux.period_type = "integer";
+    pism_config:ocean.delta_mass_flux.period_option = "ocean_delta_mass_flux_period";
+    pism_config:ocean.delta_mass_flux.period_units = "years";
+
+    pism_config:ocean.delta_mass_flux.reference_year = 0;
+    pism_config:ocean.delta_mass_flux.reference_year_doc = "Reference year to use when ``ocean.delta_mass_flux.period`` is active.";
+    pism_config:ocean.delta_mass_flux.reference_year_option = "ocean_delta_mass_flux_reference_year";
+    pism_config:ocean.delta_mass_flux.reference_year_type = "integer";
+    pism_config:ocean.delta_mass_flux.reference_year_units = "years";
+
+    pism_config:ocean.frac_MBP.file = "";
+    pism_config:ocean.frac_MBP.file_doc = "Name of the file containing melange back-pressure scaling.";
+    pism_config:ocean.frac_MBP.file_type = "string";
+    pism_config:ocean.frac_MBP.file_option = "ocean_frac_MBP_file";
+
+    pism_config:ocean.frac_MBP.period = 0;
+    pism_config:ocean.frac_MBP.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:ocean.frac_MBP.period_type = "integer";
+    pism_config:ocean.frac_MBP.period_option = "ocean_frac_MBP_period";
+    pism_config:ocean.frac_MBP.period_units = "years";
+
+    pism_config:ocean.frac_MBP.reference_year = 0;
+    pism_config:ocean.frac_MBP.reference_year_doc = "Reference year to use when ``ocean.frac_MBP.period`` is active.";
+    pism_config:ocean.frac_MBP.reference_year_option = "ocean_frac_MBP_reference_year";
+    pism_config:ocean.frac_MBP.reference_year_type = "integer";
+    pism_config:ocean.frac_MBP.reference_year_units = "years";
+
+    pism_config:ocean.frac_mass_flux.file = "";
+    pism_config:ocean.frac_mass_flux.file_doc = "Name of the file containing sub-shelf mass flux scaling.";
+    pism_config:ocean.frac_mass_flux.file_type = "string";
+    pism_config:ocean.frac_mass_flux.file_option = "ocean_frac_mass_flux_file";
+
+    pism_config:ocean.frac_mass_flux.period = 0;
+    pism_config:ocean.frac_mass_flux.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:ocean.frac_mass_flux.period_type = "integer";
+    pism_config:ocean.frac_mass_flux.period_option = "ocean_frac_mass_flux_period";
+    pism_config:ocean.frac_mass_flux.period_units = "years";
+
+    pism_config:ocean.frac_mass_flux.reference_year = 0;
+    pism_config:ocean.frac_mass_flux.reference_year_doc = "Reference year to use when ``ocean.frac_mass_flux.period`` is active.";
+    pism_config:ocean.frac_mass_flux.reference_year_option = "ocean_frac_mass_flux_reference_year";
+    pism_config:ocean.frac_mass_flux.reference_year_type = "integer";
+    pism_config:ocean.frac_mass_flux.reference_year_units = "years";
+
+    pism_config:ocean.delta_T.file = "";
+    pism_config:ocean.delta_T.file_doc = "Name of the file containing temperature offsets.";
+    pism_config:ocean.delta_T.file_type = "string";
+    pism_config:ocean.delta_T.file_option = "ocean_delta_T_file";
+
+    pism_config:ocean.delta_T.period = 0;
+    pism_config:ocean.delta_T.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:ocean.delta_T.period_type = "integer";
+    pism_config:ocean.delta_T.period_option = "ocean_delta_T_period";
+    pism_config:ocean.delta_T.period_units = "years";
+
+    pism_config:ocean.delta_T.reference_year = 0;
+    pism_config:ocean.delta_T.reference_year_doc = "Reference year to use when ``ocean.delta_T.period`` is active.";
+    pism_config:ocean.delta_T.reference_year_option = "ocean_delta_T_reference_year";
+    pism_config:ocean.delta_T.reference_year_type = "integer";
+    pism_config:ocean.delta_T.reference_year_units = "years";
 
     pism_config:ocean.given.file = "";
     pism_config:ocean.given.file_doc = "Name of the file containing climate forcing fields.";
@@ -1801,6 +1969,23 @@ netcdf pism_config {
     pism_config:stress_balance.weertman_sliding.k_doc = "The ratio of the basal water pressure and the ice overburden pressure in the Weertman-style sliding parameterization.";
     pism_config:stress_balance.weertman_sliding.k_units = "1";
     pism_config:stress_balance.weertman_sliding.k_type = "scalar";
+
+    pism_config:surface.delta_T.file = "";
+    pism_config:surface.delta_T.file_doc = "Name of the file containing temperature offsets.";
+    pism_config:surface.delta_T.file_type = "string";
+    pism_config:surface.delta_T.file_option = "surface_delta_T_file";
+
+    pism_config:surface.delta_T.period = 0;
+    pism_config:surface.delta_T.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:surface.delta_T.period_type = "integer";
+    pism_config:surface.delta_T.period_option = "surface_delta_T_period";
+    pism_config:surface.delta_T.period_units = "years";
+
+    pism_config:surface.delta_T.reference_year = 0;
+    pism_config:surface.delta_T.reference_year_doc = "Reference year to use when ``surface.delta_T.period`` is active.";
+    pism_config:surface.delta_T.reference_year_option = "surface_delta_T_reference_year";
+    pism_config:surface.delta_T.reference_year_type = "integer";
+    pism_config:surface.delta_T.reference_year_units = "years";
 
     pism_config:surface.cache.update_interval = 10;
     pism_config:surface.cache.update_interval_doc = "Update interval (in years) for the `-surface cache` modifier.";

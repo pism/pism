@@ -26,7 +26,7 @@ Frac_SMB::Frac_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
   m_forcing.reset(new ScalarForcing(g->ctx(),
-                                    "-ocean_frac_mass_flux",
+                                    "ocean.frac_mass_flux",
                                     "frac_mass_flux",
                                     "1", "1",
                                     "ice-shelf-base mass flux factor"));

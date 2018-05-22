@@ -26,7 +26,7 @@ Delta_SMB::Delta_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
   m_forcing.reset(new ScalarForcing(g->ctx(),
-                                    "-ocean_delta_mass_flux",
+                                    "ocean.delta_mass_flux",
                                     "delta_mass_flux",
                                     "kg m-2 second-1",
                                     "kg m-2 year-1",

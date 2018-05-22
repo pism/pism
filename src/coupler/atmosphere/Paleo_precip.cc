@@ -28,13 +28,13 @@ PaleoPrecip::PaleoPrecip(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel
   : AtmosphereModel(grid, in) {
 
   m_forcing.reset(new ScalarForcing(grid->ctx(),
-                                    "-atmosphere_paleo_precip",
+                                    "atmosphere.paleo_precip",
                                     "delta_T",
                                     "Kelvin",
                                     "Kelvin",
                                     "air temperature offsets"));
 
-  m_exp_factor = m_config->get_double("atmosphere.precip_exponential_factor_for_temperature");
+  m_exp_factor = m_config->get_double("atmosphere.paleo_precip.exp_factor_for_temperature");
 
   m_precipitation = allocate_precipitation(grid);
 }

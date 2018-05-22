@@ -34,11 +34,11 @@ namespace atmosphere {
 CosineYearlyCycle::CosineYearlyCycle(IceGrid::ConstPtr grid)
   : YearlyCycle(grid) {
 
-  auto scaling_file = m_config->get_string("atmosphere.yearly_cycle.scaling_file");
+  auto scaling_file = m_config->get_string("atmosphere.yearly_cycle.scaling.file");
 
   if (not scaling_file.empty()) {
     m_A.reset(new ScalarForcing(grid->ctx(),
-                                "-atmosphere_yearly_cycle_scaling",
+                                "atmosphere.yearly_cycle.scaling",
                                 "amplitude_scaling",
                                 "1", "1",
                                 "temperature amplitude scaling"));
