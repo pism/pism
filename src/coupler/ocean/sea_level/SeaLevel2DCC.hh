@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -15,36 +15,46 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+*/
 
-#include "Factory.hh"
+#ifndef _POSEALEVEL2DCC_H_
+#define _POSEALEVEL2DCC_H_
 
-// ocean models:
 #include "pism/coupler/SeaLevel.hh"
-#include "Delta_SL.hh"
-#include "Delta_SL_2D.hh"
-#include "SeaLevel2DCC.hh"
+#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 namespace ocean {
 namespace sea_level {
+class SeaLevel2DCC : public SeaLevel {
+public:
+  SeaLevel2DCC(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in);
+  virtual ~SeaLevel2DCC();
 
-Factory::Factory(IceGrid::ConstPtr grid)
-  : PCFactory<SeaLevel>(grid) {
-  m_option = "sea_level";
+protected:
+  virtual MaxTimestep max_timestep_impl(double t) const;
+  virtual void update_impl(const Geometry &geometry, double my_t, double my_dt);
 
-  add_model<SeaLevel>("constant");
-  set_default("constant");
+  virtual void init_impl(const Geometry &geometry);
 
-  add_modifier<Delta_SL>("delta_sl");
-  add_modifier<Delta_SL_2D>("delta_sl_2d");
-  add_modifier<SeaLevel2DCC>("sl2dcc");
-}
+protected:
+  IceModelVec2Int m_mask;
+  std::string m_option_prefix;
+  double m_next_update_time;
+  double m_drho,
+         m_offset;
+  int m_update_interval_years;
+  bool m_update_periodic,
+       m_update_passive,
+       m_update_startup,
+       m_update;
 
-Factory::~Factory() {
-  // empty
-}
+private:
+  void process_options();
+  void do_sl_update(const IceModelVec2S &bed, const IceModelVec2S &thk);
+};
 
 } // end of namespace sea_level
 } // end of namespace ocean
 } // end of namespace pism
+#endif /* _POSEALEVEL2DCC_H_ */

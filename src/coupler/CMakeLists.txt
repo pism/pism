@@ -3,6 +3,7 @@ add_library (boundary OBJECT
   ./util/ScalarForcing.cc
   ./util/options.cc
   ./util/lapse_rates.cc
+  ./util/FillingAlg_ConnectedComponents.cc
   ./atmosphere/AtmosphereModel.cc
   ./atmosphere/ConstantPIK.cc
   ./atmosphere/SeariseGreenland.cc
@@ -36,6 +37,8 @@ add_library (boundary OBJECT
   ./ocean/lake_level/Factory.cc
   ./ocean/sea_level/Initialization.cc
   ./ocean/sea_level/SeaLevel.cc
+  ./ocean/sea_level/SeaLevel_ConnectedComponents.cc
+  ./ocean/sea_level/SeaLevel2DCC.cc
   ./ocean/sea_level/Delta_SL.cc
   ./ocean/sea_level/Delta_SL_2D.cc
   ./ocean/sea_level/Factory.cc
