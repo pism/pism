@@ -31,7 +31,8 @@ As a technical note about saved states, a PISM run with :opt:`-stress_balance ss
 saves the last SSA velocities to the output file in variables :var:`u_ssa` and
 :var:`v_ssa`. The presence of these velocities adds efficiency in restarting because an
 initial estimate speeds up the solution of the SSA stress balance equations. If you want
-to use :opt:`-i` but also ignore these velocities then use option :opt:`-dontreadSSAvels`.
+to use :opt:`-i` but also ignore these velocities then set
+:config:`stress_balance.ssa.read_initial_guess` to *false*.
 
 .. _sec-i-format:
 

@@ -54,8 +54,7 @@ s = np.squeeze(nc.variables["usurf"][:])
 h = np.squeeze(nc.variables["thk"][:])
 z = nc.variables["z"][:]
 
-mask = np.zeros_like(h)
-mask[h <= 1] = 1
+mask = h <= 1
 
 us = np.ma.array(data=np.squeeze(nc.variables["uvelsurf"][:]), mask=mask)
 ub = np.ma.array(data=np.squeeze(nc.variables["uvelbase"][:]), mask=mask)
@@ -74,7 +73,7 @@ liqfrac = np.ma.array(data=liqfrac, mask=mask2)
 temppa = np.ma.array(data=temppa, mask=mask2)
 
 # Contour level of the CTS
-cts_level = [1, 1]
+cts_level = [1]
 liqfrac_levels = np.arange(0, 2.5, .25)
 temppa_levels = [-6, -5, -4, -3, -2, -1, -.0001]
 
@@ -98,9 +97,9 @@ axLower.plot(x, b, color='black', lw=1.5)
 axLower.plot(x, s, color='black', lw=1.5)
 c1 = axLower.contourf(xx, zz, liqfrac * 100, liqfrac_levels, cmap=plt.cm.Reds)
 plt.colorbar(mappable=c1, ax=axLower, orientation='horizontal', pad=0.05, shrink=0.75, extend="max")
-c2 = axLower.contourf(xx, zz, temppa, temppa_levels, cmap=plt.cm.Blues_r, lw=1)
+c2 = axLower.contourf(xx, zz, temppa, temppa_levels, cmap=plt.cm.Blues_r)
 plt.colorbar(mappable=c2, ax=axLower, orientation='horizontal', ticks=[-6, -5, -4, -3, -2, -1, 0], pad=0.20, shrink=0.75)
-axLower.contour(xx, zz, cts, cts_level, colors='black', linestyles='dashed', lw=1)
+axLower.contour(xx, zz, cts, cts_level, colors='black', linestyles='dashed')
 axLower.axes.set_xlim(-250, 3500)
 axLower.axes.set_ylim(1100, 1800)
 axLower.axes.set_xlabel("distance from bergschrund [m]")

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -70,7 +70,7 @@ BedSmoother::BedSmoother(IceGrid::ConstPtr g, int MAX_GHOSTS)
   }
 
   m_Glen_exponent = m_config->get_double("stress_balance.sia.Glen_exponent"); // choice is SIA; see #285
-  m_smoothing_range = m_config->get_double("stress_balance.sia.bed_smoother_range");
+  m_smoothing_range = m_config->get_double("stress_balance.sia.bed_smoother.range");
 
   if (m_smoothing_range > 0.0) {
     log.message(2,
@@ -365,6 +365,10 @@ void BedSmoother::theta(const IceModelVec2S &usurf, IceModelVec2S &result) const
   assert(m_topgsmooth.stencil_width() >= GHOSTS);
   assert(usurf.stencil_width()        >= GHOSTS);
 
+  const double
+    theta_min = m_config->get_double("stress_balance.sia.bed_smoother.theta_min"),
+    theta_max = 1.0;
+
   ParallelSection loop(m_grid->com);
   try {
     for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
@@ -387,16 +391,11 @@ void BedSmoother::theta(const IceModelVec2S &usurf, IceModelVec2S &result) const
         }
 
         result(i, j) = pow(omega, -m_Glen_exponent);
-        // now guarantee in [0,1]; this check *should not* be necessary, by convexity of p4
-        if (result(i, j) > 1.0) {
-          result(i, j) = 1.0;
-        }
-        if (result(i, j) < 0.0) {
-          result(i, j) = 0.0;
-        }
       } else {
-        result(i, j) = 0.00;  // FIXME = min_theta; make configurable
+        result(i, j) = 0.00;
       }
+
+      result(i, j) = clip(result(i, j), theta_min, theta_max);
     }
   } catch (...) {
     loop.failed();

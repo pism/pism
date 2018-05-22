@@ -2,8 +2,8 @@ netcdf pism_overrides {
     variables:
     byte pism_overrides;
 
-    pism_overrides:stress_balance.sia.bed_smoother_range = 0.;
-    pism_overrides:stress_balance.sia.bed_smoother_range_doc = "m; half-width of smoothing domain for PISMBedSmoother, in implementing [@ref Schoofbasaltopg2003] bed roughness parameterization for SIA; set value to zero to turn off mechanism";
+    pism_overrides:stress_balance.sia.bed_smoother.range = 0.;
+    pism_overrides:stress_balance.sia.bed_smoother.range_doc = "m; half-width of smoothing domain for PISMBedSmoother, in implementing [@ref Schoofbasaltopg2003] bed roughness parameterization for SIA; set value to zero to turn off mechanism";
 
     pism_overrides:output.runtime.volume_scale_factor_log10 = 0;
     pism_overrides:output.runtime.volume_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume (in km^3) in summary line to stdout";

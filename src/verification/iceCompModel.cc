@@ -64,7 +64,7 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   // Override some defaults from parent class
   m_config->set_double("stress_balance.sia.enhancement_factor", 1.0);
   // none use bed smoothing & bed roughness parameterization
-  m_config->set_double("stress_balance.sia.bed_smoother_range", 0.0);
+  m_config->set_double("stress_balance.sia.bed_smoother.range", 0.0);
 
   // set values of flags in run()
   m_config->set_boolean("geometry.update.enabled", true);
