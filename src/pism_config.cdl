@@ -900,6 +900,7 @@ netcdf pism_config {
     pism_config:grid.Lbz = 1000;
     pism_config:grid.Lbz_doc = "Thickness of the thermal bedrock layer. (Inactive if ``grid.Mbz`` < 2)";
     pism_config:grid.Lbz_type = "scalar";
+    pism_config:grid.Lbz_option = "Lbz";
     pism_config:grid.Lbz_units = "meters";
 
     pism_config:grid.Lx = 1500e3;
@@ -921,6 +922,7 @@ netcdf pism_config {
     pism_config:grid.Mbz = 1;
     pism_config:grid.Mbz_doc = "Number of thermal bedrock layers; 1 level corresponds to no bedrock.";
     pism_config:grid.Mbz_type = "integer";
+    pism_config:grid.Mbz_option = "Mbz";
     pism_config:grid.Mbz_units = "count";
 
     pism_config:grid.Mx = 61;

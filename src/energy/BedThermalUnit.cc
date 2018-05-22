@@ -43,14 +43,10 @@ BTUGrid::BTUGrid(Context::ConstPtr ctx) {
 BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
   BTUGrid result(ctx);
 
-  InputOptions opts = process_input_options(ctx->com(), ctx->config());
-
-  const Logger &log = *ctx->log();
+  Config::ConstPtr config = ctx->config();
+  InputOptions opts = process_input_options(ctx->com(), config);
 
   if (opts.type == INIT_RESTART) {
-    options::ignored(log, "-Mbz");
-    options::ignored(log, "-Lbz");
-
     // If we're initializing from a file we need to get the number of bedrock
     // levels and the depth of the bed thermal layer from it:
     PIO input_file(ctx->com(), "guess_mode", opts.filename, PISM_READONLY);
@@ -70,23 +66,12 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
     input_file.close();
   } else {
     // Bootstrapping or initializing without an input file.
-    options::Integer M("-Mbz", "number of levels in bedrock thermal layer",
-                       result.Mbz);
+    result.Mbz = config->get_double("grid.Mbz");
+    result.Lbz = config->get_double("grid.Lbz");
 
-    options::Real L("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
-                    result.Lbz);
-
-    if (M.is_set() and M == 1) {
-      options::ignored(log, "-Lbz");
+    if (result.Mbz == 1) {
       result.Lbz = 0;
       result.Mbz = 1;
-    } else {
-      if (M.is_set() ^ L.is_set()) {
-        throw RuntimeError(PISM_ERROR_LOCATION, "please specify both -Mbz and -Lbz");
-      }
-
-      result.Lbz = L;
-      result.Mbz = M;
     }
   }
 
