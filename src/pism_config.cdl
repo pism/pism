@@ -2076,6 +2076,18 @@ netcdf pism_config {
     pism_config:surface.lapse_rate.reference_year_type = "integer";
     pism_config:surface.lapse_rate.reference_year_units = "years";
 
+    pism_config:surface.lapse_rate.temperature_lapse_rate = 0;
+    pism_config:surface.lapse_rate.temperature_lapse_rate_doc = "Lapse rate for the temperature at the top of the ice.";
+    pism_config:surface.lapse_rate.temperature_lapse_rate_option = "temp_lapse_rate";
+    pism_config:surface.lapse_rate.temperature_lapse_rate_type = "scalar";
+    pism_config:surface.lapse_rate.temperature_lapse_rate_units = "K / km";
+
+    pism_config:surface.lapse_rate.smb_lapse_rate = 0;
+    pism_config:surface.lapse_rate.smb_lapse_rate_doc = "Lapse rate for the surface mass balance.";
+    pism_config:surface.lapse_rate.smb_lapse_rate_option = "smb_lapse_rate";
+    pism_config:surface.lapse_rate.smb_lapse_rate_type = "scalar";
+    pism_config:surface.lapse_rate.smb_lapse_rate_units = "(m / year) / km";
+
     pism_config:surface.pdd.air_temp_all_precip_as_rain = 275.15;
     pism_config:surface.pdd.air_temp_all_precip_as_rain_doc = "threshold temperature above which all precipitation is rain; must exceed surface.pdd.air_temp_all_precip_as_snow to avoid division by zero, because difference is in a denominator";
     pism_config:surface.pdd.air_temp_all_precip_as_rain_type = "scalar";

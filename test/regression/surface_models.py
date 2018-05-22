@@ -79,7 +79,7 @@ class DeltaT(TestCase):
 
         modifier = PISM.SurfaceDeltaT(self.grid, self.model)
 
-        options.setValue("-surface_delta_T_file", self.filename)
+        config.set_string("surface.delta_T.file", self.filename)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
@@ -105,7 +105,7 @@ class LapseRates(TestCase):
 
         config.set_string("surface.lapse_rate.file", self.filename)
 
-        options.setValue("-temp_lapse_rate", self.dTdz)
+        config.set_double("surface.lapse_rate.temperature_lapse_rate", self.dTdz)
 
     def test_surface_lapse_rate(self):
         "Modifier 'lapse_rate'"
@@ -322,7 +322,8 @@ class Cache(TestCase):
         time_bounds = np.array([0, 1, 1, 2, 2, 3, 3, 4]) * seconds_per_year
         create_scalar_forcing(self.filename, "delta_T", "Kelvin", [1, 2, 3, 4],
                               times=None, time_bounds=time_bounds)
-        options.setValue("-surface_delta_T_file", self.filename)
+
+        config.set_string("surface.delta_T.file", self.filename)
 
         config.set_double("surface.cache.update_interval", 2.0)
 

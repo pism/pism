@@ -31,23 +31,14 @@ LapseRates::LapseRates(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(g, in) {
 
   {
-    m_smb_lapse_rate = 0;
-    m_smb_lapse_rate = options::Real("-smb_lapse_rate",
-                                     "Elevation lapse rate for the surface mass balance,"
-                                     " in m year-1 per km",
-                                     m_smb_lapse_rate);
-    // convert from [m year-1 / km] to [kg m-2 year-1 / km]
+    m_smb_lapse_rate = m_config->get_double("surface.lapse_rate.smb_lapse_rate",
+                                            "(m / s) / m");
+    // convert from [m s-1 / m] to [kg m-2 s-1 / m]
     m_smb_lapse_rate *= m_config->get_double("constants.ice.density");
-    m_smb_lapse_rate = units::convert(m_sys, m_smb_lapse_rate,
-                                      "(kg m-2) year-1 / km", "(kg m-2) second-1 / m");
   }
 
-  {
-    options::Real T_lapse_rate("-temp_lapse_rate",
-                               "Elevation lapse rate for the temperature, in K per km",
-                               m_temp_lapse_rate);
-    m_temp_lapse_rate = units::convert(m_sys, T_lapse_rate, "K/km", "K/m");
-  }
+  m_temp_lapse_rate = m_config->get_double("surface.lapse_rate.temperature_lapse_rate",
+                                           "K / m");
 
   {
     ForcingOptions opt(*m_grid->ctx(), "surface.lapse_rate");
