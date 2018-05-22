@@ -53,6 +53,10 @@ pism::Context::Ptr btutest_context(MPI_Comm com, const std::string &prefix) {
   // configuration parameters
   Config::Ptr config = config_from_options(com, *logger, sys);
 
+  // default vertical grid parameters
+  config->set_double("grid.Mbz", 11);
+  config->set_double("grid.Lbz", 1000);
+
   config->set_string("time.calendar", "none");
   // when IceGrid constructor is called, these settings are used
   config->set_double("time.start_year", 0.0);
@@ -91,31 +95,18 @@ int main(int argc, char *argv[]) {
       "  -o             output file name; NetCDF format\n"
       "  -ys            start year in using Test K\n"
       "  -ye            end year in using Test K\n"
-      "  -dt            time step B (= positive float) in years\n"
-      "  -Mz            number of ice levels to use\n"
-      "  -Lz            height of ice/atmospher box\n";
-
-    // check required options
-    std::vector<std::string> required(1, "-Mbz");
+      "  -dt            time step B (= positive float) in years\n";
 
     bool done = show_usage_check_req_opts(*log, "BTUTEST %s (test program for BedThermalUnit)",
-                                          required, usage);
+                                          {"-Mbz"}, usage);
     if (done) {
       return 0;
     }
 
-    Config::Ptr config = ctx->config();
-
-    // Mbz and Lbz are used by the BedThermalUnit, not by IceGrid
-    config->set_double("grid.Mbz", 11);
-    config->set_double("grid.Lbz", 1000);
-
-    // Set default vertical grid parameters.
-    config->set_double("grid.Mz", 41);
-    config->set_double("grid.Lz", 4000);
-
     log->message(2,
                  "  initializing IceGrid from options ...\n");
+
+    Config::Ptr config = ctx->config();
 
     GridParameters P(config);
     P.Mx = 3;
