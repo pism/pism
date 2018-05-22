@@ -98,6 +98,7 @@
 %template(StringVector) std::vector<std::string>;
 %template(StringSet) std::set<std::string>;
 %template(DoubleVectorMap) std::map<std::string, std::vector<double> >;
+%template(BoolMap) std::map<std::string, bool >;
 %template(StringMap) std::map<std::string, std::string>;
 %template(DiagnosticMap) std::map<std::string, std::shared_ptr<pism::Diagnostic> >;
 
