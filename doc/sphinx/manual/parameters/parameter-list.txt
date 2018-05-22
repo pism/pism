@@ -15,6 +15,18 @@
    :Option: :opt:`-bootstrap`
    :Description: It true, use bootstrapping heuristics when initializing PISM.
 
+#. :config:`input.regrid.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-regrid_file`
+   :Description: Regridding (input) file name
+
+#. :config:`input.regrid.vars` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-regrid_vars`
+   :Description: Comma-separated list of variables to regrid. Leave empty to regrid all model state variables.
+
 #. :config:`age.enabled` (*boolean*)
 
    :Value: no
@@ -405,6 +417,12 @@
    :Value: *no default*
    :Option: :opt:`-calving`
    :Description: comma-separated list of calving methods; one or more of 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'
+
+#. :config:`calving.ocean_kill.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ocean_kill_file`
+   :Description: Input file containing ice thickness and bed elevation used to compute maximum ice extent.
 
 #. :config:`calving.thickness_calving.threshold` (*scalar*)
 
@@ -1405,7 +1423,25 @@
    :Option: :opt:`-summary_vol_scale_factor_log10`
    :Description: an integer; log base 10 of scale factor to use for volume (in km^3) in summary line to stdout
 
-#. :config:`output.save_size` (*keyword*)
+#. :config:`output.snapshot.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-save_file`
+   :Description: Snapshot (output) file name (or prefix, if saving to individual files).
+
+#. :config:`output.snapshot.times` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-save_times`
+   :Description: List or a range of times to save model state snapshots at.
+
+#. :config:`output.snapshot.split` (*boolean*)
+
+   :Value: no
+   :Option: :opt:`-save_split`
+   :Description: Save model state snapshots to separate files (one per time record).
+
+#. :config:`output.snapshot.size` (*keyword*)
 
    :Value: ``small``
    :Choices: ``none, small, medium, big_2d, big``
@@ -1456,6 +1492,12 @@
    :Value: *no default*
    :Option: :opt:`-ts_file`
    :Description: Name of the file to save scalar time series to. Leave empty to disable reporting scalar time-series.
+
+#. :config:`output.timeseries.times` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ts_times`
+   :Description: List or range of times defining reporting time intervals.
 
 #. :config:`output.variable_order` (*keyword*)
 
@@ -1600,6 +1642,12 @@
    :Value: 1.000000e+13 (Pascal second meter)
    :Option: :opt:`-ssa_eps`
    :Description: Initial amount of regularization in computation of product of effective viscosity and thickness (`\nu H`).  This default value for `\nu H` comes e.g. from a hardness for the Ross ice shelf (`\bar B`) = 1.9e8 Pa `s^{1/3}` :cite:`MacAyealetal` and a typical strain rate of 0.001 1/year for the Ross ice shelf, giving `\nu = (\bar B) / (2 \cdot 0.001^{2/3})` = 9.49e+14 Pa s ~ 30 MPa year, the value in :cite:`Ritzetal2001`, but with a tiny thickness `H` of about 1 cm.
+
+#. :config:`stress_balance.ssa.read_initial_guess` (*boolean*)
+
+   :Value: yes
+   :Option: :opt:`-ssa_read_initial_guess`
+   :Description: Read the initial guess from the input file when re-starting.
 
 #. :config:`stress_balance.ssa.fd.brutal_sliding` (*boolean*)
 
