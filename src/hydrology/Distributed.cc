@@ -372,6 +372,8 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
       hdt = std::min(hdt, dt_diff_p);
     }
 
+    m_log->message(3, "  hydrology step %05d, dt = %f s\n", step_counter, hdt);
+
     // update Wtillnew from Wtill and input_rate
     update_Wtill(hdt,
                  m_Wtill,
