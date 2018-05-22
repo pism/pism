@@ -59,7 +59,8 @@ static json_t* find_json_value(json_t *root, const std::string &name) {
 static json_t* pack_json_array(const std::vector<double> &data) {
   json_t *array = json_array();
   if (array == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to create an empty JSON array");
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "failed to create an empty JSON array");
   }
 
   for (const auto &v : data) {
@@ -80,22 +81,32 @@ static json_t* pack_json_array(const std::vector<double> &data) {
 /*!
  * Convert a JSON array to an STL vector.
  */
-std::vector<double> unpack_json_array(const json_t *array) {
+std::vector<double> unpack_json_array(const char *name,
+                                      const json_t *input) {
   std::vector<double> result;
 
-  size_t N = json_array_size(array);
+  if (json_typeof(input) != JSON_ARRAY) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "%s is not an array", name);
+  }
+
+  size_t N = json_array_size(input);
 
   for (size_t k = 0; k < N; ++k) {
-    json_t *value = json_array_get(array, k);
+    json_t *value = json_array_get(input, k);
     if (value == NULL) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to get an array element");
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "failed to get an element of %s",
+                                    name);
     }
 
     double v = 0.0;
     if (json_unpack(value, "F", &v) == 0) {
       result.push_back(v);
     } else {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to unpack an array element");
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "failed to convert an element of %s to double",
+                                    name);
     }
   }
 
@@ -117,7 +128,8 @@ static void get_all_values(json_t *root, const std::string &path,
       if (json_unpack(value, fmt, &tmp) == 0) {
         accum[parameter] = tmp;
       } else {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to json_unpack %s using format %s",
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "failed to json_unpack %s using format %s",
                                       parameter.c_str(), fmt);
       }
     } else if (value_type == JSON_OBJECT) {
@@ -136,7 +148,7 @@ static void get_all_arrays(json_t *root, const std::string &path,
 
     switch (json_typeof(value)) {
     case JSON_ARRAY:
-      accum[parameter] = unpack_json_array(value);
+      accum[parameter] = unpack_json_array(parameter.c_str(), value);
       break;
     case JSON_OBJECT:
       get_all_arrays(value, parameter + ".", accum);
@@ -159,7 +171,8 @@ static PISMType get_value(json_t *object, const std::string &name,
   if (json_unpack(value, fmt, &tmp) == 0) {
     return tmp;
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to convert %s to a %s", name.c_str(), type_name);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "failed to convert %s to a %s", name.c_str(), type_name);
   }
 }
 
@@ -311,6 +324,17 @@ double ConfigJSON::get_double_impl(const std::string &name) const {
   return get_value<double, double>(m_data, name, "F", "double");
 }
 
+std::vector<double> ConfigJSON::get_doubles_impl(const std::string &name) const {
+  json_t *value = find_json_value(m_data, name);
+
+  if (value == NULL) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "%s was not found", name.c_str());
+  }
+
+  return unpack_json_array(name.c_str(), value);
+}
+
 std::string ConfigJSON::get_string_impl(const std::string &name) const {
   return get_value<std::string, const char *>(m_data, name, "s", "string");
 }
@@ -329,8 +353,7 @@ void ConfigJSON::write_impl(const PIO &nc) const {
 }
 
 bool ConfigJSON::is_set_impl(const std::string &name) const {
-  json_t *value = find_json_value(m_data, name);
-  if (value == NULL) {
+  if (find_json_value(m_data, name) == NULL) {
     return false;
   } else {
     return true;

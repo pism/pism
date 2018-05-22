@@ -91,6 +91,10 @@ public:
   double get_double(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
   double get_double(const std::string &name, const std::string &units,
                     UseFlag flag = REMEMBER_THIS_USE) const;
+  std::vector<double> get_doubles(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
+  std::vector<double> get_doubles(const std::string &name, const std::string &units,
+                                  UseFlag flag = REMEMBER_THIS_USE) const;
+
   void set_double(const std::string &name, double value, ConfigSettingFlag flag = CONFIG_FORCE);
   void set_doubles(const std::string &name, const std::vector<double> &values,
                    ConfigSettingFlag flag = CONFIG_FORCE);
@@ -120,6 +124,8 @@ protected:
 
   virtual Doubles all_doubles_impl() const = 0;
   virtual double get_double_impl(const std::string &name) const = 0;
+  virtual std::vector<double> get_doubles_impl(const std::string &name) const = 0;
+
   virtual void set_double_impl(const std::string &name, double value) = 0;
   virtual void set_doubles_impl(const std::string &name,
                                 const std::vector<double> &values) = 0;

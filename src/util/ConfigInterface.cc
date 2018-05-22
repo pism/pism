@@ -163,6 +163,32 @@ double Config::get_double(const std::string &name,
   }
 }
 
+std::vector<double> Config::get_doubles(const std::string &name, UseFlag flag) const {
+  if (flag == REMEMBER_THIS_USE) {
+    m_impl->parameters_used.insert(name);
+  }
+  return this->get_doubles_impl(name);
+}
+
+std::vector<double> Config::get_doubles(const std::string &name,
+                                        const std::string &units,
+                                        UseFlag flag) const {
+  auto value       = this->get_doubles(name, flag);
+  auto input_units = this->get_string(name + "_units");
+
+  try {
+    units::Converter converter(m_impl->unit_system, input_units, units);
+    for (unsigned int k = 0; k < value.size(); ++k) {
+      value[k] = converter(value[k]);
+    }
+    return value;
+  } catch (RuntimeError &e) {
+    e.add_context("converting \"%s\" from \"%s\" to \"%s\"",
+                  name.c_str(), input_units.c_str(), units.c_str());
+    throw;
+  }
+}
+
 void Config::set_double(const std::string &name, double value,
                         ConfigSettingFlag flag) {
   std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;

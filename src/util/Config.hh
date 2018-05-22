@@ -45,8 +45,8 @@ protected:
   // doubles
   Doubles all_doubles_impl() const;
   double get_double_impl(const std::string &name) const;
-  double get_double_impl(const std::string &name,
-                         const std::string &u1, const std::string &u2) const;
+  std::vector<double> get_doubles_impl(const std::string &name) const;
+
   void set_double_impl(const std::string &name, double value);
   void set_doubles_impl(const std::string &name,
                         const std::vector<double> &values);

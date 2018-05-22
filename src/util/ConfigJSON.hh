@@ -46,6 +46,8 @@ private:
 
   virtual Doubles all_doubles_impl() const;
   virtual double get_double_impl(const std::string &name) const;
+  virtual std::vector<double> get_doubles_impl(const std::string &name) const;
+
   virtual void set_double_impl(const std::string &name, double value);
   virtual void set_doubles_impl(const std::string &name,
                                 const std::vector<double> &values);

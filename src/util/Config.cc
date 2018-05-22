@@ -28,9 +28,9 @@
 
 namespace pism {
 
-NetCDFConfig::NetCDFConfig(MPI_Comm new_com, const std::string &name, units::System::Ptr system)
+NetCDFConfig::NetCDFConfig(MPI_Comm com, const std::string &name, units::System::Ptr system)
   : Config(system),
-    m_com(new_com),
+    m_com(com),
     m_data(name, system) {
 }
 
@@ -48,11 +48,25 @@ double NetCDFConfig::get_double_impl(const std::string &name) const {
   if (doubles.find(name) != doubles.end()) {
     return m_data.get_double(name);
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "parameter '%s' is unset. (Parameters read from '%s'.)",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "parameter '%s' is unset. (Parameters read from '%s'.)",
                                   name.c_str(), m_config_filename.c_str());
   }
 
   return 0;                     // can't happen
+}
+
+std::vector<double> NetCDFConfig::get_doubles_impl(const std::string &name) const {
+  const VariableMetadata::DoubleAttrs& doubles = m_data.get_all_doubles();
+  if (doubles.find(name) != doubles.end()) {
+    return m_data.get_doubles(name);
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "parameter '%s' is unset. (Parameters read from '%s'.)",
+                                  name.c_str(), m_config_filename.c_str());
+  }
+
+  return {};                    // can't happen
 }
 
 Config::Doubles NetCDFConfig::all_doubles_impl() const {
