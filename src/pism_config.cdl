@@ -116,6 +116,16 @@ netcdf pism_config {
     pism_config:atmosphere.lapse_rate.file_type = "string";
     pism_config:atmosphere.lapse_rate.file_option = "atmosphere_lapse_rate_file";
 
+    pism_config:atmosphere.yearly_cycle.file = "";
+    pism_config:atmosphere.yearly_cycle.file_doc = "Name of the file containing mean annual and mean July temperatures (`air_temp_mean_annual` and `air_temp_mean_summer`) and the `precipitation` field.";
+    pism_config:atmosphere.yearly_cycle.file_type = "string";
+    pism_config:atmosphere.yearly_cycle.file_option = "atmosphere_yearly_cycle_file";
+
+    pism_config:atmosphere.yearly_cycle.scaling_file = "";
+    pism_config:atmosphere.yearly_cycle.scaling_file_doc = "Name of the file containing amplitude scaling (`amplitude_scaling`) for the near-surface air temperature.";
+    pism_config:atmosphere.yearly_cycle.scaling_file_type = "string";
+    pism_config:atmosphere.yearly_cycle.scaling_file_option = "atmosphere_yearly_cycle_scaling_file";
+
     pism_config:atmosphere.lapse_rate.period = 0;
     pism_config:atmosphere.lapse_rate.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
     pism_config:atmosphere.lapse_rate.period_type = "integer";
