@@ -1601,6 +1601,11 @@
    :Option: :opt:`-grain_size_age_coupling`
    :Description: Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt :cite:`GoldsbyKohlstedt` flow law
 
+#. :config:`stress_balance.sia.max_diffusivity` (*scalar*)
+
+   :Value: 100 (m2 s-1)
+   :Description: Maximum allowed diffusivity of the SIA flow. PISM stops with an error message if the SIA diffusivity exceeds this limit.
+
 #. :config:`stress_balance.sia.surface_gradient_method` (*keyword*)
 
    :Value: ``haseloff``
