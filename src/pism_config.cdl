@@ -1498,6 +1498,11 @@ netcdf pism_config {
     pism_config:stress_balance.sia.grain_size_age_coupling_option = "grain_size_age_coupling";
     pism_config:stress_balance.sia.grain_size_age_coupling_type = "boolean";
 
+    pism_config:stress_balance.sia.max_diffusivity = 100.0;
+    pism_config:stress_balance.sia.max_diffusivity_doc = "Maximum allowed diffusivity of the SIA flow. PISM stops with an error message if the SIA diffusivity exceeds this limit.";
+    pism_config:stress_balance.sia.max_diffusivity_type = "scalar";
+    pism_config:stress_balance.sia.max_diffusivity_units = "m2 s-1";
+
     pism_config:stress_balance.sia.surface_gradient_method = "haseloff";
     pism_config:stress_balance.sia.surface_gradient_method_choices = "eta,haseloff,mahaffy";
     pism_config:stress_balance.sia.surface_gradient_method_doc = "method used for surface gradient calculation at staggered grid points";
