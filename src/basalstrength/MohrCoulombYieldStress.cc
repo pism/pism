@@ -87,26 +87,26 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
   if (iterative_phi) {
 
     m_usurf.create(m_grid, "usurf",
-              WITH_GHOSTS, stencil_width);
+              WITH_GHOSTS);
     m_usurf.set_attrs("internal",
                  "external surface elevation",
                  "m", "surface_altitude");
 
     m_target_usurf.create(m_grid, "target_usurf",
-              WITH_GHOSTS, stencil_width);
+              WITH_GHOSTS);
     m_target_usurf.set_attrs("internal",
                  "target surface elevation",
                  "m", "target_surface_altitude");
     m_target_usurf.set_time_independent(true);
 
     m_diff_usurf.create(m_grid, "diff_usurf",
-              WITH_GHOSTS, stencil_width);
+              WITH_GHOSTS);
     m_diff_usurf.set_attrs("internal",
                  "surface elevation anomaly",
                  "m", "");
 
     m_diff_mask.create(m_grid, "diff_mask",
-              WITH_GHOSTS, stencil_width);
+              WITH_GHOSTS);
     m_diff_mask.set_attrs("internal",
                  "mask for till phi iteration",
                  "", "");

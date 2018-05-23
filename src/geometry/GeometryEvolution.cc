@@ -352,7 +352,7 @@ void GeometryEvolution::source_term_step(const Geometry &geometry, double dt,
 /*!
  * Apply changes due to flow to ice geometry and ice area specific volume.
  */
-void GeometryEvolution::apply_flux_divergence(Geometry &geometry) const {
+void GeometryEvolution::apply_flux_divergence(Geometry &geometry) {
 
   geometry.ice_thickness.add(1.0, m_impl->thickness_change);
   geometry.ice_area_specific_volume.add(1.0, m_impl->ice_area_specific_volume_change);

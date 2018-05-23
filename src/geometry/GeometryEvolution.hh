@@ -53,7 +53,7 @@ public:
                         const IceModelVec2S   &surface_mass_flux,
                         const IceModelVec2S   &basal_melt_rate);
 
-  void apply_flux_divergence(Geometry &geometry) const;
+  void apply_flux_divergence(Geometry &geometry);
   void apply_mass_fluxes(Geometry &geometry) const;
 
   const IceModelVec2S& top_surface_mass_balance() const;
