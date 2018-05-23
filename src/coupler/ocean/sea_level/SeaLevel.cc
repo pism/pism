@@ -22,6 +22,7 @@
 #include "pism/util/MaxTimestep.hh"
 
 #include "pism/util/pism_utilities.hh" // combine
+#include "pism/util/pism_options.hh"
 
 namespace pism {
 namespace ocean {
@@ -37,6 +38,8 @@ SeaLevel::SeaLevel(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> input)
   m_sea_level.set_attrs("diagnostic",
                         "sea level elevation, relative to the geoid",
                         "meter", "");
+
+  m_const_sl = 0.0;
 }
 
 // "Model" constructor (returns sea level is zero).
@@ -57,9 +60,15 @@ void SeaLevel::init_impl(const Geometry &geometry) {
   if (m_input_model) {
     m_input_model->init(geometry);
   } else {
-    // set the default value
-    m_sea_level.set(0.0);
-    m_log->message(2, "* Using constant (zero) sea level...\n");
+
+    double const_sl = m_const_sl;
+    const_sl = options::Real("-ocean_const_sl",
+                             "Constant sea level elevation (m)", const_sl);
+    m_const_sl = const_sl;
+
+    // set the sea level
+    m_sea_level.set(m_const_sl);
+    m_log->message(2, "* Using constant sea level (%gm)...\n", m_const_sl);
   }
 }
 
@@ -71,7 +80,7 @@ void SeaLevel::update_impl(const Geometry &geometry, double t, double dt) {
   if (m_input_model) {
     m_input_model->update(geometry, t, dt);
   } else {
-    m_sea_level.set(0.0);
+    m_sea_level.set(m_const_sl);
   }
 }
 

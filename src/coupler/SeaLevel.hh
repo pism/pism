@@ -60,7 +60,8 @@ protected:
 protected:
   std::shared_ptr<SeaLevel> m_input_model;
   IceModelVec2S m_sea_level;
-  double m_fill_value;
+  double m_fill_value,
+         m_const_sl;
 };
 
 } // end of namespace sea_level
