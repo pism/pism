@@ -23,7 +23,7 @@ import numpy as np
 try:
     from netCDF4 import Dataset as CDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 x, topg, thk = np.loadtxt('sg_35m_flowline.txt', unpack=True)
@@ -31,7 +31,7 @@ x, topg, thk = np.loadtxt('sg_35m_flowline.txt', unpack=True)
 output = 'storglaciaren_flowline.nc'
 
 # Write the data:
-print("Writing the data to '%s'... " % output)
+print(("Writing the data to '%s'... " % output))
 nc = CDF(output, "w")
 nc.createDimension("x", size=len(x))
 

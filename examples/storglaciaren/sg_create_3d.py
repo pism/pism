@@ -28,12 +28,7 @@ from sys import stderr
 
 write = stderr.write
 
-# try different netCDF modules
-try:
-    from netCDF4 import Dataset as CDF
-except:
-    print "netCDF4 is not installed!"
-    sys.exit(1)
+from netCDF4 import Dataset as CDF
 
 from optparse import OptionParser
 
@@ -202,6 +197,9 @@ dem_var[:] = dem
 
 ftt_mask = def_var(nc, "ftt_mask", "", fill_value)
 ftt_mask[:] = 1
+mask = np.where(thk > 0, 0, 1)
+ftt_mask[:] = mask
+
 
 # generate (somewhat) reasonable acab
 acab_max =  2.5 # m/a

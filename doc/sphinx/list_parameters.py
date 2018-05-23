@@ -65,30 +65,30 @@ def entry(name, T, value, option, description, choices=None):
                            description=description)
 
 def print_string(var, name, T):
-    print(entry(name,
+    print((entry(name,
                 T,
                 value(var, name),
                 option(var, name),
-                doc(var, name)))
+                doc(var, name))))
 
 def print_scalar(var, name, T):
     V = "{} ({})".format(number_to_string(value(var, name)), units(var, name))
-    print(entry(name, T, V, option(var, name), doc(var, name)))
+    print((entry(name, T, V, option(var, name), doc(var, name))))
 
 def print_integer(var, name, T):
-    print(entry(name,
+    print((entry(name,
                 T,
                 str(value(var, name)),
                 option(var, name),
-                doc(var, name)))
+                doc(var, name))))
 
 def print_keyword(var, name, T):
-    print(entry(name,
+    print((entry(name,
                 T,
                 value(var, name),
                 option(var, name),
                 doc(var, name),
-                choices=value(var, name + "_choices")))
+                choices=value(var, name + "_choices"))))
 
 def value(var, name):
     return var.getncattr(name)

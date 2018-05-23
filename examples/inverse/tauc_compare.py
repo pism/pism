@@ -3,7 +3,7 @@
 try:
     import netCDF4 as netCDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 from matplotlib import pyplot as pp
 from matplotlib import colors as mc

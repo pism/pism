@@ -8,7 +8,7 @@ from sys import exit
 try:
     import netCDF4 as NC
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 inname = "pismnbreen.nc"
@@ -17,13 +17,13 @@ outname = "fakesummerevent.nc"
 try:
     innc = NC.Dataset(inname, 'r')
 except:
-    print("file %s not found" % inname)
+    print(("file %s not found" % inname))
     exit(1)
 
 try:
     nc = PNC(outname, 'w', format='NETCDF3_CLASSIC')
 except:
-    print("can't open file %s for writing" % outname)
+    print(("can't open file %s for writing" % outname))
     exit(1)
 
 
