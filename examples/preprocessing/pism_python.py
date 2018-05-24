@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2009-2015 the PISM Authors
+# Copyright (C) 2009-2015, 2018 the PISM Authors
 
 # @package pism_python
 # \author the PISM authors
@@ -21,7 +21,7 @@ import numpy as np
 try:
     from netCDF4 import Dataset as CDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 # set up the grid:

@@ -3,7 +3,7 @@
 try:
     from netCDF4 import Dataset
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 import numpy as np
@@ -26,7 +26,7 @@ if len(args) != 1:
 try:
     nc = Dataset(args[0], 'r')
 except:
-    print(("file %s not found ... ending ..." % args[0]))
+    print("file %s not found ... ending ..." % args[0])
     exit(2)
 
 
@@ -35,12 +35,10 @@ def permute(variable, output_order=('time', 'z', 'zb', 'y', 'x')):
     input_dimensions = variable.dimensions
 
     # filter out irrelevant dimensions
-    dimensions = filter(lambda(x): x in input_dimensions,
-                        output_order)
+    dimensions = [x for x in output_order if x in input_dimensions]
 
     # create the mapping
-    mapping = map(lambda(x): dimensions.index(x),
-                  input_dimensions)
+    mapping = [dimensions.index(x) for x in input_dimensions]
 
     if mapping:
         return np.transpose(variable[:], mapping)

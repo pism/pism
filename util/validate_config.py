@@ -98,9 +98,9 @@ def validate_recursively(data, path=[]):
         jsonschema.validate(data, config_schema)
     except jsonschema.ValidationError as e:
         if len(e.path) == 0:
-            print "Failed while validating %s" % json.dumps(e.instance)
-            print "Message:", e.message
-            print "Path:", ".".join(path)
+            print("Failed while validating %s" % json.dumps(e.instance))
+            print("Message:", e.message)
+            print("Path:", ".".join(path))
         else:
             validate_recursively(e.instance, path + list(e.path))
 

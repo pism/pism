@@ -66,7 +66,7 @@ def generate_config():
         "basal_yield_stress.constant.value" : 1e6,
         "basal_yield_stress.constant.value_doc" : "set default to 'high tauc'",
     }
-    keys = attrs.keys()
+    keys = list(attrs.keys())
     keys.sort()
     for k in keys:
         pism_overrides.setncattr(k, attrs[k])
@@ -221,7 +221,7 @@ def generate_pism_input(x, y, xx, yy):
                  "u_ssa_bc": ussa,
                  "v_ssa_bc": vssa}
 
-    for name in variables.keys():
+    for name in list(variables.keys()):
         nc.write(name, variables[name])
 
     nc.history = subprocess.list2cmdline(argv)
@@ -259,8 +259,8 @@ if __name__ == "__main__":
     (bwatav, bwatmax) = report_drift("bwat", "inputforP.nc", "end.nc", xx, yy, doshow=False)
     (bwpav,  bwpmax) = report_drift("bwp",  "inputforP.nc", "end.nc", xx, yy, doshow=False)
 
-    print "NUMERICAL ERRORS:"
-    print "%d  %f  %f  %f  %f\n" % (opts.Mx, bwatav, bwatmax, bwpav, bwpmax)
+    print("NUMERICAL ERRORS:")
+    print("%d  %f  %f  %f  %f\n" % (opts.Mx, bwatav, bwatmax, bwpav, bwpmax))
 
     # cleanup:
     if opts.keep == False:

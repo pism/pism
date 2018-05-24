@@ -11,15 +11,15 @@ endif()
 find_program(PYTHON_EXECUTABLE python DOC "python interpreter")
 
 if(PYTHON_EXECUTABLE)
-    execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print sysconfig.get_python_inc()"
+    execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print(sysconfig.get_python_inc())"
                      OUTPUT_VARIABLE PYTHON_INCLUDES
                      RESULT_VARIABLE PYTHON_INCLUDES_NOT_FOUND
                      OUTPUT_STRIP_TRAILING_WHITESPACE)
-    execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print sysconfig.get_config_var('LIBPL')"
+    execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print(sysconfig.get_config_var('LIBPL'))"
                      OUTPUT_VARIABLE PYTHON_LIBDIR
                      RESULT_VARIABLE PYTHON_LIBDIR_NOT_FOUND
                      OUTPUT_STRIP_TRAILING_WHITESPACE)
-    execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print sysconfig.get_python_version()"
+    execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print(sysconfig.get_python_version())"
                      OUTPUT_VARIABLE PYTHON_VERSION
                      RESULT_VARIABLE PYTHON_VERSION_NOT_FOUND
                      OUTPUT_STRIP_TRAILING_WHITESPACE)

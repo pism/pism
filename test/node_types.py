@@ -42,8 +42,8 @@ def print_vec(vec):
 
     shape = vec.get_dm().get().sizes
 
-    print vec.get_name()
-    print v0.get()[:].reshape(shape, order="f")
+    print(vec.get_name())
+    print(v0.get()[:].reshape(shape, order="f"))
 
 def spy_vec(vec, value):
     v0 = vec.allocate_proc0_copy()
@@ -53,8 +53,8 @@ def spy_vec(vec, value):
 
     array = v0.get()[:].reshape(shape, order="f")
 
-    print vec.get_name()
-    print array
+    print(vec.get_name())
+    print(array)
 
     plt.title(vec.get_name())
     plt.imshow(array, interpolation="nearest")
