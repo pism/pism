@@ -65,7 +65,7 @@ DATANAME=storglaciaren_3d.nc
 PISM_DATANAME=pism_$DATANAME
 INNAME=$PISM_DATANAME
 
-EB="-e_sia 0.3"
+EB="-sia_e 0.3"
 PARAMS="-plastic_phi 40"
 FULLPHYS="-stress_balance ssa+sia -thk_eff $PARAMS"
 COUPLER="-surface given" # FIXME  should be using PSElevation as in flowline example
@@ -147,14 +147,12 @@ OUTNAME=ssa_${RUNLENGTH}a.nc
 OUTNAMEFULL=$PREFIX${GS}m_$OUTNAME
 TSNAME=ts_${OUTNAMEFULL}
 EXNAME=ex_${OUTNAMEFULL}
-TSTIMES=$STARTYEAR:$TSSTEP:$ENDTIME
-EXTIMES=$STARTYEAR:$TSSTEP:$ENDTIME
 
 echo
 echo "$SCRIPTNAME  SSA run with elevation-dependent mass balance for $RUNLENGTH years on ${GS}m grid"
 cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -i $INNAME $COUPLER_ELEV $FULLPHYS \
-     -ts_file $TSNAME -ts_times $TSTIMES \
-     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
+     -ts_file $TSNAME -ts_times $TSSTEP \
+     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXSTEP \
      -ys $STARTYEAR -y $RUNLENGTH -o_size medium -o $OUTNAMEFULL"
 $PISM_DO $cmd
 echo
