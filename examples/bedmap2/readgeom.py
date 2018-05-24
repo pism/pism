@@ -65,7 +65,7 @@ print("writing NetCDF file '%s' ..." % outname)
 try:
     nc = PNC(outname, 'w', format='NETCDF3_CLASSIC')
 except:
-    print(("can't open file %s for writing" % outname))
+    print("can't open file %s for writing" % outname)
     exit(1)
 
 print("  writing x,y ...")

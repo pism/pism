@@ -13,7 +13,7 @@ def print_heading(title, label, decoration):
 
 {title}
 {underline}"""
-    print((heading.format(label=label, title=title, underline=decoration * len(title))))
+    print(heading.format(label=label, title=title, underline=decoration * len(title)))
 
 entry_start = """
 #. ``{name}``"""
@@ -44,7 +44,7 @@ def print_diagnostics(diagnostics):
         print_heading(title, label, "-")
 
         for name in sorted(diagnostics.keys()):
-            print((entry_start.format(name=name)))
+            print(entry_start.format(name=name))
 
             if len(diagnostics[name]) == 1:
                 template = template_single
@@ -58,17 +58,17 @@ def print_diagnostics(diagnostics):
                 if len(units) == 0:
                     units = "---"
 
-                print((template.format(var_name=var_name,
+                print(template.format(var_name=var_name,
                                       units=units,
-                                      long_name=long_name)))
+                                      long_name=long_name))
 
                 if len(standard_name) > 0:
-                    print((std_name_template.format(padding=padding,
-                                                   standard_name=standard_name)))
+                    print(std_name_template.format(padding=padding,
+                                                   standard_name=standard_name))
 
                 if len(comment) > 0:
-                    print((comment_template.format(padding=padding,
-                                                  comment=comment)))
+                    print(comment_template.format(padding=padding,
+                                                  comment=comment))
 
     print(header)
 
