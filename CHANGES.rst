@@ -3,6 +3,8 @@
 Changes since v1.0
 ==================
 
+- PISM stops with an error message if the name of a parameter in a `-config_override` file
+  does not match any of the known PISM parameters.
 - PISM stops with an error message if the diffusivity of the SIA flow exceeds a given
   threshold (see `stress_balance.sia.max_diffusivity`). Extremely high SIA diffusivities
   often mean that the setup is not "shallow enough"; in a situation like this it might
