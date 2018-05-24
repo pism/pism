@@ -42,9 +42,8 @@ from numpy import *
 # Computes \f$\rho_{Jacobi}\f$, see formula (19.5.24), page 858.
 
 
-def rho_jacobi(xxx_todo_changeme):
-
-    (J, L) = xxx_todo_changeme
+def rho_jacobi(dimensions):
+    (J, L) = dimensions
     return (cos(pi / J) + cos(pi / L)) / 2
 
 # This makes the stencil wrap around the grid. It is unclear if this should be
@@ -56,9 +55,9 @@ def rho_jacobi(xxx_todo_changeme):
 #  dimensions.
 
 
-def fix_indices(Is, Js, xxx_todo_changeme1):
+def fix_indices(Is, Js, dimensions):
 
-    (M, N) = xxx_todo_changeme1
+    (M, N) = dimensions
     Is[Is == M] = 0
     Is[Is == -1] = M - 1
     Js[Js == N] = 0
