@@ -87,7 +87,7 @@ def run(scenario, plot, pause, save):
 
     elastic, use_uplift, H0 = scenarios[scenario]
 
-    print "Using scenario %s: elastic model = %s, use uplift = %s, H0 = %f m" % (scenario, elastic, use_uplift, H0)
+    print("Using scenario %s: elastic model = %s, use uplift = %s, H0 = %f m" % (scenario, elastic, use_uplift, H0))
 
     config.set_boolean("bed_deformation.lc.elastic_model", elastic)
 
@@ -126,13 +126,13 @@ def run(scenario, plot, pause, save):
             model.bed_elevation().view(400)
             model.uplift().view(400)
 
-        print "t = %s years, dt = %s years" % (time.date(), time.convert_time_interval(dt_current, "years"))
+        print("t = %s years, dt = %s years" % (time.date(), time.convert_time_interval(dt_current, "years")))
         time.step(dt_current)
 
-    print "Reached t = %s years" % time.date()
+    print("Reached t = %s years" % time.date())
 
     if pause:
-        print "Pausing for 5 seconds..."
+        print("Pausing for 5 seconds...")
         PISM.PETSc.Sys.sleep(5)
 
     if save:

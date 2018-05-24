@@ -74,13 +74,13 @@ class InvSSAPlotListener(PISM.invert.listener.PlotListener):
 
         r = self.toproczero(data.residual)
         Td = None
-        if data.has_key('T_zeta_step'):
+        if 'T_zeta_step' in data:
             Td = self.toproczero(data.T_zeta_step)
         TStarR = None
-        if data.has_key('TStar_residual'):
+        if 'TStar_residual' in data:
             TStarR = self.toproczero(data.TStar_residual)
         d = None
-        if data.has_key('zeta_step'):
+        if 'zeta_step' in data:
             d = self.toproczero(data.zeta_step)
         zeta = self.toproczero(data.zeta)
 
@@ -493,7 +493,7 @@ def run():
     if prep_module is not None:
         if prep_module.endswith(".py"):
             prep_module = prep_module[0:-2]
-        exec "import %s as user_prep_module" % prep_module
+        exec("import %s as user_prep_module" % prep_module)
         user_prep_module.prep_solver(solver)
 
     # Pausing (add this after the user's listeners)

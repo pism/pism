@@ -66,7 +66,7 @@ def generate_config():
         "basal_yield_stress.constant.value_doc" : "set default to 'high tauc'"
     }
 
-    for k,v in attrs.items():
+    for k,v in list(attrs.items()):
         pism_overrides.setncattr(k,v)
 
     nc.close()
@@ -97,14 +97,14 @@ def check_drift(file1, file2):
         drift["%s_max" % name] = np.max(diff)
         drift["%s_avg" % name] = np.average(diff)
 
-    print("drift        = ", drift)
-    print("stored_drift = ", stored_drift)
+    print(("drift        = ", drift))
+    print(("stored_drift = ", stored_drift))
 
     for name in list(drift.keys()):
         rel_diff = np.abs(stored_drift[name] - drift[name]) / stored_drift[name]
 
         if rel_diff > 1e-3:
-            print("Stored and computed drifts in %s differ: %f != %f" % (name, stored_drift[name], drift[name]))
+            print(("Stored and computed drifts in %s differ: %f != %f" % (name, stored_drift[name], drift[name])))
             exit(1)
 
 

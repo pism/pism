@@ -21,7 +21,7 @@ import numpy as np
 try:
     from netCDF4 import Dataset as CDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 # set up the grid:
@@ -94,6 +94,6 @@ historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
 setattr(nc, 'history', historystr)
 
 nc.close()
-print('  PISM-bootable NetCDF file %s written' % ncfile)
+print(('  PISM-bootable NetCDF file %s written' % ncfile))
 print('  for example, run:')
 print('    $ pismr -i foo.nc -bootstrap -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1')

@@ -77,5 +77,5 @@ assert run(PISMR + " -verbose 1 -i both-double-mismatch.nc -o pismr-output.nc") 
 
 # cleanup
 for f in files:
-    print("Removing %s..." % f)
+    print(("Removing %s..." % f))
     os.remove(f)

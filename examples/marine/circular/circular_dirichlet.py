@@ -79,4 +79,4 @@ piktests_utils.write_data(ncfile, variables)
 ncfile.variables["calving_threshold"].units = "m"
 ncfile.close()
 
-print "Successfully created %s" % options.output_filename
+print("Successfully created %s" % options.output_filename)

@@ -54,8 +54,8 @@ def print_vec(vec):
 
     shape = vec.get_dm().get().sizes
 
-    print(vec.get_name())
-    print(v0.get()[:].reshape(shape, order="f"))
+    print((vec.get_name()))
+    print((v0.get()[:].reshape(shape, order="f")))
 
 def init(mu, L, sea_level, vec, type="box"):
     k = {0.0 : 8,
@@ -105,7 +105,7 @@ def grounded_cell_fraction_test():
                                      gl_mask_x, gl_mask_y)
 
         # inspection / comparison
-        print("L = %f" % L)
+        print(("L = %f" % L))
         print_vec(mask)
         print_vec(gl_mask_x)
         print_vec(gl_mask_y)
@@ -133,7 +133,7 @@ def new_grounded_cell_fraction_test():
                                             gl_mask)
 
         # inspection / comparison
-        print("L = %f" % L)
+        print(("L = %f" % L))
         print_vec(gl_mask)
 
 grounded_cell_fraction_test()
