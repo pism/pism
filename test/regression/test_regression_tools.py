@@ -14,7 +14,7 @@ for tool in tools:
 modules = ["numpy", "sys", "netCDF4"]
 for module in modules:
     try:
-        print("Trying to import %s..." % module, end=' ')
+        print("Trying to import %s..." % module)
         __import__(module)
         print("OK.")
     except:

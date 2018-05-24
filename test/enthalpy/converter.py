@@ -10,7 +10,7 @@ converters = {"Default": PISM.EnthalpyConverter(config),
 def try_all_converters(test):
     print("")
     for name, converter in list(converters.items()):
-        print("Testing '%s' converter..." % name, end=' ')
+        print("Testing '%s' converter..." % name)
         test(name, converter)
         print("done")
 
@@ -133,7 +133,7 @@ def invalid_inputs_test():
 
         # don't test the converter that thinks this is cold:
         if not EC.is_temperate(E_cts, pressure):
-            print("skipped...", end=' ')
+            print("skipped...")
             return
 
         try:
