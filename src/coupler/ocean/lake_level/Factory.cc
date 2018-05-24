@@ -21,6 +21,7 @@
 
 // ocean models:
 #include "pism/coupler/LakeLevel.hh"
+#include "pism/coupler/ocean/lake_level/LakeCC.hh"
 
 namespace pism {
 namespace ocean {
@@ -31,6 +32,7 @@ Factory::Factory(IceGrid::ConstPtr grid)
   m_option = "lake_level";
 
   add_model<LakeLevel>("null");
+  add_model<LakeCC>("lakecc");
   set_default("null");
 
 }
