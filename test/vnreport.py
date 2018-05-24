@@ -25,7 +25,7 @@ class Plotter:
 
         # If we have less than 2 points to plot, then bail.
         if (sum(mask) < 2):
-            print(("Skipping Test %s %s (not enough data to plot)" % (testname, plot_title)))
+            print("Skipping Test %s %s (not enough data to plot)" % (testname, plot_title))
             return
 
         # Get the independent variable and transform it. Note that everywhere here
@@ -62,7 +62,7 @@ class Plotter:
             # Variable label:
             var_label = "%s, $O(%s^{%1.2f})$" % (name, dim_name, p[0])
 
-            print(("Test {} {}: convergence rate: O(dx^{:1.4f})".format(testname, name, p[0])))
+            print("Test {} {}: convergence rate: O(dx^{:1.4f})".format(testname, name, p[0]))
 
             # Plot errors and the linear fit:
             plot(dim, data, label=var_label, marker='o', color=c)
@@ -195,8 +195,8 @@ if len(available_tests) == 1:
         tests_to_plot = available_tests
 else:
     if (tests_to_plot == None):
-        print(("""Please choose tests to plot using the -t option.
-(Input file %s has reports for tests %s available.)""" % (input, str(available_tests))))
+        print("""Please choose tests to plot using the -t option.
+(Input file %s has reports for tests %s available.)""" % (input, str(available_tests)))
         sys.exit(0)
 
 if (tests_to_plot[0] == "all"):

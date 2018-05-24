@@ -94,13 +94,13 @@ def process(input, output, direction, collapse):
     try:
         nc = CDF(input)
     except:
-        print(("ERROR: Can't open %s" % input))
+        print("ERROR: Can't open %s" % input)
         exit(1)
 
     try:
         out = CDF(output, 'w', format="NETCDF3_CLASSIC")
     except:
-        print(("ERROR: Can't open %s" % output))
+        print("ERROR: Can't open %s" % output)
         exit(1)
 
     copy_attributes(nc, out)
@@ -149,7 +149,7 @@ def collapse_var(nc, out, name, direction):
     var1 = nc.variables[name]
     N = (len(nc.dimensions[direction]) - 1) / 2
 
-    print(("Processing %s..." % name))
+    print("Processing %s..." % name)
     dims = var1.dimensions
     if len(dims) > 1:                   # only collapse spatial fields
         dims = [x for x in dims if x != direction]
@@ -178,7 +178,7 @@ def expand_var(nc, out, name, direction):
 
     var1 = nc.variables[name]
 
-    print(("Processing %s..." % name))
+    print("Processing %s..." % name)
 
     # Copy coordinate variables and stop:
     if name in ['t', 'z', 'y', 'x', 'zb']:
@@ -251,8 +251,8 @@ if (not opts.output_filename):
     exit(1)
 
 if opts.collapse:
-    print(("Collapsing %s in the %s direction, writing to %s..." % (args[0], opts.direction, opts.output_filename)))
+    print("Collapsing %s in the %s direction, writing to %s..." % (args[0], opts.direction, opts.output_filename))
 else:
-    print(("Expanding %s in the %s direction, writing to %s..." % (args[0], opts.direction, opts.output_filename)))
+    print("Expanding %s in the %s direction, writing to %s..." % (args[0], opts.direction, opts.output_filename))
 
 process(args[0], opts.output_filename, opts.direction, opts.collapse or (not opts.expand))

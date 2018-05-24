@@ -33,9 +33,9 @@ tol = 0.0   # default tolerance is perfection
 
 def success(relative):
     if relative:
-        print(("Files are the same within relative tolerance %.1e" % tol))
+        print("Files are the same within relative tolerance %.1e" % tol)
     else:
-        print(("Files are the same within tolerance %.1e" % tol))
+        print("Files are the same within tolerance %.1e" % tol)
     exit(0)
 
 
@@ -77,7 +77,7 @@ def compare_vars(nc1, nc2, name, tol, relative=False):
         usagefailure("ERROR: VARIABLE '%s' OF INCOMPATIBLE SHAPES (?) IN FILES" % name)
 
     if mask.all():
-        print(('Variable %10s: no values to compare.' % name))
+        print('Variable %10s: no values to compare.' % name)
         return
 
     var1 = ma.array(var1, mask=mask)
@@ -93,10 +93,10 @@ def compare_vars(nc1, nc2, name, tol, relative=False):
 
     if relative:
         denom = max(abs(var1).max(), abs(var2).max())
-        print(("Variable %s: difference = %e, denominator = %e" % (name, delta, denom)))
+        print("Variable %s: difference = %e, denominator = %e" % (name, delta, denom))
         if denom > 0:
             delta = delta / denom
-            print(("  Relative difference = %e" % (delta)))
+            print("  Relative difference = %e" % (delta))
 
     # The actual check:
     #
@@ -105,9 +105,9 @@ def compare_vars(nc1, nc2, name, tol, relative=False):
     # bit-for-bit equality here.
     if delta > tol:
         if tol == 0.0 and delta < 10 * finfo(float).tiny:
-            print(("Variable %s: Treating %e as zero." % (name, delta)))
+            print("Variable %s: Treating %e as zero." % (name, delta))
             return
-        print(("Variable %s: delta = %e, tol = %e" % (name, delta, tol)))
+        print("Variable %s: delta = %e, tol = %e" % (name, delta, tol))
         failure()
 
 
@@ -118,7 +118,7 @@ def compare(file1, file2, variables, exclude, tol, relative):
         print("netCDF4 is not installed!")
         exit(1)
 
-    print(("Comparing %s and %s" % (file1, file2)))
+    print("Comparing %s and %s" % (file1, file2))
 
     from numpy import unique, r_
 

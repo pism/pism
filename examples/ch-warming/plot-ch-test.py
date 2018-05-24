@@ -11,7 +11,7 @@ z, times, T_ice, W_ice, T_ch, W_ch = ch_warming.run(Lz=200, Mz=201, T_final_year
 t = 86400 * np.linspace(0, 365, 366)
 Ts = ch_warming.T_surface(t, mean=268.15, amplitude=6, summer_peak_day=365/2)
 melt_season_length = np.count_nonzero(Ts > ch_warming.T_melting)
-print(("The melt season is {} weeks long.".format(melt_season_length / 7)))
+print("The melt season is {} weeks long.".format(melt_season_length / 7))
 
 plt.figure(figsize=(10,5))
 plt.plot(t / 86400, Ts)

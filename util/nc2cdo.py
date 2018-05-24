@@ -78,8 +78,8 @@ def get_projection_from_file(nc):
                 for var in list(nc.variables.keys()):
                     if hasattr(nc.variables[var], 'grid_mapping'):
                         mappingvarname = nc.variables[var].grid_mapping
-                        print((
-                            'Found projection information in variable "%s", using it' % mappingvarname))
+                        print(
+                            'Found projection information in variable "%s", using it' % mappingvarname)
                         break
                 var_mapping = nc.variables[mappingvarname]
                 p = Proj(proj="stere",

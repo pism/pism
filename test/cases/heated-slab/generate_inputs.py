@@ -118,7 +118,7 @@ if __name__ == "__main__":
     historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
 
     generate_input(ncfile)
-    print(('Wrote PISM input file %s.' % ncfile))
+    print('Wrote PISM input file %s.' % ncfile)
 
     generate_forcing(dTfile)
-    print(('Wrote PISM surface temperature forcing file %s.' % dTfile))
+    print('Wrote PISM surface temperature forcing file %s.' % dTfile)

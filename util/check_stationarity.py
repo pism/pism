@@ -82,7 +82,7 @@ def open_ncfile(infile):
         try:
             'time' in list(nc.variables.keys())
         except:
-            print(('Variable t not found in file %s' % infile))
+            print('Variable t not found in file %s' % infile)
     except IOError:
         pass
 
@@ -122,8 +122,8 @@ def getRateOfChange(t, X, p, varname):
         dXp = (np.nansum(dX ** p, axis=1)) ** (1. / p)
         dXpdt = dXp / dt
     else:
-        print(('error: dim n = %i of variable %s not supported, must be 1 or 3'
-              % (Xdim, varname)))
+        print('error: dim n = %i of variable %s not supported, must be 1 or 3'
+              % (Xdim, varname))
 
     return dXpdt
 
@@ -191,7 +191,7 @@ if __name__ == "__main__":
     if varname in list(nc.variables.keys()):
         var = nc.variables[varname]
     else:
-        print(("error: variable '%s' not found in %s" % (varname, infile)))
+        print("error: variable '%s' not found in %s" % (varname, infile))
         exit(0)
 
     # Calculate rate of change from time t, variable var,

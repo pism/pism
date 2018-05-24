@@ -89,18 +89,18 @@ def edit_attr(dict, attr):
     readline.set_completer(None)
     current_value = dict[attr]
     try:
-        print(("\n# Documentation: %s" % dict[attr + "_doc"]))
+        print("\n# Documentation: %s" % dict[attr + "_doc"])
     except:
         pass
 
-    print(("# Current value: %s = %s" % (attr, str(current_value))))
+    print("# Current value: %s = %s" % (attr, str(current_value)))
 
     while True:
         new_value = eval(input("#     New value: %s = " % attr))
 
         if new_value == "":
             new_value = current_value
-            print(("# Using the current value (%s)" % str(current_value)))
+            print("# Using the current value (%s)" % str(current_value))
             break
 
         try:
@@ -127,13 +127,13 @@ def main_loop(dict):
             new_value = edit_attr(dict, attr)
             changes[attr] = new_value
             if (old_value != new_value):
-                print(("# New value set: %s = %s\n" % (attr, str(new_value))))
+                print("# New value set: %s = %s\n" % (attr, str(new_value)))
         except:
-            print(("ERROR: attribute '%s' was not found." % attr))
+            print("ERROR: attribute '%s' was not found." % attr)
 
         print("## List of changes so far:")
         for each in list(changes.keys()):
-            print(("## %s = %s" % (each, str(changes[each]))))
+            print("## %s = %s" % (each, str(changes[each])))
     return changes
 
 
@@ -142,7 +142,7 @@ def read(filename):
     try:
         nc = NC(filename)
     except:
-        print(("ERROR: can't open %s" % filename))
+        print("ERROR: can't open %s" % filename)
         sys.exit(0)
 
     names = ['pism_config', 'pism_overrides']
@@ -156,7 +156,7 @@ def read(filename):
             pass
 
     if var == None:
-        print(("ERROR: can't find 'pism_config' or 'pism_overrides' in '%s'." % filename))
+        print("ERROR: can't find 'pism_config' or 'pism_overrides' in '%s'." % filename)
         sys.exit(0)
 
     attrs = var.ncattrs()
@@ -172,7 +172,7 @@ def save(dict, changes, default_filename, default_varname):
     """Saves attributes stored in the dictionary changes, adding doc-strings from dict."""
     readline.set_completer(None)
 
-    print(("\nPlease enter the file name to save to or hit Return to save to the original file (%s)." % default_filename))
+    print("\nPlease enter the file name to save to or hit Return to save to the original file (%s)." % default_filename)
     filename = eval(input("> "))
     if filename == "":
         filename = default_filename
@@ -187,7 +187,7 @@ def save(dict, changes, default_filename, default_varname):
             return None
 
     readline.set_completer(varname_completer)
-    print(("# Please enter the variable name to use or hit Return to use '%s'." % default_varname))
+    print("# Please enter the variable name to use or hit Return to use '%s'." % default_varname)
     varname = eval(input("> "))
     if varname == "":
         varname = default_varname
@@ -198,14 +198,14 @@ def save(dict, changes, default_filename, default_varname):
         try:
             nc = NC(filename, 'w', format='NETCDF3_CLASSIC')  # if not found, then create
         except:
-            print(("ERROR: can't open '%s'." % filename))
+            print("ERROR: can't open '%s'." % filename)
             return False
 
     try:
         var = nc.variables[varname]
     except:
         var = nc.createVariable(varname, 'b')
-        print(("# Created variable %s in %s." % (varname, filename)))
+        print("# Created variable %s in %s." % (varname, filename))
 
     for each in list(changes.keys()):
         try:
@@ -242,7 +242,7 @@ except:
 # Read attributes:
 varname, dict = read(filename)
 
-print(("PISM config file editor: using attributes from '%s' in '%s'." % (varname, filename)))
+print("PISM config file editor: using attributes from '%s' in '%s'." % (varname, filename))
 
 # Set up tab completion:
 

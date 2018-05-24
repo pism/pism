@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2011, 2014 Andy Aschwanden
+# Copyright (C) 2011, 2014, 2018 Andy Aschwanden
 #
 # This file is part of PISM.
 #
@@ -31,7 +31,7 @@ x, topg, thk = np.loadtxt('sg_35m_flowline.txt', unpack=True)
 output = 'storglaciaren_flowline.nc'
 
 # Write the data:
-print(("Writing the data to '%s'... " % output))
+print("Writing the data to '%s'... " % output)
 nc = CDF(output, "w")
 nc.createDimension("x", size=len(x))
 

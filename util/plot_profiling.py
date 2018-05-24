@@ -79,8 +79,8 @@ def aggregate(data, total_time):
     other_label = ""
     for event in data:
         if data[event][0] / float(total_time) < 0.01:
-            print(("Lumping '%s' (%f%%) with others..." % (event,
-                                                          100.0 * data[event][0] / total_time)))
+            print("Lumping '%s' (%f%%) with others..." % (event,
+                                                          100.0 * data[event][0] / total_time))
             del d[event]
             other[0] += data[event][0]
             other[1] += data[event][1]

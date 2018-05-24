@@ -260,7 +260,7 @@ if __name__ == "__main__":
     (bwpav,  bwpmax) = report_drift("bwp",  "inputforP.nc", "end.nc", xx, yy, doshow=False)
 
     print("NUMERICAL ERRORS:")
-    print(("%d  %f  %f  %f  %f\n" % (opts.Mx, bwatav, bwatmax, bwpav, bwpmax)))
+    print("%d  %f  %f  %f  %f\n" % (opts.Mx, bwatav, bwatmax, bwpav, bwpmax))
 
     # cleanup:
     if opts.keep == False:

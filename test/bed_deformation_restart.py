@@ -105,7 +105,7 @@ def compare_vec(v1, v2):
     "Compare two vecs."
     try:
         np.testing.assert_equal(v1.numpy(), v2.numpy())
-        print(("{} is the same".format(v1.get_name())))
+        print("{} is the same".format(v1.get_name()))
     except:
         plt.figure(figsize=(10,10))
         diff = v1.numpy() - v2.numpy()

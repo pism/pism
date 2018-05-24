@@ -190,5 +190,5 @@ historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
 setattr(nc, 'history', historystr)
 
 nc.close()
-print(('file %s written ...' % ncfile))
+print('file %s written ...' % ncfile)
 print('  ... now run   FIXME')

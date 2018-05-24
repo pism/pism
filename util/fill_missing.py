@@ -266,7 +266,7 @@ if __name__ == "__main__":
             if (var.ndim == 3):
                 nt = var.shape[0]
                 for t in range(0, nt):
-                    print(("\nInterpolating time step %i of %i\n" % (t, nt)))
+                    print("\nInterpolating time step %i of %i\n" % (t, nt))
 
                     data = asarray(squeeze(var[t, :, :].data))
 

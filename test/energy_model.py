@@ -99,7 +99,7 @@ def use_model(model):
     except RuntimeError:
         pass
 
-    print((model.stdout_flags()))
+    print(model.stdout_flags())
     stats = model.stats()
     enthalpy = model.get_enthalpy()
     bmr = model.get_basal_melt_rate()
@@ -117,7 +117,7 @@ def test_interface():
         model = M(grid, None)
 
         print("")
-        print(("Testing %s..." % M))
+        print("Testing %s..." % M)
 
         print("* Bootstrapping using provided basal melt rate...")
         initialize(model)

@@ -150,4 +150,4 @@ nc.Conventions = "CF 1.5"
 nc.close()
 
 time2 = time.time()
-print(('adjust_timeline.py took {}s'.format(time2 - time1)))
+print('adjust_timeline.py took {}s'.format(time2 - time1))

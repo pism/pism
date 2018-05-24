@@ -26,7 +26,7 @@ if len(args) != 1:
 try:
     nc = Dataset(args[0], 'r')
 except:
-    print(("file %s not found ... ending ..." % args[0]))
+    print("file %s not found ... ending ..." % args[0])
     exit(2)
 
 
