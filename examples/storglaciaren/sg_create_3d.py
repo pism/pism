@@ -197,8 +197,6 @@ dem_var[:] = dem
 
 ftt_mask = def_var(nc, "ftt_mask", "", fill_value)
 ftt_mask[:] = 1
-mask = np.where(thk > 0, 0, 1)
-ftt_mask[:] = mask
 
 
 # generate (somewhat) reasonable acab
