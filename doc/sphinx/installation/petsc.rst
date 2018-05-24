@@ -31,6 +31,10 @@ first:
                             --with-debugging=0 \
                             --with-fc=0
 
+   .. note::
+
+      PETSc's ``configure.py`` requires Python 2.x (Python 3.x is not supported yet).
+
    You need to define the environment variables ``PETSC_DIR`` and ``PETSC_ARCH`` [#]_ --
    one way is shown here -- *before* running the configuration script. Turning off the
    inclusion of debugging code and symbols can give a significant speed improvement, but
