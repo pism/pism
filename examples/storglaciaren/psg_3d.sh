@@ -65,7 +65,7 @@ DATANAME=storglaciaren_3d.nc
 PISM_DATANAME=pism_$DATANAME
 INNAME=$PISM_DATANAME
 
-EB="-e_sia 0.3"
+EB="-sia_e 0.3"
 PARAMS="-plastic_phi 40"
 FULLPHYS="-stress_balance ssa+sia -thk_eff $PARAMS"
 COUPLER="-surface given" # FIXME  should be using PSElevation as in flowline example
@@ -118,9 +118,9 @@ OUTNAME=ssa_ftt_${RUNLENGTH}a.nc
 OUTNAMEFULL=$PREFIX${GS}m_$OUTNAME
 TSNAME=ts_${OUTNAME}
 EXNAME=ex_${OUTNAME}
-TSSTEP=monthly
-EXSTEP=monthly
-EXVARS="usurf,bwat,h_x,h_y,bmelt,strain_rates,lon,diffusivity,taud_mag,,hardav,topg,velbar,tauc,lat,taud,bfrict,mask,thk,temppabase,diffusivity_staggered,tempicethk_basal,velbase_mag,velsurf_mag"
+TSSTEP=yearly
+EXSTEP=yearly
+EXVARS="usurf,taud_mag,topg,tauc,taud,beta,mask,thk,temppabase,tempicethk_basal,velbase_mag,velsurf_mag,climatic_mass_balance,tillphi"
 
 echo
 echo "$SCRIPTNAME  SSA run with force-to-thickness for $RUNLENGTH years on ${GS}m grid"
@@ -130,5 +130,29 @@ cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -bootstrap -i $INNAME $GRID
      -ts_file $TSNAME -ts_times $TSSTEP \
      -extra_file $EXNAME -extra_times $EXSTEP -extra_vars $EXVARS \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
+$PISM_DO $cmd
+echo
+
+COUPLER_ELEV="-surface elevation,forcing -surface.force_to_thickness_file $PISM_DATANAME -ice_surface_temp -6,0,1395,1400 -climatic_mass_balance -3,2.5,1200,1450,1615 -climatic_mass_balance_limits -3,2 "
+
+PARAMS="-pseudo_plastic -pseudo_plastic_q 0.5 -pseudo_plastic_uthreshold 5.0 -yield_stress mohr_coulomb -topg_to_phi 10,40,1000,1500 -sia_e 0.1"
+#PETSCSTUFF="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"
+FULLPHYS="-stress_balance ssa+sia $PARAMS"
+
+STARTYEAR=0
+RUNLENGTH=100
+ENDTIME=$(($STARTYEAR + $RUNLENGTH))
+INNAME=$OUTNAMEFULL
+OUTNAME=ssa_${RUNLENGTH}a.nc
+OUTNAMEFULL=$PREFIX${GS}m_$OUTNAME
+TSNAME=ts_${OUTNAMEFULL}
+EXNAME=ex_${OUTNAMEFULL}
+
+echo
+echo "$SCRIPTNAME  SSA run with elevation-dependent mass balance for $RUNLENGTH years on ${GS}m grid"
+cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -i $INNAME $COUPLER_ELEV $FULLPHYS \
+     -ts_file $TSNAME -ts_times $TSSTEP \
+     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXSTEP \
+     -ys $STARTYEAR -y $RUNLENGTH -o_size medium -o $OUTNAMEFULL"
 $PISM_DO $cmd
 echo

@@ -23,14 +23,14 @@ if len(args) == 1:
     pism_output = args[0]
     plotname = pism_output.split('.')[0]
 else:
-    print("wrong number of arguments, 1 expected, %i given" % int(len(args)))
+    print(("wrong number of arguments, 1 expected, %i given" % int(len(args))))
     import sys
     exit(1)
 
 try:
     nc = NC.Dataset(pism_output, 'r')
 except:
-    print("file %s not found" % pism_output)
+    print(("file %s not found" % pism_output))
     import sys
     exit(1)
 
@@ -95,4 +95,4 @@ f.tight_layout()
 
 f.savefig(output_filename, dpi=300)
 
-print("saving figure %s" % output_filename)
+print(("saving figure %s" % output_filename))

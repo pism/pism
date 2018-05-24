@@ -168,4 +168,4 @@ setattr(nc, 'history', historystr)
 
 nc.close()
 
-print('  ... PISM-bootable NetCDF file %s written' % args.o)
+print(('  ... PISM-bootable NetCDF file %s written' % args.o))
