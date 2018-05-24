@@ -254,8 +254,8 @@ def options_test():
     M = PISM.optionsInt("-M", "description", default=100)
     M = PISM.optionsInt("-M", "description", default=None)
 
-    S = PISM.optionsString("-S", "description", default="string")
-    S = PISM.optionsString("-S", "description", default=None)
+    S = PISM.optionsString("-string", "description", default="string")
+    S = PISM.optionsString("-string", "description", default=None)
 
     R = PISM.optionsReal("-R", "description", default=1.5)
     R = PISM.optionsReal("-R", "description", default=None)
@@ -446,7 +446,6 @@ def util_test():
     b.update(c=3.0)
 
     print(b.a, b["b"], "b" in b, b)
-
 
 def logging_test():
     "Test the PISM.logging module"
@@ -901,7 +900,7 @@ def epsg_test():
         # +init followed by more options
         v = PISM.epsg_to_cf(system, "+init=epsg:%d +units=m" % code)
         v.report_to_stdout(l, 2)
-        print(l.get(), end=' ')
+        print(l.get())
         print("done.")
 
     # test that unsupported codes trigger an exception
