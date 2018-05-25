@@ -28,10 +28,4 @@ netcdf pism_overrides {
     pism_overrides:output.runtime.area_scale_factor_log10 = 0;
     pism_overrides:output.runtime.area_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout";
 
-    pism_overrides:energy.drainage_target_water_fraction = 0.01;
-    pism_overrides:energy.drainage_target_water_fraction_doc = "; liquid water fraction (omega) above which drainage occurs, but below which there is no drainage; see [@ref AschwandenBuelerKhroulevBlatter]";
-
-    pism_overrides:energy.enthalpy.temperate_ice_thermal_conductivity_ratio = 0.001;
-    pism_overrides:energy.enthalpy.temperate_ice_thermal_conductivity_ratio_doc = "pure number; K in cold ice is multiplied by this fraction to give K0 in [@ref AschwandenBuelerKhroulevBlatter]";
-
 }

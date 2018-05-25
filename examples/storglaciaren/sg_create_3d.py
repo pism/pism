@@ -95,18 +95,20 @@ except IOError:
     exit(2)
 
 # Grid size. DEM has 10m spacing.
-N  = zBase.shape[1]
-M  = zBase.shape[0]
+N  = zBase.shape[1] - 1
+M  = zBase.shape[0] - 1
+Ne  = N + 30 
+Me  = M 
 n0 = X[-1,0]
 e0 = Y[0,0]
 de = 10 # m
 dn = 10 # m
 
-e1 = e0 + (N-1)*de
-n1 = n0 + (M-1)*dn
+e1 = e0 + (Ne - 1) * de
+n1 = n0 + (Me - 1) * dn
 
-easting  = np.linspace(e0, e1, N)
-northing = np.linspace(n0, n1, M)
+easting  = np.linspace(e0, e1, Ne)
+northing = np.linspace(n0, n1, Me)
 
 # convert to lat/lon
 
@@ -131,13 +133,27 @@ bed = np.flipud(zBase)
 dem = np.flipud(zSurf) # ignored by bootstrapping
 thk = np.flipud(zSurf-zBase) # used for bootstrapping
 
+m_bed = np.zeros((Me, Ne)) + 1100
+m_bed[0:M,0:N] = bed[0:M, 0:N]
+
+m_dem = np.zeros((Me, Ne)) 
+m_dem[0:M,0:N] = dem[0:M, 0:N]
+
+m_thk = np.zeros((Me, Ne))
+m_thk[0:M,0:N] = thk[0:M, 0:N]
+
 # Replace NaNs with zeros
 thk = np.nan_to_num(thk)
+m_thk = np.nan_to_num(m_thk)
+dem = np.nan_to_num(dem)
+m_dem = np.nan_to_num(m_dem)
+
 # There are some negative thickness values
 # Quick and dirty: set to zero
 # some inconsistencies in the original data still needs to be sorted out
 # (filtering)
 thk[thk<0] = 0
+m_thk[m_thk<0] = 0
 
 
 
@@ -164,6 +180,7 @@ y.standard_name = "projection_y_coordinate"
 x[:] = easting
 y[:] = northing
 
+from scipy.interpolate import griddata
 
 def def_var(nc, name, units, fillvalue):
     var = nc.createVariable(name, 'f', dimensions=("y", "x"),fill_value=fillvalue)
@@ -182,18 +199,18 @@ bed_var = def_var(nc, "topg", "m", fill_value)
 bed_var.valid_min = bed_valid_min
 bed_var.standard_name = "bedrock_altitude"
 bed_var.coordinates = "lat lon"
-bed_var[:] = bed
+bed_var[:] = m_bed
 
 thk_var = def_var(nc, "thk", "m", fill_value)
 thk_var.valid_min = thk_valid_min
 thk_var.standard_name = "land_ice_thickness"
 thk_var.coordinates = "lat lon"
-thk_var[:] = thk
+thk_var[:] = m_thk
 
 dem_var = def_var(nc, "usurf_from_dem", "m", fill_value)
 dem_var.standard_name = "surface_altitude"
 dem_var.coordinates = "lat lon"
-dem_var[:] = dem
+dem_var[:] = m_dem
 
 ftt_mask = def_var(nc, "ftt_mask", "", fill_value)
 ftt_mask[:] = 1
@@ -203,11 +220,12 @@ ftt_mask[:] = 1
 acab_max =  2.5 # m/a
 acab_min = -3.0 # m/a
 acab_up = easting.min() + 200 # m; location of upstream end of linear acab
-acab_down = easting.max() - 600 # m;location of downstream end of linear acab
-acab = np.ones_like(dem)
+acab_down = easting.max() - 900 # m;location of downstream end of linear acab
+acab = np.ones_like(longitude)
 
+acab[:] = acab_min
 acab[:] = acab_max - (acab_max-acab_min) * (easting - acab_up) / (acab_down - acab_up)
-acab[thk<1] = acab_min
+acab[m_thk<1] = acab_min
 
 acab_var = def_var(nc, "climatic_mass_balance", "kg m-2 year-1", fill_value)
 acab_var.standard_name = "land_ice_surface_specific_mass_balance"
@@ -222,15 +240,12 @@ Tma   =  -6.0  # degC, mean annual air temperature at Tarfala
 zcts  = 1300   # m a.s.l.; altitude where CTS is at the surface, projected to topg
 slope  = 100    # m; range around which surface temp transition happens
 
-# old abrupt jump:
-#artm  = np.zeros((M,N),float) + T0
-#artm[bed<zcts] = T0 + Tma # Scandinavian-type polythermal glacier
 
 # smoothed version; FIXME:  can't we at least have it depend on initial DEM?
 #   additional lapse rate?
-artm = T0 + Tma * (zcts + slope - bed) / (2.0 * slope)
-artm[bed<zcts-slope] = T0 + Tma
-artm[bed>zcts+slope] = T0
+artm = T0 + Tma * (zcts + slope - m_bed) / (2.0 * slope)
+artm[m_bed<zcts-slope] = T0 + Tma
+artm[m_bed>zcts+slope] = T0
 
 artm_var = def_var(nc, "ice_surface_temp", "K", fill_value)
 artm_var[:] = artm
