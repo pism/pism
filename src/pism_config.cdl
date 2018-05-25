@@ -159,6 +159,12 @@ netcdf pism_config {
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_type = "scalar";
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_units = "(kg m-2 / year) / km";
 
+    pism_config:atmosphere.lapse_rate.temperature_lapse_rate = 0.0;
+    pism_config:atmosphere.lapse_rate.temperature_lapse_rate_doc = "Elevation lapse rate for the surface temperature";
+    pism_config:atmosphere.lapse_rate.temperature_lapse_rate_option = "temp_lapse_rate";
+    pism_config:atmosphere.lapse_rate.temperature_lapse_rate_type = "scalar";
+    pism_config:atmosphere.lapse_rate.temperature_lapse_rate_units = "Kelvin / km";
+
     pism_config:atmosphere.lapse_rate.reference_year = 0;
     pism_config:atmosphere.lapse_rate.reference_year_doc = "Reference year to use when ``atmosphere.lapse_rate.period`` is active.";
     pism_config:atmosphere.lapse_rate.reference_year_option = "atmosphere_lapse_rate_reference_year";

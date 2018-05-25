@@ -35,12 +35,8 @@ LapseRates::LapseRates(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> 
   m_precip_lapse_rate = m_config->get_double("atmosphere.lapse_rate.precipitation_lapse_rate",
                                              "(kg m-2 / s) / m");
 
-  {
-    options::Real T_lapse_rate("-temp_lapse_rate",
-                               "Elevation lapse rate for the temperature, in K per km",
-                               m_temp_lapse_rate);
-    m_temp_lapse_rate = units::convert(m_sys, T_lapse_rate, "K/km", "K/m");
-  }
+  m_temp_lapse_rate = m_config->get_double("atmosphere.lapse_rate.temperature_lapse_rate",
+                                           "K / m");
 
   {
     ForcingOptions opt(*m_grid->ctx(), "atmosphere.lapse_rate");
