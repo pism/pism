@@ -40,9 +40,17 @@ Gradual::Gradual(IceGrid::ConstPtr grid,
 void Gradual::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
+  IceModelVec2S tmp;
+  tmp.create(m_grid, "effective_lake_level_elevation", WITHOUT_GHOSTS);
+  tmp.set_attrs("diagnostic",
+                "lake level elevation, relative to the geoid",
+                "meter", "");
+  tmp.metadata().set_double("_FillValue", m_fill_value);
+
   InputOptions opts = process_input_options(m_grid->com, m_config);
 
   if (opts.type == INIT_RESTART) {
+
     m_log->message(2, "* Reading lake level forcing from '%s' for re-starting...\n",
                    opts.filename.c_str());
 
@@ -50,26 +58,28 @@ void Gradual::init_impl(const Geometry &geometry) {
     const unsigned int time_length = file.inq_nrecords(),
                        last_record = time_length > 0 ? time_length - 1 : 0;
 
-    m_lake_level.read(file, last_record);
+    tmp.read(file, last_record);
 
     file.close();
   } else {
-    m_lake_level.set(m_fill_value);
+    tmp.set(m_fill_value);
   }
 
   // Support regridding. This is needed to ensure that initialization using "-i" is
   // equivalent to "-i ... -bootstrap -regrid_file ..."
   {
-    regrid("lake gradual filling modifier", m_lake_level,
+    regrid("lake gradual filling modifier", tmp,
            REGRID_WITHOUT_REGRID_VARS);
   }
+
+  m_lake_level.copy_from(tmp);
 
   double max_lake_fill_rate_m_y = units::convert(m_sys, m_max_lake_fill_rate,
                                                  "m/seconds", "m/year");
   max_lake_fill_rate_m_y = options::Real("-lake_gradual_max_fill_rate",
-                                          "Maximum rate at which lakes do fill (m/year)", max_lake_fill_rate_m_y);
+                                         "Maximum rate at which lakes do fill (m/year)",
+                                         max_lake_fill_rate_m_y);
   m_max_lake_fill_rate = units::convert(m_sys, max_lake_fill_rate_m_y, "m/year", "m/seconds");
-
 }
 
 void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
