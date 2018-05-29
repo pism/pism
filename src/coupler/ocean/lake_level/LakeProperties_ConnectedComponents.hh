@@ -10,7 +10,7 @@ namespace pism {
 
 class LakePropertiesCC {
 public:
-  LakePropertiesCC(IceGrid::ConstPtr g, const double drho, const double fill_value, const IceModelVec2S &target_level, const IceModelVec2S &lake_level, const IceModelVec2S &floating_thresh);
+  LakePropertiesCC(IceGrid::ConstPtr g, const double drho, const double fill_value, const IceModelVec2S *target_level, const IceModelVec2S *lake_level, const IceModelVec2S *floating_thresh);
   ~LakePropertiesCC();
   void getLakeProperties(IceModelVec2S &min_level, IceModelVec2S &max_level, IceModelVec2S &min_float_level);
 

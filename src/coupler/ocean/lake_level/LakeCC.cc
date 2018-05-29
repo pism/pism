@@ -28,7 +28,6 @@
 
 #include "LakeCC.hh"
 #include "LakeLevel_ConnectedComponents.hh"
-#include "LakeProperties_ConnectedComponents.hh"
 
 namespace pism {
 namespace ocean {
@@ -45,15 +44,10 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
   m_next_update_time          = m_grid->ctx()->time()->current();
   m_min_update_interval_years = 100;
 
-  m_max_lake_fill_rate = units::convert(m_sys, 10.0, "m/years", "m/seconds");
-
   m_lake_level_min = 0.;
   m_lake_level_max = 1000.;
   m_lake_level_dh  = 10.;
 
-  m_ll_ptr = &m_lake_level;
-
-  m_update_gradual  = false;
   m_update_passive  = false;
   m_update_patch    = false;
   m_update_periodic = false;
@@ -87,14 +81,10 @@ void LakeCC::init_impl(const Geometry &geometry) {
 }
 
 void LakeCC::process_options() {
-  std::string default_update_scheme = "gradual";
+  std::string default_update_scheme = "periodic";
   options::Keyword update_scheme(m_option + "_update_scheme", "Specify the scheme how the lakecc model is updated",
-                                 "gradual,passive,patch,periodic", default_update_scheme);
+                                 "passive,patch,periodic", default_update_scheme);
   if (update_scheme == "patch") {
-    m_update_patch    = true;
-    m_update_periodic = true;
-  } else if (update_scheme == "gradual") {
-    m_update_gradual  = true;
     m_update_patch    = true;
     m_update_periodic = true;
   } else if (update_scheme == "periodic") {
@@ -131,23 +121,8 @@ void LakeCC::process_options() {
   patch_iter     = options::Integer(m_option + "_patch_iter",
                                     "Number of iterations used every time-step by patch-algorithm.", patch_iter);
   m_patch_iter   = patch_iter;
-  if (m_update_patch and not m_update_gradual) {
+  if (m_update_patch) {
     m_log->message(2, "  LakeCC: number of iterations used by patch-algorithm: %d \n", m_patch_iter);
-  }
-
-  double max_lake_fill_rate_m_y = units::convert(m_sys, m_max_lake_fill_rate, "m/seconds", "m/year");
-  max_lake_fill_rate_m_y = options::Real(m_option + "_max_fill_rate",
-                                          "Maximum rate at which lakes do fill (m/year)", max_lake_fill_rate_m_y);
-  m_max_lake_fill_rate = units::convert(m_sys, max_lake_fill_rate_m_y, "m/year", "m/seconds");
-
-  if (m_update_gradual) {
-    m_log->message(2, "  LakeCC: max. lake fill rate used by gradual algorithm: %gm/year \n", max_lake_fill_rate_m_y);
-    m_log->message(2, "          number of iterations used by patch-algorithm: %d \n", m_patch_iter);
-
-    m_target_lake_level.create(m_grid, "target_lake_level", WITHOUT_GHOSTS);
-    m_target_lake_level.copy_from(m_lake_level);
-    m_target_lake_level.metadata().set_double("_FillValue", m_fill_value);
-    m_ll_ptr = &m_target_lake_level;
   }
 
   double icefree_thickness = m_icefree_thickness;
@@ -199,7 +174,7 @@ void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
     //Save copy of original lake levels
     IceModelVec2S ll_old;
     ll_old.create(m_grid, "lake_levels_old", WITHOUT_GHOSTS);
-    ll_old.copy_from(*m_ll_ptr);
+    ll_old.copy_from(m_lake_level);
 
     for (unsigned int n=0; n < m_patch_iter; ++n) {
       const int unsigned local_patch_result = patch_lake_levels(bed, thk, sl),
@@ -217,7 +192,7 @@ void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
 
     if (m_update) {
       //restore lake levels
-      m_ll_ptr->copy_from(ll_old);
+      m_lake_level.copy_from(ll_old);
     }
   }
 
@@ -232,9 +207,6 @@ void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
     }
   }
 
-  if (m_update_gradual) {
-    gradually_fill(my_dt, bed, thk, sl);
-  }
 }
 
 MaxTimestep LakeCC::max_timestep_impl(double t) const {
@@ -259,9 +231,9 @@ unsigned int LakeCC::patch_lake_levels(const IceModelVec2S *bed, const IceModelV
   const Direction dirs[] = { North, East, South, West };
 
   IceModelVec2S lake_level_old(m_grid, "ll", WITH_GHOSTS, 1);
-  IceModelVec::AccessList list{ m_ll_ptr, thk, bed, sea_level, &lake_level_old };
-  m_ll_ptr->update_ghosts();
-  lake_level_old.copy_from(*m_ll_ptr);
+  IceModelVec::AccessList list{ &m_lake_level, thk, bed, sea_level, &lake_level_old };
+  m_lake_level.update_ghosts();
+  lake_level_old.copy_from(m_lake_level);
 
   unsigned int return_value = 0;
 
@@ -300,7 +272,7 @@ unsigned int LakeCC::patch_lake_levels(const IceModelVec2S *bed, const IceModelV
       }
       if (becomesLake) {
         // Set cell to become a lake
-        (*m_ll_ptr)(i, j) = Level;
+        m_lake_level(i, j) = Level;
         return_value = 1;
       }
     } else { // cell was lake
@@ -311,7 +283,7 @@ unsigned int LakeCC::patch_lake_levels(const IceModelVec2S *bed, const IceModelV
         if (not mask::ocean(m_gc.mask(m_fill_value, bed_ij, thk_ij, lake_level_old(i, j)))) {
           // If cell that was previously lake is not lake anymore -> remove
           // label
-          (*m_ll_ptr)(i, j) = m_fill_value;
+          m_lake_level(i, j) = m_fill_value;
           return_value = 1;
         }
       }
@@ -319,93 +291,6 @@ unsigned int LakeCC::patch_lake_levels(const IceModelVec2S *bed, const IceModelV
   }
   // If function gets here all cells have been checked and patched
   return return_value;
-}
-
-void LakeCC::gradually_fill(double dt, const IceModelVec2S *bed, const IceModelVec2S *thk, const IceModelVec2S *sea_level) {
-
-  double dh_max = m_max_lake_fill_rate * dt;
-
-  IceModelVec2S floating_thresh_level(m_grid, "floating_threshold_level", WITHOUT_GHOSTS);
-  floating_thresh_level.copy_from(*bed);
-  floating_thresh_level.add(m_drho, *thk);
-
-  IceModelVec2S min_level(m_grid, "min_level", WITHOUT_GHOSTS),
-                max_level(m_grid, "max_level", WITHOUT_GHOSTS),
-                min_float_level_lake(m_grid, "min_float_level_lake", WITHOUT_GHOSTS);
-
-  //Compute min max ...
-  ParallelSection ParSec(m_grid->com);
-  try {
-    // Initialze LakeProperties Model
-    LakePropertiesCC LpCC(m_grid, m_drho, m_fill_value, m_target_lake_level, m_lake_level, floating_thresh_level);
-    LpCC.getLakeProperties(min_level, max_level, min_float_level_lake);
-  } catch (...) {
-    ParSec.failed();
-  }
-  ParSec.check();
-
-  IceModelVec::AccessList list{ &m_lake_level, &m_target_lake_level, &floating_thresh_level, &min_level, &max_level, &min_float_level_lake, sea_level, bed, thk };
-  //Update lakes
-  ParallelSection ParSec2(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-      const bool part_of_lake_domain = (min_float_level_lake(i, j) != m_fill_value);
-
-      if (part_of_lake_domain) {
-        const double current_ij = m_lake_level(i, j),
-                      target_ij  = m_target_lake_level(i, j);
-        bool rising;
-
-        if (current_ij == m_fill_value) {
-          //target_ij != m_fill_value
-          rising = true;
-        } else if (target_ij == m_fill_value) {
-          //current_ij != m_fill_value
-          rising = false;
-        } else {
-          rising = ((target_ij - current_ij) >= 0.0) ? true : false;
-        }
-
-        if (rising) {
-          double min_ij = min_level(i, j);
-          if (min_ij == m_fill_value) {
-            //filling lake from very bottom
-            min_ij = min_float_level_lake(i, j);
-          }
-          double dh_ij = target_ij - min_ij;
-          dh_ij = std::min(dh_max, dh_ij);
-          const double new_level = min_ij + dh_ij;
-          if (new_level > floating_thresh_level(i, j)) {
-            if ((new_level > current_ij) or (current_ij == m_fill_value)) {
-              m_lake_level(i, j) = new_level;
-            }
-          } else {
-            m_lake_level(i, j) = m_fill_value;
-          }
-        } else {
-          double max_ij = max_level(i, j),
-                 target_level = target_ij;
-          if (target_level == m_fill_value) {
-            target_level = floating_thresh_level(i, j);
-          }
-          double dh_ij = target_level - max_ij;
-          dh_ij = std::min(dh_max, std::abs(dh_ij));
-          const double new_level = max_ij - dh_ij;
-          if (new_level > floating_thresh_level(i, j) and not mask::ocean(m_gc.mask((*sea_level)(i, j), (*bed)(i, j), (*thk)(i, j)))) {
-            if (new_level < current_ij) {
-              m_lake_level(i, j) = new_level;
-            }
-          } else {
-            m_lake_level(i, j) = m_fill_value;
-          }
-        }
-      }
-    }
-  } catch (...) {
-    ParSec2.failed();
-  }
-  ParSec2.check();
 }
 
 void LakeCC::prepare_mask_validity(const IceModelVec2S *thk, IceModelVec2Int& valid_mask) {
@@ -439,7 +324,7 @@ void LakeCC::do_lake_update(const IceModelVec2S *bed, const IceModelVec2S *thk, 
     // Initialze LakeCC Model
     LakeLevelCC LM(m_grid, m_drho, m_icefree_thickness, *bed, *thk, pism_mask, m_fill_value, valid_mask);
     LM.floodMap(m_lake_level_min, m_lake_level_max, m_lake_level_dh);
-    LM.lake_levels(*m_ll_ptr);
+    LM.lake_levels(m_lake_level);
   } catch (...) {
     ParSec.failed();
   }

@@ -39,13 +39,11 @@ protected:
 
 protected:
   GeometryCalculator m_gc;
-  IceModelVec2S m_target_lake_level;
-  IceModelVec2S *m_ll_ptr;
   std::string m_option;
   double m_next_update_time;
   int m_min_update_interval_years, m_patch_iter;
-  double m_lake_level_min, m_lake_level_max, m_lake_level_dh, m_drho, m_last_update, m_icefree_thickness, m_max_lake_fill_rate;
-  bool m_update_patch, m_update_gradual, m_update_periodic, m_update_passive, m_update;
+  double m_lake_level_min, m_lake_level_max, m_lake_level_dh, m_drho, m_last_update, m_icefree_thickness;
+  bool m_update_patch, m_update_periodic, m_update_passive, m_update;
 
 private:
   void process_options();

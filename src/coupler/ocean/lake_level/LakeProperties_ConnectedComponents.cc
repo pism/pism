@@ -7,7 +7,7 @@
 
 namespace pism {
 
-LakePropertiesCC::LakePropertiesCC(IceGrid::ConstPtr g, const double drho, const double fill_value, const IceModelVec2S &target_level, const IceModelVec2S &lake_level, const IceModelVec2S &floating_thresh)
+LakePropertiesCC::LakePropertiesCC(IceGrid::ConstPtr g, const double drho, const double fill_value, const IceModelVec2S *target_level, const IceModelVec2S *lake_level, const IceModelVec2S *floating_thresh)
     : m_grid(g),
       m_drho(drho),
       m_i_local_first(m_grid->xs()),
@@ -18,9 +18,9 @@ LakePropertiesCC::LakePropertiesCC(IceGrid::ConstPtr g, const double drho, const
       m_i_global_last(m_grid->Mx() - 1),
       m_j_global_first(0),
       m_j_global_last(m_grid->My() - 1),
-      m_target_level(&target_level),
-      m_current_level(&lake_level),
-      m_floating_threshold_level(&floating_thresh),
+      m_target_level(target_level),
+      m_current_level(lake_level),
+      m_floating_threshold_level(floating_thresh),
       m_fill_value(fill_value) {
 
   m_mask_run.create(m_grid, "mask_run", WITH_GHOSTS, 1);

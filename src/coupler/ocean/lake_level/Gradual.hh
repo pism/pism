@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018 PISM Authors
+/* Copyright (C) 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,31 +17,34 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Factory.hh"
+#ifndef _LAKE_LEVEL_GRADUAL_H_
+#define _LAKE_LEVEL_GRADUAL_H_
 
-// ocean models:
 #include "pism/coupler/LakeLevel.hh"
-#include "pism/coupler/ocean/lake_level/LakeCC.hh"
-#include "pism/coupler/ocean/lake_level/Gradual.hh"
 
 namespace pism {
 namespace ocean {
 namespace lake_level {
 
-Factory::Factory(IceGrid::ConstPtr grid)
-  : PCFactory<LakeLevel>(grid) {
-  m_option = "lake_level";
+class Gradual : public LakeLevel {
+public:
+  Gradual(IceGrid::ConstPtr g, std::shared_ptr<LakeLevel> in);
 
-  add_model<LakeLevel>("null");
-  add_model<LakeCC>("lakecc");
-  set_default("null");
-  add_modifier<Gradual>("gradual");
-}
+private:
+  void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Geometry &geometry);
+protected:
+  double m_max_lake_fill_rate;
+  void gradually_fill(double dt,
+                      const IceModelVec2S *target_level,
+                      const IceModelVec2S *bed,
+                      const IceModelVec2S *thk,
+                      const IceModelVec2S *sea_level);
 
-Factory::~Factory() {
-  // empty
-}
+};
 
 } // end of namespace lake_level
 } // end of namespace ocean
 } // end of namespace pism
+
+#endif /* _LAKE_LEVEL_GRADUAL_H_ */
