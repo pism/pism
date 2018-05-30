@@ -86,6 +86,11 @@ computational domain. The "integrated" mass accounting error can be computed usi
 
 .. literalinclude:: conservation/scalar_accounting_error.txt
 
+.. only:: html
+
+   Click :download:`here <conservation/scalar_accounting_error.txt>` to download this
+   `ncap2` script.
+
 Comments
 ^^^^^^^^
 
