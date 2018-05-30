@@ -2154,6 +2154,11 @@ netcdf pism_config {
     pism_config:surface.pdd.factor_snow_type = "scalar";
     pism_config:surface.pdd.factor_snow_units = "meter / (Kelvin day)";
 
+    pism_config:surface.pdd.fausto.enabled = "false";
+    pism_config:surface.pdd.fausto.enabled_doc = "Set PDD parameters using formulas (6) and (7) in :cite:`Faustoetal2009`";
+    pism_config:surface.pdd.fausto.enabled_type = "boolean";
+    pism_config:surface.pdd.fausto.enabled_option = "pdd_fausto";
+
     pism_config:surface.pdd.fausto.T_c = 272.15;
     pism_config:surface.pdd.fausto.T_c_doc = "= -1 + 273.15; for formula (6) in :cite:`Faustoetal2009`";
     pism_config:surface.pdd.fausto.T_c_type = "scalar";

@@ -58,9 +58,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   m_sd_param_a                 = m_config->get_double("surface.pdd.std_dev_param_a");
   m_sd_param_b                 = m_config->get_double("surface.pdd.std_dev_param_b");
 
-  bool use_fausto_params = options::Bool("-pdd_fausto",
-                                         "Set PDD parameters using formulas (6) and (7)"
-                                         " in [Faustoetal2009]");
+  bool use_fausto_params     = m_config->get_boolean("surface.pdd.fausto.enabled");
 
   std::string method = m_config->get_string("surface.pdd.method");
 
