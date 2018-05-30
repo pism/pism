@@ -51,6 +51,7 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
   m_drho = ice_density / freshwater_density;
 
   m_filter_map = true;
+  m_n_filter   = 3;
 }
 
 LakeCC::~LakeCC() {
@@ -114,11 +115,20 @@ void LakeCC::init_impl(const Geometry &geometry) {
   m_icefree_thickness      = icefree_thickness;
   m_log->message(2, "  LakeCC: icefree thickness: %gm \n", m_icefree_thickness);
 
-  m_filter_map = !options::Bool(m_option + "_no_filter", "Do not filter lake levels!");
+  int n_filter = m_n_filter;
+  n_filter = options::Integer(m_option + "_n_filter", "Only keep lakes that contain at least one cell that has at least N lake neighbors. (0: no filtering, 1(remove one-cell lakes only)-4(keep lakes that have at least one surrounded cell))", n_filter);
+  if (n_filter < 0) {
+    n_filter = 0;
+  } else if (n_filter > 4) {
+    n_filter = 4;
+  }
+  m_n_filter = n_filter;
+  if (m_n_filter == 0) {
+    m_filter_map = false;
+  }
+
   if (m_filter_map) {
-    m_log->message(2, "  LakeCC: Filtering map");
-  } else {
-    m_log->message(2, "  LakeCC: Not Filtering map");
+    m_log->message(2, "  LakeCC: Filtering map (N=%i)", m_n_filter);
   }
 }
 
@@ -210,7 +220,7 @@ void LakeCC::do_filter_map() {
   ParallelSection ParSec(m_grid->com);
   try {
     FilterLakesCC FL(m_grid, m_lake_level, m_fill_value);
-    FL.filter_map();
+    FL.filter_map(m_n_filter);
     FL.filtered_levels(m_lake_level);
   } catch (...) {
     ParSec.failed();

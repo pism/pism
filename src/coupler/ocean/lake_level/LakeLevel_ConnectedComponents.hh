@@ -77,7 +77,7 @@ public:
   FilterLakesCC(IceGrid::ConstPtr g, const IceModelVec2S &lake_levels,
                 const double fill_value);
   ~FilterLakesCC();
-  void filter_map();
+  void filter_map(int n_filter);
   void filtered_levels(IceModelVec2S &result) const;
 
 protected:
@@ -90,7 +90,7 @@ protected:
                              std::vector<unsigned int> &lengths,
                              std::vector<bool> &isValidList);
   virtual void prepare_mask_impl();
-  void set_mask_validity();
+  void set_mask_validity(int n_filter);
   const IceModelVec2S *m_lake_level;
 
 };

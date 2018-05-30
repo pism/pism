@@ -175,14 +175,13 @@ FilterLakesCC::FilterLakesCC(IceGrid::ConstPtr g, const IceModelVec2S &lake_leve
   //To stop confusion m_lake_level is used here and points to m_bed
   m_lake_level = m_bed;
   prepare_mask();
-  set_mask_validity();
 }
 
 FilterLakesCC::~FilterLakesCC() {
   //empty
 }
 
-void FilterLakesCC::set_mask_validity() {
+void FilterLakesCC::set_mask_validity(int n_filter) {
   const Direction dirs[] = { North, East, South, West };
 
   IceModelVec2S sl_tmp(m_grid, "temp_lake_level", WITH_GHOSTS, 1);
@@ -201,8 +200,8 @@ void FilterLakesCC::set_mask_validity() {
         ++n_neighbors;
       }
     }
-    //Set sink, where pism_mask is ocean or at margin of computational domain
-    if (n_neighbors > 2) {
+    //Set cell valid if number of neighbors exceeds threshold
+    if (n_neighbors >= n_filter) {
       m_mask_validity(i, j) = 1;
     } else {
       m_mask_validity(i, j) = 0;
@@ -211,8 +210,9 @@ void FilterLakesCC::set_mask_validity() {
   m_mask_validity.update_ghosts();
 }
 
-void FilterLakesCC::filter_map() {
-  this->fill2Level(0.0);
+void FilterLakesCC::filter_map(int n_filter) {
+  set_mask_validity(n_filter);
+  this->fill2Level();
 }
 
 void FilterLakesCC::filtered_levels(IceModelVec2S &result) const {

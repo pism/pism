@@ -41,6 +41,7 @@ protected:
   std::string m_option;
   double m_lake_level_min, m_lake_level_max, m_lake_level_dh, m_drho, m_icefree_thickness;
   bool m_filter_map;
+  int m_n_filter;
 
 private:
   void do_lake_update(const IceModelVec2S *bed, const IceModelVec2S *thk, const IceModelVec2S *sea_level);
