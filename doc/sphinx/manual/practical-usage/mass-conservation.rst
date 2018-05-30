@@ -94,7 +94,7 @@ computational domain. The "integrated" mass accounting error can be computed usi
 Comments
 ^^^^^^^^
 
-- `tendency_of_ice_mass_due_to_influx` is the integral of :math:`-\nabla \cdot Q` over the
+- `tendency_of_ice_mass_due_to_flow` is the integral of :math:`-\nabla \cdot Q` over the
   computational domain. This should be zero (up to the effect of rounding errors) in
   simulations that *do not* use Dirichlet boundary conditions for ice thickness.
   Prescribing ice thickness creates sources and sinks, and this diagnostic describes their
