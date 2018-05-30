@@ -49,7 +49,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
     m_melt(m_grid, "surface_melt_flux", WITHOUT_GHOSTS),
     m_runoff(m_grid, "surface_runoff_flux", WITHOUT_GHOSTS) {
 
-  m_sd_period                  = 0;
+  m_sd_period                  = m_config->get_double("surface.pdd.std_dev.period");
   m_base_ddf.snow              = m_config->get_double("surface.pdd.factor_snow");
   m_base_ddf.ice               = m_config->get_double("surface.pdd.factor_ice");
   m_base_ddf.refreeze_fraction = m_config->get_double("surface.pdd.refreeze");
@@ -61,10 +61,6 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   bool use_fausto_params = options::Bool("-pdd_fausto",
                                          "Set PDD parameters using formulas (6) and (7)"
                                          " in [Faustoetal2009]");
-
-  options::Integer period("-pdd_sd_period",
-                          "Length of the standard deviation data period in years", 0);
-  m_sd_period = period;
 
   std::string method = m_config->get_string("surface.pdd.method");
 
@@ -81,7 +77,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
     m_base_pddStdDev = 2.53;
   }
 
-  std::string sd_file = m_config->get_string("surface.pdd.temperature_standard_deviation_file");
+  std::string sd_file = m_config->get_string("surface.pdd.std_dev.file");
 
   if (not sd_file.empty()) {
     int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
@@ -169,7 +165,7 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
 
   // initialize the spatially-variable air temperature standard deviation
   {
-    std::string sd_file = m_config->get_string("surface.pdd.temperature_standard_deviation_file");
+    std::string sd_file = m_config->get_string("surface.pdd.std_dev.file");
     if (sd_file.empty()) {
       m_log->message(2,
                      "  Using constant standard deviation of near-surface temperature.\n");
@@ -179,10 +175,7 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
                      "  Reading standard deviation of near-surface temperature from '%s'...\n",
                      sd_file.c_str());
 
-      options::Integer sd_ref_year("-pdd_sd_reference_year",
-                                   "Standard deviation data reference year", 0);
-
-      double sd_ref_time = units::convert(m_sys, sd_ref_year, "years", "seconds");
+      auto sd_ref_time = m_config->get_double("surface.pdd.std_dev.reference_year", "seconds");
 
       m_air_temp_sd->init(sd_file, m_sd_period, sd_ref_time);
     }

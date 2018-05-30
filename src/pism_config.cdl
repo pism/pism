@@ -2252,10 +2252,22 @@ netcdf pism_config {
     pism_config:surface.pdd.std_dev_use_param_doc = "Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by geometry.ice_free_thickness_standard.";
     pism_config:surface.pdd.std_dev_use_param_type = "boolean";
 
-    pism_config:surface.pdd.temperature_standard_deviation_file = "";
-    pism_config:surface.pdd.temperature_standard_deviation_file_doc = "The name of the file to read air_temp_sd from.";
-    pism_config:surface.pdd.temperature_standard_deviation_file_option = "pdd_sd_file";
-    pism_config:surface.pdd.temperature_standard_deviation_file_type = "string";
+    pism_config:surface.pdd.std_dev.file = "";
+    pism_config:surface.pdd.std_dev.file_doc = "The name of the file to read `air_temp_sd` (standard deviation of air temperature) from.";
+    pism_config:surface.pdd.std_dev.file_option = "pdd_sd_file";
+    pism_config:surface.pdd.std_dev.file_type = "string";
+
+    pism_config:surface.pdd.std_dev.period = 0;
+    pism_config:surface.pdd.std_dev.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:surface.pdd.std_dev.period_option = "pdd_sd_period";
+    pism_config:surface.pdd.std_dev.period_type = "integer";
+    pism_config:surface.pdd.std_dev.period_units = "years";
+
+    pism_config:surface.pdd.std_dev.reference_year = 0;
+    pism_config:surface.pdd.std_dev.reference_year_doc = "Reference year to use when ``surface.pdd.std_dev.period`` is active.";
+    pism_config:surface.pdd.std_dev.reference_year_option = "pdd_sd_reference_year";
+    pism_config:surface.pdd.std_dev.reference_year_type = "integer";
+    pism_config:surface.pdd.std_dev.reference_year_units = "years";
 
     pism_config:surface.pressure = 0.0;
     pism_config:surface.pressure_doc = "atmospheric pressure; = pressure at ice surface";
