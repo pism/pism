@@ -71,6 +71,30 @@ private:
   const double m_thk_threshold;
 };
 
+
+class FilterLakesCC : public FillingAlgCC {
+public:
+  FilterLakesCC(IceGrid::ConstPtr g, const IceModelVec2S &lake_levels,
+                const double fill_value);
+  ~FilterLakesCC();
+  void filter_map();
+  void filtered_levels(IceModelVec2S &result) const;
+
+protected:
+  virtual bool ForegroundCond_impl(double lake_level, double thk, int mask,
+                                   double Level, double Offset) const;
+  virtual void labelMap_impl(unsigned int run_number,
+                             std::vector<unsigned int> &i_vec,
+                             std::vector<unsigned int> &j_vec,
+                             std::vector<unsigned int> &parents,
+                             std::vector<unsigned int> &lengths,
+                             std::vector<bool> &isValidList);
+  virtual void prepare_mask_impl();
+  void set_mask_validity();
+  const IceModelVec2S *m_lake_level;
+
+};
+
 } // namespace pism
 
 #endif

@@ -49,6 +49,8 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
   const double ice_density        = m_config->get_double("constants.ice.density"),
                freshwater_density = m_config->get_double("constants.fresh_water.density");
   m_drho = ice_density / freshwater_density;
+
+  m_filter_map = true;
 }
 
 LakeCC::~LakeCC() {
@@ -111,6 +113,13 @@ void LakeCC::init_impl(const Geometry &geometry) {
                                            "Minimum ice thickness that is regarded as a closed ice cover.", icefree_thickness);
   m_icefree_thickness      = icefree_thickness;
   m_log->message(2, "  LakeCC: icefree thickness: %gm \n", m_icefree_thickness);
+
+  m_filter_map = !options::Bool(m_option + "_no_filter", "Do not filter lake levels!");
+  if (m_filter_map) {
+    m_log->message(2, "  LakeCC: Filtering map");
+  } else {
+    m_log->message(2, "  LakeCC: Not Filtering map");
+  }
 }
 
 void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
@@ -147,6 +156,10 @@ void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
   }
 
   do_lake_update(bed, thk, sl);
+
+  if (m_filter_map) {
+    do_filter_map();
+  }
 }
 
 MaxTimestep LakeCC::max_timestep_impl(double t) const {
@@ -191,6 +204,18 @@ void LakeCC::do_lake_update(const IceModelVec2S *bed, const IceModelVec2S *thk, 
   ParSec.check();
 
   m_log->message(2, "          Done!\n");
+}
+
+void LakeCC::do_filter_map() {
+  ParallelSection ParSec(m_grid->com);
+  try {
+    FilterLakesCC FL(m_grid, m_lake_level, m_fill_value);
+    FL.filter_map();
+    FL.filtered_levels(m_lake_level);
+  } catch (...) {
+    ParSec.failed();
+  }
+  ParSec.check();
 }
 
 } // end of namespace lake_level
