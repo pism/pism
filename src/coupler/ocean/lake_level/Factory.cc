@@ -23,6 +23,7 @@
 #include "pism/coupler/LakeLevel.hh"
 #include "pism/coupler/ocean/lake_level/LakeCC.hh"
 #include "pism/coupler/ocean/lake_level/Gradual.hh"
+#include "pism/coupler/ocean/lake_level/Patch.hh"
 
 namespace pism {
 namespace ocean {
@@ -36,6 +37,7 @@ Factory::Factory(IceGrid::ConstPtr grid)
   add_model<LakeCC>("lakecc");
   set_default("null");
   add_modifier<Gradual>("gradual");
+  add_modifier<Patch>("patch");
 }
 
 Factory::~Factory() {

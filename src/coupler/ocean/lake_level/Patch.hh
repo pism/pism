@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -15,38 +15,36 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ */
 
-#ifndef _POLAKECC_H_
-#define _POLAKECC_H_
+#ifndef _LAKE_LEVEL_PATCH_H_
+#define _LAKE_LEVEL_PATCH_H_
 
-#include "pism/util/Mask.hh"
 #include "pism/coupler/LakeLevel.hh"
 
 namespace pism {
 namespace ocean {
 namespace lake_level {
-class LakeCC : public LakeLevel {
+
+class Patch : public LakeLevel {
 public:
-  LakeCC(IceGrid::ConstPtr g);
-  virtual ~LakeCC();
-
-protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(const Geometry &geometry, double my_t, double my_dt);
-  virtual void init_impl(const Geometry &geometry);
-
-protected:
-  GeometryCalculator m_gc;
-  std::string m_option;
-  double m_lake_level_min, m_lake_level_max, m_lake_level_dh, m_drho, m_icefree_thickness;
+  Patch(IceGrid::ConstPtr g, std::shared_ptr<LakeLevel> in);
 
 private:
-  void do_lake_update(const IceModelVec2S *bed, const IceModelVec2S *thk, const IceModelVec2S *sea_level);
-  void prepare_mask_validity(const IceModelVec2S *thk, IceModelVec2Int &valid_mask);
+  void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Geometry &geometry);
+protected:
+  MaxTimestep max_timestep_impl(double t) const;
+  double m_next_update_time, m_last_update;
+  int m_min_update_interval_years, m_patch_iter;
+  unsigned int patch_lake_levels(const IceModelVec2S *bed,
+                                 const IceModelVec2S *thk,
+                                 const IceModelVec2S *sea_level);
+
 };
 
 } // end of namespace lake_level
 } // end of namespace ocean
 } // end of namespace pism
-#endif /* _POLAKECC_H_ */
+
+#endif /* _LAKE_LEVEL_PATCH_H_ */

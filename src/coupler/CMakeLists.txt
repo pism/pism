@@ -38,6 +38,7 @@ add_library (boundary OBJECT
   ./ocean/lake_level/LakeCC.cc
   ./ocean/lake_level/LakeLevel_ConnectedComponents.cc
   ./ocean/lake_level/Gradual.cc
+  ./ocean/lake_level/Patch.cc
   ./ocean/lake_level/LakeProperties_ConnectedComponents.cc
   ./ocean/sea_level/Initialization.cc
   ./ocean/sea_level/SeaLevel.cc
