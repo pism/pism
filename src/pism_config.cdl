@@ -264,6 +264,11 @@ netcdf pism_config {
     pism_config:atmosphere.model_option = "atmosphere";
     pism_config:atmosphere.model_type = "string";
 
+    pism_config:atmosphere.one_station.file = "";
+    pism_config:atmosphere.one_station.file_doc = "Specifies a file containing scalar time-series 'precipitation' and 'air_temp'.";
+    pism_config:atmosphere.one_station.file_option = "atmosphere_one_station_file";
+    pism_config:atmosphere.one_station.file_type = "string";
+
     pism_config:atmosphere.paleo_precip.exp_factor_for_temperature = 0.07041666667;
     pism_config:atmosphere.paleo_precip.exp_factor_for_temperature_doc = "= 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`";
     pism_config:atmosphere.paleo_precip.exp_factor_for_temperature_type = "scalar";
@@ -311,6 +316,11 @@ netcdf pism_config {
     pism_config:atmosphere.uniform.temperature_doc = "Air temperature used by the 'uniform' atmosphere model.";
     pism_config:atmosphere.uniform.temperature_type = "scalar";
     pism_config:atmosphere.uniform.temperature_units = "Kelvin";
+
+    pism_config:atmosphere.searise_greenland.file = "";
+    pism_config:atmosphere.searise_greenland.file_doc = "Name of the file containing a precipitation field.";
+    pism_config:atmosphere.searise_greenland.file_option = "atmosphere_searise_greenland_file";
+    pism_config:atmosphere.searise_greenland.file_type = "string";
 
     pism_config:atmosphere.yearly_cycle.file = "";
     pism_config:atmosphere.yearly_cycle.file_doc = "Name of the file containing mean annual and mean July temperatures (`air_temp_mean_annual` and `air_temp_mean_summer`) and the `precipitation` field.";

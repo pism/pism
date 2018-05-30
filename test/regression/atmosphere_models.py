@@ -18,8 +18,6 @@ config.set_string("time.calendar", "365_day")
 # silence models' initialization messages
 PISM.Context().log.set_threshold(1)
 
-options = PISM.PETSc.Options()
-
 def write_state(model):
     "Test writing of the model state"
 
@@ -250,7 +248,7 @@ class SeaRISE(TestCase):
         output = PISM.util.prepare_output(self.filename)
         precipitation(self.grid, self.P).write(output)
 
-        options.setValue("-atmosphere_searise_greenland_file", self.filename)
+        config.set_string("atmosphere.searise_greenland.file", self.filename)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -339,7 +337,7 @@ class OneStation(TestCase):
 
         output.close()
 
-        options.setValue("-atmosphere_one_station_file", self.filename)
+        config.set_string("atmosphere.one_station.file", self.filename)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -495,7 +493,7 @@ class LapseRates(TestCase):
 
         config.set_double("atmosphere.lapse_rate.precipitation_lapse_rate", self.dPdz)
 
-        options.setValue("-temp_lapse_rate", self.dTdz)
+        config.set_double("atmosphere.lapse_rate.temperature_lapse_rate", self.dTdz)
 
     def tearDown(self):
         os.remove(self.filename)
