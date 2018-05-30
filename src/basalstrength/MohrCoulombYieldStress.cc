@@ -155,21 +155,10 @@ void MohrCoulombYieldStress::init_impl(const Geometry &geometry,
   // regrid if requested, regardless of how initialized
   regrid("MohrCoulombYieldStress", m_till_phi);
 
-  options::String tauc_to_phi_file("-tauc_to_phi",
-                                   "Turn on, and specify, the till friction angle computation"
-                                   " which uses basal yield stress (tauc) and the rest of the model state",
-                                   "", options::ALLOW_EMPTY);
+  auto tauc_to_phi_file = m_config->get_string("basal_yield_stress.mohr_coulomb.tauc_to_phi.file");
 
-  if (tauc_to_phi_file.is_set()) {
-
-    if (not tauc_to_phi_file->empty()) {
-      // "-tauc_to_phi filename.nc" is given
-      m_basal_yield_stress.regrid(tauc_to_phi_file, CRITICAL);
-    } else {
-      // "-tauc_to_phi" is given (without a file name); assume that tauc has to be present in an
-      // input file
-      m_basal_yield_stress.regrid(opts.filename, CRITICAL);
-    }
+  if (not tauc_to_phi_file.empty()) {
+    m_basal_yield_stress.regrid(tauc_to_phi_file, CRITICAL);
 
     m_log->message(2,
                    "  Will compute till friction angle (tillphi) as a function"

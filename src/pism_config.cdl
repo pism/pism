@@ -399,6 +399,11 @@ netcdf pism_config {
     pism_config:basal_yield_stress.model_option = "yield_stress";
     pism_config:basal_yield_stress.model_type = "keyword";
 
+    pism_config:basal_yield_stress.mohr_coulomb.tauc_to_phi.file = "";
+    pism_config:basal_yield_stress.mohr_coulomb.tauc_to_phi.file_doc = "File containing the basal yield stress field that should be used to recover the till friction angle distribution.";
+    pism_config:basal_yield_stress.mohr_coulomb.tauc_to_phi.file_option = "tauc_to_phi";
+    pism_config:basal_yield_stress.mohr_coulomb.tauc_to_phi.file_type = "string";
+
     pism_config:basal_yield_stress.mohr_coulomb.till_cohesion = 0.0;
     pism_config:basal_yield_stress.mohr_coulomb.till_cohesion_doc = "cohesion of till; = c_0 in most references; note Schoof uses zero but Paterson pp 168--169 gives range 0--40 kPa; but Paterson notes that '... all the pairs c_0 and phi in the table would give a yield stress for Ice Stream B that exceeds the basal shear stress there...'";
     pism_config:basal_yield_stress.mohr_coulomb.till_cohesion_option = "till_cohesion";
