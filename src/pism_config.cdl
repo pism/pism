@@ -614,7 +614,7 @@ netcdf pism_config {
     pism_config:calving.thickness_calving.threshold_units = "meters";
 
     pism_config:calving.thickness_calving.threshold_file = "";
-    pism_config:calving.thickness_calving.threshold_file_doc = "Name of the file containing the spatially-variable thickness calving threshold. ";
+    pism_config:calving.thickness_calving.threshold_file_doc = "Name of the file containing the spatially-variable thickness calving threshold.";
     pism_config:calving.thickness_calving.threshold_file_option = "thickness_calving_threshold_file";
     pism_config:calving.thickness_calving.threshold_file_type = "string";
 
@@ -2239,12 +2239,12 @@ netcdf pism_config {
     pism_config:surface.pdd.std_dev_units = "Kelvin";
 
     pism_config:surface.pdd.std_dev_lapse_lat_base = 72.0;
-    pism_config:surface.pdd.std_dev_lapse_lat_base_doc = "std_dev is a function of latitude, with value surface.pdd.std_dev at this latitude; this value only active if surface.pdd.std_dev_lapse_lat_rate is nonzero ";
+    pism_config:surface.pdd.std_dev_lapse_lat_base_doc = "std_dev is a function of latitude, with value surface.pdd.std_dev at this latitude; this value only active if surface.pdd.std_dev_lapse_lat_rate is nonzero";
     pism_config:surface.pdd.std_dev_lapse_lat_base_type = "scalar";
     pism_config:surface.pdd.std_dev_lapse_lat_base_units = "degree_north";
 
     pism_config:surface.pdd.std_dev_lapse_lat_rate = 0.0;
-    pism_config:surface.pdd.std_dev_lapse_lat_rate_doc = "std_dev is a function of latitude, with rate of change with respect to latitude given by this constant ";
+    pism_config:surface.pdd.std_dev_lapse_lat_rate_doc = "std_dev is a function of latitude, with rate of change with respect to latitude given by this constant";
     pism_config:surface.pdd.std_dev_lapse_lat_rate_type = "scalar";
     pism_config:surface.pdd.std_dev_lapse_lat_rate_units = "Kelvin / degree_north";
 

@@ -3,30 +3,6 @@
 .. DO NOT EDIT: This file was automatically generated. Edit src/pism_config.cdl instead.
 
 
-#. :config:`input.file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-i`
-   :Description: Input file name
-
-#. :config:`input.bootstrap` (*boolean*)
-
-   :Value: no
-   :Option: :opt:`-bootstrap`
-   :Description: It true, use bootstrapping heuristics when initializing PISM.
-
-#. :config:`input.regrid.file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-regrid_file`
-   :Description: Regridding (input) file name
-
-#. :config:`input.regrid.vars` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-regrid_vars`
-   :Description: Comma-separated list of variables to regrid. Leave empty to regrid all model state variables.
-
 #. :config:`age.enabled` (*boolean*)
 
    :Value: no
@@ -37,6 +13,60 @@
 
    :Value: 0 (years)
    :Description: Initial age of ice
+
+#. :config:`atmosphere.anomaly.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_anomaly_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`atmosphere.anomaly.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_anomaly_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`atmosphere.anomaly.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_anomaly_reference_year`
+   :Description: Reference year to use when ``atmosphere.anomaly.period`` is active.
+
+#. :config:`atmosphere.delta_P.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_delta_P_file`
+   :Description: Name of the file containing scalar precipitation offsets.
+
+#. :config:`atmosphere.delta_P.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_delta_P_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`atmosphere.delta_P.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_delta_P_reference_year`
+   :Description: Reference year to use when ``atmosphere.delta_P.period`` is active.
+
+#. :config:`atmosphere.delta_T.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_delta_T_file`
+   :Description: Name of the file containing temperature offsets.
+
+#. :config:`atmosphere.delta_T.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_delta_T_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`atmosphere.delta_T.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_delta_T_reference_year`
+   :Description: Reference year to use when ``atmosphere.delta_T.period`` is active.
 
 #. :config:`atmosphere.fausto_air_temp.c_ma` (*scalar*)
 
@@ -83,6 +113,24 @@
    :Value: 196
    :Description: day of year for July 15; used in corrected formula (4) in :cite:`Faustoetal2009`
 
+#. :config:`atmosphere.frac_P.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_frac_P_file`
+   :Description: Name of the file containing scalar precipitation scaling.
+
+#. :config:`atmosphere.frac_P.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_frac_P_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`atmosphere.frac_P.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_frac_P_reference_year`
+   :Description: Reference year to use when ``atmosphere.frac_P.period`` is active.
+
 #. :config:`atmosphere.given.file` (*string*)
 
    :Value: *no default*
@@ -101,24 +149,6 @@
    :Option: :opt:`-atmosphere_given_reference_year`
    :Description: Reference year to use when ``atmosphere.given.period`` is active.
 
-#. :config:`atmosphere.anomaly.file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-atmosphere_anomaly_file`
-   :Description: Name of the file containing climate forcing fields.
-
-#. :config:`atmosphere.anomaly.period` (*integer*)
-
-   :Value: 0
-   :Option: :opt:`-atmosphere_anomaly_period`
-   :Description: Length of the period of the climate forcing data. Set to zero to disable.
-
-#. :config:`atmosphere.anomaly.reference_year` (*integer*)
-
-   :Value: 0
-   :Option: :opt:`-atmosphere_anomaly_reference_year`
-   :Description: Reference year to use when ``atmosphere.anomaly.period`` is active.
-
 #. :config:`atmosphere.lapse_rate.file` (*string*)
 
    :Value: *no default*
@@ -131,16 +161,147 @@
    :Option: :opt:`-atmosphere_lapse_rate_period`
    :Description: Length of the period of the climate forcing data. Set to zero to disable.
 
+#. :config:`atmosphere.lapse_rate.precipitation_lapse_rate` (*scalar*)
+
+   :Value: 0 ((kg m-2 / year) / km)
+   :Option: :opt:`-precip_lapse_rate`
+   :Description: Elevation lapse rate for the surface mass balance
+
+#. :config:`atmosphere.lapse_rate.temperature_lapse_rate` (*scalar*)
+
+   :Value: 0 (Kelvin / km)
+   :Option: :opt:`-temp_lapse_rate`
+   :Description: Elevation lapse rate for the surface temperature
+
 #. :config:`atmosphere.lapse_rate.reference_year` (*integer*)
 
    :Value: 0
    :Option: :opt:`-atmosphere_lapse_rate_reference_year`
    :Description: Reference year to use when ``atmosphere.lapse_rate.period`` is active.
 
-#. :config:`atmosphere.precip_exponential_factor_for_temperature` (*scalar*)
+#. :config:`atmosphere.orographic_precipitation.background_precip_post` (*scalar*)
+
+   :Value: 0 (mm/hr)
+   :Option: :opt:`-background_precip_post`
+   :Description: Adding background precipitation after truncation
+
+#. :config:`atmosphere.orographic_precipitation.background_precip_pre` (*scalar*)
+
+   :Value: 0 (mm/hr)
+   :Option: :opt:`-background_precip_pre`
+   :Description: Adding background precipitation before truncation
+
+#. :config:`atmosphere.orographic_precipitation.conversion_time` (*scalar*)
+
+   :Value: 1000 (s)
+   :Option: :opt:`-conversion_time`
+   :Description: Cloud conversion time
+
+#. :config:`atmosphere.orographic_precipitation.coriolis_latitude` (*scalar*)
+
+   :Value: 0 (degrees_N)
+   :Option: :opt:`-coriolis_latitude`
+   :Description: Latitude used to compute Coriolis force
+
+#. :config:`atmosphere.orographic_precipitation.fallout_time` (*scalar*)
+
+   :Value: 1000 (s)
+   :Option: :opt:`-fallout_time`
+   :Description: Fallout time
+
+#. :config:`atmosphere.orographic_precipitation.grid_size_factor` (*integer*)
+
+   :Value: 2
+   :Description: The spectral grid size is (Z*(grid.Mx - 1) + 1, Z*(grid.My - 1) + 1) where Z is given by this parameter.
+
+#. :config:`atmosphere.orographic_precipitation.lapse_rate` (*scalar*)
+
+   :Value: -5.800000 (K / km)
+   :Option: :opt:`-lapse_rate`
+   :Description: Lapse rate
+
+#. :config:`atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate` (*scalar*)
+
+   :Value: -6.500000 (K / km)
+   :Option: :opt:`-moist_adiabatic_lapse_rate`
+   :Description: Water vapor scale height
+
+#. :config:`atmosphere.orographic_precipitation.moist_stability_frequency` (*scalar*)
+
+   :Value: 0.050000 (1/s)
+   :Option: :opt:`-moist_stability_frequency`
+   :Description: Moist stability frequency
+
+#. :config:`atmosphere.orographic_precipitation.reference_density` (*scalar*)
+
+   :Value: 0.007400 (kg m-3)
+   :Option: :opt:`-reference_density`
+   :Description: Water vapor scale height
+
+#. :config:`atmosphere.orographic_precipitation.scale_factor` (*scalar*)
+
+   :Value: 1 (1)
+   :Option: :opt:`-scale_factor`
+   :Description: Precipitation scaling factor
+
+#. :config:`atmosphere.orographic_precipitation.truncate` (*boolean*)
+
+   :Value: true
+   :Option: :opt:`-truncate`
+   :Description: Truncate precipitation at 0
+
+#. :config:`atmosphere.orographic_precipitation.water_vapor_scale_height` (*scalar*)
+
+   :Value: 2500 (m)
+   :Option: :opt:`-water_vapor_scale_height`
+   :Description: Water vapor scale height
+
+#. :config:`atmosphere.orographic_precipitation.wind_direction` (*scalar*)
+
+   :Value: 270 (degrees)
+   :Option: :opt:`-wind_direction`
+   :Description: The direction the wind is coming from
+
+#. :config:`atmosphere.orographic_precipitation.wind_speed` (*scalar*)
+
+   :Value: 10 (m/s)
+   :Option: :opt:`-wind_speed`
+   :Description: The direction the wind is coming from
+
+#. :config:`atmosphere.model` (*string*)
+
+   :Value: given
+   :Option: :opt:`-atmosphere`
+   :Description: Comma-separated list of selected atmosphere models.
+
+#. :config:`atmosphere.one_station.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_one_station_file`
+   :Description: Specifies a file containing scalar time-series 'precipitation' and 'air_temp'.
+
+#. :config:`atmosphere.paleo_precip.exp_factor_for_temperature` (*scalar*)
 
    :Value: 0.070417 (Kelvin-1)
    :Description: = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`
+
+#. :config:`atmosphere.paleo_precip.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_paleo_precip_file`
+   :Description: Name of the file containing temperature offsets to use for a precipitation correction.
+
+#. :config:`atmosphere.paleo_precip.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_paleo_precip_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`atmosphere.paleo_precip.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_paleo_precip_reference_year`
+   :Description: Reference year to use when ``atmosphere.paleo_precip.period`` is active.
 
 #. :config:`atmosphere.pik.file` (*string*)
 
@@ -155,11 +316,10 @@
    :Option: :opt:`-atmosphere_pik`
    :Description: Selects parameterizations of mean annual and mean summer near-surface air temperatures.
 
-#. :config:`atmosphere.lapse_rate.precipitation_lapse_rate` (*scalar*)
+#. :config:`atmosphere.precip_exponential_factor_for_temperature` (*scalar*)
 
-   :Value: 0 ((kg m-2 / year) / km)
-   :Option: :opt:`-precip_lapse_rate`
-   :Description: Elevation lapse rate for the surface mass balance
+   :Value: 0.070417 (Kelvin-1)
+   :Description: = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`
 
 #. :config:`atmosphere.uniform.precipitation` (*scalar*)
 
@@ -171,94 +331,33 @@
    :Value: 273.150000 (Kelvin)
    :Description: Air temperature used by the 'uniform' atmosphere model.
 
-#. :config:`atmosphere.orographic_precipitation.grid_size_factor` (*integer*)
+#. :config:`atmosphere.searise_greenland.file` (*string*)
 
-   :Value: 2
-   :Description: The spectral grid size is (Z*(grid.Mx - 1) + 1, Z*(grid.My - 1) + 1) where Z is given by this parameter.
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_searise_greenland_file`
+   :Description: Name of the file containing a precipitation field.
 
-#. :config:`atmosphere.orographic_precipitation.background_precip_pre` (*scalar*)
+#. :config:`atmosphere.yearly_cycle.file` (*string*)
 
-   :Value: 0 (mm/hr)
-   :Option: :opt:`-background_precip_pre`
-   :Description: Adding background precipitation before truncation
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_yearly_cycle_file`
+   :Description: Name of the file containing mean annual and mean July temperatures (`air_temp_mean_annual` and `air_temp_mean_summer`) and the `precipitation` field.
 
-#. :config:`atmosphere.orographic_precipitation.background_precip_post` (*scalar*)
+#. :config:`atmosphere.yearly_cycle.scaling.file` (*string*)
 
-   :Value: 0 (mm/hr)
-   :Option: :opt:`-background_precip_post`
-   :Description: Adding background precipitation after truncation
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_yearly_cycle_scaling_file`
+   :Description: Name of the file containing amplitude scaling (`amplitude_scaling`) for the near-surface air temperature.
 
-#. :config:`atmosphere.orographic_precipitation.scale_factor` (*scalar*)
+#. :config:`atmosphere.yearly_cycle.scaling.period` (*integer*)
 
-   :Value: 1 (1)
-   :Option: :opt:`-scale_factor`
-   :Description: Precipitation scaling factor
+   :Value: 0
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
 
-#. :config:`atmosphere.orographic_precipitation.conversion_time` (*scalar*)
+#. :config:`atmosphere.yearly_cycle.scaling.reference_year` (*integer*)
 
-   :Value: 1000 (s)
-   :Option: :opt:`-conversion_time`
-   :Description: Cloud conversion time
-
-#. :config:`atmosphere.orographic_precipitation.fallout_time` (*scalar*)
-
-   :Value: 1000 (s)
-   :Option: :opt:`-fallout_time`
-   :Description: Fallout time
-
-#. :config:`atmosphere.orographic_precipitation.moist_stability_frequency` (*scalar*)
-
-   :Value: 0.050000 (1/s)
-   :Option: :opt:`-moist_stability_frequency`
-   :Description: Moist stability frequency
-
-#. :config:`atmosphere.orographic_precipitation.wind_direction` (*scalar*)
-
-   :Value: 270 (degrees)
-   :Option: :opt:`-wind_direction`
-   :Description: The direction the wind is coming from
-
-#. :config:`atmosphere.orographic_precipitation.wind_speed` (*scalar*)
-
-   :Value: 10 (m/s)
-   :Option: :opt:`-wind_speed`
-   :Description: The direction the wind is coming from
-
-#. :config:`atmosphere.orographic_precipitation.water_vapor_scale_height` (*scalar*)
-
-   :Value: 2500 (m)
-   :Option: :opt:`-water_vapor_scale_height`
-   :Description: Water vapor scale height
-
-#. :config:`atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate` (*scalar*)
-
-   :Value: -6.500000 (K / km)
-   :Option: :opt:`-moist_adiabatic_lapse_rate`
-   :Description: Water vapor scale height
-
-#. :config:`atmosphere.orographic_precipitation.lapse_rate` (*scalar*)
-
-   :Value: -5.800000 (K / km)
-   :Option: :opt:`-lapse_rate`
-   :Description: Lapse rate
-
-#. :config:`atmosphere.orographic_precipitation.reference_density` (*scalar*)
-
-   :Value: 0.007400 (kg m-3)
-   :Option: :opt:`-reference_density`
-   :Description: Water vapor scale height
-
-#. :config:`atmosphere.orographic_precipitation.coriolis_latitude` (*scalar*)
-
-   :Value: 0 (degrees_N)
-   :Option: :opt:`-coriolis_latitude`
-   :Description: Latitude used to compute Coriolis force
-
-#. :config:`atmosphere.orographic_precipitation.truncate` (*boolean*)
-
-   :Value: true
-   :Option: :opt:`-truncate`
-   :Description: Truncate precipitation at 0
+   :Value: 0
+   :Description: Reference year to use when ``atmosphere.yearly_cycle.scaling.period`` is active.
 
 #. :config:`basal_resistance.beta_ice_free_bedrock` (*scalar*)
 
@@ -320,6 +419,12 @@
    :Option: :opt:`-yield_stress`
    :Description: The basal yield stress model to use when sliding is active.
 
+#. :config:`basal_yield_stress.mohr_coulomb.tauc_to_phi.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-tauc_to_phi`
+   :Description: File containing the basal yield stress field that should be used to recover the till friction angle distribution.
+
 #. :config:`basal_yield_stress.mohr_coulomb.till_cohesion` (*scalar*)
 
    :Value: 0 (Pascal)
@@ -364,7 +469,7 @@
 #. :config:`basal_yield_stress.mohr_coulomb.topg_to_phi.enabled` (*boolean*)
 
    :Value: no
-   :Description: If THE OPTION -topg_to_phi IS SET THEN THIS WILL BE SET TO 'yes', and then MohrCoulombYieldStress will initialize the tillphi field using a piece-wise linear function of depth described by four parameters.
+   :Description: If the option ``-topg_to_phi`` is set then this will be set to 'yes', and then MohrCoulombYieldStress will initialize the ``tillphi`` field using a piece-wise linear function of depth described by four parameters.
 
 #. :config:`basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max` (*scalar*)
 
@@ -392,6 +497,18 @@
    :Option: :opt:`-tauc_slippery_grounding_lines`
    :Description: If yes, at icy grounded locations with bed elevations below sea level, within one cell of floating ice or ice-free ocean, make tauc as low as possible from the Mohr-Coulomb relation.  Specifically, at such locations replace the normally-computed tauc from the Mohr-Coulomb relation, which uses the effective pressure from the modeled amount of water in the till, by the minimum value of tauc from Mohr-Coulomb, i.e. by using the effective pressure corresponding to the maximum amount of till-stored water.  Does not alter the modeled or reported amount of till water, nor does this mechanism affect water conservation.
 
+#. :config:`bed_deformation.bed_topography_delta_file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-topg_delta_file`
+   :Description: The name of the file to read the topg_delta from. This field is added to the bed topography during initialization.
+
+#. :config:`bed_deformation.bed_uplift_file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-uplift_file`
+   :Description: The name of the file to read the uplift (dbdt) from. Leave empty to read it from an input file or a regridding file.
+
 #. :config:`bed_deformation.lc.elastic_model` (*boolean*)
 
    :Value: yes
@@ -403,15 +520,20 @@
    :Value: 4
    :Description: The spectral grid size is (Z*(grid.Mx - 1) + 1, Z*(grid.My - 1) + 1) where Z is given by this parameter. See :cite:`LingleClark`, :cite:`BLKfastearth`
 
-#. :config:`bed_deformation.mantle_density` (*scalar*)
+#. :config:`bed_deformation.lc.update_interval` (*scalar*)
 
-   :Value: 3300 (kg meter-3)
-   :Description: half-space (mantle) density used by the bed deformation model. See :cite:`LingleClark`, :cite:`BLKfastearth`
+   :Value: 10 (years)
+   :Description: Interval between updates of the Lingle-Clark model
 
 #. :config:`bed_deformation.lithosphere_flexural_rigidity` (*scalar*)
 
    :Value: 5.000000e+24 (Newton meter)
    :Description: lithosphere flexural rigidity used by the bed deformation model. See :cite:`LingleClark`, :cite:`BLKfastearth`
+
+#. :config:`bed_deformation.mantle_density` (*scalar*)
+
+   :Value: 3300 (kg meter-3)
+   :Description: half-space (mantle) density used by the bed deformation model. See :cite:`LingleClark`, :cite:`BLKfastearth`
 
 #. :config:`bed_deformation.mantle_viscosity` (*scalar*)
 
@@ -424,23 +546,6 @@
    :Choices: ``none, iso, lc``
    :Option: :opt:`-bed_def`
    :Description: Selects a bed deformation model to use. 'iso' is point-wise isostasy, 'lc' is the Lingle-Clark model (see :cite:`LingleClark`, requires FFTW3).
-
-#. :config:`bed_deformation.lc.update_interval` (*scalar*)
-
-   :Value: 10 (years)
-   :Description: Interval between updates of the Lingle-Clark model
-
-#. :config:`bed_deformation.bed_topography_delta_file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-topg_delta_file`
-   :Description: The name of the file to read the topg_delta from. This field is added to the bed topography during initialization.
-
-#. :config:`bed_deformation.bed_uplift_file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-uplift_file`
-   :Description: The name of the file to read the uplift (dbdt) from. Leave empty to read it from an input file or a regridding file.
 
 #. :config:`bootstrapping.defaults.bed` (*scalar*)
 
@@ -500,29 +605,29 @@
    :Option: :opt:`-eigen_calving_K`
    :Description: Set proportionality constant to determine calving rate from strain rates.  Note references :cite:`Levermannetal2012`, :cite:`Martinetal2011` use K in range `10^{9}` to `3 \times 10^{11}` m a, that is, `3 \times 10^{16}` to `10^{19}` m s.
 
-#. :config:`calving.float_kill.margin_only` (*boolean*)
-
-   :Value: no
-   :Option: :opt:`-float_kill_margin_only`
-   :Description: Apply float_kill at ice margin cells only.
-
 #. :config:`calving.float_kill.calve_near_grounding_line` (*boolean*)
 
    :Value: yes
    :Option: :opt:`-float_kill_calve_near_grounding_line`
    :Description: Calve floating ice near the grounding line.
 
-#. :config:`calving.front_retreat.wrap_around` (*boolean*)
+#. :config:`calving.float_kill.margin_only` (*boolean*)
 
-   :Value: false
-   :Option: :opt:`-calving_wrap_around`
-   :Description: If true, wrap around domain boundaries. This may be needed in some regional synthetic geometry setups.
+   :Value: no
+   :Option: :opt:`-float_kill_margin_only`
+   :Description: Apply float_kill at ice margin cells only.
 
 #. :config:`calving.front_retreat.use_cfl` (*boolean*)
 
    :Value: false
    :Option: :opt:`-calving_cfl`
    :Description: apply CFL criterion for eigen-calving rate front retreat
+
+#. :config:`calving.front_retreat.wrap_around` (*boolean*)
+
+   :Value: false
+   :Option: :opt:`-calving_wrap_around`
+   :Description: If true, wrap around domain boundaries. This may be needed in some regional synthetic geometry setups.
 
 #. :config:`calving.methods` (*string*)
 
@@ -546,7 +651,7 @@
 
    :Value: *no default*
    :Option: :opt:`-thickness_calving_threshold_file`
-   :Description: Name of the file containing the spatially-variable thickness calving threshold. 
+   :Description: Name of the file containing the spatially-variable thickness calving threshold.
 
 #. :config:`calving.vonmises.sigma_max` (*scalar*)
 
@@ -583,6 +688,11 @@
 
    :Value: 4170 (Joule / (kg Kelvin))
    :Description: at melting point T_0 :cite:`AschwandenBlatter`
+
+#. :config:`constants.global_ocean_area` (*scalar*)
+
+   :Value: 3.625000e+14 (meter2)
+   :Description: area of the global ocean :cite:`Cogley2011`
 
 #. :config:`constants.ice.beta_Clausius_Clapeyron` (*scalar*)
 
@@ -625,11 +735,6 @@
    :Value: 3985 (Joule / (kg Kelvin))
    :Description: at 35 psu, value taken from http://www.kayelaby.npl.co.uk/general_physics/2_7/2_7_9.html
 
-#. :config:`constants.global_ocean_area` (*scalar*)
-
-   :Value: 3.625000e+14 (meter2)
-   :Description: area of the global ocean :cite:`Cogley2011`
-
 #. :config:`constants.standard_gravity` (*scalar*)
 
    :Value: 9.810000 (meter second-2)
@@ -646,11 +751,6 @@
    :Option: :opt:`-subgl_basal_melt`
    :Description: If geometry.grounded_cell_fraction is set, use the fractional floatation mask to interpolate the basal melt rate at the grounding line between grounded and floating values.
 
-#. :config:`energy.bedrock_thermal.file` (*string*)
-
-   :Value: *no default*
-   :Description: Name of the file containing the geothermal flux field :var:`bheatflx`. Leave empty to read it from the :config:`input.file`.
-
 #. :config:`energy.bedrock_thermal.conductivity` (*scalar*)
 
    :Value: 3 (Joule / (meter Kelvin second))
@@ -661,10 +761,35 @@
    :Value: 3300 (kg meter-3)
    :Description: for bedrock used in thermal model
 
+#. :config:`energy.bedrock_thermal.file` (*string*)
+
+   :Value: *no default*
+   :Description: Name of the file containing the geothermal flux field :var:`bheatflx`. Leave empty to read it from the :config:`input.file`.
+
 #. :config:`energy.bedrock_thermal.specific_heat_capacity` (*scalar*)
 
    :Value: 1000 (Joule / (kg Kelvin))
    :Description: for bedrock used in thermal model :cite:`RitzEISMINT`
+
+#. :config:`energy.ch_warming.average_channel_spacing` (*scalar*)
+
+   :Value: 20 (meters)
+   :Description: Average spacing between elements of the cryo-hydrologic system (controls the rate of heat transfer from the CH system into the ice).
+
+#. :config:`energy.ch_warming.enabled` (*boolean*)
+
+   :Value: no
+   :Description: Enable the cryo-hydrologic warming model
+
+#. :config:`energy.ch_warming.residual_water_fraction` (*scalar*)
+
+   :Value: 0.005000 (pure number)
+   :Description: residual water fraction in the cryo-hydrologic system at the end of a melt season
+
+#. :config:`energy.ch_warming.temperate_ice_thermal_conductivity_ratio` (*scalar*)
+
+   :Value: 1 (pure number)
+   :Description: ratio of thermal conductivities of temperate and cold ice in the cryo-hydrologic system
 
 #. :config:`energy.drainage_maximum_rate` (*scalar*)
 
@@ -686,45 +811,30 @@
    :Value: 60270 (Joule / kg)
    :Description: = (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value
 
-#. :config:`energy.ch_warming.enabled` (*boolean*)
+#. :config:`energy.enthalpy.temperate_ice_thermal_conductivity_ratio` (*scalar*)
 
-   :Value: no
-   :Description: Enable the cryo-hydrologic warming model
-
-#. :config:`energy.ch_warming.residual_water_fraction` (*scalar*)
-
-   :Value: 0.005000 (pure number)
-   :Description: residual water fraction in the cryo-hydrologic system at the end of a melt season
-
-#. :config:`energy.ch_warming.temperate_ice_thermal_conductivity_ratio` (*scalar*)
-
-   :Value: 1 (pure number)
-   :Description: ratio of thermal conductivities of temperate and cold ice in the cryo-hydrologic system
-
-#. :config:`energy.ch_warming.average_channel_spacing` (*scalar*)
-
-   :Value: 20 (meters)
-   :Description: Average spacing between elements of the cryo-hydrologic system (controls the rate of heat transfer from the CH system into the ice).
-
-#. :config:`energy.margin_ice_thickness_limit` (*scalar*)
-
-   :Value: 100 (meters)
-   :Description: use special margin treatment at grid points with a neighbor with the thickness below this limit.
+   :Value: 0.100000 (pure number)
+   :Description: K in cold ice is multiplied by this fraction to give K0 in :cite:`AschwandenBuelerKhroulevBlatter`
 
 #. :config:`energy.margin_exclude_horizontal_advection` (*boolean*)
 
    :Value: yes
    :Description: Exclude horizontal advection of energy at grid points near ice margins. See :config:`energy.margin_ice_thickness_limit`.
 
+#. :config:`energy.margin_exclude_strain_heating` (*boolean*)
+
+   :Value: yes
+   :Description: Exclude strain heating at grid points near ice margins. See :config:`energy.margin_ice_thickness_limit`.
+
 #. :config:`energy.margin_exclude_vertical_advection` (*boolean*)
 
    :Value: yes
    :Description: Exclude vertical advection of energy at grid points near ice margins. See :config:`energy.margin_ice_thickness_limit`.
 
-#. :config:`energy.margin_exclude_strain_heating` (*boolean*)
+#. :config:`energy.margin_ice_thickness_limit` (*scalar*)
 
-   :Value: yes
-   :Description: Exclude strain heating at grid points near ice margins. See :config:`energy.margin_ice_thickness_limit`.
+   :Value: 100 (meters)
+   :Description: use special margin treatment at grid points with a neighbor with the thickness below this limit.
 
 #. :config:`energy.max_low_temperature_count` (*integer*)
 
@@ -737,11 +847,6 @@
    :Value: 200 (Kelvin)
    :Option: :opt:`-low_temp`
    :Description: Minimum allowed ice temperature
-
-#. :config:`energy.enthalpy.temperate_ice_thermal_conductivity_ratio` (*scalar*)
-
-   :Value: 0.100000 (pure number)
-   :Description: K in cold ice is multiplied by this fraction to give K0 in :cite:`AschwandenBuelerKhroulevBlatter`
 
 #. :config:`energy.temperature_based` (*boolean*)
 
@@ -945,15 +1050,10 @@
    :Option: :opt:`-bmr_in_cont`
    :Description: Include basal melt rate in the continuity equation
 
-#. :config:`grid.allow_extrapolation` (*boolean*)
-
-   :Value: no
-   :Option: :opt:`-allow_extrapolation`
-   :Description: Allow extrapolation during regridding.
-
 #. :config:`grid.Lbz` (*scalar*)
 
    :Value: 1000 (meters)
+   :Option: :opt:`-Lbz`
    :Description: Thickness of the thermal bedrock layer. (Inactive if ``grid.Mbz`` < 2)
 
 #. :config:`grid.Lx` (*scalar*)
@@ -975,6 +1075,7 @@
 #. :config:`grid.Mbz` (*integer*)
 
    :Value: 1
+   :Option: :opt:`-Mbz`
    :Description: Number of thermal bedrock layers; 1 level corresponds to no bedrock.
 
 #. :config:`grid.Mx` (*integer*)
@@ -995,10 +1096,11 @@
    :Option: :opt:`-Mz`
    :Description: Number of vertical grid levels in the ice.
 
-#. :config:`grid.recompute_longitude_and_latitude` (*boolean*)
+#. :config:`grid.allow_extrapolation` (*boolean*)
 
-   :Value: yes
-   :Description: Re-compute longitude and latitude using grid information and provided projection parameters. Requires PROJ.
+   :Value: no
+   :Option: :opt:`-allow_extrapolation`
+   :Description: Allow extrapolation during regridding.
 
 #. :config:`grid.ice_vertical_spacing` (*keyword*)
 
@@ -1017,18 +1119,23 @@
    :Value: 2
    :Description: Maximum width of the finite-difference stencil used in PISM.
 
-#. :config:`grid.registration` (*keyword*)
-
-   :Value: ``center``
-   :Choices: ``center, corner``
-   :Description: horizontal grid registration
-
 #. :config:`grid.periodicity` (*keyword*)
 
    :Value: ``xy``
    :Choices: ``none, x, y, xy``
    :Option: :opt:`-periodicity`
    :Description: horizontal grid periodicity
+
+#. :config:`grid.recompute_longitude_and_latitude` (*boolean*)
+
+   :Value: yes
+   :Description: Re-compute longitude and latitude using grid information and provided projection parameters. Requires PROJ.
+
+#. :config:`grid.registration` (*keyword*)
+
+   :Value: ``center``
+   :Choices: ``center, corner``
+   :Description: horizontal grid registration
 
 #. :config:`hydrology.cavitation_opening_coefficient` (*scalar*)
 
@@ -1041,6 +1148,18 @@
    :Value: 0.040000 (pure number)
    :Option: :opt:`-hydrology_creep_closure_coefficient`
    :Description: c_2 in notes; coefficient of creep closure term in evolution of layer thickness in hydrology::Distributed
+
+#. :config:`hydrology.distributed.init_p_from_steady` (*boolean*)
+
+   :Value: no
+   :Option: :opt:`-hydrology_init_p_form_steady`
+   :Description: if 'yes', initialize subglacial water pressure from P(W) formula that applies in steady state
+
+#. :config:`hydrology.distributed.sliding_speed_file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-hydrology_sliding_speed_file`
+   :Description: name of the file containing velbase_mag, the basal sliding speed to use with :literal:`hydrology.distributed.init_p_from_steady`
 
 #. :config:`hydrology.gradient_power_in_flux` (*scalar*)
 
@@ -1098,6 +1217,11 @@
    :Option: :opt:`-hydrology_roughness_scale`
    :Description: W_r in notes; roughness scale determining maximum amount of cavitation opening in hydrology::Distributed
 
+#. :config:`hydrology.surface_input_file` (*string*)
+
+   :Value: *no default*
+   :Description: Basal hydrology sub.surface_input_file.
+
 #. :config:`hydrology.thickness_power_in_flux` (*scalar*)
 
    :Value: 1.250000 (1)
@@ -1122,22 +1246,29 @@
    :Option: :opt:`-hydrology_use_const_bmelt`
    :Description: if 'yes', subglacial hydrology model sees basal melt rate which is constant and given by hydrology.const_bmelt
 
-#. :config:`hydrology.distributed.init_p_from_steady` (*boolean*)
+#. :config:`input.bootstrap` (*boolean*)
 
    :Value: no
-   :Option: :opt:`-hydrology_init_p_form_steady`
-   :Description: if 'yes', initialize subglacial water pressure from P(W) formula that applies in steady state
+   :Option: :opt:`-bootstrap`
+   :Description: It true, use bootstrapping heuristics when initializing PISM.
 
-#. :config:`hydrology.distributed.sliding_speed_file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-hydrology_sliding_speed_file`
-   :Description: name of the file containing velbase_mag, the basal sliding speed to use with :literal:`hydrology.distributed.init_p_from_steady`
-
-#. :config:`hydrology.surface_input_file` (*string*)
+#. :config:`input.file` (*string*)
 
    :Value: *no default*
-   :Description: Basal hydrology sub.surface_input_file.
+   :Option: :opt:`-i`
+   :Description: Input file name
+
+#. :config:`input.regrid.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-regrid_file`
+   :Description: Regridding (input) file name
+
+#. :config:`input.regrid.vars` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-regrid_vars`
+   :Description: Comma-separated list of variables to regrid. Leave empty to regrid all model state variables.
 
 #. :config:`inverse.design.cH1` (*scalar*)
 
@@ -1200,6 +1331,12 @@
    :Value: 10 (pure number)
    :Option: :opt:`-inv_log_ratio_scale`
    :Description: Reference scale for log-ratio functionals
+
+#. :config:`inverse.max_iterations` (*integer*)
+
+   :Value: 1000
+   :Option: :opt:`-inv_max_it`
+   :Description: maximum iteration count
 
 #. :config:`inverse.ssa.hardav_max` (*scalar*)
 
@@ -1286,11 +1423,11 @@
    :Option: :opt:`-tikhonov_rtol`
    :Description: relative threshold for Tikhonov stopping criterion
 
-#. :config:`inverse.max_iterations` (*integer*)
+#. :config:`inverse.use_design_prior` (*boolean*)
 
-   :Value: 1000
-   :Option: :opt:`-inv_max_it`
-   :Description: maximum iteration count
+   :Value: yes
+   :Option: :opt:`-inv_use_design_prior`
+   :Description: Use prior from inverse data file as initial guess.
 
 #. :config:`inverse.use_zeta_fixed_mask` (*boolean*)
 
@@ -1298,11 +1435,11 @@
    :Option: :opt:`-inv_use_zeta_fixed_mask`
    :Description: Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)
 
-#. :config:`inverse.use_design_prior` (*boolean*)
+#. :config:`ocean.always_grounded` (*boolean*)
 
-   :Value: yes
-   :Option: :opt:`-inv_use_design_prior`
-   :Description: Use prior from inverse data file as initial guess.
+   :Value: no
+   :Option: :opt:`-dry`
+   :Description: Dry (ocean-less) simulation; ice is considered grounded regardless of ice thickness, bed elevation, and sea level.
 
 #. :config:`ocean.anomaly.file` (*string*)
 
@@ -1322,6 +1459,128 @@
    :Option: :opt:`-ocean_anomaly_reference_year`
    :Description: Reference year to use when ``ocean.anomaly.period`` is active.
 
+#. :config:`ocean.cache.update_interval` (*integer*)
+
+   :Value: 10
+   :Option: :opt:`-ocean_cache_update_interval`
+   :Description: update interval of the 'cache' ocean modifier
+
+#. :config:`ocean.constant.melange_back_pressure_fraction` (*scalar*)
+
+   :Value: 0 (1)
+   :Description: default melange back pressure fraction in the 'contant' ocean model
+
+#. :config:`ocean.constant.melt_rate` (*scalar*)
+
+   :Value: 0.051914 (m / year)
+   :Option: :opt:`-shelf_base_melt_rate`
+   :Description: default melt rate used by the 'constant' ocean model (computed as `Q / (L \rho_i)`)
+
+#. :config:`ocean.delta_T.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ocean_delta_T_file`
+   :Description: Name of the file containing temperature offsets.
+
+#. :config:`ocean.delta_T.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_delta_T_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`ocean.delta_T.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_delta_T_reference_year`
+   :Description: Reference year to use when ``ocean.delta_T.period`` is active.
+
+#. :config:`ocean.delta_mass_flux.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ocean_delta_mass_flux_file`
+   :Description: Name of the file containing sub-shelf mass flux offsets.
+
+#. :config:`ocean.delta_mass_flux.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_delta_mass_flux_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`ocean.delta_mass_flux.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_delta_mass_flux_reference_year`
+   :Description: Reference year to use when ``ocean.delta_mass_flux.period`` is active.
+
+#. :config:`ocean.delta_sl.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ocean_delta_sl_file`
+   :Description: Name of the file containing sea level offsets.
+
+#. :config:`ocean.delta_sl.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_delta_sl_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`ocean.delta_sl.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_delta_sl_reference_year`
+   :Description: Reference year to use when ``ocean.delta_sl.period`` is active.
+
+#. :config:`ocean.delta_sl_2d.file` (*string*)
+
+   :Value: *no default*
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`ocean.delta_sl_2d.period` (*integer*)
+
+   :Value: 0
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`ocean.delta_sl_2d.reference_year` (*integer*)
+
+   :Value: 0
+   :Description: Reference year to use when ``ocean.delta_sl_2d.period`` is active.
+
+#. :config:`ocean.frac_MBP.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ocean_frac_MBP_file`
+   :Description: Name of the file containing melange back-pressure scaling.
+
+#. :config:`ocean.frac_MBP.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_frac_MBP_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`ocean.frac_MBP.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_frac_MBP_reference_year`
+   :Description: Reference year to use when ``ocean.frac_MBP.period`` is active.
+
+#. :config:`ocean.frac_mass_flux.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ocean_frac_mass_flux_file`
+   :Description: Name of the file containing sub-shelf mass flux scaling.
+
+#. :config:`ocean.frac_mass_flux.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_frac_mass_flux_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`ocean.frac_mass_flux.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_frac_mass_flux_reference_year`
+   :Description: Reference year to use when ``ocean.frac_mass_flux.period`` is active.
+
 #. :config:`ocean.given.file` (*string*)
 
    :Value: *no default*
@@ -1340,44 +1599,52 @@
    :Option: :opt:`-ocean_given_reference_year`
    :Description: Reference year to use when ``ocean.given.period`` is active.
 
-#. :config:`ocean.delta_sl_2d.file` (*string*)
+#. :config:`ocean.model` (*string*)
 
-   :Value: *no default*
-   :Description: Name of the file containing climate forcing fields.
+   :Value: constant
+   :Option: :opt:`-ocean`
+   :Description: Comma-separated list of selected ocean models.
 
-#. :config:`ocean.delta_sl_2d.period` (*integer*)
+#. :config:`ocean.pico.continental_shelf_depth` (*scalar*)
 
-   :Value: 0
-   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+   :Value: -800 (meters)
+   :Option: :opt:`-continental_shelf_depth`
+   :Description: Determines the edge of the continental shelf to calculate mean ocean properties
 
-#. :config:`ocean.delta_sl_2d.reference_year` (*integer*)
+#. :config:`ocean.pico.exclude_ice_rises` (*boolean*)
 
-   :Value: 0
-   :Description: Reference year to use when ``ocean.delta_sl_2d.period`` is active.
-
-#. :config:`ocean.th.file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-ocean_th_file`
-   :Description: Name of the file containing climate forcing fields.
-
-#. :config:`ocean.th.period` (*integer*)
-
-   :Value: 0
-   :Option: :opt:`-ocean_th_period`
-   :Description: Length of the period of the climate forcing data. Set to zero to disable.
-
-#. :config:`ocean.th.reference_year` (*integer*)
-
-   :Value: 0
-   :Option: :opt:`-ocean_th_reference_year`
-   :Description: Reference year to use when ``ocean.th.period`` is active.
+   :Value: yes
+   :Option: :opt:`-exclude_icerises`
+   :Description: Exclude ice rises for box calculation in PICO
 
 #. :config:`ocean.pico.file` (*string*)
 
    :Value: *no default*
    :Option: :opt:`-ocean_pico_file`
    :Description: Name of the file containing climate forcing fields.
+
+#. :config:`ocean.pico.heat_exchange_coefficent` (*scalar*)
+
+   :Value: 0.000020 (meters second-1)
+   :Option: :opt:`-gamma_T`
+   :Description: Turbulent heat exchange coefficient
+
+#. :config:`ocean.pico.maximum_ice_rise_area` (*scalar*)
+
+   :Value: 100000 (km2)
+   :Description: Maximum ice rise area. Patches of grounded ice that are bugger than this are treated as continental ice sheets.
+
+#. :config:`ocean.pico.number_of_boxes` (*integer*)
+
+   :Value: 5
+   :Option: :opt:`-number_of_boxes`
+   :Description: Default maximum number of boxes (for the largest ice shelves)
+
+#. :config:`ocean.pico.overturning_coefficent` (*scalar*)
+
+   :Value: 1000000 (meters6 seconds-1 kg-1)
+   :Option: :opt:`-overturning_coeff`
+   :Description: Overturning stregth coefficient
 
 #. :config:`ocean.pico.period` (*integer*)
 
@@ -1391,34 +1658,11 @@
    :Option: :opt:`-ocean_pico_reference_year`
    :Description: Reference year to use when ``ocean.pico.period`` is active.
 
-#. :config:`ocean.always_grounded` (*boolean*)
-
-   :Value: no
-   :Option: :opt:`-dry`
-   :Description: Dry (ocean-less) simulation; ice is considered grounded regardless of ice thickness, bed elevation, and sea level.
-
 #. :config:`ocean.pik_melt_factor` (*scalar*)
 
    :Value: 0.005000 (1)
    :Option: :opt:`-meltfactor_pik`
    :Description: dimensionless tuning parameter in the '-ocean pik' ocean heat flux parameterization; see :cite:`Martinetal2011`
-
-#. :config:`ocean.constant.melt_rate` (*scalar*)
-
-   :Value: 0.051914 (m / year)
-   :Option: :opt:`-shelf_base_melt_rate`
-   :Description: default melt rate used by the 'constant' ocean model (computed as `Q / (L \rho_i)`)
-
-#. :config:`ocean.constant.melange_back_pressure_fraction` (*scalar*)
-
-   :Value: 0 (1)
-   :Description: default melange back pressure fraction in the 'contant' ocean model
-
-#. :config:`ocean.cache.update_interval` (*integer*)
-
-   :Value: 10
-   :Option: :opt:`-ocean_cache_update_interval`
-   :Description: update interval of the 'cache' ocean modifier
 
 #. :config:`ocean.runoff_to_ocean_melt_b` (*scalar*)
 
@@ -1440,76 +1684,29 @@
    :Value: 0.500000 (W meter-2)
    :Description: = J meter-2 second-1; naively chosen default value for heat from ocean; see comments in pism::ocean::Constant::shelf_base_mass_flux().
 
+#. :config:`ocean.th.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ocean_th_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`ocean.th.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_th_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`ocean.th.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_th_reference_year`
+   :Description: Reference year to use when ``ocean.th.period`` is active.
+
 #. :config:`ocean.three_equation_model_clip_salinity` (*boolean*)
 
    :Value: yes
    :Option: :opt:`-clip_shelf_base_salinity`
    :Description: Clip shelf base salinity so that it is in the range [4, 40] k/kg. See :cite:`HollandJenkins1999`.
-
-#. :config:`ocean.pico.number_of_boxes` (*integer*)
-
-   :Value: 5
-   :Option: :opt:`-number_of_boxes`
-   :Description: Default maximum number of boxes (for the largest ice shelves)
-
-#. :config:`ocean.pico.continental_shelf_depth` (*scalar*)
-
-   :Value: -800 (meters)
-   :Option: :opt:`-continental_shelf_depth`
-   :Description: Determines the edge of the continental shelf to calculate mean ocean properties
-
-#. :config:`ocean.pico.maximum_ice_rise_area` (*scalar*)
-
-   :Value: 100000 (km2)
-   :Description: Maximum ice rise area. Patches of grounded ice that are bugger than this are treated as continental ice sheets.
-
-#. :config:`ocean.pico.overturning_coefficent` (*scalar*)
-
-   :Value: 1000000 (meters6 seconds-1 kg-1)
-   :Option: :opt:`-overturning_coeff`
-   :Description: Overturning stregth coefficient
-
-#. :config:`ocean.pico.heat_exchange_coefficent` (*scalar*)
-
-   :Value: 0.000020 (meters second-1)
-   :Option: :opt:`-gamma_T`
-   :Description: Turbulent heat exchange coefficient
-
-#. :config:`ocean.pico.exclude_ice_rises` (*boolean*)
-
-   :Value: yes
-   :Option: :opt:`-exclude_icerises`
-   :Description: Exclude ice rises for box calculation in PICO
-
-#. :config:`output.extra.file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-extra_file`
-   :Description: Name of the output file containing spatially-variable diagnostics.
-
-#. :config:`output.extra.times` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-extra_times`
-   :Description: List or a range of times defining reporting intervals for spatially-variable diagnostics.
-
-#. :config:`output.extra.vars` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-extra_vars`
-   :Description: Comma-separated list of spatially-variable diagnostics.
-
-#. :config:`output.extra.split` (*boolean*)
-
-   :Value: no
-   :Option: :opt:`-extra_split`
-   :Description: Save spatially-variable diagnostics to separate files (one per time record).
-
-#. :config:`output.extra.append` (*boolean*)
-
-   :Value: no
-   :Option: :opt:`-extra_append`
-   :Description: Append to an existing output file.
 
 #. :config:`output.backup_interval` (*scalar*)
 
@@ -1523,6 +1720,42 @@
    :Choices: ``none, small, medium, big_2d, big``
    :Option: :opt:`-backup_size`
    :Description: The 'size' of a backup file. See configuration parameters output.sizes.medium, output.sizes.big_2d, output.sizes.big
+
+#. :config:`output.extra.append` (*boolean*)
+
+   :Value: no
+   :Option: :opt:`-extra_append`
+   :Description: Append to an existing output file.
+
+#. :config:`output.extra.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-extra_file`
+   :Description: Name of the output file containing spatially-variable diagnostics.
+
+#. :config:`output.extra.split` (*boolean*)
+
+   :Value: no
+   :Option: :opt:`-extra_split`
+   :Description: Save spatially-variable diagnostics to separate files (one per time record).
+
+#. :config:`output.extra.times` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-extra_times`
+   :Description: List or a range of times defining reporting intervals for spatially-variable diagnostics.
+
+#. :config:`output.extra.vars` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-extra_vars`
+   :Description: Comma-separated list of spatially-variable diagnostics.
+
+#. :config:`output.file_name` (*string*)
+
+   :Value: unnamed.nc
+   :Option: :opt:`-o`
+   :Description: The file to save final model results to.
 
 #. :config:`output.fill_value` (*scalar*)
 
@@ -1546,12 +1779,6 @@
    :Value: 6
    :Option: :opt:`-summary_area_scale_factor_log10`
    :Description: an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout
-
-#. :config:`output.file_name` (*string*)
-
-   :Value: unnamed.nc
-   :Option: :opt:`-o`
-   :Description: The file to save final model results to.
 
 #. :config:`output.runtime.time_unit_name` (*string*)
 
@@ -1581,31 +1808,6 @@
    :Option: :opt:`-summary_vol_scale_factor_log10`
    :Description: an integer; log base 10 of scale factor to use for volume (in km^3) in summary line to stdout
 
-#. :config:`output.snapshot.file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-save_file`
-   :Description: Snapshot (output) file name (or prefix, if saving to individual files).
-
-#. :config:`output.snapshot.times` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-save_times`
-   :Description: List or a range of times to save model state snapshots at.
-
-#. :config:`output.snapshot.split` (*boolean*)
-
-   :Value: no
-   :Option: :opt:`-save_split`
-   :Description: Save model state snapshots to separate files (one per time record).
-
-#. :config:`output.snapshot.size` (*keyword*)
-
-   :Value: ``small``
-   :Choices: ``none, small, medium, big_2d, big``
-   :Option: :opt:`-save_size`
-   :Description: The 'size' of a snapshot file. See configuration parameters output.sizes.medium, output.sizes.big_2d, output.sizes.big
-
 #. :config:`output.size` (*keyword*)
 
    :Value: ``medium``
@@ -1628,22 +1830,41 @@
    :Value: ``bwat, bwatvel, climatic_mass_balance, diffusivity, enthalpy, flux, flux_mag, ice_surface_temp, liqfrac, mask, schoofs_theta, strain_rates, taub_mag, tauc, taud_mag, temp_pa, tillwat, topgsmooth, usurf, velbar_mag, velbase_mag, velsurf, velsurf_mag, wvelsurf``
    :Description: Comma-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size (the default) is selected. Does not include fields written by sub-models.
 
-#. :config:`output.timeseries.buffer_size` (*integer*)
-
-   :Value: 10000
-   :Description: Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.
-
-#. :config:`output.timeseries.variables` (*string*)
+#. :config:`output.snapshot.file` (*string*)
 
    :Value: *no default*
-   :Option: :opt:`-ts_vars`
-   :Description: Requested scalar (time-series) diagnostics. Leave empty to save all available diagnostics.
+   :Option: :opt:`-save_file`
+   :Description: Snapshot (output) file name (or prefix, if saving to individual files).
+
+#. :config:`output.snapshot.size` (*keyword*)
+
+   :Value: ``small``
+   :Choices: ``none, small, medium, big_2d, big``
+   :Option: :opt:`-save_size`
+   :Description: The 'size' of a snapshot file. See configuration parameters output.sizes.medium, output.sizes.big_2d, output.sizes.big
+
+#. :config:`output.snapshot.split` (*boolean*)
+
+   :Value: no
+   :Option: :opt:`-save_split`
+   :Description: Save model state snapshots to separate files (one per time record).
+
+#. :config:`output.snapshot.times` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-save_times`
+   :Description: List or a range of times to save model state snapshots at.
 
 #. :config:`output.timeseries.append` (*boolean*)
 
    :Value: false
    :Option: :opt:`-ts_append`
    :Description: If true, append to the scalar time series output file.
+
+#. :config:`output.timeseries.buffer_size` (*integer*)
+
+   :Value: 10000
+   :Description: Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.
 
 #. :config:`output.timeseries.filename` (*string*)
 
@@ -1656,6 +1877,12 @@
    :Value: *no default*
    :Option: :opt:`-ts_times`
    :Description: List or range of times defining reporting time intervals.
+
+#. :config:`output.timeseries.variables` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ts_vars`
+   :Description: Requested scalar (time-series) diagnostics. Leave empty to save all available diagnostics.
 
 #. :config:`output.variable_order` (*keyword*)
 
@@ -1692,6 +1919,12 @@
    :Value: *no default*
    :Option: :opt:`-title`
    :Description: Free-form string containing a concise description of the current run. This string is written to output files as the 'title' global attribute.
+
+#. :config:`sea_level.model` (*string*)
+
+   :Value: constant
+   :Option: :opt:`-sea_level`
+   :Description: Sea level elevation forcing models.
 
 #. :config:`stress_balance.calving_front_stress_bc` (*boolean*)
 
@@ -1812,12 +2045,6 @@
    :Option: :opt:`-ssa_eps`
    :Description: Initial amount of regularization in computation of product of effective viscosity and thickness (`\nu H`).  This default value for `\nu H` comes e.g. from a hardness for the Ross ice shelf (`\bar B`) = 1.9e8 Pa `s^{1/3}` :cite:`MacAyealetal` and a typical strain rate of 0.001 1/year for the Ross ice shelf, giving `\nu = (\bar B) / (2 \cdot 0.001^{2/3})` = 9.49e+14 Pa s ~ 30 MPa year, the value in :cite:`Ritzetal2001`, but with a tiny thickness `H` of about 1 cm.
 
-#. :config:`stress_balance.ssa.read_initial_guess` (*boolean*)
-
-   :Value: yes
-   :Option: :opt:`-ssa_read_initial_guess`
-   :Description: Read the initial guess from the input file when re-starting.
-
 #. :config:`stress_balance.ssa.fd.brutal_sliding` (*boolean*)
 
    :Value: false
@@ -1847,6 +2074,12 @@
    :Option: :opt:`-ssafd_picard_maxi`
    :Description: Maximum number of Picard iterations for the ice viscosity computation, in the SSAFD object
 
+#. :config:`stress_balance.ssa.fd.max_speed` (*scalar*)
+
+   :Value: 500000 (m yr-1)
+   :Option: :opt:`-ssafd_max_speed`
+   :Description: Upper bound for the ice speed computed by the SSAFD solver.
+
 #. :config:`stress_balance.ssa.fd.nuH_iter_failure_underrelaxation` (*scalar*)
 
    :Value: 0.800000 (pure number)
@@ -1864,12 +2097,6 @@
    :Value: yes
    :Description: Replace zero diagonal entries in the SSAFD matrix with basal_resistance.beta_ice_free_bedrock to avoid solver failures.
 
-#. :config:`stress_balance.ssa.fd.max_speed` (*scalar*)
-
-   :Value: 500000 (m yr-1)
-   :Option: :opt:`-ssafd_max_speed`
-   :Description: Upper bound for the ice speed computed by the SSAFD solver.
-
 #. :config:`stress_balance.ssa.flow_law` (*keyword*)
 
    :Value: ``gpbld``
@@ -1883,6 +2110,12 @@
    :Choices: ``fd, fem``
    :Option: :opt:`-ssa_method`
    :Description: Algorithm for computing the SSA solution.
+
+#. :config:`stress_balance.ssa.read_initial_guess` (*boolean*)
+
+   :Value: yes
+   :Option: :opt:`-ssa_read_initial_guess`
+   :Description: Read the initial guess from the input file when re-starting.
 
 #. :config:`stress_balance.ssa.strength_extension.constant_nu` (*scalar*)
 
@@ -1911,16 +2144,46 @@
    :Value: 0.200000 (1)
    :Description: The ratio of the basal water pressure and the ice overburden pressure in the Weertman-style sliding parameterization.
 
+#. :config:`surface.anomaly.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-surface_anomaly_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`surface.anomaly.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-surface_anomaly_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`surface.anomaly.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-surface_anomaly_reference_year`
+   :Description: Reference year to use when ``surface.anomaly.period`` is active.
+
 #. :config:`surface.cache.update_interval` (*integer*)
 
    :Value: 10
    :Description: Update interval (in years) for the `-surface cache` modifier.
 
-#. :config:`surface.force_to_thickness_file` (*string*)
+#. :config:`surface.delta_T.file` (*string*)
 
    :Value: *no default*
-   :Option: :opt:`-force_to_thickness_file`
-   :Description: The name of the file to read the target ice thickness from.
+   :Option: :opt:`-surface_delta_T_file`
+   :Description: Name of the file containing temperature offsets.
+
+#. :config:`surface.delta_T.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-surface_delta_T_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`surface.delta_T.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-surface_delta_T_reference_year`
+   :Description: Reference year to use when ``surface.delta_T.period`` is active.
 
 #. :config:`surface.force_to_thickness.alpha` (*scalar*)
 
@@ -1945,10 +2208,11 @@
    :Value: -4.540000e+09 (years)
    :Description: Starting time for the "force to thickness" modifier; the default is "start from the creation of the Earth."
 
-#. :config:`surface.given.smb_max` (*scalar*)
+#. :config:`surface.force_to_thickness_file` (*string*)
 
-   :Value: 91000 (kg m-2 year-1)
-   :Description: Maximum climatic mass balance value (used to check input data). Corresponds to 100 m/year ice equivalent.
+   :Value: *no default*
+   :Option: :opt:`-force_to_thickness_file`
+   :Description: The name of the file to read the target ice thickness from.
 
 #. :config:`surface.given.file` (*string*)
 
@@ -1968,6 +2232,11 @@
    :Option: :opt:`-surface_given_reference_year`
    :Description: Reference year to use when ``surface.given.period`` is active.
 
+#. :config:`surface.given.smb_max` (*scalar*)
+
+   :Value: 91000 (kg m-2 year-1)
+   :Description: Maximum climatic mass balance value (used to check input data). Corresponds to 100 m/year ice equivalent.
+
 #. :config:`surface.lapse_rate.file` (*string*)
 
    :Value: *no default*
@@ -1986,30 +2255,23 @@
    :Option: :opt:`-surface_lapse_rate_reference_year`
    :Description: Reference year to use when ``surface.lapse_rate.period`` is active.
 
-#. :config:`surface.anomaly.file` (*string*)
+#. :config:`surface.lapse_rate.temperature_lapse_rate` (*scalar*)
 
-   :Value: *no default*
-   :Option: :opt:`-surface_anomaly_file`
-   :Description: Name of the file containing climate forcing fields.
+   :Value: 0 (K / km)
+   :Option: :opt:`-temp_lapse_rate`
+   :Description: Lapse rate for the temperature at the top of the ice.
 
-#. :config:`surface.anomaly.period` (*integer*)
+#. :config:`surface.lapse_rate.smb_lapse_rate` (*scalar*)
 
-   :Value: 0
-   :Option: :opt:`-surface_anomaly_period`
-   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+   :Value: 0 ((m / year) / km)
+   :Option: :opt:`-smb_lapse_rate`
+   :Description: Lapse rate for the surface mass balance.
 
-#. :config:`surface.anomaly.reference_year` (*integer*)
+#. :config:`surface.model` (*string*)
 
-   :Value: 0
-   :Option: :opt:`-surface_anomaly_reference_year`
-   :Description: Reference year to use when ``surface.anomaly.period`` is active.
-
-#. :config:`surface.pdd.method` (*keyword*)
-
-   :Value: ``expectation_integral``
-   :Choices: ``expectation_integral, repeatable_random_process, random_process``
-   :Option: :opt:`-pdd_method`
-   :Description: PDD implementation method
+   :Value: given
+   :Option: :opt:`-surface`
+   :Description: Comma-separated list of selected surface models.
 
 #. :config:`surface.pdd.air_temp_all_precip_as_rain` (*scalar*)
 
@@ -2035,6 +2297,12 @@
 
    :Value: 0.003297 (meter / (Kelvin day))
    :Description: EISMINT-Greenland value :cite:`RitzEISMINT`; = (3 mm liquid-water-equivalent) / (pos degree day)
+
+#. :config:`surface.pdd.fausto.enabled` (*boolean*)
+
+   :Value: false
+   :Option: :opt:`-pdd_fausto`
+   :Description: Set PDD parameters using formulas (6) and (7) in :cite:`Faustoetal2009`
 
 #. :config:`surface.pdd.fausto.T_c` (*scalar*)
 
@@ -2082,12 +2350,6 @@
    :Option: :opt:`-pdd_firn_depth_file`
    :Description: The name of the file to read the firn_depth from.
 
-#. :config:`surface.pdd.temperature_standard_deviation_file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-pdd_sd_file`
-   :Description: The name of the file to read air_temp_sd from.
-
 #. :config:`surface.pdd.interpret_precip_as_snow` (*boolean*)
 
    :Value: no
@@ -2097,6 +2359,13 @@
 
    :Value: 52
    :Description: maximum number of times the PDD scheme will ask for air temperature and precipitation to build location-dependent time series for computing (expected) number of positive degree days and snow accumulation; the default means the PDD uses weekly samples of the annual cycle; see also surface.pdd.std_dev
+
+#. :config:`surface.pdd.method` (*keyword*)
+
+   :Value: ``expectation_integral``
+   :Choices: ``expectation_integral, repeatable_random_process, random_process``
+   :Option: :opt:`-pdd_method`
+   :Description: PDD implementation method
 
 #. :config:`surface.pdd.positive_threshold_temp` (*scalar*)
 
@@ -2121,12 +2390,12 @@
 #. :config:`surface.pdd.std_dev_lapse_lat_base` (*scalar*)
 
    :Value: 72 (degree_north)
-   :Description: std_dev is a function of latitude, with value surface.pdd.std_dev at this latitude; this value only active if surface.pdd.std_dev_lapse_lat_rate is nonzero 
+   :Description: std_dev is a function of latitude, with value surface.pdd.std_dev at this latitude; this value only active if surface.pdd.std_dev_lapse_lat_rate is nonzero
 
 #. :config:`surface.pdd.std_dev_lapse_lat_rate` (*scalar*)
 
    :Value: 0 (Kelvin / degree_north)
-   :Description: std_dev is a function of latitude, with rate of change with respect to latitude given by this constant 
+   :Description: std_dev is a function of latitude, with rate of change with respect to latitude given by this constant
 
 #. :config:`surface.pdd.std_dev_param_a` (*scalar*)
 
@@ -2142,6 +2411,24 @@
 
    :Value: no
    :Description: Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by geometry.ice_free_thickness_standard.
+
+#. :config:`surface.pdd.std_dev.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-pdd_sd_file`
+   :Description: The name of the file to read `air_temp_sd` (standard deviation of air temperature) from.
+
+#. :config:`surface.pdd.std_dev.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-pdd_sd_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`surface.pdd.std_dev.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-pdd_sd_reference_year`
+   :Description: Reference year to use when ``surface.pdd.std_dev.period`` is active.
 
 #. :config:`surface.pressure` (*scalar*)
 
