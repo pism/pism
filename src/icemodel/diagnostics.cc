@@ -1012,10 +1012,10 @@ public:
 /*!
  * This is the change in mass resulting from prescribing (fixing) ice thickness.
  */
-class IceMassRateOfChangeDueToInflux : public TSDiag<TSFluxDiagnostic, IceModel>
+class IceMassRateOfChangeDueToFlow : public TSDiag<TSFluxDiagnostic, IceModel>
 {
 public:
-  IceMassRateOfChangeDueToInflux(IceModel *m)
+  IceMassRateOfChangeDueToFlow(IceModel *m)
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_flow") {
 
     m_ts.variable().set_string("units", "kg s-1");
@@ -2377,7 +2377,7 @@ void IceModel::init_diagnostics() {
     {"dt",              s(new scalar::TimeStepLength(this))},
     // balancing the books
     {"tendency_of_ice_mass",                           s(new scalar::IceMassRateOfChange(this))},
-    {"tendency_of_ice_mass_due_to_flow",               s(new scalar::IceMassRateOfChangeDueToInflux(this))},
+    {"tendency_of_ice_mass_due_to_flow",               s(new scalar::IceMassRateOfChangeDueToFlow(this))},
     {"tendency_of_ice_mass_due_to_conservation_error", s(new scalar::IceMassFluxConservationError(this))},
     {"tendency_of_ice_mass_due_to_basal_mass_flux",    s(new scalar::IceMassFluxBasal(this))},
     {"tendency_of_ice_mass_due_to_surface_mass_flux",  s(new scalar::IceMassFluxSurface(this))},
