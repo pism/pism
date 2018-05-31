@@ -83,6 +83,12 @@ parser.add_argument("-e", "--ensemble_file", dest="ensemble_file",
                     help="File that has all combinations for ensemble study", default='ensemble.csv')
 parser.add_argument("-b", "--bootstrap", dest="bootstrap", action="store_true",
                     help="Use bootstrapping", default=False)
+parser.add_argument("--climate", dest="climate",
+                    choices=['init', 'elev+ftt', 'warming'],
+                    help="Climate forcing", default='init')
+parser.add_argument("--cryohydrologic_warming", dest="cryohydrologic_warming", action='store_true',
+                    help="Turn on cryohydrologic warming", default=False)
+
 
 options = parser.parse_args()
 
@@ -98,7 +104,8 @@ system = options.system
 
 spatial_ts = options.spatial_ts
 
-climate = 'init'
+climate = options.climate
+cryohydrologic_warming = options.cryohydrologic_warming
 vertical_velocity_approximation = options.vertical_velocity_approximation
 
 exstep = options.exstep
@@ -212,6 +219,7 @@ for n, combination in enumerate(combinations):
     ttphi = '{},{},{},{}'.format(phi_min, phi_max, topg_min, topg_max)
 
     name_options = OrderedDict()
+    name_options['sb'] = stress_balance
     name_options['climate'] = climate
     try:
         name_options['id'] = '{:03d}'.format(int(run_id))
@@ -302,9 +310,7 @@ for n, combination in enumerate(combinations):
 
                 stress_balance_params_dict = generate_stress_balance(stress_balance, sb_params_dict)
 
-
-                # climate_params_dict = generate_climate(climate, **climate_parameters)
-                climate_params_dict = generate_climate(climate)
+                climate_params_dict = generate_climate(climate, **{'energy.ch_warming.enabled': cryohydrologic_warming})
 
 
                 hydro_params_dict = generate_hydrology(hydrology)
