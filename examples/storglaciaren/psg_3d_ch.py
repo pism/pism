@@ -62,7 +62,7 @@ parser.add_argument("-s", "--system", dest="system",
                     choices=list_systems(),
                     help="computer system to use.", default='debug')
 parser.add_argument("--spatial_ts", dest="spatial_ts",
-                    choices=['basic', 'standard', 'none'],
+                    choices=['default', 'ch', 'none'],
                     help="output size type", default='default')
 parser.add_argument("--hydrology", dest="hydrology",
                     choices=['null', 'diffuse', 'routing'],
@@ -328,10 +328,10 @@ for n, combination in enumerate(combinations):
                                               scalar_ts_dict)
 
                 if not spatial_ts == 'none':
-                    if spatial_ts == 'basic':
-                        exvars = basic_spatial_ts_vars()
+                    if spatial_ts == 'default':
+                        exvars = default_spatial_ts_vars()
                     else:
-                        exvars = stability_spatial_ts_vars()
+                        exvars = ch_spatial_ts_vars()
                     spatial_ts_dict = generate_spatial_ts(outfile, exvars, exstep, odir=dirs["spatial"], split=False)
 
                     all_params_dict = merge_dicts(all_params_dict,

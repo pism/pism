@@ -15,16 +15,19 @@ parser.add_argument("-T_max",dest="T_max", type=float,
                     help="Maximum temperature",default=1)
 parser.add_argument("-t_max",dest="t_max", type=float,
                     help="lower time bound for maximum temperature",default=100)
+parser.add_argument("-amplitude",dest="amplitude", type=float,
+                    help="Amplitde of seasonal cycle.",default=12)
 
 
 options = parser.parse_args()
 args = options.FILE
 start = 0
-end = 500
-step = 1
+end = 1000
+step = 1./12.
+amplitude = options.amplitude
 t_max = options.t_max
 T_max = options.T_max
-bnds_interval_since_refdate = np.array(list(range(start, end + step, step)))
+bnds_interval_since_refdate = np.linspace(start, end, end * 12 + 1)
 time_interval_since_refdate = (bnds_interval_since_refdate[0:-1] +
                                np.diff(bnds_interval_since_refdate) / 2)
 
@@ -71,6 +74,7 @@ T_0 = 0.
 
 temp = np.zeros_like(time_interval_since_refdate) + T_max
 temp[0:int(t_max/step)] = np.linspace(T_0, T_max, t_max / step)
+temp[:] += -np.cos(time_interval_since_refdate * 2 * np.pi) * amplitude
 dT_var[:] = temp
 
 # writing global attributes
