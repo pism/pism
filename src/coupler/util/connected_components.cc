@@ -24,11 +24,10 @@ ConnectedComponents::~ConnectedComponents() {
   //empty
 }
 
-
 void ConnectedComponents::compute_runs(int &run_number, VecList &lists, unsigned int &max_items) {
   IceModelVec::AccessList list;
-  list.add(m_masks);
-  list.add(m_fields);
+  addFieldVecAccessList(m_masks, list);
+  addFieldVecAccessList(m_fields, list);
 
   //Assign Pixels to runs
   for (Points p(*m_grid); p; p.next()) {
@@ -103,7 +102,7 @@ void ConnectedComponents::checkForegroundPixel(const int i, const int j, int &ru
 
 }
 
-void ConnectedComponents::startNewRun(const int i, const int j, int &run_number, VecList &lists, const int parent) {
+void ConnectedComponents::startNewRun(const int i, const int j, int &run_number, VecList &lists, int &parent) {
   run_number += 1;
   lists["i_vec"][run_number]   = i;
   lists["j_vec"][run_number]   = j;
@@ -127,7 +126,7 @@ void ConnectedComponents::resizeLists(VecList &lists, const int new_length) {
 
 void ConnectedComponents::labelMask(int run_number, const VecList &lists) {
   IceModelVec::AccessList list;
-  list.add(m_masks);
+  addFieldVecAccessList(m_masks, list);
 
   const RunVec i_vec = lists.find("i_vec")->second,
                j_vec = lists.find("j_vec")->second;
@@ -142,9 +141,26 @@ void ConnectedComponents::labelMask(int run_number, const VecList &lists) {
 }
 
 bool ConnectedComponents::updateRunsAtBoundaries(VecList &lists) {
-  (void) lists;
+  bool changed = false;
+  IceModelVec::AccessList list;
+  addFieldVecAccessList(m_masks, list);
+  updateGhosts(m_masks);
 
   return false;
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    bool isWest   = ((i == m_i_local_first) and not(i == m_i_global_first)),
+         isEast   = ((i == m_i_local_last) and not(i == m_i_global_last)),
+         isSouth  = ((j == m_j_local_first) and not(j == m_j_global_first)),
+         isNorth  = ((j == m_j_local_last) and not(j == m_j_global_last)),
+         isMargin = (isWest or isEast or isSouth or isNorth);
+
+    if (isMargin) {
+      treatInnerMargin(i, j, isNorth, isEast, isWest, isWest, lists, changed);
+    }
+  }
+
+  return (GlobalOr(m_grid->com, changed));
 }
 
 void ConnectedComponents::run_union(RunVec &parents, int run1, int run2) {
@@ -170,5 +186,77 @@ int ConnectedComponents::trackParentRun(int run, const RunVec &parents) {
   return run;
 }
 
+void ConnectedComponents::addFieldVecAccessList(FieldVec &fields, IceModelVec::AccessList &list) {
+  for (FieldVec::iterator it = fields.begin(); it != fields.end(); it++) {
+    IceModelVec *field = *it;
+    list.add(*field);
+  }
+}
+
+void ConnectedComponents::updateGhosts(FieldVec &in) {
+  for (FieldVec::iterator it = in.begin(); it != in.end(); it++) {
+    IceModelVec *field = *it;
+    field->update_ghosts();
+  }
+}
+
+
+
+SinkCC::SinkCC(IceGrid::ConstPtr g)
+  :ConnectedComponents(g) {
+  //empty
+}
+
+SinkCC::~SinkCC() {
+  //empty
+}
+
+void SinkCC::setRunSink(int run, RunVec &parents) {
+  if ((run == 0) or (run == 1)) {
+    return;
+  }
+
+  run = trackParentRun(run, parents);
+  if (run != 1) {
+    parents[run] = 1;
+  }
+}
+
+bool SinkCC::SinkCond(const int i, const int j) {
+  const int mask = m_mask_run(i, j);
+  return (mask == 1);
+}
+
+void SinkCC::treatInnerMargin(const int i, const int j,
+                              const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
+                              VecList &lists, bool &changed) {
+  const int run = m_mask_run.as_int(i, j);
+  if (run > 1) {
+    //Lake at inner boundary
+    StarStencil<int> mask_star = m_mask_run.int_star(i, j);
+    bool WestSink = (isWest and (mask_star.w == 1)), EastSink = (isEast and (mask_star.e == 1)),
+         SouthSink = (isSouth and (mask_star.s == 1)), NorthSink = (isNorth and (mask_star.n == 1));
+
+    if (WestSink or EastSink or SouthSink or NorthSink) {
+      //Lake on other side overflowing
+      lists["parents"][run] = 1;
+      changed      = true;
+    }
+  }
+}
+
+void SinkCC::startNewRun(const int i, const int j, int &run_number, VecList &lists, int &parent) {
+  if (SinkCond(i, j)) {
+    parent = 1;
+  }
+  ConnectedComponents::startNewRun(i, j, run_number, lists, parent);
+}
+
+void SinkCC::continueRun(const int i, const int j, int &run_number, VecList &lists) {
+  ConnectedComponents::continueRun(i, j, run_number, lists);
+  if (SinkCond(i, j)) {
+    setRunSink(run_number, lists["parents"]);
+  }
+}
 
 } //namespace pism
