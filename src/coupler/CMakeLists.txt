@@ -4,6 +4,7 @@ add_library (boundary OBJECT
   ./util/options.cc
   ./util/lapse_rates.cc
   ./util/FillingAlg_ConnectedComponents.cc
+  ./util/connected_components.cc
   ./atmosphere/AtmosphereModel.cc
   ./atmosphere/ConstantPIK.cc
   ./atmosphere/SeariseGreenland.cc
