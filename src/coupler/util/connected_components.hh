@@ -25,8 +25,6 @@ private:
   void checkForegroundPixel(const int i, const int j, int &run_number, VecList &lists);
   void resizeLists(VecList &lists, const int new_length);
   void run_union(RunVec &parents, int run1, int run2);
-  void updateGhosts(FieldVec &in);
-  void addFieldVecAccessList(FieldVec &field, IceModelVec::AccessList &list);
 
 protected:
   const IceGrid::ConstPtr m_grid;
@@ -45,6 +43,8 @@ protected:
   virtual void mergeRuns(const int run_number, const int run_south, VecList &lists);
   virtual void labelMask(int run_number, const VecList &lists);
   virtual bool updateRunsAtBoundaries(VecList &lists);
+  void updateGhosts(FieldVec &in);
+  void addFieldVecAccessList(FieldVec &field, IceModelVec::AccessList &list);
 };
 
 
@@ -64,6 +64,28 @@ protected:
                                 VecList &lists, bool &changed);
   virtual void startNewRun(const int i, const int j, int &run_number, VecList &lists, int &parent);
   virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
+
+};
+
+
+class ValidSinkCC : public SinkCC {
+public:
+  ValidSinkCC(IceGrid::ConstPtr g);
+  ~ValidSinkCC();
+
+private:
+  void setRunValid(int run, VecList &lists);
+
+protected:
+  IceModelVec2Int m_mask_validity;
+  virtual void init_VecList(VecList &lists, const unsigned int length);
+  virtual void treatInnerMargin(const int i, const int j,
+                                const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
+                                VecList &lists, bool &changed);
+  virtual void startNewRun(const int i, const int j, int &run_number, VecList &lists, int &parent);
+  virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
+  virtual void mergeRuns(const int run_number, const int run_south, VecList &lists);
+  virtual void labelMask(int run_number, const VecList &lists);
 
 };
 
