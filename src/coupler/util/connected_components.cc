@@ -128,12 +128,13 @@ void ConnectedComponents::labelMask(int run_number, const VecList &lists) {
   IceModelVec::AccessList list;
   addFieldVecAccessList(m_masks, list);
 
-  const RunVec i_vec = lists.find("i_vec")->second,
-               j_vec = lists.find("j_vec")->second;
+  const RunVec i_vec   = lists.find("i_vec")->second,
+               j_vec   = lists.find("j_vec")->second,
+               len_vec = lists.find("j_vec")->second;
 
   for (int k = 0; k <= run_number; ++k) {
     const int label = trackParentRun(k, lists.find("parents")->second);
-    for (unsigned int n = 0; n < lists.find("lengths")->second[k]; ++n) {
+    for (unsigned int n = 0; n < len_vec[k]; ++n) {
       const int i = i_vec[k] + n, j = j_vec[k];
       m_mask_run(i, j) = label;
     }
@@ -261,20 +262,6 @@ void SinkCC::continueRun(const int i, const int j, int &run_number, VecList &lis
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ValidSinkCC::ValidSinkCC(IceGrid::ConstPtr g)
   :SinkCC(g) {
   m_mask_validity.create(m_grid, "mask_validity", WITH_GHOSTS, 1);
@@ -360,12 +347,13 @@ void ValidSinkCC::labelMask(int run_number, const VecList &lists) {
 
   const RunVec i_vec = lists.find("i_vec")->second,
                j_vec = lists.find("j_vec")->second,
+               len_vec = lists.find("j_vec")->second,
                validity_vec = lists.find("validity")->second;
 
   for (int k = 0; k <= run_number; ++k) {
     const int label = trackParentRun(k, lists.find("parents")->second);
     const int label_valid = validity_vec[label];
-    for (unsigned int n = 0; n < lists.find("lengths")->second[k]; ++n) {
+    for (unsigned int n = 0; n < len_vec[k]; ++n) {
       const int i = i_vec[k] + n, j = j_vec[k];
       m_mask_run(i, j) = label;
       m_mask_validity(i, j) = label_valid;
