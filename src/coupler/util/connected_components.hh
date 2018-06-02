@@ -89,6 +89,49 @@ protected:
 
 };
 
+
+
+template<class CC>
+class FillingAlgCC : public CC {
+public:
+  FillingAlgCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed, const IceModelVec2S &thk, const double fill_value);
+  ~FillingAlgCC();
+protected:
+  double m_drho, m_fill_value;
+  const IceModelVec2S *m_bed, *m_thk;
+  virtual bool ForegroundCond(double bed, double thk, int mask, double Level, double Offset) const;
+};
+
+template<class CC>
+FillingAlgCC<CC>::FillingAlgCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed, const IceModelVec2S &thk, const double fill_value)
+  : CC(g) {
+  CC::m_fields.push_back(m_bed);
+  CC::m_fields.push_back(m_thk);
+}
+
+template<class CC>
+FillingAlgCC<CC>::~FillingAlgCC() {
+  //empty
+}
+
+template<class CC>
+bool FillingAlgCC<CC>::ForegroundCond(double bed, double thk, int mask, double Level, double Offset) const {
+  if (mask > 0) {
+    return true;
+  }
+
+  if (Level == m_fill_value) {
+    return true;
+  }
+
+  double level = Level;
+  if (Offset != m_fill_value) {
+    level += Offset;
+  }
+
+  return ((bed + (m_drho * thk)) < level);
+}
+
 } //namespace pism
 
 #endif
