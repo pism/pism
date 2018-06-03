@@ -71,10 +71,10 @@ void SeaLevelCC::labelSLMap(const int run_number, const VecList lists, IceModelV
 
   for(int k = 0; k <= run_number; ++k) {
     const int label = trackParentRun(k, parents);
-    for(int n = 0; n < len_vec[k]; ++n) {
-      if(label > 1) {
-        const int i = i_vec[k] + n,
-                  j = j_vec[k];
+    if(label > 1) {
+      const int j = j_vec[k];
+      for(int n = 0; n < len_vec[k]; ++n) {
+        const int i = i_vec[k] + n;
         result(i, j) = m_fill_value;
       }
     }
@@ -91,10 +91,10 @@ void SeaLevelCC::labelSLMask(const int run_number, const VecList lists, IceModel
 
   for(int k = 0; k <= run_number; ++k) {
     const int label = trackParentRun(k, parents);
-    for(int n = 0; n < len_vec[k]; ++n) {
-      if(label > 1) {
-        const int i = i_vec[k] + n,
-                  j = j_vec[k];
+    if(label > 1) {
+      const int j = j_vec[k];
+      for(int n = 0; n < len_vec[k]; ++n) {
+        const int i = i_vec[k] + n;
         result(i, j) = 1;
       }
     }
