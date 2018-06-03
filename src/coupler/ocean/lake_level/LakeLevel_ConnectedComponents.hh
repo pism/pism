@@ -1,53 +1,35 @@
 #ifndef _LAKELEVEL_CONNECTEDCOMPONENTS_H_
 #define _LAKELEVEL_CONNECTEDCOMPONENTS_H_
 
-#include <vector>
-
 #include "pism/util/IceModelVec2CellType.hh"
-
-#include "pism/coupler/util/FillingAlg_ConnectedComponents.hh"
+#include "pism/coupler/util/connected_components.hh"
 
 namespace pism {
 
-class LakeLevelCC : public FillingAlgCC {
+class LakeLevelCC : public FillingAlgCC<ValidSinkCC> {
 public:
-  LakeLevelCC(IceGrid::ConstPtr g, const double drho,
-              const double thk_theshold, const IceModelVec2S &bed,
-              const IceModelVec2S &thk, IceModelVec2Int &pism_mask,
-              IceModelVec2Int &run_mask, const double fill_value);
-  LakeLevelCC(IceGrid::ConstPtr g, const double drho,
-              const double thk_theshold, const IceModelVec2S &bed,
-              const IceModelVec2S &thk, IceModelVec2Int &pism_mask,
-              const double fill_value);
-  LakeLevelCC(IceGrid::ConstPtr g, const double drho,
-              const double thk_theshold, const IceModelVec2S &bed,
-              const IceModelVec2S &thk, IceModelVec2Int &pism_mask,
-              IceModelVec2Int &run_mask, const double fill_value,
-              IceModelVec2Int &valid_mask);
-  LakeLevelCC(IceGrid::ConstPtr g, const double drho,
-              const double thk_theshold, const IceModelVec2S &bed,
-              const IceModelVec2S &thk, IceModelVec2Int &pism_mask,
-              const double fill_value, IceModelVec2Int &valid_mask);
+  LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed,
+              const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, const double fill_value);
+  LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed,
+              const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, const double fill_value,
+              const IceModelVec2Int &valid_mask);
   ~LakeLevelCC();
-  void floodMap(double zMin, double zMax, double dz);
-  void lake_levels(IceModelVec2S &result) const;
+  void computeLakeLevel(const double zMin, const double zMax, const double dz, const double offset, IceModelVec2S &result);
+  inline void computeLakeLevel(const double zMin, const double zMax, const double dz, IceModelVec2S &result) {
+    computeLakeLevel(zMin, zMax, dz, m_fill_value, result);
+  }
 
 protected:
-  IceModelVec2CellType m_pism_mask;
-  virtual void prepare_mask_impl();
-  virtual void labelMap_impl(unsigned int run_number,
-                             std::vector<unsigned int> &rows,
-                             std::vector<unsigned int> &columns,
-                             std::vector<unsigned int> &parents,
-                             std::vector<unsigned int> &lengths,
-                             std::vector<bool> &isValidList);
-  void init(IceModelVec2Int &pism_mask);
+  void prepare_mask(const IceModelVec2CellType &pism_mask);
+  void labelMap(const int run_number, const VecList &lists, IceModelVec2S &result);
+  void fill2Level(const double level, IceModelVec2S &result);
+  virtual bool ForegroundCond(const int i, const int j) const;
 
 private:
-  const double m_thk_threshold;
+  double m_offset, m_level;
 };
 
-
+/*
 class IsolationCC : public FillingAlgCC {
 public:
   IsolationCC(IceGrid::ConstPtr g, const IceModelVec2S &thk,
@@ -70,8 +52,9 @@ protected:
 private:
   const double m_thk_threshold;
 };
+*/
 
-
+/*
 class FilterLakesCC : public FillingAlgCC {
 public:
   FilterLakesCC(IceGrid::ConstPtr g, const IceModelVec2S &lake_levels,
@@ -94,7 +77,7 @@ protected:
   const IceModelVec2S *m_lake_level;
 
 };
-
+*/
 } // namespace pism
 
 #endif

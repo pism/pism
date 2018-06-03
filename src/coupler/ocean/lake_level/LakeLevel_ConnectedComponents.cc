@@ -2,52 +2,24 @@
 
 namespace pism {
 
-LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho,
-                         const double thk_threshold, const IceModelVec2S &bed,
-                         const IceModelVec2S &thk, IceModelVec2Int &pism_mask,
-                         const double fill_value)
-    : FillingAlgCC(g, drho, bed, thk, true, fill_value),
-      m_thk_threshold(thk_threshold) {
-
-  this->init(pism_mask);
-  this->prepare_mask();
+LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed,
+                         const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, const double fill_value)
+  : FillingAlgCC<ValidSinkCC>(g, drho, bed, thk, fill_value) {
+  IceModelVec2CellType pism_mask_type;
+  pism_mask_type.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
+  pism_mask_type.copy_from(pism_mask);
+  prepare_mask(pism_mask_type);
   m_mask_validity.set(1);
 }
 
-LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho,
-                         const double thk_threshold, const IceModelVec2S &bed,
-                         const IceModelVec2S &thk, IceModelVec2Int &pism_mask,
-                         IceModelVec2Int &run_mask, const double fill_value)
-    : FillingAlgCC(g, drho, bed, thk, true, fill_value),
-      m_thk_threshold(thk_threshold) {
-
-  this->init(pism_mask);
-  m_mask_run.copy_from(run_mask);
-  m_mask_validity.set(1);
-}
-
-LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho,
-                         const double thk_threshold, const IceModelVec2S &bed,
-                         const IceModelVec2S &thk, IceModelVec2Int &pism_mask,
-                         const double fill_value, IceModelVec2Int &valid_mask)
-    : FillingAlgCC(g, drho, bed, thk, true, fill_value),
-      m_thk_threshold(thk_threshold) {
-
-  this->init(pism_mask);
-  this->prepare_mask();
-  m_mask_validity.copy_from(valid_mask);
-}
-
-LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho,
-                         const double thk_threshold, const IceModelVec2S &bed,
-                         const IceModelVec2S &thk, IceModelVec2Int &pism_mask,
-                         IceModelVec2Int &run_mask, const double fill_value,
-                         IceModelVec2Int &valid_mask)
-    : FillingAlgCC(g, drho, bed, thk, true, fill_value),
-      m_thk_threshold(thk_threshold) {
-
-  this->init(pism_mask);
-  m_mask_run.copy_from(run_mask);
+LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed,
+                         const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, const double fill_value,
+                         const IceModelVec2Int &valid_mask)
+  : FillingAlgCC<ValidSinkCC>(g, drho, bed, thk, fill_value) {
+  IceModelVec2CellType pism_mask_type;
+  pism_mask_type.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
+  pism_mask_type.copy_from(pism_mask);
+  this->prepare_mask(pism_mask_type);
   m_mask_validity.copy_from(valid_mask);
 }
 
@@ -55,50 +27,62 @@ LakeLevelCC::~LakeLevelCC() {
   //empty
 }
 
-void LakeLevelCC::init(IceModelVec2Int &pism_mask) {
-  m_pism_mask.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
-  m_pism_mask.copy_from(pism_mask);
-  m_floatation_level.set(m_fill_value);
-}
+void LakeLevelCC::computeLakeLevel(const double zMin, const double zMax, const double dz, const double offset, IceModelVec2S &result) {
+  m_offset = offset;
+  result.set(m_fill_value);
 
-void LakeLevelCC::floodMap(double zMin, double zMax, double dz) {
   double lakeLevel = zMin;
   while (lakeLevel <= zMax) {
-    this->fill2Level(lakeLevel);
+    fill2Level(lakeLevel, result);
     lakeLevel += dz;
   }
 }
 
-void LakeLevelCC::labelMap_impl(unsigned int run_number, std::vector<unsigned int> &i_vec,
-                                std::vector<unsigned int> &j_vec, std::vector<unsigned int> &parents,
-                                std::vector<unsigned int> &lengths, std::vector<bool> &isValidList) {
-  IceModelVec::AccessList list{ &m_floatation_level, &m_level };
-  for (unsigned int k = 0; k <= run_number; ++k) {
-    unsigned int label = trackParentRun(k, parents);
-    const bool isLake_label = ((label > 1) and isValidList[label]);
-    for (unsigned int n = 0; n < lengths[k]; ++n) {
-      const int i = i_vec[k] + n, j = j_vec[k];
-      if (isLake_label) {
-        m_floatation_level(i, j) = m_level(i, j);
+void LakeLevelCC::fill2Level(const double level, IceModelVec2S &result) {
+  m_level = level;
+
+  VecList lists;
+  unsigned int max_items = 2 * m_grid->ym();
+  init_VecList(lists, max_items);
+
+  int run_number = 1;
+
+  compute_runs(run_number, lists, max_items);
+
+  labelMap(run_number, lists, result);
+}
+
+void LakeLevelCC::labelMap(const int run_number, const VecList &lists, IceModelVec2S &result) {
+  IceModelVec::AccessList list{&result};
+
+  const RunVec &i_vec = lists.find("i")->second,
+               &j_vec = lists.find("j")->second,
+               &len_vec    = lists.find("lengths")->second,
+               &parents    = lists.find("parents")->second,
+               &valid_list = lists.find("valid")->second;
+
+  for(int k = 0; k <= run_number; ++k) {
+    const int label = trackParentRun(k, parents);
+    const bool validLake = ((label > 1) and (valid_list[label] > 0));
+    if (validLake) {
+      const int j = j_vec[k];
+      for(int n = 0; n < len_vec[k]; ++n) {
+        const int i = i_vec[k] + n;
+        result(i, j) = m_level;
       }
     }
   }
 }
 
-void LakeLevelCC::lake_levels(IceModelVec2S &result) const {
-  this->get_floatation_level(result);
-}
-
-void LakeLevelCC::prepare_mask_impl() {
-
-  IceModelVec::AccessList list{ &m_mask_run, &m_pism_mask };
+void LakeLevelCC::prepare_mask(const IceModelVec2CellType &pism_mask) {
+  IceModelVec::AccessList list{ &m_mask_run, &pism_mask };
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     bool isWest = (i == m_i_global_first), isEast = (i == m_i_global_last), isSouth = (j == m_j_global_first),
          isNorth = (j == m_j_global_last), isMargin = (isWest or isEast or isSouth or isNorth);
 
     //Set sink, where pism_mask is ocean or at margin of computational domain
-    if (isMargin or m_pism_mask.ocean(i, j)) {
+    if (isMargin or pism_mask.ocean(i, j)) {
       m_mask_run(i, j) = 1;
     } else {
       m_mask_run(i, j) = 0;
@@ -107,7 +91,16 @@ void LakeLevelCC::prepare_mask_impl() {
   m_mask_run.update_ghosts();
 }
 
+bool LakeLevelCC::ForegroundCond(const int i, const int j) const {
+  double bed = (*m_bed)(i, j),
+         thk = (*m_thk)(i, j);
+  int mask = m_mask_run(i, j);
 
+  return FillingAlgCC::ForegroundCond(bed, thk, mask, m_level, m_offset);
+}
+
+
+/*
 
 IsolationCC::IsolationCC(IceGrid::ConstPtr g, const IceModelVec2S &thk, const double thk_threshold)
   :FillingAlgCC(g, 0.0, thk, thk, false, 0.0), m_thk_threshold(thk_threshold){
@@ -164,9 +157,9 @@ void IsolationCC::prepare_mask_impl() {
   }
   m_mask_run.update_ghosts();
 }
+*/
 
-
-
+/*
 FilterLakesCC::FilterLakesCC(IceGrid::ConstPtr g, const IceModelVec2S &lake_levels, const double fill_value)
   :FillingAlgCC(g, 0.0, lake_levels, lake_levels, true, fill_value) {
   this->prepare_mask();
@@ -248,7 +241,7 @@ void FilterLakesCC::labelMap_impl(unsigned int run_number, std::vector<unsigned 
 void FilterLakesCC::prepare_mask_impl() {
   m_mask_run.set(0);
 }
-
+*/
 
 
 } // namespace pism

@@ -177,10 +177,10 @@ MaxTimestep LakeCC::max_timestep_impl(double t) const {
 }
 
 void LakeCC::prepare_mask_validity(const IceModelVec2S *thk, IceModelVec2Int& valid_mask) {
-  IsolationCC IsoCC(m_grid, *thk, m_icefree_thickness);
-  IsoCC.find_isolated_spots();
-  IsoCC.isolation_mask(valid_mask);
-
+//   IsolationCC IsoCC(m_grid, *thk, m_icefree_thickness);
+//   IsoCC.find_isolated_spots();
+//   IsoCC.isolation_mask(valid_mask);
+  valid_mask.set(1);
   IceModelVec::AccessList list{ &valid_mask, &m_lake_level };
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -195,8 +195,8 @@ void LakeCC::prepare_mask_validity(const IceModelVec2S *thk, IceModelVec2Int& va
 
 void LakeCC::do_lake_update(const IceModelVec2S *bed, const IceModelVec2S *thk, const IceModelVec2S *sea_level) {
   IceModelVec2Int pism_mask, valid_mask;
-  pism_mask.create(m_grid, "mask", WITHOUT_GHOSTS);
-  valid_mask.create(m_grid, "mask", WITHOUT_GHOSTS);
+  pism_mask.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
+  valid_mask.create(m_grid, "valid_mask", WITHOUT_GHOSTS);
   m_gc.compute_mask(*sea_level, *bed, *thk, pism_mask);
   prepare_mask_validity(thk, valid_mask);
 
@@ -205,9 +205,8 @@ void LakeCC::do_lake_update(const IceModelVec2S *bed, const IceModelVec2S *thk, 
   ParallelSection ParSec(m_grid->com);
   try {
     // Initialze LakeCC Model
-    LakeLevelCC LM(m_grid, m_drho, m_icefree_thickness, *bed, *thk, pism_mask, m_fill_value, valid_mask);
-    LM.floodMap(m_lake_level_min, m_lake_level_max, m_lake_level_dh);
-    LM.lake_levels(m_lake_level);
+    LakeLevelCC LM(m_grid, m_drho, *bed, *thk, pism_mask, m_fill_value, valid_mask);
+    LM.computeLakeLevel(m_lake_level_min, m_lake_level_max, m_lake_level_dh, m_lake_level);
   } catch (...) {
     ParSec.failed();
   }
@@ -219,9 +218,9 @@ void LakeCC::do_lake_update(const IceModelVec2S *bed, const IceModelVec2S *thk, 
 void LakeCC::do_filter_map() {
   ParallelSection ParSec(m_grid->com);
   try {
-    FilterLakesCC FL(m_grid, m_lake_level, m_fill_value);
-    FL.filter_map(m_n_filter);
-    FL.filtered_levels(m_lake_level);
+//     FilterLakesCC FL(m_grid, m_lake_level, m_fill_value);
+//     FL.filter_map(m_n_filter);
+//     FL.filtered_levels(m_lake_level);
   } catch (...) {
     ParSec.failed();
   }
