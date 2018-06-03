@@ -6,7 +6,7 @@
 
 namespace pism {
 
-class LakeLevelCC : public FillingAlgCC<ValidSinkCC> {
+class LakeLevelCC : public FillingAlgCC<ValidCC<SinkCC> > {
 public:
   LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed,
               const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, const double fill_value);
@@ -51,7 +51,7 @@ private:
 };
 
 
-class FilterLakesCC : public ValidSinkCC {
+class FilterLakesCC : public ValidCC<ConnectedComponents> {
 public:
   FilterLakesCC(IceGrid::ConstPtr g, const double fill_value);
   ~FilterLakesCC();

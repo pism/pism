@@ -232,6 +232,8 @@ bool SinkCC::SinkCond(const int i, const int j) {
 void SinkCC::treatInnerMargin(const int i, const int j,
                               const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
                               VecList &lists, bool &changed) {
+  ConnectedComponents::treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
+
   const int run = m_mask_run.as_int(i, j);
   if (run > 1) {
     //Lake at inner boundary
@@ -258,110 +260,6 @@ void SinkCC::continueRun(const int i, const int j, int &run_number, VecList &lis
   ConnectedComponents::continueRun(i, j, run_number, lists);
   if (SinkCond(i, j)) {
     setRunSink(run_number, lists["parents"]);
-  }
-}
-
-
-
-ValidSinkCC::ValidSinkCC(IceGrid::ConstPtr g)
-  :SinkCC(g) {
-  m_mask_validity.create(m_grid, "mask_validity", WITH_GHOSTS, 1);
-  m_masks.push_back(&m_mask_validity);
-}
-
-ValidSinkCC::~ValidSinkCC() {
-  //empty
-}
-
-void ValidSinkCC::init_VecList(VecList &lists, const unsigned int size) {
-  SinkCC::init_VecList(lists, size);
-
-  RunVec valid_list(size);
-  lists["valid"] = valid_list;
-
-  for (unsigned int k = 0; k < 2; ++k) {
-    lists["valid"][k] = 1;
-  }
-}
-
-void ValidSinkCC::setRunValid(int run, VecList &lists) {
-  if ((run == 0) or (run == 1)) {
-    return;
-  }
-
-  run = trackParentRun(run, lists["parents"]);
-  if (run != 1) {
-    lists["valid"][run] = 1;
-  }
-}
-
-void ValidSinkCC::treatInnerMargin(const int i, const int j,
-                                   const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
-                                   VecList &lists, bool &changed) {
-  SinkCC::treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
-
-  const int run = m_mask_run.as_int(i, j);
-  if (run > 1) {
-    //Lake at inner boundary
-    const bool isValid = (lists["valid"][run] > 0);
-    if (not isValid) {
-      //Lake at this side is not labeled as valid
-      StarStencil<int> mask_isValid_star = m_mask_validity.int_star(i, j);
-
-      bool WestValid  = (isWest  and (mask_isValid_star.w == 1)),
-           EastValid  = (isEast  and (mask_isValid_star.e == 1)),
-           SouthValid = (isSouth and (mask_isValid_star.s == 1)),
-           NorthValid = (isNorth and (mask_isValid_star.n == 1));
-
-      if (WestValid or EastValid or SouthValid or NorthValid) {
-        //Lake at other side is not completely covered with ice
-        lists["valid"][run] = 1;
-        changed = true;
-      }
-    }
-  }
-}
-
-void ValidSinkCC::startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists) {
-  SinkCC::startNewRun(i, j, run_number, parent, lists);
-  const bool isValid = (m_mask_validity(i, j) > 0);
-  lists["valid"][run_number] = isValid ? 1 : 0;
-}
-
-void ValidSinkCC::continueRun(const int i, const int j, int &run_number, VecList &lists) {
-  SinkCC::continueRun(i, j, run_number, lists);
-  const bool isValid = (m_mask_validity(i, j) > 0);
-  if (isValid) {
-    setRunValid(run_number, lists);
-  }
-}
-
-void ValidSinkCC::mergeRuns(const int run_number, const int run_south, VecList &lists) {
-  SinkCC::mergeRuns(run_number, run_south, lists);
-  const bool isValid = (lists["valid"][run_number] > 0);
-  if (isValid) {
-    setRunValid(run_number, lists);
-  }
-}
-
-void ValidSinkCC::labelMask(int run_number, const VecList &lists) {
-  IceModelVec::AccessList list;
-  addFieldVecAccessList(m_masks, list);
-
-  const RunVec &i_vec = lists.find("i")->second,
-               &j_vec = lists.find("j")->second,
-               &len_vec   = lists.find("lengths")->second,
-               &parents   = lists.find("parents")->second,
-               &valid_vec = lists.find("valid")->second;
-
-  for (int k = 0; k <= run_number; ++k) {
-    const int label = trackParentRun(k, parents);
-    const int label_valid = valid_vec[label];
-    for (unsigned int n = 0; n < len_vec[k]; ++n) {
-      const int i = i_vec[k] + n, j = j_vec[k];
-      m_mask_run(i, j) = label;
-      m_mask_validity(i, j) = label_valid;
-    }
   }
 }
 

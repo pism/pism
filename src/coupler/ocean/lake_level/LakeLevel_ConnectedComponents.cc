@@ -4,7 +4,7 @@ namespace pism {
 
 LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed,
                          const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, const double fill_value)
-  : FillingAlgCC<ValidSinkCC>(g, drho, bed, thk, fill_value) {
+  : FillingAlgCC<ValidCC<SinkCC> >(g, drho, bed, thk, fill_value) {
   IceModelVec2CellType pism_mask_type;
   pism_mask_type.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
   pism_mask_type.copy_from(pism_mask);
@@ -15,7 +15,7 @@ LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelV
 LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed,
                          const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, const double fill_value,
                          const IceModelVec2Int &valid_mask)
-  : FillingAlgCC<ValidSinkCC>(g, drho, bed, thk, fill_value) {
+  : FillingAlgCC<ValidCC<SinkCC> >(g, drho, bed, thk, fill_value) {
   IceModelVec2CellType pism_mask_type;
   pism_mask_type.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
   pism_mask_type.copy_from(pism_mask);
@@ -167,7 +167,7 @@ void IsolationCC::prepare_mask() {
 
 
 FilterLakesCC::FilterLakesCC(IceGrid::ConstPtr g, const double fill_value)
-  : ValidSinkCC(g), m_fill_value(fill_value) {
+  : ValidCC<ConnectedComponents>(g), m_fill_value(fill_value) {
   //empty
 }
 

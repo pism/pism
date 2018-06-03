@@ -9,15 +9,15 @@
 
 namespace pism {
 
+typedef std::vector<double> RunVec;
+typedef std::map<std::string, RunVec > VecList;
+typedef std::vector<IceModelVec*> FieldVec;
+typedef std::vector<const IceModelVec*> ConstFieldVec;
+
 class ConnectedComponents {
 public:
   ConnectedComponents(IceGrid::ConstPtr g);
   ~ConnectedComponents();
-
-  typedef std::vector<double> RunVec;
-  typedef std::map<std::string, RunVec > VecList;
-  typedef std::vector<IceModelVec*> FieldVec;
-  typedef std::vector<const IceModelVec*> ConstFieldVec;
 
 private:
   void checkForegroundPixel(const int i, const int j, int &run_number, VecList &lists);
@@ -46,7 +46,7 @@ protected:
   virtual bool ForegroundCond(const int i, const int j) const = 0;
   virtual void treatInnerMargin(const int i, const int j,
                                 const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
-                                VecList &lists, bool &changed) = 0;
+                                VecList &lists, bool &changed) {};
 };
 
 
@@ -69,10 +69,13 @@ protected:
 };
 
 
-class ValidSinkCC : public SinkCC {
+
+
+template <class CC>
+class ValidCC : public CC {
 public:
-  ValidSinkCC(IceGrid::ConstPtr g);
-  ~ValidSinkCC();
+  ValidCC(IceGrid::ConstPtr g);
+  ~ValidCC();
 
 private:
   void setRunValid(int run, VecList &lists);
@@ -88,6 +91,118 @@ protected:
   virtual void mergeRuns(const int run_number, const int run_south, VecList &lists);
   virtual void labelMask(int run_number, const VecList &lists);
 };
+
+template <class CC>
+ValidCC<CC>::ValidCC(IceGrid::ConstPtr g)
+  :CC(g) {
+  m_mask_validity.create(CC::   m_grid, "mask_validity", WITH_GHOSTS, 1);
+  CC::m_masks.push_back(&m_mask_validity);
+}
+
+template <class CC>
+ValidCC<CC>::~ValidCC() {
+  //empty
+}
+
+template <class CC>
+void ValidCC<CC>::init_VecList(VecList &lists, const unsigned int size) {
+  CC::init_VecList(lists, size);
+
+  RunVec valid_list(size);
+  lists["valid"] = valid_list;
+
+  for (unsigned int k = 0; k < 2; ++k) {
+    lists["valid"][k] = 1;
+  }
+}
+
+template <class CC>
+void ValidCC<CC>::setRunValid(int run, VecList &lists) {
+  if ((run == 0) or (run == 1)) {
+    return;
+  }
+
+  run = CC::trackParentRun(run, lists["parents"]);
+  if (run != 1) {
+    lists["valid"][run] = 1;
+  }
+}
+
+template <class CC>
+void ValidCC<CC>::treatInnerMargin(const int i, const int j,
+                                       const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
+                                       VecList &lists, bool &changed) {
+  CC::treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
+
+  const int run = CC::m_mask_run.as_int(i, j);
+  if (run > 1) {
+    //Lake at inner boundary
+    const bool isValid = (lists["valid"][run] > 0);
+    if (not isValid) {
+      //Lake at this side is not labeled as valid
+      StarStencil<int> mask_isValid_star = m_mask_validity.int_star(i, j);
+
+      bool WestValid  = (isWest  and (mask_isValid_star.w == 1)),
+           EastValid  = (isEast  and (mask_isValid_star.e == 1)),
+           SouthValid = (isSouth and (mask_isValid_star.s == 1)),
+           NorthValid = (isNorth and (mask_isValid_star.n == 1));
+
+      if (WestValid or EastValid or SouthValid or NorthValid) {
+        //Lake at other side is not completely covered with ice
+        lists["valid"][run] = 1;
+        changed = true;
+      }
+    }
+  }
+}
+
+template <class CC>
+void ValidCC<CC>::startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists) {
+  CC::startNewRun(i, j, run_number, parent, lists);
+  const bool isValid = (m_mask_validity(i, j) > 0);
+  lists["valid"][run_number] = isValid ? 1 : 0;
+}
+
+template <class CC>
+void ValidCC<CC>::continueRun(const int i, const int j, int &run_number, VecList &lists) {
+  CC::continueRun(i, j, run_number, lists);
+  const bool isValid = (m_mask_validity(i, j) > 0);
+  if (isValid) {
+    setRunValid(run_number, lists);
+  }
+}
+
+template <class CC>
+void ValidCC<CC>::mergeRuns(const int run_number, const int run_south, VecList &lists) {
+  CC::mergeRuns(run_number, run_south, lists);
+  const bool isValid = (lists["valid"][run_number] > 0);
+  if (isValid) {
+    setRunValid(run_number, lists);
+  }
+}
+
+template <class CC>
+void ValidCC<CC>::labelMask(int run_number, const VecList &lists) {
+  IceModelVec::AccessList list;
+  CC::addFieldVecAccessList(CC::m_masks, list);
+
+  const RunVec &i_vec = lists.find("i")->second,
+               &j_vec = lists.find("j")->second,
+               &len_vec   = lists.find("lengths")->second,
+               &parents   = lists.find("parents")->second,
+               &valid_vec = lists.find("valid")->second;
+
+  for (int k = 0; k <= run_number; ++k) {
+    const int label = CC::trackParentRun(k, parents);
+    const int label_valid = valid_vec[label];
+    for (unsigned int n = 0; n < len_vec[k]; ++n) {
+      const int i = i_vec[k] + n, j = j_vec[k];
+      CC::m_mask_run(i, j) = label;
+      m_mask_validity(i, j) = label_valid;
+    }
+  }
+}
+
 
 
 
