@@ -165,7 +165,7 @@ void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
     sl = &(geometry.sea_level_elevation);
   }
 
-  do_lake_update(bed, thk, sl);
+  do_lake_update(*bed, *thk, *sl);
 
   if (m_filter_map) {
     do_filter_map();
@@ -176,11 +176,10 @@ MaxTimestep LakeCC::max_timestep_impl(double t) const {
   return MaxTimestep("lake level forcing");
 }
 
-void LakeCC::prepare_mask_validity(const IceModelVec2S *thk, IceModelVec2Int& valid_mask) {
-//   IsolationCC IsoCC(m_grid, *thk, m_icefree_thickness);
-//   IsoCC.find_isolated_spots();
-//   IsoCC.isolation_mask(valid_mask);
-  valid_mask.set(1);
+void LakeCC::prepare_mask_validity(const IceModelVec2S &thk, IceModelVec2Int& valid_mask) {
+  IsolationCC IsoCC(m_grid, thk, m_icefree_thickness);
+  IsoCC.find_isolated_spots(valid_mask);
+
   IceModelVec::AccessList list{ &valid_mask, &m_lake_level };
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -193,11 +192,11 @@ void LakeCC::prepare_mask_validity(const IceModelVec2S *thk, IceModelVec2Int& va
   valid_mask.update_ghosts();
 }
 
-void LakeCC::do_lake_update(const IceModelVec2S *bed, const IceModelVec2S *thk, const IceModelVec2S *sea_level) {
+void LakeCC::do_lake_update(const IceModelVec2S &bed, const IceModelVec2S &thk, const IceModelVec2S &sea_level) {
   IceModelVec2Int pism_mask, valid_mask;
   pism_mask.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
   valid_mask.create(m_grid, "valid_mask", WITHOUT_GHOSTS);
-  m_gc.compute_mask(*sea_level, *bed, *thk, pism_mask);
+  m_gc.compute_mask(sea_level, bed, thk, pism_mask);
   prepare_mask_validity(thk, valid_mask);
 
   m_log->message(2, "->LakeCC: Update of Lake Levels! \n");
@@ -205,7 +204,7 @@ void LakeCC::do_lake_update(const IceModelVec2S *bed, const IceModelVec2S *thk, 
   ParallelSection ParSec(m_grid->com);
   try {
     // Initialze LakeCC Model
-    LakeLevelCC LM(m_grid, m_drho, *bed, *thk, pism_mask, m_fill_value, valid_mask);
+    LakeLevelCC LM(m_grid, m_drho, bed, thk, pism_mask, m_fill_value, valid_mask);
     LM.computeLakeLevel(m_lake_level_min, m_lake_level_max, m_lake_level_dh, m_lake_level);
   } catch (...) {
     ParSec.failed();

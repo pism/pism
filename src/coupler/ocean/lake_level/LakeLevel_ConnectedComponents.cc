@@ -100,6 +100,71 @@ bool LakeLevelCC::ForegroundCond(const int i, const int j) const {
 }
 
 
+IsolationCC::IsolationCC(IceGrid::ConstPtr g, const IceModelVec2S &thk,
+                         const double thk_theshold)
+  : SinkCC(g), m_thk_threshold(thk_theshold), m_thk(&thk) {
+  prepare_mask();
+  m_fields.push_back(m_thk);
+}
+
+IsolationCC::~IsolationCC() {
+  //empty
+}
+
+void IsolationCC::find_isolated_spots(IceModelVec2Int &result) {
+  VecList lists;
+  unsigned int max_items = 2 * m_grid->ym();
+  init_VecList(lists, max_items);
+
+  int run_number = 1;
+
+  compute_runs(run_number, lists, max_items);
+
+  labelIsolatedSpots(run_number, lists, result);
+}
+
+bool IsolationCC::ForegroundCond(const int i, const int j) const {
+  const double thk = (*m_thk)(i, j);
+  const int mask = m_mask_run(i, j);
+
+  return ForegroundCond(thk, mask);
+}
+
+void IsolationCC::labelIsolatedSpots(const int run_number, const VecList &lists, IceModelVec2Int &result) {
+  IceModelVec::AccessList list{&result};
+  result.set(0);
+
+  const RunVec &i_vec = lists.find("i")->second,
+               &j_vec = lists.find("j")->second,
+               &len_vec    = lists.find("lengths")->second,
+               &parents    = lists.find("parents")->second;
+
+  for(int k = 0; k <= run_number; ++k) {
+    const int label = trackParentRun(k, parents);
+    if (label == 1) {
+      const int j = j_vec[k];
+      for(int n = 0; n < len_vec[k]; ++n) {
+        const int i = i_vec[k] + n;
+        result(i, j) = 1;
+      }
+    }
+  }
+}
+
+void IsolationCC::prepare_mask() {
+  IceModelVec::AccessList list{ &m_mask_run };
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    bool isWest = (i == m_i_global_first), isEast = (i == m_i_global_last), isSouth = (j == m_j_global_first),
+         isNorth = (j == m_j_global_last), isMargin = (isWest or isEast or isSouth or isNorth);
+
+    //Set not isolated at margin
+    m_mask_run(i, j) = isMargin ? 1 : 0;
+  }
+  m_mask_run.update_ghosts();
+}
+
+
 /*
 
 IsolationCC::IsolationCC(IceGrid::ConstPtr g, const IceModelVec2S &thk, const double thk_threshold)

@@ -44,9 +44,9 @@ protected:
   int m_n_filter;
 
 private:
-  void do_lake_update(const IceModelVec2S *bed, const IceModelVec2S *thk, const IceModelVec2S *sea_level);
+  void do_lake_update(const IceModelVec2S &bed, const IceModelVec2S &thk, const IceModelVec2S &sea_level);
   void do_filter_map();
-  void prepare_mask_validity(const IceModelVec2S *thk, IceModelVec2Int &valid_mask);
+  void prepare_mask_validity(const IceModelVec2S &thk, IceModelVec2Int &valid_mask);
 };
 
 } // end of namespace lake_level

@@ -29,30 +29,27 @@ private:
   double m_offset, m_level;
 };
 
-/*
-class IsolationCC : public FillingAlgCC {
+
+class IsolationCC : public SinkCC {
 public:
   IsolationCC(IceGrid::ConstPtr g, const IceModelVec2S &thk,
               const double thk_theshold);
   ~IsolationCC();
-  void find_isolated_spots();
-  void isolation_mask(IceModelVec2Int &result) const;
+  void find_isolated_spots(IceModelVec2Int &result);
 
 protected:
-  virtual bool ForegroundCond_impl(double bed, double thk, int mask,
-                                   double Level, double Offset) const;
-  virtual void labelMap_impl(unsigned int run_number,
-                             std::vector<unsigned int> &i_vec,
-                             std::vector<unsigned int> &j_vec,
-                             std::vector<unsigned int> &parents,
-                             std::vector<unsigned int> &lengths,
-                             std::vector<bool> &isValidList);
-  virtual void prepare_mask_impl();
+  virtual bool ForegroundCond(const int i, const int j) const;
+  void labelIsolatedSpots(const int run_number, const VecList &lists, IceModelVec2Int &result);
+  void prepare_mask();
 
 private:
   const double m_thk_threshold;
+  const IceModelVec2S *m_thk;
+  inline bool ForegroundCond(const double thk, const int mask) const {
+    return ((thk < m_thk_threshold) or (mask > 0));
+  }
 };
-*/
+
 
 /*
 class FilterLakesCC : public FillingAlgCC {
