@@ -165,91 +165,85 @@ void IsolationCC::prepare_mask() {
 }
 
 
-/*
 
-IsolationCC::IsolationCC(IceGrid::ConstPtr g, const IceModelVec2S &thk, const double thk_threshold)
-  :FillingAlgCC(g, 0.0, thk, thk, false, 0.0), m_thk_threshold(thk_threshold){
-  this->prepare_mask();
-}
-
-IsolationCC::~IsolationCC() {
+FilterLakesCC::FilterLakesCC(IceGrid::ConstPtr g, const double fill_value)
+  : ValidSinkCC(g), m_fill_value(fill_value) {
   //empty
 }
 
-void IsolationCC::find_isolated_spots() {
-  this->fill2Level(0.0);
+FilterLakesCC::~FilterLakesCC() {
+
 }
 
-void IsolationCC::isolation_mask(IceModelVec2Int &result) const {
-  this->get_floatation_level(result);
+void FilterLakesCC::filter_map(const int n_filter, IceModelVec2S &lake_level) {
+  prepare_mask(lake_level);
+  set_mask_validity(n_filter, lake_level);
+
+  VecList lists;
+  unsigned int max_items = 2 * m_grid->ym();
+  init_VecList(lists, max_items);
+
+  int run_number = 1;
+
+  compute_runs(run_number, lists, max_items);
+
+  labelMap(run_number, lists, lake_level);
 }
 
-bool IsolationCC::ForegroundCond_impl(double bed, double thk, int mask, double Level, double Offset) const {
-  (void) bed;
-  (void) Level;
-  (void) Offset;
-  return ((thk < m_thk_threshold) or (mask > 0));
+bool FilterLakesCC::ForegroundCond(const int i, const int j) const {
+  const int mask = m_mask_run(i, j);
+
+  return ForegroundCond(mask);
 }
 
-void IsolationCC::labelMap_impl(unsigned int run_number, std::vector<unsigned int> &i_vec, std::vector<unsigned int> &j_vec, std::vector<unsigned int> &parents, std::vector<unsigned int> &lengths, std::vector<bool> &isValidList) {
-  (void) isValidList;
-  //Set mask to 1, where cell is not isolated by ice
-  IceModelVec::AccessList list{&m_floatation_level};
-  m_floatation_level.set(0.0);
+void FilterLakesCC::labelMap(const int run_number, const VecList &lists, IceModelVec2S &result) {
+  IceModelVec::AccessList list{&result};
 
-  for(unsigned int k = 0; k <= run_number; ++k) {
-    unsigned int label = trackParentRun(k, parents);
-    if(label == 1) {
-      for(unsigned int n = 0; n < lengths[k]; ++n) {
-        const int i = i_vec[k] + n,
-                  j = j_vec[k];
-        m_floatation_level(i, j) = 1;
+  const RunVec &i_vec = lists.find("i")->second,
+               &j_vec = lists.find("j")->second,
+               &len_vec    = lists.find("lengths")->second,
+               &parents    = lists.find("parents")->second,
+               &valid_list = lists.find("valid")->second;
+
+  for(int k = 0; k <= run_number; ++k) {
+    const int label = trackParentRun(k, parents);
+    const bool valid = (valid_list[label] > 0);
+    if (not valid) {
+      const int j = j_vec[k];
+      for(int n = 0; n < len_vec[k]; ++n) {
+        const int i = i_vec[k] + n;
+        result(i, j) = m_fill_value;
       }
     }
   }
 }
 
-void IsolationCC::prepare_mask_impl() {
-
-  IceModelVec::AccessList list{ &m_mask_run };
+void FilterLakesCC::prepare_mask(const IceModelVec2S &lake_level) {
+  IceModelVec::AccessList list{ &m_mask_run, &lake_level};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    bool isWest = (i == m_i_global_first), isEast = (i == m_i_global_last), isSouth = (j == m_j_global_first),
-         isNorth = (j == m_j_global_last), isMargin = (isWest or isEast or isSouth or isNorth);
 
-    //Set not isolated at margin
-    m_mask_run(i, j) = isMargin ? 1 : 0;
+    //Set sink, where pism_mask is ocean or at margin of computational domain
+    if (isLake(lake_level(i, j))) {
+      m_mask_run(i, j) = 2;
+    } else {
+      m_mask_run(i, j) = 0;
+    }
   }
   m_mask_run.update_ghosts();
 }
-*/
 
-/*
-FilterLakesCC::FilterLakesCC(IceGrid::ConstPtr g, const IceModelVec2S &lake_levels, const double fill_value)
-  :FillingAlgCC(g, 0.0, lake_levels, lake_levels, true, fill_value) {
-  this->prepare_mask();
-  //The FillingAlgCC class is modified to be used in the filter algorithm
-  //In FillingAlgCC the variable m_bed holds the  lake level variable
-  //To stop confusion m_lake_level is used here and points to m_bed
-  m_lake_level = m_bed;
-  prepare_mask();
-}
-
-FilterLakesCC::~FilterLakesCC() {
-  //empty
-}
-
-void FilterLakesCC::set_mask_validity(int n_filter) {
+void FilterLakesCC::set_mask_validity(const int n_filter, const IceModelVec2S &lake_level) {
   const Direction dirs[] = { North, East, South, West };
 
-  IceModelVec2S sl_tmp(m_grid, "temp_lake_level", WITH_GHOSTS, 1);
-  sl_tmp.copy_from(*m_lake_level);
+  IceModelVec2S ll_tmp(m_grid, "temp_lake_level", WITH_GHOSTS, 1);
+  ll_tmp.copy_from(lake_level);
 
-  IceModelVec::AccessList list{ &m_mask_validity, &sl_tmp };
+  IceModelVec::AccessList list{ &m_mask_validity, &ll_tmp };
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    StarStencil<double> lake_star = sl_tmp.star(i, j);
+    StarStencil<double> lake_star = ll_tmp.star(i, j);
 
     int n_neighbors = 0;
     for (int n = 0; n < 4; ++n) {
@@ -267,46 +261,5 @@ void FilterLakesCC::set_mask_validity(int n_filter) {
   }
   m_mask_validity.update_ghosts();
 }
-
-void FilterLakesCC::filter_map(int n_filter) {
-  set_mask_validity(n_filter);
-  this->fill2Level();
-}
-
-void FilterLakesCC::filtered_levels(IceModelVec2S &result) const {
-  this->get_floatation_level(result);
-}
-
-bool FilterLakesCC::ForegroundCond_impl(double lake_level, double thk, int mask, double Level, double Offset) const {
-  (void) thk;
-  (void) mask;
-  (void) Level;
-  (void) Offset;
-  return (lake_level != m_fill_value);
-}
-
-void FilterLakesCC::labelMap_impl(unsigned int run_number, std::vector<unsigned int> &i_vec, std::vector<unsigned int> &j_vec, std::vector<unsigned int> &parents, std::vector<unsigned int> &lengths, std::vector<bool> &isValidList) {
-  //Set mask to 1, where cell is not isolated by ice
-  IceModelVec::AccessList list{&m_floatation_level, m_lake_level};
-  m_floatation_level.set(m_fill_value);
-
-  for(unsigned int k = 0; k <= run_number; ++k) {
-    unsigned int label = trackParentRun(k, parents);
-    bool isValid = isValidList[label];
-    if(isValid) {
-      for(unsigned int n = 0; n < lengths[k]; ++n) {
-        const int i = i_vec[k] + n,
-                  j = j_vec[k];
-        m_floatation_level(i, j) = (*m_lake_level)(i, j);
-      }
-    }
-  }
-}
-
-void FilterLakesCC::prepare_mask_impl() {
-  m_mask_run.set(0);
-}
-*/
-
 
 } // namespace pism

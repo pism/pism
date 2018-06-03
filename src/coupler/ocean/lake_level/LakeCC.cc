@@ -217,9 +217,8 @@ void LakeCC::do_lake_update(const IceModelVec2S &bed, const IceModelVec2S &thk, 
 void LakeCC::do_filter_map() {
   ParallelSection ParSec(m_grid->com);
   try {
-//     FilterLakesCC FL(m_grid, m_lake_level, m_fill_value);
-//     FL.filter_map(m_n_filter);
-//     FL.filtered_levels(m_lake_level);
+    FilterLakesCC FL(m_grid, m_fill_value);
+    FL.filter_map(m_n_filter, m_lake_level);
   } catch (...) {
     ParSec.failed();
   }

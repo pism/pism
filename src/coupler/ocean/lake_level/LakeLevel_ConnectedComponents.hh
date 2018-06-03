@@ -51,30 +51,31 @@ private:
 };
 
 
-/*
-class FilterLakesCC : public FillingAlgCC {
+class FilterLakesCC : public ValidSinkCC {
 public:
-  FilterLakesCC(IceGrid::ConstPtr g, const IceModelVec2S &lake_levels,
-                const double fill_value);
+  FilterLakesCC(IceGrid::ConstPtr g, const double fill_value);
   ~FilterLakesCC();
-  void filter_map(int n_filter);
-  void filtered_levels(IceModelVec2S &result) const;
+  void filter_map(const int n_filter, IceModelVec2S &lake_level);
 
 protected:
-  virtual bool ForegroundCond_impl(double lake_level, double thk, int mask,
-                                   double Level, double Offset) const;
-  virtual void labelMap_impl(unsigned int run_number,
-                             std::vector<unsigned int> &i_vec,
-                             std::vector<unsigned int> &j_vec,
-                             std::vector<unsigned int> &parents,
-                             std::vector<unsigned int> &lengths,
-                             std::vector<bool> &isValidList);
-  virtual void prepare_mask_impl();
-  void set_mask_validity(int n_filter);
-  const IceModelVec2S *m_lake_level;
+  virtual bool ForegroundCond(const int i, const int j) const;
 
+private:
+  double m_fill_value;
+
+  void labelMap(const int run_number, const VecList &lists, IceModelVec2S &result);
+  void prepare_mask(const IceModelVec2S &lake_level);
+  void set_mask_validity(const int n_filter, const IceModelVec2S &lake_level);
+
+  inline bool ForegroundCond(const int mask) const {
+    return (mask > 1);
+  }
+
+  inline bool isLake(const double level) {
+    return (level != m_fill_value);
+  }
 };
-*/
+
 } // namespace pism
 
 #endif
