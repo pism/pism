@@ -128,7 +128,7 @@ void LakeCC::init_impl(const Geometry &geometry) {
   }
 
   if (m_filter_map) {
-    m_log->message(2, "  LakeCC: Filtering map (N=%i)", m_n_filter);
+    m_log->message(2, "  LakeCC: Filtering map (N=%i) \n", m_n_filter);
   }
 }
 
