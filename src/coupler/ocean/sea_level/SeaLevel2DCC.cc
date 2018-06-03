@@ -55,7 +55,6 @@ SeaLevel2DCC::SeaLevel2DCC(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in)
   const double ice_density = m_config->get_double("constants.ice.density"),
                ocean_density = m_config->get_double("constants.sea_water.density");
   m_drho = ice_density/ocean_density;
-
 }
 
 SeaLevel2DCC::~SeaLevel2DCC() {
@@ -164,7 +163,6 @@ void SeaLevel2DCC::update_impl(const Geometry &geometry, double my_t, double my_
       m_sea_level(i, j) = m_fill_value;
     }
   }
-
 }
 
 MaxTimestep SeaLevel2DCC::max_timestep_impl(double t) const {
@@ -200,8 +198,7 @@ void SeaLevel2DCC::do_sl_update(const IceModelVec2S &bed, const IceModelVec2S &t
   try {
     // Initialze LakeCC Model
     SeaLevelCC SLM(m_grid, m_drho, bed, thk, m_fill_value);
-    SLM.fill2SeaLevel(m_sea_level, m_offset);
-    SLM.sl_crop_mask(m_mask);
+    SLM.computeMask(m_sea_level, m_offset, m_mask);
   } catch (...) {
     ParSec.failed();
   }

@@ -3,11 +3,11 @@
 
 #include <vector>
 
-#include "pism/coupler/util/FillingAlg_ConnectedComponents.hh"
+#include "pism/coupler/util/connected_components.hh"
 
 namespace pism{
 
-class SeaLevelCC : public FillingAlgCC {
+class SeaLevelCC : public FillingAlgCC<SinkCC> {
 public:
   SeaLevelCC(IceGrid::ConstPtr g,
              const double drho,
@@ -21,22 +21,17 @@ public:
              const IceModelVec2S &thk,
              const double fill_value);
   ~SeaLevelCC();
-  void fill2SeaLevel(double SeaLevel);
-  void fill2SeaLevel(double SeaLevel, double Offset);
-  void fill2SeaLevel(const IceModelVec2S &SeaLevel, double Offset);
-  void fill2SeaLevel(const IceModelVec2S &SeaLevel, const IceModelVec2S &Offset);
-  void sea_level_2D(IceModelVec2S &result) const;
-  void sl_crop_mask(IceModelVec2Int& result) const;
+  void computeSeaLevel(IceModelVec2S &SeaLevel, const double Offset);
+  void computeSeaLevel(const IceModelVec2S &SeaLevel, const double Offset, IceModelVec2S &result);
+  void computeMask(const IceModelVec2S &SeaLevel, const double Offset, IceModelVec2Int &result);
 
 protected:
-  virtual void labelMap_impl(unsigned int run_number,
-                             std::vector<unsigned int> &i_vec,
-                             std::vector<unsigned int> &j_vec,
-                             std::vector<unsigned int> &parents,
-                             std::vector<unsigned int> &lengths,
-                             std::vector<bool> &isValidList);
-  virtual void prepare_mask_impl();
-  IceModelVec2Int m_crop_mask;
+  const IceModelVec2S *m_sea_level;
+  double m_offset;
+  void labelSLMap(const int run_number, const VecList lists, IceModelVec2S &result);
+  void labelSLMask(const int run_number, const VecList lists, IceModelVec2Int &result);
+  void prepare_mask();
+  virtual bool ForegroundCond(const int i, const int j) const;
 };
 
 }

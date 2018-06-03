@@ -7,10 +7,8 @@ SeaLevelCC::SeaLevelCC(IceGrid::ConstPtr g,
                        const IceModelVec2S &bed,
                        const IceModelVec2S &thk,
                        const double fill_value)
-  :FillingAlgCC(g, drho, bed, thk, false, fill_value) {
-  this->prepare_mask();
-  m_crop_mask.create(m_grid, "sl_crop_mask", WITHOUT_GHOSTS);
-  m_crop_mask.set(0);
+  :FillingAlgCC<SinkCC>(g, drho, bed, thk, fill_value) {
+  prepare_mask();
 }
 
 SeaLevelCC::SeaLevelCC(IceGrid::ConstPtr g,
@@ -19,60 +17,91 @@ SeaLevelCC::SeaLevelCC(IceGrid::ConstPtr g,
                        const IceModelVec2S &thk,
                        const IceModelVec2Int &run_mask,
                        const double fill_value)
-  :FillingAlgCC(g, drho, bed, thk, false, fill_value) {
+  :FillingAlgCC<SinkCC>(g, drho, bed, thk, fill_value) {
   m_mask_run.copy_from(run_mask);
-  m_crop_mask.create(m_grid, "sl_crop_mask", WITHOUT_GHOSTS);
-  m_crop_mask.set(0);
 }
 
 SeaLevelCC::~SeaLevelCC() {
   //empty
 }
 
-void SeaLevelCC::fill2SeaLevel(double SeaLevel) {
-  m_floatation_level.set(SeaLevel);
-  this->fill2Level(SeaLevel);
+void SeaLevelCC::computeSeaLevel(IceModelVec2S &SeaLevel, const double Offset) {
+  computeSeaLevel(SeaLevel, Offset, SeaLevel);
 }
 
-void SeaLevelCC::fill2SeaLevel(double SeaLevel, double Offset) {
-  m_floatation_level.set(SeaLevel);
-  this->fill2Level(SeaLevel, Offset);
+void SeaLevelCC::computeSeaLevel(const IceModelVec2S &SeaLevel, const double Offset, IceModelVec2S &result) {
+  m_sea_level = &SeaLevel;
+  m_offset = Offset;
+
+  VecList lists;
+  unsigned int max_items = 2 * m_grid->ym();
+  init_VecList(lists, max_items);
+
+  int run_number = 1;
+
+  IceModelVec::AccessList list{ m_sea_level };
+  compute_runs(run_number, lists, max_items);
+
+  labelSLMap(run_number, lists, result);
 }
 
-void SeaLevelCC::fill2SeaLevel(const IceModelVec2S &SeaLevel, double Offset) {
-  m_floatation_level.copy_from(SeaLevel);
-  this->fill2Level(SeaLevel, Offset);
+void SeaLevelCC::computeMask(const IceModelVec2S &SeaLevel, const double Offset, IceModelVec2Int &result) {
+  m_sea_level = &SeaLevel;
+  m_offset = Offset;
+
+  VecList lists;
+  unsigned int max_items = 2 * m_grid->ym();
+  init_VecList(lists, max_items);
+
+  int run_number = 1;
+
+  IceModelVec::AccessList list{ m_sea_level };
+  compute_runs(run_number, lists, max_items);
+
+  labelSLMask(run_number, lists, result);
 }
 
-void SeaLevelCC::fill2SeaLevel(const IceModelVec2S &SeaLevel, const IceModelVec2S &Offset) {
-  m_floatation_level.copy_from(SeaLevel);
-  this->fill2Level(SeaLevel, Offset);
-}
+void SeaLevelCC::labelSLMap(const int run_number, const VecList lists, IceModelVec2S &result) {
+  IceModelVec::AccessList list{&result};
 
-void SeaLevelCC::labelMap_impl(unsigned int run_number,
-                               std::vector<unsigned int> &i_vec,
-                               std::vector<unsigned int> &j_vec,
-                               std::vector<unsigned int> &parents,
-                               std::vector<unsigned int> &lengths,
-                               std::vector<bool> &isValidList) {
-  (void) isValidList;
-  //Set Sea-level to invalid value, where SL above bed, but run isolated from ocean
-  IceModelVec::AccessList list{&m_floatation_level, &m_crop_mask};
+  const RunVec &i_vec   = lists.find("i")->second,
+               &j_vec   = lists.find("j")->second,
+               &len_vec = lists.find("lengths")->second,
+               &parents = lists.find("parents")->second;
 
-  for(unsigned int k = 0; k <= run_number; ++k) {
-    unsigned int label = trackParentRun(k, parents);
-    for(unsigned int n = 0; n < lengths[k]; ++n) {
+  for(int k = 0; k <= run_number; ++k) {
+    const int label = trackParentRun(k, parents);
+    for(int n = 0; n < len_vec[k]; ++n) {
       if(label > 1) {
         const int i = i_vec[k] + n,
                   j = j_vec[k];
-        m_floatation_level(i, j) = m_fill_value;
-        m_crop_mask(i, j) = 1;
+        result(i, j) = m_fill_value;
       }
     }
   }
 }
 
-void SeaLevelCC::prepare_mask_impl() {
+void SeaLevelCC::labelSLMask(const int run_number, const VecList lists, IceModelVec2Int &result) {
+  IceModelVec::AccessList list{&result};
+
+  const RunVec &i_vec   = lists.find("i")->second,
+               &j_vec   = lists.find("j")->second,
+               &len_vec = lists.find("lengths")->second,
+               &parents = lists.find("parents")->second;
+
+  for(int k = 0; k <= run_number; ++k) {
+    const int label = trackParentRun(k, parents);
+    for(int n = 0; n < len_vec[k]; ++n) {
+      if(label > 1) {
+        const int i = i_vec[k] + n,
+                  j = j_vec[k];
+        result(i, j) = 1;
+      }
+    }
+  }
+}
+
+void SeaLevelCC::prepare_mask() {
   IceModelVec::AccessList list{&m_mask_run};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -89,12 +118,13 @@ void SeaLevelCC::prepare_mask_impl() {
   m_mask_run.update_ghosts();
 }
 
-void SeaLevelCC::sea_level_2D(IceModelVec2S& result) const {
-  this->get_floatation_level(result);
-}
+bool SeaLevelCC::ForegroundCond(const int i, const int j) const {
+  double bed = (*m_bed)(i, j),
+         thk = (*m_thk)(i, j),
+         sea_level = (*m_sea_level)(i, j);
+  int mask = m_mask_run(i, j);
 
-void SeaLevelCC::sl_crop_mask(IceModelVec2Int& result) const {
-  result.copy_from(m_crop_mask);
+  return FillingAlgCC::ForegroundCond(bed, thk, mask, sea_level, m_offset);
 }
 
 }
