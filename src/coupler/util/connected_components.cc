@@ -49,12 +49,10 @@ void ConnectedComponents::compute_runs(int &run_number, VecList &lists, unsigned
 
   labelMask(run_number, lists);
 
-  bool updateAtBoundaries = true;
-
   //iteratively adapt fields amongst processor domains
+  bool updateAtBoundaries = true;
   while (updateAtBoundaries) {
     updateAtBoundaries = updateRunsAtBoundaries(lists);
-
     labelMask(run_number, lists);
   }
 }
@@ -63,26 +61,24 @@ void ConnectedComponents::init_VecList(VecList &lists, const unsigned int size) 
   RunVec parents(size), lengths(size), j_vec(size), i_vec(size);
   lists["parents"] = parents;
   lists["lengths"] = lengths;
-  lists["j_vec"]   = j_vec;
-  lists["i_vec"]   = i_vec;
+  lists["j"] = j_vec;
+  lists["i"] = i_vec;
 
   for (unsigned int k = 0; k < 2; ++k) {
     lists["parents"][k] = 0;
     lists["lengths"][k] = 0;
-    lists["j_vec"][k]   = 0;
-    lists["i_vec"][k]   = 0;
+    lists["j"][k] = 0;
+    lists["i"][k] = 0;
   }
 }
 
 void ConnectedComponents::checkForegroundPixel(const int i, const int j, int &run_number, VecList &lists) {
-
   bool isWest = (i <= m_i_local_first), isSouth = (j <= m_j_local_first);
   StarStencil<int> mask_star = m_mask_run.int_star(i, j);
 
   if (not isWest and (mask_star.w > 0)) {
     // west neighbor is also foreground: continue the run
     continueRun(i, j, run_number, lists);
-
   } else {
     //west neighbor is a background pixel (or this is westmost column): start a new run
     int parent;
@@ -92,20 +88,18 @@ void ConnectedComponents::checkForegroundPixel(const int i, const int j, int &ru
     } else {
       parent = 0;
     }
-
-    startNewRun(i, j, run_number, lists, parent);
+    startNewRun(i, j, run_number, parent, lists);
   }
 
   if (not isSouth and (mask_star.s > 0)) {
     mergeRuns(run_number, mask_star.s, lists);
   }
-
 }
 
-void ConnectedComponents::startNewRun(const int i, const int j, int &run_number, VecList &lists, int &parent) {
+void ConnectedComponents::startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists) {
   run_number += 1;
-  lists["i_vec"][run_number]   = i;
-  lists["j_vec"][run_number]   = j;
+  lists["i"][run_number] = i;
+  lists["j"][run_number] = j;
   lists["lengths"][run_number] = 1;
   lists["parents"][run_number] = parent;
 }
@@ -128,12 +122,13 @@ void ConnectedComponents::labelMask(int run_number, const VecList &lists) {
   IceModelVec::AccessList list;
   addFieldVecAccessList(m_masks, list);
 
-  const RunVec i_vec   = lists.find("i_vec")->second,
-               j_vec   = lists.find("j_vec")->second,
-               len_vec = lists.find("j_vec")->second;
+  const RunVec &i_vec   = lists.find("i")->second,
+               &j_vec   = lists.find("j")->second,
+               &len_vec = lists.find("lengths")->second,
+               &parents = lists.find("parents")->second;
 
   for (int k = 0; k <= run_number; ++k) {
-    const int label = trackParentRun(k, lists.find("parents")->second);
+    const int label = trackParentRun(k, parents);
     for (unsigned int n = 0; n < len_vec[k]; ++n) {
       const int i = i_vec[k] + n, j = j_vec[k];
       m_mask_run(i, j) = label;
@@ -142,12 +137,12 @@ void ConnectedComponents::labelMask(int run_number, const VecList &lists) {
 }
 
 bool ConnectedComponents::updateRunsAtBoundaries(VecList &lists) {
-  bool changed = false;
   IceModelVec::AccessList list;
   addFieldVecAccessList(m_masks, list);
   updateGhosts(m_masks);
 
-  return false;
+  bool changed = false;
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     bool isWest   = ((i == m_i_local_first) and not(i == m_i_global_first)),
@@ -170,7 +165,6 @@ void ConnectedComponents::run_union(RunVec &parents, int run1, int run2) {
   }
 
   run1 = trackParentRun(run1, parents);
-
   run2 = trackParentRun(run2, parents);
 
   if (run1 > run2) {
@@ -190,6 +184,13 @@ int ConnectedComponents::trackParentRun(int run, const RunVec &parents) {
 void ConnectedComponents::addFieldVecAccessList(FieldVec &fields, IceModelVec::AccessList &list) {
   for (FieldVec::iterator it = fields.begin(); it != fields.end(); it++) {
     IceModelVec *field = *it;
+    list.add(*field);
+  }
+}
+
+void ConnectedComponents::addFieldVecAccessList(ConstFieldVec &fields, IceModelVec::AccessList &list) {
+  for (ConstFieldVec::iterator it = fields.begin(); it != fields.end(); it++) {
+    const IceModelVec *field = *it;
     list.add(*field);
   }
 }
@@ -241,16 +242,16 @@ void SinkCC::treatInnerMargin(const int i, const int j,
     if (WestSink or EastSink or SouthSink or NorthSink) {
       //Lake on other side overflowing
       lists["parents"][run] = 1;
-      changed      = true;
+      changed = true;
     }
   }
 }
 
-void SinkCC::startNewRun(const int i, const int j, int &run_number, VecList &lists, int &parent) {
+void SinkCC::startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists) {
   if (SinkCond(i, j)) {
     parent = 1;
   }
-  ConnectedComponents::startNewRun(i, j, run_number, lists, parent);
+  ConnectedComponents::startNewRun(i, j, run_number, parent, lists);
 }
 
 void SinkCC::continueRun(const int i, const int j, int &run_number, VecList &lists) {
@@ -273,11 +274,13 @@ ValidSinkCC::~ValidSinkCC() {
 }
 
 void ValidSinkCC::init_VecList(VecList &lists, const unsigned int size) {
-  RunVec validity_list(size);
-  lists["validity"] = validity_list;
+  SinkCC::init_VecList(lists, size);
+
+  RunVec valid_list(size);
+  lists["valid"] = valid_list;
 
   for (unsigned int k = 0; k < 2; ++k) {
-    lists["validity"][k] = 1;
+    lists["valid"][k] = 1;
   }
 }
 
@@ -288,19 +291,19 @@ void ValidSinkCC::setRunValid(int run, VecList &lists) {
 
   run = trackParentRun(run, lists["parents"]);
   if (run != 1) {
-    lists["validity"][run] = 1;
+    lists["valid"][run] = 1;
   }
 }
 
 void ValidSinkCC::treatInnerMargin(const int i, const int j,
-                              const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
-                              VecList &lists, bool &changed) {
+                                   const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
+                                   VecList &lists, bool &changed) {
   SinkCC::treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
 
   const int run = m_mask_run.as_int(i, j);
   if (run > 1) {
     //Lake at inner boundary
-    const bool isValid = (lists["validity"][run] > 0);
+    const bool isValid = (lists["valid"][run] > 0);
     if (not isValid) {
       //Lake at this side is not labeled as valid
       StarStencil<int> mask_isValid_star = m_mask_validity.int_star(i, j);
@@ -312,17 +315,17 @@ void ValidSinkCC::treatInnerMargin(const int i, const int j,
 
       if (WestValid or EastValid or SouthValid or NorthValid) {
         //Lake at other side is not completely covered with ice
-        lists["validity"][run] = true;
+        lists["valid"][run] = 1;
         changed = true;
       }
     }
   }
 }
 
-void ValidSinkCC::startNewRun(const int i, const int j, int &run_number, VecList &lists, int &parent) {
-  SinkCC::startNewRun(i, j, run_number, lists, parent);
+void ValidSinkCC::startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists) {
+  SinkCC::startNewRun(i, j, run_number, parent, lists);
   const bool isValid = (m_mask_validity(i, j) > 0);
-  lists["validity"][run_number] = isValid ? 1 : 0;
+  lists["valid"][run_number] = isValid ? 1 : 0;
 }
 
 void ValidSinkCC::continueRun(const int i, const int j, int &run_number, VecList &lists) {
@@ -335,7 +338,7 @@ void ValidSinkCC::continueRun(const int i, const int j, int &run_number, VecList
 
 void ValidSinkCC::mergeRuns(const int run_number, const int run_south, VecList &lists) {
   SinkCC::mergeRuns(run_number, run_south, lists);
-  const bool isValid = (lists["validity"][run_number] > 0);
+  const bool isValid = (lists["valid"][run_number] > 0);
   if (isValid) {
     setRunValid(run_number, lists);
   }
@@ -345,14 +348,15 @@ void ValidSinkCC::labelMask(int run_number, const VecList &lists) {
   IceModelVec::AccessList list;
   addFieldVecAccessList(m_masks, list);
 
-  const RunVec i_vec = lists.find("i_vec")->second,
-               j_vec = lists.find("j_vec")->second,
-               len_vec = lists.find("j_vec")->second,
-               validity_vec = lists.find("validity")->second;
+  const RunVec &i_vec = lists.find("i")->second,
+               &j_vec = lists.find("j")->second,
+               &len_vec   = lists.find("lengths")->second,
+               &parents   = lists.find("parents")->second,
+               &valid_vec = lists.find("valid")->second;
 
   for (int k = 0; k <= run_number; ++k) {
-    const int label = trackParentRun(k, lists.find("parents")->second);
-    const int label_valid = validity_vec[label];
+    const int label = trackParentRun(k, parents);
+    const int label_valid = valid_vec[label];
     for (unsigned int n = 0; n < len_vec[k]; ++n) {
       const int i = i_vec[k] + n, j = j_vec[k];
       m_mask_run(i, j) = label;

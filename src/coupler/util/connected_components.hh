@@ -17,11 +17,9 @@ public:
   typedef std::vector<double> RunVec;
   typedef std::map<std::string, RunVec > VecList;
   typedef std::vector<IceModelVec*> FieldVec;
+  typedef std::vector<const IceModelVec*> ConstFieldVec;
 
 private:
-  const int m_i_local_first, m_i_local_last, m_j_local_first, m_j_local_last, m_i_global_first, m_i_global_last,
-            m_j_global_first, m_j_global_last;
-
   void checkForegroundPixel(const int i, const int j, int &run_number, VecList &lists);
   void resizeLists(VecList &lists, const int new_length);
   void run_union(RunVec &parents, int run1, int run2);
@@ -29,22 +27,26 @@ private:
 protected:
   const IceGrid::ConstPtr m_grid;
   IceModelVec2Int m_mask_run;
-  FieldVec m_masks, m_fields;
+  FieldVec m_masks;
+  ConstFieldVec m_fields;
+  const int m_i_local_first, m_i_local_last, m_j_local_first, m_j_local_last,
+            m_i_global_first, m_i_global_last, m_j_global_first, m_j_global_last;
 
   void compute_runs(int &run_number, VecList &lists, unsigned int &max_items);
+  bool updateRunsAtBoundaries(VecList &lists);
+  int trackParentRun(int run, const RunVec &parents);
+  void updateGhosts(FieldVec &in);
+  void addFieldVecAccessList(FieldVec &field, IceModelVec::AccessList &list);
+  void addFieldVecAccessList(ConstFieldVec &field, IceModelVec::AccessList &list);
   virtual void init_VecList(VecList &lists, const unsigned int length);
+  virtual void startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists);
+  virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
+  virtual void mergeRuns(const int run_number, const int run_south, VecList &lists);
+  virtual void labelMask(int run_number, const VecList &lists);
   virtual bool ForegroundCond(const int i, const int j) const = 0;
   virtual void treatInnerMargin(const int i, const int j,
                                 const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
                                 VecList &lists, bool &changed) = 0;
-  int trackParentRun(int run, const RunVec &parents);
-  virtual void startNewRun(const int i, const int j, int &run_number, VecList &lists, int &parent);
-  virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
-  virtual void mergeRuns(const int run_number, const int run_south, VecList &lists);
-  virtual void labelMask(int run_number, const VecList &lists);
-  virtual bool updateRunsAtBoundaries(VecList &lists);
-  void updateGhosts(FieldVec &in);
-  void addFieldVecAccessList(FieldVec &field, IceModelVec::AccessList &list);
 };
 
 
@@ -62,9 +64,8 @@ protected:
   virtual void treatInnerMargin(const int i, const int j,
                                 const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
                                 VecList &lists, bool &changed);
-  virtual void startNewRun(const int i, const int j, int &run_number, VecList &lists, int &parent);
+  virtual void startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists);
   virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
-
 };
 
 
@@ -82,11 +83,10 @@ protected:
   virtual void treatInnerMargin(const int i, const int j,
                                 const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
                                 VecList &lists, bool &changed);
-  virtual void startNewRun(const int i, const int j, int &run_number, VecList &lists, int &parent);
+  virtual void startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists);
   virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
   virtual void mergeRuns(const int run_number, const int run_south, VecList &lists);
   virtual void labelMask(int run_number, const VecList &lists);
-
 };
 
 
@@ -99,12 +99,12 @@ public:
 protected:
   double m_drho, m_fill_value;
   const IceModelVec2S *m_bed, *m_thk;
-  virtual bool ForegroundCond(double bed, double thk, int mask, double Level, double Offset) const;
+  virtual bool ForegroundCond(const double bed, const double thk, const int mask, const double Level, const double Offset) const;
 };
 
 template<class CC>
 FillingAlgCC<CC>::FillingAlgCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed, const IceModelVec2S &thk, const double fill_value)
-  : CC(g) {
+  : CC(g), m_drho(drho), m_bed(&bed), m_thk(&thk), m_fill_value(fill_value) {
   CC::m_fields.push_back(m_bed);
   CC::m_fields.push_back(m_thk);
 }
@@ -115,7 +115,7 @@ FillingAlgCC<CC>::~FillingAlgCC() {
 }
 
 template<class CC>
-bool FillingAlgCC<CC>::ForegroundCond(double bed, double thk, int mask, double Level, double Offset) const {
+bool FillingAlgCC<CC>::ForegroundCond(const double bed, const double thk, const int mask, const double Level, const double Offset) const {
   if (mask > 0) {
     return true;
   }
