@@ -11,7 +11,11 @@ if (PROJ4_INCLUDES)
 endif (PROJ4_INCLUDES)
 
 find_path (PROJ4_INCLUDES proj_api.h
-  HINTS "${PROJ_ROOT}/include" "$ENV{PROJ_ROOT}/include")
+  HINTS
+  "${PROJ_ROOT}/include"
+  "$ENV{PROJ_ROOT}/include"
+  "/opt/local/lib/proj5/include"
+  "/opt/local/lib/proj49/include")
 
 if (PROJ4_INCLUDES)
   string(REGEX REPLACE "/include/?$" "/lib"
