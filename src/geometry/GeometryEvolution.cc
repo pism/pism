@@ -301,8 +301,9 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
   }
   m_impl->profile.end("ge.compute_changes");
 
-  // Computes the numerical conservation error and corrects ice_thickness_change and . We can do
-  // this here because compute_surface_and_basal_mass_balance() preserves non-negativity.
+  // Computes the numerical conservation error and corrects ice_thickness_change and
+  // ice_area_specific_volume_change. We can do this here because
+  // compute_surface_and_basal_mass_balance() preserves non-negativity.
   //
   // Note that here we use the "old" ice geometry.
   //
@@ -888,7 +889,8 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
   // elevation.)
   m_impl->thickness.copy_from(ice_thickness);
 
-  // The loop above updated ice_thickness, so we need to re-calculate the mask and the surface elevation:
+  // The loop above updated ice_thickness, so we need to re-calculate the mask and the
+  // surface elevation:
   m_impl->gc.compute(sea_level, bed_topography, ice_thickness, cell_type, ice_surface_elevation);
 
   double remaining_residual = 0.0;
