@@ -95,7 +95,7 @@ protected:
 template <class CC>
 ValidCC<CC>::ValidCC(IceGrid::ConstPtr g)
   :CC(g) {
-  m_mask_validity.create(CC::   m_grid, "mask_validity", WITH_GHOSTS, 1);
+  m_mask_validity.create(CC::m_grid, "mask_validity", WITH_GHOSTS, 1);
   CC::m_masks.push_back(&m_mask_validity);
 }
 
