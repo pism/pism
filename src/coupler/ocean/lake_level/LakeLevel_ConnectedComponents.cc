@@ -262,4 +262,232 @@ void FilterLakesCC::set_mask_validity(const int n_filter, const IceModelVec2S &l
   m_mask_validity.update_ghosts();
 }
 
+
+
+
+
+
+
+LakePropertiesCC::LakePropertiesCC(IceGrid::ConstPtr g, const double drho, const double fill_value,
+                                   const IceModelVec2S &target_level, const IceModelVec2S &lake_level,
+                                   const IceModelVec2S &floating_thresh)
+  : ConnectedComponents(g), m_drho(drho), m_fill_value(fill_value), m_target_level(&target_level),
+    m_current_level(&lake_level), m_floating_threshold_level(&floating_thresh) {
+
+  m_min_ll_tmp.create(m_grid, "min_ll_mask", WITH_GHOSTS, 1);
+  m_min_ll_tmp.set(m_fill_value);
+
+  m_max_ll_tmp.create(m_grid, "max_ll_mask", WITH_GHOSTS, 1);
+  m_max_ll_tmp.set(m_fill_value);
+
+  m_min_float_tmp.create(m_grid, "min_float_mask", WITH_GHOSTS, 1);
+  m_min_float_tmp.set(m_fill_value);
+
+  m_masks.push_back(&m_min_ll_tmp);
+  m_masks.push_back(&m_max_ll_tmp);
+  m_masks.push_back(&m_min_float_tmp);
+}
+
+LakePropertiesCC::~LakePropertiesCC() {
+  //empty
+}
+
+void LakePropertiesCC::getLakeProperties(IceModelVec2S &min_level, IceModelVec2S &max_level,
+                                         IceModelVec2S &min_float_level) {
+  VecList lists;
+  unsigned int max_items = 2 * m_grid->ym();
+  init_VecList(lists, max_items);
+
+  int run_number = 1;
+
+  compute_runs(run_number, lists, max_items);
+
+  min_level.copy_from(m_min_ll_tmp);
+  max_level.copy_from(m_max_ll_tmp);
+  min_float_level.copy_from(m_min_float_tmp);
+}
+
+void LakePropertiesCC::init_VecList(VecList &lists, const unsigned int length) {
+  ConnectedComponents::init_VecList(lists, length);
+
+  RunVec min_ll_list(length), max_ll_list(length), min_float_list(length);
+  lists["min_ll"] = min_ll_list;
+  lists["max_ll"] = max_ll_list;
+  lists["min_float"] = min_float_list;
+
+  for (unsigned int k = 0; k < 2; ++k) {
+    lists["min_ll"][k] = m_fill_value;
+    lists["max_ll"][k] = m_fill_value;
+    lists["min_float"][k] = m_fill_value;
+  }
+}
+
+void LakePropertiesCC::setRunMinLevel(double level, int run, VecList &lists) {
+  if (run == 0) {
+    return;
+  }
+
+  run = trackParentRun(run, lists["parents"]);
+  if (isLake(level)) {
+    if (isLake(lists["min_ll"][run])) {
+      level = std::max(level, lists["min_ll"][run]);
+    }
+    lists["min_ll"][run] = level;
+  }
+}
+
+void LakePropertiesCC::setRunMaxLevel(double level, int run, VecList &lists) {
+  if (run == 0) {
+    return;
+  }
+
+  run = trackParentRun(run, lists["parents"]);
+  if (isLake(level)) {
+    if (isLake(lists["max_ll"][run])) {
+      level = std::max(level, lists["max_ll"][run]);
+    }
+    lists["max_ll"][run] = level;
+  }
+}
+
+void LakePropertiesCC::setRunMinFloatLevel(double level, int run, VecList &lists) {
+  if (run == 0) {
+    return;
+  }
+
+  run = trackParentRun(run, lists["parents"]);
+  if (isLake(level)) {
+    if (isLake(lists["min_float"][run])) {
+      level = std::max(level, lists["min_float"][run]);
+    }
+    lists["min_float"][run] = level;
+  }
+}
+
+bool LakePropertiesCC::ForegroundCond(const int i, const int j) const {
+  const double target  = (*m_target_level)(i, j),
+               current = (*m_current_level)(i, j);
+
+  return (ForegroundCond(target, current));
+}
+
+void LakePropertiesCC::labelMask(int run_number, const VecList &lists) {
+  IceModelVec::AccessList list;
+  addFieldVecAccessList(m_masks, list);
+
+  const RunVec &i_vec = lists.find("i")->second,
+               &j_vec = lists.find("j")->second,
+               &len_vec = lists.find("lengths")->second,
+               &parents = lists.find("parents")->second,
+               &min_vec = lists.find("min_ll")->second,
+               &max_vec = lists.find("max_ll")->second,
+               &min_float_vec = lists.find("min_float")->second;
+
+  for (int k = 0; k <= run_number; ++k) {
+    const int label = trackParentRun(k, parents);
+    const double min_ll_label = min_vec[label],
+                 max_ll_label = max_vec[label],
+                 min_float_label = min_float_vec[label];
+    unsigned int j = j_vec[k];
+    for (unsigned int n = 0; n < len_vec[k]; ++n) {
+      const int i = i_vec[k] + n;
+      m_mask_run(i, j) = label;
+      m_min_ll_tmp(i, j) = min_ll_label;
+      m_max_ll_tmp(i, j) = max_ll_label;
+      m_min_float_tmp(i, j) = min_float_label;
+    }
+  }
+}
+
+void LakePropertiesCC::treatInnerMargin(const int i, const int j,
+                                        const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
+                                        VecList &lists, bool &changed) {
+  ConnectedComponents::treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
+
+  int run = m_mask_run.as_int(i, j);
+  if (run > 0) {
+    StarStencil<double> min_star      = m_min_ll_tmp.star(i, j),
+                        max_star      = m_max_ll_tmp.star(i, j),
+                        minfloat_star = m_min_float_tmp.star(i, j);
+
+    double min_level = min_star.ij,
+           max_level = max_star.ij,
+           min_float = minfloat_star.ij;
+
+    if (isWest) {
+      if ((isLake(min_star.w) and (min_star.w < min_level)) or not isLake(min_level)) {
+        min_level = min_star.w;
+      }
+      if ((isLake(max_star.w) and (max_star.w > max_level)) or not isLake(max_level)) {
+        max_level = max_star.w;
+      }
+      if ((isLake(minfloat_star.w) and (minfloat_star.w < min_float)) or not isLake(min_float)) {
+        min_float = minfloat_star.w;
+      }
+    }
+    if (isNorth) {
+      if ((isLake(min_star.n) and (min_star.n < min_level)) or not isLake(min_level)) {
+        min_level = min_star.n;
+      }
+      if ((isLake(max_star.n) and (max_star.n > max_level)) or not isLake(max_level)) {
+        max_level = max_star.n;
+      }
+      if ((isLake(minfloat_star.n) and (minfloat_star.n < min_float)) or not isLake(min_float)) {
+        min_float = minfloat_star.n;
+      }
+    }
+    if (isEast) {
+      if ((isLake(min_star.e) and (min_star.e < min_level)) or not isLake(min_level)) {
+        min_level = min_star.e;
+      }
+      if ((isLake(max_star.e) and (max_star.e > max_level)) or not isLake(max_level)) {
+        max_level = max_star.e;
+      }
+      if ((isLake(minfloat_star.e) and (minfloat_star.e < min_float)) or not isLake(min_float)) {
+        min_float = minfloat_star.e;
+      }
+    }
+    if (isSouth) {
+      if ((isLake(min_star.s) and (min_star.s < min_level)) or not isLake(min_level)) {
+        min_level = min_star.s;
+      }
+      if ((isLake(max_star.s) and (max_star.s > max_level)) or not isLake(max_level)) {
+        max_level = max_star.s;
+      }
+      if ((isLake(minfloat_star.s) and (minfloat_star.s < min_float)) or not isLake(min_float)) {
+        min_float = minfloat_star.s;
+      }
+    }
+    if (min_level != min_star.ij) {
+      setRunMinLevel(min_level, run, lists);
+      changed = true;
+    }
+    if (max_level != max_star.ij) {
+      setRunMaxLevel(max_level, run, lists);
+      changed = true;
+    }
+    if (min_float != minfloat_star.ij) {
+      setRunMinFloatLevel(min_float, run, lists);
+      changed = true;
+    }
+  }
+}
+
+void LakePropertiesCC::startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists) {
+  ConnectedComponents::startNewRun(i, j, run_number, parent, lists);
+
+  lists["min_ll"][run_number] = (*m_current_level)(i, j);
+  lists["max_ll"][run_number] = (*m_current_level)(i, j);
+  lists["min_float"][run_number] = (*m_floating_threshold_level)(i, j);
+}
+
+void LakePropertiesCC::continueRun(const int i, const int j, int &run_number, VecList &lists) {
+  ConnectedComponents::continueRun(i, j, run_number, lists);
+
+  setRunMinLevel((*m_current_level)(i, j), run_number, lists);
+  setRunMaxLevel((*m_current_level)(i, j), run_number, lists);
+  setRunMinFloatLevel((*m_floating_threshold_level)(i, j), run_number, lists);
+}
+
+
 } // namespace pism

@@ -22,7 +22,7 @@
 #include "pism/geometry/Geometry.hh"
 
 #include "Gradual.hh"
-#include "LakeProperties_ConnectedComponents.hh"
+#include "LakeLevel_ConnectedComponents.hh"
 
 namespace pism {
 namespace ocean {
@@ -120,12 +120,12 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
     sl = &(geometry.sea_level_elevation);
   }
 
-  gradually_fill(dt, &target_level, bed, thk, sl);
+  gradually_fill(dt, target_level, *bed, *thk, *sl);
 }
 
-void Gradual::gradually_fill(double dt, const IceModelVec2S *target_level,
-                             const IceModelVec2S *bed, const IceModelVec2S *thk,
-                             const IceModelVec2S *sea_level) {
+void Gradual::gradually_fill(double dt, const IceModelVec2S &target_level,
+                             const IceModelVec2S &bed, const IceModelVec2S &thk,
+                             const IceModelVec2S &sea_level) {
 
   const double dh_max = m_max_lake_fill_rate * dt;
 
@@ -134,8 +134,8 @@ void Gradual::gradually_fill(double dt, const IceModelVec2S *target_level,
                drho               = ice_density / freshwater_density;
 
   IceModelVec2S floating_thresh_level(m_grid, "floating_threshold_level", WITHOUT_GHOSTS);
-  floating_thresh_level.copy_from(*bed);
-  floating_thresh_level.add(drho, *thk);
+  floating_thresh_level.copy_from(bed);
+  floating_thresh_level.add(drho, thk);
 
   IceModelVec2S min_level(m_grid, "min_level", WITHOUT_GHOSTS),
                 max_level(m_grid, "max_level", WITHOUT_GHOSTS),
@@ -146,7 +146,7 @@ void Gradual::gradually_fill(double dt, const IceModelVec2S *target_level,
   try {
     // Initialze LakeProperties Model
     LakePropertiesCC LpCC(m_grid, drho, m_fill_value, target_level,
-                          &m_lake_level, &floating_thresh_level);
+                          m_lake_level, floating_thresh_level);
     LpCC.getLakeProperties(min_level, max_level, min_float_level_lake);
   } catch (...) {
     ParSec.failed();
@@ -155,9 +155,9 @@ void Gradual::gradually_fill(double dt, const IceModelVec2S *target_level,
 
   GeometryCalculator gc(*m_config);
 
-  IceModelVec::AccessList list{ &m_lake_level, target_level,
+  IceModelVec::AccessList list{ &m_lake_level, &target_level,
                                 &floating_thresh_level, &min_level, &max_level,
-                                &min_float_level_lake, sea_level, bed, thk };
+                                &min_float_level_lake, &sea_level, &bed, &thk };
   //Update lakes
   ParallelSection ParSec2(m_grid->com);
   try {
@@ -167,7 +167,7 @@ void Gradual::gradually_fill(double dt, const IceModelVec2S *target_level,
 
       if (part_of_lake_domain) {
         const double current_ij = m_lake_level(i, j),
-                     target_ij  = (*target_level)(i, j);
+                     target_ij  = target_level(i, j);
         bool rising;
 
         if (current_ij == m_fill_value) {
@@ -206,7 +206,7 @@ void Gradual::gradually_fill(double dt, const IceModelVec2S *target_level,
           dh_ij = std::min(dh_max, std::abs(dh_ij));
           const double new_level = max_ij - dh_ij;
           if (new_level > floating_thresh_level(i, j)
-              and not mask::ocean(gc.mask((*sea_level)(i, j), (*bed)(i, j), (*thk)(i, j)))) {
+              and not mask::ocean(gc.mask(sea_level(i, j), bed(i, j), thk(i, j)))) {
             if (new_level < current_ij) {
               m_lake_level(i, j) = new_level;
             }
