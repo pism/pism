@@ -3,7 +3,6 @@ add_library (boundary OBJECT
   ./util/ScalarForcing.cc
   ./util/options.cc
   ./util/lapse_rates.cc
-  ./util/FillingAlg_ConnectedComponents.cc
   ./util/connected_components.cc
   ./atmosphere/AtmosphereModel.cc
   ./atmosphere/ConstantPIK.cc
@@ -40,7 +39,6 @@ add_library (boundary OBJECT
   ./ocean/lake_level/LakeLevel_ConnectedComponents.cc
   ./ocean/lake_level/Gradual.cc
   ./ocean/lake_level/Patch.cc
-  ./ocean/lake_level/LakeProperties_ConnectedComponents.cc
   ./ocean/sea_level/Initialization.cc
   ./ocean/sea_level/SeaLevel.cc
   ./ocean/sea_level/SeaLevel_ConnectedComponents.cc
