@@ -145,7 +145,7 @@ void Gradual::gradually_fill(double dt, const IceModelVec2S &target_level,
   ParallelSection ParSec(m_grid->com);
   try {
     // Initialze LakeProperties Model
-    LakePropertiesCC LpCC(m_grid, drho, m_fill_value, target_level,
+    LakePropertiesCC LpCC(m_grid, m_fill_value, target_level,
                           m_lake_level, floating_thresh_level);
     LpCC.getLakeProperties(min_level, max_level, min_float_level_lake);
   } catch (...) {

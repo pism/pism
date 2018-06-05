@@ -1,5 +1,7 @@
 #include "LakeLevel_ConnectedComponents.hh"
 
+#include<iostream>
+
 namespace pism {
 
 LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed,
@@ -268,10 +270,9 @@ void FilterLakesCC::set_mask_validity(const int n_filter, const IceModelVec2S &l
 
 
 
-LakePropertiesCC::LakePropertiesCC(IceGrid::ConstPtr g, const double drho, const double fill_value,
-                                   const IceModelVec2S &target_level, const IceModelVec2S &lake_level,
-                                   const IceModelVec2S &floating_thresh)
-  : ConnectedComponents(g), m_drho(drho), m_fill_value(fill_value), m_target_level(&target_level),
+LakePropertiesCC::LakePropertiesCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &target_level,
+                                   const IceModelVec2S &lake_level, const IceModelVec2S &floating_thresh)
+  : ConnectedComponents(g), m_fill_value(fill_value), m_target_level(&target_level),
     m_current_level(&lake_level), m_floating_threshold_level(&floating_thresh) {
 
   m_min_ll_tmp.create(m_grid, "min_ll_mask", WITH_GHOSTS, 1);
@@ -286,6 +287,10 @@ LakePropertiesCC::LakePropertiesCC(IceGrid::ConstPtr g, const double drho, const
   m_masks.push_back(&m_min_ll_tmp);
   m_masks.push_back(&m_max_ll_tmp);
   m_masks.push_back(&m_min_float_tmp);
+
+  m_fields.push_back(m_target_level);
+  m_fields.push_back(m_current_level);
+  m_fields.push_back(m_floating_threshold_level);
 }
 
 LakePropertiesCC::~LakePropertiesCC() {
@@ -358,7 +363,7 @@ void LakePropertiesCC::setRunMinFloatLevel(double level, int run, VecList &lists
   run = trackParentRun(run, lists["parents"]);
   if (isLake(level)) {
     if (isLake(lists["min_float"][run])) {
-      level = std::max(level, lists["min_float"][run]);
+      level = std::min(level, lists["min_float"][run]);
     }
     lists["min_float"][run] = level;
   }
@@ -415,46 +420,46 @@ void LakePropertiesCC::treatInnerMargin(const int i, const int j,
            min_float = minfloat_star.ij;
 
     if (isWest) {
-      if ((isLake(min_star.w) and (min_star.w < min_level)) or not isLake(min_level)) {
+      if (isLake(min_star.w) and ((min_star.w < min_level) or not isLake(min_level))) {
         min_level = min_star.w;
       }
-      if ((isLake(max_star.w) and (max_star.w > max_level)) or not isLake(max_level)) {
+      if (isLake(max_star.w) and ((max_star.w > max_level) or not isLake(max_level))) {
         max_level = max_star.w;
       }
-      if ((isLake(minfloat_star.w) and (minfloat_star.w < min_float)) or not isLake(min_float)) {
+      if (isLake(minfloat_star.w) and ((minfloat_star.w < min_float) or not isLake(min_float))) {
         min_float = minfloat_star.w;
       }
     }
     if (isNorth) {
-      if ((isLake(min_star.n) and (min_star.n < min_level)) or not isLake(min_level)) {
+      if (isLake(min_star.n) and ((min_star.n < min_level) or not isLake(min_level))) {
         min_level = min_star.n;
       }
-      if ((isLake(max_star.n) and (max_star.n > max_level)) or not isLake(max_level)) {
+      if (isLake(max_star.n) and ((max_star.n > max_level) or not isLake(max_level))) {
         max_level = max_star.n;
       }
-      if ((isLake(minfloat_star.n) and (minfloat_star.n < min_float)) or not isLake(min_float)) {
+      if (isLake(minfloat_star.n) and ((minfloat_star.n < min_float) or not isLake(min_float))) {
         min_float = minfloat_star.n;
       }
     }
     if (isEast) {
-      if ((isLake(min_star.e) and (min_star.e < min_level)) or not isLake(min_level)) {
+      if (isLake(min_star.e) and ((min_star.e < min_level) or not isLake(min_level))) {
         min_level = min_star.e;
       }
-      if ((isLake(max_star.e) and (max_star.e > max_level)) or not isLake(max_level)) {
+      if (isLake(max_star.e) and ((max_star.e > max_level) or not isLake(max_level))) {
         max_level = max_star.e;
       }
-      if ((isLake(minfloat_star.e) and (minfloat_star.e < min_float)) or not isLake(min_float)) {
+      if (isLake(minfloat_star.e) and ((minfloat_star.e < min_float) or not isLake(min_float))) {
         min_float = minfloat_star.e;
       }
     }
     if (isSouth) {
-      if ((isLake(min_star.s) and (min_star.s < min_level)) or not isLake(min_level)) {
+      if (isLake(min_star.s) and ((min_star.s < min_level) or not isLake(min_level))) {
         min_level = min_star.s;
       }
-      if ((isLake(max_star.s) and (max_star.s > max_level)) or not isLake(max_level)) {
+      if (isLake(max_star.s) and ((max_star.s > max_level) or not isLake(max_level))) {
         max_level = max_star.s;
       }
-      if ((isLake(minfloat_star.s) and (minfloat_star.s < min_float)) or not isLake(min_float)) {
+      if (isLake(minfloat_star.s) and ((minfloat_star.s < min_float) or not isLake(min_float))) {
         min_float = minfloat_star.s;
       }
     }
@@ -488,6 +493,5 @@ void LakePropertiesCC::continueRun(const int i, const int j, int &run_number, Ve
   setRunMaxLevel((*m_current_level)(i, j), run_number, lists);
   setRunMinFloatLevel((*m_floating_threshold_level)(i, j), run_number, lists);
 }
-
 
 } // namespace pism
