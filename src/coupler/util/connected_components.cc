@@ -263,4 +263,55 @@ void SinkCC::continueRun(const int i, const int j, int &run_number, VecList &lis
   }
 }
 
+
+
+MaskCC::MaskCC(IceGrid::ConstPtr g)
+  :SinkCC(g) {
+  //empty
+}
+
+MaskCC::~MaskCC() {
+  //empty
+}
+
+void MaskCC::compute_mask(IceModelVec2Int &mask) {
+  m_mask_run.copy_from(mask);
+
+  VecList lists;
+  unsigned int max_items = 2 * m_grid->ym();
+  init_VecList(lists, max_items);
+
+  int run_number = 1;
+
+  compute_runs(run_number, lists, max_items);
+
+  labelMask(run_number, lists, mask);
+}
+
+bool MaskCC::ForegroundCond(const int i, const int j) const {
+  const int mask = m_mask_run.as_int(i, j);
+  return (mask > 0);
+}
+
+void MaskCC::labelMask(const int run_number, const VecList &lists, IceModelVec2Int &result) {
+  IceModelVec::AccessList list{&result};
+  result.set(0);
+
+  const RunVec &i_vec = lists.find("i")->second,
+               &j_vec = lists.find("j")->second,
+               &len_vec = lists.find("lengths")->second,
+               &parents = lists.find("parents")->second;
+
+  for(int k = 0; k <= run_number; ++k) {
+    const int label = trackParentRun(k, parents);
+    if (label > 1) {
+      const int j = j_vec[k];
+      for(int n = 0; n < len_vec[k]; ++n) {
+        const int i = i_vec[k] + n;
+        result(i, j) = 1;
+      }
+    }
+  }
+}
+
 } //namespace pism

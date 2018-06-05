@@ -68,7 +68,18 @@ protected:
   virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
 };
 
+class MaskCC : public SinkCC {
+public:
+  MaskCC(IceGrid::ConstPtr g);
+  ~MaskCC();
+  void compute_mask(IceModelVec2Int &mask);
 
+protected:
+  virtual bool ForegroundCond(const int i, const int j) const;
+
+private:
+  void labelMask(const int run_number, const VecList &lists, IceModelVec2Int &result);
+};
 
 
 template <class CC>
