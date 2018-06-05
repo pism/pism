@@ -1,7 +1,7 @@
 #ifndef _SEALEVEL_CONNECTEDCOMPONENTS_H_
 #define _SEALEVEL_CONNECTEDCOMPONENTS_H_
 
-#include "pism/coupler/util/connected_components.hh"
+#include "pism/util/connected_components.hh"
 
 namespace pism{
 

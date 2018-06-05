@@ -20,6 +20,7 @@ set(PISMUTIL_SRC
   TerminationReason.cc
   Timeseries.cc
   VariableMetadata.cc
+  connected_components.cc
   error_handling.cc
   iceModelVec.cc
   iceModelVec2.cc
