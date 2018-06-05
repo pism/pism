@@ -152,7 +152,7 @@ bool ConnectedComponents::updateRunsAtBoundaries(VecList &lists) {
          isMargin = (isWest or isEast or isSouth or isNorth);
 
     if (isMargin) {
-      treatInnerMargin(i, j, isNorth, isEast, isWest, isWest, lists, changed);
+      treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
     }
   }
 
