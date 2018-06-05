@@ -1,7 +1,5 @@
 #include "LakeLevel_ConnectedComponents.hh"
 
-#include<iostream>
-
 namespace pism {
 
 LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed,
@@ -59,8 +57,8 @@ void LakeLevelCC::labelMap(const int run_number, const VecList &lists, IceModelV
 
   const RunVec &i_vec = lists.find("i")->second,
                &j_vec = lists.find("j")->second,
-               &len_vec    = lists.find("lengths")->second,
-               &parents    = lists.find("parents")->second,
+               &len_vec = lists.find("lengths")->second,
+               &parents = lists.find("parents")->second,
                &valid_list = lists.find("valid")->second;
 
   for(int k = 0; k <= run_number; ++k) {
@@ -138,8 +136,8 @@ void IsolationCC::labelIsolatedSpots(const int run_number, const VecList &lists,
 
   const RunVec &i_vec = lists.find("i")->second,
                &j_vec = lists.find("j")->second,
-               &len_vec    = lists.find("lengths")->second,
-               &parents    = lists.find("parents")->second;
+               &len_vec = lists.find("lengths")->second,
+               &parents = lists.find("parents")->second;
 
   for(int k = 0; k <= run_number; ++k) {
     const int label = trackParentRun(k, parents);
@@ -165,7 +163,6 @@ void IsolationCC::prepare_mask() {
   }
   m_mask_run.update_ghosts();
 }
-
 
 
 FilterLakesCC::FilterLakesCC(IceGrid::ConstPtr g, const double fill_value)
@@ -203,8 +200,8 @@ void FilterLakesCC::labelMap(const int run_number, const VecList &lists, IceMode
 
   const RunVec &i_vec = lists.find("i")->second,
                &j_vec = lists.find("j")->second,
-               &len_vec    = lists.find("lengths")->second,
-               &parents    = lists.find("parents")->second,
+               &len_vec = lists.find("lengths")->second,
+               &parents = lists.find("parents")->second,
                &valid_list = lists.find("valid")->second;
 
   for(int k = 0; k <= run_number; ++k) {
@@ -263,11 +260,6 @@ void FilterLakesCC::set_mask_validity(const int n_filter, const IceModelVec2S &l
   }
   m_mask_validity.update_ghosts();
 }
-
-
-
-
-
 
 
 LakePropertiesCC::LakePropertiesCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &target_level,
@@ -396,6 +388,7 @@ void LakePropertiesCC::labelMask(int run_number, const VecList &lists) {
     unsigned int j = j_vec[k];
     for (unsigned int n = 0; n < len_vec[k]; ++n) {
       const int i = i_vec[k] + n;
+
       m_mask_run(i, j) = label;
       m_min_ll_tmp(i, j) = min_ll_label;
       m_max_ll_tmp(i, j) = max_ll_label;
@@ -411,8 +404,8 @@ void LakePropertiesCC::treatInnerMargin(const int i, const int j,
 
   int run = m_mask_run.as_int(i, j);
   if (run > 0) {
-    StarStencil<double> min_star      = m_min_ll_tmp.star(i, j),
-                        max_star      = m_max_ll_tmp.star(i, j),
+    StarStencil<double> min_star = m_min_ll_tmp.star(i, j),
+                        max_star = m_max_ll_tmp.star(i, j),
                         minfloat_star = m_min_float_tmp.star(i, j);
 
     double min_level = min_star.ij,
