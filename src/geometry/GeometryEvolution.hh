@@ -64,6 +64,9 @@ public:
 
   const IceModelVec2S& conservation_error() const;
 
+  void prescribe_groundingline(const IceModelVec2S &old_ice_thickness, Geometry &geometry);
+
+
   // diagnostic
   const IceModelVec2Stag& flux_staggered() const;
   const IceModelVec2S& flux_divergence() const;
@@ -121,17 +124,6 @@ protected:
                                                       const IceModelVec2S        &basal_melt_rate,
                                                       IceModelVec2S              &effective_SMB,
                                                       IceModelVec2S              &effective_BMB);
-
-  virtual void prescribe_groundingline(const IceModelVec2S &ice_thickness,
-                                       IceModelVec2S &thickness_change,
-                                       const IceModelVec2S& bed_topography,
-                                       const IceModelVec2S& sea_level,
-                                       const IceModelVec2CellType& cell_type,
-                                       IceModelVec2S &effective_SMB,
-                                       IceModelVec2S &effective_BMB,
-                                       IceModelVec2S &area_specific_volume_change,
-                                       IceModelVec2S &conservation_error);
-
 protected:
   struct Impl;
   Impl *m_impl;

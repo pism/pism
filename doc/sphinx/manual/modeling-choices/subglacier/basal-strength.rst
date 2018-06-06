@@ -210,6 +210,8 @@ unlikely to be a good modelling choice for real ice sheets.
      - Use a constant till friction angle. The default is `30^{\circ}`.
    * - :opt:`-topg_to_phi` (*list of 4 numbers*)
      - Compute `\phi` using equation :eq:`eq-phipiecewise`.
+   * - :opt:`-iterative_phi`
+     - Compute `\phi` iteratively in an equilibrium simulation using equation :eq:`eq-phiiterative`.
    * - :opt:`-yield_stress constant`
      - Keep the current values of the till yield stress `\tau_c`. That is, do not update
        them by the default model using the stored basal melt water. Only effective if
@@ -267,6 +269,47 @@ warning during initialization of the second run:
 
 Omitting the :opt:`-topg_to_phi` option in the second run would make PISM continue with the
 same :var:`tillphi` field which was set in the first run.
+
+
+
+The distribution of till friction angle `\phi=` :var:`tillphi` in :eq:`eq-mohrcoulomb` can be 
+iteratively optimized in a forward equlibrium simulation with respect to the mismatch to observed 
+modern surface elevation `dh_{obs}` :cite:`BEDMAP02`, based on the simple inversion method 
+:cite:`PollardDeConto2012SLIDE` optimizing for the basal sliding coefficient `\tau_c`. 
+
+
+.. code-block:: none
+
+   -iterative_phi usurf_target_file 
+   -tphi_inverse 500.0 -hphi_inverse 250.0 
+   -phimax_inverse 70.0 -phimin_inverse 2.0 
+   -phimod_inverse 2e-3 -prescribe_gl
+
+Thus the user supplies a file :opt:`usurf_target_file` with the target surface elevation and 5 
+parameters: :opt:`\-tphi_inverse` indicates the timestep of iterations in years, :opt:`-hphi_inverse` 
+`h_{inv}` the relative surface anomaly in meters, :opt:`-phimax_inverse` `\phi_{max}` and 
+:opt:`-phimin_inverse` `\phi_{min}` the upper and lower bounds of till friction angle in degrees 
+(the default lower boundary for continetal regions above -300\,m ramps up to 5 degrees). 
+:opt:`-phimod_inverse` is a local convergence criterion for two subsequent iterations. 
+:opt:`-prescribe_gl` prescribes ice thickness in the ice shelf and ocean regions an prevents 
+grounded ice sheet areas from becoming afloat, such that the position of the grounding line 
+remains fixed (without bed deformation). 
+You can start from a initial :var:`tillphi` field using :opt:`-plastic_phi`, :opt:`-topg_to_phi` 
+or a given distribution. In each iteration step T, with maximal steps of `\delta\phi_{up}=1^{\circ}` and 
+`\delta\phi_{down}=0.5^{\circ}`, :var:`tillphi` is updated as 
+
+.. math::
+   :name: eq-phiiterative
+
+   \phi_{it}(x,y,T+1) &=  \max ( \phi_{min} \min [\phi_{max} , \phi_{it}(x,y,T) + \Delta\phi]) \\
+   \Delta\phi &= \min ( \delta\phi_{up} , \max [ \delta\phi_{down} , \frac{dh_{obs}}{h_{inv}}]).
+
+
+As diagnostic fields for the optimization simulation output variables can be called 
+:opt:`-extra_vars tillphi,diff_usurf,diff_mask`. 
+
+
+
 
 Determining the effective pressure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

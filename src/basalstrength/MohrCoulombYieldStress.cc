@@ -526,7 +526,8 @@ void MohrCoulombYieldStress::iterative_phi_step(const IceModelVec2S &ice_surface
 
   m_diff_mask.set(1.0);
 
-  //FIXME: Use configuration flags or at least RealList from option as in topg_to_phi
+  //FIXME: Use configuration flags pism_config:basal_yield_stress.mohr_coulomb.till_phi...
+  //or at least RealList from option as in topg_to_phi
   double   tinv     = 500.0, // yr
            hinv     = 500.0, // m
            phimin   = 1.0,

@@ -357,20 +357,6 @@ void GeometryEvolution::apply_flux_divergence(Geometry &geometry) {
   geometry.ice_thickness.add(1.0, m_impl->thickness_change);
   geometry.ice_area_specific_volume.add(1.0, m_impl->ice_area_specific_volume_change);
 
-  if (m_impl->prescribe_gl) {
-    m_impl->profile.begin("ge.prescribe_gl");
-    prescribe_groundingline(geometry.ice_thickness,        // in
-                            m_impl->thickness_change,      // in/out
-                            m_impl->bed_elevation,         // in
-                            m_impl->sea_level,             // in
-                            m_impl->cell_type,             // in
-                            m_impl->effective_SMB,         // in
-                            m_impl->effective_BMB,         // in
-                            m_impl->ice_area_specific_volume_change, // in/out
-                            m_impl->conservation_error);   // out
-    m_impl->profile.end("ge.prescribe_gl");
-  }
-
 }
 
 /*!
@@ -410,7 +396,6 @@ void GeometryEvolution::apply_mass_fluxes(Geometry &geometry) const {
   }
   loop.check();
 }
-
 
 /*!
  * Prevent advective ice flow from floating ice to ice-free land, as well as in the ice-free areas.
@@ -1026,20 +1011,13 @@ void GeometryEvolution::ensure_nonnegativity(const IceModelVec2S &ice_thickness,
 }
 
 
-////////////////////////////////////////////////////////////////
 
-void GeometryEvolution::prescribe_groundingline(const IceModelVec2S &ice_thickness,
-                                             IceModelVec2S &thickness_change,
-                                             const IceModelVec2S  &bed_topography,
-                                             const IceModelVec2S  &sea_level,
-                                             const IceModelVec2CellType &cell_type,
-                                             IceModelVec2S  &effective_SMB,
-                                             IceModelVec2S  &effective_BMB,
-                                             IceModelVec2S &area_specific_volume_change,
-                                             IceModelVec2S &conservation_error) {
+void GeometryEvolution::prescribe_groundingline(const IceModelVec2S &old_ice_thickness, Geometry &geometry) {
 
-  IceModelVec::AccessList list{&ice_thickness, &thickness_change, &bed_topography,&sea_level,
-               &cell_type, &effective_SMB, &effective_BMB, &area_specific_volume_change, &conservation_error};
+  IceModelVec2S &H = geometry.ice_thickness;
+
+  IceModelVec::AccessList list{&old_ice_thickness, &H,
+                               &m_impl->bed_elevation,&m_impl->sea_level,&m_impl->cell_type};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1049,37 +1027,35 @@ void GeometryEvolution::prescribe_groundingline(const IceModelVec2S &ice_thickne
       //conservation_error(i, j) = 0.0;
 
       const double
-        H       = ice_thickness(i, j),
-        dH_MB   = effective_SMB(i, j)+effective_BMB(i, j),
-        dH_flow = thickness_change(i, j),
+        Hold    = old_ice_thickness(i, j),
         rho     = m_impl->ocean_density/m_impl->ice_density,
-        Hfl     = 1.0-(bed_topography(i,j)-sea_level(i,j))*rho,
-        Hnew    = H + dH_flow + dH_MB;
+        Hfl     = 1.0-(m_impl->bed_elevation(i,j)-m_impl->sea_level(i,j))*rho,
+        Hnew    = H(i,j);
 
-        if (cell_type.grounded(i, j)) {
+        if (m_impl->cell_type.grounded(i, j)) {
+
           // prevent grounded parts form becoming afloat
           if (Hnew - Hfl < 0.0) {
-            thickness_change(i, j)    = (Hfl - Hnew + dH_flow);
-            conservation_error(i, j) += - (Hnew - Hfl);
+            //m_log->message(2, "!!!!!!!! Hgr -> Hfl with error=%f, %f, %f at %d,%d\n",Hfl-Hnew,Hold,i,j);
+            H(i, j) = Hfl;
           }
         }
-        else if (H > 0.0) {
+
+        else if (Hnew != Hold) {
 
           //avoid artefacts for floating cells surrounded by grounded neighbors
-          bool floating_lake = (cell_type.grounded(i-1,j) && cell_type.grounded(i+1,j) &&
-                                cell_type.grounded(i,j-1) && cell_type.grounded(i,j+1));
-          //thickness_change(i, j)    = dH;
-          //conservation_error(i, j) += 0.0;
+          bool floating_lake = (m_impl->cell_type.grounded(i-1,j) && m_impl->cell_type.grounded(i+1,j) &&
+                                m_impl->cell_type.grounded(i,j-1) && m_impl->cell_type.grounded(i,j+1));
 
           //floating ice shelves thickness remains unchanged
           if (floating_lake == false) {
-            double dH_mismatch = std::min(0.0, Hnew - dH_flow - dH_MB);
-            //if (dH_mismatch < 0.0)
-            //  m_log->message(4, "!!!!!!!! Hnew negative %e at %d,%d\n",Hnew-dH_flow-dH_MB,i,j);
-            thickness_change(i, j)    = (-dH_mismatch - dH_MB);
-            area_specific_volume_change(i, j)  = 0.0;
-            conservation_error(i, j) += - (dH_flow + dH_MB);
+            //m_log->message(2, "!!!!!!!! Hfl -> Hfl with error %f, %f, %f at %d,%d\n",Hnew-Hold,Hold,i,j);
+            H(i, j) = Hold;
+
           }
+          //else {
+          //  m_log->message(2, "!!!!!!!! Hfl lake at %d,%d\n",i,j);
+          //}
         }
     }
   } catch (...) {

@@ -563,6 +563,17 @@ void IceModel::step(bool do_mass_continuity,
   // FIXME: thickness B.C. mask should be separate
   IceModelVec2Int &thickness_bc_mask = m_ssa_dirichlet_bc_mask;
 
+  bool prescribe_gl  = m_config->get_boolean("geometry.update.prescribe_groundingline");
+  //if (prescribe_gl) {
+        IceModelVec2S
+          &old_Hfloat  = m_work2d[2];
+        {
+          old_Hfloat.copy_from(m_geometry.ice_thickness);
+        }
+  //}
+
+
+
   if (do_mass_continuity) {
     profiling.begin("mass_transport");
     {
@@ -675,6 +686,11 @@ void IceModel::step(bool do_mass_continuity,
                                            m_surface->mass_flux(),
                                            m_basal_melt_rate);
     m_geometry_evolution->apply_mass_fluxes(m_geometry);
+
+    if (prescribe_gl) {
+      m_geometry_evolution->prescribe_groundingline(old_Hfloat,m_geometry);
+    }
+
 
     IceModelVec2S
       &old_H    = m_work2d[0],
