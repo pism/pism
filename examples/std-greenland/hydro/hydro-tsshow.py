@@ -13,13 +13,13 @@ import sys
 try:
     import netCDF4 as netCDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 NC = netCDF.Dataset
 
 if len(sys.argv) < 3:
-    print "hydro-tsshow.py ERROR: ... FIXME ... exiting"
+    print("hydro-tsshow.py ERROR: ... FIXME ... exiting")
     sys.exit(1)
 outimage = sys.argv[1]
 tsfile = sys.argv[2]
@@ -33,13 +33,13 @@ legloc = 'lower right'
 labels = []
 plt.figure(figsize=(9, 4))
 
-print "opening file '%s' for reading ..." % tsfile
+print("opening file '%s' for reading ..." % tsfile)
 try:
     ncfile = NC(tsfile, "r")
 except:
-    print "ERROR: can't open file %s for reading ..." % tsfile
+    print("ERROR: can't open file %s for reading ..." % tsfile)
     sys.exit(2)
-print "  reading 'time' variable ..."
+print("  reading 'time' variable ...")
 t = ncfile.variables["time"][:] / secpera
 
 n = 3
@@ -47,7 +47,7 @@ style = ['b-',  'g-',  'r-']
 labels = ['ocean_loss', 'ice_free_land_loss', 'negative_thickness_gain']
 for k in range(n):
     varname = 'hydro_' + labels[k]
-    print "  reading '%s' variable ..." % varname
+    print("  reading '%s' variable ..." % varname)
     var = ncfile.variables[varname][:]
     plt.semilogy(t, var / scale, style[k], linewidth=2.5)
     plt.hold(True)
@@ -62,6 +62,6 @@ plt.xlabel("t (years)", size=16)
 plt.ylabel("flux  (%s kg/s)" % scalestr, size=16)
 plt.grid(True)
 
-print "saving image to file '%s' ..." % outimage
+print("saving image to file '%s' ..." % outimage)
 # plt.show()
 plt.savefig(outimage, bbox_inches='tight')

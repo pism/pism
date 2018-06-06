@@ -271,7 +271,6 @@ int main(int argc, char *argv[]) {
 
   MPI_Comm com = MPI_COMM_WORLD;
   petsc::Initializer petsc(argc, argv, help);
-  PetscErrorCode ierr;
 
   com = PETSC_COMM_WORLD;
 
@@ -286,19 +285,18 @@ int main(int argc, char *argv[]) {
 
     set_config_from_options(*config);
 
-    bool
-      usage_set = options::Bool("-usage", "print usage info"),
-      help_set  = options::Bool("-help", "print help info");
-    if (usage_set or help_set) {
-      ierr = PetscPrintf(com,
-                         "\n"
-                         "usage of SIAFD_TEST:\n"
-                         "  run siafd_test -Mx <number> -My <number> -Mz <number> -o foo.nc\n"
-                         "\n");
-      PISM_CHK(ierr, "PetscPrintf");
+    std::string usage = "\n"
+      "usage of SIAFD_TEST:\n"
+      "  run siafd_test -Mx <number> -My <number> -Mz <number> -o foo.nc\n"
+      "\n";
+
+    bool stop = show_usage_check_req_opts(*ctx->log(), "siafd_test", {}, usage);
+
+    if (stop) {
+      return 0;
     }
 
-    options::String output_file("-o", "Set the output file name", "siafd_test_F.nc");
+    auto output_file = config->get_string("output.file_name");
 
     GridParameters P(config);
     P.Lx = 900e3;
@@ -306,7 +304,7 @@ int main(int argc, char *argv[]) {
     P.horizontal_size_from_options();
 
     double Lz = 4000.0;
-    options::Integer Mz("-Mz", "Number of vertical grid levels", 61);
+    unsigned int Mz = config->get_double("grid.Mz");
 
     P.z = IceGrid::compute_vertical_levels(Lz, Mz, EQUAL);
     P.ownership_ranges_from_options(ctx->size());
@@ -317,20 +315,20 @@ int main(int argc, char *argv[]) {
 
     EnthalpyConverter::Ptr EC(new ColdEnthalpyConverter(*config));
 
-    IceModelVec3 enthalpy,
-      age;                      // is not used (and need not be allocated)
     const int WIDE_STENCIL = config->get_double("grid.max_stencil_width");
+
+    IceModelVec3
+      enthalpy(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL),
+      age(grid, "age", WITHOUT_GHOSTS);
 
     Geometry geometry(grid);
     geometry.sea_level_elevation.set(0.0);
 
     // age of the ice; is not used here
-    age.create(grid, "age", WITHOUT_GHOSTS);
     age.set_attrs("diagnostic", "age of the ice", "s", "");
     age.set(0.0);
 
     // enthalpy in the ice
-    enthalpy.create(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
     enthalpy.set_attrs("model_state",
                        "ice enthalpy (includes sensible heat, latent heat, pressure)",
                        "J kg-1", "");

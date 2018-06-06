@@ -39,7 +39,7 @@ resolution. There is a tradeoff between completeness of the continuum model and 
 resolution needed to resolve the features of the real ice sheet.)
 
 There exists a theory which addresses exactly this situation for the SIA model, and
-explains rigorously that one should use a smoothed bed in that model. But with an
+explains rigorously that one should use a smoothed bed in that model, but with an
 associated reduction in diffusivity. This theory explains how to improve the SIA model to
 handle bed roughness more correctly, because it parameterizes the effects of
 "higher-order" stresses which act on the ice as it flows over bed topography. Specifically
@@ -178,10 +178,10 @@ The averages appearing in his scaling arguments are over an infinite domain, e.g
 For practical modeling use, Schoof specifically recommends averaging over some finite
 length scale which should be "considerably greater than the grid spacing, but much smaller
 than the size of the ice sheet." Furthermore he recommends that, because of the typical
-aspect ratio of ice sheets, "Bed topography on much larger length scales than 10 km
-should then be resolved explicitly through the smoothed bed height `b_s` rather than
-the correction factor `\theta`." Thus in PISM we use `\lambda_1 = \lambda_2 = 5`
-km as the default. Naturally the values are configurable also.
+aspect ratio of ice sheets, "Bed topography on much larger length scales than 10 km should
+then be resolved explicitly through the smoothed bed height `b_s` rather than the
+correction factor `\theta`." Thus in PISM we use `\lambda_1 = \lambda_2 = 5` km as the
+default (set :config:`stress_balance.sia.bed_smoother.range` to change this value).
 
 It is, of course, possible to have bed roughness of significant magnitude at essentially
 any wavelength. We make no claim that PISM results are good models of ice flow over
@@ -272,9 +272,9 @@ The parameters `\lambda_1,\lambda_2` must be set, but as noted above we use a de
 value of 5 km based on Schoof's recommendation. This physical distance may be less than or
 more than the grid spacing. In the case that the grid spacing is 1 km, for example, we see
 that there is a large smoothing domain in terms of the number of grid points. Generally,
-the ghosting width (in PETSc sense) is unbounded. Therefore move the unsmoothed topography
-to processor zero and do the smoothing and the coefficient-computing there. The class
-pism::stressbalance::BedSmoother implements these details.
+the ghosting width (in PETSc sense) is unbounded. We therefore move the unsmoothed
+topography to processor zero and do the smoothing and the coefficient-computing there. The
+class ``stressbalance::BedSmoother`` implements these details.
 
 Convexity of `P_4`
 ^^^^^^^^^^^^^^^^^^

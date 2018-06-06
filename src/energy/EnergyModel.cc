@@ -227,19 +227,18 @@ void EnergyModel::init_enthalpy(const PIO &input_file, bool do_regrid, int recor
  * fraction.
  */
 void EnergyModel::regrid_enthalpy() {
-  options::String regrid_filename("-regrid_file", "regridding file name");
 
-  options::StringSet regrid_vars("-regrid_vars",
-                                 "comma-separated list of regridding variables",
-                                 "");
+  auto regrid_filename = m_config->get_string("input.regrid.file");
+  auto regrid_vars     = set_split(m_config->get_string("input.regrid.vars"), ',');
 
-  if (not regrid_filename.is_set()) {
+
+  if (regrid_filename.empty()) {
     return;
   }
 
   std::string enthalpy_name = m_ice_enthalpy.metadata().get_name();
 
-  if (not regrid_vars.is_set() or member(enthalpy_name, regrid_vars)) {
+  if (regrid_vars.empty() or member(enthalpy_name, regrid_vars)) {
     PIO regrid_file(m_grid->com, "guess_mode", regrid_filename, PISM_READONLY);
     init_enthalpy(regrid_file, true, 0);
   }

@@ -52,7 +52,7 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
   m_config->set_double("stress_balance.sia.enhancement_factor", 1.0);
 
   // none use bed smoothing & bed roughness parameterization
-  m_config->set_double("stress_balance.sia.bed_smoother_range", 0.0);
+  m_config->set_double("stress_balance.sia.bed_smoother.range", 0.0);
 
   // basal melt does not change computation of mass continuity or vertical velocity:
   m_config->set_boolean("geometry.update.use_basal_melt_rate", false);

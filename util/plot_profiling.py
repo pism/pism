@@ -70,7 +70,7 @@ total_time = np.max([s["summary"][j]["time"] for j in range(n_procs)])
 
 def get_data(event_list):
     "Get event data from the time-stepping loop stage."
-    return {e : get_event_times(e, n_procs) for e in event_list if e in s.keys()}
+    return {e : get_event_times(e, n_procs) for e in event_list if e in list(s.keys())}
 
 def aggregate(data, total_time):
     "Combine small events."
@@ -79,8 +79,8 @@ def aggregate(data, total_time):
     other_label = ""
     for event in data:
         if data[event][0] / float(total_time) < 0.01:
-            print "Lumping '%s' (%f%%) with others..." % (event,
-                                                          100.0 * data[event][0] / total_time)
+            print("Lumping '%s' (%f%%) with others..." % (event,
+                                                          100.0 * data[event][0] / total_time))
             del d[event]
             other[0] += data[event][0]
             other[1] += data[event][1]
@@ -99,7 +99,7 @@ def plot(data, total, grand_total):
     events.sort(key=lambda x: x[1])
 
     def better_name(n):
-        if n in better_names.keys():
+        if n in list(better_names.keys()):
             return better_names[n]
         else:
             return n

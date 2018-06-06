@@ -37,12 +37,12 @@ than 50 iterations.
 
 
 def fail(msg):
-    print "Test Failed: %s" % msg
+    print("Test Failed: %s" % msg)
     exit(1)
 
 
 def success():
-    print "Test Succeeded."
+    print("Test Succeeded.")
     exit(0)
 
 netCDF = None

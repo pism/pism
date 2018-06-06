@@ -154,25 +154,22 @@ void Component::write_model_state_impl(const PIO &output) const {
 void Component::regrid(const std::string &module_name, IceModelVec &variable,
                        RegriddingFlag flag) {
 
-  options::String regrid_file("-regrid_file", "regridding file name");
+  auto regrid_file = m_config->get_string("input.regrid.file");
+  auto regrid_vars = set_split(m_config->get_string("input.regrid.vars"), ',');
 
-  options::StringSet regrid_vars("-regrid_vars",
-                                 "comma-separated list of regridding variables",
-                                 "");
-
-  if (not regrid_file.is_set()) {
+  if (regrid_file.empty()) {
     return;
   }
 
   SpatialVariableMetadata &m = variable.metadata();
 
-  if ((regrid_vars.is_set() and member(m.get_string("short_name"), regrid_vars)) or
-      (not regrid_vars.is_set() and flag == REGRID_WITHOUT_REGRID_VARS)) {
+  if (((not regrid_vars.empty()) and member(m.get_string("short_name"), regrid_vars)) or
+      (regrid_vars.empty() and flag == REGRID_WITHOUT_REGRID_VARS)) {
 
     m_log->message(2,
                "  %s: regridding '%s' from file '%s' ...\n",
                module_name.c_str(),
-               m.get_string("short_name").c_str(), regrid_file->c_str());
+               m.get_string("short_name").c_str(), regrid_file.c_str());
 
     variable.regrid(regrid_file, CRITICAL);
   }

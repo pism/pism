@@ -917,12 +917,6 @@ void IceModel::run() {
 
   profiling.stage_end("time-stepping loop");
 
-  options::Integer pause_time("-pause", "Pause after the run, seconds", 0);
-  if (pause_time > 0) {
-    m_log->message(2, "pausing for %d secs ...\n", pause_time.value());
-    PetscErrorCode ierr = PetscSleep(pause_time); PISM_CHK(ierr, "PetscSleep");
-  }
-
   if (stepcount >= 0) {
     m_log->message(1,
                "count_time_steps:  run() took %d steps\n"

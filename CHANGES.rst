@@ -3,6 +3,19 @@
 Changes since v1.0
 ==================
 
+- PISM stops with an error message if the name of a parameter in a `-config_override` file
+  does not match any of the known PISM parameters.
+- PISM stops with an error message if the diffusivity of the SIA flow exceeds a given
+  threshold (see `stress_balance.sia.max_diffusivity`). Extremely high SIA diffusivities
+  often mean that the setup is not "shallow enough"; in a situation like this it might
+  make sense to re-evaluate model parameters before proceeding. (A short "smoothing" run
+  might be helpful, too, if high diffusivities occur at the beginning of a simulation
+  using ice thickness or bed topography not computed by PISM.)
+- Discard requested snapshot times that are outside of the modeled time interval. (This
+  keeps PISM from overwriting a snapshot file written by one of the previous runs in a
+  re-started simulation.)
+- Add a new configuration parameter `stress_balance.sia.bed_smoother.theta_min` for the
+  bed roughness parameterization in the SIA stress balance model.
 - Added PICO, the *Potsdam Ice-shelf Cavity mOdel* (https://doi.org/10.5194/tc-2017-70).
   Use `-ocean pico` to enable and see the documentation of PISM's `ocean models`_ in the User's
   Manual for details.

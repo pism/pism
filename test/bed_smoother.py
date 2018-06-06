@@ -78,8 +78,7 @@ def set_config():
     config.set_double("grid.Ly", 1200e3)
 
     config.set_double("stress_balance.sia.Glen_exponent", 3.0)
-    config.set_double("stress_balance.sia.Glen_exponent", 3.0)
-    config.set_double("stress_balance.sia.bed_smoother_range", 50.0e3)
+    config.set_double("stress_balance.sia.bed_smoother.range", 50.0e3)
 
 def smooth(topg, topg_smoothed, usurf, theta):
     "Smooth the bed topography."
@@ -123,7 +122,7 @@ def bed_smoother_test():
         R = f.range()
         computed_range[f.get_name()] = [R.min, R.max]
 
-    for name in stored_range.keys():
+    for name in list(stored_range.keys()):
         computed = computed_range[name]
         stored   = stored_range[name]
 

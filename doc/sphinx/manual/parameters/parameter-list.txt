@@ -15,6 +15,18 @@
    :Option: :opt:`-bootstrap`
    :Description: It true, use bootstrapping heuristics when initializing PISM.
 
+#. :config:`input.regrid.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-regrid_file`
+   :Description: Regridding (input) file name
+
+#. :config:`input.regrid.vars` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-regrid_vars`
+   :Description: Comma-separated list of variables to regrid. Leave empty to regrid all model state variables.
+
 #. :config:`age.enabled` (*boolean*)
 
    :Value: no
@@ -406,6 +418,12 @@
    :Option: :opt:`-calving`
    :Description: comma-separated list of calving methods; one or more of 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'
 
+#. :config:`calving.ocean_kill.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ocean_kill_file`
+   :Description: Input file containing ice thickness and bed elevation used to compute maximum ice extent.
+
 #. :config:`calving.thickness_calving.threshold` (*scalar*)
 
    :Value: 50 (meters)
@@ -541,10 +559,30 @@
    :Value: yes
    :Description: Solve energy conservation equations.
 
-#. :config:`energy.enthalpy_cold_bulge_max` (*scalar*)
+#. :config:`energy.enthalpy.cold_bulge_max` (*scalar*)
 
    :Value: 60270 (Joule / kg)
    :Description: = (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value
+
+#. :config:`energy.ch_warming.enabled` (*boolean*)
+
+   :Value: no
+   :Description: Enable the cryo-hydrologic warming model
+
+#. :config:`energy.ch_warming.residual_water_fraction` (*scalar*)
+
+   :Value: 0.005000 (pure number)
+   :Description: residual water fraction in the cryo-hydrologic system at the end of a melt season
+
+#. :config:`energy.ch_warming.temperate_ice_thermal_conductivity_ratio` (*scalar*)
+
+   :Value: 1 (pure number)
+   :Description: ratio of thermal conductivities of temperate and cold ice in the cryo-hydrologic system
+
+#. :config:`energy.ch_warming.average_channel_spacing` (*scalar*)
+
+   :Value: 20 (meters)
+   :Description: Average spacing between elements of the cryo-hydrologic system (controls the rate of heat transfer from the CH system into the ice).
 
 #. :config:`energy.margin_ice_thickness_limit` (*scalar*)
 
@@ -578,7 +616,7 @@
    :Option: :opt:`-low_temp`
    :Description: Minimum allowed ice temperature
 
-#. :config:`energy.temperate_ice_enthalpy_conductivity_ratio` (*scalar*)
+#. :config:`energy.enthalpy.temperate_ice_thermal_conductivity_ratio` (*scalar*)
 
    :Value: 0.100000 (pure number)
    :Description: K in cold ice is multiplied by this fraction to give K0 in :cite:`AschwandenBuelerKhroulevBlatter`
@@ -1285,6 +1323,36 @@
    :Option: :opt:`-exclude_icerises`
    :Description: Exclude ice rises for box calculation in PICO
 
+#. :config:`output.extra.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-extra_file`
+   :Description: Name of the output file containing spatially-variable diagnostics.
+
+#. :config:`output.extra.times` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-extra_times`
+   :Description: List or a range of times defining reporting intervals for spatially-variable diagnostics.
+
+#. :config:`output.extra.vars` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-extra_vars`
+   :Description: Comma-separated list of spatially-variable diagnostics.
+
+#. :config:`output.extra.split` (*boolean*)
+
+   :Value: no
+   :Option: :opt:`-extra_split`
+   :Description: Save spatially-variable diagnostics to separate files (one per time record).
+
+#. :config:`output.extra.append` (*boolean*)
+
+   :Value: no
+   :Option: :opt:`-extra_append`
+   :Description: Append to an existing output file.
+
 #. :config:`output.backup_interval` (*scalar*)
 
    :Value: 1 (hours)
@@ -1355,7 +1423,25 @@
    :Option: :opt:`-summary_vol_scale_factor_log10`
    :Description: an integer; log base 10 of scale factor to use for volume (in km^3) in summary line to stdout
 
-#. :config:`output.save_size` (*keyword*)
+#. :config:`output.snapshot.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-save_file`
+   :Description: Snapshot (output) file name (or prefix, if saving to individual files).
+
+#. :config:`output.snapshot.times` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-save_times`
+   :Description: List or a range of times to save model state snapshots at.
+
+#. :config:`output.snapshot.split` (*boolean*)
+
+   :Value: no
+   :Option: :opt:`-save_split`
+   :Description: Save model state snapshots to separate files (one per time record).
+
+#. :config:`output.snapshot.size` (*keyword*)
 
    :Value: ``small``
    :Choices: ``none, small, medium, big_2d, big``
@@ -1406,6 +1492,12 @@
    :Value: *no default*
    :Option: :opt:`-ts_file`
    :Description: Name of the file to save scalar time series to. Leave empty to disable reporting scalar time-series.
+
+#. :config:`output.timeseries.times` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ts_times`
+   :Description: List or range of times defining reporting time intervals.
 
 #. :config:`output.variable_order` (*keyword*)
 
@@ -1467,11 +1559,16 @@
    :Option: :opt:`-sia_n`
    :Description: Glen exponent in ice flow law for SIA
 
-#. :config:`stress_balance.sia.bed_smoother_range` (*scalar*)
+#. :config:`stress_balance.sia.bed_smoother.range` (*scalar*)
 
    :Value: 5000 (meters)
    :Option: :opt:`-bed_smoother_range`
    :Description: half-width of smoothing domain for stressbalance::BedSmoother, in implementing :cite:`Schoofbasaltopg2003` bed roughness parameterization for SIA; set value to zero to turn off mechanism
+
+#. :config:`stress_balance.sia.bed_smoother.theta_min` (*scalar*)
+
+   :Value: 0 (1)
+   :Description: minimum value of `\theta` in :cite:`Schoofbasaltopg2003` bed roughness parameterization for SIA
 
 #. :config:`stress_balance.sia.e_age_coupling` (*boolean*)
 
@@ -1503,6 +1600,11 @@
    :Value: no
    :Option: :opt:`-grain_size_age_coupling`
    :Description: Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt :cite:`GoldsbyKohlstedt` flow law
+
+#. :config:`stress_balance.sia.max_diffusivity` (*scalar*)
+
+   :Value: 100 (m2 s-1)
+   :Description: Maximum allowed diffusivity of the SIA flow. PISM stops with an error message if the SIA diffusivity exceeds this limit.
 
 #. :config:`stress_balance.sia.surface_gradient_method` (*keyword*)
 
@@ -1545,6 +1647,12 @@
    :Value: 1.000000e+13 (Pascal second meter)
    :Option: :opt:`-ssa_eps`
    :Description: Initial amount of regularization in computation of product of effective viscosity and thickness (`\nu H`).  This default value for `\nu H` comes e.g. from a hardness for the Ross ice shelf (`\bar B`) = 1.9e8 Pa `s^{1/3}` :cite:`MacAyealetal` and a typical strain rate of 0.001 1/year for the Ross ice shelf, giving `\nu = (\bar B) / (2 \cdot 0.001^{2/3})` = 9.49e+14 Pa s ~ 30 MPa year, the value in :cite:`Ritzetal2001`, but with a tiny thickness `H` of about 1 cm.
+
+#. :config:`stress_balance.ssa.read_initial_guess` (*boolean*)
+
+   :Value: yes
+   :Option: :opt:`-ssa_read_initial_guess`
+   :Description: Read the initial guess from the input file when re-starting.
 
 #. :config:`stress_balance.ssa.fd.brutal_sliding` (*boolean*)
 

@@ -120,7 +120,7 @@ Spatially-variable fields
 
 #. ``cts``
 
-   :Units: ---
+   :Units: 1
    :Description: cts = E/E_s(p), so cold-temperate transition surface is at cts = 1
 
 #. ``dHdt``

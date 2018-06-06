@@ -226,6 +226,10 @@ void PicoGeometry::label_tmp() {
   m_tmp.get_from_proc0(*m_tmp_p0);
 }
 
+static bool edge_p(int i, int j, int Mx, int My) {
+  return (i == 0) or (i == Mx - 1) or (j == 0) or (j == My - 1);
+}
+
 /*!
  * Compute the mask identifying "subglacial lakes", i.e. floating ice areas that are not
  * connected to the open ocean.
@@ -239,20 +243,43 @@ void PicoGeometry::label_tmp() {
 void PicoGeometry::compute_lakes(const IceModelVec2CellType &cell_type, IceModelVec2Int &result) {
   IceModelVec::AccessList list{ &cell_type, &m_tmp };
 
-  // mask of zeros and ones: one if floating ice, zero otherwise
+  const int
+    Mx = m_grid->Mx(),
+    My = m_grid->My();
+
+  // assume that ocean points (i.e. floating, either icy or ice-free) at the edge of the
+  // domain belong to the "open ocean"
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ocean(i, j)) {
       m_tmp(i, j) = 1.0;
+
+      if (edge_p(i, j, Mx, My)) {
+        m_tmp(i, j) = 2.0;
+      }
     } else {
       m_tmp(i, j) = 0.0;
     }
   }
 
-  label_tmp();
+  // identify "floating" areas that are not connected to the open ocean as defined above
+  {
+    m_tmp.put_on_proc0(*m_tmp_p0);
 
-  relabel(BY_AREA, 0.0, m_tmp);
+    ParallelSection rank0(m_grid->com);
+    try {
+      if (m_grid->rank() == 0) {
+        petsc::VecArray mask_p0(*m_tmp_p0);
+        label_connected_components(mask_p0.get(), My, Mx, true, 2.0);
+      }
+    } catch (...) {
+      rank0.failed();
+    }
+    rank0.check();
+
+    m_tmp.get_from_proc0(*m_tmp_p0);
+  }
 
   result.copy_from(m_tmp);
 }
