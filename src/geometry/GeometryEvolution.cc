@@ -352,7 +352,7 @@ void GeometryEvolution::source_term_step(const Geometry &geometry, double dt,
 /*!
  * Apply changes due to flow to ice geometry and ice area specific volume.
  */
-void GeometryEvolution::apply_flux_divergence(Geometry &geometry) {
+void GeometryEvolution::apply_flux_divergence(Geometry &geometry) const {
 
   geometry.ice_thickness.add(1.0, m_impl->thickness_change);
   geometry.ice_area_specific_volume.add(1.0, m_impl->ice_area_specific_volume_change);
@@ -1024,8 +1024,6 @@ void GeometryEvolution::prescribe_groundingline(const IceModelVec2S &old_ice_thi
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      //conservation_error(i, j) = 0.0;
-
       const double
         Hold    = old_ice_thickness(i, j),
         rho     = m_impl->ocean_density/m_impl->ice_density,
@@ -1036,7 +1034,6 @@ void GeometryEvolution::prescribe_groundingline(const IceModelVec2S &old_ice_thi
 
           // prevent grounded parts form becoming afloat
           if (Hnew - Hfl < 0.0) {
-            //m_log->message(2, "!!!!!!!! Hgr -> Hfl with error=%f, %f, %f at %d,%d\n",Hfl-Hnew,Hold,i,j);
             H(i, j) = Hfl;
           }
         }
@@ -1049,13 +1046,8 @@ void GeometryEvolution::prescribe_groundingline(const IceModelVec2S &old_ice_thi
 
           //floating ice shelves thickness remains unchanged
           if (floating_lake == false) {
-            //m_log->message(2, "!!!!!!!! Hfl -> Hfl with error %f, %f, %f at %d,%d\n",Hnew-Hold,Hold,i,j);
             H(i, j) = Hold;
-
           }
-          //else {
-          //  m_log->message(2, "!!!!!!!! Hfl lake at %d,%d\n",i,j);
-          //}
         }
     }
   } catch (...) {
