@@ -193,6 +193,7 @@ PICO has one command-line option and 7 configuration parameters:
 - :config:`ocean.pico.maximum_ice_rise_area`: specifies an area threshold that separates
   ice rises from continental regions.
 
+
 .. _sec-ocean-delta-sl:
 
 Scalar sea level offsets
@@ -296,6 +297,24 @@ It takes the following command-line options:
   model years; see section :ref:`sec-periodic-forcing`.
 - :opt:`-ocean_frac_SMB_reference_year` specifies the reference date; see section
   :ref:`sec-periodic-forcing`.
+
+.. _sec-ocean-delta-smb-2d:
+
+Two-dimensional sub-shelf mass flux offsets (PICO)
+++++++++++++++++++++++++++++++++++++++++++++++++++
+
+:|options|: ``-initmip_bmb_anomaly``
+:|variables|: :var:`bmb_anomaly` |flux|
+:|implementation|: ``pism::ocean::Pico``
+
+This modifier implements forcing using two-dimensioal sub-shelf mass flux (melt rate) offsets 
+for the purpose model intercomparison (such as LARMIP),
+
+It takes the following command-line options:
+
+- :opt:`-ocean_pico_file`: specifies the NetCDF file containing sub-shelf mass flux anomaly (:var:`bmb_anomaly`).
+
+So far, this modifier is only available for the PICO ocean coupler.
 
 .. _sec-ocean-frac-mbp:
 
