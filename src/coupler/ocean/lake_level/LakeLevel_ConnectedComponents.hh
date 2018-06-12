@@ -80,18 +80,18 @@ private:
 class LakePropertiesCC : public ConnectedComponents {
 public:
   LakePropertiesCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &target_level,
-                   const IceModelVec2S &lake_level, const IceModelVec2S &floating_thresh);
+                   const IceModelVec2S &lake_level, const IceModelVec2S &bed);
   ~LakePropertiesCC();
-  void getLakeProperties(IceModelVec2S &min_level, IceModelVec2S &max_level, IceModelVec2S &min_float_level);
+  void getLakeProperties(IceModelVec2S &min_level, IceModelVec2S &max_level, IceModelVec2S &min_bed);
 
 private:
   const double m_fill_value;
-  const IceModelVec2S *m_target_level, *m_current_level, *m_floating_threshold_level;
-  IceModelVec2S m_min_ll_tmp, m_max_ll_tmp, m_min_float_tmp;
+  const IceModelVec2S *m_target_level, *m_current_level, *m_bed;
+  IceModelVec2S m_min_lakelevel, m_max_lakelevel, m_min_bed;
 
   void setRunMinLevel(double level, int run, VecList &lists);
   void setRunMaxLevel(double level, int run, VecList &lists);
-  void setRunMinFloatLevel(double level, int run, VecList &lists);
+  void setRunMinBed(double level, int run, VecList &lists);
   inline bool isLake(const double level) const {
     return (level != m_fill_value);
   }
