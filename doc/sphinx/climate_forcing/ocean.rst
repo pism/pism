@@ -1,4 +1,4 @@
-F.. include:: shortcuts.txt
+.. include:: shortcuts.txt
 
 Ocean model components
 ----------------------
