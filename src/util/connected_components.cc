@@ -34,8 +34,28 @@ void ConnectedComponents::compute_runs(int &run_number, VecList &lists, unsigned
     const int i = p.i(), j = p.j();
 
     if (ForegroundCond(i, j)) {
+      //Check Foreground Pixel
+      bool isWest = (i <= m_i_local_first), isSouth = (j <= m_j_local_first);
+      StarStencil<int> mask_star = m_mask_run.int_star(i, j);
 
-      checkForegroundPixel(i, j, run_number, lists);
+      if (not isWest and (mask_star.w > 0)) {
+        // west neighbor is also foreground: continue the run
+        continueRun(i, j, run_number, lists);
+      } else {
+        //west neighbor is a background pixel (or this is westmost column): start a new run
+        int parent;
+        if (not isSouth and (mask_star.s > 0)) {
+          //check the pixel south and set the parent
+          parent = mask_star.s;
+        } else {
+          parent = 0;
+        }
+        startNewRun(i, j, run_number, parent, lists);
+      }
+
+      if (not isSouth and (mask_star.s > 0)) {
+        mergeRuns(run_number, mask_star.s, lists);
+      }
 
       m_mask_run(i, j) = run_number;
 
@@ -69,30 +89,6 @@ void ConnectedComponents::init_VecList(VecList &lists, const unsigned int size) 
     lists["lengths"][k] = 0;
     lists["j"][k] = 0;
     lists["i"][k] = 0;
-  }
-}
-
-void ConnectedComponents::checkForegroundPixel(const int i, const int j, int &run_number, VecList &lists) {
-  bool isWest = (i <= m_i_local_first), isSouth = (j <= m_j_local_first);
-  StarStencil<int> mask_star = m_mask_run.int_star(i, j);
-
-  if (not isWest and (mask_star.w > 0)) {
-    // west neighbor is also foreground: continue the run
-    continueRun(i, j, run_number, lists);
-  } else {
-    //west neighbor is a background pixel (or this is westmost column): start a new run
-    int parent;
-    if (not isSouth and (mask_star.s > 0)) {
-      //check the pixel south and set the parent
-      parent = (int)mask_star.s;
-    } else {
-      parent = 0;
-    }
-    startNewRun(i, j, run_number, parent, lists);
-  }
-
-  if (not isSouth and (mask_star.s > 0)) {
-    mergeRuns(run_number, mask_star.s, lists);
   }
 }
 

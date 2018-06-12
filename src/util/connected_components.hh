@@ -20,7 +20,6 @@ public:
   ~ConnectedComponents();
 
 private:
-  void checkForegroundPixel(const int i, const int j, int &run_number, VecList &lists);
   void resizeLists(VecList &lists, const int new_length);
   void run_union(RunVec &parents, int run1, int run2);
 
