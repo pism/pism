@@ -446,6 +446,11 @@ netcdf pism_config {
     pism_config:constants.fresh_water.specific_heat_capacity_type = "scalar";
     pism_config:constants.fresh_water.specific_heat_capacity_units = "Joule / (kg Kelvin)";
 
+    pism_config:constants.global_ocean_area = 3.61e8;
+    pism_config:constants.global_ocean_area_doc = "The total area of the global ocean used to compute sea level equivalent ice volume";
+    pism_config:constants.global_ocean_area_type = "scalar";
+    pism_config:constants.global_ocean_area_units = "km2";
+
     pism_config:constants.ice.beta_Clausius_Clapeyron = 7.9e-8;
     pism_config:constants.ice.beta_Clausius_Clapeyron_doc = "Clausius-Clapeyron constant relating melting temperature and pressure: `\\beta = dT / dP` :cite:`Luethi2002`";
     pism_config:constants.ice.beta_Clausius_Clapeyron_type = "scalar";

@@ -2704,8 +2704,8 @@ double IceModel::sealevel_volume(double thickness_threshold) const {
     ice_density       = m_config->get_double("constants.ice.density");
 
   const double
-    ocean_area = 3.61e14, // units: meter^2
-    volume = ice_volume_not_displacing_seawater(thickness_threshold),
+    ocean_area       = m_config->get_double("constants.global_ocean_area", "m2"),
+    volume           = ice_volume_not_displacing_seawater(thickness_threshold),
     sea_water_volume = (ice_density / sea_water_density) * volume, // corresponding sea water volume
     sea_level_change = sea_water_volume / ocean_area;
 
