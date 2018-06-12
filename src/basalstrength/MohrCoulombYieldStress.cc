@@ -278,6 +278,8 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
     list.add(m_bwat);
   }
 
+  GeometryCalculator gc(*m_config);
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -288,21 +290,26 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
     } else { // grounded and there is some ice
       // user can ask that marine grounding lines get special treatment
       double water = W_till(i,j); // usual case
+      double max_water_level;
 
-      GeometryCalculator gc(*m_config);
-      //Determine neighboring cell with highest water level
-      StarStencil<double> sl_star = sea_level.star(i, j);
-      StarStencil<double> ll_star = lake_level.star(i, j);
-      const double bed = bed_topography(i, j);
-      double max_water_level = gc.water_level(sl_star.ij, bed, ll_star.ij);
+      if (slippery_grounding_lines) {
+        //Determine neighboring cell with highest water level
+        StarStencil<double> sl_star = sea_level.star(i, j);
+        StarStencil<double> ll_star = lake_level.star(i, j);
+        const double bed = bed_topography(i, j);
+        max_water_level = gc.water_level(sl_star.ij, bed, ll_star.ij);
 
-      for (int n = 0; n < 4; ++n) {
-        const Direction direction = dirs[n];
-        const double sl = sl_star[direction];
-        const double ll = ll_star[direction];
-        const double water_level = gc.water_level(sl, bed, ll);
-        max_water_level = std::max(water_level, max_water_level);
+        for (int n = 0; n < 4; ++n) {
+          const Direction direction = dirs[n];
+          const double sl = sl_star[direction];
+          const double ll = ll_star[direction];
+          const double water_level = gc.water_level(sl, bed, ll);
+          max_water_level = std::max(water_level, max_water_level);
+        }
+      } else {
+        max_water_level = sea_level(i, j);
       }
+
       if (slippery_grounding_lines and
           bed_topography(i,j) <= max_water_level and
           (mask.next_to_floating_ice(i,j) or mask.next_to_ice_free_ocean(i,j))) {
