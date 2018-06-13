@@ -40,7 +40,6 @@
 #include "pism/util/Time.hh"
 #include "pism/geometry/Geometry.hh"
 
-#include "pism/util/pism_options.hh"
 #include "pism/coupler/util/options.hh"
 
 #include "Pico.hh"
@@ -77,19 +76,6 @@ Pico::Pico(IceGrid::ConstPtr g)
                                                    buffer_size,
                                                    evaluations_per_year,
                                                    periodic);
-
-
-
-    larmip_bmb_anomaly = options::Bool("-initmip_bmb_anomaly", "add basal melt rate anomaly to PICO melt rates"); 
-    if (larmip_bmb_anomaly){
-       bmb_anomaly = IceModelVec2T::ForcingField(m_grid,
-                                                 file,
-                                                 "bmb_anomaly",
-                                                 "", // no standard name
-                                                 buffer_size,
-                                                 evaluations_per_year,
-                                                 periodic);
-    }
   }
 
   m_theta_ocean->set_attrs("climate_forcing",
@@ -99,13 +85,6 @@ Pico::Pico(IceGrid::ConstPtr g)
   m_salinity_ocean->set_attrs("climate_forcing",
                               "salinity of the adjacent ocean",
                               "g/kg", "");
-
-  // read a bmb_anomaly field from a file..
-  if (larmip_bmb_anomaly){
-    bmb_anomaly->set_attrs("climate_forcing",
-                           "basal mass balance anomaly for LARMIP Antarctica experiments",
-                           "kg m-2 year-1", "");
-  }
 
   m_basin_mask.create(m_grid, "basins", WITH_GHOSTS);
   m_basin_mask.set_attrs("climate_forcing", "mask determines basins for PICO", "", "");
@@ -166,12 +145,6 @@ void Pico::init_impl(const Geometry &geometry) {
   m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
   m_salinity_ocean->init(opt.filename, opt.period, opt.reference_time);
 
-  if (larmip_bmb_anomaly){
-    bmb_anomaly->init(opt.filename, opt.period, opt.reference_time);  
-    //*bmb_anomaly = units::convert(m_sys, bmb_anomaly, "m year-1","m second-1");
-    //bmb_anomaly->scale(cc.rhoi);
-  }
-
   m_basin_mask.regrid(opt.filename, CRITICAL);
 
   // FIXME: m_n_basins is a misnomer
@@ -223,11 +196,6 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
 
   m_theta_ocean->average(t, dt);
   m_salinity_ocean->average(t, dt);
-
-  if (larmip_bmb_anomaly){
-    bmb_anomaly->update(t, dt); 
-    bmb_anomaly->average(t, dt);  
-  }
 
   // set values that will be used outside of floating ice areas
   {
@@ -313,43 +281,8 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
   m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
   m_shelf_base_mass_flux->scale(physics.ice_density());
 
-  /////////////////////////////////////////////////////////////////////////////
-  if (larmip_bmb_anomaly){
-    m_log->message(5, "!!!!! meltrate anomaly from file added to PICO result \n");
-    add_bmb_anomaly(cell_type,
-                    *bmb_anomaly,
-                    *m_shelf_base_mass_flux);
-  }
-
-  // only used for test purposes...
-  bool no_shelfb_melt = options::Bool("-no_shelfb_melt","Sets shelfbmassflux to 0.0");
-  if (no_shelfb_melt) {
-     m_log->message(5, "!!!!! Setting PICO basal mass flux to 0.0 \n");
-     m_shelf_base_mass_flux->set(0.0);
-  }
-  /////////////////////////////////////////////////////////////////////////////
-
   m_melange_back_pressure_fraction->set(0.0);
 }
-
-
-void Pico::add_bmb_anomaly(const IceModelVec2CellType &cell_type,
-                           const IceModelVec2S &bmassflux_anomaly,
-                           IceModelVec2S &bmassflux){
-
-    IceModelVec::AccessList list{ &bmassflux, &cell_type, &bmassflux_anomaly};
-
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-      if (cell_type.as_int(i,j) == MASK_FLOATING) {
-
-        double mrate_anomaly = units::convert(m_sys, bmassflux_anomaly(i,j), "m year-1","m second-1");
-        bmassflux(i,j) +=  mrate_anomaly;
-      }
-    }
-}
-
-
 
 
 MaxTimestep Pico::max_timestep_impl(double t) const {

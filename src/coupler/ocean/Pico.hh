@@ -57,13 +57,11 @@ private:
   IceModelVec2S m_overturning;
   IceModelVec2S m_basal_melt_rate;
 
-  bool larmip_bmb_anomaly;
-
   IceModelVec2Int m_basin_mask;
 
   std::unique_ptr<PicoGeometry> m_geometry;
 
-  IceModelVec2T::Ptr m_theta_ocean, m_salinity_ocean, bmb_anomaly;
+  IceModelVec2T::Ptr m_theta_ocean, m_salinity_ocean;
 
   void compute_ocean_input_per_basin(const PicoPhysics &physics,
                                      const IceModelVec2Int &basin_mask,
@@ -129,10 +127,6 @@ private:
                         const IceModelVec2Int &box_mask,
                         std::vector<double> &result);
 
-  void add_bmb_anomaly(const IceModelVec2CellType &cell_type,
-                       const IceModelVec2S &bmassflux_anomaly,
-                       IceModelVec2S &bmassflux);
-                       
 
   int m_n_basins, m_n_boxes, m_n_shelves;
 };

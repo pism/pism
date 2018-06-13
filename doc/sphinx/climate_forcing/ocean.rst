@@ -193,7 +193,6 @@ PICO has one command-line option and 7 configuration parameters:
 - :config:`ocean.pico.maximum_ice_rise_area`: specifies an area threshold that separates
   ice rises from continental regions.
 
-
 .. _sec-ocean-delta-sl:
 
 Scalar sea level offsets
@@ -298,23 +297,32 @@ It takes the following command-line options:
 - :opt:`-ocean_frac_SMB_reference_year` specifies the reference date; see section
   :ref:`sec-periodic-forcing`.
 
-.. _sec-ocean-delta-smb-2d:
+.. _sec-ocean-anomaly:
 
-Two-dimensional sub-shelf mass flux offsets (PICO)
-++++++++++++++++++++++++++++++++++++++++++++++++++
+Two-dimensional sub-shelf mass flux offsets
++++++++++++++++++++++++++++++++++++++++++++
 
-:|options|: ``-initmip_bmb_anomaly``
-:|variables|: :var:`bmb_anomaly` |flux|
-:|implementation|: ``pism::ocean::Pico``
+:|options|: :opt:`-ocean ...,anomaly`
+:|variables|: :var:`shelf_base_mass_flux_anomaly` |flux|
+:|implementation|: ``pism::ocean::Anomaly``
 
-This modifier implements forcing using two-dimensioal sub-shelf mass flux (melt rate) offsets 
-for the purpose model intercomparison (such as LARMIP),
+This modifier implements a spatially-variable version of ``-ocean ...,delta_T`` which
+also applies time-dependent shelf base mass flux anomalies, as used for initMIP or LARMIP
+model intercomparisons.
 
 It takes the following command-line options:
 
-- :opt:`-ocean_pico_file`: specifies the NetCDF file containing sub-shelf mass flux anomaly (:var:`bmb_anomaly`).
+- :opt:`-ocean_anomaly_file` specifies a file containing variables
+  :var:`shelf_base_mass_flux_anomaly`.
+- :opt:`-ocean_anomaly_period` (years) specifies the period of the forcing data, in
+  model years; see :ref:`sec-periodic-forcing`
+- :opt:`-ocean_anomaly_reference_year` specifies the reference year; see
+  :ref:`sec-periodic-forcing`
 
-So far, this modifier is only available for the PICO ocean coupler.
+  See also to ``-atmosphere ...,anomaly`` or 
+  ``-surface ...,anomaly`` (section :ref:`sec-surface-anomaly`)
+  which is similar, but applies anomalies at the atmosphere or surface level, 
+  respectively.
 
 .. _sec-ocean-frac-mbp:
 
