@@ -35,12 +35,18 @@ private:
   void init_impl(const Geometry &geometry);
 protected:
   double m_max_lake_fill_rate;
+  void prepareLakeLevel(const IceModelVec2S &target_level,
+                        const IceModelVec2S &bed,
+                        const IceModelVec2S &min_level,
+                        const IceModelVec2S &min_bed);
   void gradually_fill(double dt,
                       const IceModelVec2S &target_level,
                       const IceModelVec2S &bed,
                       const IceModelVec2S &thk,
-                      const IceModelVec2S &sea_level);
-
+                      const IceModelVec2S &sea_level,
+                      const IceModelVec2S &min_level,
+                      const IceModelVec2S &max_level,
+                      const IceModelVec2S &min_bed);
 };
 
 } // end of namespace lake_level

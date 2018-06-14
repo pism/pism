@@ -120,92 +120,113 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
     sl = &(geometry.sea_level_elevation);
   }
 
-  gradually_fill(dt, target_level, *bed, *thk, *sl);
-}
-
-void Gradual::gradually_fill(double dt, const IceModelVec2S &target_level,
-                             const IceModelVec2S &bed, const IceModelVec2S &thk,
-                             const IceModelVec2S &sea_level) {
-
-  const double dh_max = m_max_lake_fill_rate * dt;
-
-  const double ice_density        = m_config->get_double("constants.ice.density"),
-               freshwater_density = m_config->get_double("constants.fresh_water.density"),
-               drho               = ice_density / freshwater_density;
-
-  IceModelVec2S floating_thresh_level(m_grid, "floating_threshold_level", WITHOUT_GHOSTS);
-  floating_thresh_level.copy_from(bed);
-  floating_thresh_level.add(drho, thk);
-
   IceModelVec2S min_level(m_grid, "min_level", WITHOUT_GHOSTS),
                 max_level(m_grid, "max_level", WITHOUT_GHOSTS),
-                min_float_level_lake(m_grid, "min_float_level_lake", WITHOUT_GHOSTS);
+                min_bed(m_grid, "min_bed", WITHOUT_GHOSTS);
 
-  //Compute min max ...
-  ParallelSection ParSec(m_grid->com);
-  try {
-    // Initialze LakeProperties Model
-    LakePropertiesCC LpCC(m_grid, m_fill_value, target_level,
-                          m_lake_level, floating_thresh_level);
-    LpCC.getLakeProperties(min_level, max_level, min_float_level_lake);
-  } catch (...) {
-    ParSec.failed();
+  { //Compute min max level and min bed...
+    ParallelSection ParSec(m_grid->com);
+    try {
+      // Initialze LakeProperties Model
+      LakePropertiesCC LpCC(m_grid, m_fill_value, target_level,
+                            m_lake_level, *bed);
+      LpCC.getLakeProperties(min_level, max_level, min_bed);
+    } catch (...) {
+      ParSec.failed();
+    }
+    ParSec.check();
   }
-  ParSec.check();
+
+  prepareLakeLevel(target_level, *bed, min_level, min_bed);
+
+  gradually_fill(dt, target_level, *bed, *thk, *sl, min_level, max_level, min_bed);
+}
+
+
+void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
+                               const IceModelVec2S &bed,
+                               const IceModelVec2S &min_level,
+                               const IceModelVec2S &min_bed) {
+  IceModelVec2Int exp_mask;
+  exp_mask.create(m_grid, "expansion_mask", WITHOUT_GHOSTS);
+
+  {
+    ParallelSection ParSec(m_grid->com);
+    try {
+      FilterExpansionCC FExCC(m_grid, m_fill_value);
+      FExCC.filter_ext(m_lake_level, target_level, exp_mask);
+    } catch (...) {
+      ParSec.failed();
+    }
+    ParSec.check();
+  }
+
+  {
+    IceModelVec::AccessList list{ &m_lake_level, &min_level,
+                                  &min_bed, &exp_mask };
+    //Update lake extend depending on exp_mask
+    ParallelSection ParSec(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        const int mask_ij = exp_mask.as_int(i, j);
+        if (mask_ij == 1) {
+          //New lake basin
+          m_lake_level(i, j) = min_bed(i, j);
+        } else if (mask_ij == 2) {
+          //Extend existing lake by new cells
+          m_lake_level(i, j) = min_level(i, j);
+        }
+      }
+    } catch (...) {
+      ParSec.failed();
+    }
+    ParSec.check();
+  }
+
+  m_lake_level.update_ghosts();
+}
+
+
+void Gradual::gradually_fill(double dt,
+                             const IceModelVec2S &target_level,
+                             const IceModelVec2S &bed,
+                             const IceModelVec2S &thk,
+                             const IceModelVec2S &sea_level,
+                             const IceModelVec2S &min_level,
+                             const IceModelVec2S &max_level,
+                             const IceModelVec2S &min_bed) {
+
+  const double dh_max = m_max_lake_fill_rate * dt;
 
   GeometryCalculator gc(*m_config);
 
   IceModelVec::AccessList list{ &m_lake_level, &target_level,
-                                &floating_thresh_level, &min_level, &max_level,
-                                &min_float_level_lake, &sea_level, &bed, &thk };
+                                &min_level, &max_level, &min_bed,
+                                &sea_level, &bed, &thk };
   //Update lakes
-  ParallelSection ParSec2(m_grid->com);
+  ParallelSection ParSec(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
-      const bool part_of_lake_domain = (min_float_level_lake(i, j) != m_fill_value);
 
-      if (part_of_lake_domain) {
+      if (gc.islake(m_lake_level(i, j))) {
         const double current_ij = m_lake_level(i, j),
                      target_ij  = target_level(i, j);
-        bool rising;
 
-        if (current_ij == m_fill_value) {
-          //target_ij != m_fill_value
-          rising = true;
-        } else if (target_ij == m_fill_value) {
-          //current_ij != m_fill_value
-          rising = false;
-        } else {
-          rising = ((target_ij - current_ij) >= 0.0) ? true : false;
-        }
-
+        const bool rising = ((current_ij < target_ij) and gc.islake(target_ij)) ? true : false;
         if (rising) {
-          double min_ij = min_level(i, j);
-          if (min_ij == m_fill_value) {
-            //filling lake from very bottom
-            min_ij = min_float_level_lake(i, j);
-          }
-          double dh_ij = target_ij - min_ij;
-          dh_ij = std::min(dh_max, dh_ij);
-          const double new_level = min_ij + dh_ij;
-          if (new_level > floating_thresh_level(i, j)) {
-            if ((new_level > current_ij) or (current_ij == m_fill_value)) {
-              m_lake_level(i, j) = new_level;
-            }
-          } else {
-            m_lake_level(i, j) = m_fill_value;
+          const double min_ij = min_level(i, j),
+                       new_level = min_ij + std::min(dh_max, (target_ij - min_ij));
+          if (new_level > current_ij) {
+            m_lake_level(i, j) = new_level;
           }
         } else {
-          double max_ij = max_level(i, j),
-                 target_level = target_ij;
-          if (target_level == m_fill_value) {
-            target_level = floating_thresh_level(i, j);
-          }
-          double dh_ij = target_level - max_ij;
-          dh_ij = std::min(dh_max, std::abs(dh_ij));
-          const double new_level = max_ij - dh_ij;
-          if (new_level > floating_thresh_level(i, j)
+          const double max_ij = max_level(i, j),
+                       dh_ij = gc.islake(target_ij) ? (current_ij - target_ij) : dh_max,
+                       new_level = max_ij - std::min(dh_max, dh_ij);
+          if (new_level > bed(i, j)
               and not mask::ocean(gc.mask(sea_level(i, j), bed(i, j), thk(i, j)))) {
             if (new_level < current_ij) {
               m_lake_level(i, j) = new_level;
@@ -217,9 +238,9 @@ void Gradual::gradually_fill(double dt, const IceModelVec2S &target_level,
       }
     }
   } catch (...) {
-    ParSec2.failed();
+    ParSec.failed();
   }
-  ParSec2.check();
+  ParSec.check();
 }
 
 } // end of namespace lake_level

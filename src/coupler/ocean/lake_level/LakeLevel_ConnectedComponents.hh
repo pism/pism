@@ -111,6 +111,31 @@ protected:
   virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
 };
 
+class FilterExpansionCC : public ValidCC<ConnectedComponents> {
+public:
+  FilterExpansionCC(IceGrid::ConstPtr g, const double fill_value);
+  ~FilterExpansionCC();
+  void filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &result);
+
+protected:
+  virtual bool ForegroundCond(const int i, const int j) const;
+
+private:
+  const double m_fill_value;
+
+  void labelMap(const int run_number, const VecList &lists, IceModelVec2Int &result);
+  void prepare_mask(const IceModelVec2S &current_level, const IceModelVec2S &target_level);
+  void set_mask_validity(const int n_filter);
+
+  inline bool ForegroundCond(const int mask) const {
+    return (mask > 1);
+  }
+
+  inline bool isLake(const double level) {
+    return (level != m_fill_value);
+  }
+};
+
 } // namespace pism
 
 #endif
