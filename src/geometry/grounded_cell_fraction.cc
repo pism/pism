@@ -259,9 +259,9 @@ struct Box {
 /*!
  * The flotation criterion.
  */
-static double F(double SL, double B, double H, double alpha) {
+static double F(GeometryCalculator &gc ,double SL, double B, double H, double alpha) {
   double
-    water_depth = SL - B,
+    water_depth = gc.valid_sea_level(SL, B) - B,
     shelf_depth = H * alpha;
   return shelf_depth - water_depth;
 }
@@ -269,16 +269,16 @@ static double F(double SL, double B, double H, double alpha) {
 /*!
  * Compute the flotation criterion at all the points in the box stencil.
  */
-static Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
-  return Box(F(SL.ij, B.ij, H.ij, alpha),
-             F(SL.n,  B.n,  H.n,  alpha),
-             F(SL.nw, B.nw, H.nw, alpha),
-             F(SL.w,  B.w,  H.w,  alpha),
-             F(SL.sw, B.sw, H.sw, alpha),
-             F(SL.s,  B.s,  H.s,  alpha),
-             F(SL.se, B.se, H.se, alpha),
-             F(SL.e,  B.e,  H.e,  alpha),
-             F(SL.ne, B.ne, H.ne, alpha));
+static Box F(GeometryCalculator &gc ,const Box &SL, const Box &B, const Box &H, double alpha) {
+  return Box(F(gc, SL.ij, B.ij, H.ij, alpha),
+             F(gc, SL.n,  B.n,  H.n,  alpha),
+             F(gc, SL.nw, B.nw, H.nw, alpha),
+             F(gc, SL.w,  B.w,  H.w,  alpha),
+             F(gc, SL.sw, B.sw, H.sw, alpha),
+             F(gc, SL.s,  B.s,  H.s,  alpha),
+             F(gc, SL.se, B.se, H.se, alpha),
+             F(gc, SL.e,  B.e,  H.e,  alpha),
+             F(gc, SL.ne, B.ne, H.ne, alpha));
 }
 
 /*!
@@ -326,7 +326,7 @@ void compute_grounded_cell_fraction(double ice_density,
         alpha = &alpha_fresh;
         WL = &L;
       }
-      Box f = F(*WL, B, H, *alpha);
+      Box f = F(gc ,*WL, B, H, *alpha);
 
       /*
         NW----------------N----------------NE
