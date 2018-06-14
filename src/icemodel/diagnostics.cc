@@ -2700,14 +2700,14 @@ double IceModel::ice_volume_not_displacing_seawater(double thickness_threshold) 
 //! Computes the ice volume, which is relevant for sea-level rise in m^3 in SEA-WATER EQUIVALENT.
 double IceModel::sealevel_volume(double thickness_threshold) const {
   const double
-    sea_water_density = m_config->get_double("constants.sea_water.density"),
-    ice_density       = m_config->get_double("constants.ice.density");
+    water_density = m_config->get_double("constants.fresh_water.density"),
+    ice_density   = m_config->get_double("constants.ice.density"),
+    ocean_area    = m_config->get_double("constants.sea_water.surface_area");
 
   const double
-    ocean_area = 3.61e14, // units: meter^2
     volume = ice_volume_not_displacing_seawater(thickness_threshold),
-    sea_water_volume = (ice_density / sea_water_density) * volume, // corresponding sea water volume
-    sea_level_change = sea_water_volume / ocean_area;
+    additional_water_volume = (ice_density / water_density) * volume, // corresponding sea water volume
+    sea_level_change = additional_water_volume / ocean_area;
 
   return sea_level_change;
 }

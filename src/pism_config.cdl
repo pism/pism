@@ -487,6 +487,11 @@ netcdf pism_config {
     pism_config:constants.sea_water.specific_heat_capacity_type = "scalar";
     pism_config:constants.sea_water.specific_heat_capacity_units = "Joule / (kg Kelvin)";
 
+    pism_config:constants.sea_water.surface_area = 3.625e14;
+    pism_config:constants.sea_water.surface_area_doc = "surface area of ocean after Cogley et al., 2011";
+    pism_config:constants.sea_water.surface_area_type = "scalar";
+    pism_config:constants.sea_water.surface_area_units = "`meter^{2}`";
+
     pism_config:constants.standard_gravity = 9.81;
     pism_config:constants.standard_gravity_doc = "acceleration due to gravity on Earth geoid";
     pism_config:constants.standard_gravity_type = "scalar";
