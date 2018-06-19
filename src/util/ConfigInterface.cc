@@ -92,16 +92,36 @@ std::string Config::filename() const {
 }
 
 void Config::import_from(const Config &other) {
-  for (auto d : other.all_doubles()) {
-    this->set_double(d.first, d.second, USER);
+  auto parameters = this->keys();
+
+  for (auto p : other.all_doubles()) {
+    if (member(p.first, parameters)) {
+      this->set_double(p.first, p.second, USER);
+    } else {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "unrecognized parameter %s in %s",
+                                    p.first.c_str(), other.filename().c_str());
+    }
   }
 
-  for (auto s : other.all_strings()) {
-    this->set_string(s.first, s.second, USER);
+  for (auto p : other.all_strings()) {
+    if (member(p.first, parameters)) {
+      this->set_string(p.first, p.second, USER);
+    } else {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "unrecognized parameter %s in %s",
+                                    p.first.c_str(), other.filename().c_str());
+    }
   }
 
-  for (auto b : other.all_booleans()) {
-    this->set_boolean(b.first, b.second, USER);
+  for (auto p : other.all_booleans()) {
+    if (member(p.first, parameters)) {
+      this->set_boolean(p.first, p.second, USER);
+    } else {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "unrecognized parameter %s in %s",
+                                    p.first.c_str(), other.filename().c_str());
+    }
   }
 }
 
@@ -682,19 +702,19 @@ void ConfigWithPrefix::reset_prefix(const std::string &prefix) {
   m_prefix = prefix;
 }
 
-std::vector<std::string> Config::keys() const {
-  std::vector<std::string> result;
+std::set<std::string> Config::keys() const {
+  std::set<std::string> result;
 
   for (auto p : all_doubles()) {
-    result.push_back(p.first);
+    result.insert(p.first);
   }
 
   for (auto p : all_strings()) {
-    result.push_back(p.first);
+    result.insert(p.first);
   }
 
   for (auto p : all_booleans()) {
-    result.push_back(p.first);
+    result.insert(p.first);
   }
 
   return result;

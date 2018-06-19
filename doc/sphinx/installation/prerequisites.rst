@@ -34,9 +34,9 @@ correction and parallel I/O. These libraries are recommended, but not strictly r
    PROJ.4_,  Used to compute cell areas and cell bounds
    PnetCDF_, Can be used for parallel I/O
 
-Python_ is needed both in the PETSc installation process and in scripts related to PISM
-pre- and post-processing, while Git_ is usually needed to download the PISM code. Both
-should be included in any Linux/Unix distribution.
+Python_ 2.x is needed for the PETSc installation process; a number of PISM's pre- and
+post-processing scripts also use Python (either 2.x or 3.x), while Git_ is usually needed
+to download the PISM code.
 
 The following Python packages are needed to do all the examples in the :ref:`User’s Manual
 <sec-users-manual>` (which run Python scripts):

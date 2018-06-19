@@ -160,7 +160,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   m_vonmises_calving            = nullptr;
   m_frontal_melt                = nullptr;
 
-  m_output_global_attributes.set_string("Conventions", "CF-1.5");
+  m_output_global_attributes.set_string("Conventions", "CF-1.6");
   m_output_global_attributes.set_string("source", pism::version());
 
   // Do not save snapshots by default:
@@ -434,7 +434,7 @@ energy::Inputs IceModel::energy_model_inputs() {
   result.surface_liquid_fraction  = &m_surface->liquid_water_fraction(); // surface model
   result.surface_temp             = &m_surface->temperature();           // surface model
 
-  result.strain_heating3          = &m_stress_balance->volumetric_strain_heating();
+  result.volumetric_heating_rate  = &m_stress_balance->volumetric_strain_heating();
   result.u3                       = &m_stress_balance->velocity_u();
   result.v3                       = &m_stress_balance->velocity_v();
   result.w3                       = &m_stress_balance->velocity_w();
@@ -906,12 +906,6 @@ void IceModel::run() {
   } // end of the time-stepping loop
 
   profiling.stage_end("time-stepping loop");
-
-  options::Integer pause_time("-pause", "Pause after the run, seconds", 0);
-  if (pause_time > 0) {
-    m_log->message(2, "pausing for %d secs ...\n", pause_time.value());
-    PetscErrorCode ierr = PetscSleep(pause_time); PISM_CHK(ierr, "PetscSleep");
-  }
 
   if (stepcount >= 0) {
     m_log->message(1,

@@ -30,6 +30,7 @@
 #include "Runoff_SMB.hh"
 #include "Cache.hh"
 #include "GivenTH.hh"
+#include "Pico.hh"
 
 namespace pism {
 namespace ocean {
@@ -41,6 +42,7 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_model<GivenTH>("th");
   add_model<PIK>("pik");
   add_model<Constant>("constant");
+  add_model<Pico>("pico");
   add_model<Given>("given");
   set_default("constant");
 

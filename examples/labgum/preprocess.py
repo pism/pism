@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2013, 2014, 2016 the PISM Authors
+# Copyright (C) 2013, 2014, 2016, 2018 the PISM Authors
 
 # This script sets up the bootstrap file.
 # See also preprocess.sh.
@@ -15,7 +15,7 @@ import numpy as np
 try:
     from netCDF4 import Dataset as CDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 parser = argparse.ArgumentParser(description='Preprocess for validation using constant flux experiment from Sayag & Worster (2013).  Creates PISM-readable bootstrap file and a configuration overrides file.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -27,7 +27,7 @@ args = parser.parse_args()
 
 
 def create_config():
-    print "  creating PISM-readable config override file gumparams.nc ..."
+    print("  creating PISM-readable config override file gumparams.nc ...")
     nc = CDF("gumparams.nc", 'w')
     config = nc.createVariable("pism_overrides", 'i4')
 
@@ -38,8 +38,8 @@ def create_config():
         "constants.ice.density" : 1000.0,
         "constants.ice.density_doc" : "kg m-3; 1% Xanthan gum in water has same density as water",
 
-        "stress_balance.sia.bed_smoother_range" : -1.0,
-        "stress_balance.sia.bed_smoother_range_doc" : "m; negative value de-activates bed smoother",
+        "stress_balance.sia.bed_smoother.range" : -1.0,
+        "stress_balance.sia.bed_smoother.range_doc" : "m; negative value de-activates bed smoother",
 
         "bootstrapping.defaults.geothermal_flux" : 0.0,
         "bootstrapping.defaults.geothermal_flux_doc" : "W m-2; no geothermal",
@@ -72,7 +72,7 @@ def create_config():
         "ice_softness_doc" : "Pa-n s-1; = A_0 = B_0^(-n) = (2 x 11.4 Pa s^(1/n))^(-n);  Sayag & Worster (2013) give B_0/2 = tilde mu = 11.4 +- 0.25 Pa s^(1/n)"
     }
 
-    keys = attrs.keys()
+    keys = list(attrs.keys())
     keys.sort()
     for k in keys:
         config.setncattr(k, attrs[k])
@@ -92,10 +92,10 @@ temp = 20.0      # C;  fluid is at 20 deg (though it should not matter)
 # set up the grid:
 Mx = int(args.Mx)
 My = Mx
-print "  creating grid of Mx = %d by My = %d points ..." % (Mx, My)
+print("  creating grid of Mx = %d by My = %d points ..." % (Mx, My))
 dx = (2.0 * Lx) / float(Mx)
 dy = (2.0 * Ly) / float(My)
-print "  cells have dimensions dx = %.3f mm by dy = %.3f mm ..." % (dx * 1000.0, dy * 1000.0)
+print("  cells have dimensions dx = %.3f mm by dy = %.3f mm ..." % (dx * 1000.0, dy * 1000.0))
 x = np.linspace(-Lx - dx / 2.0, Lx + dx / 2.0, Mx)
 y = np.linspace(-Ly - dy / 2.0, Ly + dy / 2.0, My)
 
@@ -111,10 +111,10 @@ smb = np.zeros((Mx, My))
 smb[xx ** 2 + yy ** 2 <= pipeR ** 2 + 1.0e-10] = 1.0
 smbpos = sum(sum(smb))
 if smbpos == 0:
-    print "gridding ERROR: no cells have positive input flux ... ending now"
+    print("gridding ERROR: no cells have positive input flux ... ending now")
     sys.exit(1)
 else:
-    print "  input flux > 0 at %d cells ..." % smbpos
+    print("  input flux > 0 at %d cells ..." % smbpos)
 smb = (flux / (smbpos * dx * dy)) * smb  # [flux] = kg s-1  so now  [smb] = kg m-2 s-1
 
 # Write the data:

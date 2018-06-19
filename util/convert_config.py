@@ -44,4 +44,4 @@ config.init_from_string("""
 }""")
 config.import_from(pism_config)
 
-print config.dump()
+print(config.dump())

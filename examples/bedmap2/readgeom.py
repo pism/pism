@@ -16,7 +16,7 @@ import sys
 try:
     from netCDF4 import Dataset as NC
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 from PISMNC import PISMDataset as PNC
@@ -24,7 +24,7 @@ from PISMNC import PISMDataset as PNC
 
 N = 6667
 
-print "reading bedmap2 binary files from %s ..." % (BM2PATH)
+print("reading bedmap2 binary files from %s ..." % (BM2PATH))
 
 fname = BM2PATH + 'bedmap2_bed.flt'
 bed = ma.masked_equal(np.reshape(np.fromfile(fname, dtype=np.float32), (N, N)), -9999.0)
@@ -33,12 +33,12 @@ thk = ma.masked_equal(np.reshape(np.fromfile(fname, dtype=np.float32), (N, N)), 
 fname = BM2PATH + 'bedmap2_icemask_grounded_and_shelves.flt'
 msk = ma.masked_equal(np.reshape(np.fromfile(fname, dtype=np.float32), (N, N)), -9999.0)
 
-print "  range of bed = [%.2f, %.2f]" % (bed.min(), bed.max())
-print "  range of thk = [%.2f, %.2f]" % (thk.min(), thk.max())
-print "  range of msk = [%.2f, %.2f]" % (msk.min(), msk.max())
+print("  range of bed = [%.2f, %.2f]" % (bed.min(), bed.max()))
+print("  range of thk = [%.2f, %.2f]" % (thk.min(), thk.max()))
+print("  range of msk = [%.2f, %.2f]" % (msk.min(), msk.max()))
 
 if showgeom:
-    print "showing fields ..."
+    print("showing fields ...")
 
     fig = plt.figure(1)
     ax = plt.imshow(msk)
@@ -61,21 +61,21 @@ if showgeom:
 
 outname = 'ant1kmgeom.nc'
 
-print "writing NetCDF file '%s' ..." % outname
+print("writing NetCDF file '%s' ..." % outname)
 try:
     nc = PNC(outname, 'w', format='NETCDF3_CLASSIC')
 except:
     print("can't open file %s for writing" % outname)
     exit(1)
 
-print "  writing x,y ..."
+print("  writing x,y ...")
 dx = 1000.0
 dy = 1000.0
 x = np.linspace(0.0, (N - 1) * dx, N)
 y = np.linspace(0.0, (N - 1) * dy, N)
 nc.create_dimensions(x, y, time_dependent=False)
 
-print "  writing topg ..."
+print("  writing topg ...")
 nc.define_2d_field("topg", time_dependent=False,
                    attrs={"long_name": "elevation of bedrock",
                           "valid_range": (-9000.0, 9000.0),
@@ -83,7 +83,7 @@ nc.define_2d_field("topg", time_dependent=False,
                           "units": "meters"})
 nc.write_2d_field("topg", bed)
 
-print "  writing thk ..."
+print("  writing thk ...")
 nc.define_2d_field("thk", time_dependent=False,
                    attrs={"long_name": "thickness of ice sheet or ice shelf",
                           "valid_range": (0.0, 9000.0),
@@ -92,4 +92,4 @@ nc.define_2d_field("thk", time_dependent=False,
 nc.write_2d_field("thk", thk)
 
 nc.close()
-print "done"
+print("done")

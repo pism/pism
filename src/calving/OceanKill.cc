@@ -49,11 +49,10 @@ void OceanKill::init() {
   m_log->message(2,
              "* Initializing calving at a fixed calving front...\n");
 
-  options::String ocean_kill_file("-ocean_kill_file",
-                                  "Specifies a file to get ocean_kill thickness from");
+  auto ocean_kill_file = m_config->get_string("calving.ocean_kill.file");
 
-  if (not ocean_kill_file.is_set()) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "option -ocean_kill_file is required.");
+  if (ocean_kill_file.empty()) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "calving.ocean_kill.file cannot be empty");
   }
 
   IceModelVec2S thickness, bed;
@@ -62,7 +61,7 @@ void OceanKill::init() {
     m_log->message(2,
                "  setting fixed calving front location using\n"
                "  ice thickness and bed topography from '%s'\n"
-               "  assuming sea level elevation of 0 meters.\n", ocean_kill_file->c_str());
+               "  assuming sea level elevation of 0 meters.\n", ocean_kill_file.c_str());
 
     thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
     thickness.set_attrs("temporary", "land ice thickness",

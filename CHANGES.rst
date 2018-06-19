@@ -1,61 +1,117 @@
+.. default-role:: literal
+
 Changes since v1.0
 ==================
 
-- Fix `issue 400`_ (``viscous_bed_displacement`` should not use the ``coordinates``
+- PISM stops with an error message if the name of a parameter in a `-config_override` file
+  does not match any of the known PISM parameters.
+- PISM stops with an error message if the diffusivity of the SIA flow exceeds a given
+  threshold (see `stress_balance.sia.max_diffusivity`). Extremely high SIA diffusivities
+  often mean that the setup is not "shallow enough"; in a situation like this it might
+  make sense to re-evaluate model parameters before proceeding. (A short "smoothing" run
+  might be helpful, too, if high diffusivities occur at the beginning of a simulation
+  using ice thickness or bed topography not computed by PISM.)
+- Discard requested snapshot times that are outside of the modeled time interval. (This
+  keeps PISM from overwriting a snapshot file written by one of the previous runs in a
+  re-started simulation.)
+- Add a new configuration parameter `stress_balance.sia.bed_smoother.theta_min` for the
+  bed roughness parameterization in the SIA stress balance model.
+- Added PICO, the *Potsdam Ice-shelf Cavity mOdel* (https://doi.org/10.5194/tc-2017-70).
+  Use `-ocean pico` to enable and see the documentation of PISM's `ocean models`_ in the User's
+  Manual for details.
+- Exclude ice shelves from the ocean load provided to bed deformation models. See `issue
+  363`_.
+- Revert the change from v0.7 to v1.0 in the handling of energy conservation near ice
+  margins. PISM v0.7 and earlier ignored horizontal advection and strain heating terms in
+  the energy balance equation at grid points with neighbors below a given threshold ice
+  thickness. PISM v1.0 eliminated this adjustment at ice margins. This version restores
+  it, with the following additions.
+
+  Set `energy.margin_ice_thickness_limit` to control
+  the thickness limit used to trigger the special marginal treatment. Set parameters
+
+  - `energy.margin_exclude_horizontal_advection`,
+  - `energy.margin_exclude_vertical_advection`, and
+  - `energy.margin_exclude_strain_heating`
+
+  to control individual parts of this modification.
+
+  The underlying issue is that the gradient of the ice thickness is discontinuous at
+  grounded ice margins, and so its finite-difference approximation used by PISM is of poor
+  quality. (The same applies to the gradient of the top surface elevation.) Errors in
+  these approximations propagate to other quantities computed by PISM, notably the ice
+  velocity and the strain heating. The poor quality of approximation of *these* quantities
+  is the main reason for excluding them from the energy-balance computation.
+
+  Preliminary tests show that excluding the strain heating term near ice margins is the
+  most important modification.
+- Fix `issue 400`_ (`viscous_bed_displacement` should not use the `coordinates`
   attribute).
 - Support older (< 1.7) OpenMPI versions.
 - Add a work-around needed to use old-ish NetCDF (4.0 - 4.1) with OpenMPI.
-- Fix `issue 222`_ (``-part_grid`` residual redistribution code used to lose mass in
+- Fix `issue 222`_ (`-part_grid` residual redistribution code used to lose mass in
   parallel runs).
-- Add ``geometry.part_grid.max_iterations`` and increase it to 10.
-- Fix a bug in ``pismr -regional`` (stored surface elevation was not initialized correctly)
-- PDD model: add scalar diagnostics ``surface_accumulation_rate``, ``surface_melt_rate``,
-  ``surface_runoff_rate``. See `issue 394`_. Also, rename ``saccum``, ``smelt``,
-  ``srunoff`` to ``surface_accumulation_flux``, ``surface_melt_flux``,
-  ``surface_runoff_flux`` respectively. Now PDD's climatic mass balance can be compared to
-  the effective climatic mass balance: use ``surface_accumulation_flux - surface_runoff_flux``.
+- Add `geometry.part_grid.max_iterations` and increase it to 10.
+- Fix a bug in `pismr -regional` (stored surface elevation was not initialized correctly)
+- PDD model: add scalar diagnostics
 
-  To save all these, use ``-extra_vars`` shortcuts ``pdd_fluxes`` and ``pdd_rates``.
-- PDD model: replace command-line options ``-pdd_rand``, ``-pdd_rand_repeatable`` with one
-  configuration parameter: ``surface.pdd.method`` (select from ``expectation_integral``,
-  ``repeatable_random_process``, ``random_process``).
-- Fix `issue 74`_. (Now ``basal_mass_flux_floating`` is zero with the ``float_kill`
-  calving mechanism, i.e. when ``ice_area_glacierized_floating`` is zero.)
+  - `surface_accumulation_rate`,
+  - `surface_melt_rate`,
+  - `surface_runoff_rate`.
+
+  See `issue 394`_. Also, rename `saccum`, `smelt`, `srunoff` to
+  `surface_accumulation_flux`, `surface_melt_flux`, `surface_runoff_flux`
+  respectively. Now PDD's climatic mass balance can be compared to the effective climatic
+  mass balance: use `surface_accumulation_flux - surface_runoff_flux`.
+
+  To save all these, use `-extra_vars` shortcuts `pdd_fluxes` and `pdd_rates`.
+- PDD model: replace command-line options `-pdd_rand`, `-pdd_rand_repeatable` with one
+  configuration parameter: `surface.pdd.method` (select from `expectation_integral`,
+  `repeatable_random_process`, `random_process`).
+- Fix `issue 74`_. (Now `basal_mass_flux_floating` is zero with the `float_kill`
+  calving mechanism, i.e. when `ice_area_glacierized_floating` is zero.)
 - Refactor hydrology models, adding proper mass accounting.
 - Implement 2D diagnostics quantities needed for mass conservation accounting in hydrology
-  models. (See ``tendency_of_subglacial_water_mass``,
-  ``tendency_of_subglacial_water_mass_due_to_input``,
-  ``tendency_of_subglacial_water_mass_due_to_flow``,
-  ``tendency_of_subglacial_water_mass_due_to_conservation_error``,
-  ``tendency_of_subglacial_water_mass_at_grounded_margins``,
-  ``tendency_of_subglacial_water_mass_at_grounding_line``, and
-  ``tendency_of_subglacial_water_mass_at_domain_boundary``.) Use the shortcut
-  ``hydrology_fluxes`` to save all these in an "extra file."
-- Add ``hydrology.surface_input_file``: ``IceModel`` can read in time-dependent 2D water
+  models:
+
+  - `tendency_of_subglacial_water_mass`,
+  - `tendency_of_subglacial_water_mass_due_to_input`,
+  - `tendency_of_subglacial_water_mass_due_to_flow`,
+  - `tendency_of_subglacial_water_mass_due_to_conservation_error`,
+  - `tendency_of_subglacial_water_mass_at_grounded_margins`,
+  - `tendency_of_subglacial_water_mass_at_grounding_line`, and
+  - `tendency_of_subglacial_water_mass_at_domain_boundary`.
+
+  Use the shortcut `hydrology_fluxes` to save all these in an "extra file."
+- Add `hydrology.surface_input_file`: `IceModel` can read in time-dependent 2D water
   input rates for subglacial hydrology models.
 - Implement a proper generalization to 2D of the 1D parameterization of the grounding line
   position. (This code interprets ice thickness, bed elevation, and sea level as
   piecewise-linear functions on a specially-designed triangular mesh refining the regular
   grid used by PISM.)
 - Support 2D (spatially-variable) sea level elevation everywhere in PISM, including 2D sea
-  level forcing. (Use ``-sea_level constant,delta_sl_2d`` and search for
-  ``ocean.delta_sl_2d.file`` and related configuration parameters.)
+  level forcing. (Use `-sea_level constant,delta_sl_2d` and search for
+  `ocean.delta_sl_2d.file` and related configuration parameters.)
 - Split sea level forcing from the ocean model so that the sea level is available when
-  sub-shelf melt parameterizations are initialized. Use ``-sea_level constant,delta_sl``
-  instead of ``-ocean constant,delta_SL``.
+  sub-shelf melt parameterizations are initialized. Use `-sea_level constant,delta_sl`
+  instead of `-ocean constant,delta_SL`.
 - Decouple calving law parameterization from ocean models and the stress balance code.
 - Add regression tests for all ocean models.
-- Fix `issue 402`_: ensure reproducibility of ``-bed_def lc`` results.
+- Fix `issue 402`_: ensure reproducibility of `-bed_def lc` results.
 - Clean up PISM's ocean, surface, and atmosphere model code, making it easier to test and
   debug.
 - Make it easier to use scalar and 2D time-dependent forcing fields.
-- Add configuration parameters ``input.file`` and ``input.bootstrap``, corresponding to
-  command-line options ``-i`` and ``-bootstrap``.
+- Add configuration parameters `input.file` and `input.bootstrap`, corresponding to
+  command-line options `-i` and `-bootstrap`.
 - Add notes documenting the implementation of the calving front boundary condition to the
   manual.
-- Make it easier to "balance the books": 1) rename scalar diagnostics so that they match 2D
-  diagnostics and 2) report fluxes in ``Gt/year`` instead of ``kg/year``.
+- Make it easier to "balance the books":
+
+  #. rename scalar diagnostics so that they match 2D diagnostics and
+  #. report fluxes in `Gt/year` instead of `kg/year`.
 - Update the Debian/Ubuntu section of the installation manual.
+- Move the documentation of the BOMBPROOF numerical scheme for energy conservation from
+  the source code browser into the manual.
 
 Changes from v0.7 to v1.0
 =========================
@@ -485,7 +541,9 @@ Miscellaneous
 .. _issue 390: https://github.com/pism/pism/issues/390
 .. _issue 394: https://github.com/pism/pism/issues/394
 .. _issue 400: https://github.com/pism/pism/issues/400
-
+.. _issue 402: https://github.com/pism/pism/issues/402
+.. _issue 363: https://github.com/pism/pism/issues/363
+.. _ocean models: http://pism-docs.org/sphinx/climate_forcing/ocean.html
 ..
    Local Variables:
    fill-column: 90

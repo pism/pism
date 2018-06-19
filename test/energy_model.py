@@ -84,7 +84,7 @@ def setup():
 dt = PISM.convert(ctx.unit_system, 1, "years", "seconds")
 
 def use_model(model):
-    print "* Performing a time step..."
+    print("* Performing a time step...")
     model.update(0, dt, inputs)
 
     try:
@@ -99,7 +99,7 @@ def use_model(model):
     except RuntimeError:
         pass
 
-    print model.stdout_flags()
+    print(model.stdout_flags())
     stats = model.stats()
     enthalpy = model.get_enthalpy()
     bmr = model.get_basal_melt_rate()
@@ -116,10 +116,10 @@ def test_interface():
     for M in [PISM.EnthalpyModel, PISM.DummyEnergyModel, PISM.TemperatureModel]:
         model = M(grid, None)
 
-        print ""
-        print "Testing %s..." % M
+        print("")
+        print("Testing %s..." % M)
 
-        print "* Bootstrapping using provided basal melt rate..."
+        print("* Bootstrapping using provided basal melt rate...")
         initialize(model)
 
         use_model(model)
@@ -131,13 +131,13 @@ def test_interface():
 
         pio = PISM.util.prepare_output("energy_model_state.nc")
 
-        print "* Saving the model state..."
+        print("* Saving the model state...")
         model.write_model_state(pio)
 
-        print "* Restarting from a saved model state..."
+        print("* Restarting from a saved model state...")
         model.restart(pio, 0)
 
-        print "* Bootstrapping from a saved model state..."
+        print("* Bootstrapping from a saved model state...")
         model.bootstrap(pio,
                         ice_thickness,
                         surface_temp,

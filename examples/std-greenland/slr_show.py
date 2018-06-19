@@ -10,7 +10,7 @@
 try:
     from netCDF4 import Dataset as CDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 from numpy import zeros
@@ -52,7 +52,7 @@ colors = ['#984EA3',  # violet
 
 dashes = ['-', '--', '-.', '-', '--', '-.', '-', '--', '-.', '-']
 
-print "control run name is " + NCNAMES[0]
+print("control run name is " + NCNAMES[0])
 
 n = len(NCNAMES)
 nc0 = CDF(NCNAMES[0], 'r')

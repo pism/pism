@@ -2,19 +2,30 @@ netcdf pism_overrides {
     variables:
     byte pism_overrides;
 
-    pism_overrides:stress_balance.sia.bed_smoother_range = 0.;
-    pism_overrides:stress_balance.sia.bed_smoother_range_doc = "m; half-width of smoothing domain for PISMBedSmoother, in implementing [@ref Schoofbasaltopg2003] bed roughness parameterization for SIA; set value to zero to turn off mechanism";
+    pism_overrides:surface.force_to_thickness.alpha = 1.0;
+    pism_overrides:surface.force_to_thickness.alpha_doc = "exponential coefficient in force-to-thickness mechanism";
+    pism_overrides:surface.force_to_thickness.alpha_type = "scalar";
+    pism_overrides:surface.force_to_thickness.alpha_units = "year-1";
+    pism_overrides:surface.force_to_thickness.alpha_option = "force_to_thickness_alpha";
+
+    pism_overrides:surface.force_to_thickness.ice_free_alpha_factor = 1.0;
+    pism_overrides:surface.force_to_thickness.ice_free_alpha_factor_doc = "surface.force_to_thickness.alpha is multiplied by this factor in areas that are ice-free according to the target ice thickness and surface.force_to_thickness.ice_free_thickness_threshold";
+    pism_overrides:surface.force_to_thickness.ice_free_alpha_factor_type = "scalar";
+    pism_overrides:surface.force_to_thickness.ice_free_alpha_factor_units = "1";
+    pism_overrides:surface.force_to_thickness.ice_free_alpha_factor_option = "force_to_thickness_ice_free_alpha_factor";
+
+    pism_overrides:geometry.ice_free_thickness_standard = 10.0;
+    pism_overrides:geometry.ice_free_thickness_standard_doc = "If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN.";
+    pism_overrides:geometry.ice_free_thickness_standard_type = "scalar";
+    pism_overrides:geometry.ice_free_thickness_standard_units = "meters";
+
+    pism_overrides:stress_balance.sia.bed_smoother.range = 0.;
+    pism_overrides:stress_balance.sia.bed_smoother.range_doc = "m; half-width of smoothing domain for PISMBedSmoother, in implementing [@ref Schoofbasaltopg2003] bed roughness parameterization for SIA; set value to zero to turn off mechanism";
 
     pism_overrides:output.runtime.volume_scale_factor_log10 = 0;
     pism_overrides:output.runtime.volume_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume (in km^3) in summary line to stdout";
 
     pism_overrides:output.runtime.area_scale_factor_log10 = 0;
     pism_overrides:output.runtime.area_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout";
-
-    pism_overrides:energy.drainage_target_water_fraction = 0.02;
-    pism_overrides:energy.drainage_target_water_fraction_doc = "; liquid water fraction (omega) above which drainage occurs, but below which there is no drainage; see [@ref AschwandenBuelerKhroulevBlatter]";
-
-    pism_overrides:energy.temperate_ice_enthalpy_conductivity_ratio = 0.001;
-    pism_overrides:energy.temperate_ice_enthalpy_conductivity_ratio_doc = "pure number; K in cold ice is multiplied by this fraction to give K0 in [@ref AschwandenBuelerKhroulevBlatter]";
 
 }

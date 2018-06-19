@@ -18,3 +18,5 @@ Technical notes
    how-to.rst
 
    icemodelvec2t.rst
+
+   bombproof.rst

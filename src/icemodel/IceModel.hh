@@ -19,8 +19,8 @@
 #ifndef __iceModel_hh
 #define __iceModel_hh
 
-//! \file iceModel.hh Definition of class IceModel.
-/*! \file iceModel.hh
+//! \file IceModel.hh Definition of class IceModel.
+/*! \file IceModel.hh
   IceModel is a big class which is an ice flow model.  It contains all parts that
   are not well-defined, separated components.  Such components are better places
   to put sub-models that have a clear, general interface to the rest of an ice
@@ -183,7 +183,9 @@ protected:
   virtual void allocate_iceberg_remover();
 
   virtual stressbalance::Inputs stress_balance_inputs();
+
   virtual energy::Inputs energy_model_inputs();
+
   virtual YieldStressInputs yield_stress_inputs();
 
   virtual void time_setup();
@@ -328,7 +330,8 @@ protected:
   virtual void max_timestep(double &dt_result, unsigned int &skip_counter);
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
-  // see iMenergy.cc
+  // see energy.cc
+  virtual void bedrock_thermal_model_step();
   virtual void energy_step();
 
   virtual void combine_basal_melt_rate(const Geometry &geometry,

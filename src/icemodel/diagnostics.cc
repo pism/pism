@@ -287,7 +287,7 @@ CTS::CTS(const IceModel *m)
   m_vars = {SpatialVariableMetadata(m_sys, "cts", m_grid->z())};
 
   set_attrs("cts = E/E_s(p), so cold-temperate transition surface is at cts = 1", "",
-            "", "", 0);
+            "1", "1", 0);
 }
 
 IceModelVec::Ptr CTS::compute_impl() const {

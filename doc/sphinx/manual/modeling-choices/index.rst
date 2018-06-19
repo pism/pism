@@ -33,6 +33,8 @@ This section describes how to understand and make these modeling choices.
 
    marine/index.rst
 
+   regional/index.rst
+
    disabling.rst
 
    hard-choices.rst

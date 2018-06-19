@@ -392,7 +392,7 @@ void IceModelVec2T::update(unsigned int start) {
       petsc::VecArray tmp_array(m_v);
       io::regrid_spatial_variable(m_metadata[0], *m_grid, nc, start + j, CRITICAL,
                                   m_report_range, allow_extrapolation,
-                                  0.0, tmp_array.get());
+                                  0.0, m_interpolation_type, tmp_array.get());
     }
 
     m_grid->ctx()->log()->message(5, " %s: reading entry #%02d, year %s...\n",

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -46,8 +46,8 @@ with the last row
 Thus the index into the arrays L, D, U is always the row number.
  */
 TridiagonalSystem::TridiagonalSystem(unsigned int max_size,
-                                     const std::string &my_prefix)
-  : m_max_system_size(max_size), m_prefix(my_prefix) {
+                                     const std::string &prefix)
+  : m_max_system_size(max_size), m_prefix(prefix) {
   assert(m_max_system_size >= 1 && m_max_system_size < 1e6);
 
   m_L.resize(m_max_system_size);

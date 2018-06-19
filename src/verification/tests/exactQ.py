@@ -22,7 +22,7 @@ import time
 try:
     from netCDF4 import Dataset as CDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 from optparse import OptionParser
@@ -42,8 +42,8 @@ Example:  Try this diagnostic-only run:
 parser.description = "A script which runs Test Q."
 (options, args) = parser.parse_args()
 if (len(args) < 2) | (len(args) > 2):
-    print "ERROR; exactQ.py needs two arguments; run with --help to see usage"
-    print "... EXITING"
+    print("ERROR; exactQ.py needs two arguments; run with --help to see usage")
+    print("... EXITING")
     exit(-1)
 
 SperA = 31556926.0
@@ -92,11 +92,11 @@ t0 = timeQ(H0)
 
 t = t0 + runtime
 
-print 'exact Test Q has the following parameters for the start time t=t0:'
-print '  time      t0 = %.3e s = %f a' % (t0, t0 / SperA)
-print '  thickness H0 = %.3f m' % H0
-print '  radius    R0 = %.3f km' % (R0 / 1.0e3)
-print 'building PISM bootstrap file %s with Mx = %d and My = %d grid points ...' % (ncfile, Mx, My)
+print('exact Test Q has the following parameters for the start time t=t0:')
+print('  time      t0 = %.3e s = %f a' % (t0, t0 / SperA))
+print('  thickness H0 = %.3f m' % H0)
+print('  radius    R0 = %.3f km' % (R0 / 1.0e3))
+print('building PISM bootstrap file %s with Mx = %d and My = %d grid points ...' % (ncfile, Mx, My))
 
 # set up the grid:
 Lx = 200.0e3
@@ -122,10 +122,10 @@ thk_exact[rr > R_exact] = 0.0
 c_exact *= SperA
 c_exact[rr > R_exact] = 0.0
 
-print 'exact Test Q at time t=%f years is in these variables:' % (t / SperA)
-print '  c_exact, with max = %.3e' % c_exact.max()
-print '  thk_exact, with max = %.3e' % thk_exact.max()
-print 'and R_exact = %.3f km' % (R_exact / 1.0e3)
+print('exact Test Q at time t=%f years is in these variables:' % (t / SperA))
+print('  c_exact, with max = %.3e' % c_exact.max())
+print('  thk_exact, with max = %.3e' % thk_exact.max())
+print('and R_exact = %.3f km' % (R_exact / 1.0e3))
 
 # Write the data:
 nc = CDF(ncfile, "w", format='NETCDF3_CLASSIC')  # for netCDF4 module

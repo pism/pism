@@ -28,6 +28,8 @@
       \newcommand{\bmin}{b_{\mathrm{min}}}
       \newcommand{\bmax}{b_{\mathrm{max}}}
       \newcommand{\bq}{\mathbf{q}}
+      \newcommand{\Up}[2]{\operatorname{Up}\left(#1\big|#2\right)}
+      \newcommand{\uppair}[2]{\left\{\begin{matrix} #1 \\ #2 \end{matrix}\right\}}
 
 .. raw:: latex
 
@@ -60,3 +62,7 @@
 
    % hydrology
    \providecommand{\bq}{\mathbf{q}}
+
+   % BOMBPROOF
+   \providecommand{\Up}[2]{\operatorname{Up}\left(#1\big|#2\right)}
+   \providecommand{\uppair}[2]{\left\{\begin{matrix} #1 \\ #2 \end{matrix}\right\}}

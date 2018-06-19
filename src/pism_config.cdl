@@ -12,6 +12,16 @@ netcdf pism_config {
     pism_config:input.bootstrap_option = "bootstrap";
     pism_config:input.bootstrap_type = "boolean";
 
+    pism_config:input.regrid.file = "";
+    pism_config:input.regrid.file_doc = "Regridding (input) file name";
+    pism_config:input.regrid.file_type = "string";
+    pism_config:input.regrid.file_option = "regrid_file";
+
+    pism_config:input.regrid.vars = "";
+    pism_config:input.regrid.vars_doc = "Comma-separated list of variables to regrid. Leave empty to regrid all model state variables.";
+    pism_config:input.regrid.vars_type = "string";
+    pism_config:input.regrid.vars_option = "regrid_vars";
+
     pism_config:age.enabled = "no";
     pism_config:age.enabled_doc = "Solve age equation (advection equation for ice age).";
     pism_config:age.enabled_option = "age";
@@ -384,6 +394,11 @@ netcdf pism_config {
     pism_config:calving.methods_option = "calving";
     pism_config:calving.methods_type = "string";
 
+    pism_config:calving.ocean_kill.file = "";
+    pism_config:calving.ocean_kill.file_doc = "Input file containing ice thickness and bed elevation used to compute maximum ice extent.";
+    pism_config:calving.ocean_kill.file_type = "string";
+    pism_config:calving.ocean_kill.file_option = "ocean_kill_file";
+
     pism_config:calving.thickness_calving.threshold = 50.0;
     pism_config:calving.thickness_calving.threshold_doc = "When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
     pism_config:calving.thickness_calving.threshold_option = "thickness_calving_threshold";
@@ -515,10 +530,46 @@ netcdf pism_config {
     pism_config:energy.enabled_doc = "Solve energy conservation equations.";
     pism_config:energy.enabled_type = "boolean";
 
-    pism_config:energy.enthalpy_cold_bulge_max = 60270.0;
-    pism_config:energy.enthalpy_cold_bulge_max_doc = "= (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value";
-    pism_config:energy.enthalpy_cold_bulge_max_type = "scalar";
-    pism_config:energy.enthalpy_cold_bulge_max_units = "Joule / kg";
+    pism_config:energy.enthalpy.cold_bulge_max = 60270.0;
+    pism_config:energy.enthalpy.cold_bulge_max_doc = "= (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value";
+    pism_config:energy.enthalpy.cold_bulge_max_type = "scalar";
+    pism_config:energy.enthalpy.cold_bulge_max_units = "Joule / kg";
+
+    pism_config:energy.ch_warming.enabled = "no";
+    pism_config:energy.ch_warming.enabled_doc = "Enable the cryo-hydrologic warming model";
+    pism_config:energy.ch_warming.enabled_type = "boolean";
+
+    pism_config:energy.ch_warming.residual_water_fraction = 0.005;
+    pism_config:energy.ch_warming.residual_water_fraction_units = "pure number";
+    pism_config:energy.ch_warming.residual_water_fraction_doc = "residual water fraction in the cryo-hydrologic system at the end of a melt season";
+    pism_config:energy.ch_warming.residual_water_fraction_type = "scalar";
+
+    pism_config:energy.ch_warming.temperate_ice_thermal_conductivity_ratio = 1.0;
+    pism_config:energy.ch_warming.temperate_ice_thermal_conductivity_ratio_doc = "ratio of thermal conductivities of temperate and cold ice in the cryo-hydrologic system";
+    pism_config:energy.ch_warming.temperate_ice_thermal_conductivity_ratio_type = "scalar";
+    pism_config:energy.ch_warming.temperate_ice_thermal_conductivity_ratio_units = "pure number";
+
+    pism_config:energy.ch_warming.average_channel_spacing = 20.0;
+    pism_config:energy.ch_warming.average_channel_spacing_doc = "Average spacing between elements of the cryo-hydrologic system (controls the rate of heat transfer from the CH system into the ice).";
+    pism_config:energy.ch_warming.average_channel_spacing_type = "scalar";
+    pism_config:energy.ch_warming.average_channel_spacing_units = "meters";
+
+    pism_config:energy.margin_ice_thickness_limit = 100.0;
+    pism_config:energy.margin_ice_thickness_limit_doc = "use special margin treatment at grid points with a neighbor with the thickness below this limit.";
+    pism_config:energy.margin_ice_thickness_limit_type = "scalar";
+    pism_config:energy.margin_ice_thickness_limit_units = "meters";
+
+    pism_config:energy.margin_exclude_horizontal_advection = "yes";
+    pism_config:energy.margin_exclude_horizontal_advection_doc = "Exclude horizontal advection of energy at grid points near ice margins. See :config:`energy.margin_ice_thickness_limit`.";
+    pism_config:energy.margin_exclude_horizontal_advection_type = "boolean";
+
+    pism_config:energy.margin_exclude_vertical_advection = "yes";
+    pism_config:energy.margin_exclude_vertical_advection_doc = "Exclude vertical advection of energy at grid points near ice margins. See :config:`energy.margin_ice_thickness_limit`.";
+    pism_config:energy.margin_exclude_vertical_advection_type = "boolean";
+
+    pism_config:energy.margin_exclude_strain_heating = "yes";
+    pism_config:energy.margin_exclude_strain_heating_doc = "Exclude strain heating at grid points near ice margins. See :config:`energy.margin_ice_thickness_limit`.";
+    pism_config:energy.margin_exclude_strain_heating_type = "boolean";
 
     pism_config:energy.max_low_temperature_count = 10;
     pism_config:energy.max_low_temperature_count_doc = "Maximum number of grid points with ice temperature below energy.minimum_allowed_temperature.";
@@ -532,10 +583,10 @@ netcdf pism_config {
     pism_config:energy.minimum_allowed_temperature_type = "scalar";
     pism_config:energy.minimum_allowed_temperature_units = "Kelvin";
 
-    pism_config:energy.temperate_ice_enthalpy_conductivity_ratio = 0.1;
-    pism_config:energy.temperate_ice_enthalpy_conductivity_ratio_doc = "K in cold ice is multiplied by this fraction to give K0 in :cite:`AschwandenBuelerKhroulevBlatter`";
-    pism_config:energy.temperate_ice_enthalpy_conductivity_ratio_type = "scalar";
-    pism_config:energy.temperate_ice_enthalpy_conductivity_ratio_units = "pure number";
+    pism_config:energy.enthalpy.temperate_ice_thermal_conductivity_ratio = 0.1;
+    pism_config:energy.enthalpy.temperate_ice_thermal_conductivity_ratio_doc = "K in cold ice is multiplied by this fraction to give K0 in :cite:`AschwandenBuelerKhroulevBlatter`";
+    pism_config:energy.enthalpy.temperate_ice_thermal_conductivity_ratio_type = "scalar";
+    pism_config:energy.enthalpy.temperate_ice_thermal_conductivity_ratio_units = "pure number";
 
     pism_config:energy.temperature_based = "no";
     pism_config:energy.temperature_based_doc = "Use cold ice (i.e. not polythermal) methods.";
@@ -1097,6 +1148,23 @@ netcdf pism_config {
     pism_config:ocean.th.reference_year_type = "integer";
     pism_config:ocean.th.reference_year_units = "years";
 
+    pism_config:ocean.pico.file = "";
+    pism_config:ocean.pico.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:ocean.pico.file_type = "string";
+    pism_config:ocean.pico.file_option = "ocean_pico_file";
+
+    pism_config:ocean.pico.period = 0;
+    pism_config:ocean.pico.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:ocean.pico.period_type = "integer";
+    pism_config:ocean.pico.period_option = "ocean_pico_period";
+    pism_config:ocean.pico.period_units = "years";
+
+    pism_config:ocean.pico.reference_year = 0;
+    pism_config:ocean.pico.reference_year_doc = "Reference year to use when ``ocean.pico.period`` is active.";
+    pism_config:ocean.pico.reference_year_option = "ocean_pico_reference_year";
+    pism_config:ocean.pico.reference_year_type = "integer";
+    pism_config:ocean.pico.reference_year_units = "years";
+
     pism_config:ocean.always_grounded = "no";
     pism_config:ocean.always_grounded_doc = "Dry (ocean-less) simulation; ice is considered grounded regardless of ice thickness, bed elevation, and sea level.";
     pism_config:ocean.always_grounded_option = "dry";
@@ -1149,6 +1217,65 @@ netcdf pism_config {
     pism_config:ocean.three_equation_model_clip_salinity_doc = "Clip shelf base salinity so that it is in the range [4, 40] k/kg. See :cite:`HollandJenkins1999`.";
     pism_config:ocean.three_equation_model_clip_salinity_option = "clip_shelf_base_salinity";
     pism_config:ocean.three_equation_model_clip_salinity_type = "boolean";
+
+    pism_config:ocean.pico.number_of_boxes = 5;
+    pism_config:ocean.pico.number_of_boxes_doc = "Default maximum number of boxes (for the largest ice shelves)";
+    pism_config:ocean.pico.number_of_boxes_option = "number_of_boxes";
+    pism_config:ocean.pico.number_of_boxes_type = "integer";
+    pism_config:ocean.pico.number_of_boxes_units = "pure number";
+
+    pism_config:ocean.pico.continental_shelf_depth = -800.0;
+    pism_config:ocean.pico.continental_shelf_depth_doc = "Determines the edge of the continental shelf to calculate mean ocean properties";
+    pism_config:ocean.pico.continental_shelf_depth_option = "continental_shelf_depth";
+    pism_config:ocean.pico.continental_shelf_depth_type = "scalar";
+    pism_config:ocean.pico.continental_shelf_depth_units = "meters";
+
+    pism_config:ocean.pico.maximum_ice_rise_area = 1e5;
+    pism_config:ocean.pico.maximum_ice_rise_area_doc = "Maximum ice rise area. Patches of grounded ice that are bugger than this are treated as continental ice sheets.";
+    pism_config:ocean.pico.maximum_ice_rise_area_type = "scalar";
+    pism_config:ocean.pico.maximum_ice_rise_area_units = "km2";
+
+    pism_config:ocean.pico.overturning_coefficent = 1e6;
+    pism_config:ocean.pico.overturning_coefficent_doc = "Overturning stregth coefficient";
+    pism_config:ocean.pico.overturning_coefficent_option = "overturning_coeff";
+    pism_config:ocean.pico.overturning_coefficent_type = "scalar";
+    pism_config:ocean.pico.overturning_coefficent_units = "meters6 seconds-1 kg-1";
+
+    pism_config:ocean.pico.heat_exchange_coefficent = 2e-5;
+    pism_config:ocean.pico.heat_exchange_coefficent_doc = "Turbulent heat exchange coefficient";
+    pism_config:ocean.pico.heat_exchange_coefficent_option = "gamma_T";
+    pism_config:ocean.pico.heat_exchange_coefficent_type = "scalar";
+    pism_config:ocean.pico.heat_exchange_coefficent_units = "meters second-1";
+
+    pism_config:ocean.pico.exclude_ice_rises = "yes";
+    pism_config:ocean.pico.exclude_ice_rises_doc = "Exclude ice rises for box calculation in PICO";
+    pism_config:ocean.pico.exclude_ice_rises_option = "exclude_icerises";
+    pism_config:ocean.pico.exclude_ice_rises_type = "boolean";
+
+    pism_config:output.extra.file = "";
+    pism_config:output.extra.file_doc = "Name of the output file containing spatially-variable diagnostics.";
+    pism_config:output.extra.file_type = "string";
+    pism_config:output.extra.file_option = "extra_file";
+
+    pism_config:output.extra.times = "";
+    pism_config:output.extra.times_doc = "List or a range of times defining reporting intervals for spatially-variable diagnostics.";
+    pism_config:output.extra.times_type = "string";
+    pism_config:output.extra.times_option = "extra_times";
+
+    pism_config:output.extra.vars = "";
+    pism_config:output.extra.vars_doc = "Comma-separated list of spatially-variable diagnostics.";
+    pism_config:output.extra.vars_type = "string";
+    pism_config:output.extra.vars_option = "extra_vars";
+
+    pism_config:output.extra.split = "no";
+    pism_config:output.extra.split_doc = "Save spatially-variable diagnostics to separate files (one per time record).";
+    pism_config:output.extra.split_type = "boolean";
+    pism_config:output.extra.split_option = "extra_split";
+
+    pism_config:output.extra.append = "no";
+    pism_config:output.extra.append_doc = "Append to an existing output file.";
+    pism_config:output.extra.append_type = "boolean";
+    pism_config:output.extra.append_option = "extra_append";
 
     pism_config:output.backup_interval = 1.0;
     pism_config:output.backup_interval_doc = "wall-clock time between automatic backups";
@@ -1214,11 +1341,26 @@ netcdf pism_config {
     pism_config:output.runtime.volume_scale_factor_log10_type = "integer";
     pism_config:output.runtime.volume_scale_factor_log10_units = "pure number";
 
-    pism_config:output.save_size = "small";
-    pism_config:output.save_size_choices = "none,small,medium,big_2d,big";
-    pism_config:output.save_size_doc = "The 'size' of a snapshot file. See configuration parameters output.sizes.medium, output.sizes.big_2d, output.sizes.big";
-    pism_config:output.save_size_option = "save_size";
-    pism_config:output.save_size_type = "keyword";
+    pism_config:output.snapshot.file = "";
+    pism_config:output.snapshot.file_doc = "Snapshot (output) file name (or prefix, if saving to individual files).";
+    pism_config:output.snapshot.file_type = "string";
+    pism_config:output.snapshot.file_option = "save_file";
+
+    pism_config:output.snapshot.times = "";
+    pism_config:output.snapshot.times_doc = "List or a range of times to save model state snapshots at.";
+    pism_config:output.snapshot.times_type = "string";
+    pism_config:output.snapshot.times_option = "save_times";
+
+    pism_config:output.snapshot.split = "no";
+    pism_config:output.snapshot.split_doc = "Save model state snapshots to separate files (one per time record).";
+    pism_config:output.snapshot.split_type = "boolean";
+    pism_config:output.snapshot.split_option = "save_split";
+
+    pism_config:output.snapshot.size = "small";
+    pism_config:output.snapshot.size_choices = "none,small,medium,big_2d,big";
+    pism_config:output.snapshot.size_doc = "The 'size' of a snapshot file. See configuration parameters output.sizes.medium, output.sizes.big_2d, output.sizes.big";
+    pism_config:output.snapshot.size_option = "save_size";
+    pism_config:output.snapshot.size_type = "keyword";
 
     pism_config:output.size = "medium";
     pism_config:output.size_choices = "none,small,medium,big_2d,big";
@@ -1257,6 +1399,11 @@ netcdf pism_config {
     pism_config:output.timeseries.filename_type = "string";
     pism_config:output.timeseries.filename_option = "ts_file";
     pism_config:output.timeseries.filename_doc = "Name of the file to save scalar time series to. Leave empty to disable reporting scalar time-series.";
+
+    pism_config:output.timeseries.times = "";
+    pism_config:output.timeseries.times_type = "string";
+    pism_config:output.timeseries.times_option = "ts_times";
+    pism_config:output.timeseries.times_doc = "List or range of times defining reporting time intervals.";
 
     pism_config:output.variable_order = "yxz";
     pism_config:output.variable_order_choices = "xyz,yxz,zyx";
@@ -1312,11 +1459,16 @@ netcdf pism_config {
     pism_config:stress_balance.sia.Glen_exponent_type = "scalar";
     pism_config:stress_balance.sia.Glen_exponent_units = "pure number";
 
-    pism_config:stress_balance.sia.bed_smoother_range = 5.0e3;
-    pism_config:stress_balance.sia.bed_smoother_range_doc = "half-width of smoothing domain for stressbalance::BedSmoother, in implementing :cite:`Schoofbasaltopg2003` bed roughness parameterization for SIA; set value to zero to turn off mechanism";
-    pism_config:stress_balance.sia.bed_smoother_range_option = "bed_smoother_range";
-    pism_config:stress_balance.sia.bed_smoother_range_type = "scalar";
-    pism_config:stress_balance.sia.bed_smoother_range_units = "meters";
+    pism_config:stress_balance.sia.bed_smoother.range = 5.0e3;
+    pism_config:stress_balance.sia.bed_smoother.range_doc = "half-width of smoothing domain for stressbalance::BedSmoother, in implementing :cite:`Schoofbasaltopg2003` bed roughness parameterization for SIA; set value to zero to turn off mechanism";
+    pism_config:stress_balance.sia.bed_smoother.range_option = "bed_smoother_range";
+    pism_config:stress_balance.sia.bed_smoother.range_type = "scalar";
+    pism_config:stress_balance.sia.bed_smoother.range_units = "meters";
+
+    pism_config:stress_balance.sia.bed_smoother.theta_min = 0.0;
+    pism_config:stress_balance.sia.bed_smoother.theta_min_doc = "minimum value of `\\theta` in :cite:`Schoofbasaltopg2003` bed roughness parameterization for SIA";
+    pism_config:stress_balance.sia.bed_smoother.theta_min_type = "scalar";
+    pism_config:stress_balance.sia.bed_smoother.theta_min_units = "1";
 
     pism_config:stress_balance.sia.e_age_coupling = "no";
     pism_config:stress_balance.sia.e_age_coupling_doc = "Couple the SIA enhancement factor to age as in :cite:`Greve`.";
@@ -1345,6 +1497,11 @@ netcdf pism_config {
     pism_config:stress_balance.sia.grain_size_age_coupling_doc = "Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt :cite:`GoldsbyKohlstedt` flow law";
     pism_config:stress_balance.sia.grain_size_age_coupling_option = "grain_size_age_coupling";
     pism_config:stress_balance.sia.grain_size_age_coupling_type = "boolean";
+
+    pism_config:stress_balance.sia.max_diffusivity = 100.0;
+    pism_config:stress_balance.sia.max_diffusivity_doc = "Maximum allowed diffusivity of the SIA flow. PISM stops with an error message if the SIA diffusivity exceeds this limit.";
+    pism_config:stress_balance.sia.max_diffusivity_type = "scalar";
+    pism_config:stress_balance.sia.max_diffusivity_units = "m2 s-1";
 
     pism_config:stress_balance.sia.surface_gradient_method = "haseloff";
     pism_config:stress_balance.sia.surface_gradient_method_choices = "eta,haseloff,mahaffy";
@@ -1384,6 +1541,11 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.epsilon_option = "ssa_eps";
     pism_config:stress_balance.ssa.epsilon_type = "scalar";
     pism_config:stress_balance.ssa.epsilon_units = "Pascal second meter";
+
+    pism_config:stress_balance.ssa.read_initial_guess = "yes";
+    pism_config:stress_balance.ssa.read_initial_guess_doc = "Read the initial guess from the input file when re-starting.";
+    pism_config:stress_balance.ssa.read_initial_guess_option = "ssa_read_initial_guess";
+    pism_config:stress_balance.ssa.read_initial_guess_type = "boolean";
 
     pism_config:stress_balance.ssa.fd.brutal_sliding = "false";
     pism_config:stress_balance.ssa.fd.brutal_sliding_doc = "Enhance sliding speed brutally.";
