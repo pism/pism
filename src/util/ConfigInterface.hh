@@ -24,6 +24,7 @@
 #include <set>
 #include <map>
 #include <string>
+#include <vector>
 
 #include <mpi.h>
 
@@ -101,7 +102,7 @@ public:
   typedef std::map<std::string, bool> Booleans;
   Booleans all_booleans() const;
 
-  std::vector<std::string> keys() const;
+  std::set<std::string> keys() const;
 
   bool get_boolean(const std::string& name, UseFlag flag = REMEMBER_THIS_USE) const;
   void set_boolean(const std::string& name, bool value, SettingFlag flag = FORCE);

@@ -141,10 +141,7 @@ void SSA::init_impl() {
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).
   if (opts.type == INIT_RESTART) {
-    bool read_initial_guess = not options::Bool("-dontreadSSAvels",
-                                                "don't read the initial guess");
-
-    if (read_initial_guess) {
+    if (m_config->get_boolean("stress_balance.ssa.read_initial_guess")) {
       PIO input_file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
       bool u_ssa_found = input_file.inq_var("u_ssa");
       bool v_ssa_found = input_file.inq_var("v_ssa");

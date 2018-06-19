@@ -208,7 +208,7 @@ def verify_time_dependent():
         p = np.polyfit(log_dx, d[:,j], 1)
         plt.plot(log_dx, d[:,j], marker='o', label="{}, O(dx^{:.2})".format(label, p[0]))
         plt.plot(log_dx, np.polyval(p, log_dx), ls="--")
-        plt.xticks(log_dx, map(lambda x: "{:.0f}".format(x), dx))
+        plt.xticks(log_dx, ["{:.0f}".format(x) for x in dx])
 
     plt.legend()
     plt.grid(True)

@@ -257,42 +257,14 @@ void CalvingFrontRetreat::update(double dt,
 
           auto
             bed = bed_topography.star(i, j),
-            sl  = sea_level.star(i, j);
+            sl  = sea_level.star(i, j),
+            ll  = lake_level.star(i, j);
 
           for (int n = 0; n < 4; ++n) {
             Direction direction = dirs[n];
-            int m = M[direction];
+            int m  = M[direction];
             int bc = BC[direction];
-            int in, jn;
-
-            switch (direction) {
-              default:                    // just to silence the warning
-              case North:
-                in = i;
-                jn = j + 1;
-              case East:
-                in = i + 1;
-                jn = j;
-              case South:
-                in = i;
-                jn = j - 1;
-              case West:
-                in = i - 1;
-                jn = j;
-            }
-
-            double water_level= gc.valid_sea_level(sea_level(in, jn), bed[direction]);
-            StarStencil<double> sl_n_star = sea_level.star(in, jn);
-            StarStencil<double> ll_n_star = lake_level.star(in, jn);
-
-            for (int nn = 0; nn < 4; ++nn) {
-              const Direction direction_n = dirs[nn];
-              const double sl_n = sl_n_star[direction_n];
-              const double ll_n = ll_n_star[direction_n];
-
-              const double water_level_nn = gc.water_level(sl_n, bed[direction], ll_n);
-              water_level = std::max(water_level, water_level_nn);
-            }
+            double water_level = gc.water_level(sl[direction], bed[direction], ll[direction]);
 
             if (bc == 0 and     // distribute to regular (*not* Dirichlet B.C.) neighbors only
                 (mask::floating_ice(m) or
@@ -320,20 +292,7 @@ void CalvingFrontRetreat::update(double dt,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    StarStencil<double> sl_star = sea_level.star(i, j);
-    StarStencil<double> ll_star = lake_level.star(i, j);
-    StarStencil<double> bed_star= bed_topography.star(i, j);
-    double water_level = gc.valid_sea_level(sl_star.ij, bed_star.ij);
-
-    for (int n = 0; n < 4; ++n) {
-      const Direction direction = dirs[n];
-      const double sl  = sl_star[direction];
-      const double ll  = ll_star[direction];
-      const double bed = bed_star[direction];
-
-      const double water_level_n = gc.water_level(sl, bed, ll);
-      water_level = std::max(water_level, water_level_n);
-    }
+    const double water_level = gc.water_level(sea_level(i, j), bed_topography(i, j), lake_level(i, j));
 
     // Note: this condition has to match the one in step 1 above.
     if (bc_mask.as_int(i, j) == 0 and

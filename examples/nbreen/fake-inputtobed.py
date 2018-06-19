@@ -8,7 +8,7 @@ from sys import exit
 try:
     import netCDF4 as NC
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 inname = "pismnbreen.nc"

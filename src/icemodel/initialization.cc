@@ -196,8 +196,8 @@ void IceModel::model_state_setup() {
   // too.
   enforce_consistency_of_geometry(REMOVE_ICEBERGS);
 
-  // By now ice geometry is set and so we can initialize the ocean model, which may need
-  // geometric information (ice thickness, bed elevation, cell type) to bootstrap.
+  // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
+  // which may need ice thickness, bed topography, and the cell type mask.
   {
     m_ocean->init(m_geometry);
   }
@@ -428,24 +428,20 @@ void IceModel::initialize_2d() {
 //! Manage regridding based on user options.
 void IceModel::regrid() {
 
-  options::String regrid_filename("-regrid_file", "Specifies the file to regrid from");
-
-  options::StringSet regrid_vars("-regrid_vars",
-                                 "Specifies the list of variables to regrid",
-                                 "");
-
+  auto filename    = m_config->get_string("input.regrid.file");
+  auto regrid_vars = set_split(m_config->get_string("input.regrid.vars"), ',');
 
   // Return if no regridding is requested:
-  if (not regrid_filename.is_set()) {
+  if (filename.empty()) {
      return;
   }
 
-  m_log->message(2, "regridding from file %s ...\n",regrid_filename->c_str());
+  m_log->message(2, "regridding from file %s ...\n", filename.c_str());
 
   {
-    PIO regrid_file(m_grid->com, "guess_mode", regrid_filename, PISM_READONLY);
+    PIO regrid_file(m_grid->com, "guess_mode", filename, PISM_READONLY);
     for (auto v : m_model_state) {
-      if (regrid_vars->find(v->get_name()) != regrid_vars->end()) {
+      if (regrid_vars.find(v->get_name()) != regrid_vars.end()) {
         v->regrid(regrid_file, CRITICAL);
       }
     }

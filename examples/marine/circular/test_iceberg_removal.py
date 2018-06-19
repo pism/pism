@@ -38,8 +38,8 @@ else:
     rad = C
 
 # bedrock and ice thickness
-for j in xrange(options.My):
-    for i in xrange(options.Mx):
+for j in range(options.My):
+    for i in range(options.Mx):
         radius = rad(x[i], y[j])
 
         # grounded
@@ -60,8 +60,8 @@ for j in xrange(options.My):
 thk[thk > p.H0] = p.H0
 
 # set values and locations of Dirichlet boundary conditions
-for j in xrange(options.My):
-    for i in xrange(options.Mx):
+for j in range(options.My):
+    for i in range(options.Mx):
         radius = rad(x[i], y[j])
         width = dx * 3
 
@@ -88,4 +88,4 @@ variables = {"thk": thk,
 piktests_utils.write_data(ncfile, variables)
 ncfile.close()
 
-print "Successfully created %s" % options.output_filename
+print("Successfully created %s" % options.output_filename)

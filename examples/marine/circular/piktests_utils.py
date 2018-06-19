@@ -47,7 +47,7 @@ def create_grid(options):
     L = options.domain_size
     dx = L / (options.Mx - 1) * 1000.0  # meters
     dy = L / (options.My - 1) * 1000.0  # meters
-    print "dx = %.2f km, dy = %.2f km" % (dx / 1000.0, dy / 1000.0)
+    print("dx = %.2f km, dy = %.2f km" % (dx / 1000.0, dy / 1000.0))
     x = np.linspace(-L / 2 * 1000.0, L / 2 * 1000.0, options.Mx)
     y = np.linspace(-L / 2 * 1000.0, L / 2 * 1000.0, options.My)
 
@@ -99,5 +99,5 @@ def prepare_output_file(nc, x, y, include_vel_bc=True):
 
 
 def write_data(nc, variables):
-    for name in variables.keys():
+    for name in list(variables.keys()):
         nc.write(name, variables[name])

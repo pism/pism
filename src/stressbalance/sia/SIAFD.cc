@@ -741,6 +741,14 @@ void SIAFD::compute_diffusivity(bool full_update,
   } // o-loop
 
   m_D_max = GlobalMax(m_grid->com, D_max);
+
+  if (m_D_max > m_config->get_double("stress_balance.sia.max_diffusivity")) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Maximum diffusivity of SIA flow (%f m2/s) is too high.\n"
+                                  "This probably means that the bed elevation or the ice thickness is "
+                                  "too rough.\n"
+                                  "Increase stress_balance.sia.max_diffusivity to suppress this message.", m_D_max);
+  }
 }
 
 void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,

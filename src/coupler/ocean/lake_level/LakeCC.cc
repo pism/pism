@@ -134,13 +134,13 @@ void LakeCC::init_impl(const Geometry &geometry) {
 
 void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
 
-  bool init = false;
   const IceModelVec2S *bed, *thk, *sl;
   IceModelVec2S tmp;
+
   if (geometry.bed_elevation.state_counter() < m_grid->ctx()->size()) {
-    //Fake sea level timestep -> geometry.bed_elevation not available yet.
+    //Fake sea level timestep -> geometry.bed_elevation and
+    //geometry.sea_level_elevation not available yet.
     //Try to get it from somewhere else
-    init = true;
 
     tmp.create(m_grid, "topg", WITHOUT_GHOSTS);
     tmp.set_attrs("model_state", "bedrock surface elevation",
@@ -154,16 +154,12 @@ void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
                     m_config->get_double("bootstrapping.defaults.bed"));
     }
     bed = &tmp;
-  } else {
-    bed = &(geometry.bed_elevation);
-  }
-  thk = &(geometry.ice_thickness);
-
-  if (geometry.sea_level_elevation.state_counter() < m_grid->ctx()->size()) {
     sl = m_grid->variables().get_2d_scalar("sea_level");
   } else {
+    bed = &(geometry.bed_elevation);
     sl = &(geometry.sea_level_elevation);
   }
+  thk = &(geometry.ice_thickness);
 
   do_lake_update(*bed, *thk, *sl);
 

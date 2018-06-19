@@ -25,7 +25,7 @@ basic ways to input and output NetCDF files when starting and ending PISM runs.
      - Bootstrap from the file set using :opt:`-i` using heuristics to "fill in" missing
        fields. See section :ref:`sec-initboot`.
 
-   * - :opt:`-dontreadSSAvels`
+   * - :opt:`-ssa_read_initial_guess false`
      - Turns off reading the ``ubar_ssa`` and ``vbar_ssa`` velocities saved by a previous
        run using the ``ssa`` or ``ssa+sia`` stress balance (see section
        :ref:`sec-stressbalance`).

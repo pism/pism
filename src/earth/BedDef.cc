@@ -115,6 +115,9 @@ void BedDef::update(const IceModelVec2S &ice_thickness,
 //! Initialize from the context (input file and the "variables" database).
 void BedDef::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
                        const IceModelVec2S &sea_level_elevation) {
+  (void) ice_thickness;
+  (void) sea_level_elevation;
+
   m_t_beddef_last = m_grid->ctx()->time()->start();
 
   switch (opts.type) {

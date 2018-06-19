@@ -29,7 +29,11 @@
 #include "RegionalDefaultYieldStress.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism/coupler/OceanModel.hh"
+#include "pism/coupler/SurfaceModel.hh"
 #include "EnthalpyModel_Regional.hh"
+#include "pism/energy/CHSystem.hh"
+#include "pism/energy/BedThermalUnit.hh"
+#include "pism/energy/utilities.hh"
 
 namespace pism {
 
@@ -59,6 +63,10 @@ static void set_no_model_strip(const IceGrid &grid, double width, IceModelVec2In
 IceRegionalModel::IceRegionalModel(IceGrid::Ptr g, Context::Ptr c)
   : IceModel(g, c) {
   // empty
+
+  if (m_config->get_boolean("energy.ch_warming.enabled")) {
+    m_ch_warming_flux.reset(new IceModelVec3(m_grid, "ch_warming_flux", WITHOUT_GHOSTS));
+  }
 }
 
 
@@ -121,6 +129,46 @@ void IceRegionalModel::model_state_setup() {
       m_thk_stored.copy_from(m_geometry.ice_thickness);
     }
   }
+
+  if (m_ch_system) {
+    const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
+
+    std::unique_ptr<PIO> input_file;
+
+    if (use_input_file) {
+      input_file.reset(new PIO(m_grid->com, "guess_mode", input.filename, PISM_READONLY));
+    }
+
+    switch (input.type) {
+    case INIT_RESTART:
+      {
+        m_ch_system->restart(*input_file, input.record);
+        break;
+      }
+    case INIT_BOOTSTRAP:
+      {
+
+        m_ch_system->bootstrap(*input_file,
+                               m_geometry.ice_thickness,
+                               m_surface->temperature(),
+                               m_surface->mass_flux(),
+                               m_btu->flux_through_top_surface());
+        break;
+      }
+    case INIT_OTHER:
+    default:
+      {
+        m_basal_melt_rate.set(m_config->get_double("bootstrapping.defaults.bmelt"));
+
+        m_ch_system->initialize(m_basal_melt_rate,
+                                m_geometry.ice_thickness,
+                                m_surface->temperature(),
+                                m_surface->mass_flux(),
+                                m_btu->flux_through_top_surface());
+
+      }
+    }
+  }
 }
 
 void IceRegionalModel::allocate_geometry_evolution() {
@@ -155,6 +203,15 @@ void IceRegionalModel::allocate_energy_model() {
   }
 
   m_submodels["energy balance model"] = m_energy_model;
+
+  if (m_config->get_boolean("energy.ch_warming.enabled") and
+      not m_ch_system) {
+
+    m_log->message(2, "# Allocating the cryo-hydrologic warming model...\n");
+
+    m_ch_system.reset(new energy::CHSystem(m_grid, m_stress_balance.get()));
+    m_submodels["cryo-hydrologic warming"] = m_ch_system.get();
+  }
 }
 
 void IceRegionalModel::allocate_stressbalance() {
@@ -249,6 +306,39 @@ energy::Inputs IceRegionalModel::energy_model_inputs() {
   return result;
 }
 
+void IceRegionalModel::energy_step() {
+
+  if (m_ch_system) {
+    bedrock_thermal_model_step();
+
+    energy::Inputs inputs = energy_model_inputs();
+    const IceModelVec3 *strain_heating = inputs.volumetric_heating_rate;
+    inputs.volumetric_heating_rate = m_ch_warming_flux.get();
+
+    energy::cryo_hydrologic_warming_flux(m_config->get_double("constants.ice.thermal_conductivity"),
+                                         m_config->get_double("energy.ch_warming.average_channel_spacing"),
+                                         m_geometry.ice_thickness,
+                                         m_energy_model->enthalpy(),
+                                         m_ch_system->enthalpy(),
+                                         *m_ch_warming_flux);
+
+    // Convert to the loss of energy by the CH system:
+    m_ch_warming_flux->scale(-1.0);
+
+    m_ch_system->update(t_TempAge, dt_TempAge, inputs);
+
+    // Add CH warming flux to the strain heating term:
+    m_ch_warming_flux->scale(-1.0);
+    m_ch_warming_flux->add(1.0, *strain_heating);
+
+    m_energy_model->update(t_TempAge, dt_TempAge, inputs);
+
+    m_stdout_flags = m_energy_model->stdout_flags() + m_stdout_flags;
+  } else {
+    IceModel::energy_step();
+  }
+}
+
 YieldStressInputs IceRegionalModel::yield_stress_inputs() {
   YieldStressInputs result = IceModel::yield_stress_inputs();
 
@@ -256,5 +346,103 @@ YieldStressInputs IceRegionalModel::yield_stress_inputs() {
 
   return result;
 }
+
+const energy::CHSystem* IceRegionalModel::cryo_hydrologic_system() const {
+  return m_ch_system.get();
+}
+
+/*! @brief Report temperature of the cryo-hydrologic system */
+class CHTemperature : public Diag<IceRegionalModel>
+{
+public:
+  CHTemperature(const IceRegionalModel *m)
+    : Diag<IceRegionalModel>(m) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "ch_temp", m_grid->z())};
+
+    set_attrs("temperature of the cryo-hydrologic system", "",
+              "Kelvin", "Kelvin", 0);
+  }
+
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "ch_temp", WITHOUT_GHOSTS));
+
+    energy::compute_temperature(model->cryo_hydrologic_system()->enthalpy(),
+                                model->geometry().ice_thickness,
+                                *result);
+    result->metadata(0) = m_vars[0];
+
+    return result;
+  }
+};
+
+/*! @brief Report liquid water fraction in the cryo-hydrologic system */
+class CHLiquidWaterFraction : public Diag<IceRegionalModel>
+{
+public:
+  CHLiquidWaterFraction(const IceRegionalModel *m)
+    : Diag<IceRegionalModel>(m) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "ch_liqfrac", m_grid->z())};
+
+    set_attrs("liquid water fraction in the cryo-hydrologic system", "",
+              "1", "1", 0);
+  }
+
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "ch_liqfrac", WITHOUT_GHOSTS));
+
+    energy::compute_liquid_water_fraction(model->cryo_hydrologic_system()->enthalpy(),
+                                          model->geometry().ice_thickness,
+                                          *result);
+    result->metadata(0) = m_vars[0];
+    return result;
+  }
+};
+
+
+/*! @brief Report rate of cryo-hydrologic warming */
+class CHHeatFlux : public Diag<IceRegionalModel>
+{
+public:
+  CHHeatFlux(const IceRegionalModel *m)
+    : Diag<IceRegionalModel>(m) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "ch_heat_flux", m_grid->z())};
+
+    set_attrs("rate of cryo-hydrologic warming", "",
+              "W m-3", "W m-3", 0);
+  }
+
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "ch_heat_flux", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+
+    energy::cryo_hydrologic_warming_flux(m_config->get_double("constants.ice.thermal_conductivity"),
+                                         m_config->get_double("energy.ch_warming.average_channel_spacing"),
+                                         model->geometry().ice_thickness,
+                                         model->energy_balance_model()->enthalpy(),
+                                         model->cryo_hydrologic_system()->enthalpy(),
+                                         *result);
+    return result;
+  }
+};
+
+void IceRegionalModel::init_diagnostics() {
+  IceModel::init_diagnostics();
+
+  if (m_ch_system) {
+    m_diagnostics["ch_temp"]      = Diagnostic::Ptr(new CHTemperature(this));
+    m_diagnostics["ch_liqfrac"]   = Diagnostic::Ptr(new CHLiquidWaterFraction(this));
+    m_diagnostics["ch_heat_flux"] = Diagnostic::Ptr(new CHHeatFlux(this));
+  }
+}
+
 
 } // end of namespace pism

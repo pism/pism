@@ -42,8 +42,8 @@ include (CorrectWindowsPaths)
 
 macro (RESOLVE_LIBRARIES LIBS LINK_LINE)
   string (REGEX MATCHALL "((-L|-l|-Wl)([^\" ]+|\"[^\"]+\")|[^\" ]+\\.(a|so|dll|lib))" _all_tokens "${LINK_LINE}")
-  set (_libs_found)
-  set (_directory_list)
+  set (_libs_found "")
+  set (_directory_list "")
   foreach (token ${_all_tokens})
     if (token MATCHES "-L([^\" ]+|\"[^\"]+\")")
       # If it's a library path, add it to the list
@@ -58,7 +58,7 @@ macro (RESOLVE_LIBRARIES LIBS LINK_LINE)
       else (WIN32)
         string (REGEX REPLACE "^-l" "" token ${token})
       endif (WIN32)
-      set (_root)
+      set (_root "")
       if (token MATCHES "^/")	# We have an absolute path
         #separate into a path and a library name:
         string (REGEX MATCH "[^/]*\\.(a|so|dll|lib)$" libname ${token})
@@ -89,7 +89,7 @@ endmacro (RESOLVE_LIBRARIES)
 
 macro (RESOLVE_INCLUDES INCS COMPILE_LINE)
   string (REGEX MATCHALL "-I([^\" ]+|\"[^\"]+\")" _all_tokens "${COMPILE_LINE}")
-  set (_incs_found)
+  set (_incs_found "")
   foreach (token ${_all_tokens})
     string (REGEX REPLACE "^-I" "" token ${token})
     string (REGEX REPLACE "//" "/" token ${token})

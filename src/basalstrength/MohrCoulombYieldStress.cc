@@ -35,8 +35,8 @@
 
 namespace pism {
 
-//! \file PISMMohrCoulombYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
-/*! \file PISMMohrCoulombYieldStress.cc
+//! \file MohrCoulombYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
+/*! \file MohrCoulombYieldStress.cc
 The output variable of this submodel is `tauc`, the pseudo-plastic yield stress
 field that is used in the ShallowStressBalance objects.  This quantity is
 computed by the Mohr-Coulomb criterion [\ref SchoofTill], but using an empirical
@@ -264,9 +264,6 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
     m_bwat.copy_from(*inputs.subglacial_water_thickness);
   }
 
-  // Prepare to loop over neighbors: directions
-  const Direction dirs[] = {North, East, South, West};
-
   const IceModelVec2CellType &mask           = inputs.geometry->cell_type;
   const IceModelVec2S        &bed_topography = inputs.geometry->bed_elevation;
   const IceModelVec2S        &sea_level      = inputs.geometry->sea_level_elevation;
@@ -290,35 +287,17 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
     } else { // grounded and there is some ice
       // user can ask that marine grounding lines get special treatment
       double water = W_till(i,j); // usual case
-      double max_water_level;
-
-      if (slippery_grounding_lines) {
-        //Determine neighboring cell with highest water level
-        StarStencil<double> sl_star = sea_level.star(i, j);
-        StarStencil<double> ll_star = lake_level.star(i, j);
-        const double bed = bed_topography(i, j);
-        max_water_level = gc.water_level(sl_star.ij, bed, ll_star.ij);
-
-        for (int n = 0; n < 4; ++n) {
-          const Direction direction = dirs[n];
-          const double sl = sl_star[direction];
-          const double ll = ll_star[direction];
-          const double water_level = gc.water_level(sl, bed, ll);
-          max_water_level = std::max(water_level, max_water_level);
-        }
-      } else {
-        max_water_level = sea_level(i, j);
-      }
+      const double water_level = gc.water_level(sea_level(i, j), bed_topography(i, j), lake_level(i, j));
 
       if (slippery_grounding_lines and
-          bed_topography(i,j) <= max_water_level and
+          bed_topography(i,j) < water_level and
           (mask.next_to_floating_ice(i,j) or mask.next_to_ice_free_ocean(i,j))) {
         water = W_till_max;
       } else if (add_transportable_water) {
         water = W_till(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);
       }
       double
-        s    = water / W_till_max,
+        s = water / W_till_max,
         P_overburden = ice_density * standard_gravity * ice_thickness(i, j),
         Ntill = N0 * pow(delta * P_overburden / N0, s) * pow(10.0, e0overCc * (1.0 - s));
       Ntill = std::min(P_overburden, Ntill);

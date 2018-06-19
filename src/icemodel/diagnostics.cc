@@ -287,7 +287,7 @@ CTS::CTS(const IceModel *m)
   m_vars = {SpatialVariableMetadata(m_sys, "cts", m_grid->z())};
 
   set_attrs("cts = E/E_s(p), so cold-temperate transition surface is at cts = 1", "",
-            "", "", 0);
+            "1", "1", 0);
 }
 
 IceModelVec::Ptr CTS::compute_impl() const {
@@ -2678,8 +2678,8 @@ double IceModel::ice_volume(double thickness_threshold) const {
 
 double IceModel::ice_volume_not_displacing_seawater(double thickness_threshold) const {
   const double
-    sea_water_density = m_config->get_double("constants.sea_water.density"),
-    ice_density       = m_config->get_double("constants.ice.density");
+    sea_water_density   = m_config->get_double("constants.sea_water.density"),
+    ice_density         = m_config->get_double("constants.ice.density");
 
   GeometryCalculator gc(*m_config);
 
@@ -2693,14 +2693,15 @@ double IceModel::ice_volume_not_displacing_seawater(double thickness_threshold) 
     const int i = p.i(), j = p.j();
 
     const double
-      bed        = m_geometry.bed_elevation(i, j),
-      thickness  = m_geometry.ice_thickness(i, j),
-      sea_level  = m_geometry.sea_level_elevation(i, j),
-      lake_level = m_geometry.lake_level_elevation(i, j);
+      bed         = m_geometry.bed_elevation(i, j),
+      thickness   = m_geometry.ice_thickness(i, j),
+      sea_level   = m_geometry.sea_level_elevation(i, j),
+      lake_level  = m_geometry.lake_level_elevation(i, j),
+      water_level = gc.valid_sea_level(sea_level, bed);
 
     if (m_geometry.cell_type.grounded(i, j) and thickness > thickness_threshold) {
       const double cell_ice_volume = thickness * m_geometry.cell_area(i,j);
-      if (bed > sea_level) {
+      if ((bed >= water_level) or gc.islake(lake_level)) {
         volume += cell_ice_volume;
       } else {
         const double max_floating_volume = (sea_level - bed) * m_geometry.cell_area(i,j) * (sea_water_density / ice_density);

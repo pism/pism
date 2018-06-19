@@ -48,7 +48,7 @@ public:
   const IceModelVec2S *surface_temp;
   const IceModelVec2S *till_water_thickness;
 
-  const IceModelVec3 *strain_heating3;
+  const IceModelVec3 *volumetric_heating_rate;
   const IceModelVec3 *u3;
   const IceModelVec3 *v3;
   const IceModelVec3 *w3;
@@ -146,6 +146,11 @@ private:
   std::string m_stdout_flags;
   stressbalance::StressBalance *m_stress_balance;
 };
+
+/*!
+ * Return true if the grid point (i,j) is near the margin of the ice.
+ */
+bool marginal(const IceModelVec2S &thickness, int i, int j, double threshold);
 
 } // end of namespace energy
 } // end of namespace pism

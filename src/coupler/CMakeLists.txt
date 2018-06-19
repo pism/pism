@@ -38,6 +38,10 @@ add_library (boundary OBJECT
   ./ocean/lake_level/LakeLevel_ConnectedComponents.cc
   ./ocean/lake_level/Gradual.cc
   ./ocean/lake_level/Patch.cc
+  ./ocean/lake_level/ExpandLakeMargins.cc
+  ./ocean/Pico.cc
+  ./ocean/PicoPhysics.cc
+  ./ocean/PicoGeometry.cc
   ./ocean/sea_level/Initialization.cc
   ./ocean/sea_level/SeaLevel.cc
   ./ocean/sea_level/SeaLevel_ConnectedComponents.cc
