@@ -221,7 +221,7 @@ void MohrCoulombYieldStress::init_impl() {
       m_target_usurf.copy_from(m_usurf); 
     }
 
-    dt_phi_inv = units::convert(m_sys,m_config->get_double("basal_yield_stress.mohr_coulomb.iterative_phi.dt"),"years","seconds");
+    dt_phi_inv = m_config->get_double("basal_yield_stress.mohr_coulomb.iterative_phi.dt","seconds");
 
     double start_time = m_grid->ctx()->time()->start();
     m_last_time = start_time,

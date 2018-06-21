@@ -66,6 +66,14 @@
    \providecommand{\bmin}{b_{\mathrm{min}}}
    \providecommand{\bmax}{b_{\mathrm{max}}}
 
+   \providecommand{\phiminup}{\phi_{\mathrm{min}\_\mathrm{up}}}
+   \providecommand{\dphiup}{\delta\phi_{\mathrm{up}}}
+   \providecommand{\dphidown}{\delta\phi_{\mathrm{down}}}
+   \providecommand{\dtinv}{\Delta T_{\mathrm{inv}}}
+   \providecommand{\dhinv}{\Delta h_{\mathrm{inv}}}
+   \providecommand{\dhdtconv}{{\delta ht}_{\mathrm{conv}}}
+
+
    % hydrology
    \providecommand{\bq}{\mathbf{q}}
 
