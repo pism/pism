@@ -32,7 +32,6 @@
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
-//#include "pism/util/pism_options.hh"
 
 #include "pism/util/Time.hh"
 
@@ -578,17 +577,9 @@ void SIAFD::compute_diffusivity(bool full_update,
   const bool use_age = compute_grain_size_using_age or e_age_coupling;
 
   // Introduces upper bound for maximum diffusivity which determines maximum timestep
-  // Caution: May violate conservation laws
+  // Caution: May violate conservation laws?
   const double m_D_max_opt = m_config->get_double("stress_balance.sia.max_diffusivity");
   const bool D_max_from_option_set = m_config->get_boolean("stress_balance.sia.bound_by_max_diffusivity");
-
-  //const double D_max_from_option = m_config->get_double("D_max_from_option");
-  //bool D_max_from_option_set;
-  //options::Real y("-D_max_from_option", "Upper limit for SIA diffusivity", m_config->get_double("D_max_from_option"));
-  //if (D_max_from_option_set) {
-  //  m_log->message(2,"!!!! Dmax_diffuse set: %.2f\n",D_max_from_option);
-  //}
-
 
   // get "theta" from Schoof (2003) bed smoothness calculation and the
   // thickness relative to the smoothed bed; each IceModelVec2S involved must
@@ -776,7 +767,6 @@ void SIAFD::compute_diffusivity(bool full_update,
                      "This probably means that the bed elevation or the ice thickness is too rough.\n"
                      "SIA diffusivity is bounded by maximum value %.2f\n",
                      m_D_max_opt);
-    //m_D_max = m_D_max_opt;
   }
 }
 
