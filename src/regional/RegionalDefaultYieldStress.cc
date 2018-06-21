@@ -42,9 +42,9 @@ void RegionalDefaultYieldStress::init_impl() {
                  "  using the regional version with strong till in no_model_mask area...\n");
 }
 
-void RegionalDefaultYieldStress::update_impl(const YieldStressInputs &inputs) {
+void RegionalDefaultYieldStress::update_impl(const YieldStressInputs &inputs, double t, double dt) {
 
-  MohrCoulombYieldStress::update_impl(inputs);
+  MohrCoulombYieldStress::update_impl(inputs, t, dt);
 
   const IceModelVec2Int &nmm = *inputs.no_model_mask;
 

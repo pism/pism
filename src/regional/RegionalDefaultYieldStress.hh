@@ -30,7 +30,7 @@ public:
   virtual ~RegionalDefaultYieldStress();
 protected:
   virtual void init_impl();
-  virtual void update_impl(const YieldStressInputs &inputs);
+  virtual void update_impl(const YieldStressInputs &inputs, double t, double dt);
 };
 
 } // end of namespace pism

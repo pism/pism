@@ -325,7 +325,7 @@ that is, the water amount is the sum @f$ W+W_{till} @f$.  This only works
 if @f$ W @f$ is present, that is, if `hydrology` points to a
 hydrology::Routing (or derived class thereof).
  */
-void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
+void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs, double t, double dt) {
 
   bool slippery_grounding_lines = m_config->get_boolean("basal_yield_stress.slippery_grounding_lines"),
        add_transportable_water  = m_config->get_boolean("basal_yield_stress.add_transportable_water");
@@ -353,10 +353,10 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
   // simple inversion method for till friction angle ////////////////////////////////////////////
   if (m_iterative_phi) {
 
-    double t_current = m_grid->ctx()->time()->current();
+    //double t_current = m_grid->ctx()->time()->current();
 
-    double dt_years = t_current - m_last_time,
-           dt_inverse = t_current - m_last_inverse_time;
+    double dt_years = t - m_last_time,
+           dt_inverse = t - m_last_inverse_time;
 
     if (dt_inverse > dt_phi_inv) {
 
@@ -364,9 +364,9 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
                          inputs.geometry->bed_elevation,
                          inputs.geometry->cell_type);
 
-      m_last_inverse_time = t_current;
+      m_last_inverse_time = t;
     }
-    m_last_time = t_current;
+    m_last_time = t;
   }
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -441,9 +441,9 @@ void MohrCoulombYieldStress::topg_to_phi(const IceModelVec2S &bed_topography) {
 
   m_log->message(2,
                  "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
-                 "            /  %5.2f                                 for   topg < %.f\n"
+                 "            /  %5.2f                                         for   topg < %.f\n"
                  "      phi = |  %5.2f + (topg - (%.f)) * (%.2f / %.f)   for   %.f < topg < %.f\n"
-                 "            \\  %5.2f                                 for   %.f < topg\n",
+                 "            \\  %5.2f                                        for   %.f < topg\n",
                  phi_min, topg_min,
                  phi_min, topg_min, phi_max - phi_min, topg_max - topg_min, topg_min, topg_max,
                  phi_max, topg_max);
@@ -550,9 +550,9 @@ void MohrCoulombYieldStress::iterative_phi_step(const IceModelVec2S &ice_surface
 
   m_log->message(2,
                  "  lower bound of till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
-                 "             /  %5.2f                                 for   topg < %.f\n"
+                 "             /  %5.2f                                         for   topg < %.f\n"
                  "   phi_min = |  %5.2f + (topg - (%.f)) * (%.2f / %.f)   for   %.f < topg < %.f\n"
-                 "              \\  %5.2f                                 for   %.f < topg\n",
+                 "             \\  %5.2f                                        for   %.f < topg\n",
                  phi_min, topg_min,
                  phi_min, topg_min, phi_minup - phi_min, topg_max - topg_min, topg_min, topg_max,
                  phi_minup, topg_max);

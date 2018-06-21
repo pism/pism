@@ -48,10 +48,10 @@ public:
 
   void init();
   const IceModelVec2S& basal_material_yield_stress();
-  void update(const YieldStressInputs &inputs);
+  void update(const YieldStressInputs &inputs, double t, double dt);
 protected:
   virtual void init_impl() = 0;
-  virtual void update_impl(const YieldStressInputs &inputs) = 0;
+  virtual void update_impl(const YieldStressInputs &inputs, double t, double dt) = 0;
 
   DiagnosticList diagnostics_impl() const;
 

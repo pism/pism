@@ -70,7 +70,7 @@ void ConstantYieldStress::write_model_state_impl(const PIO &output) const {
   m_basal_yield_stress.write(output);
 }
 
-void ConstantYieldStress::update_impl(const YieldStressInputs &inputs) {
+void ConstantYieldStress::update_impl(const YieldStressInputs &inputs, double t, double dt) {
   (void) inputs;
   // empty
 }

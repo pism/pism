@@ -480,7 +480,7 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (updateAtDepth and m_basal_yield_stress_model) {
     profiling.begin("basal_yield_stress");
-    m_basal_yield_stress_model->update(yield_stress_inputs());
+    m_basal_yield_stress_model->update(yield_stress_inputs(),current_time,m_dt);
     profiling.end("basal_yield_stress");
     m_basal_yield_stress.copy_from(m_basal_yield_stress_model->basal_material_yield_stress());
     m_stdout_flags += "y";

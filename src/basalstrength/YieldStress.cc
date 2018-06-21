@@ -48,8 +48,8 @@ void YieldStress::init() {
   this->init_impl();
 }
 
-void YieldStress::update(const YieldStressInputs &inputs) {
-  this->update_impl(inputs);
+void YieldStress::update(const YieldStressInputs &inputs, double t, double dt) {
+  this->update_impl(inputs, t, dt);
 }
 
 const IceModelVec2S& YieldStress::basal_material_yield_stress() {

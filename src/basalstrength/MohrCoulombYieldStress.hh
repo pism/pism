@@ -48,7 +48,7 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
 
   virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(const YieldStressInputs &inputs);
+  virtual void update_impl(const YieldStressInputs &inputs, double t, double dt);
 
   void topg_to_phi(const IceModelVec2S &bed_topography);
   void tauc_to_phi(const IceModelVec2CellType &mask);
