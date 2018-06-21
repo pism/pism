@@ -30,6 +30,12 @@
       \newcommand{\bq}{\mathbf{q}}
       \newcommand{\Up}[2]{\operatorname{Up}\left(#1\big|#2\right)}
       \newcommand{\uppair}[2]{\left\{\begin{matrix} #1 \\ #2 \end{matrix}\right\}}
+      \newcommand{\phiminup}{\phi_{\mathrm{min}\_\mathrm{up}}}
+      \newcommand{\dphiup}{\delta\phi_{\mathrm{up}}}
+      \newcommand{\dphidown}{\delta\phi_{\mathrm{down}}}
+      \newcommand{\dtinv}{\Delta T_{\mathrm{inv}}}
+      \newcommand{\dhinv}{\Delta h_{\mathrm{inv}}}
+      \newcommand{\dhdtconv}{{\delta ht}_{\mathrm{conv}}}
 
 .. raw:: latex
 

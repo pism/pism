@@ -81,15 +81,14 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
   // Pollard et al. (2012), TC 6(5), "A simple inverse method for the distribution of basal
   // sliding coefficients under ice sheets, applied to Antarctica"
 
-  bool iterative_phi = options::Bool("-iterative_phi",
-                                   "Turn on the iterative till friction angle computation"
-                                   " which uses target surface elevation");
-  if (iterative_phi) {
+  m_iterative_phi = m_config->get_boolean("basal_yield_stress.mohr_coulomb.iterative_phi.enabled");
+
+  if (m_iterative_phi) {
 
     m_usurf.create(m_grid, "usurf",
               WITH_GHOSTS);
     m_usurf.set_attrs("internal",
-                 "external surface elevation",
+                 "surface elevation",
                  "m", "surface_altitude");
 
     m_target_usurf.create(m_grid, "target_usurf",
@@ -110,7 +109,7 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
     m_diff_mask.set_attrs("internal",
                  "mask for till phi iteration",
                  "", "");
-  } else{
+  } else {
     m_till_phi.set_time_independent(true);
   }
 
@@ -171,24 +170,6 @@ void MohrCoulombYieldStress::init_impl() {
 
   const double till_phi_default = m_config->get_double("basal_yield_stress.mohr_coulomb.till_phi_default");
 
-  //Optimization scheme for till friction angle anlogous to Pollard et al. (2012) /////////
-  options::String iterative_phi_file("-iterative_phi",
-                                   "Turn on the iterative till friction angle computation"
-                                   " which uses target surface elevation from file",
-                                   "", options::ALLOW_EMPTY);
-
-  m_iterative_phi = iterative_phi_file.is_set();
-
-  if (m_iterative_phi) {
-      m_log->message(2, "* Initializing the iterative till friction angle optimization...\n");
-      //FIXME: is there a better workaroud to read target surface elevation from external file?!
-      //m_usurf.regrid(iterative_phi_file, OPTIONAL,0.0);
-      m_usurf.regrid(iterative_phi_file, CRITICAL);
-      m_target_usurf.copy_from(m_usurf);
-  } else {
-    m_log->message(2, "* No file set to read target surface elevation from...\n");
-  }
-
   if (m_config->get_boolean("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled")) {
 
     m_log->message(2, "  creating till friction angle map from bed elevation...\n");
@@ -214,6 +195,41 @@ void MohrCoulombYieldStress::init_impl() {
     m_till_phi.regrid(opts.filename, OPTIONAL, till_phi_default);
   } else {
     m_till_phi.set(till_phi_default);
+  }
+
+    //Optimization scheme for till friction angle anlogous to Pollard et al. (2012) /////////
+  m_iterative_phi = m_config->get_boolean("basal_yield_stress.mohr_coulomb.iterative_phi.enabled");
+  options::String iterative_phi_file("-iterative_phi_file",
+                                   "Turn on the iterative till friction angle computation"
+                                   " which uses target surface elevation from file",
+                                   "", options::ALLOW_EMPTY);
+
+  if (iterative_phi_file.is_set()) {
+    if (not iterative_phi_file->empty()) {
+
+      m_log->message(2, "* Initializing the iterative till friction angle optimization...\n");
+
+      //FIXME: is there a better workaroud to read target surface elevation from external file?!
+      m_usurf.regrid(iterative_phi_file, CRITICAL);
+      m_target_usurf.copy_from(m_usurf);
+      m_log->message(2, "* Read target surface elevation...\n");
+
+    } else {
+
+      m_log->message(2, "* No file set to read target surface elevation from... take 's'\n",opts.filename.c_str());
+      m_usurf.regrid(opts.filename, CRITICAL);
+      m_target_usurf.copy_from(m_usurf); 
+    }
+
+    dt_phi_inv = units::convert(m_sys,m_config->get_double("basal_yield_stress.mohr_coulomb.iterative_phi.dt"),"years","seconds");
+
+    double start_time = m_grid->ctx()->time()->start();
+    m_last_time = start_time,
+    m_last_inverse_time = start_time;
+
+    iterative_phi_step(*m_grid->variables().get_2d_scalar("surface_altitude"),
+                       *m_grid->variables().get_2d_scalar("bedrock_altitude"),
+                       *m_grid->variables().get_2d_cell_type("mask"));
   }
 
   // regrid if requested, regardless of how initialized
@@ -337,31 +353,20 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
   // simple inversion method for till friction angle ////////////////////////////////////////////
   if (m_iterative_phi) {
 
-    double year = units::convert(m_sys, m_grid->ctx()->time()->current(), "seconds", "years");
-    bool initstep = ((units::convert(m_sys, m_grid->ctx()->time()->start(), "seconds", "years") - year) == 0.0);
+    double t_current = m_grid->ctx()->time()->current();
 
-    if (initstep) {
-      m_last_time = year,
-      m_last_inverse_time = year;
-    }
+    double dt_years = t_current - m_last_time,
+           dt_inverse = t_current - m_last_inverse_time;
 
-    double dt_years = year - m_last_time,
-           dt_inverse = year - m_last_inverse_time;
-
-    double tinv     = 500.0; // yr
-    tinv = options::Real("-tphi_inverse", "time step for phi inversion",tinv);
-
-    bool inverse_step = ( (dt_inverse > tinv) || initstep );
-
-    if (inverse_step) {
+    if (dt_inverse > dt_phi_inv) {
 
       iterative_phi_step(inputs.geometry->ice_surface_elevation,
                          inputs.geometry->bed_elevation,
                          inputs.geometry->cell_type);
 
-      m_last_inverse_time = year;
+      m_last_inverse_time = t_current;
     }
-    m_last_time = year;
+    m_last_time = t_current;
   }
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -518,6 +523,11 @@ void MohrCoulombYieldStress::iterative_phi_step(const IceModelVec2S &ice_surface
                                                 const IceModelVec2S &bed_topography,
                                                 const IceModelVec2CellType &mask) {
 
+  if (not m_config->get_boolean("basal_yield_stress.mohr_coulomb.iterative_phi.enabled")) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "basal_yield_stress.mohr_coulomb.iterative_phi.enabled is not set");
+  }
+
   m_log->message(2,"\n* Perform iterative step for optimization of till friction angle phi!\n\n");
 
   const IceModelVec2S &usurf = ice_surface_elevation;
@@ -526,56 +536,65 @@ void MohrCoulombYieldStress::iterative_phi_step(const IceModelVec2S &ice_surface
 
   m_diff_mask.set(1.0);
 
-  //FIXME: Use configuration flags pism_config:basal_yield_stress.mohr_coulomb.till_phi...
-  //or at least RealList from option as in topg_to_phi
-  double   tinv     = 500.0, // yr
-           hinv     = 500.0, // m
-           phimin   = 1.0,
-           phiminup = 5.0,
-           phihmin  = -300.0, // m
-           phihmax  = 700.0, // m
-           phimax   = 60.0,
-           dphi     = 1.0,
-           phimod   = 0.01; // m/yr
+  const double
+        h_inv = m_config->get_double("basal_yield_stress.mohr_coulomb.iterative_phi.h_inv"),
+    dhdt_conv = m_config->get_double("basal_yield_stress.mohr_coulomb.iterative_phi.dh_conv"),
+         dphi = m_config->get_double("basal_yield_stress.mohr_coulomb.iterative_phi.dphi"),
+      phi_min = m_config->get_double("basal_yield_stress.mohr_coulomb.iterative_phi.phi_min"),
+    phi_minup = m_config->get_double("basal_yield_stress.mohr_coulomb.iterative_phi.phi_minup"),
+     phi_max  = m_config->get_double("basal_yield_stress.mohr_coulomb.iterative_phi.phi_max"),
+     topg_min = m_config->get_double("basal_yield_stress.mohr_coulomb.iterative_phi.topg_min"), 
+     topg_max = m_config->get_double("basal_yield_stress.mohr_coulomb.iterative_phi.topg_max");
 
-  tinv = options::Real("-tphi_inverse", "time step for phi inversion",tinv);
-  hinv = options::Real("-hphi_inverse", "relative surface elevation change for phi inversion",hinv);
-  phimax = options::Real("-phimax_inverse", "maximum value of phi inversion",phimax);
-  phimin = options::Real("-phimin_inverse", "minimum value of phi inversion",phimax);
-  phimod = options::Real("-phimod_inverse", "convergence criterion for phi inversion",phimax);
+  double slope = (phi_minup - phi_min) / (topg_max - topg_min);
 
-  double slope = (phiminup - phimin) / (phihmax - phihmin);
+  m_log->message(2,
+                 "  lower bound of till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
+                 "             /  %5.2f                                 for   topg < %.f\n"
+                 "   phi_min = |  %5.2f + (topg - (%.f)) * (%.2f / %.f)   for   %.f < topg < %.f\n"
+                 "              \\  %5.2f                                 for   %.f < topg\n",
+                 phi_min, topg_min,
+                 phi_min, topg_min, phi_minup - phi_min, topg_max - topg_min, topg_min, topg_max,
+                 phi_minup, topg_max);
+
+  if (phi_min >= phi_max) {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "invalid -inverse_phi arguments: phi_min < phi_max is required");
+  }
+
+  if (topg_min >= topg_max) {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "invalid -invrse_phi arguments: topg_min < topg_max is required");
+  }
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
+      double diff_usurf_prev = m_diff_usurf(i,j);
+      m_diff_usurf(i,j) = usurf(i,j)-m_target_usurf(i,j);
+      double dh_step = std::abs(m_diff_usurf(i,j)-diff_usurf_prev);
+
       if (mask.grounded_ice(i,j)) {
 
-        double diff_usurf_prev = m_diff_usurf(i,j);
-        m_diff_usurf(i,j) = usurf(i,j)-m_target_usurf(i,j);
-
         // Convergence criterion
-        double till_phi_old  = m_till_phi(i,j),
-               diff_mask_old = m_diff_mask(i,j),
-               diff_diff     = std::abs(m_diff_usurf(i,j)-diff_usurf_prev);
-
-        if (diff_diff/tinv > phimod) {
+        if (dh_step / dt_phi_inv > dhdt_conv) {
           m_diff_mask(i,j)=1.0;
 
-          // Do incremental steps of maximum 0.5*dphi down and dphi up reaching the upper limit phimax
-          m_till_phi(i,j) -= std::min(dphi,std::max(-dphi*0.5,m_diff_usurf(i,j)/hinv));
-          m_till_phi(i,j)  = std::min(phimax,m_till_phi(i,j));
+          // Do incremental steps of maximum 0.5*dphi down and dphi up
+          m_till_phi(i,j) -= std::min(dphi,std::max(-dphi*0.5,m_diff_usurf(i,j)/h_inv));
 
-          // Different lower constraints for marine (b<phihmin) and continental (b>phihmax) areas)
-          if (bed_topography(i,j) > phihmax){
-            m_till_phi(i,j) = std::max(phiminup,m_till_phi(i,j));
+          // Different lower constraints for marine (b<topg_min) and continental (b>topg_max) areas)
+          if (bed_topography(i,j) > topg_max){
+            m_till_phi(i,j) = std::max(phi_minup,m_till_phi(i,j));
 
           // Apply smooth transition between marine and continental areas
-          } else if (bed_topography(i,j) <= phihmax && bed_topography(i,j) >= phihmin){
-            m_till_phi(i, j) = std::max((phimin + (bed_topography(i,j) - phihmin) * slope),m_till_phi(i,j));
+          } else if (bed_topography(i,j) <= topg_max && bed_topography(i,j) >= topg_min){
+            m_till_phi(i, j) = std::max((phi_min + (bed_topography(i,j) - topg_min) * slope),m_till_phi(i,j));
 
+          // Apply absolute upper and lower bounds
           } else {
-            m_till_phi(i,j) = std::max(phimin,m_till_phi(i,j));
+            m_till_phi(i,j) = std::max(phi_min,m_till_phi(i,j));
+            m_till_phi(i,j) = std::min(phi_max,m_till_phi(i,j));
           }
 
         } else {
@@ -585,8 +604,7 @@ void MohrCoulombYieldStress::iterative_phi_step(const IceModelVec2S &ice_surface
       // Floating and ice free ocean
       } else if (mask.ocean(i,j)){
 
-        m_diff_usurf(i,j) = usurf(i,j)-m_target_usurf(i,j);
-        m_till_phi(i,j)   = phimin;
+        m_till_phi(i,j)   = phi_min;
         m_diff_mask(i,j)  = 0.0;
       }
   }
@@ -596,12 +614,14 @@ void MohrCoulombYieldStress::iterative_phi_step(const IceModelVec2S &ice_surface
 DiagnosticList MohrCoulombYieldStress::diagnostics_impl() const {
 
   if (m_iterative_phi) {
+
     return combine({{"tillphi", Diagnostic::wrap(m_till_phi)},
                   {"diff_usurf", Diagnostic::wrap(m_diff_usurf)},
                   {"target_usurf", Diagnostic::wrap(m_target_usurf)},
                   {"diff_mask", Diagnostic::wrap(m_diff_mask)}},
                    YieldStress::diagnostics_impl());
   } else {
+
     return combine({{"tillphi", Diagnostic::wrap(m_till_phi)}},
                  YieldStress::diagnostics_impl());
   }

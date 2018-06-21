@@ -1015,6 +1015,7 @@ void GeometryEvolution::ensure_nonnegativity(const IceModelVec2S &ice_thickness,
 void GeometryEvolution::prescribe_groundingline(const IceModelVec2S &old_ice_thickness, Geometry &geometry) {
 
   IceModelVec2S &H = geometry.ice_thickness;
+  //IceModelVec2S &H = m_impl->ice_thickness; //Does not work, as it has been already updated
 
   IceModelVec::AccessList list{&old_ice_thickness, &H,
                                &m_impl->bed_elevation,&m_impl->sea_level,&m_impl->cell_type};
@@ -1025,20 +1026,18 @@ void GeometryEvolution::prescribe_groundingline(const IceModelVec2S &old_ice_thi
       const int i = p.i(), j = p.j();
 
       const double
-        Hold    = old_ice_thickness(i, j),
-        rho     = m_impl->ocean_density/m_impl->ice_density,
-        Hfl     = 1.0-(m_impl->bed_elevation(i,j)-m_impl->sea_level(i,j))*rho,
-        Hnew    = H(i,j);
+        Hold      = old_ice_thickness(i, j),
+        rho_ratio = m_impl->ocean_density/m_impl->ice_density,
+        Hfl       = (m_impl->sea_level(i,j)-m_impl->bed_elevation(i,j)) * rho_ratio;
 
+        // prevent grounded parts form becoming afloat
         if (m_impl->cell_type.grounded(i, j)) {
-
-          // prevent grounded parts form becoming afloat
-          if (Hnew - Hfl < 0.0) {
-            H(i, j) = Hfl;
+          if (Hold > Hfl) { 
+            H(i, j) = std::max( H(i, j), Hfl );
           }
         }
 
-        else if (Hnew != Hold) {
+        else if (H(i, j) != Hold) {
 
           //avoid artefacts for floating cells surrounded by grounded neighbors
           bool floating_lake = (m_impl->cell_type.grounded(i-1,j) && m_impl->cell_type.grounded(i+1,j) &&

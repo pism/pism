@@ -63,7 +63,7 @@ protected:
 
   bool m_iterative_phi;
   IceModelVec2S m_target_usurf, m_diff_usurf,m_usurf,m_diff_mask;
-  double m_last_time, m_last_inverse_time;
+  double m_last_time, m_last_inverse_time,dt_phi_inv;
 
   // only allocated and used if basal_yield_stress.add_transportable_water = true
   IceModelVec2S m_bwat;

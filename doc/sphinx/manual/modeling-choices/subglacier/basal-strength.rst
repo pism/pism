@@ -274,36 +274,45 @@ same :var:`tillphi` field which was set in the first run.
 
 The distribution of till friction angle `\phi=` :var:`tillphi` in :eq:`eq-mohrcoulomb` can be 
 iteratively optimized in a forward equlibrium simulation with respect to the mismatch to observed 
-modern surface elevation `dh_{obs}` :cite:`BEDMAP02`, based on the simple inversion method 
-:cite:`PollardDeConto2012SLIDE` optimizing for the basal sliding coefficient `\tau_c`. 
+modern surface elevation `\Delta h_{\mathrm{obs}}` :cite:`BEDMAP02`, analogous to the simple inversion method 
+:cite:`PollardDeConto2012SLIDE`, which is optimizing for the basal sliding coefficient `\tau_c` instead. 
 
-
+.. -iterative_phi 2,5,70,1,250,500,-300,700,1e-3
 .. code-block:: none
 
-   -iterative_phi usurf_target_file 
-   -tphi_inverse 500.0 -hphi_inverse 250.0 
-   -phimax_inverse 70.0 -phimin_inverse 2.0 
-   -phimod_inverse 2e-3 -prescribe_gl
+   -iterative_phi phimin,phiminup,phimax,dphiup,dtinv,dhinv,bmin,bmax,dhdtconv
+   -iterative_phi_file usurf_target_file 
+   -prescribe_gl
 
-Thus the user supplies a file :opt:`usurf_target_file` with the target surface elevation and 5 
-parameters: :opt:`\-tphi_inverse` indicates the timestep of iterations in years, :opt:`-hphi_inverse` 
-`h_{inv}` the relative surface anomaly in meters, :opt:`-phimax_inverse` `\phi_{max}` and 
-:opt:`-phimin_inverse` `\phi_{min}` the upper and lower bounds of till friction angle in degrees 
-(the default lower boundary for continetal regions above -300\,m ramps up to 5 degrees). 
-:opt:`-phimod_inverse` is a local convergence criterion for two subsequent iterations. 
-:opt:`-prescribe_gl` prescribes ice thickness in the ice shelf and ocean regions an prevents 
+.. include:: ../../../math-definitions.txt
+
+Thus the user supplies 9 parameters: 3 parameters for the lower and upper bounds of till friction 
+angle `\phimin`, `\phiminup` and `\phimax`, the maximal increment `\dphiup`, the time step of 
+optimization `\dtinv` in years, a typical anomaly in surface elevation `\dhinv`, bed elevation levels 
+`\bmin` and `\bmax` over which the minimum :var:`tillphi` changes linearily analogous to 
+:eq:`eq-phipiecewise`, and a local convergence criterion of relative change in surface elevation for 
+subsequent iterations `\dhdtconv`.
+
+Thus the user supplies a file :opt:`usurf_target_file` with the target surface elevation `h_{\mathrm{obs}}`.
+The lower bound of possible till friction angle varies here for marine and rather continental regions above 
+sea level.
+Option :opt:`-prescribe_gl` prescribes ice thickness in the ice shelf and ocean regions and prevents 
 grounded ice sheet areas from becoming afloat, such that the position of the grounding line 
-remains fixed (without bed deformation). 
-You can start from a initial :var:`tillphi` field using :opt:`-plastic_phi`, :opt:`-topg_to_phi` 
-or a given distribution. In each iteration step T, with maximal steps of `\delta\phi_{up}=1^{\circ}` and 
-`\delta\phi_{down}=0.5^{\circ}`, :var:`tillphi` is updated as 
+remains fixed, when neither bed deformation nor sea-level forcing is applied. Hence we can compare 
+modeled surface elevation with the target surface elevation in the prescribed grounded area. However, 
+be aware that this method breaks mass conservation and the accounting of mass changes. 
 
+You can start from a initial :var:`tillphi` field using :opt:`-plastic_phi`, :opt:`-topg_to_phi` 
+or a given distribution. In each iteration step `\dtinv`, with maximal steps of `\dphiup=1^{\circ}` and 
+`\dphidown=0.5 \cdot \dphiup`, :var:`tillphi` is updated as 
+
+.. \Delta h(x,y,T+\dtinv)_{\mathrm{obs}} &= h(x,y,T+\dtinv)_{\mathrm{mod}}-h(x,y)_{\mathrm{obs}}
 .. math::
    :name: eq-phiiterative
 
-   \phi_{it}(x,y,T+1) &=  \max ( \phi_{min} \min [\phi_{max} , \phi_{it}(x,y,T) + \Delta\phi]) \\
-   \Delta\phi &= \min ( \delta\phi_{up} , \max [ \delta\phi_{down} , \frac{dh_{obs}}{h_{inv}}]).
-
+   \phi_{(x,y,T+\dtinv)} &=  \max ( \phimin , \min [ \phimax , \phi_{(x,y,T)} + \Delta\phi]) \\
+   \Delta\phi &= \min \left( \dphiup , \max \left[ \dphidown , \frac{\Delta h_{\mathrm{obs}\,(x,y,T+\dtinv)}}{\dhinv} \right] \right), \\
+   &\mathrm{if}\,\; \frac{\Delta h_{\mathrm{obs}\,(x,y,T+\dtinv)}}{\dtinv} > \dhdtconv
 
 As diagnostic fields for the optimization simulation output variables can be called 
 :opt:`-extra_vars tillphi,diff_usurf,diff_mask`. 

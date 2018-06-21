@@ -237,6 +237,56 @@ netcdf pism_config {
     pism_config:basal_yield_stress.mohr_coulomb.till_reference_void_ratio_type = "scalar";
     pism_config:basal_yield_stress.mohr_coulomb.till_reference_void_ratio_units = "pure number";
 
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.enabled = "no";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.enabled_doc = "If THE OPTION -iterative_phi IS SET THEN THIS WILL BE SET TO 'yes', and then MohrCoulombYieldStress will optimize for the tillphi field for given target surface elevation.";
+    //pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.enabled_option = "iterative_phi";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.enabled_type = "boolean";
+
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.dt = 250.0;
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.dt_doc = "timestep for optimization of till friction angle; see the implementation of MohrCoulombYieldStress";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.dt_type = "scalar";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.dt_units = "years";
+
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.dphi = 1.0;
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.dphi_doc = "increment for optimization of till friction angle; see the implementation of MohrCoulombYieldStress";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.dphi_type = "scalar";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.dphi_units = "degrees";
+
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.h_inv = 500.0;
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.h_inv_doc = "reference anomaly in surface elevation to determine incremental steps of optimization of till friction angle; see the implementation of MohrCoulombYieldStress";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.h_inv_type = "scalar";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.h_inv_units = "meters";
+
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.dh_conv = 0.001;
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.dh_conv_doc = "change rate in surface elevation as convergence criterion for optimization of till friction angle; see the implementation of MohrCoulombYieldStress";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.dh_conv_type = "scalar";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.dh_conv_units = "meters year-1";
+
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.phi_max = 70.0;
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.phi_max_doc = "upper bound of the till friction angle optimization; see the implementation of MohrCoulombYieldStress";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.phi_max_type = "scalar";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.phi_max_units = "degrees";
+
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.phi_min = 2.0;
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.phi_min_doc = "lower bound of the till friction angle optimization; see the implementation of MohrCoulombYieldStress";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.phi_min_type = "scalar";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.phi_min_units = "degrees";
+
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.phi_minup = 5.0;
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.phi_minup_doc = "lower bound of the till friction angle optimization for non-marine regions above topg_max; see the implementation of MohrCoulombYieldStress";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.phi_minup_type = "scalar";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.phi_minup_units = "degrees";
+
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.topg_max = 700.0;
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.topg_max_doc = "the elevation at which the phi_minup of the till friction angle is used; see the implementation of MohrCoulombYieldStress";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.topg_max_type = "scalar";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.topg_max_units = "meters";
+
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.topg_min = -300.0;
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.topg_min_doc = "the elevation at which the lower value of the till friction angle is used; see the implementation of MohrCoulombYieldStress";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.topg_min_type = "scalar";
+    pism_config:basal_yield_stress.mohr_coulomb.iterative_phi.topg_min_units = "meters";
+
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.enabled = "no";
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.enabled_doc = "If THE OPTION -topg_to_phi IS SET THEN THIS WILL BE SET TO 'yes', and then MohrCoulombYieldStress will initialize the tillphi field using a piece-wise linear function of depth described by four parameters.";
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.enabled_type = "boolean";
