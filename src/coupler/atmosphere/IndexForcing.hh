@@ -41,17 +41,19 @@ protected:
   const IceModelVec2S *m_surface;
   IceModelVec2T::Ptr m_T0, m_T1, m_P0, m_P1;
 
-  virtual void init_impl(const Geometry &geometry);
-  virtual void mean_precipitation_impl(IceModelVec2S &result) const;
-  virtual void mean_annual_temp_impl(IceModelVec2S &result) const;
-  virtual void begin_pointwise_access_impl() const;
-  virtual void end_pointwise_access_impl() const;
-  virtual void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
-  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
-  virtual void init_timeseries_impl(const std::vector<double> &ts) const;
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
-  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
+  void define_model_state_impl(const PIO &output) const;
+  void write_model_state_impl(const PIO &output) const;
+
+  const IceModelVec2S& mean_precipitation_impl() const;
+  const IceModelVec2S& mean_annual_temp_impl() const;
+
+  void begin_pointwise_access_impl() const;
+  void end_pointwise_access_impl() const;
+  void init_timeseries_impl(const std::vector<double> &ts) const;
+  void precip_time_series_impl(int i, int j, std::vector<double> &result) const;
+  void temp_time_series_impl(int i, int j, std::vector<double> &result) const;
 
 private:
   double applyLapseRateT(double T, double h_ref, double h) const;

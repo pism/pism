@@ -27,7 +27,7 @@ namespace pism {
 namespace atmosphere {
 
 IndexForcing::IndexForcing(IceGrid::ConstPtr g)
-  : AtmosphereModel(g, nullptr) {
+  : AtmosphereModel(g) {
 
   m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
   m_precipitation.set_attrs("model_state", "precipitation rate",
@@ -193,12 +193,12 @@ void IndexForcing::end_pointwise_access_impl() const {
   m_air_temp.end_access();
 }
 
-void IndexForcing::mean_annual_temp_impl(IceModelVec2S& result) const {
-  result.copy_from(m_air_temp);
+const IceModelVec2S& IndexForcing::mean_precipitation_impl() const {
+  return m_precipitation;
 }
 
-void IndexForcing::mean_precipitation_impl(IceModelVec2S& result) const {
-  result.copy_from(m_precipitation);
+const IceModelVec2S& IndexForcing::mean_annual_temp_impl() const {
+  return m_air_temp;
 }
 
 void IndexForcing::update_impl(const Geometry &geometry ,double t, double dt) {
