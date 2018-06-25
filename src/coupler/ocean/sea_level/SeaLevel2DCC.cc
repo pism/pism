@@ -121,14 +121,12 @@ void SeaLevel2DCC::update_impl(const Geometry &geometry, double my_t, double my_
   }
 
   if (m_update) {
-    bool init = false;
+    const bool init = (geometry.bed_elevation.state_counter() == 0);
     const IceModelVec2S *bed, *thk;
     IceModelVec2S tmp;
-    if (geometry.bed_elevation.state_counter() < m_grid->ctx()->size()) {
+    if (init) {
       //Fake sea level timestep -> geometry.bed_elevation not available yet.
       //Try to get it from somewhere else
-      init = true;
-
       tmp.create(m_grid, "topg", WITHOUT_GHOSTS);
       tmp.set_attrs("model_state", "bedrock surface elevation",
                     "m", "bedrock_altitude");

@@ -40,39 +40,41 @@ Gradual::Gradual(IceGrid::ConstPtr grid,
 void Gradual::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
-  IceModelVec2S tmp;
-  tmp.create(m_grid, "effective_lake_level_elevation", WITHOUT_GHOSTS);
-  tmp.set_attrs("diagnostic",
-                "lake level elevation, relative to the geoid",
-                "meter", "");
-  tmp.metadata().set_double("_FillValue", m_fill_value);
-
-  InputOptions opts = process_input_options(m_grid->com, m_config);
-
-  if (opts.type == INIT_RESTART) {
-
-    m_log->message(2, "* Reading lake level forcing from '%s' for re-starting...\n",
-                   opts.filename.c_str());
-
-    PIO file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
-    const unsigned int time_length = file.inq_nrecords(),
-                       last_record = time_length > 0 ? time_length - 1 : 0;
-
-    tmp.read(file, last_record);
-
-    file.close();
-  } else {
-    tmp.set(m_fill_value);
-  }
-
-  // Support regridding. This is needed to ensure that initialization using "-i" is
-  // equivalent to "-i ... -bootstrap -regrid_file ..."
   {
-    regrid("lake gradual filling modifier", tmp,
-           REGRID_WITHOUT_REGRID_VARS);
-  }
+    IceModelVec2S tmp;
+    tmp.create(m_grid, "effective_lake_level_elevation", WITHOUT_GHOSTS);
+    tmp.set_attrs("diagnostic",
+                  "lake level elevation, relative to the geoid",
+                  "meter", "");
+    tmp.metadata().set_double("_FillValue", m_fill_value);
 
-  m_lake_level.copy_from(tmp);
+    InputOptions opts = process_input_options(m_grid->com, m_config);
+
+    if (opts.type == INIT_RESTART) {
+
+      m_log->message(2, "* Reading lake level forcing from '%s' for re-starting...\n",
+                    opts.filename.c_str());
+
+      PIO file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
+      const unsigned int time_length = file.inq_nrecords(),
+                        last_record = time_length > 0 ? time_length - 1 : 0;
+
+      tmp.read(file, last_record);
+
+      file.close();
+    } else {
+      tmp.set(m_fill_value);
+    }
+
+    // Support regridding. This is needed to ensure that initialization using "-i" is
+    // equivalent to "-i ... -bootstrap -regrid_file ..."
+    {
+      regrid("lake gradual filling modifier", tmp,
+            REGRID_WITHOUT_REGRID_VARS);
+    }
+
+    m_lake_level.copy_from(tmp);
+  }
 
   double max_lake_fill_rate_m_y = units::convert(m_sys, m_max_lake_fill_rate,
                                                  "m/seconds", "m/year");
@@ -94,7 +96,7 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
 
   const IceModelVec2S *bed, *thk, *sl;
   IceModelVec2S tmp;
-  if (geometry.bed_elevation.state_counter() < m_grid->ctx()->size()) {
+  if (geometry.bed_elevation.state_counter() == 0) {
     //Fake lake level timestep -> geometry.bed_elevation not available yet.
     //Try to get it from somewhere else
     tmp.create(m_grid, "topg", WITHOUT_GHOSTS);

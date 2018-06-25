@@ -95,7 +95,7 @@ void Patch::update_impl(const Geometry &geometry, double t, double dt) {
     m_input_model->update(geometry, t, dt);
     m_lake_level.copy_from(m_input_model->elevation());
 
-    const bool init = (geometry.bed_elevation.state_counter() < m_grid->ctx()->size());
+    const bool init = (geometry.bed_elevation.state_counter() == 0);
     m_last_update = t;
     if (!init) {
       m_next_update_time = m_grid->ctx()->time()->increment_date(t, m_min_update_interval_years);
