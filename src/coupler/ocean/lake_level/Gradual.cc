@@ -116,7 +116,7 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
   }
   thk = &(geometry.ice_thickness);
 
-  if (geometry.sea_level_elevation.state_counter() < m_grid->ctx()->size()) {
+  if (geometry.sea_level_elevation.state_counter() == 0) {
     sl = m_grid->variables().get_2d_scalar("sea_level");
   } else {
     sl = &(geometry.sea_level_elevation);
