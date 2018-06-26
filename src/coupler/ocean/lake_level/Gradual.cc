@@ -94,35 +94,11 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
 
   target_level.copy_from(m_input_model->elevation());
 
-  const IceModelVec2S *bed, *thk, *sl;
-  IceModelVec2S tmp;
-  if (geometry.bed_elevation.state_counter() == 0) {
-    //Fake lake level timestep -> geometry.bed_elevation not available yet.
-    //Try to get it from somewhere else
-    tmp.create(m_grid, "topg", WITHOUT_GHOSTS);
-    tmp.set_attrs("model_state", "bedrock surface elevation",
-                  "m", "bedrock_altitude");
+  const IceModelVec2S &bed = geometry.bed_elevation,
+                      &thk = geometry.ice_thickness,
+                      &sl  = geometry.sea_level_elevation;
 
-    //Try to initialize topg from file
-    InputOptions opts = process_input_options(m_grid->com, m_config);
-    if (opts.type != INIT_RESTART) {
-      // bootstrapping
-      tmp.regrid(opts.filename, OPTIONAL,
-                 m_config->get_double("bootstrapping.defaults.bed"));
-    }
-    bed = &tmp;
-  } else {
-    bed = &(geometry.bed_elevation);
-  }
-  thk = &(geometry.ice_thickness);
-
-  if (geometry.sea_level_elevation.state_counter() == 0) {
-    sl = m_grid->variables().get_2d_scalar("sea_level");
-  } else {
-    sl = &(geometry.sea_level_elevation);
-  }
-
-  gradually_fill(dt, target_level, *bed, *thk, *sl);
+  gradually_fill(dt, target_level, bed, thk, sl);
 }
 
 void Gradual::gradually_fill(double dt, const IceModelVec2S &target_level,
