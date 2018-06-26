@@ -327,7 +327,7 @@ void LakePropertiesCC::setRunMinLevel(double level, int run, VecList &lists) {
   run = trackParentRun(run, lists["parents"]);
   if (isLake(level)) {
     if (isLake(lists["min_ll"][run])) {
-      level = std::max(level, lists["min_ll"][run]);
+      level = std::min(level, lists["min_ll"][run]);
     }
     lists["min_ll"][run] = level;
   }
