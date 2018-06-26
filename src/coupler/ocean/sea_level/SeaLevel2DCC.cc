@@ -109,46 +109,25 @@ void SeaLevel2DCC::process_options() {
                  offset);
 }
 
-void SeaLevel2DCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
-  m_input_model->update(geometry, my_t, my_dt);
+void SeaLevel2DCC::update_impl(const Geometry &geometry, double t, double dt) {
+  m_input_model->update(geometry, t, dt);
 
   m_sea_level.copy_from(m_input_model->elevation());
 
   if (m_update_periodic) {
-    if (my_t >= m_next_update_time or fabs(my_t - m_next_update_time) < 1.0) {
+    if (t >= m_next_update_time or fabs(t - m_next_update_time) < 1.0) {
       m_update = true;
     }
   }
 
   if (m_update) {
-    const bool init = (geometry.bed_elevation.state_counter() == 0);
-    const IceModelVec2S *bed, *thk;
-    IceModelVec2S tmp;
-    if (init) {
-      //Fake sea level timestep -> geometry.bed_elevation not available yet.
-      //Try to get it from somewhere else
-      tmp.create(m_grid, "topg", WITHOUT_GHOSTS);
-      tmp.set_attrs("model_state", "bedrock surface elevation",
-                    "m", "bedrock_altitude");
-
-      //Try to initialize topg from file
-      InputOptions opts = process_input_options(m_grid->com, m_config);
-      if (opts.type != INIT_RESTART) {
-        // bootstrapping
-        tmp.regrid(opts.filename, OPTIONAL,
-                      m_config->get_double("bootstrapping.defaults.bed"));
-      }
-      bed = &tmp;
-    } else {
-      bed = &(geometry.bed_elevation);
-    }
-    thk = &(geometry.ice_thickness);
+    const IceModelVec2S &bed = geometry.bed_elevation,
+                        &thk = geometry.ice_thickness;
 
     // Update sea level mask
-    do_sl_update(*bed, *thk);
-    m_next_update_time = m_grid->ctx()->time()->increment_date(my_t,
-                                                               m_update_interval_years);
-    if (not m_update_passive and not init) {
+    do_sl_update(bed, thk);
+    m_next_update_time = m_grid->ctx()->time()->increment_date(t, m_update_interval_years);
+    if (not m_update_passive and (t != m_grid->ctx()->time()->start())) {
       m_update = false;
     }
   }
