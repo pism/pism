@@ -37,9 +37,9 @@ protected:
   MaxTimestep max_timestep_impl(double t) const;
   double m_next_update_time, m_last_update;
   int m_min_update_interval_years, m_patch_iter;
-  unsigned int patch_lake_levels(const IceModelVec2S *bed,
-                                 const IceModelVec2S *thk,
-                                 const IceModelVec2S *sea_level);
+  unsigned int patch_lake_levels(const IceModelVec2S &bed,
+                                 const IceModelVec2S &thk,
+                                 const IceModelVec2S &sea_level);
 
 };
 

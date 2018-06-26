@@ -71,13 +71,12 @@ void Patch::update_impl(const Geometry &geometry, double t, double dt) {
   }
 
   if (!full_update) {
-    const IceModelVec2S *bed, *thk, *sea_level;
-    bed        = &(geometry.bed_elevation);
-    thk        = &(geometry.ice_thickness);
-    sea_level  = &(geometry.sea_level_elevation);
+    const IceModelVec2S &bed = geometry.bed_elevation,
+                        &thk = geometry.ice_thickness,
+                        &sl  = geometry.sea_level_elevation;
 
     for (unsigned int n = 0; n < m_patch_iter; ++n) {
-      const int unsigned local_patch_result = patch_lake_levels(bed, thk, sea_level),
+      const int unsigned local_patch_result = patch_lake_levels(bed, thk, sl),
                          patch_result = GlobalMax(m_grid->com, local_patch_result);
       if (patch_result == 0) {
         //No further iteration needed
@@ -95,9 +94,8 @@ void Patch::update_impl(const Geometry &geometry, double t, double dt) {
     m_input_model->update(geometry, t, dt);
     m_lake_level.copy_from(m_input_model->elevation());
 
-    const bool init = (geometry.bed_elevation.state_counter() == 0);
     m_last_update = t;
-    if (!init) {
+    if (t != m_grid->ctx()->time()->start()) {
       m_next_update_time = m_grid->ctx()->time()->increment_date(t, m_min_update_interval_years);
     }
   }
@@ -123,24 +121,24 @@ MaxTimestep Patch::max_timestep_impl(double t) const {
   }
 }
 
-unsigned int Patch::patch_lake_levels(const IceModelVec2S *bed,
-                                      const IceModelVec2S *thk,
-                                      const IceModelVec2S *sea_level) {
+unsigned int Patch::patch_lake_levels(const IceModelVec2S &bed,
+                                      const IceModelVec2S &thk,
+                                      const IceModelVec2S &sea_level) {
   const Direction dirs[] = { North, East, South, West };
 
   IceModelVec2S lake_level_old(m_grid, "ll", WITH_GHOSTS, 1);
   lake_level_old.copy_from(m_lake_level);
 
-  IceModelVec::AccessList list{ &m_lake_level, thk, bed, sea_level, &lake_level_old };
+  IceModelVec::AccessList list{ &m_lake_level, &thk, &bed, &sea_level, &lake_level_old };
 
   unsigned int return_value = 0;
   GeometryCalculator gc(*m_config);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    const double bed_ij = (*bed)(i, j),
-                 thk_ij = (*thk)(i, j),
-                 sl_ij  = (*sea_level)(i, j);
+    const double bed_ij = bed(i, j),
+                 thk_ij = thk(i, j),
+                 sl_ij  = sea_level(i, j);
     if (not gc.islake(lake_level_old(i, j))) {
       StarStencil<double> ll_star = lake_level_old.star(i, j);
 
