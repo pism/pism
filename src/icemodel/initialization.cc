@@ -175,10 +175,29 @@ void IceModel::model_state_setup() {
     regrid();
   }
 
+  //The Sea and Lake level models are running a 'fake' update when bootstrapping
+  //before geometry.bed_elevation is initialized.
+  //To ensure this field is available load it from file. This is later again
+  //overwritten in enforce_consistency_of_geometry when beddef model was initialized.
+  if (input.type == INIT_BOOTSTRAP) {
+    IceModelVec2S tmp(m_grid, "topg", WITHOUT_GHOSTS);
+    tmp.set_attrs("model_state", "bedrock surface elevation",
+                  "m", "bedrock_altitude");
+    // bootstrapping
+    tmp.regrid(input.filename, OPTIONAL,
+               m_config->get_double("bootstrapping.defaults.bed"));
+
+    m_geometry.bed_elevation.copy_from(tmp);
+  }
+
   m_sea_level->init(m_geometry);
-  m_grid->variables().add(m_sea_level->elevation());
+
+  //Same reason as above: Lake model needs geometry.sea_level_elevation to be available
+  if (input.type == INIT_BOOTSTRAP) {
+    m_geometry.sea_level_elevation.copy_from(m_sea_level->elevation());
+  }
+
   m_lake_level->init(m_geometry);
-  m_grid->variables().add(m_lake_level->elevation());
 
   // Initialize a bed deformation model.
   if (m_beddef) {
