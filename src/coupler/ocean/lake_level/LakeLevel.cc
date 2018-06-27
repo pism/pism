@@ -20,6 +20,8 @@
 #include "pism/coupler/LakeLevel.hh"
 
 #include "pism/util/MaxTimestep.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/Vars.hh"
 
 #include "pism/util/pism_utilities.hh" // combine
 
@@ -101,12 +103,12 @@ void LakeLevel::write_model_state_impl(const PIO &output) const {
 namespace diagnostics {
 
 /*! @brief Lake level elevation. */
-class LL : public Diag<LakeLevel> {
+class LakeLevelReal : public Diag<LakeLevel> {
 public:
-  LL(const LakeLevel *m)
+  LakeLevelReal(const LakeLevel *m)
     : Diag<LakeLevel>(m) {
     /* set metadata: */
-    m_vars = {SpatialVariableMetadata(m_sys, "lake_level")};
+    m_vars = {SpatialVariableMetadata(m_sys, "lake_level_real")};
 
     set_attrs("lake level elevation, relative to the geoid", "", "meters", "meters", 0);
     metadata().set_double("_FillValue", m_fill_value);
@@ -115,20 +117,99 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "lake_level", WITHOUT_GHOSTS));
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "lake_level", WITHOUT_GHOSTS)),
+                       ll(new IceModelVec2S(m_grid, "lake_level", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
+    ll->copy_from(model->elevation());
 
-    result->copy_from(model->elevation());
+    result->set(m_fill_value);
+
+    const IceModelVec2S *bed = m_grid->variables().get_2d_scalar("bedrock_altitude"),
+                        *thk = m_grid->variables().get_2d_scalar("land_ice_thickness");
+
+    IceModelVec::AccessList list{ bed, thk };
+    list.add(*ll);
+    list.add(*result);
+
+    GeometryCalculator gc(*m_config);
+
+    ParallelSection ParSec(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        const bool isLake = mask::ocean(gc.mask(m_fill_value, (*bed)(i, j), (*thk)(i, j), (*ll)(i, j)));
+
+        if (isLake) {
+          (*result)(i, j) = (*ll)(i, j);
+        }
+      }
+    } catch (...) {
+      ParSec.failed();
+    }
+    ParSec.check();
 
     return result;
   }
 };
 
+/*! @brief Lake level elevation. */
+class LakeDepth : public Diag<LakeLevel> {
+public:
+  LakeDepth(const LakeLevel *m)
+    : Diag<LakeLevel>(m) {
+    /* set metadata: */
+    m_vars = {SpatialVariableMetadata(m_sys, "lake_depth")};
+
+    set_attrs("lake depth", "", "meters", "meters", 0);
+    metadata().set_double("_FillValue", m_fill_value);
+  }
+
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "lake_depth", WITHOUT_GHOSTS)),
+                       ll(new IceModelVec2S(m_grid, "lake_level", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+    ll->copy_from(model->elevation());
+
+    result->set(m_fill_value);
+
+    const IceModelVec2S *bed = m_grid->variables().get_2d_scalar("bedrock_altitude"),
+                        *thk = m_grid->variables().get_2d_scalar("land_ice_thickness");
+
+    IceModelVec::AccessList list{ bed, thk };
+    list.add(*ll);
+    list.add(*result);
+
+    GeometryCalculator gc(*m_config);
+
+    ParallelSection ParSec(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        const bool isLake = mask::ocean(gc.mask(m_fill_value, (*bed)(i, j), (*thk)(i, j), (*ll)(i, j)));
+
+        if (isLake) {
+          (*result)(i, j) = (*ll)(i, j) - (*bed)(i, j);
+        }
+      }
+    } catch (...) {
+      ParSec.failed();
+    }
+    ParSec.check();
+
+    return result;
+  }
+};
+
+
 } // end of namespace diagnostics
 
 DiagnosticList LakeLevel::diagnostics_impl() const {
   DiagnosticList result = {
-    {"lake_level", Diagnostic::Ptr(new diagnostics::LL(this))},
+    {"lake_level_real", Diagnostic::Ptr(new diagnostics::LakeLevelReal(this))},
+    {"lake_depth", Diagnostic::Ptr(new diagnostics::LakeDepth(this))},
+    {"lake_level", Diagnostic::wrap(m_lake_level)}
   };
 
   if (m_input_model) {
