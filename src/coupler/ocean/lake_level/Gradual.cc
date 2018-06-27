@@ -34,6 +34,28 @@ Gradual::Gradual(IceGrid::ConstPtr grid,
 
   //Set default filling rate for lakes
   m_max_lake_fill_rate = units::convert(m_sys, 10.0, "m/years", "m/seconds");
+  m_target_level.create(m_grid, "target_level", WITHOUT_GHOSTS);
+  m_target_level.set_attrs("model_state", "target lake level",
+                           "m", "target_level");
+  m_target_level.metadata().set_double("_FillValue", m_fill_value);
+
+  m_min_level.create(m_grid, "min_lake_level", WITHOUT_GHOSTS);
+  m_min_level.set_attrs("model_state", "min lake level",
+                        "m", "min_level");
+  m_min_level.metadata().set_double("_FillValue", m_fill_value);
+
+  m_max_level.create(m_grid, "max_lake_level", WITHOUT_GHOSTS);
+  m_max_level.set_attrs("model_state", "max lake level",
+                        "m", "max_level");
+  m_max_level.metadata().set_double("_FillValue", m_fill_value);
+
+  m_min_bed.create(m_grid, "min_lake_bed", WITHOUT_GHOSTS);
+  m_min_bed.set_attrs("model_state", "min lake bed",
+                      "m", "min_bed");
+  m_min_bed.metadata().set_double("_FillValue", m_fill_value);
+
+  m_expansion_mask.create(m_grid, "expansion_mask", WITHOUT_GHOSTS);
+  m_expansion_mask.metadata().set_double("_FillValue", m_fill_value);
 }
 
 
@@ -87,37 +109,28 @@ void Gradual::init_impl(const Geometry &geometry) {
 void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
 
-  IceModelVec2S target_level;
-  target_level.create(m_grid, "target_level", WITHOUT_GHOSTS);
-  target_level.set_attrs("model_state", "target lake level",
-                         "m", "target_level");
-
-  target_level.copy_from(m_input_model->elevation());
+  m_target_level.copy_from(m_input_model->elevation());
 
   const IceModelVec2S &bed = geometry.bed_elevation,
                       &thk = geometry.ice_thickness,
                       &sl  = geometry.sea_level_elevation;
 
-  IceModelVec2S min_level(m_grid, "min_level", WITHOUT_GHOSTS),
-                max_level(m_grid, "max_level", WITHOUT_GHOSTS),
-                min_bed(m_grid, "min_bed", WITHOUT_GHOSTS);
-
   { //Compute min max level and min bed...
     ParallelSection ParSec(m_grid->com);
     try {
       // Initialze LakeProperties Model
-      LakePropertiesCC LpCC(m_grid, m_fill_value, target_level,
+      LakePropertiesCC LpCC(m_grid, m_fill_value, m_target_level,
                             m_lake_level, bed);
-      LpCC.getLakeProperties(min_level, max_level, min_bed);
+      LpCC.getLakeProperties(m_min_level, m_max_level, m_min_bed);
     } catch (...) {
       ParSec.failed();
     }
     ParSec.check();
   }
 
-  prepareLakeLevel(target_level, bed, min_level, min_bed);
+  prepareLakeLevel(m_target_level, bed, m_min_level, m_min_bed);
 
-  gradually_fill(dt, target_level, bed, thk, sl, min_level, max_level, min_bed);
+  gradually_fill(dt, m_target_level, bed, thk, sl, m_min_level, m_max_level, m_min_bed);
 }
 
 
@@ -125,14 +138,11 @@ void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
                                const IceModelVec2S &bed,
                                const IceModelVec2S &min_level,
                                const IceModelVec2S &min_bed) {
-  IceModelVec2Int exp_mask;
-  exp_mask.create(m_grid, "expansion_mask", WITHOUT_GHOSTS);
-
   {
     ParallelSection ParSec(m_grid->com);
     try {
       FilterExpansionCC FExCC(m_grid, m_fill_value);
-      FExCC.filter_ext(m_lake_level, target_level, exp_mask);
+      FExCC.filter_ext(m_lake_level, target_level, m_expansion_mask);
     } catch (...) {
       ParSec.failed();
     }
@@ -141,14 +151,14 @@ void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
 
   {
     IceModelVec::AccessList list{ &m_lake_level, &min_level,
-                                  &min_bed, &exp_mask };
+                                  &min_bed, &m_expansion_mask };
     //Update lake extend depending on exp_mask
     ParallelSection ParSec(m_grid->com);
     try {
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
-        const int mask_ij = exp_mask.as_int(i, j);
+        const int mask_ij = m_expansion_mask.as_int(i, j);
         if (mask_ij == 1) {
           //New lake basin
           m_lake_level(i, j) = min_bed(i, j);
@@ -219,6 +229,20 @@ void Gradual::gradually_fill(double dt,
     ParSec.failed();
   }
   ParSec.check();
+}
+
+// Write diagnostic variables to extra files if requested
+DiagnosticList Gradual::diagnostics_impl() const {
+
+  DiagnosticList result = {
+    { "lake_gradual_target",    Diagnostic::wrap(m_target_level) },
+    { "lake_gradual_min_level", Diagnostic::wrap(m_min_level) },
+    { "lake_gradual_max_level", Diagnostic::wrap(m_max_level) },
+    { "lake_gradual_min_bed",   Diagnostic::wrap(m_min_bed) },
+    { "lake_expansion_mask",    Diagnostic::wrap(m_expansion_mask) },
+  };
+
+  return combine(result, m_input_model->diagnostics());
 }
 
 } // end of namespace lake_level

@@ -33,6 +33,8 @@ public:
 private:
   void update_impl(const Geometry &geometry, double t, double dt);
   void init_impl(const Geometry &geometry);
+  IceModelVec2S m_target_level, m_min_level, m_max_level, m_min_bed;
+  IceModelVec2Int m_expansion_mask;
 protected:
   double m_max_lake_fill_rate;
   void prepareLakeLevel(const IceModelVec2S &target_level,
@@ -47,6 +49,7 @@ protected:
                       const IceModelVec2S &min_level,
                       const IceModelVec2S &max_level,
                       const IceModelVec2S &min_bed);
+  DiagnosticList diagnostics_impl() const;
 };
 
 } // end of namespace lake_level
