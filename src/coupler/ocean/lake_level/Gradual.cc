@@ -152,6 +152,9 @@ void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
   {
     IceModelVec::AccessList list{ &m_lake_level, &min_level,
                                   &min_bed, &m_expansion_mask };
+
+    GeometryCalculator gc(*m_config);
+
     //Update lake extend depending on exp_mask
     ParallelSection ParSec(m_grid->com);
     try {
@@ -159,7 +162,7 @@ void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
         const int i = p.i(), j = p.j();
 
         const int mask_ij = m_expansion_mask.as_int(i, j);
-        if (mask_ij == 1) {
+        if (mask_ij == 1 or not gc.islake(min_level(i, j))) {
           //New lake basin
           m_lake_level(i, j) = min_bed(i, j);
         } else if (mask_ij == 2) {
