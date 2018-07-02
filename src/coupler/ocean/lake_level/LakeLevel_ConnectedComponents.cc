@@ -242,13 +242,14 @@ void FilterLakesCC::set_mask_validity(const int n_filter, const IceModelVec2S &l
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    StarStencil<double> lake_star = ll_tmp.star(i, j);
-
     int n_neighbors = 0;
-    for (int n = 0; n < 4; ++n) {
-      const Direction direction = dirs[n];
-      if (lake_star[direction] != m_fill_value) {
-        ++n_neighbors;
+    if (ll_tmp(i, j) != m_fill_value) {
+      StarStencil<double> lake_star = ll_tmp.star(i, j);
+      for (int n = 0; n < 4; ++n) {
+        const Direction direction = dirs[n];
+        if (lake_star[direction] != m_fill_value) {
+          ++n_neighbors;
+        }
       }
     }
     //Set cell valid if number of neighbors exceeds threshold
@@ -564,13 +565,14 @@ void FilterExpansionCC::set_mask_validity(const int n_filter) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    StarStencil<int> mask_star = m_mask_run.int_star(i, j);
-
     int n_neighbors = 0;
-    for (int n = 0; n < 4; ++n) {
-      const Direction direction = dirs[n];
-      if (mask_star[direction] > 1) {
-        ++n_neighbors;
+    if (m_mask_run.as_int(i, j) > 1) {
+      StarStencil<int> mask_star = m_mask_run.int_star(i, j);
+      for (int n = 0; n < 4; ++n) {
+        const Direction direction = dirs[n];
+        if (mask_star[direction] > 1) {
+          ++n_neighbors;
+        }
       }
     }
     //Set cell valid if number of neighbors exceeds threshold
