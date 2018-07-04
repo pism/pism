@@ -196,8 +196,10 @@ void IceModel::model_state_setup() {
   if (input.type == INIT_BOOTSTRAP) {
     m_geometry.sea_level_elevation.copy_from(m_sea_level->elevation());
   }
+  m_grid->variables().add(m_sea_level->elevation());
 
   m_lake_level->init(m_geometry);
+  m_grid->variables().add(m_lake_level->elevation());
 
   // Initialize a bed deformation model.
   if (m_beddef) {
