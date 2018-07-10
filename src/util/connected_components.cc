@@ -5,8 +5,107 @@
 
 namespace pism {
 
+ConnectedComponentsBase::ConnectedComponentsBase(const int dList):
+  m_dList(dList) {
+  //empty
+}
+
+ConnectedComponentsBase::~ConnectedComponentsBase() {
+  //empty
+}
+
+inline void ConnectedComponentsBase::resizeLists(VecList &lists, const int new_length) {
+  for (VecList::iterator it = lists.begin(); it != lists.end(); it++) {
+    it->second.resize(new_length);
+  }
+}
+
+inline void ConnectedComponentsBase::run_union(RunVec &parents, int run1, int run2) {
+  if ((parents[run1] == run2) or (parents[run2] == run1)) {
+    return;
+  }
+
+  run1 = trackParentRun(run1, parents);
+  run2 = trackParentRun(run2, parents);
+
+  if (run1 > run2) {
+    parents[run1] = run2;
+  } else if (run1 < run2) {
+    parents[run2] = run1;
+  }
+}
+
+inline void ConnectedComponentsBase::check_cell(const int i, const int j, const bool isWest, const bool isSouth, const int mask_w, const int mask_s, int &run_number, VecList &lists, unsigned int &max_items) {
+  //Check Foreground Pixel
+  if (not isWest and (mask_w > 0)) {
+    // west neighbor is also foreground: continue the run
+    continueRun(i, j, run_number, lists);
+  } else {
+    //west neighbor is a background pixel (or this is westmost column): start a new run
+    int parent;
+    if (not isSouth and (mask_s > 0)) {
+      //check the pixel south and set the parent
+      parent = mask_s;
+    } else {
+      parent = 0;
+    }
+    startNewRun(i, j, run_number, parent, lists);
+  }
+
+  if (not isSouth and (mask_s > 0)) {
+    mergeRuns(run_number, mask_s, lists);
+  }
+
+  //resize vectors if 'max_items' are exceeded
+  if ((run_number + 1) >= max_items) {
+    max_items += m_dList;
+    resizeLists(lists, max_items);
+  }
+}
+
+int ConnectedComponentsBase::trackParentRun(int run, const RunVec &parents) {
+  while (parents[run] != 0) {
+    run = parents[run];
+  }
+  return run;
+}
+
+void ConnectedComponentsBase::init_VecList(VecList &lists, const unsigned int size) {
+  RunVec parents(size), lengths(size), j_vec(size), i_vec(size);
+  lists["parents"] = parents;
+  lists["lengths"] = lengths;
+  lists["j"] = j_vec;
+  lists["i"] = i_vec;
+
+  for (unsigned int k = 0; k < 2; ++k) {
+    lists["parents"][k] = 0;
+    lists["lengths"][k] = 0;
+    lists["j"][k] = 0;
+    lists["i"][k] = 0;
+  }
+}
+
+void ConnectedComponentsBase::startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists) {
+  run_number += 1;
+  lists["i"][run_number] = i;
+  lists["j"][run_number] = j;
+  lists["lengths"][run_number] = 1;
+  lists["parents"][run_number] = parent;
+}
+
+void ConnectedComponentsBase::continueRun(const int i, const int j, int &run_number, VecList &lists) {
+  lists["lengths"][run_number] += 1;
+}
+
+void ConnectedComponentsBase::mergeRuns(const int run_number, const int run_south, VecList &lists) {
+  run_union(lists["parents"], run_south, run_number);
+}
+
+
+
 ConnectedComponents::ConnectedComponents(IceGrid::ConstPtr g)
     : m_grid(g),
+      ConnectedComponentsBase(m_grid->ym()),
       m_i_local_first(m_grid->xs()),
       m_i_local_last(m_i_local_first + m_grid->xm() - 1),
       m_j_local_first(m_grid->ys()),
@@ -34,36 +133,10 @@ void ConnectedComponents::compute_runs(int &run_number, VecList &lists, unsigned
     const int i = p.i(), j = p.j();
 
     if (ForegroundCond(i, j)) {
-      //Check Foreground Pixel
       bool isWest = (i <= m_i_local_first), isSouth = (j <= m_j_local_first);
       StarStencil<int> mask_star = m_mask_run.int_star(i, j);
-
-      if (not isWest and (mask_star.w > 0)) {
-        // west neighbor is also foreground: continue the run
-        continueRun(i, j, run_number, lists);
-      } else {
-        //west neighbor is a background pixel (or this is westmost column): start a new run
-        int parent;
-        if (not isSouth and (mask_star.s > 0)) {
-          //check the pixel south and set the parent
-          parent = mask_star.s;
-        } else {
-          parent = 0;
-        }
-        startNewRun(i, j, run_number, parent, lists);
-      }
-
-      if (not isSouth and (mask_star.s > 0)) {
-        mergeRuns(run_number, mask_star.s, lists);
-      }
-
+      check_cell(i, j, isWest, isSouth, mask_star.w, mask_star.s, run_number, lists, max_items);
       m_mask_run(i, j) = run_number;
-
-      //resize vectors if 'max_items' are exceeded
-      if ((run_number + 1) >= max_items) {
-        max_items += m_grid->ym();
-        resizeLists(lists, max_items);
-      }
     }
   }
 
@@ -74,43 +147,6 @@ void ConnectedComponents::compute_runs(int &run_number, VecList &lists, unsigned
   while (updateAtBoundaries) {
     updateAtBoundaries = updateRunsAtBoundaries(lists);
     labelMask(run_number, lists);
-  }
-}
-
-void ConnectedComponents::init_VecList(VecList &lists, const unsigned int size) {
-  RunVec parents(size), lengths(size), j_vec(size), i_vec(size);
-  lists["parents"] = parents;
-  lists["lengths"] = lengths;
-  lists["j"] = j_vec;
-  lists["i"] = i_vec;
-
-  for (unsigned int k = 0; k < 2; ++k) {
-    lists["parents"][k] = 0;
-    lists["lengths"][k] = 0;
-    lists["j"][k] = 0;
-    lists["i"][k] = 0;
-  }
-}
-
-void ConnectedComponents::startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists) {
-  run_number += 1;
-  lists["i"][run_number] = i;
-  lists["j"][run_number] = j;
-  lists["lengths"][run_number] = 1;
-  lists["parents"][run_number] = parent;
-}
-
-void ConnectedComponents::continueRun(const int i, const int j, int &run_number, VecList &lists) {
-  lists["lengths"][run_number] += 1;
-}
-
-void ConnectedComponents::mergeRuns(const int run_number, const int run_south, VecList &lists) {
-  run_union(lists["parents"], run_south, run_number);
-}
-
-void ConnectedComponents::resizeLists(VecList &lists, const int new_length) {
-  for (VecList::iterator it = lists.begin(); it != lists.end(); it++) {
-    it->second.resize(new_length);
   }
 }
 
@@ -153,28 +189,6 @@ bool ConnectedComponents::updateRunsAtBoundaries(VecList &lists) {
   }
 
   return (GlobalOr(m_grid->com, changed));
-}
-
-void ConnectedComponents::run_union(RunVec &parents, int run1, int run2) {
-  if ((parents[run1] == run2) or (parents[run2] == run1)) {
-    return;
-  }
-
-  run1 = trackParentRun(run1, parents);
-  run2 = trackParentRun(run2, parents);
-
-  if (run1 > run2) {
-    parents[run1] = run2;
-  } else if (run1 < run2) {
-    parents[run2] = run1;
-  }
-}
-
-int ConnectedComponents::trackParentRun(int run, const RunVec &parents) {
-  while (parents[run] != 0) {
-    run = parents[run];
-  }
-  return run;
 }
 
 void ConnectedComponents::addFieldVecAccessList(FieldVec &fields, IceModelVec::AccessList &list) {

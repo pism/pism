@@ -14,14 +14,34 @@ typedef std::map<std::string, RunVec > VecList;
 typedef std::vector<IceModelVec*> FieldVec;
 typedef std::vector<const IceModelVec*> ConstFieldVec;
 
-class ConnectedComponents {
+class ConnectedComponentsBase {
 public:
-  ConnectedComponents(IceGrid::ConstPtr g);
-  ~ConnectedComponents();
+  ConnectedComponentsBase(const int);
+  ~ConnectedComponentsBase();
 
 private:
   void resizeLists(VecList &lists, const int new_length);
   void run_union(RunVec &parents, int run1, int run2);
+
+protected:
+  int m_dList;
+  void check_cell(const int i, const int j,
+                  const bool isWest, const bool isSouth, const int mask_w, const int mask_s,
+                  int &run_number, VecList &lists, unsigned int &max_items);
+  int trackParentRun(int run, const RunVec &parents);
+  virtual void init_VecList(VecList &lists, const unsigned int length);
+  virtual void startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists);
+  virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
+  virtual void mergeRuns(const int run_number, const int run_south, VecList &lists);
+  virtual void compute_runs(int &run_number, VecList &lists, unsigned int &max_items) = 0;
+  virtual void labelMask(int run_number, const VecList &lists) = 0;
+  virtual bool ForegroundCond(const int i, const int j) const = 0;
+};
+
+class ConnectedComponents : public ConnectedComponentsBase {
+public:
+  ConnectedComponents(IceGrid::ConstPtr g);
+  ~ConnectedComponents();
 
 protected:
   const IceGrid::ConstPtr m_grid;
@@ -33,21 +53,14 @@ protected:
 
   void compute_runs(int &run_number, VecList &lists, unsigned int &max_items);
   bool updateRunsAtBoundaries(VecList &lists);
-  int trackParentRun(int run, const RunVec &parents);
   void updateGhosts(FieldVec &in);
   void addFieldVecAccessList(FieldVec &field, IceModelVec::AccessList &list);
   void addFieldVecAccessList(ConstFieldVec &field, IceModelVec::AccessList &list);
-  virtual void init_VecList(VecList &lists, const unsigned int length);
-  virtual void startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists);
-  virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
-  virtual void mergeRuns(const int run_number, const int run_south, VecList &lists);
   virtual void labelMask(int run_number, const VecList &lists);
-  virtual bool ForegroundCond(const int i, const int j) const = 0;
   virtual void treatInnerMargin(const int i, const int j,
                                 const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
                                 VecList &lists, bool &changed) {};
 };
-
 
 
 class SinkCC : public ConnectedComponents {
