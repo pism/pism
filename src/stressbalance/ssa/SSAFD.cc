@@ -982,6 +982,33 @@ void SSAFD::picard_manager(const Inputs &inputs,
     ierr = KSPSolve(m_KSP, m_b.vec(), m_velocity_global.vec());
     PISM_CHK(ierr, "KSPSolve");
 
+    IceModelVec::AccessList list{&m_velocity_global};
+    double velssamax = m_config->get_double("stress_balance.ssa.fd.max_vel");
+    velssamax = units::convert(m_sys, velssamax, "m year-1", "m second-1");
+
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      const double
+        u_abs = fabs(m_velocity_global(i, j).u),
+        v_abs = fabs(m_velocity_global(i, j).v),
+        uv_mag = sqrt(PetscSqr(u_abs) + PetscSqr(v_abs));
+
+      if (uv_mag > velssamax) {
+        double uv_ratio = uv_mag / velssamax;
+        //m_log->message(1,
+        //         "!!!!! velmag_ssa = %10.3f, %5.3f, %d, %d\n",
+        //         units::convert(m_sys, uv_mag,"m second-1","m year-1"),uv_ratio,i,j);
+
+        m_velocity_global(i, j).u /= uv_ratio;
+        m_velocity_global(i, j).v /= uv_ratio;
+      //m_velocity_global(i, j).u = std::max(std::min(velssamax, m_velocity_global(i, j).u),-velssamax);
+      //m_velocity_global(i, j).v = std::max(std::min(velssamax, m_velocity_global(i, j).v),-velssamax);
+
+      }
+    }
+
     // Check if diverged; report to standard out about iteration
     ierr = KSPGetConvergedReason(m_KSP, &reason);
     PISM_CHK(ierr, "KSPGetConvergedReason");
