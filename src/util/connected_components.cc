@@ -252,6 +252,7 @@ void ConnectedComponentsSerial::compute_runs(int &run_number, VecList &lists, un
   //labelMask(run_number, lists);
 }
 
+/*
 void ConnectedComponentsSerial::labelMask(int run_number, const VecList &lists) {
   const RunVec &i_vec   = lists.find("i")->second,
                &j_vec   = lists.find("j")->second,
@@ -266,7 +267,7 @@ void ConnectedComponentsSerial::labelMask(int run_number, const VecList &lists) 
     }
   }
 }
-
+*/
 
 SinkCC::SinkCC(IceGrid::ConstPtr g)
   :ConnectedComponents(g) {

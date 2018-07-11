@@ -35,7 +35,6 @@ protected:
   virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
   virtual void mergeRuns(const int run_number, const int run_south, VecList &lists);
   virtual void compute_runs(int &run_number, VecList &lists, unsigned int &max_items) = 0;
-  virtual void labelMask(int run_number, const VecList &lists) = 0;
   virtual bool ForegroundCond(const int i, const int j) const = 0;
 };
 
@@ -74,7 +73,7 @@ protected:
   petsc::Vec m_mask_run_vec;
 
   void compute_runs(int &run_number, VecList &lists, unsigned int &max_items);
-  virtual void labelMask(int run_number, const VecList &lists);
+//   virtual void labelMask(int run_number, const VecList &lists);
 };
 
 
