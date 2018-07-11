@@ -349,7 +349,7 @@ void MaskCC::compute_mask(IceModelVec2Int &mask) {
 
   compute_runs(run_number, lists, max_items);
 
-  labelMask(run_number, lists, mask);
+  labelOutMask(run_number, lists, mask);
 }
 
 bool MaskCC::ForegroundCond(const int i, const int j) const {
@@ -357,7 +357,7 @@ bool MaskCC::ForegroundCond(const int i, const int j) const {
   return (mask > 0);
 }
 
-void MaskCC::labelMask(const int run_number, const VecList &lists, IceModelVec2Int &result) {
+void MaskCC::labelOutMask(const int run_number, const VecList &lists, IceModelVec2Int &result) {
   IceModelVec::AccessList list{&result};
   result.set(0);
 

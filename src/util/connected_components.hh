@@ -105,7 +105,7 @@ protected:
   virtual bool ForegroundCond(const int i, const int j) const;
 
 private:
-  void labelMask(const int run_number, const VecList &lists, IceModelVec2Int &result);
+  void labelOutMask(const int run_number, const VecList &lists, IceModelVec2Int &result);
 };
 
 
