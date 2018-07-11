@@ -216,24 +216,15 @@ void ConnectedComponents::updateGhosts(FieldVec &in) {
 
 
 ConnectedComponentsSerial::ConnectedComponentsSerial(int Mx, int My)
-  :ConnectedComponentsBase(My),
-   m_Mx(Mx),
-   m_My(My) {
-
-  // memory allocation
-  PetscErrorCode ierr = 0;
-
-  // m_mask_run
-  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_mask_run_vec.rawptr());;
-  PISM_CHK(ierr, "VecCreateSeq");
-
-  m_mask_run.reset(new petsc::VecArray2D(m_mask_run_vec, m_Mx, m_My));
+  :m_Mx(Mx),
+   m_My(My),
+   ConnectedComponentsBase(m_My) {
+  //empty
 }
 
 ConnectedComponentsSerial::~ConnectedComponentsSerial() {
   //empty
 }
-
 
 void ConnectedComponentsSerial::compute_runs(int &run_number, VecList &lists, unsigned int &max_items) {
 

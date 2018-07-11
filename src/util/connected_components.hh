@@ -70,7 +70,7 @@ public:
 protected:
   const int m_Mx, m_My;
   std::unique_ptr<petsc::VecArray2D> m_mask_run;
-  petsc::Vec m_mask_run_vec;
+  petsc::Vec::Ptr m_mask_run_vec;
 
   void compute_runs(int &run_number, VecList &lists, unsigned int &max_items);
 //   virtual void labelMask(int run_number, const VecList &lists);
