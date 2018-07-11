@@ -136,6 +136,34 @@ private:
   }
 };
 
+class LakeAccumulatorCCSerial : public ConnectedComponentsSerial {
+public:
+  LakeAccumulatorCCSerial(IceGrid::ConstPtr g, const double fill_value);
+  ~LakeAccumulatorCCSerial();
+  void init(const IceModelVec2S &lake_level);
+  void accumulate(const IceModelVec2S &in, IceModelVec2S &result);
+
+protected:
+  virtual bool ForegroundCond(const int i, const int j) const;
+
+private:
+  const IceGrid::ConstPtr m_grid;
+  bool m_initialized;
+  double m_fill_value;
+  VecList m_lists;
+  int m_run_number;
+
+  void prepare_mask(const IceModelVec2S &lake_level);
+
+  inline bool ForegroundCond(const int mask) const {
+    return (mask > 0);
+  }
+
+  inline bool isLake(const double level) {
+    return (level != m_fill_value);
+  }
+};
+
 } // namespace pism
 
 #endif

@@ -586,4 +586,108 @@ void FilterExpansionCC::set_mask_validity(const int n_filter) {
 }
 
 
+LakeAccumulatorCCSerial::LakeAccumulatorCCSerial(IceGrid::ConstPtr g, const double fill_value)
+  :m_grid(g),
+   ConnectedComponentsSerial(m_grid->Mx(), m_grid->My()),
+   m_fill_value(fill_value),
+   m_initialized(false) {
+  //empty
+}
+
+LakeAccumulatorCCSerial::~LakeAccumulatorCCSerial() {
+  //empty
+}
+
+void LakeAccumulatorCCSerial::init(const IceModelVec2S &lake_level) {
+
+  prepare_mask(lake_level);
+
+  unsigned int max_items = 2 * m_grid->ym();
+  init_VecList(m_lists, max_items);
+
+  m_run_number = 0;
+
+  compute_runs(m_run_number, m_lists, max_items);
+
+  m_initialized = true;
+}
+
+void LakeAccumulatorCCSerial::accumulate(const IceModelVec2S &in, IceModelVec2S &result) {
+  if (not m_initialized) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "LakeAccumulatorCCSerial is not initialized.");
+  }
+
+  result.set(m_fill_value);
+
+  petsc::Vec::Ptr in_vec_p0,
+                  result_vec_p0;
+  in.put_on_proc0(*in_vec_p0);
+  result.put_on_proc0(*result_vec_p0);
+
+  ParallelSection rank0(m_grid->com);
+  try {
+    if (m_grid->rank() == 0) {
+      petsc::VecArray2D in_p0(*in_vec_p0, m_Mx, m_My),
+                        result_p0(*result_vec_p0, m_Mx, m_My);
+      //Init allocator
+      RunVec accumulator(m_run_number + 1, 0.0);
+
+      const RunVec &i_vec   = m_lists.find("i")->second,
+                   &j_vec   = m_lists.find("j")->second,
+                   &len_vec = m_lists.find("lengths")->second,
+                   &parents = m_lists.find("parents")->second;
+
+      //accumulate values
+      for (int k = 0; k <= m_run_number; ++k) {
+        const int j = j_vec[k];
+        const int label = trackParentRun(k, parents);
+        for (unsigned int n = 0; n < len_vec[k]; ++n) {
+          const int i = i_vec[k] + n;
+          accumulator[label] += in_p0(i, j);
+        }
+      }
+
+      //label result
+      for (int k = 0; k <= m_run_number; ++k) {
+        const int j = j_vec[k];
+        const int label = trackParentRun(k, parents);
+        for (unsigned int n = 0; n < len_vec[k]; ++n) {
+          const int i = i_vec[k] + n;
+          result_p0(i, j) = accumulator[label];
+        }
+      }
+    }
+  } catch (...) {
+    rank0.failed();
+  }
+  rank0.check();
+
+  //Get it from Processor 0
+  result.get_from_proc0(*result_vec_p0);
+}
+
+bool LakeAccumulatorCCSerial::ForegroundCond(const int i, const int j) const {
+  const int mask = (*m_mask_run)(i, j);
+  return ForegroundCond(mask);
+}
+
+void LakeAccumulatorCCSerial::prepare_mask(const IceModelVec2S &lake_level) {
+  IceModelVec2Int mask_tmp(m_grid, "tmp_mask", WITHOUT_GHOSTS);
+
+  IceModelVec::AccessList list{ &mask_tmp, &lake_level};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (isLake(lake_level(i, j))) {
+      mask_tmp(i, j) = 1;
+    } else {
+      mask_tmp(i, j) = 0;
+    }
+  }
+  mask_tmp.put_on_proc0(*m_mask_run_vec);
+
+  m_mask_run.reset(new petsc::VecArray2D(*m_mask_run_vec, m_Mx, m_My));
+}
+
 } // namespace pism
