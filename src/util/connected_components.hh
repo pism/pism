@@ -6,6 +6,7 @@
 
 #include "pism/util/IceGrid.hh"
 #include "pism/util/iceModelVec.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 
@@ -60,6 +61,20 @@ protected:
   virtual void treatInnerMargin(const int i, const int j,
                                 const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
                                 VecList &lists, bool &changed) {};
+};
+
+class ConnectedComponentsSerial : public ConnectedComponentsBase {
+public:
+  ConnectedComponentsSerial(int Mx, int My);
+  ~ConnectedComponentsSerial();
+
+protected:
+  const int m_Mx, m_My;
+  std::unique_ptr<petsc::VecArray2D> m_mask_run;
+  petsc::Vec m_mask_run_vec;
+
+  void compute_runs(int &run_number, VecList &lists, unsigned int &max_items);
+  virtual void labelMask(int run_number, const VecList &lists);
 };
 
 

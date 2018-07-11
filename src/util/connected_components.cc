@@ -1,5 +1,6 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/iceModelVec.hh"
+#include "pism/util/error_handling.hh"
 
 #include "connected_components.hh"
 
@@ -134,8 +135,9 @@ void ConnectedComponents::compute_runs(int &run_number, VecList &lists, unsigned
 
     if (ForegroundCond(i, j)) {
       bool isWest = (i <= m_i_local_first), isSouth = (j <= m_j_local_first);
-      StarStencil<int> mask_star = m_mask_run.int_star(i, j);
-      check_cell(i, j, isWest, isSouth, mask_star.w, mask_star.s, run_number, lists, max_items);
+      const int mask_w = isWest  ? 0 : m_mask_run(i-1, j),
+                mask_s = isSouth ? 0 : m_mask_run(i, j-1);
+      check_cell(i, j, isWest, isSouth, mask_w, mask_s, run_number, lists, max_items);
       m_mask_run(i, j) = run_number;
     }
   }
@@ -212,6 +214,58 @@ void ConnectedComponents::updateGhosts(FieldVec &in) {
   }
 }
 
+
+ConnectedComponentsSerial::ConnectedComponentsSerial(int Mx, int My)
+  :ConnectedComponentsBase(My),
+   m_Mx(Mx),
+   m_My(My) {
+
+  // memory allocation
+  PetscErrorCode ierr = 0;
+
+  // m_mask_run
+  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_mask_run_vec.rawptr());;
+  PISM_CHK(ierr, "VecCreateSeq");
+
+  m_mask_run.reset(new petsc::VecArray2D(m_mask_run_vec, m_Mx, m_My));
+}
+
+ConnectedComponentsSerial::~ConnectedComponentsSerial() {
+  //empty
+}
+
+
+void ConnectedComponentsSerial::compute_runs(int &run_number, VecList &lists, unsigned int &max_items) {
+
+  for (int j = 0; j < m_My; j++) {
+    for (int i = 0; i < m_Mx; i++) {
+      if (ForegroundCond(i, j)) {
+        bool isWest = (i <= 0), isSouth = (j <= 0);
+        const int mask_w = isWest  ? 0 : (*m_mask_run)(i-1, j),
+                  mask_s = isSouth ? 0 : (*m_mask_run)(i, j-1);
+        check_cell(i, j, isWest, isSouth, mask_w, mask_s, run_number, lists, max_items);
+        (*m_mask_run)(i, j) = run_number;
+      }
+    }
+  }
+  //I think this is not needed in the serial case. Might be run for further application
+  //labelMask(run_number, lists);
+}
+
+void ConnectedComponentsSerial::labelMask(int run_number, const VecList &lists) {
+  const RunVec &i_vec   = lists.find("i")->second,
+               &j_vec   = lists.find("j")->second,
+               &len_vec = lists.find("lengths")->second,
+               &parents = lists.find("parents")->second;
+
+  for (int k = 0; k <= run_number; ++k) {
+    const int label = trackParentRun(k, parents);
+    for (unsigned int n = 0; n < len_vec[k]; ++n) {
+      const int i = i_vec[k] + n, j = j_vec[k];
+      (*m_mask_run)(i, j) = label;
+    }
+  }
+}
 
 
 SinkCC::SinkCC(IceGrid::ConstPtr g)
