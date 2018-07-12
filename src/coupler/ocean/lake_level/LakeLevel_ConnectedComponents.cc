@@ -587,10 +587,9 @@ void FilterExpansionCC::set_mask_validity(const int n_filter) {
 
 
 LakeAccumulatorCCSerial::LakeAccumulatorCCSerial(IceGrid::ConstPtr g, const double fill_value)
-  :m_grid(g),
-   ConnectedComponentsSerial(m_grid->Mx(), m_grid->My()),
-   m_fill_value(fill_value),
-   m_initialized(false) {
+  : ConnectedComponentsSerial(g),
+    m_fill_value(fill_value),
+    m_initialized(false) {
   //empty
 }
 
@@ -627,8 +626,8 @@ void LakeAccumulatorCCSerial::accumulate(const IceModelVec2S &in, IceModelVec2S 
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {
-      petsc::VecArray2D in_p0(*in_vec_p0, m_Mx, m_My),
-                        result_p0(*result_vec_p0, m_Mx, m_My);
+      petsc::VecArray2D in_p0(*in_vec_p0, m_grid->Mx(), m_grid->My()),
+                        result_p0(*result_vec_p0, m_grid->Mx(), m_grid->My());
       //Init allocator
       RunVec accumulator(m_run_number + 1, 0.0);
 
@@ -687,7 +686,7 @@ void LakeAccumulatorCCSerial::prepare_mask(const IceModelVec2S &lake_level) {
   }
   mask_tmp.put_on_proc0(*m_mask_run_vec);
 
-  m_mask_run.reset(new petsc::VecArray2D(*m_mask_run_vec, m_Mx, m_My));
+  m_mask_run.reset(new petsc::VecArray2D(*m_mask_run_vec, m_grid->Mx(), m_grid->My()));
 }
 
 } // namespace pism

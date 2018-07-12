@@ -17,7 +17,7 @@ typedef std::vector<const IceModelVec*> ConstFieldVec;
 
 class ConnectedComponentsBase {
 public:
-  ConnectedComponentsBase(const int);
+  ConnectedComponentsBase(IceGrid::ConstPtr g);
   ~ConnectedComponentsBase();
 
 private:
@@ -25,7 +25,7 @@ private:
   void run_union(RunVec &parents, int run1, int run2);
 
 protected:
-  int m_dList;
+  const IceGrid::ConstPtr m_grid;
   void check_cell(const int i, const int j,
                   const bool isWest, const bool isSouth, const int mask_w, const int mask_s,
                   int &run_number, VecList &lists, unsigned int &max_items);
@@ -44,7 +44,6 @@ public:
   ~ConnectedComponents();
 
 protected:
-  const IceGrid::ConstPtr m_grid;
   IceModelVec2Int m_mask_run;
   FieldVec m_masks;
   ConstFieldVec m_fields;
@@ -64,11 +63,10 @@ protected:
 
 class ConnectedComponentsSerial : public ConnectedComponentsBase {
 public:
-  ConnectedComponentsSerial(int Mx, int My);
+  ConnectedComponentsSerial(IceGrid::ConstPtr g);
   ~ConnectedComponentsSerial();
 
 protected:
-  const int m_Mx, m_My;
   std::unique_ptr<petsc::VecArray2D> m_mask_run;
   petsc::Vec::Ptr m_mask_run_vec;
 

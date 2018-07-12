@@ -6,8 +6,8 @@
 
 namespace pism {
 
-ConnectedComponentsBase::ConnectedComponentsBase(const int dList):
-  m_dList(dList) {
+ConnectedComponentsBase::ConnectedComponentsBase(IceGrid::ConstPtr g):
+  m_grid(g) {
   //empty
 }
 
@@ -59,7 +59,7 @@ inline void ConnectedComponentsBase::check_cell(const int i, const int j, const 
 
   //resize vectors if 'max_items' are exceeded
   if ((run_number + 1) >= max_items) {
-    max_items += m_dList;
+    max_items += m_grid->ym();
     resizeLists(lists, max_items);
   }
 }
@@ -105,8 +105,7 @@ void ConnectedComponentsBase::mergeRuns(const int run_number, const int run_sout
 
 
 ConnectedComponents::ConnectedComponents(IceGrid::ConstPtr g)
-    : m_grid(g),
-      ConnectedComponentsBase(m_grid->ym()),
+    : ConnectedComponentsBase(g),
       m_i_local_first(m_grid->xs()),
       m_i_local_last(m_i_local_first + m_grid->xm() - 1),
       m_j_local_first(m_grid->ys()),
@@ -215,10 +214,8 @@ void ConnectedComponents::updateGhosts(FieldVec &in) {
 }
 
 
-ConnectedComponentsSerial::ConnectedComponentsSerial(int Mx, int My)
-  :m_Mx(Mx),
-   m_My(My),
-   ConnectedComponentsBase(m_My) {
+ConnectedComponentsSerial::ConnectedComponentsSerial(IceGrid::ConstPtr g)
+  : ConnectedComponentsBase(g) {
   //empty
 }
 
@@ -228,8 +225,8 @@ ConnectedComponentsSerial::~ConnectedComponentsSerial() {
 
 void ConnectedComponentsSerial::compute_runs(int &run_number, VecList &lists, unsigned int &max_items) {
 
-  for (int j = 0; j < m_My; j++) {
-    for (int i = 0; i < m_Mx; i++) {
+  for (int j = 0; j < m_grid->My(); j++) {
+    for (int i = 0; i < m_grid->Mx(); i++) {
       if (ForegroundCond(i, j)) {
         bool isWest = (i <= 0), isSouth = (j <= 0);
         const int mask_w = isWest  ? 0 : (*m_mask_run)(i-1, j),

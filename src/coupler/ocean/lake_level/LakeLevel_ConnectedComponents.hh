@@ -147,7 +147,6 @@ protected:
   virtual bool ForegroundCond(const int i, const int j) const;
 
 private:
-  const IceGrid::ConstPtr m_grid;
   bool m_initialized;
   double m_fill_value;
   VecList m_lists;
