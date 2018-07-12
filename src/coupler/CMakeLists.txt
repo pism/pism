@@ -9,6 +9,7 @@ add_library (boundary OBJECT
   ./atmosphere/YearlyCycle.cc
   ./atmosphere/CosineYearlyCycle.cc
   ./atmosphere/GivenClimate.cc
+  ./atmosphere/TemperaturePIK.cc
   ./atmosphere/LapseRates.cc
   ./atmosphere/Delta_T.cc
   ./atmosphere/Delta_P.cc
