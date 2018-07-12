@@ -190,6 +190,13 @@ void IceModel::model_state_setup() {
     m_geometry.bed_elevation.copy_from(tmp);
   }
 
+  //The lake model might need the ice discharge due to calving and frontal melting.
+  //Initialize it as 0 and add it to m_grid->variables()
+  m_discharge.set(0.0);
+  m_grid->variables().add(this->discharge());
+  //The lake model might need the shelf base mass flux.
+  m_grid->variables().add(m_ocean->shelf_base_mass_flux());
+
   m_sea_level->init(m_geometry);
 
   //Same reason as above: Lake model needs geometry.sea_level_elevation to be available
