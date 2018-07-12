@@ -8,7 +8,7 @@ namespace pism {
 
 ConnectedComponentsBase::ConnectedComponentsBase(IceGrid::ConstPtr g):
   m_grid(g) {
-  //empty
+  m_mask_run.create(m_grid, "mask_run", WITH_GHOSTS, 1);
 }
 
 ConnectedComponentsBase::~ConnectedComponentsBase() {
@@ -115,7 +115,6 @@ ConnectedComponents::ConnectedComponents(IceGrid::ConstPtr g)
       m_j_global_first(0),
       m_j_global_last(m_grid->My() - 1) {
 
-  m_mask_run.create(m_grid, "mask_run", WITH_GHOSTS, 1);
   m_masks.push_back(&m_mask_run);
 }
 
@@ -216,7 +215,7 @@ void ConnectedComponents::updateGhosts(FieldVec &in) {
 
 ConnectedComponentsSerial::ConnectedComponentsSerial(IceGrid::ConstPtr g)
   : ConnectedComponentsBase(g) {
-  //empty
+  m_mask_run_vec_p0 = m_mask_run.allocate_proc0_copy();
 }
 
 ConnectedComponentsSerial::~ConnectedComponentsSerial() {
@@ -225,37 +224,32 @@ ConnectedComponentsSerial::~ConnectedComponentsSerial() {
 
 void ConnectedComponentsSerial::compute_runs(int &run_number, VecList &lists, unsigned int &max_items) {
 
-  for (int j = 0; j < m_grid->My(); j++) {
-    for (int i = 0; i < m_grid->Mx(); i++) {
-      if (ForegroundCond(i, j)) {
-        bool isWest = (i <= 0), isSouth = (j <= 0);
-        const int mask_w = isWest  ? 0 : (*m_mask_run)(i-1, j),
-                  mask_s = isSouth ? 0 : (*m_mask_run)(i, j-1);
-        check_cell(i, j, isWest, isSouth, mask_w, mask_s, run_number, lists, max_items);
-        (*m_mask_run)(i, j) = run_number;
+  m_mask_run.put_on_proc0(*m_mask_run_vec_p0);
+
+  ParallelSection rank0(m_grid->com);
+  try {
+    if (m_grid->rank() == 0) {
+      petsc::VecArray2D mask_run(*m_mask_run_vec_p0, m_grid->Mx(), m_grid->My());
+      //We need a global pointer to the array to be able to access it from ForegroundCond(i, j)
+      m_mask_run_p0_ptr = &mask_run;
+      for (int j = 0; j < m_grid->My(); j++) {
+        for (int i = 0; i < m_grid->Mx(); i++) {
+          if (ForegroundCond(i, j)) {
+            bool isWest = (i <= 0), isSouth = (j <= 0);
+            const int mask_w = isWest  ? 0 : mask_run(i-1, j),
+                      mask_s = isSouth ? 0 : mask_run(i, j-1);
+            check_cell(i, j, isWest, isSouth, mask_w, mask_s, run_number, lists, max_items);
+            mask_run(i, j) = run_number;
+          }
+        }
       }
     }
+  } catch (...) {
+    rank0.failed();
   }
-  //I think this is not needed in the serial case. Might be run for further application
-  //labelMask(run_number, lists);
+  rank0.check();
 }
 
-/*
-void ConnectedComponentsSerial::labelMask(int run_number, const VecList &lists) {
-  const RunVec &i_vec   = lists.find("i")->second,
-               &j_vec   = lists.find("j")->second,
-               &len_vec = lists.find("lengths")->second,
-               &parents = lists.find("parents")->second;
-
-  for (int k = 0; k <= run_number; ++k) {
-    const int label = trackParentRun(k, parents);
-    for (unsigned int n = 0; n < len_vec[k]; ++n) {
-      const int i = i_vec[k] + n, j = j_vec[k];
-      (*m_mask_run)(i, j) = label;
-    }
-  }
-}
-*/
 
 SinkCC::SinkCC(IceGrid::ConstPtr g)
   :ConnectedComponents(g) {

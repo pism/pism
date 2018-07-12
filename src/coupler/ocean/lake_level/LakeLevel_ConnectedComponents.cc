@@ -598,7 +598,6 @@ LakeAccumulatorCCSerial::~LakeAccumulatorCCSerial() {
 }
 
 void LakeAccumulatorCCSerial::init(const IceModelVec2S &lake_level) {
-
   prepare_mask(lake_level);
 
   unsigned int max_items = 2 * m_grid->ym();
@@ -612,15 +611,17 @@ void LakeAccumulatorCCSerial::init(const IceModelVec2S &lake_level) {
 }
 
 void LakeAccumulatorCCSerial::accumulate(const IceModelVec2S &in, IceModelVec2S &result) {
+
   if (not m_initialized) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "LakeAccumulatorCCSerial is not initialized.");
   }
 
-  result.set(m_fill_value);
-
-  petsc::Vec::Ptr in_vec_p0,
-                  result_vec_p0;
+  petsc::Vec::Ptr in_vec_p0 = in.allocate_proc0_copy(),
+                  result_vec_p0 = result.allocate_proc0_copy();
   in.put_on_proc0(*in_vec_p0);
+
+  //Init result and put it on proc0
+  result.set(m_fill_value);
   result.put_on_proc0(*result_vec_p0);
 
   ParallelSection rank0(m_grid->com);
@@ -661,32 +662,27 @@ void LakeAccumulatorCCSerial::accumulate(const IceModelVec2S &in, IceModelVec2S 
   }
   rank0.check();
 
-  //Get it from Processor 0
+  //Get result from Processor 0
   result.get_from_proc0(*result_vec_p0);
 }
 
 bool LakeAccumulatorCCSerial::ForegroundCond(const int i, const int j) const {
-  const int mask = (*m_mask_run)(i, j);
+  const int mask = (*m_mask_run_p0_ptr)(i, j);
   return ForegroundCond(mask);
 }
 
 void LakeAccumulatorCCSerial::prepare_mask(const IceModelVec2S &lake_level) {
-  IceModelVec2Int mask_tmp(m_grid, "tmp_mask", WITHOUT_GHOSTS);
-
-  IceModelVec::AccessList list{ &mask_tmp, &lake_level};
+  IceModelVec::AccessList list{ &m_mask_run, &lake_level};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (isLake(lake_level(i, j))) {
-      mask_tmp(i, j) = 1;
+      m_mask_run(i, j) = 1;
     } else {
-      mask_tmp(i, j) = 0;
+      m_mask_run(i, j) = 0;
     }
   }
-  mask_tmp.put_on_proc0(*m_mask_run_vec);
-
-  m_mask_run.reset(new petsc::VecArray2D(*m_mask_run_vec, m_grid->Mx(), m_grid->My()));
 }
 
 } // namespace pism

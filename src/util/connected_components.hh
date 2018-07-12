@@ -26,6 +26,7 @@ private:
 
 protected:
   const IceGrid::ConstPtr m_grid;
+  IceModelVec2Int m_mask_run;
   void check_cell(const int i, const int j,
                   const bool isWest, const bool isSouth, const int mask_w, const int mask_s,
                   int &run_number, VecList &lists, unsigned int &max_items);
@@ -44,7 +45,6 @@ public:
   ~ConnectedComponents();
 
 protected:
-  IceModelVec2Int m_mask_run;
   FieldVec m_masks;
   ConstFieldVec m_fields;
   const int m_i_local_first, m_i_local_last, m_j_local_first, m_j_local_last,
@@ -67,11 +67,10 @@ public:
   ~ConnectedComponentsSerial();
 
 protected:
-  std::unique_ptr<petsc::VecArray2D> m_mask_run;
-  petsc::Vec::Ptr m_mask_run_vec;
+  petsc::Vec::Ptr m_mask_run_vec_p0;
+  petsc::VecArray2D *m_mask_run_p0_ptr;
 
   void compute_runs(int &run_number, VecList &lists, unsigned int &max_items);
-//   virtual void labelMask(int run_number, const VecList &lists);
 };
 
 
