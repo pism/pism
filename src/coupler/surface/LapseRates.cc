@@ -71,6 +71,11 @@ LapseRates::LapseRates(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
 
   m_mass_flux   = allocate_mass_flux(g);
   m_temperature = allocate_temperature(g);
+
+  m_smb_scale_factor = 0.0;
+  do_smb_scale  = m_config->get_boolean("surface.lapse_rate.smb_lapse_scaling");
+
+
 }
 
 LapseRates::~LapseRates() {
@@ -86,11 +91,29 @@ void LapseRates::init_impl(const Geometry &geometry) {
                  "  [using temperature and mass balance lapse corrections]\n");
 
   double ice_density = m_config->get_double("constants.ice.density");
-  m_log->message(2,
+
+  m_smb_scale_factor  = m_config->get_double("surface.lapse_rate.smb_lapse_scale_factor");
+  m_smb_scale_factor = units::convert(m_sys, m_smb_scale_factor, "km-1", "m-1");
+
+  do_smb_scale  = m_config->get_boolean("surface.lapse_rate.smb_lapse_scaling");
+
+
+  if (do_smb_scale){
+
+    m_log->message(2,
+              "   ice upper-surface temperature lapse rate: %3.3f K per km\n"
+              "   ice-equivalent surface mass balance scale factor: %3.3f per km\n",
+              convert(m_sys, m_temp_lapse_rate, "K / m", "K / km"),
+              convert(m_sys, m_smb_scale_factor, "m-1", "km-1"));
+  } else {
+
+    m_log->message(2,
                  "   ice upper-surface temperature lapse rate: %3.3f K per km\n"
                  "   ice-equivalent surface mass balance lapse rate: %3.3f m year-1 per km\n",
                  convert(m_sys, m_temp_lapse_rate, "K / m", "K / km"),
                  convert(m_sys, m_smb_lapse_rate, "kg / (m2 second)", "kg / (m2 year)") / ice_density);
+  }
+
 
   ForcingOptions opt(*m_grid->ctx(), "surface.lapse_rate");
   m_reference_surface->init(opt.filename, opt.period, opt.reference_time);
@@ -106,8 +129,14 @@ void LapseRates::update_impl(const Geometry &geometry, double t, double dt) {
   const IceModelVec2S &surface = geometry.ice_surface_elevation;
 
   m_mass_flux->copy_from(m_input_model->mass_flux());
-  lapse_rate_correction(surface, *m_reference_surface,
-                        m_smb_lapse_rate, *m_mass_flux);
+
+  if (do_smb_scale) {
+      lapse_rate_scale(surface, *m_reference_surface,
+                       m_smb_scale_factor, *m_mass_flux);
+  } else {
+      lapse_rate_correction(surface, *m_reference_surface,
+                            m_smb_lapse_rate, *m_mass_flux);
+  }
 
   m_temperature->copy_from(m_input_model->temperature());
   lapse_rate_correction(surface, *m_reference_surface,

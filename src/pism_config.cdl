@@ -1711,6 +1711,17 @@ netcdf pism_config {
     pism_config:surface.lapse_rate.reference_year_type = "integer";
     pism_config:surface.lapse_rate.reference_year_units = "years";
 
+    pism_config:surface.lapse_rate.smb_lapse_scaling = "no";
+    pism_config:surface.lapse_rate.smb_lapse_scaling_doc = "Enable surface mass balance scaling according to change in surface elevation";
+    pism_config:surface.lapse_rate.smb_lapse_scaling_option = "smb_lapse_scaling";
+    pism_config:surface.lapse_rate.smb_lapse_scaling_type = "boolean";
+
+    pism_config:surface.lapse_rate.smb_lapse_scale_factor = 0.5;
+    pism_config:surface.lapse_rate.smb_lapse_scale_factor_doc = "Scale surface mass balance according to change in surface elevation";
+    pism_config:surface.lapse_rate.smb_lapse_scale_factor_option = "smb_scale_factor";
+    pism_config:surface.lapse_rate.smb_lapse_scale_factor_type = "scalar";
+    pism_config:surface.lapse_rate.smb_lapse_scale_factor_units = "km-1";
+
     pism_config:surface.anomaly.file = "";
     pism_config:surface.anomaly.file_doc = "Name of the file containing climate forcing fields.";
     pism_config:surface.anomaly.file_type = "string";

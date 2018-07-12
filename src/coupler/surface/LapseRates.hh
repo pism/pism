@@ -40,6 +40,9 @@ protected:
 protected:
   double m_smb_lapse_rate;
   double m_temp_lapse_rate;
+  double m_smb_scale_factor;
+
+  bool do_smb_scale;
 
   IceModelVec2T::Ptr m_reference_surface;
 

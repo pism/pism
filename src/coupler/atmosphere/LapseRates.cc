@@ -99,7 +99,7 @@ void LapseRates::init_impl(const Geometry &geometry) {
 
     m_log->message(2,
              "   air temperature lapse rate: %3.3f K per km\n"
-             "   precipitation lapse rate:   %3.3f m year-1 per km\n",
+             "   precipitation lapse rate: %3.3f m year-1 per km\n",
              convert(m_sys, m_temp_lapse_rate, "K / m", "K / km"),
              convert(m_sys, m_precip_lapse_rate, "(m / s) / m", "(m / year) / km"));
   }
