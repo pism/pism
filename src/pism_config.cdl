@@ -139,6 +139,17 @@ netcdf pism_config {
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_units = "(m / year) / km";
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_option = "precip_lapse_rate";
 
+    pism_config:atmosphere.lapse_rate.precip_lapse_scaling = "no";
+    pism_config:atmosphere.lapse_rate.precip_lapse_scaling_doc = "Enable precipitation scaling according to change in surface elevation";
+    pism_config:atmosphere.lapse_rate.precip_lapse_scaling_option = "precip_lapse_scaling";
+    pism_config:atmosphere.lapse_rate.precip_lapse_scaling_type = "boolean";
+
+    pism_config:atmosphere.lapse_rate.precip_lapse_scale_factor = 0.5;
+    pism_config:atmosphere.lapse_rate.precip_lapse_scale_factor_doc = "Scale precipitation according to change in surface elevation";
+    pism_config:atmosphere.lapse_rate.precip_lapse_scale_factor_option = "precip_scale_factor";
+    pism_config:atmosphere.lapse_rate.precip_lapse_scale_factor_type = "scalar";
+    pism_config:atmosphere.lapse_rate.precip_lapse_scale_factor_units = "km-1";
+
     pism_config:basal_resistance.beta_ice_free_bedrock = 1.8e9;
     pism_config:basal_resistance.beta_ice_free_bedrock_doc = "value is for ice stream E from :cite:`HulbeMacAyeal`; thus sliding velocity, but we hope it doesn't matter much; at 100 m/year the linear sliding law gives 57040 Pa basal shear stress";
     pism_config:basal_resistance.beta_ice_free_bedrock_type = "scalar";

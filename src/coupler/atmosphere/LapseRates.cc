@@ -16,6 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cmath>                // exp
+
 #include "LapseRates.hh"
 
 #include "pism/coupler/util/options.hh"
@@ -64,6 +66,10 @@ LapseRates::LapseRates(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> 
 
   m_precipitation = allocate_precipitation(grid);
   m_temperature   = allocate_temperature(grid);
+
+  m_precip_scale_factor = 0.0;
+  do_precip_scale  = m_config->get_boolean("atmosphere.lapse_rate.precip_lapse_scaling");
+
 }
 
 LapseRates::~LapseRates() {
@@ -78,11 +84,25 @@ void LapseRates::init_impl(const Geometry &geometry) {
   m_log->message(2,
                  "   [using air temperature and precipitation lapse corrections]\n");
 
-  m_log->message(2,
-                 "   air temperature lapse rate: %3.3f K per km\n"
-                 "   precipitation lapse rate:   %3.3f m year-1 per km\n",
-                 convert(m_sys, m_temp_lapse_rate, "K / m", "K / km"),
-                 convert(m_sys, m_precip_lapse_rate, "(m / s) / m", "(m / year) / km"));
+  //This is basically temperature lapse rate 8.2 K/Km as in TemperaturPIK times precipitation scale rate 5%/K )
+  m_precip_scale_factor  = m_config->get_double("atmosphere.lapse_rate.precip_lapse_scale_factor");
+  m_precip_scale_factor = units::convert(m_sys, m_precip_scale_factor, "km-1", "m-1");
+
+  if (do_precip_scale){
+
+    m_log->message(2,
+              "   air temperature lapse rate: %3.3f K per km\n"
+              "   precipitation scale factor: %3.3f per km\n",
+              convert(m_sys, m_temp_lapse_rate, "K / m", "K / km"),
+              convert(m_sys, m_precip_scale_factor, "m-1", "km-1"));
+  } else {
+
+    m_log->message(2,
+             "   air temperature lapse rate: %3.3f K per km\n"
+             "   precipitation lapse rate:   %3.3f m year-1 per km\n",
+             convert(m_sys, m_temp_lapse_rate, "K / m", "K / km"),
+             convert(m_sys, m_precip_lapse_rate, "(m / s) / m", "(m / year) / km"));
+  }
 
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.lapse_rate");
 
@@ -104,8 +124,13 @@ void LapseRates::update_impl(const Geometry &geometry, double t, double dt) {
   {
     m_precipitation->copy_from(m_input_model->mean_precipitation());
 
-    lapse_rate_correction(m_surface, *m_reference_surface,
-                          m_precip_lapse_rate, *m_precipitation);
+    if (do_precip_scale) {
+      lapse_rate_scale(m_surface, *m_reference_surface,
+                       m_precip_scale_factor, *m_precipitation);
+    } else {
+      lapse_rate_correction(m_surface, *m_reference_surface,
+                            m_precip_lapse_rate, *m_precipitation);
+    }
   }
 
   // temperature
@@ -165,7 +190,12 @@ void LapseRates::precip_time_series_impl(int i, int j, std::vector<double> &resu
   m_reference_surface->interp(i, j, usurf);
 
   for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
-    result[m] -= m_precip_lapse_rate * (m_surface(i, j) - usurf[m]);
+
+    if (do_precip_scale) {
+      result[m] *= exp( -m_precip_scale_factor * (m_surface(i, j) - usurf[m]) );
+    } else {
+      result[m] -= m_precip_lapse_rate * (m_surface(i, j) - usurf[m]);
+    }
   }
 }
 

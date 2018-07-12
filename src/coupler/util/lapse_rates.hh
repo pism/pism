@@ -24,6 +24,11 @@ namespace pism {
 
 class IceModelVec2S;
 
+void lapse_rate_scale(const IceModelVec2S &surface,
+                      const IceModelVec2S &reference_surface,
+                      double lapse_rate,
+                      IceModelVec2S &result);
+
 void lapse_rate_correction(const IceModelVec2S &surface,
                            const IceModelVec2S &reference_surface,
                            double lapse_rate,

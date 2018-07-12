@@ -49,12 +49,15 @@ protected:
 protected:
   double m_precip_lapse_rate;
   double m_temp_lapse_rate;
+  double m_precip_scale_factor;
 
   IceModelVec2T::Ptr m_reference_surface;
 
   IceModelVec2S::Ptr m_precipitation;
   IceModelVec2S::Ptr m_temperature;
   IceModelVec2S m_surface;
+
+  bool do_precip_scale;
 };
 
 } // end of namespace atmosphere

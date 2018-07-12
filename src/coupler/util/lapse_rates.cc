@@ -23,6 +23,35 @@
 
 namespace pism {
 
+void lapse_rate_scale(const IceModelVec2S &surface,
+                      const IceModelVec2S &reference_surface,
+                      double lapse_rate,
+                      IceModelVec2S &result) {
+  IceGrid::ConstPtr grid = result.grid();
+
+  if (fabs(lapse_rate) < 1e-12) {
+    return;
+  }
+
+  IceModelVec::AccessList list{&surface, &reference_surface, &result};
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    //as in paleo_precip
+    const double correction = exp( -lapse_rate * (surface(i,j) - reference_surface(i,j)) );
+    
+    //as in paleo_precip, but taylor expansion
+    //const double correction = 1.0 - lapse_rate * (surface(i,j) - reference_surface(i,j));
+
+    //as in Pollard et al., 2012
+    //not DeConto et al., 2016 ??
+    //const double correction = pow(2.0, -lapse_rate/0.05/10.0 * (surface(i,j) - reference_surface(i,j)));
+
+    result(i, j) *= correction;
+  }
+}
+
 void lapse_rate_correction(const IceModelVec2S &surface,
                            const IceModelVec2S &reference_surface,
                            double lapse_rate,
