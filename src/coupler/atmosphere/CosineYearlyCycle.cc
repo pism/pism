@@ -61,11 +61,11 @@ void CosineYearlyCycle::init_impl(const Geometry &geometry) {
   }
 
   m_log->message(2,
-             "  Reading mean annual air temperature, mean July air temperature, and\n"
+             "  Reading mean annual air temperature, mean summer air temperature (NH:July, SH:January), and\n"
              "  precipitation fields from '%s'...\n", input_file->c_str());
 
   m_air_temp_mean_annual.regrid(input_file, CRITICAL);
-  m_air_temp_mean_july.regrid(input_file, CRITICAL);
+  m_air_temp_mean_summer.regrid(input_file, CRITICAL);
   m_precipitation.regrid(input_file, CRITICAL);
 
   if (scaling_file.is_set()) {

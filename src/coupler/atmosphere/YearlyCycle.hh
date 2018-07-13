@@ -26,15 +26,16 @@ namespace pism {
 namespace atmosphere {
 
 //! A class containing an incomplete implementation of an atmosphere model
-//! based on a temperature parameterization using mean annual and mean July
-//! (mean summer) temperatures and a cosine yearly cycle. Uses a stored
+//! based on a temperature parameterization using mean annual and mean
+//! summer temperatures and a cosine yearly cycle. Uses a stored
 //! (constant in time) precipitation field.
 class YearlyCycle : public AtmosphereModel {
 public:
   YearlyCycle(IceGrid::ConstPtr g);
   virtual ~YearlyCycle();
 
-  virtual const IceModelVec2S& mean_july_temp() const;
+  virtual const IceModelVec2S& mean_summer_temp() const;
+
 protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
@@ -58,18 +59,18 @@ protected:
   void init_internal(const std::string &input_filename, bool regrid,
                      unsigned int start);
 
-  double m_snow_temp_july_day;
+  double m_snow_temp_summer_day;
   std::string m_reference;
-  IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_july, m_precipitation;
+  IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_summer, m_precipitation;
   mutable std::vector<double> m_ts_times;
   mutable std::vector<double> m_cosine_cycle;
 };
 
-/*! @brief Mean July near-surface air temperature. */
-class PA_mean_july_temp : public Diag<YearlyCycle>
+/*! @brief Mean summer near-surface air temperature. */
+class PA_mean_summer_temp : public Diag<YearlyCycle>
 {
 public:
-  PA_mean_july_temp(const YearlyCycle *m);
+  PA_mean_summer_temp(const YearlyCycle *m);
 protected:
   IceModelVec::Ptr compute_impl() const;
 };
