@@ -193,9 +193,14 @@ void Gradual::compute_fill_rate(double dt) {
         double bml_ij = -bmb(i, j);
         bml_ij = (bml_ij >= 0.0) ? bml_ij : 0.0;
 
+        double discharge_ij = -discharge(i, j);
+        discharge_ij = (discharge_ij >= 0.0) ? discharge_ij : 0.0;
+
+        const double C = cell_area_ij * rho_ice / dt;
+
         //Convert to mass flux [kg/s]
-        mass_discharge(i, j) = discharge(i, j) * cell_area_ij * rho_ice / dt;
-        mass_basal(i, j)     = bml_ij * cell_area_ij * rho_ice / dt;
+        mass_discharge(i, j) = C * discharge_ij;
+        mass_basal(i, j)     = C * bml_ij;
       }
     } catch (...) {
       ParSec.failed();
