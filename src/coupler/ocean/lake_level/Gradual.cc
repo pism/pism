@@ -56,6 +56,35 @@ Gradual::Gradual(IceGrid::ConstPtr grid,
 
   m_expansion_mask.create(m_grid, "expansion_mask", WITHOUT_GHOSTS);
   m_expansion_mask.metadata().set_double("_FillValue", m_fill_value);
+
+  m_lake_area.create(m_grid, "lake_surface_area", WITHOUT_GHOSTS);
+  m_lake_area.set_attrs("model_state", "lake_surface_area",
+                        "m2", "lake_surface");
+  m_lake_area.metadata().set_double("_FillValue", m_fill_value);
+
+  m_lake_mass_input_discharge.create(m_grid, "lake_mass_input_due_to_discharge", WITHOUT_GHOSTS);
+  m_lake_mass_input_discharge.set_attrs("model_state", "lake_mass_input_discharge",
+                                        "kg s-1", "lake_mass_input_discharge");
+  m_lake_mass_input_discharge.metadata().set_double("_FillValue", m_fill_value);
+  m_lake_mass_input_discharge.metadata().set_string("glaciological_units", "kg year-1");
+
+  m_lake_mass_input_basal.create(m_grid, "lake_mass_input_due_to_basal melt", WITHOUT_GHOSTS);
+  m_lake_mass_input_basal.set_attrs("model_state", "lake_mass_input_basal",
+                                    "kg s-1", "lake_mass_input_shelf");
+  m_lake_mass_input_basal.metadata().set_double("_FillValue", m_fill_value);
+  m_lake_mass_input_basal.metadata().set_string("glaciological_units", "kg year-1");
+
+  m_lake_mass_input_total.create(m_grid, "lake_mass_input_total", WITHOUT_GHOSTS);
+  m_lake_mass_input_total.set_attrs("model_state", "lake_mass_input_total",
+                                    "kg s-1", "lake_mass_input_total");
+  m_lake_mass_input_total.metadata().set_double("_FillValue", m_fill_value);
+  m_lake_mass_input_total.metadata().set_string("glaciological_units", "kg year-1");
+
+  m_lake_level_rise.create(m_grid, "lake_level_rise", WITHOUT_GHOSTS);
+  m_lake_level_rise.set_attrs("model_state", "lake_level_rise",
+                              "m s-1", "lake_level_rise");
+  m_lake_level_rise.metadata().set_double("_FillValue", m_fill_value);
+  m_lake_level_rise.metadata().set_string("glaciological_units", "m year-1");
 }
 
 
@@ -128,11 +157,86 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
     ParSec.check();
   }
 
+  compute_fill_rate(dt);
+
   prepareLakeLevel(m_target_level, bed, m_min_level, m_min_bed);
 
   gradually_fill(dt, m_target_level, bed, thk, sl, m_min_level, m_max_level, m_min_bed);
 }
 
+void Gradual::compute_fill_rate(double dt) {
+
+  {
+    //Initialize Lake accumulator
+    LakeAccumulatorCCSerial Lacc(m_grid, m_fill_value);
+    Lacc.init(m_lake_level);
+
+    const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area"),
+                        &discharge = *m_grid->variables().get_2d_scalar("discharge"),
+                        &bmb       = *m_grid->variables().get_2d_scalar("effective_BMB");
+
+    IceModelVec2S mass_discharge(m_grid, "mass_discharge", WITHOUT_GHOSTS),
+                  mass_basal(m_grid, "mass_basal", WITHOUT_GHOSTS);
+
+    double rho_ice = m_config->get_double("constants.ice.density");
+
+    IceModelVec::AccessList list{ &cell_area, &discharge, &bmb, &mass_discharge, &mass_basal };
+
+    //Update lake extend depending on exp_mask
+    ParallelSection ParSec(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        const double cell_area_ij = cell_area(i, j);
+
+        //Convert from basal mass balance to basal mass loss [m].
+        double bml_ij = -bmb(i, j);
+        bml_ij = (bml_ij >= 0.0) ? bml_ij : 0.0;
+
+        //Convert to mass flux [kg/s]
+        mass_discharge(i, j) = discharge(i, j) * cell_area_ij * rho_ice / dt;
+        mass_basal(i, j)     = bml_ij * cell_area_ij * rho_ice / dt;
+      }
+    } catch (...) {
+      ParSec.failed();
+    }
+    ParSec.check();
+
+    //Lake surface area
+    Lacc.accumulate(cell_area, m_lake_area);
+
+    Lacc.accumulate(mass_discharge, m_lake_mass_input_discharge);
+    Lacc.accumulate(mass_basal, m_lake_mass_input_basal);
+  }
+
+  {
+    double rho_fresh_water = m_config->get_double("constants.fresh_water.density");
+
+    IceModelVec::AccessList list{ &m_lake_area, &m_lake_mass_input_discharge, &m_lake_mass_input_basal, &m_lake_mass_input_total, &m_lake_level_rise };
+
+    GeometryCalculator gc(*m_config);
+
+    //Update lake extend depending on exp_mask
+    ParallelSection ParSec(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        const double lake_area_ij = m_lake_area(i, j);
+        if (gc.islake(lake_area_ij)){
+          const double lake_mass_input_total_ij = m_lake_mass_input_discharge(i, j) + m_lake_mass_input_basal(i, j);
+          m_lake_mass_input_total(i, j) = lake_mass_input_total_ij;
+          m_lake_level_rise(i, j)       = lake_mass_input_total_ij / (rho_fresh_water * lake_area_ij);
+        } else {
+          m_lake_mass_input_total(i, j) = m_fill_value;
+          m_lake_level_rise(i, j)       = m_fill_value;
+        }
+      }
+    } catch (...) {
+      ParSec.failed();
+    }
+    ParSec.check();
+  }
+}
 
 void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
                                const IceModelVec2S &bed,
@@ -238,11 +342,16 @@ void Gradual::gradually_fill(double dt,
 DiagnosticList Gradual::diagnostics_impl() const {
 
   DiagnosticList result = {
-    { "lake_gradual_target",    Diagnostic::wrap(m_target_level) },
-    { "lake_gradual_min_level", Diagnostic::wrap(m_min_level) },
-    { "lake_gradual_max_level", Diagnostic::wrap(m_max_level) },
-    { "lake_gradual_min_bed",   Diagnostic::wrap(m_min_bed) },
-    { "lake_expansion_mask",    Diagnostic::wrap(m_expansion_mask) },
+    { "lake_gradual_target",       Diagnostic::wrap(m_target_level) },
+    { "lake_gradual_min_level",    Diagnostic::wrap(m_min_level) },
+    { "lake_gradual_max_level",    Diagnostic::wrap(m_max_level) },
+    { "lake_gradual_min_bed",      Diagnostic::wrap(m_min_bed) },
+    { "lake_expansion_mask",       Diagnostic::wrap(m_expansion_mask) },
+    { "lake_area",                 Diagnostic::wrap(m_lake_area) },
+    { "lake_mass_input_discharge", Diagnostic::wrap(m_lake_mass_input_discharge) },
+    { "lake_mass_input_basal",     Diagnostic::wrap(m_lake_mass_input_basal) },
+    { "lake_mass_input_total",     Diagnostic::wrap(m_lake_mass_input_total) },
+    { "lake_level_rise",           Diagnostic::wrap(m_lake_level_rise) },
   };
 
   return combine(result, m_input_model->diagnostics());

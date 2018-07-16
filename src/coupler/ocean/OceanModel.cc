@@ -41,8 +41,7 @@ IceModelVec2S::Ptr OceanModel::allocate_shelf_base_mass_flux(IceGrid::ConstPtr g
   result->set_attrs("diagnostic", "shelf base mass flux",
                     "kg m-2 s-1", "");
   result->metadata().set_string("glaciological_units", "kg m-2 year-1");
-  //Init to 0.0 
-  result->set(0.0);
+
   return result;
 }
 
