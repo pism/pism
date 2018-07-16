@@ -32,6 +32,8 @@ Gradual::Gradual(IceGrid::ConstPtr grid,
                  std::shared_ptr<LakeLevel> in)
   : LakeLevel(grid, in) {
 
+  m_use_const_fill_rate = false;
+
   //Set default filling rate for lakes
   m_max_lake_fill_rate = units::convert(m_sys, 10.0, "m/years", "m/seconds");
   m_target_level.create(m_grid, "target_level", WITHOUT_GHOSTS);
@@ -80,11 +82,11 @@ Gradual::Gradual(IceGrid::ConstPtr grid,
   m_lake_mass_input_total.metadata().set_double("_FillValue", m_fill_value);
   m_lake_mass_input_total.metadata().set_string("glaciological_units", "kg year-1");
 
-  m_lake_level_rise.create(m_grid, "lake_level_rise", WITHOUT_GHOSTS);
-  m_lake_level_rise.set_attrs("model_state", "lake_level_rise",
-                              "m s-1", "lake_level_rise");
-  m_lake_level_rise.metadata().set_double("_FillValue", m_fill_value);
-  m_lake_level_rise.metadata().set_string("glaciological_units", "m year-1");
+  m_lake_fill_rate.create(m_grid, "lake_fill_rate", WITHOUT_GHOSTS);
+  m_lake_fill_rate.set_attrs("model_state", "lake_fill_rate",
+                             "m s-1", "lake_level_rise");
+  m_lake_fill_rate.metadata().set_double("_FillValue", m_fill_value);
+  m_lake_fill_rate.metadata().set_string("glaciological_units", "m year-1");
 }
 
 
@@ -133,6 +135,11 @@ void Gradual::init_impl(const Geometry &geometry) {
                                          "Maximum rate at which lakes do fill (m/year)",
                                          max_lake_fill_rate_m_y);
   m_max_lake_fill_rate = units::convert(m_sys, max_lake_fill_rate_m_y, "m/year", "m/seconds");
+
+  bool const_fill_rate = m_use_const_fill_rate;
+  const_fill_rate = options::Bool("-lake_gradual_const_fill_rate",
+                                  "Use constant lake fill rate instead of determining it from ice sheet discharge");
+  m_use_const_fill_rate = const_fill_rate;
 }
 
 void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
@@ -157,7 +164,9 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
     ParSec.check();
   }
 
-  compute_fill_rate(dt);
+  if (not m_use_const_fill_rate) {
+    compute_fill_rate(dt);
+  }
 
   prepareLakeLevel(m_target_level, bed, m_min_level, m_min_bed);
 
@@ -217,7 +226,7 @@ void Gradual::compute_fill_rate(double dt) {
   {
     double rho_fresh_water = m_config->get_double("constants.fresh_water.density");
 
-    IceModelVec::AccessList list{ &m_lake_area, &m_lake_mass_input_discharge, &m_lake_mass_input_basal, &m_lake_mass_input_total, &m_lake_level_rise };
+    IceModelVec::AccessList list{ &m_lake_area, &m_lake_mass_input_discharge, &m_lake_mass_input_basal, &m_lake_mass_input_total, &m_lake_fill_rate };
 
     GeometryCalculator gc(*m_config);
 
@@ -230,10 +239,10 @@ void Gradual::compute_fill_rate(double dt) {
         if (gc.islake(lake_area_ij)){
           const double lake_mass_input_total_ij = m_lake_mass_input_discharge(i, j) + m_lake_mass_input_basal(i, j);
           m_lake_mass_input_total(i, j) = lake_mass_input_total_ij;
-          m_lake_level_rise(i, j)       = lake_mass_input_total_ij / (rho_fresh_water * lake_area_ij);
+          m_lake_fill_rate(i, j)        = lake_mass_input_total_ij / (rho_fresh_water * lake_area_ij);
         } else {
           m_lake_mass_input_total(i, j) = m_fill_value;
-          m_lake_level_rise(i, j)       = m_fill_value;
+          m_lake_fill_rate(i, j)        = m_fill_value;
         }
       }
     } catch (...) {
@@ -298,13 +307,18 @@ void Gradual::gradually_fill(double dt,
                              const IceModelVec2S &max_level,
                              const IceModelVec2S &min_bed) {
 
-  const double dh_max = m_max_lake_fill_rate * dt;
+  double dh_max = m_max_lake_fill_rate * dt;
 
   GeometryCalculator gc(*m_config);
 
   IceModelVec::AccessList list{ &m_lake_level, &target_level,
                                 &min_level, &max_level, &min_bed,
                                 &sea_level, &bed, &thk };
+
+  if (not m_use_const_fill_rate) {
+    list.add(m_lake_fill_rate);
+  }
+
   //Update lakes
   ParallelSection ParSec(m_grid->com);
   try {
@@ -314,6 +328,15 @@ void Gradual::gradually_fill(double dt,
       if (gc.islake(m_lake_level(i, j))) {
         const double current_ij = m_lake_level(i, j),
                      target_ij  = target_level(i, j);
+
+        if (not m_use_const_fill_rate) {
+          const double fill_rate_ij = m_lake_fill_rate(i, j);
+          if(gc.islake(fill_rate_ij) and (fill_rate_ij <= m_max_lake_fill_rate)) {
+            dh_max = fill_rate_ij * dt;
+          } else {
+            dh_max = m_max_lake_fill_rate * dt;
+          }
+        }
 
         const bool rising = ((current_ij < target_ij) and gc.islake(target_ij)) ? true : false;
         if (rising) {
@@ -356,7 +379,7 @@ DiagnosticList Gradual::diagnostics_impl() const {
     { "lake_mass_input_discharge", Diagnostic::wrap(m_lake_mass_input_discharge) },
     { "lake_mass_input_basal",     Diagnostic::wrap(m_lake_mass_input_basal) },
     { "lake_mass_input_total",     Diagnostic::wrap(m_lake_mass_input_total) },
-    { "lake_level_rise",           Diagnostic::wrap(m_lake_level_rise) },
+    { "lake_fill_rate",            Diagnostic::wrap(m_lake_fill_rate) },
   };
 
   return combine(result, m_input_model->diagnostics());

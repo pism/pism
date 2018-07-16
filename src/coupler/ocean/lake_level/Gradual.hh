@@ -35,8 +35,9 @@ private:
   void init_impl(const Geometry &geometry);
   IceModelVec2S m_target_level, m_min_level, m_max_level, m_min_bed,
                 m_lake_area, m_lake_mass_input_discharge, m_lake_mass_input_basal,
-                m_lake_mass_input_total, m_lake_level_rise;
+                m_lake_mass_input_total, m_lake_fill_rate;
   IceModelVec2Int m_expansion_mask;
+  bool m_use_const_fill_rate;
 protected:
   double m_max_lake_fill_rate;
   void prepareLakeLevel(const IceModelVec2S &target_level,
