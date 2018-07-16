@@ -169,7 +169,7 @@ void Gradual::compute_fill_rate(double dt) {
   {
     //Initialize Lake accumulator
     LakeAccumulatorCCSerial Lacc(m_grid, m_fill_value);
-    Lacc.init(m_lake_level);
+    Lacc.init(m_target_level);
 
     const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area"),
                         &discharge = *m_grid->variables().get_2d_scalar("discharge"),
