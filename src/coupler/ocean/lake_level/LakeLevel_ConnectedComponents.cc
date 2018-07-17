@@ -264,9 +264,9 @@ void FilterLakesCC::set_mask_validity(const int n_filter, const IceModelVec2S &l
 
 
 LakePropertiesCC::LakePropertiesCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &target_level,
-                                   const IceModelVec2S &lake_level, const IceModelVec2S &bed)
+                                   const IceModelVec2S &lake_level)
   : ConnectedComponents(g), m_fill_value(fill_value), m_target_level(&target_level),
-    m_current_level(&lake_level), m_bed(&bed) {
+    m_current_level(&lake_level) {
 
   m_min_lakelevel.create(m_grid, "min_ll_mask", WITH_GHOSTS, 1);
   m_min_lakelevel.set(m_fill_value);
@@ -274,24 +274,18 @@ LakePropertiesCC::LakePropertiesCC(IceGrid::ConstPtr g, const double fill_value,
   m_max_lakelevel.create(m_grid, "max_ll_mask", WITH_GHOSTS, 1);
   m_max_lakelevel.set(m_fill_value);
 
-  m_min_bed.create(m_grid, "min_bed_mask", WITH_GHOSTS, 1);
-  m_min_bed.set(m_fill_value);
-
   m_masks.push_back(&m_min_lakelevel);
   m_masks.push_back(&m_max_lakelevel);
-  m_masks.push_back(&m_min_bed);
 
   m_fields.push_back(m_target_level);
   m_fields.push_back(m_current_level);
-  m_fields.push_back(m_bed);
 }
 
 LakePropertiesCC::~LakePropertiesCC() {
   //empty
 }
 
-void LakePropertiesCC::getLakeProperties(IceModelVec2S &min_level, IceModelVec2S &max_level,
-                                         IceModelVec2S &min_bed) {
+void LakePropertiesCC::getLakeProperties(IceModelVec2S &min_level, IceModelVec2S &max_level) {
   VecList lists;
   unsigned int max_items = 2 * m_grid->ym();
   init_VecList(lists, max_items);
@@ -302,21 +296,18 @@ void LakePropertiesCC::getLakeProperties(IceModelVec2S &min_level, IceModelVec2S
 
   min_level.copy_from(m_min_lakelevel);
   max_level.copy_from(m_max_lakelevel);
-  min_bed.copy_from(m_min_bed);
 }
 
 void LakePropertiesCC::init_VecList(VecList &lists, const unsigned int length) {
   ConnectedComponents::init_VecList(lists, length);
 
-  RunVec min_ll_list(length), max_ll_list(length), min_bed_list(length);
+  RunVec min_ll_list(length), max_ll_list(length);
   lists["min_ll"]  = min_ll_list;
   lists["max_ll"]  = max_ll_list;
-  lists["min_bed"] = min_bed_list;
 
   for (unsigned int k = 0; k < 2; ++k) {
     lists["min_ll"][k]  = m_fill_value;
     lists["max_ll"][k]  = m_fill_value;
-    lists["min_bed"][k] = m_fill_value;
   }
 }
 
@@ -348,19 +339,6 @@ void LakePropertiesCC::setRunMaxLevel(double level, int run, VecList &lists) {
   }
 }
 
-void LakePropertiesCC::setRunMinBed(double level, int run, VecList &lists) {
-  if (run == 0) {
-    return;
-  }
-
-  run = trackParentRun(run, lists["parents"]);
-  if (isLake(level)) {
-    if (isLake(lists["min_bed"][run])) {
-      level = std::min(level, lists["min_bed"][run]);
-    }
-    lists["min_bed"][run] = level;
-  }
-}
 
 bool LakePropertiesCC::ForegroundCond(const int i, const int j) const {
   const double target  = (*m_target_level)(i, j),
@@ -378,14 +356,12 @@ void LakePropertiesCC::labelMask(int run_number, const VecList &lists) {
                &len_vec = lists.find("lengths")->second,
                &parents = lists.find("parents")->second,
                &min_ll  = lists.find("min_ll")->second,
-               &max_ll  = lists.find("max_ll")->second,
-               &min_bed = lists.find("min_bed")->second;
+               &max_ll  = lists.find("max_ll")->second;
 
   for (int k = 0; k <= run_number; ++k) {
     const int label = trackParentRun(k, parents);
-    const double min_ll_label  = min_ll[label],
-                 max_ll_label  = max_ll[label],
-                 min_bed_label = min_bed[label];
+    const double min_ll_label = min_ll[label],
+                 max_ll_label = max_ll[label];
     unsigned int j = j_vec[k];
     for (unsigned int n = 0; n < len_vec[k]; ++n) {
       const int i = i_vec[k] + n;
@@ -393,7 +369,6 @@ void LakePropertiesCC::labelMask(int run_number, const VecList &lists) {
       m_mask_run(i, j) = label;
       m_min_lakelevel(i, j) = min_ll_label;
       m_max_lakelevel(i, j) = max_ll_label;
-      m_min_bed(i, j) = min_bed_label;
     }
   }
 }
@@ -406,12 +381,10 @@ void LakePropertiesCC::treatInnerMargin(const int i, const int j,
   int run = m_mask_run.as_int(i, j);
   if (run > 0) {
     StarStencil<double> min_ll_star  = m_min_lakelevel.star(i, j),
-                        max_ll_star  = m_max_lakelevel.star(i, j),
-                        min_bed_star = m_min_bed.star(i, j);
+                        max_ll_star  = m_max_lakelevel.star(i, j);
 
     double min_level = min_ll_star.ij,
-           max_level = max_ll_star.ij,
-           min_bed = min_bed_star.ij;
+           max_level = max_ll_star.ij;
 
     if (isWest) {
       if (isLake(min_ll_star.w) and ((min_ll_star.w < min_level) or not isLake(min_level))) {
@@ -419,9 +392,6 @@ void LakePropertiesCC::treatInnerMargin(const int i, const int j,
       }
       if (isLake(max_ll_star.w) and ((max_ll_star.w > max_level) or not isLake(max_level))) {
         max_level = max_ll_star.w;
-      }
-      if (isLake(min_bed_star.w) and ((min_bed_star.w < min_bed) or not isLake(min_bed))) {
-        min_bed = min_bed_star.w;
       }
     }
     if (isNorth) {
@@ -431,9 +401,6 @@ void LakePropertiesCC::treatInnerMargin(const int i, const int j,
       if (isLake(max_ll_star.n) and ((max_ll_star.n > max_level) or not isLake(max_level))) {
         max_level = max_ll_star.n;
       }
-      if (isLake(min_bed_star.n) and ((min_bed_star.n < min_bed) or not isLake(min_bed))) {
-        min_bed = min_bed_star.n;
-      }
     }
     if (isEast) {
       if (isLake(min_ll_star.e) and ((min_ll_star.e < min_level) or not isLake(min_level))) {
@@ -442,9 +409,6 @@ void LakePropertiesCC::treatInnerMargin(const int i, const int j,
       if (isLake(max_ll_star.e) and ((max_ll_star.e > max_level) or not isLake(max_level))) {
         max_level = max_ll_star.e;
       }
-      if (isLake(min_bed_star.e) and ((min_bed_star.e < min_bed) or not isLake(min_bed))) {
-        min_bed = min_bed_star.e;
-      }
     }
     if (isSouth) {
       if (isLake(min_ll_star.s) and ((min_ll_star.s < min_level) or not isLake(min_level))) {
@@ -452,9 +416,6 @@ void LakePropertiesCC::treatInnerMargin(const int i, const int j,
       }
       if (isLake(max_ll_star.s) and ((max_ll_star.s > max_level) or not isLake(max_level))) {
         max_level = max_ll_star.s;
-      }
-      if (isLake(min_bed_star.s) and ((min_bed_star.s < min_bed) or not isLake(min_bed))) {
-        min_bed = min_bed_star.s;
       }
     }
     if (min_level != min_ll_star.ij) {
@@ -465,10 +426,6 @@ void LakePropertiesCC::treatInnerMargin(const int i, const int j,
       setRunMaxLevel(max_level, run, lists);
       changed = true;
     }
-    if (min_bed != min_bed_star.ij) {
-      setRunMinBed(min_bed, run, lists);
-      changed = true;
-    }
   }
 }
 
@@ -477,7 +434,6 @@ void LakePropertiesCC::startNewRun(const int i, const int j, int &run_number, in
 
   lists["min_ll"][run_number]  = (*m_current_level)(i, j);
   lists["max_ll"][run_number]  = (*m_current_level)(i, j);
-  lists["min_bed"][run_number] = (*m_bed)(i, j);
 }
 
 void LakePropertiesCC::continueRun(const int i, const int j, int &run_number, VecList &lists) {
@@ -485,7 +441,6 @@ void LakePropertiesCC::continueRun(const int i, const int j, int &run_number, Ve
 
   setRunMinLevel((*m_current_level)(i, j), run_number, lists);
   setRunMaxLevel((*m_current_level)(i, j), run_number, lists);
-  setRunMinBed((*m_bed)(i, j), run_number, lists);
 }
 
 
@@ -498,7 +453,7 @@ FilterExpansionCC::~FilterExpansionCC() {
 
 }
 
-void FilterExpansionCC::filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &result) {
+void FilterExpansionCC::filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin) {
   prepare_mask(current_level, target_level);
   set_mask_validity(4);
 
@@ -510,7 +465,7 @@ void FilterExpansionCC::filter_ext(const IceModelVec2S &current_level, const Ice
 
   compute_runs(run_number, lists, max_items);
 
-  labelMap(run_number, lists, result);
+  labelMap(run_number, lists, mask);
 }
 
 bool FilterExpansionCC::ForegroundCond(const int i, const int j) const {

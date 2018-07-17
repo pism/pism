@@ -80,18 +80,17 @@ private:
 class LakePropertiesCC : public ConnectedComponents {
 public:
   LakePropertiesCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &target_level,
-                   const IceModelVec2S &lake_level, const IceModelVec2S &bed);
+                   const IceModelVec2S &lake_level);
   ~LakePropertiesCC();
-  void getLakeProperties(IceModelVec2S &min_level, IceModelVec2S &max_level, IceModelVec2S &min_bed);
+  void getLakeProperties(IceModelVec2S &min_level, IceModelVec2S &max_level);
 
 private:
   const double m_fill_value;
-  const IceModelVec2S *m_target_level, *m_current_level, *m_bed;
-  IceModelVec2S m_min_lakelevel, m_max_lakelevel, m_min_bed;
+  const IceModelVec2S *m_target_level, *m_current_level;
+  IceModelVec2S m_min_lakelevel, m_max_lakelevel;
 
   void setRunMinLevel(double level, int run, VecList &lists);
   void setRunMaxLevel(double level, int run, VecList &lists);
-  void setRunMinBed(double level, int run, VecList &lists);
   inline bool isLake(const double level) const {
     return (level != m_fill_value);
   }
@@ -115,7 +114,7 @@ class FilterExpansionCC : public ValidCC<ConnectedComponents> {
 public:
   FilterExpansionCC(IceGrid::ConstPtr g, const double fill_value);
   ~FilterExpansionCC();
-  void filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &result);
+  void filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin);
 
 protected:
   virtual bool ForegroundCond(const int i, const int j) const;
