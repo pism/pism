@@ -152,20 +152,26 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
                       &sl  = geometry.sea_level_elevation;
 
   if (not m_use_const_fill_rate) {
-    compute_fill_rate(dt);
+    compute_fill_rate(dt, m_target_level, m_lake_area, m_lake_mass_input_discharge, m_lake_mass_input_basal, m_lake_mass_input_total, m_lake_fill_rate);
   }
 
-  prepareLakeLevel(m_target_level, bed, m_min_level, m_max_level, m_min_basin, m_expansion_mask);
+  prepareLakeLevel(m_target_level, bed, m_lake_level, m_min_level, m_max_level, m_min_basin, m_expansion_mask);
 
-  gradually_fill(dt, m_target_level, bed, thk, sl, m_min_level, m_max_level, m_min_basin);
+  gradually_fill(dt, m_max_lake_fill_rate, m_target_level, bed, thk, sl, m_min_level, m_max_level, m_min_basin, m_lake_fill_rate, m_lake_level);
 }
 
-void Gradual::compute_fill_rate(double dt) {
+void Gradual::compute_fill_rate(const double dt,
+                                const IceModelVec2S &lake_level,
+                                IceModelVec2S &lake_area,
+                                IceModelVec2S &lake_mass_input_discharge,
+                                IceModelVec2S &lake_mass_input_basal,
+                                IceModelVec2S &lake_mass_input_total,
+                                IceModelVec2S &lake_fill_rate) {
 
   {
     //Initialize Lake accumulator
     LakeAccumulatorCCSerial Lacc(m_grid, m_fill_value);
-    Lacc.init(m_target_level);
+    Lacc.init(lake_level);
 
     const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area"),
                         &discharge = *m_grid->variables().get_2d_scalar("discharge"),
@@ -204,16 +210,16 @@ void Gradual::compute_fill_rate(double dt) {
     ParSec.check();
 
     //Lake surface area
-    Lacc.accumulate(cell_area, m_lake_area);
+    Lacc.accumulate(cell_area, lake_area);
 
-    Lacc.accumulate(mass_discharge, m_lake_mass_input_discharge);
-    Lacc.accumulate(mass_basal, m_lake_mass_input_basal);
+    Lacc.accumulate(mass_discharge, lake_mass_input_discharge);
+    Lacc.accumulate(mass_basal, lake_mass_input_basal);
   }
 
   {
     double rho_fresh_water = m_config->get_double("constants.fresh_water.density");
 
-    IceModelVec::AccessList list{ &m_lake_area, &m_lake_mass_input_discharge, &m_lake_mass_input_basal, &m_lake_mass_input_total, &m_lake_fill_rate };
+    IceModelVec::AccessList list{ &lake_area, &lake_mass_input_discharge, &lake_mass_input_basal, &lake_mass_input_total, &lake_fill_rate };
 
     GeometryCalculator gc(*m_config);
 
@@ -222,14 +228,14 @@ void Gradual::compute_fill_rate(double dt) {
     try {
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
-        const double lake_area_ij = m_lake_area(i, j);
+        const double lake_area_ij = lake_area(i, j);
         if (gc.islake(lake_area_ij)){
-          const double lake_mass_input_total_ij = m_lake_mass_input_discharge(i, j) + m_lake_mass_input_basal(i, j);
-          m_lake_mass_input_total(i, j) = lake_mass_input_total_ij;
-          m_lake_fill_rate(i, j)        = lake_mass_input_total_ij / (rho_fresh_water * lake_area_ij);
+          const double lake_mass_input_total_ij = lake_mass_input_discharge(i, j) + lake_mass_input_basal(i, j);
+          lake_mass_input_total(i, j) = lake_mass_input_total_ij;
+          lake_fill_rate(i, j)        = lake_mass_input_total_ij / (rho_fresh_water * lake_area_ij);
         } else {
-          m_lake_mass_input_total(i, j) = m_fill_value;
-          m_lake_fill_rate(i, j)        = m_fill_value;
+          lake_mass_input_total(i, j) = m_fill_value;
+          lake_fill_rate(i, j)        = m_fill_value;
         }
       }
     } catch (...) {
@@ -241,6 +247,7 @@ void Gradual::compute_fill_rate(double dt) {
 
 void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
                                const IceModelVec2S &bed,
+                               IceModelVec2S &lake_level,
                                IceModelVec2S &min_level,
                                IceModelVec2S &max_level,
                                IceModelVec2S &min_basin,
@@ -250,7 +257,7 @@ void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
     ParallelSection ParSec(m_grid->com);
     try {
       // Initialze LakeProperties Model
-      LakePropertiesCC LpCC(m_grid, m_fill_value, target_level, m_lake_level);
+      LakePropertiesCC LpCC(m_grid, m_fill_value, target_level, lake_level);
       LpCC.getLakeProperties(min_level, max_level);
     } catch (...) {
       ParSec.failed();
@@ -262,7 +269,7 @@ void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
     ParallelSection ParSec(m_grid->com);
     try {
       FilterExpansionCC FExCC(m_grid, m_fill_value, bed);
-      FExCC.filter_ext(m_lake_level, target_level, mask, min_basin);
+      FExCC.filter_ext(lake_level, target_level, mask, min_basin);
     } catch (...) {
       ParSec.failed();
     }
@@ -270,7 +277,7 @@ void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
   }
 
   {
-    IceModelVec::AccessList list{ &m_lake_level, &min_level,
+    IceModelVec::AccessList list{ &lake_level, &min_level,
                                   &min_basin, &mask };
 
     GeometryCalculator gc(*m_config);
@@ -284,10 +291,10 @@ void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
         const int mask_ij = mask.as_int(i, j);
         if (mask_ij == 1 or not gc.islake(min_level(i, j))) {
           //New lake basin
-          m_lake_level(i, j) = min_basin(i, j);
+          lake_level(i, j) = min_basin(i, j);
         } else if (mask_ij == 2) {
           //Extend existing lake by new cells
-          m_lake_level(i, j) = min_level(i, j);
+          lake_level(i, j) = min_level(i, j);
         }
       }
     } catch (...) {
@@ -296,29 +303,32 @@ void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
     ParSec.check();
   }
 
-  m_lake_level.update_ghosts();
+  lake_level.update_ghosts();
 }
 
 
-void Gradual::gradually_fill(double dt,
+void Gradual::gradually_fill(const double dt,
+                             const double max_fill_rate,
                              const IceModelVec2S &target_level,
                              const IceModelVec2S &bed,
                              const IceModelVec2S &thk,
                              const IceModelVec2S &sea_level,
                              const IceModelVec2S &min_level,
                              const IceModelVec2S &max_level,
-                             const IceModelVec2S &min_bed) {
+                             const IceModelVec2S &min_bed,
+                             const IceModelVec2S &fill_rate,
+                             IceModelVec2S &lake_level) {
 
-  double dh_max = m_max_lake_fill_rate * dt;
+  double dh_max = max_fill_rate * dt;
 
   GeometryCalculator gc(*m_config);
 
-  IceModelVec::AccessList list{ &m_lake_level, &target_level,
+  IceModelVec::AccessList list{ &lake_level, &target_level,
                                 &min_level, &max_level, &min_bed,
                                 &sea_level, &bed, &thk };
 
   if (not m_use_const_fill_rate) {
-    list.add(m_lake_fill_rate);
+    list.add(fill_rate);
   }
 
   //Update lakes
@@ -327,16 +337,16 @@ void Gradual::gradually_fill(double dt,
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (gc.islake(m_lake_level(i, j))) {
-        const double current_ij = m_lake_level(i, j),
+      if (gc.islake(lake_level(i, j))) {
+        const double current_ij = lake_level(i, j),
                      target_ij  = target_level(i, j);
 
         if (not m_use_const_fill_rate) {
-          const double fill_rate_ij = m_lake_fill_rate(i, j);
-          if(gc.islake(fill_rate_ij) and (fill_rate_ij <= m_max_lake_fill_rate)) {
+          const double fill_rate_ij = fill_rate(i, j);
+          if(gc.islake(fill_rate_ij) and (fill_rate_ij <= max_fill_rate)) {
             dh_max = fill_rate_ij * dt;
           } else {
-            dh_max = m_max_lake_fill_rate * dt;
+            dh_max = max_fill_rate * dt;
           }
         }
 
@@ -345,7 +355,7 @@ void Gradual::gradually_fill(double dt,
           const double min_ij = min_level(i, j),
                        new_level = min_ij + std::min(dh_max, (target_ij - min_ij));
           if (new_level > current_ij) {
-            m_lake_level(i, j) = new_level;
+            lake_level(i, j) = new_level;
           }
         } else {
           const double max_ij = max_level(i, j),
@@ -354,10 +364,10 @@ void Gradual::gradually_fill(double dt,
           if (new_level > bed(i, j)
               and not mask::ocean(gc.mask(sea_level(i, j), bed(i, j), thk(i, j)))) {
             if (new_level < current_ij) {
-              m_lake_level(i, j) = new_level;
+              lake_level(i, j) = new_level;
             }
           } else {
-            m_lake_level(i, j) = m_fill_value;
+            lake_level(i, j) = m_fill_value;
           }
         }
       }

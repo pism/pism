@@ -42,19 +42,29 @@ protected:
   double m_max_lake_fill_rate;
   void prepareLakeLevel(const IceModelVec2S &target_level,
                         const IceModelVec2S &bed,
+                        IceModelVec2S &lake_level,
                         IceModelVec2S &min_level,
                         IceModelVec2S &max_level,
                         IceModelVec2S &min_basin,
                         IceModelVec2Int &mask);
-  void gradually_fill(double dt,
+  void gradually_fill(const double dt,
+                      const double max_fill_rate,
                       const IceModelVec2S &target_level,
                       const IceModelVec2S &bed,
                       const IceModelVec2S &thk,
                       const IceModelVec2S &sea_level,
                       const IceModelVec2S &min_level,
                       const IceModelVec2S &max_level,
-                      const IceModelVec2S &min_bed);
-  void compute_fill_rate(double dt);
+                      const IceModelVec2S &min_bed,
+                      const IceModelVec2S &fill_rate,
+                      IceModelVec2S &lake_level);
+  void compute_fill_rate(const double dt,
+                         const IceModelVec2S &lake_level,
+                         IceModelVec2S &lake_area,
+                         IceModelVec2S &lake_mass_input_discharge,
+                         IceModelVec2S &lake_mass_input_basal,
+                         IceModelVec2S &lake_mass_input_total,
+                         IceModelVec2S &lake_fill_rate);
   DiagnosticList diagnostics_impl() const;
 };
 
