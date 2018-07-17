@@ -33,7 +33,7 @@ public:
 private:
   void update_impl(const Geometry &geometry, double t, double dt);
   void init_impl(const Geometry &geometry);
-  IceModelVec2S m_target_level, m_min_level, m_max_level, m_min_bed,
+  IceModelVec2S m_target_level, m_min_level, m_max_level, m_min_basin,
                 m_lake_area, m_lake_mass_input_discharge, m_lake_mass_input_basal,
                 m_lake_mass_input_total, m_lake_fill_rate;
   IceModelVec2Int m_expansion_mask;
@@ -42,8 +42,10 @@ protected:
   double m_max_lake_fill_rate;
   void prepareLakeLevel(const IceModelVec2S &target_level,
                         const IceModelVec2S &bed,
-                        const IceModelVec2S &min_level,
-                        const IceModelVec2S &min_bed);
+                        IceModelVec2S &min_level,
+                        IceModelVec2S &max_level,
+                        IceModelVec2S &min_basin,
+                        IceModelVec2Int &mask);
   void gradually_fill(double dt,
                       const IceModelVec2S &target_level,
                       const IceModelVec2S &bed,
