@@ -338,10 +338,13 @@ void Gradual::gradually_fill(const double dt,
       const int i = p.i(), j = p.j();
 
       if (gc.islake(lake_level(i, j))) {
+        const double min_ij = min_level(i, j),
+                     max_ij = max_level(i, j);
+        const bool unbalanced_level = (min_ij != max_ij);
         const double current_ij = lake_level(i, j),
-                     target_ij  = target_level(i, j);
+                     target_ij  = (not unbalanced_level) ? target_level(i, j) : (max_ij - min_ij)/2.0;
 
-        if (not m_use_const_fill_rate) {
+        if (not (m_use_const_fill_rate or unbalanced_level)) {
           const double fill_rate_ij = fill_rate(i, j);
           if(gc.islake(fill_rate_ij) and (fill_rate_ij <= max_fill_rate)) {
             dh_max = fill_rate_ij * dt;
@@ -352,14 +355,13 @@ void Gradual::gradually_fill(const double dt,
 
         const bool rising = ((current_ij < target_ij) and gc.islake(target_ij));
         if (rising) {
-          const double min_ij = min_level(i, j),
-                       new_level = min_ij + std::min(dh_max, (target_ij - min_ij));
+          const double tmp_level = std::min(min_ij, current_ij),
+                       new_level = tmp_level + std::min(dh_max, (target_ij - tmp_level));
           if (new_level > current_ij) {
             lake_level(i, j) = new_level;
           }
         } else {
-          const double max_ij = max_level(i, j),
-                       dh_ij = gc.islake(target_ij) ? (current_ij - target_ij) : dh_max,
+          const double dh_ij = gc.islake(target_ij) ? (current_ij - target_ij) : dh_max,
                        new_level = max_ij - std::min(dh_max, dh_ij);
           if (new_level > bed(i, j)
               and not mask::ocean(gc.mask(sea_level(i, j), bed(i, j), thk(i, j)))) {
