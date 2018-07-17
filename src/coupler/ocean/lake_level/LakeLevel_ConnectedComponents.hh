@@ -112,17 +112,27 @@ protected:
 
 class FilterExpansionCC : public ValidCC<ConnectedComponents> {
 public:
-  FilterExpansionCC(IceGrid::ConstPtr g, const double fill_value);
+  FilterExpansionCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &bed);
   ~FilterExpansionCC();
   void filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin);
 
 protected:
+  virtual void init_VecList(VecList &lists, const unsigned int length);
+  virtual void labelMask(int run_number, const VecList &lists);
+  virtual void treatInnerMargin(const int i, const int j,
+                                const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
+                                VecList &lists, bool &changed);
+  virtual void startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists);
+  virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
   virtual bool ForegroundCond(const int i, const int j) const;
 
 private:
   const double m_fill_value;
+  const IceModelVec2S *m_bed;
+  IceModelVec2S m_min_bed;
 
-  void labelMap(const int run_number, const VecList &lists, IceModelVec2Int &result);
+  void setRunMinBed(double level, int run, VecList &lists);
+  void labelMap(const int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed);
   void prepare_mask(const IceModelVec2S &current_level, const IceModelVec2S &target_level);
   void set_mask_validity(const int n_filter);
 

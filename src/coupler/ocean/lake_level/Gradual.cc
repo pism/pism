@@ -261,7 +261,7 @@ void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
   { //Check which lake cells are newly added
     ParallelSection ParSec(m_grid->com);
     try {
-      FilterExpansionCC FExCC(m_grid, m_fill_value);
+      FilterExpansionCC FExCC(m_grid, m_fill_value, bed);
       FExCC.filter_ext(m_lake_level, target_level, mask, min_basin);
     } catch (...) {
       ParSec.failed();
