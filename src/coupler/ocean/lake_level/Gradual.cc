@@ -350,7 +350,7 @@ void Gradual::gradually_fill(const double dt,
           }
         }
 
-        const bool rising = ((current_ij < target_ij) and gc.islake(target_ij)) ? true : false;
+        const bool rising = ((current_ij < target_ij) and gc.islake(target_ij));
         if (rising) {
           const double min_ij = min_level(i, j),
                        new_level = min_ij + std::min(dh_max, (target_ij - min_ij));
