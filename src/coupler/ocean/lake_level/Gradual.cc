@@ -344,17 +344,18 @@ void Gradual::gradually_fill(const double dt,
         const double current_ij = lake_level(i, j),
                      target_ij  = ( (not unbalanced_level) or (not gc.islake(target_level(i, j))) ) ? target_level(i, j) : (max_ij + min_ij)/2.0;
 
-        if (not (m_use_const_fill_rate or unbalanced_level)) {
-          const double fill_rate_ij = fill_rate(i, j);
-          if(gc.islake(fill_rate_ij) and (fill_rate_ij <= max_fill_rate)) {
-            dh_max = fill_rate_ij * dt;
-          } else {
-            dh_max = max_fill_rate * dt;
-          }
-        }
-
         const bool rising = ((current_ij < target_ij) and gc.islake(target_ij));
         if (rising) {
+          //Only if rising, adjust fill rate to mass loss of ice sheet
+          if (not (m_use_const_fill_rate or unbalanced_level)) {
+            const double fill_rate_ij = fill_rate(i, j);
+            if(gc.islake(fill_rate_ij) and (fill_rate_ij <= max_fill_rate)) {
+              dh_max = fill_rate_ij * dt;
+            } else {
+              dh_max = max_fill_rate * dt;
+            }
+          }
+
           const double tmp_level = std::min(min_ij, current_ij),
                        new_level = tmp_level + std::min(dh_max, (target_ij - tmp_level));
           if (new_level > current_ij) {
