@@ -47,9 +47,9 @@ private:
   bool prepareLakeLevel(const IceModelVec2S &target_level,
                         const IceModelVec2S &bed,
                         const IceModelVec2S &min_level,
-                        const IceModelVec2S &min_basin,
-                        IceModelVec2S &lake_level,
-                        IceModelVec2Int &mask);
+                        IceModelVec2Int &mask,
+                        IceModelVec2S &min_basin,
+                        IceModelVec2S &lake_level);
   void gradually_fill(const double dt,
                       const double max_fill_rate,
                       const IceModelVec2S &target_level,

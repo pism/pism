@@ -160,7 +160,7 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
 
   updateLakeLevelMinMax(m_lake_level, m_target_level, m_min_level, m_max_level);
 
-  const bool LakeLevelChanged = prepareLakeLevel(m_target_level, bed, m_min_level, m_min_basin, m_lake_level, m_expansion_mask);
+  const bool LakeLevelChanged = prepareLakeLevel(m_target_level, bed, m_min_level, m_expansion_mask, m_min_basin, m_lake_level);
 
   if (LakeLevelChanged) {
     //if a new lake basin was added we need to update the min and max lake level
@@ -274,9 +274,9 @@ void Gradual::updateLakeLevelMinMax(const IceModelVec2S &lake_level,
 bool Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
                                const IceModelVec2S &bed,
                                const IceModelVec2S &min_level,
-                               const IceModelVec2S &min_basin,
-                               IceModelVec2S &lake_level,
-                               IceModelVec2Int &mask) {
+                               IceModelVec2Int &mask,
+                               IceModelVec2S &min_basin,
+                               IceModelVec2S &lake_level) {
 
   { //Check which lake cells are newly added
     ParallelSection ParSec(m_grid->com);
@@ -319,7 +319,8 @@ bool Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
   }
 
   lake_level.update_ghosts();
-  return (GlobalOr(MinMaxChanged));
+
+  return (GlobalOr(m_grid->com, MinMaxChanged));
 }
 
 void Gradual::gradually_fill(const double dt,
