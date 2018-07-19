@@ -373,8 +373,7 @@ void Gradual::gradually_fill(const double dt,
             }
           }
 
-          const double tmp_level = std::min(min_ij, current_ij),
-                       new_level = tmp_level + std::min(dh_max, (target_ij - tmp_level));
+          const double new_level = min_ij + std::min(dh_max, (target_ij - min_ij));
           if (new_level > current_ij) {
             lake_level(i, j) = new_level;
           }
