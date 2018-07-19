@@ -120,6 +120,8 @@ void IsolationCC::find_isolated_spots(IceModelVec2Int &result) {
 
   compute_runs(run_number, lists, max_items);
 
+  result.set(0);
+
   labelIsolatedSpots(run_number, lists, result);
 }
 

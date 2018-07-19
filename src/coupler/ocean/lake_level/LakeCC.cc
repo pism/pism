@@ -130,6 +130,8 @@ void LakeCC::init_impl(const Geometry &geometry) {
   if (m_filter_map) {
     m_log->message(2, "  LakeCC: Filtering map (N=%i) \n", m_n_filter);
   }
+
+  m_valid_mask.create(m_grid, "lake_valid_mask", WITHOUT_GHOSTS);
 }
 
 void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
@@ -166,18 +168,17 @@ void LakeCC::prepare_mask_validity(const IceModelVec2S &thk, IceModelVec2Int& va
 }
 
 void LakeCC::do_lake_update(const IceModelVec2S &bed, const IceModelVec2S &thk, const IceModelVec2S &sea_level) {
-  IceModelVec2Int pism_mask, valid_mask;
+  IceModelVec2Int pism_mask;
   pism_mask.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
-  valid_mask.create(m_grid, "valid_mask", WITHOUT_GHOSTS);
   m_gc.compute_mask(sea_level, bed, thk, pism_mask);
-  prepare_mask_validity(thk, valid_mask);
+  prepare_mask_validity(thk, m_valid_mask);
 
   m_log->message(2, "->LakeCC: Update of Lake Levels! \n");
 
   ParallelSection ParSec(m_grid->com);
   try {
     // Initialze LakeCC Model
-    LakeLevelCC LM(m_grid, m_drho, bed, thk, pism_mask, m_fill_value, valid_mask);
+    LakeLevelCC LM(m_grid, m_drho, bed, thk, pism_mask, m_fill_value, m_valid_mask);
     LM.computeLakeLevel(m_lake_level_min, m_lake_level_max, m_lake_level_dh, m_lake_level);
   } catch (...) {
     ParSec.failed();
@@ -196,6 +197,16 @@ void LakeCC::do_filter_map() {
     ParSec.failed();
   }
   ParSec.check();
+}
+
+// Write diagnostic variables to extra files if requested
+DiagnosticList LakeCC::diagnostics_impl() const {
+
+  DiagnosticList result = {
+    { "lake_valid_mask",       Diagnostic::wrap(m_valid_mask) },
+  };
+
+  return result;
 }
 
 } // end of namespace lake_level
