@@ -29,23 +29,26 @@ namespace lake_level {
 class Gradual : public LakeLevel {
 public:
   Gradual(IceGrid::ConstPtr g, std::shared_ptr<LakeLevel> in);
+  ~Gradual();
 
 private:
-  void update_impl(const Geometry &geometry, double t, double dt);
-  void init_impl(const Geometry &geometry);
+  double m_max_lake_fill_rate;
+  bool m_use_const_fill_rate;
+
   IceModelVec2S m_target_level, m_min_level, m_max_level, m_min_basin,
                 m_lake_area, m_lake_mass_input_discharge, m_lake_mass_input_basal,
                 m_lake_mass_input_total, m_lake_fill_rate;
   IceModelVec2Int m_expansion_mask;
-  bool m_use_const_fill_rate;
-protected:
-  double m_max_lake_fill_rate;
-  void prepareLakeLevel(const IceModelVec2S &target_level,
+
+  void updateLakeLevelMinMax(const IceModelVec2S &lake_level,
+                             const IceModelVec2S &target_level,
+                             IceModelVec2S &min_level,
+                             IceModelVec2S &max_level);
+  bool prepareLakeLevel(const IceModelVec2S &target_level,
                         const IceModelVec2S &bed,
+                        const IceModelVec2S &min_level,
+                        const IceModelVec2S &min_basin,
                         IceModelVec2S &lake_level,
-                        IceModelVec2S &min_level,
-                        IceModelVec2S &max_level,
-                        IceModelVec2S &min_basin,
                         IceModelVec2Int &mask);
   void gradually_fill(const double dt,
                       const double max_fill_rate,
@@ -65,7 +68,12 @@ protected:
                          IceModelVec2S &lake_mass_input_basal,
                          IceModelVec2S &lake_mass_input_total,
                          IceModelVec2S &lake_fill_rate);
-  DiagnosticList diagnostics_impl() const;
+
+protected:
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  virtual void init_impl(const Geometry &geometry);
+  virtual DiagnosticList diagnostics_impl() const;
+
 };
 
 } // end of namespace lake_level

@@ -89,6 +89,9 @@ Gradual::Gradual(IceGrid::ConstPtr grid,
   m_lake_fill_rate.metadata().set_string("glaciological_units", "m year-1");
 }
 
+Gradual::~Gradual() {
+  //empty
+}
 
 void Gradual::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
@@ -155,7 +158,14 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
     compute_fill_rate(dt, m_target_level, m_lake_area, m_lake_mass_input_discharge, m_lake_mass_input_basal, m_lake_mass_input_total, m_lake_fill_rate);
   }
 
-  prepareLakeLevel(m_target_level, bed, m_lake_level, m_min_level, m_max_level, m_min_basin, m_expansion_mask);
+  updateLakeLevelMinMax(m_lake_level, m_target_level, m_min_level, m_max_level);
+
+  const bool LakeLevelChanged = prepareLakeLevel(m_target_level, bed, m_min_level, m_min_basin, m_lake_level, m_expansion_mask);
+
+  if (LakeLevelChanged) {
+    //if a new lake basin was added we need to update the min and max lake level
+    updateLakeLevelMinMax(m_lake_level, m_target_level, m_min_level, m_max_level);
+  }
 
   gradually_fill(dt, m_max_lake_fill_rate, m_target_level, bed, thk, sl, m_min_level, m_max_level, m_min_basin, m_lake_fill_rate, m_lake_level);
 }
@@ -245,25 +255,28 @@ void Gradual::compute_fill_rate(const double dt,
   }
 }
 
-void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
-                               const IceModelVec2S &bed,
-                               IceModelVec2S &lake_level,
-                               IceModelVec2S &min_level,
-                               IceModelVec2S &max_level,
-                               IceModelVec2S &min_basin,
-                               IceModelVec2Int &mask) {
-
-  { //Compute min max level
-    ParallelSection ParSec(m_grid->com);
-    try {
-      // Initialze LakeProperties Model
-      LakePropertiesCC LpCC(m_grid, m_fill_value, target_level, lake_level);
-      LpCC.getLakeProperties(min_level, max_level);
-    } catch (...) {
-      ParSec.failed();
-    }
-    ParSec.check();
+void Gradual::updateLakeLevelMinMax(const IceModelVec2S &lake_level,
+                                    const IceModelVec2S &target_level,
+                                    IceModelVec2S &min_level,
+                                    IceModelVec2S &max_level) {
+  //Compute min max level
+  ParallelSection ParSec(m_grid->com);
+  try {
+    // Initialze LakeProperties Model
+    LakePropertiesCC LpCC(m_grid, m_fill_value, target_level, lake_level);
+    LpCC.getLakeProperties(min_level, max_level);
+  } catch (...) {
+    ParSec.failed();
   }
+  ParSec.check();
+}
+
+bool Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
+                               const IceModelVec2S &bed,
+                               const IceModelVec2S &min_level,
+                               const IceModelVec2S &min_basin,
+                               IceModelVec2S &lake_level,
+                               IceModelVec2Int &mask) {
 
   { //Check which lake cells are newly added
     ParallelSection ParSec(m_grid->com);
@@ -276,6 +289,7 @@ void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
     ParSec.check();
   }
 
+  bool MinMaxChanged = false;
   {
     IceModelVec::AccessList list{ &lake_level, &min_level,
                                   &min_basin, &mask };
@@ -292,6 +306,7 @@ void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
         if (mask_ij == 1 or not gc.islake(min_level(i, j))) {
           //New lake basin
           lake_level(i, j) = min_basin(i, j);
+          MinMaxChanged = true;
         } else if (mask_ij == 2) {
           //Extend existing lake by new cells
           lake_level(i, j) = min_level(i, j);
@@ -304,8 +319,8 @@ void Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
   }
 
   lake_level.update_ghosts();
+  return (GlobalOr(MinMaxChanged));
 }
-
 
 void Gradual::gradually_fill(const double dt,
                              const double max_fill_rate,
