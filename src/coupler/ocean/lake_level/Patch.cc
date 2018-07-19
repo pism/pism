@@ -41,6 +41,9 @@ Patch::Patch(IceGrid::ConstPtr grid,
   m_last_update = 0.0;
 }
 
+Patch::~Patch() {
+  //empty
+}
 
 void Patch::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);

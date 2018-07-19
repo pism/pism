@@ -32,6 +32,10 @@ ExpandLakeMargins::ExpandLakeMargins(IceGrid::ConstPtr grid,
   //empty
 }
 
+ExpandLakeMargins::~ExpandLakeMargins() {
+  //empty
+}
+
 
 void ExpandLakeMargins::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);

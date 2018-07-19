@@ -26,6 +26,7 @@
 namespace pism {
 namespace ocean {
 namespace sea_level {
+
 class SeaLevel2DCC : public SeaLevel {
 public:
   SeaLevel2DCC(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in);
@@ -34,24 +35,19 @@ public:
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(const Geometry &geometry, double my_t, double my_dt);
-
   virtual void init_impl(const Geometry &geometry);
 
-protected:
-  IceModelVec2Int m_mask;
+private:
   std::string m_option_prefix;
   double m_next_update_time;
-  double m_drho,
-         m_offset;
+  double m_drho, m_offset;
   int m_update_interval_years;
-  bool m_update_periodic,
-       m_update_passive,
-       m_update_startup,
-       m_update;
+  bool m_update_periodic, m_update_passive, m_update_startup, m_update;
+  IceModelVec2Int m_mask;
 
-private:
   void process_options();
   void do_sl_update(const IceModelVec2S &bed, const IceModelVec2S &thk);
+
 };
 
 } // end of namespace sea_level

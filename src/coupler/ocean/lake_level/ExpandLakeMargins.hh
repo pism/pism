@@ -29,6 +29,7 @@ namespace lake_level {
 class ExpandLakeMargins : public LakeLevel {
 public:
   ExpandLakeMargins(IceGrid::ConstPtr g, std::shared_ptr<LakeLevel> in);
+  ~ExpandLakeMargins();
 
 private:
   void update_impl(const Geometry &geometry, double t, double dt);

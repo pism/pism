@@ -29,14 +29,17 @@ namespace lake_level {
 class Patch : public LakeLevel {
 public:
   Patch(IceGrid::ConstPtr g, std::shared_ptr<LakeLevel> in);
+  ~Patch();
+
+protected:
+  virtual MaxTimestep max_timestep_impl(double t) const;
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  virtual void init_impl(const Geometry &geometry);
 
 private:
-  void update_impl(const Geometry &geometry, double t, double dt);
-  void init_impl(const Geometry &geometry);
-protected:
-  MaxTimestep max_timestep_impl(double t) const;
   double m_next_update_time, m_last_update;
   int m_min_update_interval_years, m_patch_iter;
+
   unsigned int patch_lake_levels(const IceModelVec2S &bed,
                                  const IceModelVec2S &thk,
                                  const IceModelVec2S &sea_level);
