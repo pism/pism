@@ -152,7 +152,7 @@ The main equations reflect the
 #. overturning flux driven by the density difference between open-ocean and grounding-line box,
 #. boundary layer melt formulation.
 
-The PICO model is described in detail in :cite:`ReeseAlbrecht2017`.
+The PICO model is described in detail in :cite:`ReeseAlbrecht2018`.
 
 Inputs are potential temperature (variable :var:`theta_ocean`), salinity (variable
 :var:`salinity_ocean`) and ocean basin mask (variable :var:`basins`). Variables

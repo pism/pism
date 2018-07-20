@@ -21,8 +21,8 @@
 // 1.
 // Antarctic sub-shelf melt rates via PICO
 // R. Reese, T. Albrecht, M. Mengel, X. Asay-Davis and R. Winkelmann
-// The Cryosphere Discussions (2017)
-// DOI: 10.5194/tc-2017-70
+// The Cryosphere, 12, 1969-1985, (2018)
+// DOI: 10.5194/tc-12-1969-2018
 //
 // 2.
 // A box model of circulation and melting in ice shelf caverns
