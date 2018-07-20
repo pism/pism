@@ -32,11 +32,7 @@ namespace atmosphere {
 
 CosineYearlyCycle::CosineYearlyCycle(IceGrid::ConstPtr g)
   : YearlyCycle(g) {
-  m_A.reset(new Timeseries(*m_grid, "amplitude_scaling",
-                           m_config->get_string("time.dimension_name")));
-  m_A->variable().set_string("units", "1");
-  m_A->variable().set_string("long_name", "cosine yearly cycle amplitude scaling");
-  m_A->dimension().set_string("units", m_grid->ctx()->time()->units_string());
+  
 }
 
 CosineYearlyCycle::~CosineYearlyCycle() {
@@ -52,9 +48,9 @@ void CosineYearlyCycle::init_impl(const Geometry &geometry) {
 
   options::String input_file("-atmosphere_yearly_cycle_file",
                              "CosineYearlyCycle input file name");
+
   options::String scaling_file("-atmosphere_yearly_cycle_scaling_file",
                                "CosineYearlyCycle amplitude scaling input file name");
-
   if (not input_file.is_set()) {
     throw RuntimeError(PISM_ERROR_LOCATION, "Please specify an '-atmosphere yearly_cycle' input file\n"
                        "using the -atmosphere_yearly_cycle_file option.");
@@ -69,6 +65,13 @@ void CosineYearlyCycle::init_impl(const Geometry &geometry) {
   m_precipitation.regrid(input_file, CRITICAL);
 
   if (scaling_file.is_set()) {
+
+    m_A.reset(new Timeseries(*m_grid, "amplitude_scaling",
+                             m_config->get_string("time.dimension_name")));
+    m_A->variable().set_string("units", "1");
+    m_A->variable().set_string("long_name", "cosine yearly cycle amplitude scaling");
+    m_A->dimension().set_string("units", m_grid->ctx()->time()->units_string());
+
     m_log->message(2,
                    "  Reading cosine yearly cycle amplitude scaling from '%s'...\n",
                    scaling_file->c_str());
@@ -79,6 +82,8 @@ void CosineYearlyCycle::init_impl(const Geometry &geometry) {
     }
     nc.close();
 
+  } else {
+    m_A = NULL;
   }
 }
 
