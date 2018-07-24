@@ -359,7 +359,7 @@ void Gradual::gradually_fill(const double dt,
                      max_ij = max_level(i, j);
         const bool unbalanced_level = (min_ij != max_ij);
         const double current_ij = lake_level(i, j),
-                     target_ij  = ( (not unbalanced_level) or (not gc.islake(target_level(i, j))) ) ? target_level(i, j) : (max_ij + min_ij)/2.0;
+                     target_ij  = target_level(i, j);
 
         const bool rising = ((current_ij < target_ij) and gc.islake(target_ij));
         if (rising) {
