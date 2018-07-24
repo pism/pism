@@ -367,7 +367,7 @@ void Gradual::gradually_fill(const double dt,
           if (not (m_use_const_fill_rate or unbalanced_level)) {
             const double fill_rate_ij = fill_rate(i, j);
 
-            if (gc.islake(fill_rate_ij) and (fill_rate_ij <= max_fill_rate)) {
+            if (gc.islake(fill_rate_ij) and (fill_rate_ij <= max_fill_rate) and not unbalanced_level ) {
               dh_max = fill_rate_ij * dt;
             } else {
               dh_max = max_fill_rate * dt;
