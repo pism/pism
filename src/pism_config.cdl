@@ -160,6 +160,47 @@ netcdf pism_config {
     pism_config:atmosphere.uniform.temperature_type = "scalar";
     pism_config:atmosphere.uniform.temperature_units = "Kelvin";
 
+    pism_config:atmosphere.orographic_precipitation.conversion_time = 1000.0;
+    pism_config:atmosphere.orographic_precipitation.conversion_time_doc = "Cloud conversion time";
+    pism_config:atmosphere.orographic_precipitation.conversion_time_type = "scalar";
+    pism_config:atmosphere.orographic_precipitation.conversion_time_units = "s";
+    pism_config:atmosphere.orographic_precipitation.conversion_time_option = "conversion_time";
+
+    pism_config:atmosphere.orographic_precipitation.fallout_time = 1000.0;
+    pism_config:atmosphere.orographic_precipitation.fallout_time_doc = "Fallout time";
+    pism_config:atmosphere.orographic_precipitation.fallout_time_type = "scalar";
+    pism_config:atmosphere.orographic_precipitation.fallout_time_units = "s";
+    pism_config:atmosphere.orographic_precipitation.fallout_time_option = "fallout_time";
+
+    pism_config:atmosphere.orographic_precipitation.moist_stability_frequency = 0.05;
+    pism_config:atmosphere.orographic_precipitation.moist_stability_frequency_doc = "Moist stability frequency";
+    pism_config:atmosphere.orographic_precipitation.moist_stability_frequency_type = "scalar";
+    pism_config:atmosphere.orographic_precipitation.moist_stability_frequency_units = "1/s";
+    pism_config:atmosphere.orographic_precipitation.moist_stability_frequency_option = "moist_stability_frequency";
+
+    pism_config:atmosphere.orographic_precipitation.wind_direction = 270;
+    pism_config:atmosphere.orographic_precipitation.wind_direction_doc = "The direction the wind is coming from";
+    pism_config:atmosphere.orographic_precipitation.wind_direction_type = "scalar";
+    pism_config:atmosphere.orographic_precipitation.wind_direction_units = "degrees";
+    pism_config:atmosphere.orographic_precipitation.wind_direction_option = "wind_direction";
+
+    pism_config:atmosphere.orographic_precipitation.water_vapor_scale_height = 2500.0;
+    pism_config:atmosphere.orographic_precipitation.water_vapor_scale_height_doc = "Water vapor scale height";
+    pism_config:atmosphere.orographic_precipitation.water_vapor_scale_height_type = "scalar";
+    pism_config:atmosphere.orographic_precipitation.water_vapor_scale_height_units = "m";
+    pism_config:atmosphere.orographic_precipitation.water_vapor_scale_height_option = "water_vapor_scale_height";
+
+    pism_config:atmosphere.orographic_precipitation.coriolis_latitude = 0.0;
+    pism_config:atmosphere.orographic_precipitation.coriolis_latitude_doc = "Latitude used to compute Coriolis force";
+    pism_config:atmosphere.orographic_precipitation.coriolis_latitude_type = "scalar";
+    pism_config:atmosphere.orographic_precipitation.coriolis_latitude_units = "degrees_N";
+    pism_config:atmosphere.orographic_precipitation.coriolis_latitude_option = "coriolis_latitude";
+
+    pism_config:atmosphere.orographic_precipitation.truncate = 1000.0;
+    pism_config:atmosphere.orographic_precipitation.truncate_doc = "Truncate precipitation at 0";
+    pism_config:atmosphere.orographic_precipitation.truncate_type = "boolean";
+    pism_config:atmosphere.orographic_precipitation.truncate_option = "truncate";
+
     pism_config:basal_resistance.beta_ice_free_bedrock = 1.8e9;
     pism_config:basal_resistance.beta_ice_free_bedrock_doc = "value is for ice stream E from :cite:`HulbeMacAyeal`; thus sliding velocity, but we hope it doesn't matter much; at 100 m/year the linear sliding law gives 57040 Pa basal shear stress";
     pism_config:basal_resistance.beta_ice_free_bedrock_type = "scalar";

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,6 +32,7 @@
 #include "CosineYearlyCycle.hh"
 #include "WeatherStation.hh"
 #include "Uniform.hh"
+#include "OrographicPrecipitation.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -48,6 +49,7 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_model<CosineYearlyCycle>("yearly_cycle");
   add_model<WeatherStation>("one_station");
   add_model<Uniform>("uniform");
+  add_model<OrographicPrecipitation>("orographic_precipitation");
   set_default("given");
 
   add_modifier<Anomaly>("anomaly");
