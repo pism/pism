@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015, 2017, 2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2018 Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -61,25 +61,14 @@ public:
                     int Nx, int Ny);
   ~OrographicPrecipitationSerial();
 
-  void init(Vec thickness, Vec viscous_displacement);
-
-  void bootstrap(Vec thickness, Vec uplift);
-
   void step(double dt_seconds, Vec H);
 
-  Vec total_displacement() const;
-
-  Vec viscous_displacement() const;
 private:
-  void compute_elastic_response(Vec H, Vec dE);
+  void compute_intrinsic_frequency(Vec Kx, Vec Ky, Vec sigma);
+  void compute_wave_number(Vec Kx, Vec Ky, Vec m);
 
-  void uplift_problem(Vec load_thickness, Vec atmosphere_uplift, Vec output);
+  void precompute_derived_constants();
 
-  void precompute_coefficients();
-
-  void update_displacement(Vec V, Vec dE, Vec dU);
-
-  bool m_include_elastic;
   // grid size
   int m_Mx;
   int m_My;
@@ -87,20 +76,33 @@ private:
   double m_dx;
   double m_dy;
   //! cloud conversion time
-  double m_conversion_time;
+  double m_tau_c;
   //! cloud fallout time
-  double m_fallout_time;
-  //! load density (for computing load from its thickness)
-  double m_load_density;
-  //! mantle density
-  double m_mantle_density;
-  //! mantle viscosity
-  double m_eta;
-  //! lithosphere flexural rigidity
-  double m_D;
-
-  // acceleration due to gravity
-  double m_standard_gravity;
+  double m_tau_f;
+  //! water vapor scale height
+  double m_Hw;
+  //! moist stability frequency
+  double m_Nm;
+  //! wind direction
+  double m_wind_direction;
+  //! wind speed
+  double m_wind_speed;
+  //! moist adiabatic lapse rate
+  double m_Theta_m;
+  //! moist lapse rate
+  double m_gamma;
+  //! reference density
+  double m_rho_Sref;
+  //! Coriolis force
+  double m_f;
+  //! uplift sensitivity factor
+  double m_Cw;
+  //! latitude for Coriolis force
+  double m_latitude;
+  //! horizontal wind component
+  double m_u;
+  //! vertical wind component
+  double m_v;
 
   // size of the extended grid
   int m_Nx;
@@ -121,25 +123,12 @@ private:
   // Coefficients of derivatives in Fourier space
   std::vector<double> m_cx, m_cy;
 
-  // viscous displacement on the extended grid
-  petsc::Vec m_Uv;
-
-  // load response matrix (elastic); sequential and fat *with* boundary
-  petsc::Vec m_load_response_matrix;
-  // elastic plate displacement
-  petsc::Vec m_Ue;
-
-  // total (viscous and elastic) plate displacement
-  petsc::Vec m_U;
-
   fftw_complex *m_fftw_input;
   fftw_complex *m_fftw_output;
-  fftw_complex *m_loadhat;
+  fftw_complex *m_Hhat;
 
   fftw_plan m_dft_forward;
   fftw_plan m_dft_inverse;
-
-  void tweak(Vec load_thickness, Vec U, int Nx, int Ny, double time);
 
   void set_fftw_input(Vec input, double normalization, int M, int N, int i0, int j0);
   void get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0);

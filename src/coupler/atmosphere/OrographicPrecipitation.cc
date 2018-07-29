@@ -74,6 +74,20 @@ OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr g)
                                      Lx, Ly,
                                      m_grid->x0(), m_grid->y0(),
                                      Nx, Ny, CELL_CORNER, NOT_PERIODIC);
+  
+  ParallelSection rank0(m_grid->com);
+  try {
+    if (m_grid->rank() == 0) {
+      m_serial_model.reset(new OrographicPrecipitationSerial(*m_config,
+                                           Mx, My,
+                                           m_grid->dx(), m_grid->dy(),
+                                           Nx, Ny));
+    }
+  } catch (...) {
+    rank0.failed();
+  }
+  rank0.check();
+
 }
 
 OrographicPrecipitation::~OrographicPrecipitation() {
@@ -83,11 +97,11 @@ OrographicPrecipitation::~OrographicPrecipitation() {
 void OrographicPrecipitation::init_impl(const Geometry &geometry) {
   m_log->message(2,
              "* Initializing the atmosphere model computing precipitation using the\n"
-             "  Linear Theory of Orographic Precipitation model\n"
+             "  Linear Theory of Orographic Precipitation model with scalar wind speeds\n"
              "  and reading near-surface air temperature from a file...\n");
 
   m_reference =
-    "R. B. Smith and I. Barstad, 2004. "
+    "R. B. Smith and I. Barstad, 2004.\n"
     "A Linear Theory of Orographic Precipitation. J. Atmos. Sci. 61, 1377-1391.";
 
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.orographic_precipitation");
@@ -102,8 +116,20 @@ void OrographicPrecipitation::init_impl(const Geometry &geometry) {
 
 void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, double dt) {
 
-  const IceModelVec2S
-    &h        = geometry.ice_surface_elevation;
+  m_surface.put_on_proc0(*m_work0);
+
+  ParallelSection rank0(m_grid->com);
+  try {
+    if (m_grid->rank() == 0) {  // only processor zero does the step
+      PetscErrorCode ierr = 0;
+
+      m_serial_model->step(dt, *m_work0);
+
+    }
+  } catch (...) {
+    rank0.failed();
+  }
+  rank0.check();
   
   m_air_temp->update(t, dt);
 

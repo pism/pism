@@ -62,9 +62,12 @@ protected:
 
   //! extended grid for the LT Model
   IceGrid::Ptr m_extended_grid;
+  
+  //! Serial orographic precipitation model.
+  std::unique_ptr<OrographicPrecipitationSerial> m_serial_model;
 };
 
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif /* _PAGIVEN_H_ */
+#endif /* _PAOROGRAPHICPRECIPITATION_H_ */
