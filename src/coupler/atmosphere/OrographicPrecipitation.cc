@@ -38,6 +38,12 @@ OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr g)
     unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
+    m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
+    m_precipitation.set_attrs("model_state", "precipitation rate",
+                              "kg m-2 second-1", "precipitation_flux", 0);
+    m_precipitation.metadata(0).set_string("glaciological_units", "kg m-2 year-1");
+    m_precipitation.set_time_independent(true);
+    
     PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
 
     m_air_temp = IceModelVec2T::ForcingField(m_grid,
@@ -48,9 +54,6 @@ OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr g)
                                              evaluations_per_year,
                                              periodic);
 
-  }
-
-  {
     m_air_temp->set_attrs("diagnostic", "mean annual near-surface air temperature",
                           "Kelvin", "", 0);
     m_air_temp->metadata(0).set_double("valid_min", 0.0);
@@ -88,6 +91,7 @@ OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr g)
   }
   rank0.check();
 
+  m_precipitation.get_from_proc0(*m_work0);
 }
 
 OrographicPrecipitation::~OrographicPrecipitation() {
@@ -123,7 +127,7 @@ void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, do
     if (m_grid->rank() == 0) {  // only processor zero does the step
       PetscErrorCode ierr = 0;
 
-      m_serial_model->step(dt, *m_work0);
+      m_serial_model->step(*m_work0);
 
     }
   } catch (...) {

@@ -61,13 +61,17 @@ public:
                     int Nx, int Ny);
   ~OrographicPrecipitationSerial();
 
-  void step(double dt_seconds, Vec H);
+  void step(Vec H);
 
 private:
-  void compute_intrinsic_frequency(Vec Kx, Vec Ky, Vec sigma);
+  void compute_intrinsic_frequency();
   void compute_wave_number(Vec Kx, Vec Ky, Vec m);
 
+  void precompute_coefficients();
   void precompute_derived_constants();
+
+  // regularization
+  double m_eps;
 
   // grid size
   int m_Mx;
@@ -126,6 +130,8 @@ private:
   fftw_complex *m_fftw_input;
   fftw_complex *m_fftw_output;
   fftw_complex *m_Hhat;
+  fftw_complex *m_Phat;
+  fftw_complex *m_sigma, *m_sigma2;
 
   fftw_plan m_dft_forward;
   fftw_plan m_dft_inverse;

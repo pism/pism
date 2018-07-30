@@ -21,7 +21,6 @@
 #include <gsl/gsl_math.h>       // M_PI
 
 #include "../../earth/matlablike.hh"
-#include "../../earth/greens.hh"
 #include "OrographicPrecipitationSerial.hh"
 
 #include "pism/util/pism_utilities.hh"
@@ -114,14 +113,15 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   m_i0_offset = (Nx - Mx) / 2;
   m_j0_offset = (Ny - My) / 2;
 
-  // memory allocation
-  PetscErrorCode ierr = 0;
-
   // setup fftw stuff: FFTW builds "plans" based on observed performance
   m_fftw_input  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
   m_fftw_output = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
   m_Hhat     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+  m_Phat     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+  m_sigma     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
 
+  m_eps = 1.0e-16;
+  
   // fill m_fftw_input with zeros
   {
     VecAccessor2D<fftw_complex> tmp(m_fftw_input, m_Nx, m_Ny);
@@ -154,6 +154,36 @@ OrographicPrecipitationSerial::~OrographicPrecipitationSerial() {
   fftw_free(m_fftw_input);
   fftw_free(m_fftw_output);
   fftw_free(m_Hhat);
+  fftw_free(m_Phat);
+  fftw_free(m_sigma);
+}
+
+/**
+ * Pre-compute coefficients used by the model.
+ */
+void OrographicPrecipitationSerial::precompute_coefficients() {
+
+  m_cx.resize(m_Nx);
+  m_cy.resize(m_Ny);
+
+  // Coefficients for Fourier spectral method Laplacian
+  // MATLAB version:  cx=(pi/Lx)*[0:Nx/2 Nx/2-1:-1:1]
+  for (int i = 0; i <= m_Nx / 2; i++) {
+    m_cx[i] = (M_PI / m_Lx) * i;
+  }
+
+  for (int i = m_Nx / 2 + 1; i < m_Nx; i++) {
+    m_cx[i] = (M_PI / m_Lx) * (m_Nx - i);
+  }
+
+  for (int j = 0; j <= m_Ny / 2; j++) {
+    m_cy[j] = (M_PI / m_Ly) * j;
+  }
+
+  for (int j = m_Ny / 2 + 1; j < m_Ny; j++) {
+    m_cy[j] = (M_PI / m_Ly) * (m_Ny - j);
+  }
+
 }
 
 /**
@@ -170,17 +200,24 @@ void OrographicPrecipitationSerial::precompute_derived_constants() {
   
 }
 
-/*!
- * Perform a time step.
- *
- * @param[in] dt_seconds time step length
- * @param[in] H load thickness on the physical (Mx*My) grid
+/**
+ * Compute intrinsic frequency.
  */
-void OrographicPrecipitationSerial::step(double dt_seconds, Vec H) {
+void OrographicPrecipitationSerial::compute_intrinsic_frequency() {
+
+  
+}
+  
+/*!
+ * Update precipitation.
+ *
+ * @param[in] H surface on the physical (Mx*My) grid
+ */
+void OrographicPrecipitationSerial::step(Vec H) {
   // solves:
   // Phat(k,l) = (Cw * i * sigma * Hhat(k,l)) /
-  //             (1 - i * m * Hw) * (1 + i * sigma * tauc) * (1 + i * sigma * tauc)
-  // where U=plate displacement; see equation (49) in
+  //             (1 - i * m * Hw) * (1 + i * sigma * tauc) * (1 + i * sigma * tauc);
+  // see equation (49) in
   // R. B. Smith and I. Barstad, 2004:
   // A Linear Theory of Orographic Precipitation. J. Atmos. Sci. 61, 1377-1391.
   
@@ -194,6 +231,36 @@ void OrographicPrecipitationSerial::step(double dt_seconds, Vec H) {
 
     // Save fft2(orography) in Hhat.
     copy_fftw_output(m_fftw_output, m_Hhat, m_Nx, m_Ny);
+
+  {
+    VecAccessor2D<fftw_complex>
+      sigma(m_sigma, m_Nx, m_Ny), sigma2(m_sigma2, m_Nx, m_Ny);
+    for (int i = 0; i < m_Nx; i++) {
+      for (int j = 0; j < m_Ny; j++) {
+        sigma(i, j)[0] = m_u * m_cx[i] + m_v * m_cy[j];
+        sigma(i, j)[1] = m_u * m_cx[i] + m_v * m_cy[j];
+        // Regularization
+        sigma2(i, j)[0] = pow(sigma(i,j)[0], 2.0);
+        if ((fabs(sigma2(i, j)[0]) < m_eps) and fabs(sigma2(i, j)[0] >= 0.0)) {
+            sigma2(i, j)[0] = m_eps;
+          }
+        if ((fabs(sigma2(i, j)[0]) < m_eps) and fabs(sigma2(i, j)[0] < 0.0)) {
+            sigma2(i, j)[0] = -m_eps;
+          }
+        sigma2(i, j)[1] = pow(sigma(i,j)[1], 2.0);
+        if ((fabs(sigma2(i, j)[1]) < m_eps) and fabs(sigma2(i, j)[1] >= 0.0)) {
+            sigma2(i, j)[1] = m_eps;
+          }
+        if ((fabs(sigma2(i, j)[1]) < m_eps) and fabs(sigma2(i, j)[1] < 0.0)) {
+            sigma2(i, j)[1] = -m_eps;
+          }
+      }
+    }
+  }
+
+  // fftw_execute(m_dft_inverse);
+  // get_fftw_output(m_Phat, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
+
   }
 
 }
