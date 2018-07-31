@@ -129,6 +129,8 @@ void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, do
 
       m_serial_model->step(*m_work0);
 
+      ierr = VecCopy(m_serial_model->orographic_precipitation(), *m_work0);
+      PISM_CHK(ierr, "VecCopy");
     }
   } catch (...) {
     rank0.failed();

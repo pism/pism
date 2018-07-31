@@ -61,11 +61,13 @@ public:
                     int Nx, int Ny);
   ~OrographicPrecipitationSerial();
 
+  Vec orographic_precipitation() const;
+
   void step(Vec H);
 
 private:
   void compute_intrinsic_frequency();
-  void compute_wave_number(Vec Kx, Vec Ky, Vec m);
+  void compute_vertical_wave_number();
 
   void precompute_coefficients();
   void precompute_derived_constants();
@@ -123,15 +125,21 @@ private:
   // half-lengths of the extended (FFT, spectral) computational domain
   double m_Lx;
   double m_Ly;
+  
+  std::complex<double> m_I;
 
   // Coefficients of derivatives in Fourier space
   std::vector<double> m_cx, m_cy;
+
+  // orographic precipitation
+  petsc::Vec m_precipitation;
 
   fftw_complex *m_fftw_input;
   fftw_complex *m_fftw_output;
   fftw_complex *m_Hhat;
   fftw_complex *m_Phat;
-  fftw_complex *m_sigma, *m_sigma2;
+  fftw_complex *m_sigma;
+  fftw_complex *m_m;
 
   fftw_plan m_dft_forward;
   fftw_plan m_dft_inverse;

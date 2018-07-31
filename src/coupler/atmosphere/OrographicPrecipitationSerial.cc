@@ -17,9 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cmath>                // sqrt
+#include <complex>                // I
 #include <fftw3.h>
 #include <gsl/gsl_math.h>       // M_PI
-
 #include "../../earth/matlablike.hh"
 #include "OrographicPrecipitationSerial.hh"
 
@@ -97,13 +97,13 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   m_tau_c   = config.get_double("atmosphere.orographic_precipitation.conversion_time");
   m_tau_f   = config.get_double("atmosphere.orographic_precipitation.fallout_time");
   m_Hw   = config.get_double("atmosphere.orographic_precipitation.water_vapor_scale_height");
-  m_Nm   = config.get_double("atmosphere.orographic_precipitation.moist_stability");
+  m_Nm   = config.get_double("atmosphere.orographic_precipitation.moist_stability_frequency");
   m_wind_speed   = config.get_double("atmosphere.orographic_precipitation.wind_speed");
   m_wind_direction   = config.get_double("atmosphere.orographic_precipitation.wind_direction");
   m_gamma   = config.get_double("atmosphere.orographic_precipitation.lapse_rate");
   m_Theta_m   = config.get_double("atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate");
   m_rho_Sref   = config.get_double("atmosphere.orographic_precipitation.reference_density");
-  m_latitude   = config.get_double("atmosphere.orographic_precipitation.latitude");
+  m_latitude   = config.get_double("atmosphere.orographic_precipitation.coriolis_latitude");
 
   // derive more parameters
   m_Lx        = 0.5 * (m_Nx - 1.0) * m_dx;
@@ -121,6 +121,8 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   m_sigma     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
 
   m_eps = 1.0e-16;
+
+  m_I = (0.0, 1.0);
   
   // fill m_fftw_input with zeros
   {
@@ -158,7 +160,14 @@ OrographicPrecipitationSerial::~OrographicPrecipitationSerial() {
   fftw_free(m_sigma);
 }
 
-/**
+/*!
+ * Return orographic precipitation.
+ */
+Vec OrographicPrecipitationSerial::orographic_precipitation() const {
+  return m_precipitation;
+}
+
+ /**
  * Pre-compute coefficients used by the model.
  */
 void OrographicPrecipitationSerial::precompute_coefficients() {
@@ -200,14 +209,60 @@ void OrographicPrecipitationSerial::precompute_derived_constants() {
   
 }
 
-/**
- * Compute intrinsic frequency.
- */
-void OrographicPrecipitationSerial::compute_intrinsic_frequency() {
+void  OrographicPrecipitationSerial::compute_intrinsic_frequency() {
 
+  {
+    VecAccessor2D<fftw_complex>
+      sigma(m_sigma, m_Nx, m_Ny);
+    
+    for (int i = 0; i < m_Nx; i++) {
+      for (int j = 0; j < m_Ny; j++) {
+        sigma(i, j)[0] = m_u * m_cx[i] + m_v * m_cy[j];
+        sigma(i, j)[1] = m_u * m_cx[i] + m_v * m_cy[j];
+      }
+    }
+  }
   
 }
   
+void  OrographicPrecipitationSerial::compute_vertical_wave_number() {
+  // Computes:
+  // m = [ ((Nm^2 - sigma^2) / sigma^2) * (k^2 + l^2) ]^(1/2)
+  {
+    VecAccessor2D<fftw_complex>
+      m(m_m, m_Nx, m_Ny), sigma(m_sigma, m_Nx, m_Ny);
+    
+    for (int i = 0; i < m_Nx; i++) {
+      for (int j = 0; j < m_Ny; j++) {
+        double sigma2_0 = pow(sigma(i, j)[0], 2.0);
+        double sigma2_1 = pow(sigma(i, j)[1], 2.0);
+        double nom_0 = pow(m_Nm, 2.0) - sigma2_0;
+        double nom_1 = pow(m_Nm, 2.0) - sigma2_1;
+        
+        double denom_0 = sigma2_0;
+        double denom_1 = sigma2_1;
+        // regularization
+        if (fabs(sigma2_0) < m_eps and fabs(sigma2_0 >= 0)) {
+            denom_0 = m_eps;
+          }
+        if (fabs(sigma2_0) < m_eps and fabs(sigma2_0 < 0)) {
+            denom_0 = -m_eps;
+          }
+        if (fabs(sigma2_1) < m_eps and fabs(sigma2_1 >= 0)) {
+            denom_1 = m_eps;
+          }
+        if (fabs(sigma2_1) < m_eps and fabs(sigma2_1 < 0)) {
+            denom_0 = -m_eps;
+          }
+        // m = np.sqrt(-1 * m_sqr)
+        // why is there a -1?
+        m(i, j)[0] = pow(nom_0 / denom_0 * (m_cx[i] * m_cx[i] +  m_cy[j] * m_cy[j]), 0.5);
+        m(i, j)[1] = pow(nom_1 / denom_1 * (m_cx[i] * m_cx[i] +  m_cy[j] * m_cy[j]), 0.5);
+      }
+    }
+  }
+}
+
 /*!
  * Update precipitation.
  *
@@ -231,38 +286,33 @@ void OrographicPrecipitationSerial::step(Vec H) {
 
     // Save fft2(orography) in Hhat.
     copy_fftw_output(m_fftw_output, m_Hhat, m_Nx, m_Ny);
+  }
+
+  compute_intrinsic_frequency();
+  compute_vertical_wave_number();
 
   {
     VecAccessor2D<fftw_complex>
-      sigma(m_sigma, m_Nx, m_Ny), sigma2(m_sigma2, m_Nx, m_Ny);
+      m(m_m, m_Nx, m_Ny),
+      Hhat(m_Hhat, m_Nx, m_Ny),
+      Phat(m_Phat, m_Nx, m_Ny),
+      sigma(m_sigma, m_Nx, m_Ny);
+    
     for (int i = 0; i < m_Nx; i++) {
       for (int j = 0; j < m_Ny; j++) {
-        sigma(i, j)[0] = m_u * m_cx[i] + m_v * m_cy[j];
-        sigma(i, j)[1] = m_u * m_cx[i] + m_v * m_cy[j];
-        // Regularization
-        sigma2(i, j)[0] = pow(sigma(i,j)[0], 2.0);
-        if ((fabs(sigma2(i, j)[0]) < m_eps) and fabs(sigma2(i, j)[0] >= 0.0)) {
-            sigma2(i, j)[0] = m_eps;
-          }
-        if ((fabs(sigma2(i, j)[0]) < m_eps) and fabs(sigma2(i, j)[0] < 0.0)) {
-            sigma2(i, j)[0] = -m_eps;
-          }
-        sigma2(i, j)[1] = pow(sigma(i,j)[1], 2.0);
-        if ((fabs(sigma2(i, j)[1]) < m_eps) and fabs(sigma2(i, j)[1] >= 0.0)) {
-            sigma2(i, j)[1] = m_eps;
-          }
-        if ((fabs(sigma2(i, j)[1]) < m_eps) and fabs(sigma2(i, j)[1] < 0.0)) {
-            sigma2(i, j)[1] = -m_eps;
-          }
+        double nom_0 = m_Cw * m_I.real() * sigma(i, j)[0] * Hhat(i, j)[0];
+        double nom_1 = m_Cw * m_I.imag() * sigma(i, j)[1] * Hhat(i, j)[1];
+
+        double denom_0 = (1.0 - m_I.real() * m(i, j)[0] * m_Hw)         \
+          * (1.0 + m_I.real() * sigma(i, j)[0] * m_tau_f) * (1.0 + m_I.real() *  sigma(i, j)[0] * m_tau_c);
+        double denom_1 = (1.0 - m_I.imag() * m(i, j)[1] * m_Hw)          \
+          * (1.0 + m_I.imag() * sigma(i, j)[1] * m_tau_f) * (1.0 + m_I.imag() * sigma(i, j)[1] * m_tau_c);
+
+        Phat(i, j)[0] = nom_0 / denom_0;
+        Phat(i, j)[1] = nom_1 / denom_1;
       }
     }
   }
-
-  // fftw_execute(m_dft_inverse);
-  // get_fftw_output(m_Phat, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
-
-  }
-
 }
 
 

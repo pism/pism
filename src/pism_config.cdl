@@ -160,6 +160,23 @@ netcdf pism_config {
     pism_config:atmosphere.uniform.temperature_type = "scalar";
     pism_config:atmosphere.uniform.temperature_units = "Kelvin";
 
+    pism_config:atmosphere.orographic_precipitation.file = "";
+    pism_config:atmosphere.orographic_precipitation.file_doc = "Input file temperature field.";
+    pism_config:atmosphere.orographic_precipitation.file_type = "string";
+    pism_config:atmosphere.orographic_precipitation.file_option = "orographic_precipitation_file";
+
+    pism_config:atmosphere.orographic_precipitation.period = 0;
+    pism_config:atmosphere.orographic_precipitation.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:atmosphere.orographic_precipitation.period_type = "integer";
+    pism_config:atmosphere.orographic_precipitation.period_option = "orographic_precipitation_period";
+    pism_config:atmosphere.orographic_precipitation.period_units = "years";
+
+    pism_config:atmosphere.orographic_precipitation.reference_year = 0;
+    pism_config:atmosphere.orographic_precipitation.reference_year_doc = "Reference year to use when ``atmosphere.orographic_precipitation.period`` is active.";
+    pism_config:atmosphere.orographic_precipitation.reference_year_option = "orographic_precipitation_reference_year";
+    pism_config:atmosphere.orographic_precipitation.reference_year_type = "integer";
+    pism_config:atmosphere.orographic_precipitation.reference_year_units = "years";
+
     pism_config:atmosphere.orographic_precipitation.conversion_time = 1000.0;
     pism_config:atmosphere.orographic_precipitation.conversion_time_doc = "Cloud conversion time";
     pism_config:atmosphere.orographic_precipitation.conversion_time_type = "scalar";
@@ -183,6 +200,12 @@ netcdf pism_config {
     pism_config:atmosphere.orographic_precipitation.wind_direction_type = "scalar";
     pism_config:atmosphere.orographic_precipitation.wind_direction_units = "degrees";
     pism_config:atmosphere.orographic_precipitation.wind_direction_option = "wind_direction";
+
+    pism_config:atmosphere.orographic_precipitation.wind_speed = 270;
+    pism_config:atmosphere.orographic_precipitation.wind_speed_doc = "The direction the wind is coming from";
+    pism_config:atmosphere.orographic_precipitation.wind_speed_type = "scalar";
+    pism_config:atmosphere.orographic_precipitation.wind_speed_units = "m/s";
+    pism_config:atmosphere.orographic_precipitation.wind_speed_option = "wind_speed";
 
     pism_config:atmosphere.orographic_precipitation.water_vapor_scale_height = 2500.0;
     pism_config:atmosphere.orographic_precipitation.water_vapor_scale_height_doc = "Water vapor scale height";
@@ -214,7 +237,7 @@ pism_config:atmosphere.orographic_precipitation.coriolis_latitude = 0.0;
     pism_config:atmosphere.orographic_precipitation.coriolis_latitude_units = "degrees_N";
     pism_config:atmosphere.orographic_precipitation.coriolis_latitude_option = "coriolis_latitude";
 
-    pism_config:atmosphere.orographic_precipitation.truncate = 1000.0;
+    pism_config:atmosphere.orographic_precipitation.truncate = "true";
     pism_config:atmosphere.orographic_precipitation.truncate_doc = "Truncate precipitation at 0";
     pism_config:atmosphere.orographic_precipitation.truncate_type = "boolean";
     pism_config:atmosphere.orographic_precipitation.truncate_option = "truncate";
