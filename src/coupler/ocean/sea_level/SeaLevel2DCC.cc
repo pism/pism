@@ -43,7 +43,7 @@ SeaLevel2DCC::SeaLevel2DCC(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in)
   m_next_update_time = m_grid->ctx()->time()->current();
   m_update_interval_years = 100;
 
-  m_mask.create(m_grid, "sl_mask", WITHOUT_GHOSTS);
+  m_mask.create(m_grid, "sl_mask", WITH_GHOSTS, 1);
   m_mask.set(0);
 
   m_update_periodic = false;
@@ -125,18 +125,30 @@ void SeaLevel2DCC::update_impl(const Geometry &geometry, double t, double dt) {
                         &thk = geometry.ice_thickness;
 
     // Update sea level mask
-    do_sl_update(bed, thk);
+    do_sl_mask_update(bed, thk);
     m_next_update_time = m_grid->ctx()->time()->increment_date(t, m_update_interval_years);
     if (not m_update_passive and (t != m_grid->ctx()->time()->start())) {
       m_update = false;
     }
   }
 
+  const Direction dirs[] = { North, East, South, West };
+
   //Crop values according to mask
   IceModelVec::AccessList list({&m_sea_level, &m_mask});
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    if (m_mask(i, j) > 0) {
+    StarStencil<int> sl_mask_star = m_mask.int_star(i, j);
+
+    bool mask_greater_zero = (sl_mask_star.ij > 0);
+    int n = 0;
+    while ((n < 4) and not mask_greater_zero) {
+      const Direction direction = dirs[n];
+      mask_greater_zero = (sl_mask_star[direction] > 0);
+      n++;
+    } // end loop neighbors
+
+    if (mask_greater_zero) {
       m_sea_level(i, j) = m_fill_value;
     }
   }
@@ -166,7 +178,7 @@ MaxTimestep SeaLevel2DCC::max_timestep_impl(double t) const {
   }
 }
 
-void SeaLevel2DCC::do_sl_update(const IceModelVec2S &bed, const IceModelVec2S &thk) {
+void SeaLevel2DCC::do_sl_mask_update(const IceModelVec2S &bed, const IceModelVec2S &thk) {
 
   m_log->message(3,
                  "->SL2dCC: Update of 2D Sea Level! \n");
