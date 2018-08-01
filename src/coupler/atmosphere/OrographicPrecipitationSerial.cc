@@ -94,6 +94,7 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   m_Nx = Nx;
   m_Ny = Ny;
 
+  m_truncate   = config.get_boolean("atmosphere.orographic_precipitation.truncate");
   m_tau_c   = config.get_double("atmosphere.orographic_precipitation.conversion_time");
   m_tau_f   = config.get_double("atmosphere.orographic_precipitation.fallout_time");
   m_Hw   = config.get_double("atmosphere.orographic_precipitation.water_vapor_scale_height");
@@ -158,15 +159,16 @@ OrographicPrecipitationSerial::~OrographicPrecipitationSerial() {
   fftw_free(m_Hhat);
   fftw_free(m_Phat);
   fftw_free(m_sigma);
+  fftw_free(m_m);
 }
 
 /*!
- * Return orographic precipitation.
+ * Return viscous plate displacement.
  */
 Vec OrographicPrecipitationSerial::orographic_precipitation() const {
   return m_precipitation;
 }
-
+  
  /**
  * Pre-compute coefficients used by the model.
  */
@@ -209,7 +211,7 @@ void OrographicPrecipitationSerial::precompute_derived_constants() {
   
 }
 
-void  OrographicPrecipitationSerial::compute_intrinsic_frequency() {
+  void  OrographicPrecipitationSerial::compute_intrinsic_frequency() {
 
   {
     VecAccessor2D<fftw_complex>
@@ -310,6 +312,18 @@ void OrographicPrecipitationSerial::step(Vec H) {
 
         Phat(i, j)[0] = nom_0 / denom_0;
         Phat(i, j)[1] = nom_1 / denom_1;
+      }
+    }
+  }
+  fftw_execute(m_dft_inverse);
+  get_fftw_output(m_precipitation, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
+
+  if (m_truncate) {
+    petsc::VecArray2D
+      p(m_precipitation, m_Mx, m_My);
+    for (int i = 0; i < m_Mx; i++) {
+      for (int j = 0; j < m_My; j++) {
+        p(i, j) = std::min(p(i, j), 0.0);
       }
     }
   }

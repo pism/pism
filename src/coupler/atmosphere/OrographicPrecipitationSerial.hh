@@ -81,6 +81,8 @@ private:
   // grid spacing
   double m_dx;
   double m_dy;
+  //! truncate
+  bool m_truncate;
   //! cloud conversion time
   double m_tau_c;
   //! cloud fallout time
@@ -130,6 +132,12 @@ private:
 
   // Coefficients of derivatives in Fourier space
   std::vector<double> m_cx, m_cy;
+
+  // intrinsic frequency
+  petsc::Vec m_intrinsic_frequency;
+
+  // vertical wave number
+  petsc::Vec m_vertical_wave_number;
 
   // orographic precipitation
   petsc::Vec m_precipitation;

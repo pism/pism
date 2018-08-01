@@ -34,30 +34,29 @@ OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr g)
   
   {
 
-    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
-
+    m_snow_temp_july_day = m_config->get_double("atmosphere.fausto_air_temp.summer_peak_day");
+    
+    // Allocate internal IceModelVecs:
+    m_air_temp_mean_annual.create(m_grid, "air_temp_mean_annual", WITHOUT_GHOSTS);
+    m_air_temp_mean_annual.set_attrs("diagnostic",
+                                     "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
+                                     "K",
+                                     "");  // no CF standard_name ??
+    m_air_temp_mean_annual.metadata().set_string("source", m_reference);
+    
+    m_air_temp_mean_july.create(m_grid, "air_temp_mean_july", WITHOUT_GHOSTS);
+    m_air_temp_mean_july.set_attrs("diagnostic",
+                                   "mean July near-surface air temperature (without sub-year time-dependence or forcing)",
+                                   "Kelvin",
+                                   "");  // no CF standard_name ??
+    m_air_temp_mean_july.metadata().set_string("source", m_reference);
+    
     m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
     m_precipitation.set_attrs("model_state", "precipitation rate",
                               "kg m-2 second-1", "precipitation_flux", 0);
     m_precipitation.metadata(0).set_string("glaciological_units", "kg m-2 year-1");
     m_precipitation.set_time_independent(true);
     
-    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
-
-    m_air_temp = IceModelVec2T::ForcingField(m_grid,
-                                             file,
-                                             "air_temp",
-                                             "", // no standard name
-                                             buffer_size,
-                                             evaluations_per_year,
-                                             periodic);
-
-    m_air_temp->set_attrs("diagnostic", "mean annual near-surface air temperature",
-                          "Kelvin", "", 0);
-    m_air_temp->metadata(0).set_double("valid_min", 0.0);
-    m_air_temp->metadata(0).set_double("valid_max", 323.15); // 50 C
   }
 
   m_work0 = m_surface.allocate_proc0_copy();
@@ -98,7 +97,20 @@ OrographicPrecipitation::~OrographicPrecipitation() {
   // empty
 }
 
+//! Copies the stored mean annual near-surface air temperature field into result.
+const IceModelVec2S& OrographicPrecipitation::mean_annual_temp_impl() const {
+  return m_air_temp_mean_annual;
+}
+
+//! Copies the stored mean July near-surface air temperature field into result.
+const IceModelVec2S& OrographicPrecipitation::mean_july_temp() const {
+  return m_air_temp_mean_july;
+}
+
+
 void OrographicPrecipitation::init_impl(const Geometry &geometry) {
+  (void) geometry;
+  
   m_log->message(2,
              "* Initializing the atmosphere model computing precipitation using the\n"
              "  Linear Theory of Orographic Precipitation model with scalar wind speeds\n"
@@ -110,16 +122,13 @@ void OrographicPrecipitation::init_impl(const Geometry &geometry) {
 
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.orographic_precipitation");
 
-  m_air_temp->init(opt.filename, opt.period, opt.reference_time);
-
-  // read time-independent data right away:
-  if (m_air_temp->n_records() == 1) {
-    update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
-  }
 }
 
 void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, double dt) {
-
+  (void) t;
+  (void) dt;
+  (void) geometry;
+  // do I need to get this from geometry??
   m_surface.put_on_proc0(*m_work0);
 
   ParallelSection rank0(m_grid->com);
@@ -136,38 +145,78 @@ void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, do
     rank0.failed();
   }
   rank0.check();
-  
-  m_air_temp->update(t, dt);
 
-  m_air_temp->average(t, dt);
+  m_precipitation.get_from_proc0(*m_work0);
+
 }
 
-const IceModelVec2S& OrographicPrecipitation::mean_annual_temp_impl() const {
-  return *m_air_temp;
+
+void OrographicPrecipitation::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
+
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
+    result[k] = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * m_cosine_cycle[k];
+  }
 }
 
 void OrographicPrecipitation::begin_pointwise_access_impl() const {
 
-  m_air_temp->begin_access();
+  m_air_temp_mean_annual.begin_access();
+  m_air_temp_mean_july.begin_access();
 }
 
 void OrographicPrecipitation::end_pointwise_access_impl() const {
 
-  m_air_temp->end_access();
+  m_air_temp_mean_annual.end_access();
+  m_air_temp_mean_july.end_access();
 }
 
-void OrographicPrecipitation::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
-
-  m_air_temp->interp(i, j, result);
-}
 
 void OrographicPrecipitation::init_timeseries_impl(const std::vector<double> &ts) const {
 
-  m_air_temp->init_interpolation(ts);
+  // constants related to the standard yearly cycle
+  const double
+    julyday_fraction = m_grid->ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day);
 
-  m_ts_times = ts;
+  size_t N = ts.size();
+
+  m_ts_times.resize(N);
+  m_cosine_cycle.resize(N);
+  for (unsigned int k = 0; k < m_ts_times.size(); k++) {
+    double tk = m_grid->ctx()->time()->year_fraction(ts[k]) - julyday_fraction;
+
+    m_ts_times[k] = ts[k];
+    m_cosine_cycle[k] = cos(2.0 * M_PI * tk);
+  }
+  
 }
 
+DiagnosticList OrographicPrecipitation::diagnostics_impl() const {
+  DiagnosticList result = AtmosphereModel::diagnostics_impl();
+
+  result["air_temp_mean_july"] = Diagnostic::Ptr(new PA_mean_july_temp_op(this));
+
+  return result;
+}
+
+PA_mean_july_temp_op::PA_mean_july_temp_op(const OrographicPrecipitation *m)
+  : Diag<OrographicPrecipitation>(m) {
+
+  /* set metadata: */
+  m_vars = {SpatialVariableMetadata(m_sys, "air_temp_mean_july")};
+
+  set_attrs("mean July near-surface air temperature used in the cosine yearly cycle", "",
+            "Kelvin", "Kelvin", 0);
+}
+
+IceModelVec::Ptr PA_mean_july_temp_op::compute_impl() const {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_mean_july", WITHOUT_GHOSTS));
+  result->metadata(0) = m_vars[0];
+
+  result->copy_from(model->mean_july_temp());
+
+  return result;
+}
 
 } // end of namespace atmosphere
 } // end of namespace pism

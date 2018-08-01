@@ -35,6 +35,8 @@ class OrographicPrecipitation : public AtmosphereModel
 public:
   OrographicPrecipitation(IceGrid::ConstPtr g);
   virtual ~OrographicPrecipitation();
+
+  virtual const IceModelVec2S& mean_july_temp() const;
 private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
@@ -47,11 +49,15 @@ private:
   void init_timeseries_impl(const std::vector<double> &ts) const;
   void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
 
-  IceModelVec2T::Ptr m_air_temp;
+  virtual DiagnosticList diagnostics_impl() const;
+
 protected:
+
+  double m_snow_temp_july_day;
+
   std::string m_reference;
 
-  IceModelVec2S m_precipitation;
+  IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_july, m_precipitation;
 
   //! Storage on rank zero. Used to pass the load to the serial deformation model and get
   //! bed displacement back.
@@ -65,6 +71,18 @@ protected:
   
   //! Serial orographic precipitation model.
   std::unique_ptr<OrographicPrecipitationSerial> m_serial_model;
+
+  mutable std::vector<double> m_ts_times;
+  mutable std::vector<double> m_cosine_cycle;
+};
+
+/*! @brief Mean July near-surface air temperature. */
+class PA_mean_july_temp_op : public Diag<OrographicPrecipitation>
+{
+public:
+  PA_mean_july_temp_op(const OrographicPrecipitation *m);
+protected:
+  IceModelVec::Ptr compute_impl() const;
 };
 
 } // end of namespace atmosphere
