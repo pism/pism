@@ -51,7 +51,7 @@ protected:
 
 private:
   void process_options();
-  void do_sl_update(const IceModelVec2S &bed, const IceModelVec2S &thk);
+  void do_sl_mask_update(const IceModelVec2S &bed, const IceModelVec2S &thk);
 };
 
 } // end of namespace sea_level
