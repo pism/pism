@@ -82,6 +82,9 @@ void SeaLevelCC::labelSLMap(const int run_number, const VecList lists, IceModelV
 }
 
 void SeaLevelCC::labelSLMask(const int run_number, const VecList lists, IceModelVec2Int &result) {
+  //Init mask to 0
+  result.set(0);
+
   IceModelVec::AccessList list{&result};
 
   const RunVec &i_vec   = lists.find("i")->second,
