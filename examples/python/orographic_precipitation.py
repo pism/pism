@@ -53,6 +53,7 @@ def run(plot, pause, save):
     config.set_double("grid.Mz", 2)
     config.set_double("grid.Lz", 1000)
 
+    config.set_string("atmosphere.orographic_precipitation.file", "~/pism-olympics/data_sets/climate_forcing/ltop_climate_olympics_1000m_dir_220_kg_m-2_yr-1.nc")
     grid = create_grid()
 
     thickness, bed, sea_level = allocate(grid)
@@ -64,6 +65,8 @@ def run(plot, pause, save):
     initialize_thickness(thickness, orography)
     g = PISM.Geometry(grid)
     op = PISM.AtmosphereOrographicPrecipitation(grid)
+    op.init(g)
+    op.update(g, 0.1, 0.1)
 
 if __name__ == "__main__":
 

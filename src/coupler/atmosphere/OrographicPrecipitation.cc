@@ -29,11 +29,11 @@ namespace pism {
 namespace atmosphere {
 
 OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr g)
-  : AtmosphereModel(g, nullptr), m_surface(g, "surface_altitude", WITHOUT_GHOSTS) {
+  : AtmosphereModel(g, nullptr), m_surface(g, "ice_surface_elevation", WITHOUT_GHOSTS){
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.orographic_precipitation");
   
   {
-
+    
     m_snow_temp_july_day = m_config->get_double("atmosphere.fausto_air_temp.summer_peak_day");
     
     // Allocate internal IceModelVecs:
@@ -42,14 +42,12 @@ OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr g)
                                      "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
                                      "K",
                                      "");  // no CF standard_name ??
-    m_air_temp_mean_annual.metadata().set_string("source", m_reference);
     
     m_air_temp_mean_july.create(m_grid, "air_temp_mean_july", WITHOUT_GHOSTS);
     m_air_temp_mean_july.set_attrs("diagnostic",
                                    "mean July near-surface air temperature (without sub-year time-dependence or forcing)",
                                    "Kelvin",
                                    "");  // no CF standard_name ??
-    m_air_temp_mean_july.metadata().set_string("source", m_reference);
     
     m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
     m_precipitation.set_attrs("model_state", "precipitation rate",
@@ -58,8 +56,6 @@ OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr g)
     m_precipitation.set_time_independent(true);
     
   }
-
-  m_work0 = m_surface.allocate_proc0_copy();
 
   const int
     Mx = m_grid->Mx(),
@@ -89,8 +85,6 @@ OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr g)
     rank0.failed();
   }
   rank0.check();
-
-  m_precipitation.get_from_proc0(*m_work0);
 }
 
 OrographicPrecipitation::~OrographicPrecipitation() {
@@ -120,15 +114,20 @@ void OrographicPrecipitation::init_impl(const Geometry &geometry) {
     "R. B. Smith and I. Barstad, 2004.\n"
     "A Linear Theory of Orographic Precipitation. J. Atmos. Sci. 61, 1377-1391.";
 
-  ForcingOptions opt(*m_grid->ctx(), "atmosphere.orographic_precipitation");
+  m_air_temp_mean_annual.metadata().set_string("source", m_reference);
+  m_air_temp_mean_july.metadata().set_string("source", m_reference);
 
 }
 
 void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
-  (void) geometry;
-  // do I need to get this from geometry??
+
+  m_input_model->update(geometry, t, dt);
+
+  // make a copy of the surface elevation so that it is available in methods computing
+  // precipitation
+  m_surface.copy_from(geometry.ice_surface_elevation);
   m_surface.put_on_proc0(*m_work0);
 
   ParallelSection rank0(m_grid->com);
@@ -150,27 +149,6 @@ void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, do
 
 }
 
-
-void OrographicPrecipitation::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
-
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
-    result[k] = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * m_cosine_cycle[k];
-  }
-}
-
-void OrographicPrecipitation::begin_pointwise_access_impl() const {
-
-  m_air_temp_mean_annual.begin_access();
-  m_air_temp_mean_july.begin_access();
-}
-
-void OrographicPrecipitation::end_pointwise_access_impl() const {
-
-  m_air_temp_mean_annual.end_access();
-  m_air_temp_mean_july.end_access();
-}
-
-
 void OrographicPrecipitation::init_timeseries_impl(const std::vector<double> &ts) const {
 
   // constants related to the standard yearly cycle
@@ -188,6 +166,27 @@ void OrographicPrecipitation::init_timeseries_impl(const std::vector<double> &ts
     m_cosine_cycle[k] = cos(2.0 * M_PI * tk);
   }
   
+}
+
+void OrographicPrecipitation::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
+
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
+    result[k] = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * m_cosine_cycle[k];
+  }
+}
+
+void OrographicPrecipitation::begin_pointwise_access_impl() const {
+  m_precipitation.begin_access();
+  m_air_temp_mean_annual.begin_access();
+  m_air_temp_mean_july.begin_access();
+  m_surface.begin_access();
+}
+
+void OrographicPrecipitation::end_pointwise_access_impl() const {
+  m_precipitation.end_access();
+  m_air_temp_mean_annual.end_access();
+  m_air_temp_mean_july.end_access();
+  m_surface.end_access();
 }
 
 DiagnosticList OrographicPrecipitation::diagnostics_impl() const {
