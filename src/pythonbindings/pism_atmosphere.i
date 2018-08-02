@@ -13,6 +13,7 @@
 #include "coupler/atmosphere/Uniform.hh"
 #include "coupler/atmosphere/WeatherStation.hh"
 #include "coupler/atmosphere/YearlyCycle.hh"
+#include "coupler/atmosphere/OrographicPrecipitation.hh"
 %}
 
 %shared_ptr(pism::atmosphere::AtmosphereModel)
@@ -73,3 +74,7 @@
 %shared_ptr(pism::atmosphere::Factory)
 %rename(AtmosphereFactory) pism::atmosphere::Factory;
 %include "coupler/atmosphere/Factory.hh"
+
+%shared_ptr(pism::atmosphere::OrographicPrecipitation)
+%rename(AtmosphereOrographicPrecipitation) pism::atmosphere::OrographicPrecipitation;
+%include "coupler/atmosphere/OrographicPrecipitation.hh"
