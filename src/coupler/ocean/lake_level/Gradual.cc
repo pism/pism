@@ -87,6 +87,8 @@ Gradual::Gradual(IceGrid::ConstPtr grid,
                              "m s-1", "lake_level_rise");
   m_lake_fill_rate.metadata().set_double("_FillValue", m_fill_value);
   m_lake_fill_rate.metadata().set_string("glaciological_units", "m year-1");
+
+  m_init_lakes_filled = false;
 }
 
 Gradual::~Gradual() {
@@ -96,6 +98,8 @@ Gradual::~Gradual() {
 void Gradual::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
+  bool regridded = false;
+  bool restarted = false;
   {
     IceModelVec2S tmp;
     tmp.create(m_grid, "effective_lake_level_elevation", WITHOUT_GHOSTS);
@@ -118,6 +122,8 @@ void Gradual::init_impl(const Geometry &geometry) {
       tmp.read(file, last_record);
 
       file.close();
+
+      restarted = true;
     } else {
       tmp.set(m_fill_value);
     }
@@ -129,7 +135,18 @@ void Gradual::init_impl(const Geometry &geometry) {
             REGRID_WITHOUT_REGRID_VARS);
     }
 
+    if (tmp.state_counter() == 2) {
+      regridded = true;
+    }
+
     m_lake_level.copy_from(tmp);
+  }
+
+  bool bootstrap_filled = options::Bool("-lake_gradual_bootstrap_filled",
+                                        "When bootstrapping at model start, initialize lakes filled.");
+
+  if (bootstrap_filled and not restarted and not regridded) {
+    m_init_lakes_filled = true;
   }
 
   double max_lake_fill_rate_m_y = units::convert(m_sys, m_max_lake_fill_rate,
@@ -149,6 +166,11 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
 
   m_target_level.copy_from(m_input_model->elevation());
+
+  if (m_init_lakes_filled) {
+    m_lake_level.copy_from(m_target_level);
+    m_init_lakes_filled = false;
+  }
 
   const IceModelVec2S &bed = geometry.bed_elevation,
                       &thk = geometry.ice_thickness,

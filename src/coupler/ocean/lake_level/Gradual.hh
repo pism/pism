@@ -33,7 +33,7 @@ public:
 
 private:
   double m_max_lake_fill_rate;
-  bool m_use_const_fill_rate;
+  bool m_use_const_fill_rate, m_init_lakes_filled;
 
   IceModelVec2S m_target_level, m_min_level, m_max_level, m_min_basin,
                 m_lake_area, m_lake_mass_input_discharge, m_lake_mass_input_basal,
