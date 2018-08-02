@@ -382,7 +382,7 @@ void Gradual::gradually_fill(const double dt,
           }
         } else {
           const double dh_ij = gc.islake(target_ij) ? (current_ij - target_ij) : dh_max,
-                       new_level = max_ij - std::min(dh_max, dh_ij);
+                       new_level = (gc.islake(target_ij) ? max_ij : current_ij) - std::min(dh_max, dh_ij);
 
           if ( (new_level < bed(i, j) and  not gc.islake(target_ij)) or mask::ocean(gc.mask(sea_level(i, j), bed(i, j), thk(i, j))) ) {
             lake_level(i, j) = m_fill_value;
