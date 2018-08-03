@@ -138,9 +138,10 @@ void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
 
   const IceModelVec2S &bed = geometry.bed_elevation,
                       &thk = geometry.ice_thickness,
-                      &sl  = geometry.sea_level_elevation;
+                      &sl  = geometry.sea_level_elevation,
+                      &ll  = geometry.lake_level_elevation;
 
-  do_lake_update(bed, thk, sl);
+  do_lake_update(bed, thk, sl, ll);
 
   if (m_filter_map) {
     do_filter_map();
@@ -151,27 +152,31 @@ MaxTimestep LakeCC::max_timestep_impl(double t) const {
   return MaxTimestep("lake level forcing");
 }
 
-void LakeCC::prepare_mask_validity(const IceModelVec2S &thk, IceModelVec2Int& valid_mask) {
+void LakeCC::prepare_mask_validity(const IceModelVec2S &thk, const IceModelVec2S &bed, const IceModelVec2S &old_lake_level, IceModelVec2Int& valid_mask) {
   IsolationCC IsoCC(m_grid, thk, m_icefree_thickness);
   IsoCC.find_isolated_spots(valid_mask);
 
-  IceModelVec::AccessList list{ &valid_mask, &m_lake_level };
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  IceModelVec::AccessList list{ &valid_mask, &old_lake_level };
 
-    //Set valid where a lake already exists
-    if (m_gc.islake(m_lake_level(i, j))) {
-      valid_mask(i, j) = 1;
+  if (old_lake_level.state_counter() > 0) {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      //Set valid where a lake already exists
+      if ( mask::ocean(m_gc.mask(m_fill_value, bed(i, j), thk(i, j), old_lake_level(i, j))) ) {
+        valid_mask(i, j) = 1;
+      }
     }
   }
+
   valid_mask.update_ghosts();
 }
 
-void LakeCC::do_lake_update(const IceModelVec2S &bed, const IceModelVec2S &thk, const IceModelVec2S &sea_level) {
+void LakeCC::do_lake_update(const IceModelVec2S &bed, const IceModelVec2S &thk, const IceModelVec2S &sea_level, const IceModelVec2S &old_lake_level) {
   IceModelVec2Int pism_mask;
   pism_mask.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
   m_gc.compute_mask(sea_level, bed, thk, pism_mask);
-  prepare_mask_validity(thk, m_valid_mask);
+  prepare_mask_validity(thk, bed, old_lake_level, m_valid_mask);
 
   m_log->message(2, "->LakeCC: Update of Lake Levels! \n");
 

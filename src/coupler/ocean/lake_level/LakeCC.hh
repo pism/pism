@@ -45,9 +45,9 @@ private:
   int m_n_filter;
   IceModelVec2Int m_valid_mask;
 
-  void do_lake_update(const IceModelVec2S &bed, const IceModelVec2S &thk, const IceModelVec2S &sea_level);
+  void do_lake_update(const IceModelVec2S &bed, const IceModelVec2S &thk, const IceModelVec2S &sea_level, const IceModelVec2S &old_lake_level);
   void do_filter_map();
-  void prepare_mask_validity(const IceModelVec2S &thk, IceModelVec2Int &valid_mask);
+  void prepare_mask_validity(const IceModelVec2S &thk, const IceModelVec2S &bed, const IceModelVec2S &old_lake_level, IceModelVec2Int &valid_mask);
 };
 
 } // end of namespace lake_level
