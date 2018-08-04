@@ -156,7 +156,7 @@ void LakeCC::prepare_mask_validity(const IceModelVec2S &thk, const IceModelVec2S
   IsolationCC IsoCC(m_grid, thk, m_icefree_thickness);
   IsoCC.find_isolated_spots(valid_mask);
 
-  IceModelVec::AccessList list{ &valid_mask, &old_lake_level };
+  IceModelVec::AccessList list{ &valid_mask, &bed, &thk, &old_lake_level };
 
   if (old_lake_level.state_counter() > 0) {
     for (Points p(*m_grid); p; p.next()) {
