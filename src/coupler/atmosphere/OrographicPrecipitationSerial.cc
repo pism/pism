@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <iostream>
 #include <cmath>                // sqrt
 #include <complex>                // I
 #include <fftw3.h>
@@ -106,6 +107,8 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   m_rho_Sref   = config.get_double("atmosphere.orographic_precipitation.reference_density");
   m_latitude   = config.get_double("atmosphere.orographic_precipitation.coriolis_latitude");
 
+  std::cout << "Serial start";
+
   // derive more parameters
   m_Lx        = 0.5 * (m_Nx - 1.0) * m_dx;
   m_Ly        = 0.5 * (m_Ny - 1.0) * m_dy;
@@ -114,20 +117,39 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   m_i0_offset = (Nx - Mx) / 2;
   m_j0_offset = (Ny - My) / 2;
 
+  // memory allocation
+  PetscErrorCode ierr = 0;
+
+  // precipitation
+  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_p.rawptr());;
+  PISM_CHK(ierr, "VecCreateSeq");
+
   // setup fftw stuff: FFTW builds "plans" based on observed performance
   m_fftw_input  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
   m_fftw_output = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
   m_Hhat     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
   m_Phat     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+  m_m     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
   m_sigma     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
 
-  m_eps = 1.0e-16;
+  m_eps = 1.0e-18;
 
   m_I = (0.0, 1.0);
   
   // fill m_fftw_input with zeros
   {
     VecAccessor2D<fftw_complex> tmp(m_fftw_input, m_Nx, m_Ny);
+    for (int j = 0; j < m_Ny; j++) {
+      for (int i = 0; i < m_Nx; i++) {
+        tmp(i, j)[0] = 0.0;
+        tmp(i, j)[1] = 0.0;
+      }
+    }
+  }
+
+  // fill m_sigma with zeros
+  {
+    VecAccessor2D<fftw_complex> tmp(m_sigma, m_Nx, m_Ny);
     for (int j = 0; j < m_Ny; j++) {
       for (int i = 0; i < m_Nx; i++) {
         tmp(i, j)[0] = 0.0;
@@ -146,8 +168,9 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   // user what happened. This is why we don't check return values of
   // fftw_malloc() and fftw_plan_dft_2d() calls here...
   //
-  // (Constantine Khroulev, February 1, 2015)
+ // (Constantine Khroulev, February 1, 2015)
 
+  precompute_coefficients();
   precompute_derived_constants();
 }
 
@@ -166,7 +189,7 @@ OrographicPrecipitationSerial::~OrographicPrecipitationSerial() {
  * Return viscous plate displacement.
  */
 Vec OrographicPrecipitationSerial::orographic_precipitation() const {
-  return m_precipitation;
+  return m_p;
 }
   
  /**
@@ -202,6 +225,9 @@ void OrographicPrecipitationSerial::precompute_coefficients() {
  */
 void OrographicPrecipitationSerial::precompute_derived_constants() {
 
+  // m_log->message(4,
+  //            "* Precompute derived constants\n");
+
   m_f = 2.0 * 7.2921e-5 * sin(m_latitude * M_PI / 180.0);
 
   m_u = -sin(m_wind_direction * 2.0 * M_PI / 360.0) * m_wind_speed;
@@ -211,7 +237,10 @@ void OrographicPrecipitationSerial::precompute_derived_constants() {
   
 }
 
-  void  OrographicPrecipitationSerial::compute_intrinsic_frequency() {
+void  OrographicPrecipitationSerial::compute_intrinsic_frequency() {
+
+  // m_log->message(4,
+  //            "* Compute intrinsic frequency\n");
 
   {
     VecAccessor2D<fftw_complex>
@@ -230,6 +259,10 @@ void OrographicPrecipitationSerial::precompute_derived_constants() {
 void  OrographicPrecipitationSerial::compute_vertical_wave_number() {
   // Computes:
   // m = [ ((Nm^2 - sigma^2) / sigma^2) * (k^2 + l^2) ]^(1/2)
+
+  // m_log->message(4,
+  //            "* Compute vertical wave number\n");
+
   {
     VecAccessor2D<fftw_complex>
       m(m_m, m_Nx, m_Ny), sigma(m_sigma, m_Nx, m_Ny);
@@ -254,10 +287,9 @@ void  OrographicPrecipitationSerial::compute_vertical_wave_number() {
             denom_1 = m_eps;
           }
         if (fabs(sigma2_1) < m_eps and fabs(sigma2_1 < 0)) {
-            denom_0 = -m_eps;
-          }
-        // m = np.sqrt(-1 * m_sqr)
-        // why is there a -1?
+            denom_1 = -m_eps;
+          }        
+        
         m(i, j)[0] = pow(nom_0 / denom_0 * (m_cx[i] * m_cx[i] +  m_cy[j] * m_cy[j]), 0.5);
         m(i, j)[1] = pow(nom_1 / denom_1 * (m_cx[i] * m_cx[i] +  m_cy[j] * m_cy[j]), 0.5);
       }
@@ -315,12 +347,18 @@ void OrographicPrecipitationSerial::step(Vec H) {
       }
     }
   }
+  
+  // Save Phat in m_fftw_output.
+  copy_fftw_output(m_Phat, m_fftw_output, m_Nx, m_Ny);
   fftw_execute(m_dft_inverse);
-  get_fftw_output(m_precipitation, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
+  std::cout << "HIHI\n";
+  // get m_fftw_output and put it into m_precipitation
+  get_fftw_output(m_p, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
+  std::cout << "TTHIHI\n";
 
   if (m_truncate) {
     petsc::VecArray2D
-      p(m_precipitation, m_Mx, m_My);
+      p(m_p, m_Mx, m_My);
     for (int i = 0; i < m_Mx; i++) {
       for (int j = 0; j < m_My; j++) {
         p(i, j) = std::min(p(i, j), 0.0);

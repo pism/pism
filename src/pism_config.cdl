@@ -201,7 +201,7 @@ netcdf pism_config {
     pism_config:atmosphere.orographic_precipitation.wind_direction_units = "degrees";
     pism_config:atmosphere.orographic_precipitation.wind_direction_option = "wind_direction";
 
-    pism_config:atmosphere.orographic_precipitation.wind_speed = 270;
+    pism_config:atmosphere.orographic_precipitation.wind_speed = 10;
     pism_config:atmosphere.orographic_precipitation.wind_speed_doc = "The direction the wind is coming from";
     pism_config:atmosphere.orographic_precipitation.wind_speed_type = "scalar";
     pism_config:atmosphere.orographic_precipitation.wind_speed_units = "m/s";

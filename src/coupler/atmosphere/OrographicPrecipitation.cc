@@ -29,7 +29,8 @@ namespace pism {
 namespace atmosphere {
 
 OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr g)
-  : AtmosphereModel(g, nullptr), m_surface(g, "ice_surface_elevation", WITHOUT_GHOSTS){
+  : AtmosphereModel(g, nullptr), m_surface(g, "ice_surface_elevation", WITHOUT_GHOSTS)
+{
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.orographic_precipitation");
   
   {
@@ -56,6 +57,8 @@ OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr g)
     m_precipitation.set_time_independent(true);
     
   }
+
+  m_work0 = m_surface.allocate_proc0_copy();
 
   const int
     Mx = m_grid->Mx(),
@@ -114,8 +117,7 @@ void OrographicPrecipitation::init_impl(const Geometry &geometry) {
     "R. B. Smith and I. Barstad, 2004.\n"
     "A Linear Theory of Orographic Precipitation. J. Atmos. Sci. 61, 1377-1391.";
 
-  m_air_temp_mean_annual.metadata().set_string("source", m_reference);
-  m_air_temp_mean_july.metadata().set_string("source", m_reference);
+  m_precipitation.metadata().set_string("source", m_reference);
 
 }
 
@@ -123,7 +125,9 @@ void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, do
   (void) t;
   (void) dt;
 
-  m_input_model->update(geometry, t, dt);
+  m_log->message(2,
+                 "* UPDATING\n");
+
 
   // make a copy of the surface elevation so that it is available in methods computing
   // precipitation

@@ -140,7 +140,7 @@ private:
   petsc::Vec m_vertical_wave_number;
 
   // orographic precipitation
-  petsc::Vec m_precipitation;
+  petsc::Vec m_p;
 
   fftw_complex *m_fftw_input;
   fftw_complex *m_fftw_output;
