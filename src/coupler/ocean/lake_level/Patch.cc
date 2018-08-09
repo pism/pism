@@ -76,7 +76,7 @@ void Patch::update_impl(const Geometry &geometry, double t, double dt) {
   if (!full_update) {
     const IceModelVec2S &bed = geometry.bed_elevation,
                         &thk = geometry.ice_thickness,
-                        &sl  = geometry.sea_level_elevation;
+                        &sl  = *m_grid->variables().get_2d_scalar("sea_level");
 
     for (unsigned int n = 0; n < m_patch_iter; ++n) {
       const int unsigned local_patch_result = patch_lake_levels(bed, thk, sl),

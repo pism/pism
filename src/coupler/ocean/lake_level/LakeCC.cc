@@ -138,8 +138,8 @@ void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
 
   const IceModelVec2S &bed = geometry.bed_elevation,
                       &thk = geometry.ice_thickness,
-                      &sl  = geometry.sea_level_elevation,
-                      &ll  = geometry.lake_level_elevation;
+                      &ll  = geometry.lake_level_elevation,
+                      &sl  = *m_grid->variables().get_2d_scalar("sea_level");
 
   do_lake_update(bed, thk, sl, ll);
 

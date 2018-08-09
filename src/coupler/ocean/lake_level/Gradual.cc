@@ -174,7 +174,7 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
 
   const IceModelVec2S &bed = geometry.bed_elevation,
                       &thk = geometry.ice_thickness,
-                      &sl  = geometry.sea_level_elevation;
+                      &sl  = *m_grid->variables().get_2d_scalar("sea_level");
 
   if (not m_use_const_fill_rate) {
     compute_fill_rate(dt, m_target_level, m_lake_area, m_lake_mass_input_discharge, m_lake_mass_input_basal, m_lake_mass_input_total, m_lake_fill_rate);
