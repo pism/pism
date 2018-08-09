@@ -247,7 +247,7 @@ def run(plot, pause, save):
     g = PISM.Geometry(grid)
     op = PISM.AtmosphereOrographicPrecipitation(grid)
     op.init(g)
-    #op.update(g, 0.1, 0.1)
+    op.update(g, 0.1, 0.1)
 
 if __name__ == "__main__":
 

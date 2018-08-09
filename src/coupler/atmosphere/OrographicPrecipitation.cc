@@ -104,6 +104,10 @@ const IceModelVec2S& OrographicPrecipitation::mean_july_temp() const {
   return m_air_temp_mean_july;
 }
 
+//! Copies the stored mean precipitation field into result. FIXME: is this needed??
+const IceModelVec2S& OrographicPrecipitation::mean_precipitation_impl() const {
+  return m_precipitation;
+}
 
 void OrographicPrecipitation::init_impl(const Geometry &geometry) {
   (void) geometry;
@@ -121,13 +125,10 @@ void OrographicPrecipitation::init_impl(const Geometry &geometry) {
 
 }
 
+
 void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
-
-  m_log->message(2,
-                 "* UPDATING\n");
-
 
   // make a copy of the surface elevation so that it is available in methods computing
   // precipitation

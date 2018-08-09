@@ -95,6 +95,15 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   m_Nx = Nx;
   m_Ny = Ny;
 
+  // derive more parameters
+  m_Lx        = 0.5 * (m_Nx - 1.0) * m_dx;
+  m_Ly        = 0.5 * (m_Ny - 1.0) * m_dy;
+  m_Nxge      = m_Nx + 1;
+  m_Nyge      = m_Ny + 1;
+  m_i0_offset = (Nx - Mx) / 2;
+  m_j0_offset = (Ny - My) / 2;
+
+  // constants
   m_truncate   = config.get_boolean("atmosphere.orographic_precipitation.truncate");
   m_tau_c   = config.get_double("atmosphere.orographic_precipitation.conversion_time");
   m_tau_f   = config.get_double("atmosphere.orographic_precipitation.fallout_time");
@@ -107,22 +116,12 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   m_rho_Sref   = config.get_double("atmosphere.orographic_precipitation.reference_density");
   m_latitude   = config.get_double("atmosphere.orographic_precipitation.coriolis_latitude");
 
-  std::cout << "Serial start";
-
-  // derive more parameters
-  m_Lx        = 0.5 * (m_Nx - 1.0) * m_dx;
-  m_Ly        = 0.5 * (m_Ny - 1.0) * m_dy;
-  m_Nxge      = m_Nx + 1;
-  m_Nyge      = m_Ny + 1;
-  m_i0_offset = (Nx - Mx) / 2;
-  m_j0_offset = (Ny - My) / 2;
-
   // memory allocation
   PetscErrorCode ierr = 0;
 
   // precipitation
-  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_p.rawptr());;
-  PISM_CHK(ierr, "VecCreateSeq");
+  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_p.rawptr()); PISM_CHK(ierr, "VecCreateSeq");
+  ierr = VecCopy(orographic_precipitation(), m_p);  PISM_CHK(ierr, "VecCopy");
 
   // setup fftw stuff: FFTW builds "plans" based on observed performance
   m_fftw_input  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
@@ -271,11 +270,13 @@ void  OrographicPrecipitationSerial::compute_vertical_wave_number() {
       for (int j = 0; j < m_Ny; j++) {
         double sigma2_0 = pow(sigma(i, j)[0], 2.0);
         double sigma2_1 = pow(sigma(i, j)[1], 2.0);
+        
         double nom_0 = pow(m_Nm, 2.0) - sigma2_0;
         double nom_1 = pow(m_Nm, 2.0) - sigma2_1;
         
         double denom_0 = sigma2_0;
         double denom_1 = sigma2_1;
+        
         // regularization
         if (fabs(sigma2_0) < m_eps and fabs(sigma2_0 >= 0)) {
             denom_0 = m_eps;
@@ -351,10 +352,8 @@ void OrographicPrecipitationSerial::step(Vec H) {
   // Save Phat in m_fftw_output.
   copy_fftw_output(m_Phat, m_fftw_output, m_Nx, m_Ny);
   fftw_execute(m_dft_inverse);
-  std::cout << "HIHI\n";
   // get m_fftw_output and put it into m_precipitation
-  get_fftw_output(m_p, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
-  std::cout << "TTHIHI\n";
+  get_fftw_output(m_p, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, 0, 0);
 
   if (m_truncate) {
     petsc::VecArray2D
@@ -365,6 +364,8 @@ void OrographicPrecipitationSerial::step(Vec H) {
       }
     }
   }
+  // TODO: add pre and post precip
+  //       and convert units
 }
 
 
