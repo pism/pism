@@ -104,6 +104,13 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   m_j0_offset = (Ny - My) / 2;
 
   // constants
+  double precip_pre = config.get_double("atmosphere.orographic_precipitation.background_precip_pre");
+  double precip_post = config.get_double("atmosphere.orographic_precipitation.background_precip_post");
+  m_background_precip_pre   =  precip_pre / 3600.0;
+  m_background_precip_post   =  precip_post / 3600.0;
+  // m_background_precip_pre   =  convert(m_sys, precip_pre, "mm/hr", "m/s");
+  // m_background_precip_post   =  units::convert(m_sys, precip_post, "mm/hr", "m/s");
+  m_precip_scale_factor   = config.get_double("atmosphere.orographic_precipitation.scale_factor");
   m_truncate   = config.get_boolean("atmosphere.orographic_precipitation.truncate");
   m_tau_c   = config.get_double("atmosphere.orographic_precipitation.conversion_time");
   m_tau_f   = config.get_double("atmosphere.orographic_precipitation.fallout_time");
@@ -355,17 +362,18 @@ void OrographicPrecipitationSerial::step(Vec H) {
   // get m_fftw_output and put it into m_precipitation
   get_fftw_output(m_p, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, 0, 0);
 
-  if (m_truncate) {
-    petsc::VecArray2D
-      p(m_p, m_Mx, m_My);
-    for (int i = 0; i < m_Mx; i++) {
-      for (int j = 0; j < m_My; j++) {
-        p(i, j) = std::min(p(i, j), 0.0);
-      }
+  petsc::VecArray2D
+    p(m_p, m_Mx, m_My);
+  for (int i = 0; i < m_Mx; i++) {
+    for (int j = 0; j < m_My; j++) {
+      p(i, j) += m_background_precip_pre;
+        if (m_truncate) {
+          p(i, j) = std::min(p(i, j), 0.0);
+        }
+      p(i, j) *= m_precip_scale_factor;
+      p(i, j) += m_background_precip_post;
     }
   }
-  // TODO: add pre and post precip
-  //       and convert units
 }
 
 

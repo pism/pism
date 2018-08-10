@@ -177,6 +177,24 @@ netcdf pism_config {
     pism_config:atmosphere.orographic_precipitation.reference_year_type = "integer";
     pism_config:atmosphere.orographic_precipitation.reference_year_units = "years";
 
+    pism_config:atmosphere.orographic_precipitation.background_precip_pre = 0;
+    pism_config:atmosphere.orographic_precipitation.background_precip_pre_doc = "Adding background precipitation before truncation";
+    pism_config:atmosphere.orographic_precipitation.background_precip_pre_type = "scalar";
+    pism_config:atmosphere.orographic_precipitation.background_precip_pre_units = "mm/hr";
+    pism_config:atmosphere.orographic_precipitation.background_precip_pre_option = "background_precip_pre";
+
+    pism_config:atmosphere.orographic_precipitation.background_precip_post = 0;
+    pism_config:atmosphere.orographic_precipitation.background_precip_post_doc = "Adding background precipitation after truncation";
+    pism_config:atmosphere.orographic_precipitation.background_precip_post_type = "scalar";
+    pism_config:atmosphere.orographic_precipitation.background_precip_post_units = "mm/hr";
+    pism_config:atmosphere.orographic_precipitation.background_precip_post_option = "background_precip_post";
+
+    pism_config:atmosphere.orographic_precipitation.scale_factor = 1;
+    pism_config:atmosphere.orographic_precipitation.scale_factor_doc = "Precipitation scaling factor";
+    pism_config:atmosphere.orographic_precipitation.scale_factor_type = "scalar";
+    pism_config:atmosphere.orographic_precipitation.scale_factor_units = "1";
+    pism_config:atmosphere.orographic_precipitation.scale_factor_option = "scale_factor";
+
     pism_config:atmosphere.orographic_precipitation.conversion_time = 1000.0;
     pism_config:atmosphere.orographic_precipitation.conversion_time_doc = "Cloud conversion time";
     pism_config:atmosphere.orographic_precipitation.conversion_time_type = "scalar";

@@ -83,6 +83,10 @@ private:
   double m_dy;
   //! truncate
   bool m_truncate;
+  //! precipitation scale factor
+  double m_precip_scale_factor;
+  //! background precipitation
+  double m_background_precip_pre, m_background_precip_post;
   //! cloud conversion time
   double m_tau_c;
   //! cloud fallout time
