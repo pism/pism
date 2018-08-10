@@ -252,7 +252,9 @@ def run(plot, pause, save):
     op.init(g)
     op.update(g, 0.1, 0.1)
     p = op.mean_precipitation()
-    p.dump('foo.nc')
+    t = op.mean_annual_temp()
+    p.dump('p.nc')
+    t.dump('t.nc')
 
 if __name__ == "__main__":
 

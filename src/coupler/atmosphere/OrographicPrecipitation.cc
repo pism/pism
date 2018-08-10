@@ -31,7 +31,6 @@ namespace atmosphere {
 OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr g)
   : AtmosphereModel(g, nullptr), m_surface(g, "ice_surface_elevation", WITHOUT_GHOSTS)
 {
-  ForcingOptions opt(*m_grid->ctx(), "atmosphere.orographic_precipitation");
   
   {
     
@@ -123,6 +122,10 @@ void OrographicPrecipitation::init_impl(const Geometry &geometry) {
 
   m_precipitation.metadata().set_string("source", m_reference);
 
+  ForcingOptions opt(*m_grid->ctx(), "atmosphere.orographic_precipitation");
+
+  m_air_temp_mean_annual.regrid(opt.filename, CRITICAL);
+  m_air_temp_mean_july.regrid(opt.filename, CRITICAL);
 }
 
 
@@ -177,6 +180,13 @@ void OrographicPrecipitation::temp_time_series_impl(int i, int j, std::vector<do
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * m_cosine_cycle[k];
+  }
+}
+
+void OrographicPrecipitation::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
+
+  for (unsigned int k = 0; k < m_ts_times.size(); k++) {
+    result[k] = m_precipitation(i,j);
   }
 }
 

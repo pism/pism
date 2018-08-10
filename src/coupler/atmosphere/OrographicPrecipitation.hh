@@ -49,6 +49,7 @@ private:
 
   void init_timeseries_impl(const std::vector<double> &ts) const;
   void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
+  void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 
   virtual DiagnosticList diagnostics_impl() const;
 
