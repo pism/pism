@@ -50,11 +50,14 @@ void ExpandLakeMargins::update_impl(const Geometry &geometry, double t, double d
   lake_level_old.copy_from(m_lake_level);
   lake_level_old.update_ghosts();
 
+  const IceModelVec2S &bed = geometry.bed_elevation,
+                      &thk = geometry.ice_thickness;
+
   const Direction dirs[] = { North, East, South, West };
 
   GeometryCalculator gc(*m_config);
 
-  IceModelVec::AccessList list{ &m_lake_level, &lake_level_old };
+  IceModelVec::AccessList list{ &m_lake_level, &lake_level_old, &bed, &thk };
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -63,7 +66,8 @@ void ExpandLakeMargins::update_impl(const Geometry &geometry, double t, double d
       for (int n = 0; n < 4; ++n) {
         const Direction direction = dirs[n];
         const double Level = ll_star[direction];
-        if (gc.islake(Level)) {
+        //Set Level if at a lake margin AND if no new lake cell (open water or floating ice) is created
+        if ( gc.islake(Level) and not mask::ocean(gc.mask(m_fill_value, bed(i, j), thk(i, j), Level)) ) {
           m_lake_level(i, j) = Level;
           break;
         }
