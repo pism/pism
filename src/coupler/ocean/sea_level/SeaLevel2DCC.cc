@@ -193,6 +193,8 @@ void SeaLevel2DCC::do_sl_mask_update(const IceModelVec2S &bed, const IceModelVec
   }
   ParSec.check();
 
+  m_mask.update_ghosts();
+
   m_log->message(3,
                  "          Done!\n");
 }
