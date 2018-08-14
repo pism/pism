@@ -475,6 +475,38 @@ void FilterExpansionCC::filter_ext(const IceModelVec2S &current_level, const Ice
   labelMap(run_number, lists, mask, min_basin);
 }
 
+void FilterExpansionCC::filter_ext2(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin) {
+  {
+    prepare_mask(current_level, target_level);
+    set_mask_validity(4);
+
+    VecList lists;
+    unsigned int max_items = 2 * m_grid->ym();
+    init_VecList(lists, max_items);
+
+    int run_number = 1;
+
+    compute_runs(run_number, lists, max_items);
+
+    labelMap(run_number, lists, mask, min_basin);
+  }
+
+  {
+    prepare_mask(target_level, current_level);
+    set_mask_validity(4);
+
+    VecList lists;
+    unsigned int max_items = 2 * m_grid->ym();
+    init_VecList(lists, max_items);
+
+    int run_number = 1;
+
+    compute_runs(run_number, lists, max_items);
+
+    labelMap2(run_number, lists, mask, min_basin);
+  }
+}
+
 void FilterExpansionCC::init_VecList(VecList &lists, const unsigned int length) {
   ValidCC<ConnectedComponents>::init_VecList(lists, length);
 
@@ -603,6 +635,31 @@ void FilterExpansionCC::labelMap(const int run_number, const VecList &lists, Ice
       for(int n = 0; n < len_vec[k]; ++n) {
         const int i = i_vec[k] + n;
         mask(i, j) = valid ? 1 : 2;
+        min_bed(i, j) = min_bed_label;
+      }
+    }
+  }
+}
+
+void FilterExpansionCC::labelMap2(const int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed) {
+  IceModelVec::AccessList list{ &mask, &min_bed};
+
+  const RunVec &i_vec = lists.find("i")->second,
+               &j_vec = lists.find("j")->second,
+               &len_vec = lists.find("lengths")->second,
+               &parents = lists.find("parents")->second,
+               &valid_list   = lists.find("valid")->second,
+               &min_bed_list = lists.find("min_bed")->second;
+
+  for(int k = 0; k <= run_number; ++k) {
+    const int label = trackParentRun(k, parents);
+    if (label > 1) {
+      const int j = j_vec[k];
+      const bool valid = (valid_list[label] > 0);
+      const double min_bed_label = min_bed_list[label];
+      for(int n = 0; n < len_vec[k]; ++n) {
+        const int i = i_vec[k] + n;
+        mask(i, j) = valid ? -1 : -2;
         min_bed(i, j) = min_bed_label;
       }
     }

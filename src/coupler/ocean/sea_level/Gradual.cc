@@ -151,7 +151,7 @@ void Gradual::prepareSeaLevel(const IceModelVec2S &target_level,
     ParallelSection ParSec(m_grid->com);
     try {
       FilterExpansionCC FExCC(m_grid, m_fill_value, bed);
-      FExCC.filter_ext(sea_level, target_level, mask, min_basin);
+      FExCC.filter_ext2(sea_level, target_level, mask, min_basin);
     } catch (...) {
       ParSec.failed();
     }
@@ -171,6 +171,8 @@ void Gradual::prepareSeaLevel(const IceModelVec2S &target_level,
         if (mask_ij > 0) {
           //New basin
           sea_level(i, j) = min_basin(i, j);
+        } else if (mask_ij == -2) {
+          sea_level(i, j) = m_fill_value;
         }
       }
     } catch (...) {
