@@ -35,7 +35,7 @@ Gradual::Gradual(IceGrid::ConstPtr grid,
   m_use_const_fill_rate = false;
 
   //Set default filling rate for lakes
-  m_max_lake_fill_rate = units::convert(m_sys, 10.0, "m/years", "m/seconds");
+  m_max_lake_fill_rate = units::convert(m_sys, 1.0, "m/years", "m/seconds");
   m_target_level.create(m_grid, "target_level", WITHOUT_GHOSTS);
   m_target_level.set_attrs("model_state", "target lake level",
                            "m", "target_level");

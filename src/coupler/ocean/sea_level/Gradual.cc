@@ -38,7 +38,7 @@ Gradual::Gradual(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in)
   m_log->message(2,
                  "  - Setting up SL Gradual Module...\n");
 
-  m_max_fill_rate = units::convert(m_sys, 10.0, "m/years", "m/seconds");
+  m_max_fill_rate = units::convert(m_sys, 1.0, "m/years", "m/seconds");
 
   m_target_level.create(m_grid, "target_sea_level", WITHOUT_GHOSTS);
   m_target_level.set_attrs("model_state", "target sea level",
