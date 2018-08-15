@@ -138,17 +138,8 @@ void SeaLevel2DCC::update_impl(const Geometry &geometry, double t, double dt) {
   IceModelVec::AccessList list({&m_sea_level, &m_mask});
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    StarStencil<int> sl_mask_star = m_mask.int_star(i, j);
 
-    bool mask_greater_zero = (sl_mask_star.ij > 0);
-    int n = 0;
-    while ((n < 4) and not mask_greater_zero) {
-      const Direction direction = dirs[n];
-      mask_greater_zero = (sl_mask_star[direction] > 0);
-      n++;
-    } // end loop neighbors
-
-    if (mask_greater_zero) {
+    if (m_mask(i, j) > 0) {
       m_sea_level(i, j) = m_fill_value;
     }
   }

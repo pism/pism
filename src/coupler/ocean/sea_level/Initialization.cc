@@ -18,6 +18,7 @@
  */
 
 #include "Initialization.hh"
+#include "ExpandSL.hh"
 
 #include "pism/coupler/util/init_step.hh"
 
@@ -27,7 +28,7 @@ namespace sea_level {
 
 InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid,
                                            std::shared_ptr<SeaLevel> in)
-  : SeaLevel(grid, in) {
+  : SeaLevel(grid, std::shared_ptr<SeaLevel>(new ExpandSL(grid, in))) {
 
   m_sea_level.metadata().set_name("effective_sea_level_elevation");
   m_sea_level.metadata().set_string("pism_intent", "model_state");
