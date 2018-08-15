@@ -96,7 +96,7 @@ private:
   }
 
   inline bool ForegroundCond(const double target, const double current) const {
-    return (isLake(target) or isLake(current));
+    return (isLake(target));
   }
 
 protected:
