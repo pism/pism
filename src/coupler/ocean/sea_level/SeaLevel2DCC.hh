@@ -36,6 +36,7 @@ protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(const Geometry &geometry, double my_t, double my_dt);
   virtual void init_impl(const Geometry &geometry);
+  virtual const bool expandMargins_impl() const;
 
 private:
   std::string m_option_prefix;

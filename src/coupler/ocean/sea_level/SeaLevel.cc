@@ -107,6 +107,17 @@ void SeaLevel::write_model_state_impl(const PIO &output) const {
   }
 }
 
+const bool SeaLevel::expandMargins() const {
+  return expandMargins_impl();
+}
+
+const bool SeaLevel::expandMargins_impl() const {
+  if (m_input_model) {
+    return m_input_model->expandMargins();
+  }
+  return false;
+}
+
 namespace diagnostics {
 
 /*! @brief Sea level elevation. */

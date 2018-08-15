@@ -81,6 +81,17 @@ const IceModelVec2S& LakeLevel::elevation() const {
   return m_lake_level;
 }
 
+const bool LakeLevel::expandMargins() const {
+  return expandMargins_impl();
+}
+
+const bool LakeLevel::expandMargins_impl() const {
+  if (m_input_model) {
+    return m_input_model->expandMargins();
+  }
+  return false;
+}
+
 MaxTimestep LakeLevel::max_timestep_impl(double t) const {
   if (m_input_model) {
     return m_input_model->max_timestep(t);

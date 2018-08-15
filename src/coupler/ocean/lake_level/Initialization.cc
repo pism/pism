@@ -28,7 +28,7 @@ namespace lake_level {
 
 InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid,
                                            std::shared_ptr<LakeLevel> in)
-  : LakeLevel(grid, std::shared_ptr<LakeLevel>(new ExpandLakeMargins(grid, in))) {
+  : LakeLevel(grid, std::shared_ptr<LakeLevel>( in->expandMargins()? (new ExpandLakeMargins(grid, in)) : in )) {
 
   m_lake_level.metadata().set_name("effective_lake_level_elevation");
   m_lake_level.metadata().set_string("pism_intent", "model_state");

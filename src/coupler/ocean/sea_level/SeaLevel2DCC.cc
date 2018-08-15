@@ -190,6 +190,10 @@ void SeaLevel2DCC::do_sl_mask_update(const IceModelVec2S &bed, const IceModelVec
                  "          Done!\n");
 }
 
+const bool SeaLevel2DCC::expandMargins_impl() const {
+  return true;
+}
+
 } // end of namespace sea_level
 } // end of namespace ocean
 } // end of namespace pism

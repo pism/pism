@@ -214,6 +214,10 @@ DiagnosticList LakeCC::diagnostics_impl() const {
   return result;
 }
 
+const bool LakeCC::expandMargins_impl() const {
+  return true;
+}
+
 } // end of namespace lake_level
 } // end of namespace ocean
 } // end of namespace pism

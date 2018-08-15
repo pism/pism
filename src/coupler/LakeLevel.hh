@@ -44,6 +44,8 @@ public:
 
   const IceModelVec2S& elevation() const;
 
+  const bool expandMargins() const;
+
 protected:
   virtual void init_impl(const Geometry &geometry);
 
@@ -53,6 +55,8 @@ protected:
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
+
+  virtual const bool expandMargins_impl() const;
 
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;
