@@ -111,7 +111,7 @@ const bool SeaLevel::expandMargins() const {
   return expandMargins_impl();
 }
 
-const bool SeaLevel::expandMargins_impl() const {
+bool SeaLevel::expandMargins_impl() const {
   if (m_input_model) {
     return m_input_model->expandMargins();
   }

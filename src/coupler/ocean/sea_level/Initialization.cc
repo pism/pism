@@ -28,7 +28,7 @@ namespace sea_level {
 
 InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid,
                                            std::shared_ptr<SeaLevel> in)
-  : SeaLevel(grid, std::shared_ptr<SeaLevel>( in->expandMargins()? (new ExpandSL(grid, in)) : in )) {
+  : SeaLevel(grid, in->expandMargins() ? (std::shared_ptr<SeaLevel>(new ExpandSL(grid, in))) : in ) {
 
   m_sea_level.metadata().set_name("effective_sea_level_elevation");
   m_sea_level.metadata().set_string("pism_intent", "model_state");

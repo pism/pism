@@ -214,7 +214,7 @@ DiagnosticList LakeCC::diagnostics_impl() const {
   return result;
 }
 
-const bool LakeCC::expandMargins_impl() const {
+bool LakeCC::expandMargins_impl() const {
   return true;
 }
 

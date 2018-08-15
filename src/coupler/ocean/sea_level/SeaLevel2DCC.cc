@@ -190,7 +190,7 @@ void SeaLevel2DCC::do_sl_mask_update(const IceModelVec2S &bed, const IceModelVec
                  "          Done!\n");
 }
 
-const bool SeaLevel2DCC::expandMargins_impl() const {
+bool SeaLevel2DCC::expandMargins_impl() const {
   return true;
 }
 
