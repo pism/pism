@@ -174,6 +174,7 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
 
   const IceModelVec2S &bed = geometry.bed_elevation,
                       &thk = geometry.ice_thickness,
+                      &old_ll = geometry.lake_level_elevation,
                       &sl  = *m_grid->variables().get_2d_scalar("sea_level");
 
   if (not m_use_const_fill_rate) {
@@ -182,7 +183,7 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
 
   updateLakeLevelMinMax(m_lake_level, m_target_level, m_min_level, m_max_level);
 
-  const bool LakeLevelChanged = prepareLakeLevel(m_target_level, bed, m_min_level, m_expansion_mask, m_min_basin, m_lake_level);
+  const bool LakeLevelChanged = prepareLakeLevel(m_target_level, bed, m_min_level, old_ll, m_expansion_mask, m_min_basin, m_lake_level);
 
   if (LakeLevelChanged) {
     //if a new lake basin was added we need to update the min and max lake level
@@ -296,6 +297,7 @@ void Gradual::updateLakeLevelMinMax(const IceModelVec2S &lake_level,
 bool Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
                                const IceModelVec2S &bed,
                                const IceModelVec2S &min_level,
+                               const IceModelVec2S &old_ll,
                                IceModelVec2Int &mask,
                                IceModelVec2S &min_basin,
                                IceModelVec2S &lake_level) {
@@ -314,7 +316,7 @@ bool Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
   bool MinMaxChanged = false;
   {
     IceModelVec::AccessList list{ &lake_level, &min_level,
-                                  &min_basin, &mask };
+                                  &min_basin, &mask, &old_ll };
 
     GeometryCalculator gc(*m_config);
 
@@ -332,7 +334,11 @@ bool Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
           MinMaxChanged = true;
         } else if (mask_ij == 2) {
           //Extend existing lake by new cells
-          lake_level(i, j) = min_level(i, j);
+          if ( gc.islake(old_ll(i, j)) ) {
+            lake_level(i, j) = old_ll(i, j);
+          } else {
+            lake_level(i, j) = min_level(i, j);
+          }
         }
       }
     } catch (...) {

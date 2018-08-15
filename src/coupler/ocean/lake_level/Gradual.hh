@@ -47,6 +47,7 @@ private:
   bool prepareLakeLevel(const IceModelVec2S &target_level,
                         const IceModelVec2S &bed,
                         const IceModelVec2S &min_level,
+                        const IceModelVec2S &old_ll,
                         IceModelVec2Int &mask,
                         IceModelVec2S &min_basin,
                         IceModelVec2S &lake_level);
