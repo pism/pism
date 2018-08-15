@@ -18,6 +18,8 @@
  */
 
 #include "pism/coupler/SeaLevel.hh"
+#include "pism/geometry/Geometry.hh"
+#include "pism/util/Vars.hh"
 
 #include "pism/util/MaxTimestep.hh"
 
@@ -144,11 +146,52 @@ protected:
   }
 };
 
+/*! @brief Sea level elevation. */
+class OceanDepth : public Diag<SeaLevel> {
+public:
+  OceanDepth(const SeaLevel *m)
+    : Diag<SeaLevel>(m) {
+    /* set metadata: */
+    m_vars = {SpatialVariableMetadata(m_sys, "ocean_depths")};
+
+    set_attrs("ocean depth", "", "meters", "meters", 0);
+    metadata().set_double("_FillValue", m_fill_value);
+  }
+
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ocean_depth", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+
+    const IceModelVec2S &sl  = model->elevation(),
+                        &bed = *m_grid->variables().get_2d_scalar("bedrock_altitude"),
+                        &thk = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+    IceModelVec::AccessList list{ &sl, &bed, &thk };
+    list.add(*result);
+
+    GeometryCalculator gc(*m_config);
+
+    for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask::ocean(gc.mask(sl(i, j), bed(i,j), thk(i, j)))) {
+      (*result)(i, j) = sl(i, j) - bed(i, j);
+    } else {
+      (*result)(i, j) = m_fill_value;
+    }
+  } // end loop grid
+
+    return result;
+  }
+};
+
 } // end of namespace diagnostics
 
 DiagnosticList SeaLevel::diagnostics_impl() const {
   DiagnosticList result = {
     {"sea_level", Diagnostic::Ptr(new diagnostics::SL(this))},
+    {"ocean_depth", Diagnostic::Ptr(new diagnostics::OceanDepth(this))},
   };
 
   if (m_input_model) {
