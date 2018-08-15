@@ -159,7 +159,7 @@ void Gradual::prepareSeaLevel(const IceModelVec2S &target_level,
   }
 
   {
-    IceModelVec::AccessList list{ &sea_level, &min_basin, &mask };
+    IceModelVec::AccessList list{ &sea_level, &min_basin, &mask, &target_level };
 
     //Update lake extend depending on exp_mask
     ParallelSection ParSec(m_grid->com);
@@ -170,7 +170,7 @@ void Gradual::prepareSeaLevel(const IceModelVec2S &target_level,
         const int mask_ij = mask.as_int(i, j);
         if (mask_ij > 0) {
           //New basin
-          sea_level(i, j) = min_basin(i, j);
+          sea_level(i, j) = std::min(min_basin(i, j), target_level(i, j));
         } else if (mask_ij == -2) {
           sea_level(i, j) = m_fill_value;
         }
