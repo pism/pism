@@ -44,7 +44,7 @@ public:
 
   const IceModelVec2S& elevation() const;
 
-  const bool expandMargins() const;
+  bool expandMargins() const;
 
 protected:
   virtual void init_impl(const Geometry &geometry);

@@ -81,7 +81,7 @@ const IceModelVec2S& LakeLevel::elevation() const {
   return m_lake_level;
 }
 
-const bool LakeLevel::expandMargins() const {
+bool LakeLevel::expandMargins() const {
   return expandMargins_impl();
 }
 

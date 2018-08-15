@@ -107,7 +107,7 @@ void SeaLevel::write_model_state_impl(const PIO &output) const {
   }
 }
 
-const bool SeaLevel::expandMargins() const {
+bool SeaLevel::expandMargins() const {
   return expandMargins_impl();
 }
 
