@@ -327,10 +327,14 @@ bool Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
         const int i = p.i(), j = p.j();
 
         const int mask_ij = mask.as_int(i, j);
-        //min_level exists where mask > 0
-        if (mask_ij == 1) {
-          //New lake basin
-          lake_level(i, j) = std::min(min_level(i, j), min_basin(i, j));
+        const bool new_lake = ( (mask_ij > 0) and not (gc.islake(min_level(i, j))) );
+        if ( mask_ij == 1 or  new_lake ) {
+          if (new_lake) {
+            lake_level(i, j) = min_basin(i, j);
+          } else {
+            //New basin added to existing lake
+            lake_level(i, j) = std::min(min_level(i, j), min_basin(i, j));
+          }
           MinMaxChanged = true;
         } else if (mask_ij == 2) {
           //Extend existing lake by new cells
