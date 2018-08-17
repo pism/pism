@@ -42,7 +42,7 @@ private:
   GeometryCalculator m_gc;
   std::string m_option;
   double m_lake_level_min, m_lake_level_max, m_lake_level_dh, m_drho, m_icefree_thickness;
-  bool m_filter_map;
+  bool m_filter_map, m_keep_existing_lakes;
   int m_n_filter;
   IceModelVec2Int m_valid_mask;
 

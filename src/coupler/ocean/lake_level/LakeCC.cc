@@ -52,6 +52,8 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
 
   m_filter_map = true;
   m_n_filter   = 3;
+
+  m_keep_existing_lakes = false;
 }
 
 LakeCC::~LakeCC() {
@@ -146,6 +148,9 @@ void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
   if (m_filter_map) {
     do_filter_map();
   }
+
+  m_keep_existing_lakes = options::Bool(m_option + "_keep_existing_lakes",
+                                        "If set lakes are kept even though they are enclosed or covered by ice. This might result in huge sub-glacial lakes.");
 }
 
 MaxTimestep LakeCC::max_timestep_impl(double t) const {
@@ -156,15 +161,17 @@ void LakeCC::prepare_mask_validity(const IceModelVec2S &thk, const IceModelVec2S
   IsolationCC IsoCC(m_grid, thk, m_icefree_thickness);
   IsoCC.find_isolated_spots(valid_mask);
 
-  IceModelVec::AccessList list{ &valid_mask, &bed, &thk, &old_lake_level };
+  if (m_keep_existing_lakes) {
+    IceModelVec::AccessList list{ &valid_mask, &bed, &thk, &old_lake_level };
 
-  if (old_lake_level.state_counter() > 0) {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
+    if (old_lake_level.state_counter() > 0) {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
 
-      //Set valid where a lake already exists
-      if ( mask::ocean(m_gc.mask(m_fill_value, bed(i, j), thk(i, j), old_lake_level(i, j))) ) {
-        valid_mask(i, j) = 1;
+        //Set valid where a lake already exists
+        if ( mask::ocean(m_gc.mask(m_fill_value, bed(i, j), thk(i, j), old_lake_level(i, j))) ) {
+          valid_mask(i, j) = 1;
+        }
       }
     }
   }
