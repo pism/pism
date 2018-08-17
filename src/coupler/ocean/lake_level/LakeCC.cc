@@ -54,6 +54,7 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
   m_n_filter   = 3;
 
   m_keep_existing_lakes = false;
+  m_check_sl_diagonal = false;
 }
 
 LakeCC::~LakeCC() {
@@ -137,6 +138,8 @@ void LakeCC::init_impl(const Geometry &geometry) {
 
   m_keep_existing_lakes = options::Bool(m_option + "_keep_existing_lakes",
                                         "If set lakes are kept even though they are enclosed or covered by ice. This might result in huge sub-glacial lakes.");
+  m_check_sl_diagonal = options::Bool(m_option + "_check_sl_diagonal",
+                                      "If set invalid SL cells are checked if a diagonal cell is ocean and if so, the mask is updated.");
 }
 
 void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
@@ -184,7 +187,9 @@ void LakeCC::do_lake_update(const IceModelVec2S &bed, const IceModelVec2S &thk, 
   pism_mask.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
   m_gc.compute_mask(sea_level, bed, thk, pism_mask);
 
-
+  if (m_check_sl_diagonal) {
+    update_mask_sl_diagonal(sea_level, bed, thk, pism_mask);
+  }
 
   prepare_mask_validity(thk, bed, old_lake_level, m_valid_mask);
 
@@ -226,6 +231,33 @@ DiagnosticList LakeCC::diagnostics_impl() const {
 
 bool LakeCC::expandMargins_impl() const {
   return true;
+}
+
+void LakeCC::update_mask_sl_diagonal(const IceModelVec2S &sl, const IceModelVec2S &bed, const IceModelVec2S &thk, IceModelVec2Int &mask) {
+
+  IceModelVec2Int mask_wide(m_grid, "mask_wide", WITH_GHOSTS);
+  mask_wide.copy_from(mask);
+
+  std::vector<int>i_diagonals = {1, 1,-1,-1},
+                  j_diagonals = {1,-1,-1, 1};
+
+  IceModelVec::AccessList list({ &mask_wide, &mask, &sl, &bed, &thk });
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (sl(i, j) == m_fill_value) {
+      for (int k = 0; k < 4; k++) {
+        int i_diag = i + i_diagonals[k],
+            j_diag = j + j_diagonals[k];
+        if (mask::ocean(mask_wide(i_diag, j_diag))) {
+          mask(i, j) = m_gc.mask(sl(i_diag, j_diag), bed(i, j), thk(i, j));
+          break;
+        }
+      }
+    }
+  }
+
 }
 
 } // end of namespace lake_level
