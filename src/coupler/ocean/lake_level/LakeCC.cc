@@ -134,6 +134,9 @@ void LakeCC::init_impl(const Geometry &geometry) {
   }
 
   m_valid_mask.create(m_grid, "lake_valid_mask", WITHOUT_GHOSTS);
+
+  m_keep_existing_lakes = options::Bool(m_option + "_keep_existing_lakes",
+                                        "If set lakes are kept even though they are enclosed or covered by ice. This might result in huge sub-glacial lakes.");
 }
 
 void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
@@ -148,9 +151,6 @@ void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
   if (m_filter_map) {
     do_filter_map();
   }
-
-  m_keep_existing_lakes = options::Bool(m_option + "_keep_existing_lakes",
-                                        "If set lakes are kept even though they are enclosed or covered by ice. This might result in huge sub-glacial lakes.");
 }
 
 MaxTimestep LakeCC::max_timestep_impl(double t) const {
@@ -183,6 +183,9 @@ void LakeCC::do_lake_update(const IceModelVec2S &bed, const IceModelVec2S &thk, 
   IceModelVec2Int pism_mask;
   pism_mask.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
   m_gc.compute_mask(sea_level, bed, thk, pism_mask);
+
+
+
   prepare_mask_validity(thk, bed, old_lake_level, m_valid_mask);
 
   m_log->message(2, "->LakeCC: Update of Lake Levels! \n");
