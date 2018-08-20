@@ -238,20 +238,23 @@ void LakeCC::update_mask_sl_diagonal(const IceModelVec2S &sl, const IceModelVec2
   IceModelVec2Int mask_wide(m_grid, "mask_wide", WITH_GHOSTS);
   mask_wide.copy_from(mask);
 
+  IceModelVec2S sl_wide(m_grid, "sl_wide", WITH_GHOSTS);
+  sl_wide.copy_from(sl);
+
   std::vector<int>i_diagonals = {1, 1,-1,-1},
                   j_diagonals = {1,-1,-1, 1};
 
-  IceModelVec::AccessList list({ &mask_wide, &mask, &sl, &bed, &thk });
+  IceModelVec::AccessList list({ &mask_wide, &mask, &sl_wide, &bed, &thk });
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (sl(i, j) == m_fill_value) {
+    if (sl_wide(i, j) == m_fill_value) {
       for (int k = 0; k < 4; k++) {
         int i_diag = i + i_diagonals[k],
             j_diag = j + j_diagonals[k];
         if (mask::ocean(mask_wide(i_diag, j_diag))) {
-          mask(i, j) = m_gc.mask(sl(i_diag, j_diag), bed(i, j), thk(i, j));
+          mask(i, j) = m_gc.mask(sl_wide(i_diag, j_diag), bed(i, j), thk(i, j));
           break;
         }
       }
