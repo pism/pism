@@ -30,6 +30,20 @@ evolve together. These tools are required:
    * - graphviz_
      - required to rebuild the |pism-browser|
 
+
+For a debian-based system may be able to install these by running
+
+.. literalinclude:: code/install_docu_libraries.sh
+   :language: bash
+   :lines: 3-
+
+.. only:: html
+
+   Click :download:`here <code/install_libraries.sh>` to download this file.
+
+(You may need to change this command to match your package system.)
+
+
 Note that if you install Sphinx using MacPorts_, you will install a version that
 corresponds to your Python version, and its executables will have names with suffixes
 corresponding to this version, e.g. ``sphinx-build-2.7`` rather than ``sphinx-build`` for
