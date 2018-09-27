@@ -172,10 +172,39 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
     m_init_lakes_filled = false;
   }
 
-  const IceModelVec2S &bed = geometry.bed_elevation,
-                      &thk = geometry.ice_thickness,
+  //Get bed, thk and the 'old' lake and sea level fields from geometry
+  //Since sea level was updated just before the lake level is, sea_level_elevation
+  //in geometry might not be up-to-date, so we get it from *m_grid->variables()
+  const IceModelVec2S &bed    = geometry.bed_elevation,
+                      &thk    = geometry.ice_thickness,
                       &old_ll = geometry.lake_level_elevation,
-                      &sl  = *m_grid->variables().get_2d_scalar("sea_level");
+                      &sl     = *m_grid->variables().get_2d_scalar("sea_level"),
+                      &old_sl = geometry.sea_level_elevation;
+
+  IceModelVec2S old_sl_basins(m_grid, "sl_basins", WITHOUT_GHOSTS);
+  {
+    IceModelVec::AccessList list {&old_sl_basins, &old_sl, &bed, &thk};
+
+    GeometryCalculator gc(*m_config);
+
+    //Update lake extend depending on exp_mask
+    ParallelSection ParSec(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        if (mask::ocean(gc.mask(old_sl(i, j), bed(i, j), thk(i, j)))) {
+          old_sl_basins(i, j) = old_sl(i, j);
+        } else {
+          old_sl_basins(i, j) = m_fill_value;
+        }
+      }
+    } catch (...) {
+      ParSec.failed();
+    }
+    ParSec.check();
+
+    old_sl_basins.update_ghosts();
+  }
 
   if (not m_use_const_fill_rate) {
     compute_fill_rate(dt, m_target_level, m_lake_area, m_lake_mass_input_discharge, m_lake_mass_input_basal, m_lake_mass_input_total, m_lake_fill_rate);
@@ -183,7 +212,7 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
 
   updateLakeLevelMinMax(m_lake_level, m_target_level, m_min_level, m_max_level);
 
-  const bool LakeLevelChanged = prepareLakeLevel(m_target_level, bed, m_min_level, old_ll, m_expansion_mask, m_min_basin, m_lake_level);
+  const bool LakeLevelChanged = prepareLakeLevel(m_target_level, bed, m_min_level, old_ll, old_sl_basins, m_expansion_mask, m_min_basin, m_lake_level);
 
   if (LakeLevelChanged) {
     //if a new lake basin was added we need to update the min and max lake level
@@ -298,6 +327,7 @@ bool Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
                                const IceModelVec2S &bed,
                                const IceModelVec2S &min_level,
                                const IceModelVec2S &old_ll,
+                               const IceModelVec2S &old_sl,
                                IceModelVec2Int &mask,
                                IceModelVec2S &min_basin,
                                IceModelVec2S &lake_level) {
@@ -316,7 +346,8 @@ bool Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
   bool MinMaxChanged = false;
   {
     IceModelVec::AccessList list{ &lake_level, &min_level,
-                                  &min_basin, &mask, &old_ll };
+                                  &min_basin, &mask,
+                                  &old_ll, &old_sl };
 
     GeometryCalculator gc(*m_config);
 
@@ -328,7 +359,7 @@ bool Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
 
         const int mask_ij = mask.as_int(i, j);
         const bool new_lake = ( (mask_ij > 0) and not (gc.islake(min_level(i, j))) );
-        if ( mask_ij == 1 or  new_lake ) {
+        if ( mask_ij == 1 or new_lake ) {
           if (new_lake) {
             lake_level(i, j) = min_basin(i, j);
           } else {
