@@ -106,15 +106,6 @@ error.
        :config:`flow_law.gpbld.water_frac_coeff` [default `C=181.25`\], and `\omega` is
        capped at level :config:`flow_law.gpbld.water_frac_observed_limit`.
 
-   * - ``gpbld3``
-     - Same as ``gpbld``, but with the fixed Glen exponent `n = 3`.
-
-       This flow law implementation is *significantly faster* thanks to a number of
-       low-level optimizations.
-
-       It is also less flexible (all constants are hard-wired and cannot be changed using
-       configuration parameters).
-
    * - ``pb``
      - Paterson-Budd law, the cold-mode default. Fixed Glen exponent `n=3`. Has a split
        "Arrhenius" term `A(T) = A \exp(-Q/RT^*)` where

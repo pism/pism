@@ -9,10 +9,5 @@ add_library (flowlaws OBJECT
   PatersonBudd.cc
   PatersonBuddCold.cc
   PatersonBuddWarm.cc
-  GPBLD3.cc
   approximate/gpbld_n.cc
   )
-
-add_executable(gpbld3_test
-  gpbld3_test.cc)
-target_link_libraries (gpbld3_test pism)
