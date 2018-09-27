@@ -181,13 +181,13 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
                       &sl     = *m_grid->variables().get_2d_scalar("sea_level"),
                       &old_sl = geometry.sea_level_elevation;
 
+  //Calculate basins that were filled by the ocean
   IceModelVec2S old_sl_basins(m_grid, "sl_basins", WITHOUT_GHOSTS);
   {
     IceModelVec::AccessList list {&old_sl_basins, &old_sl, &bed, &thk};
 
     GeometryCalculator gc(*m_config);
 
-    //Update lake extend depending on exp_mask
     ParallelSection ParSec(m_grid->com);
     try {
       for (Points p(*m_grid); p; p.next()) {
