@@ -50,6 +50,11 @@ Gradual::Gradual(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in)
                       "m", "min_sl_bed");
   m_min_basin.metadata().set_double("_FillValue", m_fill_value);
 
+  m_max_ll_basin.create(m_grid, "max_ll_basin", WITHOUT_GHOSTS);
+  m_max_ll_basin.set_attrs("model_state", "max ll basin",
+                           "m", "max_ll_basin");
+  m_max_ll_basin.metadata().set_double("_FillValue", m_fill_value);
+
   m_expansion_mask.create(m_grid, "sl_expansion_mask", WITHOUT_GHOSTS);
   m_expansion_mask.metadata().set_double("_FillValue", m_fill_value);
 
@@ -133,9 +138,10 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
   }
 
   const IceModelVec2S &bed = geometry.bed_elevation,
-                      &thk = geometry.ice_thickness;
+                      &thk = geometry.ice_thickness,
+                      &ll  = geometry.lake_level_elevation;
 
-  prepareSeaLevel(m_target_level, bed, m_expansion_mask, m_min_basin, m_sea_level);
+  prepareSeaLevel(m_target_level, bed, ll, m_expansion_mask, m_min_basin, m_max_ll_basin, m_sea_level);
 
   gradually_fill(dt, m_max_fill_rate, m_target_level, bed, thk, m_min_basin, m_sea_level);
 }
@@ -143,15 +149,17 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
 
 void Gradual::prepareSeaLevel(const IceModelVec2S &target_level,
                               const IceModelVec2S &bed,
+                              const IceModelVec2S &lake_level,
                               IceModelVec2Int &mask,
                               IceModelVec2S &min_basin,
+                              IceModelVec2S &max_ll_basin,
                               IceModelVec2S &sea_level) {
 
   { //Check which lake cells are newly added
     ParallelSection ParSec(m_grid->com);
     try {
-      FilterExpansionCC FExCC(m_grid, m_fill_value, bed);
-      FExCC.filter_ext2(sea_level, target_level, mask, min_basin);
+      FilterExpansionCC FExCC(m_grid, m_fill_value, bed, lake_level);
+      FExCC.filter_ext2(sea_level, target_level, mask, min_basin, max_ll_basin);
     } catch (...) {
       ParSec.failed();
     }
@@ -159,7 +167,7 @@ void Gradual::prepareSeaLevel(const IceModelVec2S &target_level,
   }
 
   {
-    IceModelVec::AccessList list{ &sea_level, &min_basin, &mask, &target_level };
+    IceModelVec::AccessList list{ &sea_level, &min_basin, &mask, &target_level, &max_ll_basin };
 
     //Update lake extend depending on exp_mask
     ParallelSection ParSec(m_grid->com);
@@ -170,7 +178,11 @@ void Gradual::prepareSeaLevel(const IceModelVec2S &target_level,
         const int mask_ij = mask.as_int(i, j);
         if (mask_ij > 0) {
           //New basin
-          sea_level(i, j) = std::min(min_basin(i, j), target_level(i, j));
+          if (max_ll_basin(i, j) == m_fill_value) {
+            sea_level(i, j) = std::min(min_basin(i, j), target_level(i, j));
+          } else {
+            sea_level(i, j) = max_ll_basin(i, j);
+          }
         } else if (mask_ij == -2) {
           sea_level(i, j) = m_fill_value;
         }
@@ -245,6 +257,7 @@ DiagnosticList Gradual::diagnostics_impl() const {
   DiagnosticList result = {
     { "sl_gradual_target",       Diagnostic::wrap(m_target_level) },
     { "sl_gradual_min_bed",      Diagnostic::wrap(m_min_basin) },
+    { "sl_gradual_max_ll_basin", Diagnostic::wrap(m_max_ll_basin) },
     { "sl_expansion_mask",       Diagnostic::wrap(m_expansion_mask) },
   };
 

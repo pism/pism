@@ -112,10 +112,10 @@ protected:
 
 class FilterExpansionCC : public ValidCC<ConnectedComponents> {
 public:
-  FilterExpansionCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &bed);
+  FilterExpansionCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &bed, const IceModelVec2S &water_level);
   ~FilterExpansionCC();
-  void filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin);
-  void filter_ext2(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin);
+  void filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin, IceModelVec2S &max_water_level);
+  void filter_ext2(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin, IceModelVec2S &max_water_level);
 
 protected:
   virtual void init_VecList(VecList &lists, const unsigned int length);
@@ -129,12 +129,13 @@ protected:
 
 private:
   const double m_fill_value;
-  const IceModelVec2S *m_bed;
-  IceModelVec2S m_min_bed;
+  const IceModelVec2S *m_bed, *m_water_level;
+  IceModelVec2S m_min_bed, m_max_wl;
 
   void setRunMinBed(double level, int run, VecList &lists);
-  void labelMap(const int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed);
-  void labelMap2(const int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed);
+  void setRunMaxWl(double level, int run, VecList &lists);
+  void labelMap(const int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl);
+  void labelMap2(const int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl);
   void prepare_mask(const IceModelVec2S &current_level, const IceModelVec2S &target_level);
   void set_mask_validity(const int n_filter);
 

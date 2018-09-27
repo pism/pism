@@ -41,13 +41,15 @@ private:
   bool m_bootstrap;
   double m_max_fill_rate;
 
-  IceModelVec2S m_target_level, m_min_basin;
+  IceModelVec2S m_target_level, m_min_basin, m_max_ll_basin;
   IceModelVec2Int m_expansion_mask;
 
   void prepareSeaLevel(const IceModelVec2S &target_level,
                        const IceModelVec2S &bed,
+                       const IceModelVec2S &lake_level,
                        IceModelVec2Int &mask,
                        IceModelVec2S &min_basin,
+                       IceModelVec2S &max_ll_basin,
                        IceModelVec2S &sea_level);
   void gradually_fill(const double dt,
                       const double max_fill_rate,

@@ -53,8 +53,13 @@ Gradual::Gradual(IceGrid::ConstPtr grid,
 
   m_min_basin.create(m_grid, "min_lake_bed", WITHOUT_GHOSTS);
   m_min_basin.set_attrs("model_state", "min lake bed",
-                      "m", "min_bed");
+                        "m", "min_bed");
   m_min_basin.metadata().set_double("_FillValue", m_fill_value);
+
+  m_max_sl_basin.create(m_grid, "max_sl_basin", WITHOUT_GHOSTS);
+  m_max_sl_basin.set_attrs("model_state", "max sl basin",
+                           "m", "max_sl_basin");
+  m_max_sl_basin.metadata().set_double("_FillValue", m_fill_value);
 
   m_expansion_mask.create(m_grid, "expansion_mask", WITHOUT_GHOSTS);
   m_expansion_mask.metadata().set_double("_FillValue", m_fill_value);
@@ -113,11 +118,11 @@ void Gradual::init_impl(const Geometry &geometry) {
     if (opts.type == INIT_RESTART) {
 
       m_log->message(2, "* Reading lake level forcing from '%s' for re-starting...\n",
-                    opts.filename.c_str());
+                     opts.filename.c_str());
 
       PIO file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
       const unsigned int time_length = file.inq_nrecords(),
-                        last_record = time_length > 0 ? time_length - 1 : 0;
+                         last_record = time_length > 0 ? time_length - 1 : 0;
 
       tmp.read(file, last_record);
 
@@ -132,7 +137,7 @@ void Gradual::init_impl(const Geometry &geometry) {
     // equivalent to "-i ... -bootstrap -regrid_file ..."
     {
       regrid("lake gradual filling modifier", tmp,
-            REGRID_WITHOUT_REGRID_VARS);
+             REGRID_WITHOUT_REGRID_VARS);
     }
 
     if (tmp.state_counter() == 2) {
@@ -212,7 +217,7 @@ void Gradual::update_impl(const Geometry &geometry, double t, double dt) {
 
   updateLakeLevelMinMax(m_lake_level, m_target_level, m_min_level, m_max_level);
 
-  const bool LakeLevelChanged = prepareLakeLevel(m_target_level, bed, m_min_level, old_ll, old_sl_basins, m_expansion_mask, m_min_basin, m_lake_level);
+  const bool LakeLevelChanged = prepareLakeLevel(m_target_level, bed, m_min_level, old_ll, old_sl_basins, m_expansion_mask, m_min_basin, m_max_sl_basin, m_lake_level);
 
   if (LakeLevelChanged) {
     //if a new lake basin was added we need to update the min and max lake level
@@ -330,13 +335,14 @@ bool Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
                                const IceModelVec2S &old_sl,
                                IceModelVec2Int &mask,
                                IceModelVec2S &min_basin,
+                               IceModelVec2S &max_sl_basin,
                                IceModelVec2S &lake_level) {
 
   { //Check which lake cells are newly added
     ParallelSection ParSec(m_grid->com);
     try {
-      FilterExpansionCC FExCC(m_grid, m_fill_value, bed);
-      FExCC.filter_ext(lake_level, target_level, mask, min_basin);
+      FilterExpansionCC FExCC(m_grid, m_fill_value, bed, old_sl);
+      FExCC.filter_ext(lake_level, target_level, mask, min_basin, max_sl_basin);
     } catch (...) {
       ParSec.failed();
     }
@@ -347,7 +353,7 @@ bool Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
   {
     IceModelVec::AccessList list{ &lake_level, &min_level,
                                   &min_basin, &mask,
-                                  &old_ll, &old_sl };
+                                  &old_ll, &max_sl_basin };
 
     GeometryCalculator gc(*m_config);
 
@@ -360,11 +366,15 @@ bool Gradual::prepareLakeLevel(const IceModelVec2S &target_level,
         const int mask_ij = mask.as_int(i, j);
         const bool new_lake = ( (mask_ij > 0) and not (gc.islake(min_level(i, j))) );
         if ( mask_ij == 1 or new_lake ) {
-          if (new_lake) {
-            lake_level(i, j) = min_basin(i, j);
+          if (max_sl_basin(i, j) != m_fill_value) {
+            lake_level(i, j) = max_sl_basin(i, j);
           } else {
-            //New basin added to existing lake
-            lake_level(i, j) = std::min(min_level(i, j), min_basin(i, j));
+            if (new_lake) {
+              lake_level(i, j) = min_basin(i, j);
+            } else {
+              //New basin added to existing lake
+              lake_level(i, j) = std::min(min_level(i, j), min_basin(i, j));
+            }
           }
           MinMaxChanged = true;
         } else if (mask_ij == 2) {
@@ -471,6 +481,7 @@ DiagnosticList Gradual::diagnostics_impl() const {
     { "lake_gradual_min_level",    Diagnostic::wrap(m_min_level) },
     { "lake_gradual_max_level",    Diagnostic::wrap(m_max_level) },
     { "lake_gradual_min_bed",      Diagnostic::wrap(m_min_basin) },
+    { "lake_gradual_max_sl_basin", Diagnostic::wrap(m_max_sl_basin) },
     { "lake_expansion_mask",       Diagnostic::wrap(m_expansion_mask) },
     { "lake_area",                 Diagnostic::wrap(m_lake_area) },
     { "lake_mass_input_discharge", Diagnostic::wrap(m_lake_mass_input_discharge) },
