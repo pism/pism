@@ -183,7 +183,7 @@ void Gradual::prepareSeaLevel(const IceModelVec2S &target_level,
           } else {
             sea_level(i, j) = max_ll_basin(i, j);
           }
-        } else if (mask_ij == -2) {
+        } else if (mask_ij < 0) {
           sea_level(i, j) = m_fill_value;
         }
       }
