@@ -24,6 +24,7 @@
 #include "pism/geometry/Geometry.hh"
 
 #include "Patch.hh"
+#include "LakeLevel_ConnectedComponents.hh"
 
 namespace pism {
 namespace ocean {
@@ -72,6 +73,12 @@ void Patch::update_impl(const Geometry &geometry, double t, double dt) {
   if ((t >= m_next_update_time) or (fabs(t - m_next_update_time) < 1.0)) {
     full_update = true;
   }
+
+  const IceModelVec2S &old_sl = geometry.sea_level_elevation,
+                      &new_sl = *m_grid->variables().get_2d_scalar("sea_level");
+
+  //Full update when ocean basins have vanished.
+  full_update = oceanBasinsVanished(geometry, old_sl, new_sl);
 
   if (!full_update) {
     const IceModelVec2S &bed = geometry.bed_elevation,
@@ -122,6 +129,36 @@ MaxTimestep Patch::max_timestep_impl(double t) const {
   } else {
     return lakecc_dt;
   }
+}
+
+bool Patch::oceanBasinsVanished(const Geometry &geometry, const IceModelVec2S &old_sl, const IceModelVec2S &new_sl) {
+  IceModelVec2Int mask(m_grid, "mask", WITHOUT_GHOSTS);
+  IceModelVec2S min_basin(m_grid, "min_basin", WITHOUT_GHOSTS),
+                max_wl(m_grid, "max_wl", WITHOUT_GHOSTS);
+
+  { //Check which lake cells are newly added
+    ParallelSection ParSec(m_grid->com);
+    try {
+      FilterExpansionCC FExCC(m_grid, m_fill_value, geometry.bed_elevation, geometry.sea_level_elevation);
+      FExCC.filter_ext2(old_sl, new_sl, mask, min_basin, max_wl);
+    } catch (...) {
+      ParSec.failed();
+    }
+    ParSec.check();
+  }
+
+  bool basinVanished = false;
+
+  IceModelVec::AccessList list{ &mask };
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    if (mask(i, j) == -1) {
+      basinVanished = true;
+      break;
+    }
+  }
+
+  return (GlobalOr(m_grid->com, basinVanished));
 }
 
 unsigned int Patch::patch_lake_levels(const IceModelVec2S &bed,

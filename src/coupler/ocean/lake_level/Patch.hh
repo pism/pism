@@ -43,6 +43,7 @@ private:
   unsigned int patch_lake_levels(const IceModelVec2S &bed,
                                  const IceModelVec2S &thk,
                                  const IceModelVec2S &sea_level);
+  bool oceanBasinsVanished(const Geometry &geometry, const IceModelVec2S &old_sl, const IceModelVec2S &new_sl);
 
 };
 
