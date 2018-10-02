@@ -48,11 +48,14 @@ Q0 = V0 * H0
 Hc1 = 4. * C / Q0
 Hc2 = 1. / (H0 ** 4)
 
+
 def H_exact(x):
     return (Hc1 * x + Hc2) ** (-1 / 4.)
 
+
 def u_exact(x):
     return Q0 / H_exact(x)
+
 
 class test_cfbc(PISM.ssa.SSAExactTestCase):
 
@@ -131,6 +134,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
         else:
             u = 0
         return [u, 0]
+
 
 if __name__ == '__main__':
     # if PISM.optionsSet('-usage') or PISM.optionsSet('-help'):

@@ -10,6 +10,7 @@ diffusive, which is not a surprise."""
 
 log = PISM.Context().log
 
+
 def disc(thickness, x0, y0, H, R):
     """Set ice thickness to H within the disc centered at (x0,y0) of
     radius R and 0 elsewhere.
@@ -19,8 +20,8 @@ def disc(thickness, x0, y0, H, R):
 
     with PISM.vec.Access(nocomm=thickness):
         for (i, j) in grid.points():
-            x  = grid.x(i)
-            y  = grid.y(j)
+            x = grid.x(i)
+            y = grid.y(j)
             d2 = (x - x0)**2 + (y - y0)**2
             r2 = R**2
             if d2 <= r2:
@@ -29,6 +30,7 @@ def disc(thickness, x0, y0, H, R):
                 thickness[i, j] = 0.0
 
     thickness.update_ghosts()
+
 
 def set_ice_thickness(output, time):
     """Exact solution at time time. Corresponds to a disc that is rotated
@@ -48,9 +50,10 @@ def set_ice_thickness(output, time):
     x0, y0 = 0.5 * L, 0.0
 
     R = 0.25 * L
-    x,y = M * np.matrix([x0, y0]).T
+    x, y = M * np.matrix([x0, y0]).T
 
     disc(output, x, y, 1, R)
+
 
 def set_velocity(v):
     """Initialize the velocity field to a rigid rotation around the
@@ -67,13 +70,15 @@ def set_velocity(v):
             y = grid.y(j)
 
             v[i, j].u = -y * radial_velocity
-            v[i, j].v =  x * radial_velocity
+            v[i, j].v = x * radial_velocity
 
     v.update_ghosts()
 
+
 def quiver(v, **kwargs):
     a = v.numpy()
-    plt.quiver(a[:,:,0], a[:,:,1], **kwargs)
+    plt.quiver(a[:, :, 0], a[:, :, 1], **kwargs)
+
 
 class MassTransport(object):
 
@@ -155,6 +160,7 @@ class MassTransport(object):
             t += dt
             j += 1
 
+
 def test():
     ctx = PISM.Context()
     Mx = 50
@@ -169,25 +175,26 @@ def test():
     mt.reset()
     levels = np.linspace(0, 1, 11)
 
-    plt.subplot(2,2,1)
+    plt.subplot(2, 2, 1)
     mt.plot_thickness(levels, "time=0")
 
     mt.step(0.333)
 
-    plt.subplot(2,2,2)
+    plt.subplot(2, 2, 2)
     mt.plot_thickness(levels, "time=0.333")
 
     mt.step(0.333)
 
-    plt.subplot(2,2,3)
+    plt.subplot(2, 2, 3)
     mt.plot_thickness(levels, "time=0.666")
 
     mt.step(0.333)
 
-    plt.subplot(2,2,4)
+    plt.subplot(2, 2, 4)
     mt.plot_thickness(levels, "time=0.999")
 
     plt.show()
+
 
 if __name__ == "__main__":
     test()

@@ -292,6 +292,7 @@ def plot_profile(experiment, step, out_file):
     title("MISMIP experiment %s, step %d" % (experiment, step))
     savefig(out_file)
 
+
 if __name__ == "__main__":
     from optparse import OptionParser
 

@@ -60,7 +60,7 @@ for dx in ("100", "50", "25", "15", "10", "5"):
             barmax = 360.0
             scale = 1.0e5
 
-        print("       [stats:  max = %9.3f %s, av = %8.3f %s]" % \
+        print("       [stats:  max = %9.3f %s, av = %8.3f %s]" %
               (data.max() / scale, units, data.sum() / (scale * x.size * y.size), units))
         pcolor(x / 1000.0, y / 1000.0, data / scale, vmin=barmin, vmax=barmax)
         colorbar()

@@ -179,7 +179,7 @@ if __name__ == "__main__":
             # project grid corners from x-y to lat-lon space
             gc_lon[:, :, corner], gc_lat[:, :, corner] = proj(
                 gc_ee, gc_nn, inverse=True)
-            
+
     # If it does not yet exist, create dimension 'grid_corner_dim_name'
     if bounds and grid_corner_dim_name not in list(nc.dimensions.keys()):
         nc.createDimension(grid_corner_dim_name, size=grid_corners)

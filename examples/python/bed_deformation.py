@@ -26,6 +26,7 @@ config = ctx.config
 
 R0 = 1000e3
 
+
 def initialize_uplift(uplift):
     "Initialize the uplift field."
     grid = uplift.grid()
@@ -34,9 +35,10 @@ def initialize_uplift(uplift):
         for (i, j) in grid.points():
             r = PISM.radius(grid, i, j)
             if r < 1.5 * R0:
-                uplift[i, j] = peak_uplift * (cos(pi * (r / (1.5 * R0))) + 1.0) / 2.0;
+                uplift[i, j] = peak_uplift * (cos(pi * (r / (1.5 * R0))) + 1.0) / 2.0
             else:
                 uplift[i, j] = 0.0
+
 
 def initialize_thickness(thickness, H0):
     grid = thickness.grid()
@@ -47,6 +49,7 @@ def initialize_thickness(thickness, H0):
                 thickness[i, j] = H0
             else:
                 thickness[i, j] = 0.0
+
 
 def allocate(grid):
     H = PISM.model.createIceThicknessVec(grid)
@@ -59,6 +62,7 @@ def allocate(grid):
 
     return H, bed, uplift, sea_level
 
+
 def create_grid():
     P = PISM.GridParameters(config)
     P.horizontal_size_from_options()
@@ -67,6 +71,7 @@ def create_grid():
     P.ownership_ranges_from_options(ctx.size)
 
     return PISM.IceGrid(ctx.ctx, P)
+
 
 def run(scenario, plot, pause, save):
 
@@ -80,10 +85,10 @@ def run(scenario, plot, pause, save):
     config.set_double("grid.Mz", 2)
     config.set_double("grid.Lz", 1000)
 
-    scenarios = {"1" : (False, False, 1000.0),
-                 "2" : (True,  False, 1000.0),
-                 "3" : (False, True,  0.0),
-                 "4" : (True,  True,  1000.0)}
+    scenarios = {"1": (False, False, 1000.0),
+                 "2": (True,  False, 1000.0),
+                 "3": (False, True,  0.0),
+                 "4": (True,  True,  1000.0)}
 
     elastic, use_uplift, H0 = scenarios[scenario]
 
@@ -139,6 +144,7 @@ def run(scenario, plot, pause, save):
         model.bed_elevation().dump("bed_elevation.nc")
         model.uplift().dump("bed_uplift.nc")
 
+
 if __name__ == "__main__":
     scenario = PISM.OptionKeyword("-scenario", "choose one of 4 scenarios", "1,2,3,4", "1")
     plot = PISM.OptionBool("-plot", "Plot bed elevation and uplift.")
@@ -147,9 +153,11 @@ if __name__ == "__main__":
 
     run(scenario.value(), plot, pause, save)
 
+
 def scenario1_test():
     "Test if scenario 1 runs"
     run("1", False, False, False)
+
 
 def scenario3_test():
     "Test if scenario 3 runs"

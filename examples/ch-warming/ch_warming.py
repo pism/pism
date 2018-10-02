@@ -8,15 +8,16 @@ config = ctx.config
 
 config.set_string("grid.ice_vertical_spacing", "equal")
 
-k         = config.get_double("constants.ice.thermal_conductivity")
+k = config.get_double("constants.ice.thermal_conductivity")
 T_melting = config.get_double("constants.fresh_water.melting_point_temperature")
 
-EC                  = ctx.enthalpy_converter
-pressure            = np.vectorize(EC.pressure)
-enthalpy            = np.vectorize(EC.enthalpy)
-temperature         = np.vectorize(EC.temperature)
+EC = ctx.enthalpy_converter
+pressure = np.vectorize(EC.pressure)
+enthalpy = np.vectorize(EC.enthalpy)
+temperature = np.vectorize(EC.temperature)
 melting_temperature = np.vectorize(EC.melting_temperature)
-water_fraction      = np.vectorize(EC.water_fraction)
+water_fraction = np.vectorize(EC.water_fraction)
+
 
 class EnthalpyColumn(object):
     "Set up the grid and arrays needed to run column solvers"
@@ -62,13 +63,15 @@ class EnthalpyColumn(object):
         ice_thickness = self.Lz
         self.sys.init(1, 1, False, ice_thickness)
 
+
 def ch_heat_flux(T_ice, T_ch, k, R):
     "Heat flux from the CH system into the ice. See equation 1."
     return (k / R**2) * (T_ch - T_ice)
 
+
 def T_surface(time, mean, amplitude, summer_peak_day):
     "Surface temperature (cosine yearly cycle)"
-    day_length  = 86400
+    day_length = 86400
     summer_peak = summer_peak_day * day_length
     year_length = float(365 * day_length)
 
@@ -76,22 +79,25 @@ def T_surface(time, mean, amplitude, summer_peak_day):
 
     return mean + amplitude * np.cos(2 * np.pi * t)
 
+
 def T_steady_state(H, z, T_surface, G, ice_k):
     "Steady state ice temperature given T_surface and the geothermal flux G."
     return T_surface + (H - z) * (G / ice_k)
+
 
 def E_steady_state(H, z, T_surface, G, ice_k):
     return enthalpy(T_steady_state(H, z, T_surface, G, ice_k),
                     0.0, pressure(H - z))
 
+
 def run(T_final_years=10.0, dt_days=1, Lz=1000, Mz=101, R=20, omega=0.005):
     """Run the one-column cryohydrologic warming setup"""
 
     T_final = PISM.convert(unit_system, T_final_years, "years", "seconds")
-    dt      = PISM.convert(unit_system, dt_days, "days", "seconds")
+    dt = PISM.convert(unit_system, dt_days, "days", "seconds")
 
     ice = EnthalpyColumn("energy.enthalpy", Mz, dt, Lz=Lz)
-    ch  = EnthalpyColumn("energy.ch_warming", Mz, dt, Lz=Lz)
+    ch = EnthalpyColumn("energy.ch_warming", Mz, dt, Lz=Lz)
 
     H = ice.Lz
 
@@ -101,10 +107,10 @@ def run(T_final_years=10.0, dt_days=1, Lz=1000, Mz=101, R=20, omega=0.005):
     z_coarse = np.array(ice.grid.z())
     P_coarse = pressure(H - z_coarse)
 
-    T_mean_annual   = 268.15    # mean annual temperature, Kelvin
-    T_amplitude     = 6         # surface temperature aplitude, Kelvin
+    T_mean_annual = 268.15    # mean annual temperature, Kelvin
+    T_amplitude = 6         # surface temperature aplitude, Kelvin
     summer_peak_day = 365/2
-    G               = 0.0       # geothermal flux, W/m^2
+    G = 0.0       # geothermal flux, W/m^2
 
     E_initial = E_steady_state(H, z_coarse, T_mean_annual, G, k)
 
@@ -119,9 +125,9 @@ def run(T_final_years=10.0, dt_days=1, Lz=1000, Mz=101, R=20, omega=0.005):
 
         times = []
         T_ice = []
-        T_ch  = []
+        T_ch = []
         W_ice = []
-        W_ch  = []
+        W_ch = []
         t = 0.0
         while t < T_final:
             times.append(t)
@@ -130,7 +136,7 @@ def run(T_final_years=10.0, dt_days=1, Lz=1000, Mz=101, R=20, omega=0.005):
             T_s = T_surface(t, T_mean_annual, T_amplitude, summer_peak_day)
 
             T_column_ice = temperature(ice.enthalpy.get_column_vector(1, 1), P_coarse)
-            T_column_ch  = temperature(ch.enthalpy.get_column_vector(1, 1), P_coarse)
+            T_column_ch = temperature(ch.enthalpy.get_column_vector(1, 1), P_coarse)
 
             if R > 0:
                 Q = ch_heat_flux(T_column_ice, T_column_ch, k, R)

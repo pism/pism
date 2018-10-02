@@ -13,6 +13,7 @@ from math import sin, pi
 ctx = PISM.Context()
 config = ctx.config
 
+
 def grid():
     "Create the bed smoother grid."
     P = PISM.GridParameters(config)
@@ -25,30 +26,32 @@ def grid():
 
     return PISM.IceGrid(ctx.ctx, P)
 
+
 def allocate_storage(grid):
     "Allocate the bed, the smoothed bed, the surface elevation, and theta."
     topg = PISM.IceModelVec2S()
     topg.create(grid, "topg", PISM.WITH_GHOSTS, 1)
     topg.set_attrs("internal", "original topography",
-                   "m", "bedrock_altitude");
+                   "m", "bedrock_altitude")
 
     topg_smoothed = PISM.IceModelVec2S()
     topg_smoothed.create(grid, "topg_smoothed", PISM.WITHOUT_GHOSTS, 1)
     topg_smoothed.set_attrs("internal", "smoothed topography",
-                            "m", "bedrock_altitude");
+                            "m", "bedrock_altitude")
 
     usurf = PISM.IceModelVec2S()
-    usurf.create(grid, "usurf", PISM.WITH_GHOSTS, 1);
+    usurf.create(grid, "usurf", PISM.WITH_GHOSTS, 1)
     usurf.set_attrs("internal", "ice surface elevation",
-                    "m", "surface_altitude");
+                    "m", "surface_altitude")
 
     theta = PISM.IceModelVec2S()
-    theta.create(grid, "theta", PISM.WITH_GHOSTS, 1);
+    theta.create(grid, "theta", PISM.WITH_GHOSTS, 1)
     theta.set_attrs("internal",
                     "coefficient theta in Schoof (2003) bed roughness parameterization",
-                    "", "");
+                    "", "")
 
     return (topg, topg_smoothed, usurf, theta)
+
 
 def set_topg(topg):
     "Initialize the bed topography."
@@ -61,9 +64,11 @@ def set_topg(topg):
             topg[i, j] = (400.0 * sin(2.0 * pi * x / 600.0e3) +
                           100.0 * sin(2.0 * pi * (x + 1.5 * y) / 40.0e3))
 
+
 def set_usurf(usurf):
     "Initialize the surface elevation."
     usurf.set(1000.0)
+
 
 def set_config():
     "Set configuration parameters."
@@ -80,6 +85,7 @@ def set_config():
     config.set_double("stress_balance.sia.Glen_exponent", 3.0)
     config.set_double("stress_balance.sia.bed_smoother.range", 50.0e3)
 
+
 def smooth(topg, topg_smoothed, usurf, theta):
     "Smooth the bed topography."
     grid = topg.grid()
@@ -91,6 +97,7 @@ def smooth(topg, topg_smoothed, usurf, theta):
     smoother.theta(usurf, theta)
 
     topg_smoothed.copy_from(smoother.smoothed_bed())
+
 
 def run():
     "Run the bed smoother using synthetic geometry."
@@ -106,6 +113,7 @@ def run():
     smooth(topg, topg_smoothed, usurf, theta)
 
     return topg, topg_smoothed, usurf, theta
+
 
 def bed_smoother_test():
     "Compare the range of topg, topg_smoothed, and theta to stored values"
@@ -124,10 +132,11 @@ def bed_smoother_test():
 
     for name in list(stored_range.keys()):
         computed = computed_range[name]
-        stored   = stored_range[name]
+        stored = stored_range[name]
 
         for k in range(2):
             assert abs(computed[k] - stored[k]) < 1e-16
+
 
 if __name__ == "__main__":
     for field in run():

@@ -39,6 +39,7 @@ import os
 import math
 from PISM.logging import logMessage
 
+
 class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
 
     def write(self, filename, append=False):
@@ -48,7 +49,7 @@ class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
             grid = self.grid
             vecs = self.modeldata.vecs
 
-            pio = PISM.PIO(grid.com, "netcdf3", filename, PISM.PISM_READWRITE) # append mode!
+            pio = PISM.PIO(grid.com, "netcdf3", filename, PISM.PISM_READWRITE)  # append mode!
 
             self.modeldata.vecs.write(filename)
             pio.close()
@@ -308,7 +309,8 @@ def run():
     inv_data_filename = PISM.optionsString("-inv_data", "inverse data file", default=input_filename)
 
     do_plotting = PISM.optionsFlag("-inv_plot", "perform visualization during the computation", default=False)
-    do_final_plot = PISM.optionsFlag("-inv_final_plot", "perform visualization at the end of the computation", default=False)
+    do_final_plot = PISM.optionsFlag(
+        "-inv_final_plot", "perform visualization at the end of the computation", default=False)
     Vmax = PISM.optionsReal("-inv_plot_vmax", "maximum velocity for plotting residuals", default=30)
 
     design_var = PISM.optionsList("-inv_ssa",
@@ -317,9 +319,11 @@ def run():
     do_pause = PISM.optionsFlag("-inv_pause", "pause each iteration", default=False)
 
     do_restart = PISM.optionsFlag("-inv_restart", "Restart a stopped computation.", default=False)
-    use_design_prior = PISM.optionsFlag("-inv_use_design_prior", "Use prior from inverse data file as initial guess.", default=True)
+    use_design_prior = PISM.optionsFlag(
+        "-inv_use_design_prior", "Use prior from inverse data file as initial guess.", default=True)
 
-    prep_module = PISM.optionsString("-inv_prep_module", "Python module used to do final setup of inverse solver", default=None)
+    prep_module = PISM.optionsString(
+        "-inv_prep_module", "Python module used to do final setup of inverse solver", default=None)
 
     is_regional = PISM.optionsFlag("-regional", "Compute SIA/SSA using regional model semantics", default=False)
 
@@ -355,7 +359,8 @@ def run():
         vecs.add(design_prior, writing=saving_inv_data)
     else:
         if not PISM.util.fileHasVariable(input_filename, design_var):
-            PISM.verbPrintf(1, com, "Initial guess for design variable is not available as '%s' in %s.\nYou can provide an initial guess in the inverse data file.\n" % (design_var, input_filename))
+            PISM.verbPrintf(1, com, "Initial guess for design variable is not available as '%s' in %s.\nYou can provide an initial guess in the inverse data file.\n" % (
+                design_var, input_filename))
             exit(1)
         PISM.logging.logMessage("Reading '%s_prior' from '%s' in input file.\n" % (design_var, design_var))
         design = createDesignVec(grid, design_var)
@@ -370,7 +375,8 @@ def run():
             vecs.add(zeta_fixed_mask)
         else:
             if design_var == 'tauc':
-                logMessage("  Computing 'zeta_fixed_mask' (i.e. locations where design variable '%s' has a fixed value).\n" % design_var)
+                logMessage(
+                    "  Computing 'zeta_fixed_mask' (i.e. locations where design variable '%s' has a fixed value).\n" % design_var)
                 zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
                 zeta_fixed_mask.set(1)
                 mask = vecs.mask
@@ -382,7 +388,8 @@ def run():
 
                 adjustTauc(vecs.mask, design_prior)
             elif design_var == 'hardav':
-                PISM.logging.logPrattle("Skipping 'zeta_fixed_mask' for design variable 'hardav'; no natural locations to fix its value.")
+                PISM.logging.logPrattle(
+                    "Skipping 'zeta_fixed_mask' for design variable 'hardav'; no natural locations to fix its value.")
                 pass
             else:
                 raise NotImplementedError("Unable to build 'zeta_fixed_mask' for design variable %s.", design_var)
@@ -402,7 +409,8 @@ def run():
     if do_restart:
         # Just to be sure, verify that we have a 'zeta_inv' in the output file.
         if not PISM.util.fileHasVariable(output_filename, 'zeta_inv'):
-            PISM.verbPrintf(1, com, "Unable to restart computation: file %s is missing variable 'zeta_inv'", output_filename)
+            PISM.verbPrintf(
+                1, com, "Unable to restart computation: file %s is missing variable 'zeta_inv'", output_filename)
             exit(1)
         PISM.logging.logMessage("  Inversion starting from 'zeta_inv' found in %s\n" % output_filename)
         zeta.regrid(output_filename, True)
@@ -420,7 +428,8 @@ def run():
         vecs.add(vel_ssa_observed, writing=saving_inv_data)
     else:
         if not PISM.util.fileHasVariable(inv_data_filename, "u_surface_observed"):
-            PISM.verbPrintf(1, context.com, "Neither u/v_ssa_observed nor u/v_surface_observed is available in %s.\nAt least one must be specified.\n" % inv_data_filename)
+            PISM.verbPrintf(
+                1, context.com, "Neither u/v_ssa_observed nor u/v_surface_observed is available in %s.\nAt least one must be specified.\n" % inv_data_filename)
             exit(1)
         vel_surface_observed = PISM.model.create2dVelocityVec(grid, '_surface_observed', stencil_width=2)
         vel_surface_observed.regrid(inv_data_filename, True)
@@ -567,6 +576,7 @@ def run():
 
     # Save the misfit history
     misfit_logger.write(output_filename)
+
 
 if __name__ == "__main__":
     run()

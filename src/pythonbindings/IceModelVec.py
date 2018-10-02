@@ -1,11 +1,13 @@
 # code extending the IceModelVec class
 
-def regrid(self,filename,critical=False,default_value=0.0):
-  if critical == True:
-    flag = CRITICAL
-  else:
-    flag = OPTIONAL
-  self._regrid(filename, flag, default_value)
+
+def regrid(self, filename, critical=False, default_value=0.0):
+    if critical == True:
+        flag = CRITICAL
+    else:
+        flag = OPTIONAL
+    self._regrid(filename, flag, default_value)
+
 
 def numpy(self):
     "Return a NumPy array containing data from this field (on rank 0)."

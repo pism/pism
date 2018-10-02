@@ -11,6 +11,7 @@ towards the exact solution."""
 
 log = PISM.Context().log
 
+
 def disc(thickness, x0, y0, H0, R_inner, R_outer):
     """Set ice thickness to H0 within the disc centered at (x0,y0) of
     radius R_inner, C/R in an annulus R_inner < r <= R_outer and 0
@@ -27,8 +28,8 @@ def disc(thickness, x0, y0, H0, R_inner, R_outer):
 
     with PISM.vec.Access(nocomm=thickness):
         for (i, j) in grid.points():
-            x  = grid.x(i)
-            y  = grid.y(j)
+            x = grid.x(i)
+            y = grid.y(j)
             d2 = (x - x0)**2 + (y - y0)**2
             if d2 <= R_inner_2:
                 thickness[i, j] = H0
@@ -38,6 +39,7 @@ def disc(thickness, x0, y0, H0, R_inner, R_outer):
                 thickness[i, j] = 0.0
 
     thickness.update_ghosts()
+
 
 def set_velocity(scalar_velocity, v):
     """Initialize the velocity field to a rigid rotation around the
@@ -57,6 +59,7 @@ def set_velocity(scalar_velocity, v):
             v[i, j].v = scalar_velocity * y / r
 
     v.update_ghosts()
+
 
 def run(Mx, My, t_final, part_grid, C=1.0):
     "Test GeometryEvolution::step()"
@@ -146,6 +149,7 @@ def run(Mx, My, t_final, part_grid, C=1.0):
 
     return geometry
 
+
 def average_error(N):
     t_final = 1.0
     C = 1.0
@@ -174,11 +178,13 @@ def average_error(N):
     # return the average error
     return diff.norm(PISM.PETSc.NormType.N1) / (N*N)
 
+
 def part_grid_convergence_test():
     "Test that the error does down as O(1/N)"
 
     np.testing.assert_almost_equal([average_error(N) for N in [51, 101]],
                                    [0.0338388,  0.0158498])
+
 
 def part_grid_symmetry_test():
     """The initial condition and the velocity fields are radially

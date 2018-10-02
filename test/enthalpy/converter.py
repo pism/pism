@@ -7,6 +7,7 @@ config = PISM.Context().config
 converters = {"Default": PISM.EnthalpyConverter(config),
               "verification (cold)": PISM.ColdEnthalpyConverter(config)}
 
+
 def try_all_converters(test):
     print("")
     for name, converter in list(converters.items()):
@@ -47,6 +48,7 @@ def reversibility_test():
         assert np.fabs(omega - omega_prescribed) < 1e-16
 
     try_all_converters(run)
+
 
 def temperate_temperature_test():
     "For temperate ice, an increase of E should not change T."
@@ -122,6 +124,7 @@ def enthalpy_of_water_test():
     # be equal to c_w * (T_m(p1) - T_m(p0))
     assert np.fabs((E1 - E0) - c_w * (T1 - T0)) < 1e-9
 
+
 def invalid_inputs_test():
     "Test that invalid inputs trigger errors."
     def run(name, EC):
@@ -188,6 +191,7 @@ def invalid_inputs_test():
 
     try_all_converters(run)
 
+
 def plot_converter(name, EC):
     """Test an enthalpy converter passed as the argument."""
 
@@ -253,6 +257,7 @@ def compare():
         plot_converter(name, converter)
 
     plt.show()
+
 
 if __name__ == "__main__":
     import pylab as plt

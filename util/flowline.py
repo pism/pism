@@ -207,6 +207,7 @@ def expand_var(nc, out, name, direction):
         elif direction == 'y':
             var2[get_slice(var2.dimensions, y=j)] = permute(var1)
 
+
 parser = OptionParser()
 parser.usage = "usage: %prog -o foo.nc -d {x,y} {--collapse,--expand} file.nc"
 parser.description = "Collapses or expands a NetCDF file in a specified direction."

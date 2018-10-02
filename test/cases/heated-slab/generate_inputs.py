@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
-import sys, time, netCDF4
+import sys
+import time
+import netCDF4
 import numpy as np
+
 
 def generate_input(filename):
     "Generate a slab-on-a-flat-bed input file for PISM."
@@ -17,8 +20,8 @@ def generate_input(filename):
     dy = dx
 
     topg = np.zeros((My, Mx))
-    thk  = np.zeros((My, Mx)) + 1000.0
-    artm = np.zeros((My, Mx)) + 273.15 -30  # -30 degrees Celsius
+    thk = np.zeros((My, Mx)) + 1000.0
+    artm = np.zeros((My, Mx)) + 273.15 - 30  # -30 degrees Celsius
     hflx = np.zeros((My, Mx)) + 0.042       # 42 mW/m2
     smb = np.zeros((My, Mx))                # zero
 
@@ -69,6 +72,7 @@ def generate_input(filename):
 
     nc.close()
 
+
 def generate_forcing(filename):
     "Generate surface temperature forcing."
     ts_yr = 0
@@ -76,11 +80,11 @@ def generate_forcing(filename):
     dt_yr = 10
 
     Mt = (te_yr - ts_yr) / dt_yr + 1
-    delta_T =  np.zeros(Mt)
+    delta_T = np.zeros(Mt)
     time = np.linspace(ts_yr, te_yr, Mt)
 
-    delta_T[np.where((time>100000))] = 25.0
-    delta_T[np.where((time>=150000))] = 0.0
+    delta_T[np.where((time > 100000))] = 25.0
+    delta_T[np.where((time >= 150000))] = 0.0
 
     # Write the data:
     nc = netCDF4.Dataset(dTfile, "w")
@@ -106,6 +110,7 @@ def generate_forcing(filename):
     setattr(nc, 'history', historystr)
 
     nc.close()
+
 
 if __name__ == "__main__":
     fill_value = np.nan

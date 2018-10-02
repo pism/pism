@@ -95,6 +95,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
         alpha = math.sqrt((tauc0 / tauc_threshold_velocity) / (4 * nu0 * H0))
         return [v0 * math.exp(-alpha * (x - L)), 0]
 
+
 # The main code for a run follows:
 if __name__ == '__main__':
     context = PISM.Context()

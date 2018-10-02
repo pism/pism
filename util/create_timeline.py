@@ -73,7 +73,7 @@ if os.path.isfile(infile):
     nc = NC(infile, 'a')
 else:
     nc = NC(infile, 'w', format='NETCDF3_CLASSIC')
-    
+
 time_units = ("%s since %s" % (ref_unit, ref_date))
 # currently PISM only supports the gregorian standard calendar
 # once this changes, calendar should become a command-line option

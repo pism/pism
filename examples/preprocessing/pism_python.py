@@ -72,6 +72,7 @@ def def_var(nc, name, units, fillvalue):
     var.units = units
     return var
 
+
 bed_var = def_var(nc, "topg", "m", fill_value)
 bed_var.standard_name = "bedrock_altitude"
 bed_var[:] = topg

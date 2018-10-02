@@ -4,7 +4,8 @@ Tests of PISM's ocean models and modifiers.
 """
 
 import PISM
-import sys, os
+import sys
+import os
 import numpy as np
 from unittest import TestCase
 import netCDF4
@@ -26,6 +27,7 @@ log.set_threshold(1)
 
 options = PISM.PETSc.Options()
 
+
 def create_geometry(grid):
     geometry = PISM.Geometry(grid)
 
@@ -43,9 +45,11 @@ def create_geometry(grid):
 
     return geometry
 
+
 def sample(vec):
     with PISM.vec.Access(nocomm=[vec]):
         return vec[0, 0]
+
 
 def create_dummy_forcing_file(filename, variable_name, units, value):
     f = netCDF4.Dataset(filename, "w")
@@ -58,6 +62,7 @@ def create_dummy_forcing_file(filename, variable_name, units, value):
     delta_T[0] = value
     f.close()
 
+
 def dummy_grid():
     "Create a dummy grid"
     ctx = PISM.Context()
@@ -65,13 +70,16 @@ def dummy_grid():
     params.ownership_ranges_from_options(ctx.size)
     return PISM.IceGrid(ctx.ctx, params)
 
+
 def check(vec, value):
     "Check if values of vec are almost equal to value."
     np.testing.assert_almost_equal(sample(vec), value)
 
+
 def check_difference(A, B, value):
     "Check if the difference between A and B is almost equal to value."
     np.testing.assert_almost_equal(sample(A) - sample(B), value)
+
 
 def check_model(model, T, omega, SMB, mass=0.0, thickness=0.0):
     check(model.mass_flux(), SMB)
@@ -79,6 +87,7 @@ def check_model(model, T, omega, SMB, mass=0.0, thickness=0.0):
     check(model.liquid_water_fraction(), omega)
     check(model.layer_mass(), mass)
     check(model.layer_thickness(), thickness)
+
 
 def check_modifier(model, modifier, T=0.0, omega=0.0, SMB=0.0, mass=0.0, thickness=0.0):
     check_difference(modifier.mass_flux(),
@@ -101,6 +110,7 @@ def check_modifier(model, modifier, T=0.0, omega=0.0, SMB=0.0, mass=0.0, thickne
                      model.layer_thickness(),
                      thickness)
 
+
 def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)
 
@@ -113,6 +123,7 @@ def create_given_input_file(filename, grid, temperature, mass_flux):
     M.set_attrs("climate", "shelf base mass flux", "kg m-2 s-1", "")
     M.set(mass_flux)
     M.write(filename)
+
 
 class DeltaT(TestCase):
     def setUp(self):
@@ -138,6 +149,7 @@ class DeltaT(TestCase):
 
     def tearDown(self):
         os.remove(self.filename)
+
 
 class LapseRates(TestCase):
     def setUp(self):
@@ -173,6 +185,7 @@ class LapseRates(TestCase):
 
     def tearDown(self):
         os.remove(self.filename)
+
 
 if __name__ == "__main__":
 

@@ -14,26 +14,30 @@ config = PISM.Context().config
 log = PISM.Context().log
 
 # unit conversion shortcut
+
+
 def convert(x, u1, u2):
     unit_system = PISM.Context().unit_system
     return PISM.convert(unit_system, x, u1, u2)
 
+
 # constants
-standard_gravity              = config.get_double("constants.standard_gravity")
-ice_density                   = config.get_double("constants.ice.density")
-mantle_density                = config.get_double("bed_deformation.mantle_density")
-mantle_viscosity              = config.get_double("bed_deformation.mantle_viscosity")
+standard_gravity = config.get_double("constants.standard_gravity")
+ice_density = config.get_double("constants.ice.density")
+mantle_density = config.get_double("bed_deformation.mantle_density")
+mantle_viscosity = config.get_double("bed_deformation.mantle_viscosity")
 lithosphere_flexural_rigidity = config.get_double("bed_deformation.lithosphere_flexural_rigidity")
 
 # disc load parameters
-disc_radius    = convert(1000, "km", "m")
+disc_radius = convert(1000, "km", "m")
 disc_thickness = 1000.0         # meters
 # domain size
 Lx = 2 * disc_radius
 # time to use for the comparison
-T       = convert(1e6,   "years", "second")
+T = convert(1e6,   "years", "second")
 t_final = convert(20000, "years", "second")
-dt      = convert(500,   "years", "second")
+dt = convert(500,   "years", "second")
+
 
 def deflection(time, radius, disc_thickness, disc_radius):
     """Compute the viscous plate deflection. See formula (17) in 'Fast
@@ -44,11 +48,13 @@ def deflection(time, radius, disc_thickness, disc_radius):
                          mantle_density, ice_density, standard_gravity,
                          lithosphere_flexural_rigidity, mantle_viscosity)
 
+
 def exact(dics_radius, disc_thickness, t, L, N):
     "Evaluate the exact solution at N points."
     r = np.linspace(0, L, N)
     z = [deflection(t, rr, disc_thickness, disc_radius) for rr in r]
     return (r, z)
+
 
 def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
     "Use the LingleClark class to compute plate deflection."
@@ -99,9 +105,10 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
     # extract half of the x grid
     r = grid.x()[N-1:]
     # extract values along the x direction (along the radius of the disc)
-    z = p0.communicate(bed_model.bed_elevation())[N-1,N-1:]
+    z = p0.communicate(bed_model.bed_elevation())[N-1, N-1:]
 
     return r, z
+
 
 def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
     "Use the LingleClark class to compute plate deflection."
@@ -138,20 +145,22 @@ def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
     # extract half of the x grid
     r = grid.x()[N-1:]
     # extract values along the x direction (along the radius of the disc)
-    z = p0.communicate(bed_model.total_displacement())[N-1,N-1:]
+    z = p0.communicate(bed_model.total_displacement())[N-1, N-1:]
 
     return r, z
+
 
 def compare_steady_state(N):
     "Compare eact and modeled results."
     r_exact, z_exact = exact(disc_radius, disc_thickness, T, Lx, N)
     r, z = modeled_steady_state(disc_radius, disc_thickness, T, Lx, N)
 
-    diff_origin  = np.fabs(z_exact[0] - z[0])
+    diff_origin = np.fabs(z_exact[0] - z[0])
     diff_average = np.average(np.fabs(z_exact - z))
-    diff_max     = np.max(np.fabs(z_exact - z))
+    diff_max = np.max(np.fabs(z_exact - z))
 
     return diff_origin, diff_max, diff_average
+
 
 def compare_time_dependent(N):
     "Compare exact and modeled results."
@@ -162,11 +171,12 @@ def compare_time_dependent(N):
 
     r, z = modeled_time_dependent(disc_radius, disc_thickness, t_final, Lx, N, dt)
 
-    diff_origin  = np.fabs(z_exact[0] - z[0])
+    diff_origin = np.fabs(z_exact[0] - z[0])
     diff_average = np.average(np.fabs(z_exact - z))
-    diff_max     = np.max(np.fabs(z_exact - z))
+    diff_max = np.max(np.fabs(z_exact - z))
 
     return diff_origin, diff_max, diff_average, dx
+
 
 def verify_steady_state():
     "Set up a grid refinement study and produce convergence plots."
@@ -176,9 +186,9 @@ def verify_steady_state():
 
     d = np.log10(diff)
     log_n = np.log10(1.0 / Ns)
-    for j,label in enumerate(["origin", "max", "average"]):
-        p = np.polyfit(log_n, d[:,j], 1)
-        plt.plot(log_n, d[:,j], marker='o', label="{}, O(dx^{:.2})".format(label, p[0]))
+    for j, label in enumerate(["origin", "max", "average"]):
+        p = np.polyfit(log_n, d[:, j], 1)
+        plt.plot(log_n, d[:, j], marker='o', label="{}, O(dx^{:.2})".format(label, p[0]))
         plt.plot(log_n, np.polyval(p, log_n), ls="--")
 
     plt.legend()
@@ -186,6 +196,7 @@ def verify_steady_state():
     plt.xlabel("log10(1/N)")
     plt.ylabel("log10(error)")
     plt.show()
+
 
 def verify_time_dependent():
     "Set up a spatial grid refinement study and produce convergence plots."
@@ -204,9 +215,9 @@ def verify_time_dependent():
     d = np.log10(diff)
     dx = diff[:, 3] / 1000.0    # convert to km
     log_dx = np.log10(dx)
-    for j,label in enumerate(["origin", "max", "average"]):
-        p = np.polyfit(log_dx, d[:,j], 1)
-        plt.plot(log_dx, d[:,j], marker='o', label="{}, O(dx^{:.2})".format(label, p[0]))
+    for j, label in enumerate(["origin", "max", "average"]):
+        p = np.polyfit(log_dx, d[:, j], 1)
+        plt.plot(log_dx, d[:, j], marker='o', label="{}, O(dx^{:.2})".format(label, p[0]))
         plt.plot(log_dx, np.polyval(p, log_dx), ls="--")
         plt.xticks(log_dx, ["{:.0f}".format(x) for x in dx])
 
@@ -216,6 +227,7 @@ def verify_time_dependent():
     plt.ylabel("log10(error)")
     plt.show()
 
+
 def time_dependent_test():
     "Time dependent bed deformation (disc load)"
     diff = np.array([compare_time_dependent(n)[:3] for n in [34, 67]])
@@ -224,6 +236,7 @@ def time_dependent_test():
               [0.04744501, 4.11548251, 0.69969177]]
 
     return np.testing.assert_almost_equal(diff, stored)
+
 
 def steady_state_test():
     "Steady state bed deformation (disc load)"

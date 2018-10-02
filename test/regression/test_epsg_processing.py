@@ -1,15 +1,19 @@
 #!/usr/bin/env python
 
 from netCDF4 import Dataset
-import os, shutil, sys
+import os
+import shutil
+import sys
 
 PISM_PATH = sys.argv[1]
 PISMR = os.path.join(PISM_PATH, "pismr")
 PISMS = os.path.join(PISM_PATH, "pisms")
 
+
 def run(command):
     print(command)
     return os.system(command)
+
 
 files = ["pisms-output.nc",
          "pismr-output.nc",

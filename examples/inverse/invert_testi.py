@@ -94,6 +94,7 @@ class LinPlotListener(PISM.invert.listener.PlotListener):
             pp.ion()
             pp.show()
 
+
 Mx = 11
 My = 61
 
@@ -153,7 +154,8 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
         config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
-        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(3.7e8, -config.get_double("stress_balance.ssa.Glen_exponent")))
+        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(
+            3.7e8, -config.get_double("stress_balance.ssa.Glen_exponent")))
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -200,6 +202,7 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
                 else:
                     misfit_weight[i, j] = right_side_weight
 
+
 # Main code starts here
 if __name__ == "__main__":
     context = PISM.Context()
@@ -210,10 +213,13 @@ if __name__ == "__main__":
     My = PISM.optionsInt("-My", "Number of grid points in y-direction", default=My)
     output_file = PISM.optionsString("-o", "output file", default="invert_testi.nc")
     right_side_weight = PISM.optionsReal("-right_side_weight", "L2 weight for y>0", default=right_side_weight)
-    tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale", "initial guess for tauc to be this factor of the true value", default=tauc_guess_scale)
-    tauc_guess_const = PISM.optionsReal("-tauc_guess_const", "initial guess for tauc to be this constant", default=tauc_guess_const)
+    tauc_guess_scale = PISM.optionsReal(
+        "-tauc_guess_scale", "initial guess for tauc to be this factor of the true value", default=tauc_guess_scale)
+    tauc_guess_const = PISM.optionsReal(
+        "-tauc_guess_const", "initial guess for tauc to be this constant", default=tauc_guess_const)
     do_plotting = PISM.optionsFlag("-inv_plot", "perform visualization during the computation", default=False)
-    do_final_plot = PISM.optionsFlag("-inv_final_plot", "perform visualization at the end of the computation", default=True)
+    do_final_plot = PISM.optionsFlag(
+        "-inv_final_plot", "perform visualization at the end of the computation", default=True)
     do_pause = PISM.optionsFlag("-inv_pause", "pause each iteration", default=False)
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint", "Test that the adjoint is working", default=False)
 
@@ -290,7 +296,8 @@ if __name__ == "__main__":
 
     # Send the true yeild stress through the forward problem to
     # get at true velocity field.
-    u_obs = PISM.model.create2dVelocityVec(grid, name='_ssa_true', desc='SSA velocity boundary condition', intent='intent')
+    u_obs = PISM.model.create2dVelocityVec(
+        grid, name='_ssa_true', desc='SSA velocity boundary condition', intent='intent')
     solver.solveForward(zeta_true, out=u_obs)
 
     # Attach various iteration listeners to the solver as needed for:

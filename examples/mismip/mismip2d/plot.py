@@ -221,6 +221,7 @@ def plot_flux(in_file, out_file):
     print("Saving '%s'...\n" % out_file)
     savefig(out_file, dpi=300, facecolor='w', edgecolor='w')
 
+
 if __name__ == "__main__":
     args, out_file, opts = process_options()
 

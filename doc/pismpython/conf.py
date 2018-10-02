@@ -11,7 +11,8 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import sys
+import os
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -64,13 +65,13 @@ inheritance_graph_attrs = dict(rankdir="TD")
 
 # -- breathe is a bridge to doxygen ----------------------------------------------
 
-breathe_projects = { "browser_inverse": "@CMAKE_BINARY_DIR@/doc/browser/inverse/xml/",
-                     "browser_util": "@CMAKE_BINARY_DIR@/doc/browser/util/xml/"}
+breathe_projects = {"browser_inverse": "@CMAKE_BINARY_DIR@/doc/browser/inverse/xml/",
+                    "browser_util": "@CMAKE_BINARY_DIR@/doc/browser/util/xml/"}
 
 breathe_default_project = "browser"
 breathe_domain_by_extension = {
-        "hh" : "cpp",
-        }
+    "hh": "cpp",
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -92,7 +93,7 @@ copyright = '2015, PISM Authors'
 # not the default (alphabetical).
 autodoc_member_order = 'bysource'
 
-# When automatically generating class documentation, include both the 
+# When automatically generating class documentation, include both the
 # class docstring and the __init__ docstring.
 autoclass_content = 'both'
 
@@ -144,7 +145,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme_path=['.']
+html_theme_path = ['.']
 html_theme = 'pismdoc'
 
 
@@ -225,21 +226,21 @@ htmlhelp_basename = 'PISMdoc'
 # -- Options for LaTeX output --------------------------------------------------
 
 latex_elements = {
-# The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+    # The paper size ('letterpaper' or 'a4paper').
+    # 'papersize': 'letterpaper',
 
-# The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
+    # The font size ('10pt', '11pt' or '12pt').
+    # 'pointsize': '10pt',
 
-# Additional stuff for the LaTeX preamble.
-#'preamble': '',
+    # Additional stuff for the LaTeX preamble.
+    # 'preamble': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'PISM.tex', 'PISM Documentation',
-   'PISM Authors', 'manual'),
+    ('index', 'PISM.tex', 'PISM Documentation',
+     'PISM Authors', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -282,9 +283,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'PISM', 'PISM Documentation',
-   'PISM Authors', 'PISM', 'One line description of project.',
-   'Miscellaneous'),
+    ('index', 'PISM', 'PISM Documentation',
+     'PISM Authors', 'PISM', 'One line description of project.',
+     'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.

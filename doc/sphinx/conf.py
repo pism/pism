@@ -32,18 +32,19 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # Get precise revision, author, and date information from Git:
 try:
-    import subprocess, shlex
+    import subprocess
+    import shlex
 
-    revision     = "git describe --always --match v?.?*"
-    author       = 'git --no-pager log -1 --pretty="format:%an"'
-    date         = 'git --no-pager log -1 --pretty="format:%ci"'
+    revision = "git describe --always --match v?.?*"
+    author = 'git --no-pager log -1 --pretty="format:%an"'
+    date = 'git --no-pager log -1 --pretty="format:%ci"'
     git_revision = subprocess.check_output(shlex.split(revision)).strip()
-    git_author   = subprocess.check_output(shlex.split(author)).strip()
-    git_date     = subprocess.check_output(shlex.split(date)).strip()
+    git_author = subprocess.check_output(shlex.split(author)).strip()
+    git_date = subprocess.check_output(shlex.split(date)).strip()
 except:
     git_revision = "unknown Git revision"
-    git_author   = "unknown Git author"
-    git_date     = "unknown Git date"
+    git_author = "unknown Git author"
+    git_date = "unknown Git date"
 
 rst_epilog = """
 .. |git-revision| replace:: ``{git_revision}``
@@ -89,20 +90,20 @@ numfig = True
 
 # -- Options for HTML output ----------------------------------------------
 
-html_context = {"git_revision" : git_revision,
-                "git_author" : git_author,
-                "git_date" : git_date}
+html_context = {"git_revision": git_revision,
+                "git_author": git_author,
+                "git_date": git_date}
 
 html_theme = 'alabaster'
 
 html_show_sourcelink = False
 
-html_theme_options = {"logo" : "pism-logo.png",
-                      "github_button" : False,
-                      "show_powered_by" : False,
-                      "body_text_align" : "justify",
-#                      "sidebar_collapse" : True,
-}
+html_theme_options = {"logo": "pism-logo.png",
+                      "github_button": False,
+                      "show_powered_by": False,
+                      "body_text_align": "justify",
+                      #                      "sidebar_collapse" : True,
+                      }
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -131,6 +132,6 @@ latex_documents = [
 # latex_show_pagerefs = True
 
 latex_elements = {
-    'releasename' : "version",
+    'releasename': "version",
     'preamble': r'\usepackage{txfonts}'
 }

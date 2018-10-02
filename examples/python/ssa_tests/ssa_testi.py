@@ -52,7 +52,8 @@ class testi(PISM.ssa.SSAExactTestCase):
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
         config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
-        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(B_schoof, -config.get_double("stress_balance.ssa.Glen_exponent")))
+        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(
+            B_schoof, -config.get_double("stress_balance.ssa.Glen_exponent")))
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -100,6 +101,7 @@ class testi(PISM.ssa.SSAExactTestCase):
     def exactSolution(self, i, j, x, y):
         p = PISM.exactI(m_schoof, x, y)
         return [p.u, p.v]
+
 
 # The main code for a run follows:
 if __name__ == '__main__':
