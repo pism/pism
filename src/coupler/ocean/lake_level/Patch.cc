@@ -77,8 +77,10 @@ void Patch::update_impl(const Geometry &geometry, double t, double dt) {
   const IceModelVec2S &old_sl = geometry.sea_level_elevation,
                       &new_sl = *m_grid->variables().get_2d_scalar("sea_level");
 
-  //Full update when ocean basins have vanished.
-  full_update = oceanBasinsVanished(geometry, old_sl, new_sl);
+  if (!full_update) {
+    //Full update when ocean basins have vanished.
+    full_update = oceanBasinsVanished(geometry, old_sl, new_sl);
+  }
 
   if (!full_update) {
     const IceModelVec2S &bed = geometry.bed_elevation,
