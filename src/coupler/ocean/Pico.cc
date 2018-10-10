@@ -260,6 +260,7 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
                  m_geometry->box_mask(),                    // input
                  m_Toc_box0,                                // input
                  m_Soc_box0,                                // input
+                 geometry.cell_area,                        // input
                  m_basal_melt_rate,
                  *m_shelf_base_temperature,
                  m_T_star,
@@ -271,6 +272,7 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
                         ice_thickness,                // input
                         m_geometry->ice_shelf_mask(), // input
                         m_geometry->box_mask(),       // input
+                        geometry.cell_area,
                         m_basal_melt_rate,
                         *m_shelf_base_temperature,
                         m_T_star,
@@ -495,6 +497,7 @@ void Pico::process_box1(const PicoPhysics &physics,
                         const IceModelVec2Int &box_mask,
                         const IceModelVec2S &Toc_box0,
                         const IceModelVec2S &Soc_box0,
+                        const IceModelVec2S &cell_area,
                         IceModelVec2S &basal_melt_rate,
                         IceModelVec2S &basal_temperature,
                         IceModelVec2S &T_star,
@@ -503,8 +506,8 @@ void Pico::process_box1(const PicoPhysics &physics,
                         IceModelVec2S &overturning) {
 
   std::vector<double> box1_area(m_n_shelves);
-  const IceModelVec2S *cell_area = m_grid->variables().get_2d_scalar("cell_area");
-  compute_box_area(1, *cell_area, shelf_mask, box_mask, box1_area);
+
+  compute_box_area(1, cell_area, shelf_mask, box_mask, box1_area);
 
   IceModelVec::AccessList list{ &ice_thickness, &shelf_mask, &box_mask,    &T_star,          &Toc_box0,          &Toc,
                                 &Soc_box0,      &Soc,        &overturning, &basal_melt_rate, &basal_temperature };
@@ -560,6 +563,7 @@ void Pico::process_other_boxes(const PicoPhysics &physics,
                                const IceModelVec2S &ice_thickness,
                                const IceModelVec2Int &shelf_mask,
                                const IceModelVec2Int &box_mask,
+                               const IceModelVec2S &cell_area,
                                IceModelVec2S &basal_melt_rate,
                                IceModelVec2S &basal_temperature,
                                IceModelVec2S &T_star,
@@ -572,8 +576,6 @@ void Pico::process_other_boxes(const PicoPhysics &physics,
 
   // get average overturning from box 1 that is used as input later
   compute_box_average(1, m_overturning, shelf_mask, box_mask, overturning);
-
-  const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
 
   std::vector<bool> use_beckmann_goosse(m_n_shelves);
 
