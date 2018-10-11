@@ -83,17 +83,11 @@ static void copy_fftw_output(fftw_complex *source, fftw_complex *destination,
  * @param[in] Ny extended grid size in the Y direction
  */
 OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &config,
-                                     int Mx, int My,
-                                     double dx, double dy,
-                                     int Nx, int Ny) {
-
-  // grid parameters
-  m_Mx = Mx;
-  m_My = My;
-  m_dx = dx;
-  m_dy = dy;
-  m_Nx = Nx;
-  m_Ny = Ny;
+                                                             const Logger::ConstPtr log,
+                                                             int Mx, int My,
+                                                             double dx, double dy,
+                                                             int Nx, int Ny)
+  : m_Mx(Mx), m_My(My), m_dx(dx), m_dy(dy), m_Nx(Nx), m_Ny(Ny), m_log(log) {
 
   // derive more parameters
   m_Lx        = 0.5 * (m_Nx - 1.0) * m_dx;
@@ -103,25 +97,23 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   m_i0_offset = (Nx - Mx) / 2;
   m_j0_offset = (Ny - My) / 2;
 
+  // FIXME: use these!
   // constants
-  double precip_pre = config.get_double("atmosphere.orographic_precipitation.background_precip_pre");
-  double precip_post = config.get_double("atmosphere.orographic_precipitation.background_precip_post");
-  m_background_precip_pre   =  precip_pre / 3600.0;
-  m_background_precip_post   =  precip_post / 3600.0;
-  // m_background_precip_pre   =  convert(m_sys, precip_pre, "mm/hr", "m/s");
-  // m_background_precip_post   =  units::convert(m_sys, precip_post, "mm/hr", "m/s");
-  m_precip_scale_factor   = config.get_double("atmosphere.orographic_precipitation.scale_factor");
-  m_truncate   = config.get_boolean("atmosphere.orographic_precipitation.truncate");
-  m_tau_c   = config.get_double("atmosphere.orographic_precipitation.conversion_time");
-  m_tau_f   = config.get_double("atmosphere.orographic_precipitation.fallout_time");
-  m_Hw   = config.get_double("atmosphere.orographic_precipitation.water_vapor_scale_height");
-  m_Nm   = config.get_double("atmosphere.orographic_precipitation.moist_stability_frequency");
-  m_wind_speed   = config.get_double("atmosphere.orographic_precipitation.wind_speed");
-  m_wind_direction   = config.get_double("atmosphere.orographic_precipitation.wind_direction");
-  m_gamma   = config.get_double("atmosphere.orographic_precipitation.lapse_rate");
-  m_Theta_m   = config.get_double("atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate");
-  m_rho_Sref   = config.get_double("atmosphere.orographic_precipitation.reference_density");
-  m_latitude   = config.get_double("atmosphere.orographic_precipitation.coriolis_latitude");
+  // double precip_pre = config.get_double("atmosphere.orographic_precipitation.background_precip_pre", "m/s");
+  // double precip_post = config.get_double("atmosphere.orographic_precipitation.background_precip_post", "m/s");
+
+  m_precip_scale_factor = config.get_double("atmosphere.orographic_precipitation.scale_factor");
+  m_truncate            = config.get_boolean("atmosphere.orographic_precipitation.truncate");
+  m_tau_c               = config.get_double("atmosphere.orographic_precipitation.conversion_time");
+  m_tau_f               = config.get_double("atmosphere.orographic_precipitation.fallout_time");
+  m_Hw                  = config.get_double("atmosphere.orographic_precipitation.water_vapor_scale_height");
+  m_Nm                  = config.get_double("atmosphere.orographic_precipitation.moist_stability_frequency");
+  m_wind_speed          = config.get_double("atmosphere.orographic_precipitation.wind_speed");
+  m_wind_direction      = config.get_double("atmosphere.orographic_precipitation.wind_direction");
+  m_gamma               = config.get_double("atmosphere.orographic_precipitation.lapse_rate");
+  m_Theta_m             = config.get_double("atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate");
+  m_rho_Sref            = config.get_double("atmosphere.orographic_precipitation.reference_density");
+  m_latitude            = config.get_double("atmosphere.orographic_precipitation.coriolis_latitude");
 
   // memory allocation
   PetscErrorCode ierr = 0;
@@ -231,8 +223,8 @@ void OrographicPrecipitationSerial::precompute_coefficients() {
  */
 void OrographicPrecipitationSerial::precompute_derived_constants() {
 
-  // m_log->message(4,
-  //            "* Precompute derived constants\n");
+  m_log->message(4,
+             "* Precompute derived constants\n");
 
   m_f = 2.0 * 7.2921e-5 * sin(m_latitude * M_PI / 180.0);
 
@@ -245,8 +237,8 @@ void OrographicPrecipitationSerial::precompute_derived_constants() {
 
 void  OrographicPrecipitationSerial::compute_intrinsic_frequency() {
 
-  // m_log->message(4,
-  //            "* Compute intrinsic frequency\n");
+  m_log->message(4,
+             "* Compute intrinsic frequency\n");
 
   {
     VecAccessor2D<fftw_complex>
@@ -266,8 +258,8 @@ void  OrographicPrecipitationSerial::compute_vertical_wave_number() {
   // Computes:
   // m = [ ((Nm^2 - sigma^2) / sigma^2) * (k^2 + l^2) ]^(1/2)
 
-  // m_log->message(4,
-  //            "* Compute vertical wave number\n");
+  m_log->message(4,
+             "* Compute vertical wave number\n");
 
   {
     VecAccessor2D<fftw_complex>

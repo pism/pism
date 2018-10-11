@@ -79,9 +79,10 @@ OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr g)
   try {
     if (m_grid->rank() == 0) {
       m_serial_model.reset(new OrographicPrecipitationSerial(*m_config,
-                                           Mx, My,
-                                           m_grid->dx(), m_grid->dy(),
-                                           Nx, Ny));
+                                                             m_log,
+                                                             Mx, My,
+                                                             m_grid->dx(), m_grid->dy(),
+                                                             Nx, Ny));
     }
   } catch (...) {
     rank0.failed();

@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 
@@ -56,9 +57,10 @@ namespace atmosphere {
 class OrographicPrecipitationSerial {
 public:
   OrographicPrecipitationSerial(const Config &config,
-                    int Mx, int My,
-                    double dx, double dy,
-                    int Nx, int Ny);
+                                const Logger::ConstPtr log,
+                                int Mx, int My,
+                                double dx, double dy,
+                                int Nx, int Ny);
   ~OrographicPrecipitationSerial();
 
   Vec orographic_precipitation() const;
@@ -158,6 +160,9 @@ private:
 
   void set_fftw_input(Vec input, double normalization, int M, int N, int i0, int j0);
   void get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0);
+
+  //! logger (for easy access)
+  const Logger::ConstPtr m_log;
 };
 
 } // end of namespace atmosphere
