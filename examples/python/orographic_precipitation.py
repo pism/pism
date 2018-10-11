@@ -234,25 +234,29 @@ def run(plot, pause, save):
     config.set_double("grid.Mz", 2)
     config.set_double("grid.Lz", 1000)
 
-    config.set_string("atmosphere.orographic_precipitation.file", "~/pism-olympics/data_sets/climate_forcing/ltop_climate_olympics_1000m_dir_220_kg_m-2_yr-1.nc")
+    config.set_string("atmosphere.orographic_precipitation.file",
+                      "~/pism-olympics/data_sets/climate_forcing/ltop_climate_olympics_1000m_dir_220_kg_m-2_yr-1.nc")
 
     config.set_double("atmosphere.orographic_precipitation.background_precip_post", 1)
     
     grid = create_grid()
 
-    thickness, bed, sea_level = allocate(grid)
+    geometry = PISM.Geometry(grid)
 
     # set initial geometry
-    bed.set(0.0)
-    thickness.set(0.0)
-    sea_level.set(0.0)
+    geometry.bed_elevation.set(0.0)
+    geometry.ice_thickness.set(0.0)
+    geometry.sea_level_elevation.set(0.0)
     initialize_thickness(thickness, orography)
-    g = PISM.Geometry(grid)
-    op = PISM.AtmosphereOrographicPrecipitation(grid)
-    op.init(g)
-    op.update(g, 0.1, 0.1)
-    p = op.mean_precipitation()
-    t = op.mean_annual_temp()
+
+    model = PISM.AtmosphereOrographicPrecipitation(grid)
+
+    model.init(geometry)
+    model.update(geometry, 0.1, 0.1)
+
+    p = model.mean_precipitation()
+    t = model.mean_annual_temp()
+
     p.dump('p.nc')
     t.dump('t.nc')
 
@@ -270,7 +274,7 @@ if __name__ == "__main__":
     sigma_y = 15e3
 
     _, _, orography = gaussian_bump(x_min, x_max, y_min, y_max, dx, dy,
-                                   x0=x0, y0=y0, sigma_x=sigma_x, sigma_y=sigma_y)
+                                    x0=x0, y0=y0, sigma_x=sigma_x, sigma_y=sigma_y)
 
     plot = PISM.OptionBool("-plot", "Plot bed elevation and uplift.")
     save = PISM.OptionBool("-save", "Save final states of the bed elevation and uplift.")
