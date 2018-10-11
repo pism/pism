@@ -16,18 +16,18 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <iostream>
-#include <cmath>                // sqrt
-#include <complex>                // I
-#include <fftw3.h>
-#include <gsl/gsl_math.h>       // M_PI
-#include "../../earth/matlablike.hh"
 #include "OrographicPrecipitationSerial.hh"
+#include "../../earth/matlablike.hh"
+#include <cmath>   // sqrt
+#include <complex> // I
+#include <fftw3.h>
+#include <gsl/gsl_math.h> // M_PI
+#include <iostream>
 
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -35,19 +35,21 @@ namespace atmosphere {
 template <class T>
 class VecAccessor2D {
 public:
-  VecAccessor2D(T* a, int Mx, int My, int i_offset, int j_offset)
-    : m_Mx(Mx), m_My(My), m_i_offset(i_offset), m_j_offset(j_offset), m_array(a) {}
+  VecAccessor2D(T *a, int Mx, int My, int i_offset, int j_offset)
+    : m_Mx(Mx), m_My(My), m_i_offset(i_offset), m_j_offset(j_offset), m_array(a) {
+  }
 
-  VecAccessor2D(T* a, int Mx, int My)
-    : m_Mx(Mx), m_My(My), m_i_offset(0), m_j_offset(0), m_array(a) {}
+  VecAccessor2D(T *a, int Mx, int My)
+    : m_Mx(Mx), m_My(My), m_i_offset(0), m_j_offset(0), m_array(a) {
+  }
 
-  inline T& operator()(int i, int j) {
+  inline T &operator()(int i, int j) {
     return m_array[(m_j_offset + j) + m_My * (m_i_offset + i)];
   }
 
 private:
   int m_Mx, m_My, m_i_offset, m_j_offset;
-  T* m_array;
+  T *m_array;
 };
 
 //! \brief Fill `input` with zeros.
@@ -62,8 +64,7 @@ static void clear_fftw_input(fftw_complex *input, int Nx, int Ny) {
 }
 
 //! @brief Copy `source` to `destination`.
-static void copy_fftw_output(fftw_complex *source, fftw_complex *destination,
-                             int Nx, int Ny) {
+static void copy_fftw_output(fftw_complex *source, fftw_complex *destination, int Nx, int Ny) {
   VecAccessor2D<fftw_complex> S(source, Nx, Ny), D(destination, Nx, Ny);
   for (int i = 0; i < Nx; ++i) {
     for (int j = 0; j < Ny; ++j) {
@@ -119,21 +120,23 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   PetscErrorCode ierr = 0;
 
   // precipitation
-  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_p.rawptr()); PISM_CHK(ierr, "VecCreateSeq");
-  ierr = VecCopy(orographic_precipitation(), m_p);  PISM_CHK(ierr, "VecCopy");
+  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_p.rawptr());
+  PISM_CHK(ierr, "VecCreateSeq");
+  ierr = VecCopy(orographic_precipitation(), m_p);
+  PISM_CHK(ierr, "VecCopy");
 
   // setup fftw stuff: FFTW builds "plans" based on observed performance
-  m_fftw_input  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
-  m_fftw_output = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
-  m_Hhat     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
-  m_Phat     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
-  m_m     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
-  m_sigma     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+  m_fftw_input  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+  m_fftw_output = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+  m_Hhat        = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+  m_Phat        = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+  m_m           = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+  m_sigma       = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
 
   m_eps = 1.0e-18;
 
   m_I = (0.0, 1.0);
-  
+
   // fill m_fftw_input with zeros
   {
     VecAccessor2D<fftw_complex> tmp(m_fftw_input, m_Nx, m_Ny);
@@ -166,7 +169,7 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   // user what happened. This is why we don't check return values of
   // fftw_malloc() and fftw_plan_dft_2d() calls here...
   //
- // (Constantine Khroulev, February 1, 2015)
+  // (Constantine Khroulev, February 1, 2015)
 
   precompute_coefficients();
   precompute_derived_constants();
@@ -189,8 +192,8 @@ OrographicPrecipitationSerial::~OrographicPrecipitationSerial() {
 Vec OrographicPrecipitationSerial::orographic_precipitation() const {
   return m_p;
 }
-  
- /**
+
+/**
  * Pre-compute coefficients used by the model.
  */
 void OrographicPrecipitationSerial::precompute_coefficients() {
@@ -215,7 +218,6 @@ void OrographicPrecipitationSerial::precompute_coefficients() {
   for (int j = m_Ny / 2 + 1; j < m_Ny; j++) {
     m_cy[j] = (M_PI / m_Ly) * (m_Ny - j);
   }
-
 }
 
 /**
@@ -223,8 +225,7 @@ void OrographicPrecipitationSerial::precompute_coefficients() {
  */
 void OrographicPrecipitationSerial::precompute_derived_constants() {
 
-  m_log->message(4,
-             "* Precompute derived constants\n");
+  m_log->message(4, "* Precompute derived constants\n");
 
   m_f = 2.0 * 7.2921e-5 * sin(m_latitude * M_PI / 180.0);
 
@@ -232,18 +233,15 @@ void OrographicPrecipitationSerial::precompute_derived_constants() {
   m_v = cos(m_wind_direction * 2.0 * M_PI / 360.0) * m_wind_speed;
 
   m_Cw = m_rho_Sref * m_Theta_m / m_gamma;
-  
 }
 
-void  OrographicPrecipitationSerial::compute_intrinsic_frequency() {
+void OrographicPrecipitationSerial::compute_intrinsic_frequency() {
 
-  m_log->message(4,
-             "* Compute intrinsic frequency\n");
+  m_log->message(4, "* Compute intrinsic frequency\n");
 
   {
-    VecAccessor2D<fftw_complex>
-      sigma(m_sigma, m_Nx, m_Ny);
-    
+    VecAccessor2D<fftw_complex> sigma(m_sigma, m_Nx, m_Ny);
+
     for (int i = 0; i < m_Nx; i++) {
       for (int j = 0; j < m_Ny; j++) {
         sigma(i, j)[0] = m_u * m_cx[i] + m_v * m_cy[j];
@@ -251,47 +249,44 @@ void  OrographicPrecipitationSerial::compute_intrinsic_frequency() {
       }
     }
   }
-  
 }
-  
-void  OrographicPrecipitationSerial::compute_vertical_wave_number() {
+
+void OrographicPrecipitationSerial::compute_vertical_wave_number() {
   // Computes:
   // m = [ ((Nm^2 - sigma^2) / sigma^2) * (k^2 + l^2) ]^(1/2)
 
-  m_log->message(4,
-             "* Compute vertical wave number\n");
+  m_log->message(4, "* Compute vertical wave number\n");
 
   {
-    VecAccessor2D<fftw_complex>
-      m(m_m, m_Nx, m_Ny), sigma(m_sigma, m_Nx, m_Ny);
-    
+    VecAccessor2D<fftw_complex> m(m_m, m_Nx, m_Ny), sigma(m_sigma, m_Nx, m_Ny);
+
     for (int i = 0; i < m_Nx; i++) {
       for (int j = 0; j < m_Ny; j++) {
         double sigma2_0 = pow(sigma(i, j)[0], 2.0);
         double sigma2_1 = pow(sigma(i, j)[1], 2.0);
-        
+
         double nom_0 = pow(m_Nm, 2.0) - sigma2_0;
         double nom_1 = pow(m_Nm, 2.0) - sigma2_1;
-        
+
         double denom_0 = sigma2_0;
         double denom_1 = sigma2_1;
-        
+
         // regularization
         if (fabs(sigma2_0) < m_eps and fabs(sigma2_0 >= 0)) {
-            denom_0 = m_eps;
-          }
+          denom_0 = m_eps;
+        }
         if (fabs(sigma2_0) < m_eps and fabs(sigma2_0 < 0)) {
-            denom_0 = -m_eps;
-          }
+          denom_0 = -m_eps;
+        }
         if (fabs(sigma2_1) < m_eps and fabs(sigma2_1 >= 0)) {
-            denom_1 = m_eps;
-          }
+          denom_1 = m_eps;
+        }
         if (fabs(sigma2_1) < m_eps and fabs(sigma2_1 < 0)) {
-            denom_1 = -m_eps;
-          }        
-        
-        m(i, j)[0] = pow(nom_0 / denom_0 * (m_cx[i] * m_cx[i] +  m_cy[j] * m_cy[j]), 0.5);
-        m(i, j)[1] = pow(nom_1 / denom_1 * (m_cx[i] * m_cx[i] +  m_cy[j] * m_cy[j]), 0.5);
+          denom_1 = -m_eps;
+        }
+
+        m(i, j)[0] = pow(nom_0 / denom_0 * (m_cx[i] * m_cx[i] + m_cy[j] * m_cy[j]), 0.5);
+        m(i, j)[1] = pow(nom_1 / denom_1 * (m_cx[i] * m_cx[i] + m_cy[j] * m_cy[j]), 0.5);
       }
     }
   }
@@ -309,7 +304,7 @@ void OrographicPrecipitationSerial::step(Vec H) {
   // see equation (49) in
   // R. B. Smith and I. Barstad, 2004:
   // A Linear Theory of Orographic Precipitation. J. Atmos. Sci. 61, 1377-1391.
-  
+
   // Compute fft2(orography)
   {
     clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
@@ -331,37 +326,36 @@ void OrographicPrecipitationSerial::step(Vec H) {
       Hhat(m_Hhat, m_Nx, m_Ny),
       Phat(m_Phat, m_Nx, m_Ny),
       sigma(m_sigma, m_Nx, m_Ny);
-    
+
     for (int i = 0; i < m_Nx; i++) {
       for (int j = 0; j < m_Ny; j++) {
         double nom_0 = m_Cw * m_I.real() * sigma(i, j)[0] * Hhat(i, j)[0];
         double nom_1 = m_Cw * m_I.imag() * sigma(i, j)[1] * Hhat(i, j)[1];
 
-        double denom_0 = (1.0 - m_I.real() * m(i, j)[0] * m_Hw)         \
-          * (1.0 + m_I.real() * sigma(i, j)[0] * m_tau_f) * (1.0 + m_I.real() *  sigma(i, j)[0] * m_tau_c);
-        double denom_1 = (1.0 - m_I.imag() * m(i, j)[1] * m_Hw)          \
-          * (1.0 + m_I.imag() * sigma(i, j)[1] * m_tau_f) * (1.0 + m_I.imag() * sigma(i, j)[1] * m_tau_c);
+        double denom_0 = (1.0 - m_I.real() * m(i, j)[0] * m_Hw) * (1.0 + m_I.real() * sigma(i, j)[0] * m_tau_f) *
+          (1.0 + m_I.real() * sigma(i, j)[0] * m_tau_c);
+        double denom_1 = (1.0 - m_I.imag() * m(i, j)[1] * m_Hw) * (1.0 + m_I.imag() * sigma(i, j)[1] * m_tau_f) *
+          (1.0 + m_I.imag() * sigma(i, j)[1] * m_tau_c);
 
         Phat(i, j)[0] = nom_0 / denom_0;
         Phat(i, j)[1] = nom_1 / denom_1;
       }
     }
   }
-  
+
   // Save Phat in m_fftw_output.
   copy_fftw_output(m_Phat, m_fftw_output, m_Nx, m_Ny);
   fftw_execute(m_dft_inverse);
   // get m_fftw_output and put it into m_precipitation
   get_fftw_output(m_p, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, 0, 0);
 
-  petsc::VecArray2D
-    p(m_p, m_Mx, m_My);
+  petsc::VecArray2D p(m_p, m_Mx, m_My);
   for (int i = 0; i < m_Mx; i++) {
     for (int j = 0; j < m_My; j++) {
       p(i, j) += m_background_precip_pre;
-        if (m_truncate) {
-          p(i, j) = std::min(p(i, j), 0.0);
-        }
+      if (m_truncate) {
+        p(i, j) = std::min(p(i, j), 0.0);
+      }
       p(i, j) *= m_precip_scale_factor;
       p(i, j) += m_background_precip_post;
     }
@@ -373,8 +367,8 @@ void OrographicPrecipitationSerial::step(Vec H) {
 /*!
  * Sets the imaginary part to zero.
  */
-void OrographicPrecipitationSerial::set_fftw_input(Vec vec_input, double normalization,
-                                       int Mx, int My, int i0, int j0) {
+void OrographicPrecipitationSerial::set_fftw_input(Vec vec_input, double normalization, int Mx, int My, int i0,
+                                                   int j0) {
   petsc::VecArray2D in(vec_input, Mx, My);
   VecAccessor2D<fftw_complex> input(m_fftw_input, m_Nx, m_Ny, i0, j0);
   for (int j = 0; j < My; ++j) {
@@ -386,8 +380,7 @@ void OrographicPrecipitationSerial::set_fftw_input(Vec vec_input, double normali
 }
 
 //! \brief Get the real part of fftw_output and put it in output.
-void OrographicPrecipitationSerial::get_fftw_output(Vec output, double normalization,
-                                        int Mx, int My, int i0, int j0) {
+void OrographicPrecipitationSerial::get_fftw_output(Vec output, double normalization, int Mx, int My, int i0, int j0) {
   petsc::VecArray2D out(output, Mx, My);
   VecAccessor2D<fftw_complex> fftw_out(m_fftw_output, m_Nx, m_Ny, i0, j0);
   for (int j = 0; j < My; ++j) {
@@ -401,114 +394,114 @@ void OrographicPrecipitationSerial::get_fftw_output(Vec output, double normaliza
 } // end of namespace pism
 
 
-    // eps = 1e-18
-    // pad = 250
+// eps = 1e-18
+// pad = 250
 
-    // ny, nx = orography.shape
-    // logger.debug('Raster shape before padding ({},{})'.format(nx, ny))
+// ny, nx = orography.shape
+// logger.debug('Raster shape before padding ({},{})'.format(nx, ny))
 
-    // padded_orography = np.pad(orography, pad, 'constant')
-    // nx, ny = padded_orography.shape
-    // logger.debug('Raster shape after padding ({},{})'.format(ny, nx))
+// padded_orography = np.pad(orography, pad, 'constant')
+// nx, ny = padded_orography.shape
+// logger.debug('Raster shape after padding ({},{})'.format(ny, nx))
 
-    // logger.info('Fourier transform orography')
-    // padded_orography_fft = np.fft.fft2(padded_orography)
+// logger.info('Fourier transform orography')
+// padded_orography_fft = np.fft.fft2(padded_orography)
 
-    // x_n_value = np.fft.fftfreq(ny, (1.0 / ny))
-    // y_n_value = np.fft.fftfreq(nx, (1.0 / nx))
+// x_n_value = np.fft.fftfreq(ny, (1.0 / ny))
+// y_n_value = np.fft.fftfreq(nx, (1.0 / nx))
 
-    // x_len = nx * dx
-    // y_len = ny * dy
-    // kx_line = np.divide(np.multiply(2.0 * np.pi, x_n_value), x_len)
-    // ky_line = np.divide(
-    //     np.multiply(
-    //         2.0 * np.pi,
-    //         y_n_value),
-    //     y_len)[
-    //     np.newaxis].T
+// x_len = nx * dx
+// y_len = ny * dy
+// kx_line = np.divide(np.multiply(2.0 * np.pi, x_n_value), x_len)
+// ky_line = np.divide(
+//     np.multiply(
+//         2.0 * np.pi,
+//         y_n_value),
+//     y_len)[
+//     np.newaxis].T
 
-    // kx = np.tile(kx_line, (nx, 1))
-    // ky = np.tile(ky_line, (1, ny))
+// kx = np.tile(kx_line, (nx, 1))
+// ky = np.tile(ky_line, (1, ny))
 
-    // # Intrinsic frequency sigma = U*k + V*l
-    // u0 = constants.u
-    // v0 = constants.v
+// # Intrinsic frequency sigma = U*k + V*l
+// u0 = constants.u
+// v0 = constants.v
 
-    // logger.info('Calculate sigma')
-    // sigma = np.add(np.multiply(kx, u0), np.multiply(ky, v0))
-    // sigma_sqr_reg = sigma ** 2
-    // m_denom = np.power(sigma, 2.) - constants.f**2
+// logger.info('Calculate sigma')
+// sigma = np.add(np.multiply(kx, u0), np.multiply(ky, v0))
+// sigma_sqr_reg = sigma ** 2
+// m_denom = np.power(sigma, 2.) - constants.f**2
 
-    // sigma_sqr_reg[
-    //     np.logical_and(
-    //         np.fabs(sigma_sqr_reg) < eps,
-    //         np.fabs(
-    //             sigma_sqr_reg >= 0))] = eps
-    // sigma_sqr_reg[
-    //     np.logical_and(
-    //         np.fabs(sigma_sqr_reg) < eps,
-    //         np.fabs(
-    //             sigma_sqr_reg < 0))] = -eps
+// sigma_sqr_reg[
+//     np.logical_and(
+//         np.fabs(sigma_sqr_reg) < eps,
+//         np.fabs(
+//             sigma_sqr_reg >= 0))] = eps
+// sigma_sqr_reg[
+//     np.logical_and(
+//         np.fabs(sigma_sqr_reg) < eps,
+//         np.fabs(
+//             sigma_sqr_reg < 0))] = -eps
 
-    // # The vertical wave number
-    // # Eqn. 12
-    // # Regularization
-    // m_denom[
-    //     np.logical_and(
-    //         np.fabs(m_denom) < eps,
-    //         np.fabs(m_denom) >= 0)] = eps
-    // m_denom[
-    //     np.logical_and(
-    //         np.fabs(m_denom) < eps,
-    //         np.fabs(m_denom) < 0)] = -eps
+// # The vertical wave number
+// # Eqn. 12
+// # Regularization
+// m_denom[
+//     np.logical_and(
+//         np.fabs(m_denom) < eps,
+//         np.fabs(m_denom) >= 0)] = eps
+// m_denom[
+//     np.logical_and(
+//         np.fabs(m_denom) < eps,
+//         np.fabs(m_denom) < 0)] = -eps
 
-    // m1 = np.divide(
-    //     np.subtract(
-    //         constants.Nm**2,
-    //         np.power(
-    //             sigma,
-    //             2.)),
-    //     m_denom)
-    // m2 = np.add(np.power(kx, 2.), np.power(ky, 2.))
-    // m_sqr = np.multiply(m1, m2)
-    // logger.info('Calculating m')
-    // m = np.sqrt(-1 * m_sqr)
-    // # Regularization
-    // m[np.logical_and(m_sqr >= 0, sigma == 0)] = np.sqrt(
-    //     m_sqr[np.logical_and(m_sqr >= 0, sigma == 0)])
-    // m[np.logical_and(m_sqr >= 0, sigma != 0)] = np.sqrt(m_sqr[np.logical_and(
-    //     m_sqr >= 0, sigma != 0)]) * np.sign(sigma[np.logical_and(m_sqr >= 0, sigma != 0)])
-    // # Numerator in Eqn. 49
-    // P_karot_num = np.multiply(np.multiply(np.multiply(
-    //     constants.Cw, 1j), sigma), padded_orography_fft)
-    // P_karot_denom_Hw = np.subtract(1, np.multiply(
-    //     np.multiply(constants.Hw, m), 1j))
-    // P_karot_denom_tauc = np.add(1, np.multiply(np.multiply(
-    //     sigma, constants.tau_c), 1j))
-    // P_karot_denom_tauf = np.add(1, np.multiply(np.multiply(
-    //     sigma, constants.tau_f), 1j))
-    // # Denominator in Eqn. 49
-    // P_karot_denom = np.multiply(
-    //     P_karot_denom_Hw, np.multiply(
-    //         P_karot_denom_tauc, P_karot_denom_tauf))
-    // P_karot = np.divide(P_karot_num, P_karot_denom)
+// m1 = np.divide(
+//     np.subtract(
+//         constants.Nm**2,
+//         np.power(
+//             sigma,
+//             2.)),
+//     m_denom)
+// m2 = np.add(np.power(kx, 2.), np.power(ky, 2.))
+// m_sqr = np.multiply(m1, m2)
+// logger.info('Calculating m')
+// m = np.sqrt(-1 * m_sqr)
+// # Regularization
+// m[np.logical_and(m_sqr >= 0, sigma == 0)] = np.sqrt(
+//     m_sqr[np.logical_and(m_sqr >= 0, sigma == 0)])
+// m[np.logical_and(m_sqr >= 0, sigma != 0)] = np.sqrt(m_sqr[np.logical_and(
+//     m_sqr >= 0, sigma != 0)]) * np.sign(sigma[np.logical_and(m_sqr >= 0, sigma != 0)])
+// # Numerator in Eqn. 49
+// P_karot_num = np.multiply(np.multiply(np.multiply(
+//     constants.Cw, 1j), sigma), padded_orography_fft)
+// P_karot_denom_Hw = np.subtract(1, np.multiply(
+//     np.multiply(constants.Hw, m), 1j))
+// P_karot_denom_tauc = np.add(1, np.multiply(np.multiply(
+//     sigma, constants.tau_c), 1j))
+// P_karot_denom_tauf = np.add(1, np.multiply(np.multiply(
+//     sigma, constants.tau_f), 1j))
+// # Denominator in Eqn. 49
+// P_karot_denom = np.multiply(
+//     P_karot_denom_Hw, np.multiply(
+//         P_karot_denom_tauc, P_karot_denom_tauf))
+// P_karot = np.divide(P_karot_num, P_karot_denom)
 
-    // # Converting from wave domain back to space domain
-    // logger.info('Performing inverse Fourier transform')
-    // P = np.fft.ifft2(P_karot)
-    // spy = 31556925.9747
-    // logger.info('De-pad array')
-    // P = P[pad:-pad, pad:-pad]
-    // P = np.multiply(np.real(P), 3600)   # mm hr-1
-    // # Add background precip
-    // P0 = constants.P0
-    // logger.info('Adding background precpipitation {} mm hr-1'.format(P0))
-    // P += P0
-    // # Truncation
+// # Converting from wave domain back to space domain
+// logger.info('Performing inverse Fourier transform')
+// P = np.fft.ifft2(P_karot)
+// spy = 31556925.9747
+// logger.info('De-pad array')
+// P = P[pad:-pad, pad:-pad]
+// P = np.multiply(np.real(P), 3600)   # mm hr-1
+// # Add background precip
+// P0 = constants.P0
+// logger.info('Adding background precpipitation {} mm hr-1'.format(P0))
+// P += P0
+// # Truncation
 
-    // if truncate:
-    //     logger.info('Truncate precipitation')
-    //     P[P < 0] = 0
-    // P_scale = constants.P_scale
-    // logger.info('Scale precipitation P = P * {}'.format(P_scale))
-    // P *= P_scale
+// if truncate:
+//     logger.info('Truncate precipitation')
+//     P[P < 0] = 0
+// P_scale = constants.P_scale
+// logger.info('Scale precipitation P = P * {}'.format(P_scale))
+// P *= P_scale

@@ -30,19 +30,19 @@ namespace atmosphere {
 
 class OrographicPrecipitationSerial;
 
-class OrographicPrecipitation : public AtmosphereModel
-{
+class OrographicPrecipitation : public AtmosphereModel {
 public:
   OrographicPrecipitation(IceGrid::ConstPtr g);
   virtual ~OrographicPrecipitation();
 
-  virtual const IceModelVec2S& mean_july_temp() const;
+  virtual const IceModelVec2S &mean_july_temp() const;
+
 private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& mean_annual_temp_impl() const;
-  const IceModelVec2S& mean_precipitation_impl() const;
+  const IceModelVec2S &mean_annual_temp_impl() const;
+  const IceModelVec2S &mean_precipitation_impl() const;
 
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;
@@ -54,7 +54,6 @@ private:
   virtual DiagnosticList diagnostics_impl() const;
 
 protected:
-
   double m_snow_temp_july_day;
 
   std::string m_reference;
@@ -70,7 +69,7 @@ protected:
 
   //! extended grid for the LT Model
   IceGrid::Ptr m_extended_grid;
-  
+
   //! Serial orographic precipitation model.
   std::unique_ptr<OrographicPrecipitationSerial> m_serial_model;
 
@@ -79,10 +78,10 @@ protected:
 };
 
 /*! @brief Mean July near-surface air temperature. */
-class PA_mean_july_temp_op : public Diag<OrographicPrecipitation>
-{
+class PA_mean_july_temp_op : public Diag<OrographicPrecipitation> {
 public:
   PA_mean_july_temp_op(const OrographicPrecipitation *m);
+
 protected:
   IceModelVec::Ptr compute_impl() const;
 };

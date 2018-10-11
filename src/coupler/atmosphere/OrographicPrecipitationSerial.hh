@@ -21,12 +21,12 @@
 
 #include <vector>
 
-#include <petscvec.h>
 #include <fftw3.h>
+#include <petscvec.h>
 #include <vector>
 
-#include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 
@@ -133,7 +133,7 @@ private:
   // half-lengths of the extended (FFT, spectral) computational domain
   double m_Lx;
   double m_Ly;
-  
+
   std::complex<double> m_I;
 
   // Coefficients of derivatives in Fourier space
