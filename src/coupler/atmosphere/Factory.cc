@@ -49,7 +49,6 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_model<CosineYearlyCycle>("yearly_cycle");
   add_model<WeatherStation>("one_station");
   add_model<Uniform>("uniform");
-  add_model<OrographicPrecipitation>("orographic_precipitation");
   set_default("given");
 
   add_modifier<Anomaly>("anomaly");
@@ -58,6 +57,7 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_modifier<Delta_P>("delta_P");
   add_modifier<Delta_T>("delta_T");
   add_modifier<LapseRates>("lapse_rate");
+  add_modifier<OrographicPrecipitation>("orographic_precipitation");
 }
 
 Factory::~Factory() {

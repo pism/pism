@@ -20,7 +20,6 @@
 #define _PAOROGRAPHICPRECIPITATION_H_
 
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 
@@ -32,58 +31,32 @@ class OrographicPrecipitationSerial;
 
 class OrographicPrecipitation : public AtmosphereModel {
 public:
-  OrographicPrecipitation(IceGrid::ConstPtr g);
+  OrographicPrecipitation(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
   virtual ~OrographicPrecipitation();
-
-  virtual const IceModelVec2S &mean_july_temp() const;
 
 private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S &mean_annual_temp_impl() const;
   const IceModelVec2S &mean_precipitation_impl() const;
 
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;
 
   void init_timeseries_impl(const std::vector<double> &ts) const;
-  void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 
-  virtual DiagnosticList diagnostics_impl() const;
-
 protected:
-  double m_snow_temp_july_day;
-
   std::string m_reference;
 
-  IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_july, m_precipitation;
+  IceModelVec2S::Ptr m_precipitation;
 
-  //! Storage on rank zero. Used to pass the load to the serial deformation model and get
-  //! bed displacement back.
+  //! Storage on rank zero. Used to pass the load to the serial orographic precipitation
+  //! Model.
   petsc::Vec::Ptr m_work0;
-
-  //! Ice-equivalent load thickness.
-  IceModelVec2S m_surface;
-
-  //! extended grid for the LT Model
-  IceGrid::Ptr m_extended_grid;
 
   //! Serial orographic precipitation model.
   std::unique_ptr<OrographicPrecipitationSerial> m_serial_model;
-
-  mutable std::vector<double> m_ts_times;
-  mutable std::vector<double> m_cosine_cycle;
-};
-
-/*! @brief Mean July near-surface air temperature. */
-class PA_mean_july_temp_op : public Diag<OrographicPrecipitation> {
-public:
-  PA_mean_july_temp_op(const OrographicPrecipitation *m);
-
-protected:
-  IceModelVec::Ptr compute_impl() const;
 };
 
 } // end of namespace atmosphere
