@@ -17,6 +17,7 @@ add_library (boundary OBJECT
   ./atmosphere/Anomaly.cc
   ./atmosphere/WeatherStation.cc
   ./atmosphere/Factory.cc
+  ./atmosphere/Uniform.cc
   ./ocean/OceanModel.cc
   ./ocean/CompleteOceanModel.cc
   ./ocean/Cache.cc

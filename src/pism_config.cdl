@@ -139,6 +139,16 @@ netcdf pism_config {
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_units = "(m / year) / km";
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_option = "precip_lapse_rate";
 
+    pism_config:atmosphere.uniform.precipitation = 1000;
+    pism_config:atmosphere.uniform.precipitation_doc = "Precipitation used by the 'uniform' atmosphere model.";
+    pism_config:atmosphere.uniform.precipitation_type = "scalar";
+    pism_config:atmosphere.uniform.precipitation_units = "kg m-2 year-1";
+
+    pism_config:atmosphere.uniform.temperature = 273.15;
+    pism_config:atmosphere.uniform.temperature_doc = "Air temperature used by the 'uniform' atmosphere model.";
+    pism_config:atmosphere.uniform.temperature_type = "scalar";
+    pism_config:atmosphere.uniform.temperature_units = "Kelvin";
+
     pism_config:basal_resistance.beta_ice_free_bedrock = 1.8e9;
     pism_config:basal_resistance.beta_ice_free_bedrock_doc = "value is for ice stream E from :cite:`HulbeMacAyeal`; thus sliding velocity, but we hope it doesn't matter much; at 100 m/year the linear sliding law gives 57040 Pa basal shear stress";
     pism_config:basal_resistance.beta_ice_free_bedrock_type = "scalar";

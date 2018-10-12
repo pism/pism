@@ -9,6 +9,7 @@
 #include "coupler/atmosphere/GivenClimate.hh"
 #include "coupler/atmosphere/Paleo_precip.hh"
 #include "coupler/atmosphere/SeariseGreenland.hh"
+#include "coupler/atmosphere/Uniform.hh"
 #include "coupler/atmosphere/WeatherStation.hh"
 #include "coupler/atmosphere/YearlyCycle.hh"
 %}
@@ -59,3 +60,7 @@
 %shared_ptr(pism::atmosphere::SeaRISEGreenland)
 %rename(AtmosphereSeaRISEGreenland) pism::atmosphere::SeaRISEGreenland;
 %include "coupler/atmosphere/SeariseGreenland.hh"
+
+%shared_ptr(pism::atmosphere::Uniform)
+%rename(AtmosphereUniform) pism::atmosphere::Uniform;
+%include "coupler/atmosphere/Uniform.hh"
