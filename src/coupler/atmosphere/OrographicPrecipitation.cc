@@ -101,10 +101,6 @@ void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, do
   m_precipitation->get_from_proc0(*m_work0);
 }
 
-void OrographicPrecipitation::init_timeseries_impl(const std::vector<double> &ts) const {
-  m_ts_times = ts;
-}
-
 void OrographicPrecipitation::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
 
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
