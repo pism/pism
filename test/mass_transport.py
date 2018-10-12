@@ -157,7 +157,6 @@ def average_error(N):
     log.disable()
     geometry = run(N, N, t_final, True, C)
     log.enable()
-
     # combine stuff stored as thickness and as area specific volume
     geometry.ice_thickness.add(1.0, geometry.ice_area_specific_volume)
 
@@ -180,7 +179,7 @@ def average_error(N):
 
 
 def part_grid_convergence_test():
-    "Test that the error does down as O(1/N)"
+    "Test that the error does go down as O(1/N)"
 
     np.testing.assert_almost_equal([average_error(N) for N in [51, 101]],
                                    [0.0338388,  0.0158498])

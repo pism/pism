@@ -58,7 +58,7 @@ def exact(dics_radius, disc_thickness, t, L, N):
 
 def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
     "Use the LingleClark class to compute plate deflection."
-    M = 2 * N - 1
+    M = int(2 * N - 1)
 
     ctx = PISM.Context().ctx
     grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
@@ -112,7 +112,7 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
 
 def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
     "Use the LingleClark class to compute plate deflection."
-    M = 2 * N - 1
+    M = int(2 * N - 1)
 
     ctx = PISM.Context().ctx
     grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC)

@@ -1488,7 +1488,7 @@ netcdf pism_config {
     pism_config:stress_balance.sia.enhancement_factor_interglacial_units = "1";
 
     pism_config:stress_balance.sia.flow_law = "gpbld";
-    pism_config:stress_balance.sia.flow_law_choices = "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb,gpbld3";
+    pism_config:stress_balance.sia.flow_law_choices = "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb";
     pism_config:stress_balance.sia.flow_law_doc = "The SIA flow law.";
     pism_config:stress_balance.sia.flow_law_option = "sia_flow_law";
     pism_config:stress_balance.sia.flow_law_type = "keyword";
@@ -1591,7 +1591,7 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_type = "boolean";
 
     pism_config:stress_balance.ssa.flow_law = "gpbld";
-    pism_config:stress_balance.ssa.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb,gpbld3";
+    pism_config:stress_balance.ssa.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
     pism_config:stress_balance.ssa.flow_law_doc = "The SSA flow law.";
     pism_config:stress_balance.ssa.flow_law_option = "ssa_flow_law";
     pism_config:stress_balance.ssa.flow_law_type = "keyword";
