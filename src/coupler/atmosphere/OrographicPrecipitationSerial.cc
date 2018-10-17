@@ -28,6 +28,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/fftw_utilities.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -51,29 +52,6 @@ private:
   int m_Mx, m_My, m_i_offset, m_j_offset;
   T *m_array;
 };
-
-//! \brief Fill `input` with zeros.
-static void clear_fftw_input(fftw_complex *input, int Nx, int Ny) {
-  VecAccessor2D<fftw_complex> fftw_in(input, Nx, Ny);
-  for (int i = 0; i < Nx; ++i) {
-    for (int j = 0; j < Ny; ++j) {
-      fftw_in(i, j)[0] = 0;
-      fftw_in(i, j)[1] = 0;
-    }
-  }
-}
-
-//! @brief Copy `source` to `destination`.
-static void copy_fftw_output(fftw_complex *source, fftw_complex *destination, int Nx, int Ny) {
-  VecAccessor2D<fftw_complex> S(source, Nx, Ny), D(destination, Nx, Ny);
-  for (int i = 0; i < Nx; ++i) {
-    for (int j = 0; j < Ny; ++j) {
-      D(i, j)[0] = S(i, j)[0];
-      D(i, j)[1] = S(i, j)[1];
-    }
-  }
-}
-
 /*!
  * @param[in] config configuration database
  * @param[in] Mx grid size in the X direction
@@ -135,29 +113,13 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
 
   m_eps = 1.0e-18;
 
-  m_I = (0.0, 1.0);
+  m_I = std::complex<double>(0.0, 1.0);
 
   // fill m_fftw_input with zeros
-  {
-    VecAccessor2D<fftw_complex> tmp(m_fftw_input, m_Nx, m_Ny);
-    for (int j = 0; j < m_Ny; j++) {
-      for (int i = 0; i < m_Nx; i++) {
-        tmp(i, j)[0] = 0.0;
-        tmp(i, j)[1] = 0.0;
-      }
-    }
-  }
+  clear_fftw_array(m_fftw_output, m_Nx, m_Ny);
 
   // fill m_sigma with zeros
-  {
-    VecAccessor2D<fftw_complex> tmp(m_sigma, m_Nx, m_Ny);
-    for (int j = 0; j < m_Ny; j++) {
-      for (int i = 0; i < m_Nx; i++) {
-        tmp(i, j)[0] = 0.0;
-        tmp(i, j)[1] = 0.0;
-      }
-    }
-  }
+  clear_fftw_array(m_sigma, m_Nx, m_Ny);
 
   m_dft_forward = fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output,
                                    FFTW_FORWARD, FFTW_ESTIMATE);
@@ -307,14 +269,14 @@ void OrographicPrecipitationSerial::step(Vec H) {
 
   // Compute fft2(orography)
   {
-    clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
+    clear_fftw_array(m_fftw_input, m_Nx, m_Ny);
     set_fftw_input(H,
                    1.0,
                    m_Mx, m_My, m_i0_offset, m_j0_offset);
     fftw_execute(m_dft_forward);
 
     // Save fft2(orography) in Hhat.
-    copy_fftw_output(m_fftw_output, m_Hhat, m_Nx, m_Ny);
+    copy_fftw_array(m_fftw_output, m_Hhat, m_Nx, m_Ny);
   }
 
   compute_intrinsic_frequency();
@@ -344,7 +306,7 @@ void OrographicPrecipitationSerial::step(Vec H) {
   }
 
   // Save Phat in m_fftw_output.
-  copy_fftw_output(m_Phat, m_fftw_output, m_Nx, m_Ny);
+  copy_fftw_array(m_Phat, m_fftw_output, m_Nx, m_Ny);
   fftw_execute(m_dft_inverse);
   // get m_fftw_output and put it into m_precipitation
   get_fftw_output(m_p, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, 0, 0);
