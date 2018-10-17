@@ -39,7 +39,7 @@ OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr grid,
   const int
     Mx = m_grid->Mx(),
     My = m_grid->My(),
-    Z = m_config->get_double("bed_deformation.lc.grid_size_factor"),
+    Z  = m_config->get_double("atmosphere.orographic_precipitation.grid_size_factor"),
     Nx = Z * (Mx - 1) + 1,
     Ny = Z * (My - 1) + 1;
 
@@ -67,8 +67,7 @@ void OrographicPrecipitation::init_impl(const Geometry &geometry) {
   (void)geometry;
 
   m_log->message(2, "* Initializing the atmosphere model computing precipitation using the\n"
-                    "  Linear Theory of Orographic Precipitation model with scalar wind speeds\n"
-                    "  and reading near-surface air temperature from a file...\n");
+                    "  Linear Theory of Orographic Precipitation model with scalar wind speeds...\n");
 
   m_reference = "R. B. Smith and I. Barstad, 2004.\n"
                 "A Linear Theory of Orographic Precipitation. J. Atmos. Sci. 61, 1377-1391.";
