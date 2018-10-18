@@ -46,8 +46,10 @@ OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr grid,
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {
-      m_serial_model.reset(
-          new OrographicPrecipitationSerial(*m_config, m_log, Mx, My, m_grid->dx(), m_grid->dy(), Nx, Ny));
+      m_serial_model.reset(new OrographicPrecipitationSerial(*m_config,
+                                                             Mx, My,
+                                                             m_grid->dx(), m_grid->dy(),
+                                                             Nx, Ny));
     }
   } catch (...) {
     rank0.failed();
@@ -89,7 +91,7 @@ void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, do
 
       m_serial_model->step(*m_work0);
 
-      ierr = VecCopy(m_serial_model->orographic_precipitation(), *m_work0);
+      ierr = VecCopy(m_serial_model->precipitation(), *m_work0);
       PISM_CHK(ierr, "VecCopy");
     }
   } catch (...) {

@@ -25,7 +25,6 @@
 #include <petscvec.h>
 #include <vector>
 
-#include "pism/util/Logger.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
@@ -39,22 +38,16 @@ namespace atmosphere {
 class OrographicPrecipitationSerial {
 public:
   OrographicPrecipitationSerial(const Config &config,
-                                const Logger::ConstPtr log,
                                 int Mx, int My,
                                 double dx, double dy,
                                 int Nx, int Ny);
   ~OrographicPrecipitationSerial();
 
-  Vec orographic_precipitation() const;
+  Vec precipitation() const;
 
   void step(Vec surface_elevation);
 
 private:
-  void compute_intrinsic_frequency();
-  void compute_vertical_wave_number();
-
-  void precompute_derived_constants();
-
   // regularization
   double m_eps;
 
@@ -103,10 +96,6 @@ private:
   int m_Nx;
   int m_Ny;
 
-  // size of the extended grid with boundary points
-  int m_Nxge;
-  int m_Nyge;
-
   // indices into extended grid for the corner of the physical grid
   int m_i0_offset;
   int m_j0_offset;
@@ -118,27 +107,14 @@ private:
   // Coefficients of derivatives in Fourier space
   std::vector<double> m_cx, m_cy;
 
-  // intrinsic frequency
-  petsc::Vec m_intrinsic_frequency;
-
-  // vertical wave number
-  petsc::Vec m_vertical_wave_number;
-
   // orographic precipitation
   petsc::Vec m_p;
 
   fftw_complex *m_fftw_input;
   fftw_complex *m_fftw_output;
-  fftw_complex *m_Hhat;
-  fftw_complex *m_Phat;
-  fftw_complex *m_sigma;
-  fftw_complex *m_m;
 
   fftw_plan m_dft_forward;
   fftw_plan m_dft_inverse;
-
-  //! logger (for easy access)
-  const Logger::ConstPtr m_log;
 };
 
 } // end of namespace atmosphere
