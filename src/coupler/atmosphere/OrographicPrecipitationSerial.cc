@@ -132,7 +132,11 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   //
   // (Constantine Khroulev, February 1, 2015)
 
-  precompute_coefficients();
+  // Coefficients for Fourier spectral method Laplacian
+  // MATLAB version:  cx=(pi/Lx)*[0:Nx/2 Nx/2-1:-1:1]
+  m_cx = fftfreq(m_Nx, M_PI / m_Lx);
+  m_cy = fftfreq(m_Ny, M_PI / m_Ly);
+
   precompute_derived_constants();
 }
 
@@ -152,35 +156,6 @@ OrographicPrecipitationSerial::~OrographicPrecipitationSerial() {
  */
 Vec OrographicPrecipitationSerial::orographic_precipitation() const {
   return m_p;
-}
-
-std::vector<double> fftfreq(int M, double normalization) {
-  std::vector<double> result(M);
-
-  for (int i = 0; i <= M / 2; i++) {
-    result[i] = i;
-  }
-
-  for (int i = M / 2 + 1; i < M; i++) {
-    result[i] = M - i;
-  }
-
-  // normalize
-  for (int i = 0; i < M; i++) {
-    result[i] *= normalization;
-  }
-
-  return result;
-}
-
-/**
- * Pre-compute coefficients used by the model.
- */
-void OrographicPrecipitationSerial::precompute_coefficients() {
-  // Coefficients for Fourier spectral method Laplacian
-  // MATLAB version:  cx=(pi/Lx)*[0:Nx/2 Nx/2-1:-1:1]
-  m_cx = fftfreq(m_Nx, M_PI / m_Lx);
-  m_cy = fftfreq(m_Ny, M_PI / m_Ly);
 }
 
 /**

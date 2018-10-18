@@ -34,26 +34,8 @@ class Config;
 
 namespace atmosphere {
 
-//! Class implementing the atmosphere deformation model descriatmosphere in [\ref BLKfastearth].
-/*!
-  This class implements the [\ref LingleClark] atmosphere deformation model by a Fourier
-  spectral collocation method, as descriatmosphere in [\ref BLKfastearth].  (The former
-  reference is where the continuum model arose, and a flow-line application is given.
-  The latter reference describes a new, fast method and gives verification results.
-  See also [\ref BLK2006earth] if more technical detail and/or Matlab programs are desired.)
-
-  Both a viscous half-space model (with elastic
-  lithosphere) and a spherical elastic model are computed.  They are superposed
-  because the underlying earth model is linear.
-
-  The class assumes that the supplied Petsc Vecs are *sequential*.  It is expected to be
-  run only on processor zero (or possibly by each processor once each processor
-  owns the entire 2D gridded load thicknesses and atmosphere elevations.)
-
-  This model always assumes that we start with no load. Note that this does not mean that we
-  starting state is the equilibrium: the viscous plate may be "pre-bent" by using a provided
-  displacement field or by computing its displacement using an uplift field.
-*/
+//! Class implementing the linear model of orographic precipitation [@ref
+//! SmithBarstad2004], [@ref SmithBarstadBonneau2005].
 class OrographicPrecipitationSerial {
 public:
   OrographicPrecipitationSerial(const Config &config,
@@ -65,13 +47,12 @@ public:
 
   Vec orographic_precipitation() const;
 
-  void step(Vec H);
+  void step(Vec surface_elevation);
 
 private:
   void compute_intrinsic_frequency();
   void compute_vertical_wave_number();
 
-  void precompute_coefficients();
   void precompute_derived_constants();
 
   // regularization
