@@ -178,6 +178,14 @@ def ltop_python(grid, truncate=True):
 
 def ltop_pism(grid):
     "Run the PISM implementation of the model to compare to the Python version."
+
+    config = PISM.Context().config
+
+    config.set_double("atmosphere.orographic_precipitation.grid_size_factor", 1)
+    config.set_double("atmosphere.orographic_precipitation.moist_stability_frequency", 0.005)
+    config.set_double("atmosphere.orographic_precipitation.wind_speed", 15.0)
+    config.set_double("atmosphere.orographic_precipitation.coriolis_latitude", 45.0)
+
     uniform  = PISM.AtmosphereUniform(grid)
     model    = PISM.AtmosphereOrographicPrecipitation(grid, uniform)
     geometry = PISM.Geometry(grid)
@@ -192,12 +200,12 @@ def ltop_pism(grid):
     geometry.cell_area.set(grid.dx() * grid.dy())
 
     # compute surface elevation from ice thickness and bed elevation
-    geometry.ensure_consistency(0.0)
+    geometry.ensure_consistency(config.get_double("geometry.ice_free_thickness_standard"))
 
     model.init(geometry)
     model.update(geometry, 0, 1)
 
-    return model.mean_precipitation().numpy()
+    return geometry, model.mean_precipitation().numpy()
 
 def comparison_test():
 
@@ -208,3 +216,6 @@ def comparison_test():
     P_pism = ltop_pism(g)
 
     return P_python, P_pism
+
+if __name__ == "__main__":
+    geometry, P = ltop_pism(grid())
