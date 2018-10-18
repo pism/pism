@@ -54,6 +54,7 @@ private:
 };
 /*!
  * @param[in] config configuration database
+ * @param[in] log logger
  * @param[in] Mx grid size in the X direction
  * @param[in] My grid size in the Y direction
  * @param[in] dx grid spacing in the X direction
@@ -82,7 +83,6 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   // double precip_post = config.get_double("atmosphere.orographic_precipitation.background_precip_post", "m/s");
 
   m_precip_scale_factor = config.get_double("atmosphere.orographic_precipitation.scale_factor");
-  m_truncate            = config.get_boolean("atmosphere.orographic_precipitation.truncate");
   m_tau_c               = config.get_double("atmosphere.orographic_precipitation.conversion_time");
   m_tau_f               = config.get_double("atmosphere.orographic_precipitation.fallout_time");
   m_Hw                  = config.get_double("atmosphere.orographic_precipitation.water_vapor_scale_height");
@@ -93,6 +93,7 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   m_Theta_m             = config.get_double("atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate");
   m_rho_Sref            = config.get_double("atmosphere.orographic_precipitation.reference_density");
   m_latitude            = config.get_double("atmosphere.orographic_precipitation.coriolis_latitude");
+  m_truncate            = config.get_boolean("atmosphere.orographic_precipitation.truncate");
 
   // memory allocation
   PetscErrorCode ierr = 0;
@@ -112,8 +113,6 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   m_sigma       = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
 
   m_eps = 1.0e-18;
-
-  m_I = std::complex<double>(0.0, 1.0);
 
   // fill m_fftw_input with zeros
   clear_fftw_array(m_fftw_output, m_Nx, m_Ny);
@@ -155,31 +154,33 @@ Vec OrographicPrecipitationSerial::orographic_precipitation() const {
   return m_p;
 }
 
+std::vector<double> fftfreq(int M, double normalization) {
+  std::vector<double> result(M);
+
+  for (int i = 0; i <= M / 2; i++) {
+    result[i] = i;
+  }
+
+  for (int i = M / 2 + 1; i < M; i++) {
+    result[i] = M - i;
+  }
+
+  // normalize
+  for (int i = 0; i < M; i++) {
+    result[i] *= normalization;
+  }
+
+  return result;
+}
+
 /**
  * Pre-compute coefficients used by the model.
  */
 void OrographicPrecipitationSerial::precompute_coefficients() {
-
-  m_cx.resize(m_Nx);
-  m_cy.resize(m_Ny);
-
   // Coefficients for Fourier spectral method Laplacian
   // MATLAB version:  cx=(pi/Lx)*[0:Nx/2 Nx/2-1:-1:1]
-  for (int i = 0; i <= m_Nx / 2; i++) {
-    m_cx[i] = (M_PI / m_Lx) * i;
-  }
-
-  for (int i = m_Nx / 2 + 1; i < m_Nx; i++) {
-    m_cx[i] = (M_PI / m_Lx) * (m_Nx - i);
-  }
-
-  for (int j = 0; j <= m_Ny / 2; j++) {
-    m_cy[j] = (M_PI / m_Ly) * j;
-  }
-
-  for (int j = m_Ny / 2 + 1; j < m_Ny; j++) {
-    m_cy[j] = (M_PI / m_Ly) * (m_Ny - j);
-  }
+  m_cx = fftfreq(m_Nx, M_PI / m_Lx);
+  m_cy = fftfreq(m_Ny, M_PI / m_Ly);
 }
 
 /**
@@ -207,7 +208,7 @@ void OrographicPrecipitationSerial::compute_intrinsic_frequency() {
     for (int i = 0; i < m_Nx; i++) {
       for (int j = 0; j < m_Ny; j++) {
         sigma(i, j)[0] = m_u * m_cx[i] + m_v * m_cy[j];
-        sigma(i, j)[1] = m_u * m_cx[i] + m_v * m_cy[j];
+        sigma(i, j)[1] = 0.0;
       }
     }
   }
@@ -270,9 +271,11 @@ void OrographicPrecipitationSerial::step(Vec H) {
   // Compute fft2(orography)
   {
     clear_fftw_array(m_fftw_input, m_Nx, m_Ny);
-    set_fftw_input(H,
-                   1.0,
-                   m_Mx, m_My, m_i0_offset, m_j0_offset);
+    set_real_part(H,
+                  1.0,
+                  m_Mx, m_My, m_Nx, m_Ny,
+                  m_i0_offset, m_j0_offset,
+                  m_fftw_input);
     fftw_execute(m_dft_forward);
 
     // Save fft2(orography) in Hhat.
@@ -281,6 +284,8 @@ void OrographicPrecipitationSerial::step(Vec H) {
 
   compute_intrinsic_frequency();
   compute_vertical_wave_number();
+
+  std::complex<double> I(0.0, 1.0);
 
   {
     VecAccessor2D<fftw_complex>
@@ -291,13 +296,13 @@ void OrographicPrecipitationSerial::step(Vec H) {
 
     for (int i = 0; i < m_Nx; i++) {
       for (int j = 0; j < m_Ny; j++) {
-        double nom_0 = m_Cw * m_I.real() * sigma(i, j)[0] * Hhat(i, j)[0];
-        double nom_1 = m_Cw * m_I.imag() * sigma(i, j)[1] * Hhat(i, j)[1];
+        double nom_0 = m_Cw * I.real() * sigma(i, j)[0] * Hhat(i, j)[0];
+        double nom_1 = m_Cw * I.imag() * sigma(i, j)[1] * Hhat(i, j)[1];
 
-        double denom_0 = (1.0 - m_I.real() * m(i, j)[0] * m_Hw) * (1.0 + m_I.real() * sigma(i, j)[0] * m_tau_f) *
-          (1.0 + m_I.real() * sigma(i, j)[0] * m_tau_c);
-        double denom_1 = (1.0 - m_I.imag() * m(i, j)[1] * m_Hw) * (1.0 + m_I.imag() * sigma(i, j)[1] * m_tau_f) *
-          (1.0 + m_I.imag() * sigma(i, j)[1] * m_tau_c);
+        double denom_0 = (1.0 - I.real() * m(i, j)[0] * m_Hw) * (1.0 + I.real() * sigma(i, j)[0] * m_tau_f) *
+          (1.0 + I.real() * sigma(i, j)[0] * m_tau_c);
+        double denom_1 = (1.0 - I.imag() * m(i, j)[1] * m_Hw) * (1.0 + I.imag() * sigma(i, j)[1] * m_tau_f) *
+          (1.0 + I.imag() * sigma(i, j)[1] * m_tau_c);
 
         Phat(i, j)[0] = nom_0 / denom_0;
         Phat(i, j)[1] = nom_1 / denom_1;
@@ -308,8 +313,10 @@ void OrographicPrecipitationSerial::step(Vec H) {
   // Save Phat in m_fftw_output.
   copy_fftw_array(m_Phat, m_fftw_output, m_Nx, m_Ny);
   fftw_execute(m_dft_inverse);
-  // get m_fftw_output and put it into m_precipitation
-  get_fftw_output(m_p, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, 0, 0);
+
+  // get m_fftw_output and put it into m_p
+  get_real_part(m_fftw_output, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, m_Nx, m_Ny, 0, 0,
+                m_p);
 
   petsc::VecArray2D p(m_p, m_Mx, m_My);
   for (int i = 0; i < m_Mx; i++) {
@@ -324,146 +331,5 @@ void OrographicPrecipitationSerial::step(Vec H) {
   }
 }
 
-
-//! \brief Set the real part of fftw_input to vec_input.
-/*!
- * Sets the imaginary part to zero.
- */
-void OrographicPrecipitationSerial::set_fftw_input(Vec vec_input, double normalization, int Mx, int My, int i0,
-                                                   int j0) {
-  petsc::VecArray2D in(vec_input, Mx, My);
-  VecAccessor2D<fftw_complex> input(m_fftw_input, m_Nx, m_Ny, i0, j0);
-  for (int j = 0; j < My; ++j) {
-    for (int i = 0; i < Mx; ++i) {
-      input(i, j)[0] = in(i, j) * normalization;
-      input(i, j)[1] = 0.0;
-    }
-  }
-}
-
-//! \brief Get the real part of fftw_output and put it in output.
-void OrographicPrecipitationSerial::get_fftw_output(Vec output, double normalization, int Mx, int My, int i0, int j0) {
-  petsc::VecArray2D out(output, Mx, My);
-  VecAccessor2D<fftw_complex> fftw_out(m_fftw_output, m_Nx, m_Ny, i0, j0);
-  for (int j = 0; j < My; ++j) {
-    for (int i = 0; i < Mx; ++i) {
-      out(i, j) = fftw_out(i, j)[0] * normalization;
-    }
-  }
-}
-
 } // end of namespace atmosphere
 } // end of namespace pism
-
-
-// eps = 1e-18
-// pad = 250
-
-// ny, nx = orography.shape
-// logger.debug('Raster shape before padding ({},{})'.format(nx, ny))
-
-// padded_orography = np.pad(orography, pad, 'constant')
-// nx, ny = padded_orography.shape
-// logger.debug('Raster shape after padding ({},{})'.format(ny, nx))
-
-// logger.info('Fourier transform orography')
-// padded_orography_fft = np.fft.fft2(padded_orography)
-
-// x_n_value = np.fft.fftfreq(ny, (1.0 / ny))
-// y_n_value = np.fft.fftfreq(nx, (1.0 / nx))
-
-// x_len = nx * dx
-// y_len = ny * dy
-// kx_line = np.divide(np.multiply(2.0 * np.pi, x_n_value), x_len)
-// ky_line = np.divide(
-//     np.multiply(
-//         2.0 * np.pi,
-//         y_n_value),
-//     y_len)[
-//     np.newaxis].T
-
-// kx = np.tile(kx_line, (nx, 1))
-// ky = np.tile(ky_line, (1, ny))
-
-// # Intrinsic frequency sigma = U*k + V*l
-// u0 = constants.u
-// v0 = constants.v
-
-// logger.info('Calculate sigma')
-// sigma = np.add(np.multiply(kx, u0), np.multiply(ky, v0))
-// sigma_sqr_reg = sigma ** 2
-// m_denom = np.power(sigma, 2.) - constants.f**2
-
-// sigma_sqr_reg[
-//     np.logical_and(
-//         np.fabs(sigma_sqr_reg) < eps,
-//         np.fabs(
-//             sigma_sqr_reg >= 0))] = eps
-// sigma_sqr_reg[
-//     np.logical_and(
-//         np.fabs(sigma_sqr_reg) < eps,
-//         np.fabs(
-//             sigma_sqr_reg < 0))] = -eps
-
-// # The vertical wave number
-// # Eqn. 12
-// # Regularization
-// m_denom[
-//     np.logical_and(
-//         np.fabs(m_denom) < eps,
-//         np.fabs(m_denom) >= 0)] = eps
-// m_denom[
-//     np.logical_and(
-//         np.fabs(m_denom) < eps,
-//         np.fabs(m_denom) < 0)] = -eps
-
-// m1 = np.divide(
-//     np.subtract(
-//         constants.Nm**2,
-//         np.power(
-//             sigma,
-//             2.)),
-//     m_denom)
-// m2 = np.add(np.power(kx, 2.), np.power(ky, 2.))
-// m_sqr = np.multiply(m1, m2)
-// logger.info('Calculating m')
-// m = np.sqrt(-1 * m_sqr)
-// # Regularization
-// m[np.logical_and(m_sqr >= 0, sigma == 0)] = np.sqrt(
-//     m_sqr[np.logical_and(m_sqr >= 0, sigma == 0)])
-// m[np.logical_and(m_sqr >= 0, sigma != 0)] = np.sqrt(m_sqr[np.logical_and(
-//     m_sqr >= 0, sigma != 0)]) * np.sign(sigma[np.logical_and(m_sqr >= 0, sigma != 0)])
-// # Numerator in Eqn. 49
-// P_karot_num = np.multiply(np.multiply(np.multiply(
-//     constants.Cw, 1j), sigma), padded_orography_fft)
-// P_karot_denom_Hw = np.subtract(1, np.multiply(
-//     np.multiply(constants.Hw, m), 1j))
-// P_karot_denom_tauc = np.add(1, np.multiply(np.multiply(
-//     sigma, constants.tau_c), 1j))
-// P_karot_denom_tauf = np.add(1, np.multiply(np.multiply(
-//     sigma, constants.tau_f), 1j))
-// # Denominator in Eqn. 49
-// P_karot_denom = np.multiply(
-//     P_karot_denom_Hw, np.multiply(
-//         P_karot_denom_tauc, P_karot_denom_tauf))
-// P_karot = np.divide(P_karot_num, P_karot_denom)
-
-// # Converting from wave domain back to space domain
-// logger.info('Performing inverse Fourier transform')
-// P = np.fft.ifft2(P_karot)
-// spy = 31556925.9747
-// logger.info('De-pad array')
-// P = P[pad:-pad, pad:-pad]
-// P = np.multiply(np.real(P), 3600)   # mm hr-1
-// # Add background precip
-// P0 = constants.P0
-// logger.info('Adding background precpipitation {} mm hr-1'.format(P0))
-// P += P0
-// # Truncation
-
-// if truncate:
-//     logger.info('Truncate precipitation')
-//     P[P < 0] = 0
-// P_scale = constants.P_scale
-// logger.info('Scale precipitation P = P * {}'.format(P_scale))
-// P *= P_scale

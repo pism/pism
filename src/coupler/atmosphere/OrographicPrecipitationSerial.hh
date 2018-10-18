@@ -134,8 +134,6 @@ private:
   double m_Lx;
   double m_Ly;
 
-  std::complex<double> m_I;
-
   // Coefficients of derivatives in Fourier space
   std::vector<double> m_cx, m_cy;
 
@@ -157,9 +155,6 @@ private:
 
   fftw_plan m_dft_forward;
   fftw_plan m_dft_inverse;
-
-  void set_fftw_input(Vec input, double normalization, int M, int N, int i0, int j0);
-  void get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0);
 
   //! logger (for easy access)
   const Logger::ConstPtr m_log;
