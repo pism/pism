@@ -86,12 +86,10 @@ void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, do
 
   ParallelSection rank0(m_grid->com);
   try {
-    if (m_grid->rank() == 0) { // only processor zero does the step
-      PetscErrorCode ierr = 0;
+    if (m_grid->rank() == 0) { // processor zero updates the precipitation
+      m_serial_model->update(*m_work0);
 
-      m_serial_model->step(*m_work0);
-
-      ierr = VecCopy(m_serial_model->precipitation(), *m_work0);
+      PetscErrorCode ierr = VecCopy(m_serial_model->precipitation(), *m_work0);
       PISM_CHK(ierr, "VecCopy");
     }
   } catch (...) {

@@ -45,7 +45,7 @@ public:
 
   Vec precipitation() const;
 
-  void step(Vec surface_elevation);
+  void update(Vec surface_elevation);
 
 private:
   // regularization

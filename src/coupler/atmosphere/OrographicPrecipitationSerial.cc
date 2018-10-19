@@ -150,7 +150,7 @@ Vec OrographicPrecipitationSerial::precipitation() const {
  *
  * @param[in] surface_elevation surface on the physical (Mx*My) grid
  */
-void OrographicPrecipitationSerial::step(Vec surface_elevation) {
+void OrographicPrecipitationSerial::update(Vec surface_elevation) {
   // solves:
   // Phat(k,l) = (Cw * i * sigma * Hhat(k,l)) /
   //             (1 - i * m * Hw) * (1 + i * sigma * tauc) * (1 + i * sigma * tauc);
@@ -186,6 +186,7 @@ void OrographicPrecipitationSerial::step(Vec surface_elevation) {
 
         double sigma = m_u * kx + m_v * ky;
 
+        // See equation (6) in [@ref SmithBarstadBonneau2005]
         std::complex<double> m;
         {
           double denominator = sigma * sigma - m_f * m_f;
@@ -205,10 +206,12 @@ void OrographicPrecipitationSerial::step(Vec surface_elevation) {
           }
         }
 
-        std::complex<double> P_hat = h_hat * (m_Cw * I * sigma /
-                                              ((1.0 - I * m * m_Hw) *
-                                               (1.0 + I * sigma * m_tau_c) *
-                                               (1.0 + I * sigma * m_tau_f)));
+        // See equation (49) in [@ref SmithBarstad2004] or equation (3) in [@ref
+        // SmithBarstadBonneau2005].
+        auto P_hat = h_hat * (m_Cw * I * sigma /
+                              ((1.0 - I * m * m_Hw) *
+                               (1.0 + I * sigma * m_tau_c) *
+                               (1.0 + I * sigma * m_tau_f)));
 
         fftw_input(i, j)[0] = P_hat.real();
         fftw_input(i, j)[1] = P_hat.imag();
