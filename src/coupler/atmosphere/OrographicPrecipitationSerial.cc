@@ -206,12 +206,23 @@ void OrographicPrecipitationSerial::update(Vec surface_elevation) {
           }
         }
 
+        // avoid dividing by zero:
+        double delta = 0.0;
+        if (std::abs(1.0 - I * m * m_Hw) < m_eps) {
+          delta = m_eps;
+        }
+
         // See equation (49) in [@ref SmithBarstad2004] or equation (3) in [@ref
         // SmithBarstadBonneau2005].
         auto P_hat = h_hat * (m_Cw * I * sigma /
-                              ((1.0 - I * m * m_Hw) *
+                              ((1.0 - I * m * m_Hw + delta) *
                                (1.0 + I * sigma * m_tau_c) *
                                (1.0 + I * sigma * m_tau_f)));
+        // Note: sigma, m_tau_c, and m_tau_f are purely real, so the second and the third
+        // factors in the denominator are never zero.
+        //
+        // The first factor (1 - i m H_w) *could* be zero. Here we check if it is and
+        // "regularize" if necessary.
 
         fftw_input(i, j)[0] = P_hat.real();
         fftw_input(i, j)[1] = P_hat.imag();
