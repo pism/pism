@@ -54,9 +54,7 @@ private:
   // grid size
   int m_Mx;
   int m_My;
-  // grid spacing
-  double m_dx;
-  double m_dy;
+
   //! truncate
   bool m_truncate;
   //! precipitation scale factor
@@ -92,7 +90,7 @@ private:
   //! vertical wind component
   double m_v;
 
-  // size of the extended grid
+  // extended grid size
   int m_Nx;
   int m_Ny;
 
@@ -100,15 +98,10 @@ private:
   int m_i0_offset;
   int m_j0_offset;
 
-  // half-lengths of the extended (FFT, spectral) computational domain
-  double m_Lx;
-  double m_Ly;
-
-  // Coefficients of derivatives in Fourier space
-  std::vector<double> m_cx, m_cy;
+  std::vector<double> m_kx, m_ky;
 
   // orographic precipitation
-  petsc::Vec m_p;
+  petsc::Vec m_precipitation;
 
   fftw_complex *m_fftw_input;
   fftw_complex *m_fftw_output;

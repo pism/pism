@@ -64,23 +64,21 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
                                                              int Mx, int My,
                                                              double dx, double dy,
                                                              int Nx, int Ny)
-  : m_Mx(Mx), m_My(My), m_dx(dx), m_dy(dy), m_Nx(Nx), m_Ny(Ny) {
+  : m_Mx(Mx), m_My(My), m_Nx(Nx), m_Ny(Ny) {
 
   m_eps = 1.0e-18;
 
   // derive more parameters
   {
-    m_Lx        = 0.5 * (m_Nx - 1.0) * m_dx;
-    m_Ly        = 0.5 * (m_Ny - 1.0) * m_dy;
     m_i0_offset = (Nx - Mx) / 2;
     m_j0_offset = (Ny - My) / 2;
 
-    m_cx = fftfreq(m_Nx, M_PI / m_Lx);
-    m_cy = fftfreq(m_Ny, M_PI / m_Ly);
+    m_kx = fftfreq(m_Nx, (m_Ny * dx) / (2 * M_PI * m_Nx));
+    m_ky = fftfreq(m_Ny, (m_Nx * dy) / (2 * M_PI * m_Ny));
   }
 
   {
-    m_background_precip_pre = config.get_double("atmosphere.orographic_precipitation.background_precip_pre", "m/s");
+    m_background_precip_pre  = config.get_double("atmosphere.orographic_precipitation.background_precip_pre", "m/s");
     m_background_precip_post = config.get_double("atmosphere.orographic_precipitation.background_precip_post");
 
     m_precip_scale_factor = config.get_double("atmosphere.orographic_precipitation.scale_factor");
@@ -111,7 +109,7 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
     PetscErrorCode ierr = 0;
 
     // precipitation
-    ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_p.rawptr());
+    ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_precipitation.rawptr());
     PISM_CHK(ierr, "VecCreateSeq");
 
     // FFTW arrays
@@ -141,16 +139,16 @@ OrographicPrecipitationSerial::~OrographicPrecipitationSerial() {
 }
 
 /*!
- * Return viscous plate displacement.
+ * Return precipitation (FIXME: units?)
  */
 Vec OrographicPrecipitationSerial::precipitation() const {
-  return m_p;
+  return m_precipitation;
 }
 
 /*!
  * Update precipitation.
  *
- * @param[in] H surface on the physical (Mx*My) grid
+ * @param[in] surface_elevation surface on the physical (Mx*My) grid
  */
 void OrographicPrecipitationSerial::step(Vec surface_elevation) {
   // solves:
@@ -180,29 +178,31 @@ void OrographicPrecipitationSerial::step(Vec surface_elevation) {
       fftw_input(m_fftw_input, m_Nx, m_Ny);
 
     for (int i = 0; i < m_Nx; i++) {
+      const double kx = m_kx[i];
       for (int j = 0; j < m_Ny; j++) {
+        const double ky = m_ky[j];
 
         std::complex<double> h_hat(fftw_output(i, j)[0], fftw_output(i, j)[1]);
 
-        const double
-          kx    = m_cx[i],
-          ky    = m_cy[j],
-          sigma = m_u * kx + m_v * ky;
+        double sigma = m_u * kx + m_v * ky;
 
-        double denominator = sigma * sigma - m_f * m_f;
+        std::complex<double> m;
+        {
+          double denominator = sigma * sigma - m_f * m_f;
 
-        // avoid dividing by zero:
-        if (fabs(denominator) < m_eps) {
-          denominator = denominator > 0 ? m_eps : -m_eps;
-        }
+          // avoid dividing by zero:
+          if (fabs(denominator) < m_eps) {
+            denominator = denominator >= 0 ? m_eps : -m_eps;
+          }
 
-        double m_squared = (m_Nm * m_Nm - sigma * sigma) * (kx * kx + ky * ky) / denominator;
+          double m_squared = (m_Nm * m_Nm - sigma * sigma) * (kx * kx + ky * ky) / denominator;
 
-        // Note: this is a *complex* square root.
-        auto m = std::sqrt(std::complex<double>(m_squared));
+          // Note: this is a *complex* square root.
+          m = std::sqrt(std::complex<double>(m_squared));
 
-        if (m_squared >= 0.0 and sigma != 0.0) {
-          m *= sigma > 0.0 ? 1.0 : -1.0;
+          if (m_squared >= 0.0 and sigma != 0.0) {
+            m *= sigma > 0.0 ? 1.0 : -1.0;
+          }
         }
 
         std::complex<double> P_hat = h_hat * (m_Cw * I * sigma /
@@ -224,14 +224,14 @@ void OrographicPrecipitationSerial::step(Vec surface_elevation) {
                 m_Mx, m_My,
                 m_Nx, m_Ny,
                 m_i0_offset, m_j0_offset,
-                m_p);
+                m_precipitation);
 
-  petsc::VecArray2D p(m_p, m_Mx, m_My);
+  petsc::VecArray2D p(m_precipitation, m_Mx, m_My);
   for (int i = 0; i < m_Mx; i++) {
     for (int j = 0; j < m_My; j++) {
       p(i, j) += m_background_precip_pre;
       if (m_truncate) {
-        p(i, j) = std::min(p(i, j), 0.0);
+        p(i, j) = std::max(p(i, j), 0.0);
       }
       p(i, j) *= m_precip_scale_factor;
       p(i, j) += m_background_precip_post;
