@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017 PISM Authors
+/* Copyright (C) 2015, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,7 +29,7 @@ public:
   RegionalDefaultYieldStress(IceGrid::ConstPtr g, hydrology::Hydrology *hydro);
   virtual ~RegionalDefaultYieldStress();
 protected:
-  virtual void init_impl();
+  virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const YieldStressInputs &inputs);
 };
 

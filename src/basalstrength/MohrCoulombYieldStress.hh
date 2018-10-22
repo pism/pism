@@ -40,7 +40,7 @@ public:
 
   void set_till_friction_angle(const IceModelVec2S &input);
 protected:
-  virtual void init_impl();
+  virtual void init_impl(const Geometry &geometry);
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;

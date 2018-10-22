@@ -35,7 +35,9 @@ ConstantYieldStress::~ConstantYieldStress () {
   // empty
 }
 
-void ConstantYieldStress::init_impl() {
+void ConstantYieldStress::init_impl(const Geometry &geometry) {
+  (void) geometry;
+
   m_log->message(2, "* Initializing the constant basal yield stress model...\n");
 
   InputOptions opts = process_input_options(m_grid->com, m_config);

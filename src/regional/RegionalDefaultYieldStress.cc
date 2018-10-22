@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,10 +32,10 @@ RegionalDefaultYieldStress::~RegionalDefaultYieldStress() {
   // empty
 }
 
-void RegionalDefaultYieldStress::init_impl() {
+void RegionalDefaultYieldStress::init_impl(const Geometry &geometry) {
   // turn off the second, redundant initialization message
   m_log->disable();
-  MohrCoulombYieldStress::init_impl();
+  MohrCoulombYieldStress::init_impl(geometry);
   m_log->enable();
 
   m_log->message(2,

@@ -114,7 +114,7 @@ This determines the map of \f$\varphi(x,y)\f$.  If this option is note given,
 the current method leaves `tillphi` unchanged, and thus either in its
 read-in-from-file state or with a default constant value from the config file.
 */
-void MohrCoulombYieldStress::init_impl() {
+void MohrCoulombYieldStress::init_impl(const Geometry &geometry) {
   {
     std::string hydrology_tillwat_max = "hydrology.tillwat_max";
     bool till_is_present = m_config->get_double(hydrology_tillwat_max) > 0.0;
@@ -149,7 +149,7 @@ void MohrCoulombYieldStress::init_impl() {
       }
     }
 
-    topg_to_phi(*m_grid->variables().get_2d_scalar("bedrock_altitude"));
+    topg_to_phi(geometry.bed_elevation);
 
   } else if (opts.type == INIT_RESTART) {
     m_till_phi.read(opts.filename, opts.record);
@@ -182,7 +182,7 @@ void MohrCoulombYieldStress::init_impl() {
                    "  Will compute till friction angle (tillphi) as a function"
                    " of the yield stress (tauc)...\n");
 
-    tauc_to_phi(*m_grid->variables().get_2d_cell_type("mask"));
+    tauc_to_phi(geometry.cell_type);
   } else {
     m_basal_yield_stress.set(0.0);
     // will be set in update_impl()
@@ -402,8 +402,7 @@ void MohrCoulombYieldStress::tauc_to_phi(const IceModelVec2CellType &mask) {
     } else { // grounded and there is some ice
       const double s = tillwat(i, j) / tillwat_max;
 
-      double Ntill = 0.0;
-      Ntill = N0 * pow(delta * Po(i, j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
+      double Ntill = N0 * pow(delta * Po(i, j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
       Ntill = std::min(Po(i, j), Ntill);
 
       m_till_phi(i, j) = 180.0/M_PI * atan((m_basal_yield_stress(i, j) - c0) / Ntill);

@@ -231,7 +231,7 @@ void IceModel::model_state_setup() {
   // basal_yield_stress_model->init() needs bwat so this must happen
   // after subglacial_hydrology->init()
   if (m_basal_yield_stress_model) {
-    m_basal_yield_stress_model->init();
+    m_basal_yield_stress_model->init(m_geometry);
   }
 
   // Initialize the bedrock thermal layer model.

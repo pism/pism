@@ -44,8 +44,8 @@ YieldStress::~YieldStress() {
   // empty
 }
 
-void YieldStress::init() {
-  this->init_impl();
+void YieldStress::init(const Geometry &geometry) {
+  this->init_impl(geometry);
 }
 
 void YieldStress::update(const YieldStressInputs &inputs) {
