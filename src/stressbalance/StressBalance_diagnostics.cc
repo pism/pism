@@ -857,23 +857,26 @@ PSB_deviatoric_stresses::PSB_deviatoric_stresses(const StressBalance *m)
 
 IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() const {
 
-  IceModelVec2::Ptr velbar = IceModelVec2V::ToVector(PSB_velbar(model).compute());
-
   IceModelVec2::Ptr result(new IceModelVec2);
   result->create(m_grid, "deviatoric_stresses", WITHOUT_GHOSTS, 1, 3);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
   result->metadata(2) = m_vars[2];
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const IceModelVec2CellType &cell_type = *m_grid->variables().get_2d_cell_type("mask");
+  const IceModelVec3         *enthalpy  = m_grid->variables().get_3d_scalar("enthalpy");
+  const IceModelVec2S        *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  IceModelVec2V velbar_with_ghosts;
-  velbar_with_ghosts.create(m_grid, "velbar", WITH_GHOSTS);
+  IceModelVec2S hardness(m_grid, "hardness", WITHOUT_GHOSTS);
+  IceModelVec2V velocity(m_grid, "velocity", WITH_GHOSTS);
 
-  // copy_from communicates ghosts
-  velbar_with_ghosts.copy_from(*velbar);
+  averaged_hardness_vec(*model->shallow()->flow_law(), *thickness, *enthalpy,
+                        hardness);
 
-  model->compute_2D_stresses(velbar_with_ghosts, mask, *result);
+  // copy_from updates ghosts
+  velocity.copy_from(*IceModelVec2V::ToVector(PSB_velbar(model).compute()));
+
+  model->compute_2D_stresses(velocity, hardness, cell_type, *result);
 
   return result;
 }

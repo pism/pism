@@ -110,7 +110,8 @@ public:
 
   //! \brief Get the components of the 2D deviatoric stress tensor.
   void compute_2D_stresses(const IceModelVec2V &velocity,
-                           const IceModelVec2CellType &mask,
+                           const IceModelVec2S &hardness,
+                           const IceModelVec2CellType &cell_type,
                            IceModelVec2 &result) const;
 
   //! \brief Produce a report string for the standard output.

@@ -170,9 +170,10 @@ const IceModelVec3& StressBalance::volumetric_strain_heating() const {
 }
 
 void StressBalance::compute_2D_stresses(const IceModelVec2V &velocity,
-                                        const IceModelVec2CellType &mask,
+                                        const IceModelVec2S &hardness,
+                                        const IceModelVec2CellType &cell_type,
                                         IceModelVec2 &result) const {
-  m_shallow_stress_balance->compute_2D_stresses(velocity, mask, result);
+  m_shallow_stress_balance->compute_2D_stresses(velocity, hardness, cell_type, result);
 }
 
 //! Compute vertical velocity using incompressibility of the ice.
