@@ -35,8 +35,12 @@ ConstantYieldStress::~ConstantYieldStress () {
   // empty
 }
 
-void ConstantYieldStress::init_impl(const Geometry &geometry) {
+void ConstantYieldStress::init_impl(const Geometry &geometry,
+                                    const IceModelVec2S &till_water_thickness,
+                                    const IceModelVec2S &overburden_pressure) {
   (void) geometry;
+  (void) till_water_thickness;
+  (void) overburden_pressure;
 
   m_log->message(2, "* Initializing the constant basal yield stress model...\n");
 

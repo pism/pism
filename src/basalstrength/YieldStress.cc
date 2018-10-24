@@ -44,8 +44,10 @@ YieldStress::~YieldStress() {
   // empty
 }
 
-void YieldStress::init(const Geometry &geometry) {
-  this->init_impl(geometry);
+void YieldStress::init(const Geometry &geometry,
+                       const IceModelVec2S &till_water_thickness,
+                       const IceModelVec2S &overburden_pressure) {
+  this->init_impl(geometry, till_water_thickness, overburden_pressure);
 }
 
 void YieldStress::update(const YieldStressInputs &inputs) {

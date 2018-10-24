@@ -23,19 +23,20 @@
 
 namespace pism {
 
-RegionalDefaultYieldStress::RegionalDefaultYieldStress(IceGrid::ConstPtr g,
-                                                       hydrology::Hydrology *hydro)
-  : MohrCoulombYieldStress(g, hydro) {
+RegionalDefaultYieldStress::RegionalDefaultYieldStress(IceGrid::ConstPtr g)
+  : MohrCoulombYieldStress(g) {
 }
 
 RegionalDefaultYieldStress::~RegionalDefaultYieldStress() {
   // empty
 }
 
-void RegionalDefaultYieldStress::init_impl(const Geometry &geometry) {
+void RegionalDefaultYieldStress::init_impl(const Geometry &geometry,
+                                           const IceModelVec2S &till_water_thickness,
+                                           const IceModelVec2S &overburden_pressure) {
   // turn off the second, redundant initialization message
   m_log->disable();
-  MohrCoulombYieldStress::init_impl(geometry);
+  MohrCoulombYieldStress::init_impl(geometry, till_water_thickness, overburden_pressure);
   m_log->enable();
 
   m_log->message(2,

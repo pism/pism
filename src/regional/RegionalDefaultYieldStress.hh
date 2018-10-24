@@ -26,10 +26,12 @@ namespace pism {
 
 class RegionalDefaultYieldStress : public MohrCoulombYieldStress {
 public:
-  RegionalDefaultYieldStress(IceGrid::ConstPtr g, hydrology::Hydrology *hydro);
+  RegionalDefaultYieldStress(IceGrid::ConstPtr g);
   virtual ~RegionalDefaultYieldStress();
 protected:
-  virtual void init_impl(const Geometry &geometry);
+  virtual void init_impl(const Geometry &geometry,
+                         const IceModelVec2S &till_water_thickness,
+                         const IceModelVec2S &overburden_pressure);
   virtual void update_impl(const YieldStressInputs &inputs);
 };
 

@@ -31,7 +31,9 @@ public:
   ConstantYieldStress(IceGrid::ConstPtr g);
   virtual ~ConstantYieldStress();
 protected:
-  virtual void init_impl(const Geometry &geometry);
+  virtual void init_impl(const Geometry &geometry,
+                         const IceModelVec2S &till_water_thickness,
+                         const IceModelVec2S &overburden_pressure);
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(const YieldStressInputs &inputs);
 
