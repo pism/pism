@@ -34,7 +34,7 @@ CalvingInputs::CalvingInputs() {
   bc_mask              = nullptr;
   ice_enthalpy         = nullptr;
   ice_velocity         = nullptr;
-  shelf_base_mass_flux = nullptr;
+  frontal_melt_rate = nullptr;
 }
 
 CalvingFrontRetreat::CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width)

@@ -45,7 +45,7 @@ public:
   const IceModelVec2V *ice_velocity;
 
   // used by the frontal melt parameterization
-  const IceModelVec2S *shelf_base_mass_flux;
+  const IceModelVec2S *frontal_melt_rate;
 };
 
 //! An abstract class implementing calving front retreat resulting from application of a

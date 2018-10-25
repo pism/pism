@@ -52,7 +52,7 @@ void FrontalMelt::compute_calving_rate(const CalvingInputs &inputs,
 
   GeometryCalculator gc(*m_config);
 
-  const IceModelVec2S &shelf_base_mass_flux = *inputs.shelf_base_mass_flux;
+  const IceModelVec2S &frontal_melt_rate = *inputs.frontal_melt_rate;
 
   const IceModelVec2S
     &bed_elevation       = inputs.geometry->bed_elevation,
@@ -64,7 +64,7 @@ void FrontalMelt::compute_calving_rate(const CalvingInputs &inputs,
     ice_density = m_config->get_double("constants.ice.density"),
     alpha       = ice_density / m_config->get_double("constants.sea_water.density");
 
-  IceModelVec::AccessList list{&m_mask, &shelf_base_mass_flux, &sea_level_elevation,
+  IceModelVec::AccessList list{&m_mask, &frontal_melt_rate, &sea_level_elevation,
       &bed_elevation, &surface_elevation, &ice_thickness, &result};
 
   ParallelSection loop(m_grid->com);
@@ -89,7 +89,7 @@ void FrontalMelt::compute_calving_rate(const CalvingInputs &inputs,
                               std::max(sea_level - bed, 0.0) :
                               alpha * H_threshold);
 
-        result(i, j) = (H_submerged / H_threshold) * shelf_base_mass_flux(i, j) / ice_density;
+        result(i, j) = (H_submerged / H_threshold) * frontal_melt_rate(i, j);
       } else {
         result(i, j) = 0.0;
       }
