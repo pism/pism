@@ -17,6 +17,11 @@ add_library (boundary OBJECT
   ./atmosphere/Anomaly.cc
   ./atmosphere/WeatherStation.cc
   ./atmosphere/Factory.cc
+  ./frontal_melt/FrontalMeltModel.cc
+  ./frontal_melt/CompleteFrontalMeltModel.cc
+  ./frontal_melt/Constant.cc
+  ./frontal_melt/GivenClimate.cc
+  ./frontal_melt/Initialization.cc
   ./ocean/OceanModel.cc
   ./ocean/CompleteOceanModel.cc
   ./ocean/Cache.cc
