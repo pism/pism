@@ -32,7 +32,7 @@
 #include "pism/calving/OceanKill.hh"
 
 #include "pism/energy/EnergyModel.hh"
-#include "pism/coupler/OceanModel.hh"
+#include "pism/coupler/FrontalMeltModel.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
 
 namespace pism {
@@ -46,7 +46,7 @@ void IceModel::do_calving() {
 
   inputs.ice_velocity         = &m_stress_balance->shallow()->velocity();
   inputs.ice_enthalpy         = &m_energy_model->enthalpy();
-  inputs.shelf_base_mass_flux = &m_ocean->shelf_base_mass_flux();
+  inputs.frontal_melt_rate    = &m_frontalmelt->frontal_melt_rate();
 
   // eigen-calving should go first: it uses the ice velocity field,
   // which is defined at grid points that were icy at the *beginning*

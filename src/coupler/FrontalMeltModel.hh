@@ -29,11 +29,10 @@ namespace pism {
 class IceModelVec2S;
 class Geometry;
 
-//! @brief FrontalMelt models and modifiers: provide sea level elevation,
-//! melange back pressure, shelf base mass flux and shelf base
-//! temperature.
+//! @brief FrontalMelt models and modifiers: provides frontal
+//! melt rate.
 namespace frontalmelt {
-//! A very rudimentary PISM ocean model.
+//! A very rudimentary PISM frontal melt model.
 class FrontalMeltModel : public Component {
 public:
   // "modifier" constructor
@@ -66,6 +65,7 @@ protected:
   std::shared_ptr<FrontalMeltModel> m_input_model;
 
   static IceModelVec2S::Ptr allocate_frontal_melt_rate(IceGrid::ConstPtr g);
+  
 };
 
 } // end of namespace frontalmelt

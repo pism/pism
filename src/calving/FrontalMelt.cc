@@ -21,6 +21,7 @@
 
 #include "pism/geometry/part_grid_threshold_thickness.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/coupler/FrontalMeltModel.hh"
 
 namespace pism {
 

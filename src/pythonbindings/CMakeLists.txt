@@ -14,6 +14,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       pism_ColumnSystem.i
       pism_DM.i
       pism_FlowLaw.i
+      pism_frontalmelt.i
       pism_Hydrology.i
       pism_IceGrid.i
       pism_IceModelVec.i
