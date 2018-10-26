@@ -78,7 +78,8 @@ void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
 
   //! Our goal: topg = topg_last - f*(load - load_last)
 
-  IceModelVec::AccessList list{&m_topg, &ice_thickness, &sea_level_elevation, &m_load_last};
+  IceModelVec::AccessList list{&m_topg, &m_topg_last,
+                               &ice_thickness, &sea_level_elevation, &m_load_last};
 
   ParallelSection loop(m_grid->com);
   try {
