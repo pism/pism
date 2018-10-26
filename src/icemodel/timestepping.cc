@@ -128,7 +128,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 
     inputs.ice_velocity         = &m_stress_balance->shallow()->velocity();
     inputs.ice_enthalpy         = &m_energy_model->enthalpy();
-    inputs.frontal_melt_rate    = &m_frontal_melt->frontal_melt_rate();
+    inputs.frontal_melt_rate    = &m_frontalmelt->frontal_melt_rate();
 
     if (m_eigen_calving) {
       restrictions.push_back(m_eigen_calving->max_timestep(inputs, current_time));

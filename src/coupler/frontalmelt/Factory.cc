@@ -19,7 +19,7 @@
 
 #include "Factory.hh"
 
-// ocean models:
+// frontal melt models:
 #include "Constant.hh"
 #include "GivenClimate.hh"
 

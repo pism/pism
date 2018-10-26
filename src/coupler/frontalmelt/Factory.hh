@@ -24,7 +24,7 @@
 
 namespace pism {
 namespace frontalmelt {
-class Factory : public PCFactory<ocean::FrontalMeltModel> {
+class Factory : public PCFactory<frontalmelt::FrontalMeltModel> {
 public:
   Factory(IceGrid::ConstPtr g);
   ~Factory();
