@@ -88,7 +88,7 @@ void Given::update_impl(const Geometry &geometry, double t, double dt) {
 MaxTimestep Given::max_timestep_impl(double t) const {
   (void) t;
 
-  return MaxTimestep("ocean th");
+  return MaxTimestep("frontalmelt given");
 }
 
 

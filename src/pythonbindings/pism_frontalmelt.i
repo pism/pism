@@ -1,14 +1,18 @@
 %{
-#include "coupler/frontal_melt/Constant.hh"
-#include "coupler/frontal_melt/GivenClimate.hh"
+#include "coupler/frontalmelt/Constant.hh"
+#include "coupler/frontalmelt/GivenClimate.hh"
 %}
 
 %shared_ptr(pism::frontalmelt::FrontalMeltModel)
-%include "coupler/frontal_melt/Model.hh"
+%include "coupler/FrontalMeltModel.hh"
 
 %shared_ptr(pism::frontalmelt::CompleteFrontalMeltModel)
-%include "coupler/frontal_melt/CompleteFrontalMeltModel.hh"
+%include "coupler/frontalmelt/CompleteFrontalMeltModel.hh"
 
 %shared_ptr(pism::frontalmelt::Constant)
-%rename(FrontalMeltConstant) pism::ocean::Constant;
-%include "coupler/frontal_melt/Constant.hh"
+%rename(FrontalMeltConstant) pism::frontalmelt::Constant;
+%include "coupler/frontalmelt/Constant.hh"
+
+%shared_ptr(pism::frontalmelt::Given)
+%rename(FrontalMeltGiven) pism::frontalmelt::Given;
+%include "coupler/frontalmelt/GivenClimate.hh"

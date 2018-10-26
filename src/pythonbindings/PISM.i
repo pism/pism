@@ -311,6 +311,8 @@
 
 %include pism_ocean.i
 
+%include pism_frontalmelt.i
+
 %include pism_surface.i
 
 %include pism_verification.i

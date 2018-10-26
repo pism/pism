@@ -750,7 +750,24 @@ netcdf pism_config {
     pism_config:frontal_melt.constant.melt_rate_option = "frontal_melt_rate";
     pism_config:frontal_melt.constant.melt_rate_type = "scalar";
 
-pism_config:geometry.grounded_cell_fraction  = "false";
+    pism_config:frontal_melt.given.file = "";
+    pism_config:frontal_melt.given.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:frontal_melt.given.file_type = "string";
+    pism_config:frontal_melt.given.file_option = "frontal_melt_given_file";
+
+    pism_config:frontal_melt.given.period = 0;
+    pism_config:frontal_melt.given.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:frontal_melt.given.period_type = "integer";
+    pism_config:frontal_melt.given.period_option = "frontal_melt_given_period";
+    pism_config:frontal_melt.given.period_units = "years";
+
+    pism_config:frontal_melt.given.reference_year = 0;
+    pism_config:frontal_melt.given.reference_year_doc = "Reference year to use when ``frontal_melt.given.period`` is active.";
+    pism_config:frontal_melt.given.reference_year_option = "frontal_melt_given_reference_year";
+    pism_config:frontal_melt.given.reference_year_type = "integer";
+    pism_config:frontal_melt.given.reference_year_units = "years";
+
+    pism_config:geometry.grounded_cell_fraction  = "false";
     pism_config:geometry.grounded_cell_fraction_doc = "Linear interpolation scheme ('LI' in Gladstone et al. 2010) expanded to two dimensions is used if switched on in order to evaluate the position of the grounding line on a subgrid scale.";
     pism_config:geometry.grounded_cell_fraction_option = "subgl";
     pism_config:geometry.grounded_cell_fraction_type = "boolean";
