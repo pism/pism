@@ -31,6 +31,18 @@ Given::Given(IceGrid::ConstPtr g)
 
   m_frontal_melt_rate   = allocate_frontal_melt_rate(g);
 
+}
+
+Given::~Given() {
+  // empty
+}
+
+void Given::init_impl(const Geometry &geometry) {
+
+  m_log->message(2,
+             "* Initializing the frontal melt model reading melt rates\n"
+             "  from a file...\n");
+
   ForcingOptions opt(*m_grid->ctx(), "frontal_melt.given");
 
   {
@@ -52,20 +64,8 @@ Given::Given(IceGrid::ConstPtr g)
   m_frontalmeltrate->set_attrs("climate_forcing",
                               "frontal melt rate",
                               "m s-1", "");
+  
   m_frontalmeltrate->metadata().set_string("glaciological_units", "m year-1");
-}
-
-Given::~Given() {
-  // empty
-}
-
-void Given::init_impl(const Geometry &geometry) {
-
-  m_log->message(2,
-             "* Initializing the frontal melt model reading melt rates\n"
-             "  from a file...\n");
-
-  ForcingOptions opt(*m_grid->ctx(), "frontal_melt.given");
 
   m_frontalmeltrate->init(opt.filename, opt.period, opt.reference_time);
 
@@ -75,6 +75,10 @@ void Given::init_impl(const Geometry &geometry) {
   }
 }
 
+void Given::bootstrap_impl(const Geometry &geometry) {
+  (void) geometry;
+}
+  
 void Given::update_impl(const Geometry &geometry, double t, double dt) {
   (void) geometry;
 

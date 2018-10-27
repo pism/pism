@@ -41,6 +41,7 @@ Constant::~Constant() {
 void Constant::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
+  (void) geometry;
 
   const double
     melt_rate   = m_config->get_double("frontal_melt.constant.melt_rate", "m second-1");
