@@ -47,6 +47,18 @@ void PointwiseIsostasy::init_impl(const InputOptions &opts, const IceModelVec2S 
   compute_load(m_topg, ice_thickness, sea_level_elevation, m_load_last);
 }
 
+
+void PointwiseIsostasy::bootstrap_impl(const IceModelVec2S &bed_elevation,
+                                       const IceModelVec2S &bed_uplift,
+                                       const IceModelVec2S &ice_thickness,
+                                       const IceModelVec2S &sea_level_elevation) {
+  BedDef::bootstrap_impl(bed_elevation, bed_uplift, ice_thickness, sea_level_elevation);
+
+  // store initial load and bed elevation
+  compute_load(bed_elevation, ice_thickness, sea_level_elevation, m_load_last);
+  m_topg_last.copy_from(bed_elevation);
+}
+
 MaxTimestep PointwiseIsostasy::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep("bed_def iso");
@@ -78,7 +90,8 @@ void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
 
   //! Our goal: topg = topg_last - f*(load - load_last)
 
-  IceModelVec::AccessList list{&m_topg, &ice_thickness, &sea_level_elevation, &m_load_last};
+  IceModelVec::AccessList list{&m_topg, &m_topg_last,
+                               &ice_thickness, &sea_level_elevation, &m_load_last};
 
   ParallelSection loop(m_grid->com);
   try {

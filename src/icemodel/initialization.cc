@@ -231,7 +231,10 @@ void IceModel::model_state_setup() {
   // basal_yield_stress_model->init() needs bwat so this must happen
   // after subglacial_hydrology->init()
   if (m_basal_yield_stress_model) {
-    m_basal_yield_stress_model->init();
+    assert((bool)m_subglacial_hydrology);
+    m_basal_yield_stress_model->init(m_geometry,
+                                     m_subglacial_hydrology->till_water_thickness(),
+                                     m_subglacial_hydrology->overburden_pressure());
   }
 
   // Initialize the bedrock thermal layer model.
@@ -608,8 +611,7 @@ void IceModel::allocate_basal_yield_stress() {
     if (yield_stress_model == "constant") {
       m_basal_yield_stress_model.reset(new ConstantYieldStress(m_grid));
     } else if (yield_stress_model == "mohr_coulomb") {
-      m_basal_yield_stress_model.reset(new MohrCoulombYieldStress(m_grid,
-                                                                  m_subglacial_hydrology.get()));
+      m_basal_yield_stress_model.reset(new MohrCoulombYieldStress(m_grid));
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
