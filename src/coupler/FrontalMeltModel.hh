@@ -28,7 +28,7 @@ namespace pism {
 
 class IceModelVec2S;
 class Geometry;
-
+  
 //! @brief FrontalMelt models and modifiers: provides frontal
 //! melt rate.
 namespace frontalmelt {

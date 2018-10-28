@@ -21,6 +21,7 @@
 
 // frontal melt models:
 #include "Constant.hh"
+#include "DischargeRouting.hh"
 #include "GivenClimate.hh"
 
 namespace pism {
@@ -31,7 +32,8 @@ Factory::Factory(IceGrid::ConstPtr g)
   m_option = "frontal";
 
   add_model<Constant>("constant");
-  add_model<Given>("given");
+  add_model<DischargeRouting>("routing");
+  // add_model<Given>("given");
   set_default("constant");
 
 }
