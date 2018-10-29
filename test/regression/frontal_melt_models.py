@@ -207,8 +207,9 @@ class GivenTest(TestCase):
         PISM.util.prepare_output(filename)
 
         Fmr = PISM.IceModelVec2S(self.grid, "frontalmeltrate", PISM.WITHOUT_GHOSTS)
-        Fmr.set_attrs("climate", "frontal melt rate", "m/year", "")
+        Fmr.set_attrs("climate", "frontal melt rate", "m/year", "m/s")
         Fmr.set(self.frontal_melt_rate)
+        Fmr.write(filename)
 
         config.set_string("frontal_melt.given.file", self.filename)
 
@@ -221,7 +222,7 @@ class GivenTest(TestCase):
 
         assert model.max_timestep(0).infinite() == True
 
-        check_model(model, self.temperature, self.mass_flux, self.melange_back_pressure)
+        check_model(model, self.frontal_melt_rate / seconds_per_year)
 
     def tearDown(self):
         os.remove(self.filename)
