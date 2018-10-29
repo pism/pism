@@ -36,8 +36,6 @@ private:
   void update_impl(const Geometry &geometry, double t, double dt);
   void init_impl(const Geometry &geometry);
 
-  void melting_point_temperature(const IceModelVec2S& depth,
-                                 IceModelVec2S &result) const;
 };
 
 } // end of namespace frontalmelt

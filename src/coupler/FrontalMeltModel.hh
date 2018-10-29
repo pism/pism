@@ -29,7 +29,18 @@ namespace pism {
 class IceModelVec2S;
 class Geometry;
   
-//! @brief FrontalMelt models and modifiers: provides frontal
+class FrontalMeltInputs {
+public:
+  FrontalMeltInputs();
+
+  const Geometry *geometry;
+
+  // used by the discharge routing
+  const IceModelVec2S *subglacial_discharge_at_grounding_line;
+
+};
+
+  //! @brief FrontalMelt models and modifiers: provides frontal
 //! melt rate.
 namespace frontalmelt {
 //! A very rudimentary PISM frontal melt model.

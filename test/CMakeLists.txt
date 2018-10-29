@@ -22,6 +22,8 @@ if (Pism_BUILD_PYTHON_BINDINGS AND NOSE_EXECUTABLE)
   add_test(NAME "Python:nose:bed_deformation:LC:restart"
     COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/beddef_lc_restart.py)
   add_test(NAME "Python:nose:ocean"
+    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/regression/frontal_melt_models.py)
+  add_test(NAME "Python:nose:frontal_melt"
     COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/regression/ocean_models.py)
   add_test(NAME "Python:nose:surface"
     COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/regression/surface_models.py)

@@ -21,14 +21,14 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/Vars.hh"
-
+#include "pism/geometry/Geometry.hh"
 #include "pism/coupler/util/options.hh"
 
 namespace pism {
 namespace frontalmelt {
   
 DischargeRouting::DischargeRouting(IceGrid::ConstPtr g)
-  : FrontalMeltModel(g, nullptr) {
+  : CompleteFrontalMeltModel(g, nullptr) {
 
   m_frontal_melt_rate   = allocate_frontal_melt_rate(g);
 
@@ -102,7 +102,7 @@ void DischargeRouting::bootstrap_impl(const Geometry &geometry) {
 void DischargeRouting::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
-  (void) geometry;
+  // (void) geometry;
 
   // We implement Eq. 1 from Rignot et al (2016):
   // q_m = (A * h * Q_sg ^{\alpha} + B) * TF^{\beta}; where
@@ -115,20 +115,24 @@ void DischargeRouting::update_impl(const Geometry &geometry, double t, double dt
   double beta = m_config->get_double("frontal_melt.power_beta");
   
   // get ice thickness
-  const IceModelVec2S* ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S &ice_thickness = geometry.ice_thickness;
+  
   // get subglacial discharge
   const IceModelVec2S *subglacial_discharge  = m_grid->variables().get_2d_scalar("tendency_of_subglacial_water_mass_at_grounding_line");
 
-  IceModelVec::AccessList list{ ice_thickness, subglacial_discharge };
+  // convert melt rates from m/day to m/s
+  double secperday = units::convert(m_sys, 1.0, "m day-1", "m s-1");
+
+  IceModelVec::AccessList list{ &ice_thickness, subglacial_discharge };
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    double h = (*ice_thickness)(i,j);
+    double h = ice_thickness(i,j);
     // Assume for now that thermal forcing is equal to theta_coean
     // also, thermal forcing is generally not available at the grounding line.
     double TF = (*m_theta_ocean)(i,j);
     double Qsg = (*subglacial_discharge)(i, j);
-    (*m_frontal_melt_rate)(i,j) = (A * h * pow(Qsg, alpha) + B) * pow(TF, beta);
+    (*m_frontal_melt_rate)(i,j) = (A * h * pow(Qsg, alpha) + B) * pow(TF, beta) / secperday;
   }
 
 }
