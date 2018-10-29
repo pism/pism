@@ -135,10 +135,16 @@ def constant_test():
     grid = dummy_grid()
     geometry = create_geometry(grid)
 
+    inputs = PISM.FrontalMeltInputs()
+    subglacial_discharge = PISM.IceModelVec2S(grid, "subglacial_discharge", PISM.WITHOUT_GHOSTS)
+    subglacial_discharge.set(0.0)
+    inputs.geometry = geometry
+    inputs.subglacial_discharge_at_grounding_line = subglacial_discharge
+
     model = PISM.FrontalMeltConstant(grid)
 
     model.init(geometry)
-    model.update(geometry, 0, 1)
+    model.update(inputs, 0, 1)
 
     check_model(model, melt_rate)
 
@@ -164,14 +170,18 @@ class DischargeRoutingTest(TestCase):
         self.geometry = create_geometry(self.grid)
         self.geometry.ice_thickness.set(self.depth)
 
-        config.set_string("hydrology.model", "routing")
+        self.inputs = PISM.FrontalMeltInputs()
+        self.discharge = PISM.IceModelVec2S(self.grid, "subglacial_discharge", PISM.WITHOUT_GHOSTS)
+        self.discharge.set(self.subglacial_discharge)
+        self.inputs.geometry = self.geometry
+        self.inputs.subglacial_discharge_at_grounding_line = self.discharge
 
     def runTest(self):
         "Model DischargeRouting"
 
         model = PISM.FrontalMeltDischargeRouting(self.grid)
         model.bootstrap(self.geometry)
-        model.update(self.geometry, 0, 1)
+        model.update(self.inputs, 0, 1)
 
         assert model.max_timestep(0).infinite() == True
 
@@ -204,12 +214,20 @@ class GivenTest(TestCase):
 
         config.set_string("frontal_melt.given.file", self.filename)
 
+        self.inputs = PISM.FrontalMeltInputs()
+        self.subglacial_discharge = PISM.IceModelVec2S(self.grid,
+                                                       "subglacial_discharge", PISM.WITHOUT_GHOSTS)
+        self.subglacial_discharge.set(0.0)
+        self.inputs.geometry = self.geometry
+        self.inputs.subglacial_discharge_at_grounding_line = self.subglacial_discharge
+
     def runTest(self):
         "Model Given"
 
         model = PISM.FrontalMeltGiven(self.grid)
         model.init(self.geometry)
-        model.update(self.geometry, 0, 1)
+
+        model.update(self.inputs, 0, 1)
 
         assert model.max_timestep(0).infinite() == True
 
