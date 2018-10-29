@@ -176,8 +176,6 @@ class DischargeRoutingTest(TestCase):
 
         config.set_string("frontal_melt.routing.file", self.filename)
         config.set_string("hydrology.model", "routing")
-        melt_rate(self.depth, self.subglacial_discharge, self.potential_temperature)
-        print(melt_rate)
 
     def runTest(self):
         "Model DischargeRouting"
@@ -188,6 +186,7 @@ class DischargeRoutingTest(TestCase):
 
         assert model.max_timestep(0).infinite() == True
 
+        melt_rate(self.depth, self.subglacial_discharge, self.potential_temperature)
         check_model(model, melt_rate)
 
     def tearDown(self):
