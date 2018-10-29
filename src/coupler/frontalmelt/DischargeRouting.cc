@@ -100,32 +100,62 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
   // A, B, alpha, beta are tuning parameters
   // Rignot (2016) is an update on Xu 2013
   
-  double A = m_config->get_double("frontal_melt.parameter_a");
-  double B = m_config->get_double("frontal_melt.parameter_b");
-  double alpha = m_config->get_double("frontal_melt.power_alpha");
-  double beta = m_config->get_double("frontal_melt.power_beta");
-  
-  // get ice thickness
+  double A             = m_config->get_double("frontal_melt.parameter_a");
+  double B             = m_config->get_double("frontal_melt.parameter_b");
+  double alpha         = m_config->get_double("frontal_melt.power_alpha");
+  double beta          = m_config->get_double("frontal_melt.power_beta");
+  double water_density = m_config->get_double("constants.fresh_water.density");
+
+  const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
+  // ice thickness, meters
   const IceModelVec2S &ice_thickness = inputs.geometry->ice_thickness;
-  
-  // get subglacial discharge
-  const IceModelVec2S *subglacial_discharge  = m_grid->variables().get_2d_scalar("tendency_of_subglacial_water_mass_at_grounding_line");
+  // cell area, meters^2
+  const IceModelVec2S &cell_area = inputs.geometry->cell_area;
+  // subglacial discharge, mass change over this time step
+  const IceModelVec2S &discharge = *inputs.subglacial_discharge_at_grounding_line;
 
-  // convert melt rates from m/day to m/s
-  double secperday = units::convert(m_sys, 1.0, "m day-1", "m s-1");
+  IceModelVec::AccessList list
+    {&ice_thickness, &cell_type, &cell_area, &discharge, m_theta_ocean.get(),
+     m_salinity_ocean.get(), m_frontal_melt_rate.get()};
 
-  IceModelVec::AccessList list{ &ice_thickness, subglacial_discharge,  m_theta_ocean.get(), m_salinity_ocean.get(), m_frontal_melt_rate.get()};
+  // index offsets for iterating over neighbors
+  const int i_offsets[4] = {1, 0, -1, 0};
+  const int j_offsets[4] = {0, 1, 0, -1};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    double h = ice_thickness(i,j);
-    // Assume for now that thermal forcing is equal to theta_coean
-    // also, thermal forcing is generally not available at the grounding line.
-    double TF = (*m_theta_ocean)(i,j);
-    double Qsg = (*subglacial_discharge)(i, j);
-    (*m_frontal_melt_rate)(i,j) = (A * h * pow(Qsg, alpha) + B) * pow(TF, beta) / secperday;
-  }
 
+    if (cell_type.ocean(i, j) and cell_type.next_to_grounded_ice(i, j)) {
+
+      // Assume for now that thermal forcing is equal to theta_ocean also, thermal forcing
+      // is generally not available at the grounding line.
+      double TF = (*m_theta_ocean)(i, j);
+
+      // subglacial discharge: convert from kg to m/s
+      double Qsg = discharge(i, j) / (water_density * cell_area(i, j) * dt);
+
+      // get the average ice thickness over ice-covered grounded neighbors
+      double H = 0.0;
+      {
+        int n_grounded_neighbors = 0;
+        for (int k = 0; k < 4; ++k) {
+          int i_n = i + i_offsets[k];
+          int j_n = j + j_offsets[k];
+
+          if (cell_type.grounded_ice(i_n, j_n)) {
+            H += ice_thickness(i_n, j_n);
+            n_grounded_neighbors += 1;
+          }
+        }
+
+        if (n_grounded_neighbors > 0) {
+          H /= n_grounded_neighbors;
+        }
+      }
+
+      (*m_frontal_melt_rate)(i,j) = (A * H * pow(Qsg, alpha) + B) * pow(TF, beta);
+    } // end of "if this is an ocean cell next to grounded ice"
+  } // end of the loop over grid points
 }
 
 MaxTimestep DischargeRouting::max_timestep_impl(double t) const {
