@@ -159,7 +159,7 @@ class DischargeRoutingTest(TestCase):
         Qsg.set(self.subglacial_discharge)
 
         # This seg faults but why?
-        # self.grid.variables().add(Qsg)
+        self.grid.variables().add(Qsg)
 
         self.geometry = create_geometry(self.grid)
         self.geometry.ice_thickness.set(depth)
@@ -192,35 +192,35 @@ class DischargeRoutingTest(TestCase):
         os.remove(self.filename)
 
 
-# class GivenTest(TestCase):
-#     def setUp(self):
+class GivenTest(TestCase):
+    def setUp(self):
 
-#         self.frontal_melt_rate = 100.0
+        self.frontal_melt_rate = 100.0
 
-#         self.grid = dummy_grid()
-#         self.geometry = create_geometry(self.grid)
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
 
-#         filename = "given_input.nc"
-#         self.filename = filename
+        filename = "given_input.nc"
+        self.filename = filename
 
-#         PISM.util.prepare_output(filename)
+        PISM.util.prepare_output(filename)
 
-#         Fmr = PISM.IceModelVec2S(self.grid, "frontalmeltrate", PISM.WITHOUT_GHOSTS)
-#         Fmr.set_attrs("climate", "frontal melt rate", "m/year", "")
-#         Fmr.set(self.frontal_melt_rate)
+        Fmr = PISM.IceModelVec2S(self.grid, "frontalmeltrate", PISM.WITHOUT_GHOSTS)
+        Fmr.set_attrs("climate", "frontal melt rate", "m/year", "")
+        Fmr.set(self.frontal_melt_rate)
 
-#         config.set_string("frontal_melt.given.file", self.filename)
+        config.set_string("frontal_melt.given.file", self.filename)
 
-#     def runTest(self):
-#         "Model Given"
+    def runTest(self):
+        "Model Given"
 
-#         model = PISM.FrontalMeltGiven(self.grid)
-#         model.init(self.geometry)
-#         model.update(self.geometry, 0, 1)
+        model = PISM.FrontalMeltGiven(self.grid)
+        model.init(self.geometry)
+        model.update(self.geometry, 0, 1)
 
-#         assert model.max_timestep(0).infinite() == True
+        assert model.max_timestep(0).infinite() == True
 
-#         check_model(model, self.temperature, self.mass_flux, self.melange_back_pressure)
+        check_model(model, self.temperature, self.mass_flux, self.melange_back_pressure)
 
-#     def tearDown(self):
-#         os.remove(self.filename)
+    def tearDown(self):
+        os.remove(self.filename)

@@ -97,12 +97,21 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
 
 void DischargeRouting::bootstrap_impl(const Geometry &geometry) {
   (void) geometry;
+  // How can I initialize these quantities?
+  m_theta_ocean->set(0.0);
+  m_salinity_ocean->set(0.0);
+  
 }
   
 void DischargeRouting::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
-  // (void) geometry;
+
+  m_theta_ocean->update(t, dt);
+  m_salinity_ocean->update(t, dt);
+
+  m_theta_ocean->average(t, dt);
+  m_salinity_ocean->average(t, dt);
 
   // We implement Eq. 1 from Rignot et al (2016):
   // q_m = (A * h * Q_sg ^{\alpha} + B) * TF^{\beta}; where
