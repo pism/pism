@@ -30,8 +30,12 @@ namespace frontalmelt {
 DischargeRouting::DischargeRouting(IceGrid::ConstPtr g)
   : CompleteFrontalMeltModel(g, nullptr) {
 
-  m_frontal_melt_rate   = allocate_frontal_melt_rate(g);
+  m_frontal_melt_rate = allocate_frontal_melt_rate(g);
 
+  unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+
+  m_theta_ocean.reset(new IceModelVec2T(g, "theta_ocean", 1, evaluations_per_year));
+  m_salinity_ocean.reset(new IceModelVec2T(g, "salinity_ocean", 1, evaluations_per_year));
 }
 
 DischargeRouting::~DischargeRouting() {
