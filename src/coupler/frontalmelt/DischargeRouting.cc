@@ -94,14 +94,6 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
     update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }
-
-void DischargeRouting::bootstrap_impl(const Geometry &geometry) {
-  (void) geometry;
-  // How can I initialize these quantities?
-  m_theta_ocean->set(0.0);
-  m_salinity_ocean->set(0.0);
-  
-}
   
 void DischargeRouting::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;

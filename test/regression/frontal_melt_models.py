@@ -175,17 +175,19 @@ class DischargeRoutingTest(TestCase):
         Th.write(filename)
 
         config.set_string("frontal_melt.routing.file", self.filename)
+        config.set_string("hydrology.model", "routing")
+        melt_rate(self.depth, self.subglacial_discharge, self.potential_temperature)
+        print(melt_rate)
 
     def runTest(self):
         "Model DischargeRouting"
 
         model = PISM.FrontalMeltDischargeRouting(self.grid)
-        model.bootstrap(self.geometry)
+        model.init(self.geometry)
         model.update(self.geometry, 0, 1)
 
         assert model.max_timestep(0).infinite() == True
 
-        melt_rate(self.depth, self.subglacial_discharge, self.potential_temperature)
         check_model(model, melt_rate)
 
     def tearDown(self):
