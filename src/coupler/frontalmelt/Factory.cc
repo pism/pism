@@ -33,7 +33,7 @@ Factory::Factory(IceGrid::ConstPtr g)
 
   add_model<Constant>("constant");
   add_model<DischargeRouting>("routing");
-  // add_model<Given>("given");
+  add_model<Given>("given");
   set_default("constant");
 
 }
