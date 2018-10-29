@@ -148,7 +148,7 @@ def constant_test():
 class DischargeRoutingTest(TestCase):
     def setUp(self):
 
-        depth = 1000.0
+        self.depth = 1000.0
         self.potential_temperature = 4.0
         self.subglacial_discharge = 1.0  # check units
 
@@ -162,35 +162,26 @@ class DischargeRoutingTest(TestCase):
         self.grid.variables().add(Qsg)
 
         self.geometry = create_geometry(self.grid)
-        self.geometry.ice_thickness.set(depth)
+        self.geometry.ice_thickness.set(self.depth)
 
-        filename = "discharge_routing_input.nc"
-        self.filename = filename
-
-        PISM.util.prepare_output(filename)
-
-        Th = PISM.IceModelVec2S(self.grid, "theta_ocean", PISM.WITHOUT_GHOSTS)
-        Th.set_attrs("climate", "potential temperature", "Kelvin", "")
-        Th.set(self.potential_temperature)
-        Th.write(filename)
-
-        config.set_string("frontal_melt.routing.file", self.filename)
         config.set_string("hydrology.model", "routing")
 
     def runTest(self):
         "Model DischargeRouting"
 
         model = PISM.FrontalMeltDischargeRouting(self.grid)
-        model.init(self.geometry)
+        model.bootstrap(self.geometry)
         model.update(self.geometry, 0, 1)
 
         assert model.max_timestep(0).infinite() == True
 
-        melt_rate(self.depth, self.subglacial_discharge, self.potential_temperature)
+        melt_rate = frontal_melt_from_discharge_and_thermal_forcing(
+            self.depth, self.subglacial_discharge, self.potential_temperature
+        )
         check_model(model, melt_rate)
 
     def tearDown(self):
-        os.remove(self.filename)
+        pass
 
 
 class GivenTest(TestCase):

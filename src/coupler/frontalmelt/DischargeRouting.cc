@@ -30,6 +30,10 @@ namespace frontalmelt {
 DischargeRouting::DischargeRouting(IceGrid::ConstPtr g)
   : CompleteFrontalMeltModel(g, nullptr) {
 
+  m_log->message(2,
+             "* Initializing the frontal melt model\n"
+             "  UAF-UT\n");
+  
   m_frontal_melt_rate = allocate_frontal_melt_rate(g);
 
   unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
@@ -42,12 +46,15 @@ DischargeRouting::~DischargeRouting() {
   // empty
 }
 
-void DischargeRouting::init_impl(const Geometry &geometry) {
+void DischargeRouting::bootstrap_impl(const Geometry &geometry) {
   (void) geometry;
 
-  m_log->message(2,
-             "* Initializing the frontal melt model UAF\n"
-             "  from a file...\n");
+  m_theta_ocean->set(0.0);
+  m_salinity_ocean->set(0.0);
+}
+
+void DischargeRouting::init_impl(const Geometry &geometry) {
+  (void) geometry;
 
   ForcingOptions opt(*m_grid->ctx(), "frontal_melt.routing");
 
@@ -103,12 +110,6 @@ void DischargeRouting::update_impl(const Geometry &geometry, double t, double dt
   (void) t;
   (void) dt;
 
-  m_theta_ocean->update(t, dt);
-  m_salinity_ocean->update(t, dt);
-
-  m_theta_ocean->average(t, dt);
-  m_salinity_ocean->average(t, dt);
-
   // We implement Eq. 1 from Rignot et al (2016):
   // q_m = (A * h * Q_sg ^{\alpha} + B) * TF^{\beta}; where
   // A, B, alpha, beta are tuning parameters
@@ -128,7 +129,7 @@ void DischargeRouting::update_impl(const Geometry &geometry, double t, double dt
   // convert melt rates from m/day to m/s
   double secperday = units::convert(m_sys, 1.0, "m day-1", "m s-1");
 
-  IceModelVec::AccessList list{ &ice_thickness, subglacial_discharge };
+  IceModelVec::AccessList list{ &ice_thickness, subglacial_discharge,  m_theta_ocean.get(), m_salinity_ocean.get(), m_frontal_melt_rate.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
