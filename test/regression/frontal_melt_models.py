@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 """
-Tests of PISM's ocean models and modifiers.
+Tests of PISM's frontal melt models and modifiers.
 """
 
 import PISM
-import sys
-import os
-import numpy as np
+import sys, os, numpy
 from unittest import TestCase
 import netCDF4
 
@@ -97,21 +95,21 @@ def create_given_input_file(filename, grid, temperature, mass_flux):
 
 def check(vec, value):
     "Check if values of vec are almost equal to value."
-    np.testing.assert_almost_equal(sample(vec), value)
+    numpy.testing.assert_almost_equal(sample(vec), value)
 
 
 def check_difference(A, B, value):
     "Check if the difference between A and B is almost equal to value."
-    np.testing.assert_almost_equal(sample(A) - sample(B), value)
+    numpy.testing.assert_almost_equal(sample(A) - sample(B), value)
 
 
 def check_ratio(A, B, value):
     "Check if the ratio of A and B is almost equal to value."
     b = sample(B)
     if b != 0:
-        np.testing.assert_almost_equal(sample(A) / b, value)
+        numpy.testing.assert_almost_equal(sample(A) / b, value)
     else:
-        np.testing.assert_almost_equal(sample(A), 0.0)
+        numpy.testing.assert_almost_equal(sample(A), 0.0)
 
 
 def check_model(model, melt_rate):
@@ -160,7 +158,9 @@ class DischargeRoutingTest(TestCase):
 
         self.grid = dummy_grid()
 
-        Qsg = PISM.IceModelVec2S(self.grid, "tendency_of_subglacial_water_mass_at_grounding_line", PISM.WITHOUT_GHOSTS)
+        Qsg = PISM.IceModelVec2S(self.grid,
+                                 "subglacial_water_mass_change_at_grounding_line",
+                                 PISM.WITHOUT_GHOSTS)
         Qsg.set_attrs("climate", "subglacial discharge at grounding line", "m day-1", "m s-1")
         Qsg.set(self.subglacial_discharge)
 
