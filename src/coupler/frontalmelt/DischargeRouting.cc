@@ -89,15 +89,9 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
   m_salinity_ocean->set_attrs("climate_forcing",
                               "salinity of the adjacent ocean",
                               "g/kg", "");
-
-
-  // read time-independent data right away:
-  if (m_theta_ocean->n_records() == 1 && m_salinity_ocean->n_records() == 1) {
-    update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
-  }
 }
   
-void DischargeRouting::update_impl(const Geometry &geometry, double t, double dt) {
+void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
   (void) t;
   (void) dt;
 
@@ -112,7 +106,7 @@ void DischargeRouting::update_impl(const Geometry &geometry, double t, double dt
   double beta = m_config->get_double("frontal_melt.power_beta");
   
   // get ice thickness
-  const IceModelVec2S &ice_thickness = geometry.ice_thickness;
+  const IceModelVec2S &ice_thickness = inputs.geometry->ice_thickness;
   
   // get subglacial discharge
   const IceModelVec2S *subglacial_discharge  = m_grid->variables().get_2d_scalar("tendency_of_subglacial_water_mass_at_grounding_line");

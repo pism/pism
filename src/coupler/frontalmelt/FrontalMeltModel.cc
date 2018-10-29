@@ -17,8 +17,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <gsl/gsl_math.h>       // GSL_NAN
-
 #include "pism/coupler/FrontalMeltModel.hh"
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/MaxTimestep.hh"
@@ -30,7 +28,6 @@ FrontalMeltInputs::FrontalMeltInputs() {
   geometry = nullptr;
 
   subglacial_discharge_at_grounding_line = nullptr;
-
 }
 
   
@@ -87,8 +84,8 @@ void FrontalMeltModel::bootstrap_impl(const Geometry &geometry) {
 }
 
   
-void FrontalMeltModel::update(const Geometry &geometry, double t, double dt) {
-  this->update_impl(geometry, t, dt);
+void FrontalMeltModel::update(const FrontalMeltInputs &inputs, double t, double dt) {
+  this->update_impl(inputs, t, dt);
 }
 
 
@@ -98,9 +95,9 @@ const IceModelVec2S& FrontalMeltModel::frontal_melt_rate() const {
 
 // pass-through default implementations for "modifiers"
 
-void FrontalMeltModel::update_impl(const Geometry &geometry, double t, double dt) {
+void FrontalMeltModel::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
   if (m_input_model) {
-    m_input_model->update(geometry, t, dt);
+    m_input_model->update(inputs, t, dt);
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }

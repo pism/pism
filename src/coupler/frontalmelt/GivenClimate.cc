@@ -38,6 +38,7 @@ Given::~Given() {
 }
 
 void Given::init_impl(const Geometry &geometry) {
+  (void) geometry;
 
   m_log->message(2,
              "* Initializing the frontal melt model reading melt rates\n"
@@ -68,19 +69,14 @@ void Given::init_impl(const Geometry &geometry) {
   m_frontalmeltrate->metadata().set_string("glaciological_units", "m year-1");
 
   m_frontalmeltrate->init(opt.filename, opt.period, opt.reference_time);
-
-  // read time-independent data right away:
-  if (m_frontalmeltrate->n_records() == 1) {
-    update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
-  }
 }
 
 void Given::bootstrap_impl(const Geometry &geometry) {
   (void) geometry;
 }
   
-void Given::update_impl(const Geometry &geometry, double t, double dt) {
-  (void) geometry;
+void Given::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
+  (void) inputs;
 
   m_frontalmeltrate->update(t, dt);
 

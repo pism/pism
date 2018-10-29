@@ -43,6 +43,7 @@ public:
   //! @brief FrontalMelt models and modifiers: provides frontal
 //! melt rate.
 namespace frontalmelt {
+
 //! A very rudimentary PISM frontal melt model.
 class FrontalMeltModel : public Component {
 public:
@@ -56,7 +57,7 @@ public:
   void init(const Geometry &geometry);
   void bootstrap(const Geometry &geometry);
 
-  void update(const Geometry &geometry, double t, double dt);
+  void update(const FrontalMeltInputs &inputs, double t, double dt);
 
   const IceModelVec2S& frontal_melt_rate() const;
 
@@ -64,7 +65,7 @@ protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void bootstrap_impl(const Geometry &geometry);
   // provides default (pass-through) implementations for "modifiers"
-  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  virtual void update_impl(const FrontalMeltInputs &inputs, double t, double dt);
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
