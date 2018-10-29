@@ -58,15 +58,6 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
 
   ForcingOptions opt(*m_grid->ctx(), "frontal_melt.routing");
 
-  // This model requires hydrology "routing" or "distributed"
-
-  std::string method = m_config->get_string("hydrology.model");
-
-  if (method != "routing" || method != "distributed") {
-    throw RuntimeError(PISM_ERROR_LOCATION, "option -frontal_melt routing"
-                       " requires -hydrology {routing,distributed}");
-  }
-  
   {
     unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
