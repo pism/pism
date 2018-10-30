@@ -27,6 +27,7 @@ namespace pism {
 FrontalMeltInputs::FrontalMeltInputs() {
   geometry = nullptr;
 
+  subglacial_discharge = nullptr;
   subglacial_discharge_at_grounding_line = nullptr;
 }
 

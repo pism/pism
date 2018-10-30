@@ -35,6 +35,8 @@ public:
 
   const Geometry *geometry;
 
+  // used by the discharge testing
+  const IceModelVec2S *subglacial_discharge;
   // used by the discharge routing
   const IceModelVec2S *subglacial_discharge_at_grounding_line;
 
