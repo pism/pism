@@ -209,61 +209,6 @@ class DischargeRoutingTest(TestCase):
         pass
 
 
-class DischargeTestingTest(TestCase):
-    def setUp(self):
-
-        self.depth = 1000.0
-        self.potential_temperature = 4.0
-        self.subglacial_discharge = 1.0 / (24 * 60 ** 2)  #  1 m day-1 in m s-1
-        self.dt = 1.0
-
-        self.grid = dummy_grid()
-
-        self.theta = PISM.IceModelVec2S(self.grid, "theta_ocean", PISM.WITHOUT_GHOSTS)
-        self.salinity = PISM.IceModelVec2S(self.grid, "salinity_ocean", PISM.WITHOUT_GHOSTS)
-
-        cell_area = self.grid.dx() * self.grid.dy()
-        water_density = config.get_double("constants.fresh_water.density")
-
-        self.Qsg = PISM.IceModelVec2S(self.grid, "subglacial_water_mass_change", PISM.WITHOUT_GHOSTS)
-        self.Qsg.set_attrs("climate", "subglacial discharge", "kg", "kg")
-        self.Qsg.set(self.subglacial_discharge * cell_area * water_density * self.dt)
-
-        self.theta.set(self.potential_temperature)
-        self.salinity.set(35.0)  # hardwired because it does not matter
-
-        self.geometry = create_geometry(self.grid)
-        self.geometry.ice_thickness.set(self.depth)
-
-        # set sea level and bed elevation so that this ice-free grid point is an "ocean"
-        # cell
-        self.geometry.sea_level_elevation.set(0.0)
-        self.geometry.bed_elevation.set(-1.0)
-
-        self.geometry.ensure_consistency(config.get_double("geometry.ice_free_thickness_standard"))
-
-        self.inputs = PISM.FrontalMeltInputs()
-        self.inputs.geometry = self.geometry
-        self.inputs.subglacial_discharge = self.Qsg
-
-    def runTest(self):
-        "Model DischargeTesting"
-
-        model = PISM.FrontalMeltDischargeTesting(self.grid)
-        model.initialize(self.theta, self.salinity)
-        model.update(self.inputs, 0, self.dt)
-
-        assert model.max_timestep(0).infinite() == True
-
-        melt_rate = frontal_melt_from_discharge_and_thermal_forcing(
-            self.depth, self.subglacial_discharge, self.potential_temperature
-        )
-        check_model(model, melt_rate)
-
-    def tearDown(self):
-        pass
-
-
 class GivenTest(TestCase):
     def setUp(self):
 

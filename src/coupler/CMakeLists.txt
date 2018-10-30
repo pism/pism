@@ -21,7 +21,6 @@ add_library (boundary OBJECT
   ./frontalmelt/CompleteFrontalMeltModel.cc
   ./frontalmelt/Constant.cc
   ./frontalmelt/DischargeRouting.cc
-  ./frontalmelt/DischargeTesting.cc
   ./frontalmelt/GivenClimate.cc
   ./frontalmelt/FrontalMeltPhysics.cc
   ./frontalmelt/Factory.cc
