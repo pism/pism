@@ -39,12 +39,11 @@ private:
 
   const IceModelVec2S& frontal_melt_rate_impl() const;
 
+  // inputs
   IceModelVec2T::Ptr m_theta_ocean, m_salinity_ocean;
 
-  IceModelVec2T::Ptr m_frontalmeltrate;
-
+  // output
   IceModelVec2S::Ptr m_frontal_melt_rate;
-  
 };
 
 } // end of namespace frontalmelt
