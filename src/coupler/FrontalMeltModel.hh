@@ -23,6 +23,7 @@
 #include <memory>
 
 #include "pism/util/Component.hh"
+#include "pism/hydrology/Hydrology.hh"
 
 namespace pism {
 
@@ -76,6 +77,8 @@ protected:
   virtual TSDiagnosticList ts_diagnostics_impl() const;
 
   virtual const IceModelVec2S& frontal_melt_rate_impl() const;
+
+  hydrology::Hydrology *m_hydrology;
 
 protected:
   std::shared_ptr<FrontalMeltModel> m_input_model;

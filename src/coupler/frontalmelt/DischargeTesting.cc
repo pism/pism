@@ -117,7 +117,7 @@ void DischargeTesting::update_impl(const FrontalMeltInputs &inputs, double t, do
   // cell area, meters^2
   const IceModelVec2S &cell_area = inputs.geometry->cell_area;
   // subglacial discharge, mass change over this time step
-  const IceModelVec2S &discharge = *inputs.subglacial_discharge;
+  const IceModelVec2S &discharge = *inputs.subglacial_discharge_at_grounding_line;
 
   IceModelVec::AccessList list
     {&ice_thickness, &cell_type, &cell_area, &discharge, m_theta_ocean.get(),
