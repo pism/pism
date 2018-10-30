@@ -36,8 +36,6 @@ public:
 
   const Geometry *geometry;
 
-  // used by the discharge testing
-  const IceModelVec2S *subglacial_discharge;
   // used by the discharge routing
   const IceModelVec2S *subglacial_discharge_at_grounding_line;
 
@@ -77,8 +75,6 @@ protected:
   virtual TSDiagnosticList ts_diagnostics_impl() const;
 
   virtual const IceModelVec2S& frontal_melt_rate_impl() const;
-
-  hydrology::Hydrology *m_hydrology;
 
 protected:
   std::shared_ptr<FrontalMeltModel> m_input_model;

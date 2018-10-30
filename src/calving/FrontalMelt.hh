@@ -21,6 +21,7 @@
 #define FRONTALMELT_H
 
 #include "CalvingFrontRetreat.hh"
+#include "pism/hydrology/Hydrology.hh"
 
 namespace pism {
 
@@ -36,6 +37,8 @@ protected:
 
   void compute_calving_rate(const CalvingInputs &inputs,
                             IceModelVec2S &result) const;
+
+  hydrology::Hydrology *m_hydrology;
 };
 
 } // end of namespace pism

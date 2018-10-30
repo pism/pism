@@ -17,20 +17,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "pism/icemodel/IceModel.hh"
-
 #include "pism/coupler/FrontalMeltModel.hh"
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/hydrology/Hydrology.hh"
 
 namespace pism {
 
 FrontalMeltInputs::FrontalMeltInputs() {
   geometry = nullptr;
 
-  subglacial_discharge_at_grounding_line = &m_hydrology->mass_change_at_grounding_line();
+  subglacial_discharge_at_grounding_line = nullptr;
 }
 
   

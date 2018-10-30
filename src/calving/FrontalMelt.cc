@@ -53,6 +53,10 @@ void FrontalMelt::compute_calving_rate(const CalvingInputs &inputs,
 
   GeometryCalculator gc(*m_config);
 
+  FrontalMeltInputs fminputs;
+
+  fminputs.subglacial_discharge_at_grounding_line = &m_hydrology->mass_change_at_grounding_line();
+
   const IceModelVec2S &frontal_melt_rate = *inputs.frontal_melt_rate;
 
   const IceModelVec2S
