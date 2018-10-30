@@ -29,10 +29,8 @@ FrontalMeltPhysics::FrontalMeltPhysics(const Config &config) {
 
   m_alpha         = config.get_double("frontal_melt.power_alpha");
   m_beta          = config.get_double("frontal_melt.power_beta");
-  std::string a_units  = "m−" + std::to_string(m_alpha) + "s^(" + std::to_string(m_alpha) + "−1) Celsius−" + std::to_string(m_beta);
-  std::string b_units  = "m s^(" + std::to_string(m_alpha) + "−1) Celsius−" + std::to_string(m_beta);
-  m_A             = config.get_double("frontal_melt.parameter_a", a_units);
-  m_B             = config.get_double("frontal_melt.parameter_b", b_units);
+  m_A             = config.get_double("frontal_melt.parameter_a");
+  m_B             = config.get_double("frontal_melt.parameter_b");
   m_water_density = config.get_double("constants.fresh_water.density");
   
 }

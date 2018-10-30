@@ -28,10 +28,10 @@ options = PISM.PETSc.Options()
 
 def frontal_melt_from_discharge_and_thermal_forcing(h, Qsg, TF):
 
-    A = config.get_double("frontal_melt.parameter_a")
-    B = config.get_double("frontal_melt.parameter_b")
     alpha = config.get_double("frontal_melt.power_alpha")
     beta = config.get_double("frontal_melt.power_beta")
+    A = config.get_double("frontal_melt.parameter_a")
+    B = config.get_double("frontal_melt.parameter_b")
 
     return (A * h * Qsg ** alpha + B) * TF ** beta
 
@@ -195,6 +195,66 @@ class DischargeRoutingTest(TestCase):
         "Model DischargeRouting"
 
         model = PISM.FrontalMeltDischargeRouting(self.grid)
+        model.initialize(self.theta, self.salinity)
+        model.update(self.inputs, 0, self.dt)
+
+        assert model.max_timestep(0).infinite() == True
+
+        melt_rate = frontal_melt_from_discharge_and_thermal_forcing(
+            self.depth, self.subglacial_discharge, self.potential_temperature
+        )
+        check_model(model, melt_rate)
+
+    def tearDown(self):
+        pass
+
+
+class DischargeTestingTest(TestCase):
+    def setUp(self):
+
+        self.depth = 1000.0
+        self.potential_temperature = 4.0
+        self.subglacial_discharge = 1.0 / (24 * 60 ** 2)  #  1 m day-1 in m s-1
+        self.dt = 1.0
+
+        self.grid = dummy_grid()
+
+        self.theta = PISM.IceModelVec2S(self.grid, "theta_ocean", PISM.WITHOUT_GHOSTS)
+        self.salinity = PISM.IceModelVec2S(self.grid, "salinity_ocean", PISM.WITHOUT_GHOSTS)
+
+        cell_area = self.grid.dx() * self.grid.dy()
+        water_density = config.get_double("constants.fresh_water.density")
+
+        self.Qsg = PISM.IceModelVec2S(self.grid, "subglacial_water_mass_change_at_grounding_line", PISM.WITHOUT_GHOSTS)
+        self.Qsg.set_attrs("climate", "subglacial discharge at grounding line", "kg", "kg")
+        self.Qsg.set(self.subglacial_discharge * cell_area * water_density * self.dt)
+
+        self.theta.set(self.potential_temperature)
+        self.salinity.set(35.0)  # hardwired because it does not matter
+
+        self.geometry = create_geometry(self.grid)
+        self.geometry.ice_thickness.set(self.depth)
+
+        # Set ice thickness to 0 at one grid points: this will be the grid point where the
+        # frontal melt rate is computed.
+        with PISM.vec.Access(nocomm=[self.geometry.ice_thickness]):
+            self.geometry.ice_thickness[0, 0] = 0.0
+
+        # set sea level and bed elevation so that this ice-free grid point is an "ocean"
+        # cell
+        self.geometry.sea_level_elevation.set(0.0)
+        self.geometry.bed_elevation.set(-1.0)
+
+        self.geometry.ensure_consistency(config.get_double("geometry.ice_free_thickness_standard"))
+
+        self.inputs = PISM.FrontalMeltInputs()
+        self.inputs.geometry = self.geometry
+        self.inputs.subglacial_discharge_at_grounding_line = self.Qsg
+
+    def runTest(self):
+        "Model DischargeTesting"
+
+        model = PISM.FrontalMeltDischargeTesting(self.grid)
         model.initialize(self.theta, self.salinity)
         model.update(self.inputs, 0, self.dt)
 

@@ -767,15 +767,15 @@ netcdf pism_config {
     pism_config:frontal_melt.given.reference_year_type = "integer";
     pism_config:frontal_melt.given.reference_year_units = "years";
 
-    pism_config:frontal_melt.parameter_a = 3.0e-4;
+    pism_config:frontal_melt.parameter_a = 3.4722222222222217e-09;
     pism_config:frontal_melt.parameter_a_doc = "parameter A in eqn. 1 in :cite:`Xu2013`";
     pism_config:frontal_melt.parameter_a_type = "scalar";
-    pism_config:frontal_melt.parameter_a_units = "m−alpha day^(alpha−1) Celsius−beta";
+    pism_config:frontal_melt.parameter_a_units = "m−alpha s^(alpha−1) Celsius−beta";
 
-    pism_config:frontal_melt.parameter_b = 0.15;
+    pism_config:frontal_melt.parameter_b = 1.736111111111111e-06;
     pism_config:frontal_melt.parameter_b_doc = "parameter B in eqn. 1 in :cite:`Xu2013`";
     pism_config:frontal_melt.parameter_b_type = "scalar";
-    pism_config:frontal_melt.parameter_b_units = "m day^(alpha−1) Celsius−beta";
+    pism_config:frontal_melt.parameter_b_units = "m s^(alpha−1) Celsius−beta";
 
     pism_config:frontal_melt.power_alpha = 0.39;
     pism_config:frontal_melt.power_alpha_doc = "exponent `\\alpha` in eqn. 1 in :cite:`Xu2013`";
