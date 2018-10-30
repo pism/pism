@@ -69,23 +69,21 @@ SSAFD::SSAFD(IceGrid::ConstPtr g)
                            "old SSA velocity field; used for re-trying with a different epsilon",
                            "m s-1", "");
 
-  const double power = 1.0 / m_flow_law->exponent();
-  char unitstr[TEMPORARY_STRING_LENGTH];
-  snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
   m_hardness.create(m_grid, "hardness", WITHOUT_GHOSTS);
   m_hardness.set_attrs("diagnostic",
-                     "vertically-averaged ice hardness",
-                     unitstr, "");
+                       "vertically-averaged ice hardness",
+                       pism::printf("Pa s%f", 1.0 / m_flow_law->exponent()),
+                       "");
 
   m_nuH.create(m_grid, "nuH", WITH_GHOSTS);
   m_nuH.set_attrs("internal",
-                "ice thickness times effective viscosity",
-                "Pa s m", "");
+                  "ice thickness times effective viscosity",
+                  "Pa s m", "");
 
   m_nuH_old.create(m_grid, "nuH_old", WITH_GHOSTS);
   m_nuH_old.set_attrs("internal",
-                    "ice thickness times effective viscosity (before an update)",
-                    "Pa s m", "");
+                      "ice thickness times effective viscosity (before an update)",
+                      "Pa s m", "");
 
   m_work.create(m_grid, "m_work", WITH_GHOSTS,
                 2, /* stencil width */
@@ -1079,13 +1077,9 @@ void SSAFD::picard_manager(const Inputs &inputs,
   // If we're here, it means that we exceeded max_iterations and still
   // failed.
 
-  char buffer[TEMPORARY_STRING_LENGTH];
-  snprintf(buffer, sizeof(buffer),
-           "effective viscosity not converged after %d iterations\n"
-           "with nuH_regularization=%8.2e.",
-           max_iterations, nuH_regularization);
-
-  throw PicardFailure(buffer);
+  throw PicardFailure(pism::printf("effective viscosity not converged after %d iterations\n"
+                                   "with nuH_regularization=%8.2e.",
+                                   max_iterations, nuH_regularization));
 
  done:
 

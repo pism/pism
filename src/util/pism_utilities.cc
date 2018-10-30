@@ -177,6 +177,8 @@ double GlobalSum(MPI_Comm comm, double local) {
   return result;
 }
 
+static const int TEMPORARY_STRING_LENGTH = 32768;
+
 std::string version() {
   char buffer[TEMPORARY_STRING_LENGTH];
   std::string result;

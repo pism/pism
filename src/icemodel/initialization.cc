@@ -309,10 +309,8 @@ void IceModel::model_state_setup() {
   {
     reset_counters();
 
-    char startstr[TEMPORARY_STRING_LENGTH];
-
-    snprintf(startstr, sizeof(startstr),
-             "PISM (%s) started on %d procs.", PISM_Revision, (int)m_grid->size());
+    auto startstr = pism::printf("PISM (%s) started on %d procs.",
+                                 PISM_Revision, (int)m_grid->size());
     prepend_history(startstr + args_string());
   }
 }

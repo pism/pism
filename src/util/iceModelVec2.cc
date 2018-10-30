@@ -499,12 +499,8 @@ void IceModelVec2::create(IceGrid::ConstPtr grid, const std::string & name,
   } else {
 
     for (unsigned int j = 0; j < m_dof; ++j) {
-      char tmp[TEMPORARY_STRING_LENGTH];
-
-      snprintf(tmp, TEMPORARY_STRING_LENGTH, "%s[%d]",
-               m_name.c_str(), j);
       m_metadata.push_back(SpatialVariableMetadata(m_grid->ctx()->unit_system(),
-                                                   tmp));
+                                                   pism::printf("%s[%d]", m_name.c_str(), j)));
     }
   }
 }

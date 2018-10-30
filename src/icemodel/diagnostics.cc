@@ -200,8 +200,7 @@ HardnessAverage::HardnessAverage(const IceModel *m)
 
   // choice to use SSA power; see #285
   const double power = 1.0 / m_config->get_double("stress_balance.ssa.Glen_exponent");
-  char unitstr[TEMPORARY_STRING_LENGTH];
-  snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
+  auto unitstr = pism::printf("Pa s%f", power);
 
   set_attrs("vertical average of ice hardness", "",
             unitstr, unitstr, 0);
@@ -2022,8 +2021,7 @@ IceHardness::IceHardness(const IceModel *m)
   m_vars = {SpatialVariableMetadata(m_sys, "hardness", m_grid->z())};
 
   const double power = 1.0 / m_config->get_double("stress_balance.sia.Glen_exponent");
-  char unitstr[TEMPORARY_STRING_LENGTH];
-  snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
+  auto unitstr = pism::printf("Pa s%f", power);
 
   set_attrs("ice hardness computed using the SIA flow law", "",
             unitstr, unitstr, 0);

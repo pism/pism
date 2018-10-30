@@ -38,8 +38,6 @@ namespace pism {
 extern const char *PISM_Revision;
 extern const char *PISM_DefaultConfigFile;
 
-const int TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
-
 double get_time();
 std::string timestamp(MPI_Comm com);
 std::string username_prefix(MPI_Comm com);
