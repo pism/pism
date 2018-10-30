@@ -235,11 +235,6 @@ class DischargeTestingTest(TestCase):
         self.geometry = create_geometry(self.grid)
         self.geometry.ice_thickness.set(self.depth)
 
-        # Set ice thickness to 0 at one grid points: this will be the grid point where the
-        # frontal melt rate is computed.
-        with PISM.vec.Access(nocomm=[self.geometry.ice_thickness]):
-            self.geometry.ice_thickness[0, 0] = 0.0
-
         # set sea level and bed elevation so that this ice-free grid point is an "ocean"
         # cell
         self.geometry.sea_level_elevation.set(0.0)
