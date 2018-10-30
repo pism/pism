@@ -21,6 +21,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/coupler/util/options.hh"
+#include "FrontalMeltPhysics.hh"
 
 namespace pism {
 namespace frontalmelt {
@@ -47,6 +48,8 @@ DischargeTesting::~DischargeTesting() {
 void DischargeTesting::bootstrap_impl(const Geometry &geometry) {
   (void) geometry;
 
+  FrontalMeltPhysics physics(*m_config);
+
   m_theta_ocean->set(0.0);
   m_salinity_ocean->set(0.0);
 }
@@ -54,6 +57,8 @@ void DischargeTesting::bootstrap_impl(const Geometry &geometry) {
 void DischargeTesting::init_impl(const Geometry &geometry) {
   (void) geometry;
 
+  FrontalMeltPhysics physics(*m_config);
+  
   ForcingOptions opt(*m_grid->ctx(), "frontal_melt.testing");
 
   {
@@ -102,17 +107,13 @@ void DischargeTesting::update_impl(const FrontalMeltInputs &inputs, double t, do
   (void) t;
   (void) dt;
 
+  FrontalMeltPhysics physics(*m_config);
+
   // We implement Eq. 1 from Rignot et al (2016):
   // q_m = (A * h * Q_sg ^{\alpha} + B) * TF^{\beta}; where
   // A, B, alpha, beta are tuning parameters
   // Rignot (2016) is an update on Xu 2013
   
-  double alpha         = m_config->get_double("frontal_melt.power_alpha");
-  double beta          = m_config->get_double("frontal_melt.power_beta");
-  std::string a_units  = "m−" + std::to_string(alpha) + "s^(" + std::to_string(alpha) + "−1) Celsius−" + std::to_string(beta);
-  std::string b_units  = "m s^(" + std::to_string(alpha) + "−1) Celsius−" + std::to_string(beta);
-  double A             = m_config->get_double("frontal_melt.parameter_a", a_units);
-  double B             = m_config->get_double("frontal_melt.parameter_b", b_units);
   double water_density = m_config->get_double("constants.fresh_water.density");
 
   const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
@@ -142,7 +143,7 @@ void DischargeTesting::update_impl(const FrontalMeltInputs &inputs, double t, do
         // subglacial discharge: convert from kg to m/s
         double Qsg = discharge(i, j) / (water_density * cell_area(i, j) * dt);
         
-        (*m_frontal_melt_rate)(i,j) = (A * h * pow(Qsg, alpha) + B) * pow(TF, beta);
+        (*m_frontal_melt_rate)(i,j) = physics.frontal_melt_from_undercutting(h, Qsg, TF);
       } else {
 
       (*m_frontal_melt_rate)(i,j) = 0.0;
