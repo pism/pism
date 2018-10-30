@@ -31,6 +31,8 @@ public:
   DischargeRouting(IceGrid::ConstPtr g);
   virtual ~DischargeRouting();
 
+  void initialize(const IceModelVec2S &theta, const IceModelVec2S &salinity);
+
 private:
   void update_impl(const FrontalMeltInputs &inputs, double t, double dt);
   void init_impl(const Geometry &geometry);

@@ -90,7 +90,16 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
                               "salinity of the adjacent ocean",
                               "g/kg", "");
 }
-  
+
+/*!
+ * Initialize potential temperature and salinity from IceModelVecs instead of an input
+ * file (for testing).
+ */
+void DischargeRouting::initialize(const IceModelVec2S &theta, const IceModelVec2S &salinity) {
+  m_theta_ocean->copy_from(theta);
+  m_salinity_ocean->copy_from(salinity);
+}
+
 void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
   (void) t;
   (void) dt;
