@@ -108,12 +108,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
   (void) dt;
 
   FrontalMeltPhysics physics(*m_config);
-  
-  // We implement Eq. 1 from Rignot et al (2016):
-  // q_m = (A * h * Q_sg ^{\alpha} + B) * TF^{\beta}; where
-  // A, B, alpha, beta are tuning parameters
-  // Rignot (2016) is an update on Xu 2013
-  
+    
   double water_density = m_config->get_double("constants.fresh_water.density");
 
   const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;

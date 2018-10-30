@@ -36,7 +36,13 @@ FrontalMeltPhysics::FrontalMeltPhysics(const Config &config) {
 }
 
 double FrontalMeltPhysics::frontal_melt_from_undercutting(double h, double Qsg, double TF) const {
-
+  /*
+  This function implements Eq. 1 from Rignot et al (2016):
+  q_m = (A * h * Q_sg ^{\alpha} + B) * TF^{\beta}; where
+  A, B, alpha, beta are tuning parameters
+  Note that Rignot (2016) is an update on Xu 2013 with slightly
+  different parameter values.
+   */
     return (m_A * h * pow(Qsg, m_alpha) + m_B) * pow(TF, m_beta);
 
 }

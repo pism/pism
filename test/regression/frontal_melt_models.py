@@ -225,8 +225,8 @@ class DischargeTestingTest(TestCase):
         cell_area = self.grid.dx() * self.grid.dy()
         water_density = config.get_double("constants.fresh_water.density")
 
-        self.Qsg = PISM.IceModelVec2S(self.grid, "subglacial_water_mass_change_at_grounding_line", PISM.WITHOUT_GHOSTS)
-        self.Qsg.set_attrs("climate", "subglacial discharge at grounding line", "kg", "kg")
+        self.Qsg = PISM.IceModelVec2S(self.grid, "subglacial_water_mass_change", PISM.WITHOUT_GHOSTS)
+        self.Qsg.set_attrs("climate", "subglacial discharge", "kg", "kg")
         self.Qsg.set(self.subglacial_discharge * cell_area * water_density * self.dt)
 
         self.theta.set(self.potential_temperature)
