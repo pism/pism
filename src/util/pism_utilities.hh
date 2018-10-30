@@ -116,6 +116,8 @@ int GlobalSum(MPI_Comm comm, int input);
 
 std::string version();
 
+std::string printf(const char *format, ...) __attribute__((format(printf, 1, 2)));
+
 } // end of namespace pism
 
 
