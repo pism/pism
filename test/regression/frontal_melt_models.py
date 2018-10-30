@@ -154,7 +154,7 @@ class DischargeRoutingTest(TestCase):
 
         self.depth = 1000.0
         self.potential_temperature = 4.0
-        self.subglacial_discharge = 1.0  # check units
+        self.subglacial_discharge = 1.0 / (24 * 60 ** 2)  #  1 m day-1 in m s-1
         self.dt = 1.0
 
         self.grid = dummy_grid()
@@ -165,14 +165,12 @@ class DischargeRoutingTest(TestCase):
         cell_area = self.grid.dx() * self.grid.dy()
         water_density = config.get_double("constants.fresh_water.density")
 
-        self.Qsg = PISM.IceModelVec2S(self.grid,
-                                      "subglacial_water_mass_change_at_grounding_line",
-                                      PISM.WITHOUT_GHOSTS)
+        self.Qsg = PISM.IceModelVec2S(self.grid, "subglacial_water_mass_change_at_grounding_line", PISM.WITHOUT_GHOSTS)
         self.Qsg.set_attrs("climate", "subglacial discharge at grounding line", "kg", "kg")
         self.Qsg.set(self.subglacial_discharge * cell_area * water_density * self.dt)
 
         self.theta.set(self.potential_temperature)
-        self.salinity.set(35.0) # hardwired because it does not matter
+        self.salinity.set(35.0)  # hardwired because it does not matter
 
         self.geometry = create_geometry(self.grid)
         self.geometry.ice_thickness.set(self.depth)
@@ -232,8 +230,7 @@ class GivenTest(TestCase):
         config.set_string("frontal_melt.given.file", self.filename)
 
         self.inputs = PISM.FrontalMeltInputs()
-        self.subglacial_discharge = PISM.IceModelVec2S(self.grid,
-                                                       "subglacial_discharge", PISM.WITHOUT_GHOSTS)
+        self.subglacial_discharge = PISM.IceModelVec2S(self.grid, "subglacial_discharge", PISM.WITHOUT_GHOSTS)
         self.subglacial_discharge.set(0.0)
         self.inputs.geometry = self.geometry
         self.inputs.subglacial_discharge_at_grounding_line = self.subglacial_discharge

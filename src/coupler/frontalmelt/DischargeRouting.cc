@@ -107,10 +107,12 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
   // A, B, alpha, beta are tuning parameters
   // Rignot (2016) is an update on Xu 2013
   
-  double A             = m_config->get_double("frontal_melt.parameter_a");
-  double B             = m_config->get_double("frontal_melt.parameter_b");
   double alpha         = m_config->get_double("frontal_melt.power_alpha");
   double beta          = m_config->get_double("frontal_melt.power_beta");
+  std::string a_units  = "m−" + std::to_string(alpha) + "s^(" + std::to_string(alpha) + "−1) Celsius−" + std::to_string(beta);
+  std::string b_units  = "m s^(" + std::to_string(alpha) + "−1) Celsius−" + std::to_string(beta);
+  double A             = m_config->get_double("frontal_melt.parameter_a", a_units);
+  double B             = m_config->get_double("frontal_melt.parameter_b", b_units);
   double water_density = m_config->get_double("constants.fresh_water.density");
 
   const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
