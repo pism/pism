@@ -161,7 +161,12 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       }
 
       (*m_frontal_melt_rate)(i,j) = (A * H * pow(Qsg, alpha) + B) * pow(TF, beta);
-    } // end of "if this is an ocean cell next to grounded ice"
+    } else { // end of "if this is an ocean cell next to grounded ice"
+
+      // This parameterization is applicable at grounded termini (see the case above), but
+      // *not* at calving fronts of ice shelves.
+      (*m_frontal_melt_rate)(i,j) = 0.0;
+    }
   } // end of the loop over grid points
 }
 
