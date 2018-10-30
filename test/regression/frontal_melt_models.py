@@ -249,7 +249,7 @@ class DischargeTestingTest(TestCase):
 
         self.inputs = PISM.FrontalMeltInputs()
         self.inputs.geometry = self.geometry
-        self.inputs.subglacial_discharge_at_grounding_line = self.Qsg
+        self.inputs.subglacial_discharge = self.Qsg
 
     def runTest(self):
         "Model DischargeTesting"
