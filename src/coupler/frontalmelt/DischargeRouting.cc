@@ -19,8 +19,6 @@
 #include "DischargeRouting.hh"
 
 #include "pism/util/IceGrid.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/Vars.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/coupler/util/options.hh"
 
