@@ -73,8 +73,8 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
     m_i0_offset = (Nx - Mx) / 2;
     m_j0_offset = (Ny - My) / 2;
 
-    m_kx = fftfreq(m_Nx, (m_Ny * dx) / (2 * M_PI * m_Nx));
-    m_ky = fftfreq(m_Ny, (m_Nx * dy) / (2 * M_PI * m_Ny));
+    m_kx = fftfreq(m_Nx, dx / (2.0 * M_PI));
+    m_ky = fftfreq(m_Ny, dy / (2.0 * M_PI));
   }
 
   {

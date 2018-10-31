@@ -83,8 +83,8 @@ def orographic_precipitation(orography, dx, dy, truncate=True):
 
     h_hat = np.fft.fft2(h)
 
-    x_freq = np.fft.fftfreq(nx, (ny * dx) / (2 * np.pi * nx))
-    y_freq = np.fft.fftfreq(ny, (nx * dy) / (2 * np.pi * ny))
+    x_freq = (2.0 * np.pi / dx) * np.fft.fftfreq(nx)
+    y_freq = (2.0 * np.pi / dy) * np.fft.fftfreq(ny)
 
     kx, ky = np.meshgrid(x_freq, y_freq)
 
@@ -253,3 +253,7 @@ if __name__ == "__main__":
     plt.colorbar()
 
     plt.show()
+
+if __name__ == "__main__":
+
+    orographic_precipitation_test()
