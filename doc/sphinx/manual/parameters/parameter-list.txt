@@ -1164,6 +1164,24 @@
    :Option: :opt:`-tikhonov_rtol`
    :Description: relative threshold for Tikhonov stopping criterion
 
+#. :config:`ocean.anomaly.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ocean_anomaly_file`
+   :Description: Name of the file containing shelf basal mass flux offset fields.
+
+#. :config:`ocean.anomaly.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_anomaly_period`
+   :Description: Length of the period of the ocean forcing data. Set to zero to disable.
+
+#. :config:`ocean.anomaly.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_anomaly_reference_year`
+   :Description: Reference year to use when ``ocean.anomaly.period`` is active.
+
 #. :config:`ocean.given.file` (*string*)
 
    :Value: *no default*

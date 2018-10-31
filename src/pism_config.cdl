@@ -1105,6 +1105,23 @@ netcdf pism_config {
     pism_config:inverse.tikhonov.rtol_type = "scalar";
     pism_config:inverse.tikhonov.rtol_units = "1";
 
+    pism_config:ocean.anomaly.file = "";
+    pism_config:ocean.anomaly.file_doc = "Name of the file containing shelf basal mass flux offset fields.";
+    pism_config:ocean.anomaly.file_type = "string";
+    pism_config:ocean.anomaly.file_option = "ocean_anomaly_file";
+
+    pism_config:ocean.anomaly.period = 0;
+    pism_config:ocean.anomaly.period_doc = "Length of the period of the ocean forcing data. Set to zero to disable.";
+    pism_config:ocean.anomaly.period_type = "integer";
+    pism_config:ocean.anomaly.period_option = "ocean_anomaly_period";
+    pism_config:ocean.anomaly.period_units = "years";
+
+    pism_config:ocean.anomaly.reference_year = 0;
+    pism_config:ocean.anomaly.reference_year_doc = "Reference year to use when ``ocean.anomaly.period`` is active.";
+    pism_config:ocean.anomaly.reference_year_option = "ocean_anomaly_reference_year";
+    pism_config:ocean.anomaly.reference_year_type = "integer";
+    pism_config:ocean.anomaly.reference_year_units = "years";
+
     pism_config:ocean.given.file = "";
     pism_config:ocean.given.file_doc = "Name of the file containing climate forcing fields.";
     pism_config:ocean.given.file_type = "string";

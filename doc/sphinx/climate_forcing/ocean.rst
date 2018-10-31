@@ -297,6 +297,33 @@ It takes the following command-line options:
 - :opt:`-ocean_frac_SMB_reference_year` specifies the reference date; see section
   :ref:`sec-periodic-forcing`.
 
+.. _sec-ocean-anomaly:
+
+Two-dimensional sub-shelf mass flux offsets
++++++++++++++++++++++++++++++++++++++++++++
+
+:|options|: :opt:`-ocean ...,anomaly`
+:|variables|: :var:`shelf_base_mass_flux_anomaly` |flux|
+:|implementation|: ``pism::ocean::Anomaly``
+
+This modifier implements a spatially-variable version of ``-ocean ...,delta_SMB`` which
+applies time-dependent shelf base mass flux anomalies, as used for initMIP or LARMIP
+model intercomparisons.
+
+It takes the following command-line options:
+
+- :opt:`-ocean_anomaly_file` specifies a file containing the variable
+  :var:`shelf_base_mass_flux_anomaly`.
+- :opt:`-ocean_anomaly_period` (years) specifies the period of the forcing data, in
+  model years; see :ref:`sec-periodic-forcing`
+- :opt:`-ocean_anomaly_reference_year` specifies the reference year; see
+  :ref:`sec-periodic-forcing`
+
+  See also to ``-atmosphere ...,anomaly`` or
+  ``-surface ...,anomaly`` (section :ref:`sec-surface-anomaly`)
+  which is similar, but applies anomalies at the atmosphere or surface level,
+  respectively.
+
 .. _sec-ocean-frac-mbp:
 
 Scalar melange back pressure fraction
