@@ -101,12 +101,6 @@ Spatially-variable fields
    :Units: m
    :Description: threshold used by the 'calving at threshold' calving method
 
-#. ``cell_area``
-
-   :Units: km2
-   :Description: cell areas
-   :Comment: values are equal to dx*dy if projection parameters are not available; otherwise WGS84 ellipsoid is used
-
 #. ``cell_grounded_fraction``
 
    :Units: ---

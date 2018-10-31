@@ -472,6 +472,11 @@
    :Value: 4170 (Joule / (kg Kelvin))
    :Description: at melting point T_0 :cite:`AschwandenBlatter`
 
+#. :config:`constants.global_ocean_area` (*scalar*)
+
+   :Value: 3.610000e+08 (km2)
+   :Description: The total area of the global ocean used to compute sea level equivalent ice volume
+
 #. :config:`constants.ice.beta_Clausius_Clapeyron` (*scalar*)
 
    :Value: 7.900000e-08 (Kelvin / Pascal)
@@ -872,11 +877,6 @@
    :Value: 31
    :Option: :opt:`-Mz`
    :Description: Number of vertical grid levels in the ice.
-
-#. :config:`grid.correct_cell_areas` (*boolean*)
-
-   :Value: yes
-   :Description: Compute corrected cell areas using WGS84 datum (for ice area and volume computations).
 
 #. :config:`grid.ice_vertical_spacing` (*keyword*)
 
@@ -1480,7 +1480,7 @@
 
 #. :config:`output.sizes.big_2d` (*string*)
 
-   :Value: ``age, bfrict, bheatflx, bmelt, bwp, bwprel, cell_area, dbdt, effbwp, enthalpybase, enthalpysurf, flux_divergence, hardav, hydroinput, lat, litho_temp, lon, nuH, ocean_kill_mask, rank, tempbase, tempicethk, tempicethk_basal, temppabase, tempsurf, thk, thksmooth, tillphi, topg, velbar, velbase, wallmelt, wvelbase``
+   :Value: ``age, bfrict, bheatflx, bmelt, bwp, bwprel, dbdt, effbwp, enthalpybase, enthalpysurf, flux_divergence, hardav, hydroinput, lat, litho_temp, lon, nuH, ocean_kill_mask, rank, tempbase, tempicethk, tempicethk_basal, temppabase, tempsurf, thk, thksmooth, tillphi, topg, velbar, velbase, wallmelt, wvelbase``
    :Description: Comma-separated list of variables to write to the output (in addition to model_state variables and variables listed in output.sizes.medium) if 'big_2d' output size is selected. Does not include fields written by boundary models.
 
 #. :config:`output.sizes.medium` (*string*)
@@ -1609,7 +1609,7 @@
 #. :config:`stress_balance.sia.flow_law` (*keyword*)
 
    :Value: ``gpbld``
-   :Choices: ``arr, arrwarm, gk, gpbld, hooke, isothermal_glen, pb, gpbld3``
+   :Choices: ``arr, arrwarm, gk, gpbld, hooke, isothermal_glen, pb``
    :Option: :opt:`-sia_flow_law`
    :Description: The SIA flow law.
 
@@ -1721,7 +1721,7 @@
 #. :config:`stress_balance.ssa.flow_law` (*keyword*)
 
    :Value: ``gpbld``
-   :Choices: ``arr, arrwarm, gpbld, hooke, isothermal_glen, pb, gpbld3``
+   :Choices: ``arr, arrwarm, gpbld, hooke, isothermal_glen, pb``
    :Option: :opt:`-ssa_flow_law`
    :Description: The SSA flow law.
 

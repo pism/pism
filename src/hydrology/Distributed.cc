@@ -380,8 +380,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
                  m_input_rate,
                  m_Wtillnew);
     // remove water in ice-free areas and account for changes
-    enforce_bounds(*inputs.cell_area,
-                   *inputs.cell_type,
+    enforce_bounds(*inputs.cell_type,
                    inputs.no_model_mask,
                    0.0,        // do not limit maximum thickness
                    m_Wtillnew,
@@ -409,8 +408,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
              m_K, m_Q,
              m_Wnew);
     // remove water in ice-free areas and account for changes
-    enforce_bounds(*inputs.cell_area,
-                   *inputs.cell_type,
+    enforce_bounds(*inputs.cell_type,
                    inputs.no_model_mask,
                    0.0, // do  not limit maximum thickness
                    m_Wnew,

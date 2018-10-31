@@ -207,8 +207,6 @@ def create_special_vecs_test():
 
     tillphi = PISM.model.createTillPhiVec(grid)
 
-    cell_area = PISM.model.createCellAreaVec(grid)
-
     basal_water = PISM.model.createBasalWaterVec(grid)
 
     gl_mask = PISM.model.createGroundingLineMask(grid)

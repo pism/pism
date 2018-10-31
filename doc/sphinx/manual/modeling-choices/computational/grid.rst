@@ -177,8 +177,6 @@ Grid projections
 PISM can use the PROJ.4_ library (see :ref:`sec-install-prerequisites`) and projection
 information to compute
 
-- a more accurate estimate of cell areas, improving the accuracy of reported areas and
-  volumes,
 - latitudes and longitudes of grid points (variables :var:`lat` and :var:`lon`), and
 - latitudes and longitudes of cell corners (variables :var:`lat_bnds` and :var:`lon_bnds`).
 

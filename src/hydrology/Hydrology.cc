@@ -424,11 +424,14 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
 
   // convert from m to kg
   // kg = m * (kg / m^3) * m^2
-  list.add({&m_flow_change, &m_input_change, inputs.cell_area});
-  double water_density = m_config->get_double("constants.fresh_water.density");
+
+  double
+    water_density = m_config->get_double("constants.fresh_water.density"),
+    kg_per_m      = water_density * m_grid->cell_area();
+
+  list.add({&m_flow_change, &m_input_change});
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    double kg_per_m = (*inputs.cell_area)(i, j) * water_density;
     m_total_change(i, j) *= kg_per_m;
     m_input_change(i, j) *= kg_per_m;
     m_flow_change(i, j) *= kg_per_m;
@@ -624,8 +627,7 @@ void Hydrology::compute_input_rate(const IceModelVec2CellType &mask,
   @param[in,out] conservation_error_change change in water thickness due to mass conservation errors
   @param[in,out] no_model_mask_change change in water thickness outside the modeling domain (regional models)
 */
-void Hydrology::enforce_bounds(const IceModelVec2S &cell_area,
-                               const IceModelVec2CellType &cell_type,
+void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
                                const IceModelVec2Int *no_model_mask,
                                double max_thickness,
                                IceModelVec2S &water_thickness,
@@ -633,16 +635,16 @@ void Hydrology::enforce_bounds(const IceModelVec2S &cell_area,
                                IceModelVec2S &grounding_line_change,
                                IceModelVec2S &conservation_error_change,
                                IceModelVec2S &no_model_mask_change) {
-  const double fresh_water_density = m_config->get_double("constants.fresh_water.density");
-
-  IceModelVec::AccessList list{&water_thickness, &cell_area, &cell_type,
+  IceModelVec::AccessList list{&water_thickness, &cell_type,
       &grounded_margin_change, &grounding_line_change, &conservation_error_change,
       &no_model_mask_change};
 
+  double
+    fresh_water_density = m_config->get_double("constants.fresh_water.density"),
+    kg_per_m            = m_grid->cell_area() * fresh_water_density; // kg m-1
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-
-    const double kg_per_m = cell_area(i, j) * fresh_water_density; // kg m-1
 
     if (water_thickness(i, j) < 0.0) {
       conservation_error_change(i, j) += -water_thickness(i, j) * kg_per_m;
@@ -676,8 +678,6 @@ void Hydrology::enforce_bounds(const IceModelVec2S &cell_area,
       const int i = p.i(), j = p.j();
 
       if (M(i, j)) {
-        const double kg_per_m = cell_area(i, j) * fresh_water_density; // kg m-1
-
         no_model_mask_change(i, j) += -water_thickness(i, j) * kg_per_m;
 
         water_thickness(i, j) = 0.0;
