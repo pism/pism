@@ -223,10 +223,10 @@ double total_ice_enthalpy(double thickness_threshold,
                           const IceModelVec2S &ice_thickness) {
   double enthalpy_sum = 0.0;
 
-  auto cell_area = ice_enthalpy.grid()->cell_area();
-
   IceGrid::ConstPtr grid = ice_enthalpy.grid();
   Config::ConstPtr config = grid->ctx()->config();
+
+  auto cell_area = grid->cell_area();
 
   const std::vector<double> &z = grid->z();
 
@@ -242,13 +242,12 @@ double total_ice_enthalpy(double thickness_threshold,
         const int ks = grid->kBelowHeight(H);
 
         const double
-          *E   = ice_enthalpy.get_column(i, j),
-          area = cell_area;
+          *E   = ice_enthalpy.get_column(i, j);
 
         for (int k = 0; k < ks; ++k) {
-          enthalpy_sum += area * E[k] * (z[k+1] - z[k]);
+          enthalpy_sum += cell_area * E[k] * (z[k+1] - z[k]);
         }
-        enthalpy_sum += area * E[ks] * (H - z[ks]);
+        enthalpy_sum += cell_area * E[ks] * (H - z[ks]);
       }
     }
   } catch (...) {

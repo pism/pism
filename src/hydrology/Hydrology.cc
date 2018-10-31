@@ -434,7 +434,7 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
     const int i = p.i(), j = p.j();
     m_total_change(i, j) *= kg_per_m;
     m_input_change(i, j) *= kg_per_m;
-    m_flow_change(i, j) *= kg_per_m;
+    m_flow_change(i, j)  *= kg_per_m;
   }
 }
 
@@ -615,7 +615,6 @@ void Hydrology::compute_input_rate(const IceModelVec2CellType &mask,
   This method should be called once for each thickness field which needs to be processed.
   This method alters the field water_thickness in-place.
 
-  @param[in] cell_area cell areas
   @param[in] cell_type cell type mask
   @param[in] no_model_mask (optional) mask of zeros and ones, zero within the modeling
                            domain, one outside

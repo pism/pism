@@ -1298,8 +1298,9 @@ public:
 
     const IceModelVec2S &ice_thickness = model->geometry().ice_thickness;
 
-    const double thickness_threshold = m_config->get_double("output.ice_free_thickness_standard"),
-      cell_area = m_grid->cell_area();
+    const double
+      thickness_threshold = m_config->get_double("output.ice_free_thickness_standard"),
+      cell_area           = m_grid->cell_area();
 
     IceModelVec::AccessList list{&ice_thickness, &cell_type};
 
@@ -2578,8 +2579,6 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
 /*!
   Computes fraction of the ice which is as old as the start of the run (original).
   Communication occurs here.
-
-  FIXME: ageStats should use cell_area(i,j).
  */
 double IceModel::compute_original_ice_fraction(double total_ice_volume) {
 
@@ -2589,7 +2588,7 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
     return result;  // leave now
   }
 
-  const double a = m_grid->dx() * m_grid->dy() * 1e-3 * 1e-3, // area unit (km^2)
+  const double a = m_grid->cell_area() * 1e-3 * 1e-3, // area unit (km^2)
     currtime = m_time->current(); // seconds
 
   const IceModelVec3 &ice_age = m_age_model->age();
@@ -2715,7 +2714,7 @@ double IceModel::sea_level_rise_potential(double thickness_threshold) const {
 }
 
 //! Computes the temperate ice volume, in m^3.
-double  IceModel::ice_volume_temperate(double thickness_threshold) const {
+double IceModel::ice_volume_temperate(double thickness_threshold) const {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
@@ -2837,7 +2836,7 @@ double IceModel::ice_area_temperate(double thickness_threshold) const {
       const int i = p.i(), j = p.j();
 
       const double
-        thickness = m_geometry.ice_thickness(i, j),
+        thickness      = m_geometry.ice_thickness(i, j),
         basal_enthalpy = ice_enthalpy.get_column(i, j)[0];
 
       if (thickness >= thickness_threshold and
@@ -2849,7 +2848,6 @@ double IceModel::ice_area_temperate(double thickness_threshold) const {
     loop.failed();
   }
   loop.check();
-
 
   return GlobalSum(m_grid->com, area);
 }
@@ -2885,7 +2883,6 @@ double IceModel::ice_area_cold(double thickness_threshold) const {
   }
   loop.check();
 
-
   return GlobalSum(m_grid->com, area);
 }
 
@@ -2899,7 +2896,8 @@ double IceModel::ice_area_grounded(double thickness_threshold) const {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_geometry.cell_type.grounded(i, j) and m_geometry.ice_thickness(i, j) >= thickness_threshold) {
+    if (m_geometry.cell_type.grounded(i, j) and
+        m_geometry.ice_thickness(i, j) >= thickness_threshold) {
       area += cell_area;
     }
   }
@@ -2917,7 +2915,8 @@ double IceModel::ice_area_floating(double thickness_threshold) const {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_geometry.cell_type.ocean(i, j) and m_geometry.ice_thickness(i, j) >= thickness_threshold) {
+    if (m_geometry.cell_type.ocean(i, j) and
+        m_geometry.ice_thickness(i, j) >= thickness_threshold) {
       area += cell_area;
     }
   }

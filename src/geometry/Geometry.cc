@@ -31,14 +31,14 @@ Geometry::Geometry(IceGrid::ConstPtr grid) {
   // (However this may increase communication costs...)
   const unsigned int WIDE_STENCIL = grid->ctx()->config()->get_double("grid.max_stencil_width");
 
-  latitude.create(grid, "lat", WITH_GHOSTS); // has ghosts so that we can compute cell areas
+  latitude.create(grid, "lat", WITHOUT_GHOSTS);
   latitude.set_attrs("mapping", "latitude", "degree_north", "latitude");
   latitude.set_time_independent(true);
   latitude.metadata().set_string("coordinates", "");
   latitude.metadata().set_string("grid_mapping", "");
   latitude.metadata().set_doubles("valid_range", {-90.0, 90.0});
 
-  longitude.create(grid, "lon", WITH_GHOSTS);
+  longitude.create(grid, "lon", WITHOUT_GHOSTS);
   longitude.set_attrs("mapping", "longitude", "degree_east", "longitude");
   longitude.set_time_independent(true);
   longitude.metadata().set_string("coordinates", "");

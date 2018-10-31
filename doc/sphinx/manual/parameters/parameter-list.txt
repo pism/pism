@@ -878,6 +878,11 @@
    :Option: :opt:`-Mz`
    :Description: Number of vertical grid levels in the ice.
 
+#. :config:`grid.recompute_longitude_and_latitude` (*boolean*)
+
+   :Value: yes
+   :Description: Re-compute longitude and latitude using grid information and provided projection parameters. Requires PROJ.4.
+
 #. :config:`grid.ice_vertical_spacing` (*keyword*)
 
    :Value: ``quadratic``

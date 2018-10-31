@@ -84,11 +84,6 @@ several scalar diagnostics:
   ``ice_area_glacierized`` :math:`\mapsto`
   (``ice_area_glacierized_cold_base``, ``ice_area_glacierized_temperate_base``).
 
-- If a PISM input file contains the ``proj4`` global attribute with a PROJ.4 string
-  defining the projection then PISM computes corrected cell areas using this information,
-  grid parameters, and the WGS84 reference ellipsoid. This yields areas and volumes with
-  greater accuracy.
-
 - The sea level rise potential :var:`sea_level_rise_potential` is the increase in sea
   level (in meters) that would result from melting all the grounded ice not displacing sea
   water and distributing the corresponding *fresh water* volume uniformly over the entire

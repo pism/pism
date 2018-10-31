@@ -131,8 +131,8 @@ void IceModel::model_state_setup() {
     input_file.reset(new PIO(m_grid->com, "guess_mode", input.filename, PISM_READONLY));
   }
 
-  // Get projection information and compute cell areas and lat/lon *before* a component decides to
-  // use latitude or longitude...
+  // Get projection information and compute latitudes and longitudes *before* a component
+  // decides to use them...
   {
     if (use_input_file) {
       std::string mapping_name = m_grid->get_mapping_info().mapping.get_name();

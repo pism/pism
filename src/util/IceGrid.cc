@@ -1411,7 +1411,7 @@ const MappingInfo& IceGrid::get_mapping_info() const {
 
 void IceGrid::set_mapping_info(const MappingInfo &info) {
   m_impl->mapping_info = info;
-  // FIXME: re-compute cell areas and lat/lon
+  // FIXME: re-compute lat/lon coordinates
 }
 
 
