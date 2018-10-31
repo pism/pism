@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifndef _POANOMALY_H_
-#define _POANOMALY_H
+#define _POANOMALY_H_
 
 #include "pism/coupler/OceanModel.hh"
 #include "pism/util/iceModelVec2T.hh"
