@@ -1498,10 +1498,10 @@ netcdf pism_config {
     pism_config:stress_balance.sia.grain_size_age_coupling_option = "grain_size_age_coupling";
     pism_config:stress_balance.sia.grain_size_age_coupling_type = "boolean";
 
-    pism_config:stress_balance.sia.bound_by_max_diffusivity = "no";
-    pism_config:stress_balance.sia.bound_by_max_diffusivity_doc = "Bound SIA diffusivity by upper bound";
-    pism_config:stress_balance.sia.bound_by_max_diffusivity_option = "limit_sia_diffusivity";
-    pism_config:stress_balance.sia.bound_by_max_diffusivity_type = "boolean";
+    pism_config:stress_balance.sia.limit_diffusivity = "no";
+    pism_config:stress_balance.sia.limit_diffusivity_doc = "Limit SIA diffusivity by `stress_balance.sia.max_diffusivity`.";
+    pism_config:stress_balance.sia.limit_diffusivity_option = "limit_sia_diffusivity";
+    pism_config:stress_balance.sia.limit_diffusivity_type = "boolean";
 
     pism_config:stress_balance.sia.max_diffusivity = 100.0;
     pism_config:stress_balance.sia.max_diffusivity_doc = "Maximum allowed diffusivity of the SIA flow. PISM stops with an error message if the SIA diffusivity exceeds this limit.";
