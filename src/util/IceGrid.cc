@@ -77,6 +77,8 @@ struct IceGrid::Impl {
   double dx;
   //! horizontal grid spacing
   double dy;
+  //! cell area (meters^2)
+  double cell_area;
   //! number of grid points in the x-direction
   unsigned int Mx;
   //! number of grid points in the y-direction
@@ -618,6 +620,8 @@ void IceGrid::Impl::compute_horizontal_coordinates() {
 
   dy = compute_horizontal_spacing(Ly, My, cell_centered);
 
+  cell_area = dx * dy;
+
   double
     x_min = x0 - Lx,
     x_max = x0 + Lx;
@@ -957,6 +961,10 @@ double IceGrid::dx() const {
 //! Horizontal grid spacing.
 double IceGrid::dy() const {
   return m_impl->dy;
+}
+
+double IceGrid::cell_area() const {
+  return m_impl->cell_area;
 }
 
 //! Minimum vertical spacing.
