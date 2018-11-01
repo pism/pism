@@ -19,6 +19,12 @@ Changes since v1.0
 - Added PICO, the *Potsdam Ice-shelf Cavity mOdel* (https://doi.org/10.5194/tc-2017-70).
   Use `-ocean pico` to enable and see the documentation of PISM's `ocean models`_ in the User's
   Manual for details.
+- The SIA stress balance model limits computed diffusivity at
+  `stress_balance.sia.max_diffusivity` if `stress_balance.sia.limit_diffusivity` is set,
+  otherwise stops the run if computed SIA diffusivity exceeds this threshold. This makes
+  it possible to speed up simulations in which high diffusivities at a few isolated grid
+  points force PISM to take very short time steps. *This implies sacrificing accuracy at
+  these grid points. Use with caution!*
 - Exclude ice shelves from the ocean load provided to bed deformation models. See `issue
   363`_.
 - Revert the change from v0.7 to v1.0 in the handling of energy conservation near ice
