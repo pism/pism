@@ -3,6 +3,7 @@
 #include "coupler/ocean/Cache.hh"
 #include "coupler/ocean/ConstantPIK.hh"
 #include "coupler/ocean/Delta_SMB.hh"
+#include "coupler/ocean/Anomaly.hh"
 #include "coupler/ocean/Delta_T.hh"
 #include "coupler/ocean/Frac_SMB.hh"
 #include "coupler/ocean/Frac_MBP.hh"
@@ -36,6 +37,10 @@
 %shared_ptr(pism::ocean::Delta_SMB)
 %rename(OceanDeltaSMB) pism::ocean::Delta_SMB;
 %include "coupler/ocean/Delta_SMB.hh"
+
+%shared_ptr(pism::ocean::Anomaly)
+%rename(OceanAnomaly) pism::ocean::Anomaly;
+%include "coupler/ocean/Anomaly.hh"
 
 %shared_ptr(pism::ocean::Delta_T)
 %rename(OceanDeltaT) pism::ocean::Delta_T;

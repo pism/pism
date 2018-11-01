@@ -1165,6 +1165,23 @@ netcdf pism_config {
     pism_config:inverse.tikhonov.rtol_type = "scalar";
     pism_config:inverse.tikhonov.rtol_units = "1";
 
+    pism_config:ocean.anomaly.file = "";
+    pism_config:ocean.anomaly.file_doc = "Name of the file containing shelf basal mass flux offset fields.";
+    pism_config:ocean.anomaly.file_type = "string";
+    pism_config:ocean.anomaly.file_option = "ocean_anomaly_file";
+
+    pism_config:ocean.anomaly.period = 0;
+    pism_config:ocean.anomaly.period_doc = "Length of the period of the ocean forcing data. Set to zero to disable.";
+    pism_config:ocean.anomaly.period_type = "integer";
+    pism_config:ocean.anomaly.period_option = "ocean_anomaly_period";
+    pism_config:ocean.anomaly.period_units = "years";
+
+    pism_config:ocean.anomaly.reference_year = 0;
+    pism_config:ocean.anomaly.reference_year_doc = "Reference year to use when ``ocean.anomaly.period`` is active.";
+    pism_config:ocean.anomaly.reference_year_option = "ocean_anomaly_reference_year";
+    pism_config:ocean.anomaly.reference_year_type = "integer";
+    pism_config:ocean.anomaly.reference_year_units = "years";
+
     pism_config:ocean.given.file = "";
     pism_config:ocean.given.file_doc = "Name of the file containing climate forcing fields.";
     pism_config:ocean.given.file_type = "string";
@@ -1562,6 +1579,11 @@ netcdf pism_config {
     pism_config:stress_balance.sia.grain_size_age_coupling_doc = "Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt :cite:`GoldsbyKohlstedt` flow law";
     pism_config:stress_balance.sia.grain_size_age_coupling_option = "grain_size_age_coupling";
     pism_config:stress_balance.sia.grain_size_age_coupling_type = "boolean";
+
+    pism_config:stress_balance.sia.limit_diffusivity = "no";
+    pism_config:stress_balance.sia.limit_diffusivity_doc = "Limit SIA diffusivity by `stress_balance.sia.max_diffusivity`.";
+    pism_config:stress_balance.sia.limit_diffusivity_option = "limit_sia_diffusivity";
+    pism_config:stress_balance.sia.limit_diffusivity_type = "boolean";
 
     pism_config:stress_balance.sia.max_diffusivity = 100.0;
     pism_config:stress_balance.sia.max_diffusivity_doc = "Maximum allowed diffusivity of the SIA flow. PISM stops with an error message if the SIA diffusivity exceeds this limit.";

@@ -11,6 +11,13 @@ Changes since v1.0
   make sense to re-evaluate model parameters before proceeding. (A short "smoothing" run
   might be helpful, too, if high diffusivities occur at the beginning of a simulation
   using ice thickness or bed topography not computed by PISM.)
+- The SIA stress balance model limits computed diffusivity at
+  `stress_balance.sia.max_diffusivity` if
+  `stress_balance.sia.limit_diffusivity` is set. This makes it
+  possible to speed up simulations in which high diffusivities at a
+  few isolated grid points force PISM to take very short time steps.
+  *This implies sacrificing accuracy at these grid points. Use with
+  caution!*
 - Discard requested snapshot times that are outside of the modeled time interval. (This
   keeps PISM from overwriting a snapshot file written by one of the previous runs in a
   re-started simulation.)
@@ -19,6 +26,8 @@ Changes since v1.0
 - Added PICO, the *Potsdam Ice-shelf Cavity mOdel* (https://doi.org/10.5194/tc-2017-70).
   Use `-ocean pico` to enable and see the documentation of PISM's `ocean models`_ in the User's
   Manual for details.
+- Added `-ocean ...,anomaly`, an ocean model *modifier* that reads spatially-variable
+  sub-shelf mass flux anomalies from an input file.
 - Exclude ice shelves from the ocean load provided to bed deformation models. See `issue
   363`_.
 - Revert the change from v0.7 to v1.0 in the handling of energy conservation near ice

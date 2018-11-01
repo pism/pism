@@ -129,6 +129,7 @@ private:
                         const IceModelVec2Int &box_mask,
                         std::vector<double> &result);
 
+
   int m_n_basins, m_n_boxes, m_n_shelves;
 };
 
