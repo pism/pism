@@ -19,6 +19,8 @@ Changes since v1.0
 - Added PICO, the *Potsdam Ice-shelf Cavity mOdel* (https://doi.org/10.5194/tc-2017-70).
   Use `-ocean pico` to enable and see the documentation of PISM's `ocean models`_ in the User's
   Manual for details.
+- Added `-ocean ...,anomaly`, an ocean model *modifier* that reads spatially-variable
+  sub-shelf mass flux anomalies from an input file.
 - Exclude ice shelves from the ocean load provided to bed deformation models. See `issue
   363`_.
 - Revert the change from v0.7 to v1.0 in the handling of energy conservation near ice
