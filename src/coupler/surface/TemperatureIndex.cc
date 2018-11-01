@@ -56,8 +56,6 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
                                          "Set PDD parameters using formulas (6) and (7)"
                                          " in [Faustoetal2009]");
 
-  bool use_aschwanden_params = options::Bool("-pdd_aschwanden", "Use Aschwanden's PDD parameters");
-
   options::Integer period("-pdd_sd_period",
                           "Length of the standard deviation data period in years", 0);
   m_sd_period = period;
@@ -75,16 +73,6 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   if (use_fausto_params) {
     m_faustogreve.reset(new FaustoGrevePDDObject(m_grid));
     m_base_pddStdDev = 2.53;
-  }
-
-  if (use_aschwanden_params) {
-    m_aschwanden.reset(new AschwandenPDDObject(m_grid->ctx()->config()));
-  }
-
-  if (use_aschwanden_params and use_fausto_params) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Both '-pdd_aschwanden' and '-pdd_fausto' are set. "
-                                  "Choose one or the other.\n");
   }
 
   std::string sd_file = m_config->get_string("surface.pdd.temperature_standard_deviation_file");
@@ -172,9 +160,6 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
     if (m_faustogreve) {
       m_log->message(2,
                      "  Setting PDD parameters from [Faustoetal2009].\n");
-    } else if (m_aschwanden) {
-      m_log->message(2,
-                     "  Setting PDD parameters from Aschwanden.\n");
     } else {
       m_log->message(2,
                      "  Using default PDD parameters.\n");
@@ -274,7 +259,6 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   // make a copy of the pointer to convince clang static analyzer that its value does not
   // change during the call
   FaustoGrevePDDObject *fausto_greve = m_faustogreve.get();
-  AschwandenPDDObject *aschwanden = m_aschwanden.get();
 
   // update to ensure that temperature and precipitation time series are correct:
   m_atmosphere->update(geometry, t, dt);
@@ -307,7 +291,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
     sigmabaselat   = m_config->get_double("surface.pdd.std_dev_lapse_lat_base");
 
   const IceModelVec2S *latitude = nullptr;
-  if (aschwanden or fausto_greve or sigmalapserate != 0.0) {
+  if (fausto_greve or sigmalapserate != 0.0) {
     latitude = &geometry.latitude;
 
     list.add(*latitude);
@@ -368,12 +352,6 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
         // we have been asked to set mass balance parameters according to
         //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
         ddf = fausto_greve->degree_day_factors(i, j, (*latitude)(i, j));
-      }
-
-      if (aschwanden) {
-        // we have been asked to set mass balance parameters according to
-        //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
-        ddf = aschwanden->degree_day_factors((*latitude)(i, j));
       }
 
       // apply standard deviation lapse rate on top of prescribed values

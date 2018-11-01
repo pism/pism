@@ -242,36 +242,6 @@ protected:
   IceModelVec2S m_temp_mj;
 };
 
-/*!
-  Aschwanden PDD parameters.
-
-  This may become a derived class of a LocationDependentPDDObject, if the idea
-  is needed more in the future.
-*/
-class AschwandenPDDObject {
-
-public:
-  AschwandenPDDObject(Config::ConstPtr config);
-  virtual ~AschwandenPDDObject();
-
-  LocalMassBalance::DegreeDayFactors degree_day_factors(double latitude);
-
-protected:
-  // "warm" PDD factors
-  double m_beta_ice_w;
-  double m_beta_snow_w;
-  // "cold" PDD factors
-  double m_beta_ice_c;
-  double m_beta_snow_c;
-  // transition from warm to cold
-  double m_transition_latitude;
-  double m_transition_width;
-  // PDD parameters
-  double m_refreeze_fraction;
-  // physical constants
-  double m_fresh_water_density;
-  double m_ice_density;
-};
 
 } // end of namespace surface
 } // end of namespace pism
