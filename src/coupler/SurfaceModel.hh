@@ -55,18 +55,24 @@ public:
   // the interface:
   void update(const Geometry &geometry, double t, double dt);
 
+  const IceModelVec2S& accumulation() const;
   const IceModelVec2S& layer_mass() const;
   const IceModelVec2S& layer_thickness() const;
   const IceModelVec2S& liquid_water_fraction() const;
   const IceModelVec2S& mass_flux() const;
+  const IceModelVec2S& melt() const;
+  const IceModelVec2S& runoff() const;
   const IceModelVec2S& temperature() const;
-
+  
 protected:
 
+  virtual const IceModelVec2S& accumulation_impl() const;
   virtual const IceModelVec2S& layer_mass_impl() const;
   virtual const IceModelVec2S& layer_thickness_impl() const;
   virtual const IceModelVec2S& liquid_water_fraction_impl() const;
   virtual const IceModelVec2S& mass_flux_impl() const;
+  virtual const IceModelVec2S& melt_impl() const;
+  virtual const IceModelVec2S& runoff_impl() const;
   virtual const IceModelVec2S& temperature_impl() const;
 
   virtual void init_impl(const Geometry &geometry);
@@ -90,6 +96,7 @@ protected:
   IceModelVec2S::Ptr m_liquid_water_fraction;
   IceModelVec2S::Ptr m_layer_mass;
   IceModelVec2S::Ptr m_layer_thickness;
+  
 
   std::shared_ptr<SurfaceModel> m_input_model;
   std::shared_ptr<atmosphere::AtmosphereModel> m_atmosphere;

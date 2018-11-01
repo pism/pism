@@ -100,7 +100,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_temperature(IceGrid::ConstPtr grid) {
 
   return result;
 }
-
+  
 SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid)
   : Component(grid), m_input_model(nullptr), m_atmosphere(nullptr) {
 
@@ -131,6 +131,30 @@ SurfaceModel::~SurfaceModel() {
   // empty
 }
 
+
+//! \brief Returns accumulation
+/*!
+ * Basic surface models currently implemented in PISM do not model accumulation
+ */
+const IceModelVec2S& SurfaceModel::accumulation() const {
+  return accumulation_impl();
+}
+
+//! \brief Returns melt
+/*!
+ * Basic surface models currently implemented in PISM do not model melt
+ */
+const IceModelVec2S& SurfaceModel::melt() const {
+  return melt_impl();
+}
+
+//! \brief Returns runoff
+/*!
+ * Basic surface models currently implemented in PISM do not model runoff
+ */
+const IceModelVec2S& SurfaceModel::runoff() const {
+  return runoff_impl();
+}
 
 const IceModelVec2S& SurfaceModel::mass_flux() const {
   return mass_flux_impl();
@@ -166,6 +190,30 @@ const IceModelVec2S& SurfaceModel::layer_mass() const {
  */
 const IceModelVec2S& SurfaceModel::layer_thickness() const {
   return layer_thickness_impl();
+}
+
+const IceModelVec2S& SurfaceModel::accumulation_impl() const {
+  if (m_input_model) {
+    return m_input_model->accumulation();
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
+const IceModelVec2S& SurfaceModel::melt_impl() const {
+  if (m_input_model) {
+    return m_input_model->melt();
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
+const IceModelVec2S& SurfaceModel::runoff_impl() const {
+  if (m_input_model) {
+    return m_input_model->runoff();
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
 }
 
 const IceModelVec2S& SurfaceModel::mass_flux_impl() const {

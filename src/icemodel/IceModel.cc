@@ -717,6 +717,10 @@ void IceModel::step(bool do_mass_continuity,
       inputs.surface_input_rate = m_surface_input_for_hydrology.get();
     }
 
+    if (m_config->get_boolean("hydrology.surface_input_from_runoff")) {
+      inputs.surface_input_rate = &m_surface->runoff();
+    }
+
     profiling.begin("basal_hydrology");
     m_subglacial_hydrology->update(current_time, m_dt, inputs);
     profiling.end("basal_hydrology");

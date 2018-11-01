@@ -1022,6 +1022,10 @@ netcdf pism_config {
     pism_config:hydrology.surface_input_file_doc = "Basal hydrology sub.surface_input_file.";
     pism_config:hydrology.surface_input_file_type = "string";
 
+    pism_config:hydrology.surface_input_from_runoff = "no";
+    pism_config:hydrology.surface_input_from_runoff_doc = "Use surface runoff as surface input.";
+    pism_config:hydrology.surface_input_from_runoff_type = "boolean";
+
     pism_config:inverse.design.cH1     = 0;
     pism_config:inverse.design.cH1_doc = "weight of derivative part of an H1 norm for inversion design variables";
     pism_config:inverse.design.cH1_option = "inv_design_cH1";
