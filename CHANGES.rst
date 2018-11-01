@@ -11,6 +11,13 @@ Changes since v1.0
   make sense to re-evaluate model parameters before proceeding. (A short "smoothing" run
   might be helpful, too, if high diffusivities occur at the beginning of a simulation
   using ice thickness or bed topography not computed by PISM.)
+- The SIA stress balance model limits computed diffusivity at
+  `stress_balance.sia.max_diffusivity` if
+  `stress_balance.sia.limit_diffusivity` is set. This makes it
+  possible to speed up simulations in which high diffusivities at a
+  few isolated grid points force PISM to take very short time steps.
+  *This implies sacrificing accuracy at these grid points. Use with
+  caution!*
 - Discard requested snapshot times that are outside of the modeled time interval. (This
   keeps PISM from overwriting a snapshot file written by one of the previous runs in a
   re-started simulation.)
