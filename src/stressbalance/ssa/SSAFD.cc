@@ -1013,6 +1013,7 @@ void SSAFD::picard_manager(const Inputs &inputs,
     // limit ice speed
     {
       auto max_speed = m_config->get_double("stress_balance.ssa.fd.max_speed", "m second-1");
+      int high_speed_counter = 0;
 
       IceModelVec::AccessList list{&m_velocity_global};
 
@@ -1023,7 +1024,14 @@ void SSAFD::picard_manager(const Inputs &inputs,
 
         if (speed > max_speed) {
           m_velocity_global(i, j) *= max_speed / speed;
+          high_speed_counter += 1;
         }
+      }
+
+      high_speed_counter = GlobalSum(m_grid->com, high_speed_counter);
+
+      if (high_speed_counter > 0) {
+        m_log->message(2, "  SSA speed was capped at %d locations\n", high_speed_counter);
       }
     }
 
