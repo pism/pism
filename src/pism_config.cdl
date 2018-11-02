@@ -1590,11 +1590,11 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_doc = "Replace zero diagonal entries in the SSAFD matrix with basal_resistance.beta_ice_free_bedrock to avoid solver failures.";
     pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_type = "boolean";
 
-    pism_config:stress_balance.ssa.fd.max_vel = 5.0e3;
-    pism_config:stress_balance.ssa.fd.max_vel_doc = "Upper bound for SSA velocity magnitude";
-    pism_config:stress_balance.ssa.fd.max_vel_type = "scalar";
-    pism_config:stress_balance.ssa.fd.max_vel_units = "m yr-1";
-    pism_config:stress_balance.ssa.fd.max_vel_option = "limit_ssa_velocity";
+    pism_config:stress_balance.ssa.fd.max_speed = 5.0e4;
+    pism_config:stress_balance.ssa.fd.max_speed_doc = "Upper bound for the ice speed computed by the SSAFD solver.";
+    pism_config:stress_balance.ssa.fd.max_speed_type = "scalar";
+    pism_config:stress_balance.ssa.fd.max_speed_units = "m yr-1";
+    pism_config:stress_balance.ssa.fd.max_speed_option = "ssafd_max_speed";
 
     pism_config:stress_balance.ssa.flow_law = "gpbld";
     pism_config:stress_balance.ssa.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb,gpbld3";
