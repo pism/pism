@@ -97,13 +97,11 @@ several scalar diagnostics:
   grid parameters, and the WGS84 reference ellipsoid. This yields areas and volumes with
   greater accuracy.
 
-- The sea-level-relevant ice volume ``slvol`` is the total grounded ice volume above flotation, 
-  following here the definition in SeaRISE :cite:`Bindschadler2013SeaRISE`. Basically it represents 
-  the amount of ice, that, if it were melted, would fill up the ocean with a surface area 
-  of :math:`362.5 \times 10^6 km^2` :cite:`Cogley2011`. That is, ``slvol`` is the sea level rise 
-  potential of the ice sheet at that time. This neglects the ice at buoyancy that already replaces 
-  the corresponding ocean volume. The result is reported in sea-level equivalent, i.e. 
-  meters of global mean sea level rise.
+- The sea level rise potential :var:`sea_level_rise_potential` is the increase in sea
+  level (in meters) that would result from melting all the grounded ice not displacing sea
+  water and distributing the corresponding *fresh water* volume uniformly over the entire
+  global ocean (:math:`362.5 \cdot 10^6\, km^2`, see :cite:`Cogley2011`). This follows the
+  definition used in the SeaRISE project :cite:`Bindschadler2013SeaRISE`.
 
 - Fields ``max_diffusivity`` and ``max_hor_vel`` relate to PISM time-stepping. These
   quantities appear in per-time-step form in the standard output from PISM (i.e. at
