@@ -857,19 +857,19 @@ public:
 };
 
 //! \brief Computes the total ice volume which is relevant for sea-level
-class SeaLevelVolume : public TSDiag<TSSnapshotDiagnostic, IceModel>
+class SeaLevelRisePotential : public TSDiag<TSSnapshotDiagnostic, IceModel>
 {
 public:
-  SeaLevelVolume(const IceModel *m)
-    : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "slvol") {
+  SeaLevelRisePotential(const IceModel *m)
+    : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "sea_level_rise_potential") {
 
     m_ts.variable().set_string("units", "m");
-    m_ts.variable().set_string("long_name", "total sea-level relevant ice IN SEA-LEVEL EQUIVALENT");
+    m_ts.variable().set_string("long_name", "the sea level rise that would result if all the ice were melted");
     m_ts.variable().set_double("valid_min", 0.0);
   }
 
   double compute() {
-    return model->sealevel_volume(m_config->get_double("output.ice_free_thickness_standard"));
+    return model->sea_level_rise_potential(m_config->get_double("output.ice_free_thickness_standard"));
   }
 };
 
@@ -2357,7 +2357,6 @@ void IceModel::init_diagnostics() {
     {"tendency_of_ice_mass_glacierized", s(new scalar::IceMassRateOfChangeGlacierized(this))},
     {"limnsw",                           s(new scalar::IceMassNotDisplacingSeaWater(this))},
     // volume
-    {"slvol",                              s(new scalar::SeaLevelVolume(this))},
     {"ice_volume_glacierized",             s(new scalar::IceVolumeGlacierized(this))},
     {"ice_volume_glacierized_cold",        s(new scalar::IceVolumeGlacierizedCold(this))},
     {"ice_volume_glacierized_grounded",    s(new scalar::IceVolumeGlacierizedGrounded(this))},
@@ -2368,6 +2367,7 @@ void IceModel::init_diagnostics() {
     {"ice_volume_temperate",               s(new scalar::IceVolumeTemperate(this))},
     {"tendency_of_ice_volume_glacierized", s(new scalar::IceVolumeRateOfChangeGlacierized(this))},
     {"tendency_of_ice_volume",             s(new scalar::IceVolumeRateOfChange(this))},
+    {"sea_level_rise_potential",           s(new scalar::SeaLevelRisePotential(this))},
     // energy
     {"ice_enthalpy_glacierized", s(new scalar::IceEnthalpyGlacierized(this))},
     {"ice_enthalpy",         s(new scalar::IceEnthalpy(this))},
@@ -2697,17 +2697,17 @@ double IceModel::ice_volume_not_displacing_seawater(double thickness_threshold) 
   return GlobalSum(m_grid->com, volume);
 }
 
-//! Computes the ice volume, which is relevant for sea-level rise in m^3 in SEA-WATER EQUIVALENT.
-double IceModel::sealevel_volume(double thickness_threshold) const {
+//! Computes the sea level rise that would result if all the ice were melted.
+double IceModel::sea_level_rise_potential(double thickness_threshold) const {
   const double
-    sea_water_density = m_config->get_double("constants.sea_water.density"),
-    ice_density       = m_config->get_double("constants.ice.density");
+    water_density = m_config->get_double("constants.fresh_water.density"),
+    ice_density   = m_config->get_double("constants.ice.density"),
+    ocean_area    = m_config->get_double("constants.global_ocean_area");
 
   const double
-    ocean_area       = m_config->get_double("constants.global_ocean_area", "m2"),
-    volume           = ice_volume_not_displacing_seawater(thickness_threshold),
-    sea_water_volume = (ice_density / sea_water_density) * volume, // corresponding sea water volume
-    sea_level_change = sea_water_volume / ocean_area;
+    volume                  = ice_volume_not_displacing_seawater(thickness_threshold),
+    additional_water_volume = (ice_density / water_density) * volume,
+    sea_level_change        = additional_water_volume / ocean_area;
 
   return sea_level_change;
 }
