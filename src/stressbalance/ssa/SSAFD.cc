@@ -1010,6 +1010,31 @@ void SSAFD::picard_manager(const Inputs &inputs,
       m_stdout_ssa += tempstr;
     }
 
+    // limit ice speed
+    {
+      auto max_speed = m_config->get_double("stress_balance.ssa.fd.max_speed", "m second-1");
+      int high_speed_counter = 0;
+
+      IceModelVec::AccessList list{&m_velocity_global};
+
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        auto speed = m_velocity_global(i, j).magnitude();
+
+        if (speed > max_speed) {
+          m_velocity_global(i, j) *= max_speed / speed;
+          high_speed_counter += 1;
+        }
+      }
+
+      high_speed_counter = GlobalSum(m_grid->com, high_speed_counter);
+
+      if (high_speed_counter > 0) {
+        m_log->message(2, "  SSA speed was capped at %d locations\n", high_speed_counter);
+      }
+    }
+
     // Communicate so that we have stencil width for evaluation of effective
     // viscosity on next "outer" iteration (and geometry etc. if done):
     // Note that copy_from() updates ghosts of m_velocity.

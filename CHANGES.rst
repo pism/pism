@@ -18,6 +18,12 @@ Changes since v1.0
   few isolated grid points force PISM to take very short time steps.
   *This implies sacrificing accuracy at these grid points. Use with
   caution!*
+- The SSAFD solver limits ice speed at a threshold specified by
+  `stress_balance.ssa.fd.max_speed`. This may be useful when the computed sliding speed is
+  abnormally high at a few isolated grid points, reducing the length of time steps PISM
+  can take. Capping ice speed makes it possible to ignore troublesome locations and speed
+  up some simulations. The default (50 km/year) is set high enough to deactivate this
+  mechanism.
 - Discard requested snapshot times that are outside of the modeled time interval. (This
   keeps PISM from overwriting a snapshot file written by one of the previous runs in a
   re-started simulation.)

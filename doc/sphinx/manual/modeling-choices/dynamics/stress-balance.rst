@@ -125,7 +125,7 @@ melt rate which is, primarily, thermodynamically-determined (see :ref:`sec-energ
 
    * - Option
      - Description
-     
+
    * - :opt:`-ssa_maxi` (300)
      - Set the maximum allowed number of Picard (nonlinear) iterations in solving the
        shallow shelf approximation.
@@ -146,11 +146,16 @@ melt rate which is, primarily, thermodynamically-determined (see :ref:`sec-energ
 
           \|(\nu^{(k)} - \nu^{(k-1)}) H\|_1 \le Z \|\nu^{(k)} H\|_1
 
-       where `Z=` ``ssa_rtol``. 
+       where `Z=` ``ssa_rtol``.
 
    * - :opt:`-ssafd_ksp_rtol` (`10^{-5}`)
      - Set the relative change tolerance for the iteration inside the Krylov linear solver
        used at each Picard iteration.
+
+   * - :opt:`-ssafd_max_speed` (`50 km/yr`)
+     - Limits computed SSA velocities: ice speed is capped at this limit after each Picard
+       iteration of the SSAFD solver. This may allow PISM to take longer time steps by
+       ignoring high velocities at a few troublesome locations.
 
 .. _sec-sia:
 
