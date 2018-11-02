@@ -144,6 +144,11 @@ the user is advised to read section :ref:`sec-pism-pik` on modeling marine ice s
      - Set the relative change tolerance for the iteration inside the Krylov linear solver
        used at each Picard iteration.
 
+   * - :opt:`-ssafd_max_speed` (`50 km/yr`)
+     - Limits computed SSA velocities: ice speed is capped at this limit after each Picard
+       iteration of the SSAFD solver. This may allow PISM to take longer time steps by
+       ignoring high velocities at a few troublesome locations.
+
 .. _sec-weertman:
 
 Weertman-style sliding
