@@ -718,7 +718,11 @@ void IceModel::step(bool do_mass_continuity,
     }
 
     if (m_config->get_boolean("hydrology.surface_input_from_runoff")) {
-      inputs.surface_input_rate = &m_surface->runoff();
+      // Does this work?
+      IceModelVec2S &result = m_work2d[0];
+      result.copy_from(m_surface->runoff());
+      result.scale(1.0 / (m_config->get_double("constants.fresh_water.density") * m_dt));
+      inputs.surface_input_rate = &result;
     }
 
     profiling.begin("basal_hydrology");
