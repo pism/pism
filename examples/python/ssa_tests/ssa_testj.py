@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -102,10 +102,7 @@ class testj(PISM.ssa.SSAExactTestCase):
 # The main code for a run follows:
 if __name__ == '__main__':
     context = PISM.Context()
+    config = context.config
 
-    Mx = PISM.optionsInt("-Mx", "Number of grid points in x-direction", default=61)
-    My = PISM.optionsInt("-My", "Number of grid points in y-direction", default=61)
-    output_file = PISM.optionsString("-o", "output file", default="testj.nc")
-
-    tc = testj(Mx, My)
-    tc.run(output_file)
+    tc = testj(int(config.get_double("grid.Mx")), int(config.get_double("grid.My")))
+    tc.run(config.get_string("output.file_name"))

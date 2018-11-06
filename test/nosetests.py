@@ -252,9 +252,6 @@ def options_test():
 
     o = PISM.PETSc.Options()
 
-    M = PISM.optionsInt("-M", "description", default=100)
-    M = PISM.optionsInt("-M", "description", default=None)
-
     S = PISM.optionsString("-string", "description", default="string")
     S = PISM.optionsString("-string", "description", default=None)
 

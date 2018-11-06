@@ -1115,6 +1115,12 @@ netcdf pism_config {
     pism_config:inverse.tikhonov.rtol_type = "scalar";
     pism_config:inverse.tikhonov.rtol_units = "1";
 
+    pism_config:inverse.max_iterations = 1000;
+    pism_config:inverse.max_iterations_doc = "maximum iteration count";
+    pism_config:inverse.max_iterations_option = "inv_max_it";
+    pism_config:inverse.max_iterations_type = "integer";
+    pism_config:inverse.max_iterations_units = "count";
+
     pism_config:inverse.use_zeta_fixed_mask = "yes";
     pism_config:inverse.use_zeta_fixed_mask_type = "boolean";
     pism_config:inverse.use_zeta_fixed_mask_option = "inv_use_zeta_fixed_mask";
