@@ -718,7 +718,7 @@ void IceModel::step(bool do_mass_continuity,
     }
 
     if (m_config->get_boolean("hydrology.surface_input_from_runoff")) {
-      // Does this work?
+      // convert [kg m-2] to [m s-1] 
       IceModelVec2S &result = m_work2d[0];
       result.copy_from(m_surface->runoff());
       result.scale(1.0 / (m_config->get_double("constants.fresh_water.density") * m_dt));
