@@ -45,8 +45,7 @@ if not input_set:
 
 output_file = PISM.optionsString("-o", "output file",
                                  default="sia_" + os.path.basename(input_filename))
-is_regional = PISM.optionsFlag("-regional",
-                               "Compute SIA using regional model semantics", default=False)
+is_regional = PISM.OptionBool("-regional", "Compute SIA using regional model semantics")
 verbosity = PISM.optionsInt("-verbose", "verbosity level", default=2)
 
 registration = PISM.CELL_CENTER

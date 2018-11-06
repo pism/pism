@@ -124,9 +124,8 @@ command-line flag.  These macros are surprisingly technical (they implement a lo
   com = PISM.Context().com
   for o in PISM.OptionsBegin(com,title="PISMI Options"):
     input_filename = PISM.optionsString("-i","input file")
-    is_regional    = PISM.optionsFlag("-regional",
-                       "Compute SIA/SSA using regional model semantics",
-                       default=False)
+    is_regional    = PISM.OptionBool("-regional",
+                       "Compute SIA/SSA using regional model semantics")
     design_var     = PISM.optionsList(com,"-inv_design",
                        "design variable name", ['tauc','hardav']
                        default = 'tauc')

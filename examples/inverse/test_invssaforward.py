@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2012, 2014, 2015, 2016, 2017 David Maxwell
+# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -430,11 +430,9 @@ if __name__ == "__main__":
 
     input_filename = PISM.optionsString("-i", "input file")
     inv_data_filename = PISM.optionsString("-inv_data", "inverse data file", default=input_filename)
-    use_design_prior = PISM.optionsFlag(
-        "-inv_use_design_prior", "Use prior from inverse data file as initial guess.", default=True)
+    use_design_prior = config.get_boolean("inverse.use_design_prior")
     design_var = PISM.optionsList("-inv_ssa", "design variable for inversion", ["tauc", "hardav"], "tauc")
-    using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
-                                             "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)", default=True)
+    using_zeta_fixed_mask = config.get_boolean("inverse.use_zeta_fixed_mask")
 
     ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename, inv_data_filename, design_var)
     ssarun.setup()

@@ -1115,6 +1115,16 @@ netcdf pism_config {
     pism_config:inverse.tikhonov.rtol_type = "scalar";
     pism_config:inverse.tikhonov.rtol_units = "1";
 
+    pism_config:inverse.use_zeta_fixed_mask = "yes";
+    pism_config:inverse.use_zeta_fixed_mask_type = "boolean";
+    pism_config:inverse.use_zeta_fixed_mask_option = "inv_use_zeta_fixed_mask";
+    pism_config:inverse.use_zeta_fixed_mask_doc = "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)";
+
+    pism_config:inverse.use_design_prior = "yes";
+    pism_config:inverse.use_design_prior_type = "boolean";
+    pism_config:inverse.use_design_prior_option = "inv_use_design_prior";
+    pism_config:inverse.use_design_prior_doc = "Use prior from inverse data file as initial guess.";
+
     pism_config:ocean.anomaly.file = "";
     pism_config:ocean.anomaly.file_doc = "Name of the file containing shelf basal mass flux offset fields.";
     pism_config:ocean.anomaly.file_type = "string";

@@ -261,26 +261,6 @@ def options_test():
     R = PISM.optionsReal("-R", "description", default=1.5)
     R = PISM.optionsReal("-R", "description", default=None)
 
-    o.setValue("-B", "on")
-    B = PISM.optionsFlag("-B", "description", default=False)
-    B = PISM.optionsFlag("B", "description", default=False)
-    B = PISM.optionsFlag("-B", "description", default=None)
-
-    o.setValue("-no_C", "on")
-    C = PISM.optionsFlag("C", "description", default=None)
-
-    D = PISM.optionsFlag("D", "description", default=None)
-    D = PISM.optionsFlag("D", "description", default=True)
-
-    o.setValue("-no_D", "on")
-    o.setValue("-D", "on")
-    try:
-        # should throw RuntimeError
-        D = PISM.optionsFlag("D", "description", default=None)
-        return False
-    except RuntimeError:
-        pass
-
     o.setValue("-IA", "1,2,3")
     IA = PISM.optionsIntArray("-IA", "description", default=[1, 2])
     IA = PISM.optionsIntArray("-IA", "description", default=None)

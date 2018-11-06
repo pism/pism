@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -115,13 +115,11 @@ if __name__ == '__main__':
                                       "Threshold in m/a for determining if ice is fast",
                                       500.0)
 
-    generate_ssa_observed = PISM.optionsFlag("-generate_ssa_observed",
-                                             "generate observed SSA velocities",
-                                             default=False)
+    generate_ssa_observed = PISM.OptionBool("-generate_ssa_observed",
+                                             "generate observed SSA velocities")
 
-    is_regional = PISM.optionsFlag("-regional",
-                                   "Compute SIA/SSA using regional model semantics",
-                                   default=False)
+    is_regional = PISM.OptionBool("-regional",
+                                   "Compute SIA/SSA using regional model semantics")
 
     design_var = PISM.optionsList("-inv_ssa",
                                   "design variable for inversion",

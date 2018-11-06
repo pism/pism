@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2012, 2014, 2015, 2016, 2017 David Maxwell
+# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -54,8 +54,8 @@ if __name__ == "__main__":
 
     input_filename = PISM.optionsString("-i", "input file")
     inv_data_filename = PISM.optionsString("-inv_data", "inverse data file", default=input_filename)
-    use_tauc_prior = PISM.optionsFlag(
-        "-inv_use_tauc_prior", "Use tauc_prior from inverse data file as initial guess.", default=False)
+    use_tauc_prior = PISM.OptionBool("-inv_use_tauc_prior",
+                                     "Use tauc_prior from inverse data file as initial guess.")
 
     ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename, inv_data_filename, 'tauc')
     ssarun.setup()

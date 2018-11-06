@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -308,27 +308,25 @@ def run():
 
     inv_data_filename = PISM.optionsString("-inv_data", "inverse data file", default=input_filename)
 
-    do_plotting = PISM.optionsFlag("-inv_plot", "perform visualization during the computation", default=False)
-    do_final_plot = PISM.optionsFlag(
-        "-inv_final_plot", "perform visualization at the end of the computation", default=False)
+    do_plotting = PISM.OptionBool("-inv_plot", "perform visualization during the computation")
+    do_final_plot = PISM.OptionBool("-inv_final_plot",
+                                     "perform visualization at the end of the computation")
     Vmax = PISM.optionsReal("-inv_plot_vmax", "maximum velocity for plotting residuals", default=30)
 
     design_var = PISM.optionsList("-inv_ssa",
                                   "design variable for inversion",
                                   "tauc,hardav", "tauc")
-    do_pause = PISM.optionsFlag("-inv_pause", "pause each iteration", default=False)
+    do_pause = PISM.OptionBool("-inv_pause", "pause each iteration")
 
-    do_restart = PISM.optionsFlag("-inv_restart", "Restart a stopped computation.", default=False)
-    use_design_prior = PISM.optionsFlag(
-        "-inv_use_design_prior", "Use prior from inverse data file as initial guess.", default=True)
+    do_restart = PISM.OptionBool("-inv_restart", "Restart a stopped computation.")
+    use_design_prior = config.get_boolean("inverse.use_design_prior")
 
     prep_module = PISM.optionsString(
         "-inv_prep_module", "Python module used to do final setup of inverse solver", default=None)
 
-    is_regional = PISM.optionsFlag("-regional", "Compute SIA/SSA using regional model semantics", default=False)
+    is_regional = PISM.OptionBool("-regional", "Compute SIA/SSA using regional model semantics")
 
-    using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
-                                             "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)", default=True)
+    using_zeta_fixed_mask = config.get_boolean("inverse.use_zeta_fixed_mask")
 
     inv_method = config.get_string("inverse.ssa.method")
 
@@ -584,8 +582,7 @@ if __name__ == "__main__":
 # try to stop coverage and save a report:
 try:                            # pragma: no cover
     cov.stop()
-    report = PISM.optionsFlag("-report_coverage", "save coverage information and a report",
-                              default=False)
+    report = PISM.OptionBool("-report_coverage", "save coverage information and a report")
     if report:
         cov.save()
         cov.html_report(include=["pismi.py"], directory="pismi_coverage")
