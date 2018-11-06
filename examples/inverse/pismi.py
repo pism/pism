@@ -311,7 +311,7 @@ def run():
     do_plotting = PISM.OptionBool("-inv_plot", "perform visualization during the computation")
     do_final_plot = PISM.OptionBool("-inv_final_plot",
                                      "perform visualization at the end of the computation")
-    Vmax = PISM.optionsReal("-inv_plot_vmax", "maximum velocity for plotting residuals", default=30)
+    Vmax = PISM.OptionReal("-inv_plot_vmax", "maximum velocity for plotting residuals", 30)
 
     design_var = PISM.optionsList("-inv_ssa",
                                   "design variable for inversion",

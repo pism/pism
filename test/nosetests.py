@@ -258,27 +258,6 @@ def options_test():
     S = PISM.optionsString("-string", "description", default="string")
     S = PISM.optionsString("-string", "description", default=None)
 
-    R = PISM.optionsReal("-R", "description", default=1.5)
-    R = PISM.optionsReal("-R", "description", default=None)
-
-    o.setValue("-IA", "1,2,3")
-    IA = PISM.optionsIntArray("-IA", "description", default=[1, 2])
-    IA = PISM.optionsIntArray("-IA", "description", default=None)
-    IA2 = PISM.optionsIntArray("-IA2", "description", default=None)
-    IA2 = PISM.optionsIntArray("-IA2", "description", default=[1, 2])
-
-    o.setValue("-RA", "1,2,3")
-    RA = PISM.optionsRealArray("-RA", "description", default=[2, 3])
-    RA = PISM.optionsRealArray("-RA", "description", default=None)
-    RA2 = PISM.optionsRealArray("-RA2", "description", default=[2, 3])
-    RA2 = PISM.optionsRealArray("-RA2", "description", default=None)
-
-    o.setValue("-SA", "1,2,3")
-    SA = PISM.optionsStringArray("-SA", "description", default="one,two")
-    SA = PISM.optionsStringArray("-SA", "description", default=None)
-    SA2 = PISM.optionsStringArray("-SA2", "description", default="two,three")
-    SA2 = PISM.optionsStringArray("-SA2", "description", default=None)
-
     M = PISM.optionsList("-L", "description", choices="one,two", default="one")
     M = PISM.optionsList("-L", "description", choices="one,two", default=None)
 

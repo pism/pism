@@ -94,24 +94,24 @@ if __name__ == '__main__':
                                           "output file",
                                           default="make_synth_ssa.nc")
 
-    design_prior_scale = PISM.optionsReal("-design_prior_scale",
+    design_prior_scale = PISM.OptionReal("-design_prior_scale",
                                           "initial guess for design variable to be this factor of the true value",
-                                          default=design_prior_scale)
+                                          design_prior_scale)
 
-    design_prior_const = PISM.optionsReal("-design_prior_const",
+    design_prior_const = PISM.OptionReal("-design_prior_const",
                                           "initial guess for design variable to be this constant",
-                                          default=design_prior_const)
+                                          0.0)
+    design_prior_const = design_prior_const.value() if design_prior_const.is_set() else None
 
-    noise = PISM.optionsReal("-rms_noise",
-                             "pointwise rms noise to add (in m/a)",
-                             default=None)
+    noise = PISM.OptionReal("-rms_noise", "pointwise rms noise to add (in m/a)", 0.0)
+    noise = noise.value() if noise.is_set() else None
 
     misfit_weight_type = PISM.optionsList("-misfit_type",
                                           "Choice of misfit weight function",
                                           "grounded,fast",
                                           "grounded")
 
-    fast_ice_speed = PISM.optionsReal("-fast_ice_speed",
+    fast_ice_speed = PISM.OptionReal("-fast_ice_speed",
                                       "Threshold in m/a for determining if ice is fast",
                                       500.0)
 
@@ -235,7 +235,7 @@ if __name__ == '__main__':
     modeldata.vecs.add(misfit_weight, writing=True)
 
     if not noise is None:
-        u_noise = PISM.vec.randVectorV(grid, noise / math.sqrt(2), final_velocity.get_stencil_width())
+        u_noise = PISM.vec.randVectorV(grid, noise / math.sqrt(2), final_velocity.stencil_width())
         final_velocity.add(PISM.convert(sys, 1.0, "m/year", "m/second"),
                            u_noise)
 
