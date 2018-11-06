@@ -446,11 +446,6 @@ netcdf pism_config {
     pism_config:constants.fresh_water.specific_heat_capacity_type = "scalar";
     pism_config:constants.fresh_water.specific_heat_capacity_units = "Joule / (kg Kelvin)";
 
-    pism_config:constants.global_ocean_area = 3.61e8;
-    pism_config:constants.global_ocean_area_doc = "The total area of the global ocean used to compute sea level equivalent ice volume";
-    pism_config:constants.global_ocean_area_type = "scalar";
-    pism_config:constants.global_ocean_area_units = "km2";
-
     pism_config:constants.ice.beta_Clausius_Clapeyron = 7.9e-8;
     pism_config:constants.ice.beta_Clausius_Clapeyron_doc = "Clausius-Clapeyron constant relating melting temperature and pressure: `\\beta = dT / dP` :cite:`Luethi2002`";
     pism_config:constants.ice.beta_Clausius_Clapeyron_type = "scalar";
@@ -491,6 +486,11 @@ netcdf pism_config {
     pism_config:constants.sea_water.specific_heat_capacity_doc = "at 35 psu, value taken from http://www.kayelaby.npl.co.uk/general_physics/2_7/2_7_9.html";
     pism_config:constants.sea_water.specific_heat_capacity_type = "scalar";
     pism_config:constants.sea_water.specific_heat_capacity_units = "Joule / (kg Kelvin)";
+
+    pism_config:constants.global_ocean_area = 3.625e14;
+    pism_config:constants.global_ocean_area_doc = "area of the global ocean :cite:`Cogley2011`";
+    pism_config:constants.global_ocean_area_type = "scalar";
+    pism_config:constants.global_ocean_area_units = "meter2";
 
     pism_config:constants.standard_gravity = 9.81;
     pism_config:constants.standard_gravity_doc = "acceleration due to gravity on Earth geoid";
@@ -1680,6 +1680,12 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries = "yes";
     pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_doc = "Replace zero diagonal entries in the SSAFD matrix with basal_resistance.beta_ice_free_bedrock to avoid solver failures.";
     pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_type = "boolean";
+
+    pism_config:stress_balance.ssa.fd.max_speed = 5.0e4;
+    pism_config:stress_balance.ssa.fd.max_speed_doc = "Upper bound for the ice speed computed by the SSAFD solver.";
+    pism_config:stress_balance.ssa.fd.max_speed_type = "scalar";
+    pism_config:stress_balance.ssa.fd.max_speed_units = "m yr-1";
+    pism_config:stress_balance.ssa.fd.max_speed_option = "ssafd_max_speed";
 
     pism_config:stress_balance.ssa.flow_law = "gpbld";
     pism_config:stress_balance.ssa.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
