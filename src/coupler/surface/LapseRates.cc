@@ -112,6 +112,11 @@ void LapseRates::update_impl(const Geometry &geometry, double t, double dt) {
   m_temperature->copy_from(m_input_model->temperature());
   lapse_rate_correction(surface, *m_reference_surface,
                         m_temp_lapse_rate, *m_temperature);
+
+  dummy_accumulation(*m_mass_flux, *m_accumulation);
+  dummy_melt(*m_mass_flux, *m_melt);
+  dummy_runoff(*m_mass_flux, *m_runoff);
+  
 }
 
 const IceModelVec2S &LapseRates::mass_flux_impl() const {

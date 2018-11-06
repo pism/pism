@@ -102,6 +102,11 @@ void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
                                  *m_mass_flux);
   m_input_model->temperature().add(1.0, *m_ice_surface_temp_anomaly,
                                    *m_temperature);
+
+  dummy_accumulation(*m_mass_flux, *m_accumulation);
+  dummy_melt(*m_mass_flux, *m_melt);
+  dummy_runoff(*m_mass_flux, *m_runoff);
+
 }
 
 const IceModelVec2S &Anomaly::mass_flux_impl() const {

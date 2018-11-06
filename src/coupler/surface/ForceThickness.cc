@@ -262,6 +262,11 @@ void ForceThickness::update_impl(const Geometry &geometry, double t, double dt) 
                    geometry.ice_thickness,
                    geometry.cell_type,
                    *m_mass_flux);
+  
+  dummy_accumulation(*m_mass_flux, *m_accumulation);
+  dummy_melt(*m_mass_flux, *m_melt);
+  dummy_runoff(*m_mass_flux, *m_runoff);
+  
 }
 
 const IceModelVec2S &ForceThickness::mass_flux_impl() const {

@@ -111,6 +111,11 @@ void StuffAsAnomaly::update_impl(const Geometry &geometry, double t, double dt) 
     m_mass_flux(i, j) = m_mass_flux(i, j) - m_mass_flux_0(i, j) + m_mass_flux_input(i, j);
     m_temp(i, j)      = m_temp(i, j) - m_temp_0(i, j) + m_temp_input(i, j);
   }
+
+  dummy_accumulation(m_mass_flux, *m_accumulation);
+  dummy_melt(m_mass_flux, *m_melt);
+  dummy_runoff(m_mass_flux, *m_runoff);
+
 }
 
 const IceModelVec2S &StuffAsAnomaly::mass_flux_impl() const {

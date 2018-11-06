@@ -142,7 +142,10 @@ void EISMINTII::update_impl(const Geometry &geometry, double t, double dt) {
   (void) dt;
   (void) geometry;
 
-  // do nothing (but an implementation is required)
+  dummy_accumulation(*m_mass_flux, *m_accumulation);
+  dummy_melt(*m_mass_flux, *m_melt);
+  dummy_runoff(*m_mass_flux, *m_runoff);
+
 }
 
 } // end of namespace surface

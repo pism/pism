@@ -49,6 +49,11 @@ void Simple::update_impl(const Geometry &geometry, double t, double dt) {
 
   m_mass_flux->copy_from(m_atmosphere->mean_precipitation());
   m_temperature->copy_from(m_atmosphere->mean_annual_temp());
+
+  dummy_accumulation(*m_mass_flux, *m_accumulation);
+  dummy_melt(*m_mass_flux, *m_melt);
+  dummy_runoff(*m_mass_flux, *m_runoff);
+
 }
 
 const IceModelVec2S &Simple::mass_flux_impl() const {
