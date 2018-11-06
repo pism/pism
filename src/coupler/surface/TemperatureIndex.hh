@@ -47,9 +47,9 @@ public:
   const IceModelVec2S& snow_depth() const;
   // these represent totals (not rates) over the time step
   const IceModelVec2S& air_temp_sd() const;
-  const IceModelVec2S& accumulation() const;
-  const IceModelVec2S& melt() const;
-  const IceModelVec2S& runoff() const;
+  // const IceModelVec2S& accumulation() const;
+  // const IceModelVec2S& melt() const;
+  // const IceModelVec2S& runoff() const;
 
 protected:
   virtual void init_impl(const Geometry &geometry);
@@ -64,6 +64,10 @@ protected:
 
   virtual const IceModelVec2S& mass_flux_impl() const;
   virtual const IceModelVec2S& temperature_impl() const;
+  
+  virtual const IceModelVec2S& accumulation_impl() const;
+  virtual const IceModelVec2S& melt_impl() const;
+  virtual const IceModelVec2S& runoff_impl() const;
 
   double compute_next_balance_year_start(double time);
 protected:

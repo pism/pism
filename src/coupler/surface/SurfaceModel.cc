@@ -100,18 +100,57 @@ IceModelVec2S::Ptr SurfaceModel::allocate_temperature(IceGrid::ConstPtr grid) {
 
   return result;
 }
-  
+
+IceModelVec2S::Ptr SurfaceModel::allocate_accumulation(IceGrid::ConstPtr grid) {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_accumulation_flux", WITHOUT_GHOSTS));
+
+  result->set_attrs("diagnostic",
+                    "surface accumulation (precipitation minus rain)",
+                    "kg m-2", "");
+
+  return result;
+}
+
+IceModelVec2S::Ptr SurfaceModel::allocate_melt(IceGrid::ConstPtr grid) {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_melt_flux", WITHOUT_GHOSTS));
+
+  result->set_attrs("diagnostic",
+                    "surface melt",
+                    "kg m-2", "");
+
+  return result;
+}
+
+IceModelVec2S::Ptr SurfaceModel::allocate_runoff(IceGrid::ConstPtr grid) {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_runoff_flux", WITHOUT_GHOSTS));
+
+  result->set_attrs("diagnostic",
+                    "surface meltwater runoff",
+                    "kg m-2", "");
+
+  return result;
+}
+
 SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid)
   : Component(grid), m_input_model(nullptr), m_atmosphere(nullptr) {
 
   m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
   m_layer_mass            = allocate_layer_mass(grid);
   m_layer_thickness       = allocate_layer_thickness(grid);
+  m_accumulation          = allocate_accumulation(grid);
+  m_melt                  = allocate_melt(grid);
+  m_runoff                = allocate_runoff(grid);
 
   // default values
   m_layer_thickness->set(0.0);
   m_layer_mass->set(0.0);
   m_liquid_water_fraction->set(0.0);
+  m_accumulation->set(0.0);
+  m_melt->set(0.0);
+  m_runoff->set(0.0);
 }
 
 SurfaceModel::SurfaceModel(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
@@ -326,6 +365,36 @@ MaxTimestep SurfaceModel::max_timestep_impl(double t) const {
   }
 
   return MaxTimestep("surface model");
+}
+
+  void SurfaceModel::dummy_accumulation(const IceModelVec2S& smb, IceModelVec2S& result) {
+
+  IceModelVec::AccessList list{&result, &smb};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    result(i,j) = std::max(smb(i,j), 0.0);
+  }
+}
+  
+  void SurfaceModel::dummy_melt(const IceModelVec2S& smb, IceModelVec2S& result) {
+
+  IceModelVec::AccessList list{&result, &smb};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    result(i,j) = std::max(-smb(i,j), 0.0);
+  }
+}
+
+  void SurfaceModel::dummy_runoff(const IceModelVec2S& smb, IceModelVec2S& result) {
+
+  IceModelVec::AccessList list{&result, &smb};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    result(i,j) = std::max(-smb(i,j), 0.0);
+  }
 }
 
 namespace diagnostics {

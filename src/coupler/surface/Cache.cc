@@ -87,6 +87,9 @@ void Cache::update_impl(const Geometry &geometry, double t, double dt) {
     m_liquid_water_fraction->copy_from(m_input_model->liquid_water_fraction());
     m_layer_mass->copy_from(m_input_model->layer_mass());
     m_layer_thickness->copy_from(m_input_model->layer_thickness());
+    m_accumulation->copy_from(m_input_model->accumulation());
+    m_melt->copy_from(m_input_model->melt());
+    m_runoff->copy_from(m_input_model->runoff());
   }
 }
 
@@ -133,6 +136,18 @@ const IceModelVec2S &Cache::liquid_water_fraction_impl() const {
 
 const IceModelVec2S &Cache::layer_mass_impl() const {
   return *m_layer_mass;
+}
+
+const IceModelVec2S& Cache::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S& Cache::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S& Cache::runoff_impl() const {
+  return *m_runoff;
 }
 
 } // end of namespace surface

@@ -86,18 +86,27 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;
 
+  void dummy_accumulation(const IceModelVec2S& smb, IceModelVec2S& result);
+  void dummy_melt(const IceModelVec2S& smb, IceModelVec2S& result);
+  void dummy_runoff(const IceModelVec2S& smb, IceModelVec2S& result);
+
   static IceModelVec2S::Ptr allocate_layer_mass(IceGrid::ConstPtr grid);
   static IceModelVec2S::Ptr allocate_layer_thickness(IceGrid::ConstPtr grid);
   static IceModelVec2S::Ptr allocate_liquid_water_fraction(IceGrid::ConstPtr grid);
   static IceModelVec2S::Ptr allocate_mass_flux(IceGrid::ConstPtr grid);
   static IceModelVec2S::Ptr allocate_temperature(IceGrid::ConstPtr grid);
+  static IceModelVec2S::Ptr allocate_accumulation(IceGrid::ConstPtr grid);
+  static IceModelVec2S::Ptr allocate_melt(IceGrid::ConstPtr grid);
+  static IceModelVec2S::Ptr allocate_runoff(IceGrid::ConstPtr grid);
 
 protected:
   IceModelVec2S::Ptr m_liquid_water_fraction;
   IceModelVec2S::Ptr m_layer_mass;
   IceModelVec2S::Ptr m_layer_thickness;
+  IceModelVec2S::Ptr m_accumulation;
+  IceModelVec2S::Ptr m_melt;
+  IceModelVec2S::Ptr m_runoff;
   
-
   std::shared_ptr<SurfaceModel> m_input_model;
   std::shared_ptr<atmosphere::AtmosphereModel> m_atmosphere;
 };

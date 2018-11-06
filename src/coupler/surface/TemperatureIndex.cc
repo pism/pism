@@ -107,18 +107,18 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
 
   // diagnostic fields:
 
-  {
-    m_accumulation.create(m_grid, "surface_accumulation_flux", WITHOUT_GHOSTS);
-    m_accumulation.set_attrs("diagnostic", "surface accumulation (precipitation minus rain)",
-                             "kg m-2", "");
+  // {
+  //   m_accumulation.create(m_grid, "surface_accumulation_flux", WITHOUT_GHOSTS);
+  //   m_accumulation.set_attrs("diagnostic", "surface accumulation (precipitation minus rain)",
+  //                            "kg m-2", "");
 
-    m_melt.create(m_grid, "surface_melt_flux", WITHOUT_GHOSTS);
-    m_melt.set_attrs("diagnostic", "surface melt", "kg m-2", "");
+  //   m_melt.create(m_grid, "surface_melt_flux", WITHOUT_GHOSTS);
+  //   m_melt.set_attrs("diagnostic", "surface melt", "kg m-2", "");
 
-    m_runoff.create(m_grid, "surface_runoff_flux", WITHOUT_GHOSTS);
-    m_runoff.set_attrs("diagnostic", "surface meltwater runoff",
-                       "kg m-2", "");
-  }
+  //   m_runoff.create(m_grid, "surface_runoff_flux", WITHOUT_GHOSTS);
+  //   m_runoff.set_attrs("diagnostic", "surface meltwater runoff",
+  //                      "kg m-2", "");
+  // }
 
   m_snow_depth.create(m_grid, "snow_depth", WITHOUT_GHOSTS);
   m_snow_depth.set_attrs("diagnostic",
@@ -483,15 +483,15 @@ const IceModelVec2S &TemperatureIndex::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S& TemperatureIndex::accumulation() const {
+const IceModelVec2S& TemperatureIndex::accumulation_impl() const {
   return m_accumulation;
 }
 
-const IceModelVec2S& TemperatureIndex::melt() const {
+const IceModelVec2S& TemperatureIndex::melt_impl() const {
   return m_melt;
 }
 
-const IceModelVec2S& TemperatureIndex::runoff() const {
+const IceModelVec2S& TemperatureIndex::runoff_impl() const {
   return m_runoff;
 }
 
