@@ -472,11 +472,6 @@
    :Value: 4170 (Joule / (kg Kelvin))
    :Description: at melting point T_0 :cite:`AschwandenBlatter`
 
-#. :config:`constants.global_ocean_area` (*scalar*)
-
-   :Value: 3.610000e+08 (km2)
-   :Description: The total area of the global ocean used to compute sea level equivalent ice volume
-
 #. :config:`constants.ice.beta_Clausius_Clapeyron` (*scalar*)
 
    :Value: 7.900000e-08 (Kelvin / Pascal)
@@ -517,6 +512,11 @@
 
    :Value: 3985 (Joule / (kg Kelvin))
    :Description: at 35 psu, value taken from http://www.kayelaby.npl.co.uk/general_physics/2_7/2_7_9.html
+
+#. :config:`constants.global_ocean_area` (*scalar*)
+
+   :Value: 3.625000e+14 (meter2)
+   :Description: area of the global ocean :cite:`Cogley2011`
 
 #. :config:`constants.standard_gravity` (*scalar*)
 
@@ -1624,6 +1624,12 @@
    :Option: :opt:`-grain_size_age_coupling`
    :Description: Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt :cite:`GoldsbyKohlstedt` flow law
 
+#. :config:`stress_balance.sia.limit_diffusivity` (*boolean*)
+
+   :Value: no
+   :Option: :opt:`-limit_sia_diffusivity`
+   :Description: Limit SIA diffusivity by `stress_balance.sia.max_diffusivity`.
+
 #. :config:`stress_balance.sia.max_diffusivity` (*scalar*)
 
    :Value: 100 (m2 s-1)
@@ -1722,6 +1728,12 @@
 
    :Value: yes
    :Description: Replace zero diagonal entries in the SSAFD matrix with basal_resistance.beta_ice_free_bedrock to avoid solver failures.
+
+#. :config:`stress_balance.ssa.fd.max_speed` (*scalar*)
+
+   :Value: 50000 (m yr-1)
+   :Option: :opt:`-ssafd_max_speed`
+   :Description: Upper bound for the ice speed computed by the SSAFD solver.
 
 #. :config:`stress_balance.ssa.flow_law` (*keyword*)
 
@@ -1878,36 +1890,6 @@
 
    :Value: 274
    :Description: day of year for October 1st, beginning of the balance year in northern latitudes.
-
-#. :config:`surface.pdd.aschwanden.beta_ice_c` (*scalar*)
-
-   :Value: 0.006000 (meter / (Kelvin day))
-   :Description: water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`
-
-#. :config:`surface.pdd.aschwanden.beta_ice_w` (*scalar*)
-
-   :Value: 0.008000 (meter / (Kelvin day))
-   :Description: water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`
-
-#. :config:`surface.pdd.aschwanden.beta_snow_c` (*scalar*)
-
-   :Value: 0.001500 (meter / (Kelvin day))
-   :Description: water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`
-
-#. :config:`surface.pdd.aschwanden.beta_snow_w` (*scalar*)
-
-   :Value: 0.003000 (meter / (Kelvin day))
-   :Description: water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`
-
-#. :config:`surface.pdd.aschwanden.latitude_beta_w` (*scalar*)
-
-   :Value: 77 (degree_north)
-   :Description: latitude below which to use warm case, in formula (6) in :cite:`Aschwandenetal2009`
-
-#. :config:`surface.pdd.aschwanden.warm_cold_transition_width` (*scalar*)
-
-   :Value: 1 (degree_north)
-   :Description: smoothing width in degrees for linear transition between warm and cold values
 
 #. :config:`surface.pdd.factor_ice` (*scalar*)
 
