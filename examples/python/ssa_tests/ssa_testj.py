@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 import PISM
-
+from PISM.util import convert
 
 class testj(PISM.ssa.SSAExactTestCase):
 
@@ -86,9 +86,8 @@ class testj(PISM.ssa.SSAExactTestCase):
         # constant viscosity by settting the strength_extension
         # thickness larger than the given ice thickness. (max = 770m).
 
-        sys = self.grid.ctx().unit_system()
-        nu0 = PISM.convert(sys, 30.0, "MPa year", "Pa s")
-        H0 = 500.0                        # 500 m typical thickness
+        nu0 = convert(30.0, "MPa year", "Pa s")
+        H0 = 500.0              # 500 m typical thickness
 
         ssa = self.ssa
         ssa.strength_extension.set_notional_strength(nu0 * H0)

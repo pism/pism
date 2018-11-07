@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import PISM
+from PISM.util import convert
 
 ctx = PISM.Context()
 
@@ -33,7 +34,7 @@ def setup():
 
     basal_heat_flux = PISM.IceModelVec2S()
     basal_heat_flux.create(grid, "bheatflx", PISM.WITHOUT_GHOSTS)
-    basal_heat_flux.set(PISM.convert(ctx.unit_system, 10, "mW m-2", "W m-2"))
+    basal_heat_flux.set(convert(10, "mW m-2", "W m-2"))
 
     ice_thickness = PISM.model.createIceThicknessVec(grid)
     ice_thickness.set(4000.0)
@@ -83,9 +84,7 @@ def setup():
     inputs.v3 = v
     inputs.w3 = w
 
-
-dt = PISM.convert(ctx.unit_system, 1, "years", "seconds")
-
+dt = convert(1, "years", "seconds")
 
 def use_model(model):
     print("* Performing a time step...")

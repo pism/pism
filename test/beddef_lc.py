@@ -9,17 +9,10 @@ Used as a verification (and regression) test for LingleClarkSerial::bootstrap().
 import PISM
 import pylab as plt
 import numpy as np
+from PISM.util import convert
 
 config = PISM.Context().config
 log = PISM.Context().log
-
-# unit conversion shortcut
-
-
-def convert(x, u1, u2):
-    unit_system = PISM.Context().unit_system
-    return PISM.convert(unit_system, x, u1, u2)
-
 
 # constants
 standard_gravity = config.get_double("constants.standard_gravity")

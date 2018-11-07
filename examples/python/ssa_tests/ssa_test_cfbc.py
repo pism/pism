@@ -20,7 +20,7 @@
 
 
 import PISM
-
+from PISM.util import convert
 help = \
     """
 SSA_TESTCFBC
@@ -37,10 +37,9 @@ usage of SSA_TEST_CFBC:
 """
 
 context = PISM.Context()
-unit_system = context.unit_system
 
 H0 = 600.          # meters
-V0 = PISM.convert(unit_system, 300, "m/year", "m/second")
+V0 = convert(300, "m/year", "m/second")
 C = 2.45e-18     # "typical constant ice parameter"
 T = 400          # time used to compute the calving front location
 

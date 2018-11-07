@@ -33,11 +33,10 @@ except ImportError:             # pragma: no cover
 
 import PISM
 import PISM.invert.ssa
-import numpy as np
-import sys
-import os
-import math
 from PISM.logging import logMessage
+from PISM.util import convert
+import numpy as np
+import sys, os, math
 
 
 class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
@@ -85,8 +84,7 @@ class InvSSAPlotListener(PISM.invert.listener.PlotListener):
             d = self.toproczero(data.zeta_step)
         zeta = self.toproczero(data.zeta)
 
-        sys = self.grid.ctx().unit_system()
-        secpera = PISM.convert(sys, 1.0, "year", "second")
+        secpera = convert(1.0, "year", "second")
 
         if self.grid.rank() == 0:
             import matplotlib.pyplot as pp
@@ -559,13 +557,11 @@ def run():
     r_mag = PISM.IceModelVec2S()
     r_mag.create(grid, "inv_ssa_residual", PISM.WITHOUT_GHOSTS, 0)
 
-    sys = grid.ctx().unit_system()
     r_mag.set_attrs("diagnostic", "magnitude of mismatch between observed surface velocities and their reconstrution by inversion",
                     "m s-1", "inv_ssa_residual", 0)
-    r_mag.metadata().set_double("_FillValue", PISM.convert(sys, -0.01, 'm/year', 'm/s'))
+    r_mag.metadata().set_double("_FillValue", convert(-0.01, 'm/year', 'm/s'))
     r_mag.metadata().set_double("valid_min", 0.0)
     r_mag.metadata().set_string("glaciological_units", "m year-1")
-    r_mag.write_in_glaciological_units = True
 
     r_mag.set_to_magnitude(residual)
     r_mag.mask_by(vecs.land_ice_thickness)

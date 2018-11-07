@@ -20,15 +20,15 @@
 
 
 import PISM
+from PISM.util import convert
 import math
 
 context = PISM.Context()
-unit_system = context.unit_system
 
 L = 50.e3  # // 50km half-width
 H0 = 500  # // m
 dhdx = 0.005  # // pure number, slope of surface & bed
-nu0 = PISM.convert(unit_system, 30.0, "MPa year", "Pa s")
+nu0 = convert(30.0, "MPa year", "Pa s")
 tauc0 = 1.e4  # // 1kPa
 
 
@@ -90,8 +90,8 @@ class test_linear(PISM.ssa.SSAExactTestCase):
     def exactSolution(self, i, j, x, y):
         tauc_threshold_velocity = self.config.get_double("basal_resistance.pseudo_plastic.u_threshold",
                                                          "m/second")
-        sys = self.grid.ctx().unit_system()
-        v0 = PISM.convert(sys, 100, "m/year", "m/second")
+
+        v0 = convert(100, "m/year", "m/second")
         alpha = math.sqrt((tauc0 / tauc_threshold_velocity) / (4 * nu0 * H0))
         return [v0 * math.exp(-alpha * (x - L)), 0]
 

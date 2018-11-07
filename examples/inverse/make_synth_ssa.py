@@ -20,9 +20,8 @@
 
 
 import PISM
-import sys
-import time
-import math
+from PISM.util import convert
+import sys, time, math
 
 design_prior_scale = 0.2
 design_prior_const = None
@@ -223,18 +222,17 @@ if __name__ == '__main__':
         vecs.markForWriting(vel_surface_observed)
         final_velocity = vel_surface_observed
 
-    sys = grid.ctx().unit_system()
     # Add the misfit weight.
     if misfit_weight_type == "fast":
         misfit_weight = fastIceMisfitWeight(modeldata, vel_ssa,
-                                            PISM.convert(sys, fast_ice_speed, "m/year", "m/second"))
+                                            convert(fast_ice_speed, "m/year", "m/second"))
     else:
         misfit_weight = groundedIceMisfitWeight(modeldata)
     modeldata.vecs.add(misfit_weight, writing=True)
 
     if not noise is None:
         u_noise = PISM.vec.randVectorV(grid, noise / math.sqrt(2), final_velocity.stencil_width())
-        final_velocity.add(PISM.convert(sys, 1.0, "m/year", "m/second"),
+        final_velocity.add(convert(1.0, "m/year", "m/second"),
                            u_noise)
 
     pio = PISM.util.prepare_output(output_file_name)
