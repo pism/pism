@@ -1,5 +1,4 @@
 // Copyright (C)  2009-2018 Ricarda Winkelmann, Torsten Albrecht
-
 //
 // This file is part of PISM.
 //
@@ -27,8 +26,7 @@ namespace pism {
 namespace atmosphere {
 
 
-class TemperaturePIK : public YearlyCycle 
-{
+class TemperaturePIK : public YearlyCycle {
 public:
   TemperaturePIK(IceGrid::ConstPtr g);
   virtual ~TemperaturePIK();
@@ -37,15 +35,13 @@ public:
   virtual void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 
 protected:
-
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(const Geometry &geometry, double t, double dt);
- 
-  bool temp_huybrechts_dewolde99_set, temp_era_interim_set, temp_era_interim_sin_set, temp_era_interim_lon_set;
 
+  bool temp_huybrechts_dewolde99_set, temp_era_interim_set, temp_era_interim_sin_set, temp_era_interim_lon_set;
 };
 
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif	// __PATemperaturePIK_hh
+#endif // __PATemperaturePIK_hh

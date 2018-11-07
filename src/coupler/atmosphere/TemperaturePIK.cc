@@ -24,15 +24,15 @@
 #include <gsl/gsl_math.h>
 
 #include "TemperaturePIK.hh"
-#include "pism/util/Vars.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/pism_options.hh"
-#include "pism/util/Time.hh"
-#include <cassert>
-#include "pism/util/ConfigInterface.hh"
-#include "pism/util/MaxTimestep.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/pism_options.hh"
+#include <cassert>
 
 
 namespace pism {
@@ -40,84 +40,75 @@ namespace atmosphere {
 
 
 ///// TemperaturePIK
-TemperaturePIK::TemperaturePIK(IceGrid::ConstPtr g)
-  : YearlyCycle(g) 
-{
-    //empty
+TemperaturePIK::TemperaturePIK(IceGrid::ConstPtr g) : YearlyCycle(g) {
+  //empty
 }
 
-TemperaturePIK::~TemperaturePIK() 
-{
-    //empty
+TemperaturePIK::~TemperaturePIK() {
+  //empty
 }
-
 
 
 void TemperaturePIK::init_impl(const Geometry &geometry) {
 
-  m_log->message(2,
-             "* Initializing PIK atmosphere model with air temperature parameterization based on \n"
-             "  Huybrechts & De Wolde (1999) and/or multiple regression analysis of ERA INTERIM data...\n"
-             "  Precipitation is per default time-independent, use modifiers paleo_precip, delta_P or lapse_rate!\n");
+  m_log->message(
+      2, "* Initializing PIK atmosphere model with air temperature parameterization based on \n"
+         "  Huybrechts & De Wolde (1999) and/or multiple regression analysis of ERA INTERIM data...\n"
+         "  Precipitation is per default time-independent, use modifiers paleo_precip, delta_P or lapse_rate!\n");
 
-  m_reference =
-    "Winkelmann et al.";
+  m_reference = "Winkelmann et al.";
 
 
   std::string option_prefix = "-atmosphere_pik_temp";
-  options::String precip_file(option_prefix + "_file",
-                              "Specifies a file with boundary conditions");
+  options::String precip_file(option_prefix + "_file", "Specifies a file with boundary conditions");
 
   if (precip_file.is_set()) {
-    m_log->message(2,
-                   "  * Option '-atmosphere_pik_temp %s' is set...\n",
-                   precip_file->c_str());
+    m_log->message(2, "  * Option '-atmosphere_pik_temp %s' is set...\n", precip_file->c_str());
 
-    YearlyCycle::init_internal(precip_file,
-                               true, /* do regrid */
+    YearlyCycle::init_internal(precip_file, true, /* do regrid */
                                0 /* start (irrelevant) */);
   } else {
     YearlyCycle::init_impl(geometry);
   }
 
 
+  /// Surface (annual mean and summer mean) temperature parametrization:
+  temp_huybrechts_dewolde99_set = options::Bool(
+      "-temp_huybrechts_dewolde99", "Near-surface air temperature is parameterized as in Huybrechts & De Wolde (1999)");
 
-  /// Surface (annual mean and summer mean) temperature parametrization: 
-  temp_huybrechts_dewolde99_set = options::Bool("-temp_huybrechts_dewolde99",
-    "Near-surface air temperature is parameterized as in Huybrechts & De Wolde (1999)");
+  temp_era_interim_set =
+      options::Bool("-temp_era_interim", "Near-surface air temperature is parameterized based on ERA INTERIM data");
 
-  temp_era_interim_set = options::Bool("-temp_era_interim",
-    "Near-surface air temperature is parameterized based on ERA INTERIM data");
+  temp_era_interim_sin_set = options::Bool(
+      "-temp_era_interim_sin",
+      "Near-surface air temperature is parameterized based on ERA INTERIM data with a sin(lat) dependence");
 
-  temp_era_interim_sin_set = options::Bool("-temp_era_interim_sin",
-    "Near-surface air temperature is parameterized based on ERA INTERIM data with a sin(lat) dependence");
-
-  temp_era_interim_lon_set = options::Bool("-temp_era_interim_lon",
-    "Near-surface air temperature is parameterized based on ERA INTERIM data with a cos(lon) dependence");
+  temp_era_interim_lon_set = options::Bool(
+      "-temp_era_interim_lon",
+      "Near-surface air temperature is parameterized based on ERA INTERIM data with a cos(lon) dependence");
 
 
   if (temp_huybrechts_dewolde99_set) {
-      m_log->message(2,
-             "    Near-surface air temperature is parameterized as in Huybrechts & De Wolde (1999).\n");
+    m_log->message(2, "    Near-surface air temperature is parameterized as in Huybrechts & De Wolde (1999).\n");
   } else if (temp_era_interim_set) {
-      m_log->message(2,
-             "    Near-surface air temperature is parameterized based on ERA INTERIM data.\n");
+    m_log->message(2, "    Near-surface air temperature is parameterized based on ERA INTERIM data.\n");
   } else if (temp_era_interim_sin_set) {
-      m_log->message(2,
-             "    Near-surface air temperature is parameterized based on ERA INTERIM data with a sin(lat) dependence.\n");
+    m_log->message(
+        2, "    Near-surface air temperature is parameterized based on ERA INTERIM data with a sin(lat) dependence.\n");
   } else if (temp_era_interim_lon_set) {
-      m_log->message(2,
-             "    Near-surface air temperature is parameterized based on ERA INTERIM data with a cos(lon) dependence.\n");
-  }else {
-      m_log->message(2,
-             "    Near-surface annual mean air temperature is parameterized as in Martin et al. (2011),\n"
-             "    and near-surface summer mean air temperature is computed as anomaly to the Huybrechts & De Wolde (1999) - temperature.\n");
+    m_log->message(
+        2, "    Near-surface air temperature is parameterized based on ERA INTERIM data with a cos(lon) dependence.\n");
+  } else {
+    m_log->message(
+        2,
+        "    Near-surface annual mean air temperature is parameterized as in Martin et al. (2011),\n"
+        "    and near-surface summer mean air temperature is computed as anomaly to the Huybrechts & De Wolde (1999) - temperature.\n");
   }
 }
 
 
 MaxTimestep TemperaturePIK::max_timestep_impl(double t) const {
-  (void) t;
+  (void)t;
   //return MaxTimestep();
   return MaxTimestep("atmosphere pik_temp");
 }
@@ -125,7 +116,7 @@ MaxTimestep TemperaturePIK::max_timestep_impl(double t) const {
 void TemperaturePIK::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
 
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
-    result[k] = m_precipitation(i,j);
+    result[k] = m_precipitation(i, j);
   }
 }
 
@@ -134,17 +125,17 @@ void TemperaturePIK::precip_time_series_impl(int i, int j, std::vector<double> &
 //! Note that the precipitation rate is time-independent and does not need
 //! to be updated.
 void TemperaturePIK::update_impl(const Geometry &geometry, double t, double dt) {
-  (void) t;
-  (void) dt;
+  (void)t;
+  (void)dt;
 
   // initialize pointers to fields the parameterization depends on:
-  const IceModelVec2S
-    &h        = *m_grid->variables().get_2d_scalar("surface_altitude"),
-    &lat_degN = *m_grid->variables().get_2d_scalar("latitude"),
-    &lon_degE = *m_grid->variables().get_2d_scalar("longitude");
+  const IceModelVec2S &h        = *m_grid->variables().get_2d_scalar("surface_altitude"),
+                      &lat_degN = *m_grid->variables().get_2d_scalar("latitude"),
+                      &lon_degE = *m_grid->variables().get_2d_scalar("longitude");
 
   if (lat_degN.metadata().has_attribute("missing_at_bootstrap")) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "latitude variable was missing at bootstrap;\n"
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "latitude variable was missing at bootstrap;\n"
                        "TemperaturePIK atmosphere model depends on latitude and would return nonsense!");
   }
 
@@ -159,45 +150,53 @@ void TemperaturePIK::update_impl(const Geometry &geometry, double t, double dt) 
     const int i = p.i(), j = p.j();
 
     double gamma_a;
-    if (h(i,j) < 1500.0) {
+    if (h(i, j) < 1500.0) {
       gamma_a = -0.005102;
-    }else{
+    } else {
       gamma_a = -0.014285;
     }
-  
-    if (temp_huybrechts_dewolde99_set){
-      m_air_temp_mean_annual(i,j) = 273.15 + 34.46 + gamma_a * h(i,j) - 0.68775 * lat_degN(i,j)*(-1.0);
-      m_air_temp_mean_summer(i,j)   = 273.15 + 16.81 - 0.00692 * h(i,j) - 0.27937 * lat_degN(i,j)*(-1.0);
+
+    if (temp_huybrechts_dewolde99_set) {
+      m_air_temp_mean_annual(i, j) = 273.15 + 34.46 + gamma_a * h(i, j) - 0.68775 * lat_degN(i, j) * (-1.0);
+      m_air_temp_mean_summer(i, j) = 273.15 + 16.81 - 0.00692 * h(i, j) - 0.27937 * lat_degN(i, j) * (-1.0);
     }
 
-    else if (temp_era_interim_set){  // parametrization based on multiple regression analysis of ERA INTERIM data
-      m_air_temp_mean_annual(i,j) = 273.15 + 29.2 - 0.0082 * h(i,j) - 0.576 * lat_degN(i,j)*(-1.0);
-      m_air_temp_mean_summer(i,j)   = 273.15 + 16.5 - 0.0068 * h(i,j) - 0.248 * lat_degN(i,j)*(-1.0);
-    }
-    else if (temp_era_interim_sin_set){  // parametrization based on multiple regression analysis of ERA INTERIM data with sin(lat)
-      m_air_temp_mean_annual(i,j) = 273.15 - 2.0 -0.0082*h(i,j) + 18.4 * (sin(3.1415*lat_degN(i,j)/180.0)+0.8910)/(1-0.8910);
-      m_air_temp_mean_summer(i,j)   = 273.15 + 3.2 -0.0067*h(i,j) +  8.3 * (sin(3.1415*lat_degN(i,j)/180.0)+0.8910)/(1-0.8910);
-    }
-    else if (temp_era_interim_lon_set){  // parametrization based on multiple regression analysis of ERA INTERIM data with cos(lon)
-      double hmod = std::max(500.0,h(i,j));  //in the fit for icefree ocean hmod was set to 0
-      m_air_temp_mean_annual(i,j) = 273.15 + 36.81 -0.00797*hmod -0.688*lat_degN(i,j)*(-1.0) + 2.574*cos(3.1415*(lon_degE(i,j)-110.0)/180.0);
-      m_air_temp_mean_summer(i,j)   = 273.15 + 22.58 -0.00940*hmod -0.234*lat_degN(i,j)*(-1.0) + 0.828*cos(3.1415*(lon_degE(i,j)-110.0)/180.0);
-    }
-    else {
+    else if (temp_era_interim_set) {
+      // parametrization based on multiple regression analysis of ERA INTERIM data
+      m_air_temp_mean_annual(i, j) = 273.15 + 29.2 - 0.0082 * h(i, j) - 0.576 * lat_degN(i, j) * (-1.0);
+      m_air_temp_mean_summer(i, j) = 273.15 + 16.5 - 0.0068 * h(i, j) - 0.248 * lat_degN(i, j) * (-1.0);
+    } else if (temp_era_interim_sin_set) {
+      // parametrization based on multiple regression analysis of ERA INTERIM data with sin(lat)
+      m_air_temp_mean_annual(i, j) =
+          273.15 - 2.0 - 0.0082 * h(i, j) + 18.4 * (sin(3.1415 * lat_degN(i, j) / 180.0) + 0.8910) / (1 - 0.8910);
+      m_air_temp_mean_summer(i, j) =
+          273.15 + 3.2 - 0.0067 * h(i, j) + 8.3 * (sin(3.1415 * lat_degN(i, j) / 180.0) + 0.8910) / (1 - 0.8910);
+    } else if (
+        temp_era_interim_lon_set) {
+      // parametrization based on multiple regression analysis of ERA INTERIM data with cos(lon)
+      double hmod = std::max(500.0, h(i, j)); //in the fit for icefree ocean hmod was set to 0
+      m_air_temp_mean_annual(i, j) = 273.15 + 36.81 - 0.00797 * hmod - 0.688 * lat_degN(i, j) * (-1.0) +
+                                     2.574 * cos(3.1415 * (lon_degE(i, j) - 110.0) / 180.0);
+      m_air_temp_mean_summer(i, j) = 273.15 + 22.58 - 0.00940 * hmod - 0.234 * lat_degN(i, j) * (-1.0) +
+                                     0.828 * cos(3.1415 * (lon_degE(i, j) - 110.0) / 180.0);
+    } else {
 
-    // annual mean temperature = Martin et al. (2011) parametrization
-    // summer mean temperature = anomaly to Huybrechts & DeWolde (1999)
-      m_air_temp_mean_annual(i,j) = 273.15 + 30 - 0.0075 * h(i,j) - 0.68775 * lat_degN(i,j)*(-1.0);  // surface temperature parameterization as in Martin et al. 2011, Eqn. 2.0.2
+      // annual mean temperature = Martin et al. (2011) parametrization
+      // summer mean temperature = anomaly to Huybrechts & DeWolde (1999)
+      m_air_temp_mean_annual(i, j) =
+          273.15 + 30 - 0.0075 * h(i, j) -
+          0.68775 * lat_degN(i, j) *
+              (-1.0); // surface temperature parameterization as in Martin et al. 2011, Eqn. 2.0.2
 
-      double TMA = 273.15 + 34.46 + gamma_a * h(i,j) - 0.68775 * lat_degN(i,j)*(-1.0); // = TMA, mean annual temperature in Huybrechts & DeWolde (1999)
-      double TMS = 273.15 + 16.81 - 0.00692 * h(i,j) - 0.27937 * lat_degN(i,j)*(-1.0); // = TMS, mean summer temperature in Huybrechts & DeWolde (1999)
+      double TMA = 273.15 + 34.46 + gamma_a * h(i, j) -
+                   0.68775 * lat_degN(i, j) * (-1.0); // = TMA, mean annual temperature in Huybrechts & DeWolde (1999)
+      double TMS = 273.15 + 16.81 - 0.00692 * h(i, j) -
+                   0.27937 * lat_degN(i, j) * (-1.0); // = TMS, mean summer temperature in Huybrechts & DeWolde (1999)
 
-      m_air_temp_mean_summer(i,j) = m_air_temp_mean_annual(i,j) + (TMS - TMA);
+      m_air_temp_mean_summer(i, j) = m_air_temp_mean_annual(i, j) + (TMS - TMA);
     }
-
   }
 }
 
 } // end of namespace atmosphere
 } // end of namespace pism
-
