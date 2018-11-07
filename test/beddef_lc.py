@@ -100,12 +100,11 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
         log.message(2, ".")
     log.message(2, "\n")
 
-    p0 = PISM.vec.ToProcZero(grid)
-
     # extract half of the x grid
     r = grid.x()[N-1:]
+
     # extract values along the x direction (along the radius of the disc)
-    z = p0.communicate(bed_model.bed_elevation())[N-1, N-1:]
+    z = bed_model.bed_elevation().numpy()[N-1, N-1:]
 
     return r, z
 
@@ -140,12 +139,11 @@ def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
 
     bed_model.bootstrap(bed, bed_uplift, ice_thickness, sea_level)
 
-    p0 = PISM.vec.ToProcZero(grid)
-
     # extract half of the x grid
     r = grid.x()[N-1:]
+
     # extract values along the x direction (along the radius of the disc)
-    z = p0.communicate(bed_model.total_displacement())[N-1, N-1:]
+    z = bed_model.total_displacement().numpy()[N-1, N-1:]
 
     return r, z
 

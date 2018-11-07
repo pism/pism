@@ -131,27 +131,6 @@ def vec_access_test():
         pass
 
 
-def toproczero_test():
-    "Test communication to processor 0"
-    grid = create_dummy_grid()
-
-    vec_scalar = PISM.vec.randVectorS(grid, 1.0)
-    vec_vector = PISM.vec.randVectorV(grid, 2.0)
-
-    tz = PISM.vec.ToProcZero(grid)
-    array_scalar_0 = tz.communicate(vec_scalar)
-
-    tz2 = PISM.vec.ToProcZero(grid, dof=2, dim=2)
-    array_vector_0 = tz2.communicate(vec_vector)
-
-    try:
-        tz3 = PISM.vec.ToProcZero(grid, dof=2, dim=3)
-        return False
-    except NotImplementedError:
-        # 3D fields are not supported (yet)
-        pass
-
-
 def create_modeldata_test():
     "Test creating the ModelData class"
     grid = create_dummy_grid()
