@@ -285,9 +285,16 @@ def run():
 
     append_mode = False
 
-    input_filename = PISM.optionsString("-i", "input file")
-    append_filename = PISM.optionsString("-a", "append file", default=None)
-    output_filename = PISM.optionsString("-o", "output file", default=None)
+    input_filename = config.get_string("input.file")
+    if len(input_filename) == 0:
+        input_filename = None
+
+    append = PISM.OptionString("-a", "append file")
+    append_filename = append.value() if append.is_set() else None
+
+    output_filename = config.get_string("output.file_name")
+    if len(output_filename) == 0:
+        output_filename = None
 
     if (input_filename is None) and (append_filename is None):
         PISM.verbPrintf(1, com, "\nError: No input file specified. Use one of -i [file.nc] or -a [file.nc].\n")
@@ -306,7 +313,7 @@ def run():
         output_filename = append_filename
         append_mode = True
 
-    inv_data_filename = PISM.optionsString("-inv_data", "inverse data file", default=input_filename)
+    inv_data_filename = PISM.OptionString("-inv_data", "inverse data file", input_filename).value()
 
     do_plotting = PISM.OptionBool("-inv_plot", "perform visualization during the computation")
     do_final_plot = PISM.OptionBool("-inv_final_plot",
@@ -321,8 +328,9 @@ def run():
     do_restart = PISM.OptionBool("-inv_restart", "Restart a stopped computation.")
     use_design_prior = config.get_boolean("inverse.use_design_prior")
 
-    prep_module = PISM.optionsString(
-        "-inv_prep_module", "Python module used to do final setup of inverse solver", default=None)
+    prep_module = PISM.OptionString("-inv_prep_module",
+                                    "Python module used to do final setup of inverse solver")
+    prep_module = prep_module.value() if prep_module.is_set() else None
 
     is_regional = PISM.OptionBool("-regional", "Compute SIA/SSA using regional model semantics")
 

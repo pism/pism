@@ -52,8 +52,8 @@ if __name__ == "__main__":
 
     append_mode = False
 
-    input_filename = PISM.optionsString("-i", "input file")
-    inv_data_filename = PISM.optionsString("-inv_data", "inverse data file", default=input_filename)
+    input_filename = config.get_string("input.file")
+    inv_data_filename = PISM.OptionString("-inv_data", "inverse data file", input_filename).value()
     use_tauc_prior = PISM.OptionBool("-inv_use_tauc_prior",
                                      "Use tauc_prior from inverse data file as initial guess.")
 

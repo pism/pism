@@ -87,12 +87,10 @@ if __name__ == '__main__':
     if not PISM.OptionString("-ssa_method", "").is_set():
         config.set_string("stress_balance.ssa.method", "fem")
 
-    input_file_name = PISM.optionsString("-i",
-                                         "file to bootstrap from")
+    input_file_name = config.get_string("input.file")
 
-    output_file_name = PISM.optionsString("-o",
-                                          "output file",
-                                          default="make_synth_ssa.nc")
+    config.set_string("output.file_name", "make_synth_ssa.nc", PISM.CONFIG_DEFAULT)
+    output_file_name = config.get_string("output.file_name")
 
     design_prior_scale = PISM.OptionReal("-design_prior_scale",
                                           "initial guess for design variable to be this factor of the true value",
