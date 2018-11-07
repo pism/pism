@@ -104,10 +104,10 @@ if __name__ == '__main__':
     noise = PISM.OptionReal("-rms_noise", "pointwise rms noise to add (in m/a)", 0.0)
     noise = noise.value() if noise.is_set() else None
 
-    misfit_weight_type = PISM.optionsList("-misfit_type",
-                                          "Choice of misfit weight function",
-                                          "grounded,fast",
-                                          "grounded")
+    misfit_weight_type = PISM.OptionKeyword("-misfit_type",
+                                            "Choice of misfit weight function",
+                                            "grounded,fast",
+                                            "grounded").value()
 
     fast_ice_speed = PISM.OptionReal("-fast_ice_speed",
                                       "Threshold in m/a for determining if ice is fast",
@@ -119,10 +119,10 @@ if __name__ == '__main__':
     is_regional = PISM.OptionBool("-regional",
                                    "Compute SIA/SSA using regional model semantics")
 
-    design_var = PISM.optionsList("-inv_ssa",
-                                  "design variable for inversion",
-                                  "tauc,hardav",
-                                  "tauc")
+    design_var = PISM.OptionKeyword("-inv_ssa",
+                                    "design variable for inversion",
+                                    "tauc,hardav",
+                                    "tauc").value()
 
     ssa_run = PISM.ssa.SSAFromInputFile(input_file_name)
 

@@ -246,16 +246,6 @@ def create_special_vecs_test():
     return True
 
 
-def options_test():
-    "Test command-line option handling"
-    ctx = PISM.Context()
-
-    o = PISM.PETSc.Options()
-
-    M = PISM.optionsList("-L", "description", choices="one,two", default="one")
-    M = PISM.optionsList("-L", "description", choices="one,two", default=None)
-
-
 def pism_vars_test():
     """Test adding fields to and getting them from pism::Vars."""
     grid = create_dummy_grid()

@@ -320,9 +320,9 @@ def run():
                                      "perform visualization at the end of the computation")
     Vmax = PISM.OptionReal("-inv_plot_vmax", "maximum velocity for plotting residuals", 30)
 
-    design_var = PISM.optionsList("-inv_ssa",
-                                  "design variable for inversion",
-                                  "tauc,hardav", "tauc")
+    design_var = PISM.OptionKeyword("-inv_ssa",
+                                    "design variable for inversion",
+                                    "tauc,hardav", "tauc").value()
     do_pause = PISM.OptionBool("-inv_pause", "pause each iteration")
 
     do_restart = PISM.OptionBool("-inv_restart", "Restart a stopped computation.")
