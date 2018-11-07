@@ -67,7 +67,8 @@ def printing_test():
 
 def random_vec_test():
     "Test methods creating random fields"
-    grid = create_dummy_grid()
+    grid = PISM.IceGrid_Shallow(PISM.Context().ctx, 1e6, 1e6, 0, 0, 61, 31,
+                                PISM.NOT_PERIODIC, PISM.CELL_CENTER)
 
     vec_scalar = PISM.vec.randVectorS(grid, 1.0)
     vec_vector = PISM.vec.randVectorV(grid, 2.0)
