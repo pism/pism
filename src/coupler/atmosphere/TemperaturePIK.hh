@@ -1,4 +1,4 @@
-// Copyright (C)  2009-2018 Ricarda Winkelmann, Torsten Albrecht
+// Copyright (C)  2009-2018 Ricarda Winkelmann, Torsten Albrecht, Constantine Khrulev
 //
 // This file is part of PISM.
 //
@@ -20,25 +20,25 @@
 #define __PATemperaturePIK_hh
 
 #include "YearlyCycle.hh"
-#include "pism/util/Timeseries.hh"
 
 namespace pism {
 namespace atmosphere {
-
 
 class TemperaturePIK : public YearlyCycle {
 public:
   TemperaturePIK(IceGrid::ConstPtr g);
   virtual ~TemperaturePIK();
 
-  virtual void init_impl(const Geometry &geometry);
-  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
+private:
+  void init_impl(const Geometry &geometry);
 
-protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  MaxTimestep max_timestep_impl(double t) const;
+  void update_impl(const Geometry &geometry, double t, double dt);
 
-  bool temp_huybrechts_dewolde99_set, temp_era_interim_set, temp_era_interim_sin_set, temp_era_interim_lon_set;
+  enum Parameterization {DEFAULT, HUYBRECHTS_DEWOLDE99, ERA_INTERIM,
+                         ERA_INTERIM_SIN, ERA_INTERIM_LON};
+
+  Parameterization m_parameterization;
 };
 
 } // end of namespace atmosphere

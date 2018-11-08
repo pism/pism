@@ -133,6 +133,17 @@ netcdf pism_config {
     pism_config:atmosphere.precip_exponential_factor_for_temperature_type = "scalar";
     pism_config:atmosphere.precip_exponential_factor_for_temperature_units = "Kelvin-1";
 
+    pism_config:atmosphere.pik_temp.file = "";
+    pism_config:atmosphere.pik_temp.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
+    pism_config:atmosphere.pik_temp.file_type = "string";
+    pism_config:atmosphere.pik_temp.file_option = "atmosphere_pik_temp_file";
+
+    pism_config:atmosphere.pik_temp.parameterization = "default";
+    pism_config:atmosphere.pik_temp.parameterization_doc = "Selects parameterizations of mean annual and mean summer near-surface air temperatures.";
+    pism_config:atmosphere.pik_temp.parameterization_type = "keyword";
+    pism_config:atmosphere.pik_temp.parameterization_choices = "default,huybrechts_dewolde99,era_interim,era_interim_sin,era_interim_lon";
+    pism_config:atmosphere.pik_temp.parameterization_option = "atmosphere_pik_temp";
+
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate = 0.0;
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_doc = "Elevation lapse rate for the surface mass balance";
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_type = "scalar";
