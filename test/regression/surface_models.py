@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Tests of PISM's ocean models and modifiers.
+Tests of PISM's surface models and modifiers.
 """
 
 import PISM
