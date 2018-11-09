@@ -27,6 +27,8 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       pism_exception.i
       pism_inverse.i
       pism_ocean.i
+      pism_surface.i
+      pism_atmosphere.i
       pism_options.i
       pism_verification.i
       )
