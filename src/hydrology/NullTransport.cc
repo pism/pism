@@ -67,10 +67,10 @@ void NullTransport::bootstrap_impl(const PIO &input_file,
   Hydrology::bootstrap_impl(input_file, ice_thickness);
 }
 
-void NullTransport::initialize_impl(const IceModelVec2S &W_till,
+void NullTransport::init_impl(const IceModelVec2S &W_till,
                                     const IceModelVec2S &W,
                                     const IceModelVec2S &P) {
-  Hydrology::initialize_impl(W_till, W, P);
+  Hydrology::init_impl(W_till, W, P);
 }
 
 MaxTimestep NullTransport::max_timestep_impl(double t) const {

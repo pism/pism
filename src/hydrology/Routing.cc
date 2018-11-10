@@ -282,10 +282,10 @@ void Routing::bootstrap_impl(const PIO &input_file,
   regrid("Hydrology", m_W);
 }
 
-void Routing::initialize_impl(const IceModelVec2S &W_till,
+void Routing::init_impl(const IceModelVec2S &W_till,
                               const IceModelVec2S &W,
                               const IceModelVec2S &P) {
-  Hydrology::initialize_impl(W_till, W, P);
+  Hydrology::init_impl(W_till, W, P);
 
   m_W.copy_from(W);
 }

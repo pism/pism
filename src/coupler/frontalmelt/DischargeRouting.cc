@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2018 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -38,7 +38,6 @@ DischargeRouting::DischargeRouting(IceGrid::ConstPtr g)
   unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
 
   m_theta_ocean.reset(new IceModelVec2T(g, "theta_ocean", 1, evaluations_per_year));
-  m_salinity_ocean.reset(new IceModelVec2T(g, "salinity_ocean", 1, evaluations_per_year));
 }
 
 DischargeRouting::~DischargeRouting() {
@@ -51,7 +50,6 @@ void DischargeRouting::bootstrap_impl(const Geometry &geometry) {
   FrontalMeltPhysics physics(*m_config);
 
   m_theta_ocean->set(0.0);
-  m_salinity_ocean->set(0.0);
 }
 
 void DischargeRouting::init_impl(const Geometry &geometry) {
@@ -75,32 +73,20 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
                                                 buffer_size,
                                                 evaluations_per_year,
                                                 periodic);
-
-    m_salinity_ocean = IceModelVec2T::ForcingField(m_grid,
-                                                   file,
-                                                   "salinity_ocean",
-                                                   "", // no standard name
-                                                   buffer_size,
-                                                   evaluations_per_year,
-                                                   periodic);
   }
 
   m_theta_ocean->set_attrs("climate_forcing",
                            "potential temperature of the adjacent ocean",
                            "Kelvin", "");
 
-  m_salinity_ocean->set_attrs("climate_forcing",
-                              "salinity of the adjacent ocean",
-                              "g/kg", "");
 }
 
 /*!
- * Initialize potential temperature and salinity from IceModelVecs instead of an input
+ * Initialize potential temperature from IceModelVecs instead of an input
  * file (for testing).
  */
-void DischargeRouting::initialize(const IceModelVec2S &theta, const IceModelVec2S &salinity) {
+void DischargeRouting::initialize(const IceModelVec2S &theta) {
   m_theta_ocean->copy_from(theta);
-  m_salinity_ocean->copy_from(salinity);
 }
 
 void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
@@ -121,7 +107,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
 
   IceModelVec::AccessList list
     {&ice_thickness, &cell_type, &cell_area, &subglacial_discharge, m_theta_ocean.get(),
-     m_salinity_ocean.get(), m_frontal_melt_rate.get()};
+     m_frontal_melt_rate.get()};
 
   // index offsets for iterating over neighbors
   const int i_offsets[4] = {1, 0, -1, 0};

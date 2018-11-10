@@ -354,11 +354,11 @@ void Hydrology::bootstrap(const PIO &input_file,
   this->bootstrap_impl(input_file, ice_thickness);
 }
 
-void Hydrology::initialize(const IceModelVec2S &W_till,
+void Hydrology::init(const IceModelVec2S &W_till,
                            const IceModelVec2S &W,
                            const IceModelVec2S &P) {
   initialization_message();
-  this->initialize_impl(W_till, W, P);
+  this->init_impl(W_till, W, P);
 }
 
 void Hydrology::restart_impl(const PIO &input_file, int record) {
@@ -379,7 +379,7 @@ void Hydrology::bootstrap_impl(const PIO &input_file,
   regrid("Hydrology", m_Wtill);
 }
 
-void Hydrology::initialize_impl(const IceModelVec2S &W_till,
+void Hydrology::init_impl(const IceModelVec2S &W_till,
                                 const IceModelVec2S &W,
                                 const IceModelVec2S &P) {
   (void) W;

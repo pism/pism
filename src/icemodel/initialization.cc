@@ -222,7 +222,7 @@ void IceModel::model_state_setup() {
         W.set(m_config->get_double("bootstrapping.defaults.bwat"));
         P.set(m_config->get_double("bootstrapping.defaults.bwp"));
 
-        m_subglacial_hydrology->initialize(W_till, W, P);
+        m_subglacial_hydrology->init(W_till, W, P);
         break;
       }
     }

@@ -99,10 +99,10 @@ void Distributed::bootstrap_impl(const PIO &input_file,
   }
 }
 
-void Distributed::initialize_impl(const IceModelVec2S &W_till,
+void Distributed::init_impl(const IceModelVec2S &W_till,
                               const IceModelVec2S &W,
                               const IceModelVec2S &P) {
-  Routing::initialize_impl(W_till, W, P);
+  Routing::init_impl(W_till, W, P);
 
   m_P.copy_from(P);
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2018 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,7 +31,7 @@ public:
   DischargeRouting(IceGrid::ConstPtr g);
   virtual ~DischargeRouting();
 
-  void initialize(const IceModelVec2S &theta, const IceModelVec2S &salinity);
+  void initialize(const IceModelVec2S &theta);
 
 private:
   void update_impl(const FrontalMeltInputs &inputs, double t, double dt);
@@ -42,7 +42,7 @@ private:
   const IceModelVec2S& frontal_melt_rate_impl() const;
 
   // inputs
-  IceModelVec2T::Ptr m_theta_ocean, m_salinity_ocean;
+  IceModelVec2T::Ptr m_theta_ocean;
 
   // output
   IceModelVec2S::Ptr m_frontal_melt_rate;
