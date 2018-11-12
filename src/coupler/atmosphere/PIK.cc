@@ -21,7 +21,7 @@
 
 // This includes the PIK temperature parameterization.
 
-#include "TemperaturePIK.hh"
+#include "PIK.hh"
 
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -32,32 +32,33 @@
 namespace pism {
 namespace atmosphere {
 
-TemperaturePIK::TemperaturePIK(IceGrid::ConstPtr g)
+PIK::PIK(IceGrid::ConstPtr g)
   : YearlyCycle(g) {
 
-  auto parameterization = m_config->get_string("atmosphere.pik_temp.parameterization");
+  auto parameterization = m_config->get_string("atmosphere.pik.parameterization");
 
   std::map<std::string, Parameterization>
-    models = {{"huybrechts_dewolde99", HUYBRECHTS_DEWOLDE99},
-              {"era_interim",          ERA_INTERIM},
-              {"era_interim_sin",      ERA_INTERIM_SIN},
-              {"era_interim_lon",      ERA_INTERIM_LON},
-              {"default",              DEFAULT}};
+    models = {{"martin",                    MARTIN},
+              {"huybrechts_dewolde",        HUYBRECHTS_DEWOLDE},
+              {"martin_huybrechts_dewolde", MARTIN_HUYBRECHTS_DEWOLDE},
+              {"era_interim",               ERA_INTERIM},
+              {"era_interim_sin",           ERA_INTERIM_SIN},
+              {"era_interim_lon",           ERA_INTERIM_LON}};
 
   if (models.find(parameterization) == models.end()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "invalid pik_temp parameterization: %s",
+                                  "invalid pik parameterization: %s",
                                   parameterization.c_str());
   }
 
   m_parameterization = models[parameterization];
 }
 
-TemperaturePIK::~TemperaturePIK() {
+PIK::~PIK() {
   // empty
 }
 
-void TemperaturePIK::init_impl(const Geometry &geometry) {
+void PIK::init_impl(const Geometry &geometry) {
 
   m_log->message(2,
                  "* Initializing PIK atmosphere model with air temperature parameterization based on \n"
@@ -66,7 +67,7 @@ void TemperaturePIK::init_impl(const Geometry &geometry) {
 
   m_reference = "Winkelmann et al.";
 
-  auto precip_file = m_config->get_string("atmosphere.pik_temp.file");
+  auto precip_file = m_config->get_string("atmosphere.pik.file");
 
   if (not precip_file.empty()) {
     YearlyCycle::init_internal(precip_file,
@@ -78,7 +79,7 @@ void TemperaturePIK::init_impl(const Geometry &geometry) {
   }
 
   switch (m_parameterization) {
-  case HUYBRECHTS_DEWOLDE99:
+  case HUYBRECHTS_DEWOLDE:
     m_log->message(2,
                    "    Parameterization based on: Huybrechts & De Wolde (1999).\n");
     break;
@@ -94,24 +95,35 @@ void TemperaturePIK::init_impl(const Geometry &geometry) {
     m_log->message(2,
                    "    Parameterization based on: multiple regression analysis of ERA INTERIM data with a cos(lon) dependence.\n");
     break;
-  default:
+  case MARTIN_HUYBRECHTS_DEWOLDE:
     m_log->message(2,
                    "    Mean annual temperature: as in Martin et al (2011).\n"
                    "    Mean summer temperature: anomaly to the parameterization used by Huybrechts & De Wolde (1999).\n");
+  default:
+  case MARTIN:
+    m_log->message(2,
+                   "    Mean annual temperature: as in Martin et al (2011).\n"
+                   "    No seasonal variation in air temperature.\n");
   }
 }
 
-MaxTimestep TemperaturePIK::max_timestep_impl(double t) const {
+MaxTimestep PIK::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep("atmosphere pik_temp");
+  return MaxTimestep("atmosphere pik");
 }
 
-static double huybrechts_dewolde99_mean_annual(double surface_elevation, double latitude) {
+/*!
+ * See equation C1 in HuybrechtsdeWolde.
+ */
+static double huybrechts_dewolde_mean_annual(double surface_elevation, double latitude) {
   double gamma_a = surface_elevation < 1500.0 ? -0.005102 : -0.014285;
   return 273.15 + 34.46 + gamma_a * surface_elevation - 0.68775 * latitude * (-1.0);
 }
 
-static double huybrechts_dewolde99_mean_summer(double surface_elevation, double latitude) {
+/*!
+ * See equation C2 in HuybrechtsdeWolde.
+ */
+static double huybrechts_dewolde_mean_summer(double surface_elevation, double latitude) {
   return 273.15 + 16.81 - 0.00692 * surface_elevation - 0.27937 * latitude * (-1.0);
 }
 
@@ -119,7 +131,7 @@ static double huybrechts_dewolde99_mean_summer(double surface_elevation, double 
  * Parameterization of mean annual and mean summer near-surface temperature as in
  * Huybrechts & DeWolde (1999)
  */
-static void huybrechts_dewolde99(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVec2S &T_ms) {
+static void huybrechts_dewolde(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVec2S &T_ms) {
   IceGrid::ConstPtr grid = T_ma.grid();
 
   const IceModelVec2S
@@ -131,8 +143,8 @@ static void huybrechts_dewolde99(const Geometry &geometry, IceModelVec2S &T_ma, 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    T_ma(i, j) = huybrechts_dewolde99_mean_annual(h(i, j), lat(i, j));
-    T_ms(i, j) = huybrechts_dewolde99_mean_summer(h(i, j), lat(i, j));
+    T_ma(i, j) = huybrechts_dewolde_mean_annual(h(i, j), lat(i, j));
+    T_ms(i, j) = huybrechts_dewolde_mean_summer(h(i, j), lat(i, j));
   }
 }
 
@@ -198,6 +210,31 @@ static void era_interim_lon(const Geometry &geometry, IceModelVec2S &T_ma, IceMo
   }
 }
 
+static double martin2011_mean_annual(double elevation, double latitude) {
+  return 273.15 + 30 - 0.0075 * elevation - 0.68775 * latitude * (-1.0);
+}
+
+/*!
+ * - annual mean temperature as in Martin et al. (2011)
+ * - no seasonal variation of air temperature
+ */
+static void martin2011(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVec2S &T_ms) {
+  IceGrid::ConstPtr grid = T_ma.grid();
+
+  const IceModelVec2S
+    &h   = geometry.ice_surface_elevation,
+    &lat = geometry.latitude;
+
+  IceModelVec::AccessList list{&h, &lat, &T_ma, &T_ms};
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    T_ma(i, j) = martin2011_mean_annual(h(i, j), lat(i, j));
+    T_ms(i, j) = T_ma(i, j);
+  }
+}
+
 /*!
  * - annual mean temperature as in Martin et al. (2011)
  * - summer mean temperature computed as an anomaly to Huybrechts & DeWolde (1999)
@@ -218,8 +255,8 @@ static void martin_huybrechts_dewolde(const Geometry &geometry, IceModelVec2S &T
     T_ma(i, j) = 273.15 + 30 - 0.0075 * h(i, j) - 0.68775 * lat(i, j) * (-1.0);
 
     double
-      TMA = huybrechts_dewolde99_mean_annual(h(i, j), lat(i, j)),
-      TMS = huybrechts_dewolde99_mean_summer(h(i, j), lat(i, j));
+      TMA = huybrechts_dewolde_mean_annual(h(i, j), lat(i, j)),
+      TMS = huybrechts_dewolde_mean_summer(h(i, j), lat(i, j));
 
     T_ms(i, j) = T_ma(i, j) + (TMS - TMA);
   }
@@ -230,19 +267,19 @@ static void martin_huybrechts_dewolde(const Geometry &geometry, IceModelVec2S &T
  * Updates mean annual and mean summer (January) near-surface air temperatures. Note that
  * the precipitation rate is time-independent and does not need to be updated.
  */
-void TemperaturePIK::update_impl(const Geometry &geometry, double t, double dt) {
+void PIK::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
 
   if (geometry.latitude.metadata().has_attribute("missing_at_bootstrap")) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "latitude variable was missing at bootstrap;\n"
-                       "TemperaturePIK atmosphere model depends on latitude and would return nonsense!");
+                       "PIK atmosphere model depends on latitude and would return nonsense!");
   }
 
   switch (m_parameterization) {
-  case HUYBRECHTS_DEWOLDE99:
-    huybrechts_dewolde99(geometry, m_air_temp_mean_annual, m_air_temp_mean_summer);
+  case HUYBRECHTS_DEWOLDE:
+    huybrechts_dewolde(geometry, m_air_temp_mean_annual, m_air_temp_mean_summer);
     break;
   case ERA_INTERIM:
     era_interim(geometry, m_air_temp_mean_annual, m_air_temp_mean_summer);
@@ -253,8 +290,13 @@ void TemperaturePIK::update_impl(const Geometry &geometry, double t, double dt) 
   case ERA_INTERIM_LON:
     era_interim_lon(geometry, m_air_temp_mean_annual, m_air_temp_mean_summer);
     break;
-  default:
+  case MARTIN_HUYBRECHTS_DEWOLDE:
     martin_huybrechts_dewolde(geometry, m_air_temp_mean_annual, m_air_temp_mean_summer);
+    break;
+  default:
+  case MARTIN:
+    martin2011(geometry, m_air_temp_mean_annual, m_air_temp_mean_summer);
+    break;
   }
 }
 

@@ -22,13 +22,12 @@
 // atmosphere models:
 #include "GivenClimate.hh"
 #include "LapseRates.hh"
-#include "TemperaturePIK.hh"
 #include "SeariseGreenland.hh"
 #include "Delta_T.hh"
 #include "Delta_P.hh"
 #include "Frac_P.hh"
 #include "Paleo_precip.hh"
-#include "ConstantPIK.hh"
+#include "PIK.hh"
 #include "Anomaly.hh"
 #include "CosineYearlyCycle.hh"
 #include "WeatherStation.hh"
@@ -45,7 +44,6 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_model<PIK>("pik");
   add_model<Given>("given");
   add_model<SeaRISEGreenland>("searise_greenland");
-  add_model<TemperaturePIK>("pik_temp");
   add_model<CosineYearlyCycle>("yearly_cycle");
   add_model<WeatherStation>("one_station");
   set_default("given");

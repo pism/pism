@@ -16,18 +16,18 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PATemperaturePIK_hh
-#define __PATemperaturePIK_hh
+#ifndef __PAPIK_hh
+#define __PAPIK_hh
 
 #include "YearlyCycle.hh"
 
 namespace pism {
 namespace atmosphere {
 
-class TemperaturePIK : public YearlyCycle {
+class PIK : public YearlyCycle {
 public:
-  TemperaturePIK(IceGrid::ConstPtr g);
-  virtual ~TemperaturePIK();
+  PIK(IceGrid::ConstPtr g);
+  virtual ~PIK();
 
 private:
   void init_impl(const Geometry &geometry);
@@ -35,8 +35,8 @@ private:
   MaxTimestep max_timestep_impl(double t) const;
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  enum Parameterization {DEFAULT, HUYBRECHTS_DEWOLDE99, ERA_INTERIM,
-                         ERA_INTERIM_SIN, ERA_INTERIM_LON};
+  enum Parameterization {MARTIN, HUYBRECHTS_DEWOLDE, MARTIN_HUYBRECHTS_DEWOLDE,
+                         ERA_INTERIM, ERA_INTERIM_SIN, ERA_INTERIM_LON};
 
   Parameterization m_parameterization;
 };
@@ -44,4 +44,4 @@ private:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif // __PATemperaturePIK_hh
+#endif // __PAPIK_hh
