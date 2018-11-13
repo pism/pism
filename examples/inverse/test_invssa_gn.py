@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2012, 2014, 2015, 2016, 2017 David Maxwell
+# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -52,10 +52,10 @@ if __name__ == "__main__":
 
     append_mode = False
 
-    input_filename = PISM.optionsString("-i", "input file")
-    inv_data_filename = PISM.optionsString("-inv_data", "inverse data file", default=input_filename)
-    use_tauc_prior = PISM.optionsFlag(
-        "-inv_use_tauc_prior", "Use tauc_prior from inverse data file as initial guess.", default=False)
+    input_filename = config.get_string("input.file")
+    inv_data_filename = PISM.OptionString("-inv_data", "inverse data file", input_filename).value()
+    use_tauc_prior = PISM.OptionBool("-inv_use_tauc_prior",
+                                     "Use tauc_prior from inverse data file as initial guess.")
 
     ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename, inv_data_filename, 'tauc')
     ssarun.setup()
@@ -120,9 +120,9 @@ if __name__ == "__main__":
 
     solver_gn = PISM.InvSSATikhonovGN(ssarun.ssa, zeta, vel_ssa_observed, eta, designFunctional, stateFunctional)
 
-    (seed, seed_set) = PISM.optionsIntWasSet("-inv_seed", "")
-    if seed_set:
-        np.random.seed(seed + PISM.Context().rank)
+    seed = PISM.OptionInteger("-inv_seed", "random generator seed")
+    if seed.is_set():
+        np.random.seed(seed.value() + PISM.Context().rank)
 
     d1 = PISM.vec.randVectorS(grid, 1)
     d2 = PISM.vec.randVectorS(grid, 1)

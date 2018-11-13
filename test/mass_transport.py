@@ -190,13 +190,9 @@ def part_grid_symmetry_test():
     # combine stuff stored as thickness and as area specific volume
     geometry.ice_thickness.add(1.0, geometry.ice_area_specific_volume)
 
-    grid = geometry.ice_thickness.grid()
-
-    p0 = PISM.vec.ToProcZero(grid)
-
-    # gather ice thickness on rank 0 -- that way we can put it in a
-    # numpy array and use flipud() and fliplr().
-    H = p0.communicate(geometry.ice_thickness)
+    # convert ice thickness to a NumPy array on rank 0 -- that way we can use flipud() and
+    # fliplr().
+    H = geometry.ice_thickness.numpy()
 
     np.testing.assert_almost_equal(H, np.flipud(H))
     np.testing.assert_almost_equal(H, np.fliplr(H))

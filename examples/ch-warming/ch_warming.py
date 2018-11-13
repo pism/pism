@@ -1,4 +1,5 @@
 import PISM
+from PISM.util import convert
 import numpy as np
 import pylab as plt
 
@@ -93,8 +94,8 @@ def E_steady_state(H, z, T_surface, G, ice_k):
 def run(T_final_years=10.0, dt_days=1, Lz=1000, Mz=101, R=20, omega=0.005):
     """Run the one-column cryohydrologic warming setup"""
 
-    T_final = PISM.convert(unit_system, T_final_years, "years", "seconds")
-    dt = PISM.convert(unit_system, dt_days, "days", "seconds")
+    T_final = convert(T_final_years, "years", "seconds")
+    dt = convert(dt_days, "days", "seconds")
 
     ice = EnthalpyColumn("energy.enthalpy", Mz, dt, Lz=Lz)
     ch = EnthalpyColumn("energy.ch_warming", Mz, dt, Lz=Lz)

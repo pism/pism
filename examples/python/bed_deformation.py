@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import PISM
+from PISM.util import convert
 from math import cos, pi
 
 # Simple testing program for Lingle & Clark bed deformation model.
@@ -30,7 +31,7 @@ R0 = 1000e3
 def initialize_uplift(uplift):
     "Initialize the uplift field."
     grid = uplift.grid()
-    peak_uplift = PISM.convert(ctx.unit_system, 10, "mm/year", "m/second")
+    peak_uplift = convert(10, "mm/year", "m/second")
     with PISM.vec.Access(nocomm=[uplift]):
         for (i, j) in grid.points():
             r = PISM.radius(grid, i, j)
@@ -118,7 +119,7 @@ def run(scenario, plot, pause, save):
     # now add the disc load
     initialize_thickness(thickness, H0)
 
-    dt = PISM.convert(ctx.unit_system, 100, "365 day", "seconds")
+    dt = convert(100, "365 day", "seconds")
 
     # the time-stepping loop
     while time.current() < time.end():

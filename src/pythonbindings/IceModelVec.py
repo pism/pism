@@ -14,4 +14,8 @@ def numpy(self):
     tmp = self.allocate_proc0_copy()
     self.put_on_proc0(tmp.get())
     import numpy
-    return numpy.array(tmp.get()).reshape(self.shape())
+
+    if self.grid().ctx().rank() == 0:
+        return numpy.array(tmp.get()).reshape(self.shape())
+    else:
+        return None
