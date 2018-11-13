@@ -72,14 +72,6 @@ several scalar diagnostics:
   ``output.ice_free_thickness_standard`` (in meters). Corresponding quantities without the
   suffix *do* include areas with a thin, "seasonal" ice cover.
 
-- The ``sub_shelf_ice_flux`` may be non-zero even if ``ice_area_glacierized_shelf`` (floating
-  ice area) is zero. This is due to the fact that during time-stepping fluxes are computed
-  before calving is applied, and the ice area is computed *after* calving. Hence ice that
-  is calved off experiences top-surface and basal fluxes, but does not contribute to the
-  reported area. This is a small error that approaches zero as the grid is refined. In
-  this case ``sub_shelf_ice_flux`` should be added to the calving flux during
-  post-processing. [#]_
-
 - Ice volume and area are computed and then split among floating and grounded portions:
   ``ice_volume_glacierized`` :math:`\mapsto` (``ice_volume_glacierized_shelf``,
   ``ice_volume_glacierized_grounded``) while ``ice_area_glacierized`` :math:`\mapsto`
@@ -109,7 +101,3 @@ several scalar diagnostics:
   sub-steps for the SIA stress balance (sub-)model. ``max_hor_vel`` determines the
   CFL-type restriction for mass continuity and conservation of energy contributions of the
   SSA stress balance (i.e. sliding) velocity.
-
-.. rubric:: Footnotes
-
-.. [#] This will be fixed in a later release of PISM.
