@@ -151,30 +151,38 @@ void YearlyCycle::end_pointwise_access_impl() const {
   m_precipitation.end_access();
 }
 
+namespace diagnostics {
+
+/*! @brief Mean July near-surface air temperature. */
+class MeanSummerTemperature : public Diag<YearlyCycle>
+{
+public:
+  MeanSummerTemperature(const YearlyCycle *m)
+    : Diag<YearlyCycle>(m) {
+
+    /* set metadata: */
+    m_vars = {SpatialVariableMetadata(m_sys, "air_temp_mean_july")};
+
+    set_attrs("mean July near-surface air temperature used in the cosine yearly cycle", "",
+              "Kelvin", "Kelvin", 0);
+  }
+private:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_mean_summer", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+
+    result->copy_from(model->mean_july_temp());
+
+    return result;
+  }
+};
+} // end of namespace diagnostics
+
 DiagnosticList YearlyCycle::diagnostics_impl() const {
   DiagnosticList result = AtmosphereModel::diagnostics_impl();
 
-  result["air_temp_mean_july"] = Diagnostic::Ptr(new PA_mean_july_temp(this));
-
-  return result;
-}
-
-PA_mean_july_temp::PA_mean_july_temp(const YearlyCycle *m)
-  : Diag<YearlyCycle>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "air_temp_mean_july")};
-
-  set_attrs("mean July near-surface air temperature used in the cosine yearly cycle", "",
-            "Kelvin", "Kelvin", 0);
-}
-
-IceModelVec::Ptr PA_mean_july_temp::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_mean_july", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-
-  result->copy_from(model->mean_july_temp());
+  result["air_temp_mean_july"] = Diagnostic::Ptr(new diagnostics::MeanSummerTemperature(this));
 
   return result;
 }

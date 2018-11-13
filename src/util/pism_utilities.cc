@@ -19,7 +19,8 @@
 
 #include "pism_utilities.hh"
 
-#include <sstream>
+#include <sstream>              // istringstream, ostringstream
+#include <cstdio>               // vsnprintf
 
 #include <mpi.h>                // MPI_Get_library_version
 #include <fftw3.h>              // fftw_version
@@ -31,7 +32,6 @@
 #define MPI_INCLUDED 1
 #endif
 #include <netcdf.h>             // nc_inq_libvers
-
 
 #if (PISM_USE_PROJ4==1)
 #include "pism/util/Proj.hh"    // pj_release
@@ -176,6 +176,8 @@ double GlobalSum(MPI_Comm comm, double local) {
   GlobalSum(comm, &local, &result, 1);
   return result;
 }
+
+static const int TEMPORARY_STRING_LENGTH = 32768;
 
 std::string version() {
   char buffer[TEMPORARY_STRING_LENGTH];
@@ -371,6 +373,20 @@ std::string filename_add_suffix(const std::string &filename,
 double get_time() {
   PetscLogDouble result;
   PetscErrorCode ierr = PetscTime(&result); PISM_CHK(ierr, "PetscTime");
+  return result;
+}
+
+std::string printf(const char *format, ...) {
+  std::string result(1024, ' ');
+  va_list arglist;
+  size_t length;
+
+  va_start(arglist, format);
+  if((length = vsnprintf(&result[0], result.size(), format, arglist)) > result.size()) {
+    result.reserve(length);
+    vsnprintf(&result[0], result.size(), format, arglist);
+  }
+  va_end(arglist);
   return result;
 }
 

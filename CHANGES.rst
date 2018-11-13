@@ -3,6 +3,12 @@
 Changes since v1.0
 ==================
 
+- PISM no longer attempts to use projection information to compute cell areas. This change
+  was prompted by better mass accounting: it is now clear that using numerical methods
+  designed for a uniform grid forces us to treat cells are equal in area. We may address
+  this issue later but do not have the resources to work on this topic in the near future.
+  Please use an equal-area projection for your simulations if distortions caused by
+  working in a projected coordinate system are a concern.
 - PISM stops with an error message if the name of a parameter in a `-config_override` file
   does not match any of the known PISM parameters.
 - PISM stops with an error message if the diffusivity of the SIA flow exceeds a given

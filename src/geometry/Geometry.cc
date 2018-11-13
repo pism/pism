@@ -31,23 +31,14 @@ Geometry::Geometry(IceGrid::ConstPtr grid) {
   // (However this may increase communication costs...)
   const unsigned int WIDE_STENCIL = grid->ctx()->config()->get_double("grid.max_stencil_width");
 
-  cell_area.create(grid, "cell_area", WITHOUT_GHOSTS);
-  cell_area.set_attrs("diagnostic", "cell areas", "m2", "");
-  cell_area.metadata().set_string("comment",
-                                  "values are equal to dx*dy "
-                                  "if projection parameters are not available; "
-                                  "otherwise WGS84 ellipsoid is used");
-  cell_area.set_time_independent(true);
-  cell_area.metadata().set_string("glaciological_units", "km2");
-
-  latitude.create(grid, "lat", WITH_GHOSTS); // has ghosts so that we can compute cell areas
+  latitude.create(grid, "lat", WITHOUT_GHOSTS);
   latitude.set_attrs("mapping", "latitude", "degree_north", "latitude");
   latitude.set_time_independent(true);
   latitude.metadata().set_string("coordinates", "");
   latitude.metadata().set_string("grid_mapping", "");
   latitude.metadata().set_doubles("valid_range", {-90.0, 90.0});
 
-  longitude.create(grid, "lon", WITH_GHOSTS);
+  longitude.create(grid, "lon", WITHOUT_GHOSTS);
   longitude.set_attrs("mapping", "longitude", "degree_east", "longitude");
   longitude.set_time_independent(true);
   longitude.metadata().set_string("coordinates", "");

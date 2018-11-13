@@ -313,6 +313,9 @@
 
 %include pism_frontalmelt.i
 
+/* surface models use atmosphere models as inputs so we need to define atmosphere models first */
+%include pism_atmosphere.i
+
 %include pism_surface.i
 
 %include pism_verification.i

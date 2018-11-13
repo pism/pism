@@ -220,16 +220,17 @@ void compute_cts(const IceModelVec3 &ice_enthalpy,
 */
 double total_ice_enthalpy(double thickness_threshold,
                           const IceModelVec3 &ice_enthalpy,
-                          const IceModelVec2S &ice_thickness,
-                          const IceModelVec2S &cell_area) {
+                          const IceModelVec2S &ice_thickness) {
   double enthalpy_sum = 0.0;
 
   IceGrid::ConstPtr grid = ice_enthalpy.grid();
   Config::ConstPtr config = grid->ctx()->config();
 
+  auto cell_area = grid->cell_area();
+
   const std::vector<double> &z = grid->z();
 
-  IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness, &cell_area};
+  IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness};
   ParallelSection loop(grid->com);
   try {
     for (Points p(*grid); p; p.next()) {
@@ -241,13 +242,12 @@ double total_ice_enthalpy(double thickness_threshold,
         const int ks = grid->kBelowHeight(H);
 
         const double
-          *E   = ice_enthalpy.get_column(i, j),
-          area = cell_area(i, j);
+          *E   = ice_enthalpy.get_column(i, j);
 
         for (int k = 0; k < ks; ++k) {
-          enthalpy_sum += area * E[k] * (z[k+1] - z[k]);
+          enthalpy_sum += cell_area * E[k] * (z[k+1] - z[k]);
         }
-        enthalpy_sum += area * E[ks] * (H - z[ks]);
+        enthalpy_sum += cell_area * E[ks] * (H - z[ks]);
       }
     }
   } catch (...) {

@@ -379,8 +379,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   }
   loop.check();
 
-  // FIXME: use cell areas
-  m_stats.liquified_ice_volume = ((double) liquifiedCount) * dz * m_grid->dx() * m_grid->dy();
+  m_stats.liquified_ice_volume = ((double) liquifiedCount) * dz * m_grid->cell_area();
 }
 
 void EnthalpyModel::define_model_state_impl(const PIO &output) const {

@@ -334,9 +334,9 @@ void columnSystemCtx::init_column(int i, int j,
 
 //! Write system matrix and right-hand-side into an Python script.  The file name contains ZERO_PIVOT_ERROR.
 void columnSystemCtx::reportColumnZeroPivotErrorMFile(unsigned int M) {
-  char filename[TEMPORARY_STRING_LENGTH];
-  snprintf(filename, sizeof(filename), "%s_i%d_j%d_ZERO_PIVOT_ERROR.py",
-           m_solver->prefix().c_str(), m_i, m_j);
+
+  auto filename = pism::printf("%s_i%d_j%d_ZERO_PIVOT_ERROR.py",
+                               m_solver->prefix().c_str(), m_i, m_j);
 
   std::ofstream output(filename);
   output << "# system has 1-norm = " << m_solver->norm1(M)
@@ -350,8 +350,7 @@ void columnSystemCtx::reportColumnZeroPivotErrorMFile(unsigned int M) {
 //! solution into Python script. Constructs file name from m_prefix.
 void columnSystemCtx::save_to_file(const std::vector<double> &x) {
 
-  char filename[TEMPORARY_STRING_LENGTH];
-  snprintf(filename, sizeof(filename), "%s_i%d_j%d.py", m_solver->prefix().c_str(), m_i, m_j);
+  auto filename = pism::printf("%s_i%d_j%d.py", m_solver->prefix().c_str(), m_i, m_j);
 
   std::cout << "saving "
             << m_solver->prefix() << " column system at (i,j)"

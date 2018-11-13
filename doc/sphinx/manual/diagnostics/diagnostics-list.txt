@@ -984,10 +984,10 @@ Scalar time-series
    :Units: m year-1
    :Description: maximum abs component of horizontal ice velocity over grid in last time step during time-series reporting interval
 
-#. ``slvol``
+#. ``sea_level_rise_potential``
 
    :Units: m
-   :Description: total sea-level relevant ice IN SEA-LEVEL EQUIVALENT
+   :Description: the sea level rise that would result if all the ice were melted
 
 #. ``surface_accumulation_rate``
 

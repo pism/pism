@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Tests of PISM's surface models and modifiers.
+Tests of PISM's atmosphere models and modifiers.
 """
 
 import PISM
@@ -14,23 +14,20 @@ config = PISM.Context().config
 
 # reduce the grid size to speed this up
 config.set_double("grid.Mx", 3)
-config.set_double("grid.My", 3)
+config.set_double("grid.My", 6) # non-square grid
 config.set_double("grid.Mz", 5)
 
 seconds_per_year = 365 * 86400
 # ensure that this is the correct year length
 config.set_string("time.calendar", "365_day")
 
-log = PISM.Context().log
 # silence models' initialization messages
-log.set_threshold(1)
-
-options = PISM.PETSc.Options()
-
+log = PISM.Context().log.set_threshold(1)
 
 def create_geometry(grid):
     geometry = PISM.Geometry(grid)
 
+    geometry.cell_area.set(grid.dx() * grid.dy())
     geometry.latitude.set(0.0)
     geometry.longitude.set(0.0)
 
@@ -44,12 +41,6 @@ def create_geometry(grid):
 
     return geometry
 
-
-def sample(vec):
-    with PISM.vec.Access(nocomm=[vec]):
-        return vec[0, 0]
-
-
 def create_dummy_forcing_file(filename, variable_name, units, value):
     f = netCDF4.Dataset(filename, "w")
     f.createDimension("time", 1)
@@ -61,7 +52,6 @@ def create_dummy_forcing_file(filename, variable_name, units, value):
     delta_T[0] = value
     f.close()
 
-
 def dummy_grid():
     "Create a dummy grid"
     ctx = PISM.Context()
@@ -69,46 +59,27 @@ def dummy_grid():
     params.ownership_ranges_from_options(ctx.size)
     return PISM.IceGrid(ctx.ctx, params)
 
-
 def check(vec, value):
-    "Check if values of vec are almost equal to value."
-    np.testing.assert_almost_equal(sample(vec), value)
-
+    "Check if vec[0,0] is almost equal to value."
+    np.testing.assert_almost_equal(vec.numpy()[0,0], value)
 
 def check_difference(A, B, value):
     "Check if the difference between A and B is almost equal to value."
-    np.testing.assert_almost_equal(sample(A) - sample(B), value)
+    delta = A.numpy() - B.numpy()
+    np.testing.assert_almost_equal(delta[0,0], value)
 
+def check_model(model, T, SMB):
+    check(model.mean_precipitation(), SMB)
+    check(model.mean_annual_temp(), T)
 
-def check_model(model, T, omega, SMB, mass=0.0, thickness=0.0):
-    check(model.mass_flux(), SMB)
-    check(model.temperature(), T)
-    check(model.liquid_water_fraction(), omega)
-    check(model.layer_mass(), mass)
-    check(model.layer_thickness(), thickness)
+def check_modifier(model, modifier, T=0.0, P=0.0):
+    check_difference(modifier.mean_precipitation(),
+                     model.mean_precipitation(),
+                     P)
 
-
-def check_modifier(model, modifier, T=0.0, omega=0.0, SMB=0.0, mass=0.0, thickness=0.0):
-    check_difference(modifier.mass_flux(),
-                     model.mass_flux(),
-                     SMB)
-
-    check_difference(modifier.temperature(),
-                     model.temperature(),
+    check_difference(modifier.mean_annual_temp(),
+                     model.mean_annual_temp(),
                      T)
-
-    check_difference(modifier.liquid_water_fraction(),
-                     model.liquid_water_fraction(),
-                     omega)
-
-    check_difference(modifier.layer_mass(),
-                     model.layer_mass(),
-                     mass)
-
-    check_difference(modifier.layer_thickness(),
-                     model.layer_thickness(),
-                     thickness)
-
 
 def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)
@@ -123,12 +94,11 @@ def create_given_input_file(filename, grid, temperature, mass_flux):
     M.set(mass_flux)
     M.write(filename)
 
-
 class DeltaT(TestCase):
     def setUp(self):
         self.filename = "delta_T_input.nc"
         self.grid = dummy_grid()
-        self.model = PISM.SurfaceEISMINTII(self.grid, ord('A'))
+        self.model = PISM.AtmosphereUniform(self.grid)
         self.dT = -5.0
         self.geometry = create_geometry(self.grid)
 
@@ -137,7 +107,8 @@ class DeltaT(TestCase):
     def runTest(self):
         "Modifier Delta_T"
 
-        modifier = PISM.SurfaceDeltaT(self.grid, self.model)
+
+        modifier = PISM.AtmosphereDeltaT(self.grid, self.model)
 
         options.setValue("-surface_delta_T_file", self.filename)
 
@@ -149,8 +120,7 @@ class DeltaT(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
-
-class LapseRates(TestCase):
+class ElevationCorrection(TestCase):
     def setUp(self):
         self.filename = "reference_surface.nc"
         self.grid = dummy_grid()
@@ -164,14 +134,13 @@ class LapseRates(TestCase):
         # save current surface elevation to use it as a "reference" surface elevation
         self.geometry.ice_surface_elevation.dump(self.filename)
 
-        config.set_string("surface.lapse_rate.file", self.filename)
-
-        options.setValue("-temp_lapse_rate", self.dTdz)
+        config.set_string("surface.elevation_correction.file", self.filename)
+        config.set_double("surface.elevation_correction.temperature.lapse_rate", self.dTdz)
 
     def runTest(self):
         "Modifier lapse_rate"
 
-        modifier = PISM.SurfaceLapseRates(self.grid, self.model)
+        modifier = PISM.SurfaceElevationCorrection(self.grid, self.model)
 
         modifier.init(self.geometry)
 
@@ -188,7 +157,7 @@ class LapseRates(TestCase):
 
 if __name__ == "__main__":
 
-    t = LapseRates()
+    t = ElevationCorrection()
 
     t.setUp()
     t.runTest()

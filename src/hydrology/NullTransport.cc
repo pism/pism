@@ -116,12 +116,13 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
 
   m_input_change.add(dt, m_input_rate);
 
-  const double water_density = m_config->get_double("constants.fresh_water.density");
+  const double
+    water_density = m_config->get_double("constants.fresh_water.density"),
+    kg_per_m      = m_grid->cell_area() * water_density; // kg m-1
 
   const IceModelVec2CellType &cell_type = *inputs.cell_type;
-  const IceModelVec2S &cell_area = *inputs.cell_area;
 
-  IceModelVec::AccessList list{&cell_type, &cell_area, &m_Wtill, &m_input_rate,
+  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_input_rate,
       &m_conservation_error_change};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -146,7 +147,6 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
     m_Wtill(i, j) = (W_old + dW_input) + dW_decay;
 
     // dW_decay is a "conservation error"
-    const double kg_per_m = cell_area(i, j) * water_density; // kg m-1
     m_conservation_error_change(i, j) += dW_decay * kg_per_m;
   }
 
@@ -155,8 +155,7 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   }
 
   // remove water in ice-free areas and account for changes
-  enforce_bounds(*inputs.cell_area,
-                 *inputs.cell_type,
+  enforce_bounds(*inputs.cell_type,
                  inputs.no_model_mask,
                  m_tillwat_max,
                  m_Wtill,

@@ -552,13 +552,13 @@ protected:
     const IceModelVec2S &melt_amount = model->melt();
 
     if (m_kind == MASS) {
-      const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
+      double cell_area = m_grid->cell_area();
 
-      IceModelVec::AccessList list{&m_melt_mass, &melt_amount, &cell_area};
+      IceModelVec::AccessList list{&m_melt_mass, &melt_amount};
 
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
-        m_melt_mass(i, j) = melt_amount(i, j) * cell_area(i, j);
+        m_melt_mass(i, j) = melt_amount(i, j) * cell_area;
       }
       return m_melt_mass;
     } else {
@@ -614,13 +614,13 @@ protected:
     const IceModelVec2S &runoff_amount = model->runoff();
 
     if (m_kind == MASS) {
-      const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
+      double cell_area = m_grid->cell_area();
 
-      IceModelVec::AccessList list{&m_runoff_mass, &runoff_amount, &cell_area};
+      IceModelVec::AccessList list{&m_runoff_mass, &runoff_amount};
 
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
-        m_runoff_mass(i, j) = runoff_amount(i, j) * cell_area(i, j);
+        m_runoff_mass(i, j) = runoff_amount(i, j) * cell_area;
       }
       return m_runoff_mass;
     } else {
@@ -676,13 +676,13 @@ protected:
     const IceModelVec2S &accumulation_amount = model->accumulation();
 
     if (m_kind == MASS) {
-      const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
+      double cell_area = m_grid->cell_area();
 
-      IceModelVec::AccessList list{&m_accumulation_mass, &accumulation_amount, &cell_area};
+      IceModelVec::AccessList list{&m_accumulation_mass, &accumulation_amount};
 
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
-        m_accumulation_mass(i, j) = accumulation_amount(i, j) * cell_area(i, j);
+        m_accumulation_mass(i, j) = accumulation_amount(i, j) * cell_area;
       }
       return m_accumulation_mass;
     } else {
@@ -699,18 +699,19 @@ private:
  *
  * If the input has units kg/m^2, the output will be in kg.
  */
-static double integrate(const IceModelVec2S &input,
-                        const IceModelVec2S &cell_area) {
+static double integrate(const IceModelVec2S &input) {
   IceGrid::ConstPtr grid = input.grid();
 
-  IceModelVec::AccessList list{&input, &cell_area};
+  double cell_area = grid->cell_area();
+
+  IceModelVec::AccessList list{&input};
 
   double result = 0.0;
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    result += input(i, j) * cell_area(i, j);
+    result += input(i, j) * cell_area;
   }
 
   return GlobalSum(grid->com, result);
@@ -730,8 +731,7 @@ public:
   }
 
   double compute() {
-    const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
-    return integrate(model->accumulation(), cell_area);
+    return integrate(model->accumulation());
   }
 };
 
@@ -749,8 +749,7 @@ public:
   }
 
   double compute() {
-    const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
-    return integrate(model->melt(), cell_area);
+    return integrate(model->melt());
   }
 };
 
@@ -768,8 +767,7 @@ public:
   }
 
   double compute() {
-    const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
-    return integrate(model->runoff(), cell_area);
+    return integrate(model->runoff());
   }
 };
 

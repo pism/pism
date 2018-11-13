@@ -65,15 +65,6 @@ protected:
   mutable std::vector<double> m_cosine_cycle;
 };
 
-/*! @brief Mean July near-surface air temperature. */
-class PA_mean_july_temp : public Diag<YearlyCycle>
-{
-public:
-  PA_mean_july_temp(const YearlyCycle *m);
-protected:
-  IceModelVec::Ptr compute_impl() const;
-};
-
 } // end of namespace atmosphere
 } // end of namespace pism
 

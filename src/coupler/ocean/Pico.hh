@@ -87,7 +87,6 @@ private:
                     const IceModelVec2Int &box_mask,
                     const IceModelVec2S &Toc_box0,
                     const IceModelVec2S &Soc_box0,
-                    const IceModelVec2S &cell_area,
                     IceModelVec2S &basal_melt_rate,
                     IceModelVec2S &basal_temperature,
                     IceModelVec2S &T_star,
@@ -99,7 +98,6 @@ private:
                            const IceModelVec2S &ice_thickness,
                            const IceModelVec2Int &shelf_mask,
                            const IceModelVec2Int &box_mask,
-                           const IceModelVec2S &cell_area,
                            IceModelVec2S &basal_melt_rate,
                            IceModelVec2S &basal_temperature,
                            IceModelVec2S &T_star,
@@ -124,7 +122,6 @@ private:
                            std::vector<double> &result);
 
   void compute_box_area(int box_id,
-                        const IceModelVec2S &cell_area,
                         const IceModelVec2Int &shelf_mask,
                         const IceModelVec2Int &box_mask,
                         std::vector<double> &result);

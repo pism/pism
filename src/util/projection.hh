@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -54,8 +54,6 @@ void check_consistency_epsg(const MappingInfo &info);
 /*! @brief Get projection info from a file. */
 MappingInfo get_projection_info(const PIO &input_file, const std::string &mapping_name,
                                 units::System::Ptr unit_system);
-
-void compute_cell_areas(const std::string &projection, IceModelVec2S &result);
 
 void compute_longitude(const std::string &projection, IceModelVec2S &result);
 void compute_latitude(const std::string &projection, IceModelVec2S &result);

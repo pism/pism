@@ -213,8 +213,7 @@ protected:
   virtual void process_options();
   virtual std::set<std::string> output_variables(const std::string &keyword);
 
-  // see iMutil.cc
-  virtual void compute_cell_areas(); // is an initialization step; should go there
+  virtual void compute_lat_lon();
 
   // see iMIO.cc
   virtual void restart_2d(const PIO &input_file, unsigned int record);

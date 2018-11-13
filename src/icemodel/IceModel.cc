@@ -260,7 +260,6 @@ void IceModel::allocate_storage() {
   m_grid->variables().add(m_geometry.cell_type);
   m_grid->variables().add(m_geometry.longitude);
   m_grid->variables().add(m_geometry.latitude);
-  m_grid->variables().add(m_geometry.cell_area);
 
   if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
     m_grid->variables().add(m_geometry.cell_grounded_fraction);
@@ -704,7 +703,6 @@ void IceModel::step(bool do_mass_continuity,
 
     inputs.no_model_mask      = nullptr;
     inputs.cell_type          = &m_geometry.cell_type;
-    inputs.cell_area          = &m_geometry.cell_area;
     inputs.ice_thickness      = &m_geometry.ice_thickness;
     inputs.bed_elevation      = &m_geometry.bed_elevation;
     inputs.surface_input_rate = nullptr;

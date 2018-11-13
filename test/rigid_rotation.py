@@ -69,8 +69,8 @@ def set_velocity(v):
             x = grid.x(i)
             y = grid.y(j)
 
-            v[i, j].u = -y * radial_velocity
-            v[i, j].v = x * radial_velocity
+            v[i, j].u =  y * radial_velocity
+            v[i, j].v = -x * radial_velocity
 
     v.update_ghosts()
 
@@ -89,28 +89,20 @@ class MassTransport(object):
         if part_grid:
             grid.ctx().config().set_boolean("geometry.part_grid.enabled", True)
 
-        self.v = PISM.model.create2dVelocityVec(grid)
-
-        self.Q = PISM.IceModelVec2Stag()
-        self.Q.create(grid, "Q", PISM.WITHOUT_GHOSTS)
-
-        self.v_bc_mask = PISM.IceModelVec2Int()
-        self.v_bc_mask.create(grid, "v_bc_mask", PISM.WITHOUT_GHOSTS)
-
-        self.H_bc_mask = PISM.IceModelVec2Int()
-        self.H_bc_mask.create(grid, "H_bc_mask", PISM.WITHOUT_GHOSTS)
+        self.v = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
+        self.Q = PISM.IceModelVec2Stag(grid, "Q", PISM.WITHOUT_GHOSTS)
+        self.v_bc_mask = PISM.IceModelVec2Int(grid, "v_bc_mask", PISM.WITHOUT_GHOSTS)
+        self.H_bc_mask = PISM.IceModelVec2Int(grid, "H_bc_mask", PISM.WITHOUT_GHOSTS)
 
         self.ge = PISM.GeometryEvolution(grid)
 
-        geometry = PISM.Geometry(grid)
-        self.geometry = geometry
+        self.geometry = PISM.Geometry(grid)
 
         self.reset()
 
     def reset(self):
         geometry = self.geometry
         # grid info
-        geometry.cell_area.set(self.grid.dx() * self.grid.dy())
         geometry.latitude.set(0.0)
         geometry.longitude.set(0.0)
         # environment
@@ -160,11 +152,16 @@ class MassTransport(object):
             t += dt
             j += 1
 
+def volume(geometry):
+    cell_area = geometry.ice_thickness.grid().cell_area()
+    volume = ((geometry.ice_thickness.numpy() + geometry.ice_area_specific_volume.numpy()) *
+              cell_area)
+    return volume.sum()
 
 def test():
     ctx = PISM.Context()
-    Mx = 50
-    My = 50
+    Mx = int(ctx.config.get_double("grid.Mx"))
+    My = int(ctx.config.get_double("grid.My"))
     grid = PISM.IceGrid_Shallow(ctx.ctx, 1, 1, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     import pylab as plt
@@ -175,23 +172,16 @@ def test():
     mt.reset()
     levels = np.linspace(0, 1, 11)
 
-    plt.subplot(2, 2, 1)
-    mt.plot_thickness(levels, "time=0")
+    t = 0
+    dt = 0.333
+    C = 1.0
 
-    mt.step(0.333)
+    for j in [1, 2, 4, 3]:
+        plt.subplot(2, 2, j)
+        mt.plot_thickness(levels, "time={}, V={}".format(t, volume(mt.geometry)))
 
-    plt.subplot(2, 2, 2)
-    mt.plot_thickness(levels, "time=0.333")
-
-    mt.step(0.333)
-
-    plt.subplot(2, 2, 3)
-    mt.plot_thickness(levels, "time=0.666")
-
-    mt.step(0.333)
-
-    plt.subplot(2, 2, 4)
-    mt.plot_thickness(levels, "time=0.999")
+        mt.step(dt, C)
+        t += dt
 
     plt.show()
 
