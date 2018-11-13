@@ -94,19 +94,18 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
   (void) dt;
 
   FrontalMeltPhysics physics(*m_config);
-    
+
   double water_density = m_config->get_double("constants.fresh_water.density");
+  double cell_area = m_grid->cell_area();
 
   const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
   // ice thickness, meters
   const IceModelVec2S &ice_thickness = inputs.geometry->ice_thickness;
-  // cell area, meters^2
-  const IceModelVec2S &cell_area = inputs.geometry->cell_area;
   // subglacial discharge, mass change over this time step
   const IceModelVec2S &subglacial_discharge = *inputs.subglacial_discharge_at_grounding_line;
 
   IceModelVec::AccessList list
-    {&ice_thickness, &cell_type, &cell_area, &subglacial_discharge, m_theta_ocean.get(),
+    {&ice_thickness, &cell_type, &subglacial_discharge, m_theta_ocean.get(),
      m_frontal_melt_rate.get()};
 
   // index offsets for iterating over neighbors
@@ -123,7 +122,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       double TF = (*m_theta_ocean)(i, j);
 
       // subglacial discharge: convert from kg to m/s
-      double Qsg = subglacial_discharge(i, j) / (water_density * cell_area(i, j) * dt);
+      double Qsg = subglacial_discharge(i, j) / (water_density * cell_area * dt);
 
       // get the average ice thickness over ice-covered grounded neighbors
       double H = 0.0;
