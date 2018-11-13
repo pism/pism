@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -142,15 +142,15 @@ public:
                         const std::vector<double> &T,
                         std::vector<double> &PDDs);
 
-  virtual void get_snow_accumulation(const std::vector<double> &T,
-                                     std::vector<double> &precip_rate);
+  void get_snow_accumulation(const std::vector<double> &T,
+                             std::vector<double> &precip_rate);
 
-  virtual Changes step(const DegreeDayFactors &ddf,
-                       double PDDs,
-                       double ice_thickness,
-                       double firn_depth,
-                       double snow_depth,
-                       double accumulation);
+  Changes step(const DegreeDayFactors &ddf,
+               double PDDs,
+               double ice_thickness,
+               double firn_depth,
+               double snow_depth,
+               double accumulation);
 
 protected:
   double CalovGreveIntegrand(double sigma, double TacC);

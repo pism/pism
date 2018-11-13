@@ -274,12 +274,17 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
   // Turn firn into ice at X times accumulation
   // firn_depth -= accumulation *  m_config->get_double("surface.pdd.firn_compaction_to_accumulation_ratio");
 
+  const double smb = accumulation - runoff;
+
   Changes result;
-  result.firn_depth    = firn_depth - old_firn_depth;
-  result.snow_depth    = snow_depth - old_snow_depth;
-  result.melt          = melt;
-  result.runoff        = runoff;
-  result.smb           = accumulation - runoff;
+  // Ensure that we never generate negative ice thicknesses. As far as I can tell the code
+  // above guarantees that thickness + smb >= *in exact arithmetic*. The check below
+  // should make sure that we don't get bitten by rounding errors.
+  result.smb        = thickness + smb >= 0 ? smb : -thickness;
+  result.firn_depth = firn_depth - old_firn_depth;
+  result.snow_depth = snow_depth - old_snow_depth;
+  result.melt       = melt;
+  result.runoff     = runoff;
 
   assert(thickness + result.smb >= 0);
 
