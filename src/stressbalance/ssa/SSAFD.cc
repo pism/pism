@@ -1158,7 +1158,7 @@ a bit of bad behavior at these few places, and \f$L^1\f$ ignores it more than
  */
 void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 
-  const double area = m_grid->dx() * m_grid->dy();
+  const double area = m_grid->cell_area();
   const NormType MY_NORM = NORM_1;
 
   // Test for change in nu

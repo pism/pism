@@ -794,7 +794,7 @@ void GeometryEvolution::update_in_place(double dt,
     if (not done) {
       m_log->message(2,
                      "WARNING: not done redistributing mass after %d iterations, remaining residual: %f m^3.\n",
-                     max_n_iterations, m_impl->residual.sum()*m_grid->dx()*m_grid->dy());
+                     max_n_iterations, m_impl->residual.sum() * m_grid->cell_area());
 
       // Add residual to ice thickness, preserving total ice mass. (This is not great, but
       // better than losing mass.)

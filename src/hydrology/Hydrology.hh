@@ -38,7 +38,6 @@ public:
   const IceModelVec2Int      *no_model_mask;
   // geometry
   const IceModelVec2CellType *cell_type;
-  const IceModelVec2S        *cell_area;
   const IceModelVec2S        *ice_thickness;
   const IceModelVec2S        *bed_elevation;
   // hydrological inputs
@@ -193,8 +192,7 @@ protected:
 
   // when we update the water amounts, careful mass accounting at the boundary
   // is needed
-  void enforce_bounds(const IceModelVec2S &cell_area,
-                      const IceModelVec2CellType &cell_type,
+  void enforce_bounds(const IceModelVec2CellType &cell_type,
                       const IceModelVec2Int *no_model_mask,
                       double max_thickness,
                       IceModelVec2S &water_thickness,

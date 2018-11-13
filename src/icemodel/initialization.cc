@@ -131,8 +131,8 @@ void IceModel::model_state_setup() {
     input_file.reset(new PIO(m_grid->com, "guess_mode", input.filename, PISM_READONLY));
   }
 
-  // Get projection information and compute cell areas and lat/lon *before* a component decides to
-  // use latitude or longitude...
+  // Get projection information and compute latitudes and longitudes *before* a component
+  // decides to use them...
   {
     if (use_input_file) {
       std::string mapping_name = m_grid->get_mapping_info().mapping.get_name();
@@ -153,7 +153,7 @@ void IceModel::model_state_setup() {
 
     }
 
-    compute_cell_areas();
+    compute_lat_lon();
   }
 
   // Initialize 2D fields owned by IceModel (ice geometry, etc)
@@ -975,29 +975,17 @@ std::set<std::string> IceModel::output_variables(const std::string &keyword) {
   return set_split(variables, ',');
 }
 
-void IceModel::compute_cell_areas() {
+void IceModel::compute_lat_lon() {
 
   std::string projection = m_grid->get_mapping_info().proj4;
 
-  if (m_config->get_boolean("grid.correct_cell_areas") and
+  if (m_config->get_boolean("grid.recompute_longitude_and_latitude") and
       not projection.empty()) {
-
-    m_log->message(2,
-                   "* Computing cell areas using projection parameters...\n");
-
-    ::pism::compute_cell_areas(projection, m_geometry.cell_area);
-
     m_log->message(2,
                    "* Computing longitude and latitude using projection parameters...\n");
 
     compute_longitude(projection, m_geometry.longitude);
     compute_latitude(projection, m_geometry.latitude);
-  } else {
-    m_log->message(2,
-                   "* Computing cell areas using grid spacing (dx = %f m, dy = %f m)...\n",
-                   m_grid->dx(), m_grid->dy());
-
-    m_geometry.cell_area.set(m_grid->dx() * m_grid->dy());
   }
 }
 

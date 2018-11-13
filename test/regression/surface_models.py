@@ -31,7 +31,6 @@ options = PISM.PETSc.Options()
 def create_geometry(grid):
     geometry = PISM.Geometry(grid)
 
-    geometry.cell_area.set(grid.dx() * grid.dy())
     geometry.latitude.set(0.0)
     geometry.longitude.set(0.0)
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,7 +38,6 @@ public:
 
   // This is grid information, which is not (strictly speaking) ice geometry, but it should be
   // available everywhere we use ice geometry.
-  IceModelVec2S cell_area;
   IceModelVec2S latitude;
   IceModelVec2S longitude;
 

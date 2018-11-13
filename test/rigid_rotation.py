@@ -110,7 +110,6 @@ class MassTransport(object):
     def reset(self):
         geometry = self.geometry
         # grid info
-        geometry.cell_area.set(self.grid.dx() * self.grid.dy())
         geometry.latitude.set(0.0)
         geometry.longitude.set(0.0)
         # environment

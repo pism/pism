@@ -90,7 +90,6 @@ void IP_SSAHardavForwardProblem::init() {
   // I will need to fix this at some point.
   {
     Geometry geometry(m_grid);
-    geometry.cell_area.set(m_grid->dx() * m_grid->dy());
     geometry.ice_thickness.copy_from(*m_grid->variables().get_2d_scalar("land_ice_thickness"));
     geometry.bed_elevation.copy_from(*m_grid->variables().get_2d_scalar("bedrock_altitude"));
     geometry.sea_level_elevation.set(0.0); // FIXME: this should be an input

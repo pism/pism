@@ -95,7 +95,6 @@ def run(Mx, My, t_final, part_grid, C=1.0):
     ge = PISM.GeometryEvolution(grid)
 
     # grid info
-    geometry.cell_area.set(grid.dx() * grid.dy())
     geometry.latitude.set(0.0)
     geometry.longitude.set(0.0)
     # environment

@@ -162,7 +162,7 @@ static void relabel(RelabelingType type,
     loop.check();
 
     for (unsigned int k = 0; k < area.size(); ++k) {
-      area[k] = grid->dx() * grid->dy() * GlobalSum(grid->com, area[k]);
+      area[k] = grid->cell_area() * GlobalSum(grid->com, area[k]);
     }
   }
 
