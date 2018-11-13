@@ -115,6 +115,9 @@ void InitializationHelper::update_impl(const Geometry &geometry, double t, doubl
   m_liquid_water_fraction->copy_from(m_input_model->liquid_water_fraction());
   m_layer_mass->copy_from(m_input_model->layer_mass());
   m_layer_thickness->copy_from(m_input_model->layer_thickness());
+  m_accumulation->copy_from(m_input_model->accumulation());
+  m_melt->copy_from(m_input_model->melt());
+  m_runoff->copy_from(m_input_model->runoff());
 }
 
 const IceModelVec2S &InitializationHelper::layer_thickness_impl() const {
