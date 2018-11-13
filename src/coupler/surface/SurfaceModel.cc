@@ -367,7 +367,17 @@ MaxTimestep SurfaceModel::max_timestep_impl(double t) const {
   return MaxTimestep("surface model");
 }
 
-  void SurfaceModel::dummy_accumulation(const IceModelVec2S& smb, IceModelVec2S& result) {
+/*!
+ * Use the surface mass balance to compute dummy accumulation.
+ *
+ * This is used by surface models that compute the SMB but do not provide accumulation,
+ * melt, and runoff.
+ *
+ * We assume that the positive part of the SMB is accumulation and the negative part is
+ * runoff. This ensures that outputs of PISM's surface models satisfy "SMB = accumulation
+ * - runoff".
+ */
+void SurfaceModel::dummy_accumulation(const IceModelVec2S& smb, IceModelVec2S& result) {
 
   IceModelVec::AccessList list{&result, &smb};
 
@@ -376,8 +386,18 @@ MaxTimestep SurfaceModel::max_timestep_impl(double t) const {
     result(i,j) = std::max(smb(i,j), 0.0);
   }
 }
-  
-  void SurfaceModel::dummy_melt(const IceModelVec2S& smb, IceModelVec2S& result) {
+
+/*!
+ * Use the surface mass balance to compute dummy runoff.
+ *
+ * This is used by surface models that compute the SMB but do not provide accumulation,
+ * melt, and runoff.
+ *
+ * We assume that the positive part of the SMB is accumulation and the negative part is
+ * runoff. This ensures that outputs of PISM's surface models satisfy "SMB = accumulation
+ * - runoff".
+ */
+void SurfaceModel::dummy_runoff(const IceModelVec2S& smb, IceModelVec2S& result) {
 
   IceModelVec::AccessList list{&result, &smb};
 
@@ -387,14 +407,17 @@ MaxTimestep SurfaceModel::max_timestep_impl(double t) const {
   }
 }
 
-  void SurfaceModel::dummy_runoff(const IceModelVec2S& smb, IceModelVec2S& result) {
-
-  IceModelVec::AccessList list{&result, &smb};
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    result(i,j) = std::max(-smb(i,j), 0.0);
-  }
+/*!
+ * Use the surface mass balance to compute dummy runoff.
+ *
+ * This is used by surface models that compute the SMB but do not provide accumulation,
+ * melt, and runoff.
+ *
+ * We assume that all melt runs off, i.e. runoff = melt, but treat melt as a "derived"
+ * quantity.
+ */
+void SurfaceModel::dummy_melt(const IceModelVec2S& smb, IceModelVec2S& result) {
+  dummy_runoff(smb, result);
 }
 
 namespace diagnostics {
