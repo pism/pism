@@ -501,6 +501,36 @@ void set_scalar_from_option(Config &config, const std::string &name, const std::
   }
 }
 
+void set_scalar_list_from_option(Config &config, const std::string &name,
+                                 const std::string &parameter) {
+  options::RealList option("-" + name, config.doc(parameter),
+                           config.get_doubles(parameter, Config::FORGET_THIS_USE));
+
+  if (option.is_set()) {
+    config.set_doubles(parameter, option, CONFIG_USER);
+  }
+}
+
+void set_integer_list_from_option(Config &config, const std::string &name,
+                                  const std::string &parameter) {
+  std::vector<int> default_value;
+
+  for (auto v : config.get_doubles(parameter, Config::FORGET_THIS_USE)) {
+    default_value.push_back(v);
+  }
+
+  options::IntegerList option("-" + name, config.doc(parameter), default_value);
+
+  std::vector<double> value;
+  for (auto v : option.value()) {
+    value.push_back(v);
+  }
+
+  if (option.is_set()) {
+    config.set_doubles(parameter, value, CONFIG_USER);
+  }
+}
+
 void set_integer_from_option(Config &config, const std::string &name, const std::string &parameter) {
   options::Integer option("-" + name, config.doc(parameter),
                           config.get_double(parameter, Config::FORGET_THIS_USE));
