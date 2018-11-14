@@ -152,7 +152,7 @@ double Config::get_double(const std::string &name,
                           const std::string &units,
                           UseFlag flag) const {
   double value = this->get_double(name, flag);
-  std::string input_units = this->get_string(name + "_units");
+  std::string input_units = this->units(name);
 
   try {
     return units::convert(m_impl->unit_system, value, input_units, units);
@@ -174,7 +174,7 @@ std::vector<double> Config::get_doubles(const std::string &name,
                                         const std::string &units,
                                         UseFlag flag) const {
   auto value       = this->get_doubles(name, flag);
-  auto input_units = this->get_string(name + "_units");
+  auto input_units = this->units(name);
 
   try {
     units::Converter converter(m_impl->unit_system, input_units, units);
@@ -282,11 +282,19 @@ void Config::set_boolean(const std::string& name, bool value,
 }
 
 static bool special_parameter(const std::string &name) {
-  return (ends_with(name, "_doc") or
-          ends_with(name, "_units") or
-          ends_with(name, "_type") or
-          ends_with(name, "_option") or
-          ends_with(name, "_choices"));
+  for (auto suffix : {"_doc", "_units", "_type", "_option", "_choices"}) {
+    if (ends_with(name, suffix)) {
+      return true;
+    }
+  }
+
+  // The NetCDF-based configuration database stores parameters as attributes of a variable
+  // and CF conventions require that all variables have a "long name."
+  if (name == "long_name") {
+    return true;
+  }
+
+  return false;
 }
 
 void print_config(const Logger &log, int verbosity_threshhold, const Config &config) {
@@ -318,10 +326,10 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
 
     std::string padding(max_name_size - name.size(), ' ');
 
-    if (strings[name + "_type"] == "keyword") {
+    if (config.type(name) == "keyword") {
       log.message(v, "  %s%s = \"%s\" (allowed choices: %s)\n",
                   name.c_str(), padding.c_str(), value.c_str(),
-                  strings[name + "_choices"].c_str());
+                  config.choices(name).c_str());
     } else {
       log.message(v, "  %s%s = \"%s\"\n", name.c_str(), padding.c_str(), value.c_str());
     }
@@ -341,7 +349,7 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
     std::string name  = d.first;
     double      value = d.second[0];
 
-    std::string units = strings[name + "_units"]; // will be empty if not set
+    std::string units = config.units(name); // will be empty if not set
     std::string padding(max_name_size - name.size(), ' ');
 
     if (fabs(value) >= 1.0e7 or fabs(value) <= 1.0e-4) {
@@ -387,7 +395,7 @@ void print_unused_parameters(const Logger &log, int verbosity_threshhold,
 
   for (auto p : parameters_set) {
 
-    if (ends_with(p, "_doc")) {
+    if (special_parameter(p)) {
       continue;
     }
 
@@ -429,7 +437,7 @@ void set_boolean_from_option(Config &config, const std::string &option,
 
   // get the default value
   bool value = config.get_boolean(parameter_name, Config::FORGET_THIS_USE);
-  std::string doc = config.get_string(parameter_name + "_doc", Config::FORGET_THIS_USE);
+  std::string doc = config.doc(parameter_name);
 
   // process the command-line option
   options::String opt("-" + option, doc, value ? "true" : "false", options::ALLOW_EMPTY);
@@ -486,8 +494,7 @@ void set_boolean_from_option(Config &config, const std::string &option,
   converting again.)
 */
 void set_scalar_from_option(Config &config, const std::string &name, const std::string &parameter) {
-  options::Real option("-" + name,
-                       config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
+  options::Real option("-" + name, config.doc(parameter),
                        config.get_double(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
     config.set_double(parameter, option, CONFIG_USER);
@@ -495,8 +502,7 @@ void set_scalar_from_option(Config &config, const std::string &name, const std::
 }
 
 void set_integer_from_option(Config &config, const std::string &name, const std::string &parameter) {
-  options::Integer option("-" + name,
-                          config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
+  options::Integer option("-" + name, config.doc(parameter),
                           config.get_double(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
     config.set_double(parameter, option, CONFIG_USER);
@@ -505,8 +511,7 @@ void set_integer_from_option(Config &config, const std::string &name, const std:
 
 void set_string_from_option(Config &config, const std::string &name, const std::string &parameter) {
 
-  options::String value("-" + name,
-                        config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
+  options::String value("-" + name, config.doc(parameter),
                         config.get_string(parameter, Config::FORGET_THIS_USE));
   if (value.is_set()) {
     config.set_string(parameter, value, CONFIG_USER);
@@ -523,9 +528,7 @@ void set_keyword_from_option(Config &config, const std::string &name,
                              const std::string &parameter,
                              const std::string &choices) {
 
-  options::Keyword keyword("-" + name,
-                           config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
-                           choices,
+  options::Keyword keyword("-" + name, config.doc(parameter), choices,
                            config.get_string(parameter, Config::FORGET_THIS_USE));
 
   if (keyword.is_set()) {
@@ -544,10 +547,10 @@ void set_parameter_from_options(Config &config, const std::string &name) {
   // a different (possibly shorter) command-line option.
   std::string option = name;
 
-  if (config.is_set(name + "_option")) { // there is a short version of the command-line option
+  if (not config.option(name).empty()) { // there is a short version of the command-line option
     std::string
-      short_option = config.get_string(name + "_option"),
-      description  = config.get_string(name + "_doc");
+      short_option = config.option(name),
+      description  = config.doc(name);
 
     if (options::Bool("-" + short_option, description) or
         options::Bool("-no_" + short_option, description)) { // short option is set
@@ -562,11 +565,7 @@ void set_parameter_from_options(Config &config, const std::string &name) {
     }
   }
 
-  std::string type = "string";
-  if (config.is_set(name + "_type")) {
-    // will get marked as "used", but that's OK
-    type = config.get_string(name + "_type");
-  }
+  std::string type = config.type(name);
 
   if (type == "string") {
     set_string_from_option(config, option, name);
@@ -577,10 +576,7 @@ void set_parameter_from_options(Config &config, const std::string &name) {
   } else if (type == "integer") {
     set_integer_from_option(config, option, name);
   } else if (type == "keyword") {
-    // will be marked as "used" and will fail if not set
-    std::string choices = config.get_string(name + "_choices");
-
-    set_keyword_from_option(config, option, name, choices);
+    set_keyword_from_option(config, option, name, config.choices(name));
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "parameter type \"%s\" is invalid", type.c_str());
   }
@@ -763,5 +759,31 @@ std::set<std::string> Config::keys() const {
 
   return result;
 }
+
+std::string Config::doc(const std::string &parameter) const {
+  return this->get_string(parameter + "_doc", Config::FORGET_THIS_USE);
+}
+
+std::string Config::units(const std::string &parameter) const {
+  return this->get_string(parameter + "_units", Config::FORGET_THIS_USE);
+}
+
+std::string Config::type(const std::string &parameter) const {
+  return this->get_string(parameter + "_type", Config::FORGET_THIS_USE);
+}
+
+std::string Config::option(const std::string &parameter) const {
+  if (this->is_set(parameter + "_option")) {
+    return this->get_string(parameter + "_option", Config::FORGET_THIS_USE);
+  } else {
+    return "";
+  }
+}
+
+std::string Config::choices(const std::string &parameter) const {
+  return this->get_string(parameter + "_choices", Config::FORGET_THIS_USE);
+}
+
+
 
 } // end of namespace pism

@@ -115,6 +115,11 @@ public:
   bool get_boolean(const std::string& name, UseFlag flag = REMEMBER_THIS_USE) const;
   void set_boolean(const std::string& name, bool value, ConfigSettingFlag flag = CONFIG_FORCE);
 
+  std::string doc(const std::string &parameter) const;
+  std::string units(const std::string &parameter) const;
+  std::string type(const std::string &parameter) const;
+  std::string option(const std::string &parameter) const;
+  std::string choices(const std::string &parameter) const;
   // Implementations
 protected:
   virtual void read_impl(const PIO &nc) = 0;
