@@ -41,7 +41,7 @@ namespace stressbalance {
 
 SIAFD::SIAFD(IceGrid::ConstPtr g)
   : SSB_Modifier(g),
-    m_stencil_width(m_config->get_double("grid.max_stencil_width")),
+    m_stencil_width(m_config->get_number("grid.max_stencil_width")),
     m_work_2d_0(m_grid, "work_vector_2d_0", WITH_GHOSTS, m_stencil_width),
     m_work_2d_1(m_grid, "work_vector_2d_1", WITH_GHOSTS, m_stencil_width),
     m_h_x(m_grid, "h_x", WITH_GHOSTS),
@@ -85,9 +85,9 @@ SIAFD::SIAFD(IceGrid::ConstPtr g)
                          "age is needed for age-dependent flow enhancement");
   }
 
-  m_eemian_start   = m_config->get_double("time.eemian_start", "seconds");
-  m_eemian_end     = m_config->get_double("time.eemian_end", "seconds");
-  m_holocene_start = m_config->get_double("time.holocene_start", "seconds");
+  m_eemian_start   = m_config->get_number("time.eemian_start", "seconds");
+  m_eemian_end     = m_config->get_number("time.eemian_end", "seconds");
+  m_holocene_start = m_config->get_number("time.holocene_start", "seconds");
 }
 
 SIAFD::~SIAFD() {
@@ -561,7 +561,7 @@ void SIAFD::compute_diffusivity(bool full_update,
     current_time                    = m_grid->ctx()->time()->current(),
     enhancement_factor              = m_flow_law->enhancement_factor(),
     enhancement_factor_interglacial = m_flow_law->enhancement_factor_interglacial(),
-    D_limit                         = m_config->get_double("stress_balance.sia.max_diffusivity");
+    D_limit                         = m_config->get_number("stress_balance.sia.max_diffusivity");
 
   const bool
     compute_grain_size_using_age = m_config->get_boolean("stress_balance.sia.grain_size_age_coupling"),
@@ -606,7 +606,7 @@ void SIAFD::compute_diffusivity(bool full_update,
 
   std::vector<double> depth(Mz), stress(Mz), pressure(Mz), E(Mz), flow(Mz);
   std::vector<double> delta_ij(Mz);
-  std::vector<double> A(Mz), ice_grain_size(Mz, m_config->get_double("constants.ice.grain_size", "m"));
+  std::vector<double> A(Mz), ice_grain_size(Mz, m_config->get_number("constants.ice.grain_size", "m"));
   std::vector<double> e_factor(Mz, enhancement_factor);
 
   double D_max = 0.0;

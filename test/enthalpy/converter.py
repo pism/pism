@@ -103,7 +103,7 @@ def enthalpy_of_water_test():
     """Test the dependence of the enthalpy of water at T_m(p) on p."""
 
     config = PISM.Context().config
-    c_w = config.get_double("constants.fresh_water.specific_heat_capacity")
+    c_w = config.get_number("constants.fresh_water.specific_heat_capacity")
 
     EC = converters["Default"]
 

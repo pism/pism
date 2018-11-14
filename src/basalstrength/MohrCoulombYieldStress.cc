@@ -109,7 +109,7 @@ void MohrCoulombYieldStress::init_impl(const Geometry &geometry,
                                        const IceModelVec2S &overburden_pressure) {
   {
     std::string hydrology_tillwat_max = "hydrology.tillwat_max";
-    bool till_is_present = m_config->get_double(hydrology_tillwat_max) > 0.0;
+    bool till_is_present = m_config->get_number(hydrology_tillwat_max) > 0.0;
 
     if (not till_is_present) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -121,7 +121,7 @@ void MohrCoulombYieldStress::init_impl(const Geometry &geometry,
 
   m_log->message(2, "* Initializing the Mohr-Coulomb basal yield stress model...\n");
 
-  const double till_phi_default = m_config->get_double("basal_yield_stress.mohr_coulomb.till_phi_default");
+  const double till_phi_default = m_config->get_number("basal_yield_stress.mohr_coulomb.till_phi_default");
 
   InputOptions opts = process_input_options(m_grid->com, m_config);
 
@@ -228,17 +228,17 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
   bool slippery_grounding_lines = m_config->get_boolean("basal_yield_stress.slippery_grounding_lines"),
        add_transportable_water  = m_config->get_boolean("basal_yield_stress.add_transportable_water");
   const double
-    ice_density      = m_config->get_double("constants.ice.density"),
-    standard_gravity = m_config->get_double("constants.standard_gravity");
+    ice_density      = m_config->get_number("constants.ice.density"),
+    standard_gravity = m_config->get_number("constants.standard_gravity");
 
-  const double high_tauc  = m_config->get_double("basal_yield_stress.ice_free_bedrock"),
-               W_till_max = m_config->get_double("hydrology.tillwat_max"),
-               c0         = m_config->get_double("basal_yield_stress.mohr_coulomb.till_cohesion"),
-               N0         = m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure"),
-               e0overCc   = (m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_void_ratio") /
-                             m_config->get_double("basal_yield_stress.mohr_coulomb.till_compressibility_coefficient")),
-               delta      = m_config->get_double("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"),
-               tlftw      = m_config->get_double("basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water");
+  const double high_tauc  = m_config->get_number("basal_yield_stress.ice_free_bedrock"),
+               W_till_max = m_config->get_number("hydrology.tillwat_max"),
+               c0         = m_config->get_number("basal_yield_stress.mohr_coulomb.till_cohesion"),
+               N0         = m_config->get_number("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure"),
+               e0overCc   = (m_config->get_number("basal_yield_stress.mohr_coulomb.till_reference_void_ratio") /
+                             m_config->get_number("basal_yield_stress.mohr_coulomb.till_compressibility_coefficient")),
+               delta      = m_config->get_number("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"),
+               tlftw      = m_config->get_number("basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water");
 
   const IceModelVec2S
     &W_till        = *inputs.till_water_thickness,
@@ -305,10 +305,10 @@ void MohrCoulombYieldStress::till_friction_angle(const IceModelVec2S &bed_topogr
                                                  IceModelVec2S &result) {
 
   const double
-    phi_min  = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
-    phi_max  = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max"),
-    topg_min = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min"),
-    topg_max = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max");
+    phi_min  = m_config->get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
+    phi_max  = m_config->get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max"),
+    topg_min = m_config->get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min"),
+    topg_max = m_config->get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max");
 
   m_log->message(2,
                  "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
@@ -363,12 +363,12 @@ void MohrCoulombYieldStress::till_friction_angle(const IceModelVec2S &basal_yiel
                                                  const IceModelVec2CellType &cell_type,
                                                  IceModelVec2S &result) {
 
-  const double c0 = m_config->get_double("basal_yield_stress.mohr_coulomb.till_cohesion"),
-    N0            = m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure"),
-    e0overCc      = (m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_void_ratio") /
-                     m_config->get_double("basal_yield_stress.mohr_coulomb.till_compressibility_coefficient")),
-    delta         = m_config->get_double("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"),
-    W_till_max    = m_config->get_double("hydrology.tillwat_max");
+  const double c0 = m_config->get_number("basal_yield_stress.mohr_coulomb.till_cohesion"),
+    N0            = m_config->get_number("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure"),
+    e0overCc      = (m_config->get_number("basal_yield_stress.mohr_coulomb.till_reference_void_ratio") /
+                     m_config->get_number("basal_yield_stress.mohr_coulomb.till_compressibility_coefficient")),
+    delta         = m_config->get_number("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"),
+    W_till_max    = m_config->get_number("hydrology.tillwat_max");
 
   const IceModelVec2S
     &W_till = till_water_thickness,

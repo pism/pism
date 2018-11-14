@@ -160,8 +160,8 @@ def volume(geometry):
 
 def test():
     ctx = PISM.Context()
-    Mx = int(ctx.config.get_double("grid.Mx"))
-    My = int(ctx.config.get_double("grid.My"))
+    Mx = int(ctx.config.get_number("grid.Mx"))
+    My = int(ctx.config.get_number("grid.My"))
     grid = PISM.IceGrid_Shallow(ctx.ctx, 1, 1, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     import pylab as plt

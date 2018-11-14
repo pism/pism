@@ -61,8 +61,8 @@ void FrontalMelt::compute_calving_rate(const CalvingInputs &inputs,
     &sea_level_elevation = inputs.geometry->sea_level_elevation;
 
   const double
-    ice_density = m_config->get_double("constants.ice.density"),
-    alpha       = ice_density / m_config->get_double("constants.sea_water.density");
+    ice_density = m_config->get_number("constants.ice.density"),
+    alpha       = ice_density / m_config->get_number("constants.sea_water.density");
 
   IceModelVec::AccessList list{&m_mask, &shelf_base_mass_flux, &sea_level_elevation,
       &bed_elevation, &surface_elevation, &ice_thickness, &result};

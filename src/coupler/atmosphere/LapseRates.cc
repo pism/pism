@@ -32,17 +32,17 @@ LapseRates::LapseRates(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> 
   : AtmosphereModel(grid, in),
   m_surface(grid, "ice_surface_elevation", WITHOUT_GHOSTS) {
 
-  m_precip_lapse_rate = m_config->get_double("atmosphere.lapse_rate.precipitation_lapse_rate",
+  m_precip_lapse_rate = m_config->get_number("atmosphere.lapse_rate.precipitation_lapse_rate",
                                              "(kg m-2 / s) / m");
 
-  m_temp_lapse_rate = m_config->get_double("atmosphere.lapse_rate.temperature_lapse_rate",
+  m_temp_lapse_rate = m_config->get_number("atmosphere.lapse_rate.temperature_lapse_rate",
                                            "K / m");
 
   {
     ForcingOptions opt(*m_grid->ctx(), "atmosphere.lapse_rate");
 
-    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    unsigned int buffer_size = m_config->get_number("climate_forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
     PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);

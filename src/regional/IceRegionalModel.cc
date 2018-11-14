@@ -83,7 +83,7 @@ void IceRegionalModel::allocate_storage() {
                             "mask: zeros (modeling domain) and ones"
                             " (no-model buffer near grid edges)",
                             "", ""); // no units and no standard name
-  m_no_model_mask.metadata().set_doubles("flag_values", {0, 1});
+  m_no_model_mask.metadata().set_numbers("flag_values", {0, 1});
   m_no_model_mask.metadata().set_string("flag_meanings", "normal special_treatment");
   m_no_model_mask.set_time_independent(true);
   m_no_model_mask.metadata().set_output_type(PISM_BYTE);
@@ -160,7 +160,7 @@ void IceRegionalModel::model_state_setup() {
     case INIT_OTHER:
     default:
       {
-        m_basal_melt_rate.set(m_config->get_double("bootstrapping.defaults.bmelt"));
+        m_basal_melt_rate.set(m_config->get_number("bootstrapping.defaults.bmelt"));
 
         m_ch_system->initialize(m_basal_melt_rate,
                                 m_geometry.ice_thickness,
@@ -269,7 +269,7 @@ void IceRegionalModel::bootstrap_2d(const PIO &input_file) {
   // no_model_mask
   {
     // set using the no_model_strip parameter
-    double strip_width = m_config->get_double("regional.no_model_strip", "meters");
+    double strip_width = m_config->get_number("regional.no_model_strip", "meters");
     set_no_model_strip(*m_grid, strip_width, m_no_model_mask);
 
     // m_no_model_mask was added to m_model_state, so
@@ -316,8 +316,8 @@ void IceRegionalModel::energy_step() {
     const IceModelVec3 *strain_heating = inputs.volumetric_heating_rate;
     inputs.volumetric_heating_rate = m_ch_warming_flux.get();
 
-    energy::cryo_hydrologic_warming_flux(m_config->get_double("constants.ice.thermal_conductivity"),
-                                         m_config->get_double("energy.ch_warming.average_channel_spacing"),
+    energy::cryo_hydrologic_warming_flux(m_config->get_number("constants.ice.thermal_conductivity"),
+                                         m_config->get_number("energy.ch_warming.average_channel_spacing"),
                                          m_geometry.ice_thickness,
                                          m_energy_model->enthalpy(),
                                          m_ch_system->enthalpy(),
@@ -425,8 +425,8 @@ protected:
     IceModelVec3::Ptr result(new IceModelVec3(m_grid, "ch_heat_flux", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
 
-    energy::cryo_hydrologic_warming_flux(m_config->get_double("constants.ice.thermal_conductivity"),
-                                         m_config->get_double("energy.ch_warming.average_channel_spacing"),
+    energy::cryo_hydrologic_warming_flux(m_config->get_number("constants.ice.thermal_conductivity"),
+                                         m_config->get_number("energy.ch_warming.average_channel_spacing"),
                                          model->geometry().ice_thickness,
                                          model->energy_balance_model()->enthalpy(),
                                          model->cryo_hydrologic_system()->enthalpy(),

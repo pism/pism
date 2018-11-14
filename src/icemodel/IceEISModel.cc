@@ -49,10 +49,10 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
   m_config->set_boolean("ocean.always_grounded", true);
 
   // purely SIA, and E=1
-  m_config->set_double("stress_balance.sia.enhancement_factor", 1.0);
+  m_config->set_number("stress_balance.sia.enhancement_factor", 1.0);
 
   // none use bed smoothing & bed roughness parameterization
-  m_config->set_double("stress_balance.sia.bed_smoother.range", 0.0);
+  m_config->set_number("stress_balance.sia.bed_smoother.range", 0.0);
 
   // basal melt does not change computation of mass continuity or vertical velocity:
   m_config->set_boolean("geometry.update.use_basal_melt_rate", false);
@@ -61,12 +61,12 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
   // zero thickness bedrock layer is the default, but we want the ice/rock
   // interface segment to have geothermal flux applied directly to ice without
   // jump in material properties at base.
-  m_config->set_double("energy.bedrock_thermal.density",
-                       m_config->get_double("constants.ice.density"));
-  m_config->set_double("energy.bedrock_thermal.conductivity",
-                       m_config->get_double("constants.ice.thermal_conductivity"));
-  m_config->set_double("energy.bedrock_thermal.specific_heat_capacity",
-                       m_config->get_double("constants.ice.specific_heat_capacity"));
+  m_config->set_number("energy.bedrock_thermal.density",
+                       m_config->get_number("constants.ice.density"));
+  m_config->set_number("energy.bedrock_thermal.conductivity",
+                       m_config->get_number("constants.ice.thermal_conductivity"));
+  m_config->set_number("energy.bedrock_thermal.specific_heat_capacity",
+                       m_config->get_number("constants.ice.specific_heat_capacity"));
 
   // no sliding + SIA
   m_config->set_string("stress_balance.model", "sia");

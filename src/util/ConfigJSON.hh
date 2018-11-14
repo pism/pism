@@ -45,11 +45,11 @@ private:
   virtual bool is_set_impl(const std::string &name) const;
 
   virtual Doubles all_doubles_impl() const;
-  virtual double get_double_impl(const std::string &name) const;
-  virtual std::vector<double> get_doubles_impl(const std::string &name) const;
+  virtual double get_number_impl(const std::string &name) const;
+  virtual std::vector<double> get_numbers_impl(const std::string &name) const;
 
-  virtual void set_double_impl(const std::string &name, double value);
-  virtual void set_doubles_impl(const std::string &name,
+  virtual void set_number_impl(const std::string &name, double value);
+  virtual void set_numbers_impl(const std::string &name,
                                 const std::vector<double> &values);
 
   virtual Strings all_strings_impl() const;

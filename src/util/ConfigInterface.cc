@@ -96,7 +96,7 @@ void Config::import_from(const Config &other) {
 
   for (auto p : other.all_doubles()) {
     if (member(p.first, parameters)) {
-      this->set_doubles(p.first, p.second, CONFIG_USER);
+      this->set_numbers(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "unrecognized parameter %s in %s",
@@ -141,17 +141,17 @@ Config::Doubles Config::all_doubles() const {
   return this->all_doubles_impl();
 }
 
-double Config::get_double(const std::string &name, UseFlag flag) const {
+double Config::get_number(const std::string &name, UseFlag flag) const {
   if (flag == REMEMBER_THIS_USE) {
     m_impl->parameters_used.insert(name);
   }
-  return this->get_double_impl(name);
+  return this->get_number_impl(name);
 }
 
-double Config::get_double(const std::string &name,
+double Config::get_number(const std::string &name,
                           const std::string &units,
                           UseFlag flag) const {
-  double value = this->get_double(name, flag);
+  double value = this->get_number(name, flag);
   std::string input_units = this->units(name);
 
   try {
@@ -163,17 +163,17 @@ double Config::get_double(const std::string &name,
   }
 }
 
-std::vector<double> Config::get_doubles(const std::string &name, UseFlag flag) const {
+std::vector<double> Config::get_numbers(const std::string &name, UseFlag flag) const {
   if (flag == REMEMBER_THIS_USE) {
     m_impl->parameters_used.insert(name);
   }
-  return this->get_doubles_impl(name);
+  return this->get_numbers_impl(name);
 }
 
-std::vector<double> Config::get_doubles(const std::string &name,
+std::vector<double> Config::get_numbers(const std::string &name,
                                         const std::string &units,
                                         UseFlag flag) const {
-  auto value       = this->get_doubles(name, flag);
+  auto value       = this->get_numbers(name, flag);
   auto input_units = this->units(name);
 
   try {
@@ -189,7 +189,7 @@ std::vector<double> Config::get_doubles(const std::string &name,
   }
 }
 
-void Config::set_double(const std::string &name, double value,
+void Config::set_number(const std::string &name, double value,
                         ConfigSettingFlag flag) {
   std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
 
@@ -203,10 +203,10 @@ void Config::set_double(const std::string &name, double value,
     return;
   }
 
-  this->set_double_impl(name, value);
+  this->set_number_impl(name, value);
 }
 
-void Config::set_doubles(const std::string &name,
+void Config::set_numbers(const std::string &name,
                          const std::vector<double> &values,
                          ConfigSettingFlag flag) {
   std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
@@ -221,7 +221,7 @@ void Config::set_doubles(const std::string &name,
     return;
   }
 
-  this->set_doubles_impl(name, values);
+  this->set_numbers_impl(name, values);
 }
 
 Config::Strings Config::all_strings() const {
@@ -495,19 +495,19 @@ void set_boolean_from_option(Config &config, const std::string &option,
 */
 void set_number_from_option(Config &config, const std::string &name, const std::string &parameter) {
   options::Real option("-" + name, config.doc(parameter),
-                       config.get_double(parameter, Config::FORGET_THIS_USE));
+                       config.get_number(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
-    config.set_double(parameter, option, CONFIG_USER);
+    config.set_number(parameter, option, CONFIG_USER);
   }
 }
 
 void set_number_list_from_option(Config &config, const std::string &name,
                                  const std::string &parameter) {
   options::RealList option("-" + name, config.doc(parameter),
-                           config.get_doubles(parameter, Config::FORGET_THIS_USE));
+                           config.get_numbers(parameter, Config::FORGET_THIS_USE));
 
   if (option.is_set()) {
-    config.set_doubles(parameter, option, CONFIG_USER);
+    config.set_numbers(parameter, option, CONFIG_USER);
   }
 }
 
@@ -515,7 +515,7 @@ void set_integer_list_from_option(Config &config, const std::string &name,
                                   const std::string &parameter) {
   std::vector<int> default_value;
 
-  for (auto v : config.get_doubles(parameter, Config::FORGET_THIS_USE)) {
+  for (auto v : config.get_numbers(parameter, Config::FORGET_THIS_USE)) {
     default_value.push_back(v);
   }
 
@@ -527,15 +527,15 @@ void set_integer_list_from_option(Config &config, const std::string &name,
   }
 
   if (option.is_set()) {
-    config.set_doubles(parameter, value, CONFIG_USER);
+    config.set_numbers(parameter, value, CONFIG_USER);
   }
 }
 
 void set_integer_from_option(Config &config, const std::string &name, const std::string &parameter) {
   options::Integer option("-" + name, config.doc(parameter),
-                          config.get_double(parameter, Config::FORGET_THIS_USE));
+                          config.get_number(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
-    config.set_double(parameter, option, CONFIG_USER);
+    config.set_number(parameter, option, CONFIG_USER);
   }
 }
 
@@ -651,10 +651,10 @@ void set_config_from_options(Config &config) {
   // -topg_to_phi
   {
     std::vector<double> defaults = {
-      config.get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
-      config.get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max"),
-      config.get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min"),
-      config.get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max")
+      config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
+      config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max"),
+      config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min"),
+      config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max")
     };
 
     options::RealList topg_to_phi("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max",
@@ -666,10 +666,10 @@ void set_config_from_options(Config &config) {
                                       (int)topg_to_phi->size());
       }
       config.set_boolean("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled", true);
-      config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min", topg_to_phi[0]);
-      config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max", topg_to_phi[1]);
-      config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min", topg_to_phi[2]);
-      config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max", topg_to_phi[3]);
+      config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min", topg_to_phi[0]);
+      config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max", topg_to_phi[1]);
+      config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min", topg_to_phi[2]);
+      config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max", topg_to_phi[3]);
     }
   }
   // Ice shelves
@@ -694,7 +694,7 @@ void set_config_from_options(Config &config) {
   if (config.get_string("calving.methods").find("eigen_calving") != std::string::npos) {
     config.set_boolean("geometry.part_grid.enabled", true, CONFIG_USER);
     // eigen-calving requires a wider stencil:
-    config.set_double("grid.max_stencil_width", 3);
+    config.set_number("grid.max_stencil_width", 3);
   }
 
   // all calving mechanisms require iceberg removal
@@ -752,12 +752,12 @@ ConfigWithPrefix::ConfigWithPrefix(Config::ConstPtr c, const std::string &prefix
   // empty
 }
 
-double ConfigWithPrefix::get_double(const std::string &name) const {
-  return m_config->get_double(m_prefix + name);
+double ConfigWithPrefix::get_number(const std::string &name) const {
+  return m_config->get_number(m_prefix + name);
 }
 
-double ConfigWithPrefix::get_double(const std::string &name, const std::string &units) const {
-  return m_config->get_double(m_prefix + name, units);
+double ConfigWithPrefix::get_number(const std::string &name, const std::string &units) const {
+  return m_config->get_number(m_prefix + name, units);
 }
 
 std::string ConfigWithPrefix::get_string(const std::string &name) const {

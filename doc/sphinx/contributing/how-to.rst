@@ -29,7 +29,7 @@ To use a scalar parameter, do
 
 .. code-block:: c++
 
-   double g = m_config->get_double("constants.standard_gravity");
+   double g = m_config->get_number("constants.standard_gravity");
 
 To use a flag, do
 
@@ -77,7 +77,7 @@ and then set its metadata:
    IceModelVec2S ice_thickness(grid, "thk", WITH_GHOSTS, 2);
    ice_thickness.set_attrs("model_state", "land ice thickness",
                            "m", "land_ice_thickness");
-   ice_thickness.metadata().set_double("valid_min", 0.0);
+   ice_thickness.metadata().set_number("valid_min", 0.0);
 
 Here `grid` is an `IceGrid` instance, `thk` is the name of the NetCDF variable,
 `WITH_GHOSTS` means that storage for "ghost" ("halo") points will be allocated, and "2" is

@@ -77,14 +77,14 @@ def create_grid():
 def run(scenario, plot, pause, save):
 
     # set grid defaults
-    config.set_double("grid.Mx", 193)
-    config.set_double("grid.My", 129)
+    config.set_number("grid.Mx", 193)
+    config.set_number("grid.My", 129)
 
-    config.set_double("grid.Lx", 3000e3)
-    config.set_double("grid.Ly", 2000e3)
+    config.set_number("grid.Lx", 3000e3)
+    config.set_number("grid.Ly", 2000e3)
 
-    config.set_double("grid.Mz", 2)
-    config.set_double("grid.Lz", 1000)
+    config.set_number("grid.Mz", 2)
+    config.set_number("grid.Lz", 1000)
 
     scenarios = {"1": (False, False, 1000.0),
                  "2": (True,  False, 1000.0),

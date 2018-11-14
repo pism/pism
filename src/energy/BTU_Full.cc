@@ -33,11 +33,11 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
   : BedThermalUnit(g),
     m_bootstrapping_needed(false) {
 
-  m_k = m_config->get_double("energy.bedrock_thermal.conductivity");
+  m_k = m_config->get_number("energy.bedrock_thermal.conductivity");
 
   const double
-    rho = m_config->get_double("energy.bedrock_thermal.density"),
-    c   = m_config->get_double("energy.bedrock_thermal.specific_heat_capacity");
+    rho = m_config->get_number("energy.bedrock_thermal.density"),
+    c   = m_config->get_number("energy.bedrock_thermal.specific_heat_capacity");
   // build constant diffusivity for heat equation
   m_D   = m_k / (rho * c);
 
@@ -75,7 +75,7 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
     m_temp->set_attrs("model_state",
                       "lithosphere (bedrock) temperature, in BTU_Full",
                       "K", "");
-    m_temp->metadata().set_double("valid_min", 0.0);
+    m_temp->metadata().set_number("valid_min", 0.0);
   }
 
   m_column.reset(new BedrockColumn("bedrock_column", *m_config, vertical_spacing(), Mz()));

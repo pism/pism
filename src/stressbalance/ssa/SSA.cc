@@ -36,8 +36,8 @@ namespace pism {
 namespace stressbalance {
 
 SSAStrengthExtension::SSAStrengthExtension(const Config &config) {
-  m_min_thickness = config.get_double("stress_balance.ssa.strength_extension.min_thickness");
-  m_constant_nu = config.get_double("stress_balance.ssa.strength_extension.constant_nu");
+  m_min_thickness = config.get_number("stress_balance.ssa.strength_extension.min_thickness");
+  m_constant_nu = config.get_number("stress_balance.ssa.strength_extension.constant_nu");
 }
 
 //! Set strength = (viscosity times thickness).
@@ -77,7 +77,7 @@ SSA::SSA(IceGrid::ConstPtr g)
 {
   strength_extension = new SSAStrengthExtension(*m_config);
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
 
   // grounded_dragging_floating integer mask
   m_mask.create(m_grid, "ssa_mask", WITH_GHOSTS, WIDE_STENCIL);
@@ -88,7 +88,7 @@ SSA::SSA(IceGrid::ConstPtr g)
   mask_values[1] = MASK_GROUNDED;
   mask_values[2] = MASK_FLOATING;
   mask_values[3] = MASK_ICE_FREE_OCEAN;
-  m_mask.metadata().set_doubles("flag_values", mask_values);
+  m_mask.metadata().set_numbers("flag_values", mask_values);
   m_mask.metadata().set_string("flag_meanings",
                               "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
 
@@ -164,7 +164,7 @@ void SSA::update(const Inputs &inputs, bool full_update) {
   // update the cell type mask using the ice-free thickness threshold for stress balance
   // computations
   {
-    const double H_threshold = m_config->get_double("stress_balance.ice_free_thickness_standard");
+    const double H_threshold = m_config->get_number("stress_balance.ice_free_thickness_standard");
     GeometryCalculator gc(*m_config);
     gc.set_icefree_thickness(H_threshold);
 

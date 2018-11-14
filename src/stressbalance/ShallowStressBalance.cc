@@ -53,7 +53,7 @@ using pism::mask::ice_free;
 ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
   : Component(g), m_basal_sliding_law(NULL), m_flow_law(NULL), m_EC(g->ctx()->enthalpy_converter()) {
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
 
   if (m_config->get_boolean("basal_resistance.pseudo_plastic.enabled") == true) {
     m_basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(*m_config);
@@ -303,8 +303,8 @@ IceModelVec::Ptr SSB_taud::compute_impl() const {
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2S *surface = m_grid->variables().get_2d_scalar("surface_altitude");
 
-  double standard_gravity = m_config->get_double("constants.standard_gravity"),
-    ice_density = m_config->get_double("constants.ice.density");
+  double standard_gravity = m_config->get_number("constants.standard_gravity"),
+    ice_density = m_config->get_number("constants.ice.density");
 
   IceModelVec::AccessList list{surface, thickness, result.get()};
 

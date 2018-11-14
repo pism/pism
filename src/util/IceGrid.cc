@@ -210,7 +210,7 @@ IceGrid::Ptr IceGrid::Shallow(Context::ConstPtr ctx,
     p.registration = registration;
     p.periodicity = periodicity;
 
-    double Lz = ctx->config()->get_double("grid.Lz");
+    double Lz = ctx->config()->get_number("grid.Lz");
     p.z.resize(3);
     p.z[0] = 0.0;
     p.z[1] = 0.5 * Lz;
@@ -254,7 +254,7 @@ IceGrid::IceGrid(Context::ConstPtr context, const GridParameters &p)
     m_impl->compute_horizontal_coordinates();
 
     {
-      unsigned int stencil_width = (unsigned int)context->config()->get_double("grid.max_stencil_width");
+      unsigned int stencil_width = (unsigned int)context->config()->get_number("grid.max_stencil_width");
 
       try {
         petsc::DM::Ptr tmp = this->get_dm(1, stencil_width);
@@ -318,7 +318,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (p.z.size() < 2) {
-      double Lz = ctx->config()->get_double("grid.Lz");
+      double Lz = ctx->config()->get_number("grid.Lz");
       log.message(3,
                   "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
                   "         Using 2 levels and Lz of %3.3fm\n",
@@ -1178,21 +1178,21 @@ void GridParameters::ownership_ranges_from_options(unsigned int size) {
 
 //! Initialize from a configuration database. Does not try to compute ownership ranges.
 void GridParameters::init_from_config(Config::ConstPtr config) {
-  Lx = config->get_double("grid.Lx");
-  Ly = config->get_double("grid.Ly");
+  Lx = config->get_number("grid.Lx");
+  Ly = config->get_number("grid.Ly");
 
   x0 = 0.0;
   y0 = 0.0;
 
-  Mx = config->get_double("grid.Mx");
-  My = config->get_double("grid.My");
+  Mx = config->get_number("grid.Mx");
+  My = config->get_number("grid.My");
 
   periodicity = string_to_periodicity(config->get_string("grid.periodicity"));
   registration = string_to_registration(config->get_string("grid.registration"));
 
-  double Lz = config->get_double("grid.Lz");
-  unsigned int Mz = config->get_double("grid.Mz");
-  double lambda = config->get_double("grid.lambda");
+  double Lz = config->get_number("grid.Lz");
+  unsigned int Mz = config->get_number("grid.Mz");
+  double lambda = config->get_number("grid.lambda");
   SpacingType s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
   z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
   // does not set ownership ranges because we don't know if these settings are final
@@ -1268,9 +1268,9 @@ void GridParameters::horizontal_extent_from_options() {
 }
 
 void GridParameters::vertical_grid_from_options(Config::ConstPtr config) {
-  double Lz = z.size() > 0 ? z.back() : config->get_double("grid.Lz");
-  int Mz = z.size() > 0 ? z.size() : config->get_double("grid.Mz");
-  double lambda = config->get_double("grid.lambda");
+  double Lz = z.size() > 0 ? z.back() : config->get_number("grid.Lz");
+  int Mz = z.size() > 0 ? z.size() : config->get_number("grid.Mz");
+  double lambda = config->get_number("grid.lambda");
   SpacingType s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
 
   z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);

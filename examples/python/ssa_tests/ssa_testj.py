@@ -59,8 +59,8 @@ class testj(PISM.ssa.SSAExactTestCase):
         enth0 = EC.enthalpy(273.15, 0.01, 0)  # 0.01 water fraction
         vecs.enthalpy.set(enth0)
 
-        ocean_rho = self.config.get_double("constants.sea_water.density")
-        ice_rho = self.config.get_double("constants.ice.density")
+        ocean_rho = self.config.get_number("constants.sea_water.density")
+        ice_rho = self.config.get_number("constants.ice.density")
 
         # The PISM.vec.Access object ensures that we call beginAccess for each
         # variable in 'vars', and that endAccess is called for each one on exiting
@@ -103,5 +103,5 @@ if __name__ == '__main__':
     context = PISM.Context()
     config = context.config
 
-    tc = testj(int(config.get_double("grid.Mx")), int(config.get_double("grid.My")))
+    tc = testj(int(config.get_number("grid.Mx")), int(config.get_number("grid.My")))
     tc.run(config.get_string("output.file_name"))

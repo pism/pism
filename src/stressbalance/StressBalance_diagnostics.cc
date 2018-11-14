@@ -123,9 +123,9 @@ PSB_velbar_mag::PSB_velbar_mag(const StressBalance *m)
 
   set_attrs("magnitude of vertically-integrated horizontal velocity of ice", "",
             "m second-1", "m year-1", 0);
-  m_vars[0].set_double("_FillValue", convert(m_sys, m_fill_value,
+  m_vars[0].set_number("_FillValue", convert(m_sys, m_fill_value,
                                              "m year-1", "m second-1"));
-  m_vars[0].set_double("valid_min", 0.0);
+  m_vars[0].set_number("valid_min", 0.0);
 }
 
 IceModelVec::Ptr PSB_velbar_mag::compute_impl() const {
@@ -165,7 +165,7 @@ PSB_flux::PSB_flux(const StressBalance *m)
 }
 
 IceModelVec::Ptr PSB_flux::compute_impl() const {
-  double H_threshold = m_config->get_double("geometry.ice_free_thickness_standard");
+  double H_threshold = m_config->get_number("geometry.ice_free_thickness_standard");
 
   IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "flux", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
@@ -244,8 +244,8 @@ PSB_flux_mag::PSB_flux_mag(const StressBalance *m)
 
   double fill_value = convert(m_sys, m_fill_value,
                               "m2 year-1", "m2 second-1");
-  m_vars[0].set_double("_FillValue", fill_value);
-  m_vars[0].set_double("valid_min", 0.0);
+  m_vars[0].set_number("_FillValue", fill_value);
+  m_vars[0].set_number("valid_min", 0.0);
 }
 
 IceModelVec::Ptr PSB_flux_mag::compute_impl() const {
@@ -281,8 +281,8 @@ PSB_velbase_mag::PSB_velbase_mag(const StressBalance *m)
 
   double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
 
-  m_vars[0].set_double("_FillValue", fill_value);
-  m_vars[0].set_double("valid_min", 0.0);
+  m_vars[0].set_number("_FillValue", fill_value);
+  m_vars[0].set_number("valid_min", 0.0);
 }
 
 IceModelVec::Ptr PSB_velbase_mag::compute_impl() const {
@@ -320,8 +320,8 @@ PSB_velsurf_mag::PSB_velsurf_mag(const StressBalance *m)
 
   double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
 
-  m_vars[0].set_double("_FillValue", fill_value);
-  m_vars[0].set_double("valid_min",  0.0);
+  m_vars[0].set_number("_FillValue", fill_value);
+  m_vars[0].set_number("valid_min",  0.0);
 }
 
 IceModelVec::Ptr PSB_velsurf_mag::compute_impl() const {
@@ -366,13 +366,13 @@ PSB_velsurf::PSB_velsurf(const StressBalance *m)
 
   double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
 
-  m_vars[0].set_double("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_vars[0].set_double("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
-  m_vars[0].set_double("_FillValue", fill_value);
+  m_vars[0].set_number("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_vars[0].set_number("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
+  m_vars[0].set_number("_FillValue", fill_value);
 
-  m_vars[1].set_double("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_vars[1].set_double("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
-  m_vars[1].set_double("_FillValue", fill_value);
+  m_vars[1].set_number("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_vars[1].set_number("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
+  m_vars[1].set_number("_FillValue", fill_value);
 }
 
 IceModelVec::Ptr PSB_velsurf::compute_impl() const {
@@ -420,8 +420,8 @@ PSB_wvel::PSB_wvel(const StressBalance *m)
 
   set_attrs("vertical velocity of ice, relative to geoid", "",
             "m s-1", "m year-1", 0);
-  m_vars[0].set_double("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_vars[0].set_double("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
+  m_vars[0].set_number("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_vars[0].set_number("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
 }
 
 IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) const {
@@ -442,8 +442,8 @@ IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) const {
 
   IceModelVec::AccessList list{&thickness, &mask, bed, &u3, &v3, &w3, uplift, result3.get()};
 
-  const double ice_density = m_config->get_double("constants.ice.density"),
-    sea_water_density = m_config->get_double("constants.sea_water.density"),
+  const double ice_density = m_config->get_number("constants.ice.density"),
+    sea_water_density = m_config->get_number("constants.sea_water.density"),
     R = ice_density / sea_water_density;
 
   ParallelSection loop(m_grid->com);
@@ -515,11 +515,11 @@ PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m)
   set_attrs("vertical velocity of ice at ice surface, relative to the geoid",
             "land_ice_surface_upward_velocity", // InitMIP "standard" name
             "m s-1", "m year-1", 0);
-  m_vars[0].set_double("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_vars[0].set_double("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
+  m_vars[0].set_number("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_vars[0].set_number("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
 
   double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
-  m_vars[0].set_double("_FillValue", fill_value);
+  m_vars[0].set_number("_FillValue", fill_value);
 }
 
 IceModelVec::Ptr PSB_wvelsurf::compute_impl() const {
@@ -559,11 +559,11 @@ PSB_wvelbase::PSB_wvelbase(const StressBalance *m)
   set_attrs("vertical velocity of ice at the base of ice, relative to the geoid",
             "land_ice_basal_upward_velocity", // InitMIP "standard" name
             "m s-1", "m year-1", 0);
-  m_vars[0].set_double("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_vars[0].set_double("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
+  m_vars[0].set_number("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_vars[0].set_number("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
 
   double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
-  m_vars[0].set_double("_FillValue", fill_value);
+  m_vars[0].set_number("_FillValue", fill_value);
 }
 
 IceModelVec::Ptr PSB_wvelbase::compute_impl() const {
@@ -608,13 +608,13 @@ PSB_velbase::PSB_velbase(const StressBalance *m)
 
   double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
 
-  m_vars[0].set_double("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_vars[0].set_double("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
-  m_vars[0].set_double("_FillValue", fill_value);
+  m_vars[0].set_number("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_vars[0].set_number("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
+  m_vars[0].set_number("_FillValue", fill_value);
 
-  m_vars[1].set_double("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_vars[1].set_double("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
-  m_vars[1].set_double("_FillValue", fill_value);
+  m_vars[1].set_number("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_vars[1].set_number("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
+  m_vars[1].set_number("_FillValue", fill_value);
 }
 
 IceModelVec::Ptr PSB_velbase::compute_impl() const {
@@ -884,7 +884,7 @@ IceModelVec::Ptr PSB_pressure::compute_impl() const {
 
   IceModelVec::AccessList list{thickness, result.get()};
 
-  const double rg = m_config->get_double("constants.ice.density") * m_config->get_double("constants.standard_gravity");
+  const double rg = m_config->get_number("constants.ice.density") * m_config->get_number("constants.standard_gravity");
 
   ParallelSection loop(m_grid->com);
   try {
@@ -941,7 +941,7 @@ IceModelVec::Ptr PSB_tauxz::compute_impl() const {
 
   IceModelVec::AccessList list{surface, thickness, result.get()};
 
-  const double rg = m_config->get_double("constants.ice.density") * m_config->get_double("constants.standard_gravity");
+  const double rg = m_config->get_number("constants.ice.density") * m_config->get_number("constants.standard_gravity");
 
   ParallelSection loop(m_grid->com);
   try {
@@ -999,7 +999,7 @@ IceModelVec::Ptr PSB_tauyz::compute_impl() const {
 
   IceModelVec::AccessList list{surface, thickness, result.get()};
 
-  const double rg = m_config->get_double("constants.ice.density") * m_config->get_double("constants.standard_gravity");
+  const double rg = m_config->get_number("constants.ice.density") * m_config->get_number("constants.standard_gravity");
 
   ParallelSection loop(m_grid->com);
   try {

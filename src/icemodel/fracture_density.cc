@@ -129,7 +129,7 @@ void IceModel::update_fracture_density() {
 
   bool do_fracground = m_config->get_boolean("fracture_density.include_grounded_ice");
 
-  double fdBoundaryValue = m_config->get_double("fracture_density.phi0");
+  double fdBoundaryValue = m_config->get_number("fracture_density.phi0");
 
   bool constant_healing = m_config->get_boolean("fracture_density.constant_healing");
 

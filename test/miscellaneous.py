@@ -587,7 +587,7 @@ def pism_context_test():
     ctx = PISM.cpp.Context(com, system, config, EC, time, logger, "greenland")
 
     print(ctx.com().Get_size())
-    print(ctx.config().get_double("constants.standard_gravity"))
+    print(ctx.config().get_number("constants.standard_gravity"))
     print(ctx.enthalpy_converter().L(273.15))
     print(ctx.time().current())
     print(PISM.convert(ctx.unit_system(), 1, "km", "m"))

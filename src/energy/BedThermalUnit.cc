@@ -35,8 +35,8 @@ namespace pism {
 namespace energy {
 
 BTUGrid::BTUGrid(Context::ConstPtr ctx) {
-  Mbz = (unsigned int) ctx->config()->get_double("grid.Mbz");
-  Lbz = ctx->config()->get_double("grid.Lbz");
+  Mbz = (unsigned int) ctx->config()->get_number("grid.Mbz");
+  Lbz = ctx->config()->get_number("grid.Lbz");
 }
 
 
@@ -58,7 +58,7 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
       result.Mbz = info.z_len;
       result.Lbz = -info.z_min;
     } else {
-      // override values we got using config.get_double() in the constructor
+      // override values we got using config.get_number() in the constructor
       result.Mbz = 1;
       result.Lbz = 0;
     }
@@ -66,8 +66,8 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
     input_file.close();
   } else {
     // Bootstrapping or initializing without an input file.
-    result.Mbz = config->get_double("grid.Mbz");
-    result.Lbz = config->get_double("grid.Lbz");
+    result.Mbz = config->get_number("grid.Mbz");
+    result.Lbz = config->get_number("grid.Lbz");
 
     if (result.Mbz == 1) {
       result.Lbz = 0;
@@ -146,7 +146,7 @@ void BedThermalUnit::init_impl(const InputOptions &opts) {
       break;
     case INIT_BOOTSTRAP:
       m_bottom_surface_flux.regrid(opts.filename, OPTIONAL,
-                                   m_config->get_double("bootstrapping.defaults.geothermal_flux"));
+                                   m_config->get_number("bootstrapping.defaults.geothermal_flux"));
       break;
     case INIT_OTHER:
     default:
@@ -158,7 +158,7 @@ void BedThermalUnit::init_impl(const InputOptions &opts) {
 }
 
 void BedThermalUnit::initialize_bottom_surface_flux() {
-  const double heat_flux = m_config->get_double("bootstrapping.defaults.geothermal_flux");
+  const double heat_flux = m_config->get_number("bootstrapping.defaults.geothermal_flux");
 
   m_log->message(2, "  using constant geothermal flux %f W m-2 ...\n",
                  heat_flux);

@@ -95,7 +95,7 @@ void IP_SSAHardavForwardProblem::init() {
     geometry.sea_level_elevation.set(0.0); // FIXME: this should be an input
     geometry.ice_area_specific_volume.set(0.0);
 
-    geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
+    geometry.ensure_consistency(m_config->get_number("stress_balance.ice_free_thickness_standard"));
 
     stressbalance::Inputs inputs;
 
@@ -401,7 +401,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
                                                                  IceModelVec2V &du,
                                                                  Vec dzeta) {
 
-  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_double("grid.max_stencil_width"));
+  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_number("grid.max_stencil_width"));
   petsc::DMDAVecArray dzeta_a(da2, dzeta);
   this->apply_jacobian_design_transpose(u, du, (double**)dzeta_a.get());
 }

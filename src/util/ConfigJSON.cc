@@ -303,11 +303,11 @@ Config::Booleans ConfigJSON::all_booleans_impl() const {
   return result;
 }
 
-void ConfigJSON::set_double_impl(const std::string &name, double value) {
+void ConfigJSON::set_number_impl(const std::string &name, double value) {
   set_value(m_data, name, json_pack("f", value));
 }
 
-void ConfigJSON::set_doubles_impl(const std::string &name,
+void ConfigJSON::set_numbers_impl(const std::string &name,
                                   const std::vector<double> &values) {
   set_value(m_data, name, pack_json_array(values));
 }
@@ -320,11 +320,11 @@ void ConfigJSON::set_string_impl(const std::string &name, const std::string &val
   set_value(m_data, name, json_pack("s", value.c_str()));
 }
 
-double ConfigJSON::get_double_impl(const std::string &name) const {
+double ConfigJSON::get_number_impl(const std::string &name) const {
   return get_value<double, double>(m_data, name, "F", "double");
 }
 
-std::vector<double> ConfigJSON::get_doubles_impl(const std::string &name) const {
+std::vector<double> ConfigJSON::get_numbers_impl(const std::string &name) const {
   json_t *value = find_json_value(m_data, name);
 
   if (value == NULL) {

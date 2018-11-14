@@ -33,8 +33,8 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
   ForcingOptions opt(*m_grid->ctx(), "surface.given");
 
   {
-    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    unsigned int buffer_size = m_config->get_number("climate_forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
     PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
@@ -60,15 +60,15 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
   m_temperature->set_attrs("climate_forcing",
                            "temperature of the ice at the ice surface but below firn processes",
                            "Kelvin", "");
-  m_temperature->metadata().set_doubles("valid_range", {0.0, 323.15}); // [0C, 50C]
+  m_temperature->metadata().set_numbers("valid_range", {0.0, 323.15}); // [0C, 50C]
 
-  const double smb_max = m_config->get_double("surface.given.smb_max", "kg m-2 second-1");
+  const double smb_max = m_config->get_number("surface.given.smb_max", "kg m-2 second-1");
 
   m_mass_flux->set_attrs("climate_forcing",
                          "surface mass balance (accumulation/ablation) rate",
                          "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
   m_mass_flux->metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_mass_flux->metadata().set_doubles("valid_range", {-smb_max, smb_max});
+  m_mass_flux->metadata().set_numbers("valid_range", {-smb_max, smb_max});
 
   // this class uses the "modifier" version of the SurfaceModel constructor, so we need to
   // allocate these here

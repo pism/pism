@@ -58,7 +58,7 @@
 namespace pism {
 
 FractureFields::FractureFields(IceGrid::ConstPtr grid)
-  : m_stencil_width(grid->ctx()->config()->get_double("grid.max_stencil_width")),
+  : m_stencil_width(grid->ctx()->config()->get_number("grid.max_stencil_width")),
     density(grid, "fracture_density", WITH_GHOSTS, m_stencil_width),
     growth_rate(grid, "fracture_growth_rate", WITH_GHOSTS, m_stencil_width),
     healing_rate(grid, "fracture_healing_rate", WITH_GHOSTS, m_stencil_width),
@@ -71,11 +71,11 @@ FractureFields::FractureFields(IceGrid::ConstPtr grid)
     deviatoric_stresses(grid, "sigma", WITH_GHOSTS, 2 /* stencil width */, 3) {
 
   density.set_attrs("model_state", "fracture density in ice shelf", "", "");
-  density.metadata().set_double("valid_max", 1.0);
-  density.metadata().set_double("valid_min", 0.0);
+  density.metadata().set_number("valid_max", 1.0);
+  density.metadata().set_number("valid_min", 0.0);
 
   growth_rate.set_attrs("model_state", "fracture growth rate", "second-1", "");
-  growth_rate.metadata().set_double("valid_min", 0.0);
+  growth_rate.metadata().set_number("valid_min", 0.0);
 
   healing_rate.set_attrs("model_state", "fracture healing rate", "second-1", "");
 
@@ -166,7 +166,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
 
   // allocate temporary storage
   {
-    const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
+    const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
 
     // various internal quantities
     // 2d work vectors
@@ -179,8 +179,8 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
 
   auto surface_input_file = m_config->get_string("hydrology.surface_input_file");
   if (not surface_input_file.empty()) {
-    int buffer_size = m_config->get_double("climate_forcing.buffer_size");
-    int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    int buffer_size = m_config->get_number("climate_forcing.buffer_size");
+    int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
 
     PIO file(m_grid->com, "netcdf3", surface_input_file, PISM_READONLY);
 
@@ -194,7 +194,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     m_surface_input_for_hydrology->set_attrs("diagnostic",
                                              "water input rate for the subglacial hydrology model",
                                              "kg m-2 s-1", "");
-    m_surface_input_for_hydrology->metadata().set_double("valid_min", 0.0);
+    m_surface_input_for_hydrology->metadata().set_number("valid_min", 0.0);
     m_surface_input_for_hydrology->metadata().set_string("glaciological_units", "kg m-2 year-1");
   }
 }
@@ -242,7 +242,7 @@ IceModel::~IceModel() {
 */
 void IceModel::allocate_storage() {
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
 
   // FIXME: this should do for now, but we should pass a const reference to Geometry to sub-models
   // as a function argument.
@@ -294,7 +294,7 @@ void IceModel::allocate_storage() {
     m_ssa_dirichlet_bc_mask.create(m_grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
     m_ssa_dirichlet_bc_mask.set_attrs("model_state", "Dirichlet boundary mask",
                                       "", "");
-    m_ssa_dirichlet_bc_mask.metadata().set_doubles("flag_values", {0, 1});
+    m_ssa_dirichlet_bc_mask.metadata().set_numbers("flag_values", {0, 1});
     m_ssa_dirichlet_bc_mask.metadata().set_string("flag_meanings", "no_data bc_condition");
     m_ssa_dirichlet_bc_mask.metadata().set_output_type(PISM_BYTE);
     m_ssa_dirichlet_bc_mask.set_time_independent(true);
@@ -307,7 +307,7 @@ void IceModel::allocate_storage() {
   }
   // SSA Dirichlet B.C. values
   {
-    double fill_value = units::convert(m_sys, m_config->get_double("output.fill_value"),
+    double fill_value = units::convert(m_sys, m_config->get_number("output.fill_value"),
                                        "m year-1", "m second-1");
     double valid_range = units::convert(m_sys, 1e6, "m year-1", "m second-1");
     // vel_bc
@@ -320,8 +320,8 @@ void IceModel::allocate_storage() {
                                         "m s-1", "", 1);
     for (int j = 0; j < 2; ++j) {
       m_ssa_dirichlet_bc_values.metadata(j).set_string("glaciological_units", "m year-1");
-      m_ssa_dirichlet_bc_values.metadata(j).set_doubles("valid_range", {-valid_range, valid_range});
-      m_ssa_dirichlet_bc_values.metadata(j).set_double("_FillValue", fill_value);
+      m_ssa_dirichlet_bc_values.metadata(j).set_numbers("valid_range", {-valid_range, valid_range});
+      m_ssa_dirichlet_bc_values.metadata(j).set_number("_FillValue", fill_value);
     }
 
     // FIXME: this is used by the inverse modeling code. Do NOT get
@@ -371,7 +371,7 @@ void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
   if (m_iceberg_remover and flag == REMOVE_ICEBERGS) {
     // The iceberg remover has to use the same mask as the stress balance code, hence the
     // stress-balance-related threshold here.
-    m_geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
+    m_geometry.ensure_consistency(m_config->get_number("stress_balance.ice_free_thickness_standard"));
 
     m_iceberg_remover->update(m_ssa_dirichlet_bc_mask,
                               m_geometry.cell_type,
@@ -382,7 +382,7 @@ void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
 
   // This will ensure that ice area specific volume is zero if ice thickness is greater
   // than zero, then compute new surface elevation and mask.
-  m_geometry.ensure_consistency(m_config->get_double("geometry.ice_free_thickness_standard"));
+  m_geometry.ensure_consistency(m_config->get_number("geometry.ice_free_thickness_standard"));
 }
 
 stressbalance::Inputs IceModel::stress_balance_inputs() {

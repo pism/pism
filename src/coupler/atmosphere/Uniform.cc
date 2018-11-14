@@ -35,8 +35,8 @@ void Uniform::init_impl(const Geometry &geometry) {
 
   m_log->message(2, "* Initializing the test atmosphere model...\n");
 
-  m_temperature->set(m_config->get_double("atmosphere.uniform.temperature", "Kelvin"));
-  m_precipitation->set(m_config->get_double("atmosphere.uniform.precipitation", "kg m-2 s-1"));
+  m_temperature->set(m_config->get_number("atmosphere.uniform.temperature", "Kelvin"));
+  m_precipitation->set(m_config->get_number("atmosphere.uniform.precipitation", "kg m-2 s-1"));
 }
 
 void Uniform::update_impl(const Geometry &geometry, double t, double dt) {

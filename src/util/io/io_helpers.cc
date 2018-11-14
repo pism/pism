@@ -1350,7 +1350,7 @@ void read_attributes(const PIO &nc,
         variable.set_string(attribute_name,
                             nc.get_att_text(variable_name, attribute_name));
       } else {
-        variable.set_doubles(attribute_name,
+        variable.set_numbers(attribute_name,
                              nc.get_att_double(variable_name, attribute_name));
       }
     } // end of for (int j = 0; j < nattrs; ++j)
@@ -1391,19 +1391,19 @@ void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type n
 
     std::vector<double> bounds(2);
     if (variable.has_attribute("valid_range")) {
-      bounds = variable.get_doubles("valid_range");
+      bounds = variable.get_numbers("valid_range");
     } else {
       if (variable.has_attribute("valid_min")) {
-        bounds[0]  = variable.get_double("valid_min");
+        bounds[0]  = variable.get_number("valid_min");
       }
       if (variable.has_attribute("valid_max")) {
-        bounds[1]  = variable.get_double("valid_max");
+        bounds[1]  = variable.get_number("valid_max");
       }
     }
 
     double fill_value = 0.0;
     if (variable.has_attribute("_FillValue")) {
-      fill_value = variable.get_double("_FillValue");
+      fill_value = variable.get_number("_FillValue");
     }
 
     // We need to save valid_min, valid_max and valid_range in the units
@@ -1489,17 +1489,17 @@ void read_valid_range(const PIO &nc, const std::string &name, VariableMetadata &
 
     std::vector<double> bounds = nc.get_att_double(name, "valid_range");
     if (bounds.size() == 2) {             // valid_range is present
-      variable.set_double("valid_min", c(bounds[0]));
-      variable.set_double("valid_max", c(bounds[1]));
+      variable.set_number("valid_min", c(bounds[0]));
+      variable.set_number("valid_max", c(bounds[1]));
     } else {                      // valid_range has the wrong length or is missing
       bounds = nc.get_att_double(name, "valid_min");
       if (bounds.size() == 1) {           // valid_min is present
-        variable.set_double("valid_min", c(bounds[0]));
+        variable.set_number("valid_min", c(bounds[0]));
       }
 
       bounds = nc.get_att_double(name, "valid_max");
       if (bounds.size() == 1) {           // valid_max is present
-        variable.set_double("valid_max", c(bounds[0]));
+        variable.set_number("valid_max", c(bounds[0]));
       }
     }
   } catch (RuntimeError &e) {

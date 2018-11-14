@@ -106,9 +106,9 @@ void IceModel::save_results() {
 
     auto str = pism::printf(
       "PISM done. Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour.",
-      m_run_stats.get_double("wall_clock_hours"),
-      m_run_stats.get_double("processor_hours"),
-      m_run_stats.get_double("model_years_per_processor_hour"));
+      m_run_stats.get_number("wall_clock_hours"),
+      m_run_stats.get_number("processor_hours"),
+      m_run_stats.get_number("model_years_per_processor_hour"));
 
     prepend_history(str);
   }

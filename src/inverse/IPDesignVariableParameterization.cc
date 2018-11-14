@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -42,7 +42,7 @@ void IPDesignVariableParameterization::set_scales(const Config & config,
   std::string key("inverse.design.param_");
   key += design_var_name;
   key += "_scale";
-  m_d_scale = config.get_double(key);
+  m_d_scale = config.get_number(key);
 }
 
 //! Transforms a vector of \f$\zeta\f$ values to a vector of \f$d\f$ values.
@@ -148,7 +148,7 @@ void IPDesignVariableParamExp::set_scales(const Config &config, const std::strin
   std::string key("inverse.design.param_");
   key += design_var_name;
   key += "_eps";
-  m_d_eps = config.get_double(key);
+  m_d_eps = config.get_number(key);
 }
 
 void IPDesignVariableParamExp::toDesignVariable(double p, double *value,
@@ -178,14 +178,14 @@ void IPDesignVariableParamTruncatedIdent::set_scales(const Config &config,
   key += design_var_name;
   key += "0";
 
-  double d0 = config.get_double(key);
+  double d0 = config.get_number(key);
   m_d0_sq = d0*d0 / (m_d_scale*m_d_scale);
 
 
   key = "inverse.design.param_";
   key += design_var_name;
   key += "_eps";
-  m_d_eps = config.get_double(key);
+  m_d_eps = config.get_number(key);
 }
 
 void IPDesignVariableParamTruncatedIdent::toDesignVariable(double p,

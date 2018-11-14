@@ -6,8 +6,8 @@ np.set_printoptions(precision=5, suppress=True)
 
 ctx = PISM.Context()
 
-ice_density = ctx.config.get_double("constants.ice.density")
-ocean_density = ctx.config.get_double("constants.sea_water.density")
+ice_density = ctx.config.get_number("constants.ice.density")
+ocean_density = ctx.config.get_number("constants.sea_water.density")
 
 mu = ice_density / ocean_density
 

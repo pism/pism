@@ -70,8 +70,8 @@ void SSATestCaseJ::initializeSSACoefficients() {
   m_ice_enthalpy.set(enth0);
 
   /* use Ritz et al (2001) value of 30 MPa year for typical vertically-averaged viscosity */
-  double ocean_rho = m_config->get_double("constants.sea_water.density"),
-    ice_rho = m_config->get_double("constants.ice.density");
+  double ocean_rho = m_config->get_number("constants.sea_water.density"),
+    ice_rho = m_config->get_number("constants.ice.density");
   const double nu0 = units::convert(m_sys, 30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
   const double H0 = 500.;       /* 500 m typical thickness */
 
@@ -150,8 +150,8 @@ int main(int argc, char *argv[]) {
 
     // Parameters that can be overridden by command line options
 
-    unsigned int Mx = config->get_double("grid.Mx");
-    unsigned int My = config->get_double("grid.My");
+    unsigned int Mx = config->get_number("grid.Mx");
+    unsigned int My = config->get_number("grid.My");
 
     auto method = config->get_string("stress_balance.ssa.method");
     auto output = config->get_string("output.file_name");

@@ -33,7 +33,7 @@ YieldStressInputs::YieldStressInputs() {
 YieldStress::YieldStress(IceGrid::ConstPtr g)
   : Component(g),
   m_basal_yield_stress(m_grid, "tauc", WITH_GHOSTS,
-                       m_config->get_double("grid.max_stencil_width")) {
+                       m_config->get_number("grid.max_stencil_width")) {
 
   // PROPOSED standard_name = land_ice_basal_material_yield_stress
   m_basal_yield_stress.set_attrs("model_state",

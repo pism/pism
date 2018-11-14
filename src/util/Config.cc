@@ -43,10 +43,10 @@ bool NetCDFConfig::is_set_impl(const std::string &name) const {
 
 // doubles
 
-double NetCDFConfig::get_double_impl(const std::string &name) const {
+double NetCDFConfig::get_number_impl(const std::string &name) const {
   const VariableMetadata::DoubleAttrs& doubles = m_data.get_all_doubles();
   if (doubles.find(name) != doubles.end()) {
-    return m_data.get_double(name);
+    return m_data.get_number(name);
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "parameter '%s' is unset. (Parameters read from '%s'.)",
@@ -56,10 +56,10 @@ double NetCDFConfig::get_double_impl(const std::string &name) const {
   return 0;                     // can't happen
 }
 
-std::vector<double> NetCDFConfig::get_doubles_impl(const std::string &name) const {
+std::vector<double> NetCDFConfig::get_numbers_impl(const std::string &name) const {
   const VariableMetadata::DoubleAttrs& doubles = m_data.get_all_doubles();
   if (doubles.find(name) != doubles.end()) {
-    return m_data.get_doubles(name);
+    return m_data.get_numbers(name);
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "parameter '%s' is unset. (Parameters read from '%s'.)",
@@ -79,13 +79,13 @@ Config::Doubles NetCDFConfig::all_doubles_impl() const {
 }
 
 
-void NetCDFConfig::set_double_impl(const std::string &name, double value) {
-  m_data.set_double(name, value);
+void NetCDFConfig::set_number_impl(const std::string &name, double value) {
+  m_data.set_number(name, value);
 }
 
-void NetCDFConfig::set_doubles_impl(const std::string &name,
+void NetCDFConfig::set_numbers_impl(const std::string &name,
                                     const std::vector<double> &values) {
-  m_data.set_doubles(name, values);
+  m_data.set_numbers(name, values);
 }
 
 // strings

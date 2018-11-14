@@ -108,9 +108,9 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem 
   m_iter_max = 1000;
   m_iter_max = options::Integer("-inv_gn_iter_max", "", m_iter_max);
 
-  m_tikhonov_atol = grid->ctx()->config()->get_double("inverse.tikhonov.atol");
-  m_tikhonov_rtol = grid->ctx()->config()->get_double("inverse.tikhonov.rtol");
-  m_tikhonov_ptol = grid->ctx()->config()->get_double("inverse.tikhonov.ptol");
+  m_tikhonov_atol = grid->ctx()->config()->get_number("inverse.tikhonov.atol");
+  m_tikhonov_rtol = grid->ctx()->config()->get_number("inverse.tikhonov.rtol");
+  m_tikhonov_ptol = grid->ctx()->config()->get_number("inverse.tikhonov.ptol");
 
   m_log = d0.grid()->ctx()->log();
 }

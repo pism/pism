@@ -88,15 +88,15 @@ public:
   typedef std::map<std::string, std::vector<double> > Doubles;
   Doubles all_doubles() const;
 
-  double get_double(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
-  double get_double(const std::string &name, const std::string &units,
+  double get_number(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
+  double get_number(const std::string &name, const std::string &units,
                     UseFlag flag = REMEMBER_THIS_USE) const;
-  std::vector<double> get_doubles(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
-  std::vector<double> get_doubles(const std::string &name, const std::string &units,
+  std::vector<double> get_numbers(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
+  std::vector<double> get_numbers(const std::string &name, const std::string &units,
                                   UseFlag flag = REMEMBER_THIS_USE) const;
 
-  void set_double(const std::string &name, double value, ConfigSettingFlag flag = CONFIG_FORCE);
-  void set_doubles(const std::string &name, const std::vector<double> &values,
+  void set_number(const std::string &name, double value, ConfigSettingFlag flag = CONFIG_FORCE);
+  void set_numbers(const std::string &name, const std::vector<double> &values,
                    ConfigSettingFlag flag = CONFIG_FORCE);
 
   // strings
@@ -128,11 +128,11 @@ protected:
   virtual bool is_set_impl(const std::string &name) const = 0;
 
   virtual Doubles all_doubles_impl() const = 0;
-  virtual double get_double_impl(const std::string &name) const = 0;
-  virtual std::vector<double> get_doubles_impl(const std::string &name) const = 0;
+  virtual double get_number_impl(const std::string &name) const = 0;
+  virtual std::vector<double> get_numbers_impl(const std::string &name) const = 0;
 
-  virtual void set_double_impl(const std::string &name, double value) = 0;
-  virtual void set_doubles_impl(const std::string &name,
+  virtual void set_number_impl(const std::string &name, double value) = 0;
+  virtual void set_numbers_impl(const std::string &name,
                                 const std::vector<double> &values) = 0;
 
   virtual Strings all_strings_impl() const = 0;
@@ -152,8 +152,8 @@ class ConfigWithPrefix {
 public:
   ConfigWithPrefix(Config::ConstPtr c, const std::string &prefix);
 
-  double get_double(const std::string &name) const;
-  double get_double(const std::string &name, const std::string &units) const;
+  double get_number(const std::string &name) const;
+  double get_number(const std::string &name, const std::string &units) const;
 
   std::string get_string(const std::string &name) const;
 

@@ -218,9 +218,9 @@ void IceModel::model_state_setup() {
           &W      = m_work2d[1],
           &P      = m_work2d[2];
 
-        W_till.set(m_config->get_double("bootstrapping.defaults.tillwat"));
-        W.set(m_config->get_double("bootstrapping.defaults.bwat"));
-        P.set(m_config->get_double("bootstrapping.defaults.bwp"));
+        W_till.set(m_config->get_number("bootstrapping.defaults.tillwat"));
+        W.set(m_config->get_number("bootstrapping.defaults.bwat"));
+        P.set(m_config->get_number("bootstrapping.defaults.bwp"));
 
         m_subglacial_hydrology->initialize(W_till, W, P);
         break;
@@ -287,7 +287,7 @@ void IceModel::model_state_setup() {
     case INIT_OTHER:
     default:
       {
-        m_basal_melt_rate.set(m_config->get_double("bootstrapping.defaults.bmelt"));
+        m_basal_melt_rate.set(m_config->get_number("bootstrapping.defaults.bmelt"));
 
         m_energy_model->initialize(m_basal_melt_rate,
                                    m_geometry.ice_thickness,
@@ -380,7 +380,7 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
   }
 
   m_geometry.ice_thickness.regrid(input_file, OPTIONAL,
-                                  m_config->get_double("bootstrapping.defaults.ice_thickness"));
+                                  m_config->get_number("bootstrapping.defaults.ice_thickness"));
   // check the range of the ice thickness
   {
     Range thk_range = m_geometry.ice_thickness.range();
@@ -939,7 +939,7 @@ void IceModel::process_options() {
 
   // warn about some option combinations
 
-  if (m_config->get_double("time_stepping.maximum_time_step") <= 0) {
+  if (m_config->get_number("time_stepping.maximum_time_step") <= 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "time_stepping.maximum_time_step has to be greater than 0.");
   }
 

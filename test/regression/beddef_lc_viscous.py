@@ -13,15 +13,15 @@ from PISM.util import convert
 config = PISM.Context().config
 log = PISM.Context().log
 
-config.set_double("bed_deformation.lc.grid_size_factor", 2)
+config.set_number("bed_deformation.lc.grid_size_factor", 2)
 config.set_boolean("bed_deformation.lc.elastic_model", False)
 
 # constants
-standard_gravity = config.get_double("constants.standard_gravity")
-ice_density = config.get_double("constants.ice.density")
-mantle_density = config.get_double("bed_deformation.mantle_density")
-mantle_viscosity = config.get_double("bed_deformation.mantle_viscosity")
-lithosphere_flexural_rigidity = config.get_double("bed_deformation.lithosphere_flexural_rigidity")
+standard_gravity = config.get_number("constants.standard_gravity")
+ice_density = config.get_number("constants.ice.density")
+mantle_density = config.get_number("bed_deformation.mantle_density")
+mantle_viscosity = config.get_number("bed_deformation.mantle_viscosity")
+lithosphere_flexural_rigidity = config.get_number("bed_deformation.lithosphere_flexural_rigidity")
 
 # disc load parameters
 disc_radius = convert(1000, "km", "m")

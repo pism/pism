@@ -28,10 +28,10 @@ namespace hydrology {
 NullTransport::NullTransport(IceGrid::ConstPtr g)
   : Hydrology(g) {
   m_diffuse_tillwat    = m_config->get_boolean("hydrology.null_diffuse_till_water");
-  m_diffusion_time     = m_config->get_double("hydrology.null_diffusion_time", "seconds");
-  m_diffusion_distance = m_config->get_double("hydrology.null_diffusion_distance", "meters");
-  m_tillwat_max        = m_config->get_double("hydrology.tillwat_max", "meters");
-  m_tillwat_decay_rate = m_config->get_double("hydrology.tillwat_decay_rate", "m / second");
+  m_diffusion_time     = m_config->get_number("hydrology.null_diffusion_time", "seconds");
+  m_diffusion_distance = m_config->get_number("hydrology.null_diffusion_distance", "meters");
+  m_tillwat_max        = m_config->get_number("hydrology.tillwat_max", "meters");
+  m_tillwat_decay_rate = m_config->get_number("hydrology.tillwat_decay_rate", "m / second");
 
   if (m_tillwat_max < 0.0) {
     throw RuntimeError(PISM_ERROR_LOCATION,
@@ -117,7 +117,7 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   m_input_change.add(dt, m_input_rate);
 
   const double
-    water_density = m_config->get_double("constants.fresh_water.density"),
+    water_density = m_config->get_number("constants.fresh_water.density"),
     kg_per_m      = m_grid->cell_area() * water_density; // kg m-1
 
   const IceModelVec2CellType &cell_type = *inputs.cell_type;

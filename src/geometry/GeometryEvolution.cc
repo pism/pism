@@ -109,11 +109,11 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
 
   Config::ConstPtr config = grid->ctx()->config();
 
-  gc.set_icefree_thickness(config->get_double("geometry.ice_free_thickness_standard"));
+  gc.set_icefree_thickness(config->get_number("geometry.ice_free_thickness_standard"));
 
   // constants
   {
-    ice_density   = config->get_double("constants.ice.density");
+    ice_density   = config->get_number("constants.ice.density");
     use_bmr       = config->get_boolean("geometry.update.use_basal_melt_rate");
     use_part_grid = config->get_boolean("geometry.part_grid.enabled");
   }
@@ -775,7 +775,7 @@ void GeometryEvolution::update_in_place(double dt,
     See [@ref Albrechtetal2011].
   */
   if (m_impl->use_part_grid) {
-    const int max_n_iterations = m_config->get_double("geometry.part_grid.max_iterations");
+    const int max_n_iterations = m_config->get_number("geometry.part_grid.max_iterations");
 
     bool done = false;
     for (int i = 0; i < max_n_iterations and not done; ++i) {

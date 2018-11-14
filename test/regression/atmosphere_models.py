@@ -11,6 +11,11 @@ from unittest import TestCase
 
 config = PISM.Context().config
 
+# reduce the grid size to speed this up
+config.set_number("grid.Mx", 3)
+config.set_number("grid.My", 5) # non-square grid
+config.set_number("grid.Mz", 2)
+
 seconds_per_year = 365 * 86400
 # ensure that this is the correct year length
 config.set_string("time.calendar", "365_day")
@@ -304,7 +309,7 @@ class YearlyCycle(TestCase):
         one_year = 365 * 86400.0
         model.update(self.geometry, 0, one_year)
 
-        summer_peak = config.get_double("atmosphere.fausto_air_temp.summer_peak_day") / 365.0
+        summer_peak = config.get_number("atmosphere.fausto_air_temp.summer_peak_day") / 365.0
 
         ts = np.linspace(0, one_year, 13)
         cycle = np.cos(2.0 * np.pi * (ts / one_year - summer_peak))
@@ -360,8 +365,8 @@ class Uniform(TestCase):
         self.P = 5.0
         self.T = 250.0
 
-        config.set_double("atmosphere.uniform.temperature", self.T)
-        config.set_double("atmosphere.uniform.precipitation", self.P)
+        config.set_number("atmosphere.uniform.temperature", self.T)
+        config.set_number("atmosphere.uniform.precipitation", self.P)
 
     def test_atmosphere_uniform(self):
         "Model 'uniform'"
@@ -491,9 +496,9 @@ class LapseRates(TestCase):
 
         config.set_string("atmosphere.lapse_rate.file", self.filename)
 
-        config.set_double("atmosphere.lapse_rate.precipitation_lapse_rate", self.dPdz)
+        config.set_number("atmosphere.lapse_rate.precipitation_lapse_rate", self.dPdz)
 
-        config.set_double("atmosphere.lapse_rate.temperature_lapse_rate", self.dTdz)
+        config.set_number("atmosphere.lapse_rate.temperature_lapse_rate", self.dTdz)
 
     def tearDown(self):
         os.remove(self.filename)

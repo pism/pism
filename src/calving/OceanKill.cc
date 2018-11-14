@@ -32,7 +32,7 @@ namespace calving {
 OceanKill::OceanKill(IceGrid::ConstPtr g)
   : Component(g),
     m_mask(m_grid, "ocean_kill_mask", WITH_GHOSTS,
-           m_config->get_double("grid.max_stencil_width")) {
+           m_config->get_number("grid.max_stencil_width")) {
 
   m_mask.set_attrs("internal",
                    "mask specifying fixed calving front locations",
@@ -66,7 +66,7 @@ void OceanKill::init() {
 
     thickness.set_attrs("temporary", "land ice thickness",
                         "m", "land_ice_thickness");
-    thickness.metadata().set_double("valid_min", 0.0);
+    thickness.metadata().set_number("valid_min", 0.0);
 
     bed.set_attrs("temporary", "bedrock surface elevation",
                   "m", "bedrock_altitude");

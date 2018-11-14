@@ -13,9 +13,9 @@ log10 = np.log10
 
 ctx = PISM.Context()
 
-k = ctx.config.get_double("energy.bedrock_thermal.conductivity")
-c = ctx.config.get_double("energy.bedrock_thermal.specific_heat_capacity")
-rho = ctx.config.get_double("energy.bedrock_thermal.density")
+k = ctx.config.get_number("energy.bedrock_thermal.conductivity")
+c = ctx.config.get_number("energy.bedrock_thermal.specific_heat_capacity")
+rho = ctx.config.get_number("energy.bedrock_thermal.density")
 K = k / c
 # alpha squared
 alpha2 = k / (c * rho)

@@ -34,7 +34,7 @@ PaleoPrecip::PaleoPrecip(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel
                                     "Kelvin",
                                     "air temperature offsets"));
 
-  m_exp_factor = m_config->get_double("atmosphere.paleo_precip.exp_factor_for_temperature");
+  m_exp_factor = m_config->get_number("atmosphere.paleo_precip.exp_factor_for_temperature");
 
   m_precipitation = allocate_precipitation(grid);
 }

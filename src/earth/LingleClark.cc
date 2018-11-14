@@ -41,7 +41,7 @@ LingleClark::LingleClark(IceGrid::ConstPtr grid)
 
   m_time_name = m_config->get_string("time.dimension_name") + "_lingle_clark";
   m_t_last = m_grid->ctx()->time()->current();
-  m_update_interval = m_config->get_double("bed_deformation.lc.update_interval", "seconds");
+  m_update_interval = m_config->get_number("bed_deformation.lc.update_interval", "seconds");
   m_t_eps = 1.0;
 
   if (m_update_interval < 1.0) {
@@ -74,7 +74,7 @@ LingleClark::LingleClark(IceGrid::ConstPtr grid)
   const int
     Mx = m_grid->Mx(),
     My = m_grid->My(),
-    Z  = m_config->get_double("bed_deformation.lc.grid_size_factor"),
+    Z  = m_config->get_number("bed_deformation.lc.grid_size_factor"),
     Nx = Z*(Mx - 1) + 1,
     Ny = Z*(My - 1) + 1;
 

@@ -63,7 +63,7 @@ public:
 
     // Use a pseudo-plastic law with linear till
     m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", true);
-    m_config->set_double("basal_resistance.pseudo_plastic.q", 1.0);
+    m_config->set_number("basal_resistance.pseudo_plastic.q", 1.0);
 
     // The following is irrelevant because we will force linear rheology later.
     m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
@@ -124,7 +124,7 @@ void SSATestCaseExp::initializeSSACoefficients() {
 
 void SSATestCaseExp::exactSolution(int /*i*/, int /*j*/, double x, double /*y*/,
                                    double *u, double *v) {
-  double tauc_threshold_velocity = m_config->get_double("basal_resistance.pseudo_plastic.u_threshold",
+  double tauc_threshold_velocity = m_config->get_number("basal_resistance.pseudo_plastic.u_threshold",
                                                         "m second-1");
   double v0 = units::convert(m_sys, 100.0, "m year-1", "m second-1");
   // double alpha=log(2.)/(2*L);
@@ -163,8 +163,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    unsigned int Mx = config->get_double("grid.Mx");
-    unsigned int My = config->get_double("grid.My");
+    unsigned int Mx = config->get_number("grid.Mx");
+    unsigned int My = config->get_number("grid.My");
 
     auto method      = config->get_string("stress_balance.ssa.method");
     auto output_file = config->get_string("output.file_name");

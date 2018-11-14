@@ -52,8 +52,8 @@ class testi(PISM.ssa.SSAExactTestCase):
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
         config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
-        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(
-            B_schoof, -config.get_double("stress_balance.ssa.Glen_exponent")))
+        config.set_number("flow_law.isothermal_Glen.ice_softness", pow(
+            B_schoof, -config.get_number("stress_balance.ssa.Glen_exponent")))
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -69,10 +69,10 @@ class testi(PISM.ssa.SSAExactTestCase):
         # The finite difference code uses the following flag to treat
         # the non-periodic grid correctly.
         self.config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", True)
-        self.config.set_double("stress_balance.ssa.epsilon", 0.0)  # don't use this lower bound
+        self.config.set_number("stress_balance.ssa.epsilon", 0.0)  # don't use this lower bound
 
-        standard_gravity = self.config.get_double("constants.standard_gravity")
-        ice_rho = self.config.get_double("constants.ice.density")
+        standard_gravity = self.config.get_number("constants.standard_gravity")
+        ice_rho = self.config.get_number("constants.ice.density")
         theta = math.atan(0.001)
         f = ice_rho * standard_gravity * H0_schoof * math.tan(theta)
         grid = self.grid
@@ -110,9 +110,9 @@ if __name__ == '__main__':
 
     PISM.set_abort_on_sigint(True)
 
-    config.set_double("grid.Mx", 11, PISM.CONFIG_DEFAULT)
-    config.set_double("grid.My", 61, PISM.CONFIG_DEFAULT)
+    config.set_number("grid.Mx", 11, PISM.CONFIG_DEFAULT)
+    config.set_number("grid.My", 61, PISM.CONFIG_DEFAULT)
 
-    tc = testi(int(config.get_double("grid.Mx")),
-               int(config.get_double("grid.My")))
+    tc = testi(int(config.get_number("grid.Mx")),
+               int(config.get_number("grid.My")))
     tc.run(config.get_string("output.file_name"))

@@ -44,11 +44,11 @@ protected:
 
   // doubles
   Doubles all_doubles_impl() const;
-  double get_double_impl(const std::string &name) const;
-  std::vector<double> get_doubles_impl(const std::string &name) const;
+  double get_number_impl(const std::string &name) const;
+  std::vector<double> get_numbers_impl(const std::string &name) const;
 
-  void set_double_impl(const std::string &name, double value);
-  void set_doubles_impl(const std::string &name,
+  void set_number_impl(const std::string &name, double value);
+  void set_numbers_impl(const std::string &name,
                         const std::vector<double> &values);
   // strings
   Strings all_strings_impl() const;

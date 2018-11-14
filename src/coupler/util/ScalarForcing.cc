@@ -59,8 +59,8 @@ void ScalarForcing::init() {
   Config::ConstPtr config = m_ctx->config();
 
   auto   file           = config->get_string(m_prefix + ".file");
-  int    period         = config->get_double(m_prefix + ".period");
-  double reference_year = config->get_double(m_prefix + ".reference_year");
+  int    period         = config->get_number(m_prefix + ".period");
+  double reference_year = config->get_number(m_prefix + ".reference_year");
 
   if (file.empty()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,

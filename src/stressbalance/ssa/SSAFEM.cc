@@ -47,9 +47,9 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g)
     m_element(*g),
     m_quadrature(g->dx(), g->dy(), 1.0) {
 
-  const double ice_density = m_config->get_double("constants.ice.density");
-  m_alpha = 1 - ice_density / m_config->get_double("constants.sea_water.density");
-  m_rho_g = ice_density * m_config->get_double("constants.standard_gravity");
+  const double ice_density = m_config->get_number("constants.ice.density");
+  m_alpha = 1 - ice_density / m_config->get_number("constants.sea_water.density");
+  m_rho_g = ice_density * m_config->get_number("constants.standard_gravity");
 
   m_driving_stress_x = NULL;
   m_driving_stress_y = NULL;
@@ -57,7 +57,7 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g)
   PetscErrorCode ierr;
 
   m_dirichletScale = 1.0;
-  m_beta_ice_free_bedrock = m_config->get_double("basal_resistance.beta_ice_free_bedrock");
+  m_beta_ice_free_bedrock = m_config->get_number("basal_resistance.beta_ice_free_bedrock");
 
   ierr = SNESCreate(m_grid->com, m_snes.rawptr());
   PISM_CHK(ierr, "SNESCreate");
@@ -188,7 +188,7 @@ TerminationReason::Ptr SSAFEM::solve_with_reason(const Inputs &inputs) {
 TerminationReason::Ptr SSAFEM::solve_nocache() {
   PetscErrorCode ierr;
 
-  m_epsilon_ssa = m_config->get_double("stress_balance.ssa.epsilon");
+  m_epsilon_ssa = m_config->get_number("stress_balance.ssa.epsilon");
 
   options::String filename("-ssa_view", "");
   if (filename.is_set()) {
@@ -322,7 +322,7 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
   if (use_cfbc) {
     // Note: the call below uses ghosts of inputs.geometry->ice_thickness.
     compute_node_types(inputs.geometry->ice_thickness,
-                       m_config->get_double("stress_balance.ice_free_thickness_standard"),
+                       m_config->get_number("stress_balance.ice_free_thickness_standard"),
                        m_node_type);
   } else {
     m_node_type.set(NODE_INTERIOR);
@@ -557,9 +557,9 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
     is_dry_simulation = m_config->get_boolean("ocean.always_grounded");
 
   const double
-    ice_density      = m_config->get_double("constants.ice.density"),
-    ocean_density    = m_config->get_double("constants.sea_water.density"),
-    standard_gravity = m_config->get_double("constants.standard_gravity");
+    ice_density      = m_config->get_number("constants.ice.density"),
+    ocean_density    = m_config->get_number("constants.sea_water.density"),
+    standard_gravity = m_config->get_number("constants.standard_gravity");
 
   // Reset the boundary integral so that all values are overwritten.
   m_boundary_integral.set(0.0);

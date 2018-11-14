@@ -45,8 +45,8 @@ class test_plug(PISM.ssa.SSAExactTestCase):
 
         # // Use constant hardness
         config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
-        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(B0, -glen_n))
-        config.set_double("stress_balance.ssa.Glen_exponent", glen_n)
+        config.set_number("flow_law.isothermal_Glen.ice_softness", pow(B0, -glen_n))
+        config.set_number("stress_balance.ssa.Glen_exponent", glen_n)
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -90,11 +90,11 @@ class test_plug(PISM.ssa.SSAExactTestCase):
         # self.config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", True);
 
         # SSAFEM uses this (even though it has "ssafd" in its name)
-        self.config.set_double("stress_balance.ssa.epsilon", 0.0)
+        self.config.set_number("stress_balance.ssa.epsilon", 0.0)
 
     def exactSolution(self, i, j, x, y):
-        earth_grav = self.config.get_double("constants.standard_gravity")
-        ice_rho = self.config.get_double("constants.ice.density")
+        earth_grav = self.config.get_number("constants.standard_gravity")
+        ice_rho = self.config.get_number("constants.ice.density")
         f = ice_rho * earth_grav * H0 * dhdx
         ynd = y / L
 
@@ -109,5 +109,5 @@ if __name__ == '__main__':
 
     PISM.set_abort_on_sigint(True)
 
-    tc = test_plug(int(config.get_double("grid.Mx")), int(config.get_double("grid.My")))
+    tc = test_plug(int(config.get_number("grid.Mx")), int(config.get_number("grid.My")))
     tc.run(config.get_string("output.file_name"))

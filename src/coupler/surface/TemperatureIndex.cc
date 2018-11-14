@@ -49,14 +49,14 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
     m_melt(m_grid, "surface_melt_flux", WITHOUT_GHOSTS),
     m_runoff(m_grid, "surface_runoff_flux", WITHOUT_GHOSTS) {
 
-  m_sd_period                  = m_config->get_double("surface.pdd.std_dev.period");
-  m_base_ddf.snow              = m_config->get_double("surface.pdd.factor_snow");
-  m_base_ddf.ice               = m_config->get_double("surface.pdd.factor_ice");
-  m_base_ddf.refreeze_fraction = m_config->get_double("surface.pdd.refreeze");
-  m_base_pddStdDev             = m_config->get_double("surface.pdd.std_dev");
+  m_sd_period                  = m_config->get_number("surface.pdd.std_dev.period");
+  m_base_ddf.snow              = m_config->get_number("surface.pdd.factor_snow");
+  m_base_ddf.ice               = m_config->get_number("surface.pdd.factor_ice");
+  m_base_ddf.refreeze_fraction = m_config->get_number("surface.pdd.refreeze");
+  m_base_pddStdDev             = m_config->get_number("surface.pdd.std_dev");
   m_sd_use_param               = m_config->get_boolean("surface.pdd.std_dev_use_param");
-  m_sd_param_a                 = m_config->get_double("surface.pdd.std_dev_param_a");
-  m_sd_param_b                 = m_config->get_double("surface.pdd.std_dev_param_b");
+  m_sd_param_a                 = m_config->get_number("surface.pdd.std_dev_param_a");
+  m_sd_param_b                 = m_config->get_number("surface.pdd.std_dev_param_b");
 
   bool use_fausto_params     = m_config->get_boolean("surface.pdd.fausto.enabled");
 
@@ -78,8 +78,8 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   std::string sd_file = m_config->get_string("surface.pdd.std_dev.file");
 
   if (not sd_file.empty()) {
-    int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
-    int max_buffer_size = (unsigned int) m_config->get_double("climate_forcing.buffer_size");
+    int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
+    int max_buffer_size = (unsigned int) m_config->get_number("climate_forcing.buffer_size");
 
     PIO file(m_grid->com, "netcdf3", sd_file, PISM_READONLY);
     m_air_temp_sd = IceModelVec2T::ForcingField(m_grid, file,
@@ -125,7 +125,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   m_firn_depth.set_attrs("diagnostic",
                          "firn cover depth",
                          "m", "");
-  m_firn_depth.metadata().set_double("valid_min", 0.0);
+  m_firn_depth.metadata().set_number("valid_min", 0.0);
   m_firn_depth.set(0.0);
 
   m_temperature = allocate_temperature(g);
@@ -173,7 +173,7 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
                      "  Reading standard deviation of near-surface temperature from '%s'...\n",
                      sd_file.c_str());
 
-      auto sd_ref_time = m_config->get_double("surface.pdd.std_dev.reference_year", "seconds");
+      auto sd_ref_time = m_config->get_number("surface.pdd.std_dev.reference_year", "seconds");
 
       m_air_temp_sd->init(sd_file, m_sd_period, sd_ref_time);
     }
@@ -235,7 +235,7 @@ MaxTimestep TemperatureIndex::max_timestep_impl(double my_t) const {
 double TemperatureIndex::compute_next_balance_year_start(double time) {
   // compute the time corresponding to the beginning of the next balance year
   double
-    balance_year_start_day = m_config->get_double("surface.pdd.balance_year_start_day"),
+    balance_year_start_day = m_config->get_number("surface.pdd.balance_year_start_day"),
     one_day                = units::convert(m_sys, 1.0, "days", "seconds"),
     year_start             = m_grid->ctx()->time()->calendar_year_start(time),
     balance_year_start     = year_start + (balance_year_start_day - 1.0) * one_day;
@@ -279,8 +279,8 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
       &m_firn_depth, &m_snow_depth, &m_accumulation, &m_melt, &m_runoff};
 
   const double
-    sigmalapserate = m_config->get_double("surface.pdd.std_dev_lapse_lat_rate"),
-    sigmabaselat   = m_config->get_double("surface.pdd.std_dev_lapse_lat_base");
+    sigmalapserate = m_config->get_number("surface.pdd.std_dev_lapse_lat_rate"),
+    sigmabaselat   = m_config->get_number("surface.pdd.std_dev_lapse_lat_base");
 
   const IceModelVec2S *latitude = nullptr;
   if (fausto_greve or sigmalapserate != 0.0) {
@@ -303,7 +303,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
 
   m_atmosphere->begin_pointwise_access();
 
-  const double ice_density = m_config->get_double("constants.ice.density");
+  const double ice_density = m_config->get_number("constants.ice.density");
 
   ParallelSection loop(m_grid->com);
   try {
@@ -551,7 +551,7 @@ public:
     m_vars[0].set_string("cell_methods", "time: mean");
 
     double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", fill_value);
   }
 
 protected:
@@ -613,7 +613,7 @@ public:
     m_vars[0].set_string("cell_methods", "time: mean");
 
     double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", fill_value);
   }
 
 protected:
@@ -675,7 +675,7 @@ public:
     m_vars[0].set_string("cell_methods", "time: mean");
 
     double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", fill_value);
   }
 
 protected:

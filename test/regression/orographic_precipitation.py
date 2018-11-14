@@ -75,7 +75,7 @@ def run_model(grid, orography):
     model.update(geometry, 0, 1)
 
     config = PISM.Context().config
-    water_density = config.get_double("constants.fresh_water.density")
+    water_density = config.get_number("constants.fresh_water.density")
 
     # convert from kg / (m^2 s) to mm/s
     return model.mean_precipitation().numpy() / (1000.0 * water_density)
@@ -89,21 +89,21 @@ def max_error(spacing, wind_direction):
     config = PISM.Context().config
 
     # set wind speed and direction
-    config.set_double("atmosphere.orographic_precipitation.wind_speed", wind_speed)
-    config.set_double("atmosphere.orographic_precipitation.wind_direction", wind_direction)
+    config.set_number("atmosphere.orographic_precipitation.wind_speed", wind_speed)
+    config.set_number("atmosphere.orographic_precipitation.wind_direction", wind_direction)
 
     # set conversion time to zero
-    config.set_double("atmosphere.orographic_precipitation.conversion_time", 0.0)
+    config.set_number("atmosphere.orographic_precipitation.conversion_time", 0.0)
     # eliminate the effect of airflow dynamics
-    config.set_double("atmosphere.orographic_precipitation.water_vapor_scale_height", 0.0)
+    config.set_number("atmosphere.orographic_precipitation.water_vapor_scale_height", 0.0)
     # eliminate the effect of the Coriolis force
-    config.set_double("atmosphere.orographic_precipitation.coriolis_latitude", 0.0)
+    config.set_number("atmosphere.orographic_precipitation.coriolis_latitude", 0.0)
 
     # get constants needed to compute the exact solution
-    tau      = config.get_double("atmosphere.orographic_precipitation.fallout_time")
-    Theta_m  = config.get_double("atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate")
-    rho_Sref = config.get_double("atmosphere.orographic_precipitation.reference_density")
-    gamma    = config.get_double("atmosphere.orographic_precipitation.lapse_rate")
+    tau      = config.get_number("atmosphere.orographic_precipitation.fallout_time")
+    Theta_m  = config.get_number("atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate")
+    rho_Sref = config.get_number("atmosphere.orographic_precipitation.reference_density")
+    gamma    = config.get_number("atmosphere.orographic_precipitation.lapse_rate")
     Cw       = rho_Sref * Theta_m / gamma
 
     if wind_direction == 90 or wind_direction == 270:

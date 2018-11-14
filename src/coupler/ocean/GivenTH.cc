@@ -51,12 +51,12 @@ GivenTH::Constants::Constants(const Config &config) {
   // to use the spatially-variable top-of-the-ice temperature.
   shelf_top_surface_temperature    = -20.0; // degrees Celsius
 
-  water_latent_heat_fusion         = config.get_double("constants.fresh_water.latent_heat_of_fusion");
-  sea_water_density                = config.get_double("constants.sea_water.density");
-  sea_water_specific_heat_capacity = config.get_double("constants.sea_water.specific_heat_capacity");
-  ice_density                      = config.get_double("constants.ice.density");
-  ice_specific_heat_capacity       = config.get_double("constants.ice.specific_heat_capacity");
-  ice_thermal_diffusivity          = config.get_double("constants.ice.thermal_conductivity") / (ice_density * ice_specific_heat_capacity);
+  water_latent_heat_fusion         = config.get_number("constants.fresh_water.latent_heat_of_fusion");
+  sea_water_density                = config.get_number("constants.sea_water.density");
+  sea_water_specific_heat_capacity = config.get_number("constants.sea_water.specific_heat_capacity");
+  ice_density                      = config.get_number("constants.ice.density");
+  ice_specific_heat_capacity       = config.get_number("constants.ice.specific_heat_capacity");
+  ice_thermal_diffusivity          = config.get_number("constants.ice.thermal_conductivity") / (ice_density * ice_specific_heat_capacity);
   limit_salinity_range             = config.get_boolean("ocean.three_equation_model_clip_salinity");
 }
 
@@ -66,8 +66,8 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
   ForcingOptions opt(*m_grid->ctx(), "ocean.th");
 
   {
-    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    unsigned int buffer_size = m_config->get_number("climate_forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
     PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
@@ -160,7 +160,7 @@ void GivenTH::update_impl(const Geometry &geometry, double t, double dt) {
   }
 
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
-  m_shelf_base_mass_flux->scale(m_config->get_double("constants.ice.density"));
+  m_shelf_base_mass_flux->scale(m_config->get_number("constants.ice.density"));
 }
 
 MaxTimestep GivenTH::max_timestep_impl(double t) const {

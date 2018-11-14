@@ -85,7 +85,7 @@ void vonMisesCalving::compute_calving_rate(const CalvingInputs &inputs,
   const double *z = &m_grid->z()[0];
 
   const double ssa_n = m_flow_law->exponent();
-  double sigma_max = m_config->get_double("calving.vonmises.sigma_max");
+  double sigma_max = m_config->get_number("calving.vonmises.sigma_max");
 
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
