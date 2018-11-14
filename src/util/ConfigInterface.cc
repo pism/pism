@@ -485,7 +485,7 @@ void set_boolean_from_option(Config &config, const std::string &option,
 
 //! Sets a configuration parameter from a command-line option.
 /*!
-  If called as scalar_from_option("foo", "foo"), checks -foo and calls set("foo", value).
+  If called as number_from_option("foo", "foo"), checks -foo and calls set("foo", value).
 
   Does nothing if -foo was not set.
 
@@ -493,7 +493,7 @@ void set_boolean_from_option(Config &config, const std::string &option,
   input units and converted as needed. (This allows saving parameters without
   converting again.)
 */
-void set_scalar_from_option(Config &config, const std::string &name, const std::string &parameter) {
+void set_number_from_option(Config &config, const std::string &name, const std::string &parameter) {
   options::Real option("-" + name, config.doc(parameter),
                        config.get_double(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
@@ -501,7 +501,7 @@ void set_scalar_from_option(Config &config, const std::string &name, const std::
   }
 }
 
-void set_scalar_list_from_option(Config &config, const std::string &name,
+void set_number_list_from_option(Config &config, const std::string &name,
                                  const std::string &parameter) {
   options::RealList option("-" + name, config.doc(parameter),
                            config.get_doubles(parameter, Config::FORGET_THIS_USE));
@@ -601,8 +601,8 @@ void set_parameter_from_options(Config &config, const std::string &name) {
     set_string_from_option(config, option, name);
   } else if (type == "boolean") {
     set_boolean_from_option(config, option, name);
-  } else if (type == "scalar") {
-    set_scalar_from_option(config, option, name);
+  } else if (type == "number") {
+    set_number_from_option(config, option, name);
   } else if (type == "integer") {
     set_integer_from_option(config, option, name);
   } else if (type == "keyword") {

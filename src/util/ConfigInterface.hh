@@ -179,7 +179,7 @@ void set_boolean_from_option(Config &config,
                              const std::string &option,const std::string &parameter);
 
 //! Set one scalar parameter using command-line options.
-void set_scalar_from_option(Config &config,
+void set_number_from_option(Config &config,
                             const std::string &option, const std::string &parameter);
 
 //! Set one free-form string parameter using command-line options.

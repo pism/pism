@@ -77,7 +77,7 @@ def print_string(var, name, T):
                 doc(var, name)))
 
 
-def print_scalar(var, name, T):
+def print_number(var, name, T):
     V = "{} ({})".format(number_to_string(value(var, name)), units(var, name))
     print(entry(name, T, V, option(var, name), doc(var, name)))
 
@@ -119,7 +119,7 @@ def option(var, name):
 
 
 printers = {"string": print_string,
-            "scalar": print_scalar,
+            "number": print_number,
             "integer": print_integer,
             "boolean": print_string,
             "keyword": print_keyword}

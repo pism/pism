@@ -124,7 +124,7 @@ def generic_dialog(event, func):
     footer.grid(row=j, column=0, columnspan=2)
 
     def is_valid(T, value):
-        if T == "scalar":
+        if T == "number":
             try:
                 dummy = float(value)
                 return True
