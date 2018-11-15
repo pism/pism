@@ -532,7 +532,7 @@ void SIAFD::surface_gradient_haseloff(const Inputs &inputs,
  *
  * The trapezoidal rule is used to approximate the integral.
  *
- * \param[in]  full_update the boolean flag specitying if we're doing a "full" update.
+ * \param[in]  full_update the flag specitying if we're doing a "full" update.
  * \param[in]  h_x x-component of the surface gradient, on the staggered grid
  * \param[in]  h_y y-component of the surface gradient, on the staggered grid
  * \param[out] result diffusivity of the SIA flow

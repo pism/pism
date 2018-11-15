@@ -118,10 +118,10 @@ def option(var, name):
         return None
 
 
-printers = {"string": print_string,
-            "number": print_number,
+printers = {"string":  print_string,
+            "number":  print_number,
             "integer": print_integer,
-            "boolean": print_string,
+            "flag":    print_string,
             "keyword": print_keyword}
 
 header = """.. -*- mode: rst -*-

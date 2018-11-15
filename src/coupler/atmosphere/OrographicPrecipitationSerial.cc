@@ -73,7 +73,7 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
     m_Theta_m             = config.get_number("atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate");
     m_rho_Sref            = config.get_number("atmosphere.orographic_precipitation.reference_density");
     m_latitude            = config.get_number("atmosphere.orographic_precipitation.coriolis_latitude");
-    m_truncate            = config.get_boolean("atmosphere.orographic_precipitation.truncate");
+    m_truncate            = config.get_flag("atmosphere.orographic_precipitation.truncate");
 
 
     // derived constants

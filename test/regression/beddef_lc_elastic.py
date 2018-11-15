@@ -96,8 +96,8 @@ class LingleClarkElastic(TestCase):
     def setUp(self):
         self.ctx = PISM.Context()
 
-        self.elastic = self.ctx.config.get_boolean("bed_deformation.lc.elastic_model")
-        self.ctx.config.set_boolean("bed_deformation.lc.elastic_model", True)
+        self.elastic = self.ctx.config.get_flag("bed_deformation.lc.elastic_model")
+        self.ctx.config.set_flag("bed_deformation.lc.elastic_model", True)
 
         self.size_factor = self.ctx.config.get_number("bed_deformation.lc.grid_size_factor")
         self.ctx.config.set_number("bed_deformation.lc.grid_size_factor", 2)
@@ -133,5 +133,5 @@ class LingleClarkElastic(TestCase):
 
     def tearDown(self):
         # reset configuration parameters
-        self.ctx.config.set_boolean("bed_deformation.lc.elastic_model", self.elastic)
+        self.ctx.config.set_flag("bed_deformation.lc.elastic_model", self.elastic)
         self.ctx.config.set_number("bed_deformation.lc.grid_size_factor", self.size_factor)

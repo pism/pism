@@ -296,8 +296,8 @@ Config::Strings ConfigJSON::all_strings_impl() const {
   return result;
 }
 
-Config::Booleans ConfigJSON::all_booleans_impl() const {
-  Config::Booleans result;
+Config::Flags ConfigJSON::all_flags_impl() const {
+  Config::Flags result;
   get_all_values<bool, int>(m_data, "", JSON_TRUE, "b", result);
   get_all_values<bool, int>(m_data, "", JSON_FALSE, "b", result);
   return result;
@@ -321,7 +321,7 @@ void ConfigJSON::set_string_impl(const std::string &name, const std::string &val
 }
 
 double ConfigJSON::get_number_impl(const std::string &name) const {
-  return get_value<double, double>(m_data, name, "F", "double");
+  return get_value<double, double>(m_data, name, "F", "number");
 }
 
 std::vector<double> ConfigJSON::get_numbers_impl(const std::string &name) const {
@@ -340,7 +340,7 @@ std::string ConfigJSON::get_string_impl(const std::string &name) const {
 }
 
 bool ConfigJSON::get_flag_impl(const std::string &name) const {
-  return get_value<bool, int>(m_data, name, "b", "boolean");
+  return get_value<bool, int>(m_data, name, "b", "flag");
 }
 
 void ConfigJSON::read_impl(const PIO &nc) {

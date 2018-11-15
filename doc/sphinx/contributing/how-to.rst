@@ -35,7 +35,7 @@ To use a flag, do
 
 .. code-block:: c++
 
-   bool compute_age = config->get_boolean("age.enabled");
+   bool compute_age = config->get_flag("age.enabled");
 
 .. note::
 

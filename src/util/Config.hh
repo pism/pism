@@ -55,8 +55,8 @@ protected:
   std::string get_string_impl(const std::string &name) const;
   void set_string_impl(const std::string &name, const std::string &value);
 
-  // booleans
-  Booleans all_booleans_impl() const;
+  // flags
+  Flags all_flags_impl() const;
   bool get_flag_impl(const std::string& name) const;
   void set_flag_impl(const std::string& name, bool value);
 protected:

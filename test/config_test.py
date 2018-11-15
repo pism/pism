@@ -45,8 +45,8 @@ for a in attrs:
         print("Attribute {} is a number, but it does not have units".format(a))
         sys.exit(1)
 
-    if attr_type == "boolean" and attr_value not in ["yes", "no", "true", "false", "on", "off"]:
-        print("Attribute {} is a boolean, but its value is {}".format(a, attr_value))
+    if attr_type == "flag" and attr_value not in ["yes", "no", "true", "false", "on", "off"]:
+        print("Attribute {} is a flag, but its value is {}".format(a, attr_value))
         sys.exit(1)
 
     if attr_type == "keyword" and (a + "_choices") not in attrs:

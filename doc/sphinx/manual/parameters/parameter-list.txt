@@ -3,7 +3,7 @@
 .. DO NOT EDIT: This file was automatically generated. Edit src/pism_config.cdl instead.
 
 
-#. :config:`age.enabled` (*boolean*)
+#. :config:`age.enabled` (*flag*)
 
    :Value: no
    :Option: :opt:`-age`
@@ -244,7 +244,7 @@
    :Option: :opt:`-scale_factor`
    :Description: Precipitation scaling factor
 
-#. :config:`atmosphere.orographic_precipitation.truncate` (*boolean*)
+#. :config:`atmosphere.orographic_precipitation.truncate` (*flag*)
 
    :Value: true
    :Option: :opt:`-truncate`
@@ -370,7 +370,7 @@
    :Option: :opt:`-plastic_reg`
    :Description: Set the value of `\epsilon` regularization of plastic till; this is the second `\epsilon` in formula (4.1) in :cite:`SchoofStream`
 
-#. :config:`basal_resistance.pseudo_plastic.enabled` (*boolean*)
+#. :config:`basal_resistance.pseudo_plastic.enabled` (*flag*)
 
    :Value: no
    :Option: :opt:`-pseudo_plastic`
@@ -394,7 +394,7 @@
    :Option: :opt:`-pseudo_plastic_uthreshold`
    :Description: threshold velocity of the pseudo-plastic sliding law
 
-#. :config:`basal_yield_stress.add_transportable_water` (*boolean*)
+#. :config:`basal_yield_stress.add_transportable_water` (*flag*)
 
    :Value: no
    :Option: :opt:`-tauc_add_transportable_water`
@@ -466,7 +466,7 @@
    :Option: :opt:`-till_reference_void_ratio`
    :Description: void ratio at reference effective pressure N_0; value from :cite:`Tulaczyketal2000`
 
-#. :config:`basal_yield_stress.mohr_coulomb.topg_to_phi.enabled` (*boolean*)
+#. :config:`basal_yield_stress.mohr_coulomb.topg_to_phi.enabled` (*flag*)
 
    :Value: no
    :Description: If the option ``-topg_to_phi`` is set then this will be set to 'yes', and then MohrCoulombYieldStress will initialize the ``tillphi`` field using a piece-wise linear function of depth described by four parameters.
@@ -491,7 +491,7 @@
    :Value: -1000 (meters)
    :Description: the elevation at which the lower value of the till friction angle is used; see the implementation of MohrCoulombYieldStress
 
-#. :config:`basal_yield_stress.slippery_grounding_lines` (*boolean*)
+#. :config:`basal_yield_stress.slippery_grounding_lines` (*flag*)
 
    :Value: no
    :Option: :opt:`-tauc_slippery_grounding_lines`
@@ -509,7 +509,7 @@
    :Option: :opt:`-uplift_file`
    :Description: The name of the file to read the uplift (dbdt) from. Leave empty to read it from an input file or a regridding file.
 
-#. :config:`bed_deformation.lc.elastic_model` (*boolean*)
+#. :config:`bed_deformation.lc.elastic_model` (*flag*)
 
    :Value: yes
    :Option: :opt:`-bed_def_lc_elastic_model`
@@ -605,25 +605,25 @@
    :Option: :opt:`-eigen_calving_K`
    :Description: Set proportionality constant to determine calving rate from strain rates.  Note references :cite:`Levermannetal2012`, :cite:`Martinetal2011` use K in range `10^{9}` to `3 \times 10^{11}` m a, that is, `3 \times 10^{16}` to `10^{19}` m s.
 
-#. :config:`calving.float_kill.calve_near_grounding_line` (*boolean*)
+#. :config:`calving.float_kill.calve_near_grounding_line` (*flag*)
 
    :Value: yes
    :Option: :opt:`-float_kill_calve_near_grounding_line`
    :Description: Calve floating ice near the grounding line.
 
-#. :config:`calving.float_kill.margin_only` (*boolean*)
+#. :config:`calving.float_kill.margin_only` (*flag*)
 
    :Value: no
    :Option: :opt:`-float_kill_margin_only`
    :Description: Apply float_kill at ice margin cells only.
 
-#. :config:`calving.front_retreat.use_cfl` (*boolean*)
+#. :config:`calving.front_retreat.use_cfl` (*flag*)
 
    :Value: false
    :Option: :opt:`-calving_cfl`
    :Description: apply CFL criterion for eigen-calving rate front retreat
 
-#. :config:`calving.front_retreat.wrap_around` (*boolean*)
+#. :config:`calving.front_retreat.wrap_around` (*flag*)
 
    :Value: false
    :Option: :opt:`-calving_wrap_around`
@@ -740,12 +740,12 @@
    :Value: 9.810000 (meter second-2)
    :Description: acceleration due to gravity on Earth geoid
 
-#. :config:`energy.allow_temperature_above_melting` (*boolean*)
+#. :config:`energy.allow_temperature_above_melting` (*flag*)
 
    :Value: no
    :Description: If set to 'yes', allow temperatures above the pressure-malting point in the cold mode temperature code. Used by some verifiaction tests.
 
-#. :config:`energy.basal_melt.use_grounded_cell_fraction` (*boolean*)
+#. :config:`energy.basal_melt.use_grounded_cell_fraction` (*flag*)
 
    :Value: true
    :Option: :opt:`-subgl_basal_melt`
@@ -776,7 +776,7 @@
    :Value: 20 (meters)
    :Description: Average spacing between elements of the cryo-hydrologic system (controls the rate of heat transfer from the CH system into the ice).
 
-#. :config:`energy.ch_warming.enabled` (*boolean*)
+#. :config:`energy.ch_warming.enabled` (*flag*)
 
    :Value: no
    :Description: Enable the cryo-hydrologic warming model
@@ -801,7 +801,7 @@
    :Value: 0.010000 (1)
    :Description: liquid water fraction (omega) above which drainage occurs, but below which there is no drainage; see :cite:`AschwandenBuelerKhroulevBlatter`
 
-#. :config:`energy.enabled` (*boolean*)
+#. :config:`energy.enabled` (*flag*)
 
    :Value: yes
    :Description: Solve energy conservation equations.
@@ -816,17 +816,17 @@
    :Value: 0.100000 (pure number)
    :Description: K in cold ice is multiplied by this fraction to give K0 in :cite:`AschwandenBuelerKhroulevBlatter`
 
-#. :config:`energy.margin_exclude_horizontal_advection` (*boolean*)
+#. :config:`energy.margin_exclude_horizontal_advection` (*flag*)
 
    :Value: yes
    :Description: Exclude horizontal advection of energy at grid points near ice margins. See :config:`energy.margin_ice_thickness_limit`.
 
-#. :config:`energy.margin_exclude_strain_heating` (*boolean*)
+#. :config:`energy.margin_exclude_strain_heating` (*flag*)
 
    :Value: yes
    :Description: Exclude strain heating at grid points near ice margins. See :config:`energy.margin_ice_thickness_limit`.
 
-#. :config:`energy.margin_exclude_vertical_advection` (*boolean*)
+#. :config:`energy.margin_exclude_vertical_advection` (*flag*)
 
    :Value: yes
    :Description: Exclude vertical advection of energy at grid points near ice margins. See :config:`energy.margin_ice_thickness_limit`.
@@ -848,12 +848,12 @@
    :Option: :opt:`-low_temp`
    :Description: Minimum allowed ice temperature
 
-#. :config:`energy.temperature_based` (*boolean*)
+#. :config:`energy.temperature_based` (*flag*)
 
    :Value: no
    :Description: Use cold ice (i.e. not polythermal) methods.
 
-#. :config:`energy.temperature_dependent_thermal_conductivity` (*boolean*)
+#. :config:`energy.temperature_dependent_thermal_conductivity` (*flag*)
 
    :Value: no
    :Option: :opt:`-vark`
@@ -944,49 +944,49 @@
    :Value: 3.168900e-24 (Pascal-3 second-1)
    :Description: ice softness used by IsothermalGlenIce :cite:`EISMINT96`
 
-#. :config:`fracture_density.constant_fd` (*boolean*)
+#. :config:`fracture_density.constant_fd` (*flag*)
 
    :Value: no
    :Option: :opt:`-constant_fd`
    :Description: FIXME
 
-#. :config:`fracture_density.constant_healing` (*boolean*)
+#. :config:`fracture_density.constant_healing` (*flag*)
 
    :Value: no
    :Option: :opt:`-constant_healing`
    :Description: Constant healing
 
-#. :config:`fracture_density.enabled` (*boolean*)
+#. :config:`fracture_density.enabled` (*flag*)
 
    :Value: no
    :Option: :opt:`-fractures`
    :Description: Calculation of fracture density according to stresses and strain rate field.
 
-#. :config:`fracture_density.fd2d_scheme` (*boolean*)
+#. :config:`fracture_density.fd2d_scheme` (*flag*)
 
    :Value: no
    :Option: :opt:`-scheme_fd2d`
    :Description: FIXME
 
-#. :config:`fracture_density.fracture_weighted_healing` (*boolean*)
+#. :config:`fracture_density.fracture_weighted_healing` (*flag*)
 
    :Value: no
    :Option: :opt:`-fracture_weighted_healing`
    :Description: Fracture weighted healing
 
-#. :config:`fracture_density.include_grounded_ice` (*boolean*)
+#. :config:`fracture_density.include_grounded_ice` (*flag*)
 
    :Value: no
    :Option: :opt:`-do_frac_on_grounded`
    :Description: model fracture density in grounded areas
 
-#. :config:`fracture_density.lefm` (*boolean*)
+#. :config:`fracture_density.lefm` (*flag*)
 
    :Value: no
    :Option: :opt:`-lefm`
    :Description: FIXME
 
-#. :config:`fracture_density.max_shear_stress` (*boolean*)
+#. :config:`fracture_density.max_shear_stress` (*flag*)
 
    :Value: no
    :Option: :opt:`-max_shear`
@@ -1004,13 +1004,13 @@
    :Option: :opt:`-fracture_softening`
    :Description: epsilon in equation (6) in Albrecht and Levermann, 'Fracture-induced softening for large-scale ice dynamics'
 
-#. :config:`fracture_density.write_fields` (*boolean*)
+#. :config:`fracture_density.write_fields` (*flag*)
 
    :Value: no
    :Option: :opt:`-write_fd_fields`
    :Description: Writing of fracture density related fields to nc-file.
 
-#. :config:`geometry.grounded_cell_fraction` (*boolean*)
+#. :config:`geometry.grounded_cell_fraction` (*flag*)
 
    :Value: false
    :Option: :opt:`-subgl`
@@ -1021,7 +1021,7 @@
    :Value: 0.010000 (meters)
    :Description: If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN.
 
-#. :config:`geometry.part_grid.enabled` (*boolean*)
+#. :config:`geometry.part_grid.enabled` (*flag*)
 
    :Value: no
    :Option: :opt:`-part_grid`
@@ -1032,19 +1032,19 @@
    :Value: 10
    :Description: maximum number of residual redistribution iterations
 
-#. :config:`geometry.remove_icebergs` (*boolean*)
+#. :config:`geometry.remove_icebergs` (*flag*)
 
    :Value: no
    :Option: :opt:`-kill_icebergs`
    :Description: identify and kill detached ice-shelf areas
 
-#. :config:`geometry.update.enabled` (*boolean*)
+#. :config:`geometry.update.enabled` (*flag*)
 
    :Value: yes
    :Option: :opt:`-mass`
    :Description: Solve the mass conservation equation
 
-#. :config:`geometry.update.use_basal_melt_rate` (*boolean*)
+#. :config:`geometry.update.use_basal_melt_rate` (*flag*)
 
    :Value: yes
    :Option: :opt:`-bmr_in_cont`
@@ -1096,7 +1096,7 @@
    :Option: :opt:`-Mz`
    :Description: Number of vertical grid levels in the ice.
 
-#. :config:`grid.allow_extrapolation` (*boolean*)
+#. :config:`grid.allow_extrapolation` (*flag*)
 
    :Value: no
    :Option: :opt:`-allow_extrapolation`
@@ -1126,7 +1126,7 @@
    :Option: :opt:`-periodicity`
    :Description: horizontal grid periodicity
 
-#. :config:`grid.recompute_longitude_and_latitude` (*boolean*)
+#. :config:`grid.recompute_longitude_and_latitude` (*flag*)
 
    :Value: yes
    :Description: Re-compute longitude and latitude using grid information and provided projection parameters. Requires PROJ.
@@ -1149,7 +1149,7 @@
    :Option: :opt:`-hydrology_creep_closure_coefficient`
    :Description: c_2 in notes; coefficient of creep closure term in evolution of layer thickness in hydrology::Distributed
 
-#. :config:`hydrology.distributed.init_p_from_steady` (*boolean*)
+#. :config:`hydrology.distributed.init_p_from_steady` (*flag*)
 
    :Value: no
    :Option: :opt:`-hydrology_init_p_form_steady`
@@ -1185,7 +1185,7 @@
    :Option: :opt:`-hydrology`
    :Description: Basal hydrology sub-model.
 
-#. :config:`hydrology.null_diffuse_till_water` (*boolean*)
+#. :config:`hydrology.null_diffuse_till_water` (*flag*)
 
    :Value: no
    :Description: Diffuse stored till water laterally. See equation (11) of :cite:`BBssasliding`
@@ -1240,13 +1240,13 @@
    :Option: :opt:`-hydrology_tillwat_max`
    :Description: maximum effective thickness of the water stored in till
 
-#. :config:`hydrology.use_const_bmelt` (*boolean*)
+#. :config:`hydrology.use_const_bmelt` (*flag*)
 
    :Value: no
    :Option: :opt:`-hydrology_use_const_bmelt`
    :Description: if 'yes', subglacial hydrology model sees basal melt rate which is constant and given by hydrology.const_bmelt
 
-#. :config:`input.bootstrap` (*boolean*)
+#. :config:`input.bootstrap` (*flag*)
 
    :Value: no
    :Option: :opt:`-bootstrap`
@@ -1423,19 +1423,19 @@
    :Option: :opt:`-tikhonov_rtol`
    :Description: relative threshold for Tikhonov stopping criterion
 
-#. :config:`inverse.use_design_prior` (*boolean*)
+#. :config:`inverse.use_design_prior` (*flag*)
 
    :Value: yes
    :Option: :opt:`-inv_use_design_prior`
    :Description: Use prior from inverse data file as initial guess.
 
-#. :config:`inverse.use_zeta_fixed_mask` (*boolean*)
+#. :config:`inverse.use_zeta_fixed_mask` (*flag*)
 
    :Value: yes
    :Option: :opt:`-inv_use_zeta_fixed_mask`
    :Description: Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)
 
-#. :config:`ocean.always_grounded` (*boolean*)
+#. :config:`ocean.always_grounded` (*flag*)
 
    :Value: no
    :Option: :opt:`-dry`
@@ -1611,7 +1611,7 @@
    :Option: :opt:`-continental_shelf_depth`
    :Description: Determines the edge of the continental shelf to calculate mean ocean properties
 
-#. :config:`ocean.pico.exclude_ice_rises` (*boolean*)
+#. :config:`ocean.pico.exclude_ice_rises` (*flag*)
 
    :Value: yes
    :Option: :opt:`-exclude_icerises`
@@ -1702,7 +1702,7 @@
    :Option: :opt:`-ocean_th_reference_year`
    :Description: Reference year to use when ``ocean.th.period`` is active.
 
-#. :config:`ocean.three_equation_model_clip_salinity` (*boolean*)
+#. :config:`ocean.three_equation_model_clip_salinity` (*flag*)
 
    :Value: yes
    :Option: :opt:`-clip_shelf_base_salinity`
@@ -1721,7 +1721,7 @@
    :Option: :opt:`-backup_size`
    :Description: The 'size' of a backup file. See configuration parameters output.sizes.medium, output.sizes.big_2d, output.sizes.big
 
-#. :config:`output.extra.append` (*boolean*)
+#. :config:`output.extra.append` (*flag*)
 
    :Value: no
    :Option: :opt:`-extra_append`
@@ -1733,7 +1733,7 @@
    :Option: :opt:`-extra_file`
    :Description: Name of the output file containing spatially-variable diagnostics.
 
-#. :config:`output.extra.split` (*boolean*)
+#. :config:`output.extra.split` (*flag*)
 
    :Value: no
    :Option: :opt:`-extra_split`
@@ -1785,7 +1785,7 @@
    :Value: year
    :Description: Time units used when printing model time, time step, and maximum horizontal velocity at summary to stdout.  Must be valid udunits for time.  (E.g. choose from year,month,day,hour,minute,second.)
 
-#. :config:`output.runtime.time_use_calendar` (*boolean*)
+#. :config:`output.runtime.time_use_calendar` (*flag*)
 
    :Value: yes
    :Description: Whether to use the current calendar when printing model time in summary to stdout.
@@ -1843,7 +1843,7 @@
    :Option: :opt:`-save_size`
    :Description: The 'size' of a snapshot file. See configuration parameters output.sizes.medium, output.sizes.big_2d, output.sizes.big
 
-#. :config:`output.snapshot.split` (*boolean*)
+#. :config:`output.snapshot.split` (*flag*)
 
    :Value: no
    :Option: :opt:`-save_split`
@@ -1855,7 +1855,7 @@
    :Option: :opt:`-save_times`
    :Description: List or a range of times to save model state snapshots at.
 
-#. :config:`output.timeseries.append` (*boolean*)
+#. :config:`output.timeseries.append` (*flag*)
 
    :Value: false
    :Option: :opt:`-ts_append`
@@ -1902,7 +1902,7 @@
    :Value: 1000 (kPa)
    :Description: High yield stress used in the 'no_model_mask' area in the regional mode.
 
-#. :config:`regional.zero_gradient` (*boolean*)
+#. :config:`regional.zero_gradient` (*flag*)
 
    :Value: false
    :Option: :opt:`-zero_grad_where_no_model`
@@ -1926,7 +1926,7 @@
    :Option: :opt:`-sea_level`
    :Description: Sea level elevation forcing models.
 
-#. :config:`stress_balance.calving_front_stress_bc` (*boolean*)
+#. :config:`stress_balance.calving_front_stress_bc` (*flag*)
 
    :Value: no
    :Option: :opt:`-cfbc`
@@ -1961,7 +1961,7 @@
    :Value: 0 (1)
    :Description: minimum value of `\theta` in :cite:`Schoofbasaltopg2003` bed roughness parameterization for SIA
 
-#. :config:`stress_balance.sia.e_age_coupling` (*boolean*)
+#. :config:`stress_balance.sia.e_age_coupling` (*flag*)
 
    :Value: no
    :Option: :opt:`-e_age_coupling`
@@ -1986,13 +1986,13 @@
    :Option: :opt:`-sia_flow_law`
    :Description: The SIA flow law.
 
-#. :config:`stress_balance.sia.grain_size_age_coupling` (*boolean*)
+#. :config:`stress_balance.sia.grain_size_age_coupling` (*flag*)
 
    :Value: no
    :Option: :opt:`-grain_size_age_coupling`
    :Description: Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt :cite:`GoldsbyKohlstedt` flow law
 
-#. :config:`stress_balance.sia.limit_diffusivity` (*boolean*)
+#. :config:`stress_balance.sia.limit_diffusivity` (*flag*)
 
    :Value: no
    :Option: :opt:`-limit_sia_diffusivity`
@@ -2016,12 +2016,12 @@
    :Option: :opt:`-ssa_n`
    :Description: Glen exponent in ice flow law for SSA
 
-#. :config:`stress_balance.ssa.compute_surface_gradient_inward` (*boolean*)
+#. :config:`stress_balance.ssa.compute_surface_gradient_inward` (*flag*)
 
    :Value: no
    :Description: If yes then use inward first-order differencing in computing surface gradient in the SSA objects.
 
-#. :config:`stress_balance.ssa.dirichlet_bc` (*boolean*)
+#. :config:`stress_balance.ssa.dirichlet_bc` (*flag*)
 
    :Value: no
    :Option: :opt:`-ssa_dirichlet_bc`
@@ -2045,7 +2045,7 @@
    :Option: :opt:`-ssa_eps`
    :Description: Initial amount of regularization in computation of product of effective viscosity and thickness (`\nu H`).  This default value for `\nu H` comes e.g. from a hardness for the Ross ice shelf (`\bar B`) = 1.9e8 Pa `s^{1/3}` :cite:`MacAyealetal` and a typical strain rate of 0.001 1/year for the Ross ice shelf, giving `\nu = (\bar B) / (2 \cdot 0.001^{2/3})` = 9.49e+14 Pa s ~ 30 MPa year, the value in :cite:`Ritzetal2001`, but with a tiny thickness `H` of about 1 cm.
 
-#. :config:`stress_balance.ssa.fd.brutal_sliding` (*boolean*)
+#. :config:`stress_balance.ssa.fd.brutal_sliding` (*flag*)
 
    :Value: false
    :Option: :opt:`-brutal_sliding`
@@ -2057,7 +2057,7 @@
    :Option: :opt:`-brutal_sliding_scale`
    :Description: Brutal SSA Sliding Scale
 
-#. :config:`stress_balance.ssa.fd.lateral_drag.enabled` (*boolean*)
+#. :config:`stress_balance.ssa.fd.lateral_drag.enabled` (*flag*)
 
    :Value: false
    :Description: set viscosity at ice shelf margin next to ice free bedrock as friction parameterization
@@ -2092,7 +2092,7 @@
    :Option: :opt:`-ssafd_picard_rtol`
    :Description: Relative change tolerance for the effective viscosity in the SSAFD object
 
-#. :config:`stress_balance.ssa.fd.replace_zero_diagonal_entries` (*boolean*)
+#. :config:`stress_balance.ssa.fd.replace_zero_diagonal_entries` (*flag*)
 
    :Value: yes
    :Description: Replace zero diagonal entries in the SSAFD matrix with basal_resistance.beta_ice_free_bedrock to avoid solver failures.
@@ -2111,7 +2111,7 @@
    :Option: :opt:`-ssa_method`
    :Description: Algorithm for computing the SSA solution.
 
-#. :config:`stress_balance.ssa.read_initial_guess` (*boolean*)
+#. :config:`stress_balance.ssa.read_initial_guess` (*flag*)
 
    :Value: yes
    :Option: :opt:`-ssa_read_initial_guess`
@@ -2298,7 +2298,7 @@
    :Value: 0.003297 (meter / (Kelvin day))
    :Description: EISMINT-Greenland value :cite:`RitzEISMINT`; = (3 mm liquid-water-equivalent) / (pos degree day)
 
-#. :config:`surface.pdd.fausto.enabled` (*boolean*)
+#. :config:`surface.pdd.fausto.enabled` (*flag*)
 
    :Value: false
    :Option: :opt:`-pdd_fausto`
@@ -2350,7 +2350,7 @@
    :Option: :opt:`-pdd_firn_depth_file`
    :Description: The name of the file to read the firn_depth from.
 
-#. :config:`surface.pdd.interpret_precip_as_snow` (*boolean*)
+#. :config:`surface.pdd.interpret_precip_as_snow` (*flag*)
 
    :Value: no
    :Description: Interpret precipitation as snow fall.
@@ -2377,7 +2377,7 @@
    :Value: 0.600000 (1)
    :Description: EISMINT-Greenland value :cite:`RitzEISMINT`
 
-#. :config:`surface.pdd.refreeze_ice_melt` (*boolean*)
+#. :config:`surface.pdd.refreeze_ice_melt` (*flag*)
 
    :Value: yes
    :Description: If set to 'yes', refreeze surface.pdd.refreeze fraction of melted ice, otherwise all of the melted ice runs off.
@@ -2407,7 +2407,7 @@
    :Value: 0.660000 (Kelvin)
    :Description: Parameter b in Sigma = a*T + b, with T in degrees C. Used only if surface.pdd.std_dev_use_param is set to yes.
 
-#. :config:`surface.pdd.std_dev_use_param` (*boolean*)
+#. :config:`surface.pdd.std_dev_use_param` (*flag*)
 
    :Value: no
    :Description: Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by geometry.ice_free_thickness_standard.
@@ -2488,13 +2488,13 @@
    :Option: :opt:`-adapt_ratio`
    :Description: Adaptive time stepping ratio for the explicit scheme for the mass balance equation; :cite:`BBL`, inequality (25)
 
-#. :config:`time_stepping.count_steps` (*boolean*)
+#. :config:`time_stepping.count_steps` (*flag*)
 
    :Value: no
    :Option: :opt:`-count_steps`
    :Description: If yes, IceModel::run() will count the number of time steps it took.  Sometimes useful for performance evaluation.  Counts all steps, regardless of whether processes (mass continuity, energy, velocity, ...) occurred within the step.
 
-#. :config:`time_stepping.hit_extra_times` (*boolean*)
+#. :config:`time_stepping.hit_extra_times` (*flag*)
 
    :Value: yes
    :Option: :opt:`-extra_force_output_times`
@@ -2506,13 +2506,13 @@
    :Option: :opt:`-timestep_hit_multiples`
    :Description: Hit every X years, where X is specified using this parameter. Use 0 to disable
 
-#. :config:`time_stepping.hit_save_times` (*boolean*)
+#. :config:`time_stepping.hit_save_times` (*flag*)
 
    :Value: no
    :Option: :opt:`-save_force_output_times`
    :Description: Modify the time-stepping mechanism to hit times requested using -save_times.
 
-#. :config:`time_stepping.hit_ts_times` (*boolean*)
+#. :config:`time_stepping.hit_ts_times` (*flag*)
 
    :Value: no
    :Description: Modify the time-stepping mechanism to hit times requested using -ts_times.
@@ -2523,7 +2523,7 @@
    :Option: :opt:`-max_dt`
    :Description: Maximum allowed time step length
 
-#. :config:`time_stepping.skip.enabled` (*boolean*)
+#. :config:`time_stepping.skip.enabled` (*flag*)
 
    :Value: no
    :Option: :opt:`-skip`

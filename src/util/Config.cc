@@ -111,8 +111,8 @@ Config::Strings NetCDFConfig::all_strings_impl() const {
     std::string value = s.second;
 
     auto k = strings.find(name + "_type");
-    if (k != strings.end() and k->second == "boolean") {
-      // Booleans are stored as strings. Skip them.
+    if (k != strings.end() and k->second == "flag") {
+      // Flags are stored as strings. Skip them.
       continue;
     }
 
@@ -125,7 +125,7 @@ void NetCDFConfig::set_string_impl(const std::string &name, const std::string &v
   m_data.set_string(name, value);
 }
 
-// booleans
+// flags
 
 static bool string_is_false(const std::string &value) {
   return value == "false" or value == "off" or value == "no";
@@ -150,7 +150,7 @@ bool NetCDFConfig::get_flag_impl(const std::string &name) const {
       return true;
     }
 
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Parameter '%s' (%s) cannot be interpreted as a boolean.\n"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Parameter '%s' (%s) cannot be interpreted as a flag.\n"
                                   "Please make sure that it is set to one of 'true', 'yes', 'on', 'false', 'no', 'off'.",
                                   name.c_str(), value.c_str());
   }
@@ -161,8 +161,8 @@ bool NetCDFConfig::get_flag_impl(const std::string &name) const {
   return true;                  // will never happen
 }
 
-Config::Booleans NetCDFConfig::all_booleans_impl() const {
-  Booleans result;
+Config::Flags NetCDFConfig::all_flags_impl() const {
+  Flags result;
 
   for (auto b : m_data.get_all_strings()) {
     std::string name = b.first;
@@ -177,7 +177,7 @@ Config::Booleans NetCDFConfig::all_booleans_impl() const {
   return result;
 }
 
-//! Set a value of a boolean flag.
+//! Set a value of a flag flag.
 void NetCDFConfig::set_flag_impl(const std::string &name, bool value) {
   if (value) {
     m_data.set_string(name, "true");
@@ -188,7 +188,7 @@ void NetCDFConfig::set_flag_impl(const std::string &name, bool value) {
 
 // file I/O
 
-//! Read boolean flags and double parameters from a NetCDF file.
+//! Read flag flags and double parameters from a NetCDF file.
 /*!
   Erases all the present parameters before reading.
 */

@@ -56,7 +56,7 @@ private:
   virtual std::string get_string_impl(const std::string &name) const;
   virtual void set_string_impl(const std::string &name, const std::string &value);
 
-  virtual Booleans all_booleans_impl() const;
+  virtual Flags all_flags_impl() const;
 
   virtual bool get_flag_impl(const std::string& name) const;
   virtual void set_flag_impl(const std::string& name, bool value);

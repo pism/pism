@@ -5,7 +5,7 @@ netcdf pism_config {
     pism_config:age.enabled = "no";
     pism_config:age.enabled_doc = "Solve age equation (advection equation for ice age).";
     pism_config:age.enabled_option = "age";
-    pism_config:age.enabled_type = "boolean";
+    pism_config:age.enabled_type = "flag";
 
     pism_config:age.initial_value = 0.0;
     pism_config:age.initial_value_doc = "Initial age of ice";
@@ -239,7 +239,7 @@ netcdf pism_config {
     pism_config:atmosphere.orographic_precipitation.truncate = "true";
     pism_config:atmosphere.orographic_precipitation.truncate_doc = "Truncate precipitation at 0";
     pism_config:atmosphere.orographic_precipitation.truncate_option = "truncate";
-    pism_config:atmosphere.orographic_precipitation.truncate_type = "boolean";
+    pism_config:atmosphere.orographic_precipitation.truncate_type = "flag";
 
     pism_config:atmosphere.orographic_precipitation.water_vapor_scale_height = 2500.0;
     pism_config:atmosphere.orographic_precipitation.water_vapor_scale_height_doc = "Water vapor scale height";
@@ -356,7 +356,7 @@ netcdf pism_config {
     pism_config:basal_resistance.pseudo_plastic.enabled = "no";
     pism_config:basal_resistance.pseudo_plastic.enabled_doc = "Use the pseudo-plastic till model (basal sliding law).";
     pism_config:basal_resistance.pseudo_plastic.enabled_option = "pseudo_plastic";
-    pism_config:basal_resistance.pseudo_plastic.enabled_type = "boolean";
+    pism_config:basal_resistance.pseudo_plastic.enabled_type = "flag";
 
     pism_config:basal_resistance.pseudo_plastic.q = 0.25;
     pism_config:basal_resistance.pseudo_plastic.q_doc = "The exponent of the pseudo-plastic basal resistance model";
@@ -379,7 +379,7 @@ netcdf pism_config {
     pism_config:basal_yield_stress.add_transportable_water = "no";
     pism_config:basal_yield_stress.add_transportable_water_doc = "If 'yes' then the water amount in the transport system is added to tillwat in determining tauc (in the Mohr-Coulomb relation).  Normally only the water in the till is used.";
     pism_config:basal_yield_stress.add_transportable_water_option = "tauc_add_transportable_water";
-    pism_config:basal_yield_stress.add_transportable_water_type = "boolean";
+    pism_config:basal_yield_stress.add_transportable_water_type = "flag";
 
     pism_config:basal_yield_stress.constant.value = 2e5;
     pism_config:basal_yield_stress.constant.value_doc = "fill value for yield stress for basal till (plastic or pseudo-plastic model); note `2 \\times 10^5` Pa = 2 bar is quite strong and little sliding should occur";
@@ -447,7 +447,7 @@ netcdf pism_config {
 
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.enabled = "no";
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.enabled_doc = "If the option ``-topg_to_phi`` is set then this will be set to 'yes', and then MohrCoulombYieldStress will initialize the ``tillphi`` field using a piece-wise linear function of depth described by four parameters.";
-    pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.enabled_type = "boolean";
+    pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.enabled_type = "flag";
 
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max = 15.0;
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max_doc = "upper value of the till friction angle; see the implementation of MohrCoulombYieldStress";
@@ -472,7 +472,7 @@ netcdf pism_config {
     pism_config:basal_yield_stress.slippery_grounding_lines = "no";
     pism_config:basal_yield_stress.slippery_grounding_lines_doc = "If yes, at icy grounded locations with bed elevations below sea level, within one cell of floating ice or ice-free ocean, make tauc as low as possible from the Mohr-Coulomb relation.  Specifically, at such locations replace the normally-computed tauc from the Mohr-Coulomb relation, which uses the effective pressure from the modeled amount of water in the till, by the minimum value of tauc from Mohr-Coulomb, i.e. by using the effective pressure corresponding to the maximum amount of till-stored water.  Does not alter the modeled or reported amount of till water, nor does this mechanism affect water conservation.";
     pism_config:basal_yield_stress.slippery_grounding_lines_option = "tauc_slippery_grounding_lines";
-    pism_config:basal_yield_stress.slippery_grounding_lines_type = "boolean";
+    pism_config:basal_yield_stress.slippery_grounding_lines_type = "flag";
 
     pism_config:bed_deformation.bed_topography_delta_file = "";
     pism_config:bed_deformation.bed_topography_delta_file_doc = "The name of the file to read the topg_delta from. This field is added to the bed topography during initialization.";
@@ -487,7 +487,7 @@ netcdf pism_config {
     pism_config:bed_deformation.lc.elastic_model = "yes";
     pism_config:bed_deformation.lc.elastic_model_doc = "Use the elastic part of the Lingle-Clark bed deformation model.";
     pism_config:bed_deformation.lc.elastic_model_option = "bed_def_lc_elastic_model";
-    pism_config:bed_deformation.lc.elastic_model_type = "boolean";
+    pism_config:bed_deformation.lc.elastic_model_type = "flag";
 
     pism_config:bed_deformation.lc.grid_size_factor = 4;
     pism_config:bed_deformation.lc.grid_size_factor_doc = "The spectral grid size is (Z*(grid.Mx - 1) + 1, Z*(grid.My - 1) + 1) where Z is given by this parameter. See :cite:`LingleClark`, :cite:`BLKfastearth`";
@@ -580,22 +580,22 @@ netcdf pism_config {
     pism_config:calving.float_kill.calve_near_grounding_line = "yes";
     pism_config:calving.float_kill.calve_near_grounding_line_doc = "Calve floating ice near the grounding line.";
     pism_config:calving.float_kill.calve_near_grounding_line_option = "float_kill_calve_near_grounding_line";
-    pism_config:calving.float_kill.calve_near_grounding_line_type = "boolean";
+    pism_config:calving.float_kill.calve_near_grounding_line_type = "flag";
 
     pism_config:calving.float_kill.margin_only = "no";
     pism_config:calving.float_kill.margin_only_doc = "Apply float_kill at ice margin cells only.";
     pism_config:calving.float_kill.margin_only_option = "float_kill_margin_only";
-    pism_config:calving.float_kill.margin_only_type = "boolean";
+    pism_config:calving.float_kill.margin_only_type = "flag";
 
     pism_config:calving.front_retreat.use_cfl = "false";
     pism_config:calving.front_retreat.use_cfl_doc = "apply CFL criterion for eigen-calving rate front retreat";
     pism_config:calving.front_retreat.use_cfl_option = "calving_cfl";
-    pism_config:calving.front_retreat.use_cfl_type = "boolean";
+    pism_config:calving.front_retreat.use_cfl_type = "flag";
 
     pism_config:calving.front_retreat.wrap_around = "false";
     pism_config:calving.front_retreat.wrap_around_doc = "If true, wrap around domain boundaries. This may be needed in some regional synthetic geometry setups.";
     pism_config:calving.front_retreat.wrap_around_option = "calving_wrap_around";
-    pism_config:calving.front_retreat.wrap_around_type = "boolean";
+    pism_config:calving.front_retreat.wrap_around_type = "flag";
 
     pism_config:calving.methods = "";
     pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'";
@@ -707,12 +707,12 @@ netcdf pism_config {
 
     pism_config:energy.allow_temperature_above_melting = "no";
     pism_config:energy.allow_temperature_above_melting_doc = "If set to 'yes', allow temperatures above the pressure-malting point in the cold mode temperature code. Used by some verifiaction tests.";
-    pism_config:energy.allow_temperature_above_melting_type = "boolean";
+    pism_config:energy.allow_temperature_above_melting_type = "flag";
 
     pism_config:energy.basal_melt.use_grounded_cell_fraction  = "true";
     pism_config:energy.basal_melt.use_grounded_cell_fraction_doc = "If geometry.grounded_cell_fraction is set, use the fractional floatation mask to interpolate the basal melt rate at the grounding line between grounded and floating values.";
     pism_config:energy.basal_melt.use_grounded_cell_fraction_option  = "subgl_basal_melt";
-    pism_config:energy.basal_melt.use_grounded_cell_fraction_type  = "boolean";
+    pism_config:energy.basal_melt.use_grounded_cell_fraction_type  = "flag";
 
     pism_config:energy.bedrock_thermal.conductivity = 3.0;
     pism_config:energy.bedrock_thermal.conductivity_doc = "= W m-1 K-1; for bedrock used in thermal model :cite:`RitzEISMINT`";
@@ -740,7 +740,7 @@ netcdf pism_config {
 
     pism_config:energy.ch_warming.enabled = "no";
     pism_config:energy.ch_warming.enabled_doc = "Enable the cryo-hydrologic warming model";
-    pism_config:energy.ch_warming.enabled_type = "boolean";
+    pism_config:energy.ch_warming.enabled_type = "flag";
 
     pism_config:energy.ch_warming.residual_water_fraction = 0.005;
     pism_config:energy.ch_warming.residual_water_fraction_doc = "residual water fraction in the cryo-hydrologic system at the end of a melt season";
@@ -764,7 +764,7 @@ netcdf pism_config {
 
     pism_config:energy.enabled = "yes";
     pism_config:energy.enabled_doc = "Solve energy conservation equations.";
-    pism_config:energy.enabled_type = "boolean";
+    pism_config:energy.enabled_type = "flag";
 
     pism_config:energy.enthalpy.cold_bulge_max = 60270.0;
     pism_config:energy.enthalpy.cold_bulge_max_doc = "= (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value";
@@ -778,15 +778,15 @@ netcdf pism_config {
 
     pism_config:energy.margin_exclude_horizontal_advection = "yes";
     pism_config:energy.margin_exclude_horizontal_advection_doc = "Exclude horizontal advection of energy at grid points near ice margins. See :config:`energy.margin_ice_thickness_limit`.";
-    pism_config:energy.margin_exclude_horizontal_advection_type = "boolean";
+    pism_config:energy.margin_exclude_horizontal_advection_type = "flag";
 
     pism_config:energy.margin_exclude_strain_heating = "yes";
     pism_config:energy.margin_exclude_strain_heating_doc = "Exclude strain heating at grid points near ice margins. See :config:`energy.margin_ice_thickness_limit`.";
-    pism_config:energy.margin_exclude_strain_heating_type = "boolean";
+    pism_config:energy.margin_exclude_strain_heating_type = "flag";
 
     pism_config:energy.margin_exclude_vertical_advection = "yes";
     pism_config:energy.margin_exclude_vertical_advection_doc = "Exclude vertical advection of energy at grid points near ice margins. See :config:`energy.margin_ice_thickness_limit`.";
-    pism_config:energy.margin_exclude_vertical_advection_type = "boolean";
+    pism_config:energy.margin_exclude_vertical_advection_type = "flag";
 
     pism_config:energy.margin_ice_thickness_limit = 100.0;
     pism_config:energy.margin_ice_thickness_limit_doc = "use special margin treatment at grid points with a neighbor with the thickness below this limit.";
@@ -807,12 +807,12 @@ netcdf pism_config {
 
     pism_config:energy.temperature_based = "no";
     pism_config:energy.temperature_based_doc = "Use cold ice (i.e. not polythermal) methods.";
-    pism_config:energy.temperature_based_type = "boolean";
+    pism_config:energy.temperature_based_type = "flag";
 
     pism_config:energy.temperature_dependent_thermal_conductivity = "no";
     pism_config:energy.temperature_dependent_thermal_conductivity_doc = "If yes, use varkenthSystemCtx class in the energy step. It is base on formula (4.37) in :cite:`GreveBlatter2009`. Otherwise use enthSystemCtx, which has temperature-independent thermal conductivity set by constant ice.thermal_conductivity.";
     pism_config:energy.temperature_dependent_thermal_conductivity_option = "vark";
-    pism_config:energy.temperature_dependent_thermal_conductivity_type = "boolean";
+    pism_config:energy.temperature_dependent_thermal_conductivity_type = "flag";
 
     pism_config:enthalpy_converter.T_reference = 223.15;
     pism_config:enthalpy_converter.T_reference_doc = "= T_0 in enthalpy formulas in :cite:`AschwandenBuelerKhroulevBlatter`";
@@ -902,42 +902,42 @@ netcdf pism_config {
     pism_config:fracture_density.constant_fd = "no";
     pism_config:fracture_density.constant_fd_doc = "FIXME";
     pism_config:fracture_density.constant_fd_option = "constant_fd";
-    pism_config:fracture_density.constant_fd_type = "boolean";
+    pism_config:fracture_density.constant_fd_type = "flag";
 
     pism_config:fracture_density.constant_healing = "no";
     pism_config:fracture_density.constant_healing_doc = "Constant healing";
     pism_config:fracture_density.constant_healing_option = "constant_healing";
-    pism_config:fracture_density.constant_healing_type = "boolean";
+    pism_config:fracture_density.constant_healing_type = "flag";
 
     pism_config:fracture_density.enabled = "no";
     pism_config:fracture_density.enabled_doc = "Calculation of fracture density according to stresses and strain rate field.";
     pism_config:fracture_density.enabled_option = "fractures";
-    pism_config:fracture_density.enabled_type = "boolean";
+    pism_config:fracture_density.enabled_type = "flag";
 
     pism_config:fracture_density.fd2d_scheme = "no";
     pism_config:fracture_density.fd2d_scheme_doc = "FIXME";
     pism_config:fracture_density.fd2d_scheme_option = "scheme_fd2d";
-    pism_config:fracture_density.fd2d_scheme_type = "boolean";
+    pism_config:fracture_density.fd2d_scheme_type = "flag";
 
     pism_config:fracture_density.fracture_weighted_healing = "no";
     pism_config:fracture_density.fracture_weighted_healing_doc = "Fracture weighted healing";
     pism_config:fracture_density.fracture_weighted_healing_option = "fracture_weighted_healing";
-    pism_config:fracture_density.fracture_weighted_healing_type = "boolean";
+    pism_config:fracture_density.fracture_weighted_healing_type = "flag";
 
     pism_config:fracture_density.include_grounded_ice = "no";
     pism_config:fracture_density.include_grounded_ice_doc = "model fracture density in grounded areas";
     pism_config:fracture_density.include_grounded_ice_option = "do_frac_on_grounded";
-    pism_config:fracture_density.include_grounded_ice_type = "boolean";
+    pism_config:fracture_density.include_grounded_ice_type = "flag";
 
     pism_config:fracture_density.lefm = "no";
     pism_config:fracture_density.lefm_doc = "FIXME";
     pism_config:fracture_density.lefm_option = "lefm";
-    pism_config:fracture_density.lefm_type = "boolean";
+    pism_config:fracture_density.lefm_type = "flag";
 
     pism_config:fracture_density.max_shear_stress = "no";
     pism_config:fracture_density.max_shear_stress_doc = "Use the max. shear stress criterion.";
     pism_config:fracture_density.max_shear_stress_option = "max_shear";
-    pism_config:fracture_density.max_shear_stress_type = "boolean";
+    pism_config:fracture_density.max_shear_stress_type = "flag";
 
     pism_config:fracture_density.phi0 = 0.0;
     pism_config:fracture_density.phi0_doc = "FIXME";
@@ -954,12 +954,12 @@ netcdf pism_config {
     pism_config:fracture_density.write_fields = "no";
     pism_config:fracture_density.write_fields_doc = "Writing of fracture density related fields to nc-file.";
     pism_config:fracture_density.write_fields_option = "write_fd_fields";
-    pism_config:fracture_density.write_fields_type = "boolean";
+    pism_config:fracture_density.write_fields_type = "flag";
 
     pism_config:geometry.grounded_cell_fraction  = "false";
     pism_config:geometry.grounded_cell_fraction_doc = "Linear interpolation scheme ('LI' in Gladstone et al. 2010) expanded to two dimensions is used if switched on in order to evaluate the position of the grounding line on a subgrid scale.";
     pism_config:geometry.grounded_cell_fraction_option = "subgl";
-    pism_config:geometry.grounded_cell_fraction_type = "boolean";
+    pism_config:geometry.grounded_cell_fraction_type = "flag";
 
     pism_config:geometry.ice_free_thickness_standard = 0.01;
     pism_config:geometry.ice_free_thickness_standard_doc = "If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN.";
@@ -969,7 +969,7 @@ netcdf pism_config {
     pism_config:geometry.part_grid.enabled = "no";
     pism_config:geometry.part_grid.enabled_doc = "apply partially filled grid cell scheme";
     pism_config:geometry.part_grid.enabled_option = "part_grid";
-    pism_config:geometry.part_grid.enabled_type = "boolean";
+    pism_config:geometry.part_grid.enabled_type = "flag";
 
     pism_config:geometry.part_grid.max_iterations = 10;
     pism_config:geometry.part_grid.max_iterations_doc = "maximum number of residual redistribution iterations";
@@ -979,17 +979,17 @@ netcdf pism_config {
     pism_config:geometry.remove_icebergs = "no";
     pism_config:geometry.remove_icebergs_doc = "identify and kill detached ice-shelf areas";
     pism_config:geometry.remove_icebergs_option = "kill_icebergs";
-    pism_config:geometry.remove_icebergs_type = "boolean";
+    pism_config:geometry.remove_icebergs_type = "flag";
 
     pism_config:geometry.update.enabled = "yes";
     pism_config:geometry.update.enabled_doc = "Solve the mass conservation equation";
     pism_config:geometry.update.enabled_option = "mass";
-    pism_config:geometry.update.enabled_type = "boolean";
+    pism_config:geometry.update.enabled_type = "flag";
 
     pism_config:geometry.update.use_basal_melt_rate = "yes";
     pism_config:geometry.update.use_basal_melt_rate_doc = "Include basal melt rate in the continuity equation";
     pism_config:geometry.update.use_basal_melt_rate_option = "bmr_in_cont";
-    pism_config:geometry.update.use_basal_melt_rate_type = "boolean";
+    pism_config:geometry.update.use_basal_melt_rate_type = "flag";
 
     pism_config:grid.Lbz = 1000;
     pism_config:grid.Lbz_doc = "Thickness of the thermal bedrock layer. (Inactive if ``grid.Mbz`` < 2)";
@@ -1040,7 +1040,7 @@ netcdf pism_config {
     pism_config:grid.allow_extrapolation = "no";
     pism_config:grid.allow_extrapolation_doc = "Allow extrapolation during regridding.";
     pism_config:grid.allow_extrapolation_option = "allow_extrapolation";
-    pism_config:grid.allow_extrapolation_type = "boolean";
+    pism_config:grid.allow_extrapolation_type = "flag";
 
     pism_config:grid.ice_vertical_spacing = "quadratic";
     pism_config:grid.ice_vertical_spacing_choices = "quadratic,equal";
@@ -1066,7 +1066,7 @@ netcdf pism_config {
 
     pism_config:grid.recompute_longitude_and_latitude = "yes";
     pism_config:grid.recompute_longitude_and_latitude_doc = "Re-compute longitude and latitude using grid information and provided projection parameters. Requires PROJ.";
-    pism_config:grid.recompute_longitude_and_latitude_type = "boolean";
+    pism_config:grid.recompute_longitude_and_latitude_type = "flag";
 
     pism_config:grid.registration = "center";
     pism_config:grid.registration_choices = "center,corner";
@@ -1088,7 +1088,7 @@ netcdf pism_config {
     pism_config:hydrology.distributed.init_p_from_steady = "no";
     pism_config:hydrology.distributed.init_p_from_steady_doc = "if 'yes', initialize subglacial water pressure from P(W) formula that applies in steady state";
     pism_config:hydrology.distributed.init_p_from_steady_option = "hydrology_init_p_form_steady";
-    pism_config:hydrology.distributed.init_p_from_steady_type = "boolean";
+    pism_config:hydrology.distributed.init_p_from_steady_type = "flag";
 
     pism_config:hydrology.distributed.sliding_speed_file = "";
     pism_config:hydrology.distributed.sliding_speed_file_doc = "name of the file containing velbase_mag, the basal sliding speed to use with :literal:`hydrology.distributed.init_p_from_steady`";
@@ -1120,7 +1120,7 @@ netcdf pism_config {
 
     pism_config:hydrology.null_diffuse_till_water = "no";
     pism_config:hydrology.null_diffuse_till_water_doc = "Diffuse stored till water laterally. See equation (11) of :cite:`BBssasliding`";
-    pism_config:hydrology.null_diffuse_till_water_type = "boolean";
+    pism_config:hydrology.null_diffuse_till_water_type = "flag";
 
     pism_config:hydrology.null_diffusion_distance = 2e4;
     pism_config:hydrology.null_diffusion_distance_doc = "diffusion distance for till water thickness; see equation (11) in :cite:`BBssasliding`; only active if hydrology.null_diffuse_till_water is set";
@@ -1174,12 +1174,12 @@ netcdf pism_config {
     pism_config:hydrology.use_const_bmelt = "no";
     pism_config:hydrology.use_const_bmelt_doc = "if 'yes', subglacial hydrology model sees basal melt rate which is constant and given by hydrology.const_bmelt";
     pism_config:hydrology.use_const_bmelt_option = "hydrology_use_const_bmelt";
-    pism_config:hydrology.use_const_bmelt_type = "boolean";
+    pism_config:hydrology.use_const_bmelt_type = "flag";
 
     pism_config:input.bootstrap = "no";
     pism_config:input.bootstrap_doc = "It true, use bootstrapping heuristics when initializing PISM.";
     pism_config:input.bootstrap_option = "bootstrap";
-    pism_config:input.bootstrap_type = "boolean";
+    pism_config:input.bootstrap_type = "flag";
 
     pism_config:input.file = "";
     pism_config:input.file_doc = "Input file name";
@@ -1348,17 +1348,17 @@ netcdf pism_config {
     pism_config:inverse.use_design_prior = "yes";
     pism_config:inverse.use_design_prior_doc = "Use prior from inverse data file as initial guess.";
     pism_config:inverse.use_design_prior_option = "inv_use_design_prior";
-    pism_config:inverse.use_design_prior_type = "boolean";
+    pism_config:inverse.use_design_prior_type = "flag";
 
     pism_config:inverse.use_zeta_fixed_mask = "yes";
     pism_config:inverse.use_zeta_fixed_mask_doc = "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)";
     pism_config:inverse.use_zeta_fixed_mask_option = "inv_use_zeta_fixed_mask";
-    pism_config:inverse.use_zeta_fixed_mask_type = "boolean";
+    pism_config:inverse.use_zeta_fixed_mask_type = "flag";
 
     pism_config:ocean.always_grounded = "no";
     pism_config:ocean.always_grounded_doc = "Dry (ocean-less) simulation; ice is considered grounded regardless of ice thickness, bed elevation, and sea level.";
     pism_config:ocean.always_grounded_option = "dry";
-    pism_config:ocean.always_grounded_type = "boolean";
+    pism_config:ocean.always_grounded_type = "flag";
 
     pism_config:ocean.anomaly.file = "";
     pism_config:ocean.anomaly.file_doc = "Name of the file containing shelf basal mass flux offset fields.";
@@ -1524,7 +1524,7 @@ netcdf pism_config {
     pism_config:ocean.pico.exclude_ice_rises = "yes";
     pism_config:ocean.pico.exclude_ice_rises_doc = "Exclude ice rises for box calculation in PICO";
     pism_config:ocean.pico.exclude_ice_rises_option = "exclude_icerises";
-    pism_config:ocean.pico.exclude_ice_rises_type = "boolean";
+    pism_config:ocean.pico.exclude_ice_rises_type = "flag";
 
     pism_config:ocean.pico.file = "";
     pism_config:ocean.pico.file_doc = "Name of the file containing climate forcing fields.";
@@ -1612,7 +1612,7 @@ netcdf pism_config {
     pism_config:ocean.three_equation_model_clip_salinity = "yes";
     pism_config:ocean.three_equation_model_clip_salinity_doc = "Clip shelf base salinity so that it is in the range [4, 40] k/kg. See :cite:`HollandJenkins1999`.";
     pism_config:ocean.three_equation_model_clip_salinity_option = "clip_shelf_base_salinity";
-    pism_config:ocean.three_equation_model_clip_salinity_type = "boolean";
+    pism_config:ocean.three_equation_model_clip_salinity_type = "flag";
 
     pism_config:output.backup_interval = 1.0;
     pism_config:output.backup_interval_doc = "wall-clock time between automatic backups";
@@ -1629,7 +1629,7 @@ netcdf pism_config {
     pism_config:output.extra.append = "no";
     pism_config:output.extra.append_doc = "Append to an existing output file.";
     pism_config:output.extra.append_option = "extra_append";
-    pism_config:output.extra.append_type = "boolean";
+    pism_config:output.extra.append_type = "flag";
 
     pism_config:output.extra.file = "";
     pism_config:output.extra.file_doc = "Name of the output file containing spatially-variable diagnostics.";
@@ -1639,7 +1639,7 @@ netcdf pism_config {
     pism_config:output.extra.split = "no";
     pism_config:output.extra.split_doc = "Save spatially-variable diagnostics to separate files (one per time record).";
     pism_config:output.extra.split_option = "extra_split";
-    pism_config:output.extra.split_type = "boolean";
+    pism_config:output.extra.split_type = "flag";
 
     pism_config:output.extra.times = "";
     pism_config:output.extra.times_doc = "List or a range of times defining reporting intervals for spatially-variable diagnostics.";
@@ -1684,7 +1684,7 @@ netcdf pism_config {
 
     pism_config:output.runtime.time_use_calendar = "yes";
     pism_config:output.runtime.time_use_calendar_doc = "Whether to use the current calendar when printing model time in summary to stdout.";
-    pism_config:output.runtime.time_use_calendar_type = "boolean";
+    pism_config:output.runtime.time_use_calendar_type = "flag";
 
     pism_config:output.runtime.viewer.size = 320;
     pism_config:output.runtime.viewer.size_doc = "default diagnostic viewer size (number of pixels of the longer side)";
@@ -1735,7 +1735,7 @@ netcdf pism_config {
     pism_config:output.snapshot.split = "no";
     pism_config:output.snapshot.split_doc = "Save model state snapshots to separate files (one per time record).";
     pism_config:output.snapshot.split_option = "save_split";
-    pism_config:output.snapshot.split_type = "boolean";
+    pism_config:output.snapshot.split_type = "flag";
 
     pism_config:output.snapshot.times = "";
     pism_config:output.snapshot.times_doc = "List or a range of times to save model state snapshots at.";
@@ -1745,7 +1745,7 @@ netcdf pism_config {
     pism_config:output.timeseries.append = "false";
     pism_config:output.timeseries.append_doc = "If true, append to the scalar time series output file.";
     pism_config:output.timeseries.append_option = "ts_append";
-    pism_config:output.timeseries.append_type = "boolean";
+    pism_config:output.timeseries.append_type = "flag";
 
     pism_config:output.timeseries.buffer_size = 10000;
     pism_config:output.timeseries.buffer_size_doc = "Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.";
@@ -1787,7 +1787,7 @@ netcdf pism_config {
     pism_config:regional.zero_gradient = "false";
     pism_config:regional.zero_gradient_doc = "Use zero ice thickness and ice surface gradient in the no_model_mask area.";
     pism_config:regional.zero_gradient_option = "zero_grad_where_no_model";
-    pism_config:regional.zero_gradient_type = "boolean";
+    pism_config:regional.zero_gradient_type = "flag";
 
     pism_config:run_info.institution = "";
     pism_config:run_info.institution_doc = "Institution name. This string is written to output files as the 'institution' global attribute.";
@@ -1807,7 +1807,7 @@ netcdf pism_config {
     pism_config:stress_balance.calving_front_stress_bc = "no";
     pism_config:stress_balance.calving_front_stress_bc_doc = "Apply CFBC condition as in :cite:`Albrechtetal2011`, :cite:`Winkelmannetal2011`.  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in :cite:`BBssasliding`.";
     pism_config:stress_balance.calving_front_stress_bc_option = "cfbc";
-    pism_config:stress_balance.calving_front_stress_bc_type = "boolean";
+    pism_config:stress_balance.calving_front_stress_bc_type = "flag";
 
     pism_config:stress_balance.ice_free_thickness_standard = 10.0;
     pism_config:stress_balance.ice_free_thickness_standard_doc = "If ice is thinner than this standard then a cell is considered ice-free for purposes of computing ice velocity distribution.";
@@ -1840,7 +1840,7 @@ netcdf pism_config {
     pism_config:stress_balance.sia.e_age_coupling = "no";
     pism_config:stress_balance.sia.e_age_coupling_doc = "Couple the SIA enhancement factor to age as in :cite:`Greve`.";
     pism_config:stress_balance.sia.e_age_coupling_option = "e_age_coupling";
-    pism_config:stress_balance.sia.e_age_coupling_type = "boolean";
+    pism_config:stress_balance.sia.e_age_coupling_type = "flag";
 
     pism_config:stress_balance.sia.enhancement_factor = 1.0;
     pism_config:stress_balance.sia.enhancement_factor_doc = "Flow enhancement factor for SIA";
@@ -1863,12 +1863,12 @@ netcdf pism_config {
     pism_config:stress_balance.sia.grain_size_age_coupling = "no";
     pism_config:stress_balance.sia.grain_size_age_coupling_doc = "Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt :cite:`GoldsbyKohlstedt` flow law";
     pism_config:stress_balance.sia.grain_size_age_coupling_option = "grain_size_age_coupling";
-    pism_config:stress_balance.sia.grain_size_age_coupling_type = "boolean";
+    pism_config:stress_balance.sia.grain_size_age_coupling_type = "flag";
 
     pism_config:stress_balance.sia.limit_diffusivity = "no";
     pism_config:stress_balance.sia.limit_diffusivity_doc = "Limit SIA diffusivity by `stress_balance.sia.max_diffusivity`.";
     pism_config:stress_balance.sia.limit_diffusivity_option = "limit_sia_diffusivity";
-    pism_config:stress_balance.sia.limit_diffusivity_type = "boolean";
+    pism_config:stress_balance.sia.limit_diffusivity_type = "flag";
 
     pism_config:stress_balance.sia.max_diffusivity = 100.0;
     pism_config:stress_balance.sia.max_diffusivity_doc = "Maximum allowed diffusivity of the SIA flow. PISM stops with an error message if the SIA diffusivity exceeds this limit.";
@@ -1889,12 +1889,12 @@ netcdf pism_config {
 
     pism_config:stress_balance.ssa.compute_surface_gradient_inward = "no";
     pism_config:stress_balance.ssa.compute_surface_gradient_inward_doc = "If yes then use inward first-order differencing in computing surface gradient in the SSA objects.";
-    pism_config:stress_balance.ssa.compute_surface_gradient_inward_type = "boolean";
+    pism_config:stress_balance.ssa.compute_surface_gradient_inward_type = "flag";
 
     pism_config:stress_balance.ssa.dirichlet_bc = "no";
     pism_config:stress_balance.ssa.dirichlet_bc_doc = "apply SSA velocity Dirichlet boundary condition";
     pism_config:stress_balance.ssa.dirichlet_bc_option = "ssa_dirichlet_bc";
-    pism_config:stress_balance.ssa.dirichlet_bc_type = "boolean";
+    pism_config:stress_balance.ssa.dirichlet_bc_type = "flag";
 
     pism_config:stress_balance.ssa.enhancement_factor = 1.0;
     pism_config:stress_balance.ssa.enhancement_factor_doc = "Flow enhancement factor for SSA";
@@ -1917,7 +1917,7 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.brutal_sliding = "false";
     pism_config:stress_balance.ssa.fd.brutal_sliding_doc = "Enhance sliding speed brutally.";
     pism_config:stress_balance.ssa.fd.brutal_sliding_option = "brutal_sliding";
-    pism_config:stress_balance.ssa.fd.brutal_sliding_type = "boolean";
+    pism_config:stress_balance.ssa.fd.brutal_sliding_type = "flag";
 
     pism_config:stress_balance.ssa.fd.brutal_sliding_scale = 1.0;
     pism_config:stress_balance.ssa.fd.brutal_sliding_scale_doc = "Brutal SSA Sliding Scale";
@@ -1927,7 +1927,7 @@ netcdf pism_config {
 
     pism_config:stress_balance.ssa.fd.lateral_drag.enabled = "false";
     pism_config:stress_balance.ssa.fd.lateral_drag.enabled_doc = "set viscosity at ice shelf margin next to ice free bedrock as friction parameterization";
-    pism_config:stress_balance.ssa.fd.lateral_drag.enabled_type = "boolean";
+    pism_config:stress_balance.ssa.fd.lateral_drag.enabled_type = "flag";
 
     pism_config:stress_balance.ssa.fd.lateral_drag.viscosity = 5.0e15;
     pism_config:stress_balance.ssa.fd.lateral_drag.viscosity_doc = "Staggered Viscosity used as side friction parameterization.";
@@ -1961,7 +1961,7 @@ netcdf pism_config {
 
     pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries = "yes";
     pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_doc = "Replace zero diagonal entries in the SSAFD matrix with basal_resistance.beta_ice_free_bedrock to avoid solver failures.";
-    pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_type = "boolean";
+    pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_type = "flag";
 
     pism_config:stress_balance.ssa.flow_law = "gpbld";
     pism_config:stress_balance.ssa.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
@@ -1978,7 +1978,7 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.read_initial_guess = "yes";
     pism_config:stress_balance.ssa.read_initial_guess_doc = "Read the initial guess from the input file when re-starting.";
     pism_config:stress_balance.ssa.read_initial_guess_option = "ssa_read_initial_guess";
-    pism_config:stress_balance.ssa.read_initial_guess_type = "boolean";
+    pism_config:stress_balance.ssa.read_initial_guess_type = "flag";
 
     pism_config:stress_balance.ssa.strength_extension.constant_nu = 9.48680701906572e+14;
     pism_config:stress_balance.ssa.strength_extension.constant_nu_doc = "The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 `Pa s^{1/3}` :cite:`MacAyealetal` and a typical strain rate of 0.001 year-1:  `\\nu = (\\bar B) / (2 \\cdot 0.001^{2/3})`.  Compare the value of 9.45e14 Pa s = 30 MPa year in :cite:`Ritzetal2001`.";
@@ -2156,7 +2156,7 @@ netcdf pism_config {
 
     pism_config:surface.pdd.fausto.enabled = "false";
     pism_config:surface.pdd.fausto.enabled_doc = "Set PDD parameters using formulas (6) and (7) in :cite:`Faustoetal2009`";
-    pism_config:surface.pdd.fausto.enabled_type = "boolean";
+    pism_config:surface.pdd.fausto.enabled_type = "flag";
     pism_config:surface.pdd.fausto.enabled_option = "pdd_fausto";
 
     pism_config:surface.pdd.fausto.T_c = 272.15;
@@ -2206,7 +2206,7 @@ netcdf pism_config {
 
     pism_config:surface.pdd.interpret_precip_as_snow = "no";
     pism_config:surface.pdd.interpret_precip_as_snow_doc = "Interpret precipitation as snow fall.";
-    pism_config:surface.pdd.interpret_precip_as_snow_type = "boolean";
+    pism_config:surface.pdd.interpret_precip_as_snow_type = "flag";
 
     pism_config:surface.pdd.max_evals_per_year = 52;
     pism_config:surface.pdd.max_evals_per_year_doc = "maximum number of times the PDD scheme will ask for air temperature and precipitation to build location-dependent time series for computing (expected) number of positive degree days and snow accumulation; the default means the PDD uses weekly samples of the annual cycle; see also surface.pdd.std_dev";
@@ -2231,7 +2231,7 @@ netcdf pism_config {
 
     pism_config:surface.pdd.refreeze_ice_melt = "yes";
     pism_config:surface.pdd.refreeze_ice_melt_doc = "If set to 'yes', refreeze surface.pdd.refreeze fraction of melted ice, otherwise all of the melted ice runs off.";
-    pism_config:surface.pdd.refreeze_ice_melt_type = "boolean";
+    pism_config:surface.pdd.refreeze_ice_melt_type = "flag";
 
     pism_config:surface.pdd.std_dev = 5.0;
     pism_config:surface.pdd.std_dev_doc = "std dev of daily temp variation; = EISMINT-Greenland value :cite:`RitzEISMINT`";
@@ -2260,7 +2260,7 @@ netcdf pism_config {
 
     pism_config:surface.pdd.std_dev_use_param = "no";
     pism_config:surface.pdd.std_dev_use_param_doc = "Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by geometry.ice_free_thickness_standard.";
-    pism_config:surface.pdd.std_dev_use_param_type = "boolean";
+    pism_config:surface.pdd.std_dev_use_param_type = "flag";
 
     pism_config:surface.pdd.std_dev.file = "";
     pism_config:surface.pdd.std_dev.file_doc = "The name of the file to read `air_temp_sd` (standard deviation of air temperature) from.";
@@ -2337,12 +2337,12 @@ netcdf pism_config {
     pism_config:time_stepping.count_steps = "no";
     pism_config:time_stepping.count_steps_doc = "If yes, IceModel::run() will count the number of time steps it took.  Sometimes useful for performance evaluation.  Counts all steps, regardless of whether processes (mass continuity, energy, velocity, ...) occurred within the step.";
     pism_config:time_stepping.count_steps_option = "count_steps";
-    pism_config:time_stepping.count_steps_type = "boolean";
+    pism_config:time_stepping.count_steps_type = "flag";
 
     pism_config:time_stepping.hit_extra_times = "yes";
     pism_config:time_stepping.hit_extra_times_doc = "Modify the time-stepping mechanism to hit times requested using -extra_times.";
     pism_config:time_stepping.hit_extra_times_option = "extra_force_output_times";
-    pism_config:time_stepping.hit_extra_times_type = "boolean";
+    pism_config:time_stepping.hit_extra_times_type = "flag";
 
     pism_config:time_stepping.hit_multiples = 0.0;
     pism_config:time_stepping.hit_multiples_doc = "Hit every X years, where X is specified using this parameter. Use 0 to disable";
@@ -2353,11 +2353,11 @@ netcdf pism_config {
     pism_config:time_stepping.hit_save_times = "no";
     pism_config:time_stepping.hit_save_times_doc = "Modify the time-stepping mechanism to hit times requested using -save_times.";
     pism_config:time_stepping.hit_save_times_option = "save_force_output_times";
-    pism_config:time_stepping.hit_save_times_type = "boolean";
+    pism_config:time_stepping.hit_save_times_type = "flag";
 
     pism_config:time_stepping.hit_ts_times = "no";
     pism_config:time_stepping.hit_ts_times_doc = "Modify the time-stepping mechanism to hit times requested using -ts_times.";
-    pism_config:time_stepping.hit_ts_times_type = "boolean";
+    pism_config:time_stepping.hit_ts_times_type = "flag";
 
     pism_config:time_stepping.maximum_time_step = 60.0;
     pism_config:time_stepping.maximum_time_step_doc = "Maximum allowed time step length";
@@ -2368,7 +2368,7 @@ netcdf pism_config {
     pism_config:time_stepping.skip.enabled = "no";
     pism_config:time_stepping.skip.enabled_doc = "Use the temperature, age, and SSA stress balance computation skipping mechanism.";
     pism_config:time_stepping.skip.enabled_option = "skip";
-    pism_config:time_stepping.skip.enabled_type = "boolean";
+    pism_config:time_stepping.skip.enabled_type = "flag";
 
     pism_config:time_stepping.skip.max = 10;
     pism_config:time_stepping.skip.max_doc = "Number of mass-balance steps, including SIA diffusivity updates, to perform before a the temperature, age, and SSA stress balance computations are done";

@@ -114,7 +114,7 @@ void Config::import_from(const Config &other) {
     }
   }
 
-  for (auto p : other.all_booleans()) {
+  for (auto p : other.all_flags()) {
     if (member(p.first, parameters)) {
       this->set_flag(p.first, p.second, CONFIG_USER);
     } else {
@@ -253,8 +253,8 @@ void Config::set_string(const std::string &name,
   this->set_string_impl(name, value);
 }
 
-Config::Booleans Config::all_booleans() const {
-  return this->all_booleans_impl();
+Config::Flags Config::all_flags() const {
+  return this->all_flags_impl();
 }
 
 bool Config::get_flag(const std::string& name, UseFlag flag) const {
@@ -361,17 +361,17 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
   }
 
   log.message(v,
-             "### Booleans:\n"
+             "### Flags:\n"
              "###\n");
 
   // find max. name size
   max_name_size = 0;
-  for (auto b : config.all_booleans()) {
+  for (auto b : config.all_flags()) {
     max_name_size = std::max(max_name_size, b.first.size());
   }
 
-  // print booleans
-  for (auto b : config.all_booleans()) {
+  // print flags
+  for (auto b : config.all_flags()) {
     std::string name  = b.first;
     std::string value = b.second ? "true" : "false";
     std::string padding(max_name_size - name.size(), ' ');
@@ -599,7 +599,7 @@ void set_parameter_from_options(Config &config, const std::string &name) {
 
   if (type == "string") {
     set_string_from_option(config, option, name);
-  } else if (type == "boolean") {
+  } else if (type == "flag") {
     set_flag_from_option(config, option, name);
   } else if (type == "number") {
     set_number_from_option(config, option, name);
@@ -621,7 +621,7 @@ void set_config_from_options(Config &config) {
     set_parameter_from_options(config, s.first);
   }
 
-  for (auto b : config.all_booleans()) {
+  for (auto b : config.all_flags()) {
     set_parameter_from_options(config, b.first);
   }
 
@@ -783,7 +783,7 @@ std::set<std::string> Config::keys() const {
     result.insert(p.first);
   }
 
-  for (auto p : all_booleans()) {
+  for (auto p : all_flags()) {
     result.insert(p.first);
   }
 

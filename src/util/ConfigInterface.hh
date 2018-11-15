@@ -106,9 +106,9 @@ public:
   std::string get_string(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
   void set_string(const std::string &name, const std::string &value, ConfigSettingFlag flag = CONFIG_FORCE);
 
-  // booleans
-  typedef std::map<std::string, bool> Booleans;
-  Booleans all_booleans() const;
+  // flags
+  typedef std::map<std::string, bool> Flags;
+  Flags all_flags() const;
 
   std::set<std::string> keys() const;
 
@@ -139,7 +139,7 @@ protected:
   virtual std::string get_string_impl(const std::string &name) const = 0;
   virtual void set_string_impl(const std::string &name, const std::string &value) = 0;
 
-  virtual Booleans all_booleans_impl() const = 0;
+  virtual Flags all_flags_impl() const = 0;
 
   virtual bool get_flag_impl(const std::string& name) const = 0;
   virtual void set_flag_impl(const std::string& name, bool value) = 0;
@@ -174,7 +174,7 @@ void set_config_from_options(Config &config);
 //! Set one parameter using command-line options.
 void set_parameter_from_options(Config &config, const std::string &name);
 
-//! Set one boolean parameter using command-line options.
+//! Set one flag parameter using command-line options.
 void set_flag_from_option(Config &config,
                              const std::string &option,const std::string &parameter);
 

@@ -14,7 +14,7 @@ config = PISM.Context().config
 log = PISM.Context().log
 
 config.set_number("bed_deformation.lc.grid_size_factor", 2)
-config.set_boolean("bed_deformation.lc.elastic_model", False)
+config.set_flag("bed_deformation.lc.elastic_model", False)
 
 # constants
 standard_gravity = config.get_number("constants.standard_gravity")
