@@ -142,11 +142,34 @@
    :Value: 0.070417 (Kelvin-1)
    :Description: = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`
 
+#. :config:`atmosphere.pik.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_pik_file`
+   :Description: Name of the file containing the reference surface elevation field (variable ``usurf``).
+
+#. :config:`atmosphere.pik.parameterization` (*keyword*)
+
+   :Value: ``default``
+   :Choices: ``martin, huybrechts_dewolde, martin_huybrechts_dewolde, era_interim, era_interim_sin, era_interim_lon``
+   :Option: :opt:`-atmosphere_pik`
+   :Description: Selects parameterizations of mean annual and mean summer near-surface air temperatures.
+
 #. :config:`atmosphere.lapse_rate.precipitation_lapse_rate` (*scalar*)
 
    :Value: 0 ((m / year) / km)
    :Option: :opt:`-precip_lapse_rate`
    :Description: Elevation lapse rate for the surface mass balance
+
+#. :config:`atmosphere.uniform.precipitation` (*scalar*)
+
+   :Value: 1000 (kg m-2 year-1)
+   :Description: Precipitation used by the 'uniform' atmosphere model.
+
+#. :config:`atmosphere.uniform.temperature` (*scalar*)
+
+   :Value: 273.150000 (Kelvin)
+   :Description: Air temperature used by the 'uniform' atmosphere model.
 
 #. :config:`basal_resistance.beta_ice_free_bedrock` (*scalar*)
 
@@ -1168,6 +1191,24 @@
    :Value: 0.050000 (1)
    :Option: :opt:`-tikhonov_rtol`
    :Description: relative threshold for Tikhonov stopping criterion
+
+#. :config:`inverse.max_iterations` (*integer*)
+
+   :Value: 1000
+   :Option: :opt:`-inv_max_it`
+   :Description: maximum iteration count
+
+#. :config:`inverse.use_zeta_fixed_mask` (*boolean*)
+
+   :Value: yes
+   :Option: :opt:`-inv_use_zeta_fixed_mask`
+   :Description: Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)
+
+#. :config:`inverse.use_design_prior` (*boolean*)
+
+   :Value: yes
+   :Option: :opt:`-inv_use_design_prior`
+   :Description: Use prior from inverse data file as initial guess.
 
 #. :config:`ocean.anomaly.file` (*string*)
 

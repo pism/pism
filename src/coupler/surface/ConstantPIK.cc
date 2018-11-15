@@ -45,7 +45,7 @@ void PIK::init_impl(const Geometry &geometry) {
   m_log->message(2,
                  "* Initializing the constant-in-time surface processes model PIK.\n"
                  "  It reads surface mass balance directly from the file and holds it constant.\n"
-                 "  Ice upper-surface temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"
+                 "  Ice upper-surface temperature is parameterized as in Martin et al. 2011, equation (1).\n"
                  "  Any choice of atmosphere coupler (option '-atmosphere') is ignored.\n");
 
   InputOptions opts = process_input_options(m_grid->com, m_config);

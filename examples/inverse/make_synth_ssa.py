@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -20,9 +20,8 @@
 
 
 import PISM
-import sys
-import time
-import math
+from PISM.util import convert
+import sys, time, math
 
 design_prior_scale = 0.2
 design_prior_const = None
@@ -87,46 +86,42 @@ if __name__ == '__main__':
     if not PISM.OptionString("-ssa_method", "").is_set():
         config.set_string("stress_balance.ssa.method", "fem")
 
-    input_file_name = PISM.optionsString("-i",
-                                         "file to bootstrap from")
+    input_file_name = config.get_string("input.file")
 
-    output_file_name = PISM.optionsString("-o",
-                                          "output file",
-                                          default="make_synth_ssa.nc")
+    config.set_string("output.file_name", "make_synth_ssa.nc", PISM.CONFIG_DEFAULT)
+    output_file_name = config.get_string("output.file_name")
 
-    design_prior_scale = PISM.optionsReal("-design_prior_scale",
+    design_prior_scale = PISM.OptionReal("-design_prior_scale",
                                           "initial guess for design variable to be this factor of the true value",
-                                          default=design_prior_scale)
+                                          design_prior_scale)
 
-    design_prior_const = PISM.optionsReal("-design_prior_const",
+    design_prior_const = PISM.OptionReal("-design_prior_const",
                                           "initial guess for design variable to be this constant",
-                                          default=design_prior_const)
+                                          0.0)
+    design_prior_const = design_prior_const.value() if design_prior_const.is_set() else None
 
-    noise = PISM.optionsReal("-rms_noise",
-                             "pointwise rms noise to add (in m/a)",
-                             default=None)
+    noise = PISM.OptionReal("-rms_noise", "pointwise rms noise to add (in m/a)", 0.0)
+    noise = noise.value() if noise.is_set() else None
 
-    misfit_weight_type = PISM.optionsList("-misfit_type",
-                                          "Choice of misfit weight function",
-                                          "grounded,fast",
-                                          "grounded")
+    misfit_weight_type = PISM.OptionKeyword("-misfit_type",
+                                            "Choice of misfit weight function",
+                                            "grounded,fast",
+                                            "grounded").value()
 
-    fast_ice_speed = PISM.optionsReal("-fast_ice_speed",
+    fast_ice_speed = PISM.OptionReal("-fast_ice_speed",
                                       "Threshold in m/a for determining if ice is fast",
                                       500.0)
 
-    generate_ssa_observed = PISM.optionsFlag("-generate_ssa_observed",
-                                             "generate observed SSA velocities",
-                                             default=False)
+    generate_ssa_observed = PISM.OptionBool("-generate_ssa_observed",
+                                             "generate observed SSA velocities")
 
-    is_regional = PISM.optionsFlag("-regional",
-                                   "Compute SIA/SSA using regional model semantics",
-                                   default=False)
+    is_regional = PISM.OptionBool("-regional",
+                                   "Compute SIA/SSA using regional model semantics")
 
-    design_var = PISM.optionsList("-inv_ssa",
-                                  "design variable for inversion",
-                                  "tauc,hardav",
-                                  "tauc")
+    design_var = PISM.OptionKeyword("-inv_ssa",
+                                    "design variable for inversion",
+                                    "tauc,hardav",
+                                    "tauc").value()
 
     ssa_run = PISM.ssa.SSAFromInputFile(input_file_name)
 
@@ -227,18 +222,17 @@ if __name__ == '__main__':
         vecs.markForWriting(vel_surface_observed)
         final_velocity = vel_surface_observed
 
-    sys = grid.ctx().unit_system()
     # Add the misfit weight.
     if misfit_weight_type == "fast":
         misfit_weight = fastIceMisfitWeight(modeldata, vel_ssa,
-                                            PISM.convert(sys, fast_ice_speed, "m/year", "m/second"))
+                                            convert(fast_ice_speed, "m/year", "m/second"))
     else:
         misfit_weight = groundedIceMisfitWeight(modeldata)
     modeldata.vecs.add(misfit_weight, writing=True)
 
     if not noise is None:
-        u_noise = PISM.vec.randVectorV(grid, noise / math.sqrt(2), final_velocity.get_stencil_width())
-        final_velocity.add(PISM.convert(sys, 1.0, "m/year", "m/second"),
+        u_noise = PISM.vec.randVectorV(grid, noise / math.sqrt(2), final_velocity.stencil_width())
+        final_velocity.add(convert(1.0, "m/year", "m/second"),
                            u_noise)
 
     pio = PISM.util.prepare_output(output_file_name)

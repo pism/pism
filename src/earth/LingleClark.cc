@@ -295,7 +295,7 @@ void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
     return;
   }
 
-  step(ice_thickness, sea_level_elevation, dt);
+  step(ice_thickness, sea_level_elevation, dt_beddef);
 
   m_t_beddef_last = t_final;
 }

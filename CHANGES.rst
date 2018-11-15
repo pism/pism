@@ -9,6 +9,7 @@ Changes since v1.0
   this issue later but do not have the resources to work on this topic in the near future.
   Please use an equal-area projection for your simulations if distortions caused by
   working in a projected coordinate system are a concern.
+- Add 5 more parameterizations of near-surface air temperature to `-atmosphere pik`.
 - PISM stops with an error message if the name of a parameter in a `-config_override` file
   does not match any of the known PISM parameters.
 - PISM stops with an error message if the diffusivity of the SIA flow exceeds a given

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -20,7 +20,7 @@
 
 
 import PISM
-
+from PISM.util import convert
 help = \
     """
 SSA_TESTCFBC
@@ -37,10 +37,9 @@ usage of SSA_TEST_CFBC:
 """
 
 context = PISM.Context()
-unit_system = context.unit_system
 
 H0 = 600.          # meters
-V0 = PISM.convert(unit_system, 300, "m/year", "m/second")
+V0 = convert(300, "m/year", "m/second")
 C = 2.45e-18     # "typical constant ice parameter"
 T = 400          # time used to compute the calving front location
 
@@ -137,16 +136,10 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
 
 
 if __name__ == '__main__':
-    # if PISM.optionsSet('-usage') or PISM.optionsSet('-help'):
-    #   PISM.verbPrintf(1,context.com,help)
-    #   PISM.verbPrintf(1,context.com,usage)
 
-    Mx = PISM.optionsInt("-Mx", "Number of grid points in x-direction", default=61)
-    My = PISM.optionsInt("-My", "Number of grid points in y-direction", default=61)
-    output_file = PISM.optionsString("-o", "output file", default="ssa_test_cfbc.nc")
-    verbosity = PISM.optionsInt("-verbose", "verbosity level", default=3)
+    config = PISM.Context().config
 
-    context.config.set_string('ssa_method', 'fd')
+    tc = test_cfbc(int(config.get_double("grid.Mx")),
+                   int(config.get_double("grid.My")))
 
-    tc = test_cfbc(Mx, My)
-    tc.run(output_file)
+    tc.run(config.get_string("output.file_name"))

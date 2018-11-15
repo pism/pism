@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2012, 2014, 2015, 2016, 2017 David Maxwell
+# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -428,13 +428,13 @@ if __name__ == "__main__":
 
     append_mode = False
 
-    input_filename = PISM.optionsString("-i", "input file")
-    inv_data_filename = PISM.optionsString("-inv_data", "inverse data file", default=input_filename)
-    use_design_prior = PISM.optionsFlag(
-        "-inv_use_design_prior", "Use prior from inverse data file as initial guess.", default=True)
-    design_var = PISM.optionsList("-inv_ssa", "design variable for inversion", ["tauc", "hardav"], "tauc")
-    using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
-                                             "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)", default=True)
+    input_filename = config.get_string("input.file")
+    inv_data_filename = PISM.OptionString("-inv_data", "inverse data file", input_filename).value()
+    use_design_prior = config.get_boolean("inverse.use_design_prior")
+    design_var = PISM.OptionKeyword("-inv_ssa",
+                                    "design variable for inversion",
+                                    "tauc,hardav", "tauc").value()
+    using_zeta_fixed_mask = config.get_boolean("inverse.use_zeta_fixed_mask")
 
     ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename, inv_data_filename, design_var)
     ssarun.setup()
@@ -493,11 +493,15 @@ if __name__ == "__main__":
 
     ssarun.ssa.linearize_at(zeta1)
 
-    test_type = PISM.optionsList("-inv_test", "", ["j_design", "j_design_transpose", "lin", "lin_transpose"], "")
+    test_type = PISM.OptionKeyword("-inv_test", "",
+                                   "j_design,j_design_transpose,lin,lin_transpose",
+                                   "j_design")
 
-    if test_type == "":
+    if not test_type.is_set():
         PISM.verbPrintf(1, com, "Must specify a test type via -inv_test\n")
         exit(1)
+    else:
+        test_type = test_type.value()
 
     if test_type == "j_design":
         test_j_design(ssarun)

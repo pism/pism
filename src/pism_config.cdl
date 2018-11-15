@@ -133,6 +133,17 @@ netcdf pism_config {
     pism_config:atmosphere.precip_exponential_factor_for_temperature_type = "scalar";
     pism_config:atmosphere.precip_exponential_factor_for_temperature_units = "Kelvin-1";
 
+    pism_config:atmosphere.pik.file = "";
+    pism_config:atmosphere.pik.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
+    pism_config:atmosphere.pik.file_type = "string";
+    pism_config:atmosphere.pik.file_option = "atmosphere_pik_file";
+
+    pism_config:atmosphere.pik.parameterization = "default";
+    pism_config:atmosphere.pik.parameterization_doc = "Selects parameterizations of mean annual and mean summer near-surface air temperatures.";
+    pism_config:atmosphere.pik.parameterization_type = "keyword";
+    pism_config:atmosphere.pik.parameterization_choices = "martin,huybrechts_dewolde,martin_huybrechts_dewolde,era_interim,era_interim_sin,era_interim_lon";
+    pism_config:atmosphere.pik.parameterization_option = "atmosphere_pik";
+
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate = 0.0;
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_doc = "Elevation lapse rate for the surface mass balance";
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_type = "scalar";
@@ -1178,6 +1189,22 @@ netcdf pism_config {
     pism_config:inverse.tikhonov.rtol_option = "tikhonov_rtol";
     pism_config:inverse.tikhonov.rtol_type = "scalar";
     pism_config:inverse.tikhonov.rtol_units = "1";
+
+    pism_config:inverse.max_iterations = 1000;
+    pism_config:inverse.max_iterations_doc = "maximum iteration count";
+    pism_config:inverse.max_iterations_option = "inv_max_it";
+    pism_config:inverse.max_iterations_type = "integer";
+    pism_config:inverse.max_iterations_units = "count";
+
+    pism_config:inverse.use_zeta_fixed_mask = "yes";
+    pism_config:inverse.use_zeta_fixed_mask_type = "boolean";
+    pism_config:inverse.use_zeta_fixed_mask_option = "inv_use_zeta_fixed_mask";
+    pism_config:inverse.use_zeta_fixed_mask_doc = "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)";
+
+    pism_config:inverse.use_design_prior = "yes";
+    pism_config:inverse.use_design_prior_type = "boolean";
+    pism_config:inverse.use_design_prior_option = "inv_use_design_prior";
+    pism_config:inverse.use_design_prior_doc = "Use prior from inverse data file as initial guess.";
 
     pism_config:ocean.anomaly.file = "";
     pism_config:ocean.anomaly.file_doc = "Name of the file containing shelf basal mass flux offset fields.";

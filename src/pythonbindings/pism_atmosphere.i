@@ -1,6 +1,6 @@
 %{
 #include "coupler/atmosphere/Anomaly.hh"
-#include "coupler/atmosphere/ConstantPIK.hh"
+#include "coupler/atmosphere/PIK.hh"
 #include "coupler/atmosphere/CosineYearlyCycle.hh"
 #include "coupler/atmosphere/Delta_P.hh"
 #include "coupler/atmosphere/Delta_T.hh"
@@ -21,20 +21,16 @@
 %rename(AtmosphereAnomaly) pism::atmosphere::Anomaly;
 %include "coupler/atmosphere/Anomaly.hh"
 
-%shared_ptr(pism::atmosphere::PIK)
-%rename(AtmospherePIK) pism::atmosphere::PIK;
-%include "coupler/atmosphere/ConstantPIK.hh"
-
 %shared_ptr(pism::atmosphere::Delta_P)
-%rename(AtmosphereDelta_P) pism::atmosphere::Delta_P;
+%rename(AtmosphereDeltaP) pism::atmosphere::Delta_P;
 %include "coupler/atmosphere/Delta_P.hh"
 
 %shared_ptr(pism::atmosphere::Delta_T)
-%rename(AtmosphereDelta_T) pism::atmosphere::Delta_T;
+%rename(AtmosphereDeltaT) pism::atmosphere::Delta_T;
 %include "coupler/atmosphere/Delta_T.hh"
 
 %shared_ptr(pism::atmosphere::Frac_P)
-%rename(AtmosphereFrac_P) pism::atmosphere::Frac_P;
+%rename(AtmosphereFracP) pism::atmosphere::Frac_P;
 %include "coupler/atmosphere/Frac_P.hh"
 
 %shared_ptr(pism::atmosphere::Given)
@@ -56,6 +52,10 @@
 %shared_ptr(pism::atmosphere::CosineYearlyCycle)
 %rename(AtmosphereCosineYearlyCycle) pism::atmosphere::CosineYearlyCycle;
 %include "coupler/atmosphere/CosineYearlyCycle.hh"
+
+%shared_ptr(pism::atmosphere::PIK)
+%rename(AtmospherePIK) pism::atmosphere::PIK;
+%include "coupler/atmosphere/PIK.hh"
 
 %shared_ptr(pism::atmosphere::SeaRISEGreenland)
 %rename(AtmosphereSeaRISEGreenland) pism::atmosphere::SeaRISEGreenland;

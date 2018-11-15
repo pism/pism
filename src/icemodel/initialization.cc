@@ -340,12 +340,6 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
                      usurf_found, usurf_name, usurf_found_by_std_name);
   mask_found = input_file.inq_var("mask");
 
-  std::string lon_name, lat_name;
-  bool lon_found = false, lat_found = false,
-    lon_found_by_std_name = false, lat_found_by_std_name = false;
-  input_file.inq_var("lon", "longitude", lon_found, lon_name, lon_found_by_std_name);
-  input_file.inq_var("lat", "latitude",  lat_found, lat_name, lat_found_by_std_name);
-
   // now work through all the 2d variables, regridding if present and otherwise
   // setting to default values appropriately
 
@@ -359,14 +353,30 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
 
   m_log->message(2, "  reading 2D model state variables by regridding ...\n");
 
-  m_geometry.longitude.regrid(input_file, OPTIONAL);
-  if (not lon_found) {
-    m_geometry.longitude.metadata().set_string("missing_at_bootstrap","true");
+  // longitude
+  {
+    m_geometry.longitude.regrid(input_file, OPTIONAL);
+
+    std::string lon_name;
+    bool lon_found = false, lon_found_by_std_name = false;
+    input_file.inq_var("lon", "longitude", lon_found, lon_name, lon_found_by_std_name);
+
+    if (not lon_found) {
+      m_geometry.longitude.metadata().set_string("missing_at_bootstrap", "true");
+    }
   }
 
-  m_geometry.latitude.regrid(input_file, OPTIONAL);
-  if (not lat_found) {
-    m_geometry.latitude.metadata().set_string("missing_at_bootstrap","true");
+  // latitude
+  {
+    m_geometry.latitude.regrid(input_file, OPTIONAL);
+
+    std::string lat_name;
+    bool lat_found = false, lat_found_by_std_name = false;
+    input_file.inq_var("lat", "latitude",  lat_found, lat_name, lat_found_by_std_name);
+
+    if (not lat_found) {
+      m_geometry.latitude.metadata().set_string("missing_at_bootstrap", "true");
+    }
   }
 
   m_geometry.ice_thickness.regrid(input_file, OPTIONAL,
@@ -983,7 +993,9 @@ void IceModel::compute_lat_lon() {
                    "* Computing longitude and latitude using projection parameters...\n");
 
     compute_longitude(projection, m_geometry.longitude);
+    m_geometry.longitude.metadata().set_string("missing_at_bootstrap", "");
     compute_latitude(projection, m_geometry.latitude);
+    m_geometry.latitude.metadata().set_string("missing_at_bootstrap", "");
   }
 }
 

@@ -4,6 +4,7 @@ advection of enthalpy in the column. Tests PISM's enthalpy solver.
 """
 
 import PISM
+from PISM.util import convert
 import numpy as np
 import pylab as plt
 
@@ -165,8 +166,8 @@ def errors_DN(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
     """Test the enthalpy solver with Dirichlet B.C. at the base and
     Neumann at the top surface.
     """
-    T_final = PISM.convert(unit_system, T_final_years, "years", "seconds")
-    dt = PISM.convert(unit_system, dt_years, "years", "seconds")
+    T_final = convert(T_final_years, "years", "seconds")
+    dt = convert(dt_years, "years", "seconds")
 
     column = EnthalpyColumn(Mz, dt)
 
@@ -205,7 +206,7 @@ def errors_DN(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
     E_exact_final = E_exact(z, t)
 
     if plot_results:
-        t_years = PISM.convert(unit_system, t, "seconds", "years")
+        t_years = convert(t, "seconds", "years")
 
         plt.figure()
         plt.xlabel("z, meters")
@@ -245,8 +246,8 @@ def errors_ND(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
     """Test the enthalpy solver with Neumann B.C. at the base and
     Dirichlet B.C. at the top surface.
     """
-    T_final = PISM.convert(unit_system, T_final_years, "years", "seconds")
-    dt = PISM.convert(unit_system, dt_years, "years", "seconds")
+    T_final = convert(T_final_years, "years", "seconds")
+    dt = convert(dt_years, "years", "seconds")
 
     column = EnthalpyColumn(Mz, dt)
 
@@ -285,7 +286,7 @@ def errors_ND(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
     E_exact_final = E_exact(z, t)
 
     if plot_results:
-        t_years = PISM.convert(unit_system, t, "seconds", "years")
+        t_years = convert(t, "seconds", "years")
 
         plt.figure()
         plt.xlabel("z, meters")

@@ -67,7 +67,8 @@ def printing_test():
 
 def random_vec_test():
     "Test methods creating random fields"
-    grid = create_dummy_grid()
+    grid = PISM.IceGrid_Shallow(PISM.Context().ctx, 1e6, 1e6, 0, 0, 61, 31,
+                                PISM.NOT_PERIODIC, PISM.CELL_CENTER)
 
     vec_scalar = PISM.vec.randVectorS(grid, 1.0)
     vec_vector = PISM.vec.randVectorV(grid, 2.0)
@@ -128,27 +129,6 @@ def vec_access_test():
 
     # try with nocomm=None
     with PISM.vec.Access(comm=vec_scalar_ghosted):
-        pass
-
-
-def toproczero_test():
-    "Test communication to processor 0"
-    grid = create_dummy_grid()
-
-    vec_scalar = PISM.vec.randVectorS(grid, 1.0)
-    vec_vector = PISM.vec.randVectorV(grid, 2.0)
-
-    tz = PISM.vec.ToProcZero(grid)
-    array_scalar_0 = tz.communicate(vec_scalar)
-
-    tz2 = PISM.vec.ToProcZero(grid, dof=2, dim=2)
-    array_vector_0 = tz2.communicate(vec_vector)
-
-    try:
-        tz3 = PISM.vec.ToProcZero(grid, dof=2, dim=3)
-        return False
-    except NotImplementedError:
-        # 3D fields are not supported (yet)
         pass
 
 
@@ -244,63 +224,6 @@ def create_special_vecs_test():
     vecs.mask
 
     return True
-
-
-def options_test():
-    "Test command-line option handling"
-    ctx = PISM.Context()
-
-    o = PISM.PETSc.Options()
-
-    M = PISM.optionsInt("-M", "description", default=100)
-    M = PISM.optionsInt("-M", "description", default=None)
-
-    S = PISM.optionsString("-string", "description", default="string")
-    S = PISM.optionsString("-string", "description", default=None)
-
-    R = PISM.optionsReal("-R", "description", default=1.5)
-    R = PISM.optionsReal("-R", "description", default=None)
-
-    o.setValue("-B", "on")
-    B = PISM.optionsFlag("-B", "description", default=False)
-    B = PISM.optionsFlag("B", "description", default=False)
-    B = PISM.optionsFlag("-B", "description", default=None)
-
-    o.setValue("-no_C", "on")
-    C = PISM.optionsFlag("C", "description", default=None)
-
-    D = PISM.optionsFlag("D", "description", default=None)
-    D = PISM.optionsFlag("D", "description", default=True)
-
-    o.setValue("-no_D", "on")
-    o.setValue("-D", "on")
-    try:
-        # should throw RuntimeError
-        D = PISM.optionsFlag("D", "description", default=None)
-        return False
-    except RuntimeError:
-        pass
-
-    o.setValue("-IA", "1,2,3")
-    IA = PISM.optionsIntArray("-IA", "description", default=[1, 2])
-    IA = PISM.optionsIntArray("-IA", "description", default=None)
-    IA2 = PISM.optionsIntArray("-IA2", "description", default=None)
-    IA2 = PISM.optionsIntArray("-IA2", "description", default=[1, 2])
-
-    o.setValue("-RA", "1,2,3")
-    RA = PISM.optionsRealArray("-RA", "description", default=[2, 3])
-    RA = PISM.optionsRealArray("-RA", "description", default=None)
-    RA2 = PISM.optionsRealArray("-RA2", "description", default=[2, 3])
-    RA2 = PISM.optionsRealArray("-RA2", "description", default=None)
-
-    o.setValue("-SA", "1,2,3")
-    SA = PISM.optionsStringArray("-SA", "description", default="one,two")
-    SA = PISM.optionsStringArray("-SA", "description", default=None)
-    SA2 = PISM.optionsStringArray("-SA2", "description", default="two,three")
-    SA2 = PISM.optionsStringArray("-SA2", "description", default=None)
-
-    M = PISM.optionsList("-L", "description", choices="one,two", default="one")
-    M = PISM.optionsList("-L", "description", choices="one,two", default=None)
 
 
 def pism_vars_test():
@@ -733,17 +656,16 @@ def ssa_trivial_test():
     "Test the SSA solver using a trivial setup."
 
     context = PISM.Context()
-    unit_system = context.unit_system
 
     L = 50.e3  # // 50km half-width
     H0 = 500  # // m
     dhdx = 0.005  # // pure number, slope of surface & bed
-    nu0 = PISM.convert(unit_system, 30.0, "MPa year", "Pa s")
+    nu0 = PISM.util.convert(30.0, "MPa year", "Pa s")
     tauc0 = 1.e4  # // 1kPa
 
     class TrivialSSARun(PISM.ssa.SSAExactTestCase):
         def _initGrid(self):
-            self.grid = PISM.IceGrid.Shallow(PISM.Context().ctx, L, L, 0, 0,
+            self.grid = PISM.IceGrid.Shallow(context.ctx, L, L, 0, 0,
                                              self.Mx, self.My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
         def _initPhysics(self):
