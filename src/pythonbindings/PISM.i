@@ -64,6 +64,7 @@
 #include "util/node_types.hh"
 
 #include "util/Time.hh"
+#include "util/Time_Calendar.hh"
 %}
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
@@ -215,6 +216,8 @@
 
 %shared_ptr(pism::Time);
 %include "util/Time.hh"
+%shared_ptr(pism::Time_Calendar);
+%include "util/Time_Calendar.hh"
 
 %include "util/Profiling.hh"
 %shared_ptr(pism::Context);
