@@ -126,7 +126,7 @@ option :opt:`-atmosphere_pik`).
      - Description
 
    * - ``martin`` (default)
-     - Uses equation 2.0.2 from :cite:`Martinetal2011` to parameterize mean annual
+     - Uses equation (1) from :cite:`Martinetal2011` to parameterize mean annual
        temperature with *no seasonal variation in temperature.*
 
    * - ``huybrechts_dewolde``

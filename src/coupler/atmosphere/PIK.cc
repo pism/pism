@@ -210,6 +210,10 @@ static void era_interim_lon(const Geometry &geometry, IceModelVec2S &T_ma, IceMo
   }
 }
 
+/*!
+ * Parameterization of the mean annual near-surface air temperature, see equation (1) in
+ * Martin et al, 2011.
+ */
 static double martin2011_mean_annual(double elevation, double latitude) {
   return 273.15 + 30 - 0.0075 * elevation - 0.68775 * latitude * (-1.0);
 }
@@ -251,7 +255,7 @@ static void martin_huybrechts_dewolde(const Geometry &geometry, IceModelVec2S &T
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    // mean annual surface temperature as in Martin et al. 2011, Eqn. 2.0.2
+    // mean annual surface temperature as in Martin et al. 2011, equation (1)
     T_ma(i, j) = 273.15 + 30 - 0.0075 * h(i, j) - 0.68775 * lat(i, j) * (-1.0);
 
     double
