@@ -501,17 +501,39 @@ void set_number_from_option(Config &config, const std::string &name, const std::
   }
 }
 
-void set_number_list_from_option(Config &config, const std::string &name,
+/*!
+ * Use a command-line option -option to set a parameter that is a list of numbers.
+ *
+ * The length of the list given as an argument to the command-line option has to be the
+ * same as the length of the default value of the parameter *unless* the length of the
+ * default value is less than 2. This default value length is used to disable this check.
+ */
+void set_number_list_from_option(Config &config, const std::string &option,
                                  const std::string &parameter) {
-  options::RealList option("-" + name, config.doc(parameter),
-                           config.get_numbers(parameter, Config::FORGET_THIS_USE));
+  auto default_value = config.get_numbers(parameter, Config::FORGET_THIS_USE);
+  options::RealList list("-" + option, config.doc(parameter), default_value);
 
-  if (option.is_set()) {
-    config.set_numbers(parameter, option, CONFIG_USER);
+  if (list.is_set()) {
+    if (default_value.size() < 2 and list->size() != default_value.size()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Option -%s requires a list of %d numbers (got %d instead).",
+                                    option.c_str(),
+                                    (int)default_value.size(),
+                                    (int)list->size());
+    }
+
+    config.set_numbers(parameter, list, CONFIG_USER);
   }
 }
 
-void set_integer_list_from_option(Config &config, const std::string &name,
+/*!
+ * Use a command-line option -option to set a parameter that is a list of integers.
+ *
+ * The length of the list given as an argument to the command-line option has to be the
+ * same as the length of the default value of the parameter *unless* the length of the
+ * default value is less than 2. This default value length is used to disable this check.
+ */
+void set_integer_list_from_option(Config &config, const std::string &option,
                                   const std::string &parameter) {
   std::vector<int> default_value;
 
@@ -519,14 +541,22 @@ void set_integer_list_from_option(Config &config, const std::string &name,
     default_value.push_back(v);
   }
 
-  options::IntegerList option("-" + name, config.doc(parameter), default_value);
+  options::IntegerList list("-" + option, config.doc(parameter), default_value);
 
   std::vector<double> value;
-  for (auto v : option.value()) {
+  for (auto v : list.value()) {
     value.push_back(v);
   }
 
-  if (option.is_set()) {
+  if (list.is_set()) {
+    if (default_value.size() < 2 and value.size() != default_value.size()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Option -%s requires a list of %d integers (got %d instead).",
+                                    option.c_str(),
+                                    (int)default_value.size(),
+                                    (int)value.size());
+    }
+
     config.set_numbers(parameter, value, CONFIG_USER);
   }
 }
