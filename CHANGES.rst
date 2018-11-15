@@ -3,6 +3,7 @@
 Changes since v1.0
 ==================
 
+- Add 5 more parameterizations of near-surface air temperature to `-atmosphere pik`.
 - PISM stops with an error message if the name of a parameter in a `-config_override` file
   does not match any of the known PISM parameters.
 - PISM stops with an error message if the diffusivity of the SIA flow exceeds a given
