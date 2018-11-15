@@ -983,7 +983,9 @@ void IceModel::compute_lat_lon() {
                    "* Computing longitude and latitude using projection parameters...\n");
 
     compute_longitude(projection, m_geometry.longitude);
+    m_geometry.longitude.metadata().set_string("missing_at_bootstrap", "");
     compute_latitude(projection, m_geometry.latitude);
+    m_geometry.latitude.metadata().set_string("missing_at_bootstrap", "");
   }
 }
 
