@@ -8,10 +8,10 @@
 Spatially-variable fields
 -------------------------
 
-#. ``air_temp_mean_july``
+#. ``air_temp_mean_summer``
 
    :Units: Kelvin
-   :Description: mean July near-surface air temperature used in the cosine yearly cycle
+   :Description: mean summer near-surface air temperature used in the cosine yearly cycle
 
 #. ``air_temp_sd``
 
