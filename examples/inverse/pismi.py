@@ -324,7 +324,7 @@ def run():
     do_pause = PISM.OptionBool("-inv_pause", "pause each iteration")
 
     do_restart = PISM.OptionBool("-inv_restart", "Restart a stopped computation.")
-    use_design_prior = config.get_boolean("inverse.use_design_prior")
+    use_design_prior = config.get_flag("inverse.use_design_prior")
 
     prep_module = PISM.OptionString("-inv_prep_module",
                                     "Python module used to do final setup of inverse solver")
@@ -332,7 +332,7 @@ def run():
 
     is_regional = PISM.OptionBool("-regional", "Compute SIA/SSA using regional model semantics")
 
-    using_zeta_fixed_mask = config.get_boolean("inverse.use_zeta_fixed_mask")
+    using_zeta_fixed_mask = config.get_flag("inverse.use_zeta_fixed_mask")
 
     inv_method = config.get_string("inverse.ssa.method")
 

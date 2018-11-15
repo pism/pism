@@ -54,11 +54,11 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   m_base_ddf.ice               = m_config->get_number("surface.pdd.factor_ice");
   m_base_ddf.refreeze_fraction = m_config->get_number("surface.pdd.refreeze");
   m_base_pddStdDev             = m_config->get_number("surface.pdd.std_dev");
-  m_sd_use_param               = m_config->get_boolean("surface.pdd.std_dev_use_param");
+  m_sd_use_param               = m_config->get_flag("surface.pdd.std_dev_use_param");
   m_sd_param_a                 = m_config->get_number("surface.pdd.std_dev_param_a");
   m_sd_param_b                 = m_config->get_number("surface.pdd.std_dev_param_b");
 
-  bool use_fausto_params     = m_config->get_boolean("surface.pdd.fausto.enabled");
+  bool use_fausto_params     = m_config->get_flag("surface.pdd.fausto.enabled");
 
   std::string method = m_config->get_string("surface.pdd.method");
 

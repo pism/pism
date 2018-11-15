@@ -135,7 +135,7 @@ static bool string_is_true(const std::string &value) {
   return value == "true" or value == "on" or value == "yes";
 }
 
-bool NetCDFConfig::get_boolean_impl(const std::string &name) const {
+bool NetCDFConfig::get_flag_impl(const std::string &name) const {
   const VariableMetadata::StringAttrs& strings = m_data.get_all_strings();
   auto j = strings.find(name);
   if (j != strings.end()) {
@@ -178,7 +178,7 @@ Config::Booleans NetCDFConfig::all_booleans_impl() const {
 }
 
 //! Set a value of a boolean flag.
-void NetCDFConfig::set_boolean_impl(const std::string &name, bool value) {
+void NetCDFConfig::set_flag_impl(const std::string &name, bool value) {
   if (value) {
     m_data.set_string(name, "true");
   } else {

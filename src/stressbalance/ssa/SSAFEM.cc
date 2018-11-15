@@ -318,7 +318,7 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
 
   m_coefficients.update_ghosts();
 
-  const bool use_cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
+  const bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
   if (use_cfbc) {
     // Note: the call below uses ghosts of inputs.geometry->ice_thickness.
     compute_node_types(inputs.geometry->ice_thickness,
@@ -553,8 +553,8 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
   const Vector2 *outward_normal = fem::q1::outward_normals();
 
   const bool
-    use_cfbc          = m_config->get_boolean("stress_balance.calving_front_stress_bc"),
-    is_dry_simulation = m_config->get_boolean("ocean.always_grounded");
+    use_cfbc          = m_config->get_flag("stress_balance.calving_front_stress_bc"),
+    is_dry_simulation = m_config->get_flag("ocean.always_grounded");
 
   const double
     ice_density      = m_config->get_number("constants.ice.density"),
@@ -691,7 +691,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
   const bool use_explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
 
-  const bool use_cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
+  const bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
 
   const unsigned int Nk = fem::q1::n_chi;
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
@@ -903,7 +903,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
-  const bool use_cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
+  const bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
 
   // Zero out the Jacobian in preparation for updating it.
   PetscErrorCode ierr = MatZeroEntries(Jac);

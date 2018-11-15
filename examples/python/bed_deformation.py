@@ -95,7 +95,7 @@ def run(scenario, plot, pause, save):
 
     print("Using scenario %s: elastic model = %s, use uplift = %s, H0 = %f m" % (scenario, elastic, use_uplift, H0))
 
-    config.set_boolean("bed_deformation.lc.elastic_model", elastic)
+    config.set_flag("bed_deformation.lc.elastic_model", elastic)
 
     grid = create_grid()
 

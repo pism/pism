@@ -78,7 +78,7 @@ MaxTimestep IceModel::max_timestep_diffusivity() {
  */
 unsigned int IceModel::skip_counter(double input_dt, double input_dt_diffusivity) {
 
-  if (not m_config->get_boolean("time_stepping.skip.enabled")) {
+  if (not m_config->get_flag("time_stepping.skip.enabled")) {
     return 0;
   }
 
@@ -163,7 +163,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
   }
 
   // mass continuity stability criteria
-  if (m_config->get_boolean("geometry.update.enabled")) {
+  if (m_config->get_flag("geometry.update.enabled")) {
     CFLData cfl = m_stress_balance->max_timestep_cfl_2d();
 
     restrictions.push_back(MaxTimestep(cfl.dt_max.value(), "2D CFL"));

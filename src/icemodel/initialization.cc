@@ -72,7 +72,7 @@ void IceModel::time_setup() {
                   m_config->get_string("time.dimension_name"),
                   *m_log, *m_time);
 
-  bool use_calendar = m_config->get_boolean("output.runtime.time_use_calendar");
+  bool use_calendar = m_config->get_flag("output.runtime.time_use_calendar");
 
   if (use_calendar) {
     m_log->message(2,
@@ -392,7 +392,7 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
     }
   }
 
-  if (m_config->get_boolean("geometry.part_grid.enabled")) {
+  if (m_config->get_flag("geometry.part_grid.enabled")) {
     // Read the Href field from an input file. This field is
     // grid-dependent, so interpolating it from one grid to a
     // different one does not make sense in general.
@@ -404,7 +404,7 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
     m_geometry.ice_area_specific_volume.regrid(input_file, OPTIONAL, 0.0);
   }
 
-  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
+  if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
     // Do not use Dirichlet B.C. anywhere if bc_mask is not present.
     m_ssa_dirichlet_bc_mask.regrid(input_file, OPTIONAL, 0.0);
     // In the absence of u_ssa_bc and v_ssa_bc in the file the only B.C. that make sense are the
@@ -505,7 +505,7 @@ void IceModel::allocate_iceberg_remover() {
   m_log->message(2,
              "# Allocating an iceberg remover (part of a calving model)...\n");
 
-  if (m_config->get_boolean("geometry.remove_icebergs")) {
+  if (m_config->get_flag("geometry.remove_icebergs")) {
 
     // this will throw an exception on failure
     m_iceberg_remover = new calving::IcebergRemover(m_grid);
@@ -524,7 +524,7 @@ void IceModel::allocate_age_model() {
     return;
   }
 
-  if (m_config->get_boolean("age.enabled")) {
+  if (m_config->get_flag("age.enabled")) {
     m_log->message(2, "# Allocating an ice age model...\n");
 
     if (m_stress_balance == NULL) {
@@ -545,8 +545,8 @@ void IceModel::allocate_energy_model() {
 
   m_log->message(2, "# Allocating an energy balance model...\n");
 
-  if (m_config->get_boolean("energy.enabled")) {
-    if (m_config->get_boolean("energy.temperature_based")) {
+  if (m_config->get_flag("energy.enabled")) {
+    if (m_config->get_flag("energy.temperature_based")) {
       m_energy_model = new energy::TemperatureModel(m_grid, m_stress_balance.get());
     } else {
       m_energy_model = new energy::EnthalpyModel(m_grid, m_stress_balance.get());
@@ -778,10 +778,10 @@ void IceModel::misc_setup() {
   // a report on whether PISM-PIK modifications of IceModel are in use
   {
     std::vector<std::string> pik_methods;
-    if (m_config->get_boolean("geometry.part_grid.enabled")) {
+    if (m_config->get_flag("geometry.part_grid.enabled")) {
       pik_methods.push_back("part_grid");
     }
-    if (m_config->get_boolean("geometry.remove_icebergs")) {
+    if (m_config->get_flag("geometry.remove_icebergs")) {
       pik_methods.push_back("kill_icebergs");
     }
 
@@ -943,15 +943,15 @@ void IceModel::process_options() {
     throw RuntimeError(PISM_ERROR_LOCATION, "time_stepping.maximum_time_step has to be greater than 0.");
   }
 
-  if (not m_config->get_boolean("geometry.update.enabled") &&
-      m_config->get_boolean("time_stepping.skip.enabled")) {
+  if (not m_config->get_flag("geometry.update.enabled") &&
+      m_config->get_flag("time_stepping.skip.enabled")) {
     m_log->message(2,
                "PISM WARNING: Both -skip and -no_mass are set.\n"
                "              -skip only makes sense in runs updating ice geometry.\n");
   }
 
   if (m_config->get_string("calving.methods").find("thickness_calving") != std::string::npos &&
-      not m_config->get_boolean("geometry.part_grid.enabled")) {
+      not m_config->get_flag("geometry.part_grid.enabled")) {
     m_log->message(2,
                "PISM WARNING: Calving at certain terminal ice thickness (-calving thickness_calving)\n"
                "              without application of partially filled grid cell scheme (-part_grid)\n"
@@ -985,7 +985,7 @@ void IceModel::compute_lat_lon() {
 
   std::string projection = m_grid->get_mapping_info().proj;
 
-  if (m_config->get_boolean("grid.recompute_longitude_and_latitude") and
+  if (m_config->get_flag("grid.recompute_longitude_and_latitude") and
       not projection.empty()) {
     m_log->message(2,
                    "* Computing longitude and latitude using projection parameters...\n");

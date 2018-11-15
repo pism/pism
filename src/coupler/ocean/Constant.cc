@@ -59,7 +59,7 @@ void Constant::update_impl(const Geometry &geometry, double t, double dt) {
 void Constant::init_impl(const Geometry &geometry) {
   (void) geometry;
 
-  if (not m_config->get_boolean("ocean.always_grounded")) {
+  if (not m_config->get_flag("ocean.always_grounded")) {
     m_log->message(2, "* Initializing the constant ocean model...\n");
     m_log->message(2, "  Sub-shelf melt rate set to %f m/year.\n",
                    m_config->get_number("ocean.constant.melt_rate", "m year-1"));

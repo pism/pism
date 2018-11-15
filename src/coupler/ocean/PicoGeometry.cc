@@ -76,7 +76,7 @@ const IceModelVec2Int &PicoGeometry::ice_rise_mask() const {
  * to date.
  */
 void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2CellType &cell_type) {
-  bool exclude_ice_rises = m_config->get_boolean("ocean.pico.exclude_ice_rises");
+  bool exclude_ice_rises = m_config->get_flag("ocean.pico.exclude_ice_rises");
 
   int n_boxes = m_config->get_number("ocean.pico.number_of_boxes");
 

@@ -87,7 +87,7 @@ class MassTransport(object):
         self.grid = grid
 
         if part_grid:
-            grid.ctx().config().set_boolean("geometry.part_grid.enabled", True)
+            grid.ctx().config().set_flag("geometry.part_grid.enabled", True)
 
         self.v = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
         self.Q = PISM.IceModelVec2Stag(grid, "Q", PISM.WITHOUT_GHOSTS)

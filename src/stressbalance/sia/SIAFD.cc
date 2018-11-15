@@ -62,9 +62,9 @@ SIAFD::SIAFD(IceGrid::ConstPtr g)
     m_flow_law = ice_factory.create();
   }
 
-  const bool compute_grain_size_using_age = m_config->get_boolean("stress_balance.sia.grain_size_age_coupling");
-  const bool age_model_enabled = m_config->get_boolean("age.enabled");
-  const bool e_age_coupling = m_config->get_boolean("stress_balance.sia.e_age_coupling");
+  const bool compute_grain_size_using_age = m_config->get_flag("stress_balance.sia.grain_size_age_coupling");
+  const bool age_model_enabled = m_config->get_flag("age.enabled");
+  const bool e_age_coupling = m_config->get_flag("stress_balance.sia.e_age_coupling");
 
   if (compute_grain_size_using_age) {
     if (not FlowLawUsesGrainSize(*m_flow_law)) {
@@ -107,7 +107,7 @@ void SIAFD::init() {
 
   // implements an option e.g. described in @ref Greve97Greenland that is the
   // enhancement factor is coupled to the age of the ice
-  if (m_config->get_boolean("stress_balance.sia.e_age_coupling")) {
+  if (m_config->get_flag("stress_balance.sia.e_age_coupling")) {
     m_log->message(2,
                    "  using age-dependent enhancement factor:\n"
                    "  e=%f for ice accumulated during interglacial periods\n"
@@ -564,9 +564,9 @@ void SIAFD::compute_diffusivity(bool full_update,
     D_limit                         = m_config->get_number("stress_balance.sia.max_diffusivity");
 
   const bool
-    compute_grain_size_using_age = m_config->get_boolean("stress_balance.sia.grain_size_age_coupling"),
-    e_age_coupling               = m_config->get_boolean("stress_balance.sia.e_age_coupling"),
-    limit_diffusivity            = m_config->get_boolean("stress_balance.sia.limit_diffusivity"),
+    compute_grain_size_using_age = m_config->get_flag("stress_balance.sia.grain_size_age_coupling"),
+    e_age_coupling               = m_config->get_flag("stress_balance.sia.e_age_coupling"),
+    limit_diffusivity            = m_config->get_flag("stress_balance.sia.limit_diffusivity"),
     use_age                      = compute_grain_size_using_age or e_age_coupling;
 
   rheology::grain_size_vostok gs_vostok;

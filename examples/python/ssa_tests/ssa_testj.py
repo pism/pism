@@ -35,7 +35,7 @@ class testj(PISM.ssa.SSAExactTestCase):
 
     def _initPhysics(self):
         config = self.modeldata.config
-        config.set_boolean("basal_resistance.pseudo_plastic.enabled", False)
+        config.set_flag("basal_resistance.pseudo_plastic.enabled", False)
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
 

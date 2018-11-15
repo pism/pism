@@ -58,8 +58,8 @@ private:
 
   virtual Booleans all_booleans_impl() const;
 
-  virtual bool get_boolean_impl(const std::string& name) const;
-  virtual void set_boolean_impl(const std::string& name, bool value);
+  virtual bool get_flag_impl(const std::string& name) const;
+  virtual void set_flag_impl(const std::string& name, bool value);
 private:
   json_t *m_data;
 };

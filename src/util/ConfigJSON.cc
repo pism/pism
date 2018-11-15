@@ -312,7 +312,7 @@ void ConfigJSON::set_numbers_impl(const std::string &name,
   set_value(m_data, name, pack_json_array(values));
 }
 
-void ConfigJSON::set_boolean_impl(const std::string &name, bool value) {
+void ConfigJSON::set_flag_impl(const std::string &name, bool value) {
   set_value(m_data, name, json_pack("b", value));
 }
 
@@ -339,7 +339,7 @@ std::string ConfigJSON::get_string_impl(const std::string &name) const {
   return get_value<std::string, const char *>(m_data, name, "s", "string");
 }
 
-bool ConfigJSON::get_boolean_impl(const std::string &name) const {
+bool ConfigJSON::get_flag_impl(const std::string &name) const {
   return get_value<bool, int>(m_data, name, "b", "boolean");
 }
 

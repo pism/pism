@@ -103,7 +103,7 @@ IceModelVec::Ptr CalvingFrontPressureDifference::compute_impl() const {
     rho_ocean = m_config->get_number("constants.sea_water.density"),
     g         = m_config->get_number("constants.standard_gravity");
 
-  const bool dry_mode = m_config->get_boolean("ocean.always_grounded");
+  const bool dry_mode = m_config->get_flag("ocean.always_grounded");
 
   IceModelVec::AccessList list{&H, &bed, &mask, result.get()};
 
@@ -356,7 +356,7 @@ TemperaturePA::TemperaturePA(const IceModel *m)
 }
 
 IceModelVec::Ptr TemperaturePA::compute_impl() const {
-  bool cold_mode = m_config->get_boolean("energy.temperature_based");
+  bool cold_mode = m_config->get_flag("energy.temperature_based");
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
   IceModelVec3::Ptr result(new IceModelVec3(m_grid, "temp_pa", WITHOUT_GHOSTS));
@@ -415,7 +415,7 @@ TemperaturePABasal::TemperaturePABasal(const IceModel *m)
 
 IceModelVec::Ptr TemperaturePABasal::compute_impl() const {
 
-  bool cold_mode = m_config->get_boolean("energy.temperature_based");
+  bool cold_mode = m_config->get_flag("energy.temperature_based");
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "temp_pa_base", WITHOUT_GHOSTS));
@@ -640,7 +640,7 @@ IceModelVec::Ptr LiquidFraction::compute_impl() const {
   IceModelVec3::Ptr result(new IceModelVec3(m_grid, "liqfrac", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  bool cold_mode = m_config->get_boolean("energy.temperature_based");
+  bool cold_mode = m_config->get_flag("energy.temperature_based");
 
   if (cold_mode) {
     result->set(0.0);
@@ -1738,7 +1738,7 @@ IceModelVec::Ptr IceAreaFraction::compute_impl() const {
   IceModelVec::AccessList list{&thickness, &surface_elevation, &bed_topography, &cell_type,
       result.get()};
 
-  const bool do_part_grid = m_config->get_boolean("geometry.part_grid.enabled");
+  const bool do_part_grid = m_config->get_flag("geometry.part_grid.enabled");
   const IceModelVec2S &Href = model->geometry().ice_area_specific_volume;;
   if (do_part_grid) {
     list.add(Href);
@@ -1964,7 +1964,7 @@ IceModelVec::Ptr IceMass::compute_impl() const {
   loop.check();
 
   // Add the mass of ice in Href:
-  if (m_config->get_boolean("geometry.part_grid.enabled")) {
+  if (m_config->get_flag("geometry.part_grid.enabled")) {
     const IceModelVec2S &Href = model->geometry().ice_area_specific_volume;
     list.add(Href);
     for (Points p(*m_grid); p; p.next()) {
@@ -2643,7 +2643,7 @@ double IceModel::ice_volume(double thickness_threshold) const {
   }
 
   // Add the volume of the ice in Href:
-  if (m_config->get_boolean("geometry.part_grid.enabled")) {
+  if (m_config->get_flag("geometry.part_grid.enabled")) {
     list.add(m_geometry.ice_area_specific_volume);
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();

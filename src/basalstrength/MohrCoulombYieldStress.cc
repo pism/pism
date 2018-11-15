@@ -125,7 +125,7 @@ void MohrCoulombYieldStress::init_impl(const Geometry &geometry,
 
   InputOptions opts = process_input_options(m_grid->com, m_config);
 
-  if (m_config->get_boolean("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled")) {
+  if (m_config->get_flag("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled")) {
 
     m_log->message(2, "  creating till friction angle map from bed elevation...\n");
 
@@ -225,8 +225,8 @@ that is, the water amount is the sum @f$ W+W_{till} @f$.
  */
 void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
 
-  bool slippery_grounding_lines = m_config->get_boolean("basal_yield_stress.slippery_grounding_lines"),
-       add_transportable_water  = m_config->get_boolean("basal_yield_stress.add_transportable_water");
+  bool slippery_grounding_lines = m_config->get_flag("basal_yield_stress.slippery_grounding_lines"),
+       add_transportable_water  = m_config->get_flag("basal_yield_stress.add_transportable_water");
   const double
     ice_density      = m_config->get_number("constants.ice.density"),
     standard_gravity = m_config->get_number("constants.standard_gravity");

@@ -177,7 +177,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
     melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature"),
     beta_CC_grad       = m_config->get_number("constants.ice.beta_Clausius_Clapeyron") * ice_density * m_config->get_number("constants.standard_gravity");
 
-  const bool allow_above_melting = m_config->get_boolean("energy.allow_temperature_above_melting");
+  const bool allow_above_melting = m_config->get_flag("energy.allow_temperature_above_melting");
 
   // this is bulge limit constant in K; is max amount by which ice
   //   or bedrock can be lower than surface temperature

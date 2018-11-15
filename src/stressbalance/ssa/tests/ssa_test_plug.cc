@@ -96,7 +96,7 @@ protected:
 void SSATestCasePlug::initializeSSACoefficients() {
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", true);
+  m_config->set_flag("stress_balance.ssa.compute_surface_gradient_inward", true);
   m_config->set_number("stress_balance.ssa.epsilon", 0.0);
 
   // Ensure we never use the strength extension.

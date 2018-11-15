@@ -56,11 +56,11 @@ std::string LocalMassBalance::method() const {
 
 PDDMassBalance::PDDMassBalance(Config::ConstPtr config, units::System::Ptr system)
   : LocalMassBalance(config, system) {
-  precip_as_snow     = m_config->get_boolean("surface.pdd.interpret_precip_as_snow");
+  precip_as_snow     = m_config->get_flag("surface.pdd.interpret_precip_as_snow");
   Tmin               = m_config->get_number("surface.pdd.air_temp_all_precip_as_snow");
   Tmax               = m_config->get_number("surface.pdd.air_temp_all_precip_as_rain");
   pdd_threshold_temp = m_config->get_number("surface.pdd.positive_threshold_temp");
-  refreeze_ice_melt  = m_config->get_boolean("surface.pdd.refreeze_ice_melt");
+  refreeze_ice_melt  = m_config->get_flag("surface.pdd.refreeze_ice_melt");
 
   m_method = "an expectation integral";
 }

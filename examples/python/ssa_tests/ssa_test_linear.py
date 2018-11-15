@@ -42,7 +42,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
 
     def _initPhysics(self):
         config = self.config
-        config.set_boolean("basal_resistance.pseudo_plastic.enabled", True)
+        config.set_flag("basal_resistance.pseudo_plastic.enabled", True)
         config.set_number("basal_resistance.pseudo_plastic.q", 1.0)
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
@@ -85,7 +85,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
         se.set_min_thickness(4000 * 10)
 
         # For the benefit of SSAFD on a non-periodic grid
-        self.config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", True)
+        self.config.set_flag("stress_balance.ssa.compute_surface_gradient_inward", True)
 
     def exactSolution(self, i, j, x, y):
         tauc_threshold_velocity = self.config.get_number("basal_resistance.pseudo_plastic.u_threshold",

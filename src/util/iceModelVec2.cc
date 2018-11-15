@@ -220,7 +220,7 @@ void IceModelVec2::regrid_impl(const PIO &file, RegriddingFlag flag,
   // the same way v is
   petsc::TemporaryGlobalVec tmp(da2);
 
-  const bool allow_extrapolation = m_grid->ctx()->config()->get_boolean("grid.allow_extrapolation");
+  const bool allow_extrapolation = m_grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 
   for (unsigned int j = 0; j < m_dof; ++j) {
     {

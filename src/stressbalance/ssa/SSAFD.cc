@@ -218,7 +218,7 @@ void SSAFD::init_impl() {
   m_nuh_viewer_size = viewer_size;
   m_view_nuh = options::Bool("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer");
 
-  if (m_config->get_boolean("stress_balance.calving_front_stress_bc")) {
+  if (m_config->get_flag("stress_balance.calving_front_stress_bc")) {
     m_log->message(2,
                "  using PISM-PIK calving-front stress boundary condition ...\n");
   }
@@ -259,11 +259,11 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     rho_ice                   = m_config->get_number("constants.ice.density");
 
   const bool
-    use_cfbc          = m_config->get_boolean("stress_balance.calving_front_stress_bc"),
-    is_dry_simulation = m_config->get_boolean("ocean.always_grounded");
+    use_cfbc          = m_config->get_flag("stress_balance.calving_front_stress_bc"),
+    is_dry_simulation = m_config->get_flag("ocean.always_grounded");
 
   // FIXME: bedrock_boundary is a misleading name
-  bool bedrock_boundary = m_config->get_boolean("stress_balance.ssa.dirichlet_bc");
+  bool bedrock_boundary = m_config->get_flag("stress_balance.ssa.dirichlet_bc");
 
   compute_driving_stress(*inputs.geometry, m_taud);
 
@@ -464,12 +464,12 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
     dy                    = m_grid->dy(),
     beta_ice_free_bedrock = m_config->get_number("basal_resistance.beta_ice_free_bedrock");
 
-  const bool use_cfbc     = m_config->get_boolean("stress_balance.calving_front_stress_bc");
+  const bool use_cfbc     = m_config->get_flag("stress_balance.calving_front_stress_bc");
   const bool replace_zero_diagonal_entries =
-    m_config->get_boolean("stress_balance.ssa.fd.replace_zero_diagonal_entries");
+    m_config->get_flag("stress_balance.ssa.fd.replace_zero_diagonal_entries");
 
   // FIXME: bedrock_boundary is a misleading name
-  const bool bedrock_boundary = m_config->get_boolean("stress_balance.ssa.dirichlet_bc");
+  const bool bedrock_boundary = m_config->get_flag("stress_balance.ssa.dirichlet_bc");
 
   ierr = MatZeroEntries(A);
   PISM_CHK(ierr, "MatZeroEntries");
@@ -480,14 +480,14 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
     list.add(*inputs.bc_mask);
   }
 
-  const bool sub_gl = m_config->get_boolean("geometry.grounded_cell_fraction");
+  const bool sub_gl = m_config->get_flag("geometry.grounded_cell_fraction");
   if (sub_gl) {
     list.add(grounded_fraction);
   }
 
   // handles friction of the ice cell along ice-free bedrock margins when bedrock higher than ice
   // surface (in simplified setups)
-  bool lateral_drag_enabled=m_config->get_boolean("stress_balance.ssa.fd.lateral_drag.enabled");
+  bool lateral_drag_enabled=m_config->get_flag("stress_balance.ssa.fd.lateral_drag.enabled");
   if (lateral_drag_enabled) {
     list.add({&thickness, &bed, &surface});
   }
@@ -879,7 +879,7 @@ void SSAFD::solve(const Inputs &inputs) {
   }
 
   // Post-process velocities if the user asked for it:
-  if (m_config->get_boolean("stress_balance.ssa.fd.brutal_sliding")) {
+  if (m_config->get_flag("stress_balance.ssa.fd.brutal_sliding")) {
     const double brutal_sliding_scaleFactor = m_config->get_number("stress_balance.ssa.fd.brutal_sliding_scale");
     m_velocity.scale(brutal_sliding_scaleFactor);
 
@@ -945,7 +945,7 @@ void SSAFD::picard_manager(const Inputs &inputs,
 
   m_stdout_ssa.clear();
 
-  bool use_cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
+  bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
 
   if (use_cfbc == true) {
     compute_nuH_staggered_cfbc(*inputs.geometry, nuH_regularization, m_nuH);

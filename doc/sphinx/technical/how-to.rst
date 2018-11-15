@@ -32,12 +32,12 @@ To use a flag, do
 
 .. code-block:: c++
 
-   bool compute_age = config->get_boolean("do_age");
+   bool compute_age = config->get_flag("do_age");
 
 .. note::
 
    - It is a good idea to avoid calling `m_config->get_number()` and
-     `m_config->get_boolean()` from within loops: looking up a parameter by its name is
+     `m_config->get_flag()` from within loops: looking up a parameter by its name is
      slow.
    - Please see :ref:`sec-parameter-list` for a list of flags and parameters currently
      used in PISM.

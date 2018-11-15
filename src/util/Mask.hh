@@ -69,7 +69,7 @@ class GeometryCalculator {
 public:
   GeometryCalculator(const Config &config) {
     m_alpha = 1 - config.get_number("constants.ice.density") / config.get_number("constants.sea_water.density");
-    m_is_dry_simulation = config.get_boolean("ocean.always_grounded");
+    m_is_dry_simulation = config.get_flag("ocean.always_grounded");
     m_icefree_thickness = config.get_number("geometry.ice_free_thickness_standard");
     if (m_icefree_thickness < 0.0) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,

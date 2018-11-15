@@ -29,7 +29,7 @@ namespace pism {
 MaxTimestep IceModel::extras_max_timestep(double my_t) {
 
   if ((not m_save_extra) or
-      (not m_config->get_boolean("time_stepping.hit_extra_times"))) {
+      (not m_config->get_flag("time_stepping.hit_extra_times"))) {
     return MaxTimestep("reporting (-extra_times)");
   }
 
@@ -97,8 +97,8 @@ void IceModel::init_extras() {
   m_extra_filename   = m_config->get_string("output.extra.file");
   std::string times  = m_config->get_string("output.extra.times");
   std::string vars   = m_config->get_string("output.extra.vars");
-  bool        split  = m_config->get_boolean("output.extra.split");
-  bool        append = m_config->get_boolean("output.extra.append");
+  bool        split  = m_config->get_flag("output.extra.split");
+  bool        append = m_config->get_flag("output.extra.append");
 
   bool extra_file_set = not m_extra_filename.empty();
   bool times_set = not times.empty();
@@ -270,7 +270,7 @@ void IceModel::write_extras() {
                  filename, m_time->date().c_str());
 
   // default behavior is to move the file aside if it exists already; option allows appending
-  bool append = m_config->get_boolean("output.extra.append");
+  bool append = m_config->get_flag("output.extra.append");
   IO_Mode mode = m_extra_file_is_ready or append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 
   const Profiling &profiling = m_ctx->profiling();

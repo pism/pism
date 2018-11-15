@@ -141,7 +141,7 @@ void SSA::init_impl() {
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).
   if (opts.type == INIT_RESTART) {
-    if (m_config->get_boolean("stress_balance.ssa.read_initial_guess")) {
+    if (m_config->get_flag("stress_balance.ssa.read_initial_guess")) {
       PIO input_file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
       bool u_ssa_found = input_file.inq_var("u_ssa");
       bool v_ssa_found = input_file.inq_var("v_ssa");
@@ -210,8 +210,8 @@ void SSA::compute_driving_stress(const Geometry &geometry, IceModelVec2V &result
   const double minThickEtaTransform = 5.0; // m
   const double dx=m_grid->dx(), dy=m_grid->dy();
 
-  bool cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
-  bool compute_surf_grad_inward_ssa = m_config->get_boolean("stress_balance.ssa.compute_surface_gradient_inward");
+  bool cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
+  bool compute_surf_grad_inward_ssa = m_config->get_flag("stress_balance.ssa.compute_surface_gradient_inward");
   bool use_eta = (m_config->get_string("stress_balance.sia.surface_gradient_method") == "eta");
 
   IceModelVec::AccessList list{&surface, &bed, &m_mask, &thk, &result};

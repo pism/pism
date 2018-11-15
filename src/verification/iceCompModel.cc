@@ -67,8 +67,8 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   m_config->set_number("stress_balance.sia.bed_smoother.range", 0.0);
 
   // set values of flags in run()
-  m_config->set_boolean("geometry.update.enabled", true);
-  m_config->set_boolean("geometry.update.use_basal_melt_rate", false);
+  m_config->set_flag("geometry.update.enabled", true);
+  m_config->set_flag("geometry.update.use_basal_melt_rate", false);
 
   // flow law settings
   switch (m_testname) {
@@ -112,42 +112,42 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   }
 
   if ((m_testname == 'F') || (m_testname == 'G') || (m_testname == 'K') || (m_testname == 'O')) {
-    m_config->set_boolean("energy.enabled", true);
+    m_config->set_flag("energy.enabled", true);
     // essentially turn off run-time reporting of extremely low computed
     // temperatures; *they will be reported as errors* anyway
     m_config->set_number("energy.minimum_allowed_temperature", 0.0);
     m_config->set_number("energy.max_low_temperature_count", 1000000);
   } else {
-    m_config->set_boolean("energy.enabled", false);
+    m_config->set_flag("energy.enabled", false);
   }
 
-  m_config->set_boolean("ocean.always_grounded", true);
+  m_config->set_flag("ocean.always_grounded", true);
 
   // special considerations for K and O wrt thermal bedrock and pressure-melting
   if ((m_testname == 'K') || (m_testname == 'O')) {
-    m_config->set_boolean("energy.allow_temperature_above_melting", false);
+    m_config->set_flag("energy.allow_temperature_above_melting", false);
   } else {
     // note temps are generally allowed to go above pressure melting in verify
-    m_config->set_boolean("energy.allow_temperature_above_melting", true);
+    m_config->set_flag("energy.allow_temperature_above_melting", true);
   }
 
   if (m_testname == 'V') {
     // no sub-shelf melting
-    m_config->set_boolean("geometry.update.use_basal_melt_rate", false);
+    m_config->set_flag("geometry.update.use_basal_melt_rate", false);
 
     // this test is isothermal
-    m_config->set_boolean("energy.enabled", false);
+    m_config->set_flag("energy.enabled", false);
 
     // use the SSA solver
     m_config->set_string("stress_balance_model", "ssa");
 
     // this certainly is not a "dry simulation"
-    m_config->set_boolean("ocean.always_grounded", false);
+    m_config->set_flag("ocean.always_grounded", false);
 
-    m_config->set_boolean("stress_balance.ssa.dirichlet_bc", true);
+    m_config->set_flag("stress_balance.ssa.dirichlet_bc", true);
   }
 
-  m_config->set_boolean("energy.temperature_based", true);
+  m_config->set_flag("energy.temperature_based", true);
 }
 
 void IceCompModel::allocate_storage() {

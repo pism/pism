@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = context_from_options(com, "siafd_test");
     Config::Ptr config = ctx->config();
 
-    config->set_boolean("stress_balance.sia.grain_size_age_coupling", false);
+    config->set_flag("stress_balance.sia.grain_size_age_coupling", false);
     config->set_string("stress_balance.sia.flow_law", "arr");
 
     set_config_from_options(*config);

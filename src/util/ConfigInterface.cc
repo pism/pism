@@ -116,7 +116,7 @@ void Config::import_from(const Config &other) {
 
   for (auto p : other.all_booleans()) {
     if (member(p.first, parameters)) {
-      this->set_boolean(p.first, p.second, CONFIG_USER);
+      this->set_flag(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "unrecognized parameter %s in %s",
@@ -257,14 +257,14 @@ Config::Booleans Config::all_booleans() const {
   return this->all_booleans_impl();
 }
 
-bool Config::get_boolean(const std::string& name, UseFlag flag) const {
+bool Config::get_flag(const std::string& name, UseFlag flag) const {
   if (flag == REMEMBER_THIS_USE) {
     m_impl->parameters_used.insert(name);
   }
-  return this->get_boolean_impl(name);
+  return this->get_flag_impl(name);
 }
 
-void Config::set_boolean(const std::string& name, bool value,
+void Config::set_flag(const std::string& name, bool value,
                          ConfigSettingFlag flag) {
   std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
 
@@ -278,7 +278,7 @@ void Config::set_boolean(const std::string& name, bool value,
     return;
   }
 
-  this->set_boolean_impl(name, value);
+  this->set_flag_impl(name, value);
 }
 
 static bool special_parameter(const std::string &name) {
@@ -414,7 +414,7 @@ void print_unused_parameters(const Logger &log, int verbosity_threshhold,
 /*!
  * Use the command-line option `option` to set the configuration parameter `parameter_name`.
  *
- * When called as `set_boolean_from_option(config, "foo", "bar")`,
+ * When called as `set_flag_from_option(config, "foo", "bar")`,
  *
  * sets the configuration parameter `bar` to `true` if
  *
@@ -432,11 +432,11 @@ void print_unused_parameters(const Logger &log, int verbosity_threshhold,
  *
  * `-foo X` with `X` not equal to `yes`, `no`, `true`, `True`, `false`, `False` results in an error.
  */
-void set_boolean_from_option(Config &config, const std::string &option,
+void set_flag_from_option(Config &config, const std::string &option,
                              const std::string &parameter_name) {
 
   // get the default value
-  bool value = config.get_boolean(parameter_name, Config::FORGET_THIS_USE);
+  bool value = config.get_flag(parameter_name, Config::FORGET_THIS_USE);
   std::string doc = config.doc(parameter_name);
 
   // process the command-line option
@@ -480,7 +480,7 @@ void set_boolean_from_option(Config &config, const std::string &option,
     }
   }
 
-  config.set_boolean(parameter_name, value, CONFIG_USER);
+  config.set_flag(parameter_name, value, CONFIG_USER);
 }
 
 //! Sets a configuration parameter from a command-line option.
@@ -600,7 +600,7 @@ void set_parameter_from_options(Config &config, const std::string &name) {
   if (type == "string") {
     set_string_from_option(config, option, name);
   } else if (type == "boolean") {
-    set_boolean_from_option(config, option, name);
+    set_flag_from_option(config, option, name);
   } else if (type == "number") {
     set_number_from_option(config, option, name);
   } else if (type == "integer") {
@@ -633,15 +633,15 @@ void set_config_from_options(Config &config) {
 
     if (energy.is_set()) {
       if (energy == "none") {
-        config.set_boolean("energy.enabled", false, CONFIG_USER);
+        config.set_flag("energy.enabled", false, CONFIG_USER);
         // Allow selecting cold ice flow laws in isothermal mode.
-        config.set_boolean("energy.temperature_based", true, CONFIG_USER);
+        config.set_flag("energy.temperature_based", true, CONFIG_USER);
       } else if (energy == "cold") {
-        config.set_boolean("energy.enabled", true, CONFIG_USER);
-        config.set_boolean("energy.temperature_based", true, CONFIG_USER);
+        config.set_flag("energy.enabled", true, CONFIG_USER);
+        config.set_flag("energy.temperature_based", true, CONFIG_USER);
       } else if (energy == "enthalpy") {
-        config.set_boolean("energy.enabled", true, CONFIG_USER);
-        config.set_boolean("energy.temperature_based", false, CONFIG_USER);
+        config.set_flag("energy.enabled", true, CONFIG_USER);
+        config.set_flag("energy.temperature_based", false, CONFIG_USER);
       } else {
         throw RuntimeError(PISM_ERROR_LOCATION, "this can't happen: options::Keyword validates input");
       }
@@ -665,7 +665,7 @@ void set_config_from_options(Config &config) {
                                       "option -topg_to_phi expected 4 numbers; got %d",
                                       (int)topg_to_phi->size());
       }
-      config.set_boolean("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled", true);
+      config.set_flag("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled", true);
       config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min", topg_to_phi[0]);
       config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max", topg_to_phi[1]);
       config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min", topg_to_phi[2]);
@@ -676,7 +676,7 @@ void set_config_from_options(Config &config) {
 
   bool nu_bedrock = options::Bool("-nu_bedrock", "constant viscosity near margins");
   if (nu_bedrock) {
-    config.set_boolean("stress_balance.ssa.fd.lateral_drag.enabled", true, CONFIG_USER);
+    config.set_flag("stress_balance.ssa.fd.lateral_drag.enabled", true, CONFIG_USER);
   }
 
   // Shortcuts
@@ -685,34 +685,34 @@ void set_config_from_options(Config &config) {
   // and in particular NOT  "-calving eigen_calving")
   bool pik = options::Bool("-pik", "enable suite of PISM-PIK mechanisms");
   if (pik) {
-    config.set_boolean("stress_balance.calving_front_stress_bc", true, CONFIG_USER);
-    config.set_boolean("geometry.part_grid.enabled", true, CONFIG_USER);
-    config.set_boolean("geometry.remove_icebergs", true, CONFIG_USER);
-    config.set_boolean("geometry.grounded_cell_fraction", true, CONFIG_USER);
+    config.set_flag("stress_balance.calving_front_stress_bc", true, CONFIG_USER);
+    config.set_flag("geometry.part_grid.enabled", true, CONFIG_USER);
+    config.set_flag("geometry.remove_icebergs", true, CONFIG_USER);
+    config.set_flag("geometry.grounded_cell_fraction", true, CONFIG_USER);
   }
 
   if (config.get_string("calving.methods").find("eigen_calving") != std::string::npos) {
-    config.set_boolean("geometry.part_grid.enabled", true, CONFIG_USER);
+    config.set_flag("geometry.part_grid.enabled", true, CONFIG_USER);
     // eigen-calving requires a wider stencil:
     config.set_number("grid.max_stencil_width", 3);
   }
 
   // all calving mechanisms require iceberg removal
   if (not config.get_string("calving.methods").empty()) {
-    config.set_boolean("geometry.remove_icebergs", true, CONFIG_USER);
+    config.set_flag("geometry.remove_icebergs", true, CONFIG_USER);
   }
 
   // geometry.remove_icebergs requires part_grid
-  if (config.get_boolean("geometry.remove_icebergs")) {
-    config.set_boolean("geometry.part_grid.enabled", true, CONFIG_USER);
+  if (config.get_flag("geometry.remove_icebergs")) {
+    config.set_flag("geometry.part_grid.enabled", true, CONFIG_USER);
   }
 
   bool test_climate_models = options::Bool("-test_climate_models",
                                            "Disable ice dynamics to test climate models");
   if (test_climate_models) {
     config.set_string("stress_balance.model", "none", CONFIG_USER);
-    config.set_boolean("energy.enabled", false, CONFIG_USER);
-    config.set_boolean("age.enabled", false, CONFIG_USER);
+    config.set_flag("energy.enabled", false, CONFIG_USER);
+    config.set_flag("age.enabled", false, CONFIG_USER);
     // let the user decide if they want to use "-no_mass" or not
   }
 
@@ -764,8 +764,8 @@ std::string ConfigWithPrefix::get_string(const std::string &name) const {
   return m_config->get_string(m_prefix + name);
 }
 
-bool ConfigWithPrefix::get_boolean(const std::string& name) const {
-  return m_config->get_boolean(m_prefix + name);
+bool ConfigWithPrefix::get_flag(const std::string& name) const {
+  return m_config->get_flag(m_prefix + name);
 }
 
 void ConfigWithPrefix::reset_prefix(const std::string &prefix) {

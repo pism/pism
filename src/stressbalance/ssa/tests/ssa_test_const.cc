@@ -69,11 +69,11 @@ public:
     nu0   = units::convert(ctx->unit_system(), 30.0, "MPa year", "Pa s");
     tauc0 = 1.e4;               // Pa
 
-    m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", true);
+    m_config->set_flag("basal_resistance.pseudo_plastic.enabled", true);
     m_config->set_number("basal_resistance.pseudo_plastic.q", basal_q);
 
     // Use a pseudo-plastic law with a constant q determined at run time
-    m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", true);
+    m_config->set_flag("basal_resistance.pseudo_plastic.enabled", true);
 
     // The following is irrelevant because we will force linear rheology later.
     m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
@@ -98,7 +98,7 @@ void SSATestCaseConst::initializeSSACoefficients() {
   m_ssa->strength_extension->set_min_thickness(0.5*H0);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", true);
+  m_config->set_flag("stress_balance.ssa.compute_surface_gradient_inward", true);
 
   // Set constant thickness, tauc
   m_bc_mask.set(0);

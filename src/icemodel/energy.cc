@@ -92,8 +92,8 @@ void IceModel::combine_basal_melt_rate(const Geometry &geometry,
                                        const IceModelVec2S &grounded_basal_melt_rate,
                                        IceModelVec2S &result) {
 
-  const bool sub_gl = (m_config->get_boolean("geometry.grounded_cell_fraction") and
-                       m_config->get_boolean("energy.basal_melt.use_grounded_cell_fraction"));
+  const bool sub_gl = (m_config->get_flag("geometry.grounded_cell_fraction") and
+                       m_config->get_flag("energy.basal_melt.use_grounded_cell_fraction"));
 
   IceModelVec::AccessList list{&geometry.cell_type,
       &grounded_basal_melt_rate, &shelf_base_mass_flux, &result};

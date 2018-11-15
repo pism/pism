@@ -112,8 +112,8 @@ public:
 
   std::set<std::string> keys() const;
 
-  bool get_boolean(const std::string& name, UseFlag flag = REMEMBER_THIS_USE) const;
-  void set_boolean(const std::string& name, bool value, ConfigSettingFlag flag = CONFIG_FORCE);
+  bool get_flag(const std::string& name, UseFlag flag = REMEMBER_THIS_USE) const;
+  void set_flag(const std::string& name, bool value, ConfigSettingFlag flag = CONFIG_FORCE);
 
   std::string doc(const std::string &parameter) const;
   std::string units(const std::string &parameter) const;
@@ -141,8 +141,8 @@ protected:
 
   virtual Booleans all_booleans_impl() const = 0;
 
-  virtual bool get_boolean_impl(const std::string& name) const = 0;
-  virtual void set_boolean_impl(const std::string& name, bool value) = 0;
+  virtual bool get_flag_impl(const std::string& name) const = 0;
+  virtual void set_flag_impl(const std::string& name, bool value) = 0;
 private:
   struct Impl;
   Impl *m_impl;
@@ -157,7 +157,7 @@ public:
 
   std::string get_string(const std::string &name) const;
 
-  bool get_boolean(const std::string& name) const;
+  bool get_flag(const std::string& name) const;
 
   void reset_prefix(const std::string &prefix);
 
@@ -175,7 +175,7 @@ void set_config_from_options(Config &config);
 void set_parameter_from_options(Config &config, const std::string &name);
 
 //! Set one boolean parameter using command-line options.
-void set_boolean_from_option(Config &config,
+void set_flag_from_option(Config &config,
                              const std::string &option,const std::string &parameter);
 
 //! Set one scalar parameter using command-line options.

@@ -87,7 +87,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
         self.ssa.strength_extension.set_min_thickness(H0 / 2)
 
         # // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-        # self.config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", True);
+        # self.config.set_flag("stress_balance.ssa.compute_surface_gradient_inward", True);
 
         # SSAFEM uses this (even though it has "ssafd" in its name)
         self.config.set_number("stress_balance.ssa.epsilon", 0.0)

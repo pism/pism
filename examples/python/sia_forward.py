@@ -55,7 +55,7 @@ if is_regional:
 input_file = PISM.PIO(ctx.com(), "netcdf3", input_filename, PISM.PISM_READONLY)
 grid = PISM.IceGrid.FromFile(ctx, input_file, "enthalpy", registration)
 
-config.set_boolean("basal_resistance.pseudo_plastic.enabled", False)
+config.set_flag("basal_resistance.pseudo_plastic.enabled", False)
 
 enthalpyconverter = PISM.EnthalpyConverter(config)
 

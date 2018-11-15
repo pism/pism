@@ -57,8 +57,8 @@ protected:
 
   // booleans
   Booleans all_booleans_impl() const;
-  bool get_boolean_impl(const std::string& name) const;
-  void set_boolean_impl(const std::string& name, bool value);
+  bool get_flag_impl(const std::string& name) const;
+  void set_flag_impl(const std::string& name, bool value);
 protected:
   MPI_Comm m_com;
   VariableMetadata m_data;

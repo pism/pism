@@ -28,7 +28,7 @@ namespace pism {
 MaxTimestep IceModel::save_max_timestep(double my_t) {
 
   if ((not m_save_snapshots) or
-      (not m_config->get_boolean("time_stepping.hit_save_times"))) {
+      (not m_config->get_flag("time_stepping.hit_save_times"))) {
     return MaxTimestep("reporting (-save_times)");
   }
 
@@ -45,7 +45,7 @@ void IceModel::init_snapshots() {
   auto save_times = m_config->get_string("output.snapshot.times");
   bool times_set = not save_times.empty();
 
-  bool split = m_config->get_boolean("output.snapshot.split");
+  bool split = m_config->get_flag("output.snapshot.split");
 
   m_snapshot_vars = output_variables(m_config->get_string("output.snapshot.size"));
 

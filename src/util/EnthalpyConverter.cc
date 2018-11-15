@@ -64,7 +64,7 @@ EnthalpyConverter::EnthalpyConverter(const Config &config) {
   m_T_tolerance = config.get_number("enthalpy_converter.relaxed_is_temperate_tolerance"); // K
   m_T_0         = config.get_number("enthalpy_converter.T_reference"); // K
 
-  m_do_cold_ice_methods  = config.get_boolean("energy.temperature_based");
+  m_do_cold_ice_methods  = config.get_flag("energy.temperature_based");
 }
 
 EnthalpyConverter::~EnthalpyConverter() {

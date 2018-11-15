@@ -63,7 +63,7 @@ LingleClark::LingleClark(IceGrid::ConstPtr grid)
                      "bed relief relative to the modeled bed displacement",
                      "meters", "");
 
-  bool use_elastic_model = m_config->get_boolean("bed_deformation.lc.elastic_model");
+  bool use_elastic_model = m_config->get_flag("bed_deformation.lc.elastic_model");
 
   m_elastic_displacement.set_attrs("model state",
                                    "elastic part of the displacement in the "

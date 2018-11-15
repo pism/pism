@@ -60,9 +60,9 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_ice_k   = config.get_number("constants.ice.thermal_conductivity");
   m_p_air   = config.get_number("surface.pressure");
 
-  m_exclude_horizontal_advection = config.get_boolean("energy.margin_exclude_horizontal_advection");
-  m_exclude_vertical_advection   = config.get_boolean("energy.margin_exclude_vertical_advection");
-  m_exclude_strain_heat          = config.get_boolean("energy.margin_exclude_strain_heating");
+  m_exclude_horizontal_advection = config.get_flag("energy.margin_exclude_horizontal_advection");
+  m_exclude_vertical_advection   = config.get_flag("energy.margin_exclude_vertical_advection");
+  m_exclude_strain_heat          = config.get_flag("energy.margin_exclude_strain_heating");
 
   size_t Mz = m_z.size();
   m_Enth.resize(Mz);
@@ -86,7 +86,7 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_R_cold = K * m_R_factor;
   m_R_temp = K0 * m_R_factor;
 
-  if (config.get_boolean("energy.temperature_dependent_thermal_conductivity")) {
+  if (config.get_flag("energy.temperature_dependent_thermal_conductivity")) {
     m_k_depends_on_T = true;
   } else {
     m_k_depends_on_T = false;

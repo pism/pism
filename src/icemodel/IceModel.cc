@@ -252,11 +252,11 @@ void IceModel::allocate_storage() {
   m_grid->variables().add(m_geometry.longitude);
   m_grid->variables().add(m_geometry.latitude);
 
-  if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
+  if (m_config->get_flag("geometry.grounded_cell_fraction")) {
     m_grid->variables().add(m_geometry.cell_grounded_fraction);
   }
 
-  if (m_config->get_boolean("geometry.part_grid.enabled")) {
+  if (m_config->get_flag("geometry.part_grid.enabled")) {
     m_grid->variables().add(m_geometry.ice_area_specific_volume);
   }
 
@@ -329,7 +329,7 @@ void IceModel::allocate_storage() {
     m_grid->variables().add(m_ssa_dirichlet_bc_values);
   }
 
-  if (m_config->get_boolean("fracture_density.enabled")) {
+  if (m_config->get_flag("fracture_density.enabled")) {
     m_fracture = new FractureFields(m_grid);
 
     m_grid->variables().add(m_fracture->toughness);
@@ -387,7 +387,7 @@ void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
 
 stressbalance::Inputs IceModel::stress_balance_inputs() {
   stressbalance::Inputs result;
-  if (m_config->get_boolean("geometry.update.use_basal_melt_rate")) {
+  if (m_config->get_flag("geometry.update.use_basal_melt_rate")) {
     result.basal_melt_rate = &m_basal_melt_rate;
   }
 
@@ -398,12 +398,12 @@ stressbalance::Inputs IceModel::stress_balance_inputs() {
   result.enthalpy              = &m_energy_model->enthalpy();
   result.age                   = m_age_model ? &m_age_model->age() : nullptr;
 
-  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
+  if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
     result.bc_mask   = &m_ssa_dirichlet_bc_mask;
     result.bc_values = &m_ssa_dirichlet_bc_values;
   }
 
-  if (m_config->get_boolean("fracture_density.enabled")) {
+  if (m_config->get_flag("fracture_density.enabled")) {
     result.fracture_density = &m_fracture->density;
   }
 
@@ -545,7 +545,7 @@ void IceModel::step(bool do_mass_continuity,
   }
 
   //! \li update the fracture density field; see update_fracture_density()
-  if (m_config->get_boolean("fracture_density.enabled")) {
+  if (m_config->get_flag("fracture_density.enabled")) {
     profiling.begin("fracture_density");
     update_fracture_density();
     profiling.end("fracture_density");
@@ -824,11 +824,11 @@ void IceModel::run_to(double run_end) {
 void IceModel::run() {
   const Profiling &profiling = m_ctx->profiling();
 
-  bool do_mass_conserve = m_config->get_boolean("geometry.update.enabled");
-  bool do_energy = m_config->get_boolean("energy.enabled");
-  bool do_skip = m_config->get_boolean("time_stepping.skip.enabled");
+  bool do_mass_conserve = m_config->get_flag("geometry.update.enabled");
+  bool do_energy = m_config->get_flag("energy.enabled");
+  bool do_skip = m_config->get_flag("time_stepping.skip.enabled");
 
-  int stepcount = m_config->get_boolean("time_stepping.count_steps") ? 0 : -1;
+  int stepcount = m_config->get_flag("time_stepping.count_steps") ? 0 : -1;
 
   // de-allocate diagnostics that are not needed
   prune_diagnostics();

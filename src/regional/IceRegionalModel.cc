@@ -64,7 +64,7 @@ IceRegionalModel::IceRegionalModel(IceGrid::Ptr g, Context::Ptr c)
   : IceModel(g, c) {
   // empty
 
-  if (m_config->get_boolean("energy.ch_warming.enabled")) {
+  if (m_config->get_flag("energy.ch_warming.enabled")) {
     m_ch_warming_flux.reset(new IceModelVec3(m_grid, "ch_warming_flux", WITHOUT_GHOSTS));
   }
 }
@@ -121,7 +121,7 @@ void IceRegionalModel::model_state_setup() {
   // bootstrap_2d because bed topography is not initialized at the time bootstrap_2d is
   // called.
   if (input.type == INIT_BOOTSTRAP) {
-    if (m_config->get_boolean("regional.zero_gradient")) {
+    if (m_config->get_flag("regional.zero_gradient")) {
       m_usurf_stored.set(0.0);
       m_thk_stored.set(0.0);
     } else {
@@ -193,8 +193,8 @@ void IceRegionalModel::allocate_energy_model() {
 
   m_log->message(2, "# Allocating an energy balance model...\n");
 
-  if (m_config->get_boolean("energy.enabled")) {
-    if (m_config->get_boolean("energy.temperature_based")) {
+  if (m_config->get_flag("energy.enabled")) {
+    if (m_config->get_flag("energy.temperature_based")) {
       throw RuntimeError(PISM_ERROR_LOCATION,
                          "pismr -regional does not support the '-energy cold' mode.");
     } else {
@@ -206,7 +206,7 @@ void IceRegionalModel::allocate_energy_model() {
 
   m_submodels["energy balance model"] = m_energy_model;
 
-  if (m_config->get_boolean("energy.ch_warming.enabled") and
+  if (m_config->get_flag("energy.ch_warming.enabled") and
       not m_ch_system) {
 
     m_log->message(2, "# Allocating the cryo-hydrologic warming model...\n");
@@ -276,7 +276,7 @@ void IceRegionalModel::bootstrap_2d(const PIO &input_file) {
     // IceModel::regrid() will take care of regridding it, if necessary.
   }
 
-  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
+  if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
     IceModelVec::AccessList list{&m_no_model_mask, &m_ssa_dirichlet_bc_mask};
 
     for (Points p(*m_grid); p; p.next()) {

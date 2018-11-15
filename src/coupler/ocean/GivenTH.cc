@@ -57,7 +57,7 @@ GivenTH::Constants::Constants(const Config &config) {
   ice_density                      = config.get_number("constants.ice.density");
   ice_specific_heat_capacity       = config.get_number("constants.ice.specific_heat_capacity");
   ice_thermal_diffusivity          = config.get_number("constants.ice.thermal_conductivity") / (ice_density * ice_specific_heat_capacity);
-  limit_salinity_range             = config.get_boolean("ocean.three_equation_model_clip_salinity");
+  limit_salinity_range             = config.get_flag("ocean.three_equation_model_clip_salinity");
 }
 
 GivenTH::GivenTH(IceGrid::ConstPtr g)

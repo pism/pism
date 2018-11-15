@@ -73,8 +73,8 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
 
         config.set_number("flow_law.isothermal_Glen.ice_softness",
                           pow(1.9e8, -config.get_number("stress_balance.ssa.Glen_exponent")))
-        config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", False)
-        config.set_boolean("stress_balance.calving_front_stress_bc", True)
+        config.set_flag("stress_balance.ssa.compute_surface_gradient_inward", False)
+        config.set_flag("stress_balance.calving_front_stress_bc", True)
         config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
 
         enthalpyconverter = PISM.EnthalpyConverter(config)

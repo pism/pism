@@ -63,8 +63,8 @@ public:
 
     m_config->set_number("flow_law.isothermal_Glen.ice_softness",
                          pow(1.9e8, -m_config->get_number("stress_balance.ssa.Glen_exponent")));
-    m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", false);
-    m_config->set_boolean("stress_balance.calving_front_stress_bc", true);
+    m_config->set_flag("stress_balance.ssa.compute_surface_gradient_inward", false);
+    m_config->set_flag("stress_balance.calving_front_stress_bc", true);
     m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
 
     m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));

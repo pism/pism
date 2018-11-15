@@ -47,8 +47,8 @@ InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config) {
 
   std::string input_filename = config->get_string("input.file");
 
-  bool bootstrap = config->get_boolean("input.bootstrap") and (not input_filename.empty());
-  bool restart   = (not config->get_boolean("input.bootstrap")) and (not input_filename.empty());
+  bool bootstrap = config->get_flag("input.bootstrap") and (not input_filename.empty());
+  bool restart   = (not config->get_flag("input.bootstrap")) and (not input_filename.empty());
 
   if (restart) {
     // re-start a run by initializing from an input file

@@ -73,7 +73,7 @@ void Distributed::bootstrap_impl(const PIO &input_file,
 
   regrid("Hydrology", m_P);
 
-  bool init_P_from_steady = m_config->get_boolean("hydrology.distributed.init_p_from_steady");
+  bool init_P_from_steady = m_config->get_flag("hydrology.distributed.init_p_from_steady");
 
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
     m_log->message(2,

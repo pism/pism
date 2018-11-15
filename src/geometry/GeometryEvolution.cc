@@ -114,8 +114,8 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
   // constants
   {
     ice_density   = config->get_number("constants.ice.density");
-    use_bmr       = config->get_boolean("geometry.update.use_basal_melt_rate");
-    use_part_grid = config->get_boolean("geometry.part_grid.enabled");
+    use_bmr       = config->get_flag("geometry.update.use_basal_melt_rate");
+    use_part_grid = config->get_flag("geometry.part_grid.enabled");
   }
 
   // reported quantities

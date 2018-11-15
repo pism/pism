@@ -43,10 +43,10 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
   // the following flag must be here in constructor because
   // IceModel::createVecs() uses it non-polythermal methods; can be
   // overridden by the command-line option "-energy enthalpy"
-  m_config->set_boolean("energy.temperature_based", true);
+  m_config->set_flag("energy.temperature_based", true);
 
   // see EISMINT II description; choose no ocean interaction,
-  m_config->set_boolean("ocean.always_grounded", true);
+  m_config->set_flag("ocean.always_grounded", true);
 
   // purely SIA, and E=1
   m_config->set_number("stress_balance.sia.enhancement_factor", 1.0);
@@ -55,7 +55,7 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
   m_config->set_number("stress_balance.sia.bed_smoother.range", 0.0);
 
   // basal melt does not change computation of mass continuity or vertical velocity:
-  m_config->set_boolean("geometry.update.use_basal_melt_rate", false);
+  m_config->set_flag("geometry.update.use_basal_melt_rate", false);
 
   // Make bedrock thermal material properties into ice properties.  Note that
   // zero thickness bedrock layer is the default, but we want the ice/rock
