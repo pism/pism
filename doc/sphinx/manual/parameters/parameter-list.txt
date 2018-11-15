@@ -142,6 +142,19 @@
    :Value: 0.070417 (Kelvin-1)
    :Description: = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`
 
+#. :config:`atmosphere.pik.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_pik_file`
+   :Description: Name of the file containing the reference surface elevation field (variable ``usurf``).
+
+#. :config:`atmosphere.pik.parameterization` (*keyword*)
+
+   :Value: ``default``
+   :Choices: ``martin, huybrechts_dewolde, martin_huybrechts_dewolde, era_interim, era_interim_sin, era_interim_lon``
+   :Option: :opt:`-atmosphere_pik`
+   :Description: Selects parameterizations of mean annual and mean summer near-surface air temperatures.
+
 #. :config:`atmosphere.lapse_rate.precipitation_lapse_rate` (*scalar*)
 
    :Value: 0 ((m / year) / km)
