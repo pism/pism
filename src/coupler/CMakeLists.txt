@@ -4,11 +4,11 @@ add_library (boundary OBJECT
   ./util/options.cc
   ./util/lapse_rates.cc
   ./atmosphere/AtmosphereModel.cc
-  ./atmosphere/ConstantPIK.cc
   ./atmosphere/SeariseGreenland.cc
   ./atmosphere/YearlyCycle.cc
   ./atmosphere/CosineYearlyCycle.cc
   ./atmosphere/GivenClimate.cc
+  ./atmosphere/PIK.cc
   ./atmosphere/LapseRates.cc
   ./atmosphere/Delta_T.cc
   ./atmosphere/Delta_P.cc

@@ -27,7 +27,7 @@
 #include "Delta_P.hh"
 #include "Frac_P.hh"
 #include "Paleo_precip.hh"
-#include "ConstantPIK.hh"
+#include "PIK.hh"
 #include "Anomaly.hh"
 #include "CosineYearlyCycle.hh"
 #include "WeatherStation.hh"
