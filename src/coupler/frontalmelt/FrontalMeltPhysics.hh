@@ -27,13 +27,12 @@ class FrontalMeltPhysics {
 public:
   FrontalMeltPhysics(const Config &config);
 
-  double frontal_melt_from_undercutting(double salinity, double temperature, double pressure) const;
+  double frontal_melt_from_undercutting(double ice_thickness,
+                                        double discharge_flux,
+                                        double potential_temperature) const;
 
 private:
-
-  double m_water_density;
   double m_A, m_B, m_alpha, m_beta;
-
 };
 
 } // end of namespace frontalmelt

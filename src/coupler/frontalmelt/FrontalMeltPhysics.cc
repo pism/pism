@@ -16,7 +16,7 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include <cmath> // sqrt
+#include <cmath> // pow
 
 #include "FrontalMeltPhysics.hh"
 
@@ -31,8 +31,6 @@ FrontalMeltPhysics::FrontalMeltPhysics(const Config &config) {
   m_beta          = config.get_double("frontal_melt.power_beta");
   m_A             = config.get_double("frontal_melt.parameter_a");
   m_B             = config.get_double("frontal_melt.parameter_b");
-  m_water_density = config.get_double("constants.fresh_water.density");
-  
 }
 
 double FrontalMeltPhysics::frontal_melt_from_undercutting(double h, double Qsg, double TF) const {
