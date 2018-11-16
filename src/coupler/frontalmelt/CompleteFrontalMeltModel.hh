@@ -28,7 +28,6 @@ namespace frontalmelt {
 /*!
  * Base class for frontal melt models with dedicated storage for output fields.
  *
- * All ocean models have storage for melange back pressure. (All but one set it to zero.)
  */
 class CompleteFrontalMeltModel : public FrontalMeltModel {
 public:
