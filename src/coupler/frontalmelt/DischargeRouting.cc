@@ -114,17 +114,22 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
   const int i_offsets[4] = {1, 0, -1, 0};
   const int j_offsets[4] = {0, 1, 0, -1};
 
+  double seconds_per_day = 86400;
+  double kg_to_m_per_day = seconds_per_day / (water_density * cell_area * dt);
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ocean(i, j) and cell_type.next_to_grounded_ice(i, j)) {
 
-      // Assume for now that thermal forcing is equal to theta_ocean also, thermal forcing
-      // is generally not available at the grounding line.
-      double TF = (*m_theta_ocean)(i, j);
+      // Assume for now that thermal forcing is equal to theta_ocean. Also, thermal
+      // forcing is generally not available at the grounding line.
+      //
+      // Convert from Kelvin to Celsius
+      double TF = (*m_theta_ocean)(i, j) - 273.15;
 
-      // subglacial discharge: convert from kg to m/s
-      double Qsg = subglacial_discharge(i, j) / (water_density * cell_area * dt);
+      // subglacial discharge: convert from kg to m/day
+      double q_sg = subglacial_discharge(i, j) * kg_to_m_per_day;
 
       // get the average ice thickness over ice-covered grounded neighbors
       double H = 0.0;
@@ -145,7 +150,9 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
         }
       }
 
-      (*m_frontal_melt_rate)(i,j) = physics.frontal_melt_from_undercutting(H, Qsg, TF);
+      (*m_frontal_melt_rate)(i,j) = physics.frontal_melt_from_undercutting(H, q_sg, TF);
+      // convert from m / day to m / s
+      (*m_frontal_melt_rate)(i,j) /= seconds_per_day;
     } else { // end of "if this is an ocean cell next to grounded ice"
 
       // This parameterization is applicable at grounded termini (see the case above), but

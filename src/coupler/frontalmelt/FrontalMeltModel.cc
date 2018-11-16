@@ -36,9 +36,8 @@ namespace frontalmelt {
 IceModelVec2S::Ptr FrontalMeltModel::allocate_frontal_melt_rate(IceGrid::ConstPtr g) {
   IceModelVec2S::Ptr result(new IceModelVec2S(g, "frontalmeltrate", WITHOUT_GHOSTS));
 
-  result->set_attrs("diagnostic", "frontal melt rate",
-                    "m s-1", "");
-  result->metadata().set_string("glaciological_units", "m year-1");
+  result->set_attrs("diagnostic", "frontal melt rate", "m s-1", "");
+  result->metadata().set_string("glaciological_units", "m day-1");
 
   return result;
 }

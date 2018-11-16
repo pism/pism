@@ -26,23 +26,30 @@ namespace pism {
 namespace frontalmelt {
 
 FrontalMeltPhysics::FrontalMeltPhysics(const Config &config) {
-
-  m_alpha         = config.get_double("frontal_melt.power_alpha");
-  m_beta          = config.get_double("frontal_melt.power_beta");
-  m_A             = config.get_double("frontal_melt.parameter_a");
-  m_B             = config.get_double("frontal_melt.parameter_b");
+  m_alpha = config.get_double("frontal_melt.power_alpha");
+  m_beta  = config.get_double("frontal_melt.power_beta");
+  m_A     = config.get_double("frontal_melt.parameter_a");
+  m_B     = config.get_double("frontal_melt.parameter_b");
 }
 
-double FrontalMeltPhysics::frontal_melt_from_undercutting(double h, double Qsg, double TF) const {
-  /*
-  This function implements Eq. 1 from Rignot et al (2016):
-  q_m = (A * h * Q_sg ^{\alpha} + B) * TF^{\beta}; where
-  A, B, alpha, beta are tuning parameters
-  Note that Rignot (2016) is an update on Xu 2013 with slightly
-  different parameter values.
-   */
-    return (m_A * h * pow(Qsg, m_alpha) + m_B) * pow(TF, m_beta);
-
+/*!
+ * Parameterization of the frontal melt rate.
+ *
+ * This function implements equation 1 from [@ref Rignotetal2016].
+ *
+ * q_m = (A * h * Q_sg ^{\alpha} + B) * TF^{\beta}
+ *
+ * where A, B, alpha, beta are tuning parameters. Note that Rignot (2016) is an update on
+ * Xu 2013 with slightly different parameter values.
+ *
+ * @param[in] h water depth, meters
+ * @param[in] q_sg subglacial water flux, m / day
+ * @param[in] TF thermal forcing, Celsius
+ *
+ * @returns frontal melt rate, m / day.
+ */
+double FrontalMeltPhysics::frontal_melt_from_undercutting(double h, double q_sg, double TF) const {
+  return (m_A * h * pow(q_sg, m_alpha) + m_B) * pow(TF, m_beta);
 }
 
 
