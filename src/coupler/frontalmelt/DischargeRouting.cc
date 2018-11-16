@@ -79,6 +79,8 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
                            "potential temperature of the adjacent ocean",
                            "Kelvin", "");
 
+  m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
+
 }
 
 /*!
@@ -90,8 +92,8 @@ void DischargeRouting::initialize(const IceModelVec2S &theta) {
 }
 
 void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
-  (void) t;
-  (void) dt;
+
+  m_theta_ocean->update(t, dt);
 
   FrontalMeltPhysics physics(*m_config);
 
