@@ -194,6 +194,9 @@
 %feature("valuewrapper") pism::units::Unit;
 %include "util/Units.hh"
 
+%shared_ptr(pism::MaxTimestep)
+%include "util/MaxTimestep.hh"
+
 %include pism_DM.i
 %include pism_Vec.i
 /* End of independent PISM classes. */
@@ -243,7 +246,6 @@
 
 %shared_ptr(pism::Diagnostic)
 %include "util/Diagnostic.hh"
-%include "util/MaxTimestep.hh"
 %include "stressbalance/timestepping.hh"
 
 %shared_ptr(pism::Component)
