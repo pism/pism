@@ -103,10 +103,6 @@ private:
   int m_Nx;
   int m_Ny;
 
-  // size of the extended grid with boundary points
-  int m_Nxge;
-  int m_Nyge;
-
   // indices into extended grid for the corner of the physical grid
   int m_i0_offset;
   int m_j0_offset;
@@ -132,6 +128,7 @@ private:
   fftw_complex *m_fftw_input;
   fftw_complex *m_fftw_output;
   fftw_complex *m_loadhat;
+  fftw_complex *m_fftw_load_response_matrix;
 
   fftw_plan m_dft_forward;
   fftw_plan m_dft_inverse;

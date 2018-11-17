@@ -110,8 +110,6 @@ LingleClarkSerial::LingleClarkSerial(const Config &config,
   // derive more parameters
   m_Lx        = 0.5 * (m_Nx - 1.0) * m_dx;
   m_Ly        = 0.5 * (m_Ny - 1.0) * m_dy;
-  m_Nxge      = m_Nx + 1;
-  m_Nyge      = m_Ny + 1;
   m_i0_offset = (Nx - Mx) / 2;
   m_j0_offset = (Ny - My) / 2;
 
@@ -131,13 +129,14 @@ LingleClarkSerial::LingleClarkSerial(const Config &config,
   PISM_CHK(ierr, "VecCreateSeq");
 
   // elastic load response matrix
-  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Nxge * m_Nyge, m_load_response_matrix.rawptr());
+  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Nx * m_Ny, m_load_response_matrix.rawptr());
   PISM_CHK(ierr, "VecCreateSeq");
 
   // setup fftw stuff: FFTW builds "plans" based on observed performance
   m_fftw_input  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
   m_fftw_output = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
   m_loadhat     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+  m_fftw_load_response_matrix = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
 
   // fill m_fftw_input with zeros
   {
@@ -171,6 +170,7 @@ LingleClarkSerial::~LingleClarkSerial() {
   fftw_free(m_fftw_input);
   fftw_free(m_fftw_output);
   fftw_free(m_loadhat);
+  fftw_free(m_fftw_load_response_matrix);
 }
 
 /*!
@@ -216,21 +216,31 @@ void LingleClarkSerial::precompute_coefficients() {
 
   // compare geforconv.m
   if (m_include_elastic) {
+
     ierr = PetscPrintf(PETSC_COMM_SELF,
                        "     computing spherical elastic load response matrix ...");
     PISM_CHK(ierr, "PetscPrintf");
 
-    petsc::VecArray2D II(m_load_response_matrix, m_Nxge, m_Nyge);
+    petsc::VecArray2D II(m_load_response_matrix, m_Nx, m_Ny);
     ge_params ge_data;
     ge_data.dx = m_dx;
     ge_data.dy = m_dy;
-    for (int j = 0; j < m_Nyge; j++) {
-      for (int i = 0; i < m_Nxge; i++) {
-        ge_data.p = i;
-        ge_data.q = j;
+    for (int j = 0; j < m_Ny; j++) {
+      for (int i = 0; i < m_Nx; i++) {
+        ge_data.p = i <= m_Nx/2 ? i : m_Nx - i;
+        ge_data.q = j <= m_Ny/2 ? j : m_Ny - j;
         II(i, j) = dblquad_cubature(ge_integrand, -m_dx/2, m_dx/2, -m_dy/2, m_dy/2,
                                     1.0e-8, &ge_data);
       }
+    }
+
+    // Compute fft2(m_response_matrix)
+    {
+      clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
+      set_fftw_input(m_load_response_matrix, 1.0, m_Nx, m_Ny, 0, 0);
+      fftw_execute(m_dft_forward);
+      // Save fft2(m_response_matrix) in m_fftw_load_response_matrix.
+      copy_fftw_output(m_fftw_output, m_fftw_load_response_matrix, m_Nx, m_Ny);
     }
 
     ierr = PetscPrintf(PETSC_COMM_SELF, " done\n");
@@ -427,9 +437,27 @@ void LingleClarkSerial::step(double dt_seconds, Vec H) {
  */
 void LingleClarkSerial::compute_elastic_response(Vec H, Vec dE) {
 
-  conv2_same(H, m_Mx, m_My, m_load_response_matrix, m_Nxge, m_Nyge, dE);
+  // Compute fft2(load_density * H)
+  {
+    clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
+    set_fftw_input(H, m_load_density, m_Mx, m_My, m_i0_offset, m_j0_offset);
+    fftw_execute(m_dft_forward);
+  }
 
-  PetscErrorCode ierr = VecScale(m_Ue, m_load_density); PISM_CHK(ierr, "VecScale");
+  // fft2(m_response_matrix) * fft2(load_density*H)
+  {
+    VecAccessor2D<fftw_complex> input(m_fftw_input, m_Nx, m_Ny),
+      fftw_response_mat(m_fftw_load_response_matrix, m_Nx, m_Ny), load_hat(m_fftw_output, m_Nx, m_Ny);
+    for (int i = 0; i < m_Nx; i++) {
+      for (int j = 0; j < m_Ny; j++) {
+        input(i, j)[0] = (fftw_response_mat(i, j)[0] * load_hat(i, j)[0]) - (fftw_response_mat(i, j)[1] * load_hat(i, j)[1]);
+        input(i, j)[1] = (fftw_response_mat(i, j)[0] * load_hat(i, j)[1]) - (fftw_response_mat(i, j)[1] * load_hat(i, j)[0]);
+      }
+    }
+  }
+
+  fftw_execute(m_dft_inverse);
+  get_fftw_output(m_Ue, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, m_i0_offset, m_j0_offset);
 }
 
 /*! Compute total displacement by combining viscous and elastic contributions.
