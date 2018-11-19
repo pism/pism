@@ -1,4 +1,4 @@
-nnetcdf pism_config {
+netcdf pism_config {
     variables:
     byte pism_config;
 
