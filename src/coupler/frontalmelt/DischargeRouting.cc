@@ -111,10 +111,6 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
     {&bed_elevation, &cell_type, &sea_level_elevation, &subglacial_discharge, m_theta_ocean.get(),
      m_frontal_melt_rate.get()};
 
-  // index offsets for iterating over neighbors
-  const int i_offsets[4] = {1, 0, -1, 0};
-  const int j_offsets[4] = {0, 1, 0, -1};
-
   double seconds_per_day = 86400;
   double kg_to_m_per_day = seconds_per_day / (water_density * cell_area * dt);
 
@@ -133,32 +129,16 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       double q_sg = subglacial_discharge(i, j) * kg_to_m_per_day;
 
       // get the average ice thickness over ice-covered grounded neighbors
-      double H = 0.0;
-      {
-        int n_grounded_neighbors = 0;
-        for (int k = 0; k < 4; ++k) {
-          int i_n = i + i_offsets[k];
-          int j_n = j + j_offsets[k];
+      double water_depth = sea_level_elevation(i, j) - bed_elevation(i, j);
 
-          if (cell_type.grounded_ice(i_n, j_n)) {
-            H += sea_level_elevation(i_n, j_n) - bed_elevation(i_n, j_n);
-            n_grounded_neighbors += 1;
-          }
-        }
-
-        if (n_grounded_neighbors > 0) {
-          H /= n_grounded_neighbors;
-        }
-      }
-
-      (*m_frontal_melt_rate)(i,j) = physics.frontal_melt_from_undercutting(H, q_sg, TF);
+      (*m_frontal_melt_rate)(i, j) = physics.frontal_melt_from_undercutting(water_depth, q_sg, TF);
       // convert from m / day to m / s
-      (*m_frontal_melt_rate)(i,j) /= seconds_per_day;
+      (*m_frontal_melt_rate)(i, j) /= seconds_per_day;
     } else { // end of "if this is an ocean cell next to grounded ice"
 
       // This parameterization is applicable at grounded termini (see the case above), but
       // *not* at calving fronts of ice shelves.
-      (*m_frontal_melt_rate)(i,j) = 0.0;
+      (*m_frontal_melt_rate)(i, j) = 0.0;
     }
   } // end of the loop over grid points
 }
