@@ -102,12 +102,13 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
 
   const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
   // ice thickness, meters
-  const IceModelVec2S &ice_thickness = inputs.geometry->ice_thickness;
+  const IceModelVec2S &bed_elevation = inputs.geometry->bed_elevation;
+  const IceModelVec2S &sea_level_elevation = inputs.geometry->sea_level_elevation;
   // subglacial discharge, mass change over this time step
   const IceModelVec2S &subglacial_discharge = *inputs.subglacial_discharge_at_grounding_line;
 
   IceModelVec::AccessList list
-    {&ice_thickness, &cell_type, &subglacial_discharge, m_theta_ocean.get(),
+    {&bed_elevation, &cell_type, &sea_level_elevation, &subglacial_discharge, m_theta_ocean.get(),
      m_frontal_melt_rate.get()};
 
   // index offsets for iterating over neighbors
@@ -140,7 +141,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
           int j_n = j + j_offsets[k];
 
           if (cell_type.grounded_ice(i_n, j_n)) {
-            H += ice_thickness(i_n, j_n);
+            H += sea_level_elevation(i_n, j_n) - bed_elevation(i_n, j_n);
             n_grounded_neighbors += 1;
           }
         }
