@@ -33,13 +33,13 @@ class Config;
 
 namespace bed {
 
-//! Class implementing the bed deformation model described in [\ref BLKfastearth].
+//! Class implementing the bed deformation model described in [@ref BLKfastearth].
 /*!
-  This class implements the [\ref LingleClark] bed deformation model by a Fourier
-  spectral collocation method, as described in [\ref BLKfastearth].  (The former
+  This class implements the [@ref LingleClark] bed deformation model by a Fourier
+  spectral collocation method, as described in [@ref BLKfastearth].  (The former
   reference is where the continuum model arose, and a flow-line application is given.
   The latter reference describes a new, fast method and gives verification results.
-  See also [\ref BLK2006earth] if more technical detail and/or Matlab programs are desired.)
+  See also [@ref BLK2006earth] if more technical detail and/or Matlab programs are desired.)
 
   Both a viscous half-space model (with elastic
   lithosphere) and a spherical elastic model are computed.  They are superposed
@@ -134,9 +134,6 @@ private:
   fftw_plan m_dft_inverse;
 
   void tweak(Vec load_thickness, Vec U, int Nx, int Ny, double time);
-
-  void set_fftw_input(Vec input, double normalization, int M, int N, int i0, int j0);
-  void get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0);
 };
 
 } // end of namespace bed

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,6 +28,7 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/fftw_utilities.hh"
 
 namespace pism {
 namespace bed {
@@ -49,29 +50,6 @@ private:
   int m_Mx, m_My, m_i_offset, m_j_offset;
   T* m_array;
 };
-
-//! \brief Fill `input` with zeros.
-static void clear_fftw_input(fftw_complex *input, int Nx, int Ny) {
-  VecAccessor2D<fftw_complex> fftw_in(input, Nx, Ny);
-  for (int i = 0; i < Nx; ++i) {
-    for (int j = 0; j < Ny; ++j) {
-      fftw_in(i, j)[0] = 0;
-      fftw_in(i, j)[1] = 0;
-    }
-  }
-}
-
-//! @brief Copy `source` to `destination`.
-static void copy_fftw_output(fftw_complex *source, fftw_complex *destination,
-                             int Nx, int Ny) {
-  VecAccessor2D<fftw_complex> S(source, Nx, Ny), D(destination, Nx, Ny);
-  for (int i = 0; i < Nx; ++i) {
-    for (int j = 0; j < Ny; ++j) {
-      D(i, j)[0] = S(i, j)[0];
-      D(i, j)[1] = S(i, j)[1];
-    }
-  }
-}
 
 /*!
  * @param[in] config configuration database
@@ -193,26 +171,10 @@ Vec LingleClarkSerial::viscous_displacement() const {
 void LingleClarkSerial::precompute_coefficients() {
   PetscErrorCode ierr = 0;
 
-  m_cx.resize(m_Nx);
-  m_cy.resize(m_Ny);
-
   // Coefficients for Fourier spectral method Laplacian
   // MATLAB version:  cx=(pi/Lx)*[0:Nx/2 Nx/2-1:-1:1]
-  for (int i = 0; i <= m_Nx / 2; i++) {
-    m_cx[i] = (M_PI / m_Lx) * i;
-  }
-
-  for (int i = m_Nx / 2 + 1; i < m_Nx; i++) {
-    m_cx[i] = (M_PI / m_Lx) * (m_Nx - i);
-  }
-
-  for (int j = 0; j <= m_Ny / 2; j++) {
-    m_cy[j] = (M_PI / m_Ly) * j;
-  }
-
-  for (int j = m_Ny / 2 + 1; j < m_Ny; j++) {
-    m_cy[j] = (M_PI / m_Ly) * (m_Ny - j);
-  }
+  m_cx = fftfreq(m_Nx, m_Lx / (m_Nx * M_PI));
+  m_cy = fftfreq(m_Ny, m_Ly / (m_Ny * M_PI));
 
   // compare geforconv.m
   if (m_include_elastic) {
@@ -253,11 +215,13 @@ void LingleClarkSerial::precompute_coefficients() {
 
     // Compute fft2(m_response_matrix)
     {
-      clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
-      set_fftw_input(m_load_response_matrix, 1.0, m_Nx, m_Ny, 0, 0);
+      clear_fftw_array(m_fftw_input, m_Nx, m_Ny);
+      set_real_part(m_load_response_matrix, 1.0,
+                    m_Nx, m_Ny, m_Nx, m_Ny, 0, 0,
+                    m_fftw_input);
       fftw_execute(m_dft_forward);
       // Save fft2(m_response_matrix) in m_fftw_load_response_matrix.
-      copy_fftw_output(m_fftw_output, m_fftw_load_response_matrix, m_Nx, m_Ny);
+      copy_fftw_array(m_fftw_output, m_fftw_load_response_matrix, m_Nx, m_Ny);
     }
 
     ierr = PetscPrintf(PETSC_COMM_SELF, " done\n");
@@ -284,17 +248,20 @@ void LingleClarkSerial::uplift_problem(Vec load_thickness, Vec bed_uplift,
 
   // Compute fft2(-load_density * g * load_thickness)
   {
-    clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
-    set_fftw_input(load_thickness, - m_load_density * m_standard_gravity, m_Mx, m_My, m_i0_offset, m_j0_offset);
+    clear_fftw_array(m_fftw_input, m_Nx, m_Ny);
+    set_real_part(load_thickness, - m_load_density * m_standard_gravity,
+                  m_Mx, m_My, m_Nx, m_Ny, m_i0_offset, m_j0_offset,
+                  m_fftw_input);
     fftw_execute(m_dft_forward);
     // Save fft2(-load_density * g * load_thickness) in loadhat.
-    copy_fftw_output(m_fftw_output, m_loadhat, m_Nx, m_Ny);
+    copy_fftw_array(m_fftw_output, m_loadhat, m_Nx, m_Ny);
   }
 
   // fft2(uplift)
   {
-    clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
-    set_fftw_input(bed_uplift, 1.0, m_Mx, m_My, m_i0_offset, m_j0_offset);
+    clear_fftw_array(m_fftw_input, m_Nx, m_Ny);
+    set_real_part(bed_uplift, 1.0, m_Mx, m_My, m_Nx, m_Ny, m_i0_offset, m_j0_offset,
+                  m_fftw_input);
     fftw_execute(m_dft_forward);
   }
 
@@ -318,7 +285,7 @@ void LingleClarkSerial::uplift_problem(Vec load_thickness, Vec bed_uplift,
   }
 
   fftw_execute(m_dft_inverse);
-  get_fftw_output(output, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
+  get_real_part(m_fftw_output, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, m_Nx, m_Ny, 0, 0, output);
 
   tweak(load_thickness, output, m_Nx, m_Ny, 0.0);
 }
@@ -380,7 +347,7 @@ void LingleClarkSerial::init(Vec thickness, Vec viscous_displacement) {
 /*!
  * Perform a time step.
  *
- * @param[in] dt_seconds time step length
+ * @param[in] dt time step length
  * @param[in] H load thickness on the physical (Mx*My) grid
  */
 void LingleClarkSerial::step(double dt, Vec H) {
@@ -398,20 +365,21 @@ void LingleClarkSerial::step(double dt, Vec H) {
 
     // Compute fft2(-load_density * g * dt * H)
     {
-      clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
-      set_fftw_input(H,
-                     - m_load_density * m_standard_gravity * dt,
-                     m_Mx, m_My, m_i0_offset, m_j0_offset);
+      clear_fftw_array(m_fftw_input, m_Nx, m_Ny);
+      set_real_part(H,
+                    - m_load_density * m_standard_gravity * dt,
+                    m_Mx, m_My, m_Nx, m_Ny, m_i0_offset, m_j0_offset,
+                    m_fftw_input);
       fftw_execute(m_dft_forward);
 
       // Save fft2(-load_density * g * H * dt) in loadhat.
-      copy_fftw_output(m_fftw_output, m_loadhat, m_Nx, m_Ny);
+      copy_fftw_array(m_fftw_output, m_loadhat, m_Nx, m_Ny);
     }
 
     // Compute fft2(u).
     // no need to clear fftw_input: all values are overwritten
     {
-      set_fftw_input(m_Uv, 1.0, m_Nx, m_Ny, 0, 0);
+      set_real_part(m_Uv, 1.0, m_Nx, m_Ny, m_Nx, m_Ny, 0, 0, m_fftw_input);
       fftw_execute(m_dft_forward);
     }
 
@@ -436,7 +404,7 @@ void LingleClarkSerial::step(double dt, Vec H) {
     }
 
     fftw_execute(m_dft_inverse);
-    get_fftw_output(m_Uv, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
+    get_real_part(m_fftw_output, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, m_Nx, m_Ny, 0, 0, m_Uv);
 
     // Now tweak. (See the "correction" in section 5 of BuelerLingleBrown.)
     //
@@ -465,8 +433,8 @@ void LingleClarkSerial::compute_elastic_response(Vec H, Vec dE) {
 
   // Compute fft2(load_density * H)
   {
-    clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
-    set_fftw_input(H, m_load_density, m_Mx, m_My, 0, 0);
+    clear_fftw_array(m_fftw_input, m_Nx, m_Ny);
+    set_real_part(H, m_load_density, m_Mx, m_My, m_Nx, m_Ny, 0, 0, m_fftw_input);
     fftw_execute(m_dft_forward);
   }
 
@@ -483,7 +451,8 @@ void LingleClarkSerial::compute_elastic_response(Vec H, Vec dE) {
   }
 
   fftw_execute(m_dft_inverse);
-  get_fftw_output(dE, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, m_Nx/2, m_Ny/2);
+  get_real_part(m_fftw_output, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, m_Nx, m_Ny,
+                m_Nx/2, m_Ny/2, dE);
 }
 
 /*! Compute total displacement by combining viscous and elastic contributions.
@@ -565,34 +534,6 @@ void LingleClarkSerial::tweak(Vec load_thickness, Vec U, int Nx, int Ny, double 
   }
 
   ierr = VecShift(U, shift - average); PISM_CHK(ierr, "VecShift");
-}
-
-//! \brief Set the real part of fftw_input to vec_input.
-/*!
- * Sets the imaginary part to zero.
- */
-void LingleClarkSerial::set_fftw_input(Vec vec_input, double normalization,
-                                       int Mx, int My, int i0, int j0) {
-  petsc::VecArray2D in(vec_input, Mx, My);
-  VecAccessor2D<fftw_complex> input(m_fftw_input, m_Nx, m_Ny, i0, j0);
-  for (int j = 0; j < My; ++j) {
-    for (int i = 0; i < Mx; ++i) {
-      input(i, j)[0] = in(i, j) * normalization;
-      input(i, j)[1] = 0.0;
-    }
-  }
-}
-
-//! \brief Get the real part of fftw_output and put it in output.
-void LingleClarkSerial::get_fftw_output(Vec output, double normalization,
-                                        int Mx, int My, int i0, int j0) {
-  petsc::VecArray2D out(output, Mx, My);
-  VecAccessor2D<fftw_complex> fftw_out(m_fftw_output, m_Nx, m_Ny, i0, j0);
-  for (int j = 0; j < My; ++j) {
-    for (int i = 0; i < Mx; ++i) {
-      out(i, j) = fftw_out(i, j)[0] * normalization;
-    }
-  }
 }
 
 } // end of namespace bed
