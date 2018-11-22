@@ -225,12 +225,23 @@ void LingleClarkSerial::precompute_coefficients() {
     ge_params ge_data;
     ge_data.dx = m_dx;
     ge_data.dy = m_dy;
-    for (int j = 0; j < m_Ny; j++) {
-      for (int i = 0; i < m_Nx; i++) {
-        ge_data.p = i <= m_Nx/2 ? i : m_Nx - i;
-        ge_data.q = j <= m_Ny/2 ? j : m_Ny - j;
-        II(i, j) = dblquad_cubature(ge_integrand, -m_dx/2, m_dx/2, -m_dy/2, m_dy/2,
-                                    1.0e-8, &ge_data);
+    int Nx2 = m_Nx/2,
+        Ny2 = m_Ny/2;
+    for (int j = 0; j <= Ny2; j++) {
+      for (int i = 0; i <= Nx2; i++) {
+        ge_data.p = i;
+        ge_data.q = j;
+        const double Ge = dblquad_cubature(ge_integrand, -m_dx/2, m_dx/2, -m_dy/2, m_dy/2,
+                          1.0e-8, &ge_data);
+        II(Nx2 - i, Ny2 - j) = Ge;
+        if ((i > 0) and ((Nx2 + i) < m_Nx)) {
+          II(Nx2 + i, Ny2 - j) = Ge;
+          if ((j > 0) and ((Ny2 + j) < m_Ny)) {
+            II(Nx2 + i, Ny2 + j) = Ge;
+          }
+        } else if ((j > 0) and ((Ny2 + j) < m_Ny)) {
+          II(Nx2 - i, Ny2 + j) = Ge;
+        }
       }
     }
 
