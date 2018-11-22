@@ -13,6 +13,8 @@ from PISM.util import convert
 config = PISM.Context().config
 log = PISM.Context().log
 
+config.set_double("bed_deformation.lc.grid_size_factor", 2)
+
 # constants
 standard_gravity = config.get_double("constants.standard_gravity")
 ice_density = config.get_double("constants.ice.density")
@@ -172,8 +174,8 @@ def time_dependent_test():
     "Time dependent bed deformation (disc load)"
     diff = np.array([compare_time_dependent(n)[:3] for n in [34, 67]])
 
-    stored = [[0.01023591, 5.19786964, 0.93575341],
-              [0.04744501, 4.11548251, 0.69969177]]
+    stored = [[0.04099917, 5.05854,    0.93909436],
+              [0.05710513, 4.14329508, 0.71246272]]
 
     return np.testing.assert_almost_equal(diff, stored)
 
@@ -183,10 +185,10 @@ def steady_state_test():
     Ns = 10 * np.arange(1, 5) + 1
     diff = np.array([compare_steady_state(n) for n in Ns])
 
-    stored = [[3.20730323e-02, 1.55400133e+01, 3.81424848e+00],
-              [5.82577650e-03, 1.10354567e+01, 1.92997362e+00],
-              [1.62485905e-02, 9.53012210e+00, 1.75301378e+00],
-              [1.95503166e-02, 7.60885504e+00, 1.37961265e+00]]
+    stored = [[ 0.0399697,  15.71882867,  3.80458833],
+              [ 0.04592036, 11.43876195,  1.94967725],
+              [ 0.04357962,  9.7207298,   1.76262896],
+              [ 0.04019595,  7.71929661,  1.38746767]]
 
     return np.testing.assert_almost_equal(diff, stored)
 
@@ -197,6 +199,9 @@ def verify_steady_state():
     Ns = 101 + 10 * np.arange(0, 10)
 
     diff = np.array([compare_steady_state(n) for n in Ns])
+
+    plt.figure()
+    plt.title("Steady state")
 
     d = np.log10(diff)
     log_n = np.log10(1.0 / Ns)
@@ -213,7 +218,7 @@ def verify_steady_state():
     plt.show()
 
 
-def verify_time_dependent():
+def verify_time_dependent(show=True):
     "Set up a spatial grid refinement study and produce convergence plots."
 
     dxs = [15, 30, 60, 125, 250, 500]
@@ -226,6 +231,9 @@ def verify_time_dependent():
     Ns = [int(Lx / (1000 * dx)) + 1 for dx in dxs]
 
     diff = np.array([compare_time_dependent(n) for n in Ns])
+
+    plt.figure()
+    plt.title("Time-dependent")
 
     d = np.log10(diff)
     dx = diff[:, 3] / 1000.0    # convert to km
