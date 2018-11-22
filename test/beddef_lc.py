@@ -50,12 +50,15 @@ def exact(dics_radius, disc_thickness, t, L, N):
     return (r, z)
 
 
-def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
+def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, Nx, dt):
     "Use the LingleClark class to compute plate deflection."
-    M = int(2 * N - 1)
+
+    Ny = Nx
+    Mx = int(2 * Nx - 1)
+    My = int(2 * Ny - 1)
 
     ctx = PISM.Context().ctx
-    grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+    grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     bed_model = PISM.LingleClark(grid)
 
@@ -95,20 +98,23 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
     log.message(2, "\n")
 
     # extract half of the x grid
-    r = grid.x()[N-1:]
+    r = grid.x()[Nx-1:]
 
     # extract values along the x direction (along the radius of the disc)
-    z = bed_model.bed_elevation().numpy()[N-1, N-1:]
+    z = bed_model.bed_elevation().numpy()[Ny-1, Nx-1:]
 
     return r, z
 
 
-def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
+def modeled_steady_state(dics_radius, disc_thickness, time, L, Nx):
     "Use the LingleClark class to compute plate deflection."
-    M = int(2 * N - 1)
+
+    Ny = Nx
+    Mx = int(2 * Nx - 1)
+    My = int(2 * Ny - 1)
 
     ctx = PISM.Context().ctx
-    grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+    grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     bed_model = PISM.LingleClark(grid)
 
@@ -134,10 +140,10 @@ def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
     bed_model.bootstrap(bed, bed_uplift, ice_thickness, sea_level)
 
     # extract half of the x grid
-    r = grid.x()[N-1:]
+    r = grid.x()[Nx-1:]
 
     # extract values along the x direction (along the radius of the disc)
-    z = bed_model.total_displacement().numpy()[N-1, N-1:]
+    z = bed_model.total_displacement().numpy()[Ny-1, Nx-1:]
 
     return r, z
 
@@ -252,7 +258,8 @@ def verify_time_dependent(show=True):
     plt.show()
 
 if __name__ == "__main__":
-    import pylab as plt
-
-    verify_time_dependent()
-    verify_steady_state()
+    log.message(2, "  Creating convergence plots (spatial refinement)...\n")
+    log.message(2, "  1. Steady state problem...\n")
+    verify_steady_state(show=False)
+    log.message(2, "  2. Time-dependent problem...\n")
+    verify_time_dependent(show=True)
