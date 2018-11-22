@@ -116,17 +116,7 @@ LingleClarkSerial::LingleClarkSerial(const Config &config,
   m_loadhat     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
   m_fftw_load_response_matrix = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
 
-  // fill m_fftw_input with zeros
-  {
-    VecAccessor2D<fftw_complex> tmp(m_fftw_input, m_Nx, m_Ny);
-    for (int j = 0; j < m_Ny; j++) {
-      for (int i = 0; i < m_Nx; i++) {
-        tmp(i, j)[0] = 0.0;
-        tmp(i, j)[1] = 0.0;
-      }
-    }
-  }
-
+  clear_fftw_array(m_fftw_input, m_Nx, m_Ny);
   m_dft_forward = fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output,
                                    FFTW_FORWARD, FFTW_ESTIMATE);
   m_dft_inverse = fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output,
