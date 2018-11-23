@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007, 2015, 2017 Jed Brown and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2007, 2015, 2017, 2018, 2019 Jed Brown and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,56 +21,82 @@
 #include <cmath>
 #include <gsl/gsl_sf_bessel.h>
 #include <gsl/gsl_integration.h>
-#include "matlablike.hh"
 
 #include "greens.hh"
 
 namespace pism {
 namespace bed {
 
-double ge_integrand(unsigned ndim, const double* xi_and_eta, void* parameters) {
+double ge_integrand(unsigned ndim, const double* args, void* data) {
 
   assert(ndim == 2);
   (void) ndim;
 
-  // data here is from Lingle & Clark (1985), but claims to give G^E(r) for Farrell (1972)
-  const double rmkm[42] =
-    {0.0,    0.011,    0.111,  1.112,  2.224,  3.336,  4.448,  6.672,  8.896,  11.12,
-     17.79,  22.24,    27.80,  33.36,  44.48,  55.60,  66.72,  88.96,  111.2,  133.4,
-     177.9,  222.4,    278.0,  333.6,  444.8,  556.0,  667.2,  778.4,  889.6,  1001.0,
-     1112.0, 1334.0,   1779.0, 2224.0, 2780.0, 3336.0, 4448.0, 5560.0, 6672.0, 7784.0,
-     8896.0, 10008.0};
-  // rm = rmkm * 1e3 (remember to convert to meters); GE /(10^12 rm) is
-  //    vertical displacement in meters
-  // (GE(r=0) has been computed by linear extrapolation:  GE(0) := -33.6488)
-  const double GE[42] =
-    {-33.6488, -33.64, -33.56, -32.75, -31.86, -30.98, -30.12, -28.44, -26.87, -25.41,
-     -21.80,   -20.02, -18.36, -17.18, -15.71, -14.91, -14.41, -13.69, -13.01, -12.31,
-     -10.95,   -9.757, -8.519, -7.533, -6.131, -5.237, -4.660, -4.272, -3.999, -3.798,
-     -3.640,   -3.392, -2.999, -2.619, -2.103, -1.530, -0.292,  0.848,  1.676,  2.083,
-      2.057,    1.643};
-
-  struct ge_params* p = (struct ge_params*) parameters;
+  struct ge_data* d = (struct ge_data*) data;
 
   const double
-    dx        = p->dx,
-    dy        = p->dy,
-    xi_shift  = p->p * dx - xi_and_eta[0],
-    eta_shift = p->q * dy - xi_and_eta[1],
+    dx        = d->dx,
+    dy        = d->dy,
+    xi        = args[0],
+    eta       = args[1],
+    xi_shift  = d->p * dx - xi,
+    eta_shift = d->q * dy - eta,
     r         = sqrt(xi_shift * xi_shift + eta_shift * eta_shift);
-  
-  double z = 0.0;
-  if (r < 0.01) {
-    z = GE[0]/(rmkm[1] * 1.0e3 * 1.0e12);
-  } else if (r > rmkm[41] * 1.0e3) {
-    z = 0.0;
-  } else {
-    z = interp1_linear((double*)rmkm, (double*)GE, 42, r / 1.0e3) / (r * 1.0e12);
-  }
-  return z;
+
+  greens_elastic &G = *d->G;
+
+  return G(r);
 }
 
+greens_elastic::greens_elastic() {
+  acc = gsl_interp_accel_alloc();
+  spline = gsl_spline_alloc(gsl_interp_linear, N);
+  gsl_spline_init(spline, rmkm, GE, N);
+}
 
+greens_elastic::~greens_elastic() {
+  gsl_spline_free(spline);
+  gsl_interp_accel_free(acc);
+}
+
+double greens_elastic::operator()(double r) {
+  if (r < 0.01) {
+    return GE[0] / (rmkm[1] * 1.0e3 * 1.0e12);
+  } else if (r > rmkm[N - 1] * 1.0e3) {
+    return 0.0;
+  } else {
+    return gsl_spline_eval(spline, r / 1.0e3, acc) / (r * 1.0e12);
+  }
+}
+
+const double greens_elastic::rmkm[greens_elastic::N] =
+  {0.0,    0.011,    0.111,  1.112,  2.224,  3.336,  4.448,  6.672,  8.896,  11.12,
+   17.79,  22.24,    27.80,  33.36,  44.48,  55.60,  66.72,  88.96,  111.2,  133.4,
+   177.9,  222.4,    278.0,  333.6,  444.8,  556.0,  667.2,  778.4,  889.6,  1001.0,
+   1112.0, 1334.0,   1779.0, 2224.0, 2780.0, 3336.0, 4448.0, 5560.0, 6672.0, 7784.0,
+   8896.0, 10008.0};
+
+const double greens_elastic::GE[greens_elastic::N] =
+  {-33.6488, -33.64, -33.56, -32.75, -31.86, -30.98, -30.12, -28.44, -26.87, -25.41,
+   -21.80,   -20.02, -18.36, -17.18, -15.71, -14.91, -14.41, -13.69, -13.01, -12.31,
+   -10.95,   -9.757, -8.519, -7.533, -6.131, -5.237, -4.660, -4.272, -3.999, -3.798,
+   -3.640,   -3.392, -2.999, -2.619, -2.103, -1.530, -0.292,  0.848,  1.676,  2.083,
+   2.057,    1.643};
+
+//! @brief Parameters used to describe the response of the viscous
+//! half-space model to a disc load.
+struct vd_params {
+   double t, R0, rk, rho, grav, D, eta;
+};
+
+
+//! @brief Integrand defining the response of the viscous half-space
+//! model to a disc load.
+/*!
+ * For the solution of the disc load case of the viscous half-space
+ * model, see appendix B of \ref BLK2006earth. See also \ref
+ * LingleClark and \ref BLKfastearth.
+ */
 double vd_integrand (double kappa, void* parameters) {
   // Matlab:  function y=integrand(kappa,rg,D,t,eta,R0,rk)
   //            beta=rg + D*kappa.^4;
@@ -106,7 +132,7 @@ double vd_integrand (double kappa, void* parameters) {
  * @param[in] D lithosphere flexural rigidity, N meter
  * @param[in] eta mantle viscosity, Pascal second
  */
-double viscDisc(double t, double H0, double R0, double r, 
+double viscDisc(double t, double H0, double R0, double r,
                 double rho, double rho_ice, double grav, double D, double eta) {
   // t in seconds; H0, R0, r in meters
 
@@ -116,7 +142,7 @@ double viscDisc(double t, double H0, double R0, double r,
   const int    lengthpts       = 142;
 
   gsl_integration_workspace* w = gsl_integration_workspace_alloc(N_gsl_workspace);
-  
+
   // Matlab:  pts=[10.^(-3:-0.05:-10) 1.0e-14];
   std::vector<double> pts(lengthpts);
   for (int j=0; j < lengthpts-1; j++) {
@@ -131,7 +157,7 @@ double viscDisc(double t, double H0, double R0, double r,
   F.function = &vd_integrand;
   F.params = &params;
   // regarding tolerance: request is for convergence of all digits and relative tolerance RELTOL
-  gsl_integration_qag (&F, pts[1], 100.0*pts[1], ABSTOL, RELTOL, N_gsl_workspace, 
+  gsl_integration_qag (&F, pts[1], 100.0*pts[1], ABSTOL, RELTOL, N_gsl_workspace,
                        GSL_INTEG_GAUSS21, w, &result, &error);
 
   double sum = result;
@@ -139,11 +165,11 @@ double viscDisc(double t, double H0, double R0, double r,
   //   result=result+quadl(@integrand,pts(j+1),pts(j),TOL,0,rg,D,t,eta,R0,rk);
   // end
   for (int j = 0; j < lengthpts - 1; j++) {
-    gsl_integration_qag (&F, pts[j+1], pts[j], ABSTOL, RELTOL, N_gsl_workspace, 
+    gsl_integration_qag (&F, pts[j+1], pts[j], ABSTOL, RELTOL, N_gsl_workspace,
                          GSL_INTEG_GAUSS21, w, &result, &error);
     sum += result;
   }
-  
+
   gsl_integration_workspace_free(w);
   // u(k)=rhoi*g*H0*R0*result;
   return rho_ice * grav * H0 * R0 * sum;

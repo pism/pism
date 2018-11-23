@@ -222,9 +222,11 @@ void LingleClarkSerial::precompute_coefficients() {
     PISM_CHK(ierr, "PetscPrintf");
 
     petsc::VecArray2D II(m_load_response_matrix, m_Nx, m_Ny);
-    ge_params ge_data;
+    greens_elastic G;
+    ge_data ge_data;
     ge_data.dx = m_dx;
     ge_data.dy = m_dy;
+    ge_data.G = &G;
     int Nx2 = m_Nx/2,
         Ny2 = m_Ny/2;
     for (int j = 0; j <= Ny2; j++) {
