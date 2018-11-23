@@ -233,13 +233,17 @@ void LingleClarkSerial::precompute_coefficients() {
         ge_data.q = j;
         const double Ge = dblquad_cubature(ge_integrand, -m_dx/2, m_dx/2, -m_dy/2, m_dy/2,
                           1.0e-8, &ge_data);
+
         II(Nx2 - i, Ny2 - j) = Ge;
+
         if ((i > 0) and ((Nx2 + i) < m_Nx)) {
           II(Nx2 + i, Ny2 - j) = Ge;
+
           if ((j > 0) and ((Ny2 + j) < m_Ny)) {
             II(Nx2 + i, Ny2 + j) = Ge;
           }
-        } else if ((j > 0) and ((Ny2 + j) < m_Ny)) {
+        }
+        if ((j > 0) and ((Ny2 + j) < m_Ny)) {
           II(Nx2 - i, Ny2 + j) = Ge;
         }
       }
@@ -451,7 +455,7 @@ void LingleClarkSerial::compute_elastic_response(Vec H, Vec dE) {
   // Compute fft2(load_density * H)
   {
     clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
-    set_fftw_input(H, m_load_density, m_Mx, m_My, m_i0_offset, m_j0_offset);
+    set_fftw_input(H, m_load_density, m_Mx, m_My, 0, 0);
     fftw_execute(m_dft_forward);
   }
 
@@ -462,13 +466,13 @@ void LingleClarkSerial::compute_elastic_response(Vec H, Vec dE) {
     for (int i = 0; i < m_Nx; i++) {
       for (int j = 0; j < m_Ny; j++) {
         input(i, j)[0] = (fftw_response_mat(i, j)[0] * load_hat(i, j)[0]) - (fftw_response_mat(i, j)[1] * load_hat(i, j)[1]);
-        input(i, j)[1] = (fftw_response_mat(i, j)[0] * load_hat(i, j)[1]) - (fftw_response_mat(i, j)[1] * load_hat(i, j)[0]);
+        input(i, j)[1] = (fftw_response_mat(i, j)[0] * load_hat(i, j)[1]) + (fftw_response_mat(i, j)[1] * load_hat(i, j)[0]);
       }
     }
   }
 
   fftw_execute(m_dft_inverse);
-  get_fftw_output(m_Ue, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, m_i0_offset, m_j0_offset);
+  get_fftw_output(m_Ue, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, m_Nx/2, m_Ny/2);
 }
 
 /*! Compute total displacement by combining viscous and elastic contributions.
