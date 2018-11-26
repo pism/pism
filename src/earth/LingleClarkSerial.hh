@@ -117,8 +117,6 @@ private:
   // viscous displacement on the extended grid
   petsc::Vec m_Uv;
 
-  // load response matrix (elastic); sequential and fat *with* boundary
-  petsc::Vec m_load_response_matrix;
   // elastic plate displacement
   petsc::Vec m_Ue;
 
@@ -128,7 +126,7 @@ private:
   fftw_complex *m_fftw_input;
   fftw_complex *m_fftw_output;
   fftw_complex *m_loadhat;
-  fftw_complex *m_fftw_load_response_matrix;
+  fftw_complex *m_lrm_hat;
 
   fftw_plan m_dft_forward;
   fftw_plan m_dft_inverse;
