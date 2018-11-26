@@ -344,6 +344,7 @@ void LingleClarkSerial::step(double dt, Vec H) {
   //
   // This makes it easier to test the elastic part of the model.
   if (dt > 0.0) {
+    // Non-zero time step: include the viscous part of the model.
 
     // Compute fft2(-load_density * g * dt * H)
     {
@@ -368,7 +369,7 @@ void LingleClarkSerial::step(double dt, Vec H) {
     // frhs = right.*fft2(uun) + fft2(dt*sszz);
     // uun1 = real(ifft2(frhs./left));
     {
-      VecAccessor2D<fftw_complex> input(m_fftw_input, m_Nx, m_Ny),
+      FFTWArray input(m_fftw_input, m_Nx, m_Ny),
         u_hat(m_fftw_output, m_Nx, m_Ny), load_hat(m_loadhat, m_Nx, m_Ny);
       for (int i = 0; i < m_Nx; i++) {
         for (int j = 0; j < m_Ny; j++) {
@@ -379,8 +380,7 @@ void LingleClarkSerial::step(double dt, Vec H) {
             A = part1 - part2,
             B = part1 + part2;
 
-          input(i, j)[0] = (load_hat(i, j)[0] + A * u_hat(i, j)[0]) / B;
-          input(i, j)[1] = (load_hat(i, j)[1] + A * u_hat(i, j)[1]) / B;
+          input(i, j) = (load_hat(i, j) + A * u_hat(i, j)) / B;
         }
       }
     }
@@ -393,7 +393,7 @@ void LingleClarkSerial::step(double dt, Vec H) {
     // Here 1e16 approximates t = \infty.
     tweak(H, m_Uv, m_Nx, m_Ny, 1e16);
   } else {
-    // dt == 0: set viscous displacement to zero
+    // zero time step: viscous displacement is zero
     PetscErrorCode ierr = VecSet(m_Uv, 0.0); PISM_CHK(ierr, "VecSet");
   }
 
