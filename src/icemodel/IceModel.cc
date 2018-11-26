@@ -503,6 +503,9 @@ void IceModel::step(bool do_mass_continuity,
                                              "_stressbalance_failed", "");
     PIO file(m_grid->com, m_config->get_string("output.format"), o_file, PISM_READWRITE_MOVE);
 
+    update_run_stats();
+    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+
     save_variables(file, INCLUDE_MODEL_STATE, output_variables("small"));
 
     e.add_context("performing a time step. (Note: Model state was saved to '%s'.)",
@@ -772,6 +775,10 @@ void IceModel::step(bool do_mass_continuity,
     std::string o_file = filename_add_suffix(output_file,
                                              "_max_thickness", "");
     PIO file(m_grid->com, m_config->get_string("output.format"), o_file, PISM_READWRITE_MOVE);
+
+    update_run_stats();
+    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+
     save_variables(file, INCLUDE_MODEL_STATE, output_variables("small"));
 
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
