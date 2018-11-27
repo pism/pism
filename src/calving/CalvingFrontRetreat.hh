@@ -48,7 +48,7 @@ public:
   const IceModelVec2S *frontal_melt_rate;
 
   // used by the frontal melt parameterization
-  const IceModelVec2S *subglacial_discharge_at_grounding_line;
+  const IceModelVec2S *subglacial_water_speed;
 };
 
 //! An abstract class implementing calving front retreat resulting from application of a

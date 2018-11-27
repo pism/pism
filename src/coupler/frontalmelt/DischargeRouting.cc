@@ -105,7 +105,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
   const IceModelVec2S &bed_elevation = inputs.geometry->bed_elevation;
   const IceModelVec2S &sea_level_elevation = inputs.geometry->sea_level_elevation;
   // subglacial discharge, mass change over this time step
-  const IceModelVec2S &subglacial_discharge = *inputs.subglacial_discharge_at_grounding_line;
+  const IceModelVec2S &subglacial_discharge = *inputs.subglacial_water_speed;
 
   IceModelVec::AccessList list
     {&bed_elevation, &cell_type, &sea_level_elevation, &subglacial_discharge, m_theta_ocean.get(),

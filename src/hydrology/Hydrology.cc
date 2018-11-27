@@ -288,6 +288,15 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
   m_Pover.set_attrs("internal", "overburden pressure", "Pa", "");
   m_Pover.metadata().set_double("valid_min", 0.0);
 
+  // auxiliary variables which do not need ghosts
+
+  m_V.create(m_grid, "water_velocity", WITHOUT_GHOSTS);
+  m_V.set_attrs("internal",
+                "cell face-centered (staggered) components of water velocity"
+                " in subglacial water layer",
+                "m s-1", "");
+  m_V.set(0.0);
+
   // needs ghosts in Routing and Distributed
   m_W.create(m_grid, "bwat", WITH_GHOSTS, 1);
   m_W.set_attrs("diagnostic",
@@ -498,6 +507,10 @@ const IceModelVec2S& Hydrology::till_water_thickness() const {
 //! Return the effective thickness of the transportable basal water layer.
 const IceModelVec2S& Hydrology::subglacial_water_thickness() const {
   return m_W;
+}
+
+const IceModelVec2Stag& Hydrology::velocity_staggered() const {
+  return m_V;
 }
 
 const IceModelVec2S& Hydrology::total_input_rate() const {

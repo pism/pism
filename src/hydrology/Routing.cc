@@ -219,14 +219,6 @@ Routing::Routing(IceGrid::ConstPtr g)
                 "work space for modeled subglacial water hydraulic potential",
                 "Pa", "");
 
-  // auxiliary variables which do not need ghosts
-
-  m_V.create(m_grid, "water_velocity", WITHOUT_GHOSTS);
-  m_V.set_attrs("internal",
-                "cell face-centered (staggered) components of water velocity"
-                " in subglacial water layer",
-                "m s-1", "");
-
   // temporaries during update; do not need ghosts
   m_Wnew.create(m_grid, "W_new", WITHOUT_GHOSTS);
   m_Wnew.set_attrs("internal",
@@ -873,10 +865,6 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
                  units::convert(m_sys, dt / step_counter, "seconds", "years"),
                  dt / step_counter,
                  (dt / step_counter) / 3600.0);
-}
-
-const IceModelVec2Stag& Routing::velocity_staggered() const {
-  return m_V;
 }
 
 std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {

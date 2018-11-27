@@ -86,8 +86,6 @@ public:
 
   const IceModelVec2S& subglacial_water_pressure() const;
 
-  const IceModelVec2Stag& velocity_staggered() const;
-
 protected:
   virtual void restart_impl(const PIO &input_file, int record);
 
@@ -109,9 +107,6 @@ protected:
   double max_timestep_W_diff(double KW_max) const;
   double max_timestep_W_cfl() const;
 protected:
-
-  // this model's auxiliary variables
-  IceModelVec2Stag m_V;
 
   // edge-centered (staggered) W values (averaged from regular)
   IceModelVec2Stag m_Wstag;

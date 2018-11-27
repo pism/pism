@@ -131,6 +131,7 @@ public:
   const IceModelVec2S& subglacial_water_thickness() const;
   const IceModelVec2S& overburden_pressure() const;
   const IceModelVec2S& total_input_rate() const;
+  const IceModelVec2Stag& velocity_staggered() const;
 
   const IceModelVec2S& mass_change() const;
   const IceModelVec2S& mass_change_at_grounded_margin() const;
@@ -164,6 +165,9 @@ protected:
                           const IceModelVec2S *surface_input_rate,
                           IceModelVec2S &result);
 protected:
+  // water velocity on staggered grid
+  IceModelVec2Stag m_V;
+
   //! effective thickness of basal water stored in till
   IceModelVec2S m_Wtill;
 
