@@ -386,19 +386,17 @@ double Time::increment_date(double T, int years) const {
   return T + years_to_seconds(years);
 }
 
-void Time::parse_times(const std::string &spec,
-                       std::vector<double> &result) const {
-
+std::vector<double> Time::parse_times(const std::string &spec) const {
+  std::vector<double> result;
   if (spec.find(',') != std::string::npos) {
     // a list will always contain a comma because at least two numbers are
     // needed to specify reporting intervals
     parse_list(spec, result);
-
   } else {
     // it must be a range specification
     parse_range(spec, result);
   }
-
+  return result;
 }
 
 void Time::parse_list(const std::string &spec, std::vector<double> &result) const {

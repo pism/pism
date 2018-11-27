@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -110,7 +110,7 @@ public:
 
   void init_calendar(const std::string &calendar);
 
-  void parse_times(const std::string &spec, std::vector<double> &result) const;
+  std::vector<double> parse_times(const std::string &spec) const;
 
   //! \brief Returns the CF- (and UDUNITS) compliant units string.
   /*!

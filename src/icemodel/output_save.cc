@@ -62,8 +62,7 @@ void IceModel::init_snapshots() {
 
   try {
     // parse
-    std::vector<double> times;
-    m_time->parse_times(save_times, times);
+    std::vector<double> times = m_time->parse_times(save_times);
 
     // discard times before the beginning and after the end of the run
     m_snapshot_times.clear();
