@@ -115,7 +115,7 @@ void IceModel::init_extras() {
   }
 
   try {
-    m_time->parse_times(times, m_extra_times);
+    m_extra_times = m_time->parse_times(times);
   } catch (RuntimeError &e) {
     e.add_context("parsing the output.extra.times argument %s", times.c_str());
     throw;

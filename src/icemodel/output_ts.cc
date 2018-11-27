@@ -43,7 +43,7 @@ void IceModel::init_timeseries() {
   }
 
   try {
-    m_time->parse_times(times, *m_ts_times);
+    *m_ts_times = m_time->parse_times(times);
   } catch (RuntimeError &e) {
     e.add_context("parsing the -ts_times argument %s", times.c_str());
     throw;
