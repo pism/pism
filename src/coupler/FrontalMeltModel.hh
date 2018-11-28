@@ -22,7 +22,6 @@
 #include <memory>
 
 #include "pism/util/Component.hh"
-#include "pism/hydrology/Hydrology.hh"
 
 namespace pism {
 
