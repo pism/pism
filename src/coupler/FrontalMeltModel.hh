@@ -35,7 +35,7 @@ public:
   const Geometry *geometry;
 
   // used by the discharge routing
-  const IceModelVec2S *subglacial_water_speed;
+  const IceModelVec2S *subglacial_water_flux;
 
 };
 

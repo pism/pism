@@ -348,17 +348,17 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     compute_conductivity(m_Wstag,
                          subglacial_water_pressure(),
                          *inputs.bed_elevation,
-                         m_K, maxKW);
+                         m_Kstag, maxKW);
 
     compute_velocity(m_Wstag,
                      subglacial_water_pressure(),
                      *inputs.bed_elevation,
-                     m_K,
+                     m_Kstag,
                      inputs.no_model_mask,
                      m_Vstag);
 
     // to get Q, W needs valid ghosts
-    advective_fluxes(m_Vstag, m_W, m_Q);
+    advective_fluxes(m_Vstag, m_W, m_Qstag);
 
     {
       const double
@@ -397,7 +397,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
              m_Wtill, m_Wtillnew,
              subglacial_water_pressure(),
              m_W, m_Wstag,
-             m_K, m_Q,
+             m_Kstag, m_Qstag,
              m_Pnew);
 
     // update Wnew from W, Wtill, Wtillnew, Wstag, Q, input_rate
@@ -405,7 +405,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
              m_input_rate,
              m_W, m_Wstag,
              m_Wtill, m_Wtillnew,
-             m_K, m_Q,
+             m_Kstag, m_Qstag,
              m_Wnew);
     // remove water in ice-free areas and account for changes
     enforce_bounds(*inputs.cell_type,

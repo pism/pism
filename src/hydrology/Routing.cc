@@ -196,6 +196,12 @@ Routing::Routing(IceGrid::ConstPtr g)
   m_rg    = (m_config->get_double("constants.fresh_water.density") *
              m_config->get_double("constants.standard_gravity"));
 
+  m_Vstag.create(m_grid, "water_velocity", WITHOUT_GHOSTS);
+  m_Vstag.set_attrs("internal",
+                    "cell face-centered (staggered) components of water velocity"
+                    " in subglacial water layer",
+                    "m s-1", "");
+
   // auxiliary variables which NEED ghosts
   m_Wstag.create(m_grid, "W_staggered", WITH_GHOSTS, 1);
   m_Wstag.set_attrs("internal",
@@ -203,16 +209,11 @@ Routing::Routing(IceGrid::ConstPtr g)
                     "m", "");
   m_Wstag.metadata().set_double("valid_min", 0.0);
 
-  m_K.create(m_grid, "K_staggered", WITH_GHOSTS, 1);
-  m_K.set_attrs("internal",
-                "cell face-centered (staggered) values of nonlinear conductivity",
-                "", "");
-  m_K.metadata().set_double("valid_min", 0.0);
-
-  m_Q.create(m_grid, "advection_flux", WITH_GHOSTS, 1);
-  m_Q.set_attrs("internal",
-                "cell face-centered (staggered) components of advective subglacial water flux",
-                "m2 s-1", "");
+  m_Kstag.create(m_grid, "K_staggered", WITH_GHOSTS, 1);
+  m_Kstag.set_attrs("internal",
+                    "cell face-centered (staggered) values of nonlinear conductivity",
+                    "", "");
+  m_Kstag.metadata().set_double("valid_min", 0.0);
 
   m_R.create(m_grid, "potential_workspace", WITH_GHOSTS, 1); // box stencil used
   m_R.set_attrs("internal",
@@ -296,6 +297,10 @@ void Routing::write_model_state_impl(const PIO &output) const {
 //! because this is the model.
 const IceModelVec2S& Routing::subglacial_water_pressure() const {
   return m_Pover;
+}
+
+const IceModelVec2Stag& Routing::velocity_staggered() const {
+  return m_Vstag;
 }
 
 //! Get the hydraulic potential from bedrock topography and current state variables.
@@ -798,17 +803,17 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     compute_conductivity(m_Wstag,
                          subglacial_water_pressure(),
                          *inputs.bed_elevation,
-                         m_K, maxKW);
+                         m_Kstag, maxKW);
 
     compute_velocity(m_Wstag,
                      subglacial_water_pressure(),
                      *inputs.bed_elevation,
-                     m_K,
+                     m_Kstag,
                      inputs.no_model_mask,
                      m_Vstag);
 
     // to get Q, W needs valid ghosts
-    advective_fluxes(m_Vstag, m_W, m_Q);
+    advective_fluxes(m_Vstag, m_W, m_Qstag);
 
     {
       const double
@@ -842,7 +847,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
              m_input_rate,
              m_W, m_Wstag,
              m_Wtill, m_Wtillnew,
-             m_K, m_Q,
+             m_Kstag, m_Qstag,
              m_Wnew);
     // remove water in ice-free areas and account for changes
     enforce_bounds(*inputs.cell_type,

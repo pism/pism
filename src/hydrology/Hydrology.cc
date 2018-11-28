@@ -288,26 +288,23 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
   m_Pover.set_attrs("internal", "overburden pressure", "Pa", "");
   m_Pover.metadata().set_double("valid_min", 0.0);
 
-  // auxiliary variables which do not need ghosts
-
-  m_Vstag.create(m_grid, "water_velocity", WITH_GHOSTS);
-  m_Vstag.set_attrs("internal",
-                    "cell face-centered (staggered) components of water velocity"
-                    " in subglacial water layer",
-                    "m s-1", "");
-  m_Vstag.set(0.0);
-
-  m_V.create(m_grid, "water_velocity", WITH_GHOSTS);
-  m_V.set_attrs("internal",
-                "subglacial water velocity on the regular grid",
-                "m s-1", "");
-
   // needs ghosts in Routing and Distributed
   m_W.create(m_grid, "bwat", WITH_GHOSTS, 1);
   m_W.set_attrs("diagnostic",
                 "thickness of transportable subglacial water layer",
                 "m", "");
   m_W.metadata().set_double("valid_min", 0.0);
+
+  m_Qstag.create(m_grid, "advection_flux", WITH_GHOSTS, 1);
+  m_Qstag.set_attrs("internal",
+                    "cell face-centered (staggered) components of advective subglacial water flux",
+                    "m2 s-1", "");
+  m_Qstag.set(0.0);
+
+  m_Q.create(m_grid, "subglacial_water_flux", WITHOUT_GHOSTS);
+  m_Q.set_attrs("diagnostic",
+                "advective subglacial water flux",
+                "m2 s-1", "");
 
   // storage for water conservation reporting quantities
   {
@@ -430,9 +427,11 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
 
   this->update_impl(t, dt, inputs);
 
-  // compute water velocity on the regular grid
-  m_Vstag.update_ghosts();
-  m_Vstag.staggered_to_regular(m_V);
+  // compute water flux on the regular grid
+  //
+  // note that update_impl() ensures that ghosts of m_Qstag are up to date because they
+  // are needed to compute flux divergence
+  m_Qstag.staggered_to_regular(m_Q);
 
   // compute total change in meters
   for (Points p(*m_grid); p; p.next()) {
@@ -518,12 +517,14 @@ const IceModelVec2S& Hydrology::subglacial_water_thickness() const {
   return m_W;
 }
 
-const IceModelVec2Stag& Hydrology::velocity_staggered() const {
-  return m_Vstag;
-}
-
-const IceModelVec2V& Hydrology::velocity() const {
-  return m_V;
+/*!
+ * Return subglacial water flux.
+ *
+ * FIXME: right now this is the flux during the last short hydrology time step during the
+ * longer requested time step. We might want to compute the time-averaged flux instead.
+ */
+const IceModelVec2V& Hydrology::flux() const {
+  return m_Q;
 }
 
 const IceModelVec2S& Hydrology::total_input_rate() const {

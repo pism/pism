@@ -85,6 +85,7 @@ public:
   virtual ~Routing();
 
   const IceModelVec2S& subglacial_water_pressure() const;
+  const IceModelVec2Stag& velocity_staggered() const;
 
 protected:
   virtual void restart_impl(const PIO &input_file, int record);
@@ -108,14 +109,14 @@ protected:
   double max_timestep_W_cfl() const;
 protected:
 
+  // edge-centered (staggered) water velocity
+  IceModelVec2Stag m_Vstag;
+
   // edge-centered (staggered) W values (averaged from regular)
   IceModelVec2Stag m_Wstag;
 
   // edge-centered (staggered) values of nonlinear conductivity
-  IceModelVec2Stag m_K;
-
-  // edge-centered (staggered) advection fluxes
-  IceModelVec2Stag m_Q;
+  IceModelVec2Stag m_Kstag;
 
   // work space
   IceModelVec2S m_Wnew, m_Wtillnew;

@@ -27,7 +27,7 @@ namespace pism {
 FrontalMeltInputs::FrontalMeltInputs() {
   geometry = nullptr;
 
-  subglacial_water_speed = nullptr;
+  subglacial_water_flux = nullptr;
 }
 
   

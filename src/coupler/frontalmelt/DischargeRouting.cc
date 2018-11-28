@@ -105,10 +105,10 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
   const IceModelVec2S &bed_elevation = inputs.geometry->bed_elevation;
   const IceModelVec2S &sea_level_elevation = inputs.geometry->sea_level_elevation;
   // subglacial discharge, mass change over this time step
-  const IceModelVec2S &subglacial_discharge = *inputs.subglacial_water_speed;
+  const IceModelVec2S &discharge_flux = *inputs.subglacial_water_flux;
 
   IceModelVec::AccessList list
-    {&bed_elevation, &cell_type, &sea_level_elevation, &subglacial_discharge, m_theta_ocean.get(),
+    {&bed_elevation, &cell_type, &sea_level_elevation, &discharge_flux, m_theta_ocean.get(),
      m_frontal_melt_rate.get()};
 
   double seconds_per_day = 86400;
@@ -126,7 +126,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       double TF = (*m_theta_ocean)(i, j) - 273.15;
 
       // subglacial discharge: convert from kg to m/day
-      double q_sg = subglacial_discharge(i, j) * kg_to_m_per_day;
+      double q_sg = discharge_flux(i, j) * kg_to_m_per_day;
 
       // get the average ice thickness over ice-covered grounded neighbors
       double water_depth = sea_level_elevation(i, j) - bed_elevation(i, j);
