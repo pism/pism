@@ -25,7 +25,7 @@ namespace calving {
 StressCalving::StressCalving(IceGrid::ConstPtr grid,
                              unsigned int stencil_width)
   // mask has to have a wider stencil to be able to call is_marginal() away from the current cell
-  : CalvingFrontRetreat(grid, stencil_width + 1),
+  : FrontRetreat(grid, stencil_width + 1),
     m_stencil_width(stencil_width) {
 
   m_strain_rates.create(m_grid, "strain_rates", WITH_GHOSTS,

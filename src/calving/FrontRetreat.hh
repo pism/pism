@@ -56,10 +56,10 @@ public:
 /*! The retreat rate may correspond to frontal melting or calving. Requires the "part_grid"
     mechanism.
  */
-class CalvingFrontRetreat : public Component {
+class FrontRetreat : public Component {
 public:
-  CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width);
-  virtual ~CalvingFrontRetreat();
+  FrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width);
+  virtual ~FrontRetreat();
 
   MaxTimestep max_timestep(const CalvingInputs &inputs,
                            double t) const ;
@@ -86,10 +86,10 @@ protected:
 };
 
 /*! @brief Calving (or frontal melt) rate diagnostic. */
-class CalvingRate : public Diag<CalvingFrontRetreat>
+class CalvingRate : public Diag<FrontRetreat>
 {
 public:
-  CalvingRate(const CalvingFrontRetreat *m,
+  CalvingRate(const FrontRetreat *m,
               const std::string &name,
               const std::string &long_name);
   IceModelVec::Ptr compute_impl() const;

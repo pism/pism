@@ -29,7 +29,7 @@ add_library (pism
   basalstrength/MohrCoulombYieldStress.cc
   basalstrength/YieldStress.cc
   calving/CalvingAtThickness.cc
-  calving/CalvingFrontRetreat.cc
+  calving/FrontRetreat.cc
   calving/EigenCalving.cc
   calving/FloatKill.cc
   calving/FrontalMelt.cc

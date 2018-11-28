@@ -20,12 +20,12 @@
 #ifndef FRONTALMELT_H
 #define FRONTALMELT_H
 
-#include "CalvingFrontRetreat.hh"
+#include "FrontRetreat.hh"
 #include "pism/hydrology/Hydrology.hh"
 
 namespace pism {
 
-class FrontalMelt : public CalvingFrontRetreat {
+class FrontalMelt : public FrontRetreat {
 public:
   FrontalMelt(IceGrid::ConstPtr grid);
   virtual ~FrontalMelt();

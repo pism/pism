@@ -16,7 +16,7 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include "CalvingFrontRetreat.hh"
+#include "FrontRetreat.hh"
 #include "remove_narrow_tongues.hh"
 
 #include "pism/util/iceModelVec.hh"
@@ -37,7 +37,7 @@ CalvingInputs::CalvingInputs() {
   frontal_melt_rate = nullptr;
 }
 
-CalvingFrontRetreat::CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width)
+FrontRetreat::FrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width)
   : Component(g) {
 
   m_tmp.create(m_grid, "temporary_storage", WITH_GHOSTS, 1);
@@ -58,7 +58,7 @@ CalvingFrontRetreat::CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_
   m_restrict_timestep = m_config->get_boolean("calving.front_retreat.use_cfl");
 }
 
-CalvingFrontRetreat::~CalvingFrontRetreat() {
+FrontRetreat::~FrontRetreat() {
   // empty
 }
 
@@ -66,7 +66,7 @@ CalvingFrontRetreat::~CalvingFrontRetreat() {
  * @brief Compute the maximum time-step length allowed by the CFL
  * condition applied to the calving rate.
  */
-MaxTimestep CalvingFrontRetreat::max_timestep(const CalvingInputs &inputs,
+MaxTimestep FrontRetreat::max_timestep(const CalvingInputs &inputs,
                                               double t) const {
   (void) t;
 
@@ -131,7 +131,7 @@ MaxTimestep CalvingFrontRetreat::max_timestep(const CalvingInputs &inputs,
 /*!
  * Adjust the mask near domain boundaries to avoid "wrapping around."
  */
-void CalvingFrontRetreat::prepare_mask(const IceModelVec2CellType &input,
+void FrontRetreat::prepare_mask(const IceModelVec2CellType &input,
                                        IceModelVec2CellType &output) const {
 
   output.copy_from(input);
@@ -173,7 +173,7 @@ void CalvingFrontRetreat::prepare_mask(const IceModelVec2CellType &input,
  * calving parameterization which uses strain rates (eigen-calving), but it may not be appropriate
  * with a frontal melt parameterization.
  */
-void CalvingFrontRetreat::update(double dt,
+void FrontRetreat::update(double dt,
                                  const CalvingInputs &inputs,
                                  IceModelVec2CellType &mask,
                                  IceModelVec2S &Href,
@@ -313,14 +313,14 @@ void CalvingFrontRetreat::update(double dt,
   gc.compute_mask(sea_level, bed_topography, ice_thickness, mask);
 }
 
-const IceModelVec2S& CalvingFrontRetreat::calving_rate() const {
+const IceModelVec2S& FrontRetreat::calving_rate() const {
   return m_horizontal_calving_rate;
 }
 
-CalvingRate::CalvingRate(const CalvingFrontRetreat *m,
+CalvingRate::CalvingRate(const FrontRetreat *m,
                          const std::string &name,
                          const std::string &long_name)
-  : Diag<CalvingFrontRetreat>(m) {
+  : Diag<FrontRetreat>(m) {
 
   /* set metadata: */
   m_vars = {SpatialVariableMetadata(m_sys, name)};

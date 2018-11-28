@@ -26,7 +26,7 @@
 namespace pism {
 
 FrontalMelt::FrontalMelt(IceGrid::ConstPtr grid)
-  : CalvingFrontRetreat(grid, 1) {
+  : FrontRetreat(grid, 1) {
   // empty
 }
 
