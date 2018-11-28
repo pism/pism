@@ -37,8 +37,6 @@ protected:
 
   void compute_calving_rate(const CalvingInputs &inputs,
                             IceModelVec2S &result) const;
-
-  hydrology::Hydrology *m_hydrology;
 };
 
 } // end of namespace pism
