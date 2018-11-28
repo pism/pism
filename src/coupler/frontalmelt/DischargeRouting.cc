@@ -97,27 +97,29 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
 
   FrontalMeltPhysics physics(*m_config);
 
-  double water_density = m_config->get_double("constants.fresh_water.density");
-  double cell_area = m_grid->cell_area();
-
   const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
   // ice thickness, meters
   const IceModelVec2S &bed_elevation = inputs.geometry->bed_elevation;
+  const IceModelVec2S &ice_thickness = inputs.geometry->ice_thickness;
   const IceModelVec2S &sea_level_elevation = inputs.geometry->sea_level_elevation;
   // subglacial discharge, mass change over this time step
   const IceModelVec2S &discharge_flux = *inputs.subglacial_water_flux;
 
   IceModelVec::AccessList list
-    {&bed_elevation, &cell_type, &sea_level_elevation, &discharge_flux, m_theta_ocean.get(),
-     m_frontal_melt_rate.get()};
+    {&ice_thickness, &bed_elevation, &cell_type, &sea_level_elevation,
+     &discharge_flux, m_theta_ocean.get(), m_frontal_melt_rate.get()};
 
-  double seconds_per_day = 86400;
-  double kg_to_m_per_day = seconds_per_day / (water_density * cell_area * dt);
+  double
+    ice_density     = m_config->get_double("constants.ice.density"),
+    water_density   = m_config->get_double("constants.fresh_water.density"),
+    density_ratio   = water_density / ice_density,
+    seconds_per_day = 86400,
+    grid_spacing    = 0.5 * (m_grid->dx() + m_grid->dy());
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.ocean(i, j) and cell_type.next_to_grounded_ice(i, j)) {
+    if (cell_type.icy(i, j)) {
 
       // Assume for now that thermal forcing is equal to theta_ocean. Also, thermal
       // forcing is generally not available at the grounding line.
@@ -125,8 +127,22 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       // Convert from Kelvin to Celsius
       double TF = (*m_theta_ocean)(i, j) - 273.15;
 
-      // subglacial discharge: convert from kg to m/day
-      double q_sg = discharge_flux(i, j) * kg_to_m_per_day;
+      double cross_section_area = ice_thickness(i, j) * grid_spacing;
+
+      // subglacial discharge: convert from m^2/s to m/day
+      //
+      // The parameterization uses the water "flux" in the very strange units of "m /
+      // day". The only interpretation of it I can come up with is that it is the rate of
+      // retreat of the front that results in the mass loss equivalent to the mass loss
+      // due to the water flux from underneath the ice.
+      //
+      // [flux] = m^2 / s, so
+      // [flux * grid_spacing] = m^3 / s, so
+      // [flux * grid_spacing / cross_section_area] = m / s, and
+      // [flux * grid_spacing  * (s / day) / cross_section_area] = m / day
+      //
+      // The density ratio below converts water-equivalent rates to ice-equivalent ones.
+      double q_sg = discharge_flux(i, j) * grid_spacing / cross_section_area * seconds_per_day * density_ratio;
 
       // get the average ice thickness over ice-covered grounded neighbors
       double water_depth = sea_level_elevation(i, j) - bed_elevation(i, j);
