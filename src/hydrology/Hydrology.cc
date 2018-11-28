@@ -290,12 +290,17 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
 
   // auxiliary variables which do not need ghosts
 
-  m_V.create(m_grid, "water_velocity", WITHOUT_GHOSTS);
+  m_Vstag.create(m_grid, "water_velocity", WITH_GHOSTS);
+  m_Vstag.set_attrs("internal",
+                    "cell face-centered (staggered) components of water velocity"
+                    " in subglacial water layer",
+                    "m s-1", "");
+  m_Vstag.set(0.0);
+
+  m_V.create(m_grid, "water_velocity", WITH_GHOSTS);
   m_V.set_attrs("internal",
-                "cell face-centered (staggered) components of water velocity"
-                " in subglacial water layer",
+                "subglacial water velocity on the regular grid",
                 "m s-1", "");
-  m_V.set(0.0);
 
   // needs ghosts in Routing and Distributed
   m_W.create(m_grid, "bwat", WITH_GHOSTS, 1);
@@ -425,6 +430,10 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
 
   this->update_impl(t, dt, inputs);
 
+  // compute water velocity on the regular grid
+  m_Vstag.update_ghosts();
+  m_Vstag.staggered_to_regular(m_V);
+
   // compute total change in meters
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -510,6 +519,10 @@ const IceModelVec2S& Hydrology::subglacial_water_thickness() const {
 }
 
 const IceModelVec2Stag& Hydrology::velocity_staggered() const {
+  return m_Vstag;
+}
+
+const IceModelVec2V& Hydrology::velocity() const {
   return m_V;
 }
 

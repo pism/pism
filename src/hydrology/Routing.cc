@@ -650,7 +650,7 @@ double Routing::max_timestep_W_diff(double KW_max) const {
  */
 double Routing::max_timestep_W_cfl() const {
   // V could be zero if P is constant and bed is flat
-  std::vector<double> tmp = m_V.absmaxcomponents();
+  std::vector<double> tmp = m_Vstag.absmaxcomponents();
 
   return 0.5 / (tmp[0]/m_dx + tmp[1]/m_dy); // FIXME: is regularization needed?
 }
@@ -805,10 +805,10 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
                      *inputs.bed_elevation,
                      m_K,
                      inputs.no_model_mask,
-                     m_V);
+                     m_Vstag);
 
     // to get Q, W needs valid ghosts
-    advective_fluxes(m_V, m_W, m_Q);
+    advective_fluxes(m_Vstag, m_W, m_Q);
 
     {
       const double
