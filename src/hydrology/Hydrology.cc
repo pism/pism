@@ -334,6 +334,7 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
   m_Q.create(m_grid, "water_flux", WITHOUT_GHOSTS);
   m_Q.set_attrs("diagnostic", "advective subglacial water flux",
                 "m2 s-1", "");
+  m_Q.metadata().set_string("glaciological_units", "m2 day-1");
   m_Q.set(0.0);
 
   // storage for water conservation reporting quantities
