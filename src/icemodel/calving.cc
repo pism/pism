@@ -39,6 +39,16 @@ namespace pism {
 
 void IceModel::do_calving() {
 
+  {
+    m_work2d[0].set_to_magnitude(m_subglacial_hydrology->velocity());
+
+    FrontalMeltInputs inputs;
+    inputs.geometry               = &m_geometry;
+    inputs.subglacial_water_speed = &m_work2d[0];
+
+    m_frontalmelt->update(inputs, m_time->current(), m_dt);
+  }
+
   CalvingInputs inputs;
 
   inputs.geometry = &m_geometry;
