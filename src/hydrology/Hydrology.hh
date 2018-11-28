@@ -168,9 +168,6 @@ protected:
   // water flux on the regular grid
   IceModelVec2V m_Q;
 
-  // edge-centered (staggered) advection flux
-  IceModelVec2Stag m_Qstag;
-
   //! effective thickness of basal water stored in till
   IceModelVec2S m_Wtill;
 

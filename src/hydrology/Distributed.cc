@@ -316,6 +316,8 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     dt_max  = m_config->get_double("hydrology.maximum_time_step", "seconds"),
     phi0    = m_config->get_double("hydrology.regularizing_porosity");
 
+  m_Qstag_average.set(0.0);
+
   // make sure W,P have valid ghosts before starting hydrology steps
   m_W.update_ghosts();
   m_P.update_ghosts();
@@ -359,6 +361,8 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
 
     // to get Q, W needs valid ghosts
     advective_fluxes(m_Vstag, m_W, m_Qstag);
+
+    m_Qstag_average.add(hdt, m_Qstag);
 
     {
       const double
@@ -422,6 +426,9 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     m_Wtill.copy_from(m_Wtillnew);
     m_P.copy_from(m_Pnew);
   } // end of the time-stepping loop
+
+  m_Qstag_average.scale(1.0 / dt);
+  m_Qstag_average.staggered_to_regular(m_Q);
 
   m_log->message(2,
                  "  took %d hydrology sub-steps with average dt = %.6f years (%.6f s)\n",

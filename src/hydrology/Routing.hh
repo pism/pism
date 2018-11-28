@@ -109,6 +109,11 @@ protected:
   double max_timestep_W_cfl() const;
 protected:
 
+  // edge-centered (staggered) advection flux
+  IceModelVec2Stag m_Qstag;
+
+  IceModelVec2Stag m_Qstag_average;
+
   // edge-centered (staggered) water velocity
   IceModelVec2Stag m_Vstag;
 

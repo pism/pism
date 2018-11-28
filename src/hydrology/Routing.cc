@@ -196,6 +196,16 @@ Routing::Routing(IceGrid::ConstPtr g)
   m_rg    = (m_config->get_double("constants.fresh_water.density") *
              m_config->get_double("constants.standard_gravity"));
 
+  m_Qstag.create(m_grid, "advection_flux", WITH_GHOSTS, 1);
+  m_Qstag.set_attrs("internal",
+                    "cell face-centered (staggered) components of advective subglacial water flux",
+                    "m2 s-1", "");
+
+  m_Qstag_average.create(m_grid, "cumulative_advection_flux", WITH_GHOSTS, 1);
+  m_Qstag_average.set_attrs("internal",
+                            "average (over time) advection flux on the staggered grid",
+                            "m2 s-1", "");
+
   m_Vstag.create(m_grid, "water_velocity", WITHOUT_GHOSTS);
   m_Vstag.set_attrs("internal",
                     "cell face-centered (staggered) components of water velocity"
@@ -781,6 +791,8 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     t_final = t + dt,
     dt_max  = m_config->get_double("hydrology.maximum_time_step", "seconds");
 
+  m_Qstag_average.set(0.0);
+
   // make sure W has valid ghosts before starting hydrology steps
   m_W.update_ghosts();
 
@@ -814,6 +826,8 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
 
     // to get Q, W needs valid ghosts
     advective_fluxes(m_Vstag, m_W, m_Qstag);
+
+    m_Qstag_average.add(hdt, m_Qstag);
 
     {
       const double
@@ -863,6 +877,9 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     m_W.copy_from(m_Wnew);
     m_Wtill.copy_from(m_Wtillnew);
   } // end of the time-stepping loop
+
+  m_Qstag_average.scale(1.0 / dt);
+  m_Qstag_average.staggered_to_regular(m_Q);
 
   m_log->message(2,
                  "  took %d hydrology sub-steps with average dt = %.6f years (%.3f s or %.3f hours)\n",

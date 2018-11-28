@@ -116,6 +116,42 @@ protected:
   }
 };
 
+/*! @brief Report advective subglacial water flux. */
+class SubglacialWaterFlux : public DiagAverageRate<Hydrology>
+{
+public:
+  SubglacialWaterFlux(const Hydrology *m)
+    : DiagAverageRate<Hydrology>(m, "subglacial_water_flux", RATE) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux")};
+    m_accumulator.metadata().set_string("units", "m2");
+
+    set_attrs("advective subglacial water flux", "",
+              "m2 second-1", "m2 year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
+
+    m_flux_magnitude.create(m_grid, "flux_magnitude", WITHOUT_GHOSTS);
+    m_flux_magnitude.set_attrs("internal", "magnitude of the subglacial water flux", "m2 s-1", "");
+  }
+
+protected:
+  void update_impl(double dt) {
+    m_flux_magnitude.set_to_magnitude(model->flux());
+
+    m_accumulator.add(dt, m_flux_magnitude);
+
+    m_interval_length += dt;
+  }
+
+  IceModelVec2S m_flux_magnitude;
+};
+
+
 /*! @brief Report water flux at the grounded margin. */
 class GroundedMarginFlux : public DiagAverageRate<Hydrology>
 {
@@ -295,16 +331,10 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
                 "m", "");
   m_W.metadata().set_double("valid_min", 0.0);
 
-  m_Qstag.create(m_grid, "advection_flux", WITH_GHOSTS, 1);
-  m_Qstag.set_attrs("internal",
-                    "cell face-centered (staggered) components of advective subglacial water flux",
-                    "m2 s-1", "");
-  m_Qstag.set(0.0);
-
-  m_Q.create(m_grid, "subglacial_water_flux", WITHOUT_GHOSTS);
-  m_Q.set_attrs("diagnostic",
-                "advective subglacial water flux",
+  m_Q.create(m_grid, "water_flux", WITHOUT_GHOSTS);
+  m_Q.set_attrs("diagnostic", "advective subglacial water flux",
                 "m2 s-1", "");
+  m_Q.set(0.0);
 
   // storage for water conservation reporting quantities
   {
@@ -427,12 +457,6 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
 
   this->update_impl(t, dt, inputs);
 
-  // compute water flux on the regular grid
-  //
-  // note that update_impl() ensures that ghosts of m_Qstag are up to date because they
-  // are needed to compute flux divergence
-  m_Qstag.staggered_to_regular(m_Q);
-
   // compute total change in meters
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -468,6 +492,7 @@ DiagnosticList Hydrology::diagnostics_impl() const {
     {"tendency_of_subglacial_water_mass_at_grounded_margins",       Diagnostic::Ptr(new GroundedMarginFlux(this))},
     {"tendency_of_subglacial_water_mass_at_grounding_line",         Diagnostic::Ptr(new GroundingLineFlux(this))},
     {"tendency_of_subglacial_water_mass_at_domain_boundary",        Diagnostic::Ptr(new DomainBoundaryFlux(this))},
+    {"subglacial_water_flux_mag",                                   Diagnostic::Ptr(new SubglacialWaterFlux(this))},
   };
 
   return result;
@@ -518,10 +543,8 @@ const IceModelVec2S& Hydrology::subglacial_water_thickness() const {
 }
 
 /*!
- * Return subglacial water flux.
- *
- * FIXME: right now this is the flux during the last short hydrology time step during the
- * longer requested time step. We might want to compute the time-averaged flux instead.
+ * Return subglacial water flux (time-average over the time step requested at the time of
+ * the update() call).
  */
 const IceModelVec2V& Hydrology::flux() const {
   return m_Q;
