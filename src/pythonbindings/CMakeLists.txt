@@ -58,8 +58,9 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     SET_SOURCE_FILES_PROPERTIES(${swig_generated_file_fullname}
       PROPERTIES COMPILE_FLAGS "-w")
 
-    add_custom_target(clean_swig
-      COMMAND rm -f ${swig_generated_file_fullname}
+    add_custom_target (clean_swig
+      COMMAND ${CMAKE_COMMAND} -E touch PISM.i
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       VERBATIM)
 
     if (${CMAKE_VERSION} VERSION_LESS "3.8.0")
