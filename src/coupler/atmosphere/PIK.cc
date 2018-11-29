@@ -99,6 +99,7 @@ void PIK::init_impl(const Geometry &geometry) {
     m_log->message(2,
                    "    Mean annual temperature: as in Martin et al (2011).\n"
                    "    Mean summer temperature: anomaly to the parameterization used by Huybrechts & De Wolde (1999).\n");
+    break;
   default:
   case MARTIN:
     m_log->message(2,
