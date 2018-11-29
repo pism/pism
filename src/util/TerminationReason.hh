@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2018  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,13 +30,22 @@ namespace pism {
 
 class TerminationReason {
 public:
-  TerminationReason() :m_reason(0) {};
+  TerminationReason()
+    : m_reason(0) {
+  }
+
+  TerminationReason(int code)
+    : m_reason(code) {
+  }
+
+  virtual ~TerminationReason() {
+  }
   
   typedef std::shared_ptr<TerminationReason> Ptr;
   
   virtual int reason() {
     return m_reason;
-  };
+  }
 
   virtual std::string description() {
     std::stringstream sdesc;
@@ -61,11 +70,11 @@ public:
 
   virtual bool has_root_cause() {
     return (bool)m_root_cause;
-  };
+  }
 
   TerminationReason::Ptr root_cause() {
     return m_root_cause;
-  };
+  }
 
   void set_root_cause(TerminationReason::Ptr cause) {
     m_root_cause = cause;
@@ -107,15 +116,17 @@ public:
 
 class GenericTerminationReason: public TerminationReason {
 public:
-  GenericTerminationReason(int code, std::string &desc) :
-    m_description(desc) {
-    m_reason = code;
-  };
+  GenericTerminationReason(int code, std::string &desc)
+    : TerminationReason(code), m_description(desc) {
+  }
 
-  GenericTerminationReason(int code, const std::string &desc) :
-    m_description(desc) {
-    m_reason = code;
-  };
+  GenericTerminationReason(int code, const std::string &desc)
+    : TerminationReason(code), m_description(desc) {
+  }
+
+  virtual ~GenericTerminationReason() {
+    // empty
+  }
   
   static TerminationReason::Ptr keep_iterating() {
     static TerminationReason::Ptr sm_keep_iterating(new GenericTerminationReason(0,"Keep iterating."));
