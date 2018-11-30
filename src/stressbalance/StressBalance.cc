@@ -29,6 +29,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/Time.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
@@ -52,6 +53,84 @@ Inputs::Inputs() {
   no_model_mask              = NULL;
   no_model_ice_thickness     = NULL;
   no_model_surface_elevation = NULL;
+}
+
+/*!
+ * Save stress balance inputs to a file (for debugging).
+ */
+void Inputs::dump(const char *filename) const {
+  if (not geometry) {
+    return;
+  }
+
+  Context::ConstPtr ctx = geometry->ice_thickness.grid()->ctx();
+  Config::ConstPtr config = ctx->config();
+
+  PIO output(ctx->com(), config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
+
+  config->write(output);
+
+  io::define_time(output, *ctx);
+  io::append_time(output, config->get_string("time.dimension_name"), ctx->time()->current());
+
+  {
+    geometry->latitude.write(output);
+    geometry->longitude.write(output);
+
+    geometry->bed_elevation.write(output);
+    geometry->sea_level_elevation.write(output);
+
+    geometry->ice_thickness.write(output);
+    geometry->ice_area_specific_volume.write(output);
+
+    geometry->cell_type.write(output);
+    geometry->cell_grounded_fraction.write(output);
+    geometry->ice_surface_elevation.write(output);
+  }
+
+  if (basal_melt_rate) {
+    basal_melt_rate->write(output);
+  }
+
+  if (melange_back_pressure) {
+    melange_back_pressure->write(output);
+  }
+
+  if (fracture_density) {
+    fracture_density->write(output);
+  }
+
+  if (basal_yield_stress) {
+    basal_yield_stress->write(output);
+  }
+
+  if (enthalpy) {
+    enthalpy->write(output);
+  }
+
+  if (age) {
+    age->write(output);
+  }
+
+  if (bc_mask) {
+    bc_mask->write(output);
+  }
+
+  if (bc_values) {
+    bc_values->write(output);
+  }
+
+  if (no_model_mask) {
+    no_model_mask->write(output);
+  }
+
+  if (no_model_ice_thickness) {
+    no_model_ice_thickness->write(output);
+  }
+
+  if (no_model_surface_elevation) {
+    no_model_surface_elevation->write(output);
+  }
 }
 
 StressBalance::StressBalance(IceGrid::ConstPtr g,

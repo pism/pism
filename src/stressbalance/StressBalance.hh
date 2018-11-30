@@ -56,6 +56,8 @@ public:
   const IceModelVec2Int *no_model_mask;
   const IceModelVec2S *no_model_ice_thickness;
   const IceModelVec2S *no_model_surface_elevation;
+
+  void dump(const char *filename) const;
 };
 
 //! The class defining PISM's interface to the shallow stress balance code.
