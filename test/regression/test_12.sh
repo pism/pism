@@ -40,7 +40,7 @@ if diff_max < threshold:
     print("diff(volume).max() = %f, threshold = %f" % (diff_max, threshold))
     exit(0)
 else:
-    print "diff(volume).max() = %f > %f" % (diff_max, threshold)
+    print("diff(volume).max() = %f > %f" % (diff_max, threshold))
     exit(1)
 EOF
 
