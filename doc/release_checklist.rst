@@ -33,7 +33,6 @@ PISM release checklist
       make manual_html manual_pdf browser.tgz pismpython_docs
 
 #. Upload these docs.
-#. Update the default branch on https://github.com/pism/pism
 #. Write a news item for ``pism-docs.org``.
 #. Update the current PISM version on ``pism-docs.org``.
 #. Send an e-mail to CRYOLIST.
