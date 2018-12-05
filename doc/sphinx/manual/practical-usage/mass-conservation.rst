@@ -131,6 +131,17 @@ to save all diagnostics mentioned above.
 
 See :ref:`sec-subhydro` for more information about hydrology models.
 
+Mass accounting in the PDD model
+--------------------------------
+
+PISM's PDD model provides diagnostics needed to compare computed accumulation, melt, and
+runoff to the effective mass balance. Use diagnostic quantities
+`surface_accumulation_flux`, `surface_melt_flux`, and `surface_runoff_flux` (units of mass
+per area per time) and `surface_accumulation_rate`, `surface_melt_rate`,
+`surface_runoff_rate` (units of mass per time).
+
+To save all these, use `-extra_vars` shortcuts `pdd_fluxes` and `pdd_rates`.
+
 .. [#] See :ref:`sec-diagnostics-list` for the full list of diagnostics.
 
 .. [#] `ncap2` is a part of NCO_.
