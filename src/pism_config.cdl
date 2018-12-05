@@ -1252,21 +1252,6 @@ netcdf pism_config {
     pism_config:ocean.cache.update_interval_option = "ocean_cache_update_interval";
     pism_config:ocean.cache.update_interval_type = "integer";
 
-    pism_config:ocean.runoff_to_ocean_melt_b = 0.15;
-    pism_config:ocean.runoff_to_ocean_melt_b_doc = "parameter B in eqn. 1 in :cite:`Aschwanden`";
-    pism_config:ocean.runoff_to_ocean_melt_b_type = "scalar";
-    pism_config:ocean.runoff_to_ocean_melt_b_units = "1";
-
-    pism_config:ocean.runoff_to_ocean_melt_power_alpha = 0.54;
-    pism_config:ocean.runoff_to_ocean_melt_power_alpha_doc = "exponent `\\alpha` in eqn. 1 in :cite:`Xu2013`";
-    pism_config:ocean.runoff_to_ocean_melt_power_alpha_type = "scalar";
-    pism_config:ocean.runoff_to_ocean_melt_power_alpha_units = "1";
-
-    pism_config:ocean.runoff_to_ocean_melt_power_beta = 1.17;
-    pism_config:ocean.runoff_to_ocean_melt_power_beta_doc = "exponent `\\beta` in eqn. 1 in :cite:`Xu2013`";
-    pism_config:ocean.runoff_to_ocean_melt_power_beta_type = "scalar";
-    pism_config:ocean.runoff_to_ocean_melt_power_beta_units = "1";
-
     pism_config:ocean.sub_shelf_heat_flux_into_ice = 0.5;
     pism_config:ocean.sub_shelf_heat_flux_into_ice_doc = "= J meter-2 second-1; naively chosen default value for heat from ocean; see comments in pism::ocean::Constant::shelf_base_mass_flux().";
     pism_config:ocean.sub_shelf_heat_flux_into_ice_type = "scalar";
