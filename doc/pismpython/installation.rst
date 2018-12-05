@@ -41,14 +41,13 @@ on Mac OS X.
 ------------
 
 ``petsc4py`` is a set of Python bindings for PETSc. `Download
-<https://bitbucket.org/petsc/petsc4py/>`__ a version appropriate for your
-version of PETSc; version 3.3 works with PETSc 3.2 and 3.3. Then,
-assuming you built PISM with ``PETSC_DIR=/home/user/petsc-3.2-p7/``
-and ``PETSC_ARCH=linux-gnu-opt``
+<https://bitbucket.org/petsc/petsc4py/>`__ a version appropriate for your version of
+PETSc. Then, assuming you built PISM with ``PETSC_DIR=/home/user/petsc-3.10.2/`` and
+``PETSC_ARCH=linux-gnu-opt``
 
 .. code-block:: bash
 
-   export PETSC_DIR=/home/user/petsc-3.2-p7/
+   export PETSC_DIR=/home/user/petsc-3.10.2/
    export PETSC_ARCH=linux-gnu-opt
    python setup.py build
    python setup.py install --prefix INSTALL_LOCATION
