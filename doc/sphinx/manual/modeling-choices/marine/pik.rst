@@ -70,7 +70,7 @@ The vertically integrated force balance at floating calving fronts has been form
 :cite:`Morland` as
 
 .. math::
-   :name: eq-cfbc
+   :label: eq-cfbc
 
    \int_{z_s-\frac{\rho}{\rho_w}H}^{z_s+(1-\frac{\rho}{\rho_w})H}\mathbf{\sigma}\cdot\mathbf{n}\;dz
    = \int_{z_s-\frac{\rho}{\rho_w}H}^{z_s}\rho_w g (z-z_s) \;\mathbf{n}\;dz.

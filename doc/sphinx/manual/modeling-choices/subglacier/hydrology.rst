@@ -86,7 +86,7 @@ In particular, denoting ``tillwat`` by `W_{till}`, the till-stored water layer e
 thickness evolves by the simple equation
 
 .. math::
-   :name: eq-tillwatevolve
+   :label: eq-tillwatevolve
 
    \frac{\partial W_{till}}{\partial t} = \frac{m}{\rho_w} - C
 
@@ -120,7 +120,7 @@ subglacial water flux is determined by a generalized Darcy flux relation :cite:`
 .. include:: ../../../math-definitions.txt
 
 .. math::
-   :name: eq-flux
+   :label: eq-flux
 
    \bq = - k\, W^\alpha\, |\nabla \psi|^{\beta-2} \nabla \psi
 
@@ -131,7 +131,7 @@ layer of transportable water, `\psi` is the hydraulic potential, and `k`, `\alph
 In the ``routing`` model the hydraulic potential `\psi` is determined by
 
 .. math::
-   :name: eq-hydraulicpotential
+   :label: eq-hydraulicpotential
 
    \psi = P_o + \rho_w g (b + W)
 

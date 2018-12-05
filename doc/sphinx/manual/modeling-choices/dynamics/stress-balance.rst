@@ -205,11 +205,11 @@ Weertman-style sliding
 PISM implements equation 5 from :cite:`Tomkin2007`:
 
 .. math::
-   :name: weertman-sliding
+   :label: eq-weertman-sliding
 
    \mathbf{u}_s = \frac{2 A_s \beta_c (\rho g H)^{n}}{N - P} |\nabla h|^{n-1} \nabla h.
 
-.. list-table:: Notation used in :eq:`weertman-sliding`
+.. list-table:: Notation used in :eq:`eq-weertman-sliding`
    :name: tab-weertman-notation
    :header-rows: 1
    :widths: 1,9
@@ -246,7 +246,7 @@ PISM implements equation 5 from :cite:`Tomkin2007`:
        set to `1` in this implementation
 
 We assume that the basal water pressure is a given constant fraction of the overburden
-pressure: `P = k N`. This simplifies :eq:`weertman-sliding` to
+pressure: `P = k N`. This simplifies :eq:`eq-weertman-sliding` to
 
 .. math::
 

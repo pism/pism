@@ -112,7 +112,7 @@ the grid spacing of `5` km.
 In summary, with the default (center) grid registration
 
 .. math::
-   :name: eq-grid-registration-center
+   :label: eq-grid-center
 
    \Delta x &= \frac{2 L_x}{M_x},
 
@@ -147,7 +147,7 @@ and `x` coordinates range from `-10000` to `10000`.
 With the "corner" grid registration
 
 .. math::
-   :name: eq-grid-registration-corner
+   :label: eq-grid-corner
 
    \Delta x &= \frac{2 L_x}{M_x - 1},
 
@@ -166,7 +166,7 @@ See :numref:`fig-cell-corner` for an illustration.
 
    *Left*: a coarse grid. *Right*: a finer grid covering the same domain.
 
-To switch between :eq:`eq-grid-registration-center` and :eq:`eq-grid-registration-corner`,
+To switch between :eq:`eq-grid-center` and :eq:`eq-grid-corner`,
 set the configuration parameter :config:`grid.registration`.
 
 .. _sec-projections:
