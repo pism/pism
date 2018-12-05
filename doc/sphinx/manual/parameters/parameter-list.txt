@@ -150,7 +150,7 @@
 
 #. :config:`atmosphere.pik.parameterization` (*keyword*)
 
-   :Value: ``default``
+   :Value: ``martin``
    :Choices: ``martin, huybrechts_dewolde, martin_huybrechts_dewolde, era_interim, era_interim_sin, era_interim_lon``
    :Option: :opt:`-atmosphere_pik`
    :Description: Selects parameterizations of mean annual and mean summer near-surface air temperatures.
