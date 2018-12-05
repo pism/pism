@@ -1,6 +1,8 @@
 PISM release checklist
 ======================
 
+#. Create a "pre-release" branch starting from the "dev" branch and remove code that
+   should not be a part of the release.
 #. Run ``make`` in the ``doc/sphinx`` directory to update lists of diagnostics and
    configuration parameters.
 #. Run ``make`` in the ``doc`` directory to update funding sources.
