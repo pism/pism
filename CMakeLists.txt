@@ -103,9 +103,8 @@ if (Pism_CODE_COVERAGE)
   endif()
   add_custom_target (coverage_report
     # remove coverage data from src/pythonbindings
-    COMMAND lcov -d ${Pism_BINARY_DIR}/src/pythonbindings -z
-    COMMAND lcov -d ${Pism_BINARY_DIR}/src/vdt -z
-    COMMAND lcov -q -b ${Pism_SOURCE_DIR} --no-external -d . -c -o pism-coverage.info
+    COMMAND lcov --directory ${Pism_BINARY_DIR}/src/pythonbindings -z
+    COMMAND lcov --base-directory ${Pism_SOURCE_DIR} --directory src --quiet --no-external --capture -o pism-coverage.info
     COMMAND genhtml -t "PISM Coverage report" -o cover --demangle-cpp --legend pism-coverage.info
     WORKING_DIRECTORY ${Pism_BINARY_DIR}
     VERBATIM
