@@ -99,7 +99,6 @@
 .. _searise-greenland-data: http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
 .. _searise: http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment
 .. _mismip-code: http://homepages.ulb.ac.be/~fpattyn/mismip/MISMIP_distribution.tar
-.. _VDT: https://github.com/dpiparo/vdt
 
 .. PISM-related external links
 

@@ -9,5 +9,4 @@ add_library (flowlaws OBJECT
   PatersonBudd.cc
   PatersonBuddCold.cc
   PatersonBuddWarm.cc
-  approximate/gpbld_n.cc
   )

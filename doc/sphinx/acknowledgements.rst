@@ -35,8 +35,6 @@ PISM includes the source code for three external libraries we rely on:
 
 - `CalCalcs <CalCalcs-home_>`_, Copyright |copy| 2010 by David W. Pierce, GPL
 
-- VDT_, Copyright |copy| 2012 Danilo Piparo, Vincenzo Innocente, Thomas Hauth (CERN), LGPL
-
 - ``cubature.c``, Copyright |copy| 2005 Steven G. Johnson, GPL
 
 .. csv-table:: Past and current grants supporting PISM development.
