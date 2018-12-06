@@ -38,9 +38,9 @@ try:
     revision = "git describe --always --match v?.?*"
     author = 'git --no-pager log -1 --pretty="format:%an"'
     date = 'git --no-pager log -1 --pretty="format:%ci"'
-    git_revision = subprocess.check_output(shlex.split(revision)).strip()
-    git_author = subprocess.check_output(shlex.split(author)).strip()
-    git_date = subprocess.check_output(shlex.split(date)).strip()
+    git_revision = subprocess.check_output(shlex.split(revision)).strip().decode("utf-8")
+    git_author = subprocess.check_output(shlex.split(author)).strip().decode("utf-8")
+    git_date = subprocess.check_output(shlex.split(date)).strip().decode("utf-8")
 except:
     git_revision = "unknown Git revision"
     git_author = "unknown Git author"
@@ -50,9 +50,9 @@ rst_epilog = """
 .. |git-revision| replace:: ``{git_revision}``
 .. |git-author| replace:: {git_author}
 .. |git-date| replace:: ``{git_date}``
-""".format(git_revision=git_revision.decode("utf-8"),
-           git_author=git_author.decode("utf-8"),
-           git_date=git_date.decode("utf-8"))
+""".format(git_revision=git_revision,
+           git_author=git_author,
+           git_date=git_date)
 
 # This is needed to be able to put .. bibliography:: in a "References" section in HTML and
 # just in the main document in LaTeX. (Otherwise Sphinx produces an empty "References"
