@@ -1,6 +1,7 @@
 PISM release checklist
 ======================
 
+#. Run `make manual_linkcheck` and fix any broken links in the manual.
 #. Create a "pre-release" branch starting from the "dev" branch and remove code that
    should not be a part of the release.
 #. Run ``make`` in the ``doc/sphinx`` directory to update lists of diagnostics and
