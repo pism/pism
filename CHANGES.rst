@@ -1,5 +1,10 @@
 .. default-role:: literal
 
+Changes from v1.1.2 to v1.1.3
+=============================
+
+- Minor fixes of PISM's documentation.
+
 Changes from v1.1.1 to v1.1.2
 =============================
 
