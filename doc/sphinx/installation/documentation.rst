@@ -31,7 +31,7 @@ evolve together. These tools are required:
      - required to rebuild the |pism-browser|
 
 
-For a debian-based system may be able to install these by running
+On a debian-based system you may be able to install these by running
 
 .. literalinclude:: code/install_docu_libraries.sh
    :language: bash
@@ -39,10 +39,9 @@ For a debian-based system may be able to install these by running
 
 .. only:: html
 
-   Click :download:`here <code/install_libraries.sh>` to download this file.
+   Click :download:`here <code/install_docu_libraries.sh>` to download this file.
 
 (You may need to change this command to match your package system.)
-
 
 Note that if you install Sphinx using MacPorts_, you will install a version that
 corresponds to your Python version, and its executables will have names with suffixes
