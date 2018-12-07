@@ -31,7 +31,7 @@ Greg Newby have supported our hardware, software, and computations. Bob Bindscha
 Sophie Nowicki, Jesse Johnson, and others in the SeaRISE group have motivated and assisted
 PISM development in many ways.
 
-PISM includes the source code for three external libraries we rely on:
+PISM includes the source code for two external libraries we rely on:
 
 - `CalCalcs <CalCalcs-home_>`_, Copyright |copy| 2010 by David W. Pierce, GPL
 
