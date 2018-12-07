@@ -32,7 +32,7 @@ PISM release checklist
 
    ::
 
-      make manual_html manual_pdf browser.tgz pismpython_docs
+      make manual_html manual_pdf browser.tgz
 
 #. Upload these docs.
 #. Write a news item for ``pism-docs.org``.
