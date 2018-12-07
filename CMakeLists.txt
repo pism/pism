@@ -1,4 +1,5 @@
 cmake_minimum_required (VERSION 3.1)
+cmake_policy(SET CMP0078 OLD)       #controls names of SWIG targets
 project (Pism C CXX)
 
 # Require C++11 compiler support.
