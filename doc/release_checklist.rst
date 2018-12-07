@@ -7,7 +7,6 @@ PISM release checklist
 #. Run ``make`` in the ``doc/sphinx`` directory to update lists of diagnostics and
    configuration parameters.
 #. Run ``make`` in the ``doc`` directory to update funding sources.
-#. Create a new branch and merge (if needed).
 #. Set ``Pism_BRANCH`` in ``CMakeLists.txt`` to "stable".
 #. Update ``version`` and ``release`` in ``doc/sphinx/conf.py``.
 #. Update ``CHANGES.rst``.
