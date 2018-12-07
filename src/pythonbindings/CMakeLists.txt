@@ -93,20 +93,6 @@ add_custom_target (install_python_bindings_in_the_build_directory ALL
   VERBATIM
   DEPENDS ${SWIG_MODULE_cpp_REAL_NAME}  _petsc_version install_site_packages_in_the_build_directory )
 
-configure_file(${Pism_SOURCE_DIR}/test/pylintrc pylintrc)
-add_custom_target (install_python_bindings_in_the_source_directory ALL
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:_cpp> ${Pism_SOURCE_DIR}/site-packages/PISM
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:_petsc_version> ${Pism_SOURCE_DIR}/site-packages/PISM/
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/cpp.py ${Pism_SOURCE_DIR}/site-packages/PISM/
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/petsc_version.py ${Pism_SOURCE_DIR}/site-packages/PISM/
-  VERBATIM
-  DEPENDS ${SWIG_MODULE_cpp_REAL_NAME}  _petsc_version)
-add_custom_target (pylint
-  COMMAND pylint --rcfile=${CMAKE_CURRENT_BINARY_DIR}/pylintrc ${Pism_SOURCE_DIR}/site-packages/PISM
-  VERBATIM
-  DEPENDS install_python_bindings_in_the_source_directory
-)
-
 # The Python code snippet below returns 1 if Python can import a PISM
 # and if the directory of said PISM matches the place we are about to
 # install PISM's Python wrappers. If the return value is not 1, we
