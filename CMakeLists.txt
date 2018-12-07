@@ -177,7 +177,7 @@ else()
 endif()
 
 add_custom_target (etags
-  COMMAND find . -regextype posix-extended -regex ".*\\.(c|cc|h|hh)" | xargs etags --class-qualify --no-defines
+  COMMAND find . -regex ".*\\.(c|cc|h|hh)" | xargs etags --class-qualify --no-defines
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
   VERBATIM
 )
