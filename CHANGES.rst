@@ -134,6 +134,9 @@ Changes since v1.0
 - Update the Debian/Ubuntu section of the installation manual.
 - Move the documentation of the BOMBPROOF numerical scheme for energy conservation from
   the source code browser into the manual.
+- Add an experimental implementation of a parameterization of cryo-hydrologic warming
+  based on *Cryo-hydrologic warming: A potential mechanism for rapid thermal response of
+  ice sheets* by Phillips et al, 2010.)
 
 Changes from v0.7 to v1.0
 =========================
