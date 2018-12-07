@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,7 +31,9 @@
 #include "pism/calving/OceanKill.hh"
 #include "pism/calving/FrontalMelt.hh"
 #include "pism/energy/BedThermalUnit.hh"
-#include "pism/hydrology/Hydrology.hh"
+#include "pism/hydrology/NullTransport.hh"
+#include "pism/hydrology/Routing.hh"
+#include "pism/hydrology/Distributed.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/stressbalance/sia/SIAFD.hh"
 #include "pism/stressbalance/ssa/SSAFD.hh"
@@ -47,6 +49,8 @@
 #include "pism/coupler/atmosphere/Factory.hh"
 #include "pism/coupler/ocean/Factory.hh"
 #include "pism/coupler/ocean/Initialization.hh"
+#include "pism/coupler/ocean/sea_level/Factory.hh"
+#include "pism/coupler/ocean/sea_level/Initialization.hh"
 #include "pism/coupler/surface/Factory.hh"
 #include "pism/coupler/surface/Initialization.hh"
 #include "pism/earth/LingleClark.hh"
@@ -117,7 +121,7 @@ void IceModel::time_setup() {
 void IceModel::model_state_setup() {
 
   // Check if we are initializing from a PISM output file:
-  InputOptions input = process_input_options(m_ctx->com());
+  InputOptions input = process_input_options(m_ctx->com(), m_config);
 
   const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
 
@@ -127,8 +131,8 @@ void IceModel::model_state_setup() {
     input_file.reset(new PIO(m_grid->com, "guess_mode", input.filename, PISM_READONLY));
   }
 
-  // Get projection information and compute cell areas and lat/lon *before* a component decides to
-  // use latitude or longitude...
+  // Get projection information and compute latitudes and longitudes *before* a component
+  // decides to use them...
   {
     if (use_input_file) {
       std::string mapping_name = m_grid->get_mapping_info().mapping.get_name();
@@ -149,7 +153,7 @@ void IceModel::model_state_setup() {
 
     }
 
-    compute_cell_areas();
+    compute_lat_lon();
   }
 
   // Initialize 2D fields owned by IceModel (ice geometry, etc)
@@ -169,15 +173,11 @@ void IceModel::model_state_setup() {
     regrid();
   }
 
-  // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
-  // which may need ice thickness to bootstrap.
-  {
-    m_ocean->init();
-  }
+  m_sea_level->init(m_geometry);
 
-  // Initialize a bed deformation model. This may use ice thickness initialized above.
+  // Initialize a bed deformation model.
   if (m_beddef) {
-    m_beddef->init(input);
+    m_beddef->init(input, m_geometry.ice_thickness, m_sea_level->elevation());
     m_grid->variables().add(m_beddef->bed_elevation());
     m_grid->variables().add(m_beddef->uplift());
   }
@@ -189,20 +189,52 @@ void IceModel::model_state_setup() {
   // updated near the end, so during the second time step the stress balance code is
   // guaranteed not to see "icebergs". Here we make sure that the first time step is OK
   // too.
-  enforce_consistency_of_geometry(true); // remove icebergs
+  enforce_consistency_of_geometry(REMOVE_ICEBERGS);
+
+  // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
+  // which may need ice thickness, bed topography, and the cell type mask.
+  {
+    m_ocean->init(m_geometry);
+  }
 
   // Now surface elevation is initialized, so we can initialize surface models (some use
   // elevation-based parameterizations of surface temperature and/or mass balance).
-  m_surface->init();
+  m_surface->init(m_geometry);
 
   if (m_subglacial_hydrology) {
-    m_subglacial_hydrology->init();
+
+    switch (input.type) {
+    case INIT_RESTART:
+      m_subglacial_hydrology->restart(*input_file, input.record);
+      break;
+    case INIT_BOOTSTRAP:
+      m_subglacial_hydrology->bootstrap(*input_file,
+                                        m_geometry.ice_thickness);
+      break;
+    case INIT_OTHER:
+      {
+        IceModelVec2S
+          &W_till = m_work2d[0],
+          &W      = m_work2d[1],
+          &P      = m_work2d[2];
+
+        W_till.set(m_config->get_double("bootstrapping.defaults.tillwat"));
+        W.set(m_config->get_double("bootstrapping.defaults.bwat"));
+        P.set(m_config->get_double("bootstrapping.defaults.bwp"));
+
+        m_subglacial_hydrology->initialize(W_till, W, P);
+        break;
+      }
+    }
   }
 
   // basal_yield_stress_model->init() needs bwat so this must happen
   // after subglacial_hydrology->init()
   if (m_basal_yield_stress_model) {
-    m_basal_yield_stress_model->init();
+    assert((bool)m_subglacial_hydrology);
+    m_basal_yield_stress_model->init(m_geometry,
+                                     m_subglacial_hydrology->till_water_thickness(),
+                                     m_subglacial_hydrology->overburden_pressure());
   }
 
   // Initialize the bedrock thermal layer model.
@@ -236,9 +268,6 @@ void IceModel::model_state_setup() {
 
   // Initialize the energy balance sub-model.
   {
-    IceModelVec2S &ice_surface_temperature = m_work2d[0];
-    IceModelVec2S &climatic_mass_balance   = m_work2d[1];
-
     switch (input.type) {
     case INIT_RESTART:
       {
@@ -247,12 +276,11 @@ void IceModel::model_state_setup() {
       }
     case INIT_BOOTSTRAP:
       {
-        m_surface->temperature(ice_surface_temperature);
-        m_surface->mass_flux(climatic_mass_balance);
+
         m_energy_model->bootstrap(*input_file,
                                   m_geometry.ice_thickness,
-                                  ice_surface_temperature,
-                                  climatic_mass_balance,
+                                  m_surface->temperature(),
+                                  m_surface->mass_flux(),
                                   m_btu->flux_through_top_surface());
         break;
       }
@@ -260,12 +288,11 @@ void IceModel::model_state_setup() {
     default:
       {
         m_basal_melt_rate.set(m_config->get_double("bootstrapping.defaults.bmelt"));
-        m_surface->temperature(ice_surface_temperature);
-        m_surface->mass_flux(climatic_mass_balance);
+
         m_energy_model->initialize(m_basal_melt_rate,
                                    m_geometry.ice_thickness,
-                                   ice_surface_temperature,
-                                   climatic_mass_balance,
+                                   m_surface->temperature(),
+                                   m_surface->mass_flux(),
                                    m_btu->flux_through_top_surface());
 
       }
@@ -282,10 +309,8 @@ void IceModel::model_state_setup() {
   {
     reset_counters();
 
-    char startstr[TEMPORARY_STRING_LENGTH];
-
-    snprintf(startstr, sizeof(startstr),
-             "PISM (%s) started on %d procs.", PISM_Revision, (int)m_grid->size());
+    auto startstr = pism::printf("PISM (%s) started on %d procs.",
+                                 PISM_Revision, (int)m_grid->size());
     prepend_history(startstr + args_string());
   }
 }
@@ -315,12 +340,6 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
                      usurf_found, usurf_name, usurf_found_by_std_name);
   mask_found = input_file.inq_var("mask");
 
-  std::string lon_name, lat_name;
-  bool lon_found = false, lat_found = false,
-    lon_found_by_std_name = false, lat_found_by_std_name = false;
-  input_file.inq_var("lon", "longitude", lon_found, lon_name, lon_found_by_std_name);
-  input_file.inq_var("lat", "latitude",  lat_found, lat_name, lat_found_by_std_name);
-
   // now work through all the 2d variables, regridding if present and otherwise
   // setting to default values appropriately
 
@@ -334,14 +353,30 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
 
   m_log->message(2, "  reading 2D model state variables by regridding ...\n");
 
-  m_geometry.longitude.regrid(input_file, OPTIONAL);
-  if (not lon_found) {
-    m_geometry.longitude.metadata().set_string("missing_at_bootstrap","true");
+  // longitude
+  {
+    m_geometry.longitude.regrid(input_file, OPTIONAL);
+
+    std::string lon_name;
+    bool lon_found = false, lon_found_by_std_name = false;
+    input_file.inq_var("lon", "longitude", lon_found, lon_name, lon_found_by_std_name);
+
+    if (not lon_found) {
+      m_geometry.longitude.metadata().set_string("missing_at_bootstrap", "true");
+    }
   }
 
-  m_geometry.latitude.regrid(input_file, OPTIONAL);
-  if (not lat_found) {
-    m_geometry.latitude.metadata().set_string("missing_at_bootstrap","true");
+  // latitude
+  {
+    m_geometry.latitude.regrid(input_file, OPTIONAL);
+
+    std::string lat_name;
+    bool lat_found = false, lat_found_by_std_name = false;
+    input_file.inq_var("lat", "latitude",  lat_found, lat_name, lat_found_by_std_name);
+
+    if (not lat_found) {
+      m_geometry.latitude.metadata().set_string("missing_at_bootstrap", "true");
+    }
   }
 
   m_geometry.ice_thickness.regrid(input_file, OPTIONAL,
@@ -399,24 +434,20 @@ void IceModel::initialize_2d() {
 //! Manage regridding based on user options.
 void IceModel::regrid() {
 
-  options::String regrid_filename("-regrid_file", "Specifies the file to regrid from");
-
-  options::StringSet regrid_vars("-regrid_vars",
-                                 "Specifies the list of variables to regrid",
-                                 "");
-
+  auto filename    = m_config->get_string("input.regrid.file");
+  auto regrid_vars = set_split(m_config->get_string("input.regrid.vars"), ',');
 
   // Return if no regridding is requested:
-  if (not regrid_filename.is_set()) {
+  if (filename.empty()) {
      return;
   }
 
-  m_log->message(2, "regridding from file %s ...\n",regrid_filename->c_str());
+  m_log->message(2, "regridding from file %s ...\n", filename.c_str());
 
   {
-    PIO regrid_file(m_grid->com, "guess_mode", regrid_filename, PISM_READONLY);
+    PIO regrid_file(m_grid->com, "guess_mode", filename, PISM_READONLY);
     for (auto v : m_model_state) {
-      if (regrid_vars->find(v->get_name()) != regrid_vars->end()) {
+      if (regrid_vars.find(v->get_name()) != regrid_vars.end()) {
         v->regrid(regrid_file, CRITICAL);
       }
     }
@@ -549,31 +580,30 @@ void IceModel::allocate_subglacial_hydrology() {
 
   std::string hydrology_model = m_config->get_string("hydrology.model");
 
-  if (m_subglacial_hydrology != NULL) { // indicates it has already been allocated
+  if (m_subglacial_hydrology) { // indicates it has already been allocated
     return;
   }
 
-  m_log->message(2,
-                 "# Allocating a subglacial hydrology model...\n");
+  m_log->message(2, "# Allocating a subglacial hydrology model...\n");
 
   if (hydrology_model == "null") {
-    m_subglacial_hydrology = new NullTransport(m_grid);
+    m_subglacial_hydrology.reset(new NullTransport(m_grid));
   } else if (hydrology_model == "routing") {
-    m_subglacial_hydrology = new Routing(m_grid);
+    m_subglacial_hydrology.reset(new Routing(m_grid));
   } else if (hydrology_model == "distributed") {
-    m_subglacial_hydrology = new Distributed(m_grid, m_stress_balance.get());
+    m_subglacial_hydrology.reset(new Distributed(m_grid));
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown value for configuration string 'hydrology.model':\n"
-                                  "has value '%s'", hydrology_model.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "unknown 'hydrology.model': %s", hydrology_model.c_str());
   }
 
-  m_submodels["subglacial hydrology"] = m_subglacial_hydrology;
+  m_submodels["subglacial hydrology"] = m_subglacial_hydrology.get();
 }
 
 //! \brief Decide which basal yield stress model to use.
 void IceModel::allocate_basal_yield_stress() {
 
-  if (m_basal_yield_stress_model != NULL) {
+  if (m_basal_yield_stress_model) {
     return;
   }
 
@@ -587,15 +617,15 @@ void IceModel::allocate_basal_yield_stress() {
     std::string yield_stress_model = m_config->get_string("basal_yield_stress.model");
 
     if (yield_stress_model == "constant") {
-      m_basal_yield_stress_model = new ConstantYieldStress(m_grid);
+      m_basal_yield_stress_model.reset(new ConstantYieldStress(m_grid));
     } else if (yield_stress_model == "mohr_coulomb") {
-      m_basal_yield_stress_model = new MohrCoulombYieldStress(m_grid, m_subglacial_hydrology);
+      m_basal_yield_stress_model.reset(new MohrCoulombYieldStress(m_grid));
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
     }
 
-    m_submodels["basal yield stress"] = m_basal_yield_stress_model;
+    m_submodels["basal yield stress"] = m_basal_yield_stress_model.get();
   }
 }
 
@@ -633,29 +663,36 @@ void IceModel::allocate_submodels() {
 
 void IceModel::allocate_couplers() {
   // Initialize boundary models:
-  atmosphere::Factory pa(m_grid);
-  surface::Factory ps(m_grid);
-  ocean::Factory po(m_grid);
 
-  if (m_surface == NULL) {
+  if (not m_surface) {
 
-    m_log->message(2,
-             "# Allocating a surface process model or coupler...\n");
+    m_log->message(2, "# Allocating a surface process model or coupler...\n");
 
-    m_surface = new surface::InitializationHelper(m_grid, ps.create());
+    surface::Factory ps(m_grid, atmosphere::Factory(m_grid).create());
 
-    m_surface->attach_atmosphere_model(pa.create());
+    m_surface.reset(new surface::InitializationHelper(m_grid, ps.create()));
 
-    m_submodels["surface process model"] = m_surface;
+    m_submodels["surface process model"] = m_surface.get();
   }
 
-  if (m_ocean == NULL) {
-    m_log->message(2,
-             "# Allocating an ocean model or coupler...\n");
+  if (not m_sea_level) {
+    m_log->message(2, "# Allocating sea level forcing...\n");
 
-    m_ocean = new ocean::InitializationHelper(m_grid, po.create());
+    using namespace ocean::sea_level;
 
-    m_submodels["ocean model"] = m_ocean;
+    m_sea_level.reset(new InitializationHelper(m_grid, Factory(m_grid).create()));
+
+    m_submodels["sea level forcing"] = m_sea_level.get();
+  }
+
+  if (not m_ocean) {
+    m_log->message(2, "# Allocating an ocean model or coupler...\n");
+
+    using namespace ocean;
+
+    m_ocean.reset(new InitializationHelper(m_grid, Factory(m_grid).create()));
+
+    m_submodels["ocean model"] = m_ocean.get();
   }
 }
 
@@ -663,7 +700,7 @@ void IceModel::allocate_couplers() {
 void IceModel::misc_setup() {
 
   m_log->message(3, "Finishing initialization...\n");
-  InputOptions opts = process_input_options(m_ctx->com());
+  InputOptions opts = process_input_options(m_ctx->com(), m_config);
 
   if (not (opts.type == INIT_OTHER)) {
     // initializing from a file
@@ -773,6 +810,11 @@ void IceModel::misc_setup() {
       }
     }
   }
+
+  if (m_surface_input_for_hydrology) {
+    m_surface_input_for_hydrology->init(m_config->get_string("hydrology.surface_input_file"),
+                                        0, 0);
+  }
 }
 
 //! \brief Initialize calving mechanisms.
@@ -782,7 +824,7 @@ void IceModel::init_calving() {
 
   if (methods.find("ocean_kill") != methods.end()) {
 
-    if (m_ocean_kill_calving == NULL) {
+    if (not m_ocean_kill_calving) {
       m_ocean_kill_calving = new calving::OceanKill(m_grid);
     }
 
@@ -794,7 +836,7 @@ void IceModel::init_calving() {
 
   if (methods.find("thickness_calving") != methods.end()) {
 
-    if (m_thickness_threshold_calving == NULL) {
+    if (not m_thickness_threshold_calving) {
       m_thickness_threshold_calving = new calving::CalvingAtThickness(m_grid);
     }
 
@@ -807,8 +849,8 @@ void IceModel::init_calving() {
 
   if (methods.find("eigen_calving") != methods.end()) {
 
-    if (m_eigen_calving == NULL) {
-      m_eigen_calving = new calving::EigenCalving(m_grid, m_stress_balance.get());
+    if (not m_eigen_calving) {
+      m_eigen_calving = new calving::EigenCalving(m_grid);
     }
 
     m_eigen_calving->init();
@@ -819,8 +861,9 @@ void IceModel::init_calving() {
 
   if (methods.find("vonmises_calving") != methods.end()) {
 
-    if (m_vonmises_calving == NULL) {
-      m_vonmises_calving = new calving::vonMisesCalving(m_grid, m_stress_balance.get());
+    if (not m_vonmises_calving) {
+      m_vonmises_calving = new calving::vonMisesCalving(m_grid,
+                                                        m_stress_balance->shallow()->flow_law());
     }
 
     m_vonmises_calving->init();
@@ -831,8 +874,8 @@ void IceModel::init_calving() {
 
   if (methods.find("frontal_melt") != methods.end()) {
 
-    if (m_frontal_melt == NULL) {
-      m_frontal_melt = new FrontalMelt(m_grid, m_ocean);
+    if (not m_frontal_melt) {
+      m_frontal_melt = new FrontalMelt(m_grid);
     }
 
     m_frontal_melt->init();
@@ -842,7 +885,7 @@ void IceModel::init_calving() {
   }
 
   if (methods.find("float_kill") != methods.end()) {
-    if (m_float_kill_calving == NULL) {
+    if (not m_float_kill_calving) {
       m_float_kill_calving = new calving::FloatKill(m_grid);
     }
 
@@ -940,29 +983,19 @@ std::set<std::string> IceModel::output_variables(const std::string &keyword) {
   return set_split(variables, ',');
 }
 
-void IceModel::compute_cell_areas() {
+void IceModel::compute_lat_lon() {
 
   std::string projection = m_grid->get_mapping_info().proj4;
 
-  if (m_config->get_boolean("grid.correct_cell_areas") and
+  if (m_config->get_boolean("grid.recompute_longitude_and_latitude") and
       not projection.empty()) {
-
-    m_log->message(2,
-                   "* Computing cell areas using projection parameters...\n");
-
-    ::pism::compute_cell_areas(projection, m_geometry.cell_area);
-
     m_log->message(2,
                    "* Computing longitude and latitude using projection parameters...\n");
 
     compute_longitude(projection, m_geometry.longitude);
+    m_geometry.longitude.metadata().set_string("missing_at_bootstrap", "");
     compute_latitude(projection, m_geometry.latitude);
-  } else {
-    m_log->message(2,
-                   "* Computing cell areas using grid spacing (dx = %f m, dy = %f m)...\n",
-                   m_grid->dx(), m_grid->dy());
-
-    m_geometry.cell_area.set(m_grid->dx() * m_grid->dy());
+    m_geometry.latitude.metadata().set_string("missing_at_bootstrap", "");
   }
 }
 

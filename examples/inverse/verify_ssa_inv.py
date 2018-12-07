@@ -37,13 +37,14 @@ than 50 iterations.
 
 
 def fail(msg):
-    print "Test Failed: %s" % msg
+    print("Test Failed: %s" % msg)
     exit(1)
 
 
 def success():
-    print "Test Succeeded."
+    print("Test Succeeded.")
     exit(0)
+
 
 netCDF = None
 try:
@@ -59,8 +60,10 @@ parser = argparse.ArgumentParser(description=help_description,
 parser.add_argument('inv_filename', help='NC file with inversion results', type=str)
 parser.add_argument('-m', '--desired_misfit', required=True, type=float, help='desired final misfit')
 parser.add_argument('-i', '--iter_max', required=True, type=int, help='maximum number of iterations')
-parser.add_argument('-z', '--morozov', required=False, action='store_true', help='verify that next-to-last misfit is larger than desired misfit')
-parser.add_argument('-t', '--misfit_tolerance', required=False, type=float, help='maximum difference between desired and computed misfit')
+parser.add_argument('-z', '--morozov', required=False, action='store_true',
+                    help='verify that next-to-last misfit is larger than desired misfit')
+parser.add_argument('-t', '--misfit_tolerance', required=False, type=float,
+                    help='maximum difference between desired and computed misfit')
 
 args = parser.parse_args()
 
@@ -86,7 +89,8 @@ if iter_count > args.iter_max:
 if args.misfit_tolerance:
     d_misfit = abs(last_misfit - desired_misfit)
     if d_misfit > args.misfit_tolerance:
-        fail("Final misfit too far from desired misfit: |final-desired| = |%0.4g-%0.4g| = %0.4g > %0.4g = desired" % (last_misfit, desired_misfit, d_misfit, args.misfit_tolerance))
+        fail("Final misfit too far from desired misfit: |final-desired| = |%0.4g-%0.4g| = %0.4g > %0.4g = desired" %
+             (last_misfit, desired_misfit, d_misfit, args.misfit_tolerance))
 else:
     if last_misfit >= desired_misfit:
         fail("Desired final misfit not met: computed = %0.4g >= %0.4g = desired" % (last_misfit, desired_misfit))

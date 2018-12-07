@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 PISM Authors
+/* Copyright (C) 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,9 +21,11 @@
 
 #include "StressBalance.hh"
 #include "ShallowStressBalance.hh"
+#include "WeertmanSliding.hh"
 #include "SSB_Modifier.hh"
 #include "pism/regional/SSAFD_Regional.hh"
 #include "pism/regional/SIAFD_Regional.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -33,11 +35,13 @@ std::shared_ptr<StressBalance> create(const std::string &model,
                                       bool regional) {
   ShallowStressBalance *sliding = NULL;
 
-  if (model == "none" or model == "sia") {
+  if (member(model, {"none", "sia"})) {
     sliding = new ZeroSliding(grid);
-  } else if (model == "prescribed_sliding" or model == "prescribed_sliding+sia") {
+  } else if (member(model, {"prescribed_sliding", "prescribed_sliding+sia"})) {
     sliding = new PrescribedSliding(grid);
-  } else if (model == "ssa" or model == "ssa+sia") {
+  } else if (member(model, {"weertman_sliding", "weertman_sliding+sia"})) {
+    sliding = new WeertmanSliding(grid);
+  } else if (member(model, {"ssa", "ssa+sia"})) {
     if (regional) {
       sliding = new SSAFD_Regional(grid);
     } else {
@@ -50,11 +54,9 @@ std::shared_ptr<StressBalance> create(const std::string &model,
 
   SSB_Modifier *modifier = NULL;
 
-  if (model == "none" or model == "ssa" or model == "prescribed_sliding") {
+  if (member(model, {"none", "ssa", "prescribed_sliding", "weertman_sliding"})) {
     modifier = new ConstantInColumn(grid);
-  } else if (model == "prescribed_sliding+sia" or
-             model == "ssa+sia" or
-             model == "sia") {
+  } else if (member(model, {"prescribed_sliding+sia", "weertman_sliding+sia", "ssa+sia", "sia"})) {
     if (regional) {
       modifier = new SIAFD_Regional(grid);
     } else {

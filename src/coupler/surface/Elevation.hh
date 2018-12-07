@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #define _PSELEVATION_H_
 
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/coupler/AtmosphereModel.hh"
 
 namespace pism {
 namespace surface {
@@ -28,18 +27,24 @@ namespace surface {
 //! \brief A class implementing a elevation-dependent temperature and mass balance model.
 class Elevation : public SurfaceModel {
 public:
-  Elevation(IceGrid::ConstPtr g);
-protected:
-  virtual void init_impl();
-  virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
-  virtual void update_impl(double my_t, double my_dt);
+  Elevation(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> input);
+private:
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual void mass_flux_impl(IceModelVec2S &result) const;
-  virtual void temperature_impl(IceModelVec2S &result) const;
-  virtual MaxTimestep max_timestep_impl(double t) const;
-protected:
+  MaxTimestep max_timestep_impl(double t) const;
+
+  const IceModelVec2S& mass_flux_impl() const;
+  const IceModelVec2S& temperature_impl() const;
+
+  void compute_mass_flux(const IceModelVec2S &surface, IceModelVec2S &result) const;
+  void compute_temperature(const IceModelVec2S &surface, IceModelVec2S &result) const;
+
   double m_T_min, m_T_max, m_z_T_min, m_z_T_max;
   double m_M_min, m_M_max, m_M_limit_min, m_M_limit_max, m_z_M_min, m_z_ELA, m_z_M_max;
+
+  IceModelVec2S::Ptr m_mass_flux;
+  IceModelVec2S::Ptr m_temperature;
 };
 
 } // end of namespace surface

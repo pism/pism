@@ -7,15 +7,11 @@ length=10
 
 infile="circular_shelfonly.nc"
 
-if [[ ! -r $infile ]]
-then
-    echo "generating the input file..."
-    ./circular_dirichlet.py -o $infile -shelf
-fi
+./circular_dirichlet.py -Mx $xx -My $yy -o $infile -shelf
 
-grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 1500 -Lbz 1000"
+grid="-Mx $xx -My $yy -Mz 31 -Mbz 1 -Lz 1500 -Lbz 1000"
 
-extra="-extra_times 1 -extra_vars thk,mask,velbar_mag,Href,velbar -extra_file "
+extra="-extra_times 1 -extra_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar -extra_file "
 
 pismopts="-i $infile -bootstrap $grid -stress_balance ssa+sia -ssa_dirichlet_bc"
 

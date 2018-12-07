@@ -27,6 +27,8 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       pism_exception.i
       pism_inverse.i
       pism_ocean.i
+      pism_surface.i
+      pism_atmosphere.i
       pism_options.i
       pism_verification.i
       )
@@ -54,6 +56,11 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     # Disable compiler warnings:
     SET_SOURCE_FILES_PROPERTIES(${swig_generated_file_fullname}
       PROPERTIES COMPILE_FLAGS "-w")
+
+    add_custom_target (clean_swig
+      COMMAND ${CMAKE_COMMAND} -E touch PISM.i
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      VERBATIM)
 
     if (${CMAKE_VERSION} VERSION_LESS "3.8.0")
       SWIG_ADD_MODULE(petsc_version python petsc_version.i petsc_version.cc)
@@ -85,20 +92,6 @@ add_custom_target (install_python_bindings_in_the_build_directory ALL
   COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/petsc_version.py ${CMAKE_BINARY_DIR}/site-packages/PISM/
   VERBATIM
   DEPENDS ${SWIG_MODULE_cpp_REAL_NAME}  _petsc_version install_site_packages_in_the_build_directory )
-
-configure_file(${Pism_SOURCE_DIR}/test/pylintrc pylintrc)
-add_custom_target (install_python_bindings_in_the_source_directory ALL
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:_cpp> ${Pism_SOURCE_DIR}/site-packages/PISM
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:_petsc_version> ${Pism_SOURCE_DIR}/site-packages/PISM/
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/cpp.py ${Pism_SOURCE_DIR}/site-packages/PISM/
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/petsc_version.py ${Pism_SOURCE_DIR}/site-packages/PISM/
-  VERBATIM
-  DEPENDS ${SWIG_MODULE_cpp_REAL_NAME}  _petsc_version)
-add_custom_target (pylint
-  COMMAND pylint --rcfile=${CMAKE_CURRENT_BINARY_DIR}/pylintrc ${Pism_SOURCE_DIR}/site-packages/PISM
-  VERBATIM
-  DEPENDS install_python_bindings_in_the_source_directory
-)
 
 # The Python code snippet below returns 1 if Python can import a PISM
 # and if the directory of said PISM matches the place we are about to

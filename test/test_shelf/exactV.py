@@ -54,7 +54,7 @@ def plot_xc(t_years):
 
 def run_pismv(Mx, run_length, options, output):
     command = "pismv -test V -y %f -Mx %d %s -o %s" % (run_length, Mx, options, output)
-    print "Running %s" % command
+    print("Running %s" % command)
     subprocess.call(shlex.split(command))
 
 
@@ -159,7 +159,7 @@ elif options.variant == 2:
     run_pismv(Mx, run_length, opt + " -max_dt 1", "out.nc")
     plot_pism_results("out.nc", "Figure 6 (e-f) (-part_grid)", 'green', same_figure=True)
 else:
-    print "Wrong variant number. Choose one of 0, 1, 2."
+    print("Wrong variant number. Choose one of 0, 1, 2.")
     sys.exit(1)
 
 show()

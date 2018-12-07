@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -33,7 +33,7 @@ static char help[] =
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/verification/tests/exactTestsIJ.h"
 
@@ -148,7 +148,6 @@ int main(int argc, char *argv[]) {
 
   MPI_Comm com = MPI_COMM_WORLD;
   petsc::Initializer petsc(argc, argv, help);
-  PetscErrorCode ierr;
 
   com = PETSC_COMM_WORLD;
 
@@ -157,25 +156,23 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = context_from_options(com, "ssa_testi");
     Config::Ptr config = ctx->config();
 
-    bool
-      usage_set = options::Bool("-usage", "print usage info"),
-      help_set  = options::Bool("-help", "print help info");
-    if (usage_set or help_set) {
-      ierr = PetscPrintf(com,
-                         "\n"
-                         "usage of SSA_TESTi:\n"
-                         "  run ssa_testi -Mx <number> -My <number> -ssa_method <fd|fem>\n"
-                         "\n");
-      PISM_CHK(ierr, "PetscPrintf");
+    std::string usage = "\n"
+      "usage of SSA_TESTi:\n"
+      "  run ssa_testi -Mx <number> -My <number> -ssa_method <fd|fem>\n"
+      "\n";
+
+    bool stop = show_usage_check_req_opts(*ctx->log(), "ssa_testi", {}, usage);
+
+    if (stop) {
+      return 0;
     }
 
     // Parameters that can be overridden by command line options
     unsigned int Mx = config->get_double("grid.Mx");
     unsigned int My = config->get_double("grid.My");
-    options::Keyword method("-ssa_method", "Algorithm for computing the SSA solution",
-                            "fem,fd", "fem");
 
-    options::String output_file("-o", "Set the output file name", "ssa_test_i.nc");
+    auto method = config->get_string("stress_balance.ssa.method");
+    auto output_file = config->get_string("output.file_name");
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2017 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2018 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -69,23 +69,21 @@ SSAFD::SSAFD(IceGrid::ConstPtr g)
                            "old SSA velocity field; used for re-trying with a different epsilon",
                            "m s-1", "");
 
-  const double power = 1.0 / m_flow_law->exponent();
-  char unitstr[TEMPORARY_STRING_LENGTH];
-  snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
   m_hardness.create(m_grid, "hardness", WITHOUT_GHOSTS);
   m_hardness.set_attrs("diagnostic",
-                     "vertically-averaged ice hardness",
-                     unitstr, "");
+                       "vertically-averaged ice hardness",
+                       pism::printf("Pa s%f", 1.0 / m_flow_law->exponent()),
+                       "");
 
   m_nuH.create(m_grid, "nuH", WITH_GHOSTS);
   m_nuH.set_attrs("internal",
-                "ice thickness times effective viscosity",
-                "Pa s m", "");
+                  "ice thickness times effective viscosity",
+                  "Pa s m", "");
 
   m_nuH_old.create(m_grid, "nuH_old", WITH_GHOSTS);
   m_nuH_old.set_attrs("internal",
-                    "ice thickness times effective viscosity (before an update)",
-                    "Pa s m", "");
+                      "ice thickness times effective viscosity (before an update)",
+                      "Pa s m", "");
 
   m_work.create(m_grid, "m_work", WITH_GHOSTS,
                 2, /* stencil width */
@@ -249,6 +247,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   const IceModelVec2S
     &thickness             = inputs.geometry->ice_thickness,
     &bed                   = inputs.geometry->bed_elevation,
+    &sea_level             = inputs.geometry->sea_level_elevation,
     *melange_back_pressure = inputs.melange_back_pressure;
 
   const double
@@ -275,7 +274,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   }
 
   if (use_cfbc) {
-    list.add({&thickness, &bed, &m_mask});
+    list.add({&thickness, &bed, &m_mask, &sea_level});
   }
 
   if (use_cfbc && melange_back_pressure != NULL) {
@@ -338,7 +337,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
         }
 
         double ocean_pressure = ocean_pressure_difference(ocean(M_ij), is_dry_simulation,
-                                                          H_ij, bed(i,j), inputs.sea_level,
+                                                          H_ij, bed(i,j), sea_level(i, j),
                                                           rho_ice, rho_ocean, standard_gravity);
 
         if (melange_back_pressure != NULL) {
@@ -978,7 +977,7 @@ void SSAFD::picard_manager(const Inputs &inputs,
     ierr = KSPSetOperators(m_KSP, m_A, m_A);
     PISM_CHK(ierr, "KSPSetOperator");
 
-    ierr = KSPSolve(m_KSP, m_b.get_vec(), m_velocity_global.get_vec());
+    ierr = KSPSolve(m_KSP, m_b.vec(), m_velocity_global.vec());
     PISM_CHK(ierr, "KSPSolve");
 
     // Check if diverged; report to standard out about iteration
@@ -1007,6 +1006,31 @@ void SSAFD::picard_manager(const Inputs &inputs,
     if (very_verbose) {
       snprintf(tempstr, 100, "S:%d,%d: ", (int)ksp_iterations, reason);
       m_stdout_ssa += tempstr;
+    }
+
+    // limit ice speed
+    {
+      auto max_speed = m_config->get_double("stress_balance.ssa.fd.max_speed", "m second-1");
+      int high_speed_counter = 0;
+
+      IceModelVec::AccessList list{&m_velocity_global};
+
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        auto speed = m_velocity_global(i, j).magnitude();
+
+        if (speed > max_speed) {
+          m_velocity_global(i, j) *= max_speed / speed;
+          high_speed_counter += 1;
+        }
+      }
+
+      high_speed_counter = GlobalSum(m_grid->com, high_speed_counter);
+
+      if (high_speed_counter > 0) {
+        m_log->message(2, "  SSA speed was capped at %d locations\n", high_speed_counter);
+      }
     }
 
     // Communicate so that we have stencil width for evaluation of effective
@@ -1053,13 +1077,9 @@ void SSAFD::picard_manager(const Inputs &inputs,
   // If we're here, it means that we exceeded max_iterations and still
   // failed.
 
-  char buffer[TEMPORARY_STRING_LENGTH];
-  snprintf(buffer, sizeof(buffer),
-           "effective viscosity not converged after %d iterations\n"
-           "with nuH_regularization=%8.2e.",
-           max_iterations, nuH_regularization);
-
-  throw PicardFailure(buffer);
+  throw PicardFailure(pism::printf("effective viscosity not converged after %d iterations\n"
+                                   "with nuH_regularization=%8.2e.",
+                                   max_iterations, nuH_regularization));
 
  done:
 
@@ -1132,7 +1152,7 @@ a bit of bad behavior at these few places, and \f$L^1\f$ ignores it more than
  */
 void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 
-  const double area = m_grid->dx() * m_grid->dy();
+  const double area = m_grid->cell_area();
   const NormType MY_NORM = NORM_1;
 
   // Test for change in nu
@@ -1414,9 +1434,9 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
 
   IceModelVec::AccessList list{&m_mask, &m_work, &m_velocity};
 
-  assert(m_velocity.get_stencil_width() >= 2);
-  assert(m_mask.get_stencil_width()    >= 2);
-  assert(m_work.get_stencil_width()     >= 1);
+  assert(m_velocity.stencil_width() >= 2);
+  assert(m_mask.stencil_width()    >= 2);
+  assert(m_work.stencil_width()     >= 1);
 
   for (PointsWithGhosts p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1648,7 +1668,7 @@ void SSAFD::write_system_petsc(const std::string &namepart) {
   ierr = MatView(m_A, viewer);
   PISM_CHK(ierr, "MatView");
 
-  ierr = VecView(m_b.get_vec(), viewer);
+  ierr = VecView(m_b.vec(), viewer);
   PISM_CHK(ierr, "VecView");
 }
 
@@ -1656,8 +1676,6 @@ SSAFD_nuH::SSAFD_nuH(const SSAFD *m)
   : Diag<SSAFD>(m) {
 
   // set metadata:
-  m_dof = 2;
-
   m_vars = {SpatialVariableMetadata(m_sys, "nuH[0]"),
             SpatialVariableMetadata(m_sys, "nuH[1]")};
 
@@ -1679,8 +1697,8 @@ IceModelVec::Ptr SSAFD_nuH::compute_impl() const {
   return result;
 }
 
-std::map<std::string, Diagnostic::Ptr> SSAFD::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = SSA::diagnostics_impl();
+DiagnosticList SSAFD::diagnostics_impl() const {
+  DiagnosticList result = SSA::diagnostics_impl();
 
   result["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));
 

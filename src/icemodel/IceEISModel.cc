@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,6 +27,9 @@
 #include "pism/coupler/ocean/Constant.hh"
 #include "pism/coupler/ocean/Initialization.hh"
 
+#include "pism/coupler/SeaLevel.hh"
+#include "pism/coupler/ocean/sea_level/Initialization.hh"
+
 #include "pism/coupler/surface/EISMINTII.hh"
 #include "pism/coupler/surface/Initialization.hh"
 
@@ -49,7 +52,7 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
   m_config->set_double("stress_balance.sia.enhancement_factor", 1.0);
 
   // none use bed smoothing & bed roughness parameterization
-  m_config->set_double("stress_balance.sia.bed_smoother_range", 0.0);
+  m_config->set_double("stress_balance.sia.bed_smoother.range", 0.0);
 
   // basal melt does not change computation of mass continuity or vertical velocity:
   m_config->set_boolean("geometry.update.use_basal_melt_rate", false);
@@ -72,14 +75,23 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
 void IceEISModel::allocate_couplers() {
 
   // Climate will always come from intercomparison formulas.
-  if (m_surface == NULL) {
-    m_surface = new surface::InitializationHelper(m_grid, new surface::EISMINTII(m_grid, m_experiment));
-    m_submodels["surface process model"] = m_surface;
+  if (not m_surface) {
+    std::shared_ptr<surface::SurfaceModel> surface(new surface::EISMINTII(m_grid, m_experiment));
+    m_surface.reset(new surface::InitializationHelper(m_grid, surface));
+    m_submodels["surface process model"] = m_surface.get();
   }
 
-  if (m_ocean == NULL) {
-    m_ocean = new ocean::InitializationHelper(m_grid, new ocean::Constant(m_grid));
-    m_submodels["ocean model"] = m_ocean;
+  if (not m_ocean) {
+    std::shared_ptr<ocean::OceanModel> ocean(new ocean::Constant(m_grid));
+    m_ocean.reset(new ocean::InitializationHelper(m_grid, ocean));
+    m_submodels["ocean model"] = m_ocean.get();
+  }
+
+  if (not m_sea_level) {
+    using namespace ocean::sea_level;
+    std::shared_ptr<SeaLevel> sea_level(new SeaLevel(m_grid));
+    m_sea_level.reset(new InitializationHelper(m_grid, sea_level));
+    m_submodels["sea level forcing"] = m_sea_level.get();
   }
 }
 
@@ -87,7 +99,7 @@ void generate_trough_topography(IceModelVec2S &result) {
   // computation based on code by Tony Payne, 6 March 1997:
   // http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
 
-  IceGrid::ConstPtr grid = result.get_grid();
+  IceGrid::ConstPtr grid = result.grid();
 
   const double
     b0    = 1000.0,  // plateau elevation
@@ -114,7 +126,7 @@ void generate_mound_topography(IceModelVec2S &result) {
   // computation based on code by Tony Payne, 6 March 1997:
   // http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
 
-  IceGrid::ConstPtr grid = result.get_grid();
+  IceGrid::ConstPtr grid = result.grid();
 
   const double slope = 250.0;
   const double w     = 150.0e3; // mound width
@@ -134,26 +146,26 @@ void IceEISModel::initialize_2d() {
                  "initializing variables from EISMINT II experiment %c formulas... \n",
                  m_experiment);
 
-  IceModelVec2S bed_topography, bed_uplift;
-  bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
-  bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
-
   // set bed topography
   if (m_experiment == 'I' or m_experiment == 'J') {
-    generate_trough_topography(bed_topography);
+    generate_trough_topography(m_geometry.bed_elevation);
   } else if (m_experiment == 'K' or m_experiment == 'L') {
-    generate_mound_topography(bed_topography);
+    generate_mound_topography(m_geometry.bed_elevation);
   } else {
-    bed_topography.set(0.0);
+    m_geometry.bed_elevation.set(0.0);
   }
 
+  m_geometry.sea_level_elevation.set(0.0);
+
   // set uplift
+  IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
   bed_uplift.set(0.0);
 
   // start with zero ice
   m_geometry.ice_thickness.set(0.0);
 
-  m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness);
+  m_beddef->bootstrap(m_geometry.bed_elevation, bed_uplift, m_geometry.ice_thickness,
+                      m_geometry.sea_level_elevation);
 }
 
 } // end of namespace pism

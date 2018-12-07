@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 PISM Authors
+/* Copyright (C) 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -60,6 +60,31 @@ static std::set<std::string> process_extra_shortcuts(const std::set<std::string>
     result.insert("tendency_of_ice_mass_due_to_surface_mass_flux");
   }
 
+  if (result.find("pdd_fluxes") != result.end()) {
+    result.erase("pdd_fluxes");
+    result.insert("surface_accumulation_flux");
+    result.insert("surface_runoff_flux");
+    result.insert("surface_melt_flux");
+  }
+
+  if (result.find("pdd_rates") != result.end()) {
+    result.erase("pdd_rates");
+    result.insert("surface_accumulation_rate");
+    result.insert("surface_runoff_rate");
+    result.insert("surface_melt_rate");
+  }
+
+  if (result.find("hydrology_fluxes") != result.end()) {
+    result.erase("hydrology_fluxes");
+    result.insert("tendency_of_subglacial_water_mass");
+    result.insert("tendency_of_subglacial_water_mass_due_to_input");
+    result.insert("tendency_of_subglacial_water_mass_due_to_flow");
+    result.insert("tendency_of_subglacial_water_mass_due_to_conservation_error");
+    result.insert("tendency_of_subglacial_water_mass_at_grounded_margins");
+    result.insert("tendency_of_subglacial_water_mass_at_grounding_line");
+    result.insert("tendency_of_subglacial_water_mass_at_domain_boundary");
+  }
+
   return result;
 }
 
@@ -69,39 +94,40 @@ void IceModel::init_extras() {
   m_last_extra = 0;               // will be set in write_extras()
   m_next_extra = 0;
 
-  options::String extra_file("-extra_file", "Specifies the output file");
-  m_extra_filename = extra_file;
+  m_extra_filename   = m_config->get_string("output.extra.file");
+  std::string times  = m_config->get_string("output.extra.times");
+  std::string vars   = m_config->get_string("output.extra.vars");
+  bool        split  = m_config->get_boolean("output.extra.split");
+  bool        append = m_config->get_boolean("output.extra.append");
 
-  options::String times("-extra_times", "Specifies times to save at");
+  bool extra_file_set = not m_extra_filename.empty();
+  bool times_set = not times.empty();
 
-  options::StringSet vars("-extra_vars",
-                          "Specifies a comma-separated list of variables to save", "");
-
-  bool split  = options::Bool("-extra_split", "Specifies whether to save to separate files");
-  bool append = options::Bool("-extra_append", "append spatial diagnostics");
-
-  if (extra_file.is_set() ^ times.is_set()) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "you need to specify both -extra_file and -extra_times to save spatial time-series.");
+  if (extra_file_set ^ times_set) {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "you need to set both output.extra.file and output.extra.times"
+                       " to save spatial time-series.");
   }
 
-  if (not extra_file.is_set() && not times.is_set()) {
+  if (not extra_file_set and not times_set) {
     m_save_extra = false;
     return;
   }
 
   try {
-    m_time->parse_times(times, m_extra_times);
+    m_extra_times = m_time->parse_times(times);
   } catch (RuntimeError &e) {
-    e.add_context("parsing the -extra_times argument %s", times->c_str());
+    e.add_context("parsing the output.extra.times argument %s", times.c_str());
     throw;
   }
 
   if (m_extra_times.size() == 0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "no argument for -extra_times option.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "output.extra.times cannot be empty");
   }
 
   if (append and split) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "both -extra_split and -extra_append are set.");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "both output.extra.split and output.extra.append are set.");
   }
 
   if (append) {
@@ -153,19 +179,19 @@ void IceModel::init_extras() {
                m_extra_filename.c_str());
   }
 
-  m_log->message(2, "times requested: %s\n", times->c_str());
+  m_log->message(2, "times requested: %s\n", times.c_str());
 
   if (m_extra_times.size() > 500) {
     m_log->message(2,
                "PISM WARNING: more than 500 times requested. This might fill your hard-drive!\n");
   }
 
-  if (vars.is_set()) {
-    m_extra_vars = process_extra_shortcuts(vars);
-    m_log->message(2, "variables requested: %s\n", vars.to_string().c_str());
+  if (not vars.empty()) {
+    m_extra_vars = process_extra_shortcuts(set_split(vars, ','));
+    m_log->message(2, "variables requested: %s\n", vars.c_str());
   } else {
-    m_log->message(2, "PISM WARNING: -extra_vars was not set. Writing the model state...\n");
-
+    m_log->message(2,
+                   "PISM WARNING: output.extra.vars was not set. Writing the model state...\n");
   } // end of the else clause after "if (extra_vars_set)"
 }
 
@@ -244,7 +270,7 @@ void IceModel::write_extras() {
                  filename, m_time->date().c_str());
 
   // default behavior is to move the file aside if it exists already; option allows appending
-  bool append = options::Bool("-extra_append", "append -extra_file output");
+  bool append = m_config->get_boolean("output.extra.append");
   IO_Mode mode = m_extra_file_is_ready or append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 
   const Profiling &profiling = m_ctx->profiling();

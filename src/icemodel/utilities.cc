@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -50,11 +50,9 @@ int IceModel::process_signals() {
   if (pism_signal == SIGTERM) {
     m_log->message(1,
        "\ncaught signal SIGTERM:  EXITING EARLY and saving with original filename.\n");
-    char str[TEMPORARY_STRING_LENGTH];
-    snprintf(str, sizeof(str),
-       "EARLY EXIT caused by signal SIGTERM.  Completed timestep at time=%s.",
-             m_time->date().c_str());
-    prepend_history(str);
+
+    prepend_history(pism::printf("EARLY EXIT caused by signal SIGTERM. Completed timestep at time=%s.",
+                                 m_time->date().c_str()));
     // Tell the caller that the user requested an early termination of
     // the run.
     return 1;
@@ -103,6 +101,7 @@ void IceModel::update_run_stats() {
   // time-independent info
   {
     m_run_stats.set_string("source", std::string("PISM ") + PISM_Revision);
+    m_run_stats.set_string("long_name", "Run statistics");
   }
 
   m_run_stats.set_double("wall_clock_hours", wall_clock_hours);
@@ -121,7 +120,7 @@ void  IceModel::prepend_history(const std::string &str) {
 /*! Return true if the ice thickness exceeds the height of the computational domain.
  */
 bool check_maximum_ice_thickness(const IceModelVec2S &ice_thickness) {
-  IceGrid::ConstPtr grid = ice_thickness.get_grid();
+  IceGrid::ConstPtr grid = ice_thickness.grid();
 
   const double Lz = grid->Lz();
 

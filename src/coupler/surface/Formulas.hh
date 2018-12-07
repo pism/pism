@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,6 @@
 #define _PSFORMULAS_H_
 
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 namespace surface {
@@ -36,16 +35,16 @@ public:
   PSFormulas(IceGrid::ConstPtr g);
   ~PSFormulas();
 protected:
-  void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  void mass_flux_impl(IceModelVec2S &result) const;
-  void temperature_impl(IceModelVec2S &result) const;
+  virtual const IceModelVec2S& mass_flux_impl() const;
+  virtual const IceModelVec2S& temperature_impl() const;
+
 protected:
-  IceModelVec2S m_climatic_mass_balance;
-  IceModelVec2S m_ice_surface_temp;
+  IceModelVec2S::Ptr m_mass_flux;
+  IceModelVec2S::Ptr m_temperature;
 };
 
 

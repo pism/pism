@@ -1,5 +1,5 @@
 # Flow laws.
-add_library (pismflowlaws OBJECT
+add_library (flowlaws OBJECT
   FlowLaw.cc
   FlowLawFactory.cc
   GPBLD.cc
@@ -9,6 +9,4 @@ add_library (pismflowlaws OBJECT
   PatersonBudd.cc
   PatersonBuddCold.cc
   PatersonBuddWarm.cc
-  GPBLD3.cc
-  approximate/gpbld_n.cc
   )

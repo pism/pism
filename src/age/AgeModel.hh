@@ -41,19 +41,16 @@ public:
   const IceModelVec3 *w3;
 };
 
-class AgeModel : public Component_TS {
+class AgeModel : public Component {
 public:
   AgeModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
 
-  using Component_TS::update;
   void update(double t, double dt, const AgeModelInputs &inputs);
 
   void init(const InputOptions &opts);
 
   const IceModelVec3 & age() const;
 protected:
-  void update_impl(double t, double dt);
-
   MaxTimestep max_timestep_impl(double t) const;
   void define_model_state_impl(const PIO &output) const;
   void write_model_state_impl(const PIO &output) const;

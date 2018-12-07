@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,23 +19,29 @@
 #ifndef _PODTFORCING_H_
 #define _PODTFORCING_H_
 
-#include "pism/coupler/util/PScalarForcing.hh"
 #include "pism/coupler/OceanModel.hh"
-#include "Modifier.hh"
 
 namespace pism {
+
+class ScalarForcing;
+
 namespace ocean {
 //! \brief Forcing using shelf base temperature scalar time-dependent offsets.
-class Delta_T : public PScalarForcing<OceanModel,OceanModifier>
+class Delta_T : public OceanModel
 {
 public:
-  Delta_T(IceGrid::ConstPtr g, OceanModel* in);
+  Delta_T(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
   virtual ~Delta_T();
 
-protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void init_impl();
-  virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
+private:
+  void init_impl(const Geometry &geometry);
+
+  void update_impl(const Geometry &geometry, double t, double dt);
+
+  const IceModelVec2S& shelf_base_temperature_impl() const;
+
+  IceModelVec2S::Ptr m_shelf_base_temperature;
+  std::unique_ptr<ScalarForcing> m_forcing;
 };
 
 } // end of namespace ocean

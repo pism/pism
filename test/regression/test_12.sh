@@ -37,10 +37,10 @@ threshold = 10**(floor(log10(volume_max)) - 14) # 14 digits of accuracy
 diff_max = diff(volume).max()
 
 if diff_max < threshold:
-    print "diff(volume).max() = %f, threshold = %f" % (diff_max, threshold)
+    print("diff(volume).max() = %f, threshold = %f" % (diff_max, threshold))
     exit(0)
 else:
-    print "diff(volume).max() = %f > %f" % (diff_max, threshold)
+    print("diff(volume).max() = %f > %f" % (diff_max, threshold))
     exit(1)
 EOF
 

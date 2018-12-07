@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,6 @@
 #include "IsothermalGlen.hh"
 #include "PatersonBudd.hh"
 #include "GPBLD.hh"
-#include "GPBLD3.hh"
 #include "Hooke.hh"
 #include "PatersonBuddCold.hh"
 #include "PatersonBuddWarm.hh"
@@ -47,11 +46,6 @@ FlowLaw* create_pb(const std::string &pre,
 FlowLaw* create_gpbld(const std::string &pre,
                       const Config &config, EnthalpyConverter::Ptr EC) {
   return new (GPBLD)(pre, config, EC);
-}
-
-FlowLaw* create_gpbld3(const std::string &pre,
-                       const Config &config, EnthalpyConverter::Ptr EC) {
-  return new (GPBLD3)(pre, config, EC);
 }
 
 FlowLaw* create_hooke(const std::string &pre,
@@ -87,7 +81,6 @@ FlowLawFactory::FlowLawFactory(const std::string &prefix,
   add(ICE_ISOTHERMAL_GLEN, &create_isothermal_glen);
   add(ICE_PB, &create_pb);
   add(ICE_GPBLD, &create_gpbld);
-  add(ICE_GPBLD3, &create_gpbld3);
   add(ICE_HOOKE, &create_hooke);
   add(ICE_ARR, &create_arr);
   add(ICE_ARRWARM, &create_arrwarm);
@@ -118,7 +111,7 @@ void FlowLawFactory::set_default(const std::string &type) {
   m_type_name = type;
 }
 
-FlowLaw* FlowLawFactory::create() {
+std::shared_ptr<FlowLaw> FlowLawFactory::create() {
   // find the function that can create selected flow law:
   FlowLawCreator r = m_flow_laws[m_type_name];
   if (r == NULL) {
@@ -128,7 +121,7 @@ FlowLaw* FlowLawFactory::create() {
   }
 
   // create an FlowLaw instance:
-  return (*r)(m_prefix, *m_config, m_EC);
+  return std::shared_ptr<FlowLaw>((*r)(m_prefix, *m_config, m_EC));
 }
 
 } // end of namespace rheology

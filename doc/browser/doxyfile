@@ -556,8 +556,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT = pism_config.md std_names.md mainpage.md bombproof_enth.md vertchange.md \
-        bedrough.md references.md howto.md petsc.md coding_style.md \
+INPUT = mainpage.md references.md howto.md petsc.md \
         ${Pism_SOURCE_DIR}/src/
 
 USE_MDFILE_AS_MAINPAGE = mainpage.md
@@ -594,8 +593,7 @@ RECURSIVE              = YES
 
 EXCLUDE                = ${Pism_SOURCE_DIR}/src/earth/cubature.h \
                          ${Pism_SOURCE_DIR}/src/earth/cubature.c \
-                         ${Pism_SOURCE_DIR}/src/calcalcs \
-                         ${Pism_SOURCE_DIR}/src/vdt
+                         ${Pism_SOURCE_DIR}/src/calcalcs
 
 # The EXCLUDE_SYMLINKS tag can be used select whether or not files or
 # directories that are symbolic links (a Unix filesystem feature) are excluded
@@ -643,7 +641,7 @@ EXAMPLE_RECURSIVE      = NO
 # directories that contain image that are included in the documentation (see
 # the \image command).
 
-IMAGE_PATH             = ${Pism_SOURCE_DIR}/doc/browser/figs/
+IMAGE_PATH             =
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program
@@ -1294,8 +1292,7 @@ DOT_PATH               =
 # contain dot files that are included in the documentation (see the
 # \dotfile command).
 
-DOTFILE_DIRS           = ${Pism_SOURCE_DIR}/doc/browser/ \
-                         ${Pism_SOURCE_DIR}/src/base/stressbalance/figs/
+DOTFILE_DIRS           =
 
 # The DOT_GRAPH_MAX_NODES tag can be used to set the maximum number of
 # nodes that will be shown in the graph. If the number of nodes in a graph

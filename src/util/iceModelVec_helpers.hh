@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2016 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -57,7 +57,7 @@ void add_2d(const IceModelVec* const x_in, double alpha,
   compute_params(x, y, z, stencil, scatter);
 
   IceModelVec::AccessList list{x, y, z};
-  for (PointsWithGhosts p(*z->get_grid(), stencil); p; p.next()) {
+  for (PointsWithGhosts p(*z->grid(), stencil); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     (*z)(i, j) = (*x)(i, j) + (*y)(i, j) * alpha;
@@ -87,7 +87,7 @@ void copy_2d(const IceModelVec* const source,
 
   IceModelVec::AccessList list{x, z};
 
-  for (PointsWithGhosts p(*z->get_grid(), stencil); p; p.next()) {
+  for (PointsWithGhosts p(*z->grid(), stencil); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     (*z)(i, j) = (*x)(i, j);

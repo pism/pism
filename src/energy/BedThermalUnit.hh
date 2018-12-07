@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -97,7 +97,7 @@ struct BTUGrid {
   top_heat_flux() method uses first-order differencing to compute the
   values of \f$G_0\f$.
 */
-class BedThermalUnit : public Component_TS {
+class BedThermalUnit : public Component {
 public:
 
   static BedThermalUnit* FromOptions(IceGrid::ConstPtr g,
@@ -118,7 +118,6 @@ public:
   //! Return the upward heat flux through the bottom surface of the bedrock thermal layer.
   const IceModelVec2S& flux_through_bottom_surface() const;
 
-  using Component_TS::update;
   void update(const IceModelVec2S &bedrock_top_temperature,
               double t, double dt);
 
@@ -139,18 +138,18 @@ protected:
   virtual double depth_impl() const = 0;
   virtual unsigned int Mz_impl() const = 0;
 
-  void update_impl(double my_t, double my_dt);
-
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
 protected:
   //! upward heat flux through the bottom surface of the bed thermal layer
   IceModelVec2S m_bottom_surface_flux;
 
   //! upward heat flux through the top surface of the bed thermal layer
   IceModelVec2S m_top_surface_flux;
+
+  double m_t, m_dt;
 };
 
 class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {

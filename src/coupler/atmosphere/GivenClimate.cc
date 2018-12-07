@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,45 +16,53 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>
-
 #include "GivenClimate.hh"
+
+#include "pism/coupler/util/options.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/ConfigInterface.hh"
+#include "pism/util/Time.hh"
 
 namespace pism {
 namespace atmosphere {
 
 Given::Given(IceGrid::ConstPtr g)
-  : PGivenClimate<PAModifier,AtmosphereModel>(g, NULL)
-{
-  m_option_prefix = "-atmosphere_given";
-  m_air_temp      = NULL;
-  m_precipitation = NULL;
-
-  // will be de-allocated by the parent's destructor
-  m_precipitation = new IceModelVec2T;
-  m_air_temp      = new IceModelVec2T;
-
-  m_fields["precipitation"] = m_precipitation;
-  m_fields["air_temp"]      = m_air_temp;
-
-  process_options();
-
-  std::map<std::string, std::string> standard_names;
-  set_vec_parameters(standard_names);
+  : AtmosphereModel(g, nullptr) {
+  ForcingOptions opt(*m_grid->ctx(), "atmosphere.given");
 
   {
-    m_air_temp->create(m_grid, "air_temp");
+    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    bool periodic = opt.period > 0;
+
+    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
+
+    m_air_temp = IceModelVec2T::ForcingField(m_grid,
+                                             file,
+                                             "air_temp",
+                                             "", // no standard name
+                                             buffer_size,
+                                             evaluations_per_year,
+                                             periodic);
+
+    m_precipitation = IceModelVec2T::ForcingField(m_grid,
+                                                  file,
+                                                  "precipitation",
+                                                  "", // no standard name
+                                                  buffer_size,
+                                                  evaluations_per_year,
+                                                  periodic);
+  }
+
+  {
     m_air_temp->set_attrs("diagnostic", "mean annual near-surface air temperature",
                           "Kelvin", "", 0);
     m_air_temp->metadata(0).set_double("valid_min", 0.0);
     m_air_temp->metadata(0).set_double("valid_max", 323.15); // 50 C
   }
   {
-    m_precipitation->create(m_grid, "precipitation");
     m_precipitation->set_attrs("model_state", "precipitation rate",
-                               "kg m-2 second-1", "", 0);
+                               "kg m-2 second-1", "precipitation_flux", 0);
     m_precipitation->metadata(0).set_string("glaciological_units", "kg m-2 year-1");
   }
 }
@@ -63,39 +71,38 @@ Given::~Given() {
   // empty
 }
 
-void Given::init_impl() {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
+void Given::init_impl(const Geometry &geometry) {
   m_log->message(2,
              "* Initializing the atmosphere model reading near-surface air temperature\n"
              "  and ice-equivalent precipitation from a file...\n");
 
-  m_air_temp->init(m_filename, m_bc_period, m_bc_reference_time);
-  m_precipitation->init(m_filename, m_bc_period, m_bc_reference_time);
+  ForcingOptions opt(*m_grid->ctx(), "atmosphere.given");
+
+  m_air_temp->init(opt.filename, opt.period, opt.reference_time);
+  m_precipitation->init(opt.filename, opt.period, opt.reference_time);
 
   // read time-independent data right away:
-  if (m_air_temp->get_n_records() == 1 && m_precipitation->get_n_records() == 1) {
-    update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
+  if (m_air_temp->n_records() == 1 && m_precipitation->n_records() == 1) {
+    update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }
 
-void Given::update_impl(double my_t, double my_dt) {
-  update_internal(my_t, my_dt);
+void Given::update_impl(const Geometry &geometry, double t, double dt) {
+  (void) geometry;
 
-  // compute mean precipitation
-  m_precipitation->average(m_t, m_dt);
+  m_precipitation->update(t, dt);
+  m_air_temp->update(t, dt);
 
-  // Average so that the mean_annual_temp() may be reported correctly (at least
-  // in the "-surface pdd" case).
-  m_air_temp->average(m_t, m_dt);
+  m_precipitation->average(t, dt);
+  m_air_temp->average(t, dt);
 }
 
-void Given::mean_precipitation_impl(IceModelVec2S &result) const {
-  result.copy_from(*m_precipitation);
+const IceModelVec2S& Given::mean_precipitation_impl() const {
+  return *m_precipitation;
 }
 
-void Given::mean_annual_temp_impl(IceModelVec2S &result) const {
-  result.copy_from(*m_air_temp);
+const IceModelVec2S& Given::mean_annual_temp_impl() const {
+  return *m_air_temp;
 }
 
 void Given::begin_pointwise_access_impl() const {

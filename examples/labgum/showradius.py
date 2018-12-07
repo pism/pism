@@ -13,12 +13,13 @@ from sys import exit
 try:
     import netCDF4 as netCDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 import argparse
 
-parser = argparse.ArgumentParser(description='A script to show margin radius time series.  Requires one or more NetCDF files with "time" dimension and "time" and "ice_area_glacierized" variables.  Generates a .png image file with the graph.')
+parser = argparse.ArgumentParser(
+    description='A script to show margin radius time series.  Requires one or more NetCDF files with "time" dimension and "time" and "ice_area_glacierized" variables.  Generates a .png image file with the graph.')
 parser.add_argument('-o', '--outfile', metavar='FILENAME',
                     help='output file name (PNG)', default='foo.png')
 parser.add_argument('-d', '--datafile', metavar='FILENAME',

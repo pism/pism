@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,18 +33,16 @@ static char help[] =
 #include "pism/util/Mask.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/verification/tests/exactTestsFG.hh"
 #include "pism/util/io/io_helpers.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 
@@ -273,7 +271,6 @@ int main(int argc, char *argv[]) {
 
   MPI_Comm com = MPI_COMM_WORLD;
   petsc::Initializer petsc(argc, argv, help);
-  PetscErrorCode ierr;
 
   com = PETSC_COMM_WORLD;
 
@@ -284,21 +281,22 @@ int main(int argc, char *argv[]) {
     Config::Ptr config = ctx->config();
 
     config->set_boolean("stress_balance.sia.grain_size_age_coupling", false);
-    config->set_string("sia_flow_law", "arr");
+    config->set_string("stress_balance.sia.flow_law", "arr");
 
-    bool
-      usage_set = options::Bool("-usage", "print usage info"),
-      help_set  = options::Bool("-help", "print help info");
-    if (usage_set or help_set) {
-      ierr = PetscPrintf(com,
-                         "\n"
-                         "usage of SIAFD_TEST:\n"
-                         "  run siafd_test -Mx <number> -My <number> -Mz <number> -o foo.nc\n"
-                         "\n");
-      PISM_CHK(ierr, "PetscPrintf");
+    set_config_from_options(*config);
+
+    std::string usage = "\n"
+      "usage of SIAFD_TEST:\n"
+      "  run siafd_test -Mx <number> -My <number> -Mz <number> -o foo.nc\n"
+      "\n";
+
+    bool stop = show_usage_check_req_opts(*ctx->log(), "siafd_test", {}, usage);
+
+    if (stop) {
+      return 0;
     }
 
-    options::String output_file("-o", "Set the output file name", "siafd_test_F.nc");
+    auto output_file = config->get_string("output.file_name");
 
     GridParameters P(config);
     P.Lx = 900e3;
@@ -306,7 +304,7 @@ int main(int argc, char *argv[]) {
     P.horizontal_size_from_options();
 
     double Lz = 4000.0;
-    options::Integer Mz("-Mz", "Number of vertical grid levels", 61);
+    unsigned int Mz = config->get_double("grid.Mz");
 
     P.z = IceGrid::compute_vertical_levels(Lz, Mz, EQUAL);
     P.ownership_ranges_from_options(ctx->size());
@@ -316,60 +314,26 @@ int main(int argc, char *argv[]) {
     grid->report_parameters();
 
     EnthalpyConverter::Ptr EC(new ColdEnthalpyConverter(*config));
-    rheology::PatersonBuddCold ice("stress_balance.sia.", *config, EC);
 
-    IceModelVec2S ice_surface_elevation, ice_thickness, bed_topography;
-    IceModelVec2CellType cell_type;
-    IceModelVec3 enthalpy,
-      age;                      // is not used (and need not be allocated)
     const int WIDE_STENCIL = config->get_double("grid.max_stencil_width");
 
-    Vars &vars = grid->variables();
+    IceModelVec3
+      enthalpy(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL),
+      age(grid, "age", WITHOUT_GHOSTS);
 
-    bed_topography.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
-    bed_topography.set_attrs("model_state", "bedrock surface elevation",
-                             "m", "bedrock_altitude");
-    vars.add(bed_topography);
-
-    // ice upper surface elevation
-    ice_surface_elevation.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
-    ice_surface_elevation.set_attrs("diagnostic", "ice upper surface elevation",
-                                    "m", "surface_altitude");
-    vars.add(ice_surface_elevation);
-
-    // land ice thickness
-    ice_thickness.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
-    ice_thickness.set_attrs("model_state", "land ice thickness",
-                            "m", "land_ice_thickness");
-    ice_thickness.metadata().set_double("valid_min", 0.0);
-    vars.add(ice_thickness);
+    Geometry geometry(grid);
+    geometry.sea_level_elevation.set(0.0);
 
     // age of the ice; is not used here
-    age.create(grid, "age", WITHOUT_GHOSTS);
     age.set_attrs("diagnostic", "age of the ice", "s", "");
-    age.metadata().set_string("glaciological_units", "year");
-    vars.add(age);
+    age.set(0.0);
 
     // enthalpy in the ice
-    enthalpy.create(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
     enthalpy.set_attrs("model_state",
                        "ice enthalpy (includes sensible heat, latent heat, pressure)",
                        "J kg-1", "");
-    vars.add(enthalpy);
-
-    // grounded_dragging_floating integer mask
-    cell_type.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
-    cell_type.set_attrs("model_state", "grounded_dragging_floating integer mask",
-                    "", "");
-    std::vector<double> mask_values(4);
-    mask_values[0] = MASK_ICE_FREE_BEDROCK;
-    mask_values[1] = MASK_GROUNDED;
-    mask_values[2] = MASK_FLOATING;
-    mask_values[3] = MASK_ICE_FREE_OCEAN;
-    cell_type.metadata().set_doubles("flag_values", mask_values);
-    cell_type.metadata().set_string("flag_meanings",
-                                "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
-    vars.add(cell_type);
+    //
+    enthalpy.set(EC->enthalpy(263.15, 0.0, EC->pressure(1000.0)));
 
     // Create the SIA solver object:
 
@@ -379,14 +343,20 @@ int main(int argc, char *argv[]) {
     SIAFD *sia = new SIAFD(grid);
     ZeroSliding *no_sliding = new ZeroSliding(grid);
 
+    // stress_balance will de-allocate no_sliding and sia.
     StressBalance stress_balance(grid, no_sliding, sia);
 
     // fill the fields:
     setInitStateF(*grid, *EC,
-                  bed_topography, cell_type, ice_surface_elevation, ice_thickness,
+                  geometry.bed_elevation,
+                  geometry.cell_type,
+                  geometry.ice_surface_elevation,
+                  geometry.ice_thickness,
                   enthalpy);
 
-    // Allocate the SIA solver:
+    geometry.ensure_consistency(config->get_double("geometry.ice_free_thickness_standard"));
+
+    // Initialize the SIA solver:
     stress_balance.init();
 
     IceModelVec2S melange_back_pressure;
@@ -396,9 +366,13 @@ int main(int argc, char *argv[]) {
     melange_back_pressure.set(0.0);
 
     bool full_update = true;
+
     stressbalance::Inputs inputs;
-    inputs.sea_level             = 0.0;
+    inputs.geometry              = &geometry;
     inputs.melange_back_pressure = &melange_back_pressure;
+    inputs.enthalpy              = &enthalpy;
+    inputs.age                   = &age;
+
     stress_balance.update(inputs, full_update);
 
     // Report errors relative to the exact solution:
@@ -410,18 +384,19 @@ int main(int argc, char *argv[]) {
     const IceModelVec3 &sigma = stress_balance.volumetric_strain_heating();
 
     reportErrors(*grid, ctx->unit_system(),
-                 ice_thickness, u3, v3, w3, sigma);
+                 geometry.ice_thickness, u3, v3, w3, sigma);
 
     // Write results to an output file:
     PIO file(grid->com, "netcdf3", output_file, PISM_READWRITE_MOVE);
     io::define_time(file, *ctx);
     io::append_time(file, *ctx->config(), ctx->time()->current());
 
-    ice_surface_elevation.write(file);
-    ice_thickness.write(file);
-    cell_type.write(file);
-    bed_topography.write(file);
-    
+    geometry.ice_surface_elevation.write(file);
+    geometry.ice_thickness.write(file);
+    geometry.cell_type.write(file);
+    geometry.bed_elevation.write(file);
+
+    sia->diffusivity().write(file);
     u3.write(file);
     v3.write(file);
     w3.write(file);

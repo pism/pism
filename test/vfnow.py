@@ -5,7 +5,7 @@
 # \brief A script for verification of numerical schemes in PISM.
 # \details It specifies a refinement path for each of Tests ABCDEFGIJKL and runs
 # pismv accordingly.
-# Copyright (C) 2007--2013, 2015, 2016 Ed Bueler and Constantine Khroulev
+# Copyright (C) 2007--2013, 2015, 2016, 2018 Ed Bueler and Constantine Khroulev
 ##
 # Organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in the user manual.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
 ##
@@ -19,7 +19,7 @@
 
 import sys
 import time
-import commands
+import subprocess
 from numpy import array
 
 # A class describing a refinement path and command-line options
@@ -47,11 +47,11 @@ class PISMVerificationTest:
     executable = "pismv"
 
     def build_command(self, exec_prefix, level):
-        M = zip(self.Mx, self.My, self.Mz, self.Mbz)
+        M = list(zip(self.Mx, self.My, self.Mz, self.Mbz))
 
         if level > len(M):
-            print "Test %s: Invalid refinement level: %d (only %d are available)" % (
-                self.name, level, len(M))
+            print("Test %s: Invalid refinement level: %d (only %d are available)" % (
+                self.name, level, len(M)))
             return ""
 
         grid_options = "-Mx %d -My %d -Mz %d -Mbz %d" % M[level - 1]
@@ -62,54 +62,54 @@ def run_test(executable, name, level, extra_options="", debug=False):
     try:
         test = tests[name]
     except:
-        print "Test %s not found." % name
+        print("Test %s not found." % name)
         return
 
     if level == 1:
-        print "# ++++  TEST %s:  verifying with %s exact solution  ++++\n# %s" % (
-            test.name, test.test, test.path)
+        print("# ++++  TEST %s:  verifying with %s exact solution  ++++\n# %s" % (
+            test.name, test.test, test.path))
     else:
         extra_options += " -append"
 
     command = test.build_command(executable, level) + " " + extra_options
 
     if debug:
-        print '# L%d\n%s' % (level, command)
+        print('# L%d\n%s' % (level, command))
         return
     else:
-        print ' L%d: trying "%s"' % (level, command)
+        print(' L%d: trying "%s"' % (level, command))
 
     # run PISM:
     try:
         lasttime = time.time()
-        (status, output) = commands.getstatusoutput(command)
+        (status, output) = subprocess.getstatusoutput(command)
         elapsetime = time.time() - lasttime
     except KeyboardInterrupt:
         sys.exit(2)
     if status:
         sys.exit(status)
-    print ' finished in %7.4f seconds; reported numerical errors as follows:' % elapsetime
+    print(' finished in %7.4f seconds; reported numerical errors as follows:' % elapsetime)
 
     # process the output:
     position = output.find('NUMERICAL ERRORS')
     if position >= 0:
         report = output[position:output.find('NUM ERRORS DONE')]
         endline = report.find('\n')
-        print '    ' + report[0:endline]
+        print('    ' + report[0:endline])
         report = report[endline + 1:]
         while (len(report) > 1) and (endline > 0):
             endline = report.find('\n')
             if endline == -1:
                 endline = len(report)
-            print '   #' + report[0:endline]
+            print('   #' + report[0:endline])
             report = report[endline + 1:]
             endline = report.find('\n')
             if endline == -1:
                 endline = len(report)
-            print '   |' + report[0:endline]
+            print('   |' + report[0:endline])
             report = report[endline + 1:]
     else:
-        print " ERROR: can't find reported numerical error"
+        print(" ERROR: can't find reported numerical error")
         sys.exit(99)
 
 
@@ -303,6 +303,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
 
     return tests
 
+
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
@@ -352,16 +353,16 @@ tests = define_refinement_paths(KSPRTOL, SSARTOL)
 
 manual_tests = ["B_manual", "G_manual", "K_manual", "I_manual"]
 if options.manual:
-    print "# VFNOW.PY: test(s) %s, using '%s...'\n" % (manual_tests, exec_prefix) + \
-          "#           and ignoring options -t and -l"
+    print("# VFNOW.PY: test(s) %s, using '%s...'\n" % (manual_tests, exec_prefix) +
+          "#           and ignoring options -t and -l")
     for test in manual_tests:
         N = len(tests[test].Mx)
         for j in range(1, N + 1):
             run_test(exec_prefix, test, j, extra_options,
                      options.debug)
 else:
-    print "# VFNOW.PY: test(s) %s, %d refinement level(s), using '%s...'" % (
-        options.tests, options.levels, exec_prefix)
+    print("# VFNOW.PY: test(s) %s, %d refinement level(s), using '%s...'" % (
+        options.tests, options.levels, exec_prefix))
 
     for test in options.tests:
         for j in range(1, options.levels + 1):

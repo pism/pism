@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 PISM Authors
+/* Copyright (C) 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,23 +31,14 @@ Geometry::Geometry(IceGrid::ConstPtr grid) {
   // (However this may increase communication costs...)
   const unsigned int WIDE_STENCIL = grid->ctx()->config()->get_double("grid.max_stencil_width");
 
-  cell_area.create(grid, "cell_area", WITHOUT_GHOSTS);
-  cell_area.set_attrs("diagnostic", "cell areas", "m2", "");
-  cell_area.metadata().set_string("comment",
-                                  "values are equal to dx*dy "
-                                  "if projection parameters are not available; "
-                                  "otherwise WGS84 ellipsoid is used");
-  cell_area.set_time_independent(true);
-  cell_area.metadata().set_string("glaciological_units", "km2");
-
-  latitude.create(grid, "lat", WITH_GHOSTS); // has ghosts so that we can compute cell areas
+  latitude.create(grid, "lat", WITHOUT_GHOSTS);
   latitude.set_attrs("mapping", "latitude", "degree_north", "latitude");
   latitude.set_time_independent(true);
   latitude.metadata().set_string("coordinates", "");
   latitude.metadata().set_string("grid_mapping", "");
   latitude.metadata().set_doubles("valid_range", {-90.0, 90.0});
 
-  longitude.create(grid, "lon", WITH_GHOSTS);
+  longitude.create(grid, "lon", WITHOUT_GHOSTS);
   longitude.set_attrs("mapping", "longitude", "degree_east", "longitude");
   longitude.set_time_independent(true);
   longitude.metadata().set_string("coordinates", "");
@@ -58,7 +49,7 @@ Geometry::Geometry(IceGrid::ConstPtr grid) {
   bed_elevation.set_attrs("model_state", "bedrock surface elevation",
                           "m", "bedrock_altitude");
 
-  sea_level_elevation.create(grid, "sea_level_elevation", WITHOUT_GHOSTS);
+  sea_level_elevation.create(grid, "sea_level", WITH_GHOSTS);
   sea_level_elevation.set_attrs("model_state",
                                 "sea level elevation above reference ellipsoid", "meters",
                                 "sea_surface_height_above_reference_ellipsoid");
@@ -103,7 +94,7 @@ Geometry::Geometry(IceGrid::ConstPtr grid) {
 }
 
 void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness) {
-  IceGrid::ConstPtr grid = ice_thickness.get_grid();
+  IceGrid::ConstPtr grid = ice_thickness.grid();
 
   IceModelVec::AccessList list(ice_thickness);
 
@@ -125,7 +116,7 @@ void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness) {
 }
 
 void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
-  IceGrid::ConstPtr grid = ice_thickness.get_grid();
+  IceGrid::ConstPtr grid = ice_thickness.grid();
   Config::ConstPtr config = grid->ctx()->config();
 
   check_minimum_ice_thickness(ice_thickness);
@@ -187,9 +178,7 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
                                  sea_level_elevation,
                                  ice_thickness,
                                  bed_elevation,
-                                 cell_type,
-                                 cell_grounded_fraction,
-                                 NULL, NULL);
+                                 cell_grounded_fraction);
 }
 
 } // end of namespace pism

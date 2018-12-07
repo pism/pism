@@ -14,7 +14,7 @@ import numpy as np
 try:
     from netCDF4 import Dataset as NC
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 subgl = False
@@ -32,7 +32,7 @@ try:
 
 
 except getopt.GetoptError:
-    print 'Incorrect command line arguments'
+    print('Incorrect command line arguments')
     sys.exit(2)
 
 
@@ -67,7 +67,7 @@ try:
     name = inpath  # + '.nc'
     infile = NC(name, 'r')
 except Exception:
-    print "file '%s' not found" % name
+    print("file '%s' not found" % name)
     sys.exit(2)
     # exit(-1)
 
@@ -98,23 +98,23 @@ ice_surface_temp = np.zeros((ny, nx))
 precip = np.zeros((ny, nx))
 tauc = np.zeros((ny, nx))
 
-print "Informations from createSetup_PXXS.py:"
-print "grid size:"
-print nx
-print ny
-print "grid size center:"
-print nxcenter
-print nycenter
+print("Informations from createSetup_PXXS.py:")
+print("grid size:")
+print(nx)
+print(ny)
+print("grid size center:")
+print(nxcenter)
+print(nycenter)
 
-print "domain range in meters:"
-print "x-dir:"
-print x[0]
-print x[nx - 1]
-print "y-dir:"
-print y[0]
-print y[ny - 1]
-print "y-boxWidth:"
-print y[ny - 1] - y[ny - 2]
+print("domain range in meters:")
+print("x-dir:")
+print(x[0])
+print(x[nx - 1])
+print("y-dir:")
+print(y[0])
+print(y[ny - 1])
+print("y-boxWidth:")
+print(y[ny - 1] - y[ny - 2])
 
 
 # load data from Stnd-result:
@@ -125,8 +125,8 @@ Topg_stnd = squeeze(infile.variables["topg"][:])
 if subgl == True:
     Gl_mask = squeeze(infile.variables["gl_mask"][:])
 
-print "number snapshots:"
-print len(Thk_stnd[:, 0, 0])
+print("number snapshots:")
+print(len(Thk_stnd[:, 0, 0]))
 lastslice = len(Thk_stnd[:, 0, 0]) - 1
 
 thk_stnd = Thk_stnd[lastslice, :, :]
@@ -155,8 +155,8 @@ for i in range(0, nx):
 for i in range(0, nx):
     for j in range(0, ny):
         precip[j, i] = precip_stnd[0, 0] / secpera / ice_density
-print "snow per year in meters"
-print precip_stnd[0, 0]
+print("snow per year in meters")
+print(precip_stnd[0, 0])
 
 
 # defining dummy temperature:
@@ -185,11 +185,11 @@ for i in range(mask.shape[0]):
         else:
             xg_new = xg + dx / 2.0
 
-print "old grounding line at position:"
-print xg, "km"
+print("old grounding line at position:")
+print(xg, "km")
 
-print "new grounding line at position:"
-print xg_new, "km"
+print("new grounding line at position:")
+print(xg_new, "km")
 
 
 xg = xg_new * 1.0e3
@@ -259,7 +259,7 @@ vars = {'y':   	['m',
                  tauc],
         }
 
-for name in vars.keys():
+for name in list(vars.keys()):
     [_, _, _, fill_value, data] = vars[name]
     if name in ['x', 'y']:
         var = ncfile.createVariable(name, 'f4', (name,))
@@ -272,5 +272,5 @@ for name in vars.keys():
 
 # finish up
 ncfile.close()
-print "NetCDF file ", WRIT_FILE, " created"
-print ''
+print("NetCDF file ", WRIT_FILE, " created")
+print('')

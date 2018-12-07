@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,8 +19,8 @@
 #ifndef __iceModel_hh
 #define __iceModel_hh
 
-//! \file iceModel.hh Definition of class IceModel.
-/*! \file iceModel.hh
+//! \file IceModel.hh Definition of class IceModel.
+/*! \file IceModel.hh
   IceModel is a big class which is an ice flow model.  It contains all parts that
   are not well-defined, separated components.  Such components are better places
   to put sub-models that have a clear, general interface to the rest of an ice
@@ -37,6 +37,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <memory>
 
 // IceModel owns a bunch of fields, so we have to include this.
 #include "pism/util/iceModelVec.hh"
@@ -56,6 +57,9 @@ namespace pism {
 
 namespace ocean {
 class OceanModel;
+namespace sea_level {
+class SeaLevel;
+}
 }
 
 namespace surface {
@@ -91,6 +95,7 @@ class BedDef;
 class IceGrid;
 class AgeModel;
 class IceModelVec2CellType;
+class IceModelVec2T;
 class Component;
 
 struct FractureFields {
@@ -141,7 +146,7 @@ public:
 
   double ice_volume(double thickness_threshold) const;
   double ice_volume_not_displacing_seawater(double thickness_threshold) const;
-  double sealevel_volume(double thickness_threshold) const;
+  double sea_level_rise_potential(double thickness_threshold) const;
   double ice_volume_temperate(double thickness_threshold) const;
   double ice_volume_cold(double thickness_threshold) const;
   double ice_area(double thickness_threshold) const;
@@ -175,7 +180,9 @@ protected:
   virtual void allocate_iceberg_remover();
 
   virtual stressbalance::Inputs stress_balance_inputs();
+
   virtual energy::Inputs energy_model_inputs();
+
   virtual YieldStressInputs yield_stress_inputs();
 
   virtual void time_setup();
@@ -201,8 +208,7 @@ protected:
   virtual void process_options();
   virtual std::set<std::string> output_variables(const std::string &keyword);
 
-  // see iMutil.cc
-  virtual void compute_cell_areas(); // is an initialization step; should go there
+  virtual void compute_lat_lon();
 
   // see iMIO.cc
   virtual void restart_2d(const PIO &input_file, unsigned int record);
@@ -254,8 +260,10 @@ protected:
   //! the list of sub-models, for writing model states and obtaining diagnostics
   std::map<std::string,const Component*> m_submodels;
 
-  hydrology::Hydrology   *m_subglacial_hydrology;
-  YieldStress *m_basal_yield_stress_model;
+  std::unique_ptr<hydrology::Hydrology> m_subglacial_hydrology;
+  std::unique_ptr<YieldStress> m_basal_yield_stress_model;
+
+  std::shared_ptr<IceModelVec2T> m_surface_input_for_hydrology;
 
   energy::BedThermalUnit *m_btu;
   energy::EnergyModel *m_energy_model;
@@ -270,9 +278,11 @@ protected:
   calving::vonMisesCalving    *m_vonmises_calving;
   FrontalMelt                 *m_frontal_melt;
 
-  surface::SurfaceModel *m_surface;
-  ocean::OceanModel     *m_ocean;
-  bed::BedDef           *m_beddef;
+  std::shared_ptr<surface::SurfaceModel>      m_surface;
+  std::shared_ptr<ocean::OceanModel>          m_ocean;
+  std::shared_ptr<ocean::sea_level::SeaLevel> m_sea_level;
+
+  bed::BedDef *m_beddef;
 
   // state variables and some diagnostics/internals
 
@@ -315,21 +325,25 @@ protected:
   virtual void max_timestep(double &dt_result, unsigned int &skip_counter);
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
-  // see iMenergy.cc
+  // see energy.cc
+  virtual void bedrock_thermal_model_step();
   virtual void energy_step();
 
-  virtual void combine_basal_melt_rate(IceModelVec2S &result);
+  virtual void combine_basal_melt_rate(const Geometry &geometry,
+                                       const IceModelVec2S &shelf_base_mass_flux,
+                                       const IceModelVec2S &grounded_basal_melt_rate,
+                                       IceModelVec2S &result);
 
-  void enforce_consistency_of_geometry(bool remove_icebergs);
+  enum ConsistencyFlag {REMOVE_ICEBERGS, DONT_REMOVE_ICEBERGS};
+  void enforce_consistency_of_geometry(ConsistencyFlag flag);
 
-  virtual void update_ice_geometry(bool skip);
   virtual void do_calving();
-  virtual void Href_cleanup();
-  virtual void compute_discharge(const IceModelVec2S &thickness,
-                                 const IceModelVec2S &Href,
-                                 const IceModelVec2S &thickness_old,
-                                 const IceModelVec2S &Href_old,
-                                 IceModelVec2S &output);
+
+  virtual void accumulate_discharge(const IceModelVec2S &thickness,
+                                    const IceModelVec2S &Href,
+                                    const IceModelVec2S &thickness_old,
+                                    const IceModelVec2S &Href_old,
+                                    IceModelVec2S &output);
 
   // see iMIO.cc
   virtual void regrid();
@@ -353,7 +367,7 @@ protected:
   virtual void update_run_stats();
 
   // working space (a convenience)
-  static const int m_n_work2d = 4;
+  static const int m_n_work2d = 3;
   mutable IceModelVec2S m_work2d[m_n_work2d];
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
@@ -430,7 +444,7 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
 void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness);
 bool check_maximum_ice_thickness(const IceModelVec2S &ice_thickness);
 
-void bedrock_surface_temperature(double sea_level,
+void bedrock_surface_temperature(const IceModelVec2S &sea_level,
                                  const IceModelVec2CellType &cell_type,
                                  const IceModelVec2S &bed_topography,
                                  const IceModelVec2S &ice_thickness,

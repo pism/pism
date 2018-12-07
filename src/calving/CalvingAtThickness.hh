@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -40,7 +40,7 @@ public:
   const IceModelVec2S& threshold() const;
 
 protected:
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
   IceModelVec2S m_calving_threshold;
   IceModelVec2CellType m_old_mask;
 };

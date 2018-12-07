@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2017 PISM Authors
+// Copyright (C) 2004--2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,11 +18,9 @@
 
 #include <cmath>
 #include <cassert>
-#include <gsl/gsl_math.h>
 
 #include "MohrCoulombYieldStress.hh"
 
-#include "pism/hydrology/Hydrology.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
@@ -36,8 +34,8 @@
 
 namespace pism {
 
-//! \file PISMMohrCoulombYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
-/*! \file PISMMohrCoulombYieldStress.cc
+//! \file MohrCoulombYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
+/*! \file MohrCoulombYieldStress.cc
 The output variable of this submodel is `tauc`, the pseudo-plastic yield stress
 field that is used in the ShallowStressBalance objects.  This quantity is
 computed by the Mohr-Coulomb criterion [\ref SchoofTill], but using an empirical
@@ -50,47 +48,23 @@ the submodel, namely `tillphi`.  Its initialization is nontrivial: either the
 latter case `tillphi` can be read-in at the beginning of the run.  Currently
 `tillphi` does not evolve during the run.)
 
-This submodel uses a pointer to a Hydrology instance to get the till (pore)
-water amount, the effective water layer thickness.  The effective pressure is
-derived from this.  Then the effective pressure is combined with tillphi to
-compute an updated `tauc` by the Mohr-Coulomb criterion.
+The effective pressure is derived from the till (pore) water amount (the effective water
+layer thickness). Then the effective pressure is combined with tillphi to compute an
+updated `tauc` by the Mohr-Coulomb criterion.
 
 This submodel is inactive in floating areas.
 */
 
 
-MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
-                                               hydrology::Hydrology *hydro)
-  : YieldStress(g), m_hydrology(hydro) {
+MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g)
+  : YieldStress(g) {
 
-  const unsigned int stencil_width = m_config->get_double("grid.max_stencil_width");
-
-  m_till_phi.create(m_grid, "tillphi", WITH_GHOSTS, stencil_width);
+  m_till_phi.create(m_grid, "tillphi", WITHOUT_GHOSTS);
   m_till_phi.set_attrs("model_state",
                        "friction angle for till under grounded ice sheet",
                        "degrees", "");
   m_till_phi.set_time_independent(true);
   // in this model; need not be time-independent in general
-
-  // internal working space; stencil width needed because redundant computation
-  // on overlaps
-  m_tillwat.create(m_grid, "tillwat_for_MohrCoulomb", WITH_GHOSTS, stencil_width);
-  m_tillwat.set_attrs("internal",
-                      "copy of till water thickness held by MohrCoulombYieldStress",
-                      "m", "");
-
-  m_Po.create(m_grid, "overburden_pressure_for_MohrCoulomb",
-              WITH_GHOSTS, stencil_width);
-  m_Po.set_attrs("internal",
-                 "copy of overburden pressure held by MohrCoulombYieldStress",
-                 "Pa", "");
-
-  if (m_config->get_boolean("basal_yield_stress.add_transportable_water")) {
-    m_bwat.create(m_grid, "bwat_for_MohrCoulomb", WITHOUT_GHOSTS);
-    m_bwat.set_attrs("internal",
-                     "copy of transportable water thickness held by MohrCoulombYieldStress",
-                     "m", "");
-  }
 }
 
 MohrCoulombYieldStress::~MohrCoulombYieldStress() {
@@ -115,8 +89,8 @@ See also IceBasalResistancePlasticLaw::drag().
 
 The strength of the saturated till material, the yield stress, is modeled by a
 Mohr-Coulomb relation [\ref Paterson, \ref SchoofStream],
-    \f[   \tau_c = c_0 + (\tan \varphi) N_{til}, \f]
-where \f$N_{til}\f$ is the effective pressure of the glacier on the mineral
+    \f[   \tau_c = c_0 + (\tan \varphi) N_{till}, \f]
+where \f$N_{till}\f$ is the effective pressure of the glacier on the mineral
 till.
 
 The determination of the till friction angle \f$\varphi(x,y)\f$  is important.
@@ -130,28 +104,18 @@ This determines the map of \f$\varphi(x,y)\f$.  If this option is note given,
 the current method leaves `tillphi` unchanged, and thus either in its
 read-in-from-file state or with a default constant value from the config file.
 */
-void MohrCoulombYieldStress::init_impl() {
+void MohrCoulombYieldStress::init_impl(const Geometry &geometry,
+                                       const IceModelVec2S &till_water_thickness,
+                                       const IceModelVec2S &overburden_pressure) {
   {
     std::string hydrology_tillwat_max = "hydrology.tillwat_max";
     bool till_is_present = m_config->get_double(hydrology_tillwat_max) > 0.0;
 
     if (not till_is_present) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "The Mohr-Coulomb yield stress model cannot be used without till.\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "The Mohr-Coulomb yield stress model cannot be used without till.\n"
                                     "Reset %s or choose a different yield stress model.",
                                     hydrology_tillwat_max.c_str());
-    }
-  }
-
-  {
-    const std::string flag_name = "basal_yield_stress.add_transportable_water";
-    hydrology::Routing *hydrology_routing = dynamic_cast<hydrology::Routing*>(m_hydrology);
-    if (m_config->get_boolean(flag_name) == true && hydrology_routing == NULL) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Flag %s is set.\n"
-                                    "Thus the Mohr-Coulomb yield stress model needs a hydrology::Routing\n"
-                                    "(or derived like hydrology::Distributed) object with transportable water.\n"
-                                    "The current Hydrology instance is not suitable.  Set flag\n"
-                                    "%s to 'no' or choose a different yield stress model.",
-                                    flag_name.c_str(), flag_name.c_str());
     }
   }
 
@@ -159,11 +123,11 @@ void MohrCoulombYieldStress::init_impl() {
 
   const double till_phi_default = m_config->get_double("basal_yield_stress.mohr_coulomb.till_phi_default");
 
-  InputOptions opts = process_input_options(m_grid->com);
+  InputOptions opts = process_input_options(m_grid->com, m_config);
 
-  if (options::Bool("-topg_to_phi", "compute tillphi as a function of bed elevation")) {
+  if (m_config->get_boolean("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled")) {
 
-    m_log->message(2, "  option -topg_to_phi seen; creating tillphi map from bed elevation...\n");
+    m_log->message(2, "  creating till friction angle map from bed elevation...\n");
 
     if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
 
@@ -178,7 +142,7 @@ void MohrCoulombYieldStress::init_impl() {
       }
     }
 
-    topg_to_phi(*m_grid->variables().get_2d_scalar("bedrock_altitude"));
+    till_friction_angle(geometry.bed_elevation, m_till_phi);
 
   } else if (opts.type == INIT_RESTART) {
     m_till_phi.read(opts.filename, opts.record);
@@ -211,7 +175,11 @@ void MohrCoulombYieldStress::init_impl() {
                    "  Will compute till friction angle (tillphi) as a function"
                    " of the yield stress (tauc)...\n");
 
-    tauc_to_phi(*m_grid->variables().get_2d_cell_type("mask"));
+    till_friction_angle(m_basal_yield_stress,
+                        till_water_thickness,
+                        overburden_pressure,
+                        geometry.cell_type,
+                        m_till_phi);
   } else {
     m_basal_yield_stress.set(0.0);
     // will be set in update_impl()
@@ -244,16 +212,16 @@ from a Hydrology object.  We implement the Mohr-Coulomb criterion allowing
 a (typically small) till cohesion  @f$ c_0 @f$
 and by expressing the coefficient as the tangent of a till friction angle
  @f$ \varphi @f$ :
-    @f[   \tau_c = c_0 + (\tan \varphi) N_{til}. @f]
+    @f[   \tau_c = c_0 + (\tan \varphi) N_{till}. @f]
 See [@ref Paterson] table 8.1 regarding values.
 
 The effective pressure on the till is empirically-related
 to the amount of water in the till.  We use this formula derived from
 [@ref Tulaczyketal2000] and documented in [@ref BuelervanPeltDRAFT]:
 
-@f[ N_{til} = \min\left\{P_o, N_0 \left(\frac{\delta P_o}{N_0}\right)^s 10^{(e_0/C_c) (1 - s)}\right\} @f]
+@f[ N_{till} = \min\left\{P_o, N_0 \left(\frac{\delta P_o}{N_0}\right)^s 10^{(e_0/C_c) (1 - s)}\right\} @f]
 
-where  @f$ s = W_{til} / W_{til}^{max} @f$,  @f$ W_{til}^{max} @f$ =`hydrology_tillwat_max`,
+where  @f$ s = W_{till} / W_{till}^{max} @f$,  @f$ W_{till}^{max} @f$ =`hydrology_tillwat_max`,
 @f$ \delta @f$ =`basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden`,  @f$ P_o @f$  is the
 overburden pressure,  @f$ N_0 @f$ =`basal_yield_stress.mohr_coulomb.till_reference_effective_pressure` is a
 reference effective pressure,   @f$ e_0 @f$ =`basal_yield_stress.mohr_coulomb.till_reference_void_ratio` is the void ratio
@@ -263,73 +231,65 @@ found by [@ref Tulaczyketal2000] from laboratory experiments on samples of
 till.
 
 If `basal_yield_stress.add_transportable_water` is yes then @f$ s @f$ in the above formula
-becomes @f$ s = (W + W_{til}) / W_{til}^{max} @f$,
-that is, the water amount is the sum @f$ W+W_{til} @f$.  This only works
-if @f$ W @f$ is present, that is, if `hydrology` points to a
-hydrology::Routing (or derived class thereof).
+becomes @f$ s = (W + W_{till}) / W_{till}^{max} @f$,
+that is, the water amount is the sum @f$ W+W_{till} @f$.
  */
 void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
 
   bool slippery_grounding_lines = m_config->get_boolean("basal_yield_stress.slippery_grounding_lines"),
        add_transportable_water  = m_config->get_boolean("basal_yield_stress.add_transportable_water");
+  const double
+    ice_density      = m_config->get_double("constants.ice.density"),
+    standard_gravity = m_config->get_double("constants.standard_gravity");
 
-  hydrology::Routing* hydrowithtransport = dynamic_cast<hydrology::Routing*>(m_hydrology);
+  const double high_tauc  = m_config->get_double("basal_yield_stress.ice_free_bedrock"),
+               W_till_max = m_config->get_double("hydrology.tillwat_max"),
+               c0         = m_config->get_double("basal_yield_stress.mohr_coulomb.till_cohesion"),
+               N0         = m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure"),
+               e0overCc   = (m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_void_ratio") /
+                             m_config->get_double("basal_yield_stress.mohr_coulomb.till_compressibility_coefficient")),
+               delta      = m_config->get_double("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"),
+               tlftw      = m_config->get_double("basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water");
 
-  if (add_transportable_water and not hydrowithtransport) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "add_transportable_water requires a routing hydrology model");
-  }
+  const IceModelVec2S
+    &W_till        = *inputs.till_water_thickness,
+    &W_subglacial  = *inputs.subglacial_water_thickness,
+    &ice_thickness = inputs.geometry->ice_thickness;
 
-  const double high_tauc   = m_config->get_double("basal_yield_stress.ice_free_bedrock"),
-               tillwat_max = m_config->get_double("hydrology.tillwat_max"),
-               c0          = m_config->get_double("basal_yield_stress.mohr_coulomb.till_cohesion"),
-               N0          = m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure"),
-               e0overCc    = (m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_void_ratio") /
-                              m_config->get_double("basal_yield_stress.mohr_coulomb.till_compressibility_coefficient")),
-               delta       = m_config->get_double("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"),
-               tlftw       = m_config->get_double("basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water");
-
-  if (m_hydrology) {
-    m_hydrology->till_water_thickness(m_tillwat);
-    m_hydrology->overburden_pressure(m_Po);
-    if (add_transportable_water) {
-      hydrowithtransport->subglacial_water_thickness(m_bwat);
-    }
-  }
-
-  const IceModelVec2CellType &mask           = inputs.geometry->cell_type;
+  const IceModelVec2CellType &cell_type      = inputs.geometry->cell_type;
   const IceModelVec2S        &bed_topography = inputs.geometry->bed_elevation;
+  const IceModelVec2S        &sea_level      = inputs.geometry->sea_level_elevation;
 
-  IceModelVec::AccessList list{&m_tillwat, &m_till_phi, &m_basal_yield_stress, &mask,
-      &bed_topography, &m_Po};
+  IceModelVec::AccessList list{&W_till, &m_till_phi, &m_basal_yield_stress, &cell_type,
+      &bed_topography, &sea_level, &ice_thickness};
   if (add_transportable_water) {
-    list.add(m_bwat);
+    list.add(W_subglacial);
   }
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.ocean(i, j)) {
+    if (cell_type.ocean(i, j)) {
       m_basal_yield_stress(i, j) = 0.0;
-    } else if (mask.ice_free(i, j)) {
+    } else if (cell_type.ice_free(i, j)) {
       m_basal_yield_stress(i, j) = high_tauc;  // large yield stress if grounded and ice-free
     } else { // grounded and there is some ice
       // user can ask that marine grounding lines get special treatment
-      const double sea_level = 0.0; // FIXME: get sea-level from correct PISM source
-      double water = m_tillwat(i,j); // usual case
+      double water = W_till(i,j); // usual case
       if (slippery_grounding_lines and
-          bed_topography(i,j) <= sea_level and
-          (mask.next_to_floating_ice(i,j) or mask.next_to_ice_free_ocean(i,j))) {
-        water = tillwat_max;
+          bed_topography(i,j) <= sea_level(i, j) and
+          (cell_type.next_to_floating_ice(i,j) or cell_type.next_to_ice_free_ocean(i,j))) {
+        water = W_till_max;
       } else if (add_transportable_water) {
-        water = m_tillwat(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);
+        water = W_till(i,j) + tlftw * log(1.0 + W_subglacial(i,j) / tlftw);
       }
       double
-        s    = water / tillwat_max,
-        Ntil = N0 * pow(delta * m_Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
-      Ntil = std::min(m_Po(i,j), Ntil);
+        s    = water / W_till_max,
+        P_overburden = ice_density * standard_gravity * ice_thickness(i, j),
+        Ntill = N0 * pow(delta * P_overburden / N0, s) * pow(10.0, e0overCc * (1.0 - s));
+      Ntill = std::min(P_overburden, Ntill);
 
-      m_basal_yield_stress(i, j) = c0 + Ntil * tan((M_PI/180.0) * m_till_phi(i, j));
+      m_basal_yield_stress(i, j) = c0 + Ntill * tan((M_PI/180.0) * m_till_phi(i, j));
     }
   }
 
@@ -352,34 +312,14 @@ where \f$\phi_{\text{min}}=\f$`phi_min`, \f$\phi_{\text{max}}=\f$`phi_max`,
 
 The default values are vaguely suitable for Antarctica.  See src/pism_config.cdl.
 */
-void MohrCoulombYieldStress::topg_to_phi(const IceModelVec2S &bed_topography) {
-
-  options::RealList option("-topg_to_phi",
-                           "Turn on, and specify, the till friction angle parameterization"
-                           " based on bedrock elevation (topg)");
-
-  if (not option.is_set()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "-topg_to_phi is not set");
-  }
-
-  if (option->size() != 4) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "invalid -topg_to_phi arguments: has to be a list"
-                                  " of 4 numbers, got %d", (int)option->size());
-  }
+void MohrCoulombYieldStress::till_friction_angle(const IceModelVec2S &bed_topography,
+                                                 IceModelVec2S &result) {
 
   const double
-    phi_min  = option[0],
-    phi_max  = option[1],
-    topg_min = option[2],
-    topg_max = option[3];
-
-  // FIXME: these parameters aren't actually used
-  // const double
-  //   phi_min  = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
-  //   phi_max  = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max"),
-  //   topg_min = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min"),
-  //   topg_max = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max");
+    phi_min  = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
+    phi_max  = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max"),
+    topg_min = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min"),
+    topg_max = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max");
 
   m_log->message(2,
                  "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
@@ -402,70 +342,72 @@ void MohrCoulombYieldStress::topg_to_phi(const IceModelVec2S &bed_topography) {
 
   const double slope = (phi_max - phi_min) / (topg_max - topg_min);
 
-  IceModelVec::AccessList list{&bed_topography, &m_till_phi};
+  IceModelVec::AccessList list{&bed_topography, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     const double bed = bed_topography(i, j);
 
     if (bed <= topg_min) {
-      m_till_phi(i, j) = phi_min;
+      result(i, j) = phi_min;
     } else if (bed >= topg_max) {
-      m_till_phi(i, j) = phi_max;
+      result(i, j) = phi_max;
     } else {
-      m_till_phi(i, j) = phi_min + (bed - topg_min) * slope;
+      result(i, j) = phi_min + (bed - topg_min) * slope;
     }
   }
 
   // communicate ghosts so that the tauc computation can be performed locally
   // (including ghosts of tauc, that is)
-  m_till_phi.update_ghosts();
+  result.update_ghosts();
 }
 
+/*!
+ * Compute the till friction angle in grounded areas using available basal yield stress,
+ * till water thickness, and overburden pressure.
+ *
+ * This is the inverse of the formula used to by `update_impl()`.
+ */
+void MohrCoulombYieldStress::till_friction_angle(const IceModelVec2S &basal_yield_stress,
+                                                 const IceModelVec2S &till_water_thickness,
+                                                 const IceModelVec2S &overburden_pressure,
+                                                 const IceModelVec2CellType &cell_type,
+                                                 IceModelVec2S &result) {
 
-void MohrCoulombYieldStress::tauc_to_phi(const IceModelVec2CellType &mask) {
   const double c0 = m_config->get_double("basal_yield_stress.mohr_coulomb.till_cohesion"),
     N0            = m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure"),
     e0overCc      = (m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_void_ratio") /
                      m_config->get_double("basal_yield_stress.mohr_coulomb.till_compressibility_coefficient")),
     delta         = m_config->get_double("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"),
-    tillwat_max   = m_config->get_double("hydrology.tillwat_max");
+    W_till_max    = m_config->get_double("hydrology.tillwat_max");
 
-  assert(m_hydrology != NULL);
+  const IceModelVec2S
+    &W_till = till_water_thickness,
+    &Po     = overburden_pressure;
 
-  m_hydrology->till_water_thickness(m_tillwat);
-  m_hydrology->overburden_pressure(m_Po);
+  IceModelVec::AccessList list{&cell_type, &basal_yield_stress, &W_till, &Po, &result};
 
-  // make sure that we have enough ghosts:
-  const unsigned int GHOSTS = m_till_phi.get_stencil_width();
-
-  assert(mask.get_stencil_width()                 >= GHOSTS);
-  assert(m_basal_yield_stress.get_stencil_width() >= GHOSTS);
-  assert(m_tillwat.get_stencil_width()            >= GHOSTS);
-  assert(m_Po.get_stencil_width()                 >= GHOSTS);
-
-  IceModelVec::AccessList list{&mask, &m_basal_yield_stress, &m_tillwat, &m_Po, &m_till_phi};
-
-  for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.ocean(i, j)) {
+    if (cell_type.ocean(i, j)) {
       // no change
-    } else if (mask.ice_free(i, j)) {
+    } else if (cell_type.ice_free(i, j)) {
       // no change
     } else { // grounded and there is some ice
-      const double s = m_tillwat(i, j) / tillwat_max;
+      const double s = W_till(i, j) / W_till_max;
 
-      double Ntil = 0.0;
-      Ntil = N0 * pow(delta * m_Po(i, j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
-      Ntil = std::min(m_Po(i, j), Ntil);
+      double Ntill = N0 * pow(delta * Po(i, j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
+      Ntill = std::min(Po(i, j), Ntill);
 
-      m_till_phi(i, j) = 180.0/M_PI * atan((m_basal_yield_stress(i, j) - c0) / Ntil);
+      result(i, j) = 180.0/M_PI * atan((basal_yield_stress(i, j) - c0) / Ntill);
     }
   }
+
+  result.update_ghosts();
 }
 
-std::map<std::string, Diagnostic::Ptr> MohrCoulombYieldStress::diagnostics_impl() const {
+DiagnosticList MohrCoulombYieldStress::diagnostics_impl() const {
   return combine({{"tillphi", Diagnostic::wrap(m_till_phi)}},
                  YieldStress::diagnostics_impl());
 }

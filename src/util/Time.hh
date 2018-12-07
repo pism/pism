@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,7 @@
 #include <vector>
 #include <memory>
 
-#include "pism_const.hh"
+#include "pism_utilities.hh"
 #include "Units.hh"
 #include "pism/util/ConfigInterface.hh"
 
@@ -110,7 +110,7 @@ public:
 
   void init_calendar(const std::string &calendar);
 
-  void parse_times(const std::string &spec, std::vector<double> &result) const;
+  std::vector<double> parse_times(const std::string &spec) const;
 
   //! \brief Returns the CF- (and UDUNITS) compliant units string.
   /*!
@@ -170,7 +170,14 @@ public:
   virtual double convert_time_interval(double T, const std::string &units) const;
 
 protected:
-  void parse_list(const std::string &spec, std::vector<double> &result) const;
+  double years_to_seconds(double input) const;
+  double seconds_to_years(double input) const;
+
+  std::vector<double> parse_list(const std::string &spec) const;
+  std::vector<double> parse_range(const std::string &spec) const;
+
+  void compute_times_simple(double time_start, double delta, double time_end,
+                            std::vector<double> &result) const;
 
   virtual bool process_ys(double &result);
   virtual bool process_y(double &result);
@@ -180,18 +187,10 @@ protected:
                              const std::string &keyword,
                              std::vector<double> &result) const;
 
-  void compute_times_simple(double time_start, double delta, double time_end,
-                            std::vector<double> &result) const;
-
-  virtual void parse_range(const std::string &spec, std::vector<double> &result) const;
-
   virtual void parse_date(const std::string &spec, double *result) const;
 
   virtual void parse_interval_length(const std::string &spec, std::string &keyword,
                                      double *result) const;
-
-  double years_to_seconds(double input) const;
-  double seconds_to_years(double input) const;
 
 protected:
   const Config::ConstPtr m_config;

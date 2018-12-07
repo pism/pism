@@ -1,11 +1,13 @@
 PISM Storglaciaren example.
 
-For the flowline case, start with that section of the User's Manual.  Then do:
-  $ ./preprocess.sh
-  $ ./psg_flowline.sh N   # N processors
-
-For the PRELIMINARY 3d case, which is not yet documented in the User's Manual, do:
+Here we provide a 3D example that uses cryo-hydrologic warming. To get started, run:
   $ ./preprocess.sh
   $ ./sg_create_3d.py
-  $ ./psg_3d.sh N         # N processors
 
+Then spinup the test case by running:
+
+  $ ./run_spinup.sh N         # N processors
+
+Now compare 1K warming over 100 years with and without cryo-hydrologic warming
+
+  $ ./run_ch.sh N         # N processors

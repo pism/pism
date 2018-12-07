@@ -17,7 +17,7 @@ sub-shelf mass flux is a "melt rate".
 
 Constant in time and space
 ++++++++++++++++++++++++++
-    
+
 :|options|: ``-ocean constant``
 :|variables|: none
 :|implementation|: ``pism::ocean::Constant``
@@ -38,7 +38,7 @@ Alternatively, the sub-shelf melt rate in meters per year can be set using the
 
 Reading forcing data from a file
 ++++++++++++++++++++++++++++++++
-    
+
 :|options|: ``-ocean given``
 :|variables|: :var:`shelfbtemp` Kelvin,
               :var:`shelfbmassflux`  |flux|
@@ -62,7 +62,7 @@ given`` component is very similar to ``-surface given`` and ``-atmosphere given`
 
 PIK
 +++
-    
+
 :|options|: ``-ocean pik``
 :|variables|: none
 :|implementation|: ``pism::ocean::PIK``
@@ -114,28 +114,126 @@ It takes two command-line option:
   salinity is clipped so that it stays in the `[4, 40]` psu range. This is done to
   ensure that we stay in the range of applicability of the melting point temperature
   parameterization; see :cite:`HollandJenkins1999`. To disable salinity clipping, use the
-  :opt:`-no_clip_shelf_base_salinity` option or set the
-  :config:`ocean_three_equation_model_clip_salinity` configuration parameter to "no".
+  :opt:`-no_clip_shelf_base_salinity` option or set the configuration parameter
+  :config:`ocean.three_equation_model_clip_salinity`  to "no".
+
+.. _sec-pico:
+
+PICO
+++++
+
+:|options|: ``-ocean pico``
+:|variables|: :var:`theta_ocean` (potential ocean temperature), [Kelvin],
+
+              :var:`salinity_ocean` (salinity of the adjacent ocean), [g/kg],
+
+              :var:`basins` (mask of large-scale ocean basins that ocean input is averaged over), [integer]
+:|implementation|: ``pism::ocean::Pico``
+
+The PICO model provides sub-shelf melt rates and temperatures consistent with the vertical
+overturning circulation in ice shelf cavities that drives the exchange with open ocean
+water masses. It is based on the ocean box model of :cite:`OlbersHellmer2010` and includes
+a geometric approach which makes it applicable to ice shelves that evolve in two
+horizontal dimensions. For each ice shelf, PICO solves the box model equations describing
+the transport between coarse ocean boxes. It applies a boundary layer melt formulation
+:cite:`HellmerOlbers1989`, :cite:`HollandJenkins1999`. The overturning circulation is
+driven by the ice-pump :cite:`LewisPerkin1986`: melting at the ice-shelf base reduces the
+density of ambient water masses. Buoyant water rising along the shelf base draws in ocean
+water at depth, which flows across the continental shelf towards the deep grounding lines.
+The model captures this circulation by defining consecutive boxes following the flow
+within the ice shelf cavity, with the first box adjacent to the grounding line. The
+extents of the ocean boxes are computed adjusting to the evolving grounding lines and
+calving fronts. Open ocean properties in front of the shelf as well as the geometry of the
+shelf determine basal melt rate and basal temperature at each grid point.
+
+The main equations reflect the
+
+#. heat and salt balance for each ocean box in contact with the ice shelf base,
+#. overturning flux driven by the density difference between open-ocean and grounding-line box,
+#. boundary layer melt formulation.
+
+The PICO model is described in detail in :cite:`ReeseAlbrecht2018`.
+
+Inputs are potential temperature (variable :var:`theta_ocean`), salinity (variable
+:var:`salinity_ocean`) and ocean basin mask (variable :var:`basins`). Variables
+:var:`theta_ocean` and :var:`salinity_ocean` may be time-dependent.
+
+Forcing ocean temperature and salinity are taken from the water masses that occupy the sea
+floor in front of the ice shelves, which extends down to a specified continental shelf
+depth (see :config:`ocean.pico.continental_shelf_depth`). These water masses are
+transported by the overturning circulation into the ice shelf cavity and towards the
+grounding line. The basin mask defines regions of similar, large-scale ocean conditions;
+each region is marked with a distinct positive integer. In PICO, ocean input temperature
+and salinity are averaged on the continental shelf within each basins. For each ice shelf,
+the input values of the overturning circulation are calculated as an area-weighted average
+over all basins that intersect the ice shelf. If ocean input parameters cannot be
+identified, standard values are used (**Warning:** this could strongly influence melt
+rates computed by PICO). In regions where the PICO geometry cannot be identified,
+:cite:`BeckmannGoosse2003` is applied.
+
+PICO has one command-line option and 7 configuration parameters:
+
+- :opt:`-ocean_pico_file`: specifies the NetCDF file containing potential temperature
+  (:var:`theta_ocean`), salinity (:var:`salinity_ocean`) and ocean basins (:var:`basins`).
+- :config:`ocean.pico.heat_exchange_coefficent` sets the coefficient for turbulent heat
+  exchange from the ambient ocean across the boundary layer beneath the ice shelf base.
+- :config:`ocean.pico.overturning_coefficent`: sets the coefficient in the overturning
+  parameterization.
+- :config:`ocean.pico.number_of_boxes`: For each ice shelf the number of ocean boxes is
+  determined by interpolating between 1 and number_of_boxes depending on its size and
+  geometry such that larger ice shelves are resolved with more boxes; a value of 5 is
+  suitable for the Antarctic setup.
+- :config:`ocean.pico.number_of_basins`
+- :config:`ocean.pico.exclude_ice_rises`: If set to true, grounding lines of ice rises are
+  excluded in the geometrical routines that determine the ocean boxes; using this option
+  is recommended.
+- :config:`ocean.pico.continental_shelf_depth`: specifies the depth up to which oceanic
+  input temperatures and salinities are averaged over the continental shelf areas in front
+  of the ice shelf cavities.
+- :config:`ocean.pico.maximum_ice_rise_area`: specifies an area threshold that separates
+  ice rises from continental regions.
 
 .. _sec-ocean-delta-sl:
 
 Scalar sea level offsets
 ++++++++++++++++++++++++
 
-:|options|: :opt:`-ocean ...,delta_SL`
+:|options|: :opt:`-sea_level ...,delta_sl`
 :|variables|: :var:`delta_SL` (meters)
-:|implementation|: ``pism::ocean::Delta_SL``
+:|implementation|: ``pism::ocean::sea_level::Delta_SL``
 
-The ``delta_SL`` modifier implements sea level forcing using scalar offsets.
+The ``delta_sl`` modifier implements sea level forcing using scalar offsets.
 
 It takes the following command-line options:
 
-- :opt:`-ocean_delta_SL_file`: specifies the name of the file containing forcing data.
+- :opt:`-ocean_delta_sl_file`: specifies the name of the file containing forcing data.
   This file has to contain the :var:`delta_SL` variable using units "meters" or
   equivalent.
-- :opt:`-ocean_delta_SL_period` specifies the length of the period of the forcing data, in
+- :opt:`-ocean_delta_sl_period` specifies the length of the period of the forcing data, in
   model years; see section :ref:`sec-periodic-forcing`.
-- :opt:`-ocean_delta_SL_reference_year` specifies the reference date; see section
+- :opt:`-ocean_delta_sl_reference_year` specifies the reference date; see section
+  :ref:`sec-periodic-forcing`.
+
+.. _sec-ocean-delta-sl-2d:
+
+Two-dimensional sea level offsets
++++++++++++++++++++++++++++++++++
+
+:|options|: :opt:`-sea_level ...,delta_sl_2d`
+:|variables|: :var:`delta_SL` (meters)
+:|implementation|: ``pism::ocean::sea_level::Delta_SL_2D``
+
+The ``delta_sl`` modifier implements sea level forcing using time-dependent and
+spatially-variable offsets.
+
+It uses the following configuration parameters:
+
+- :config:`ocean.delta_sl_2d.file`: specifies the name of the file containing forcing
+  data. This file has to contain the :var:`delta_SL` variable using units "meters" or
+  equivalent.
+- :config:`ocean.delta_sl_2d.period` specifies the length of the period of the forcing
+  data, in model years; see section :ref:`sec-periodic-forcing`.
+- :config:`ocean.delta_sl_2d.reference_year` specifies the reference date; see section
   :ref:`sec-periodic-forcing`.
 
 .. _sec-ocean-delta-t:
@@ -198,6 +296,33 @@ It takes the following command-line options:
   model years; see section :ref:`sec-periodic-forcing`.
 - :opt:`-ocean_frac_SMB_reference_year` specifies the reference date; see section
   :ref:`sec-periodic-forcing`.
+
+.. _sec-ocean-anomaly:
+
+Two-dimensional sub-shelf mass flux offsets
++++++++++++++++++++++++++++++++++++++++++++
+
+:|options|: :opt:`-ocean ...,anomaly`
+:|variables|: :var:`shelf_base_mass_flux_anomaly` |flux|
+:|implementation|: ``pism::ocean::Anomaly``
+
+This modifier implements a spatially-variable version of ``-ocean ...,delta_SMB`` which
+applies time-dependent shelf base mass flux anomalies, as used for initMIP or LARMIP
+model intercomparisons.
+
+It takes the following command-line options:
+
+- :opt:`-ocean_anomaly_file` specifies a file containing the variable
+  :var:`shelf_base_mass_flux_anomaly`.
+- :opt:`-ocean_anomaly_period` (years) specifies the period of the forcing data, in
+  model years; see :ref:`sec-periodic-forcing`
+- :opt:`-ocean_anomaly_reference_year` specifies the reference year; see
+  :ref:`sec-periodic-forcing`
+
+  See also to ``-atmosphere ...,anomaly`` or
+  ``-surface ...,anomaly`` (section :ref:`sec-surface-anomaly`)
+  which is similar, but applies anomalies at the atmosphere or surface level,
+  respectively.
 
 .. _sec-ocean-frac-mbp:
 

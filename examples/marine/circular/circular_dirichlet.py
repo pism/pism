@@ -26,12 +26,15 @@ if options.shelf:
     thk[radius >= p.r_cf] = 0.0
     # cap ice thickness
     thk[thk > p.H0] = p.H0
+
+    thk[radius <= p.r_gl] = p.H0
+    thk[radius <= p.r_gl - 0.5 * (dx + dy)] = 0.0
 else:
     thk[radius <= p.r_gl] = p.H0
 
 # Ice thickness threshold for "calving at a threshold thickness"
 thk_threshold = np.zeros((options.My, options.Mx))  # sheet/shelf thickness
-thk_threshold[:] = 400.0
+thk_threshold[:] = 500.0
 thk_threshold[xx < 0.0] = 200.0
 
 # Bed topography
@@ -69,11 +72,11 @@ variables = {"thk": thk,
              "bc_mask": bc_mask,
              "u_ssa_bc": ubar,
              "v_ssa_bc": vbar,
-             "calving_threshold" : thk_threshold}
+             "calving_threshold": thk_threshold}
 
 piktests_utils.write_data(ncfile, variables)
 
 ncfile.variables["calving_threshold"].units = "m"
 ncfile.close()
 
-print "Successfully created %s" % options.output_filename
+print("Successfully created %s" % options.output_filename)

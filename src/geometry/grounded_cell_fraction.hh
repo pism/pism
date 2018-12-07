@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,20 +23,12 @@
 namespace pism {
 
 class IceModelVec2S;
-class IceModelVec2CellType;
 
-void compute_grounded_cell_fraction(double ice_density,
-                             double ocean_density,
-                             const IceModelVec2S &sea_level,
-                             const IceModelVec2S &ice_thickness,
-                             const IceModelVec2S &bed_topography,
-                             const IceModelVec2CellType &mask,
-                             IceModelVec2S &result,
-                             IceModelVec2S *result_x,
-                             IceModelVec2S *result_y);
+double grounded_area_fraction(double a, double b, double c);
 
 /*!
- * Compute grounded cell fractions using quadratures.
+ * Compute grounded cell fractions by splitting control volumes into triangles and
+ * treating the flotation criterion as a linear function on each triangle.
  */
 void compute_grounded_cell_fraction(double ice_density,
                                     double ocean_density,

@@ -26,7 +26,7 @@ colors = [(141, 211, 199), (255, 255, 179), (190, 186, 218), (251, 128, 114),
           (217, 217, 217), (188, 128, 189), (204, 235, 197), (255, 237, 111)]
 colors = np.array(colors) / 255.0
 
-n_procs = r.numProcs
+n_procs = r.size
 s = r.Stages["time-stepping loop"]
 
 big_events = ["basal_yield_stress",
@@ -43,12 +43,18 @@ big_events = ["basal_yield_stress",
               "io"]
 
 small_events = {}
-small_events["energy"] = ["ice_energy", "btu"];
+small_events["energy"] = ["ice_energy", "btu"]
 small_events["stress_balance"] = ["stress_balance.shallow", "stress_balance.modifier",
                                   "stress_balance.strain_heat", "stress_balance.vertical_velocity"]
 small_events["stress_balance.modifier"] = ["sia.bed_smoother",
-                                           "sia.gradient", "sia.flux", "sia.valocity"]
+                                           "sia.gradient", "sia.flux", "sia.3d_velocity"]
 small_events["io"] = ["io.backup", "io.extra_file", "io.model_state"]
+
+better_names = {"stress_balance.shallow": "SSA",
+                "stress_balance.modifier": "SIA",
+                "stress_balance.strain_heat": "Strain heating",
+                "stress_balance.vertical_velocity": "Vertical velocity"}
+
 
 def get_event_times(event, n_procs):
     result = [s[event][j]["time"] for j in range(n_procs)]
@@ -61,11 +67,14 @@ def get_event_times(event, n_procs):
     else:
         return max, min, 0.0
 
+
 total_time = np.max([s["summary"][j]["time"] for j in range(n_procs)])
+
 
 def get_data(event_list):
     "Get event data from the time-stepping loop stage."
-    return {e : get_event_times(e, n_procs) for e in event_list if e in s.keys()}
+    return {e: get_event_times(e, n_procs) for e in event_list if e in list(s.keys())}
+
 
 def aggregate(data, total_time):
     "Combine small events."
@@ -74,8 +83,8 @@ def aggregate(data, total_time):
     other_label = ""
     for event in data:
         if data[event][0] / float(total_time) < 0.01:
-            print "Lumping '%s' (%f%%) with others..." % (event,
-                                                          100.0 * data[event][0] / total_time)
+            print("Lumping '%s' (%f%%) with others..." % (event,
+                                                          100.0 * data[event][0] / total_time))
             del d[event]
             other[0] += data[event][0]
             other[1] += data[event][1]
@@ -88,12 +97,18 @@ def aggregate(data, total_time):
     d["other"] = other
     return d
 
+
 def plot(data, total, grand_total):
 
     events = [(e, data[e][0]) for e in data]
     events.sort(key=lambda x: x[1])
 
-    names = [e[0] for e in events]
+    def better_name(n):
+        if n in list(better_names.keys()):
+            return better_names[n]
+        else:
+            return n
+
     times = [e[1] for e in events]
     times_percent = [100.0 * t / float(total) for t in times]
 
@@ -103,10 +118,11 @@ def plot(data, total, grand_total):
         labels = ["\n(%3.1f s)" % time for time in times]
 
     labels = [name + comment for name, comment in zip(names, labels)]
-    
+
     explode = [0.05]*len(times)
     plt.pie(times_percent, autopct="%3.1f%%", labels=labels, colors=colors, startangle=0.0, explode=explode)
     plt.axis('equal')
+
 
 def figure(title, event_list, total, grand_total=None):
     plt.figure()
@@ -115,6 +131,7 @@ def figure(title, event_list, total, grand_total=None):
     plot(aggregate(data, total), total, grand_total)
     # plot(data, total, grand_total)
     return data
+
 
 big = figure("Time-stepping loop",
              big_events,
@@ -128,12 +145,12 @@ stressbalance = figure("Stress balance",
                        small_events["stress_balance"],
                        big["stress_balance"][0], total_time)
 
-sia = figure("SB modifier (SIA)",
+sia = figure("SIA",
              small_events["stress_balance.modifier"],
              stressbalance["stress_balance.modifier"][0], total_time)
 
 io = figure("I/O during run",
-             small_events["io"],
-             big["io"][0], total_time)
+            small_events["io"],
+            big["io"][0], total_time)
 
 plt.show()

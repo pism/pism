@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,6 @@
 
 #include <cassert>
 
-#include "pism_const.hh"
 #include "pism_utilities.hh"
 #include "iceModelVec.hh"
 #include "pism/util/io/PIO.hh"
@@ -30,6 +29,8 @@
 #include "iceModelVec_helpers.hh"
 #include "io/io_helpers.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Profiling.hh"
+#include "pism/util/petscwrappers/VecScatter.hh"
 
 namespace pism {
 
@@ -52,6 +53,7 @@ IceModelVec::IceModelVec() {
   reset_attrs(0);
 
   m_state_counter = 0;
+  m_interpolation_type = BILINEAR;
 
   m_zlevels.resize(1);
   m_zlevels[0] = 0.0;
@@ -68,19 +70,19 @@ IceModelVec::IceModelVec() {
  *
  * See also inc_state_counter().
  */
-int IceModelVec::get_state_counter() const {
+int IceModelVec::state_counter() const {
   return m_state_counter;
 }
 
-IceGrid::ConstPtr IceModelVec::get_grid() const {
+IceGrid::ConstPtr IceModelVec::grid() const {
   return m_grid;
 }
 
-unsigned int IceModelVec::get_ndof() const {
+unsigned int IceModelVec::ndof() const {
   return m_dof;
 }
 
-std::vector<double> IceModelVec::get_levels() const {
+std::vector<double> IceModelVec::levels() const {
   return m_zlevels;
 }
 
@@ -106,12 +108,25 @@ bool IceModelVec::was_created() const {
 }
 
 //! Returns the grid type of an IceModelVec. (This is the way to figure out if an IceModelVec is 2D or 3D).
-unsigned int IceModelVec::get_ndims() const {
+unsigned int IceModelVec::ndims() const {
   if (m_zlevels.size() > 1) {
     return 3;
   }
 
   return 2;
+}
+
+std::vector<int> IceModelVec::shape() const {
+
+  if (ndims() == 3) {
+    return {(int)m_grid->My(), (int)m_grid->Mx(), (int)levels().size()};
+  } else {
+    if (ndof() == 1) {
+      return {(int)m_grid->My(), (int)m_grid->Mx()};
+    } else {
+      return {(int)m_grid->My(), (int)m_grid->Mx(), (int)ndof()};
+    }
+  }
 }
 
 //! Set the time independent flag for all variables corresponding to this IceModelVec instance.
@@ -337,7 +352,7 @@ void  IceModelVec::copy_from(const IceModelVec &source) {
 
 //! @brief Get the stencil width of the current IceModelVec. Returns 0
 //! if ghosts are not available.
-unsigned int IceModelVec::get_stencil_width() const {
+unsigned int IceModelVec::stencil_width() const {
   if (m_has_ghosts) {
     return m_da_stencil_width;
   } else {
@@ -345,11 +360,11 @@ unsigned int IceModelVec::get_stencil_width() const {
   }
 }
 
-Vec IceModelVec::get_vec() {
+Vec IceModelVec::vec() {
   return m_v;
 }
 
-petsc::DM::Ptr IceModelVec::get_dm() const {
+petsc::DM::Ptr IceModelVec::dm() const {
   return m_da;
 }
 
@@ -414,8 +429,6 @@ void IceModelVec::set_attrs(const std::string &pism_intent,
  */
 void IceModelVec::regrid_impl(const PIO &file, RegriddingFlag flag,
                               double default_value) {
-  m_grid->ctx()->log()->message(3, "  Regridding %s...\n", m_name.c_str());
-
   if (m_dof != 1) {
     throw RuntimeError(PISM_ERROR_LOCATION, "This method (IceModelVec::regrid_impl)"
                        " only supports IceModelVecs with dof == 1.");
@@ -429,14 +442,14 @@ void IceModelVec::regrid_impl(const PIO &file, RegriddingFlag flag,
 
     io::regrid_spatial_variable(metadata(0), *m_grid, file, flag,
                                 m_report_range, allow_extrapolation,
-                                default_value, tmp_array.get());
+                                default_value, m_interpolation_type, tmp_array.get());
 
     global_to_local(m_da, tmp, m_v);
   } else {
     petsc::VecArray v_array(m_v);
     io::regrid_spatial_variable(metadata(0), *m_grid,  file, flag,
                                 m_report_range, allow_extrapolation,
-                                default_value, v_array.get());
+                                default_value, m_interpolation_type, v_array.get());
   }
 }
 
@@ -640,17 +653,17 @@ void  IceModelVec::update_ghosts(IceModelVec &destination) const {
   assert(destination.m_has_ghosts);
 
   if (m_has_ghosts and destination.m_has_ghosts) {
-    ierr = DMLocalToLocalBegin(*m_da, m_v, INSERT_VALUES, destination.m_v);
+    ierr = DMLocalToLocalBegin(*m_da, m_v, INSERT_VALUES, destination.vec());
     PISM_CHK(ierr, "DMLocalToLocalBegin");
 
-    ierr = DMLocalToLocalEnd(*m_da, m_v, INSERT_VALUES, destination.m_v);
+    ierr = DMLocalToLocalEnd(*m_da, m_v, INSERT_VALUES, destination.vec());
     PISM_CHK(ierr, "DMLocalToLocalEnd");
 
     return;
   }
 
   if (not m_has_ghosts and destination.m_has_ghosts) {
-    global_to_local(destination.m_da, m_v, destination.m_v);
+    global_to_local(destination.dm(), m_v, destination.vec());
 
     return;
   }
@@ -708,13 +721,13 @@ void compute_params(const IceModelVec* const x, const IceModelVec* const y,
 		    const IceModelVec* const z, int &ghosts, bool &scatter) {
 
   // We have 2^3=8 cases here (x,y,z having or not having ghosts).
-  if (z->get_stencil_width() == 0) {
+  if (z->stencil_width() == 0) {
     // z has no ghosts; we can update everything locally
     // (This covers 4 cases.)
     ghosts = 0;
     scatter = false;
-  } else if (x->get_stencil_width() == 0 ||
-             y->get_stencil_width() == 0) {
+  } else if (x->stencil_width() == 0 ||
+             y->stencil_width() == 0) {
     // z has ghosts, but at least one of x and y does not. we have to scatter
     // ghosts.
     // (This covers 3 cases.)
@@ -723,10 +736,10 @@ void compute_params(const IceModelVec* const x, const IceModelVec* const y,
   } else {
     // all of x, y, z have ghosts
     // (The remaining 8-th case.)
-    if (z->get_stencil_width() <= x->get_stencil_width() &&
-        z->get_stencil_width() <= y->get_stencil_width()) {
+    if (z->stencil_width() <= x->stencil_width() &&
+        z->stencil_width() <= y->stencil_width()) {
       // x and y have enough ghosts to update ghosts of z locally
-      ghosts = z->get_stencil_width();
+      ghosts = z->stencil_width();
       scatter = false;
     } else {
       // z has ghosts, but at least one of x and y doesn't have a wide enough
@@ -846,8 +859,24 @@ void IceModelVec::regrid(const std::string &filename, RegriddingFlag flag,
  */
 void IceModelVec::regrid(const PIO &nc, RegriddingFlag flag,
                          double default_value) {
-  this->regrid_impl(nc, flag, default_value);
-  inc_state_counter();          // mark as modified
+  m_grid->ctx()->log()->message(3, "  [%s] Regridding %s...\n",
+                                timestamp(m_grid->com).c_str(), m_name.c_str());
+  double start_time = get_time();
+  m_grid->ctx()->profiling().begin("io.regridding");
+  {
+    this->regrid_impl(nc, flag, default_value);
+    inc_state_counter();          // mark as modified
+  }
+  m_grid->ctx()->profiling().end("io.regridding");
+  double
+    end_time   = get_time(),
+    time_spent = end_time - start_time;
+
+  if (time_spent > 1.0) {
+    m_grid->ctx()->log()->message(3, "  done in %f seconds.\n", time_spent);
+  } else {
+    m_grid->ctx()->log()->message(3, "  done.\n");
+  }
 }
 
 void IceModelVec::read(const PIO &nc, const unsigned int time) {
@@ -862,9 +891,9 @@ void IceModelVec::write(const PIO &nc) const {
                                timestamp(m_grid->com).c_str(),
                                m_name.c_str());
 
-  PetscLogDouble start_time = GetTime();
+  double start_time = get_time();
   write_impl(nc);
-  PetscLogDouble end_time = GetTime();
+  double end_time = get_time();
 
   const double
     time_spent = end_time - start_time,
@@ -906,6 +935,7 @@ AccessList::~AccessList() {
 
 AccessList::AccessList(std::initializer_list<const PetscAccessible *> vecs) {
   for (auto j : vecs) {
+    assert(j != nullptr);
     add(*j);
   }
 }
@@ -921,6 +951,7 @@ void AccessList::add(const PetscAccessible &vec) {
 
 void AccessList::add(const std::vector<const PetscAccessible*> vecs) {
   for (auto v : vecs) {
+    assert(v != nullptr);
     add(*v);
   }
 }
@@ -941,6 +972,261 @@ size_t IceModelVec::size() const {
   return Mx * My * Mz * dof;
 }
 
+struct VecAndScatter {
+  VecScatter scatter;
+  Vec v;
+};
+
+/*!
+ * Allocate the scatter from a part of a parallel Vec to a target rank.
+ *
+ * The caller is responsible for de-allocating both the scatter and the target Vec.
+ */
+VecAndScatter scatter_part(Vec v_in, int start, int length, int target_rank) {
+  PetscErrorCode ierr;
+  int rank;
+  VecAndScatter result;
+  IS is;
+
+  MPI_Comm_rank(PetscObjectComm((PetscObject)v_in), &rank);
+
+  if (rank != target_rank) {
+    length = 0;
+  }
+
+  ierr = VecCreateSeq(PETSC_COMM_SELF, length, &result.v);
+  PISM_CHK(ierr, "VecCreateSeq");
+
+  ierr = ISCreateStride(PETSC_COMM_SELF, length, start, 1, &is);
+  PISM_CHK(ierr, "ISCreateStride");
+
+  ierr = VecScatterCreate(v_in, is, result.v, NULL, &result.scatter);
+  PISM_CHK(ierr, "VecScatterCreate");
+
+  ierr = ISDestroy(&is);
+  PISM_CHK(ierr, "ISDestroy");
+
+  return result;
+}
+
+/*!
+ * Allocate a natural Vec for a given DM.
+ *
+ * The caller is responsible for de-allocating the Vec returned by this function.
+ */
+Vec get_natural_work(DM dm) {
+  PetscErrorCode ierr;
+  Vec result;
+
+  ierr = PetscObjectQuery((PetscObject)dm, "natural_work", (PetscObject*)&result);
+  PISM_CHK(ierr, "PetscObjectQuery");
+
+  if (result == NULL) {
+    Vec v = NULL;
+    ierr = DMDACreateNaturalVector(dm, &v);
+    PISM_CHK(ierr, "DMDACreateNaturalVector");
+
+    ierr = PetscObjectCompose((PetscObject)dm, "natural_work", (PetscObject)(v));
+    PISM_CHK(ierr, "PetscObjectCompose");
+
+    result = v;
+
+    ierr = VecDestroy(&v);
+    PISM_CHK(ierr, "VecDestroy");
+  }
+
+  return result;
+}
+
+/*!
+ * Given a DM, allocate a rank 0 target Vec that can be used to gather a part of a
+ * "global" Vec on rank 0. Arguments "start" and "length" define the part in question.
+ *
+ * The caller is responsible for de-allocating the Vec returned by this function.
+ */
+Vec proc0_copy(DM dm, int start, int length) {
+  Vec v_proc0 = NULL;
+  PetscErrorCode ierr = 0;
+
+  ierr = PetscObjectQuery((PetscObject)dm, "v_proc0", (PetscObject*)&v_proc0);
+  PISM_CHK(ierr, "PetscObjectQuery");
+                                                                                          ;
+  if (v_proc0 == NULL) {
+
+    // natural_work will be destroyed at the end of scope, but it will
+    // only decrement the reference counter incremented by
+    // PetscObjectCompose below.
+    auto natural_work = get_natural_work(dm);
+
+    // scatter_to_zero will be destroyed at the end of scope, but it
+    // will only decrement the reference counter incremented by
+    // PetscObjectCompose below.
+    auto vs = scatter_part(natural_work, start, length, 0);
+
+    // this increments the reference counter of scatter_to_zero
+    ierr = PetscObjectCompose((PetscObject)dm, "scatter_to_zero",
+                              (PetscObject)(vs.scatter));
+    PISM_CHK(ierr, "PetscObjectCompose");
+
+    // this increments the reference counter of v_proc0
+    ierr = PetscObjectCompose((PetscObject)dm, "v_proc0",
+                              (PetscObject)vs.v);
+    PISM_CHK(ierr, "PetscObjectCompose");
+
+    VecScatterDestroy(&vs.scatter);
+
+    // We DO NOT call VecDestroy(v_proc0): the petsc::Vec wrapper will
+    // take care of this.
+    return vs.v;
+  }
+  return v_proc0;
+}
+
+/*! Allocate a copy on processor zero and the scatter needed to move data.
+ */
+petsc::Vec::Ptr IceModelVec::allocate_proc0_copy() const {
+  PetscErrorCode ierr;
+  Vec v_proc0 = NULL;
+  Vec result = NULL;
+
+  ierr = PetscObjectQuery((PetscObject)m_da->get(), "v_proc0", (PetscObject*)&v_proc0);
+  PISM_CHK(ierr, "PetscObjectQuery")
+                                                                                          ;
+  if (v_proc0 == NULL) {
+
+    // natural_work will be destroyed at the end of scope, but it will
+    // only decrement the reference counter incremented by
+    // PetscObjectCompose below.
+    petsc::Vec natural_work;
+    // create a work vector with natural ordering:
+    ierr = DMDACreateNaturalVector(*m_da, natural_work.rawptr());
+    PISM_CHK(ierr, "DMDACreateNaturalVector");
+
+    // this increments the reference counter of natural_work
+    ierr = PetscObjectCompose((PetscObject)m_da->get(), "natural_work",
+                              (PetscObject)((::Vec)natural_work));
+    PISM_CHK(ierr, "PetscObjectCompose");
+
+    // scatter_to_zero will be destroyed at the end of scope, but it
+    // will only decrement the reference counter incremented by
+    // PetscObjectCompose below.
+    petsc::VecScatter scatter_to_zero;
+
+    // initialize the scatter to processor 0 and create storage on processor 0
+    ierr = VecScatterCreateToZero(natural_work, scatter_to_zero.rawptr(),
+                                  &v_proc0);
+    PISM_CHK(ierr, "VecScatterCreateToZero");
+
+    // this increments the reference counter of scatter_to_zero
+    ierr = PetscObjectCompose((PetscObject)m_da->get(), "scatter_to_zero",
+                              (PetscObject)((::VecScatter)scatter_to_zero));
+    PISM_CHK(ierr, "PetscObjectCompose");
+
+    // this increments the reference counter of v_proc0
+    ierr = PetscObjectCompose((PetscObject)m_da->get(), "v_proc0",
+                              (PetscObject)v_proc0);
+    PISM_CHK(ierr, "PetscObjectCompose");
+
+    // We DO NOT call VecDestroy(v_proc0): the petsc::Vec wrapper will
+    // take care of this.
+    result = v_proc0;
+  } else {
+    // We DO NOT call VecDestroy(result): the petsc::Vec wrapper will
+    // take care of this.
+    ierr = VecDuplicate(v_proc0, &result);
+    PISM_CHK(ierr, "VecDuplicate");
+  }
+  return petsc::Vec::Ptr(new petsc::Vec(result));
+}
+
+void IceModelVec::put_on_proc0(Vec parallel, Vec onp0) const {
+  PetscErrorCode ierr = 0;
+  VecScatter scatter_to_zero = NULL;
+  Vec natural_work = NULL;
+
+  ierr = PetscObjectQuery((PetscObject)m_da->get(), "scatter_to_zero",
+                          (PetscObject*)&scatter_to_zero);
+  PISM_CHK(ierr, "PetscObjectQuery");
+
+  ierr = PetscObjectQuery((PetscObject)m_da->get(), "natural_work",
+                          (PetscObject*)&natural_work);
+  PISM_CHK(ierr, "PetscObjectQuery");
+
+  if (natural_work == NULL || scatter_to_zero == NULL) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "call allocate_proc0_copy() before calling put_on_proc0");
+  }
+
+  ierr = DMDAGlobalToNaturalBegin(*m_da, parallel, INSERT_VALUES, natural_work);
+  PISM_CHK(ierr, "DMDAGlobalToNaturalBegin");
+
+  ierr = DMDAGlobalToNaturalEnd(*m_da, parallel, INSERT_VALUES, natural_work);
+  PISM_CHK(ierr, "DMDAGlobalToNaturalEnd");
+
+  ierr = VecScatterBegin(scatter_to_zero, natural_work, onp0,
+                         INSERT_VALUES, SCATTER_FORWARD);
+  PISM_CHK(ierr, "VecScatterBegin");
+
+  ierr = VecScatterEnd(scatter_to_zero, natural_work, onp0,
+                       INSERT_VALUES, SCATTER_FORWARD);
+  PISM_CHK(ierr, "VecScatterEnd");
+}
+
+
+//! Puts a local IceModelVec2S on processor 0.
+void IceModelVec::put_on_proc0(Vec onp0) const {
+  if (m_has_ghosts) {
+    petsc::TemporaryGlobalVec tmp(m_da);
+    this->copy_to_vec(m_da, tmp);
+    put_on_proc0(tmp, onp0);
+  } else {
+    put_on_proc0(m_v, onp0);
+  }
+}
+
+void IceModelVec::get_from_proc0(Vec onp0, Vec parallel) {
+  PetscErrorCode ierr;
+
+  VecScatter scatter_to_zero = NULL;
+  Vec natural_work = NULL;
+  ierr = PetscObjectQuery((PetscObject)m_da->get(), "scatter_to_zero",
+                          (PetscObject*)&scatter_to_zero);
+  PISM_CHK(ierr, "PetscObjectQuery");
+
+  ierr = PetscObjectQuery((PetscObject)m_da->get(), "natural_work",
+                          (PetscObject*)&natural_work);
+  PISM_CHK(ierr, "PetscObjectQuery");
+
+  if (natural_work == NULL || scatter_to_zero == NULL) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "call allocate_proc0_copy() before calling get_from_proc0");
+  }
+
+  ierr = VecScatterBegin(scatter_to_zero, onp0, natural_work,
+                         INSERT_VALUES, SCATTER_REVERSE);
+  PISM_CHK(ierr, "VecScatterBegin");
+
+  ierr = VecScatterEnd(scatter_to_zero, onp0, natural_work,
+                       INSERT_VALUES, SCATTER_REVERSE);
+  PISM_CHK(ierr, "VecScatterEnd");
+
+  ierr = DMDANaturalToGlobalBegin(*m_da, natural_work, INSERT_VALUES, parallel);
+  PISM_CHK(ierr, "DMDANaturalToGlobalBegin");
+
+  ierr = DMDANaturalToGlobalEnd(*m_da, natural_work, INSERT_VALUES, parallel);
+  PISM_CHK(ierr, "DMDANaturalToGlobalEnd");
+}
+
+//! Gets a local IceModelVec2 from processor 0.
+void IceModelVec::get_from_proc0(Vec onp0) {
+  if (m_has_ghosts) {
+    petsc::TemporaryGlobalVec tmp(m_da);
+    get_from_proc0(onp0, tmp);
+    this->copy_from_vec(tmp);
+  } else {
+    get_from_proc0(onp0, m_v);
+  }
+  inc_state_counter();          // mark as modified
+}
+
 void convert_vec(Vec v, units::System::Ptr system,
                  const std::string &spec1, const std::string &spec2) {
   units::Converter c(system, spec1, spec2);
@@ -958,7 +1244,7 @@ bool set_contains(const std::set<std::string> &S, const IceModelVec &field) {
   // Note that this uses IceModelVec::get_name() and not IceModelVec::metadata() and
   // VariableMetadata::get_name(): this is used to check if a possibly multi-variable field was
   // requested.
-  return set_contains(S, field.get_name());
+  return member(field.get_name(), S);
 }
 
 } // end of namespace pism

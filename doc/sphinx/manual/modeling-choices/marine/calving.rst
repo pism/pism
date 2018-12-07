@@ -85,7 +85,7 @@ of principal components of the horizontal strain rates, `\dot{\epsilon}_{_\pm}`,
 from SSA-velocities
 
 .. math::
-   :name: eq-calv2
+   :label: eq-calv2
 
    c = K\; \dot{\epsilon}_{_+}\; \dot{\epsilon}_{_-}\quad\text{and}\quad\dot{\epsilon}_{_\pm}>0\:.
 
@@ -134,7 +134,7 @@ Instead of the product of the eigen strain rates, :cite:`Morlighem2016` proposes
 law where the calving rate `c` is a functionally related to tensile stresses:
 
 .. math::
-   :name: eq-calv3
+   :label: eq-calv3
 
    c = |\mathbf{u}| \frac{\tilde{\sigma}}{\sigma_{max}},
 
@@ -145,7 +145,7 @@ is much smaller than the compressive fracture strenth, the effective tensile str
 is defined as
 
 .. math::
-   :name: eq-calv4
+   :label: eq-calv4
 
    \tilde{\dot{\epsilon}}_e = \left(\frac{1}{2}\left(\max(0,\dot{\epsilon}_{_+})^2 +
    \max(0,\dot{\epsilon}_{_-})^2\right)\right)^{1/2}.
@@ -153,7 +153,7 @@ is defined as
 Following :cite:`Morlighem2016` `\tilde{\sigma}` is given by
 
 .. math::
-   :name: eq-calv5
+   :label: eq-calv5
 
    \tilde{\sigma} = \sqrt{3} B \tilde{\dot{{\epsilon}}}_e^{1/n},
 

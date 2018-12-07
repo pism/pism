@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2013, 2014, 2016 the PISM Authors
+# Copyright (C) 2013, 2014, 2016, 2018 the PISM Authors
 
 # This script sets up the bootstrap file.
 # See also preprocess.sh.
@@ -15,10 +15,11 @@ import numpy as np
 try:
     from netCDF4 import Dataset as CDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
-parser = argparse.ArgumentParser(description='Preprocess for validation using constant flux experiment from Sayag & Worster (2013).  Creates PISM-readable bootstrap file and a configuration overrides file.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser = argparse.ArgumentParser(description='Preprocess for validation using constant flux experiment from Sayag & Worster (2013).  Creates PISM-readable bootstrap file and a configuration overrides file.',
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('-Mx', default=52,
                     help='number of points in each direction on a square grid; note MX -> cell width cases: 52 -> 10mm,  104 -> 5mm, 209 -> 2.5mm, 520 -> 1mm')
 parser.add_argument('-o', metavar='FILENAME', default='initlab52.nc',
@@ -27,57 +28,58 @@ args = parser.parse_args()
 
 
 def create_config():
-    print "  creating PISM-readable config override file gumparams.nc ..."
+    print("  creating PISM-readable config override file gumparams.nc ...")
     nc = CDF("gumparams.nc", 'w')
     config = nc.createVariable("pism_overrides", 'i4')
 
     attrs = {
-        "constants.standard_gravity" : 9.81,
-        "constants.standard_gravity_doc" : "m s-2; = g",
+        "constants.standard_gravity": 9.81,
+        "constants.standard_gravity_doc": "m s-2; = g",
 
-        "constants.ice.density" : 1000.0,
-        "constants.ice.density_doc" : "kg m-3; 1% Xanthan gum in water has same density as water",
+        "constants.ice.density": 1000.0,
+        "constants.ice.density_doc": "kg m-3; 1% Xanthan gum in water has same density as water",
 
-        "stress_balance.sia.bed_smoother_range" : -1.0,
-        "stress_balance.sia.bed_smoother_range_doc" : "m; negative value de-activates bed smoother",
+        "stress_balance.sia.bed_smoother.range": -1.0,
+        "stress_balance.sia.bed_smoother.range_doc": "m; negative value de-activates bed smoother",
 
-        "bootstrapping.defaults.geothermal_flux" : 0.0,
-        "bootstrapping.defaults.geothermal_flux_doc" : "W m-2; no geothermal",
+        "bootstrapping.defaults.geothermal_flux": 0.0,
+        "bootstrapping.defaults.geothermal_flux_doc": "W m-2; no geothermal",
 
-        "output.runtime.time_unit_name" : "second",
-        "output.runtime.time_unit_name_doc" : "stdout uses seconds (not years) to show model time",
+        "output.runtime.time_unit_name": "second",
+        "output.runtime.time_unit_name_doc": "stdout uses seconds (not years) to show model time",
 
-        "output.runtime.time_use_calendar" : "no",
-        "output.runtime.time_use_calendar_doc" : "stdout does not use a calendar to show model time",
+        "output.runtime.time_use_calendar": "no",
+        "output.runtime.time_use_calendar_doc": "stdout does not use a calendar to show model time",
 
-        "output.runtime.volume_scale_factor_log10" : -15,
-        "output.runtime.volume_scale_factor_log10_doc" : "; an integer; log base 10 of scale factor to use for volume in summary line to stdout; -15 gives volume in cm^3",
+        "output.runtime.volume_scale_factor_log10": -15,
+        "output.runtime.volume_scale_factor_log10_doc": "; an integer; log base 10 of scale factor to use for volume in summary line to stdout; -15 gives volume in cm^3",
 
-        "output.runtime.area_scale_factor_log10" : -10,
-        "output.runtime.area_scale_factor_log10_doc" : "; an integer; log base 10 of scale factor to use for area in summary line to stdout; -10 gives area in cm^2",
+        "output.runtime.area_scale_factor_log10": -10,
+        "output.runtime.area_scale_factor_log10_doc": "; an integer; log base 10 of scale factor to use for area in summary line to stdout; -10 gives area in cm^2",
 
-        "geometry.ice_free_thickness_standard" : 1e-8,
-        "geometry.ice_free_thickness_standard_doc" : "m; only if the fluid is less than this is a cell marked as ice free",
+        "geometry.ice_free_thickness_standard": 1e-8,
+        "geometry.ice_free_thickness_standard_doc": "m; only if the fluid is less than this is a cell marked as ice free",
 
-        "output.ice_free_thickness_standard" : 1e-8,
-        "output.ice_free_thickness_standard_doc" : "fluid layer exceeding this thickness is included in computations of areas and volumes",
+        "output.ice_free_thickness_standard": 1e-8,
+        "output.ice_free_thickness_standard_doc": "fluid layer exceeding this thickness is included in computations of areas and volumes",
 
-        "time_stepping.adaptive_ratio" : 0.08,
-        "time_stepping.adaptive_ratio_doc" : "; compare default 0.12; needs to be smaller because gum suspension is more shear-thinning than ice?",
+        "time_stepping.adaptive_ratio": 0.08,
+        "time_stepping.adaptive_ratio_doc": "; compare default 0.12; needs to be smaller because gum suspension is more shear-thinning than ice?",
 
-        "stress_balance.sia.Glen_exponent" : 5.9,
-        "stress_balance.sia.Glen_exponent_doc" : "; : n;  Sayag & Worster (2013) give n = 5.9 +- 0.2",
+        "stress_balance.sia.Glen_exponent": 5.9,
+        "stress_balance.sia.Glen_exponent_doc": "; : n;  Sayag & Worster (2013) give n = 5.9 +- 0.2",
 
-        "flow_law.isothermal_Glen.ice_softness" : 9.7316e-09,  # vs (e.g.) 4e-25 Pa-3 s-1 for ice
-        "ice_softness_doc" : "Pa-n s-1; = A_0 = B_0^(-n) = (2 x 11.4 Pa s^(1/n))^(-n);  Sayag & Worster (2013) give B_0/2 = tilde mu = 11.4 +- 0.25 Pa s^(1/n)"
+        "flow_law.isothermal_Glen.ice_softness": 9.7316e-09,  # vs (e.g.) 4e-25 Pa-3 s-1 for ice
+        "ice_softness_doc": "Pa-n s-1; = A_0 = B_0^(-n) = (2 x 11.4 Pa s^(1/n))^(-n);  Sayag & Worster (2013) give B_0/2 = tilde mu = 11.4 +- 0.25 Pa s^(1/n)"
     }
 
-    keys = attrs.keys()
+    keys = list(attrs.keys())
     keys.sort()
     for k in keys:
         config.setncattr(k, attrs[k])
 
     nc.close()
+
 
 create_config()
 
@@ -85,17 +87,17 @@ create_config()
 # shear-thinning fluid, which is Xanthan gum 1% solution
 Lx = 260.0e-3    # m;  = 260 mm;  maximum observed radius is 25.2 cm so we go out just a bit
 Ly = Lx          # square table
-flux = 3.8173e-3 # kg s-1;  = 3.8173 g s-1; Sayag personal communication
+flux = 3.8173e-3  # kg s-1;  = 3.8173 g s-1; Sayag personal communication
 pipeR = 8.0e-3   # m;  = 8 mm;  input pipe has this radius; Sayag personal communication
 temp = 20.0      # C;  fluid is at 20 deg (though it should not matter)
 
 # set up the grid:
 Mx = int(args.Mx)
 My = Mx
-print "  creating grid of Mx = %d by My = %d points ..." % (Mx, My)
+print("  creating grid of Mx = %d by My = %d points ..." % (Mx, My))
 dx = (2.0 * Lx) / float(Mx)
 dy = (2.0 * Ly) / float(My)
-print "  cells have dimensions dx = %.3f mm by dy = %.3f mm ..." % (dx * 1000.0, dy * 1000.0)
+print("  cells have dimensions dx = %.3f mm by dy = %.3f mm ..." % (dx * 1000.0, dy * 1000.0))
 x = np.linspace(-Lx - dx / 2.0, Lx + dx / 2.0, Mx)
 y = np.linspace(-Ly - dy / 2.0, Ly + dy / 2.0, My)
 
@@ -111,10 +113,10 @@ smb = np.zeros((Mx, My))
 smb[xx ** 2 + yy ** 2 <= pipeR ** 2 + 1.0e-10] = 1.0
 smbpos = sum(sum(smb))
 if smbpos == 0:
-    print "gridding ERROR: no cells have positive input flux ... ending now"
+    print("gridding ERROR: no cells have positive input flux ... ending now")
     sys.exit(1)
 else:
-    print "  input flux > 0 at %d cells ..." % smbpos
+    print("  input flux > 0 at %d cells ..." % smbpos)
 smb = (flux / (smbpos * dx * dy)) * smb  # [flux] = kg s-1  so now  [smb] = kg m-2 s-1
 
 # Write the data:
@@ -144,6 +146,7 @@ def def_var(nc, name, units, fillvalue):
     var = nc.createVariable(name, 'f', dimensions=("y", "x"), fill_value=fillvalue)
     var.units = units
     return var
+
 
 bed_var = def_var(nc, "topg", "m", fill_value)
 bed_var.standard_name = "bedrock_altitude"

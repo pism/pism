@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "FlowLaw.hh"
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/iceModelVec.hh"
@@ -187,7 +187,7 @@ void averaged_hardness_vec(const FlowLaw &ice,
                            const IceModelVec3  &enthalpy,
                            IceModelVec2S &result) {
 
-  const IceGrid &grid = *thickness.get_grid();
+  const IceGrid &grid = *thickness.grid();
 
   IceModelVec::AccessList list{&thickness, &result, &enthalpy};
 
@@ -263,11 +263,11 @@ double averaged_hardness(const FlowLaw &ice,
   return B;
 }
 
-bool FlowLawUsesGrainSize(FlowLaw *flow_law) {
+bool FlowLawUsesGrainSize(const FlowLaw &flow_law) {
   static const double gs[] = {1e-4, 1e-3, 1e-2, 1}, s=1e4, E=400000, p=1e6;
-  double ref = flow_law->flow(s, E, p, gs[0]);
+  double ref = flow_law.flow(s, E, p, gs[0]);
   for (int i=1; i<4; i++) {
-    if (flow_law->flow(s, E, p, gs[i]) != ref) {
+    if (flow_law.flow(s, E, p, gs[i]) != ref) {
       return true;
     }
   }

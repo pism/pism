@@ -8,10 +8,10 @@
 Spatially-variable fields
 -------------------------
 
-#. ``air_temp_mean_july``
+#. ``air_temp_mean_summer``
 
    :Units: Kelvin
-   :Description: mean July near-surface air temperature used in the cosine yearly cycle
+   :Description: mean summer near-surface air temperature used in the cosine yearly cycle
 
 #. ``air_temp_sd``
 
@@ -72,7 +72,7 @@ Spatially-variable fields
 #. ``bwat``
 
    :Units: m
-   :Description: thickness of transportable water in subglacial layer
+   :Description: thickness of transportable subglacial water layer
 
 #. ``bwatvel``
 
@@ -101,12 +101,6 @@ Spatially-variable fields
    :Units: m
    :Description: threshold used by the 'calving at threshold' calving method
 
-#. ``cell_area``
-
-   :Units: km2
-   :Description: cell areas
-   :Comment: values are equal to dx*dy if projection parameters are not available; otherwise WGS84 ellipsoid is used
-
 #. ``cell_grounded_fraction``
 
    :Units: ---
@@ -120,7 +114,7 @@ Spatially-variable fields
 
 #. ``cts``
 
-   :Units: ---
+   :Units: 1
    :Description: cts = E/E_s(p), so cold-temperate transition surface is at cts = 1
 
 #. ``dHdt``
@@ -183,6 +177,7 @@ Spatially-variable fields
 
    :Units: kg m-2 year-1
    :Description: effective precipitation rate
+   :Standard name: ``precipitation_flux``
 
 #. ``effective_viscosity``
 
@@ -293,16 +288,6 @@ Spatially-variable fields
    :Standard name: ``upward_geothermal_heat_flux_at_ground_level``
    :Comment: positive values correspond to an upward flux
 
-#. ``hydrobmelt``
-
-   :Units: m year-1
-   :Description: the version of bmelt seen by the hydrology model
-
-#. ``hydroinput``
-
-   :Units: m year-1
-   :Description: total water input into subglacial hydrology layer
-
 #. ``ice_area_specific_volume``
 
    :Units: m3/m2
@@ -383,11 +368,6 @@ Spatially-variable fields
    :Units: 1
    :Description: processor rank
 
-#. ``saccum``
-
-   :Units: kg m-2 year-1
-   :Description: accumulation (precipitation minus rain), averaged over the reporting interval
-
 #. ``schoofs_theta``
 
    :Units: 1
@@ -426,20 +406,10 @@ Spatially-variable fields
    :Units: Kelvin
    :Description: ice temperature at the basal surface of ice shelves
 
-#. ``smelt``
-
-   :Units: kg m-2 year-1
-   :Description: surface melt, averaged over the reporting interval
-
 #. ``snow_depth``
 
    :Units: m
    :Description: snow cover depth (set to zero once a year)
-
-#. ``srunoff``
-
-   :Units: kg m-2 year-1
-   :Description: surface runoff, averaged over the reporting interval
 
 #. ``ssa_bc_mask``
 
@@ -475,6 +445,22 @@ Spatially-variable fields
    :Units: mW m-3
    :Description: rate of strain heating in ice (dissipation heating)
 
+#. ``subglacial_water_input_rate``
+
+   :Units: m year-1
+   :Description: total input rate of subglacial water (basal melt rate plus input from the surface)
+   :Comment: positive flux corresponds to water gain
+
+#. ``surface_accumulation_flux``
+
+   :Units: kg m-2 year-1
+   :Description: accumulation (precipitation minus rain), averaged over the reporting interval
+
+#. ``surface_accumulation_rate``
+
+   :Units: Gt year-1
+   :Description: accumulation (precipitation minus rain), averaged over the reporting interval
+
 #. ``surface_layer_mass``
 
    :Units: kg
@@ -484,6 +470,28 @@ Spatially-variable fields
 
    :Units: meters
    :Description: thickness of the surface layer (snow and firn)
+
+#. ``surface_melt_flux``
+
+   :Units: kg m-2 year-1
+   :Description: surface melt, averaged over the reporting interval
+   :Standard name: ``surface_snow_and_ice_melt_flux``
+
+#. ``surface_melt_rate``
+
+   :Units: Gt year-1
+   :Description: surface melt, averaged over the reporting interval
+
+#. ``surface_runoff_flux``
+
+   :Units: kg m-2 year-1
+   :Description: surface runoff, averaged over the reporting interval
+   :Standard name: ``surface_runoff_flux``
+
+#. ``surface_runoff_rate``
+
+   :Units: Gt year-1
+   :Description: surface runoff, averaged over the reporting interval
 
 #. ``taub``
 
@@ -650,6 +658,48 @@ Spatially-variable fields
    :Units: Gt year-1
    :Description: average surface mass flux over reporting interval
    :Comment: positive flux corresponds to ice gain
+
+#. ``tendency_of_subglacial_water_mass``
+
+   :Units: Gt year-1
+   :Description: rate of change of the total mass of subglacial water
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_at_domain_boundary``
+
+   :Units: Gt year-1
+   :Description: subglacial water flux at domain boundary (in regional model configurations)
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_at_grounded_margins``
+
+   :Units: Gt year-1
+   :Description: subglacial water flux at grounded ice margins
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_at_grounding_line``
+
+   :Units: Gt year-1
+   :Description: subglacial water flux at grounding lines
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_due_to_conservation_error``
+
+   :Units: Gt year-1
+   :Description: subglacial water flux due to conservation error (mass added to preserve non-negativity)
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_due_to_flow``
+
+   :Units: Gt year-1
+   :Description: rate of change subglacial water mass due to lateral flow
+   :Comment: positive flux corresponds to water gain
+
+#. ``tendency_of_subglacial_water_mass_due_to_input``
+
+   :Units: Gt year-1
+   :Description: subglacial water flux due to input
+   :Comment: positive flux corresponds to water gain
 
 #. ``thk``
 
@@ -822,26 +872,6 @@ Scalar time-series
    :Units: year
    :Description: mass continuity time step
 
-#. ``hydro_ice_free_land_loss``
-
-   :Units: kg s-1
-   :Description: rate of liquid water loss from subglacial hydrology into cells with mask as ice free land
-
-#. ``hydro_negative_thickness_gain``
-
-   :Units: kg s-1
-   :Description: rate of non-conserving liquid water gain from subglacial hydrology transportable water thickness coming out negative during time step, and being projected up to zero
-
-#. ``hydro_null_strip_loss``
-
-   :Units: kg s-1
-   :Description: rate of liquid water loss from subglacial hydrology into cells inside the null strip
-
-#. ``hydro_ocean_loss``
-
-   :Units: kg s-1
-   :Description: rate of liquid water loss from subglacial hydrology into cells with mask as ocean
-
 #. ``ice_area_glacierized``
 
    :Units: m2
@@ -948,10 +978,25 @@ Scalar time-series
    :Units: m year-1
    :Description: maximum abs component of horizontal ice velocity over grid in last time step during time-series reporting interval
 
-#. ``slvol``
+#. ``sea_level_rise_potential``
 
    :Units: m
-   :Description: total sea-level relevant ice IN SEA-LEVEL EQUIVALENT
+   :Description: the sea level rise that would result if all the ice were melted
+
+#. ``surface_accumulation_rate``
+
+   :Units: kg year-1
+   :Description: surface accumulation rate (PDD model)
+
+#. ``surface_melt_rate``
+
+   :Units: kg year-1
+   :Description: surface melt rate (PDD model)
+
+#. ``surface_runoff_rate``
+
+   :Units: kg year-1
+   :Description: surface runoff rate (PDD model)
 
 #. ``tendency_of_ice_mass``
 

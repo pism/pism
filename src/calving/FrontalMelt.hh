@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,25 +22,20 @@
 
 #include "CalvingFrontRetreat.hh"
 
-#include "pism/coupler/OceanModel.hh"
-
 namespace pism {
 
 class FrontalMelt : public CalvingFrontRetreat {
 public:
-  FrontalMelt(IceGrid::ConstPtr g, const ocean::OceanModel *ocean_model);
+  FrontalMelt(IceGrid::ConstPtr grid);
   virtual ~FrontalMelt();
 
   void init();
 
 protected:
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
 
-  void compute_calving_rate(const IceModelVec2CellType &mask,
+  void compute_calving_rate(const CalvingInputs &inputs,
                             IceModelVec2S &result) const;
-
-  const ocean::OceanModel *m_ocean;
-  IceModelVec2S m_shelf_base_mass_flux;
 };
 
 } // end of namespace pism

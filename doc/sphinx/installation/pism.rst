@@ -14,7 +14,7 @@ like ``$PETSC_DIR/$PETSC_ARCH/bin``. Thus the following lines might appear in yo
 
 .. code-block:: bash
 
-   export PETSC_DIR=/home/user/petsc-3.7.6/
+   export PETSC_DIR=/home/user/petsc-3.10.2/
    export PETSC_ARCH=opt
    export PATH=$PETSC_DIR/$PETSC_ARCH/bin/:$PATH
 
@@ -43,20 +43,23 @@ Follow these steps to build PISM:
 
       mkdir -p pism-stable/build
       cd pism-stable/build
-      PISM_INSTALL_PREFIX=~/pism cmake ..
+      PISM_INSTALL_PREFIX=~/pism CC=mpicc CXX=mpicxx cmake ..
       make install
 
    Here ``pism-stable`` is the directory containing PISM source code while ``~/pism`` is
-   the directory PISM will be installed into. All the temporary files created during the
-   build process will be in ``pism-stable/build`` created above.
+   the directory PISM will be installed into.
 
-   You might need to add ``CC`` and ``CXX`` to the ``cmake`` command:
+   Variables ``CC`` and ``CXX`` specify MPI compiler wrappers provided by your MPI
+   installation.
 
-   .. code-block:: bash
+   .. note::
 
-      PISM_INSTALL_PREFIX=~/pism CC=mpicc CXX=mpicxx cmake ..
+      When using MPI's compiler wrappers, make sure that ``mpicc`` and ``mpicxx`` you
+      select were used to compile the PETSc library: *PISM and PETSc have to use the same
+      MPI installation.*
 
-   Whether this is necessary or not depends on your MPI setup.
+   All the temporary files created during the build process will be in
+   ``pism-stable/build`` created above.
 
    Commands above will configure PISM to be installed in ``~/pism/bin`` and
    ``~/pism/lib/`` then compile and install all its executables and scripts.

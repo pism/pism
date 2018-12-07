@@ -18,7 +18,6 @@
 
 #include "IPTotalVariationFunctional.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/pism_const.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {

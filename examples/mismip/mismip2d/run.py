@@ -9,7 +9,7 @@ import MISMIP
 try:
     from netCDF4 import Dataset as NC
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 import sys
@@ -160,9 +160,9 @@ class Experiment:
                  }
 
         if self.model != 1:
-            attrs["stress_balance.sia.bed_smoother_range"] = 0.0
+            attrs["stress_balance.sia.bed_smoother.range"] = 0.0
 
-        for name, value in attrs.iteritems():
+        for name, value in attrs.items():
             var.setncattr(name, value)
 
         nc.close()
@@ -191,7 +191,7 @@ class Experiment:
 
         options = ["-extra_file %s" % extra_file,
                    "-extra_times 0:50:3e4",
-                   "-extra_vars thk,topg,velbar_mag,flux_mag,mask,dHdt,usurf,hardav,velbase_mag,nuH,tauc,taud,taub,flux_divergence",
+                   "-extra_vars thk,topg,velbar_mag,flux_mag,mask,dHdt,usurf,hardav,velbase_mag,nuH,tauc,taud,taub,flux_divergence,cell_grounded_fraction",
                    "-ts_file %s" % ts_file,
                    "-ts_times 0:50:3e4",
                    "-o %s" % output_file,
@@ -219,38 +219,38 @@ class Experiment:
 
     def run_step(self, step, input_file=None):
         out, opts = self.options(step, input_file)
-        print 'echo "# Step %s-%s"' % (self.experiment, step)
-        print "%s %s" % (self.executable, ' '.join(opts))
-        print 'echo "Done."\n'
+        print('echo "# Step %s-%s"' % (self.experiment, step))
+        print("%s %s" % (self.executable, ' '.join(opts)))
+        print('echo "Done."\n')
 
         return out
 
     def run(self, step=None):
-        print 'echo "# Experiment %s"' % self.experiment
+        print('echo "# Experiment %s"' % self.experiment)
 
         if self.experiment in ('1a', '1b'):
             # bootstrap
             input_file = None
             # steps 1 to 9
-            steps = range(1, 10)
+            steps = list(range(1, 10))
 
         if self.experiment in ('2a', '2b'):
             # start from step 9 of the corresponding experiment 1
             input_file = self.output_filename(self.experiment.replace("2", "1"), 9)
             # steps 8 to 1
-            steps = range(8, 0, -1)
+            steps = list(range(8, 0, -1))
 
         if self.experiment == '3a':
             # bootstrap
             input_file = None
             # steps 1 to 13
-            steps = range(1, 14)
+            steps = list(range(1, 14))
 
         if self.experiment == '3b':
             # bootstrap
             input_file = None
             # steps 1 to 15
-            steps = range(1, 16)
+            steps = list(range(1, 16))
 
         if step is not None:
             input_file = None
@@ -266,7 +266,7 @@ def run_mismip(initials, executable, semianalytic):
     modes = (1, 2, 3)
     experiments = ('1a', '1b', '2a', '2b', '3a', '3b')
 
-    print preamble
+    print(preamble)
 
     for model in models:
         for mode in modes:
@@ -323,12 +323,12 @@ if __name__ == "__main__":
 
     arg_list = [escape(a) for a in sys.argv]
 
-    print "#!/bin/bash"
-    print "# This script was created by examples/mismip/run.py. The command was:"
-    print "# %s" % (' '.join(arg_list))
+    print("#!/bin/bash")
+    print("# This script was created by examples/mismip/run.py. The command was:")
+    print("# %s" % (' '.join(arg_list)))
 
     if opts.executable is None:
-        print preamble
+        print(preamble)
 
     e = Experiment(opts.experiment,
                    initials=opts.initials,

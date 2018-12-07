@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -87,17 +87,8 @@ public:
   void compute(const IceModelVec2S &sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
                IceModelVec2Int &out_mask, IceModelVec2S &out_surface) const;
 
-  void compute(double sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
-               IceModelVec2Int &out_mask, IceModelVec2S &out_surface) const;
-
-  void compute_mask(double sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
-                    IceModelVec2Int &result) const;
-
   void compute_mask(const IceModelVec2S& sea_level, const IceModelVec2S& bed,
                     const IceModelVec2S& thickness, IceModelVec2Int& result) const;
-
-  void compute_surface(double sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
-                       IceModelVec2S &result) const;
 
   void compute_surface(const IceModelVec2S& sea_level, const IceModelVec2S& bed,
                        const IceModelVec2S& thickness, IceModelVec2S& result) const;

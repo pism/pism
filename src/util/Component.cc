@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,13 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>
 #include <cassert>
 
 #include "Component.hh"
 #include "pism/util/io/PIO.hh"
 #include "IceGrid.hh"
-#include "pism_const.hh"
 #include "pism_utilities.hh"
 #include "VariableMetadata.hh"
 #include "iceModelVec.hh"
@@ -43,15 +41,14 @@ InputOptions::InputOptions(InitializationType t, const std::string &file, unsign
 /*! Process command-line options -i and -bootstrap.
  *
  */
-InputOptions process_input_options(MPI_Comm com) {
+InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config) {
   InitializationType type   = INIT_OTHER;
   unsigned int       record = 0;
 
-  options::String input_filename("-i", "Specifies the PISM input file");
-  bool bootstrap_is_set = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+  std::string input_filename = config->get_string("input.file");
 
-  const bool bootstrap = input_filename.is_set() and bootstrap_is_set;
-  const bool restart   = input_filename.is_set() and not bootstrap_is_set;
+  bool bootstrap = config->get_boolean("input.bootstrap") and (not input_filename.empty());
+  bool restart   = (not config->get_boolean("input.bootstrap")) and (not input_filename.empty());
 
   if (restart) {
     // re-start a run by initializing from an input file
@@ -65,7 +62,7 @@ InputOptions process_input_options(MPI_Comm com) {
   }
 
   // get the index of the last record in the input file
-  if (input_filename.is_set()) {
+  if (not input_filename.empty()) {
     PIO input_file(com, "guess_mode", input_filename, PISM_READONLY);
 
     // Find the index of the last record in the input file.
@@ -92,19 +89,19 @@ Component::~Component() {
   // empty
 }
 
-std::map<std::string, Diagnostic::Ptr> Component::diagnostics() const {
+DiagnosticList Component::diagnostics() const {
   return this->diagnostics_impl();
 }
 
-std::map<std::string, TSDiagnostic::Ptr> Component::ts_diagnostics() const {
+TSDiagnosticList Component::ts_diagnostics() const {
   return this->ts_diagnostics_impl();
 }
 
-std::map<std::string, Diagnostic::Ptr> Component::diagnostics_impl() const {
+DiagnosticList Component::diagnostics_impl() const {
   return {};
 }
 
-std::map<std::string, TSDiagnostic::Ptr> Component::ts_diagnostics_impl() const {
+TSDiagnosticList Component::ts_diagnostics_impl() const {
   return {};
 }
 
@@ -157,71 +154,34 @@ void Component::write_model_state_impl(const PIO &output) const {
 void Component::regrid(const std::string &module_name, IceModelVec &variable,
                        RegriddingFlag flag) {
 
-  options::String regrid_file("-regrid_file", "regridding file name");
+  auto regrid_file = m_config->get_string("input.regrid.file");
+  auto regrid_vars = set_split(m_config->get_string("input.regrid.vars"), ',');
 
-  options::StringSet regrid_vars("-regrid_vars",
-                                 "comma-separated list of regridding variables",
-                                 "");
-
-  if (not regrid_file.is_set()) {
+  if (regrid_file.empty()) {
     return;
   }
 
   SpatialVariableMetadata &m = variable.metadata();
 
-  if ((regrid_vars.is_set() and set_contains(regrid_vars, m.get_string("short_name"))) or
-      (not regrid_vars.is_set() and flag == REGRID_WITHOUT_REGRID_VARS)) {
+  if (((not regrid_vars.empty()) and member(m.get_string("short_name"), regrid_vars)) or
+      (regrid_vars.empty() and flag == REGRID_WITHOUT_REGRID_VARS)) {
 
     m_log->message(2,
                "  %s: regridding '%s' from file '%s' ...\n",
                module_name.c_str(),
-               m.get_string("short_name").c_str(), regrid_file->c_str());
+               m.get_string("short_name").c_str(), regrid_file.c_str());
 
     variable.regrid(regrid_file, CRITICAL);
   }
 }
 
-Component_TS::Component_TS(IceGrid::ConstPtr g)
-  : Component(g) {
-  m_t = m_dt = GSL_NAN;
-}
-
-Component_TS::~Component_TS() {
-  // empty
-}
-
-MaxTimestep Component_TS::max_timestep(double t) const {
+MaxTimestep Component::max_timestep(double t) const {
   return this->max_timestep_impl(t);
 }
 
-void Component_TS::update(double t, double dt) {
-  this->update_impl(t, dt);
-}
-
-/*!
- * Update a `model` by asking it to perform time-stepping from the current time to one year in the
- * future (or as far as the time step restriction allows).
- *
- * This is sometimes necessary during initialization, but should be avoided if possible.
- */
-void init_step(Component_TS &model, const Time& time) {
-  const double
-    now               = time.current(),
-    one_year_from_now = time.increment_date(now, 1.0);
-
-  // Take a one year long step if we can.
-  MaxTimestep max_dt(one_year_from_now - now);
-
-  max_dt = std::min(max_dt, model.max_timestep(now));
-
-  // Do not take time-steps shorter than 1 second
-  if (max_dt.value() < 1.0) {
-    max_dt = MaxTimestep(1.0);
-  }
-
-  assert(max_dt.finite() == true);
-
-  model.update(now, max_dt.value());
+MaxTimestep Component::max_timestep_impl(double t) const {
+  (void) t;
+  return MaxTimestep();
 }
 
 

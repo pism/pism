@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,11 +19,14 @@
 #ifndef _PS_DELTA_T_H_
 #define _PS_DELTA_T_H_
 
-#include "pism/coupler/util/PScalarForcing.hh"
+#include <memory>               // std::unique_ptr
+
 #include "pism/coupler/SurfaceModel.hh"
-#include "Modifier.hh"
 
 namespace pism {
+
+class ScalarForcing;
+
 namespace surface {
 
 /** @brief Implements the scalar temperature offsets for the ice
@@ -31,15 +34,20 @@ namespace surface {
  *
  * Other fields are passed through without change.
  */
-class Delta_T : public PScalarForcing<SurfaceModel,SurfaceModifier>
+class Delta_T : public SurfaceModel
 {
 public:
-  Delta_T(IceGrid::ConstPtr g, SurfaceModel* in);
+  Delta_T(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
   virtual ~Delta_T();
 protected:
-  virtual void init_impl();
-  virtual void temperature_impl(IceModelVec2S &result) const;
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
+
+  virtual const IceModelVec2S& temperature_impl() const;
+
+  std::unique_ptr<ScalarForcing> m_forcing;
+
+  IceModelVec2S::Ptr m_temperature;
 };
 
 } // end of namespace surface

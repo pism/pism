@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -49,44 +49,32 @@ void IceCompModel::energy_step() {
 
   energy::EnergyModelStats stats;
 
-  IceModelVec2S &ice_surface_temperature = m_work2d[0];
   IceModelVec2S &bedtoptemp              = m_work2d[1];
   IceModelVec2S &basal_enthalpy          = m_work2d[2];
   m_energy_model->enthalpy().getHorSlice(basal_enthalpy, 0.0);
-  m_surface->temperature(ice_surface_temperature);
-  bedrock_surface_temperature(m_ocean->sea_level_elevation(),
+
+  bedrock_surface_temperature(m_geometry.sea_level_elevation,
                               m_geometry.cell_type,
                               m_geometry.bed_elevation,
                               m_geometry.ice_thickness,
                               basal_enthalpy,
-                              ice_surface_temperature,
+                              m_surface->temperature(),
                               bedtoptemp);
 
   m_btu->update(bedtoptemp, t_TempAge, dt_TempAge);
 
   energy::Inputs inputs;
   {
-    IceModelVec2S &ice_surface_liquid_water_fraction = m_work2d[1];
-    IceModelVec2S &till_water_thickness              = m_work2d[2];
-    IceModelVec2S &shelf_base_temperature            = m_work2d[3];
-
-    m_surface->temperature(ice_surface_temperature);
-    m_surface->liquid_water_fraction(ice_surface_liquid_water_fraction);
-
-    m_ocean->shelf_base_temperature(shelf_base_temperature);
-
-    m_subglacial_hydrology->till_water_thickness(till_water_thickness);
-
     inputs.basal_frictional_heating = &m_stress_balance->basal_frictional_heating();
     inputs.basal_heat_flux          = &m_btu->flux_through_top_surface(); // bedrock thermal layer
-    inputs.cell_type                = &m_geometry.cell_type;            // geometry
-    inputs.ice_thickness            = &m_geometry.ice_thickness;        // geometry
-    inputs.shelf_base_temp          = &shelf_base_temperature;            // ocean model
-    inputs.surface_liquid_fraction  = &ice_surface_liquid_water_fraction; // surface model
-    inputs.surface_temp             = &ice_surface_temperature;           // surface model
-    inputs.till_water_thickness     = &till_water_thickness;              // hydrology model
+    inputs.cell_type                = &m_geometry.cell_type;              // geometry
+    inputs.ice_thickness            = &m_geometry.ice_thickness;          // geometry
+    inputs.shelf_base_temp          = &m_ocean->shelf_base_temperature(); // ocean model
+    inputs.surface_liquid_fraction  = &m_surface->liquid_water_fraction(); // surface model
+    inputs.surface_temp             = &m_surface->temperature(); // surface model
+    inputs.till_water_thickness     = &m_subglacial_hydrology->till_water_thickness();
 
-    inputs.strain_heating3          = &m_stress_balance->volumetric_strain_heating();
+    inputs.volumetric_heating_rate  = &m_stress_balance->volumetric_strain_heating();
     inputs.u3                       = &m_stress_balance->velocity_u();
     inputs.v3                       = &m_stress_balance->velocity_v();
     inputs.w3                       = &m_stress_balance->velocity_w();
@@ -99,10 +87,10 @@ void IceCompModel::energy_step() {
     getCompSourcesTestFG();
 
     // Add computed strain heating to the compensatory part.
-    m_strain_heating3_comp.add(1.0, *inputs.strain_heating3);
+    m_strain_heating3_comp.add(1.0, *inputs.volumetric_heating_rate);
 
     // Use the result.
-    inputs.strain_heating3 = &m_strain_heating3_comp;
+    inputs.volumetric_heating_rate = &m_strain_heating3_comp;
   }
 
   m_energy_model->update(t_TempAge, dt_TempAge, inputs);
@@ -133,27 +121,35 @@ void IceCompModel::initTestFG() {
   m_geometry.ice_thickness.update_ghosts();
 
   {
-    IceModelVec2S bed_topography, bed_uplift;
-    bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
+    IceModelVec2S bed_topography(m_grid, "topg", WITHOUT_GHOSTS);
     bed_topography.set(0.0);
-    bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
+
+    IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
     bed_uplift.set(0.0);
 
-    m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness);
+    IceModelVec2S sea_level(m_grid, "sea_level", WITHOUT_GHOSTS);
+    sea_level.set(0.0);
+
+    m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness,
+                        sea_level);
   }
 }
 
 void IceCompModel::initTestsKO() {
 
-  IceModelVec2S bed_topography, bed_uplift;
-  bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
+  IceModelVec2S bed_topography(m_grid, "topg", WITHOUT_GHOSTS);
   bed_topography.set(0.0);
-  bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
+
+  IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
   bed_uplift.set(0.0);
+
+  IceModelVec2S sea_level(m_grid, "sea_level", WITHOUT_GHOSTS);
+  sea_level.set(0.0);
 
   m_geometry.ice_thickness.set(3000.0);
 
-  m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness);
+  m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness,
+                      sea_level);
 }
 
 void IceCompModel::getCompSourcesTestFG() {
@@ -257,7 +253,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   }
   const IceModelVec3Custom &bedrock_temp = my_btu->temperature();
 
-  std::vector<double> zblevels = bedrock_temp.get_levels();
+  std::vector<double> zblevels = bedrock_temp.levels();
   unsigned int Mbz = (unsigned int)zblevels.size();
   std::vector<double> Tbex(Mbz);
 

@@ -8,6 +8,6 @@
 %shared_ptr(pism::petsc::Wrapper< ::Vec >)
 
 %include "util/petscwrappers/Wrapper.hh"
-%template(VecWrapper) pism::petsc::Wrapper< ::Vec >;
+%template(_VecWrapper) pism::petsc::Wrapper< ::Vec >;
 
 %include "util/petscwrappers/Vec.hh"

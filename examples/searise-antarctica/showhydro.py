@@ -7,7 +7,7 @@ from sys import exit
 try:
     from netCDF4 import Dataset as NC
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 nameroot = "routing"
@@ -15,11 +15,11 @@ nameroot = "routing"
 for dx in ("100", "50", "25", "15", "10", "5"):
     basename = nameroot + dx + "km"
     filename = basename + ".nc"
-    print "%s: looking for file ..." % filename
+    print("%s: looking for file ..." % filename)
     try:
         nc = NC(filename, 'r')
     except:
-        print "  can't read from file ..."
+        print("  can't read from file ...")
         continue
 
     xvar = nc.variables["x"]
@@ -28,14 +28,14 @@ for dx in ("100", "50", "25", "15", "10", "5"):
     y = asarray(squeeze(yvar[:]))
 
     for varname in ("bwat", "bwp", "psi"):   # psi must go after bwat, bwp
-        print "  %s:  generating pcolor() image ..." % varname
+        print("  %s:  generating pcolor() image ..." % varname)
         try:
             if varname == "psi":
                 var = nc.variables["topg"]
             else:
                 var = nc.variables[varname]
         except:
-            print "variable '%s' not found ... continuing ..." % varname
+            print("variable '%s' not found ... continuing ..." % varname)
             continue
 
         data = asarray(squeeze(var[:])).transpose()
@@ -60,8 +60,8 @@ for dx in ("100", "50", "25", "15", "10", "5"):
             barmax = 360.0
             scale = 1.0e5
 
-        print "       [stats:  max = %9.3f %s, av = %8.3f %s]" % \
-              (data.max() / scale, units, data.sum() / (scale * x.size * y.size), units)
+        print("       [stats:  max = %9.3f %s, av = %8.3f %s]" %
+              (data.max() / scale, units, data.sum() / (scale * x.size * y.size), units))
         pcolor(x / 1000.0, y / 1000.0, data / scale, vmin=barmin, vmax=barmax)
         colorbar()
         gca().set_aspect('equal')
@@ -70,7 +70,7 @@ for dx in ("100", "50", "25", "15", "10", "5"):
         ylabel('y  (km)')
         dxpad = "%03d" % int(dx)
         pngfilename = varname + "_" + dxpad + "km" + ".png"
-        print "    saving figure in %s ..." % pngfilename
+        print("    saving figure in %s ..." % pngfilename)
         savefig(pngfilename, dpi=300, bbox_inches='tight')
         close()
 

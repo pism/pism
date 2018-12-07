@@ -33,11 +33,11 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem 
     m_designFunctional(designFunctional), m_stateFunctional(stateFunctional),
     m_target_misfit(0.0) {
   PetscErrorCode ierr;
-  IceGrid::ConstPtr grid = m_d0.get_grid();
+  IceGrid::ConstPtr grid = m_d0.grid();
   m_comm = grid->com;
 
-  unsigned int design_stencil_width = m_d0.get_stencil_width();
-  unsigned int state_stencil_width = m_u_obs.get_stencil_width();
+  unsigned int design_stencil_width = m_d0.stencil_width();
+  unsigned int state_stencil_width = m_u_obs.stencil_width();
 
   m_x.create(grid, "x", WITH_GHOSTS, design_stencil_width);
 
@@ -115,7 +115,7 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem 
   m_tikhonov_rtol = grid->ctx()->config()->get_double("inverse.tikhonov.rtol");
   m_tikhonov_ptol = grid->ctx()->config()->get_double("inverse.tikhonov.ptol");
 
-  m_log = d0.get_grid()->ctx()->log();
+  m_log = d0.grid()->ctx()->log();
 }
 
 IP_SSATaucTikhonovGNSolver::~IP_SSATaucTikhonovGNSolver() {
@@ -127,7 +127,7 @@ TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::init() {
 }
 
 void IP_SSATaucTikhonovGNSolver::apply_GN(IceModelVec2S &x, IceModelVec2S &y) {
-  this->apply_GN(x.get_vec(), y.get_vec());
+  this->apply_GN(x.vec(), y.vec());
 }
 
 //! @note This function has to return PetscErrorCode (it is used as a callback).
@@ -150,7 +150,7 @@ void  IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
   m_designFunctional.interior_product(m_x,tmp_gD);
   GNx.add(m_alpha,tmp_gD);
 
-  PetscErrorCode ierr = VecCopy(GNx.get_vec(), y); PISM_CHK(ierr, "VecCopy");
+  PetscErrorCode ierr = VecCopy(GNx.vec(), y); PISM_CHK(ierr, "VecCopy");
 }
 
 void IP_SSATaucTikhonovGNSolver::assemble_GN_rhs(DesignVec &rhs) {
@@ -174,7 +174,7 @@ TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::solve_linearized() {
   ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN);
   PISM_CHK(ierr, "KSPSetOperators");
 
-  ierr = KSPSolve(m_ksp,m_GN_rhs.get_vec(),m_hGlobal.get_vec());
+  ierr = KSPSolve(m_ksp,m_GN_rhs.vec(),m_hGlobal.vec());
   PISM_CHK(ierr, "KSPSolve");
 
   KSPConvergedReason ksp_reason;
@@ -304,7 +304,7 @@ TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::linesearch() {
 
   m_tmp_D1Global.copy_from(m_h);
 
-  ierr = VecDot(m_gradient.get_vec(), m_tmp_D1Global.get_vec(), &descent_derivative);
+  ierr = VecDot(m_gradient.vec(), m_tmp_D1Global.vec(), &descent_derivative);
   PISM_CHK(ierr, "VecDot");
 
   if (descent_derivative >=0) {
@@ -414,7 +414,7 @@ TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlo
   ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN);
   PISM_CHK(ierr, "KSPSetOperators");
 
-  ierr = KSPSolve(m_ksp,m_dalpha_rhs.get_vec(),m_dh_dalphaGlobal.get_vec());
+  ierr = KSPSolve(m_ksp,m_dalpha_rhs.vec(),m_dh_dalphaGlobal.vec());
   PISM_CHK(ierr, "KSPSolve");
 
   m_dh_dalpha.copy_from(m_dh_dalphaGlobal);

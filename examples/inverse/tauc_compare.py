@@ -3,7 +3,7 @@
 try:
     import netCDF4 as netCDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 from matplotlib import pyplot as pp
 from matplotlib import colors as mc
@@ -11,7 +11,7 @@ from optparse import OptionParser
 from siple.reporting import endpause
 import numpy as np
 
-usage =  """Usage: %prog [options]
+usage = """Usage: %prog [options]
 
 Example: %prog -N 100 -n 0.1"""
 
@@ -58,7 +58,8 @@ tauc_diff[not_sliding] = 0.
 
 # difference figure
 pp.clf()
-pp.imshow(tauc_diff.transpose() / tauc_true.transpose(), origin='lower', vmin=-options.tauc_error_cap, vmax=options.tauc_error_cap)
+pp.imshow(tauc_diff.transpose() / tauc_true.transpose(), origin='lower',
+          vmin=-options.tauc_error_cap, vmax=options.tauc_error_cap)
 pp.title(r'$(\tau_c$ - true) / true')
 pp.colorbar()
 

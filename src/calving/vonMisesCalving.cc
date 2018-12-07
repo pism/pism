@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,24 +18,22 @@
  */
 
 #include "vonMisesCalving.hh"
+
 #include "pism/util/IceGrid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceModelVec2CellType.hh"
-#include "remove_narrow_tongues.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/stressbalance/ShallowStressBalance.hh"
-#include "pism/util/Vars.hh"
 #include "pism/rheology/FlowLaw.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace calving {
 
-vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr g,
-                           stressbalance::StressBalance *stress_balance)
-  : StressCalving(g, stress_balance, 2) {
-
-  m_sigma_max = m_config->get_double("calving.vonmises.sigma_max");
+vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr grid,
+                                 std::shared_ptr<const rheology::FlowLaw> flow_law)
+  : StressCalving(grid, 2),
+    m_flow_law(flow_law) {
+  // empty
 }
 
 vonMisesCalving::~vonMisesCalving() {
@@ -48,49 +46,53 @@ void vonMisesCalving::init() {
                  "* Initializing the 'von Mises calving' mechanism...\n");
 
   if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "-calving vonmises_calving using a non-square grid cell is not implemented (yet);\n"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "-calving vonmises_calving using a non-square grid cell is not implemented (yet);\n"
                                   "dx = %f, dy = %f, relative difference = %f",
                                   m_grid->dx(), m_grid->dy(),
                                   fabs(m_grid->dx() - m_grid->dy()) / std::max(m_grid->dx(), m_grid->dy()));
   }
 
   m_strain_rates.set(0.0);
-
 }
 
 //! \brief Uses principal strain rates to apply "eigencalving" with constant K.
 /*!
   See equation (26) in [\ref Winkelmannetal2011].
 */
-void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
+void vonMisesCalving::compute_calving_rate(const CalvingInputs &inputs,
                                            IceModelVec2S &result) const {
+
+  const IceModelVec2S &ice_thickness = inputs.geometry->ice_thickness;
+  const IceModelVec2V &ice_velocity  = *inputs.ice_velocity;
+  const IceModelVec3  *enthalpy      = inputs.ice_enthalpy;
 
   using std::max;
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
 
-  update_strain_rates();
+  prepare_mask(inputs.geometry->cell_type, m_mask);
 
-  const IceModelVec2V &ssa_velocity  = m_stress_balance->advective_velocity();
-  const IceModelVec3  *enthalpy      = m_grid->variables().get_3d_scalar("enthalpy");
-  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  stressbalance::compute_2D_principal_strain_rates(ice_velocity,
+                                                   m_mask,
+                                                   m_strain_rates);
+  m_strain_rates.update_ghosts();
 
-  IceModelVec::AccessList list{enthalpy, &ice_thickness, &mask, &ssa_velocity,
+  IceModelVec::AccessList list{enthalpy, &ice_thickness, &m_mask, &ice_velocity,
       &m_strain_rates, &result};
 
   const double *z = &m_grid->z()[0];
-  const rheology::FlowLaw*
-    flow_law = m_stress_balance->shallow()->flow_law();
 
-  const double ssa_n = flow_law->exponent();
+  const double ssa_n = m_flow_law->exponent();
+  double sigma_max = m_config->get_double("calving.vonmises.sigma_max");
 
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
     // have floating ice neighbors after the mass continuity step
-    if (mask.ice_free_ocean(i, j) and mask.next_to_floating_ice(i, j)) {
+    if (m_mask.ice_free_ocean(i, j) and m_mask.next_to_floating_ice(i, j)) {
 
       double
         velocity_magnitude = 0.0,
@@ -103,12 +105,12 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
         int N = 0;
         for (int p = -1; p < 2; p += 2) {
           const int I = i + p * offset;
-          if (mask.icy(I, j)) {
-            velocity_magnitude += ssa_velocity(I, j).magnitude();
+          if (m_mask.icy(I, j)) {
+            velocity_magnitude += ice_velocity(I, j).magnitude();
             {
               double H = ice_thickness(I, j);
               unsigned int k = m_grid->kBelowHeight(H);
-              hardness += averaged_hardness(*flow_law, H, k, &z[0], enthalpy->get_column(I, j));
+              hardness += averaged_hardness(*m_flow_law, H, k, &z[0], enthalpy->get_column(I, j));
             }
             eigen1 += m_strain_rates(I, j, 0);
             eigen2 += m_strain_rates(I, j, 1);
@@ -118,12 +120,12 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
 
         for (int q = -1; q < 2; q += 2) {
           const int J = j + q * offset;
-          if (mask.icy(i, J)) {
-            velocity_magnitude += ssa_velocity(i, J).magnitude();
+          if (m_mask.icy(i, J)) {
+            velocity_magnitude += ice_velocity(i, J).magnitude();
             {
               double H = ice_thickness(i, J);
               unsigned int k = m_grid->kBelowHeight(H);
-              hardness += averaged_hardness(*flow_law, H, k, &z[0], enthalpy->get_column(i, J));
+              hardness += averaged_hardness(*m_flow_law, H, k, &z[0], enthalpy->get_column(i, J));
             }
             eigen1 += m_strain_rates(i, J, 0);
             eigen2 += m_strain_rates(i, J, 1);
@@ -147,7 +149,7 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
                                                             1.0 / ssa_n);
 
       // Calving law [\ref Morlighem2016] equation 4
-      result(i, j) = velocity_magnitude * sigma_tilde / m_sigma_max;
+      result(i, j) = velocity_magnitude * sigma_tilde / sigma_max;
 
     } else { // end of "if (ice_free_ocean and next_to_floating)"
       result(i, j) = 0.0;
@@ -155,7 +157,7 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
   }   // end of loop over grid points
 }
 
-std::map<std::string, Diagnostic::Ptr> vonMisesCalving::diagnostics_impl() const {
+DiagnosticList vonMisesCalving::diagnostics_impl() const {
   return {{"vonmises_calving_rate",
         Diagnostic::Ptr(new CalvingRate(this, "vonmises_calving_rate",
                                         "horizontal calving rate due to von Mises calving"))}};

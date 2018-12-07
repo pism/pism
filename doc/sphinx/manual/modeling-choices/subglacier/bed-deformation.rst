@@ -20,7 +20,7 @@ multiple of the increase in ice thickness from the starting time:
 Here `f` is the density of ice divided by the density of the mantle, so its value is
 determined by setting the values of :config:`bed_deformation.mantle_density` and
 :config:`constants.ice.density` in the configuration file; see :ref:`sec-pism-defaults`.
-For an example and verification, see Test H in :ref`sec-verification`.
+For an example and verification, see Test H in :ref:`sec-verif`.
 
 The second model ``-bed_def lc`` is much more physical. It is based on papers by Lingle
 and Clark :cite:`LingleClark` and Bueler and others :cite:`BLKfastearth`. It generalizes
@@ -55,7 +55,7 @@ read in from an input file. This sets the bed topography `b` at the beginning of
 follows:
 
 .. math::
-   :name: eq-bedcorrection
+   :label: eq-bedcorrection
 
    b = b_{0} + \Delta b.
 
@@ -65,5 +65,22 @@ is the :var:`topg_delta` field read in from the file specified using this option
 A correction like this can be used to get a bed topography field at the end of a
 paleo-climate run that is closer to observed present day topography. The correction is
 computed by performing a "preliminary" run and subtracting modeled bed topography from
-present day observations. A subsequent run with this correction should produce a bed
+present day observations. A subsequent run with this correction should produce bed
 elevations that are closer to observed values.
+
+.. warning::
+
+   The variable :var:`viscous_bed_displacement` does not correspond to any measured
+   physical quantity. Do not even attempt to analyze it without a careful reading of
+   :cite:`BLKfastearth`.
+
+   Trying to provide a "hand-crafted" :var:`viscous_bed_displacement` field to PISM is not
+   a good idea.
+
+   Keep in mind that zero :var:`viscous_bed_displacement` does *not* mean that the bed
+   deformation model is in equilibrium.
+
+.. FIXME: Document regridding viscous_bed_displacement when switching to a finer grid in a
+   long bootstrapping simulation. This is the one and only reasonable example of using a
+   viscous_bed_displacement field provided by the user. (Re-starting from a file created
+   by PISM does not count.)

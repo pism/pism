@@ -16,7 +16,7 @@ Using Schoof's parameterized bed roughness technique in PISM
 An explanation
 --------------
 
-If the bed elevation \c topg is smoothed by preprocessing then we observe a reduction in
+If the bed elevation ``topg`` is smoothed by preprocessing then we observe a reduction in
 the peak values of the SIA diffusivities. From such smoothing there is (generically) also
 a reduction in the peak magnitudes of horizontal velocities from both the SIA and SSA
 models. The major consequence of these reductions, through the adaptive time-stepping
@@ -34,12 +34,12 @@ Here we are emphasizing the performance "hit" which the whole model experiences 
 small part of the ice sheet is on a rough bed. That part therefore is not well-modeled
 anyway, compared to the majority of the ice sheet. (Switching to full Stokes or Blatter
 higher order models without major spatial adaptivity would probably imply a gain in the
-balanced stress components \e and a loss of the ability to model the ice sheet at high
+balanced stress components *and* a loss of the ability to model the ice sheet at high
 resolution. There is a tradeoff between completeness of the continuum model and usable
 resolution needed to resolve the features of the real ice sheet.)
 
 There exists a theory which addresses exactly this situation for the SIA model, and
-explains rigorously that one should use a smoothed bed in that model. But with an
+explains rigorously that one should use a smoothed bed in that model, but with an
 associated reduction in diffusivity. This theory explains how to improve the SIA model to
 handle bed roughness more correctly, because it parameterizes the effects of
 "higher-order" stresses which act on the ice as it flows over bed topography. Specifically
@@ -85,12 +85,12 @@ with zero basal sliding, the horizontal mass flux is
    
     \mathbf{q} = - D_{SIA} \nabla h, 
 
-where `D_{SIA}\ge 0` is given next. Thus the mass continuity equation is \e diffusive. The
+where `D_{SIA}\ge 0` is given next. Thus the mass continuity equation is *diffusive*. The
 diffusivity `D_{SIA}` is a function of the ice geometry and the ice flow law. In the
 isothermal Glen power law (power `= n`) case we recall
 
 .. math::
-   :name: siadiffusivity
+   :label: eq-siadiffusivity
    
    D_{SIA} = \Gamma H^{n+2} |\nabla h|^{n-1}
 
@@ -136,21 +136,21 @@ modify the diffusivity by multiplying by a factor `0 \le \theta \le 1`:
    
     D = \theta(h(x_1,x_2),x_1,x_2) \, D_{SIA}. 
 
-where `D_{SIA}` is defined by :eq:`siadiffusivity` earlier, and
+where `D_{SIA}` is defined by :eq:`eq-siadiffusivity` earlier, and
 
 .. math::
-   :name: thetadefn
+   :label: eq-thetadefn
    
     \theta(h,x_1,x_2) = \left[ \fint \left(1 - \frac{\tilde b(x_1,x_2,\xi_1,\xi_2)}{H}\right)^{-(n+2)/n}\,d\xi_1\,d\xi_2 \right]^{-n}
 
-Here the ice thickness and ice surface elevation are related to the \e smoothed bed
+Here the ice thickness and ice surface elevation are related to the *smoothed* bed
 topography, so that in PISM notation
 
 .. math::
    
     H(t,x_1,x_2) = h(t,x_1,x_2) - b_s(x_1,x_2). 
 
-This can be treated as the \e definition of the ice thickness `H` in the above formula for
+This can be treated as the *definition* of the ice thickness `H` in the above formula for
 `\theta`.
 
 The formula for `\theta` has additional terms if there is basal sliding, but we consider
@@ -178,23 +178,23 @@ The averages appearing in his scaling arguments are over an infinite domain, e.g
 For practical modeling use, Schoof specifically recommends averaging over some finite
 length scale which should be "considerably greater than the grid spacing, but much smaller
 than the size of the ice sheet." Furthermore he recommends that, because of the typical
-aspect ratio of ice sheets, "Bed topography on much larger length scales than 10 km
-should then be resolved explicitly through the smoothed bed height `b_s` rather than
-the correction factor `\theta`." Thus in PISM we use `\lambda_1 = \lambda_2 = 5`
-km as the default. Naturally the values are configurable also.
+aspect ratio of ice sheets, "Bed topography on much larger length scales than 10 km should
+then be resolved explicitly through the smoothed bed height `b_s` rather than the
+correction factor `\theta`." Thus in PISM we use `\lambda_1 = \lambda_2 = 5` km as the
+default (set :config:`stress_balance.sia.bed_smoother.range` to change this value).
 
 It is, of course, possible to have bed roughness of significant magnitude at essentially
-any wavelength. We make no claim that PISM results are good models of ice flow over \e
-arbitrary geometry; clearly the current models cannot come close to the non-shallow
+any wavelength. We make no claim that PISM results are good models of ice flow over
+*arbitrary* geometry; clearly the current models cannot come close to the non-shallow
 solution (Stokes) in such cases. Rather, the goal right now is to improve on the existing
 shallow models, the diffusive SIA specifically, while maintaining or increasing
 high-resolution performance and comprehensive model quality, which necessarily includes
 many other modeled physical processes like ice thermal state, basal lubrication, and so
 on. The desirable properties of the Schoof scheme are accepted not because the resulting
-model is perfect, but because we gain both a physical modeling improvement \e and a
+model is perfect, but because we gain both a physical modeling improvement *and* a
 computational performance improvement from its use.
 
-How do we actually compute expression :eq:`thetadefn` quickly? Schoof has this suggestion,
+How do we actually compute expression :eq:`eq-thetadefn` quickly? Schoof has this suggestion,
 which we follow: "To find `\theta` for values of [surface elevation for which `\theta` has
 not already been computed], some interpolation scheme should then be used. `\theta` is
 then represented at each grid point by some locally-defined interpolating function [of the
@@ -211,7 +211,7 @@ Use of Taylor polynomial `P_4(x)` only requires the storage of three fields (bel
 but it has been demonstrated to be reasonably accurate by trying beds of various
 roughnesses in Matlab/Octave scripts. The derivation of the Taylor polynomial is most
 easily understood by starting with an abstract rational function like the one which
-appears in :eq:`thetadefn`, as follows.
+appears in :eq:`eq-thetadefn`, as follows.
 
 The fourth-order Taylor polynomial of the function `F(s)=(1-s)^{-k}` around `s=0` is
 
@@ -249,7 +249,7 @@ this `f(\xi)` is zero, so that the first-order term drops out in the above expan
 `\omega`. We have the following approximation of `\theta`:
 
 .. math::
-   :name: thetaapprox
+   :label: eq-thetaapprox
 
     \theta(h,x_1,x_2) \approx \left[ 1 + C_2(x_1,x_2) H^{-2} + C_3(x_1,x_2) H^{-3} + C_4(x_1,x_2) H^{-4} \right]^{-n}
 
@@ -263,7 +263,7 @@ for `q=2,3,4` and `k = (n+2)/n`.
 
 Note that the coefficients `C_q` depend only on the bed topography, and not on the ice
 geometry. Thus we will pre-process the original bed elevations `b_0` to compute and store
-the fields `b_s,C_2,C_3,C_4`. The computation of equation :eq:`thetaapprox` is fast and
+the fields `b_s,C_2,C_3,C_4`. The computation of equation :eq:`eq-thetaapprox` is fast and
 easily-parallelized if these fields are pre-stored. The computation of the coefficients
 `C_q` and the smoothed bed `b_s` at the pre-processing stage is more involved, especially
 when done in parallel.
@@ -272,14 +272,14 @@ The parameters `\lambda_1,\lambda_2` must be set, but as noted above we use a de
 value of 5 km based on Schoof's recommendation. This physical distance may be less than or
 more than the grid spacing. In the case that the grid spacing is 1 km, for example, we see
 that there is a large smoothing domain in terms of the number of grid points. Generally,
-the ghosting width (in PETSc sense) is unbounded. Therefore move the unsmoothed topography
-to processor zero and do the smoothing and the coefficient-computing there. The class
-pism::stressbalance::BedSmoother implements these details.
+the ghosting width (in PETSc sense) is unbounded. We therefore move the unsmoothed
+topography to processor zero and do the smoothing and the coefficient-computing there. The
+class ``stressbalance::BedSmoother`` implements these details.
 
 Convexity of `P_4`
 ^^^^^^^^^^^^^^^^^^
 
-The approximation :eq:`thetaapprox` given above relates to the Jensen's inequality argument
+The approximation :eq:`eq-thetaapprox` given above relates to the Jensen's inequality argument
 used by Schoof in Appendix A of :cite:`Schoofbasaltopg2003`. For the nonsliding case, his
 argument shows that because `F(s)=(1-s)^{-k}` is convex on `[-1,1]` for `k>0`, therefore
 `0 \le \theta \le 1`.

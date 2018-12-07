@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,13 +20,12 @@
 #include <fstream>
 #include <iostream>
 
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/iceModelVec.hh"
 #include "ColumnSystem.hh"
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/ColumnInterpolation.hh"
-#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -47,8 +46,8 @@ with the last row
 Thus the index into the arrays L, D, U is always the row number.
  */
 TridiagonalSystem::TridiagonalSystem(unsigned int max_size,
-                                     const std::string &my_prefix)
-  : m_max_system_size(max_size), m_prefix(my_prefix) {
+                                     const std::string &prefix)
+  : m_max_system_size(max_size), m_prefix(prefix) {
   assert(m_max_system_size >= 1 && m_max_system_size < 1e6);
 
   m_L.resize(m_max_system_size);
@@ -335,9 +334,9 @@ void columnSystemCtx::init_column(int i, int j,
 
 //! Write system matrix and right-hand-side into an Python script.  The file name contains ZERO_PIVOT_ERROR.
 void columnSystemCtx::reportColumnZeroPivotErrorMFile(unsigned int M) {
-  char filename[TEMPORARY_STRING_LENGTH];
-  snprintf(filename, sizeof(filename), "%s_i%d_j%d_ZERO_PIVOT_ERROR.py",
-           m_solver->prefix().c_str(), m_i, m_j);
+
+  auto filename = pism::printf("%s_i%d_j%d_ZERO_PIVOT_ERROR.py",
+                               m_solver->prefix().c_str(), m_i, m_j);
 
   std::ofstream output(filename);
   output << "# system has 1-norm = " << m_solver->norm1(M)
@@ -351,8 +350,7 @@ void columnSystemCtx::reportColumnZeroPivotErrorMFile(unsigned int M) {
 //! solution into Python script. Constructs file name from m_prefix.
 void columnSystemCtx::save_to_file(const std::vector<double> &x) {
 
-  char filename[TEMPORARY_STRING_LENGTH];
-  snprintf(filename, sizeof(filename), "%s_i%d_j%d.py", m_solver->prefix().c_str(), m_i, m_j);
+  auto filename = pism::printf("%s_i%d_j%d.py", m_solver->prefix().c_str(), m_i, m_j);
 
   std::cout << "saving "
             << m_solver->prefix() << " column system at (i,j)"

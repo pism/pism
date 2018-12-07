@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,10 +19,13 @@
 #ifndef _PA_PALEO_PRECIP_H_
 #define _PA_PALEO_PRECIP_H_
 
-#include "pism/coupler/util/PScalarForcing.hh"
-#include "Modifier.hh"
+#include "pism/coupler/AtmosphereModel.hh"
+#include "pism/coupler/util/ScalarForcing.hh"
 
 namespace pism {
+
+class ScalarForcing;
+
 namespace atmosphere {
 
 /** "Paleo-precipitation correction"
@@ -50,25 +53,27 @@ namespace atmosphere {
  * belonging to the set of uncertainties related to the conversion
  * between isotopic and temperature signals.
  */
-class PaleoPrecip : public PScalarForcing<AtmosphereModel,PAModifier>
-{
+class PaleoPrecip : public AtmosphereModel {
 public:
-  PaleoPrecip(IceGrid::ConstPtr g, AtmosphereModel* in);
+  PaleoPrecip(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
   virtual ~PaleoPrecip();
 
 protected:
-  virtual void init_impl();
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual void init_timeseries_impl(const std::vector<double> &ts) const;
+  void init_timeseries_impl(const std::vector<double> &ts) const;
 
-  virtual void mean_precipitation_impl(IceModelVec2S &result) const;
+  const IceModelVec2S& mean_precipitation_impl() const;
 
-  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
+  void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 
-  virtual MaxTimestep max_timestep_impl(double t) const;
 protected:
-  double m_precipexpfactor;
+  double m_exp_factor;
+  std::unique_ptr<ScalarForcing> m_forcing;
   mutable std::vector<double> m_scaling_values;
+
+  IceModelVec2S::Ptr m_precipitation;
 };
 
 } // end of namespace atmosphere

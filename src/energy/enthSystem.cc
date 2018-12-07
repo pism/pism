@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2017 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2018 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "enthSystem.hh"
-#include <gsl/gsl_math.h>
+#include <gsl/gsl_math.h>       // GSL_NAN, gsl_isnan()
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/EnthalpyConverter.hh"
@@ -60,8 +60,9 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_ice_k   = config.get_double("constants.ice.thermal_conductivity");
   m_p_air   = config.get_double("surface.pressure");
 
-  m_ice_K  = m_ice_k / m_ice_c;
-  m_ice_K0 = m_ice_K * config.get_double("energy.temperate_ice_enthalpy_conductivity_ratio");
+  m_exclude_horizontal_advection = config.get_boolean("energy.margin_exclude_horizontal_advection");
+  m_exclude_vertical_advection   = config.get_boolean("energy.margin_exclude_vertical_advection");
+  m_exclude_strain_heat          = config.get_boolean("energy.margin_exclude_strain_heating");
 
   size_t Mz = m_z.size();
   m_Enth.resize(Mz);
@@ -76,17 +77,20 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
 
   m_nu = m_dt / m_dz;
 
+  double
+    ratio = config.get_double(prefix + ".temperate_ice_thermal_conductivity_ratio"),
+    K     = m_ice_k / m_ice_c,
+    K0    = (ratio * m_ice_k) / m_ice_c;
+
   m_R_factor = m_dt / (PetscSqr(m_dz) * m_ice_density);
-  m_R_cold = m_ice_K * m_R_factor;
-  m_R_temp = m_ice_K0 * m_R_factor;
+  m_R_cold = K * m_R_factor;
+  m_R_temp = K0 * m_R_factor;
 
   if (config.get_boolean("energy.temperature_dependent_thermal_conductivity")) {
     m_k_depends_on_T = true;
   } else {
     m_k_depends_on_T = false;
   }
-
-  m_c_depends_on_T = false;
 }
 
 
@@ -105,8 +109,10 @@ double enthSystemCtx::k_from_T(double T) const {
   return m_ice_k;
 }
 
-void enthSystemCtx::init(int i, int j, double ice_thickness) {
+void enthSystemCtx::init(int i, int j, bool marginal, double ice_thickness) {
   m_ice_thickness = ice_thickness;
+
+  m_marginal = marginal;
 
   init_column(i, j, m_ice_thickness);
 
@@ -116,7 +122,15 @@ void enthSystemCtx::init(int i, int j, double ice_thickness) {
 
   coarse_to_fine(m_u3, m_i, m_j, &m_u[0]);
   coarse_to_fine(m_v3, m_i, m_j, &m_v[0]);
-  coarse_to_fine(m_w3, m_i, m_j, &m_w[0]);
+
+  if (m_marginal and m_exclude_vertical_advection) {
+    for (unsigned int k = 0; k < m_w.size(); ++k) {
+      m_w[k] = 0.0;
+    }
+  } else {
+    coarse_to_fine(m_w3, m_i, m_j, &m_w[0]);
+  }
+
   coarse_to_fine(m_strain_heating3, m_i, m_j, &m_strain_heating[0]);
   coarse_to_fine(m_Enth3, m_i, m_j, &m_Enth[0]);
 
@@ -207,6 +221,9 @@ void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
     enthalpy flux even if K == 0, i.e. in a "pure advection" setup.
  */
 void enthSystemCtx::set_surface_neumann_bc(double G) {
+  const bool include_horizontal_advection = not (m_marginal and m_exclude_horizontal_advection);
+  const bool include_strain_heating       = not (m_marginal and m_exclude_strain_heat);
+
   const double
     Rminus = 0.5 * (m_R[m_ks - 1] + m_R[m_ks]), // R_{ks-1/2}
     Rplus  = m_R[m_ks],                         // R_{ks+1/2}
@@ -222,24 +239,34 @@ void enthSystemCtx::set_surface_neumann_bc(double G) {
   m_D_ks = 1.0 + Rminus + Rplus + 2.0 * mu_w * A_d;
   // upper-diagonal entry (not used)
   m_U_ks = 0.0;
-  // m_Enth[0] (below) is there due to the fully-implicit discretization in time, the second term is
+  // m_Enth[m_ks] (below) is there due to the fully-implicit discretization in time, the second term is
   // the modification of the right-hand side implementing the Neumann B.C. (similar to
   // set_basal_heat_flux(); see that method for details)
   m_B_ks = m_Enth[m_ks] + 2.0 * G * m_dz * (Rplus + mu_w * A_b);
 
   // treat horizontal velocity using first-order upwinding:
-  const double UpEnthu = upwind(m_u[m_ks], m_E_w[m_ks], m_Enth[m_ks], m_E_e[m_ks], 1.0 / m_dx);
-  const double UpEnthv = upwind(m_v[m_ks], m_E_s[m_ks], m_Enth[m_ks], m_E_n[m_ks], 1.0 / m_dy);
+  double upwind_u = 0.0;
+  double upwind_v = 0.0;
+  if (include_horizontal_advection) {
+    upwind_u = upwind(m_u[m_ks], m_E_w[m_ks], m_Enth[m_ks], m_E_e[m_ks], 1.0 / m_dx);
+    upwind_v = upwind(m_v[m_ks], m_E_s[m_ks], m_Enth[m_ks], m_E_n[m_ks], 1.0 / m_dy);
+  }
+  double Sigma    = 0.0;
+  if (include_strain_heating) {
+    Sigma = m_strain_heating[m_ks];
+  }
 
-  m_B_ks += m_dt * ((m_strain_heating[m_ks] / m_ice_density) - UpEnthu - UpEnthv);  // = rhs[m_ks]
+  m_B_ks += m_dt * ((Sigma / m_ice_density) - upwind_u - upwind_v);  // = rhs[m_ks]
 }
 
 void enthSystemCtx::checkReadyToSolve() {
   if (m_nu < 0.0 || m_R_cold < 0.0 || m_R_temp < 0.0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "not ready to solve: need initAllColumns() in enthSystemCtx");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "not ready to solve: need initAllColumns() in enthSystemCtx");
   }
   if (m_lambda < 0.0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "not ready to solve: need setSchemeParamsThisColumn() in enthSystemCtx");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "not ready to solve: need setSchemeParamsThisColumn() in enthSystemCtx");
   }
 }
 
@@ -313,6 +340,9 @@ void enthSystemCtx::set_basal_heat_flux(double heat_flux) {
     enthalpy flux even if K == 0, i.e. in a "pure advection" setup.
  */
 void enthSystemCtx::set_basal_neumann_bc(double G) {
+  const bool include_horizontal_advection = not (m_marginal and m_exclude_horizontal_advection);
+  const bool include_strain_heating       = not (m_marginal and m_exclude_strain_heat);
+
   const double
     Rminus = m_R[0],                  // R_{-1/2}
     Rplus  = 0.5 * (m_R[0] + m_R[1]), // R_{+1/2}
@@ -330,10 +360,18 @@ void enthSystemCtx::set_basal_neumann_bc(double G) {
   m_B0 = m_Enth[0] + 2.0 * G * m_dz * (-Rminus + mu_w * A_b);
 
   // treat horizontal velocity using first-order upwinding:
-  const double UpEnthu = upwind(m_u[0], m_E_w[0], m_Enth[0], m_E_e[0], 1.0 / m_dx);
-  const double UpEnthv = upwind(m_v[0], m_E_s[0], m_Enth[0], m_E_n[0], 1.0 / m_dy);
+  double upwind_u = 0.0;
+  double upwind_v = 0.0;
+  if (include_horizontal_advection) {
+    upwind_u = upwind(m_u[0], m_E_w[0], m_Enth[0], m_E_e[0], 1.0 / m_dx);
+    upwind_v = upwind(m_v[0], m_E_s[0], m_Enth[0], m_E_n[0], 1.0 / m_dy);
+  }
+  double Sigma    = 0.0;
+  if (include_strain_heating) {
+    Sigma = m_strain_heating[0];
+  }
 
-  m_B0 += m_dt * ((m_strain_heating[0] / m_ice_density) - UpEnthu - UpEnthv);  // = rhs[0]
+  m_B0 += m_dt * ((Sigma / m_ice_density) - upwind_u - upwind_v);  // = rhs[m_ks]
 }
 
 
@@ -445,7 +483,8 @@ void enthSystemCtx::solve(std::vector<double> &x) {
 #if (PISM_DEBUG==1)
   checkReadyToSolve();
   if (gsl_isnan(m_D0) || gsl_isnan(m_U0) || gsl_isnan(m_B0)) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "solveThisColumn() should only be called after\n"
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "solveThisColumn() should only be called after\n"
                        "  setting basal boundary condition in enthSystemCtx");
   }
 #endif
@@ -460,6 +499,9 @@ void enthSystemCtx::solve(std::vector<double> &x) {
     one_over_rho = 1.0 / m_ice_density,
     Dx = 1.0 / m_dx,
     Dy = 1.0 / m_dy;
+
+  const bool include_horizontal_advection = not (m_marginal and m_exclude_horizontal_advection);
+  const bool include_strain_heating       = not (m_marginal and m_exclude_strain_heat);
 
   // generic ice segment in k location (if any; only runs if m_ks >= 2)
   for (unsigned int k = 1; k < m_ks; k++) {
@@ -477,12 +519,19 @@ void enthSystemCtx::solve(std::vector<double> &x) {
     S.D(k) = 1.0 + Rminus + Rplus + nu_w * A_d;
     S.U(k) = - Rplus + nu_w * A_u;
 
-    S.RHS(k) = m_Enth[k];
-    const double
-      UpEnthu = upwind(m_u[k], m_E_w[k], m_Enth[k], m_E_e[k], Dx),
-      UpEnthv = upwind(m_v[k], m_E_s[k], m_Enth[k], m_E_n[k], Dy);
+    // horizontal velocity and strain heating
+    double upwind_u = 0.0;
+    double upwind_v = 0.0;
+    if (include_horizontal_advection) {
+      upwind_u = upwind(m_u[k], m_E_w[k], m_Enth[k], m_E_e[k], Dx);
+      upwind_v = upwind(m_v[k], m_E_s[k], m_Enth[k], m_E_n[k], Dy);
+    }
+    double Sigma    = 0.0;
+    if (include_strain_heating) {
+      Sigma    = m_strain_heating[k];
+    }
 
-    S.RHS(k) += m_dt * (one_over_rho * m_strain_heating[k] - UpEnthu - UpEnthv);
+    S.RHS(k) = m_Enth[k] + m_dt * (one_over_rho * Sigma - upwind_u - upwind_v);
   }
 
   // Assemble the top surface equation. Values m_{L,D,U,B}_ks are set using set_surface_dirichlet()

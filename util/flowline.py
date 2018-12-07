@@ -24,7 +24,7 @@ from optparse import OptionParser
 try:
     from netCDF4 import Dataset as CDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 import numpy as np
@@ -62,12 +62,10 @@ def permute(variable, output_order=('t', 'z', 'zb', 'y', 'x')):
     input_dimensions = variable.dimensions
 
     # filter out irrelevant dimensions
-    dimensions = filter(lambda(x): x in input_dimensions,
-                        output_order)
+    dimensions = [x for x in output_order if x in input_dimensions]
 
     # create the mapping
-    mapping = map(lambda(x): dimensions.index(x),
-                  input_dimensions)
+    mapping = [dimensions.index(x) for x in input_dimensions]
 
     if mapping:
         return np.transpose(variable[:], mapping)
@@ -96,22 +94,22 @@ def process(input, output, direction, collapse):
     try:
         nc = CDF(input)
     except:
-        print "ERROR: Can't open %s" % input
+        print("ERROR: Can't open %s" % input)
         exit(1)
 
     try:
         out = CDF(output, 'w', format="NETCDF3_CLASSIC")
     except:
-        print "ERROR: Can't open %s" % output
+        print("ERROR: Can't open %s" % output)
         exit(1)
 
     copy_attributes(nc, out)
 
-    for name in nc.dimensions.keys():
+    for name in list(nc.dimensions.keys()):
         copy_dim(nc, out, name, direction)
 
     if collapse:
-        for name in nc.variables.keys():
+        for name in list(nc.variables.keys()):
             if name == direction:
                 continue
             collapse_var(nc, out, name, direction)
@@ -134,7 +132,7 @@ def process(input, output, direction, collapse):
         var2.units = var1.units
         var2[:] = [-delta, 0, delta]
 
-        for name in nc.variables.keys():
+        for name in list(nc.variables.keys()):
             expand_var(nc, out, name, direction)
 
     message = asctime() + ': ' + ' '.join(argv) + '\n'
@@ -151,10 +149,10 @@ def collapse_var(nc, out, name, direction):
     var1 = nc.variables[name]
     N = (len(nc.dimensions[direction]) - 1) / 2
 
-    print "Processing %s..." % name
+    print("Processing %s..." % name)
     dims = var1.dimensions
     if len(dims) > 1:                   # only collapse spatial fields
-        dims = filter(lambda(x): x != direction, dims)
+        dims = [x for x in dims if x != direction]
 
     try:
         fill_value = var1._FillValue
@@ -180,7 +178,7 @@ def expand_var(nc, out, name, direction):
 
     var1 = nc.variables[name]
 
-    print "Processing %s..." % name
+    print("Processing %s..." % name)
 
     # Copy coordinate variables and stop:
     if name in ['t', 'z', 'y', 'x', 'zb']:
@@ -209,6 +207,7 @@ def expand_var(nc, out, name, direction):
         elif direction == 'y':
             var2[get_slice(var2.dimensions, y=j)] = permute(var1)
 
+
 parser = OptionParser()
 parser.usage = "usage: %prog -o foo.nc -d {x,y} {--collapse,--expand} file.nc"
 parser.description = "Collapses or expands a NetCDF file in a specified direction."
@@ -225,12 +224,12 @@ parser.add_option("-c", "--collapse", dest="collapse", action="store_true",
 (opts, args) = parser.parse_args()
 
 if len(args) != 1:
-    print "ERROR: File argument is missing."
+    print("ERROR: File argument is missing.")
     exit(1)
 
 
 if (opts.expand and opts.collapse) or ((not opts.expand) and (not opts.collapse)):
-    print "ERROR: exactly one of -e and -c is required."
+    print("ERROR: exactly one of -e and -c is required.")
     exit(1)
 
 if not opts.direction:
@@ -245,16 +244,16 @@ if not opts.direction:
             opts.direction = 'x'
         nc.close()
 elif opts.direction not in ['x', 'y']:
-    print "ERROR: Please specify direction using the -d option. (Choose one of x,y.)"
+    print("ERROR: Please specify direction using the -d option. (Choose one of x,y.)")
     exit(1)
 
 if (not opts.output_filename):
-    print "ERROR: Please specify the output file name using the -o option."
+    print("ERROR: Please specify the output file name using the -o option.")
     exit(1)
 
 if opts.collapse:
-    print "Collapsing %s in the %s direction, writing to %s..." % (args[0], opts.direction, opts.output_filename)
+    print("Collapsing %s in the %s direction, writing to %s..." % (args[0], opts.direction, opts.output_filename))
 else:
-    print "Expanding %s in the %s direction, writing to %s..." % (args[0], opts.direction, opts.output_filename)
+    print("Expanding %s in the %s direction, writing to %s..." % (args[0], opts.direction, opts.output_filename))
 
 process(args[0], opts.output_filename, opts.direction, opts.collapse or (not opts.expand))

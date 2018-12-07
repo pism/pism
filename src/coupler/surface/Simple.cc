@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,32 +16,24 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cassert>
-#include <gsl/gsl_math.h>
 
 #include "Simple.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/pism_const.hh"
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/ConfigInterface.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/MaxTimestep.hh"
-#include "pism/util/pism_utilities.hh"
+
+#include "pism/coupler/AtmosphereModel.hh"
 
 namespace pism {
 namespace surface {
 
-///// Simple PISM surface model.
-Simple::Simple(IceGrid::ConstPtr g)
-  : SurfaceModel(g) {
+Simple::Simple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
+  : SurfaceModel(g, atmosphere) {
+
+  m_temperature = allocate_temperature(g);
+  m_mass_flux   = allocate_mass_flux(g);
 }
 
-void Simple::init_impl() {
+void Simple::init_impl(const Geometry &geometry) {
 
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
-  assert(m_atmosphere != NULL);
-  m_atmosphere->init();
+  m_atmosphere->init(geometry);
 
   m_log->message(2,
              "* Initializing the simplest PISM surface (snow) processes model Simple.\n"
@@ -50,29 +42,21 @@ void Simple::init_impl() {
              "    ice upper surface temperature := 2m air temperature.\n");
 }
 
-MaxTimestep Simple::max_timestep_impl(double t) const {
-  (void) t;
+void Simple::update_impl(const Geometry &geometry, double t, double dt) {
   if (m_atmosphere) {
-    return m_atmosphere->max_timestep(t);
-  } else {
-    return MaxTimestep("surface simple");
+    m_atmosphere->update(geometry, t, dt);
   }
+
+  m_mass_flux->copy_from(m_atmosphere->mean_precipitation());
+  m_temperature->copy_from(m_atmosphere->mean_annual_temp());
 }
 
-void Simple::update_impl(double my_t, double my_dt) {
-  m_t = my_t;
-  m_dt = my_dt;
-  if (m_atmosphere) {
-    m_atmosphere->update(my_t, my_dt);
-  }
+const IceModelVec2S &Simple::mass_flux_impl() const {
+  return *m_mass_flux;
 }
 
-void Simple::mass_flux_impl(IceModelVec2S &result) const {
-  m_atmosphere->mean_precipitation(result);
-}
-
-void Simple::temperature_impl(IceModelVec2S &result) const {
-  m_atmosphere->mean_annual_temp(result);
+const IceModelVec2S &Simple::temperature_impl() const {
+  return *m_temperature;
 }
 
 } // end of namespace surface

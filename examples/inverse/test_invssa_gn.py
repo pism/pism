@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2012, 2014, 2015, 2016 David Maxwell
+# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -32,7 +32,7 @@ import PISM
 def adjustTauc(mask, tauc):
     """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
 
-    grid = mask.get_grid()
+    grid = mask.grid()
     high_tauc = grid.ctx().config().get_double("basal_yield_stress.ice_free_bedrock")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
@@ -52,9 +52,10 @@ if __name__ == "__main__":
 
     append_mode = False
 
-    input_filename = PISM.optionsString("-i", "input file")
-    inv_data_filename = PISM.optionsString("-inv_data", "inverse data file", default=input_filename)
-    use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior", "Use tauc_prior from inverse data file as initial guess.", default=False)
+    input_filename = config.get_string("input.file")
+    inv_data_filename = PISM.OptionString("-inv_data", "inverse data file", input_filename).value()
+    use_tauc_prior = PISM.OptionBool("-inv_use_tauc_prior",
+                                     "Use tauc_prior from inverse data file as initial guess.")
 
     ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename, inv_data_filename, 'tauc')
     ssarun.setup()
@@ -66,13 +67,15 @@ if __name__ == "__main__":
     # a) tauc from the input file (default)
     # b) tauc_prior from the inv_datafile if -use_tauc_prior is set
     tauc_prior = PISM.model.createYieldStressVec(grid, 'tauc_prior')
-    tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "")
+    tauc_prior.set_attrs(
+        "diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "")
     tauc = PISM.model.createYieldStressVec(grid)
     if use_tauc_prior:
         tauc_prior.regrid(inv_data_filename, critical=True)
     else:
         if not PISM.util.fileHasVariable(input_filename, "tauc"):
-            PISM.verbPrintf(1, com, "Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior." % input_filename)
+            PISM.verbPrintf(
+                1, com, "Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior." % input_filename)
             exit(1)
         tauc.regrid(input_filename, True)
         tauc_prior.copy_from(tauc)
@@ -92,7 +95,8 @@ if __name__ == "__main__":
         vel_ssa_observed.regrid(inv_data_filename, True)
     else:
         if not PISM.util.fileHasVariable(inv_data_filename, "u_surface_observed"):
-            PISM.verbPrintf(1, context.com, "Neither u/v_ssa_observed nor u/v_surface_observed is available in %s.\nAt least one must be specified.\n" % inv_data_filename)
+            PISM.verbPrintf(
+                1, context.com, "Neither u/v_ssa_observed nor u/v_surface_observed is available in %s.\nAt least one must be specified.\n" % inv_data_filename)
             exit(1)
         vel_surface_observed = PISM.model.create2dVelocityVec(grid, '_surface_observed', stencil_width=2)
         vel_surface_observed.regrid(inv_data_filename, True)
@@ -116,9 +120,9 @@ if __name__ == "__main__":
 
     solver_gn = PISM.InvSSATikhonovGN(ssarun.ssa, zeta, vel_ssa_observed, eta, designFunctional, stateFunctional)
 
-    (seed, seed_set) = PISM.optionsIntWasSet("-inv_seed", "")
-    if seed_set:
-        np.random.seed(seed + PISM.Context().rank)
+    seed = PISM.OptionInteger("-inv_seed", "random generator seed")
+    if seed.is_set():
+        np.random.seed(seed.value() + PISM.Context().rank)
 
     d1 = PISM.vec.randVectorS(grid, 1)
     d2 = PISM.vec.randVectorS(grid, 1)

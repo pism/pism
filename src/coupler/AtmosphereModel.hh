@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -25,23 +25,29 @@
 #include "pism/util/Component.hh"
 
 namespace pism {
+
+class Geometry;
 class IceModelVec2S;
+
 //! @brief Atmosphere models and modifiers: provide precipitation and
 //! temperature to a surface::SurfaceModel below
 namespace atmosphere {
 //! A purely virtual class defining the interface of a PISM Atmosphere Model.
-class AtmosphereModel : public Component_TS {
+class AtmosphereModel : public Component {
 public:
   AtmosphereModel(IceGrid::ConstPtr g);
+  AtmosphereModel(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> input);
   virtual ~AtmosphereModel();
 
-  void init();
+  void init(const Geometry &geometry);
+
+  void update(const Geometry &geometry, double t, double dt);
 
   //! \brief Sets result to the mean precipitation, in m/s ice equivalent.
-  void mean_precipitation(IceModelVec2S &result) const;
+  const IceModelVec2S& mean_precipitation() const;
 
   //! \brief Sets result to the mean annual near-surface air temperature, in degrees Kelvin.
-  void mean_annual_temp(IceModelVec2S &result) const;
+  const IceModelVec2S& mean_annual_temp() const;
 
   void begin_pointwise_access() const;
   void end_pointwise_access() const;
@@ -58,45 +64,31 @@ public:
   //! begin_pointwise_access() and end_pointwise_access()
   void temp_time_series(int i, int j, std::vector<double> &result) const;
 protected:
-  virtual void init_impl() = 0;
-  virtual void mean_precipitation_impl(IceModelVec2S &result) const = 0;
-  virtual void mean_annual_temp_impl(IceModelVec2S &result) const = 0;
-  virtual void begin_pointwise_access_impl() const = 0;
-  virtual void end_pointwise_access_impl() const = 0;
-  virtual void init_timeseries_impl(const std::vector<double> &ts) const = 0;
-  virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) const = 0;
-  virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) const = 0;
+  virtual void init_impl(const Geometry &geometry) = 0;
+  virtual void update_impl(const Geometry &geometry, double t, double dt) = 0;
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual MaxTimestep max_timestep_impl(double my_t) const;
+
+  virtual const IceModelVec2S& mean_precipitation_impl() const;
+  virtual const IceModelVec2S& mean_annual_temp_impl() const;
+
+  virtual void begin_pointwise_access_impl() const;
+  virtual void end_pointwise_access_impl() const;
+  virtual void init_timeseries_impl(const std::vector<double> &ts) const;
+  virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) const;
+  virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) const;
+
+  virtual DiagnosticList diagnostics_impl() const;
+  virtual TSDiagnosticList ts_diagnostics_impl() const;
 protected:
   mutable std::vector<double> m_ts_times;
-};
 
-/*! @brief Instantaneous near-surface air temperature. */
-class PA_air_temp_snapshot : public Diag<AtmosphereModel>
-{
-public:
-  PA_air_temp_snapshot(const AtmosphereModel *m);
-protected:
-  IceModelVec::Ptr compute_impl() const;
-};
+  std::shared_ptr<AtmosphereModel> m_input_model;
 
-/*! @brief Effective near-surface mean-annual air temperature. */
-class PA_air_temp : public Diag<AtmosphereModel>
-{
-public:
-  PA_air_temp(const AtmosphereModel *m);
-protected:
-  IceModelVec::Ptr compute_impl() const;
-};
-
-/*! @brief Effective precipitation rate (average over time step). */
-class PA_precipitation : public Diag<AtmosphereModel>
-{
-public:
-  PA_precipitation(const AtmosphereModel *m);
-protected:
-  IceModelVec::Ptr compute_impl() const;
+  static IceModelVec2S::Ptr allocate_temperature(IceGrid::ConstPtr grid);
+  static IceModelVec2S::Ptr allocate_precipitation(IceGrid::ConstPtr grid);
 };
 
 } // end of namespace atmosphere

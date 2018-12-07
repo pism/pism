@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -36,6 +36,7 @@
 #include "pism/util/io/PIO.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/coupler/ocean/Constant.hh"
+#include "pism/coupler/SeaLevel.hh"
 #include "PSVerification.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/error_handling.hh"
@@ -63,7 +64,7 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   // Override some defaults from parent class
   m_config->set_double("stress_balance.sia.enhancement_factor", 1.0);
   // none use bed smoothing & bed roughness parameterization
-  m_config->set_double("stress_balance.sia.bed_smoother_range", 0.0);
+  m_config->set_double("stress_balance.sia.bed_smoother.range", 0.0);
 
   // set values of flags in run()
   m_config->set_boolean("geometry.update.enabled", true);
@@ -240,11 +241,14 @@ void IceCompModel::allocate_couplers() {
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   // Climate will always come from verification test formulas.
-  m_surface = new surface::Verification(m_grid, EC, m_testname);
-  m_submodels["surface process model"] = m_surface;
+  m_surface.reset(new surface::Verification(m_grid, EC, m_testname));
+  m_submodels["surface process model"] = m_surface.get();
 
-  m_ocean   = new ocean::Constant(m_grid);
-  m_submodels["ocean model"] = m_ocean;
+  m_ocean.reset(new ocean::Constant(m_grid));
+  m_submodels["ocean model"] = m_ocean.get();
+
+  m_sea_level.reset(new ocean::sea_level::SeaLevel(m_grid));
+  m_submodels["sea level forcing"] = m_sea_level.get();
 }
 
 void IceCompModel::bootstrap_2d(const PIO &input_file) {
@@ -255,12 +259,16 @@ void IceCompModel::bootstrap_2d(const PIO &input_file) {
 void IceCompModel::initialize_2d() {
   m_log->message(3, "initializing Test %c from formulas ...\n",m_testname);
 
-  // all have no uplift
-  IceModelVec2S zero;
-  zero.create(m_grid, "temporary", WITHOUT_GHOSTS);
-  zero.set(0.0);
+  m_geometry.bed_elevation.set(0.0);
+  m_geometry.sea_level_elevation.set(0.0);
 
-  m_beddef->bootstrap(zero, zero, m_geometry.ice_thickness);
+  IceModelVec2S uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+  uplift.set(0.0);
+
+  m_beddef->bootstrap(m_geometry.bed_elevation,
+                      uplift,
+                      m_geometry.ice_thickness,
+                      m_geometry.sea_level_elevation);
 
   // Test-specific initialization:
   switch (m_testname) {
@@ -332,18 +340,18 @@ void IceCompModel::initTestABCDH() {
   m_geometry.ice_thickness.update_ghosts();
 
   {
-    IceModelVec2S bed_topography, bed_uplift;
-    bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
-    bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
+    IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
     bed_uplift.set(0.0);
 
     if (m_testname == 'H') {
-      bed_topography.copy_from(m_geometry.ice_thickness);
-      bed_topography.scale(-m_f);
+      m_geometry.bed_elevation.copy_from(m_geometry.ice_thickness);
+      m_geometry.bed_elevation.scale(-m_f);
     } else {  // flat bed case otherwise
-      bed_topography.set(0.0);
+      m_geometry.bed_elevation.set(0.0);
     }
-      m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness);
+    m_geometry.sea_level_elevation.set(0.0);
+    m_beddef->bootstrap(m_geometry.bed_elevation, bed_uplift, m_geometry.ice_thickness,
+                        m_geometry.sea_level_elevation);
   }
 }
 
@@ -393,22 +401,21 @@ void IceCompModel::initTestL() {
   ExactLParameters L = exactL(rr);
 
   {
-    IceModelVec2S bed_topography, bed_uplift;
-    bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
-    bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
+    IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
 
-    IceModelVec::AccessList list{&m_geometry.ice_thickness, &bed_topography};
+    IceModelVec::AccessList list{&m_geometry.ice_thickness, &m_geometry.bed_elevation};
 
     for (k = 0; k < MM; k++) {
       m_geometry.ice_thickness(rrv[k].i, rrv[k].j)  = L.H[k];
-      bed_topography(rrv[k].i, rrv[k].j) = L.b[k];
+      m_geometry.bed_elevation(rrv[k].i, rrv[k].j) = L.b[k];
     }
 
     m_geometry.ice_thickness.update_ghosts();
 
     bed_uplift.set(0.0);
 
-    m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness);
+    m_beddef->bootstrap(m_geometry.bed_elevation, bed_uplift, m_geometry.ice_thickness,
+                        m_geometry.sea_level_elevation);
   }
 
   // store copy of ice_thickness for evaluating geometry errors
@@ -632,8 +639,8 @@ void IceCompModel::reportErrors() {
   double max_strain_heating_error, av_strain_heating_error;
   double maxUerr, avUerr, maxWerr, avWerr;
 
-  const rheology::FlowLaw* flow_law = m_stress_balance->modifier()->flow_law();
-  const double m = (2.0 * flow_law->exponent() + 2.0) / flow_law->exponent();
+  const rheology::FlowLaw &flow_law = *m_stress_balance->modifier()->flow_law();
+  const double m = (2.0 * flow_law.exponent() + 2.0) / flow_law.exponent();
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
@@ -891,14 +898,12 @@ void IceCompModel::reportErrors() {
 void IceCompModel::test_V_init() {
 
   {
-    // initialize the bed topography
-    IceModelVec2S bed_topography, bed_uplift;
-    bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
-    bed_topography.set(-1000);
-    bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
+    IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
     bed_uplift.set(0.0);
+    m_geometry.bed_elevation.set(-1000);
 
-    m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness);
+    m_beddef->bootstrap(m_geometry.bed_elevation, bed_uplift, m_geometry.ice_thickness,
+                        m_geometry.sea_level_elevation);
   }
 
   // set SSA boundary conditions:

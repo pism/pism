@@ -40,7 +40,7 @@ def generate_input(N):
     topg = zeros.copy() - 0.1 * options.H
     topg[1, 1] = -options.H
 
-    for j in xrange(M * M):
+    for j in range(M * M):
         if string[j] == '1':
             thk[j] = options.H
 
@@ -56,10 +56,13 @@ def generate_input(N):
     return output_filename, pism_output_filename
 
 
-def run_pismr((input_filename, output_filename)):
-    command = "pismr -i %s -bootstrap -o %s -Mx %d -My %d -Lz 1000 -Mz 5 -stress_balance ssa+sia -cfbc -y 0.001 -verbose 1" % (input_filename, output_filename, M, M)
-    print "Running %s" % command
+def run_pismr(input_filename, output_filename):
+    command = "pismr -i %s -bootstrap -o %s -Mx %d -My %d -Lz 1000 -Mz 5 -stress_balance ssa+sia -cfbc -y 0.001 -verbose 1" % (
+        input_filename, output_filename, M, M)
+    print("Running %s" % command)
     subprocess.call(shlex.split(command))
 
-for k in xrange(2 ** (M * M)):
-    run_pismr(generate_input(k))
+
+for k in range(2 ** (M * M)):
+    input_file, output_file = generate_input(k)
+    run_pismr(input_file, output_file)

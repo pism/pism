@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 #include <cmath>                // for erfc() in CalovGreveIntegrand()
 #include <algorithm>
 
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "localMassBalance.hh"
 #include "pism/util/IceGrid.hh"
@@ -33,10 +33,11 @@ namespace pism {
 namespace surface {
 
 LocalMassBalance::Changes::Changes() {
-  snow_depth = 0.0;
-  melt       = 0.0;
-  runoff     = 0.0;
-  smb        = 0.0;
+  firn_depth    = 0.0;
+  snow_depth    = 0.0;
+  melt          = 0.0;
+  runoff        = 0.0;
+  smb           = 0.0;
 }
 
 LocalMassBalance::LocalMassBalance(Config::ConstPtr myconfig, units::System::Ptr system)
@@ -88,11 +89,10 @@ in the above integral is in degrees C.  Here we think of the argument `TacC`
 as temperature in Celsius, but really it is the temperature above a threshold
 at which it is "positive".
 
-This integral is used for the expected number of positive degree days, unless the
-user selects a random PDD implementation with `-pdd_rand` or
-`-pdd_rand_repeatable`.  The user can choose \f$\sigma\f$ by option
-`-pdd_std_dev`.  Note that the integral is over a time interval of length
-`dt` instead of a whole year as stated in \ref CalovGreve05 . If `sigma` is zero, return the positive part of `TacC`.
+This integral is used for the expected number of positive degree days. The user can choose
+\f$\sigma\f$ by option `-pdd_std_dev`. Note that the integral is over a time interval of
+length `dt` instead of a whole year as stated in \ref CalovGreve05 . If `sigma` is zero,
+return the positive part of `TacC`.
  */
 double PDDMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
 
@@ -196,19 +196,35 @@ void PDDMassBalance::get_snow_accumulation(const std::vector<double> &T,
  */
 PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
                                              double PDDs,
+                                             double thickness,
                                              double old_firn_depth,
                                              double old_snow_depth,
                                              double accumulation) {
-
-  Changes result;
-
   double
     firn_depth      = old_firn_depth,
-    snow_depth      = old_snow_depth + accumulation,
+    snow_depth      = old_snow_depth,
     max_snow_melted = PDDs * ddf.snow,
     firn_melted     = 0.0,
     snow_melted     = 0.0,
     excess_pdds     = 0.0;
+
+  assert(thickness >= 0);
+
+  // snow depth cannot exceed total thickness
+  snow_depth = std::min(snow_depth, thickness);
+
+  assert(snow_depth >= 0);
+
+  // firn depth cannot exceed thickness - snow_depth
+  firn_depth = std::min(firn_depth, thickness - snow_depth);
+
+  assert(firn_depth >= 0);
+
+  double ice_thickness = thickness - snow_depth - firn_depth;
+
+  assert(ice_thickness >= 0);
+
+  snow_depth += accumulation;
 
   if (PDDs <= 0.0) {            // The "no melt" case.
     snow_melted = 0.0;
@@ -224,12 +240,12 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
   } else if (max_snow_melted <= firn_depth + snow_depth) {
     // All of the snow is melted but some firn is left; in any case, all of
     // the energy available for melt, namely all of the positive
-    // degree days (PDDs) were used up in melting snow.
+    // degree days (PDDs) were used up in melting snow and firn.
     snow_melted = snow_depth;
     firn_melted = max_snow_melted - snow_melted;
     excess_pdds = 0.0;
   } else {
-    // All (firn and snow_depth meters) of snow melted. Excess_pddsum is the
+    // All (firn_depth and snow_depth meters) of snow and firn melted. Excess_pdds is the
     // positive degree days available to melt ice.
     firn_melted = firn_depth;
     snow_melted = snow_depth;
@@ -237,7 +253,7 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
   }
 
   double
-    ice_melted              = excess_pdds * ddf.ice,
+    ice_melted              = std::min(excess_pdds * ddf.ice, ice_thickness),
     melt                    = snow_melted + firn_melted + ice_melted,
     ice_created_by_refreeze = 0.0;
 
@@ -248,27 +264,29 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
     ice_created_by_refreeze = (firn_melted + snow_melted) * ddf.refreeze_fraction;
   }
 
-  firn_depth -= firn_melted;
+  const double runoff = melt - ice_created_by_refreeze;
+
+  snow_depth = std::max(snow_depth - snow_melted, 0.0);
+  firn_depth = std::max(firn_depth - firn_melted, 0.0);
+
   // FIXME: need to add snow that hasn't melted, is this correct?
   // firn_depth += (snow_depth - snow_melted);
   // Turn firn into ice at X times accumulation
   // firn_depth -= accumulation *  m_config->get_double("surface.pdd.firn_compaction_to_accumulation_ratio");
 
-  if (firn_depth < 0.0) {
-    firn_depth = 0.0;
-  }
-  snow_depth -= snow_melted;
-  if (snow_depth < 0.0) {
-    snow_depth = 0.0;
-  }
+  const double smb = accumulation - runoff;
 
-  const double runoff = melt - ice_created_by_refreeze;
-
+  Changes result;
+  // Ensure that we never generate negative ice thicknesses. As far as I can tell the code
+  // above guarantees that thickness + smb >= *in exact arithmetic*. The check below
+  // should make sure that we don't get bitten by rounding errors.
+  result.smb        = thickness + smb >= 0 ? smb : -thickness;
   result.firn_depth = firn_depth - old_firn_depth;
   result.snow_depth = snow_depth - old_snow_depth;
   result.melt       = melt;
   result.runoff     = runoff;
-  result.smb        = accumulation - runoff;
+
+  assert(thickness + result.smb >= 0);
 
   return result;
 }

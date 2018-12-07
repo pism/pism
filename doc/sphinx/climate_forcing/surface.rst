@@ -178,9 +178,9 @@ The default PDD model used by PISM, turned on by option :opt:`-surface pdd`, is 
 
 Our model computes the solid (snow) precipitation rate using the air temperature threshold
 with a linear transition. All precipitation during periods with air temperatures above
-:config:`air_temp_all_precip_as_rain` (default of `2^\circ C`) is interpreted as
+:config:`surface.pdd.air_temp_all_precip_as_rain` (default of `2^\circ C`) is interpreted as
 rain; all precipitation during periods with air temperatures below
-:config:`air_temp_all_precip_as_snow` (default of `0^\circ C`) is interpreted as
+:config:`surface.pdd.air_temp_all_precip_as_snow` (default of `0^\circ C`) is interpreted as
 snow.
 
 For long-term simulations, a PDD model generally uses an idealized seasonal temperature
@@ -192,7 +192,7 @@ occur. Concretely, a normally-distributed, mean zero random temperature incremen
 to the seasonal cycle. There is no assumed spatial correlation of daily variability. The
 standard deviation of the daily variability is controlled by command-line options:
 
-- :opt:`-pdd_sd_file`, which prescribes an input file.
+- :opt:`-pdd_sd_file`, which prescribes an input file containing :var:`air_temp_sd`
 - :opt:`-pdd_sd_period` (*years*), which interprets its data as periodic; see
   :ref:`sec-periodic-forcing`.
 - :opt:`-pdd_sd_reference_year`, which sets the reference model year; see
@@ -202,7 +202,7 @@ A file ``foo.nc`` used with ``-surface pdd -pdd_sd_file foo.nc`` should contain 
 deviation of near-surface air temperature in variable :var:`air_temp_sd`, and the
 corresponding time coordinate in variable :var:`time`. If ``-pdd_sd_file`` is not set,
 PISM uses a constant value for standard deviation, which is set by the
-:config:`surface.pdd.std_dev` configuration parameter. The default value is `5.0` degrees
+configuration parameter :config:`surface.pdd.std_dev`. The default value is `5.0` degrees
 :cite:`RitzEISMINT`. However, this approach is not recommended as it induces significant
 errors in modeled surface mass balance in both ice-covered and ice-free regions
 :cite:`RogozhinaRau2014`, :cite:`Seguinot2013`.
@@ -222,12 +222,12 @@ excursion above `0\!\phantom{|}^\circ \text{C}` multiplied by the duration (in d
 when it is above zero.
 
 In PISM there are two methods for computing the number of positive degree days. The first
-computes only the expected value, by the method described in :cite:`CalovGreve05`. This is the
-default when a PDD is chosen (i.e. option :opt:`-surface pdd`). The second is a Monte Carlo
-simulation of the white noise itself, chosen by adding the option :opt:`-pdd_rand`. This
-Monte Carlo simulation adds the same daily variation at every point, though the seasonal
-cycle is (generally) location dependent. If repeatable randomness is desired use
-:opt:`-pdd_rand_repeatable` instead of ``-pdd_rand``.
+computes only the expected value, by the method described in :cite:`CalovGreve05`. This is
+the default when a PDD is chosen (i.e. option :opt:`-surface pdd`). The second is a Monte
+Carlo simulation of the white noise itself, chosen by adding the option :opt:`-pdd_method
+random_process`. This Monte Carlo simulation adds the same daily variation at every point,
+though the seasonal cycle is (generally) location dependent. If repeatable randomness is
+desired use :opt:`-pdd_method repeatable_random_process` instead.
 
 .. figure:: figures/pdd-model-flowchart.png
    :name: fig-pdd-model
@@ -235,18 +235,18 @@ cycle is (generally) location dependent. If repeatable randomness is desired use
    PISM's positive degree day model. `F_s` and `F_i` are PDD factors for snow
    and ice, respectively; `\theta_{\text{refreeze}}` is the refreeze fraction.
 
-By default, the computation summarized in :numref:`fig-pdd-model` is performed
-every week. (This frequency is controlled by the :config:`surface.pdd.max_evals_per_year`
-parameter.) To compute mass balance during each week-long time-step, PISM keeps track of
-the current snow depth (using units of ice-equivalent thickness). This is necessary to
-determine if melt should be computed using the degree day factor for snow
+By default, the computation summarized in :numref:`fig-pdd-model` is performed every week.
+(This frequency is controlled by the parameter :config:`surface.pdd.max_evals_per_year`.)
+To compute mass balance during each week-long time-step, PISM keeps track of the current
+snow depth (using units of ice-equivalent thickness). This is necessary to determine if
+melt should be computed using the degree day factor for snow
 (:config:`surface.pdd.factor_snow`) or the corresponding factor for ice
 (:config:`surface.pdd.factor_ice`).
 
 A fraction of the melt controlled by the configuration parameter :config:`surface.pdd.refreeze`
 (`\theta_{\text{refreeze}}` in :numref:`fig-pdd-model`, default: `0.6`)
 refreezes. The user can select whether melted ice should be allowed to refreeze using the
-:config:`surface.pdd.refreeze_ice_melt` configuration flag.
+configuration flag :config:`surface.pdd.refreeze_ice_melt`.
 
 Since PISM does not have a principled firn model, the snow depth is set to zero at the
 beginning of the balance year. See :config:`surface.pdd.balance_year_start_day`. Default is
@@ -259,14 +259,34 @@ like these.
 
 This code also implements latitude- and mean July temperature dependent ice and snow
 factors using formulas (6) and (7) in :cite:`Faustoetal2009`; set :opt:`-pdd_fausto` to enable.
-The default standard deviation of the daily variability (:opt:`-pdd_std_dev` option) is
-2.53 degrees under the :opt:`-pdd_fausto` option :cite:`Faustoetal2009`. See also configuration
+The default standard deviation of the daily variability (option :opt:`-pdd_std_dev`) is
+2.53 degrees when :opt:`-pdd_fausto` is set :cite:`Faustoetal2009`. See also configuration
 parameters with the ``surface.pdd.fausto`` prefix.
 
 Note that when used with periodic climate data (air temperature and precipitation) that is
 read from a file (see section :ref:`sec-atmosphere-given`), use of
 :opt:`-timestep_hit_multiplies X` is recommended. (Here `X` is the length of the climate
 data period in years.)
+
+This model provides the following scalar:
+
+- :var:`surface_accumulation_rate`
+- :var:`surface_melt_rate`
+- :var:`surface_runoff_rate`
+
+and these 2D diagnostic quantities (averaged over reporting intervals; positive flux
+corresponds to ice gain):
+
+- :var:`surface_accumulation_flux`
+- :var:`surface_melt_flux`
+- :var:`surface_runoff_flux`
+
+This makes it easy to compare the surface mass balance computed by the model to its
+individual components:
+
+.. code::
+
+   SMB = surface_accumulation_flux - surface_runoff_flux
 
 .. _sec-surface-pik:
 
@@ -434,7 +454,7 @@ The caching modifier
 :|seealso|: :ref:`sec-ocean-cache`
     
 This modifier skips surface model updates, so that a surface model is called no more than
-every :opt:`-surface_cache_update_interval` years. A time-step of `1` year is used every
+every :opt:`-surface.cache.update_interval` years. A time-step of `1` year is used every
 time a surface model is updated.
 
 This is useful in cases when inter-annual climate variability is important, but one year
@@ -442,7 +462,7 @@ differs little from the next. (Coarse-grid paleo-climate runs, for example.)
 
 It takes the following options:
 
-- :opt:`-surface_cache_update_interval` (*years*) Specifies the minimum interval between
+- :opt:`-surface.cache.update_interval` (*years*) Specifies the minimum interval between
   updates. PISM may take longer time-steps if the adaptive scheme allows it, though.
 
 .. rubric:: Footnotes

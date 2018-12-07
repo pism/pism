@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,6 +18,7 @@
  */
 
 #include <sstream>
+#include <petscsys.h>
 
 #include "pism_options.hh"
 #include "error_handling.hh"
@@ -44,6 +45,8 @@ String::String(const std::string& option,
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to process option %s", option.c_str());
   }
 }
+
+static const int TEMPORARY_STRING_LENGTH = 32768;
 
 int String::process(const std::string& option,
                     const std::string& description,
@@ -159,7 +162,8 @@ Keyword::Keyword(const std::string& option,
   if (choices_set.find(word) != choices_set.end()) {
     this->set(word, true);
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid %s argument: '%s'. Please choose one of %s.\n",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "invalid %s argument: '%s'. Please choose one of %s.\n",
                                   option.c_str(), word.c_str(), list.c_str());
   }
 }
@@ -178,16 +182,24 @@ Integer::Integer(const std::string& option,
 
 
 IntegerList::IntegerList(const std::string& option,
-                         const std::string& description) {
-  RealList input(option, description);
+                         const std::string& description,
+                         const std::vector<int> &defaults) {
+  std::vector<double> default_value;
+
+  for (auto v : defaults) {
+    default_value.push_back(v);
+  }
+
+  RealList input(option, description, default_value);
   std::vector<int> result;
 
-  for (unsigned int k = 0; k < input->size(); ++k) {
-    if (fabs(input[k] - floor(input[k])) > 1e-6) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't process '%s': (%f is not an integer).",
-                                    option.c_str(), input[k]);
+  for (auto v : input.value()) {
+    if (fabs(v - floor(v)) > 1e-6) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Can't process '%s': (%f is not an integer).",
+                                    option.c_str(), v);
     }
-    result.push_back(static_cast<int>(input[k]));
+    result.push_back(static_cast<int>(v));
   }
   
   this->set(result, input.is_set());
@@ -222,9 +234,10 @@ Real::Real(const std::string& option,
 
 
 RealList::RealList(const std::string& option,
-                   const std::string& description) {
+                   const std::string& description,
+                   const std::vector<double> &default_value) {
   String input(option, description, "", DONT_ALLOW_EMPTY);
-  std::vector<double> result;
+  std::vector<double> result = default_value;
 
   if (input.is_set()) {
     std::istringstream arg(input);

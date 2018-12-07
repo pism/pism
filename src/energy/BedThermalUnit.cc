@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>
+#include <gsl/gsl_math.h>       // GSL_NAN
 
 #include "BedThermalUnit.hh"
 #include "pism/util/io/PIO.hh"
@@ -43,7 +43,7 @@ BTUGrid::BTUGrid(Context::ConstPtr ctx) {
 BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
   BTUGrid result(ctx);
 
-  InputOptions opts = process_input_options(ctx->com());
+  InputOptions opts = process_input_options(ctx->com(), ctx->config());
 
   const Logger &log = *ctx->log();
 
@@ -70,23 +70,23 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
     input_file.close();
   } else {
     // Bootstrapping or initializing without an input file.
-    options::Integer Mbz("-Mbz", "number of levels in bedrock thermal layer",
-                         result.Mbz);
+    options::Integer M("-Mbz", "number of levels in bedrock thermal layer",
+                       result.Mbz);
 
-    options::Real Lbz("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
-                      result.Lbz);
+    options::Real L("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
+                    result.Lbz);
 
-    if (Mbz.is_set() and Mbz == 1) {
+    if (M.is_set() and M == 1) {
       options::ignored(log, "-Lbz");
       result.Lbz = 0;
       result.Mbz = 1;
     } else {
-      if (Mbz.is_set() ^ Lbz.is_set()) {
+      if (M.is_set() ^ L.is_set()) {
         throw RuntimeError(PISM_ERROR_LOCATION, "please specify both -Mbz and -Lbz");
       }
 
-      result.Lbz = Lbz;
-      result.Mbz = Mbz;
+      result.Lbz = L;
+      result.Mbz = M;
     }
   }
 
@@ -110,7 +110,7 @@ BedThermalUnit* BedThermalUnit::FromOptions(IceGrid::ConstPtr grid,
 
 
 BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
-  : Component_TS(g) {
+  : Component(g) {
 
   {
     m_top_surface_flux.create(m_grid, "heat_flux_from_bedrock", WITHOUT_GHOSTS);
@@ -198,17 +198,10 @@ void BedThermalUnit::write_model_state_impl(const PIO &output) const {
   m_bottom_surface_flux.write(output);
 }
 
-std::map<std::string, Diagnostic::Ptr> BedThermalUnit::diagnostics_impl() const {
+DiagnosticList BedThermalUnit::diagnostics_impl() const {
   return {
     {"bheatflx",   Diagnostic::wrap(m_bottom_surface_flux)},
     {"hfgeoubed", Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this))}};
-}
-
-void BedThermalUnit::update_impl(double t, double dt) {
-  (void) t;
-  (void) dt;
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "BedThermalUnit::update(t, dt) is not implemented");
 }
 
 void BedThermalUnit::update(const IceModelVec2S &bedrock_top_temperature,

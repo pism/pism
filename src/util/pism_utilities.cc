@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <mpi.h>
-#include <fftw3.h>
+#include "pism_utilities.hh"
+
+#include <sstream>              // istringstream, ostringstream
+#include <cstdio>               // vsnprintf
+
+#include <mpi.h>                // MPI_Get_library_version
+#include <fftw3.h>              // fftw_version
 #include <gsl/gsl_version.h>
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
@@ -26,23 +31,25 @@
 #ifndef MPI_INCLUDED
 #define MPI_INCLUDED 1
 #endif
-#include <netcdf.h>
+#include <netcdf.h>             // nc_inq_libvers
 
 #if (PISM_USE_PROJ4==1)
-#include "pism/util/Proj.hh"
+#include "pism/util/Proj.hh"    // pj_release
 #endif
 
 #ifdef PISM_USE_JANSSON
-#include <jansson.h>
+#include <jansson.h>            // JANSSON_VERSION
 #endif
 
-#include "pism_utilities.hh"
-#include "pism_const.hh"
+#include <petsctime.h>          // PetscTime
+
 #include "error_handling.hh"
 
-#include <sstream>
-
 namespace pism {
+
+const char *PISM_DefaultConfigFile = PISM_DEFAULT_CONFIG_FILE;
+
+const char *PISM_Revision = PISM_REVISION;
 
 //! Returns true if `str` ends with `suffix` and false otherwise.
 bool ends_with(const std::string &str, const std::string &suffix) {
@@ -117,8 +124,8 @@ bool is_increasing(const std::vector<double> &a) {
   return true;
 }
 
-bool set_contains(const std::set<std::string> &S, const std::string &name) {
-  return (S.find(name) != S.end());
+bool member(const std::string &string, const std::set<std::string> &set) {
+  return (set.find(string) != set.end());
 }
 
 void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op) {
@@ -170,6 +177,8 @@ double GlobalSum(MPI_Comm comm, double local) {
   return result;
 }
 
+static const int TEMPORARY_STRING_LENGTH = 32768;
+
 std::string version() {
   char buffer[TEMPORARY_STRING_LENGTH];
   std::string result;
@@ -184,9 +193,11 @@ std::string version() {
   result += buffer;
   result += "\n";
 
+#ifdef PISM_PETSC_CONFIGURE_FLAGS
   snprintf(buffer, sizeof(buffer), "PETSc configure: %s\n",
            PISM_PETSC_CONFIGURE_FLAGS);
   result += buffer;
+#endif
 
   // OpenMPI added MPI_Get_library_version in version 1.7 (relatively recently).
 #ifdef OPEN_MPI
@@ -242,7 +253,7 @@ double wall_clock_hours(MPI_Comm com, double start_time) {
   ParallelSection rank0(com);
   try {
     if (rank == 0) {
-      result = (GetTime() - start_time) / 3600.0;
+      result = (get_time() - start_time) / 3600.0;
     }
   } catch (...) {
     rank0.failed();
@@ -359,5 +370,24 @@ std::string filename_add_suffix(const std::string &filename,
   return result;
 }
 
+double get_time() {
+  PetscLogDouble result;
+  PetscErrorCode ierr = PetscTime(&result); PISM_CHK(ierr, "PetscTime");
+  return result;
+}
+
+std::string printf(const char *format, ...) {
+  std::string result(1024, ' ');
+  va_list arglist;
+  size_t length;
+
+  va_start(arglist, format);
+  if((length = vsnprintf(&result[0], result.size(), format, arglist)) > result.size()) {
+    result.reserve(length);
+    vsnprintf(&result[0], result.size(), format, arglist);
+  }
+  va_end(arglist);
+  return result.substr(0, length);
+}
 
 } // end of namespace pism

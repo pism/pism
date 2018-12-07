@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,6 @@
 #include <gsl/gsl_interp.h>
 
 #include "IceGrid.hh"
-#include "pism_const.hh"
 #include "pism_utilities.hh"
 #include "Time.hh"
 #include "Time_Calendar.hh"
@@ -78,6 +77,8 @@ struct IceGrid::Impl {
   double dx;
   //! horizontal grid spacing
   double dy;
+  //! cell area (meters^2)
+  double cell_area;
   //! number of grid points in the x-direction
   unsigned int Mx;
   //! number of grid points in the y-direction
@@ -527,8 +528,8 @@ static OwnershipRanges compute_ownership_ranges(unsigned int Mx,
   }
 
   // check -procs_x and -procs_y
-  options::IntegerList procs_x("-procs_x", "Processor ownership ranges (x direction)");
-  options::IntegerList procs_y("-procs_y", "Processor ownership ranges (y direction)");
+  options::IntegerList procs_x("-procs_x", "Processor ownership ranges (x direction)", {});
+  options::IntegerList procs_y("-procs_y", "Processor ownership ranges (y direction)", {});
 
   if (procs_x.is_set()) {
     if (procs_x->size() != (unsigned int)Nx) {
@@ -618,6 +619,8 @@ void IceGrid::Impl::compute_horizontal_coordinates() {
   dx = compute_horizontal_spacing(Lx, Mx, cell_centered);
 
   dy = compute_horizontal_spacing(Ly, My, cell_centered);
+
+  cell_area = dx * dy;
 
   double
     x_min = x0 - Lx,
@@ -960,6 +963,10 @@ double IceGrid::dy() const {
   return m_impl->dy;
 }
 
+double IceGrid::cell_area() const {
+  return m_impl->cell_area;
+}
+
 //! Minimum vertical spacing.
 double IceGrid::dz_min() const {
   double result = m_impl->z.back();
@@ -1247,8 +1254,8 @@ void GridParameters::horizontal_extent_from_options() {
 
   // Alternatively: domain size and extent
   {
-    options::RealList x_range("-x_range", "min,max x coordinate values");
-    options::RealList y_range("-y_range", "min,max y coordinate values");
+    options::RealList x_range("-x_range", "min,max x coordinate values", {});
+    options::RealList y_range("-y_range", "min,max y coordinate values", {});
 
     if (x_range.is_set() and y_range.is_set()) {
       if (x_range->size() != 2 or y_range->size() != 2) {
@@ -1404,7 +1411,7 @@ const MappingInfo& IceGrid::get_mapping_info() const {
 
 void IceGrid::set_mapping_info(const MappingInfo &info) {
   m_impl->mapping_info = info;
-  // FIXME: re-compute cell areas and lat/lon
+  // FIXME: re-compute lat/lon coordinates
 }
 
 

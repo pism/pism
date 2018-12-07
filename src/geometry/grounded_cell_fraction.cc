@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,329 +17,352 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <vector>
+#include <cassert>
+#include <cmath>                // fabs
 
-#include "pism/util/iceModelVec.hh"
+#include "grounded_cell_fraction.hh"
+
 #include "pism/util/error_handling.hh"
-#include "pism/util/Mask.hh"
-#include "pism/util/IceModelVec2CellType.hh"
-#include "pism/util/FETools.hh"
+#include "pism/util/pism_utilities.hh" // clip
+#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 
-/**
- * Compute `lambda`, the grounding line position (LI in [@ref Gladstoneetal2010]).
+struct Point {
+  double x;
+  double y;
+};
+
+/*!
+ * Consider the right triangle A(0,0) - B(1,0) - C(0,1).
  *
- * @param mu `mu = ice_density / water_density`
- * @param sea_level sea level elevation
- * @param H0 ice thickness at the first point
- * @param b0 bed elevation at the first point
- * @param H1 ice thickness at the second point
- * @param b1 bed elevation at the second point
+ * Define a linear function z = a + (b - a) * x + (c - a) * y, where a, b, and c are its
+ * values at points A, B, and C, respectively.
  *
- * Here `mu * H` is the depth of the ice below sea water and `sea_level - b` is the ocean depth.
+ * Our goal is to find the fraction of the area of ABC in where z > 0.
  *
- * If `mu * H` is greater than `sea_level - b` then there is too much ice for ice to float.
+ * We note that z(x,y) is continuous, so unless a, b, and c have the same sign the line
  *
- * @return `lambda`, a number between 0 and 1
+ * z = 0
+ *
+ * will intersect exactly two of the sides (possibly at a node of ABC).
+ *
+ * So, if the line (z = 0) does not intersect BC, for example, then it has to intersect AB
+ * and AC.
+ *
+ * This method can be applied to arbitrary triangles. It does not even matter if values at
+ * triangle nodes (a, b, c) are listed in the same order. (For any two triangles on a
+ * plane there exists an affine map that takes one to the other. Also, affine maps
+ * preserve ratios of areas of figures.)
  */
-static inline double gl_position(double mu,
-                                 double sea_level,
-                                 double H0, double b0,
-                                 double H1, double b1) {
-  const double
-    alpha = mu * H0 - (sea_level - b0),
-    beta = mu * H1 - (sea_level - b1);
 
-  if (alpha - beta == 0.0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "cannot determine grounding line position. Please submit a bug report.");
-  }
-
-  double lambda = alpha / (alpha - beta);
-
-  return std::max(0.0, std::min(lambda, 1.0));
+/*!
+ * Compute the area of a triangle on a plane using the "shoelace formula."
+ */
+static inline double triangle_area(const Point &a, const Point &b, const Point &c) {
+  // note: fabs should not be needed since we traverse all triangle nodes
+  // counter-clockwise, but it is good to be safe
+  return 0.5 * fabs((a.x - c.x) * (b.y - a.y) - (a.x - b.x) * (c.y - a.y));
 }
 
+/*!
+ * Compute the coordinates of the intersection of (z = 0) with the side AB.
+ */
+Point intersect_ab(double a, double b) {
+  if (a != b) {
+    return {a / (a - b), 0.0};
+  } else {
+    return {-1.0, -1.0};        // no intersection
+  }
+}
 
-/**
-   @brief Updates the fractional "flotation mask".
+/*!
+ * Compute the coordinates of the intersection of (z = 0) with the side BC.
+ */
+Point intersect_bc(double b, double c) {
+  if (b != c) {
+    return {c / (c - b), b / (b - c)};
+  } else {
+    return {-1.0, -1.0};        // no intersection
+  }
+}
 
-   This mask ranges from 0 to 1 and is equal to the fraction of the
-   cell (by area) that is grounded.
+/*!
+ * Compute the coordinates of the intersection of (z = 0) with the side AC.
+ */
+Point intersect_ac(double a, double c) {
+  if (a != c) {
+    return {0.0, a / (a - c)};
+  } else {
+    return {-1.0, -1.0};        // no intersection
+  }
+}
 
-   Currently it is used to adjust the basal drag near the grounding
-   line in the SSAFD stress balance model and the basal melt rate
-   computation in the energy balance code.
+/*!
+ * Return true if a point p is not a valid point on a side of the triangle
+ * (0,0)-(1,0)-(0,1).
+ *
+ * This is not a complete test (for example, it does not check if y = 1 - x for points on
+ * the hypotenuse). The point of this is to exclude the kinds of invalid points we are
+ * likely to see, not all of them.
+ *
+ * Note that we use (-1, -1) to indicate "invalid" points in the rest of the code and
+ * these are easy to detect: they require only one comparison.
+ */
+bool invalid(const Point &p) {
+  if (p.x < 0.0 or p.x > 1.0 or p.y < 0.0 or p.y > 1.0) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
-   We use the 1D (flow line) parameterization of the sub-grid
-   grounding line position due to [@ref Gladstoneetal2010], (section
-   3.1.1) and generalize it to the case of arbitrary sea level
-   elevation. Then this sub-grid grounding line position is used to
-   compute the grounded area fraction for each cell.
+/*!
+ * Return true if two points are the same.
+ */
+static bool same(const Point &a, const Point &b) {
+  double threshold = 1e-12;
+  return fabs(a.x - b.x) < threshold and fabs(a.y - b.y) < threshold;
+}
 
-   We use the "LI" 1D grounding line position parameterization in "x"
-   and "y" directions *independently*. The grounding line positions in
-   the "x" and "y" directions (@f$ \lambda_x @f$ and @f$ \lambda_y
-   @f$) are then interpreted as *width* and *height* of a rectangular
-   sub-set of the cell. The grounded area is computed as the product
-   of these two: @f$ A_g = \lambda_x \times \lambda_y. @f$
+/*!
+ * Consider the right triangle A(0,0) - B(1,0) - C(0,1).
+ *
+ * Define a linear function z = a + (b - a) * x + (c - a) * y, where a, b, and c are its
+ * values at points A, B, and C, respectively.
+ *
+ * Our goal is to find the fraction of the triangle ABC in where z > 0.
+ *
+ * This corresponds to the grounded area fraction if z is the flotation criterion
+ * function.
+ */
+double grounded_area_fraction(double a, double b, double c) {
 
-   Consider a cell at `(i,j)` and assume that the ice is grounded
-   there and floating at `(i+1,j)`.
+  if (a > 0.0 and b > 0.0 and c > 0.0) {
+    return 1.0;
+  }
 
-   Assume that the ice thickness and bedrock elevation change linearly
-   from `(i,j)` to `(i+1,j)` and drop the `j` index for clarity:
+  if (a <= 0.0 and b <= 0.0 and c <= 0.0) {
+    return 0.0;
+  }
 
-   @f{align*}{
-   H(\lambda) &= H_{i}(1 - \lambda) + H_{i+1}\lambda,\\
-   b(\lambda) &= b_{i}(1 - \lambda) + b_{i+1}\lambda.\\
-   @f}
+  // the area of the triangle (0,0)-(1,0)-(0,1)
+  const double total_area = 0.5;
 
-   Here @f$ \lambda @f$ is the dimensionless variable parameterizing
-   the sub-grid grounding line position, ranging from 0 to 1.
+  const Point
+    ab = intersect_ab(a, b),
+    bc = intersect_bc(b, c),
+    ac = intersect_ac(a, c);
 
-   Now, substituting @f$ b(\lambda) @f$ and @f$ H(\lambda) @f$ into
-   the floatation criterion
+  if (invalid(bc)) {
+    assert(not (invalid(ab) or invalid(ac)));
 
-   @f{align*}{
-   \mu\cdot H(\lambda) &= z_{\text{sea level}} - b(\lambda),\\
-   \mu &= \rho_{\text{ice}} / \rho_{\text{sea water}}.
-   @f}
+    double ratio = triangle_area({0.0, 0.0}, ab, ac) / total_area;
+    assert((ratio >= 0.0) and (ratio <= 1.0));
 
-   and solving for @f$ \lambda @f$, we get
+    if (a > 0.0) {
+      return ratio;
+    } else {
+      return 1.0 - ratio;
+    }
+  }
 
-   @f{align*}{
-   \lambda_{g} &= \frac{\alpha}{\alpha - \beta}\\
-   & \text{where} \\
-   \alpha &= \mu\cdot H_{i} + b_{i} - z_{\text{sea level}}\\
-   \beta &= \mu\cdot H_{i+1} + b_{i+1} - z_{\text{sea level}}.
-   @f}
+  if (invalid(ac)) {
+    assert(not (invalid(ab) or invalid(bc)));
 
-   Note that [@ref Gladstoneetal2010] describe a parameterization of
-   the grounding line position within a cell defined as the interval
-   from the grid point `(i)` to the grid point `(i+1)`, with the ice
-   thickness @f$ H @f$ and the bed elevation @f$ b @f$ defined *at
-   grid points* (boundaries of a 1D cell).
+    double ratio = triangle_area({1.0, 0.0}, bc, ab) / total_area;
+    assert((ratio >= 0.0) and (ratio <= 1.0));
 
-   Here we compute a grounded fraction of the **cell centered at the
-   grid point**.
+    if (b > 0.0) {
+      return ratio;
+    } else {
+      return 1.0 - ratio;
+    }
+  }
 
-   FIXME: sometimes alpha<0 (slightly below flotation) even though the
-   mask says grounded
+  if (invalid(ab)) {
+    assert(not (invalid(bc) or invalid(ac)));
 
-   @param[in] ice_density ice density, kg/m3
-   @param[in] ocean_density ocean (sea water) density, kg/m3
-   @param[in] sea_level sea level elevation, m
-   @param[in] ice_thickness ice thickness (a 2D field)
-   @param[in] bed_topography bed topography (a 2D field)
-   @param[in] mask cell type mask (a 2D field)
-   @param[out] result resulting grounded fraction
-   @param[out] result_x grounding line position in the x direction (1D parameterization, for debugging)
-   @param[out] result_y grounding line position in the y direction (1D parameterization, for debugging)
+    double ratio = triangle_area({0.0, 1.0}, ac, bc) / total_area;
+    assert((ratio >= 0.0) and (ratio <= 1.0));
+
+    if (c > 0.0) {
+      return ratio;
+    } else {
+      return 1.0 - ratio;
+    }
+  }
+
+  // Note that we know that ab, bc, and ac are all valid.
+
+  // the a == 0 case, the line F = 0 goes through A
+  if (same(ab, ac)) {
+    double ratio = triangle_area({1.0, 0.0}, bc, ab) / total_area;
+    assert((ratio >= 0.0) and (ratio <= 1.0));
+
+    if (b > 0.0) {
+      return ratio;
+    } else {
+      return 1.0 - ratio;
+    }
+  }
+
+  // the b == 0 case and the c == 0 case
+  if (same(ab, bc) or same(ac, bc)) {
+    double ratio = triangle_area({0.0, 0.0}, ab, ac) / total_area;
+    assert((ratio >= 0.0) and (ratio <= 1.0));
+
+    if (a > 0.0) {
+      return ratio;
+    } else {
+      return 1.0 - ratio;
+    }
+  }
+
+  // Note: the case of F=0 coinciding with a side of the triangle is covered by if clauses
+  // above. For example, when F=0 coincides with AC, we have a = c = 0 and intersect_ac(a, c)
+  // returns an invalid intersection point.
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "the logic in grounded_area_fraction failed! Please submit a bug report.");
+}
+
+// This structure extracts the box stencil information from an IceModelVec2S.
+struct Box {
+  double ij, n, nw, w, sw, s, se, e, ne;
+
+  Box(double ij_,
+      double n_, double nw_, double w_, double sw_,
+      double s_, double se_, double e_, double ne_) {
+    ij = ij_;
+    n  = n_;
+    nw = nw_;
+    w  = w_;
+    sw = sw_;
+    s  = s_;
+    se = se_;
+    e  = e_;
+    ne = ne_;
+  }
+  Box(const IceModelVec2S &X, int i, int j) {
+    const int
+      E = i + 1,
+      W = i - 1,
+      N = j + 1,
+      S = j - 1;
+    ij = X(i, j);
+    n  = X(i, N);
+    nw = X(W, N);
+    w  = X(W, j);
+    sw = X(W, S);
+    s  = X(i, S);
+    se = X(E, S);
+    e  = X(E, j);
+    ne = X(E, N);
+  }
+};
+
+/*!
+ * The flotation criterion.
+ */
+static double F(double SL, double B, double H, double alpha) {
+  double
+    water_depth = SL - B,
+    shelf_depth = H * alpha;
+  return shelf_depth - water_depth;
+}
+
+/*!
+ * Compute the flotation criterion at all the points in the box stencil.
+ */
+static Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
+  return Box(F(SL.ij, B.ij, H.ij, alpha),
+             F(SL.n,  B.n,  H.n,  alpha),
+             F(SL.nw, B.nw, H.nw, alpha),
+             F(SL.w,  B.w,  H.w,  alpha),
+             F(SL.sw, B.sw, H.sw, alpha),
+             F(SL.s,  B.s,  H.s,  alpha),
+             F(SL.se, B.se, H.se, alpha),
+             F(SL.e,  B.e,  H.e,  alpha),
+             F(SL.ne, B.ne, H.ne, alpha));
+}
+
+/*!
+ * @param[in] ice_density ice density, kg/m3
+ * @param[in] ocean_density ocean_density, kg/m3
+ * @param[in] sea_level sea level (flotation) elevation, m
+ * @param[in] ice_thickness ice thickness, m
+ * @param[in] bed_topography bed elevation, m
+ * @param[out] result grounded cell fraction, between 0 (floating) and 1 (grounded)
  */
 void compute_grounded_cell_fraction(double ice_density,
-                             double ocean_density,
-                             const IceModelVec2S &sea_level,
-                             const IceModelVec2S &ice_thickness,
-                             const IceModelVec2S &bed_topography,
-                             const IceModelVec2CellType &mask,
-                             IceModelVec2S &result,
-                             IceModelVec2S *result_x,
-                             IceModelVec2S *result_y) {
+                                    double ocean_density,
+                                    const IceModelVec2S &sea_level,
+                                    const IceModelVec2S &ice_thickness,
+                                    const IceModelVec2S &bed_topography,
+                                    IceModelVec2S &result) {
+  IceGrid::ConstPtr grid = result.grid();
+  double alpha = ice_density / ocean_density;
 
-  const double mu = ice_density / ocean_density;
-
-  IceModelVec::AccessList list{&sea_level, &ice_thickness, &bed_topography, &mask, &result};
-
-  if (result_x != NULL) {
-    list.add(*result_x);
-  }
-  if (result_y != NULL) {
-    list.add(*result_y);
-  }
-
-  IceGrid::ConstPtr grid = result.get_grid();
+  IceModelVec::AccessList list{&sea_level, &ice_thickness, &bed_topography, &result};
 
   ParallelSection loop(grid->com);
   try {
     for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const StarStencil<int>
-        m = mask.int_star(i, j);
-      const StarStencil<double>
-        H = ice_thickness.star(i, j),
-        b = bed_topography.star(i, j);
+      Box
+        S(sea_level,      i, j),
+        H(ice_thickness,  i, j),
+        B(bed_topography, i, j);
 
-      const Direction dirs[4] = {North, East, South, West};
+      Box f = F(S, B, H, alpha);
 
-      // Contributions from the 4 directions
-      std::vector<double> lambda(4, 0.0);
+      /*
+        NW----------------N----------------NE
+        |                 |                 |
+        |                 |                 |
+        |       nw--------n--------ne       |
+        |        |        |        |        |
+        |        |        |        |        |
+        W--------w--------o--------e--------E
+        |        |        |        |        |
+        |        |        |        |        |
+        |       sw--------s--------se       |
+        |                 |                 |
+        |                 |                 |
+        SW----------------S----------------SE
+      */
 
-      if (mask::grounded(m.ij)) {
+      double
+        f_o  = f.ij,
+        f_sw = 0.25 + (f.sw + f.s + f.ij + f.w),
+        f_se = 0.25 * (f.s + f.se + f.e + f.ij),
+        f_ne = 0.25 * (f.ij + f.e + f.ne + f.n),
+        f_nw = 0.25 * (f.w + f.ij + f.n + f.nw);
 
-        for (int k = 0; k < 4; ++k) {
-          const Direction direction = dirs[k];
+      double
+        f_s = 0.5 * (f.ij + f.s),
+        f_e = 0.5 * (f.ij + f.e),
+        f_n = 0.5 * (f.ij + f.n),
+        f_w = 0.5 * (f.ij + f.w);
 
-          if (mask::grounded(m[direction])) {
-            lambda[k] = 0.5;
-          } else {
-            const double L = gl_position(mu, sea_level(i,j), H.ij, b.ij, H[direction], b[direction]);
-            lambda[k] = std::min(L, 0.5);
-          }
-        }
+      double fraction = 0.125 * (grounded_area_fraction(f_o, f_ne, f_n) +
+                                 grounded_area_fraction(f_o, f_n,  f_nw) +
+                                 grounded_area_fraction(f_o, f_nw, f_w) +
+                                 grounded_area_fraction(f_o, f_w,  f_sw) +
+                                 grounded_area_fraction(f_o, f_sw, f_s) +
+                                 grounded_area_fraction(f_o, f_s,  f_se) +
+                                 grounded_area_fraction(f_o, f_se, f_e) +
+                                 grounded_area_fraction(f_o, f_e,  f_ne));
 
-      } else if (mask::ocean(m.ij)) {
+      result(i, j) = clip(fraction, 0.0, 1.0);
 
-        for (int k = 0; k < 4; ++k) {
-          const Direction direction = dirs[k];
-
-          if (mask::grounded(m[direction])) {
-            const double L = gl_position(mu, sea_level(i,j), H[direction], b[direction], H.ij, b.ij);
-            lambda[k] = std::max(L - 0.5, 0.0);
-          } else {
-            lambda[k] = 0.0;
-          }
-        }
-
-      } else { // end of the "mask::ocean(m.ij)" case
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ice is neither grounded nor floating (ocean) at (%d,%d)."
-                                      " This should not happen.", i, j);
-      }
-
-      const double
-        lambda_x = lambda[East] + lambda[West],
-        lambda_y = lambda[South] + lambda[North];
-
-      if (result_x != NULL) {
-        (*result_x)(i, j) = lambda_x;
-      }
-      if (result_y != NULL) {
-        (*result_y)(i, j) = lambda_y;
-      }
-
-      // Note: in the flowline case (in general: when one of lambda_[xy] is zero) this does not work
-      // very well, but I don't know how to get it "right"... (CK)
-      result(i, j) = lambda_x * lambda_y;
-
-    } // end of the loop over grid points
+    }
   } catch (...) {
     loop.failed();
   }
   loop.check();
-
-}
-
-void compute_grounded_cell_fraction(double ice_density, double ocean_density,
-                                    const IceModelVec2S &sea_level,
-                                    const IceModelVec2S &ice_thickness,
-                                    const IceModelVec2S &bed_topography,
-                                    IceModelVec2S &result) {
-
-  IceGrid::ConstPtr grid = ice_thickness.get_grid();
-
-  GeometryCalculator gc(*grid->ctx()->config());
-
-  const double
-    dx = grid->dx(),
-    dy = grid->dy();
-
-  fem::ElementIterator element_index(*grid);
-  fem::ElementMap element(*grid);
-
-  // The quadrature used to approximate the integral.
-  fem::Q0Quadrature1e4 Q0(dx, dy, 1.0);
-  // Quadrature-point values of the basis functions used to approximate the integrand.
-  fem::Q1Quadrature1e4 Q1(dx, dy, 1.0);
-
-  const unsigned int Nk = fem::q1::n_chi;
-  const unsigned int Nq = Q1.n();
-  // Jacobian times weights for quadrature.
-  const double* W = Q1.weights();
-
-  IceModelVec::AccessList list{&sea_level, &ice_thickness, &bed_topography, &result};
-
-  // Iterate over the elements.
-  const int
-    xs = element_index.xs,
-    xm = element_index.xm,
-    ys = element_index.ys,
-    ym = element_index.ym;
-
-  // An Nq by Nk array of test function values.
-  const fem::Germs *psi = Q0.test_function_values();
-
-  const double alpha = ice_density / ocean_density;
-
-  ParallelSection loop(grid->com);
-  try {
-    int M[Nk];
-    double grounded_area[Nk], sl_nodal[Nk], b_nodal[Nk], H_nodal[Nk];
-    std::vector<double> sl(Nq), b(Nq), H(Nq);
-
-    for (int j = ys; j < ys + ym; j++) {
-      for (int i = xs; i < xs + xm; i++) {
-        // Initialize the map from global to element degrees of freedom.
-        element.reset(i, j);
-
-        element.nodal_values(sea_level,      sl_nodal);
-        element.nodal_values(bed_topography, b_nodal);
-        element.nodal_values(ice_thickness,  H_nodal);
-
-        for (unsigned int k = 0; k < Nk; ++k) {
-          M[k] = gc.mask(sl_nodal[k], b_nodal[k], H_nodal[k]);
-        }
-
-        const bool fully_floating = (mask::ocean(M[0]) and mask::ocean(M[1]) and
-                                     mask::ocean(M[2]) and mask::ocean(M[3]));
-
-        const bool fully_grounded = (mask::grounded(M[0]) and mask::grounded(M[1]) and
-                                     mask::grounded(M[2]) and mask::grounded(M[3]));
-
-        // zero out contributions in preparation
-        for (unsigned int k = 0; k < Nk; k++) {
-          grounded_area[k] = 0.0;
-        }
-
-        if (fully_grounded) {
-          // contribute 1/4 to all the cell-centered cells corresponding to the nodes of this
-          // element
-          for (unsigned int k = 0; k < Nk; k++) {
-            grounded_area[k] = 0.25 * dx * dy;
-          }
-        } else if (fully_floating) {
-          // no contribution
-        } else {
-          quadrature_point_values(Q1, sl_nodal, &sl[0]);
-          quadrature_point_values(Q1, b_nodal,  &b[0]);
-          quadrature_point_values(Q1, H_nodal,  &H[0]);
-
-          for (unsigned int q = 0; q < Nq; q++) {
-
-            // Here F is the indicator function of the "grounded" subset of the plane.
-            const double
-              water_depth = sl[q] - b[q],
-              shelf_depth = H[q] * alpha,
-              F           = shelf_depth >= water_depth ? 1.0 : 0.0,
-              WF          = W[q] * F;
-
-            // Loop over test functions.
-            for (unsigned int k = 0; k < Nk; k++) {
-              grounded_area[k] += WF * psi[q][k].val;
-            } // k (test functions)
-          }   // q (quadrature points)
-        }
-
-        element.add_contribution(grounded_area, result);
-      } // i-loop
-    }   // j-loop
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  // divide grounded area by the cell area to get area fractions
-  result.scale(1.0 / (dx * dy));
 }
 
 } // end of namespace pism

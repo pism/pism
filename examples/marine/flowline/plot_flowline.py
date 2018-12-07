@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 try:
     from netCDF4 import Dataset as NC
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 pism_output = "flowline_result_50km.nc"
@@ -19,11 +19,11 @@ pism_output = "flowline_result_20km.nc"
 
 # load the PISM output
 try:
-    print "Loading PISM output from '%s'..." % (pism_output),
+    print("Loading PISM output from '%s'..." % (pism_output), end=' ')
     infile = NC(pism_output, 'r')
 
 except Exception:
-    print """ERROR!\nSpecify NetCDF file from PISM run with -p."""
+    print("""ERROR!\nSpecify NetCDF file from PISM run with -p.""")
     exit(-1)
 
 printfile = pism_output[:-3] + ".pdf"

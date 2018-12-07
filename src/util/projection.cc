@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -210,7 +210,7 @@ static double triangle_area(double *A, double *B, double *C) {
 }
 
 void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
-  IceGrid::ConstPtr grid = result.get_grid();
+  IceGrid::ConstPtr grid = result.grid();
 
   Proj geocent("+proj=geocent +datum=WGS84 +ellps=WGS84");
   Proj pism(projection);
@@ -275,7 +275,7 @@ static void compute_lon_lat(const std::string &projection,
 // +-----------+
 // (sw)        (se)
 
-  IceGrid::ConstPtr grid = result.get_grid();
+  IceGrid::ConstPtr grid = result.grid();
 
   IceModelVec::AccessList list{&result};
 
@@ -303,7 +303,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
   Proj lonlat("+proj=latlong +datum=WGS84 +ellps=WGS84");
   Proj pism(projection);
 
-  IceGrid::ConstPtr grid = result.get_grid();
+  IceGrid::ConstPtr grid = result.grid();
 
   double dx2 = 0.5 * grid->dx(), dy2 = 0.5 * grid->dy();
   double x_offsets[] = {-dx2, dx2, dx2, -dx2};
@@ -340,7 +340,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
 void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
   (void) projection;
 
-  IceGrid::ConstPtr grid = result.get_grid();
+  IceGrid::ConstPtr grid = result.grid();
   result.set(grid->dx() * grid->dy());
 }
 

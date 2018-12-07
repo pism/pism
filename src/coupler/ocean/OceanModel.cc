@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,143 +17,260 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <gsl/gsl_math.h>       // GSL_NAN
+
 #include "pism/coupler/OceanModel.hh"
 #include "pism/util/iceModelVec.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace ocean {
+
+IceModelVec2S::Ptr OceanModel::allocate_shelf_base_temperature(IceGrid::ConstPtr g) {
+  IceModelVec2S::Ptr result(new IceModelVec2S(g, "shelfbtemp", WITHOUT_GHOSTS));
+  result->set_attrs("diagnostic",
+                    "ice temperature at the bottom of floating ice",
+                    "Kelvin", "");
+  return result;
+}
+
+IceModelVec2S::Ptr OceanModel::allocate_shelf_base_mass_flux(IceGrid::ConstPtr g) {
+  IceModelVec2S::Ptr result(new IceModelVec2S(g, "shelfbmassflux", WITHOUT_GHOSTS));
+
+  result->set_attrs("diagnostic", "shelf base mass flux",
+                    "kg m-2 s-1", "");
+  result->metadata().set_string("glaciological_units", "kg m-2 year-1");
+
+  return result;
+}
+
+IceModelVec2S::Ptr OceanModel::allocate_melange_back_pressure(IceGrid::ConstPtr g) {
+  IceModelVec2S::Ptr result(new IceModelVec2S(g,
+                                              "melange_back_pressure_fraction", WITHOUT_GHOSTS));
+
+  result->set_attrs("diagnostic",
+                    "melange back pressure fraction",
+                    "1", "");
+  result->set(0.0);
+
+  return result;
+}
+
+// "modifier" constructor
+OceanModel::OceanModel(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> input)
+  : Component(g), m_input_model(input) {
+
+  if (not input) {
+    m_melange_back_pressure_fraction = allocate_melange_back_pressure(g);
+    // set the default value
+    m_melange_back_pressure_fraction->set(0.0);
+  }
+}
+
+// "model" constructor
 OceanModel::OceanModel(IceGrid::ConstPtr g)
-  : Component_TS(g), m_sea_level(0) {
+  : OceanModel(g, nullptr) {
   // empty
 }
+
 
 OceanModel::~OceanModel() {
   // empty
 }
 
-void OceanModel::init() {
-  this->init_impl();
+void OceanModel::init(const Geometry &geometry) {
+  this->init_impl(geometry);
 }
 
-double OceanModel::sea_level_elevation() const {
-  double result;
-  this->sea_level_elevation_impl(result);
-  return result;
+void OceanModel::init_impl(const Geometry &geometry) {
+  if (m_input_model) {
+    m_input_model->init(geometry);
+  }
 }
 
-void OceanModel::shelf_base_temperature(IceModelVec2S &result) const {
-  this->shelf_base_temperature_impl(result);
+void OceanModel::update(const Geometry &geometry, double t, double dt) {
+  this->update_impl(geometry, t, dt);
 }
 
-void OceanModel::shelf_base_mass_flux(IceModelVec2S &result) const {
-  this->shelf_base_mass_flux_impl(result);
+
+const IceModelVec2S& OceanModel::shelf_base_mass_flux() const {
+  return shelf_base_mass_flux_impl();
 }
 
-void OceanModel::melange_back_pressure_fraction(IceModelVec2S &result) const {
-  this->melange_back_pressure_fraction_impl(result);
+const IceModelVec2S& OceanModel::shelf_base_temperature() const {
+  return shelf_base_temperature_impl();
 }
 
-/** Set `result` to the melange back pressure fraction.
- *
- * This default implementation sets `result` to 0.0.
- *
- * @param[out] result back pressure fraction
- *
- * @return 0 on success
- */
-void OceanModel::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
-  result.set(0.0);
+const IceModelVec2S& OceanModel::melange_back_pressure_fraction() const {
+  return melange_back_pressure_fraction_impl();
 }
 
-std::map<std::string, Diagnostic::Ptr> OceanModel::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = {
-    {"sea_level",                      Diagnostic::Ptr(new PO_sea_level(this))},
+// pass-through default implementations for "modifiers"
+
+void OceanModel::update_impl(const Geometry &geometry, double t, double dt) {
+  if (m_input_model) {
+    m_input_model->update(geometry, t, dt);
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
+MaxTimestep OceanModel::max_timestep_impl(double t) const {
+  if (m_input_model) {
+    return m_input_model->max_timestep(t);
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
+void OceanModel::define_model_state_impl(const PIO &output) const {
+  if (m_input_model) {
+    return m_input_model->define_model_state(output);
+  } else {
+    // no state to define
+  }
+}
+
+void OceanModel::write_model_state_impl(const PIO &output) const {
+  if (m_input_model) {
+    return m_input_model->write_model_state(output);
+  } else {
+    // no state to write
+  }
+}
+
+const IceModelVec2S& OceanModel::shelf_base_temperature_impl() const {
+  if (m_input_model) {
+    return m_input_model->shelf_base_temperature();
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
+const IceModelVec2S& OceanModel::shelf_base_mass_flux_impl() const {
+  if (m_input_model) {
+    return m_input_model->shelf_base_mass_flux();
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
+const IceModelVec2S& OceanModel::melange_back_pressure_fraction_impl() const {
+  if (m_input_model) {
+    return m_input_model->melange_back_pressure_fraction();
+  } else {
+    return *m_melange_back_pressure_fraction;
+  }
+}
+
+namespace diagnostics {
+
+/*! @brief Shelf base temperature. */
+class PO_shelf_base_temperature : public Diag<OceanModel>
+{
+public:
+  PO_shelf_base_temperature(const OceanModel *m)
+    : Diag<OceanModel>(m) {
+
+    /* set metadata: */
+    m_vars = {SpatialVariableMetadata(m_sys, "shelfbtemp")};
+
+    set_attrs("ice temperature at the basal surface of ice shelves", "",
+              "Kelvin", "Kelvin", 0);
+  }
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "shelfbtemp", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+
+    result->copy_from(model->shelf_base_temperature());
+
+    return result;
+  }
+};
+
+
+
+/*! @brief Shelf base mass flux. */
+class PO_shelf_base_mass_flux : public Diag<OceanModel>
+{
+public:
+  PO_shelf_base_mass_flux(const OceanModel *m)
+    : Diag<OceanModel>(m) {
+
+    /* set metadata: */
+    m_vars = {SpatialVariableMetadata(m_sys, "shelfbmassflux")};
+
+    set_attrs("mass flux at the basal surface of ice shelves", "",
+              "kg m-2 s-1", "kg m-2 s-1", 0);
+  }
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "shelfbmassflux", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+
+    result->copy_from(model->shelf_base_mass_flux());
+
+    return result;
+  }
+};
+
+
+
+/*! @brief Melange back pressure fraction. */
+class PO_melange_back_pressure_fraction : public Diag<OceanModel>
+{
+public:
+  PO_melange_back_pressure_fraction(const OceanModel *m)
+    : Diag<OceanModel>(m) {
+
+    /* set metadata: */
+    m_vars = {SpatialVariableMetadata(m_sys, "melange_back_pressure_fraction")};
+
+    set_attrs("dimensionless pressure fraction at calving fronts due to presence of melange ", "",
+              "1", "1", 0);
+  }
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid,
+                                                "melange_back_pressure_fraction", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+
+    result->copy_from(model->melange_back_pressure_fraction());
+
+    return result;
+  }
+};
+
+} // end of namespace diagnostics
+
+DiagnosticList OceanModel::diagnostics_impl() const {
+  using namespace diagnostics;
+  DiagnosticList result = {
     {"shelfbtemp",                     Diagnostic::Ptr(new PO_shelf_base_temperature(this))},
     {"shelfbmassflux",                 Diagnostic::Ptr(new PO_shelf_base_mass_flux(this))},
     {"melange_back_pressure_fraction", Diagnostic::Ptr(new PO_melange_back_pressure_fraction(this))}
   };
-  return result;
+
+  if (m_input_model) {
+    return combine(m_input_model->diagnostics(), result);
+  } else {
+    return result;
+  }
 }
 
-PO_sea_level::PO_sea_level(const OceanModel *m)
-  : Diag<OceanModel>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "sea_level")};
-
-  set_attrs("sea level elevation, relative to the geoid", "",
-            "meters", "meters", 0);
+TSDiagnosticList OceanModel::ts_diagnostics_impl() const {
+  if (m_input_model) {
+    return m_input_model->ts_diagnostics();
+  } else {
+    return {};
+  }
 }
 
-IceModelVec::Ptr PO_sea_level::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "sea_level", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-
-  result->set(model->sea_level_elevation());
-
-  return result;
-}
-
-PO_shelf_base_temperature::PO_shelf_base_temperature(const OceanModel *m)
-  : Diag<OceanModel>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "shelfbtemp")};
-
-  set_attrs("ice temperature at the basal surface of ice shelves", "",
-            "Kelvin", "Kelvin", 0);
-}
-
-IceModelVec::Ptr PO_shelf_base_temperature::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "shelfbtemp", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-
-  model->shelf_base_temperature(*result);
-
-  return result;
-}
-
-PO_shelf_base_mass_flux::PO_shelf_base_mass_flux(const OceanModel *m)
-  : Diag<OceanModel>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "shelfbmassflux")};
-
-  set_attrs("mass flux at the basal surface of ice shelves", "",
-            "kg m-2 s-1", "kg m-2 s-1", 0);
-}
-
-IceModelVec::Ptr PO_shelf_base_mass_flux::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "shelfbmassflux", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-
-  model->shelf_base_mass_flux(*result);
-
-  return result;
-}
-
-PO_melange_back_pressure_fraction::PO_melange_back_pressure_fraction(const OceanModel *m)
-  : Diag<OceanModel>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "melange_back_pressure_fraction")};
-
-  set_attrs("dimensionless pressure fraction at calving fronts due to presence of melange ", "",
-            "1", "1", 0);
-}
-
-IceModelVec::Ptr PO_melange_back_pressure_fraction::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "melange_back_pressure_fraction", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-
-  model->melange_back_pressure_fraction(*result);
-
-  return result;
-}
 
 } // end of namespace ocean
 } // end of namespace pism

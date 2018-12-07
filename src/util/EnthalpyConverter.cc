@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "EnthalpyConverter.hh"
 #include "pism/util/ConfigInterface.hh"
 

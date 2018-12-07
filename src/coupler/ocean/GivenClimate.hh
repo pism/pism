@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,26 +19,32 @@
 #ifndef _PODIRECTFORCING_H_
 #define _PODIRECTFORCING_H_
 
-#include "pism/coupler/util/PGivenClimate.hh"
-#include "Modifier.hh"
+#include "pism/coupler/OceanModel.hh"
+
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace ocean {
-class Given : public PGivenClimate<OceanModifier,OceanModel>
+
+class Given : public OceanModel
 {
 public:
   Given(IceGrid::ConstPtr g);
   virtual ~Given();
 
-protected:
-  virtual void update_impl(double my_t, double my_dt);
-  virtual void init_impl();
-  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const;
-  virtual void sea_level_elevation_impl(double &result) const;
-  virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
-  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
-protected:
-  IceModelVec2T *m_shelfbtemp, *m_shelfbmassflux;
+private:
+  void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Geometry &geometry);
+  MaxTimestep max_timestep_impl(double t) const;
+
+  const IceModelVec2S& shelf_base_temperature_impl() const;
+  const IceModelVec2S& shelf_base_mass_flux_impl() const;
+
+  IceModelVec2T::Ptr m_shelfbtemp;
+  IceModelVec2T::Ptr m_shelfbmassflux;
+
+  IceModelVec2S::Ptr m_shelf_base_temperature;
+  IceModelVec2S::Ptr m_shelf_base_mass_flux;
 };
 
 } // end of namespace ocean

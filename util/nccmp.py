@@ -33,15 +33,16 @@ tol = 0.0   # default tolerance is perfection
 
 def success(relative):
     if relative:
-        print "Files are the same within relative tolerance %.1e" % tol
+        print("Files are the same within relative tolerance %.1e" % tol)
     else:
-        print "Files are the same within tolerance %.1e" % tol
+        print("Files are the same within tolerance %.1e" % tol)
     exit(0)
 
 
 def failure():
-    print "Files are different."
+    print("Files are different.")
     exit(1)
+
 
 usage = """nccmp.py compares NetCDF files by absolute max norms of difference of variables
 usage:
@@ -52,9 +53,9 @@ usage:
 
 
 def usagefailure(message):
-    print message
-    print
-    print usage
+    print(message)
+    print()
+    print(usage)
     exit(2)
 
 
@@ -77,7 +78,7 @@ def compare_vars(nc1, nc2, name, tol, relative=False):
         usagefailure("ERROR: VARIABLE '%s' OF INCOMPATIBLE SHAPES (?) IN FILES" % name)
 
     if mask.all():
-        print 'Variable %10s: no values to compare.' % name
+        print('Variable %10s: no values to compare.' % name)
         return
 
     var1 = ma.array(var1, mask=mask)
@@ -93,10 +94,10 @@ def compare_vars(nc1, nc2, name, tol, relative=False):
 
     if relative:
         denom = max(abs(var1).max(), abs(var2).max())
-        print "Variable %s: difference = %e, denominator = %e" % (name, delta, denom)
+        print("Variable %s: difference = %e, denominator = %e" % (name, delta, denom))
         if denom > 0:
             delta = delta / denom
-            print "  Relative difference = %e" % (delta)
+            print("  Relative difference = %e" % (delta))
 
     # The actual check:
     #
@@ -105,9 +106,9 @@ def compare_vars(nc1, nc2, name, tol, relative=False):
     # bit-for-bit equality here.
     if delta > tol:
         if tol == 0.0 and delta < 10 * finfo(float).tiny:
-            print "Variable %s: Treating %e as zero." % (name, delta)
+            print("Variable %s: Treating %e as zero." % (name, delta))
             return
-        print "Variable %s: delta = %e, tol = %e" % (name, delta, tol)
+        print("Variable %s: delta = %e, tol = %e" % (name, delta, tol))
         failure()
 
 
@@ -115,10 +116,10 @@ def compare(file1, file2, variables, exclude, tol, relative):
     try:
         from netCDF4 import Dataset as NC
     except:
-        print "netCDF4 is not installed!"
+        print("netCDF4 is not installed!")
         exit(1)
 
-    print "Comparing %s and %s" % (file1, file2)
+    print("Comparing %s and %s" % (file1, file2))
 
     from numpy import unique, r_
 
@@ -133,21 +134,22 @@ def compare(file1, file2, variables, exclude, tol, relative):
 
     if (exclude == False):
         if len(variables) == 0:
-            vars1 = nc1.variables.keys()
-            vars2 = nc2.variables.keys()
+            vars1 = list(nc1.variables.keys())
+            vars2 = list(nc2.variables.keys())
             variables = unique(r_[vars1, vars2])
 
         for each in variables:
             compare_vars(nc1, nc2, each, tol, relative)
     else:
-        vars1 = nc1.variables.keys()
-        vars2 = nc2.variables.keys()
+        vars1 = list(nc1.variables.keys())
+        vars2 = list(nc2.variables.keys())
         vars = unique(r_[vars1, vars2])
 
         for each in vars:
             if (each in variables):
                 continue
             compare_vars(nc1, nc2, each, tol, relative)
+
 
 if __name__ == "__main__":
     from numpy import double
@@ -170,7 +172,7 @@ if __name__ == "__main__":
         if opt == "-v":
             variables = arg.split(",")
         if opt in ("--help", "--usage"):
-            print usage
+            print(usage)
             exit(0)
 
     if len(args) != 2:

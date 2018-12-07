@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
 
     ctx->time()->init(*log);
 
-    options::String outname("-o", "Output file name", "unnamed_btutest.nc");
+    auto outname = config->get_string("output.file_name");
 
     options::Real dt_years("-dt", "Time-step, in years", 1.0);
 
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
       btu.reset(new energy::BTU_Minimal(grid));
     }
 
-    InputOptions opts = process_input_options(com);
+    InputOptions opts = process_input_options(com, config);
     btu->init(opts);
 
     double dt_seconds = units::convert(ctx->unit_system(), dt_years, "years", "seconds");

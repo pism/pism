@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,27 +19,31 @@
 #ifndef _PSANOMALY_H_
 #define _PSANOMALY_H_
 
-#include "pism/coupler/util/PGivenClimate.hh"
-#include "Modifier.hh"
+#include "pism/coupler/SurfaceModel.hh"
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace surface {
 
-//! \brief Reads and uses climatic_mass_balance and ice_surface_temp \b anomalies from a file.
-class Anomaly : public PGivenClimate<SurfaceModifier,SurfaceModel>
+//! @brief Reads and uses climatic_mass_balance and ice_surface_temp *anomalies* from a
+//! file.
+class Anomaly : public SurfaceModel
 {
 public:
-  Anomaly(IceGrid::ConstPtr g, SurfaceModel* in);
+  Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
   virtual ~Anomaly();
 protected:
-  virtual void init_impl();
-  virtual void update_impl(double my_t, double my_dt);
+  virtual void init_impl(const Geometry &geometry);
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual void mass_flux_impl(IceModelVec2S &result) const;
-  virtual void temperature_impl(IceModelVec2S &result) const;
+  virtual const IceModelVec2S& mass_flux_impl() const;
+  virtual const IceModelVec2S& temperature_impl() const;
 protected:
-  IceModelVec2T *m_climatic_mass_balance_anomaly;
-  IceModelVec2T *m_ice_surface_temp_anomaly;
+  IceModelVec2S::Ptr m_mass_flux;
+  IceModelVec2S::Ptr m_temperature;
+
+  IceModelVec2T::Ptr m_climatic_mass_balance_anomaly;
+  IceModelVec2T::Ptr m_ice_surface_temp_anomaly;
 };
 
 } // end of namespace surface

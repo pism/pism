@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -104,14 +104,11 @@ void IceModel::save_results() {
   {
     update_run_stats();
 
-    // build and put string into global attribute "history"
-    char str[TEMPORARY_STRING_LENGTH];
-
-    snprintf(str, TEMPORARY_STRING_LENGTH,
-             "PISM done.  Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour.",
-             m_run_stats.get_double("wall_clock_hours"),
-             m_run_stats.get_double("processor_hours"),
-             m_run_stats.get_double("model_years_per_processor_hour"));
+    auto str = pism::printf(
+      "PISM done. Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour.",
+      m_run_stats.get_double("wall_clock_hours"),
+      m_run_stats.get_double("processor_hours"),
+      m_run_stats.get_double("model_years_per_processor_hour"));
 
     prepend_history(str);
   }

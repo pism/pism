@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -435,7 +435,7 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
 }
 
 bool set_contains(const std::set<std::string> &S, const VariableMetadata &variable) {
-  return set_contains(S, variable.get_name());
+  return member(variable.get_name(), S);
 }
 
 TimeseriesMetadata::TimeseriesMetadata(const std::string &name, const std::string &dimension_name,

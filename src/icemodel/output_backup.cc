@@ -59,7 +59,7 @@ void IceModel::write_backup() {
                  "  [%s] Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
                  timestamp(m_grid->com).c_str(), m_backup_filename.c_str(), wall_clock_hours);
 
-  PetscLogDouble backup_start_time = GetTime();
+  double backup_start_time = get_time();
   profiling.begin("io.backup");
   {
     PIO file(m_grid->com, m_config->get_string("output.format"),
@@ -71,7 +71,7 @@ void IceModel::write_backup() {
     save_variables(file, INCLUDE_MODEL_STATE, m_backup_vars);
   }
   profiling.end("io.backup");
-  PetscLogDouble backup_end_time = GetTime();
+  double backup_end_time = get_time();
 
   // Also flush time-series:
   flush_timeseries();

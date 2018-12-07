@@ -56,7 +56,7 @@ void AgeModelInputs::check() const {
 }
 
 AgeModel::AgeModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance)
-  : Component_TS(grid), m_stress_balance(stress_balance) {
+  : Component(grid), m_stress_balance(stress_balance) {
 
   // FIXME: should be able to use width=1...
   const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
@@ -183,22 +183,6 @@ MaxTimestep AgeModel::max_timestep_impl(double t) const {
   }
 
   return MaxTimestep(m_stress_balance->max_timestep_cfl_3d().dt_max.value(), "age model");
-}
-
-void AgeModel::update_impl(double t, double dt) {
-
-  if (m_stress_balance == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "AgeModel: no stress balance provided.");
-  }
-
-  AgeModelInputs inputs;
-  inputs.ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
-  inputs.u3            = &m_stress_balance->velocity_u();
-  inputs.v3            = &m_stress_balance->velocity_v();
-  inputs.w3            = &m_stress_balance->velocity_w();
-
-  this->update(t, dt, inputs);
 }
 
 void AgeModel::init(const InputOptions &opts) {

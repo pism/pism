@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@ using std::shared_ptr;
 
 #include "PIO.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
@@ -54,7 +54,10 @@ struct PIO::Impl {
 };
 
 static io::NCFile::Ptr create_backend(MPI_Comm com, string mode) {
-  if (mode == "netcdf3") {
+  int size = 1;
+  MPI_Comm_size(com, &size);
+
+  if (mode == "netcdf3" or size == 1) {
     return io::NCFile::Ptr(new io::NC3File(com));
   }
 #if (PISM_USE_PARALLEL_NETCDF4==1)
@@ -80,6 +83,11 @@ PIO::PIO(MPI_Comm com, const std::string &backend, const std::string &filename, 
 
   if (backend != "guess_mode" && not m_impl->nc) {
     throw RuntimeError(PISM_ERROR_LOCATION, "failed to allocate an I/O backend (class PIO)");
+  }
+
+  if (filename.empty()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot open file: provided file name is empty");
   }
 
   this->open(filename, mode);

@@ -48,7 +48,7 @@ void BTU_Verification::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
   (void) bedrock_top_temperature;
 
   std::vector<double> Tbcol(m_Mbz),
-    zlevels = m_temp.get_levels();
+    zlevels = m_temp.levels();
 
   double time = m_grid->ctx()->time()->current();
 

@@ -1,6 +1,6 @@
 %header%{
 #include "pism_python.hh"
-#include "util/pism_const.hh"
+#include "util/pism_utilities.hh"
 %}
 
 %exception {
@@ -34,6 +34,8 @@
     $action
   } catch (pism::RuntimeError &e) {
     SWIG_exception(SWIG_RuntimeError, e.what());
+  } catch (std::exception &e) {
+    SWIG_exception(SWIG_UnknownError, e.what());
   } catch (...) {
     SWIG_exception(SWIG_UnknownError, "unknown C++ exception");
   }

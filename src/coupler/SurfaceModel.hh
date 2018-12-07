@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -33,6 +33,7 @@ namespace atmosphere {
 class AtmosphereModel;
 }
 
+class Geometry;
 class IceModelVec2S;
 
 //! @brief Surface models and modifiers: provide top-surface
@@ -41,45 +42,57 @@ class IceModelVec2S;
 namespace surface {
 
 //! \brief The interface of PISM's surface models.
-class SurfaceModel : public Component_TS {
+class SurfaceModel : public Component {
 public:
   SurfaceModel(IceGrid::ConstPtr g);
+  SurfaceModel(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input);
+  SurfaceModel(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere);
+
   virtual ~SurfaceModel();
 
-  void init();
-
-  void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
+  void init(const Geometry &geometry);
 
   // the interface:
-  void mass_flux(IceModelVec2S &result) const;
+  void update(const Geometry &geometry, double t, double dt);
 
-  void temperature(IceModelVec2S &result) const;
-  void liquid_water_fraction(IceModelVec2S &result) const;
+  const IceModelVec2S& layer_mass() const;
+  const IceModelVec2S& layer_thickness() const;
+  const IceModelVec2S& liquid_water_fraction() const;
+  const IceModelVec2S& mass_flux() const;
+  const IceModelVec2S& temperature() const;
 
-  void layer_mass(IceModelVec2S &result) const;
-  void layer_thickness(IceModelVec2S &result) const;
 protected:
-  virtual void init_impl();
 
-  virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
+  virtual const IceModelVec2S& layer_mass_impl() const;
+  virtual const IceModelVec2S& layer_thickness_impl() const;
+  virtual const IceModelVec2S& liquid_water_fraction_impl() const;
+  virtual const IceModelVec2S& mass_flux_impl() const;
+  virtual const IceModelVec2S& temperature_impl() const;
+
+  virtual void init_impl(const Geometry &geometry);
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
   virtual MaxTimestep max_timestep_impl(double my_t) const;
 
-  virtual void layer_thickness_impl(IceModelVec2S &result) const;
-  virtual void layer_mass_impl(IceModelVec2S &result) const;
+  virtual DiagnosticList diagnostics_impl() const;
+  virtual TSDiagnosticList ts_diagnostics_impl() const;
 
-  virtual void temperature_impl(IceModelVec2S &result) const = 0;
-  virtual void liquid_water_fraction_impl(IceModelVec2S &result) const;
+  static IceModelVec2S::Ptr allocate_layer_mass(IceGrid::ConstPtr grid);
+  static IceModelVec2S::Ptr allocate_layer_thickness(IceGrid::ConstPtr grid);
+  static IceModelVec2S::Ptr allocate_liquid_water_fraction(IceGrid::ConstPtr grid);
+  static IceModelVec2S::Ptr allocate_mass_flux(IceGrid::ConstPtr grid);
+  static IceModelVec2S::Ptr allocate_temperature(IceGrid::ConstPtr grid);
 
-  virtual void mass_flux_impl(IceModelVec2S &result) const = 0;
-
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
-  virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 protected:
-  atmosphere::AtmosphereModel *m_atmosphere;
+  IceModelVec2S::Ptr m_liquid_water_fraction;
+  IceModelVec2S::Ptr m_layer_mass;
+  IceModelVec2S::Ptr m_layer_thickness;
+
+  std::shared_ptr<SurfaceModel> m_input_model;
+  std::shared_ptr<atmosphere::AtmosphereModel> m_atmosphere;
 };
 
 } // end of namespace surface

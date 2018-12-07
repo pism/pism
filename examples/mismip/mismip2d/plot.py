@@ -12,7 +12,7 @@ import os.path
 try:
     from netCDF4 import Dataset as NC
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 
@@ -30,19 +30,19 @@ def parse_filename(filename, opts):
 
     except:
         if opts.experiment is None:
-            print "Please specify the experiment name (e.g. '-e 1a')."
+            print("Please specify the experiment name (e.g. '-e 1a').")
             exit(0)
         else:
             experiment = opts.experiment
 
         if opts.step is None:
-            print "Please specify the step (e.g. '-s 1')."
+            print("Please specify the step (e.g. '-s 1').")
             exit(0)
         else:
             step = opts.step
 
         if opts.model is None:
-            print "Please specify the model name (e.g. '-m ABC1')."
+            print("Please specify the model name (e.g. '-m ABC1').")
             exit(0)
         else:
             model = opts.model
@@ -84,15 +84,15 @@ def process_options():
     opts, args = parser.parse_args()
 
     if len(args) == 0:
-        print "ERROR: An input file is requied."
+        print("ERROR: An input file is requied.")
         exit(0)
 
     if len(args) > 1 and opts.output:
-        print "More than one input file given. Ignoring the -o option...\n"
+        print("More than one input file given. Ignoring the -o option...\n")
         opts.output = None
 
     if opts.output and opts.profile and opts.flux:
-        print "Please choose between flux (-f) and profile (-p) plots."
+        print("Please choose between flux (-f) and profile (-p) plots.")
         exit(0)
 
     return args, opts.output, opts
@@ -105,7 +105,7 @@ def read(filename, name):
     try:
         var = nc.variables[name][:]
     except:
-        print "ERROR: Variable '%s' not present in '%s'" % (name, filename)
+        print("ERROR: Variable '%s' not present in '%s'" % (name, filename))
         exit(1)
 
     N = len(var.shape)
@@ -132,7 +132,7 @@ def find_grounding_line(x, topg, thk, mask):
         z_sl = 0
         return (z_sl - topg[j]) * MISMIP.rho_w() / (MISMIP.rho_i() * thk[j])
 
-    for j in xrange(x.size):
+    for j in range(x.size):
         if mask[j] == 2 and mask[j + 1] == 3:  # j is grounded, j+1 floating
             nabla_f = (f(j + 1) - f(j)) / (x[j + 1] - x[j])
 
@@ -143,8 +143,8 @@ def find_grounding_line(x, topg, thk, mask):
 
 
 def plot_profile(in_file, out_file):
-    print "Reading %s to plot geometry profile for model %s, experiment %s, grid mode %s, step %s" % (
-        in_file, model, experiment, mode, step)
+    print("Reading %s to plot geometry profile for model %s, experiment %s, grid mode %s, step %s" % (
+        in_file, model, experiment, mode, step))
 
     if out_file is None:
         out_file = os.path.splitext(in_file)[0] + "-profile.pdf"
@@ -190,13 +190,13 @@ def plot_profile(in_file, out_file):
     vlines(xg / 1e3, ymin, ymax, linestyles='dashed', color='black')
     vlines(xg_PISM / 1e3, ymin, ymax, linestyles='dashed', color='red')
 
-    print "Saving '%s'...\n" % out_file
+    print("Saving '%s'...\n" % out_file)
     savefig(out_file)
 
 
 def plot_flux(in_file, out_file):
-    print "Reading %s to plot ice flux for model %s, experiment %s, grid mode %s, step %s" % (
-        in_file, model, experiment, mode, step)
+    print("Reading %s to plot ice flux for model %s, experiment %s, grid mode %s, step %s" % (
+        in_file, model, experiment, mode, step))
 
     if out_file is None:
         out_file = os.path.splitext(in_file)[0] + "-flux.pdf"
@@ -218,8 +218,9 @@ def plot_flux(in_file, out_file):
     xlabel("x ($\mathrm{km}$)", size=14)
     ylabel(r"flux ($\mathrm{m}^2\,\mathrm{a}^{-1}$)", size=14)
 
-    print "Saving '%s'...\n" % out_file
+    print("Saving '%s'...\n" % out_file)
     savefig(out_file, dpi=300, facecolor='w', edgecolor='w')
+
 
 if __name__ == "__main__":
     args, out_file, opts = process_options()

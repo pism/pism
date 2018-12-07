@@ -19,7 +19,7 @@
 #include "NCFile.hh"
 
 #include <cstdio>               // fprintf, stderr, rename, remove
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/error_handling.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in

@@ -34,10 +34,10 @@ Model components and modifiers can be chained as shown in
 
 .. code-block:: none
 
-    -ocean constant,delta_SL -ocean_delta_SL_file delta_SL.nc
+    -ocean constant,delta_T -ocean_delta_T_file delta_T.nc
 
 combines the component providing constant (both in space and time) ocean boundary
-conditions with a modifier that applies scalar sea level ("SL") offsets. This combination
+conditions with a modifier that applies scalar temperature offsets. This combination
 one of the many ocean models that can be chosen using components as building blocks.
 
 Section :ref:`sec-forcing-examples` gives examples of combining components to choose

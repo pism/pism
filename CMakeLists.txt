@@ -1,4 +1,5 @@
 cmake_minimum_required (VERSION 3.1)
+cmake_policy(SET CMP0078 OLD)       #controls names of SWIG targets
 project (Pism C CXX)
 
 # Require C++11 compiler support.
@@ -26,6 +27,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 
 # Set the install prefix
 pism_set_install_prefix()
+set(CMAKE_INSTALL_MESSAGE "LAZY")
 
 # Set Pism_DEFAULT_CONFIG_FILE (*after* we set the CMAKE_INSTALL_PREFIX above).
 pism_check_build_dir_location()
@@ -39,7 +41,7 @@ option (BUILD_SHARED_LIBS      "Build shared Pism libraries" ON)
 option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
 option (Pism_BUILD_ICEBIN "Build PISM portions of IceBin library" OFF)
 option (Pism_BUILD_DOCS "Build PISM's documentation with 'make all'." OFF)
-option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." OFF)
+option (Pism_USE_PROJ4 "Use Proj.4 to compute longitudes and latitudes." OFF)
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
 option (Pism_ENABLE_DOCUMENTATION "Enable targets building PISM's documentation." ON)
@@ -102,9 +104,8 @@ if (Pism_CODE_COVERAGE)
   endif()
   add_custom_target (coverage_report
     # remove coverage data from src/pythonbindings
-    COMMAND lcov -d ${Pism_BINARY_DIR}/src/pythonbindings -z
-    COMMAND lcov -d ${Pism_BINARY_DIR}/src/vdt -z
-    COMMAND lcov -q -b ${Pism_SOURCE_DIR} --no-external -d . -c -o pism-coverage.info
+    COMMAND lcov --directory ${Pism_BINARY_DIR}/src/pythonbindings -z
+    COMMAND lcov --base-directory ${Pism_SOURCE_DIR} --directory src --quiet --no-external --capture -o pism-coverage.info
     COMMAND genhtml -t "PISM Coverage report" -o cover --demangle-cpp --legend pism-coverage.info
     WORKING_DIRECTORY ${Pism_BINARY_DIR}
     VERBATIM
@@ -162,14 +163,14 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   mark_as_advanced (SWIG_DIR SWIG_EXECUTABLE SWIG_VERSION)
 
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import distutils.sysconfig; print distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}')"
+    COMMAND ${PYTHON_EXECUTABLE} -c "import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))"
     OUTPUT_VARIABLE PISM_INSTALL_PYTHON_MODULE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE)
   set(PISM_INSTALL_PYTHON_MODULE_DIR ${PISM_INSTALL_PYTHON_MODULE_DIR}
     CACHE PATH "Python extension module installation directory." )
 endif ()
 
-# Do cell area computations the right way if we have proj.4.
+# Use PROJ.4 to compute latitudes and longitudes of grid points (if available).
 if (Pism_USE_PROJ4)
   add_definitions (-DPISM_USE_PROJ4=1)
 else()
@@ -177,7 +178,7 @@ else()
 endif()
 
 add_custom_target (etags
-  COMMAND find . -regextype posix-extended -regex ".*\\.(c|cc|h|hh)" | xargs etags --class-qualify --no-defines
+  COMMAND find . -regex ".*\\.(c|cc|h|hh)" | xargs etags --class-qualify --no-defines
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
   VERBATIM
 )

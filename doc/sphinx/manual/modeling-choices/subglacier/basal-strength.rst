@@ -50,7 +50,7 @@ Choosing the sliding law
 In PISM the sliding law can be chosen to be a purely-plastic (Coulomb) model, namely,
 
 .. math::
-   :name: eq-plastic
+   :label: eq-plastic
 
    |\boldsymbol{\tau}_b| \le \tau_c \quad \text{and} \quad \boldsymbol{\tau}_b =
    - \tau_c \frac{\mathbf{u}}{|\mathbf{u}|} \quad\text{if and only if}\quad |\mathbf{u}| > 0.
@@ -61,7 +61,7 @@ yield value can there be sliding. The sliding law can, however, also be chosen t
 power law
 
 .. math::
-   :name: eq-pseudoplastic
+   :label: eq-pseudoplastic
 
    \boldsymbol{\tau}_b =  - \tau_c \frac{\mathbf{u}}{u_{\text{threshold}}^q |\mathbf{u}|^{1-q}},
 
@@ -169,14 +169,14 @@ locations of ice streams :cite:`SchoofStream`. The default model ``-yield_stress
 mohr_coulomb`` determines these variations in time and space. The value of `\tau_c` is
 determined in part by a subglacial hydrology model, including the modeled till-pore water
 amount ``tillwat`` (section :ref:`sec-subhydro`), which then determines the effective
-pressure `N_{til}` (see below). The value of `\tau_c` is also determined in part by a
+pressure `N_{till}` (see below). The value of `\tau_c` is also determined in part by a
 material property field `\phi=` :var:`tillphi`, the "till friction angle". These
 quantities are related by the Mohr-Coulomb criterion :cite:`CuffeyPaterson`:
 
 .. math::
-   :name: eq-mohrcoulomb
+   :label: eq-mohrcoulomb
 
-   \tau_c = c_{0} + (\tan\phi)\,N_{til}.
+   \tau_c = c_{0} + (\tan\phi)\,N_{till}.
 
 Here `c_0` is called the "till cohesion", whose default value in PISM is zero (see
 :cite:`SchoofStream`, formula (2.4)) but which can be set by option :opt:`-till_cohesion`.
@@ -238,7 +238,7 @@ stands for the bed elevation. To explain these, we define `M = (\phimax - \phimi
 (\bmax - \bmin)`. Then
 
 .. math::
-   :name: eq-phipiecewise
+   :label: eq-phipiecewise
 
    \phi(x,y) =
    \begin{cases}
@@ -272,25 +272,25 @@ Determining the effective pressure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When using the default option ``-yield_stress mohr_coulomb``, the effective pressure on
-the till `N_{til}` is determined by the modeled amount of water in the till. Lower
+the till `N_{till}` is determined by the modeled amount of water in the till. Lower
 effective pressure means that more of the weight of the ice is carried by the pressurized
 water in the till and thus the ice can slide more easily. That is, equation
-:eq:`eq-mohrcoulomb` sets the value of `\tau_c` proportionately to `N_{til}`. The amount
+:eq:`eq-mohrcoulomb` sets the value of `\tau_c` proportionately to `N_{till}`. The amount
 of water in the till is, however, a nontrivial output of the hydrology (section
 :ref:`sec-subhydro`) and conservation-of-energy (section :ref:`sec-energy`) submodels in
 PISM.
 
 Following :cite:`Tulaczyketal2000`, based on laboratory experiments with till extracted
 from an ice stream in Antarctica, :cite:`BuelervanPelt2015` propose the following
-parameterization which is used in PISM. It is based on the ratio `s=W_{til}/W_{til}^{max}`
-where `W_{til}=` :var:`tillwat` is the effective thickness of water in the till and
-`W_{til}^{max}=` :config:`hydrology.tillwat_max` is the maximum amount of water in the
+parameterization which is used in PISM. It is based on the ratio `s=W_{till}/W_{till}^{max}`
+where `W_{till}=` :var:`tillwat` is the effective thickness of water in the till and
+`W_{till}^{max}=` :config:`hydrology.tillwat_max` is the maximum amount of water in the
 till (see section :ref:`sec-subhydro`):
 
 .. math::
-   :name: eq-computeNtil
+   :label: eq-computeNtill
 
-   N_{til} = \min\left\{P_o, N_0 \left(\frac{\delta P_o}{N_0}\right)^s \, 10^{(e_0/C_c) \left(1 - s\right).}\right\}
+   N_{till} = \min\left\{P_o, N_0 \left(\frac{\delta P_o}{N_0}\right)^s \, 10^{(e_0/C_c) \left(1 - s\right).}\right\}
 
 Here `P_o` is the ice overburden pressure, which is determined entirely by the ice
 thickness and density, and the remaining parameters are set by options in
@@ -304,7 +304,7 @@ regarded as uncertain, important, and subject to parameter studies to assess its
    configuration flag is set (either in the configuration file or using the
    :opt:`-tauc_add_transportable_water` option), then the above formula becomes FIXME
 
-.. list-table:: Command-line options controlling how till effective pressure `N_{til}` in
+.. list-table:: Command-line options controlling how till effective pressure `N_{till}` in
                 equation :eq:`eq-mohrcoulomb` is determined
    :name: tab-effective-pressure
    :header-rows: 1
@@ -312,14 +312,14 @@ regarded as uncertain, important, and subject to parameter studies to assess its
    * - Option
      - Description
    * - :opt:`-till_reference_void_ratio`
-     - `= e_0` in :eq:`eq-computeNtil`, dimensionless, with default value 0.69
+     - `= e_0` in :eq:`eq-computeNtill`, dimensionless, with default value 0.69
        :cite:`Tulaczyketal2000`
    * - :opt:`-till_compressibility_coefficient`
-     - `= C_c` in :eq:`eq-computeNtil`, dimensionless, with default value 0.12
+     - `= C_c` in :eq:`eq-computeNtill`, dimensionless, with default value 0.12
        :cite:`Tulaczyketal2000`
    * - :opt:`-till_effective_fraction_overburden`
-     - `= \delta` in :eq:`eq-computeNtil`, dimensionless, with default value 0.02
+     - `= \delta` in :eq:`eq-computeNtill`, dimensionless, with default value 0.02
        :cite:`BuelervanPelt2015`
    * - :opt:`-till_reference_effective_pressure`
-     - `= N_0` in :eq:`eq-computeNtil`, in Pa, with default value 1000.0
+     - `= N_0` in :eq:`eq-computeNtill`, in Pa, with default value 1000.0
        :cite:`Tulaczyketal2000`

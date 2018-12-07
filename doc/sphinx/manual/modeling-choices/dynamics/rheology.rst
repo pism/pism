@@ -14,7 +14,7 @@ which is, in the most general case in PISM, a function `F(\sigma,T,\omega,P,d)` 
 "constitutive relation" form
 
 .. math::
-   :name: eq-constitutive
+   :label: eq-constitutive
 
    D_{ij} = F(\sigma,T,\omega,P,d)\, \sigma_{ij}'.
 
@@ -28,7 +28,7 @@ a flow law, found by inverting the constitutive relation :eq:`eq-constitutive`, 
 for ice shelf and ice stream (SSA) flow :cite:`BBssasliding`:
 
 .. math::
-   :name: eq-viscosityform
+   :label: eq-viscosityform
 
    \sigma_{ij}' = 2 \nu(D,T,\omega,P,d)\,D_{ij}
 
@@ -38,7 +38,7 @@ D_{ij} D_{ij}`.
 Most of the flow laws in PISM are of Glen-Nye single-power type.  For example,
 
 .. math::
-   :name: eq-glen
+   :label: eq-glen
 
    F(\sigma,T) = A(T) \sigma^{n-1}
 
@@ -105,15 +105,6 @@ error.
        where `\omega` is the liquid water fraction, `C` is a configuration parameter
        :config:`flow_law.gpbld.water_frac_coeff` [default `C=181.25`\], and `\omega` is
        capped at level :config:`flow_law.gpbld.water_frac_observed_limit`.
-
-   * - ``gpbld3``
-     - Same as ``gpbld``, but with the fixed Glen exponent `n = 3`.
-
-       This flow law implementation is *significantly faster* thanks to a number of
-       low-level optimizations.
-
-       It is also less flexible (all constants are hard-wired and cannot be changed using
-       configuration parameters).
 
    * - ``pb``
      - Paterson-Budd law, the cold-mode default. Fixed Glen exponent `n=3`. Has a split
@@ -193,7 +184,7 @@ to be true with a new enhancement factor `E_{new}`. Eliminating `D_0` and
 solving for the new enhancement factor gives
 
 .. math::
-   :name: eq-renewexponent
+   :label: eq-renewexponent
 
    E_{new} = E_{old}\, \sigma_0^{n_{old} - n_{new}}.
 

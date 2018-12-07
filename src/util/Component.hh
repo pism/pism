@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2018 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -48,7 +48,7 @@ struct InputOptions {
   unsigned int record;
 };
 
-InputOptions process_input_options(MPI_Comm com);
+InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config);
 
 //! \brief A class defining a common interface for most PISM sub-models.
 /*!
@@ -98,7 +98,7 @@ InputOptions process_input_options(MPI_Comm com);
 
   \subsection pismcomponent_timestep Restricting time-steps
 
-  Implement Component_TS::max_timestep() to affect PISM's adaptive time-stepping mechanism.
+  Implement Component::max_timestep() to affect PISM's adaptive time-stepping mechanism.
 */
 class Component {
 public:
@@ -107,21 +107,24 @@ public:
   Component(IceGrid::ConstPtr g);
   virtual ~Component();
 
-  //! Add pointers to available diagnostic quantities to a dictionary.
-  std::map<std::string, Diagnostic::Ptr> diagnostics() const;
-  std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics() const;
+  DiagnosticList diagnostics() const;
+  TSDiagnosticList ts_diagnostics() const;
 
   IceGrid::ConstPtr grid() const;
 
   void define_model_state(const PIO &output) const;
   void write_model_state(const PIO &output) const;
 
+  //! Reports the maximum time-step the model can take at time t.
+  MaxTimestep max_timestep(double t) const;
+
 protected:
+  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
-  virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
+  virtual TSDiagnosticList ts_diagnostics_impl() const;
 
   /** @brief This flag determines whether a variable is read from the
       `-regrid_file` file even if it is not listed among variables in
@@ -140,73 +143,6 @@ protected:
   //! logger (for easy access)
   const Logger::ConstPtr m_log;
 };
-
-//! \brief An abstract class for time-stepping PISM components. Created to
-//! simplify creating basic surface, snow, atmosphere, ocean... models for
-//! PISM.
-class Component_TS : public Component {
-public:
-  /** Create an instance of Component_TS given a grid. */
-  Component_TS(IceGrid::ConstPtr g);
-  virtual ~Component_TS();
-
-  //! @brief Reports the maximum time-step the model can take at t.
-  MaxTimestep max_timestep(double t) const;
-
-  //! Update the *state* of a component, if necessary.
-  /**
-   * Defines the common interface of time-stepping components.
-   *
-   * Derived classes should use this method to perform computations
-   * needed to step from `t` to `t + dt`. This could be
-   * a no-op.
-   *
-   * Time-step length `dt` should never be zero.
-   *
-   * This method will be called only once with a given `t`, `dt` pair;
-   * the value of `t` in a particular call should be equal to `t + dt`
-   * in the previous call (i.e. there should be no "gaps" or "repeats").
-   *
-   * One unfortunate exception is the initialization stage:
-   * IceModel::bootstrapFromFile() and IceModel::model_state_setup()
-   * may need to "know" the state of the model at the beginning of
-   * the run, which might require a non-trivial computation and so
-   * requires an update() call. Because of this *currently* update()
-   * may get called twice at the beginning of the run.
-   *
-   * Other interface methods
-   * (SurfaceModel::temperature() is an example)
-   * should use cached values if the corresponding computation is
-   * expensive. Methods like
-   * SurfaceModel::temperature() might be called
-   * multiple times per time-step.
-   *
-   * TemperatureIndex is an example of a component that does a
-   * fairly expensive computation in TemperatureIndex::update() and
-   * uses cached values in
-   * TemperatureIndex::mass_flux_impl().
-   *
-   * *Who* calls this depends on the kind of the component in
-   * question, but all calls originate from IceModel::step() and the
-   * initialization methods mentioned above.
-   *
-   * @param[in] t time corresponding to the beginning of the time-step, in seconds
-   * @param[in] dt length of the time-step, in seconds
-   *
-   */
-  void update(double t, double dt);
-
-protected:
-  virtual MaxTimestep max_timestep_impl(double t) const = 0;
-  virtual void update_impl(double t, double dt) = 0;
-protected:
-  //! Last time used as an argument for the update() method.
-  double m_t;
-  //! Last time-step used as an argument for the update() method.
-  double m_dt;
-};
-
-void init_step(Component_TS &model, const Time& time);
 
 } // end of namespace pism
 

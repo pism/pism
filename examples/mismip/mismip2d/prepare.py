@@ -3,7 +3,7 @@
 try:
     from netCDF4 import Dataset as NC
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 import MISMIP
@@ -107,6 +107,7 @@ def pism_bootstrap_file(filename, experiment, step, mode,
 
     nc.close()
 
+
 if __name__ == "__main__":
 
     from optparse import OptionParser
@@ -136,8 +137,8 @@ if __name__ == "__main__":
 
     experiments = ('1a', '1b', '2a', '2b', '3a', '3b')
     if opts.experiment not in experiments:
-        print "Invalid experiment %s. Has to be one of %s." % (
-            opts.experiment, experiments)
+        print("Invalid experiment %s. Has to be one of %s." % (
+            opts.experiment, experiments))
         exit(1)
 
     if not opts.output_filename:
@@ -147,8 +148,8 @@ if __name__ == "__main__":
     else:
         output_filename = opts.output_filename
 
-    print "Creating MISMIP setup for experiment %s, step %s, grid mode %d in %s..." % (
-        opts.experiment, opts.step, opts.mode, output_filename)
+    print("Creating MISMIP setup for experiment %s, step %s, grid mode %d in %s..." % (
+        opts.experiment, opts.step, opts.mode, output_filename))
 
     pism_bootstrap_file(output_filename,
                         opts.experiment,
@@ -158,4 +159,4 @@ if __name__ == "__main__":
                         N=opts.N,
                         semianalytical_profile=opts.semianalytical_profile)
 
-    print "done."
+    print("done.")

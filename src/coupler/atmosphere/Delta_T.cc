@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,58 +16,56 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>
-
 #include "Delta_T.hh"
+
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/pism_utilities.hh"
+#include "pism/coupler/util/ScalarForcing.hh"
 
 namespace pism {
 namespace atmosphere {
 
 /// delta_T forcing of near-surface air temperatures
 
-Delta_T::Delta_T(IceGrid::ConstPtr g, AtmosphereModel* in)
-  : PScalarForcing<AtmosphereModel,PAModifier>(g, in) {
-  m_option_prefix = "-atmosphere_delta_T";
-  m_offset_name   = "delta_T";
+Delta_T::Delta_T(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
+  : AtmosphereModel(grid, in) {
 
-  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
-  m_offset->variable().set_string("units", "Kelvin");
-  m_offset->variable().set_string("long_name", "near-surface air temperature offsets");
-  m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
+  m_forcing.reset(new ScalarForcing(grid->ctx(),
+                                    "-atmosphere_delta_T",
+                                    "delta_T",
+                                    "Kelvin",
+                                    "Kelvin",
+                                    "near-surface air temperature offsets"));
+
+  m_temperature = allocate_temperature(grid);
 }
 
-void Delta_T::init_impl() {
-
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
-  m_input_model->init();
+void Delta_T::init_impl(const Geometry &geometry) {
+  m_input_model->init(geometry);
 
   m_log->message(2, "* Initializing near-surface air temperature forcing using scalar offsets...\n");
 
-  init_internal();
-}
-
-MaxTimestep Delta_T::max_timestep_impl(double t) const {
-  (void) t;
-  return MaxTimestep("atmosphere delta_T");
+  m_forcing->init();
 }
 
 void Delta_T::init_timeseries_impl(const std::vector<double> &ts) const {
-  PAModifier::init_timeseries_impl(ts);
+  AtmosphereModel::init_timeseries_impl(ts);
 
-  m_offset_values.resize(m_ts_times.size());
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
-    m_offset_values[k] = (*m_offset)(m_ts_times[k]);
+  m_offset_values.resize(ts.size());
+  for (unsigned int k = 0; k < ts.size(); ++k) {
+    m_offset_values[k] = m_forcing->value(ts[k]);
   }
 }
 
-void Delta_T::mean_annual_temp_impl(IceModelVec2S &result) const {
+void Delta_T::update_impl(const Geometry& geometry, double t, double dt) {
+  m_input_model->update(geometry, t, dt);
+  m_forcing->update(t, dt);
 
-  m_input_model->mean_annual_temp(result);
-  offset_data(result);
+  m_temperature->copy_from(m_input_model->mean_annual_temp());
+  m_temperature->shift(m_forcing->value());
+}
+
+const IceModelVec2S& Delta_T::mean_annual_temp_impl() const {
+  return *m_temperature;
 }
 
 void Delta_T::temp_time_series_impl(int i, int j, std::vector<double> &result) const {

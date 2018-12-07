@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,18 +16,17 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>
-
 #include "StuffAsAnomaly.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace surface {
 
-StuffAsAnomaly::StuffAsAnomaly(IceGrid::ConstPtr g, SurfaceModel *input)
-    : SurfaceModifier(g, input) {
+StuffAsAnomaly::StuffAsAnomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
+    : SurfaceModel(g, input) {
 
   m_mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   m_mass_flux.set_attrs("climate_state",
@@ -62,14 +61,12 @@ StuffAsAnomaly::~StuffAsAnomaly() {
   // empty
 }
 
-void StuffAsAnomaly::init_impl() {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
+void StuffAsAnomaly::init_impl(const Geometry &geometry) {
   if (m_input_model != NULL) {
-    m_input_model->init();
+    m_input_model->init(geometry);
   }
 
-  InputOptions opts = process_input_options(m_grid->com);
+  InputOptions opts = process_input_options(m_grid->com, m_config);
 
   m_log->message(2,
              "* Initializing the 'turn_into_anomaly' modifier\n"
@@ -90,24 +87,16 @@ MaxTimestep StuffAsAnomaly::max_timestep_impl(double t) const {
   return MaxTimestep("surface turn_into_anomaly");
 }
 
-void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
-  if ((fabs(my_t - m_t) < 1e-12) &&
-      (fabs(my_dt - m_dt) < 1e-12)) {
-    return;
-  }
-
-  m_t  = my_t;
-  m_dt = my_dt;
+void StuffAsAnomaly::update_impl(const Geometry &geometry, double t, double dt) {
 
   if (m_input_model != NULL) {
-    m_input_model->update(m_t, m_dt);
-    m_input_model->temperature(m_temp);
-    m_input_model->mass_flux(m_mass_flux);
+    m_input_model->update(geometry, t, dt);
+    m_temp.copy_from(m_input_model->temperature());
+    m_mass_flux.copy_from(m_input_model->mass_flux());
 
     // if we are at the beginning of the run...
-    if (m_t < m_grid->ctx()->time()->start() + 1) { // this is goofy, but time-steps are
-                                      // usually longer than 1 second, so it
-                                      // should work
+    if (t < m_grid->ctx()->time()->start() + 1) {
+      // this is goofy, but time-steps are usually longer than 1 second, so it should work
       m_temp_0.copy_from(m_temp);
       m_mass_flux_0.copy_from(m_mass_flux);
     }
@@ -124,12 +113,12 @@ void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
   }
 }
 
-void StuffAsAnomaly::mass_flux_impl(IceModelVec2S &result) const {
-  result.copy_from(m_mass_flux);
+const IceModelVec2S &StuffAsAnomaly::mass_flux_impl() const {
+  return m_mass_flux;
 }
 
-void StuffAsAnomaly::temperature_impl(IceModelVec2S &result) const {
-  result.copy_from(m_temp);
+const IceModelVec2S &StuffAsAnomaly::temperature_impl() const {
+  return m_temp;
 }
 
 } // end of namespace surface

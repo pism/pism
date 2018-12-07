@@ -11,8 +11,12 @@ Technical notes
 
    bed_roughness.rst
 
+   ssafd-cfbc.rst
+
    coding_guidelines.rst
 
    how-to.rst
 
    icemodelvec2t.rst
+
+   bombproof.rst

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -33,11 +33,11 @@ except ImportError:             # pragma: no cover
 
 import PISM
 import PISM.invert.ssa
-import numpy as np
-import sys
-import os
-import math
 from PISM.logging import logMessage
+from PISM.util import convert
+import numpy as np
+import sys, os, math
+
 
 class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
 
@@ -48,7 +48,7 @@ class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
             grid = self.grid
             vecs = self.modeldata.vecs
 
-            pio = PISM.PIO(grid.com, "netcdf3", filename, PISM.PISM_READWRITE) # append mode!
+            pio = PISM.PIO(grid.com, "netcdf3", filename, PISM.PISM_READWRITE)  # append mode!
 
             self.modeldata.vecs.write(filename)
             pio.close()
@@ -74,18 +74,17 @@ class InvSSAPlotListener(PISM.invert.listener.PlotListener):
 
         r = self.toproczero(data.residual)
         Td = None
-        if data.has_key('T_zeta_step'):
+        if 'T_zeta_step' in data:
             Td = self.toproczero(data.T_zeta_step)
         TStarR = None
-        if data.has_key('TStar_residual'):
+        if 'TStar_residual' in data:
             TStarR = self.toproczero(data.TStar_residual)
         d = None
-        if data.has_key('zeta_step'):
+        if 'zeta_step' in data:
             d = self.toproczero(data.zeta_step)
         zeta = self.toproczero(data.zeta)
 
-        sys = self.grid.ctx().unit_system()
-        secpera = PISM.convert(sys, 1.0, "year", "second")
+        secpera = convert(1.0, "year", "second")
 
         if self.grid.rank() == 0:
             import matplotlib.pyplot as pp
@@ -230,7 +229,7 @@ def adjustTauc(mask, tauc):
 
     logMessage("  Adjusting initial estimate of 'tauc' to match PISM model for floating ice and ice-free bedrock.\n")
 
-    grid = mask.get_grid()
+    grid = mask.grid()
     high_tauc = grid.ctx().config().get_double("basal_yield_stress.ice_free_bedrock")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
@@ -284,9 +283,16 @@ def run():
 
     append_mode = False
 
-    input_filename = PISM.optionsString("-i", "input file")
-    append_filename = PISM.optionsString("-a", "append file", default=None)
-    output_filename = PISM.optionsString("-o", "output file", default=None)
+    input_filename = config.get_string("input.file")
+    if len(input_filename) == 0:
+        input_filename = None
+
+    append = PISM.OptionString("-a", "append file")
+    append_filename = append.value() if append.is_set() else None
+
+    output_filename = config.get_string("output.file_name")
+    if len(output_filename) == 0:
+        output_filename = None
 
     if (input_filename is None) and (append_filename is None):
         PISM.verbPrintf(1, com, "\nError: No input file specified. Use one of -i [file.nc] or -a [file.nc].\n")
@@ -305,26 +311,28 @@ def run():
         output_filename = append_filename
         append_mode = True
 
-    inv_data_filename = PISM.optionsString("-inv_data", "inverse data file", default=input_filename)
+    inv_data_filename = PISM.OptionString("-inv_data", "inverse data file", input_filename).value()
 
-    do_plotting = PISM.optionsFlag("-inv_plot", "perform visualization during the computation", default=False)
-    do_final_plot = PISM.optionsFlag("-inv_final_plot", "perform visualization at the end of the computation", default=False)
-    Vmax = PISM.optionsReal("-inv_plot_vmax", "maximum velocity for plotting residuals", default=30)
+    do_plotting = PISM.OptionBool("-inv_plot", "perform visualization during the computation")
+    do_final_plot = PISM.OptionBool("-inv_final_plot",
+                                     "perform visualization at the end of the computation")
+    Vmax = PISM.OptionReal("-inv_plot_vmax", "maximum velocity for plotting residuals", 30)
 
-    design_var = PISM.optionsList("-inv_ssa",
-                                  "design variable for inversion",
-                                  "tauc,hardav", "tauc")
-    do_pause = PISM.optionsFlag("-inv_pause", "pause each iteration", default=False)
+    design_var = PISM.OptionKeyword("-inv_ssa",
+                                    "design variable for inversion",
+                                    "tauc,hardav", "tauc").value()
+    do_pause = PISM.OptionBool("-inv_pause", "pause each iteration")
 
-    do_restart = PISM.optionsFlag("-inv_restart", "Restart a stopped computation.", default=False)
-    use_design_prior = PISM.optionsFlag("-inv_use_design_prior", "Use prior from inverse data file as initial guess.", default=True)
+    do_restart = PISM.OptionBool("-inv_restart", "Restart a stopped computation.")
+    use_design_prior = config.get_boolean("inverse.use_design_prior")
 
-    prep_module = PISM.optionsString("-inv_prep_module", "Python module used to do final setup of inverse solver", default=None)
+    prep_module = PISM.OptionString("-inv_prep_module",
+                                    "Python module used to do final setup of inverse solver")
+    prep_module = prep_module.value() if prep_module.is_set() else None
 
-    is_regional = PISM.optionsFlag("-regional", "Compute SIA/SSA using regional model semantics", default=False)
+    is_regional = PISM.OptionBool("-regional", "Compute SIA/SSA using regional model semantics")
 
-    using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
-                                             "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)", default=True)
+    using_zeta_fixed_mask = config.get_boolean("inverse.use_zeta_fixed_mask")
 
     inv_method = config.get_string("inverse.ssa.method")
 
@@ -355,7 +363,8 @@ def run():
         vecs.add(design_prior, writing=saving_inv_data)
     else:
         if not PISM.util.fileHasVariable(input_filename, design_var):
-            PISM.verbPrintf(1, com, "Initial guess for design variable is not available as '%s' in %s.\nYou can provide an initial guess in the inverse data file.\n" % (design_var, input_filename))
+            PISM.verbPrintf(1, com, "Initial guess for design variable is not available as '%s' in %s.\nYou can provide an initial guess in the inverse data file.\n" % (
+                design_var, input_filename))
             exit(1)
         PISM.logging.logMessage("Reading '%s_prior' from '%s' in input file.\n" % (design_var, design_var))
         design = createDesignVec(grid, design_var)
@@ -370,7 +379,8 @@ def run():
             vecs.add(zeta_fixed_mask)
         else:
             if design_var == 'tauc':
-                logMessage("  Computing 'zeta_fixed_mask' (i.e. locations where design variable '%s' has a fixed value).\n" % design_var)
+                logMessage(
+                    "  Computing 'zeta_fixed_mask' (i.e. locations where design variable '%s' has a fixed value).\n" % design_var)
                 zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
                 zeta_fixed_mask.set(1)
                 mask = vecs.mask
@@ -382,7 +392,8 @@ def run():
 
                 adjustTauc(vecs.mask, design_prior)
             elif design_var == 'hardav':
-                PISM.logging.logPrattle("Skipping 'zeta_fixed_mask' for design variable 'hardav'; no natural locations to fix its value.")
+                PISM.logging.logPrattle(
+                    "Skipping 'zeta_fixed_mask' for design variable 'hardav'; no natural locations to fix its value.")
                 pass
             else:
                 raise NotImplementedError("Unable to build 'zeta_fixed_mask' for design variable %s.", design_var)
@@ -402,7 +413,8 @@ def run():
     if do_restart:
         # Just to be sure, verify that we have a 'zeta_inv' in the output file.
         if not PISM.util.fileHasVariable(output_filename, 'zeta_inv'):
-            PISM.verbPrintf(1, com, "Unable to restart computation: file %s is missing variable 'zeta_inv'", output_filename)
+            PISM.verbPrintf(
+                1, com, "Unable to restart computation: file %s is missing variable 'zeta_inv'", output_filename)
             exit(1)
         PISM.logging.logMessage("  Inversion starting from 'zeta_inv' found in %s\n" % output_filename)
         zeta.regrid(output_filename, True)
@@ -420,7 +432,8 @@ def run():
         vecs.add(vel_ssa_observed, writing=saving_inv_data)
     else:
         if not PISM.util.fileHasVariable(inv_data_filename, "u_surface_observed"):
-            PISM.verbPrintf(1, context.com, "Neither u/v_ssa_observed nor u/v_surface_observed is available in %s.\nAt least one must be specified.\n" % inv_data_filename)
+            PISM.verbPrintf(
+                1, context.com, "Neither u/v_ssa_observed nor u/v_surface_observed is available in %s.\nAt least one must be specified.\n" % inv_data_filename)
             exit(1)
         vel_surface_observed = PISM.model.create2dVelocityVec(grid, '_surface_observed', stencil_width=2)
         vel_surface_observed.regrid(inv_data_filename, True)
@@ -493,7 +506,7 @@ def run():
     if prep_module is not None:
         if prep_module.endswith(".py"):
             prep_module = prep_module[0:-2]
-        exec "import %s as user_prep_module" % prep_module
+        exec("import %s as user_prep_module" % prep_module)
         user_prep_module.prep_solver(solver)
 
     # Pausing (add this after the user's listeners)
@@ -544,13 +557,11 @@ def run():
     r_mag = PISM.IceModelVec2S()
     r_mag.create(grid, "inv_ssa_residual", PISM.WITHOUT_GHOSTS, 0)
 
-    sys = grid.ctx().unit_system()
     r_mag.set_attrs("diagnostic", "magnitude of mismatch between observed surface velocities and their reconstrution by inversion",
                     "m s-1", "inv_ssa_residual", 0)
-    r_mag.metadata().set_double("_FillValue", PISM.convert(sys, -0.01, 'm/year', 'm/s'))
+    r_mag.metadata().set_double("_FillValue", convert(-0.01, 'm/year', 'm/s'))
     r_mag.metadata().set_double("valid_min", 0.0)
     r_mag.metadata().set_string("glaciological_units", "m year-1")
-    r_mag.write_in_glaciological_units = True
 
     r_mag.set_to_magnitude(residual)
     r_mag.mask_by(vecs.land_ice_thickness)
@@ -568,14 +579,14 @@ def run():
     # Save the misfit history
     misfit_logger.write(output_filename)
 
+
 if __name__ == "__main__":
     run()
 
 # try to stop coverage and save a report:
 try:                            # pragma: no cover
     cov.stop()
-    report = PISM.optionsFlag("-report_coverage", "save coverage information and a report",
-                              default=False)
+    report = PISM.OptionBool("-report_coverage", "save coverage information and a report")
     if report:
         cov.save()
         cov.html_report(include=["pismi.py"], directory="pismi_coverage")

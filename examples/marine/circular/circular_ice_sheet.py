@@ -44,6 +44,7 @@ def MISMIP_thk(r):
     c = thk_max
     return a * r ** 4 + b * r ** 2 + c
 
+
 # bedrock and ice thickness
 for j in range(options.My):
     for i in range(options.Mx):
@@ -66,8 +67,9 @@ def f(x):
     "floatation criterion: rho_ice/rho_ocean * thk + bed = 0"
     return (p.rho_ice / p.rho_ocean) * MISMIP_thk(x) + MISMIP_bed(x)
 
+
 r_gl = opt.bisect(f, 0, r_cf)
-print "grounding line radius = %.2f km" % (r_gl / 1000.0)
+print("grounding line radius = %.2f km" % (r_gl / 1000.0))
 
 ncfile = PISMNC.PISMDataset(options.output_filename, 'w', format='NETCDF3_CLASSIC')
 
@@ -81,4 +83,4 @@ variables = {"thk": thk,
 piktests_utils.write_data(ncfile, variables)
 
 ncfile.close()
-print "Successfully created %s" % options.output_filename
+print("Successfully created %s" % options.output_filename)

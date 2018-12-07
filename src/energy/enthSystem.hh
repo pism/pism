@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2017 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2017, 2018 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -51,7 +51,7 @@ public:
                 EnthalpyConverter::Ptr EC);
   ~enthSystemCtx();
 
-  void init(int i, int j, double ice_thickness);
+  void init(int i, int j, bool ismarginal, double ice_thickness);
 
   double k_from_T(double T) const;
 
@@ -94,14 +94,18 @@ protected:
   //! values of @f$ k \Delta t / (\rho c \Delta x^2) @f$
   std::vector<double> m_R;
 
-  double m_ice_density, m_ice_c, m_ice_k, m_ice_K, m_ice_K0, m_p_air,
+  double m_ice_density, m_ice_c, m_ice_k, m_p_air,
     m_nu, m_R_cold, m_R_temp, m_R_factor;
 
   double m_ice_thickness,
     m_lambda;              //!< implicit FD method parameter
   double m_D0, m_U0, m_B0;   // coefficients of the first (basal) equation
   double m_L_ks, m_D_ks, m_U_ks, m_B_ks;   // coefficients of the last (surface) equation
-  bool m_ismarginal, m_c_depends_on_T, m_k_depends_on_T;
+  bool m_marginal, m_k_depends_on_T;
+
+  bool m_exclude_horizontal_advection;
+  bool m_exclude_vertical_advection;
+  bool m_exclude_strain_heat;
 
   const IceModelVec3 &m_Enth3, &m_strain_heating3;
   EnthalpyConverter::Ptr m_EC;  // conductivity has known dependence on T, not enthalpy

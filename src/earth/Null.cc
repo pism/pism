@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,7 @@
 
 #include "BedDef.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
 
 namespace pism {
@@ -30,11 +30,12 @@ Null::Null(IceGrid::ConstPtr g)
   // empty
 }
 
-void Null::init_impl(const InputOptions &opts) {
+void Null::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
+                     const IceModelVec2S &sea_level_elevation) {
   m_log->message(2,
              "* Initializing the dummy (no-op) bed deformation model...\n");
 
-  BedDef::init_impl(opts);
+  BedDef::init_impl(opts, ice_thickness, sea_level_elevation);
 
   m_uplift.set(0.0);
 }
@@ -44,9 +45,11 @@ MaxTimestep Null::max_timestep_impl(double t) const {
   return MaxTimestep("bed_def none");
 }
 
-void Null::update_with_thickness_impl(const IceModelVec2S &ice_thickness,
-                                        double t, double dt) {
+void Null::update_impl(const IceModelVec2S &ice_thickness,
+                       const IceModelVec2S &sea_level_elevation,
+                       double t, double dt) {
   (void) ice_thickness;
+  (void) sea_level_elevation;
   (void) t;
   (void) dt;
   // This model does not update bed topography or bed uplift.

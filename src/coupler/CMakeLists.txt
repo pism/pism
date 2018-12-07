@@ -1,11 +1,14 @@
 # Boundary models (surface, atmosphere, ocean).
-add_library (pismboundary OBJECT
+add_library (boundary OBJECT
+  ./util/ScalarForcing.cc
+  ./util/options.cc
+  ./util/lapse_rates.cc
   ./atmosphere/AtmosphereModel.cc
-  ./atmosphere/ConstantPIK.cc
   ./atmosphere/SeariseGreenland.cc
   ./atmosphere/YearlyCycle.cc
   ./atmosphere/CosineYearlyCycle.cc
   ./atmosphere/GivenClimate.cc
+  ./atmosphere/PIK.cc
   ./atmosphere/LapseRates.cc
   ./atmosphere/Delta_T.cc
   ./atmosphere/Delta_P.cc
@@ -14,19 +17,29 @@ add_library (pismboundary OBJECT
   ./atmosphere/Anomaly.cc
   ./atmosphere/WeatherStation.cc
   ./atmosphere/Factory.cc
+  ./atmosphere/Uniform.cc
   ./ocean/OceanModel.cc
+  ./ocean/CompleteOceanModel.cc
   ./ocean/Cache.cc
   ./ocean/ConstantPIK.cc
   ./ocean/Constant.cc
   ./ocean/GivenClimate.cc
   ./ocean/GivenTH.cc
-  ./ocean/Delta_SL.cc
+  ./ocean/Anomaly.cc
   ./ocean/Delta_T.cc
   ./ocean/Delta_SMB.cc
   ./ocean/Frac_MBP.cc
   ./ocean/Frac_SMB.cc
   ./ocean/Factory.cc
   ./ocean/Initialization.cc
+  ./ocean/Pico.cc
+  ./ocean/PicoPhysics.cc
+  ./ocean/PicoGeometry.cc
+  ./ocean/sea_level/Initialization.cc
+  ./ocean/sea_level/SeaLevel.cc
+  ./ocean/sea_level/Delta_SL.cc
+  ./ocean/sea_level/Delta_SL_2D.cc
+  ./ocean/sea_level/Factory.cc
   ./surface/Initialization.cc
   ./surface/localMassBalance.cc
   ./surface/SurfaceModel.cc

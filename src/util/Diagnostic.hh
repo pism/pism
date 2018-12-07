@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,8 @@
 #define __Diagnostic_hh
 
 #include <memory>
+#include <map>
+#include <string>
 
 #include "VariableMetadata.hh"
 #include "Timeseries.hh"        // inline code and a member of TSDiagnostic
@@ -102,13 +104,13 @@ protected:
   const units::System::Ptr m_sys;
   //! Configuration flags and parameters
   const Config::ConstPtr m_config;
-  //! number of degrees of freedom; 1 for scalar fields, 2 for vector fields
-  unsigned int m_dof;
   //! metadata corresponding to NetCDF variables
   std::vector<SpatialVariableMetadata> m_vars;
   //! fill value (used often enough to justify storing it)
   double m_fill_value;
 };
+
+typedef std::map<std::string, Diagnostic::Ptr> DiagnosticList;
 
 /*!
  * Helper template wrapping quantities with dedicated storage in diagnostic classes.
@@ -120,19 +122,18 @@ template<class T>
 class DiagWithDedicatedStorage : public Diagnostic {
 public:
   DiagWithDedicatedStorage(const T &input)
-    : Diagnostic(input.get_grid()),
+    : Diagnostic(input.grid()),
       m_input(input)
   {
-    m_dof = input.get_ndof();
-    for (unsigned int j = 0; j < m_dof; ++j) {
+    for (unsigned int j = 0; j < input.ndof(); ++j) {
       m_vars.push_back(input.metadata(j));
     }
   }
 protected:
   IceModelVec::Ptr compute_impl() const {
-    typename T::Ptr result(new T(m_input.get_grid(), "unnamed", WITHOUT_GHOSTS));
+    typename T::Ptr result(new T(m_input.grid(), "unnamed", WITHOUT_GHOSTS));
     result->set_name(m_input.get_name());
-    for (unsigned int k = 0; k < m_dof; ++k) {
+    for (unsigned int k = 0; k < m_vars.size(); ++k) {
       result->metadata(k) = m_vars[k];
     }
 
@@ -320,6 +321,8 @@ protected:
   //! size of the buffer used to store data
   size_t m_buffer_size;
 };
+
+typedef std::map<std::string, TSDiagnostic::Ptr> TSDiagnosticList;
 
 //! Scalar diagnostic reporting a snapshot of a quantity modeled by PISM.
 /*!

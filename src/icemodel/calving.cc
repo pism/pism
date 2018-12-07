@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2017 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2004--2018 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,8 +21,6 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/pism_const.hh"
-#include "pism/coupler/OceanModel.hh"
 #include "pism/util/pism_utilities.hh"
 
 #include "pism/calving/CalvingAtThickness.hh"
@@ -33,18 +31,29 @@
 #include "pism/calving/IcebergRemover.hh"
 #include "pism/calving/OceanKill.hh"
 
+#include "pism/energy/EnergyModel.hh"
+#include "pism/coupler/OceanModel.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
+
 namespace pism {
 
 void IceModel::do_calving() {
+
+  CalvingInputs inputs;
+
+  inputs.geometry = &m_geometry;
+  inputs.bc_mask  = &m_ssa_dirichlet_bc_mask;
+
+  inputs.ice_velocity         = &m_stress_balance->shallow()->velocity();
+  inputs.ice_enthalpy         = &m_energy_model->enthalpy();
+  inputs.shelf_base_mass_flux = &m_ocean->shelf_base_mass_flux();
 
   // eigen-calving should go first: it uses the ice velocity field,
   // which is defined at grid points that were icy at the *beginning*
   // of a time-step.
   if (m_eigen_calving) {
     m_eigen_calving->update(m_dt,
-                            m_ocean->sea_level_elevation(),
-                            m_ssa_dirichlet_bc_mask,
-                            m_geometry.bed_elevation,
+                            inputs,
                             m_geometry.cell_type,
                             m_geometry.ice_area_specific_volume,
                             m_geometry.ice_thickness);
@@ -52,9 +61,7 @@ void IceModel::do_calving() {
 
   if (m_vonmises_calving) {
     m_vonmises_calving->update(m_dt,
-                               m_ocean->sea_level_elevation(),
-                               m_ssa_dirichlet_bc_mask,
-                               m_geometry.bed_elevation,
+                               inputs,
                                m_geometry.cell_type,
                                m_geometry.ice_area_specific_volume,
                                m_geometry.ice_thickness);
@@ -62,9 +69,7 @@ void IceModel::do_calving() {
 
   if (m_frontal_melt) {
     m_frontal_melt->update(m_dt,
-                           m_ocean->sea_level_elevation(),
-                           m_ssa_dirichlet_bc_mask,
-                           m_geometry.bed_elevation,
+                           inputs,
                            m_geometry.cell_type,
                            m_geometry.ice_area_specific_volume,
                            m_geometry.ice_thickness);
@@ -84,34 +89,6 @@ void IceModel::do_calving() {
 }
 
 /**
- * Clean up the Href field.
- *
- * Href(i,j) > 0 is allowed only if ice_thickness(i,j) == 0 and (i,j) has a
- * floating ice neighbor.
- */
-void IceModel::Href_cleanup() {
-
-  IceModelVec2S
-    &V = m_geometry.ice_area_specific_volume,
-    &H = m_geometry.ice_thickness;
-
-  IceModelVec::AccessList list{&H, &V, &m_geometry.cell_type};
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (H(i, j) > 0 and V(i, j) > 0) {
-      H(i, j) += V(i, j);
-      V(i, j) = 0.0;
-    }
-
-    if (V(i, j) > 0.0 and not m_geometry.cell_type.next_to_ice(i, j)) {
-      V(i, j) = 0.0;
-    }
-  }
-}
-
-/**
  * Compute the ice discharge into the ocean during the current time step.
  *
  * Units: ice equivalent meters.
@@ -120,13 +97,13 @@ void IceModel::Href_cleanup() {
  * @param Href current "reference ice thickness"
  * @param thickness_old old ice thickness
  * @param Href_old old "reference ice thickness"
- * @param[out] output computed discharge during the current time step
+ * @param[in,out] output computed discharge during the current time step
  */
-void IceModel::compute_discharge(const IceModelVec2S &thickness,
-                                 const IceModelVec2S &Href,
-                                 const IceModelVec2S &thickness_old,
-                                 const IceModelVec2S &Href_old,
-                                 IceModelVec2S &output) {
+void IceModel::accumulate_discharge(const IceModelVec2S &thickness,
+                                    const IceModelVec2S &Href,
+                                    const IceModelVec2S &thickness_old,
+                                    const IceModelVec2S &Href_old,
+                                    IceModelVec2S &output) {
 
   IceModelVec::AccessList list{&thickness, &thickness_old,
       &Href, &Href_old, &output};
@@ -135,10 +112,9 @@ void IceModel::compute_discharge(const IceModelVec2S &thickness,
     const int i = p.i(), j = p.j();
 
     const double
-      H_old     = thickness_old(i, j) + Href_old(i, j),
-      H_new     = thickness(i, j) + Href(i, j);
-
-    output(i, j) = H_new - H_old;
+      H_old       = thickness_old(i, j) + Href_old(i, j),
+      H_new       = thickness(i, j) + Href(i, j);
+    output(i, j) += H_new - H_old;
   }
 }
 

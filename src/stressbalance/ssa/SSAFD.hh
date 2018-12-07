@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -40,7 +40,7 @@ public:
 protected:
   virtual void init_impl();
 
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
 
   virtual void pc_setup_bjacobi();
 

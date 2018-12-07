@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 
 import PISM
+from PISM.util import convert
 
 ctx = PISM.Context()
+
 
 def create_dummy_grid():
     "Create a dummy grid"
     params = PISM.GridParameters(ctx.config)
     params.ownership_ranges_from_options(ctx.size)
     return PISM.IceGrid(ctx.ctx, params)
+
 
 def setup():
     global grid
@@ -31,7 +34,7 @@ def setup():
 
     basal_heat_flux = PISM.IceModelVec2S()
     basal_heat_flux.create(grid, "bheatflx", PISM.WITHOUT_GHOSTS)
-    basal_heat_flux.set(PISM.convert(ctx.unit_system, 10, "mW m-2", "W m-2"))
+    basal_heat_flux.set(convert(10, "mW m-2", "W m-2"))
 
     ice_thickness = PISM.model.createIceThicknessVec(grid)
     ice_thickness.set(4000.0)
@@ -68,23 +71,23 @@ def setup():
 
     inputs = PISM.EnergyModelInputs()
 
-    inputs.cell_type                = cell_type
+    inputs.cell_type = cell_type
     inputs.basal_frictional_heating = zero
-    inputs.basal_heat_flux          = basal_heat_flux
-    inputs.ice_thickness            = ice_thickness
-    inputs.surface_liquid_fraction  = zero
-    inputs.shelf_base_temp          = shelf_base_temp
-    inputs.surface_temp             = surface_temp
-    inputs.till_water_thickness     = zero
-    inputs.strain_heating3          = strain_heating3
-    inputs.u3                       = u
-    inputs.v3                       = v
-    inputs.w3                       = w
+    inputs.basal_heat_flux = basal_heat_flux
+    inputs.ice_thickness = ice_thickness
+    inputs.surface_liquid_fraction = zero
+    inputs.shelf_base_temp = shelf_base_temp
+    inputs.surface_temp = surface_temp
+    inputs.till_water_thickness = zero
+    inputs.strain_heating3 = strain_heating3
+    inputs.u3 = u
+    inputs.v3 = v
+    inputs.w3 = w
 
-dt = PISM.convert(ctx.unit_system, 1, "years", "seconds")
+dt = convert(1, "years", "seconds")
 
 def use_model(model):
-    print "* Performing a time step..."
+    print("* Performing a time step...")
     model.update(0, dt, inputs)
 
     try:
@@ -99,10 +102,11 @@ def use_model(model):
     except RuntimeError:
         pass
 
-    print model.stdout_flags()
+    print(model.stdout_flags())
     stats = model.stats()
     enthalpy = model.get_enthalpy()
     bmr = model.get_basal_melt_rate()
+
 
 def initialize(model):
     model.initialize(basal_melt_rate,
@@ -111,15 +115,16 @@ def initialize(model):
                      climatic_mass_balance,
                      basal_heat_flux)
 
+
 def test_interface():
     "Use the EnergyModel interface to make sure the code runs."
     for M in [PISM.EnthalpyModel, PISM.DummyEnergyModel, PISM.TemperatureModel]:
         model = M(grid, None)
 
-        print ""
-        print "Testing %s..." % M
+        print("")
+        print("Testing %s..." % M)
 
-        print "* Bootstrapping using provided basal melt rate..."
+        print("* Bootstrapping using provided basal melt rate...")
         initialize(model)
 
         use_model(model)
@@ -131,13 +136,13 @@ def test_interface():
 
         pio = PISM.util.prepare_output("energy_model_state.nc")
 
-        print "* Saving the model state..."
+        print("* Saving the model state...")
         model.write_model_state(pio)
 
-        print "* Restarting from a saved model state..."
+        print("* Restarting from a saved model state...")
         model.restart(pio, 0)
 
-        print "* Bootstrapping from a saved model state..."
+        print("* Bootstrapping from a saved model state...")
         model.bootstrap(pio,
                         ice_thickness,
                         surface_temp,
@@ -145,6 +150,7 @@ def test_interface():
                         basal_heat_flux)
 
         pio.close()
+
 
 def test_temp_restart_from_enth():
     enth_model = PISM.EnthalpyModel(grid, None)
@@ -156,6 +162,7 @@ def test_temp_restart_from_enth():
     enth_model.write_model_state(pio)
 
     temp_model.restart(pio, 0)
+
 
 def test_enth_restart_from_temp():
     enth_model = PISM.EnthalpyModel(grid, None)

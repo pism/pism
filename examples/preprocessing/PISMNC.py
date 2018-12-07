@@ -3,7 +3,7 @@
 try:
     import netCDF4 as netCDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 
@@ -30,7 +30,7 @@ class PISMDataset(netCDF.Dataset):
         Create PISM-compatible dimensions in a NetCDF file.
         """
 
-        if time_dependent and not 'time' in self.variables.keys():
+        if time_dependent and not 'time' in list(self.variables.keys()):
             self.create_time(use_time_bounds)
 
         self.createDimension('x', x.size)
@@ -55,7 +55,7 @@ class PISMDataset(netCDF.Dataset):
         self.sync()
 
     def append_time(self, value, bounds=None):
-        if 'time' in self.dimensions.keys():
+        if 'time' in list(self.dimensions.keys()):
             time = self.variables['time']
             N = time.size
             time[N] = value
@@ -68,7 +68,7 @@ class PISMDataset(netCDF.Dataset):
         if not attrs:
             return
 
-        for (name, value) in attrs.iteritems():
+        for (name, value) in attrs.items():
             if name == "_FillValue":
                 continue
             setattr(self.variables[var_name], name, value)
@@ -91,7 +91,7 @@ class PISMDataset(netCDF.Dataset):
         try:
             var = self.variables[var_name]
         except:
-            if attrs is not None and '_FillValue' in attrs.keys():
+            if attrs is not None and '_FillValue' in list(attrs.keys()):
                 var = self.createVariable(var_name, nc_type, dims,
                                           fill_value=attrs['_FillValue'])
             else:
@@ -103,7 +103,7 @@ class PISMDataset(netCDF.Dataset):
 
     def define_timeseries(self, var_name, attrs=None):
         try:
-            if attrs is not None and '_FillValue' in attrs.keys():
+            if attrs is not None and '_FillValue' in list(attrs.keys()):
                 var = self.createVariable(var_name, 'f8', ('time',),
                                           fill_value=attrs['_FillValue'])
             else:
@@ -149,6 +149,7 @@ class PISMDataset(netCDF.Dataset):
         var[:] = data
 
         return var
+
 
 if __name__ == "__main__":
     # produce a NetCDF file for testing

@@ -11,18 +11,6 @@ parameters. One can also set CMake cache variables using the ``-D`` command-line
 
 Here are some issues we know about.
 
-- Sometimes, if a system has more than one MPI installation CMake finds the wrong one. To
-  tell it which one to use, set ``MPI_LIBRARY`` and related variables by using ``ccmake``.
-  You can also set environment variables ``CC`` and ``CXX`` to point to MPI wrappers:
-
-  .. code-block:: bash
-
-      CC=mpicc CXX=mpicxx cmake path/to/pism-source
-
-  It is also possible to guide CMake’s configuration mechanism by setting ``MPI_COMPILER``
-  to the compiler (such as ``mpicc``) corresponding to the MPI installation you want to
-  use, setting ``MPI_LIBRARY`` to ``MPI_LIBRARY-NOTFOUND`` and re-running CMake.
-
 - If you are compiling PISM on a system using a cross-compiler, you will need to disable
   CMake’s tests trying to determine if PETSc is installed properly. To do this, set
   ``PETSC_EXECUTABLE_RUNS`` to "yes".
@@ -40,4 +28,4 @@ Here are some issues we know about.
   ``ccmake``.
 
 - You can set ``Pism_LOOK_FOR_LIBRARIES`` to "``OFF``" to disable all heuristics and set
-  compiler flags by hand. See `HPC builds <HPC-builds_>`_ for examples.
+  compiler flags by hand. See `PISM builds <pism-builds_>`_ for examples.

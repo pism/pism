@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,13 +25,10 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_const.hh"
-#include "pism/coupler/OceanModel.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/earth/BedDef.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Profiling.hh"
-#include "pism/util/pism_utilities.hh"
 
 #include "pism/hydrology/Hydrology.hh"
 #include "pism/stressbalance/StressBalance.hh"
@@ -40,36 +37,38 @@
 
 namespace pism {
 
-//! \file iMenergy.cc Methods of IceModel which address conservation of energy.
+//! \file energy.cc Methods of IceModel which address conservation of energy.
 //! Common to enthalpy (polythermal) and temperature (cold-ice) methods.
 
-//! Manage the solution of the energy equation, and related parallel communication.
-void IceModel::energy_step() {
+void IceModel::bedrock_thermal_model_step() {
 
   const Profiling &profiling = m_ctx->profiling();
 
-  energy::EnergyModelStats stats;
+  IceModelVec2S &basal_enthalpy = m_work2d[2];
 
-  // operator-splitting occurs here (ice and bedrock energy updates are split):
-  //   tell BedThermalUnit* btu that we have an ice base temp; it will return
-  //   the z=0 value of geothermal flux when called inside temperatureStep() or
-  //   enthalpyStep()
-
-  IceModelVec2S &ice_surface_temperature = m_work2d[0];
-  IceModelVec2S &basal_enthalpy          = m_work2d[2];
   m_energy_model->enthalpy().getHorSlice(basal_enthalpy, 0.0);
-  m_surface->temperature(ice_surface_temperature);
-  bedrock_surface_temperature(m_ocean->sea_level_elevation(),
+
+  bedrock_surface_temperature(m_geometry.sea_level_elevation,
                               m_geometry.cell_type,
                               m_geometry.bed_elevation,
                               m_geometry.ice_thickness,
                               basal_enthalpy,
-                              ice_surface_temperature,
+                              m_surface->temperature(),
                               m_bedtoptemp);
 
   profiling.begin("btu");
   m_btu->update(m_bedtoptemp, t_TempAge, dt_TempAge);
   profiling.end("btu");
+}
+
+//! Manage the solution of the energy equation, and related parallel communication.
+void IceModel::energy_step() {
+
+  // operator-splitting occurs here (ice and bedrock energy updates are split):
+  //   tell BedThermalUnit* btu that we have an ice base temp; it will return
+  //   the z=0 value of geothermal flux when called inside temperatureStep() or
+  //   enthalpyStep()
+  bedrock_thermal_model_step();
 
   m_energy_model->update(t_TempAge, dt_TempAge, energy_model_inputs());
 
@@ -88,20 +87,18 @@ void IceModel::energy_step() {
  * The sub shelf mass flux provided by an ocean model is in [kg m-2
  * s-1], so we divide by the ice density to convert to [m second-1].
  */
-void IceModel::combine_basal_melt_rate(IceModelVec2S &result) {
-
-  IceModelVec2S &shelf_base_mass_flux = m_work2d[0];
-  assert(m_ocean);
-  m_ocean->shelf_base_mass_flux(shelf_base_mass_flux);
+void IceModel::combine_basal_melt_rate(const Geometry &geometry,
+                                       const IceModelVec2S &shelf_base_mass_flux,
+                                       const IceModelVec2S &grounded_basal_melt_rate,
+                                       IceModelVec2S &result) {
 
   const bool sub_gl = (m_config->get_boolean("geometry.grounded_cell_fraction") and
                        m_config->get_boolean("energy.basal_melt.use_grounded_cell_fraction"));
 
-  const IceModelVec2S &M_grounded = m_energy_model->basal_melt_rate();
-
-  IceModelVec::AccessList list{&m_geometry.cell_type, &M_grounded, &shelf_base_mass_flux, &result};
+  IceModelVec::AccessList list{&geometry.cell_type,
+      &grounded_basal_melt_rate, &shelf_base_mass_flux, &result};
   if (sub_gl) {
-    list.add(m_geometry.cell_grounded_fraction);
+    list.add(geometry.cell_grounded_fraction);
   }
 
   double ice_density = m_config->get_double("constants.ice.density");
@@ -117,16 +114,16 @@ void IceModel::combine_basal_melt_rate(IceModelVec2S &result) {
     // Use the fractional floatation mask to adjust the basal melt
     // rate near the grounding line:
     if (sub_gl) {
-      lambda = m_geometry.cell_grounded_fraction(i,j);
-    } else if (m_geometry.cell_type.ocean(i,j)) {
+      lambda = geometry.cell_grounded_fraction(i,j);
+    } else if (geometry.cell_type.ocean(i,j)) {
       lambda = 0.0;
     }
-    result(i,j) = lambda * M_grounded(i, j) + (1.0 - lambda) * M_shelf_base;
+    result(i,j) = lambda * grounded_basal_melt_rate(i, j) + (1.0 - lambda) * M_shelf_base;
   }
 }
 
 //! @brief Compute the temperature seen by the top of the bedrock thermal layer.
-void bedrock_surface_temperature(double sea_level,
+void bedrock_surface_temperature(const IceModelVec2S &sea_level,
                                  const IceModelVec2CellType &cell_type,
                                  const IceModelVec2S &bed_topography,
                                  const IceModelVec2S &ice_thickness,
@@ -134,7 +131,7 @@ void bedrock_surface_temperature(double sea_level,
                                  const IceModelVec2S &ice_surface_temperature,
                                  IceModelVec2S &result) {
 
-  IceGrid::ConstPtr grid  = result.get_grid();
+  IceGrid::ConstPtr grid  = result.grid();
   Config::ConstPtr config = grid->ctx()->config();
 
   const double
@@ -145,7 +142,7 @@ void bedrock_surface_temperature(double sea_level,
 
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
-  IceModelVec::AccessList list{&cell_type, &bed_topography, &ice_thickness,
+  IceModelVec::AccessList list{&cell_type, &bed_topography, &sea_level, &ice_thickness,
       &ice_surface_temperature, &basal_enthalpy, &result};
   ParallelSection loop(grid->com);
   try {
@@ -160,7 +157,7 @@ void bedrock_surface_temperature(double sea_level,
           result(i,j) = EC->temperature(basal_enthalpy(i,j), pressure);
         }
       } else { // floating: apply pressure melting temp as top of bedrock temp
-        result(i,j) = T0 - (sea_level - bed_topography(i,j)) * beta_CC_grad_sea_water;
+        result(i,j) = T0 - (sea_level(i, j) - bed_topography(i,j)) * beta_CC_grad_sea_water;
       }
     }
   } catch (...) {

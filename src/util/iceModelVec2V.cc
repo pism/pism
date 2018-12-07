@@ -20,7 +20,7 @@
 using std::dynamic_pointer_cast;
 
 #include "iceModelVec.hh"
-#include "pism_const.hh"
+#include "pism_utilities.hh"
 #include "IceGrid.hh"
 
 #include "error_handling.hh"

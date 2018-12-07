@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2017 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2018 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,14 +27,13 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
 
 #include "pism/util/Time.hh"
-#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -78,7 +77,7 @@ SIAFD::SIAFD(IceGrid::ConstPtr g)
   const bool e_age_coupling = m_config->get_boolean("stress_balance.sia.e_age_coupling");
 
   if (compute_grain_size_using_age) {
-    if (not FlowLawUsesGrainSize(m_flow_law)) {
+    if (not FlowLawUsesGrainSize(*m_flow_law)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "flow law %s does not use grain size "
                                     "but sia.grain_size_age_coupling was set",
                                     m_flow_law->name().c_str());
@@ -103,10 +102,6 @@ SIAFD::SIAFD(IceGrid::ConstPtr g)
 
 SIAFD::~SIAFD() {
   delete m_bed_smoother;
-  if (m_flow_law != NULL) {
-    delete m_flow_law;
-    m_flow_law = NULL;
-  }
 }
 
 //! \brief Initialize the SIA module.
@@ -248,8 +243,8 @@ void SIAFD::surface_gradient_eta(const Inputs &inputs,
 
   IceModelVec::AccessList list{&eta, &H, &h_x, &h_y, &b};
 
-  unsigned int GHOSTS = eta.get_stencil_width();
-  assert(H.get_stencil_width() >= GHOSTS);
+  unsigned int GHOSTS = eta.stencil_width();
+  assert(H.stencil_width() >= GHOSTS);
 
   for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -260,10 +255,10 @@ void SIAFD::surface_gradient_eta(const Inputs &inputs,
   // now use Mahaffy on eta to get grad h on staggered;
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
 
-  assert(b.get_stencil_width()   >= 2);
-  assert(eta.get_stencil_width() >= 2);
-  assert(h_x.get_stencil_width() >= 1);
-  assert(h_y.get_stencil_width() >= 1);
+  assert(b.stencil_width()   >= 2);
+  assert(eta.stencil_width() >= 2);
+  assert(h_x.stencil_width() >= 1);
+  assert(h_y.stencil_width() >= 1);
 
   for (int o=0; o<2; o++) {
 
@@ -315,10 +310,10 @@ void SIAFD::surface_gradient_mahaffy(const Inputs &inputs,
   IceModelVec::AccessList list{&h_x, &h_y, &h};
 
   // h_x and h_y have to have ghosts
-  assert(h_x.get_stencil_width() >= 1);
-  assert(h_y.get_stencil_width() >= 1);
+  assert(h_x.stencil_width() >= 1);
+  assert(h_y.stencil_width() >= 1);
   // surface elevation needs more ghosts
-  assert(h.get_stencil_width()   >= 2);
+  assert(h.stencil_width()   >= 2);
 
   for (PointsWithGhosts p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -397,13 +392,13 @@ void SIAFD::surface_gradient_haseloff(const Inputs &inputs,
 
   IceModelVec::AccessList list{&h_x, &h_y, &w_i, &w_j, &h, &mask, &b};
 
-  assert(b.get_stencil_width()    >= 2);
-  assert(mask.get_stencil_width() >= 2);
-  assert(h.get_stencil_width()    >= 2);
-  assert(h_x.get_stencil_width()  >= 1);
-  assert(h_y.get_stencil_width()  >= 1);
-  assert(w_i.get_stencil_width()  >= 1);
-  assert(w_j.get_stencil_width()  >= 1);
+  assert(b.stencil_width()    >= 2);
+  assert(mask.stencil_width() >= 2);
+  assert(h.stencil_width()    >= 2);
+  assert(h_x.stencil_width()  >= 1);
+  assert(h_y.stencil_width()  >= 1);
+  assert(w_i.stencil_width()  >= 1);
+  assert(w_j.stencil_width()  >= 1);
 
   for (PointsWithGhosts p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -571,15 +566,17 @@ void SIAFD::compute_diffusivity(bool full_update,
 
   result.set(0.0);
 
-  const double enhancement_factor = m_flow_law->enhancement_factor();
-  const double enhancement_factor_interglacial = m_flow_law->enhancement_factor_interglacial();
+  const double
+    current_time                    = m_grid->ctx()->time()->current(),
+    enhancement_factor              = m_flow_law->enhancement_factor(),
+    enhancement_factor_interglacial = m_flow_law->enhancement_factor_interglacial(),
+    D_limit                         = m_config->get_double("stress_balance.sia.max_diffusivity");
 
-  const bool compute_grain_size_using_age = m_config->get_boolean("stress_balance.sia.grain_size_age_coupling");
-
-  const bool e_age_coupling = m_config->get_boolean("stress_balance.sia.e_age_coupling");
-  const double current_time = m_grid->ctx()->time()->current();
-
-  const bool use_age = compute_grain_size_using_age or e_age_coupling;
+  const bool
+    compute_grain_size_using_age = m_config->get_boolean("stress_balance.sia.grain_size_age_coupling"),
+    e_age_coupling               = m_config->get_boolean("stress_balance.sia.e_age_coupling"),
+    limit_diffusivity            = m_config->get_boolean("stress_balance.sia.limit_diffusivity"),
+    use_age                      = compute_grain_size_using_age or e_age_coupling;
 
   // get "theta" from Schoof (2003) bed smoothness calculation and the
   // thickness relative to the smoothed bed; each IceModelVec2S involved must
@@ -591,22 +588,22 @@ void SIAFD::compute_diffusivity(bool full_update,
   IceModelVec::AccessList list{&result, &theta, &thk_smooth, &h_x, &h_y, enthalpy};
 
   if (use_age) {
-    assert(age->get_stencil_width() >= 2);
+    assert(age->stencil_width() >= 2);
     list.add(*age);
   }
 
   if (full_update) {
     list.add({&m_delta[0], &m_delta[1]});
-    assert(m_delta[0].get_stencil_width()  >= 1);
-    assert(m_delta[1].get_stencil_width()  >= 1);
+    assert(m_delta[0].stencil_width()  >= 1);
+    assert(m_delta[1].stencil_width()  >= 1);
   }
 
-  assert(theta.get_stencil_width()      >= 2);
-  assert(thk_smooth.get_stencil_width() >= 2);
-  assert(result.get_stencil_width()     >= 1);
-  assert(h_x.get_stencil_width()        >= 1);
-  assert(h_y.get_stencil_width()        >= 1);
-  assert(enthalpy->get_stencil_width()  >= 2);
+  assert(theta.stencil_width()      >= 2);
+  assert(thk_smooth.stencil_width() >= 2);
+  assert(result.stencil_width()     >= 1);
+  assert(h_x.stencil_width()        >= 1);
+  assert(h_y.stencil_width()        >= 1);
+  assert(enthalpy->stencil_width()  >= 2);
 
   const std::vector<double> &z = m_grid->z();
   const unsigned int
@@ -616,10 +613,11 @@ void SIAFD::compute_diffusivity(bool full_update,
 
   std::vector<double> depth(Mz), stress(Mz), pressure(Mz), E(Mz), flow(Mz);
   std::vector<double> delta_ij(Mz);
-  std::vector<double> A(Mz), ice_grain_size(Mz, m_config->get_double("constants.ice.grain_size"));
+  std::vector<double> A(Mz), ice_grain_size(Mz, m_config->get_double("constants.ice.grain_size", "m"));
   std::vector<double> e_factor(Mz, enhancement_factor);
 
   double D_max = 0.0;
+  int high_diffusivity_counter = 0;
   for (int o=0; o<2; o++) {
     ParallelSection loop(m_grid->com);
     try {
@@ -726,11 +724,13 @@ void SIAFD::compute_diffusivity(bool full_update,
           D = 0.0;
         }
 
+        if (limit_diffusivity and D >= D_limit) {
+          D = D_limit;
+          high_diffusivity_counter += 1;
+        }
+
         D_max = std::max(D_max, D);
 
-        // vertically-averaged SIA-only flux, sans sliding; note
-        //   result(i, j, 0) is  u  at E (east)  staggered point (i+1/2, j)
-        //   result(i, j, 1) is  v  at N (north) staggered point (i, j+1/2)
         result(i, j, o) = D;
 
         // if doing the full update, fill the delta column above the ice and
@@ -749,6 +749,22 @@ void SIAFD::compute_diffusivity(bool full_update,
   } // o-loop
 
   m_D_max = GlobalMax(m_grid->com, D_max);
+
+  high_diffusivity_counter = GlobalSum(m_grid->com, high_diffusivity_counter);
+
+  if (m_D_max > D_limit) {
+
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Maximum diffusivity of SIA flow (%f m2/s) is too high.\n"
+                                  "This probably means that the bed elevation or the ice thickness is "
+                                  "too rough.\n"
+                                  "Increase stress_balance.sia.max_diffusivity to suppress this message.", m_D_max);
+
+  } else if (high_diffusivity_counter > 0) {
+
+    m_log->message(2, "  SIA diffusivity was capped at %.2f m2/s at %d locations.\n",
+                   D_limit, high_diffusivity_counter);
+  }
 }
 
 void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,
@@ -801,11 +817,11 @@ void SIAFD::compute_I(const Geometry &geometry) {
 
   IceModelVec::AccessList list{&m_delta[0], &m_delta[1], &I[0], &I[1], &thk_smooth};
 
-  assert(I[0].get_stencil_width()     >= 1);
-  assert(I[1].get_stencil_width()     >= 1);
-  assert(m_delta[0].get_stencil_width() >= 1);
-  assert(m_delta[1].get_stencil_width() >= 1);
-  assert(thk_smooth.get_stencil_width() >= 2);
+  assert(I[0].stencil_width()     >= 1);
+  assert(I[1].stencil_width()     >= 1);
+  assert(m_delta[0].stencil_width() >= 1);
+  assert(m_delta[1].stencil_width() >= 1);
+  assert(thk_smooth.stencil_width() >= 2);
 
   const unsigned int Mz = m_grid->Mz();
 

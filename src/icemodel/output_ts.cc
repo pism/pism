@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 PISM Authors
+/* Copyright (C) 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,9 +29,10 @@ void IceModel::init_timeseries() {
 
   m_ts_filename = m_config->get_string("output.timeseries.filename");
 
-  options::String times("-ts_times", "Specifies a MATLAB-style range or a list of requested times");
+  auto times = m_config->get_string("output.timeseries.times");
+  bool times_set = not times.empty();
 
-  if (times.is_set() xor not m_ts_filename.empty()) {
+  if (times_set xor not m_ts_filename.empty()) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "you need to specity both -ts_file and -ts_times"
                        " to save scalar diagnostic time-series.");
@@ -42,16 +43,16 @@ void IceModel::init_timeseries() {
   }
 
   try {
-    m_time->parse_times(times, *m_ts_times);
+    *m_ts_times = m_time->parse_times(times);
   } catch (RuntimeError &e) {
-    e.add_context("parsing the -ts_times argument %s", times->c_str());
+    e.add_context("parsing the -ts_times argument %s", times.c_str());
     throw;
   }
 
   m_log->message(2, "  saving scalar time-series to '%s'\n", m_ts_filename.c_str());
-  m_log->message(2, "  times requested: %s\n", times->c_str());
+  m_log->message(2, "  times requested: %s\n", times.c_str());
 
-  std::set<std::string> vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
+  auto vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
   if (not vars.empty()) {
     m_log->message(2, "variables requested: %s\n", set_join(vars, ",").c_str());
   }

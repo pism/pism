@@ -12,8 +12,8 @@ Example::Example(IceGrid::ConstPtr g)
   : OceanModel(g) {
 
   // assume that climate_forcing.buffer_size is big enough
-  m_shelf_melt_rate.set_n_records(m_config->get_double("climate_forcing.buffer_size"));
-  m_shelf_melt_rate.create(m_grid, "shelf_base_melt_rate");
+  m_shelf_melt_rate.create(m_grid, "shelf_base_melt_rate",
+                           m_config->get_double("climate_forcing.buffer_size"));
   m_shelf_melt_rate.set_attrs("internal", "shelf base melt rate", "m / second", "");
 }
 

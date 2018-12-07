@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 #include <memory>
 
 #include <petscvec.h>
-#include <gsl/gsl_interp.h>
+#include <gsl/gsl_interp.h>     // gsl_interp_accel
 
 #include "VariableMetadata.hh"
 #include "pism/util/petscwrappers/Viewer.hh"
@@ -32,6 +32,7 @@
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/IceGrid.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 
@@ -71,7 +72,7 @@ private:
  */
 template<class F, typename T>
 T interpolate(const F &field, double x, double y) {
-  auto grid = field.get_grid();
+  auto grid = field.grid();
 
   int i_left = 0, i_right = 0, j_bottom = 0, j_top = 0;
   grid->compute_point_neighbors(x, y, i_left, i_right, j_bottom, j_top);
@@ -211,12 +212,13 @@ public:
 
 
   virtual bool was_created() const;
-  IceGrid::ConstPtr get_grid() const;
-  unsigned int get_ndims() const;
+  IceGrid::ConstPtr grid() const;
+  unsigned int ndims() const;
+  std::vector<int> shape() const;
   //! \brief Returns the number of degrees of freedom per grid point.
-  unsigned int get_ndof() const;
-  unsigned int get_stencil_width() const;
-  std::vector<double> get_levels() const;
+  unsigned int ndof() const;
+  unsigned int stencil_width() const;
+  std::vector<double> levels() const;
 
   virtual Range range() const;
   double norm(int n) const;
@@ -230,8 +232,8 @@ public:
   void copy_to_vec(petsc::DM::Ptr destination_da, Vec destination) const;
   void copy_from_vec(Vec source);
   virtual void copy_from(const IceModelVec &source);
-  Vec get_vec();
-  petsc::DM::Ptr get_dm() const;
+  Vec vec();
+  petsc::DM::Ptr dm() const;
   virtual void  set_name(const std::string &name);
   const std::string& get_name() const;
   virtual void  set_attrs(const std::string &pism_intent, const std::string &long_name,
@@ -256,20 +258,24 @@ public:
   virtual void  update_ghosts();
   virtual void  update_ghosts(IceModelVec &destination) const;
 
+  petsc::Vec::Ptr allocate_proc0_copy() const;
+  void put_on_proc0(Vec onp0) const;
+  void get_from_proc0(Vec onp0);
+
   void  set(double c);
 
   SpatialVariableMetadata& metadata(unsigned int N = 0);
 
   const SpatialVariableMetadata& metadata(unsigned int N = 0) const;
 
-  int get_state_counter() const;
+  int state_counter() const;
   void inc_state_counter();
   void set_time_independent(bool flag);
 
+protected:
+
   //! If true, report range when regridding.
   bool m_report_range;
-
-protected:
 
   void global_to_local(petsc::DM::Ptr dm, Vec source, Vec destination) const;
   virtual void read_impl(const PIO &nc, unsigned int time);
@@ -304,6 +310,8 @@ protected:
   mutable int m_access_counter;           // used in begin_access() and end_access()
   int m_state_counter;            //!< Internal IceModelVec "revision number"
 
+  InterpolationType m_interpolation_type;
+
   virtual void checkCompatibility(const char *function, const IceModelVec &other) const;
 
   //! \brief Check the array indices and warn if they are out of range.
@@ -326,6 +334,9 @@ public:
   void dump(const char filename[]) const;
 
   typedef pism::AccessList AccessList;
+protected:
+  void put_on_proc0(Vec parallel, Vec onp0) const;
+  void get_from_proc0(Vec onp0, Vec parallel);
 };
 
 bool set_contains(const std::set<std::string> &S, const IceModelVec &field);
@@ -426,9 +437,6 @@ public:
   using IceModelVec2::create;
   void create(IceGrid::ConstPtr grid, const std::string &name,
               IceModelVecKind ghostedp, int width = 1);
-  petsc::Vec::Ptr allocate_proc0_copy() const;
-  void put_on_proc0(Vec onp0) const;
-  void get_from_proc0(Vec onp0);
   virtual void copy_from(const IceModelVec &source);
   double** get_array();
   virtual void set_to_magnitude(const IceModelVec2S &v_x, const IceModelVec2S &v_y);
@@ -456,9 +464,6 @@ public:
   inline double& operator() (int i, int j);
   inline const double& operator()(int i, int j) const;
   inline StarStencil<double> star(int i, int j) const;
-protected:
-  void put_on_proc0(Vec parallel, Vec onp0) const;
-  void get_from_proc0(Vec onp0, Vec parallel);
 };
 
 
@@ -466,6 +471,9 @@ protected:
 //! floating-point scalars (instead of integers).
 class IceModelVec2Int : public IceModelVec2S {
 public:
+  IceModelVec2Int();
+  IceModelVec2Int(IceGrid::ConstPtr grid, const std::string &name,
+                  IceModelVecKind ghostedp, int width = 1);
 
   typedef std::shared_ptr<IceModelVec2Int> Ptr;
   typedef std::shared_ptr<const IceModelVec2Int> ConstPtr;

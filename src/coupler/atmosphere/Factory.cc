@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017 PISM Authors
+/* Copyright (C) 2015, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,10 +27,11 @@
 #include "Delta_P.hh"
 #include "Frac_P.hh"
 #include "Paleo_precip.hh"
-#include "ConstantPIK.hh"
+#include "PIK.hh"
 #include "Anomaly.hh"
 #include "CosineYearlyCycle.hh"
 #include "WeatherStation.hh"
+#include "Uniform.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -38,7 +39,7 @@ namespace atmosphere {
 // Atmosphere
 
 Factory::Factory(IceGrid::ConstPtr g)
-  : PCFactory<AtmosphereModel,PAModifier>(g) {
+  : PCFactory<AtmosphereModel>(g) {
   m_option = "atmosphere";
 
   add_model<PIK>("pik");
@@ -46,6 +47,7 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_model<SeaRISEGreenland>("searise_greenland");
   add_model<CosineYearlyCycle>("yearly_cycle");
   add_model<WeatherStation>("one_station");
+  add_model<Uniform>("uniform");
   set_default("given");
 
   add_modifier<Anomaly>("anomaly");

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2017 PISM Authors
+// Copyright (C) 2008-2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,13 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>
+#include <gsl/gsl_math.h>       // GSL_NAN
 
 #include "pism/util/IceGrid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/io/PIO.hh"
-#include "pism/util/pism_const.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/icebin/IBSurfaceModel.hh"
 
@@ -33,7 +32,9 @@ namespace icebin {
 ///// ice surface temperature parameterized as in PISM-IBSurfaceModel dependent on latitude and surface elevation
 
 
-IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g) : SurfaceModel(g) {
+IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g)
+  : SurfaceModel(g) {
+
   printf("BEGIN IBSurfaceModel::allocate_IBSurfaceModel()\n");
   icebin_wflux.create(m_grid, "icebin_wflux", WITHOUT_GHOSTS);
   icebin_wflux.set_attrs("climate_state",
@@ -46,8 +47,6 @@ IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g) : SurfaceModel(g) {
       "climate_state", "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
       "W m-2", "");
   icebin_deltah.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  //	icebin_deltah.write_in_glaciological_units = true;
-
 
   icebin_massxfer.create(m_grid, "icebin_massxfer", WITHOUT_GHOSTS);
   icebin_massxfer.set_attrs(
@@ -65,18 +64,14 @@ IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g) : SurfaceModel(g) {
   printf("END IBSurfaceModel::allocate_IBSurfaceModel()\n");
 }
 
-void IBSurfaceModel::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input) {
-  delete input;
-}
-
-void IBSurfaceModel::init_impl() {
-  m_t = m_dt = GSL_NAN; // every re-init restarts the clock
+void IBSurfaceModel::init_impl(const Geometry &geometry) {
+  (void) geometry;
 
   m_log->message(2, "* Initializing the IceBin interface surface model IBSurfaceModel.\n"
                     "  IceBin changes its state when surface conditions change.\n");
 
   // find PISM input file to read data from:
-  m_input_file = process_input_options(m_grid->com).filename;
+  m_input_file = process_input_options(m_grid->com, m_config).filename;
 
   // It doesn't matter what we set this to, it will be re-set later.
   icebin_wflux.set(0.0);
@@ -93,21 +88,18 @@ MaxTimestep IBSurfaceModel::max_timestep_impl(double t) const {
   return MaxTimestep("surface icebin");
 }
 
-void IBSurfaceModel::update_impl(double my_t, double my_dt) {
-  if ((fabs(my_t - m_t) < 1e-12) && (fabs(my_dt - m_dt) < 1e-12)) {
-    return;
-  }
-
-  m_t  = my_t;
-  m_dt = my_dt;
+void IBSurfaceModel::update_impl(const Geometry &geometry, double t, double dt) {
+  (void) geometry;
+  (void) t;
+  (void) dt;
 }
 
-void IBSurfaceModel::mass_flux_impl(IceModelVec2S &result) const {
-  result.copy_from(icebin_massxfer);
+const IceModelVec2S &IBSurfaceModel::mass_flux_impl() const {
+  return icebin_massxfer;
 }
 
-void IBSurfaceModel::temperature_impl(IceModelVec2S &result) const {
-  result.copy_from(surface_temp);
+const IceModelVec2S &IBSurfaceModel::temperature_impl() const {
+  return surface_temp;
 }
 
 void IBSurfaceModel::define_model_state_impl(const PIO &output) const {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -48,7 +48,7 @@ public:
   const IceModelVec2S *surface_temp;
   const IceModelVec2S *till_water_thickness;
 
-  const IceModelVec3 *strain_heating3;
+  const IceModelVec3 *volumetric_heating_rate;
   const IceModelVec3 *u3;
   const IceModelVec3 *v3;
   const IceModelVec3 *w3;
@@ -71,7 +71,7 @@ public:
   double liquified_ice_volume;
 };
 
-class EnergyModel : public Component_TS {
+class EnergyModel : public Component {
 public:
   EnergyModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
 
@@ -95,7 +95,6 @@ public:
                   const IceModelVec2S &climatic_mass_balance,
                   const IceModelVec2S &basal_heat_flux);
 
-  using Component_TS::update;
   void update(double t, double dt, const Inputs &inputs);
 
   const EnergyModelStats& stats() const;
@@ -106,7 +105,6 @@ public:
   const std::string& stdout_flags() const;
 protected:
 
-  virtual void update_impl(double t, double dt);
   virtual MaxTimestep max_timestep_impl(double t) const;
 
   virtual void restart_impl(const PIO &input_file, int record) = 0;
@@ -128,8 +126,8 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const = 0;
   virtual void write_model_state_impl(const PIO &output) const = 0;
 
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
-  virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
+  virtual TSDiagnosticList ts_diagnostics_impl() const;
 
   /*! @brief Initialize enthalpy by reading it from a file, or by reading temperature and liquid
       water fraction, or by reading the temperature field alone. */
@@ -148,6 +146,11 @@ private:
   std::string m_stdout_flags;
   stressbalance::StressBalance *m_stress_balance;
 };
+
+/*!
+ * Return true if the grid point (i,j) is near the margin of the ice.
+ */
+bool marginal(const IceModelVec2S &thickness, int i, int j, double threshold);
 
 } // end of namespace energy
 } // end of namespace pism

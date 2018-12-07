@@ -7,7 +7,7 @@ import sys
 try:
     from netCDF4 import Dataset as NC
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 
@@ -20,12 +20,12 @@ class Plotter:
 
     def plot(self, x, vars, testname, plot_title):
         # This mask lets us choose data corresponding to a particular test:
-        test = array(map(chr, self.nc.variables['test'][:]))
+        test = array(list(map(chr, self.nc.variables['test'][:])))
         mask = (test == testname)
 
         # If we have less than 2 points to plot, then bail.
         if (sum(mask) < 2):
-            print "Skipping Test %s %s (not enough data to plot)" % (testname, plot_title)
+            print("Skipping Test %s %s (not enough data to plot)" % (testname, plot_title))
             return
 
         # Get the independent variable and transform it. Note that everywhere here
@@ -62,7 +62,7 @@ class Plotter:
             # Variable label:
             var_label = "%s, $O(%s^{%1.2f})$" % (name, dim_name, p[0])
 
-            print "Test {} {}: convergence rate: O(dx^{:1.4f})".format(testname, name, p[0])
+            print("Test {} {}: convergence rate: O(dx^{:1.4f})".format(testname, name, p[0]))
 
             # Plot errors and the linear fit:
             plot(dim, data, label=var_label, marker='o', color=c)
@@ -79,18 +79,18 @@ class Plotter:
             dx = dx / 1000.0
             units = "km"
         # Round grid spacing in x-ticks:
-        xticks(dim, map(lambda(x): "%d" % x, dx))
+        xticks(dim, ["%d" % x for x in dx])
         xlabel("$%s$ (%s)" % (dim_name, units))
 
         # Use default (figured out by matplotlib) locations, but change labels for y-ticks:
         loc, _ = yticks()
-        yticks(loc, map(lambda(x): "$10^{%1.1f}$" % x, loc))
+        yticks(loc, ["$10^{%1.1f}$" % x for x in loc])
 
         # Make sure that all variables given have the same units:
         try:
-            ylabels = array(map(lambda(x): self.nc.variables[x].units, vars))
+            ylabels = array([self.nc.variables[x].units for x in vars])
             if (any(ylabels != ylabels[0])):
-                print "Incompatible units!"
+                print("Incompatible units!")
             else:
                 ylabel(ylabels[0])
         except:
@@ -171,6 +171,7 @@ class Plotter:
                 self.plot('dx', ["maximum_u", "average_u"],
                           test_name, "velocity errors")
 
+
 from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.description = """Plot script for PISM verification results."""
@@ -187,7 +188,7 @@ parser.add_argument("--file_format", dest="file_format", default="png",
 options = parser.parse_args()
 
 input_file = NC(options.filename, 'r')
-available_tests = unique(array(map(chr, input_file.variables['test'][:])))
+available_tests = unique(array(list(map(chr, input_file.variables['test'][:]))))
 tests_to_plot = options.tests_to_plot
 
 if len(available_tests) == 1:
@@ -195,8 +196,8 @@ if len(available_tests) == 1:
         tests_to_plot = available_tests
 else:
     if (tests_to_plot == None):
-        print """Please choose tests to plot using the -t option.
-(Input file %s has reports for tests %s available.)""" % (input, str(available_tests))
+        print("""Please choose tests to plot using the -t option.
+(Input file %s has reports for tests %s available.)""" % (input, str(available_tests)))
         sys.exit(0)
 
 if (tests_to_plot[0] == "all"):

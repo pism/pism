@@ -13,9 +13,15 @@ hydrology model. In the ``routing`` model water is conserved by horizontally-tra
 the excess water (namely ``bwat``) according to the gradient of the modeled hydraulic
 potential. In both hydrology models a state variable ``tillwat`` is the effective
 thickness of the layer of liquid water in the till; it is used to compute the effective
-pressure on the till (see the previous subsection). The pressure of the transportable
+pressure on the till (see :ref:`sec-basestrength`). The pressure of the transportable
 water ``bwat`` in the ``routing`` model does not relate directly to the effective pressure
 on the till.
+
+.. note::
+
+   Both models described here provide all diagnostic quantities needed for mass
+   accounting, even though the simpler model is not mass-conserving. See
+   :ref:`sec-mass-conservation-hydrology` for details.
 
 .. list-table:: Command-line options to choose the hydrology model
    :name: tab-hydrologychoice
@@ -53,21 +59,10 @@ thereby effectively decoupling the hydrology model from the ice dynamics
 
    * - Option
      - Description
-   * - :opt:`-hydrology_bmelt_file`
-     - Specifies a NetCDF file which contains a time-independent field
-       ``basal_melt_rate_grounded`` which has units of water thickness per time. This rate
-       *replaces* the conservation-of-energy computed rate ``basal_melt_rate_grounded``.
-   * - :opt:`-hydrology_const_bmelt` (m/s)
-     - If ``-hydrology_use_const_bmelt`` is set then use this to set the constant rate
-       (water thickness per time).
-   * - :opt:`-hydrology_input_to_bed_file`
-     - Specifies a NetCDF file which contains a time-dependent field ``inputtobed`` which
-       has units of water thickness per time. This rate is *added to* the
-       ``basal_melt_rate_grounded`` rate.
-   * - :opt:`-hydrology_input_to_bed_period` (a)
-     - The period, in years, of ``-hydrology_input_to_bed_file`` data.
-   * - :opt:`-hydrology_input_to_bed_reference_year` (a)
-     - The reference year for periodizing the ``-hydrology_input_to_bed_file`` data.
+   * - :opt:`-hydrology.surface_input_file`
+     - Specifies a NetCDF file which contains a time-dependent field ``water_input_rate``
+       which has units of water thickness per time. This rate is *added to* the basal melt
+       rate computed by the energy conservation code.
    * - :opt:`-hydrology_tillwat_max` (m)
      - Maximum effective thickness for water stored in till.
    * - :opt:`-hydrology_tillwat_decay_rate` (m/a)
@@ -81,32 +76,33 @@ The default model: ``-hydrology null``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In this model the water is *not* conserved but it is stored locally in the till up to a
-specified amount; option :opt:`-hydrology_tillwat_max` sets that amount. The water is not
-conserved in the sense that water above the ``hydrology_tillwat_max`` level is lost
-permanently. This model is based on the "undrained plastic bed" concept of
-:cite:`Tulaczyketal2000b`; see also :cite:`BBssasliding`.
+specified amount; the configuration parameter :config:`hydrology.tillwat_max` sets that
+amount. The water is not conserved in the sense that water above the
+:config:`hydrology.tillwat_max` level is lost permanently. This model is based on the
+"undrained plastic bed" concept of :cite:`Tulaczyketal2000b`; see also
+:cite:`BBssasliding`.
 
-In particular, denoting ``tillwat`` by `W_{til}`, the till-stored water layer effective
+In particular, denoting ``tillwat`` by `W_{till}`, the till-stored water layer effective
 thickness evolves by the simple equation
 
 .. math::
-   :name: eq-tillwatevolve
+   :label: eq-tillwatevolve
 
-   \frac{\partial W_{til}}{\partial t} = \frac{m}{\rho_w} - C
+   \frac{\partial W_{till}}{\partial t} = \frac{m}{\rho_w} - C
 
 where `m=` :var:`basal_melt_rate_grounded` (kg `\text{m}^{-2}\,\text{s}^{-1}`), `\rho_w`
 is the density of fresh water, and `C` :var:`hydrology_tillwat_decay_rate`. At all times
-bounds `0 \le W_{til} \le W_{til}^{max}` are satisfied.
+bounds `0 \le W_{till} \le W_{till}^{max}` are satisfied.
 
 This ``-hydrology null`` model has been extensively tested in combination with the
-Mohr-Coulomb till (section :ref:`sec-basestrength` above) for modelling ice streaming (see
+Mohr-Coulomb till (section :ref:`sec-basestrength`) for modelling ice streaming (see
 :cite:`AschwandenAdalgeirsdottirKhroulev` and :cite:`BBssasliding`, among others).
 
 The mass-conserving model: ``-hydrology routing``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In this model the water *is* conserved in the map-plane. Water does get put into the till,
-with the same maximum value ``hydrology_tillwat_max``, but excess water is
+with the same maximum value :config:`hydrology.tillwat_max`, but excess water is
 horizontally-transported. An additional state variable ``bwat``, the effective thickness
 of the layer of transportable water, is used by ``routing``. This transportable water will
 flow in the direction of the negative of the gradient of the modeled hydraulic potential.
@@ -124,7 +120,7 @@ subglacial water flux is determined by a generalized Darcy flux relation :cite:`
 .. include:: ../../../math-definitions.txt
 
 .. math::
-   :name: eq-flux
+   :label: eq-flux
 
    \bq = - k\, W^\alpha\, |\nabla \psi|^{\beta-2} \nabla \psi
 
@@ -135,7 +131,7 @@ layer of transportable water, `\psi` is the hydraulic potential, and `k`, `\alph
 In the ``routing`` model the hydraulic potential `\psi` is determined by
 
 .. math::
-   :name: eq-hydraulicpotential
+   :label: eq-hydraulicpotential
 
    \psi = P_o + \rho_w g (b + W)
 
@@ -149,16 +145,14 @@ model. This follows directly from the CFL-type time-step restriction on lateral 
 fluid with velocity on the order of centimeters to meters per second (i.e. the subglacial
 liquid water ``bwat``). (By comparison, much of PISM ice dynamics time-stepping is
 controlled by the much slower velocity of the flowing ice.) Therefore the user should
-start with short runs of order a few model years. The option
-:opt:`-report_mass_accounting` is also recommended, so as to see the time-stepping
-behavior at ``stdout``. Finally, ``daily`` or even ``hourly`` reporting for scalar and
-spatially-distributed time-series to see hydrology model behavior, especially on fine
-grids (e.g. `< 1` km).
+start with short runs of order a few model years. We also recommend ``daily`` or even
+``hourly`` reporting for scalar and spatially-distributed time-series to see hydrology
+model behavior, especially on fine grids (e.g. `< 1` km).
 
 .. list-table:: Command-line options specific to hydrology model ``routing``
    :name: tab-hydrologyrouting
    :header-rows: 1
-   :widths: 1,1
+   :widths: 5,4
 
    * - Option
      - Description
@@ -171,9 +165,5 @@ grids (e.g. `< 1` km).
      - `=\beta` in formula :eq:`eq-flux`.
    * - :opt:`-hydrology_thickness_power_in_flux` `\alpha`
      - `=\alpha` in formula :eq:`eq-flux`.
-   * - :opt:`-report_mass_accounting`
-     - At each major (ice dynamics) time-step, the duration of hydrology time steps is
-       reported, along with the amount of subglacial water lost to ice-free land, to the
-       ocean, and into the "null strip".
 
 .. FIXME -hydrology distributed is not documented except by :cite:`BuelervanPelt2015`

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,33 +20,31 @@
 #ifndef _PSCACHE_H_
 #define _PSCACHE_H_
 
-#include "Modifier.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/coupler/SurfaceModel.hh"
 
 namespace pism {
 namespace surface {
 
-class Cache : public SurfaceModifier {
+class Cache : public SurfaceModel {
 public:
-  Cache(IceGrid::ConstPtr g, SurfaceModel* in);
+  Cache(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
   virtual ~Cache();
 protected:
-  virtual void init_impl();
-  virtual void update_impl(double my_t, double my_dt);
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual void layer_thickness_impl(IceModelVec2S &result) const;
-  virtual void layer_mass_impl(IceModelVec2S &result) const;
-  virtual void mass_flux_impl(IceModelVec2S &result) const;
-  virtual void temperature_impl(IceModelVec2S &result) const;
-  virtual void liquid_water_fraction_impl(IceModelVec2S &result) const;
+  const IceModelVec2S &layer_mass_impl() const;
+  const IceModelVec2S &liquid_water_fraction_impl() const;
+  const IceModelVec2S &temperature_impl() const;
+  const IceModelVec2S &mass_flux_impl() const;
+  const IceModelVec2S &layer_thickness_impl() const;
 
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t) const;
 protected:
-  IceModelVec2S m_mass_flux;
-  IceModelVec2S m_temperature;
-  IceModelVec2S m_liquid_water_fraction;
-  IceModelVec2S m_surface_layer_mass;
-  IceModelVec2S m_surface_layer_thickness;
+  // storage for the rest of the fields is inherited from SurfaceModel
+  IceModelVec2S::Ptr m_mass_flux;
+  IceModelVec2S::Ptr m_temperature;
+
   double m_next_update_time;
   unsigned int m_update_interval_years;
 };

@@ -11,7 +11,7 @@ can be written in terms of velocity components:
 .. include:: ../../../math-definitions.txt
 
 .. math::
-   :name: eq-cfbc-uv
+   :label: eq-cfbc-uv
 
    2 \nu H (2u_x + u_y) \nx + 2 \nu H (u_y + v_x)  \ny &= \displaystyle \int_{b}^{h}(\pice - \psw) dz\, \nx,
 
@@ -35,7 +35,7 @@ Then melange pressure is added to the ordinary ocean pressure so that the pressu
 difference term scales with `\lambda`:
 
 .. math::
-   :name: eq-cfbc-3
+   :label: eq-cfbc-3
 
    \int_{b}^{h}(\pice - (\psw + \pmelange))\, dz &= \int_{b}^{h}(\pice - (\psw + \lambda(\pice - \psw)))\, dz
 
@@ -46,7 +46,7 @@ This formula replaces the integral on the right hand side of :eq:`eq-cfbc-uv`.
 The resulting stress boundary condition at the shelf front is
 
 .. math::
-   :name: eq-cfbc-mbp
+   :label: eq-cfbc-mbp
 
    2 \nu H (2u_x + u_y) \nx + 2 \nu H (u_y + v_x)  \ny &= \displaystyle (1 - \lambda) \int_{b}^{h}(\pice - \psw) dz\, \nx,
 

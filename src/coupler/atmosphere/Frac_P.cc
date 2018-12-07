@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,66 +16,63 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>
-
 #include "Frac_P.hh"
+
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/pism_utilities.hh"
+#include "pism/coupler/util/ScalarForcing.hh"
 
 namespace pism {
 namespace atmosphere {
 
-Frac_P::Frac_P(IceGrid::ConstPtr g, AtmosphereModel* in)
-  : PScalarForcing<AtmosphereModel,PAModifier>(g, in) {
-  m_option_prefix = "-atmosphere_frac_P";
-  m_offset_name = "frac_P";
-  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
-  m_offset->variable().set_string("units", "1");
-  m_offset->variable().set_string("long_name", "precipitation multiplier, pure fraction");
-  m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
+Frac_P::Frac_P(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
+  : AtmosphereModel(grid, in) {
+
+  m_forcing.reset(new ScalarForcing(grid->ctx(),
+                                    "-atmosphere_frac_P",
+                                    "frac_P",
+                                    "1", "1",
+                                    "precipitation multiplier, pure fraction"));
+
+  m_precipitation = allocate_precipitation(grid);
 }
 
-Frac_P::~Frac_P()
-{
-  // empty; "offset" is deleted by ~PScalarForcing().
+Frac_P::~Frac_P() {
+  // empty
 }
 
-void Frac_P::init_impl() {
+void Frac_P::init_impl(const Geometry &geometry) {
+  m_input_model->init(geometry);
 
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
+  m_log->message(2, "* Initializing precipitation forcing using scalar multipliers...\n");
 
-  m_input_model->init();
-
-  m_log->message(2,
-             "* Initializing precipitation forcing using scalar multipliers...\n");
-
-  init_internal();
-}
-
-MaxTimestep Frac_P::max_timestep_impl(double t) const {
-  (void) t;
-  return MaxTimestep("atmosphere frac_P");
+  m_forcing->init();
 }
 
 void Frac_P::init_timeseries_impl(const std::vector<double> &ts) const {
-  PAModifier::init_timeseries_impl(ts);
+  AtmosphereModel::init_timeseries_impl(ts);
 
-  m_offset_values.resize(m_ts_times.size());
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
-    m_offset_values[k] = (*m_offset)(m_ts_times[k]);
+  m_offset_values.resize(ts.size());
+  for (unsigned int k = 0; k < ts.size(); ++k) {
+    m_offset_values[k] = m_forcing->value(ts[k]);
   }
 }
 
-void Frac_P::mean_precipitation_impl(IceModelVec2S &result) const {
-  m_input_model->mean_precipitation(result);
-  scale_data(result);
+void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
+  m_input_model->update(geometry, t, dt);
+  m_forcing->update(t, dt);
+
+  m_precipitation->copy_from(m_input_model->mean_precipitation());
+  m_precipitation->scale(m_forcing->value());
+}
+
+const IceModelVec2S& Frac_P::mean_precipitation_impl() const {
+  return *m_precipitation;
 }
 
 void Frac_P::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   m_input_model->precip_time_series(i, j, result);
 
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
+  for (unsigned int k = 0; k < m_offset_values.size(); ++k) {
     result[k] *= m_offset_values[k];
   }
 }

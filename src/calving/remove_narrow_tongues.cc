@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -52,7 +52,7 @@ namespace pism {
  * This means that we can update `ice_thickness` in place without
  * introducing a dependence on the grid traversal order.
  *
- * @param[in,out] pism_mask cell type mask
+ * @param[in,out] mask cell type mask
  * @param[in,out] ice_thickness modeled ice thickness
  *
  * @return 0 on success
@@ -60,7 +60,7 @@ namespace pism {
 void remove_narrow_tongues(const IceModelVec2CellType &mask,
                            IceModelVec2S &ice_thickness) {
 
-  IceGrid::ConstPtr grid = mask.get_grid();
+  IceGrid::ConstPtr grid = mask.grid();
 
   IceModelVec::AccessList list{&mask, &ice_thickness};
 

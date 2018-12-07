@@ -1,4 +1,4 @@
-all: ssafd_cfbc_notes.pdf ssafem_notes.pdf
+all: ssafem_notes.pdf
 
 %.pdf: %.tex
 	pdflatex $^

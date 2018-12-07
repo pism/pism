@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef PSINITIALIZATION_H
 #define PSINITIALIZATION_H
 
-#include "Modifier.hh"
+#include "pism/coupler/SurfaceModel.hh"
 
 namespace pism {
 namespace surface {
@@ -37,19 +37,18 @@ namespace surface {
  * - is added automatically, and
  * - does not have a corresponding "keyword" in surface::Factory.
  */
-class InitializationHelper : public SurfaceModifier {
+class InitializationHelper : public SurfaceModel {
 public:
-  InitializationHelper(IceGrid::ConstPtr g, SurfaceModel* in);
+  InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
 protected:
-  void init_impl();
-  void update_impl(double my_t, double my_dt);
-  void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *in);
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
 
-  void mass_flux_impl(IceModelVec2S &result) const;
-  void temperature_impl(IceModelVec2S &result) const;
-  void liquid_water_fraction_impl(IceModelVec2S &result) const;
-  void layer_mass_impl(IceModelVec2S &result) const;
-  void layer_thickness_impl(IceModelVec2S &result) const;
+  const IceModelVec2S &layer_mass_impl() const;
+  const IceModelVec2S &liquid_water_fraction_impl() const;
+  const IceModelVec2S &temperature_impl() const;
+  const IceModelVec2S &mass_flux_impl() const;
+  const IceModelVec2S &layer_thickness_impl() const;
 
   void define_model_state_impl(const PIO &output) const;
   void write_model_state_impl(const PIO &output) const;
@@ -58,11 +57,9 @@ private:
   // store pointers to fields so that we can iterate over them
   std::vector<IceModelVec*> m_variables;
   // storage
-  IceModelVec2S m_ice_surface_mass_flux;
-  IceModelVec2S m_ice_surface_temperature;
-  IceModelVec2S m_ice_surface_liquid_water_fraction;
-  IceModelVec2S m_surface_layer_mass;
-  IceModelVec2S m_surface_layer_thickness;
+  IceModelVec2S m_mass_flux;
+  IceModelVec2S m_temperature;
+  // the rest of the field are inherited from SurfaceModel
 };
 
 } // end of namespace surface

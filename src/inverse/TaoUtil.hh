@@ -23,7 +23,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/TerminationReason.hh"
 #include "pism/util/petscwrappers/Tao.hh"
 #include "pism/util/error_handling.hh"

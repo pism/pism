@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,26 +19,25 @@
 #ifndef _POCONSTANT_H_
 #define _POCONSTANT_H_
 
-#include "pism/coupler/OceanModel.hh"
+#include "CompleteOceanModel.hh"
 
 namespace pism {
 namespace ocean {
 //! \brief A class implementing a constant (in terms of the ocean inputs) ocean
 //! model. Uses configuration parameters for the sea level elevation and
 //! sub-shelf heat flux.
-class Constant : public OceanModel {
+class Constant : public CompleteOceanModel {
 public:
   Constant(IceGrid::ConstPtr g);
   virtual ~Constant();
-protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(double my_t, double my_dt);
-  virtual void init_impl();
-  virtual void sea_level_elevation_impl(double &result) const;
-  virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
-  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
-protected:
-  double m_meltrate;
+
+private:
+  MaxTimestep max_timestep_impl(double t) const;
+  void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Geometry &geometry);
+
+  void melting_point_temperature(const IceModelVec2S& depth,
+                                 IceModelVec2S &result) const;
 };
 
 } // end of namespace ocean

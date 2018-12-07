@@ -5,7 +5,7 @@ from sys import exit
 try:
     import netCDF4 as NC
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     exit(1)
 
 import subprocess
@@ -20,7 +20,7 @@ def run(commands):
     """Run a list of commands (or one command given as a string)."""
     if isinstance(commands, (list, tuple)):
         for cmd in commands:
-            print "Running '%s'..." % cmd
+            print("Running '%s'..." % cmd)
             subprocess.call(cmd.split(' '))
     else:
         run([commands])
@@ -198,8 +198,8 @@ def final_corrections(filename):
     ocean_ice_free = 3
 
     My, Mx = thk.shape
-    for j in xrange(My):
-        for i in xrange(Mx):
+    for j in range(My):
+        for i in range(Mx):
             if is_grounded(thk[j, i], topg[j, i]):
                 if thk[j, i] > 1.0:
                     mask[j, i] = grounded_icy
@@ -217,8 +217,8 @@ def final_corrections(filename):
     # mark ocean_icy cells next to grounded_icy ones too:
     row = np.array([0, -1, 1,  0])
     col = np.array([-1,  0, 0,  1])
-    for j in xrange(1, My - 1):
-        for i in xrange(1, Mx - 1):
+    for j in range(1, My - 1):
+        for i in range(1, Mx - 1):
             nearest = mask[j + row, i + col]
 
             if mask[j, i] == ocean_icy and np.any(nearest == grounded_icy):
@@ -248,6 +248,7 @@ def final_corrections(filename):
     mask_var[:] = mask
 
     nc.close()
+
 
 if __name__ == "__main__":
 

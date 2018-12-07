@@ -16,8 +16,5 @@ build*/
 out.*
 examples/**/*.png
 examples/**/*.zip
-site-packages/**/*.so
-site-packages/**/cpp.py
-site-packages/**/petsc_version.py
 TAGS
 .DS_Store

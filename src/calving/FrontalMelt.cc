@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,15 +19,14 @@
 
 #include "FrontalMelt.hh"
 
-#include "pism/util/Vars.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 
-FrontalMelt::FrontalMelt(IceGrid::ConstPtr g, const ocean::OceanModel *ocean_model)
-  : CalvingFrontRetreat(g, 1), m_ocean(ocean_model) {
-  m_shelf_base_mass_flux.create(m_grid, "shelf_base_mass_flux", WITHOUT_GHOSTS);
-  m_shelf_base_mass_flux.set_attrs("internal", "sub-shelf mass flux", "kg m-2 s-1", "");
+FrontalMelt::FrontalMelt(IceGrid::ConstPtr grid)
+  : CalvingFrontRetreat(grid, 1) {
+  // empty
 }
 
 FrontalMelt::~FrontalMelt() {
@@ -40,30 +39,32 @@ void FrontalMelt::init() {
                  "  using sub-shelf mass flux from an ocean model...\n");
 }
 
-std::map<std::string, Diagnostic::Ptr> FrontalMelt::diagnostics_impl() const {
+DiagnosticList FrontalMelt::diagnostics_impl() const {
   return {{"frontal_melt_rate",
         Diagnostic::Ptr(new CalvingRate(this, "frontal_melt_rate",
                                         "horizontal front retreat rate due to melt"))}};
 }
 
-void FrontalMelt::compute_calving_rate(const IceModelVec2CellType &mask,
+void FrontalMelt::compute_calving_rate(const CalvingInputs &inputs,
                                        IceModelVec2S &result) const {
+
+  prepare_mask(inputs.geometry->cell_type, m_mask);
+
   GeometryCalculator gc(*m_config);
 
-  IceModelVec2S &shelf_base_mass_flux = m_tmp;
-  m_ocean->shelf_base_mass_flux(shelf_base_mass_flux);
+  const IceModelVec2S &shelf_base_mass_flux = *inputs.shelf_base_mass_flux;
 
   const IceModelVec2S
-    &bed_elevation     = *m_grid->variables().get_2d_scalar("bedrock_altitude"),
-    &surface_elevation = *m_grid->variables().get_2d_scalar("surface_altitude"),
-    &ice_thickness     = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+    &bed_elevation       = inputs.geometry->bed_elevation,
+    &surface_elevation   = inputs.geometry->ice_surface_elevation,
+    &ice_thickness       = inputs.geometry->ice_thickness,
+    &sea_level_elevation = inputs.geometry->sea_level_elevation;
 
   const double
-    sea_level   = m_ocean->sea_level_elevation(),
     ice_density = m_config->get_double("constants.ice.density"),
     alpha       = ice_density / m_config->get_double("constants.sea_water.density");
 
-  IceModelVec::AccessList list{&mask, &shelf_base_mass_flux,
+  IceModelVec::AccessList list{&m_mask, &shelf_base_mass_flux, &sea_level_elevation,
       &bed_elevation, &surface_elevation, &ice_thickness, &result};
 
   ParallelSection loop(m_grid->com);
@@ -71,19 +72,22 @@ void FrontalMelt::compute_calving_rate(const IceModelVec2CellType &mask,
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (mask.ice_free_ocean(i, j) and mask.next_to_ice(i, j)) {
-        const double bed = bed_elevation(i, j);
+      if (m_mask.ice_free_ocean(i, j) and m_mask.next_to_ice(i, j)) {
+        const double
+          bed       = bed_elevation(i, j),
+          sea_level = sea_level_elevation(i, j);
 
-        StarStencil<double> H = ice_thickness.star(i, j);
-        StarStencil<double> h = surface_elevation.star(i, j);
-        StarStencil<int> M = mask.int_star(i, j);
+        auto H = ice_thickness.star(i, j);
+        auto h = surface_elevation.star(i, j);
+        auto M = m_mask.int_star(i, j);
 
-        const double H_threshold = part_grid_threshold_thickness(M, H, h, bed);
+        double H_threshold = part_grid_threshold_thickness(M, H, h, bed);
 
-        const int m = gc.mask(sea_level, bed, H_threshold);
+        int m = gc.mask(sea_level, bed, H_threshold);
 
-        const double H_submerged = (mask::grounded(m) ? std::max(sea_level - bed, 0.0) :
-                                    alpha * H_threshold);
+        double H_submerged = (mask::grounded(m) ?
+                              std::max(sea_level - bed, 0.0) :
+                              alpha * H_threshold);
 
         result(i, j) = (H_submerged / H_threshold) * shelf_base_mass_flux(i, j) / ice_density;
       } else {

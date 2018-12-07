@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,7 @@
 
 #include "pism/util/error_handling.hh"
 
-#include "pism_const.hh"
+#include "pism_utilities.hh"
 
 namespace pism {
 
@@ -140,7 +140,7 @@ Converter::Converter(System::Ptr sys,
   Unit u1(sys, spec1), u2(sys, spec2);
 
   if (ut_are_convertible(u1.get(), u2.get()) == 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot convert %s to %s", spec1.c_str(), spec2.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot convert '%s' to '%s'", spec1.c_str(), spec2.c_str());
   }
 
   m_converter = ut_get_converter(u1.get(), u2.get());

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,31 +20,32 @@
 #ifndef _POCACHE_H_
 #define _POCACHE_H_
 
-#include "Modifier.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/coupler/OceanModel.hh"
 
 namespace pism {
 namespace ocean {
-class Cache : public OceanModifier {
+
+class Cache : public OceanModel {
 public:
-  Cache(IceGrid::ConstPtr g, OceanModel* in);
+  Cache(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
   virtual ~Cache();
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(double my_t, double my_dt);
+  MaxTimestep max_timestep_impl(double t) const;
 
-  virtual void init_impl();
-  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const;
-  virtual void sea_level_elevation_impl(double &result) const;
-  virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
-  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
-protected:
-  IceModelVec2S m_shelf_base_temperature, m_shelf_base_mass_flux,
-    m_melange_back_pressure_fraction;
-  double m_sea_level;
+  void update_impl(const Geometry &geometry, double my_t, double my_dt);
+  void init_impl(const Geometry &geometry);
+
+  const IceModelVec2S& shelf_base_temperature_impl() const;
+  const IceModelVec2S& shelf_base_mass_flux_impl() const;
+  const IceModelVec2S& melange_back_pressure_fraction_impl() const;
+private:
   double m_next_update_time;
   unsigned int m_update_interval_years;
+
+  // storage for melange_back_pressure_fraction is inherited from OceanModel
+  IceModelVec2S::Ptr m_shelf_base_temperature;
+  IceModelVec2S::Ptr m_shelf_base_mass_flux;
 };
 
 } // end of namespace ocean

@@ -42,8 +42,8 @@ from numpy import *
 # Computes \f$\rho_{Jacobi}\f$, see formula (19.5.24), page 858.
 
 
-def rho_jacobi((J, L)):
-
+def rho_jacobi(dimensions):
+    (J, L) = dimensions
     return (cos(pi / J) + cos(pi / L)) / 2
 
 # This makes the stencil wrap around the grid. It is unclear if this should be
@@ -55,8 +55,9 @@ def rho_jacobi((J, L)):
 #  dimensions.
 
 
-def fix_indices(Is, Js, (M, N)):
+def fix_indices(Is, Js, dimensions):
 
+    (M, N) = dimensions
     Is[Is == M] = 0
     Is[Is == -1] = M - 1
     Js[Js == N] = 0
@@ -105,8 +106,8 @@ def laplace(data, mask, eps1, eps2, initial_guess='mean', max_iter=10000):
     odd = (i % 2 == 1) ^ (j % 2 == 0)
     even = (i % 2 == 0) ^ (j % 2 == 0)
     # odd and even parts _in_ the domain:
-    odd_part = zip(i[mask & odd], j[mask & odd])
-    even_part = zip(i[mask & even], j[mask & even])
+    odd_part = list(zip(i[mask & odd], j[mask & odd]))
+    even_part = list(zip(i[mask & even], j[mask & even]))
     # relative indices of the stencil points:
     k = array([0, 1, 0, -1])
     l = array([-1, 0, 1, 0])
@@ -119,12 +120,12 @@ def laplace(data, mask, eps1, eps2, initial_guess='mean', max_iter=10000):
             present = array(ones_like(mask) - mask, dtype=bool)
             initial_guess = mean(data[present])
         else:
-            print """ERROR: initial_guess of '%s' is not supported (it should be a number or 'mean').
-    Note: your data was not modified.""" % initial_guess
+            print("""ERROR: initial_guess of '%s' is not supported (it should be a number or 'mean').
+    Note: your data was not modified.""" % initial_guess)
             return
 
     data[mask] = initial_guess
-    print "Using the initial guess of %10f." % initial_guess
+    print("Using the initial guess of %10f." % initial_guess)
 
     # compute the initial norm of residual
     initial_norm = 0.0
@@ -133,8 +134,8 @@ def laplace(data, mask, eps1, eps2, initial_guess='mean', max_iter=10000):
             Is, Js = fix_indices(i + k, j + l, dimensions)
             xi = sum(data[Is, Js]) - 4 * data[i, j]
             initial_norm += abs(xi)
-    print "Initial norm of residual =", initial_norm
-    print "Criterion is (change < %f) OR (res norm < %f (initial norm))." % (eps2, eps1)
+    print("Initial norm of residual =", initial_norm)
+    print("Criterion is (change < %f) OR (res norm < %f (initial norm))." % (eps2, eps1))
 
     omega = 1.0
     # The main loop:
@@ -158,13 +159,14 @@ def laplace(data, mask, eps1, eps2, initial_guess='mean', max_iter=10000):
                     omega = 1.0 / (1.0 - 0.5 * rjac ** 2)
                 else:
                     omega = 1.0 / (1.0 - 0.25 * rjac ** 2 * omega)
-        print "max change = %10f, residual norm = %10f" % (change, anorm)
+        print("max change = %10f, residual norm = %10f" % (change, anorm))
         if (anorm < eps1 * initial_norm) or (change < eps2):
-            print "Exiting with change=%f, anorm=%f after %d iteration(s)." % (change,
-                                                                               anorm, n + 1)
+            print("Exiting with change=%f, anorm=%f after %d iteration(s)." % (change,
+                                                                               anorm, n + 1))
             return
-    print "Exceeded the maximum number of iterations."
+    print("Exceeded the maximum number of iterations.")
     return
+
 
 if __name__ == "__main__":
     from optparse import OptionParser
@@ -176,7 +178,7 @@ if __name__ == "__main__":
     try:
         from netCDF4 import Dataset as NC
     except:
-        print "netCDF4 is not installed!"
+        print("netCDF4 is not installed!")
         sys.exit(1)
 
     parser = OptionParser()
@@ -199,20 +201,20 @@ if __name__ == "__main__":
     (options, args) = parser.parse_args()
 
     if options.input_filename == "":
-        print """Please specify the input file name
-(using the -f or --file command line option)."""
+        print("""Please specify the input file name
+(using the -f or --file command line option).""")
         exit(-1)
     input_filename = options.input_filename
 
     if options.variables == "":
-        print """Please specify the list of variables to process
-(using the -v or --variables command line option)."""
+        print("""Please specify the list of variables to process
+(using the -v or --variables command line option).""")
         exit(-1)
     variables = (options.variables).split(',')
 
     if options.output_filename == "":
-        print """Please specify the output file name
-(using the -o or --out_file command line option)."""
+        print("""Please specify the output file name
+(using the -o or --out_file command line option).""")
         exit(-1)
     output_filename = options.output_filename
 
@@ -220,19 +222,19 @@ if __name__ == "__main__":
 
     # Done processing command-line options.
 
-    print "Creating the temporary file..."
+    print("Creating the temporary file...")
     try:
         (handle, tmp_filename) = mkstemp()
         close(handle)  # mkstemp returns a file handle (which we don't need)
         copy(input_filename, tmp_filename)
     except IOError:
-        print "ERROR: Can't create %s, Exiting..." % tmp_filename
+        print("ERROR: Can't create %s, Exiting..." % tmp_filename)
 
     try:
         nc = NC(tmp_filename, 'a')
-    except Exception, message:
-        print message
-        print "Note: %s was not modified." % output_filename
+    except Exception as message:
+        print(message)
+        print("Note: %s was not modified." % output_filename)
         exit(-1)
 
     # add history global attribute (after checking if present)
@@ -245,21 +247,21 @@ if __name__ == "__main__":
 
     t_zero = time()
     for name in variables:
-        print "Processing %s..." % name
+        print("Processing %s..." % name)
         try:
             var = nc.variables[name]
 
             attributes = ["valid_range", "valid_min", "valid_max",
                           "_FillValue", "missing_value"]
             adict = {}
-            print "Reading attributes..."
+            print("Reading attributes...")
             for attribute in attributes:
-                print "* %15s -- " % attribute,
+                print("* %15s -- " % attribute, end=' ')
                 if attribute in var.ncattrs():
                     adict[attribute] = getattr(var, attribute)
-                    print "found"
+                    print("found")
                 else:
-                    print "not found"
+                    print("not found")
 
             if (var.ndim == 3):
                 nt = var.shape[0]
@@ -268,51 +270,51 @@ if __name__ == "__main__":
 
                     data = asarray(squeeze(var[t, :, :].data))
 
-                    if adict.has_key("valid_range"):
+                    if "valid_range" in adict:
                         range = adict["valid_range"]
                         mask = ((data >= range[0]) & (data <= range[1]))
-                        print "Using the valid_range attribute; range = ", range
+                        print("Using the valid_range attribute; range = ", range)
 
-                    elif adict.has_key("valid_min") and adict.has_key("valid_max"):
+                    elif "valid_min" in adict and "valid_max" in adict:
                         valid_min = adict["valid_min"]
                         valid_max = adict["valid_max"]
                         mask = ((data < valid_min) | (data > valid_max))
-                        print """Using valid_min and valid_max attributes.
-        valid_min = %10f, valid_max = %10f.""" % (valid_min, valid_max)
+                        print("""Using valid_min and valid_max attributes.
+        valid_min = %10f, valid_max = %10f.""" % (valid_min, valid_max))
 
-                    elif adict.has_key("valid_min"):
+                    elif "valid_min" in adict:
                         valid_min = adict["valid_min"]
                         mask = data < valid_min
-                        print "Using the valid_min attribute; valid_min = %10f" % valid_min
+                        print("Using the valid_min attribute; valid_min = %10f" % valid_min)
 
-                    elif adict.has_key("valid_max"):
+                    elif "valid_max" in adict:
                         valid_max = adict["valid_max"]
                         mask = data > valid_max
-                        print "Using the valid_max attribute; valid_max = %10f" % valid_max
+                        print("Using the valid_max attribute; valid_max = %10f" % valid_max)
 
-                    elif adict.has_key("_FillValue"):
+                    elif "_FillValue" in adict:
                         fill_value = adict["_FillValue"]
                         if fill_value <= 0:
                             mask = data <= fill_value + 2 * finfo(float).eps
                         else:
                             mask = data >= fill_value - 2 * finfo(float).eps
-                        print "Using the _FillValue attribute; _FillValue = %10f" % fill_value
+                        print("Using the _FillValue attribute; _FillValue = %10f" % fill_value)
 
-                    elif adict.has_key("missing_value"):
+                    elif "missing_value" in adict:
                         missing = adict["missing_value"]
                         mask = abs(data - missing) < 2 * finfo(float).eps
-                        print """Using the missing_value attribute; missing_value = %10f
-        Warning: this attribute is deprecated by the NUG.""" % missing
+                        print("""Using the missing_value attribute; missing_value = %10f
+        Warning: this attribute is deprecated by the NUG.""" % missing)
 
                     else:
-                        print "No missing values found. Skipping this variable..."
+                        print("No missing values found. Skipping this variable...")
                         continue
 
                     count = int(sum(mask))
                     if count == 0:
-                        print "No missing values found. Skipping this variable..."
+                        print("No missing values found. Skipping this variable...")
                         continue
-                    print "Filling in %5d missing values..." % count
+                    print("Filling in %5d missing values..." % count)
                     t0 = time()
                     laplace(data, mask, -1, eps, initial_guess=options.initial_guess)
                     var[t, :, :] = data
@@ -326,57 +328,57 @@ if __name__ == "__main__":
                         delattr(var, 'missing_value')
                     except:
                         pass
-                    print "This took %5f seconds." % (time() - t0)
+                    print("This took %5f seconds." % (time() - t0))
 
             elif (var.ndim == 2):
 
                 data = asarray(squeeze(var[:]))
 
-                if adict.has_key("valid_range"):
+                if "valid_range" in adict:
                     range = adict["valid_range"]
                     mask = ((data >= range[0]) & (data <= range[1]))
-                    print "Using the valid_range attribute; range = ", range
+                    print("Using the valid_range attribute; range = ", range)
 
-                elif adict.has_key("valid_min") and adict.has_key("valid_max"):
+                elif "valid_min" in adict and "valid_max" in adict:
                     valid_min = adict["valid_min"]
                     valid_max = adict["valid_max"]
                     mask = ((data < valid_min) | (data > valid_max))
-                    print """Using valid_min and valid_max attributes.
-    valid_min = %10f, valid_max = %10f.""" % (valid_min, valid_max)
+                    print("""Using valid_min and valid_max attributes.
+    valid_min = %10f, valid_max = %10f.""" % (valid_min, valid_max))
 
-                elif adict.has_key("valid_min"):
+                elif "valid_min" in adict:
                     valid_min = adict["valid_min"]
                     mask = data < valid_min
-                    print "Using the valid_min attribute; valid_min = %10f" % valid_min
+                    print("Using the valid_min attribute; valid_min = %10f" % valid_min)
 
-                elif adict.has_key("valid_max"):
+                elif "valid_max" in adict:
                     valid_max = adict["valid_max"]
                     mask = data > valid_max
-                    print "Using the valid_max attribute; valid_max = %10f" % valid_max
+                    print("Using the valid_max attribute; valid_max = %10f" % valid_max)
 
-                elif adict.has_key("_FillValue"):
+                elif "_FillValue" in adict:
                     fill_value = adict["_FillValue"]
                     if fill_value <= 0:
                         mask = data <= fill_value + 2 * finfo(float).eps
                     else:
                         mask = data >= fill_value - 2 * finfo(float).eps
-                    print "Using the _FillValue attribute; _FillValue = %10f" % fill_value
+                    print("Using the _FillValue attribute; _FillValue = %10f" % fill_value)
 
-                elif adict.has_key("missing_value"):
+                elif "missing_value" in adict:
                     missing = adict["missing_value"]
                     mask = abs(data - missing) < 2 * finfo(float).eps
-                    print """Using the missing_value attribute; missing_value = %10f
-    Warning: this attribute is deprecated by the NUG.""" % missing
+                    print("""Using the missing_value attribute; missing_value = %10f
+    Warning: this attribute is deprecated by the NUG.""" % missing)
 
                 else:
-                    print "No missing values found. Skipping this variable..."
+                    print("No missing values found. Skipping this variable...")
                     continue
 
                 count = int(sum(mask))
                 if count == 0:
-                    print "No missing values found. Skipping this variable..."
+                    print("No missing values found. Skipping this variable...")
                     continue
-                print "Filling in %5d missing values..." % count
+                print("Filling in %5d missing values..." % count)
                 t0 = time()
                 laplace(data, mask, -1, eps, initial_guess=options.initial_guess)
                 var[:] = data
@@ -390,20 +392,20 @@ if __name__ == "__main__":
                     delattr(var, 'missing_value')
                 except:
                     pass
-                print "This took %5f seconds." % (time() - t0)
+                print("This took %5f seconds." % (time() - t0))
             else:
                 print('wrong shape')
 
-        except Exception, message:
-            print "ERROR:", message
-            print "Note: %s was not modified." % output_filename
+        except Exception as message:
+            print("ERROR:", message)
+            print("Note: %s was not modified." % output_filename)
             exit(-1)
 
-    print "Processing all the variables took %5f seconds." % (time() - t_zero)
+    print("Processing all the variables took %5f seconds." % (time() - t_zero))
     nc.close()
     try:
         move(tmp_filename, output_filename)
     except:
-        print "Error moving %s to %s. Exiting..." % (tmp_filename,
-                                                     output_filename)
+        print("Error moving %s to %s. Exiting..." % (tmp_filename,
+                                                     output_filename))
         exit(-1)

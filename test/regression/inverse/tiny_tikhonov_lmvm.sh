@@ -23,8 +23,7 @@ $PYTHONEXEC pismi.py \
               -i tiny.nc -pseudo_plastic -pseudo_plastic_q 0.25 -inv_data inv_data.nc \
               -o tiny_tikhonov_lmvm.nc -regional -ssa_dirichlet_bc -inv_use_tauc_prior \
               -inv_design_param trunc -inv_design_cL2 1 -inv_design_cH1 0 \
-              -inv_method tikhonov_lmvm -tikhonov_penalty 3e-2 -report_coverage
+              -inv_method tikhonov_lmvm -tikhonov_penalty 6e-2 -report_coverage
 
 # Check if we succeeded
-$PYTHONEXEC verify_ssa_inv.py tiny_tikhonov_lmvm.nc --desired_misfit 13.5 --misfit_tolerance .5 --iter_max 75
-
+$PYTHONEXEC verify_ssa_inv.py tiny_tikhonov_lmvm.nc --desired_misfit 10 --misfit_tolerance .5 --iter_max 100

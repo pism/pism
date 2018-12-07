@@ -19,6 +19,7 @@
 #include <cassert>
 #include <sstream>
 #include <cstdlib>
+#include <petscsys.h>
 
 #include "error_handling.hh"
 

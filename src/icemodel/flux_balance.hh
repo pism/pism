@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 PISM Authors
+/* Copyright (C) 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,7 +18,7 @@
  */
 
 /*
- * This source code is included in iceModel_diagnostics.cc and so it does not need any #include
+ * This source code is included in diagnostics.cc and so it does not need any #include
  * directives here.
  */
 
@@ -78,12 +78,13 @@ protected:
     if (m_interval_length > 0.0) {
       double ice_density = m_config->get_double("constants.ice.density");
 
-      const IceModelVec2S& cell_area = model->geometry().cell_area;
+      auto cell_area = m_grid->cell_area();
+
       const IceModelVec2S& thickness = model->geometry().ice_thickness;
       const IceModelVec2S& area_specific_volume = model->geometry().ice_area_specific_volume;
 
       IceModelVec::AccessList list{result.get(),
-          &thickness, &area_specific_volume, &m_last_amount, &cell_area};
+          &thickness, &area_specific_volume, &m_last_amount};
 
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
@@ -95,7 +96,7 @@ protected:
 
         if (m_kind == MASS) {
           // kg / m^2 * m^2 = kg
-          (*result)(i, j) *= cell_area(i, j);
+          (*result)(i, j) *= cell_area;
         }
       }
     } else {
@@ -181,15 +182,16 @@ protected:
   void update_impl(double dt) {
     const IceModelVec2S
       &dH = model->geometry_evolution().thickness_change_due_to_flow(),
-      &dV = model->geometry_evolution().area_specific_volume_change_due_to_flow(),
-      &cell_area = model->geometry().cell_area;
+      &dV = model->geometry_evolution().area_specific_volume_change_due_to_flow();
 
-    IceModelVec::AccessList list{&m_accumulator, &dH, &dV, &cell_area};
+    auto cell_area = m_grid->cell_area();
+
+    IceModelVec::AccessList list{&m_accumulator, &dH, &dV};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area(i, j));
+      double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
 
       m_accumulator(i, j) += C * (dH(i, j) + dV(i, j));
     }
@@ -243,15 +245,16 @@ public:
 protected:
   void update_impl(double dt) {
     const IceModelVec2S
-      &SMB       = model->geometry_evolution().top_surface_mass_balance(),
-      &cell_area = model->geometry().cell_area;
+      &SMB = model->geometry_evolution().top_surface_mass_balance();
 
-    IceModelVec::AccessList list{&m_accumulator, &SMB, &cell_area};
+    auto cell_area = m_grid->cell_area();
+
+    IceModelVec::AccessList list{&m_accumulator, &SMB};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area(i, j));
+      double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
 
       m_accumulator(i, j) += C * SMB(i, j);
     }
@@ -303,15 +306,16 @@ public:
 protected:
   void update_impl(double dt) {
     const IceModelVec2S
-      &BMB       = model->geometry_evolution().bottom_surface_mass_balance(),
-      &cell_area = model->geometry().cell_area;
+      &BMB = model->geometry_evolution().bottom_surface_mass_balance();
 
-    IceModelVec::AccessList list{&m_accumulator, &BMB, &cell_area};
+    auto cell_area = m_grid->cell_area();
+
+    IceModelVec::AccessList list{&m_accumulator, &BMB};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area(i, j));
+      double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
 
       m_accumulator(i, j) += C * BMB(i, j);
     }
@@ -363,15 +367,16 @@ public:
 protected:
   void update_impl(double dt) {
     const IceModelVec2S
-      &error     = model->geometry_evolution().conservation_error(),
-      &cell_area = model->geometry().cell_area;
+      &error = model->geometry_evolution().conservation_error();
 
-    IceModelVec::AccessList list{&m_accumulator, &error, &cell_area};
+    IceModelVec::AccessList list{&m_accumulator, &error};
+
+    auto cell_area = m_grid->cell_area();
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area(i, j));
+      double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
 
       m_accumulator(i, j) += C * error(i, j);
     }
@@ -425,15 +430,16 @@ public:
 protected:
   void update_impl(double dt) {
     const IceModelVec2S
-      &discharge = model->discharge(),
-      &cell_area = model->geometry().cell_area;
+      &discharge = model->discharge();
 
-    IceModelVec::AccessList list{&m_accumulator, &discharge, &cell_area};
+    IceModelVec::AccessList list{&m_accumulator, &discharge};
+
+    auto cell_area = m_grid->cell_area();
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area(i, j));
+      double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
 
       m_accumulator(i, j) += C * discharge(i, j);
     }

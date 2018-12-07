@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,23 +23,20 @@
 
 namespace pism {
 
-class IceModelVec2S;
-class IceModelVec2CellType;
-
 namespace calving {
 
 class EigenCalving : public StressCalving {
 public:
-  EigenCalving(IceGrid::ConstPtr g, stressbalance::StressBalance *stress_balance);
+  EigenCalving(IceGrid::ConstPtr grid);
   virtual ~EigenCalving();
 
   void init();
 
   // empty methods that we're required to implement:
 protected:
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
 
-  void compute_calving_rate(const IceModelVec2CellType &mask,
+  void compute_calving_rate(const CalvingInputs &inputs,
                             IceModelVec2S &result) const;
 
 protected:

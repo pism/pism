@@ -5,7 +5,7 @@
 Authorship
 ==========
 
-   *Copyright* |copy| *2004 -- 2017 the PISM authors.*
+   *Copyright* |copy| *2004 -- 2018 the PISM authors.*
 
    *This file is part of PISM. PISM is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as published by the Free
@@ -63,12 +63,14 @@ Research (PIK), and several additional developers listed here.
    * - David Maxwell (UAF)
      - inversion, SSA finite elements, python bindings 
    * - Ward van Pelt (IMAU)
-     - hydrology analysis and design 
-   * - Julien Seguinot (INK)
+     - hydrology analysis and design
+   * - Ronja Reese (PIK)
+     - sub-shelf mass balance
+   * - Julien Seguinot (ETH)
      - bug fixes, temperature index model 
    * - Ricarda Winkelmann (PIK)
      - Antarctica processes, coupling, and modeling  
-   * - Florian Ziemen (UAF)
+   * - Florian Ziemen (MPI)
      - bug fixes, sliding 
 
 Email the **highlighted** UAF developers at |pism-email|.

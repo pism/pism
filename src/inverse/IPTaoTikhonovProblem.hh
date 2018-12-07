@@ -226,7 +226,7 @@ public:
   //! Callback from TaoBasicSolver to form the starting iterate for the minimization.  See also
   //  setInitialGuess.
   virtual TerminationReason::Ptr formInitialGuess(Vec *v) {
-    *v = m_dGlobal.get_vec();
+    *v = m_dGlobal.vec();
     return GenericTerminationReason::success();
   }
 
@@ -300,13 +300,13 @@ IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(ForwardProblem &forwa
   : m_forward(forward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
     m_designFunctional(designFunctional), m_stateFunctional(stateFunctional) {
 
-  m_grid = m_d0.get_grid();
+  m_grid = m_d0.grid();
 
   m_tikhonov_atol = m_grid->ctx()->config()->get_double("inverse.tikhonov.atol");
   m_tikhonov_rtol = m_grid->ctx()->config()->get_double("inverse.tikhonov.rtol");
 
-  int design_stencil_width = m_d0.get_stencil_width();
-  int state_stencil_width = m_u_obs.get_stencil_width();
+  int design_stencil_width = m_d0.stencil_width();
+  int state_stencil_width = m_u_obs.stencil_width();
 
   m_d.reset(new DesignVec);
   m_d->create(m_grid, "design variable", WITH_GHOSTS, design_stencil_width);
@@ -433,7 +433,7 @@ void IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(Tao tao,
   m_grad->scale(1.0 / m_eta);
   m_grad->add(1, *m_grad_state);
 
-  ierr = VecCopy(m_grad->get_vec(), gradient);
+  ierr = VecCopy(m_grad->vec(), gradient);
   PISM_CHK(ierr, "VecCopy");
 
   double valDesign, valState;

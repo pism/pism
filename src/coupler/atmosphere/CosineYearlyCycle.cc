@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,6 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>       // M_PI, GSL_NAN
-
 #include "CosineYearlyCycle.hh"
 #include "pism/util/Timeseries.hh"
 #include "pism/util/Time.hh"
@@ -33,18 +31,16 @@ namespace pism {
 namespace atmosphere {
 
 CosineYearlyCycle::CosineYearlyCycle(IceGrid::ConstPtr g)
-  : YearlyCycle(g), m_A(NULL) {
+  : YearlyCycle(g) {
+  
 }
 
 CosineYearlyCycle::~CosineYearlyCycle() {
-  if (m_A != NULL) {
-    delete m_A;
-  }
+  // empty
 }
 
-void CosineYearlyCycle::init_impl() {
-
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
+void CosineYearlyCycle::init_impl(const Geometry &geometry) {
+  (void) geometry;
 
   m_log->message(2,
              "* Initializing the 'cosine yearly cycle' atmosphere model (-atmosphere yearly_cycle)...\n");
@@ -52,35 +48,33 @@ void CosineYearlyCycle::init_impl() {
 
   options::String input_file("-atmosphere_yearly_cycle_file",
                              "CosineYearlyCycle input file name");
+
   options::String scaling_file("-atmosphere_yearly_cycle_scaling_file",
                                "CosineYearlyCycle amplitude scaling input file name");
-
   if (not input_file.is_set()) {
     throw RuntimeError(PISM_ERROR_LOCATION, "Please specify an '-atmosphere yearly_cycle' input file\n"
                        "using the -atmosphere_yearly_cycle_file option.");
   }
 
   m_log->message(2,
-             "  Reading mean annual air temperature, mean July air temperature, and\n"
+             "  Reading mean annual air temperature, mean summer air temperature (NH:July, SH:January), and\n"
              "  precipitation fields from '%s'...\n", input_file->c_str());
 
   m_air_temp_mean_annual.regrid(input_file, CRITICAL);
-  m_air_temp_mean_july.regrid(input_file, CRITICAL);
+  m_air_temp_mean_summer.regrid(input_file, CRITICAL);
   m_precipitation.regrid(input_file, CRITICAL);
 
   if (scaling_file.is_set()) {
 
-    if (m_A == NULL) {
-      m_A = new Timeseries(*m_grid, "amplitude_scaling",
-                           m_config->get_string("time.dimension_name"));
-      m_A->variable().set_string("units", "1");
-      m_A->variable().set_string("long_name", "cosine yearly cycle amplitude scaling");
-      m_A->dimension().set_string("units", m_grid->ctx()->time()->units_string());
-    }
+    m_A.reset(new Timeseries(*m_grid, "amplitude_scaling",
+                             m_config->get_string("time.dimension_name")));
+    m_A->variable().set_string("units", "1");
+    m_A->variable().set_string("long_name", "cosine yearly cycle amplitude scaling");
+    m_A->dimension().set_string("units", m_grid->ctx()->time()->units_string());
 
     m_log->message(2,
-               "  Reading cosine yearly cycle amplitude scaling from '%s'...\n",
-               scaling_file->c_str());
+                   "  Reading cosine yearly cycle amplitude scaling from '%s'...\n",
+                   scaling_file->c_str());
 
     PIO nc(m_grid->com, "netcdf3", scaling_file, PISM_READONLY);    // OK to use netcdf3
     {
@@ -89,9 +83,6 @@ void CosineYearlyCycle::init_impl() {
     nc.close();
 
   } else {
-    if (m_A != NULL) {
-      delete m_A;
-    }
     m_A = NULL;
   }
 }
@@ -101,16 +92,18 @@ MaxTimestep CosineYearlyCycle::max_timestep_impl(double t) const {
   return MaxTimestep("atmosphere cosine_yearly_cycle");
 }
 
-void CosineYearlyCycle::update_impl(double my_t, double my_dt) {
-  m_t = my_t;
-  m_dt = my_dt;
+void CosineYearlyCycle::update_impl(const Geometry &geometry, double t, double dt) {
+  (void) geometry;
+  (void) t;
+  (void) dt;
+  // nothing to do here, but an implementation is required
 }
 
 void CosineYearlyCycle::init_timeseries_impl(const std::vector<double> &ts) const {
 
   YearlyCycle::init_timeseries_impl(ts);
 
-  if (m_A != NULL) {
+  if (m_A) {
     for (unsigned int k = 0; k < ts.size(); ++k) {
       m_cosine_cycle[k] *= (*m_A)(ts[k]);
     }

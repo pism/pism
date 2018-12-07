@@ -4,15 +4,19 @@ advection of enthalpy in the column. Tests PISM's enthalpy solver.
 """
 
 import PISM
+from PISM.util import convert
 import numpy as np
 import pylab as plt
+
 
 def log_plot(x, y, style, label):
     plt.plot(log10(x), log10(y), style, label=label)
     plt.xticks(log10(x), x)
 
+
 def log_fit_plot(x, p, label):
     plt.plot(log10(x), np.polyval(p, log10(x)), label=label)
+
 
 log10 = np.log10
 
@@ -32,6 +36,7 @@ alpha2 = k / (c * rho)
 EC = PISM.EnthalpyConverter(ctx.config)
 pressure = np.vectorize(EC.pressure)
 cts = np.vectorize(EC.enthalpy_cts)
+
 
 class EnthalpyColumn(object):
     "Set up the grid and arrays needed to run column solvers"
@@ -61,7 +66,7 @@ class EnthalpyColumn(object):
 
         self.u, self.v, self.w = PISM.model.create3DVelocityVecs(grid)
 
-        self.sys = PISM.enthSystemCtx(grid.z(), "enth",
+        self.sys = PISM.enthSystemCtx(grid.z(), "energy.enthalpy",
                                       grid.dx(), grid.dy(), self.dt,
                                       config,
                                       self.enthalpy,
@@ -84,7 +89,8 @@ class EnthalpyColumn(object):
 
     def init_column(self):
         ice_thickness = self.Lz
-        self.sys.init(1, 1, ice_thickness)
+        self.sys.init(1, 1, False, ice_thickness)
+
 
 def diffusion_convergence_rate_time(title, error_func):
     "Compute the convergence rate with refinement in time."
@@ -101,7 +107,6 @@ def diffusion_convergence_rate_time(title, error_func):
     if True:
         plt.figure()
         plt.title(title + "\nTesting convergence as dt -> 0")
-        plt.hold(True)
         log_plot(dts, max_errors, 'o', "max errors")
         log_plot(dts, avg_errors, 'o', "avg errors")
         log_fit_plot(dts, p_max, "max: dt^{}".format(p_max[0]))
@@ -112,9 +117,10 @@ def diffusion_convergence_rate_time(title, error_func):
 
     return p_max[0], p_avg[0]
 
+
 def diffusion_convergence_rate_space(title, error_func):
     "Compute the convergence rate with refinement in space."
-    Mz = 2.0**np.arange(3,10)
+    Mz = np.array(2.0**np.arange(3, 10), dtype=int)
     dzs = 1000.0 / Mz
 
     max_errors = np.zeros_like(dzs)
@@ -132,7 +138,6 @@ def diffusion_convergence_rate_space(title, error_func):
     if True:
         plt.figure()
         plt.title(title + "\nTesting convergence as dz -> 0")
-        plt.hold(True)
         log_plot(dzs, max_errors, 'o', "max errors")
         log_plot(dzs, avg_errors, 'o', "avg errors")
         log_fit_plot(dzs, p_max, "max: dz^{}".format(p_max[0]))
@@ -142,6 +147,7 @@ def diffusion_convergence_rate_space(title, error_func):
         plt.legend(loc="best")
 
     return p_max[0], p_avg[0]
+
 
 def exact_DN(L, U0, QL):
     """Exact solution (and an initial state) for the 'Dirichlet at the base,
@@ -155,12 +161,13 @@ def exact_DN(L, U0, QL):
         return v + (U0 + QL * z)
     return f
 
+
 def errors_DN(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
     """Test the enthalpy solver with Dirichlet B.C. at the base and
     Neumann at the top surface.
     """
-    T_final = PISM.convert(unit_system, T_final_years, "years", "seconds")
-    dt = PISM.convert(unit_system, dt_years, "years", "seconds")
+    T_final = convert(T_final_years, "years", "seconds")
+    dt = convert(dt_years, "years", "seconds")
 
     column = EnthalpyColumn(Mz, dt)
 
@@ -199,12 +206,11 @@ def errors_DN(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
     E_exact_final = E_exact(z, t)
 
     if plot_results:
-        t_years = PISM.convert(unit_system, t, "seconds", "years")
+        t_years = convert(t, "seconds", "years")
 
         plt.figure()
         plt.xlabel("z, meters")
         plt.ylabel("E, J/kg")
-        plt.hold(True)
         plt.step(z, E_exact(z, 0), color="blue", label="initial condition")
         plt.step(z, E_exact_final, color="green", label="exact solution")
         plt.step(z, cts(pressure(Lz - z)), "--", color="black", label="CTS")
@@ -222,6 +228,7 @@ def errors_DN(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
 
     return max_error, avg_error
 
+
 def exact_ND(L, Q0, UL):
     """Exact solution (and an initial state) for the 'Dirichlet at the base,
     Neumann at the top' setup."""
@@ -234,12 +241,13 @@ def exact_ND(L, Q0, UL):
         return v + (UL + Q0 * (z - L))
     return f
 
+
 def errors_ND(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
     """Test the enthalpy solver with Neumann B.C. at the base and
     Dirichlet B.C. at the top surface.
     """
-    T_final = PISM.convert(unit_system, T_final_years, "years", "seconds")
-    dt = PISM.convert(unit_system, dt_years, "years", "seconds")
+    T_final = convert(T_final_years, "years", "seconds")
+    dt = convert(dt_years, "years", "seconds")
 
     column = EnthalpyColumn(Mz, dt)
 
@@ -248,7 +256,7 @@ def errors_ND(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
 
     E_base = EC.enthalpy(240.0, 0.0, EC.pressure(Lz))
     E_surface = EC.enthalpy(260.0, 0.0, 0.0)
-    dE_base = (E_surface  - E_base) / Lz
+    dE_base = (E_surface - E_base) / Lz
 
     E_steady = E_surface + dE_base * (z - Lz)
     Q_base = - K * dE_base
@@ -278,12 +286,11 @@ def errors_ND(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
     E_exact_final = E_exact(z, t)
 
     if plot_results:
-        t_years = PISM.convert(unit_system, t, "seconds", "years")
+        t_years = convert(t, "seconds", "years")
 
         plt.figure()
         plt.xlabel("z, meters")
         plt.ylabel("E, J/kg")
-        plt.hold(True)
         plt.step(z, E_exact(z, 0), color="blue", label="initial condition")
         plt.step(z, E_exact_final, color="green", label="exact solution")
         plt.step(z, cts(pressure(Lz - z)), "--", color="black", label="CTS")
@@ -301,14 +308,18 @@ def errors_ND(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
 
     return max_error, avg_error
 
+
 def exact_advection(L, w):
     "Exact solution of the 'pure advection' problem."
     C = np.pi / L
-    def f(z,t):
+
+    def f(z, t):
         return np.sin(C * (z - w * t))
-    def df(z,t):
+
+    def df(z, t):
         return C * np.cos(C * (z - w * t))
     return f, df
+
 
 def errors_advection_up(plot_results=True, T_final=1000.0, dt=100, Mz=101):
     """Test the enthalpy solver using a 'pure advection' problem with
@@ -353,7 +364,6 @@ def errors_advection_up(plot_results=True, T_final=1000.0, dt=100, Mz=101):
         plt.figure()
         plt.xlabel("z, meters")
         plt.ylabel("E, J/kg")
-        plt.hold(True)
         plt.step(z, E_exact(z, 0), color="blue", label="initial condition")
         plt.step(z, E_exact(z, t), color="green", label="exact solution")
         plt.grid(True)
@@ -368,6 +378,7 @@ def errors_advection_up(plot_results=True, T_final=1000.0, dt=100, Mz=101):
     avg_error = np.average(np.fabs(errors))
 
     return max_error, avg_error
+
 
 def errors_advection_down(plot_results=True, T_final=1000.0, dt=100, Mz=101):
     """Test the enthalpy solver using a 'pure advection' problem with
@@ -412,7 +423,6 @@ def errors_advection_down(plot_results=True, T_final=1000.0, dt=100, Mz=101):
         plt.figure()
         plt.xlabel("z, meters")
         plt.ylabel("E, J/kg")
-        plt.hold(True)
         plt.step(z, E_exact(z, 0), color="blue", label="initial condition")
         plt.step(z, E_exact(z, t), color="green", label="exact solution")
         plt.grid(True)
@@ -427,6 +437,7 @@ def errors_advection_down(plot_results=True, T_final=1000.0, dt=100, Mz=101):
     avg_error = np.average(np.fabs(errors))
 
     return max_error, avg_error
+
 
 def advection_convergence_rate_time(title, error_func):
     "Compute the convergence rate with refinement in time."
@@ -448,7 +459,6 @@ def advection_convergence_rate_time(title, error_func):
     if True:
         plt.figure()
         plt.title(title + "\nTesting convergence as dt -> 0")
-        plt.hold(True)
         log_plot(dts, max_errors, 'o', "max errors")
         log_plot(dts, avg_errors, 'o', "avg errors")
         log_fit_plot(dts, p_max, "max: dt^{}".format(p_max[0]))
@@ -458,6 +468,7 @@ def advection_convergence_rate_time(title, error_func):
         plt.legend(loc="best")
 
     return p_max[0], p_avg[0]
+
 
 def advection_convergence_rate_space(title, error_func):
     "Compute the convergence rate with refinement in time."
@@ -481,7 +492,6 @@ def advection_convergence_rate_space(title, error_func):
     if True:
         plt.figure()
         plt.title(title + "\nTesting convergence as dz -> 0")
-        plt.hold(True)
         log_plot(dzs, max_errors, 'o', "max errors")
         log_plot(dzs, avg_errors, 'o', "avg errors")
         log_fit_plot(dzs, p_max, "max: dz^{}".format(p_max[0]))
@@ -492,11 +502,13 @@ def advection_convergence_rate_space(title, error_func):
 
     return p_max[0], p_avg[0]
 
+
 def diffusion_DN_test():
     assert diffusion_convergence_rate_time("Diffusion: Dirichlet at the base, Neumann at the surface",
                                            errors_DN)[1] > 0.93
     assert diffusion_convergence_rate_space("Diffusion: Dirichlet at the base, Neumann at the surface",
                                             errors_DN)[1] > 2.0
+
 
 def diffusion_ND_test():
     assert diffusion_convergence_rate_time("Diffusion: Neumann at the base, Dirichlet at the surface",
@@ -504,17 +516,20 @@ def diffusion_ND_test():
     assert diffusion_convergence_rate_space("Diffusion: Neumann at the base, Dirichlet at the surface",
                                             errors_ND)[1] > 2.0
 
+
 def advection_up_test():
     assert advection_convergence_rate_time("Advection: Upward flow",
                                            errors_advection_up)[1] > 0.87
     assert advection_convergence_rate_space("Advection: Upward flow",
                                             errors_advection_up)[1] > 0.96
 
+
 def advection_down_test():
     assert advection_convergence_rate_time("Advection: Downward flow",
                                            errors_advection_down)[1] > 0.87
     assert advection_convergence_rate_space("Advection: Downward flow",
                                             errors_advection_down)[1] > 0.96
+
 
 if __name__ == "__main__":
     diffusion_ND_test()

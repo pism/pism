@@ -7,7 +7,7 @@ from numpy import squeeze, abs, diff
 try:
     from netCDF4 import Dataset as NC
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 pism_path = argv[1]
@@ -25,7 +25,8 @@ if e != 0:
 deltas = []
 dts = [200, 100]                # FIXME: this is fragile and the test fails if I add smaller dt like 50 here
 for dt in dts:
-    cmd = "%s %s/pisms -eisII B -y 2400 -Mx 16 -My 16 -Mz 21 -Lbz 1000 -Mbz 11 -energy enthalpy -regrid_file bar-temp-continuity.nc -regrid_vars thk -verbose 1 -max_dt %f -o foo-temp-continuity.nc -o_size big" % (mpiexec, pism_path, dt)
+    cmd = "%s %s/pisms -eisII B -y 2400 -Mx 16 -My 16 -Mz 21 -Lbz 1000 -Mbz 11 -energy enthalpy -regrid_file bar-temp-continuity.nc -regrid_vars thk -verbose 1 -max_dt %f -o foo-temp-continuity.nc -o_size big" % (
+        mpiexec, pism_path, dt)
     stderr.write(cmd + '\n')
 
     e = system(cmd)
@@ -54,7 +55,7 @@ for (dt, delta) in zip(dts, deltas):
 
 # the only test is whether they decrease; no rate measured
 if any(diff(deltas) > 0):
-    print diff(deltas)
+    print(diff(deltas))
     exit(1)
 
 system("rm foo-temp-continuity.nc foo-temp-continuity.nc~ bar-temp-continuity.nc temp-temp-continuity.nc litho_temp-temp-continuity.nc")

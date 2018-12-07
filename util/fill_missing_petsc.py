@@ -60,7 +60,7 @@ def assemble_matrix(mask):
     # loop over owned block of rows on this
     # processor and insert entry values
     row_start, row_end = A.getOwnershipRange()
-    for row in xrange(row_start, row_end):
+    for row in range(row_start, row_end):
         A[row, row] = diagonal
 
         i = row // ncol    # map row number to
@@ -128,7 +128,7 @@ def assemble_rhs(rhs, X):
     # nodes.
     rhs.set(0.0)
 
-    for row in xrange(row_start, row_end):
+    for row in range(row_start, row_end):
         i = row // ncol    # map row number to
         j = row - i * ncol  # grid coordinates
 
@@ -278,7 +278,7 @@ def fill_variable(nc, name):
     if var.ndim == 3:
         A = None
         n_records = var.shape[0]
-        for t in xrange(n_records):
+        for t in range(n_records):
             PETSc.Sys.Print("Processing record %d/%d..." % (t + 1, n_records))
             data = var[t, :, :]
 
@@ -330,6 +330,7 @@ def add_history(nc):
     else:
         nc.history = historystr
 
+
 if __name__ == "__main__":
     from argparse import ArgumentParser
     import os
@@ -361,7 +362,7 @@ if __name__ == "__main__":
 
     if options.all:
         nc = NC(input_filename)
-        variables = nc.variables.keys()
+        variables = list(nc.variables.keys())
         nc.close()
     else:
         try:
@@ -404,7 +405,7 @@ if __name__ == "__main__":
             nc = NC(tmp_filename, 'a')
         else:
             nc = NC(input_filename, 'r')
-    except Exception, message:
+    except Exception as message:
         PETSc.Sys.Print(message)
         PETSc.Sys.Print("Note: %s was not modified." % output_filename)
         sys.exit(-1)
@@ -414,7 +415,7 @@ if __name__ == "__main__":
     for name in variables:
         try:
             fill_variable(nc, name)
-        except Exception, message:
+        except Exception as message:
             PETSc.Sys.Print("ERROR:", message)
             PETSc.Sys.Print("Note: %s was not modified." % output_filename)
             sys.exit(-1)

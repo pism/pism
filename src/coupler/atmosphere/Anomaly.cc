@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,42 +16,56 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>
-
 #include "Anomaly.hh"
+
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/coupler/util/options.hh"
 
 namespace pism {
 namespace atmosphere {
 
-Anomaly::Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in)
-  : PGivenClimate<PAModifier,AtmosphereModel>(g, in) {
-  m_option_prefix  = "-atmosphere_anomaly";
+Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
+  : AtmosphereModel(g, in) {
 
-  // will be de-allocated by the parent's destructor
-  m_air_temp_anomaly      = new IceModelVec2T;
-  m_precipitation_anomaly = new IceModelVec2T;
+  ForcingOptions opt(*m_grid->ctx(), "atmosphere.anomaly");
 
-  m_fields["air_temp_anomaly"]      = m_air_temp_anomaly;
-  m_fields["precipitation_anomaly"] = m_precipitation_anomaly;
+  {
+    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    bool periodic = opt.period > 0;
 
-  process_options();
+    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
 
-  std::map<std::string, std::string> standard_names;
-  set_vec_parameters(standard_names);
+    m_air_temp_anomaly = IceModelVec2T::ForcingField(m_grid,
+                                                     file,
+                                                     "air_temp_anomaly",
+                                                     "", // no standard name
+                                                     buffer_size,
+                                                     evaluations_per_year,
+                                                     periodic);
 
-  m_air_temp_anomaly->create(m_grid, "air_temp_anomaly");
+    m_precipitation_anomaly = IceModelVec2T::ForcingField(m_grid,
+                                                          file,
+                                                          "precipitation_anomaly",
+                                                          "", // no standard name
+                                                          buffer_size,
+                                                          evaluations_per_year,
+                                                          periodic);
+  }
+
   m_air_temp_anomaly->set_attrs("climate_forcing",
-                              "anomaly of the near-surface air temperature",
-                              "Kelvin", "");
+                                "anomaly of the near-surface air temperature",
+                                "Kelvin", "");
 
-  m_precipitation_anomaly->create(m_grid, "precipitation_anomaly");
   m_precipitation_anomaly->set_attrs("climate_forcing",
-                                   "anomaly of the ice-equivalent precipitation rate",
-                                   "kg m-2 second-1", "");
+                                     "anomaly of the ice-equivalent precipitation rate",
+                                     "kg m-2 second-1", "");
   m_precipitation_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
+
+  m_precipitation = allocate_precipitation(g);
+  m_temperature   = allocate_temperature(g);
 }
 
 Anomaly::~Anomaly()
@@ -59,40 +73,50 @@ Anomaly::~Anomaly()
   // empty
 }
 
-void Anomaly::init_impl() {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
+void Anomaly::init_impl(const Geometry &geometry) {
+  m_input_model->init(geometry);
 
-  m_input_model->init();
-
-  m_log->message(2,
-             "* Initializing the -atmosphere ...,anomaly code...\n");
+  ForcingOptions opt(*m_grid->ctx(), "atmosphere.anomaly");
 
   m_log->message(2,
-             "    reading anomalies from %s ...\n",
-             m_filename.c_str());
+                 "* Initializing the -atmosphere ...,anomaly code...\n");
 
-  m_air_temp_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
-  m_precipitation_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
+  m_log->message(2,
+                 "    reading anomalies from %s ...\n",
+                 opt.filename.c_str());
+
+  m_air_temp_anomaly->init(opt.filename, opt.period, opt.reference_time);
+  m_precipitation_anomaly->init(opt.filename, opt.period, opt.reference_time);
 }
 
-void Anomaly::update_impl(double my_t, double my_dt) {
-  update_internal(my_t, my_dt);
+void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
+  m_input_model->update(geometry, t, dt);
 
-  m_precipitation_anomaly->average(m_t, m_dt);
-  m_air_temp_anomaly->average(m_t, m_dt);
+  m_precipitation_anomaly->update(t, dt);
+  m_air_temp_anomaly->update(t, dt);
+
+  m_precipitation_anomaly->average(t, dt);
+  m_air_temp_anomaly->average(t, dt);
+
+  // precipitation
+  {
+    m_precipitation->copy_from(m_input_model->mean_precipitation());
+    m_precipitation->add(1.0, *m_precipitation_anomaly);
+  }
+
+  // temperature
+  {
+    m_temperature->copy_from(m_input_model->mean_annual_temp());
+    m_temperature->add(1.0, *m_air_temp_anomaly);
+  }
 }
 
-
-void Anomaly::mean_precipitation_impl(IceModelVec2S &result) const {
-  m_input_model->mean_precipitation(result);
-
-  result.add(1.0, *m_precipitation_anomaly);
+const IceModelVec2S& Anomaly::mean_precipitation_impl() const {
+  return *m_precipitation;
 }
 
-void Anomaly::mean_annual_temp_impl(IceModelVec2S &result) const {
-  m_input_model->mean_annual_temp(result);
-
-  result.add(1.0, *m_air_temp_anomaly);
+const IceModelVec2S& Anomaly::mean_annual_temp_impl() const {
+  return *m_temperature;
 }
 
 void Anomaly::begin_pointwise_access_impl() const {
@@ -108,7 +132,7 @@ void Anomaly::end_pointwise_access_impl() const {
 }
 
 void Anomaly::init_timeseries_impl(const std::vector<double> &ts) const {
-  PAModifier::init_timeseries_impl(ts);
+  AtmosphereModel::init_timeseries_impl(ts);
 
   m_air_temp_anomaly->init_interpolation(ts);
 

@@ -31,6 +31,10 @@ first:
                             --with-debugging=0 \
                             --with-fc=0
 
+   .. note::
+
+      PETSc's ``configure.py`` requires Python 2.x (Python 3.x is not supported yet).
+
    You need to define the environment variables ``PETSC_DIR`` and ``PETSC_ARCH`` [#]_ --
    one way is shown here -- *before* running the configuration script. Turning off the
    inclusion of debugging code and symbols can give a significant speed improvement, but
@@ -43,14 +47,8 @@ first:
    than using the system-wide version. So one may add "``--download-f2cblaslapack=1``" to
    the other configure options.
 
-#. If there is an existing MPI installation, for example at ``/home/user/mympi/``, one can
-   point PETSc to it by adding the option "``--with-mpi-dir=/home/user/mympi/``". The path
-   used in this option must have MPI executables ``mpicxx`` and ``mpicc``, and either
-   ``mpiexec`` or ``mpirun``, in sub-directory ``bin/`` and MPI library files in
-   sub-directory ``lib/``.
-
-   Alternatively, use MPI's compiler wrappers to specify an MPI library when installing
-   PETSc, for example:
+#. If there is an existing MPI installation, we recommend using MPI's compiler wrappers to
+   specify an MPI library when installing PETSc, for example:
 
    .. code-block:: bash
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef POINITIALIZATION_H
 #define POINITIALIZATION_H
 
-#include "Modifier.hh"
+#include "pism/coupler/OceanModel.hh"
 
 namespace pism {
 namespace ocean {
@@ -37,29 +37,24 @@ namespace ocean {
  * - is added automatically, and
  * - does not have a corresponding "keyword" in ocean::Factory.
  */
-class InitializationHelper : public OceanModifier {
+class InitializationHelper : public OceanModel {
 public:
-  InitializationHelper(IceGrid::ConstPtr g, OceanModel* in);
-protected:
+  InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
+
+private:
   void define_model_state_impl(const PIO &output) const;
   void write_model_state_impl(const PIO &output) const;
 
-  void update_impl(double t, double dt);
-  void init_impl();
+  void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Geometry &geometry);
 
-  void melange_back_pressure_fraction_impl(IceModelVec2S &result) const;
-  void sea_level_elevation_impl(double &result) const;
-  void shelf_base_temperature_impl(IceModelVec2S &result) const;
-  void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
+  const IceModelVec2S& shelf_base_temperature_impl() const;
+  const IceModelVec2S& shelf_base_mass_flux_impl() const;
+  const IceModelVec2S& melange_back_pressure_fraction_impl() const;
 
-private:
-  IceModelVec2S m_melange_back_pressure_fraction;
-  IceModelVec2S m_shelf_base_temperature;
-  IceModelVec2S m_shelf_base_mass_flux;
-
-  double m_sea_level_elevation;
-
-  TimeseriesMetadata m_sea_level_metadata;
+  // storage for melange_back_pressure_fraction is inherited from OceanModel
+  IceModelVec2S::Ptr m_shelf_base_temperature;
+  IceModelVec2S::Ptr m_shelf_base_mass_flux;
 };
 
 } // end of namespace ocean

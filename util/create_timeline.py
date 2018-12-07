@@ -27,7 +27,7 @@ import numpy as np
 try:
     import netCDF4 as netCDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 NC = netCDF.Dataset
 from netcdftime import utime
@@ -73,7 +73,7 @@ if os.path.isfile(infile):
     nc = NC(infile, 'a')
 else:
     nc = NC(infile, 'w', format='NETCDF3_CLASSIC')
-    
+
 time_units = ("%s since %s" % (ref_unit, ref_date))
 # currently PISM only supports the gregorian standard calendar
 # once this changes, calendar should become a command-line option
@@ -115,12 +115,12 @@ else:
 
 # create a new dimension for bounds only if it does not yet exist
 time_dim = "time"
-if time_dim not in nc.dimensions.keys():
+if time_dim not in list(nc.dimensions.keys()):
     nc.createDimension(time_dim)
 
 # create a new dimension for bounds only if it does not yet exist
 bnds_dim = "nb2"
-if bnds_dim not in nc.dimensions.keys():
+if bnds_dim not in list(nc.dimensions.keys()):
     nc.createDimension(bnds_dim, 2)
 
 # variable names consistent with PISM

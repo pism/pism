@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -35,19 +35,18 @@ namespace icebin {
 
 class IBSurfaceModel : public pism::surface::SurfaceModel {
 public:
-  IBSurfaceModel(IceGrid::ConstPtr g);
+  IBSurfaceModel(IceGrid::ConstPtr grid);
 
 protected:
-  virtual void init_impl();
-  virtual void update_impl(double my_t, double my_dt);
-  virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
+  virtual void init_impl(const Geometry &geometry);
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  virtual MaxTimestep max_timestep_impl(double t) const;
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual void mass_flux_impl(IceModelVec2S &result) const;
-  virtual void temperature_impl(IceModelVec2S &result) const;
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  virtual const IceModelVec2S& mass_flux_impl() const;
+  virtual const IceModelVec2S& temperature_impl() const;
 
 protected:
   bool _initialized;

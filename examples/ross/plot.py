@@ -8,7 +8,7 @@ from argparse import ArgumentParser
 try:
     import netCDF4 as NC
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 # Set up the option parser
@@ -34,13 +34,16 @@ except:
     import sys
     exit(1)
 
+
 def get(name):
     global nc
     return np.squeeze(nc.variables[name][:])
 
+
 def floating(a):
     global mask
     return np.ma.array(a, mask=mask != 3)
+
 
 # load data and restrict velocities to floating areas
 seconds_per_year = 3.1556926e7
@@ -57,8 +60,8 @@ v_bc = floating(get('v_ssa_bc'))
 plt.clf()
 
 f, (a0, a1) = plt.subplots(1, 2,
-                           gridspec_kw = {'width_ratios':[1.2, 1]},
-                           figsize=(16,8))
+                           gridspec_kw={'width_ratios': [1.2, 1]},
+                           figsize=(16, 8))
 
 # mark the grounding line
 a0.contour(x, y, mask, [2.5], colors="black", lw=2)

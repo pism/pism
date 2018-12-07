@@ -9,7 +9,7 @@ import argparse
 try:
     from netCDF4 import Dataset as NC
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 parser = argparse.ArgumentParser(description='show scatter plot P versus W from a PISM run')
@@ -47,58 +47,58 @@ args = parser.parse_args()
 try:
     nc = NC(args.filename, 'r')
 except:
-    print "ERROR: can't read from file ..."
+    print("ERROR: can't read from file ...")
     sys.exit(1)
 
-print "  reading 'bwprel' field from file %s ..." % (args.filename)
+print("  reading 'bwprel' field from file %s ..." % (args.filename))
 try:
     bwprel = nc.variables["bwprel"]
 except:
-    print "ERROR: variable 'bwprel' not found ..."
+    print("ERROR: variable 'bwprel' not found ...")
     sys.exit(2)
 
-print "  reading 'bwat' field from file %s ..." % (args.filename)
+print("  reading 'bwat' field from file %s ..." % (args.filename))
 try:
     bwat = nc.variables["bwat"]
 except:
-    print "ERROR: variable 'bwat' not found ..."
+    print("ERROR: variable 'bwat' not found ...")
     sys.exit(3)
 
 if args.s != None:
-    print "  reading '%s' field, for point selection, from file %s ..." % (args.s, args.filename)
+    print("  reading '%s' field, for point selection, from file %s ..." % (args.s, args.filename))
     try:
         ss = nc.variables[args.s]
     except:
-        print "ERROR: variable '%s' not found ..." % (args.s)
+        print("ERROR: variable '%s' not found ..." % (args.s))
         sys.exit(5)
     if args.smin != None:
-        print "    minimum value of '%s' for selection is %f" % (args.s, args.smin)
+        print("    minimum value of '%s' for selection is %f" % (args.s, args.smin))
     if args.smax != None:
-        print "    maximum value of '%s' for selection is %f" % (args.s, args.smax)
+        print("    maximum value of '%s' for selection is %f" % (args.s, args.smax))
 
 if args.c != None:
-    print "  reading '%s' field, for point color, from file %s ..." % (args.c, args.filename)
+    print("  reading '%s' field, for point color, from file %s ..." % (args.c, args.filename))
     try:
         cc = nc.variables[args.c]
     except:
-        print "ERROR: variable '%s' not found ..." % (args.c)
+        print("ERROR: variable '%s' not found ..." % (args.c))
         sys.exit(4)
     if args.cmin != None:
-        print '    color minimum value is %f' % args.cmin
+        print('    color minimum value is %f' % args.cmin)
     if args.cmax != None:
-        print '    color maximum value is %f' % args.cmax
+        print('    color maximum value is %f' % args.cmax)
 
 if args.d >= 0:
     if np.shape(bwprel)[0] <= args.d:
-        print "ERROR: frame %d not available in variable bwprel" % args.d
+        print("ERROR: frame %d not available in variable bwprel" % args.d)
         sys.exit(4)
     if np.shape(bwat)[0] <= args.d:
-        print "ERROR: frame %d not available in variable bwat" % args.d
+        print("ERROR: frame %d not available in variable bwat" % args.d)
         sys.exit(5)
-    print "  using frame %d of %d frames" % (args.d, np.shape(bwat)[0])
+    print("  using frame %d of %d frames" % (args.d, np.shape(bwat)[0]))
 else:
     args.d = -1
-    print "  reading last frame of %d frames" % (np.shape(bwat)[0])
+    print("  reading last frame of %d frames" % (np.shape(bwat)[0]))
 
 bwat = np.asarray(np.squeeze(bwat[args.d, :, :])).flatten()
 bwprel = np.asarray(np.squeeze(bwprel[args.d, :, :])).flatten()
@@ -142,7 +142,7 @@ if args.c != None:
 bwat = bwat[bwprel > 0.0]
 bwprel = bwprel[bwprel > 0.0]
 
-print "  scatter plot has %d points ...\n" % len(bwat)
+print("  scatter plot has %d points ...\n" % len(bwat))
 
 # W axis limits
 if args.wmin == None:
@@ -190,5 +190,5 @@ plt.ylabel(r'$P/P_0$')
 if args.o == None:
     plt.show()
 else:
-    print "  saving scatter plot in %s ...\n" % args.o
+    print("  saving scatter plot in %s ...\n" % args.o)
     plt.savefig(args.o, dpi=300, bbox_inches='tight')

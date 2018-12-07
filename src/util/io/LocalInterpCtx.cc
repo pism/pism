@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,12 +22,11 @@
 #include <gsl/gsl_interp.h>
 
 #include "PIO.hh"
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "LocalInterpCtx.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
 
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/interpolation.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Logger.hh"
@@ -81,11 +80,12 @@ static void subset_start_and_count(const std::vector<double> &x,
   processor.
 */
 LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
-                               const std::vector<double> &z_output) {
+                               const std::vector<double> &z_output,
+                               InterpolationType type) {
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
 
-  grid.ctx()->log()->message(3, "\nRegridding file grid info:\n");
-  input.report(*grid.ctx()->log(), 3, grid.ctx()->unit_system());
+  grid.ctx()->log()->message(4, "\nRegridding file grid info:\n");
+  input.report(*grid.ctx()->log(), 4, grid.ctx()->unit_system());
 
   // limits of the processor's part of the target computational domain
   const double
@@ -127,13 +127,23 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   }
   allocation.check();
 
-  x.reset(new LinearInterpolation(&input.x[start[X]], count[X],
-                                  &grid.x()[grid.xs()], grid.xm()));
+  if (type == BILINEAR) {
+    x.reset(new LinearInterpolation(&input.x[start[X]], count[X],
+                                    &grid.x()[grid.xs()], grid.xm()));
 
-  y.reset(new LinearInterpolation(&input.y[start[Y]], count[Y],
-                                  &grid.y()[grid.ys()], grid.ym()));
+    y.reset(new LinearInterpolation(&input.y[start[Y]], count[Y],
+                                    &grid.y()[grid.ys()], grid.ym()));
 
-  z.reset(new LinearInterpolation(input.z, z_output));
+    z.reset(new LinearInterpolation(input.z, z_output));
+  } else {
+    x.reset(new NearestNeighbor(&input.x[start[X]], count[X],
+                                &grid.x()[grid.xs()], grid.xm()));
+
+    y.reset(new NearestNeighbor(&input.y[start[Y]], count[Y],
+                                &grid.y()[grid.ys()], grid.ym()));
+
+    z.reset(new NearestNeighbor(input.z, z_output));
+  }
 }
 
 } // end of namespace pism

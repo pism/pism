@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,35 +19,39 @@
 #ifndef _PAANOMALY_H_
 #define _PAANOMALY_H_
 
-#include "pism/coupler/util/PGivenClimate.hh"
-#include "Modifier.hh"
+#include "pism/coupler/AtmosphereModel.hh"
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace atmosphere {
 
 //! \brief Reads and uses air_temp and precipitation anomalies from a file.
-class Anomaly : public PGivenClimate<PAModifier,AtmosphereModel>
+class Anomaly : public AtmosphereModel
 {
 public:
-  Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in);
+  Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
   virtual ~Anomaly();
 
 protected:
-  virtual void init_impl();
-  virtual void update_impl(double my_t, double my_dt);
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual void mean_precipitation_impl(IceModelVec2S &result) const;
-  virtual void mean_annual_temp_impl(IceModelVec2S &result) const;
+  const IceModelVec2S& mean_precipitation_impl() const;
+  const IceModelVec2S& mean_annual_temp_impl() const;
 
-  virtual void init_timeseries_impl(const std::vector<double> &ts) const;
-  virtual void begin_pointwise_access_impl() const;
-  virtual void end_pointwise_access_impl() const;
-  virtual void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
-  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
+  void init_timeseries_impl(const std::vector<double> &ts) const;
+  void begin_pointwise_access_impl() const;
+  void end_pointwise_access_impl() const;
+  void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
+  void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 protected:
-  std::vector<double> m_ts_mod, m_ts_values;
-  IceModelVec2T *m_air_temp_anomaly, *m_precipitation_anomaly;
   mutable std::vector<double> m_mass_flux_anomaly, m_temp_anomaly;
+
+  IceModelVec2T::Ptr m_air_temp_anomaly;
+  IceModelVec2T::Ptr m_precipitation_anomaly;
+
+  IceModelVec2S::Ptr m_precipitation;
+  IceModelVec2S::Ptr m_temperature;
 };
 
 } // end of namespace atmosphere

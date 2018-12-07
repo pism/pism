@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,8 +24,10 @@
 namespace pism {
 
 YieldStressInputs::YieldStressInputs() {
-  geometry      = NULL;
-  no_model_mask = NULL;
+  geometry                   = nullptr;
+  no_model_mask              = nullptr;
+  till_water_thickness       = nullptr;
+  subglacial_water_thickness = nullptr;
 }
 
 YieldStress::YieldStress(IceGrid::ConstPtr g)
@@ -42,8 +44,10 @@ YieldStress::~YieldStress() {
   // empty
 }
 
-void YieldStress::init() {
-  this->init_impl();
+void YieldStress::init(const Geometry &geometry,
+                       const IceModelVec2S &till_water_thickness,
+                       const IceModelVec2S &overburden_pressure) {
+  this->init_impl(geometry, till_water_thickness, overburden_pressure);
 }
 
 void YieldStress::update(const YieldStressInputs &inputs) {
@@ -54,7 +58,7 @@ const IceModelVec2S& YieldStress::basal_material_yield_stress() {
   return m_basal_yield_stress;
 }
 
-std::map<std::string, Diagnostic::Ptr> YieldStress::diagnostics_impl() const {
+DiagnosticList YieldStress::diagnostics_impl() const {
   return {{"tauc", Diagnostic::wrap(m_basal_yield_stress)}};
 }
 

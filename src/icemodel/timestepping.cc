@@ -25,7 +25,15 @@
 #include "pism/util/Time.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/util/Component.hh" // ...->max_timestep()
+
+#include "pism/calving/EigenCalving.hh"
+#include "pism/calving/vonMisesCalving.hh"
+#include "pism/calving/FrontalMelt.hh"
+
+#include "pism/energy/EnergyModel.hh"
+#include "pism/coupler/OceanModel.hh"
 
 namespace pism {
 
@@ -105,11 +113,32 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
   // get time-stepping restrictions from sub-models
   std::vector<MaxTimestep> restrictions;
   {
-    for (auto s : m_submodels) {
-      const Component_TS* m = dynamic_cast<const Component_TS*>(s.second);
-      if (m != NULL) {
-        restrictions.push_back(m->max_timestep(current_time));
-      }
+    for (auto m : m_submodels) {
+      restrictions.push_back(m.second->max_timestep(current_time));
+    }
+  }
+
+  // calving code needs additional inputs to compute time step restrictions
+  {
+    CalvingInputs inputs;
+
+    inputs.geometry = &m_geometry;
+    inputs.bc_mask  = &m_ssa_dirichlet_bc_mask;
+
+    inputs.ice_velocity         = &m_stress_balance->shallow()->velocity();
+    inputs.ice_enthalpy         = &m_energy_model->enthalpy();
+    inputs.shelf_base_mass_flux = &m_ocean->shelf_base_mass_flux();
+
+    if (m_eigen_calving) {
+      restrictions.push_back(m_eigen_calving->max_timestep(inputs, current_time));
+    }
+
+    if (m_vonmises_calving) {
+      restrictions.push_back(m_vonmises_calving->max_timestep(inputs, current_time));
+    }
+
+    if (m_frontal_melt) {
+      restrictions.push_back(m_frontal_melt->max_timestep(inputs, current_time));
     }
   }
 

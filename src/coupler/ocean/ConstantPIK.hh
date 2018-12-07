@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef _POCONSTANTPIK_H_
 #define _POCONSTANTPIK_H_
 
-#include "pism/coupler/OceanModel.hh"
+#include "CompleteOceanModel.hh"
 
 namespace pism {
 namespace ocean {
@@ -36,22 +36,18 @@ namespace ocean {
 //! @f$T_{o}@f$ are the heat capacity and temperature of the ocean mixed
 //! layer, @f$T_{f}@f$ is the freezing temperature of ocean water at the
 //! shelf bottom.
-class PIK : public OceanModel {
+class PIK : public CompleteOceanModel {
 public:
   PIK(IceGrid::ConstPtr g);
   virtual ~PIK();
 
-protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(double my_t, double my_dt);
-  virtual void init_impl();
-
-  virtual void sea_level_elevation_impl(double &result) const;
-  virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
-  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 private:
-  //! @f$ F_{\text{melt}} @f$ of [@ref Martinetal2011]
-  double m_meltfactor;
+  MaxTimestep max_timestep_impl(double t) const;
+  void update_impl(const Geometry &geometry, double my_t, double my_dt);
+  void init_impl(const Geometry &geometry);
+
+  void melting_point_temperature(const IceModelVec2S &depth, IceModelVec2S &result) const;
+  void mass_flux(const IceModelVec2S &depth, IceModelVec2S &result) const;
 };
 
 } // end of namespace ocean

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2009-2015 the PISM Authors
+# Copyright (C) 2009-2015, 2018 the PISM Authors
 
 # @package pism_python
 # \author the PISM authors
@@ -21,7 +21,7 @@ import numpy as np
 try:
     from netCDF4 import Dataset as CDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 # set up the grid:
@@ -71,6 +71,7 @@ def def_var(nc, name, units, fillvalue):
     var = nc.createVariable(name, 'f', dimensions=("y", "x"), fill_value=fillvalue)
     var.units = units
     return var
+
 
 bed_var = def_var(nc, "topg", "m", fill_value)
 bed_var.standard_name = "bedrock_altitude"

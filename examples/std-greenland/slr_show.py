@@ -10,7 +10,7 @@
 try:
     from netCDF4 import Dataset as CDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 from numpy import zeros
@@ -34,10 +34,12 @@ t_a = options.t_a
 t_e = options.t_e
 
 # first name in this list is CONTROL
-NCNAMES = [model + "_G_D3_C1_E0.nc", model + "_G_D3_C2_E0.nc", model + "_G_D3_C3_E0.nc", model + "_G_D3_C4_E0.nc", model + "_G_D3_C1_S1.nc", model + "_G_D3_C1_S2.nc", model + "_G_D3_C1_S3.nc", model + "_G_D3_C1_M1.nc", model + "_G_D3_C1_M2.nc", model + "_G_D3_C1_M3.nc", model + "_G_D3_C1_T1.nc"]
+NCNAMES = [model + "_G_D3_C1_E0.nc", model + "_G_D3_C2_E0.nc", model + "_G_D3_C3_E0.nc", model + "_G_D3_C4_E0.nc", model + "_G_D3_C1_S1.nc", model +
+           "_G_D3_C1_S2.nc", model + "_G_D3_C1_S3.nc", model + "_G_D3_C1_M1.nc", model + "_G_D3_C1_M2.nc", model + "_G_D3_C1_M3.nc", model + "_G_D3_C1_T1.nc"]
 
 # labels
-labels = ["AR4 A1B", "AR4 A1B 1.5x", "AR4 A1B 2x", "2x basal sliding", "2.5x basal sliding", "3x basal sliding", "2 m/a bmr", "20 m/a bmr", "200 m/a bmr", "AR4 A1B + 2x sliding"]
+labels = ["AR4 A1B", "AR4 A1B 1.5x", "AR4 A1B 2x", "2x basal sliding", "2.5x basal sliding",
+          "3x basal sliding", "2 m/a bmr", "20 m/a bmr", "200 m/a bmr", "AR4 A1B + 2x sliding"]
 # line colors
 colors = ['#984EA3',  # violet
           '#984EA3',  # violet
@@ -52,7 +54,7 @@ colors = ['#984EA3',  # violet
 
 dashes = ['-', '--', '-.', '-', '--', '-.', '-', '--', '-.', '-']
 
-print "control run name is " + NCNAMES[0]
+print("control run name is " + NCNAMES[0])
 
 n = len(NCNAMES)
 nc0 = CDF(NCNAMES[0], 'r')

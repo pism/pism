@@ -7,8 +7,8 @@ How do I...?
 
 .. contents::
 
-Creating and using configuration flags and parameters
------------------------------------------------------
+Create and use configuration flags and parameters
+-------------------------------------------------
 
 - Edit |config-cdl|. Each flag or parameter is stored as a NetCDF attribute and
   should have a corresponding "_doc" attribute describing its meaning.
@@ -42,8 +42,8 @@ To use a flag, do
    - Please see :ref:`sec-parameter-list` for a list of flags and parameters currently
      used in PISM.
 
-Creating and using additional variables
----------------------------------------
+Create and use additional variables
+-----------------------------------
 
 Creating IceModelVec instances
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -116,8 +116,8 @@ If you want PISM to save data in units other than internal ones, first set these
 
    ice_thickness.metadata().set_string("glaciological_units", "km");
 
-Reading data from a file
-^^^^^^^^^^^^^^^^^^^^^^^^
+Read data from a file
+---------------------
 
 There are at least three cases of "reading data from a file":
 
@@ -130,8 +130,8 @@ There are at least three cases of "reading data from a file":
 
 FIXME
 
-Writing data to a file
-^^^^^^^^^^^^^^^^^^^^^^
+Write data to a file
+--------------------
 
 To write a field stored in an `IceModelVec` to an already "prepared" file, just call
 
@@ -167,8 +167,8 @@ moves it aside if it is; to append to an existing file, use
 A newly-created file is "empty" and contains no records. The `nc.append_time()` call
 creates a record corresponding to a particular model year.
 
-Creating IceModelVec instances that are data members of a class
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Create IceModelVec instances that are data members of a class
+-------------------------------------------------------------
 
 To add a new variable to IceModel, allocate it in the createVecs() method.
 
@@ -180,8 +180,8 @@ is re-starting from and will always write it to an output, snapshot and backup f
 
    variables.add(ice_thickness);
 
-Reading scalar forcing data
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Read scalar forcing data
+------------------------
 
 PISM uses instances of the `Timeseries` class to read scalar forcing data; please see
 `PA_delta_T` for an example.
@@ -222,8 +222,8 @@ To use `offset`, call
 to get the value corresponding to the time `time` in seconds. The value returned will be
 computed using linear interpolation.
 
-Reading 2D forcing fields
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Read 2D forcing fields
+----------------------
 
 PISM uses instances of the `IceModelVec2T` class to read 2D forcing fields that
 vary in time; please see PSDirectForcing for an example.
@@ -275,15 +275,15 @@ output file:
   calls define_variables()
 - Write all the variables to the file (same method); calls write_variables().
 
-Adding a new "diagnostic" quantity to an atmosphere model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Add a new "diagnostic" quantity to an atmosphere model
+------------------------------------------------------
 
 To add a new "diagnostic" quantity (i.e. a 2D or 3D field that needs to be saved to an
 output file but is not permanently stored in memory and is computed on demand), do the
 following.
 
 Create the class implementing the diagnostic
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Assuming that PA_foo is the atmosphere model we're working with and "bar" is
 the name of the new quantity, we need to add this code
@@ -353,7 +353,7 @@ the block marked "2" returns a pointer to a 2D field, which gets cast to a point
 This allows us to have the same interface for both 2D and 3D diagnostics.
 
 "Register" the new diagnostic.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To make the new diagnostic field available (i.e. to be able to use the new `PA_foo_bar`
 class), implement `PA_foo::diagnostics_impl()` or `PA_foo::ts_diagnostics_impl()`.
@@ -374,3 +374,4 @@ to remember to call
 .. rubric:: Footnotes
 
 .. [#] And all classes derived from `Component`.
+

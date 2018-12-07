@@ -10,7 +10,7 @@ import numpy as np
 try:
     from netCDF4 import Dataset as NC
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 
@@ -30,7 +30,7 @@ try:
         if opt in ("-r", "--resolution"):  # resolution in km
             boxWidth = arg
 except getopt.GetoptError:
-    print 'Incorrect command line arguments'
+    print('Incorrect command line arguments')
     sys.exit(2)
 
 
@@ -73,21 +73,21 @@ precip = np.zeros((ny, nx))
 
 # print range(0,int(np.floor(0.5*nx)))
 
-print "Informations from createSetup_Stnd.py:"
-print "grid size (pixel):"
-print ny
-print nx
-print "grid size center:"
-print nxcenter
-print nycenter
+print("Informations from createSetup_Stnd.py:")
+print("grid size (pixel):")
+print(ny)
+print(nx)
+print("grid size center:")
+print(nxcenter)
+print(nycenter)
 
-print "domain range in meters:"
-print "x-dir:"
-print x[0]
-print x[nx - 1]
-print "y-dir:"
-print y[0]
-print y[ny - 1]
+print("domain range in meters:")
+print("x-dir:")
+print(x[0])
+print(x[nx - 1])
+print("y-dir:")
+print(y[0])
+print(y[ny - 1])
 
 
 # define bedrock geometry topg:
@@ -162,7 +162,7 @@ vars = {'y':   	['m',
                                   precip],
         }
 
-for name in vars.keys():
+for name in list(vars.keys()):
     [_, _, _, fill_value, data] = vars[name]
     if name in ['x', 'y']:
         var = ncfile.createVariable(name, 'f4', (name,))
@@ -175,5 +175,5 @@ for name in vars.keys():
 
 # finish up
 ncfile.close()
-print "NetCDF file ", WRIT_FILE, " created"
-print ''
+print("NetCDF file ", WRIT_FILE, " created")
+print('')

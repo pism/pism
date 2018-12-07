@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,34 +19,42 @@
 #ifndef _PALAPSERATES_H_
 #define _PALAPSERATES_H_
 
-#include "pism/coupler/util/PLapseRates.hh"
-#include "Modifier.hh"
+#include "pism/coupler/AtmosphereModel.hh"
+
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace atmosphere {
 
-class LapseRates : public PLapseRates<AtmosphereModel,PAModifier>
+class LapseRates : public AtmosphereModel
 {
 public:
-  LapseRates(IceGrid::ConstPtr g, AtmosphereModel* in);
+  LapseRates(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
   virtual ~LapseRates();
 
 protected:
-  virtual void init_impl();
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual void mean_precipitation_impl(IceModelVec2S &result) const;
-  virtual void mean_annual_temp_impl(IceModelVec2S &result) const;
+  const IceModelVec2S& mean_precipitation_impl() const;
+  const IceModelVec2S& mean_annual_temp_impl() const;
 
-  virtual void begin_pointwise_access_impl() const;
-  virtual void end_pointwise_access_impl() const;
+  void begin_pointwise_access_impl() const;
+  void end_pointwise_access_impl() const;
 
-  virtual void init_timeseries_impl(const std::vector<double> &ts) const;
-  virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) const;
-  virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) const;
+  void init_timeseries_impl(const std::vector<double> &ts) const;
+  void precip_time_series_impl(int i, int j, std::vector<double> &result) const;
+  void temp_time_series_impl(int i, int j, std::vector<double> &result) const;
 
 protected:
   double m_precip_lapse_rate;
-  const IceModelVec2S *m_surface;
+  double m_temp_lapse_rate;
+
+  IceModelVec2T::Ptr m_reference_surface;
+
+  IceModelVec2S::Ptr m_precipitation;
+  IceModelVec2S::Ptr m_temperature;
+  IceModelVec2S m_surface;
 };
 
 } // end of namespace atmosphere

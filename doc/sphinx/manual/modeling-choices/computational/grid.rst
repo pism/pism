@@ -112,7 +112,7 @@ the grid spacing of `5` km.
 In summary, with the default (center) grid registration
 
 .. math::
-   :name: eq-grid-registration-center
+   :label: eq-grid-center
 
    \Delta x &= \frac{2 L_x}{M_x},
 
@@ -147,7 +147,7 @@ and `x` coordinates range from `-10000` to `10000`.
 With the "corner" grid registration
 
 .. math::
-   :name: eq-grid-registration-corner
+   :label: eq-grid-corner
 
    \Delta x &= \frac{2 L_x}{M_x - 1},
 
@@ -166,7 +166,7 @@ See :numref:`fig-cell-corner` for an illustration.
 
    *Left*: a coarse grid. *Right*: a finer grid covering the same domain.
 
-To switch between :eq:`eq-grid-registration-center` and :eq:`eq-grid-registration-corner`,
+To switch between :eq:`eq-grid-center` and :eq:`eq-grid-corner`,
 set the configuration parameter :config:`grid.registration`.
 
 .. _sec-projections:
@@ -177,8 +177,6 @@ Grid projections
 PISM can use the PROJ.4_ library (see :ref:`sec-install-prerequisites`) and projection
 information to compute
 
-- a more accurate estimate of cell areas, improving the accuracy of reported areas and
-  volumes,
 - latitudes and longitudes of grid points (variables :var:`lat` and :var:`lon`), and
 - latitudes and longitudes of cell corners (variables :var:`lat_bnds` and :var:`lon_bnds`).
 
@@ -193,18 +191,18 @@ following:
    > ncdump -h pism_Greenland_5km_v1.1.nc | grep :proj4
    :proj4 = "+proj=stere +lat_0=90 +lat_ts=71 +lon_0=-39 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" ;
 
-The spinup run in that example disables cell area correction to avoid the dependency on
-PROJ.4 (look for :opt:`-grid.correct_cell_areas false` in the command). If we remove this
-option, PISM will report the following.
+The spinup run in that example disables the code re-computing longitude, latitude grid
+coordinates using projection information to avoid the dependency on PROJ.4 (look for
+:opt:`-grid.recompute_longitude_and_latitude` in the command). If we remove this option,
+PISM will report the following.
 
 .. code-block:: none
 
    > pismr -i pism_Greenland_5km_v1.1.nc \
            -bootstrap -Mx 76 -My 141 -Mz 101 -Mbz 11 ... \
-           -grid.correct_cell_areas true ... -o output.nc
+           -grid.recompute_longitude_and_latitude true ... -o output.nc
    ...
    * Got projection parameters "+proj=stere +lat_0=90 +lat_ts=71 +lon_0=-39 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" from "pism_Greenland_5km_v1.1.nc".
-   * Computing cell areas using projection parameters...
    * Computing longitude and latitude using projection parameters...
    ...
    ... done with run
@@ -215,8 +213,8 @@ If the ``proj4`` attribute contains the string "``+init=epsg:XXXX``" where ``XXX
 describing the projection in use.
 
 "Mapping" variables following CF metadata conventions in input files are copied to output
-files (including ``-extra_file``\s) but are **not** used to compute corrected cell areas
-and latitude/longitude coordinates.
+files (including ``-extra_file``\s) but are **not** used to compute latitude/longitude
+coordinates.
 
 To simplify post-processing and analysis with CDO PISM adds the PROJ.4 string (if known)
 to the mapping variable, putting it in the ``proj4_params`` attribute.

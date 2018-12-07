@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2012, 2014, 2015, 2016 David Maxwell
+# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -48,13 +48,13 @@ def view(vec, viewer):
         v_global = PISM.IceModelVec2S()
     else:
         v_global = PISM.IceModelVec2V()
-    v_global.create(vec.get_grid(), "", PISM.WITHOUT_GHOSTS)
+    v_global.create(vec.grid(), "", PISM.WITHOUT_GHOSTS)
     v_global.copy_from(vec)
     v_global.get_vec().view(viewer)
 
 # def view2(vec,viewer):
 #   v_global = PISM.IceModelVec2V()
-#   v_global.create(vec.get_grid(),"",PISM.WITHOUT_GHOSTS)
+#   v_global.create(vec.grid(),"",PISM.WITHOUT_GHOSTS)
 #   v_global.copy_from(vec)
 #   v_global.get_vec().view(viewer)
 
@@ -62,7 +62,7 @@ def view(vec, viewer):
 def adjustTauc(mask, tauc):
     """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
 
-    grid = mask.get_grid()
+    grid = mask.grid()
     high_tauc = grid.ctx().config().get_double("basal_yield_stress.ice_free_bedrock")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
@@ -147,7 +147,8 @@ def test_lin(ssarun):
         n_d_Td_linf = d_Td.norm(PETSc.NormType.NORM_INFINITY)
 
         PISM.verbPrintf(1, grid.com, "(i,j)=(%d,%d)\n" % (i, j))
-        PISM.verbPrintf(1, grid.com, "apply_linearization(d): l2 norm %.10g; finite difference %.10g\n" % (n_Td_l2, n_Td_fd))
+        PISM.verbPrintf(1, grid.com, "apply_linearization(d): l2 norm %.10g; finite difference %.10g\n" %
+                        (n_Td_l2, n_Td_fd))
 
         r_d_l2 = 0
         if n_Td_l2 != 0:
@@ -159,7 +160,8 @@ def test_lin(ssarun):
         r_d_linf = 0
         if n_Td_linf != 0:
             r_d_linf = n_d_Td_linf / n_Td_linf
-        PISM.verbPrintf(1, grid.com, "relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" % (r_d_l2, r_d_l1, r_d_linf))
+        PISM.verbPrintf(1, grid.com, "relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" %
+                        (r_d_l2, r_d_l1, r_d_linf))
 
         PISM.verbPrintf(1, grid.com, "\n")
 
@@ -260,11 +262,14 @@ def test_j_design(ssarun):
         n_d_drhs_linf = d_drhs.norm(PETSc.NormType.NORM_INFINITY)
 
         PISM.verbPrintf(1, grid.com, "\nTest Jacobian Design (Comparison with finite differences):\n")
-        PISM.verbPrintf(1, grid.com, "jacobian_design(d): l2 norm %.10g; finite difference %.10g\n" % (n_drhs_l2, n_drhs_fd))
+        PISM.verbPrintf(1, grid.com, "jacobian_design(d): l2 norm %.10g; finite difference %.10g\n" %
+                        (n_drhs_l2, n_drhs_fd))
         if n_drhs_linf == 0:
-            PISM.verbPrintf(1, grid.com, "difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" % (n_d_drhs_l2, n_d_drhs_l1, n_d_drhs_linf))
+            PISM.verbPrintf(1, grid.com, "difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" %
+                            (n_d_drhs_l2, n_d_drhs_l1, n_d_drhs_linf))
         else:
-            PISM.verbPrintf(1, grid.com, "relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" % (n_d_drhs_l2 / n_drhs_l2, n_d_drhs_l1 / n_drhs_l1, n_d_drhs_linf / n_drhs_linf))
+            PISM.verbPrintf(1, grid.com, "relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" %
+                            (n_d_drhs_l2 / n_drhs_l2, n_d_drhs_l1 / n_drhs_l1, n_d_drhs_linf / n_drhs_linf))
 
         view(d, d_viewer)
         view(drhs, drhs_viewer)
@@ -423,12 +428,13 @@ if __name__ == "__main__":
 
     append_mode = False
 
-    input_filename = PISM.optionsString("-i", "input file")
-    inv_data_filename = PISM.optionsString("-inv_data", "inverse data file", default=input_filename)
-    use_design_prior = PISM.optionsFlag("-inv_use_design_prior", "Use prior from inverse data file as initial guess.", default=True)
-    design_var = PISM.optionsList("-inv_ssa", "design variable for inversion", ["tauc", "hardav"], "tauc")
-    using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
-                                             "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)", default=True)
+    input_filename = config.get_string("input.file")
+    inv_data_filename = PISM.OptionString("-inv_data", "inverse data file", input_filename).value()
+    use_design_prior = config.get_boolean("inverse.use_design_prior")
+    design_var = PISM.OptionKeyword("-inv_ssa",
+                                    "design variable for inversion",
+                                    "tauc,hardav", "tauc").value()
+    using_zeta_fixed_mask = config.get_boolean("inverse.use_zeta_fixed_mask")
 
     ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename, inv_data_filename, design_var)
     ssarun.setup()
@@ -448,7 +454,8 @@ if __name__ == "__main__":
         design_prior.regrid(inv_data_filename, critical=True)
     else:
         if not PISM.util.fileHasVariable(input_filename, design_var):
-            PISM.verbPrintf(1, com, "Initial guess for design variable is not available as '%s' in %s.\nYou can provide an initial guess in the inverse data file.\n" % (design_var, input_filename))
+            PISM.verbPrintf(1, com, "Initial guess for design variable is not available as '%s' in %s.\nYou can provide an initial guess in the inverse data file.\n" % (
+                design_var, input_filename))
             exit(1)
         PISM.logging.logMessage("Reading '%s_prior' from '%s' in input file.\n" % (design_var, design_var))
         design = createDesignVec(grid, design_var)
@@ -462,7 +469,8 @@ if __name__ == "__main__":
             vecs.add(zeta_fixed_mask)
         else:
             if design_var == 'tauc':
-                logMessage("  Computing 'zeta_fixed_mask' (i.e. locations where design variable '%s' has a fixed value).\n" % design_var)
+                logMessage(
+                    "  Computing 'zeta_fixed_mask' (i.e. locations where design variable '%s' has a fixed value).\n" % design_var)
                 zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
                 zeta_fixed_mask.set(1)
                 mask = vecs.ice_mask
@@ -485,11 +493,15 @@ if __name__ == "__main__":
 
     ssarun.ssa.linearize_at(zeta1)
 
-    test_type = PISM.optionsList("-inv_test", "", ["j_design", "j_design_transpose", "lin", "lin_transpose"], "")
+    test_type = PISM.OptionKeyword("-inv_test", "",
+                                   "j_design,j_design_transpose,lin,lin_transpose",
+                                   "j_design")
 
-    if test_type == "":
+    if not test_type.is_set():
         PISM.verbPrintf(1, com, "Must specify a test type via -inv_test\n")
         exit(1)
+    else:
+        test_type = test_type.value()
 
     if test_type == "j_design":
         test_j_design(ssarun)

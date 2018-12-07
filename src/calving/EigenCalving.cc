@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,19 +18,18 @@
  */
 
 #include "EigenCalving.hh"
-#include "remove_narrow_tongues.hh"
 
 #include "pism/util/IceGrid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace calving {
 
-EigenCalving::EigenCalving(IceGrid::ConstPtr g,
-                           stressbalance::StressBalance *stress_balance)
-  : StressCalving(g, stress_balance, 2) {
+EigenCalving::EigenCalving(IceGrid::ConstPtr grid)
+  : StressCalving(grid, 2) {
 
   m_K = m_config->get_double("calving.eigen_calving.K");
 }
@@ -58,8 +57,10 @@ void EigenCalving::init() {
 /*!
   See equation (26) in [\ref Winkelmannetal2011].
 */
-void EigenCalving::compute_calving_rate(const IceModelVec2CellType &mask,
+void EigenCalving::compute_calving_rate(const CalvingInputs &inputs,
                                         IceModelVec2S &result) const {
+
+  prepare_mask(inputs.geometry->cell_type, m_mask);
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
@@ -68,9 +69,12 @@ void EigenCalving::compute_calving_rate(const IceModelVec2CellType &mask,
   // compressive to extensive flow regime
   const double eigenCalvOffset = 0.0;
 
-  update_strain_rates();
+  stressbalance::compute_2D_principal_strain_rates(*inputs.ice_velocity,
+                                                   m_mask,
+                                                   m_strain_rates);
+  m_strain_rates.update_ghosts();
 
-  IceModelVec::AccessList list{&mask, &result, &m_strain_rates};
+  IceModelVec::AccessList list{&m_mask, &result, &m_strain_rates};
 
   // Compute the horizontal calving rate
   for (Points pt(*m_grid); pt; pt.next()) {
@@ -78,7 +82,7 @@ void EigenCalving::compute_calving_rate(const IceModelVec2CellType &mask,
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
     // have floating ice neighbors after the mass continuity step
-    if (mask.ice_free_ocean(i, j) and mask.next_to_floating_ice(i, j)) {
+    if (m_mask.ice_free_ocean(i, j) and m_mask.next_to_floating_ice(i, j)) {
 
       // Average of strain-rate eigenvalues in adjacent floating grid cells to be used for
       // eigen-calving:
@@ -89,7 +93,7 @@ void EigenCalving::compute_calving_rate(const IceModelVec2CellType &mask,
         int N = 0;
         for (int p = -1; p < 2; p += 2) {
           const int I = i + p * offset;
-          if (mask.floating_ice(I, j) and not mask.ice_margin(I, j)) {
+          if (m_mask.floating_ice(I, j) and not m_mask.ice_margin(I, j)) {
             eigen1 += m_strain_rates(I, j, 0);
             eigen2 += m_strain_rates(I, j, 1);
             N += 1;
@@ -98,7 +102,7 @@ void EigenCalving::compute_calving_rate(const IceModelVec2CellType &mask,
 
         for (int q = -1; q < 2; q += 2) {
           const int J = j + q * offset;
-          if (mask.floating_ice(i, J) and not mask.ice_margin(i, J)) {
+          if (m_mask.floating_ice(i, J) and not m_mask.ice_margin(i, J)) {
             eigen1 += m_strain_rates(i, J, 0);
             eigen2 += m_strain_rates(i, J, 1);
             N += 1;
@@ -129,7 +133,7 @@ void EigenCalving::compute_calving_rate(const IceModelVec2CellType &mask,
 
 }
 
-std::map<std::string, Diagnostic::Ptr> EigenCalving::diagnostics_impl() const {
+DiagnosticList EigenCalving::diagnostics_impl() const {
   return {{"eigen_calving_rate",
         Diagnostic::Ptr(new CalvingRate(this, "eigen_calving_rate",
                                         "horizontal calving rate due to eigen-calving"))}};

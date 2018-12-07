@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,11 +18,11 @@
 */
 
 #include <mpi.h>
+#include <cmath>
 
 #include "pism/util/io/PIO.hh"
 #include "ConfigInterface.hh"
 #include "Units.hh"
-#include "pism_const.hh"
 #include "pism_utilities.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
@@ -92,16 +92,36 @@ std::string Config::filename() const {
 }
 
 void Config::import_from(const Config &other) {
-  for (auto d : other.all_doubles()) {
-    this->set_double(d.first, d.second, USER);
+  auto parameters = this->keys();
+
+  for (auto p : other.all_doubles()) {
+    if (member(p.first, parameters)) {
+      this->set_double(p.first, p.second, CONFIG_USER);
+    } else {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "unrecognized parameter %s in %s",
+                                    p.first.c_str(), other.filename().c_str());
+    }
   }
 
-  for (auto s : other.all_strings()) {
-    this->set_string(s.first, s.second, USER);
+  for (auto p : other.all_strings()) {
+    if (member(p.first, parameters)) {
+      this->set_string(p.first, p.second, CONFIG_USER);
+    } else {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "unrecognized parameter %s in %s",
+                                    p.first.c_str(), other.filename().c_str());
+    }
   }
 
-  for (auto b : other.all_booleans()) {
-    this->set_boolean(b.first, b.second, USER);
+  for (auto p : other.all_booleans()) {
+    if (member(p.first, parameters)) {
+      this->set_boolean(p.first, p.second, CONFIG_USER);
+    } else {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "unrecognized parameter %s in %s",
+                                    p.first.c_str(), other.filename().c_str());
+    }
   }
 }
 
@@ -144,15 +164,15 @@ double Config::get_double(const std::string &name,
 }
 
 void Config::set_double(const std::string &name, double value,
-                        Config::SettingFlag flag) {
+                        ConfigSettingFlag flag) {
   std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
 
-  if (flag == USER) {
+  if (flag == CONFIG_USER) {
     set_by_user.insert(name);
   }
 
   // stop if we're setting the default value and this parameter was set by user already
-  if (flag == DEFAULT and
+  if (flag == CONFIG_DEFAULT and
       set_by_user.find(name) != set_by_user.end()) {
     return;
   }
@@ -173,15 +193,15 @@ std::string Config::get_string(const std::string &name, UseFlag flag) const {
 
 void Config::set_string(const std::string &name,
                         const std::string &value,
-                        Config::SettingFlag flag) {
+                        ConfigSettingFlag flag) {
   std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
 
-  if (flag == USER) {
+  if (flag == CONFIG_USER) {
     set_by_user.insert(name);
   }
 
   // stop if we're setting the default value and this parameter was set by user already
-  if (flag == DEFAULT and
+  if (flag == CONFIG_DEFAULT and
       set_by_user.find(name) != set_by_user.end()) {
     return;
   }
@@ -201,15 +221,15 @@ bool Config::get_boolean(const std::string& name, UseFlag flag) const {
 }
 
 void Config::set_boolean(const std::string& name, bool value,
-                         Config::SettingFlag flag) {
+                         ConfigSettingFlag flag) {
   std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
 
-  if (flag == USER) {
+  if (flag == CONFIG_USER) {
     set_by_user.insert(name);
   }
 
   // stop if we're setting the default value and this parameter was set by user already
-  if (flag == DEFAULT and
+  if (flag == CONFIG_DEFAULT and
       set_by_user.find(name) != set_by_user.end()) {
     return;
   }
@@ -408,7 +428,7 @@ void set_boolean_from_option(Config &config, const std::string &option,
     }
   }
 
-  config.set_boolean(parameter_name, value, Config::USER);
+  config.set_boolean(parameter_name, value, CONFIG_USER);
 }
 
 //! Sets a configuration parameter from a command-line option.
@@ -426,7 +446,7 @@ void set_scalar_from_option(Config &config, const std::string &name, const std::
                        config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
                        config.get_double(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
-    config.set_double(parameter, option, Config::USER);
+    config.set_double(parameter, option, CONFIG_USER);
   }
 }
 
@@ -435,7 +455,7 @@ void set_integer_from_option(Config &config, const std::string &name, const std:
                           config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
                           config.get_double(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
-    config.set_double(parameter, option, Config::USER);
+    config.set_double(parameter, option, CONFIG_USER);
   }
 }
 
@@ -445,7 +465,7 @@ void set_string_from_option(Config &config, const std::string &name, const std::
                         config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
                         config.get_string(parameter, Config::FORGET_THIS_USE));
   if (value.is_set()) {
-    config.set_string(parameter, value, Config::USER);
+    config.set_string(parameter, value, CONFIG_USER);
   }
 }
 
@@ -465,7 +485,7 @@ void set_keyword_from_option(Config &config, const std::string &name,
                            config.get_string(parameter, Config::FORGET_THIS_USE));
 
   if (keyword.is_set()) {
-    config.set_string(parameter, keyword, Config::USER);
+    config.set_string(parameter, keyword, CONFIG_USER);
   }
 }
 
@@ -543,40 +563,50 @@ void set_config_from_options(Config &config) {
 
     if (energy.is_set()) {
       if (energy == "none") {
-        config.set_boolean("energy.enabled", false, Config::USER);
+        config.set_boolean("energy.enabled", false, CONFIG_USER);
         // Allow selecting cold ice flow laws in isothermal mode.
-        config.set_boolean("energy.temperature_based", true, Config::USER);
+        config.set_boolean("energy.temperature_based", true, CONFIG_USER);
       } else if (energy == "cold") {
-        config.set_boolean("energy.enabled", true, Config::USER);
-        config.set_boolean("energy.temperature_based", true, Config::USER);
+        config.set_boolean("energy.enabled", true, CONFIG_USER);
+        config.set_boolean("energy.temperature_based", true, CONFIG_USER);
       } else if (energy == "enthalpy") {
-        config.set_boolean("energy.enabled", true, Config::USER);
-        config.set_boolean("energy.temperature_based", false, Config::USER);
+        config.set_boolean("energy.enabled", true, CONFIG_USER);
+        config.set_boolean("energy.temperature_based", false, CONFIG_USER);
       } else {
         throw RuntimeError(PISM_ERROR_LOCATION, "this can't happen: options::Keyword validates input");
       }
     }
   }
 
-  // read the comma-separated list of four values
-  options::RealList topg_to_phi("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max");
-  if (topg_to_phi.is_set()) {
-    if (topg_to_phi->size() != 4) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "option -topg_to_phi requires a comma-separated list with 4 numbers; got %d",
-                                    (int)topg_to_phi->size());
-    }
-    config.set_boolean("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled", true);
-    config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min", topg_to_phi[0]);
-    config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max", topg_to_phi[1]);
-    config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min", topg_to_phi[2]);
-    config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max", topg_to_phi[3]);
-  }
+  // -topg_to_phi
+  {
+    std::vector<double> defaults = {
+      config.get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
+      config.get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max"),
+      config.get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min"),
+      config.get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max")
+    };
 
+    options::RealList topg_to_phi("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max",
+                                  defaults);
+    if (topg_to_phi.is_set()) {
+      if (topg_to_phi->size() != 4) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "option -topg_to_phi expected 4 numbers; got %d",
+                                      (int)topg_to_phi->size());
+      }
+      config.set_boolean("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled", true);
+      config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min", topg_to_phi[0]);
+      config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max", topg_to_phi[1]);
+      config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min", topg_to_phi[2]);
+      config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max", topg_to_phi[3]);
+    }
+  }
   // Ice shelves
 
   bool nu_bedrock = options::Bool("-nu_bedrock", "constant viscosity near margins");
   if (nu_bedrock) {
-    config.set_boolean("stress_balance.ssa.fd.lateral_drag.enabled", true, Config::USER);
+    config.set_boolean("stress_balance.ssa.fd.lateral_drag.enabled", true, CONFIG_USER);
   }
 
   // Shortcuts
@@ -585,34 +615,34 @@ void set_config_from_options(Config &config) {
   // and in particular NOT  "-calving eigen_calving")
   bool pik = options::Bool("-pik", "enable suite of PISM-PIK mechanisms");
   if (pik) {
-    config.set_boolean("stress_balance.calving_front_stress_bc", true, Config::USER);
-    config.set_boolean("geometry.part_grid.enabled", true, Config::USER);
-    config.set_boolean("geometry.remove_icebergs", true, Config::USER);
-    config.set_boolean("geometry.grounded_cell_fraction", true, Config::USER);
+    config.set_boolean("stress_balance.calving_front_stress_bc", true, CONFIG_USER);
+    config.set_boolean("geometry.part_grid.enabled", true, CONFIG_USER);
+    config.set_boolean("geometry.remove_icebergs", true, CONFIG_USER);
+    config.set_boolean("geometry.grounded_cell_fraction", true, CONFIG_USER);
   }
 
   if (config.get_string("calving.methods").find("eigen_calving") != std::string::npos) {
-    config.set_boolean("geometry.part_grid.enabled", true, Config::USER);
+    config.set_boolean("geometry.part_grid.enabled", true, CONFIG_USER);
     // eigen-calving requires a wider stencil:
     config.set_double("grid.max_stencil_width", 3);
   }
 
   // all calving mechanisms require iceberg removal
   if (not config.get_string("calving.methods").empty()) {
-    config.set_boolean("geometry.remove_icebergs", true, Config::USER);
+    config.set_boolean("geometry.remove_icebergs", true, CONFIG_USER);
   }
 
   // geometry.remove_icebergs requires part_grid
   if (config.get_boolean("geometry.remove_icebergs")) {
-    config.set_boolean("geometry.part_grid.enabled", true, Config::USER);
+    config.set_boolean("geometry.part_grid.enabled", true, CONFIG_USER);
   }
 
   bool test_climate_models = options::Bool("-test_climate_models",
                                            "Disable ice dynamics to test climate models");
   if (test_climate_models) {
-    config.set_string("stress_balance.model", "none", Config::USER);
-    config.set_boolean("energy.enabled", false, Config::USER);
-    config.set_boolean("age.enabled", false, Config::USER);
+    config.set_string("stress_balance.model", "none", CONFIG_USER);
+    config.set_boolean("energy.enabled", false, CONFIG_USER);
+    config.set_boolean("age.enabled", false, CONFIG_USER);
     // let the user decide if they want to use "-no_mass" or not
   }
 
@@ -670,6 +700,24 @@ bool ConfigWithPrefix::get_boolean(const std::string& name) const {
 
 void ConfigWithPrefix::reset_prefix(const std::string &prefix) {
   m_prefix = prefix;
+}
+
+std::set<std::string> Config::keys() const {
+  std::set<std::string> result;
+
+  for (auto p : all_doubles()) {
+    result.insert(p.first);
+  }
+
+  for (auto p : all_strings()) {
+    result.insert(p.first);
+  }
+
+  for (auto p : all_booleans()) {
+    result.insert(p.first);
+  }
+
+  return result;
 }
 
 } // end of namespace pism

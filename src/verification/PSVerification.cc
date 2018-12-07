@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -57,21 +57,21 @@ Verification::~Verification() {
   // empty
 }
 
-void Verification::init_impl() {
+void Verification::init_impl(const Geometry &geometry) {
   // Make sure that ice surface temperature and climatic mass balance
   // get initialized at the beginning of the run (as far as I can tell
   // this affects zero-length runs only).
-  update(m_grid->ctx()->time()->current(), 0);
+  update(geometry, m_grid->ctx()->time()->current(), 0);
 }
 
 void Verification::define_model_state_impl(const PIO &output) const {
-  m_climatic_mass_balance.define(output);
-  m_ice_surface_temp.define(output);
+  m_mass_flux->define(output);
+  m_temperature->define(output);
 }
 
 void Verification::write_model_state_impl(const PIO &output) const {
-  m_climatic_mass_balance.write(output);
-  m_ice_surface_temp.write(output);
+  m_mass_flux->write(output);
+  m_temperature->write(output);
 }
 
 MaxTimestep Verification::max_timestep_impl(double t) const {
@@ -85,8 +85,8 @@ MaxTimestep Verification::max_timestep_impl(double t) const {
  */
 void Verification::update_KO() {
 
-  m_climatic_mass_balance.set(0.0);
-  m_ice_surface_temp.set(223.15);
+  m_mass_flux->set(0.0);
+  m_temperature->set(223.15);
 }
 
 /** Update the test L climate input (once).
@@ -106,7 +106,7 @@ void Verification::update_L() {
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
 
-  m_ice_surface_temp.set(T0);
+  m_temperature->set(T0);
 
   const double
     ice_density = m_config->get_double("constants.ice.density"),
@@ -114,28 +114,28 @@ void Verification::update_L() {
     L           = 750e3,
     Lsqr        = L * L;
 
-  IceModelVec::AccessList list(m_climatic_mass_balance);
+  IceModelVec::AccessList list(*m_mass_flux);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double r = radius(*m_grid, i, j);
-    m_climatic_mass_balance(i, j) = a0 * (1.0 - (2.0 * r * r / Lsqr));
+    (*m_mass_flux)(i, j) = a0 * (1.0 - (2.0 * r * r / Lsqr));
 
-    m_climatic_mass_balance(i, j) *= ice_density; // convert to [kg m-2 s-1]
+    (*m_mass_flux)(i, j) *= ice_density; // convert to [kg m-2 s-1]
   }
 }
 
 void Verification::update_V() {
 
   // initialize temperature; the value used does not matter
-  m_ice_surface_temp.set(273.15);
+  m_temperature->set(273.15);
 
   // initialize mass balance:
-  m_climatic_mass_balance.set(0.0);
+  m_mass_flux->set(0.0);
 }
 
-void Verification::update_impl(PetscReal t, PetscReal dt) {
-
+void Verification::update_impl(const Geometry &geometry, double t, double dt) {
+  (void) geometry;
   (void) dt;
 
   switch (m_testname) {
@@ -168,7 +168,7 @@ void Verification::update_impl(PetscReal t, PetscReal dt) {
   }
 
   // convert from [m second-1] to [kg m-2 s-1]
-  m_climatic_mass_balance.scale(m_config->get_double("constants.ice.density"));
+  m_mass_flux->scale(m_config->get_double("constants.ice.density"));
 }
 
 /** Update climate inputs for tests A, B, C, D, E, H.
@@ -187,9 +187,9 @@ void Verification::update_ABCDH(double time) {
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
 
-  m_ice_surface_temp.set(T0);
+  m_temperature->set(T0);
 
-  IceModelVec::AccessList list(m_climatic_mass_balance);
+  IceModelVec::AccessList list(*m_mass_flux);
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -216,7 +216,7 @@ void Verification::update_ABCDH(double time) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "test must be A, B, C, D, or H, got %c",
                                       m_testname);
       }
-      m_climatic_mass_balance(i, j) = accum;
+      (*m_mass_flux)(i, j) = accum;
     }
   } catch (...) {
     loop.failed();
@@ -229,7 +229,7 @@ void Verification::update_FG(double time) {
   const double t = m_testname == 'F' ? 0.0 : time;
   const double A = m_testname == 'F' ? 0.0 : ApforG;
 
-  IceModelVec::AccessList list{&m_climatic_mass_balance, &m_ice_surface_temp};
+  IceModelVec::AccessList list{m_mass_flux.get(), m_temperature.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -237,13 +237,13 @@ void Verification::update_FG(double time) {
     // avoid singularity at origin
     const double r = std::max(radius(*m_grid, i, j), 1.0);
 
-    m_ice_surface_temp(i, j) = Tmin + ST * r;
+    (*m_temperature)(i, j) = Tmin + ST * r;
 
     if (r > LforFG - 1.0) {
       // if (essentially) outside of sheet
-      m_climatic_mass_balance(i, j) = - ablationRateOutside / secpera;
+      (*m_mass_flux)(i, j) = - ablationRateOutside / secpera;
     } else {
-      m_climatic_mass_balance(i, j) = exactFG(t, r, m_grid->z(), A).M;
+      (*m_mass_flux)(i, j) = exactFG(t, r, m_grid->z(), A).M;
     }
   }
 }

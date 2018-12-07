@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -266,6 +266,7 @@ public:
 
   double dx() const;
   double dy() const;
+  double cell_area() const;
 
   unsigned int Mx() const;
   unsigned int My() const;

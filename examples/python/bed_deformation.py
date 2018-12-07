@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import PISM
+from PISM.util import convert
 from math import cos, pi
 
 # Simple testing program for Lingle & Clark bed deformation model.
@@ -26,20 +27,22 @@ config = ctx.config
 
 R0 = 1000e3
 
+
 def initialize_uplift(uplift):
     "Initialize the uplift field."
-    grid = uplift.get_grid()
-    peak_uplift = PISM.convert(ctx.unit_system, 10, "mm/year", "m/second")
+    grid = uplift.grid()
+    peak_uplift = convert(10, "mm/year", "m/second")
     with PISM.vec.Access(nocomm=[uplift]):
         for (i, j) in grid.points():
             r = PISM.radius(grid, i, j)
             if r < 1.5 * R0:
-                uplift[i, j] = peak_uplift * (cos(pi * (r / (1.5 * R0))) + 1.0) / 2.0;
+                uplift[i, j] = peak_uplift * (cos(pi * (r / (1.5 * R0))) + 1.0) / 2.0
             else:
                 uplift[i, j] = 0.0
 
+
 def initialize_thickness(thickness, H0):
-    grid = thickness.get_grid()
+    grid = thickness.grid()
     with PISM.vec.Access(nocomm=[thickness]):
         for (i, j) in grid.points():
             r = PISM.radius(grid, i, j)
@@ -48,6 +51,7 @@ def initialize_thickness(thickness, H0):
             else:
                 thickness[i, j] = 0.0
 
+
 def allocate(grid):
     H = PISM.model.createIceThicknessVec(grid)
     bed = PISM.model.createBedrockElevationVec(grid)
@@ -55,7 +59,10 @@ def allocate(grid):
     uplift.create(grid, "uplift", PISM.WITHOUT_GHOSTS)
     uplift.set_attrs("internal", "bed uplift", "m / second", "")
 
-    return H, bed, uplift
+    sea_level = PISM.IceModelVec2S(grid, "sea_level", PISM.WITHOUT_GHOSTS)
+
+    return H, bed, uplift, sea_level
+
 
 def create_grid():
     P = PISM.GridParameters(config)
@@ -65,6 +72,7 @@ def create_grid():
     P.ownership_ranges_from_options(ctx.size)
 
     return PISM.IceGrid(ctx.ctx, P)
+
 
 def run(scenario, plot, pause, save):
 
@@ -78,24 +86,25 @@ def run(scenario, plot, pause, save):
     config.set_double("grid.Mz", 2)
     config.set_double("grid.Lz", 1000)
 
-    scenarios = {"1" : (False, False, 1000.0),
-                 "2" : (True,  False, 1000.0),
-                 "3" : (False, True,  0.0),
-                 "4" : (True,  True,  1000.0)}
+    scenarios = {"1": (False, False, 1000.0),
+                 "2": (True,  False, 1000.0),
+                 "3": (False, True,  0.0),
+                 "4": (True,  True,  1000.0)}
 
     elastic, use_uplift, H0 = scenarios[scenario]
 
-    print "Using scenario %s: elastic model = %s, use uplift = %s, H0 = %f m" % (scenario, elastic, use_uplift, H0)
+    print("Using scenario %s: elastic model = %s, use uplift = %s, H0 = %f m" % (scenario, elastic, use_uplift, H0))
 
     config.set_boolean("bed_deformation.lc.elastic_model", elastic)
 
     grid = create_grid()
 
-    thickness, bed, uplift = allocate(grid)
+    thickness, bed, uplift, sea_level = allocate(grid)
 
     # set initial geometry and uplift
     bed.set(0.0)
     thickness.set(0.0)
+    sea_level.set(0.0)
     if use_uplift:
         initialize_uplift(uplift)
 
@@ -105,36 +114,37 @@ def run(scenario, plot, pause, save):
 
     model = PISM.LingleClark(grid)
 
-    model.bootstrap(bed, uplift, thickness)
+    model.bootstrap(bed, uplift, thickness, sea_level)
 
     # now add the disc load
     initialize_thickness(thickness, H0)
 
-    dt = PISM.convert(ctx.unit_system, 100, "365 day", "seconds")
+    dt = convert(100, "365 day", "seconds")
 
     # the time-stepping loop
     while time.current() < time.end():
         # don't go past the end of the run
         dt_current = min(dt, time.end() - time.current())
 
-        model.update(thickness, time.current(), dt_current)
+        model.update(thickness, sea_level, time.current(), dt_current)
 
         if plot:
             model.bed_elevation().view(400)
             model.uplift().view(400)
 
-        print "t = %s years, dt = %s years" % (time.date(), time.convert_time_interval(dt_current, "years"))
+        print("t = %s years, dt = %s years" % (time.date(), time.convert_time_interval(dt_current, "years")))
         time.step(dt_current)
 
-    print "Reached t = %s years" % time.date()
+    print("Reached t = %s years" % time.date())
 
     if pause:
-        print "Pausing for 5 seconds..."
+        print("Pausing for 5 seconds...")
         PISM.PETSc.Sys.sleep(5)
 
     if save:
         model.bed_elevation().dump("bed_elevation.nc")
         model.uplift().dump("bed_uplift.nc")
+
 
 if __name__ == "__main__":
     scenario = PISM.OptionKeyword("-scenario", "choose one of 4 scenarios", "1,2,3,4", "1")
@@ -144,9 +154,11 @@ if __name__ == "__main__":
 
     run(scenario.value(), plot, pause, save)
 
+
 def scenario1_test():
     "Test if scenario 1 runs"
     run("1", False, False, False)
+
 
 def scenario3_test():
     "Test if scenario 3 runs"

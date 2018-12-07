@@ -11,7 +11,7 @@ for PISM, do:
 
 .. code-block:: none
 
-   cd pism/examples/std-greenland
+   cd examples/std-greenland
    ./preprocess.sh
 
 The script ``preprocess.sh`` requires ``wget`` and also the `NetCDF Operators <NCO_>`_. It

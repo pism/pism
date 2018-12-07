@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,25 +19,32 @@
 #ifndef _PSLAPSERATES_H_
 #define _PSLAPSERATES_H_
 
-#include "pism/coupler/util/PLapseRates.hh"
 #include "pism/coupler/SurfaceModel.hh"
-#include "Modifier.hh"
+
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace surface {
 
-class LapseRates : public PLapseRates<SurfaceModel,SurfaceModifier>
+class LapseRates : public SurfaceModel
 {
 public:
-  LapseRates(IceGrid::ConstPtr g, SurfaceModel* in);
+  LapseRates(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
   virtual ~LapseRates();
 protected:
-  virtual void init_impl();
+  virtual void init_impl(const Geometry &geometry);
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual void mass_flux_impl(IceModelVec2S &result) const;
-  virtual void temperature_impl(IceModelVec2S &result) const;
+  virtual const IceModelVec2S& mass_flux_impl() const;
+  virtual const IceModelVec2S& temperature_impl() const;
 protected:
   double m_smb_lapse_rate;
+  double m_temp_lapse_rate;
+
+  IceModelVec2T::Ptr m_reference_surface;
+
+  IceModelVec2S::Ptr m_mass_flux;
+  IceModelVec2S::Ptr m_temperature;
 };
 
 } // end of namespace surface

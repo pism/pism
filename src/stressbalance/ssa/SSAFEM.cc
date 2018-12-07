@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2018 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -205,7 +205,7 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
     ierr = PetscViewerASCIIPrintf(viewer, "solution vector before SSASolve_FE\n");
     PISM_CHK(ierr, "PetscViewerASCIIPrintf");
 
-    ierr = VecView(m_velocity_global.get_vec(), viewer);
+    ierr = VecView(m_velocity_global.vec(), viewer);
     PISM_CHK(ierr, "VecView");
   }
 
@@ -215,7 +215,7 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
   }
 
   // Solve:
-  ierr = SNESSolve(m_snes, NULL, m_velocity_global.get_vec());
+  ierr = SNESSolve(m_snes, NULL, m_velocity_global.vec());
   PISM_CHK(ierr, "SNESSolve");
 
   // See if it worked.
@@ -238,7 +238,7 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
       ierr = PetscViewerASCIIPrintf(viewer, "solution vector after SSASolve\n");
       PISM_CHK(ierr, "PetscViewerASCIIPrintf");
 
-      ierr = VecView(m_velocity_global.get_vec(), viewer);
+      ierr = VecView(m_velocity_global.vec(), viewer);
       PISM_CHK(ierr, "VecView");
     }
 
@@ -272,6 +272,7 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
       inputs.enthalpy,
       &inputs.geometry->ice_thickness,
       &inputs.geometry->bed_elevation,
+      &inputs.geometry->sea_level_elevation,
       inputs.basal_yield_stress};
 
   bool use_explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
@@ -303,7 +304,7 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
       Coefficients c;
       c.thickness      = thickness;
       c.bed            = inputs.geometry->bed_elevation(i, j);
-      c.sea_level      = inputs.sea_level; // FIXME: use a 2D field
+      c.sea_level      = inputs.geometry->sea_level_elevation(i, j);
       c.tauc           = (*inputs.basal_yield_stress)(i, j);
       c.hardness       = hardness;
       c.driving_stress = tau_d;
@@ -570,7 +571,9 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 
   IceModelVec::AccessList list{&m_node_type,
       &inputs.geometry->ice_thickness,
-      &inputs.geometry->bed_elevation, &m_boundary_integral};
+      &inputs.geometry->bed_elevation,
+      &inputs.geometry->sea_level_elevation,
+      &m_boundary_integral};
 
   // Iterate over the elements.
   const int
@@ -609,6 +612,9 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
         double b_nodal[Nk];
         m_element.nodal_values(inputs.geometry->bed_elevation, b_nodal);
 
+        double sl_nodal[Nk];
+        m_element.nodal_values(inputs.geometry->sea_level_elevation, sl_nodal);
+
         // storage for test function values psi[0] for the first "end" of a side, psi[1] for the
         // second
         double psi[2] = {0.0, 0.0};
@@ -640,14 +646,15 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
             // Compute ice thickness and bed elevation at a quadrature point. This uses a 1D basis
             // expansion on the side.
             const double
-              H   = H_nodal[n0] * psi[0] + H_nodal[n1] * psi[1],
-              bed = b_nodal[n0] * psi[0] + b_nodal[n1] * psi[1];
+              H         = H_nodal[n0]  * psi[0] + H_nodal[n1]  * psi[1],
+              bed       = b_nodal[n0]  * psi[0] + b_nodal[n1]  * psi[1],
+              sea_level = sl_nodal[n0] * psi[0] + sl_nodal[n1] * psi[1];
 
-            const bool floating = ocean(m_gc.mask(inputs.sea_level, bed, H));
+            const bool floating = ocean(m_gc.mask(sea_level, bed, H));
 
             // ocean pressure difference at a quadrature point
             const double dP = ocean_pressure_difference(floating, is_dry_simulation,
-                                                        H, bed, inputs.sea_level,
+                                                        H, bed, sea_level,
                                                         ice_density, ocean_density,
                                                         standard_gravity);
 

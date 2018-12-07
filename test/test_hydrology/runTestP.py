@@ -24,7 +24,8 @@ def parse_options():
     parser.description = "Test P (verification of '-hydrology distributed')."
     parser.add_argument("--pism_path", dest="PISM_PATH", default=".")
     parser.add_argument("--mpiexec", dest="MPIEXEC", default="")
-    parser.add_argument("--Mx", dest="Mx", help="Horizontal grid size. Default corresponds to a 1km grid.", type=int, default=51)
+    parser.add_argument("--Mx", dest="Mx",
+                        help="Horizontal grid size. Default corresponds to a 1km grid.", type=int, default=51)
     parser.add_argument("--keep", dest="keep", action="store_true", help="Keep the generated PISM input file.")
 
     return parser.parse_args()
@@ -39,34 +40,34 @@ def generate_config():
     pism_overrides = nc.createVariable("pism_overrides", 'b')
 
     attrs = {
-        "flow_law.isothermal_Glen.ice_softness" : 3.1689e-24,
-        "flow_law.isothermal_Glen.ice_softness_doc" : "Pa-3 s-1; ice softness; NOT DEFAULT",
+        "flow_law.isothermal_Glen.ice_softness": 3.1689e-24,
+        "flow_law.isothermal_Glen.ice_softness_doc": "Pa-3 s-1; ice softness; NOT DEFAULT",
 
-        "hydrology.hydraulic_conductivity" : 1.0e-2 / (1000.0 * 9.81),
-        "hydrology.hydraulic_conductivity_doc" : "= k; NOT DEFAULT",
+        "hydrology.hydraulic_conductivity": 1.0e-2 / (1000.0 * 9.81),
+        "hydrology.hydraulic_conductivity_doc": "= k; NOT DEFAULT",
 
-        "hydrology.regularizing_porosity" : 0.01,
-        "hydrology.regularizing_porosity_doc" : "[pure]; phi_0 in notes",
+        "hydrology.regularizing_porosity": 0.01,
+        "hydrology.regularizing_porosity_doc": "[pure]; phi_0 in notes",
 
-        "hydrology.tillwat_max" : 0.0,
-        "hydrology.tillwat_max_doc" : "m; turn off till water mechanism",
+        "hydrology.tillwat_max": 0.0,
+        "hydrology.tillwat_max_doc": "m; turn off till water mechanism",
 
-        "hydrology.thickness_power_in_flux" : 1.0,
-        "hydrology.thickness_power_in_flux_doc" : "; = alpha in notes",
+        "hydrology.thickness_power_in_flux": 1.0,
+        "hydrology.thickness_power_in_flux_doc": "; = alpha in notes",
 
-        "hydrology.gradient_power_in_flux" : 2.0,
-        "hydrology.gradient_power_in_flux_doc" : "; = beta in notes",
+        "hydrology.gradient_power_in_flux": 2.0,
+        "hydrology.gradient_power_in_flux_doc": "; = beta in notes",
 
-        "hydrology.roughness_scale" : 1.0,
-        "hydrology.roughness_scale_doc" : "m; W_r in notes; roughness scale",
+        "hydrology.roughness_scale": 1.0,
+        "hydrology.roughness_scale_doc": "m; W_r in notes; roughness scale",
 
-        "basal_yield_stress.model" : "constant",
-        "basal_yield_stress.model_doc" : "only the constant yield stress model works without till",
+        "basal_yield_stress.model": "constant",
+        "basal_yield_stress.model_doc": "only the constant yield stress model works without till",
 
-        "basal_yield_stress.constant.value" : 1e6,
-        "basal_yield_stress.constant.value_doc" : "set default to 'high tauc'",
+        "basal_yield_stress.constant.value": 1e6,
+        "basal_yield_stress.constant.value_doc": "set default to 'high tauc'",
     }
-    keys = attrs.keys()
+    keys = list(attrs.keys())
     keys.sort()
     for k in keys:
         pism_overrides.setncattr(k, attrs[k])
@@ -221,7 +222,7 @@ def generate_pism_input(x, y, xx, yy):
                  "u_ssa_bc": ussa,
                  "v_ssa_bc": vssa}
 
-    for name in variables.keys():
+    for name in list(variables.keys()):
         nc.write(name, variables[name])
 
     nc.history = subprocess.list2cmdline(argv)
@@ -232,7 +233,8 @@ def generate_pism_input(x, y, xx, yy):
 def run_pism(opts):
     stderr.write("Testing: Test P verification of '-hydrology distributed'.\n")
 
-    cmd = "%s %s/pismr -config_override testPconfig.nc -i inputforP.nc -bootstrap -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -energy none -stress_balance ssa+sia -ssa_dirichlet_bc -o end.nc" % (opts.MPIEXEC, opts.PISM_PATH, opts.Mx, opts.Mx)
+    cmd = "%s %s/pismr -config_override testPconfig.nc -i inputforP.nc -bootstrap -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -energy none -stress_balance ssa+sia -ssa_dirichlet_bc -o end.nc" % (
+        opts.MPIEXEC, opts.PISM_PATH, opts.Mx, opts.Mx)
 
     stderr.write(cmd + "\n")
     subprocess.call(cmd, shell=True)
@@ -241,6 +243,7 @@ def run_pism(opts):
 #    ./runTestP.py --pism_path=../../build --mpiexec="mpiexec -n 4" --Mx=201
 # example which should suffice for regression:
 #    ./runTestP.py --pism_path=../../build --Mx=21
+
 
 if __name__ == "__main__":
 
@@ -259,8 +262,8 @@ if __name__ == "__main__":
     (bwatav, bwatmax) = report_drift("bwat", "inputforP.nc", "end.nc", xx, yy, doshow=False)
     (bwpav,  bwpmax) = report_drift("bwp",  "inputforP.nc", "end.nc", xx, yy, doshow=False)
 
-    print "NUMERICAL ERRORS:"
-    print "%d  %f  %f  %f  %f\n" % (opts.Mx, bwatav, bwatmax, bwpav, bwpmax)
+    print("NUMERICAL ERRORS:")
+    print("%d  %f  %f  %f  %f\n" % (opts.Mx, bwatav, bwatmax, bwpav, bwpmax))
 
     # cleanup:
     if opts.keep == False:

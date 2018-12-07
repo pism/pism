@@ -31,7 +31,7 @@ from pyproj import Proj
 try:
     from netCDF4 import Dataset as CDF
 except:
-    print "netCDF4 is not installed!"
+    print("netCDF4 is not installed!")
     sys.exit(1)
 
 # Set up the option parser
@@ -75,7 +75,7 @@ def get_projection_from_file(nc):
         except:
             try:
                 # go through variables and look for 'grid_mapping' attribute
-                for var in nc.variables.keys():
+                for var in list(nc.variables.keys()):
                     if hasattr(nc.variables[var], 'grid_mapping'):
                         mappingvarname = nc.variables[var].grid_mapping
                         print(
@@ -110,11 +110,11 @@ if __name__ == "__main__":
 
     # assign x dimension
     for dim in xdims:
-        if dim in nc.dimensions.keys():
+        if dim in list(nc.dimensions.keys()):
             xdim = dim
     # assign y dimension
     for dim in ydims:
-        if dim in nc.dimensions.keys():
+        if dim in list(nc.dimensions.keys()):
             ydim = dim
 
     # coordinate variable in x-direction
@@ -179,14 +179,14 @@ if __name__ == "__main__":
             # project grid corners from x-y to lat-lon space
             gc_lon[:, :, corner], gc_lat[:, :, corner] = proj(
                 gc_ee, gc_nn, inverse=True)
-            
+
     # If it does not yet exist, create dimension 'grid_corner_dim_name'
-    if bounds and grid_corner_dim_name not in nc.dimensions.keys():
+    if bounds and grid_corner_dim_name not in list(nc.dimensions.keys()):
         nc.createDimension(grid_corner_dim_name, size=grid_corners)
 
     var = 'lon_bnds'
     # Create variable 'lon_bnds'
-    if not var in nc.variables.keys():
+    if not var in list(nc.variables.keys()):
         var_out = nc.createVariable(
             var, 'f', dimensions=(ydim, xdim, grid_corner_dim_name))
     else:
@@ -198,7 +198,7 @@ if __name__ == "__main__":
 
     var = 'lat_bnds'
     # Create variable 'lat_bnds'
-    if not var in nc.variables.keys():
+    if not var in list(nc.variables.keys()):
         var_out = nc.createVariable(
             var, 'f', dimensions=(ydim, xdim, grid_corner_dim_name))
     else:
@@ -213,7 +213,7 @@ if __name__ == "__main__":
 
     var = 'lon'
     # If it does not yet exist, create variable 'lon'
-    if not var in nc.variables.keys():
+    if not var in list(nc.variables.keys()):
         var_out = nc.createVariable(var, 'f', dimensions=(ydim, xdim))
     else:
         var_out = nc.variables[var]
@@ -231,7 +231,7 @@ if __name__ == "__main__":
 
     var = 'lat'
     # If it does not yet exist, create variable 'lat'
-    if not var in nc.variables.keys():
+    if not var in list(nc.variables.keys()):
         var_out = nc.createVariable(var, 'f', dimensions=(ydim, xdim))
     else:
         var_out = nc.variables[var]
@@ -248,7 +248,7 @@ if __name__ == "__main__":
         var_out.bounds = "lat_bnds"
 
     # Make sure variables have 'coordinates' attribute
-    for var in nc.variables.keys():
+    for var in list(nc.variables.keys()):
         if (nc.variables[var].ndim >= 2):
             nc.variables[var].coordinates = "lon lat"
 

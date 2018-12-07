@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,12 +19,12 @@
 #ifndef _POGIVENTH_H_
 #define _POGIVENTH_H_
 
-#include "pism/coupler/util/PGivenClimate.hh"
-#include "Modifier.hh"
+#include "CompleteOceanModel.hh"
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace ocean {
-class GivenTH : public PGivenClimate<OceanModifier,OceanModel>
+class GivenTH : public CompleteOceanModel
 {
 public:
   GivenTH(IceGrid::ConstPtr g);
@@ -58,16 +58,13 @@ public:
     double ice_thermal_diffusivity;
     bool limit_salinity_range;
   };
-protected:
-  virtual void update_impl(double my_t, double my_dt);
-  virtual void init_impl();
-  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const;
-  virtual void sea_level_elevation_impl(double &result) const;
-  virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
-  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 private:
-  IceModelVec2S m_shelfbtemp, m_shelfbmassflux;
-  IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
+  void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Geometry &geometry);
+  MaxTimestep max_timestep_impl(double t) const;
+
+  IceModelVec2T::Ptr m_theta_ocean;
+  IceModelVec2T::Ptr m_salinity_ocean;
 
   void pointwise_update(const Constants &constants,
                         double sea_water_salinity,

@@ -77,10 +77,10 @@ void TemperatureModel::bootstrap_impl(const PIO &input_file,
                            m_config->get_double("bootstrapping.defaults.bmelt"));
   regrid("Temperature-based energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
 
-  int temp_revision = m_ice_temperature.get_state_counter();
+  int temp_revision = m_ice_temperature.state_counter();
   regrid("Temperature-based energy balance model", m_ice_temperature, REGRID_WITHOUT_REGRID_VARS);
 
-  if (temp_revision == m_ice_temperature.get_state_counter()) {
+  if (temp_revision == m_ice_temperature.state_counter()) {
     bootstrap_ice_temperature(ice_thickness, surface_temperature, climatic_mass_balance,
                               basal_heat_flux, m_ice_temperature);
   }
@@ -99,10 +99,10 @@ void TemperatureModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
   m_basal_melt_rate.copy_from(basal_melt_rate);
   regrid("Temperature-based energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
 
-  int temp_revision = m_ice_temperature.get_state_counter();
+  int temp_revision = m_ice_temperature.state_counter();
   regrid("Temperature-based energy balance model", m_ice_temperature, REGRID_WITHOUT_REGRID_VARS);
 
-  if (temp_revision == m_ice_temperature.get_state_counter()) {
+  if (temp_revision == m_ice_temperature.state_counter()) {
     bootstrap_ice_temperature(ice_thickness, surface_temperature, climatic_mass_balance,
                               basal_heat_flux, m_ice_temperature);
   }
@@ -181,11 +181,11 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
 
   // this is bulge limit constant in K; is max amount by which ice
   //   or bedrock can be lower than surface temperature
-  const double bulge_max  = m_config->get_double("energy.enthalpy_cold_bulge_max") / ice_c;
+  const double bulge_max  = m_config->get_double("energy.enthalpy.cold_bulge_max") / ice_c;
 
   inputs.check();
   const IceModelVec3
-    &strain_heating3 = *inputs.strain_heating3,
+    &strain_heating3 = *inputs.volumetric_heating_rate,
     &u3              = *inputs.u3,
     &v3              = *inputs.v3,
     &w3              = *inputs.w3;
@@ -219,6 +219,8 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   unsigned int maxLowTempCount = m_config->get_double("energy.max_low_temperature_count");
   const double T_minimum = m_config->get_double("energy.minimum_allowed_temperature");
 
+  double margin_threshold = m_config->get_double("energy.margin_ice_thickness_limit");
+
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -229,8 +231,9 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
       const double H = ice_thickness(i, j);
       const double T_surface = ice_surface_temp(i, j);
 
-      // false means "don't ignore horizontal advection and strain heating near margins"
-      system.initThisColumn(i, j, false, mask, H);
+      system.initThisColumn(i, j,
+                            marginal(ice_thickness, i, j, margin_threshold),
+                            mask, H);
 
       const int ks = system.ks();
 
@@ -373,7 +376,7 @@ void TemperatureModel::column_drainage(const double rho, const double c, const d
                                        double *Texcess, double *bwat) const {
 
   const double
-    darea      = m_grid->dx() * m_grid->dy(),
+    darea      = m_grid->cell_area(),
     dvol       = darea * dz,
     dE         = rho * c * (*Texcess) * dvol,
     massmelted = dE / L;

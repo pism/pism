@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,6 +24,7 @@
 #include <set>
 #include <map>
 #include <string>
+#include <vector>
 
 #include <mpi.h>
 
@@ -34,6 +35,20 @@ namespace pism {
 class PIO;
 class Logger;
 
+
+//! Flag used by `set_...()` methods.
+/** Meanings:
+ *
+ * - `DEFAULT`: set the default value; has no effect if a parameter was set by a user at the time
+ *   of the call
+ * - `FORCE`: forcibly set a parameter; unconditionally overrides previous values
+ * - `USER`: forcibly set a parameter; unconditionally overrides previous values and marks this
+ *   parameter as set by the user. This affects future `set_...()` calls using the `DEFAULT` flag
+ *   value and results of `parameters_set_by_user()`.
+ */
+enum ConfigSettingFlag {CONFIG_DEFAULT = 0, CONFIG_FORCE = 1, CONFIG_USER = 2};
+
+
 //! A class for storing and accessing PISM configuration flags and parameters.
 class Config {
 public:
@@ -42,18 +57,6 @@ public:
 
   Config(units::System::Ptr unit_system);
   virtual ~Config();
-
-  //! Flag used by `set_...()` methods.
-  /** Meanings:
-   *
-   * - `DEFAULT`: set the default value; has no effect if a parameter was set by a user at the time
-   *   of the call
-   * - `FORCE`: forcibly set a parameter; unconditionally overrides previous values
-   * - `USER`: forcibly set a parameter; unconditionally overrides previous values and marks this
-   *   parameter as set by the user. This affects future `set_...()` calls using the `DEFAULT` flag
-   *   value and results of `parameters_set_by_user()`.
-   */
-  enum SettingFlag {DEFAULT = 0, FORCE = 1, USER = 2};
 
   //! Flag used by `get_...()` methods.
   /** Meanings:
@@ -88,21 +91,23 @@ public:
   double get_double(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
   double get_double(const std::string &name, const std::string &units,
                     UseFlag flag = REMEMBER_THIS_USE) const;
-  void set_double(const std::string &name, double value, SettingFlag flag = FORCE);
+  void set_double(const std::string &name, double value, ConfigSettingFlag flag = CONFIG_FORCE);
 
   // strings
   typedef std::map<std::string, std::string> Strings;
   Strings all_strings() const;
 
   std::string get_string(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
-  void set_string(const std::string &name, const std::string &value, SettingFlag flag = FORCE);
+  void set_string(const std::string &name, const std::string &value, ConfigSettingFlag flag = CONFIG_FORCE);
 
   // booleans
   typedef std::map<std::string, bool> Booleans;
   Booleans all_booleans() const;
 
+  std::set<std::string> keys() const;
+
   bool get_boolean(const std::string& name, UseFlag flag = REMEMBER_THIS_USE) const;
-  void set_boolean(const std::string& name, bool value, SettingFlag flag = FORCE);
+  void set_boolean(const std::string& name, bool value, ConfigSettingFlag flag = CONFIG_FORCE);
 
   // Implementations
 protected:

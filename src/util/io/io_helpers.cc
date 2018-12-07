@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,8 +20,6 @@
 #include <memory>
 #include <cassert>
 
-#include <gsl/gsl_interp.h>
-
 #include "io_helpers.hh"
 #include "PIO.hh"
 #include "pism/util/IceGrid.hh"
@@ -35,6 +33,7 @@
 #include "pism/util/Context.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/interpolation.hh"
+#include "pism/util/Profiling.hh"
 
 namespace pism {
 namespace io {
@@ -330,6 +329,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
  * Check if the storage order of a variable in the current file
  * matches the memory storage order used by PISM.
  *
+ * @param[in] nc input file
  * @param var_name name of the variable to check
  * @returns false if storage orders match, true otherwise
  */
@@ -450,12 +450,15 @@ static void regrid_vec_generic(const PIO &file, const IceGrid &grid,
                                unsigned int t_start,
                                bool fill_missing,
                                double default_value,
+                               InterpolationType interpolation_type,
                                double *output) {
   const int X = 1, Y = 2, Z = 3; // indices, just for clarity
 
+  const Profiling& profiling = grid.ctx()->profiling();
+
   try {
     grid_info gi(file, variable_name, grid.ctx()->unit_system(), grid.registration());
-    LocalInterpCtx lic(gi, grid, zlevels_out);
+    LocalInterpCtx lic(gi, grid, zlevels_out, interpolation_type);
 
     std::vector<double> &buffer = lic.buffer;
 
@@ -471,11 +474,13 @@ static void regrid_vec_generic(const PIO &file, const IceGrid &grid,
                             start, count, imap);
 
     bool mapped_io = use_mapped_io(file, grid.ctx()->unit_system(), variable_name);
+    profiling.begin("io.regridding.read");
     if (mapped_io) {
       file.get_varm_double(variable_name, start, count, imap, &buffer[0]);
     } else {
       file.get_vara_double(variable_name, start, count, &buffer[0]);
     }
+    profiling.end("io.regridding.read");
 
     // Replace missing values if the _FillValue attribute is present,
     // and if we have missing values to replace.
@@ -493,7 +498,9 @@ static void regrid_vec_generic(const PIO &file, const IceGrid &grid,
     }
 
     // interpolate
+    profiling.begin("io.regridding.interpolate");
     regrid(grid, zlevels_out, &lic, output);
+    profiling.end("io.regridding.interpolate");
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' (using linear interpolation) from '%s'",
                   variable_name.c_str(), file.inq_filename().c_str());
@@ -505,17 +512,21 @@ static void regrid_vec_generic(const PIO &file, const IceGrid &grid,
 //! interpolation to put it on the grid defined by "grid" and zlevels_out.
 static void regrid_vec(const PIO &nc, const IceGrid &grid, const std::string &var_name,
                        const std::vector<double> &zlevels_out,
-                       unsigned int t_start, double *output) {
+                       unsigned int t_start,
+                       InterpolationType interpolation_type,
+                       double *output) {
   regrid_vec_generic(nc, grid,
                      var_name,
                      zlevels_out,
                      t_start,
                      false, 0.0,
+                     interpolation_type,
                      output);
 }
 
 /** Regrid `var_name` from a file, replacing missing values with `default_value`.
  *
+ * @param[in] nc input file
  * @param grid computational grid; used to initialize interpolation
  * @param var_name variable to regrid
  * @param zlevels_out vertical levels of the resulting grid
@@ -528,12 +539,14 @@ static void regrid_vec_fill_missing(const PIO &nc, const IceGrid &grid,
                                     const std::vector<double> &zlevels_out,
                                     unsigned int t_start,
                                     double default_value,
+                                    InterpolationType interpolation_type,
                                     double *output) {
   regrid_vec_generic(nc, grid,
                      var_name,
                      zlevels_out,
                      t_start,
                      true, default_value,
+                     interpolation_type,
                      output);
 }
 
@@ -690,24 +703,23 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
   get_vec(nc, grid, name_found, nlevels, time, output);
 
   std::string input_units = nc.get_att_text(name_found, "units");
+  const std::string &internal_units = var.get_string("units");
 
-  if (var.has_attribute("units") && input_units.empty()) {
-    const std::string &units_string = var.get_string("units"),
-      &long_name = var.get_string("long_name");
+  if (input_units.empty() and not internal_units.empty()) {
+    const std::string &long_name = var.get_string("long_name");
     log.message(2,
                "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
                "              Assuming that it is in '%s'.\n",
                var.get_name().c_str(), long_name.c_str(),
-               units_string.c_str());
-    input_units = units_string;
+               internal_units.c_str());
+    input_units = internal_units;
   }
 
   // Convert data:
   size_t size = grid.xm() * grid.ym() * nlevels;
 
   units::Converter(var.unit_system(),
-                input_units,
-                var.get_string("units")).convert_doubles(output, size);
+                   input_units, internal_units).convert_doubles(output, size);
 }
 
 //! \brief Write a double array to a file.
@@ -774,14 +786,16 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
                              const IceGrid& grid, const PIO &nc,
                              RegriddingFlag flag, bool report_range,
                              bool allow_extrapolation,
-                             double default_value, double *output) {
+                             double default_value,
+                             InterpolationType interpolation_type,
+                             double *output) {
   unsigned int t_length = nc.inq_nrecords(var.get_name(),
                                           var.get_string("standard_name"),
                                           var.unit_system());
 
   regrid_spatial_variable(var, grid, nc, t_length - 1, flag,
                           report_range, allow_extrapolation,
-                          default_value, output);
+                          default_value, interpolation_type, output);
 }
 
 static void compute_range(MPI_Comm com, double *data, size_t data_size, double *min, double *max) {
@@ -884,6 +898,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
                              bool report_range,
                              bool allow_extrapolation,
                              double default_value,
+                             InterpolationType interpolation_type,
                              double *output) {
   const Logger &log = *grid.ctx()->log();
 
@@ -916,9 +931,9 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
                   file.inq_filename().c_str());
 
       regrid_vec_fill_missing(file, grid, name_found, levels,
-                              t_start, default_value, output);
+                              t_start, default_value, interpolation_type, output);
     } else {
-      regrid_vec(file, grid, name_found, levels, t_start, output);
+      regrid_vec(file, grid, name_found, levels, t_start, interpolation_type, output);
     }
 
     // Now we need to get the units string from the file and convert
@@ -926,24 +941,20 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
     // be in PISM (MKS) units.
 
     std::string input_units = file.get_att_text(name_found, "units");
+    std::string internal_units = variable.get_string("units");
 
-    if (input_units.empty()) {
-      std::string internal_units = variable.get_string("units");
+    if (input_units.empty() and not internal_units.empty()) {
+      log.message(2,
+                  "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+                  "              Assuming that it is in '%s'.\n",
+                  variable.get_name().c_str(),
+                  variable.get_string("long_name").c_str(),
+                  internal_units.c_str());
       input_units = internal_units;
-      if (not internal_units.empty()) {
-        log.message(2,
-                    "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-                    "              Assuming that it is in '%s'.\n",
-                    variable.get_name().c_str(),
-                    variable.get_string("long_name").c_str(),
-                    internal_units.c_str());
-      }
     }
 
     // Convert data:
-    units::Converter(sys,
-                     input_units,
-                     variable.get_string("units")).convert_doubles(output, data_size);
+    units::Converter(sys, input_units, internal_units).convert_doubles(output, data_size);
 
     // Check the range and report it if necessary.
     {
