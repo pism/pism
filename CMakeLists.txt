@@ -1,6 +1,10 @@
 cmake_minimum_required (VERSION 3.1)
-cmake_policy(SET CMP0078 OLD)       #controls names of SWIG targets
 project (Pism C CXX)
+
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13")
+  # Policy CMP0078 was introduced in 3.13. See "cmake --help-policies" for details.
+  cmake_policy(SET CMP0078 OLD)       #controls names of SWIG targets
+endif()
 
 # Require C++11 compiler support.
 set(CMAKE_CXX_STANDARD 11)
