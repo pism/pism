@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,69 @@
 namespace pism {
 
 class IceModelVec2CellType;
+
+
+/*!
+ * Implementation of the Mohr-Coulomb basal yield stress model *at a point*.
+ */
+class MohrCoulombPointwise {
+public:
+  MohrCoulombPointwise(Config::ConstPtr config);
+
+  /*!
+   * Compute basal yield stress
+   *
+   * @param[in] delta fraction of overburden pressure
+   * @param[in] P_overburden overburden pressure (Pa)
+   * @param[in] water_thickness till water thickness (m)
+   * @param[in] phi till friction angle (degrees)
+   *
+   * returns basal yield stress in Pascal
+   */
+  double yield_stress(double delta,
+                      double P_overburden,
+                      double water_thickness,
+                      double phi) const;
+
+  /*!
+   * Inverse of `yield_stress()`.
+   *
+   * @param[in] delta fraction of overburden pressure
+   * @param[in] P_overburden overburden pressure (Pa)
+   * @param[in] water_thickness till water thickness
+   * @param[in] yield_stress basal yield stress (Pa)
+   *
+   * returns till friction angle in degrees
+   */
+  double till_friction_angle(double delta,
+                             double P_overburden,
+                             double water_thickness,
+                             double yield_stress) const;
+
+  /*!
+   * Compute effective pressure on till
+   *
+   * Used in `yield_stress()` and `till_friction_angle()`.
+   *
+   * @param[in] delta fraction of overburden pressure
+   * @param[in] P_overburden overburden pressure (Pa)
+   * @param[in] water_thickness till water thickness
+   */
+  double effective_pressure(double delta,
+                            double P_overburden,
+                            double water_thickness) const;
+private:
+  //! Maximum till water thickness
+  double m_W_till_max;
+  //! Cohesion of till
+  double m_till_cohesion;
+  //! Reference effective pressure
+  double m_reference_effective_pressure;
+  //! Reference void ratio
+  double m_reference_void_ratio;
+  //! Coefficient of compressibility of till
+  double m_compressibility_coefficient;
+};
 
 //! @brief PISM's default basal yield stress model which applies the
 //! Mohr-Coulomb model of deformable, pressurized till.
