@@ -28,17 +28,17 @@ add_library (pism
   basalstrength/ConstantYieldStress.cc
   basalstrength/MohrCoulombYieldStress.cc
   basalstrength/YieldStress.cc
-  calving/CalvingAtThickness.cc
-  calving/FrontRetreat.cc
-  calving/EigenCalving.cc
-  calving/FloatKill.cc
-  calving/FrontalMelt.cc
-  calving/IcebergRemover.cc
-  calving/OceanKill.cc
-  calving/StressCalving.cc
-  calving/connected_components.cc
-  calving/remove_narrow_tongues.cc
-  calving/vonMisesCalving.cc
+  frontretreat/CalvingAtThickness.cc
+  frontretreat/FrontRetreat.cc
+  frontretreat/EigenCalving.cc
+  frontretreat/FloatKill.cc
+  frontretreat/FrontalMelt.cc
+  frontretreat/IcebergRemover.cc
+  frontretreat/OceanKill.cc
+  frontretreat/StressCalving.cc
+  frontretreat/connected_components.cc
+  frontretreat/remove_narrow_tongues.cc
+  frontretreat/vonMisesCalving.cc
   energy/BTU_Full.cc
   energy/BTU_Minimal.cc
   energy/BedThermalUnit.cc
@@ -56,7 +56,7 @@ add_library (pism
   geometry/grounded_cell_fraction.cc
   geometry/part_grid_threshold_thickness.cc
   icemodel/IceModel.cc
-  icemodel/calving.cc
+  icemodel/frontretreat.cc
   icemodel/diagnostics.cc
   icemodel/diagnostics.cc
   icemodel/diagnostics.hh

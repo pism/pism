@@ -28,9 +28,9 @@
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/util/Component.hh" // ...->max_timestep()
 
-#include "pism/calving/EigenCalving.hh"
-#include "pism/calving/vonMisesCalving.hh"
-#include "pism/calving/FrontalMelt.hh"
+#include "pism/frontretreat/EigenCalving.hh"
+#include "pism/frontretreat/vonMisesCalving.hh"
+#include "pism/frontretreat/FrontalMelt.hh"
 
 #include "pism/energy/EnergyModel.hh"
 #include "pism/coupler/OceanModel.hh"

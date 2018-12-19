@@ -20,7 +20,7 @@
 #include <algorithm> // max_element
 
 #include "PicoGeometry.hh"
-#include "pism/calving/connected_components.hh"
+#include "pism/frontretreat/connected_components.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/pism_utilities.hh"
 
