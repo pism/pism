@@ -32,7 +32,7 @@ protected:
   virtual void init_impl(const Geometry &geometry,
                          const IceModelVec2S &till_water_thickness,
                          const IceModelVec2S &overburden_pressure);
-  virtual void update_impl(const YieldStressInputs &inputs);
+  virtual void update_impl(const YieldStressInputs &inputs, double t, double dt);
 };
 
 } // end of namespace pism

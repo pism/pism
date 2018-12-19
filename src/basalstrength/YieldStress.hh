@@ -50,14 +50,14 @@ public:
             const IceModelVec2S &till_water_thickness,
             const IceModelVec2S &overburden_pressure);
 
-  void update(const YieldStressInputs &inputs);
+  void update(const YieldStressInputs &inputs, double t, double dt);
 
   const IceModelVec2S& basal_material_yield_stress();
 protected:
   virtual void init_impl(const Geometry &geometry,
                          const IceModelVec2S &till_water_thickness,
                          const IceModelVec2S &overburden_pressure) = 0;
-  virtual void update_impl(const YieldStressInputs &inputs) = 0;
+  virtual void update_impl(const YieldStressInputs &inputs, double t, double dt) = 0;
 
   DiagnosticList diagnostics_impl() const;
 

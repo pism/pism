@@ -223,7 +223,10 @@ If `basal_yield_stress.add_transportable_water` is yes then @f$ s @f$ in the abo
 becomes @f$ s = (W + W_{till}) / W_{till}^{max} @f$,
 that is, the water amount is the sum @f$ W+W_{till} @f$.
  */
-void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
+void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
+                                         double t, double dt) {
+  (void) t;
+  (void) dt;
 
   bool slippery_grounding_lines = m_config->get_flag("basal_yield_stress.slippery_grounding_lines"),
        add_transportable_water  = m_config->get_flag("basal_yield_stress.add_transportable_water");

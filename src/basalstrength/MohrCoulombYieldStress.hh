@@ -46,7 +46,7 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
 
   virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(const YieldStressInputs &inputs);
+  virtual void update_impl(const YieldStressInputs &inputs, double t, double dt);
 
 private:
   void till_friction_angle(const IceModelVec2S &bed_topography,

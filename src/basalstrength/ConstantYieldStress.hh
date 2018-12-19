@@ -35,7 +35,7 @@ protected:
                          const IceModelVec2S &till_water_thickness,
                          const IceModelVec2S &overburden_pressure);
   virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(const YieldStressInputs &inputs);
+  virtual void update_impl(const YieldStressInputs &inputs, double t, double dt);
 
   virtual void define_model_state_impl(const File &output) const;
   virtual void write_model_state_impl(const File &output) const;

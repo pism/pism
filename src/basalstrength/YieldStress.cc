@@ -51,8 +51,8 @@ void YieldStress::init(const Geometry &geometry,
   this->init_impl(geometry, till_water_thickness, overburden_pressure);
 }
 
-void YieldStress::update(const YieldStressInputs &inputs) {
-  this->update_impl(inputs);
+void YieldStress::update(const YieldStressInputs &inputs, double t, double dt) {
+  this->update_impl(inputs, t, dt);
 }
 
 const IceModelVec2S& YieldStress::basal_material_yield_stress() {
