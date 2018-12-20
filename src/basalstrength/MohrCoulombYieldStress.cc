@@ -236,12 +236,10 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
 
   const double high_tauc  = m_config->get_number("basal_yield_stress.ice_free_bedrock"),
                W_till_max = m_config->get_number("hydrology.tillwat_max"),
-               c0         = m_config->get_number("basal_yield_stress.mohr_coulomb.till_cohesion"),
-               N0         = m_config->get_number("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure"),
-               e0overCc   = (m_config->get_number("basal_yield_stress.mohr_coulomb.till_reference_void_ratio") /
-                             m_config->get_number("basal_yield_stress.mohr_coulomb.till_compressibility_coefficient")),
                delta      = m_config->get_number("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"),
                tlftw      = m_config->get_number("basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water");
+
+  MohrCoulombPointwise mc(m_config);
 
   const IceModelVec2S
     &W_till        = *inputs.till_water_thickness,
@@ -266,6 +264,7 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
     } else if (cell_type.ice_free(i, j)) {
       m_basal_yield_stress(i, j) = high_tauc;  // large yield stress if grounded and ice-free
     } else { // grounded and there is some ice
+
       // user can ask that marine grounding lines get special treatment
       double water = W_till(i,j); // usual case
       if (slippery_grounding_lines and
@@ -275,13 +274,10 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
       } else if (add_transportable_water) {
         water = W_till(i,j) + tlftw * log(1.0 + W_subglacial(i,j) / tlftw);
       }
-      double
-        s    = water / W_till_max,
-        P_overburden = ice_density * standard_gravity * ice_thickness(i, j),
-        Ntill = N0 * pow(delta * P_overburden / N0, s) * pow(10.0, e0overCc * (1.0 - s));
-      Ntill = std::min(P_overburden, Ntill);
 
-      m_basal_yield_stress(i, j) = c0 + Ntill * tan((M_PI/180.0) * m_till_phi(i, j));
+      double P_overburden = ice_density * standard_gravity * ice_thickness(i, j);
+
+      m_basal_yield_stress(i, j) = mc.yield_stress(delta, P_overburden, water, m_till_phi(i, j));
     }
   }
 
@@ -366,12 +362,9 @@ void MohrCoulombYieldStress::till_friction_angle(const IceModelVec2S &basal_yiel
                                                  const IceModelVec2CellType &cell_type,
                                                  IceModelVec2S &result) {
 
-  const double c0 = m_config->get_number("basal_yield_stress.mohr_coulomb.till_cohesion"),
-    N0            = m_config->get_number("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure"),
-    e0overCc      = (m_config->get_number("basal_yield_stress.mohr_coulomb.till_reference_void_ratio") /
-                     m_config->get_number("basal_yield_stress.mohr_coulomb.till_compressibility_coefficient")),
-    delta         = m_config->get_number("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"),
-    W_till_max    = m_config->get_number("hydrology.tillwat_max");
+  MohrCoulombPointwise mc(m_config);
+
+  double delta = m_config->get_number("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden");
 
   const IceModelVec2S
     &W_till = till_water_thickness,
@@ -387,12 +380,7 @@ void MohrCoulombYieldStress::till_friction_angle(const IceModelVec2S &basal_yiel
     } else if (cell_type.ice_free(i, j)) {
       // no change
     } else { // grounded and there is some ice
-      const double s = W_till(i, j) / W_till_max;
-
-      double Ntill = N0 * pow(delta * Po(i, j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
-      Ntill = std::min(Po(i, j), Ntill);
-
-      result(i, j) = 180.0/M_PI * atan((basal_yield_stress(i, j) - c0) / Ntill);
+      result(i, j) = mc.till_friction_angle(delta, Po(i, j), W_till(i, j), basal_yield_stress(i, j));
     }
   }
 
@@ -405,11 +393,11 @@ DiagnosticList MohrCoulombYieldStress::diagnostics_impl() const {
 }
 
 MohrCoulombPointwise::MohrCoulombPointwise(Config::ConstPtr config) {
-  m_W_till_max                   = config->get_double("hydrology.tillwat_max");
-  m_till_cohesion                = config->get_double("basal_yield_stress.mohr_coulomb.till_cohesion");
-  m_reference_effective_pressure = config->get_double("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure");
-  m_reference_void_ratio         = config->get_double("basal_yield_stress.mohr_coulomb.till_reference_void_ratio");
-  m_compressibility_coefficient  = config->get_double("basal_yield_stress.mohr_coulomb.till_compressibility_coefficient");
+  m_W_till_max                   = config->get_number("hydrology.tillwat_max");
+  m_till_cohesion                = config->get_number("basal_yield_stress.mohr_coulomb.till_cohesion");
+  m_reference_effective_pressure = config->get_number("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure");
+  m_reference_void_ratio         = config->get_number("basal_yield_stress.mohr_coulomb.till_reference_void_ratio");
+  m_compressibility_coefficient  = config->get_number("basal_yield_stress.mohr_coulomb.till_compressibility_coefficient");
 }
 
 double MohrCoulombPointwise::effective_pressure(double delta,
