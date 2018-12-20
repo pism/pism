@@ -249,7 +249,7 @@ protected:
   std::map<std::string,const Component*> m_submodels;
 
   std::unique_ptr<hydrology::Hydrology> m_subglacial_hydrology;
-  std::unique_ptr<YieldStress> m_basal_yield_stress_model;
+  std::shared_ptr<YieldStress> m_basal_yield_stress_model;
 
   std::shared_ptr<IceModelVec2T> m_surface_input_for_hydrology;
 

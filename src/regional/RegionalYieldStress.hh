@@ -17,24 +17,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _REGIONALDEFAULTYIELDSTRESS_H_
-#define _REGIONALDEFAULTYIELDSTRESS_H_
+#ifndef _REGIONAL_YIELD_STRESS_H_
+#define _REGIONAL_YIELD_STRESS_H_
 
-#include "pism/basalstrength/MohrCoulombYieldStress.hh"
+#include "pism/basalstrength/YieldStress.hh"
 
 namespace pism {
 
-class RegionalDefaultYieldStress : public MohrCoulombYieldStress {
+class RegionalYieldStress : public YieldStress {
 public:
-  RegionalDefaultYieldStress(IceGrid::ConstPtr g);
-  virtual ~RegionalDefaultYieldStress();
+  RegionalYieldStress(std::shared_ptr<YieldStress> input);
+  virtual ~RegionalYieldStress();
 protected:
   virtual void init_impl(const Geometry &geometry,
                          const IceModelVec2S &till_water_thickness,
                          const IceModelVec2S &overburden_pressure);
   virtual void update_impl(const YieldStressInputs &inputs, double t, double dt);
+private:
+  std::shared_ptr<YieldStress> m_input;
 };
 
 } // end of namespace pism
 
-#endif /* _REGIONALDEFAULTYIELDSTRESS_H_ */
+#endif /* _REGIONAL_YIELD_STRESS_H_ */

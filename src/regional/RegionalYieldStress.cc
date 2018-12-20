@@ -17,36 +17,33 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "RegionalDefaultYieldStress.hh"
+#include "RegionalYieldStress.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/Vars.hh"
 
 namespace pism {
 
-RegionalDefaultYieldStress::RegionalDefaultYieldStress(IceGrid::ConstPtr g)
-  : MohrCoulombYieldStress(g) {
-}
-
-RegionalDefaultYieldStress::~RegionalDefaultYieldStress() {
+RegionalYieldStress::RegionalYieldStress(std::shared_ptr<YieldStress> input)
+  : YieldStress(input->grid()), m_input(input) {
   // empty
 }
 
-void RegionalDefaultYieldStress::init_impl(const Geometry &geometry,
+RegionalYieldStress::~RegionalYieldStress() {
+  // empty
+}
+
+void RegionalYieldStress::init_impl(const Geometry &geometry,
                                            const IceModelVec2S &till_water_thickness,
                                            const IceModelVec2S &overburden_pressure) {
-  // turn off the second, redundant initialization message
-  m_log->disable();
-  MohrCoulombYieldStress::init_impl(geometry, till_water_thickness, overburden_pressure);
-  m_log->enable();
+  m_input->init(geometry, till_water_thickness, overburden_pressure);
 
   m_log->message(2,
                  "  using the regional version with strong till in no_model_mask area...\n");
 }
 
-void RegionalDefaultYieldStress::update_impl(const YieldStressInputs &inputs,
+void RegionalYieldStress::update_impl(const YieldStressInputs &inputs,
                                              double t, double dt) {
 
-  MohrCoulombYieldStress::update_impl(inputs, t, dt);
+  m_input->update(inputs, t, dt);
 
   const IceModelVec2Int &nmm = *inputs.no_model_mask;
 
