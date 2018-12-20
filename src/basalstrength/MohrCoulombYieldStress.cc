@@ -29,8 +29,10 @@
 #include "pism/util/pism_options.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/Time.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/coupler/util/options.hh" // ForcingOptions
 
 namespace pism {
 
@@ -65,6 +67,28 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g)
                        "degrees", "degrees", "", 0);
   m_till_phi.set_time_independent(true);
   // in this model; need not be time-independent in general
+
+  auto delta_file = m_config->get_string("basal_yield_stress.mohr_coulomb.delta.file");
+
+  if (not delta_file.empty()) {
+    ForcingOptions opt(*m_grid->ctx(), "basal_yield_stress.mohr_coulomb.delta");
+
+    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
+    bool periodic = opt.period > 0;
+
+    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
+
+    m_delta = IceModelVec2T::ForcingField(m_grid,
+                                          file,
+                                          "mohr_coulomb_delta",
+                                          "", // no standard name
+                                          buffer_size,
+                                          evaluations_per_year,
+                                          periodic, LINEAR);
+    m_delta->set_attrs("", "minimum effective pressure on till as a fraction of overburden pressure",
+                       "1", "", 0);
+  }
 }
 
 MohrCoulombYieldStress::~MohrCoulombYieldStress() {
@@ -171,12 +195,34 @@ void MohrCoulombYieldStress::init_impl(const Geometry &geometry,
                         m_till_phi);
   } else {
     m_basal_yield_stress.set(0.0);
-    // will be set in update_impl()
+    // will be set below
   }
+
+  if (m_delta) {
+    ForcingOptions opt(*m_grid->ctx(), "basal_yield_stress.mohr_coulomb.delta");
+
+    m_delta->init(opt.filename, opt.period, opt.reference_time);
+  }
+
+  // We need to ensure that m_basal_yield_stress is up to date:
+  // basal_material_yield_stress() will be called before update() in IceModel::step()
+  //
+  // We use a short time step length because we can get away with it here, but we can
+  // probably do better...
+  this->update(inputs, m_grid->ctx()->time()->current(), 1.0 /* one second */);
 }
 
 MaxTimestep MohrCoulombYieldStress::max_timestep_impl(double t) const {
   (void) t;
+
+  if (m_delta) {
+    auto dt = m_delta->max_timestep(t);
+
+    if (dt.finite()) {
+      return MaxTimestep(dt.value(), "Mohr-Coulomb yield stress");
+    }
+  }
+
   return MaxTimestep("Mohr-Coulomb yield stress");
 }
 
@@ -230,6 +276,7 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
 
   bool slippery_grounding_lines = m_config->get_flag("basal_yield_stress.slippery_grounding_lines"),
        add_transportable_water  = m_config->get_flag("basal_yield_stress.add_transportable_water");
+
   const double
     ice_density      = m_config->get_number("constants.ice.density"),
     standard_gravity = m_config->get_number("constants.standard_gravity");
@@ -252,8 +299,15 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
 
   IceModelVec::AccessList list{&W_till, &m_till_phi, &m_basal_yield_stress, &cell_type,
       &bed_topography, &sea_level, &ice_thickness};
+
   if (add_transportable_water) {
     list.add(W_subglacial);
+  }
+
+  if (m_delta) {
+    m_delta->update(t, dt);
+    m_delta->average(t, dt);
+    list.add(*m_delta);
   }
 
   for (Points p(*m_grid); p; p.next()) {
@@ -267,6 +321,7 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
 
       // user can ask that marine grounding lines get special treatment
       double water = W_till(i,j); // usual case
+
       if (slippery_grounding_lines and
           bed_topography(i,j) <= sea_level(i, j) and
           (cell_type.next_to_floating_ice(i,j) or cell_type.next_to_ice_free_ocean(i,j))) {
@@ -277,7 +332,8 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
 
       double P_overburden = ice_density * standard_gravity * ice_thickness(i, j);
 
-      m_basal_yield_stress(i, j) = mc.yield_stress(delta, P_overburden, water, m_till_phi(i, j));
+      m_basal_yield_stress(i, j) = mc.yield_stress(m_delta ? (*m_delta)(i, j) : delta,
+                                                   P_overburden, water, m_till_phi(i, j));
     }
   }
 

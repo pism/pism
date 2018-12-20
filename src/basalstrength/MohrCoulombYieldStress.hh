@@ -22,6 +22,7 @@
 #include "YieldStress.hh"
 
 #include "pism/util/iceModelVec.hh"
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 
@@ -122,6 +123,8 @@ private:
                            IceModelVec2S &result);
 
   IceModelVec2S m_till_phi;
+
+  IceModelVec2T::Ptr m_delta;
 };
 
 } // end of namespace pism
