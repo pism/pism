@@ -257,7 +257,7 @@ double Timeseries::operator()(double t) const {
  */
 double Timeseries::operator[](unsigned int j) const {
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   if (j >= m_values.size()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Timeseries %s: operator[]: invalid argument: size=%d, index=%d",
                                   m_variable.get_name().c_str(), (int)m_values.size(), j);

@@ -320,7 +320,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
   m_W.update_ghosts();
   m_P.update_ghosts();
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   double tillwat_max = m_config->get_double("hydrology.tillwat_max");
 #endif
 
@@ -328,7 +328,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
   for (; ht < t_final; ht += hdt) {
     step_counter++;
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
     double huge_number = 1e6;
     check_bounds(m_W, huge_number);
     check_bounds(m_Wtill, tillwat_max);

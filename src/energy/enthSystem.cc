@@ -186,7 +186,7 @@ double enthSystemCtx::compute_lambda() {
 
 
 void enthSystemCtx::set_surface_dirichlet_bc(double E_surface) {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   if ((m_nu < 0.0) || (m_R_cold < 0.0) || (m_R_temp < 0.0)) {
     throw RuntimeError(PISM_ERROR_LOCATION, "setDirichletSurface() should only be called after\n"
                        "initAllColumns() in enthSystemCtx");
@@ -277,7 +277,7 @@ This method should only be called if everything but the basal boundary condition
 is already set.
  */
 void enthSystemCtx::set_basal_dirichlet_bc(double Y) {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   checkReadyToSolve();
   if (gsl_isnan(m_D0) == 0 || gsl_isnan(m_U0) == 0 || gsl_isnan(m_B0) == 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "setting basal boundary conditions twice in enthSystemCtx");
@@ -426,7 +426,7 @@ void enthSystemCtx::assemble_R() {
   }
 
   // R[k] for k > m_ks are never used
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   for (unsigned int k = m_ks + 1; k < m_R.size(); ++k) {
     m_R[k] = GSL_NAN;
   }
@@ -480,7 +480,7 @@ void enthSystemCtx::solve(std::vector<double> &x) {
 
   TridiagonalSystem &S = *m_solver;
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   checkReadyToSolve();
   if (gsl_isnan(m_D0) || gsl_isnan(m_U0) || gsl_isnan(m_B0)) {
     throw RuntimeError(PISM_ERROR_LOCATION,
@@ -561,7 +561,7 @@ void enthSystemCtx::solve(std::vector<double> &x) {
     x[k] = m_B_ks;
   }
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   // if success, mark column as done by making scheme params and b.c. coeffs invalid
   m_lambda = -1.0;
   m_D0     = GSL_NAN;

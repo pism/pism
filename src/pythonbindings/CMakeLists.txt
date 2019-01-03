@@ -34,7 +34,9 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       )
 
     if(Pism_USE_JANSSON)
-      set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPISM_USE_JANSSON" APPEND)
+      set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPism_USE_JANSSON=1" APPEND)
+    else()
+      set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPism_USE_JANSSON=0" APPEND)
     endif()
 
     set_source_files_properties(PISM.i PROPERTIES

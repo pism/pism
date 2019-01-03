@@ -831,7 +831,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
   for (; ht < t_final; ht += hdt) {
     step_counter++;
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
     double huge_number = 1e6;
     check_bounds(m_W, huge_number);
 

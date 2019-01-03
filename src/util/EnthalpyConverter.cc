@@ -91,7 +91,7 @@ bool EnthalpyConverter::is_temperate_relaxed(double E, double P) const {
 
 
 void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) const {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   const double T_melting = melting_temperature(P);
   if (T <= 0.0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "T = %f <= 0 is not a valid absolute temperature",T);
@@ -115,7 +115,7 @@ void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) con
 }
 
 void EnthalpyConverter::validate_E_P(double E, double P) const {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   if (E >= enthalpy_liquid(P)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "E=%f J/kg at P=%f Pa equals or exceeds that of liquid water (%f J/kg)",
                                   E, P, enthalpy_liquid(P));

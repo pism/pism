@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,7 +28,9 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/iceModelVec.hh"
 
-#if (PISM_USE_PROJ4==1)
+#include "pism/pism_config.hh"
+
+#if (Pism_USE_PROJ==1)
 #include "pism/util/Proj.hh"
 #endif
 
@@ -194,7 +196,7 @@ MappingInfo get_projection_info(const PIO &input_file, const std::string &mappin
 
 enum LonLat {LONGITUDE, LATITUDE};
 
-#if (PISM_USE_PROJ4==1)
+#if (Pism_USE_PROJ==1)
 
 //! Computes the area of a triangle using vector cross product.
 static double triangle_area(double *A, double *B, double *C) {

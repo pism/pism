@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2009--2019 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -247,7 +247,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
     mode = PISM_READWRITE_MOVE;
   }
 
-  global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);
+  global_attributes.set_string("source", std::string("PISM ") + pism::revision);
 
   // Find the number of records in this file:
   PIO nc(m_grid->com, "netcdf3", filename, mode);      // OK to use NetCDF3.

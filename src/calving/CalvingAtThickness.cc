@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,6 @@
 #include "CalvingAtThickness.hh"
 
 #include "pism/util/Mask.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"

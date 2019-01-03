@@ -32,11 +32,13 @@ using std::shared_ptr;
 #include "pism/util/Time.hh"
 #include "NC3File.hh"
 
-#if (PISM_USE_PARALLEL_NETCDF4==1)
+#include "pism/pism_config.hh"
+
+#if (Pism_USE_PARALLEL_NETCDF4==1)
 #include "NC4_Par.hh"
 #endif
 
-#if (PISM_USE_PNETCDF==1)
+#if (Pism_USE_PNETCDF==1)
 #include "PNCFile.hh"
 #endif
 
@@ -60,12 +62,12 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, string mode) {
   if (mode == "netcdf3" or size == 1) {
     return io::NCFile::Ptr(new io::NC3File(com));
   }
-#if (PISM_USE_PARALLEL_NETCDF4==1)
+#if (Pism_USE_PARALLEL_NETCDF4==1)
   else if (mode == "netcdf4_parallel") {
     return io::NCFile::Ptr(new io::NC4_Par(com));
   }
 #endif
-#if (PISM_USE_PNETCDF==1)
+#if (Pism_USE_PNETCDF==1)
   else if (mode == "pnetcdf") {
     return io::NCFile::Ptr(new io::PNCFile(com));
   }

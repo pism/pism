@@ -373,7 +373,7 @@ void GeometryEvolution::apply_mass_fluxes(Geometry &geometry) const {
       // (Recall that floating-point arithmetic is not associative.)
       const double H_new = (H(i, j) + dH_SMB(i, j)) + dH_BMB(i, j);
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
       if (H_new < 0.0) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "H = %f (negative) at i=%d, j=%d",
                                       H_new, i, j);
@@ -711,7 +711,7 @@ void GeometryEvolution::update_in_place(double dt,
           &m_impl->surface_elevation, &bed_topography, &m_impl->cell_type});
   }
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   const double Lz = m_grid->Lz();
 #endif
 
@@ -752,7 +752,7 @@ void GeometryEvolution::update_in_place(double dt,
 
       ice_thickness(i, j) += - dt * divQ;
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
       if (ice_thickness(i, j) > Lz) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ice thickness exceeds Lz at i=%d, j=%d (H=%f, Lz=%f)",
                                       i, j, ice_thickness(i, j), Lz);

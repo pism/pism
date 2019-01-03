@@ -170,7 +170,7 @@ macro(pism_find_prerequisites)
     find_package (PNetCDF REQUIRED)
   endif()
 
-  if (Pism_USE_PROJ4)
+  if (Pism_USE_PROJ)
     find_package (PROJ4 REQUIRED)
   endif()
 
@@ -246,7 +246,7 @@ macro(pism_set_dependencies)
     list (APPEND Pism_EXTERNAL_LIBS ${JANSSON_LIBRARIES})
   endif()
 
-  if (Pism_USE_PROJ4)
+  if (Pism_USE_PROJ)
     include_directories (${PROJ4_INCLUDES})
     list (APPEND Pism_EXTERNAL_LIBS ${PROJ4_LIBRARIES})
   endif()
@@ -290,19 +290,6 @@ macro(pism_check_petsc_scalar_type)
   if (${PISM_PETSC_SCALAR} MATCHES "complex")
     message(FATAL_ERROR
       "PETSc configured with --with-scalar-type=complex cannot be used to build PISM.")
-  endif()
-endmacro()
-
-# Set version information that will be embedded in output files.
-macro(pism_set_version_info)
-  pism_petsc_get_variable("CONFIGURE_OPTIONS" PISM_PETSC_CONFIGURE_FLAGS)
-  add_definitions("-DPISM_PETSC_CONFIGURE_FLAGS=\"${PISM_PETSC_CONFIGURE_FLAGS}\"")
-
-  add_definitions("-DPISM_CMAKE_VERSION=\"${CMAKE_VERSION}\"")
-
-  if (Pism_BUILD_PYTHON_BINDINGS)
-    add_definitions("-DPISM_SWIG_VERSION=\"${SWIG_VERSION}\"")
-    add_definitions("-DPISM_PETSC4PY_VERSION=\"${Pism_PETSC4PY_VERSION}\"")
   endif()
 endmacro()
 

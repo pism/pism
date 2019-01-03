@@ -310,7 +310,7 @@ void IceModel::model_state_setup() {
     reset_counters();
 
     auto startstr = pism::printf("PISM (%s) started on %d procs.",
-                                 PISM_Revision, (int)m_grid->size());
+                                 pism::revision, (int)m_grid->size());
     prepend_history(startstr + args_string());
   }
 }
@@ -750,7 +750,7 @@ void IceModel::misc_setup() {
 
   m_output_vars = output_variables(m_config->get_string("output.size"));
 
-#if (PISM_USE_PROJ4==1)
+#if (Pism_USE_PROJ==1)
   {
     std::string proj_string = m_grid->get_mapping_info().proj4;
     if (not proj_string.empty()) {

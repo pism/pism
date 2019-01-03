@@ -49,7 +49,7 @@
 #include "util/Diagnostic.hh"
 #include "util/Config.hh"
 
-#ifdef PISM_USE_JANSSON
+#if (Pism_USE_JANSSON==1)
 #include "util/ConfigJSON.hh"
 #endif
 
@@ -207,7 +207,7 @@
 %include "util/ConfigInterface.hh"
 %include "util/Config.hh"
 
-#ifdef PISM_USE_JANSSON
+#if (Pism_USE_JANSSON==1)
 %shared_ptr(pism::ConfigJSON);
 %include "util/ConfigJSON.hh"
 #endif
