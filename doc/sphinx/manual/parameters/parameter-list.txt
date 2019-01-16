@@ -1329,7 +1329,7 @@
 #. :config:`ocean.runoff_to_ocean_melt_b` (*scalar*)
 
    :Value: 0.150000 (1)
-   :Description: parameter B in eqn. 1 in :cite:`Aschwanden`
+   :Description: parameter B in eqn. 1 in :cite:`Aschwanden2019`
 
 #. :config:`ocean.runoff_to_ocean_melt_power_alpha` (*scalar*)
 
