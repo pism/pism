@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.1)
 project (Pism C CXX)
 
-if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13")
+if (NOT (${CMAKE_VERSION} VERSION_LESS "3.13"))
   # Policy CMP0078 was introduced in 3.13. See "cmake --help-policies" for details.
   cmake_policy(SET CMP0078 OLD)       #controls names of SWIG targets
 endif()
