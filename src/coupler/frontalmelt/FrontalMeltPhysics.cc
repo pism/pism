@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -49,6 +49,10 @@ FrontalMeltPhysics::FrontalMeltPhysics(const Config &config) {
  * @returns frontal melt rate, m / day.
  */
 double FrontalMeltPhysics::frontal_melt_from_undercutting(double h, double q_sg, double TF) const {
+  if (h <= 0.0 or q_sg <= 0.0 or TF <= 0.0) {
+    return 0.0;
+  }
+
   return (m_A * h * pow(q_sg, m_alpha) + m_B) * pow(TF, m_beta);
 }
 
