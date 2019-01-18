@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -103,16 +103,13 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
   const IceModelVec2S &ice_thickness = inputs.geometry->ice_thickness;
   const IceModelVec2S &sea_level_elevation = inputs.geometry->sea_level_elevation;
   // subglacial discharge, mass change over this time step
-  const IceModelVec2S &discharge_flux = *inputs.subglacial_water_flux;
+  const IceModelVec2S &water_flux = *inputs.subglacial_water_flux;
 
   IceModelVec::AccessList list
     {&ice_thickness, &bed_elevation, &cell_type, &sea_level_elevation,
-     &discharge_flux, m_theta_ocean.get(), m_frontal_melt_rate.get()};
+     &water_flux, m_theta_ocean.get(), m_frontal_melt_rate.get()};
 
   double
-    ice_density     = m_config->get_double("constants.ice.density"),
-    water_density   = m_config->get_double("constants.fresh_water.density"),
-    density_ratio   = water_density / ice_density,
     seconds_per_day = 86400,
     grid_spacing    = 0.5 * (m_grid->dx() + m_grid->dy());
 
@@ -140,9 +137,8 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       // [flux * grid_spacing] = m^3 / s, so
       // [flux * grid_spacing / cross_section_area] = m / s, and
       // [flux * grid_spacing  * (s / day) / cross_section_area] = m / day
-      //
-      // The density ratio below converts water-equivalent rates to ice-equivalent ones.
-      double q_sg = discharge_flux(i, j) * grid_spacing / cross_section_area * seconds_per_day * density_ratio;
+      double Q_sg = water_flux(i, j) * grid_spacing;
+      double q_sg = Q_sg / cross_section_area * seconds_per_day;
 
       // get the average ice thickness over ice-covered grounded neighbors
       double water_depth = sea_level_elevation(i, j) - bed_elevation(i, j);
