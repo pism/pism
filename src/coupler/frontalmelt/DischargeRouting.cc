@@ -49,6 +49,7 @@ void DischargeRouting::bootstrap_impl(const Geometry &geometry) {
 
   FrontalMeltPhysics physics(*m_config);
 
+  // FIXME: theta has units of Kelvin, so zero is not a reasonable default value
   m_theta_ocean->set(0.0);
 }
 
@@ -97,13 +98,11 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
 
   FrontalMeltPhysics physics(*m_config);
 
-  const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
-  // ice thickness, meters
-  const IceModelVec2S &bed_elevation = inputs.geometry->bed_elevation;
-  const IceModelVec2S &ice_thickness = inputs.geometry->ice_thickness;
-  const IceModelVec2S &sea_level_elevation = inputs.geometry->sea_level_elevation;
-  // subglacial discharge, mass change over this time step
-  const IceModelVec2S &water_flux = *inputs.subglacial_water_flux;
+  const IceModelVec2CellType &cell_type           = inputs.geometry->cell_type;
+  const IceModelVec2S        &bed_elevation       = inputs.geometry->bed_elevation;
+  const IceModelVec2S        &ice_thickness       = inputs.geometry->ice_thickness;
+  const IceModelVec2S        &sea_level_elevation = inputs.geometry->sea_level_elevation;
+  const IceModelVec2S        &water_flux          = *inputs.subglacial_water_flux;
 
   IceModelVec::AccessList list
     {&ice_thickness, &bed_elevation, &cell_type, &sea_level_elevation,
@@ -146,7 +145,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       (*m_frontal_melt_rate)(i, j) = physics.frontal_melt_from_undercutting(water_depth, q_sg, TF);
       // convert from m / day to m / s
       (*m_frontal_melt_rate)(i, j) /= seconds_per_day;
-    } else { // end of "if this is an ocean cell next to grounded ice"
+    } else {
 
       // This parameterization is applicable at grounded termini (see the case above), but
       // *not* at calving fronts of ice shelves.
