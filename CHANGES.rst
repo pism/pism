@@ -1,7 +1,14 @@
 .. default-role:: literal
 
-Changes since v1.0
+
+Changes since v1.1
 ==================
+
+- Add the `hydraulic_potential` diagnostic to `routing` and `distributed` subglacial
+  hydrology models.
+
+Changes from v1.0 to v1.1
+=========================
 
 - PISM no longer attempts to use projection information to compute cell areas. This change
   was prompted by better mass accounting: it is now clear that using numerical methods
