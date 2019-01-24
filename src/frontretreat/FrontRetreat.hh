@@ -28,9 +28,9 @@ namespace pism {
 
 class Geometry;
 
-class CalvingInputs {
+class FrontRetreatInputs {
 public:
-  CalvingInputs();
+  FrontRetreatInputs();
 
   const Geometry *geometry;
 
@@ -58,11 +58,11 @@ public:
   FrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width);
   virtual ~FrontRetreat();
 
-  MaxTimestep max_timestep(const CalvingInputs &inputs,
+  MaxTimestep max_timestep(const FrontRetreatInputs &inputs,
                            double t) const ;
 
   void update(double dt,
-              const CalvingInputs &inputs,
+              const FrontRetreatInputs &inputs,
               IceModelVec2CellType &pism_mask,
               IceModelVec2S &Href,
               IceModelVec2S &ice_thickness);
@@ -71,7 +71,7 @@ public:
 
 protected:
 
-  virtual void compute_calving_rate(const CalvingInputs &inputs,
+  virtual void compute_calving_rate(const FrontRetreatInputs &inputs,
                                     IceModelVec2S &result) const = 0;
 
   void prepare_mask(const IceModelVec2CellType &input, IceModelVec2CellType &output) const;

@@ -60,7 +60,7 @@ void vonMisesCalving::init() {
 /*!
   See equation (26) in [\ref Winkelmannetal2011].
 */
-void vonMisesCalving::compute_calving_rate(const CalvingInputs &inputs,
+void vonMisesCalving::compute_calving_rate(const FrontRetreatInputs &inputs,
                                            IceModelVec2S &result) const {
 
   const IceModelVec2S &ice_thickness = inputs.geometry->ice_thickness;

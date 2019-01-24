@@ -28,7 +28,7 @@
 
 namespace pism {
 
-CalvingInputs::CalvingInputs() {
+FrontRetreatInputs::FrontRetreatInputs() {
   geometry = nullptr;
 
   bc_mask           = nullptr;
@@ -128,7 +128,7 @@ FrontRetreatMaxTimestep max_timestep(const IceModelVec2S &horizontal_retreat_rat
  * @brief Compute the maximum time-step length allowed by the CFL
  * condition applied to the calving rate.
  */
-MaxTimestep FrontRetreat::max_timestep(const CalvingInputs &inputs,
+MaxTimestep FrontRetreat::max_timestep(const FrontRetreatInputs &inputs,
                                               double t) const {
   (void) t;
 
@@ -199,7 +199,7 @@ void FrontRetreat::prepare_mask(const IceModelVec2CellType &input,
  * with a frontal melt parameterization.
  */
 void FrontRetreat::update(double dt,
-                                 const CalvingInputs &inputs,
+                                 const FrontRetreatInputs &inputs,
                                  IceModelVec2CellType &mask,
                                  IceModelVec2S &Href,
                                  IceModelVec2S &ice_thickness) {

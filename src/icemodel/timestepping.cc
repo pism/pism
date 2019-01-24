@@ -121,7 +121,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 
   // calving code needs additional inputs to compute time step restrictions
   {
-    CalvingInputs inputs;
+    FrontRetreatInputs inputs;
 
     inputs.geometry = &m_geometry;
     inputs.bc_mask  = &m_ssa_dirichlet_bc_mask;

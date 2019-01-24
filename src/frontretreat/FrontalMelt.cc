@@ -46,7 +46,7 @@ DiagnosticList FrontalMelt::diagnostics_impl() const {
                                              "horizontal front retreat rate due to melt"))}};
 }
 
-void FrontalMelt::compute_calving_rate(const CalvingInputs &inputs,
+void FrontalMelt::compute_calving_rate(const FrontRetreatInputs &inputs,
                                        IceModelVec2S &result) const {
 
   prepare_mask(inputs.geometry->cell_type, m_mask);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -42,7 +42,7 @@ public:
 protected:
   virtual DiagnosticList diagnostics_impl() const;
 
-  void compute_calving_rate(const CalvingInputs &inputs,
+  void compute_calving_rate(const FrontRetreatInputs &inputs,
                             IceModelVec2S &result) const;
 
   std::shared_ptr<const rheology::FlowLaw> m_flow_law;

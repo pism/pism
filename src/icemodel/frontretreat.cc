@@ -51,7 +51,7 @@ void IceModel::do_calving() {
     m_frontalmelt->update(inputs, m_time->current(), m_dt);
   }
 
-  CalvingInputs inputs;
+  FrontRetreatInputs inputs;
 
   inputs.geometry = &m_geometry;
   inputs.bc_mask  = &m_ssa_dirichlet_bc_mask;
