@@ -400,15 +400,15 @@ netcdf pism_config {
     pism_config:calving.float_kill.calve_near_grounding_line_option = "float_kill_calve_near_grounding_line";
     pism_config:calving.float_kill.calve_near_grounding_line_type = "boolean";
 
-    pism_config:calving.front_retreat.wrap_around = "false";
-    pism_config:calving.front_retreat.wrap_around_doc = "If true, wrap around domain boundaries. This may be needed in some regional synthetic geometry setups.";
-    pism_config:calving.front_retreat.wrap_around_option = "calving_wrap_around";
-    pism_config:calving.front_retreat.wrap_around_type = "boolean";
+    pism_config:geometry.front_retreat.wrap_around = "false";
+    pism_config:geometry.front_retreat.wrap_around_doc = "If true, wrap around domain boundaries. This may be needed in some regional synthetic geometry setups.";
+    pism_config:geometry.front_retreat.wrap_around_option = "front_retreat_wrap_around";
+    pism_config:geometry.front_retreat.wrap_around_type = "boolean";
 
-    pism_config:calving.front_retreat.use_cfl = "false";
-    pism_config:calving.front_retreat.use_cfl_doc = "apply CFL criterion for eigen-calving rate front retreat";
-    pism_config:calving.front_retreat.use_cfl_option = "calving_cfl";
-    pism_config:calving.front_retreat.use_cfl_type = "boolean";
+    pism_config:geometry.front_retreat.use_cfl = "false";
+    pism_config:geometry.front_retreat.use_cfl_doc = "apply CFL criterion for eigen-calving rate front retreat";
+    pism_config:geometry.front_retreat.use_cfl_option = "front_retreat_cfl";
+    pism_config:geometry.front_retreat.use_cfl_type = "boolean";
 
     pism_config:calving.methods = "";
     pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'";

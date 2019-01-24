@@ -18,7 +18,7 @@ implemented in PISM.
    * - Option
      - Description
 
-   * - :opt:`-calving_cfl`
+   * - :opt:`-front_retreat_cfl`
      - Apply CFL-type criterion to reduce (limit) PISM's time step using the horizontal
        calving rate computed by ``eigen_calving`` or ``vonmises_calving``.
     
@@ -109,7 +109,7 @@ framework suitable to relate the calving rate produced by ``eigen_calving`` to t
 transport scheme at the ice shelf terminus. Ice shelf front advance and retreat due to
 calving are limited to a maximum of one grid cell length per (adaptive) time step. The
 calving rate (velocity) from ``eigen_calving`` can be used to limit the overall timestep
-of PISM--thus slowing down all of PISM--by using :opt:`-calving_cfl`. This "CFL"-type
+of PISM--thus slowing down all of PISM--by using :opt:`-front_retreat_cfl`. This "CFL"-type
 time-step limitation is definitely recommended in high-resolution runs which attempt to
 model calving position accurately. Without this option, under certain conditions where
 PISM's adaptive time step happens to be long enough, dendritic structures can appear at
@@ -161,7 +161,7 @@ where `B` is the ice hardness.
 
 Similar to ``eigen_calving``, the calving rate from ``vonmises_calving`` can be used to
 limit the overall timestep of PISM --- thus slowing down all of PISM --- by using
-:opt:`-calving_cfl`.
+:opt:`-front_retreat_cfl`.
 
 .. _sec-additional-calving:
 

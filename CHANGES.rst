@@ -1,5 +1,11 @@
 .. default-role:: literal
 
+- Rename configuration parameters controlling front retreat because they are not
+  calving-specific (`calving.front_retreat.use_cfl` to `geometry.front_retreat.use_cfl`
+  and `calving.front_retreat.wrap_around` to `geometry.front_retreat.wrap_around`).
+  Corresponding command-line options are renamed to `-front_retreat_cfl` and
+  `-front_retreat_wrap_around`.
+
 Changes since v1.0
 ==================
 
