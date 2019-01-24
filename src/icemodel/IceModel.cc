@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,13 +25,13 @@
 
 #include "pism/basalstrength/YieldStress.hh"
 #include "pism/basalstrength/basal_resistance.hh"
-#include "pism/frontretreat/CalvingAtThickness.hh"
-#include "pism/frontretreat/EigenCalving.hh"
-#include "pism/frontretreat/vonMisesCalving.hh"
-#include "pism/frontretreat/FloatKill.hh"
-#include "pism/frontretreat/IcebergRemover.hh"
-#include "pism/frontretreat/OceanKill.hh"
 #include "pism/frontretreat/FrontalMelt.hh"
+#include "pism/frontretreat/IcebergRemover.hh"
+#include "pism/frontretreat/calving/CalvingAtThickness.hh"
+#include "pism/frontretreat/calving/EigenCalving.hh"
+#include "pism/frontretreat/calving/FloatKill.hh"
+#include "pism/frontretreat/calving/OceanKill.hh"
+#include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/hydrology/Hydrology.hh"
 #include "pism/stressbalance/StressBalance.hh"

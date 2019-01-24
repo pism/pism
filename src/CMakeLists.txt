@@ -28,17 +28,6 @@ add_library (pism
   basalstrength/ConstantYieldStress.cc
   basalstrength/MohrCoulombYieldStress.cc
   basalstrength/YieldStress.cc
-  frontretreat/CalvingAtThickness.cc
-  frontretreat/FrontRetreat.cc
-  frontretreat/EigenCalving.cc
-  frontretreat/FloatKill.cc
-  frontretreat/FrontalMelt.cc
-  frontretreat/IcebergRemover.cc
-  frontretreat/OceanKill.cc
-  frontretreat/StressCalving.cc
-  frontretreat/connected_components.cc
-  frontretreat/remove_narrow_tongues.cc
-  frontretreat/vonMisesCalving.cc
   energy/BTU_Full.cc
   energy/BTU_Minimal.cc
   energy/BedThermalUnit.cc
@@ -76,6 +65,7 @@ add_library (pism
   stressbalance/timestepping.cc
   util/ColumnSystem.cc
   util/pism_signal.c
+  $<TARGET_OBJECTS:frontretreat>
   $<TARGET_OBJECTS:hydrology>
   $<TARGET_OBJECTS:flowlaws>
   $<TARGET_OBJECTS:stressbalance>
@@ -167,6 +157,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/
 add_subdirectory (coupler)
 add_subdirectory (earth)
 add_subdirectory (external)
+add_subdirectory (frontretreat)
 add_subdirectory (hydrology)
 add_subdirectory (inverse)
 add_subdirectory (regional)

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2018 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2004--2019 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,13 +23,13 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_utilities.hh"
 
-#include "pism/frontretreat/CalvingAtThickness.hh"
-#include "pism/frontretreat/EigenCalving.hh"
-#include "pism/frontretreat/vonMisesCalving.hh"
 #include "pism/frontretreat/FrontalMelt.hh"
-#include "pism/frontretreat/FloatKill.hh"
 #include "pism/frontretreat/IcebergRemover.hh"
-#include "pism/frontretreat/OceanKill.hh"
+#include "pism/frontretreat/calving/CalvingAtThickness.hh"
+#include "pism/frontretreat/calving/EigenCalving.hh"
+#include "pism/frontretreat/calving/FloatKill.hh"
+#include "pism/frontretreat/calving/OceanKill.hh"
+#include "pism/frontretreat/calving/vonMisesCalving.hh"
 
 #include "pism/energy/EnergyModel.hh"
 #include "pism/coupler/FrontalMeltModel.hh"

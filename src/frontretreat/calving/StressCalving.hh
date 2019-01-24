@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2018 PISM Authors
+/* Copyright (C) 2016, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef STRESSCALVING_H
 #define STRESSCALVING_H
 
-#include "FrontRetreat.hh"
+#include "pism/frontretreat/FrontRetreat.hh"
 
 namespace pism {
 

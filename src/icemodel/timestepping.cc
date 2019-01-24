@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,8 +28,8 @@
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/util/Component.hh" // ...->max_timestep()
 
-#include "pism/frontretreat/EigenCalving.hh"
-#include "pism/frontretreat/vonMisesCalving.hh"
+#include "pism/frontretreat/calving/EigenCalving.hh"
+#include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/frontretreat/FrontalMelt.hh"
 
 #include "pism/energy/EnergyModel.hh"
