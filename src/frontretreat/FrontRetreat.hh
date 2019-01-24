@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef CALVINGFRONTRETREAT_H
-#define CALVINGFRONTRETREAT_H
+#ifndef FRONTRETREAT_H
+#define FRONTRETREAT_H
 
 #include "pism/util/Component.hh"
 #include "pism/util/iceModelVec.hh"
@@ -82,7 +82,7 @@ protected:
   bool m_restrict_timestep;
 };
 
-/*! @brief Calving (or frontal melt) rate diagnostic. */
+/*! @brief Retreat rate due to calving (or frontal melt). */
 class FrontRetreatRate : public Diag<FrontRetreat>
 {
 public:
@@ -95,4 +95,4 @@ public:
 } // end of namespace pism
 
 
-#endif /* CALVINGFRONTRETREAT_H */
+#endif /* FRONTRETREAT_H */

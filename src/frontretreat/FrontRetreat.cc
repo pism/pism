@@ -41,11 +41,11 @@ FrontRetreat::FrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width)
   : Component(g) {
 
   m_tmp.create(m_grid, "temporary_storage", WITH_GHOSTS, 1);
-  m_tmp.set_attrs("internal", "additional mass loss at points near the calving front",
+  m_tmp.set_attrs("internal", "additional mass loss at points near the front",
                   "m", "");
 
   m_horizontal_retreat_rate.create(m_grid, "horizontal_retreat_rate", WITHOUT_GHOSTS);
-  m_horizontal_retreat_rate.set_attrs("diagnostic", "calving rate", "m second-1", "");
+  m_horizontal_retreat_rate.set_attrs("diagnostic", "retreat rate", "m second-1", "");
   m_horizontal_retreat_rate.set_time_independent(false);
   m_horizontal_retreat_rate.metadata().set_string("glaciological_units", "m year-1");
 
@@ -126,7 +126,7 @@ FrontRetreatMaxTimestep max_timestep(const IceModelVec2S &horizontal_retreat_rat
 
 /**
  * @brief Compute the maximum time-step length allowed by the CFL
- * condition applied to the calving rate.
+ * condition applied to the retreat rate.
  */
 MaxTimestep FrontRetreat::max_timestep(const FrontRetreatInputs &inputs,
                                               double t) const {
@@ -143,8 +143,8 @@ MaxTimestep FrontRetreat::max_timestep(const FrontRetreatInputs &inputs,
   auto info = pism::max_timestep(horizontal_retreat_rate);
 
   m_log->message(3,
-                 "  calving: maximum rate = %.2f m/year gives dt=%.5f years\n"
-                 "           mean rate    = %.2f m/year over %d cells\n",
+                 "  front retreat: maximum rate = %.2f m/year gives dt=%.5f years\n"
+                 "                 mean rate    = %.2f m/year over %d cells\n",
                  convert(m_sys, info.rate_max, "m second-1", "m year-1"),
                  convert(m_sys, info.dt.value(), "seconds", "years"),
                  convert(m_sys, info.rate_mean, "m second-1", "m year-1"),
@@ -185,7 +185,7 @@ void FrontRetreat::prepare_mask(const IceModelVec2CellType &input,
   loop.check();
 }
 
-/*! Update ice geometry and mask using the computed horizontal calving rate.
+/*! Update ice geometry and mask using the computed horizontal retreat rate.
  * @param[in] dt time step, seconds
  * @param[in] sea_level sea level elevation, meters
  * @param[in] thickness_bc_mask Dirichlet B.C. mask for the ice thickness
@@ -211,7 +211,7 @@ void FrontRetreat::update(double dt,
   GeometryCalculator gc(*m_config);
   gc.compute_surface(sea_level, bed_topography, ice_thickness, m_surface_topography);
 
-  // use mask with a wide stencil to compute the calving rate
+  // use mask with a wide stencil to compute the retreat rate
   compute_retreat_rate(inputs, m_horizontal_retreat_rate);
 
   const double dx = m_grid->dx();
@@ -225,7 +225,7 @@ void FrontRetreat::update(double dt,
   // Prepare to loop over neighbors: directions
   const Direction dirs[] = {North, East, South, West};
 
-  // Step 1: Apply the computed horizontal calving rate:
+  // Step 1: Apply the computed horizontal retreat rate:
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
@@ -237,7 +237,7 @@ void FrontRetreat::update(double dt,
     const double rate = m_horizontal_retreat_rate(i, j);
 
     if (mask.ice_free(i, j) and rate > 0.0) {
-      // apply calving rate at the margin (i.e. to partially-filled cells) only
+      // apply retreat rate at the margin (i.e. to partially-filled cells) only
 
       const double Href_old = Href(i, j);
 
@@ -288,7 +288,7 @@ void FrontRetreat::update(double dt,
         if (N > 0) {
           m_tmp(i, j) = (Href_old + Href_change) / (double)N;
         } else {
-          // No shelf calving front of grounded terminus to distribute to: calving stops here.
+          // No shelf calving front of grounded terminus to distribute to: retreat stops here.
           m_tmp(i, j) = 0.0;
         }
       }
@@ -296,8 +296,7 @@ void FrontRetreat::update(double dt,
     } // end of "if (rate > 0.0)"
   }   // end of loop over grid points
 
-  // Step 2: update ice thickness and Href in neighboring cells if we need to propagate mass losses
-  // due to calving front retreat.
+  // Step 2: update ice thickness and Href in neighboring cells if we need to propagate mass losses.
   m_tmp.update_ghosts();
 
   for (Points p(*m_grid); p; p.next()) {
@@ -316,7 +315,7 @@ void FrontRetreat::update(double dt,
         ice_thickness(i, j) = 0.0;
       }
 
-      // Stop calving if the current cell does not have enough ice to absorb the loss.
+      // Stop retreat if the current cell does not have enough ice to absorb the loss.
       if (Href(i, j) < 0.0) {
         Href(i, j) = 0.0;
       }
