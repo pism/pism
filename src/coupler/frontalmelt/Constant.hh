@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,7 @@
 
 namespace pism {
 namespace frontalmelt {
+
 //! \brief A class implementing a constant (in terms of the ocean inputs)
 //! frontal melt model. Uses configuration parameters for the sea level
 //! sea level elevation and frontal melt rate.

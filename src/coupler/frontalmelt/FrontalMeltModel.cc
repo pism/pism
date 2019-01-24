@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 Constantine Khroulev and Andy Aschwanden
+/* Copyright (C) 2018, 2019 Constantine Khroulev and Andy Aschwanden
  *
  * This file is part of PISM.
  *
@@ -30,7 +30,6 @@ FrontalMeltInputs::FrontalMeltInputs() {
   subglacial_water_flux = nullptr;
 }
 
-  
 namespace frontalmelt {
 
 IceModelVec2S::Ptr FrontalMeltModel::allocate_frontal_melt_rate(IceGrid::ConstPtr g) {
@@ -46,9 +45,7 @@ IceModelVec2S::Ptr FrontalMeltModel::allocate_frontal_melt_rate(IceGrid::ConstPt
 // "modifier" constructor
 FrontalMeltModel::FrontalMeltModel(IceGrid::ConstPtr g, std::shared_ptr<FrontalMeltModel> input)
   : Component(g), m_input_model(input) {
-
-  if (not input) {
-  }
+  // empty
 }
 
 // "model" constructor
