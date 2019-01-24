@@ -62,6 +62,68 @@ FrontRetreat::~FrontRetreat() {
   // empty
 }
 
+/*!
+ * Combines information about maximum time step length computed using given front retreat
+ * rate.
+ */
+struct FrontRetreatMaxTimestep {
+  MaxTimestep dt;
+  double rate_max;
+  double rate_mean;
+  int N_cells;
+};
+
+/*!
+ * Compute the maximum time step length provided a horizontal retreat rate.
+ */
+FrontRetreatMaxTimestep max_timestep(const IceModelVec2S &horizontal_retreat_rate) {
+
+  IceGrid::ConstPtr grid = horizontal_retreat_rate.grid();
+  units::System::Ptr sys = grid->ctx()->unit_system();
+
+  using units::convert;
+
+  // About 9 hours which corresponds to 10000 km year-1 on a 10 km grid
+  double dt_min = convert(sys, 0.001, "years", "seconds");
+
+  double
+    retreat_rate_max  = 0.0,
+    retreat_rate_mean = 0.0;
+  int N_cells = 0;
+
+  IceModelVec::AccessList list(horizontal_retreat_rate);
+
+  for (Points pt(*grid); pt; pt.next()) {
+    const int i = pt.i(), j = pt.j();
+
+    const double C = horizontal_retreat_rate(i, j);
+
+    if (C > 0.0) {
+      N_cells           += 1;
+      retreat_rate_mean += C;
+      retreat_rate_max   = std::max(C, retreat_rate_max);
+    }
+  }
+
+  N_cells           = GlobalSum(grid->com, N_cells);
+  retreat_rate_mean = GlobalSum(grid->com, retreat_rate_mean);
+  retreat_rate_max  = GlobalMax(grid->com, retreat_rate_max);
+
+  if (N_cells > 0.0) {
+    retreat_rate_mean /= N_cells;
+  } else {
+    retreat_rate_mean = 0.0;
+  }
+
+  double denom = retreat_rate_max / grid->dx();
+  const double epsilon = convert(sys, 0.001 / (grid->dx() + grid->dy()), "seconds", "years");
+
+  double dt = 1.0 / (denom + epsilon);
+
+  return {MaxTimestep(std::max(dt, dt_min)), retreat_rate_max, retreat_rate_mean, N_cells};
+}
+
+
 /**
  * @brief Compute the maximum time-step length allowed by the CFL
  * condition applied to the calving rate.
@@ -74,58 +136,21 @@ MaxTimestep FrontRetreat::max_timestep(const CalvingInputs &inputs,
     return MaxTimestep();
   }
 
-  // About 9 hours which corresponds to 10000 km year-1 on a 10 km grid
-  double dt_min = units::convert(m_sys, 0.001, "years", "seconds");
-
-  double
-    calving_rate_max  = 0.0,
-    calving_rate_mean = 0.0;
-  int N_calving_cells = 0;
-
   IceModelVec2S &horizontal_calving_rate = m_tmp;
 
   compute_calving_rate(inputs, horizontal_calving_rate);
 
-  IceModelVec::AccessList list(horizontal_calving_rate);
-
-  for (Points pt(*m_grid); pt; pt.next()) {
-    const int i = pt.i(), j = pt.j();
-
-    const double C = horizontal_calving_rate(i, j);
-
-    if (C > 0.0) {
-      N_calving_cells   += 1;
-      calving_rate_mean += C;
-      calving_rate_max   = std::max(C, calving_rate_max);
-    }
-  }
-
-  N_calving_cells   = GlobalSum(m_grid->com, N_calving_cells);
-  calving_rate_mean = GlobalSum(m_grid->com, calving_rate_mean);
-  calving_rate_max  = GlobalMax(m_grid->com, calving_rate_max);
-
-  if (N_calving_cells > 0.0) {
-    calving_rate_mean /= N_calving_cells;
-  } else {
-    calving_rate_mean = 0.0;
-  }
-
-  using units::convert;
-
-  double denom = calving_rate_max / m_grid->dx();
-  const double epsilon = convert(m_sys, 0.001 / (m_grid->dx() + m_grid->dy()), "seconds", "years");
-
-  double dt = 1.0 / (denom + epsilon);
+  auto info = pism::max_timestep(horizontal_calving_rate);
 
   m_log->message(3,
                  "  calving: maximum rate = %.2f m/year gives dt=%.5f years\n"
                  "           mean rate    = %.2f m/year over %d cells\n",
-                 convert(m_sys, calving_rate_max, "m second-1", "m year-1"),
-                 convert(m_sys, dt, "seconds", "years"),
-                 convert(m_sys, calving_rate_mean, "m second-1", "m year-1"),
-                 N_calving_cells);
+                 convert(m_sys, info.rate_max, "m second-1", "m year-1"),
+                 convert(m_sys, info.dt.value(), "seconds", "years"),
+                 convert(m_sys, info.rate_mean, "m second-1", "m year-1"),
+                 info.N_cells);
 
-  return MaxTimestep(std::max(dt, dt_min));
+  return info.dt;
 }
 
 /*!
