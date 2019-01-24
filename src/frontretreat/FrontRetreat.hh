@@ -71,14 +71,14 @@ public:
 
 protected:
 
-  virtual void compute_calving_rate(const FrontRetreatInputs &inputs,
+  virtual void compute_retreat_rate(const FrontRetreatInputs &inputs,
                                     IceModelVec2S &result) const = 0;
 
   void prepare_mask(const IceModelVec2CellType &input, IceModelVec2CellType &output) const;
 
   mutable IceModelVec2CellType m_mask;
   mutable IceModelVec2S m_tmp;
-  IceModelVec2S m_horizontal_calving_rate, m_surface_topography;
+  IceModelVec2S m_horizontal_retreat_rate, m_surface_topography;
   bool m_restrict_timestep;
 };
 

@@ -44,10 +44,10 @@ FrontRetreat::FrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width)
   m_tmp.set_attrs("internal", "additional mass loss at points near the calving front",
                   "m", "");
 
-  m_horizontal_calving_rate.create(m_grid, "horizontal_calving_rate", WITHOUT_GHOSTS);
-  m_horizontal_calving_rate.set_attrs("diagnostic", "calving rate", "m second-1", "land_ice_calving_rate");
-  m_horizontal_calving_rate.set_time_independent(false);
-  m_horizontal_calving_rate.metadata().set_string("glaciological_units", "m year-1");
+  m_horizontal_retreat_rate.create(m_grid, "horizontal_retreat_rate", WITHOUT_GHOSTS);
+  m_horizontal_retreat_rate.set_attrs("diagnostic", "calving rate", "m second-1", "");
+  m_horizontal_retreat_rate.set_time_independent(false);
+  m_horizontal_retreat_rate.metadata().set_string("glaciological_units", "m year-1");
 
   m_mask.create(m_grid, "m_mask", WITH_GHOSTS, mask_stencil_width);
   m_mask.set_attrs("internal", "cell type mask", "", "");
@@ -136,11 +136,11 @@ MaxTimestep FrontRetreat::max_timestep(const FrontRetreatInputs &inputs,
     return MaxTimestep();
   }
 
-  IceModelVec2S &horizontal_calving_rate = m_tmp;
+  IceModelVec2S &horizontal_retreat_rate = m_tmp;
 
-  compute_calving_rate(inputs, horizontal_calving_rate);
+  compute_retreat_rate(inputs, horizontal_retreat_rate);
 
-  auto info = pism::max_timestep(horizontal_calving_rate);
+  auto info = pism::max_timestep(horizontal_retreat_rate);
 
   m_log->message(3,
                  "  calving: maximum rate = %.2f m/year gives dt=%.5f years\n"
@@ -212,14 +212,14 @@ void FrontRetreat::update(double dt,
   gc.compute_surface(sea_level, bed_topography, ice_thickness, m_surface_topography);
 
   // use mask with a wide stencil to compute the calving rate
-  compute_calving_rate(inputs, m_horizontal_calving_rate);
+  compute_retreat_rate(inputs, m_horizontal_retreat_rate);
 
   const double dx = m_grid->dx();
 
   m_tmp.set(0.0);
 
   IceModelVec::AccessList list{&ice_thickness, &bc_mask,
-      &bed_topography, &sea_level, &mask, &Href, &m_tmp, &m_horizontal_calving_rate,
+      &bed_topography, &sea_level, &mask, &Href, &m_tmp, &m_horizontal_retreat_rate,
       &m_surface_topography};
 
   // Prepare to loop over neighbors: directions
@@ -234,7 +234,7 @@ void FrontRetreat::update(double dt,
       continue;
     }
 
-    const double rate = m_horizontal_calving_rate(i, j);
+    const double rate = m_horizontal_retreat_rate(i, j);
 
     if (mask.ice_free(i, j) and rate > 0.0) {
       // apply calving rate at the margin (i.e. to partially-filled cells) only
@@ -339,7 +339,7 @@ void FrontRetreat::update(double dt,
 }
 
 const IceModelVec2S& FrontRetreat::calving_rate() const {
-  return m_horizontal_calving_rate;
+  return m_horizontal_retreat_rate;
 }
 
 FrontRetreatRate::FrontRetreatRate(const FrontRetreat *m,
@@ -350,7 +350,7 @@ FrontRetreatRate::FrontRetreatRate(const FrontRetreat *m,
   /* set metadata: */
   m_vars = {SpatialVariableMetadata(m_sys, name)};
 
-  set_attrs(long_name, "",      // land_ice_calving_rate
+  set_attrs(long_name, "",
             "m second-1", "m year-1", 0);
 }
 

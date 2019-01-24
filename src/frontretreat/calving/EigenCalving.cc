@@ -57,7 +57,7 @@ void EigenCalving::init() {
 /*!
   See equation (26) in [\ref Winkelmannetal2011].
 */
-void EigenCalving::compute_calving_rate(const FrontRetreatInputs &inputs,
+void EigenCalving::compute_retreat_rate(const FrontRetreatInputs &inputs,
                                         IceModelVec2S &result) const {
 
   prepare_mask(inputs.geometry->cell_type, m_mask);

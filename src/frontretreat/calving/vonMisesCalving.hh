@@ -42,7 +42,7 @@ public:
 protected:
   virtual DiagnosticList diagnostics_impl() const;
 
-  void compute_calving_rate(const FrontRetreatInputs &inputs,
+  void compute_retreat_rate(const FrontRetreatInputs &inputs,
                             IceModelVec2S &result) const;
 
   std::shared_ptr<const rheology::FlowLaw> m_flow_law;
