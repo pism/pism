@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -159,8 +159,8 @@ void vonMisesCalving::compute_calving_rate(const CalvingInputs &inputs,
 
 DiagnosticList vonMisesCalving::diagnostics_impl() const {
   return {{"vonmises_calving_rate",
-        Diagnostic::Ptr(new CalvingRate(this, "vonmises_calving_rate",
-                                        "horizontal calving rate due to von Mises calving"))}};
+        Diagnostic::Ptr(new FrontRetreatRate(this, "vonmises_calving_rate",
+                                             "horizontal calving rate due to von Mises calving"))}};
 }
 
 } // end of namespace calving

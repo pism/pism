@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -83,12 +83,12 @@ protected:
 };
 
 /*! @brief Calving (or frontal melt) rate diagnostic. */
-class CalvingRate : public Diag<FrontRetreat>
+class FrontRetreatRate : public Diag<FrontRetreat>
 {
 public:
-  CalvingRate(const FrontRetreat *m,
-              const std::string &name,
-              const std::string &long_name);
+  FrontRetreatRate(const FrontRetreat *m,
+                   const std::string &name,
+                   const std::string &long_name);
   IceModelVec::Ptr compute_impl() const;
 };
 

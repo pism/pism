@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,9 +31,9 @@ namespace pism {
 CalvingInputs::CalvingInputs() {
   geometry = nullptr;
 
-  bc_mask              = nullptr;
-  ice_enthalpy         = nullptr;
-  ice_velocity         = nullptr;
+  bc_mask           = nullptr;
+  ice_enthalpy      = nullptr;
+  ice_velocity      = nullptr;
   frontal_melt_rate = nullptr;
 }
 
@@ -317,9 +317,9 @@ const IceModelVec2S& FrontRetreat::calving_rate() const {
   return m_horizontal_calving_rate;
 }
 
-CalvingRate::CalvingRate(const FrontRetreat *m,
-                         const std::string &name,
-                         const std::string &long_name)
+FrontRetreatRate::FrontRetreatRate(const FrontRetreat *m,
+                                   const std::string &name,
+                                   const std::string &long_name)
   : Diag<FrontRetreat>(m) {
 
   /* set metadata: */
@@ -329,7 +329,7 @@ CalvingRate::CalvingRate(const FrontRetreat *m,
             "m second-1", "m year-1", 0);
 }
 
-IceModelVec::Ptr CalvingRate::compute_impl() const {
+IceModelVec::Ptr FrontRetreatRate::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];

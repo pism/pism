@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -42,8 +42,8 @@ void FrontalMelt::init() {
 
 DiagnosticList FrontalMelt::diagnostics_impl() const {
   return {{"frontal_melt_rate",
-        Diagnostic::Ptr(new CalvingRate(this, "frontal_melt_rate",
-                                        "horizontal front retreat rate due to melt"))}};
+        Diagnostic::Ptr(new FrontRetreatRate(this, "frontal_melt_rate",
+                                             "horizontal front retreat rate due to melt"))}};
 }
 
 void FrontalMelt::compute_calving_rate(const CalvingInputs &inputs,
