@@ -338,7 +338,7 @@ void FrontRetreat::update(double dt,
   gc.compute_mask(sea_level, bed_topography, ice_thickness, mask);
 }
 
-const IceModelVec2S& FrontRetreat::calving_rate() const {
+const IceModelVec2S& FrontRetreat::retreat_rate() const {
   return m_horizontal_retreat_rate;
 }
 
@@ -359,7 +359,7 @@ IceModelVec::Ptr FrontRetreatRate::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  result->copy_from(model->calving_rate());
+  result->copy_from(model->retreat_rate());
 
   return result;
 }

@@ -67,7 +67,7 @@ public:
               IceModelVec2S &Href,
               IceModelVec2S &ice_thickness);
 
-  const IceModelVec2S& calving_rate() const;
+  const IceModelVec2S& retreat_rate() const;
 
 protected:
 
