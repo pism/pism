@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PFMDIRECTFORCING_H_
-#define _PFMDIRECTFORCING_H_
+#ifndef _PFM_GIVEN_H_
+#define _PFM_GIVEN_H_
 
 #include "pism/coupler/FrontalMeltModel.hh"
 
@@ -47,4 +47,4 @@ private:
 
 } // end of namespace frontalmelt
 } // end of namespace pism
-#endif /* _PFMDIRECTFORCING_H_ */
+#endif /* _PFM_GIVEN_H_ */

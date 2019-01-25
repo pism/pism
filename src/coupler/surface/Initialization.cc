@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -70,6 +70,8 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid, std::shared_p
                                  "meters", "");
     m_layer_thickness->set_time_independent(false);
   }
+
+  m_accumulation = allocate_accumulation(grid);
 
   // collect pointers
   m_variables = {&m_mass_flux,

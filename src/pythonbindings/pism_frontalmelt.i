@@ -1,7 +1,7 @@
 %{
 #include "coupler/frontalmelt/Constant.hh"
 #include "coupler/frontalmelt/DischargeRouting.hh"
-#include "coupler/frontalmelt/GivenClimate.hh"
+#include "coupler/frontalmelt/Given.hh"
 
 #include "coupler/frontalmelt/FrontalMeltPhysics.hh"
 %}
@@ -22,7 +22,7 @@
 
 %shared_ptr(pism::frontalmelt::Given)
 %rename(FrontalMeltGiven) pism::frontalmelt::Given;
-%include "coupler/frontalmelt/GivenClimate.hh"
+%include "coupler/frontalmelt/Given.hh"
 
 %shared_ptr(pism::frontalmelt::FrontalMeltPhysics)
 %include "coupler/frontalmelt/FrontalMeltPhysics.hh"

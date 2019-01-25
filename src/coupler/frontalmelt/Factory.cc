@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,7 +22,7 @@
 // frontal melt models:
 #include "Constant.hh"
 #include "DischargeRouting.hh"
-#include "GivenClimate.hh"
+#include "Given.hh"
 
 namespace pism {
 namespace frontalmelt {

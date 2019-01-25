@@ -20,7 +20,7 @@
 #include "pism/coupler/FrontalMeltModel.hh"
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/pism_utilities.hh"
+#include "pism/util/pism_utilities.hh" // combine()
 
 namespace pism {
 
@@ -41,7 +41,6 @@ IceModelVec2S::Ptr FrontalMeltModel::allocate_frontal_melt_rate(IceGrid::ConstPt
   return result;
 }
 
-
 // "modifier" constructor
 FrontalMeltModel::FrontalMeltModel(IceGrid::ConstPtr g, std::shared_ptr<FrontalMeltModel> input)
   : Component(g), m_input_model(input) {
@@ -53,7 +52,6 @@ FrontalMeltModel::FrontalMeltModel(IceGrid::ConstPtr g)
   : FrontalMeltModel(g, nullptr) {
   // empty
 }
-
 
 FrontalMeltModel::~FrontalMeltModel() {
   // empty
@@ -79,11 +77,9 @@ void FrontalMeltModel::bootstrap_impl(const Geometry &geometry) {
   }
 }
 
-  
 void FrontalMeltModel::update(const FrontalMeltInputs &inputs, double t, double dt) {
   this->update_impl(inputs, t, dt);
 }
-
 
 const IceModelVec2S& FrontalMeltModel::frontal_melt_rate() const {
   return frontal_melt_rate_impl();
@@ -131,15 +127,13 @@ const IceModelVec2S& FrontalMeltModel::frontal_melt_rate_impl() const {
   }
 }
 
-  
 namespace diagnostics {
 
-
 /*! @brief Frontal melt rate. */
-class PFM_frontal_melt_rate : public Diag<FrontalMeltModel>
+class FrontalMeltRate : public Diag<FrontalMeltModel>
 {
 public:
-  PFM_frontal_melt_rate(const FrontalMeltModel *m)
+  FrontalMeltRate(const FrontalMeltModel *m)
     : Diag<FrontalMeltModel>(m) {
 
     /* set metadata: */
@@ -160,13 +154,12 @@ protected:
   }
 };
 
-
 } // end of namespace diagnostics
 
 DiagnosticList FrontalMeltModel::diagnostics_impl() const {
   using namespace diagnostics;
   DiagnosticList result = {
-    {"frontalmeltrate",                 Diagnostic::Ptr(new PFM_frontal_melt_rate(this))},
+    {"frontalmeltrate", Diagnostic::Ptr(new FrontalMeltRate(this))},
   };
 
   if (m_input_model) {

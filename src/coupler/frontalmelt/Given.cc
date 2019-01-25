@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "GivenClimate.hh"
+#include "Given.hh"
 
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Time.hh"
@@ -29,8 +29,7 @@ namespace frontalmelt {
 Given::Given(IceGrid::ConstPtr g)
   : FrontalMeltModel(g, nullptr) {
 
-  m_frontal_melt_rate   = allocate_frontal_melt_rate(g);
-
+  m_frontal_melt_rate = allocate_frontal_melt_rate(g);
 }
 
 Given::~Given() {
@@ -41,8 +40,8 @@ void Given::init_impl(const Geometry &geometry) {
   (void) geometry;
 
   m_log->message(2,
-             "* Initializing the frontal melt model reading melt rates\n"
-             "  from a file...\n");
+                 "* Initializing the frontal melt model reading melt rates\n"
+                 "  from a file...\n");
 
   ForcingOptions opt(*m_grid->ctx(), "frontal_melt.given");
 
@@ -54,17 +53,17 @@ void Given::init_impl(const Geometry &geometry) {
     PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
 
     m_frontalmeltrate = IceModelVec2T::ForcingField(m_grid,
-                                                   file,
-                                                   "frontalmeltrate",
-                                                   "", // no standard name
-                                                   buffer_size,
-                                                   evaluations_per_year,
-                                                   periodic);
+                                                    file,
+                                                    "frontalmeltrate",
+                                                    "", // no standard name
+                                                    buffer_size,
+                                                    evaluations_per_year,
+                                                    periodic);
   }
 
   m_frontalmeltrate->set_attrs("climate_forcing",
-                              "frontal melt rate",
-                              "m s-1", "");
+                               "frontal melt rate",
+                               "m s-1", "");
   
   m_frontalmeltrate->metadata().set_string("glaciological_units", "m year-1");
 
@@ -87,7 +86,7 @@ void Given::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
 
 MaxTimestep Given::max_timestep_impl(double t) const {
   (void) t;
-
+  // FIXME: get time-step restriction from the input data
   return MaxTimestep("frontalmelt given");
 }
 
