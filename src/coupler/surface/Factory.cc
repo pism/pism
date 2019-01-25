@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,7 +24,6 @@
 #include "Elevation.hh"
 #include "GivenClimate.hh"
 #include "LapseRates.hh"
-#include "StuffAsAnomaly.hh"
 #include "Delta_T.hh"
 #include "TemperatureIndex.hh"
 #include "Simple.hh"
@@ -54,7 +53,6 @@ Factory::Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereMode
   add_modifier<Delta_T>("delta_T");
   add_modifier<ForceThickness>("forcing");
   add_modifier<LapseRates>("lapse_rate");
-  add_modifier<StuffAsAnomaly>("turn_into_anomaly");
 }
 
 Factory::~Factory() {

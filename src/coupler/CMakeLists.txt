@@ -54,7 +54,6 @@ add_library (boundary OBJECT
   ./surface/Cache.cc
   ./surface/ConstantPIK.cc
   ./surface/Elevation.cc
-  ./surface/StuffAsAnomaly.cc
   ./surface/GivenClimate.cc
   ./surface/LapseRates.cc
   ./surface/Delta_T.cc
