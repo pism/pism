@@ -80,15 +80,21 @@ def check_difference(A, B, value):
     np.testing.assert_almost_equal(sample(A) - sample(B), value)
 
 
-def check_model(model, T, omega, SMB, mass=0.0, thickness=0.0):
+def check_model(model, T, omega, SMB,
+                mass=0.0, thickness=0.0, accumulation=0.0, melt=0.0, runoff=0.0):
     check(model.mass_flux(), SMB)
     check(model.temperature(), T)
     check(model.liquid_water_fraction(), omega)
     check(model.layer_mass(), mass)
     check(model.layer_thickness(), thickness)
+    check(model.accumulation(), accumulation)
+    check(model.melt(), melt)
+    check(model.runoff(), runoff)
 
 
-def check_modifier(model, modifier, T=0.0, omega=0.0, SMB=0.0, mass=0.0, thickness=0.0):
+def check_modifier(model, modifier,
+                   T=0.0, omega=0.0, SMB=0.0, mass=0.0, thickness=0.0,
+                   accumulation=0.0, melt=0.0, runoff=0.0):
     check_difference(modifier.mass_flux(),
                      model.mass_flux(),
                      SMB)
@@ -109,6 +115,17 @@ def check_modifier(model, modifier, T=0.0, omega=0.0, SMB=0.0, mass=0.0, thickne
                      model.layer_thickness(),
                      thickness)
 
+    check_difference(modifier.accumulation(),
+                     model.accumulation(),
+                     accumulation)
+
+    check_difference(modifier.melt(),
+                     model.melt(),
+                     melt)
+
+    check_difference(modifier.runoff(),
+                     model.runoff(),
+                     runoff)
 
 def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)
@@ -122,7 +139,6 @@ def create_given_input_file(filename, grid, temperature, mass_flux):
     M.set_attrs("climate", "shelf base mass flux", "kg m-2 s-1", "")
     M.set(mass_flux)
     M.write(filename)
-
 
 class DeltaT(TestCase):
     def setUp(self):
