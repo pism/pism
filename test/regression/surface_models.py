@@ -127,18 +127,47 @@ def check_modifier(model, modifier,
                      model.runoff(),
                      runoff)
 
-def create_given_input_file(filename, grid, temperature, mass_flux):
-    PISM.util.prepare_output(filename)
+class Given(TestCase):
+    "Model given"
 
-    T = PISM.IceModelVec2S(grid, "shelfbtemp", PISM.WITHOUT_GHOSTS)
-    T.set_attrs("climate", "shelf base temperature", "Kelvin", "")
-    T.set(temperature)
-    T.write(filename)
+    def create_given_input_file(self, filename, grid, temperature, mass_flux):
+        PISM.util.prepare_output(filename)
 
-    M = PISM.IceModelVec2S(grid, "shelfbmassflux", PISM.WITHOUT_GHOSTS)
-    M.set_attrs("climate", "shelf base mass flux", "kg m-2 s-1", "")
-    M.set(mass_flux)
-    M.write(filename)
+        T = PISM.IceModelVec2S(grid, "ice_surface_temp", PISM.WITHOUT_GHOSTS)
+        T.set_attrs("climate", "ice surface temperature", "Kelvin", "")
+        T.set(temperature)
+        T.write(filename)
+
+        M = PISM.IceModelVec2S(grid, "climatic_mass_balance", PISM.WITHOUT_GHOSTS)
+        M.set_attrs("climate", "top surface mass balance", "kg m-2 s-1", "")
+        M.set(mass_flux)
+        M.write(filename)
+
+    def setUp(self):
+        self.filename = "given_input.nc"
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
+
+        self.T = 272.15
+        self.M = 1001.0
+
+        self.create_given_input_file(self.filename, self.grid, self.T, self.M)
+
+    def runTest(self):
+        atmosphere = PISM.AtmosphereUniform(self.grid)
+
+        config.set_string("surface.given.file", self.filename)
+
+        model = PISM.SurfaceGiven(self.grid, atmosphere)
+
+        model.init(self.geometry)
+
+        model.update(self.geometry, 0, 1)
+
+        check_model(model, self.T, 0.0, self.M, accumulation=self.M)
+
+    def tearDown(self):
+        os.remove(self.filename)
 
 class DeltaT(TestCase):
     def setUp(self):
@@ -204,7 +233,7 @@ class LapseRates(TestCase):
 
 if __name__ == "__main__":
 
-    t = LapseRates()
+    t = Given()
 
     t.setUp()
     t.runTest()
