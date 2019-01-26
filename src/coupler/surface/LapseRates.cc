@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -69,8 +69,11 @@ LapseRates::LapseRates(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
                                    "surface_altitude", 0);
   }
 
-  m_mass_flux   = allocate_mass_flux(g);
-  m_temperature = allocate_temperature(g);
+  m_mass_flux    = allocate_mass_flux(g);
+  m_temperature  = allocate_temperature(g);
+  m_accumulation = allocate_accumulation(g);
+  m_melt         = allocate_melt(g);
+  m_runoff       = allocate_runoff(g);
 }
 
 LapseRates::~LapseRates() {
@@ -113,6 +116,8 @@ void LapseRates::update_impl(const Geometry &geometry, double t, double dt) {
   lapse_rate_correction(surface, *m_reference_surface,
                         m_temp_lapse_rate, *m_temperature);
 
+  // This modifier changes m_mass_flux, so we need to compute accumulation, melt, and
+  // runoff.
   dummy_accumulation(*m_mass_flux, *m_accumulation);
   dummy_melt(*m_mass_flux, *m_melt);
   dummy_runoff(*m_mass_flux, *m_runoff);
@@ -125,6 +130,18 @@ const IceModelVec2S &LapseRates::mass_flux_impl() const {
 
 const IceModelVec2S &LapseRates::temperature_impl() const {
   return *m_temperature;
+}
+
+const IceModelVec2S &LapseRates::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S &LapseRates::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S &LapseRates::runoff_impl() const {
+  return *m_runoff;
 }
 
 
