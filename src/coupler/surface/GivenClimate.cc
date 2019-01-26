@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -68,19 +68,6 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
                          "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
   m_mass_flux->metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_mass_flux->metadata().set_doubles("valid_range", {-smb_max, smb_max});
-
-  // this class uses the "modifier" version of the SurfaceModel constructor, so we need to
-  // allocate these here
-  {
-    m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
-    m_layer_mass            = allocate_layer_mass(grid);
-    m_layer_thickness       = allocate_layer_thickness(grid);
-
-    // default values
-    m_layer_thickness->set(0.0);
-    m_layer_mass->set(0.0);
-    m_liquid_water_fraction->set(0.0);
-  }
 }
 
 Given::~Given() {
@@ -125,6 +112,18 @@ const IceModelVec2S &Given::mass_flux_impl() const {
 
 const IceModelVec2S &Given::temperature_impl() const {
   return *m_temperature;
+}
+
+const IceModelVec2S &Given::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S &Given::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S &Given::runoff_impl() const {
+  return *m_runoff;
 }
 
 void Given::define_model_state_impl(const PIO &output) const {
