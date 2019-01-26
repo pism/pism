@@ -46,9 +46,7 @@ def create_geometry(grid):
 
 
 def sample(vec):
-    with PISM.vec.Access(nocomm=[vec]):
-        return vec[0, 0]
-
+    return vec.numpy()[0,0]
 
 def create_dummy_forcing_file(filename, variable_name, units, value):
     f = netCDF4.Dataset(filename, "w")
@@ -256,9 +254,24 @@ class PIK(TestCase):
 
 class Simple(TestCase):
     def setUp(self):
-        pass
+        self.grid = dummy_grid()
+        self.atmosphere = PISM.AtmosphereUniform(self.grid)
+        self.geometry = create_geometry(self.grid)
+
     def runTest(self):
-        raise NotImplementedError
+        atmosphere = self.atmosphere
+
+        model = PISM.SurfaceSimple(self.grid, atmosphere)
+
+        model.init(self.geometry)
+
+        model.update(self.geometry, 0, 1)
+
+        T = sample(atmosphere.mean_annual_temp())
+        M = sample(atmosphere.mean_precipitation())
+
+        check_model(model, T, 0.0, M, accumulation=M)
+
     def tearDown(self):
         pass
 
