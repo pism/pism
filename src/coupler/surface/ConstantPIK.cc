@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018 PISM Authors
+// Copyright (C) 2008-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -97,6 +97,18 @@ const IceModelVec2S &PIK::mass_flux_impl() const {
 
 const IceModelVec2S &PIK::temperature_impl() const {
   return *m_temperature;
+}
+
+const IceModelVec2S &PIK::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S &PIK::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S &PIK::runoff_impl() const {
+  return *m_runoff;
 }
 
 void PIK::define_model_state_impl(const PIO &output) const {

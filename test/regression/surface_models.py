@@ -245,12 +245,37 @@ class TemperatureIndex(TestCase):
         pass
 
 class PIK(TestCase):
+    def create_input(self, filename, grid, mass_flux):
+        PISM.util.prepare_output(filename)
+
+        M = PISM.IceModelVec2S(grid, "climatic_mass_balance", PISM.WITHOUT_GHOSTS)
+        M.set_attrs("climate", "top surface mass balance", "kg m-2 s-1", "")
+        M.set(mass_flux)
+        M.write(filename)
+
     def setUp(self):
-        pass
+        self.filename = "pik_input.nc"
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
+
+        self.M = 1001.0
+        self.T = 273.15 + 30.0
+
+        self.create_input(self.filename, self.grid, self.M)
+
+        config.set_string("input.file", self.filename)
+
     def runTest(self):
-        raise NotImplementedError
+        model = PISM.SurfacePIK(self.grid, PISM.AtmosphereUniform(self.grid))
+
+        model.init(self.geometry)
+
+        model.update(self.geometry, 0, 1)
+
+        check_model(model, self.T, 0.0, self.M, accumulation=self.M)
+
     def tearDown(self):
-        pass
+        os.remove(self.filename)
 
 class Simple(TestCase):
     def setUp(self):
