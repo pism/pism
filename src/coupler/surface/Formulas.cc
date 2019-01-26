@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,6 +29,9 @@ PSFormulas::PSFormulas(IceGrid::ConstPtr grid)
 
   m_mass_flux   = allocate_mass_flux(grid);
   m_temperature = allocate_temperature(grid);
+  m_accumulation = allocate_accumulation(grid);
+  m_melt         = allocate_melt(grid);
+  m_runoff       = allocate_runoff(grid);
 }
 
 PSFormulas::~PSFormulas() {
@@ -41,6 +44,18 @@ const IceModelVec2S &PSFormulas::mass_flux_impl() const {
 
 const IceModelVec2S & PSFormulas::temperature_impl() const {
   return *m_temperature;
+}
+
+const IceModelVec2S &PSFormulas::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S &PSFormulas::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S &PSFormulas::runoff_impl() const {
+  return *m_runoff;
 }
 
 void PSFormulas::define_model_state_impl(const PIO &output) const {

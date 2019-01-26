@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -39,8 +39,12 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual const IceModelVec2S& mass_flux_impl() const;
-  virtual const IceModelVec2S& temperature_impl() const;
+  const IceModelVec2S& mass_flux_impl() const;
+  const IceModelVec2S& temperature_impl() const;
+
+  const IceModelVec2S& accumulation_impl() const;
+  const IceModelVec2S& melt_impl() const;
+  const IceModelVec2S& runoff_impl() const;
 
 protected:
   IceModelVec2S::Ptr m_mass_flux;
