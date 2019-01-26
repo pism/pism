@@ -90,7 +90,7 @@ diffusivity `D_{SIA}` is a function of the ice geometry and the ice flow law. In
 isothermal Glen power law (power `= n`) case we recall
 
 .. math::
-   :name: siadiffusivity
+   :label: siadiffusivity
    
    D_{SIA} = \Gamma H^{n+2} |\nabla h|^{n-1}
 
@@ -139,7 +139,7 @@ modify the diffusivity by multiplying by a factor `0 \le \theta \le 1`:
 where `D_{SIA}` is defined by :eq:`siadiffusivity` earlier, and
 
 .. math::
-   :name: thetadefn
+   :label: thetadefn
    
     \theta(h,x_1,x_2) = \left[ \fint \left(1 - \frac{\tilde b(x_1,x_2,\xi_1,\xi_2)}{H}\right)^{-(n+2)/n}\,d\xi_1\,d\xi_2 \right]^{-n}
 
@@ -249,7 +249,7 @@ this `f(\xi)` is zero, so that the first-order term drops out in the above expan
 `\omega`. We have the following approximation of `\theta`:
 
 .. math::
-   :name: thetaapprox
+   :label: thetaapprox
 
     \theta(h,x_1,x_2) \approx \left[ 1 + C_2(x_1,x_2) H^{-2} + C_3(x_1,x_2) H^{-3} + C_4(x_1,x_2) H^{-4} \right]^{-n}
 

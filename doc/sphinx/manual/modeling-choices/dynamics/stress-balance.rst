@@ -205,7 +205,7 @@ Weertman-style sliding
 PISM implements equation 5 from :cite:`Tomkin2007`:
 
 .. math::
-   :name: weertman-sliding
+   :label: weertman-sliding
 
    \mathbf{u}_s = \frac{2 A_s \beta_c (\rho g H)^{n}}{N - P} |\nabla h|^{n-1} \nabla h.
 

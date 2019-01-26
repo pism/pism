@@ -112,7 +112,7 @@ the grid spacing of `5` km.
 In summary, with the default (center) grid registration
 
 .. math::
-   :name: eq-grid-registration-center
+   :label: eq-grid-registration-center
 
    \Delta x &= \frac{2 L_x}{M_x},
 
@@ -147,7 +147,7 @@ and `x` coordinates range from `-10000` to `10000`.
 With the "corner" grid registration
 
 .. math::
-   :name: eq-grid-registration-corner
+   :label: eq-grid-registration-corner
 
    \Delta x &= \frac{2 L_x}{M_x - 1},
 

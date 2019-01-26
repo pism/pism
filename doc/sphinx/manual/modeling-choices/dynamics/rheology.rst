@@ -14,7 +14,7 @@ which is, in the most general case in PISM, a function `F(\sigma,T,\omega,P,d)` 
 "constitutive relation" form
 
 .. math::
-   :name: eq-constitutive
+   :label: eq-constitutive
 
    D_{ij} = F(\sigma,T,\omega,P,d)\, \sigma_{ij}'.
 
@@ -28,7 +28,7 @@ a flow law, found by inverting the constitutive relation :eq:`eq-constitutive`, 
 for ice shelf and ice stream (SSA) flow :cite:`BBssasliding`:
 
 .. math::
-   :name: eq-viscosityform
+   :label: eq-viscosityform
 
    \sigma_{ij}' = 2 \nu(D,T,\omega,P,d)\,D_{ij}
 
@@ -38,7 +38,7 @@ D_{ij} D_{ij}`.
 Most of the flow laws in PISM are of Glen-Nye single-power type.  For example,
 
 .. math::
-   :name: eq-glen
+   :label: eq-glen
 
    F(\sigma,T) = A(T) \sigma^{n-1}
 
@@ -184,7 +184,7 @@ to be true with a new enhancement factor `E_{new}`. Eliminating `D_0` and
 solving for the new enhancement factor gives
 
 .. math::
-   :name: eq-renewexponent
+   :label: eq-renewexponent
 
    E_{new} = E_{old}\, \sigma_0^{n_{old} - n_{new}}.
 
