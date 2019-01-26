@@ -230,6 +230,61 @@ class LapseRates(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
+class Elevation(TestCase):
+    def setUp(self):
+        pass
+    def runTest(self):
+        raise NotImplementedError
+    def tearDown(self):
+        pass
+
+class TemperatureIndex(TestCase):
+    def setUp(self):
+        pass
+    def runTest(self):
+        raise NotImplementedError
+    def tearDown(self):
+        pass
+
+class PIK(TestCase):
+    def setUp(self):
+        pass
+    def runTest(self):
+        raise NotImplementedError
+    def tearDown(self):
+        pass
+
+class Simple(TestCase):
+    def setUp(self):
+        pass
+    def runTest(self):
+        raise NotImplementedError
+    def tearDown(self):
+        pass
+
+class Anomaly(TestCase):
+    def setUp(self):
+        pass
+    def runTest(self):
+        raise NotImplementedError
+    def tearDown(self):
+        pass
+
+class Cache(TestCase):
+    def setUp(self):
+        pass
+    def runTest(self):
+        raise NotImplementedError
+    def tearDown(self):
+        pass
+
+class ForceThickness(TestCase):
+    def setUp(self):
+        pass
+    def runTest(self):
+        raise NotImplementedError
+    def tearDown(self):
+        pass
 
 if __name__ == "__main__":
 
