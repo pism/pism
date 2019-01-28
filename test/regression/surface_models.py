@@ -450,11 +450,46 @@ class Cache(TestCase):
 
 class ForceThickness(TestCase):
     def setUp(self):
-        pass
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
+
+        self.filename = "force_to_thickness_input.nc"
+
+        self.geometry.ice_thickness.set(1000.0)
+
+        # save ice thickness to a file to use as the target thickness
+        PISM.util.prepare_output(self.filename)
+        self.geometry.ice_thickness.write(self.filename)
+
+        ftt_mask = PISM.IceModelVec2S(self.grid, "ftt_mask", PISM.WITHOUT_GHOSTS)
+        ftt_mask.set(1.0)
+        ftt_mask.write(self.filename)
+
+        config.set_string("surface.force_to_thickness_file", self.filename)
+        config.set_double("surface.force_to_thickness.alpha", 10.0)
+
     def runTest(self):
-        raise NotImplementedError
+        "Modifier ForceThickness"
+        model = PISM.SurfaceSimple(self.grid, PISM.AtmosphereUniform(self.grid))
+
+        modifier = PISM.SurfaceForceThickness(self.grid, model)
+
+        modifier.init(self.geometry)
+
+        self.geometry.ice_thickness.set(2000.0)
+
+        modifier.update(self.geometry, 0, 1)
+
+        SMB          = -0.2883677582314483
+        accumulation = 0.0
+        melt         = 0.0
+        runoff       = 0.0
+
+        check_modifier(model, modifier, SMB=SMB,
+                       accumulation=accumulation, melt=melt, runoff=runoff)
+
     def tearDown(self):
-        pass
+        os.remove(self.filename)
 
 if __name__ == "__main__":
 
