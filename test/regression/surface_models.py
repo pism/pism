@@ -238,9 +238,31 @@ class Elevation(TestCase):
 
 class TemperatureIndex(TestCase):
     def setUp(self):
-        pass
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
+        self.atmosphere = PISM.AtmosphereUniform(self.grid)
+
     def runTest(self):
-        raise NotImplementedError
+
+        config.set_string("surface.pdd.method", "expectation_integral")
+
+        model = PISM.SurfaceTemperatureIndex(self.grid, self.atmosphere)
+
+        model.init(self.geometry)
+
+        model.update(self.geometry, 0, 1)
+
+        T = config.get_double("atmosphere.uniform.temperature", "Kelvin")
+        omega = 0.0
+
+        accumulation = config.get_double("atmosphere.uniform.precipitation", "kg m-2 second-1")
+        melt         = accumulation
+        runoff       = melt * (1.0 - config.get_double("surface.pdd.refreeze"))
+        SMB          = accumulation - runoff
+
+        check_model(model, T, omega, SMB, accumulation=accumulation, melt=melt,
+                    runoff=runoff)
+
     def tearDown(self):
         pass
 
@@ -276,6 +298,7 @@ class PIK(TestCase):
 
     def tearDown(self):
         os.remove(self.filename)
+        config.set_string("input.file", "")
 
 class Simple(TestCase):
     def setUp(self):
@@ -414,7 +437,7 @@ class ForceThickness(TestCase):
 
 if __name__ == "__main__":
 
-    t = Anomaly()
+    t = TemperatureIndex()
 
     t.setUp()
     t.runTest()
