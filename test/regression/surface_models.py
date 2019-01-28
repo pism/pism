@@ -126,8 +126,6 @@ def check_modifier(model, modifier,
                      runoff)
 
 class Given(TestCase):
-    "Model given"
-
     def create_given_input_file(self, filename, grid, temperature, mass_flux):
         PISM.util.prepare_output(filename)
 
@@ -152,6 +150,7 @@ class Given(TestCase):
         self.create_given_input_file(self.filename, self.grid, self.T, self.M)
 
     def runTest(self):
+        "Model given"
         atmosphere = PISM.AtmosphereUniform(self.grid)
 
         config.set_string("surface.given.file", self.filename)
@@ -238,6 +237,7 @@ class Elevation(TestCase):
         self.geometry.ensure_consistency(0.0)
 
     def runTest(self):
+        "Model Elevation"
         model = PISM.SurfaceElevation(self.grid, PISM.AtmosphereUniform(self.grid))
 
         model.init(self.geometry)
@@ -264,7 +264,7 @@ class TemperatureIndex(TestCase):
         self.atmosphere = PISM.AtmosphereUniform(self.grid)
 
     def runTest(self):
-
+        "Model TemperatureIndex"
         config.set_string("surface.pdd.method", "expectation_integral")
 
         model = PISM.SurfaceTemperatureIndex(self.grid, self.atmosphere)
@@ -309,6 +309,7 @@ class PIK(TestCase):
         config.set_string("input.file", self.filename)
 
     def runTest(self):
+        "Model PIK"
         model = PISM.SurfacePIK(self.grid, PISM.AtmosphereUniform(self.grid))
 
         model.init(self.geometry)
@@ -328,6 +329,7 @@ class Simple(TestCase):
         self.geometry = create_geometry(self.grid)
 
     def runTest(self):
+        "Model Simple"
         atmosphere = self.atmosphere
 
         model = PISM.SurfaceSimple(self.grid, atmosphere)
