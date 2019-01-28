@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -65,6 +65,10 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
 
   m_mass_flux = allocate_mass_flux(g);
   m_temperature = allocate_temperature(g);
+
+  m_accumulation = allocate_accumulation(g);
+  m_melt         = allocate_melt(g);
+  m_runoff       = allocate_runoff(g);
 }
 
 Anomaly::~Anomaly() {

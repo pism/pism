@@ -302,11 +302,45 @@ class Simple(TestCase):
 
 class Anomaly(TestCase):
     def setUp(self):
-        pass
+        self.filename = "surface_anomaly_input.nc"
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
+        self.model = PISM.SurfaceSimple(self.grid, PISM.AtmosphereUniform(self.grid))
+        self.dSMB = -5.0
+        self.dT = 2.0
+
+        PISM.util.prepare_output(self.filename)
+
+        delta_SMB = PISM.IceModelVec2S(self.grid, "climatic_mass_balance_anomaly",
+                                       PISM.WITHOUT_GHOSTS)
+        delta_SMB.set_attrs("climate_forcing",
+                            "2D surface mass flux anomaly", "kg m-2 s-1", "")
+        delta_SMB.set(self.dSMB)
+
+        delta_SMB.write(self.filename)
+
+        delta_T = PISM.IceModelVec2S(self.grid, "ice_surface_temp_anomaly",
+                                     PISM.WITHOUT_GHOSTS)
+        delta_T.set_attrs("climate_forcing",
+                          "2D surface temperature anomaly", "Kelvin", "")
+        delta_T.set(self.dT)
+
+        delta_T.write(self.filename)
+
     def runTest(self):
-        raise NotImplementedError
+        "Modifier Anomaly"
+
+        config.set_string("surface.anomaly.file", self.filename)
+
+        modifier = PISM.SurfaceAnomaly(self.grid, self.model)
+
+        modifier.init(self.geometry)
+        modifier.update(self.geometry, 0, 1)
+
+        check_modifier(self.model, modifier, T=self.dT, SMB=self.dSMB)
+
     def tearDown(self):
-        pass
+        os.remove(self.filename)
 
 class Cache(TestCase):
     def create_delta_T_file(self, filename):
@@ -380,7 +414,7 @@ class ForceThickness(TestCase):
 
 if __name__ == "__main__":
 
-    t = Cache()
+    t = Anomaly()
 
     t.setUp()
     t.runTest()
