@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -48,6 +48,9 @@ Cache::Cache(IceGrid::ConstPtr grid, std::shared_ptr<SurfaceModel> in)
     m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
     m_layer_mass            = allocate_layer_mass(grid);
     m_layer_thickness       = allocate_layer_thickness(grid);
+    m_accumulation          = allocate_accumulation(grid);
+    m_melt                  = allocate_melt(grid);
+    m_runoff                = allocate_runoff(grid);
   }
 }
 

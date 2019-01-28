@@ -309,12 +309,66 @@ class Anomaly(TestCase):
         pass
 
 class Cache(TestCase):
+    def create_delta_T_file(self, filename):
+        """Create a delta_T input file covering the interval [0, 4] years. When used with the
+        'Cache' modifier with the update interval of 2, this data will be sampled every 2
+        years, producing [1, 1, 3, 3].
+        """
+        f = netCDF4.Dataset(filename, "w")
+        f.createDimension("time", 4)
+        f.createDimension("bnds", 2)
+        t = f.createVariable("time", "d", ("time",))
+        t.units = "seconds"
+        t.bounds = "time_bounds"
+        t_bnds = f.createVariable("time_bounds", "d", ("time", "bnds"))
+        delta_T = f.createVariable("delta_T", "d", ("time",))
+        delta_T.units = "Kelvin"
+        t[:] = [0.5, 1.5, 2.5, 3.5]
+        t[:] *= seconds_per_year
+        t_bnds[:, 0] = [0, 1, 2, 3]
+        t_bnds[:, 1] = [1, 2, 3, 4]
+        t_bnds[:, :] *= seconds_per_year
+        delta_T[:] = [1, 2, 3, 4]
+        f.close()
+
     def setUp(self):
-        pass
+        self.filename = "dT.nc"
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
+
+        self.constant = PISM.SurfaceSimple(self.grid, PISM.AtmosphereUniform(self.grid))
+        self.delta_T = PISM.SurfaceDeltaT(self.grid, self.constant)
+
+        self.create_delta_T_file(self.filename)
+        options.setValue("-surface_delta_T_file", self.filename)
+
+        config.set_double("surface.cache.update_interval", 2.0)
+
     def runTest(self):
-        raise NotImplementedError
+        "Modifier Cache"
+
+        modifier = PISM.SurfaceCache(self.grid, self.delta_T)
+
+        modifier.init(self.geometry)
+
+        t = 0
+        dt = seconds_per_year
+
+        diff = []
+        while t < 4 * seconds_per_year:
+            modifier.update(self.geometry, t, dt)
+
+            original = sample(self.constant.temperature())
+            cached = sample(modifier.temperature())
+
+            diff.append(cached - original)
+
+            t += dt
+
+        np.testing.assert_almost_equal(diff, [1, 1, 3, 3])
+
     def tearDown(self):
-        pass
+        os.remove(self.filename)
 
 class ForceThickness(TestCase):
     def setUp(self):
@@ -326,7 +380,7 @@ class ForceThickness(TestCase):
 
 if __name__ == "__main__":
 
-    t = Given()
+    t = Cache()
 
     t.setUp()
     t.runTest()
