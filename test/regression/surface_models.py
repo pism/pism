@@ -191,15 +191,15 @@ class DeltaT(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
-
 class LapseRates(TestCase):
     def setUp(self):
         self.filename = "reference_surface.nc"
-        self.grid = dummy_grid()
-        self.model = PISM.SurfaceEISMINTII(self.grid, ord('A'))
-        self.dTdz = 1.0         # 1 Kelvin per km
-        self.dT = -1.0
-        self.dz = 1000.0
+        self.grid     = dummy_grid()
+        self.model    = PISM.SurfaceEISMINTII(self.grid, ord('A'))
+        self.dTdz     = 1.0         # 1 Kelvin per km
+        self.dSMBdz   = 2.0         # m year-1 per km
+        self.dT       = -1.0
+        self.dz       = 1000.0
 
         self.geometry = create_geometry(self.grid)
 
@@ -209,6 +209,11 @@ class LapseRates(TestCase):
         config.set_string("surface.lapse_rate.file", self.filename)
 
         options.setValue("-temp_lapse_rate", self.dTdz)
+        options.setValue("-smb_lapse_rate", self.dSMBdz)
+
+        ice_density = config.get_double("constants.ice.density")
+        self.dSMB = PISM.util.convert(- self.dSMBdz * ice_density,
+                                      "kg m-2 year-1", "kg m-2 s-1")
 
     def runTest(self):
         "Modifier lapse_rate"
@@ -222,7 +227,9 @@ class LapseRates(TestCase):
 
         # check that the temperature changed accordingly
         modifier.update(self.geometry, 0, 1)
-        check_modifier(self.model, modifier, T=self.dT)
+
+        check_modifier(self.model, modifier, T=self.dT, SMB=self.dSMB,
+                       melt=-self.dSMB, runoff=-self.dSMB)
 
     def tearDown(self):
         os.remove(self.filename)
