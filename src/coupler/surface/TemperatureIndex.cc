@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -119,6 +119,10 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   m_firn_depth.set(0.0);
 
   m_temperature = allocate_temperature(g);
+
+  m_accumulation = allocate_accumulation(g);
+  m_melt         = allocate_melt(g);
+  m_runoff       = allocate_runoff(g);
 }
 
 TemperatureIndex::~TemperatureIndex() {
@@ -215,9 +219,9 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
   {
     m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
 
-    m_accumulation.set(0.0);
-    m_melt.set(0.0);
-    m_runoff.set(0.0);
+    m_accumulation->set(0.0);
+    m_melt->set(0.0);
+    m_runoff->set(0.0);
   }
 }
 
@@ -269,7 +273,8 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   const IceModelVec2S        &H    = geometry.ice_thickness;
 
   IceModelVec::AccessList list{&mask, &H, m_air_temp_sd.get(), &m_mass_flux,
-      &m_firn_depth, &m_snow_depth, &m_accumulation, &m_melt, &m_runoff};
+                               &m_firn_depth, &m_snow_depth,
+                               m_accumulation.get(), m_melt.get(), m_runoff.get()};
 
   const double
     sigmalapserate = m_config->get_double("surface.pdd.std_dev_lapse_lat_rate"),
@@ -436,9 +441,9 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
         // set total accumulation, melt, and runoff, and SMB at this point, converting
         // from "meters, ice equivalent" to "kg / m^2"
         {
-          m_accumulation(i, j)          = A * ice_density;
-          m_melt(i, j)                  = M * ice_density;
-          m_runoff(i, j)                = R * ice_density;
+          (*m_accumulation)(i, j)          = A * ice_density;
+          (*m_melt)(i, j)                  = M * ice_density;
+          (*m_runoff)(i, j)                = R * ice_density;
           // m_mass_flux (unlike m_accumulation, m_melt, and m_runoff), is a
           // rate. m * (kg / m^3) / second = kg / m^2 / second
           m_mass_flux(i, j) = SMB * ice_density / dt;
@@ -469,15 +474,15 @@ const IceModelVec2S &TemperatureIndex::temperature_impl() const {
 }
 
 const IceModelVec2S& TemperatureIndex::accumulation_impl() const {
-  return m_accumulation;
+  return *m_accumulation;
 }
 
 const IceModelVec2S& TemperatureIndex::melt_impl() const {
-  return m_melt;
+  return *m_melt;
 }
 
 const IceModelVec2S& TemperatureIndex::runoff_impl() const {
-  return m_runoff;
+  return *m_runoff;
 }
 
 const IceModelVec2S& TemperatureIndex::firn_depth() const {
