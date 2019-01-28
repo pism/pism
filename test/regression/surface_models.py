@@ -230,9 +230,30 @@ class LapseRates(TestCase):
 
 class Elevation(TestCase):
     def setUp(self):
-        pass
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
+
+        # change geometry just to make this a bit more interesting
+        self.geometry.ice_thickness.set(1000.0)
+        self.geometry.ensure_consistency(0.0)
+
     def runTest(self):
-        raise NotImplementedError
+        model = PISM.SurfaceElevation(self.grid, PISM.AtmosphereUniform(self.grid))
+
+        model.init(self.geometry)
+
+        model.update(self.geometry, 0, 1)
+
+        T            = 268.15
+        omega        = 0.0
+        SMB          = -8.651032746943449e-05
+        accumulation = 0.0
+        melt         = -SMB
+        runoff       = melt
+
+        check_model(model, T, omega, SMB,
+                    accumulation=accumulation, melt=melt, runoff=runoff)
+
     def tearDown(self):
         pass
 
