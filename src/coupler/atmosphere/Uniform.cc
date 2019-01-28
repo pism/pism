@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -61,6 +61,10 @@ void Uniform::begin_pointwise_access_impl() const {
 void Uniform::end_pointwise_access_impl() const {
   m_precipitation->end_access();
   m_temperature->end_access();
+}
+
+void Uniform::init_timeseries_impl(const std::vector<double> &ts) const {
+  m_ts_times = ts;
 }
 
 
