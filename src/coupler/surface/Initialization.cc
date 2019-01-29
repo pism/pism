@@ -72,13 +72,23 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid, std::shared_p
   }
 
   m_accumulation = allocate_accumulation(grid);
+  m_accumulation->set_name("effective_" + m_accumulation->get_name());
+
+  m_melt = allocate_melt(grid);
+  m_melt->set_name("effective_" + m_melt->get_name());
+
+  m_runoff = allocate_runoff(grid);
+  m_runoff->set_name("effective_" + m_runoff->get_name());
 
   // collect pointers
   m_variables = {&m_mass_flux,
                  &m_temperature,
                  m_liquid_water_fraction.get(),
                  m_layer_mass.get(),
-                 m_layer_thickness.get()};
+                 m_layer_thickness.get(),
+                 m_accumulation.get(),
+                 m_melt.get(),
+                 m_runoff.get()};
 }
 
 void InitializationHelper::init_impl(const Geometry &geometry) {
