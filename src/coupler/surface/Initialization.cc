@@ -152,6 +152,18 @@ const IceModelVec2S &InitializationHelper::layer_mass_impl() const {
   return *m_layer_mass;
 }
 
+const IceModelVec2S &InitializationHelper::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S &InitializationHelper::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S &InitializationHelper::runoff_impl() const {
+  return *m_runoff;
+}
+
 void InitializationHelper::define_model_state_impl(const PIO &output) const {
   for (auto v : m_variables) {
     v->define(output);

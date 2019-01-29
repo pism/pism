@@ -110,7 +110,6 @@ void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
   dummy_accumulation(*m_mass_flux, *m_accumulation);
   dummy_melt(*m_mass_flux, *m_melt);
   dummy_runoff(*m_mass_flux, *m_runoff);
-
 }
 
 const IceModelVec2S &Anomaly::mass_flux_impl() const {
@@ -119,6 +118,18 @@ const IceModelVec2S &Anomaly::mass_flux_impl() const {
 
 const IceModelVec2S &Anomaly::temperature_impl() const {
   return *m_temperature;
+}
+
+const IceModelVec2S &Anomaly::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S &Anomaly::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S &Anomaly::runoff_impl() const {
+  return *m_runoff;
 }
 
 } // end of namespace surface

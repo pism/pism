@@ -276,6 +276,18 @@ const IceModelVec2S &ForceThickness::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
+const IceModelVec2S &ForceThickness::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S &ForceThickness::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S &ForceThickness::runoff_impl() const {
+  return *m_runoff;
+}
+
 /*!
 The timestep restriction is, by direct analogy, the same as for
    \f[\frac{dy}{dt} = - \alpha y\f]
