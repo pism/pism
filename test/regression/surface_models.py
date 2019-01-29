@@ -10,6 +10,8 @@ import numpy as np
 from unittest import TestCase
 import netCDF4
 
+from PISM.util import convert
+
 config = PISM.Context().config
 
 # reduce the grid size to speed this up
@@ -27,6 +29,40 @@ log.set_threshold(1)
 
 options = PISM.PETSc.Options()
 
+def write_state(model, filename):
+    "Write the state of the model to a file"
+
+    PISM.util.prepare_output(filename)
+    f = PISM.PIO(model.grid().ctx().com(), "netcdf3",
+                 filename, PISM.PISM_READWRITE)
+    model.define_model_state(f)
+    model.write_model_state(f)
+
+    diags = model.diagnostics()
+    for k in diags.keys():
+        diags[k].compute().write(f)
+
+    f.close()
+
+def probe_interface(model):
+    """Prove the interface of a surface model to check if its public methods run successfully."""
+    model.accumulation()
+    model.layer_mass()
+    model.layer_thickness()
+    model.liquid_water_fraction()
+    model.mass_flux()
+    model.melt()
+    model.runoff()
+    model.temperature()
+
+    model.max_timestep(0)
+
+    model.diagnostics()
+
+    # FIXME: this causes a memory leak
+    # model.ts_diagnostics()
+
+    model.grid()
 
 def create_geometry(grid):
     geometry = PISM.Geometry(grid)
@@ -141,6 +177,7 @@ class Given(TestCase):
 
     def setUp(self):
         self.filename = "given_input.nc"
+        self.output_filename = "given_output.nc"
         self.grid = dummy_grid()
         self.geometry = create_geometry(self.grid)
 
@@ -163,14 +200,19 @@ class Given(TestCase):
 
         check_model(model, self.T, 0.0, self.M, accumulation=self.M)
 
+        write_state(model, self.output_filename)
+        probe_interface(model)
+
     def tearDown(self):
         os.remove(self.filename)
+        os.remove(self.output_filename)
 
 class DeltaT(TestCase):
     def setUp(self):
         self.filename = "delta_T_input.nc"
+        self.output_filename = "delta_T_output.nc"
         self.grid = dummy_grid()
-        self.model = PISM.SurfaceEISMINTII(self.grid, ord('A'))
+        self.model = PISM.SurfaceSimple(self.grid, PISM.AtmosphereUniform(self.grid))
         self.dT = -5.0
         self.geometry = create_geometry(self.grid)
 
@@ -188,18 +230,22 @@ class DeltaT(TestCase):
 
         check_modifier(self.model, modifier, T=self.dT)
 
+        write_state(modifier, self.output_filename)
+        probe_interface(modifier)
+
     def tearDown(self):
         os.remove(self.filename)
+        os.remove(self.output_filename)
 
 class LapseRates(TestCase):
     def setUp(self):
         self.filename = "reference_surface.nc"
+        self.output_filename = "lapse_rates_output.nc"
         self.grid     = dummy_grid()
-        self.model    = PISM.SurfaceEISMINTII(self.grid, ord('A'))
+        self.model    = PISM.SurfaceSimple(self.grid, PISM.AtmosphereUniform(self.grid))
         self.dTdz     = 1.0         # 1 Kelvin per km
         self.dSMBdz   = 2.0         # m year-1 per km
-        self.dT       = -1.0
-        self.dz       = 1000.0
+        self.dz       = 1500.0      # m
 
         self.geometry = create_geometry(self.grid)
 
@@ -212,8 +258,11 @@ class LapseRates(TestCase):
         options.setValue("-smb_lapse_rate", self.dSMBdz)
 
         ice_density = config.get_double("constants.ice.density")
-        self.dSMB = PISM.util.convert(- self.dSMBdz * ice_density,
-                                      "kg m-2 year-1", "kg m-2 s-1")
+
+        self.dSMB = self.dz * ice_density * convert(-self.dSMBdz,
+                                                    "kg m-2 year-1 / km",
+                                                    "kg m-2 s-1 / m")
+        self.dT = self.dz * convert(-self.dTdz, "Kelvin / km", "Kelvin / m")
 
     def runTest(self):
         "Modifier lapse_rate"
@@ -228,16 +277,25 @@ class LapseRates(TestCase):
         # check that the temperature changed accordingly
         modifier.update(self.geometry, 0, 1)
 
+        dA = 0.0 - sample(self.model.accumulation())
+        dM = dA - self.dSMB
+        dR = dM
+
         check_modifier(self.model, modifier, T=self.dT, SMB=self.dSMB,
-                       melt=-self.dSMB, runoff=-self.dSMB)
+                       accumulation=dA, melt=dM, runoff=dR)
+
+        write_state(modifier, self.output_filename)
+        probe_interface(modifier)
 
     def tearDown(self):
         os.remove(self.filename)
+        os.remove(self.output_filename)
 
 class Elevation(TestCase):
     def setUp(self):
         self.grid = dummy_grid()
         self.geometry = create_geometry(self.grid)
+        self.output_filename = "elevation_output.nc"
 
         # change geometry just to make this a bit more interesting
         self.geometry.ice_thickness.set(1000.0)
@@ -261,14 +319,18 @@ class Elevation(TestCase):
         check_model(model, T, omega, SMB,
                     accumulation=accumulation, melt=melt, runoff=runoff)
 
+        write_state(model, self.output_filename)
+        probe_interface(model)
+
     def tearDown(self):
-        pass
+        os.remove(self.output_filename)
 
 class TemperatureIndex(TestCase):
     def setUp(self):
         self.grid = dummy_grid()
         self.geometry = create_geometry(self.grid)
         self.atmosphere = PISM.AtmosphereUniform(self.grid)
+        self.output_filename = "pdd_output.nc"
 
     def runTest(self):
         "Model TemperatureIndex"
@@ -291,8 +353,11 @@ class TemperatureIndex(TestCase):
         check_model(model, T, omega, SMB, accumulation=accumulation, melt=melt,
                     runoff=runoff)
 
+        write_state(model, self.output_filename)
+        probe_interface(model)
+
     def tearDown(self):
-        pass
+        os.remove(self.output_filename)
 
 class PIK(TestCase):
     def create_input(self, filename, grid, mass_flux):
@@ -305,6 +370,7 @@ class PIK(TestCase):
 
     def setUp(self):
         self.filename = "pik_input.nc"
+        self.output_filename = "pik_output.nc"
         self.grid = dummy_grid()
         self.geometry = create_geometry(self.grid)
 
@@ -325,13 +391,18 @@ class PIK(TestCase):
 
         check_model(model, self.T, 0.0, self.M, accumulation=self.M)
 
+        write_state(model, self.output_filename)
+        probe_interface(model)
+
     def tearDown(self):
         os.remove(self.filename)
+        os.remove(self.output_filename)
         config.set_string("input.file", "")
 
 class Simple(TestCase):
     def setUp(self):
         self.grid = dummy_grid()
+        self.output_filename = "simple_output.nc"
         self.atmosphere = PISM.AtmosphereUniform(self.grid)
         self.geometry = create_geometry(self.grid)
 
@@ -350,16 +421,20 @@ class Simple(TestCase):
 
         check_model(model, T, 0.0, M, accumulation=M)
 
+        write_state(model, self.output_filename)
+        probe_interface(model)
+
     def tearDown(self):
-        pass
+        os.remove(self.output_filename)
 
 class Anomaly(TestCase):
     def setUp(self):
         self.filename = "surface_anomaly_input.nc"
+        self.output_filename = "anomaly_output.nc"
         self.grid = dummy_grid()
         self.geometry = create_geometry(self.grid)
         self.model = PISM.SurfaceSimple(self.grid, PISM.AtmosphereUniform(self.grid))
-        self.dSMB = -5.0
+        self.dSMB = -(config.get_double("atmosphere.uniform.precipitation", "kg m-2 s-1") + 5.0)
         self.dT = 2.0
 
         PISM.util.prepare_output(self.filename)
@@ -390,10 +465,20 @@ class Anomaly(TestCase):
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
 
-        check_modifier(self.model, modifier, T=self.dT, SMB=self.dSMB)
+        # once anomaly is applied the SMB is negative, so the new accumulation is zero
+        dA = 0.0 - sample(self.model.accumulation())
+        dM = dA - self.dSMB
+        dR = dM
+
+        check_modifier(self.model, modifier, T=self.dT, SMB=self.dSMB,
+                       accumulation=dA, melt=dM, runoff=dR)
+
+        write_state(modifier, self.output_filename)
+        probe_interface(modifier)
 
     def tearDown(self):
         os.remove(self.filename)
+        os.remove(self.output_filename)
 
 class Cache(TestCase):
     def create_delta_T_file(self, filename):
@@ -420,6 +505,7 @@ class Cache(TestCase):
 
     def setUp(self):
         self.filename = "dT.nc"
+        self.output_filename = "cache_output.nc"
         self.grid = dummy_grid()
         self.geometry = create_geometry(self.grid)
 
@@ -454,17 +540,25 @@ class Cache(TestCase):
 
         np.testing.assert_almost_equal(diff, [1, 1, 3, 3])
 
+        write_state(modifier, self.output_filename)
+        probe_interface(modifier)
+
     def tearDown(self):
         os.remove(self.filename)
+        os.remove(self.output_filename)
 
 class ForceThickness(TestCase):
     def setUp(self):
         self.grid = dummy_grid()
         self.geometry = create_geometry(self.grid)
-
+        self.model = PISM.SurfaceSimple(self.grid, PISM.AtmosphereUniform(self.grid))
         self.filename = "force_to_thickness_input.nc"
+        self.output_filename = "force_to_thickness_output.nc"
 
-        self.geometry.ice_thickness.set(1000.0)
+        self.H = 1000.0
+        self.dH = 1000.0
+
+        self.geometry.ice_thickness.set(self.H)
 
         # save ice thickness to a file to use as the target thickness
         PISM.util.prepare_output(self.filename)
@@ -474,72 +568,127 @@ class ForceThickness(TestCase):
         ftt_mask.set(1.0)
         ftt_mask.write(self.filename)
 
+        alpha       = 10.0
+        ice_density = config.get_double("constants.ice.density")
+        self.dSMB   = -ice_density * alpha * self.dH
+
         config.set_string("surface.force_to_thickness_file", self.filename)
-        config.set_double("surface.force_to_thickness.alpha", 10.0)
+        config.set_double("surface.force_to_thickness.alpha", convert(alpha, "1/s", "1/year"))
 
     def runTest(self):
         "Modifier ForceThickness"
-        model = PISM.SurfaceSimple(self.grid, PISM.AtmosphereUniform(self.grid))
-
-        modifier = PISM.SurfaceForceThickness(self.grid, model)
+        modifier = PISM.SurfaceForceThickness(self.grid, self.model)
 
         modifier.init(self.geometry)
 
-        self.geometry.ice_thickness.set(2000.0)
+        self.geometry.ice_thickness.set(self.H + self.dH)
 
         modifier.update(self.geometry, 0, 1)
 
-        SMB          = -0.2883677582314483
-        accumulation = 0.0
-        melt         = 0.0
-        runoff       = 0.0
+        dA   = 0.0 - sample(self.model.accumulation())
+        dM   = dA - self.dSMB
+        dR   = dM
 
-        check_modifier(model, modifier, SMB=SMB,
-                       accumulation=accumulation, melt=melt, runoff=runoff)
+        check_modifier(self.model, modifier, SMB=self.dSMB,
+                       accumulation=dA, melt=dM, runoff=dR)
+
+        write_state(modifier, self.output_filename)
+        probe_interface(modifier)
 
     def tearDown(self):
         os.remove(self.filename)
+        os.remove(self.output_filename)
 
-class Simple(TestCase):
+class EISMINTII(TestCase):
     def setUp(self):
         self.grid = dummy_grid()
-        self.atmosphere = PISM.AtmosphereUniform(self.grid)
         self.geometry = create_geometry(self.grid)
-        self.filename = "simple_output.nc"
+        self.output_filename = "eismint_output.nc"
 
     def runTest(self):
-        "Model Simple: define and write model state; get diagnostics"
-        atmosphere = self.atmosphere
+        "Model EISMINTII: define and write model state; get diagnostics"
 
-        model = PISM.SurfaceSimple(self.grid, atmosphere)
+        for experiment in "ABCDEFGHIJKL":
+            model = PISM.SurfaceEISMINTII(self.grid, ord(experiment))
 
-        model.init(self.geometry)
+            model.init(self.geometry)
 
-        model.update(self.geometry, 0, 1)
+            model.update(self.geometry, 0, 1)
 
-        T = sample(atmosphere.mean_annual_temp())
-        M = sample(atmosphere.mean_precipitation())
+            write_state(model, self.output_filename)
+            probe_interface(model)
 
-        PISM.util.prepare_output(self.filename)
-        f = PISM.PIO(self.grid.ctx().com(), "netcdf3",
-                     self.filename, PISM.PISM_READWRITE)
-        model.define_model_state(f)
-        model.write_model_state(f)
-
-        diags = model.diagnostics()
-        for k in diags.keys():
-            diags[k].compute().write(f)
-
-        f.close()
-
-        check_model(model, T, 0.0, M, accumulation=M)
+            os.remove(self.output_filename)
 
     def tearDown(self):
-        os.remove(self.filename)
+        try:
+            os.remove(self.output_filename)
+        except:
+            pass
+
+class Initialization(TestCase):
+    def setUp(self):
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
+        self.output_filename = "init_output.nc"
+        self.model = PISM.SurfaceSimple(self.grid, PISM.AtmosphereUniform(self.grid))
+
+    def runTest(self):
+        "Modifier InitializationHelper"
+
+        modifier = PISM.SurfaceInitialization(self.grid, self.model)
+
+        modifier.init(self.geometry)
+
+        modifier.update(self.geometry, 0, 1)
+
+        write_state(modifier, self.output_filename)
+        probe_interface(modifier)
+
+    def tearDown(self):
+        os.remove(self.output_filename)
+
+class Factory(TestCase):
+    def setUp(self):
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
+
+    def runTest(self):
+        "Surface model factory"
+        atmosphere = PISM.AtmosphereUniform(self.grid)
+
+        factory = PISM.SurfaceFactory(self.grid, atmosphere)
+
+        factory.set_default("simple")
+
+        simple = factory.create()
+
+        model = factory.create("simple,cache")
+
+        try:
+            factory.set_default("invalid_model")
+            return False
+        except RuntimeError:
+            pass
+
+        try:
+            factory.create("invalid_model")
+            return False
+        except RuntimeError:
+            pass
+
+        try:
+            factory.create("simple,invalid_modifier")
+            return False
+        except RuntimeError:
+            pass
+
+    def tearDown(self):
+        pass
 
 if __name__ == "__main__":
 
-    t = TemperatureIndex()
+    t = ForceThickness()
 
     t.setUp()
     t.runTest()
