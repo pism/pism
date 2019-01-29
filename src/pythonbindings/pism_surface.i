@@ -10,6 +10,7 @@
 #include "coupler/surface/TemperatureIndex.hh"
 #include "coupler/surface/GivenClimate.hh"
 #include "coupler/surface/ForceThickness.hh"
+#include "coupler/surface/Factory.hh"
 %}
 
 %shared_ptr(pism::surface::SurfaceModel)
@@ -62,3 +63,11 @@
 %shared_ptr(pism::surface::ForceThickness)
 %rename(SurfaceForceThickness) pism::surface::ForceThickness;
 %include "coupler/surface/ForceThickness.hh"
+%include "coupler/util/PCFactory.hh"
+
+%shared_ptr(pism::PCFactory< pism::surface::SurfaceModel >)
+%shared_ptr(pism::surface::Factory)
+
+%template(_SurfaceFactory) pism::PCFactory<pism::surface::SurfaceModel>;
+%rename(SurfaceFactory) pism::surface::Factory;
+%include "coupler/surface/Factory.hh"
