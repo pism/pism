@@ -500,6 +500,43 @@ class ForceThickness(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
+class Simple(TestCase):
+    def setUp(self):
+        self.grid = dummy_grid()
+        self.atmosphere = PISM.AtmosphereUniform(self.grid)
+        self.geometry = create_geometry(self.grid)
+        self.filename = "simple_output.nc"
+
+    def runTest(self):
+        "Model Simple: define and write model state; get diagnostics"
+        atmosphere = self.atmosphere
+
+        model = PISM.SurfaceSimple(self.grid, atmosphere)
+
+        model.init(self.geometry)
+
+        model.update(self.geometry, 0, 1)
+
+        T = sample(atmosphere.mean_annual_temp())
+        M = sample(atmosphere.mean_precipitation())
+
+        PISM.util.prepare_output(self.filename)
+        f = PISM.PIO(self.grid.ctx().com(), "netcdf3",
+                     self.filename, PISM.PISM_READWRITE)
+        model.define_model_state(f)
+        model.write_model_state(f)
+
+        diags = model.diagnostics()
+        for k in diags.keys():
+            diags[k].compute().write(f)
+
+        f.close()
+
+        check_model(model, T, 0.0, M, accumulation=M)
+
+    def tearDown(self):
+        os.remove(self.filename)
+
 if __name__ == "__main__":
 
     t = TemperatureIndex()
