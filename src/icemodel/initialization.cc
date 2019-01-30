@@ -763,6 +763,7 @@ void IceModel::misc_setup() {
 #endif
 
   init_calving();
+  init_frontal_melt();
   init_diagnostics();
   init_snapshots();
   init_backups();
@@ -815,6 +816,13 @@ void IceModel::misc_setup() {
     m_surface_input_for_hydrology->init(m_config->get_string("hydrology.surface_input_file"),
                                         0, 0);
   }
+}
+
+void IceModel::init_frontal_melt() {
+  // TO DO:
+  // - add configuration parameters selecting a frontal melt model
+  // - check parameters here and allocate models, if necessary
+  // - add to m_submodels
 }
 
 //! \brief Initialize calving mechanisms.

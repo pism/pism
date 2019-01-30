@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -195,7 +195,7 @@ protected:
   virtual void misc_setup();
   virtual void init_diagnostics();
   virtual void init_calving();
-
+  virtual void init_frontal_melt();
   virtual void prune_diagnostics();
   virtual void update_diagnostics(double dt);
   virtual void reset_diagnostics();
