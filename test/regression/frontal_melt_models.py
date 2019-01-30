@@ -4,6 +4,7 @@ Tests of PISM's frontal melt models.
 """
 
 import PISM
+from PISM.util import convert
 import sys, os, numpy
 from unittest import TestCase
 import netCDF4
@@ -21,14 +22,7 @@ log.set_threshold(1)
 
 options = PISM.PETSc.Options()
 
-def frontal_melt_from_discharge_and_thermal_forcing(h, q_sg, TF):
-
-    alpha = config.get_double("frontal_melt.power_alpha")
-    beta = config.get_double("frontal_melt.power_beta")
-    A = config.get_double("frontal_melt.parameter_a")
-    B = config.get_double("frontal_melt.parameter_b")
-
-    return (A * h * q_sg ** alpha + B) * TF ** beta
+seconds_per_day = 86400
 
 def create_geometry(grid):
     geometry = PISM.Geometry(grid)
@@ -60,7 +54,7 @@ def create_dummy_forcing_file(filename, variable_name, units, value):
     delta_T[0] = value
     f.close()
 
-def dummy_grid():
+def create_grid():
     "Create a dummy grid"
     ctx = PISM.Context()
     params = PISM.GridParameters(ctx.config)
@@ -93,7 +87,7 @@ def constant_test():
     # compute mass flux
     melt_rate = config.get_double("frontal_melt.constant.melt_rate", "m second-1")
 
-    grid = dummy_grid()
+    grid = create_grid()
     geometry = create_geometry(grid)
 
     inputs = PISM.FrontalMeltInputs()
@@ -112,40 +106,44 @@ def constant_test():
     assert model.max_timestep(0).infinite()
 
 class DischargeRoutingTest(TestCase):
+
+    def frontal_melt(self, h, q_sg, TF):
+        """
+        h:    water depth, meters
+        q_sg: subglacial water flux, m / day
+        TF:   thermal forcing, Celsius
+
+        Returns the melt rate in m / day
+        """
+        alpha = config.get_double("frontal_melt.power_alpha")
+        beta  = config.get_double("frontal_melt.power_beta")
+        A     = config.get_double("frontal_melt.parameter_a")
+        B     = config.get_double("frontal_melt.parameter_b")
+
+        return (A * h * q_sg ** alpha + B) * TF ** beta
+
     def setUp(self):
+        self.depth = 1000.0              # meters
+        self.potential_temperature = 4.0 # Celsius
+        self.water_flux = 10.0           # m / day
 
-        self.depth = 1000.0
-        self.potential_temperature = 4.0
-        self.water_flux = 1.0 / (24 * 60 ** 2)  #  1 m day-1 in m s-1
-        self.dt = 1.0
-
-        self.grid = dummy_grid()
+        self.grid = create_grid()
 
         self.theta = PISM.IceModelVec2S(self.grid, "theta_ocean", PISM.WITHOUT_GHOSTS)
+        self.theta.set(convert(self.potential_temperature, "Celsius", "Kelvin"))
 
-        cell_area = self.grid.dx() * self.grid.dy()
-        water_density = config.get_double("constants.fresh_water.density")
-
-        self.Qsg = PISM.IceModelVec2S(self.grid,
-                                      "subglacial_water_mass_change_at_grounding_line",
+        self.Qsg = PISM.IceModelVec2S(self.grid, "subglacial_water_flux",
                                       PISM.WITHOUT_GHOSTS)
-        self.Qsg.set_attrs("climate", "subglacial discharge at grounding line", "kg", "kg")
-        self.Qsg.set(self.water_flux * cell_area * water_density * self.dt)
+        self.Qsg.set_attrs("climate", "subglacial water flux", "m2 / s", "")
 
-        self.theta.set(self.potential_temperature)
+        grid_spacing = 0.5 * (self.grid.dx() + self.grid.dy())
+        cross_section_area = self.depth * grid_spacing
+
+        self.Qsg.set(self.water_flux * cross_section_area / (grid_spacing * seconds_per_day))
 
         self.geometry = create_geometry(self.grid)
         self.geometry.ice_thickness.set(self.depth)
-
-        # Set ice thickness to 0 at one grid points: this will be the grid point where the
-        # frontal melt rate is computed.
-        with PISM.vec.Access(nocomm=[self.geometry.ice_thickness]):
-            self.geometry.ice_thickness[0, 0] = 0.0
-
-        # set sea level and bed elevation so that this ice-free grid point is an "ocean"
-        # cell
-        self.geometry.sea_level_elevation.set(0.0)
-        self.geometry.bed_elevation.set(-1.0)
+        self.geometry.sea_level_elevation.set(self.depth)
 
         self.geometry.ensure_consistency(config.get_double("geometry.ice_free_thickness_standard"))
 
@@ -157,15 +155,18 @@ class DischargeRoutingTest(TestCase):
         "Model DischargeRouting"
 
         model = PISM.FrontalMeltDischargeRouting(self.grid)
+
         model.initialize(self.theta)
-        model.update(self.inputs, 0, self.dt)
+
+        model.update(self.inputs, 0, 1)
+
+        melt_rate = self.frontal_melt(self.depth, self.water_flux, self.potential_temperature)
+        # convert from m / day to m / s
+        melt_rate /= seconds_per_day
+
+        check_model(model, melt_rate)
 
         assert model.max_timestep(0).infinite()
-
-        melt_rate = frontal_melt_from_discharge_and_thermal_forcing(
-            self.depth, self.water_flux, self.potential_temperature
-        )
-        check_model(model, melt_rate)
 
     def tearDown(self):
         pass
@@ -185,7 +186,7 @@ class GivenTest(TestCase):
 
         self.frontal_melt_rate = 100.0
 
-        self.grid = dummy_grid()
+        self.grid = create_grid()
         self.geometry = create_geometry(self.grid)
 
         self.filename = "given_input.nc"
@@ -215,3 +216,11 @@ class GivenTest(TestCase):
 
     def tearDown(self):
         os.remove(self.filename)
+
+if __name__ == "__main__":
+
+    t = DischargeRoutingTest()
+
+    t.setUp()
+    t.runTest()
+    t.tearDown()
