@@ -33,17 +33,17 @@ for k in [0, 1, 2]:
 
             delta = abs(v[i,j] - v[ii,j])
             if (delta >= tol):
-                print "X-symmetry failure at (%d,%d),(%d,%d) level %d (delta = %2.2e)" % (i,j,ii,j,k,delta)
+                print("X-symmetry failure at (%d,%d),(%d,%d) level %d (delta = %2.2e)" % (i,j,ii,j,k,delta))
                 exit(1)
 
             delta = abs(v[i,j] - v[i,jj])
             if (delta >= tol):
-                print "Y-symmetry failure at (%d,%d),(%d,%d) level %d (delta = %2.2e)" % (i,j,i,jj,k,delta)
+                print("Y-symmetry failure at (%d,%d),(%d,%d) level %d (delta = %2.2e)" % (i,j,i,jj,k,delta))
                 exit(1)
                 
             delta = abs(v[i,j] - v[ii,jj])
             if (delta >= tol):
-                print "Radial symmetry failure at (%d,%d),(%d,%d) level %d (delta = %2.2e)" % (i,j,ii,jj,k,delta)
+                print("Radial symmetry failure at (%d,%d),(%d,%d) level %d (delta = %2.2e)" % (i,j,ii,jj,k,delta))
                 exit(1)
 exit(0)
 EOF
