@@ -39,7 +39,7 @@ namespace pism {
 
 void IceModel::do_calving() {
 
-  {
+  if (m_frontalmelt) {
     IceModelVec2S &flux_magnitude = m_work2d[0];
 
     flux_magnitude.set_to_magnitude(m_subglacial_hydrology->flux());
@@ -58,7 +58,9 @@ void IceModel::do_calving() {
 
   inputs.ice_velocity         = &m_stress_balance->shallow()->velocity();
   inputs.ice_enthalpy         = &m_energy_model->enthalpy();
-  inputs.frontal_melt_rate    = &m_frontalmelt->frontal_melt_rate();
+  if (m_frontalmelt) {
+    inputs.frontal_melt_rate    = &m_frontalmelt->frontal_melt_rate();
+  }
 
   // eigen-calving should go first: it uses the ice velocity field,
   // which is defined at grid points that were icy at the *beginning*
