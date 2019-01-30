@@ -170,7 +170,14 @@ public:
   virtual double convert_time_interval(double T, const std::string &units) const;
 
 protected:
-  void parse_list(const std::string &spec, std::vector<double> &result) const;
+  double years_to_seconds(double input) const;
+  double seconds_to_years(double input) const;
+
+  std::vector<double> parse_list(const std::string &spec) const;
+  std::vector<double> parse_range(const std::string &spec) const;
+
+  void compute_times_simple(double time_start, double delta, double time_end,
+                            std::vector<double> &result) const;
 
   virtual bool process_ys(double &result);
   virtual bool process_y(double &result);
@@ -180,18 +187,10 @@ protected:
                              const std::string &keyword,
                              std::vector<double> &result) const;
 
-  void compute_times_simple(double time_start, double delta, double time_end,
-                            std::vector<double> &result) const;
-
-  virtual void parse_range(const std::string &spec, std::vector<double> &result) const;
-
   virtual void parse_date(const std::string &spec, double *result) const;
 
   virtual void parse_interval_length(const std::string &spec, std::string &keyword,
                                      double *result) const;
-
-  double years_to_seconds(double input) const;
-  double seconds_to_years(double input) const;
 
 protected:
   const Config::ConstPtr m_config;

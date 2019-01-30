@@ -150,7 +150,7 @@
 
 #. :config:`atmosphere.pik.parameterization` (*keyword*)
 
-   :Value: ``default``
+   :Value: ``martin``
    :Choices: ``martin, huybrechts_dewolde, martin_huybrechts_dewolde, era_interim, era_interim_sin, era_interim_lon``
    :Option: :opt:`-atmosphere_pik`
    :Description: Selects parameterizations of mean annual and mean summer near-surface air temperatures.
@@ -1329,7 +1329,7 @@
 #. :config:`ocean.runoff_to_ocean_melt_b` (*scalar*)
 
    :Value: 0.150000 (1)
-   :Description: parameter B in eqn. 1 in :cite:`Aschwanden`
+   :Description: parameter B in eqn. 1 in :cite:`Aschwanden2019`
 
 #. :config:`ocean.runoff_to_ocean_melt_power_alpha` (*scalar*)
 
@@ -1772,7 +1772,7 @@
 
 #. :config:`stress_balance.ssa.fd.max_speed` (*scalar*)
 
-   :Value: 50000 (m yr-1)
+   :Value: 500000 (m yr-1)
    :Option: :opt:`-ssafd_max_speed`
    :Description: Upper bound for the ice speed computed by the SSAFD solver.
 

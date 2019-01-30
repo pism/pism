@@ -18,7 +18,7 @@
  */
 
 /*
- * This source code is included in iceModel_diagnostics.cc and so it does not need any #include
+ * This source code is included in diagnostics.cc and so it does not need any #include
  * directives here.
  */
 

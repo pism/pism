@@ -49,7 +49,7 @@ options = parser.parse_args()
 year = time.gmtime(time.time())[0]
 funding = {}
 
-with open("funding.csv", "rb") as f:
+with open("funding.csv", "r") as f:
     reader = csv.reader(f, skipinitialspace=True, quoting=csv.QUOTE_ALL)
 
     funding = {}

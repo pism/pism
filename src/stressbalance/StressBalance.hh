@@ -42,12 +42,12 @@ public:
   bool new_bed_elevation;
 
   const IceModelVec2S *basal_melt_rate;
-  const IceModelVec2S *basal_yield_stress; // NOT USED YET
+  const IceModelVec2S *basal_yield_stress;
   const IceModelVec2S *melange_back_pressure;
   const IceModelVec2S *fracture_density;
 
-  const IceModelVec3  *enthalpy; // NOT USED YET
-  const IceModelVec3  *age;      // NOT USED YET
+  const IceModelVec3  *enthalpy;
+  const IceModelVec3  *age;
 
   const IceModelVec2Int *bc_mask;
   const IceModelVec2V *bc_values;
@@ -56,6 +56,8 @@ public:
   const IceModelVec2Int *no_model_mask;
   const IceModelVec2S *no_model_ice_thickness;
   const IceModelVec2S *no_model_surface_elevation;
+
+  void dump(const char *filename) const;
 };
 
 //! The class defining PISM's interface to the shallow stress balance code.

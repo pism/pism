@@ -138,7 +138,7 @@ netcdf pism_config {
     pism_config:atmosphere.pik.file_type = "string";
     pism_config:atmosphere.pik.file_option = "atmosphere_pik_file";
 
-    pism_config:atmosphere.pik.parameterization = "default";
+    pism_config:atmosphere.pik.parameterization = "martin";
     pism_config:atmosphere.pik.parameterization_doc = "Selects parameterizations of mean annual and mean summer near-surface air temperatures.";
     pism_config:atmosphere.pik.parameterization_type = "keyword";
     pism_config:atmosphere.pik.parameterization_choices = "martin,huybrechts_dewolde,martin_huybrechts_dewolde,era_interim,era_interim_sin,era_interim_lon";
@@ -1317,7 +1317,7 @@ netcdf pism_config {
     pism_config:ocean.cache.update_interval_type = "integer";
 
     pism_config:ocean.runoff_to_ocean_melt_b = 0.15;
-    pism_config:ocean.runoff_to_ocean_melt_b_doc = "parameter B in eqn. 1 in :cite:`Aschwanden`";
+    pism_config:ocean.runoff_to_ocean_melt_b_doc = "parameter B in eqn. 1 in :cite:`Aschwanden2019`";
     pism_config:ocean.runoff_to_ocean_melt_b_type = "scalar";
     pism_config:ocean.runoff_to_ocean_melt_b_units = "1";
 

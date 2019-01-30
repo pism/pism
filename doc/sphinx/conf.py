@@ -50,7 +50,9 @@ rst_epilog = """
 .. |git-revision| replace:: ``{git_revision}``
 .. |git-author| replace:: {git_author}
 .. |git-date| replace:: ``{git_date}``
-""".format(git_revision=git_revision, git_author=git_author, git_date=git_date)
+""".format(git_revision=git_revision.decode("utf-8"),
+           git_author=git_author.decode("utf-8"),
+           git_date=git_date.decode("utf-8"))
 
 # This is needed to be able to put .. bibliography:: in a "References" section in HTML and
 # just in the main document in LaTeX. (Otherwise Sphinx produces an empty "References"
@@ -67,7 +69,7 @@ else:
 
 # General information about the project.
 project = 'PISM, a Parallel Ice Sheet Model'
-copyright = '2004--2017, the PISM authors'
+copyright = '2004--2018, the PISM authors'
 author = 'the PISM authors'
 
 # The version info for the project you're documenting, acts as replacement for

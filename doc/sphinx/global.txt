@@ -28,7 +28,7 @@
 
 .. |pism-email| replace:: uaf-pism@alaska.edu
 .. |pism-docs| replace:: http://www.pism-docs.org
-.. |petsc-download| replace:: http://www.mcs.anl.gov/petsc/download/index.html
+.. |petsc-download| replace:: https://www.mcs.anl.gov/petsc/download/index.html
 
 .. |pism-browser| replace:: PISM *Source Code Browser*
 
@@ -42,7 +42,7 @@
 .. |eismint-url| replace:: http://homepages.vub.ac.be/~phuybrec/eismint.html
 .. |ismip-url| replace:: http://homepages.vub.ac.be/~phuybrec/ismip.html
 
-.. |sphinxcontrib-bibtex-url| replace:: http://sphinxcontrib-bibtex.readthedocs.io/en/latest/
+.. |sphinxcontrib-bibtex-url| replace:: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/
 
 .. external links
 
@@ -58,52 +58,50 @@
 .. _cf-names-proposed: http://cfeditor.ceda.ac.uk/proposals/1
 .. _CMake: https://cmake.org/
 .. _CMake-cross-compiling: https://cmake.org/Wiki/CMake_Cross_Compiling
-.. _Enthought: https://www.enthought.com/
+.. _Enthought: https://www.enthought.com/product/enthought-python-distribution/
 .. _FFTW: http://www.fftw.org/
 .. _Fink: http://www.finkproject.org/
 .. _GSL: http://www.gnu.org/software/gsl/
 .. _Git: https://git-scm.com/
 .. _Homebrew: https://brew.sh/
-.. _IDV: http://www.unidata.ucar.edu/software/idv/
-.. _LaTeX: http://www.latex-project.org/
+.. _IDV: https://www.unidata.ucar.edu/software/idv/
+.. _LaTeX: https://www.latex-project.org/
 .. _latexmk: http://personal.psu.edu/jcc8//software/latexmk-jcc/
-.. _MPI: http://www.mcs.anl.gov/research/projects/mpi/
+.. _MPI: https://www.mcs.anl.gov/research/projects/mpi/
 .. _MacPorts: https://www.macports.org/
-.. _measures-ross: http://nsidc.org/data/NSIDC-0484
-.. _NSIDC: http://nsidc.org
+.. _measures-ross: https://nsidc.org/data/NSIDC-0484
+.. _NSIDC: https://nsidc.org
 .. _NCL: http://www.ncl.ucar.edu
 .. _NCO: http://nco.sourceforge.net/
-.. _NetCDF: http://www.unidata.ucar.edu/software/netcdf/
-.. _netcdf-classic-format: http://www.unidata.ucar.edu/software/netcdf/docs/file_structure_and_performance.html#classic_file_parts
+.. _NetCDF: https://www.unidata.ucar.edu/software/netcdf/
+.. _netcdf-classic-format: https://www.unidata.ucar.edu/software/netcdf/docs/file_structure_and_performance.html#classic_file_parts
 .. _NumPy: http://www.numpy.org/
-.. _PETSc-installation: http://www.mcs.anl.gov/petsc/documentation/installation.html
-.. _PETSc: http://www.mcs.anl.gov/petsc/
-.. _PISM: http://www.pism-docs.org/wiki/doku.php
-.. _PROJ.4: http://proj4.org/
-.. _PnetCDF: http://trac.mcs.anl.gov/projects/parallel-netcdf
+.. _PETSc-installation: https://www.mcs.anl.gov/petsc/documentation/installation.html
+.. _PETSc: https://www.mcs.anl.gov/petsc/
+.. _PROJ.4: https://proj4.org/
+.. _PnetCDF: https://trac.mcs.anl.gov/projects/parallel-netcdf
 .. _Python: https://www.python.org
-.. _Sphinx: http://www.sphinx-doc.org/en/stable/install.html
-.. _sphinxcontrib.bibtex: http://sphinxcontrib-bibtex.readthedocs.io/en/latest/
-.. _UDUNITS: http://www.unidata.ucar.edu/software/udunits/
+.. _Sphinx: http://www.sphinx-doc.org/en/master/usage/installation.html
+.. _sphinxcontrib.bibtex: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/
+.. _UDUNITS: https://www.unidata.ucar.edu/software/udunits/
 .. _Ubuntu: https://www.ubuntu.com/desktop
 .. _X: https://www.x.org/wiki/
 .. _XCode: https://developer.apple.com/xcode/
 .. _XQuartz: https://www.xquartz.org/
-.. _doxygen: http://www.stack.nl/~dimitri/doxygen/
+.. _doxygen: http://www.doxygen.nl
 .. _graphviz: http://www.graphviz.org/
-.. _matplotlib: http://matplotlib.org/
+.. _matplotlib: https://matplotlib.org/
 .. _ncview: http://meteora.ucsd.edu/~pierce/ncview_home_page.html
-.. _netcdf4-python: https://pypi.python.org/pypi/netCDF4
+.. _netcdf4-python: https://pypi.org/project/netCDF4
 .. _pyngl: http://www.pyngl.ucar.edu
 .. _SeaRISE-Greenland: http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland
 .. _searise-greenland-data: http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
 .. _searise: http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment
 .. _mismip-code: http://homepages.ulb.ac.be/~fpattyn/mismip/MISMIP_distribution.tar
-.. _VDT: https://github.com/dpiparo/vdt
 
 .. PISM-related external links
 
-.. _HPC-builds: https://github.com/pism/hpc-builds
+.. _pism-builds: https://github.com/pism/pism-builds
 .. _PISM: http://www.pism-docs.org/wiki/doku.php
 .. _pism-browser: http://www.pism-docs.org/doxy/html/index.html
 .. _pism-email: mailto:uaf-pism@alaska.edu

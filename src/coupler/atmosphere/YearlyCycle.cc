@@ -127,13 +127,14 @@ void YearlyCycle::init_timeseries_impl(const std::vector<double> &ts) const {
 }
 
 void YearlyCycle::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
+  result.resize(m_ts_times.size());
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_precipitation(i,j);
   }
 }
 
 void YearlyCycle::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
-
+  result.resize(m_ts_times.size());
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_summer(i,j) - m_air_temp_mean_annual(i,j)) * m_cosine_cycle[k];
   }

@@ -1,13 +1,18 @@
 .. default-role:: literal
 
+Changes since v1.1
+==================
+
 - Rename configuration parameters controlling front retreat because they are not
   calving-specific (`calving.front_retreat.use_cfl` to `geometry.front_retreat.use_cfl`
   and `calving.front_retreat.wrap_around` to `geometry.front_retreat.wrap_around`).
   Corresponding command-line options are renamed to `-front_retreat_cfl` and
   `-front_retreat_wrap_around`.
+- Add the `hydraulic_potential` diagnostic to `routing` and `distributed` subglacial
+  hydrology models.
 
-Changes since v1.0
-==================
+Changes from v1.0 to v1.1
+=========================
 
 - PISM no longer attempts to use projection information to compute cell areas. This change
   was prompted by better mass accounting: it is now clear that using numerical methods
@@ -35,7 +40,7 @@ Changes since v1.0
   `stress_balance.ssa.fd.max_speed`. This may be useful when the computed sliding speed is
   abnormally high at a few isolated grid points, reducing the length of time steps PISM
   can take. Capping ice speed makes it possible to ignore troublesome locations and speed
-  up some simulations. The default (50 km/year) is set high enough to deactivate this
+  up some simulations. The default (500 km/year) is set high enough to deactivate this
   mechanism.
 - Discard requested snapshot times that are outside of the modeled time interval. (This
   keeps PISM from overwriting a snapshot file written by one of the previous runs in a
@@ -140,6 +145,9 @@ Changes since v1.0
 - Update the Debian/Ubuntu section of the installation manual.
 - Move the documentation of the BOMBPROOF numerical scheme for energy conservation from
   the source code browser into the manual.
+- Add an experimental implementation of a parameterization of cryo-hydrologic warming
+  based on *Cryo-hydrologic warming: A potential mechanism for rapid thermal response of
+  ice sheets* by Phillips et al, 2010.)
 
 Changes from v0.7 to v1.0
 =========================

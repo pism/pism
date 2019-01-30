@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 PISM Authors
+// Copyright (C) 2012-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -186,6 +186,70 @@ protected:
   }
 };
 
+//! Compute the hydraulic potential.
+/*!
+  Computes \f$\psi = P + \rho_w g (b + W)\f$ except where floating, where \f$\psi = P_o\f$.
+*/
+void hydraulic_potential(const IceModelVec2S &W,
+                         const IceModelVec2S &P,
+                         const IceModelVec2S &P_overburden,
+                         const IceModelVec2S &bed,
+                         const IceModelVec2CellType &mask,
+                         IceModelVec2S &result) {
+
+  IceGrid::ConstPtr grid = result.grid();
+
+  Config::ConstPtr config = grid->ctx()->config();
+
+  double rg = (config->get_double("constants.fresh_water.density") *
+               config->get_double("constants.standard_gravity"));
+
+  IceModelVec::AccessList list{&P, &P_overburden, &W, &mask, &bed, &result};
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.ocean(i, j)) {
+      result(i, j) = P_overburden(i, j);
+    } else {
+      result(i, j) = P(i, j) + rg * (bed(i, j) + W(i, j));
+    }
+  }
+}
+
+/*! @brief Report hydraulic potential in the subglacial hydrology system */
+class HydraulicPotential : public Diag<Routing>
+{
+public:
+  HydraulicPotential(const Routing *m)
+    : Diag<Routing>(m) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "hydraulic_potential")};
+
+    set_attrs("hydraulic potential in the subglacial hydrology system", "",
+              "Pa", "Pa", 0);
+  }
+
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hydraulic_potential", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+
+    const IceModelVec2S        &bed_elevation = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+    const IceModelVec2CellType &cell_type     = *m_grid->variables().get_2d_cell_type("mask");
+
+    hydraulic_potential(model->subglacial_water_thickness(),
+                        model->subglacial_water_pressure(),
+                        model->overburden_pressure(),
+                        bed_elevation,
+                        cell_type,
+                        *result);
+
+    return result;
+  }
+};
+
 } // end of namespace diagnostics
 
 Routing::Routing(IceGrid::ConstPtr g)
@@ -311,30 +375,6 @@ const IceModelVec2S& Routing::subglacial_water_pressure() const {
 
 const IceModelVec2Stag& Routing::velocity_staggered() const {
   return m_Vstag;
-}
-
-//! Get the hydraulic potential from bedrock topography and current state variables.
-/*!
-  Computes \f$\psi = P + \rho_w g (b + W)\f$ except where floating, where \f$\psi = P_o\f$.
-*/
-void Routing::compute_hydraulic_potential(const IceModelVec2S &W,
-                                          const IceModelVec2S &P,
-                                          const IceModelVec2S &P_overburden,
-                                          const IceModelVec2S &bed,
-                                          const IceModelVec2CellType &mask,
-                                          IceModelVec2S &result) const {
-
-  IceModelVec::AccessList list{&P, &P_overburden, &W, &mask, &bed, &result};
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (mask.ocean(i, j)) {
-      result(i, j) = P_overburden(i, j);
-    } else {
-      result(i, j) = P(i, j) + m_rg * (bed(i, j) + W(i, j));
-    }
-  }
 }
 
 
@@ -893,11 +933,12 @@ std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
   using namespace diagnostics;
 
   DiagnosticList result = {
-    {"bwatvel",  Diagnostic::Ptr(new BasalWaterVelocity(this))},
-    {"bwp",      Diagnostic::Ptr(new BasalWaterPressure(this))},
-    {"bwprel",   Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},
-    {"effbwp",   Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
-    {"wallmelt", Diagnostic::Ptr(new WallMelt(this))},
+    {"bwatvel",             Diagnostic::Ptr(new BasalWaterVelocity(this))},
+    {"bwp",                 Diagnostic::Ptr(new BasalWaterPressure(this))},
+    {"bwprel",              Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},
+    {"effbwp",              Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
+    {"wallmelt",            Diagnostic::Ptr(new WallMelt(this))},
+    {"hydraulic_potential", Diagnostic::Ptr(new HydraulicPotential(this))},
   };
   return combine(result, Hydrology::diagnostics_impl());
 }

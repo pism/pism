@@ -873,7 +873,7 @@ void SSAFD::solve(const Inputs &inputs) {
         write_system_petsc("all_strategies_failed");
         throw RuntimeError(PISM_ERROR_LOCATION, "all SSAFD strategies failed");
       }
-    } catch (PicardFailure) {
+    } catch (PicardFailure &f) {
       // proceed to the next strategy
     }
   }
@@ -899,7 +899,7 @@ void SSAFD::picard_iteration(const Inputs &inputs,
       picard_manager(inputs, nuH_regularization,
                      nuH_iter_failure_underrelax);
 
-    } catch (KSPFailure) {
+    } catch (KSPFailure &f) {
 
       m_default_pc_failure_count += 1;
 
@@ -1127,7 +1127,7 @@ void SSAFD::picard_strategy_regularization(const Inputs &inputs) {
       // if this call succeeded, stop over-regularizing
       break;
     }
-    catch (PicardFailure) {
+    catch (PicardFailure &f) {
       k += 1;
 
       if (k == max_tries) {

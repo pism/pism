@@ -288,6 +288,11 @@ Spatially-variable fields
    :Standard name: ``upward_geothermal_heat_flux_at_ground_level``
    :Comment: positive values correspond to an upward flux
 
+#. ``hydraulic_potential``
+
+   :Units: Pa
+   :Description: hydraulic potential in the subglacial hydrology system
+
 #. ``ice_area_specific_volume``
 
    :Units: m3/m2

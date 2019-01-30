@@ -10,13 +10,10 @@ files="simp_exper-13.nc"
 
 rm -f $files
 # run pisms
-$MPIEXEC -n 2 $PISM_PATH/pisms -y 10e3 -Lz 5000 -Mx 12 -My 12 -o_size big -energy enthalpy -o simp_exper-13.nc
+$MPIEXEC -n 2 $PISM_PATH/pisms -y 10e3 -Lz 5000 -Mx 12 -My 12 -o_size big -energy enthalpy -o simp_exper-13.nc -output.variable_order zyx
 
 /usr/bin/env python <<EOF
-try:
-    from netCDF3 import Dataset as NC
-except:
-    from netCDF4 import Dataset as NC
+from netCDF4 import Dataset as NC
 from numpy import abs, arange
 from sys import exit
 
@@ -26,8 +23,8 @@ n = 12; m = 12; tol = 1e-3
 
 for k in [0, 1, 2]:
     v = var[0,k,:,:]	# time,z,y,x
-    for i in arange((n-1)/2):
-        for j in arange((m-1)/2):
+    for i in arange((n-1)/2, dtype=int):
+        for j in arange((m-1)/2, dtype=int):
             ii = (n-1) - i
             jj = (m-1) - j
 

@@ -165,6 +165,8 @@ def create_special_vecs_test():
 
     thk = PISM.model.createIceThicknessVec(grid)
 
+    sea_level = PISM.model.createSeaLevelVec(grid)
+
     usurfstore = PISM.model.createIceSurfaceStoreVec(grid)
 
     thkstore = PISM.model.createIceThicknessStoreVec(grid)

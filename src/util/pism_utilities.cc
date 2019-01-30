@@ -387,7 +387,7 @@ std::string printf(const char *format, ...) {
     vsnprintf(&result[0], result.size(), format, arglist);
   }
   va_end(arglist);
-  return result;
+  return result.substr(0, length);
 }
 
 } // end of namespace pism

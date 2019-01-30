@@ -2,6 +2,11 @@ cmake_minimum_required (VERSION 3.1)
 cmake_policy(SET CMP0078 OLD)       #controls names of SWIG targets
 project (Pism C CXX)
 
+if (NOT (${CMAKE_VERSION} VERSION_LESS "3.13"))
+  # Policy CMP0078 was introduced in 3.13. See "cmake --help-policies" for details.
+  cmake_policy(SET CMP0078 OLD)       #controls names of SWIG targets
+endif()
+
 # Require C++11 compiler support.
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -95,9 +100,8 @@ if (Pism_CODE_COVERAGE)
 
   add_custom_target (coverage_report
     # remove coverage data from src/pythonbindings
-    COMMAND lcov -d ${Pism_BINARY_DIR}/src/pythonbindings -z
-    COMMAND lcov -d ${Pism_BINARY_DIR}/src/vdt -z
-    COMMAND lcov -q -b ${Pism_SOURCE_DIR} --no-external -d . -c -o pism-coverage.info
+    COMMAND lcov --directory ${Pism_BINARY_DIR}/src/pythonbindings -z
+    COMMAND lcov --base-directory ${Pism_SOURCE_DIR} --directory src --quiet --no-external --capture -o pism-coverage.info
     COMMAND genhtml -t "PISM Coverage report" -o cover --demangle-cpp --legend pism-coverage.info
     WORKING_DIRECTORY ${Pism_BINARY_DIR}
     VERBATIM

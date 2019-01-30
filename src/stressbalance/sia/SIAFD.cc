@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2018 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2019 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -753,6 +753,8 @@ void SIAFD::compute_diffusivity(bool full_update,
   high_diffusivity_counter = GlobalSum(m_grid->com, high_diffusivity_counter);
 
   if (m_D_max > D_limit) {
+    // This can happen only if stress_balance.sia.limit_diffusivity is false (m_D_max <=
+    // D_limit when limiting is enabled).
 
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Maximum diffusivity of SIA flow (%f m2/s) is too high.\n"
@@ -761,6 +763,9 @@ void SIAFD::compute_diffusivity(bool full_update,
                                   "Increase stress_balance.sia.max_diffusivity to suppress this message.", m_D_max);
 
   } else if (high_diffusivity_counter > 0) {
+    // This can happen only if stress_balance.sia.limit_diffusivity is true and this
+    // limiting mechanism was active (high_diffusivity_counter is incremented only if
+    // limit_diffusivity is true).
 
     m_log->message(2, "  SIA diffusivity was capped at %.2f m2/s at %d locations.\n",
                    D_limit, high_diffusivity_counter);

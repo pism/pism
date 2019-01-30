@@ -593,8 +593,7 @@ RECURSIVE              = YES
 
 EXCLUDE                = ${Pism_SOURCE_DIR}/src/earth/cubature.h \
                          ${Pism_SOURCE_DIR}/src/earth/cubature.c \
-                         ${Pism_SOURCE_DIR}/src/calcalcs \
-                         ${Pism_SOURCE_DIR}/src/vdt
+                         ${Pism_SOURCE_DIR}/src/calcalcs
 
 # The EXCLUDE_SYMLINKS tag can be used select whether or not files or
 # directories that are symbolic links (a Unix filesystem feature) are excluded
