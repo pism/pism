@@ -5,11 +5,13 @@
 #include "energy/enthSystem.hh"
 using pism::MaskValue;
 #include "energy/tempSystem.hh"
+#include "energy/BedrockColumn.hh"
 %}
 
 %rename(EnergyModelInputs) pism::energy::Inputs;
 
 /* wrap the enthalpy solver to make testing easier */
+%ignore pism::TridiagonalSystem::solve(unsigned int, double *);
 %include "util/ColumnSystem.hh"
 
 %rename(get_lambda) pism::energy::enthSystemCtx::lambda;
@@ -30,3 +32,6 @@ using pism::MaskValue;
 
 %shared_ptr(pism::energy::EnthalpyModel_Regional)
 %include "regional/EnthalpyModel_Regional.hh"
+
+%ignore pism::energy::BedrockColumn::solve(double, double, double, const double *, double *);
+%include "energy/BedrockColumn.hh"
