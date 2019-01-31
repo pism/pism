@@ -39,6 +39,7 @@ add_library (pism
   calving/connected_components.cc
   calving/remove_narrow_tongues.cc
   calving/vonMisesCalving.cc
+  energy/BedrockColumn.cc
   energy/BTU_Full.cc
   energy/BTU_Minimal.cc
   energy/BedThermalUnit.cc
