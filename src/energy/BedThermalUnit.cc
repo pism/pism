@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -137,8 +137,6 @@ BedThermalUnit::~BedThermalUnit() {
 }
 
 void BedThermalUnit::init(const InputOptions &opts) {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
   this->init_impl(opts);
 }
 
