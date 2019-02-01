@@ -11,6 +11,9 @@ Changes since v1.1
   could lead to uncontrolled growth of ice thickness.
 - Update the `-atmosphere pik` temperature parameterization for compatibility with paleo
   simulations by Albrecht et al.
+- Switch to an unconditionally-stable method for the approximation of the heat equation in
+  columns of the bedrock thermal layer (backward Euler time discretization instead of
+  explicit time stepping).
 
 Changes from v1.0 to v1.1
 =========================
