@@ -6,6 +6,9 @@ Changes since v1.1
 
 - Add the `hydraulic_potential` diagnostic to `routing` and `distributed` subglacial
   hydrology models.
+- Switch to an unconditionally-stable method for the approximation of the heat equation in
+  columns of the bedrock thermal layer (backward Euler time discretization instead of
+  explicit time stepping).
 
 Changes from v1.0 to v1.1
 =========================
