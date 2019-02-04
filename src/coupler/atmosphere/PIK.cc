@@ -205,9 +205,10 @@ static void era_interim_lon(const Geometry &geometry, IceModelVec2S &T_ma, IceMo
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double hmod = std::max(500.0, h(i, j)); // in the fit for ice free ocean hmod was set to 0
-    T_ma(i, j) = 273.15 + 36.81 - 0.00797 * hmod - 0.688 * lat(i, j) * (-1.0) + 2.574 * cos(3.1415 * (lon(i, j) - 110.0) / 180.0);
-    T_ms(i, j) = 273.15 + 22.58 - 0.00940 * hmod - 0.234 * lat(i, j) * (-1.0) + 0.828 * cos(3.1415 * (lon(i, j) - 110.0) / 180.0);
+    double hmod = std::max(1000.0, h(i, j));
+    T_ma(i, j) = 273.15 + 37.49 - 0.0095 * hmod - 0.644 * lat(i, j) * (-1.0) + 2.146 * cos(3.1415 * (lon(i, j) + 110.0) / 180.0);
+    T_ms(i, j) = 273.15 + 15.74 - 0.0083 * hmod - 0.196 * lat(i, j) * (-1.0) + 0.225 * cos(3.1415 * (lon(i, j) + 110.0) / 180.0);
+
   }
 }
 
