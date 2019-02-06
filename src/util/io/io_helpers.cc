@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -873,22 +873,47 @@ static void check_grid_overlap(const grid_info &input, const IceGrid &internal,
                                   input_x_min, input_x_max, input_y_min, input_y_max);
   }
 
-
-  // vertical grid extent
-  const double
-    input_z_min = input.z.size() > 0 ? input.z.front() : 0.0,
-    input_z_max = input.z.size() > 0 ? input.z.back()  : 0.0,
-    z_min       = z_internal.size() > 0 ? z_internal.front() : 0.0,
-    z_max       = z_internal.size() > 0 ? z_internal.back()  : 0.0;
-
-  if (not (z_min >= input.z_min - eps and z_max <= input.z_max + eps)) {
+  if (z_internal.size() == 0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "PISM's computational domain is not a subset of the domain in '%s'\n"
-                                  "PISM grid:       z: [%3.3f, %3.3f] meters\n"
-                                  "input file grid: z: [%3.3f, %3.3f] meters",
+                                  "Interval vertical grid has 0 levels. This should never happen.");
+  }
+
+  if (z_internal.size() == 1 and input.z.size() > 1) {
+    // internal field is 2D or 3D with one level, input variable is 3D with more than one
+    // vertical level
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "trying to read in a 2D field but the input file %s contains\n"
+                                  "a 3D field with %d levels",
                                   input.filename.c_str(),
-                                  z_min, z_max,
-                                  input_z_min, input_z_max);
+                                  static_cast<int>(input.z.size()));
+  }
+
+  if (z_internal.size() > 1 and input.z.size() <= 1) {
+    // internal field is 3D with more than one vertical level, input variable is 2D or 3D
+    // with 1 level
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "trying to read in a 3D field but the input file %s contains\n"
+                                  "a 2D field", input.filename.c_str());
+  }
+
+  if (z_internal.size() > 1 and input.z.size() > 0) {
+    // both internal field and input variable are 3D: check vertical grid extent
+    // Note: in PISM 2D fields have one vertical level (z = 0).
+    const double
+      input_z_min = input.z.front(),
+      input_z_max = input.z.back(),
+      z_min       = z_internal.front(),
+      z_max       = z_internal.back();
+
+    if (not (z_min >= input.z_min - eps and z_max <= input.z_max + eps)) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "PISM's computational domain is not a subset of the domain in '%s'\n"
+                                    "PISM grid:       z: [%3.3f, %3.3f] meters\n"
+                                    "input file grid: z: [%3.3f, %3.3f] meters",
+                                    input.filename.c_str(),
+                                    z_min, z_max,
+                                    input_z_min, input_z_max);
+    }
   }
 }
 
