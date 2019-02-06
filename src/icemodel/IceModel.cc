@@ -26,7 +26,7 @@
 #include "pism/basalstrength/YieldStress.hh"
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/frontretreat/FrontalMelt.hh"
-#include "pism/frontretreat/IcebergRemover.hh"
+#include "pism/frontretreat/util/IcebergRemover.hh"
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
 #include "pism/frontretreat/calving/FloatKill.hh"

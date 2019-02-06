@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #include <algorithm> // max_element
 
 #include "PicoGeometry.hh"
-#include "pism/frontretreat/connected_components.hh"
+#include "pism/frontretreat/util/connected_components.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/pism_utilities.hh"
 

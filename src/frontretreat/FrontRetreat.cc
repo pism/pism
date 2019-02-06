@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include "FrontRetreat.hh"
-#include "remove_narrow_tongues.hh"
+#include "util/remove_narrow_tongues.hh"
 
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2CellType.hh"
