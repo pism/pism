@@ -12,6 +12,8 @@ Changes since v1.1
 - Provide better error messages when trying to read in a 2D field but the input file
   contains a 3D variable (or trying to read a 3D field but the input contains a 2D
   variable).
+- Provide better error messages when trying to allocate more than 10000 records of a
+  forcing field.
 
 Changes from v1.0 to v1.1
 =========================
