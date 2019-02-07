@@ -36,7 +36,7 @@ namespace pism {
 namespace surface {
 
 Factory::Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : PCFactory<SurfaceModel>(g, "surface"),
+  : PCFactory<SurfaceModel>(g, "surface.models"),
     m_input(input) {
 
   add_surface_model<Elevation>("elevation");
@@ -44,7 +44,6 @@ Factory::Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereMode
   add_surface_model<TemperatureIndex>("pdd");
   add_surface_model<PIK>("pik");
   add_surface_model<Simple>("simple");
-  set_default("given");
 
   add_modifier<Anomaly>("anomaly");
   add_modifier<Cache>("cache");
@@ -56,32 +55,6 @@ Factory::Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereMode
 Factory::~Factory() {
   // empty
 }
-
-void Factory::set_default(const std::string &name) {
-  if (m_surface_models.find(name) == m_surface_models.end()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "type %s is not registered", name.c_str());
-  } else {
-    m_default_model = name;
-  }
-}
-
-std::shared_ptr<SurfaceModel> Factory::create() {
-  // build a list of available models:
-  auto model_list = key_list(m_surface_models);
-
-  // build a list of available modifiers:
-  auto modifier_list = key_list(m_modifiers);
-
-  std::string description = ("Sets up the PISM " + m_option + " model."
-                             " Available models: " + model_list +
-                             " Available modifiers: " + modifier_list);
-
-  // Get the command-line option:
-  options::StringList choices("-" + m_option, description, m_default_model);
-
-  return create(choices.to_string());
-}
-
 
 std::shared_ptr<SurfaceModel> Factory::create(const std::string &type) {
 
@@ -107,7 +80,7 @@ std::shared_ptr<SurfaceModel> Factory::surface_model(const std::string &type,
   if (m_surface_models.find(type) == m_surface_models.end()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s model \"%s\" is not available.\n"
                                   "Available models:    %s\n",
-                                  m_option.c_str(), type.c_str(),
+                                  m_parameter.c_str(), type.c_str(),
                                   key_list(m_surface_models).c_str());
   }
 

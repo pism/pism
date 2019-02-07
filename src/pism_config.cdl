@@ -32,6 +32,11 @@ netcdf pism_config {
     pism_config:age.initial_value_type = "scalar";
     pism_config:age.initial_value_units = "years";
 
+    pism_config:atmosphere.models = "given";
+    pism_config:atmosphere.models_doc = "Comma-separated list of atmosphere melt models and modifiers.";
+    pism_config:atmosphere.models_type = "string";
+    pism_config:atmosphere.models_option = "atmosphere";
+
     pism_config:atmosphere.fausto_air_temp.c_ma = -0.7189;
     pism_config:atmosphere.fausto_air_temp.c_ma_doc = "latitude-dependence coefficient for formula (1) in :cite:`Faustoetal2009`";
     pism_config:atmosphere.fausto_air_temp.c_ma_type = "scalar";
@@ -765,6 +770,11 @@ netcdf pism_config {
     pism_config:fracture_density.write_fields_option = "write_fd_fields";
     pism_config:fracture_density.write_fields_type = "boolean";
 
+    pism_config:frontal_melt.models = "";
+    pism_config:frontal_melt.models_doc = "Comma-separated list of frontal melt models and modifiers. (Leave empty to disable.)";
+    pism_config:frontal_melt.models_type = "string";
+    pism_config:frontal_melt.models_option = "frontal";
+
     pism_config:frontal_melt.constant.melt_rate = 1.0;
     pism_config:frontal_melt.constant.melt_rate_units = "m / day";
     pism_config:frontal_melt.constant.melt_rate_doc = "default melt rate used by the 'constant' frontal_melt model";
@@ -1205,6 +1215,16 @@ netcdf pism_config {
     pism_config:inverse.use_design_prior_type = "boolean";
     pism_config:inverse.use_design_prior_option = "inv_use_design_prior";
     pism_config:inverse.use_design_prior_doc = "Use prior from inverse data file as initial guess.";
+
+    pism_config:ocean.models = "constant";
+    pism_config:ocean.models_doc = "Comma-separated list of ocean models and modifiers.";
+    pism_config:ocean.models_type = "string";
+    pism_config:ocean.models_option = "ocean";
+
+    pism_config:sea_level.models = "constant";
+    pism_config:sea_level.models_doc = "Comma-separated list of sea level models and modifiers.";
+    pism_config:sea_level.models_type = "string";
+    pism_config:sea_level.models_option = "sea_level";
 
     pism_config:ocean.anomaly.file = "";
     pism_config:ocean.anomaly.file_doc = "Name of the file containing shelf basal mass flux offset fields.";
@@ -1761,6 +1781,11 @@ netcdf pism_config {
     pism_config:stress_balance.weertman_sliding.k_doc = "The ratio of the basal water pressure and the ice overburden pressure in the Weertman-style sliding parameterization.";
     pism_config:stress_balance.weertman_sliding.k_units = "1";
     pism_config:stress_balance.weertman_sliding.k_type = "scalar";
+
+    pism_config:surface.models = "given";
+    pism_config:surface.models_doc = "Comma-separated list of surface models and modifiers.";
+    pism_config:surface.models_type = "string";
+    pism_config:surface.models_option = "surface";
 
     pism_config:surface.cache.update_interval = 10;
     pism_config:surface.cache.update_interval_doc = "Update interval (in years) for the `-surface cache` modifier.";

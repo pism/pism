@@ -659,17 +659,9 @@ class Factory(TestCase):
 
         factory = PISM.SurfaceFactory(self.grid, atmosphere)
 
-        factory.set_default("simple")
-
-        simple = factory.create()
+        simple = factory.create("simple")
 
         model = factory.create("simple,cache")
-
-        try:
-            factory.set_default("invalid_model")
-            return False
-        except RuntimeError:
-            pass
 
         try:
             factory.create("invalid_model")
