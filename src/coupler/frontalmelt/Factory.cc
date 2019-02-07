@@ -28,8 +28,7 @@ namespace pism {
 namespace frontalmelt {
 // FrontalMelt
 Factory::Factory(IceGrid::ConstPtr g)
-  : PCFactory<FrontalMeltModel>(g) {
-  m_option = "frontal";
+  : PCFactory<FrontalMeltModel>(g, "frontal") {
 
   add_model<Constant>("constant");
   add_model<DischargeRouting>("routing");

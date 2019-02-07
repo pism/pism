@@ -36,10 +36,8 @@ namespace pism {
 namespace surface {
 
 Factory::Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : PCFactory<SurfaceModel>(g),
-  m_input(input) {
-
-  m_option = "surface";
+  : PCFactory<SurfaceModel>(g, "surface"),
+    m_input(input) {
 
   add_surface_model<Elevation>("elevation");
   add_surface_model<Given>("given");
@@ -63,7 +61,7 @@ void Factory::set_default(const std::string &name) {
   if (m_surface_models.find(name) == m_surface_models.end()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "type %s is not registered", name.c_str());
   } else {
-    m_default_type = name;
+    m_default_model = name;
   }
 }
 
@@ -79,7 +77,7 @@ std::shared_ptr<SurfaceModel> Factory::create() {
                              " Available modifiers: " + modifier_list);
 
   // Get the command-line option:
-  options::StringList choices("-" + m_option, description, m_default_type);
+  options::StringList choices("-" + m_option, description, m_default_model);
 
   return create(choices.to_string());
 }

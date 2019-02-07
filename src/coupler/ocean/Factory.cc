@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,8 +37,7 @@ namespace pism {
 namespace ocean {
 // Ocean
 Factory::Factory(IceGrid::ConstPtr g)
-  : PCFactory<OceanModel>(g) {
-  m_option = "ocean";
+  : PCFactory<OceanModel>(g, "ocean") {
 
   add_model<GivenTH>("th");
   add_model<PIK>("pik");

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -35,8 +35,8 @@ template <class Model>
 class PCFactory {
 public:
 
-  PCFactory<Model>(IceGrid::ConstPtr g)
-  : m_grid(g) {}
+  PCFactory<Model>(IceGrid::ConstPtr g, const std::string &option)
+    : m_option(option), m_grid(g) {}
   ~PCFactory<Model>() {}
 
   //! Creates a boundary model. Processes command-line options.
@@ -52,7 +52,7 @@ public:
                                " Available modifiers: " + modifier_list);
 
     // Get the command-line option:
-    options::StringList choices("-" + m_option, description, m_default_type);
+    options::StringList choices("-" + m_option, description, m_default_model);
 
     return create(choices.to_string());
   }
@@ -82,7 +82,7 @@ public:
     if (m_models.find(name) == m_models.end()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "type %s is not registered", name.c_str());
     } else {
-      m_default_type = name;
+      m_default_model = name;
     }
   }
 
@@ -169,7 +169,7 @@ protected:
     }
   };
 
-  std::string m_default_type, m_option;
+  std::string m_default_model, m_option;
   std::map<std::string, std::shared_ptr<ModelCreator> > m_models;
   std::map<std::string, std::shared_ptr<ModifierCreator> > m_modifiers;
   IceGrid::ConstPtr m_grid;
