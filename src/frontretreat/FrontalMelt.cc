@@ -45,6 +45,10 @@ DiagnosticList FrontalMelt::diagnostics_impl() const {
                                              "horizontal front retreat rate due to melt"))}};
 }
 
+/*!
+ * Convert provided melt rate into the corresponding rate of retreat, considering which
+ * part of the front is submerged.
+ */
 void FrontalMelt::compute_retreat_rate(const FrontRetreatInputs &inputs,
                                        IceModelVec2S &result) const {
 
