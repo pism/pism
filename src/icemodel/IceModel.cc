@@ -200,9 +200,9 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
                                                                 false); // not periodic
     m_surface_input_for_hydrology->set_attrs("diagnostic",
                                              "water input rate for the subglacial hydrology model",
-                                             "m s-1", "");
+                                             "kg m-2 s-1", "");
     m_surface_input_for_hydrology->metadata().set_double("valid_min", 0.0);
-    m_surface_input_for_hydrology->metadata().set_string("glaciological_units", "m year-1");
+    m_surface_input_for_hydrology->metadata().set_string("glaciological_units", "kg m-2 year-1");
   }
 }
 

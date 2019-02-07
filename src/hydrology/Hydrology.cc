@@ -573,7 +573,7 @@ void check_bounds(const IceModelVec2S& W, double W_max) {
 
   @param[in] mask cell type mask
   @param[in] basal melt rate (ice thickness per time)
-  @param[in] surface_input_rate surface input rate (water thickness per time); set to NULL to ignore
+  @param[in] surface_input_rate surface input rate (kg m-2 s-1); set to NULL to ignore
   @param[out] result resulting input rate (water thickness per time)
 */
 void Hydrology::compute_input_rate(const IceModelVec2CellType &mask,
@@ -599,7 +599,7 @@ void Hydrology::compute_input_rate(const IceModelVec2CellType &mask,
 
       double surface_input = surface_input_rate ? (*surface_input_rate)(i, j) : 0.0;
 
-      result(i,j) = C * basal_melt_rate(i, j) + surface_input;
+      result(i,j) = C * basal_melt_rate(i, j) + surface_input / water_density;
     } else {
       result(i,j) = 0.0;
     }
