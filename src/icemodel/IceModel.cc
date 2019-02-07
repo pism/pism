@@ -716,13 +716,11 @@ void IceModel::step(bool do_mass_continuity,
       m_surface_input_for_hydrology->update(current_time, m_dt);
       m_surface_input_for_hydrology->average(current_time, m_dt);
       inputs.surface_input_rate = m_surface_input_for_hydrology.get();
-    }
-
-    if (m_config->get_boolean("hydrology.surface_input_from_runoff")) {
-      // convert [kg m-2] to [m s-1] 
+    } else if (m_config->get_boolean("hydrology.surface_input_from_runoff")) {
+      // convert [kg m-2] to [kg m-2 s-1]
       IceModelVec2S &result = m_work2d[0];
       result.copy_from(m_surface->runoff());
-      result.scale(1.0 / (m_config->get_double("constants.fresh_water.density") * m_dt));
+      result.scale(1.0 / m_dt);
       inputs.surface_input_rate = &result;
     }
 
