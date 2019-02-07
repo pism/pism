@@ -78,7 +78,7 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
 
   m_theta_ocean->set_attrs("climate_forcing",
                            "potential temperature of the adjacent ocean",
-                           "Kelvin", "");
+                           "Celsius", "");
 
   m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
 
@@ -120,8 +120,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       // Assume for now that thermal forcing is equal to theta_ocean. Also, thermal
       // forcing is generally not available at the grounding line.
       //
-      // Convert from Kelvin to Celsius
-      double TF = (*m_theta_ocean)(i, j) - 273.15;
+      double TF = (*m_theta_ocean)(i, j);
 
       double cross_section_area = ice_thickness(i, j) * grid_spacing;
 
