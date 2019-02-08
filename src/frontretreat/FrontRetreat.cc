@@ -62,21 +62,11 @@ FrontRetreat::~FrontRetreat() {
   // empty
 }
 
-/*!
- * Combines information about maximum time step length computed using given front retreat
- * rate.
- */
-struct FrontRetreatMaxTimestep {
-  MaxTimestep dt;
-  double rate_max;
-  double rate_mean;
-  int N_cells;
-};
 
 /*!
  * Compute the maximum time step length provided a horizontal retreat rate.
  */
-FrontRetreatMaxTimestep max_timestep(const IceModelVec2S &horizontal_retreat_rate) {
+FrontRetreat::Timestep FrontRetreat::max_timestep(const IceModelVec2S &horizontal_retreat_rate) const {
 
   IceGrid::ConstPtr grid = horizontal_retreat_rate.grid();
   units::System::Ptr sys = grid->ctx()->unit_system();
@@ -129,7 +119,7 @@ FrontRetreatMaxTimestep max_timestep(const IceModelVec2S &horizontal_retreat_rat
  * condition applied to the retreat rate.
  */
 MaxTimestep FrontRetreat::max_timestep(const FrontRetreatInputs &inputs,
-                                              double t) const {
+                                       double t) const {
   (void) t;
 
   if (not m_restrict_timestep) {
@@ -140,7 +130,7 @@ MaxTimestep FrontRetreat::max_timestep(const FrontRetreatInputs &inputs,
 
   compute_retreat_rate(inputs, horizontal_retreat_rate);
 
-  auto info = pism::max_timestep(horizontal_retreat_rate);
+  auto info = max_timestep(horizontal_retreat_rate);
 
   m_log->message(3,
                  "  front retreat: maximum rate = %.2f m/year gives dt=%.5f years\n"

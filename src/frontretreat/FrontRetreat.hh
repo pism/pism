@@ -23,6 +23,7 @@
 #include "pism/util/Component.hh"
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 
@@ -82,7 +83,21 @@ protected:
   virtual void compute_retreat_rate(const FrontRetreatInputs &inputs,
                                     IceModelVec2S &result) const = 0;
 
-  void prepare_mask(const IceModelVec2CellType &input, IceModelVec2CellType &output) const;
+  void prepare_mask(const IceModelVec2CellType &input,
+                    IceModelVec2CellType &output) const;
+
+  /*!
+   * Combines information about maximum time step length computed using given front
+   * retreat rate.
+   */
+  struct Timestep {
+    MaxTimestep dt;
+    double rate_max;
+    double rate_mean;
+    int N_cells;
+  };
+
+  Timestep max_timestep(const IceModelVec2S &horizontal_retreat_rate) const;
 
   mutable IceModelVec2CellType m_mask;
   mutable IceModelVec2S m_tmp;
