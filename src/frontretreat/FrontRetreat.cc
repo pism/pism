@@ -301,41 +301,6 @@ void FrontRetreat::update_geometry(double dt,
   // update cell_type
   gc.set_icefree_thickness(m_config->get_double("stress_balance.ice_free_thickness_standard"));
   gc.compute_mask(sea_level, bed_topography, ice_thickness, cell_type);
-
-  // remove narrow ice tongues
-  remove_narrow_tongues(cell_type, ice_thickness);
-
-  // update cell_type again
-  gc.compute_mask(sea_level, bed_topography, ice_thickness, cell_type);
-}
-
-/*! Update ice geometry and mask using the computed horizontal retreat rate.
- * @param[in] dt time step, seconds
- * @param[in] sea_level sea level elevation, meters
- * @param[in] thickness_bc_mask Dirichlet B.C. mask for the ice thickness
- * @param[in] bed_topography bed elevation, meters
- * @param[in,out] mask cell type mask
- * @param[in,out] Href "area specific volume"
- * @param[in,out] ice_thickness ice thickness
- *
- * FIXME: we don't really need to call remove_narrow_tongues here: it is necessary when we use a
- * calving parameterization which uses strain rates (eigen-calving), but it may not be appropriate
- * with a frontal melt parameterization.
- */
-void FrontRetreat::update(double dt,
-                          const FrontRetreatInputs &inputs,
-                          IceModelVec2CellType &mask,
-                          IceModelVec2S &Href,
-                          IceModelVec2S &ice_thickness) {
-
-  compute_retreat_rate(inputs, m_horizontal_retreat_rate);
-
-  update_geometry(dt,
-                  inputs.geometry->sea_level_elevation,
-                  inputs.geometry->bed_elevation,
-                  *inputs.bc_mask,
-                  m_horizontal_retreat_rate,
-                  mask, Href, ice_thickness);
 }
 
 const IceModelVec2S& FrontRetreat::retreat_rate() const {

@@ -67,7 +67,9 @@ void IceModel::do_calving() {
   // of a time-step.
   if (m_eigen_calving) {
     m_eigen_calving->update(m_dt,
-                            inputs,
+                            m_geometry,
+                            m_ssa_dirichlet_bc_mask,
+                            m_stress_balance->shallow()->velocity(),
                             m_geometry.cell_type,
                             m_geometry.ice_area_specific_volume,
                             m_geometry.ice_thickness);
@@ -75,7 +77,10 @@ void IceModel::do_calving() {
 
   if (m_vonmises_calving) {
     m_vonmises_calving->update(m_dt,
-                               inputs,
+                               m_geometry,
+                               m_ssa_dirichlet_bc_mask,
+                               m_stress_balance->shallow()->velocity(),
+                               m_energy_model->enthalpy(),
                                m_geometry.cell_type,
                                m_geometry.ice_area_specific_volume,
                                m_geometry.ice_thickness);
@@ -83,7 +88,9 @@ void IceModel::do_calving() {
 
   if (m_frontal_melt) {
     m_frontal_melt->update(m_dt,
-                           inputs,
+                           m_geometry,
+                           m_ssa_dirichlet_bc_mask,
+                           m_frontalmelt->frontal_melt_rate(),
                            m_geometry.cell_type,
                            m_geometry.ice_area_specific_volume,
                            m_geometry.ice_thickness);

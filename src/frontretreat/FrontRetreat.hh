@@ -62,12 +62,6 @@ public:
   MaxTimestep max_timestep(const FrontRetreatInputs &inputs,
                            double t) const ;
 
-  void update(double dt,
-              const FrontRetreatInputs &inputs,
-              IceModelVec2CellType &pism_mask,
-              IceModelVec2S &Href,
-              IceModelVec2S &ice_thickness);
-
   const IceModelVec2S& retreat_rate() const;
 
 protected:
