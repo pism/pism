@@ -39,6 +39,15 @@ public:
 
   void init();
 
+  void update(double dt,
+              const Geometry &geometry,
+              const IceModelVec2Int &bc_mask,
+              const IceModelVec2V &ice_velocity,
+              const IceModelVec3 &ice_enthalpy,
+              IceModelVec2CellType &cell_type,
+              IceModelVec2S &Href,
+              IceModelVec2S &ice_thickness);
+
 protected:
   virtual DiagnosticList diagnostics_impl() const;
 
