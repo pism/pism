@@ -236,7 +236,6 @@ IceModel::~IceModel() {
   delete m_thickness_threshold_calving;
   delete m_eigen_calving;
   delete m_vonmises_calving;
-  delete m_frontal_melt;
 }
 
 

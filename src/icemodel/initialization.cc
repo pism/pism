@@ -883,13 +883,13 @@ void IceModel::init_calving() {
   if (methods.find("frontal_melt") != methods.end()) {
 
     if (not m_frontal_melt) {
-      m_frontal_melt = new FrontalMelt(m_grid);
+      m_frontal_melt.reset(new FrontalMelt(m_grid));
     }
 
     m_frontal_melt->init();
     methods.erase("frontal_melt");
 
-    m_submodels["frontal melt"] = m_frontal_melt;
+    m_submodels["frontal melt"] = m_frontal_melt.get();
   }
 
   if (methods.find("float_kill") != methods.end()) {

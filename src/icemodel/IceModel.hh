@@ -281,7 +281,8 @@ protected:
   calving::CalvingAtThickness *m_thickness_threshold_calving;
   calving::EigenCalving       *m_eigen_calving;
   calving::vonMisesCalving    *m_vonmises_calving;
-  FrontalMelt                 *m_frontal_melt;
+
+  std::shared_ptr<FrontalMelt> m_frontal_melt;
 
   std::shared_ptr<surface::SurfaceModel>                  m_surface;
   std::shared_ptr<ocean::OceanModel>                      m_ocean;
