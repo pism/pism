@@ -39,6 +39,24 @@ void FrontalMelt::init() {
                  "  using sub-shelf mass flux from an ocean model...\n");
 }
 
+void FrontalMelt::update(double dt,
+                         const Geometry &geometry,
+                         const IceModelVec2Int &bc_mask,
+                         const IceModelVec2S &frontal_melt_rate,
+                         IceModelVec2CellType &cell_type,
+                         IceModelVec2S &Href,
+                         IceModelVec2S &ice_thickness) {
+
+  compute_retreat_rate(geometry, frontal_melt_rate, m_horizontal_retreat_rate);
+
+  update_geometry(dt,
+                  geometry.sea_level_elevation,
+                  geometry.bed_elevation,
+                  bc_mask,
+                  m_horizontal_retreat_rate,
+                  cell_type, Href, ice_thickness);
+}
+
 DiagnosticList FrontalMelt::diagnostics_impl() const {
   return {{"frontal_melt_rate",
         Diagnostic::Ptr(new FrontRetreatRate(this, "frontal_melt_rate",
