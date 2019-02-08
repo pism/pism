@@ -184,42 +184,24 @@ void FrontRetreat::prepare_mask(const IceModelVec2CellType &input,
   }
   loop.check();
 }
-
-/*! Update ice geometry and mask using the computed horizontal retreat rate.
- * @param[in] dt time step, seconds
- * @param[in] sea_level sea level elevation, meters
- * @param[in] thickness_bc_mask Dirichlet B.C. mask for the ice thickness
- * @param[in] bed_topography bed elevation, meters
- * @param[in,out] mask cell type mask
- * @param[in,out] Href "area specific volume"
- * @param[in,out] ice_thickness ice thickness
- *
- * FIXME: we don't really need to call remove_narrow_tongues here: it is necessary when we use a
- * calving parameterization which uses strain rates (eigen-calving), but it may not be appropriate
- * with a frontal melt parameterization.
- */
-void FrontRetreat::update(double dt,
-                                 const FrontRetreatInputs &inputs,
-                                 IceModelVec2CellType &mask,
-                                 IceModelVec2S &Href,
-                                 IceModelVec2S &ice_thickness) {
-
-  const IceModelVec2S   &sea_level      = inputs.geometry->sea_level_elevation;
-  const IceModelVec2S   &bed_topography = inputs.geometry->bed_elevation;
-  const IceModelVec2Int &bc_mask        = *inputs.bc_mask;
+void FrontRetreat::update_geometry(double dt,
+                                   const IceModelVec2S &sea_level,
+                                   const IceModelVec2S &bed_topography,
+                                   const IceModelVec2Int &bc_mask,
+                                   const IceModelVec2S &horizontal_retreat_rate,
+                                   IceModelVec2CellType &cell_type,
+                                   IceModelVec2S &Href,
+                                   IceModelVec2S &ice_thickness) {
 
   GeometryCalculator gc(*m_config);
   gc.compute_surface(sea_level, bed_topography, ice_thickness, m_surface_topography);
-
-  // use mask with a wide stencil to compute the retreat rate
-  compute_retreat_rate(inputs, m_horizontal_retreat_rate);
 
   const double dx = m_grid->dx();
 
   m_tmp.set(0.0);
 
   IceModelVec::AccessList list{&ice_thickness, &bc_mask,
-      &bed_topography, &sea_level, &mask, &Href, &m_tmp, &m_horizontal_retreat_rate,
+      &bed_topography, &sea_level, &cell_type, &Href, &m_tmp, &horizontal_retreat_rate,
       &m_surface_topography};
 
   // Prepare to loop over neighbors: directions
@@ -234,15 +216,15 @@ void FrontRetreat::update(double dt,
       continue;
     }
 
-    const double rate = m_horizontal_retreat_rate(i, j);
+    const double rate = horizontal_retreat_rate(i, j);
 
-    if (mask.ice_free(i, j) and rate > 0.0) {
+    if (cell_type.ice_free(i, j) and rate > 0.0) {
       // apply retreat rate at the margin (i.e. to partially-filled cells) only
 
       const double Href_old = Href(i, j);
 
       // Compute the number of floating neighbors and the neighbor-averaged ice thickness:
-      double H_threshold = part_grid_threshold_thickness(mask.int_star(i, j),
+      double H_threshold = part_grid_threshold_thickness(cell_type.int_star(i, j),
                                                          ice_thickness.star(i, j),
                                                          m_surface_topography.star(i, j),
                                                          bed_topography(i, j));
@@ -265,7 +247,7 @@ void FrontRetreat::update(double dt,
         int N = 0;
         {
           auto
-            M  = mask.int_star(i, j),
+            M  = cell_type.int_star(i, j),
             BC = bc_mask.int_star(i, j);
 
           auto
@@ -304,8 +286,8 @@ void FrontRetreat::update(double dt,
 
     // Note: this condition has to match the one in step 1 above.
     if (bc_mask.as_int(i, j) == 0 and
-        (mask.floating_ice(i, j) or
-         (mask.grounded_ice(i, j) and bed_topography(i, j) < sea_level(i, j)))) {
+        (cell_type.floating_ice(i, j) or
+         (cell_type.grounded_ice(i, j) and bed_topography(i, j) < sea_level(i, j)))) {
 
       const double delta_H = (m_tmp(i + 1, j) + m_tmp(i - 1, j) +
                               m_tmp(i, j + 1) + m_tmp(i, j - 1));
@@ -326,15 +308,44 @@ void FrontRetreat::update(double dt,
   // need to update ghosts of thickness to compute mask in place
   ice_thickness.update_ghosts();
 
-  // update mask
+  // update cell_type
   gc.set_icefree_thickness(m_config->get_double("stress_balance.ice_free_thickness_standard"));
-  gc.compute_mask(sea_level, bed_topography, ice_thickness, mask);
+  gc.compute_mask(sea_level, bed_topography, ice_thickness, cell_type);
 
   // remove narrow ice tongues
-  remove_narrow_tongues(mask, ice_thickness);
+  remove_narrow_tongues(cell_type, ice_thickness);
 
-  // update mask again
-  gc.compute_mask(sea_level, bed_topography, ice_thickness, mask);
+  // update cell_type again
+  gc.compute_mask(sea_level, bed_topography, ice_thickness, cell_type);
+}
+
+/*! Update ice geometry and mask using the computed horizontal retreat rate.
+ * @param[in] dt time step, seconds
+ * @param[in] sea_level sea level elevation, meters
+ * @param[in] thickness_bc_mask Dirichlet B.C. mask for the ice thickness
+ * @param[in] bed_topography bed elevation, meters
+ * @param[in,out] mask cell type mask
+ * @param[in,out] Href "area specific volume"
+ * @param[in,out] ice_thickness ice thickness
+ *
+ * FIXME: we don't really need to call remove_narrow_tongues here: it is necessary when we use a
+ * calving parameterization which uses strain rates (eigen-calving), but it may not be appropriate
+ * with a frontal melt parameterization.
+ */
+void FrontRetreat::update(double dt,
+                          const FrontRetreatInputs &inputs,
+                          IceModelVec2CellType &mask,
+                          IceModelVec2S &Href,
+                          IceModelVec2S &ice_thickness) {
+
+  compute_retreat_rate(inputs, m_horizontal_retreat_rate);
+
+  update_geometry(dt,
+                  inputs.geometry->sea_level_elevation,
+                  inputs.geometry->bed_elevation,
+                  *inputs.bc_mask,
+                  m_horizontal_retreat_rate,
+                  mask, Href, ice_thickness);
 }
 
 const IceModelVec2S& FrontRetreat::retreat_rate() const {

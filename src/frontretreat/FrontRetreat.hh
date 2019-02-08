@@ -70,6 +70,14 @@ public:
   const IceModelVec2S& retreat_rate() const;
 
 protected:
+  void update_geometry(double dt,
+                       const IceModelVec2S &sea_level,
+                       const IceModelVec2S &bed_topography,
+                       const IceModelVec2Int &bc_mask,
+                       const IceModelVec2S &horizontal_retreat_rate,
+                       IceModelVec2CellType &cell_type,
+                       IceModelVec2S &Href,
+                       IceModelVec2S &ice_thickness);
 
   virtual void compute_retreat_rate(const FrontRetreatInputs &inputs,
                                     IceModelVec2S &result) const = 0;
