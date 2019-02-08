@@ -35,6 +35,10 @@ public:
 protected:
   virtual DiagnosticList diagnostics_impl() const;
 
+  void compute_retreat_rate(const Geometry &geometry,
+                            const IceModelVec2S &frontal_melt_rate,
+                            IceModelVec2S &result) const;
+
   void compute_retreat_rate(const FrontRetreatInputs &inputs,
                             IceModelVec2S &result) const;
 };

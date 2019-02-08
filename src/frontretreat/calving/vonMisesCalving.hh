@@ -42,6 +42,12 @@ public:
 protected:
   virtual DiagnosticList diagnostics_impl() const;
 
+  void compute_retreat_rate(const IceModelVec2CellType &cell_type,
+                            const IceModelVec2S &ice_thickness,
+                            const IceModelVec2V &ice_velocity,
+                            const IceModelVec3 &ice_enthalpy,
+                            IceModelVec2S &result) const;
+
   void compute_retreat_rate(const FrontRetreatInputs &inputs,
                             IceModelVec2S &result) const;
 

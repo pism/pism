@@ -53,14 +53,11 @@ void EigenCalving::init() {
 
 }
 
-//! \brief Uses principal strain rates to apply "eigencalving" with constant K.
-/*!
-  See equation (26) in [\ref Winkelmannetal2011].
-*/
-void EigenCalving::compute_retreat_rate(const FrontRetreatInputs &inputs,
+void EigenCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type,
+                                        const IceModelVec2V &ice_velocity,
                                         IceModelVec2S &result) const {
 
-  prepare_mask(inputs.geometry->cell_type, m_mask);
+  prepare_mask(cell_type, m_mask);
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
@@ -69,7 +66,7 @@ void EigenCalving::compute_retreat_rate(const FrontRetreatInputs &inputs,
   // compressive to extensive flow regime
   const double eigenCalvOffset = 0.0;
 
-  stressbalance::compute_2D_principal_strain_rates(*inputs.ice_velocity,
+  stressbalance::compute_2D_principal_strain_rates(ice_velocity,
                                                    m_mask,
                                                    m_strain_rates);
   m_strain_rates.update_ghosts();
@@ -131,6 +128,16 @@ void EigenCalving::compute_retreat_rate(const FrontRetreatInputs &inputs,
     }
   } // end of the loop over grid points
 
+}
+
+
+//! \brief Uses principal strain rates to apply "eigencalving" with constant K.
+/*!
+  See equation (26) in [\ref Winkelmannetal2011].
+*/
+void EigenCalving::compute_retreat_rate(const FrontRetreatInputs &inputs,
+                                        IceModelVec2S &result) const {
+  compute_retreat_rate(inputs.geometry->cell_type, *inputs.ice_velocity, result);
 }
 
 DiagnosticList EigenCalving::diagnostics_impl() const {

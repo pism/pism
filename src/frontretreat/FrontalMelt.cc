@@ -49,20 +49,19 @@ DiagnosticList FrontalMelt::diagnostics_impl() const {
  * Convert provided melt rate into the corresponding rate of retreat, considering which
  * part of the front is submerged.
  */
-void FrontalMelt::compute_retreat_rate(const FrontRetreatInputs &inputs,
+void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
+                                       const IceModelVec2S &frontal_melt_rate,
                                        IceModelVec2S &result) const {
 
-  prepare_mask(inputs.geometry->cell_type, m_mask);
+  prepare_mask(geometry.cell_type, m_mask);
 
   GeometryCalculator gc(*m_config);
 
-  const IceModelVec2S &frontal_melt_rate = *inputs.frontal_melt_rate;
-
   const IceModelVec2S
-    &bed_elevation       = inputs.geometry->bed_elevation,
-    &surface_elevation   = inputs.geometry->ice_surface_elevation,
-    &ice_thickness       = inputs.geometry->ice_thickness,
-    &sea_level_elevation = inputs.geometry->sea_level_elevation;
+    &bed_elevation       = geometry.bed_elevation,
+    &surface_elevation   = geometry.ice_surface_elevation,
+    &ice_thickness       = geometry.ice_thickness,
+    &sea_level_elevation = geometry.sea_level_elevation;
 
   const double
     ice_density = m_config->get_double("constants.ice.density"),
@@ -102,6 +101,12 @@ void FrontalMelt::compute_retreat_rate(const FrontRetreatInputs &inputs,
     loop.failed();
   }
   loop.check();
+}
+
+void FrontalMelt::compute_retreat_rate(const FrontRetreatInputs &inputs,
+                                       IceModelVec2S &result) const {
+  compute_retreat_rate(*inputs.geometry, *inputs.frontal_melt_rate,
+                       result);
 }
 
 } // end of namespace pism

@@ -56,30 +56,25 @@ void vonMisesCalving::init() {
   m_strain_rates.set(0.0);
 }
 
-//! \brief Uses principal strain rates to apply "eigencalving" with constant K.
-/*!
-  See equation (26) in [\ref Winkelmannetal2011].
-*/
-void vonMisesCalving::compute_retreat_rate(const FrontRetreatInputs &inputs,
+void vonMisesCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type,
+                                           const IceModelVec2S &ice_thickness,
+                                           const IceModelVec2V &ice_velocity,
+                                           const IceModelVec3 &ice_enthalpy,
                                            IceModelVec2S &result) const {
-
-  const IceModelVec2S &ice_thickness = inputs.geometry->ice_thickness;
-  const IceModelVec2V &ice_velocity  = *inputs.ice_velocity;
-  const IceModelVec3  *enthalpy      = inputs.ice_enthalpy;
 
   using std::max;
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
 
-  prepare_mask(inputs.geometry->cell_type, m_mask);
+  prepare_mask(cell_type, m_mask);
 
   stressbalance::compute_2D_principal_strain_rates(ice_velocity,
                                                    m_mask,
                                                    m_strain_rates);
   m_strain_rates.update_ghosts();
 
-  IceModelVec::AccessList list{enthalpy, &ice_thickness, &m_mask, &ice_velocity,
+  IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness, &m_mask, &ice_velocity,
       &m_strain_rates, &result};
 
   const double *z = &m_grid->z()[0];
@@ -110,7 +105,7 @@ void vonMisesCalving::compute_retreat_rate(const FrontRetreatInputs &inputs,
             {
               double H = ice_thickness(I, j);
               unsigned int k = m_grid->kBelowHeight(H);
-              hardness += averaged_hardness(*m_flow_law, H, k, &z[0], enthalpy->get_column(I, j));
+              hardness += averaged_hardness(*m_flow_law, H, k, &z[0], ice_enthalpy.get_column(I, j));
             }
             eigen1 += m_strain_rates(I, j, 0);
             eigen2 += m_strain_rates(I, j, 1);
@@ -125,7 +120,7 @@ void vonMisesCalving::compute_retreat_rate(const FrontRetreatInputs &inputs,
             {
               double H = ice_thickness(i, J);
               unsigned int k = m_grid->kBelowHeight(H);
-              hardness += averaged_hardness(*m_flow_law, H, k, &z[0], enthalpy->get_column(i, J));
+              hardness += averaged_hardness(*m_flow_law, H, k, &z[0], ice_enthalpy.get_column(i, J));
             }
             eigen1 += m_strain_rates(i, J, 0);
             eigen2 += m_strain_rates(i, J, 1);
@@ -155,6 +150,20 @@ void vonMisesCalving::compute_retreat_rate(const FrontRetreatInputs &inputs,
       result(i, j) = 0.0;
     }
   }   // end of loop over grid points
+}
+
+
+//! \brief Uses principal strain rates to apply "eigencalving" with constant K.
+/*!
+  See equation (26) in [\ref Winkelmannetal2011].
+*/
+void vonMisesCalving::compute_retreat_rate(const FrontRetreatInputs &inputs,
+                                           IceModelVec2S &result) const {
+  compute_retreat_rate(inputs.geometry->cell_type,
+                       inputs.geometry->ice_thickness,
+                       *inputs.ice_velocity,
+                       *inputs.ice_enthalpy,
+                       result);
 }
 
 DiagnosticList vonMisesCalving::diagnostics_impl() const {
