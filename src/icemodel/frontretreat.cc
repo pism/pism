@@ -39,29 +39,6 @@ namespace pism {
 
 void IceModel::do_calving() {
 
-  if (m_frontalmelt) {
-    IceModelVec2S &flux_magnitude = m_work2d[0];
-
-    flux_magnitude.set_to_magnitude(m_subglacial_hydrology->flux());
-
-    FrontalMeltInputs inputs;
-    inputs.geometry              = &m_geometry;
-    inputs.subglacial_water_flux = &flux_magnitude;
-
-    m_frontalmelt->update(inputs, m_time->current(), m_dt);
-  }
-
-  FrontRetreatInputs inputs;
-
-  inputs.geometry = &m_geometry;
-  inputs.bc_mask  = &m_ssa_dirichlet_bc_mask;
-
-  inputs.ice_velocity         = &m_stress_balance->shallow()->velocity();
-  inputs.ice_enthalpy         = &m_energy_model->enthalpy();
-  if (m_frontalmelt) {
-    inputs.frontal_melt_rate    = &m_frontalmelt->frontal_melt_rate();
-  }
-
   // eigen-calving should go first: it uses the ice velocity field,
   // which is defined at grid points that were icy at the *beginning*
   // of a time-step.
@@ -86,7 +63,20 @@ void IceModel::do_calving() {
                                m_geometry.ice_thickness);
   }
 
-  if (m_frontal_melt) {
+  if (m_frontal_melt and m_frontalmelt) {
+
+    {
+      IceModelVec2S &flux_magnitude = m_work2d[0];
+
+      flux_magnitude.set_to_magnitude(m_subglacial_hydrology->flux());
+
+      FrontalMeltInputs inputs;
+      inputs.geometry              = &m_geometry;
+      inputs.subglacial_water_flux = &flux_magnitude;
+
+      m_frontalmelt->update(inputs, m_time->current(), m_dt);
+    }
+
     m_frontal_melt->update(m_dt,
                            m_geometry,
                            m_ssa_dirichlet_bc_mask,
