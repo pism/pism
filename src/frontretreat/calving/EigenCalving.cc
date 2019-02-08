@@ -24,6 +24,7 @@
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/frontretreat/util/remove_narrow_tongues.hh"
 
 namespace pism {
 namespace calving {
@@ -51,6 +52,32 @@ void EigenCalving::init() {
 
   m_strain_rates.set(0.0);
 
+}
+
+void EigenCalving::update(double dt,
+                          const Geometry &geometry,
+                          const IceModelVec2Int &bc_mask,
+                          const IceModelVec2V &ice_velocity,
+                          IceModelVec2CellType &cell_type,
+                          IceModelVec2S &Href,
+                          IceModelVec2S &ice_thickness) {
+
+  compute_retreat_rate(cell_type, ice_velocity, m_horizontal_retreat_rate);
+
+  update_geometry(dt,
+                  geometry.sea_level_elevation,
+                  geometry.bed_elevation,
+                  bc_mask,
+                  m_horizontal_retreat_rate,
+                  cell_type, Href, ice_thickness);
+
+  // remove narrow ice tongues
+  remove_narrow_tongues(cell_type, ice_thickness);
+
+  // update cell_type again
+  GeometryCalculator gc(*m_config);
+  gc.compute_mask(geometry.sea_level_elevation,
+                  geometry.bed_elevation, ice_thickness, cell_type);
 }
 
 void EigenCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type,

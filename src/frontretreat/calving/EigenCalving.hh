@@ -32,7 +32,14 @@ public:
 
   void init();
 
-  // empty methods that we're required to implement:
+  void update(double dt,
+              const Geometry &geometry,
+              const IceModelVec2Int &bc_mask,
+              const IceModelVec2V &ice_velocity,
+              IceModelVec2CellType &cell_type,
+              IceModelVec2S &Href,
+              IceModelVec2S &ice_thickness);
+
 protected:
   virtual DiagnosticList diagnostics_impl() const;
 
