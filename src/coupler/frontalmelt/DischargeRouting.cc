@@ -156,7 +156,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
 MaxTimestep DischargeRouting::max_timestep_impl(double t) const {
   (void) t;
 
-  return MaxTimestep("frontalmelt routing");
+  return MaxTimestep("frontal_melt routing");
 }
 
 

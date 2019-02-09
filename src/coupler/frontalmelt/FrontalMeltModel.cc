@@ -33,7 +33,7 @@ FrontalMeltInputs::FrontalMeltInputs() {
 namespace frontalmelt {
 
 IceModelVec2S::Ptr FrontalMeltModel::allocate_frontal_melt_rate(IceGrid::ConstPtr g) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(g, "frontalmeltrate", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(g, "frontal_melt_rate", WITHOUT_GHOSTS));
 
   result->set_attrs("diagnostic", "frontal melt rate", "m s-1", "");
   result->metadata().set_string("glaciological_units", "m day-1");
@@ -42,7 +42,8 @@ IceModelVec2S::Ptr FrontalMeltModel::allocate_frontal_melt_rate(IceGrid::ConstPt
 }
 
 // "modifier" constructor
-FrontalMeltModel::FrontalMeltModel(IceGrid::ConstPtr g, std::shared_ptr<FrontalMeltModel> input)
+FrontalMeltModel::FrontalMeltModel(IceGrid::ConstPtr g,
+                                   std::shared_ptr<FrontalMeltModel> input)
   : Component(g), m_input_model(input) {
   // empty
 }
@@ -139,13 +140,12 @@ public:
     /* set metadata: */
     m_vars = {SpatialVariableMetadata(m_sys, "frontal_melt_rate")};
 
-    set_attrs("frontal melt rate", "",
-              "m s-1", "m year-1", 0);
+    set_attrs("frontal melt rate", "", "m s-1", "m year-1", 0);
   }
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "frontalmeltrate", WITHOUT_GHOSTS));
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "frontal_melt_rate", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->frontal_melt_rate());
@@ -159,7 +159,7 @@ protected:
 DiagnosticList FrontalMeltModel::diagnostics_impl() const {
   using namespace diagnostics;
   DiagnosticList result = {
-    {"frontalmeltrate", Diagnostic::Ptr(new FrontalMeltRate(this))},
+    {"frontal_melt_rate", Diagnostic::Ptr(new FrontalMeltRate(this))},
   };
 
   if (m_input_model) {

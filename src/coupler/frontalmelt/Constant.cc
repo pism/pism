@@ -61,7 +61,7 @@ void Constant::init_impl(const Geometry &geometry) {
 
 MaxTimestep Constant::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep("frontalmelt constant");
+  return MaxTimestep("frontal_melt constant");
 }
 
 

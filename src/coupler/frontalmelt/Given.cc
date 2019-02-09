@@ -54,17 +54,14 @@ void Given::init_impl(const Geometry &geometry) {
 
     m_frontalmeltrate = IceModelVec2T::ForcingField(m_grid,
                                                     file,
-                                                    "frontalmeltrate",
+                                                    "frontal_melt_rate",
                                                     "", // no standard name
                                                     buffer_size,
                                                     evaluations_per_year,
                                                     periodic);
   }
 
-  m_frontalmeltrate->set_attrs("climate_forcing",
-                               "frontal melt rate",
-                               "m s-1", "");
-  
+  m_frontalmeltrate->set_attrs("climate_forcing", "frontal melt rate", "m s-1", "");
   m_frontalmeltrate->metadata().set_string("glaciological_units", "m year-1");
 
   m_frontalmeltrate->init(opt.filename, opt.period, opt.reference_time);
@@ -87,7 +84,7 @@ void Given::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
 MaxTimestep Given::max_timestep_impl(double t) const {
   (void) t;
   // FIXME: get time-step restriction from the input data
-  return MaxTimestep("frontalmelt given");
+  return MaxTimestep("frontal_melt given");
 }
 
 
