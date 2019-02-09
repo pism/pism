@@ -121,27 +121,21 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 
   // calving code needs additional inputs to compute time step restrictions
   {
-    FrontRetreatInputs inputs;
-
-    inputs.geometry = &m_geometry;
-    inputs.bc_mask  = &m_ssa_dirichlet_bc_mask;
-
-    inputs.ice_velocity         = &m_stress_balance->shallow()->velocity();
-    inputs.ice_enthalpy         = &m_energy_model->enthalpy();
-    if (m_frontalmelt) {
-      inputs.frontal_melt_rate    = &m_frontalmelt->frontal_melt_rate();
-    }
-
     if (m_eigen_calving) {
-      restrictions.push_back(m_eigen_calving->max_timestep(inputs, current_time));
+      restrictions.push_back(m_eigen_calving->max_timestep(m_geometry.cell_type,
+                                                           m_stress_balance->shallow()->velocity()));
     }
 
     if (m_vonmises_calving) {
-      restrictions.push_back(m_vonmises_calving->max_timestep(inputs, current_time));
+      restrictions.push_back(m_vonmises_calving->max_timestep(m_geometry.cell_type,
+                                                              m_geometry.ice_thickness,
+                                                              m_stress_balance->shallow()->velocity(),
+                                                              m_energy_model->enthalpy()));
     }
 
-    if (m_frontal_melt) {
-      restrictions.push_back(m_frontal_melt->max_timestep(inputs, current_time));
+    if (m_frontal_melt and m_frontalmelt) {
+      restrictions.push_back(m_frontal_melt->max_timestep(m_geometry,
+                                                          m_frontalmelt->frontal_melt_rate()));
     }
   }
 

@@ -121,10 +121,27 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
   loop.check();
 }
 
-void FrontalMelt::compute_retreat_rate(const FrontRetreatInputs &inputs,
-                                       IceModelVec2S &result) const {
-  compute_retreat_rate(*inputs.geometry, *inputs.frontal_melt_rate,
-                       result);
+MaxTimestep FrontalMelt::max_timestep(const Geometry &geometry,
+                                      const IceModelVec2S &frontal_melt_rate) const {
+
+  if (not m_restrict_timestep) {
+    return MaxTimestep("frontal melt");
+  }
+
+  compute_retreat_rate(geometry, frontal_melt_rate, m_tmp);
+
+  auto info = FrontRetreat::max_timestep(m_tmp);
+
+  m_log->message(3,
+                 "  frontal melt: maximum rate = %.2f m/year gives dt=%.5f years\n"
+                 "                mean rate    = %.2f m/year over %d cells\n",
+                 convert(m_sys, info.rate_max, "m second-1", "m year-1"),
+                 convert(m_sys, info.dt.value(), "seconds", "years"),
+                 convert(m_sys, info.rate_mean, "m second-1", "m year-1"),
+                 info.N_cells);
+
+  return MaxTimestep(info.dt.value(), "frontal melt");
 }
+
 
 } // end of namespace pism

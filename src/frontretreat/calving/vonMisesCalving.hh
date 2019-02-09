@@ -24,7 +24,7 @@
 
 namespace pism {
 
-class IceModelVec2S;
+class Geometry;
 
 namespace rheology {
 class FlowLaw;
@@ -48,6 +48,11 @@ public:
               IceModelVec2S &Href,
               IceModelVec2S &ice_thickness);
 
+  MaxTimestep max_timestep(const IceModelVec2CellType &cell_type,
+                           const IceModelVec2S &ice_thickness,
+                           const IceModelVec2V &ice_velocity,
+                           const IceModelVec3 &ice_enthalpy) const;
+
 protected:
   virtual DiagnosticList diagnostics_impl() const;
 
@@ -55,9 +60,6 @@ protected:
                             const IceModelVec2S &ice_thickness,
                             const IceModelVec2V &ice_velocity,
                             const IceModelVec3 &ice_enthalpy,
-                            IceModelVec2S &result) const;
-
-  void compute_retreat_rate(const FrontRetreatInputs &inputs,
                             IceModelVec2S &result) const;
 
   std::shared_ptr<const rheology::FlowLaw> m_flow_law;

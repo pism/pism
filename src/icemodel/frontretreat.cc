@@ -39,9 +39,8 @@ namespace pism {
 
 void IceModel::do_calving() {
 
-  // eigen-calving should go first: it uses the ice velocity field,
-  // which is defined at grid points that were icy at the *beginning*
-  // of a time-step.
+  // eigen-calving and von Mises calving should go first: they use the ice velocity field,
+  // which is defined at grid points that were icy at the *beginning* of a time-step.
   if (m_eigen_calving) {
     m_eigen_calving->update(m_dt,
                             m_geometry,

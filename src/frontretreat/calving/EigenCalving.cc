@@ -80,6 +80,10 @@ void EigenCalving::update(double dt,
                   geometry.bed_elevation, ice_thickness, cell_type);
 }
 
+//! \brief Uses principal strain rates to apply "eigencalving" with constant K.
+/*!
+  See equation (26) in [\ref Winkelmannetal2011].
+*/
 void EigenCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type,
                                         const IceModelVec2V &ice_velocity,
                                         IceModelVec2S &result) const {
@@ -157,14 +161,26 @@ void EigenCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type,
 
 }
 
+MaxTimestep EigenCalving::max_timestep(const IceModelVec2CellType &cell_type,
+                                       const IceModelVec2V &ice_velocity) const {
 
-//! \brief Uses principal strain rates to apply "eigencalving" with constant K.
-/*!
-  See equation (26) in [\ref Winkelmannetal2011].
-*/
-void EigenCalving::compute_retreat_rate(const FrontRetreatInputs &inputs,
-                                        IceModelVec2S &result) const {
-  compute_retreat_rate(inputs.geometry->cell_type, *inputs.ice_velocity, result);
+  if (not m_restrict_timestep) {
+    return MaxTimestep("eigencalving");
+  }
+
+  compute_retreat_rate(cell_type, ice_velocity, m_tmp);
+
+  auto info = FrontRetreat::max_timestep(m_tmp);
+
+  m_log->message(3,
+                 "  eigencalving: maximum rate = %.2f m/year gives dt=%.5f years\n"
+                 "                mean rate    = %.2f m/year over %d cells\n",
+                 convert(m_sys, info.rate_max, "m second-1", "m year-1"),
+                 convert(m_sys, info.dt.value(), "seconds", "years"),
+                 convert(m_sys, info.rate_mean, "m second-1", "m year-1"),
+                 info.N_cells);
+
+  return MaxTimestep(info.dt.value(), "eigencalving");
 }
 
 DiagnosticList EigenCalving::diagnostics_impl() const {

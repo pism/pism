@@ -88,6 +88,10 @@ void vonMisesCalving::update(double dt,
                   geometry.bed_elevation, ice_thickness, cell_type);
 }
 
+//! \brief Uses principal strain rates to apply "eigencalving" with constant K.
+/*!
+  See equation (26) in [\ref Winkelmannetal2011].
+*/
 void vonMisesCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type,
                                            const IceModelVec2S &ice_thickness,
                                            const IceModelVec2V &ice_velocity,
@@ -184,18 +188,28 @@ void vonMisesCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type
   }   // end of loop over grid points
 }
 
+MaxTimestep vonMisesCalving::max_timestep(const IceModelVec2CellType &cell_type,
+                                          const IceModelVec2S &ice_thickness,
+                                          const IceModelVec2V &ice_velocity,
+                                          const IceModelVec3 &ice_enthalpy) const {
 
-//! \brief Uses principal strain rates to apply "eigencalving" with constant K.
-/*!
-  See equation (26) in [\ref Winkelmannetal2011].
-*/
-void vonMisesCalving::compute_retreat_rate(const FrontRetreatInputs &inputs,
-                                           IceModelVec2S &result) const {
-  compute_retreat_rate(inputs.geometry->cell_type,
-                       inputs.geometry->ice_thickness,
-                       *inputs.ice_velocity,
-                       *inputs.ice_enthalpy,
-                       result);
+  if (not m_restrict_timestep) {
+    return MaxTimestep("von Mises calving");
+  }
+
+  compute_retreat_rate(cell_type, ice_thickness, ice_velocity, ice_enthalpy, m_tmp);
+
+  auto info = FrontRetreat::max_timestep(m_tmp);
+
+  m_log->message(3,
+                 "  von Mises calving: maximum rate = %.2f m/year gives dt=%.5f years\n"
+                 "                     mean rate    = %.2f m/year over %d cells\n",
+                 convert(m_sys, info.rate_max, "m second-1", "m year-1"),
+                 convert(m_sys, info.dt.value(), "seconds", "years"),
+                 convert(m_sys, info.rate_mean, "m second-1", "m year-1"),
+                 info.N_cells);
+
+  return MaxTimestep(info.dt.value(), "von Mises calving");
 }
 
 DiagnosticList vonMisesCalving::diagnostics_impl() const {

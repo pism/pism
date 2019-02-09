@@ -28,15 +28,6 @@
 
 namespace pism {
 
-FrontRetreatInputs::FrontRetreatInputs() {
-  geometry = nullptr;
-
-  bc_mask           = nullptr;
-  ice_enthalpy      = nullptr;
-  ice_velocity      = nullptr;
-  frontal_melt_rate = nullptr;
-}
-
 FrontRetreat::FrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width)
   : Component(g) {
 
@@ -111,36 +102,6 @@ FrontRetreat::Timestep FrontRetreat::max_timestep(const IceModelVec2S &horizonta
   double dt = 1.0 / (denom + epsilon);
 
   return {MaxTimestep(std::max(dt, dt_min)), retreat_rate_max, retreat_rate_mean, N_cells};
-}
-
-
-/**
- * @brief Compute the maximum time-step length allowed by the CFL
- * condition applied to the retreat rate.
- */
-MaxTimestep FrontRetreat::max_timestep(const FrontRetreatInputs &inputs,
-                                       double t) const {
-  (void) t;
-
-  if (not m_restrict_timestep) {
-    return MaxTimestep();
-  }
-
-  IceModelVec2S &horizontal_retreat_rate = m_tmp;
-
-  compute_retreat_rate(inputs, horizontal_retreat_rate);
-
-  auto info = max_timestep(horizontal_retreat_rate);
-
-  m_log->message(3,
-                 "  front retreat: maximum rate = %.2f m/year gives dt=%.5f years\n"
-                 "                 mean rate    = %.2f m/year over %d cells\n",
-                 convert(m_sys, info.rate_max, "m second-1", "m year-1"),
-                 convert(m_sys, info.dt.value(), "seconds", "years"),
-                 convert(m_sys, info.rate_mean, "m second-1", "m year-1"),
-                 info.N_cells);
-
-  return info.dt;
 }
 
 /*!

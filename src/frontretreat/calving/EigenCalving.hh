@@ -23,6 +23,8 @@
 
 namespace pism {
 
+class Geometry;
+
 namespace calving {
 
 class EigenCalving : public StressCalving {
@@ -40,14 +42,14 @@ public:
               IceModelVec2S &Href,
               IceModelVec2S &ice_thickness);
 
+  MaxTimestep max_timestep(const IceModelVec2CellType &cell_type,
+                           const IceModelVec2V &ice_velocity) const;
+
 protected:
   virtual DiagnosticList diagnostics_impl() const;
 
   void compute_retreat_rate(const IceModelVec2CellType &cell_type,
                             const IceModelVec2V &ice_velocity,
-                            IceModelVec2S &result) const;
-
-  void compute_retreat_rate(const FrontRetreatInputs &inputs,
                             IceModelVec2S &result) const;
 
 protected:

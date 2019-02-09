@@ -25,6 +25,8 @@
 
 namespace pism {
 
+class Geometry;
+
 class FrontalMelt : public FrontRetreat {
 public:
   FrontalMelt(IceGrid::ConstPtr grid);
@@ -40,14 +42,14 @@ public:
               IceModelVec2S &Href,
               IceModelVec2S &ice_thickness);
 
+  MaxTimestep max_timestep(const Geometry &geometry,
+                           const IceModelVec2S &frontal_melt_rate) const;
+
 protected:
   virtual DiagnosticList diagnostics_impl() const;
 
   void compute_retreat_rate(const Geometry &geometry,
                             const IceModelVec2S &frontal_melt_rate,
-                            IceModelVec2S &result) const;
-
-  void compute_retreat_rate(const FrontRetreatInputs &inputs,
                             IceModelVec2S &result) const;
 };
 
