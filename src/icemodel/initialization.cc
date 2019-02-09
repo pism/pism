@@ -880,18 +880,6 @@ void IceModel::init_calving() {
     m_submodels["von Mises calving"] = m_vonmises_calving;
   }
 
-  if (methods.find("frontal_melt") != methods.end()) {
-
-    if (not m_frontal_melt) {
-      m_frontal_melt.reset(new FrontalMelt(m_grid));
-    }
-
-    m_frontal_melt->init();
-    methods.erase("frontal_melt");
-
-    m_submodels["frontal melt"] = m_frontal_melt.get();
-  }
-
   if (methods.find("float_kill") != methods.end()) {
     if (not m_float_kill_calving) {
       m_float_kill_calving = new calving::FloatKill(m_grid);
