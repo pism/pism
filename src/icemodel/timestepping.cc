@@ -119,21 +119,31 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
     }
   }
 
-  if (m_eigen_calving) {
-    restrictions.push_back(m_eigen_calving->max_timestep(m_geometry.cell_type,
-                                                         m_stress_balance->shallow()->velocity()));
-  }
+  // mechanisms that use a retreat rate
+  if (m_config->get_boolean("geometry.front_retreat.use_cfl") and
+      (m_eigen_calving or m_vonmises_calving or m_frontal_melt)) {
+    // at least one of front retreat mechanisms is active
 
-  if (m_vonmises_calving) {
-    restrictions.push_back(m_vonmises_calving->max_timestep(m_geometry.cell_type,
-                                                            m_geometry.ice_thickness,
-                                                            m_stress_balance->shallow()->velocity(),
-                                                            m_energy_model->enthalpy()));
-  }
+    IceModelVec2S &retreat_rate = m_work2d[0];
+    retreat_rate.set(0.0);
 
-  if (m_frontal_melt and m_frontalmelt) {
-    restrictions.push_back(m_frontal_melt->max_timestep(m_geometry,
-                                                        m_frontalmelt->frontal_melt_rate()));
+    if (m_eigen_calving) {
+      retreat_rate.add(1.0, m_eigen_calving->calving_rate());
+    }
+
+    if (m_vonmises_calving) {
+      retreat_rate.add(1.0, m_vonmises_calving->calving_rate());
+    }
+
+    if (m_frontal_melt) {
+      retreat_rate.add(1.0, m_frontal_melt->retreat_rate());
+    }
+
+    assert(m_front_retreat);
+
+    restrictions.push_back(m_front_retreat->max_timestep(m_geometry.cell_type,
+                                                         m_ssa_dirichlet_bc_mask,
+                                                         retreat_rate));
   }
 
   // Always consider the maximum allowed time-step length.

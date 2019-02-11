@@ -57,61 +57,29 @@ void vonMisesCalving::init() {
   m_strain_rates.set(0.0);
 }
 
-void vonMisesCalving::update(double dt,
-                             const Geometry &geometry,
-                             const IceModelVec2Int &bc_mask,
-                             const IceModelVec2V &ice_velocity,
-                             const IceModelVec3 &ice_enthalpy,
-                             IceModelVec2CellType &cell_type,
-                             IceModelVec2S &Href,
-                             IceModelVec2S &ice_thickness) {
-
-  compute_retreat_rate(cell_type,
-                       ice_thickness,
-                       ice_velocity,
-                       ice_enthalpy,
-                       m_horizontal_retreat_rate);
-
-  update_geometry(dt,
-                  geometry.sea_level_elevation,
-                  geometry.bed_elevation,
-                  bc_mask,
-                  m_horizontal_retreat_rate,
-                  cell_type, Href, ice_thickness);
-
-  // remove narrow ice tongues
-  remove_narrow_tongues(cell_type, ice_thickness);
-
-  // update cell_type again
-  GeometryCalculator gc(*m_config);
-  gc.compute_mask(geometry.sea_level_elevation,
-                  geometry.bed_elevation, ice_thickness, cell_type);
-}
-
 //! \brief Uses principal strain rates to apply "eigencalving" with constant K.
 /*!
   See equation (26) in [\ref Winkelmannetal2011].
 */
-void vonMisesCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type,
-                                           const IceModelVec2S &ice_thickness,
-                                           const IceModelVec2V &ice_velocity,
-                                           const IceModelVec3 &ice_enthalpy,
-                                           IceModelVec2S &result) const {
+void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
+                             const IceModelVec2S &ice_thickness,
+                             const IceModelVec2V &ice_velocity,
+                             const IceModelVec3 &ice_enthalpy) {
 
   using std::max;
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
 
-  prepare_mask(cell_type, m_mask);
+  // make a copy with a wider stencil
+  m_cell_type.copy_from(cell_type);
 
-  stressbalance::compute_2D_principal_strain_rates(ice_velocity,
-                                                   m_mask,
+  stressbalance::compute_2D_principal_strain_rates(ice_velocity, m_cell_type,
                                                    m_strain_rates);
   m_strain_rates.update_ghosts();
 
-  IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness, &m_mask, &ice_velocity,
-      &m_strain_rates, &result};
+  IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness, &m_cell_type, &ice_velocity,
+      &m_strain_rates, &m_calving_rate};
 
   const double *z = &m_grid->z()[0];
 
@@ -123,7 +91,7 @@ void vonMisesCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
     // have floating ice neighbors after the mass continuity step
-    if (m_mask.ice_free_ocean(i, j) and m_mask.next_to_floating_ice(i, j)) {
+    if (m_cell_type.ice_free_ocean(i, j) and m_cell_type.next_to_floating_ice(i, j)) {
 
       double
         velocity_magnitude = 0.0,
@@ -136,7 +104,7 @@ void vonMisesCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type
         int N = 0;
         for (int p = -1; p < 2; p += 2) {
           const int I = i + p * offset;
-          if (m_mask.icy(I, j)) {
+          if (m_cell_type.icy(I, j)) {
             velocity_magnitude += ice_velocity(I, j).magnitude();
             {
               double H = ice_thickness(I, j);
@@ -151,7 +119,7 @@ void vonMisesCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type
 
         for (int q = -1; q < 2; q += 2) {
           const int J = j + q * offset;
-          if (m_mask.icy(i, J)) {
+          if (m_cell_type.icy(i, J)) {
             velocity_magnitude += ice_velocity(i, J).magnitude();
             {
               double H = ice_thickness(i, J);
@@ -180,42 +148,16 @@ void vonMisesCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type
                                                             1.0 / ssa_n);
 
       // Calving law [\ref Morlighem2016] equation 4
-      result(i, j) = velocity_magnitude * sigma_tilde / sigma_max;
+      m_calving_rate(i, j) = velocity_magnitude * sigma_tilde / sigma_max;
 
     } else { // end of "if (ice_free_ocean and next_to_floating)"
-      result(i, j) = 0.0;
+      m_calving_rate(i, j) = 0.0;
     }
   }   // end of loop over grid points
 }
 
-MaxTimestep vonMisesCalving::max_timestep(const IceModelVec2CellType &cell_type,
-                                          const IceModelVec2S &ice_thickness,
-                                          const IceModelVec2V &ice_velocity,
-                                          const IceModelVec3 &ice_enthalpy) const {
-
-  if (not m_restrict_timestep) {
-    return MaxTimestep("von Mises calving");
-  }
-
-  compute_retreat_rate(cell_type, ice_thickness, ice_velocity, ice_enthalpy, m_tmp);
-
-  auto info = FrontRetreat::max_timestep(m_tmp);
-
-  m_log->message(3,
-                 "  von Mises calving: maximum rate = %.2f m/year gives dt=%.5f years\n"
-                 "                     mean rate    = %.2f m/year over %d cells\n",
-                 convert(m_sys, info.rate_max, "m second-1", "m year-1"),
-                 convert(m_sys, info.dt.value(), "seconds", "years"),
-                 convert(m_sys, info.rate_mean, "m second-1", "m year-1"),
-                 info.N_cells);
-
-  return MaxTimestep(info.dt.value(), "von Mises calving");
-}
-
 DiagnosticList vonMisesCalving::diagnostics_impl() const {
-  return {{"vonmises_calving_rate",
-        Diagnostic::Ptr(new FrontRetreatRate(this, "vonmises_calving_rate",
-                                             "horizontal calving rate due to von Mises calving"))}};
+  return {{"vonmises_calving_rate", Diagnostic::wrap(m_calving_rate)}};
 }
 
 } // end of namespace calving

@@ -101,6 +101,7 @@ class AgeModel;
 class IceModelVec2CellType;
 class IceModelVec2T;
 class Component;
+class FrontRetreat;
 
 struct FractureFields {
   FractureFields(IceGrid::ConstPtr grid);
@@ -284,6 +285,8 @@ protected:
 
   std::shared_ptr<FrontalMelt> m_frontal_melt;
 
+  std::shared_ptr<FrontRetreat> m_front_retreat;
+
   std::shared_ptr<surface::SurfaceModel>                  m_surface;
   std::shared_ptr<ocean::OceanModel>                      m_ocean;
   std::shared_ptr<frontalmelt::FrontalMeltModel>          m_frontalmelt;
@@ -344,7 +347,7 @@ protected:
   enum ConsistencyFlag {REMOVE_ICEBERGS, DONT_REMOVE_ICEBERGS};
   void enforce_consistency_of_geometry(ConsistencyFlag flag);
 
-  virtual void do_calving();
+  virtual void front_retreat_step();
 
   virtual void accumulate_discharge(const IceModelVec2S &thickness,
                                     const IceModelVec2S &Href,

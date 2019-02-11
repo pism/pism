@@ -21,7 +21,6 @@
 #define FRONTALMELT_H
 
 #include "FrontRetreat.hh"
-#include "pism/hydrology/Hydrology.hh"
 
 namespace pism {
 
@@ -34,23 +33,13 @@ public:
 
   void init();
 
-  void update(double dt,
-              const Geometry &geometry,
-              const IceModelVec2Int &bc_mask,
-              const IceModelVec2S &frontal_melt_rate,
-              IceModelVec2CellType &cell_type,
-              IceModelVec2S &Href,
-              IceModelVec2S &ice_thickness);
+  void update(const Geometry &geometry, const IceModelVec2S &frontal_melt_rate);
 
-  MaxTimestep max_timestep(const Geometry &geometry,
-                           const IceModelVec2S &frontal_melt_rate) const;
-
+  const IceModelVec2S &retreat_rate() const;
 protected:
-  virtual DiagnosticList diagnostics_impl() const;
+  DiagnosticList diagnostics_impl() const;
 
-  void compute_retreat_rate(const Geometry &geometry,
-                            const IceModelVec2S &frontal_melt_rate,
-                            IceModelVec2S &result) const;
+  IceModelVec2S m_retreat_rate;
 };
 
 } // end of namespace pism

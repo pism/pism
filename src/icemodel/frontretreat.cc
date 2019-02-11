@@ -34,67 +34,76 @@
 #include "pism/energy/EnergyModel.hh"
 #include "pism/coupler/FrontalMeltModel.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/hydrology/Hydrology.hh"
+#include "pism/frontretreat/util/remove_narrow_tongues.hh"
 
 namespace pism {
 
-void IceModel::do_calving() {
+void IceModel::front_retreat_step() {
 
-  // eigen-calving and von Mises calving should go first: they use the ice velocity field,
-  // which is defined at grid points that were icy at the *beginning* of a time-step.
-  if (m_eigen_calving) {
-    m_eigen_calving->update(m_dt,
-                            m_geometry,
-                            m_ssa_dirichlet_bc_mask,
-                            m_stress_balance->shallow()->velocity(),
-                            m_geometry.cell_type,
-                            m_geometry.ice_area_specific_volume,
-                            m_geometry.ice_thickness);
-  }
+  // mechanisms that use a retreat rate
+  if (m_eigen_calving or m_vonmises_calving or m_frontal_melt) {
+    // at least one of front retreat mechanisms is active
 
-  if (m_vonmises_calving) {
-    m_vonmises_calving->update(m_dt,
-                               m_geometry,
-                               m_ssa_dirichlet_bc_mask,
-                               m_stress_balance->shallow()->velocity(),
-                               m_energy_model->enthalpy(),
-                               m_geometry.cell_type,
-                               m_geometry.ice_area_specific_volume,
-                               m_geometry.ice_thickness);
-  }
+    IceModelVec2S &retreat_rate = m_work2d[0];
+    retreat_rate.set(0.0);
 
-  if (m_frontal_melt and m_frontalmelt) {
+    if (m_eigen_calving) {
+      m_eigen_calving->update(m_geometry.cell_type,
+                              m_stress_balance->shallow()->velocity());
+      retreat_rate.add(1.0, m_eigen_calving->calving_rate());
+    }
 
-    {
-      IceModelVec2S &flux_magnitude = m_work2d[0];
+    if (m_vonmises_calving) {
+      // FIXME: consider computing vertically-averaged hardness here and providing that
+      // instead of using ice thickness and enthalpy.
+      m_vonmises_calving->update(m_geometry.cell_type,
+                                 m_geometry.ice_thickness,
+                                 m_stress_balance->shallow()->velocity(),
+                                 m_energy_model->enthalpy());
+      retreat_rate.add(1.0, m_vonmises_calving->calving_rate());
+    }
+
+    if (m_frontal_melt) {
+      IceModelVec2S &flux_magnitude = m_work2d[1];
 
       flux_magnitude.set_to_magnitude(m_subglacial_hydrology->flux());
 
-      FrontalMeltInputs inputs;
-      inputs.geometry              = &m_geometry;
-      inputs.subglacial_water_flux = &flux_magnitude;
-
-      m_frontalmelt->update(inputs, m_time->current(), m_dt);
+      m_frontal_melt->update(m_geometry, flux_magnitude);
+      retreat_rate.add(1.0, m_frontal_melt->retreat_rate());
     }
 
-    m_frontal_melt->update(m_dt,
-                           m_geometry,
-                           m_ssa_dirichlet_bc_mask,
-                           m_frontalmelt->frontal_melt_rate(),
-                           m_geometry.cell_type,
-                           m_geometry.ice_area_specific_volume,
-                           m_geometry.ice_thickness);
+    assert(m_front_retreat);
+
+    m_front_retreat->update_geometry(m_dt, m_geometry, m_ssa_dirichlet_bc_mask,
+                                     retreat_rate,
+                                     m_geometry.ice_area_specific_volume,
+                                     m_geometry.ice_thickness);
+
+    auto thickness_threshold = m_config->get_double("stress_balance.ice_free_thickness_standard");
+
+    m_geometry.ensure_consistency(thickness_threshold);
+
+    if (m_eigen_calving or m_vonmises_calving) {
+      remove_narrow_tongues(m_geometry.cell_type, m_geometry.ice_thickness);
+
+      m_geometry.ensure_consistency(thickness_threshold);
+    }
   }
 
-  if (m_ocean_kill_calving) {
-    m_ocean_kill_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
-  }
+  // calving mechanisms that remove ice
+  {
+    if (m_ocean_kill_calving) {
+      m_ocean_kill_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
+    }
 
-  if (m_float_kill_calving) {
-    m_float_kill_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
-  }
+    if (m_float_kill_calving) {
+      m_float_kill_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
+    }
 
-  if (m_thickness_threshold_calving) {
-    m_thickness_threshold_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
+    if (m_thickness_threshold_calving) {
+      m_thickness_threshold_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
+    }
   }
 }
 

@@ -17,7 +17,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include "FrontRetreat.hh"
-#include "util/remove_narrow_tongues.hh"
 
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2CellType.hh"
@@ -35,31 +34,54 @@ FrontRetreat::FrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width)
   m_tmp.set_attrs("internal", "additional mass loss at points near the front",
                   "m", "");
 
-  m_horizontal_retreat_rate.create(m_grid, "horizontal_retreat_rate", WITHOUT_GHOSTS);
-  m_horizontal_retreat_rate.set_attrs("diagnostic", "retreat rate", "m second-1", "");
-  m_horizontal_retreat_rate.set_time_independent(false);
-  m_horizontal_retreat_rate.metadata().set_string("glaciological_units", "m year-1");
+  m_cell_type.create(m_grid, "cell_type", WITH_GHOSTS, mask_stencil_width);
+  m_cell_type.set_attrs("internal", "cell type mask", "", "");
 
-  m_mask.create(m_grid, "m_mask", WITH_GHOSTS, mask_stencil_width);
-  m_mask.set_attrs("internal", "cell type mask", "", "");
-
-  m_surface_topography.create(m_grid, "m_surface_topography", WITH_GHOSTS, 1);
+  m_surface_topography.create(m_grid, "surface_topography", WITH_GHOSTS, 1);
   m_surface_topography.set_attrs("internal", "surface topography", "m", "surface_altitude");
-
-  m_restrict_timestep = m_config->get_boolean("geometry.front_retreat.use_cfl");
 }
 
 FrontRetreat::~FrontRetreat() {
   // empty
 }
 
+/*!
+ * Compute the modified mask to avoid "wrapping around" of front retreat at domain
+ * boundaries.
+ */
+void FrontRetreat::compute_modified_mask(const IceModelVec2CellType &input,
+                                         IceModelVec2CellType &output) const {
+
+  IceModelVec::AccessList list{&input, &output};
+
+  const int Mx = m_grid->Mx();
+  const int My = m_grid->My();
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (PointsWithGhosts p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (i < 0 or i >= Mx or j < 0 or j >= My) {
+        output(i, j) = MASK_ICE_FREE_OCEAN;
+      } else {
+        output(i, j) = input(i, j);
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+}
 
 /*!
  * Compute the maximum time step length provided a horizontal retreat rate.
  */
-FrontRetreat::Timestep FrontRetreat::max_timestep(const IceModelVec2S &horizontal_retreat_rate) const {
+MaxTimestep FrontRetreat::max_timestep(const IceModelVec2CellType &cell_type,
+                                       const IceModelVec2Int &bc_mask,
+                                       const IceModelVec2S &retreat_rate) const {
 
-  IceGrid::ConstPtr grid = horizontal_retreat_rate.grid();
+  IceGrid::ConstPtr grid = retreat_rate.grid();
   units::System::Ptr sys = grid->ctx()->unit_system();
 
   using units::convert;
@@ -72,14 +94,18 @@ FrontRetreat::Timestep FrontRetreat::max_timestep(const IceModelVec2S &horizonta
     retreat_rate_mean = 0.0;
   int N_cells = 0;
 
-  IceModelVec::AccessList list(horizontal_retreat_rate);
+  IceModelVec::AccessList list{&cell_type, &bc_mask, &retreat_rate};
 
   for (Points pt(*grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
-    const double C = horizontal_retreat_rate(i, j);
+    if (cell_type.ice_free_ocean(i, j) and
+        cell_type.next_to_ice(i, j) and
+        bc_mask(i, j) < 0.5) {
+      // NB: this condition has to match the one below
 
-    if (C > 0.0) {
+      const double C = retreat_rate(i, j);
+
       N_cells           += 1;
       retreat_rate_mean += C;
       retreat_rate_max   = std::max(C, retreat_rate_max);
@@ -101,58 +127,48 @@ FrontRetreat::Timestep FrontRetreat::max_timestep(const IceModelVec2S &horizonta
 
   double dt = 1.0 / (denom + epsilon);
 
-  return {MaxTimestep(std::max(dt, dt_min)), retreat_rate_max, retreat_rate_mean, N_cells};
+  return MaxTimestep(std::max(dt, dt_min), "front_retreat");
 }
 
 /*!
- * Adjust the mask near domain boundaries to avoid "wrapping around."
+ * Update ice geometry by applying a horizontal retreat rate.
+ *
+ * This code applies a horizontal retreat rate at "partially-filled" cells that are next
+ * to icy cells.
+ *
+ * Models providing the "retreat rate" should set this field to zero in areas where a
+ * particular parameterization does not apply. (For example: some calving models apply at
+ * shelf calving fronts, others may apply at grounded termini but not at ice shelves,
+ * etc).
  */
-void FrontRetreat::prepare_mask(const IceModelVec2CellType &input,
-                                       IceModelVec2CellType &output) const {
-
-  output.copy_from(input);
-
-  if (m_config->get_boolean("geometry.front_retreat.wrap_around")) {
-    return;
-  }
-
-  IceModelVec::AccessList list(output);
-
-  const int Mx = m_grid->Mx();
-  const int My = m_grid->My();
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (PointsWithGhosts p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      if (i < 0 or i >= Mx or j < 0 or j >= My) {
-        output(i, j) = MASK_ICE_FREE_OCEAN;
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-}
 void FrontRetreat::update_geometry(double dt,
-                                   const IceModelVec2S &sea_level,
-                                   const IceModelVec2S &bed_topography,
+                                   const Geometry &geometry,
                                    const IceModelVec2Int &bc_mask,
-                                   const IceModelVec2S &horizontal_retreat_rate,
-                                   IceModelVec2CellType &cell_type,
+                                   const IceModelVec2S &retreat_rate,
                                    IceModelVec2S &Href,
                                    IceModelVec2S &ice_thickness) {
 
+  const IceModelVec2S &bed = geometry.bed_elevation;
+  const IceModelVec2S &sea_level = geometry.sea_level_elevation;
+
+  if (m_config->get_boolean("geometry.front_retreat.wrap_around")) {
+    m_cell_type.copy_from(geometry.cell_type);
+  } else {
+    // compute the modified mask needed to prevent front retreat from "wrapping around"
+    // the computational domain
+    compute_modified_mask(geometry.cell_type, m_cell_type);
+  }
+
   GeometryCalculator gc(*m_config);
-  gc.compute_surface(sea_level, bed_topography, ice_thickness, m_surface_topography);
+  gc.compute_surface(sea_level, bed, ice_thickness,
+                     m_surface_topography);
 
   const double dx = m_grid->dx();
 
   m_tmp.set(0.0);
 
   IceModelVec::AccessList list{&ice_thickness, &bc_mask,
-      &bed_topography, &sea_level, &cell_type, &Href, &m_tmp, &horizontal_retreat_rate,
+      &bed, &sea_level, &m_cell_type, &Href, &m_tmp, &retreat_rate,
       &m_surface_topography};
 
   // Prepare to loop over neighbors: directions
@@ -162,23 +178,21 @@ void FrontRetreat::update_geometry(double dt,
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
-    if (bc_mask(i, j) > 0.5) {
-      // don't modify cells marked as Dirichlet B.C. locations
-      continue;
-    }
+    // apply retreat rate at the margin (i.e. to partially-filled cells) only
+    if (m_cell_type.ice_free_ocean(i, j) and
+        m_cell_type.next_to_ice(i, j) and
+        bc_mask(i, j) < 0.5) {
+      // NB: this condition has to match the one above
 
-    const double rate = horizontal_retreat_rate(i, j);
-
-    if (cell_type.ice_free(i, j) and rate > 0.0) {
-      // apply retreat rate at the margin (i.e. to partially-filled cells) only
-
-      const double Href_old = Href(i, j);
+      const double
+        rate     = retreat_rate(i, j),
+        Href_old = Href(i, j);
 
       // Compute the number of floating neighbors and the neighbor-averaged ice thickness:
-      double H_threshold = part_grid_threshold_thickness(cell_type.int_star(i, j),
+      double H_threshold = part_grid_threshold_thickness(m_cell_type.int_star(i, j),
                                                          ice_thickness.star(i, j),
                                                          m_surface_topography.star(i, j),
-                                                         bed_topography(i, j));
+                                                         bed(i, j));
 
       // Calculate mass loss with respect to the associated ice thickness and the grid size:
       const double Href_change = -dt * rate * H_threshold / dx; // in m
@@ -198,21 +212,23 @@ void FrontRetreat::update_geometry(double dt,
         int N = 0;
         {
           auto
-            M  = cell_type.int_star(i, j),
+            M  = m_cell_type.int_star(i, j),
             BC = bc_mask.int_star(i, j);
 
           auto
-            bed = bed_topography.star(i, j),
-            sl  = sea_level.star(i, j);
+            b  = bed.star(i, j),
+            sl = sea_level.star(i, j);
 
           for (int n = 0; n < 4; ++n) {
             Direction direction = dirs[n];
             int m = M[direction];
             int bc = BC[direction];
 
+            // note: this is where the modified cell type mask is used to prevent
+            // wrap-around
             if (bc == 0 and     // distribute to regular (*not* Dirichlet B.C.) neighbors only
                 (mask::floating_ice(m) or
-                 (mask::grounded_ice(m) and bed[direction] < sl[direction]))) {
+                 (mask::grounded_ice(m) and b[direction] < sl[direction]))) {
               N += 1;
             }
           }
@@ -226,7 +242,7 @@ void FrontRetreat::update_geometry(double dt,
         }
       }
 
-    } // end of "if (rate > 0.0)"
+    } // end of "if ice free ocean next to ice and not a BC location "
   }   // end of loop over grid points
 
   // Step 2: update ice thickness and Href in neighboring cells if we need to propagate mass losses.
@@ -237,8 +253,8 @@ void FrontRetreat::update_geometry(double dt,
 
     // Note: this condition has to match the one in step 1 above.
     if (bc_mask.as_int(i, j) == 0 and
-        (cell_type.floating_ice(i, j) or
-         (cell_type.grounded_ice(i, j) and bed_topography(i, j) < sea_level(i, j)))) {
+        (m_cell_type.floating_ice(i, j) or
+         (m_cell_type.grounded_ice(i, j) and bed(i, j) < sea_level(i, j)))) {
 
       const double delta_H = (m_tmp(i + 1, j) + m_tmp(i - 1, j) +
                               m_tmp(i, j + 1) + m_tmp(i, j - 1));
@@ -252,42 +268,8 @@ void FrontRetreat::update_geometry(double dt,
       if (Href(i, j) < 0.0) {
         Href(i, j) = 0.0;
       }
-
     }
   }
-
-  // need to update ghosts of thickness to compute mask in place
-  ice_thickness.update_ghosts();
-
-  // update cell_type
-  gc.set_icefree_thickness(m_config->get_double("stress_balance.ice_free_thickness_standard"));
-  gc.compute_mask(sea_level, bed_topography, ice_thickness, cell_type);
-}
-
-const IceModelVec2S& FrontRetreat::retreat_rate() const {
-  return m_horizontal_retreat_rate;
-}
-
-FrontRetreatRate::FrontRetreatRate(const FrontRetreat *m,
-                                   const std::string &name,
-                                   const std::string &long_name)
-  : Diag<FrontRetreat>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, name)};
-
-  set_attrs(long_name, "",
-            "m second-1", "m year-1", 0);
-}
-
-IceModelVec::Ptr FrontRetreatRate::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-
-  result->copy_from(model->retreat_rate());
-
-  return result;
 }
 
 } // end of namespace pism

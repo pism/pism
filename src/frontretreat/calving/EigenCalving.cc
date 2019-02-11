@@ -51,58 +51,30 @@ void EigenCalving::init() {
   }
 
   m_strain_rates.set(0.0);
-
-}
-
-void EigenCalving::update(double dt,
-                          const Geometry &geometry,
-                          const IceModelVec2Int &bc_mask,
-                          const IceModelVec2V &ice_velocity,
-                          IceModelVec2CellType &cell_type,
-                          IceModelVec2S &Href,
-                          IceModelVec2S &ice_thickness) {
-
-  compute_retreat_rate(cell_type, ice_velocity, m_horizontal_retreat_rate);
-
-  update_geometry(dt,
-                  geometry.sea_level_elevation,
-                  geometry.bed_elevation,
-                  bc_mask,
-                  m_horizontal_retreat_rate,
-                  cell_type, Href, ice_thickness);
-
-  // remove narrow ice tongues
-  remove_narrow_tongues(cell_type, ice_thickness);
-
-  // update cell_type again
-  GeometryCalculator gc(*m_config);
-  gc.compute_mask(geometry.sea_level_elevation,
-                  geometry.bed_elevation, ice_thickness, cell_type);
 }
 
 //! \brief Uses principal strain rates to apply "eigencalving" with constant K.
 /*!
   See equation (26) in [\ref Winkelmannetal2011].
 */
-void EigenCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type,
-                                        const IceModelVec2V &ice_velocity,
-                                        IceModelVec2S &result) const {
+void EigenCalving::update(const IceModelVec2CellType &cell_type,
+                          const IceModelVec2V &ice_velocity) {
 
-  prepare_mask(cell_type, m_mask);
+  // make a copy with a wider stencil
+  m_cell_type.copy_from(cell_type);
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
 
-  // eigenCalvOffset allows adjusting the transition from
-  // compressive to extensive flow regime
+  // eigenCalvOffset allows adjusting the transition from compressive to extensive flow
+  // regime
   const double eigenCalvOffset = 0.0;
 
-  stressbalance::compute_2D_principal_strain_rates(ice_velocity,
-                                                   m_mask,
+  stressbalance::compute_2D_principal_strain_rates(ice_velocity, m_cell_type,
                                                    m_strain_rates);
   m_strain_rates.update_ghosts();
 
-  IceModelVec::AccessList list{&m_mask, &result, &m_strain_rates};
+  IceModelVec::AccessList list{&m_cell_type, &m_calving_rate, &m_strain_rates};
 
   // Compute the horizontal calving rate
   for (Points pt(*m_grid); pt; pt.next()) {
@@ -110,7 +82,7 @@ void EigenCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type,
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
     // have floating ice neighbors after the mass continuity step
-    if (m_mask.ice_free_ocean(i, j) and m_mask.next_to_floating_ice(i, j)) {
+    if (m_cell_type.ice_free_ocean(i, j) and m_cell_type.next_to_floating_ice(i, j)) {
 
       // Average of strain-rate eigenvalues in adjacent floating grid cells to be used for
       // eigen-calving:
@@ -121,7 +93,7 @@ void EigenCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type,
         int N = 0;
         for (int p = -1; p < 2; p += 2) {
           const int I = i + p * offset;
-          if (m_mask.floating_ice(I, j) and not m_mask.ice_margin(I, j)) {
+          if (m_cell_type.floating_ice(I, j) and not m_cell_type.ice_margin(I, j)) {
             eigen1 += m_strain_rates(I, j, 0);
             eigen2 += m_strain_rates(I, j, 1);
             N += 1;
@@ -130,7 +102,7 @@ void EigenCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type,
 
         for (int q = -1; q < 2; q += 2) {
           const int J = j + q * offset;
-          if (m_mask.floating_ice(i, J) and not m_mask.ice_margin(i, J)) {
+          if (m_cell_type.floating_ice(i, J) and not m_cell_type.ice_margin(i, J)) {
             eigen1 += m_strain_rates(i, J, 0);
             eigen2 += m_strain_rates(i, J, 1);
             N += 1;
@@ -149,44 +121,19 @@ void EigenCalving::compute_retreat_rate(const IceModelVec2CellType &cell_type,
       // [m*s^1] hence, eigen_calving_K has units [m*s]
       if (eigen2 > eigenCalvOffset and eigen1 > 0.0) {
         // spreading in all directions
-        result(i, j) = m_K * eigen1 * (eigen2 - eigenCalvOffset);
+        m_calving_rate(i, j) = m_K * eigen1 * (eigen2 - eigenCalvOffset);
       } else {
-        result(i, j) = 0.0;
+        m_calving_rate(i, j) = 0.0;
       }
 
     } else { // end of "if (ice_free_ocean and next_to_floating)"
-      result(i, j) = 0.0;
+      m_calving_rate(i, j) = 0.0;
     }
   } // end of the loop over grid points
-
-}
-
-MaxTimestep EigenCalving::max_timestep(const IceModelVec2CellType &cell_type,
-                                       const IceModelVec2V &ice_velocity) const {
-
-  if (not m_restrict_timestep) {
-    return MaxTimestep("eigencalving");
-  }
-
-  compute_retreat_rate(cell_type, ice_velocity, m_tmp);
-
-  auto info = FrontRetreat::max_timestep(m_tmp);
-
-  m_log->message(3,
-                 "  eigencalving: maximum rate = %.2f m/year gives dt=%.5f years\n"
-                 "                mean rate    = %.2f m/year over %d cells\n",
-                 convert(m_sys, info.rate_max, "m second-1", "m year-1"),
-                 convert(m_sys, info.dt.value(), "seconds", "years"),
-                 convert(m_sys, info.rate_mean, "m second-1", "m year-1"),
-                 info.N_cells);
-
-  return MaxTimestep(info.dt.value(), "eigencalving");
 }
 
 DiagnosticList EigenCalving::diagnostics_impl() const {
-  return {{"eigen_calving_rate",
-        Diagnostic::Ptr(new FrontRetreatRate(this, "eigen_calving_rate",
-                                             "horizontal calving rate due to eigen-calving"))}};
+  return {{"eigen_calving_rate", Diagnostic::wrap(m_calving_rate)}};
 }
 
 } // end of namespace calving

@@ -39,39 +39,19 @@ void FrontalMelt::init() {
                  "  using sub-shelf mass flux from an ocean model...\n");
 }
 
-void FrontalMelt::update(double dt,
-                         const Geometry &geometry,
-                         const IceModelVec2Int &bc_mask,
-                         const IceModelVec2S &frontal_melt_rate,
-                         IceModelVec2CellType &cell_type,
-                         IceModelVec2S &Href,
-                         IceModelVec2S &ice_thickness) {
-
-  compute_retreat_rate(geometry, frontal_melt_rate, m_horizontal_retreat_rate);
-
-  update_geometry(dt,
-                  geometry.sea_level_elevation,
-                  geometry.bed_elevation,
-                  bc_mask,
-                  m_horizontal_retreat_rate,
-                  cell_type, Href, ice_thickness);
+const IceModelVec2S &FrontalMelt::retreat_rate() const {
+  return m_retreat_rate;
 }
 
 DiagnosticList FrontalMelt::diagnostics_impl() const {
-  return {{"frontal_melt_rate",
-        Diagnostic::Ptr(new FrontRetreatRate(this, "frontal_melt_rate",
-                                             "horizontal front retreat rate due to melt"))}};
+  return {{"frontal_melt_rate", Diagnostic::wrap(m_retreat_rate)}};
 }
 
 /*!
  * Convert provided melt rate into the corresponding rate of retreat, considering which
  * part of the front is submerged.
  */
-void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
-                                       const IceModelVec2S &frontal_melt_rate,
-                                       IceModelVec2S &result) const {
-
-  prepare_mask(geometry.cell_type, m_mask);
+void FrontalMelt::update(const Geometry &geometry, const IceModelVec2S &frontal_melt_rate) {
 
   GeometryCalculator gc(*m_config);
 
@@ -80,27 +60,28 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
     &surface_elevation   = geometry.ice_surface_elevation,
     &ice_thickness       = geometry.ice_thickness,
     &sea_level_elevation = geometry.sea_level_elevation;
+  const IceModelVec2CellType &cell_type = geometry.cell_type;
 
   const double
     ice_density = m_config->get_double("constants.ice.density"),
     alpha       = ice_density / m_config->get_double("constants.sea_water.density");
 
-  IceModelVec::AccessList list{&m_mask, &frontal_melt_rate, &sea_level_elevation,
-      &bed_elevation, &surface_elevation, &ice_thickness, &result};
+  IceModelVec::AccessList list{&cell_type, &frontal_melt_rate, &sea_level_elevation,
+      &bed_elevation, &surface_elevation, &ice_thickness, &m_retreat_rate};
 
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (m_mask.ice_free_ocean(i, j) and m_mask.next_to_ice(i, j)) {
+      if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j)) {
         const double
           bed       = bed_elevation(i, j),
           sea_level = sea_level_elevation(i, j);
 
         auto H = ice_thickness.star(i, j);
         auto h = surface_elevation.star(i, j);
-        auto M = m_mask.int_star(i, j);
+        auto M = cell_type.int_star(i, j);
 
         double H_threshold = part_grid_threshold_thickness(M, H, h, bed);
 
@@ -110,9 +91,9 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
                               std::max(sea_level - bed, 0.0) :
                               alpha * H_threshold);
 
-        result(i, j) = (H_submerged / H_threshold) * frontal_melt_rate(i, j);
+        m_retreat_rate(i, j) = (H_submerged / H_threshold) * frontal_melt_rate(i, j);
       } else {
-        result(i, j) = 0.0;
+        m_retreat_rate(i, j) = 0.0;
       }
     }
   } catch (...) {
@@ -120,28 +101,5 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
   }
   loop.check();
 }
-
-MaxTimestep FrontalMelt::max_timestep(const Geometry &geometry,
-                                      const IceModelVec2S &frontal_melt_rate) const {
-
-  if (not m_restrict_timestep) {
-    return MaxTimestep("frontal melt");
-  }
-
-  compute_retreat_rate(geometry, frontal_melt_rate, m_tmp);
-
-  auto info = FrontRetreat::max_timestep(m_tmp);
-
-  m_log->message(3,
-                 "  frontal melt: maximum rate = %.2f m/year gives dt=%.5f years\n"
-                 "                mean rate    = %.2f m/year over %d cells\n",
-                 convert(m_sys, info.rate_max, "m second-1", "m year-1"),
-                 convert(m_sys, info.dt.value(), "seconds", "years"),
-                 convert(m_sys, info.rate_mean, "m second-1", "m year-1"),
-                 info.N_cells);
-
-  return MaxTimestep(info.dt.value(), "frontal melt");
-}
-
 
 } // end of namespace pism

@@ -32,8 +32,15 @@ public:
   StressCalving(IceGrid::ConstPtr grid, unsigned int stencil_width);
   virtual ~StressCalving();
 
+  const IceModelVec2S &calving_rate() const;
+
 protected:
-  mutable IceModelVec2 m_strain_rates;
+  IceModelVec2 m_strain_rates;
+
+  IceModelVec2S m_calving_rate;
+
+  IceModelVec2CellType m_cell_type;
+
   const int m_stencil_width;
 };
 

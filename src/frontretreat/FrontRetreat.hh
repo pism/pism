@@ -27,58 +27,43 @@
 
 namespace pism {
 
+class Geometry;
+
 //! An abstract class implementing calving front retreat resulting from application of a
 //! spatially-variable horizontal retreat rate.
-/*! The retreat rate may correspond to frontal melting or calving. Requires the "part_grid"
-    mechanism.
+/*! The retreat rate may correspond to frontal melting or calving. Requires the
+    "part_grid" mechanism and a grid with dx == dy.
  */
 class FrontRetreat : public Component {
 public:
   FrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width);
-  virtual ~FrontRetreat();
+  ~FrontRetreat();
 
-  const IceModelVec2S& retreat_rate() const;
-
-protected:
   void update_geometry(double dt,
-                       const IceModelVec2S &sea_level,
-                       const IceModelVec2S &bed_topography,
+                       const Geometry &geometry,
                        const IceModelVec2Int &bc_mask,
-                       const IceModelVec2S &horizontal_retreat_rate,
-                       IceModelVec2CellType &cell_type,
+                       const IceModelVec2S &retreat_rate,
                        IceModelVec2S &Href,
                        IceModelVec2S &ice_thickness);
 
-  void prepare_mask(const IceModelVec2CellType &input,
-                    IceModelVec2CellType &output) const;
+  MaxTimestep max_timestep(const IceModelVec2CellType &cell_type,
+                           const IceModelVec2Int &bc_mask,
+                           const IceModelVec2S &retreat_rate) const;
+private:
 
-  /*!
-   * Combines information about maximum time step length computed using given front
-   * retreat rate.
-   */
-  struct Timestep {
-    MaxTimestep dt;
-    double rate_max;
-    double rate_mean;
-    int N_cells;
-  };
+  void compute_modified_mask(const IceModelVec2CellType &input,
+                             IceModelVec2CellType &output) const;
 
-  Timestep max_timestep(const IceModelVec2S &horizontal_retreat_rate) const;
-
-  mutable IceModelVec2CellType m_mask;
-  mutable IceModelVec2S m_tmp;
-  IceModelVec2S m_horizontal_retreat_rate, m_surface_topography;
-  bool m_restrict_timestep;
-};
-
-/*! @brief Retreat rate due to calving (or frontal melt). */
-class FrontRetreatRate : public Diag<FrontRetreat>
-{
-public:
-  FrontRetreatRate(const FrontRetreat *m,
-                   const std::string &name,
-                   const std::string &long_name);
-  IceModelVec::Ptr compute_impl() const;
+  // ghosted (and potentially modified) cell type mask
+  IceModelVec2CellType m_cell_type;
+  // temporary storage for distributing ice loss to "full" (as opposed to "partially
+  // filled") cells near the front
+  IceModelVec2S m_tmp;
+  // ghosted copy of the surface topography
+  //
+  // FIXME: Why do we need this? Can't we use geometry.ice_surface_elevation, which is
+  // ghosted too?
+  IceModelVec2S m_surface_topography;
 };
 
 } // end of namespace pism

@@ -582,7 +582,7 @@ void IceModel::step(bool do_mass_continuity,
     profiling.end("mass_transport");
 
     // calving, frontal melt, and discharge accounting
-    profiling.begin("calving");
+    profiling.begin("front_retreat");
     {
       IceModelVec2S
         &old_H    = m_work2d[0],
@@ -594,7 +594,7 @@ void IceModel::step(bool do_mass_continuity,
         m_discharge.set(0.0);
       }
 
-      do_calving();
+      front_retreat_step();
 
       enforce_consistency_of_geometry(REMOVE_ICEBERGS);
 
@@ -618,7 +618,7 @@ void IceModel::step(bool do_mass_continuity,
                            old_H, old_Href,
                            m_discharge);
     }
-    profiling.end("calving");
+    profiling.end("front_retreat");
 
     m_stdout_flags += "h";
   } else {

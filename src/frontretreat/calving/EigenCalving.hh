@@ -34,23 +34,9 @@ public:
 
   void init();
 
-  void update(double dt,
-              const Geometry &geometry,
-              const IceModelVec2Int &bc_mask,
-              const IceModelVec2V &ice_velocity,
-              IceModelVec2CellType &cell_type,
-              IceModelVec2S &Href,
-              IceModelVec2S &ice_thickness);
-
-  MaxTimestep max_timestep(const IceModelVec2CellType &cell_type,
-                           const IceModelVec2V &ice_velocity) const;
-
+  void update(const IceModelVec2CellType &cell_type, const IceModelVec2V &ice_velocity);
 protected:
-  virtual DiagnosticList diagnostics_impl() const;
-
-  void compute_retreat_rate(const IceModelVec2CellType &cell_type,
-                            const IceModelVec2V &ice_velocity,
-                            IceModelVec2S &result) const;
+  DiagnosticList diagnostics_impl() const;
 
 protected:
   double m_K;

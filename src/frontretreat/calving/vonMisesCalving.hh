@@ -39,28 +39,12 @@ public:
 
   void init();
 
-  void update(double dt,
-              const Geometry &geometry,
-              const IceModelVec2Int &bc_mask,
+  void update(const IceModelVec2CellType &cell_type,
+              const IceModelVec2S &ice_thickness,
               const IceModelVec2V &ice_velocity,
-              const IceModelVec3 &ice_enthalpy,
-              IceModelVec2CellType &cell_type,
-              IceModelVec2S &Href,
-              IceModelVec2S &ice_thickness);
-
-  MaxTimestep max_timestep(const IceModelVec2CellType &cell_type,
-                           const IceModelVec2S &ice_thickness,
-                           const IceModelVec2V &ice_velocity,
-                           const IceModelVec3 &ice_enthalpy) const;
-
+              const IceModelVec3 &ice_enthalpy);
 protected:
-  virtual DiagnosticList diagnostics_impl() const;
-
-  void compute_retreat_rate(const IceModelVec2CellType &cell_type,
-                            const IceModelVec2S &ice_thickness,
-                            const IceModelVec2V &ice_velocity,
-                            const IceModelVec3 &ice_enthalpy,
-                            IceModelVec2S &result) const;
+  DiagnosticList diagnostics_impl() const;
 
   std::shared_ptr<const rheology::FlowLaw> m_flow_law;
 };
