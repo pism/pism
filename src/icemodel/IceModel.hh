@@ -275,12 +275,12 @@ protected:
 
   AgeModel *m_age_model;
 
-  calving::IcebergRemover     *m_iceberg_remover;
-  calving::OceanKill          *m_ocean_kill_calving;
-  calving::FloatKill          *m_float_kill_calving;
-  calving::CalvingAtThickness *m_thickness_threshold_calving;
-  calving::EigenCalving       *m_eigen_calving;
-  calving::vonMisesCalving    *m_vonmises_calving;
+  std::shared_ptr<calving::IcebergRemover>     m_iceberg_remover;
+  std::shared_ptr<calving::OceanKill>          m_ocean_kill_calving;
+  std::shared_ptr<calving::FloatKill>          m_float_kill_calving;
+  std::shared_ptr<calving::CalvingAtThickness> m_thickness_threshold_calving;
+  std::shared_ptr<calving::EigenCalving>       m_eigen_calving;
+  std::shared_ptr<calving::vonMisesCalving>    m_vonmises_calving;
 
   std::shared_ptr<FrontalMelt> m_frontal_melt;
 

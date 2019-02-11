@@ -151,14 +151,6 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   m_btu = nullptr;
   m_energy_model = nullptr;
 
-  m_iceberg_remover             = nullptr;
-  m_ocean_kill_calving          = nullptr;
-  m_float_kill_calving          = nullptr;
-  m_thickness_threshold_calving = nullptr;
-  m_eigen_calving               = nullptr;
-  m_vonmises_calving            = nullptr;
-  m_frontal_melt                = nullptr;
-
   m_output_global_attributes.set_string("Conventions", "CF-1.6");
   m_output_global_attributes.set_string("source", pism::version());
 
@@ -229,13 +221,6 @@ IceModel::~IceModel() {
   delete m_energy_model;
 
   delete m_fracture;
-
-  delete m_iceberg_remover;
-  delete m_ocean_kill_calving;
-  delete m_float_kill_calving;
-  delete m_thickness_threshold_calving;
-  delete m_eigen_calving;
-  delete m_vonmises_calving;
 }
 
 

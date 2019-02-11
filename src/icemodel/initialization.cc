@@ -508,13 +508,13 @@ void IceModel::allocate_iceberg_remover() {
   if (m_config->get_boolean("geometry.remove_icebergs")) {
 
     // this will throw an exception on failure
-    m_iceberg_remover = new calving::IcebergRemover(m_grid);
+    m_iceberg_remover.reset(new calving::IcebergRemover(m_grid));
 
     // Iceberg Remover does not have a state, so it is OK to
     // initialize here.
     m_iceberg_remover->init();
 
-    m_submodels["iceberg remover"] = m_iceberg_remover;
+    m_submodels["iceberg remover"] = m_iceberg_remover.get();
   }
 }
 
@@ -833,62 +833,62 @@ void IceModel::init_calving() {
   if (methods.find("ocean_kill") != methods.end()) {
 
     if (not m_ocean_kill_calving) {
-      m_ocean_kill_calving = new calving::OceanKill(m_grid);
+      m_ocean_kill_calving.reset(new calving::OceanKill(m_grid));
     }
 
     m_ocean_kill_calving->init();
     methods.erase("ocean_kill");
 
-    m_submodels["ocean kill calving"] = m_ocean_kill_calving;
+    m_submodels["ocean kill calving"] = m_ocean_kill_calving.get();
   }
 
   if (methods.find("thickness_calving") != methods.end()) {
 
     if (not m_thickness_threshold_calving) {
-      m_thickness_threshold_calving = new calving::CalvingAtThickness(m_grid);
+      m_thickness_threshold_calving.reset(new calving::CalvingAtThickness(m_grid));
     }
 
     m_thickness_threshold_calving->init();
     methods.erase("thickness_calving");
 
-    m_submodels["thickness threshold calving"] = m_thickness_threshold_calving;
+    m_submodels["thickness threshold calving"] = m_thickness_threshold_calving.get();
   }
 
 
   if (methods.find("eigen_calving") != methods.end()) {
 
     if (not m_eigen_calving) {
-      m_eigen_calving = new calving::EigenCalving(m_grid);
+      m_eigen_calving.reset(new calving::EigenCalving(m_grid));
     }
 
     m_eigen_calving->init();
     methods.erase("eigen_calving");
 
-    m_submodels["eigen calving"] = m_eigen_calving;
+    m_submodels["eigen calving"] = m_eigen_calving.get();
   }
 
   if (methods.find("vonmises_calving") != methods.end()) {
 
     if (not m_vonmises_calving) {
-      m_vonmises_calving = new calving::vonMisesCalving(m_grid,
-                                                        m_stress_balance->shallow()->flow_law());
+      m_vonmises_calving.reset(new calving::vonMisesCalving(m_grid,
+                                                            m_stress_balance->shallow()->flow_law()));
     }
 
     m_vonmises_calving->init();
     methods.erase("vonmises_calving");
 
-    m_submodels["von Mises calving"] = m_vonmises_calving;
+    m_submodels["von Mises calving"] = m_vonmises_calving.get();
   }
 
   if (methods.find("float_kill") != methods.end()) {
     if (not m_float_kill_calving) {
-      m_float_kill_calving = new calving::FloatKill(m_grid);
+      m_float_kill_calving.reset(new calving::FloatKill(m_grid));
     }
 
     m_float_kill_calving->init();
     methods.erase("float_kill");
 
-    m_submodels["float kill calving"] = m_float_kill_calving;
+    m_submodels["float kill calving"] = m_float_kill_calving.get();
   }
 
   if (not methods.empty()) {
