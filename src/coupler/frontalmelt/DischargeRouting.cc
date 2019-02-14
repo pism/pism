@@ -109,7 +109,6 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
     const int i = p.i(), j = p.j();
 
     if (cell_type.icy(i, j)) {
-
       // Assume for now that thermal forcing is equal to theta_ocean. Also, thermal
       // forcing is generally not available at the grounding line.
       double TF = (*m_theta_ocean)(i, j);
@@ -133,12 +132,38 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       // convert from m / day to m / s
       (*m_frontal_melt_rate)(i, j) /= seconds_per_day;
     } else {
-
-      // This parameterization is applicable at grounded termini (see the case above), but
-      // *not* at calving fronts of ice shelves.
       (*m_frontal_melt_rate)(i, j) = 0.0;
     }
   } // end of the loop over grid points
+
+  // Set frontal melt rate *near* grounded termini to the average of neighbors: front
+  // retreat code uses values at these locations (the rest is for visualization).
+
+  const Direction dirs[] = {North, East, South, West};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_grounded_ice(i, j)) {
+
+      auto R = m_frontal_melt_rate->star(i, j);
+      auto M = cell_type.int_star(i, j);
+
+      int N = 0;
+      double R_sum = 0.0;
+      for (int n = 0; n < 4; ++n) {
+        Direction direction = dirs[n];
+        if (mask::grounded_ice(M[direction])) {
+          R_sum += R[direction];
+          N++;
+        }
+      }
+
+      if (N > 0) {
+        (*m_frontal_melt_rate)(i, j) = R_sum / N;
+      }
+    }
+  }
 }
 
 MaxTimestep DischargeRouting::max_timestep_impl(double t) const {
