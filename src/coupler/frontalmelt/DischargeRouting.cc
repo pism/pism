@@ -167,10 +167,14 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
 }
 
 MaxTimestep DischargeRouting::max_timestep_impl(double t) const {
-  (void) t;
 
-  // FIXME: get time step restriction from m_theta_ocean.
-  return MaxTimestep("frontal_melt routing");
+  auto dt = m_theta_ocean->max_timestep(t);
+
+  if (dt.finite()) {
+    return MaxTimestep(dt.value(), "frontal_melt routing");
+  } else {
+    return MaxTimestep("frontal_melt routing");
+  }
 }
 
 } // end of namespace frontalmelt

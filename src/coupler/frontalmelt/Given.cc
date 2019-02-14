@@ -78,9 +78,14 @@ void Given::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
 }
 
 MaxTimestep Given::max_timestep_impl(double t) const {
-  (void) t;
-  // FIXME: get time-step restriction from the input data
-  return MaxTimestep("frontal_melt given");
+
+  auto dt = m_frontal_melt_rate->max_timestep(t);
+
+  if (dt.finite()) {
+    return MaxTimestep(dt.value(), "frontal_melt given");
+  } else {
+    return MaxTimestep("frontal_melt given");
+  }
 }
 
 
