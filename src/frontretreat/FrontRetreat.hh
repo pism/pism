@@ -36,7 +36,7 @@ class Geometry;
  */
 class FrontRetreat : public Component {
 public:
-  FrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width);
+  FrontRetreat(IceGrid::ConstPtr g);
   ~FrontRetreat();
 
   void update_geometry(double dt,

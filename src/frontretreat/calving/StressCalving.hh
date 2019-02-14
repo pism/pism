@@ -20,14 +20,15 @@
 #ifndef STRESSCALVING_H
 #define STRESSCALVING_H
 
-#include "pism/frontretreat/FrontRetreat.hh"
+#include "pism/util/Component.hh"
+#include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {
 
 namespace calving {
 
 /*! @brief An abstract class containing fields used by all stress-based calving methods. */
-class StressCalving : public FrontRetreat {
+class StressCalving : public Component {
 public:
   StressCalving(IceGrid::ConstPtr grid, unsigned int stencil_width);
   virtual ~StressCalving();

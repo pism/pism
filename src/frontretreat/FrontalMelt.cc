@@ -25,7 +25,7 @@
 namespace pism {
 
 FrontalMelt::FrontalMelt(IceGrid::ConstPtr grid)
-  : FrontRetreat(grid, 1) {
+  : Component(grid) {
   // empty
 }
 
@@ -35,8 +35,7 @@ FrontalMelt::~FrontalMelt() {
 
 void FrontalMelt::init() {
   m_log->message(2,
-                 "* Initializing the frontal melt parameterization\n"
-                 "  using sub-shelf mass flux from an ocean model...\n");
+                 "* Initializing the frontal melt parameterization...\n");
 }
 
 const IceModelVec2S &FrontalMelt::retreat_rate() const {
@@ -44,7 +43,7 @@ const IceModelVec2S &FrontalMelt::retreat_rate() const {
 }
 
 DiagnosticList FrontalMelt::diagnostics_impl() const {
-  return {{"frontal_melt_rate", Diagnostic::wrap(m_retreat_rate)}};
+  return {{"retreat_rate_due_to_frontal_melt", Diagnostic::wrap(m_retreat_rate)}};
 }
 
 /*!

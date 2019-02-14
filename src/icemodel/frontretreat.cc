@@ -23,6 +23,7 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_utilities.hh"
 
+#include "pism/frontretreat/FrontRetreat.hh"
 #include "pism/frontretreat/FrontalMelt.hh"
 #include "pism/frontretreat/util/IcebergRemover.hh"
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"

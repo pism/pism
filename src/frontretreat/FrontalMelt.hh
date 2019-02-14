@@ -20,13 +20,13 @@
 #ifndef FRONTALMELT_H
 #define FRONTALMELT_H
 
-#include "FrontRetreat.hh"
+#include "pism/util/Component.hh"
 
 namespace pism {
 
 class Geometry;
 
-class FrontalMelt : public FrontRetreat {
+class FrontalMelt : public Component {
 public:
   FrontalMelt(IceGrid::ConstPtr grid);
   virtual ~FrontalMelt();
