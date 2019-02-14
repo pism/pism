@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
+// Copyright (C) 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -40,9 +40,7 @@ private:
 
   const IceModelVec2S& frontal_melt_rate_impl() const;
 
-  IceModelVec2T::Ptr m_frontalmeltrate;
-
-  IceModelVec2S::Ptr m_frontal_melt_rate;
+  IceModelVec2T::Ptr m_frontal_melt_rate;
 };
 
 } // end of namespace frontalmelt
