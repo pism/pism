@@ -33,6 +33,9 @@ EigenCalving::EigenCalving(IceGrid::ConstPtr grid)
   : StressCalving(grid, 2) {
 
   m_K = m_config->get_double("calving.eigen_calving.K");
+
+  m_calving_rate.metadata().set_string("long_name",
+                                       "horizontal calving rate due to eigen-calving");
 }
 
 EigenCalving::~EigenCalving() {

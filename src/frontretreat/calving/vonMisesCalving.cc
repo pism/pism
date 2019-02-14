@@ -34,7 +34,9 @@ vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr grid,
                                  std::shared_ptr<const rheology::FlowLaw> flow_law)
   : StressCalving(grid, 2),
     m_flow_law(flow_law) {
-  // empty
+
+  m_calving_rate.metadata().set_string("long_name",
+                                       "horizontal calving rate due to von Mises calving");
 }
 
 vonMisesCalving::~vonMisesCalving() {
