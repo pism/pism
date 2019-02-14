@@ -32,8 +32,8 @@ DischargeRouting::DischargeRouting(IceGrid::ConstPtr g)
   m_frontal_melt_rate = allocate_frontal_melt_rate(g);
 
   m_log->message(2,
-             "* Initializing the frontal melt model\n"
-             "  UAF-UT\n");
+                 "* Initializing the frontal melt model\n"
+                 "  UAF-UT\n");
   
   m_frontal_melt_rate = allocate_frontal_melt_rate(g);
 
@@ -138,8 +138,9 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
     }
   } // end of the loop over grid points
 
-  // Set frontal melt rate *near* grounded termini to the average of neighbors: front
-  // retreat code uses values at these locations (the rest is for visualization).
+  // Set frontal melt rate *near* grounded termini to the average of grounded icy
+  // neighbors: front retreat code uses values at these locations (the rest is for
+  // visualization).
 
   const Direction dirs[] = {North, East, South, West};
 

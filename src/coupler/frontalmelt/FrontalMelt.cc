@@ -44,6 +44,12 @@ IceModelVec2S::Ptr FrontalMelt::allocate_frontal_melt_rate(IceGrid::ConstPtr g) 
   return result;
 }
 
+/*!
+ * Compute retreat rate corresponding to a given frontal melt rate.
+ *
+ * This code computes the fraction of the front submerged in ocean water and uses it to
+ * scale the provided melt rate.
+ */
 void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
                                        const IceModelVec2S &frontal_melt_rate,
                                        IceModelVec2S &result) const {
@@ -136,7 +142,6 @@ const IceModelVec2S& FrontalMelt::frontal_melt_rate() const {
   return frontal_melt_rate_impl();
 }
 
-
 const IceModelVec2S& FrontalMelt::retreat_rate() const {
   return m_retreat_rate;
 }
@@ -172,14 +177,6 @@ void FrontalMelt::write_model_state_impl(const PIO &output) const {
     return m_input_model->write_model_state(output);
   } else {
     // no state to write
-  }
-}
-
-const IceModelVec2S& FrontalMelt::frontal_melt_rate_impl() const {
-  if (m_input_model) {
-    return m_input_model->frontal_melt_rate();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
 }
 

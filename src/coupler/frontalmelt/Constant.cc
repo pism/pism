@@ -41,8 +41,8 @@ void Constant::update_impl(const FrontalMeltInputs &inputs, double t, double dt)
   (void) dt;
 
   const double
-    melt_rate   = m_config->get_double("frontal_melt.constant.melt_rate", "m second-1");
-  
+    melt_rate = m_config->get_double("frontal_melt.constant.melt_rate", "m second-1");
+
   m_frontal_melt_rate->set(melt_rate);
 }
 

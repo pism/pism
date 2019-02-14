@@ -72,7 +72,7 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;
 
-  virtual const IceModelVec2S& frontal_melt_rate_impl() const;
+  virtual const IceModelVec2S& frontal_melt_rate_impl() const = 0;
 
   void compute_retreat_rate(const Geometry &geometry, const IceModelVec2S &frontal_melt_rate,
                             IceModelVec2S &result) const;
