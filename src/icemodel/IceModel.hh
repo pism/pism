@@ -79,8 +79,6 @@ class CalvingAtThickness;
 class IcebergRemover;
 }
 
-class FrontalMelt;
-
 namespace energy {
 class BedThermalUnit;
 class Inputs;
@@ -283,13 +281,11 @@ protected:
   std::shared_ptr<calving::EigenCalving>       m_eigen_calving;
   std::shared_ptr<calving::vonMisesCalving>    m_vonmises_calving;
 
-  std::shared_ptr<FrontalMelt> m_frontal_melt;
-
   std::shared_ptr<FrontRetreat> m_front_retreat;
 
   std::shared_ptr<surface::SurfaceModel>                  m_surface;
   std::shared_ptr<ocean::OceanModel>                      m_ocean;
-  std::shared_ptr<frontalmelt::FrontalMeltModel>          m_frontalmelt;
+  std::shared_ptr<frontalmelt::FrontalMeltModel>          m_frontal_melt;
   std::shared_ptr<ocean::sea_level::SeaLevel>             m_sea_level;
 
   bed::BedDef *m_beddef;

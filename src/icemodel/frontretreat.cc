@@ -24,7 +24,6 @@
 #include "pism/util/pism_utilities.hh"
 
 #include "pism/frontretreat/FrontRetreat.hh"
-#include "pism/frontretreat/FrontalMelt.hh"
 #include "pism/frontretreat/util/IcebergRemover.hh"
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
@@ -66,11 +65,18 @@ void IceModel::front_retreat_step() {
     }
 
     if (m_frontal_melt) {
+
       IceModelVec2S &flux_magnitude = m_work2d[1];
 
       flux_magnitude.set_to_magnitude(m_subglacial_hydrology->flux());
 
-      m_frontal_melt->update(m_geometry, flux_magnitude);
+      FrontalMeltInputs inputs;
+
+      inputs.geometry = &m_geometry;
+      inputs.subglacial_water_flux = &flux_magnitude;
+
+      m_frontal_melt->update(inputs, m_time->current(), m_dt);
+
       retreat_rate.add(1.0, m_frontal_melt->retreat_rate());
     }
 

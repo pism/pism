@@ -30,7 +30,6 @@
 
 #include "pism/frontretreat/calving/EigenCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
-#include "pism/frontretreat/FrontalMelt.hh"
 #include "pism/frontretreat/FrontRetreat.hh"
 
 #include "pism/energy/EnergyModel.hh"
