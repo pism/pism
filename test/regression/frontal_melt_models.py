@@ -130,7 +130,7 @@ class DischargeRoutingTest(TestCase):
         self.grid = create_grid()
 
         self.theta = PISM.IceModelVec2S(self.grid, "theta_ocean", PISM.WITHOUT_GHOSTS)
-        self.theta.set(convert(self.potential_temperature, "Celsius", "Kelvin"))
+        self.theta.set(self.potential_temperature)
 
         self.Qsg = PISM.IceModelVec2S(self.grid, "subglacial_water_flux",
                                       PISM.WITHOUT_GHOSTS)
@@ -175,7 +175,7 @@ class GivenTest(TestCase):
     def create_input(self, filename, melt_rate):
         PISM.util.prepare_output(filename)
 
-        Fmr = PISM.IceModelVec2S(self.grid, "frontalmeltrate", PISM.WITHOUT_GHOSTS)
+        Fmr = PISM.IceModelVec2S(self.grid, "frontal_melt_rate", PISM.WITHOUT_GHOSTS)
         Fmr.set_attrs("climate", "frontal melt rate", "m / s", "")
 
         Fmr.set(melt_rate)
