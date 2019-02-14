@@ -283,10 +283,10 @@ protected:
 
   std::shared_ptr<FrontRetreat> m_front_retreat;
 
-  std::shared_ptr<surface::SurfaceModel>                  m_surface;
-  std::shared_ptr<ocean::OceanModel>                      m_ocean;
-  std::shared_ptr<frontalmelt::FrontalMelt>          m_frontal_melt;
-  std::shared_ptr<ocean::sea_level::SeaLevel>             m_sea_level;
+  std::shared_ptr<surface::SurfaceModel>      m_surface;
+  std::shared_ptr<ocean::OceanModel>          m_ocean;
+  std::shared_ptr<frontalmelt::FrontalMelt>   m_frontal_melt;
+  std::shared_ptr<ocean::sea_level::SeaLevel> m_sea_level;
 
   bed::BedDef *m_beddef;
 
