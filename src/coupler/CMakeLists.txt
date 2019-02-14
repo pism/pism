@@ -19,7 +19,6 @@ add_library (boundary OBJECT
   ./atmosphere/Factory.cc
   ./atmosphere/Uniform.cc
   ./frontalmelt/FrontalMelt.cc
-  ./frontalmelt/CompleteFrontalMelt.cc
   ./frontalmelt/Constant.cc
   ./frontalmelt/DischargeRouting.cc
   ./frontalmelt/Given.cc

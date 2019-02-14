@@ -22,15 +22,13 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace frontalmelt {
 
 Constant::Constant(IceGrid::ConstPtr g)
-  : CompleteFrontalMelt(g) {
-  // empty
+  : FrontalMelt(g) {
+  m_frontal_melt_rate = allocate_frontal_melt_rate(g);
 }
 
 Constant::~Constant() {
@@ -47,16 +45,18 @@ void Constant::update_impl(const FrontalMeltInputs &inputs, double t, double dt)
   
   m_frontal_melt_rate->set(melt_rate);
 }
+
+const IceModelVec2S& Constant::frontal_melt_rate_impl() const {
+  return *m_frontal_melt_rate;
+}
   
 void Constant::init_impl(const Geometry &geometry) {
   (void) geometry;
 
-  if (not m_config->get_boolean("ocean.always_grounded")) {
-    m_log->message(2, "* Initializing the constant frontal melt model...\n");
-    m_log->message(2, "  Frontal melt rate set to %f m/year.\n",
-                   m_config->get_double("frontal_melt.constant.melt_rate", "m year-1"));
-
-  }
+  m_log->message(2,
+                 "* Initializing the constant frontal melt model...\n"
+                 "  Frontal melt rate set to %f m/year.\n",
+                 m_config->get_double("frontal_melt.constant.melt_rate", "m year-1"));
 }
 
 MaxTimestep Constant::max_timestep_impl(double t) const {

@@ -19,13 +19,13 @@
 #ifndef _PFMDISCHARGE_ROUTING_H_
 #define _PFMDISCHARGE_ROUTING_H_
 
-#include "CompleteFrontalMelt.hh"
+#include "pism/coupler/FrontalMelt.hh"
 #include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace frontalmelt {
   
-class DischargeRouting : public CompleteFrontalMelt
+class DischargeRouting : public FrontalMelt
 {
 public:
   DischargeRouting(IceGrid::ConstPtr g);
@@ -38,10 +38,15 @@ private:
 
   void update_impl(const FrontalMeltInputs &inputs, double t, double dt);
 
+  const IceModelVec2S& frontal_melt_rate_impl() const;
+
   MaxTimestep max_timestep_impl(double t) const;
 
   // input
   IceModelVec2T::Ptr m_theta_ocean;
+
+  // output
+  IceModelVec2S::Ptr m_frontal_melt_rate;
 };
 
 } // end of namespace frontalmelt

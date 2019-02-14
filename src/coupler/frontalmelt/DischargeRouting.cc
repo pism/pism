@@ -27,7 +27,9 @@ namespace pism {
 namespace frontalmelt {
   
 DischargeRouting::DischargeRouting(IceGrid::ConstPtr g)
-  : CompleteFrontalMelt(g, nullptr) {
+  : FrontalMelt(g, nullptr) {
+
+  m_frontal_melt_rate = allocate_frontal_melt_rate(g);
 
   m_log->message(2,
              "* Initializing the frontal melt model\n"
@@ -164,6 +166,10 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       }
     }
   }
+}
+
+const IceModelVec2S& DischargeRouting::frontal_melt_rate_impl() const {
+  return *m_frontal_melt_rate;
 }
 
 MaxTimestep DischargeRouting::max_timestep_impl(double t) const {

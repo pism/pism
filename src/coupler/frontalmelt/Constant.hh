@@ -19,24 +19,28 @@
 #ifndef _PFMCONSTANT_H_
 #define _PFMCONSTANT_H_
 
-#include "CompleteFrontalMelt.hh"
+#include "pism/coupler/FrontalMelt.hh"
 
 namespace pism {
 namespace frontalmelt {
 
-//! \brief A class implementing a constant (in terms of the ocean inputs)
-//! frontal melt model. Uses configuration parameters for the sea level
-//! sea level elevation and frontal melt rate.
-class Constant : public CompleteFrontalMelt {
+//! @brief A class implementing a constant (in terms of the ocean inputs) frontal melt
+//! model. Uses a configuration parameter for the frontal melt rate.
+class Constant : public FrontalMelt {
 public:
   Constant(IceGrid::ConstPtr g);
   virtual ~Constant();
 
 private:
-  MaxTimestep max_timestep_impl(double t) const;
-  void update_impl(const FrontalMeltInputs &inputs, double t, double dt);
   void init_impl(const Geometry &geometry);
 
+  void update_impl(const FrontalMeltInputs &inputs, double t, double dt);
+
+  const IceModelVec2S& frontal_melt_rate_impl() const;
+
+  MaxTimestep max_timestep_impl(double t) const;
+
+  IceModelVec2S::Ptr m_frontal_melt_rate;
 };
 
 } // end of namespace frontalmelt

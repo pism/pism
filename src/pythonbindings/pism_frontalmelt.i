@@ -9,9 +9,6 @@
 %shared_ptr(pism::frontalmelt::FrontalMelt)
 %include "coupler/FrontalMelt.hh"
 
-%shared_ptr(pism::frontalmelt::CompleteFrontalMelt)
-%include "coupler/frontalmelt/CompleteFrontalMelt.hh"
-
 %shared_ptr(pism::frontalmelt::Constant)
 %rename(FrontalMeltConstant) pism::frontalmelt::Constant;
 %include "coupler/frontalmelt/Constant.hh"
