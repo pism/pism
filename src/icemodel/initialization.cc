@@ -62,6 +62,7 @@
 #include "pism/age/AgeModel.hh"
 #include "pism/energy/EnthalpyModel.hh"
 #include "pism/energy/TemperatureModel.hh"
+#include "pism/frontretreat/FrontRetreat.hh"
 
 namespace pism {
 
@@ -894,6 +895,11 @@ void IceModel::init_calving() {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "PISM ERROR: calving method(s) [%s] are not supported.\n",
                                   set_join(methods, ",").c_str());
+  }
+
+  // allocate front retreat code if necessary
+  if (m_eigen_calving or m_vonmises_calving) {
+    m_front_retreat.reset(new FrontRetreat(m_grid));
   }
 }
 
