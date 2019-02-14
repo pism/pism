@@ -87,7 +87,7 @@ class EnergyModel;
 }
 
 namespace frontalmelt {
-  class FrontalMeltModel;
+  class FrontalMelt;
 }
 
 namespace bed {
@@ -160,7 +160,7 @@ public:
 
   const stressbalance::StressBalance* stress_balance() const;
   const ocean::OceanModel* ocean_model() const;
-  const frontalmelt::FrontalMeltModel* frontalmelt_model() const;
+  const frontalmelt::FrontalMelt* frontalmelt_model() const;
   const bed::BedDef* bed_model() const;
   const energy::BedThermalUnit* bedrock_thermal_model() const;
   const energy::EnergyModel* energy_balance_model() const;
@@ -285,7 +285,7 @@ protected:
 
   std::shared_ptr<surface::SurfaceModel>                  m_surface;
   std::shared_ptr<ocean::OceanModel>                      m_ocean;
-  std::shared_ptr<frontalmelt::FrontalMeltModel>          m_frontal_melt;
+  std::shared_ptr<frontalmelt::FrontalMelt>          m_frontal_melt;
   std::shared_ptr<ocean::sea_level::SeaLevel>             m_sea_level;
 
   bed::BedDef *m_beddef;

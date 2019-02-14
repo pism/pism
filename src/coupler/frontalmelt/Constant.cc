@@ -29,7 +29,7 @@ namespace pism {
 namespace frontalmelt {
 
 Constant::Constant(IceGrid::ConstPtr g)
-  : CompleteFrontalMeltModel(g) {
+  : CompleteFrontalMelt(g) {
   // empty
 }
 

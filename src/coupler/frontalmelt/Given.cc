@@ -27,7 +27,7 @@ namespace pism {
 namespace frontalmelt {
 
 Given::Given(IceGrid::ConstPtr g)
-  : FrontalMeltModel(g, nullptr) {
+  : FrontalMelt(g, nullptr) {
 
   m_frontal_melt_rate = allocate_frontal_melt_rate(g);
 }

@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "pism/coupler/FrontalMeltModel.hh"
+#include "pism/coupler/FrontalMelt.hh"
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh" // combine()
@@ -35,7 +35,7 @@ FrontalMeltInputs::FrontalMeltInputs() {
 
 namespace frontalmelt {
 
-IceModelVec2S::Ptr FrontalMeltModel::allocate_frontal_melt_rate(IceGrid::ConstPtr g) {
+IceModelVec2S::Ptr FrontalMelt::allocate_frontal_melt_rate(IceGrid::ConstPtr g) {
   IceModelVec2S::Ptr result(new IceModelVec2S(g, "frontal_melt_rate", WITHOUT_GHOSTS));
 
   result->set_attrs("diagnostic", "frontal melt rate", "m s-1", "");
@@ -44,7 +44,7 @@ IceModelVec2S::Ptr FrontalMeltModel::allocate_frontal_melt_rate(IceGrid::ConstPt
   return result;
 }
 
-void FrontalMeltModel::compute_retreat_rate(const Geometry &geometry,
+void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
                                             const IceModelVec2S &frontal_melt_rate,
                                             IceModelVec2S &result) const {
 
@@ -98,8 +98,8 @@ void FrontalMeltModel::compute_retreat_rate(const Geometry &geometry,
 }
 
 // "modifier" constructor
-FrontalMeltModel::FrontalMeltModel(IceGrid::ConstPtr g,
-                                   std::shared_ptr<FrontalMeltModel> input)
+FrontalMelt::FrontalMelt(IceGrid::ConstPtr g,
+                                   std::shared_ptr<FrontalMelt> input)
   : Component(g), m_input_model(input) {
 
   m_retreat_rate.create(m_grid, "retreat_rate_due_to_frontal_melt", WITHOUT_GHOSTS);
@@ -108,53 +108,53 @@ FrontalMeltModel::FrontalMeltModel(IceGrid::ConstPtr g,
 }
 
 // "model" constructor
-FrontalMeltModel::FrontalMeltModel(IceGrid::ConstPtr g)
-  : FrontalMeltModel(g, nullptr) {
+FrontalMelt::FrontalMelt(IceGrid::ConstPtr g)
+  : FrontalMelt(g, nullptr) {
   // empty
 }
 
-FrontalMeltModel::~FrontalMeltModel() {
+FrontalMelt::~FrontalMelt() {
   // empty
 }
 
-void FrontalMeltModel::init(const Geometry &geometry) {
+void FrontalMelt::init(const Geometry &geometry) {
   this->init_impl(geometry);
 }
 
-void FrontalMeltModel::bootstrap(const Geometry &geometry) {
+void FrontalMelt::bootstrap(const Geometry &geometry) {
   this->bootstrap_impl(geometry);
 }
 
-void FrontalMeltModel::init_impl(const Geometry &geometry) {
+void FrontalMelt::init_impl(const Geometry &geometry) {
   if (m_input_model) {
     m_input_model->init(geometry);
   }
 }
 
-void FrontalMeltModel::bootstrap_impl(const Geometry &geometry) {
+void FrontalMelt::bootstrap_impl(const Geometry &geometry) {
   if (m_input_model) {
     m_input_model->bootstrap(geometry);
   }
 }
 
-void FrontalMeltModel::update(const FrontalMeltInputs &inputs, double t, double dt) {
+void FrontalMelt::update(const FrontalMeltInputs &inputs, double t, double dt) {
   this->update_impl(inputs, t, dt);
 
   compute_retreat_rate(*inputs.geometry, frontal_melt_rate(), m_retreat_rate);
 }
 
-const IceModelVec2S& FrontalMeltModel::frontal_melt_rate() const {
+const IceModelVec2S& FrontalMelt::frontal_melt_rate() const {
   return frontal_melt_rate_impl();
 }
 
 
-const IceModelVec2S& FrontalMeltModel::retreat_rate() const {
+const IceModelVec2S& FrontalMelt::retreat_rate() const {
   return m_retreat_rate;
 }
 
 // pass-through default implementations for "modifiers"
 
-void FrontalMeltModel::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
+void FrontalMelt::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
   if (m_input_model) {
     m_input_model->update(inputs, t, dt);
   } else {
@@ -162,7 +162,7 @@ void FrontalMeltModel::update_impl(const FrontalMeltInputs &inputs, double t, do
   }
 }
 
-MaxTimestep FrontalMeltModel::max_timestep_impl(double t) const {
+MaxTimestep FrontalMelt::max_timestep_impl(double t) const {
   if (m_input_model) {
     return m_input_model->max_timestep(t);
   } else {
@@ -170,7 +170,7 @@ MaxTimestep FrontalMeltModel::max_timestep_impl(double t) const {
   }
 }
 
-void FrontalMeltModel::define_model_state_impl(const PIO &output) const {
+void FrontalMelt::define_model_state_impl(const PIO &output) const {
   if (m_input_model) {
     return m_input_model->define_model_state(output);
   } else {
@@ -178,7 +178,7 @@ void FrontalMeltModel::define_model_state_impl(const PIO &output) const {
   }
 }
 
-void FrontalMeltModel::write_model_state_impl(const PIO &output) const {
+void FrontalMelt::write_model_state_impl(const PIO &output) const {
   if (m_input_model) {
     return m_input_model->write_model_state(output);
   } else {
@@ -186,7 +186,7 @@ void FrontalMeltModel::write_model_state_impl(const PIO &output) const {
   }
 }
 
-const IceModelVec2S& FrontalMeltModel::frontal_melt_rate_impl() const {
+const IceModelVec2S& FrontalMelt::frontal_melt_rate_impl() const {
   if (m_input_model) {
     return m_input_model->frontal_melt_rate();
   } else {
@@ -197,11 +197,11 @@ const IceModelVec2S& FrontalMeltModel::frontal_melt_rate_impl() const {
 namespace diagnostics {
 
 /*! @brief Frontal melt rate. */
-class FrontalMeltRate : public Diag<FrontalMeltModel>
+class FrontalMeltRate : public Diag<FrontalMelt>
 {
 public:
-  FrontalMeltRate(const FrontalMeltModel *m)
-    : Diag<FrontalMeltModel>(m) {
+  FrontalMeltRate(const FrontalMelt *m)
+    : Diag<FrontalMelt>(m) {
 
     /* set metadata: */
     m_vars = {SpatialVariableMetadata(m_sys, "frontal_melt_rate")};
@@ -222,7 +222,7 @@ protected:
 
 } // end of namespace diagnostics
 
-DiagnosticList FrontalMeltModel::diagnostics_impl() const {
+DiagnosticList FrontalMelt::diagnostics_impl() const {
   using namespace diagnostics;
   DiagnosticList result = {
     {"frontal_melt_rate", Diagnostic::Ptr(new FrontalMeltRate(this))},
@@ -235,7 +235,7 @@ DiagnosticList FrontalMeltModel::diagnostics_impl() const {
   }
 }
 
-TSDiagnosticList FrontalMeltModel::ts_diagnostics_impl() const {
+TSDiagnosticList FrontalMelt::ts_diagnostics_impl() const {
   if (m_input_model) {
     return m_input_model->ts_diagnostics();
   } else {

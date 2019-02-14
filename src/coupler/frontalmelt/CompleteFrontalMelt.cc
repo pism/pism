@@ -17,33 +17,31 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef COMPLETEFRONTALMELTMODEL_H
-#define COMPLETEFRONTALMELTMODEL_H
-
-#include "pism/coupler/FrontalMeltModel.hh"
+#include "CompleteFrontalMelt.hh"
 
 namespace pism {
 namespace frontalmelt {
 
-/*!
- * Base class for frontal melt models with dedicated storage for output fields.
- *
- */
-class CompleteFrontalMeltModel : public FrontalMeltModel {
-public:
-  // "modifier" constructor
-  CompleteFrontalMeltModel(IceGrid::ConstPtr g, std::shared_ptr<FrontalMeltModel> input);
-  // "model" constructor
-  CompleteFrontalMeltModel(IceGrid::ConstPtr g);
+// "modifier" constructor
+CompleteFrontalMelt::CompleteFrontalMelt(IceGrid::ConstPtr g, std::shared_ptr<FrontalMelt> input)
+  : FrontalMelt(g, input) {
 
-  virtual ~CompleteFrontalMeltModel();
-protected:
-  virtual const IceModelVec2S& frontal_melt_rate_impl() const;
+  m_frontal_melt_rate = allocate_frontal_melt_rate(g);
+}
 
-  IceModelVec2S::Ptr m_frontal_melt_rate;
-};
+// "model" constructor
+CompleteFrontalMelt::CompleteFrontalMelt(IceGrid::ConstPtr g)
+  : CompleteFrontalMelt(g, nullptr) {
+  // empty
+}
 
-} // end of namespace frontalmelt
+CompleteFrontalMelt::~CompleteFrontalMelt() {
+  // empty
+}
+
+const IceModelVec2S& CompleteFrontalMelt::frontal_melt_rate_impl() const {
+  return *m_frontal_melt_rate;
+}
+
+} // end of namespace ocean
 } // end of namespace pism
-
-#endif /* COMPLETEOCEANMODEL_H */

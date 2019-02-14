@@ -19,7 +19,7 @@
 #ifndef _PFMCONSTANT_H_
 #define _PFMCONSTANT_H_
 
-#include "CompleteFrontalMeltModel.hh"
+#include "CompleteFrontalMelt.hh"
 
 namespace pism {
 namespace frontalmelt {
@@ -27,7 +27,7 @@ namespace frontalmelt {
 //! \brief A class implementing a constant (in terms of the ocean inputs)
 //! frontal melt model. Uses configuration parameters for the sea level
 //! sea level elevation and frontal melt rate.
-class Constant : public CompleteFrontalMeltModel {
+class Constant : public CompleteFrontalMelt {
 public:
   Constant(IceGrid::ConstPtr g);
   virtual ~Constant();

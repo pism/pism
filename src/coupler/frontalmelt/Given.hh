@@ -19,14 +19,14 @@
 #ifndef _PFM_GIVEN_H_
 #define _PFM_GIVEN_H_
 
-#include "pism/coupler/FrontalMeltModel.hh"
+#include "pism/coupler/FrontalMelt.hh"
 
 #include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace frontalmelt {
 
-class Given : public FrontalMeltModel
+class Given : public FrontalMelt
 {
 public:
   Given(IceGrid::ConstPtr g);

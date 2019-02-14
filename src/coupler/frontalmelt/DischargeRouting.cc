@@ -27,7 +27,7 @@ namespace pism {
 namespace frontalmelt {
   
 DischargeRouting::DischargeRouting(IceGrid::ConstPtr g)
-  : CompleteFrontalMeltModel(g, nullptr) {
+  : CompleteFrontalMelt(g, nullptr) {
 
   m_log->message(2,
              "* Initializing the frontal melt model\n"

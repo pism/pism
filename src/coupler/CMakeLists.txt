@@ -18,8 +18,8 @@ add_library (boundary OBJECT
   ./atmosphere/WeatherStation.cc
   ./atmosphere/Factory.cc
   ./atmosphere/Uniform.cc
-  ./frontalmelt/FrontalMeltModel.cc
-  ./frontalmelt/CompleteFrontalMeltModel.cc
+  ./frontalmelt/FrontalMelt.cc
+  ./frontalmelt/CompleteFrontalMelt.cc
   ./frontalmelt/Constant.cc
   ./frontalmelt/DischargeRouting.cc
   ./frontalmelt/Given.cc

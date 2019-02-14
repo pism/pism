@@ -32,7 +32,7 @@
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
 
 #include "pism/energy/EnergyModel.hh"
-#include "pism/coupler/FrontalMeltModel.hh"
+#include "pism/coupler/FrontalMelt.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/hydrology/Hydrology.hh"
 #include "pism/frontretreat/util/remove_narrow_tongues.hh"

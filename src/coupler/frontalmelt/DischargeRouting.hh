@@ -19,13 +19,13 @@
 #ifndef _PFMDISCHARGE_ROUTING_H_
 #define _PFMDISCHARGE_ROUTING_H_
 
-#include "CompleteFrontalMeltModel.hh"
+#include "CompleteFrontalMelt.hh"
 #include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace frontalmelt {
   
-class DischargeRouting : public CompleteFrontalMeltModel
+class DischargeRouting : public CompleteFrontalMelt
 {
 public:
   DischargeRouting(IceGrid::ConstPtr g);

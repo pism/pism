@@ -20,11 +20,11 @@
 #define _PFMFACTORY_H_
 
 #include "pism/coupler/util/PCFactory.hh"
-#include "pism/coupler/FrontalMeltModel.hh"
+#include "pism/coupler/FrontalMelt.hh"
 
 namespace pism {
 namespace frontalmelt {
-class Factory : public PCFactory<frontalmelt::FrontalMeltModel> {
+class Factory : public PCFactory<frontalmelt::FrontalMelt> {
 public:
   Factory(IceGrid::ConstPtr g);
   ~Factory();

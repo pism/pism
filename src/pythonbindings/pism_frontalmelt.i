@@ -6,11 +6,11 @@
 #include "coupler/frontalmelt/FrontalMeltPhysics.hh"
 %}
 
-%shared_ptr(pism::frontalmelt::FrontalMeltModel)
-%include "coupler/FrontalMeltModel.hh"
+%shared_ptr(pism::frontalmelt::FrontalMelt)
+%include "coupler/FrontalMelt.hh"
 
-%shared_ptr(pism::frontalmelt::CompleteFrontalMeltModel)
-%include "coupler/frontalmelt/CompleteFrontalMeltModel.hh"
+%shared_ptr(pism::frontalmelt::CompleteFrontalMelt)
+%include "coupler/frontalmelt/CompleteFrontalMelt.hh"
 
 %shared_ptr(pism::frontalmelt::Constant)
 %rename(FrontalMeltConstant) pism::frontalmelt::Constant;

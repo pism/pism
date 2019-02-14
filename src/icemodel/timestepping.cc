@@ -34,7 +34,7 @@
 
 #include "pism/energy/EnergyModel.hh"
 #include "pism/coupler/OceanModel.hh"
-#include "pism/coupler/FrontalMeltModel.hh"
+#include "pism/coupler/FrontalMelt.hh"
 
 namespace pism {
 

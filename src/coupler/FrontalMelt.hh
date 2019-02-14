@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PISMFrontalMeltModel_hh
-#define __PISMFrontalMeltModel_hh
+#ifndef __PISMFrontalMelt_hh
+#define __PISMFrontalMelt_hh
 
 #include <memory>
 
@@ -44,14 +44,14 @@ public:
 namespace frontalmelt {
 
 //! A very rudimentary PISM frontal melt model.
-class FrontalMeltModel : public Component {
+class FrontalMelt : public Component {
 public:
   // "modifier" constructor
-  FrontalMeltModel(IceGrid::ConstPtr g, std::shared_ptr<FrontalMeltModel> input);
+  FrontalMelt(IceGrid::ConstPtr g, std::shared_ptr<FrontalMelt> input);
   // "model" constructor
-  FrontalMeltModel(IceGrid::ConstPtr g);
+  FrontalMelt(IceGrid::ConstPtr g);
 
-  virtual ~FrontalMeltModel();
+  virtual ~FrontalMelt();
 
   void init(const Geometry &geometry);
   void bootstrap(const Geometry &geometry);
@@ -80,7 +80,7 @@ protected:
                             IceModelVec2S &result) const;
 
 protected:
-  std::shared_ptr<FrontalMeltModel> m_input_model;
+  std::shared_ptr<FrontalMelt> m_input_model;
 
   static IceModelVec2S::Ptr allocate_frontal_melt_rate(IceGrid::ConstPtr g);
 
@@ -90,4 +90,4 @@ protected:
 } // end of namespace frontalmelt
 } // end of namespace pism
 
-#endif  // __PISMFrontalMeltModel_hh
+#endif  // __PISMFrontalMelt_hh
