@@ -54,16 +54,14 @@ private:
   void compute_modified_mask(const IceModelVec2CellType &input,
                              IceModelVec2CellType &output) const;
 
-  // ghosted (and potentially modified) cell type mask
+  // Ghosted cell type mask
+  //
+  // We make a copy here because frontal retreat code uses a modified mask if
+  // geometry.front_retreat.wrap_around is false.
   IceModelVec2CellType m_cell_type;
-  // temporary storage for distributing ice loss to "full" (as opposed to "partially
+  // Temporary storage for distributing ice loss to "full" (as opposed to "partially
   // filled") cells near the front
   IceModelVec2S m_tmp;
-  // ghosted copy of the surface topography
-  //
-  // FIXME: Why do we need this? Can't we use geometry.ice_surface_elevation, which is
-  // ghosted too?
-  IceModelVec2S m_surface_topography;
 };
 
 } // end of namespace pism

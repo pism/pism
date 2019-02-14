@@ -36,9 +36,6 @@ FrontRetreat::FrontRetreat(IceGrid::ConstPtr g)
 
   m_cell_type.create(m_grid, "cell_type", WITH_GHOSTS, 1);
   m_cell_type.set_attrs("internal", "cell type mask", "", "");
-
-  m_surface_topography.create(m_grid, "surface_topography", WITH_GHOSTS, 1);
-  m_surface_topography.set_attrs("internal", "surface topography", "m", "surface_altitude");
 }
 
 FrontRetreat::~FrontRetreat() {
@@ -158,6 +155,7 @@ void FrontRetreat::update_geometry(double dt,
 
   const IceModelVec2S &bed = geometry.bed_elevation;
   const IceModelVec2S &sea_level = geometry.sea_level_elevation;
+  const IceModelVec2S &surface_elevation = geometry.ice_surface_elevation;
 
   if (m_config->get_boolean("geometry.front_retreat.wrap_around")) {
     m_cell_type.copy_from(geometry.cell_type);
@@ -167,17 +165,13 @@ void FrontRetreat::update_geometry(double dt,
     compute_modified_mask(geometry.cell_type, m_cell_type);
   }
 
-  GeometryCalculator gc(*m_config);
-  gc.compute_surface(sea_level, bed, ice_thickness,
-                     m_surface_topography);
-
   const double dx = m_grid->dx();
 
   m_tmp.set(0.0);
 
   IceModelVec::AccessList list{&ice_thickness, &bc_mask,
       &bed, &sea_level, &m_cell_type, &Href, &m_tmp, &retreat_rate,
-      &m_surface_topography};
+      &surface_elevation};
 
   // Prepare to loop over neighbors: directions
   const Direction dirs[] = {North, East, South, West};
@@ -199,7 +193,7 @@ void FrontRetreat::update_geometry(double dt,
       // Compute the number of floating neighbors and the neighbor-averaged ice thickness:
       double H_threshold = part_grid_threshold_thickness(m_cell_type.int_star(i, j),
                                                          ice_thickness.star(i, j),
-                                                         m_surface_topography.star(i, j),
+                                                         surface_elevation.star(i, j),
                                                          bed(i, j));
 
       // Calculate mass loss with respect to the associated ice thickness and the grid size:
