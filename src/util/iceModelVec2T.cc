@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018 Constantine Khroulev
+// Copyright (C) 2009--2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -452,9 +452,6 @@ void IceModelVec2T::get_record(int n) {
 
 //! \brief Given the time t and the current selected time-step dt,
 //! determines the maximum possible time-step this IceModelVec2T allows.
-/*!
-  Returns -1 if any time step is OK at t.
- */
 MaxTimestep IceModelVec2T::max_timestep(double t) const {
   // only allow going to the next record
   auto l = upper_bound(m_time_bounds.begin(), m_time_bounds.end(), t);

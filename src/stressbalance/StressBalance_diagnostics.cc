@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -1088,8 +1088,6 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
-    // Find partially filled or empty grid boxes on the icefree ocean, which
-    // have floating ice neighbors after the mass continuity step
     if (mask.icy(i, j)) {
 
       const double       H = ice_thickness(i, j);
