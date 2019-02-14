@@ -63,6 +63,7 @@
 #include "pism/energy/EnthalpyModel.hh"
 #include "pism/energy/TemperatureModel.hh"
 #include "pism/frontretreat/FrontRetreat.hh"
+#include "pism/coupler/frontalmelt/Factory.hh"
 
 namespace pism {
 
@@ -819,10 +820,20 @@ void IceModel::misc_setup() {
 }
 
 void IceModel::init_frontal_melt() {
-  // TO DO:
-  // - add configuration parameters selecting a frontal melt model
-  // - check parameters here and allocate models, if necessary
-  // - add to m_submodels
+
+  auto frontal_melt = m_config->get_string("frontal_melt.models");
+
+  if (not frontal_melt.empty()) {
+    m_frontal_melt = frontalmelt::Factory(m_grid).create(frontal_melt);
+
+    m_frontal_melt->init(m_geometry);
+
+    m_submodels["frontal melt"] = m_frontal_melt.get();
+
+    if (not m_front_retreat) {
+      m_front_retreat.reset(new FrontRetreat(m_grid));
+    }
+  }
 }
 
 //! \brief Initialize calving mechanisms.
