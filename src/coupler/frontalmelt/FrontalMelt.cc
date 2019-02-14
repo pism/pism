@@ -209,12 +209,39 @@ protected:
   }
 };
 
+/*! @brief Report retreat rate due to frontal melt */
+class FrontalMeltRetreatRate : public Diag<FrontalMelt>
+{
+public:
+  FrontalMeltRetreatRate(const FrontalMelt *m)
+    : Diag<FrontalMelt>(m) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "frontal_melt_retreat_rate")};
+
+    set_attrs("retreat rate due to frontal melt", "", "m s-1", "m year-1", 0);
+    m_vars[0].set_string("comment", "takes into account what part of the front is submerged");
+  }
+
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid,
+                                                "frontal_melt_retreat_rate", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+
+    result->copy_from(model->retreat_rate());
+
+    return result;
+  }
+};
+
 } // end of namespace diagnostics
 
 DiagnosticList FrontalMelt::diagnostics_impl() const {
   using namespace diagnostics;
   DiagnosticList result = {
     {"frontal_melt_rate", Diagnostic::Ptr(new FrontalMeltRate(this))},
+    {"frontal_melt_retreat_rate", Diagnostic::Ptr(new FrontalMeltRetreatRate(this))}
   };
 
   if (m_input_model) {
