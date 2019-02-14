@@ -824,6 +824,11 @@ void IceModel::init_frontal_melt() {
   auto frontal_melt = m_config->get_string("frontal_melt.models");
 
   if (not frontal_melt.empty()) {
+    if (not m_config->get_boolean("geometry.part_grid.enabled")) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "ERROR: frontal melt models require geometry.part_grid.enabled");
+    }
+
     m_frontal_melt = frontalmelt::Factory(m_grid).create(frontal_melt);
 
     m_frontal_melt->init(m_geometry);
