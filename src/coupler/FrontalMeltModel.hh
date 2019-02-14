@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2018, 2019 Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -60,6 +60,8 @@ public:
 
   const IceModelVec2S& frontal_melt_rate() const;
 
+  const IceModelVec2S& retreat_rate() const;
+
 protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void bootstrap_impl(const Geometry &geometry);
@@ -74,11 +76,15 @@ protected:
 
   virtual const IceModelVec2S& frontal_melt_rate_impl() const;
 
+  void compute_retreat_rate(const Geometry &geometry, const IceModelVec2S &frontal_melt_rate,
+                            IceModelVec2S &result) const;
+
 protected:
   std::shared_ptr<FrontalMeltModel> m_input_model;
 
   static IceModelVec2S::Ptr allocate_frontal_melt_rate(IceGrid::ConstPtr g);
-  
+
+  IceModelVec2S m_retreat_rate;
 };
 
 } // end of namespace frontalmelt

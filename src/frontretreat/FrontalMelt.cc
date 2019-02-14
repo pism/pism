@@ -51,54 +51,6 @@ DiagnosticList FrontalMelt::diagnostics_impl() const {
  * part of the front is submerged.
  */
 void FrontalMelt::update(const Geometry &geometry, const IceModelVec2S &frontal_melt_rate) {
-
-  GeometryCalculator gc(*m_config);
-
-  const IceModelVec2S
-    &bed_elevation       = geometry.bed_elevation,
-    &surface_elevation   = geometry.ice_surface_elevation,
-    &ice_thickness       = geometry.ice_thickness,
-    &sea_level_elevation = geometry.sea_level_elevation;
-  const IceModelVec2CellType &cell_type = geometry.cell_type;
-
-  const double
-    ice_density = m_config->get_double("constants.ice.density"),
-    alpha       = ice_density / m_config->get_double("constants.sea_water.density");
-
-  IceModelVec::AccessList list{&cell_type, &frontal_melt_rate, &sea_level_elevation,
-      &bed_elevation, &surface_elevation, &ice_thickness, &m_retreat_rate};
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j)) {
-        const double
-          bed       = bed_elevation(i, j),
-          sea_level = sea_level_elevation(i, j);
-
-        auto H = ice_thickness.star(i, j);
-        auto h = surface_elevation.star(i, j);
-        auto M = cell_type.int_star(i, j);
-
-        double H_threshold = part_grid_threshold_thickness(M, H, h, bed);
-
-        int m = gc.mask(sea_level, bed, H_threshold);
-
-        double H_submerged = (mask::grounded(m) ?
-                              std::max(sea_level - bed, 0.0) :
-                              alpha * H_threshold);
-
-        m_retreat_rate(i, j) = (H_submerged / H_threshold) * frontal_melt_rate(i, j);
-      } else {
-        m_retreat_rate(i, j) = 0.0;
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
 }
 
 } // end of namespace pism

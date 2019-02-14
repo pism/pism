@@ -21,6 +21,9 @@
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh" // combine()
+#include "pism/geometry/Geometry.hh"
+#include "pism/geometry/part_grid_threshold_thickness.hh"
+#include "pism/util/Mask.hh"         // GeometryCalculator
 
 namespace pism {
 
@@ -41,11 +44,67 @@ IceModelVec2S::Ptr FrontalMeltModel::allocate_frontal_melt_rate(IceGrid::ConstPt
   return result;
 }
 
+void FrontalMeltModel::compute_retreat_rate(const Geometry &geometry,
+                                            const IceModelVec2S &frontal_melt_rate,
+                                            IceModelVec2S &result) const {
+
+  GeometryCalculator gc(*m_config);
+
+  const IceModelVec2S
+    &bed_elevation       = geometry.bed_elevation,
+    &surface_elevation   = geometry.ice_surface_elevation,
+    &ice_thickness       = geometry.ice_thickness,
+    &sea_level_elevation = geometry.sea_level_elevation;
+  const IceModelVec2CellType &cell_type = geometry.cell_type;
+
+  const double
+    ice_density = m_config->get_double("constants.ice.density"),
+    alpha       = ice_density / m_config->get_double("constants.sea_water.density");
+
+  IceModelVec::AccessList list{&cell_type, &frontal_melt_rate, &sea_level_elevation,
+      &bed_elevation, &surface_elevation, &ice_thickness, &result};
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j)) {
+        const double
+          bed       = bed_elevation(i, j),
+          sea_level = sea_level_elevation(i, j);
+
+        auto H = ice_thickness.star(i, j);
+        auto h = surface_elevation.star(i, j);
+        auto M = cell_type.int_star(i, j);
+
+        double H_threshold = part_grid_threshold_thickness(M, H, h, bed);
+
+        int m = gc.mask(sea_level, bed, H_threshold);
+
+        double H_submerged = (mask::grounded(m) ?
+                              std::max(sea_level - bed, 0.0) :
+                              alpha * H_threshold);
+
+        result(i, j) = (H_submerged / H_threshold) * frontal_melt_rate(i, j);
+      } else {
+        result(i, j) = 0.0;
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+}
+
 // "modifier" constructor
 FrontalMeltModel::FrontalMeltModel(IceGrid::ConstPtr g,
                                    std::shared_ptr<FrontalMeltModel> input)
   : Component(g), m_input_model(input) {
-  // empty
+
+  m_retreat_rate.create(m_grid, "retreat_rate_due_to_frontal_melt", WITHOUT_GHOSTS);
+  m_retreat_rate.set_attrs("diagnostic", "retreat rate due to frontal melt", "m s-1", "");
+  m_retreat_rate.metadata().set_string("glaciological_units", "m day-1");
 }
 
 // "model" constructor
@@ -80,10 +139,17 @@ void FrontalMeltModel::bootstrap_impl(const Geometry &geometry) {
 
 void FrontalMeltModel::update(const FrontalMeltInputs &inputs, double t, double dt) {
   this->update_impl(inputs, t, dt);
+
+  compute_retreat_rate(*inputs.geometry, frontal_melt_rate(), m_retreat_rate);
 }
 
 const IceModelVec2S& FrontalMeltModel::frontal_melt_rate() const {
   return frontal_melt_rate_impl();
+}
+
+
+const IceModelVec2S& FrontalMeltModel::retreat_rate() const {
+  return m_retreat_rate;
 }
 
 // pass-through default implementations for "modifiers"
