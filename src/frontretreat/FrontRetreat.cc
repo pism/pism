@@ -128,8 +128,8 @@ MaxTimestep FrontRetreat::max_timestep(const IceModelVec2CellType &cell_type,
   double dt = 1.0 / (denom + epsilon);
 
   m_log->message(3,
-                 "  frontal melt: maximum rate = %.2f m/year gives dt=%.5f years\n"
-                 "                mean rate    = %.2f m/year over %d cells\n",
+                 "  frontal retreat: maximum rate = %.2f m/year gives dt=%.5f years\n"
+                 "                   mean rate    = %.2f m/year over %d cells\n",
                  convert(m_sys, retreat_rate_max, "m second-1", "m year-1"),
                  convert(m_sys, dt, "seconds", "years"),
                  convert(m_sys, retreat_rate_mean, "m second-1", "m year-1"),
