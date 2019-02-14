@@ -373,7 +373,7 @@ protected:
   virtual void update_run_stats();
 
   // working space (a convenience)
-  static const int m_n_work2d = 3;
+  static const int m_n_work2d = 4;
   mutable IceModelVec2S m_work2d[m_n_work2d];
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;

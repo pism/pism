@@ -45,7 +45,7 @@ void IceModel::front_retreat_step() {
   if (m_eigen_calving or m_vonmises_calving or m_frontal_melt) {
     // at least one of front retreat mechanisms is active
 
-    IceModelVec2S &retreat_rate = m_work2d[0];
+    IceModelVec2S &retreat_rate = m_work2d[2];
     retreat_rate.set(0.0);
 
     if (m_eigen_calving) {
@@ -66,7 +66,7 @@ void IceModel::front_retreat_step() {
 
     if (m_frontal_melt) {
 
-      IceModelVec2S &flux_magnitude = m_work2d[1];
+      IceModelVec2S &flux_magnitude = m_work2d[3];
 
       flux_magnitude.set_to_magnitude(m_subglacial_hydrology->flux());
 

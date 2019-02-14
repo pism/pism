@@ -661,22 +661,25 @@ void IceModel::step(bool do_mass_continuity,
                                            m_basal_melt_rate);
     m_geometry_evolution->apply_mass_fluxes(m_geometry);
 
-    IceModelVec2S
-      &old_H    = m_work2d[0],
-      &old_Href = m_work2d[1];
-
+    // add removed icebergs to ice discharge
     {
-      old_H.copy_from(m_geometry.ice_thickness);
-      old_Href.copy_from(m_geometry.ice_area_specific_volume);
+      IceModelVec2S
+        &old_H    = m_work2d[0],
+        &old_Href = m_work2d[1];
+
+      {
+        old_H.copy_from(m_geometry.ice_thickness);
+        old_Href.copy_from(m_geometry.ice_area_specific_volume);
+      }
+
+      // the last call has to remove icebergs
+      enforce_consistency_of_geometry(REMOVE_ICEBERGS);
+
+      accumulate_discharge(m_geometry.ice_thickness,
+                           m_geometry.ice_area_specific_volume,
+                           old_H, old_Href,
+                           m_discharge);
     }
-
-    // the last call has to remove icebergs
-    enforce_consistency_of_geometry(REMOVE_ICEBERGS);
-
-    accumulate_discharge(m_geometry.ice_thickness,
-                         m_geometry.ice_area_specific_volume,
-                         old_H, old_Href,
-                         m_discharge);
   }
 
   //! \li update the state variables in the subglacial hydrology model (typically
