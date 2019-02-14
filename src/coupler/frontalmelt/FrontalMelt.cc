@@ -98,8 +98,7 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
 }
 
 // "modifier" constructor
-FrontalMelt::FrontalMelt(IceGrid::ConstPtr g,
-                                   std::shared_ptr<FrontalMelt> input)
+FrontalMelt::FrontalMelt(IceGrid::ConstPtr g, std::shared_ptr<FrontalMelt> input)
   : Component(g), m_input_model(input) {
 
   m_retreat_rate.create(m_grid, "retreat_rate_due_to_frontal_melt", WITHOUT_GHOSTS);
@@ -121,19 +120,9 @@ void FrontalMelt::init(const Geometry &geometry) {
   this->init_impl(geometry);
 }
 
-void FrontalMelt::bootstrap(const Geometry &geometry) {
-  this->bootstrap_impl(geometry);
-}
-
 void FrontalMelt::init_impl(const Geometry &geometry) {
   if (m_input_model) {
     m_input_model->init(geometry);
-  }
-}
-
-void FrontalMelt::bootstrap_impl(const Geometry &geometry) {
-  if (m_input_model) {
-    m_input_model->bootstrap(geometry);
   }
 }
 

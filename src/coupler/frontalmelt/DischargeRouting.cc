@@ -38,25 +38,19 @@ DischargeRouting::DischargeRouting(IceGrid::ConstPtr g)
   unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
 
   m_theta_ocean.reset(new IceModelVec2T(g, "theta_ocean", 1, evaluations_per_year));
+  m_theta_ocean->set_attrs("climate_forcing",
+                           "potential temperature of the adjacent ocean",
+                           "Celsius", "");
+
+  m_theta_ocean->init_constant(0.0);
 }
 
 DischargeRouting::~DischargeRouting() {
   // empty
 }
 
-void DischargeRouting::bootstrap_impl(const Geometry &geometry) {
-  (void) geometry;
-
-  FrontalMeltPhysics physics(*m_config);
-
-  // FIXME: theta has units of Kelvin, so zero is not a reasonable default value
-  m_theta_ocean->set(0.0);
-}
-
 void DischargeRouting::init_impl(const Geometry &geometry) {
   (void) geometry;
-
-  FrontalMeltPhysics physics(*m_config);
 
   ForcingOptions opt(*m_grid->ctx(), "frontal_melt.routing");
 
@@ -81,7 +75,6 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
                            "Celsius", "");
 
   m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
-
 }
 
 /*!
@@ -156,12 +149,8 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
 MaxTimestep DischargeRouting::max_timestep_impl(double t) const {
   (void) t;
 
+  // FIXME: get time step restriction from m_theta_ocean.
   return MaxTimestep("frontal_melt routing");
-}
-
-
-const IceModelVec2S& DischargeRouting::frontal_melt_rate_impl() const {
-  return *m_frontal_melt_rate;
 }
 
 } // end of namespace frontalmelt

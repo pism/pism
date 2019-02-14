@@ -33,9 +33,10 @@ public:
   virtual ~Given();
 
 private:
-  void update_impl(const FrontalMeltInputs &inputs, double t, double dt);
   void init_impl(const Geometry &geometry);
-  void bootstrap_impl(const Geometry &geometry);
+
+  void update_impl(const FrontalMeltInputs &inputs, double t, double dt);
+
   MaxTimestep max_timestep_impl(double t) const;
 
   const IceModelVec2S& frontal_melt_rate_impl() const;

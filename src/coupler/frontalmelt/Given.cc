@@ -28,7 +28,10 @@ namespace frontalmelt {
 
 Given::Given(IceGrid::ConstPtr g)
   : FrontalMelt(g, nullptr) {
-  // empty
+
+  m_frontal_melt_rate.reset(new IceModelVec2T(g, "frontal_melt_rate", 1, 1));
+
+  m_frontal_melt_rate->init_constant(0.0);
 }
 
 Given::~Given() {
@@ -66,11 +69,6 @@ void Given::init_impl(const Geometry &geometry) {
   m_frontal_melt_rate->init(opt.filename, opt.period, opt.reference_time);
 }
 
-void Given::bootstrap_impl(const Geometry &geometry) {
-  (void) geometry;
-  m_frontal_melt_rate->init_constant(0.0);
-}
-  
 void Given::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
   (void) inputs;
 
