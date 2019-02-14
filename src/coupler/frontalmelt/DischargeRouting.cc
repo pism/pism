@@ -112,17 +112,13 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
 
       // Assume for now that thermal forcing is equal to theta_ocean. Also, thermal
       // forcing is generally not available at the grounding line.
-      //
       double TF = (*m_theta_ocean)(i, j);
 
       double cross_section_area = ice_thickness(i, j) * grid_spacing;
 
-      // subglacial discharge: convert from m^2/s to m/day
-      //
-      // The parameterization uses the water "flux" in the very strange units of "m /
-      // day". The only interpretation of it I can come up with is that it is the rate of
-      // retreat of the front that results in the mass loss equivalent to the mass loss
-      // due to the water flux from underneath the ice.
+      // Convert subglacial water flux (m^2/s) to an "effective subglacial freshwater
+      // velocity" or flux per unit area of ice front in m/day (see Xu et al 2013, section
+      // 2, paragraph 11).
       //
       // [flux] = m^2 / s, so
       // [flux * grid_spacing] = m^3 / s, so
@@ -131,7 +127,6 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       double Q_sg = water_flux(i, j) * grid_spacing;
       double q_sg = Q_sg / cross_section_area * seconds_per_day;
 
-      // get the average ice thickness over ice-covered grounded neighbors
       double water_depth = sea_level_elevation(i, j) - bed_elevation(i, j);
 
       (*m_frontal_melt_rate)(i, j) = physics.frontal_melt_from_undercutting(water_depth, q_sg, TF);
