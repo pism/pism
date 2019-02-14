@@ -38,6 +38,12 @@
    :Value: 0 (years)
    :Description: Initial age of ice
 
+#. :config:`atmosphere.models` (*string*)
+
+   :Value: given
+   :Option: :opt:`-atmosphere`
+   :Description: Comma-separated list of atmosphere melt models and modifiers.
+
 #. :config:`atmosphere.fausto_air_temp.c_ma` (*scalar*)
 
    :Value: -0.718900 (Kelvin / degree_north)
@@ -423,16 +429,16 @@
    :Option: :opt:`-float_kill_calve_near_grounding_line`
    :Description: Calve floating ice near the grounding line.
 
-#. :config:`calving.front_retreat.wrap_around` (*boolean*)
+#. :config:`geometry.front_retreat.wrap_around` (*boolean*)
 
    :Value: false
-   :Option: :opt:`-calving_wrap_around`
+   :Option: :opt:`-front_retreat_wrap_around`
    :Description: If true, wrap around domain boundaries. This may be needed in some regional synthetic geometry setups.
 
-#. :config:`calving.front_retreat.use_cfl` (*boolean*)
+#. :config:`geometry.front_retreat.use_cfl` (*boolean*)
 
    :Value: false
-   :Option: :opt:`-calving_cfl`
+   :Option: :opt:`-front_retreat_cfl`
    :Description: apply CFL criterion for eigen-calving rate front retreat
 
 #. :config:`calving.methods` (*string*)
@@ -811,6 +817,74 @@
    :Option: :opt:`-write_fd_fields`
    :Description: Writing of fracture density related fields to nc-file.
 
+#. :config:`frontal_melt.models` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-frontal`
+   :Description: Comma-separated list of frontal melt models and modifiers. (Leave empty to disable.)
+
+#. :config:`frontal_melt.constant.melt_rate` (*scalar*)
+
+   :Value: 1 (m / day)
+   :Option: :opt:`-frontal_melt_rate`
+   :Description: default melt rate used by the 'constant' frontal_melt model
+
+#. :config:`frontal_melt.given.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-frontal_melt_given_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`frontal_melt.given.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-frontal_melt_given_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`frontal_melt.given.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-frontal_melt_given_reference_year`
+   :Description: Reference year to use when ``frontal_melt.given.period`` is active.
+
+#. :config:`frontal_melt.parameter_a` (*scalar*)
+
+   :Value: 0.000300 (m−alpha day^(alpha−1) Celsius−beta)
+   :Description: parameter A in eqn. 1 in :cite:`Xu2013`
+
+#. :config:`frontal_melt.parameter_b` (*scalar*)
+
+   :Value: 0.150000 (m day^(alpha−1) Celsius−beta)
+   :Description: parameter B in eqn. 1 in :cite:`Xu2013`
+
+#. :config:`frontal_melt.power_alpha` (*scalar*)
+
+   :Value: 0.390000 (1)
+   :Description: exponent `\alpha` in eqn. 1 in :cite:`Xu2013`
+
+#. :config:`frontal_melt.power_beta` (*scalar*)
+
+   :Value: 1.180000 (1)
+   :Description: exponent `\beta` in eqn. 1 in :cite:`Xu2013`
+
+#. :config:`frontal_melt.routing.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-frontal_melt_routing_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`frontal_melt.routing.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-frontal_melt_routing_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`frontal_melt.routing.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-frontal_melt_routing_reference_year`
+   :Description: Reference year to use when ``frontal_melt.routing.period`` is active.
+
 #. :config:`geometry.grounded_cell_fraction` (*boolean*)
 
    :Value: false
@@ -1045,6 +1119,11 @@
    :Value: *no default*
    :Description: Basal hydrology sub.surface_input_file.
 
+#. :config:`hydrology.surface_input_from_runoff` (*boolean*)
+
+   :Value: no
+   :Description: Use surface runoff as surface input.
+
 #. :config:`inverse.design.cH1` (*scalar*)
 
    :Value: 0 (1)
@@ -1209,6 +1288,18 @@
    :Value: yes
    :Option: :opt:`-inv_use_design_prior`
    :Description: Use prior from inverse data file as initial guess.
+
+#. :config:`ocean.models` (*string*)
+
+   :Value: constant
+   :Option: :opt:`-ocean`
+   :Description: Comma-separated list of ocean models and modifiers.
+
+#. :config:`sea_level.models` (*string*)
+
+   :Value: constant
+   :Option: :opt:`-sea_level`
+   :Description: Comma-separated list of sea level models and modifiers.
 
 #. :config:`ocean.anomaly.file` (*string*)
 
@@ -1816,6 +1907,12 @@
 
    :Value: 0.200000 (1)
    :Description: The ratio of the basal water pressure and the ice overburden pressure in the Weertman-style sliding parameterization.
+
+#. :config:`surface.models` (*string*)
+
+   :Value: given
+   :Option: :opt:`-surface`
+   :Description: Comma-separated list of surface models and modifiers.
 
 #. :config:`surface.cache.update_interval` (*integer*)
 

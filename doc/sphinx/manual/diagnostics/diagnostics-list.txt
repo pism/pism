@@ -239,7 +239,13 @@ Spatially-variable fields
 #. ``frontal_melt_rate``
 
    :Units: m year-1
-   :Description: horizontal front retreat rate due to melt
+   :Description: frontal melt rate
+
+#. ``frontal_melt_retreat_rate``
+
+   :Units: m year-1
+   :Description: retreat rate due to frontal melt
+   :Comment: takes into account what part of the front is submerged
 
 #. ``h_x``
 
@@ -449,6 +455,11 @@ Spatially-variable fields
 
    :Units: mW m-3
    :Description: rate of strain heating in ice (dissipation heating)
+
+#. ``subglacial_water_flux_mag``
+
+   :Units: m2 year-1
+   :Description: advective subglacial water flux
 
 #. ``subglacial_water_input_rate``
 
