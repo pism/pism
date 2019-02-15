@@ -10,6 +10,19 @@ Changes since v1.1
   `-front_retreat_wrap_around`.
 - Add the `hydraulic_potential` diagnostic to `routing` and `distributed` subglacial
   hydrology models.
+- Variable `water_input_rate` containing water input rate for hydrology models (see
+  `hydrology.surface_input_file`) uses units of "kg m-2 s-1" instead of "m s-1".
+- PISM uses configuration parameters to select surface, atmosphere, ocean, sea level, and
+  frontal melt models. See `surface.models`, `atmosphere.models`, `ocean.models`,
+  `sea_level.models`, and `frontal_melt.models`.
+- Implement 3 frontal melt models: constant in time and space (`constant`), reading
+  frontal melt from a file (`given`), and using time- and space-dependent thermal ocean
+  forcing and modeled subglacial water flux in an implementation of the frontal melt
+  parameterization in Rignot et al 2016.
+- Now PISM combines retreat rates due to calving (eigen-calving and von Mises calving) and
+  a frontal melt parameterizations before using these to update ice geometry. This
+  simplifies the implementation and fixes the implementation of
+  `geometry.front_retreat.use_cfl`.
 
 Changes from v1.0 to v1.1
 =========================
