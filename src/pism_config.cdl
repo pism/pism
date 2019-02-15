@@ -798,25 +798,25 @@ netcdf pism_config {
     pism_config:frontal_melt.given.reference_year_type = "integer";
     pism_config:frontal_melt.given.reference_year_units = "years";
 
-    pism_config:frontal_melt.parameter_a = 3e-4;
-    pism_config:frontal_melt.parameter_a_doc = "parameter A in eqn. 1 in :cite:`Xu2013`";
-    pism_config:frontal_melt.parameter_a_type = "scalar";
-    pism_config:frontal_melt.parameter_a_units = "m−alpha day^(alpha−1) Celsius−beta";
+    pism_config:frontal_melt.routing.parameter_a = 3e-4;
+    pism_config:frontal_melt.routing.parameter_a_doc = "parameter A in eqn. 1 in :cite:`Xu2013`";
+    pism_config:frontal_melt.routing.parameter_a_type = "scalar";
+    pism_config:frontal_melt.routing.parameter_a_units = "m−alpha day^(alpha−1) Celsius−beta";
 
-    pism_config:frontal_melt.parameter_b = 0.15;
-    pism_config:frontal_melt.parameter_b_doc = "parameter B in eqn. 1 in :cite:`Xu2013`";
-    pism_config:frontal_melt.parameter_b_type = "scalar";
-    pism_config:frontal_melt.parameter_b_units = "m day^(alpha−1) Celsius−beta";
+    pism_config:frontal_melt.routing.parameter_b = 0.15;
+    pism_config:frontal_melt.routing.parameter_b_doc = "parameter B in eqn. 1 in :cite:`Xu2013`";
+    pism_config:frontal_melt.routing.parameter_b_type = "scalar";
+    pism_config:frontal_melt.routing.parameter_b_units = "m day^(alpha−1) Celsius−beta";
 
-    pism_config:frontal_melt.power_alpha = 0.39;
-    pism_config:frontal_melt.power_alpha_doc = "exponent `\\alpha` in eqn. 1 in :cite:`Xu2013`";
-    pism_config:frontal_melt.power_alpha_type = "scalar";
-    pism_config:frontal_melt.power_alpha_units = "1";
+    pism_config:frontal_melt.routing.power_alpha = 0.39;
+    pism_config:frontal_melt.routing.power_alpha_doc = "exponent `\\alpha` in eqn. 1 in :cite:`Xu2013`";
+    pism_config:frontal_melt.routing.power_alpha_type = "scalar";
+    pism_config:frontal_melt.routing.power_alpha_units = "1";
 
-    pism_config:frontal_melt.power_beta = 1.18;
-    pism_config:frontal_melt.power_beta_doc = "exponent `\\beta` in eqn. 1 in :cite:`Xu2013`";
-    pism_config:frontal_melt.power_beta_type = "scalar";
-    pism_config:frontal_melt.power_beta_units = "1";
+    pism_config:frontal_melt.routing.power_beta = 1.18;
+    pism_config:frontal_melt.routing.power_beta_doc = "exponent `\\beta` in eqn. 1 in :cite:`Xu2013`";
+    pism_config:frontal_melt.routing.power_beta_type = "scalar";
+    pism_config:frontal_melt.routing.power_beta_units = "1";
 
     pism_config:frontal_melt.routing.file = "";
     pism_config:frontal_melt.routing.file_doc = "Name of the file containing climate forcing fields.";

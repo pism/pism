@@ -847,22 +847,22 @@
    :Option: :opt:`-frontal_melt_given_reference_year`
    :Description: Reference year to use when ``frontal_melt.given.period`` is active.
 
-#. :config:`frontal_melt.parameter_a` (*scalar*)
+#. :config:`frontal_melt.routing.parameter_a` (*scalar*)
 
    :Value: 0.000300 (m−alpha day^(alpha−1) Celsius−beta)
    :Description: parameter A in eqn. 1 in :cite:`Xu2013`
 
-#. :config:`frontal_melt.parameter_b` (*scalar*)
+#. :config:`frontal_melt.routing.parameter_b` (*scalar*)
 
    :Value: 0.150000 (m day^(alpha−1) Celsius−beta)
    :Description: parameter B in eqn. 1 in :cite:`Xu2013`
 
-#. :config:`frontal_melt.power_alpha` (*scalar*)
+#. :config:`frontal_melt.routing.power_alpha` (*scalar*)
 
    :Value: 0.390000 (1)
    :Description: exponent `\alpha` in eqn. 1 in :cite:`Xu2013`
 
-#. :config:`frontal_melt.power_beta` (*scalar*)
+#. :config:`frontal_melt.routing.power_beta` (*scalar*)
 
    :Value: 1.180000 (1)
    :Description: exponent `\beta` in eqn. 1 in :cite:`Xu2013`

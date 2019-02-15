@@ -115,10 +115,10 @@ class DischargeRoutingTest(TestCase):
 
         Returns the melt rate in m / day
         """
-        alpha = config.get_double("frontal_melt.power_alpha")
-        beta  = config.get_double("frontal_melt.power_beta")
-        A     = config.get_double("frontal_melt.parameter_a")
-        B     = config.get_double("frontal_melt.parameter_b")
+        alpha = config.get_double("frontal_melt.routing.power_alpha")
+        beta  = config.get_double("frontal_melt.routing.power_beta")
+        A     = config.get_double("frontal_melt.routing.parameter_a")
+        B     = config.get_double("frontal_melt.routing.parameter_b")
 
         return (A * h * q_sg ** alpha + B) * TF ** beta
 

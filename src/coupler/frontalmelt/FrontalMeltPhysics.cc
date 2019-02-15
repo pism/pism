@@ -26,10 +26,10 @@ namespace pism {
 namespace frontalmelt {
 
 FrontalMeltPhysics::FrontalMeltPhysics(const Config &config) {
-  m_alpha = config.get_double("frontal_melt.power_alpha");
-  m_beta  = config.get_double("frontal_melt.power_beta");
-  m_A     = config.get_double("frontal_melt.parameter_a");
-  m_B     = config.get_double("frontal_melt.parameter_b");
+  m_alpha = config.get_double("frontal_melt.routing.power_alpha");
+  m_beta  = config.get_double("frontal_melt.routing.power_beta");
+  m_A     = config.get_double("frontal_melt.routing.parameter_a");
+  m_B     = config.get_double("frontal_melt.routing.parameter_b");
 }
 
 /*!
