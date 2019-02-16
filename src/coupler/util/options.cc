@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -44,7 +44,7 @@ ForcingOptions::ForcingOptions(const Context &ctx,
       this->filename = process_input_options(ctx.com(), ctx.config()).filename;
 
       log.message(2,
-                  "  - Option %s_file is not set. Trying the input file '%s'...\n",
+                  "  - Option %s.file is not set. Trying the input file '%s'...\n",
                   prefix.c_str(), this->filename.c_str());
     }
 
