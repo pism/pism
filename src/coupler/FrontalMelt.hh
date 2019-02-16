@@ -80,7 +80,8 @@ protected:
 protected:
   std::shared_ptr<FrontalMelt> m_input_model;
 
-  static IceModelVec2S::Ptr allocate_frontal_melt_rate(IceGrid::ConstPtr g);
+  static IceModelVec2S::Ptr allocate_frontal_melt_rate(IceGrid::ConstPtr g,
+                                                       int stencil_width = 0);
 
   IceModelVec2S m_retreat_rate;
 };

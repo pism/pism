@@ -26,20 +26,18 @@
 namespace pism {
 namespace frontalmelt {
   
-DischargeRouting::DischargeRouting(IceGrid::ConstPtr g)
-  : FrontalMelt(g, nullptr) {
+DischargeRouting::DischargeRouting(IceGrid::ConstPtr grid)
+  : FrontalMelt(grid, nullptr) {
 
-  m_frontal_melt_rate = allocate_frontal_melt_rate(g);
+  m_frontal_melt_rate = allocate_frontal_melt_rate(grid, 1);
 
   m_log->message(2,
                  "* Initializing the frontal melt model\n"
                  "  UAF-UT\n");
-  
-  m_frontal_melt_rate = allocate_frontal_melt_rate(g);
 
   unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
 
-  m_theta_ocean.reset(new IceModelVec2T(g, "theta_ocean", 1, evaluations_per_year));
+  m_theta_ocean.reset(new IceModelVec2T(grid, "theta_ocean", 1, evaluations_per_year));
   m_theta_ocean->set_attrs("climate_forcing",
                            "potential temperature of the adjacent ocean",
                            "Celsius", "");
@@ -141,6 +139,8 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
   // Set frontal melt rate *near* grounded termini to the average of grounded icy
   // neighbors: front retreat code uses values at these locations (the rest is for
   // visualization).
+
+  m_frontal_melt_rate->update_ghosts();
 
   const Direction dirs[] = {North, East, South, West};
 

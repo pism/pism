@@ -35,8 +35,15 @@ FrontalMeltInputs::FrontalMeltInputs() {
 
 namespace frontalmelt {
 
-IceModelVec2S::Ptr FrontalMelt::allocate_frontal_melt_rate(IceGrid::ConstPtr g) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(g, "frontal_melt_rate", WITHOUT_GHOSTS));
+IceModelVec2S::Ptr FrontalMelt::allocate_frontal_melt_rate(IceGrid::ConstPtr g,
+                                                           int stencil_width) {
+  IceModelVec2S::Ptr result;
+
+  if (stencil_width > 0) {
+    result.reset(new IceModelVec2S(g, "frontal_melt_rate", WITH_GHOSTS, stencil_width));
+  } else {
+    result.reset(new IceModelVec2S(g, "frontal_melt_rate", WITHOUT_GHOSTS));
+  }
 
   result->set_attrs("diagnostic", "frontal melt rate", "m s-1", "");
   result->metadata().set_string("glaciological_units", "m day-1");
