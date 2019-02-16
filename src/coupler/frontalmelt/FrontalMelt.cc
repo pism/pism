@@ -192,7 +192,7 @@ public:
     /* set metadata: */
     m_vars = {SpatialVariableMetadata(m_sys, "frontal_melt_rate")};
 
-    set_attrs("frontal melt rate", "", "m s-1", "m year-1", 0);
+    set_attrs("frontal melt rate", "", "m s-1", "m day-1", 0);
   }
 protected:
   IceModelVec::Ptr compute_impl() const {
