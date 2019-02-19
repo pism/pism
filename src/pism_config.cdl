@@ -773,7 +773,7 @@ netcdf pism_config {
     pism_config:frontal_melt.models = "";
     pism_config:frontal_melt.models_doc = "Comma-separated list of frontal melt models and modifiers. (Leave empty to disable.)";
     pism_config:frontal_melt.models_type = "string";
-    pism_config:frontal_melt.models_option = "frontal";
+    pism_config:frontal_melt.models_option = "frontal_melt";
 
     pism_config:frontal_melt.constant.melt_rate = 1.0;
     pism_config:frontal_melt.constant.melt_rate_units = "m / day";
