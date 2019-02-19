@@ -320,7 +320,9 @@ void IceModelVec2T::update(double t, double dt) {
   // check if all the records necessary to cover this interval fit in the
   // buffer:
   if (n - m + 1 > m_n_records) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "IceModelVec2T::update(): timestep is too big");
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot read %d records of %s (buffer size: %d)",
+                                  n - m + 1, m_name.c_str(), m_n_records);
   }
 
   update(m);
