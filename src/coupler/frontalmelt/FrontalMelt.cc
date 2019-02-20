@@ -117,6 +117,8 @@ FrontalMelt::FrontalMelt(IceGrid::ConstPtr g, std::shared_ptr<FrontalMelt> input
   m_retreat_rate.create(m_grid, "retreat_rate_due_to_frontal_melt", WITHOUT_GHOSTS);
   m_retreat_rate.set_attrs("diagnostic", "retreat rate due to frontal melt", "m s-1", "");
   m_retreat_rate.metadata().set_string("glaciological_units", "m day-1");
+  
+  m_include_floating_ice = m_config->get_boolean("frontal_melt.include_floating_ice");
 }
 
 // "model" constructor

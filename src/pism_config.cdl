@@ -775,7 +775,12 @@ netcdf pism_config {
     pism_config:frontal_melt.models_type = "string";
     pism_config:frontal_melt.models_option = "frontal_melt";
 
-    pism_config:frontal_melt.constant.melt_rate = 1.0;
+    pism_config:frontal_melt.include_floating_ice = "no";
+    pism_config:frontal_melt.include_floating_ice_doc = "Apply frontal melt to all grid icy cells next to ocean cells";
+    pism_config:frontal_melt.inlude_floating_ice_option = "frontal_melt_everywhere";
+    pism_config:frontal_melt.include_floating_ice_type = "boolean";
+
+pism_config:frontal_melt.constant.melt_rate = 1.0;
     pism_config:frontal_melt.constant.melt_rate_units = "m / day";
     pism_config:frontal_melt.constant.melt_rate_doc = "default melt rate used by the 'constant' frontal_melt model";
     pism_config:frontal_melt.constant.melt_rate_option = "frontal_melt_rate";

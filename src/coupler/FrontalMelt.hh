@@ -84,6 +84,7 @@ protected:
                                                        int stencil_width = 0);
 
   IceModelVec2S m_retreat_rate;
+  bool m_include_floating_ice;
 };
 
 } // end of namespace frontalmelt
