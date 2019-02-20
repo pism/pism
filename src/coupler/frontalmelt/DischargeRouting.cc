@@ -163,7 +163,8 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       double R_sum = 0.0;
       for (int n = 0; n < 4; ++n) {
         Direction direction = dirs[n];
-        if (mask::grounded_ice(M[direction])) {
+        if (mask::grounded_ice(M[direction]) or
+            (m_include_floating_ice and mask::icy(M[direction]))) {
           R_sum += R[direction];
           N++;
         }
