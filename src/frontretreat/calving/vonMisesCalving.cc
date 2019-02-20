@@ -35,8 +35,10 @@ vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr grid,
   : StressCalving(grid, 2),
     m_flow_law(flow_law) {
 
-  m_calving_rate.metadata().set_string("long_name",
-                                       "horizontal calving rate due to von Mises calving");
+  m_calving_rate.metadata().set_name("vonmises_calving_rate");
+  m_calving_rate.set_attrs("diagnostic",
+                           "horizontal calving rate due to von Mises calving",
+                           "m s-1", "", 0);
 }
 
 vonMisesCalving::~vonMisesCalving() {
