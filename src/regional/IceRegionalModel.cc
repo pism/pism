@@ -130,6 +130,8 @@ void IceRegionalModel::model_state_setup() {
     }
   }
 
+  m_geometry_evolution->set_no_model_mask(m_no_model_mask);
+
   if (m_ch_system) {
     const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
 

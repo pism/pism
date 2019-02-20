@@ -4,6 +4,8 @@ Changes since v1.1
 ==================
 
 - PISM supports CMake 3.1 again (v1.1 required CMake 3.13 for no good reason).
+- Fix PISM's `-regional` runs: disable ice flow, surface mass balance, and basal mass
+  balance effects on ice geometry in "no model" areas.
 
 Changes from v1.0 to v1.1
 =========================
