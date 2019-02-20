@@ -6,9 +6,8 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     set(PISM_PYTHON_BINDING_LIBRARIES "pism")
 
     list(APPEND PISM_Python_deps
-      geometry.i
       AgeModel.i
-      EnergyModel.i
+      geometry.i
       petsc_version.i
       pism_BedDef.i
       pism_ColumnSystem.i
@@ -25,12 +24,13 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       pism_VariableMetadata.i
       pism_Vars.i
       pism_Vec.i
+      pism_atmosphere.i
+      pism_energy.i
       pism_exception.i
       pism_inverse.i
       pism_ocean.i
-      pism_surface.i
-      pism_atmosphere.i
       pism_options.i
+      pism_surface.i
       pism_verification.i
       )
 

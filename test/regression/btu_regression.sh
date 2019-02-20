@@ -25,7 +25,7 @@ set +e
 diff btu_test_out.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS in upward heat flux at z=0 relative to exact solution:
 bheatflx0  :       max    prcntmax          av
-             0.0034644   11.2928277    0.0034644
+             0.0034644   11.2927879    0.0034644
 NUM ERRORS DONE
 NUMERICAL ERRORS in upward heat flux at z=0 relative to exact solution:
 bheatflx0  :       max    prcntmax          av

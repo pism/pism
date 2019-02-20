@@ -28,6 +28,7 @@ add_library (pism
   basalstrength/ConstantYieldStress.cc
   basalstrength/MohrCoulombYieldStress.cc
   basalstrength/YieldStress.cc
+  energy/BedrockColumn.cc
   energy/BTU_Full.cc
   energy/BTU_Minimal.cc
   energy/BedThermalUnit.cc

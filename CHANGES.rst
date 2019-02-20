@@ -23,6 +23,17 @@ Changes since v1.1
   a frontal melt parameterizations before using these to update ice geometry. This
   simplifies the implementation and fixes the implementation of
   `geometry.front_retreat.use_cfl`.
+- Switch to an unconditionally-stable method for the approximation of the heat equation in
+  columns of the bedrock thermal layer (backward Euler time discretization instead of
+  explicit time stepping).
+- Provide better error messages when trying to read in a 2D field but the input file
+  contains a 3D variable (or trying to read a 3D field but the input contains a 2D
+  variable).
+- Provide better error messages when trying to allocate more than 10000 records of a
+  forcing field.
+- PISM supports CMake 3.1 again (v1.1 required CMake 3.13 for no good reason).
+- Fix PISM's `-regional` runs: disable ice flow, surface mass balance, and basal mass
+  balance effects on ice geometry in "no model" areas.
 
 Changes from v1.0 to v1.1
 =========================

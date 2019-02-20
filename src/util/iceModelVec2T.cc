@@ -71,6 +71,14 @@ IceModelVec2T::Ptr IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
   // (atmosphere::Given) when "-surface given" (Given) is selected.
   n_records = std::max(n_records, 1);
 
+  if (n_records > IceGrid::max_dm_dof) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot allocate storage for %d records of %s (%s)"
+                                  " (exceeds the maximum of %d)",
+                                  n_records, short_name.c_str(), standard_name.c_str(),
+                                  IceGrid::max_dm_dof);
+  }
+
   return IceModelVec2T::Ptr(new IceModelVec2T(grid, short_name, n_records,
                                               evaluations_per_year));
 }
@@ -94,6 +102,13 @@ IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_na
   const unsigned int width = 1;
 
   IceModelVec2S::create(grid, short_name, WITHOUT_GHOSTS, width);
+
+  if (n_records > IceGrid::max_dm_dof) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot allocate storage for %d records of %s"
+                                  " (exceeds the maximum of %d)",
+                                  n_records, short_name.c_str(), IceGrid::max_dm_dof);
+  }
 
   // initialize the m_da3 member:
   m_da3 = m_grid->get_dm(n_records, this->m_da_stencil_width);

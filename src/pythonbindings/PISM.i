@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -257,7 +257,7 @@
 
 %include pism_ColumnSystem.i
 
-%include EnergyModel.i
+%include pism_energy.i
 
 /* SSAForwardRunFromInputFile sets up a yield stress model, which
  * requires a hydrology model.
