@@ -1,7 +1,12 @@
 .. default-role:: literal
 
-Changes since v1.0
+Changes since v1.1
 ==================
+
+- PISM supports CMake 3.1 again (v1.1 required CMake 3.13 for no good reason).
+
+Changes from v1.0 to v1.1
+=========================
 
 - PISM no longer attempts to use projection information to compute cell areas. This change
   was prompted by better mass accounting: it is now clear that using numerical methods
