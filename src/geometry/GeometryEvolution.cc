@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -1156,6 +1156,9 @@ void RegionalGeometryEvolution::set_no_model_mask_impl(const IceModelVec2Int &ma
   m_no_model_mask.copy_from(mask);
 }
 
+/*!
+ * Disable ice flow in "no model" areas.
+ */
 void RegionalGeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cell_type,
                                                          const IceModelVec2S        &ice_thickness,
                                                          const IceModelVec2V        &velocity,
@@ -1188,6 +1191,44 @@ void RegionalGeometryEvolution::compute_interface_fluxes(const IceModelVec2CellT
         if (not (M == 0 and M_n == 0)) {
           output(i, j, n) = 0.0;
         }
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+}
+
+/*!
+ * Set surface and basal mass balance to zero in "no model" areas.
+ */
+void RegionalGeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
+                                                                       const IceModelVec2Int      &thickness_bc_mask,
+                                                                       const IceModelVec2S        &ice_thickness,
+                                                                       const IceModelVec2CellType &cell_type,
+                                                                       const IceModelVec2S        &surface_mass_flux,
+                                                                       const IceModelVec2S        &basal_melt_rate,
+                                                                       IceModelVec2S              &effective_SMB,
+                                                                       IceModelVec2S              &effective_BMB) {
+  GeometryEvolution::compute_surface_and_basal_mass_balance(dt,
+                                                            thickness_bc_mask,
+                                                            ice_thickness,
+                                                            cell_type,
+                                                            surface_mass_flux,
+                                                            basal_melt_rate,
+                                                            effective_SMB,
+                                                            effective_BMB);
+
+  IceModelVec::AccessList list{&m_no_model_mask, &effective_SMB, &effective_BMB};
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (m_no_model_mask(i, j) > 0.5) {
+        effective_SMB(i, j) = 0.0;
+        effective_BMB(i, j) = 0.0;
       }
     }
   } catch (...) {
