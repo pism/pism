@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 PISM Authors
+// Copyright (C) 2012-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -685,6 +685,9 @@ void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
                                IceModelVec2S &grounding_line_change,
                                IceModelVec2S &conservation_error_change,
                                IceModelVec2S &no_model_mask_change) {
+
+  bool include_shelves = m_config->get_boolean("hydrology.routing.include_ice_shelves");
+
   IceModelVec::AccessList list{&water_thickness, &cell_type,
       &grounded_margin_change, &grounding_line_change, &conservation_error_change,
       &no_model_mask_change};
@@ -713,7 +716,8 @@ void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
       water_thickness(i, j) = 0.0;
     }
 
-    if (cell_type.ocean(i, j)) {
+    if ((include_shelves and cell_type.ice_free_ocean(i, j)) or
+        cell_type.ocean(i, j)) {
       grounding_line_change(i, j) += -water_thickness(i, j) * kg_per_m;
       water_thickness(i, j) = 0.0;
     }
