@@ -385,37 +385,38 @@ void Routing::water_thickness_staggered(const IceModelVec2S &W,
                                         const IceModelVec2CellType &mask,
                                         IceModelVec2Stag &result) {
 
+  bool include_shelves = m_config->get_boolean("hydrology.routing.include_ice_shelves");
+
   IceModelVec::AccessList list{ &mask, &W, &result };
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    // east
-    if (mask.grounded_ice(i, j)) {
-      if (mask.grounded_ice(i + 1, j)) {
-        result(i, j, 0) = 0.5 * (W(i, j) + W(i + 1, j));
+    if (include_shelves) {
+      // east
+      if (mask.icy(i, j)) {
+        result(i, j, 0) = mask.icy(i + 1, j) ? 0.5 * (W(i, j) + W(i + 1, j)) : W(i, j);
       } else {
-        result(i, j, 0) = W(i, j);
+        result(i, j, 0) = mask.icy(i + 1, j) ? W(i + 1, j) : 0.0;
+      }
+      // north
+      if (mask.icy(i, j)) {
+        result(i, j, 1) = mask.icy(i, j + 1) ? 0.5 * (W(i, j) + W(i, j + 1)) : W(i, j);
+      } else {
+        result(i, j, 1) = mask.icy(i, j + 1) ? W(i, j + 1) : 0.0;
       }
     } else {
-      if (mask.grounded_ice(i + 1, j)) {
-        result(i, j, 0) = W(i + 1, j);
+      // east
+      if (mask.grounded_ice(i, j)) {
+        result(i, j, 0) = mask.grounded_ice(i + 1, j) ? 0.5 * (W(i, j) + W(i + 1, j)) : W(i, j);
       } else {
-        result(i, j, 0) = 0.0;
+        result(i, j, 0) = mask.grounded_ice(i + 1, j) ? W(i + 1, j) : 0.0;
       }
-    }
-    // north
-    if (mask.grounded_ice(i, j)) {
-      if (mask.grounded_ice(i, j + 1)) {
-        result(i, j, 1) = 0.5 * (W(i, j) + W(i, j + 1));
+      // north
+      if (mask.grounded_ice(i, j)) {
+        result(i, j, 1) = mask.grounded_ice(i, j + 1) ? 0.5 * (W(i, j) + W(i, j + 1)) : W(i, j);
       } else {
-        result(i, j, 1) = W(i, j);
-      }
-    } else {
-      if (mask.grounded_ice(i, j + 1)) {
-        result(i, j, 1) = W(i, j + 1);
-      } else {
-        result(i, j, 1) = 0.0;
+        result(i, j, 1) = mask.grounded_ice(i, j + 1) ? W(i, j + 1) : 0.0;
       }
     }
   }
