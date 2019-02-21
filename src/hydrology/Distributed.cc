@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 PISM Authors
+// Copyright (C) 2012-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -427,8 +427,10 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     m_P.copy_from(m_Pnew);
   } // end of the time-stepping loop
 
-  m_Qstag_average.scale(1.0 / dt);
-  m_Qstag_average.staggered_to_regular(m_Q);
+  staggered_to_regular(*inputs.cell_type, m_Qstag_average,
+                       m_config->get_boolean("hydrology.routing.include_ice_shelves"),
+                       m_Q);
+  m_Q.scale(1.0 / dt);
 
   m_log->message(2,
                  "  took %d hydrology sub-steps with average dt = %.6f years (%.6f s)\n",

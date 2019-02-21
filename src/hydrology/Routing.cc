@@ -919,8 +919,10 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     m_Wtill.copy_from(m_Wtillnew);
   } // end of the time-stepping loop
 
-  m_Qstag_average.scale(1.0 / dt);
-  m_Qstag_average.staggered_to_regular(m_Q);
+  staggered_to_regular(*inputs.cell_type, m_Qstag_average,
+                       m_config->get_boolean("hydrology.routing.include_ice_shelves"),
+                       m_Q);
+  m_Q.scale(1.0 / dt);
 
   m_log->message(2,
                  "  took %d hydrology sub-steps with average dt = %.6f years (%.3f s or %.3f hours)\n",
