@@ -210,7 +210,7 @@ void hydraulic_potential(const IceModelVec2S &W,
     const int i = p.i(), j = p.j();
 
     if (mask.ocean(i, j)) {
-      result(i, j) = P_overburden(i, j);
+      result(i, j) = P_overburden(i, j) + rg * W(i, j);
     } else {
       result(i, j) = P(i, j) + rg * (bed(i, j) + W(i, j));
     }
