@@ -820,8 +820,13 @@
 #. :config:`frontal_melt.models` (*string*)
 
    :Value: *no default*
-   :Option: :opt:`-frontal`
+   :Option: :opt:`-frontal_melt`
    :Description: Comma-separated list of frontal melt models and modifiers. (Leave empty to disable.)
+
+#. :config:`frontal_melt.include_floating_ice` (*boolean*)
+
+   :Value: no
+   :Description: Apply frontal melt to all grid icy cells next to ocean cells
 
 #. :config:`frontal_melt.constant.melt_rate` (*scalar*)
 

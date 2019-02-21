@@ -238,7 +238,7 @@ Spatially-variable fields
 
 #. ``frontal_melt_rate``
 
-   :Units: m year-1
+   :Units: m day-1
    :Description: frontal melt rate
 
 #. ``frontal_melt_retreat_rate``
