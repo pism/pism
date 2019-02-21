@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2019 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -610,6 +610,32 @@ public:
  */
 void convert_vec(Vec v, units::System::Ptr system,
                  const std::string &spec1, const std::string &spec2);
+
+class IceModelVec2CellType;
+
+/*!
+ * Average a scalar field from the staggered grid onto the regular grid by considering
+ * only ice-covered grid.
+ *
+ * If `include_floating_ice` is true, include floating ice, otherwise consider grounded
+ * icy cells only.
+ */
+void staggered_to_regular(const IceModelVec2CellType &cell_type,
+                          const IceModelVec2Stag &input,
+                          bool include_floating_ice,
+                          IceModelVec2S &result);
+
+/*!
+ * Average a vector field from the staggered grid onto the regular grid by considering
+ * only ice-covered grid.
+ *
+ * If `include_floating_ice` is true, include floating ice, otherwise consider grounded
+ * icy cells only.
+ */
+void staggered_to_regular(const IceModelVec2CellType &cell_type,
+                          const IceModelVec2Stag &input,
+                          bool include_floating_ice,
+                          IceModelVec2V &result);
 
 } // end of namespace pism
 

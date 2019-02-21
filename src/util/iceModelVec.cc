@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2019 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -31,6 +31,8 @@
 #include "pism/util/Logger.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/petscwrappers/VecScatter.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {
 
@@ -1246,5 +1248,95 @@ bool set_contains(const std::set<std::string> &S, const IceModelVec &field) {
   // requested.
   return member(field.get_name(), S);
 }
+
+void staggered_to_regular(const IceModelVec2CellType &cell_type,
+                          const IceModelVec2Stag &input,
+                          bool include_floating_ice,
+                          IceModelVec2S &result) {
+
+  using mask::grounded_ice;
+  using mask::icy;
+
+  IceGrid::ConstPtr grid = result.grid();
+
+  IceModelVec::AccessList list{&cell_type, &input, &result};
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (cell_type.grounded_ice(i, j) or
+        (include_floating_ice and cell_type.icy(i, j))) {
+      auto M = cell_type.int_star(i, j);
+      auto F = input.star(i, j);
+
+      int n = 0, e = 0, s = 0, w = 0;
+      if (include_floating_ice) {
+        n = icy(M.n);
+        e = icy(M.e);
+        s = icy(M.s);
+        w = icy(M.w);
+      } else {
+        n = grounded_ice(M.n);
+        e = grounded_ice(M.e);
+        s = grounded_ice(M.s);
+        w = grounded_ice(M.w);
+      }
+
+      if (n + e + s + w > 0) {
+        result(i, j) = (n * F.n + e * F.e + s * F.s + w * F.w) / (n + e + s + w);
+      } else {
+        result(i, j) = 0.0;
+      }
+    } else {
+      result(i, j) = 0.0;
+    }
+  }
+}
+
+void staggered_to_regular(const IceModelVec2CellType &cell_type,
+                          const IceModelVec2Stag &input,
+                          bool include_floating_ice,
+                          IceModelVec2V &result) {
+
+  using mask::grounded_ice;
+  using mask::icy;
+
+  IceGrid::ConstPtr grid = result.grid();
+
+  IceModelVec::AccessList list{&cell_type, &input, &result};
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    auto M = cell_type.int_star(i, j);
+    auto F = input.star(i, j);
+
+    int n = 0, e = 0, s = 0, w = 0;
+    if (include_floating_ice) {
+      n = icy(M.n);
+      e = icy(M.e);
+      s = icy(M.s);
+      w = icy(M.w);
+    } else {
+      n = grounded_ice(M.n);
+      e = grounded_ice(M.e);
+      s = grounded_ice(M.s);
+      w = grounded_ice(M.w);
+    }
+
+    if (e + w > 0) {
+      result(i, j).u = (e * F.e + w * F.w) / (e + w);
+    } else {
+      result(i, j).u = 0.0;
+    }
+
+    if (n + s > 0) {
+      result(i, j).v = (n * F.n + s * F.s) / (n + s);
+    } else {
+      result(i, j).v = 0.0;
+    }
+  }
+}
+
 
 } // end of namespace pism
