@@ -385,7 +385,7 @@ void Routing::water_thickness_staggered(const IceModelVec2S &W,
                                         const IceModelVec2CellType &mask,
                                         IceModelVec2Stag &result) {
 
-  bool include_shelves = m_config->get_boolean("hydrology.routing.include_ice_shelves");
+  bool include_shelves = m_config->get_boolean("hydrology.routing.include_floating_ice");
 
   IceModelVec::AccessList list{ &mask, &W, &result };
 
@@ -920,7 +920,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
   } // end of the time-stepping loop
 
   staggered_to_regular(*inputs.cell_type, m_Qstag_average,
-                       m_config->get_boolean("hydrology.routing.include_ice_shelves"),
+                       m_config->get_boolean("hydrology.routing.include_floating_ice"),
                        m_Q);
   m_Q.scale(1.0 / dt);
 

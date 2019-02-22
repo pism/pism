@@ -40,6 +40,15 @@ vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr grid,
                            "horizontal calving rate due to von Mises calving",
                            "m s-1", "", 0);
   m_calving_rate.metadata().set_string("glaciological_units", "m year-1");
+  
+  m_calving_threshold.create(m_grid, "vonmises_calving_threshold", WITHOUT_GHOSTS);
+
+  m_calving_threshold.set_attrs("diagnostic",
+                                "threshold used by the 'von Mises' calving method",
+                                "Pa",
+                                ""); // no standard name
+  m_calving_threshold.set_time_independent(true);
+
 }
 
 vonMisesCalving::~vonMisesCalving() {
@@ -50,6 +59,22 @@ void vonMisesCalving::init() {
 
   m_log->message(2,
                  "* Initializing the 'von Mises calving' mechanism...\n");
+
+  std::string threshold_file = m_config->get_string("calving.vonmises_calving.threshold_file");
+  double sigma_max = m_config->get_double("calving.vonmises_calving.sigma_max");
+
+  m_calving_threshold.set(sigma_max);
+
+  if (not threshold_file.empty()) {
+    m_log->message(2,
+                   "  Reading von Mises calving threshold from file '%s'...\n",
+                   threshold_file.c_str());
+
+    m_calving_threshold.regrid(threshold_file, CRITICAL);
+  } else {
+    m_log->message(2,
+                   "  von Mises calving threshold: %3.3f Pa.\n", sigma_max);
+  }
 
   if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -84,12 +109,11 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
   m_strain_rates.update_ghosts();
 
   IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness, &m_cell_type, &ice_velocity,
-      &m_strain_rates, &m_calving_rate};
+                               &m_strain_rates, &m_calving_rate, &m_calving_threshold};
 
   const double *z = &m_grid->z()[0];
 
   const double ssa_n = m_flow_law->exponent();
-  double sigma_max = m_config->get_double("calving.vonmises.sigma_max");
 
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
@@ -153,7 +177,7 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
                                                             1.0 / ssa_n);
 
       // Calving law [\ref Morlighem2016] equation 4
-      m_calving_rate(i, j) = velocity_magnitude * sigma_tilde / sigma_max;
+      m_calving_rate(i, j) = velocity_magnitude * sigma_tilde / m_calving_threshold(i, j);
 
     } else { // end of "if (ice_free_ocean and next_to_floating)"
       m_calving_rate(i, j) = 0.0;
@@ -161,8 +185,13 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
   }   // end of loop over grid points
 }
 
+const IceModelVec2S& vonMisesCalving::threshold() const {
+  return m_calving_threshold;
+}
+
 DiagnosticList vonMisesCalving::diagnostics_impl() const {
-  return {{"vonmises_calving_rate", Diagnostic::wrap(m_calving_rate)}};
+  return {{"vonmises_calving_rate", Diagnostic::wrap(m_calving_rate)}, 
+          {"vonmises_calving_threshold", Diagnostic::wrap(m_calving_threshold)}};
 }
 
 } // end of namespace calving

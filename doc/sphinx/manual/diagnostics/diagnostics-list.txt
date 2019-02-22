@@ -96,11 +96,6 @@ Spatially-variable fields
    :Units: ---
    :Description: pressure of transportable water in subglacial layer as fraction of the overburden pressure
 
-#. ``calving_threshold``
-
-   :Units: m
-   :Description: threshold used by the 'calving at threshold' calving method
-
 #. ``cell_grounded_fraction``
 
    :Units: ---
@@ -717,6 +712,11 @@ Spatially-variable fields
    :Description: subglacial water flux due to input
    :Comment: positive flux corresponds to water gain
 
+#. ``thickness_calving_threshold``
+
+   :Units: m
+   :Description: threshold used by the 'calving at threshold' calving method
+
 #. ``thk``
 
    :Units: m
@@ -827,6 +827,11 @@ Spatially-variable fields
 
    :Units: m year-1
    :Description: horizontal calving rate due to von Mises calving
+
+#. ``vonmises_calving_threshold``
+
+   :Units: Pa
+   :Description: threshold used by the 'von Mises' calving method
 
 #. ``vonmises_stress``
 

@@ -405,16 +405,6 @@ netcdf pism_config {
     pism_config:calving.float_kill.calve_near_grounding_line_option = "float_kill_calve_near_grounding_line";
     pism_config:calving.float_kill.calve_near_grounding_line_type = "boolean";
 
-    pism_config:geometry.front_retreat.wrap_around = "false";
-    pism_config:geometry.front_retreat.wrap_around_doc = "If true, wrap around domain boundaries. This may be needed in some regional synthetic geometry setups.";
-    pism_config:geometry.front_retreat.wrap_around_option = "front_retreat_wrap_around";
-    pism_config:geometry.front_retreat.wrap_around_type = "boolean";
-
-    pism_config:geometry.front_retreat.use_cfl = "false";
-    pism_config:geometry.front_retreat.use_cfl_doc = "apply CFL criterion for eigen-calving rate front retreat";
-    pism_config:geometry.front_retreat.use_cfl_option = "front_retreat_cfl";
-    pism_config:geometry.front_retreat.use_cfl_type = "boolean";
-
     pism_config:calving.methods = "";
     pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'";
     pism_config:calving.methods_option = "calving";
@@ -436,11 +426,16 @@ netcdf pism_config {
     pism_config:calving.thickness_calving.threshold_file_option = "thickness_calving_threshold_file";
     pism_config:calving.thickness_calving.threshold_file_type = "string";
 
-    pism_config:calving.vonmises.sigma_max = 1.0e6;
-    pism_config:calving.vonmises.sigma_max_doc = "Set maximum tensile stress.  Note references :cite:`Morlighem2016` use 1.0e6 Pa.";
-    pism_config:calving.vonmises.sigma_max_option = "vonmises_calving_sigma_max";
-    pism_config:calving.vonmises.sigma_max_type = "scalar";
-    pism_config:calving.vonmises.sigma_max_units = "Pa";
+    pism_config:calving.vonmises_calving.sigma_max = 1.0e6;
+    pism_config:calving.vonmises_calving.sigma_max_doc = "Set maximum tensile stress.  Note references :cite:`Morlighem2016` use 1.0e6 Pa.";
+    pism_config:calving.vonmises_calving.sigma_max_option = "vonmises_calving_calving_sigma_max";
+    pism_config:calving.vonmises_calving.sigma_max_type = "scalar";
+    pism_config:calving.vonmises_calving.sigma_max_units = "Pa";
+
+    pism_config:calving.vonmises_calving.threshold_file = "";
+    pism_config:calving.vonmises_calving.threshold_file_doc = "Name of the file containing the spatially-variable vonmises_calving calving threshold. ";
+    pism_config:calving.vonmises_calving.threshold_file_option = "vonmises_calving_threshold_file";
+    pism_config:calving.vonmises_calving.threshold_file_type = "string";
 
     pism_config:climate_forcing.buffer_size = 60;
     pism_config:climate_forcing.buffer_size_doc = "number of 2D climate forcing records to keep in memory; = 5 years of monthly records";
@@ -840,6 +835,16 @@ pism_config:frontal_melt.constant.melt_rate = 1.0;
     pism_config:frontal_melt.routing.reference_year_type = "integer";
     pism_config:frontal_melt.routing.reference_year_units = "years";
 
+    pism_config:geometry.front_retreat.wrap_around = "false";
+    pism_config:geometry.front_retreat.wrap_around_doc = "If true, wrap around domain boundaries. This may be needed in some regional synthetic geometry setups.";
+    pism_config:geometry.front_retreat.wrap_around_option = "front_retreat_wrap_around";
+    pism_config:geometry.front_retreat.wrap_around_type = "boolean";
+
+    pism_config:geometry.front_retreat.use_cfl = "false";
+    pism_config:geometry.front_retreat.use_cfl_doc = "apply CFL criterion for eigen-calving rate front retreat";
+    pism_config:geometry.front_retreat.use_cfl_option = "front_retreat_cfl";
+    pism_config:geometry.front_retreat.use_cfl_type = "boolean";
+
     pism_config:geometry.grounded_cell_fraction  = "false";
     pism_config:geometry.grounded_cell_fraction_doc = "Linear interpolation scheme ('LI' in Gladstone et al. 2010) expanded to two dimensions is used if switched on in order to evaluate the position of the grounding line on a subgrid scale.";
     pism_config:geometry.grounded_cell_fraction_option = "subgl";
@@ -1062,9 +1067,9 @@ pism_config:frontal_melt.constant.melt_rate = 1.0;
     pism_config:hydrology.surface_input_from_runoff_doc = "Use surface runoff as surface input.";
     pism_config:hydrology.surface_input_from_runoff_type = "boolean";
 
-    pism_config:hydrology.routing.include_ice_shelves = "no";
-    pism_config:hydrology.routing.include_ice_shelves_doc = "Route subglacial water under ice shelves. This may be appropriate if a shelf is close to floatation. Note that this has no effect on ice flow.";
-    pism_config:hydrology.routing.include_ice_shelves_type = "boolean";
+    pism_config:hydrology.routing.include_floating_ice = "no";
+    pism_config:hydrology.routing.include_floating_ice_doc = "Route subglacial water under ice shelves. This may be appropriate if a shelf is close to floatation. Note that this has no effect on ice flow.";
+    pism_config:hydrology.routing.include_floating_ice_type = "boolean";
 
     pism_config:inverse.design.cH1     = 0;
     pism_config:inverse.design.cH1_doc = "weight of derivative part of an H1 norm for inversion design variables";

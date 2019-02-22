@@ -34,7 +34,7 @@ CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
 
   m_old_mask.create(m_grid, "old_mask", WITH_GHOSTS, 1);
 
-  m_calving_threshold.create(m_grid, "calving_threshold", WITHOUT_GHOSTS);
+  m_calving_threshold.create(m_grid, "thickness_calving_threshold", WITHOUT_GHOSTS);
 
   m_calving_threshold.set_attrs("diagnostic",
                                 "threshold used by the 'calving at threshold' calving method",
@@ -107,7 +107,7 @@ const IceModelVec2S& CalvingAtThickness::threshold() const {
 }
 
 DiagnosticList CalvingAtThickness::diagnostics_impl() const {
-  return {{"calving_threshold", Diagnostic::wrap(m_calving_threshold)}};
+  return {{"thickness_calving_threshold", Diagnostic::wrap(m_calving_threshold)}};
 }
 
 } // end of namespace calving

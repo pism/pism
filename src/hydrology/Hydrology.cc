@@ -686,7 +686,7 @@ void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
                                IceModelVec2S &conservation_error_change,
                                IceModelVec2S &no_model_mask_change) {
 
-  bool include_shelves = m_config->get_boolean("hydrology.routing.include_ice_shelves");
+  bool include_shelves = m_config->get_boolean("hydrology.routing.include_floating_ice");
 
   IceModelVec::AccessList list{&water_thickness, &cell_type,
       &grounded_margin_change, &grounding_line_change, &conservation_error_change,

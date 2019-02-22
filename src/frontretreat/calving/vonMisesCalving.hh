@@ -43,8 +43,12 @@ public:
               const IceModelVec2S &ice_thickness,
               const IceModelVec2V &ice_velocity,
               const IceModelVec3 &ice_enthalpy);
+  const IceModelVec2S& threshold() const;
+
 protected:
   DiagnosticList diagnostics_impl() const;
+  
+  IceModelVec2S m_calving_threshold;
 
   std::shared_ptr<const rheology::FlowLaw> m_flow_law;
 };

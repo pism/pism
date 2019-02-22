@@ -429,18 +429,6 @@
    :Option: :opt:`-float_kill_calve_near_grounding_line`
    :Description: Calve floating ice near the grounding line.
 
-#. :config:`geometry.front_retreat.wrap_around` (*boolean*)
-
-   :Value: false
-   :Option: :opt:`-front_retreat_wrap_around`
-   :Description: If true, wrap around domain boundaries. This may be needed in some regional synthetic geometry setups.
-
-#. :config:`geometry.front_retreat.use_cfl` (*boolean*)
-
-   :Value: false
-   :Option: :opt:`-front_retreat_cfl`
-   :Description: apply CFL criterion for eigen-calving rate front retreat
-
 #. :config:`calving.methods` (*string*)
 
    :Value: *no default*
@@ -465,11 +453,17 @@
    :Option: :opt:`-thickness_calving_threshold_file`
    :Description: Name of the file containing the spatially-variable thickness calving threshold. 
 
-#. :config:`calving.vonmises.sigma_max` (*scalar*)
+#. :config:`calving.vonmises_calving.sigma_max` (*scalar*)
 
    :Value: 1000000 (Pa)
-   :Option: :opt:`-vonmises_calving_sigma_max`
+   :Option: :opt:`-vonmises_calving_calving_sigma_max`
    :Description: Set maximum tensile stress.  Note references :cite:`Morlighem2016` use 1.0e6 Pa.
+
+#. :config:`calving.vonmises_calving.threshold_file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-vonmises_calving_threshold_file`
+   :Description: Name of the file containing the spatially-variable vonmises_calving calving threshold. 
 
 #. :config:`climate_forcing.buffer_size` (*integer*)
 
@@ -890,6 +884,18 @@
    :Option: :opt:`-frontal_melt_routing_reference_year`
    :Description: Reference year to use when ``frontal_melt.routing.period`` is active.
 
+#. :config:`geometry.front_retreat.wrap_around` (*boolean*)
+
+   :Value: false
+   :Option: :opt:`-front_retreat_wrap_around`
+   :Description: If true, wrap around domain boundaries. This may be needed in some regional synthetic geometry setups.
+
+#. :config:`geometry.front_retreat.use_cfl` (*boolean*)
+
+   :Value: false
+   :Option: :opt:`-front_retreat_cfl`
+   :Description: apply CFL criterion for eigen-calving rate front retreat
+
 #. :config:`geometry.grounded_cell_fraction` (*boolean*)
 
    :Value: false
@@ -1128,6 +1134,11 @@
 
    :Value: no
    :Description: Use surface runoff as surface input.
+
+#. :config:`hydrology.routing.include_floating_ice` (*boolean*)
+
+   :Value: no
+   :Description: Route subglacial water under ice shelves. This may be appropriate if a shelf is close to floatation. Note that this has no effect on ice flow.
 
 #. :config:`inverse.design.cH1` (*scalar*)
 
