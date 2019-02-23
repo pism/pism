@@ -716,7 +716,7 @@ void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
     }
 
     if ((include_floating and cell_type.ice_free_ocean(i, j)) or
-        cell_type.ocean(i, j)) {
+        (not include_floating and cell_type.ocean(i, j))) {
       grounding_line_change(i, j) += -water_thickness(i, j) * kg_per_m;
       water_thickness(i, j) = 0.0;
     }
