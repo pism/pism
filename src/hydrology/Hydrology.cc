@@ -25,6 +25,7 @@
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace hydrology {
@@ -296,13 +297,11 @@ protected:
 } // end of namespace diagnostics
 
 Inputs::Inputs() {
-  surface_input_rate = NULL;
-  basal_melt_rate    = NULL;
-  cell_type          = NULL;
-  ice_thickness      = NULL;
-  bed_elevation      = NULL;
-  ice_sliding_speed  = NULL;
-  no_model_mask      = NULL;
+  geometry           = nullptr;
+  surface_input_rate = nullptr;
+  basal_melt_rate    = nullptr;
+  ice_sliding_speed  = nullptr;
+  no_model_mask      = nullptr;
 }
 
 Hydrology::Hydrology(IceGrid::ConstPtr g)
@@ -441,9 +440,9 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
     m_input_change.set(0.0);
   }
 
-  compute_overburden_pressure(*inputs.ice_thickness, m_Pover);
+  compute_overburden_pressure(inputs.geometry->ice_thickness, m_Pover);
 
-  compute_input_rate(*inputs.cell_type,
+  compute_input_rate(inputs.geometry->cell_type,
                      *inputs.basal_melt_rate,
                      inputs.surface_input_rate,
                      m_input_rate);

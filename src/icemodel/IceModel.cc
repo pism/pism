@@ -691,9 +691,7 @@ void IceModel::step(bool do_mass_continuity,
     sliding_speed.set_to_magnitude(m_stress_balance->advective_velocity());
 
     inputs.no_model_mask      = nullptr;
-    inputs.cell_type          = &m_geometry.cell_type;
-    inputs.ice_thickness      = &m_geometry.ice_thickness;
-    inputs.bed_elevation      = &m_geometry.bed_elevation;
+    inputs.geometry           = &m_geometry;
     inputs.surface_input_rate = nullptr;
     inputs.basal_melt_rate    = &m_basal_melt_rate;
     inputs.ice_sliding_speed  = &sliding_speed;

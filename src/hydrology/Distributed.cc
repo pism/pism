@@ -26,6 +26,7 @@
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace hydrology {
@@ -343,18 +344,18 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     check_P_bounds(m_P, m_Pover, enforce_upper);
 
     water_thickness_staggered(m_W,
-                              *inputs.cell_type,
+                              inputs.geometry->cell_type,
                               m_Wstag);
 
     double maxKW = 0.0;
     compute_conductivity(m_Wstag,
                          subglacial_water_pressure(),
-                         *inputs.bed_elevation,
+                         inputs.geometry->bed_elevation,
                          m_Kstag, maxKW);
 
     compute_velocity(m_Wstag,
                      subglacial_water_pressure(),
-                     *inputs.bed_elevation,
+                     inputs.geometry->bed_elevation,
                      m_Kstag,
                      inputs.no_model_mask,
                      m_Vstag);
@@ -384,7 +385,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
                  m_input_rate,
                  m_Wtillnew);
     // remove water in ice-free areas and account for changes
-    enforce_bounds(*inputs.cell_type,
+    enforce_bounds(inputs.geometry->cell_type,
                    inputs.no_model_mask,
                    0.0,        // do not limit maximum thickness
                    m_Wtillnew,
@@ -394,7 +395,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
                    m_no_model_mask_change);
 
     update_P(hdt,
-             *inputs.cell_type,
+             inputs.geometry->cell_type,
              *inputs.ice_sliding_speed,
              m_input_rate,
              m_Pover,
@@ -412,7 +413,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
              m_Kstag, m_Qstag,
              m_Wnew);
     // remove water in ice-free areas and account for changes
-    enforce_bounds(*inputs.cell_type,
+    enforce_bounds(inputs.geometry->cell_type,
                    inputs.no_model_mask,
                    0.0, // do  not limit maximum thickness
                    m_Wnew,
@@ -427,7 +428,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     m_P.copy_from(m_Pnew);
   } // end of the time-stepping loop
 
-  staggered_to_regular(*inputs.cell_type, m_Qstag_average,
+  staggered_to_regular(inputs.geometry->cell_type, m_Qstag_average,
                        m_config->get_boolean("hydrology.routing.include_floating_ice"),
                        m_Q);
   m_Q.scale(1.0 / dt);

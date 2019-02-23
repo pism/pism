@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 PISM Authors
+// Copyright (C) 2012-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,7 @@
 namespace pism {
 
 class IceModelVec2CellType;
+class Geometry;
 
 //! @brief Sub-glacial hydrology models and related diagnostics.
 namespace hydrology {
@@ -37,9 +38,7 @@ public:
   // modeling domain (set to NULL in whole-ice-sheet configurations)
   const IceModelVec2Int      *no_model_mask;
   // geometry
-  const IceModelVec2CellType *cell_type;
-  const IceModelVec2S        *ice_thickness;
-  const IceModelVec2S        *bed_elevation;
+  const Geometry *geometry;
   // hydrological inputs
   const IceModelVec2S        *surface_input_rate;
   const IceModelVec2S        *basal_melt_rate;

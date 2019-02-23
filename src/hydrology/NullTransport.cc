@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 PISM Authors
+// Copyright (C) 2012-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,7 @@
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/pism_utilities.hh" // clip
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace hydrology {
@@ -120,7 +121,7 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
     water_density = m_config->get_double("constants.fresh_water.density"),
     kg_per_m      = m_grid->cell_area() * water_density; // kg m-1
 
-  const IceModelVec2CellType &cell_type = *inputs.cell_type;
+  const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
 
   IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_input_rate,
       &m_conservation_error_change};
@@ -155,7 +156,7 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   }
 
   // remove water in ice-free areas and account for changes
-  enforce_bounds(*inputs.cell_type,
+  enforce_bounds(inputs.geometry->cell_type,
                  inputs.no_model_mask,
                  m_tillwat_max,
                  m_Wtill,
