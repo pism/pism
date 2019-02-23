@@ -189,32 +189,34 @@ protected:
 
 //! Compute the hydraulic potential.
 /*!
-  Computes \f$\psi = P + \rho_w g (b + W)\f$ except where floating, where \f$\psi = P_o\f$.
+  Computes \f$\psi = P + \rho_w g (b + W)\f$.
 */
 void hydraulic_potential(const IceModelVec2S &W,
                          const IceModelVec2S &P,
-                         const IceModelVec2S &P_overburden,
+                         const IceModelVec2S &sea_level,
                          const IceModelVec2S &bed,
-                         const IceModelVec2CellType &mask,
+                         const IceModelVec2S &ice_thickness,
                          IceModelVec2S &result) {
 
   IceGrid::ConstPtr grid = result.grid();
 
   Config::ConstPtr config = grid->ctx()->config();
 
-  double rg = (config->get_double("constants.fresh_water.density") *
-               config->get_double("constants.standard_gravity"));
+  double
+    ice_density       = config->get_double("constants.ice.density"),
+    sea_water_density = config->get_double("constants.sea_water.density"),
+    C                 = ice_density / sea_water_density,
+    rg                = (config->get_double("constants.fresh_water.density") *
+                         config->get_double("constants.standard_gravity"));
 
-  IceModelVec::AccessList list{&P, &P_overburden, &W, &mask, &bed, &result};
+  IceModelVec::AccessList list{&P, &W, &sea_level, &ice_thickness, &bed, &result};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.ocean(i, j)) {
-      result(i, j) = P_overburden(i, j) + rg * W(i, j);
-    } else {
-      result(i, j) = P(i, j) + rg * (bed(i, j) + W(i, j));
-    }
+    double b = std::max(bed(i, j), sea_level(i, j) - C * ice_thickness(i, j));
+
+    result(i, j) = P(i, j) + rg * (b + W(i, j));
   }
 }
 
@@ -237,14 +239,15 @@ protected:
     IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hydraulic_potential", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
 
+    const IceModelVec2S        &sea_level     = *m_grid->variables().get_2d_scalar("sea_level");
     const IceModelVec2S        &bed_elevation = *m_grid->variables().get_2d_scalar("bedrock_altitude");
-    const IceModelVec2CellType &cell_type     = *m_grid->variables().get_2d_cell_type("mask");
+    const IceModelVec2S        &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
     hydraulic_potential(model->subglacial_water_thickness(),
                         model->subglacial_water_pressure(),
-                        model->overburden_pressure(),
+                        sea_level,
                         bed_elevation,
-                        cell_type,
+                        ice_thickness,
                         *result);
 
     return result;
@@ -254,7 +257,8 @@ protected:
 } // end of namespace diagnostics
 
 Routing::Routing(IceGrid::ConstPtr g)
-  : Hydrology(g), m_dx(g->dx()), m_dy(g->dy()) {
+  : Hydrology(g), m_dx(g->dx()), m_dy(g->dy()),
+    m_bottom_surface(g, "ice_bottom_surface_elevation", WITH_GHOSTS) {
 
   m_W.metadata().set_string("pism_intent", "model_state");
 
@@ -386,14 +390,14 @@ void Routing::water_thickness_staggered(const IceModelVec2S &W,
                                         const IceModelVec2CellType &mask,
                                         IceModelVec2Stag &result) {
 
-  bool include_shelves = m_config->get_boolean("hydrology.routing.include_floating_ice");
+  bool include_floating = m_config->get_boolean("hydrology.routing.include_floating_ice");
 
   IceModelVec::AccessList list{ &mask, &W, &result };
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (include_shelves) {
+    if (include_floating) {
       // east
       if (mask.icy(i, j)) {
         result(i, j, 0) = mask.icy(i + 1, j) ? 0.5 * (W(i, j) + W(i + 1, j)) : W(i, j);
@@ -813,6 +817,39 @@ void Routing::update_W(double dt,
   m_input_change.add(dt, input_rate);
 }
 
+/*! Compute the elevation of the bottom surface of the ice.
+ */
+void Routing::ice_bottom_surface(const Geometry &geometry,
+                                 IceModelVec2S &result) const {
+    double
+      ice_density   = m_config->get_double("constants.ice.density"),
+      water_density = m_config->get_double("constants.sea_water.density"),
+      alpha         = ice_density / water_density;
+
+  const IceModelVec2S        &ice_thickness = geometry.ice_thickness;
+  const IceModelVec2S        &bed_elevation = geometry.bed_elevation;
+  const IceModelVec2S        &sea_level     = geometry.sea_level_elevation;
+
+  IceModelVec::AccessList list{&ice_thickness, &bed_elevation, &sea_level, &result};
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double
+        b_grounded = bed_elevation(i, j),
+        b_floating = sea_level(i, j) - alpha * ice_thickness(i, j);
+
+      result(i, j) = std::max(b_grounded, b_floating);
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  result.update_ghosts();
+}
 
 //! Update the model state variables W and Wtill by applying the subglacial hydrology model equations.
 /*!
@@ -824,6 +861,8 @@ void Routing::update_W(double dt,
   call update_Wtill().
 */
 void Routing::update_impl(double t, double dt, const Inputs& inputs) {
+
+  ice_bottom_surface(*inputs.geometry, m_bottom_surface);
 
   double
     ht  = t,
@@ -856,12 +895,12 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     double maxKW = 0.0;
     compute_conductivity(m_Wstag,
                          subglacial_water_pressure(),
-                         inputs.geometry->bed_elevation,
+                         m_bottom_surface,
                          m_Kstag, maxKW);
 
     compute_velocity(m_Wstag,
                      subglacial_water_pressure(),
-                     inputs.geometry->bed_elevation,
+                     m_bottom_surface,
                      m_Kstag,
                      inputs.no_model_mask,
                      m_Vstag);

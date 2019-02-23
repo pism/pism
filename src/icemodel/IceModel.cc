@@ -241,6 +241,7 @@ void IceModel::allocate_storage() {
   m_grid->variables().add(m_geometry.ice_surface_elevation);
   m_grid->variables().add(m_geometry.ice_thickness);
   m_grid->variables().add(m_geometry.cell_type);
+  m_grid->variables().add(m_geometry.sea_level_elevation);
   m_grid->variables().add(m_geometry.longitude);
   m_grid->variables().add(m_geometry.latitude);
 

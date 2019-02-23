@@ -308,6 +308,8 @@ void Distributed::update_P(double dt,
 */
 void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
 
+  ice_bottom_surface(*inputs.geometry, m_bottom_surface);
+
   double
     ht  = t,
     hdt = 0.0;
@@ -350,12 +352,12 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     double maxKW = 0.0;
     compute_conductivity(m_Wstag,
                          subglacial_water_pressure(),
-                         inputs.geometry->bed_elevation,
+                         m_bottom_surface,
                          m_Kstag, maxKW);
 
     compute_velocity(m_Wstag,
                      subglacial_water_pressure(),
-                     inputs.geometry->bed_elevation,
+                     m_bottom_surface,
                      m_Kstag,
                      inputs.no_model_mask,
                      m_Vstag);

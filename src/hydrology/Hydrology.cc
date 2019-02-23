@@ -685,7 +685,7 @@ void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
                                IceModelVec2S &conservation_error_change,
                                IceModelVec2S &no_model_mask_change) {
 
-  bool include_shelves = m_config->get_boolean("hydrology.routing.include_floating_ice");
+  bool include_floating = m_config->get_boolean("hydrology.routing.include_floating_ice");
 
   IceModelVec::AccessList list{&water_thickness, &cell_type,
       &grounded_margin_change, &grounding_line_change, &conservation_error_change,
@@ -715,7 +715,7 @@ void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
       water_thickness(i, j) = 0.0;
     }
 
-    if ((include_shelves and cell_type.ice_free_ocean(i, j)) or
+    if ((include_floating and cell_type.ice_free_ocean(i, j)) or
         cell_type.ocean(i, j)) {
       grounding_line_change(i, j) += -water_thickness(i, j) * kg_per_m;
       water_thickness(i, j) = 0.0;
