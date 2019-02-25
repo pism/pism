@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -644,6 +644,13 @@ void set_config_from_options(Config &config) {
     config.set_boolean("energy.enabled", false, CONFIG_USER);
     config.set_boolean("age.enabled", false, CONFIG_USER);
     // let the user decide if they want to use "-no_mass" or not
+  }
+
+  // If frontal melt code includes floating ice, routing hydrology should include it also.
+  if (config.get_string("hydrology.model") == "routing") {
+    if (config.get_boolean("frontal_melt.include_floating_ice")) {
+      config.set_boolean("hydrology.routing.include_floating_ice", true);
+    }
   }
 
   // old options

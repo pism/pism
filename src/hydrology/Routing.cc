@@ -334,6 +334,12 @@ Routing::~Routing() {
 void Routing::initialization_message() const {
   m_log->message(2,
                  "* Initializing the routing subglacial hydrology model ...\n");
+
+  if (m_config->get_boolean("hydrology.routing.include_floating_ice")) {
+    m_log->message(2, "  ... routing subglacial water under grounded and floating ice.\n");
+  } else {
+    m_log->message(2, "  ... routing  subglacial water under grounded ice only.\n");
+  }
 }
 
 void Routing::restart_impl(const PIO &input_file, int record) {
