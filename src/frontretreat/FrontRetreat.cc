@@ -99,7 +99,7 @@ MaxTimestep FrontRetreat::max_timestep(const IceModelVec2CellType &cell_type,
     if (cell_type.ice_free_ocean(i, j) and
         cell_type.next_to_ice(i, j) and
         bc_mask(i, j) < 0.5) {
-      // NB: this condition has to match the one below
+      // NB: this condition has to match the one in update_geometry()
 
       const double C = retreat_rate(i, j);
 
@@ -184,7 +184,7 @@ void FrontRetreat::update_geometry(double dt,
     if (m_cell_type.ice_free_ocean(i, j) and
         m_cell_type.next_to_ice(i, j) and
         bc_mask(i, j) < 0.5) {
-      // NB: this condition has to match the one above
+      // NB: this condition has to match the one in max_timestep()
 
       const double
         rate     = retreat_rate(i, j),
