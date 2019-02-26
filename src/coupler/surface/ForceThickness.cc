@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -280,7 +280,7 @@ Therefore we set here
    \f[\Delta t = \frac{2}{\alpha}.\f]
  */
 MaxTimestep ForceThickness::max_timestep_impl(double my_t) const {
-  double max_dt = units::convert(m_sys, 2.0 / m_alpha, "years", "seconds");
+  double max_dt = 2.0 / m_alpha;
   MaxTimestep input_max_dt = m_input_model->max_timestep(my_t);
 
   return std::min(input_max_dt, MaxTimestep(max_dt, "surface forcing"));
