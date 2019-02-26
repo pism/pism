@@ -6,6 +6,11 @@ Changes since v1.1
 - PISM supports CMake 3.1 again (v1.1 required CMake 3.13 for no good reason).
 - Fix PISM's `-regional` runs: disable ice flow, surface mass balance, and basal mass
   balance effects on ice geometry in "no model" areas.
+- Fix an unreported bug in `-surface ...,forcing`: PISM was ignoring the time step
+  restriction associated with this mechanism; large `surface.force_to_thickness.alpha`
+  could lead to uncontrolled growth of ice thickness.
+- Update the `-atmosphere pik` temperature parameterization for compatibility with paleo
+  simulations by Albrecht et al.
 
 Changes from v1.0 to v1.1
 =========================
