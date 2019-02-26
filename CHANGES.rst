@@ -18,7 +18,7 @@ Changes since v1.1
 - Implement 3 frontal melt models: constant in time and space (`constant`), reading
   frontal melt from a file (`given`), and using time- and space-dependent thermal ocean
   forcing and modeled subglacial water flux in an implementation of the frontal melt
-  parameterization in Rignot et al 2016.
+  parameterization in Rignot et al 2016 (`routing`).
 - Now PISM combines retreat rates due to calving (eigen-calving and von Mises calving) and
   a frontal melt parameterizations before using these to update ice geometry. This
   simplifies the implementation and fixes the implementation of
@@ -34,10 +34,14 @@ Changes since v1.1
 - PISM supports CMake 3.1 again (v1.1 required CMake 3.13 for no good reason).
 - Fix PISM's `-regional` runs: disable ice flow, surface mass balance, and basal mass
   balance effects on ice geometry in "no model" areas.
-- Add a configuration parameter `hydrology.routing.include_ice_shelves` to allow routing
-  of subglacial water under ice shelves. This may be appropriate when shelves are close to
-  floatation and allows PISM to provide more meaningful `subglacial_water_flux_mag`, for
-  example.
+- Add a configuration parameter `hydrology.routing.include_floating_ice` to allow routing
+  of subglacial water under floating ice. This may be appropriate when an outlet glacier
+  has a small floating tongue. This also produces an extension of
+  `subglacial_water_flux_mag` to floating areas, which is needed to model frontal melt
+  using the `routing` model (see above).
+- Add a configuration parameter `frontal_melt.include_floating_ice`: `true` means "apply
+  computed frontal melt rates at *both* grounded and floating ice margins", `false` means
+  "apply computed frontal melt rates at grounded margins only."
 
 Changes from v1.0 to v1.1
 =========================
