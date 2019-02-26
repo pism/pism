@@ -20,6 +20,7 @@ add_library (boundary OBJECT
   ./atmosphere/Uniform.cc
   ./frontalmelt/FrontalMelt.cc
   ./frontalmelt/Constant.cc
+  ./frontalmelt/DischargeGiven.cc
   ./frontalmelt/DischargeRouting.cc
   ./frontalmelt/Given.cc
   ./frontalmelt/FrontalMeltPhysics.cc

@@ -21,6 +21,7 @@
 
 // frontal melt models:
 #include "Constant.hh"
+#include "DischargeGiven.hh"
 #include "DischargeRouting.hh"
 #include "Given.hh"
 
@@ -31,6 +32,7 @@ Factory::Factory(IceGrid::ConstPtr g)
   : PCFactory<FrontalMelt>(g, "frontal_melt.models") {
 
   add_model<Constant>("constant");
+  add_model<DischargeGiven>("discharge_given");
   add_model<DischargeRouting>("routing");
   add_model<Given>("given");
 }
