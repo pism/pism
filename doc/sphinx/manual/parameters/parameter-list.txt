@@ -557,17 +557,17 @@
    :Option: :opt:`-subgl_basal_melt`
    :Description: If geometry.grounded_cell_fraction is set, use the fractional floatation mask to interpolate the basal melt rate at the grounding line between grounded and floating values.
 
-#. :config:`energy.bedrock_thermal_conductivity` (*scalar*)
+#. :config:`energy.bedrock_thermal.conductivity` (*scalar*)
 
    :Value: 3 (Joule / (meter Kelvin second))
    :Description: = W m-1 K-1; for bedrock used in thermal model :cite:`RitzEISMINT`
 
-#. :config:`energy.bedrock_thermal_density` (*scalar*)
+#. :config:`energy.bedrock_thermal.density` (*scalar*)
 
    :Value: 3300 (kg meter-3)
    :Description: for bedrock used in thermal model
 
-#. :config:`energy.bedrock_thermal_specific_heat_capacity` (*scalar*)
+#. :config:`energy.bedrock_thermal.specific_heat_capacity` (*scalar*)
 
    :Value: 1000 (Joule / (kg Kelvin))
    :Description: for bedrock used in thermal model :cite:`RitzEISMINT`

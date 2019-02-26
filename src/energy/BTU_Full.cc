@@ -33,11 +33,11 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
   : BedThermalUnit(g),
     m_bootstrapping_needed(false) {
 
-  m_k = m_config->get_double("energy.bedrock_thermal_conductivity");
+  m_k = m_config->get_double("energy.bedrock_thermal.conductivity");
 
   const double
-    rho = m_config->get_double("energy.bedrock_thermal_density"),
-    c   = m_config->get_double("energy.bedrock_thermal_specific_heat_capacity");
+    rho = m_config->get_double("energy.bedrock_thermal.density"),
+    c   = m_config->get_double("energy.bedrock_thermal.specific_heat_capacity");
   // build constant diffusivity for heat equation
   m_D   = m_k / (rho * c);
 

@@ -527,20 +527,20 @@ netcdf pism_config {
     pism_config:energy.basal_melt.use_grounded_cell_fraction_option  = "subgl_basal_melt";
     pism_config:energy.basal_melt.use_grounded_cell_fraction_type  = "boolean";
 
-    pism_config:energy.bedrock_thermal_conductivity = 3.0;
-    pism_config:energy.bedrock_thermal_conductivity_doc = "= W m-1 K-1; for bedrock used in thermal model :cite:`RitzEISMINT`";
-    pism_config:energy.bedrock_thermal_conductivity_type = "scalar";
-    pism_config:energy.bedrock_thermal_conductivity_units = "Joule / (meter Kelvin second)";
+    pism_config:energy.bedrock_thermal.conductivity = 3.0;
+    pism_config:energy.bedrock_thermal.conductivity_doc = "= W m-1 K-1; for bedrock used in thermal model :cite:`RitzEISMINT`";
+    pism_config:energy.bedrock_thermal.conductivity_type = "scalar";
+    pism_config:energy.bedrock_thermal.conductivity_units = "Joule / (meter Kelvin second)";
 
-    pism_config:energy.bedrock_thermal_density = 3300.0;
-    pism_config:energy.bedrock_thermal_density_doc = "for bedrock used in thermal model";
-    pism_config:energy.bedrock_thermal_density_type = "scalar";
-    pism_config:energy.bedrock_thermal_density_units = "kg meter-3";
+    pism_config:energy.bedrock_thermal.density = 3300.0;
+    pism_config:energy.bedrock_thermal.density_doc = "for bedrock used in thermal model";
+    pism_config:energy.bedrock_thermal.density_type = "scalar";
+    pism_config:energy.bedrock_thermal.density_units = "kg meter-3";
 
-    pism_config:energy.bedrock_thermal_specific_heat_capacity = 1000.0;
-    pism_config:energy.bedrock_thermal_specific_heat_capacity_doc = "for bedrock used in thermal model :cite:`RitzEISMINT`";
-    pism_config:energy.bedrock_thermal_specific_heat_capacity_type = "scalar";
-    pism_config:energy.bedrock_thermal_specific_heat_capacity_units = "Joule / (kg Kelvin)";
+    pism_config:energy.bedrock_thermal.specific_heat_capacity = 1000.0;
+    pism_config:energy.bedrock_thermal.specific_heat_capacity_doc = "for bedrock used in thermal model :cite:`RitzEISMINT`";
+    pism_config:energy.bedrock_thermal.specific_heat_capacity_type = "scalar";
+    pism_config:energy.bedrock_thermal.specific_heat_capacity_units = "Joule / (kg Kelvin)";
 
     pism_config:energy.drainage_maximum_rate = 1.58443823077064e-09;
     pism_config:energy.drainage_maximum_rate_doc = "0.05 year-1; maximum rate at which liquid water fraction in temperate ice could possibly drain; see :cite:`AschwandenBuelerKhroulevBlatter`";

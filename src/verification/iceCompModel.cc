@@ -173,9 +173,9 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     if (m_testname == 'K') {
       m_log->message(1,
                      "setting material properties of bedrock to those of ice in Test K\n");
-      m_config->set_double("energy.bedrock_thermal_density", m_config->get_double("constants.ice.density"));
-      m_config->set_double("energy.bedrock_thermal_conductivity", m_config->get_double("constants.ice.thermal_conductivity"));
-      m_config->set_double("energy.bedrock_thermal_specific_heat_capacity", m_config->get_double("constants.ice.specific_heat_capacity"));
+      m_config->set_double("energy.bedrock_thermal.density", m_config->get_double("constants.ice.density"));
+      m_config->set_double("energy.bedrock_thermal.conductivity", m_config->get_double("constants.ice.thermal_conductivity"));
+      m_config->set_double("energy.bedrock_thermal.specific_heat_capacity", m_config->get_double("constants.ice.specific_heat_capacity"));
       m_bedrock_is_ice_forK = true;
     } else {
       m_log->message(1,
@@ -188,9 +188,9 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     // (note Mbz=1 also, by default, but want ice/rock interface to see
     // pure ice from the point of view of applying geothermal boundary
     // condition, especially in tests F and G)
-    m_config->set_double("energy.bedrock_thermal_density", m_config->get_double("constants.ice.density"));
-    m_config->set_double("energy.bedrock_thermal_conductivity", m_config->get_double("constants.ice.thermal_conductivity"));
-    m_config->set_double("energy.bedrock_thermal_specific_heat_capacity", m_config->get_double("constants.ice.specific_heat_capacity"));
+    m_config->set_double("energy.bedrock_thermal.density", m_config->get_double("constants.ice.density"));
+    m_config->set_double("energy.bedrock_thermal.conductivity", m_config->get_double("constants.ice.thermal_conductivity"));
+    m_config->set_double("energy.bedrock_thermal.specific_heat_capacity", m_config->get_double("constants.ice.specific_heat_capacity"));
   }
 
   energy::BTUGrid bed_vertical_grid = energy::BTUGrid::FromOptions(m_grid->ctx());

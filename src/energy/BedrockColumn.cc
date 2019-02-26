@@ -33,10 +33,10 @@ BedrockColumn::BedrockColumn(const std::string& prefix,
   assert(M > 1);
 
   const double
-    rho = config.get_double("energy.bedrock_thermal_density"),
-    c   = config.get_double("energy.bedrock_thermal_specific_heat_capacity");
+    rho = config.get_double("energy.bedrock_thermal.density"),
+    c   = config.get_double("energy.bedrock_thermal.specific_heat_capacity");
 
-  m_k   = config.get_double("energy.bedrock_thermal_conductivity");
+  m_k   = config.get_double("energy.bedrock_thermal.conductivity");
   m_D   = m_k / (rho * c);
 }
 
