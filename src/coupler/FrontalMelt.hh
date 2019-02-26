@@ -83,6 +83,8 @@ protected:
   static IceModelVec2S::Ptr allocate_frontal_melt_rate(IceGrid::ConstPtr g,
                                                        int stencil_width = 0);
 
+  bool apply(const IceModelVec2CellType &M, int i, int j);
+
   IceModelVec2S m_retreat_rate;
   bool m_include_floating_ice;
 };

@@ -22,6 +22,7 @@
 #include "pism/util/Time.hh"
 
 #include "pism/coupler/util/options.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace frontalmelt {
@@ -70,11 +71,29 @@ void Given::init_impl(const Geometry &geometry) {
 }
 
 void Given::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
-  (void) inputs;
 
+  const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
+
+  // fill m_frontal_melt_rate with values read from an file
   m_frontal_melt_rate->update(t, dt);
-
   m_frontal_melt_rate->average(t, dt);
+
+  // post-processing: keep values at grounded (or grounded and floating) margins and in
+  // the interior, filling the rest with zeros
+
+  IceModelVec::AccessList list{&cell_type, m_frontal_melt_rate.get()};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    auto R = (*m_frontal_melt_rate)(i, j);
+
+    if (apply(cell_type, i, j)) {
+      (*m_frontal_melt_rate)(i, j) = R;
+    } else {
+      (*m_frontal_melt_rate)(i, j) = 0.0;
+    }
+  }
 }
 
 MaxTimestep Given::max_timestep_impl(double t) const {

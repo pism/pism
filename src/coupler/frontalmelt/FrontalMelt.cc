@@ -265,6 +265,16 @@ TSDiagnosticList FrontalMelt::ts_diagnostics_impl() const {
   }
 }
 
+bool FrontalMelt::apply(const IceModelVec2CellType &M, int i, int j) {
+  // icy and grounded_ice cells are included for visualization only (values at these
+  // locations have no effect)
+  if (m_include_floating_ice) {
+    return (M.ice_free_ocean(i, j) and M.next_to_ice(i, j)) or M.icy(i, j);
+  } else {
+    return (M.ice_free_ocean(i, j) and M.next_to_grounded_ice(i, j)) or M.grounded_ice(i, j);
+  }
+}
+
 
 } // end of namespace frontalmelt
 } // end of namespace pism

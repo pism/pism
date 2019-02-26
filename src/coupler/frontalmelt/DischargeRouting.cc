@@ -147,14 +147,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    bool apply_frontal_melt;
-    if (m_include_floating_ice) {
-      apply_frontal_melt = cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j); 
-    } else {
-      apply_frontal_melt = cell_type.ice_free_ocean(i, j) and cell_type.next_to_grounded_ice(i, j);
-    }
-
-    if (apply_frontal_melt) {
+    if (apply(cell_type, i, j) and cell_type.ice_free(i, j)) {
 
       auto R = m_frontal_melt_rate->star(i, j);
       auto M = cell_type.int_star(i, j);

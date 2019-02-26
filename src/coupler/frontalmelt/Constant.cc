@@ -22,6 +22,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace frontalmelt {
@@ -36,14 +37,25 @@ Constant::~Constant() {
 }
 
 void Constant::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
-  (void) inputs;
   (void) t;
   (void) dt;
+
+  const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
 
   const double
     melt_rate = m_config->get_double("frontal_melt.constant.melt_rate", "m second-1");
 
-  m_frontal_melt_rate->set(melt_rate);
+  IceModelVec::AccessList list{&cell_type, m_frontal_melt_rate.get()};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (apply(cell_type, i, j)) {
+      (*m_frontal_melt_rate)(i, j) = melt_rate;
+    } else {
+      (*m_frontal_melt_rate)(i, j) = 0.0;
+    }
+  }
 }
 
 const IceModelVec2S& Constant::frontal_melt_rate_impl() const {
