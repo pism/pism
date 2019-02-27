@@ -142,17 +142,31 @@ void BedThermalUnit::init(const InputOptions &opts) {
 
 //! \brief Initialize the bedrock thermal unit.
 void BedThermalUnit::init_impl(const InputOptions &opts) {
-  switch (opts.type) {
-  case INIT_RESTART:
-    m_bottom_surface_flux.read(opts.filename, opts.record);
-    break;
-  case INIT_BOOTSTRAP:
-    m_bottom_surface_flux.regrid(opts.filename, OPTIONAL,
-                                 m_config->get_double("bootstrapping.defaults.geothermal_flux"));
-    break;
-  case INIT_OTHER:
-  default:
-    initialize_bottom_surface_flux();
+  auto input_file = m_config->get_string("energy.bedrock_thermal.file");
+
+  if (not input_file.empty()) {
+    m_log->message(2, "  - Reading geothermal flux from '%s' ...\n",
+                   input_file.c_str());
+
+    m_bottom_surface_flux.regrid(input_file, CRITICAL);
+  } else {
+    m_log->message(2,
+                   "  - Parameter %s is not set. Reading geothermal flux from '%s'...\n",
+                   "energy.bedrock_thermal.file",
+                   opts.filename.c_str());
+
+    switch (opts.type) {
+    case INIT_RESTART:
+      m_bottom_surface_flux.read(opts.filename, opts.record);
+      break;
+    case INIT_BOOTSTRAP:
+      m_bottom_surface_flux.regrid(opts.filename, OPTIONAL,
+                                   m_config->get_double("bootstrapping.defaults.geothermal_flux"));
+      break;
+    case INIT_OTHER:
+    default:
+      initialize_bottom_surface_flux();
+    }
   }
 
   regrid("bedrock thermal layer", m_bottom_surface_flux, REGRID_WITHOUT_REGRID_VARS);

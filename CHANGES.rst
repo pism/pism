@@ -17,6 +17,9 @@ Changes since v1.1
 - PISM supports CMake 3.1 again (v1.1 required CMake 3.13 for no good reason).
 - Fix PISM's `-regional` runs: disable ice flow, surface mass balance, and basal mass
   balance effects on ice geometry in "no model" areas.
+- Add a configuration parameter `energy.bedrock_thermal.file`. Use this to specify a
+  separate file containing the geothermal flux field (`bheatflx`). Leave it empty to read
+  `bheatflx` from the input file (`-i` and `input.file`).
 
 Changes from v1.0 to v1.1
 =========================
