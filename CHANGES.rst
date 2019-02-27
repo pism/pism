@@ -1,11 +1,8 @@
 .. default-role:: literal
 
-Changes since v1.1
-==================
+Changes from v1.1.1 to v1.1.2
+=============================
 
-- PISM supports CMake 3.1 again (v1.1 required CMake 3.13 for no good reason).
-- Fix PISM's `-regional` runs: disable ice flow, surface mass balance, and basal mass
-  balance effects on ice geometry in "no model" areas.
 - Fix an unreported bug in `-surface ...,forcing`: PISM was ignoring the time step
   restriction associated with this mechanism; large `surface.force_to_thickness.alpha`
   could lead to uncontrolled growth of ice thickness.
@@ -14,6 +11,13 @@ Changes since v1.1
 - Switch to an unconditionally-stable method for the approximation of the heat equation in
   columns of the bedrock thermal layer (backward Euler time discretization instead of
   explicit time stepping).
+
+Changes from v1.1 to v1.1.1
+===========================
+
+- PISM supports CMake 3.1 again (v1.1 required CMake 3.13 for no good reason).
+- Fix PISM's `-regional` runs: disable ice flow, surface mass balance, and basal mass
+  balance effects on ice geometry in "no model" areas.
 
 Changes from v1.0 to v1.1
 =========================
