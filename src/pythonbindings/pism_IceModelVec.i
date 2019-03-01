@@ -2,6 +2,7 @@
 /* Using directives needed to compile IceModelVec wrappers. */
 #include "util/IceModelVec2CellType.hh"
 #include "util/iceModelVec2T.hh"
+#include "util/IceModelVec3Custom.hh"
 
 using namespace pism;
 %}
@@ -17,6 +18,7 @@ using namespace pism;
 %shared_ptr(pism::IceModelVec2Stag)
 %shared_ptr(pism::IceModelVec3D)
 %shared_ptr(pism::IceModelVec3)
+%shared_ptr(pism::IceModelVec3Custom)
 
 %ignore pism::AccessList::AccessList(std::initializer_list<const PetscAccessible *>);
 
@@ -139,3 +141,5 @@ std::vector<double> interp(int i, int j) {
 %include "util/IceModelVec2CellType.hh"
 %include "util/iceModelVec2T.hh"
 %include "util/Vector2.hh"
+
+%include "util/IceModelVec3Custom.hh"
