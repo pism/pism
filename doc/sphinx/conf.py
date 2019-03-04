@@ -30,17 +30,17 @@ source_suffix = '.rst'
 # This patterns also affect html_static_path and html_extra_path
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
+def git(command):
+    return subprocess.check_output(shlex.split(command)).strip().decode("utf-8")
+
 # Get precise revision, author, and date information from Git:
 try:
     import subprocess
     import shlex
 
-    revision = "git describe --always --match v?.?*"
-    author = 'git --no-pager log -1 --pretty="format:%an"'
-    date = 'git --no-pager log -1 --pretty="format:%ci"'
-    git_revision = subprocess.check_output(shlex.split(revision)).strip().decode("utf-8")
-    git_author = subprocess.check_output(shlex.split(author)).strip().decode("utf-8")
-    git_date = subprocess.check_output(shlex.split(date)).strip().decode("utf-8")
+    git_revision = git("git describe --always --match v?.?*")
+    git_author = git('git --no-pager log -1 --pretty="format:%an"')
+    git_date = git('git --no-pager log -1 --pretty="format:%ci"')
 except:
     git_revision = "unknown Git revision"
     git_author = "unknown Git author"
