@@ -353,6 +353,8 @@ class IceModelVec2S;
 class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2();
+  IceModelVec2(IceGrid::ConstPtr grid, const std::string &short_name,
+               IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
 
   typedef std::shared_ptr<IceModelVec2> Ptr;
   typedef std::shared_ptr<const IceModelVec2> ConstPtr;

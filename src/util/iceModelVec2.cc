@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2019 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -453,6 +453,10 @@ double IceModelVec2S::min() const {
 
 
 // IceModelVec2
+IceModelVec2::IceModelVec2(IceGrid::ConstPtr grid, const std::string &short_name,
+                           IceModelVecKind ghostedp, unsigned int stencil_width, int dof) {
+  create(grid, short_name, ghostedp, stencil_width, dof);
+}
 
 void IceModelVec2::get_component(unsigned int n, IceModelVec2S &result) const {
 
