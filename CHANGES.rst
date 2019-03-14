@@ -4,6 +4,11 @@ Changes from v1.1.2 to v1.1.3
 =============================
 
 - Minor fixes of PISM's documentation.
+- Fix an unreported bug in the computation of the `flux` diagnostic. This bug affected
+  PISM's diagnostic variables `flux`, `velbar`, `velbar_mag`, and `vonmises_stress` (which
+  uses `velbar`).
+
+  It did *not* affect ice dynamics.
 
 Changes from v1.1.1 to v1.1.2
 =============================

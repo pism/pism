@@ -165,7 +165,7 @@ PSB_flux::PSB_flux(const StressBalance *m)
 }
 
 IceModelVec::Ptr PSB_flux::compute_impl() const {
-  double icefree_thickness = m_config->get_double("geometry.ice_free_thickness_standard");
+  double H_threshold = m_config->get_double("geometry.ice_free_thickness_standard");
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "flux", WITHOUT_GHOSTS);
@@ -181,48 +181,49 @@ IceModelVec::Ptr PSB_flux::compute_impl() const {
 
   IceModelVec::AccessList list{&u3, &v3, thickness, result.get()};
 
+  auto &z = m_grid->z();
+
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double u_sum = 0, v_sum = 0,
-        thk = (*thickness)(i,j);
-      int ks = m_grid->kBelowHeight(thk);
+      double H = (*thickness)(i,j);
 
       // an "ice-free" cell:
-      if (thk < icefree_thickness) {
-        (*result)(i,j).u = 0;
-        (*result)(i,j).v = 0;
+      if (H < H_threshold) {
+        (*result)(i, j) = 0.0;
         continue;
       }
 
-      // an ice-filled cell:
-      const double *u_ij = NULL, *v_ij = NULL;
-      u_ij = u3.get_column(i, j);
-      v_ij = v3.get_column(i, j);
+      // an icy cell:
+      {
+        auto u = u3.get_column(i, j);
+        auto v = v3.get_column(i, j);
 
-      if (thk <= m_grid->z(1)) {
-        (*result)(i,j).u = u_ij[0];
-        (*result)(i,j).v = v_ij[0];
-        continue;
+        Vector2 Q(0.0, 0.0);
+
+        // ks is "k just below the surface"
+        int ks = m_grid->kBelowHeight(H);
+
+        if (ks > 0) {
+          Vector2 v0(u[0], v[0]);
+
+          for (int k = 1; k <= ks; ++k) {
+            Vector2 v1(u[k], v[k]);
+
+            // trapezoid rule
+            Q += (z[k] - z[k - 1]) * 0.5 * (v0 + v1);
+
+            v0 = v1;
+          }
+        }
+
+        // rectangle method to integrate over the last level
+        Q += (H - z[ks]) * Vector2(u[ks], v[ks]);
+
+        (*result)(i, j) = Q;
       }
-
-      for (int k = 1; k <= ks; ++k) {
-        u_sum += (m_grid->z(k) - m_grid->z(k-1)) * (u_ij[k] + u_ij[k-1]);
-        v_sum += (m_grid->z(k) - m_grid->z(k-1)) * (v_ij[k] + v_ij[k-1]);
-      }
-
-      // Finish the trapezoidal rule integration (multiply by 1/2).
-      (*result)(i,j).u = 0.5 * u_sum;
-      (*result)(i,j).v = 0.5 * v_sum;
-
-      // The top surface of the ice is not aligned with the grid, so
-      // we have at most dz meters of ice above grid.z(ks).
-      // Assume that its velocity is (u_ij[ks], v_ij[ks]) and add its
-      // contribution.
-      (*result)(i,j).u += u_ij[ks] * (thk - m_grid->z(ks));
-      (*result)(i,j).v += v_ij[ks] * (thk - m_grid->z(ks));
     }
   } catch (...) {
     loop.failed();
