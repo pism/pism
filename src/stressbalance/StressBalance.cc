@@ -761,7 +761,7 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &V,
     const double A = 0.5 * (u_x + v_y),  // A = (1/2) trace(D)
       B   = 0.5 * (u_x - v_y),
       Dxy = 0.5 * (v_x + u_y),  // B^2 = A^2 - u_x v_y
-      q   = sqrt(PetscSqr(B) + PetscSqr(Dxy));
+      q   = sqrt(B*B + Dxy*Dxy);
     result(i,j,0) = A + q;
     result(i,j,1) = A - q; // q >= 0 so e1 >= e2
 
