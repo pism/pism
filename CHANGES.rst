@@ -20,6 +20,11 @@ Changes since v1.1
 - Add a configuration parameter `energy.bedrock_thermal.file`. Use this to specify a
   separate file containing the geothermal flux field (`bheatflx`). Leave it empty to read
   `bheatflx` from the input file (`-i` and `input.file`).
+- Fix an unreported bug in the computation of the `flux` diagnostic. This bug affected
+  PISM's diagnostic variables `flux`, `velbar`, `velbar_mag`, and `vonmises_stress` (which
+  uses `velbar`).
+
+  It did *not* affect ice dynamics.
 
 Changes from v1.0 to v1.1
 =========================
