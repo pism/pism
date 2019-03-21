@@ -1081,7 +1081,11 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
   const rheology::FlowLaw &flow_law = *model->shallow()->flow_law();
 
   const double *z = &m_grid->z()[0];
-  const double ssa_n = flow_law.exponent();
+
+  double ssa_n = flow_law.exponent();
+  if (m_config->get_boolean("calving.vonmises_calving.use_own_Glen_exponent")) {
+    ssa_n = m_config->get_double("calving.vonmises_calving.Glen_exponent");
+  }
 
   IceModelVec::AccessList list{&vonmises_stress, &velocity, &strain_rates, &ice_thickness,
       enthalpy, &mask};
