@@ -633,11 +633,7 @@ void Hydrology::compute_input_rate(const IceModelVec2CellType &mask,
 
   IceModelVec::AccessList list{&basal_melt_rate, &mask, &result};
 
-  const bool add_surface_input_to_till_water = m_config->get_boolean("hydrology.add_water_input_to_till_water");
-    
-  // I don't think this is the right approach because the water_input is used in both
-  // W and W_till updates
-  if (surface_input_rate and add_surface_input_to_till_water) {
+  if (surface_input_rate) {
     list.add(*surface_input_rate);
   }
 

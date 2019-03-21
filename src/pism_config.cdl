@@ -988,10 +988,6 @@ pism_config:frontal_melt.constant.melt_rate = 1.0;
     pism_config:grid.periodicity_option = "periodicity";
     pism_config:grid.periodicity_type = "keyword";
 
-    pism_config:hydrology.add_water_input_to_till_water = "yes";
-    pism_config:hydrology.add_water_input_to_till_water_doc = "Add surface input to water stored in till. If no it will be added to the transportable water";
-    pism_config:hydrology.add_water_input_to_till_water_type = "boolean";
-
     pism_config:hydrology.cavitation_opening_coefficient = 0.5;
     pism_config:hydrology.cavitation_opening_coefficient_doc = "c_1 in notes; coefficient of cavitation opening term in evolution of layer thickness in hydrology::Distributed";
     pism_config:hydrology.cavitation_opening_coefficient_option = "hydrology_cavitation_opening_coefficient";
