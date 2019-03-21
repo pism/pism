@@ -191,53 +191,56 @@ void FrontalMelt::write_model_state_impl(const PIO &output) const {
 
 namespace diagnostics {
 
-/*! @brief Frontal melt rate. */
-class FrontalMeltRate : public Diag<FrontalMelt>
+/*! @brief Report frontal melt rate. */
+class FrontalMeltRate : public DiagAverageRate<FrontalMelt>
 {
 public:
   FrontalMeltRate(const FrontalMelt *m)
-    : Diag<FrontalMelt>(m) {
+    : DiagAverageRate<FrontalMelt>(m, "frontal_melt_rate", RATE) {
 
-    /* set metadata: */
     m_vars = {SpatialVariableMetadata(m_sys, "frontal_melt_rate")};
+    m_accumulator.metadata().set_string("units", "m");
 
-    set_attrs("frontal melt rate", "", "m s-1", "m day-1", 0);
+    set_attrs("frontal melt rate", "",
+              "m second-1", "m day-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
   }
+
 protected:
-  IceModelVec::Ptr compute_impl() const {
-
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "frontal_melt_rate", WITHOUT_GHOSTS));
-    result->metadata(0) = m_vars[0];
-
-    result->copy_from(model->frontal_melt_rate());
-
-    return result;
+  const IceModelVec2S& model_input() {
+    return model->frontal_melt_rate();
   }
 };
 
-/*! @brief Report retreat rate due to frontal melt */
-class FrontalMeltRetreatRate : public Diag<FrontalMelt>
+/*! @brief Report retreat rate due to frontal melt. */
+class FrontalMeltRetreatRate : public DiagAverageRate<FrontalMelt>
 {
 public:
   FrontalMeltRetreatRate(const FrontalMelt *m)
-    : Diag<FrontalMelt>(m) {
+    : DiagAverageRate<FrontalMelt>(m, "frontal_melt_retreat_rate", RATE) {
 
     m_vars = {SpatialVariableMetadata(m_sys, "frontal_melt_retreat_rate")};
+    m_accumulator.metadata().set_string("units", "m");
 
-    set_attrs("retreat rate due to frontal melt", "", "m s-1", "m year-1", 0);
+    set_attrs("retreat rate due to frontal melt", "",
+              "m second-1", "m year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
     m_vars[0].set_string("comment", "takes into account what part of the front is submerged");
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() const {
-
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid,
-                                                "frontal_melt_retreat_rate", WITHOUT_GHOSTS));
-    result->metadata(0) = m_vars[0];
-
-    result->copy_from(model->retreat_rate());
-
-    return result;
+  const IceModelVec2S& model_input() {
+    return model->retreat_rate();
   }
 };
 
