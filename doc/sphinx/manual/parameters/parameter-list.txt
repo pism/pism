@@ -453,6 +453,18 @@
    :Option: :opt:`-thickness_calving_threshold_file`
    :Description: Name of the file containing the spatially-variable thickness calving threshold. 
 
+#. :config:`calving.vonmises_calving.use_own_Glen_exponent` (*boolean*)
+
+   :Value: no
+   :Option: :opt:`-vonmises_calving_use_own_n`
+   :Description: Glen exponent in ice flow law for von Mises calving
+
+#. :config:`calving.vonmises_calving.Glen_exponent` (*scalar*)
+
+   :Value: 3 (pure number)
+   :Option: :opt:`-vonmises_calving_n`
+   :Description: Glen exponent in ice flow law for von Mises calving
+
 #. :config:`calving.vonmises_calving.sigma_max` (*scalar*)
 
    :Value: 1000000 (Pa)
@@ -827,6 +839,24 @@
    :Value: 1 (m / day)
    :Option: :opt:`-frontal_melt_rate`
    :Description: default melt rate used by the 'constant' frontal_melt model
+
+#. :config:`frontal_melt.discharge_given.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-frontal_melt_discharge_given_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`frontal_melt.discharge_given.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-frontal_melt_discharge_given_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`frontal_melt.discharge_given.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-frontal_melt_discharge_given_reference_year`
+   :Description: Reference year to use when ``frontal_melt.discharge_given.period`` is active.
 
 #. :config:`frontal_melt.given.file` (*string*)
 
