@@ -426,6 +426,17 @@ netcdf pism_config {
     pism_config:calving.thickness_calving.threshold_file_option = "thickness_calving_threshold_file";
     pism_config:calving.thickness_calving.threshold_file_type = "string";
 
+    pism_config:calving.vonmises_calving.use_own_Glen_exponent = "no";
+    pism_config:calving.vonmises_calving.use_own_Glen_exponent_doc = "Glen exponent in ice flow law for von Mises calving";
+    pism_config:calving.vonmises_calving.use_own_Glen_exponent_option = "vonmises_calving_use_own_n";
+    pism_config:calving.vonmises_calving.use_own_Glen_exponent_type = "boolean";
+
+    pism_config:calving.vonmises_calving.Glen_exponent = 3.0;
+    pism_config:calving.vonmises_calving.Glen_exponent_doc = "Glen exponent in ice flow law for von Mises calving";
+    pism_config:calving.vonmises_calving.Glen_exponent_option = "vonmises_calving_n";
+    pism_config:calving.vonmises_calving.Glen_exponent_type = "scalar";
+    pism_config:calving.vonmises_calving.Glen_exponent_units = "pure number";
+
     pism_config:calving.vonmises_calving.sigma_max = 1.0e6;
     pism_config:calving.vonmises_calving.sigma_max_doc = "Set maximum tensile stress.  Note references :cite:`Morlighem2016` use 1.0e6 Pa.";
     pism_config:calving.vonmises_calving.sigma_max_option = "vonmises_calving_calving_sigma_max";
@@ -976,6 +987,10 @@ pism_config:frontal_melt.constant.melt_rate = 1.0;
     pism_config:grid.periodicity_doc = "horizontal grid periodicity";
     pism_config:grid.periodicity_option = "periodicity";
     pism_config:grid.periodicity_type = "keyword";
+
+    pism_config:hydrology.add_water_input_to_till_water = "yes";
+    pism_config:hydrology.add_water_input_to_till_water_doc = "Add surface input to water stored in till. If no it will be added to the transportable water";
+    pism_config:hydrology.add_water_input_to_till_water_type = "boolean";
 
     pism_config:hydrology.cavitation_opening_coefficient = 0.5;
     pism_config:hydrology.cavitation_opening_coefficient_doc = "c_1 in notes; coefficient of cavitation opening term in evolution of layer thickness in hydrology::Distributed";

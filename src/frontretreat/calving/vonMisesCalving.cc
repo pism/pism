@@ -113,8 +113,16 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
 
   const double *z = &m_grid->z()[0];
 
-  const double ssa_n = m_flow_law->exponent();
+  double ssa_n = m_flow_law->exponent();          
 
+  const bool use_own_exponent = m_config->get_boolean("calving.vonmises_calving.use_own_Glen_exponent");
+  
+    if (use_own_exponent) {
+      ssa_n = m_config->get_double("calving.vonmises_calving.Glen_exponent");
+    } else {
+    }
+  
+  
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
