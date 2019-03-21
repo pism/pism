@@ -40,7 +40,7 @@ vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr grid,
                            "horizontal calving rate due to von Mises calving",
                            "m s-1", "", 0);
   m_calving_rate.metadata().set_string("glaciological_units", "m year-1");
-  
+
   m_calving_threshold.create(m_grid, "vonmises_calving_threshold", WITHOUT_GHOSTS);
 
   m_calving_threshold.set_attrs("diagnostic",
@@ -113,14 +113,14 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
 
   const double *z = &m_grid->z()[0];
 
-  double ssa_n = m_flow_law->exponent();          
+  double ssa_n = m_flow_law->exponent();
 
   const bool use_own_exponent = m_config->get_boolean("calving.vonmises_calving.use_own_Glen_exponent");
-  
+
     if (use_own_exponent) {
       ssa_n = m_config->get_double("calving.vonmises_calving.Glen_exponent");
     }
-  
+
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
@@ -196,7 +196,7 @@ const IceModelVec2S& vonMisesCalving::threshold() const {
 }
 
 DiagnosticList vonMisesCalving::diagnostics_impl() const {
-  return {{"vonmises_calving_rate", Diagnostic::wrap(m_calving_rate)}, 
+  return {{"vonmises_calving_rate", Diagnostic::wrap(m_calving_rate)},
           {"vonmises_calving_threshold", Diagnostic::wrap(m_calving_threshold)}};
 }
 
