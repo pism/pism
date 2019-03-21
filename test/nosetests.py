@@ -13,7 +13,7 @@ nosetests --with-coverage --cover-branches --cover-html --cover-package=PISM tes
 import PISM
 import sys
 import numpy as np
-
+from unittest import TestCase
 
 def create_dummy_grid():
     "Create a dummy grid"
@@ -948,3 +948,87 @@ def vertical_extrapolation_during_regridding_test():
     # clean up
     import os
     os.remove("test.nc")
+
+class PrincipalStrainRates(TestCase):
+    def u_exact(self, x, y):
+        "Velocity field for testing"
+        return (np.cos(y) + np.sin(x),
+                np.sin(y) + np.cos(x))
+
+    def eps_exact(self, x, y):
+        "Principal strain rates corresponding to u_exact."
+        u_x = np.cos(x)
+        u_y = - np.sin(y)
+
+        v_x = - np.sin(x)
+        v_y = np.cos(y)
+
+        A   = 0.5 * (u_x + v_y)
+        B   = 0.5 * (u_x - v_y)
+        Dxy = 0.5 * (v_x + u_y)
+        q   = np.sqrt(B**2 + Dxy**2);
+
+        return (A + q, A - q)
+
+    def create_grid(self, Mx):
+        My = Mx + 10            # a non-square grid
+        return PISM.IceGrid.Shallow(self.ctx.ctx,
+                                    2*np.pi, 2*np.pi,
+                                    0, 0, int(Mx), int(My), PISM.CELL_CENTER, PISM.NOT_PERIODIC)
+
+    def create_velocity(self, grid):
+        velocity = PISM.IceModelVec2V(grid, "bar", PISM.WITH_GHOSTS)
+        with PISM.vec.Access(nocomm=velocity):
+            for (i, j) in grid.points():
+                u, v = self.u_exact(grid.x(i), grid.y(j))
+                velocity[i, j].u = u
+                velocity[i, j].v = v
+        velocity.update_ghosts()
+
+        return velocity
+
+    def create_cell_type(self, grid):
+        cell_type = PISM.IceModelVec2CellType(grid, "cell_type", PISM.WITH_GHOSTS)
+        cell_type.set(PISM.MASK_GROUNDED)
+        cell_type.update_ghosts()
+
+        return cell_type
+
+    def error(self, Mx):
+        grid = self.create_grid(Mx)
+
+        velocity = self.create_velocity(grid)
+        cell_type = self.create_cell_type(grid)
+        strain_rates = PISM.IceModelVec2(grid, "strain_rates", PISM.WITHOUT_GHOSTS, 0, 2)
+
+        PISM.compute_2D_principal_strain_rates(velocity, cell_type, strain_rates)
+        rates = strain_rates.numpy()
+
+        e1 = rates[:,:,0]
+        e2 = rates[:,:,1]
+
+        # compute e1, e2 using formulas
+        xx, yy = np.meshgrid(grid.x(), grid.y())
+        e1_exact, e2_exact = self.eps_exact(xx, yy)
+
+        delta_e1 = np.max(np.fabs(e1 - e1_exact))
+        delta_e2 = np.max(np.fabs(e2 - e2_exact))
+
+        return Mx, delta_e1, delta_e2
+
+    def setUp(self):
+        self.ctx = PISM.Context()
+
+    def runTest(self):
+        "Test principal strain rate computation"
+        errors = np.array([self.error(M) for M in [10, 20, 40]])
+
+        Ms = errors[:,0]
+        p_e1 = np.polyfit(np.log(1.0 / Ms), np.log(errors[:,1]), 1)
+        p_e2 = np.polyfit(np.log(1.0 / Ms), np.log(errors[:,2]), 1)
+
+        assert p_e1[0] > 1.8
+        assert p_e2[0] > 1.8
+
+    def tearDown(self):
+        pass
