@@ -33,7 +33,7 @@ def create_geometry(grid):
     geometry.bed_elevation.set(0.0)
     geometry.sea_level_elevation.set(0.0)
 
-    geometry.ice_thickness.set(0.0)
+    geometry.ice_thickness.set(1000.0)
     geometry.ice_area_specific_volume.set(0.0)
 
     geometry.ensure_consistency(0.0)
