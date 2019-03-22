@@ -129,7 +129,7 @@ public:
   const IceModelVec2S& till_water_thickness() const;
   const IceModelVec2S& subglacial_water_thickness() const;
   const IceModelVec2S& overburden_pressure() const;
-  const IceModelVec2S& total_input_rate() const;
+  const IceModelVec2S& surface_input_rate() const;
   const IceModelVec2V& flux() const;
 
   const IceModelVec2S& mass_change() const;
@@ -159,10 +159,13 @@ protected:
   void compute_overburden_pressure(const IceModelVec2S &ice_thickness,
                                    IceModelVec2S &result) const;
 
-  void compute_input_rate(const IceModelVec2CellType &mask,
-                          const IceModelVec2S &basal_melt_rate,
-                          const IceModelVec2S *surface_input_rate,
-                          IceModelVec2S &result);
+  void compute_surface_input_rate(const IceModelVec2CellType &mask,
+                                  const IceModelVec2S *surface_input_rate,
+                                  IceModelVec2S &result);
+
+  void compute_basal_melt_rate(const IceModelVec2CellType &mask,
+                               const IceModelVec2S &basal_melt_rate,
+                               IceModelVec2S &result);
 protected:
   // water flux on the regular grid
   IceModelVec2V m_Q;
@@ -176,8 +179,11 @@ protected:
   //! overburden pressure
   IceModelVec2S m_Pover;
 
-  // total input rate, combining basal melt rate and the input from the surface
-  IceModelVec2S m_input_rate;
+  // surface input rate
+  IceModelVec2S m_surface_input_rate;
+
+  // input rate due to basal melt
+  IceModelVec2S m_basal_melt_rate;
 
   // change due to flow for the current hydrology time step
   IceModelVec2S m_flow_change_incremental;

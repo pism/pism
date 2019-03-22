@@ -162,18 +162,20 @@ protected:
                             const IceModelVec2Stag &Q,
                             IceModelVec2S &result);
   void update_W(double dt,
-                const IceModelVec2S &input_rate,
-                const IceModelVec2S &W,
+                const IceModelVec2S    &surface_input_rate,
+                const IceModelVec2S    &basal_melt_rate,
+                const IceModelVec2S    &W,
                 const IceModelVec2Stag &Wstag,
-                const IceModelVec2S &Wtill,
-                const IceModelVec2S &Wtill_new,
+                const IceModelVec2S    &Wtill,
+                const IceModelVec2S    &Wtill_new,
                 const IceModelVec2Stag &K,
                 const IceModelVec2Stag &Q,
                 IceModelVec2S &W_new);
 
-  void update_Wtill(double hdt,
+  void update_Wtill(double dt,
                     const IceModelVec2S &Wtill,
-                    const IceModelVec2S &input_rate,
+                    const IceModelVec2S &surface_input_rate,
+                    const IceModelVec2S &basal_melt_rate,
                     IceModelVec2S &Wtill_new);
 
   void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result) const;

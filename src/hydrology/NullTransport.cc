@@ -115,7 +115,8 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   // no transportable basal water
   m_W.set(0.0);
 
-  m_input_change.add(dt, m_input_rate);
+  m_input_change.add(dt, m_surface_input_rate);
+  m_input_change.add(dt, m_basal_melt_rate);
 
   const double
     water_density = m_config->get_double("constants.fresh_water.density"),
@@ -123,14 +124,14 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
 
   const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
 
-  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_input_rate,
+  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_surface_input_rate, &m_basal_melt_rate,
       &m_conservation_error_change};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double
       W_old      = m_Wtill(i, j),
-      dW_input   = dt * m_input_rate(i, j);
+      dW_input   = dt * (m_surface_input_rate(i, j) + m_basal_melt_rate(i, j));
 
     if (W_old < 0.0) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,

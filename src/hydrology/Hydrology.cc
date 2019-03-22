@@ -58,21 +58,19 @@ protected:
   }
 };
 
-/*! @brief Report total input rate of subglacial water (basal melt rate plus input from
-  the surface).
+/*! @brief Report water input rate from the ice surface into the subglacial water system.
  */
 class TotalInputRate : public DiagAverageRate<Hydrology>
 {
 public:
   TotalInputRate(const Hydrology *m)
-    : DiagAverageRate<Hydrology>(m, "subglacial_water_input_rate", RATE) {
+    : DiagAverageRate<Hydrology>(m, "subglacial_water_input_rate_from_surface", RATE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_input_rate")};
+    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_input_rate_from_surface")};
     m_accumulator.metadata().set_string("units", "m");
 
-    set_attrs("total input rate of subglacial water "
-              "(basal melt rate plus input from the surface)", "",
-              "m second-1", "m year-1", 0);
+    set_attrs("water input rate from the ice surface into the subglacial water system",
+              "", "m second-1", "m year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
     double fill_value = units::convert(m_sys, m_fill_value,
@@ -84,7 +82,7 @@ public:
 
 protected:
   const IceModelVec2S& model_input() {
-    return model->total_input_rate();
+    return model->surface_input_rate();
   }
 };
 
@@ -307,9 +305,14 @@ Inputs::Inputs() {
 Hydrology::Hydrology(IceGrid::ConstPtr g)
   : Component(g) {
 
-  m_input_rate.create(m_grid, "water_input_rate", WITHOUT_GHOSTS);
-  m_input_rate.set_attrs("internal",
-                         "hydrology model workspace for total input rate into subglacial water layer",
+  m_surface_input_rate.create(m_grid, "water_input_rate_from_surface", WITHOUT_GHOSTS);
+  m_surface_input_rate.set_attrs("internal",
+                                 "hydrology model workspace for water input rate from the ice surface",
+                                 "m s-1", "");
+
+  m_basal_melt_rate.create(m_grid, "water_input_rate_due_to_basal_melt", WITHOUT_GHOSTS);
+  m_basal_melt_rate.set_attrs("internal",
+                         "hydrology model workspace for water input rate due to basal melt",
                          "m s-1", "");
 
   // *all* Hydrology classes have layer of water stored in till as a state variable
@@ -442,10 +445,12 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
 
   compute_overburden_pressure(inputs.geometry->ice_thickness, m_Pover);
 
-  compute_input_rate(inputs.geometry->cell_type,
-                     *inputs.basal_melt_rate,
-                     inputs.surface_input_rate,
-                     m_input_rate);
+  compute_surface_input_rate(inputs.geometry->cell_type,
+                             inputs.surface_input_rate,
+                             m_surface_input_rate);
+  compute_basal_melt_rate(inputs.geometry->cell_type,
+                          *inputs.basal_melt_rate,
+                          m_basal_melt_rate);
 
   IceModelVec::AccessList list{&m_W, &m_Wtill, &m_total_change};
 
@@ -550,8 +555,8 @@ const IceModelVec2V& Hydrology::flux() const {
   return m_Q;
 }
 
-const IceModelVec2S& Hydrology::total_input_rate() const {
-  return m_input_rate;
+const IceModelVec2S& Hydrology::surface_input_rate() const {
+  return m_surface_input_rate;
 }
 
 const IceModelVec2S& Hydrology::mass_change_at_grounded_margin() const {
@@ -616,26 +621,54 @@ void check_bounds(const IceModelVec2S& W, double W_max) {
 }
 
 
-//! Compute the total water input rate into the basal hydrology layer in the ice-covered
+//! Compute the surface water input rate into the basal hydrology layer in the ice-covered
 //! region.
 /*!
   This method ignores the input rate in the ice-free region.
 
   @param[in] mask cell type mask
-  @param[in] basal melt rate (ice thickness per time)
   @param[in] surface_input_rate surface input rate (kg m-2 s-1); set to NULL to ignore
   @param[out] result resulting input rate (water thickness per time)
 */
-void Hydrology::compute_input_rate(const IceModelVec2CellType &mask,
-                                   const IceModelVec2S &basal_melt_rate,
-                                   const IceModelVec2S *surface_input_rate,
-                                   IceModelVec2S &result) {
+void Hydrology::compute_surface_input_rate(const IceModelVec2CellType &mask,
+                                           const IceModelVec2S *surface_input_rate,
+                                           IceModelVec2S &result) {
+
+  if (not surface_input_rate) {
+    result.set(0.0);
+    return;
+  }
+
+  IceModelVec::AccessList list{surface_input_rate, &mask, &result};
+
+  const double
+    water_density = m_config->get_double("constants.fresh_water.density");
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.icy(i, j)) {
+      result(i,j) = (*surface_input_rate)(i, j) / water_density;
+    } else {
+      result(i,j) = 0.0;
+    }
+  }
+}
+
+//! Compute the input rate into the basal hydrology layer in the ice-covered
+//! region due to basal melt rate.
+/*!
+  This method ignores the input in the ice-free region.
+
+  @param[in] mask cell type mask
+  @param[in] basal_melt_rate basal melt rate (ice thickness per time)
+  @param[out] result resulting input rate (water thickness per time)
+*/
+void Hydrology::compute_basal_melt_rate(const IceModelVec2CellType &mask,
+                                        const IceModelVec2S &basal_melt_rate,
+                                        IceModelVec2S &result) {
 
   IceModelVec::AccessList list{&basal_melt_rate, &mask, &result};
-
-  if (surface_input_rate) {
-    list.add(*surface_input_rate);
-  }
 
   const double
     ice_density   = m_config->get_double("constants.ice.density"),
@@ -646,10 +679,7 @@ void Hydrology::compute_input_rate(const IceModelVec2CellType &mask,
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
-
-      double surface_input = surface_input_rate ? (*surface_input_rate)(i, j) : 0.0;
-
-      result(i,j) = C * basal_melt_rate(i, j) + surface_input / water_density;
+      result(i,j) = C * basal_melt_rate(i, j);
     } else {
       result(i,j) = 0.0;
     }

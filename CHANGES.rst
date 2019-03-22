@@ -48,6 +48,12 @@ Changes since v1.1
   that this affects the formula computing tensile von Mises stress but *not* the ice
   hardness which is also a function of `n`: ice hardness is computed using the SSA flow
   law.)
+- Add a configuration parameter `hydrology.routing.add_water_input_to_till_storage`
+  (default: yes). If "yes", surface water input is added to till storage which (if it
+  overflows) then contributes to the amount of transportable subglacial water. If "no",
+  surface water input directly contributes to the amount of transportable water, bypassing
+  till storage. Basal melt rate always contributes to the amount of water stored in the
+  till.
 
 Changes from v1.0 to v1.1
 =========================

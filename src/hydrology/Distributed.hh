@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 PISM Authors
+// Copyright (C) 2012-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -78,7 +78,8 @@ protected:
   void update_P(double dt,
                 const IceModelVec2CellType &cell_type,
                 const IceModelVec2S &sliding_speed,
-                const IceModelVec2S &total_input,
+                const IceModelVec2S &surface_input_rate,
+                const IceModelVec2S &basal_melt_rate,
                 const IceModelVec2S &P_overburden,
                 const IceModelVec2S &Wtill,
                 const IceModelVec2S &Wtill_new,

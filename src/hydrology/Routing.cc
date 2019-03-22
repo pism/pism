@@ -744,18 +744,29 @@ double Routing::max_timestep_W_cfl() const {
 */
 void Routing::update_Wtill(double dt,
                            const IceModelVec2S &Wtill,
-                           const IceModelVec2S &input_rate,
+                           const IceModelVec2S &surface_input_rate,
+                           const IceModelVec2S &basal_melt_rate,
                            IceModelVec2S &Wtill_new) {
   const double
     tillwat_max = m_config->get_double("hydrology.tillwat_max"),
     C           = m_config->get_double("hydrology.tillwat_decay_rate", "m / second");
 
-  IceModelVec::AccessList list{&Wtill, &Wtill_new, &input_rate};
+  IceModelVec::AccessList list{&Wtill, &Wtill_new, &basal_melt_rate};
+
+  bool add_surface_input = m_config->get_boolean("hydrology.routing.add_water_input_to_till_storage");
+  if (add_surface_input) {
+    list.add(surface_input_rate);
+  }
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    Wtill_new(i, j) = clip(Wtill(i, j) + dt * (input_rate(i, j) - C),
+    double input_rate = basal_melt_rate(i, j);
+    if (add_surface_input) {
+      input_rate += surface_input_rate(i, j);
+    }
+
+    Wtill_new(i, j) = clip(Wtill(i, j) + dt * (input_rate - C),
                            0, tillwat_max);
   }
 }
@@ -798,7 +809,8 @@ void Routing::W_change_due_to_flow(double dt,
 
 //! The computation of Wnew, called by update().
 void Routing::update_W(double dt,
-                       const IceModelVec2S    &input_rate,
+                       const IceModelVec2S    &surface_input_rate,
+                       const IceModelVec2S    &basal_melt_rate,
                        const IceModelVec2S    &W,
                        const IceModelVec2Stag &Wstag,
                        const IceModelVec2S    &Wtill,
@@ -809,18 +821,21 @@ void Routing::update_W(double dt,
 
   W_change_due_to_flow(dt, W, Wstag, K, Q, m_flow_change_incremental);
 
-  IceModelVec::AccessList list{&W, &Wtill, &Wtill_new, &input_rate,
-      &m_flow_change_incremental, &W_new};
+  IceModelVec::AccessList list{&W, &Wtill, &Wtill_new, &surface_input_rate,
+                               &basal_melt_rate, &m_flow_change_incremental, &W_new};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
+    double input_rate = surface_input_rate(i, j) + basal_melt_rate(i, j);
+
     double Wtill_change = Wtill_new(i, j) - Wtill(i, j);
-    W_new(i, j) = W(i, j) - Wtill_change + dt * input_rate(i, j) + m_flow_change_incremental(i, j);
+    W_new(i, j) = (W(i, j) + (dt * input_rate - Wtill_change) + m_flow_change_incremental(i, j));
   }
 
   m_flow_change.add(1.0, m_flow_change_incremental);
-  m_input_change.add(dt, input_rate);
+  m_input_change.add(dt, surface_input_rate);
+  m_input_change.add(dt, basal_melt_rate);
 }
 
 /*! Compute the elevation of the bottom surface of the ice.
@@ -931,7 +946,8 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     // update Wtillnew from Wtill and input_rate
     update_Wtill(hdt,
                  m_Wtill,
-                 m_input_rate,
+                 m_surface_input_rate,
+                 m_basal_melt_rate,
                  m_Wtillnew);
     // remove water in ice-free areas and account for changes
     enforce_bounds(inputs.geometry->cell_type,
@@ -945,7 +961,8 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
 
     // update Wnew from W, Wtill, Wtillnew, Wstag, Q, input_rate
     update_W(hdt,
-             m_input_rate,
+             m_surface_input_rate,
+             m_basal_melt_rate,
              m_W, m_Wstag,
              m_Wtill, m_Wtillnew,
              m_Kstag, m_Qstag,

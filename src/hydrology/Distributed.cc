@@ -225,7 +225,8 @@ double Distributed::max_timestep_P_diff(double phi0, double dt_diff_w) const {
 void Distributed::update_P(double dt,
                            const IceModelVec2CellType &cell_type,
                            const IceModelVec2S &sliding_speed,
-                           const IceModelVec2S &total_input,
+                           const IceModelVec2S &surface_input_rate,
+                           const IceModelVec2S &basal_melt_rate,
                            const IceModelVec2S &P_overburden,
                            const IceModelVec2S &Wtill,
                            const IceModelVec2S &Wtill_new,
@@ -251,7 +252,8 @@ void Distributed::update_P(double dt,
     wuy = 1.0 / (m_dy * m_dy);
 
   IceModelVec::AccessList list{&P, &W, &Wtill, &Wtill_new, &sliding_speed, &Ws,
-      &K, &Q, &total_input, &cell_type, &P_overburden, &P_new};
+                               &K, &Q, &surface_input_rate, &basal_melt_rate,
+                               &cell_type, &P_overburden, &P_new};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -289,7 +291,8 @@ void Distributed::update_P(double dt,
 
       // pressure update equation
       double Wtill_change = Wtill_new(i, j) - Wtill(i, j);
-      double ZZ = Close - Open + total_input(i, j) - Wtill_change / dt;
+      double total_input = surface_input_rate(i, j) + basal_melt_rate(i, j);
+      double ZZ = Close - Open + total_input - Wtill_change / dt;
 
       P_new(i, j) = P(i, j) + CC * (divflux + ZZ);
 
@@ -384,7 +387,8 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     // update Wtillnew from Wtill and input_rate
     update_Wtill(hdt,
                  m_Wtill,
-                 m_input_rate,
+                 m_surface_input_rate,
+                 m_basal_melt_rate,
                  m_Wtillnew);
     // remove water in ice-free areas and account for changes
     enforce_bounds(inputs.geometry->cell_type,
@@ -399,7 +403,8 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     update_P(hdt,
              inputs.geometry->cell_type,
              *inputs.ice_sliding_speed,
-             m_input_rate,
+             m_surface_input_rate,
+             m_basal_melt_rate,
              m_Pover,
              m_Wtill, m_Wtillnew,
              subglacial_water_pressure(),
@@ -409,7 +414,8 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
 
     // update Wnew from W, Wtill, Wtillnew, Wstag, Q, input_rate
     update_W(hdt,
-             m_input_rate,
+             m_surface_input_rate,
+             m_basal_melt_rate,
              m_W, m_Wstag,
              m_Wtill, m_Wtillnew,
              m_Kstag, m_Qstag,
