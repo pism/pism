@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cassert>
 #include <cmath>                // sqrt
 #include <fftw3.h>
 #include <gsl/gsl_math.h>       // M_PI
@@ -172,31 +173,54 @@ void LingleClarkSerial::precompute_coefficients() {
     FFTWArray LRM(m_fftw_input, m_Nx, m_Ny);
 
     greens_elastic G;
-    ge_data ge_data;
-    ge_data.dx = m_dx;
-    ge_data.dy = m_dy;
-    ge_data.G = &G;
-    int Nx2 = m_Nx/2,
-        Ny2 = m_Ny/2;
-    for (int j = 0; j <= Ny2; j++) {
-      for (int i = 0; i <= Nx2; i++) {
-        ge_data.p = i;
-        ge_data.q = j;
-        const double Ge = dblquad_cubature(ge_integrand, -m_dx/2, m_dx/2, -m_dy/2, m_dy/2,
-                          1.0e-8, &ge_data);
+    ge_data ge_data{ m_dx, m_dy, 0, 0, &G };
 
-        LRM(Nx2 - i, Ny2 - j) = Ge;
+    int Nx2 = m_Nx / 2;
+    int Ny2 = m_Ny / 2;
 
-        if ((i > 0) and ((Nx2 + i) < m_Nx)) {
-          LRM(Nx2 + i, Ny2 - j) = Ge;
+    // Top half
+    for (int j = 0; j <= Ny2; ++j) {
+      // Top left quarter
+      for (int i = 0; i <= Nx2; ++i) {
+        ge_data.p = Nx2 - i;
+        ge_data.q = Ny2 - j;
 
-          if ((j > 0) and ((Ny2 + j) < m_Ny)) {
-            LRM(Nx2 + i, Ny2 + j) = Ge;
-          }
-        }
-        if ((j > 0) and ((Ny2 + j) < m_Ny)) {
-          LRM(Nx2 - i, Ny2 + j) = Ge;
-        }
+        LRM(i, j) = dblquad_cubature(ge_integrand,
+                                     -m_dx / 2, m_dx / 2,
+                                     -m_dy / 2, m_dy / 2,
+                                     1.0e-8, &ge_data);
+      }
+
+      // Top right quarter
+      //
+      // Note: Nx2 = m_Nx / 2 (using integer division!), so
+      //
+      // - If m_Nx is even then 2 * Nx2 == m_Nx. So i < m_Nx implies i < 2 * Nx2 and
+      //   2 * Nx2 - i > 0.
+      //
+      // - If m_Nx is odd then 2 * Nx2 == m_Nx - 1 or m_Nx == 2 * Nx2 + 1. So i < m_Nx
+      //   implies i < 2 * Nx2 + 1, which is the same as 2 * Nx2 - i > -1 or
+      //   2 * Nx2 - i >= 0.
+      //
+      // Also, i == Nx2 + 1 gives 2 * Nx2 - i == Nx2 - 1
+      //
+      // So, in both cases (even and odd) 0 <= 2 * Nx2 - i <= Nx2 - 1.
+      //
+      // This means that LRM(2 * Nx2 - i, j) will not use indexes that are out of bounds
+      // *and* will only use values computed in the for loop above.
+      for (int i = Nx2 + 1; i < m_Nx; ++i) {
+        assert(2 * Nx2 - i >= 0);
+        LRM(i, j) = LRM(2 * Nx2 - i, j);
+      }
+    } // End of the loop over the top half
+
+    // Bottom half
+    //
+    // See the comment above the "top right quarter" loop.
+    for (int j = Ny2 + 1; j < m_Ny; ++j) {
+      for (int i = 0; i < m_Nx; ++i) {
+        assert(2 * Ny2 - j >= 0);
+        LRM(i, j) = LRM(i, 2 * Ny2 - j);
       }
     }
 
