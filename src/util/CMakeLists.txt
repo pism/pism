@@ -49,6 +49,7 @@ set(PISMUTIL_SRC
   pism_options.cc
   pism_utilities.cc
   projection.cc
+  fftw_utilities.cc
   )
 
 if(Pism_USE_JANSSON)
