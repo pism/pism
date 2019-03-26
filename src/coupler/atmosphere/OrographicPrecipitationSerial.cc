@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,25 +31,6 @@
 namespace pism {
 namespace atmosphere {
 
-template <class T>
-class VecAccessor2D {
-public:
-  VecAccessor2D(T *a, int Mx, int My, int i_offset, int j_offset)
-    : m_Mx(Mx), m_My(My), m_i_offset(i_offset), m_j_offset(j_offset), m_array(a) {
-  }
-
-  VecAccessor2D(T *a, int Mx, int My)
-    : m_Mx(Mx), m_My(My), m_i_offset(0), m_j_offset(0), m_array(a) {
-  }
-
-  inline T &operator()(int i, int j) {
-    return m_array[(m_j_offset + j) + m_My * (m_i_offset + i)];
-  }
-
-private:
-  int m_Mx, m_My, m_i_offset, m_j_offset;
-  T *m_array;
-};
 /*!
  * @param[in] config configuration database
  * @param[in] log logger
@@ -173,7 +154,7 @@ void OrographicPrecipitationSerial::update(Vec surface_elevation) {
   }
 
   {
-    VecAccessor2D<fftw_complex>
+    FFTWArray
       fftw_output(m_fftw_output, m_Nx, m_Ny),
       fftw_input(m_fftw_input, m_Nx, m_Ny);
 
@@ -182,7 +163,7 @@ void OrographicPrecipitationSerial::update(Vec surface_elevation) {
       for (int j = 0; j < m_Ny; j++) {
         const double ky = m_ky[j];
 
-        std::complex<double> h_hat(fftw_output(i, j)[0], fftw_output(i, j)[1]);
+        const auto &h_hat = fftw_output(i, j);
 
         double sigma = m_u * kx + m_v * ky;
 
@@ -224,8 +205,7 @@ void OrographicPrecipitationSerial::update(Vec surface_elevation) {
         // The first factor (1 - i m H_w) *could* be zero. Here we check if it is and
         // "regularize" if necessary.
 
-        fftw_input(i, j)[0] = P_hat.real();
-        fftw_input(i, j)[1] = P_hat.imag();
+        fftw_input(i, j) = P_hat;
       }
     }
   }
