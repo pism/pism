@@ -381,7 +381,7 @@ void LingleClarkSerial::init(Vec thickness, Vec viscous_displacement) {
  * @param[in] dt_seconds time step length
  * @param[in] H load thickness on the physical (Mx*My) grid
  */
-void LingleClarkSerial::step(double dt_seconds, Vec H) {
+void LingleClarkSerial::step(double dt, Vec H) {
   // solves:
   //     (2 eta |grad| U^{n+1}) + (dt/2) * (rho_r g U^{n+1} + D grad^4 U^{n+1})
   //   = (2 eta |grad| U^n) - (dt/2) * (rho_r g U^n + D grad^4 U^n) - dt * rho g H_start
@@ -389,52 +389,61 @@ void LingleClarkSerial::step(double dt_seconds, Vec H) {
   // Bueler, Lingle, Brown (2007) "Fast computation of a viscoelastic
   // deformable Earth model for ice sheet simulations", Ann. Glaciol. 46, 97--105
 
-  // Compute fft2(-load_density * g * dt * H)
-  {
-    clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
-    set_fftw_input(H,
-                   - m_load_density * m_standard_gravity * dt_seconds,
-                   m_Mx, m_My, m_i0_offset, m_j0_offset);
-    fftw_execute(m_dft_forward);
+  // Compute viscous displacement if dt > 0 and bypass this computation if dt == 0.
+  //
+  // This makes it easier to test the elastic part of the model.
+  if (dt > 0.0) {
 
-    // Save fft2(-load_density * g * H * dt) in loadhat.
-    copy_fftw_output(m_fftw_output, m_loadhat, m_Nx, m_Ny);
-  }
+    // Compute fft2(-load_density * g * dt * H)
+    {
+      clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
+      set_fftw_input(H,
+                     - m_load_density * m_standard_gravity * dt,
+                     m_Mx, m_My, m_i0_offset, m_j0_offset);
+      fftw_execute(m_dft_forward);
 
-  // Compute fft2(u).
-  // no need to clear fftw_input: all values are overwritten
-  {
-    set_fftw_input(m_Uv, 1.0, m_Nx, m_Ny, 0, 0);
-    fftw_execute(m_dft_forward);
-  }
+      // Save fft2(-load_density * g * H * dt) in loadhat.
+      copy_fftw_output(m_fftw_output, m_loadhat, m_Nx, m_Ny);
+    }
 
-  // frhs = right.*fft2(uun) + fft2(dt*sszz);
-  // uun1 = real(ifft2(frhs./left));
-  {
-    VecAccessor2D<fftw_complex> input(m_fftw_input, m_Nx, m_Ny),
-      u_hat(m_fftw_output, m_Nx, m_Ny), load_hat(m_loadhat, m_Nx, m_Ny);
-    for (int i = 0; i < m_Nx; i++) {
-      for (int j = 0; j < m_Ny; j++) {
-        const double
-          C     = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j],
-          part1 = 2.0 * m_eta * sqrt(C),
-          part2 = (dt_seconds / 2.0) * (m_mantle_density * m_standard_gravity + m_D * C * C),
-          A = part1 - part2,
-          B = part1 + part2;
+    // Compute fft2(u).
+    // no need to clear fftw_input: all values are overwritten
+    {
+      set_fftw_input(m_Uv, 1.0, m_Nx, m_Ny, 0, 0);
+      fftw_execute(m_dft_forward);
+    }
 
-        input(i, j)[0] = (load_hat(i, j)[0] + A * u_hat(i, j)[0]) / B;
-        input(i, j)[1] = (load_hat(i, j)[1] + A * u_hat(i, j)[1]) / B;
+    // frhs = right.*fft2(uun) + fft2(dt*sszz);
+    // uun1 = real(ifft2(frhs./left));
+    {
+      VecAccessor2D<fftw_complex> input(m_fftw_input, m_Nx, m_Ny),
+        u_hat(m_fftw_output, m_Nx, m_Ny), load_hat(m_loadhat, m_Nx, m_Ny);
+      for (int i = 0; i < m_Nx; i++) {
+        for (int j = 0; j < m_Ny; j++) {
+          const double
+            C     = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j],
+            part1 = 2.0 * m_eta * sqrt(C),
+            part2 = (dt / 2.0) * (m_mantle_density * m_standard_gravity + m_D * C * C),
+            A = part1 - part2,
+            B = part1 + part2;
+
+          input(i, j)[0] = (load_hat(i, j)[0] + A * u_hat(i, j)[0]) / B;
+          input(i, j)[1] = (load_hat(i, j)[1] + A * u_hat(i, j)[1]) / B;
+        }
       }
     }
+
+    fftw_execute(m_dft_inverse);
+    get_fftw_output(m_Uv, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
+
+    // Now tweak. (See the "correction" in section 5 of BuelerLingleBrown.)
+    //
+    // Here 1e16 approximates t = \infty.
+    tweak(H, m_Uv, m_Nx, m_Ny, 1e16);
+  } else {
+    // dt == 0: set viscous displacement to zero
+    PetscErrorCode ierr = VecSet(m_Uv, 0.0); PISM_CHK(ierr, "VecSet");
   }
-
-  fftw_execute(m_dft_inverse);
-  get_fftw_output(m_Uv, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
-
-  // Now tweak. (See the "correction" in section 5 of BuelerLingleBrown.)
-  //
-  // Here 1e16 approximates t = \infty.
-  tweak(H, m_Uv, m_Nx, m_Ny, 1e16);
 
   // now compute elastic response if desired
   if (m_include_elastic) {
