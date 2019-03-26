@@ -52,6 +52,7 @@ protected:
   IceModelVec2T::Ptr m_temperature;
   IceModelVec2T::Ptr m_temperature_anomaly;
   IceModelVec2T::Ptr m_temperature_gradient;
+  IceModelVec2S::Ptr m_temperature_reference;
 };
 
 } // end of namespace surface

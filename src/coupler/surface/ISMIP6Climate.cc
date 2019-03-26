@@ -44,8 +44,6 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
     // the anomaly/gradient file (time-dependent)
     std::string reference_filename = m_config->get_string("surface.ismip6.reference_file");
     
-    // File with reference surface elevation, temperature, and climatic mass balance
-    PIO reference_file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
     // File with anomalies and gradients of temperature and climatic mass balance
     PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
 
@@ -66,10 +64,8 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
                                               periodic);
 
     m_mass_flux_reference->create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
-    m_mass_flux_reference->regrid(reference_file, CRITICAL);
 
     m_surface_reference->create(m_grid, "surface_elevation", WITHOUT_GHOSTS);
-    m_surface_reference->regrid(reference_file, CRITICAL);
 
     m_temperature_anomaly = IceModelVec2T::ForcingField(m_grid,
                                                 file,
@@ -88,9 +84,6 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
                                                 periodic);
 
     m_temperature_reference->create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
-    m_temperature_reference->regrid(reference_file, CRITICAL);
-
-
 
   }
 
@@ -125,6 +118,14 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
                            "Kelvin", "");
   m_temperature->metadata().set_doubles("valid_range", {0.0, 323.15}); // [0C, 50C]
 
+
+  m_temperature_anomaly->set_attrs("climate_forcing_anomaly",
+                           "temperature of the ice at the ice surface but below firn processes",
+                           "Kelvin", "");
+
+  m_temperature_gradient->set_attrs("climate_forcing_gradient",
+                           "temperature of the ice at the ice surface but below firn processes",
+                           "Kelvin m-1", "");
 }
 
 ISMIP6::~ISMIP6() {
@@ -137,16 +138,21 @@ void ISMIP6::init_impl(const Geometry &geometry) {
                  "* Initializing the ISMIP6 surface model\n");
   ForcingOptions opt(*m_grid->ctx(), "surface.ismip6");
 
-  m_temperature->init(opt.filename, opt.period, opt.reference_time);
+  // File with reference surface elevation, temperature, and climatic mass balance
+  PIO reference_file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
+
+  m_mass_flux_reference->regrid(reference_file, CRITICAL);
+  m_surface_reference->regrid(reference_file, CRITICAL);
+  m_temperature_reference->regrid(reference_file, CRITICAL);
+  
   m_mass_flux_anomaly->init(opt.filename, opt.period, opt.reference_time);
   m_mass_flux_gradient->init(opt.filename, opt.period, opt.reference_time);
 
+  m_temperature_anomaly->init(opt.filename, opt.period, opt.reference_time);
+  m_temperature_gradient->init(opt.filename, opt.period, opt.reference_time);
 }
 
 void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
-
-  m_temperature->update(t, dt);
-  m_temperature->average(t, dt);
 
   dummy_accumulation(*m_mass_flux, *m_accumulation);
   dummy_melt(*m_mass_flux, *m_melt);
@@ -158,12 +164,14 @@ void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
   const IceModelVec2S &surface = geometry.ice_surface_elevation;
 
   IceModelVec::AccessList list
-    {&surface, m_mass_flux_reference.get(), m_mass_flux_anomaly.get(), m_mass_flux_gradient.get(), m_surface_reference.get()};
+    {&surface, m_mass_flux_reference.get(), m_mass_flux_anomaly.get(), m_mass_flux_gradient.get(), m_surface_reference.get(),  m_temperature_anomaly.get(), m_temperature_gradient.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     
     (*m_mass_flux)(i, j) = (*m_mass_flux_reference)(i, j) + (*m_mass_flux_anomaly)(i, j) + (*m_mass_flux_gradient)(i, j) * (surface(i, j) - (*m_surface_reference)(i, j));
+
+    (*m_temperature)(i, j) = (*m_temperature_reference)(i, j) + (*m_temperature_anomaly)(i, j) + (*m_temperature_gradient)(i, j) * (surface(i, j) - (*m_surface_reference)(i, j));
   }
 
 }
