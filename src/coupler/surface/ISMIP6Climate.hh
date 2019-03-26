@@ -45,11 +45,13 @@ protected:
 
 protected:
   IceModelVec2S::Ptr m_mass_flux;
-  IceModelVec2S::Ptr m_mass_flux_reference;
   IceModelVec2T::Ptr m_mass_flux_anomaly;
+  IceModelVec2S::Ptr m_mass_flux_reference;
   IceModelVec2T::Ptr m_mass_flux_gradient;
   IceModelVec2S::Ptr m_surface_reference;
   IceModelVec2T::Ptr m_temperature;
+  IceModelVec2T::Ptr m_temperature_anomaly;
+  IceModelVec2T::Ptr m_temperature_gradient;
 };
 
 } // end of namespace surface

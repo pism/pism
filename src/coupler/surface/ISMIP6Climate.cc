@@ -43,22 +43,11 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
     // elevation (time-independent) and
     // the anomaly/gradient file (time-dependent)
     std::string reference_filename = m_config->get_string("surface.ismip6.reference_file");
+    
+    // File with reference surface elevation, temperature, and climatic mass balance
     PIO reference_file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
+    // File with anomalies and gradients of temperature and climatic mass balance
     PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
-
-    m_temperature = IceModelVec2T::ForcingField(m_grid,
-                                                file,
-                                                "ice_surface_temp",
-                                                "", // no standard name
-                                                buffer_size,
-                                                evaluations_per_year,
-                                                periodic);
-
-    m_surface_reference->create(m_grid, "surface_elevation", WITHOUT_GHOSTS);
-    m_surface_reference->regrid(reference_file, CRITICAL);
-
-    m_mass_flux_reference->create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
-    m_mass_flux_reference->regrid(reference_file, CRITICAL);
 
     m_mass_flux_anomaly = IceModelVec2T::ForcingField(m_grid,
                                               file,
@@ -75,19 +64,49 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
                                               buffer_size,
                                               evaluations_per_year,
                                               periodic);
-  }
 
-  m_temperature->set_attrs("climate_forcing",
-                           "temperature of the ice at the ice surface but below firn processes",
-                           "Kelvin", "");
-  m_temperature->metadata().set_doubles("valid_range", {0.0, 323.15}); // [0C, 50C]
+    m_mass_flux_reference->create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+    m_mass_flux_reference->regrid(reference_file, CRITICAL);
+
+    m_surface_reference->create(m_grid, "surface_elevation", WITHOUT_GHOSTS);
+    m_surface_reference->regrid(reference_file, CRITICAL);
+
+    m_temperature_anomaly = IceModelVec2T::ForcingField(m_grid,
+                                                file,
+                                                "ice_surface_temp_anomaly",
+                                                "", // no standard name
+                                                buffer_size,
+                                                evaluations_per_year,
+                                                periodic);
+
+    m_temperature_gradient = IceModelVec2T::ForcingField(m_grid,
+                                                file,
+                                                "ice_surface_temp_gradient",
+                                                "", // no standard name
+                                                buffer_size,
+                                                evaluations_per_year,
+                                                periodic);
+
+    m_temperature_reference->create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
+    m_temperature_reference->regrid(reference_file, CRITICAL);
+
+
+
+  }
 
   const double smb_max = m_config->get_double("surface.given.smb_max", "kg m-2 second-1");
 
-  m_surface_reference->set_attrs("surface_altitude",
-                         "reference surface altitude",
-                         "m", "surface_altitude");
-  m_surface_reference->set_time_independent(true);
+
+  m_mass_flux_anomaly->set_attrs("climate_forcing",
+                         "surface mass balance (accumulation/ablation) rate",
+                         "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
+  
+  m_mass_flux_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_mass_flux_anomaly->set_attrs("climate_forcing",
+                         "surface mass balance (accumulation/ablation) rate",
+                         "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
+  
+  m_mass_flux_gradient->metadata().set_string("glaciological_units", "kg m-2 year-1 m-1");
 
   m_mass_flux_reference->set_attrs("climate_forcing",
                          "surface mass balance (accumulation/ablation) rate",
@@ -96,15 +115,16 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
   m_mass_flux_reference->metadata().set_doubles("valid_range", {-smb_max, smb_max});
   m_mass_flux_reference->set_time_independent(true);
 
-  m_mass_flux_anomaly->set_attrs("climate_forcing",
-                         "surface mass balance (accumulation/ablation) rate",
-                         "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
-  m_mass_flux_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_surface_reference->set_attrs("surface_altitude",
+                         "reference surface altitude",
+                         "m", "surface_altitude");
+  m_surface_reference->set_time_independent(true);
 
-  m_mass_flux_anomaly->set_attrs("climate_forcing",
-                         "surface mass balance (accumulation/ablation) rate",
-                         "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
-  m_mass_flux_gradient->metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_temperature->set_attrs("climate_forcing",
+                           "temperature of the ice at the ice surface but below firn processes",
+                           "Kelvin", "");
+  m_temperature->metadata().set_doubles("valid_range", {0.0, 323.15}); // [0C, 50C]
+
 }
 
 ISMIP6::~ISMIP6() {
