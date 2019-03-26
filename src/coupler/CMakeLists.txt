@@ -55,6 +55,7 @@ add_library (boundary OBJECT
   ./surface/ConstantPIK.cc
   ./surface/Elevation.cc
   ./surface/GivenClimate.cc
+  ./surface/ISMIP6Climate.cc
   ./surface/LapseRates.cc
   ./surface/Delta_T.cc
   ./surface/Simple.cc

@@ -23,6 +23,7 @@
 #include "Anomaly.hh"
 #include "Elevation.hh"
 #include "GivenClimate.hh"
+#include "ISMIP6Climate.hh"
 #include "LapseRates.hh"
 #include "Delta_T.hh"
 #include "TemperatureIndex.hh"
@@ -41,6 +42,7 @@ Factory::Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereMode
 
   add_surface_model<Elevation>("elevation");
   add_surface_model<Given>("given");
+  add_surface_model<ISMIP6>("ismip6");
   add_surface_model<TemperatureIndex>("pdd");
   add_surface_model<PIK>("pik");
   add_surface_model<Simple>("simple");
