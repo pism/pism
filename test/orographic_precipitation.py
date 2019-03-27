@@ -1,146 +1,15 @@
 #!/usr/bin/env python
-
 import numpy as np
 
 import PISM
 
-class Constants(object):
-    "Spatially-constant inputs of the LT model"
+# silence initialization messages
+PISM.Context().log.set_threshold(1)
 
-    tau_c = 1000.0
-    "conversion time [s]"
-
-    tau_f = 1000.0
-    "fallout time [s]"
-
-    P0 = 0.0
-    'Background precipitation rate [mm hr-1]'
-
-    P_scale = 1.0
-    'Precipitation scale factor'
-
-    Nm = 0.005
-    'moist stability frequency [s-1]'
-
-    Hw = 2500
-    'Water vapor scale height [m]'
-
-    latitude = 45.0
-    "Latitude used to compute the Coriolis force"
-
-    direction = 270.0
-    "Wind direction, 0 is north, 270 is west"
-
-    speed = 15.0
-    "Wind speed"
-
-    f = None
-    "Coriolis force"
-
-    u = None
-    "u component of the wind velocity"
-
-    v = None
-    "v component of the wind velocity"
-
-    Cw = None
-    "Uplift sensitivity factor [kg m-3]"
-
-    Theta_m = -6.5
-    "moist adiabatic lapse rate [K / km]"
-
-    rho_Sref = 7.4e-3
-    "reference density [kg m-3]"
-
-    gamma = -5.8
-    "adiabatic lapse rate [K / km]"
-
-    def update(self):
-        "Update derived constants"
-
-        self.f = 2 * 7.2921e-5 * np.sin(self.latitude * np.pi / 180.0)
-
-        self.u = -np.sin(self.direction * 2 * np.pi / 360) * self.speed
-        self.v = -np.cos(self.direction * 2 * np.pi / 360) * self.speed
-
-        self.Cw = self.rho_Sref * self.Theta_m / self.gamma
-
-    def __init__(self):
-        self.update()
-
-def orographic_precipitation(orography, dx, dy, truncate=True):
-
-    constants = Constants()
-
-    eps = 1e-18
-
-    ny, nx = orography.shape
-
-    pad = 250
-
-    h = np.pad(orography, pad, 'constant')
-    ny, nx = h.shape
-
-    h_hat = np.fft.fft2(h)
-
-    x_freq = (2.0 * np.pi / dx) * np.fft.fftfreq(nx)
-    y_freq = (2.0 * np.pi / dy) * np.fft.fftfreq(ny)
-
-    kx, ky = np.meshgrid(x_freq, y_freq)
-
-    # Intrinsic frequency sigma = U*k + V*l
-    u0 = constants.u
-    v0 = constants.v
-
-    # $\sigma = U k + V l$, see paragraph after eq 5.
-    sigma = u0 * kx + v0 * ky
-
-    denominator = sigma**2 - constants.f**2
-    denominator[np.logical_and(np.fabs(denominator) < eps, denominator >= 0)] = eps
-    denominator[np.logical_and(np.fabs(denominator) < eps, denominator  < 0)] = -eps
-
-    m_squared = (constants.Nm**2 - sigma**2) * (kx**2 + ky**2) / denominator
-
-    m = np.sqrt(np.array(m_squared, dtype=np.complex))
-
-    # Regularization
-    nonzero = np.logical_and(m_squared >= 0, sigma != 0)
-    m[nonzero] *= np.sign(sigma[nonzero])
-
-    P_hat = h_hat * (constants.Cw * 1j * sigma /
-                     ((1 - 1j * m * constants.Hw) *
-                      (1 + 1j * sigma * constants.tau_c) *
-                      (1 + 1j * sigma * constants.tau_f)))
-
-    # Convert from wave domain back to space domain
-    P = np.real(np.fft.ifft2(P_hat))
-
-    # Remove padding
-    if pad > 0:
-        P = P[pad:-pad, pad:-pad]
-
-    # convert to mm hr-1
-    P *= 3600
-
-    # Add background precipitation
-    P += constants.P0
-
-    # Truncate
-    if truncate:
-        P[P < 0] = 0.0
-
-    P *= constants.P_scale
-
-    return P
-
-def create_grid():
+def triangle_ridge_grid(dx=5e4, dy=5e4):
     "Allocate the grid for the synthetic geometry test."
-    x_min   = -100e3
-    x_max   = 200e3
-    y_min   = -150e3
-    y_max   = 150e3
-    dx      = 750
-    dy      = 750
+    x_min, x_max   = -100e3, 100e3
+    y_min, y_max   = -100e3, 100e3
 
     x0 = (x_max + x_min) / 2.0
     y0 = (y_max + y_min) / 2.0
@@ -156,51 +25,48 @@ def create_grid():
                                 Mx, My,
                                 PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
-def gaussian_bump(x, y, h_max=500.0,
-                  x0=-25e3, y0=0.0, sigma_x=15e3, sigma_y=15e3):
-    "Create the setup needed to reproduce Fig 4c in SB2004"
-    X, Y = np.meshgrid(x, y)
-    surface = h_max * np.exp(-(((X - x0)**2 / (2 * sigma_x**2)) +
-                              ((Y - y0)**2 / (2 * sigma_y**2))))
-    return surface
+def triangle_ridge(x, A=500.0, d=50e3):
+    "Create the 'triangle ridge' topography"
+    return np.maximum(A * (1 - np.fabs(x) / d), 0)
 
-def orographic_precipitation_pism(grid, surface_elevation):
+def triangle_ridge_exact(x, u, Cw, tau, A=500.0, d=50e3):
+    """Exact precipitation for the triangle ridge setup.
+
+    See equations 44, 45, 46 in Smith and Barstad (2004).
+    """
+    assert d > 0
+
+    C = Cw * u * A / d
+    Ut = u * tau
+
+    xc = Ut * np.log(2 - np.exp(-d / Ut))
+
+    def P(x):
+        if x < 0 and x >= -d:
+            return C * (1.0 - np.exp(-(x + d) / Ut))
+        elif x >= 0 and x <= xc:
+            return C * (np.exp(-x / Ut) * (2 - np.exp(-d / Ut)) - 1)
+        else:
+            return 0
+
+    try:
+        return 3600 * np.array([P(t) for t in x])
+    except TypeError:
+        return 3600 * P(x)
+
+def run_model(grid, orography):
     "Run the PISM implementation of the model to compare to the Python version."
 
-    config = PISM.Context().config
-
-    c = Constants()
-
-    # set parameters to match Constants above
-    config.set_boolean("atmosphere.orographic_precipitation.truncate", True)
-    config.set_double("atmosphere.orographic_precipitation.conversion_time", c.tau_c)
-    config.set_double("atmosphere.orographic_precipitation.coriolis_latitude", c.latitude)
-    config.set_double("atmosphere.orographic_precipitation.fallout_time", c.tau_f)
-    config.set_double("atmosphere.orographic_precipitation.grid_size_factor", 2)
-    config.set_double("atmosphere.orographic_precipitation.lapse_rate", c.gamma)
-    config.set_double("atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate", c.Theta_m)
-    config.set_double("atmosphere.orographic_precipitation.moist_stability_frequency", c.Nm)
-    config.set_double("atmosphere.orographic_precipitation.reference_density", c.rho_Sref)
-    config.set_double("atmosphere.orographic_precipitation.water_vapor_scale_height", c.Hw)
-    config.set_double("atmosphere.orographic_precipitation.wind_direction", c.direction)
-    config.set_double("atmosphere.orographic_precipitation.wind_speed", c.speed)
-
-    config.set_double("atmosphere.orographic_precipitation.background_precip_post", 0.0)
-    config.set_double("atmosphere.orographic_precipitation.background_precip_pre", c.P0)
-    config.set_double("atmosphere.orographic_precipitation.scale_factor", c.P_scale)
-
-    uniform  = PISM.AtmosphereUniform(grid)
-    model    = PISM.AtmosphereOrographicPrecipitation(grid, uniform)
+    model    = PISM.AtmosphereOrographicPrecipitation(grid, PISM.AtmosphereUniform(grid))
     geometry = PISM.Geometry(grid)
 
-    H          = geometry.ice_thickness.allocate_proc0_copy()
-    H.get()[:] = surface_elevation
-    geometry.ice_thickness.get_from_proc0(H.get())
+    with PISM.vec.Access(nocomm=geometry.ice_thickness):
+        for i,j in grid.points():
+            geometry.ice_thickness[i, j] = orography[j, i]
 
     geometry.bed_elevation.set(0.0)
     geometry.sea_level_elevation.set(0.0)
     geometry.ice_area_specific_volume.set(0.0)
-    geometry.cell_area.set(grid.dx() * grid.dy())
 
     # compute surface elevation from ice thickness and bed elevation
     geometry.ensure_consistency(0)
@@ -208,52 +74,102 @@ def orographic_precipitation_pism(grid, surface_elevation):
     model.init(geometry)
     model.update(geometry, 0, 1)
 
+    # convert from mm/s to mm/hour
     return model.mean_precipitation().numpy() * 3600
 
-def orographic_precipitation_test():
-    "Comparing PISM's orographic precipitation model to a reference implementation"
+def max_error(spacing, wind_direction):
+    # Set conversion time to zero (we could set fallout time to zero instead: it does not
+    # matter which one is zero)
 
-    grid = create_grid()
-    orography = gaussian_bump(grid.x(), grid.y())
+    wind_speed = 15
 
-    P_python = orographic_precipitation(orography, grid.dx(), grid.dy())
+    config = PISM.Context().config
 
-    P_pism = orographic_precipitation_pism(grid, orography)
+    # set wind speed and direction
+    config.set_double("atmosphere.orographic_precipitation.wind_speed", wind_speed)
+    config.set_double("atmosphere.orographic_precipitation.wind_direction", wind_direction)
 
-    np.testing.assert_allclose(P_python, P_pism, rtol=0, atol=1e-4)
+    # set conversion time to zero
+    config.set_double("atmosphere.orographic_precipitation.conversion_time", 0.0)
+    # eliminate the effect of airflow dynamics
+    config.set_double("atmosphere.orographic_precipitation.water_vapor_scale_height", 0.0)
+    # eliminate the effect of the Coriolis force
+    config.set_double("atmosphere.orographic_precipitation.coriolis_latitude", 0.0)
 
-if __name__ == "__main__":
+    # get constants needed to compute the exact solution
+    tau      = config.get_double("atmosphere.orographic_precipitation.fallout_time")
+    Theta_m  = config.get_double("atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate")
+    rho_Sref = config.get_double("atmosphere.orographic_precipitation.reference_density")
+    gamma    = config.get_double("atmosphere.orographic_precipitation.lapse_rate")
+    Cw       = rho_Sref * Theta_m / gamma
 
-    grid = create_grid()
+    if wind_direction == 90 or wind_direction == 270:
+        # east or west
+        grid = triangle_ridge_grid(dx=spacing)
+        t = np.array(grid.x())
 
-    x = grid.x()
-    y = grid.y()
+        h = triangle_ridge(t)
+        orography = np.tile(h, (grid.My(), 1))
 
-    orography = gaussian_bump(x, y)
+        P = run_model(grid, orography)
+        P = P[grid.My() // 2, :]
+    else:
+        # north or south
+        grid = triangle_ridge_grid(dy=spacing)
+        t = np.array(grid.y())
 
-    P_python = orographic_precipitation(orography, grid.dx(), grid.dy())
+        h = triangle_ridge(t)
+        orography = np.tile(h, (grid.Mx(), 1)).T
 
-    P_pism = orographic_precipitation_pism(grid, orography)
+        P = run_model(grid, orography)
+        P = P[:, grid.Mx() // 2]
 
-    import pylab as plt
+    if wind_direction == 0 or wind_direction == 90:
+        P_exact = triangle_ridge_exact(-t, wind_speed, Cw, tau)
+    else:
+        P_exact = triangle_ridge_exact(t, wind_speed, Cw, tau)
 
-    def plot(v, title):
+    return np.max(np.fabs(P - P_exact))
+
+def convergence_rate(error, wind_direction, plot):
+    dxs = [2000, 1000, 500]
+    errors = [error(dx, wind_direction) for dx in dxs]
+
+    p = np.polyfit(np.log10(dxs), np.log10(errors), 1)
+
+    if plot:
+        import pylab as plt
+
+        direction = {0 : "north",
+                     90 : "east",
+                     180 : "south",
+                     270 : "west"}
+
+        def log_plot(x, y, style, label):
+            plt.plot(np.log10(x), np.log10(y), style, label=label)
+            plt.xticks(np.log10(x), x)
+
+        def log_fit_plot(x, p, label):
+            plt.plot(np.log10(x), np.polyval(p, np.log10(x)), label=label)
+
         plt.figure()
-        plt.contour(x, y, v, levels=np.linspace(0.025, 2.025, 6))
-        plt.colorbar()
-        plt.contour(x, y, orography, colors="black", linewidths=0.5)
-        plt.title(title)
+        plt.title("Precipitation errors (wind direction: {})".format(direction[wind_direction]))
+        log_fit_plot(dxs, p, "polynomial fit (dx^{:1.4})".format(p[0]))
+        log_plot(dxs, errors, 'o', "errors")
+        plt.legend()
+        plt.grid()
+        plt.xlabel("grid spacing (meters)")
+        plt.ylabel("log10(error)")
+        plt.show()
 
-    plot(P_pism, "PISM")
-    plot(P_python, "Python")
+    return p[0]
 
-    plt.figure()
-    plt.title("difference")
-    plt.imshow(P_pism - P_python)
-    plt.colorbar()
-
-    plt.show()
+def ltop_test(plot=False):
+    "Orographic precipitation (triangle ridge test case)"
+    assert convergence_rate(max_error,   0, plot) > 1.99
+    assert convergence_rate(max_error,  90, plot) > 1.99
+    assert convergence_rate(max_error, 180, plot) > 1.99
+    assert convergence_rate(max_error, 270, plot) > 1.99
 
 if __name__ == "__main__":
-
-    orographic_precipitation_test()
+    ltop_test(plot=True)
