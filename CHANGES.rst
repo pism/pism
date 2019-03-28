@@ -42,12 +42,10 @@ Changes since v1.1
 - Add a configuration parameter `frontal_melt.include_floating_ice`: `true` means "apply
   computed frontal melt rates at *both* grounded and floating ice margins", `false` means
   "apply computed frontal melt rates at grounded margins only."
-- Add configuration parameters `calving.vonmises_calving.use_own_Glen_exponent` and
-  `calving.vonmises_calving.Glen_exponent`. This makes it possible to use a different Glen
-  exponent in the stress balance model and the tensile von Mises stress computation. (Note
-  that this affects the formula computing tensile von Mises stress but *not* the ice
-  hardness which is also a function of `n`: ice hardness is computed using the SSA flow
-  law.)
+- Add configuration parameters `calving.vonmises_calving.use_custom_flow_law`,
+  `calving.vonmises_calving.flow_law`, and `calving.vonmises_calving.Glen_exponent`. This
+  makes it possible to use a different flow law (and so a different Glen exponent) in the
+  stress balance model and the tensile von Mises stress computation.
 - Add a configuration parameter `hydrology.routing.add_water_input_to_till_storage`
   (default: yes). If "yes", surface water input is added to till storage which (if it
   overflows) then contributes to the amount of transportable subglacial water. If "no",

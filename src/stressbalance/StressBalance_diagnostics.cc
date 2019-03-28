@@ -26,6 +26,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/rheology/FlowLaw.hh"
+#include "pism/rheology/FlowLawFactory.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -1078,14 +1079,19 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
   const IceModelVec3 *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  const rheology::FlowLaw &flow_law = *model->shallow()->flow_law();
+  std::shared_ptr<const rheology::FlowLaw> flow_law;
+
+  if (m_config->get_boolean("calving.vonmises_calving.use_custom_flow_law")) {
+    EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
+    rheology::FlowLawFactory factory("calving.vonmises_calving.", m_config, EC);
+    flow_law = factory.create();
+  } else {
+    flow_law = model->shallow()->flow_law();
+  }
 
   const double *z = &m_grid->z()[0];
 
-  double ssa_n = flow_law.exponent();
-  if (m_config->get_boolean("calving.vonmises_calving.use_own_Glen_exponent")) {
-    ssa_n = m_config->get_double("calving.vonmises_calving.Glen_exponent");
-  }
+  double glen_exponent = flow_law->exponent();
 
   IceModelVec::AccessList list{&vonmises_stress, &velocity, &strain_rates, &ice_thickness,
       enthalpy, &mask};
@@ -1100,7 +1106,7 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
 
       const double
         *enthalpy_column   = enthalpy->get_column(i, j),
-        hardness           = averaged_hardness(flow_law, H, k, z, enthalpy_column),
+        hardness           = averaged_hardness(*flow_law, H, k, z, enthalpy_column),
         eigen1             = strain_rates(i, j, 0),
         eigen2             = strain_rates(i, j, 1);
 
@@ -1109,7 +1115,7 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
                                                                PetscSqr(max(0.0, eigen2))));
       // [\ref Morlighem2016] equation 7
       vonmises_stress(i, j) = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate,
-                                                         1.0 / ssa_n);
+                                                         1.0 / glen_exponent);
 
     } else { // end of "if (mask.icy(i, j))"
       vonmises_stress(i, j) = 0.0;

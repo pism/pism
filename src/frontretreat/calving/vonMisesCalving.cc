@@ -23,6 +23,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/rheology/FlowLawFactory.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/frontretreat/util/remove_narrow_tongues.hh"
@@ -34,6 +35,12 @@ vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr grid,
                                  std::shared_ptr<const rheology::FlowLaw> flow_law)
   : StressCalving(grid, 2),
     m_flow_law(flow_law) {
+
+  if (m_config->get_boolean("calving.vonmises_calving.use_custom_flow_law")) {
+    EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
+    rheology::FlowLawFactory factory("calving.vonmises_calving.", m_config, EC);
+    m_flow_law = factory.create();
+  }
 
   m_calving_rate.metadata().set_name("vonmises_calving_rate");
   m_calving_rate.set_attrs("diagnostic",
@@ -113,10 +120,7 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
 
   const double *z = &m_grid->z()[0];
 
-  double ssa_n = m_flow_law->exponent();
-  if (m_config->get_boolean("calving.vonmises_calving.use_own_Glen_exponent")) {
-    ssa_n = m_config->get_double("calving.vonmises_calving.Glen_exponent");
-  }
+  double glen_exponent = m_flow_law->exponent();
 
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
@@ -177,7 +181,7 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
                                                                PetscSqr(max(0.0, eigen2))));
       // [\ref Morlighem2016] equation 7
       const double sigma_tilde = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate,
-                                                            1.0 / ssa_n);
+                                                            1.0 / glen_exponent);
 
       // Calving law [\ref Morlighem2016] equation 4
       m_calving_rate(i, j) = velocity_magnitude * sigma_tilde / m_calving_threshold(i, j);
