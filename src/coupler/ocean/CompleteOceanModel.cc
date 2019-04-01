@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,7 +32,7 @@ CompleteOceanModel::CompleteOceanModel(IceGrid::ConstPtr g, std::shared_ptr<Ocea
 
 // "model" constructor
 CompleteOceanModel::CompleteOceanModel(IceGrid::ConstPtr g)
-  : CompleteOceanModel(g, nullptr) {
+  : CompleteOceanModel(g, std::shared_ptr<OceanModel>()) {
   // empty
 }
 

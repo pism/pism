@@ -27,7 +27,7 @@ namespace pism {
 namespace ocean {
 
 Given::Given(IceGrid::ConstPtr g)
-  : OceanModel(g, nullptr) {
+  : OceanModel(g, std::shared_ptr<OceanModel>()) {
 
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
   m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);

@@ -69,7 +69,7 @@ OceanModel::OceanModel(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> input)
 
 // "model" constructor
 OceanModel::OceanModel(IceGrid::ConstPtr g)
-  : OceanModel(g, nullptr) {
+  : OceanModel(g, std::shared_ptr<OceanModel>()) {
   // empty
 }
 

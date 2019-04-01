@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -40,7 +40,7 @@ SeaLevel::SeaLevel(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> input)
 
 // "Model" constructor (returns sea level is zero).
 SeaLevel::SeaLevel(IceGrid::ConstPtr g)
-  : SeaLevel(g, nullptr) {
+  : SeaLevel(g, std::shared_ptr<SeaLevel>()) {
   // empty
 }
 

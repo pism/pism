@@ -61,7 +61,7 @@ GivenTH::Constants::Constants(const Config &config) {
 }
 
 GivenTH::GivenTH(IceGrid::ConstPtr g)
-  : CompleteOceanModel(g, nullptr) {
+  : CompleteOceanModel(g, std::shared_ptr<OceanModel>()) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.th");
 
