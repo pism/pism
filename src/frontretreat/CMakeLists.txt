@@ -1,5 +1,6 @@
 add_library(frontretreat OBJECT
   FrontRetreat.cc
+  ISMIP6Retreat.cc
   calving/CalvingAtThickness.cc
   calving/EigenCalving.cc
   calving/FloatKill.cc

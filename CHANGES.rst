@@ -52,6 +52,9 @@ Changes since v1.1
   surface water input directly contributes to the amount of transportable water, bypassing
   till storage. Basal melt rate always contributes to the amount of water stored in the
   till.
+- Implement the ISMIP6 front retreat parameterization. Reads a time-dependent ice extent
+  mask (variable name: `land_ice_area_fraction_retreat`) from a file specified using the
+  configuration parameter `geometry.front_retreat.ismip6.file`.
 
 Changes from v1.0 to v1.1
 =========================
