@@ -64,8 +64,8 @@ void Given::init_impl(const Geometry &geometry) {
                                                       periodic);
   }
 
-  m_frontal_melt_rate->set_attrs("climate_forcing", "frontal melt rate", "m s-1", "");
-  m_frontal_melt_rate->metadata().set_string("glaciological_units", "m year-1");
+  m_frontal_melt_rate->set_attrs("climate_forcing", "frontal melt rate",
+                                 "m s-1", "m year-1", "", 0);
 
   m_frontal_melt_rate->init(opt.filename, opt.period, opt.reference_time);
 }

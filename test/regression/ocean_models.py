@@ -80,12 +80,12 @@ def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)
 
     T = PISM.IceModelVec2S(grid, "shelfbtemp", PISM.WITHOUT_GHOSTS)
-    T.set_attrs("climate", "shelf base temperature", "Kelvin", "")
+    T.set_attrs("climate", "shelf base temperature", "Kelvin", "Kelvin", "", 0)
     T.set(temperature)
     T.write(filename)
 
     M = PISM.IceModelVec2S(grid, "shelfbmassflux", PISM.WITHOUT_GHOSTS)
-    M.set_attrs("climate", "shelf base mass flux", "kg m-2 s-1", "")
+    M.set_attrs("climate", "shelf base mass flux", "kg m-2 s-1", "kg m-2 s-1", "", 0)
     M.set(mass_flux)
     M.write(filename)
 
@@ -248,12 +248,12 @@ class GivenTHTest(TestCase):
         PISM.util.prepare_output(filename)
 
         Th = PISM.IceModelVec2S(self.grid, "theta_ocean", PISM.WITHOUT_GHOSTS)
-        Th.set_attrs("climate", "potential temperature", "Kelvin", "")
+        Th.set_attrs("climate", "potential temperature", "Kelvin", "Kelvin", "", 0)
         Th.set(potential_temperature)
         Th.write(filename)
 
         S = PISM.IceModelVec2S(self.grid, "salinity_ocean", PISM.WITHOUT_GHOSTS)
-        S.set_attrs("climate", "ocean salinity", "g/kg", "")
+        S.set_attrs("climate", "ocean salinity", "g/kg", "g/kg", "", 0)
         S.set(salinity)
         S.write(filename)
 
@@ -337,7 +337,7 @@ class AnomalyBMB(TestCase):
         delta_BMB = PISM.IceModelVec2S(self.grid, "shelf_base_mass_flux_anomaly",
                                        PISM.WITHOUT_GHOSTS)
         delta_BMB.set_attrs("climate_forcing",
-                            "2D shelf base mass flux anomaly", "kg m-2 s-1", "")
+                            "2D shelf base mass flux anomaly", "kg m-2 s-1", "kg m-2 s-1", "", 0)
         delta_BMB.set(self.dBMB)
 
         delta_BMB.dump(self.filename)
@@ -529,7 +529,7 @@ def create_delta_SL_file(filename, grid, sea_level_offset):
     PISM.util.prepare_output(filename)
 
     SL = PISM.IceModelVec2S(grid, "delta_SL", PISM.WITHOUT_GHOSTS)
-    SL.set_attrs("forcing", "sea level forcing", "meters", "")
+    SL.set_attrs("forcing", "sea level forcing", "meters", "meters", "", 0)
     SL.set(sea_level_offset)
     SL.write(filename)
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -58,8 +58,8 @@ LapseRates::LapseRates(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> 
                                                       buffer_size,
                                                       evaluations_per_year,
                                                       periodic);
-    m_reference_surface->set_attrs("climate_forcing", "ice surface elevation", "m",
-                                   "surface_altitude", 0);
+    m_reference_surface->set_attrs("climate_forcing", "ice surface elevation",
+                                   "m", "m", "surface_altitude", 0);
   }
 
   m_precipitation = allocate_precipitation(grid);

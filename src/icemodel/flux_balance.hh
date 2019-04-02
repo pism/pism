@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018 PISM Authors
+/* Copyright (C) 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -65,9 +65,10 @@ public:
     m_vars[0].set_double("_FillValue", m_fill_value);
     m_vars[0].set_string("cell_methods", "time: mean");
 
+    auto units = internal_units + " second";
     m_last_amount.set_attrs("internal",
                             "ice amount at the time of the last report of " + name,
-                            internal_units + " second", "");
+                            units, units, "", 0);
   }
 protected:
   IceModelVec::Ptr compute_impl() const {

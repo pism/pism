@@ -166,12 +166,12 @@ class Given(TestCase):
         PISM.util.prepare_output(filename)
 
         T = PISM.IceModelVec2S(grid, "ice_surface_temp", PISM.WITHOUT_GHOSTS)
-        T.set_attrs("climate", "ice surface temperature", "Kelvin", "")
+        T.set_attrs("climate", "ice surface temperature", "Kelvin", "Kelvin", "", 0)
         T.set(temperature)
         T.write(filename)
 
         M = PISM.IceModelVec2S(grid, "climatic_mass_balance", PISM.WITHOUT_GHOSTS)
-        M.set_attrs("climate", "top surface mass balance", "kg m-2 s-1", "")
+        M.set_attrs("climate", "top surface mass balance", "kg m-2 s-1", "kg m-2 s-1", "", 0)
         M.set(mass_flux)
         M.write(filename)
 
@@ -364,7 +364,7 @@ class PIK(TestCase):
         PISM.util.prepare_output(filename)
 
         M = PISM.IceModelVec2S(grid, "climatic_mass_balance", PISM.WITHOUT_GHOSTS)
-        M.set_attrs("climate", "top surface mass balance", "kg m-2 s-1", "")
+        M.set_attrs("climate", "top surface mass balance", "kg m-2 s-1", "kg m-2 s-1", "", 0)
         M.set(mass_flux)
         M.write(filename)
 
@@ -442,7 +442,7 @@ class Anomaly(TestCase):
         delta_SMB = PISM.IceModelVec2S(self.grid, "climatic_mass_balance_anomaly",
                                        PISM.WITHOUT_GHOSTS)
         delta_SMB.set_attrs("climate_forcing",
-                            "2D surface mass flux anomaly", "kg m-2 s-1", "")
+                            "2D surface mass flux anomaly", "kg m-2 s-1", "kg m-2 s-1", "", 0)
         delta_SMB.set(self.dSMB)
 
         delta_SMB.write(self.filename)
@@ -450,7 +450,7 @@ class Anomaly(TestCase):
         delta_T = PISM.IceModelVec2S(self.grid, "ice_surface_temp_anomaly",
                                      PISM.WITHOUT_GHOSTS)
         delta_T.set_attrs("climate_forcing",
-                          "2D surface temperature anomaly", "Kelvin", "")
+                          "2D surface temperature anomaly", "Kelvin", "Kelvin", "", 0)
         delta_T.set(self.dT)
 
         delta_T.write(self.filename)

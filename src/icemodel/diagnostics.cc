@@ -1613,7 +1613,7 @@ public:
 
     m_last_thickness.set_attrs("internal",
                                "ice thickness at the time of the last report of dHdt",
-                               "m", "land_ice_thickness");
+                               "m", "m", "land_ice_thickness", 0);
   }
 protected:
   IceModelVec::Ptr compute_impl() const {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,7 +31,7 @@ IceModelVec2S::Ptr AtmosphereModel::allocate_temperature(IceGrid::ConstPtr grid)
   IceModelVec2S::Ptr result(new IceModelVec2S(grid, "air_temp", WITHOUT_GHOSTS));
 
   result->set_attrs("climate_forcing", "mean annual near-surface air temperature",
-                    "Kelvin", "");
+                    "Kelvin", "Kelvin", "", 0);
 
   return result;
 }
@@ -39,9 +39,8 @@ IceModelVec2S::Ptr AtmosphereModel::allocate_temperature(IceGrid::ConstPtr grid)
 IceModelVec2S::Ptr AtmosphereModel::allocate_precipitation(IceGrid::ConstPtr grid) {
   IceModelVec2S::Ptr result(new IceModelVec2S(grid, "precipitation", WITHOUT_GHOSTS));
   result->set_attrs("climate_forcing", "precipitation rate",
-                    "kg m-2 second-1",
-                    "precipitation_flux");
-  result->metadata(0).set_string("glaciological_units", "kg m-2 year-1");
+                    "kg m-2 second-1", "kg m-2 year-1",
+                    "precipitation_flux", 0);
 
   return result;
 }

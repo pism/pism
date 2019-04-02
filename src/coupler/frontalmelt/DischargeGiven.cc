@@ -40,14 +40,14 @@ DischargeGiven::DischargeGiven(IceGrid::ConstPtr grid)
   m_theta_ocean.reset(new IceModelVec2T(grid, "theta_ocean", 1, evaluations_per_year));
   m_theta_ocean->set_attrs("climate_forcing",
                            "potential temperature of the adjacent ocean",
-                           "Celsius", "");
+                           "Celsius", "Celsius", "", 0);
 
   m_theta_ocean->init_constant(0.0);
 
   m_subglacial_discharge.reset(new IceModelVec2T(grid, "subglacial_discharge", 1, evaluations_per_year));
   m_subglacial_discharge->set_attrs("climate_forcing",
-                           "potential temperature of the adjacent ocean",
-                           "Celsius", "");
+                                    "potential temperature of the adjacent ocean",
+                                    "Celsius", "Celsius", "", 0);
 
   m_subglacial_discharge->init_constant(0.0);
 }
@@ -87,13 +87,13 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
 
   m_theta_ocean->set_attrs("climate_forcing",
                            "potential temperature of the adjacent ocean",
-                           "Celsius", "");
+                           "Celsius", "Celsius", "", 0);
 
   m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
 
   m_subglacial_discharge->set_attrs("climate_forcing",
-                           "subglacial discharge",
-                           "kg m-2 s-1", "");
+                                    "subglacial discharge",
+                                    "kg m-2 s-1", "kg m-2 s-1", "", 0);
 
   m_subglacial_discharge->init(opt.filename, opt.period, opt.reference_time);
 }

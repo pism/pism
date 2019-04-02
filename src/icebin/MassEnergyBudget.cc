@@ -19,10 +19,12 @@ void MassEnthVec2S::set_attrs(
 	const std::string &my_units,
 	const std::string &my_standard_name)
 {
-	mass.set_attrs(my_pism_intent, my_long_name + " (mass portion)",
-		"kg " + my_units, my_standard_name + ".mass", 0);
-	enth.set_attrs(my_pism_intent, my_long_name + " (enthalpy portion)",
-		"J " + my_units, my_standard_name + ".enth", 0);
+  auto mass_units = "kg " + my_units;
+  auto energy_units = "J " + my_units;
+  mass.set_attrs(my_pism_intent, my_long_name + " (mass portion)",
+                 mass_units, mass_units, my_standard_name + ".mass", 0);
+  enth.set_attrs(my_pism_intent, my_long_name + " (enthalpy portion)",
+                 energy_units, energy_units, my_standard_name + ".enth", 0);
 }
 
 MassEnergyBudget::MassEnergyBudget()
@@ -49,29 +51,29 @@ void MassEnergyBudget::create(pism::IceGrid::ConstPtr grid, std::string const &p
 	basal_frictional_heating.create(grid, prefix+"basal_frictional_heating",
 		ghostedp, width);
 	basal_frictional_heating.set_attrs("internal",
-		"Basal frictional heating",
-		"W m-2", "");
+                                           "Basal frictional heating",
+                                           "W m-2", "W m-2", "", 0);
 	add_enth(basal_frictional_heating, DELTA, "basal_frictional_heating");
 
 	strain_heating.create(grid, prefix+"strain_heating",
 		ghostedp, width);
 	strain_heating.set_attrs("internal",
-		"Strain heating",
-		"W m-2", "");
+                                 "Strain heating",
+                                 "W m-2", "W m-2", "", 0);
 	add_enth(strain_heating, DELTA, "strain_heating");	//!< Total amount of strain heating [J/m^2]
 
 	geothermal_flux.create(grid, prefix+"geothermal_flux",
 		ghostedp, width);
 	geothermal_flux.set_attrs("internal",
-		"Geothermal energy through (compare to upward_geothermal_flux?)",
-		"W m-2", "");
+                                  "Geothermal energy through (compare to upward_geothermal_flux?)",
+                                  "W m-2", "W m-2", "", 0);
 	add_enth(geothermal_flux, 0, "geothermal_flux");	//!< Total amount of geothermal energy [J/m^2]
 
 	upward_geothermal_flux.create(grid, prefix+"upward_geothermal_flux",
 		ghostedp, width);
 	upward_geothermal_flux.set_attrs("internal",
-		"Geothermal energy through (compare to geothermal_flux?)",
-		"W m-2", "");
+                                         "Geothermal energy through (compare to geothermal_flux?)",
+                                         "W m-2", "W m-2", "", 0);
 	add_enth(upward_geothermal_flux, DELTA, "upward_geothermal_flux");	//!< Total amount of geothermal energy [J/m^2]
 
 	// ----------- Mass advection, with accompanying enthalpy change
@@ -103,22 +105,22 @@ void MassEnergyBudget::create(pism::IceGrid::ConstPtr grid, std::string const &p
 	icebin_deltah.create(grid, prefix+"icebin_deltah",
 		ghostedp, width);
 	icebin_deltah.set_attrs("diagnostic",
-		"icebin_deltah",
-		"J m-2 s-1", "icebin_deltah");
+                                "icebin_deltah",
+                                "J m-2 s-1", "J m-2 s-1", "icebin_deltah", 0);
 	add_enth(icebin_deltah, DELTA, "");
 
 	href_to_h.create(grid, prefix+"href_to_h",
 		ghostedp, width);
 	href_to_h.set_attrs("diagnostic",
-		"href_to_h",
-		"kg m-2 s-1", "href_to_h");
+                            "href_to_h",
+                            "kg m-2 s-1", "kg m-2 s-1", "href_to_h", 0);
 	add_mass(href_to_h, 0, "");
 
 	nonneg_rule.create(grid, prefix+"nonneg_rule",
 		ghostedp, width);
 	nonneg_rule.set_attrs("diagnostic",
-		"nonneg_rule",
-		"kg m-2 s-1", "nonneg_rule");
+                              "nonneg_rule",
+                              "kg m-2 s-1", "kg m-2 s-1", "nonneg_rule", 0);
 	add_mass(nonneg_rule, 0, "");
 
 

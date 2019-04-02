@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,7 +37,7 @@ OceanKill::OceanKill(IceGrid::ConstPtr g)
 
   m_mask.set_attrs("internal",
                    "mask specifying fixed calving front locations",
-                   "", "");
+                   "", "", "", 0);
   m_mask.set_time_independent(true);
 }
 
@@ -65,12 +65,12 @@ void OceanKill::init() {
 
     thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
     thickness.set_attrs("temporary", "land ice thickness",
-                        "m", "land_ice_thickness");
+                        "m", "m", "land_ice_thickness", 0);
     thickness.metadata().set_double("valid_min", 0.0);
 
     bed.create(m_grid, "topg", WITHOUT_GHOSTS);
     bed.set_attrs("temporary", "bedrock surface elevation",
-                  "m", "bedrock_altitude");
+                  "m", "m", "bedrock_altitude", 0);
 
     thickness.regrid(ocean_kill_file, CRITICAL);
     bed.regrid(ocean_kill_file, CRITICAL);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -82,7 +82,7 @@ void IceRegionalModel::allocate_storage() {
   m_no_model_mask.set_attrs("model_state",
                             "mask: zeros (modeling domain) and ones"
                             " (no-model buffer near grid edges)",
-                            "", ""); // no units and no standard name
+                            "", "", "", 0); // no units and no standard name
   m_no_model_mask.metadata().set_doubles("flag_values", {0, 1});
   m_no_model_mask.metadata().set_string("flag_meanings", "normal special_treatment");
   m_no_model_mask.set_time_independent(true);
@@ -94,16 +94,16 @@ void IceRegionalModel::allocate_storage() {
   m_usurf_stored.set_attrs("model_state",
                            "saved surface elevation for use to keep surface gradient constant"
                            " in no_model strip",
-                           "m",
-                           ""); //  no standard name
+                           "m", "m",
+                           "", 0); //  no standard name
 
   // stencil width of 1 needed for differentiation
   m_thk_stored.create(m_grid, "thkstore", WITH_GHOSTS, 1);
   m_thk_stored.set_attrs("model_state",
                          "saved ice thickness for use to keep driving stress constant"
                          " in no_model strip",
-                         "m",
-                         ""); //  no standard name
+                         "m", "m",
+                         "", 0); //  no standard name
 
   m_model_state.insert(&m_thk_stored);
   m_model_state.insert(&m_usurf_stored);

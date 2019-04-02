@@ -724,7 +724,7 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
 
 //! \brief Write a double array to a file.
 /*!
-  Converts the units if `use_glaciological_units` is `true`.
+  Converts units if internal and "glaciological" units are different.
  */
 void write_spatial_variable(const SpatialVariableMetadata &var,
                             const IceGrid& grid,
@@ -1370,10 +1370,6 @@ void read_attributes(const PIO &nc,
 
 //! Write variable attributes to a NetCDF file.
 /*!
-  - If use_glaciological_units == true, "glaciological_units" are
-    written under the name "units" plus the valid range is written in
-    glaciological units.
-
   - If both valid_min and valid_max are set, then valid_range is written
     instead of the valid_min, valid_max pair.
 

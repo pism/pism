@@ -65,8 +65,8 @@ LapseRates::LapseRates(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
                                                       buffer_size,
                                                       evaluations_per_year,
                                                       periodic);
-    m_reference_surface->set_attrs("climate_forcing", "ice surface elevation", "m",
-                                   "surface_altitude", 0);
+    m_reference_surface->set_attrs("climate_forcing", "ice surface elevation",
+                                   "m", "m", "surface_altitude", 0);
   }
 
   m_mass_flux    = allocate_mass_flux(g);

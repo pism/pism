@@ -45,8 +45,8 @@ IceModelVec2S::Ptr FrontalMelt::allocate_frontal_melt_rate(IceGrid::ConstPtr g,
     result.reset(new IceModelVec2S(g, "frontal_melt_rate", WITHOUT_GHOSTS));
   }
 
-  result->set_attrs("diagnostic", "frontal melt rate", "m s-1", "");
-  result->metadata().set_string("glaciological_units", "m day-1");
+  result->set_attrs("diagnostic", "frontal melt rate",
+                    "m s-1", "m day-1", "", 0);
 
   return result;
 }
@@ -115,9 +115,9 @@ FrontalMelt::FrontalMelt(IceGrid::ConstPtr g, std::shared_ptr<FrontalMelt> input
   : Component(g), m_input_model(input) {
 
   m_retreat_rate.create(m_grid, "retreat_rate_due_to_frontal_melt", WITHOUT_GHOSTS);
-  m_retreat_rate.set_attrs("diagnostic", "retreat rate due to frontal melt", "m s-1", "");
-  m_retreat_rate.metadata().set_string("glaciological_units", "m day-1");
-  
+  m_retreat_rate.set_attrs("diagnostic", "retreat rate due to frontal melt",
+                           "m s-1", "m day-1", "", 0);
+
   m_include_floating_ice = m_config->get_boolean("frontal_melt.include_floating_ice");
 }
 

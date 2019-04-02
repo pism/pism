@@ -268,48 +268,48 @@ Routing::Routing(IceGrid::ConstPtr g)
   m_Qstag.create(m_grid, "advection_flux", WITH_GHOSTS, 1);
   m_Qstag.set_attrs("internal",
                     "cell face-centered (staggered) components of advective subglacial water flux",
-                    "m2 s-1", "");
+                    "m2 s-1", "m2 s-1", "", 0);
 
   m_Qstag_average.create(m_grid, "cumulative_advection_flux", WITH_GHOSTS, 1);
   m_Qstag_average.set_attrs("internal",
                             "average (over time) advection flux on the staggered grid",
-                            "m2 s-1", "");
+                            "m2 s-1", "m2 s-1", "", 0);
 
   m_Vstag.create(m_grid, "water_velocity", WITHOUT_GHOSTS);
   m_Vstag.set_attrs("internal",
                     "cell face-centered (staggered) components of water velocity"
                     " in subglacial water layer",
-                    "m s-1", "");
+                    "m s-1", "m s-1", "", 0);
 
   // auxiliary variables which NEED ghosts
   m_Wstag.create(m_grid, "W_staggered", WITH_GHOSTS, 1);
   m_Wstag.set_attrs("internal",
                     "cell face-centered (staggered) values of water layer thickness",
-                    "m", "");
+                    "m", "m", "", 0);
   m_Wstag.metadata().set_double("valid_min", 0.0);
 
   m_Kstag.create(m_grid, "K_staggered", WITH_GHOSTS, 1);
   m_Kstag.set_attrs("internal",
                     "cell face-centered (staggered) values of nonlinear conductivity",
-                    "", "");
+                    "", "", "", 0);
   m_Kstag.metadata().set_double("valid_min", 0.0);
 
   m_R.create(m_grid, "potential_workspace", WITH_GHOSTS, 1); // box stencil used
   m_R.set_attrs("internal",
                 "work space for modeled subglacial water hydraulic potential",
-                "Pa", "");
+                "Pa", "Pa", "", 0);
 
   // temporaries during update; do not need ghosts
   m_Wnew.create(m_grid, "W_new", WITHOUT_GHOSTS);
   m_Wnew.set_attrs("internal",
                    "new thickness of transportable subglacial water layer during update",
-                   "m", "");
+                   "m", "m", "", 0);
   m_Wnew.metadata().set_double("valid_min", 0.0);
 
   m_Wtillnew.create(m_grid, "Wtill_new", WITHOUT_GHOSTS);
   m_Wtillnew.set_attrs("internal",
                        "new thickness of till (subglacial) water layer during update",
-                       "m", "");
+                       "m", "m", "", 0);
   m_Wtillnew.metadata().set_double("valid_min", 0.0);
 
   {

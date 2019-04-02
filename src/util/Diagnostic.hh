@@ -87,10 +87,10 @@ protected:
   virtual void define_state_impl(const PIO &output) const;
   virtual void write_state_impl(const PIO &output) const;
 
-  void set_attrs(const std::string &my_long_name,
-                 const std::string &my_standard_name,
-                 const std::string &my_units,
-                 const std::string &my_glaciological_units,
+  void set_attrs(const std::string &long_name,
+                 const std::string &standard_name,
+                 const std::string &units,
+                 const std::string &glaciological_units,
                  unsigned int N = 0);
 
   virtual void update_impl(double dt);

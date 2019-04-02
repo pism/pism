@@ -65,12 +65,12 @@ def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)
 
     T = PISM.IceModelVec2S(grid, "shelfbtemp", PISM.WITHOUT_GHOSTS)
-    T.set_attrs("climate", "shelf base temperature", "Kelvin", "")
+    T.set_attrs("climate", "shelf base temperature", "Kelvin", "Kelvin", "", 0)
     T.set(temperature)
     T.write(filename)
 
     M = PISM.IceModelVec2S(grid, "shelfbmassflux", PISM.WITHOUT_GHOSTS)
-    M.set_attrs("climate", "shelf base mass flux", "kg m-2 s-1", "")
+    M.set_attrs("climate", "shelf base mass flux", "kg m-2 s-1", "kg m-2 s-1", "", 0)
     M.set(mass_flux)
     M.write(filename)
 
@@ -134,7 +134,7 @@ class DischargeRoutingTest(TestCase):
 
         self.Qsg = PISM.IceModelVec2S(self.grid, "subglacial_water_flux",
                                       PISM.WITHOUT_GHOSTS)
-        self.Qsg.set_attrs("climate", "subglacial water flux", "m2 / s", "")
+        self.Qsg.set_attrs("climate", "subglacial water flux", "m2 / s", "m2 / s", "", 0)
 
         grid_spacing = 0.5 * (self.grid.dx() + self.grid.dy())
         cross_section_area = self.depth * grid_spacing
@@ -176,7 +176,7 @@ class GivenTest(TestCase):
         PISM.util.prepare_output(filename)
 
         Fmr = PISM.IceModelVec2S(self.grid, "frontal_melt_rate", PISM.WITHOUT_GHOSTS)
-        Fmr.set_attrs("climate", "frontal melt rate", "m / s", "")
+        Fmr.set_attrs("climate", "frontal melt rate", "m / s", "m / s", "", 0)
 
         Fmr.set(melt_rate)
 

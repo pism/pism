@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -47,7 +47,7 @@ Delta_SL_2D::Delta_SL_2D(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> in)
                                             periodic);
     m_forcing->set_attrs("climate_forcing",
                          "two-dimensional sea level offsets",
-                         "meters", "");
+                         "meters", "meters", "", 0);
   }
 }
 

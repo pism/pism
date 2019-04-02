@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -325,13 +325,13 @@ int main(int argc, char *argv[]) {
     geometry.sea_level_elevation.set(0.0);
 
     // age of the ice; is not used here
-    age.set_attrs("diagnostic", "age of the ice", "s", "");
+    age.set_attrs("diagnostic", "age of the ice", "s", "s", "", 0);
     age.set(0.0);
 
     // enthalpy in the ice
     enthalpy.set_attrs("model_state",
                        "ice enthalpy (includes sensible heat, latent heat, pressure)",
-                       "J kg-1", "");
+                       "J kg-1", "J kg-1", "", 0);
     //
     enthalpy.set(EC->enthalpy(263.15, 0.0, EC->pressure(1000.0)));
 
@@ -362,7 +362,7 @@ int main(int argc, char *argv[]) {
     IceModelVec2S melange_back_pressure;
     melange_back_pressure.create(grid, "melange_back_pressure", WITHOUT_GHOSTS);
     melange_back_pressure.set_attrs("boundary_condition",
-                                    "melange back pressure fraction", "", "");
+                                    "melange back pressure fraction", "", "", "", 0);
     melange_back_pressure.set(0.0);
 
     bool full_update = true;

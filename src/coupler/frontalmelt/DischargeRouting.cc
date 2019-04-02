@@ -40,7 +40,7 @@ DischargeRouting::DischargeRouting(IceGrid::ConstPtr grid)
   m_theta_ocean.reset(new IceModelVec2T(grid, "theta_ocean", 1, evaluations_per_year));
   m_theta_ocean->set_attrs("climate_forcing",
                            "potential temperature of the adjacent ocean",
-                           "Celsius", "");
+                           "Celsius", "Celsius", "", 0);
 
   m_theta_ocean->init_constant(0.0);
 }
@@ -72,7 +72,7 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
 
   m_theta_ocean->set_attrs("climate_forcing",
                            "potential temperature of the adjacent ocean",
-                           "Celsius", "");
+                           "Celsius", "Celsius", "", 0);
 
   m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
 }

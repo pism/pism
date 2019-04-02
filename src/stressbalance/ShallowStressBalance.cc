@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -64,19 +64,15 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
   m_velocity.create(m_grid, "bar", WITH_GHOSTS, WIDE_STENCIL); // components ubar, vbar
   m_velocity.set_attrs("model_state",
                        "thickness-advective ice velocity (x-component)", 
-                       "m s-1", "", 0);
+                       "m s-1", "m year-1", "", 0);
   m_velocity.set_attrs("model_state",
                        "thickness-advective ice velocity (y-component)",
-                       "m s-1", "", 1);
-
-  m_velocity.metadata(0).set_string("glaciological_units", "m year-1");
-  m_velocity.metadata(1).set_string("glaciological_units", "m year-1");
+                       "m s-1", "m year-1", "", 1);
 
   m_basal_frictional_heating.create(m_grid, "bfrict", WITHOUT_GHOSTS);
   m_basal_frictional_heating.set_attrs("diagnostic",
                                        "basal frictional heating",
-                                       "W m-2", "");
-  m_basal_frictional_heating.metadata().set_string("glaciological_units", "mW m-2");
+                                       "W m-2", "mW m-2", "", 0);
 }
 
 ShallowStressBalance::~ShallowStressBalance() {
