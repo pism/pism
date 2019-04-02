@@ -829,7 +829,7 @@ public:
   IceVolumeGlacierized(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_volume_glacierized") {
 
-    m_ts.variable().set_string("units", "m3");
+    set_units("m3", "m3");
     m_ts.variable().set_string("long_name", "volume of the ice in glacierized areas");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -845,7 +845,7 @@ public:
   IceVolume(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_volume") {
 
-    m_ts.variable().set_string("units", "m3");
+    set_units("m3", "m3");
     m_ts.variable().set_string("long_name", "volume of the ice, including seasonal cover");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -862,7 +862,7 @@ public:
   SeaLevelRisePotential(const IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "sea_level_rise_potential") {
 
-    m_ts.variable().set_string("units", "m");
+    set_units("m", "m");
     m_ts.variable().set_string("long_name", "the sea level rise that would result if all the ice were melted");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -912,7 +912,7 @@ public:
   IceAreaGlacierized(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_area_glacierized") {
 
-    m_ts.variable().set_string("units", "m2");
+    set_units("m2", "m2");
     m_ts.variable().set_string("long_name", "glacierized area");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -929,7 +929,7 @@ public:
   IceMassNotDisplacingSeaWater(const IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "limnsw") {
 
-    m_ts.variable().set_string("units", "kg");
+    set_units("kg", "kg");
     m_ts.variable().set_string("long_name", "mass of the ice not displacing sea water");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -953,7 +953,7 @@ public:
   IceMassGlacierized(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_mass_glacierized") {
 
-    m_ts.variable().set_string("units", "kg");
+    set_units("kg", "kg");
     m_ts.variable().set_string("long_name", "mass of the ice in glacierized areas");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -973,7 +973,7 @@ public:
   IceMass(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_mass") {
 
-    m_ts.variable().set_string("units", "kg");
+    set_units("kg", "kg");
     m_ts.variable().set_string("long_name", "mass of the ice, including seasonal cover");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -1070,7 +1070,7 @@ public:
   IceVolumeGlacierizedTemperate(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_volume_glacierized_temperate") {
 
-    m_ts.variable().set_string("units", "m3");
+    set_units("m3", "m3");
     m_ts.variable().set_string("long_name", "volume of temperate ice in glacierized areas");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -1087,7 +1087,7 @@ public:
   IceVolumeTemperate(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_volume_temperate") {
 
-    m_ts.variable().set_string("units", "m3");
+    set_units("m3", "m3");
     m_ts.variable().set_string("long_name", "volume of temperate ice, including seasonal cover");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -1104,7 +1104,7 @@ public:
   IceVolumeGlacierizedCold(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_volume_glacierized_cold") {
 
-    m_ts.variable().set_string("units", "m3");
+    set_units("m3", "m3");
     m_ts.variable().set_string("long_name", "volume of cold ice in glacierized areas");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -1121,7 +1121,7 @@ public:
   IceVolumeCold(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_volume_cold") {
 
-    m_ts.variable().set_string("units", "m3");
+    set_units("m3", "m3");
     m_ts.variable().set_string("long_name", "volume of cold ice, including seasonal cover");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -1138,7 +1138,7 @@ public:
   IceAreaGlacierizedTemperateBase(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_area_glacierized_temperate_base") {
 
-    m_ts.variable().set_string("units", "m2");
+    set_units("m2", "m2");
     m_ts.variable().set_string("long_name", "glacierized area where basal ice is temperate");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -1155,7 +1155,7 @@ public:
   IceAreaGlacierizedColdBase(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_area_glacierized_cold_base") {
 
-    m_ts.variable().set_string("units", "m2");
+    set_units("m2", "m2");
     m_ts.variable().set_string("long_name", "glacierized area where basal ice is cold");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -1172,7 +1172,7 @@ public:
   IceEnthalpyGlacierized(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_enthalpy_glacierized") {
 
-    m_ts.variable().set_string("units", "J");
+    set_units("J", "J");
     m_ts.variable().set_string("long_name", "enthalpy of the ice in glacierized areas");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -1191,7 +1191,7 @@ public:
   IceEnthalpy(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_enthalpy") {
 
-    m_ts.variable().set_string("units", "J");
+    set_units("J", "J");
     m_ts.variable().set_string("long_name", "enthalpy of the ice, including seasonal cover");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -1210,7 +1210,7 @@ public:
   IceAreaGlacierizedGrounded(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_area_glacierized_grounded") {
 
-    m_ts.variable().set_string("units", "m2");
+    set_units("m2", "m2");
     m_ts.variable().set_string("long_name", "area of grounded ice in glacierized areas");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -1227,7 +1227,7 @@ public:
   IceAreaGlacierizedShelf(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_area_glacierized_floating") {
 
-    m_ts.variable().set_string("units", "m2");
+    set_units("m2", "m2");
     m_ts.variable().set_string("long_name", "area of ice shelves in glacierized areas");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -1244,7 +1244,7 @@ public:
   IceVolumeGlacierizedGrounded(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_volume_glacierized_grounded") {
 
-    m_ts.variable().set_string("units", "m3");
+    set_units("m3", "m3");
     m_ts.variable().set_string("long_name", "volume of grounded ice in glacierized areas");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -1282,7 +1282,7 @@ public:
   IceVolumeGlacierizedShelf(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_volume_glacierized_floating") {
 
-    m_ts.variable().set_string("units", "m3");
+    set_units("m3", "m3");
     m_ts.variable().set_string("long_name", "volume of ice shelves in glacierized areas");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -1337,7 +1337,7 @@ public:
   MaxDiffusivity(const IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "max_diffusivity") {
 
-    m_ts.variable().set_string("units", "m2 s-1");
+    set_units("m2 s-1", "m2 s-1");
     m_ts.variable().set_string("long_name", "maximum diffusivity");
     m_ts.variable().set_double("valid_min", 0.0);
   }
