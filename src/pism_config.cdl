@@ -1609,6 +1609,10 @@ pism_config:frontal_melt.constant.melt_rate = 1.0;
     pism_config:output.timeseries.times_option = "ts_times";
     pism_config:output.timeseries.times_doc = "List or range of times defining reporting time intervals.";
 
+    pism_config:output.use_MKS_units = "false";
+    pism_config:output.use_MKS_units_type = "boolean";
+    pism_config:output.use_MKS_units_doc = "Use MKS units in output files.";
+
     pism_config:output.variable_order = "yxz";
     pism_config:output.variable_order_choices = "xyz,yxz,zyx";
     pism_config:output.variable_order_doc = "Variable order to use in output files.";

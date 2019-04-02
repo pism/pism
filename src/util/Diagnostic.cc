@@ -181,6 +181,15 @@ TSDiagnostic::~TSDiagnostic() {
   flush();
 }
 
+void TSDiagnostic::set_units(const std::string &units,
+                             const std::string &glaciological_units) {
+  m_ts.variable().set_string("units", units);
+
+  if (not m_config->get_boolean("output.use_MKS_units")) {
+    m_ts.variable().set_string("glaciological_units", glaciological_units);
+  }
+}
+
 TSSnapshotDiagnostic::TSSnapshotDiagnostic(IceGrid::ConstPtr g, const std::string &name)
   : TSDiagnostic(g, name) {
   // empty

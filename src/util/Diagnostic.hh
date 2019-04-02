@@ -301,6 +301,13 @@ protected:
    */
   virtual double compute() = 0;
 
+  /*!
+   * Set internal (MKS) and "glaciological" units.
+   *
+   * glaciological_units is ignored if output.use_MKS_units is set.
+   */
+  void set_units(const std::string &units, const std::string &glaciological_units);
+
   //! the grid
   IceGrid::ConstPtr m_grid;
   //! Configuration flags and parameters
