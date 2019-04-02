@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -138,7 +138,7 @@ void Diagnostic::set_attrs(const std::string &long_name,
 
   m_vars[N].set_string("units", units);
 
-  if (not glaciological_units.empty()) {
+  if (not (m_config->get_boolean("output.use_MKS_units") or glaciological_units.empty())) {
     m_vars[N].set_string("glaciological_units", glaciological_units);
   }
 }
