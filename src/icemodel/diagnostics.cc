@@ -879,8 +879,7 @@ public:
   IceVolumeRateOfChangeGlacierized(IceModel *m)
     : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_volume_glacierized") {
 
-    m_ts.variable().set_string("units", "m3 s-1");
-    m_ts.variable().set_string("glaciological_units", "m3 year-1");
+    set_units("m3 s-1", "m3 year-1");
     m_ts.variable().set_string("long_name", "rate of change of the ice volume in glacierized areas");
   }
 
@@ -896,8 +895,7 @@ public:
   IceVolumeRateOfChange(IceModel *m)
     : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_volume") {
 
-    m_ts.variable().set_string("units", "m3 s-1");
-    m_ts.variable().set_string("glaciological_units", "m3 year-1");
+    set_units("m3 s-1", "m3 year-1");
     m_ts.variable().set_string("long_name",
                                "rate of change of the ice volume, including seasonal cover");
   }
@@ -993,8 +991,7 @@ public:
   IceMassRateOfChangeGlacierized(IceModel *m)
     : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_mass_glacierized") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "Gt year-1");
+    set_units("kg s-1", "Gt year-1");
     m_ts.variable().set_string("long_name", "rate of change of the ice mass in glacierized areas");
   }
 
@@ -1017,8 +1014,7 @@ public:
   IceMassRateOfChangeDueToFlow(IceModel *m)
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_flow") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "Gt year-1");
+    set_units("kg s-1", "Gt year-1");
     m_ts.variable().set_string("long_name", "rate of change of the mass of ice due to flow"
                                " (i.e. prescribed ice thickness)");
   }
@@ -1055,8 +1051,7 @@ public:
   IceMassRateOfChange(IceModel *m)
     : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_mass") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "Gt year-1");
+    set_units("kg s-1", "Gt year-1");
     m_ts.variable().set_string("long_name",
                                "rate of change of the mass of ice, including seasonal cover");
   }
@@ -1325,8 +1320,7 @@ public:
   TimeStepLength(const IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "dt") {
 
-    m_ts.variable().set_string("units", "second");
-    m_ts.variable().set_string("glaciological_units", "year");
+    set_units("second", "year");
     m_ts.variable().set_string("long_name", "mass continuity time step");
     m_ts.variable().set_double("valid_min", 0.0);
   }
@@ -1370,8 +1364,7 @@ public:
   MaxHorizontalVelocity(const IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "max_hor_vel") {
 
-    m_ts.variable().set_string("units", "m second-1");
-    m_ts.variable().set_string("glaciological_units", "m year-1");
+    set_units("m second-1", "m year-1");
     m_ts.variable().set_string("long_name",
                                "maximum abs component of horizontal ice velocity"
                                " over grid in last time step during time-series reporting interval");
@@ -1473,8 +1466,7 @@ public:
   IceMassFluxBasal(const IceModel *m)
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_basal_mass_flux") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "Gt year-1");
+    set_units("kg s-1", "Gt year-1");
     m_ts.variable().set_string("long_name", "total over ice domain of bottom surface ice mass flux");
     m_ts.variable().set_string("comment", "positive means ice gain");
   }
@@ -1491,8 +1483,7 @@ public:
   IceMassFluxSurface(const IceModel *m)
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_surface_mass_flux") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "Gt year-1");
+    set_units("kg s-1", "Gt year-1");
     m_ts.variable().set_string("long_name", "total over ice domain of top surface ice mass flux");
     m_ts.variable().set_string("comment", "positive means ice gain");
   }
@@ -1509,8 +1500,7 @@ public:
   IceMassFluxBasalGrounded(const IceModel *m)
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_mass_flux_grounded") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "Gt year-1");
+    set_units("kg s-1", "Gt year-1");
     m_ts.variable().set_string("long_name", "total over grounded ice domain of basal mass flux");
     m_ts.variable().set_string("comment", "positive means ice gain");
   }
@@ -1527,8 +1517,7 @@ public:
   IceMassFluxBasalFloating(const IceModel *m)
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_mass_flux_floating") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "Gt year-1");
+    set_units("kg s-1", "Gt year-1");
     m_ts.variable().set_string("long_name", "total sub-shelf ice flux");
     m_ts.variable().set_string("comment", "positive means ice gain");
   }
@@ -1546,8 +1535,7 @@ public:
   IceMassFluxConservationError(const IceModel *m)
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_conservation_error") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "Gt year-1");
+    set_units("kg s-1", "Gt year-1");
     m_ts.variable().set_string("long_name", "total numerical flux needed to preserve non-negativity"
                                " of ice thickness");
     m_ts.variable().set_string("comment", "positive means ice gain");
@@ -1565,8 +1553,7 @@ public:
   IceMassFluxDischarge(const IceModel *m)
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_discharge") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "Gt year-1");
+    set_units("kg s-1", "Gt year-1");
     m_ts.variable().set_string("long_name", "discharge (calving & icebergs) flux");
     m_ts.variable().set_string("comment", "positive means ice gain");
   }

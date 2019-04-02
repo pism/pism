@@ -730,8 +730,7 @@ public:
   TotalSurfaceAccumulation(const TemperatureIndex *m)
     : TSDiag<TSFluxDiagnostic, TemperatureIndex>(m, "surface_accumulation_rate") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    set_units("kg s-1", "kg year-1");
     m_ts.variable().set_string("long_name", "surface accumulation rate (PDD model)");
   }
 
@@ -748,8 +747,7 @@ public:
   TotalSurfaceMelt(const TemperatureIndex *m)
     : TSDiag<TSFluxDiagnostic, TemperatureIndex>(m, "surface_melt_rate") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    set_units("kg s-1", "kg year-1");
     m_ts.variable().set_string("long_name", "surface melt rate (PDD model)");
   }
 
@@ -766,8 +764,7 @@ public:
   TotalSurfaceRunoff(const TemperatureIndex *m)
     : TSDiag<TSFluxDiagnostic, TemperatureIndex>(m, "surface_runoff_rate") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    set_units("kg s-1", "kg year-1");
     m_ts.variable().set_string("long_name", "surface runoff rate (PDD model)");
   }
 
