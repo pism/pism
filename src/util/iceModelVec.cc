@@ -422,7 +422,7 @@ void IceModelVec::set_attrs(const std::string &pism_intent,
 
   metadata(N).set_string("units", units);
 
-  if (not m_grid->ctx()->config()->get_boolean("output.use_MKS_units")) {
+  if (not m_grid->ctx()->config()->get_boolean("output.use_MKS")) {
     metadata(N).set_string("glaciological_units", glaciological_units);
   }
 

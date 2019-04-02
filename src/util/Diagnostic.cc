@@ -138,7 +138,7 @@ void Diagnostic::set_attrs(const std::string &long_name,
 
   m_vars[N].set_string("units", units);
 
-  if (not (m_config->get_boolean("output.use_MKS_units") or glaciological_units.empty())) {
+  if (not (m_config->get_boolean("output.use_MKS") or glaciological_units.empty())) {
     m_vars[N].set_string("glaciological_units", glaciological_units);
   }
 }
@@ -185,7 +185,7 @@ void TSDiagnostic::set_units(const std::string &units,
                              const std::string &glaciological_units) {
   m_ts.variable().set_string("units", units);
 
-  if (not m_config->get_boolean("output.use_MKS_units")) {
+  if (not m_config->get_boolean("output.use_MKS")) {
     m_ts.variable().set_string("glaciological_units", glaciological_units);
   }
 }
