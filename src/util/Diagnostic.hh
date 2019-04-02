@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2010--2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -243,17 +243,20 @@ protected:
       result->copy_from(m_accumulator);
       result->scale(1.0 / m_interval_length);
     } else {
-      std::string
-        out = Diagnostic::m_vars.at(0).get_string("glaciological_units"),
-        in  = Diagnostic::m_vars.at(0).get_string("units");
-      const double
-        fill = convert(Diagnostic::m_sys, Diagnostic::m_fill_value, out, in);
-      result->set(fill);
+      result->set(fill_value());
     }
 
     return result;
   }
 protected:
+
+  double fill_value() const {
+      std::string
+        out = Diagnostic::m_vars.at(0).get_string("glaciological_units"),
+        in  = Diagnostic::m_vars.at(0).get_string("units");
+      return convert(Diagnostic::m_sys, Diagnostic::m_fill_value, out, in);
+  }
+
   // constants initialized in the constructor
   double m_factor;
   InputKind m_input_kind;

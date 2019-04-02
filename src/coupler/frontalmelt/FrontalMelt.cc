@@ -205,10 +205,7 @@ public:
               "m second-1", "m day-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", fill_value());
   }
 
 protected:
@@ -231,10 +228,7 @@ public:
               "m second-1", "m year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", fill_value());
     m_vars[0].set_string("comment", "takes into account what part of the front is submerged");
   }
 
