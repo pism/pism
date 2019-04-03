@@ -157,8 +157,7 @@ public:
     set_attrs(description, "", "kg m-2 s-1", "kg m-2 year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value, "year-1", "second-1");
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
   }
 
@@ -1595,20 +1594,14 @@ public:
     // set metadata:
     m_vars = {SpatialVariableMetadata(m_sys, "dHdt")};
 
-    std::string
-      internal_units = "m second-1",
-      external_units = "m year-1";
-
     set_attrs("ice thickness rate of change",
               "tendency_of_land_ice_thickness",
-              internal_units, external_units, 0);
+              "m second-1", "m year-1", 0);
 
-    units::Converter c(m_sys, external_units, internal_units);
+    auto large_number = to_internal(1e6);
 
-    const double valid_range = c(1e6);
-
-    m_vars[0].set_doubles("valid_range",  {-valid_range, valid_range});
-    m_vars[0].set_double("_FillValue", c(m_fill_value));
+    m_vars[0].set_doubles("valid_range",  {-large_number, large_number});
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("cell_methods", "time: mean");
 
     m_last_thickness.set_attrs("internal",

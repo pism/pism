@@ -55,14 +55,10 @@ public:
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
 
-    units::Converter c(m_sys, external_units, internal_units);
+    auto large_number = to_internal(1e6);
 
-    m_fill_value = c(m_fill_value);
-
-    const double valid_range = c(1e6);
-
-    m_vars[0].set_doubles("valid_range",  {-valid_range, valid_range});
-    m_vars[0].set_double("_FillValue", m_fill_value);
+    m_vars[0].set_doubles("valid_range",  {-large_number, large_number});
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("cell_methods", "time: mean");
 
     auto units = internal_units + " second";
@@ -172,10 +168,7 @@ public:
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
     m_vars[0].set_string("cell_methods", "time: mean");
-
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
   }
 
@@ -236,9 +229,7 @@ public:
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("cell_methods", "time: mean");
     m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
   }
@@ -298,8 +289,7 @@ public:
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
 
-    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("cell_methods", "time: mean");
     m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
   }
@@ -359,8 +349,7 @@ public:
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
 
-    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("cell_methods", "time: mean");
     m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
   }
@@ -423,8 +412,7 @@ public:
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
   }
 

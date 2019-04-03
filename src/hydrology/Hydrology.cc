@@ -45,7 +45,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    m_vars[0].set_double("_FillValue", fill_value());
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -70,7 +70,7 @@ public:
               "", "m second-1", "m year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    m_vars[0].set_double("_FillValue", fill_value());
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -96,7 +96,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    m_vars[0].set_double("_FillValue", fill_value());
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -120,7 +120,7 @@ public:
               "m2 second-1", "m2 year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    m_vars[0].set_double("_FillValue", fill_value());
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
 
     m_flux_magnitude.create(m_grid, "flux_magnitude", WITHOUT_GHOSTS);
     m_flux_magnitude.set_attrs("internal", "magnitude of the subglacial water flux",
@@ -156,7 +156,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    m_vars[0].set_double("_FillValue", fill_value());
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -180,7 +180,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    m_vars[0].set_double("_FillValue", fill_value());
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -206,7 +206,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    m_vars[0].set_double("_FillValue", fill_value());
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -230,7 +230,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    m_vars[0].set_double("_FillValue", fill_value());
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -256,7 +256,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    m_vars[0].set_double("_FillValue", fill_value());
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 

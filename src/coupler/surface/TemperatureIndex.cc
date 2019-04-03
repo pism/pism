@@ -548,8 +548,7 @@ public:
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
   }
 
 protected:
@@ -610,8 +609,7 @@ public:
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
   }
 
 protected:
@@ -672,8 +670,7 @@ public:
     set_attrs(long_name, "", internal_units, external_units, 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
   }
 
 protected:

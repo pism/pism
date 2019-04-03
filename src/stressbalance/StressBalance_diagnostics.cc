@@ -31,8 +31,6 @@
 namespace pism {
 namespace stressbalance {
 
-using units::convert;
-
 DiagnosticList StressBalance::diagnostics_impl() const {
   DiagnosticList result = {
     {"bfrict",              Diagnostic::Ptr(new PSB_bfrict(this))},
@@ -108,8 +106,7 @@ IceModelVec::Ptr PSB_velbar::compute_impl() const {
     if (thk > 0.0) {
       (*result)(i,j) /= thk;
     } else {
-      (*result)(i,j).u = 0.0;
-      (*result)(i,j).v = 0.0;
+      (*result)(i,j) = 0.0;
     }
   }
 
@@ -124,8 +121,7 @@ PSB_velbar_mag::PSB_velbar_mag(const StressBalance *m)
 
   set_attrs("magnitude of vertically-integrated horizontal velocity of ice", "",
             "m second-1", "m year-1", 0);
-  m_vars[0].set_double("_FillValue", convert(m_sys, m_fill_value,
-                                             "m year-1", "m second-1"));
+  m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
   m_vars[0].set_double("valid_min", 0.0);
 }
 
@@ -143,8 +139,7 @@ IceModelVec::Ptr PSB_velbar_mag::compute_impl() const {
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   // mask out ice-free areas:
-  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
-  result->mask_by(*thickness, fill_value);
+  result->mask_by(*thickness, to_internal(m_fill_value));
 
   return result;
 }
@@ -244,9 +239,7 @@ PSB_flux_mag::PSB_flux_mag(const StressBalance *m)
   set_attrs("magnitude of vertically-integrated horizontal flux of ice", "",
             "m2 s-1", "m2 year-1", 0);
 
-  double fill_value = convert(m_sys, m_fill_value,
-                              "m2 year-1", "m2 second-1");
-  m_vars[0].set_double("_FillValue", fill_value);
+  m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
   m_vars[0].set_double("valid_min", 0.0);
 }
 
@@ -264,8 +257,7 @@ IceModelVec::Ptr PSB_flux_mag::compute_impl() const {
     (*result)(i,j) *= (*thickness)(i,j);
   }
 
-  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
-  result->mask_by(*thickness, fill_value);
+  result->mask_by(*thickness, to_internal(m_fill_value));
 
   result->metadata() = m_vars[0];
 
@@ -281,9 +273,7 @@ PSB_velbase_mag::PSB_velbase_mag(const StressBalance *m)
   set_attrs("magnitude of horizontal velocity of ice at base of ice", "",
             "m s-1", "m year-1", 0);
 
-  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
-
-  m_vars[0].set_double("_FillValue", fill_value);
+  m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
   m_vars[0].set_double("valid_min", 0.0);
 }
 
@@ -307,8 +297,7 @@ IceModelVec::Ptr PSB_velbase_mag::compute_impl() const {
   result->set_to_magnitude(*result, tmp);
 
   // mask out ice-free areas
-  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
-  result->mask_by(*thickness, fill_value);
+  result->mask_by(*thickness, to_internal(m_fill_value));
 
   return result;
 }
@@ -321,9 +310,7 @@ PSB_velsurf_mag::PSB_velsurf_mag(const StressBalance *m)
   set_attrs("magnitude of horizontal velocity of ice at ice surface", "",
             "m s-1", "m year-1", 0);
 
-  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
-
-  m_vars[0].set_double("_FillValue", fill_value);
+  m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
   m_vars[0].set_double("valid_min",  0.0);
 }
 
@@ -349,8 +336,7 @@ IceModelVec::Ptr PSB_velsurf_mag::compute_impl() const {
   result->set_to_magnitude(*result, tmp);
 
   // mask out ice-free areas
-  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
-  result->mask_by(*thickness, fill_value);
+  result->mask_by(*thickness, to_internal(m_fill_value));
 
   return result;
 }
@@ -370,19 +356,17 @@ PSB_velsurf::PSB_velsurf(const StressBalance *m)
             "land_ice_surface_y_velocity", // InitMIP "standard" name
             "m s-1", "m year-1", 1);
 
-  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
+  auto large_number = to_internal(1e6);
 
-  m_vars[0].set_double("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_vars[0].set_double("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
-  m_vars[0].set_double("_FillValue", fill_value);
+  m_vars[0].set_doubles("valid_range", {-large_number, large_number});
+  m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
 
-  m_vars[1].set_double("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_vars[1].set_double("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
-  m_vars[1].set_double("_FillValue", fill_value);
+  m_vars[1].set_doubles("valid_range", {-large_number, large_number});
+  m_vars[1].set_double("_FillValue", to_internal(m_fill_value));
 }
 
 IceModelVec::Ptr PSB_velsurf::compute_impl() const {
-  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
+  double fill_value = to_internal(m_fill_value);
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "surf", WITHOUT_GHOSTS);
@@ -428,8 +412,10 @@ PSB_wvel::PSB_wvel(const StressBalance *m)
 
   set_attrs("vertical velocity of ice, relative to geoid", "",
             "m s-1", "m year-1", 0);
-  m_vars[0].set_double("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_vars[0].set_double("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
+
+  auto large_number = to_internal(1e6);
+
+  m_vars[0].set_doubles("valid_range", {-large_number, large_number});
 }
 
 IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) const {
@@ -524,15 +510,15 @@ PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m)
   set_attrs("vertical velocity of ice at ice surface, relative to the geoid",
             "land_ice_surface_upward_velocity", // InitMIP "standard" name
             "m s-1", "m year-1", 0);
-  m_vars[0].set_double("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_vars[0].set_double("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
 
-  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
-  m_vars[0].set_double("_FillValue", fill_value);
+  auto large_number = to_internal(1e6);
+
+  m_vars[0].set_doubles("valid_range", {-large_number, large_number});
+  m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
 }
 
 IceModelVec::Ptr PSB_wvelsurf::compute_impl() const {
-  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
+  double fill_value = to_internal(m_fill_value);
 
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wvelsurf", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
@@ -568,15 +554,15 @@ PSB_wvelbase::PSB_wvelbase(const StressBalance *m)
   set_attrs("vertical velocity of ice at the base of ice, relative to the geoid",
             "land_ice_basal_upward_velocity", // InitMIP "standard" name
             "m s-1", "m year-1", 0);
-  m_vars[0].set_double("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_vars[0].set_double("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
 
-  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
-  m_vars[0].set_double("_FillValue", fill_value);
+  auto large_number = to_internal(1e6);
+
+  m_vars[0].set_doubles("valid_range", {-large_number, large_number});
+  m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
 }
 
 IceModelVec::Ptr PSB_wvelbase::compute_impl() const {
-  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
+  double fill_value = to_internal(m_fill_value);
 
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wvelbase", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
@@ -615,19 +601,18 @@ PSB_velbase::PSB_velbase(const StressBalance *m)
             "land_ice_basal_y_velocity", // InitMIP "standard" name
             "m s-1", "m year-1", 1);
 
-  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
+  auto fill_value = to_internal(m_fill_value);
+  auto large_number = to_internal(1e6);
 
-  m_vars[0].set_double("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_vars[0].set_double("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
+  m_vars[0].set_doubles("valid_range", {-large_number, large_number});
+  m_vars[1].set_doubles("valid_range", {-large_number, large_number});
+
   m_vars[0].set_double("_FillValue", fill_value);
-
-  m_vars[1].set_double("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_vars[1].set_double("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
   m_vars[1].set_double("_FillValue", fill_value);
 }
 
 IceModelVec::Ptr PSB_velbase::compute_impl() const {
-  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
+  double fill_value = to_internal(m_fill_value);
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "base", WITHOUT_GHOSTS);

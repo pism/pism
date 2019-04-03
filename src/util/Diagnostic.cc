@@ -63,6 +63,26 @@ void Diagnostic::reset_impl() {
   // empty
 }
 
+/*!
+ * Convert from external (output) units to internal units.
+ */
+double Diagnostic::to_internal(double x) const {
+  std::string
+    out = m_vars.at(0).get_string("glaciological_units"),
+    in  = m_vars.at(0).get_string("units");
+  return convert(m_sys, x, out, in);
+}
+
+/*!
+ * Convert from internal to external (output) units.
+ */
+double Diagnostic::to_external(double x) const {
+  std::string
+    out = m_vars.at(0).get_string("glaciological_units"),
+    in  = m_vars.at(0).get_string("units");
+  return convert(m_sys, x, in, out);
+}
+
 //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
 unsigned int Diagnostic::n_variables() const {
   return m_vars.size();

@@ -98,6 +98,9 @@ protected:
 
   virtual IceModelVec::Ptr compute_impl() const = 0;
 
+  double to_internal(double x) const;
+  double to_external(double x) const;
+
   //! the grid
   IceGrid::ConstPtr m_grid;
   //! the unit system
@@ -243,20 +246,12 @@ protected:
       result->copy_from(m_accumulator);
       result->scale(1.0 / m_interval_length);
     } else {
-      result->set(fill_value());
+      result->set(Diagnostic::to_internal(Diagnostic::m_fill_value));
     }
 
     return result;
   }
 protected:
-
-  double fill_value() const {
-      std::string
-        out = Diagnostic::m_vars.at(0).get_string("glaciological_units"),
-        in  = Diagnostic::m_vars.at(0).get_string("units");
-      return convert(Diagnostic::m_sys, Diagnostic::m_fill_value, out, in);
-  }
-
   // constants initialized in the constructor
   double m_factor;
   InputKind m_input_kind;
