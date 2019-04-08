@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -142,19 +142,23 @@ public:
                             TOTAL_CHANGE), m_kind(flag) {
     assert(flag != BOTH);
 
-    std::string name, description;
+    auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
+    std::string name, description, standard_name;
     if (m_kind == GROUNDED) {
-      name        = "basal_mass_flux_grounded";
-      description = "average basal mass flux over the reporting interval (grounded areas)";
+      name          = ismip6 ? "libmassbfgr" : "basal_mass_flux_grounded";
+      description   = "average basal mass flux over the reporting interval (grounded areas)";
+      standard_name = ismip6 ? "land_ice_basal_specific_mass_balance_flux" : "";
     } else {
-      name        = "basal_mass_flux_floating";
-      description = "average basal mass flux over the reporting interval (floating areas)";
+      name          = ismip6 ? "libmassbffl" : "basal_mass_flux_floating";
+      description   = "average basal mass flux over the reporting interval (floating areas)";
+      standard_name = ismip6 ? "land_ice_basal_specific_mass_balance_flux" : "";
     }
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
     m_accumulator.metadata().set_string("units", "kg m-2");
 
-    set_attrs(description, "", "kg m-2 s-1", "kg m-2 year-1", 0);
+    set_attrs(description, standard_name, "kg m-2 s-1", "kg m-2 year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
     m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
@@ -1591,12 +1595,14 @@ public:
     m_last_thickness(m_grid, "last_ice_thickness", WITHOUT_GHOSTS),
     m_interval_length(0.0) {
 
+    auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
     // set metadata:
-    m_vars = {SpatialVariableMetadata(m_sys, "dHdt")};
+    m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "dlithkdt" : "dHdt")};
 
     set_attrs("ice thickness rate of change",
               "tendency_of_land_ice_thickness",
-              "m second-1", "m year-1", 0);
+              "m s-1", "m year-1", 0);
 
     auto large_number = to_internal(1e6);
 
@@ -1823,7 +1829,7 @@ IceAreaFractionFloating::IceAreaFractionFloating(const IceModel *m)
   : Diag<IceModel>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, floating_ice_sheet_area_fraction_name)};
   set_attrs("fraction of a grid cell covered by floating ice",
-            "floating_ice_sheet_area_fraction", // InitMIP "standard" name
+            "floating_ice_shelf_area_fraction",
             "1", "1", 0);
 }
 
@@ -2229,6 +2235,62 @@ IceModelVec::Ptr IceViscosity::compute_impl() const {
   return result;
 }
 
+/*! @brief Report ice thickness */
+class IceThickness : public Diag<IceModel>
+{
+public:
+  IceThickness(const IceModel *m)
+    : Diag<IceModel>(m) {
+
+    auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
+    m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "lithk" : "thk")};
+
+    set_attrs("land ice thickness", "land_ice_thickness",
+              "m", "m", 0);
+    m_vars[0].set_double("valid_min", 0.0);
+  }
+
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "thk", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+
+    result->copy_from(model->geometry().ice_thickness);
+
+    return result;
+  }
+};
+
+/*! @brief Report ice top surface elevation */
+class IceSurfaceElevation : public Diag<IceModel>
+{
+public:
+  IceSurfaceElevation(const IceModel *m)
+    : Diag<IceModel>(m) {
+
+    auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
+    m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "orog" : "usurf")};
+
+    set_attrs("ice top surface elevation", "surface_altitude",
+              "m", "m", 0);
+  }
+
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "usurf", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+
+    result->copy_from(model->geometry().ice_surface_elevation);
+
+    return result;
+  }
+};
+
+
 } // end of namespace diagnostics
 
 void IceModel::init_diagnostics() {
@@ -2246,9 +2308,9 @@ void IceModel::init_diagnostics() {
     {"lat",                                 d::wrap(m_geometry.latitude)},
     {"lon",                                 d::wrap(m_geometry.longitude)},
     {"mask",                                d::wrap(m_geometry.cell_type)},
-    {"thk",                                 d::wrap(m_geometry.ice_thickness)},
+    {"thk",                                 f(new IceThickness(this))},
     {"topg_sl_adjusted",                    f(new BedTopographySeaLevelAdjusted(this))},
-    {"usurf",                               d::wrap(m_geometry.ice_surface_elevation)},
+    {"usurf",                               f(new IceSurfaceElevation(this))},
     {floating_ice_sheet_area_fraction_name, f(new IceAreaFractionFloating(this))},
     {grounded_ice_sheet_area_fraction_name, f(new IceAreaFractionGrounded(this))},
     {land_ice_area_fraction_name,           f(new IceAreaFraction(this))},
@@ -2320,6 +2382,16 @@ void IceModel::init_diagnostics() {
     m_diagnostics["lon_bnds"] = f(new LatLonBounds(this, "lon", proj4));
   }
 #endif
+
+  // add ISMIP6 variable names
+  if (m_config->get_boolean("output.ISMIP6")) {
+    m_diagnostics["lithk"]       = f(new IceThickness(this));
+    m_diagnostics["dlithkdt"]    = f(new ThicknessRateOfChange(this));
+    m_diagnostics["orog"]        = f(new IceSurfaceElevation(this));
+    m_diagnostics["acabf"]       = f(new SurfaceFlux(this, AMOUNT));
+    m_diagnostics["libmassbfgr"] = f(new BMBSplit(this, GROUNDED));
+    m_diagnostics["libmassbffl"] = f(new BMBSplit(this, SHELF));
+  }
 
   typedef TSDiagnostic::Ptr s; // "s" for "scalar"
   m_ts_diagnostics = {

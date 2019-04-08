@@ -57,6 +57,12 @@ DiagnosticList StressBalance::diagnostics_impl() const {
     {"tauyz",               Diagnostic::Ptr(new PSB_tauyz(this))}
   };
 
+  if (m_config->get_boolean("output.ISMIP6")) {
+    result["velmean"] = Diagnostic::Ptr(new PSB_velbar(this));
+    result["zvelbase"] = Diagnostic::Ptr(new PSB_wvelbase(this));
+    result["zvelsurf"] = Diagnostic::Ptr(new PSB_wvelsurf(this));
+  }
+
   // add diagnostics from the shallow stress balance and the "modifier"
   result = pism::combine(result, m_shallow_stress_balance->diagnostics());
   result = pism::combine(result, m_modifier->diagnostics());
@@ -72,9 +78,11 @@ TSDiagnosticList StressBalance::ts_diagnostics_impl() const {
 PSB_velbar::PSB_velbar(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
+  auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "ubar"),
-            SpatialVariableMetadata(m_sys, "vbar")};
+  m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "xvelmean" : "ubar"),
+            SpatialVariableMetadata(m_sys, ismip6 ? "yvelmean" : "vbar")};
 
   set_attrs("vertical mean of horizontal ice velocity in the X direction",
             "land_ice_vertical_mean_x_velocity",
@@ -345,9 +353,11 @@ IceModelVec::Ptr PSB_velsurf_mag::compute_impl() const {
 PSB_velsurf::PSB_velsurf(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
+  auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "uvelsurf"),
-            SpatialVariableMetadata(m_sys, "vvelsurf")};
+  m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "xvelsurf" : "uvelsurf"),
+            SpatialVariableMetadata(m_sys, ismip6 ? "yvelsurf" : "vvelsurf")};
 
   set_attrs("x-component of the horizontal velocity of ice at ice surface",
             "land_ice_surface_x_velocity", // InitMIP "standard" name
@@ -504,8 +514,10 @@ IceModelVec::Ptr PSB_wvel::compute_impl() const {
 PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
+  auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "wvelsurf")};
+  m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "zvelsurf" : "wvelsurf")};
 
   set_attrs("vertical velocity of ice at ice surface, relative to the geoid",
             "land_ice_surface_upward_velocity", // InitMIP "standard" name
@@ -548,8 +560,10 @@ IceModelVec::Ptr PSB_wvelsurf::compute_impl() const {
 PSB_wvelbase::PSB_wvelbase(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
+  auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "wvelbase")};
+  m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "zvelbase" : "wvelbase")};
 
   set_attrs("vertical velocity of ice at the base of ice, relative to the geoid",
             "land_ice_basal_upward_velocity", // InitMIP "standard" name
@@ -590,9 +604,11 @@ IceModelVec::Ptr PSB_wvelbase::compute_impl() const {
 PSB_velbase::PSB_velbase(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
+  auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "uvelbase"),
-            SpatialVariableMetadata(m_sys, "vvelbase")};
+  m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "xvelbase" : "uvelbase"),
+            SpatialVariableMetadata(m_sys, ismip6 ? "yvelbase" : "vvelbase")};
 
   set_attrs("x-component of the horizontal velocity of ice at the base of ice",
             "land_ice_basal_x_velocity", // InitMIP "standard" name

@@ -116,7 +116,7 @@ BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
     m_top_surface_flux.create(m_grid, "heat_flux_from_bedrock", WITHOUT_GHOSTS);
     m_top_surface_flux.set_attrs("diagnostic", "upward geothermal flux at the top bedrock surface",
                                  "W m-2", "mW m-2",
-                                 "upward_geothermal_heat_flux_at_ground_level", 0); // InitMIP "standard" name
+                                 "upward_geothermal_heat_flux_at_ground_level_in_land_ice", 0);
     m_top_surface_flux.metadata().set_string("comment", "positive values correspond to an upward flux");
   }
   {
@@ -196,9 +196,14 @@ void BedThermalUnit::write_model_state_impl(const PIO &output) const {
 }
 
 DiagnosticList BedThermalUnit::diagnostics_impl() const {
-  return {
+  DiagnosticList result = {
     {"bheatflx",   Diagnostic::wrap(m_bottom_surface_flux)},
-    {"hfgeoubed", Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this))}};
+    {"heat_flux_from_bedrock", Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this))}};
+
+  if (m_config->get_boolean("output.ISMIP6")) {
+    result["hfgeoubed"] = Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this));
+  }
+  return result;
 }
 
 void BedThermalUnit::update(const IceModelVec2S &bedrock_top_temperature,
@@ -216,7 +221,19 @@ const IceModelVec2S& BedThermalUnit::flux_through_bottom_surface() const {
 
 BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m)
   : Diag<BedThermalUnit>(m) {
-  m_vars = {model->flux_through_top_surface().metadata()};
+
+  auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
+  // set metadata:
+  m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "hfgeoubed" : "heat_flux_from_bedrock")};
+
+  set_attrs("upward geothermal flux at the top bedrock surface",
+            (ismip6 ?
+             "upward_geothermal_heat_flux_in_land_ice" :
+             "upward_geothermal_heat_flux_at_ground_level_in_land_ice"),
+            "W m-2", "mW m-2", 0);
+  m_vars[0].set_string("comment",
+                       "positive values correspond to an upward flux");
 }
 
 IceModelVec::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() const {

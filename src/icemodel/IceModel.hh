@@ -421,6 +421,7 @@ protected:
   TimeBoundsMetadata m_extra_bounds;
   void init_extras();
   void write_extras();
+  std::set<std::string> process_extra_shortcuts(const std::set<std::string> &input);
   MaxTimestep extras_max_timestep(double my_t);
 
   // automatic backups

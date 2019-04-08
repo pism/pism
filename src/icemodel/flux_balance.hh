@@ -208,12 +208,14 @@ public:
     m_kind(kind) {
     m_factor = m_config->get_double("constants.ice.density");
 
+    auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
     std::string
-      name              = "tendency_of_ice_amount_due_to_surface_mass_flux",
+      name              = ismip6 ? "acabf" : "tendency_of_ice_amount_due_to_surface_mass_flux",
       accumulator_units = "kg m-2",
       long_name         = "average surface mass flux over reporting interval",
-      standard_name     = "",
-      internal_units    = "kg m-2 second-1",
+      standard_name     = "land_ice_surface_specific_mass_balance_flux",
+      internal_units    = "kg m-2 s-1",
       external_units    = "kg m-2 year-1";
     if (kind == MASS) {
       name              = "tendency_of_ice_mass_due_to_surface_mass_flux",
