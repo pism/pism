@@ -18,8 +18,7 @@
 
 #include <cassert>
 
-#include "diagnostics.hh"
-
+#include "pism/icemodel/IceModel.hh"
 #include "pism/age/AgeModel.hh"
 #include "pism/energy/EnergyModel.hh"
 #include "pism/energy/utilities.hh"
@@ -195,6 +194,15 @@ protected:
   }
 };
 
+//! \brief Computes vertically-averaged ice hardness.
+class HardnessAverage : public Diag<IceModel>
+{
+public:
+  HardnessAverage(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
+
 HardnessAverage::HardnessAverage(const IceModel *m)
   : Diag<IceModel>(m) {
 
@@ -256,6 +264,14 @@ IceModelVec::Ptr HardnessAverage::compute_impl() const {
   return result;
 }
 
+//! \brief Computes a diagnostic field filled with processor rank values.
+class Rank : public Diag<IceModel>
+{
+public:
+  Rank(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
 
 Rank::Rank(const IceModel *m)
   : Diag<IceModel>(m) {
@@ -279,6 +295,14 @@ IceModelVec::Ptr Rank::compute_impl() const {
   return result;
 }
 
+//! \brief Computes CTS, CTS = E/E_s(p).
+class CTS : public Diag<IceModel>
+{
+public:
+  CTS(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
 
 CTS::CTS(const IceModel *m)
   : Diag<IceModel>(m) {
@@ -301,6 +325,15 @@ IceModelVec::Ptr CTS::compute_impl() const {
 
   return result;
 }
+
+//! \brief Computes ice temperature from enthalpy.
+class Temperature : public Diag<IceModel>
+{
+public:
+  Temperature(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
 
 Temperature::Temperature(const IceModel *m)
   : Diag<IceModel>(m) {
@@ -346,6 +379,16 @@ IceModelVec::Ptr Temperature::compute_impl() const {
 
   return result;
 }
+
+//! \brief Compute the pressure-adjusted temperature in degrees C corresponding
+//! to ice temperature.
+class TemperaturePA : public Diag<IceModel>
+{
+public:
+  TemperaturePA(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
 
 
 TemperaturePA::TemperaturePA(const IceModel *m)
@@ -407,6 +450,15 @@ IceModelVec::Ptr TemperaturePA::compute_impl() const {
   return result;
 }
 
+//! \brief Computes basal values of the pressure-adjusted temperature.
+class TemperaturePABasal : public Diag<IceModel>
+{
+public:
+  TemperaturePABasal(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
+
 TemperaturePABasal::TemperaturePABasal(const IceModel *m)
   : Diag<IceModel>(m) {
 
@@ -462,6 +514,15 @@ IceModelVec::Ptr TemperaturePABasal::compute_impl() const {
   return result;
 }
 
+//! \brief Computes surface values of ice enthalpy.
+class IceEnthalpySurface : public Diag<IceModel>
+{
+public:
+  IceEnthalpySurface(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
+
 IceEnthalpySurface::IceEnthalpySurface(const IceModel *m)
   : Diag<IceModel>(m) {
 
@@ -504,6 +565,15 @@ IceModelVec::Ptr IceEnthalpySurface::compute_impl() const {
   return result;
 }
 
+//! \brief Computes enthalpy at the base of the ice.
+class IceEnthalpyBasal : public Diag<IceModel>
+{
+public:
+  IceEnthalpyBasal(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
+
 IceEnthalpyBasal::IceEnthalpyBasal(const IceModel *m)
   : Diag<IceModel>(m) {
 
@@ -527,6 +597,14 @@ IceModelVec::Ptr IceEnthalpyBasal::compute_impl() const {
   return result;
 }
 
+//! \brief Computes ice temperature at the base of the ice.
+class TemperatureBasal : public Diag<IceModel>
+{
+public:
+  TemperatureBasal(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
 
 TemperatureBasal::TemperatureBasal(const IceModel *m)
   : Diag<IceModel>(m) {
@@ -579,6 +657,15 @@ IceModelVec::Ptr TemperatureBasal::compute_impl() const {
   return result;
 }
 
+//! \brief Computes ice temperature at the surface of the ice.
+class TemperatureSurface : public Diag<IceModel>
+{
+public:
+  TemperatureSurface(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
+
 TemperatureSurface::TemperatureSurface(const IceModel *m)
   : Diag<IceModel>(m) {
 
@@ -627,6 +714,14 @@ IceModelVec::Ptr TemperatureSurface::compute_impl() const {
   return result;
 }
 
+//! \brief Computes the liquid water fraction.
+class LiquidFraction : public Diag<IceModel>
+{
+public:
+  LiquidFraction(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
 
 LiquidFraction::LiquidFraction(const IceModel *m)
   : Diag<IceModel>(m) {
@@ -657,6 +752,15 @@ IceModelVec::Ptr LiquidFraction::compute_impl() const {
 
   return result;
 }
+
+//! \brief Computes the total thickness of temperate ice in a column.
+class TemperateIceThickness : public Diag<IceModel>
+{
+public:
+  TemperateIceThickness(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
 
 TemperateIceThickness::TemperateIceThickness(const IceModel *m)
   : Diag<IceModel>(m) {
@@ -720,6 +824,15 @@ IceModelVec::Ptr TemperateIceThickness::compute_impl() const {
 
   return result;
 }
+
+//! \brief Computes the thickness of the basal layer of temperate ice.
+class TemperateIceThicknessBasal : public Diag<IceModel>
+{
+public:
+  TemperateIceThicknessBasal(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
 
 TemperateIceThicknessBasal::TemperateIceThicknessBasal(const IceModel *m)
   : Diag<IceModel>(m) {
@@ -1644,6 +1757,19 @@ protected:
   double m_interval_length;
 };
 
+//! \brief Computes latitude and longitude bounds.
+class LatLonBounds : public Diag<IceModel>
+{
+public:
+  LatLonBounds(const IceModel *m,
+               const std::string &var_name,
+               const std::string &proj_string);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+protected:
+  std::string m_var_name, m_proj_string;
+};
+
 LatLonBounds::LatLonBounds(const IceModel *m,
                            const std::string &var_name,
                            const std::string &proj_string)
@@ -1705,6 +1831,14 @@ IceModelVec::Ptr LatLonBounds::compute_impl() const {
 
   return result;
 }
+
+class IceAreaFraction : public Diag<IceModel>
+{
+public:
+  IceAreaFraction(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
 
 IceAreaFraction::IceAreaFraction(const IceModel *m)
   : Diag<IceModel>(m) {
@@ -1777,6 +1911,14 @@ IceModelVec::Ptr IceAreaFraction::compute_impl() const {
   return result;
 }
 
+class IceAreaFractionGrounded : public Diag<IceModel>
+{
+public:
+  IceAreaFractionGrounded(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
+
 IceAreaFractionGrounded::IceAreaFractionGrounded(const IceModel *m)
   : Diag<IceModel>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, grounded_ice_sheet_area_fraction_name)};
@@ -1825,6 +1967,14 @@ IceModelVec::Ptr IceAreaFractionGrounded::compute_impl() const {
   return result;
 }
 
+class IceAreaFractionFloating : public Diag<IceModel>
+{
+public:
+  IceAreaFractionFloating(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
+
 IceAreaFractionFloating::IceAreaFractionFloating(const IceModel *m)
   : Diag<IceModel>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, floating_ice_sheet_area_fraction_name)};
@@ -1849,6 +1999,15 @@ IceModelVec::Ptr IceAreaFractionFloating::compute_impl() const {
 
   return result;
 }
+
+//! \brief Computes the 2D height above flotation.
+class HeightAboveFloatation : public Diag<IceModel>
+{
+public:
+  HeightAboveFloatation(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
 
 HeightAboveFloatation::HeightAboveFloatation(const IceModel *m)
   : Diag<IceModel>(m) {
@@ -1905,6 +2064,15 @@ IceModelVec::Ptr HeightAboveFloatation::compute_impl() const {
 
   return result;
 }
+
+//! \brief Computes the mass per cell.
+class IceMass : public Diag<IceModel>
+{
+public:
+  IceMass(const IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl() const;
+};
 
 IceMass::IceMass(const IceModel *m)
   : Diag<IceModel>(m) {
@@ -1970,6 +2138,15 @@ IceModelVec::Ptr IceMass::compute_impl() const {
   return result;
 }
 
+/*! @brief Sea-level adjusted bed topography (zero at sea level). */
+class BedTopographySeaLevelAdjusted : public Diag<IceModel>
+{
+public:
+  BedTopographySeaLevelAdjusted(const IceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl() const;
+};
+
 BedTopographySeaLevelAdjusted::BedTopographySeaLevelAdjusted(const IceModel *m)
   : Diag<IceModel>(m) {
 
@@ -1999,6 +2176,15 @@ IceModelVec::Ptr BedTopographySeaLevelAdjusted::compute_impl() const {
 
   return result;
 }
+
+/*! @brief Ice hardness computed using the SIA flow law. */
+class IceHardness : public Diag<IceModel>
+{
+public:
+  IceHardness(const IceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl() const;
+};
 
 IceHardness::IceHardness(const IceModel *m)
   : Diag<IceModel>(m) {
@@ -2055,6 +2241,15 @@ IceModelVec::Ptr IceHardness::compute_impl() const {
 
   return result;
 }
+
+/*! @brief Effective viscosity of ice (3D). */
+class IceViscosity : public Diag<IceModel>
+{
+public:
+  IceViscosity(IceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl() const;
+};
 
 IceViscosity::IceViscosity(IceModel *m)
   : Diag<IceModel>(m) {
