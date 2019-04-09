@@ -601,35 +601,52 @@ IceModelVec::Ptr IceEnthalpyBasal::compute_impl() const {
 class TemperatureBasal : public Diag<IceModel>
 {
 public:
-  TemperatureBasal(const IceModel *m);
-protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  TemperatureBasal(const IceModel *m, AreaType flag);
+private:
+  IceModelVec::Ptr compute_impl() const;
+
+  AreaType m_area_type;
 };
 
-TemperatureBasal::TemperatureBasal(const IceModel *m)
-  : Diag<IceModel>(m) {
+TemperatureBasal::TemperatureBasal(const IceModel *m, AreaType area_type)
+  : Diag<IceModel>(m), m_area_type(area_type) {
 
+  std::string name, long_name, standard_name;
+  switch (area_type) {
+  case GROUNDED:
+    name          = "litempbotgr";
+    long_name     = "ice temperature at the bottom surface of grounded ice";
+    standard_name = "temperature_at_base_of_ice_sheet_model";
+    break;
+  case SHELF:
+    name          = "litempbotfl";
+    long_name     = "ice temperature at the bottom surface of floating ice";
+    standard_name = "temperature_at_base_of_ice_sheet_model";
+    break;
+  case BOTH:
+    name          = "tempbase";
+    long_name     = "ice temperature at the base of ice";
+    standard_name = "land_ice_basal_temperature";
+    break;
+  }
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "tempbase")};
+  m_vars = {SpatialVariableMetadata(m_sys, name)};
 
-  set_attrs("ice temperature at the base of ice",
-            "land_ice_basal_temperature", // InitMIP "standard" name
-            "K", "K", 0);
+  set_attrs(long_name, standard_name, "K", "K", 0);
   m_vars[0].set_double("_FillValue", m_fill_value);
 }
 
 IceModelVec::Ptr TemperatureBasal::compute_impl() const {
 
-  const IceModelVec2S &thickness = model->geometry().ice_thickness;
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "basal_temperature", WITHOUT_GHOSTS));
+  result->metadata(0) = m_vars[0];
 
-  IceModelVec::Ptr enth = IceEnthalpyBasal(model).compute();
+  const IceModelVec2S &thickness = model->geometry().ice_thickness;
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
-  IceModelVec2S::Ptr result = IceModelVec2S::To2DScalar(enth);
-
-  // result contains basal enthalpy; note that it is allocated by
-  // IceEnthalpyBasal::compute().
+  model->energy_balance_model()->enthalpy().getHorSlice(*result, 0.0);  // z=0 (basal) slice
+  // Now result contains basal enthalpy.
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
 
@@ -640,10 +657,15 @@ IceModelVec::Ptr TemperatureBasal::compute_impl() const {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double depth = thickness(i,j),
-        pressure = EC->pressure(depth);
-      if (cell_type.icy(i, j)) {
-        (*result)(i,j) = EC->temperature((*result)(i,j), pressure);
+      double
+        depth    = thickness(i, j),
+        pressure = EC->pressure(depth),
+        T        = EC->temperature((*result)(i, j), pressure);
+
+      if ((m_area_type == BOTH     and cell_type.icy(i, j)) or
+          (m_area_type == GROUNDED and cell_type.grounded_ice(i, j)) or
+          (m_area_type == SHELF    and cell_type.floating_ice(i, j))) {
+        (*result)(i, j) = T;
       } else {
         (*result)(i,j) = m_fill_value;
       }
@@ -653,7 +675,6 @@ IceModelVec::Ptr TemperatureBasal::compute_impl() const {
   }
   loop.check();
 
-  result->metadata(0) = m_vars[0];
   return result;
 }
 
@@ -2518,7 +2539,7 @@ void IceModel::init_diagnostics() {
     {"liqfrac",      f(new LiquidFraction(this))},
     {"temp",         f(new Temperature(this))},
     {"temp_pa",      f(new TemperaturePA(this))},
-    {"tempbase",     f(new TemperatureBasal(this))},
+    {"tempbase",     f(new TemperatureBasal(this, BOTH))},
     {"temppabase",   f(new TemperaturePABasal(this))},
     {"tempsurf",     f(new TemperatureSurface(this))},
 
@@ -2586,6 +2607,8 @@ void IceModel::init_diagnostics() {
     m_diagnostics["acabf"]       = f(new SurfaceFlux(this, AMOUNT));
     m_diagnostics["libmassbfgr"] = f(new BMBSplit(this, GROUNDED));
     m_diagnostics["libmassbffl"] = f(new BMBSplit(this, SHELF));
+    m_diagnostics["litempbotgr"] = f(new TemperatureBasal(this, GROUNDED));
+    m_diagnostics["litempbotfl"] = f(new TemperatureBasal(this, SHELF));
   }
 
   typedef TSDiagnostic::Ptr s; // "s" for "scalar"
