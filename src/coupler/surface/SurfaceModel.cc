@@ -494,11 +494,16 @@ IceModelVec::Ptr PS_climatic_mass_balance::compute_impl() const {
 PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "ice_surface_temp")};
 
-  set_attrs("ice temperature at the ice surface", "",
-            "Kelvin", "Kelvin", 0);
+  auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
+  /* set metadata: */
+  m_vars = {SpatialVariableMetadata(m_sys,
+                                    ismip6 ? "litemptop" : "ice_surface_temp")};
+
+  set_attrs("ice temperature at the top ice surface",
+            "temperature_at_top_of_ice_sheet_model",
+            "K", "K", 0);
 }
 
 IceModelVec::Ptr PS_ice_surface_temp::compute_impl() const {
@@ -582,6 +587,10 @@ DiagnosticList SurfaceModel::diagnostics_impl() const {
     {"surface_layer_mass",                Diagnostic::Ptr(new PS_layer_mass(this))},
     {"surface_layer_thickness",           Diagnostic::Ptr(new PS_layer_thickness(this))}
   };
+
+  if (m_config->get_boolean("output.ISMIP6")) {
+    result["litemptop"] = Diagnostic::Ptr(new PS_ice_surface_temp(this));
+  }
 
   if (m_atmosphere) {
     result = pism::combine(result, m_atmosphere->diagnostics());
