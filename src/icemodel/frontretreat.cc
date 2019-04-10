@@ -40,82 +40,128 @@
 namespace pism {
 
 void IceModel::front_retreat_step() {
+  IceModelVec2S
+    &old_H    = m_work2d[0],
+    &old_Href = m_work2d[1];
 
-  // mechanisms that use a retreat rate
-  if (m_eigen_calving or m_vonmises_calving or m_frontal_melt) {
-    // at least one of front retreat mechanisms is active
+  {
+    old_H.copy_from(m_geometry.ice_thickness);
+    old_Href.copy_from(m_geometry.ice_area_specific_volume);
+    m_thickness_change.calving.set(0.0);
+  }
 
-    IceModelVec2S &retreat_rate = m_work2d[2];
-    retreat_rate.set(0.0);
+  {
+    // mechanisms that use a retreat rate
+    if (m_eigen_calving or m_vonmises_calving or m_frontal_melt) {
+      // at least one of front retreat mechanisms is active
 
-    if (m_eigen_calving) {
-      m_eigen_calving->update(m_geometry.cell_type,
-                              m_stress_balance->shallow()->velocity());
-      retreat_rate.add(1.0, m_eigen_calving->calving_rate());
-    }
+      if (m_frontal_melt) {
 
-    if (m_vonmises_calving) {
-      // FIXME: consider computing vertically-averaged hardness here and providing that
-      // instead of using ice thickness and enthalpy.
-      m_vonmises_calving->update(m_geometry.cell_type,
-                                 m_geometry.ice_thickness,
-                                 m_stress_balance->shallow()->velocity(),
-                                 m_energy_model->enthalpy());
-      retreat_rate.add(1.0, m_vonmises_calving->calving_rate());
-    }
+        IceModelVec2S &flux_magnitude = m_work2d[3];
 
-    if (m_frontal_melt) {
+        flux_magnitude.set_to_magnitude(m_subglacial_hydrology->flux());
 
-      IceModelVec2S &flux_magnitude = m_work2d[3];
+        FrontalMeltInputs inputs;
 
-      flux_magnitude.set_to_magnitude(m_subglacial_hydrology->flux());
+        inputs.geometry = &m_geometry;
+        inputs.subglacial_water_flux = &flux_magnitude;
 
-      FrontalMeltInputs inputs;
+        m_frontal_melt->update(inputs, m_time->current(), m_dt);
 
-      inputs.geometry = &m_geometry;
-      inputs.subglacial_water_flux = &flux_magnitude;
+        // apply frontal melt rate
+        // retreat_rate.add(1.0, m_frontal_melt->retreat_rate());
 
-      m_frontal_melt->update(inputs, m_time->current(), m_dt);
+        compute_geometry_change(m_geometry.ice_thickness,
+                                m_geometry.ice_area_specific_volume,
+                                old_H, old_Href,
+                                REPLACE_CHANGES,
+                                m_thickness_change.frontal_melt);
 
-      retreat_rate.add(1.0, m_frontal_melt->retreat_rate());
-    }
+      } else {
+        m_thickness_change.frontal_melt.set(0.0);
+      }
 
-    assert(m_front_retreat);
+      IceModelVec2S &retreat_rate = m_work2d[2];
+      retreat_rate.set(0.0);
 
-    m_front_retreat->update_geometry(m_dt, m_geometry, m_ssa_dirichlet_bc_mask,
-                                     retreat_rate,
-                                     m_geometry.ice_area_specific_volume,
-                                     m_geometry.ice_thickness);
+      if (m_eigen_calving) {
+        m_eigen_calving->update(m_geometry.cell_type,
+                                m_stress_balance->shallow()->velocity());
+        retreat_rate.add(1.0, m_eigen_calving->calving_rate());
+      }
 
-    auto thickness_threshold = m_config->get_double("stress_balance.ice_free_thickness_standard");
+      if (m_vonmises_calving) {
+        // FIXME: consider computing vertically-averaged hardness here and providing that
+        // instead of using ice thickness and enthalpy.
+        m_vonmises_calving->update(m_geometry.cell_type,
+                                   m_geometry.ice_thickness,
+                                   m_stress_balance->shallow()->velocity(),
+                                   m_energy_model->enthalpy());
+        retreat_rate.add(1.0, m_vonmises_calving->calving_rate());
+      }
 
-    m_geometry.ensure_consistency(thickness_threshold);
 
-    if (m_eigen_calving or m_vonmises_calving) {
-      remove_narrow_tongues(m_geometry.cell_type, m_geometry.ice_thickness);
+      assert(m_front_retreat);
+
+      m_front_retreat->update_geometry(m_dt, m_geometry, m_ssa_dirichlet_bc_mask,
+                                       retreat_rate,
+                                       m_geometry.ice_area_specific_volume,
+                                       m_geometry.ice_thickness);
+
+      auto thickness_threshold = m_config->get_double("stress_balance.ice_free_thickness_standard");
 
       m_geometry.ensure_consistency(thickness_threshold);
+
+      if (m_eigen_calving or m_vonmises_calving) {
+        remove_narrow_tongues(m_geometry.cell_type, m_geometry.ice_thickness);
+
+        m_geometry.ensure_consistency(thickness_threshold);
+      }
+    }
+
+    // calving mechanisms that remove ice at a given location instead of applying a retreat
+    // rate
+    {
+      if (m_ocean_kill_calving) {
+        m_ocean_kill_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
+      }
+
+      if (m_float_kill_calving) {
+        m_float_kill_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
+      }
+
+      if (m_thickness_threshold_calving) {
+        m_thickness_threshold_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
+      }
     }
   }
 
-  // calving mechanisms that remove ice
+  enforce_consistency_of_geometry(REMOVE_ICEBERGS);
+
+  // clean up partially-filled cells that are not next to ice
   {
-    if (m_ocean_kill_calving) {
-      m_ocean_kill_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
-    }
+    IceModelVec::AccessList list{&m_geometry.ice_area_specific_volume,
+                                 &m_geometry.cell_type};
 
-    if (m_float_kill_calving) {
-      m_float_kill_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
-    }
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (m_thickness_threshold_calving) {
-      m_thickness_threshold_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
+      if (m_geometry.ice_area_specific_volume(i, j) > 0.0 and
+          not m_geometry.cell_type.next_to_ice(i, j)) {
+        m_geometry.ice_area_specific_volume(i, j) = 0.0;
+      }
     }
   }
+
+  compute_geometry_change(m_geometry.ice_thickness,
+                          m_geometry.ice_area_specific_volume,
+                          old_H, old_Href,
+                          ADD_CHANGES,
+                          m_thickness_change.calving);
 }
 
 /**
- * Compute the ice discharge into the ocean during the current time step.
+ * Compute the change in ice geometry from "old" to "current".
  *
  * Units: ice equivalent meters.
  *
@@ -123,13 +169,14 @@ void IceModel::front_retreat_step() {
  * @param Href current "reference ice thickness"
  * @param thickness_old old ice thickness
  * @param Href_old old "reference ice thickness"
- * @param[in,out] output computed discharge during the current time step
+ * @param[in,out] output computed change
  */
-void IceModel::accumulate_discharge(const IceModelVec2S &thickness,
-                                    const IceModelVec2S &Href,
-                                    const IceModelVec2S &thickness_old,
-                                    const IceModelVec2S &Href_old,
-                                    IceModelVec2S &output) {
+void IceModel::compute_geometry_change(const IceModelVec2S &thickness,
+                                       const IceModelVec2S &Href,
+                                       const IceModelVec2S &thickness_old,
+                                       const IceModelVec2S &Href_old,
+                                       GeometryChangeFlag flag,
+                                       IceModelVec2S &output) {
 
   IceModelVec::AccessList list{&thickness, &thickness_old,
       &Href, &Href_old, &output};
@@ -138,9 +185,15 @@ void IceModel::accumulate_discharge(const IceModelVec2S &thickness,
     const int i = p.i(), j = p.j();
 
     const double
-      H_old       = thickness_old(i, j) + Href_old(i, j),
-      H_new       = thickness(i, j) + Href(i, j);
-    output(i, j) += H_new - H_old;
+      H_old  = thickness_old(i, j) + Href_old(i, j),
+      H_new  = thickness(i, j) + Href(i, j),
+      change = H_new - H_old;
+
+    if (flag == ADD_CHANGES) {
+      output(i, j) += change;
+    } else {
+      output(i, j) = change;
+    }
   }
 }
 

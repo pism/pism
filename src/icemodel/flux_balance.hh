@@ -422,10 +422,10 @@ public:
 
 protected:
   void update_impl(double dt) {
-    const IceModelVec2S
-      &discharge = model->discharge();
+    const IceModelVec2S &calving = model->calving();
+    const IceModelVec2S &frontal_melt = model->frontal_melt();
 
-    IceModelVec::AccessList list{&m_accumulator, &discharge};
+    IceModelVec::AccessList list{&m_accumulator, &calving, &frontal_melt};
 
     auto cell_area = m_grid->cell_area();
 
@@ -434,7 +434,7 @@ protected:
 
       double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
 
-      m_accumulator(i, j) += C * discharge(i, j);
+      m_accumulator(i, j) += C * (calving(i, j) + frontal_melt(i, j));
     }
 
     m_interval_length += dt;

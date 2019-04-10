@@ -145,7 +145,8 @@ public:
   std::map<std::string, std::vector<VariableMetadata>> describe_diagnostics() const;
   std::map<std::string, std::vector<VariableMetadata>> describe_ts_diagnostics() const;
 
-  const IceModelVec2S &discharge() const;
+  const IceModelVec2S &calving() const;
+  const IceModelVec2S &frontal_melt() const;
 
   double ice_volume(double thickness_threshold) const;
   double ice_volume_not_displacing_seawater(double thickness_threshold) const;
@@ -345,11 +346,13 @@ protected:
 
   virtual void front_retreat_step();
 
-  virtual void accumulate_discharge(const IceModelVec2S &thickness,
-                                    const IceModelVec2S &Href,
-                                    const IceModelVec2S &thickness_old,
-                                    const IceModelVec2S &Href_old,
-                                    IceModelVec2S &output);
+  enum GeometryChangeFlag {REPLACE_CHANGES, ADD_CHANGES};
+  void compute_geometry_change(const IceModelVec2S &thickness,
+                               const IceModelVec2S &Href,
+                               const IceModelVec2S &thickness_old,
+                               const IceModelVec2S &Href_old,
+                               GeometryChangeFlag flag,
+                               IceModelVec2S &output);
 
   // see iMIO.cc
   virtual void regrid();
@@ -378,8 +381,20 @@ protected:
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
 
-  // discharge during the last time step
-  IceModelVec2S m_discharge;
+  struct ThicknessChanges {
+    ThicknessChanges(IceGrid::ConstPtr grid);
+
+    // calving during the last time step
+    IceModelVec2S calving;
+
+    // frontal melt during the last time step
+    IceModelVec2S frontal_melt;
+
+    // parameterized retreat
+    IceModelVec2S retreat_forcing;
+  };
+
+  ThicknessChanges m_thickness_change;
 
   /*!
    * The set of variables that the "state" of IceModel consists of.

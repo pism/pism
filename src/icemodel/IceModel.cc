@@ -126,7 +126,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     m_run_stats("run_stats", m_sys),
     m_geometry(m_grid),
     m_new_bed_elevation(true),
-    m_discharge(m_grid, "discharge", WITH_GHOSTS),
+    m_thickness_change(g),
     m_ts_times(new std::vector<double>()),
     m_extra_bounds("time_bounds", m_config->get_string("time.dimension_name"), m_sys),
     m_timestamp("timestamp", m_config->get_string("time.dimension_name"), m_sys) {
@@ -579,41 +579,7 @@ void IceModel::step(bool do_mass_continuity,
 
     // calving, frontal melt, and discharge accounting
     profiling.begin("front_retreat");
-    {
-      IceModelVec2S
-        &old_H    = m_work2d[0],
-        &old_Href = m_work2d[1];
-
-      {
-        old_H.copy_from(m_geometry.ice_thickness);
-        old_Href.copy_from(m_geometry.ice_area_specific_volume);
-        m_discharge.set(0.0);
-      }
-
-      front_retreat_step();
-
-      enforce_consistency_of_geometry(REMOVE_ICEBERGS);
-
-      // clean up partially-filled cells that are not next to ice
-      {
-        IceModelVec::AccessList list{&m_geometry.ice_area_specific_volume,
-            &m_geometry.cell_type};
-
-        for (Points p(*m_grid); p; p.next()) {
-          const int i = p.i(), j = p.j();
-
-          if (m_geometry.ice_area_specific_volume(i, j) > 0.0 and
-              not m_geometry.cell_type.next_to_ice(i, j)) {
-            m_geometry.ice_area_specific_volume(i, j) = 0.0;
-          }
-        }
-      }
-
-      accumulate_discharge(m_geometry.ice_thickness,
-                           m_geometry.ice_area_specific_volume,
-                           old_H, old_Href,
-                           m_discharge);
-    }
+    front_retreat_step();
     profiling.end("front_retreat");
 
     m_stdout_flags += "h";
@@ -672,10 +638,11 @@ void IceModel::step(bool do_mass_continuity,
       // the last call has to remove icebergs
       enforce_consistency_of_geometry(REMOVE_ICEBERGS);
 
-      accumulate_discharge(m_geometry.ice_thickness,
-                           m_geometry.ice_area_specific_volume,
-                           old_H, old_Href,
-                           m_discharge);
+      compute_geometry_change(m_geometry.ice_thickness,
+                              m_geometry.ice_area_specific_volume,
+                              old_H, old_Href,
+                              ADD_CHANGES,
+                              m_thickness_change.calving);
     }
   }
 
@@ -974,8 +941,18 @@ const energy::EnergyModel* IceModel::energy_balance_model() const {
   return m_energy_model;
 }
 
-const IceModelVec2S& IceModel::discharge() const {
-  return m_discharge;
+/*!
+ * Return thickness change due to calving (over the last time step).
+ */
+const IceModelVec2S& IceModel::calving() const {
+  return m_thickness_change.calving;
+}
+
+/*!
+ * Return thickness change due to frontal melt (over the last time step).
+ */
+const IceModelVec2S& IceModel::frontal_melt() const {
+  return m_thickness_change.frontal_melt;
 }
 
 void warn_about_missing(const Logger &log,
@@ -1100,6 +1077,13 @@ void IceModel::reset_diagnostics() {
   for (auto d : m_diagnostics) {
     d.second->reset();
   }
+}
+
+IceModel::ThicknessChanges::ThicknessChanges(IceGrid::ConstPtr grid)
+  : calving(grid, "thickness_change_due_to_calving", WITHOUT_GHOSTS),
+    frontal_melt(grid, "thickness_change_due_to_frontal_melt", WITHOUT_GHOSTS),
+    retreat_forcing(grid, "thickness_change_due_to_retreat_forcing", WITHOUT_GHOSTS) {
+  // empty
 }
 
 } // end of namespace pism

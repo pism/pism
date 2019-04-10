@@ -1698,18 +1698,19 @@ public:
   double compute() {
     const double ice_density = m_config->get_double("constants.ice.density");
 
-    const IceModelVec2S &discharge = model->discharge();
+    const IceModelVec2S &calving = model->calving();
+    const IceModelVec2S &frontal_melt = model->frontal_melt();
 
     auto cell_area = m_grid->cell_area();
 
     double volume_change = 0.0;
 
-    IceModelVec::AccessList list{&discharge};
+    IceModelVec::AccessList list{&calving, &frontal_melt};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
       // m^2 * m = m^3
-      volume_change += cell_area * discharge(i, j);
+      volume_change += cell_area * (calving(i, j) + frontal_melt(i, j));
     }
 
     // (kg/m^3) * m^3 = kg
