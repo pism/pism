@@ -2609,6 +2609,7 @@ void IceModel::init_diagnostics() {
     m_diagnostics["libmassbffl"] = f(new BMBSplit(this, SHELF));
     m_diagnostics["litempbotgr"] = f(new TemperatureBasal(this, GROUNDED));
     m_diagnostics["litempbotfl"] = f(new TemperatureBasal(this, SHELF));
+    m_diagnostics["lifmassbf"]   = f(new DischargeFlux(this, AMOUNT));
   }
 
   typedef TSDiagnostic::Ptr s; // "s" for "scalar"

@@ -392,12 +392,14 @@ public:
 
     m_factor = m_config->get_double("constants.ice.density");
 
+    auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
     std::string
-      name              = "tendency_of_ice_amount_due_to_discharge",
+      name              = ismip6 ? "lifmassbf" : "tendency_of_ice_amount_due_to_discharge",
       long_name         = "discharge (calving and frontal melt) flux",
       accumulator_units = "kg m-2",
       standard_name     = "land_ice_specific_mass_flux_due_to_calving_and_ice_front_melting",
-      internal_units    = "kg m-2 second-1",
+      internal_units    = "kg m-2 s-1",
       external_units    = "kg m-2 year-1";
     if (kind == MASS) {
       name              = "tendency_of_ice_mass_due_to_discharge";
