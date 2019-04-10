@@ -28,9 +28,9 @@
 namespace pism {
 
 FrontRetreat::FrontRetreat(IceGrid::ConstPtr g)
-  : Component(g) {
+  : Component(g),
+    m_tmp(m_grid, "temporary_storage", WITH_GHOSTS, 1) {
 
-  m_tmp.create(m_grid, "temporary_storage", WITH_GHOSTS, 1);
   m_tmp.set_attrs("internal", "additional mass loss at points near the front",
                   "m", "m", "", 0);
 
@@ -204,7 +204,7 @@ void FrontRetreat::update_geometry(double dt,
         Href(i, j) = Href_old + Href_change;
       } else {
         Href(i, j) = 0.0;
-        // Href is below Href_change: need to distribute mass loss to neighboring points
+        // Href + Href_change is negative: need to distribute mass loss to neighboring points
 
         // Find the number of neighbors to distribute to.
         //
