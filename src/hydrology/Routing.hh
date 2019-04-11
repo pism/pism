@@ -178,8 +178,6 @@ protected:
                     const IceModelVec2S &basal_melt_rate,
                     IceModelVec2S &Wtill_new);
 
-  void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result) const;
-
 private:
   virtual void initialization_message() const;
 };

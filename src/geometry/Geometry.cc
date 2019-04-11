@@ -181,4 +181,42 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
                                  cell_grounded_fraction);
 }
 
+/*! Compute the elevation of the bottom surface of the ice.
+ */
+void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result) {
+
+  auto grid = result.grid();
+  auto config = grid->ctx()->config();
+
+  double
+    ice_density   = config->get_double("constants.ice.density"),
+    water_density = config->get_double("constants.sea_water.density"),
+    alpha         = ice_density / water_density;
+
+  const IceModelVec2S        &ice_thickness = geometry.ice_thickness;
+  const IceModelVec2S        &bed_elevation = geometry.bed_elevation;
+  const IceModelVec2S        &sea_level     = geometry.sea_level_elevation;
+
+  IceModelVec::AccessList list{&ice_thickness, &bed_elevation, &sea_level, &result};
+
+  ParallelSection loop(grid->com);
+  try {
+    for (Points p(*grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double
+        b_grounded = bed_elevation(i, j),
+        b_floating = sea_level(i, j) - alpha * ice_thickness(i, j);
+
+      result(i, j) = std::max(b_grounded, b_floating);
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  result.update_ghosts();
+}
+
+
 } // end of namespace pism

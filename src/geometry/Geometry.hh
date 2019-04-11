@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -56,6 +56,8 @@ public:
   IceModelVec2S cell_grounded_fraction;
   IceModelVec2S ice_surface_elevation;
 };
+
+void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result);
 
 } // end of namespace pism
 

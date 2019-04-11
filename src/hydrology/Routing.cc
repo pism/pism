@@ -838,40 +838,6 @@ void Routing::update_W(double dt,
   m_input_change.add(dt, basal_melt_rate);
 }
 
-/*! Compute the elevation of the bottom surface of the ice.
- */
-void Routing::ice_bottom_surface(const Geometry &geometry,
-                                 IceModelVec2S &result) const {
-    double
-      ice_density   = m_config->get_double("constants.ice.density"),
-      water_density = m_config->get_double("constants.sea_water.density"),
-      alpha         = ice_density / water_density;
-
-  const IceModelVec2S        &ice_thickness = geometry.ice_thickness;
-  const IceModelVec2S        &bed_elevation = geometry.bed_elevation;
-  const IceModelVec2S        &sea_level     = geometry.sea_level_elevation;
-
-  IceModelVec::AccessList list{&ice_thickness, &bed_elevation, &sea_level, &result};
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      double
-        b_grounded = bed_elevation(i, j),
-        b_floating = sea_level(i, j) - alpha * ice_thickness(i, j);
-
-      result(i, j) = std::max(b_grounded, b_floating);
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  result.update_ghosts();
-}
-
 //! Update the model state variables W and Wtill by applying the subglacial hydrology model equations.
 /*!
   Runs the hydrology model from time t to time t + dt.  Here [t, dt]
