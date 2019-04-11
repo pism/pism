@@ -2559,6 +2559,33 @@ protected:
 };
 
 /*! @brief Report ice top surface elevation */
+class IceBottomSurfaceElevation : public Diag<IceModel>
+{
+public:
+  IceBottomSurfaceElevation(const IceModel *m)
+    : Diag<IceModel>(m) {
+
+    auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
+    m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "base" : "ice_base_elevation")};
+
+    set_attrs("ice bottom surface elevation", "", // no standard name
+              "m", "m", 0);
+  }
+
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_base_elevation", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+
+    ice_bottom_surface(model->geometry(), *result);
+
+    return result;
+  }
+};
+
+/*! @brief Report ice top surface elevation */
 class IceSurfaceElevation : public Diag<IceModel>
 {
 public:
@@ -2606,6 +2633,7 @@ void IceModel::init_diagnostics() {
     {"thk",                                 f(new IceThickness(this))},
     {"topg_sl_adjusted",                    f(new BedTopographySeaLevelAdjusted(this))},
     {"usurf",                               f(new IceSurfaceElevation(this))},
+    {"ice_base_elevation",                  f(new IceBottomSurfaceElevation(this))},
     {floating_ice_sheet_area_fraction_name, f(new IceAreaFractionFloating(this))},
     {grounded_ice_sheet_area_fraction_name, f(new IceAreaFractionGrounded(this))},
     {land_ice_area_fraction_name,           f(new IceAreaFraction(this))},
@@ -2682,6 +2710,7 @@ void IceModel::init_diagnostics() {
 
   // add ISMIP6 variable names
   if (m_config->get_boolean("output.ISMIP6")) {
+    m_diagnostics["base"]        = m_diagnostics["ice_base_elevation"];
     m_diagnostics["lithk"]       = m_diagnostics["thk"];
     m_diagnostics["dlithkdt"]    = m_diagnostics["dHdt"];
     m_diagnostics["orog"]        = m_diagnostics["usurf"];
