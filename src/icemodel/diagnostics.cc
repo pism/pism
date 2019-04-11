@@ -1068,6 +1068,7 @@ public:
 
     set_units("kg", "kg");
     m_ts.variable().set_string("long_name", "mass of the ice not displacing sea water");
+    m_ts.variable().set_string("standard_name", "land_ice_mass_not_displacing_sea_water");
     m_ts.variable().set_double("valid_min", 0.0);
   }
 
@@ -1110,8 +1111,13 @@ public:
   IceMass(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_mass") {
 
+    if (m_config->get_boolean("output.ISMIP6")) {
+      m_ts.variable().set_name("lim");
+    }
+
     set_units("kg", "kg");
     m_ts.variable().set_string("long_name", "mass of the ice, including seasonal cover");
+    m_ts.variable().set_string("standard_name", "land_ice_mass");
     m_ts.variable().set_double("valid_min", 0.0);
   }
 
@@ -1347,8 +1353,13 @@ public:
   IceAreaGlacierizedGrounded(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_area_glacierized_grounded") {
 
+    if (m_config->get_boolean("output.ISMIP6")) {
+      m_ts.variable().set_name("iareagr");
+    }
+
     set_units("m2", "m2");
     m_ts.variable().set_string("long_name", "area of grounded ice in glacierized areas");
+    m_ts.variable().set_string("standard_name", "grounded_ice_sheet_area");
     m_ts.variable().set_double("valid_min", 0.0);
   }
 
@@ -1364,8 +1375,13 @@ public:
   IceAreaGlacierizedShelf(IceModel *m)
     : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_area_glacierized_floating") {
 
+    if (m_config->get_boolean("output.ISMIP6")) {
+      m_ts.variable().set_name("iareafl");
+    }
+
     set_units("m2", "m2");
     m_ts.variable().set_string("long_name", "area of ice shelves in glacierized areas");
+    m_ts.variable().set_string("standard_name", "floating_ice_shelf_area");
     m_ts.variable().set_double("valid_min", 0.0);
   }
 
@@ -1620,8 +1636,13 @@ public:
   IceMassFluxSurface(const IceModel *m)
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_surface_mass_flux") {
 
+    if (m_config->get_boolean("output.ISMIP6")) {
+      m_ts.variable().set_name("tendacabf");
+    }
+
     set_units("kg s-1", "Gt year-1");
     m_ts.variable().set_string("long_name", "total over ice domain of top surface ice mass flux");
+    m_ts.variable().set_string("standard_name", "tendency_of_land_ice_mass_due_to_surface_mass_balance");
     m_ts.variable().set_string("comment", "positive means ice gain");
   }
 
@@ -1637,8 +1658,13 @@ public:
   IceMassFluxBasalGrounded(const IceModel *m)
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_mass_flux_grounded") {
 
+    if (m_config->get_boolean("output.ISMIP6")) {
+      m_ts.variable().set_name("tendlibmassbf");
+    }
+
     set_units("kg s-1", "Gt year-1");
     m_ts.variable().set_string("long_name", "total over grounded ice domain of basal mass flux");
+    m_ts.variable().set_string("standard_name", "tendency_of_land_ice_mass_due_to_basal_mass_balance");
     m_ts.variable().set_string("comment", "positive means ice gain");
   }
 
@@ -1654,8 +1680,13 @@ public:
   IceMassFluxBasalFloating(const IceModel *m)
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_mass_flux_floating") {
 
+    if (m_config->get_boolean("output.ISMIP6")) {
+      m_ts.variable().set_name("tendlibmassbffl");
+    }
+
     set_units("kg s-1", "Gt year-1");
     m_ts.variable().set_string("long_name", "total sub-shelf ice flux");
+    m_ts.variable().set_string("standard_name", "tendency_of_land_ice_mass_due_to_basal_mass_balance");
     m_ts.variable().set_string("comment", "positive means ice gain");
   }
 
@@ -1690,9 +1721,15 @@ public:
   IceMassFluxDischarge(const IceModel *m)
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_discharge") {
 
+    if (m_config->get_boolean("output.ISMIP6")) {
+      m_ts.variable().set_name("tendlifmassbf");
+    }
+
     set_units("kg s-1", "Gt year-1");
     m_ts.variable().set_string("long_name",
                                "discharge flux (frontal melt, calving, forced retreat)");
+    m_ts.variable().set_string("standard_name",
+                               "tendency_of_land_ice_mass_due_to_calving_and_ice_front_melting");
     m_ts.variable().set_string("comment", "positive means ice gain");
   }
 
