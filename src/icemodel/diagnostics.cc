@@ -2646,6 +2646,7 @@ void IceModel::init_diagnostics() {
     {"tendency_of_ice_amount_due_to_surface_mass_flux",  f(new SurfaceFlux(this,                  AMOUNT))},
     {"tendency_of_ice_amount_due_to_basal_mass_flux",    f(new BasalFlux(this,                    AMOUNT))},
     {"tendency_of_ice_amount_due_to_discharge",          f(new DischargeFlux(this,                AMOUNT))},
+    {"tendency_of_ice_amount_due_to_calving",            f(new CalvingFlux(this,                  AMOUNT))},
 
     // same, in terms of mass
     // tendency_of_ice_mass = (tendency_of_ice_mass_due_to_flow +
@@ -2659,10 +2660,11 @@ void IceModel::init_diagnostics() {
     {"tendency_of_ice_mass_due_to_surface_mass_flux",  f(new SurfaceFlux(this,                  MASS))},
     {"tendency_of_ice_mass_due_to_basal_mass_flux",    f(new BasalFlux(this,                    MASS))},
     {"tendency_of_ice_mass_due_to_discharge",          f(new DischargeFlux(this,                MASS))},
+    {"tendency_of_ice_mass_due_to_calving",            f(new CalvingFlux(this,                  MASS))},
 
     // other rates and fluxes
     {"basal_mass_flux_grounded", f(new BMBSplit(this, GROUNDED))},
-    {"basal_mass_flux_floating",    f(new BMBSplit(this, SHELF))},
+    {"basal_mass_flux_floating", f(new BMBSplit(this, SHELF))},
     {"dHdt",                     f(new ThicknessRateOfChange(this))},
     {"bmelt",                    d::wrap(m_basal_melt_rate)},
 
@@ -2689,6 +2691,7 @@ void IceModel::init_diagnostics() {
     m_diagnostics["litempbotgr"] = f(new TemperatureBasal(this, GROUNDED));
     m_diagnostics["litempbotfl"] = f(new TemperatureBasal(this, SHELF));
     m_diagnostics["lifmassbf"]   = f(new DischargeFlux(this, AMOUNT));
+    m_diagnostics["licalvf"]     = f(new CalvingFlux(this, AMOUNT));
   }
 
   typedef TSDiagnostic::Ptr s; // "s" for "scalar"

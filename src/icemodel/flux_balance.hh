@@ -443,6 +443,69 @@ protected:
   AmountKind m_kind;
 };
 
+/*! @brief Report discharge (calving and frontal melt) flux. */
+class CalvingFlux : public DiagAverageRate<IceModel>
+{
+public:
+  CalvingFlux(const IceModel *m, AmountKind kind)
+    : DiagAverageRate<IceModel>(m,
+                                kind == AMOUNT
+                                ? "tendency_of_ice_amount_due_to_calving"
+                                : "tendency_of_ice_mass_due_to_calving",
+                                TOTAL_CHANGE),
+    m_kind(kind) {
+
+    m_factor = m_config->get_double("constants.ice.density");
+
+    auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
+    std::string
+      name              = ismip6 ? "licalvf" : "tendency_of_ice_amount_due_to_calving",
+      long_name         = "calving flux",
+      accumulator_units = "kg m-2",
+      standard_name     = "land_ice_specific_mass_flux_due_to_calving",
+      internal_units    = "kg m-2 s-1",
+      external_units    = "kg m-2 year-1";
+    if (kind == MASS) {
+      name              = "tendency_of_ice_mass_due_to_calving";
+      long_name         = "calving flux";
+      accumulator_units = "kg";
+      standard_name     = "";
+      internal_units    = "kg second-1";
+      external_units    = "Gt year-1";
+    }
+
+    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_accumulator.metadata().set_string("units", accumulator_units);
+
+    set_attrs(long_name, standard_name, internal_units, external_units, 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
+    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+  }
+
+protected:
+  void update_impl(double dt) {
+    const IceModelVec2S &calving = model->calving();
+
+    IceModelVec::AccessList list{&m_accumulator, &calving};
+
+    auto cell_area = m_grid->cell_area();
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
+
+      m_accumulator(i, j) += C * calving(i, j);
+    }
+
+    m_interval_length += dt;
+  }
+  AmountKind m_kind;
+};
+
 
 } // end of namespace diagnostics
 } // end of namespace pism
