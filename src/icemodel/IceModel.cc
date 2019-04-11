@@ -372,6 +372,21 @@ void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
   // This will ensure that ice area specific volume is zero if ice thickness is greater
   // than zero, then compute new surface elevation and mask.
   m_geometry.ensure_consistency(m_config->get_double("geometry.ice_free_thickness_standard"));
+
+  if (flag == REMOVE_ICEBERGS) {
+    // clean up partially-filled cells that are not next to ice
+    IceModelVec::AccessList list{&m_geometry.ice_area_specific_volume,
+                                 &m_geometry.cell_type};
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (m_geometry.ice_area_specific_volume(i, j) > 0.0 and
+          not m_geometry.cell_type.next_to_ice(i, j)) {
+        m_geometry.ice_area_specific_volume(i, j) = 0.0;
+      }
+    }
+  }
 }
 
 stressbalance::Inputs IceModel::stress_balance_inputs() {
@@ -624,7 +639,7 @@ void IceModel::step(bool do_mass_continuity,
                                            m_basal_melt_rate);
     m_geometry_evolution->apply_mass_fluxes(m_geometry);
 
-    // add removed icebergs to ice discharge
+    // add removed icebergs to discharge due to calving
     {
       IceModelVec2S
         &old_H    = m_work2d[0],
@@ -677,8 +692,8 @@ void IceModel::step(bool do_mass_continuity,
     profiling.end("basal_hydrology");
   }
 
-  //! \li compute the bed deformation, which only depends on current thickness
-  //! and bed elevation
+  //! \li compute the bed deformation, which depends on current thickness, bed elevation,
+  //! and sea level
   if (m_beddef) {
     int topg_state_counter = m_beddef->bed_elevation().state_counter();
 
@@ -955,6 +970,13 @@ const IceModelVec2S& IceModel::frontal_melt() const {
   return m_thickness_change.frontal_melt;
 }
 
+/*!
+ * Return thickness change due to forced retreat (over the last time step).
+ */
+const IceModelVec2S& IceModel::forced_retreat() const {
+  return m_thickness_change.forced_retreat;
+}
+
 void warn_about_missing(const Logger &log,
                         const std::set<std::string> &vars,
                         const std::string &type,
@@ -1082,7 +1104,7 @@ void IceModel::reset_diagnostics() {
 IceModel::ThicknessChanges::ThicknessChanges(IceGrid::ConstPtr grid)
   : calving(grid, "thickness_change_due_to_calving", WITHOUT_GHOSTS),
     frontal_melt(grid, "thickness_change_due_to_frontal_melt", WITHOUT_GHOSTS),
-    retreat_forcing(grid, "thickness_change_due_to_retreat_forcing", WITHOUT_GHOSTS) {
+    forced_retreat(grid, "thickness_change_due_to_forced_retreat", WITHOUT_GHOSTS) {
   // empty
 }
 

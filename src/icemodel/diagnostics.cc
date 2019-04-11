@@ -1691,7 +1691,8 @@ public:
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_discharge") {
 
     set_units("kg s-1", "Gt year-1");
-    m_ts.variable().set_string("long_name", "discharge (calving & icebergs) flux");
+    m_ts.variable().set_string("long_name",
+                               "discharge flux (frontal melt, calving, forced retreat)");
     m_ts.variable().set_string("comment", "positive means ice gain");
   }
 
@@ -1700,17 +1701,18 @@ public:
 
     const IceModelVec2S &calving = model->calving();
     const IceModelVec2S &frontal_melt = model->frontal_melt();
+    const IceModelVec2S &forced_retreat = model->forced_retreat();
 
     auto cell_area = m_grid->cell_area();
 
     double volume_change = 0.0;
 
-    IceModelVec::AccessList list{&calving, &frontal_melt};
+    IceModelVec::AccessList list{&calving, &frontal_melt, &forced_retreat};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
       // m^2 * m = m^3
-      volume_change += cell_area * (calving(i, j) + frontal_melt(i, j));
+      volume_change += cell_area * (calving(i, j) + frontal_melt(i, j) + forced_retreat(i, j));
     }
 
     // (kg/m^3) * m^3 = kg

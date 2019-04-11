@@ -147,6 +147,7 @@ public:
 
   const IceModelVec2S &calving() const;
   const IceModelVec2S &frontal_melt() const;
+  const IceModelVec2S &forced_retreat() const;
 
   double ice_volume(double thickness_threshold) const;
   double ice_volume_not_displacing_seawater(double thickness_threshold) const;
@@ -376,7 +377,7 @@ protected:
   virtual void update_run_stats();
 
   // working space (a convenience)
-  static const int m_n_work2d = 4;
+  static const int m_n_work2d = 3;
   mutable IceModelVec2S m_work2d[m_n_work2d];
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
@@ -391,7 +392,7 @@ protected:
     IceModelVec2S frontal_melt;
 
     // parameterized retreat
-    IceModelVec2S retreat_forcing;
+    IceModelVec2S forced_retreat;
   };
 
   ThicknessChanges m_thickness_change;

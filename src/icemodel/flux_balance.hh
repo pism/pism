@@ -396,14 +396,14 @@ public:
 
     std::string
       name              = ismip6 ? "lifmassbf" : "tendency_of_ice_amount_due_to_discharge",
-      long_name         = "discharge (calving and frontal melt) flux",
+      long_name         = "discharge flux (calving, frontal melt, forced retreat)",
       accumulator_units = "kg m-2",
       standard_name     = "land_ice_specific_mass_flux_due_to_calving_and_ice_front_melting",
       internal_units    = "kg m-2 s-1",
       external_units    = "kg m-2 year-1";
     if (kind == MASS) {
       name              = "tendency_of_ice_mass_due_to_discharge";
-      long_name         = "discharge (calving and frontal melt) flux";
+      long_name         = "discharge flux (calving, frontal melt, forced retreat)";
       accumulator_units = "kg";
       standard_name     = "";
       internal_units    = "kg second-1";
@@ -424,8 +424,9 @@ protected:
   void update_impl(double dt) {
     const IceModelVec2S &calving = model->calving();
     const IceModelVec2S &frontal_melt = model->frontal_melt();
+    const IceModelVec2S &forced_retreat = model->forced_retreat();
 
-    IceModelVec::AccessList list{&m_accumulator, &calving, &frontal_melt};
+    IceModelVec::AccessList list{&m_accumulator, &calving, &frontal_melt, &forced_retreat};
 
     auto cell_area = m_grid->cell_area();
 
@@ -434,7 +435,7 @@ protected:
 
       double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
 
-      m_accumulator(i, j) += C * (calving(i, j) + frontal_melt(i, j));
+      m_accumulator(i, j) += C * (calving(i, j) + frontal_melt(i, j) + forced_retreat(i, j));
     }
 
     m_interval_length += dt;
