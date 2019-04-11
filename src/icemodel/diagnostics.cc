@@ -2739,6 +2739,18 @@ void IceModel::init_diagnostics() {
     {"basal_mass_flux_floating", s(new scalar::IceMassFluxBasalFloating(this))},
   };
 
+  // add ISMIP6 variable names
+  if (m_config->get_boolean("output.ISMIP6")) {
+    m_ts_diagnostics["iareafl"]         = m_ts_diagnostics["ice_area_glacierized_floating"];
+    m_ts_diagnostics["iareagr"]         = m_ts_diagnostics["ice_area_glacierized_grounded"];
+    m_ts_diagnostics["lim"]             = m_ts_diagnostics["ice_mass"];
+    m_ts_diagnostics["tendacabf"]       = m_ts_diagnostics["tendency_of_ice_mass_due_to_surface_mass_flux"];
+    m_ts_diagnostics["tendlibmassbf"]   = m_ts_diagnostics["basal_mass_flux_grounded"];
+    m_ts_diagnostics["tendlibmassbffl"] = m_ts_diagnostics["basal_mass_flux_floating"];
+    m_ts_diagnostics["tendlicalvf"]     = m_ts_diagnostics["tendency_of_ice_mass_due_to_calving"];
+    m_ts_diagnostics["tendlifmassbf"]   = m_ts_diagnostics["tendency_of_ice_mass_due_to_discharge"];
+  }
+
   // get diagnostics from submodels
   for (auto m : m_submodels) {
     m_diagnostics = pism::combine(m_diagnostics, m.second->diagnostics());
