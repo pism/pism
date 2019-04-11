@@ -1757,6 +1757,45 @@ public:
   }
 };
 
+//! \brief Reports the total calving flux.
+class IceMassFluxCalving : public TSDiag<TSFluxDiagnostic, IceModel>
+{
+public:
+  IceMassFluxCalving(const IceModel *m)
+    : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_calving") {
+
+    if (m_config->get_boolean("output.ISMIP6")) {
+      m_ts.variable().set_name("tendlicalvf");
+    }
+
+    set_units("kg s-1", "Gt year-1");
+    m_ts.variable().set_string("long_name", "calving flux");
+    m_ts.variable().set_string("standard_name", "tendency_of_land_ice_mass_due_to_calving");
+    m_ts.variable().set_string("comment", "positive means ice gain");
+  }
+
+  double compute() {
+    const double ice_density = m_config->get_double("constants.ice.density");
+
+    const IceModelVec2S &calving = model->calving();
+
+    auto cell_area = m_grid->cell_area();
+
+    double volume_change = 0.0;
+
+    IceModelVec::AccessList list{&calving};
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+      // m^2 * m = m^3
+      volume_change += cell_area * calving(i, j);
+    }
+
+    // (kg/m^3) * m^3 = kg
+    return ice_density * GlobalSum(m_grid->com, volume_change);
+  }
+};
+
 } // end of namespace scalar
 
 
@@ -2691,6 +2730,7 @@ void IceModel::init_diagnostics() {
     {"tendency_of_ice_mass_due_to_basal_mass_flux",    s(new scalar::IceMassFluxBasal(this))},
     {"tendency_of_ice_mass_due_to_surface_mass_flux",  s(new scalar::IceMassFluxSurface(this))},
     {"tendency_of_ice_mass_due_to_discharge",          s(new scalar::IceMassFluxDischarge(this))},
+    {"tendency_of_ice_mass_due_to_calving",            s(new scalar::IceMassFluxCalving(this))},
     // other fluxes
     {"basal_mass_flux_grounded", s(new scalar::IceMassFluxBasalGrounded(this))},
     {"basal_mass_flux_floating", s(new scalar::IceMassFluxBasalFloating(this))},
