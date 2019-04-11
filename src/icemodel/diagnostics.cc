@@ -2682,16 +2682,16 @@ void IceModel::init_diagnostics() {
 
   // add ISMIP6 variable names
   if (m_config->get_boolean("output.ISMIP6")) {
-    m_diagnostics["lithk"]       = f(new IceThickness(this));
-    m_diagnostics["dlithkdt"]    = f(new ThicknessRateOfChange(this));
-    m_diagnostics["orog"]        = f(new IceSurfaceElevation(this));
-    m_diagnostics["acabf"]       = f(new SurfaceFlux(this, AMOUNT));
-    m_diagnostics["libmassbfgr"] = f(new BMBSplit(this, GROUNDED));
-    m_diagnostics["libmassbffl"] = f(new BMBSplit(this, SHELF));
+    m_diagnostics["lithk"]       = m_diagnostics["thk"];
+    m_diagnostics["dlithkdt"]    = m_diagnostics["dHdt"];
+    m_diagnostics["orog"]        = m_diagnostics["usurf"];
+    m_diagnostics["acabf"]       = m_diagnostics["tendency_of_ice_amount_due_to_surface_mass_flux"];
+    m_diagnostics["libmassbfgr"] = m_diagnostics["basal_mass_flux_grounded"];
+    m_diagnostics["libmassbffl"] = m_diagnostics["basal_mass_flux_floating"];
+    m_diagnostics["lifmassbf"]   = m_diagnostics["tendency_of_ice_amount_due_to_discharge"];
+    m_diagnostics["licalvf"]     = m_diagnostics["tendency_of_ice_amount_due_to_calving"];
     m_diagnostics["litempbotgr"] = f(new TemperatureBasal(this, GROUNDED));
     m_diagnostics["litempbotfl"] = f(new TemperatureBasal(this, SHELF));
-    m_diagnostics["lifmassbf"]   = f(new DischargeFlux(this, AMOUNT));
-    m_diagnostics["licalvf"]     = f(new CalvingFlux(this, AMOUNT));
   }
 
   typedef TSDiagnostic::Ptr s; // "s" for "scalar"
