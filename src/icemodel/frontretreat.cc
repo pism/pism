@@ -92,7 +92,7 @@ void IceModel::front_retreat_step() {
     compute_geometry_change(m_geometry.ice_thickness,
                             m_geometry.ice_area_specific_volume,
                             old_H, old_Href,
-                            REPLACE_CHANGES,
+                            INSERT_VALUES,
                             m_thickness_change.frontal_melt);
   } else {
     m_thickness_change.frontal_melt.set(0.0);
@@ -144,7 +144,7 @@ void IceModel::front_retreat_step() {
     compute_geometry_change(m_geometry.ice_thickness,
                             m_geometry.ice_area_specific_volume,
                             old_H, old_Href,
-                            REPLACE_CHANGES,
+                            INSERT_VALUES,
                             m_thickness_change.calving);
   } else {
     m_thickness_change.calving.set(0.0);
@@ -160,7 +160,7 @@ void IceModel::front_retreat_step() {
     compute_geometry_change(m_geometry.ice_thickness,
                             m_geometry.ice_area_specific_volume,
                             old_H, old_Href,
-                            REPLACE_CHANGES,
+                            INSERT_VALUES,
                             m_thickness_change.forced_retreat);
 
   } else {
@@ -178,7 +178,7 @@ void IceModel::front_retreat_step() {
     compute_geometry_change(m_geometry.ice_thickness,
                             m_geometry.ice_area_specific_volume,
                             old_H, old_Href,
-                            ADD_CHANGES,
+                            ADD_VALUES,
                             m_thickness_change.calving);
   }
 }
@@ -192,13 +192,15 @@ void IceModel::front_retreat_step() {
  * @param Href current "reference ice thickness"
  * @param thickness_old old ice thickness
  * @param Href_old old "reference ice thickness"
+ * @param[in] flag if `flag == ADD_VALUES`, add computed values to `output`, otherwise
+ *                 overwrite them
  * @param[in,out] output computed change
  */
 void IceModel::compute_geometry_change(const IceModelVec2S &thickness,
                                        const IceModelVec2S &Href,
                                        const IceModelVec2S &thickness_old,
                                        const IceModelVec2S &Href_old,
-                                       GeometryChangeFlag flag,
+                                       InsertMode flag,
                                        IceModelVec2S &output) {
 
   IceModelVec::AccessList list{&thickness, &thickness_old,
@@ -212,7 +214,7 @@ void IceModel::compute_geometry_change(const IceModelVec2S &thickness,
       H_new  = thickness(i, j) + Href(i, j),
       change = H_new - H_old;
 
-    if (flag == ADD_CHANGES) {
+    if (flag == ADD_VALUES) {
       output(i, j) += change;
     } else {
       output(i, j) = change;

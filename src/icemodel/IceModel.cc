@@ -656,7 +656,7 @@ void IceModel::step(bool do_mass_continuity,
       compute_geometry_change(m_geometry.ice_thickness,
                               m_geometry.ice_area_specific_volume,
                               old_H, old_Href,
-                              ADD_CHANGES,
+                              ADD_VALUES,
                               m_thickness_change.calving);
     }
   }

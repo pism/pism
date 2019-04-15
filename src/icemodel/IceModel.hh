@@ -347,12 +347,11 @@ protected:
 
   virtual void front_retreat_step();
 
-  enum GeometryChangeFlag {REPLACE_CHANGES, ADD_CHANGES};
   void compute_geometry_change(const IceModelVec2S &thickness,
                                const IceModelVec2S &Href,
                                const IceModelVec2S &thickness_old,
                                const IceModelVec2S &Href_old,
-                               GeometryChangeFlag flag,
+                               InsertMode flag,
                                IceModelVec2S &output);
 
   // see iMIO.cc
