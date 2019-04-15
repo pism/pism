@@ -58,6 +58,7 @@ public:
 };
 
 void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result);
+double ice_volume(const Geometry &geometry, double thickness_threshold);
 
 } // end of namespace pism
 

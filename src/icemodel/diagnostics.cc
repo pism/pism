@@ -971,7 +971,8 @@ public:
     m_ts.variable().set_double("valid_min", 0.0);
   }
   double compute() {
-    return model->ice_volume(m_config->get_double("output.ice_free_thickness_standard"));
+    return ice_volume(model->geometry(),
+                      m_config->get_double("output.ice_free_thickness_standard"));
   }
 };
 
@@ -988,7 +989,7 @@ public:
   }
 
   double compute() {
-    return model->ice_volume(0.0);
+    return ice_volume(model->geometry(), 0.0);
   }
 };
 
@@ -1021,7 +1022,8 @@ public:
   }
 
   double compute() {
-    return model->ice_volume(m_config->get_double("output.ice_free_thickness_standard"));
+    return ice_volume(model->geometry(),
+                      m_config->get_double("output.ice_free_thickness_standard"));
   }
 };
 
@@ -1038,7 +1040,7 @@ public:
   }
 
   double compute() {
-    return model->ice_volume(0.0);
+    return ice_volume(model->geometry(), 0.0);
   }
 };
 
@@ -1100,7 +1102,7 @@ public:
     double
       ice_density        = m_config->get_double("constants.ice.density"),
       thickness_standard = m_config->get_double("output.ice_free_thickness_standard");
-    return model->ice_volume(thickness_standard) * ice_density;
+    return ice_volume(model->geometry(), thickness_standard) * ice_density;
   }
 };
 
@@ -1122,7 +1124,7 @@ public:
   }
 
   double compute() {
-    return (model->ice_volume(0.0) *
+    return (ice_volume(model->geometry(), 0.0) *
             m_config->get_double("constants.ice.density"));
   }
 };
@@ -1142,7 +1144,7 @@ public:
     double
       ice_density         = m_config->get_double("constants.ice.density"),
       thickness_threshold = m_config->get_double("output.ice_free_thickness_standard");
-    return model->ice_volume(thickness_threshold) * ice_density;
+    return ice_volume(model->geometry(), thickness_threshold) * ice_density;
   }
 };
 
@@ -1201,7 +1203,7 @@ public:
 
   double compute() {
     const double ice_density = m_config->get_double("constants.ice.density");
-    return model->ice_volume(0.0) * ice_density;
+    return ice_volume(model->geometry(), 0.0) * ice_density;
   }
 };
 
@@ -3062,37 +3064,6 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
     result = 0.0;
   }
   return result;
-}
-
-//! Computes the ice volume, in m^3.
-double IceModel::ice_volume(double thickness_threshold) const {
-  IceModelVec::AccessList list{&m_geometry.ice_thickness};
-
-  double volume = 0.0;
-
-  auto cell_area = m_grid->cell_area();
-
-  {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      if (m_geometry.ice_thickness(i,j) >= thickness_threshold) {
-        volume += m_geometry.ice_thickness(i,j) * cell_area;
-      }
-    }
-  }
-
-  // Add the volume of the ice in Href:
-  if (m_config->get_boolean("geometry.part_grid.enabled")) {
-    list.add(m_geometry.ice_area_specific_volume);
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      volume += m_geometry.ice_area_specific_volume(i,j) * cell_area;
-    }
-  }
-
-  return GlobalSum(m_grid->com, volume);
 }
 
 double IceModel::ice_volume_not_displacing_seawater(double thickness_threshold) const {

@@ -22,6 +22,7 @@
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/Mask.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/geometry/grounded_cell_fraction.hh"
 
 namespace pism {
@@ -216,6 +217,40 @@ void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result) {
   loop.check();
 
   result.update_ghosts();
+}
+
+//! Computes the ice volume, in m^3.
+double ice_volume(const Geometry &geometry, double thickness_threshold) {
+  auto grid = geometry.ice_thickness.grid();
+  auto config = grid->ctx()->config();
+
+  IceModelVec::AccessList list{&geometry.ice_thickness};
+
+  double volume = 0.0;
+
+  auto cell_area = grid->cell_area();
+
+  {
+    for (Points p(*grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (geometry.ice_thickness(i,j) >= thickness_threshold) {
+        volume += geometry.ice_thickness(i,j) * cell_area;
+      }
+    }
+  }
+
+  // Add the volume of the ice in Href:
+  if (config->get_boolean("geometry.part_grid.enabled")) {
+    list.add(geometry.ice_area_specific_volume);
+    for (Points p(*grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      volume += geometry.ice_area_specific_volume(i,j) * cell_area;
+    }
+  }
+
+  return GlobalSum(grid->com, volume);
 }
 
 
