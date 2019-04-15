@@ -59,7 +59,11 @@ public:
 
 void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result);
 double ice_volume(const Geometry &geometry, double thickness_threshold);
-
+double ice_area_floating(const Geometry &geometry, double thickness_threshold);
+double ice_area_grounded(const Geometry &geometry, double thickness_threshold);
+double ice_area(const Geometry &geometry, double thickness_threshold);
+double ice_volume_not_displacing_seawater(const Geometry &geometry,
+                                          double thickness_threshold);
 } // end of namespace pism
 
 #endif /* GEOMETRY_H */

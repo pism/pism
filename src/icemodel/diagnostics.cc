@@ -1057,7 +1057,7 @@ public:
   }
 
   double compute() {
-    return model->ice_area(m_config->get_double("output.ice_free_thickness_standard"));
+    return ice_area(model->geometry(), m_config->get_double("output.ice_free_thickness_standard"));
   }
 };
 
@@ -1079,7 +1079,8 @@ public:
     const double
       thickness_standard = m_config->get_double("output.ice_free_thickness_standard"),
       ice_density        = m_config->get_double("constants.ice.density"),
-      ice_volume         = model->ice_volume_not_displacing_seawater(thickness_standard),
+      ice_volume         = ice_volume_not_displacing_seawater(model->geometry(),
+                                                              thickness_standard),
       ice_mass           = ice_volume * ice_density;
 
     return ice_mass;
@@ -1366,7 +1367,8 @@ public:
   }
 
   double compute() {
-    return model->ice_area_grounded(m_config->get_double("output.ice_free_thickness_standard"));
+    return ice_area_grounded(model->geometry(),
+                             m_config->get_double("output.ice_free_thickness_standard"));
   }
 };
 
@@ -1388,7 +1390,8 @@ public:
   }
 
   double compute() {
-    return model->ice_area_floating(m_config->get_double("output.ice_free_thickness_standard"));
+    return ice_area_floating(model->geometry(),
+                             m_config->get_double("output.ice_free_thickness_standard"));
   }
 };
 
@@ -3066,38 +3069,6 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
   return result;
 }
 
-double IceModel::ice_volume_not_displacing_seawater(double thickness_threshold) const {
-  const double
-    sea_water_density = m_config->get_double("constants.sea_water.density"),
-    ice_density       = m_config->get_double("constants.ice.density"),
-    cell_area         = m_grid->cell_area();
-
-  IceModelVec::AccessList list{&m_geometry.cell_type, &m_geometry.ice_thickness,
-      &m_geometry.bed_elevation, &m_geometry.sea_level_elevation};
-
-  double volume = 0.0;
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    const double
-      bed       = m_geometry.bed_elevation(i, j),
-      thickness = m_geometry.ice_thickness(i, j),
-      sea_level = m_geometry.sea_level_elevation(i, j);
-
-    if (m_geometry.cell_type.grounded(i, j) and thickness > thickness_threshold) {
-      const double cell_ice_volume = thickness * cell_area;
-      if (bed > sea_level) {
-        volume += cell_ice_volume;
-      } else {
-        const double max_floating_volume = (sea_level - bed) * cell_area * (sea_water_density / ice_density);
-        volume += cell_ice_volume - max_floating_volume;
-      }
-    }
-  } // end of the loop over grid points
-
-  return GlobalSum(m_grid->com, volume);
-}
 
 //! Computes the sea level rise that would result if all the ice were melted.
 double IceModel::sea_level_rise_potential(double thickness_threshold) const {
@@ -3107,7 +3078,8 @@ double IceModel::sea_level_rise_potential(double thickness_threshold) const {
     ocean_area    = m_config->get_double("constants.global_ocean_area");
 
   const double
-    volume                  = ice_volume_not_displacing_seawater(thickness_threshold),
+    volume                  = ice_volume_not_displacing_seawater(m_geometry,
+                                                                 thickness_threshold),
     additional_water_volume = (ice_density / water_density) * volume,
     sea_level_change        = additional_water_volume / ocean_area;
 
@@ -3201,24 +3173,6 @@ double IceModel::ice_volume_cold(double thickness_threshold) const {
   return GlobalSum(m_grid->com, volume);
 }
 
-//! Computes ice area, in m^2.
-double IceModel::ice_area(double thickness_threshold) const {
-  double area = 0.0;
-
-  auto cell_area = m_grid->cell_area();
-
-  IceModelVec::AccessList list{&m_geometry.ice_thickness};
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (m_geometry.ice_thickness(i, j) >= thickness_threshold) {
-      area += cell_area;
-    }
-  }
-
-  return GlobalSum(m_grid->com, area);
-}
-
 //! Computes area of basal ice which is temperate, in m^2.
 double IceModel::ice_area_temperate(double thickness_threshold) const {
 
@@ -3286,44 +3240,5 @@ double IceModel::ice_area_cold(double thickness_threshold) const {
 
   return GlobalSum(m_grid->com, area);
 }
-
-//! Computes grounded ice area, in m^2.
-double IceModel::ice_area_grounded(double thickness_threshold) const {
-  double area = 0.0;
-
-  auto cell_area = m_grid->cell_area();
-
-  IceModelVec::AccessList list{&m_geometry.cell_type, &m_geometry.ice_thickness};
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (m_geometry.cell_type.grounded(i, j) and
-        m_geometry.ice_thickness(i, j) >= thickness_threshold) {
-      area += cell_area;
-    }
-  }
-
-  return GlobalSum(m_grid->com, area);
-}
-
-//! Computes floating ice area, in m^2.
-double IceModel::ice_area_floating(double thickness_threshold) const {
-  double area = 0.0;
-
-  auto cell_area = m_grid->cell_area();
-
-  IceModelVec::AccessList list{&m_geometry.cell_type, &m_geometry.ice_thickness};
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (m_geometry.cell_type.ocean(i, j) and
-        m_geometry.ice_thickness(i, j) >= thickness_threshold) {
-      area += cell_area;
-    }
-  }
-
-  return GlobalSum(m_grid->com, area);
-}
-
 
 } // end of namespace pism

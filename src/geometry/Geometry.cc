@@ -253,5 +253,103 @@ double ice_volume(const Geometry &geometry, double thickness_threshold) {
   return GlobalSum(grid->com, volume);
 }
 
+double ice_volume_not_displacing_seawater(const Geometry &geometry,
+                                          double thickness_threshold) {
+  auto grid = geometry.ice_thickness.grid();
+  auto config = grid->ctx()->config();
+
+  const double
+    sea_water_density = config->get_double("constants.sea_water.density"),
+    ice_density       = config->get_double("constants.ice.density"),
+    cell_area         = grid->cell_area();
+
+  IceModelVec::AccessList list{&geometry.cell_type, &geometry.ice_thickness,
+      &geometry.bed_elevation, &geometry.sea_level_elevation};
+
+  double volume = 0.0;
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const double
+      bed       = geometry.bed_elevation(i, j),
+      thickness = geometry.ice_thickness(i, j),
+      sea_level = geometry.sea_level_elevation(i, j);
+
+    if (geometry.cell_type.grounded(i, j) and thickness > thickness_threshold) {
+      const double cell_ice_volume = thickness * cell_area;
+      if (bed > sea_level) {
+        volume += cell_ice_volume;
+      } else {
+        const double max_floating_volume = (sea_level - bed) * cell_area * (sea_water_density / ice_density);
+        volume += cell_ice_volume - max_floating_volume;
+      }
+    }
+  } // end of the loop over grid points
+
+  return GlobalSum(grid->com, volume);
+}
+
+//! Computes ice area, in m^2.
+double ice_area(const Geometry &geometry, double thickness_threshold) {
+  auto grid = geometry.ice_thickness.grid();
+
+  double area = 0.0;
+
+  auto cell_area = grid->cell_area();
+
+  IceModelVec::AccessList list{&geometry.ice_thickness};
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (geometry.ice_thickness(i, j) >= thickness_threshold) {
+      area += cell_area;
+    }
+  }
+
+  return GlobalSum(grid->com, area);
+}
+
+//! Computes grounded ice area, in m^2.
+double ice_area_grounded(const Geometry &geometry, double thickness_threshold) {
+  auto grid = geometry.ice_thickness.grid();
+
+  double area = 0.0;
+
+  auto cell_area = grid->cell_area();
+
+  IceModelVec::AccessList list{&geometry.cell_type, &geometry.ice_thickness};
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (geometry.cell_type.grounded(i, j) and
+        geometry.ice_thickness(i, j) >= thickness_threshold) {
+      area += cell_area;
+    }
+  }
+
+  return GlobalSum(grid->com, area);
+}
+
+//! Computes floating ice area, in m^2.
+double ice_area_floating(const Geometry &geometry, double thickness_threshold) {
+  auto grid = geometry.ice_thickness.grid();
+
+  double area = 0.0;
+
+  auto cell_area = grid->cell_area();
+
+  IceModelVec::AccessList list{&geometry.cell_type, &geometry.ice_thickness};
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (geometry.cell_type.ocean(i, j) and
+        geometry.ice_thickness(i, j) >= thickness_threshold) {
+      area += cell_area;
+    }
+  }
+
+  return GlobalSum(grid->com, area);
+}
 
 } // end of namespace pism

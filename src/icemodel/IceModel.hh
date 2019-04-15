@@ -149,13 +149,9 @@ public:
   const IceModelVec2S &frontal_melt() const;
   const IceModelVec2S &forced_retreat() const;
 
-  double ice_volume_not_displacing_seawater(double thickness_threshold) const;
   double sea_level_rise_potential(double thickness_threshold) const;
   double ice_volume_temperate(double thickness_threshold) const;
   double ice_volume_cold(double thickness_threshold) const;
-  double ice_area(double thickness_threshold) const;
-  double ice_area_grounded(double thickness_threshold) const;
-  double ice_area_floating(double thickness_threshold) const;
   double ice_area_temperate(double thickness_threshold) const;
   double ice_area_cold(double thickness_threshold) const;
 
