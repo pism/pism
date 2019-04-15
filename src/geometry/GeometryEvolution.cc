@@ -1248,11 +1248,13 @@ void GeometryEvolution::set_no_model_mask_impl(const IceModelVec2Int &mask) {
 
 void grounding_line_flux(const IceModelVec2CellType &cell_type,
                          const IceModelVec2Stag &flux,
-                         IceModelVec2S &result) {
+                         double dt,
+                         InsertMode flag,
+                         IceModelVec2S &output) {
 
   using mask::grounded;
 
-  auto grid = result.grid();
+  auto grid = output.grid();
 
   const double
     dx = grid->dx(),
@@ -1262,37 +1264,43 @@ void grounding_line_flux(const IceModelVec2CellType &cell_type,
 
   auto ice_density = grid->ctx()->config()->get_double("constants.ice.density");
 
-  IceModelVec::AccessList list{&cell_type, &flux, &result};
+  IceModelVec::AccessList list{&cell_type, &flux, &output};
 
   ParallelSection loop(grid->com);
   try {
     for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      result(i, j) = 0.0;
+      double result = 0.0;
 
       if (cell_type.ocean(i ,j)) {
         auto M = cell_type.int_star(i, j);
         auto Q = flux.star(i, j);
 
         if (grounded(M.n) and Q.n <= 0.0) {
-          result(i, j) += Q.n * dx;
+          result += Q.n * dx;
         }
 
         if (grounded(M.e) and Q.e <= 0.0) {
-          result(i, j) += Q.e * dy;
+          result += Q.e * dy;
         }
 
         if (grounded(M.s) and Q.s >= 0.0) {
-          result(i, j) -= Q.s * dx;
+          result -= Q.s * dx;
         }
 
         if (grounded(M.w) and Q.w >= 0.0) {
-          result(i, j) -= Q.w * dy;
+          result -= Q.w * dy;
         }
 
-        // convert from "m^3 / s" to "kg / (m^2 s)"
-        result(i, j) *= (ice_density / cell_area);
+        // convert from "m^3 / s" to "kg / m^2"
+        result *= dt * (ice_density / cell_area);
+      }
+
+      if (flag == ADD_VALUES) {
+        output(i, j) += result;
+      } else {
+        output(i, j) = result;
       }
     }
   } catch (...) {

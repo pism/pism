@@ -2612,6 +2612,41 @@ protected:
   }
 };
 
+/*! @brief Report grounding line flux. */
+class GroundingLineFlux : public DiagAverageRate<IceModel>
+{
+public:
+  GroundingLineFlux(const IceModel *m)
+    : DiagAverageRate<IceModel>(m, "grounding_line_flux", RATE) {
+
+    auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
+    m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "ligroundf" : "grounding_line_flux")};
+    m_accumulator.metadata().set_string("units", "kg m-2");
+
+    set_attrs("grounding line flux", "",
+              "kg m-2 second-1", "kg m-2 year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
+    m_vars[0].set_string("comment",
+                         "Positive flux corresponds to mass moving from the ocean to"
+                         " an icy grounded area. This convention makes it easier to compare"
+                         " grounding line flux to the total discharge into the ocean");
+  }
+
+protected:
+  void update_impl(double dt) {
+    grounding_line_flux(model->geometry().cell_type,
+                        model->geometry_evolution().flux_staggered(),
+                        dt,
+                        ADD_VALUES,
+                        m_accumulator);
+
+    m_interval_length += dt;
+  }
+};
+
 
 } // end of namespace diagnostics
 
@@ -2695,6 +2730,7 @@ void IceModel::init_diagnostics() {
     {"basal_mass_flux_floating", f(new BMBSplit(this, SHELF))},
     {"dHdt",                     f(new ThicknessRateOfChange(this))},
     {"bmelt",                    d::wrap(m_basal_melt_rate)},
+    {"grounding_line_flux",      f(new GroundingLineFlux(this))},
 
     // misc
     {"rank", f(new Rank(this))},
@@ -2721,6 +2757,7 @@ void IceModel::init_diagnostics() {
     m_diagnostics["licalvf"]     = m_diagnostics["tendency_of_ice_amount_due_to_calving"];
     m_diagnostics["litempbotgr"] = f(new TemperatureBasal(this, GROUNDED));
     m_diagnostics["litempbotfl"] = f(new TemperatureBasal(this, SHELF));
+    m_diagnostics["ligroundf"]   = m_diagnostics["grounding_line_flux"];
   }
 
   typedef TSDiagnostic::Ptr s; // "s" for "scalar"
