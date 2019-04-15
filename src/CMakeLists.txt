@@ -49,7 +49,6 @@ add_library (pism
   icemodel/frontretreat.cc
   icemodel/diagnostics.cc
   icemodel/diagnostics.cc
-  icemodel/diagnostics.hh
   icemodel/energy.cc
   icemodel/flux_balance.hh
   icemodel/fracture_density.cc
