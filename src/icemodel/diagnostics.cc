@@ -1802,6 +1802,32 @@ public:
   }
 };
 
+//! @brief Reports the total flux across the grounding line.
+class IceMassFluxAtGroundingLine : public TSDiag<TSFluxDiagnostic, IceModel>
+{
+public:
+  IceMassFluxAtGroundingLine(const IceModel *m)
+    : TSDiag<TSFluxDiagnostic, IceModel>(m, "grounding_line_flux") {
+
+    if (m_config->get_boolean("output.ISMIP6")) {
+      m_ts.variable().set_name("tendligroundf");
+      m_ts.variable().set_string("standard_name",
+                                 "tendency_of_grounded_ice_mass");
+    }
+
+    set_units("kg s-1", "Gt year-1");
+    m_ts.variable().set_string("long_name",
+                               "total ice flux across the grounding line");
+    m_ts.variable().set_string("comment", "negative flux corresponds to ice loss into the ocean");
+  }
+
+  double compute() {
+    return total_grounding_line_flux(model->geometry().cell_type,
+                                     model->geometry_evolution().flux_staggered(),
+                                     model->dt());
+  }
+};
+
 } // end of namespace scalar
 
 
@@ -2809,6 +2835,7 @@ void IceModel::init_diagnostics() {
     // other fluxes
     {"basal_mass_flux_grounded", s(new scalar::IceMassFluxBasalGrounded(this))},
     {"basal_mass_flux_floating", s(new scalar::IceMassFluxBasalFloating(this))},
+    {"grounding_line_flux",      s(new scalar::IceMassFluxAtGroundingLine(this))},
   };
 
   // add ISMIP6 variable names
@@ -2821,6 +2848,7 @@ void IceModel::init_diagnostics() {
     m_ts_diagnostics["tendlibmassbffl"] = m_ts_diagnostics["basal_mass_flux_floating"];
     m_ts_diagnostics["tendlicalvf"]     = m_ts_diagnostics["tendency_of_ice_mass_due_to_calving"];
     m_ts_diagnostics["tendlifmassbf"]   = m_ts_diagnostics["tendency_of_ice_mass_due_to_discharge"];
+    m_ts_diagnostics["tendligroundf"]   = m_ts_diagnostics["grounding_line_flux"];
   }
 
   // get diagnostics from submodels
