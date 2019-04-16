@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef ISMIP6RETREAT_H
-#define ISMIP6RETREAT_H
+#ifndef PRESCRIBED_RETREAT_H
+#define PRESCRIBED_RETREAT_H
 
 #include "pism/util/Component.hh"
 #include "pism/util/iceModelVec.hh"
@@ -39,10 +39,10 @@ namespace pism {
  * corresponding fraction of ice volume in this cell. If the mask is 1 ice thickness is
  * not modified.
  */
-class ISMIP6Retreat : public Component {
+class PrescribedRetreat : public Component {
 public:
-  ISMIP6Retreat(IceGrid::ConstPtr grid);
-  virtual ~ISMIP6Retreat();
+  PrescribedRetreat(IceGrid::ConstPtr grid);
+  virtual ~PrescribedRetreat();
 
   void init();
 
@@ -58,4 +58,4 @@ protected:
 
 } // end of namespace pism
 
-#endif /* ISMIP6RETREAT_H */
+#endif /* PRESCRIBED_RETREAT_H */
