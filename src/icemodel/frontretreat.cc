@@ -35,6 +35,7 @@
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/hydrology/Hydrology.hh"
 #include "pism/frontretreat/util/remove_narrow_tongues.hh"
+#include "pism/frontretreat/PrescribedRetreat.hh"
 
 namespace pism {
 
@@ -150,11 +151,14 @@ void IceModel::front_retreat_step() {
   }
 
   // prescribed retreat
-  if (m_ocean_kill_calving) {
+
+  if (m_prescribed_retreat) {
     old_H.copy_from(m_geometry.ice_thickness);
     old_Href.copy_from(m_geometry.ice_area_specific_volume);
 
-    m_ocean_kill_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
+    m_prescribed_retreat->update(m_time->current(), m_dt,
+                                 m_geometry.ice_thickness,
+                                 m_geometry.ice_area_specific_volume);
 
     compute_geometry_change(m_geometry.ice_thickness,
                             m_geometry.ice_area_specific_volume,
@@ -165,6 +169,7 @@ void IceModel::front_retreat_step() {
   } else {
     m_thickness_change.forced_retreat.set(0.0);
   }
+
 
   // Changes above may create icebergs; here we remove them and account for additional
   // mass losses.

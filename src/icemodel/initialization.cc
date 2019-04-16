@@ -62,6 +62,7 @@
 #include "pism/energy/EnthalpyModel.hh"
 #include "pism/energy/TemperatureModel.hh"
 #include "pism/frontretreat/FrontRetreat.hh"
+#include "pism/frontretreat/PrescribedRetreat.hh"
 #include "pism/coupler/frontalmelt/Factory.hh"
 
 namespace pism {
@@ -764,6 +765,7 @@ void IceModel::misc_setup() {
 
   init_calving();
   init_frontal_melt();
+  init_front_retreat();
   init_diagnostics();
   init_snapshots();
   init_backups();
@@ -837,6 +839,18 @@ void IceModel::init_frontal_melt() {
     if (not m_front_retreat) {
       m_front_retreat.reset(new FrontRetreat(m_grid));
     }
+  }
+}
+
+void IceModel::init_front_retreat() {
+  auto front_retreat_file = m_config->get_string("geometry.front_retreat.prescribed.file");
+
+  if (not front_retreat_file.empty()) {
+    m_prescribed_retreat.reset(new PrescribedRetreat(m_grid));
+
+    m_prescribed_retreat->init();
+
+    m_submodels["prescribed front retreat"] = m_prescribed_retreat.get();
   }
 }
 

@@ -99,6 +99,7 @@ class IceModelVec2CellType;
 class IceModelVec2T;
 class Component;
 class FrontRetreat;
+class PrescribedRetreat;
 
 struct FractureFields {
   FractureFields(IceGrid::ConstPtr grid);
@@ -190,6 +191,7 @@ protected:
   virtual void init_diagnostics();
   virtual void init_calving();
   virtual void init_frontal_melt();
+  virtual void init_front_retreat();
   virtual void prune_diagnostics();
   virtual void update_diagnostics(double dt);
   virtual void reset_diagnostics();
@@ -274,6 +276,7 @@ protected:
   std::shared_ptr<calving::CalvingAtThickness> m_thickness_threshold_calving;
   std::shared_ptr<calving::EigenCalving>       m_eigen_calving;
   std::shared_ptr<calving::vonMisesCalving>    m_vonmises_calving;
+  std::shared_ptr<PrescribedRetreat>           m_prescribed_retreat;
 
   std::shared_ptr<FrontRetreat> m_front_retreat;
 
