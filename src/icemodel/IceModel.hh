@@ -73,7 +73,6 @@ class Hydrology;
 namespace calving {
 class EigenCalving;
 class vonMisesCalving;
-class OceanKill;
 class FloatKill;
 class CalvingAtThickness;
 class IcebergRemover;
@@ -271,7 +270,6 @@ protected:
   AgeModel *m_age_model;
 
   std::shared_ptr<calving::IcebergRemover>     m_iceberg_remover;
-  std::shared_ptr<calving::OceanKill>          m_ocean_kill_calving;
   std::shared_ptr<calving::FloatKill>          m_float_kill_calving;
   std::shared_ptr<calving::CalvingAtThickness> m_thickness_threshold_calving;
   std::shared_ptr<calving::EigenCalving>       m_eigen_calving;

@@ -27,7 +27,6 @@
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
 #include "pism/frontretreat/calving/FloatKill.hh"
-#include "pism/frontretreat/calving/OceanKill.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/hydrology/NullTransport.hh"
@@ -845,18 +844,6 @@ void IceModel::init_frontal_melt() {
 void IceModel::init_calving() {
 
   std::set<std::string> methods = set_split(m_config->get_string("calving.methods"), ',');
-
-  if (methods.find("ocean_kill") != methods.end()) {
-
-    if (not m_ocean_kill_calving) {
-      m_ocean_kill_calving.reset(new calving::OceanKill(m_grid));
-    }
-
-    m_ocean_kill_calving->init();
-    methods.erase("ocean_kill");
-
-    m_submodels["ocean kill calving"] = m_ocean_kill_calving.get();
-  }
 
   if (methods.find("thickness_calving") != methods.end()) {
 
