@@ -1006,7 +1006,8 @@ public:
   }
 
   double compute() {
-    return model->sea_level_rise_potential(m_config->get_double("output.ice_free_thickness_standard"));
+    return sea_level_rise_potential(model->geometry(),
+                                    m_config->get_double("output.ice_free_thickness_standard"));
   }
 };
 
@@ -3069,22 +3070,6 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
   return result;
 }
 
-
-//! Computes the sea level rise that would result if all the ice were melted.
-double IceModel::sea_level_rise_potential(double thickness_threshold) const {
-  const double
-    water_density = m_config->get_double("constants.fresh_water.density"),
-    ice_density   = m_config->get_double("constants.ice.density"),
-    ocean_area    = m_config->get_double("constants.global_ocean_area");
-
-  const double
-    volume                  = ice_volume_not_displacing_seawater(m_geometry,
-                                                                 thickness_threshold),
-    additional_water_volume = (ice_density / water_density) * volume,
-    sea_level_change        = additional_water_volume / ocean_area;
-
-  return sea_level_change;
-}
 
 //! Computes the temperate ice volume, in m^3.
 double IceModel::ice_volume_temperate(double thickness_threshold) const {

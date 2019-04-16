@@ -352,4 +352,24 @@ double ice_area_floating(const Geometry &geometry, double thickness_threshold) {
   return GlobalSum(grid->com, area);
 }
 
+
+//! Computes the sea level rise that would result if all the ice were melted.
+double sea_level_rise_potential(const Geometry &geometry, double thickness_threshold) {
+  auto config = geometry.ice_thickness.grid()->ctx()->config();
+
+  const double
+    water_density = config->get_double("constants.fresh_water.density"),
+    ice_density   = config->get_double("constants.ice.density"),
+    ocean_area    = config->get_double("constants.global_ocean_area");
+
+  const double
+    volume                  = ice_volume_not_displacing_seawater(geometry,
+                                                                 thickness_threshold),
+    additional_water_volume = (ice_density / water_density) * volume,
+    sea_level_change        = additional_water_volume / ocean_area;
+
+  return sea_level_change;
+}
+
+
 } // end of namespace pism
