@@ -1309,5 +1309,63 @@ void grounding_line_flux(const IceModelVec2CellType &cell_type,
   loop.check();
 }
 
+/*!
+ * Compute the total grounding line flux over a time step, in kg.
+ */
+double total_grounding_line_flux(const IceModelVec2CellType &cell_type,
+                                 const IceModelVec2Stag &flux,
+                                 double dt) {
+  using mask::grounded;
+
+  auto grid = cell_type.grid();
+
+  const double
+    dx = grid->dx(),
+    dy = grid->dy();
+
+  auto ice_density = grid->ctx()->config()->get_double("constants.ice.density");
+
+  double total_flux = 0.0;
+
+  IceModelVec::AccessList list{&cell_type, &flux};
+
+  ParallelSection loop(grid->com);
+  try {
+    for (Points p(*grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double volume_flux = 0.0;
+
+      if (cell_type.ocean(i ,j)) {
+        auto M = cell_type.int_star(i, j);
+        auto Q = flux.star(i, j); // m^2 / s
+
+        if (grounded(M.n) and Q.n <= 0.0) {
+          volume_flux += Q.n * dx;
+        }
+
+        if (grounded(M.e) and Q.e <= 0.0) {
+          volume_flux += Q.e * dy;
+        }
+
+        if (grounded(M.s) and Q.s >= 0.0) {
+          volume_flux -= Q.s * dx;
+        }
+
+        if (grounded(M.w) and Q.w >= 0.0) {
+          volume_flux -= Q.w * dy;
+        }
+      }
+
+      // convert from "m^3 / s" to "kg" and sum up
+      total_flux += volume_flux * dt * ice_density;
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return GlobalSum(grid->com, total_flux);
+}
 
 } // end of namespace pism

@@ -166,6 +166,9 @@ void grounding_line_flux(const IceModelVec2CellType &cell_type,
                          InsertMode flag,
                          IceModelVec2S &result);
 
+double total_grounding_line_flux(const IceModelVec2CellType &cell_type,
+                                 const IceModelVec2Stag &flux,
+                                 double dt);
 } // end of namespace pism
 
 #endif /* GEOMETRYEVOLUTION_H */
