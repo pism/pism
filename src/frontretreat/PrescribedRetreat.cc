@@ -39,6 +39,8 @@ PrescribedRetreat::PrescribedRetreat(IceGrid::ConstPtr grid)
                                                  buffer_size,
                                                  evaluations_per_year,
                                                  periodic);
+    m_retreat_mask->set_attrs("forcing", "maximum ice extent mask",
+                              "1", "1", "", 0);
   }
 }
 
@@ -52,7 +54,8 @@ void PrescribedRetreat::init() {
 
   m_log->message(2,
                  "* Initializing the prescribed front retreat mechanism\n"
-                 "  using a time-dependent ice extent mask read from '%s'...",
+                 "  using a time-dependent ice extent mask '%s' in '%s'...\n",
+                 m_retreat_mask->get_name().c_str(),
                  opt.filename.c_str());
 
   m_retreat_mask->init(opt.filename, opt.period, opt.reference_time);
@@ -86,7 +89,12 @@ void PrescribedRetreat::update(double t,
 
 MaxTimestep PrescribedRetreat::max_timestep_impl(double t) const {
   auto dt = m_retreat_mask->max_timestep(t);
-  return MaxTimestep(dt.value(), "prescribed ice retreat");
+
+  if (dt.finite()) {
+    return MaxTimestep(dt.value(), "prescribed ice retreat");
+  } else {
+    return MaxTimestep("prescribed ice retreat");
+  }
 }
 
 } // end of namespace pism
