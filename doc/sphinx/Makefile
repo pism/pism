@@ -29,9 +29,8 @@ diagnostics.json: dummy.nc
 	      -yield_stress mohr_coulomb \
 	      -topg_to_phi 10,30,-50,0 \
 	      -hydrology routing \
-	      -calving eigen_calving,thickness_calving,ocean_kill,vonmises_calving \
+	      -calving eigen_calving,thickness_calving,vonmises_calving \
 	      -frontal_melt constant \
-	      -ocean_kill_file dummy.nc \
 	      -verbose 1 -o_size none \
 	      -list_diagnostics_json > $@
 

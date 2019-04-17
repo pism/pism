@@ -433,13 +433,7 @@
 
    :Value: *no default*
    :Option: :opt:`-calving`
-   :Description: comma-separated list of calving methods; one or more of 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'
-
-#. :config:`calving.ocean_kill.file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-ocean_kill_file`
-   :Description: Input file containing ice thickness and bed elevation used to compute maximum ice extent.
+   :Description: comma-separated list of calving methods; one or more of 'eigen_calving', 'float_kill', 'thickness_calving'
 
 #. :config:`calving.thickness_calving.threshold` (*scalar*)
 
@@ -453,17 +447,33 @@
    :Option: :opt:`-thickness_calving_threshold_file`
    :Description: Name of the file containing the spatially-variable thickness calving threshold. 
 
-#. :config:`calving.vonmises_calving.use_own_Glen_exponent` (*boolean*)
+#. :config:`calving.vonmises_calving.use_custom_flow_law` (*boolean*)
 
    :Value: no
-   :Option: :opt:`-vonmises_calving_use_own_n`
-   :Description: Glen exponent in ice flow law for von Mises calving
+   :Option: :opt:`-vonmises_calving_use_custom_flow_law`
+   :Description: Use custom flow law in the von Mises stress computation
+
+#. :config:`calving.vonmises_calving.flow_law` (*keyword*)
+
+   :Value: ``gpbld``
+   :Choices: ``arr, arrwarm, gpbld, hooke, isothermal_glen, pb``
+   :Description: The custom flow law for the von Mises stress computation
 
 #. :config:`calving.vonmises_calving.Glen_exponent` (*scalar*)
 
    :Value: 3 (pure number)
    :Option: :opt:`-vonmises_calving_n`
    :Description: Glen exponent in ice flow law for von Mises calving
+
+#. :config:`calving.vonmises_calving.enhancement_factor` (*scalar*)
+
+   :Value: 1 (1)
+   :Description: Flow enhancement factor used by the flow law in the von Mises stress computation
+
+#. :config:`calving.vonmises_calving.enhancement_factor_interglacial` (*scalar*)
+
+   :Value: 1 (1)
+   :Description: Flow enhancement factor used by the flow law in the von Mises stress computation (for ice accumulated during interglacial periods).
 
 #. :config:`calving.vonmises_calving.sigma_max` (*scalar*)
 
@@ -878,12 +888,12 @@
 
 #. :config:`frontal_melt.routing.parameter_a` (*scalar*)
 
-   :Value: 0.000300 (m−alpha day^(alpha−1) Celsius−beta)
+   :Value: 0.000300 (m-alpha day^(alpha-1) Celsius-beta)
    :Description: parameter A in eqn. 1 in :cite:`Xu2013`
 
 #. :config:`frontal_melt.routing.parameter_b` (*scalar*)
 
-   :Value: 0.150000 (m day^(alpha−1) Celsius−beta)
+   :Value: 0.150000 (m day^(alpha-1) Celsius-beta)
    :Description: parameter B in eqn. 1 in :cite:`Xu2013`
 
 #. :config:`frontal_melt.routing.power_alpha` (*scalar*)
@@ -925,6 +935,22 @@
    :Value: false
    :Option: :opt:`-front_retreat_cfl`
    :Description: apply CFL criterion for eigen-calving rate front retreat
+
+#. :config:`geometry.front_retreat.prescribed.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-front_retreat_file`
+   :Description: Name of the file containing the maximum ice extent mask `land_ice_area_fraction_retreat`
+
+#. :config:`geometry.front_retreat.prescribed.period` (*integer*)
+
+   :Value: 0
+   :Description: Length of the period of the front retreat data. Set to zero to disable.
+
+#. :config:`geometry.front_retreat.prescribed.reference_year` (*integer*)
+
+   :Value: 0
+   :Description: Reference year to use when `geometry.front_retreat.prescribed.period` is active.
 
 #. :config:`geometry.grounded_cell_fraction` (*boolean*)
 
@@ -1169,6 +1195,11 @@
 
    :Value: no
    :Description: Route subglacial water under ice shelves. This may be appropriate if a shelf is close to floatation. Note that this has no effect on ice flow.
+
+#. :config:`hydrology.routing.add_water_input_to_till_storage` (*boolean*)
+
+   :Value: yes
+   :Description: Add surface input to water stored in till. If no it will be added to the transportable water.
 
 #. :config:`inverse.design.cH1` (*scalar*)
 
@@ -1663,13 +1694,18 @@
 
 #. :config:`output.sizes.big_2d` (*string*)
 
-   :Value: ``age, bfrict, bheatflx, bmelt, bwp, bwprel, dbdt, effbwp, enthalpybase, enthalpysurf, flux_divergence, hardav, hydroinput, lat, litho_temp, lon, nuH, ocean_kill_mask, rank, tempbase, tempicethk, tempicethk_basal, temppabase, tempsurf, thk, thksmooth, tillphi, topg, velbar, velbase, wallmelt, wvelbase``
+   :Value: ``age, bfrict, bheatflx, bmelt, bwp, bwprel, dbdt, effbwp, enthalpybase, enthalpysurf, flux_divergence, hardav, hydroinput, lat, litho_temp, lon, nuH, rank, tempbase, tempicethk, tempicethk_basal, temppabase, tempsurf, thk, thksmooth, tillphi, topg, velbar, velbase, wallmelt, wvelbase``
    :Description: Comma-separated list of variables to write to the output (in addition to model_state variables and variables listed in output.sizes.medium) if 'big_2d' output size is selected. Does not include fields written by boundary models.
 
 #. :config:`output.sizes.medium` (*string*)
 
    :Value: ``bwat, bwatvel, climatic_mass_balance, diffusivity, enthalpy, flux, flux_mag, ice_surface_temp, liqfrac, mask, schoofs_theta, strain_rates, taub_mag, tauc, taud_mag, temp_pa, tillwat, topgsmooth, usurf, velbar_mag, velbase_mag, velsurf, velsurf_mag, wvelsurf``
    :Description: Comma-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size (the default) is selected. Does not include fields written by sub-models.
+
+#. :config:`output.ISMIP6_variables` (*string*)
+
+   :Value: ``lithk, orog, topg, hfgeoubed, acabf, libmassbfgr, libmassbffl, dlithkdt, velsurf, zvelsurf, velbase, zvelbase, velmean, litemptop, litempbotgr, litempbotfl, strbasemag, licalvf, lifmassbf, sftgif, sftgrf, sftflf``
+   :Description: Comma-separated list of variables reported by models participating in ISMIP6 simulations.
 
 #. :config:`output.timeseries.buffer_size` (*integer*)
 
@@ -1699,6 +1735,16 @@
    :Value: *no default*
    :Option: :opt:`-ts_times`
    :Description: List or range of times defining reporting time intervals.
+
+#. :config:`output.use_MKS` (*boolean*)
+
+   :Value: false
+   :Description: Use MKS units in output files.
+
+#. :config:`output.ISMIP6` (*boolean*)
+
+   :Value: false
+   :Description: Follow ISMIP6 conventions (units, variable names, "standard names") when writing output variables.
 
 #. :config:`output.variable_order` (*keyword*)
 
@@ -2016,6 +2062,30 @@
    :Value: 0
    :Option: :opt:`-surface_given_reference_year`
    :Description: Reference year to use when ``surface.given.period`` is active.
+
+#. :config:`surface.ismip6.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-surface_ismip6_file`
+   :Description: Name of the file containing climate forcing anomaly fields.
+
+#. :config:`surface.ismip6.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-surface_ismip6_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`surface.ismip6.reference_file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-surface_ismip6_reference_file`
+   :Description: Name of the file containing reference climate forcing fields.
+
+#. :config:`surface.ismip6.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-surface_ismip6_reference_year`
+   :Description: Reference year to use when ``surface.ismip6.period`` is active.
 
 #. :config:`surface.lapse_rate.file` (*string*)
 
