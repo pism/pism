@@ -54,7 +54,7 @@ Changes since v1.1
   till.
 - Implement the ISMIP6 front retreat parameterization. Reads a time-dependent ice extent
   mask (variable name: `land_ice_area_fraction_retreat`) from a file specified using the
-  configuration parameter `geometry.front_retreat.ismip6.file`. (FIXME: unfinished.)
+  configuration parameter `geometry.front_retreat.prescribed.file`.
 - Add configuration parameters `output.ISMIP6` (follow ISMIP6 conventions),
   `output.use_MKS` (save output variables in MKS units), `output.ISMIP6_variables` (list
   of variables to report when `-extra_vars ismip6_greenland` is given).
