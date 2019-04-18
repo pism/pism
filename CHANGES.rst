@@ -57,7 +57,7 @@ Changes since v1.1
   configuration parameter `geometry.front_retreat.prescribed.file`.
 - Add configuration parameters `output.ISMIP6` (follow ISMIP6 conventions),
   `output.use_MKS` (save output variables in MKS units), `output.ISMIP6_variables` (list
-  of variables to report when `-extra_vars ismip6_greenland` is given).
+  of variables to report when `-extra_vars ismip6` is given).
 
 Changes from v1.0 to v1.1
 =========================

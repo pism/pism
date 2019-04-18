@@ -85,8 +85,8 @@ std::set<std::string> IceModel::process_extra_shortcuts(const std::set<std::stri
     result.insert("tendency_of_subglacial_water_mass_at_domain_boundary");
   }
 
-  if (result.find("ismip6_greenland") != result.end()) {
-    result.erase("ismip6_greenland");
+  if (result.find("ismip6") != result.end()) {
+    result.erase("ismip6");
     for (auto v : set_split(m_config->get_string("output.ISMIP6_variables"), ',')) {
       result.insert(v);
     }
