@@ -1941,12 +1941,6 @@ pism_config:frontal_melt.constant.melt_rate = 1.0;
     pism_config:surface.ismip6.reference_file_type = "string";
     pism_config:surface.ismip6.reference_file_option = "surface_ismip6_reference_file";
 
-    pism_config:surface.ismip6.reference_year = 0;
-    pism_config:surface.ismip6.reference_year_doc = "Reference year to use when ``surface.ismip6.period`` is active.";
-    pism_config:surface.ismip6.reference_year_option = "surface_ismip6_reference_year";
-    pism_config:surface.ismip6.reference_year_type = "integer";
-    pism_config:surface.ismip6.reference_year_units = "years";
-
     pism_config:surface.lapse_rate.file = "";
     pism_config:surface.lapse_rate.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
     pism_config:surface.lapse_rate.file_type = "string";
