@@ -98,6 +98,7 @@
 .. _searise-greenland-data: http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
 .. _searise: http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment
 .. _mismip-code: http://homepages.ulb.ac.be/~fpattyn/mismip/MISMIP_distribution.tar
+.. _Ismip6-greenland: http://www.climate-cryosphere.org/wiki/index.php?title=ISMIP6-Projections-Greenland
 
 .. PISM-related external links
 

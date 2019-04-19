@@ -40,3 +40,5 @@ code modifications; see the following sub-sections for details.
    flowline.rst
 
    modifying-pism.rst
+
+   ismip6.rst
