@@ -875,16 +875,19 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     check_bounds(m_Wtill, m_config->get_double("hydrology.tillwat_max"));
 #endif
 
+    // updates ghosts of m_Wstag
     water_thickness_staggered(m_W,
                               inputs.geometry->cell_type,
                               m_Wstag);
 
     double maxKW = 0.0;
+    // updates ghosts of m_Kstag
     compute_conductivity(m_Wstag,
                          subglacial_water_pressure(),
                          m_bottom_surface,
                          m_Kstag, maxKW);
 
+    // ghosts of m_Vstag are not updated
     compute_velocity(m_Wstag,
                      subglacial_water_pressure(),
                      m_bottom_surface,
@@ -892,7 +895,8 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
                      inputs.no_model_mask,
                      m_Vstag);
 
-    // to get Q, W needs valid ghosts
+    // to get Q, W needs valid ghosts (ghosts of m_Vstag are not used)
+    // updates ghosts of m_Qstag
     advective_fluxes(m_Vstag, m_W, m_Qstag);
 
     m_Qstag_average.add(hdt, m_Qstag);
@@ -926,6 +930,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
                    m_no_model_mask_change);
 
     // update Wnew from W, Wtill, Wtillnew, Wstag, Q, input_rate
+    // uses ghosts of m_W, m_Wstag, m_Qstag, m_Kstag
     update_W(hdt,
              m_surface_input_rate,
              m_basal_melt_rate,
@@ -943,8 +948,9 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
                    m_conservation_error_change,
                    m_no_model_mask_change);
 
-    // transfer new into old
+    // transfer new into old (updates ghosts of m_W)
     m_W.copy_from(m_Wnew);
+    // m_Wtill has no ghosts
     m_Wtill.copy_from(m_Wtillnew);
   } // end of the time-stepping loop
 
