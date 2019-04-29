@@ -630,50 +630,51 @@ void wall_melt(const Routing &model,
   bed has valid ghosts.
 */
 void Routing::compute_velocity(const IceModelVec2Stag &W,
-                               const IceModelVec2S &P,
+                               const IceModelVec2S &pressure,
                                const IceModelVec2S &bed,
                                const IceModelVec2Stag &K,
                                const IceModelVec2Int *no_model_mask,
                                IceModelVec2Stag &result) const {
-  double dbdx, dbdy, dPdx, dPdy;
+  IceModelVec2S &P = m_R;
+  P.copy_from(pressure);  // yes, it updates ghosts
 
-  IceModelVec2S &pressure = m_R;
-  pressure.copy_from(P);  // yes, it updates ghosts
-
-  IceModelVec::AccessList list{&pressure, &W, &K, &bed, &result};
+  IceModelVec::AccessList list{&P, &W, &K, &bed, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (W(i, j, 0) > 0.0) {
-      dPdx = (pressure(i + 1, j) - pressure(i, j)) / m_dx;
-      dbdx = (bed(i + 1, j) - bed(i, j)) / m_dx;
-      result(i, j, 0) =  - K(i, j, 0) * (dPdx + m_rg * dbdx);
+      double
+        P_x = (P(i + 1, j) - P(i, j)) / m_dx,
+        b_x = (bed(i + 1, j) - bed(i, j)) / m_dx;
+      result(i, j, 0) = - K(i, j, 0) * (P_x + m_rg * b_x);
     } else {
       result(i, j, 0) = 0.0;
     }
 
     if (W(i, j, 1) > 0.0) {
-      dPdy = (pressure(i, j + 1) - pressure(i, j)) / m_dy;
-      dbdy = (bed(i, j + 1) - bed(i, j)) / m_dy;
-      result(i, j, 1) =  - K(i, j, 1) * (dPdy + m_rg * dbdy);
+      double
+        P_y = (P(i, j + 1) - P(i, j)) / m_dy,
+        b_y = (bed(i, j + 1) - bed(i, j)) / m_dy;
+      result(i, j, 1) = - K(i, j, 1) * (P_y + m_rg * b_y);
     } else {
       result(i, j, 1) = 0.0;
     }
   }
 
   if (no_model_mask) {
-    const IceModelVec2Int &M = *no_model_mask;
-    list.add(M);
+    list.add(*no_model_mask);
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (M(i, j) or M(i + 1, j)) {
+      auto M = no_model_mask->int_star(i, j);
+
+      if (M.ij or M.e) {
         result(i, j, 0) = 0.0;
       }
 
-      if (M(i, j) or M(i, j + 1)) {
+      if (M.ij or M.n) {
         result(i, j, 1) = 0.0;
       }
     }
@@ -709,7 +710,7 @@ void Routing::advective_fluxes(const IceModelVec2Stag &V,
  */
 double Routing::max_timestep_W_diff(double KW_max) const {
   double D_max = m_rg * KW_max;
-  double result = 1.0/(m_dx*m_dx) + 1.0/(m_dy*m_dy);
+  double result = 1.0 / (m_dx * m_dx) + 1.0 / (m_dy * m_dy);
   return 0.25 / (D_max * result);
 }
 
@@ -720,7 +721,10 @@ double Routing::max_timestep_W_cfl() const {
   // V could be zero if P is constant and bed is flat
   std::vector<double> tmp = m_Vstag.absmaxcomponents();
 
-  return 0.5 / (tmp[0]/m_dx + tmp[1]/m_dy); // FIXME: is regularization needed?
+  // add a safety margin
+  double alpha = 0.95;
+
+  return alpha * 0.5 / (tmp[0]/m_dx + tmp[1]/m_dy); // FIXME: is regularization needed?
 }
 
 
