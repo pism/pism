@@ -34,6 +34,8 @@
 #include "pism/energy/CHSystem.hh"
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/energy/utilities.hh"
+#include "pism/util/IceModelVec2T.hh"
+#include "pism/hydrology/Hydrology.hh"
 
 namespace pism {
 
@@ -443,6 +445,33 @@ void IceRegionalModel::init_diagnostics() {
     m_diagnostics["ch_liqfrac"]   = Diagnostic::Ptr(new CHLiquidWaterFraction(this));
     m_diagnostics["ch_heat_flux"] = Diagnostic::Ptr(new CHHeatFlux(this));
   }
+}
+
+void IceRegionalModel::hydrology_step() {
+  hydrology::Inputs inputs;
+
+  IceModelVec2S &sliding_speed = m_work2d[0];
+  sliding_speed.set_to_magnitude(m_stress_balance->advective_velocity());
+
+  inputs.no_model_mask      = &m_no_model_mask;
+  inputs.geometry           = &m_geometry;
+  inputs.surface_input_rate = nullptr;
+  inputs.basal_melt_rate    = &m_basal_melt_rate;
+  inputs.ice_sliding_speed  = &sliding_speed;
+
+  if (m_surface_input_for_hydrology) {
+    m_surface_input_for_hydrology->update(m_time->current(), m_dt);
+    m_surface_input_for_hydrology->average(m_time->current(), m_dt);
+    inputs.surface_input_rate = m_surface_input_for_hydrology.get();
+  } else if (m_config->get_boolean("hydrology.surface_input_from_runoff")) {
+    // convert [kg m-2] to [kg m-2 s-1]
+    IceModelVec2S &surface_input_rate = m_work2d[1];
+    surface_input_rate.copy_from(m_surface->runoff());
+    surface_input_rate.scale(1.0 / m_dt);
+    inputs.surface_input_rate = &surface_input_rate;
+  }
+
+  m_subglacial_hydrology->update(m_time->current(), m_dt, inputs);
 }
 
 

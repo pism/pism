@@ -662,34 +662,9 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
-  {
-    hydrology::Inputs inputs;
-
-    IceModelVec2S &sliding_speed = m_work2d[0];
-    sliding_speed.set_to_magnitude(m_stress_balance->advective_velocity());
-
-    inputs.no_model_mask      = nullptr;
-    inputs.geometry           = &m_geometry;
-    inputs.surface_input_rate = nullptr;
-    inputs.basal_melt_rate    = &m_basal_melt_rate;
-    inputs.ice_sliding_speed  = &sliding_speed;
-
-    if (m_surface_input_for_hydrology) {
-      m_surface_input_for_hydrology->update(current_time, m_dt);
-      m_surface_input_for_hydrology->average(current_time, m_dt);
-      inputs.surface_input_rate = m_surface_input_for_hydrology.get();
-    } else if (m_config->get_boolean("hydrology.surface_input_from_runoff")) {
-      // convert [kg m-2] to [kg m-2 s-1]
-      IceModelVec2S &result = m_work2d[0];
-      result.copy_from(m_surface->runoff());
-      result.scale(1.0 / m_dt);
-      inputs.surface_input_rate = &result;
-    }
-
-    profiling.begin("basal_hydrology");
-    m_subglacial_hydrology->update(current_time, m_dt, inputs);
-    profiling.end("basal_hydrology");
-  }
+  profiling.begin("basal_hydrology");
+  hydrology_step();
+  profiling.end("basal_hydrology");
 
   //! \li compute the bed deformation, which depends on current thickness, bed elevation,
   //! and sea level
@@ -760,6 +735,36 @@ void IceModel::step(bool do_mass_continuity,
 
   // end the flag line
   m_stdout_flags += " " + m_adaptive_timestep_reason;
+}
+
+/*!
+ * Note: don't forget to update IceRegionalModel::hydrology_step() if necessary.
+ */
+void IceModel::hydrology_step() {
+  hydrology::Inputs inputs;
+
+  IceModelVec2S &sliding_speed = m_work2d[0];
+  sliding_speed.set_to_magnitude(m_stress_balance->advective_velocity());
+
+  inputs.no_model_mask      = nullptr;
+  inputs.geometry           = &m_geometry;
+  inputs.surface_input_rate = nullptr;
+  inputs.basal_melt_rate    = &m_basal_melt_rate;
+  inputs.ice_sliding_speed  = &sliding_speed;
+
+  if (m_surface_input_for_hydrology) {
+    m_surface_input_for_hydrology->update(m_time->current(), m_dt);
+    m_surface_input_for_hydrology->average(m_time->current(), m_dt);
+    inputs.surface_input_rate = m_surface_input_for_hydrology.get();
+  } else if (m_config->get_boolean("hydrology.surface_input_from_runoff")) {
+    // convert [kg m-2] to [kg m-2 s-1]
+    IceModelVec2S &surface_input_rate = m_work2d[1];
+    surface_input_rate.copy_from(m_surface->runoff());
+    surface_input_rate.scale(1.0 / m_dt);
+    inputs.surface_input_rate = &surface_input_rate;
+  }
+
+  m_subglacial_hydrology->update(m_time->current(), m_dt, inputs);
 }
 
 //! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.

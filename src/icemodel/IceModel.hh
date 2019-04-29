@@ -332,6 +332,8 @@ protected:
   virtual void bedrock_thermal_model_step();
   virtual void energy_step();
 
+  virtual void hydrology_step();
+
   virtual void combine_basal_melt_rate(const Geometry &geometry,
                                        const IceModelVec2S &shelf_base_mass_flux,
                                        const IceModelVec2S &grounded_basal_melt_rate,
