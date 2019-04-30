@@ -155,12 +155,7 @@ void RoutingSteady::update_impl(double t, double dt, const Inputs& inputs) {
                        m_Q);
   m_Q.scale(1.0 / dt);
 
-  m_log->message(2,
-                 "  took %d hydrology sub-steps with average dt = %.6f years (%.3f s or %.3f hours)\n",
-                 step_counter,
-                 units::convert(m_sys, dt / step_counter, "seconds", "years"),
-                 dt / step_counter,
-                 (dt / step_counter) / 3600.0);
+  m_log->message(2, "  performed %d routing_steady hydrology iterations\n", step_counter);
 }
 
 
