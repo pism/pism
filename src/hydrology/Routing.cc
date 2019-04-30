@@ -171,9 +171,9 @@ public:
               SpatialVariableMetadata(m_sys, "bwatvel[1]")};
 
     set_attrs("velocity of water in subglacial layer, i-offset", "",
-              "m s-1", "m year-1", 0);
+              "m s-1", "m s-1", 0);
     set_attrs("velocity of water in subglacial layer, j-offset", "",
-              "m s-1", "m year-1", 1);
+              "m s-1", "m s-1", 1);
   }
 protected:
   virtual IceModelVec::Ptr compute_impl() const {
