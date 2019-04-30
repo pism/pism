@@ -168,7 +168,7 @@ void RoutingSteady::update_impl(double t, double dt, const Inputs& inputs) {
 
   The advection velocity is given by the formula
 
-  @f[ \mathbf{V} = - \nabla (P + \rho_w g b) / \left| \nabla (P + \rho_w g b) \right| @f]
+  @f[ \mathbf{V} = - \nabla (P + \rho_w g (b + W)) / \left| \nabla (P + \rho_w g (b + W)) \right| @f]
 
   where @f$ \mathbf{V} @f$ is the water velocity, @f$ P @f$ is the water
   pressure, and @f$ b @f$ is the bedrock elevation.
@@ -195,14 +195,16 @@ void RoutingSteady::compute_velocity(const IceModelVec2Stag &W,
 
     if (W(i, j, 0) > 0.0) {
       double
+        W_x = (W(i + 1, j, 0) - W(i - 1, j, 0)) / (2.0 * m_dx),
+        W_y = (W(i, j + 1, 0) - W(i, j - 1, 0)) / (2.0 * m_dy),
         P_x = (P(i + 1, j) - P(i, j)) / m_dx,
         b_x = (bed(i + 1, j) - bed(i, j)) / m_dx,
         P_y = (+ P(i + 1, j + 1) + P(i, j + 1)
                - P(i + 1, j - 1) - P(i, j - 1)) / (4.0 * m_dy),
         b_y = (+ bed(i + 1, j + 1) + bed(i, j + 1)
                - bed(i + 1, j - 1) - bed(i, j - 1)) / (4.0 * m_dy),
-        u   = - (P_x + m_rg * b_x),
-        v   = - (P_y + m_rg * b_y),
+        u   = - (P_x + m_rg * (b_x + W_x)),
+        v   = - (P_y + m_rg * (b_y + W_y)),
         S   = Vector2(u, v).magnitude();
 
       result(i, j, 0) = S > 0.0 ? u / S : 0.0;
@@ -212,14 +214,16 @@ void RoutingSteady::compute_velocity(const IceModelVec2Stag &W,
 
     if (W(i, j, 1) > 0.0) {
       double
+        W_x = (W(i + 1, j, 1) - W(i - 1, j, 1)) / (2.0 * m_dx),
+        W_y = (W(i, j + 1, 1) - W(i, j - 1, 1)) / (2.0 * m_dy),
         P_x = (+ P(i + 1, j + 1) + P(i + 1, j)
                - P(i - 1, j + 1) - P(i - 1, j)) / (4.0 * m_dx),
         b_x = (+ bed(i + 1, j + 1) + bed(i + 1, j)
                - bed(i - 1, j + 1) - bed(i - 1, j)) / (4.0 * m_dx),
         P_y = (P(i, j + 1) - P(i, j)) / m_dy,
         b_y = (bed(i, j + 1) - bed(i, j)) / m_dy,
-        u   = - (P_x + m_rg * b_x),
-        v   = - (P_y + m_rg * b_y),
+        u   = - (P_x + m_rg * (b_x + W_x)),
+        v   = - (P_y + m_rg * (b_y + W_y)),
         S   = Vector2(u, v).magnitude();
 
       result(i, j, 1) = S > 0.0 ? v / S : 0.0;
