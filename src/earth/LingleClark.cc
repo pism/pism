@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -40,14 +40,14 @@ LingleClark::LingleClark(IceGrid::ConstPtr g)
   m_bed_displacement.set_attrs("internal",
                                "total (viscous and elastic) displacement "
                                "in the Lingle-Clark bed deformation model",
-                               "meters", "");
+                               "meters", "meters", "", 0);
 
   m_work0 = m_bed_displacement.allocate_proc0_copy();
 
   m_relief.create(m_grid, "bed_relief", WITHOUT_GHOSTS);
   m_relief.set_attrs("internal",
                      "bed relief relative to the modeled bed displacement",
-                     "meters", "");
+                     "meters", "meters", "", 0);
 
   bool use_elastic_model = m_config->get_boolean("bed_deformation.lc.elastic_model");
 
@@ -72,7 +72,8 @@ LingleClark::LingleClark(IceGrid::ConstPtr g)
   m_viscous_bed_displacement.set_attrs("model state",
                                        "bed displacement in the viscous half-space "
                                        "bed deformation model; "
-                                       "see BuelerLingleBrown", "meters", "");
+                                       "see BuelerLingleBrown",
+                                       "meters", "meters", "", 0);
 
   // coordinate variables of the extended grid should have different names
   m_viscous_bed_displacement.metadata().get_x().set_name("x_lc");

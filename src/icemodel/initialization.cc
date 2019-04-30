@@ -27,7 +27,6 @@
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
 #include "pism/frontretreat/calving/FloatKill.hh"
-#include "pism/frontretreat/calving/OceanKill.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/hydrology/NullTransport.hh"
@@ -63,6 +62,7 @@
 #include "pism/energy/EnthalpyModel.hh"
 #include "pism/energy/TemperatureModel.hh"
 #include "pism/frontretreat/FrontRetreat.hh"
+#include "pism/frontretreat/PrescribedRetreat.hh"
 #include "pism/coupler/frontalmelt/Factory.hh"
 
 namespace pism {
@@ -765,6 +765,7 @@ void IceModel::misc_setup() {
 
   init_calving();
   init_frontal_melt();
+  init_front_retreat();
   init_diagnostics();
   init_snapshots();
   init_backups();
@@ -841,22 +842,22 @@ void IceModel::init_frontal_melt() {
   }
 }
 
+void IceModel::init_front_retreat() {
+  auto front_retreat_file = m_config->get_string("geometry.front_retreat.prescribed.file");
+
+  if (not front_retreat_file.empty()) {
+    m_prescribed_retreat.reset(new PrescribedRetreat(m_grid));
+
+    m_prescribed_retreat->init();
+
+    m_submodels["prescribed front retreat"] = m_prescribed_retreat.get();
+  }
+}
+
 //! \brief Initialize calving mechanisms.
 void IceModel::init_calving() {
 
   std::set<std::string> methods = set_split(m_config->get_string("calving.methods"), ',');
-
-  if (methods.find("ocean_kill") != methods.end()) {
-
-    if (not m_ocean_kill_calving) {
-      m_ocean_kill_calving.reset(new calving::OceanKill(m_grid));
-    }
-
-    m_ocean_kill_calving->init();
-    methods.erase("ocean_kill");
-
-    m_submodels["ocean kill calving"] = m_ocean_kill_calving.get();
-  }
 
   if (methods.find("thickness_calving") != methods.end()) {
 

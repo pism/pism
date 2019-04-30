@@ -57,11 +57,10 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   m_ice_surface_temp_anomaly->set_attrs("climate_forcing",
                                         "anomaly of the temperature of the ice at the ice surface"
                                         " but below firn processes",
-                                        "Kelvin", "");
+                                        "Kelvin", "Kelvin", "", 0);
   m_climatic_mass_balance_anomaly->set_attrs("climate_forcing",
                                              "anomaly of the surface mass balance (accumulation/ablation) rate",
-                                             "kg m-2 s-1", "");
-  m_climatic_mass_balance_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
+                                             "kg m-2 s-1", "kg m-2 year-1", "", 0);
 
   m_mass_flux = allocate_mass_flux(g);
   m_temperature = allocate_temperature(g);

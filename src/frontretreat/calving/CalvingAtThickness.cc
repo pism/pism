@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,8 +38,8 @@ CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
 
   m_calving_threshold.set_attrs("diagnostic",
                                 "threshold used by the 'calving at threshold' calving method",
-                                "m",
-                                ""); // no standard name
+                                "m", "m",
+                                "", 0); // no standard name
   m_calving_threshold.set_time_independent(true);
 }
 

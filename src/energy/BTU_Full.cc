@@ -73,7 +73,7 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
 
     m_temp.set_attrs("model_state",
                     "lithosphere (bedrock) temperature, in BTU_Full",
-                    "K", "");
+                     "K", "K", "", 0);
     m_temp.metadata().set_double("valid_min", 0.0);
   }
 

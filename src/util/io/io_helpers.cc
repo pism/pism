@@ -724,23 +724,18 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
 
 //! \brief Write a double array to a file.
 /*!
-  Converts the units if `use_glaciological_units` is `true`.
+  Converts units if internal and "glaciological" units are different.
  */
 void write_spatial_variable(const SpatialVariableMetadata &var,
                             const IceGrid& grid,
                             const PIO &file,
                             const double *input) {
 
-  // find or define the variable
-  std::string name_found;
-  bool exists, found_by_standard_name;
-  file.inq_var(var.get_name(),
-               var.get_string("standard_name"),
-               exists, name_found, found_by_standard_name);
+  auto name = var.get_name();
 
-  if (not exists) {
+  if (not file.inq_var(name)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in '%s'.",
-                                  var.get_name().c_str(),
+                                  name.c_str(),
                                   file.inq_filename().c_str());
   }
 
@@ -766,9 +761,9 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
                      units,
                      glaciological_units).convert_doubles(&tmp[0], tmp.size());
 
-    put_vec(file, grid, name_found, nlevels, &tmp[0]);
+    put_vec(file, grid, name, nlevels, &tmp[0]);
   } else {
-    put_vec(file, grid, name_found, nlevels, input);
+    put_vec(file, grid, name, nlevels, input);
   }
 }
 
@@ -1370,10 +1365,6 @@ void read_attributes(const PIO &nc,
 
 //! Write variable attributes to a NetCDF file.
 /*!
-  - If use_glaciological_units == true, "glaciological_units" are
-    written under the name "units" plus the valid range is written in
-    glaciological units.
-
   - If both valid_min and valid_max are set, then valid_range is written
     instead of the valid_min, valid_max pair.
 

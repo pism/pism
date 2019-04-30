@@ -40,7 +40,7 @@ DischargeRouting::DischargeRouting(IceGrid::ConstPtr grid)
   m_theta_ocean.reset(new IceModelVec2T(grid, "theta_ocean", 1, evaluations_per_year));
   m_theta_ocean->set_attrs("climate_forcing",
                            "potential temperature of the adjacent ocean",
-                           "Celsius", "");
+                           "Celsius", "Celsius", "", 0);
 
   m_theta_ocean->init_constant(0.0);
 }
@@ -72,7 +72,7 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
 
   m_theta_ocean->set_attrs("climate_forcing",
                            "potential temperature of the adjacent ocean",
-                           "Celsius", "");
+                           "Celsius", "Celsius", "", 0);
 
   m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
 }
@@ -113,7 +113,8 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       // forcing is generally not available at the grounding line.
       double TF = (*m_theta_ocean)(i, j);
 
-      double cross_section_area = ice_thickness(i, j) * grid_spacing;
+      double water_depth = std::max(sea_level_elevation(i, j) - bed_elevation(i, j), 0.0),
+        submerged_front_area = water_depth * grid_spacing;
 
       // Convert subglacial water flux (m^2/s) to an "effective subglacial freshwater
       // velocity" or flux per unit area of ice front in m/day (see Xu et al 2013, section
@@ -121,12 +122,10 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       //
       // [flux] = m^2 / s, so
       // [flux * grid_spacing] = m^3 / s, so
-      // [flux * grid_spacing / cross_section_area] = m / s, and
-      // [flux * grid_spacing  * (s / day) / cross_section_area] = m / day
+      // [flux * grid_spacing / submerged_front_area] = m / s, and
+      // [flux * grid_spacing  * (s / day) / submerged_front_area] = m / day
       double Q_sg = water_flux(i, j) * grid_spacing;
-      double q_sg = Q_sg / cross_section_area * seconds_per_day;
-
-      double water_depth = sea_level_elevation(i, j) - bed_elevation(i, j);
+      double q_sg = Q_sg / submerged_front_area * seconds_per_day;
 
       (*m_frontal_melt_rate)(i, j) = physics.frontal_melt_from_undercutting(water_depth, q_sg, TF);
       // convert from m / day to m / s

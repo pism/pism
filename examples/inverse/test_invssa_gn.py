@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018 David Maxwell
+# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018, 2019 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -67,8 +67,9 @@ if __name__ == "__main__":
     # a) tauc from the input file (default)
     # b) tauc_prior from the inv_datafile if -use_tauc_prior is set
     tauc_prior = PISM.model.createYieldStressVec(grid, 'tauc_prior')
-    tauc_prior.set_attrs(
-        "diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "")
+    tauc_prior.set_attrs("diagnostic",
+                         "initial guess for (pseudo-plastic) basal yield stress in an inversion",
+                         "Pa", "Pa", "", 0)
     tauc = PISM.model.createYieldStressVec(grid)
     if use_tauc_prior:
         tauc_prior.regrid(inv_data_filename, critical=True)

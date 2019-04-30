@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -60,11 +60,10 @@ Given::Given(IceGrid::ConstPtr g)
 
   m_shelfbtemp->set_attrs("climate_forcing",
                           "absolute temperature at ice shelf base",
-                          "Kelvin", "");
+                          "Kelvin", "Kelvin", "", 0);
   m_shelfbmassflux->set_attrs("climate_forcing",
                               "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                              "kg m-2 s-1", "");
-  m_shelfbmassflux->metadata().set_string("glaciological_units", "kg m-2 year-1");
+                              "kg m-2 s-1", "kg m-2 year-1", "", 0);
 }
 
 Given::~Given() {

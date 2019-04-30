@@ -137,7 +137,7 @@ EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
     // POSSIBLE standard name = land_ice_enthalpy
     m_ice_enthalpy.set_attrs("model_state",
                              "ice enthalpy (includes sensible heat, latent heat, pressure)",
-                             "J kg-1", "");
+                             "J kg-1", "J kg-1", "", 0);
   }
 
   {
@@ -145,10 +145,9 @@ EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
     // ghosted to allow the "redundant" computation of tauc
     m_basal_melt_rate.set_attrs("model_state",
                                 "ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)",
-                                "m s-1", "");
+                                "m s-1", "m year-1", "", 0);
     // We could use land_ice_basal_melt_rate, but that way both basal_melt_rate_grounded and bmelt
     // have this standard name.
-    m_basal_melt_rate.metadata().set_string("glaciological_units", "m year-1");
     m_basal_melt_rate.metadata().set_string("comment", "positive basal melt rate corresponds to ice loss");
   }
 
@@ -157,7 +156,7 @@ EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
     m_work.create(m_grid, "work_vector", WITHOUT_GHOSTS);
     m_work.set_attrs("internal",
                      "usually new values of temperature or enthalpy during time step",
-                     "", "");
+                     "", "", "", 0);
   }
 }
 
@@ -177,7 +176,8 @@ void EnergyModel::init_enthalpy(const PIO &input_file, bool do_regrid, int recor
     {
       temp.set_name("temp");
       temp.metadata(0).set_name("temp");
-      temp.set_attrs("temporary", "ice temperature", "Kelvin", "land_ice_temperature");
+      temp.set_attrs("temporary", "ice temperature",
+                     "Kelvin", "Kelvin", "land_ice_temperature", 0);
 
       if (do_regrid) {
         temp.regrid(input_file, CRITICAL);
@@ -194,7 +194,7 @@ void EnergyModel::init_enthalpy(const PIO &input_file, bool do_regrid, int recor
       liqfrac.set_name("liqfrac");
       liqfrac.metadata(0).set_name("liqfrac");
       liqfrac.set_attrs("temporary", "ice liquid water fraction",
-                        "1", "");
+                        "1", "1", "", 0);
 
       if (do_regrid) {
         liqfrac.regrid(input_file, CRITICAL);
@@ -347,8 +347,7 @@ public:
   LiquifiedIceFlux(const EnergyModel *m)
     : TSDiag<TSFluxDiagnostic, EnergyModel>(m, "liquified_ice_flux") {
 
-    m_ts.variable().set_string("units", "m3 / second");
-    m_ts.variable().set_string("glaciological_units", "m3 / year");
+    set_units("m3 / second", "m3 / year");
     m_ts.variable().set_string("long_name",
                                "rate of ice loss due to liquefaction,"
                                " averaged over the reporting interval");

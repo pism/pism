@@ -55,7 +55,7 @@ class PIK(TestCase):
         self.geometry = create_geometry(self.grid)
 
         precip = PISM.IceModelVec2S(self.grid, "precipitation", PISM.WITHOUT_GHOSTS)
-        precip.set_attrs("climate", "dummy precipitation field", "kg m-2 s-1", "")
+        precip.set_attrs("climate", "dummy precipitation field", "kg m-2 s-1", "kg m-2 s-1", "", 0)
         precip.set(10.0)
         precip.dump(self.filename)
 

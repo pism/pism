@@ -38,13 +38,13 @@ Distributed::Distributed(IceGrid::ConstPtr g)
   m_P.create(m_grid, "bwp", WITH_GHOSTS, 1);
   m_P.set_attrs("model_state",
                 "pressure of transportable water in subglacial layer",
-                "Pa", "");
+                "Pa", "Pa", "", 0);
   m_P.metadata().set_double("valid_min", 0.0);
 
   m_Pnew.create(m_grid, "Pnew_internal", WITHOUT_GHOSTS);
   m_Pnew.set_attrs("internal",
                    "new transportable subglacial water pressure during update",
-                   "Pa", "");
+                   "Pa", "Pa", "", 0);
   m_Pnew.metadata().set_double("valid_min", 0.0);
 }
 
@@ -84,7 +84,8 @@ void Distributed::bootstrap_impl(const PIO &input_file,
 
     IceModelVec2S sliding_speed;
     sliding_speed.create(m_grid, "velbase_mag", WITHOUT_GHOSTS);
-    sliding_speed.set_attrs("internal", "basal sliding speed", "m s-1", "");
+    sliding_speed.set_attrs("internal", "basal sliding speed",
+                            "m s-1", "m s-1", "", 0);
 
     std::string filename = m_config->get_string("hydrology.distributed.sliding_speed_file");
 

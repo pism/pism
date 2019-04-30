@@ -29,7 +29,6 @@
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
 #include "pism/frontretreat/calving/FloatKill.hh"
-#include "pism/frontretreat/calving/OceanKill.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/hydrology/Hydrology.hh"
@@ -62,25 +61,24 @@ FractureFields::FractureFields(IceGrid::ConstPtr grid) {
   const unsigned int WIDE_STENCIL = config->get_double("grid.max_stencil_width");
 
   density.create(grid, "fracture_density", WITH_GHOSTS, WIDE_STENCIL);
-  density.set_attrs("model_state", "fracture density in ice shelf", "", "");
-  density.metadata().set_double("valid_max", 1.0);
-  density.metadata().set_double("valid_min", 0.0);
+  density.set_attrs("model_state", "fracture density in ice shelf", "", "", "", 0);
+  density.metadata().set_doubles("valid_range", {0.0, 1.0});
 
   growth_rate.create(grid, "fracture_growth_rate", WITH_GHOSTS, WIDE_STENCIL);
-  growth_rate.set_attrs("model_state", "fracture growth rate", "second-1", "");
+  growth_rate.set_attrs("model_state", "fracture growth rate", "second-1", "second-1", "", 0);
   growth_rate.metadata().set_double("valid_min", 0.0);
 
   healing_rate.create(grid, "fracture_healing_rate", WITH_GHOSTS, WIDE_STENCIL);
-  healing_rate.set_attrs("model_state", "fracture healing rate", "second-1", "");
+  healing_rate.set_attrs("model_state", "fracture healing rate", "second-1", "second-1", "", 0);
 
   flow_enhancement.create(grid, "fracture_flow_enhancement", WITH_GHOSTS, WIDE_STENCIL);
-  flow_enhancement.set_attrs("model_state", "fracture-induced flow enhancement", "", "");
+  flow_enhancement.set_attrs("model_state", "fracture-induced flow enhancement", "", "", "", 0);
 
   age.create(grid, "fracture_age", WITH_GHOSTS, WIDE_STENCIL);
-  age.set_attrs("model_state", "age since fracturing", "years", "");
+  age.set_attrs("model_state", "age since fracturing", "seconds", "years", "", 0);
 
   toughness.create(grid, "fracture_toughness", WITH_GHOSTS, WIDE_STENCIL);
-  toughness.set_attrs("model_state", "fracture toughness", "Pa", "");
+  toughness.set_attrs("model_state", "fracture toughness", "Pa", "Pa", "", 0);
 
   strain_rates.create(grid, "strain_rates", WITH_GHOSTS,
                       2, // stencil width, has to match or exceed the "offset" in eigenCalving
@@ -89,12 +87,12 @@ FractureFields::FractureFields(IceGrid::ConstPtr grid) {
   strain_rates.metadata(0).set_name("eigen1");
   strain_rates.set_attrs("internal",
                          "major principal component of horizontal strain-rate",
-                         "second-1", "", 0);
+                         "second-1", "second-1", "", 0);
 
   strain_rates.metadata(1).set_name("eigen2");
   strain_rates.set_attrs("internal",
                          "minor principal component of horizontal strain-rate",
-                         "second-1", "", 1);
+                         "second-1", "second-1", "", 1);
 
   deviatoric_stresses.create(grid, "sigma", WITH_GHOSTS,
                              2, // stencil width
@@ -103,17 +101,17 @@ FractureFields::FractureFields(IceGrid::ConstPtr grid) {
   deviatoric_stresses.metadata(0).set_name("sigma_xx");
   deviatoric_stresses.set_attrs("internal",
                                 "deviatoric stress in x direction",
-                                "Pa", "", 0);
+                                "Pa", "Pa", "", 0);
 
   deviatoric_stresses.metadata(1).set_name("sigma_yy");
   deviatoric_stresses.set_attrs("internal",
                                 "deviatoric stress in y direction",
-                                "Pa", "", 1);
+                                "Pa", "Pa", "", 1);
 
   deviatoric_stresses.metadata(2).set_name("sigma_xy");
   deviatoric_stresses.set_attrs("internal",
                                 "deviatoric shear stress",
-                                "Pa", "", 2);
+                                "Pa", "Pa", "", 2);
 }
 
 IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
@@ -127,7 +125,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     m_run_stats("run_stats", m_sys),
     m_geometry(m_grid),
     m_new_bed_elevation(true),
-    m_discharge(m_grid, "discharge", WITH_GHOSTS),
+    m_thickness_change(g),
     m_ts_times(new std::vector<double>()),
     m_extra_bounds("time_bounds", m_config->get_string("time.dimension_name"), m_sys),
     m_timestamp("timestamp", m_config->get_string("time.dimension_name"), m_sys) {
@@ -191,9 +189,8 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
                                                                 false); // not periodic
     m_surface_input_for_hydrology->set_attrs("diagnostic",
                                              "water input rate for the subglacial hydrology model",
-                                             "kg m-2 s-1", "");
+                                             "kg m-2 s-1", "kg m-2 year-1", "", 0);
     m_surface_input_for_hydrology->metadata().set_double("valid_min", 0.0);
-    m_surface_input_for_hydrology->metadata().set_string("glaciological_units", "kg m-2 year-1");
   }
 }
 
@@ -259,7 +256,7 @@ void IceModel::allocate_storage() {
     // PROPOSED standard_name = land_ice_basal_material_yield_stress
     m_basal_yield_stress.set_attrs("diagnostic",
                                  "yield stress for basal till (plastic or pseudo-plastic model)",
-                                 "Pa", "");
+                                   "Pa", "Pa", "", 0);
     m_grid->variables().add(m_basal_yield_stress);
   }
 
@@ -267,15 +264,14 @@ void IceModel::allocate_storage() {
     m_bedtoptemp.create(m_grid, "bedtoptemp", WITHOUT_GHOSTS);
     m_bedtoptemp.set_attrs("diagnostic",
                            "temperature at the top surface of the bedrock thermal layer",
-                           "Kelvin", "");
+                           "Kelvin", "Kelvin", "", 0);
   }
 
   // basal melt rate
   m_basal_melt_rate.create(m_grid, "bmelt", WITHOUT_GHOSTS);
   m_basal_melt_rate.set_attrs("internal",
                               "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",
-                              "m s-1", "land_ice_basal_melt_rate");
-  m_basal_melt_rate.metadata().set_string("glaciological_units", "m year-1");
+                              "m s-1", "m year-1", "land_ice_basal_melt_rate", 0);
   m_basal_melt_rate.metadata().set_string("comment", "positive basal melt rate corresponds to ice loss");
   m_grid->variables().add(m_basal_melt_rate);
 
@@ -286,7 +282,7 @@ void IceModel::allocate_storage() {
   {
     m_ssa_dirichlet_bc_mask.create(m_grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
     m_ssa_dirichlet_bc_mask.set_attrs("model_state", "Dirichlet boundary mask",
-                                      "", "");
+                                      "", "", "", 0);
     m_ssa_dirichlet_bc_mask.metadata().set_doubles("flag_values", {0, 1});
     m_ssa_dirichlet_bc_mask.metadata().set_string("flag_meanings", "no_data bc_condition");
     m_ssa_dirichlet_bc_mask.metadata().set_output_type(PISM_BYTE);
@@ -307,12 +303,11 @@ void IceModel::allocate_storage() {
     m_ssa_dirichlet_bc_values.create(m_grid, "_ssa_bc", WITH_GHOSTS, WIDE_STENCIL); // u_ssa_bc and v_ssa_bc
     m_ssa_dirichlet_bc_values.set_attrs("model_state",
                                         "X-component of the SSA velocity boundary conditions",
-                                        "m s-1", "", 0);
+                                        "m s-1", "m year-1", "", 0);
     m_ssa_dirichlet_bc_values.set_attrs("model_state",
                                         "Y-component of the SSA velocity boundary conditions",
-                                        "m s-1", "", 1);
+                                        "m s-1", "m year-1", "", 1);
     for (int j = 0; j < 2; ++j) {
-      m_ssa_dirichlet_bc_values.metadata(j).set_string("glaciological_units", "m year-1");
       m_ssa_dirichlet_bc_values.metadata(j).set_doubles("valid_range", {-valid_range, valid_range});
       m_ssa_dirichlet_bc_values.metadata(j).set_double("_FillValue", fill_value);
     }
@@ -376,6 +371,21 @@ void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
   // This will ensure that ice area specific volume is zero if ice thickness is greater
   // than zero, then compute new surface elevation and mask.
   m_geometry.ensure_consistency(m_config->get_double("geometry.ice_free_thickness_standard"));
+
+  if (flag == REMOVE_ICEBERGS) {
+    // clean up partially-filled cells that are not next to ice
+    IceModelVec::AccessList list{&m_geometry.ice_area_specific_volume,
+                                 &m_geometry.cell_type};
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (m_geometry.ice_area_specific_volume(i, j) > 0.0 and
+          not m_geometry.cell_type.next_to_ice(i, j)) {
+        m_geometry.ice_area_specific_volume(i, j) = 0.0;
+      }
+    }
+  }
 }
 
 stressbalance::Inputs IceModel::stress_balance_inputs() {
@@ -583,41 +593,7 @@ void IceModel::step(bool do_mass_continuity,
 
     // calving, frontal melt, and discharge accounting
     profiling.begin("front_retreat");
-    {
-      IceModelVec2S
-        &old_H    = m_work2d[0],
-        &old_Href = m_work2d[1];
-
-      {
-        old_H.copy_from(m_geometry.ice_thickness);
-        old_Href.copy_from(m_geometry.ice_area_specific_volume);
-        m_discharge.set(0.0);
-      }
-
-      front_retreat_step();
-
-      enforce_consistency_of_geometry(REMOVE_ICEBERGS);
-
-      // clean up partially-filled cells that are not next to ice
-      {
-        IceModelVec::AccessList list{&m_geometry.ice_area_specific_volume,
-            &m_geometry.cell_type};
-
-        for (Points p(*m_grid); p; p.next()) {
-          const int i = p.i(), j = p.j();
-
-          if (m_geometry.ice_area_specific_volume(i, j) > 0.0 and
-              not m_geometry.cell_type.next_to_ice(i, j)) {
-            m_geometry.ice_area_specific_volume(i, j) = 0.0;
-          }
-        }
-      }
-
-      accumulate_discharge(m_geometry.ice_thickness,
-                           m_geometry.ice_area_specific_volume,
-                           old_H, old_Href,
-                           m_discharge);
-    }
+    front_retreat_step();
     profiling.end("front_retreat");
 
     m_stdout_flags += "h";
@@ -662,7 +638,7 @@ void IceModel::step(bool do_mass_continuity,
                                            m_basal_melt_rate);
     m_geometry_evolution->apply_mass_fluxes(m_geometry);
 
-    // add removed icebergs to ice discharge
+    // add removed icebergs to discharge due to calving
     {
       IceModelVec2S
         &old_H    = m_work2d[0],
@@ -676,10 +652,11 @@ void IceModel::step(bool do_mass_continuity,
       // the last call has to remove icebergs
       enforce_consistency_of_geometry(REMOVE_ICEBERGS);
 
-      accumulate_discharge(m_geometry.ice_thickness,
-                           m_geometry.ice_area_specific_volume,
-                           old_H, old_Href,
-                           m_discharge);
+      compute_geometry_change(m_geometry.ice_thickness,
+                              m_geometry.ice_area_specific_volume,
+                              old_H, old_Href,
+                              ADD_VALUES,
+                              m_thickness_change.calving);
     }
   }
 
@@ -714,8 +691,8 @@ void IceModel::step(bool do_mass_continuity,
     profiling.end("basal_hydrology");
   }
 
-  //! \li compute the bed deformation, which only depends on current thickness
-  //! and bed elevation
+  //! \li compute the bed deformation, which depends on current thickness, bed elevation,
+  //! and sea level
   if (m_beddef) {
     int topg_state_counter = m_beddef->bed_elevation().state_counter();
 
@@ -978,8 +955,25 @@ const energy::EnergyModel* IceModel::energy_balance_model() const {
   return m_energy_model;
 }
 
-const IceModelVec2S& IceModel::discharge() const {
-  return m_discharge;
+/*!
+ * Return thickness change due to calving (over the last time step).
+ */
+const IceModelVec2S& IceModel::calving() const {
+  return m_thickness_change.calving;
+}
+
+/*!
+ * Return thickness change due to frontal melt (over the last time step).
+ */
+const IceModelVec2S& IceModel::frontal_melt() const {
+  return m_thickness_change.frontal_melt;
+}
+
+/*!
+ * Return thickness change due to forced retreat (over the last time step).
+ */
+const IceModelVec2S& IceModel::forced_retreat() const {
+  return m_thickness_change.forced_retreat;
 }
 
 void warn_about_missing(const Logger &log,
@@ -1104,6 +1098,13 @@ void IceModel::reset_diagnostics() {
   for (auto d : m_diagnostics) {
     d.second->reset();
   }
+}
+
+IceModel::ThicknessChanges::ThicknessChanges(IceGrid::ConstPtr grid)
+  : calving(grid, "thickness_change_due_to_calving", WITHOUT_GHOSTS),
+    frontal_melt(grid, "thickness_change_due_to_frontal_melt", WITHOUT_GHOSTS),
+    forced_retreat(grid, "thickness_change_due_to_forced_retreat", WITHOUT_GHOSTS) {
+  // empty
 }
 
 } // end of namespace pism

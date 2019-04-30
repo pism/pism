@@ -37,7 +37,7 @@ YieldStress::YieldStress(IceGrid::ConstPtr g)
   // PROPOSED standard_name = land_ice_basal_material_yield_stress
   m_basal_yield_stress.set_attrs("model_state",
                                  "yield stress for basal till (plastic or pseudo-plastic model)",
-                                 "Pa", "");
+                                 "Pa", "Pa", "", 0);
 }
 
 YieldStress::~YieldStress() {

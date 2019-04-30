@@ -73,7 +73,6 @@ class Hydrology;
 namespace calving {
 class EigenCalving;
 class vonMisesCalving;
-class OceanKill;
 class FloatKill;
 class CalvingAtThickness;
 class IcebergRemover;
@@ -100,6 +99,7 @@ class IceModelVec2CellType;
 class IceModelVec2T;
 class Component;
 class FrontRetreat;
+class PrescribedRetreat;
 
 struct FractureFields {
   FractureFields(IceGrid::ConstPtr grid);
@@ -145,16 +145,12 @@ public:
   std::map<std::string, std::vector<VariableMetadata>> describe_diagnostics() const;
   std::map<std::string, std::vector<VariableMetadata>> describe_ts_diagnostics() const;
 
-  const IceModelVec2S &discharge() const;
+  const IceModelVec2S &calving() const;
+  const IceModelVec2S &frontal_melt() const;
+  const IceModelVec2S &forced_retreat() const;
 
-  double ice_volume(double thickness_threshold) const;
-  double ice_volume_not_displacing_seawater(double thickness_threshold) const;
-  double sea_level_rise_potential(double thickness_threshold) const;
   double ice_volume_temperate(double thickness_threshold) const;
   double ice_volume_cold(double thickness_threshold) const;
-  double ice_area(double thickness_threshold) const;
-  double ice_area_grounded(double thickness_threshold) const;
-  double ice_area_floating(double thickness_threshold) const;
   double ice_area_temperate(double thickness_threshold) const;
   double ice_area_cold(double thickness_threshold) const;
 
@@ -195,6 +191,7 @@ protected:
   virtual void init_diagnostics();
   virtual void init_calving();
   virtual void init_frontal_melt();
+  virtual void init_front_retreat();
   virtual void prune_diagnostics();
   virtual void update_diagnostics(double dt);
   virtual void reset_diagnostics();
@@ -275,11 +272,11 @@ protected:
   AgeModel *m_age_model;
 
   std::shared_ptr<calving::IcebergRemover>     m_iceberg_remover;
-  std::shared_ptr<calving::OceanKill>          m_ocean_kill_calving;
   std::shared_ptr<calving::FloatKill>          m_float_kill_calving;
   std::shared_ptr<calving::CalvingAtThickness> m_thickness_threshold_calving;
   std::shared_ptr<calving::EigenCalving>       m_eigen_calving;
   std::shared_ptr<calving::vonMisesCalving>    m_vonmises_calving;
+  std::shared_ptr<PrescribedRetreat>           m_prescribed_retreat;
 
   std::shared_ptr<FrontRetreat> m_front_retreat;
 
@@ -345,11 +342,12 @@ protected:
 
   virtual void front_retreat_step();
 
-  virtual void accumulate_discharge(const IceModelVec2S &thickness,
-                                    const IceModelVec2S &Href,
-                                    const IceModelVec2S &thickness_old,
-                                    const IceModelVec2S &Href_old,
-                                    IceModelVec2S &output);
+  void compute_geometry_change(const IceModelVec2S &thickness,
+                               const IceModelVec2S &Href,
+                               const IceModelVec2S &thickness_old,
+                               const IceModelVec2S &Href_old,
+                               InsertMode flag,
+                               IceModelVec2S &output);
 
   // see iMIO.cc
   virtual void regrid();
@@ -373,13 +371,25 @@ protected:
   virtual void update_run_stats();
 
   // working space (a convenience)
-  static const int m_n_work2d = 4;
+  static const int m_n_work2d = 3;
   mutable IceModelVec2S m_work2d[m_n_work2d];
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
 
-  // discharge during the last time step
-  IceModelVec2S m_discharge;
+  struct ThicknessChanges {
+    ThicknessChanges(IceGrid::ConstPtr grid);
+
+    // calving during the last time step
+    IceModelVec2S calving;
+
+    // frontal melt during the last time step
+    IceModelVec2S frontal_melt;
+
+    // parameterized retreat
+    IceModelVec2S forced_retreat;
+  };
+
+  ThicknessChanges m_thickness_change;
 
   /*!
    * The set of variables that the "state" of IceModel consists of.
@@ -421,6 +431,7 @@ protected:
   TimeBoundsMetadata m_extra_bounds;
   void init_extras();
   void write_extras();
+  std::set<std::string> process_extra_shortcuts(const std::set<std::string> &input);
   MaxTimestep extras_max_timestep(double my_t);
 
   // automatic backups

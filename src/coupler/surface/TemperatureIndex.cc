@@ -95,26 +95,26 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
 
   m_air_temp_sd->set_attrs("climate_forcing",
                            "standard deviation of near-surface air temperature",
-                           "Kelvin", "");
+                           "Kelvin", "Kelvin", "", 0);
 
   m_mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   m_mass_flux.set_attrs("diagnostic",
-                                    "instantaneous surface mass balance (accumulation/ablation) rate",
-                                    "kg m-2 s-1",
-                                    "land_ice_surface_specific_mass_balance_flux");
-  m_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
+                        "instantaneous surface mass balance (accumulation/ablation) rate",
+                        "kg m-2 s-1", "kg m-2 s-1",
+                        "land_ice_surface_specific_mass_balance_flux", 0);
+
   m_mass_flux.metadata().set_string("comment", "positive values correspond to ice gain");
 
   m_snow_depth.create(m_grid, "snow_depth", WITHOUT_GHOSTS);
   m_snow_depth.set_attrs("diagnostic",
                          "snow cover depth (set to zero once a year)",
-                         "m", "");
+                         "m", "m", "", 0);
   m_snow_depth.set(0.0);
 
   m_firn_depth.create(m_grid, "firn_depth", WITHOUT_GHOSTS);
   m_firn_depth.set_attrs("diagnostic",
                          "firn cover depth",
-                         "m", "");
+                         "m", "m", "", 0);
   m_firn_depth.metadata().set_double("valid_min", 0.0);
   m_firn_depth.set(0.0);
 
@@ -548,8 +548,7 @@ public:
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
   }
 
 protected:
@@ -610,8 +609,7 @@ public:
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
   }
 
 protected:
@@ -672,8 +670,7 @@ public:
     set_attrs(long_name, "", internal_units, external_units, 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
   }
 
 protected:
@@ -730,8 +727,7 @@ public:
   TotalSurfaceAccumulation(const TemperatureIndex *m)
     : TSDiag<TSFluxDiagnostic, TemperatureIndex>(m, "surface_accumulation_rate") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    set_units("kg s-1", "kg year-1");
     m_ts.variable().set_string("long_name", "surface accumulation rate (PDD model)");
   }
 
@@ -748,8 +744,7 @@ public:
   TotalSurfaceMelt(const TemperatureIndex *m)
     : TSDiag<TSFluxDiagnostic, TemperatureIndex>(m, "surface_melt_rate") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    set_units("kg s-1", "kg year-1");
     m_ts.variable().set_string("long_name", "surface melt rate (PDD model)");
   }
 
@@ -766,8 +761,7 @@ public:
   TotalSurfaceRunoff(const TemperatureIndex *m)
     : TSDiag<TSFluxDiagnostic, TemperatureIndex>(m, "surface_runoff_rate") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    set_units("kg s-1", "kg year-1");
     m_ts.variable().set_string("long_name", "surface runoff rate (PDD model)");
   }
 

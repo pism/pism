@@ -40,14 +40,16 @@ DischargeGiven::DischargeGiven(IceGrid::ConstPtr grid)
   m_theta_ocean.reset(new IceModelVec2T(grid, "theta_ocean", 1, evaluations_per_year));
   m_theta_ocean->set_attrs("climate_forcing",
                            "potential temperature of the adjacent ocean",
-                           "Celsius", "");
+                           "Celsius", "Celsius", "", 0);
 
   m_theta_ocean->init_constant(0.0);
 
-  m_subglacial_discharge.reset(new IceModelVec2T(grid, "subglacial_discharge", 1, evaluations_per_year));
+  m_subglacial_discharge.reset(new IceModelVec2T(grid,
+                                                 "subglacial_discharge", 1,
+                                                 evaluations_per_year));
   m_subglacial_discharge->set_attrs("climate_forcing",
-                           "potential temperature of the adjacent ocean",
-                           "Celsius", "");
+                                    "subglacial discharge",
+                                    "kg m-2 s-1", "kg m-2 year-1", "", 0);
 
   m_subglacial_discharge->init_constant(0.0);
 }
@@ -87,13 +89,13 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
 
   m_theta_ocean->set_attrs("climate_forcing",
                            "potential temperature of the adjacent ocean",
-                           "Celsius", "");
+                           "Celsius", "Celsius", "", 0);
 
   m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
 
   m_subglacial_discharge->set_attrs("climate_forcing",
-                           "subglacial discharge",
-                           "kg m-2 s-1", "");
+                                    "subglacial discharge",
+                                    "kg m-2 s-1", "kg m-2 year-1", "", 0);
 
   m_subglacial_discharge->init(opt.filename, opt.period, opt.reference_time);
 }
@@ -112,20 +114,22 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
   m_theta_ocean->update(t, dt);
   m_subglacial_discharge->update(t, dt);
 
+  m_theta_ocean->average(t, dt);
+  m_subglacial_discharge->average(t, dt);
+
   FrontalMeltPhysics physics(*m_config);
 
   const IceModelVec2CellType &cell_type           = inputs.geometry->cell_type;
   const IceModelVec2S        &bed_elevation       = inputs.geometry->bed_elevation;
-  const IceModelVec2S        &ice_thickness       = inputs.geometry->ice_thickness;
   const IceModelVec2S        &sea_level_elevation = inputs.geometry->sea_level_elevation;
 
   IceModelVec::AccessList list
-    {&ice_thickness, &bed_elevation, &cell_type, &sea_level_elevation,
+    {&bed_elevation, &cell_type, &sea_level_elevation,
      m_theta_ocean.get(), m_subglacial_discharge.get(), m_frontal_melt_rate.get()};
 
   double
-    seconds_per_day = 86400,
-    grid_spacing    = 0.5 * (m_grid->dx() + m_grid->dy());
+    water_density   = m_config->get_double("constants.fresh_water.density"),
+    seconds_per_day = 86400;
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -135,17 +139,14 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
       // forcing is generally not available at the grounding line.
       double TF = (*m_theta_ocean)(i, j);
 
-      double cross_section_area = ice_thickness(i, j) * grid_spacing;
-
-      // Convert subglacial discharge (kg m^-2*s-1) to an "effective subglacial freshwater
-      // velocity" or flux per unit area of ice front in m/day (see Xu et al 2013, section
-      // 2, paragraph 11).
+      // Convert subglacial discharge (kg /(m^2 * s)) to an "effective subglacial freshwater
+      // velocity" or volume flux per unit area of ice front in m/day (see Xu et al 2013,
+      // section 2, paragraph 11).
       //
       // [flux] = kg / (m^2 * s), so
-      // [flux * water_density] = m / s, so
-      // [flux * water_desity  * (s / day) ] = m / day
-      double Q_sg = (*m_subglacial_discharge)(i, j) * grid_spacing;
-      double q_sg = Q_sg / cross_section_area * seconds_per_day;
+      // [flux / water_density] = m / s, so
+      // [flux / water_density  * (s / day) ] = m / day
+      double q_sg = ((*m_subglacial_discharge)(i, j) / water_density) * seconds_per_day;
 
       double water_depth = sea_level_elevation(i, j) - bed_elevation(i, j);
 
@@ -168,14 +169,7 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    bool apply_frontal_melt;
-    if (m_include_floating_ice) {
-      apply_frontal_melt = cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j); 
-    } else {
-      apply_frontal_melt = cell_type.ice_free_ocean(i, j) and cell_type.next_to_grounded_ice(i, j);
-    }
-
-    if (apply_frontal_melt) {
+    if (apply(cell_type, i, j) and cell_type.ice_free(i, j)) {
 
       auto R = m_frontal_melt_rate->star(i, j);
       auto M = cell_type.int_star(i, j);
@@ -204,7 +198,8 @@ const IceModelVec2S& DischargeGiven::frontal_melt_rate_impl() const {
 
 MaxTimestep DischargeGiven::max_timestep_impl(double t) const {
 
-  auto dt = m_theta_ocean->max_timestep(t);
+  auto dt = std::min(m_theta_ocean->max_timestep(t),
+                     m_subglacial_discharge->max_timestep(t));
 
   if (dt.finite()) {
     return MaxTimestep(dt.value(), "frontal_melt discharge_given");

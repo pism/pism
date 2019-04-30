@@ -98,6 +98,8 @@ PISM output files:
      - the (descriptive) long name used for plotting, etc (a free-form string)
    * - `units`
      - units used *in the code*. Does not have to match units in a file
+   * - `glaciological_units`
+     - units to use when saving data to an output file
    * - `standard_name`
      - CF standard name, if defined, or an empty string.
 
@@ -108,13 +110,6 @@ The CF convention covers some attribute semantics, including `valid_min` in this
 
 PISM will automatically convert units from ones present in an input file into internal
 units defines by the `set_attrs()` call (see above).
-
-If you want PISM to save data in units other than internal ones, first set these
-"glaciological" units:
-
-.. code-block:: c++
-
-   ice_thickness.metadata().set_string("glaciological_units", "km");
 
 Read data from a file
 ---------------------

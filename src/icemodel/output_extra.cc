@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018 PISM Authors
+/* Copyright (C) 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -36,7 +36,7 @@ MaxTimestep IceModel::extras_max_timestep(double my_t) {
   return reporting_max_timestep(m_extra_times, my_t, "reporting (-extra_times)");
 }
 
-static std::set<std::string> process_extra_shortcuts(const std::set<std::string> &input) {
+std::set<std::string> IceModel::process_extra_shortcuts(const std::set<std::string> &input) {
   std::set<std::string> result = input;
 
   // process shortcuts
@@ -83,6 +83,13 @@ static std::set<std::string> process_extra_shortcuts(const std::set<std::string>
     result.insert("tendency_of_subglacial_water_mass_at_grounded_margins");
     result.insert("tendency_of_subglacial_water_mass_at_grounding_line");
     result.insert("tendency_of_subglacial_water_mass_at_domain_boundary");
+  }
+
+  if (result.find("ismip6") != result.end()) {
+    result.erase("ismip6");
+    for (auto v : set_split(m_config->get_string("output.ISMIP6_variables"), ',')) {
+      result.insert(v);
+    }
   }
 
   return result;

@@ -45,15 +45,14 @@ vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr grid,
   m_calving_rate.metadata().set_name("vonmises_calving_rate");
   m_calving_rate.set_attrs("diagnostic",
                            "horizontal calving rate due to von Mises calving",
-                           "m s-1", "", 0);
-  m_calving_rate.metadata().set_string("glaciological_units", "m year-1");
+                           "m s-1", "m year-1", "", 0);
 
   m_calving_threshold.create(m_grid, "vonmises_calving_threshold", WITHOUT_GHOSTS);
 
   m_calving_threshold.set_attrs("diagnostic",
                                 "threshold used by the 'von Mises' calving method",
-                                "Pa",
-                                ""); // no standard name
+                                "Pa", "Pa",
+                                "", 0); // no standard name
   m_calving_threshold.set_time_independent(true);
 
 }

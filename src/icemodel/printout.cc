@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -113,8 +113,8 @@ void IceModel::print_summary(bool tempAndAge) {
   // get maximum diffusivity
   double max_diffusivity = m_stress_balance->max_diffusivity();
   // get volumes in m^3 and areas in m^2
-  double volume = ice_volume(0.0);
-  double area = ice_area(0.0);
+  double volume = ice_volume(m_geometry, 0.0);
+  double area = ice_area(m_geometry, 0.0);
 
   double meltfrac = 0.0;
   if (tempAndAge or m_log->get_threshold() >= 3) {

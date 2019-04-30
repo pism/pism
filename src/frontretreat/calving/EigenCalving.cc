@@ -37,8 +37,7 @@ EigenCalving::EigenCalving(IceGrid::ConstPtr grid)
   m_calving_rate.metadata().set_name("eigen_calving_rate");
   m_calving_rate.set_attrs("diagnostic",
                            "horizontal calving rate due to eigen-calving",
-                           "m s-1", "", 0);
-  m_calving_rate.metadata().set_string("glaciological_units", "m year-1");
+                           "m s-1", "m year-1", "", 0);
 }
 
 EigenCalving::~EigenCalving() {

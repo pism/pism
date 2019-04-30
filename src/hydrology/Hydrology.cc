@@ -45,10 +45,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -73,10 +70,7 @@ public:
               "", "m second-1", "m year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -102,10 +96,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -129,13 +120,11 @@ public:
               "m2 second-1", "m2 year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
 
     m_flux_magnitude.create(m_grid, "flux_magnitude", WITHOUT_GHOSTS);
-    m_flux_magnitude.set_attrs("internal", "magnitude of the subglacial water flux", "m2 s-1", "");
+    m_flux_magnitude.set_attrs("internal", "magnitude of the subglacial water flux",
+                               "m2 s-1", "m2 s-1", "", 0);
   }
 
 protected:
@@ -167,10 +156,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -194,10 +180,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -223,10 +206,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -250,10 +230,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -279,10 +256,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_double("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -308,35 +282,35 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
   m_surface_input_rate.create(m_grid, "water_input_rate_from_surface", WITHOUT_GHOSTS);
   m_surface_input_rate.set_attrs("internal",
                                  "hydrology model workspace for water input rate from the ice surface",
-                                 "m s-1", "");
+                                 "m s-1", "m s-1", "", 0);
 
   m_basal_melt_rate.create(m_grid, "water_input_rate_due_to_basal_melt", WITHOUT_GHOSTS);
   m_basal_melt_rate.set_attrs("internal",
-                         "hydrology model workspace for water input rate due to basal melt",
-                         "m s-1", "");
+                              "hydrology model workspace for water input rate due to basal melt",
+                              "m s-1", "m s-1", "", 0);
 
   // *all* Hydrology classes have layer of water stored in till as a state variable
   m_Wtill.create(m_grid, "tillwat", WITHOUT_GHOSTS);
   m_Wtill.set_attrs("model_state",
                     "effective thickness of subglacial water stored in till",
-                    "m", "");
+                    "m", "m", "", 0);
   m_Wtill.metadata().set_double("valid_min", 0.0);
 
   m_Pover.create(m_grid, "overburden_pressure", WITHOUT_GHOSTS);
-  m_Pover.set_attrs("internal", "overburden pressure", "Pa", "");
+  m_Pover.set_attrs("internal", "overburden pressure",
+                    "Pa", "Pa", "", 0);
   m_Pover.metadata().set_double("valid_min", 0.0);
 
   // needs ghosts in Routing and Distributed
   m_W.create(m_grid, "bwat", WITH_GHOSTS, 1);
   m_W.set_attrs("diagnostic",
                 "thickness of transportable subglacial water layer",
-                "m", "");
+                "m", "m", "", 0);
   m_W.metadata().set_double("valid_min", 0.0);
 
   m_Q.create(m_grid, "water_flux", WITHOUT_GHOSTS);
   m_Q.set_attrs("diagnostic", "advective subglacial water flux",
-                "m2 s-1", "");
-  m_Q.metadata().set_string("glaciological_units", "m2 day-1");
+                "m2 s-1", "m2 day-1", "", 0);
   m_Q.set(0.0);
 
   // storage for water conservation reporting quantities
@@ -344,42 +318,42 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
     m_total_change.create(m_grid, "water_mass_change", WITHOUT_GHOSTS);
     m_total_change.set_attrs("internal",
                              "total change in water mass over one time step",
-                             "kg", "");
+                             "kg", "kg", "", 0);
 
     m_input_change.create(m_grid, "water_mass_change_due_to_input", WITHOUT_GHOSTS);
     m_input_change.set_attrs("internal",
                              "change in water mass over one time step due to the input "
                              "(basal melt and surface drainage)",
-                             "kg", "");
+                             "kg", "kg", "", 0);
 
     m_flow_change_incremental.create(m_grid, "water_thickness_change_due_to_flow", WITHOUT_GHOSTS);
 
     m_flow_change.create(m_grid, "water_mass_change_due_to_flow", WITHOUT_GHOSTS);
     m_flow_change.set_attrs("internal",
                             "change in water mass due to lateral flow (over one time step)",
-                            "kg", "");
+                            "kg", "kg", "", 0);
 
     m_grounded_margin_change.create(m_grid, "grounded_margin_change", WITHOUT_GHOSTS);
     m_grounded_margin_change.set_attrs("diagnostic",
                                        "changes in subglacial water thickness at the grounded margin",
-                                       "kg", "");
+                                       "kg", "kg", "", 0);
     m_grounding_line_change.create(m_grid, "grounding_line_change", WITHOUT_GHOSTS);
     m_grounding_line_change.set_attrs("diagnostic",
                                       "changes in subglacial water thickness at the grounding line",
-                                      "kg", "");
+                                      "kg", "kg", "", 0);
 
     m_no_model_mask_change.create(m_grid, "no_model_mask_change", WITHOUT_GHOSTS);
     m_no_model_mask_change.set_attrs("diagnostic",
                                      "changes in subglacial water thickness at the edge of the modeling domain"
                                      " (regional models)",
-                                     "kg", "");
+                                     "kg", "kg", "", 0);
 
     m_conservation_error_change.create(m_grid, "conservation_error_change", WITHOUT_GHOSTS);
     m_conservation_error_change.set_attrs("diagnostic",
                                           "changes in subglacial water thickness required "
                                           "to preserve non-negativity or "
                                           "keep water thickness within bounds",
-                                          "kg", "");
+                                          "kg", "kg", "", 0);
   }
 }
 

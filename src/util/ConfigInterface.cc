@@ -653,6 +653,11 @@ void set_config_from_options(Config &config) {
     }
   }
 
+  if (config.get_boolean("output.ISMIP6")) {
+    // use MKS units in ISMIP6 mode
+    config.set_boolean("output.use_MKS", true);
+  }
+
   // old options
   options::deprecated("-sliding_scale_brutal",
                       "-brutal_sliding' and '-brutal_sliding_scale");

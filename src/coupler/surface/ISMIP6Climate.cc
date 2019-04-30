@@ -92,40 +92,40 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
 
   m_mass_flux_anomaly->set_attrs("climate_forcing",
                          "surface mass balance (accumulation/ablation) rate",
-                         "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
+                                 "kg m-2 s-1", "kg m-2 year-1",
+                                 "land_ice_surface_specific_mass_balance_flux", 0);
   
-  m_mass_flux_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_mass_flux_anomaly->set_attrs("climate_forcing",
-                         "surface mass balance (accumulation/ablation) rate",
-                         "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
+  m_mass_flux_gradient->set_attrs("climate_forcing",
+                                  "surface mass balance (accumulation/ablation) rate",
+                                  "kg m-2 s-1 m-1", "kg m-2 year-1 m-1",
+                                  "land_ice_surface_specific_mass_balance_flux", 0);
   
-  m_mass_flux_gradient->metadata().set_string("glaciological_units", "kg m-2 year-1 m-1");
-
   m_mass_flux_reference->set_attrs("climate_forcing",
-                         "surface mass balance (accumulation/ablation) rate",
-                         "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
-  m_mass_flux_reference->metadata().set_string("glaciological_units", "kg m-2 year-1");
+                                   "surface mass balance (accumulation/ablation) rate",
+                                   "kg m-2 s-1", "kg m-2 year-1",
+                                   "land_ice_surface_specific_mass_balance_flux", 0);
+
   m_mass_flux_reference->metadata().set_doubles("valid_range", {-smb_max, smb_max});
   m_mass_flux_reference->set_time_independent(true);
 
   m_surface_reference->set_attrs("surface_altitude",
-                         "reference surface altitude",
-                         "m", "surface_altitude");
+                                 "reference surface altitude",
+                                 "m", "m", "surface_altitude", 0);
   m_surface_reference->set_time_independent(true);
 
   m_temperature->set_attrs("climate_forcing",
                            "temperature of the ice at the ice surface but below firn processes",
-                           "Kelvin", "");
+                           "Kelvin", "Kelvin", "", 0);
   m_temperature->metadata().set_doubles("valid_range", {0.0, 323.15}); // [0C, 50C]
 
 
   m_temperature_anomaly->set_attrs("climate_forcing_anomaly",
-                           "temperature of the ice at the ice surface but below firn processes",
-                           "Kelvin", "");
+                                   "temperature of the ice at the ice surface but below firn processes",
+                                   "Kelvin", "Kelvin", "", 0);
 
   m_temperature_gradient->set_attrs("climate_forcing_gradient",
-                           "temperature of the ice at the ice surface but below firn processes",
-                           "Kelvin m-1", "");
+                                    "temperature of the ice at the ice surface but below firn processes",
+                                    "Kelvin m-1", "Kelvin m-1", "", 0);
 }
 
 ISMIP6::~ISMIP6() {

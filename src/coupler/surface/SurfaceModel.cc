@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2019 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -37,7 +37,8 @@ namespace surface {
 IceModelVec2S::Ptr SurfaceModel::allocate_layer_mass(IceGrid::ConstPtr grid) {
   IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_layer_mass", WITHOUT_GHOSTS));
 
-  result->set_attrs("climate_forcing", "mass held in the surface layer", "kg", "");
+  result->set_attrs("climate_forcing", "mass held in the surface layer",
+                    "kg", "kg", "", 0);
 
   result->metadata().set_double("valid_min", 0.0);
 
@@ -50,7 +51,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_layer_thickness(IceGrid::ConstPtr grid
 
   result->set_attrs("climate_forcing",
                     "thickness of the surface process layer at the top surface of the ice",
-                    "m", "");
+                    "m", "m", "", 0);
 
   result->metadata().set_double("valid_min", 0.0);
 
@@ -64,7 +65,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_liquid_water_fraction(IceGrid::ConstPt
 
   result->set_attrs("climate_forcing",
                     "liquid water fraction of the ice at the top surface",
-                    "1", "");
+                    "1", "1", "", 0);
 
   result->metadata().set_doubles("valid_range", {0.0, 1.0});
 
@@ -77,8 +78,8 @@ IceModelVec2S::Ptr SurfaceModel::allocate_mass_flux(IceGrid::ConstPtr grid) {
 
   result->set_attrs("climate_forcing",
                     "surface mass balance (accumulation/ablation) rate",
-                    "kg m-2 second-1", "land_ice_surface_specific_mass_balance_flux");
-  result->metadata().set_string("glaciological_units", "kg m-2 year-1");
+                    "kg m-2 second-1", "kg m-2 year-1",
+                    "land_ice_surface_specific_mass_balance_flux", 0);
 
   Config::ConstPtr config = grid->ctx()->config();
   const double smb_max = config->get_double("surface.given.smb_max", "kg m-2 second-1");
@@ -94,7 +95,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_temperature(IceGrid::ConstPtr grid) {
 
   result->set_attrs("climate_forcing",
                     "temperature of the ice at the ice surface but below firn processes",
-                    "Kelvin", "");
+                    "Kelvin", "Kelvin", "", 0);
 
   result->metadata().set_doubles("valid_range", {0.0, 323.15}); // [0C, 50C]
 
@@ -107,7 +108,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_accumulation(IceGrid::ConstPtr grid) {
 
   result->set_attrs("diagnostic",
                     "surface accumulation (precipitation minus rain)",
-                    "kg m-2", "");
+                    "kg m-2", "kg m-2", "", 0);
 
   return result;
 }
@@ -118,7 +119,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_melt(IceGrid::ConstPtr grid) {
 
   result->set_attrs("diagnostic",
                     "surface melt",
-                    "kg m-2", "");
+                    "kg m-2", "kg m-2", "", 0);
 
   return result;
 }
@@ -129,7 +130,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_runoff(IceGrid::ConstPtr grid) {
 
   result->set_attrs("diagnostic",
                     "surface meltwater runoff",
-                    "kg m-2", "");
+                    "kg m-2", "kg m-2", "", 0);
 
   return result;
 }
@@ -493,11 +494,16 @@ IceModelVec::Ptr PS_climatic_mass_balance::compute_impl() const {
 PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "ice_surface_temp")};
 
-  set_attrs("ice temperature at the ice surface", "",
-            "Kelvin", "Kelvin", 0);
+  auto ismip6 = m_config->get_boolean("output.ISMIP6");
+
+  /* set metadata: */
+  m_vars = {SpatialVariableMetadata(m_sys,
+                                    ismip6 ? "litemptop" : "ice_surface_temp")};
+
+  set_attrs("ice temperature at the top ice surface",
+            "temperature_at_top_of_ice_sheet_model",
+            "K", "K", 0);
 }
 
 IceModelVec::Ptr PS_ice_surface_temp::compute_impl() const {
@@ -581,6 +587,10 @@ DiagnosticList SurfaceModel::diagnostics_impl() const {
     {"surface_layer_mass",                Diagnostic::Ptr(new PS_layer_mass(this))},
     {"surface_layer_thickness",           Diagnostic::Ptr(new PS_layer_thickness(this))}
   };
+
+  if (m_config->get_boolean("output.ISMIP6")) {
+    result["litemptop"] = Diagnostic::Ptr(new PS_ice_surface_temp(this));
+  }
 
   if (m_atmosphere) {
     result = pism::combine(result, m_atmosphere->diagnostics());

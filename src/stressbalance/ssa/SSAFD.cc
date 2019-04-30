@@ -67,30 +67,31 @@ SSAFD::SSAFD(IceGrid::ConstPtr g)
   m_velocity_old.create(m_grid, "velocity_old", WITH_GHOSTS);
   m_velocity_old.set_attrs("internal",
                            "old SSA velocity field; used for re-trying with a different epsilon",
-                           "m s-1", "");
+                           "m s-1", "m s-1", "", 0);
 
+  auto units = pism::printf("Pa s%f", 1.0 / m_flow_law->exponent());
   m_hardness.create(m_grid, "hardness", WITHOUT_GHOSTS);
   m_hardness.set_attrs("diagnostic",
                        "vertically-averaged ice hardness",
-                       pism::printf("Pa s%f", 1.0 / m_flow_law->exponent()),
-                       "");
+                       units, units,
+                       "", 0);
 
   m_nuH.create(m_grid, "nuH", WITH_GHOSTS);
   m_nuH.set_attrs("internal",
                   "ice thickness times effective viscosity",
-                  "Pa s m", "");
+                  "Pa s m", "Pa s m", "", 0);
 
   m_nuH_old.create(m_grid, "nuH_old", WITH_GHOSTS);
   m_nuH_old.set_attrs("internal",
                       "ice thickness times effective viscosity (before an update)",
-                      "Pa s m", "");
+                      "Pa s m", "Pa s m", "", 0);
 
   m_work.create(m_grid, "m_work", WITH_GHOSTS,
                 2, /* stencil width */
                 6  /* dof */);
   m_work.set_attrs("internal",
                    "temporary storage used to compute nuH",
-                   "", "");
+                   "", "", "", 0);
 
   m_scaling = 1.0e9;  // comparable to typical beta for an ice stream;
 
@@ -1570,7 +1571,7 @@ void SSAFD::update_nuH_viewers() {
   tmp.create(m_grid, "nuH", WITHOUT_GHOSTS);
   tmp.set_attrs("temporary",
                 "log10 of (viscosity * thickness)",
-                "Pa s m", "");
+                "Pa s m", "Pa s m", "", 0);
 
   IceModelVec::AccessList list{&m_nuH, &tmp};
 

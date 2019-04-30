@@ -268,48 +268,48 @@ Routing::Routing(IceGrid::ConstPtr g)
   m_Qstag.create(m_grid, "advection_flux", WITH_GHOSTS, 1);
   m_Qstag.set_attrs("internal",
                     "cell face-centered (staggered) components of advective subglacial water flux",
-                    "m2 s-1", "");
+                    "m2 s-1", "m2 s-1", "", 0);
 
   m_Qstag_average.create(m_grid, "cumulative_advection_flux", WITH_GHOSTS, 1);
   m_Qstag_average.set_attrs("internal",
                             "average (over time) advection flux on the staggered grid",
-                            "m2 s-1", "");
+                            "m2 s-1", "m2 s-1", "", 0);
 
   m_Vstag.create(m_grid, "water_velocity", WITHOUT_GHOSTS);
   m_Vstag.set_attrs("internal",
                     "cell face-centered (staggered) components of water velocity"
                     " in subglacial water layer",
-                    "m s-1", "");
+                    "m s-1", "m s-1", "", 0);
 
   // auxiliary variables which NEED ghosts
   m_Wstag.create(m_grid, "W_staggered", WITH_GHOSTS, 1);
   m_Wstag.set_attrs("internal",
                     "cell face-centered (staggered) values of water layer thickness",
-                    "m", "");
+                    "m", "m", "", 0);
   m_Wstag.metadata().set_double("valid_min", 0.0);
 
   m_Kstag.create(m_grid, "K_staggered", WITH_GHOSTS, 1);
   m_Kstag.set_attrs("internal",
                     "cell face-centered (staggered) values of nonlinear conductivity",
-                    "", "");
+                    "", "", "", 0);
   m_Kstag.metadata().set_double("valid_min", 0.0);
 
   m_R.create(m_grid, "potential_workspace", WITH_GHOSTS, 1); // box stencil used
   m_R.set_attrs("internal",
                 "work space for modeled subglacial water hydraulic potential",
-                "Pa", "");
+                "Pa", "Pa", "", 0);
 
   // temporaries during update; do not need ghosts
   m_Wnew.create(m_grid, "W_new", WITHOUT_GHOSTS);
   m_Wnew.set_attrs("internal",
                    "new thickness of transportable subglacial water layer during update",
-                   "m", "");
+                   "m", "m", "", 0);
   m_Wnew.metadata().set_double("valid_min", 0.0);
 
   m_Wtillnew.create(m_grid, "Wtill_new", WITHOUT_GHOSTS);
   m_Wtillnew.set_attrs("internal",
                        "new thickness of till (subglacial) water layer during update",
-                       "m", "");
+                       "m", "m", "", 0);
   m_Wtillnew.metadata().set_double("valid_min", 0.0);
 
   {
@@ -836,40 +836,6 @@ void Routing::update_W(double dt,
   m_flow_change.add(1.0, m_flow_change_incremental);
   m_input_change.add(dt, surface_input_rate);
   m_input_change.add(dt, basal_melt_rate);
-}
-
-/*! Compute the elevation of the bottom surface of the ice.
- */
-void Routing::ice_bottom_surface(const Geometry &geometry,
-                                 IceModelVec2S &result) const {
-    double
-      ice_density   = m_config->get_double("constants.ice.density"),
-      water_density = m_config->get_double("constants.sea_water.density"),
-      alpha         = ice_density / water_density;
-
-  const IceModelVec2S        &ice_thickness = geometry.ice_thickness;
-  const IceModelVec2S        &bed_elevation = geometry.bed_elevation;
-  const IceModelVec2S        &sea_level     = geometry.sea_level_elevation;
-
-  IceModelVec::AccessList list{&ice_thickness, &bed_elevation, &sea_level, &result};
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      double
-        b_grounded = bed_elevation(i, j),
-        b_floating = sea_level(i, j) - alpha * ice_thickness(i, j);
-
-      result(i, j) = std::max(b_grounded, b_floating);
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  result.update_ghosts();
 }
 
 //! Update the model state variables W and Wtill by applying the subglacial hydrology model equations.
