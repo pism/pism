@@ -31,6 +31,7 @@
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/hydrology/NullTransport.hh"
 #include "pism/hydrology/Routing.hh"
+#include "pism/hydrology/RoutingSteady.hh"
 #include "pism/hydrology/Distributed.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/stressbalance/sia/SIAFD.hh"
@@ -591,6 +592,8 @@ void IceModel::allocate_subglacial_hydrology() {
     m_subglacial_hydrology.reset(new NullTransport(m_grid));
   } else if (hydrology_model == "routing") {
     m_subglacial_hydrology.reset(new Routing(m_grid));
+  } else if (hydrology_model == "routing_steady") {
+    m_subglacial_hydrology.reset(new RoutingSteady(m_grid));
   } else if (hydrology_model == "distributed") {
     m_subglacial_hydrology.reset(new Distributed(m_grid));
   } else {

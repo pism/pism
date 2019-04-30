@@ -1043,7 +1043,7 @@ pism_config:frontal_melt.constant.melt_rate = 1.0;
     pism_config:hydrology.maximum_time_step_units = "years";
 
     pism_config:hydrology.model = "null";
-    pism_config:hydrology.model_choices = "null,routing,distributed";
+    pism_config:hydrology.model_choices = "null,routing,routing_steady,distributed";
     pism_config:hydrology.model_doc = "Basal hydrology sub-model.";
     pism_config:hydrology.model_option = "hydrology";
     pism_config:hydrology.model_type = "keyword";
