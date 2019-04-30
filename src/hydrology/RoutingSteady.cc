@@ -82,7 +82,7 @@ void RoutingSteady::update_impl(double t, double dt, const Inputs& inputs) {
   unsigned int step_counter = 0;
   for (; step_counter < n_max_iterations and dW_max > eps; ++step_counter) {
 
-    m_log->message(2, "  routing_steady iteration %05d\n", step_counter);
+    m_log->message(3, "  routing_steady iteration %05d\n", step_counter);
 
     // updates ghosts of m_Wstag
     water_thickness_staggered(m_W,
@@ -122,7 +122,7 @@ void RoutingSteady::update_impl(double t, double dt, const Inputs& inputs) {
 
           m_flow_change(i, j) += dW;
 
-          dW_max = std::max(dW_max, dW);
+          dW_max = std::max(fabs(dW_max), dW);
         }
       }
       dW_max = GlobalMax(m_grid->com, dW_max);
@@ -142,11 +142,11 @@ void RoutingSteady::update_impl(double t, double dt, const Inputs& inputs) {
     }
 
     if (dW_max <= eps) {
-      m_log->message(2, "stopping iteration: dW_max < eps\n");
+      m_log->message(2, "  stopping iteration: dW_max < eps\n");
     }
 
-    if (step_counter >= n_max_iterations) {
-      m_log->message(2, "stopping iteration: exceeded n_max_iterations\n");
+    if (step_counter == n_max_iterations - 1) {
+      m_log->message(2, "  stopping iteration: exceeded n_max_iterations\n");
     }
   } // end of the loop
 
@@ -155,7 +155,8 @@ void RoutingSteady::update_impl(double t, double dt, const Inputs& inputs) {
                        m_Q);
   m_Q.scale(1.0 / dt);
 
-  m_log->message(2, "  performed %d routing_steady hydrology iterations\n", step_counter);
+  m_log->message(2, "  performed %d routing_steady hydrology iterations, |dW_max| = %f\n",
+                 step_counter, dW_max);
 }
 
 
