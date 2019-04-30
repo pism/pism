@@ -19,6 +19,9 @@
 
 #include "RoutingSteady.hh"
 
+#include "pism/geometry/Geometry.hh"
+#include "pism/util/pism_utilities.hh"
+
 namespace pism {
 namespace hydrology {
 
@@ -59,97 +62,66 @@ void RoutingSteady::update_impl(double t, double dt, const Inputs& inputs) {
 
   ice_bottom_surface(*inputs.geometry, m_bottom_surface);
 
+  // set conductivity to zero to disable diffusive flow
+  m_Kstag.set(0.0);
+
   m_Qstag_average.set(0.0);
 
-  // make sure W has valid ghosts before starting hydrology steps
-  m_W.update_ghosts();
+  // this model does not have till storage
+  m_Wtill.set(0.0);
+  m_Wtillnew.set(0.0);
 
+  // add all the water in the beginning (this updates ghosts)
+  m_W.add(dt, m_surface_input_rate);
+  m_input_change.add(dt, m_surface_input_rate);
+
+  double eps = 1e-8;
+  double dW_max = 2.0 * eps;
+
+  const unsigned int n_max_iterations = 1000;
   unsigned int step_counter = 0;
-  for (; ht < t_final; ht += hdt) {
-    step_counter++;
+  for (; step_counter < n_max_iterations and dW_max > eps; ++step_counter) {
 
-#if (PISM_DEBUG==1)
-    double huge_number = 1e6;
-    check_bounds(m_W, huge_number);
-
-    check_bounds(m_Wtill, m_config->get_double("hydrology.tillwat_max"));
-#endif
+    m_log->message(2, "  routing_steady iteration %05d\n", step_counter);
 
     // updates ghosts of m_Wstag
     water_thickness_staggered(m_W,
                               inputs.geometry->cell_type,
                               m_Wstag);
 
-    double maxKW = 0.0;
-    // updates ghosts of m_Kstag
-    m_grid->ctx()->profiling().begin("routing_conductivity");
-    compute_conductivity(m_Wstag,
-                         subglacial_water_pressure(),
-                         m_bottom_surface,
-                         m_Kstag, maxKW);
-    m_grid->ctx()->profiling().end("routing_conductivity");
-
     // ghosts of m_Vstag are not updated
-    m_grid->ctx()->profiling().begin("routing_velocity");
     compute_velocity(m_Wstag,
                      subglacial_water_pressure(),
                      m_bottom_surface,
-                     m_Kstag,
                      inputs.no_model_mask,
                      m_Vstag);
-    m_grid->ctx()->profiling().end("routing_velocity");
+    double hdt = max_timestep_W_cfl();
 
     // to get Q, W needs valid ghosts (ghosts of m_Vstag are not used)
     // updates ghosts of m_Qstag
-    m_grid->ctx()->profiling().begin("routing_flux");
     advective_fluxes(m_Vstag, m_W, m_Qstag);
-    m_grid->ctx()->profiling().end("routing_flux");
 
     m_Qstag_average.add(hdt, m_Qstag);
 
+    // update Wnew from W and Q
+    // uses ghosts of m_Qstag
     {
-      const double
-        dt_cfl    = max_timestep_W_cfl(),
-        dt_diff_w = max_timestep_W_diff(maxKW);
+      dW_max = 0.0;
+      {
+        IceModelVec::AccessList list{&m_W, &m_Qstag, &m_Wnew};
 
-      hdt = std::min(t_final - ht, dt_max);
-      hdt = std::min(hdt, dt_cfl);
-      hdt = std::min(hdt, dt_diff_w);
-    }
+        for (Points p(*m_grid); p; p.next()) {
+          const int i = p.i(), j = p.j();
 
-    m_log->message(3, "  hydrology step %05d, dt = %f s\n", step_counter, hdt);
+          auto q = m_Qstag.star(i, j);
+          const double divQ = (q.e - q.w) / m_dx + (q.n - q.s) / m_dy;
 
-    // update Wtillnew from Wtill and input_rate
-    {
-      m_grid->ctx()->profiling().begin("routing_Wtill");
-      update_Wtill(hdt,
-                   m_Wtill,
-                   m_surface_input_rate,
-                   m_basal_melt_rate,
-                   m_Wtillnew);
-      // remove water in ice-free areas and account for changes
-      enforce_bounds(inputs.geometry->cell_type,
-                     inputs.no_model_mask,
-                     0.0,        // do not limit maximum thickness
-                     m_Wtillnew,
-                     m_grounded_margin_change,
-                     m_grounding_line_change,
-                     m_conservation_error_change,
-                     m_no_model_mask_change);
-      m_grid->ctx()->profiling().end("routing_Wtill");
-    }
+          m_Wnew(i, j) = m_W(i, j) + hdt * (- divQ);
+          dW_max = std::max(dW_max, hdt * (- divQ));
+        }
+      }
+      dW_max = GlobalMax(m_grid->com, dW_max);
 
-    // update Wnew from W, Wtill, Wtillnew, Wstag, Q, input_rate
-    // uses ghosts of m_W, m_Wstag, m_Qstag, m_Kstag
-    {
-      m_grid->ctx()->profiling().begin("routing_W");
-      update_W(hdt,
-               m_surface_input_rate,
-               m_basal_melt_rate,
-               m_W, m_Wstag,
-               m_Wtill, m_Wtillnew,
-               m_Kstag, m_Qstag,
-               m_Wnew);
       // remove water in ice-free areas and account for changes
       enforce_bounds(inputs.geometry->cell_type,
                      inputs.no_model_mask,
@@ -162,12 +134,16 @@ void RoutingSteady::update_impl(double t, double dt, const Inputs& inputs) {
 
       // transfer new into old (updates ghosts of m_W)
       m_W.copy_from(m_Wnew);
-      m_grid->ctx()->profiling().end("routing_W");
     }
 
-    // m_Wtill has no ghosts
-    m_Wtill.copy_from(m_Wtillnew);
-  } // end of the time-stepping loop
+    if (dW_max <= eps) {
+      m_log->message(2, "stopping iteration: dW_max < eps\n");
+    }
+
+    if (step_counter >= n_max_iterations) {
+      m_log->message(2, "stopping iteration: exceeded n_max_iterations\n");
+    }
+  } // end of the loop
 
   staggered_to_regular(inputs.geometry->cell_type, m_Qstag_average,
                        m_config->get_boolean("hydrology.routing.include_floating_ice"),
@@ -180,6 +156,95 @@ void RoutingSteady::update_impl(double t, double dt, const Inputs& inputs) {
                  units::convert(m_sys, dt / step_counter, "seconds", "years"),
                  dt / step_counter,
                  (dt / step_counter) / 3600.0);
+}
+
+
+//! Get the advection velocity V at the center of cell edges.
+/*!
+  Computes the advection velocity @f$\mathbf{V}@f$ on the staggered
+  (edge-centered) grid.  If V = (u, v) in components then we have
+  <code> result(i, j, 0) = u(i+1/2, j) </code> and
+  <code> result(i, j, 1) = v(i, j+1/2) </code>
+
+  The advection velocity is given by the formula
+
+  @f[ \mathbf{V} = - \nabla (P + \rho_w g b) / \left| \nabla (P + \rho_w g b) \right| @f]
+
+  where @f$ \mathbf{V} @f$ is the water velocity, @f$ P @f$ is the water
+  pressure, and @f$ b @f$ is the bedrock elevation.
+
+  If the corresponding staggered grid value of the water thickness is zero then that
+  component of V is set to zero. This does not change the flux value (which would be zero
+  anyway) but it does provide the correct max velocity in the CFL calculation. We assume
+  bed has valid ghosts.
+*/
+void RoutingSteady::compute_velocity(const IceModelVec2Stag &W,
+                                     const IceModelVec2S &pressure,
+                                     const IceModelVec2S &bed,
+                                     const IceModelVec2Int *no_model_mask,
+                                     IceModelVec2Stag &result) const {
+  IceModelVec2S &P = m_R;
+  P.copy_from(pressure);  // yes, it updates ghosts
+
+  IceModelVec::AccessList list{&P, &W, &bed, &result};
+
+  const double S = 1.0;
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (W(i, j, 0) > 0.0) {
+      double
+        P_x = (P(i + 1, j) - P(i, j)) / m_dx,
+        b_x = (bed(i + 1, j) - bed(i, j)) / m_dx,
+        P_y = (+ P(i + 1, j + 1) + P(i, j + 1)
+               - P(i + 1, j - 1) - P(i, j - 1)) / (4.0 * m_dy),
+        b_y = (+ bed(i + 1, j + 1) + bed(i, j + 1)
+               - bed(i + 1, j - 1) - bed(i, j - 1)) / (4.0 * m_dy),
+        u   = - (P_x + m_rg * b_x),
+        v   = - (P_y + m_rg * b_y),
+        S   = Vector2(u, v).magnitude();
+
+      result(i, j, 0) = S > 0.0 ? u / S : 0.0;
+    } else {
+      result(i, j, 0) = 0.0;
+    }
+
+    if (W(i, j, 1) > 0.0) {
+      double
+        P_x = (+ P(i + 1, j + 1) + P(i + 1, j)
+               - P(i - 1, j + 1) - P(i - 1, j)) / (4.0 * m_dx),
+        b_x = (+ bed(i + 1, j + 1) + bed(i + 1, j)
+               - bed(i - 1, j + 1) - bed(i - 1, j)) / (4.0 * m_dx),
+        P_y = (P(i, j + 1) - P(i, j)) / m_dy,
+        b_y = (bed(i, j + 1) - bed(i, j)) / m_dy,
+        u   = - (P_x + m_rg * b_x),
+        v   = - (P_y + m_rg * b_y),
+        S   = Vector2(u, v).magnitude();
+
+      result(i, j, 1) = S > 0.0 ? v / S : 0.0;
+    } else {
+      result(i, j, 1) = 0.0;
+    }
+  }
+
+  if (no_model_mask) {
+    list.add(*no_model_mask);
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      auto M = no_model_mask->int_star(i, j);
+
+      if (M.ij or M.e) {
+        result(i, j, 0) = 0.0;
+      }
+
+      if (M.ij or M.n) {
+        result(i, j, 1) = 0.0;
+      }
+    }
+  }
 }
 
 void RoutingSteady::define_model_state_impl(const PIO& output) const {

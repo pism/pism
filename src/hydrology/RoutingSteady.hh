@@ -41,15 +41,19 @@ protected:
                               const IceModelVec2S &ice_thickness);
 
   virtual void init_impl(const IceModelVec2S &W_till,
-                               const IceModelVec2S &W,
-                               const IceModelVec2S &P);
+                         const IceModelVec2S &W,
+                         const IceModelVec2S &P);
 
   virtual void update_impl(double t, double dt, const Inputs& inputs);
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-protected:
+  void compute_velocity(const IceModelVec2Stag &W,
+                        const IceModelVec2S &pressure,
+                        const IceModelVec2S &bed,
+                        const IceModelVec2Int *no_model_mask,
+                        IceModelVec2Stag &result) const;
 };
 
 } // end of namespace hydrology

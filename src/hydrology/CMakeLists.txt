@@ -3,4 +3,5 @@ add_library(hydrology OBJECT
   Hydrology.cc
   NullTransport.cc
   Routing.cc
+  RoutingSteady.cc
   )
