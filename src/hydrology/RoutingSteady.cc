@@ -108,7 +108,7 @@ void RoutingSteady::update_impl(double t, double dt, const Inputs& inputs) {
     {
       dW_max = 0.0;
       {
-        IceModelVec::AccessList list{&m_W, &m_Qstag, &m_Wnew};
+        IceModelVec::AccessList list{&m_W, &m_Qstag, &m_Wnew, &m_flow_change};
 
         for (Points p(*m_grid); p; p.next()) {
           const int i = p.i(), j = p.j();
@@ -116,8 +116,13 @@ void RoutingSteady::update_impl(double t, double dt, const Inputs& inputs) {
           auto q = m_Qstag.star(i, j);
           const double divQ = (q.e - q.w) / m_dx + (q.n - q.s) / m_dy;
 
-          m_Wnew(i, j) = m_W(i, j) + hdt * (- divQ);
-          dW_max = std::max(dW_max, hdt * (- divQ));
+          double dW = hdt * (- divQ);
+
+          m_Wnew(i, j) = m_W(i, j) + dW;
+
+          m_flow_change(i, j) += dW;
+
+          dW_max = std::max(dW_max, dW);
         }
       }
       dW_max = GlobalMax(m_grid->com, dW_max);
