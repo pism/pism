@@ -1128,6 +1128,11 @@ pism_config:frontal_melt.constant.melt_rate = 1.0;
     pism_config:hydrology.routing.add_water_input_to_till_storage_doc = "Add surface input to water stored in till. If no it will be added to the transportable water.";
     pism_config:hydrology.routing.add_water_input_to_till_storage_type = "boolean";
 
+    pism_config:hydrology.routing_steady.n_iterations = 100;
+    pism_config:hydrology.routing_steady.n_iterations_doc = "number of iterations taken by the `routing_steady` hydrology model";
+    pism_config:hydrology.routing_steady.n_iterations_type = "integer";
+    pism_config:hydrology.routing_steady.n_iterations_units = "count";
+
     pism_config:inverse.design.cH1     = 0;
     pism_config:inverse.design.cH1_doc = "weight of derivative part of an H1 norm for inversion design variables";
     pism_config:inverse.design.cH1_option = "inv_design_cH1";

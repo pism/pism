@@ -62,9 +62,6 @@ void RoutingSteady::update_impl(double t, double dt, const Inputs& inputs) {
 
   ice_bottom_surface(*inputs.geometry, m_bottom_surface);
 
-  // set conductivity to zero to disable diffusive flow
-  m_Kstag.set(0.0);
-
   m_Qstag_average.set(0.0);
 
   // this model does not have till storage
@@ -75,14 +72,9 @@ void RoutingSteady::update_impl(double t, double dt, const Inputs& inputs) {
   m_W.add(dt, m_surface_input_rate);
   m_input_change.add(dt, m_surface_input_rate);
 
-  double eps = 1e-8;
-  double dW_max = 2.0 * eps;
-
-  const unsigned int n_max_iterations = 1000;
+  const unsigned int n_iterations = m_config->get_double("hydrology.routing_steady.n_iterations");
   unsigned int step_counter = 0;
-  for (; step_counter < n_max_iterations and dW_max > eps; ++step_counter) {
-
-    m_log->message(3, "  routing_steady iteration %05d\n", step_counter);
+  for (; step_counter < n_iterations; ++step_counter) {
 
     // updates ghosts of m_Wstag
     water_thickness_staggered(m_W,
@@ -106,26 +98,20 @@ void RoutingSteady::update_impl(double t, double dt, const Inputs& inputs) {
     // update Wnew from W and Q
     // uses ghosts of m_Qstag
     {
-      dW_max = 0.0;
-      {
-        IceModelVec::AccessList list{&m_W, &m_Qstag, &m_Wnew, &m_flow_change};
+      IceModelVec::AccessList list{&m_W, &m_Qstag, &m_Wnew, &m_flow_change};
 
-        for (Points p(*m_grid); p; p.next()) {
-          const int i = p.i(), j = p.j();
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
 
-          auto q = m_Qstag.star(i, j);
-          const double divQ = (q.e - q.w) / m_dx + (q.n - q.s) / m_dy;
+        auto q = m_Qstag.star(i, j);
+        const double divQ = (q.e - q.w) / m_dx + (q.n - q.s) / m_dy;
 
-          double dW = hdt * (- divQ);
+        double dW = hdt * (- divQ);
 
-          m_Wnew(i, j) = m_W(i, j) + dW;
+        m_Wnew(i, j) = m_W(i, j) + dW;
 
-          m_flow_change(i, j) += dW;
-
-          dW_max = std::max(fabs(dW_max), dW);
-        }
+        m_flow_change(i, j) += dW;
       }
-      dW_max = GlobalMax(m_grid->com, dW_max);
 
       // remove water in ice-free areas and account for changes
       enforce_bounds(inputs.geometry->cell_type,
@@ -140,23 +126,12 @@ void RoutingSteady::update_impl(double t, double dt, const Inputs& inputs) {
       // transfer new into old (updates ghosts of m_W)
       m_W.copy_from(m_Wnew);
     }
-
-    if (dW_max <= eps) {
-      m_log->message(2, "  stopping iteration: dW_max < eps\n");
-    }
-
-    if (step_counter == n_max_iterations - 1) {
-      m_log->message(2, "  stopping iteration: exceeded n_max_iterations\n");
-    }
   } // end of the loop
 
   staggered_to_regular(inputs.geometry->cell_type, m_Qstag_average,
                        m_config->get_boolean("hydrology.routing.include_floating_ice"),
                        m_Q);
   m_Q.scale(1.0 / dt);
-
-  m_log->message(2, "  performed %d routing_steady hydrology iterations, |dW_max| = %f\n",
-                 step_counter, dW_max);
 }
 
 
