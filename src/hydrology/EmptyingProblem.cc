@@ -154,8 +154,8 @@ EmptyingProblem::EmptyingProblem(IceGrid::ConstPtr grid)
 
   m_dx    = m_grid->dx();
   m_dy    = m_grid->dy();
-  m_tau   = m_config->get_double("hydrology.routing_steady.input_rate_scaling");
-  m_W_min = m_tau * m_config->get_double("hydrology.routing_steady.min_thickness_scaling");
+  m_tau   = m_config->get_double("hydrology.steady.input_rate_scaling");
+  m_W_min = m_tau * m_config->get_double("hydrology.steady.min_thickness_scaling");
 }
 
 EmptyingProblem::~EmptyingProblem() {
@@ -178,9 +178,9 @@ void EmptyingProblem::update(const Geometry &geometry,
     u_max          = m_speed,
     v_max          = m_speed,
     dt             = 0.5 / (u_max / m_dx + v_max / m_dy), // CFL condition
-    wet_area_ratio = m_config->get_double("hydrology.routing_steady.wet_area_ratio");
+    wet_area_ratio = m_config->get_double("hydrology.steady.wet_area_ratio");
 
-  const int n_iterations = m_config->get_double("hydrology.routing_steady.n_iterations");
+  const int n_iterations = m_config->get_double("hydrology.steady.n_iterations");
 
   ice_bottom_surface(geometry, m_bottom_surface);
 
@@ -333,9 +333,9 @@ void EmptyingProblem::compute_potential(const IceModelVec2S &ice_thickness,
                                         IceModelVec2S &result) {
   IceModelVec2S &psi_new = m_tmp;
 
-  double delta = m_config->get_double("hydrology.routing_steady.potential_delta");
+  double delta = m_config->get_double("hydrology.steady.potential_delta");
 
-  int n_iterations = m_config->get_double("hydrology.routing_steady.potential_n_iterations");
+  int n_iterations = m_config->get_double("hydrology.steady.potential_n_iterations");
   int step_counter = 0;
   int n_sinks = 0;
   int n_sinks_remaining = 0;

@@ -1124,7 +1124,7 @@
 #. :config:`hydrology.model` (*keyword*)
 
    :Value: ``null``
-   :Choices: ``null, routing, routing_steady, distributed``
+   :Choices: ``null, routing, steady, distributed``
    :Option: :opt:`-hydrology`
    :Description: Basal hydrology sub-model.
 
@@ -1216,10 +1216,10 @@
    :Value: yes
    :Description: Add surface input to water stored in till. If no it will be added to the transportable water.
 
-#. :config:`hydrology.routing_steady.n_iterations` (*integer*)
+#. :config:`hydrology.steady.n_iterations` (*integer*)
 
    :Value: 100
-   :Description: number of iterations taken by the `routing_steady` hydrology model
+   :Description: number of iterations taken by the `steady` hydrology model
 
 #. :config:`inverse.design.cH1` (*scalar*)
 

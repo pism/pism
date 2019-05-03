@@ -2,7 +2,7 @@
 #include "hydrology/Hydrology.hh"
 #include "hydrology/NullTransport.hh"
 #include "hydrology/Routing.hh"
-#include "hydrology/RoutingSteady.hh"
+#include "hydrology/SteadyState.hh"
 #include "hydrology/Distributed.hh"
 #include "hydrology/EmptyingProblem.hh"
 %}
@@ -17,12 +17,12 @@
 %shared_ptr(pism::hydrology::Hydrology)
 %shared_ptr(pism::hydrology::NullTransport)
 %shared_ptr(pism::hydrology::Routing)
-%shared_ptr(pism::hydrology::RoutingSteady)
+%shared_ptr(pism::hydrology::SteadyState)
 %shared_ptr(pism::hydrology::Distributed)
 %include "hydrology/Hydrology.hh"
 %include "hydrology/NullTransport.hh"
 %include "hydrology/Routing.hh"
-%include "hydrology/RoutingSteady.hh"
+%include "hydrology/SteadyState.hh"
 %include "hydrology/Distributed.hh"
 
 %shared_ptr(pism::hydrology::EmptyingProblem)
