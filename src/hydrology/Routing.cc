@@ -501,7 +501,7 @@ void Routing::compute_conductivity(const IceModelVec2Stag &W,
       const int i = p.i(), j = p.j();
 
       for (int o = 0; o < 2; ++o) {
-        const double Pi = result(i, j, 0);
+        const double Pi = result(i, j, o);
 
         // FIXME: same as Pi above: we don't need to re-compute this each time we make a
         // short hydrology time step
