@@ -35,6 +35,12 @@ point observations and/or paleo ice load modeling, and if that uplift field is p
 NetCDF variable with standard name ``tendency_of_bedrock_altitude`` in the input file,
 then this model will initialize so that it starts with the given uplift rate.
 
+.. note::
+
+   By default the elastic part of the Lingle Clark bed deformation model, as described in
+   :cite:`BLKfastearth`, is deactivated.
+   To activate it set :config:`-bed_def_lc_elastic_model on`.
+
 Here are minimal example runs to compare these models:
 
 .. code-block:: none
