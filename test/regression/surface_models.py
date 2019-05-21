@@ -678,9 +678,123 @@ class Factory(TestCase):
     def tearDown(self):
         pass
 
+
+class ISMIP6(TestCase):
+    def prepare_reference_data(self, grid, filename):
+
+        usurf   = PISM.model.createIceSurfaceVec(grid)
+        SMB_ref = PISM.IceModelVec2S(grid, "climatic_mass_balance", PISM.WITHOUT_GHOSTS)
+        T_ref   = PISM.IceModelVec2S(grid, "ice_surface_temp", PISM.WITHOUT_GHOSTS)
+
+        usurf.metadata(0).set_string("units", "m")
+
+        SMB_ref.set_attrs("climate_forcing", "reference SMB", "kg m-2 s-1", "kg m-2 s-1",
+                          "land_ice_surface_specific_mass_balance_flux", 0)
+
+        T_ref.metadata(0).set_string("units", "K")
+
+        out = PISM.util.prepare_output(filename, append_time=True)
+
+        T_ref.set(260.0)
+        SMB_ref.set(0.0)
+        usurf.set(0.0)
+
+        # write time-independent fields
+        for v in [usurf, SMB_ref, T_ref]:
+            v.set_time_independent(True)
+            v.write(out)
+
+        out.close()
+
+    def prepare_climate_forcing(self, grid, filename):
+
+        aSMB = PISM.IceModelVec2S(grid, "climatic_mass_balance_anomaly", PISM.WITHOUT_GHOSTS)
+        aSMB.set_attrs("climate_forcing", "SMB anomaly", "kg m-2 s-1", "kg m-2 s-1", "", 0)
+
+        dSMBdz = PISM.IceModelVec2S(grid, "climatic_mass_balance_gradient", PISM.WITHOUT_GHOSTS)
+        dSMBdz.set_attrs("climate_forcing", "SMB gradient", "kg m-2 s-1 m-1", "kg m-2 s-1 m-1", "", 0)
+
+        aT = PISM.IceModelVec2S(grid, "ice_surface_temp_anomaly", PISM.WITHOUT_GHOSTS)
+        aT.set_attrs("climate_forcing", "temperature anomaly", "Kelvin", "Kelvin", "", 0)
+
+        dTdz = PISM.IceModelVec2S(grid, "ice_surface_temp_gradient", PISM.WITHOUT_GHOSTS)
+        dTdz.set_attrs("climate_forcing", "surface temperature gradient", "K m-1", "K m-1", "", 0)
+
+        out = PISM.util.prepare_output(filename, append_time=False)
+
+        bounds = PISM.TimeBoundsMetadata("time_bounds", "time", self.ctx.unit_system)
+
+        SMB_anomaly  = 1.0
+        T_anomaly    = 1.0
+        SMB_gradient = 1.0
+        T_gradient   = 1.0
+
+        # monthly steps
+        dt = (365 * 86400) / 12.0
+
+        for j in range(12):
+
+            t = self.ctx.time.current() + j * dt
+
+            PISM.append_time(out, self.ctx.config, t)
+
+            PISM.write_time_bounds(out, bounds, j, [t, t + dt])
+
+            aSMB.set(t * SMB_anomaly)
+
+            dSMBdz.set(t * SMB_gradient)
+
+            aT.set(t * T_anomaly)
+
+            dTdz.set(t * T_gradient)
+
+            for v in [aSMB, dSMBdz, aT, dTdz]:
+                v.write(out)
+
+        out.put_att_text("time", "bounds", "time_bounds")
+        out.put_att_text("time", "units", "seconds since 2000-1-1")
+
+        out.close()
+
+    def setUp(self):
+
+        self.ctx = PISM.Context()
+
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
+
+        self.geometry.ice_surface_elevation.set(100.0)
+
+        self.forcing_file = "surface_ismip6_forcing.nc"
+        self.reference_file = "surface_ismip6_reference.nc"
+
+        self.prepare_reference_data(self.grid, self.reference_file)
+        self.prepare_climate_forcing(self.grid, self.forcing_file)
+
+        self.ctx.config.set_string("surface.ismip6.file", self.forcing_file)
+        self.ctx.config.set_string("surface.ismip6.reference_file", self.reference_file)
+
+    def runTest(self):
+        "Surface model ISMIP6"
+
+        atmosphere = PISM.AtmosphereUniform(self.grid)
+
+        model = PISM.SurfaceISMIP6(self.grid, atmosphere)
+
+        model.init(self.geometry)
+
+        t = self.ctx.time.current()
+        dt = model.max_timestep(t).value()
+
+        model.update(self.geometry, t, dt)
+
+    def tearDown(self):
+        os.remove(self.reference_file)
+        os.remove(self.forcing_file)
+
 if __name__ == "__main__":
 
-    t = ForceThickness()
+    t = ISMIP6()
 
     t.setUp()
     t.runTest()

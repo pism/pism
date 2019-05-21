@@ -1,4 +1,5 @@
 %{
+#include "coupler/surface/ISMIP6Climate.hh"
 #include "coupler/surface/EISMINTII.hh"
 #include "coupler/surface/Delta_T.hh"
 #include "coupler/surface/ConstantPIK.hh"
@@ -28,6 +29,10 @@
 %rename(SurfaceEISMINTII) pism::surface::EISMINTII;
 %feature("notabstract") pism::surface::EISMINTII;
 %include "coupler/surface/EISMINTII.hh"
+
+%shared_ptr(pism::surface::ISMIP6)
+%rename(SurfaceISMIP6) pism::surface::ISMIP6;
+%include "coupler/surface/ISMIP6Climate.hh"
 
 %shared_ptr(pism::surface::PIK)
 %rename(SurfacePIK) pism::surface::PIK;

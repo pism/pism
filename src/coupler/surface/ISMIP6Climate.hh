@@ -44,12 +44,12 @@ protected:
   // time-dependent inputs
   IceModelVec2T::Ptr m_mass_flux_anomaly;
   IceModelVec2T::Ptr m_temperature_anomaly;
+  IceModelVec2T::Ptr m_mass_flux_gradient;
+  IceModelVec2T::Ptr m_temperature_gradient;
 
   // time-independent inputs
   IceModelVec2S m_mass_flux_reference;
-  IceModelVec2S m_mass_flux_gradient;
   IceModelVec2S m_temperature_reference;
-  IceModelVec2S m_temperature_gradient;
   IceModelVec2S m_surface_reference;
 
   // outputs; stored as shared_ptr to be able to use SurfaceModel::allocate_xxx()

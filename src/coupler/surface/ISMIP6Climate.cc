@@ -28,9 +28,8 @@ namespace surface {
 ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
   : SurfaceModel(grid),
     m_mass_flux_reference(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
-    m_surface_reference(m_grid, "surface_elevation", WITHOUT_GHOSTS),
     m_temperature_reference(m_grid, "ice_surface_temp", WITHOUT_GHOSTS),
-    m_temperature_gradient(m_grid, "ice_surface_temp_gradient", WITHOUT_GHOSTS)
+    m_surface_reference(m_grid, "usurf", WITHOUT_GHOSTS)
 {
   (void) input;
 
@@ -91,10 +90,18 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
     }
 
     {
-      m_mass_flux_gradient.set_attrs("climate_forcing",
-                                     "surface mass balance rate elevation lapse rate",
-                                     "kg m-2 s-1 m-1", "kg m-2 year-1 m-1",
-                                     "", 0);
+      m_mass_flux_gradient = IceModelVec2T::ForcingField(m_grid,
+                                                         file,
+                                                         "climatic_mass_balance_gradient",
+                                                         "", // no standard name
+                                                         buffer_size,
+                                                         evaluations_per_year,
+                                                         periodic);
+
+      m_mass_flux_gradient->set_attrs("climate_forcing",
+                                      "surface mass balance rate elevation lapse rate",
+                                      "kg m-2 s-1 m-1", "kg m-2 year-1 m-1",
+                                      "", 0);
     }
 
     {
@@ -105,15 +112,24 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
                                                           buffer_size,
                                                           evaluations_per_year,
                                                           periodic);
+
       m_temperature_anomaly->set_attrs("climate_forcing",
                                        "ice surface temperature anomaly",
                                        "Kelvin", "Kelvin", "", 0);
     }
 
     {
-      m_temperature_gradient.set_attrs("climate_forcing",
-                                       "ice surface temperature elevation lapse rate",
-                                       "Kelvin m-1", "Kelvin m-1", "", 0);
+      m_temperature_gradient = IceModelVec2T::ForcingField(m_grid,
+                                                           file,
+                                                           "ice_surface_temp_gradient",
+                                                           "", // no standard name
+                                                           buffer_size,
+                                                           evaluations_per_year,
+                                                           periodic);
+
+      m_temperature_gradient->set_attrs("climate_forcing",
+                                        "ice surface temperature elevation lapse rate",
+                                        "Kelvin m-1", "Kelvin m-1", "", 0);
     }
 
   }
@@ -124,6 +140,7 @@ ISMIP6::~ISMIP6() {
 }
 
 void ISMIP6::init_impl(const Geometry &geometry) {
+  (void) geometry;
 
   m_log->message(2, "* Initializing the ISMIP6 surface model...\n");
 
@@ -141,7 +158,10 @@ void ISMIP6::init_impl(const Geometry &geometry) {
     ForcingOptions opt(*m_grid->ctx(), "surface.ismip6");
 
     m_mass_flux_anomaly->init(opt.filename, opt.period, opt.reference_time);
+    m_mass_flux_gradient->init(opt.filename, opt.period, opt.reference_time);
+
     m_temperature_anomaly->init(opt.filename, opt.period, opt.reference_time);
+    m_temperature_gradient->init(opt.filename, opt.period, opt.reference_time);
   }
 }
 
@@ -150,15 +170,13 @@ void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
   // inputs
   const IceModelVec2S &h       = geometry.ice_surface_elevation;
   const IceModelVec2S &h_ref   = m_surface_reference;
-
-  const IceModelVec2S &T_ref = m_temperature_reference;
-  const IceModelVec2S &dTdz  = m_temperature_gradient;
-
+  const IceModelVec2S &T_ref   = m_temperature_reference;
   const IceModelVec2S &SMB_ref = m_mass_flux_reference;
-  const IceModelVec2S &dSMBdz  = m_mass_flux_gradient;
 
-  IceModelVec2T &aT   = *m_temperature_anomaly;
-  IceModelVec2T &aSMB = *m_mass_flux_anomaly;
+  IceModelVec2T &dTdz   = *m_temperature_gradient;
+  IceModelVec2T &dSMBdz = *m_mass_flux_gradient;
+  IceModelVec2T &aT     = *m_temperature_anomaly;
+  IceModelVec2T &aSMB   = *m_mass_flux_anomaly;
 
   // outputs
   IceModelVec2S &T   = *m_temperature;
@@ -168,13 +186,17 @@ void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
   {
     aT.update(t, dt);
     aSMB.update(t, dt);
+    dTdz.update(t, dt);
+    dSMBdz.update(t, dt);
 
     aT.average(t, dt);
     aSMB.average(t, dt);
+    dTdz.average(t, dt);
+    dSMBdz.average(t, dt);
   }
 
   // From http://www.climate-cryosphere.org/wiki/index.php?title=ISMIP6-Projections-Greenland:
-  // SMB(x,y,t) = SMB_ref(x,y) + aSMB(x,y,t) + dSMBdz(x,y) * [h(x,y,t) - h_ref(x,y)]
+  // SMB(x,y,t) = SMB_ref(x,y) + aSMB(x,y,t) + dSMBdz(x,y,t) * [h(x,y,t) - h_ref(x,y)]
 
   IceModelVec::AccessList list{&h, &h_ref,
                                &SMB, &SMB_ref, &aSMB, &dSMBdz,
@@ -196,8 +218,9 @@ MaxTimestep ISMIP6::max_timestep_impl(double t) const {
   using std::min;
 
   auto dt = m_temperature_anomaly->max_timestep(t);
-
+  dt = min(dt, m_temperature_gradient->max_timestep(t));
   dt = min(dt, m_mass_flux_anomaly->max_timestep(t));
+  dt = min(dt, m_mass_flux_gradient->max_timestep(t));
 
   if (dt.finite()) {
     return MaxTimestep(dt.value(), "surface ISMIP6");

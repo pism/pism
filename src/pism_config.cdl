@@ -1964,6 +1964,11 @@ pism_config:frontal_melt.constant.melt_rate = 1.0;
     pism_config:surface.ismip6.period_option = "surface_ismip6_period";
     pism_config:surface.ismip6.period_units = "years";
 
+    pism_config:surface.ismip6.reference_year = 0;
+    pism_config:surface.ismip6.reference_year_doc = "Reference year to use when ``surface.ismip6.period`` is active.";
+    pism_config:surface.ismip6.reference_year_type = "integer";
+    pism_config:surface.ismip6.reference_year_units = "years";
+
     pism_config:surface.ismip6.reference_file = "";
     pism_config:surface.ismip6.reference_file_doc = "Name of the file containing reference climate forcing fields.";
     pism_config:surface.ismip6.reference_file_type = "string";
