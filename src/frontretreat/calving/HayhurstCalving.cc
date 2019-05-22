@@ -54,7 +54,7 @@ void HayhurstCalving::init() {
   m_sigma_threshold = m_config->get_double("calving.hayhurst_calving.sigma_threshold");
 
   m_log->message(2,
-                 "  B tilde parameter: %3.3f MPa-%3.3f s-1.\n", m_B_tilde, m_exponent_r);
+                 "  B tilde parameter: %3.3f MPa-%3.3f yr-1.\n", m_B_tilde, m_exponent_r);
   m_log->message(2,
                  "  Hayhurst calving threshold: %3.3f MPa.\n", m_sigma_threshold);
 
@@ -91,17 +91,19 @@ void HayhurstCalving::update(const IceModelVec2CellType &cell_type,
 
       // [\ref Mercenier2018] maximum tensile stress approximation
       const double sigma_0 = (0.4 - 0.45 * pow(omega - 0.065, 2.0) * ice_density * gravity * H),
-        mpa_scaling = pow(1e-6, m_exponent_r);
+        // convert "Pa" to "MPa" and "m yr-1" to "m s-1"
+        unit_scaling = pow(1e-6, m_exponent_r) * convert(m_sys, 1.0, "m year-1", "m second-1");
+;
       
       // [\ref Mercenier2018] equation 22
-      m_calving_rate(i, j) = m_B_tilde * (1 - pow(omega, 2.8)) * pow(sigma_0 - m_sigma_threshold , m_exponent_r) * mpa_scaling * H;
+      m_calving_rate(i, j) = m_B_tilde * unit_scaling * (1 - pow(omega, 2.8)) * pow(sigma_0 - m_sigma_threshold , m_exponent_r) * H;
 
     } else { // end of "if (ice_free_ocean and next_to_floating)"
       m_calving_rate(i, j) = 0.0;
     }
   }   // end of loop over grid points
 
-  // Set frontal melt rate *near* grounded termini to the average of grounded icy
+  // Set calving rate *near* grounded termini to the average of grounded icy
   // neighbors: front retreat code uses values at these locations (the rest is for
   // visualization).
 
