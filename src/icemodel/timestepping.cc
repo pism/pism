@@ -29,6 +29,7 @@
 #include "pism/util/Component.hh" // ...->max_timestep()
 
 #include "pism/frontretreat/calving/EigenCalving.hh"
+#include "pism/frontretreat/calving/HuyhurstCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/frontretreat/FrontRetreat.hh"
 

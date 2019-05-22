@@ -27,6 +27,7 @@
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
 #include "pism/frontretreat/calving/FloatKill.hh"
+#include "pism/frontretreat/calving/HuyhurstCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/hydrology/NullTransport.hh"
@@ -898,6 +899,18 @@ void IceModel::init_calving() {
     methods.erase("vonmises_calving");
 
     m_submodels["von Mises calving"] = m_vonmises_calving.get();
+  }
+
+  if (methods.find("huyhurst_calving") != methods.end()) {
+
+    if (not m_huyhurst_calving) {
+      m_huyhurst_calving.reset(new calving::HuyhurstCalving(m_grid));
+    }
+
+    m_huyhurst_calving->init();
+    methods.erase("huyhurst_calving");
+
+    m_submodels["Huyhurst calving"] = m_huyhurst_calving.get();
   }
 
   if (methods.find("float_kill") != methods.end()) {

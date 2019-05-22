@@ -1,0 +1,111 @@
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+ *
+ * This file is part of PISM.
+ *
+ * PISM is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with PISM; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#include "HuyhurstCalving.hh"
+
+#include "pism/util/IceGrid.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/geometry/Geometry.hh"
+#include "pism/frontretreat/util/remove_narrow_tongues.hh"
+#include "pism/coupler/SeaLevel.hh"
+
+namespace pism {
+namespace calving {
+
+HuyhurstCalving::HuyhurstCalving(IceGrid::ConstPtr grid)
+  : StressCalving(grid, 2) {
+
+
+  m_calving_rate.metadata().set_name("huyhurst_calving_rate");
+  m_calving_rate.set_attrs("diagnostic",
+                           "horizontal calving rate due to Huyhurst calving",
+                           "m s-1", "m year-1", "", 0);
+
+}
+
+HuyhurstCalving::~HuyhurstCalving() {
+  // empty
+}
+
+void HuyhurstCalving::init() {
+
+  m_log->message(2,
+                 "* Initializing the 'Huyhurst calving' mechanism...\n");
+
+  m_B_tilde = m_config->get_double("calving.huyhurst_calving.B_tilde");
+  m_exponent_r = m_config->get_double("calving.huyhurst_calving.expondent_r");
+  m_sigma_threshold = m_config->get_double("calving.huyhurst_calving.sigma_threshold");
+
+  m_log->message(2,
+                 "  B tilde parameter: %3.3f Pa-%3.3f s-1.\n", m_B_tilde, m_exponent_r);
+  m_log->message(2,
+                 "  Huyhurst calving threshold: %3.3f Pa.\n", m_sigma_threshold);
+
+  if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "-calving huyhurst_calving using a non-square grid cell is not implemented (yet);\n"
+                                  "dx = %f, dy = %f, relative difference = %f",
+                                  m_grid->dx(), m_grid->dy(),
+                                  fabs(m_grid->dx() - m_grid->dy()) / std::max(m_grid->dx(), m_grid->dy()));
+  }
+
+}
+
+void HuyhurstCalving::update(const IceModelVec2CellType &cell_type,
+                             const IceModelVec2S &ice_thickness,
+                             const IceModelVec2S &sealevel,
+                             const IceModelVec2S &surface) {
+
+  using std::min;
+
+  const double ice_density = m_config->get_double("constants.ice.density"),
+    gravity = m_config->get_double("constants.standard_gravity");
+
+  IceModelVec::AccessList list{&ice_thickness, &cell_type, &m_calving_rate, &sealevel, &surface};
+
+  for (Points pt(*m_grid); pt; pt.next()) {
+    const int i = pt.i(), j = pt.j();
+
+    // Find partially filled or empty grid boxes on the icefree ocean, which
+    // have floating ice neighbors after the mass continuity step
+    if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_floating_ice(i, j)) {
+
+      const double H = ice_thickness(i,j);
+      const double Hw = H - (surface(i,j) - sealevel(i,j));      
+      const double omega = min(0.0, Hw / H);
+
+      // [\ref Mercenier2018] maximum tensile stress approximation
+      const double sigma_0 = (0.4 - 0.45 * pow(omega - 0.065, 2.0) * ice_density * gravity * H);
+      // [\ref Mercenier2018] equation 22
+      m_calving_rate(i, j) = m_B_tilde * (1 - pow(omega, 2.8)) * pow(sigma_0 - m_sigma_threshold , m_exponent_r) * H;
+
+    } else { // end of "if (ice_free_ocean and next_to_floating)"
+      m_calving_rate(i, j) = 0.0;
+    }
+  }   // end of loop over grid points
+}
+
+
+DiagnosticList HuyhurstCalving::diagnostics_impl() const {
+  return {{"huyhurst_calving_rate", Diagnostic::wrap(m_calving_rate)}};
+}
+
+} // end of namespace calving
+} // end of namespace pism

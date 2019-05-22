@@ -74,6 +74,7 @@ namespace calving {
 class EigenCalving;
 class vonMisesCalving;
 class FloatKill;
+class HuyhurstCalving;
 class CalvingAtThickness;
 class IcebergRemover;
 }
@@ -275,6 +276,7 @@ protected:
   std::shared_ptr<calving::FloatKill>          m_float_kill_calving;
   std::shared_ptr<calving::CalvingAtThickness> m_thickness_threshold_calving;
   std::shared_ptr<calving::EigenCalving>       m_eigen_calving;
+  std::shared_ptr<calving::HuyhurstCalving>    m_huyhurst_calving;
   std::shared_ptr<calving::vonMisesCalving>    m_vonmises_calving;
   std::shared_ptr<PrescribedRetreat>           m_prescribed_retreat;
 
