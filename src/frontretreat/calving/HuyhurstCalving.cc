@@ -54,9 +54,9 @@ void HuyhurstCalving::init() {
   m_sigma_threshold = m_config->get_double("calving.huyhurst_calving.sigma_threshold");
 
   m_log->message(2,
-                 "  B tilde parameter: %3.3f Pa-%3.3f s-1.\n", m_B_tilde, m_exponent_r);
+                 "  B tilde parameter: %3.3f MPa-%3.3f s-1.\n", m_B_tilde, m_exponent_r);
   m_log->message(2,
-                 "  Huyhurst calving threshold: %3.3f Pa.\n", m_sigma_threshold);
+                 "  Huyhurst calving threshold: %3.3f MPa.\n", m_sigma_threshold);
 
   if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -83,23 +83,55 @@ void HuyhurstCalving::update(const IceModelVec2CellType &cell_type,
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
-    // Find partially filled or empty grid boxes on the icefree ocean, which
-    // have floating ice neighbors after the mass continuity step
-    if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_floating_ice(i, j)) {
+    if (cell_type.icy(i, j)) {
 
       const double H = ice_thickness(i,j);
       const double Hw = H - (surface(i,j) - sealevel(i,j));      
       const double omega = min(0.0, Hw / H);
 
       // [\ref Mercenier2018] maximum tensile stress approximation
-      const double sigma_0 = (0.4 - 0.45 * pow(omega - 0.065, 2.0) * ice_density * gravity * H);
+      const double sigma_0 = (0.4 - 0.45 * pow(omega - 0.065, 2.0) * ice_density * gravity * H),
+        mpa_scaling = pow(1e-6, m_exponent_r);
+      
       // [\ref Mercenier2018] equation 22
-      m_calving_rate(i, j) = m_B_tilde * (1 - pow(omega, 2.8)) * pow(sigma_0 - m_sigma_threshold , m_exponent_r) * pow(1e-6, m_exponent_r) * H;
+      m_calving_rate(i, j) = m_B_tilde * (1 - pow(omega, 2.8)) * pow(sigma_0 - m_sigma_threshold , m_exponent_r) * mpa_scaling * H;
 
     } else { // end of "if (ice_free_ocean and next_to_floating)"
       m_calving_rate(i, j) = 0.0;
     }
   }   // end of loop over grid points
+
+  // Set frontal melt rate *near* grounded termini to the average of grounded icy
+  // neighbors: front retreat code uses values at these locations (the rest is for
+  // visualization).
+
+  m_calving_rate.update_ghosts();
+
+  const Direction dirs[] = {North, East, South, West};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (cell_type.next_to_ice(i, j) and cell_type.ice_free(i, j)) {
+
+      auto R = m_calving_rate.star(i, j);
+      auto M = cell_type.int_star(i, j);
+
+      int N = 0;
+      double R_sum = 0.0;
+      for (int n = 0; n < 4; ++n) {
+        Direction direction = dirs[n];
+        if (mask::icy(M[direction])) {
+          R_sum += R[direction];
+          N++;
+        }
+      }
+
+      if (N > 0) {
+        m_calving_rate(i, j) = R_sum / N;
+      }
+    }
+  }
 }
 
 const IceModelVec2S &HuyhurstCalving::calving_rate() const {
