@@ -30,7 +30,7 @@ namespace pism {
 namespace calving {
 
 HuyhurstCalving::HuyhurstCalving(IceGrid::ConstPtr grid)
-  : StressCalving(grid, 2) {
+  : Component(grid) {
 
 
   m_calving_rate.metadata().set_name("huyhurst_calving_rate");
@@ -94,7 +94,7 @@ void HuyhurstCalving::update(const IceModelVec2CellType &cell_type,
       // [\ref Mercenier2018] maximum tensile stress approximation
       const double sigma_0 = (0.4 - 0.45 * pow(omega - 0.065, 2.0) * ice_density * gravity * H);
       // [\ref Mercenier2018] equation 22
-      m_calving_rate(i, j) = m_B_tilde * (1 - pow(omega, 2.8)) * pow(sigma_0 - m_sigma_threshold , m_exponent_r) * H;
+      m_calving_rate(i, j) = m_B_tilde * (1 - pow(omega, 2.8)) * pow(sigma_0 - m_sigma_threshold , m_exponent_r) * pow(1e-6, m_exponent_r) * H;
 
     } else { // end of "if (ice_free_ocean and next_to_floating)"
       m_calving_rate(i, j) = 0.0;
@@ -102,6 +102,9 @@ void HuyhurstCalving::update(const IceModelVec2CellType &cell_type,
   }   // end of loop over grid points
 }
 
+const IceModelVec2S &HuyhurstCalving::calving_rate() const {
+  return m_calving_rate;
+}
 
 DiagnosticList HuyhurstCalving::diagnostics_impl() const {
   return {{"huyhurst_calving_rate", Diagnostic::wrap(m_calving_rate)}};

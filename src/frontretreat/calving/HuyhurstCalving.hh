@@ -20,7 +20,7 @@
 #ifndef HUYHURSTCALVING_H
 #define HUYHURSTCALVING_H
 
-#include "StressCalving.hh"
+#include "pism/util/Component.hh"
 
 namespace pism {
 
@@ -28,7 +28,7 @@ class Geometry;
 
 namespace calving {
 
-class HuyhurstCalving : public StressCalving {
+class HuyhurstCalving : public Component {
 public:
   HuyhurstCalving(IceGrid::ConstPtr grid);
   virtual ~HuyhurstCalving();
@@ -38,10 +38,15 @@ public:
   void update(const IceModelVec2CellType &pism_mask, const IceModelVec2S &ice_thickness, 
               const IceModelVec2S &sealevel, const IceModelVec2S &surface);
 
+  const IceModelVec2S &calving_rate() const;
+
 protected:
   DiagnosticList diagnostics_impl() const;
   
 protected:
+
+  IceModelVec2S m_calving_rate;
+
   double m_B_tilde, m_exponent_r, m_sigma_threshold;
 
 };

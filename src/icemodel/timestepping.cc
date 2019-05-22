@@ -122,7 +122,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 
   // mechanisms that use a retreat rate
   if (m_config->get_boolean("geometry.front_retreat.use_cfl") and
-      (m_eigen_calving or m_vonmises_calving or m_frontal_melt)) {
+      (m_eigen_calving or m_vonmises_calving or m_huyhurst_calving or m_frontal_melt)) {
     // at least one of front retreat mechanisms is active
 
     IceModelVec2S &retreat_rate = m_work2d[0];
@@ -130,6 +130,10 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 
     if (m_eigen_calving) {
       retreat_rate.add(1.0, m_eigen_calving->calving_rate());
+    }
+
+    if (m_huyhurst_calving) {
+      retreat_rate.add(1.0, m_huyhurst_calving->calving_rate());
     }
 
     if (m_vonmises_calving) {
