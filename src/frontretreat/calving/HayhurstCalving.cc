@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "HuyhurstCalving.hh"
+#include "HayhurstCalving.hh"
 
 #include "pism/util/IceGrid.hh"
 #include "pism/util/error_handling.hh"
@@ -29,38 +29,38 @@
 namespace pism {
 namespace calving {
 
-HuyhurstCalving::HuyhurstCalving(IceGrid::ConstPtr grid)
+HayhurstCalving::HayhurstCalving(IceGrid::ConstPtr grid)
   : Component(grid) {
 
 
-  m_calving_rate.metadata().set_name("huyhurst_calving_rate");
+  m_calving_rate.metadata().set_name("hayhurst_calving_rate");
   m_calving_rate.set_attrs("diagnostic",
-                           "horizontal calving rate due to Huyhurst calving",
+                           "horizontal calving rate due to Hayhurst calving",
                            "m s-1", "m year-1", "", 0);
 
 }
 
-HuyhurstCalving::~HuyhurstCalving() {
+HayhurstCalving::~HayhurstCalving() {
   // empty
 }
 
-void HuyhurstCalving::init() {
+void HayhurstCalving::init() {
 
   m_log->message(2,
-                 "* Initializing the 'Huyhurst calving' mechanism...\n");
+                 "* Initializing the 'Hayhurst calving' mechanism...\n");
 
-  m_B_tilde = m_config->get_double("calving.huyhurst_calving.B_tilde");
-  m_exponent_r = m_config->get_double("calving.huyhurst_calving.expondent_r");
-  m_sigma_threshold = m_config->get_double("calving.huyhurst_calving.sigma_threshold");
+  m_B_tilde = m_config->get_double("calving.hayhurst_calving.B_tilde");
+  m_exponent_r = m_config->get_double("calving.hayhurst_calving.expondent_r");
+  m_sigma_threshold = m_config->get_double("calving.hayhurst_calving.sigma_threshold");
 
   m_log->message(2,
                  "  B tilde parameter: %3.3f MPa-%3.3f s-1.\n", m_B_tilde, m_exponent_r);
   m_log->message(2,
-                 "  Huyhurst calving threshold: %3.3f MPa.\n", m_sigma_threshold);
+                 "  Hayhurst calving threshold: %3.3f MPa.\n", m_sigma_threshold);
 
   if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "-calving huyhurst_calving using a non-square grid cell is not implemented (yet);\n"
+                                  "-calving hayhurst_calving using a non-square grid cell is not implemented (yet);\n"
                                   "dx = %f, dy = %f, relative difference = %f",
                                   m_grid->dx(), m_grid->dy(),
                                   fabs(m_grid->dx() - m_grid->dy()) / std::max(m_grid->dx(), m_grid->dy()));
@@ -68,7 +68,7 @@ void HuyhurstCalving::init() {
 
 }
 
-void HuyhurstCalving::update(const IceModelVec2CellType &cell_type,
+void HayhurstCalving::update(const IceModelVec2CellType &cell_type,
                              const IceModelVec2S &ice_thickness,
                              const IceModelVec2S &sealevel,
                              const IceModelVec2S &surface) {
@@ -134,12 +134,12 @@ void HuyhurstCalving::update(const IceModelVec2CellType &cell_type,
   }
 }
 
-const IceModelVec2S &HuyhurstCalving::calving_rate() const {
+const IceModelVec2S &HayhurstCalving::calving_rate() const {
   return m_calving_rate;
 }
 
-DiagnosticList HuyhurstCalving::diagnostics_impl() const {
-  return {{"huyhurst_calving_rate", Diagnostic::wrap(m_calving_rate)}};
+DiagnosticList HayhurstCalving::diagnostics_impl() const {
+  return {{"hayhurst_calving_rate", Diagnostic::wrap(m_calving_rate)}};
 }
 
 } // end of namespace calving

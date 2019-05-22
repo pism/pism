@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef HUYHURSTCALVING_H
-#define HUYHURSTCALVING_H
+#ifndef HAYHURSTCALVING_H
+#define HAYHURSTCALVING_H
 
 #include "pism/util/Component.hh"
 
@@ -28,10 +28,10 @@ class Geometry;
 
 namespace calving {
 
-class HuyhurstCalving : public Component {
+class HayhurstCalving : public Component {
 public:
-  HuyhurstCalving(IceGrid::ConstPtr grid);
-  virtual ~HuyhurstCalving();
+  HayhurstCalving(IceGrid::ConstPtr grid);
+  virtual ~HayhurstCalving();
 
   void init();
 
@@ -54,4 +54,4 @@ protected:
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* HUYHURSTCALVING_H */
+#endif /* HAYHURSTCALVING_H */
