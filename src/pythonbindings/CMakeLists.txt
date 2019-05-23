@@ -32,6 +32,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       pism_options.i
       pism_surface.i
       pism_verification.i
+      pism_calving.i
       )
 
     if(Pism_USE_JANSSON)

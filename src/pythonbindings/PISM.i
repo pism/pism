@@ -323,6 +323,8 @@
 
 %include pism_surface.i
 
+%include pism_calving.i
+
 %include pism_verification.i
 
 %include "energy/bootstrapping.hh"
