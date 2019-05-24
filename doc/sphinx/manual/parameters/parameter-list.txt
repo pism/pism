@@ -417,6 +417,21 @@
    :Option: :opt:`-eigen_calving_K`
    :Description: Set proportionality constant to determine calving rate from strain rates.  Note references :cite:`Levermannetal2012`, :cite:`Martinetal2011` use K in range `10^{9}` to `3 \times 10^{11}` m a, that is, `3 \times 10^{16}` to `10^{19}` m s.
 
+#. :config:`calving.hayhurst_calving.B_tilde` (*scalar*)
+
+   :Value: 65 ((MPa)^r / year)
+   :Description: Effective damage rate :cite:`Mercenier2018`
+
+#. :config:`calving.hayhurst_calving.exponent_r` (*scalar*)
+
+   :Value: 0.430000 (1)
+   :Description: Damage law exponent :cite:`Mercenier2018`
+
+#. :config:`calving.hayhurst_calving.sigma_threshold` (*scalar*)
+
+   :Value: 0.170000 (MPa)
+   :Description: Damage threshold stress :cite:`Mercenier2018`
+
 #. :config:`calving.float_kill.margin_only` (*boolean*)
 
    :Value: no
@@ -1109,7 +1124,7 @@
 #. :config:`hydrology.model` (*keyword*)
 
    :Value: ``null``
-   :Choices: ``null, routing, distributed``
+   :Choices: ``null, routing, routing_steady, distributed``
    :Option: :opt:`-hydrology`
    :Description: Basal hydrology sub-model.
 
@@ -1200,6 +1215,11 @@
 
    :Value: yes
    :Description: Add surface input to water stored in till. If no it will be added to the transportable water.
+
+#. :config:`hydrology.routing_steady.n_iterations` (*integer*)
+
+   :Value: 100
+   :Description: number of iterations taken by the `routing_steady` hydrology model
 
 #. :config:`inverse.design.cH1` (*scalar*)
 
@@ -2075,17 +2095,16 @@
    :Option: :opt:`-surface_ismip6_period`
    :Description: Length of the period of the climate forcing data. Set to zero to disable.
 
+#. :config:`surface.ismip6.reference_year` (*integer*)
+
+   :Value: 0
+   :Description: Reference year to use when ``surface.ismip6.period`` is active.
+
 #. :config:`surface.ismip6.reference_file` (*string*)
 
    :Value: *no default*
    :Option: :opt:`-surface_ismip6_reference_file`
    :Description: Name of the file containing reference climate forcing fields.
-
-#. :config:`surface.ismip6.reference_year` (*integer*)
-
-   :Value: 0
-   :Option: :opt:`-surface_ismip6_reference_year`
-   :Description: Reference year to use when ``surface.ismip6.period`` is active.
 
 #. :config:`surface.lapse_rate.file` (*string*)
 
