@@ -34,7 +34,7 @@ HayhurstCalving::HayhurstCalving(IceGrid::ConstPtr grid)
 {
   m_calving_rate.set_attrs("diagnostic",
                            "horizontal calving rate due to Hayhurst calving",
-                           "m s-1", "m year-1", "", 0);
+                           "m s-1", "m day-1", "", 0);
 
 }
 
