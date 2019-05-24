@@ -41,13 +41,20 @@
 namespace pism {
 
 void IceModel::front_retreat_step() {
-  // compute retreat rates due to eigencalving, von Mises calving, and frontal melt
-  //
+  // compute retreat rates due to eigencalving, von Mises calving, Hayhurst calving,
+  // and frontal melt.
   // We do this first to make sure that all three mechanisms use the same ice geometry.
   {
     if (m_eigen_calving) {
       m_eigen_calving->update(m_geometry.cell_type,
                               m_stress_balance->shallow()->velocity());
+    }
+
+    if (m_hayhurst_calving) {
+      m_hayhurst_calving->update(m_geometry.cell_type,
+                                 m_geometry.ice_thickness,
+                                 m_geometry.sea_level_elevation,
+                                 m_geometry.ice_surface_elevation);
     }
 
     if (m_vonmises_calving) {
@@ -100,11 +107,11 @@ void IceModel::front_retreat_step() {
   }
 
   // calving
-  if (m_eigen_calving or m_vonmises_calving or m_float_kill_calving or m_thickness_threshold_calving) {
+  if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_float_kill_calving or m_thickness_threshold_calving) {
     old_H.copy_from(m_geometry.ice_thickness);
     old_Href.copy_from(m_geometry.ice_area_specific_volume);
 
-    if (m_eigen_calving or m_vonmises_calving) {
+    if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving) {
       assert(m_front_retreat);
 
       IceModelVec2S &retreat_rate = m_work2d[2];
@@ -112,6 +119,10 @@ void IceModel::front_retreat_step() {
 
       if (m_eigen_calving) {
         retreat_rate.add(1.0, m_eigen_calving->calving_rate());
+      }
+
+      if (m_hayhurst_calving) {
+        retreat_rate.add(1.0, m_hayhurst_calving->calving_rate());
       }
 
       if (m_vonmises_calving) {
@@ -127,7 +138,7 @@ void IceModel::front_retreat_step() {
 
       m_geometry.ensure_consistency(thickness_threshold);
 
-      if (m_eigen_calving or m_vonmises_calving) {
+      if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving) {
         remove_narrow_tongues(m_geometry.cell_type, m_geometry.ice_thickness);
 
         m_geometry.ensure_consistency(thickness_threshold);
