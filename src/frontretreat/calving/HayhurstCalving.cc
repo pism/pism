@@ -75,10 +75,11 @@ void HayhurstCalving::update(const IceModelVec2CellType &cell_type,
   using std::min;
 
   const double
-    ice_density  = m_config->get_double("constants.ice.density"),
-    gravity      = m_config->get_double("constants.standard_gravity"),
+    ice_density   = m_config->get_double("constants.ice.density"),
+    water_density = m_config->get_double("constants.sea_water.density"),
+    gravity       = m_config->get_double("constants.standard_gravity"),
     // convert "Pa" to "MPa" and "m yr-1" to "m s-1"
-    unit_scaling = pow(1e-6, m_exponent_r) * convert(m_sys, 1.0, "m year-1", "m second-1");
+    unit_scaling  = pow(1e-6, m_exponent_r) * convert(m_sys, 1.0, "m year-1", "m second-1");
 
   IceModelVec::AccessList list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
                                &bed_elevation};
@@ -92,9 +93,14 @@ void HayhurstCalving::update(const IceModelVec2CellType &cell_type,
       // note that ice_thickness > 0 at icy locations
       assert(ice_thickness(i, j) > 0);
 
-      const double
-        H     = ice_thickness(i, j),
-        omega = std::min(1.0, water_depth / H);
+      double H     = ice_thickness(i, j);
+
+      // Note that for ice at floatation water_depth = H * (ice_density / water_density),
+      // so omega cannot exceed ice_density / water_density.
+      //
+      // This extends the calving parameterization to ice tongues and shelves close to
+      // floatation.
+      double omega = std::min(ice_density / water_density, water_depth / H);
 
       // [\ref Mercenier2018] maximum tensile stress approximation
       double sigma_0 = (0.4 - 0.45 * pow(omega - 0.065, 2.0)) * ice_density * gravity * H;
