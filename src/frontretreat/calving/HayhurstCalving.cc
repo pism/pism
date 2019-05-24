@@ -29,10 +29,9 @@ namespace pism {
 namespace calving {
 
 HayhurstCalving::HayhurstCalving(IceGrid::ConstPtr grid)
-  : Component(grid) {
-
-
-  m_calving_rate.metadata().set_name("hayhurst_calving_rate");
+  : Component(grid),
+    m_calving_rate(grid, "hayhurst_calving_rate", WITH_GHOSTS)
+{
   m_calving_rate.set_attrs("diagnostic",
                            "horizontal calving rate due to Hayhurst calving",
                            "m s-1", "m year-1", "", 0);
@@ -49,13 +48,14 @@ void HayhurstCalving::init() {
                  "* Initializing the 'Hayhurst calving' mechanism...\n");
 
   m_B_tilde = m_config->get_double("calving.hayhurst_calving.B_tilde");
-  m_exponent_r = m_config->get_double("calving.hayhurst_calving.expondent_r");
-  m_sigma_threshold = m_config->get_double("calving.hayhurst_calving.sigma_threshold");
+  m_exponent_r = m_config->get_double("calving.hayhurst_calving.exponent_r");
+  m_sigma_threshold = m_config->get_double("calving.hayhurst_calving.sigma_threshold", "Pa");
 
   m_log->message(2,
                  "  B tilde parameter: %3.3f MPa-%3.3f yr-1.\n", m_B_tilde, m_exponent_r);
   m_log->message(2,
-                 "  Hayhurst calving threshold: %3.3f MPa.\n", m_sigma_threshold);
+                 "  Hayhurst calving threshold: %3.3f MPa.\n",
+                 convert(m_sys, m_sigma_threshold, "Pa", "MPa"));
 
   if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -69,34 +69,43 @@ void HayhurstCalving::init() {
 
 void HayhurstCalving::update(const IceModelVec2CellType &cell_type,
                              const IceModelVec2S &ice_thickness,
-                             const IceModelVec2S &sealevel,
-                             const IceModelVec2S &surface) {
+                             const IceModelVec2S &sea_level,
+                             const IceModelVec2S &bed_elevation) {
 
   using std::min;
 
-  const double ice_density = m_config->get_double("constants.ice.density"),
-    gravity = m_config->get_double("constants.standard_gravity");
+  const double
+    ice_density  = m_config->get_double("constants.ice.density"),
+    gravity      = m_config->get_double("constants.standard_gravity"),
+    // convert "Pa" to "MPa" and "m yr-1" to "m s-1"
+    unit_scaling = pow(1e-6, m_exponent_r) * convert(m_sys, 1.0, "m year-1", "m second-1");
 
-  IceModelVec::AccessList list{&ice_thickness, &cell_type, &m_calving_rate, &sealevel, &surface};
+  IceModelVec::AccessList list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
+                               &bed_elevation};
 
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
-    if (cell_type.icy(i, j)) {
+    double water_depth = sea_level(i, j) - bed_elevation(i, j);
 
-      const double H = ice_thickness(i,j);
-      const double Hw = H - (surface(i,j) - sealevel(i,j));      
-      const double omega = min(0.0, Hw / H);
+    if (cell_type.icy(i, j) and water_depth > 0.0) {
+      // note that ice_thickness > 0 at icy locations
+      assert(ice_thickness(i, j) > 0);
+
+      const double
+        H     = ice_thickness(i, j),
+        omega = std::min(1.0, water_depth / H);
 
       // [\ref Mercenier2018] maximum tensile stress approximation
-      const double sigma_0 = (0.4 - 0.45 * pow(omega - 0.065, 2.0) * ice_density * gravity * H),
-        // convert "Pa" to "MPa" and "m yr-1" to "m s-1"
-        unit_scaling = pow(1e-6, m_exponent_r) * convert(m_sys, 1.0, "m year-1", "m second-1");
-;
-      
-      // [\ref Mercenier2018] equation 22
-      m_calving_rate(i, j) = m_B_tilde * unit_scaling * (1 - pow(omega, 2.8)) * pow(sigma_0 - m_sigma_threshold , m_exponent_r) * H;
+      double sigma_0 = (0.4 - 0.45 * pow(omega - 0.065, 2.0)) * ice_density * gravity * H;
 
+      // ensure that sigma_0 - m_sigma_threshold >= 0
+      sigma_0 = std::max(sigma_0, m_sigma_threshold);
+
+      // [\ref Mercenier2018] equation 22
+      m_calving_rate(i, j) = (m_B_tilde * unit_scaling *
+                              (1.0 - pow(omega, 2.8)) *
+                              pow(sigma_0 - m_sigma_threshold, m_exponent_r) * H);
     } else { // end of "if (ice_free_ocean and next_to_floating)"
       m_calving_rate(i, j) = 0.0;
     }
@@ -113,7 +122,7 @@ void HayhurstCalving::update(const IceModelVec2CellType &cell_type,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.next_to_ice(i, j) and cell_type.ice_free(i, j)) {
+    if (cell_type.ice_free(i, j) and cell_type.next_to_ice(i, j) ) {
 
       auto R = m_calving_rate.star(i, j);
       auto M = cell_type.int_star(i, j);

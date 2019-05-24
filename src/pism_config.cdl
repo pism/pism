@@ -395,6 +395,21 @@ netcdf pism_config {
     pism_config:calving.eigen_calving.K_type = "scalar";
     pism_config:calving.eigen_calving.K_units = "meter second";
 
+    pism_config:calving.hayhurst_calving.B_tilde = 65.0;
+    pism_config:calving.hayhurst_calving.B_tilde_doc = "Effective damage rate :cite:`Mercenier2018`";
+    pism_config:calving.hayhurst_calving.B_tilde_type = "scalar";
+    pism_config:calving.hayhurst_calving.B_tilde_units = "(MPa)^r / year";
+
+    pism_config:calving.hayhurst_calving.exponent_r = 0.43;
+    pism_config:calving.hayhurst_calving.exponent_r_doc = "Damage law exponent :cite:`Mercenier2018`";
+    pism_config:calving.hayhurst_calving.exponent_r_type = "scalar";
+    pism_config:calving.hayhurst_calving.exponent_r_units = "1";
+
+    pism_config:calving.hayhurst_calving.sigma_threshold = 0.17;
+    pism_config:calving.hayhurst_calving.sigma_threshold_doc = "Damage threshold stress :cite:`Mercenier2018`";
+    pism_config:calving.hayhurst_calving.sigma_threshold_type = "scalar";
+    pism_config:calving.hayhurst_calving.sigma_threshold_units = "MPa";
+
     pism_config:calving.float_kill.margin_only = "no";
     pism_config:calving.float_kill.margin_only_doc = "Apply float_kill at ice margin cells only.";
     pism_config:calving.float_kill.margin_only_option = "float_kill_margin_only";
@@ -404,29 +419,6 @@ netcdf pism_config {
     pism_config:calving.float_kill.calve_near_grounding_line_doc = "Calve floating ice near the grounding line.";
     pism_config:calving.float_kill.calve_near_grounding_line_option = "float_kill_calve_near_grounding_line";
     pism_config:calving.float_kill.calve_near_grounding_line_type = "boolean";
-
-    pism_config:calving.huyhurst_calving.B_tilde = 6.5;
-    pism_config:calving.huyhurst_calving.B_tilde_doc = "Set threshold stress.  Note references :cite:`Mercenier2018` use 65e6 Pa which is most likely a typo.";
-    pism_config:calving.huyhurst_calving.B_tilde_option = "huyhurst_calving_calving_B_tilde";
-    pism_config:calving.huyhurst_calving.B_tilde_type = "scalar";
-    pism_config:calving.huyhurst_calving.B_tilde_units = "MPa-r s-1";
-
-    pism_config:calving.huyhurst_calving.exponent_r = 0.43;
-    pism_config:calving.huyhurst_calving.exponent_r_doc = "Set exponent. See :cite:`Mercenier2018`";
-    pism_config:calving.huyhurst_calving.exponent_r_option = "huyhurst_calving_calving_exponent_r";
-    pism_config:calving.huyhurst_calving.exponent_r_type = "scalar";
-    pism_config:calving.huyhurst_calving.exponent_r_units = "1";
-
-    pism_config:calving.huyhurst_calving.sigma_threshold = 0.17;
-    pism_config:calving.huyhurst_calving.sigma_threshold_doc = "Set threshold stress. See :cite:`Mercenier2018`";
-    pism_config:calving.huyhurst_calving.sigma_threshold_option = "huyhurst_calving_calving_sigma_threshold";
-    pism_config:calving.huyhurst_calving.sigma_threshold_type = "scalar";
-    pism_config:calving.huyhurst_calving.sigma_threshold_units = "MPa";
-
-    pism_config:calving.huyhurst_calving.threshold_file = "";
-    pism_config:calving.huyhurst_calving.threshold_file_doc = "Name of the file containing the spatially-variable huyhurst_calving calving threshold. ";
-    pism_config:calving.huyhurst_calving.threshold_file_option = "huyhurst_calving_threshold_file";
-    pism_config:calving.huyhurst_calving.threshold_file_type = "string";
 
     pism_config:calving.methods = "";
     pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of 'eigen_calving', 'float_kill', 'thickness_calving'";
