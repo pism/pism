@@ -1690,8 +1690,7 @@ LatLonBounds::LatLonBounds(const IceModel *m,
 
 #if (Pism_USE_PROJ==1)
   // create PROJ objects to check if proj_string is OK.
-  Proj lonlat("+proj=latlong +datum=WGS84 +ellps=WGS84");
-  Proj pism(m_proj_string);
+  Proj crs(m_proj_string);
 #endif
   // If PISM_USE_PROJ is not 1 we don't need to check validity of m_proj_string: this diagnostic
   // will not be available and so this code will not run.

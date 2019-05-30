@@ -214,8 +214,7 @@ static double triangle_area(double *A, double *B, double *C) {
 void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
   IceGrid::ConstPtr grid = result.grid();
 
-  Proj geocent("+proj=geocent +datum=WGS84 +ellps=WGS84");
-  Proj pism(projection);
+  Proj pism_to_geocent(projection, "+proj=geocent +datum=WGS84 +ellps=WGS84");
 
 // Cell layout:
 // (nw)        (ne)
@@ -239,22 +238,28 @@ void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
       x = grid->x(i),
       y = grid->y(j);
     double
-      x_nw = x - dx2, y_nw = y + dy2, Z_nw = 0,
-      x_ne = x + dx2, y_ne = y + dy2, Z_ne = 0,
-      x_se = x + dx2, y_se = y - dy2, Z_se = 0,
-      x_sw = x - dx2, y_sw = y - dy2, Z_sw = 0;
+      x_nw = x - dx2, y_nw = y + dy2,
+      x_ne = x + dx2, y_ne = y + dy2,
+      x_se = x + dx2, y_se = y - dy2,
+      x_sw = x - dx2, y_sw = y - dy2;
 
-    pj_transform(pism, geocent, 1, 1, &x_nw, &y_nw, &Z_nw);
-    double nw[3] = {x_nw, y_nw, Z_nw};
+    PJ_COORD in, out;
 
-    pj_transform(pism, geocent, 1, 1, &x_ne, &y_ne, &Z_ne);
-    double ne[3] = {x_ne, y_ne, Z_ne};
+    in.xy = {x_nw, y_nw};
+    out = proj_trans(*pism_to_geocent, PJ_FWD, in);
+    double nw[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
-    pj_transform(pism, geocent, 1, 1, &x_se, &y_se, &Z_se);
-    double se[3] = {x_se, y_se, Z_se};
+    in.xy = {x_ne, y_ne};
+    out = proj_trans(*pism_to_geocent, PJ_FWD, in);
+    double ne[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
-    pj_transform(pism, geocent, 1, 1, &x_sw, &y_sw, &Z_sw);
-    double sw[3] = {x_sw, y_sw, Z_sw};
+    in.xy = {x_se, y_se};
+    out = proj_trans(*pism_to_geocent, PJ_FWD, in);
+    double se[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
+
+    in.xy = {x_sw, y_sw};
+    out = proj_trans(*pism_to_geocent, PJ_FWD, in);
+    double sw[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
     result(i, j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
   }
@@ -263,8 +268,7 @@ void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
 static void compute_lon_lat(const std::string &projection,
                             LonLat which, IceModelVec2S &result) {
 
-  Proj lonlat("+proj=latlong +datum=WGS84 +ellps=WGS84");
-  Proj pism(projection);
+  Proj crs(projection);
 
 // Cell layout:
 // (nw)        (ne)
@@ -284,16 +288,15 @@ static void compute_lon_lat(const std::string &projection,
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double
-      x = grid->x(i),
-      y = grid->y(j);
+    PJ_COORD in, out;
 
-    pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
+    in.xy = {grid->x(i), grid->y(j)};
+    out = proj_trans(*crs, PJ_INV, in);
 
     if (which == LONGITUDE) {
-      result(i, j) = x * RAD_TO_DEG;
+      result(i, j) = proj_todeg(out.lp.lam);
     } else {
-      result(i, j) = y * RAD_TO_DEG;
+      result(i, j) = proj_todeg(out.lp.phi);
     }
   }
 }
@@ -302,8 +305,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
                                    LonLat which,
                                    IceModelVec3D &result) {
 
-  Proj lonlat("+proj=latlong +datum=WGS84 +ellps=WGS84");
-  Proj pism(projection);
+  Proj crs(projection);
 
   IceGrid::ConstPtr grid = result.grid();
 
@@ -321,17 +323,18 @@ static void compute_lon_lat_bounds(const std::string &projection,
     double *values = result.get_column(i, j);
 
     for (int k = 0; k < 4; ++k) {
-      double
-        x = x0 + x_offsets[k],
-        y = y0 + y_offsets[k];
+
+      PJ_COORD in, out;
+
+      in.xy = {x0 + x_offsets[k], y0 + y_offsets[k]};
 
       // compute lon,lat coordinates:
-      pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
+      out = proj_trans(*crs, PJ_INV, in);
 
       if (which == LATITUDE) {
-        values[k] = y * RAD_TO_DEG;
+        values[k] = proj_todeg(out.lp.phi);
       } else {
-        values[k] = x * RAD_TO_DEG;
+        values[k] = proj_todeg(out.lp.lam);
       }
     }
   }
