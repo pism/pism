@@ -93,14 +93,21 @@ void HayhurstCalving::update(const IceModelVec2CellType &cell_type,
       // note that ice_thickness > 0 at icy locations
       assert(ice_thickness(i, j) > 0);
 
-      double H     = ice_thickness(i, j);
+      double H = ice_thickness(i, j);
 
       // Note that for ice at floatation water_depth = H * (ice_density / water_density),
       // so omega cannot exceed ice_density / water_density.
-      //
-      // This extends the calving parameterization to ice tongues and shelves close to
-      // floatation.
-      double omega = std::min(ice_density / water_density, water_depth / H);
+      double omega = water_depth / H;
+
+      // Extend the calving parameterization to ice shelves. This tweak should (I hope)
+      // prevent a feedback in which the creation of an ice shelf reduces the calving
+      // rate, which leads to an advance of the front and an even lower calving rate, etc.
+      if (omega > ice_density / water_density) {
+        // ice at the front is floating
+        double freeboard = (1.0 - ice_density / water_density) * H;
+        H = water_depth + freeboard;
+        omega = water_depth / H;
+      }
 
       // [\ref Mercenier2018] maximum tensile stress approximation
       double sigma_0 = (0.4 - 0.45 * pow(omega - 0.065, 2.0)) * ice_density * gravity * H;
