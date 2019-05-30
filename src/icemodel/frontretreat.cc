@@ -54,7 +54,7 @@ void IceModel::front_retreat_step() {
       m_hayhurst_calving->update(m_geometry.cell_type,
                                  m_geometry.ice_thickness,
                                  m_geometry.sea_level_elevation,
-                                 m_geometry.ice_surface_elevation);
+                                 m_geometry.bed_elevation);
     }
 
     if (m_vonmises_calving) {
