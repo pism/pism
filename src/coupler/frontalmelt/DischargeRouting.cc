@@ -33,7 +33,8 @@ DischargeRouting::DischargeRouting(IceGrid::ConstPtr grid)
 
   m_log->message(2,
                  "* Initializing the frontal melt model\n"
-                 "  UAF-UT\n");
+                 "  using the Rignot/Xu parameterization\n"
+                 "  and routing of subglacial discharge\n");
 
   unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
 
