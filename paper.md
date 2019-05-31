@@ -32,9 +32,8 @@ Features include:
   * polythermal energy conservation
   * subglacial hydrology and till model
   * complete overview|documentation
-  * parallel simulations using [[https://en.wikipedia.org/wiki/Message_Passing_Interface|MPI]] & [[http://www.mcs.anl.gov/petsc/|PETSc]]
-  * reads and writes [[http://cfconventions.org/|CF-compliant]] [[http://www.unidata.ucar.edu/software/netcdf/|NetCDF]]
-  * [[http://www.pism-docs.org/doxy/inverse/html/index.html|inversion toolbox in Python]]
+  * parallel simulations using [MPI](https://en.wikipedia.org/wiki/Message_Passing_Interface) & [PETSc](http://www.mcs.anl.gov/petsc/)
+  * reads and writes [CF-compliant](http://cfconventions.org/) [NetCDF](http://www.unidata.ucar.edu/software/netcdf/)
   * verification and validation tools
 
 # Recent development
