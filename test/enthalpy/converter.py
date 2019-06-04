@@ -139,6 +139,21 @@ def invalid_inputs_test():
             print("skipped...")
             return
 
+        # temperature exceeds pressure melting
+        E = EC.enthalpy_permissive(T_melting + 1.0, 0.0, pressure)
+        # omega exceeds 1
+        E = EC.enthalpy_permissive(T_melting, 1.1, pressure)
+        # non-zero omega even though the ice is cold
+        E = EC.enthalpy_permissive(T_melting - 1.0, 0.1, pressure)
+        # negative omega
+        E = EC.enthalpy_permissive(T_melting, -0.1, pressure)
+
+        if not PISM.Pism_DEBUG:
+            # Skip remaining tests if PISM was built with Pism_DEBUG set to "OFF". (These
+            # checks are disabled in optimized builds, although we do ensure that
+            # EnthalpyConverter produces reasonable outputs even if it's fed garbage.)
+            return
+
         try:
             E = EC.temperature(E_liquid + 1.0, pressure)
             raise AssertionError("failed to catch E > E_liquid in temperature()")
@@ -157,23 +172,17 @@ def invalid_inputs_test():
         except RuntimeError:
             pass
 
-        E = EC.enthalpy_permissive(T_melting + 1.0, 0.0, pressure)
-
         try:
             E = EC.enthalpy(T_melting, -0.1, pressure)
             raise AssertionError("failed to catch omega < 0 in enthalpy()")
         except RuntimeError:
             pass
 
-        E = EC.enthalpy_permissive(T_melting, -0.1, pressure)
-
         try:
             E = EC.enthalpy(T_melting, 1.1, pressure)
             raise AssertionError("failed to catch omega > 1 in enthalpy()")
         except RuntimeError:
             pass
-
-        E = EC.enthalpy_permissive(T_melting, 1.1, pressure)
 
         try:
             E = EC.enthalpy(-1.0, 0.0, pressure)
@@ -187,7 +196,6 @@ def invalid_inputs_test():
         except RuntimeError:
             pass
 
-        E = EC.enthalpy_permissive(T_melting - 1.0, 0.1, pressure)
 
     try_all_converters(run)
 
