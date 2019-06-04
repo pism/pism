@@ -67,6 +67,15 @@
 #include "util/Time_Calendar.hh"
 %}
 
+// Tell SWIG that the following variables are truly constant
+%immutable pism::revision;
+%immutable pism::config_file;
+%immutable pism::petsc_configure_flags;
+%immutable pism::petsc4py_version;
+%immutable pism::swig_version;
+%immutable pism::cmake_version;
+%include "pism/pism_config.hh"
+
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
 %include "petsc4py/petsc4py.i"
 
@@ -168,10 +177,6 @@
  $1 = SWIG_CheckState(res);
 }
 
-
-// Tell SWIG that the following variables are truly constant
-%immutable pism::PISM_Revision;
-%immutable pism::PISM_DefaultConfigFile;
 
 /* PISM header with no dependence on other PISM headers. */
 %include "util/pism_utilities.hh"

@@ -33,6 +33,8 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       pism_verification.i
       )
 
+    set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-I${CMAKE_BINARY_DIR}" APPEND)
+
     if(Pism_USE_JANSSON)
       set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPism_USE_JANSSON=1" APPEND)
     else()
