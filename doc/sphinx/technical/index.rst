@@ -20,3 +20,5 @@ Technical notes
    icemodelvec2t.rst
 
    bombproof.rst
+
+   steady-hydrology.rst
