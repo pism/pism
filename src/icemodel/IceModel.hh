@@ -421,6 +421,7 @@ protected:
   std::string m_ts_filename;
   //! requested times for scalar time-series
   std::shared_ptr<std::vector<double>> m_ts_times;
+  std::set<std::string> m_ts_vars;
   void init_timeseries();
   void flush_timeseries();
   MaxTimestep ts_max_timestep(double my_t);
@@ -435,7 +436,6 @@ protected:
   TimeBoundsMetadata m_extra_bounds;
   void init_extras();
   void write_extras();
-  std::set<std::string> process_extra_shortcuts(const std::set<std::string> &input);
   MaxTimestep extras_max_timestep(double my_t);
 
   // automatic backups
