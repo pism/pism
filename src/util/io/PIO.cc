@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -755,5 +755,31 @@ void PIO::put_varm_double(const string &variable_name,
     throw;
   }
 }
+
+unsigned int PIO::inq_nvars() const {
+  int n_vars = 0;
+
+  try {
+    m_impl->nc->inq_nvars(n_vars);
+  } catch (RuntimeError &e) {
+    e.add_context("getting the number of variables in '%s'", inq_filename().c_str());
+    throw;
+  }
+
+  return n_vars;
+}
+
+std::string PIO::inq_varname(unsigned int id) const {
+  std::string result;
+  try {
+    m_impl->nc->inq_varname(id, result);
+  } catch (RuntimeError &e) {
+    e.add_context("getting the name of %d-th variable in '%s'", id, inq_filename().c_str());
+    throw;
+  }
+
+  return result;
+}
+
 
 } // end of namespace pism
