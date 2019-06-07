@@ -275,36 +275,38 @@ void append_time(const PIO &nc, const std::string &name, double value) {
 
 //! \brief Define dimensions a variable depends on.
 static void define_dimensions(const SpatialVariableMetadata& var,
-                              const IceGrid& grid, const PIO &nc) {
+                              const IceGrid& grid, const PIO &file) {
 
   // x
   std::string x_name = var.get_x().get_name();
-  if (not nc.inq_dim(x_name)) {
-    define_dimension(nc, grid.Mx(), var.get_x());
-    nc.put_att_double(x_name, "spacing_meters", PISM_DOUBLE,
-                      grid.x(1) - grid.x(0));
-    nc.put_1d_var(x_name, 0, grid.x().size(), grid.x());
+  if (not file.inq_dim(x_name)) {
+    define_dimension(file, grid.Mx(), var.get_x());
+    file.put_att_double(x_name, "spacing_meters", PISM_DOUBLE,
+                        grid.x(1) - grid.x(0));
+    file.put_1d_var(x_name, 0, grid.x().size(), grid.x());
   }
 
   // y
   std::string y_name = var.get_y().get_name();
-  if (not nc.inq_dim(y_name)) {
-    define_dimension(nc, grid.My(), var.get_y());
-    nc.put_att_double(y_name, "spacing_meters", PISM_DOUBLE,
-                      grid.y(1) - grid.y(0));
-    nc.put_1d_var(y_name, 0, grid.y().size(), grid.y());
+  if (not file.inq_dim(y_name)) {
+    define_dimension(file, grid.My(), var.get_y());
+    file.put_att_double(y_name, "spacing_meters", PISM_DOUBLE,
+                        grid.y(1) - grid.y(0));
+    file.put_1d_var(y_name, 0, grid.y().size(), grid.y());
   }
 
   // z
   std::string z_name = var.get_z().get_name();
   if (not z_name.empty()) {
-    if (not nc.inq_dim(z_name)) {
+    if (not file.inq_dim(z_name)) {
       const std::vector<double>& levels = var.get_levels();
       // make sure we have at least one level
       unsigned int nlevels = std::max(levels.size(), (size_t)1);
-      define_dimension(nc, nlevels, var.get_z());
+      define_dimension(file, nlevels, var.get_z());
 
-      if (nlevels > 1) {
+      bool spatial_dim = not var.get_z().get_string("axis").empty();
+
+      if (nlevels > 1 and spatial_dim) {
         double dz_max = levels[1] - levels[0];
         double dz_min = levels.back() - levels.front();
 
@@ -314,13 +316,13 @@ static void define_dimensions(const SpatialVariableMetadata& var,
           dz_min = std::min(dz_min, dz);
         }
 
-        nc.put_att_double(z_name, "spacing_min_meters", PISM_DOUBLE,
-                          dz_min);
-        nc.put_att_double(z_name, "spacing_max_meters", PISM_DOUBLE,
-                          dz_max);
+        file.put_att_double(z_name, "spacing_min_meters", PISM_DOUBLE,
+                            dz_min);
+        file.put_att_double(z_name, "spacing_max_meters", PISM_DOUBLE,
+                            dz_max);
       }
 
-      nc.put_1d_var(z_name, 0, levels.size(), levels);
+      file.put_1d_var(z_name, 0, levels.size(), levels);
     }
   }
 }
