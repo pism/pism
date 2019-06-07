@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2019 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -756,8 +756,6 @@ void IceModel::misc_setup() {
     if (not proj_string.empty()) {
       m_output_vars.insert("lon_bnds");
       m_output_vars.insert("lat_bnds");
-      m_geometry.latitude.metadata().set_string("bounds", "lat_bnds");
-      m_geometry.longitude.metadata().set_string("bounds", "lon_bnds");
     }
   }
 #endif

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -192,6 +192,44 @@ void IceModel::save_variables(const PIO &file,
     define_model_state(file);
   }
   define_diagnostics(file, variables, default_diagnostics_type);
+
+  // Done defining variables
+
+  {
+    // Note: we don't use "variables" (an argument of this method) here because it
+    // contains PISM's names of diagnostic quantities which (in some cases) map to more
+    // than one NetCDF variable. Moreover, here we're concerned with file contents, not
+    // the list of requested variables.
+    std::set<std::string> var_names;
+    unsigned int n_vars = file.inq_nvars();
+    for (unsigned int k = 0; k < n_vars; ++k) {
+      var_names.insert(file.inq_varname(k));
+    }
+
+    // If this output file contains variables lat and lon...
+    if (member("lat", var_names) and member("lon", var_names)) {
+
+      // add the coordinates attribute to all variables that use x and y dimensions
+      for (auto v : var_names) {
+        std::set<std::string> dims;
+        for (auto d : file.inq_vardims(v)) {
+          dims.insert(d);
+        }
+
+        if (not member(v, {"lat", "lon", "lat_bnds", "lon_bnds"}) and
+            member("x", dims) and member("y", dims)) {
+          file.put_att_text(v, "coordinates", "lat lon");
+        }
+      }
+
+      // and if it also contains lat_bnds and lon_bnds, add the bounds attribute to lat
+      // and lon.
+      if (member("lat_bnds", var_names) and member("lon_bnds", var_names)) {
+        file.put_att_text("lat", "bounds", "lat_bnds");
+        file.put_att_text("lon", "bounds", "lon_bnds");
+      }
+    }
+  }
 
   if (kind == INCLUDE_MODEL_STATE) {
     write_model_state(file);

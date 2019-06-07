@@ -1684,7 +1684,6 @@ LatLonBounds::LatLonBounds(const IceModel *m,
     set_attrs("latitude bounds", "", "degree_north", "degree_north", 0);
     m_vars[0].set_doubles("valid_range", {-90, 90});
   }
-  m_vars[0].set_string("coordinates", "");
 
   m_proj_string = proj_string;
 

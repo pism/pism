@@ -34,14 +34,12 @@ Geometry::Geometry(IceGrid::ConstPtr grid) {
   latitude.create(grid, "lat", WITHOUT_GHOSTS);
   latitude.set_attrs("mapping", "latitude", "degree_north", "latitude");
   latitude.set_time_independent(true);
-  latitude.metadata().set_string("coordinates", "");
   latitude.metadata().set_string("grid_mapping", "");
   latitude.metadata().set_doubles("valid_range", {-90.0, 90.0});
 
   longitude.create(grid, "lon", WITHOUT_GHOSTS);
   longitude.set_attrs("mapping", "longitude", "degree_east", "longitude");
   longitude.set_time_independent(true);
-  longitude.metadata().set_string("coordinates", "");
   longitude.metadata().set_string("grid_mapping", "");
   longitude.metadata().set_doubles("valid_range", {-180.0, 180.0});
 
