@@ -10,6 +10,7 @@ authors:
     orcid: 0000-0001-8149-2315
     affiliation: 1
   - name: Constantine Khroulev
+    orcid: 0000-0003-2170-7454
     affiliation: 1
 affiliations:
   - name: University of Alaska Fairbanks, Fairbanks, AK, USA
@@ -21,7 +22,7 @@ bibliography: paper.bib
 
 # Introduction
 
-The Parallel Ice Sheet Model (PISM) is an open source, parallel, high-resolution ice sheet model written in C++.
+The Parallel Ice Sheet Model (PISM) is an open source, parallel, high-resolution ice sheet model written in C++. PISM has been used in 100+ peer-reviewed publications to study the past, present and future of glaciers and ice sheets, to gain insight into glaciological processes using synthetic geometries, and to couple to Global Circulation Models (GCMs).
 
 # Key Functionality
 
