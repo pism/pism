@@ -177,8 +177,7 @@ public:
   }
 protected:
   virtual IceModelVec::Ptr compute_impl() const {
-    IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
-    result->create(m_grid, "bwatvel", WITHOUT_GHOSTS);
+    IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "bwatvel", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
     result->metadata(1) = m_vars[1];
 
@@ -339,7 +338,7 @@ void Routing::initialization_message() const {
   if (m_config->get_boolean("hydrology.routing.include_floating_ice")) {
     m_log->message(2, "  ... routing subglacial water under grounded and floating ice.\n");
   } else {
-    m_log->message(2, "  ... routing  subglacial water under grounded ice only.\n");
+    m_log->message(2, "  ... routing subglacial water under grounded ice only.\n");
   }
 }
 
@@ -567,15 +566,13 @@ void wall_melt(const Routing &model,
                                   "alpha = %f < 1 which is not allowed", alpha);
   }
 
-  IceModelVec2S R;
-  R.create(grid, "R", WITH_GHOSTS);
+  IceModelVec2S R(grid, "R", WITH_GHOSTS);
 
   // R  <-- P + rhow g b
   model.subglacial_water_pressure().add(rg, bed_elevation, R);
   // yes, it updates ghosts
 
-  IceModelVec2S W;
-  W.create(grid, "W", WITH_GHOSTS);
+  IceModelVec2S W(grid, "W", WITH_GHOSTS);
   W.copy_from(model.subglacial_water_thickness());
 
   IceModelVec::AccessList list{&R, &W, &result};
@@ -723,8 +720,9 @@ double Routing::max_timestep_W_cfl() const {
 
   // add a safety margin
   double alpha = 0.95;
+  double eps = 1e-6;
 
-  return alpha * 0.5 / (tmp[0]/m_dx + tmp[1]/m_dy); // FIXME: is regularization needed?
+  return alpha * 0.5 / (tmp[0]/m_dx + tmp[1]/m_dy + eps);
 }
 
 
