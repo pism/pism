@@ -372,4 +372,29 @@ double sea_level_rise_potential(const Geometry &geometry, double thickness_thres
 }
 
 
+/*!
+ * @brief Set no_model_mask variable to have value 1 in strip of width 'strip' m around
+ * edge of computational domain, and value 0 otherwise.
+ */
+void set_no_model_strip(const IceGrid &grid, double width, IceModelVec2Int &result) {
+
+  if (width <= 0.0) {
+    return;
+  }
+
+  IceModelVec::AccessList list(result);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (in_null_strip(grid, i, j, width)) {
+      result(i, j) = 1;
+    } else {
+      result(i, j) = 0;
+    }
+  }
+
+  result.update_ghosts();
+}
+
 } // end of namespace pism
