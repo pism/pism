@@ -1614,9 +1614,13 @@ pism_config:frontal_melt.constant.melt_rate = 1.0;
     pism_config:output.sizes.medium_doc = "Comma-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size (the default) is selected. Does not include fields written by sub-models.";
     pism_config:output.sizes.medium_type = "string";
 
-    pism_config:output.ISMIP6_variables = "lithk,orog,topg,hfgeoubed,acabf,libmassbfgr,libmassbffl,dlithkdt,velsurf,zvelsurf,velbase,zvelbase,velmean,litemptop,litempbotgr,litempbotfl,strbasemag,licalvf,lifmassbf,sftgif,sftgrf,sftflf";
-    pism_config:output.ISMIP6_variables_doc = "Comma-separated list of variables reported by models participating in ISMIP6 simulations.";
-    pism_config:output.ISMIP6_variables_type = "string";
+    pism_config:output.ISMIP6_extra_variables = "lithk,orog,topg,hfgeoubed,acabf,libmassbfgr,libmassbffl,dlithkdt,velsurf,zvelsurf,velbase,zvelbase,velmean,litemptop,litempbotgr,litempbotfl,strbasemag,licalvf,lifmassbf,sftgif,sftgrf,sftflf";
+    pism_config:output.ISMIP6_extra_variables_doc = "Comma-separated list of fields reported by models participating in ISMIP6 simulations.";
+    pism_config:output.ISMIP6_extra_variables_type = "string";
+
+    pism_config:output.ISMIP6_ts_variables = "lim,limnsw,iareagr,iareafl,tendacabf,tendlibmassbf,tendlibmassbffl,tendlicalvf,tendlifmassbf";
+    pism_config:output.ISMIP6_ts_variables_doc = "Comma-separated list of scalar variables (time series) reported by models participating in ISMIP6 simulations.";
+    pism_config:output.ISMIP6_ts_variables_type = "string";
 
     pism_config:output.timeseries.buffer_size = 10000;
     pism_config:output.timeseries.buffer_size_doc = "Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.";

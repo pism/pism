@@ -36,7 +36,8 @@ MaxTimestep IceModel::extras_max_timestep(double my_t) {
   return reporting_max_timestep(m_extra_times, my_t, "reporting (-extra_times)");
 }
 
-std::set<std::string> IceModel::process_extra_shortcuts(const std::set<std::string> &input) {
+static std::set<std::string> process_extra_shortcuts(const Config &config,
+                                                     const std::set<std::string> &input) {
   std::set<std::string> result = input;
 
   // process shortcuts
@@ -87,7 +88,7 @@ std::set<std::string> IceModel::process_extra_shortcuts(const std::set<std::stri
 
   if (result.find("ismip6") != result.end()) {
     result.erase("ismip6");
-    for (auto v : set_split(m_config->get_string("output.ISMIP6_variables"), ',')) {
+    for (auto v : set_split(config.get_string("output.ISMIP6_extra_variables"), ',')) {
       result.insert(v);
     }
   }
@@ -194,7 +195,7 @@ void IceModel::init_extras() {
   }
 
   if (not vars.empty()) {
-    m_extra_vars = process_extra_shortcuts(set_split(vars, ','));
+    m_extra_vars = process_extra_shortcuts(*m_config, set_split(vars, ','));
     m_log->message(2, "variables requested: %s\n", vars.c_str());
   } else {
     m_log->message(2,

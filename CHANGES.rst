@@ -56,8 +56,10 @@ Changes since v1.1
   mask (variable name: `land_ice_area_fraction_retreat`) from a file specified using the
   configuration parameter `geometry.front_retreat.prescribed.file`.
 - Add configuration parameters `output.ISMIP6` (follow ISMIP6 conventions),
-  `output.use_MKS` (save output variables in MKS units), `output.ISMIP6_variables` (list
-  of variables to report when `-extra_vars ismip6` is given).
+  `output.use_MKS` (save output variables in MKS units), `output.ISMIP6_extra_variables`
+  (list of fields to report when `-extra_vars ismip6` is given), and
+  `output.ISMIP6_ts_variables` (list of scalar time series to report when `-ts_vars
+  ismip6` is given).
 
 Changes from v1.0 to v1.1
 =========================

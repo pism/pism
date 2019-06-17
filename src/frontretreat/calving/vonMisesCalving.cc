@@ -93,9 +93,9 @@ void vonMisesCalving::init() {
   m_strain_rates.set(0.0);
 }
 
-//! \brief Uses principal strain rates to apply "eigencalving" with constant K.
+//! \brief Uses principal strain rates to apply the "von Mises" calving method
 /*!
-  See equation (26) in [\ref Winkelmannetal2011].
+  See equation (4) in [@ref Morlighem2016].
 */
 void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
                              const IceModelVec2S &ice_thickness,

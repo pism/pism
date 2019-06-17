@@ -96,13 +96,25 @@ ISMIP6 variable names.
 
 To save *all* the diagnostics requested by ISMIP6 use the short-cut
 
-.. Code-block:: bash
+.. code-block:: bash
 
    pismr -extra_vars ismip6 ...
 
 The list of variables is stored in the configuration parameter
-:config:`output.ISMIP6_variables` and contains variables Greenland projections are
+:config:`output.ISMIP6_extra_variables` and contains variables Greenland projections are
 required to provide. (Add ``base,ligroundf`` to this list for Antarctic projections.)
+
+To save all the time series supported by PISM, omit the `-ts_vars` option:
+
+.. code-block:: bash
+
+   pismr -ts_times TIMES -ts_file ts.nc
+
+To save all variables requested by ISMIP6, use `-ts_vars ismip6`:
+
+.. code-block:: bash
+
+   pismr -ts_times TIMES -ts_file ts.nc -ts_vars ismip6
 
 .. list-table:: ISMIP6 variables
    :name: tab-ismip6-variables
