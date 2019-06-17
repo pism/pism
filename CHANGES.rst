@@ -1,5 +1,13 @@
 .. default-role:: literal
 
+Changes from v1.1.3 to v1.1.4
+=============================
+
+- PISM can be built with PROJ v6. (We define `ACCEPT_USE_OF_DEPRECATED_PROJ_API_H`. This
+  workaround will break once PROJ drops the deprecated API completely. See `issue 409`_.)
+- Fix a minor bug in the `routing` hydrology model (improper indexing in the code
+  computing hydraulic conductivity).
+
 Changes from v1.1.2 to v1.1.3
 =============================
 
@@ -597,6 +605,7 @@ Miscellaneous
 .. _issue 400: https://github.com/pism/pism/issues/400
 .. _issue 402: https://github.com/pism/pism/issues/402
 .. _issue 363: https://github.com/pism/pism/issues/363
+.. _issue 409: https://github.com/pism/pism/issues/409
 .. _ocean models: http://pism-docs.org/sphinx/climate_forcing/ocean.html
 ..
    Local Variables:
