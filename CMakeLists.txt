@@ -6,6 +6,11 @@ if (NOT (${CMAKE_VERSION} VERSION_LESS "3.13"))
   cmake_policy(SET CMP0078 OLD)       #controls names of SWIG targets
 endif()
 
+if (NOT (${CMAKE_VERSION} VERSION_LESS "3.14"))
+  # Policy CMP0086 was introduced in 3.14. See "cmake --help-policies" for details.
+  cmake_policy(SET CMP0086 NEW)
+endif()
+
 # Require C++11 compiler support.
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
