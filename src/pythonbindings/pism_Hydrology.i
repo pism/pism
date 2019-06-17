@@ -4,6 +4,7 @@
 #include "hydrology/Routing.hh"
 #include "hydrology/RoutingSteady.hh"
 #include "hydrology/Distributed.hh"
+#include "hydrology/EmptyingProblem.hh"
 %}
 
 %rename(DistributedHydrology) pism::hydrology::Distributed;
@@ -23,3 +24,6 @@
 %include "hydrology/Routing.hh"
 %include "hydrology/RoutingSteady.hh"
 %include "hydrology/Distributed.hh"
+
+%shared_ptr(pism::hydrology::EmptyingProblem)
+%include "hydrology/EmptyingProblem.hh"
