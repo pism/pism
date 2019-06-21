@@ -50,6 +50,7 @@ set(PISMUTIL_SRC
   pism_utilities.cc
   projection.cc
   fftw_utilities.cc
+  Poisson.cc
   )
 
 if(Pism_USE_JANSSON)

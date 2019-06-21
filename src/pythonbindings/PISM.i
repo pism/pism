@@ -65,6 +65,7 @@
 
 #include "util/Time.hh"
 #include "util/Time_Calendar.hh"
+#include "util/Poisson.hh"
 %}
 
 // Tell SWIG that the following variables are truly constant
@@ -343,3 +344,6 @@
 %include pism_verification.i
 
 %include "energy/bootstrapping.hh"
+
+%shared_ptr(pism::Poisson)
+%include "util/Poisson.hh"
