@@ -20,6 +20,7 @@
 
 #include "pism/util/IceGrid.hh"
 #include "pism/coupler/util/options.hh"
+#include "pism/util/io/io_helpers.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
