@@ -87,6 +87,14 @@ static std::set<std::string> process_extra_shortcuts(const Config &config,
   }
 
   if (result.find("ismip6") != result.end()) {
+
+    const char *flag_name = "output.ISMIP6";
+
+    if (not config.get_boolean(flag_name)) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Please set %s to save ISMIP6 diagnostics "
+                                    "(-extra_vars ismip6).", flag_name);
+    }
+
     result.erase("ismip6");
     for (auto v : set_split(config.get_string("output.ISMIP6_extra_variables"), ',')) {
       result.insert(v);
