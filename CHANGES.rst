@@ -1,5 +1,12 @@
 .. default-role:: literal
 
+Changes from v1.1.4 to v1.1.5
+=============================
+
+- Bug fix: ensure that land ice area fraction (diagnostic variable `sftgif`) never
+  exceeds 1.
+- Set CMake policy CMP0086.
+
 Changes from v1.1.3 to v1.1.4
 =============================
 
