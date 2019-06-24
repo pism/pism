@@ -148,7 +148,7 @@ void ISMIP6::init_impl(const Geometry &geometry) {
   {
     // File with reference surface elevation, temperature, and climatic mass balance
     auto reference_filename = m_config->get_string("surface.ismip6.reference_file");
-    PIO reference_file(m_grid->com, "detect_mode", reference_filename, PISM_READONLY);
+    PIO reference_file(m_grid->com, "guess_mode", reference_filename, PISM_READONLY);
 
     m_mass_flux_reference.regrid(reference_file, CRITICAL);
     m_surface_reference.regrid(reference_file, CRITICAL);
