@@ -25,6 +25,8 @@ Changes since v1.1
   uses `velbar`).
 
   It did *not* affect ice dynamics.
+- Bug fix: ensure that land ice area fraction (diagnostic variable `sftgif`) never
+  exceeds 1.
 
 Changes from v1.0 to v1.1
 =========================
