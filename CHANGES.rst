@@ -60,6 +60,8 @@ Changes since v1.1
   (list of fields to report when `-extra_vars ismip6` is given), and
   `output.ISMIP6_ts_variables` (list of scalar time series to report when `-ts_vars
   ismip6` is given).
+- Bug fix: ensure that land ice area fraction (diagnostic variable `sftgif`) never
+  exceeds 1.
 
 Changes from v1.0 to v1.1
 =========================

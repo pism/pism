@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cassert>
+#include <algorithm>
 
 #include "pism/icemodel/IceModel.hh"
 #include "pism/age/AgeModel.hh"
@@ -2022,7 +2023,7 @@ IceModelVec::Ptr IceAreaFraction::compute_impl() const {
                                                                    bed_topography(i,j));
           // protect from a division by zero
           if (H_threshold > 0.0) {
-            (*result)(i, j) = H_reference / H_threshold;
+            (*result)(i, j) = std::min(H_reference / H_threshold, 1.0);
           } else {
             (*result)(i, j) = 1.0;
           }
