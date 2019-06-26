@@ -72,39 +72,40 @@ Mx = 101
 My = Mx
 
 def test_elastic(grid):
+    geometry = PISM.Geometry(grid)
+
     bed_model = PISM.LingleClark(grid)
-
-    ice_thickness = PISM.IceModelVec2S(grid, "thk", PISM.WITHOUT_GHOSTS)
-
-    bed = PISM.IceModelVec2S(grid, "topg", PISM.WITHOUT_GHOSTS)
 
     bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
 
-    sea_level = PISM.IceModelVec2S(grid, "sea_level", PISM.WITHOUT_GHOSTS)
-
     # start with a flat bed, no ice, and no uplift
-    bed.set(0.0)
-    bed_uplift.set(0.0)
-    ice_thickness.set(0.0)
-    sea_level.set(-1000.0)
+    geometry.bed_elevation.set(0.0)
+    geometry.ice_thickness.set(0.0)
+    geometry.sea_level_elevation.set(-1000.0)
+    geometry.ensure_consistency(0.0)
 
-    bed_model.bootstrap(bed, bed_uplift, ice_thickness, sea_level)
+    bed_uplift.set(0.0)
+
+    bed_model.bootstrap(geometry.bed_elevation, bed_uplift, geometry.ice_thickness,
+                        geometry.sea_level_elevation)
 
     Mx2 = int(grid.Mx()) // 2
     My2 = int(grid.My()) // 2
 
     # add the disc load
-    with PISM.vec.Access(nocomm=ice_thickness):
+    with PISM.vec.Access(nocomm=geometry.ice_thickness):
         for (i, j) in grid.points():
             if i == Mx2 and j == My2:
             # if abs(i - Mx2) < 4 and abs(j - My2) < 4:
-                ice_thickness[i, j] = 1000.0
+                geometry.ice_thickness[i, j] = 1000.0
 
     # dt of zero disables the viscous part of the model, so all we get is the elastic
     # response
-    bed_model.step(ice_thickness, sea_level, 0)
+    bed_model.step(geometry.ice_thickness, geometry.sea_level_elevation, 0)
 
-    return ice_thickness.numpy(), bed_model.bed_elevation().numpy(), bed_model.total_displacement().numpy()
+    return (geometry.ice_thickness.numpy(),
+            bed_model.bed_elevation().numpy(),
+            bed_model.total_displacement().numpy())
 
 def elastic_model(thk, LRM, rho):
     return np.fft.ifft2(np.fft.fft2(rho * thk) * np.fft.fft2(LRM))
