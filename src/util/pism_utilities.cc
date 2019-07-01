@@ -384,4 +384,22 @@ std::string printf(const char *format, ...) {
   return result.substr(0, length);
 }
 
+/*!
+ * Validate a format string. In this application a format string should contain `%` exactly
+ * once, followed by `s` (i.e. `%s`).
+ *
+ * Throws RuntimeError if the provided string is invalid.
+ */
+void validate_format_string(const std::string &format) {
+  if (format.find("%s") == std::string::npos) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "format string %s does not contain %%s",
+                                  format.c_str());
+  }
+
+  if (format.find("%") != format.rfind("%")) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "format string %s contains more than one %%",
+                                  format.c_str());
+  }
+}
+
 } // end of namespace pism

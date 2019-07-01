@@ -113,6 +113,8 @@ std::string version();
 
 std::string printf(const char *format, ...) __attribute__((format(printf, 1, 2)));
 
+void validate_format_string(const std::string &format);
+
 } // end of namespace pism
 
 
