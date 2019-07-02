@@ -256,7 +256,10 @@ void IceModel::write_extras() {
     // called).
     m_last_extra = current_time;
 
-    return;
+    // ISMIP6 runs need to save diagnostics at the beginning of the run
+    if (not m_config->get_boolean("output.ISMIP6")) {
+      return;
+    }
   }
 
   if (saving_after < m_time->start()) {

@@ -59,7 +59,8 @@ Changes since v1.1
   `output.use_MKS` (save output variables in MKS units), `output.ISMIP6_extra_variables`
   (list of fields to report when `-extra_vars ismip6` is given), and
   `output.ISMIP6_ts_variables` (list of scalar time series to report when `-ts_vars
-  ismip6` is given).
+  ismip6` is given). When `output.ISMIP6` is set PISM saves spatially-variable diagnostics
+  at the beginning of the run (if requested).
 - Bug fix: ensure that land ice area fraction (diagnostic variable `sftgif`) never
   exceeds 1.
 
