@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2022 Constantine Khroulev
+// Copyright (C) 2011-2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -255,8 +255,9 @@ static double parse_date(const std::string &input,
   std::string spec = string_strip(input);
 
   if (spec.empty()) {
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "got an empty date specification");
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "got an empty date specification: '%s'",
+                                  input.c_str());
   }
 
   // We need to remember if the year was negative in the input string: split() will ignore
