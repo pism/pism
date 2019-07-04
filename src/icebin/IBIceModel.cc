@@ -343,8 +343,6 @@ void IBIceModel::prepare_outputs(double time_s) {
       ice_top_senth(i,j) = senth;
 
       // emI_ice, emI_land: Used by IceBin for elevation and masking
-      auto ct(cell_type(i,j));
-
       switch(cell_type(i,j)) {
         case IceMask::GROUNDED_ICE :
         case IceMask::FLOATING_ICE :
