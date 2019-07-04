@@ -68,8 +68,8 @@ protected:
   pism::IceModelVec2S ice_top_senth;
 
 public:
-  // Elevation of grid cells, with NaN off the ice sheet [m]
-  pism::IceModelVec2S elevmaskI;
+  // Elevation of grid cells, with NaN off the ice sheet (or ice sheet+land) [m]
+  pism::IceModelVec2S emI_ice, emI_land;
 
 protected:
   // see iceModel.cc

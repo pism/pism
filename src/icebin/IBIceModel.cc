@@ -14,7 +14,7 @@
 namespace pism {
 namespace icebin {
 
-static double const nan = std::numeric_limits<double>::quiet_NaN();
+static double const NaN = std::numeric_limits<double>::quiet_NaN();
 
 // ================================
 
@@ -73,7 +73,8 @@ void IBIceModel::createVecs() {
 
   // Sent back to IceBin
   ice_top_senth.create(m_grid, "ice_top_senth", pism::WITHOUT_GHOSTS);
-  elevmaskI.create(m_grid, "elevmaskI", pism::WITHOUT_GHOSTS);
+  emI_ice.create(m_grid, "emI_ice", pism::WITHOUT_GHOSTS);
+  emI_land.create(m_grid, "emI_land", pism::WITHOUT_GHOSTS);
 
   std::cout << "IBIceModel Conservation Formulas:" << std::endl;
   cur.print_formulas(std::cout);
@@ -325,11 +326,13 @@ void IBIceModel::prepare_outputs(double time_s) {
 
   // --------- ice_surface_enth from m_ice_enthalpy
   auto &ice_surface_elevation(this->ice_surface_elevation());
+  auto &bed_topography(this->bed_model()->bed_elevation());
+
   auto &cell_type(this->cell_type());
   AccessList access{
     &m_ice_enthalpy, &m_ice_thickness,        // INPUTS
-    &ice_surface_elevation, &cell_type,
-    &ice_top_senth, &elevmaskI };                 // OUTPUT
+    &ice_surface_elevation, &bed_topography, &cell_type,
+    &ice_top_senth, &emI_ice, &emI_land };                 // OUTPUT
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
       double const *Enth = m_ice_enthalpy.get_column(i, j);
@@ -339,12 +342,24 @@ void IBIceModel::prepare_outputs(double time_s) {
       double senth = Enth[ks];   // [J kg-1]
       ice_top_senth(i,j) = senth;
 
-      // elevmaskI: Used by IceBin for elevation and masking
+      // emI_ice, emI_land: Used by IceBin for elevation and masking
       auto ct(cell_type(i,j));
-      if (ct == MASK_GROUNDED || ct == MASK_FLOATING) {
-        elevmaskI(i,j) = ice_surface_elevation(i,j);
-      } else {
-        elevmaskI(i,j) = nan;
+
+      switch(cell_type(i,j)) {
+        case IceMask::GROUNDED_ICE :
+        case IceMask::FLOATING_ICE :
+          emI_ice(i,j) = ice_surface_elevation(i,j);
+          emI_land(i,j) = ice_surface_elevation(i,j);
+        break;
+        case IceMask::ICE_FREE_OCEAN :
+        case IceMask::UNKNOWN :
+          emI_ice(i,j) = NaN;
+          emI_land(i,j) = NaN;
+        break;
+        case IceMask::ICE_FREE_BEDROCK :
+          emI_ice(i,j) = NaN;
+          emI_land(i,j) = bed_topography(i,j);
+        break;
       }
     }
   }
