@@ -194,9 +194,9 @@ void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result) {
     water_density = config->get_double("constants.sea_water.density"),
     alpha         = ice_density / water_density;
 
-  const IceModelVec2S        &ice_thickness = geometry.ice_thickness;
-  const IceModelVec2S        &bed_elevation = geometry.bed_elevation;
-  const IceModelVec2S        &sea_level     = geometry.sea_level_elevation;
+  const IceModelVec2S &ice_thickness = geometry.ice_thickness;
+  const IceModelVec2S &bed_elevation = geometry.bed_elevation;
+  const IceModelVec2S &sea_level     = geometry.sea_level_elevation;
 
   IceModelVec::AccessList list{&ice_thickness, &bed_elevation, &sea_level, &result};
 
