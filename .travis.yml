@@ -33,17 +33,13 @@ addons:
       - petsc-dev
 
 install:
-  - mkdir -p build && cd build && cmake .. && make
+  - "mkdir -p build && cd build && 
+  CC=mpicc CXX=mpicxx =
+  PETSC_DIR=/usr/lib/petscdir/3.7.7/x86_64-linux-gnu-real/ \
+  PISM_INSTALL_PREFIX=~/pism cmake .. && make"
 
 script:
   - cd build && make test
 
 notifications:
   email: false
-
-#after_failure:
-#  - "for runlog in $TRAVIS_BUILD_DIR/testsuite.travisCItest/*.travisCItest/logs/icepack.runlog.*; do
-#    echo \"### Contents of $runlog ###\" && cat $runlog; done"
-#  - "git config --global user.email 'travis@travis-ci.org' &&
-#    git config --global user.name 'ciceconsortium' &&
-#    ./report_results.csh --travisCI"
