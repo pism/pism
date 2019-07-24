@@ -27,6 +27,7 @@ addons:
       - libopenmpi-dev
       - netcdf-bin
       - openmpi
+      - openmpi-bin
       - python-dev
       - python-pyproj
       - python-netcdf4
@@ -34,9 +35,10 @@ addons:
 
 install:
   - "mkdir -p build && cd build && 
-  CC=mpicc CXX=mpicxx \
-  PETSC_DIR=/usr/lib/petscdir/3.7.7/x86_64-linux-gnu-real/ \
-  PISM_INSTALL_PREFIX=~/pism cmake .. && make"
+     CC=mpicc CXX=mpicxx \
+     PETSC_DIR=/usr/lib/petscdir/3.7.7/x86_64-linux-gnu-real/ \
+     PISM_INSTALL_PREFIX=~/pism \
+     cmake .. && make"
 
 script:
   - cd build && make test
