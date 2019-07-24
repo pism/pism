@@ -12,6 +12,7 @@ cases; please `e-mail us <pism-email_>`_ if you need help.
 .. toctree::
 
    debian.rst
+   arch.rst
    macos.rst
 
    petsc.rst
