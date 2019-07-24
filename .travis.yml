@@ -1,0 +1,47 @@
+language: cpp
+
+sudo: false
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++
+      - cmake
+      - cdo
+      - nco
+      - ncview
+      - mpich
+      - libmpich-dev
+      - libfftw3-dev
+      - libgsl-dev
+      - libproj-dev
+      - libudunits2-dev
+      - libx11-dev
+      - libblas-dev
+      - liblapack-dev
+      - libnetcdf-dev
+      - libopenmpi-dev
+      - netcdf-bin
+      - openmpi
+      - python-dev
+      - python-pyproj
+      - python-netcdf4
+      - petsc-dev
+
+install:
+  - mkdir -p build && cd build && cmake .. && make
+
+script:
+  - cd build && make test
+
+notifications:
+  email: false
+
+#after_failure:
+#  - "for runlog in $TRAVIS_BUILD_DIR/testsuite.travisCItest/*.travisCItest/logs/icepack.runlog.*; do
+#    echo \"### Contents of $runlog ###\" && cat $runlog; done"
+#  - "git config --global user.email 'travis@travis-ci.org' &&
+#    git config --global user.name 'ciceconsortium' &&
+#    ./report_results.csh --travisCI"
