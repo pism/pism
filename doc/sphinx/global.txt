@@ -46,7 +46,6 @@
 
 .. external links
 
-.. _Arch Linux User Repository: https://aur.archlinux.org
 .. _Bash: http://www.gnu.org/software/bash/
 .. _CalCalcs: http://meteora.ucsd.edu/~pierce/calcalcs/calendars.html
 .. _CalCalcs-home: http://meteora.ucsd.edu/~pierce/calcalcs/index.html
