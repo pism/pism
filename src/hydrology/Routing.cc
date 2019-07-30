@@ -758,7 +758,7 @@ void Routing::update_Wtill(double dt,
 
   IceModelVec::AccessList list{&Wtill, &Wtill_new, &basal_melt_rate};
 
-  bool add_surface_input = m_config->get_boolean("hydrology.routing.add_water_input_to_till_storage");
+  bool add_surface_input = m_config->get_boolean("hydrology.add_water_input_to_till_storage");
   if (add_surface_input) {
     list.add(surface_input_rate);
   }

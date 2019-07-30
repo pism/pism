@@ -112,11 +112,15 @@ MaxTimestep NullTransport::max_timestep_impl(double t) const {
 void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   (void) t;
 
+  bool add_surface_input = m_config->get_boolean("hydrology.add_water_input_to_till_storage");
+
   // no transportable basal water
   m_W.set(0.0);
 
-  m_input_change.add(dt, m_surface_input_rate);
   m_input_change.add(dt, m_basal_melt_rate);
+  if (add_surface_input) {
+    m_input_change.add(dt, m_surface_input_rate);
+  }
 
   const double
     water_density = m_config->get_double("constants.fresh_water.density"),
@@ -124,14 +128,23 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
 
   const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
 
-  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_surface_input_rate, &m_basal_melt_rate,
+  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_basal_melt_rate,
       &m_conservation_error_change};
+
+  if (add_surface_input) {
+    list.add(m_surface_input_rate);
+  }
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double
-      W_old      = m_Wtill(i, j),
-      dW_input   = dt * (m_surface_input_rate(i, j) + m_basal_melt_rate(i, j));
+    double
+      W_old    = m_Wtill(i, j),
+      dW_input = dt * m_basal_melt_rate(i, j);
+
+    if (add_surface_input) {
+      dW_input += dt * m_surface_input_rate(i, j);
+    }
 
     if (W_old < 0.0) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,

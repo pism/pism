@@ -46,7 +46,7 @@ Changes since v1.1
   `calving.vonmises_calving.flow_law`, and `calving.vonmises_calving.Glen_exponent`. This
   makes it possible to use a different flow law (and so a different Glen exponent) in the
   stress balance model and the tensile von Mises stress computation.
-- Add a configuration parameter `hydrology.routing.add_water_input_to_till_storage`
+- Add a configuration parameter `hydrology.add_water_input_to_till_storage`
   (default: yes). If "yes", surface water input is added to till storage which (if it
   overflows) then contributes to the amount of transportable subglacial water. If "no",
   surface water input directly contributes to the amount of transportable water, bypassing
