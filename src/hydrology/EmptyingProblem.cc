@@ -152,10 +152,9 @@ EmptyingProblem::EmptyingProblem(IceGrid::ConstPtr grid)
   m_eps_gradient = 1e-2;
   m_speed = 1.0;
 
-  m_dx    = m_grid->dx();
-  m_dy    = m_grid->dy();
-  m_tau   = m_config->get_double("hydrology.steady.input_rate_scaling");
-  m_W_min = m_tau * m_config->get_double("hydrology.steady.min_thickness_scaling");
+  m_dx  = m_grid->dx();
+  m_dy  = m_grid->dy();
+  m_tau = m_config->get_double("hydrology.steady.input_rate_scaling");
 }
 
 EmptyingProblem::~EmptyingProblem() {
@@ -171,39 +170,42 @@ EmptyingProblem::~EmptyingProblem() {
  */
 void EmptyingProblem::update(const Geometry &geometry,
                              const IceModelVec2Int *no_model_mask,
-                             const IceModelVec2S &water_input_rate) {
+                             const IceModelVec2S &water_input_rate,
+                             bool recompute_potential) {
 
   const double
-    cell_area      = m_grid->cell_area(),
-    u_max          = m_speed,
-    v_max          = m_speed,
-    dt             = 0.5 / (u_max / m_dx + v_max / m_dy), // CFL condition
-    wet_area_ratio = m_config->get_double("hydrology.steady.wet_area_ratio");
+    eps = 1e-16,
+    cell_area    = m_grid->cell_area(),
+    u_max        = m_speed,
+    v_max        = m_speed,
+    dt           = 0.5 / (u_max / m_dx + v_max / m_dy), // CFL condition
+    volume_ratio = m_config->get_double("hydrology.steady.volume_ratio");
 
   const int n_iterations = m_config->get_double("hydrology.steady.n_iterations");
 
-  ice_bottom_surface(geometry, m_bottom_surface);
+  if (recompute_potential) {
+    ice_bottom_surface(geometry, m_bottom_surface);
 
-  compute_mask(geometry.cell_type, no_model_mask, m_domain_mask);
+    compute_mask(geometry.cell_type, no_model_mask, m_domain_mask);
 
-  // updates ghosts of m_potential
-  compute_potential(geometry.ice_thickness,
-                    m_bottom_surface,
-                    m_domain_mask,
-                    m_potential);
+    // updates ghosts of m_potential
+    compute_potential(geometry.ice_thickness,
+                      m_bottom_surface,
+                      m_domain_mask,
+                      m_potential);
 
-  // diagnostics
-  {
-    compute_raw_potential(geometry.ice_thickness, m_bottom_surface, m_adjustment);
+    // diagnostics
+    {
+      compute_raw_potential(geometry.ice_thickness, m_bottom_surface, m_adjustment);
 
-    m_potential.add(-1.0, m_adjustment, m_adjustment);
+      m_potential.add(-1.0, m_adjustment, m_adjustment);
 
-    diagnostics::compute_sinks(m_domain_mask, m_potential, m_sinks);
+      diagnostics::compute_sinks(m_domain_mask, m_potential, m_sinks);
+    }
   }
 
-  // set initial state and compute initial wet area
-  double wet_area_0 = 0.0;
-  double Volume0 = 0.0;
+  // set initial state and compute initial volume
+  double volume_0 = 0.0;
   {
     IceModelVec::AccessList list{&geometry.cell_type, &m_W, &water_input_rate};
 
@@ -216,12 +218,9 @@ void EmptyingProblem::update(const Geometry &geometry,
         m_W(i, j) = 0.0;
       }
 
-      wet_area_0 += m_W(i, j) > m_W_min ? 1.0 : 0.0;
-
-      Volume0 += m_W(i, j);
+      volume_0 += m_W(i, j);
     }
-    wet_area_0 = cell_area * GlobalSum(m_grid->com, wet_area_0);
-    Volume0 = cell_area * GlobalSum(m_grid->com, Volume0);
+    volume_0 = cell_area * GlobalSum(m_grid->com, volume_0);
   }
   m_W.update_ghosts();
 
@@ -231,22 +230,19 @@ void EmptyingProblem::update(const Geometry &geometry,
   m_Qsum.set(0.0);
 
   // no input means no flux
-  if (wet_area_0 < m_grid->cell_area()) {
+  if (volume_0 == 0.0) {
     m_Q.set(0.0);
     m_q_sg.set(0.0);
     return;
   }
 
-  double
-    Volume = 0.0,
-    wet_area = 0.0;
+  double volume = 0.0;
   int step_counter = 0;
 
   IceModelVec::AccessList list{&m_Qsum, &m_W, &m_Vstag, &m_domain_mask, &m_tmp};
 
   for (step_counter = 0; step_counter < n_iterations; ++step_counter) {
-    Volume = 0.0;
-    wet_area = 0.0;
+    volume = 0.0;
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -268,30 +264,32 @@ void EmptyingProblem::update(const Geometry &geometry,
         m_tmp(i, j) = 0.0;
       }
 
-      // accumulate fluxes
+      if (m_tmp(i, j) < -eps) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "W(%d, %d) = %f < 0",
+                                      i, j, m_tmp(i, j));
+      }
+
+      // accumulate the water flux
       m_Qsum(i, j, 0) += dt * q_e;
       m_Qsum(i, j, 1) += dt * q_n;
 
-      // compute volume and wet area
-      Volume   += m_tmp(i, j);
-      wet_area += m_tmp(i, j) > m_W_min ? 1.0 : 0.0;
+      // compute volume
+      volume += m_tmp(i, j);
     }
 
     m_W.copy_from(m_tmp);
-    wet_area = cell_area * GlobalSum(m_grid->com, wet_area);
-    Volume   = cell_area * GlobalSum(m_grid->com, Volume);
+    volume = cell_area * GlobalSum(m_grid->com, volume);
 
-    if (wet_area / wet_area_0 <= wet_area_ratio) {
+    if (volume / volume_0 <= volume_ratio) {
       break;
     }
-    m_log->message(3, "%04d A = %f V = %f\n",
-                   step_counter, wet_area / wet_area_0, Volume / Volume0);
+    m_log->message(3, "%04d V = %f\n", step_counter, volume / volume_0);
   } // end of the loop
 
-  m_log->message(2, "Stopped after %d iterations. A = %f V = %f\n",
-                 step_counter, wet_area / wet_area_0, Volume / Volume0);
+  m_log->message(3, "Emptying problem: stopped after %d iterations. V = %f\n",
+                 step_counter, volume / volume_0);
 
-  double epsilon = m_W.sum() * cell_area / Volume0;
+  double epsilon = volume / volume_0;
 
   m_Qsum.update_ghosts();
   staggered_to_regular(geometry.cell_type, m_Qsum,
@@ -380,7 +378,7 @@ void EmptyingProblem::compute_potential(const IceModelVec2S &ice_thickness,
     }
 
     if (n_sinks_remaining == 0) {
-      m_log->message(2, "Filled %d sinks after %d iterations.\n",
+      m_log->message(3, "Emptying problem: filled %d sinks after %d iterations.\n",
                      n_sinks - n_sinks_remaining, step_counter);
       break;
     }

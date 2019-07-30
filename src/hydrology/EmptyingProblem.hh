@@ -37,7 +37,8 @@ public:
 
   void update(const Geometry &geometry,
               const IceModelVec2Int *no_model_mask,
-              const IceModelVec2S &water_input_rate);
+              const IceModelVec2S &water_input_rate,
+              bool recompute_potential = true);
 
   // output
   const IceModelVec2V& flux() const;
@@ -89,7 +90,6 @@ protected:
   double m_eps_gradient;
   double m_speed;
   double m_tau;
-  double m_W_min;
 };
 
 } // end of namespace hydrology
