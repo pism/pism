@@ -1,0 +1,22 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: admesg/pism-debian:0.1.2
+
+    steps:
+      - checkout
+
+      - run:
+          name: Build PISM
+          command: >-
+            mkdir -p build && cd build &&
+            CC=mpicc CXX=mpicxx
+            PETSC_DIR=/usr/lib/petscdir/3.10/x86_64-linux-gnu-real/
+            PISM_INSTALL_PREFIX=~/pism
+            cmake .. && make
+
+      - run:
+          name: Run PISM test suite
+          command: >-
+            cd build && env CTEST_OUTPUT_ON_FAILURE=1 make test
