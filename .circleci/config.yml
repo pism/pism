@@ -16,7 +16,7 @@ jobs:
           command: >-
             sed 's/^sudo //;s/ install / install -y /' \
               ./doc/sphinx/installation/code/install_libraries.sh | sh &&
-            apt install petsc-dev
+            apt install -y petsc-dev
 
       - run:
           name: Build PISM
@@ -26,3 +26,7 @@ jobs:
             PETSC_DIR=/usr/lib/petscdir/3.10/x86_64-linux-gnu-real/
             PISM_INSTALL_PREFIX=~/pism
             cmake .. && make
+
+      - run:
+          name: Run PISM test suite
+          command: cd build && make test
