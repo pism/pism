@@ -2,21 +2,10 @@ version: 2
 jobs:
   build:
     docker:
-      - image: debian:buster
+      - image: admesg/pism-debian:0.1.0
 
     steps:
-      - run:
-          name: Install git
-          command: apt update && apt install -y git
-
       - checkout
-
-      - run:
-          name: Install requirements
-          command: >-
-            sed 's/^sudo //;s/ install / install -y /' \
-              ./doc/sphinx/installation/code/install_libraries.sh | sh &&
-            apt install -y petsc-dev
 
       - run:
           name: Build PISM
