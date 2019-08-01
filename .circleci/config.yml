@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: admesg/pism-debian:latest
+      - image: admesg/pism-debian:0.1.1
 
     steps:
       - checkout
