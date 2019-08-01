@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 sudo apt-get install \
      g++ git cmake cmake-curses-gui cdo nco ncview \
