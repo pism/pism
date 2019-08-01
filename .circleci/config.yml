@@ -2,22 +2,27 @@ version: 2
 jobs:
   build:
     docker:
-      - image: debian:stretch
+      - image: debian:buster
 
     steps:
+      - run:
+          name: Install git
+          command: apt update && apt install -y git
+
       - checkout
 
       - run:
           name: Install requirements
           command: >-
-            sh ./doc/sphinx/installation/code/install_libraries.sh &&
-            sudo apt install petsc-dev
+            sed 's/^sudo //;s/ install / install -y /' \
+              ./doc/sphinx/installation/code/install_libraries.sh | sh &&
+            apt install petsc-dev
 
       - run:
           name: Build PISM
           command: >-
             mkdir -p build && cd build &&
             CC=mpicc CXX=mpicxx
-            PETSC_DIR=/usr/lib/petscdir/3.7.5/x86_64-linux-gnu-real/
+            PETSC_DIR=/usr/lib/petscdir/3.10/x86_64-linux-gnu-real/
             PISM_INSTALL_PREFIX=~/pism
             cmake .. && make
