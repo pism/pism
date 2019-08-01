@@ -8,16 +8,16 @@ jobs:
       - checkout
 
       - run:
-        name: Install requirements
-        command: >-
-          sh ./doc/sphinx/installation/code/install_libraries.sh &&
-          sudo apt install petsc-dev
+          name: Install requirements
+          command: >-
+            sh ./doc/sphinx/installation/code/install_libraries.sh &&
+            sudo apt install petsc-dev
 
       - run:
-        name: Build PISM
-        command: >-
-          mkdir -p build && cd build &&
-          CC=mpicc CXX=mpicxx
-          PETSC_DIR=/usr/lib/petscdir/3.7.5/x86_64-linux-gnu-real/
-          PISM_INSTALL_PREFIX=~/pism
-          cmake .. && make
+          name: Build PISM
+          command: >-
+            mkdir -p build && cd build &&
+            CC=mpicc CXX=mpicxx
+            PETSC_DIR=/usr/lib/petscdir/3.7.5/x86_64-linux-gnu-real/
+            PISM_INSTALL_PREFIX=~/pism
+            cmake .. && make
