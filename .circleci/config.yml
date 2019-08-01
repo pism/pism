@@ -19,5 +19,4 @@ jobs:
       - run:
           name: Run PISM test suite
           command: >-
-            useradd -u 8877 runner && chown -R runner build && cd build &&
-            su runner sh -c "env CTEST_OUTPUT_ON_FAILURE=1 make test"
+            cd build && env CTEST_OUTPUT_ON_FAILURE=1 make test
