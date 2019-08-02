@@ -22,4 +22,5 @@ jobs:
       - run:
           name: Run PISM test suite
           command: >-
+            export PYTHONPATH=$PWD/build/site-packages:$PYTHONPATH &&
             cd build && env CTEST_OUTPUT_ON_FAILURE=1 make test
