@@ -12,9 +12,9 @@
 # relatively straightforward (compared to the lat-lon world), and then project the corners
 # onto the lat-lon grid. The script attemps to retrieve the required mapping information from,
 # if present, a global attribute called 'projection' which (hopefully) contains a valid
-# Proj4 projection string. If this string is not available (this is true for standard PISM
+# Proj projection string. If this string is not available (this is true for standard PISM
 # output), the script searches variables for the 'grid_mapping' attribute and translates information
-# from the corresponding mapping variable into a Proj4 projection string. If neither is found,
+# from the corresponding mapping variable into a Proj projection string. If neither is found,
 # the script exists with an error message.
 #
 # Usage:
@@ -36,13 +36,13 @@ except:
 
 # Set up the option parser
 parser = ArgumentParser()
-parser.description = '''Script makes netCDF file ready for Climate Data Operators (CDO). Either a global attribute "projection", a mapping variable, or a command-line proj4 string or a EPSG code must be given.'''
+parser.description = '''Script makes netCDF file ready for Climate Data Operators (CDO). Either a global attribute "projection", a mapping variable, or a command-line proj string or a EPSG code must be given.'''
 parser.add_argument("FILE", nargs=1)
 parser.add_argument("--no_bounds", dest="bounds", action="store_false",
                     help="do not add lat/lon bounds.", default=True)
 parser.add_argument("--srs", dest="srs",
                     help='''
-                  a valid proj4 string describing describing the projection
+                  a valid proj string describing describing the projection
                   ''', default=None)
 options = parser.parse_args()
 args = options.FILE
@@ -61,12 +61,12 @@ else:
 
 def get_projection_from_file(nc):
 
-    # First, check if we have a global attribute 'proj4'
-    # which contains a Proj4 string:
+    # First, check if we have a global attribute 'proj'
+    # which contains a Proj string:
     try:
-        p = Proj(str(nc.proj4))
+        p = Proj(str(nc.proj))
         print(
-            'Found projection information in global attribute proj4, using it')
+            'Found projection information in global attribute proj, using it')
     except:
         try:
             p = Proj(str(nc.projection))
@@ -271,10 +271,10 @@ if __name__ == "__main__":
     else:
         nc.history = histstr
 
-    for attr in ("projection", "proj4"):
+    for attr in ("projection", "proj"):
         if hasattr(nc, attr):
             delattr(nc, attr)
     # Write projection attribute
-    nc.proj4 = proj.srs
+    nc.proj = proj.srs
     # Close file
     nc.close()

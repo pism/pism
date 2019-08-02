@@ -904,7 +904,7 @@
 #. :config:`grid.recompute_longitude_and_latitude` (*boolean*)
 
    :Value: yes
-   :Description: Re-compute longitude and latitude using grid information and provided projection parameters. Requires PROJ.4.
+   :Description: Re-compute longitude and latitude using grid information and provided projection parameters. Requires PROJ.
 
 #. :config:`grid.ice_vertical_spacing` (*keyword*)
 

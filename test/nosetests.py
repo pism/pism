@@ -732,11 +732,11 @@ def epsg_test():
     except RuntimeError as e:
         print("unsupported codes trigger exceptions: {}".format(e))
 
-    # test that an invalid PROJ.4 string (e.g. an EPSG code is not a
+    # test that an invalid PROJ string (e.g. an EPSG code is not a
     # number) triggers an exception
     try:
         v = PISM.epsg_to_cf(system, "+init=epsg:not-a-number +units=m")
-        # raise AssertionError("an invalid PROJ.4 string failed to trigger an exception")
+        raise AssertionError("an invalid PROJ string failed to trigger an exception")
     except RuntimeError as e:
         print("invalid codes trigger exceptions: {}".format(e))
 

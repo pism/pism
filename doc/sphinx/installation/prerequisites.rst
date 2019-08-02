@@ -32,7 +32,7 @@ recommended, but not strictly required:
 .. csv-table::
    :header: Recommended Library, Comment
 
-   PROJ.4_,  Used to compute grid coordinates cell bounds
+   PROJ_,  Used to compute grid coordinates cell bounds
    PnetCDF_, Can be used for parallel I/O
 
 Python_ 2.x is needed for the PETSc installation process; a number of PISM's pre- and

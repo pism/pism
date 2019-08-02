@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2011, 2014, 2018 Andy Aschwanden
+# Copyright (C) 2011, 2014, 2018, 2019 Andy Aschwanden
 #
 # This file is part of PISM.
 #
@@ -255,7 +255,7 @@ nc.Conventions = "CF-1.4"
 historysep = ' '
 historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
 setattr(nc, 'history', historystr)
-# proj4 string equivalent to EPSG 3021
-nc.projection = "+proj=tmerc +lat_0=0 +lon_0=15.80827777777778 +k=1 +x_0=1500000 +y_0=0 +ellps=bessel +towgs84=419.384,99.3335,591.345,0.850389,1.81728,-7.86224,-0.99496 +units=m +no_defs"
+# PROJ string equivalent to EPSG 3021
+nc.proj = "+proj=tmerc +lat_0=0 +lon_0=15.80827777777778 +k=1 +x_0=1500000 +y_0=0 +ellps=bessel +towgs84=419.384,99.3335,591.345,0.850389,1.81728,-7.86224,-0.99496 +units=m +no_defs"
 nc.close()
 write('Done writing NetCDF file %s!\n' % ncfile)

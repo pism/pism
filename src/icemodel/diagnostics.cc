@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -1689,7 +1689,7 @@ LatLonBounds::LatLonBounds(const IceModel *m,
   m_proj_string = proj_string;
 
 #if (Pism_USE_PROJ==1)
-  // create PROJ.4 objects to check if proj_string is OK.
+  // create PROJ objects to check if proj_string is OK.
   Proj lonlat("+proj=latlong +datum=WGS84 +ellps=WGS84");
   Proj pism(m_proj_string);
 #endif
@@ -2334,10 +2334,10 @@ void IceModel::init_diagnostics() {
   };
 
 #if (Pism_USE_PROJ==1)
-  std::string proj4 = m_grid->get_mapping_info().proj4;
-  if (not proj4.empty()) {
-    m_diagnostics["lat_bnds"] = f(new LatLonBounds(this, "lat", proj4));
-    m_diagnostics["lon_bnds"] = f(new LatLonBounds(this, "lon", proj4));
+  std::string proj = m_grid->get_mapping_info().proj;
+  if (not proj.empty()) {
+    m_diagnostics["lat_bnds"] = f(new LatLonBounds(this, "lat", proj));
+    m_diagnostics["lon_bnds"] = f(new LatLonBounds(this, "lon", proj));
   }
 #endif
 

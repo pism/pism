@@ -156,12 +156,12 @@ void IceModel::model_state_setup() {
       MappingInfo info = get_projection_info(*input_file, mapping_name,
                                              m_ctx->unit_system());
 
-      if (not info.proj4.empty()) {
+      if (not info.proj.empty()) {
         m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".\n",
-                       info.proj4.c_str(), input.filename.c_str());
+                       info.proj.c_str(), input.filename.c_str());
       }
 
-      m_output_global_attributes.set_string("proj4", info.proj4);
+      m_output_global_attributes.set_string("proj", info.proj);
       m_grid->set_mapping_info(info);
 
       std::string history = input_file->get_att_text("PISM_GLOBAL", "history");
@@ -752,7 +752,7 @@ void IceModel::misc_setup() {
 
 #if (Pism_USE_PROJ==1)
   {
-    std::string proj_string = m_grid->get_mapping_info().proj4;
+    std::string proj_string = m_grid->get_mapping_info().proj;
     if (not proj_string.empty()) {
       m_output_vars.insert("lon_bnds");
       m_output_vars.insert("lat_bnds");
@@ -983,7 +983,7 @@ std::set<std::string> IceModel::output_variables(const std::string &keyword) {
 
 void IceModel::compute_lat_lon() {
 
-  std::string projection = m_grid->get_mapping_info().proj4;
+  std::string projection = m_grid->get_mapping_info().proj;
 
   if (m_config->get_boolean("grid.recompute_longitude_and_latitude") and
       not projection.empty()) {
