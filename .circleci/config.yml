@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: admesg/pism-debian:0.1.2
+      - image: admesg/pism-debian:0.1.5
 
     steps:
       - checkout
@@ -14,7 +14,10 @@ jobs:
             CC=mpicc CXX=mpicxx
             PETSC_DIR=/usr/lib/petscdir/petsc3.10/x86_64-linux-gnu-real
             PISM_INSTALL_PREFIX=~/pism
-            cmake .. && make
+            cmake ..
+            -DPism_BUILD_PYTHON_BINDINGS=Yes
+            -DPism_USE_PROJ4=Yes
+            && make
 
       - run:
           name: Run PISM test suite
