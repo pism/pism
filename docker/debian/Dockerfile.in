@@ -1,0 +1,5 @@
+FROM debian:buster
+RUN apt-get update && apt-get install -y ${PISM_DEBIAN_PACKAGE_LIST}
+RUN groupadd -r runner -g 1000 && useradd -u 1000 -r -g runner -m -d /runner -s /sbin/nologin -c 'CI' runner && chmod 755 /runner
+WORKDIR /runner
+USER runner

@@ -1,4 +1,3 @@
-Name, Comments
 cdo, used in some pre-processing scripts
 cmake, required to configure PISM
 cmake-curses-gui, a text-based easy interface for CMake

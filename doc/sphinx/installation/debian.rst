@@ -9,7 +9,7 @@ recommended as they satisfy requirements for building or running PISM.
 
 .. csv-table:: Debian packages
    :name: tab-debian-packages
-   :header-rows: 1
+   :header: Name, Comment
    :widths: 2,5
    :file: debian-packages.csv
 

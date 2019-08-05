@@ -214,3 +214,5 @@ ENABLE_TESTING()
 include(CTest)
 add_subdirectory (test)
 add_subdirectory (test/regression)
+
+add_subdirectory (docker)
