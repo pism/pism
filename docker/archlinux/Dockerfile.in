@@ -1,0 +1,8 @@
+FROM archlinux/base:latest
+RUN groupadd -r runner -g 1000 && useradd -u 1000 -r -g runner -m -d /runner -s /sbin/nologin -c 'CI' runner && chmod 755 /runner
+COPY arch-install-yay.sh /runner
+RUN yes | pacman -Sqy git binutils sudo go
+USER runner:runner
+RUN bash /runner/arch-install-yay.sh
+USER root:root
+RUN yay -Sy pism
