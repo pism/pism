@@ -18,8 +18,6 @@
 
 #include "LingleClark.hh"
 
-#include <gsl/gsl_math.h>       // GSL_NAN
-
 #include "pism/util/io/PIO.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/IceGrid.hh"
@@ -36,7 +34,7 @@ namespace bed {
 LingleClark::LingleClark(IceGrid::ConstPtr g)
   : BedDef(g), m_load_thickness(g, "load_thickness", WITHOUT_GHOSTS) {
 
-  m_t_beddef_last = GSL_NAN;
+  m_t_beddef_last = m_grid->ctx()->time()->current();
 
   // A work vector. This storage is used to put thickness change on rank 0 and to get the plate
   // displacement change back.
@@ -115,7 +113,7 @@ void LingleClark::bootstrap_impl(const IceModelVec2S &bed_elevation,
                                  const IceModelVec2S &bed_uplift,
                                  const IceModelVec2S &ice_thickness,
                                  const IceModelVec2S &sea_level_elevation) {
-  m_t_beddef_last = m_grid->ctx()->time()->start();
+  m_t_beddef_last = m_grid->ctx()->time()->current();
 
   m_topg_last.copy_from(bed_elevation);
 
@@ -169,7 +167,7 @@ void LingleClark::init_impl(const InputOptions &opts, const IceModelVec2S &ice_t
                             const IceModelVec2S &sea_level_elevation) {
   m_log->message(2, "* Initializing the Lingle-Clark bed deformation model...\n");
 
-  m_t_beddef_last = m_grid->ctx()->time()->start();
+  m_t_beddef_last = m_grid->ctx()->time()->current();
 
   // Initialize bed topography and uplift maps.
   BedDef::init_impl(opts, ice_thickness, sea_level_elevation);
