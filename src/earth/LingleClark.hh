@@ -87,7 +87,7 @@ protected:
   petsc::Vec::Ptr m_viscous_bed_displacement0;
 
   //! time of the last bed deformation update
-  double m_t_beddef_last;
+  double m_t_last;
 };
 
 } // end of namespace bed
