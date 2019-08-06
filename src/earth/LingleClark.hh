@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -85,6 +85,9 @@ protected:
   IceModelVec2S m_viscous_bed_displacement;
   //! rank 0 storage using the extended grid
   petsc::Vec::Ptr m_viscous_bed_displacement0;
+
+  //! time of the last bed deformation update
+  double m_t_beddef_last;
 };
 
 } // end of namespace bed

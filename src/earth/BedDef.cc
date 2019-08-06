@@ -16,8 +16,6 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>       // GSL_NAN
-
 #include "BedDef.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Time.hh"
@@ -30,8 +28,6 @@ namespace bed {
 
 BedDef::BedDef(IceGrid::ConstPtr g)
   : Component(g) {
-
-  m_t_beddef_last = GSL_NAN;
 
   const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
@@ -117,8 +113,6 @@ void BedDef::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickn
                        const IceModelVec2S &sea_level_elevation) {
   (void) ice_thickness;
   (void) sea_level_elevation;
-
-  m_t_beddef_last = m_grid->ctx()->time()->start();
 
   switch (opts.type) {
   case INIT_RESTART:

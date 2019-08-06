@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,8 @@
 
 #include "LingleClark.hh"
 
+#include <gsl/gsl_math.h>       // GSL_NAN
+
 #include "pism/util/io/PIO.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/IceGrid.hh"
@@ -33,6 +35,8 @@ namespace bed {
 
 LingleClark::LingleClark(IceGrid::ConstPtr g)
   : BedDef(g), m_load_thickness(g, "load_thickness", WITHOUT_GHOSTS) {
+
+  m_t_beddef_last = GSL_NAN;
 
   // A work vector. This storage is used to put thickness change on rank 0 and to get the plate
   // displacement change back.
@@ -164,6 +168,8 @@ void LingleClark::bootstrap_impl(const IceModelVec2S &bed_elevation,
 void LingleClark::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
                             const IceModelVec2S &sea_level_elevation) {
   m_log->message(2, "* Initializing the Lingle-Clark bed deformation model...\n");
+
+  m_t_beddef_last = m_grid->ctx()->time()->start();
 
   // Initialize bed topography and uplift maps.
   BedDef::init_impl(opts, ice_thickness, sea_level_elevation);
