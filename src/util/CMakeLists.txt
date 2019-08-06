@@ -66,10 +66,4 @@ if (Pism_USE_PNETCDF)
   list(APPEND PISMUTIL_SRC io/PNCFile.cc)
 endif()
 
-add_custom_target (touch_pism_utilities
-  COMMAND ${CMAKE_COMMAND} -E touch pism_utilities.cc
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  VERBATIM)
-
 add_library (util OBJECT ${PISMUTIL_SRC})
-add_dependencies (util touch_pism_utilities)
