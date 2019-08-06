@@ -34,6 +34,7 @@ namespace bed {
 LingleClark::LingleClark(IceGrid::ConstPtr g)
   : BedDef(g), m_load_thickness(g, "load_thickness", WITHOUT_GHOSTS) {
 
+  m_time_name = m_config->get_string("time.dimension_name") + "_lingle_clark";
   m_t_last = m_grid->ctx()->time()->current();
 
   // A work vector. This storage is used to put thickness change on rank 0 and to get the plate
@@ -167,7 +168,17 @@ void LingleClark::init_impl(const InputOptions &opts, const IceModelVec2S &ice_t
                             const IceModelVec2S &sea_level_elevation) {
   m_log->message(2, "* Initializing the Lingle-Clark bed deformation model...\n");
 
-  m_t_last = m_grid->ctx()->time()->current();
+  if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
+    PIO input_file(m_grid->com, "netcdf3", opts.filename, PISM_READONLY);
+
+    if (input_file.inq_var(m_time_name)) {
+      input_file.get_vara_double(m_time_name, {0}, {1}, &m_t_last);
+    } else {
+      m_t_last = m_grid->ctx()->time()->current();
+    }
+  } else {
+    m_t_last = m_grid->ctx()->time()->current();
+  }
 
   // Initialize bed topography and uplift maps.
   BedDef::init_impl(opts, ice_thickness, sea_level_elevation);
@@ -307,12 +318,23 @@ void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
 void LingleClark::define_model_state_impl(const PIO &output) const {
   BedDef::define_model_state_impl(output);
   m_viscous_bed_displacement.define(output);
+
+  if (not output.inq_var(m_time_name)) {
+    output.def_var(m_time_name, PISM_DOUBLE, {});
+
+    output.put_att_text(m_time_name, "long_name",
+                        "time of the last update of the Lingle-Clark bed deformation model");
+    output.put_att_text(m_time_name, "calendar", m_grid->ctx()->time()->calendar());
+    output.put_att_text(m_time_name, "units", m_grid->ctx()->time()->CF_units_string());
+  }
 }
 
 void LingleClark::write_model_state_impl(const PIO &output) const {
   BedDef::write_model_state_impl(output);
 
   m_viscous_bed_displacement.write(output);
+
+  output.put_vara_double(m_time_name, {0}, {1}, &m_t_last);
 }
 
 DiagnosticList LingleClark::diagnostics_impl() const {

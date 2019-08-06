@@ -88,6 +88,7 @@ protected:
 
   //! time of the last bed deformation update
   double m_t_last;
+  std::string m_time_name;
 };
 
 } // end of namespace bed
