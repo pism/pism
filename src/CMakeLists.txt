@@ -18,8 +18,10 @@ configure_file(pism_config.hh.in ${CMAKE_BINARY_DIR}/pism/pism_config.hh ESCAPE_
 install(FILES ${CMAKE_BINARY_DIR}/pism/pism_config.hh
   DESTINATION include/pism)
 
-# Generate the source file containing constants defined in pism_config.hh
-configure_file(pism_config.cc.in pism_config.cc ESCAPE_QUOTES)
+# Generate the source file containing constants defined in pism_config.hh Note that we
+# don't escape quotes here: PETSc's configure flags should have them escaped already (if
+# we're lucky).
+configure_file(pism_config.cc.in pism_config.cc)
 
 # PISM's build directory contains the symlink to its source directory (see above). This
 # makes it possible to #include PISM's headers using '#include "pism/header.hh"' both in
