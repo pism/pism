@@ -88,6 +88,11 @@ protected:
 
   //! time of the last bed deformation update
   double m_t_last;
+  //! Update interval in seconds
+  double m_update_interval;
+  //! Temporal resolution to use when checking whether it's time to update
+  double m_t_eps;
+  //! Name of the variable used to store the last update time.
   std::string m_time_name;
 };
 

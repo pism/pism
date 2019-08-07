@@ -36,6 +36,14 @@ LingleClark::LingleClark(IceGrid::ConstPtr g)
 
   m_time_name = m_config->get_string("time.dimension_name") + "_lingle_clark";
   m_t_last = m_grid->ctx()->time()->current();
+  m_update_interval = m_config->get_double("bed_deformation.update_interval", "seconds");
+  m_t_eps = 1.0;
+
+  if (m_update_interval < 1.0) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "invalid bed_deformation.update_interval = %f seconds",
+                                  m_update_interval);
+  }
 
   // A work vector. This storage is used to put thickness change on rank 0 and to get the plate
   // displacement change back.
@@ -230,9 +238,26 @@ void LingleClark::init_impl(const InputOptions &opts, const IceModelVec2S &ice_t
 }
 
 MaxTimestep LingleClark::max_timestep_impl(double t) const {
-  (void) t;
-  // no time-step restriction
-  return MaxTimestep("bed_def lc");
+
+  if (t < m_t_last) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "time %f is less than the previous time %f",
+                                  t, m_t_last);
+  }
+
+  // Find the smallest time of the form m_t_last + k * m_update_interval that is greater
+  // than t
+  double k = ceil((t - m_t_last) / m_update_interval);
+
+  double
+    t_next = m_t_last + k * m_update_interval,
+    dt_max = t_next - t;
+
+  if (dt_max < m_t_eps) {
+    dt_max = m_update_interval;
+  }
+
+  return MaxTimestep(dt_max, "bed_def lc");
 }
 
 /*!
@@ -300,19 +325,19 @@ void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
                               const IceModelVec2S &sea_level_elevation,
                               double t, double dt) {
 
-  double t_final = t + dt;
+  double
+    t_next  = m_t_last + m_update_interval,
+    t_final = t + dt;
 
-  // Check if it's time to update:
-  double dt_beddef = t_final - m_t_last; // in seconds
-  if ((dt_beddef < m_config->get_double("bed_deformation.update_interval", "seconds") and
-       t_final < m_grid->ctx()->time()->end()) or
-      dt_beddef < 1e-12) {
-    return;
+  if (t_final < m_t_last) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "cannot go back in time");
   }
 
-  step(ice_thickness, sea_level_elevation, dt_beddef);
-
-  m_t_last = t_final;
+  if (std::abs(t_next - t_final) < m_t_eps) { // reached the next update time
+    double dt_beddef = t_final - m_t_last;
+    step(ice_thickness, sea_level_elevation, dt_beddef);
+    m_t_last = t_final;
+  }
 }
 
 void LingleClark::define_model_state_impl(const PIO &output) const {
