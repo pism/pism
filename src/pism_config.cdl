@@ -318,10 +318,10 @@ netcdf pism_config {
     pism_config:bed_deformation.model_option = "bed_def";
     pism_config:bed_deformation.model_type = "keyword";
 
-    pism_config:bed_deformation.update_interval = 10.0;
-    pism_config:bed_deformation.update_interval_doc = "Interval between bed deformation updates";
-    pism_config:bed_deformation.update_interval_type = "scalar";
-    pism_config:bed_deformation.update_interval_units = "years";
+    pism_config:bed_deformation.lc.update_interval = 10.0;
+    pism_config:bed_deformation.lc.update_interval_doc = "Interval between updates of the Lingle-Clark model";
+    pism_config:bed_deformation.lc.update_interval_type = "scalar";
+    pism_config:bed_deformation.lc.update_interval_units = "years";
 
     pism_config:bed_deformation.bed_topography_delta_file = "";
     pism_config:bed_deformation.bed_topography_delta_file_option = "topg_delta_file";

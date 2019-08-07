@@ -36,12 +36,12 @@ LingleClark::LingleClark(IceGrid::ConstPtr g)
 
   m_time_name = m_config->get_string("time.dimension_name") + "_lingle_clark";
   m_t_last = m_grid->ctx()->time()->current();
-  m_update_interval = m_config->get_double("bed_deformation.update_interval", "seconds");
+  m_update_interval = m_config->get_double("bed_deformation.lc.update_interval", "seconds");
   m_t_eps = 1.0;
 
   if (m_update_interval < 1.0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "invalid bed_deformation.update_interval = %f seconds",
+                                  "invalid bed_deformation.lc.update_interval = %f seconds",
                                   m_update_interval);
   }
 
