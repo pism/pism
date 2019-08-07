@@ -31,17 +31,6 @@ N = 101
 
 dt = convert(1000.0, "years", "seconds")
 
-
-def allocate_storage(grid):
-    ice_thickness = PISM.IceModelVec2S(grid, "thk", PISM.WITHOUT_GHOSTS)
-    ice_thickness.metadata().set_string("standard_name", "land_ice_thickness")
-    bed = PISM.IceModelVec2S(grid, "topg", PISM.WITHOUT_GHOSTS)
-    bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
-    sea_level = PISM.IceModelVec2S(grid, "sea_level", PISM.WITHOUT_GHOSTS)
-
-    return ice_thickness, bed, bed_uplift, sea_level
-
-
 def add_disc_load(ice_thickness, radius, thickness):
     "Add a disc load with a given radius and thickness."
     grid = ice_thickness.grid()
@@ -61,23 +50,26 @@ def run(dt, restart=False):
 
     model = PISM.LingleClark(grid)
 
-    ice_thickness, bed, bed_uplift, sea_level = allocate_storage(grid)
-    grid.variables().add(ice_thickness)
+    geometry = PISM.Geometry(grid)
+
+    bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
 
     # start with a flat bed, no ice, and no uplift
-    bed.set(0.0)
+    geometry.bed_elevation.set(0.0)
+    geometry.ice_thickness.set(0.0)
+    geometry.sea_level_elevation.set(0.0)
+    geometry.ensure_consistency(0.0)
+
     bed_uplift.set(0.0)
-    ice_thickness.set(0.0)
-    sea_level.set(0.0)
 
     # initialize the model
-    model.bootstrap(bed, bed_uplift, ice_thickness, sea_level)
+    model.bootstrap(geometry.bed_elevation, bed_uplift, geometry.ice_thickness, geometry.sea_level_elevation)
 
     # add the disc load
-    add_disc_load(ice_thickness, disc_radius, disc_thickness)
+    add_disc_load(geometry.ice_thickness, disc_radius, disc_thickness)
 
     # do 1 step
-    model.step(ice_thickness, sea_level, dt)
+    model.step(geometry.ice_thickness, geometry.sea_level_elevation, dt)
 
     if restart:
         # save the model state
@@ -95,12 +87,12 @@ def run(dt, restart=False):
             # initialize
             PISM.PETSc.Options().setValue("-i", filename)
             options = PISM.process_input_options(grid.com, ctx.config)
-            model.init(options, ice_thickness, sea_level)
+            model.init(options, geometry.ice_thickness, geometry.sea_level_elevation)
         finally:
             os.remove(filename)
 
     # do 1 more step
-    model.step(ice_thickness, sea_level, dt)
+    model.step(geometry.ice_thickness, geometry.sea_level_elevation, dt)
 
     return model
 
