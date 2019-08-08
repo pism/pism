@@ -32,6 +32,14 @@ Changes since v1.1
 - PISM uses the new (v5.x) PROJ API, so PROJ 5.0 or later is required to compute
   longitude-latitude grid coordinates and cell bounds. (Tested using PROJ v5.2.0 and
   v6.1.1.)
+- Rename `bed_deformation.update_interval` to `bed_deformation.lc.update_interval` and fix
+  its interpretation: before this change both bed deformation models (point-wise isostasy
+  and the Lingle-Clark model) updated *not more often than* every
+  `bed_deformation.update_interval` years. This lead to issues with stopped and re-started
+  simulations (see `issue 422`_). Now the point-wise isostasy model is updated every time
+  step (its computational cost is negligible) and the Lingle-Clark model is updated
+  *exactly* every `bed_deformation.lc.update_interval` years, limiting PISM's time step
+  length.
 
 Changes from v1.0 to v1.1
 =========================
@@ -602,6 +610,7 @@ Miscellaneous
 .. _issue 402: https://github.com/pism/pism/issues/402
 .. _issue 363: https://github.com/pism/pism/issues/363
 .. _issue 405: https://github.com/pism/pism/issues/405
+.. _issue 422: https://github.com/pism/pism/issues/422
 .. _ocean models: http://pism-docs.org/sphinx/climate_forcing/ocean.html
 ..
    Local Variables:
