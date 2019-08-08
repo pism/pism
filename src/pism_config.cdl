@@ -2023,6 +2023,10 @@ netcdf pism_config {
     pism_config:surface.anomaly.reference_year_type = "integer";
     pism_config:surface.anomaly.reference_year_units = "years";
 
+    pism_config:stress_balance.prescribed_sliding.file = "";
+    pism_config:stress_balance.prescribed_sliding.file_doc = "The name of the file containing prescribed sliding velocity (variable names: `ubar`, `vbar`).";
+    pism_config:stress_balance.prescribed_sliding.file_type = "string";
+
     pism_config:surface.cache.update_interval = 10;
     pism_config:surface.cache.update_interval_doc = "Update interval (in years) for the `-surface cache` modifier.";
     pism_config:surface.cache.update_interval_type = "integer";

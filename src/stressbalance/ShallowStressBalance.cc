@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -444,10 +444,11 @@ void PrescribedSliding::update(const Inputs &inputs, bool full_update) {
 void PrescribedSliding::init_impl() {
   ShallowStressBalance::init_impl();
 
-  options::String input_filename("-prescribed_sliding_file",
-                                 "name of the file to read velocity fields from");
-  if (not input_filename.is_set()) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "option -prescribed_sliding_file is required.");
+  auto input_filename = m_config->get_string("stress_balance.prescribed_sliding.file");
+
+  if (input_filename.empty()) {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "stress_balance.prescribed_sliding.file is required.");
   }
 
   m_velocity.regrid(input_filename, CRITICAL);

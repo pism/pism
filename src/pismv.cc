@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -134,10 +134,15 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
 }
 
 IceGrid::Ptr pismv_grid(Context::Ptr ctx, char testname) {
-  options::String input_file("-i", "Specifies a PISM input file");
-  options::forbidden("-bootstrap");
+  auto config = ctx->config();
 
-  if (input_file.is_set()) {
+  auto input_file = config->get_string("input.file");
+
+  if (config->get_flag("input.bootstrap")) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "pisms does not support bootstrapping");
+  }
+
+  if (not input_file.empty()) {
     GridRegistration r = string_to_registration(ctx->config()->get_string("grid.registration"));
 
     // get grid from a PISM input file
