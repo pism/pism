@@ -117,7 +117,7 @@ Pico::Pico(IceGrid::ConstPtr g)
   m_overturning.set_attrs("model_state", "cavity overturning", "m^3 s-1", "cavity overturning");
   m_overturning.metadata().set_double("_FillValue", 0.0);
 
-  m_basal_melt_rate.create(m_grid, "pico_basal_melt_rate", WITHOUT_GHOSTS);
+  m_basal_melt_rate.create(m_grid, "pico_basal_melt_rate", WITH_GHOSTS);
   m_basal_melt_rate.set_attrs("model_state", "PICO sub-shelf melt rate", "m/s", "PICO sub-shelf melt rate");
   m_basal_melt_rate.metadata().set_string("glaciological_units", "m year-1");
   m_basal_melt_rate.metadata().set_double("_FillValue", 0.0);
@@ -277,6 +277,8 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
                         m_Toc,
                         m_Soc);
   }
+
+  extend_basal_melt_rates(cell_type,m_basal_melt_rate);
 
   m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
   m_shelf_base_mass_flux->scale(physics.ice_density());
@@ -642,6 +644,48 @@ void Pico::process_other_boxes(const PicoPhysics &physics,
 
   } // loop over boxes
 }
+
+/*!
+* extend basal melt rates to grounded and ocean neighbors for consitency with subgl_melt.
+* note that melt rates are then simply interpolated into partially floating cells, they
+* are not included in the calculations of pico
+*/
+void Pico::extend_basal_melt_rates(const IceModelVec2CellType &mask, IceModelVec2S &basal_melt_rate) {
+
+	IceModelVec::AccessList list{ &mask, &basal_melt_rate };
+	
+	for (Points p(*m_grid); p; p.next()) {
+
+		const int i = p.i(), j = p.j();
+
+		bool potential_partially_filled_cell = 
+			((mask.as_int(i, j) == MASK_GROUNDED or mask.as_int(i, j) == MASK_ICE_FREE_OCEAN ) and 
+			 (mask.as_int(i-1, j) == MASK_FLOATING or mask.as_int(i+1, j) == MASK_FLOATING or
+			  mask.as_int(i, j-1) == MASK_FLOATING or mask.as_int(i, j+1) == MASK_FLOATING or
+			  mask.as_int(i-1, j-1) == MASK_FLOATING or mask.as_int(i-1, j+1) == MASK_FLOATING or
+			  mask.as_int(i+1, j-1) == MASK_FLOATING or mask.as_int(i+1, j+1) == MASK_FLOATING) );
+
+		if (potential_partially_filled_cell){
+			double melt_average = 0.0;
+			int N = 0;
+
+			if (mask.as_int(i-1,j) == MASK_FLOATING) { melt_average += basal_melt_rate(i-1,j); N++; }
+			if (mask.as_int(i,j-1) == MASK_FLOATING) { melt_average += basal_melt_rate(i,j-1); N++; }
+			if (mask.as_int(i+1,j) == MASK_FLOATING) { melt_average += basal_melt_rate(i+1,j); N++; }
+			if (mask.as_int(i,j+1) == MASK_FLOATING) { melt_average += basal_melt_rate(i,j+1); N++; }
+			if (mask.as_int(i-1,j-1) == MASK_FLOATING) { melt_average += basal_melt_rate(i-1,j-1); N++; }
+			if (mask.as_int(i+1,j-1) == MASK_FLOATING) { melt_average += basal_melt_rate(i+1,j-1); N++; }
+			if (mask.as_int(i-1,j+1) == MASK_FLOATING) { melt_average += basal_melt_rate(i-1,j+1); N++; }
+			if (mask.as_int(i+1,j+1) == MASK_FLOATING) { melt_average += basal_melt_rate(i+1,j+1); N++; }
+
+			if (N != 0) { // If there are floating neigbors, return average melt rates
+				basal_melt_rate(i, j) = melt_average / N;
+			}
+		}
+
+	}
+}
+
 
 
 // Write diagnostic variables to extra files if requested
