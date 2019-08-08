@@ -6,6 +6,14 @@ Changes from v1.1.4 to v1.1.5
 - Bug fix: ensure that land ice area fraction (diagnostic variable `sftgif`) never
   exceeds 1.
 - Set CMake policy CMP0086.
+- Rename `bed_deformation.update_interval` to `bed_deformation.lc.update_interval` and fix
+  its interpretation: before this change both bed deformation models (point-wise isostasy
+  and the Lingle-Clark model) updated *not more often than* every
+  `bed_deformation.update_interval` years. This lead to issues with stopped and re-started
+  simulations (see `issue 422`_). Now the point-wise isostasy model is updated every time
+  step (its computational cost is negligible) and the Lingle-Clark model is updated
+  *exactly* every `bed_deformation.lc.update_interval` years, limiting PISM's time step
+  length.
 
 Changes from v1.1.3 to v1.1.4
 =============================
@@ -613,6 +621,7 @@ Miscellaneous
 .. _issue 402: https://github.com/pism/pism/issues/402
 .. _issue 363: https://github.com/pism/pism/issues/363
 .. _issue 409: https://github.com/pism/pism/issues/409
+.. _issue 422: https://github.com/pism/pism/issues/422
 .. _ocean models: http://pism-docs.org/sphinx/climate_forcing/ocean.html
 ..
    Local Variables:

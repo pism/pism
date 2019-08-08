@@ -336,10 +336,10 @@
    :Option: :opt:`-bed_def`
    :Description: Selects a bed deformation model to use. 'iso' is point-wise isostasy, 'lc' is the Lingle-Clark model (see :cite:`LingleClark`, requires FFTW3).
 
-#. :config:`bed_deformation.update_interval` (*scalar*)
+#. :config:`bed_deformation.lc.update_interval` (*scalar*)
 
    :Value: 10 (years)
-   :Description: Interval between bed deformation updates
+   :Description: Interval between updates of the Lingle-Clark bed deformation model
 
 #. :config:`bed_deformation.bed_topography_delta_file` (*string*)
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -68,18 +68,7 @@ MaxTimestep PointwiseIsostasy::max_timestep_impl(double t) const {
 void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
                                     const IceModelVec2S &sea_level_elevation,
                                     double t, double dt) {
-
-  double t_final = t + dt;
-
-  // Check if it's time to update:
-  double dt_beddef = t_final - m_t_beddef_last; // in seconds
-  if ((dt_beddef < m_config->get_double("bed_deformation.update_interval", "seconds") &&
-       t_final < m_grid->ctx()->time()->end()) ||
-      dt_beddef < 1e-12) {
-    return;
-  }
-
-  m_t_beddef_last = t_final;
+  (void) t;
 
   const double
     mantle_density = m_config->get_double("bed_deformation.mantle_density"),
@@ -112,7 +101,7 @@ void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
   loop.check();
 
   //! Finally, we need to update bed uplift, topg_last and load_last.
-  compute_uplift(m_topg, m_topg_last, dt_beddef, m_uplift);
+  compute_uplift(m_topg, m_topg_last, dt, m_uplift);
 
   m_topg_last.copy_from(m_topg);
 

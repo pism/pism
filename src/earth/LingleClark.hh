@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -85,6 +85,15 @@ protected:
   IceModelVec2S m_viscous_bed_displacement;
   //! rank 0 storage using the extended grid
   petsc::Vec::Ptr m_viscous_bed_displacement0;
+
+  //! time of the last bed deformation update
+  double m_t_last;
+  //! Update interval in seconds
+  double m_update_interval;
+  //! Temporal resolution to use when checking whether it's time to update
+  double m_t_eps;
+  //! Name of the variable used to store the last update time.
+  std::string m_time_name;
 };
 
 } // end of namespace bed
