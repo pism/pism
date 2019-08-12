@@ -285,18 +285,6 @@ std::string Time_Calendar::date(double T) const {
   return std::string(tmp);
 }
 
-std::string Time_Calendar::date() const {
-  return this->date(m_time_in_seconds);
-}
-
-std::string Time_Calendar::start_date() const {
-  return this->date(m_run_start);
-}
-
-std::string Time_Calendar::end_date() const {
-  return this->date(m_run_end);
-}
-
 double Time_Calendar::calendar_year_start(double T) const {
   auto D = m_time_units.date(T, m_calendar_string);
 

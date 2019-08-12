@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -45,13 +45,8 @@ public:
 
   virtual double year_fraction(double T) const;
 
+  using Time::date;
   virtual std::string date(double T) const;
-
-  virtual std::string date() const;
-
-  virtual std::string start_date() const;
-
-  virtual std::string end_date() const;
 
   virtual std::string units_string() const {
     return CF_units_string();

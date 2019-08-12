@@ -334,7 +334,7 @@ std::string Time::date(double T) const {
 }
 
 std::string Time::date() const {
-  return date(m_time_in_seconds);
+  return date(current());
 }
 
 std::string Time::start_date() const {
