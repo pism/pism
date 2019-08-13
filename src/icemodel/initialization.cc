@@ -229,7 +229,7 @@ void IceModel::model_state_setup() {
     }
   }
 
-  // basal_yield_stress_model->init() needs bwat so this must happen
+  // basal_yield_stress_model->init() needs till water thickness so this must happen
   // after subglacial_hydrology->init()
   if (m_basal_yield_stress_model) {
     assert((bool)m_subglacial_hydrology);

@@ -245,7 +245,7 @@ void IceModel::allocate_storage() {
     m_ssa_dirichlet_bc_mask.set_time_independent(true);
 
     // FIXME: this is used by the inverse modeling code. Do NOT get
-    // this mask from m_grid->variables() elsewhere in the code!
+    // this field from m_grid->variables() elsewhere in the code!
     m_grid->variables().add(m_ssa_dirichlet_bc_mask);
 
     m_ssa_dirichlet_bc_mask.set(0.0);
@@ -270,7 +270,7 @@ void IceModel::allocate_storage() {
     }
 
     // FIXME: this is used by the inverse modeling code. Do NOT get
-    // this mask from m_grid->variables() elsewhere in the code!
+    // this field from m_grid->variables() elsewhere in the code!
     m_grid->variables().add(m_ssa_dirichlet_bc_values);
   }
 
