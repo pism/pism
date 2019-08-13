@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -194,11 +194,9 @@ protected:
     }
 
     if (input.inq_var(m_time_since_reset.get_name())) {
-      std::vector<double> data;
-      input.get_1d_var(m_time_since_reset.get_name(),
-                       time, 1, // start, count
-                       data);
-      m_interval_length = data[0];
+      input.get_vara_double(m_time_since_reset.get_name(),
+                            {time}, {1}, // start, count
+                            &m_interval_length);
     } else {
       m_interval_length = 0.0;
     }
