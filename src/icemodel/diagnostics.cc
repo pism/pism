@@ -83,8 +83,7 @@ IceModelVec::Ptr CalvingFrontPressureDifference::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ocean_pressure_difference", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  IceModelVec2CellType mask;
-  mask.create(m_grid, "mask", WITH_GHOSTS);
+  IceModelVec2CellType mask(m_grid, "mask", WITH_GHOSTS);
 
   auto
     &H         = model->geometry().ice_thickness,
@@ -290,8 +289,7 @@ CTS::CTS(const IceModel *m)
 
 IceModelVec::Ptr CTS::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3);
-  result->create(m_grid, "cts", WITHOUT_GHOSTS);
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "cts", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   energy::compute_cts(model->energy_balance_model()->enthalpy(),
@@ -639,8 +637,7 @@ LiquidFraction::LiquidFraction(const IceModel *m)
 
 IceModelVec::Ptr LiquidFraction::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3);
-  result->create(m_grid, "liqfrac", WITHOUT_GHOSTS);
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "liqfrac", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   bool cold_mode = m_config->get_boolean("energy.temperature_based");
@@ -1700,9 +1697,8 @@ IceModelVec::Ptr LatLonBounds::compute_impl() const {
   std::map<std::string,std::string> attrs;
   std::vector<double> indices(4);
 
-  IceModelVec3Custom::Ptr result(new IceModelVec3Custom);
-  result->create(m_grid, m_var_name + "_bnds", "nv4",
-                 indices, attrs);
+  IceModelVec3Custom::Ptr result(new IceModelVec3Custom(m_grid, m_var_name + "_bnds", "nv4",
+                                                        indices, attrs));
   result->metadata(0) = m_vars[0];
 
   bool latitude = true;
@@ -2028,8 +2024,7 @@ IceHardness::IceHardness(const IceModel *m)
 
 IceModelVec::Ptr IceHardness::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3);
-  result->create(m_grid, "hardness", WITHOUT_GHOSTS);
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "hardness", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
@@ -2087,12 +2082,10 @@ static inline double square(double x) {
 
 IceModelVec::Ptr IceViscosity::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3);
-  result->create(m_grid, "effective_viscosity", WITHOUT_GHOSTS);
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "effective_viscosity", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  IceModelVec3 W;
-  W.create(m_grid, "wvel", WITH_GHOSTS);
+  IceModelVec3 W(m_grid, "wvel", WITH_GHOSTS);
 
   using mask::ice_free;
 

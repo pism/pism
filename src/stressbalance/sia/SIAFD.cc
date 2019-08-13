@@ -39,31 +39,20 @@ namespace pism {
 namespace stressbalance {
 
 SIAFD::SIAFD(IceGrid::ConstPtr g)
-  : SSB_Modifier(g) {
-
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
-
-  // 2D temporary storage:
-  for (int i = 0; i < 2; ++i) {
-    char name[30];
-    snprintf(name, sizeof(name), "work_vector_2d_%d", i);
-
-    m_work_2d[i].create(m_grid, name, WITH_GHOSTS, WIDE_STENCIL);
-  }
-
-  m_h_x.create(m_grid, "h_x", WITH_GHOSTS);
-  m_h_y.create(m_grid, "h_y", WITH_GHOSTS);
-  m_D.create(m_grid, "diffusivity", WITH_GHOSTS);
-
-  m_delta[0].create(m_grid, "delta_0", WITH_GHOSTS);
-  m_delta[1].create(m_grid, "delta_1", WITH_GHOSTS);
-
-  // 3D temporary storage:
-  m_work_3d[0].create(m_grid, "work_3d_0", WITH_GHOSTS);
-  m_work_3d[1].create(m_grid, "work_3d_1", WITH_GHOSTS);
-
+  : SSB_Modifier(g),
+    m_stencil_width(m_config->get_double("grid.max_stencil_width")),
+    m_work_2d_0(m_grid, "work_vector_2d_0", WITH_GHOSTS, m_stencil_width),
+    m_work_2d_1(m_grid, "work_vector_2d_1", WITH_GHOSTS, m_stencil_width),
+    m_h_x(m_grid, "h_x", WITH_GHOSTS),
+    m_h_y(m_grid, "h_y", WITH_GHOSTS),
+    m_D(m_grid, "diffusivity", WITH_GHOSTS),
+    m_delta_0(m_grid, "delta_0", WITH_GHOSTS),
+    m_delta_1(m_grid, "delta_1", WITH_GHOSTS),
+    m_work_3d_0(m_grid, "work_3d_0", WITH_GHOSTS),
+    m_work_3d_1(m_grid, "work_3d_1", WITH_GHOSTS)
+{
   // bed smoother
-  m_bed_smoother = new BedSmoother(m_grid, WIDE_STENCIL);
+  m_bed_smoother = new BedSmoother(m_grid, m_stencil_width);
 
   m_second_to_kiloyear = units::convert(m_sys, 1, "second", "1000 years");
 
@@ -233,7 +222,7 @@ void SIAFD::surface_gradient_eta(const Inputs &inputs,
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
   const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
-  IceModelVec2S &eta = m_work_2d[0];
+  IceModelVec2S &eta = m_work_2d_0;
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
 
@@ -385,8 +374,8 @@ void SIAFD::surface_gradient_haseloff(const Inputs &inputs,
     &h = inputs.geometry->ice_surface_elevation,
     &b = inputs.geometry->bed_elevation;
   IceModelVec2S
-    &w_i = m_work_2d[0],
-    &w_j = m_work_2d[1]; // averaging weights
+    &w_i = m_work_2d_0,
+    &w_j = m_work_2d_1; // averaging weights
 
   const IceModelVec2CellType &mask = inputs.geometry->cell_type;
 
@@ -555,14 +544,15 @@ void SIAFD::compute_diffusivity(bool full_update,
                                 const IceModelVec2Stag &h_y,
                                 IceModelVec2Stag &result) {
   IceModelVec2S
-    &thk_smooth = m_work_2d[0],
-    &theta      = m_work_2d[1];
+    &thk_smooth = m_work_2d_0,
+    &theta      = m_work_2d_1;
 
   const IceModelVec2S
     &h = geometry.ice_surface_elevation,
     &H = geometry.ice_thickness;
 
   const IceModelVec2CellType &mask = geometry.cell_type;
+  IceModelVec3* delta[] = {&m_delta_0, &m_delta_1};
 
   result.set(0.0);
 
@@ -593,9 +583,9 @@ void SIAFD::compute_diffusivity(bool full_update,
   }
 
   if (full_update) {
-    list.add({&m_delta[0], &m_delta[1]});
-    assert(m_delta[0].stencil_width()  >= 1);
-    assert(m_delta[1].stencil_width()  >= 1);
+    list.add({delta[0], delta[1]});
+    assert(m_delta_0.stencil_width()  >= 1);
+    assert(m_delta_1.stencil_width()  >= 1);
   }
 
   assert(theta.stencil_width()      >= 2);
@@ -635,7 +625,7 @@ void SIAFD::compute_diffusivity(bool full_update,
         if (thk == 0.0) {
           result(i, j, o) = 0.0;
           if (full_update) {
-            m_delta[o].set_column(i, j, 0.0);
+            delta[o]->set_column(i, j, 0.0);
           }
           continue;
         }
@@ -739,7 +729,7 @@ void SIAFD::compute_diffusivity(bool full_update,
           for (unsigned int k = ks + 1; k < Mz; ++k) {
             delta_ij[k] = 0.0;
           }
-          m_delta[o].set_column(i, j, &delta_ij[0]);
+          delta[o]->set_column(i, j, &delta_ij[0]);
         }
       } // i, j-loop
     } catch (...) {
@@ -809,8 +799,9 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
  */
 void SIAFD::compute_I(const Geometry &geometry) {
 
-  IceModelVec2S &thk_smooth = m_work_2d[0];
-  IceModelVec3* I = m_work_3d;
+  IceModelVec2S &thk_smooth = m_work_2d_0;
+  IceModelVec3* I[] = {&m_work_3d_0, &m_work_3d_1};
+  IceModelVec3* delta[] = {&m_delta_0, &m_delta_1};
 
   const IceModelVec2S
     &h = geometry.ice_surface_elevation,
@@ -820,12 +811,12 @@ void SIAFD::compute_I(const Geometry &geometry) {
 
   m_bed_smoother->smoothed_thk(h, H, mask, thk_smooth);
 
-  IceModelVec::AccessList list{&m_delta[0], &m_delta[1], &I[0], &I[1], &thk_smooth};
+  IceModelVec::AccessList list{delta[0], delta[1], I[0], I[1], &thk_smooth};
 
-  assert(I[0].stencil_width()     >= 1);
-  assert(I[1].stencil_width()     >= 1);
-  assert(m_delta[0].stencil_width() >= 1);
-  assert(m_delta[1].stencil_width() >= 1);
+  assert(I[0]->stencil_width()     >= 1);
+  assert(I[1]->stencil_width()     >= 1);
+  assert(delta[0]->stencil_width() >= 1);
+  assert(delta[1]->stencil_width() >= 1);
   assert(thk_smooth.stencil_width() >= 2);
 
   const unsigned int Mz = m_grid->Mz();
@@ -845,8 +836,8 @@ void SIAFD::compute_I(const Geometry &geometry) {
         const double
           thk = 0.5 * (thk_smooth(i, j) + thk_smooth(i + oi, j + oj));
 
-        const double *delta_ij = m_delta[o].get_column(i, j);
-        double       *I_ij     = I[o].get_column(i, j);
+        const double *delta_ij = delta[o]->get_column(i, j);
+        double       *I_ij     = I[o]->get_column(i, j);
 
         const unsigned int ks = m_grid->kBelowHeight(thk);
 
@@ -897,9 +888,9 @@ void SIAFD::compute_3d_horizontal_velocity(const Geometry &geometry,
 
   compute_I(geometry);
   // after the compute_I() call work_3d[0,1] contains I on the staggered grid
-  IceModelVec3 *I = m_work_3d;
+  IceModelVec3* I[] = {&m_work_3d_0, &m_work_3d_1};
 
-  IceModelVec::AccessList list{&u_out, &v_out, &h_x, &h_y, &sliding_velocity, &I[0], &I[1]};
+  IceModelVec::AccessList list{&u_out, &v_out, &h_x, &h_y, &sliding_velocity, I[0], I[1]};
 
   const unsigned int Mz = m_grid->Mz();
 
@@ -907,10 +898,10 @@ void SIAFD::compute_3d_horizontal_velocity(const Geometry &geometry,
     const int i = p.i(), j = p.j();
 
     const double
-      *I_e = I[0].get_column(i, j),
-      *I_w = I[0].get_column(i - 1, j),
-      *I_n = I[1].get_column(i, j),
-      *I_s = I[1].get_column(i, j - 1);
+      *I_e = I[0]->get_column(i, j),
+      *I_w = I[0]->get_column(i - 1, j),
+      *I_n = I[1]->get_column(i, j),
+      *I_s = I[1]->get_column(i, j - 1);
 
     // Fetch values from 2D fields *outside* of the k-loop:
     const double

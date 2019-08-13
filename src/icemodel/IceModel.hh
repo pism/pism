@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -98,7 +98,10 @@ class IceModelVec2CellType;
 class IceModelVec2T;
 class Component;
 
-struct FractureFields {
+class FractureFields {
+private:
+  const unsigned int m_stencil_width;
+public:
   FractureFields(IceGrid::ConstPtr grid);
 
   IceModelVec2S density;

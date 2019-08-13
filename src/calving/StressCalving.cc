@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,11 +26,10 @@ StressCalving::StressCalving(IceGrid::ConstPtr grid,
                              unsigned int stencil_width)
   // mask has to have a wider stencil to be able to call is_marginal() away from the current cell
   : CalvingFrontRetreat(grid, stencil_width + 1),
-    m_stencil_width(stencil_width) {
-
-  m_strain_rates.create(m_grid, "strain_rates", WITH_GHOSTS,
-                        m_stencil_width,
-                        2);     // 2 components
+    m_stencil_width(stencil_width),
+    m_strain_rates(m_grid, "strain_rates", WITH_GHOSTS,
+                   m_stencil_width,
+                   2 /* 2 components */) {
 
   m_strain_rates.metadata(0).set_name("eigen1");
   m_strain_rates.set_attrs("internal",

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 PISM Authors
+// Copyright (C) 2012-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -270,26 +270,34 @@ Inputs::Inputs() {
 }
 
 Hydrology::Hydrology(IceGrid::ConstPtr g)
-  : Component(g) {
+  : Component(g),
+    m_input_rate(m_grid, "water_input_rate", WITHOUT_GHOSTS),
+    m_Wtill(m_grid, "tillwat", WITHOUT_GHOSTS),
+    m_Pover(m_grid, "overburden_pressure", WITHOUT_GHOSTS),
+    m_W(m_grid, "bwat", WITH_GHOSTS, 1),
+    m_total_change(m_grid, "water_mass_change", WITHOUT_GHOSTS),
+    m_input_change(m_grid, "water_mass_change_due_to_input", WITHOUT_GHOSTS),
+    m_flow_change_incremental(m_grid, "water_thickness_change_due_to_flow", WITHOUT_GHOSTS),
+    m_flow_change(m_grid, "water_mass_change_due_to_flow", WITHOUT_GHOSTS),
+    m_grounded_margin_change(m_grid, "grounded_margin_change", WITHOUT_GHOSTS),
+    m_grounding_line_change(m_grid, "grounding_line_change", WITHOUT_GHOSTS),
+    m_no_model_mask_change(m_grid, "no_model_mask_change", WITHOUT_GHOSTS),
+    m_conservation_error_change(m_grid, "conservation_error_change", WITHOUT_GHOSTS) {
 
-  m_input_rate.create(m_grid, "water_input_rate", WITHOUT_GHOSTS);
   m_input_rate.set_attrs("internal",
                          "hydrology model workspace for total input rate into subglacial water layer",
                          "m s-1", "");
 
   // *all* Hydrology classes have layer of water stored in till as a state variable
-  m_Wtill.create(m_grid, "tillwat", WITHOUT_GHOSTS);
   m_Wtill.set_attrs("model_state",
                     "effective thickness of subglacial water stored in till",
                     "m", "");
   m_Wtill.metadata().set_double("valid_min", 0.0);
 
-  m_Pover.create(m_grid, "overburden_pressure", WITHOUT_GHOSTS);
   m_Pover.set_attrs("internal", "overburden pressure", "Pa", "");
   m_Pover.metadata().set_double("valid_min", 0.0);
 
   // needs ghosts in Routing and Distributed
-  m_W.create(m_grid, "bwat", WITH_GHOSTS, 1);
   m_W.set_attrs("diagnostic",
                 "thickness of transportable subglacial water layer",
                 "m", "");
@@ -297,40 +305,32 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
 
   // storage for water conservation reporting quantities
   {
-    m_total_change.create(m_grid, "water_mass_change", WITHOUT_GHOSTS);
     m_total_change.set_attrs("internal",
                              "total change in water mass over one time step",
                              "kg", "");
 
-    m_input_change.create(m_grid, "water_mass_change_due_to_input", WITHOUT_GHOSTS);
     m_input_change.set_attrs("internal",
                              "change in water mass over one time step due to the input "
                              "(basal melt and surface drainage)",
                              "kg", "");
 
-    m_flow_change_incremental.create(m_grid, "water_thickness_change_due_to_flow", WITHOUT_GHOSTS);
 
-    m_flow_change.create(m_grid, "water_mass_change_due_to_flow", WITHOUT_GHOSTS);
     m_flow_change.set_attrs("internal",
                             "change in water mass due to lateral flow (over one time step)",
                             "kg", "");
 
-    m_grounded_margin_change.create(m_grid, "grounded_margin_change", WITHOUT_GHOSTS);
     m_grounded_margin_change.set_attrs("diagnostic",
                                        "changes in subglacial water thickness at the grounded margin",
                                        "kg", "");
-    m_grounding_line_change.create(m_grid, "grounding_line_change", WITHOUT_GHOSTS);
     m_grounding_line_change.set_attrs("diagnostic",
                                       "changes in subglacial water thickness at the grounding line",
                                       "kg", "");
 
-    m_no_model_mask_change.create(m_grid, "no_model_mask_change", WITHOUT_GHOSTS);
     m_no_model_mask_change.set_attrs("diagnostic",
                                      "changes in subglacial water thickness at the edge of the modeling domain"
                                      " (regional models)",
                                      "kg", "");
 
-    m_conservation_error_change.create(m_grid, "conservation_error_change", WITHOUT_GHOSTS);
     m_conservation_error_change.set_attrs("diagnostic",
                                           "changes in subglacial water thickness required "
                                           "to preserve non-negativity or "

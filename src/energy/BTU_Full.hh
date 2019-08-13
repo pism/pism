@@ -108,7 +108,7 @@ protected:
 protected:
   //! bedrock thermal layer temperature, in degrees Kelvin; part of state; uses equally-spaced
   //! layers.
-  IceModelVec3Custom m_temp;
+  IceModelVec3Custom::Ptr m_temp;
 
   //! bedrock thermal conductivity
   double m_k;

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017  David Maxwell
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -105,6 +105,9 @@ protected:
   virtual TerminationReason::Ptr compute_dlogalpha(double *dalpha);
 
   virtual TerminationReason::Ptr linesearch();
+
+  const unsigned int m_design_stencil_width;
+  const unsigned int m_state_stencil_width;
 
   IP_SSATaucForwardProblem &m_ssaforward;
 

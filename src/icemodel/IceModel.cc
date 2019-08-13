@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -57,35 +57,33 @@
 
 namespace pism {
 
-FractureFields::FractureFields(IceGrid::ConstPtr grid) {
-  Config::ConstPtr config = grid->ctx()->config();
+FractureFields::FractureFields(IceGrid::ConstPtr grid)
+  : m_stencil_width(grid->ctx()->config()->get_double("grid.max_stencil_width")),
+    density(grid, "fracture_density", WITH_GHOSTS, m_stencil_width),
+    growth_rate(grid, "fracture_growth_rate", WITH_GHOSTS, m_stencil_width),
+    healing_rate(grid, "fracture_healing_rate", WITH_GHOSTS, m_stencil_width),
+    flow_enhancement(grid, "fracture_flow_enhancement", WITH_GHOSTS, m_stencil_width),
+    age(grid, "fracture_age", WITH_GHOSTS, m_stencil_width),
+    toughness(grid, "fracture_toughness", WITH_GHOSTS, m_stencil_width),
+    strain_rates(grid, "strain_rates", WITH_GHOSTS,
+                 2, // stencil width, has to match or exceed the "offset" in eigenCalving
+                 2),
+    deviatoric_stresses(grid, "sigma", WITH_GHOSTS, 2 /* stencil width */, 3) {
 
-  const unsigned int WIDE_STENCIL = config->get_double("grid.max_stencil_width");
-
-  density.create(grid, "fracture_density", WITH_GHOSTS, WIDE_STENCIL);
   density.set_attrs("model_state", "fracture density in ice shelf", "", "");
   density.metadata().set_double("valid_max", 1.0);
   density.metadata().set_double("valid_min", 0.0);
 
-  growth_rate.create(grid, "fracture_growth_rate", WITH_GHOSTS, WIDE_STENCIL);
   growth_rate.set_attrs("model_state", "fracture growth rate", "second-1", "");
   growth_rate.metadata().set_double("valid_min", 0.0);
 
-  healing_rate.create(grid, "fracture_healing_rate", WITH_GHOSTS, WIDE_STENCIL);
   healing_rate.set_attrs("model_state", "fracture healing rate", "second-1", "");
 
-  flow_enhancement.create(grid, "fracture_flow_enhancement", WITH_GHOSTS, WIDE_STENCIL);
   flow_enhancement.set_attrs("model_state", "fracture-induced flow enhancement", "", "");
 
-  age.create(grid, "fracture_age", WITH_GHOSTS, WIDE_STENCIL);
   age.set_attrs("model_state", "age since fracturing", "years", "");
 
-  toughness.create(grid, "fracture_toughness", WITH_GHOSTS, WIDE_STENCIL);
   toughness.set_attrs("model_state", "fracture toughness", "Pa", "");
-
-  strain_rates.create(grid, "strain_rates", WITH_GHOSTS,
-                      2, // stencil width, has to match or exceed the "offset" in eigenCalving
-                      2);
 
   strain_rates.metadata(0).set_name("eigen1");
   strain_rates.set_attrs("internal",
@@ -96,10 +94,6 @@ FractureFields::FractureFields(IceGrid::ConstPtr grid) {
   strain_rates.set_attrs("internal",
                          "minor principal component of horizontal strain-rate",
                          "second-1", "", 1);
-
-  deviatoric_stresses.create(grid, "sigma", WITH_GHOSTS,
-                             2, // stencil width
-                             3);
 
   deviatoric_stresses.metadata(0).set_name("sigma_xx");
   deviatoric_stresses.set_attrs("internal",

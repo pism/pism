@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -41,7 +41,13 @@ namespace surface {
 
 TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
                                    std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : SurfaceModel(g, input) {
+  : SurfaceModel(g, input),
+    m_mass_flux(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
+    m_firn_depth(m_grid, "firn_depth", WITHOUT_GHOSTS),
+    m_snow_depth(m_grid, "snow_depth", WITHOUT_GHOSTS),
+    m_accumulation(m_grid, "surface_accumulation_flux", WITHOUT_GHOSTS),
+    m_melt(m_grid, "surface_melt_flux", WITHOUT_GHOSTS),
+    m_runoff(m_grid, "surface_runoff_flux", WITHOUT_GHOSTS) {
 
   m_sd_period                  = 0;
   m_base_ddf.snow              = m_config->get_double("surface.pdd.factor_snow");
@@ -97,7 +103,6 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
                            "standard deviation of near-surface air temperature",
                            "Kelvin", "");
 
-  m_mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   m_mass_flux.set_attrs("diagnostic",
                                     "instantaneous surface mass balance (accumulation/ablation) rate",
                                     "kg m-2 s-1",
@@ -108,25 +113,20 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   // diagnostic fields:
 
   {
-    m_accumulation.create(m_grid, "surface_accumulation_flux", WITHOUT_GHOSTS);
     m_accumulation.set_attrs("diagnostic", "surface accumulation (precipitation minus rain)",
                              "kg m-2", "");
 
-    m_melt.create(m_grid, "surface_melt_flux", WITHOUT_GHOSTS);
     m_melt.set_attrs("diagnostic", "surface melt", "kg m-2", "");
 
-    m_runoff.create(m_grid, "surface_runoff_flux", WITHOUT_GHOSTS);
     m_runoff.set_attrs("diagnostic", "surface meltwater runoff",
                        "kg m-2", "");
   }
 
-  m_snow_depth.create(m_grid, "snow_depth", WITHOUT_GHOSTS);
   m_snow_depth.set_attrs("diagnostic",
                          "snow cover depth (set to zero once a year)",
                          "m", "");
   m_snow_depth.set(0.0);
 
-  m_firn_depth.create(m_grid, "firn_depth", WITHOUT_GHOSTS);
   m_firn_depth.set_attrs("diagnostic",
                          "firn cover depth",
                          "m", "");

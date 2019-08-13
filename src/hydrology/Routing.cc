@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 PISM Authors
+// Copyright (C) 2012-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -175,8 +175,7 @@ public:
   }
 protected:
   virtual IceModelVec::Ptr compute_impl() const {
-    IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
-    result->create(m_grid, "bwatvel", WITHOUT_GHOSTS);
+    IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "bwatvel", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
     result->metadata(1) = m_vars[1];
 
@@ -253,7 +252,14 @@ protected:
 } // end of namespace diagnostics
 
 Routing::Routing(IceGrid::ConstPtr g)
-  : Hydrology(g), m_dx(g->dx()), m_dy(g->dy()) {
+  : Hydrology(g), m_dx(g->dx()), m_dy(g->dy()),
+    m_Wstag(m_grid, "W_staggered", WITH_GHOSTS, 1),
+    m_K(m_grid, "K_staggered", WITH_GHOSTS, 1),
+    m_Q(m_grid, "advection_flux", WITH_GHOSTS, 1),
+    m_R(m_grid, "potential_workspace", WITH_GHOSTS, 1), // box stencil used
+    m_V(m_grid, "water_velocity", WITHOUT_GHOSTS),
+    m_Wnew(m_grid, "W_new", WITHOUT_GHOSTS),
+    m_Wtillnew(m_grid, "Wtill_new", WITHOUT_GHOSTS) {
 
   m_W.metadata().set_string("pism_intent", "model_state");
 
@@ -261,44 +267,37 @@ Routing::Routing(IceGrid::ConstPtr g)
              m_config->get_double("constants.standard_gravity"));
 
   // auxiliary variables which NEED ghosts
-  m_Wstag.create(m_grid, "W_staggered", WITH_GHOSTS, 1);
   m_Wstag.set_attrs("internal",
                     "cell face-centered (staggered) values of water layer thickness",
                     "m", "");
   m_Wstag.metadata().set_double("valid_min", 0.0);
 
-  m_K.create(m_grid, "K_staggered", WITH_GHOSTS, 1);
   m_K.set_attrs("internal",
                 "cell face-centered (staggered) values of nonlinear conductivity",
                 "", "");
   m_K.metadata().set_double("valid_min", 0.0);
 
-  m_Q.create(m_grid, "advection_flux", WITH_GHOSTS, 1);
   m_Q.set_attrs("internal",
                 "cell face-centered (staggered) components of advective subglacial water flux",
                 "m2 s-1", "");
 
-  m_R.create(m_grid, "potential_workspace", WITH_GHOSTS, 1); // box stencil used
   m_R.set_attrs("internal",
                 "work space for modeled subglacial water hydraulic potential",
                 "Pa", "");
 
   // auxiliary variables which do not need ghosts
 
-  m_V.create(m_grid, "water_velocity", WITHOUT_GHOSTS);
   m_V.set_attrs("internal",
                 "cell face-centered (staggered) components of water velocity"
                 " in subglacial water layer",
                 "m s-1", "");
 
   // temporaries during update; do not need ghosts
-  m_Wnew.create(m_grid, "W_new", WITHOUT_GHOSTS);
   m_Wnew.set_attrs("internal",
                    "new thickness of transportable subglacial water layer during update",
                    "m", "");
   m_Wnew.metadata().set_double("valid_min", 0.0);
 
-  m_Wtillnew.create(m_grid, "Wtill_new", WITHOUT_GHOSTS);
   m_Wtillnew.set_attrs("internal",
                        "new thickness of till (subglacial) water layer during update",
                        "m", "");
@@ -547,15 +546,13 @@ void wall_melt(const Routing &model,
                                   "alpha = %f < 1 which is not allowed", alpha);
   }
 
-  IceModelVec2S R;
-  R.create(grid, "R", WITH_GHOSTS);
+  IceModelVec2S R(grid, "R", WITH_GHOSTS);
 
   // R  <-- P + rhow g b
   model.subglacial_water_pressure().add(rg, bed_elevation, R);
   // yes, it updates ghosts
 
-  IceModelVec2S W;
-  W.create(grid, "W", WITH_GHOSTS);
+  IceModelVec2S W(grid, "W", WITH_GHOSTS);
   W.copy_from(model.subglacial_water_thickness());
 
   IceModelVec::AccessList list{&R, &W, &result};

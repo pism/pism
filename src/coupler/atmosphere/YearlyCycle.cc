@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2019 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -33,26 +33,27 @@ namespace pism {
 namespace atmosphere {
 
 YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
-  : AtmosphereModel(g) {
+  : AtmosphereModel(g),
+    m_air_temp_mean_annual(m_grid, "air_temp_mean_annual", WITHOUT_GHOSTS),
+    m_air_temp_mean_summer(m_grid, "air_temp_mean_summer", WITHOUT_GHOSTS),
+    m_precipitation(m_grid, "precipitation", WITHOUT_GHOSTS) {
 
   m_snow_temp_summer_day = m_config->get_double("atmosphere.fausto_air_temp.summer_peak_day");
 
-  // Allocate internal IceModelVecs:
-  m_air_temp_mean_annual.create(m_grid, "air_temp_mean_annual", WITHOUT_GHOSTS);
   m_air_temp_mean_annual.set_attrs("diagnostic",
-                                   "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
+                                   "mean annual near-surface air temperature"
+                                   " (without sub-year time-dependence or forcing)",
                                    "K",
                                    "");  // no CF standard_name ??
   m_air_temp_mean_annual.metadata().set_string("source", m_reference);
 
-  m_air_temp_mean_summer.create(m_grid, "air_temp_mean_summer", WITHOUT_GHOSTS);
   m_air_temp_mean_summer.set_attrs("diagnostic",
-                                 "mean summer (NH: July/ SH: January) near-surface air temperature (without sub-year time-dependence or forcing)",
-                                 "Kelvin",
-                                 "");  // no CF standard_name ??
+                                   "mean summer (NH: July/ SH: January) near-surface"
+                                   " air temperature (without sub-year time-dependence or forcing)",
+                                   "Kelvin",
+                                   "");  // no CF standard_name ??
   m_air_temp_mean_summer.metadata().set_string("source", m_reference);
 
-  m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
   m_precipitation.set_attrs("model_state", "precipitation rate",
                             "kg m-2 second-1", "precipitation_flux", 0);
   m_precipitation.metadata(0).set_string("glaciological_units", "kg m-2 year-1");

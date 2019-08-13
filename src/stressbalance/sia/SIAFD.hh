@@ -103,14 +103,19 @@ protected:
 
   bool interglacial(double accumulation_time);
 
+  const unsigned int m_stencil_width;
+
   //! temporary storage for eta, theta and the smoothed thickness
-  mutable IceModelVec2S m_work_2d[2];
+  mutable IceModelVec2S m_work_2d_0;
+  mutable IceModelVec2S m_work_2d_1;
   //! temporary storage for the surface gradient and the diffusivity
   mutable IceModelVec2Stag m_h_x, m_h_y, m_D;
   //! temporary storage for delta on the staggered grid
-  mutable IceModelVec3 m_delta[2];
+  mutable IceModelVec3 m_delta_0;
+  mutable IceModelVec3 m_delta_1;
   //! temporary storage used to store I and strain_heating on the staggered grid
-  IceModelVec3 m_work_3d[2];
+  IceModelVec3 m_work_3d_0;
+  IceModelVec3 m_work_3d_1;
 
   BedSmoother *m_bed_smoother;
 

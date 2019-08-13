@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2018 PISM Authors
+// Copyright (C) 2004--2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -57,9 +57,9 @@ This submodel is inactive in floating areas.
 
 
 MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g)
-  : YieldStress(g) {
+  : YieldStress(g),
+  m_till_phi(m_grid, "tillphi", WITHOUT_GHOSTS) {
 
-  m_till_phi.create(m_grid, "tillphi", WITHOUT_GHOSTS);
   m_till_phi.set_attrs("model_state",
                        "friction angle for till under grounded ice sheet",
                        "degrees", "");

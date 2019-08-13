@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 Constantine Khrulev, Ricarda Winkelmann, Ronja Reese, Torsten
+// Copyright (C) 2012-2019 Constantine Khrulev, Ricarda Winkelmann, Ronja Reese, Torsten
 // Albrecht, and Matthias Mengel
 //
 // This file is part of PISM.
@@ -50,7 +50,15 @@ namespace pism {
 namespace ocean {
 
 Pico::Pico(IceGrid::ConstPtr g)
-    : CompleteOceanModel(g, NULL), m_geometry(new PicoGeometry(g)) {
+  : CompleteOceanModel(g, NULL), m_geometry(new PicoGeometry(g)),
+    m_basin_mask(m_grid, "basins", WITH_GHOSTS),
+    m_Soc(m_grid, "pico_salinity", WITHOUT_GHOSTS),
+    m_Soc_box0(m_grid, "pico_salinity_box0", WITHOUT_GHOSTS),
+    m_Toc(m_grid, "pico_temperature", WITHOUT_GHOSTS),
+    m_Toc_box0(m_grid, "pico_temperature_box0", WITHOUT_GHOSTS),
+    m_T_star(m_grid, "pico_T_star", WITHOUT_GHOSTS),
+    m_overturning(m_grid, "pico_overturning", WITHOUT_GHOSTS),
+    m_basal_melt_rate(m_grid, "pico_basal_melt_rate", WITHOUT_GHOSTS) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
 
@@ -86,39 +94,33 @@ Pico::Pico(IceGrid::ConstPtr g)
                               "salinity of the adjacent ocean",
                               "g/kg", "");
 
-  m_basin_mask.create(m_grid, "basins", WITH_GHOSTS);
   m_basin_mask.set_attrs("climate_forcing", "mask determines basins for PICO", "", "");
 
   // computed salinity in ocean boxes
-  m_Soc.create(m_grid, "pico_salinity", WITHOUT_GHOSTS);
   m_Soc.set_attrs("model_state", "ocean salinity field", "g/kg", "ocean salinity field");
   m_Soc.metadata().set_double("_FillValue", 0.0);
 
   // salinity input for box 1
-  m_Soc_box0.create(m_grid, "pico_salinity_box0", WITHOUT_GHOSTS);
-  m_Soc_box0.set_attrs("model_state", "ocean base salinity field", "g/kg", "ocean base salinity field");
+  m_Soc_box0.set_attrs("model_state", "ocean base salinity field", "g/kg",
+                       "ocean base salinity field");
   m_Soc_box0.metadata().set_double("_FillValue", 0.0);
 
   // computed temperature in ocean boxes
-  m_Toc.create(m_grid, "pico_temperature", WITHOUT_GHOSTS);
   m_Toc.set_attrs("model_state", "ocean temperature field", "K", "ocean temperature field");
   m_Toc.metadata().set_double("_FillValue", 0.0);
 
   // temperature input for box 1
-  m_Toc_box0.create(m_grid, "pico_temperature_box0", WITHOUT_GHOSTS);
   m_Toc_box0.set_attrs("model_state", "ocean base temperature", "K", "ocean base temperature");
   m_Toc_box0.metadata().set_double("_FillValue", 0.0);
 
-  m_T_star.create(m_grid, "pico_T_star", WITHOUT_GHOSTS);
   m_T_star.set_attrs("model_state", "T_star field", "degree C", "T_star field");
   m_T_star.metadata().set_double("_FillValue", 0.0);
 
-  m_overturning.create(m_grid, "pico_overturning", WITHOUT_GHOSTS);
   m_overturning.set_attrs("model_state", "cavity overturning", "m^3 s-1", "cavity overturning");
   m_overturning.metadata().set_double("_FillValue", 0.0);
 
-  m_basal_melt_rate.create(m_grid, "pico_basal_melt_rate", WITHOUT_GHOSTS);
-  m_basal_melt_rate.set_attrs("model_state", "PICO sub-shelf melt rate", "m/s", "PICO sub-shelf melt rate");
+  m_basal_melt_rate.set_attrs("model_state", "PICO sub-shelf melt rate", "m/s",
+                              "PICO sub-shelf melt rate");
   m_basal_melt_rate.metadata().set_string("glaciological_units", "m year-1");
   m_basal_melt_rate.metadata().set_double("_FillValue", 0.0);
 

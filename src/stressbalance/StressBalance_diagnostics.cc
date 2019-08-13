@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -167,8 +167,7 @@ PSB_flux::PSB_flux(const StressBalance *m)
 IceModelVec::Ptr PSB_flux::compute_impl() const {
   double H_threshold = m_config->get_double("geometry.ice_free_thickness_standard");
 
-  IceModelVec2V::Ptr result(new IceModelVec2V);
-  result->create(m_grid, "flux", WITHOUT_GHOSTS);
+  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "flux", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -330,8 +329,7 @@ IceModelVec::Ptr PSB_velsurf_mag::compute_impl() const {
 
   // FIXME: Compute this using PSB_velsurf.
 
-  IceModelVec2S tmp;
-  tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
+  IceModelVec2S tmp(m_grid, "tmp", WITHOUT_GHOSTS);
 
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "velsurf_mag", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
@@ -383,13 +381,11 @@ PSB_velsurf::PSB_velsurf(const StressBalance *m)
 IceModelVec::Ptr PSB_velsurf::compute_impl() const {
   double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
 
-  IceModelVec2V::Ptr result(new IceModelVec2V);
-  result->create(m_grid, "surf", WITHOUT_GHOSTS);
+  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "surf", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  IceModelVec2S tmp;
-  tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
+  IceModelVec2S tmp(m_grid, "tmp", WITHOUT_GHOSTS);
 
   const IceModelVec3
     &u3 = model->velocity_u(),
@@ -432,8 +428,7 @@ PSB_wvel::PSB_wvel(const StressBalance *m)
 }
 
 IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) const {
-  IceModelVec3::Ptr result3(new IceModelVec3);
-  result3->create(m_grid, "wvel", WITHOUT_GHOSTS);
+  IceModelVec3::Ptr result3(new IceModelVec3(m_grid, "wvel", WITHOUT_GHOSTS));
   result3->metadata() = m_vars[0];
 
   const IceModelVec2S *bed, *uplift;
@@ -628,13 +623,11 @@ PSB_velbase::PSB_velbase(const StressBalance *m)
 IceModelVec::Ptr PSB_velbase::compute_impl() const {
   double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
 
-  IceModelVec2V::Ptr result(new IceModelVec2V);
-  result->create(m_grid, "base", WITHOUT_GHOSTS);
+  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "base", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  IceModelVec2S tmp;            // will be de-allocated automatically
-  tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
+  IceModelVec2S tmp(m_grid, "tmp", WITHOUT_GHOSTS);
 
   const IceModelVec3
     &u3 = model->velocity_u(),
@@ -733,8 +726,7 @@ static void zero_above_ice(const IceModelVec3 &F, const IceModelVec2S &H,
 
 IceModelVec::Ptr PSB_uvel::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3);
-  result->create(m_grid, "uvel", WITHOUT_GHOSTS);
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "uvel", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   zero_above_ice(model->velocity_u(),
@@ -756,8 +748,7 @@ PSB_vvel::PSB_vvel(const StressBalance *m)
 
 IceModelVec::Ptr PSB_vvel::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3);
-  result->create(m_grid, "vvel", WITHOUT_GHOSTS);
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "vvel", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   zero_above_ice(model->velocity_v(),
@@ -779,8 +770,7 @@ PSB_wvel_rel::PSB_wvel_rel(const StressBalance *m)
 
 IceModelVec::Ptr PSB_wvel_rel::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3);
-  result->create(m_grid, "wvel_rel", WITHOUT_GHOSTS);
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "wvel_rel", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   zero_above_ice(model->velocity_w(),
@@ -825,15 +815,13 @@ PSB_strain_rates::PSB_strain_rates(const StressBalance *m)
 IceModelVec::Ptr PSB_strain_rates::compute_impl() const {
   IceModelVec2V::Ptr velbar = IceModelVec2V::ToVector(PSB_velbar(model).compute());
 
-  IceModelVec2::Ptr result(new IceModelVec2);
-  result->create(m_grid, "strain_rates", WITHOUT_GHOSTS, 1, 2);
+  IceModelVec2::Ptr result(new IceModelVec2(m_grid, "strain_rates", WITHOUT_GHOSTS, 1, 2));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec2V velbar_with_ghosts;
-  velbar_with_ghosts.create(m_grid, "velbar", WITH_GHOSTS);
+  IceModelVec2V velbar_with_ghosts(m_grid, "velbar", WITH_GHOSTS);
 
   // copy_from communicates ghosts
   velbar_with_ghosts.copy_from(*velbar);
@@ -858,8 +846,7 @@ PSB_deviatoric_stresses::PSB_deviatoric_stresses(const StressBalance *m)
 
 IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() const {
 
-  IceModelVec2::Ptr result(new IceModelVec2);
-  result->create(m_grid, "deviatoric_stresses", WITHOUT_GHOSTS, 1, 3);
+  IceModelVec2::Ptr result(new IceModelVec2(m_grid, "deviatoric_stresses", WITHOUT_GHOSTS, 1, 3));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
   result->metadata(2) = m_vars[2];
@@ -893,8 +880,7 @@ PSB_pressure::PSB_pressure(const StressBalance *m)
 
 IceModelVec::Ptr PSB_pressure::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3);
-  result->create(m_grid, "pressure", WITHOUT_GHOSTS);
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "pressure", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
@@ -948,8 +934,7 @@ PSB_tauxz::PSB_tauxz(const StressBalance *m)
  */
 IceModelVec::Ptr PSB_tauxz::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3);
-  result->create(m_grid, "tauxz", WITHOUT_GHOSTS);
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "tauxz", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   const IceModelVec2S *thickness, *surface;
@@ -1009,8 +994,7 @@ PSB_tauyz::PSB_tauyz(const StressBalance *m)
  */
 IceModelVec::Ptr PSB_tauyz::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3);
-  result->create(m_grid, "tauyz", WITHOUT_GHOSTS);
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "tauyz", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");

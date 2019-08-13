@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 PISM Authors
+// Copyright (C) 2012-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,16 +31,16 @@ namespace pism {
 namespace hydrology {
 
 Distributed::Distributed(IceGrid::ConstPtr g)
-  : Routing(g) {
+  : Routing(g),
+    m_P(m_grid, "bwp", WITH_GHOSTS, 1),
+    m_Pnew(m_grid, "Pnew_internal", WITHOUT_GHOSTS) {
 
   // additional variables beyond hydrology::Routing
-  m_P.create(m_grid, "bwp", WITH_GHOSTS, 1);
   m_P.set_attrs("model_state",
                 "pressure of transportable water in subglacial layer",
                 "Pa", "");
   m_P.metadata().set_double("valid_min", 0.0);
 
-  m_Pnew.create(m_grid, "Pnew_internal", WITHOUT_GHOSTS);
   m_Pnew.set_attrs("internal",
                    "new transportable subglacial water pressure during update",
                    "Pa", "");
