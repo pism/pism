@@ -126,7 +126,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
 
   auto surface_input_file = m_config->get_string("hydrology.surface_input_file");
   if (not surface_input_file.empty()) {
-    int buffer_size = m_config->get_number("climate_forcing.buffer_size");
+    int buffer_size = m_config->get_number("input.forcing.buffer_size");
     int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
 
     PIO file(m_grid->com, "netcdf3", surface_input_file, PISM_READONLY);

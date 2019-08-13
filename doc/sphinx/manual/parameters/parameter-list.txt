@@ -659,7 +659,7 @@
    :Option: :opt:`-vonmises_calving_sigma_max`
    :Description: Set maximum tensile stress.  Note references :cite:`Morlighem2016` use 1.0e6 Pa.
 
-#. :config:`climate_forcing.buffer_size` (*integer*)
+#. :config:`input.forcing.buffer_size` (*integer*)
 
    :Value: 60
    :Description: number of 2D climate forcing records to keep in memory; = 5 years of monthly records

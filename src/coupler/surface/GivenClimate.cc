@@ -33,7 +33,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
   ForcingOptions opt(*m_grid->ctx(), "surface.given");
 
   {
-    unsigned int buffer_size = m_config->get_number("climate_forcing.buffer_size");
+    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
