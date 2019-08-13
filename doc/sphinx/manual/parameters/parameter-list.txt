@@ -664,7 +664,7 @@
    :Value: 60
    :Description: number of 2D climate forcing records to keep in memory; = 5 years of monthly records
 
-#. :config:`climate_forcing.evaluations_per_year` (*integer*)
+#. :config:`input.forcing.evaluations_per_year` (*integer*)
 
    :Value: 52
    :Description: length of the time-series used to compute temporal averages of forcing data (such as mean annual temperature)

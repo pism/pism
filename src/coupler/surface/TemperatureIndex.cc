@@ -78,7 +78,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   std::string sd_file = m_config->get_string("surface.pdd.std_dev.file");
 
   if (not sd_file.empty()) {
-    int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
+    int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
     int max_buffer_size = (unsigned int) m_config->get_number("input.forcing.buffer_size");
 
     PIO file(m_grid->com, "netcdf3", sd_file, PISM_READONLY);
