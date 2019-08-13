@@ -501,9 +501,7 @@ MaxTimestep IceModelVec2T::max_timestep(double t) const {
  */
 void IceModelVec2T::interp(double t) {
 
-  std::vector<double> t_vector(1);
-  t_vector[0] = t;
-  init_interpolation(t_vector);
+  init_interpolation({t});
 
   get_record(m_interp_indices[0]);
 }
@@ -568,13 +566,12 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
   // Compute "periodized" times if necessary.
   std::vector<double> times_requested(ts_length);
   if (m_period != 0) {
+    auto time = m_grid->ctx()->time();
     for (unsigned int k = 0; k < ts_length; ++k) {
-      times_requested[k] = m_grid->ctx()->time()->mod(ts[k] - m_reference_time, m_period);
+      times_requested[k] = time->mod(ts[k] - m_reference_time, m_period);
     }
   } else {
-    for (unsigned int k = 0; k < ts_length; ++k) {
-      times_requested[k] = ts[k];
-    }
+    times_requested = ts;
   }
 
   m_interp_indices.resize(ts_length);
