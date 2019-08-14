@@ -155,6 +155,9 @@ Changes since v1.1
 - Add a configuration flag `output.extra.stop_missing` (default: yes). Set this flag to
   "no" to make PISM warn about `-extra_vars` diagnostics that are requested but not
   available instead of stopping with an error message.
+- Add the ability to use space- and time-dependent `delta` (minimum effective pressure on
+  till as a fraction of overburden pressure) in the Mohr-Coulomb basal yield stress
+  parameterization.
 
 
 Changes from v1.0 to v1.1
