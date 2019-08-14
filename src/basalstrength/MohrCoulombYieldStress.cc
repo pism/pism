@@ -128,9 +128,7 @@ This determines the map of \f$\varphi(x,y)\f$.  If this option is note given,
 the current method leaves `tillphi` unchanged, and thus either in its
 read-in-from-file state or with a default constant value from the config file.
 */
-void MohrCoulombYieldStress::init_impl(const Geometry &geometry,
-                                       const IceModelVec2S &till_water_thickness,
-                                       const IceModelVec2S &overburden_pressure) {
+void MohrCoulombYieldStress::init_impl(const YieldStressInputs &inputs) {
   {
     std::string hydrology_tillwat_max = "hydrology.tillwat_max";
     bool till_is_present = m_config->get_number(hydrology_tillwat_max) > 0.0;
@@ -166,7 +164,7 @@ void MohrCoulombYieldStress::init_impl(const Geometry &geometry,
       }
     }
 
-    till_friction_angle(geometry.bed_elevation, m_till_phi);
+    till_friction_angle(inputs.geometry->bed_elevation, m_till_phi);
 
   } else if (opts.type == INIT_RESTART) {
     m_till_phi.read(opts.filename, opts.record);
@@ -189,9 +187,9 @@ void MohrCoulombYieldStress::init_impl(const Geometry &geometry,
                    " of the yield stress (tauc)...\n");
 
     till_friction_angle(m_basal_yield_stress,
-                        till_water_thickness,
-                        overburden_pressure,
-                        geometry.cell_type,
+                        *inputs.till_water_thickness,
+                        inputs.geometry->ice_thickness,
+                        inputs.geometry->cell_type,
                         m_till_phi);
   } else {
     m_basal_yield_stress.set(0.0);
@@ -410,23 +408,27 @@ void MohrCoulombYieldStress::till_friction_angle(const IceModelVec2S &bed_topogr
  * Compute the till friction angle in grounded areas using available basal yield stress,
  * till water thickness, and overburden pressure.
  *
- * This is the inverse of the formula used to by `update_impl()`.
+ * This is the inverse of the formula used by `update_impl()`.
  */
 void MohrCoulombYieldStress::till_friction_angle(const IceModelVec2S &basal_yield_stress,
                                                  const IceModelVec2S &till_water_thickness,
-                                                 const IceModelVec2S &overburden_pressure,
+                                                 const IceModelVec2S &ice_thickness,
                                                  const IceModelVec2CellType &cell_type,
                                                  IceModelVec2S &result) {
 
   MohrCoulombPointwise mc(m_config);
 
-  double delta = m_config->get_number("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden");
+  double
+    ice_density      = m_config->get_number("constants.ice.density"),
+    standard_gravity = m_config->get_number("constants.standard_gravity");
+
+  double
+    delta = m_config->get_number("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden");
 
   const IceModelVec2S
-    &W_till = till_water_thickness,
-    &Po     = overburden_pressure;
+    &W_till = till_water_thickness;
 
-  IceModelVec::AccessList list{&cell_type, &basal_yield_stress, &W_till, &Po, &result};
+  IceModelVec::AccessList list{&cell_type, &basal_yield_stress, &W_till, &ice_thickness, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -436,7 +438,9 @@ void MohrCoulombYieldStress::till_friction_angle(const IceModelVec2S &basal_yiel
     } else if (cell_type.ice_free(i, j)) {
       // no change
     } else { // grounded and there is some ice
-      result(i, j) = mc.till_friction_angle(delta, Po(i, j), W_till(i, j), basal_yield_stress(i, j));
+      double P_overburden = ice_density * standard_gravity * ice_thickness(i, j);
+
+      result(i, j) = mc.till_friction_angle(delta, P_overburden, W_till(i, j), basal_yield_stress(i, j));
     }
   }
 

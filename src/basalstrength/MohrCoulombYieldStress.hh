@@ -100,9 +100,7 @@ public:
 
   void set_till_friction_angle(const IceModelVec2S &input);
 protected:
-  virtual void init_impl(const Geometry &geometry,
-                         const IceModelVec2S &till_water_thickness,
-                         const IceModelVec2S &overburden_pressure);
+  virtual void init_impl(const YieldStressInputs &inputs);
 
   virtual void define_model_state_impl(const File &output) const;
   virtual void write_model_state_impl(const File &output) const;
@@ -118,7 +116,7 @@ private:
 
   void till_friction_angle(const IceModelVec2S &basal_yield_stress,
                            const IceModelVec2S &till_water_thickness,
-                           const IceModelVec2S &overburden_pressure,
+                           const IceModelVec2S &ice_thickness,
                            const IceModelVec2CellType &cell_type,
                            IceModelVec2S &result);
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,12 +35,8 @@ ConstantYieldStress::~ConstantYieldStress () {
   // empty
 }
 
-void ConstantYieldStress::init_impl(const Geometry &geometry,
-                                    const IceModelVec2S &till_water_thickness,
-                                    const IceModelVec2S &overburden_pressure) {
-  (void) geometry;
-  (void) till_water_thickness;
-  (void) overburden_pressure;
+void ConstantYieldStress::init_impl(const YieldStressInputs &inputs) {
+  (void) inputs;
 
   m_log->message(2, "* Initializing the constant basal yield stress model...\n");
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,17 +31,38 @@ RegionalYieldStress::~RegionalYieldStress() {
   // empty
 }
 
-void RegionalYieldStress::init_impl(const Geometry &geometry,
-                                           const IceModelVec2S &till_water_thickness,
-                                           const IceModelVec2S &overburden_pressure) {
-  m_input->init(geometry, till_water_thickness, overburden_pressure);
+static void set_no_model_yield_stress(double tauc,
+                                      const IceModelVec2Int &mask,
+                                      IceModelVec2S &basal_yield_stress) {
+
+  auto grid = mask.grid();
+
+  // now set tauc to a big value in no_model_strip
+  IceModelVec::AccessList list{&mask, &basal_yield_stress};
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask(i, j) > 0.5) {
+      basal_yield_stress(i, j) = tauc;
+    }
+  }
+
+}
+
+void RegionalYieldStress::init_impl(const YieldStressInputs &inputs) {
+  m_input->init(inputs);
 
   m_log->message(2,
                  "  using the regional version with strong till in no_model_mask area...\n");
+
+  double high_tauc = m_config->get_number("regional.no_model_yield_stress", "Pa");
+
+  set_no_model_yield_stress(high_tauc, *inputs.no_model_mask, m_basal_yield_stress);
 }
 
 void RegionalYieldStress::update_impl(const YieldStressInputs &inputs,
-                                             double t, double dt) {
+                                      double t, double dt) {
 
   m_input->update(inputs, t, dt);
 
@@ -49,16 +70,7 @@ void RegionalYieldStress::update_impl(const YieldStressInputs &inputs,
 
   double high_tauc = m_config->get_number("regional.no_model_yield_stress", "Pa");
 
-  // now set tauc to a big value in no_model_strip
-  IceModelVec::AccessList list{&nmm, &m_basal_yield_stress};
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (nmm(i,j) > 0.5) {
-      m_basal_yield_stress(i,j) = high_tauc;
-    }
-  }
+  set_no_model_yield_stress(high_tauc, nmm, m_basal_yield_stress);
 }
 
 } // end of namespace pism

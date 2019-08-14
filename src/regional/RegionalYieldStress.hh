@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,9 +29,7 @@ public:
   RegionalYieldStress(std::shared_ptr<YieldStress> input);
   virtual ~RegionalYieldStress();
 protected:
-  virtual void init_impl(const Geometry &geometry,
-                         const IceModelVec2S &till_water_thickness,
-                         const IceModelVec2S &overburden_pressure);
+  virtual void init_impl(const YieldStressInputs &inputs);
   virtual void update_impl(const YieldStressInputs &inputs, double t, double dt);
 private:
   std::shared_ptr<YieldStress> m_input;

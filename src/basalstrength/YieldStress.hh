@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012, 2014, 2015, 2016, 2017, 2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2012, 2014, 2015, 2016, 2017, 2018, 2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -46,17 +46,13 @@ public:
   YieldStress(IceGrid::ConstPtr g);
   virtual ~YieldStress();
 
-  void init(const Geometry &geometry,
-            const IceModelVec2S &till_water_thickness,
-            const IceModelVec2S &overburden_pressure);
+  void init(const YieldStressInputs &inputs);
 
   void update(const YieldStressInputs &inputs, double t, double dt);
 
   const IceModelVec2S& basal_material_yield_stress();
 protected:
-  virtual void init_impl(const Geometry &geometry,
-                         const IceModelVec2S &till_water_thickness,
-                         const IceModelVec2S &overburden_pressure) = 0;
+  virtual void init_impl(const YieldStressInputs &inputs) = 0;
   virtual void update_impl(const YieldStressInputs &inputs, double t, double dt) = 0;
 
   DiagnosticList diagnostics_impl() const;

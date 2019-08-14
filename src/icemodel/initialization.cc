@@ -235,10 +235,9 @@ void IceModel::model_state_setup() {
   // basal_yield_stress_model->init() needs till water thickness so this must happen
   // after subglacial_hydrology->init()
   if (m_basal_yield_stress_model) {
-    assert((bool)m_subglacial_hydrology);
-    m_basal_yield_stress_model->init(m_geometry,
-                                     m_subglacial_hydrology->till_water_thickness(),
-                                     m_subglacial_hydrology->overburden_pressure());
+    YieldStressInputs inputs = yield_stress_inputs();
+
+    m_basal_yield_stress_model->init(inputs);
   }
 
   // Initialize the bedrock thermal layer model.
