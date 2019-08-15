@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -110,9 +110,44 @@ public:
 class NearestNeighbor : public Interpolation {
 public:
   NearestNeighbor(const std::vector<double> &input_x,
-                      const std::vector<double> &output_x);
+                  const std::vector<double> &output_x);
   NearestNeighbor(const double *input_x, unsigned int input_x_size,
                   const double *output_x, unsigned int output_x_size);
+};
+
+/*!
+ * Piecewise constant 1D interpolation used for time-dependent forcing (fluxes that should
+ * be interpreted as piecewise-constant to simplify accounting of mass conservation).
+ *
+ * Here `input_x` defines bounds of intervals, i.e. `input_x` has one more point than the
+ * input data. For example, [0, 1, 2] defines two intervals.
+ */
+class PiecewiseConstant : public Interpolation {
+public:
+  PiecewiseConstant(const std::vector<double> &input_x,
+                    const std::vector<double> &output_x);
+  PiecewiseConstant(const double *input_x, unsigned int input_x_size,
+                    const double *output_x, unsigned int output_x_size);
+private:
+  void init(const double *input_x, unsigned int input_x_size,
+            const double *output_x, unsigned int output_x_size);
+};
+
+/*!
+ * Linear interpolation for periodic data (annual temperature cycles, etc).
+ *
+ * Input data are assumed to be periodic on the interval from 0 to `period`.
+ */
+class LinearPeriodic : public Interpolation {
+public:
+  LinearPeriodic(const std::vector<double> &input_x,
+                 const std::vector<double> &output_x, double period);
+  LinearPeriodic(const double *input_x, unsigned int input_x_size,
+                 const double *output_x, unsigned int output_x_size, double period);
+private:
+  void init(const double *input_x, unsigned int input_x_size,
+            const double *output_x, unsigned int output_x_size,
+            double period);
 };
 
 } // end of namespace pism
