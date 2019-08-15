@@ -51,6 +51,8 @@ Changes since v1.1
   `sea_level` components.
 - Implement orographic precipitation following Smith and Barstad, *A linear theory of
   orographic precipitation*, 2004.
+- Rename command-line options `-ssa_rtol` to `-ssafd_picard_rtol` and `-ssa_maxi` to
+  `-ssafd_picard_maxi` to make it clear that they control Picard iterations.
 
 Changes from v1.0 to v1.1
 =========================

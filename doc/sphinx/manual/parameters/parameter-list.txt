@@ -1750,7 +1750,7 @@
 #. :config:`stress_balance.ssa.fd.max_iterations` (*integer*)
 
    :Value: 300
-   :Option: :opt:`-ssa_maxi`
+   :Option: :opt:`-ssafd_picard_maxi`
    :Description: Maximum number of iterations for the ice viscosity computation, in the SSAFD object
 
 #. :config:`stress_balance.ssa.fd.nuH_iter_failure_underrelaxation` (*scalar*)
@@ -1762,7 +1762,7 @@
 #. :config:`stress_balance.ssa.fd.relative_convergence` (*scalar*)
 
    :Value: 0.000100 (1)
-   :Option: :opt:`-ssa_rtol`
+   :Option: :opt:`-ssafd_picard_rtol`
    :Description: Relative change tolerance for the effective viscosity in the SSAFD object
 
 #. :config:`stress_balance.ssa.fd.replace_zero_diagonal_entries` (*boolean*)

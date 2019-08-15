@@ -1725,8 +1725,8 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.lateral_drag.viscosity_units = "Pascal second";
 
     pism_config:stress_balance.ssa.fd.max_iterations = 300;
-    pism_config:stress_balance.ssa.fd.max_iterations_doc = "Maximum number of iterations for the ice viscosity computation, in the SSAFD object";
-    pism_config:stress_balance.ssa.fd.max_iterations_option = "ssa_maxi";
+    pism_config:stress_balance.ssa.fd.max_iterations_doc = "Maximum number of Picard iterations for the ice viscosity computation, in the SSAFD object";
+    pism_config:stress_balance.ssa.fd.max_iterations_option = "ssafd_picard_maxi";
     pism_config:stress_balance.ssa.fd.max_iterations_type = "integer";
     pism_config:stress_balance.ssa.fd.max_iterations_units = "count";
 
@@ -1738,7 +1738,7 @@ netcdf pism_config {
 
     pism_config:stress_balance.ssa.fd.relative_convergence = 1.0e-4;
     pism_config:stress_balance.ssa.fd.relative_convergence_doc = "Relative change tolerance for the effective viscosity in the SSAFD object";
-    pism_config:stress_balance.ssa.fd.relative_convergence_option = "ssa_rtol";
+    pism_config:stress_balance.ssa.fd.relative_convergence_option = "ssafd_picard_rtol";
     pism_config:stress_balance.ssa.fd.relative_convergence_type = "scalar";
     pism_config:stress_balance.ssa.fd.relative_convergence_units = "1";
 

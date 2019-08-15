@@ -815,7 +815,7 @@ roughly twice as slow.  The outputs of PETSc options `-ksp_monitor_singular_valu
 
 The outer loop terminates when the effective viscosity times thickness
 is no longer changing much, according to the tolerance set by the
-option `-ssa_rtol`. The outer loop also terminates when a maximum
+option `-ssafd_picard_rtol`. The outer loop also terminates when a maximum
 number of iterations is exceeded. We save the velocity from the last
 time step in order to have a better estimate of the effective
 viscosity than the u=v=0 result.
