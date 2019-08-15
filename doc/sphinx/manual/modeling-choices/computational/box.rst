@@ -5,7 +5,7 @@
 Computational box
 -----------------
 
-.. FIXME: This assumes that the sea (i.e. floatation) level is zero.
+.. FIXME: Equations below assume that the sea (i.e. floatation) level is zero.
 
 PISM does all simulations in a computational box which is rectangular in the PISM
 coordinates. The coordinate system has horizontal coordinates `x,y` and a vertical
