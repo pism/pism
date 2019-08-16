@@ -202,35 +202,18 @@ void PiecewiseConstant::init(const double *input_x, unsigned int input_x_size,
     }
   }
 
-  gsl_interp_accel *accel = gsl_interp_accel_alloc();
-  if (accel == NULL) {
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "Failed to allocate a GSL interpolation accelerator");
-  }
+  // compute indexes and weights
+  for (unsigned int i = 0; i < output_x_size; ++i) {
 
-  try {
-    // compute indexes and weights
-    for (unsigned int i = 0; i < output_x_size; ++i) {
-      double x = output_x[i];
+    size_t L = gsl_interp_bsearch(input_x, output_x[i], 0, input_x_size);
 
-      // gsl_interp_bsearch always returns an index "L" such that "L + 1" is valid
-      unsigned int L = gsl_interp_bsearch(input_x, x, 0, input_x_size - 1);
+    m_left[i] = L;
+    m_right[i] = L;
+    m_alpha[i] = 0.0;
 
-      m_left[i] = L;
-      m_right[i] = L;
-      m_alpha[i] = 0.0;
-
-      assert(m_left[i] >= 0 and m_left[i] < (int)input_x_size);
-      assert(m_right[i] >= 0 and m_right[i] < (int)input_x_size);
-      assert(m_alpha[i] >= 0.0 and m_alpha[i] <= 1.0);
-    }
-  } catch (...) {
-    gsl_interp_accel_free(accel);
-    accel = nullptr;
-  }
-
-  if (accel != nullptr) {
-    gsl_interp_accel_free(accel);
+    assert(m_left[i] >= 0 and m_left[i] < (int)input_x_size);
+    assert(m_right[i] >= 0 and m_right[i] < (int)input_x_size);
+    assert(m_alpha[i] >= 0.0 and m_alpha[i] <= 1.0);
   }
 }
 
@@ -270,58 +253,46 @@ void LinearPeriodic::init(const double *input_x, unsigned int input_x_size,
     }
   }
 
-  gsl_interp_accel *accel = gsl_interp_accel_alloc();
-  if (accel == NULL) {
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "Failed to allocate a GSL interpolation accelerator");
-  }
+  // compute indexes and weights
+  for (unsigned int i = 0; i < output_x_size; ++i) {
+    double x = output_x[i];
 
-  try {
-    // compute indexes and weights
-    for (unsigned int i = 0; i < output_x_size; ++i) {
-      double x = output_x[i];
-
-      unsigned int L = 0, R = 0;
-      if (x < input_x[0]) {
-        L = input_x_size - 1;
-        R = 0.0;
-      } else {
-        L = gsl_interp_bsearch(input_x, x, 0, input_x_size);
-        R = L + 1 < input_x_size ? L + 1 : 0;
-      }
-
-      double
-        x_l = input_x[L],
-        x_r = input_x[R],
-        alpha = 0.0;
-      if (L < R) {
-        alpha = (x - x_l) / (x_r - x_l);
-      } else {
-        double
-          x0 = input_x[0],
-          dx = (period - x_l) + x0;
-        if (x > x0) {
-          alpha = (x - x_l) / dx;
-        } else {
-          alpha = 1.0 - (x_r - x) / dx;
-        }
-      }
-
-      assert(L >= 0 and L < input_x_size);
-      assert(R >= 0 and R < input_x_size);
-      assert(alpha >= 0.0 and alpha <= 1.0);
-
-      m_left[i] = L;
-      m_right[i] = R;
-      m_alpha[i] = alpha;
+    unsigned int L = 0, R = 0;
+    if (x < input_x[0]) {
+      L = input_x_size - 1;
+      R = 0.0;
+    } else {
+      L = gsl_interp_bsearch(input_x, x, 0, input_x_size);
+      R = L + 1 < input_x_size ? L + 1 : 0;
     }
-  } catch (...) {
-    gsl_interp_accel_free(accel);
-    accel = nullptr;
-  }
 
-  if (accel != nullptr) {
-    gsl_interp_accel_free(accel);
+    double
+      x_l = input_x[L],
+      x_r = input_x[R],
+      alpha = 0.0;
+    if (L < R) {
+      // regular case
+      alpha = (x - x_l) / (x_r - x_l);
+    } else {
+      double
+        x0 = input_x[0],
+        dx = (period - x_l) + x0;
+      if (x > x0) {
+        // interval from the last point of the input grid to the period
+        alpha = (x - x_l) / dx;
+      } else {
+        // interval from 0 to the first point of the input grid
+        alpha = 1.0 - (x_r - x) / dx;
+      }
+    }
+
+    assert(L >= 0 and L < input_x_size);
+    assert(R >= 0 and R < input_x_size);
+    assert(alpha >= 0.0 and alpha <= 1.0);
+
+    m_left[i]  = L;
+    m_right[i] = R;
+    m_alpha[i] = alpha;
   }
 }
 
