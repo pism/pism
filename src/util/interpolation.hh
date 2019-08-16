@@ -88,8 +88,6 @@ protected:
   std::vector<double> m_alpha;
   void init_linear(const double *input_x, unsigned int input_x_size,
                    const double *output_x, unsigned int output_x_size);
-  void init_nearest(const double *input_x, unsigned int input_x_size,
-                    const double *output_x, unsigned int output_x_size);
   Interpolation();
 };
 
@@ -113,14 +111,18 @@ public:
                   const std::vector<double> &output_x);
   NearestNeighbor(const double *input_x, unsigned int input_x_size,
                   const double *output_x, unsigned int output_x_size);
+private:
+  void init(const double *input_x, unsigned int input_x_size,
+            const double *output_x, unsigned int output_x_size);
 };
 
 /*!
  * Piecewise constant 1D interpolation used for time-dependent forcing (fluxes that should
  * be interpreted as piecewise-constant to simplify accounting of mass conservation).
  *
- * Here `input_x` defines bounds of intervals, i.e. `input_x` has one more point than the
- * input data. For example, [0, 1, 2] defines two intervals.
+ * Here `input_x` defines left end-points of intervals, For example, [0, 1] defines two
+ * intervals: [0, 1) and [1, x_e). Here the value x_e is irrelevant because we use
+ * constant extrapolation for points outside the interval covered by input data.
  */
 class PiecewiseConstant : public Interpolation {
 public:

@@ -95,16 +95,6 @@ void Interpolation::init_linear(const double *input_x, unsigned int input_x_size
   }
 }
 
-void Interpolation::init_nearest(const double *input_x, unsigned int input_x_size,
-                                 const double *output_x, unsigned int output_x_size) {
-
-  init_linear(input_x, input_x_size, output_x, output_x_size);
-
-  for (unsigned int j = 0; j < m_alpha.size(); ++j) {
-    m_alpha[j] = m_alpha[j] > 0.5 ? 1.0 : 0.0;
-  }
-}
-
 const std::vector<int>& Interpolation::left() const {
   return m_left;
 }
@@ -156,12 +146,22 @@ LinearInterpolation::LinearInterpolation(const double *input_x, unsigned int inp
 NearestNeighbor::NearestNeighbor(const std::vector<double> &input_x,
                                  const std::vector<double> &output_x) {
 
-  this->init_nearest(&input_x[0], input_x.size(), &output_x[0], output_x.size());
+  this->init(&input_x[0], input_x.size(), &output_x[0], output_x.size());
 }
 
 NearestNeighbor::NearestNeighbor(const double *input_x, unsigned int input_x_size,
                                  const double *output_x, unsigned int output_x_size) {
-  this->init_nearest(input_x, input_x_size, output_x, output_x_size);
+  this->init(input_x, input_x_size, output_x, output_x_size);
+}
+
+void NearestNeighbor::init(const double *input_x, unsigned int input_x_size,
+                           const double *output_x, unsigned int output_x_size) {
+
+  init_linear(input_x, input_x_size, output_x, output_x_size);
+
+  for (unsigned int j = 0; j < m_alpha.size(); ++j) {
+    m_alpha[j] = m_alpha[j] > 0.5 ? 1.0 : 0.0;
+  }
 }
 
 PiecewiseConstant::PiecewiseConstant(const std::vector<double>& input_x,
