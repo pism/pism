@@ -122,14 +122,19 @@ double Interpolation::alpha(size_t j) const {
 std::vector<double> Interpolation::interpolate(const std::vector<double> &input_values) const {
   std::vector<double> result(m_alpha.size());
 
-  for (size_t k = 0; k < result.size(); ++k) {
+  interpolate(input_values.data(), result.data());
+
+  return result;
+}
+
+void Interpolation::interpolate(const double *input, double *output) const {
+  size_t n = m_alpha.size();
+  for (size_t k = 0; k < n; ++k) {
     const int
       L = m_left[k],
       R = m_right[k];
-    const double Alpha = m_alpha[k];
-    result[k] = input_values[L] + Alpha * (input_values[R] - input_values[L]);
+    output[k] = input[L] + m_alpha[k] * (input[R] - input[L]);
   }
-  return result;
 }
 
 LinearInterpolation::LinearInterpolation(const std::vector<double> &input_x,

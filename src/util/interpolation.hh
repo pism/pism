@@ -83,6 +83,7 @@ public:
   /** This is used for testing. (Regular code calls left(), right(), and alpha().)
    */
   std::vector<double> interpolate(const std::vector<double> &input_values) const;
+  void interpolate(const double *input, double *output) const;
 protected:
   std::vector<int> m_left, m_right;
   std::vector<double> m_alpha;
