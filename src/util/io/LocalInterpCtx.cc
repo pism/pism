@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -127,7 +127,7 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   }
   allocation.check();
 
-  if (type == BILINEAR) {
+  if (type == LINEAR) {
     x.reset(new LinearInterpolation(&input.x[start[X]], count[X],
                                     &grid.x()[grid.xs()], grid.xm()));
 

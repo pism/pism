@@ -24,6 +24,7 @@
 
 namespace pism {
 
+enum InterpolationType {LINEAR, NEAREST, PIECEWISE_CONSTANT, LINEAR_PERIODIC};
 
 /**
  * Class encapsulating linear interpolation indexes and weights.
@@ -83,6 +84,10 @@ public:
   /** This is used for testing. (Regular code calls left(), right(), and alpha().)
    */
   std::vector<double> interpolate(const std::vector<double> &input_values) const;
+
+  /*!
+   * Compute interpolated values on the output grid given values on the input grid.
+   */
   void interpolate(const double *input, double *output) const;
 protected:
   std::vector<int> m_left, m_right;

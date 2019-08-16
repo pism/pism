@@ -34,6 +34,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/pism_config.hh"  // Pism_DEBUG
+#include "pism/util/interpolation.hh" // InterpolationType
 
 namespace pism {
 
