@@ -214,9 +214,9 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
                              log, m_time_bounds);
 
         // time bounds data overrides the time variable: we make t[j] be the
-        // right end-point of the j-th interval
+        // left end-point of the j-th interval
         for (unsigned int k = 0; k < m_time.size(); ++k) {
-          m_time[k] = m_time_bounds[2*k + 1];
+          m_time[k] = m_time_bounds[2*k + 0];
         }
       } else {
         // no time bounds attribute
