@@ -531,7 +531,7 @@ def linear_interpolation_test(plot=False):
 
     values = F(x_input)
 
-    i = PISM.LinearInterpolation(x_input, x_output)
+    i = PISM.Interpolation(PISM.LINEAR, x_input, x_output)
 
     F_interpolated = i.interpolate(values)
 

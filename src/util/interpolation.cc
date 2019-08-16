@@ -25,12 +25,35 @@
 
 namespace pism {
 
-Interpolation::Interpolation() {
+Interpolation::Interpolation(InterpolationType type,
+                             const std::vector<double> &input_x,
+                             const std::vector<double> &output_x,
+                             double period)
+  : Interpolation(type, input_x.data(), input_x.size(),
+                  output_x.data(), output_x.size(), period) {
   // empty
 }
 
-Interpolation::~Interpolation() {
-  // empty
+Interpolation::Interpolation(InterpolationType type,
+                             const double *input_x, unsigned int input_x_size,
+                             const double *output_x, unsigned int output_x_size,
+                             double period) {
+  switch (type) {
+  case LINEAR:
+    init_linear(input_x, input_x_size, output_x, output_x_size);
+    break;
+  case NEAREST:
+    init_nearest(input_x, input_x_size, output_x, output_x_size);
+    break;
+  case PIECEWISE_CONSTANT:
+    init_piecewise_constant(input_x, input_x_size, output_x, output_x_size);
+    break;
+  case LINEAR_PERIODIC:
+    init_linear_periodic(input_x, input_x_size, output_x, output_x_size, period);
+    break;
+  default:
+    throw RuntimeError(PISM_ERROR_LOCATION, "invalid interpolation type");
+  }
 }
 
 /**
@@ -137,30 +160,8 @@ void Interpolation::interpolate(const double *input, double *output) const {
   }
 }
 
-LinearInterpolation::LinearInterpolation(const std::vector<double> &input_x,
-                                         const std::vector<double> &output_x) {
-
-  this->init_linear(&input_x[0], input_x.size(), &output_x[0], output_x.size());
-}
-
-LinearInterpolation::LinearInterpolation(const double *input_x, unsigned int input_x_size,
-                                         const double *output_x, unsigned int output_x_size) {
-  this->init_linear(input_x, input_x_size, output_x, output_x_size);
-}
-
-NearestNeighbor::NearestNeighbor(const std::vector<double> &input_x,
-                                 const std::vector<double> &output_x) {
-
-  this->init(&input_x[0], input_x.size(), &output_x[0], output_x.size());
-}
-
-NearestNeighbor::NearestNeighbor(const double *input_x, unsigned int input_x_size,
+void Interpolation::init_nearest(const double *input_x, unsigned int input_x_size,
                                  const double *output_x, unsigned int output_x_size) {
-  this->init(input_x, input_x_size, output_x, output_x_size);
-}
-
-void NearestNeighbor::init(const double *input_x, unsigned int input_x_size,
-                           const double *output_x, unsigned int output_x_size) {
 
   init_linear(input_x, input_x_size, output_x, output_x_size);
 
@@ -169,18 +170,8 @@ void NearestNeighbor::init(const double *input_x, unsigned int input_x_size,
   }
 }
 
-PiecewiseConstant::PiecewiseConstant(const std::vector<double>& input_x,
-                                     const std::vector<double>& output_x) {
-  init(&input_x[0], input_x.size(), &output_x[0], output_x.size());
-}
-
-PiecewiseConstant::PiecewiseConstant(const double *input_x, unsigned int input_x_size,
-                                     const double *output_x, unsigned int output_x_size) {
-  init(input_x, input_x_size, output_x, output_x_size);
-}
-
-void PiecewiseConstant::init(const double *input_x, unsigned int input_x_size,
-                             const double *output_x, unsigned int output_x_size) {
+void Interpolation::init_piecewise_constant(const double *input_x, unsigned int input_x_size,
+                                            const double *output_x, unsigned int output_x_size) {
 
   m_left.resize(output_x_size);
   m_right.resize(output_x_size);
@@ -217,21 +208,9 @@ void PiecewiseConstant::init(const double *input_x, unsigned int input_x_size,
   }
 }
 
-LinearPeriodic::LinearPeriodic(const std::vector<double>& input_x,
-                               const std::vector<double>& output_x,
-                               double period) {
-  init(&input_x[0], input_x.size(), &output_x[0], output_x.size(), period);
-}
-
-LinearPeriodic::LinearPeriodic(const double *input_x, unsigned int input_x_size,
-                               const double *output_x, unsigned int output_x_size,
-                               double period) {
-  init(input_x, input_x_size, output_x, output_x_size, period);
-}
-
-void LinearPeriodic::init(const double *input_x, unsigned int input_x_size,
-                          const double *output_x, unsigned int output_x_size,
-                          double period) {
+void Interpolation::init_linear_periodic(const double *input_x, unsigned int input_x_size,
+                                         const double *output_x, unsigned int output_x_size,
+                                         double period) {
 
   m_left.resize(output_x_size);
   m_right.resize(output_x_size);

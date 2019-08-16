@@ -67,10 +67,26 @@ enum InterpolationType {LINEAR, NEAREST, PIECEWISE_CONSTANT, LINEAR_PERIODIC};
  * const double Alpha = m_alpha[k];
  * result[k] = input_values[L] + Alpha * (input_values[R] - input_values[L]);
  * ~~~
+ *
+ * Piecewise constant 1D interpolation used for time-dependent forcing (fluxes that should
+ * be interpreted as piecewise-constant to simplify accounting of mass conservation).
+ *
+ * Here `input_x` defines left end-points of intervals, For example, [0, 1] defines two
+ * intervals: [0, 1) and [1, x_e). Here the value x_e is irrelevant because we use
+ * constant extrapolation for points outside the interval covered by input data.
+ *
+ *
+ * Linear interpolation for periodic data (annual temperature cycles, etc).
+ *
+ * Input data are assumed to be periodic on the interval from 0 to `period`.
+ *
  */
 class Interpolation {
 public:
-  virtual ~Interpolation();
+  Interpolation(InterpolationType type, const std::vector<double> &input_x,
+                const std::vector<double> &output_x, double period = 0.0);
+  Interpolation(InterpolationType type, const double *input_x, unsigned int input_x_size,
+                const double *output_x, unsigned int output_x_size, double period = 0.0);
 
   const std::vector<int>& left() const;
   const std::vector<int>& right() const;
@@ -89,73 +105,20 @@ public:
    * Compute interpolated values on the output grid given values on the input grid.
    */
   void interpolate(const double *input, double *output) const;
-protected:
+private:
+  //! Interpolation indexes
   std::vector<int> m_left, m_right;
+  //! Interpolation weights
   std::vector<double> m_alpha;
   void init_linear(const double *input_x, unsigned int input_x_size,
                    const double *output_x, unsigned int output_x_size);
-  Interpolation();
-};
-
-class LinearInterpolation : public Interpolation {
-public:
-  LinearInterpolation(const std::vector<double> &input_x,
-                      const std::vector<double> &output_x);
-  LinearInterpolation(const double *input_x, unsigned int input_x_size,
-                      const double *output_x, unsigned int output_x_size);
-};
-
-/*!
- * Nearest neighbor interpolation.
- *
- * Implemented as a modification of linear interpolation by adjusting interpolation
- * weights.
- */
-class NearestNeighbor : public Interpolation {
-public:
-  NearestNeighbor(const std::vector<double> &input_x,
-                  const std::vector<double> &output_x);
-  NearestNeighbor(const double *input_x, unsigned int input_x_size,
-                  const double *output_x, unsigned int output_x_size);
-private:
-  void init(const double *input_x, unsigned int input_x_size,
-            const double *output_x, unsigned int output_x_size);
-};
-
-/*!
- * Piecewise constant 1D interpolation used for time-dependent forcing (fluxes that should
- * be interpreted as piecewise-constant to simplify accounting of mass conservation).
- *
- * Here `input_x` defines left end-points of intervals, For example, [0, 1] defines two
- * intervals: [0, 1) and [1, x_e). Here the value x_e is irrelevant because we use
- * constant extrapolation for points outside the interval covered by input data.
- */
-class PiecewiseConstant : public Interpolation {
-public:
-  PiecewiseConstant(const std::vector<double> &input_x,
-                    const std::vector<double> &output_x);
-  PiecewiseConstant(const double *input_x, unsigned int input_x_size,
+  void init_nearest(const double *input_x, unsigned int input_x_size,
                     const double *output_x, unsigned int output_x_size);
-private:
-  void init(const double *input_x, unsigned int input_x_size,
-            const double *output_x, unsigned int output_x_size);
-};
-
-/*!
- * Linear interpolation for periodic data (annual temperature cycles, etc).
- *
- * Input data are assumed to be periodic on the interval from 0 to `period`.
- */
-class LinearPeriodic : public Interpolation {
-public:
-  LinearPeriodic(const std::vector<double> &input_x,
-                 const std::vector<double> &output_x, double period);
-  LinearPeriodic(const double *input_x, unsigned int input_x_size,
-                 const double *output_x, unsigned int output_x_size, double period);
-private:
-  void init(const double *input_x, unsigned int input_x_size,
-            const double *output_x, unsigned int output_x_size,
-            double period);
+  void init_piecewise_constant(const double *input_x, unsigned int input_x_size,
+                               const double *output_x, unsigned int output_x_size);
+  void init_linear_periodic(const double *input_x, unsigned int input_x_size,
+                            const double *output_x, unsigned int output_x_size,
+                            double period);
 };
 
 } // end of namespace pism
