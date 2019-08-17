@@ -628,6 +628,8 @@ void IceModelVec2T::interp(int i, int j, std::vector<double> &result) {
   double ***a3 = (double***) m_array3;
   unsigned int ts_length = m_interp_indices.size();
 
+  result.resize(ts_length);
+
   for (unsigned int k = 0; k < ts_length; ++k) {
     result[k] = a3[j][i][m_interp_indices[k]];
   }
