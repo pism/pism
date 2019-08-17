@@ -267,11 +267,13 @@ void IceModelVec2T::init_constant(double value) {
 
   // set constant value everywhere
   set(value);
+  set_record(0);
 
   // set the time to zero
   m_time.resize(1);
   m_time[0] = 0;
-  //N = 1 ;
+  m_N = 1;
+  m_first = 0;
 
   // set fake time bounds:
   m_time_bounds.resize(2);
