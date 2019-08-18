@@ -71,6 +71,7 @@ IceModelVec2T::Ptr IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
   // (atmosphere::Given) when "-surface given" (Given) is selected.
   n_records = std::max(n_records, 1);
 
+  // LCOV_EXCL_START
   if (n_records > IceGrid::max_dm_dof) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "cannot allocate storage for %d records of %s (%s)"
@@ -78,6 +79,7 @@ IceModelVec2T::Ptr IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
                                   n_records, short_name.c_str(), standard_name.c_str(),
                                   IceGrid::max_dm_dof);
   }
+  // LCOV_EXCL_STOP
 
   return IceModelVec2T::Ptr(new IceModelVec2T(grid, short_name, n_records,
                                               evaluations_per_year));
@@ -103,12 +105,14 @@ IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_na
 
   IceModelVec2S::create(grid, short_name, WITHOUT_GHOSTS, width);
 
+  // LCOV_EXCL_START
   if (n_records > IceGrid::max_dm_dof) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "cannot allocate storage for %d records of %s"
                                   " (exceeds the maximum of %d)",
                                   n_records, short_name.c_str(), IceGrid::max_dm_dof);
   }
+  // LCOV_EXCL_STOP
 
   // initialize the m_da3 member:
   m_da3 = m_grid->get_dm(n_records, this->m_da_stencil_width);
@@ -652,7 +656,7 @@ double IceModelVec2T::average(int i, int j) {
 
     interp(i, j, values);
 
-    // rectangular rule (uses the fact that points are equally-spaces
+    // rectangular rule (uses the fact that points are equally-spaced
     // in time)
     result = 0;
     for (unsigned int k = 0; k < M; ++k) {
