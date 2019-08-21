@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <petsc.h>
-#include <algorithm>
 #include <cassert>
 
 #include "iceModelVec2T.hh"
@@ -30,6 +29,7 @@
 #include "error_handling.hh"
 #include "io/io_helpers.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 
@@ -98,6 +98,7 @@ IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_na
   m_period               = 0;
   m_reference_time       = 0.0;
   m_n_evaluations_per_year = 53;
+  m_interp_type = PIECEWISE_CONSTANT;
 
   m_n_evaluations_per_year = n_evaluations_per_year;
 
@@ -181,38 +182,31 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
                                   m_filename.c_str());
   }
 
-  // find the time dimension:
-  std::vector<std::string> dims;
-  dims = nc.inq_vardims(name_found);
-  
-  std::string dimname = "";
+  std::string time_name;
   bool time_found = false;
-  for (unsigned int i = 0; i < dims.size(); ++i) {
-    dimname = dims[i];
-
-    AxisType dimtype = nc.inq_dimtype(dimname, m_grid->ctx()->unit_system());
-
-    if (dimtype == T_AXIS) {
+  for (auto d : nc.inq_vardims(name_found)) {
+    if (nc.inq_dimtype(d, m_grid->ctx()->unit_system()) == T_AXIS) {
       time_found = true;
+      time_name = d;
       break;
     }
   }
 
   if (time_found) {
     // we're found the time dimension
-    TimeseriesMetadata time_dimension(dimname, dimname, m_grid->ctx()->unit_system());
-
-    time_dimension.set_string("units", m_grid->ctx()->time()->units_string());
+    TimeseriesMetadata time_dimension(time_name, time_name, m_grid->ctx()->unit_system());
+    auto time_units = m_grid->ctx()->time()->units_string();
+    time_dimension.set_string("units", time_units);
     io::read_timeseries(nc, time_dimension,
                         *m_grid->ctx()->time(), log, m_time);
 
-    std::string bounds_name = nc.get_att_text(dimname, "bounds");
+    std::string bounds_name = nc.get_att_text(time_name, "bounds");
 
     if (m_time.size() > 1) {
       if (not bounds_name.empty()) {
         // read time bounds data from a file
-        TimeBoundsMetadata tb(bounds_name, dimname, m_grid->ctx()->unit_system());
-        tb.set_string("units", time_dimension.get_string("units"));
+        TimeBoundsMetadata tb(bounds_name, time_name, m_grid->ctx()->unit_system());
+        tb.set_string("units", time_units);
 
         io::read_time_bounds(nc, tb, *m_grid->ctx()->time(),
                              log, m_time_bounds);
@@ -227,7 +221,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                       "Variable '%s' does not have the time_bounds attribute.\n"
                                       "Cannot use time-dependent forcing data '%s' (%s) without time bounds.",
-                                      dimname.c_str(),  m_metadata[0].get_string("long_name").c_str(),
+                                      time_name.c_str(),  m_metadata[0].get_string("long_name").c_str(),
                                       m_metadata[0].get_name().c_str());
       }
     } else {
@@ -287,7 +281,6 @@ void IceModelVec2T::init_constant(double value) {
 
 //! Read some data to make sure that the interval (t, t + dt) is covered.
 void IceModelVec2T::update(double t, double dt) {
-  unsigned int m, n, last;
 
   if (m_filename.empty()) {
     // We are not reading data from a file.
@@ -305,46 +298,33 @@ void IceModelVec2T::update(double t, double dt) {
   }
 
   if (m_N > 0) {
-    last = m_first + (m_N - 1);
+    unsigned int last = m_first + (m_N - 1);
 
     // find the interval covered by data held in memory:
-    double t0 = m_time_bounds[m_first * 2],
+    double
+      t0 = m_time_bounds[m_first * 2],
       t1 = m_time_bounds[last * 2 + 1];
 
     // just return if we have all the data we need:
-    if (t >= t0 && t + dt <= t1) {
+    if (t >= t0 and t + dt <= t1) {
       return;
     }
   }
 
-  // i will point to the smallest t so that t >= t 
-  auto i = lower_bound(m_time_bounds.begin(), m_time_bounds.end(), t);
+  Interpolation I(m_interp_type, m_time, {t, t + dt});
 
-  // j will point to the smallest t so that t >= t + dt
-  auto j = lower_bound(m_time_bounds.begin(), m_time_bounds.end(), t + dt);
-
-  // some of the the interval (t, t + dt) is outside of the
-  // time interval available in the file (on the right)
-  // 
-  if (i == m_time_bounds.end()) {
-    m = (int)(m_time.size() - 1);
-  } else {
-    m = (int)((i - m_time_bounds.begin() - 1) / 2);
-  }
-
-  if (j == m_time_bounds.end()) {
-    n = (int)(m_time.size() - 1);
-  } else {
-    n = (int)((j - m_time_bounds.begin() - 1) / 2);
-  }
+  unsigned int
+    first = I.left(0),
+    last  = I.right(1),
+    N     = last - first + 1;
 
   // check if all the records necessary to cover this interval fit in the
   // buffer:
-  if (n - m + 1 > m_n_records) {
+  if (N > m_n_records) {
     throw RuntimeError(PISM_ERROR_LOCATION, "IceModelVec2T::update(): timestep is too big");
   }
 
-  update(m);
+  update(first);
 }
 
 //! Update by reading at most n_records records from the file.
@@ -509,7 +489,7 @@ void IceModelVec2T::interp(double t) {
 
   init_interpolation({t});
 
-  get_record(m_interp_indices[0]);
+  get_record(m_interp->left(0));
 }
 
 
@@ -563,61 +543,19 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
 
   assert(m_first >= 0);
 
-  unsigned int
-    index = 0,
-    last  = m_first + m_N - 1;
-
-  size_t ts_length = ts.size();
-
   // Compute "periodized" times if necessary.
-  std::vector<double> times_requested(ts_length);
+  std::vector<double> times_requested(ts.size());
   if (m_period != 0) {
     auto time = m_grid->ctx()->time();
-    for (unsigned int k = 0; k < ts_length; ++k) {
+    for (unsigned int k = 0; k < ts.size(); ++k) {
       times_requested[k] = time->mod(ts[k] - m_reference_time, m_period);
     }
   } else {
     times_requested = ts;
   }
 
-  m_interp_indices.resize(ts_length);
-
-  if (m_time_bounds.size() == 0) {
-    for (unsigned int k = 0; k < ts_length; ++k) {
-      m_interp_indices[k] = 0;
-    }
-  }
-
-  for (unsigned int k = 0; k < ts_length; ++k) {
-
-    if (k > 0 && times_requested[k] < times_requested[k-1]) {
-      // reset the index: times_requested are not increasing!
-      index = 0;
-    }
-
-    // extrapolate on the left:
-    if (times_requested[k] < m_time_bounds[2*m_first]) {
-      m_interp_indices[k] = 0;
-      continue;
-    }
-
-    // extrapolate on the right:
-    if (times_requested[k] >= m_time_bounds[2*last + 1]) {
-      m_interp_indices[k] = m_N - 1;
-      continue;
-    }
-
-    while (index < m_N) {
-      if (m_time_bounds[2*(m_first + index) + 0] <= times_requested[k] &&
-          m_time_bounds[2*(m_first + index) + 1] >  times_requested[k]) {
-        break;
-      }
-
-      index++;
-    }
-
-    m_interp_indices[k] = index;
-  }
+  m_interp.reset(new Interpolation(m_interp_type, &m_time[m_first], m_N,
+                                   times_requested.data(), times_requested.size()));
 }
 
 /** 
@@ -630,13 +568,10 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
  */
 void IceModelVec2T::interp(int i, int j, std::vector<double> &result) {
   double ***a3 = (double***) m_array3;
-  unsigned int ts_length = m_interp_indices.size();
 
-  result.resize(ts_length);
+  result.resize(m_interp->alpha().size());
 
-  for (unsigned int k = 0; k < ts_length; ++k) {
-    result[k] = a3[j][i][m_interp_indices[k]];
-  }
+  m_interp->interpolate(a3[j][i], result.data());
 }
 
 //! \brief Finds the average value at i,j over the interval (t, t +
@@ -645,7 +580,7 @@ void IceModelVec2T::interp(int i, int j, std::vector<double> &result) {
   Can (and should) be optimized. Later, though.
  */
 double IceModelVec2T::average(int i, int j) {
-  unsigned int M = m_interp_indices.size();
+  unsigned int M = m_interp->alpha().size();
   double result = 0.0;
 
   if (m_N == 1) {
