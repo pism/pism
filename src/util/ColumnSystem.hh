@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016 Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -90,6 +90,7 @@ public:
   // uses an output argument to allow re-using storage and avoid
   // copying
   void solve(unsigned int system_size, std::vector<double> &result);
+  void solve(unsigned int system_size, double *result);
 
   void save_system_with_solution(const std::string &filename,
                                  unsigned int system_size,

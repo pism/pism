@@ -23,6 +23,7 @@
 #include "grounded_cell_fraction.hh"
 
 #include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh" // clip
 #include "pism/util/iceModelVec.hh"
 
 namespace pism {
@@ -157,6 +158,7 @@ double grounded_area_fraction(double a, double b, double c) {
     assert(not (invalid(ab) or invalid(ac)));
 
     double ratio = triangle_area({0.0, 0.0}, ab, ac) / total_area;
+    assert((ratio >= 0.0) and (ratio <= 1.0));
 
     if (a > 0.0) {
       return ratio;
@@ -169,6 +171,7 @@ double grounded_area_fraction(double a, double b, double c) {
     assert(not (invalid(ab) or invalid(bc)));
 
     double ratio = triangle_area({1.0, 0.0}, bc, ab) / total_area;
+    assert((ratio >= 0.0) and (ratio <= 1.0));
 
     if (b > 0.0) {
       return ratio;
@@ -181,6 +184,7 @@ double grounded_area_fraction(double a, double b, double c) {
     assert(not (invalid(bc) or invalid(ac)));
 
     double ratio = triangle_area({0.0, 1.0}, ac, bc) / total_area;
+    assert((ratio >= 0.0) and (ratio <= 1.0));
 
     if (c > 0.0) {
       return ratio;
@@ -194,6 +198,7 @@ double grounded_area_fraction(double a, double b, double c) {
   // the a == 0 case, the line F = 0 goes through A
   if (same(ab, ac)) {
     double ratio = triangle_area({1.0, 0.0}, bc, ab) / total_area;
+    assert((ratio >= 0.0) and (ratio <= 1.0));
 
     if (b > 0.0) {
       return ratio;
@@ -205,6 +210,7 @@ double grounded_area_fraction(double a, double b, double c) {
   // the b == 0 case and the c == 0 case
   if (same(ab, bc) or same(ac, bc)) {
     double ratio = triangle_area({0.0, 0.0}, ab, ac) / total_area;
+    assert((ratio >= 0.0) and (ratio <= 1.0));
 
     if (a > 0.0) {
       return ratio;
@@ -213,8 +219,9 @@ double grounded_area_fraction(double a, double b, double c) {
     }
   }
 
-  // FIXME: we need to cover the case of the line F=0 intersecting *two* nodes of the
-  // triangle, i.e. coinciding with a side of the triangle.
+  // Note: the case of F=0 coinciding with a side of the triangle is covered by if clauses
+  // above. For example, when F=0 coincides with AC, we have a = c = 0 and intersect_ac(a, c)
+  // returns an invalid intersection point.
 
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "the logic in grounded_area_fraction failed! Please submit a bug report.");
@@ -340,14 +347,16 @@ void compute_grounded_cell_fraction(double ice_density,
         f_n = 0.5 * (f.ij + f.n),
         f_w = 0.5 * (f.ij + f.w);
 
-      result(i, j) = 0.125 * (grounded_area_fraction(f_o, f_ne, f_n) +
-                              grounded_area_fraction(f_o, f_n,  f_nw) +
-                              grounded_area_fraction(f_o, f_nw, f_w) +
-                              grounded_area_fraction(f_o, f_w,  f_sw) +
-                              grounded_area_fraction(f_o, f_sw, f_s) +
-                              grounded_area_fraction(f_o, f_s,  f_se) +
-                              grounded_area_fraction(f_o, f_se, f_e) +
-                              grounded_area_fraction(f_o, f_e,  f_ne));
+      double fraction = 0.125 * (grounded_area_fraction(f_o, f_ne, f_n) +
+                                 grounded_area_fraction(f_o, f_n,  f_nw) +
+                                 grounded_area_fraction(f_o, f_nw, f_w) +
+                                 grounded_area_fraction(f_o, f_w,  f_sw) +
+                                 grounded_area_fraction(f_o, f_sw, f_s) +
+                                 grounded_area_fraction(f_o, f_s,  f_se) +
+                                 grounded_area_fraction(f_o, f_se, f_e) +
+                                 grounded_area_fraction(f_o, f_e,  f_ne));
+
+      result(i, j) = clip(fraction, 0.0, 1.0);
 
     }
   } catch (...) {

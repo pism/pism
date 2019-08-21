@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2019 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -131,31 +131,6 @@ void IceModel::model_state_setup() {
     input_file.reset(new PIO(m_grid->com, "guess_mode", input.filename, PISM_READONLY));
   }
 
-  // Get projection information and compute cell areas and lat/lon *before* a component decides to
-  // use latitude or longitude...
-  {
-    if (use_input_file) {
-      std::string mapping_name = m_grid->get_mapping_info().mapping.get_name();
-      MappingInfo info = get_projection_info(*input_file, mapping_name,
-                                             m_ctx->unit_system());
-
-      if (not info.proj4.empty()) {
-        m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".\n",
-                       info.proj4.c_str(), input.filename.c_str());
-      }
-
-      m_output_global_attributes.set_string("proj4", info.proj4);
-      m_grid->set_mapping_info(info);
-
-      std::string history = input_file->get_att_text("PISM_GLOBAL", "history");
-      m_output_global_attributes.set_string("history",
-                                            history + m_output_global_attributes.get_string("history"));
-
-    }
-
-    compute_cell_areas();
-  }
-
   // Initialize 2D fields owned by IceModel (ice geometry, etc)
   {
     switch (input.type) {
@@ -171,6 +146,31 @@ void IceModel::model_state_setup() {
     }
 
     regrid();
+  }
+
+  // Get projection information and compute latitudes and longitudes *before* a component
+  // decides to use them...
+  {
+    if (use_input_file) {
+      std::string mapping_name = m_grid->get_mapping_info().mapping.get_name();
+      MappingInfo info = get_projection_info(*input_file, mapping_name,
+                                             m_ctx->unit_system());
+
+      if (not info.proj.empty()) {
+        m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".\n",
+                       info.proj.c_str(), input.filename.c_str());
+      }
+
+      m_output_global_attributes.set_string("proj", info.proj);
+      m_grid->set_mapping_info(info);
+
+      std::string history = input_file->get_att_text("PISM_GLOBAL", "history");
+      m_output_global_attributes.set_string("history",
+                                            history + m_output_global_attributes.get_string("history"));
+
+    }
+
+    compute_lat_lon();
   }
 
   m_sea_level->init(m_geometry);
@@ -231,7 +231,10 @@ void IceModel::model_state_setup() {
   // basal_yield_stress_model->init() needs bwat so this must happen
   // after subglacial_hydrology->init()
   if (m_basal_yield_stress_model) {
-    m_basal_yield_stress_model->init();
+    assert((bool)m_subglacial_hydrology);
+    m_basal_yield_stress_model->init(m_geometry,
+                                     m_subglacial_hydrology->till_water_thickness(),
+                                     m_subglacial_hydrology->overburden_pressure());
   }
 
   // Initialize the bedrock thermal layer model.
@@ -306,10 +309,8 @@ void IceModel::model_state_setup() {
   {
     reset_counters();
 
-    char startstr[TEMPORARY_STRING_LENGTH];
-
-    snprintf(startstr, sizeof(startstr),
-             "PISM (%s) started on %d procs.", PISM_Revision, (int)m_grid->size());
+    auto startstr = pism::printf("PISM (%s) started on %d procs.",
+                                 pism::revision, (int)m_grid->size());
     prepend_history(startstr + args_string());
   }
 }
@@ -339,12 +340,6 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
                      usurf_found, usurf_name, usurf_found_by_std_name);
   mask_found = input_file.inq_var("mask");
 
-  std::string lon_name, lat_name;
-  bool lon_found = false, lat_found = false,
-    lon_found_by_std_name = false, lat_found_by_std_name = false;
-  input_file.inq_var("lon", "longitude", lon_found, lon_name, lon_found_by_std_name);
-  input_file.inq_var("lat", "latitude",  lat_found, lat_name, lat_found_by_std_name);
-
   // now work through all the 2d variables, regridding if present and otherwise
   // setting to default values appropriately
 
@@ -358,14 +353,30 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
 
   m_log->message(2, "  reading 2D model state variables by regridding ...\n");
 
-  m_geometry.longitude.regrid(input_file, OPTIONAL);
-  if (not lon_found) {
-    m_geometry.longitude.metadata().set_string("missing_at_bootstrap","true");
+  // longitude
+  {
+    m_geometry.longitude.regrid(input_file, OPTIONAL);
+
+    std::string lon_name;
+    bool lon_found = false, lon_found_by_std_name = false;
+    input_file.inq_var("lon", "longitude", lon_found, lon_name, lon_found_by_std_name);
+
+    if (not lon_found) {
+      m_geometry.longitude.metadata().set_string("missing_at_bootstrap", "true");
+    }
   }
 
-  m_geometry.latitude.regrid(input_file, OPTIONAL);
-  if (not lat_found) {
-    m_geometry.latitude.metadata().set_string("missing_at_bootstrap","true");
+  // latitude
+  {
+    m_geometry.latitude.regrid(input_file, OPTIONAL);
+
+    std::string lat_name;
+    bool lat_found = false, lat_found_by_std_name = false;
+    input_file.inq_var("lat", "latitude",  lat_found, lat_name, lat_found_by_std_name);
+
+    if (not lat_found) {
+      m_geometry.latitude.metadata().set_string("missing_at_bootstrap", "true");
+    }
   }
 
   m_geometry.ice_thickness.regrid(input_file, OPTIONAL,
@@ -608,8 +619,7 @@ void IceModel::allocate_basal_yield_stress() {
     if (yield_stress_model == "constant") {
       m_basal_yield_stress_model.reset(new ConstantYieldStress(m_grid));
     } else if (yield_stress_model == "mohr_coulomb") {
-      m_basal_yield_stress_model.reset(new MohrCoulombYieldStress(m_grid,
-                                                                  m_subglacial_hydrology.get()));
+      m_basal_yield_stress_model.reset(new MohrCoulombYieldStress(m_grid));
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
@@ -740,14 +750,12 @@ void IceModel::misc_setup() {
 
   m_output_vars = output_variables(m_config->get_string("output.size"));
 
-#if (PISM_USE_PROJ4==1)
+#if (Pism_USE_PROJ==1)
   {
-    std::string proj_string = m_grid->get_mapping_info().proj4;
+    std::string proj_string = m_grid->get_mapping_info().proj;
     if (not proj_string.empty()) {
       m_output_vars.insert("lon_bnds");
       m_output_vars.insert("lat_bnds");
-      m_geometry.latitude.metadata().set_string("bounds", "lat_bnds");
-      m_geometry.longitude.metadata().set_string("bounds", "lon_bnds");
     }
   }
 #endif
@@ -973,29 +981,19 @@ std::set<std::string> IceModel::output_variables(const std::string &keyword) {
   return set_split(variables, ',');
 }
 
-void IceModel::compute_cell_areas() {
+void IceModel::compute_lat_lon() {
 
-  std::string projection = m_grid->get_mapping_info().proj4;
+  std::string projection = m_grid->get_mapping_info().proj;
 
-  if (m_config->get_boolean("grid.correct_cell_areas") and
+  if (m_config->get_boolean("grid.recompute_longitude_and_latitude") and
       not projection.empty()) {
-
-    m_log->message(2,
-                   "* Computing cell areas using projection parameters...\n");
-
-    ::pism::compute_cell_areas(projection, m_geometry.cell_area);
-
     m_log->message(2,
                    "* Computing longitude and latitude using projection parameters...\n");
 
     compute_longitude(projection, m_geometry.longitude);
+    m_geometry.longitude.metadata().set_string("missing_at_bootstrap", "");
     compute_latitude(projection, m_geometry.latitude);
-  } else {
-    m_log->message(2,
-                   "* Computing cell areas using grid spacing (dx = %f m, dy = %f m)...\n",
-                   m_grid->dx(), m_grid->dy());
-
-    m_geometry.cell_area.set(m_grid->dx() * m_grid->dy());
+    m_geometry.latitude.metadata().set_string("missing_at_bootstrap", "");
   }
 }
 

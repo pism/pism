@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,11 +32,13 @@ using std::shared_ptr;
 #include "pism/util/Time.hh"
 #include "NC3File.hh"
 
-#if (PISM_USE_PARALLEL_NETCDF4==1)
+#include "pism/pism_config.hh"
+
+#if (Pism_USE_PARALLEL_NETCDF4==1)
 #include "NC4_Par.hh"
 #endif
 
-#if (PISM_USE_PNETCDF==1)
+#if (Pism_USE_PNETCDF==1)
 #include "PNCFile.hh"
 #endif
 
@@ -60,12 +62,12 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, string mode) {
   if (mode == "netcdf3" or size == 1) {
     return io::NCFile::Ptr(new io::NC3File(com));
   }
-#if (PISM_USE_PARALLEL_NETCDF4==1)
+#if (Pism_USE_PARALLEL_NETCDF4==1)
   else if (mode == "netcdf4_parallel") {
     return io::NCFile::Ptr(new io::NC4_Par(com));
   }
 #endif
-#if (PISM_USE_PNETCDF==1)
+#if (Pism_USE_PNETCDF==1)
   else if (mode == "pnetcdf") {
     return io::NCFile::Ptr(new io::PNCFile(com));
   }
@@ -755,5 +757,31 @@ void PIO::put_varm_double(const string &variable_name,
     throw;
   }
 }
+
+unsigned int PIO::inq_nvars() const {
+  int n_vars = 0;
+
+  try {
+    m_impl->nc->inq_nvars(n_vars);
+  } catch (RuntimeError &e) {
+    e.add_context("getting the number of variables in '%s'", inq_filename().c_str());
+    throw;
+  }
+
+  return n_vars;
+}
+
+std::string PIO::inq_varname(unsigned int id) const {
+  std::string result;
+  try {
+    m_impl->nc->inq_varname(id, result);
+  } catch (RuntimeError &e) {
+    e.add_context("getting the name of %d-th variable in '%s'", id, inq_filename().c_str());
+    throw;
+  }
+
+  return result;
+}
+
 
 } // end of namespace pism

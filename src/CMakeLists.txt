@@ -1,28 +1,38 @@
-add_definitions(
-  "-DPISM_REVISION=\"${Pism_REVISION_TAG}\""
-  "-DPISM_DEFAULT_CONFIG_FILE=\"${Pism_DEFAULT_CONFIG_FILE}\"")
+# Create a subdirectory in the build directory containing symlinks to directories in
+# PISM's source tree. This way other code using PISM needs to add only *one* directory to
+# the compiler search path; see #166. This subdirectory contains a generated header,
+# otherwise we could create *one* symlink to ${CMAKE_CURRENT_SOURCE_DIR} instead.
 
-# Create a link from build/pism to src so that PISM can use #include "pism/..." in its
-# source files. This way other code using PISM needs to add only *one* directory to the
-# compiler search path. See #166.
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/pism)
 
-execute_process(
-  COMMAND
-  ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/pism)
+subdirlist(directories ${CMAKE_CURRENT_SOURCE_DIR})
+foreach(d IN LISTS directories)
+  execute_process(
+    COMMAND
+    ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/${d} ${CMAKE_BINARY_DIR}/pism/${d})
+endforeach(d)
+unset(directories)
 
-# Alternatively: copy headers to the build directory
-# file(COPY .
-#   DESTINATION ${CMAKE_BINARY_DIR}/pism/
-#   FILES_MATCHING
-#   PATTERN "*.hh"
-#   PATTERN "*.h")
+# Generate the header containing information about PISM's build-time configuration.
+configure_file(pism_config.hh.in ${CMAKE_BINARY_DIR}/pism/pism_config.hh ESCAPE_QUOTES)
+install(FILES ${CMAKE_BINARY_DIR}/pism/pism_config.hh
+  DESTINATION include/pism)
 
+# Generate the source file containing constants defined in pism_config.hh Note that we
+# don't escape quotes here: PETSc's configure flags should have them escaped already (if
+# we're lucky).
+configure_file(pism_config.cc.in pism_config.cc)
+
+# PISM's build directory contains the symlink to its source directory (see above). This
+# makes it possible to #include PISM's headers using '#include "pism/header.hh"' both in
+# PISM's sources and in code linking to PISM as a library.
 include_directories (${CMAKE_BINARY_DIR})
 
 # This library contains PISM code implementing the ice-sheet model itself
 # (using other PISM libraries and a good deal of non-trivial code).
 add_library (pism
   ${EVERYTRACE_cf_mpi_REFADDR}
+  ${CMAKE_CURRENT_BINARY_DIR}/pism_config.cc
   age/AgeColumnSystem.cc
   age/AgeModel.cc
   basalstrength/ConstantYieldStress.cc
@@ -39,6 +49,7 @@ add_library (pism
   calving/connected_components.cc
   calving/remove_narrow_tongues.cc
   calving/vonMisesCalving.cc
+  energy/BedrockColumn.cc
   energy/BTU_Full.cc
   energy/BTU_Minimal.cc
   energy/BedThermalUnit.cc

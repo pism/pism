@@ -27,10 +27,11 @@
 #include "Delta_P.hh"
 #include "Frac_P.hh"
 #include "Paleo_precip.hh"
-#include "ConstantPIK.hh"
+#include "PIK.hh"
 #include "Anomaly.hh"
 #include "CosineYearlyCycle.hh"
 #include "WeatherStation.hh"
+#include "Uniform.hh"
 #include "IndexForcing.hh"
 
 namespace pism {
@@ -47,6 +48,7 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_model<SeaRISEGreenland>("searise_greenland");
   add_model<CosineYearlyCycle>("yearly_cycle");
   add_model<WeatherStation>("one_station");
+  add_model<Uniform>("uniform");
   add_model<IndexForcing>("index");
   set_default("given");
 

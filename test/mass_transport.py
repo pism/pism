@@ -11,6 +11,7 @@ towards the exact solution."""
 
 log = PISM.Context().log
 
+
 def disc(thickness, x0, y0, H0, R_inner, R_outer):
     """Set ice thickness to H0 within the disc centered at (x0,y0) of
     radius R_inner, C/R in an annulus R_inner < r <= R_outer and 0
@@ -27,8 +28,8 @@ def disc(thickness, x0, y0, H0, R_inner, R_outer):
 
     with PISM.vec.Access(nocomm=thickness):
         for (i, j) in grid.points():
-            x  = grid.x(i)
-            y  = grid.y(j)
+            x = grid.x(i)
+            y = grid.y(j)
             d2 = (x - x0)**2 + (y - y0)**2
             if d2 <= R_inner_2:
                 thickness[i, j] = H0
@@ -38,6 +39,7 @@ def disc(thickness, x0, y0, H0, R_inner, R_outer):
                 thickness[i, j] = 0.0
 
     thickness.update_ghosts()
+
 
 def set_velocity(scalar_velocity, v):
     """Initialize the velocity field to a rigid rotation around the
@@ -57,6 +59,7 @@ def set_velocity(scalar_velocity, v):
             v[i, j].v = scalar_velocity * y / r
 
     v.update_ghosts()
+
 
 def run(Mx, My, t_final, part_grid, C=1.0):
     "Test GeometryEvolution::step()"
@@ -78,21 +81,14 @@ def run(Mx, My, t_final, part_grid, C=1.0):
 
     geometry = PISM.Geometry(grid)
 
-    v = PISM.model.create2dVelocityVec(grid)
-
-    Q = PISM.IceModelVec2Stag()
-    Q.create(grid, "Q", PISM.WITHOUT_GHOSTS)
-
-    v_bc_mask = PISM.IceModelVec2Int()
-    v_bc_mask.create(grid, "v_bc_mask", PISM.WITHOUT_GHOSTS)
-
-    H_bc_mask = PISM.IceModelVec2Int()
-    H_bc_mask.create(grid, "H_bc_mask", PISM.WITHOUT_GHOSTS)
+    v         = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
+    Q         = PISM.IceModelVec2Stag(grid, "Q", PISM.WITHOUT_GHOSTS)
+    v_bc_mask = PISM.IceModelVec2Int(grid, "v_bc_mask", PISM.WITHOUT_GHOSTS)
+    H_bc_mask = PISM.IceModelVec2Int(grid, "H_bc_mask", PISM.WITHOUT_GHOSTS)
 
     ge = PISM.GeometryEvolution(grid)
 
     # grid info
-    geometry.cell_area.set(grid.dx() * grid.dy())
     geometry.latitude.set(0.0)
     geometry.longitude.set(0.0)
     # environment
@@ -133,8 +129,7 @@ def run(Mx, My, t_final, part_grid, C=1.0):
         profiling.end("step")
 
         profiling.begin("modify")
-        geometry.ice_thickness.add(1.0, ge.thickness_change_due_to_flow())
-        geometry.ice_area_specific_volume.add(1.0, ge.area_specific_volume_change_due_to_flow())
+        ge.apply_flux_divergence(geometry)
         geometry.ensure_consistency(0.0)
         profiling.end("modify")
 
@@ -146,6 +141,7 @@ def run(Mx, My, t_final, part_grid, C=1.0):
 
     return geometry
 
+
 def average_error(N):
     t_final = 1.0
     C = 1.0
@@ -153,7 +149,6 @@ def average_error(N):
     log.disable()
     geometry = run(N, N, t_final, True, C)
     log.enable()
-
     # combine stuff stored as thickness and as area specific volume
     geometry.ice_thickness.add(1.0, geometry.ice_area_specific_volume)
 
@@ -174,11 +169,13 @@ def average_error(N):
     # return the average error
     return diff.norm(PISM.PETSc.NormType.N1) / (N*N)
 
+
 def part_grid_convergence_test():
-    "Test that the error does down as O(1/N)"
+    "Test that the error does go down as O(1/N)"
 
     np.testing.assert_almost_equal([average_error(N) for N in [51, 101]],
                                    [0.0338388,  0.0158498])
+
 
 def part_grid_symmetry_test():
     """The initial condition and the velocity fields are radially
@@ -193,13 +190,9 @@ def part_grid_symmetry_test():
     # combine stuff stored as thickness and as area specific volume
     geometry.ice_thickness.add(1.0, geometry.ice_area_specific_volume)
 
-    grid = geometry.ice_thickness.grid()
-
-    p0 = PISM.vec.ToProcZero(grid)
-
-    # gather ice thickness on rank 0 -- that way we can put it in a
-    # numpy array and use flipud() and fliplr().
-    H = p0.communicate(geometry.ice_thickness)
+    # convert ice thickness to a NumPy array on rank 0 -- that way we can use flipud() and
+    # fliplr().
+    H = geometry.ice_thickness.numpy()
 
     np.testing.assert_almost_equal(H, np.flipud(H))
     np.testing.assert_almost_equal(H, np.fliplr(H))

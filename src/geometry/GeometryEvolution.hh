@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -132,12 +132,21 @@ public:
 protected:
   void set_no_model_mask_impl(const IceModelVec2Int &mask);
 
-  virtual void compute_interface_fluxes(const IceModelVec2CellType &cell_type,
-                                        const IceModelVec2S        &ice_thickness,
-                                        const IceModelVec2V        &velocity,
-                                        const IceModelVec2Int      &velocity_bc_mask,
-                                        const IceModelVec2Stag     &diffusive_flux,
-                                        IceModelVec2Stag           &output);
+  void compute_interface_fluxes(const IceModelVec2CellType &cell_type,
+                                const IceModelVec2S        &ice_thickness,
+                                const IceModelVec2V        &velocity,
+                                const IceModelVec2Int      &velocity_bc_mask,
+                                const IceModelVec2Stag     &diffusive_flux,
+                                IceModelVec2Stag           &output);
+
+  void compute_surface_and_basal_mass_balance(double dt,
+                                              const IceModelVec2Int      &thickness_bc_mask,
+                                              const IceModelVec2S        &ice_thickness,
+                                              const IceModelVec2CellType &cell_type,
+                                              const IceModelVec2S        &surface_mass_flux,
+                                              const IceModelVec2S        &basal_melt_rate,
+                                              IceModelVec2S              &effective_SMB,
+                                              IceModelVec2S              &effective_BMB);
 private:
   IceModelVec2Int m_no_model_mask;
 };

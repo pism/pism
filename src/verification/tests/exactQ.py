@@ -84,6 +84,7 @@ def geomvelQ(t, r, V):
     R = (V / (C0 * pi)) ** 0.5 * tnt ** (1.0 / (2.0 * n))
     return H, u, R
 
+
 # similarity solution: choose dimensions, get told the time and volume
 H0 = 1000.0     # m
 R0 = 100.0e3    # m; 100 km
@@ -152,6 +153,7 @@ def def_var(nc, name, units, fillvalue):
     var = nc.createVariable(name, 'f', dimensions=("y", "x"), fill_value=fillvalue)
     var.units = units
     return var
+
 
 bed_var = def_var(nc, "topg", "m", fill_value)
 bed_var.standard_name = "bedrock_altitude"

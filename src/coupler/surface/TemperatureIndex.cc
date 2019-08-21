@@ -56,8 +56,6 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
                                          "Set PDD parameters using formulas (6) and (7)"
                                          " in [Faustoetal2009]");
 
-  bool use_aschwanden_params = options::Bool("-pdd_aschwanden", "Use Aschwanden's PDD parameters");
-
   options::Integer period("-pdd_sd_period",
                           "Length of the standard deviation data period in years", 0);
   m_sd_period = period;
@@ -75,16 +73,6 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   if (use_fausto_params) {
     m_faustogreve.reset(new FaustoGrevePDDObject(m_grid));
     m_base_pddStdDev = 2.53;
-  }
-
-  if (use_aschwanden_params) {
-    m_aschwanden.reset(new AschwandenPDDObject(m_grid->ctx()->config()));
-  }
-
-  if (use_aschwanden_params and use_fausto_params) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Both '-pdd_aschwanden' and '-pdd_fausto' are set. "
-                                  "Choose one or the other.\n");
   }
 
   std::string sd_file = m_config->get_string("surface.pdd.temperature_standard_deviation_file");
@@ -172,9 +160,6 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
     if (m_faustogreve) {
       m_log->message(2,
                      "  Setting PDD parameters from [Faustoetal2009].\n");
-    } else if (m_aschwanden) {
-      m_log->message(2,
-                     "  Setting PDD parameters from Aschwanden.\n");
     } else {
       m_log->message(2,
                      "  Using default PDD parameters.\n");
@@ -274,7 +259,6 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   // make a copy of the pointer to convince clang static analyzer that its value does not
   // change during the call
   FaustoGrevePDDObject *fausto_greve = m_faustogreve.get();
-  AschwandenPDDObject *aschwanden = m_aschwanden.get();
 
   // update to ensure that temperature and precipitation time series are correct:
   m_atmosphere->update(geometry, t, dt);
@@ -307,7 +291,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
     sigmabaselat   = m_config->get_double("surface.pdd.std_dev_lapse_lat_base");
 
   const IceModelVec2S *latitude = nullptr;
-  if (aschwanden or fausto_greve or sigmalapserate != 0.0) {
+  if (fausto_greve or sigmalapserate != 0.0) {
     latitude = &geometry.latitude;
 
     list.add(*latitude);
@@ -368,12 +352,6 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
         // we have been asked to set mass balance parameters according to
         //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
         ddf = fausto_greve->degree_day_factors(i, j, (*latitude)(i, j));
-      }
-
-      if (aschwanden) {
-        // we have been asked to set mass balance parameters according to
-        //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
-        ddf = aschwanden->degree_day_factors((*latitude)(i, j));
       }
 
       // apply standard deviation lapse rate on top of prescribed values
@@ -589,13 +567,13 @@ protected:
     const IceModelVec2S &melt_amount = model->melt();
 
     if (m_kind == MASS) {
-      const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
+      double cell_area = m_grid->cell_area();
 
-      IceModelVec::AccessList list{&m_melt_mass, &melt_amount, &cell_area};
+      IceModelVec::AccessList list{&m_melt_mass, &melt_amount};
 
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
-        m_melt_mass(i, j) = melt_amount(i, j) * cell_area(i, j);
+        m_melt_mass(i, j) = melt_amount(i, j) * cell_area;
       }
       return m_melt_mass;
     } else {
@@ -651,13 +629,13 @@ protected:
     const IceModelVec2S &runoff_amount = model->runoff();
 
     if (m_kind == MASS) {
-      const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
+      double cell_area = m_grid->cell_area();
 
-      IceModelVec::AccessList list{&m_runoff_mass, &runoff_amount, &cell_area};
+      IceModelVec::AccessList list{&m_runoff_mass, &runoff_amount};
 
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
-        m_runoff_mass(i, j) = runoff_amount(i, j) * cell_area(i, j);
+        m_runoff_mass(i, j) = runoff_amount(i, j) * cell_area;
       }
       return m_runoff_mass;
     } else {
@@ -713,13 +691,13 @@ protected:
     const IceModelVec2S &accumulation_amount = model->accumulation();
 
     if (m_kind == MASS) {
-      const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
+      double cell_area = m_grid->cell_area();
 
-      IceModelVec::AccessList list{&m_accumulation_mass, &accumulation_amount, &cell_area};
+      IceModelVec::AccessList list{&m_accumulation_mass, &accumulation_amount};
 
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
-        m_accumulation_mass(i, j) = accumulation_amount(i, j) * cell_area(i, j);
+        m_accumulation_mass(i, j) = accumulation_amount(i, j) * cell_area;
       }
       return m_accumulation_mass;
     } else {
@@ -736,18 +714,19 @@ private:
  *
  * If the input has units kg/m^2, the output will be in kg.
  */
-static double integrate(const IceModelVec2S &input,
-                        const IceModelVec2S &cell_area) {
+static double integrate(const IceModelVec2S &input) {
   IceGrid::ConstPtr grid = input.grid();
 
-  IceModelVec::AccessList list{&input, &cell_area};
+  double cell_area = grid->cell_area();
+
+  IceModelVec::AccessList list{&input};
 
   double result = 0.0;
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    result += input(i, j) * cell_area(i, j);
+    result += input(i, j) * cell_area;
   }
 
   return GlobalSum(grid->com, result);
@@ -767,8 +746,7 @@ public:
   }
 
   double compute() {
-    const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
-    return integrate(model->accumulation(), cell_area);
+    return integrate(model->accumulation());
   }
 };
 
@@ -786,8 +764,7 @@ public:
   }
 
   double compute() {
-    const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
-    return integrate(model->melt(), cell_area);
+    return integrate(model->melt());
   }
 };
 
@@ -805,8 +782,7 @@ public:
   }
 
   double compute() {
-    const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
-    return integrate(model->runoff(), cell_area);
+    return integrate(model->runoff());
   }
 };
 

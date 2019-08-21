@@ -81,7 +81,7 @@ private:
                               IceModelVec2S &Toc_box0,
                               IceModelVec2S &Soc_box0);
 
-  void process_box1(const PicoPhysics &cc,
+  void process_box1(const PicoPhysics &physics,
                     const IceModelVec2S &ice_thickness,
                     const IceModelVec2Int &shelf_mask,
                     const IceModelVec2Int &box_mask,
@@ -122,10 +122,10 @@ private:
                            std::vector<double> &result);
 
   void compute_box_area(int box_id,
-                        const IceModelVec2S &cell_area,
                         const IceModelVec2Int &shelf_mask,
                         const IceModelVec2Int &box_mask,
                         std::vector<double> &result);
+
 
   int m_n_basins, m_n_boxes, m_n_shelves;
 };

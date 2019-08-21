@@ -72,7 +72,7 @@ variables = {"thk": thk,
              "bc_mask": bc_mask,
              "u_ssa_bc": ubar,
              "v_ssa_bc": vbar,
-             "calving_threshold" : thk_threshold}
+             "calving_threshold": thk_threshold}
 
 piktests_utils.write_data(ncfile, variables)
 

@@ -62,7 +62,8 @@ public:
   const IceModelVec2S& basal_frictional_heating();
 
   void compute_2D_stresses(const IceModelVec2V &velocity,
-                           const IceModelVec2CellType &mask,
+                           const IceModelVec2S &hardness,
+                           const IceModelVec2CellType &cell_type,
                            IceModelVec2 &result) const;
 
   void compute_basal_frictional_heating(const IceModelVec2V &velocity,

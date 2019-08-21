@@ -69,23 +69,21 @@ SSAFD::SSAFD(IceGrid::ConstPtr g)
                            "old SSA velocity field; used for re-trying with a different epsilon",
                            "m s-1", "");
 
-  const double power = 1.0 / m_flow_law->exponent();
-  char unitstr[TEMPORARY_STRING_LENGTH];
-  snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
   m_hardness.create(m_grid, "hardness", WITHOUT_GHOSTS);
   m_hardness.set_attrs("diagnostic",
-                     "vertically-averaged ice hardness",
-                     unitstr, "");
+                       "vertically-averaged ice hardness",
+                       pism::printf("Pa s%f", 1.0 / m_flow_law->exponent()),
+                       "");
 
   m_nuH.create(m_grid, "nuH", WITH_GHOSTS);
   m_nuH.set_attrs("internal",
-                "ice thickness times effective viscosity",
-                "Pa s m", "");
+                  "ice thickness times effective viscosity",
+                  "Pa s m", "");
 
   m_nuH_old.create(m_grid, "nuH_old", WITH_GHOSTS);
   m_nuH_old.set_attrs("internal",
-                    "ice thickness times effective viscosity (before an update)",
-                    "Pa s m", "");
+                      "ice thickness times effective viscosity (before an update)",
+                      "Pa s m", "");
 
   m_work.create(m_grid, "m_work", WITH_GHOSTS,
                 2, /* stencil width */
@@ -774,7 +772,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
 
   ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
   PISM_CHK(ierr, "MatAssemblyEnd");
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   ierr = MatSetOption(A,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);
   PISM_CHK(ierr, "MatSetOption");
 #endif
@@ -875,7 +873,7 @@ void SSAFD::solve(const Inputs &inputs) {
         write_system_petsc("all_strategies_failed");
         throw RuntimeError(PISM_ERROR_LOCATION, "all SSAFD strategies failed");
       }
-    } catch (PicardFailure) {
+    } catch (PicardFailure &f) {
       // proceed to the next strategy
     }
   }
@@ -901,7 +899,7 @@ void SSAFD::picard_iteration(const Inputs &inputs,
       picard_manager(inputs, nuH_regularization,
                      nuH_iter_failure_underrelax);
 
-    } catch (KSPFailure) {
+    } catch (KSPFailure &f) {
 
       m_default_pc_failure_count += 1;
 
@@ -1010,6 +1008,31 @@ void SSAFD::picard_manager(const Inputs &inputs,
       m_stdout_ssa += tempstr;
     }
 
+    // limit ice speed
+    {
+      auto max_speed = m_config->get_double("stress_balance.ssa.fd.max_speed", "m second-1");
+      int high_speed_counter = 0;
+
+      IceModelVec::AccessList list{&m_velocity_global};
+
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        auto speed = m_velocity_global(i, j).magnitude();
+
+        if (speed > max_speed) {
+          m_velocity_global(i, j) *= max_speed / speed;
+          high_speed_counter += 1;
+        }
+      }
+
+      high_speed_counter = GlobalSum(m_grid->com, high_speed_counter);
+
+      if (high_speed_counter > 0) {
+        m_log->message(2, "  SSA speed was capped at %d locations\n", high_speed_counter);
+      }
+    }
+
     // Communicate so that we have stencil width for evaluation of effective
     // viscosity on next "outer" iteration (and geometry etc. if done):
     // Note that copy_from() updates ghosts of m_velocity.
@@ -1054,13 +1077,9 @@ void SSAFD::picard_manager(const Inputs &inputs,
   // If we're here, it means that we exceeded max_iterations and still
   // failed.
 
-  char buffer[TEMPORARY_STRING_LENGTH];
-  snprintf(buffer, sizeof(buffer),
-           "effective viscosity not converged after %d iterations\n"
-           "with nuH_regularization=%8.2e.",
-           max_iterations, nuH_regularization);
-
-  throw PicardFailure(buffer);
+  throw PicardFailure(pism::printf("effective viscosity not converged after %d iterations\n"
+                                   "with nuH_regularization=%8.2e.",
+                                   max_iterations, nuH_regularization));
 
  done:
 
@@ -1108,7 +1127,7 @@ void SSAFD::picard_strategy_regularization(const Inputs &inputs) {
       // if this call succeeded, stop over-regularizing
       break;
     }
-    catch (PicardFailure) {
+    catch (PicardFailure &f) {
       k += 1;
 
       if (k == max_tries) {
@@ -1133,7 +1152,7 @@ a bit of bad behavior at these few places, and \f$L^1\f$ ignores it more than
  */
 void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 
-  const double area = m_grid->dx() * m_grid->dy();
+  const double area = m_grid->cell_area();
   const NormType MY_NORM = NORM_1;
 
   // Test for change in nu

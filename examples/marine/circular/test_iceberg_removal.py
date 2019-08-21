@@ -32,6 +32,7 @@ def R(x, y):
 def C(x, y):
     return np.sqrt(x ** 2 + y ** 2)
 
+
 if options.square:
     rad = R
 else:

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -301,8 +301,9 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
   }
   m_impl->profile.end("ge.compute_changes");
 
-  // Computes the numerical conservation error and corrects ice_thickness_change and . We can do
-  // this here because compute_surface_and_basal_mass_balance() preserves non-negativity.
+  // Computes the numerical conservation error and corrects ice_thickness_change and
+  // ice_area_specific_volume_change. We can do this here because
+  // compute_surface_and_basal_mass_balance() preserves non-negativity.
   //
   // Note that here we use the "old" ice geometry.
   //
@@ -372,7 +373,7 @@ void GeometryEvolution::apply_mass_fluxes(Geometry &geometry) const {
       // (Recall that floating-point arithmetic is not associative.)
       const double H_new = (H(i, j) + dH_SMB(i, j)) + dH_BMB(i, j);
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
       if (H_new < 0.0) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "H = %f (negative) at i=%d, j=%d",
                                       H_new, i, j);
@@ -639,10 +640,6 @@ void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cel
  * Compute flux divergence using cell interface fluxes on the staggered grid.
  *
  * The flux divergence at *ice thickness* Dirichlet B.C. locations is set to zero.
- *
- * FIXME: This method should also compute the tendency_of_ice_thickness_due_to_influx. In other
- * words, the flux divergence at B.C. locations should be put in a different field so that we can
- * keep track of the mass added or removed by prescribed Dirichlet B.C.
  */
 void GeometryEvolution::compute_flux_divergence(const IceModelVec2Stag &flux,
                                                 const IceModelVec2Int &thickness_bc_mask,
@@ -714,7 +711,7 @@ void GeometryEvolution::update_in_place(double dt,
           &m_impl->surface_elevation, &bed_topography, &m_impl->cell_type});
   }
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   const double Lz = m_grid->Lz();
 #endif
 
@@ -755,7 +752,7 @@ void GeometryEvolution::update_in_place(double dt,
 
       ice_thickness(i, j) += - dt * divQ;
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
       if (ice_thickness(i, j) > Lz) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ice thickness exceeds Lz at i=%d, j=%d (H=%f, Lz=%f)",
                                       i, j, ice_thickness(i, j), Lz);
@@ -798,7 +795,7 @@ void GeometryEvolution::update_in_place(double dt,
     if (not done) {
       m_log->message(2,
                      "WARNING: not done redistributing mass after %d iterations, remaining residual: %f m^3.\n",
-                     max_n_iterations, m_impl->residual.sum()*m_grid->dx()*m_grid->dy());
+                     max_n_iterations, m_impl->residual.sum() * m_grid->cell_area());
 
       // Add residual to ice thickness, preserving total ice mass. (This is not great, but
       // better than losing mass.)
@@ -892,7 +889,8 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
   // elevation.)
   m_impl->thickness.copy_from(ice_thickness);
 
-  // The loop above updated ice_thickness, so we need to re-calculate the mask and the surface elevation:
+  // The loop above updated ice_thickness, so we need to re-calculate the mask and the
+  // surface elevation:
   m_impl->gc.compute(sea_level, bed_topography, ice_thickness, cell_type, ice_surface_elevation);
 
   double remaining_residual = 0.0;
@@ -1158,6 +1156,9 @@ void RegionalGeometryEvolution::set_no_model_mask_impl(const IceModelVec2Int &ma
   m_no_model_mask.copy_from(mask);
 }
 
+/*!
+ * Disable ice flow in "no model" areas.
+ */
 void RegionalGeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cell_type,
                                                          const IceModelVec2S        &ice_thickness,
                                                          const IceModelVec2V        &velocity,
@@ -1190,6 +1191,44 @@ void RegionalGeometryEvolution::compute_interface_fluxes(const IceModelVec2CellT
         if (not (M == 0 and M_n == 0)) {
           output(i, j, n) = 0.0;
         }
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+}
+
+/*!
+ * Set surface and basal mass balance to zero in "no model" areas.
+ */
+void RegionalGeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
+                                                                       const IceModelVec2Int      &thickness_bc_mask,
+                                                                       const IceModelVec2S        &ice_thickness,
+                                                                       const IceModelVec2CellType &cell_type,
+                                                                       const IceModelVec2S        &surface_mass_flux,
+                                                                       const IceModelVec2S        &basal_melt_rate,
+                                                                       IceModelVec2S              &effective_SMB,
+                                                                       IceModelVec2S              &effective_BMB) {
+  GeometryEvolution::compute_surface_and_basal_mass_balance(dt,
+                                                            thickness_bc_mask,
+                                                            ice_thickness,
+                                                            cell_type,
+                                                            surface_mass_flux,
+                                                            basal_melt_rate,
+                                                            effective_SMB,
+                                                            effective_BMB);
+
+  IceModelVec::AccessList list{&m_no_model_mask, &effective_SMB, &effective_BMB};
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (m_no_model_mask(i, j) > 0.5) {
+        effective_SMB(i, j) = 0.0;
+        effective_BMB(i, j) = 0.0;
       }
     }
   } catch (...) {

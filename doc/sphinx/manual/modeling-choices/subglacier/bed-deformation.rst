@@ -55,7 +55,7 @@ read in from an input file. This sets the bed topography `b` at the beginning of
 follows:
 
 .. math::
-   :name: eq-bedcorrection
+   :label: eq-bedcorrection
 
    b = b_{0} + \Delta b.
 

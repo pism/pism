@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -77,6 +77,8 @@ struct IceGrid::Impl {
   double dx;
   //! horizontal grid spacing
   double dy;
+  //! cell area (meters^2)
+  double cell_area;
   //! number of grid points in the x-direction
   unsigned int Mx;
   //! number of grid points in the y-direction
@@ -252,10 +254,10 @@ IceGrid::IceGrid(Context::ConstPtr context, const GridParameters &p)
     m_impl->compute_horizontal_coordinates();
 
     {
-      unsigned int max_stencil_width = (unsigned int)context->config()->get_double("grid.max_stencil_width");
+      unsigned int stencil_width = (unsigned int)context->config()->get_double("grid.max_stencil_width");
 
       try {
-        petsc::DM::Ptr tmp = this->get_dm(1, max_stencil_width);
+        petsc::DM::Ptr tmp = this->get_dm(1, stencil_width);
       } catch (RuntimeError &e) {
         e.add_context("distributing a %d x %d grid across %d processors.",
                       Mx(), My(), size());
@@ -618,6 +620,8 @@ void IceGrid::Impl::compute_horizontal_coordinates() {
 
   dy = compute_horizontal_spacing(Ly, My, cell_centered);
 
+  cell_area = dx * dy;
+
   double
     x_min = x0 - Lx,
     x_max = x0 + Lx;
@@ -794,16 +798,18 @@ std::vector<double> IceGrid::compute_interp_weights(double X, double Y) const{
 }
 
 // Computes the hash corresponding to the DM with given dof and stencil_width.
-static int dm_hash(int da_dof, int stencil_width) {
-  if (da_dof < 0 or da_dof > 10000) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Invalid da_dof argument: %d", da_dof);
+static int dm_hash(int dm_dof, int stencil_width) {
+  if (dm_dof < 0 or dm_dof > IceGrid::max_dm_dof) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Invalid dm_dof argument: %d", dm_dof);
   }
 
-  if (stencil_width < 0 or stencil_width > 10000) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Invalid stencil_width argument: %d", stencil_width);
+  if (stencil_width < 0 or stencil_width > IceGrid::max_stencil_width) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Invalid stencil_width argument: %d", stencil_width);
   }
 
-  return 10000 * da_dof + stencil_width;
+  return IceGrid::max_stencil_width * dm_dof + stencil_width;
 }
 
 //! @brief Get a PETSc DM ("distributed array manager") object for given `dof` (number of degrees of
@@ -957,6 +963,10 @@ double IceGrid::dx() const {
 //! Horizontal grid spacing.
 double IceGrid::dy() const {
   return m_impl->dy;
+}
+
+double IceGrid::cell_area() const {
+  return m_impl->cell_area;
 }
 
 //! Minimum vertical spacing.
@@ -1403,7 +1413,7 @@ const MappingInfo& IceGrid::get_mapping_info() const {
 
 void IceGrid::set_mapping_info(const MappingInfo &info) {
   m_impl->mapping_info = info;
-  // FIXME: re-compute cell areas and lat/lon
+  // FIXME: re-compute lat/lon coordinates
 }
 
 

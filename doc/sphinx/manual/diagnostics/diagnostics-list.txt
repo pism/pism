@@ -8,10 +8,10 @@
 Spatially-variable fields
 -------------------------
 
-#. ``air_temp_mean_july``
+#. ``air_temp_mean_summer``
 
    :Units: Kelvin
-   :Description: mean July near-surface air temperature used in the cosine yearly cycle
+   :Description: mean summer near-surface air temperature used in the cosine yearly cycle
 
 #. ``air_temp_sd``
 
@@ -100,12 +100,6 @@ Spatially-variable fields
 
    :Units: m
    :Description: threshold used by the 'calving at threshold' calving method
-
-#. ``cell_area``
-
-   :Units: km2
-   :Description: cell areas
-   :Comment: values are equal to dx*dy if projection parameters are not available; otherwise WGS84 ellipsoid is used
 
 #. ``cell_grounded_fraction``
 
@@ -293,6 +287,11 @@ Spatially-variable fields
    :Description: upward geothermal flux at the top bedrock surface
    :Standard name: ``upward_geothermal_heat_flux_at_ground_level``
    :Comment: positive values correspond to an upward flux
+
+#. ``hydraulic_potential``
+
+   :Units: Pa
+   :Description: hydraulic potential in the subglacial hydrology system
 
 #. ``ice_area_specific_volume``
 
@@ -984,10 +983,10 @@ Scalar time-series
    :Units: m year-1
    :Description: maximum abs component of horizontal ice velocity over grid in last time step during time-series reporting interval
 
-#. ``slvol``
+#. ``sea_level_rise_potential``
 
    :Units: m
-   :Description: total sea-level relevant ice IN SEA-LEVEL EQUIVALENT
+   :Description: the sea level rise that would result if all the ice were melted
 
 #. ``surface_accumulation_rate``
 

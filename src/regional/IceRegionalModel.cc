@@ -130,6 +130,8 @@ void IceRegionalModel::model_state_setup() {
     }
   }
 
+  m_geometry_evolution->set_no_model_mask(m_no_model_mask);
+
   if (m_ch_system) {
     const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
 
@@ -243,8 +245,7 @@ void IceRegionalModel::allocate_basal_yield_stress() {
     if (yield_stress_model == "constant") {
       m_basal_yield_stress_model.reset(new ConstantYieldStress(m_grid));
     } else if (yield_stress_model == "mohr_coulomb") {
-      m_basal_yield_stress_model.reset(new RegionalDefaultYieldStress(m_grid,
-                                                                      m_subglacial_hydrology.get()));
+      m_basal_yield_stress_model.reset(new RegionalDefaultYieldStress(m_grid));
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "yield stress model '%s' is not supported.",

@@ -171,6 +171,7 @@ class Plotter:
                 self.plot('dx', ["maximum_u", "average_u"],
                           test_name, "velocity errors")
 
+
 from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.description = """Plot script for PISM verification results."""

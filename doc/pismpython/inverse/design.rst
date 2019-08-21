@@ -1,6 +1,8 @@
-===============================================
+.. include:: ../math-definitions.txt
+
+=====================
 Inverse Code Overview
-===============================================
+=====================
 
 This document is an brief
 overview of how the algorithms for solving inverse problems have been grafted onto the main PISM library, intended to

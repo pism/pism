@@ -142,11 +142,34 @@
    :Value: 0.070417 (Kelvin-1)
    :Description: = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`
 
+#. :config:`atmosphere.pik.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_pik_file`
+   :Description: Name of the file containing the reference surface elevation field (variable ``usurf``).
+
+#. :config:`atmosphere.pik.parameterization` (*keyword*)
+
+   :Value: ``martin``
+   :Choices: ``martin, huybrechts_dewolde, martin_huybrechts_dewolde, era_interim, era_interim_sin, era_interim_lon``
+   :Option: :opt:`-atmosphere_pik`
+   :Description: Selects parameterizations of mean annual and mean summer near-surface air temperatures.
+
 #. :config:`atmosphere.lapse_rate.precipitation_lapse_rate` (*scalar*)
 
    :Value: 0 ((m / year) / km)
    :Option: :opt:`-precip_lapse_rate`
    :Description: Elevation lapse rate for the surface mass balance
+
+#. :config:`atmosphere.uniform.precipitation` (*scalar*)
+
+   :Value: 1000 (kg m-2 year-1)
+   :Description: Precipitation used by the 'uniform' atmosphere model.
+
+#. :config:`atmosphere.uniform.temperature` (*scalar*)
+
+   :Value: 273.150000 (Kelvin)
+   :Description: Air temperature used by the 'uniform' atmosphere model.
 
 #. :config:`basal_resistance.beta_ice_free_bedrock` (*scalar*)
 
@@ -513,6 +536,11 @@
    :Value: 3985 (Joule / (kg Kelvin))
    :Description: at 35 psu, value taken from http://www.kayelaby.npl.co.uk/general_physics/2_7/2_7_9.html
 
+#. :config:`constants.global_ocean_area` (*scalar*)
+
+   :Value: 3.625000e+14 (meter2)
+   :Description: area of the global ocean :cite:`Cogley2011`
+
 #. :config:`constants.standard_gravity` (*scalar*)
 
    :Value: 9.810000 (meter second-2)
@@ -529,17 +557,17 @@
    :Option: :opt:`-subgl_basal_melt`
    :Description: If geometry.grounded_cell_fraction is set, use the fractional floatation mask to interpolate the basal melt rate at the grounding line between grounded and floating values.
 
-#. :config:`energy.bedrock_thermal_conductivity` (*scalar*)
+#. :config:`energy.bedrock_thermal.conductivity` (*scalar*)
 
    :Value: 3 (Joule / (meter Kelvin second))
    :Description: = W m-1 K-1; for bedrock used in thermal model :cite:`RitzEISMINT`
 
-#. :config:`energy.bedrock_thermal_density` (*scalar*)
+#. :config:`energy.bedrock_thermal.density` (*scalar*)
 
    :Value: 3300 (kg meter-3)
    :Description: for bedrock used in thermal model
 
-#. :config:`energy.bedrock_thermal_specific_heat_capacity` (*scalar*)
+#. :config:`energy.bedrock_thermal.specific_heat_capacity` (*scalar*)
 
    :Value: 1000 (Joule / (kg Kelvin))
    :Description: for bedrock used in thermal model :cite:`RitzEISMINT`
@@ -873,10 +901,10 @@
    :Option: :opt:`-Mz`
    :Description: Number of vertical grid levels in the ice.
 
-#. :config:`grid.correct_cell_areas` (*boolean*)
+#. :config:`grid.recompute_longitude_and_latitude` (*boolean*)
 
    :Value: yes
-   :Description: Compute corrected cell areas using WGS84 datum (for ice area and volume computations).
+   :Description: Re-compute longitude and latitude using grid information and provided projection parameters. Requires PROJ.
 
 #. :config:`grid.ice_vertical_spacing` (*keyword*)
 
@@ -1164,6 +1192,42 @@
    :Option: :opt:`-tikhonov_rtol`
    :Description: relative threshold for Tikhonov stopping criterion
 
+#. :config:`inverse.max_iterations` (*integer*)
+
+   :Value: 1000
+   :Option: :opt:`-inv_max_it`
+   :Description: maximum iteration count
+
+#. :config:`inverse.use_zeta_fixed_mask` (*boolean*)
+
+   :Value: yes
+   :Option: :opt:`-inv_use_zeta_fixed_mask`
+   :Description: Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)
+
+#. :config:`inverse.use_design_prior` (*boolean*)
+
+   :Value: yes
+   :Option: :opt:`-inv_use_design_prior`
+   :Description: Use prior from inverse data file as initial guess.
+
+#. :config:`ocean.anomaly.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-ocean_anomaly_file`
+   :Description: Name of the file containing shelf basal mass flux offset fields.
+
+#. :config:`ocean.anomaly.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_anomaly_period`
+   :Description: Length of the period of the ocean forcing data. Set to zero to disable.
+
+#. :config:`ocean.anomaly.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-ocean_anomaly_reference_year`
+   :Description: Reference year to use when ``ocean.anomaly.period`` is active.
+
 #. :config:`ocean.given.file` (*string*)
 
    :Value: *no default*
@@ -1265,7 +1329,7 @@
 #. :config:`ocean.runoff_to_ocean_melt_b` (*scalar*)
 
    :Value: 0.150000 (1)
-   :Description: parameter B in eqn. 1 in :cite:`Aschwanden`
+   :Description: parameter B in eqn. 1 in :cite:`Aschwanden2019`
 
 #. :config:`ocean.runoff_to_ocean_melt_power_alpha` (*scalar*)
 
@@ -1462,7 +1526,7 @@
 
 #. :config:`output.sizes.big_2d` (*string*)
 
-   :Value: ``age, bfrict, bheatflx, bmelt, bwp, bwprel, cell_area, dbdt, effbwp, enthalpybase, enthalpysurf, flux_divergence, hardav, hydroinput, lat, litho_temp, lon, nuH, ocean_kill_mask, rank, tempbase, tempicethk, tempicethk_basal, temppabase, tempsurf, thk, thksmooth, tillphi, topg, velbar, velbase, wallmelt, wvelbase``
+   :Value: ``age, bfrict, bheatflx, bmelt, bwp, bwprel, dbdt, effbwp, enthalpybase, enthalpysurf, flux_divergence, hardav, hydroinput, lat, litho_temp, lon, nuH, ocean_kill_mask, rank, tempbase, tempicethk, tempicethk_basal, temppabase, tempsurf, thk, thksmooth, tillphi, topg, velbar, velbase, wallmelt, wvelbase``
    :Description: Comma-separated list of variables to write to the output (in addition to model_state variables and variables listed in output.sizes.medium) if 'big_2d' output size is selected. Does not include fields written by boundary models.
 
 #. :config:`output.sizes.medium` (*string*)
@@ -1591,7 +1655,7 @@
 #. :config:`stress_balance.sia.flow_law` (*keyword*)
 
    :Value: ``gpbld``
-   :Choices: ``arr, arrwarm, gk, gpbld, hooke, isothermal_glen, pb, gpbld3``
+   :Choices: ``arr, arrwarm, gk, gpbld, hooke, isothermal_glen, pb``
    :Option: :opt:`-sia_flow_law`
    :Description: The SIA flow law.
 
@@ -1600,6 +1664,12 @@
    :Value: no
    :Option: :opt:`-grain_size_age_coupling`
    :Description: Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt :cite:`GoldsbyKohlstedt` flow law
+
+#. :config:`stress_balance.sia.limit_diffusivity` (*boolean*)
+
+   :Value: no
+   :Option: :opt:`-limit_sia_diffusivity`
+   :Description: Limit SIA diffusivity by `stress_balance.sia.max_diffusivity`.
 
 #. :config:`stress_balance.sia.max_diffusivity` (*scalar*)
 
@@ -1700,10 +1770,16 @@
    :Value: yes
    :Description: Replace zero diagonal entries in the SSAFD matrix with basal_resistance.beta_ice_free_bedrock to avoid solver failures.
 
+#. :config:`stress_balance.ssa.fd.max_speed` (*scalar*)
+
+   :Value: 500000 (m yr-1)
+   :Option: :opt:`-ssafd_max_speed`
+   :Description: Upper bound for the ice speed computed by the SSAFD solver.
+
 #. :config:`stress_balance.ssa.flow_law` (*keyword*)
 
    :Value: ``gpbld``
-   :Choices: ``arr, arrwarm, gpbld, hooke, isothermal_glen, pb, gpbld3``
+   :Choices: ``arr, arrwarm, gpbld, hooke, isothermal_glen, pb``
    :Option: :opt:`-ssa_flow_law`
    :Description: The SSA flow law.
 
@@ -1855,36 +1931,6 @@
 
    :Value: 274
    :Description: day of year for October 1st, beginning of the balance year in northern latitudes.
-
-#. :config:`surface.pdd.aschwanden.beta_ice_c` (*scalar*)
-
-   :Value: 0.006000 (meter / (Kelvin day))
-   :Description: water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`
-
-#. :config:`surface.pdd.aschwanden.beta_ice_w` (*scalar*)
-
-   :Value: 0.008000 (meter / (Kelvin day))
-   :Description: water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`
-
-#. :config:`surface.pdd.aschwanden.beta_snow_c` (*scalar*)
-
-   :Value: 0.001500 (meter / (Kelvin day))
-   :Description: water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`
-
-#. :config:`surface.pdd.aschwanden.beta_snow_w` (*scalar*)
-
-   :Value: 0.003000 (meter / (Kelvin day))
-   :Description: water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`
-
-#. :config:`surface.pdd.aschwanden.latitude_beta_w` (*scalar*)
-
-   :Value: 77 (degree_north)
-   :Description: latitude below which to use warm case, in formula (6) in :cite:`Aschwandenetal2009`
-
-#. :config:`surface.pdd.aschwanden.warm_cold_transition_width` (*scalar*)
-
-   :Value: 1 (degree_north)
-   :Description: smoothing width in degrees for linear transition between warm and cold values
 
 #. :config:`surface.pdd.factor_ice` (*scalar*)
 

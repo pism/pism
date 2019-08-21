@@ -12,7 +12,8 @@ except:
     print("netCDF4 is not installed!")
     sys.exit(1)
 
-parser = argparse.ArgumentParser(description='show quiver for the subglacial water velocity (or flux) field from a PISM file')
+parser = argparse.ArgumentParser(
+    description='show quiver for the subglacial water velocity (or flux) field from a PISM file')
 parser.add_argument('filename',
                     help='file from which to get  V = bwatvel[2]  (and  W = bwat  for flux)')
 parser.add_argument('-b', type=float, default=-1.0,
@@ -116,7 +117,7 @@ if args.s:
         else:
             data = vely
             name = "vely"
-        print("  %s stats:\n    min = %9.3f %s,  max = %9.3f %s,  av = %8.3f %s" % \
+        print("  %s stats:\n    min = %9.3f %s,  max = %9.3f %s,  av = %8.3f %s" %
               (name, data.min(), units, data.max(), units, data.sum() / (x.size * y.size), units))
         subplot(1, 2, j)
         pcolor(x / 1000.0, y / 1000.0, data, vmin=data.min(), vmax=data.max())
@@ -150,8 +151,8 @@ if args.q:
     print("  maximum water flux magnitude = %8.3f %s" % (speed.max(), units))
     titlestr = "water flux in %s" % units
 else:
-    print("  maximum water speed = %8.3f %s = %6.3f %s" % \
-        (speed.max(), units, speed.max() / 3600.0, 'm s-1'))  # assumes units is m hr-1
+    print("  maximum water speed = %8.3f %s = %6.3f %s" %
+          (speed.max(), units, speed.max() / 3600.0, 'm s-1'))  # assumes units is m hr-1
     titlestr = "water velocity in %s" % units
 title(titlestr)
 

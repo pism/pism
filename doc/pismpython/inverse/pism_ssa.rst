@@ -1,3 +1,5 @@
+.. include:: ../math-definitions.txt
+
 .. _PISM_SSA:
 
 PISM's SSA Model

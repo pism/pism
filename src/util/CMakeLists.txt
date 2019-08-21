@@ -49,32 +49,21 @@ set(PISMUTIL_SRC
   pism_options.cc
   pism_utilities.cc
   projection.cc
+  fftw_utilities.cc
   )
 
 if(Pism_USE_JANSSON)
   list(APPEND PISMUTIL_SRC ConfigJSON.cc)
 endif()
 
-# Check if NetCDF-4 parallel I/O is enabled. If so, set compiler flags and add a source code file.
+# Check if NetCDF-4 parallel I/O is enabled and add a source code file if necessary.
 if (Pism_USE_PARALLEL_NETCDF4)
-  add_definitions(-DPISM_USE_PARALLEL_NETCDF4=1)
   list(APPEND PISMUTIL_SRC io/NC4_Par.cc)
-else()
-  add_definitions(-DPISM_USE_PARALLEL_NETCDF4=0)
 endif()
 
-# Check if PnetCDF parallel I/O is enabled. If so, set compiler flags and add a source code file.
+# Check if PnetCDF parallel I/O is enabled and add a source code file if necessary.
 if (Pism_USE_PNETCDF)
-  add_definitions(-DPISM_USE_PNETCDF=1)
   list(APPEND PISMUTIL_SRC io/PNCFile.cc)
-else()
-  add_definitions(-DPISM_USE_PNETCDF=0)
 endif()
-
-add_custom_target (touch_pism_utilities
-  COMMAND ${CMAKE_COMMAND} -E touch pism_utilities.cc
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  VERBATIM)
 
 add_library (util OBJECT ${PISMUTIL_SRC})
-add_dependencies (util touch_pism_utilities)

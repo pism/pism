@@ -26,6 +26,7 @@ def tongue(xx, x0, width):
     result[:, x0:x0 + width] = 100.0
     return result
 
+
 thk = np.zeros_like(xx)
 
 x0 = 3

@@ -2,6 +2,7 @@
 
 data = {}
 
+
 def text_height(width, value):
     assert width > 0
 
@@ -9,6 +10,7 @@ def text_height(width, value):
         return 1
     else:
         return len(value) / width + 2
+
 
 def load_config(filename):
     global data
@@ -18,11 +20,14 @@ def load_config(filename):
     with open(filename) as f:
         data = json.load(f)
 
+
 def is_special(key):
     return key.endswith("_doc") or key.endswith("_type") or key.endswith("_units") or key.endswith("_option") or key.endswith("_choices") or key == "long_name"
 
+
 def path(event):
     return event.widget.focus().split(".")
+
 
 def parameter_info(event):
     d = data.copy()
@@ -36,10 +41,10 @@ def parameter_info(event):
 
     result = {}
 
-    result["name"]   = ".".join(p)
-    result["value"]  = d[name]
-    result["type"]   = d[name + "_type"]
-    result["doc"]    = d[name + "_doc"]
+    result["name"] = ".".join(p)
+    result["value"] = d[name]
+    result["type"] = d[name + "_type"]
+    result["doc"] = d[name + "_doc"]
 
     try:
         result["option"] = "-" + d[name + "_option"]
@@ -50,9 +55,10 @@ def parameter_info(event):
         result["choices"] = d[name + "_choices"]
 
     if result["type"] not in ("keyword", "boolean", "string"):
-        result["units"]  = d[name + "_units"]
+        result["units"] = d[name + "_units"]
 
     return result
+
 
 def keyword_handler(info, window, first_row):
     value = tk.StringVar()
@@ -69,8 +75,10 @@ def keyword_handler(info, window, first_row):
 
     return j
 
+
 def keyword_dialog(event):
     generic_dialog(event, keyword_handler)
+
 
 def generic_dialog(event, func):
 
@@ -164,6 +172,7 @@ def generic_dialog(event, func):
     window.grab_set()
     root.wait_window(window)
 
+
 def scalar_handler(info, window, first_row, integer):
 
     j = first_row
@@ -186,11 +195,14 @@ def scalar_handler(info, window, first_row, integer):
 
     return j
 
+
 def scalar_dialog(event):
-    generic_dialog(event, lambda a, b, c : scalar_handler(a, b, c, False))
+    generic_dialog(event, lambda a, b, c: scalar_handler(a, b, c, False))
+
 
 def integer_dialog(event):
-    generic_dialog(event, lambda a, b, c : scalar_handler(a, b, c, True))
+    generic_dialog(event, lambda a, b, c: scalar_handler(a, b, c, True))
+
 
 def string_handler(info, window, first_row):
 
@@ -208,8 +220,10 @@ def string_handler(info, window, first_row):
 
     return j
 
+
 def string_dialog(event):
     generic_dialog(event, string_handler)
+
 
 def boolean_handler(info, window, first_row):
 
@@ -227,8 +241,10 @@ def boolean_handler(info, window, first_row):
 
     return j
 
+
 def boolean_dialog(event):
     generic_dialog(event, boolean_handler)
+
 
 class App(object):
     def __init__(self, master):
@@ -311,7 +327,7 @@ class App(object):
         else:
             master.update()
             self.input_file = tkFileDialog.askopenfilename(parent=master,
-                                                           filetypes = ["JSON .json"],
+                                                           filetypes=["JSON .json"],
                                                            title='Choose an input file')
 
         if len(self.input_file) == 0:
@@ -320,6 +336,7 @@ class App(object):
             sys.exit(0)
 
         load_config(self.input_file)
+
 
 def create_nesting(config, name):
     p = name.split(".")
@@ -330,6 +347,7 @@ def create_nesting(config, name):
             d[j] = {}
 
         d = d[j]
+
 
 def copy_parameter(source, destination, name):
     create_nesting(destination, name)
@@ -346,10 +364,13 @@ def copy_parameter(source, destination, name):
         if k.startswith(p[-1] + "_"):
             d[k] = s[k]
 
+
 if __name__ == "__main__":
 
     import Tkinter as tk
-    import tkFileDialog, ttk, tkMessageBox
+    import tkFileDialog
+    import ttk
+    import tkMessageBox
 
     root = tk.Tk()
     root.geometry("%dx%d" % (1200, 700))

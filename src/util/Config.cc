@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,6 +24,7 @@
 #include "io/io_helpers.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/pism_config.hh"  // pism::config_file
 
 namespace pism {
 
@@ -214,7 +215,7 @@ DefaultConfig::~DefaultConfig() {
 void DefaultConfig::init(const Logger &log, bool use_default_path) {
   options::String file(m_option,
                        "Name of the file to read " + m_data.get_name() + " from",
-                       PISM_DefaultConfigFile);
+                       pism::config_file);
   if (use_default_path or file.is_set()) {
     this->read(m_com, file);
     log.message(2, "Reading configuration parameters (%s) from file '%s'.\n",

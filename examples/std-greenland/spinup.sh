@@ -152,7 +152,7 @@ else
   exit
 fi
 
-grid="-Mx $myMx -My $myMy $vgrid -grid.correct_cell_areas false -grid.registration corner"
+grid="-Mx $myMx -My $myMy $vgrid -grid.recompute_longitude_and_latitude false -grid.registration corner"
 
 # set stress balance from argument 5
 if [ -n "${PARAM_SIAE:+1}" ] ; then  # check if env var is already set

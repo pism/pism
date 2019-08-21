@@ -320,7 +320,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
   m_W.update_ghosts();
   m_P.update_ghosts();
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   double tillwat_max = m_config->get_double("hydrology.tillwat_max");
 #endif
 
@@ -328,7 +328,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
   for (; ht < t_final; ht += hdt) {
     step_counter++;
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
     double huge_number = 1e6;
     check_bounds(m_W, huge_number);
     check_bounds(m_Wtill, tillwat_max);
@@ -380,8 +380,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
                  m_input_rate,
                  m_Wtillnew);
     // remove water in ice-free areas and account for changes
-    enforce_bounds(*inputs.cell_area,
-                   *inputs.cell_type,
+    enforce_bounds(*inputs.cell_type,
                    inputs.no_model_mask,
                    0.0,        // do not limit maximum thickness
                    m_Wtillnew,
@@ -409,8 +408,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
              m_K, m_Q,
              m_Wnew);
     // remove water in ice-free areas and account for changes
-    enforce_bounds(*inputs.cell_area,
-                   *inputs.cell_type,
+    enforce_bounds(*inputs.cell_type,
                    inputs.no_model_mask,
                    0.0, // do  not limit maximum thickness
                    m_Wnew,

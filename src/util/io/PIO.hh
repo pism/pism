@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -85,6 +85,10 @@ public:
                   const std::vector<double> &data) const;
 
   void append_history(const std::string &history) const;
+
+  unsigned int inq_nvars() const;
+
+  std::string inq_varname(unsigned int id) const;
 
   unsigned int inq_nattrs(const std::string &var_name) const;
 

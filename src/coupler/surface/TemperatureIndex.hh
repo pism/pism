@@ -74,9 +74,6 @@ protected:
   //! if not NULL then user wanted fausto PDD stuff
   std::unique_ptr<FaustoGrevePDDObject> m_faustogreve;
 
-  //! if not NULL then user wanted Aschwanden PDD stuff
-  std::unique_ptr<AschwandenPDDObject> m_aschwanden;
-
   //! holds degree-day factors in location-independent case
   LocalMassBalance::DegreeDayFactors m_base_ddf;
 

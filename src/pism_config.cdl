@@ -150,11 +150,32 @@ netcdf pism_config {
     pism_config:atmosphere.precip_exponential_factor_for_temperature_type = "scalar";
     pism_config:atmosphere.precip_exponential_factor_for_temperature_units = "Kelvin-1";
 
+    pism_config:atmosphere.pik.file = "";
+    pism_config:atmosphere.pik.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
+    pism_config:atmosphere.pik.file_type = "string";
+    pism_config:atmosphere.pik.file_option = "atmosphere_pik_file";
+
+    pism_config:atmosphere.pik.parameterization = "martin";
+    pism_config:atmosphere.pik.parameterization_doc = "Selects parameterizations of mean annual and mean summer near-surface air temperatures.";
+    pism_config:atmosphere.pik.parameterization_type = "keyword";
+    pism_config:atmosphere.pik.parameterization_choices = "martin,huybrechts_dewolde,martin_huybrechts_dewolde,era_interim,era_interim_sin,era_interim_lon";
+    pism_config:atmosphere.pik.parameterization_option = "atmosphere_pik";
+
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate = 0.0;
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_doc = "Elevation lapse rate for the surface mass balance";
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_type = "scalar";
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_units = "(m / year) / km";
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_option = "precip_lapse_rate";
+
+    pism_config:atmosphere.uniform.precipitation = 1000;
+    pism_config:atmosphere.uniform.precipitation_doc = "Precipitation used by the 'uniform' atmosphere model.";
+    pism_config:atmosphere.uniform.precipitation_type = "scalar";
+    pism_config:atmosphere.uniform.precipitation_units = "kg m-2 year-1";
+
+    pism_config:atmosphere.uniform.temperature = 273.15;
+    pism_config:atmosphere.uniform.temperature_doc = "Air temperature used by the 'uniform' atmosphere model.";
+    pism_config:atmosphere.uniform.temperature_type = "scalar";
+    pism_config:atmosphere.uniform.temperature_units = "Kelvin";
 
     pism_config:basal_resistance.beta_ice_free_bedrock = 1.8e9;
     pism_config:basal_resistance.beta_ice_free_bedrock_doc = "value is for ice stream E from :cite:`HulbeMacAyeal`; thus sliding velocity, but we hope it doesn't matter much; at 100 m/year the linear sliding law gives 57040 Pa basal shear stress";
@@ -504,6 +525,11 @@ netcdf pism_config {
     pism_config:constants.sea_water.specific_heat_capacity_type = "scalar";
     pism_config:constants.sea_water.specific_heat_capacity_units = "Joule / (kg Kelvin)";
 
+    pism_config:constants.global_ocean_area = 3.625e14;
+    pism_config:constants.global_ocean_area_doc = "area of the global ocean :cite:`Cogley2011`";
+    pism_config:constants.global_ocean_area_type = "scalar";
+    pism_config:constants.global_ocean_area_units = "meter2";
+
     pism_config:constants.standard_gravity = 9.81;
     pism_config:constants.standard_gravity_doc = "acceleration due to gravity on Earth geoid";
     pism_config:constants.standard_gravity_type = "scalar";
@@ -518,20 +544,24 @@ netcdf pism_config {
     pism_config:energy.basal_melt.use_grounded_cell_fraction_option  = "subgl_basal_melt";
     pism_config:energy.basal_melt.use_grounded_cell_fraction_type  = "boolean";
 
-    pism_config:energy.bedrock_thermal_conductivity = 3.0;
-    pism_config:energy.bedrock_thermal_conductivity_doc = "= W m-1 K-1; for bedrock used in thermal model :cite:`RitzEISMINT`";
-    pism_config:energy.bedrock_thermal_conductivity_type = "scalar";
-    pism_config:energy.bedrock_thermal_conductivity_units = "Joule / (meter Kelvin second)";
+    pism_config:energy.bedrock_thermal.file = "";
+    pism_config:energy.bedrock_thermal.file_doc = "Name of the file containing the geothermal flux field `bheatflx`. Leave empty to read it from the `input.file`.";
+    pism_config:energy.bedrock_thermal.file_type = "string";
 
-    pism_config:energy.bedrock_thermal_density = 3300.0;
-    pism_config:energy.bedrock_thermal_density_doc = "for bedrock used in thermal model";
-    pism_config:energy.bedrock_thermal_density_type = "scalar";
-    pism_config:energy.bedrock_thermal_density_units = "kg meter-3";
+    pism_config:energy.bedrock_thermal.conductivity = 3.0;
+    pism_config:energy.bedrock_thermal.conductivity_doc = "= W m-1 K-1; for bedrock used in thermal model :cite:`RitzEISMINT`";
+    pism_config:energy.bedrock_thermal.conductivity_type = "scalar";
+    pism_config:energy.bedrock_thermal.conductivity_units = "Joule / (meter Kelvin second)";
 
-    pism_config:energy.bedrock_thermal_specific_heat_capacity = 1000.0;
-    pism_config:energy.bedrock_thermal_specific_heat_capacity_doc = "for bedrock used in thermal model :cite:`RitzEISMINT`";
-    pism_config:energy.bedrock_thermal_specific_heat_capacity_type = "scalar";
-    pism_config:energy.bedrock_thermal_specific_heat_capacity_units = "Joule / (kg Kelvin)";
+    pism_config:energy.bedrock_thermal.density = 3300.0;
+    pism_config:energy.bedrock_thermal.density_doc = "for bedrock used in thermal model";
+    pism_config:energy.bedrock_thermal.density_type = "scalar";
+    pism_config:energy.bedrock_thermal.density_units = "kg meter-3";
+
+    pism_config:energy.bedrock_thermal.specific_heat_capacity = 1000.0;
+    pism_config:energy.bedrock_thermal.specific_heat_capacity_doc = "for bedrock used in thermal model :cite:`RitzEISMINT`";
+    pism_config:energy.bedrock_thermal.specific_heat_capacity_type = "scalar";
+    pism_config:energy.bedrock_thermal.specific_heat_capacity_units = "Joule / (kg Kelvin)";
 
     pism_config:energy.drainage_maximum_rate = 1.58443823077064e-09;
     pism_config:energy.drainage_maximum_rate_doc = "0.05 year-1; maximum rate at which liquid water fraction in temperate ice could possibly drain; see :cite:`AschwandenBuelerKhroulevBlatter`";
@@ -840,9 +870,9 @@ netcdf pism_config {
     pism_config:grid.Mz_units = "count";
     pism_config:grid.Mz_option = "Mz";
 
-    pism_config:grid.correct_cell_areas = "yes";
-    pism_config:grid.correct_cell_areas_doc = "Compute corrected cell areas using WGS84 datum (for ice area and volume computations).";
-    pism_config:grid.correct_cell_areas_type = "boolean";
+    pism_config:grid.recompute_longitude_and_latitude = "yes";
+    pism_config:grid.recompute_longitude_and_latitude_doc = "Re-compute longitude and latitude using grid information and provided projection parameters. Requires PROJ.";
+    pism_config:grid.recompute_longitude_and_latitude_type = "boolean";
 
     pism_config:grid.ice_vertical_spacing = "quadratic";
     pism_config:grid.ice_vertical_spacing_choices = "quadratic,equal";
@@ -1117,6 +1147,39 @@ netcdf pism_config {
     pism_config:inverse.tikhonov.rtol_type = "scalar";
     pism_config:inverse.tikhonov.rtol_units = "1";
 
+    pism_config:inverse.max_iterations = 1000;
+    pism_config:inverse.max_iterations_doc = "maximum iteration count";
+    pism_config:inverse.max_iterations_option = "inv_max_it";
+    pism_config:inverse.max_iterations_type = "integer";
+    pism_config:inverse.max_iterations_units = "count";
+
+    pism_config:inverse.use_zeta_fixed_mask = "yes";
+    pism_config:inverse.use_zeta_fixed_mask_type = "boolean";
+    pism_config:inverse.use_zeta_fixed_mask_option = "inv_use_zeta_fixed_mask";
+    pism_config:inverse.use_zeta_fixed_mask_doc = "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)";
+
+    pism_config:inverse.use_design_prior = "yes";
+    pism_config:inverse.use_design_prior_type = "boolean";
+    pism_config:inverse.use_design_prior_option = "inv_use_design_prior";
+    pism_config:inverse.use_design_prior_doc = "Use prior from inverse data file as initial guess.";
+
+    pism_config:ocean.anomaly.file = "";
+    pism_config:ocean.anomaly.file_doc = "Name of the file containing shelf basal mass flux offset fields.";
+    pism_config:ocean.anomaly.file_type = "string";
+    pism_config:ocean.anomaly.file_option = "ocean_anomaly_file";
+
+    pism_config:ocean.anomaly.period = 0;
+    pism_config:ocean.anomaly.period_doc = "Length of the period of the ocean forcing data. Set to zero to disable.";
+    pism_config:ocean.anomaly.period_type = "integer";
+    pism_config:ocean.anomaly.period_option = "ocean_anomaly_period";
+    pism_config:ocean.anomaly.period_units = "years";
+
+    pism_config:ocean.anomaly.reference_year = 0;
+    pism_config:ocean.anomaly.reference_year_doc = "Reference year to use when ``ocean.anomaly.period`` is active.";
+    pism_config:ocean.anomaly.reference_year_option = "ocean_anomaly_reference_year";
+    pism_config:ocean.anomaly.reference_year_type = "integer";
+    pism_config:ocean.anomaly.reference_year_units = "years";
+
     pism_config:ocean.given.file = "";
     pism_config:ocean.given.file_doc = "Name of the file containing climate forcing fields.";
     pism_config:ocean.given.file_type = "string";
@@ -1211,7 +1274,7 @@ netcdf pism_config {
     pism_config:ocean.cache.update_interval_type = "integer";
 
     pism_config:ocean.runoff_to_ocean_melt_b = 0.15;
-    pism_config:ocean.runoff_to_ocean_melt_b_doc = "parameter B in eqn. 1 in :cite:`Aschwanden`";
+    pism_config:ocean.runoff_to_ocean_melt_b_doc = "parameter B in eqn. 1 in :cite:`Aschwanden2019`";
     pism_config:ocean.runoff_to_ocean_melt_b_type = "scalar";
     pism_config:ocean.runoff_to_ocean_melt_b_units = "1";
 
@@ -1389,7 +1452,7 @@ netcdf pism_config {
     pism_config:output.sizes.big_doc = "Comma-separated list of variables to write to the output (in addition to model_state variables and variables listed in output.sizes.medium and output.sizes.big_2d) if 'big' output size is selected. Does not include fields written by sub-models.";
     pism_config:output.sizes.big_type = "string";
 
-    pism_config:output.sizes.big_2d = "age,bfrict,bheatflx,bmelt,bwp,bwprel,cell_area,dbdt,effbwp,enthalpybase,enthalpysurf,flux_divergence,hardav,hydroinput,lat,litho_temp,lon,nuH,ocean_kill_mask,rank,tempbase,tempicethk,tempicethk_basal,temppabase,tempsurf,thk,thksmooth,tillphi,topg,velbar,velbase,wallmelt,wvelbase";
+    pism_config:output.sizes.big_2d = "age,bfrict,bheatflx,bmelt,bwp,bwprel,dbdt,effbwp,enthalpybase,enthalpysurf,flux_divergence,hardav,hydroinput,lat,litho_temp,lon,nuH,ocean_kill_mask,rank,tempbase,tempicethk,tempicethk_basal,temppabase,tempsurf,thk,thksmooth,tillphi,topg,velbar,velbase,wallmelt,wvelbase";
     pism_config:output.sizes.big_2d_doc = "Comma-separated list of variables to write to the output (in addition to model_state variables and variables listed in output.sizes.medium) if 'big_2d' output size is selected. Does not include fields written by boundary models.";
     pism_config:output.sizes.big_2d_type = "string";
 
@@ -1505,7 +1568,7 @@ netcdf pism_config {
     pism_config:stress_balance.sia.enhancement_factor_interglacial_units = "1";
 
     pism_config:stress_balance.sia.flow_law = "gpbld";
-    pism_config:stress_balance.sia.flow_law_choices = "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb,gpbld3";
+    pism_config:stress_balance.sia.flow_law_choices = "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb";
     pism_config:stress_balance.sia.flow_law_doc = "The SIA flow law.";
     pism_config:stress_balance.sia.flow_law_option = "sia_flow_law";
     pism_config:stress_balance.sia.flow_law_type = "keyword";
@@ -1514,6 +1577,11 @@ netcdf pism_config {
     pism_config:stress_balance.sia.grain_size_age_coupling_doc = "Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt :cite:`GoldsbyKohlstedt` flow law";
     pism_config:stress_balance.sia.grain_size_age_coupling_option = "grain_size_age_coupling";
     pism_config:stress_balance.sia.grain_size_age_coupling_type = "boolean";
+
+    pism_config:stress_balance.sia.limit_diffusivity = "no";
+    pism_config:stress_balance.sia.limit_diffusivity_doc = "Limit SIA diffusivity by `stress_balance.sia.max_diffusivity`.";
+    pism_config:stress_balance.sia.limit_diffusivity_option = "limit_sia_diffusivity";
+    pism_config:stress_balance.sia.limit_diffusivity_type = "boolean";
 
     pism_config:stress_balance.sia.max_diffusivity = 100.0;
     pism_config:stress_balance.sia.max_diffusivity_doc = "Maximum allowed diffusivity of the SIA flow. PISM stops with an error message if the SIA diffusivity exceeds this limit.";
@@ -1607,8 +1675,14 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_doc = "Replace zero diagonal entries in the SSAFD matrix with basal_resistance.beta_ice_free_bedrock to avoid solver failures.";
     pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_type = "boolean";
 
+    pism_config:stress_balance.ssa.fd.max_speed = 500.0e3;
+    pism_config:stress_balance.ssa.fd.max_speed_doc = "Upper bound for the ice speed computed by the SSAFD solver.";
+    pism_config:stress_balance.ssa.fd.max_speed_type = "scalar";
+    pism_config:stress_balance.ssa.fd.max_speed_units = "m yr-1";
+    pism_config:stress_balance.ssa.fd.max_speed_option = "ssafd_max_speed";
+
     pism_config:stress_balance.ssa.flow_law = "gpbld";
-    pism_config:stress_balance.ssa.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb,gpbld3";
+    pism_config:stress_balance.ssa.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
     pism_config:stress_balance.ssa.flow_law_doc = "The SSA flow law.";
     pism_config:stress_balance.ssa.flow_law_option = "ssa_flow_law";
     pism_config:stress_balance.ssa.flow_law_type = "keyword";
@@ -1754,36 +1828,6 @@ netcdf pism_config {
     pism_config:surface.pdd.balance_year_start_day_doc = "day of year for October 1st, beginning of the balance year in northern latitudes.";
     pism_config:surface.pdd.balance_year_start_day_type = "integer";
     pism_config:surface.pdd.balance_year_start_day_units = "ordinal day number";
-
-    pism_config:surface.pdd.aschwanden.beta_ice_c = 0.006;
-    pism_config:surface.pdd.aschwanden.beta_ice_c_doc = "water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`";
-    pism_config:surface.pdd.aschwanden.beta_ice_c_type = "scalar";
-    pism_config:surface.pdd.aschwanden.beta_ice_c_units = "meter / (Kelvin day)";
-
-    pism_config:surface.pdd.aschwanden.beta_ice_w = 0.008;
-    pism_config:surface.pdd.aschwanden.beta_ice_w_doc = "water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`";
-    pism_config:surface.pdd.aschwanden.beta_ice_w_type = "scalar";
-    pism_config:surface.pdd.aschwanden.beta_ice_w_units = "meter / (Kelvin day)";
-
-    pism_config:surface.pdd.aschwanden.beta_snow_c = 0.0015;
-    pism_config:surface.pdd.aschwanden.beta_snow_c_doc = "water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`";
-    pism_config:surface.pdd.aschwanden.beta_snow_c_type = "scalar";
-    pism_config:surface.pdd.aschwanden.beta_snow_c_units = "meter / (Kelvin day)";
-
-    pism_config:surface.pdd.aschwanden.beta_snow_w = 0.003;
-    pism_config:surface.pdd.aschwanden.beta_snow_w_doc = "water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`";
-    pism_config:surface.pdd.aschwanden.beta_snow_w_type = "scalar";
-    pism_config:surface.pdd.aschwanden.beta_snow_w_units = "meter / (Kelvin day)";
-
-    pism_config:surface.pdd.aschwanden.latitude_beta_w = 77.0;
-    pism_config:surface.pdd.aschwanden.latitude_beta_w_doc = "latitude below which to use warm case, in formula (6) in :cite:`Aschwandenetal2009`";
-    pism_config:surface.pdd.aschwanden.latitude_beta_w_type = "scalar";
-    pism_config:surface.pdd.aschwanden.latitude_beta_w_units = "degree_north";
-
-    pism_config:surface.pdd.aschwanden.warm_cold_transition_width = 1.0;
-    pism_config:surface.pdd.aschwanden.warm_cold_transition_width_doc = "smoothing width in degrees for linear transition between warm and cold values";
-    pism_config:surface.pdd.aschwanden.warm_cold_transition_width_type = "scalar";
-    pism_config:surface.pdd.aschwanden.warm_cold_transition_width_units = "degree_north";
 
     pism_config:surface.pdd.factor_ice = 0.00879120879120879;
     pism_config:surface.pdd.factor_ice_doc = "EISMINT-Greenland value :cite:`RitzEISMINT`; = (8 mm liquid-water-equivalent) / (pos degree day)";

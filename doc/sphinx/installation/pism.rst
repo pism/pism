@@ -14,7 +14,7 @@ like ``$PETSC_DIR/$PETSC_ARCH/bin``. Thus the following lines might appear in yo
 
 .. code-block:: bash
 
-   export PETSC_DIR=/home/user/petsc-3.7.6/
+   export PETSC_DIR=/home/user/petsc-3.10.2/
    export PETSC_ARCH=opt
    export PATH=$PETSC_DIR/$PETSC_ARCH/bin/:$PATH
 

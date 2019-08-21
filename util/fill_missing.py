@@ -167,6 +167,7 @@ def laplace(data, mask, eps1, eps2, initial_guess='mean', max_iter=10000):
     print("Exceeded the maximum number of iterations.")
     return
 
+
 if __name__ == "__main__":
     from optparse import OptionParser
     from sys import argv, exit

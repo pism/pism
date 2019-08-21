@@ -28,4 +28,4 @@ Here are some issues we know about.
   ``ccmake``.
 
 - You can set ``Pism_LOOK_FOR_LIBRARIES`` to "``OFF``" to disable all heuristics and set
-  compiler flags by hand. See `HPC builds <HPC-builds_>`_ for examples.
+  compiler flags by hand. See `PISM builds <pism-builds_>`_ for examples.

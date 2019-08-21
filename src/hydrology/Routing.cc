@@ -186,6 +186,70 @@ protected:
   }
 };
 
+//! Compute the hydraulic potential.
+/*!
+  Computes \f$\psi = P + \rho_w g (b + W)\f$ except where floating, where \f$\psi = P_o\f$.
+*/
+void hydraulic_potential(const IceModelVec2S &W,
+                         const IceModelVec2S &P,
+                         const IceModelVec2S &P_overburden,
+                         const IceModelVec2S &bed,
+                         const IceModelVec2CellType &mask,
+                         IceModelVec2S &result) {
+
+  IceGrid::ConstPtr grid = result.grid();
+
+  Config::ConstPtr config = grid->ctx()->config();
+
+  double rg = (config->get_double("constants.fresh_water.density") *
+               config->get_double("constants.standard_gravity"));
+
+  IceModelVec::AccessList list{&P, &P_overburden, &W, &mask, &bed, &result};
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.ocean(i, j)) {
+      result(i, j) = P_overburden(i, j);
+    } else {
+      result(i, j) = P(i, j) + rg * (bed(i, j) + W(i, j));
+    }
+  }
+}
+
+/*! @brief Report hydraulic potential in the subglacial hydrology system */
+class HydraulicPotential : public Diag<Routing>
+{
+public:
+  HydraulicPotential(const Routing *m)
+    : Diag<Routing>(m) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "hydraulic_potential")};
+
+    set_attrs("hydraulic potential in the subglacial hydrology system", "",
+              "Pa", "Pa", 0);
+  }
+
+protected:
+  IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hydraulic_potential", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+
+    const IceModelVec2S        &bed_elevation = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+    const IceModelVec2CellType &cell_type     = *m_grid->variables().get_2d_cell_type("mask");
+
+    hydraulic_potential(model->subglacial_water_thickness(),
+                        model->subglacial_water_pressure(),
+                        model->overburden_pressure(),
+                        bed_elevation,
+                        cell_type,
+                        *result);
+
+    return result;
+  }
+};
+
 } // end of namespace diagnostics
 
 Routing::Routing(IceGrid::ConstPtr g)
@@ -306,30 +370,6 @@ const IceModelVec2S& Routing::subglacial_water_pressure() const {
   return m_Pover;
 }
 
-//! Get the hydraulic potential from bedrock topography and current state variables.
-/*!
-  Computes \f$\psi = P + \rho_w g (b + W)\f$ except where floating, where \f$\psi = P_o\f$.
-*/
-void Routing::compute_hydraulic_potential(const IceModelVec2S &W,
-                                          const IceModelVec2S &P,
-                                          const IceModelVec2S &P_overburden,
-                                          const IceModelVec2S &bed,
-                                          const IceModelVec2CellType &mask,
-                                          IceModelVec2S &result) const {
-
-  IceModelVec::AccessList list{&P, &P_overburden, &W, &mask, &bed, &result};
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (mask.ocean(i, j)) {
-      result(i, j) = P_overburden(i, j);
-    } else {
-      result(i, j) = P(i, j) + m_rg * (bed(i, j) + W(i, j));
-    }
-  }
-}
-
 
 //! Average the regular grid water thickness to values at the center of cell edges.
 /*! Uses mask values to avoid averaging using water thickness values from
@@ -441,7 +481,7 @@ void Routing::compute_conductivity(const IceModelVec2Stag &W,
       const int i = p.i(), j = p.j();
 
       for (int o = 0; o < 2; ++o) {
-        const double Pi = result(i, j, 0);
+        const double Pi = result(i, j, o);
 
         // FIXME: same as Pi above: we don't need to re-compute this each time we make a
         // short hydrology time step
@@ -791,7 +831,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
   for (; ht < t_final; ht += hdt) {
     step_counter++;
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
     double huge_number = 1e6;
     check_bounds(m_W, huge_number);
 
@@ -836,8 +876,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
                  m_input_rate,
                  m_Wtillnew);
     // remove water in ice-free areas and account for changes
-    enforce_bounds(*inputs.cell_area,
-                   *inputs.cell_type,
+    enforce_bounds(*inputs.cell_type,
                    inputs.no_model_mask,
                    0.0,        // do not limit maximum thickness
                    m_Wtillnew,
@@ -854,8 +893,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
              m_K, m_Q,
              m_Wnew);
     // remove water in ice-free areas and account for changes
-    enforce_bounds(*inputs.cell_area,
-                   *inputs.cell_type,
+    enforce_bounds(*inputs.cell_type,
                    inputs.no_model_mask,
                    0.0,        // do not limit maximum thickness
                    m_Wnew,
@@ -885,11 +923,12 @@ std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
   using namespace diagnostics;
 
   DiagnosticList result = {
-    {"bwatvel",  Diagnostic::Ptr(new BasalWaterVelocity(this))},
-    {"bwp",      Diagnostic::Ptr(new BasalWaterPressure(this))},
-    {"bwprel",   Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},
-    {"effbwp",   Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
-    {"wallmelt", Diagnostic::Ptr(new WallMelt(this))},
+    {"bwatvel",             Diagnostic::Ptr(new BasalWaterVelocity(this))},
+    {"bwp",                 Diagnostic::Ptr(new BasalWaterPressure(this))},
+    {"bwprel",              Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},
+    {"effbwp",              Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
+    {"wallmelt",            Diagnostic::Ptr(new WallMelt(this))},
+    {"hydraulic_potential", Diagnostic::Ptr(new HydraulicPotential(this))},
   };
   return combine(result, Hydrology::diagnostics_impl());
 }

@@ -9,8 +9,11 @@ Provides:
 """
 
 from collections import OrderedDict
-import os, math, sys
+import os
+import math
+import sys
 import os.path
+
 
 def generate_prefix_str(pism_exec):
     '''
@@ -28,7 +31,7 @@ def generate_domain(domain):
 
     Returns: string
     '''
-    
+
     if domain.lower() in ('storglaciaren'):
         pism_exec = 'pismr -regional -no_model_strip 0'
     else:
@@ -43,7 +46,7 @@ def default_spatial_ts_vars():
     '''
     Returns a list of commonly-used extra vars
     '''
-    
+
     exvars = ['beta',
               'bmelt',
               'climatic_mass_balance',
@@ -65,11 +68,12 @@ def default_spatial_ts_vars():
               'velsurf_mag']
     return exvars
 
+
 def ch_spatial_ts_vars():
     '''
     Returns a list of commonly-used extra vars
     '''
-    
+
     exvars = ['beta',
               'bmelt',
               'climatic_mass_balance',
@@ -91,7 +95,6 @@ def ch_spatial_ts_vars():
               'velbase_mag',
               'velsurf_mag']
     return exvars
-
 
 
 def generate_spatial_ts(outfile, exvars, step, start=None, end=None, split=None, odir=None):
@@ -116,7 +119,7 @@ def generate_spatial_ts(outfile, exvars, step, start=None, end=None, split=None,
     else:
         params_dict['extra_file'] = os.path.join(odir, 'ex_' + outfile)
     params_dict['extra_vars'] = exvars
-        
+
     if step is None:
         step = 'yearly'
 
@@ -124,9 +127,9 @@ def generate_spatial_ts(outfile, exvars, step, start=None, end=None, split=None,
         times = '{start}:{step}:{end}'.format(start=start, step=step, end=end)
     else:
         times = step
-        
-    params_dict['extra_times'] = times        
-  
+
+    params_dict['extra_times'] = times
+
     return params_dict
 
 
@@ -142,7 +145,7 @@ def generate_scalar_ts(outfile, step, start=None, end=None, odir=None):
         params_dict['ts_file'] = 'ts_' + outfile
     else:
         params_dict['ts_file'] = os.path.join(odir, 'ts_' + outfile)
-    
+
     if step is None:
         step = 'yearly'
 
@@ -183,7 +186,7 @@ def generate_grid_description(grid_resolution, domain, restart=False):
     '''
 
     if domain.lower() in ('storglaciaren'):
-    
+
         mx_max = 400
         my_max = 200
 
@@ -209,10 +212,9 @@ def generate_grid_description(grid_resolution, domain, restart=False):
             skip_max = 200
             mz = 101
             mzb = 1
-            
 
     grid_div = (grid_resolution / resolution_max)
-              
+
     mx = mx_max / grid_div
     my = my_max / grid_div
 
@@ -302,7 +304,7 @@ def generate_hydrology(hydro, **kwargs):
 
     Returns: OrderedDict
     '''
-    
+
     params_dict = OrderedDict()
     if hydro in ('null'):
         params_dict['hydrology'] = 'null'
@@ -356,7 +358,7 @@ def generate_climate(climate, **kwargs):
 
     Returns: OrderedDict
     '''
-    
+
     params_dict = OrderedDict()
     if climate in ('init'):
         params_dict['surface'] = 'elevation,forcing'
@@ -401,10 +403,10 @@ def generate_climate(climate, **kwargs):
         print(('climate {} not recognized, exiting'.format(climate)))
         import sys
         sys.exit(0)
-        
+
     return merge_dicts(params_dict, kwargs)
 
-        
+
 def generate_ocean(ocean, **kwargs):
     '''
     Generate ocean params
@@ -434,7 +436,7 @@ def generate_ocean(ocean, **kwargs):
     elif ocean == 'warming_3eqn':
         params_dict['ocean'] = 'th,delta_T'
     elif ocean == 'paleo_const':
-        params_dict['ocean'] = 'given,delta_SL'        
+        params_dict['ocean'] = 'given,delta_SL'
     elif ocean == 'paleo_const_mbp':
         params_dict['ocean'] = 'given,delta_SL,delta_MBP'
     elif ocean in ('given', 'relax'):
@@ -474,7 +476,7 @@ def list_bed_types():
     '''
     Return a list of supported bed types.
     '''
-    
+
     list = ['ctrl',
             'cresis',
             'cresisp',
@@ -484,43 +486,43 @@ def list_bed_types():
             '970mW_hs',
             'jak_1985',
             'no_bath']
-    
+
     return list
 
 
 # information about systems
 systems = {}
 
-systems['debug'] = {'mpido'  : 'mpiexec -n {cores}',
-                    'submit' : 'echo',
-                    'job_id' : 'PBS_JOBID',
-                    'queue'  : {}}
+systems['debug'] = {'mpido': 'mpiexec -n {cores}',
+                    'submit': 'echo',
+                    'job_id': 'PBS_JOBID',
+                    'queue': {}}
 
-systems['chinook'] = {'mpido'    : 'mpirun -np {cores} -machinefile ./nodes_$SLURM_JOBID',
-                      'submit'   : 'sbatch',
-                      'work_dir' : 'SLURM_SUBMIT_DIR',
-                      'job_id'   : 'SLURM_JOBID',
-                      'queue' : {
-                          't1standard' : 24,
-                          't1small'    : 24,
-                          't2standard' : 24,
-                          't2small'    : 24,
-                          'debug'      : 24}}
+systems['chinook'] = {'mpido': 'mpirun -np {cores} -machinefile ./nodes_$SLURM_JOBID',
+                      'submit': 'sbatch',
+                      'work_dir': 'SLURM_SUBMIT_DIR',
+                      'job_id': 'SLURM_JOBID',
+                      'queue': {
+                          't1standard': 24,
+                          't1small': 24,
+                          't2standard': 24,
+                          't2small': 24,
+                          'debug': 24}}
 
-systems['pleiades'] = {'mpido'    : 'mpiexec -n {cores}',
-                       'submit'   : 'qsub',
-                       'work_dir' : 'PBS_O_WORKDIR',
-                       'job_id'   : 'PBS_JOBID',
-                       'queue'    : {'long' : 20, 'normal': 20}}
+systems['pleiades'] = {'mpido': 'mpiexec -n {cores}',
+                       'submit': 'qsub',
+                       'work_dir': 'PBS_O_WORKDIR',
+                       'job_id': 'PBS_JOBID',
+                       'queue': {'long': 20, 'normal': 20}}
 
 systems['pleiades_haswell'] = systems['pleiades'].copy()
-systems['pleiades_haswell']['queue'] = {'long' : 24, 'normal': 24}
+systems['pleiades_haswell']['queue'] = {'long': 24, 'normal': 24}
 
 systems['pleiades_ivy'] = systems['pleiades'].copy()
-systems['pleiades_ivy']['queue'] = {'long' : 20, 'normal': 20}
+systems['pleiades_ivy']['queue'] = {'long': 20, 'normal': 20}
 
 systems['pleiades_broadwell'] = systems['pleiades'].copy()
-systems['pleiades_broadwell']['queue'] = {'long' : 28, 'normal': 28}
+systems['pleiades_broadwell']['queue'] = {'long': 28, 'normal': 28}
 
 systems['electra_broadwell'] = systems['pleiades_broadwell'].copy()
 
@@ -537,7 +539,7 @@ systems['electra_broadwell'] = systems['pleiades_broadwell'].copy()
 
 systems['debug']['header'] = ""
 
-systems['chinook']['header'] =  """#!/bin/sh
+systems['chinook']['header'] = """#!/bin/sh
 #SBATCH --partition={queue}
 #SBATCH --ntasks={cores}
 #SBATCH --tasks-per-node={ppn}
@@ -562,7 +564,7 @@ ulimit
 
 """
 
-systems['chinook']['footer'] =  """
+systems['chinook']['footer'] = """
 # clean up the list of hostnames
 rm -rf ./nodes_$SLURM_JOBID
 """
@@ -673,6 +675,7 @@ ulimit
 
 """
 
+
 def make_batch_header(system_name, n_cores, walltime, queue):
     '''
     Generate header file for different HPC system.
@@ -693,15 +696,16 @@ def make_batch_header(system_name, n_cores, walltime, queue):
         try:
             ppn = system['queue'][queue]
         except:
-            raise ValueError("There is no queue {} on {}. Pick one of {}.".format(queue, system_name, list(system['queue'].keys())))
+            raise ValueError("There is no queue {} on {}. Pick one of {}.".format(
+                queue, system_name, list(system['queue'].keys())))
         # round up when computing the number of nodes needed to run on 'n_cores' cores
         nodes = int(math.ceil(float(n_cores) / ppn))
 
         if nodes * ppn != n_cores:
             print(("Warning! Running {n_cores} tasks on {nodes} {ppn}-processor nodes, wasting {N} processors!".format(nodes=nodes,
-                                                                                                                      ppn=ppn,
-                                                                                                                      n_cores=n_cores,
-                                                                                                                      N=ppn*nodes - n_cores)))
+                                                                                                                       ppn=ppn,
+                                                                                                                       n_cores=n_cores,
+                                                                                                                       N=ppn*nodes - n_cores)))
 
     system['mpido'] = system['mpido'].format(cores=n_cores)
     system["header"] = system["header"].format(queue=queue,
@@ -712,6 +716,7 @@ def make_batch_header(system_name, n_cores, walltime, queue):
     system["header"] += version_header()
 
     return system["header"], system
+
 
 def make_batch_post_header(system):
 
@@ -724,6 +729,7 @@ def make_batch_post_header(system):
     else:
         return post_headers['default'] + v
 
+
 def make_batch_header_test():
     "print headers of all supported systems and queues (for testing)"
     for s in list(systems.keys()):
@@ -731,10 +737,13 @@ def make_batch_header_test():
             print("# system: {system}, queue: {queue}".format(system=s, queue=q))
             print(make_batch_header(s, 100, "1:00:00", q)[0])
 
+
 def version():
     """Return the path to the top directory of the Git repository
     containing this script, the URL of the "origin" remote and the version."""
-    import inspect, shlex, subprocess
+    import inspect
+    import shlex
+    import subprocess
 
     def output(command):
         path = os.path.realpath(os.path.dirname(inspect.stack(0)[0][1]))
@@ -743,6 +752,7 @@ def version():
     return (output("git rev-parse --show-toplevel"),
             output("git remote get-url origin"),
             output("git describe --always"))
+
 
 def version_header():
     "Return shell comments containing version info."
