@@ -114,7 +114,7 @@ Let `\pice=\rhoi g (h-z)`. In the hydrostatic approximation, `t_{zz}=-\pice`
 Thus
 
 .. math::
-   :name: ssafd-cfbc-1
+   :label: ssafd-cfbc-1
 
    \begin{array}{rcrcl}
      (2\td{xx} + \td{yy}) \nx &+& \td{xy} \ny &=& (\pice - \psw) \nx,\\
@@ -141,7 +141,7 @@ Here `\bar \viscosity` is the vertically-averaged effective viscosity.
 Integrating :eq:`ssafd-cfbc-1` with respect to `z`, we get
 
 .. math::
-   :name: ssafd-cfbc-3
+   :label: ssafd-cfbc-3
 
    \begin{array}{rcrcl}
      (2N_{xx} + N_{yy}) \nx &+& N_{xy} \ny &=& \displaystyle \int_{b}^{h}(\pice - \psw) dz\, \nx,\\
@@ -155,7 +155,7 @@ Shallow shelf approximation
 The shallow shelf approximation written in terms of `N_{ij}` is
 
 .. math::
-   :name: ssafd-cfbc-2
+   :label: ssafd-cfbc-2
 
    \begin{array}{rcrcl}
      \D \diff{}{x}(2N_{xx} + N_{yy}) &+& \D \diff{N_{xy}}{y} &=& \D \rho g H \diff{h}{x},\\
@@ -169,7 +169,7 @@ We use centered finite difference approximations in the discretization of the SS
 :eq:`ssafd-cfbc-2`. Consider the first equation:
 
 .. math::
-   :name: ssafd-cfbc-4
+   :label: ssafd-cfbc-4
 
    \diff{}{x}(2N_{xx} + N_{yy}) + \D \diff{N_{xy}}{y} = \D \rho g H \diff{h}{x}.
 
@@ -187,7 +187,7 @@ Now, assume that the cell boundary (face) at `i+\frac12,j` is at the
 calving front. Then `\n = (1,0)` and from :eq:`ssafd-cfbc-3` we have
 
 .. math::
-   :name: ssafd-cfbc-vertintbdry
+   :label: ssafd-cfbc-vertintbdry
 
    2N_{xx} + N_{yy} = \int_{b}^{h}(\pice - \psw) dz.
 
@@ -276,7 +276,7 @@ Let `\pmelange` be the additional melange back-pressure. Then `\psw \le \psw + \
 \le \pice`. Put another way,
 
 .. math::
-   :name: ssafd-cfbc-13
+   :label: ssafd-cfbc-13
 
    0 \le \pmelange \le \pice - \psw.
 
@@ -284,14 +284,14 @@ Let `\lambda` be the "melange back-pressure fraction" (or "relative melange pres
 ranging from `0` to `1`, so that
 
 .. math::
-   :name: ssafd-cfbc-14
+   :label: ssafd-cfbc-14
 
    \pmelange = \lambda \cdot (\pice - \psw).
 
 Then the modified pressure difference term is
 
 .. math::
-   :name: ssafd-cfbc-15
+   :label: ssafd-cfbc-15
 
    \int_{b}^{h}(\pice - (\psw + \pmelange)) dz &= \int_{b}^{h}(\pice - (\psw + \lambda(\pice - \psw)))\, dz
 

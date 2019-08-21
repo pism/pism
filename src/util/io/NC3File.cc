@@ -319,7 +319,7 @@ int NC3File::get_var_double(const std::string &variable_name,
   unsigned int local_chunk_size = 1,
     processor_0_chunk_size = 0;
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   if (mapped) {
     if (start.size() != count.size() ||
         start.size() != imap.size()) {
@@ -456,7 +456,7 @@ int NC3File::put_var_double(const std::string &variable_name,
   unsigned int local_chunk_size = 1,
     processor_0_chunk_size = 0;
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   if (mapped) {
     if (start.size() != count.size() ||
         start.size() != imap.size()) {

@@ -25,7 +25,8 @@ if e != 0:
 deltas = []
 dts = [200, 100]                # FIXME: this is fragile and the test fails if I add smaller dt like 50 here
 for dt in dts:
-    cmd = "%s %s/pisms -eisII B -y 2400 -Mx 16 -My 16 -Mz 21 -Lbz 1000 -Mbz 11 -energy enthalpy -regrid_file bar-temp-continuity.nc -regrid_vars thk -verbose 1 -max_dt %f -o foo-temp-continuity.nc -o_size big" % (mpiexec, pism_path, dt)
+    cmd = "%s %s/pisms -eisII B -y 2400 -Mx 16 -My 16 -Mz 21 -Lbz 1000 -Mbz 11 -energy enthalpy -regrid_file bar-temp-continuity.nc -regrid_vars thk -verbose 1 -max_dt %f -o foo-temp-continuity.nc -o_size big" % (
+        mpiexec, pism_path, dt)
     stderr.write(cmd + '\n')
 
     e = system(cmd)

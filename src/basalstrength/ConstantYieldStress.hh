@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,7 +31,9 @@ public:
   ConstantYieldStress(IceGrid::ConstPtr g);
   virtual ~ConstantYieldStress();
 protected:
-  virtual void init_impl();
+  virtual void init_impl(const Geometry &geometry,
+                         const IceModelVec2S &till_water_thickness,
+                         const IceModelVec2S &overburden_pressure);
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(const YieldStressInputs &inputs);
 

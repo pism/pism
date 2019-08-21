@@ -34,7 +34,7 @@ model.init(input_options)
 
 inputs = PISM.AgeModelInputs(ice_thickness, u, v, w)
 
-dt = PISM.convert(ctx.unit_system, 1, "years", "seconds")
+dt = PISM.util.convert(1, "years", "seconds")
 
 model.update(0, dt, inputs)
 

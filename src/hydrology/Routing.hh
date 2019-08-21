@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 PISM Authors
+// Copyright (C) 2012-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -131,13 +131,6 @@ protected:
   void water_thickness_staggered(const IceModelVec2S &W,
                                  const IceModelVec2CellType &mask,
                                  IceModelVec2Stag &result);
-
-  void compute_hydraulic_potential(const IceModelVec2S &W,
-                                   const IceModelVec2S &P,
-                                   const IceModelVec2S &P_overburden,
-                                   const IceModelVec2S &bed,
-                                   const IceModelVec2CellType &mask,
-                                   IceModelVec2S &result) const;
 
   void compute_conductivity(const IceModelVec2Stag &W,
                             const IceModelVec2S &P,

@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2019 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -453,6 +453,10 @@ double IceModelVec2S::min() const {
 
 
 // IceModelVec2
+IceModelVec2::IceModelVec2(IceGrid::ConstPtr grid, const std::string &short_name,
+                           IceModelVecKind ghostedp, unsigned int stencil_width, int dof) {
+  create(grid, short_name, ghostedp, stencil_width, dof);
+}
 
 void IceModelVec2::get_component(unsigned int n, IceModelVec2S &result) const {
 
@@ -499,12 +503,8 @@ void IceModelVec2::create(IceGrid::ConstPtr grid, const std::string & name,
   } else {
 
     for (unsigned int j = 0; j < m_dof; ++j) {
-      char tmp[TEMPORARY_STRING_LENGTH];
-
-      snprintf(tmp, TEMPORARY_STRING_LENGTH, "%s[%d]",
-               m_name.c_str(), j);
       m_metadata.push_back(SpatialVariableMetadata(m_grid->ctx()->unit_system(),
-                                                   tmp));
+                                                   pism::printf("%s[%d]", m_name.c_str(), j)));
     }
   }
 }

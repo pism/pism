@@ -4,11 +4,11 @@ add_library (boundary OBJECT
   ./util/options.cc
   ./util/lapse_rates.cc
   ./atmosphere/AtmosphereModel.cc
-  ./atmosphere/ConstantPIK.cc
   ./atmosphere/SeariseGreenland.cc
   ./atmosphere/YearlyCycle.cc
   ./atmosphere/CosineYearlyCycle.cc
   ./atmosphere/GivenClimate.cc
+  ./atmosphere/PIK.cc
   ./atmosphere/LapseRates.cc
   ./atmosphere/Delta_T.cc
   ./atmosphere/Delta_P.cc
@@ -17,6 +17,7 @@ add_library (boundary OBJECT
   ./atmosphere/Anomaly.cc
   ./atmosphere/WeatherStation.cc
   ./atmosphere/Factory.cc
+  ./atmosphere/Uniform.cc
   ./ocean/OceanModel.cc
   ./ocean/CompleteOceanModel.cc
   ./ocean/Cache.cc
@@ -24,6 +25,7 @@ add_library (boundary OBJECT
   ./ocean/Constant.cc
   ./ocean/GivenClimate.cc
   ./ocean/GivenTH.cc
+  ./ocean/Anomaly.cc
   ./ocean/Delta_T.cc
   ./ocean/Delta_SMB.cc
   ./ocean/Frac_MBP.cc

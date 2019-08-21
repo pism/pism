@@ -22,7 +22,7 @@ import os
 ctx = PISM.Context()
 
 # disc load parameters
-disc_radius    = convert(1000, "km", "m")
+disc_radius = convert(1000, "km", "m")
 disc_thickness = 1000.0         # meters
 # domain size
 Lx = 2 * disc_radius
@@ -31,14 +31,16 @@ N = 101
 
 dt = convert(1000.0, "years", "seconds")
 
+
 def allocate_storage(grid):
     ice_thickness = PISM.IceModelVec2S(grid, "thk", PISM.WITHOUT_GHOSTS)
     ice_thickness.metadata().set_string("standard_name", "land_ice_thickness")
-    bed           = PISM.IceModelVec2S(grid, "topg", PISM.WITHOUT_GHOSTS)
-    bed_uplift    = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
-    sea_level     = PISM.IceModelVec2S(grid, "sea_level", PISM.WITHOUT_GHOSTS)
+    bed = PISM.IceModelVec2S(grid, "topg", PISM.WITHOUT_GHOSTS)
+    bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
+    sea_level = PISM.IceModelVec2S(grid, "sea_level", PISM.WITHOUT_GHOSTS)
 
     return ice_thickness, bed, bed_uplift, sea_level
+
 
 def add_disc_load(ice_thickness, radius, thickness):
     "Add a disc load with a given radius and thickness."
@@ -49,6 +51,7 @@ def add_disc_load(ice_thickness, radius, thickness):
             r = PISM.radius(grid, i, j)
             if r <= disc_radius:
                 ice_thickness[i, j] = disc_thickness
+
 
 def run(dt, restart=False):
     "Run the model for 1 time step, stop, save model state, restart, do 1 more step."
@@ -101,18 +104,20 @@ def run(dt, restart=False):
 
     return model
 
+
 def compare_vec(v1, v2):
     "Compare two vecs."
     try:
         np.testing.assert_equal(v1.numpy(), v2.numpy())
         print("{} is the same".format(v1.get_name()))
     except:
-        plt.figure(figsize=(10,10))
+        plt.figure(figsize=(10, 10))
         diff = v1.numpy() - v2.numpy()
         max_diff = np.max(np.fabs(diff))
         m = plt.imshow(diff, origin="lower")
         plt.colorbar(m)
         plt.title("{}, max. difference {}".format(v1.get_name(), max_diff))
+
 
 def compare(model1, model2):
     "Compare two models"
@@ -121,6 +126,7 @@ def compare(model1, model2):
     compare_vec(model1.total_displacement(), model2.total_displacement())
     compare_vec(model1.viscous_displacement(), model2.viscous_displacement())
     compare_vec(model1.relief(), model2.relief())
+
 
 def lingle_clark_restart_test():
     "Compare straight and re-started runs."

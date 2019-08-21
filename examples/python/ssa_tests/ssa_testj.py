@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 import PISM
-
+from PISM.util import convert
 
 class testj(PISM.ssa.SSAExactTestCase):
 
@@ -77,7 +77,7 @@ class testj(PISM.ssa.SSAExactTestCase):
                 vecs.surface_altitude[i, j] = (1.0 - ice_rho / ocean_rho) * p.H  # // FIXME task #7297
 
                 # special case at center point (Dirichlet BC)
-                if (i == (grid.Mx()) / 2) and (j == (grid.My()) / 2):
+                if (i == grid.Mx() // 2) and (j == grid.My() // 2):
                     vecs.bc_mask[i, j] = 1
                     vecs.vel_bc[i, j] = [p.u, p.v]
 
@@ -86,9 +86,8 @@ class testj(PISM.ssa.SSAExactTestCase):
         # constant viscosity by settting the strength_extension
         # thickness larger than the given ice thickness. (max = 770m).
 
-        sys = self.grid.ctx().unit_system()
-        nu0 = PISM.convert(sys, 30.0, "MPa year", "Pa s")
-        H0 = 500.0                        # 500 m typical thickness
+        nu0 = convert(30.0, "MPa year", "Pa s")
+        H0 = 500.0              # 500 m typical thickness
 
         ssa = self.ssa
         ssa.strength_extension.set_notional_strength(nu0 * H0)
@@ -102,10 +101,7 @@ class testj(PISM.ssa.SSAExactTestCase):
 # The main code for a run follows:
 if __name__ == '__main__':
     context = PISM.Context()
+    config = context.config
 
-    Mx = PISM.optionsInt("-Mx", "Number of grid points in x-direction", default=61)
-    My = PISM.optionsInt("-My", "Number of grid points in y-direction", default=61)
-    output_file = PISM.optionsString("-o", "output file", default="testj.nc")
-
-    tc = testj(Mx, My)
-    tc.run(output_file)
+    tc = testj(int(config.get_double("grid.Mx")), int(config.get_double("grid.My")))
+    tc.run(config.get_string("output.file_name"))

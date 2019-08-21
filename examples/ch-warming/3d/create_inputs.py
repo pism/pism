@@ -7,8 +7,8 @@ M = 3                           # grid size
 L = 1e5                         # domain size
 b0 = 0.0                        # bed elevation
 H0 = 200.0                      # ice thickness
-T_mean_annual   = 268.15        # mean annual temperature, Kelvin
-T_amplitude     = 6             # surface temperature aplitude, Kelvin
+T_mean_annual = 268.15        # mean annual temperature, Kelvin
+T_amplitude = 6             # surface temperature aplitude, Kelvin
 summer_peak_day = 365/2
 seconds_per_year = 365 * 86400
 M0 = 0.0                        # mass balance
@@ -20,15 +20,17 @@ My = M
 Lx = L
 Ly = L
 
+
 def T_surface(time, mean, amplitude, summer_peak_day):
     "Surface temperature (cosine yearly cycle)"
-    day_length  = 86400
+    day_length = 86400
     summer_peak = summer_peak_day * day_length
     year_length = float(365 * day_length)
 
     t = np.mod(time - summer_peak, year_length) / year_length
 
     return mean + amplitude * np.cos(2 * np.pi * t)
+
 
 f = netCDF4.Dataset("input.nc", "w")
 

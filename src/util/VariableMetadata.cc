@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -158,8 +158,6 @@ void SpatialVariableMetadata::init_internal(const std::string &name,
   m_z.set_string("long_name", "Z-coordinate in Cartesian system");
   m_z.set_string("units", "m");
   m_z.set_string("positive", "up");
-
-  set_string("coordinates", "lat lon");
 
   set_name(name);
 

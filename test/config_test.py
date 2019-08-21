@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # Checks the structure of a PISM configuration file. (This is used as a regression test.)
 
+
 def is_special(name):
     "Check if the name is 'special' and should not be included."
 
@@ -13,7 +14,9 @@ def is_special(name):
 
     return False
 
-import netCDF4, sys
+
+import netCDF4
+import sys
 import numpy as np
 
 config = netCDF4.Dataset(sys.argv[1])

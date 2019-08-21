@@ -284,6 +284,7 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
   m_melange_back_pressure_fraction->set(0.0);
 }
 
+
 MaxTimestep Pico::max_timestep_impl(double t) const {
   (void) t;
 
@@ -503,8 +504,8 @@ void Pico::process_box1(const PicoPhysics &physics,
                         IceModelVec2S &overturning) {
 
   std::vector<double> box1_area(m_n_shelves);
-  const IceModelVec2S *cell_area = m_grid->variables().get_2d_scalar("cell_area");
-  compute_box_area(1, *cell_area, shelf_mask, box_mask, box1_area);
+
+  compute_box_area(1, shelf_mask, box_mask, box1_area);
 
   IceModelVec::AccessList list{ &ice_thickness, &shelf_mask, &box_mask,    &T_star,          &Toc_box0,          &Toc,
                                 &Soc_box0,      &Soc,        &overturning, &basal_melt_rate, &basal_temperature };
@@ -573,12 +574,10 @@ void Pico::process_other_boxes(const PicoPhysics &physics,
   // get average overturning from box 1 that is used as input later
   compute_box_average(1, m_overturning, shelf_mask, box_mask, overturning);
 
-  const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
-
   std::vector<bool> use_beckmann_goosse(m_n_shelves);
 
   IceModelVec::AccessList list{ &ice_thickness, &shelf_mask,      &box_mask,           &T_star,   &Toc,
-                                &Soc,           &basal_melt_rate, &basal_temperature, &cell_area };
+                                &Soc,           &basal_melt_rate, &basal_temperature };
 
   // Iterate over all boxes i for i > 1
   for (int box = 2; box <= m_n_boxes; ++box) {
@@ -597,7 +596,7 @@ void Pico::process_other_boxes(const PicoPhysics &physics,
     }
 
     std::vector<double> box_area;
-    compute_box_area(box, cell_area, shelf_mask, box_mask, box_area);
+    compute_box_area(box, shelf_mask, box_mask, box_area);
 
     int n_beckmann_goosse_cells = 0;
 
@@ -716,19 +715,19 @@ void Pico::compute_box_average(int box_id,
  * For all shelves compute areas of boxes with id `box_id`.
  *
  * @param[in] box_mask box index mask
- * @param[in] cell_area cell area, m^2
  * @param[out] result resulting box areas.
  *
  * Note: shelf and box indexes start from 1.
  */
 void Pico::compute_box_area(int box_id,
-                            const IceModelVec2S &cell_area,
                             const IceModelVec2Int &shelf_mask,
                             const IceModelVec2Int &box_mask,
                             std::vector<double> &result) {
   result.resize(m_n_shelves);
 
-  IceModelVec::AccessList list{ &shelf_mask, &box_mask, &cell_area };
+  IceModelVec::AccessList list{ &shelf_mask, &box_mask };
+
+  auto cell_area = m_grid->cell_area();
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -736,7 +735,7 @@ void Pico::compute_box_area(int box_id,
     int shelf_id = shelf_mask.as_int(i, j);
 
     if (shelf_id > 0 and box_mask.as_int(i, j) == box_id) {
-      result[shelf_id] += cell_area(i, j);
+      result[shelf_id] += cell_area;
     }
   }
 

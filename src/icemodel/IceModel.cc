@@ -201,9 +201,9 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
                                                                 false); // not periodic
     m_surface_input_for_hydrology->set_attrs("diagnostic",
                                              "water input rate for the subglacial hydrology model",
-                                             "m s-1", "");
+                                             "kg m-2 s-1", "");
     m_surface_input_for_hydrology->metadata().set_double("valid_min", 0.0);
-    m_surface_input_for_hydrology->metadata().set_string("glaciological_units", "m year-1");
+    m_surface_input_for_hydrology->metadata().set_string("glaciological_units", "kg m-2 year-1");
   }
 }
 
@@ -261,7 +261,6 @@ void IceModel::allocate_storage() {
   m_grid->variables().add(m_geometry.cell_type);
   m_grid->variables().add(m_geometry.longitude);
   m_grid->variables().add(m_geometry.latitude);
-  m_grid->variables().add(m_geometry.cell_area);
 
   if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
     m_grid->variables().add(m_geometry.cell_grounded_fraction);
@@ -506,6 +505,9 @@ void IceModel::step(bool do_mass_continuity,
                                              "_stressbalance_failed", "");
     PIO file(m_grid->com, m_config->get_string("output.format"), o_file, PISM_READWRITE_MOVE);
 
+    update_run_stats();
+    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+
     save_variables(file, INCLUDE_MODEL_STATE, output_variables("small"));
 
     e.add_context("performing a time step. (Note: Model state was saved to '%s'.)",
@@ -710,7 +712,6 @@ void IceModel::step(bool do_mass_continuity,
 
     inputs.no_model_mask      = nullptr;
     inputs.cell_type          = &m_geometry.cell_type;
-    inputs.cell_area          = &m_geometry.cell_area;
     inputs.ice_thickness      = &m_geometry.ice_thickness;
     inputs.bed_elevation      = &m_geometry.bed_elevation;
     inputs.surface_input_rate = nullptr;
@@ -780,6 +781,10 @@ void IceModel::step(bool do_mass_continuity,
     std::string o_file = filename_add_suffix(output_file,
                                              "_max_thickness", "");
     PIO file(m_grid->com, m_config->get_string("output.format"), o_file, PISM_READWRITE_MOVE);
+
+    update_run_stats();
+    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+
     save_variables(file, INCLUDE_MODEL_STATE, output_variables("small"));
 
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,

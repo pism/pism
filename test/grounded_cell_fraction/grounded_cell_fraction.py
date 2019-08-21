@@ -1,4 +1,5 @@
-import PISM, time
+import PISM
+import time
 import numpy as np
 
 np.set_printoptions(precision=5, suppress=True)
@@ -9,6 +10,7 @@ ice_density = ctx.config.get_double("constants.ice.density")
 ocean_density = ctx.config.get_double("constants.sea_water.density")
 
 mu = ice_density / ocean_density
+
 
 def allocate_grid(ctx):
     params = PISM.GridParameters(ctx.config)
@@ -22,6 +24,7 @@ def allocate_grid(ctx):
     params.registration = PISM.CELL_CORNER
     params.ownership_ranges_from_options(ctx.size)
     return PISM.IceGrid(ctx.ctx, params)
+
 
 def allocate_storage(grid):
     ice_thickness = PISM.model.createIceThicknessVec(grid)
@@ -44,9 +47,11 @@ def allocate_storage(grid):
 
     return ice_thickness, bed_topography, surface, mask, gl_mask, gl_mask_x, gl_mask_y, sea_level
 
+
 def compute_mask(sea_level, bed_topography, ice_thickness, mask, surface):
     gc = PISM.GeometryCalculator(ctx.config)
     gc.compute(sea_level, bed_topography, ice_thickness, mask, surface)
+
 
 def print_vec(vec):
     v0 = vec.allocate_proc0_copy()
@@ -57,12 +62,13 @@ def print_vec(vec):
     print(vec.get_name())
     print(v0.get()[:].reshape(shape, order="f"))
 
+
 def init(mu, L, sea_level, vec, type="box"):
-    k = {0.0 : 8,
-         0.25 : 7,
-         0.5 : 6,
-         0.75 : 5,
-         1.0 : 4}
+    k = {0.0: 8,
+         0.25: 7,
+         0.5: 6,
+         0.75: 5,
+         1.0: 4}
 
     H0 = (8.0 / k[L]) * (sea_level / mu)
     H1 = 0.5 * H0
@@ -83,6 +89,7 @@ def init(mu, L, sea_level, vec, type="box"):
 
     vec.update_ghosts()
 
+
 def grounded_cell_fraction_test():
 
     # allocation
@@ -101,8 +108,8 @@ def grounded_cell_fraction_test():
 
         # computation of gl_mask
         PISM.compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
-                                     ice_thickness, bed_topography, mask, gl_mask,
-                                     gl_mask_x, gl_mask_y)
+                                            ice_thickness, bed_topography, mask, gl_mask,
+                                            gl_mask_x, gl_mask_y)
 
         # inspection / comparison
         print("L = %f" % L)
@@ -110,6 +117,7 @@ def grounded_cell_fraction_test():
         print_vec(gl_mask_x)
         print_vec(gl_mask_y)
         print_vec(gl_mask)
+
 
 def new_grounded_cell_fraction_test():
 
@@ -135,6 +143,7 @@ def new_grounded_cell_fraction_test():
         # inspection / comparison
         print("L = %f" % L)
         print_vec(gl_mask)
+
 
 grounded_cell_fraction_test()
 new_grounded_cell_fraction_test()

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,7 +28,9 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/iceModelVec.hh"
 
-#if (PISM_USE_PROJ4==1)
+#include "pism/pism_config.hh"
+
+#if (Pism_USE_PROJ==1)
 #include "pism/util/Proj.hh"
 #endif
 
@@ -40,19 +42,19 @@ MappingInfo::MappingInfo(const std::string &mapping_name, units::System::Ptr uni
 }
 
 //! @brief Return CF-Convention "mapping" variable corresponding to an EPSG code specified in a
-//! PROJ.4 string.
-VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj4_string) {
+//! PROJ string.
+VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_string) {
   VariableMetadata mapping("mapping", system);
 
   std::string option = "+init=epsg:";
-  std::string::size_type pos = proj4_string.find(option);
-  std::string epsg_code = proj4_string.substr(pos + option.size());
+  std::string::size_type pos = proj_string.find(option);
+  std::string epsg_code = proj_string.substr(pos + option.size());
   char *endptr = NULL;
   const char *str = epsg_code.c_str();
   long int epsg = strtol(str, &endptr, 10);
   if (endptr == str) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to parse EPSG code at '%s' in PROJ.4 string '%s'",
-                                  epsg_code.c_str(), proj4_string.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to parse EPSG code at '%s' in PROJ string '%s'",
+                                  epsg_code.c_str(), proj_string.c_str());
   }
 
   switch (epsg) {
@@ -86,8 +88,8 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj4_
     mapping.set_string("unit", "metre");
     break;
   default:
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown EPSG code '%d' in PROJ.4 string '%s'",
-                                  (int)epsg, proj4_string.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown EPSG code '%d' in PROJ string '%s'",
+                                  (int)epsg, proj_string.c_str());
   }
 
   return mapping;
@@ -95,7 +97,7 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj4_
 
 void check_consistency_epsg(const MappingInfo &info) {
 
-  VariableMetadata epsg_mapping = epsg_to_cf(info.mapping.unit_system(), info.proj4);
+  VariableMetadata epsg_mapping = epsg_to_cf(info.mapping.unit_system(), info.proj);
 
   bool mapping_is_empty      = not info.mapping.has_attributes();
   bool epsg_mapping_is_empty = not epsg_mapping.has_attributes();
@@ -109,9 +111,9 @@ void check_consistency_epsg(const MappingInfo &info) {
     for (auto s : epsg_mapping.get_all_strings()) {
       if (not info.mapping.has_attribute(s.first)) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
-                                      "PROJ.4 string \"%s\" requires %s = \"%s\",\n"
+                                      "PROJ string \"%s\" requires %s = \"%s\",\n"
                                       "but the mapping variable has no %s.",
-                                      info.proj4.c_str(),
+                                      info.proj.c_str(),
                                       s.first.c_str(), s.second.c_str(),
                                       s.first.c_str());
       }
@@ -122,7 +124,7 @@ void check_consistency_epsg(const MappingInfo &info) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "%s requires %s = \"%s\",\n"
                                       "but the mapping variable has %s = \"%s\".",
-                                      info.proj4.c_str(),
+                                      info.proj.c_str(),
                                       s.first.c_str(), s.second.c_str(),
                                       s.first.c_str(),
                                       string.c_str());
@@ -135,7 +137,7 @@ void check_consistency_epsg(const MappingInfo &info) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "%s requires %s = %f,\n"
                                       "but the mapping variable has no %s.",
-                                      info.proj4.c_str(),
+                                      info.proj.c_str(),
                                       d.first.c_str(), d.second[0],
                                       d.first.c_str());
       }
@@ -146,7 +148,7 @@ void check_consistency_epsg(const MappingInfo &info) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "%s requires %s = %f,\n"
                                       "but the mapping variable has %s = %f.",
-                                      info.proj4.c_str(),
+                                      info.proj.c_str(),
                                       d.first.c_str(), d.second[0],
                                       d.first.c_str(),
                                       value);
@@ -159,17 +161,17 @@ MappingInfo get_projection_info(const PIO &input_file, const std::string &mappin
                                 units::System::Ptr unit_system) {
   MappingInfo result(mapping_name, unit_system);
 
-  result.proj4 = input_file.get_att_text("PISM_GLOBAL", "proj4");
+  result.proj = input_file.get_att_text("PISM_GLOBAL", "proj");
 
-  std::string::size_type position = result.proj4.find("+init=epsg:");
-  bool proj4_is_epsg = position != std::string::npos;
+  std::string::size_type position = result.proj.find("+init=epsg:");
+  bool proj_is_epsg = position != std::string::npos;
 
   if (input_file.inq_var(mapping_name)) {
     // input file has a mapping variable
 
     io::read_attributes(input_file, mapping_name, result.mapping);
 
-    if (proj4_is_epsg) {
+    if (proj_is_epsg) {
       // check consistency
       try {
         check_consistency_epsg(result);
@@ -183,8 +185,8 @@ MappingInfo get_projection_info(const PIO &input_file, const std::string &mappin
   } else {
     // no mapping variable in the input file
 
-    if (proj4_is_epsg) {
-      result.mapping = epsg_to_cf(unit_system, result.proj4);
+    if (proj_is_epsg) {
+      result.mapping = epsg_to_cf(unit_system, result.proj);
     } else {
       // leave mapping empty
     }
@@ -194,7 +196,7 @@ MappingInfo get_projection_info(const PIO &input_file, const std::string &mappin
 
 enum LonLat {LONGITUDE, LATITUDE};
 
-#if (PISM_USE_PROJ4==1)
+#if (Pism_USE_PROJ==1)
 
 //! Computes the area of a triangle using vector cross product.
 static double triangle_area(double *A, double *B, double *C) {
@@ -212,8 +214,7 @@ static double triangle_area(double *A, double *B, double *C) {
 void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
   IceGrid::ConstPtr grid = result.grid();
 
-  Proj geocent("+proj=geocent +datum=WGS84 +ellps=WGS84");
-  Proj pism(projection);
+  Proj pism_to_geocent(projection, "+proj=geocent +datum=WGS84 +ellps=WGS84");
 
 // Cell layout:
 // (nw)        (ne)
@@ -237,22 +238,28 @@ void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
       x = grid->x(i),
       y = grid->y(j);
     double
-      x_nw = x - dx2, y_nw = y + dy2, Z_nw = 0,
-      x_ne = x + dx2, y_ne = y + dy2, Z_ne = 0,
-      x_se = x + dx2, y_se = y - dy2, Z_se = 0,
-      x_sw = x - dx2, y_sw = y - dy2, Z_sw = 0;
+      x_nw = x - dx2, y_nw = y + dy2,
+      x_ne = x + dx2, y_ne = y + dy2,
+      x_se = x + dx2, y_se = y - dy2,
+      x_sw = x - dx2, y_sw = y - dy2;
 
-    pj_transform(pism, geocent, 1, 1, &x_nw, &y_nw, &Z_nw);
-    double nw[3] = {x_nw, y_nw, Z_nw};
+    PJ_COORD in, out;
 
-    pj_transform(pism, geocent, 1, 1, &x_ne, &y_ne, &Z_ne);
-    double ne[3] = {x_ne, y_ne, Z_ne};
+    in.xy = {x_nw, y_nw};
+    out = proj_trans(*pism_to_geocent, PJ_FWD, in);
+    double nw[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
-    pj_transform(pism, geocent, 1, 1, &x_se, &y_se, &Z_se);
-    double se[3] = {x_se, y_se, Z_se};
+    in.xy = {x_ne, y_ne};
+    out = proj_trans(*pism_to_geocent, PJ_FWD, in);
+    double ne[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
-    pj_transform(pism, geocent, 1, 1, &x_sw, &y_sw, &Z_sw);
-    double sw[3] = {x_sw, y_sw, Z_sw};
+    in.xy = {x_se, y_se};
+    out = proj_trans(*pism_to_geocent, PJ_FWD, in);
+    double se[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
+
+    in.xy = {x_sw, y_sw};
+    out = proj_trans(*pism_to_geocent, PJ_FWD, in);
+    double sw[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
     result(i, j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
   }
@@ -261,8 +268,7 @@ void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
 static void compute_lon_lat(const std::string &projection,
                             LonLat which, IceModelVec2S &result) {
 
-  Proj lonlat("+proj=latlong +datum=WGS84 +ellps=WGS84");
-  Proj pism(projection);
+  Proj crs(projection);
 
 // Cell layout:
 // (nw)        (ne)
@@ -282,16 +288,15 @@ static void compute_lon_lat(const std::string &projection,
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double
-      x = grid->x(i),
-      y = grid->y(j);
+    PJ_COORD in, out;
 
-    pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
+    in.xy = {grid->x(i), grid->y(j)};
+    out = proj_trans(*crs, PJ_INV, in);
 
     if (which == LONGITUDE) {
-      result(i, j) = x * RAD_TO_DEG;
+      result(i, j) = proj_todeg(out.lp.lam);
     } else {
-      result(i, j) = y * RAD_TO_DEG;
+      result(i, j) = proj_todeg(out.lp.phi);
     }
   }
 }
@@ -300,8 +305,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
                                    LonLat which,
                                    IceModelVec3D &result) {
 
-  Proj lonlat("+proj=latlong +datum=WGS84 +ellps=WGS84");
-  Proj pism(projection);
+  Proj crs(projection);
 
   IceGrid::ConstPtr grid = result.grid();
 
@@ -319,17 +323,18 @@ static void compute_lon_lat_bounds(const std::string &projection,
     double *values = result.get_column(i, j);
 
     for (int k = 0; k < 4; ++k) {
-      double
-        x = x0 + x_offsets[k],
-        y = y0 + y_offsets[k];
+
+      PJ_COORD in, out;
+
+      in.xy = {x0 + x_offsets[k], y0 + y_offsets[k]};
 
       // compute lon,lat coordinates:
-      pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
+      out = proj_trans(*crs, PJ_INV, in);
 
       if (which == LATITUDE) {
-        values[k] = y * RAD_TO_DEG;
+        values[k] = proj_todeg(out.lp.phi);
       } else {
-        values[k] = x * RAD_TO_DEG;
+        values[k] = proj_todeg(out.lp.lam);
       }
     }
   }
@@ -351,7 +356,7 @@ static void compute_lon_lat(const std::string &projection, LonLat which,
   (void) result;
 
   throw RuntimeError(PISM_ERROR_LOCATION, "Cannot compute longitude and latitude."
-                     " Please rebuild PISM with PROJ.4.");
+                     " Please rebuild PISM with PROJ.");
 }
 
 static void compute_lon_lat_bounds(const std::string &projection,
@@ -362,7 +367,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
   (void) result;
 
   throw RuntimeError(PISM_ERROR_LOCATION, "Cannot compute longitude and latitude bounds."
-                     " Please rebuild PISM with PROJ.4.");
+                     " Please rebuild PISM with PROJ.");
 }
 
 #endif

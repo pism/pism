@@ -64,11 +64,11 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
   // zero thickness bedrock layer is the default, but we want the ice/rock
   // interface segment to have geothermal flux applied directly to ice without
   // jump in material properties at base.
-  m_config->set_double("energy.bedrock_thermal_density",
+  m_config->set_double("energy.bedrock_thermal.density",
                        m_config->get_double("constants.ice.density"));
-  m_config->set_double("energy.bedrock_thermal_conductivity",
+  m_config->set_double("energy.bedrock_thermal.conductivity",
                        m_config->get_double("constants.ice.thermal_conductivity"));
-  m_config->set_double("energy.bedrock_thermal_specific_heat_capacity",
+  m_config->set_double("energy.bedrock_thermal.specific_heat_capacity",
                        m_config->get_double("constants.ice.specific_heat_capacity"));
 
   // no sliding + SIA

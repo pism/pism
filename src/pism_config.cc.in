@@ -1,4 +1,4 @@
-/* Copyright (C) 2015-2017 PISM Authors
+/* Copyright (C) 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,16 +17,18 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef GPBLD_N_H
-#define GPBLD_N_H
+namespace pism {
 
-/* Glen-Paterson-Budd-Lliboutry-Duval hardness as a function of
-   enthalpy and pressure. */
-void gpbld_hardness_n(const double *E, const double *P, unsigned int n, double *result);
+const char *config_file = "${Pism_CONFIG_FILE}";
 
-/* Glen-Paterson-Budd-Lliboutry-Duval flow function for a column of
-   ice, optimized for the Glen exponent n == 3. */
-void gpbld_flow_n(const double *stress, const double *E, const double *P,
-                  unsigned int n, double *result);
+const char *revision = "${Pism_REVISION_TAG}";
 
-#endif /* GPBLD_N_H */
+const char *petsc_configure_flags = "${Pism_PETSC_CONFIGURE_FLAGS}";
+
+const char *petsc4py_version = "${Pism_PETSC4PY_VERSION}";
+
+const char *cmake_version = "${CMAKE_VERSION}";
+
+const char *swig_version = "${SWIG_VERSION}";
+
+} // end of namespace pism

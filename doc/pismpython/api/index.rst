@@ -6,7 +6,6 @@ API
    :maxdepth: 2
 
    PISM.rst
-   options.rst
    logging.rst
    vec.rst
    util.rst

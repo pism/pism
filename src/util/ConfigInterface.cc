@@ -96,7 +96,7 @@ void Config::import_from(const Config &other) {
 
   for (auto p : other.all_doubles()) {
     if (member(p.first, parameters)) {
-      this->set_double(p.first, p.second, USER);
+      this->set_double(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "unrecognized parameter %s in %s",
@@ -106,7 +106,7 @@ void Config::import_from(const Config &other) {
 
   for (auto p : other.all_strings()) {
     if (member(p.first, parameters)) {
-      this->set_string(p.first, p.second, USER);
+      this->set_string(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "unrecognized parameter %s in %s",
@@ -116,7 +116,7 @@ void Config::import_from(const Config &other) {
 
   for (auto p : other.all_booleans()) {
     if (member(p.first, parameters)) {
-      this->set_boolean(p.first, p.second, USER);
+      this->set_boolean(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "unrecognized parameter %s in %s",
@@ -164,15 +164,15 @@ double Config::get_double(const std::string &name,
 }
 
 void Config::set_double(const std::string &name, double value,
-                        Config::SettingFlag flag) {
+                        ConfigSettingFlag flag) {
   std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
 
-  if (flag == USER) {
+  if (flag == CONFIG_USER) {
     set_by_user.insert(name);
   }
 
   // stop if we're setting the default value and this parameter was set by user already
-  if (flag == DEFAULT and
+  if (flag == CONFIG_DEFAULT and
       set_by_user.find(name) != set_by_user.end()) {
     return;
   }
@@ -193,15 +193,15 @@ std::string Config::get_string(const std::string &name, UseFlag flag) const {
 
 void Config::set_string(const std::string &name,
                         const std::string &value,
-                        Config::SettingFlag flag) {
+                        ConfigSettingFlag flag) {
   std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
 
-  if (flag == USER) {
+  if (flag == CONFIG_USER) {
     set_by_user.insert(name);
   }
 
   // stop if we're setting the default value and this parameter was set by user already
-  if (flag == DEFAULT and
+  if (flag == CONFIG_DEFAULT and
       set_by_user.find(name) != set_by_user.end()) {
     return;
   }
@@ -221,15 +221,15 @@ bool Config::get_boolean(const std::string& name, UseFlag flag) const {
 }
 
 void Config::set_boolean(const std::string& name, bool value,
-                         Config::SettingFlag flag) {
+                         ConfigSettingFlag flag) {
   std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
 
-  if (flag == USER) {
+  if (flag == CONFIG_USER) {
     set_by_user.insert(name);
   }
 
   // stop if we're setting the default value and this parameter was set by user already
-  if (flag == DEFAULT and
+  if (flag == CONFIG_DEFAULT and
       set_by_user.find(name) != set_by_user.end()) {
     return;
   }
@@ -428,7 +428,7 @@ void set_boolean_from_option(Config &config, const std::string &option,
     }
   }
 
-  config.set_boolean(parameter_name, value, Config::USER);
+  config.set_boolean(parameter_name, value, CONFIG_USER);
 }
 
 //! Sets a configuration parameter from a command-line option.
@@ -446,7 +446,7 @@ void set_scalar_from_option(Config &config, const std::string &name, const std::
                        config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
                        config.get_double(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
-    config.set_double(parameter, option, Config::USER);
+    config.set_double(parameter, option, CONFIG_USER);
   }
 }
 
@@ -455,7 +455,7 @@ void set_integer_from_option(Config &config, const std::string &name, const std:
                           config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
                           config.get_double(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
-    config.set_double(parameter, option, Config::USER);
+    config.set_double(parameter, option, CONFIG_USER);
   }
 }
 
@@ -465,7 +465,7 @@ void set_string_from_option(Config &config, const std::string &name, const std::
                         config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
                         config.get_string(parameter, Config::FORGET_THIS_USE));
   if (value.is_set()) {
-    config.set_string(parameter, value, Config::USER);
+    config.set_string(parameter, value, CONFIG_USER);
   }
 }
 
@@ -485,7 +485,7 @@ void set_keyword_from_option(Config &config, const std::string &name,
                            config.get_string(parameter, Config::FORGET_THIS_USE));
 
   if (keyword.is_set()) {
-    config.set_string(parameter, keyword, Config::USER);
+    config.set_string(parameter, keyword, CONFIG_USER);
   }
 }
 
@@ -563,15 +563,15 @@ void set_config_from_options(Config &config) {
 
     if (energy.is_set()) {
       if (energy == "none") {
-        config.set_boolean("energy.enabled", false, Config::USER);
+        config.set_boolean("energy.enabled", false, CONFIG_USER);
         // Allow selecting cold ice flow laws in isothermal mode.
-        config.set_boolean("energy.temperature_based", true, Config::USER);
+        config.set_boolean("energy.temperature_based", true, CONFIG_USER);
       } else if (energy == "cold") {
-        config.set_boolean("energy.enabled", true, Config::USER);
-        config.set_boolean("energy.temperature_based", true, Config::USER);
+        config.set_boolean("energy.enabled", true, CONFIG_USER);
+        config.set_boolean("energy.temperature_based", true, CONFIG_USER);
       } else if (energy == "enthalpy") {
-        config.set_boolean("energy.enabled", true, Config::USER);
-        config.set_boolean("energy.temperature_based", false, Config::USER);
+        config.set_boolean("energy.enabled", true, CONFIG_USER);
+        config.set_boolean("energy.temperature_based", false, CONFIG_USER);
       } else {
         throw RuntimeError(PISM_ERROR_LOCATION, "this can't happen: options::Keyword validates input");
       }
@@ -606,7 +606,7 @@ void set_config_from_options(Config &config) {
 
   bool nu_bedrock = options::Bool("-nu_bedrock", "constant viscosity near margins");
   if (nu_bedrock) {
-    config.set_boolean("stress_balance.ssa.fd.lateral_drag.enabled", true, Config::USER);
+    config.set_boolean("stress_balance.ssa.fd.lateral_drag.enabled", true, CONFIG_USER);
   }
 
   // Shortcuts
@@ -615,34 +615,34 @@ void set_config_from_options(Config &config) {
   // and in particular NOT  "-calving eigen_calving")
   bool pik = options::Bool("-pik", "enable suite of PISM-PIK mechanisms");
   if (pik) {
-    config.set_boolean("stress_balance.calving_front_stress_bc", true, Config::USER);
-    config.set_boolean("geometry.part_grid.enabled", true, Config::USER);
-    config.set_boolean("geometry.remove_icebergs", true, Config::USER);
-    config.set_boolean("geometry.grounded_cell_fraction", true, Config::USER);
+    config.set_boolean("stress_balance.calving_front_stress_bc", true, CONFIG_USER);
+    config.set_boolean("geometry.part_grid.enabled", true, CONFIG_USER);
+    config.set_boolean("geometry.remove_icebergs", true, CONFIG_USER);
+    config.set_boolean("geometry.grounded_cell_fraction", true, CONFIG_USER);
   }
 
   if (config.get_string("calving.methods").find("eigen_calving") != std::string::npos) {
-    config.set_boolean("geometry.part_grid.enabled", true, Config::USER);
+    config.set_boolean("geometry.part_grid.enabled", true, CONFIG_USER);
     // eigen-calving requires a wider stencil:
     config.set_double("grid.max_stencil_width", 3);
   }
 
   // all calving mechanisms require iceberg removal
   if (not config.get_string("calving.methods").empty()) {
-    config.set_boolean("geometry.remove_icebergs", true, Config::USER);
+    config.set_boolean("geometry.remove_icebergs", true, CONFIG_USER);
   }
 
   // geometry.remove_icebergs requires part_grid
   if (config.get_boolean("geometry.remove_icebergs")) {
-    config.set_boolean("geometry.part_grid.enabled", true, Config::USER);
+    config.set_boolean("geometry.part_grid.enabled", true, CONFIG_USER);
   }
 
   bool test_climate_models = options::Bool("-test_climate_models",
                                            "Disable ice dynamics to test climate models");
   if (test_climate_models) {
-    config.set_string("stress_balance.model", "none", Config::USER);
-    config.set_boolean("energy.enabled", false, Config::USER);
-    config.set_boolean("age.enabled", false, Config::USER);
+    config.set_string("stress_balance.model", "none", CONFIG_USER);
+    config.set_boolean("energy.enabled", false, CONFIG_USER);
+    config.set_boolean("age.enabled", false, CONFIG_USER);
     // let the user decide if they want to use "-no_mass" or not
   }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -266,6 +266,7 @@ public:
 
   double dx() const;
   double dy() const;
+  double cell_area() const;
 
   unsigned int Mx() const;
   unsigned int My() const;
@@ -294,6 +295,14 @@ public:
   Vars& variables();
   const Vars& variables() const;
 
+  //! Maximum number of degrees of freedom supported by PISM.
+  /*!
+   * This is also the maximum number of records an IceModelVec2T can hold.
+   */
+  static const int max_dm_dof = 10000;
+
+  //! Maximum stencil width supported by PISM.
+  static const int max_stencil_width = 10000;
 private:
   struct Impl;
   Impl *m_impl;

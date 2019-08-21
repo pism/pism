@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -20,15 +20,15 @@
 
 
 import PISM
+from PISM.util import convert
 import math
 
 context = PISM.Context()
-unit_system = context.unit_system
 
 L = 50.e3  # // 50km half-width
 H0 = 500  # // m
 dhdx = 0.005  # // pure number, slope of surface & bed
-nu0 = PISM.convert(unit_system, 30.0, "MPa year", "Pa s")
+nu0 = convert(30.0, "MPa year", "Pa s")
 tauc0 = 1.e4  # // 1kPa
 
 
@@ -90,20 +90,18 @@ class test_linear(PISM.ssa.SSAExactTestCase):
     def exactSolution(self, i, j, x, y):
         tauc_threshold_velocity = self.config.get_double("basal_resistance.pseudo_plastic.u_threshold",
                                                          "m/second")
-        sys = self.grid.ctx().unit_system()
-        v0 = PISM.convert(sys, 100, "m/year", "m/second")
+
+        v0 = convert(100, "m/year", "m/second")
         alpha = math.sqrt((tauc0 / tauc_threshold_velocity) / (4 * nu0 * H0))
         return [v0 * math.exp(-alpha * (x - L)), 0]
+
 
 # The main code for a run follows:
 if __name__ == '__main__':
     context = PISM.Context()
+    config = context.config
 
     PISM.set_abort_on_sigint(True)
 
-    Mx = PISM.optionsInt("-Mx", "Number of grid points in x-direction", default=61)
-    My = PISM.optionsInt("-My", "Number of grid points in y-direction", default=61)
-    output_file = PISM.optionsString("-o", "output file", default="test_linear.nc")
-
-    tc = test_linear(Mx, My)
-    tc.run(output_file)
+    tc = test_linear(int(config.get_double("grid.Mx")), int(config.get_double("grid.My")))
+    tc.run(config.get_string("output.file_name"))

@@ -1,0 +1,23 @@
+# Canonical names for contributors, to simplify inconsistent use of
+# initials, for example. We also repair email addresses that are not
+# used or that cannot deliver mail. Could also be used to remap
+# addresses to current versions, though we don't do that here.
+
+#
+# See 'git help shortlog' for details
+
+Andy Aschwanden <aaschwanden@alaska.edu>            <andy.aschwanden@arsc.edu>
+Andy Aschwanden <aaschwanden@alaska.edu>            <andy.aschwanden@gmail.com>
+Andy Aschwanden <aaschwanden@alaska.edu>            <andy@aschwanden.org>
+Constantine Khrulev <ckhroulev@alaska.edu>
+Constantine Khrulev <ckhroulev@alaska.edu>          <c.khroulev@gmail.com>
+Constantine Khrulev <ckhroulev@alaska.edu>          <constantine@Constantines-MacBook-Pro.local>
+Constantine Khrulev <ckhroulev@alaska.edu>          <khroulev@pismdocs.org>
+Elizabeth Fischer <elizabeth.fischer@columbia.edu>  <rpf2116@columbia.edu>
+Florian Ziemen <florian.ziemen@posteo.de>
+Jed Brown <jed@jedbrown.org>                        <jed@59A2.org>
+Joseph H Kennedy <kennedyjh@ornl.gov>               <me@jhkennedy.org>
+Julien Seguinot <julien.seguinot@natgeo.su.se>      <seguinot@vaw.baug.ethz.ch>
+Matthias Mengel <mengel@pik-potsdam.de>             <mengel@login01.(none)>
+Ronja Reese <reese@pik-potsdam.de>
+Torsten Albrecht <albrecht@pik-potsdam.de>          <torsten.albrecht@pik-potsdam.de>

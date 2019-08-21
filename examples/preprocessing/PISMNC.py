@@ -150,6 +150,7 @@ class PISMDataset(netCDF.Dataset):
 
         return var
 
+
 if __name__ == "__main__":
     # produce a NetCDF file for testing
     from numpy import linspace, meshgrid

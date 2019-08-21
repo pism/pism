@@ -38,16 +38,15 @@ sia_forward.py -i IN.nc [-o file.nc]
 
 PISM.show_usage_check_req_opts(ctx.log(), "sia_forward.py", ["-i"], usage)
 
-input_filename, input_set = PISM.optionsStringWasSet("-i", "input file")
-if not input_set:
+input_filename = config.get_string("input.file")
+if len(input_filename) == 0:
     import sys
     sys.exit(1)
 
-output_file = PISM.optionsString("-o", "output file",
-                                 default="sia_" + os.path.basename(input_filename))
-is_regional = PISM.optionsFlag("-regional",
-                               "Compute SIA using regional model semantics", default=False)
-verbosity = PISM.optionsInt("-verbose", "verbosity level", default=2)
+config.set_string("output.file_name", "sia_" + os.path.basename(input_filename), PISM.CONFIG_DEFAULT)
+
+output_file = config.get_string("output.file_name")
+is_regional = PISM.OptionBool("-regional", "Compute SIA using regional model semantics")
 
 registration = PISM.CELL_CENTER
 if is_regional:

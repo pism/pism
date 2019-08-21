@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2018 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,6 +25,9 @@
 #include <string>
 #include <vector>
 
+#include "pism/pism_config.hh"  // Pism_DEBUG
+
+
 namespace pism {
 
 class ErrorLocation {
@@ -35,7 +38,7 @@ public:
   int line_number;
 };
 
-#if PISM_DEBUG==1
+#if Pism_DEBUG==1
 #define PISM_ERROR_LOCATION pism::ErrorLocation(__FILE__, __LINE__)
 #else
 #define PISM_ERROR_LOCATION pism::ErrorLocation()

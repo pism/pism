@@ -22,7 +22,7 @@ recommended as they satisfy requirements for building or running PISM.
    ``git``,              used to get PISM source code
    ``nco``,              used in many pre-processing scripts
    ``ncview``,           view fields in NetCDF files
-   ``libproj-dev``,      used to compute ice area and volume
+   ``libproj-dev``,      used to compute longitude and latitude coordinates of grid points
    ``python-dev``,       (helps with scripts…perhaps not essential)
    ``python-pyproj``,    used in some pre-processing scripts
    ``python-netcdf4``,   used in most post-processing scripts

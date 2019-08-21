@@ -46,11 +46,17 @@ public:
   YieldStress(IceGrid::ConstPtr g);
   virtual ~YieldStress();
 
-  void init();
-  const IceModelVec2S& basal_material_yield_stress();
+  void init(const Geometry &geometry,
+            const IceModelVec2S &till_water_thickness,
+            const IceModelVec2S &overburden_pressure);
+
   void update(const YieldStressInputs &inputs);
+
+  const IceModelVec2S& basal_material_yield_stress();
 protected:
-  virtual void init_impl() = 0;
+  virtual void init_impl(const Geometry &geometry,
+                         const IceModelVec2S &till_water_thickness,
+                         const IceModelVec2S &overburden_pressure) = 0;
   virtual void update_impl(const YieldStressInputs &inputs) = 0;
 
   DiagnosticList diagnostics_impl() const;

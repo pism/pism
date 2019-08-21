@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -49,7 +49,7 @@
 #include "util/Diagnostic.hh"
 #include "util/Config.hh"
 
-#ifdef PISM_USE_JANSSON
+#if (Pism_USE_JANSSON==1)
 #include "util/ConfigJSON.hh"
 #endif
 
@@ -64,7 +64,17 @@
 #include "util/node_types.hh"
 
 #include "util/Time.hh"
+#include "util/Time_Calendar.hh"
 %}
+
+// Tell SWIG that the following variables are truly constant
+%immutable pism::revision;
+%immutable pism::config_file;
+%immutable pism::petsc_configure_flags;
+%immutable pism::petsc4py_version;
+%immutable pism::swig_version;
+%immutable pism::cmake_version;
+%include "pism/pism_config.hh"
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
 %include "petsc4py/petsc4py.i"
@@ -168,10 +178,6 @@
 }
 
 
-// Tell SWIG that the following variables are truly constant
-%immutable pism::PISM_Revision;
-%immutable pism::PISM_DefaultConfigFile;
-
 /* PISM header with no dependence on other PISM headers. */
 %include "util/pism_utilities.hh"
 %include "util/interpolation.hh"
@@ -193,6 +199,9 @@
 %feature("valuewrapper") pism::units::Unit;
 %include "util/Units.hh"
 
+%shared_ptr(pism::MaxTimestep)
+%include "util/MaxTimestep.hh"
+
 %include pism_DM.i
 %include pism_Vec.i
 /* End of independent PISM classes. */
@@ -203,7 +212,7 @@
 %include "util/ConfigInterface.hh"
 %include "util/Config.hh"
 
-#ifdef PISM_USE_JANSSON
+#if (Pism_USE_JANSSON==1)
 %shared_ptr(pism::ConfigJSON);
 %include "util/ConfigJSON.hh"
 #endif
@@ -215,6 +224,8 @@
 
 %shared_ptr(pism::Time);
 %include "util/Time.hh"
+%shared_ptr(pism::Time_Calendar);
+%include "util/Time_Calendar.hh"
 
 %include "util/Profiling.hh"
 %shared_ptr(pism::Context);
@@ -240,7 +251,6 @@
 
 %shared_ptr(pism::Diagnostic)
 %include "util/Diagnostic.hh"
-%include "util/MaxTimestep.hh"
 %include "stressbalance/timestepping.hh"
 
 %shared_ptr(pism::Component)
@@ -252,7 +262,7 @@
 
 %include pism_ColumnSystem.i
 
-%include EnergyModel.i
+%include pism_energy.i
 
 /* SSAForwardRunFromInputFile sets up a yield stress model, which
  * requires a hydrology model.
@@ -310,6 +320,9 @@
 %include pism_inverse.i
 
 %include pism_ocean.i
+
+/* surface models use atmosphere models as inputs so we need to define atmosphere models first */
+%include pism_atmosphere.i
 
 %include pism_surface.i
 

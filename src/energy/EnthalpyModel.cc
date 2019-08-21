@@ -112,8 +112,9 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
 
   const double
-    ice_density  = m_config->get_double("constants.ice.density"),          // kg m-3
-    bulgeEnthMax = m_config->get_double("energy.enthalpy.cold_bulge_max"); // J kg-1
+    ice_density           = m_config->get_double("constants.ice.density"), // kg m-3
+    bulgeEnthMax          = m_config->get_double("energy.enthalpy.cold_bulge_max"), // J kg-1
+    target_water_fraction = m_config->get_double("energy.drainage_target_water_fraction");
 
   energy::DrainageCalculator dc(*m_config);
 
@@ -252,10 +253,11 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
             double omega = EC->water_fraction(Enthnew[k], p);
 
-            if (omega > 0.01) {                          // FIXME: make "0.01" configurable here
+            if (omega > target_water_fraction) {
               double fractiondrained = dc.get_drainage_rate(omega) * dt; // pure number
 
-              fractiondrained  = std::min(fractiondrained, omega - 0.01); // only drain down to 0.01
+              fractiondrained  = std::min(fractiondrained,
+                                          omega - target_water_fraction);
               Hdrainedtotal   += fractiondrained * dz; // always a positive contribution
               Enthnew[k]      -= fractiondrained * L;
             }
@@ -377,8 +379,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   }
   loop.check();
 
-  // FIXME: use cell areas
-  m_stats.liquified_ice_volume = ((double) liquifiedCount) * dz * m_grid->dx() * m_grid->dy();
+  m_stats.liquified_ice_volume = ((double) liquifiedCount) * dz * m_grid->cell_area();
 }
 
 void EnthalpyModel::define_model_state_impl(const PIO &output) const {

@@ -24,6 +24,8 @@ namespace pism {
 
 class IceModelVec2S;
 
+double grounded_area_fraction(double a, double b, double c);
+
 /*!
  * Compute grounded cell fractions by splitting control volumes into triangles and
  * treating the flotation criterion as a linear function on each triangle.

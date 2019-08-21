@@ -127,7 +127,7 @@ double GoldsbyKohlstedt::flow_from_temp(double stress, double temp,
   if (T > m_diff_crit_temp) {
     diff_D_b *= 1000; // Coble creep scaling
   }
-  eps_diff = 14 * m_diff_V_m *
+  eps_diff = 42 * m_diff_V_m *
     (diff_D_v + M_PI * m_diff_delta * diff_D_b / gs) / (RT*(gs*gs));
   // Dislocation Creep
   if (T > m_disl_crit_temp) {

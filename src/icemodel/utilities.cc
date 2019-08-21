@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -50,11 +50,9 @@ int IceModel::process_signals() {
   if (pism_signal == SIGTERM) {
     m_log->message(1,
        "\ncaught signal SIGTERM:  EXITING EARLY and saving with original filename.\n");
-    char str[TEMPORARY_STRING_LENGTH];
-    snprintf(str, sizeof(str),
-       "EARLY EXIT caused by signal SIGTERM.  Completed timestep at time=%s.",
-             m_time->date().c_str());
-    prepend_history(str);
+
+    prepend_history(pism::printf("EARLY EXIT caused by signal SIGTERM. Completed timestep at time=%s.",
+                                 m_time->date().c_str()));
     // Tell the caller that the user requested an early termination of
     // the run.
     return 1;
@@ -102,7 +100,7 @@ void IceModel::update_run_stats() {
 
   // time-independent info
   {
-    m_run_stats.set_string("source", std::string("PISM ") + PISM_Revision);
+    m_run_stats.set_string("source", std::string("PISM ") + pism::revision);
     m_run_stats.set_string("long_name", "Run statistics");
   }
 

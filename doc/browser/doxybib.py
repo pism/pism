@@ -2,8 +2,8 @@
 import re
 from os import popen, system
 
-input  = "ice-bib"
-bbl    = "texput.bbl"
+input = "ice-bib"
+bbl = "texput.bbl"
 output = "references.md"
 
 header = """References {#references}
@@ -26,7 +26,7 @@ latexdummy = """\\documentclass{article}
 system("rm -f %s" % bbl)
 
 # Run LaTeX:
-f= popen("latex", 'w')
+f = popen("latex", 'w')
 f.write(latexdummy)
 f.close()
 
@@ -40,9 +40,9 @@ f.close()
 body = "".join(lines[:])
 
 # NB! The order of substitutions is important.
-subs = [(r"%\n",                      r""), # lines wrapped by BibTeX
-        (r"\\href{([^}]*)}{([^}]*)}", r'[\2](\1)'), # hyperref href command
-        (r"\\url{([^}]*)}",           r'[\1](\1)'), # hyperref url command
+subs = [(r"%\n",                      r""),  # lines wrapped by BibTeX
+        (r"\\href{([^}]*)}{([^}]*)}", r'[\2](\1)'),  # hyperref href command
+        (r"\\url{([^}]*)}",           r'[\1](\1)'),  # hyperref url command
         (r"\\\w*{([^}]*)}",           r" \1 "),                # ignore other LaTeX commands
         (r"[}{]",                     r""),                    # curly braces
         (r"\$\\sim\$",                r"~"),                   # LaTeX \sim used to represent ~

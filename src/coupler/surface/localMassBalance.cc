@@ -274,12 +274,17 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
   // Turn firn into ice at X times accumulation
   // firn_depth -= accumulation *  m_config->get_double("surface.pdd.firn_compaction_to_accumulation_ratio");
 
+  const double smb = accumulation - runoff;
+
   Changes result;
-  result.firn_depth    = firn_depth - old_firn_depth;
-  result.snow_depth    = snow_depth - old_snow_depth;
-  result.melt          = melt;
-  result.runoff        = runoff;
-  result.smb           = accumulation - runoff;
+  // Ensure that we never generate negative ice thicknesses. As far as I can tell the code
+  // above guarantees that thickness + smb >= *in exact arithmetic*. The check below
+  // should make sure that we don't get bitten by rounding errors.
+  result.smb        = thickness + smb >= 0 ? smb : -thickness;
+  result.firn_depth = firn_depth - old_firn_depth;
+  result.snow_depth = snow_depth - old_snow_depth;
+  result.melt       = melt;
+  result.runoff     = runoff;
 
   assert(thickness + result.smb >= 0);
 
@@ -450,57 +455,6 @@ void FaustoGrevePDDObject::update_temp_mj(const IceModelVec2S &surfelev,
     const int i = p.i(), j = p.j();
     m_temp_mj(i,j) = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
   }
-}
-
-AschwandenPDDObject::AschwandenPDDObject(Config::ConstPtr config) {
-
-  m_beta_ice_w  = config->get_double("surface.pdd.aschwanden.beta_ice_w");
-  m_beta_snow_w = config->get_double("surface.pdd.aschwanden.beta_snow_w");
-
-  m_beta_ice_c  = config->get_double("surface.pdd.aschwanden.beta_ice_c");
-  m_beta_snow_c = config->get_double("surface.pdd.aschwanden.beta_snow_c");
-
-  m_transition_latitude = config->get_double("surface.pdd.aschwanden.latitude_beta_w");
-  m_transition_width    = config->get_double("surface.pdd.aschwanden.warm_cold_transition_width");
-  m_refreeze_fraction   = config->get_double("surface.pdd.refreeze");
-  m_fresh_water_density = config->get_double("constants.fresh_water.density");
-  m_ice_density         = config->get_double("constants.ice.density");
-}
-
-AschwandenPDDObject::~AschwandenPDDObject() {
-  // empty
-}
-
-LocalMassBalance::DegreeDayFactors AschwandenPDDObject::degree_day_factors(double latitude) {
-
-  LocalMassBalance::DegreeDayFactors ddf;
-  ddf.refreeze_fraction = m_refreeze_fraction;
-
-  double width = m_transition_width;
-  double L     = m_transition_latitude;
-
-  double lambda = 0.0;
-  if (latitude <= L - width / 2.0) {
-    // warm case: latitude <= 77 deg N - smoothing
-    lambda = 0.0;
-  } else if (latitude <= L + width / 2.0) {
-    // intermediate case: linear transition
-    lambda = (latitude - (L - width / 2.0)) / width;
-  } else {
-    // cold case: latitude > 77 deg N + smoothing
-    lambda = 1.0;
-  }
-
-  ddf.ice  = (1.0 - lambda) * m_beta_ice_w  + lambda * m_beta_ice_c;
-  ddf.snow = (1.0 - lambda) * m_beta_snow_w + lambda * m_beta_snow_c;
-
-  // Convert degree-day factors from water-equivalent thickness per degree day to ice-equivalent
-  // thickness per degree day.
-  double iwfactor = m_fresh_water_density / m_ice_density;
-  ddf.snow *= iwfactor;
-  ddf.ice  *= iwfactor;
-
-  return ddf;
 }
 
 } // end of namespace surface

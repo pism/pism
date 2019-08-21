@@ -43,6 +43,7 @@ def failure():
     print("Files are different.")
     exit(1)
 
+
 usage = """nccmp.py compares NetCDF files by absolute max norms of difference of variables
 usage:
   nccmp.py foo.nc bar.nc            compare all variables
@@ -148,6 +149,7 @@ def compare(file1, file2, variables, exclude, tol, relative):
             if (each in variables):
                 continue
             compare_vars(nc1, nc2, each, tol, relative)
+
 
 if __name__ == "__main__":
     from numpy import double

@@ -17,33 +17,61 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-#include <cmath>
-#include <gsl/gsl_math.h> // M_PI
-#include <petscsys.h>
+#include <petscsys.h>           // PetscSqr
+#include <cmath>                // atan, sqrt
+#include <gsl/gsl_math.h>       // M_PI
+
+#include "IceModel.hh"
+
+#include "pism/energy/EnergyModel.hh"
+
+#include "pism/rheology/FlowLaw.hh"
 
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
+
 #include "pism/util/IceGrid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_options.hh"
-#include "IceModel.hh"
 
 namespace pism {
 
 //! \file fracture_density.cc implementing calculation of fracture density with PIK options -fractures.
 
 void IceModel::update_fracture_density() {
-  const double dx = m_grid->dx(), dy = m_grid->dy(), Mx = m_grid->Mx(), My = m_grid->My();
+  const double
+    dx = m_grid->dx(),
+    dy = m_grid->dy();
+  const int
+    Mx = m_grid->Mx(),
+    My = m_grid->My();
 
-  IceModelVec2S &D = m_fracture->density, &A = m_fracture->age, &D_new = m_work2d[0], &A_new = m_work2d[1];
+  IceModelVec2S
+    &D        = m_fracture->density,
+    &A        = m_fracture->age,
+    &D_new    = m_work2d[0],
+    &A_new    = m_work2d[1],
+    &hardness = m_work2d[2];
 
   // get SSA velocities and related strain rates and stresses
-  const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
-  IceModelVec2 &strain_rates = m_fracture->strain_rates;
-  IceModelVec2 &deviatoric_stresses = m_fracture->deviatoric_stresses;
-  stressbalance::compute_2D_principal_strain_rates(ssa_velocity, m_geometry.cell_type, strain_rates);
-  m_stress_balance->compute_2D_stresses(ssa_velocity, m_geometry.cell_type, deviatoric_stresses);
+  const IceModelVec2V &ssa_velocity        = m_stress_balance->advective_velocity();
+  IceModelVec2        &strain_rates        = m_fracture->strain_rates;
+  IceModelVec2        &deviatoric_stresses = m_fracture->deviatoric_stresses;
+
+  stressbalance::compute_2D_principal_strain_rates(ssa_velocity,
+                                                   m_geometry.cell_type,
+                                                   strain_rates);
+
+  averaged_hardness_vec(*m_stress_balance->shallow()->flow_law(),
+                        m_geometry.ice_thickness,
+                        m_energy_model->enthalpy(),
+                        hardness);
+
+  m_stress_balance->compute_2D_stresses(ssa_velocity,
+                                        hardness,
+                                        m_geometry.cell_type,
+                                        deviatoric_stresses);
 
   IceModelVec::AccessList list{&ssa_velocity, &strain_rates, &deviatoric_stresses,
       &m_geometry.ice_thickness, &D, &D_new, &m_geometry.cell_type};

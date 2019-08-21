@@ -85,7 +85,7 @@ MaxTimestep SeaRISEGreenland::max_timestep_impl(double t) const {
   return MaxTimestep("atmosphere searise_greenland");
 }
 
-//! \brief Updates mean annual and mean July near-surface air temperatures.
+//! \brief Updates mean annual and mean summer (July) near-surface air temperatures.
 //! Note that the precipitation rate is time-independent and does not need
 //! to be updated.
 void SeaRISEGreenland::update_impl(const Geometry &geometry, double t, double dt) {
@@ -119,12 +119,12 @@ void SeaRISEGreenland::update_impl(const Geometry &geometry, double t, double dt
                        "SeaRISE-Greenland atmosphere model depends on longitude and would return nonsense!");
   }
 
-  IceModelVec::AccessList list{&h, &lat_degN, &lon_degE, &m_air_temp_mean_annual, &m_air_temp_mean_july};
+  IceModelVec::AccessList list{&h, &lat_degN, &lon_degE, &m_air_temp_mean_annual, &m_air_temp_mean_summer};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     m_air_temp_mean_annual(i,j) = d_ma + gamma_ma * h(i,j) + c_ma * lat_degN(i,j) + kappa_ma * (-lon_degE(i,j));
-    m_air_temp_mean_july(i,j)   = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
+    m_air_temp_mean_summer(i,j)   = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
   }
 }
 
