@@ -116,6 +116,8 @@ void Interpolation::init_linear(const double *input_x, unsigned int input_x_size
     assert(m_right[i] >= 0 and m_right[i] < (int)input_x_size);
     assert(m_alpha[i] >= 0.0 and m_alpha[i] <= 1.0);
   }
+
+  init_weights_linear(input_x, input_x_size, output_x, output_x_size);
 }
 
 const std::vector<int>& Interpolation::left() const {
@@ -274,5 +276,74 @@ void Interpolation::init_linear_periodic(const double *input_x, unsigned int inp
     m_alpha[i] = alpha;
   }
 }
+
+/*!
+ * Initialize integration weights (trapezoid rule).
+ */
+void Interpolation::init_weights_linear(const double *x,
+                                        unsigned int x_size,
+                                        const double *output_x,
+                                        unsigned int output_x_size) {
+  int
+    N = output_x_size - 1,
+    al = m_left[0],
+    ar = m_right[0],
+    bl = m_left[N],
+    br = m_left[N];
+
+  double
+    a = output_x[0],
+    b = output_x[N],
+    alpha_a = m_alpha[0],
+    alpha_b = m_alpha[N];
+
+  if (a >= b) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid interval: (%f, %f)", a, b);
+  }
+
+  m_interval_length = b - a;
+
+  m_w.resize(x_size);
+  for (unsigned int k = 0; k < x_size; ++k) {
+    m_w[k] = 0.0;
+  }
+
+  if (al == bl and ar == br) {
+    // both end points are in the same interval
+
+    m_w[al] += 0.5 * (2.0 - alpha_a - alpha_b) * (b - a);
+    m_w[ar] += 0.5 * (alpha_a + alpha_b) * (b - a);
+  } else {
+    // first interval
+    m_w[al] += 0.5 * (1.0 - alpha_a) * (x[ar] - a);
+    m_w[ar] += 0.5 * (1.0 + alpha_a) * (x[ar] - a);
+
+    // intermediate intervals
+    for (int k = ar; k < bl; ++k) {
+      int
+        L = k,
+        R = k + 1;
+      m_w[L] += 0.5 * (x[R] - x[L]);
+      m_w[R] += 0.5 * (x[R] - x[L]);
+    }
+
+    // last interval
+    m_w[bl] += 0.5 * (2.0 - alpha_b) * (b - x[bl]);
+    m_w[br] += 0.5 * alpha_b * (b - x[bl]);
+  }
+}
+
+double Interpolation::integral(const double *input) const {
+  double result = 0.0;
+  for (size_t k = 0; k < m_w.size(); ++k) {
+    result += input[k] * m_w[k];
+  }
+  return result;
+}
+
+double Interpolation::interval_length() const {
+  return m_interval_length;
+}
+
 
 } // end of namespace pism

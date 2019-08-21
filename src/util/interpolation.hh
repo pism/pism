@@ -105,11 +105,20 @@ public:
    * Compute interpolated values on the output grid given values on the input grid.
    */
   void interpolate(const double *input, double *output) const;
+
+  double integral(const double *input) const;
+  double interval_length() const;
 private:
   //! Interpolation indexes
   std::vector<int> m_left, m_right;
   //! Interpolation weights
   std::vector<double> m_alpha;
+
+  //! Integration weights
+  std::vector<double> m_w;
+  //! Length of the interval defined by `output_x`.
+  double m_interval_length;
+
   void init_linear(const double *input_x, unsigned int input_x_size,
                    const double *output_x, unsigned int output_x_size);
   void init_nearest(const double *input_x, unsigned int input_x_size,
@@ -119,6 +128,11 @@ private:
   void init_linear_periodic(const double *input_x, unsigned int input_x_size,
                             const double *output_x, unsigned int output_x_size,
                             double period);
+
+  void init_weights_linear(const double *x,
+                           unsigned int x_size,
+                           const double *output_x,
+                           unsigned int output_x_size);
 };
 
 } // end of namespace pism
