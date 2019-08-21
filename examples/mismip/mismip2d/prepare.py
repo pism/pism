@@ -107,6 +107,7 @@ def pism_bootstrap_file(filename, experiment, step, mode,
 
     nc.close()
 
+
 if __name__ == "__main__":
 
     from optparse import OptionParser

@@ -4,7 +4,9 @@
 import itertools
 from collections import OrderedDict
 import numpy as np
-import os, sys, shlex
+import os
+import sys
+import shlex
 from os.path import join, abspath, realpath, dirname
 
 try:
@@ -15,20 +17,24 @@ except:
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import sys
 
+
 def current_script_directory():
     import inspect
     filename = inspect.stack(0)[0][1]
     return realpath(dirname(filename))
 
+
 script_directory = current_script_directory()
 
 from resources import *
+
 
 def map_dict(val, mdict):
     try:
         return mdict[val]
     except:
         return val
+
 
 grid_choices = [40, 20, 10]
 
@@ -148,8 +154,8 @@ pism_config = 'psg_config'
 pism_config_nc = join(output_dir, pism_config + ".nc")
 
 cmd = "ncgen -o {output} {input_dir}/{config}.cdl".format(output=pism_config_nc,
-                                                                 input_dir=input_dir,
-                                                                 config=pism_config)
+                                                          input_dir=input_dir,
+                                                          config=pism_config)
 sub.call(shlex.split(cmd))
 
 # these Bash commands are added to the beginning of the run scrips
@@ -180,11 +186,11 @@ done
 # set up model initialization
 # ########################################################
 
-ssa_n    = 3.0
-ssa_e    = 1.0
-tefo     = 0.020
-phi_min  = 5.0
-phi_max  = 40.
+ssa_n = 3.0
+ssa_e = 1.0
+tefo = 0.020
+phi_min = 5.0
+phi_max = 40.
 topg_min = -700
 topg_max = 700
 
@@ -200,16 +206,17 @@ except:
 
 tsstep = 'yearly'
 
-scripts           = []
+scripts = []
 scripts_combinded = []
 
 simulation_start_year = options.start_year
-simulation_end_year   = options.start_year + options.duration
-restart_step          = options.step
+simulation_end_year = options.start_year + options.duration
+restart_step = options.step
 
 if restart_step > (simulation_end_year - simulation_start_year):
     print('Error:')
-    print('restart_step > (simulation_end_year - simulation_start_year): {} > {}'.format(restart_step, simulation_end_year - simulation_start_year))
+    print('restart_step > (simulation_end_year - simulation_start_year): {} > {}'.format(restart_step,
+                                                                                         simulation_end_year - simulation_start_year))
     print('Try again')
     import sys
     sys.exit(0)
@@ -230,9 +237,8 @@ for n, combination in enumerate(combinations):
     except:
         name_options['id'] = '{}'.format(run_id)
 
-    full_exp_name =  '_'.join(['_'.join(['_'.join([k, str(v)]) for k, v in name_options.items()])])
+    full_exp_name = '_'.join(['_'.join(['_'.join([k, str(v)]) for k, v in name_options.items()])])
     full_outfile = 'g{grid}m_{experiment}.nc'.format(grid=grid, experiment=full_exp_name)
-
 
     # All runs in one script file for coarse grids that fit into max walltime
     script_combined = join(scripts_dir, 'sg_g{}m_{}_j.sh'.format(grid, full_exp_name))
@@ -245,7 +251,8 @@ for n, combination in enumerate(combinations):
 
             end = start + restart_step
 
-            experiment =  '_'.join(['_'.join(['_'.join([k, str(v)]) for k, v in name_options.items()]), '{}'.format(start), '{}'.format(end)])
+            experiment = '_'.join(['_'.join(['_'.join([k, str(v)])
+                                             for k, v in name_options.items()]), '{}'.format(start), '{}'.format(end)])
 
             script = join(scripts_dir, 'sg_g{}m_{}.sh'.format(grid, experiment))
             scripts.append(script)
@@ -265,11 +272,11 @@ for n, combination in enumerate(combinations):
                 f.write(batch_header)
                 f.write(run_header)
 
-                outfile = '{domain}_g{grid}m_{experiment}.nc'.format(domain=domain.lower(), grid=grid, experiment=experiment)
+                outfile = '{domain}_g{grid}m_{experiment}.nc'.format(
+                    domain=domain.lower(), grid=grid, experiment=experiment)
 
                 pism = generate_prefix_str(pism_exec)
 
-                    
                 general_params_dict = {
                     'ys':                          start,
                     'ye':                          end,
@@ -291,12 +298,10 @@ for n, combination in enumerate(combinations):
                 else:
                     general_params_dict['i'] = regridfile
 
-
                 if osize != 'custom':
                     general_params_dict['o_size'] = osize
                 else:
                     general_params_dict['output.sizes.medium'] = 'sftgif,velsurf_mag'
-
 
                 if start == simulation_start_year:
                     grid_params_dict = generate_grid_description(grid, domain)
@@ -314,8 +319,8 @@ for n, combination in enumerate(combinations):
 
                 stress_balance_params_dict = generate_stress_balance(stress_balance, sb_params_dict)
 
-                climate_params_dict = generate_climate(climate, **{'energy.ch_warming.enabled': cryohydrologic_warming})
-
+                climate_params_dict = generate_climate(
+                    climate, **{'energy.ch_warming.enabled': cryohydrologic_warming})
 
                 hydro_params_dict = generate_hydrology(hydrology)
 
@@ -352,7 +357,7 @@ for n, combination in enumerate(combinations):
 
                 context = merge_dicts(batch_system,
                                       dirs,
-                                      {"job_no" : job_no, "pism" : pism, "params" : all_params})
+                                      {"job_no": job_no, "pism": pism, "params": all_params})
                 cmd = template.format(**context)
 
                 f.write(cmd)
@@ -376,4 +381,3 @@ print('\n'.join([script for script in scripts]))
 print('\nwritten\n')
 print('\n'.join([script for script in scripts_combinded]))
 print('\nwritten\n')
-

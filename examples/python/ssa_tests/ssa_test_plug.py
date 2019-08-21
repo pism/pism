@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -25,7 +25,7 @@ L = 50.e3  # // 50km half-width
 dhdx = 0.001  # // pure number, slope of surface & bed
 tauc0 = 0.  # // No basal shear stress
 B0 = 3.7e8  # // Pa s^{1/3}; hardness
-#// given on p. 239 of Schoof; why so big?
+# // given on p. 239 of Schoof; why so big?
 glen_n = 3.
 
 
@@ -40,10 +40,10 @@ class test_plug(PISM.ssa.SSAExactTestCase):
     def _initPhysics(self):
         config = self.config
 
-        #// Enthalpy converter is irrelevant for this test.
+        # // Enthalpy converter is irrelevant for this test.
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
-        #// Use constant hardness
+        # // Use constant hardness
         config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
         config.set_double("flow_law.isothermal_Glen.ice_softness", pow(B0, -glen_n))
         config.set_double("stress_balance.ssa.Glen_exponent", glen_n)
@@ -86,7 +86,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
         # Ensure we never use the strength extension.
         self.ssa.strength_extension.set_min_thickness(H0 / 2)
 
-        #// The finite difference code uses the following flag to treat the non-periodic grid correctly.
+        # // The finite difference code uses the following flag to treat the non-periodic grid correctly.
         # self.config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", True);
 
         # SSAFEM uses this (even though it has "ssafd" in its name)
@@ -101,15 +101,13 @@ class test_plug(PISM.ssa.SSAExactTestCase):
         u = 0.5 * (f ** 3) * (L ** 4) / ((B0 * H0) ** 3) * (1 - ynd ** 4)
         return [u, 0]
 
+
 # The main code for a run follows:
 if __name__ == '__main__':
     context = PISM.Context()
+    config = context.config
 
     PISM.set_abort_on_sigint(True)
 
-    Mx = PISM.optionsInt("-Mx", "Number of grid points in x-direction", default=61)
-    My = PISM.optionsInt("-My", "Number of grid points in y-direction", default=61)
-    output_file = PISM.optionsString("-o", "output file", default="test_plug.nc")
-
-    tc = test_plug(Mx, My)
-    tc.run(output_file)
+    tc = test_plug(int(config.get_double("grid.Mx")), int(config.get_double("grid.My")))
+    tc.run(config.get_string("output.file_name"))

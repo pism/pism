@@ -29,6 +29,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/Time.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
@@ -52,6 +53,84 @@ Inputs::Inputs() {
   no_model_mask              = NULL;
   no_model_ice_thickness     = NULL;
   no_model_surface_elevation = NULL;
+}
+
+/*!
+ * Save stress balance inputs to a file (for debugging).
+ */
+void Inputs::dump(const char *filename) const {
+  if (not geometry) {
+    return;
+  }
+
+  Context::ConstPtr ctx = geometry->ice_thickness.grid()->ctx();
+  Config::ConstPtr config = ctx->config();
+
+  PIO output(ctx->com(), config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
+
+  config->write(output);
+
+  io::define_time(output, *ctx);
+  io::append_time(output, config->get_string("time.dimension_name"), ctx->time()->current());
+
+  {
+    geometry->latitude.write(output);
+    geometry->longitude.write(output);
+
+    geometry->bed_elevation.write(output);
+    geometry->sea_level_elevation.write(output);
+
+    geometry->ice_thickness.write(output);
+    geometry->ice_area_specific_volume.write(output);
+
+    geometry->cell_type.write(output);
+    geometry->cell_grounded_fraction.write(output);
+    geometry->ice_surface_elevation.write(output);
+  }
+
+  if (basal_melt_rate) {
+    basal_melt_rate->write(output);
+  }
+
+  if (melange_back_pressure) {
+    melange_back_pressure->write(output);
+  }
+
+  if (fracture_density) {
+    fracture_density->write(output);
+  }
+
+  if (basal_yield_stress) {
+    basal_yield_stress->write(output);
+  }
+
+  if (enthalpy) {
+    enthalpy->write(output);
+  }
+
+  if (age) {
+    age->write(output);
+  }
+
+  if (bc_mask) {
+    bc_mask->write(output);
+  }
+
+  if (bc_values) {
+    bc_values->write(output);
+  }
+
+  if (no_model_mask) {
+    no_model_mask->write(output);
+  }
+
+  if (no_model_ice_thickness) {
+    no_model_ice_thickness->write(output);
+  }
+
+  if (no_model_surface_elevation) {
+    no_model_surface_elevation->write(output);
+  }
 }
 
 StressBalance::StressBalance(IceGrid::ConstPtr g,
@@ -170,9 +249,10 @@ const IceModelVec3& StressBalance::volumetric_strain_heating() const {
 }
 
 void StressBalance::compute_2D_stresses(const IceModelVec2V &velocity,
-                                        const IceModelVec2CellType &mask,
+                                        const IceModelVec2S &hardness,
+                                        const IceModelVec2CellType &cell_type,
                                         IceModelVec2 &result) const {
-  m_shallow_stress_balance->compute_2D_stresses(velocity, mask, result);
+  m_shallow_stress_balance->compute_2D_stresses(velocity, hardness, cell_type, result);
 }
 
 //! Compute vertical velocity using incompressibility of the ice.
@@ -681,7 +761,7 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &V,
     const double A = 0.5 * (u_x + v_y),  // A = (1/2) trace(D)
       B   = 0.5 * (u_x - v_y),
       Dxy = 0.5 * (v_x + u_y),  // B^2 = A^2 - u_x v_y
-      q   = sqrt(PetscSqr(B) + PetscSqr(Dxy));
+      q   = sqrt(B*B + Dxy*Dxy);
     result(i,j,0) = A + q;
     result(i,j,1) = A - q; // q >= 0 so e1 >= e2
 

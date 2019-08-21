@@ -27,20 +27,18 @@ namespace pism {
 
 class IceModelVec2CellType;
 
-namespace hydrology {
-class Hydrology;
-}
-
 //! @brief PISM's default basal yield stress model which applies the
 //! Mohr-Coulomb model of deformable, pressurized till.
 class MohrCoulombYieldStress : public YieldStress {
 public:
-  MohrCoulombYieldStress(IceGrid::ConstPtr g, hydrology::Hydrology *hydro);
+  MohrCoulombYieldStress(IceGrid::ConstPtr g);
   virtual ~MohrCoulombYieldStress();
 
   void set_till_friction_angle(const IceModelVec2S &input);
 protected:
-  virtual void init_impl();
+  virtual void init_impl(const Geometry &geometry,
+                         const IceModelVec2S &till_water_thickness,
+                         const IceModelVec2S &overburden_pressure);
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
@@ -50,14 +48,17 @@ protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(const YieldStressInputs &inputs);
 
-  void topg_to_phi(const IceModelVec2S &bed_topography);
-  void tauc_to_phi(const IceModelVec2CellType &mask);
-protected:
-  IceModelVec2S m_till_phi;
-  hydrology::Hydrology *m_hydrology;
+private:
+  void till_friction_angle(const IceModelVec2S &bed_topography,
+                           IceModelVec2S &result);
 
-  // only allocated and used if basal_yield_stress.add_transportable_water = true
-  IceModelVec2S m_bwat;
+  void till_friction_angle(const IceModelVec2S &basal_yield_stress,
+                           const IceModelVec2S &till_water_thickness,
+                           const IceModelVec2S &overburden_pressure,
+                           const IceModelVec2CellType &cell_type,
+                           IceModelVec2S &result);
+
+  IceModelVec2S m_till_phi;
 };
 
 } // end of namespace pism

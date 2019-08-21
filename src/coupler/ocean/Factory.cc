@@ -20,6 +20,7 @@
 #include "Factory.hh"
 
 // ocean models:
+#include "Anomaly.hh"
 #include "Constant.hh"
 #include "ConstantPIK.hh"
 #include "GivenClimate.hh"
@@ -46,6 +47,7 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_model<Given>("given");
   set_default("constant");
 
+  add_modifier<Anomaly>("anomaly");
   add_modifier<Cache>("cache");
   add_modifier<Delta_SMB>("delta_SMB");
   add_modifier<Frac_SMB>("frac_SMB");

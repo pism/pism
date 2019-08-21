@@ -7,6 +7,8 @@ PISM.set_abort_on_sigint(True)
 context = PISM.Context()
 config = PISM.Context().config
 
+config.set_string("output.file_name", "tiny.nc")
+
 # Default constants that  may get overridden later.
 
 Ly = 25e3  # 25 km
@@ -53,15 +55,15 @@ def stream_tauc(x, y):
 # The main code for a run follows:
 if __name__ == '__main__':
 
-    Mx = PISM.optionsInt("-Mx", "Number of grid points in x-direction", default=Mx)
-    My = PISM.optionsInt("-My", "Number of grid points in y-direction", default=My)
-    output_filename = PISM.optionsString("-o", "output file", default="tiny.nc")
-    verbosity = PISM.optionsInt("-verbose", "verbosity level", default=3)
+    config = PISM.Context().config
+
+    config.set_double("grid.Mx", Mx, PISM.CONFIG_DEFAULT)
+    config.set_double("grid.My", My, PISM.CONFIG_DEFAULT)
 
     # Build the grid.
     p = PISM.GridParameters(config)
-    p.Mx = Mx
-    p.My = My
+    p.Mx = int(config.get_double("grid.Mx"))
+    p.My = int(config.get_double("grid.My"))
     p.Lx = Lx
     p.Ly = Ly
     z = PISM.IceGrid.compute_vertical_levels(Lz, Mz, PISM.EQUAL, 4.0)
@@ -116,6 +118,7 @@ if __name__ == '__main__':
             if (i == 0) or (i == grid.Mx() - 1) or (j == 0) or (j == grid.My() - 1):
                 no_model_mask[i, j] = 1
 
+    output_filename = config.get_string("output.file_name")
     pio = PISM.util.prepare_output(output_filename)
     pio.close()
     vecs.writeall(output_filename)

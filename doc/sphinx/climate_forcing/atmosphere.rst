@@ -100,18 +100,57 @@ every one degree Celsius of temperature change :cite:`Huybrechts02`.
 
 PIK
 +++
-    
+
 :|options|: :opt:`-atmosphere pik`
-:|variables|: :var:`lat`,
-              :var:`precipitation`
+:|variables|: :var:`lat`, :var:`lon`, :var:`precipitation`
 :|implementation|: ``pism::atmosphere::PIK``
 
-This model component reads a time-independent precipitation field from an input
-(:opt:`-i`) file and computes near-surface air temperature using a latitude and surface
-elevation-dependent formula.
+This model component reads a time-independent precipitation field from an input file
+specified by :config:`atmosphere.pik.file` and computes near-surface air temperature using
+a parameterization selected using :config:`atmosphere.pik.parameterization` (command-line
+option :opt:`-atmosphere_pik`).
 
-The parameterization is the same as in the :opt:`-surface pik` model, section
-:ref:`sec-surface-pik`.
+.. note::
+
+   * Parameterizations implemented in this model are appropriate for the **Antarctic** ice
+     sheet.
+
+   * All parameterizations except for the first one implement a cosine annual cycle of the
+     near-surface air temperature.
+
+.. list-table:: Near-surface air temperature parameterizations
+   :header-rows: 1
+   :widths: 1,2
+
+   * - Keyword
+     - Description
+
+   * - ``martin`` (default)
+     - Uses equation (1) from :cite:`Martinetal2011` to parameterize mean annual
+       temperature with *no seasonal variation in temperature.*
+
+   * - ``huybrechts_dewolde``
+     - Mean annual and mean summer temperatures are computed using parameterizations for
+       the Antarctic ice sheet described in :cite:`HuybrechtsdeWolde` (equations C1 and C2).
+
+   * - ``martin_huybrechts_dewolde``
+     - Hybrid of the two above: mean annual temperature as in :cite:`Martinetal2011` with
+       the amplitude of the annual cycle from :cite:`HuybrechtsdeWolde`.
+
+   * - ``era_interim``
+     - Mean annual and mean summer temperatures use parameterizations based on multiple
+       regression analysis of ERA INTERIM data.
+
+   * - ``era_interim_sin``
+     - Mean annual and mean summer temperatures use parameterizations based on multiple
+       regression analysis of ERA INTERIM data with a `\sin(\text{latitude})` dependence.
+
+   * - ``era_interim_lon``
+     - Mean annual and mean summer temperatures use parameterizations based on multiple
+       regression analysis of ERA INTERIM data with a `\cos(\text{longitude})` dependence.
+
+See :ref:`sec-surface-pik` for a surface model that implements the ``martin`` choice as a
+parameterization of the ice temperature at its top surface.
 
 .. _sec-atmosphere-one-station:
 

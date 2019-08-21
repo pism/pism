@@ -8,7 +8,7 @@ macro(pism_use_rpath)
   set (CMAKE_SKIP_BUILD_RPATH FALSE)
   # when building, don't use the install RPATH already
   # (but later on when installing)
-  set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
+  set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
   # the RPATH to be used when installing
   set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
   # add the automatically determined parts of the RPATH
@@ -23,7 +23,7 @@ endmacro(pism_use_rpath)
 # Set CMake variables to disable rpath
 macro(pism_dont_use_rpath)
   set (CMAKE_SKIP_BUILD_RPATH TRUE)
-  set (CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
+  set (CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
   set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
   set (CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 endmacro(pism_dont_use_rpath)
@@ -170,8 +170,8 @@ macro(pism_find_prerequisites)
     find_package (PNetCDF REQUIRED)
   endif()
 
-  if (Pism_USE_PROJ4)
-    find_package (PROJ4 REQUIRED)
+  if (Pism_USE_PROJ)
+    find_package (PROJ REQUIRED)
   endif()
 
   if (Pism_USE_PARALLEL_NETCDF4)
@@ -246,9 +246,9 @@ macro(pism_set_dependencies)
     list (APPEND Pism_EXTERNAL_LIBS ${JANSSON_LIBRARIES})
   endif()
 
-  if (Pism_USE_PROJ4)
-    include_directories (${PROJ4_INCLUDES})
-    list (APPEND Pism_EXTERNAL_LIBS ${PROJ4_LIBRARIES})
+  if (Pism_USE_PROJ)
+    include_directories (${PROJ_INCLUDES})
+    list (APPEND Pism_EXTERNAL_LIBS ${PROJ_LIBRARIES})
   endif()
 
   if (Pism_USE_PNETCDF)
@@ -293,15 +293,15 @@ macro(pism_check_petsc_scalar_type)
   endif()
 endmacro()
 
-# Set version information that will be embedded in output files.
-macro(pism_set_version_info)
-  pism_petsc_get_variable("CONFIGURE_OPTIONS" PISM_PETSC_CONFIGURE_FLAGS)
-  add_definitions("-DPISM_PETSC_CONFIGURE_FLAGS=\"${PISM_PETSC_CONFIGURE_FLAGS}\"")
-
-  add_definitions("-DPISM_CMAKE_VERSION=\"${CMAKE_VERSION}\"")
-
-  if (Pism_BUILD_PYTHON_BINDINGS)
-    add_definitions("-DPISM_SWIG_VERSION=\"${SWIG_VERSION}\"")
-    add_definitions("-DPISM_PETSC4PY_VERSION=\"${Pism_PETSC4PY_VERSION}\"")
-  endif()
-endmacro()
+# Create a list of subdirectories.
+# See https://stackoverflow.com/questions/7787823/cmake-how-to-get-the-name-of-all-subdirectories-of-a-directory
+MACRO(SUBDIRLIST result curdir)
+  FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
+  SET(dirlist "")
+  FOREACH(child ${children})
+    IF(IS_DIRECTORY ${curdir}/${child})
+      LIST(APPEND dirlist ${child})
+    ENDIF()
+  ENDFOREACH()
+  SET(${result} ${dirlist})
+ENDMACRO()

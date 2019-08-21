@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,6 +25,8 @@
 
 namespace pism {
 namespace energy {
+
+class BedrockColumn;
 
 //! @brief Given the temperature of the top of the bedrock, for the duration of one time-step,
 //! provides upward geothermal flux at that interface at the end of the time-step.
@@ -122,6 +124,8 @@ protected:
   bool m_bootstrapping_needed;
 
   void update_flux_through_top_surface();
+
+  std::shared_ptr<BedrockColumn> m_column;
 };
 
 } // end of namespace energy

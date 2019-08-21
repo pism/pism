@@ -32,7 +32,6 @@ namespace rheology {
 #define ICE_ISOTHERMAL_GLEN  "isothermal_glen" /* Plain isothermal Glen */
 #define ICE_PB      "pb"            /* Paterson-Budd (PatersonBudd) */
 #define ICE_GPBLD   "gpbld"         /* Paterson-Budd-Lliboutry-Duval (GPBLD) */
-#define ICE_GPBLD3   "gpbld3"         /* Paterson-Budd-Lliboutry-Duval (GPBLD) (n == 3)*/
 #define ICE_HOOKE   "hooke"         /* Hooke (Hooke) */
 #define ICE_ARR     "arr"           /* Temperature dependent Arrhenius (either warm or cold) */
 #define ICE_GOLDSBY_KOHLSTEDT "gk"  /* Goldsby-Kohlstedt for SIA */

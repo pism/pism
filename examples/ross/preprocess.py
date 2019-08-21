@@ -249,6 +249,7 @@ def final_corrections(filename):
 
     nc.close()
 
+
 if __name__ == "__main__":
 
     velocity = preprocess_ice_velocity()

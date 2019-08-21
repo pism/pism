@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -275,36 +275,38 @@ void append_time(const PIO &nc, const std::string &name, double value) {
 
 //! \brief Define dimensions a variable depends on.
 static void define_dimensions(const SpatialVariableMetadata& var,
-                              const IceGrid& grid, const PIO &nc) {
+                              const IceGrid& grid, const PIO &file) {
 
   // x
   std::string x_name = var.get_x().get_name();
-  if (not nc.inq_dim(x_name)) {
-    define_dimension(nc, grid.Mx(), var.get_x());
-    nc.put_att_double(x_name, "spacing_meters", PISM_DOUBLE,
-                      grid.x(1) - grid.x(0));
-    nc.put_1d_var(x_name, 0, grid.x().size(), grid.x());
+  if (not file.inq_dim(x_name)) {
+    define_dimension(file, grid.Mx(), var.get_x());
+    file.put_att_double(x_name, "spacing_meters", PISM_DOUBLE,
+                        grid.x(1) - grid.x(0));
+    file.put_1d_var(x_name, 0, grid.x().size(), grid.x());
   }
 
   // y
   std::string y_name = var.get_y().get_name();
-  if (not nc.inq_dim(y_name)) {
-    define_dimension(nc, grid.My(), var.get_y());
-    nc.put_att_double(y_name, "spacing_meters", PISM_DOUBLE,
-                      grid.y(1) - grid.y(0));
-    nc.put_1d_var(y_name, 0, grid.y().size(), grid.y());
+  if (not file.inq_dim(y_name)) {
+    define_dimension(file, grid.My(), var.get_y());
+    file.put_att_double(y_name, "spacing_meters", PISM_DOUBLE,
+                        grid.y(1) - grid.y(0));
+    file.put_1d_var(y_name, 0, grid.y().size(), grid.y());
   }
 
   // z
   std::string z_name = var.get_z().get_name();
   if (not z_name.empty()) {
-    if (not nc.inq_dim(z_name)) {
+    if (not file.inq_dim(z_name)) {
       const std::vector<double>& levels = var.get_levels();
       // make sure we have at least one level
       unsigned int nlevels = std::max(levels.size(), (size_t)1);
-      define_dimension(nc, nlevels, var.get_z());
+      define_dimension(file, nlevels, var.get_z());
 
-      if (nlevels > 1) {
+      bool spatial_dim = not var.get_z().get_string("axis").empty();
+
+      if (nlevels > 1 and spatial_dim) {
         double dz_max = levels[1] - levels[0];
         double dz_min = levels.back() - levels.front();
 
@@ -314,13 +316,13 @@ static void define_dimensions(const SpatialVariableMetadata& var,
           dz_min = std::min(dz_min, dz);
         }
 
-        nc.put_att_double(z_name, "spacing_min_meters", PISM_DOUBLE,
-                          dz_min);
-        nc.put_att_double(z_name, "spacing_max_meters", PISM_DOUBLE,
-                          dz_max);
+        file.put_att_double(z_name, "spacing_min_meters", PISM_DOUBLE,
+                            dz_min);
+        file.put_att_double(z_name, "spacing_max_meters", PISM_DOUBLE,
+                            dz_max);
       }
 
-      nc.put_1d_var(z_name, 0, levels.size(), levels);
+      file.put_1d_var(z_name, 0, levels.size(), levels);
     }
   }
 }
@@ -873,22 +875,47 @@ static void check_grid_overlap(const grid_info &input, const IceGrid &internal,
                                   input_x_min, input_x_max, input_y_min, input_y_max);
   }
 
-
-  // vertical grid extent
-  const double
-    input_z_min = input.z.size() > 0 ? input.z.front() : 0.0,
-    input_z_max = input.z.size() > 0 ? input.z.back()  : 0.0,
-    z_min       = z_internal.size() > 0 ? z_internal.front() : 0.0,
-    z_max       = z_internal.size() > 0 ? z_internal.back()  : 0.0;
-
-  if (not (z_min >= input.z_min - eps and z_max <= input.z_max + eps)) {
+  if (z_internal.size() == 0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "PISM's computational domain is not a subset of the domain in '%s'\n"
-                                  "PISM grid:       z: [%3.3f, %3.3f] meters\n"
-                                  "input file grid: z: [%3.3f, %3.3f] meters",
+                                  "Interval vertical grid has 0 levels. This should never happen.");
+  }
+
+  if (z_internal.size() == 1 and input.z.size() > 1) {
+    // internal field is 2D or 3D with one level, input variable is 3D with more than one
+    // vertical level
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "trying to read in a 2D field but the input file %s contains\n"
+                                  "a 3D field with %d levels",
                                   input.filename.c_str(),
-                                  z_min, z_max,
-                                  input_z_min, input_z_max);
+                                  static_cast<int>(input.z.size()));
+  }
+
+  if (z_internal.size() > 1 and input.z.size() <= 1) {
+    // internal field is 3D with more than one vertical level, input variable is 2D or 3D
+    // with 1 level
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "trying to read in a 3D field but the input file %s contains\n"
+                                  "a 2D field", input.filename.c_str());
+  }
+
+  if (z_internal.size() > 1 and input.z.size() > 0) {
+    // both internal field and input variable are 3D: check vertical grid extent
+    // Note: in PISM 2D fields have one vertical level (z = 0).
+    const double
+      input_z_min = input.z.front(),
+      input_z_max = input.z.back(),
+      z_min       = z_internal.front(),
+      z_max       = z_internal.back();
+
+    if (not (z_min >= input.z_min - eps and z_max <= input.z_max + eps)) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "PISM's computational domain is not a subset of the domain in '%s'\n"
+                                    "PISM grid:       z: [%3.3f, %3.3f] meters\n"
+                                    "input file grid: z: [%3.3f, %3.3f] meters",
+                                    input.filename.c_str(),
+                                    z_min, z_max,
+                                    input_z_min, input_z_max);
+    }
   }
 }
 

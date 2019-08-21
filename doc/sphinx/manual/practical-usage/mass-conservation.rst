@@ -86,10 +86,15 @@ computational domain. The "integrated" mass accounting error can be computed usi
 
 .. literalinclude:: conservation/scalar_accounting_error.txt
 
+.. only:: html
+
+   Click :download:`here <conservation/scalar_accounting_error.txt>` to download this
+   `ncap2` script.
+
 Comments
 ^^^^^^^^
 
-- `tendency_of_ice_mass_due_to_influx` is the integral of :math:`-\nabla \cdot Q` over the
+- `tendency_of_ice_mass_due_to_flow` is the integral of :math:`-\nabla \cdot Q` over the
   computational domain. This should be zero (up to the effect of rounding errors) in
   simulations that *do not* use Dirichlet boundary conditions for ice thickness.
   Prescribing ice thickness creates sources and sinks, and this diagnostic describes their
@@ -125,6 +130,17 @@ Use a shortcut
 to save all diagnostics mentioned above.
 
 See :ref:`sec-subhydro` for more information about hydrology models.
+
+Mass accounting in the PDD model
+--------------------------------
+
+PISM's PDD model provides diagnostics needed to compare computed accumulation, melt, and
+runoff to the effective mass balance. Use diagnostic quantities
+`surface_accumulation_flux`, `surface_melt_flux`, and `surface_runoff_flux` (units of mass
+per area per time) and `surface_accumulation_rate`, `surface_melt_rate`,
+`surface_runoff_rate` (units of mass per time).
+
+To save all these, use `-extra_vars` shortcuts `pdd_fluxes` and `pdd_rates`.
 
 .. [#] See :ref:`sec-diagnostics-list` for the full list of diagnostics.
 

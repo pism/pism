@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
-import json, argparse
+import json
+import argparse
 
 parser = argparse.ArgumentParser()
 parser.description = '''Generate an RST list documenting PISM's diagnostics.'''
 parser.add_argument("FILE", nargs=1)
 options = parser.parse_args()
+
 
 def print_heading(title, label, decoration):
     heading = """
@@ -14,6 +16,7 @@ def print_heading(title, label, decoration):
 {title}
 {underline}"""
     print(heading.format(label=label, title=title, underline=decoration * len(title)))
+
 
 entry_start = """
 #. ``{name}``"""
@@ -36,6 +39,7 @@ header = """.. -*- mode: rst -*-
 
 .. DO NOT EDIT. This file was generated using list_diagnostics.py.
 """
+
 
 def print_diagnostics(diagnostics):
 
@@ -74,6 +78,7 @@ def print_diagnostics(diagnostics):
 
     print_some("Spatially-variable fields", "sec-extra_vars", diagnostics["spatial"])
     print_some("Scalar time-series",  "sec-ts_vars", diagnostics["scalar"])
+
 
 with open(options.FILE[0]) as f:
     print_diagnostics(json.load(f))

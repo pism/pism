@@ -90,7 +90,7 @@ diffusivity `D_{SIA}` is a function of the ice geometry and the ice flow law. In
 isothermal Glen power law (power `= n`) case we recall
 
 .. math::
-   :name: siadiffusivity
+   :label: eq-siadiffusivity
    
    D_{SIA} = \Gamma H^{n+2} |\nabla h|^{n-1}
 
@@ -136,10 +136,10 @@ modify the diffusivity by multiplying by a factor `0 \le \theta \le 1`:
    
     D = \theta(h(x_1,x_2),x_1,x_2) \, D_{SIA}. 
 
-where `D_{SIA}` is defined by :eq:`siadiffusivity` earlier, and
+where `D_{SIA}` is defined by :eq:`eq-siadiffusivity` earlier, and
 
 .. math::
-   :name: thetadefn
+   :label: eq-thetadefn
    
     \theta(h,x_1,x_2) = \left[ \fint \left(1 - \frac{\tilde b(x_1,x_2,\xi_1,\xi_2)}{H}\right)^{-(n+2)/n}\,d\xi_1\,d\xi_2 \right]^{-n}
 
@@ -194,7 +194,7 @@ on. The desirable properties of the Schoof scheme are accepted not because the r
 model is perfect, but because we gain both a physical modeling improvement *and* a
 computational performance improvement from its use.
 
-How do we actually compute expression :eq:`thetadefn` quickly? Schoof has this suggestion,
+How do we actually compute expression :eq:`eq-thetadefn` quickly? Schoof has this suggestion,
 which we follow: "To find `\theta` for values of [surface elevation for which `\theta` has
 not already been computed], some interpolation scheme should then be used. `\theta` is
 then represented at each grid point by some locally-defined interpolating function [of the
@@ -211,7 +211,7 @@ Use of Taylor polynomial `P_4(x)` only requires the storage of three fields (bel
 but it has been demonstrated to be reasonably accurate by trying beds of various
 roughnesses in Matlab/Octave scripts. The derivation of the Taylor polynomial is most
 easily understood by starting with an abstract rational function like the one which
-appears in :eq:`thetadefn`, as follows.
+appears in :eq:`eq-thetadefn`, as follows.
 
 The fourth-order Taylor polynomial of the function `F(s)=(1-s)^{-k}` around `s=0` is
 
@@ -249,7 +249,7 @@ this `f(\xi)` is zero, so that the first-order term drops out in the above expan
 `\omega`. We have the following approximation of `\theta`:
 
 .. math::
-   :name: thetaapprox
+   :label: eq-thetaapprox
 
     \theta(h,x_1,x_2) \approx \left[ 1 + C_2(x_1,x_2) H^{-2} + C_3(x_1,x_2) H^{-3} + C_4(x_1,x_2) H^{-4} \right]^{-n}
 
@@ -263,7 +263,7 @@ for `q=2,3,4` and `k = (n+2)/n`.
 
 Note that the coefficients `C_q` depend only on the bed topography, and not on the ice
 geometry. Thus we will pre-process the original bed elevations `b_0` to compute and store
-the fields `b_s,C_2,C_3,C_4`. The computation of equation :eq:`thetaapprox` is fast and
+the fields `b_s,C_2,C_3,C_4`. The computation of equation :eq:`eq-thetaapprox` is fast and
 easily-parallelized if these fields are pre-stored. The computation of the coefficients
 `C_q` and the smoothed bed `b_s` at the pre-processing stage is more involved, especially
 when done in parallel.
@@ -279,7 +279,7 @@ class ``stressbalance::BedSmoother`` implements these details.
 Convexity of `P_4`
 ^^^^^^^^^^^^^^^^^^
 
-The approximation :eq:`thetaapprox` given above relates to the Jensen's inequality argument
+The approximation :eq:`eq-thetaapprox` given above relates to the Jensen's inequality argument
 used by Schoof in Appendix A of :cite:`Schoofbasaltopg2003`. For the nonsliding case, his
 argument shows that because `F(s)=(1-s)^{-k}` is convex on `[-1,1]` for `k>0`, therefore
 `0 \le \theta \le 1`.

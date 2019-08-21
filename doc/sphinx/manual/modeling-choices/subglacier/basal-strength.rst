@@ -50,7 +50,7 @@ Choosing the sliding law
 In PISM the sliding law can be chosen to be a purely-plastic (Coulomb) model, namely,
 
 .. math::
-   :name: eq-plastic
+   :label: eq-plastic
 
    |\boldsymbol{\tau}_b| \le \tau_c \quad \text{and} \quad \boldsymbol{\tau}_b =
    - \tau_c \frac{\mathbf{u}}{|\mathbf{u}|} \quad\text{if and only if}\quad |\mathbf{u}| > 0.
@@ -61,7 +61,7 @@ yield value can there be sliding. The sliding law can, however, also be chosen t
 power law
 
 .. math::
-   :name: eq-pseudoplastic
+   :label: eq-pseudoplastic
 
    \boldsymbol{\tau}_b =  - \tau_c \frac{\mathbf{u}}{u_{\text{threshold}}^q |\mathbf{u}|^{1-q}},
 
@@ -174,7 +174,7 @@ material property field `\phi=` :var:`tillphi`, the "till friction angle". These
 quantities are related by the Mohr-Coulomb criterion :cite:`CuffeyPaterson`:
 
 .. math::
-   :name: eq-mohrcoulomb
+   :label: eq-mohrcoulomb
 
    \tau_c = c_{0} + (\tan\phi)\,N_{till}.
 
@@ -238,7 +238,7 @@ stands for the bed elevation. To explain these, we define `M = (\phimax - \phimi
 (\bmax - \bmin)`. Then
 
 .. math::
-   :name: eq-phipiecewise
+   :label: eq-phipiecewise
 
    \phi(x,y) =
    \begin{cases}
@@ -288,7 +288,7 @@ where `W_{till}=` :var:`tillwat` is the effective thickness of water in the till
 till (see section :ref:`sec-subhydro`):
 
 .. math::
-   :name: eq-computeNtill
+   :label: eq-computeNtill
 
    N_{till} = \min\left\{P_o, N_0 \left(\frac{\delta P_o}{N_0}\right)^s \, 10^{(e_0/C_c) \left(1 - s\right).}\right\}
 

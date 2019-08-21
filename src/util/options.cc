@@ -46,6 +46,8 @@ String::String(const std::string& option,
   }
 }
 
+static const int TEMPORARY_STRING_LENGTH = 32768;
+
 int String::process(const std::string& option,
                     const std::string& description,
                     const std::string& default_value,

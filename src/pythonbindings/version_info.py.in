@@ -1,0 +1,10 @@
+"""This module contains build time configuration info. We use this to initialize petsc4py
+with the correct PETSC_ARCH value *before* importing PISM.cpp.
+
+"""
+
+"""The directory containing the PETSc library PISM was built with."""
+PETSC_DIR = "${PETSC_DIR}"
+
+"""The PETSC_ARCH value used to build PISM."""
+PETSC_ARCH = "${PETSC_ARCH}"

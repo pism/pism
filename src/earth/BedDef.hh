@@ -110,9 +110,13 @@ public:
   PointwiseIsostasy(IceGrid::ConstPtr g);
   virtual ~PointwiseIsostasy();
 protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
-                         const IceModelVec2S &sea_level_elevation);
+  MaxTimestep max_timestep_impl(double t) const;
+  void init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
+                 const IceModelVec2S &sea_level_elevation);
+  void bootstrap_impl(const IceModelVec2S &bed_elevation,
+                      const IceModelVec2S &bed_uplift,
+                      const IceModelVec2S &ice_thickness,
+                      const IceModelVec2S &sea_level_elevation);
   void update_impl(const IceModelVec2S &ice_thickness,
                    const IceModelVec2S &sea_level_elevation,
                    double t, double dt);

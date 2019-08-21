@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -386,26 +386,22 @@ double Time::increment_date(double T, int years) const {
   return T + years_to_seconds(years);
 }
 
-void Time::parse_times(const std::string &spec,
-                       std::vector<double> &result) const {
-
+std::vector<double> Time::parse_times(const std::string &spec) const {
   if (spec.find(',') != std::string::npos) {
     // a list will always contain a comma because at least two numbers are
     // needed to specify reporting intervals
-    parse_list(spec, result);
-
+    return parse_list(spec);
   } else {
     // it must be a range specification
-    parse_range(spec, result);
+    return parse_range(spec);
   }
-
 }
 
-void Time::parse_list(const std::string &spec, std::vector<double> &result) const {
+std::vector<double> Time::parse_list(const std::string &spec) const {
   std::istringstream arg(spec);
   std::string tmp;
+  std::vector<double> result;
 
-  result.clear();
   while(getline(arg, tmp, ',')) {
     try {
       double d;
@@ -416,6 +412,7 @@ void Time::parse_list(const std::string &spec, std::vector<double> &result) cons
       throw;
     }
   }
+  return result;
 }
 
 /**
@@ -496,7 +493,7 @@ void Time::parse_interval_length(const std::string &spec, std::string &keyword, 
 }
 
 
-void Time::parse_range(const std::string &spec, std::vector<double> &result) const {
+std::vector<double> Time::parse_range(const std::string &spec) const {
   double
     time_start   = m_run_start,
     time_end     = m_run_end,
@@ -526,7 +523,9 @@ void Time::parse_range(const std::string &spec, std::vector<double> &result) con
     }
   }
 
+  std::vector<double> result;
   compute_times(time_start, delta, time_end, keyword, result);
+  return result;
 }
 
 
@@ -604,6 +603,10 @@ double Time::convert_time_interval(double T, const std::string &units) const {
     return this->seconds_to_years(T); // uses year length here
   }
   return convert(m_unit_system, T, "seconds", units);
+}
+
+double Time::current_years() const {
+  return seconds_to_years(current());
 }
 
 } // end of namespace pism

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-import netCDF4, argparse
+import netCDF4
+import argparse
+
 
 def is_special(name):
     "Check if the name is 'special' and should not be included."
@@ -14,16 +16,18 @@ def is_special(name):
 
     return False
 
+
 def number_to_string(number):
     "Format a number as a string. Use scientific notation for large and small numbers, remove '.0' from integers."
     if abs(number) >= 1e7:
-        return '%e' % number # use scientific notation if a number is big
+        return '%e' % number  # use scientific notation if a number is big
     elif int(number) == number:
-        return '%d' % int(number) # remove zeros after the decimal point
+        return '%d' % int(number)  # remove zeros after the decimal point
     elif abs(number) <= 1e-5:
-        return '%e' % number # use scientific notation if small (and not zero; previous case)
+        return '%e' % number  # use scientific notation if small (and not zero; previous case)
     else:
         return '%f' % number
+
 
 def entry(name, T, value, option, description, choices=None):
 
@@ -64,6 +68,7 @@ def entry(name, T, value, option, description, choices=None):
                            option=option,
                            description=description)
 
+
 def print_string(var, name, T):
     print(entry(name,
                 T,
@@ -71,9 +76,11 @@ def print_string(var, name, T):
                 option(var, name),
                 doc(var, name)))
 
+
 def print_scalar(var, name, T):
     V = "{} ({})".format(number_to_string(value(var, name)), units(var, name))
     print(entry(name, T, V, option(var, name), doc(var, name)))
+
 
 def print_integer(var, name, T):
     print(entry(name,
@@ -81,6 +88,7 @@ def print_integer(var, name, T):
                 str(value(var, name)),
                 option(var, name),
                 doc(var, name)))
+
 
 def print_keyword(var, name, T):
     print(entry(name,
@@ -90,14 +98,18 @@ def print_keyword(var, name, T):
                 doc(var, name),
                 choices=value(var, name + "_choices")))
 
+
 def value(var, name):
     return var.getncattr(name)
+
 
 def units(var, name):
     return value(var, name + "_units")
 
+
 def doc(var, name):
     return value(var, name + "_doc")
+
 
 def option(var, name):
     try:
@@ -105,11 +117,12 @@ def option(var, name):
     except AttributeError:
         return None
 
-printers = {"string" : print_string,
-            "scalar" : print_scalar,
-            "integer" : print_integer,
-            "boolean" : print_string,
-            "keyword" : print_keyword}
+
+printers = {"string": print_string,
+            "scalar": print_scalar,
+            "integer": print_integer,
+            "boolean": print_string,
+            "keyword": print_keyword}
 
 header = """.. -*- mode: rst -*-
 

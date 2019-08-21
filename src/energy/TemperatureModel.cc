@@ -376,7 +376,7 @@ void TemperatureModel::column_drainage(const double rho, const double c, const d
                                        double *Texcess, double *bwat) const {
 
   const double
-    darea      = m_grid->dx() * m_grid->dy(),
+    darea      = m_grid->cell_area(),
     dvol       = darea * dz,
     dE         = rho * c * (*Texcess) * dvol,
     massmelted = dE / L;

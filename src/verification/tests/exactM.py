@@ -30,6 +30,7 @@ def FF(x, alpha, r):
     DD = x * x + x * (alpha / r) + (alpha / r) ** 2
     return Q * DD ** (1. / 3.) - 2.0 * r * x - alpha
 
+
 # ODE we are solving is   alpha' = GG(alpha,r)
 qual = []  # quality information goes here
 
@@ -40,6 +41,7 @@ def GG(alpha, r):
     result = fsolve(FF, guess, args=(alpha[0], r))
     qual.append([r, guess, result, abs(guess - result) / abs(result)])
     return [result]
+
 
 # build vector of locations to solve (and plot)
 dr = 1000.0  # plot on 1 km grid
@@ -56,11 +58,11 @@ qual = array(qual)
 rused = qual[:, 0]
 strainrate = qual[:, 2]
 guesserr = qual[:, 3]
-print('maximum relative error in initial guess for fsolve() is %f' \
-    % max(guesserr))
+print('maximum relative error in initial guess for fsolve() is %f'
+      % max(guesserr))
 
-print("at calving front:  alpha(Rc) = %f  (m/year)" \
-    % (alpha[-1] * SperA))
+print("at calving front:  alpha(Rc) = %f  (m/year)"
+      % (alpha[-1] * SperA))
 # print "   (last r used = %f km; strain rate at last r = %f  (1/a))" \
 #   % (rused[-1] / 1000.0, strainrate[-1] * SperA)
 

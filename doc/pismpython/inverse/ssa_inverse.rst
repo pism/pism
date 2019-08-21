@@ -1,3 +1,5 @@
+.. include:: ../math-definitions.txt
+
 .. _SSAInverse:
 
 SSA Inverse Problems

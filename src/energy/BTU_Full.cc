@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -16,14 +16,14 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-#include <gsl/gsl_math.h>       // gsl_isnan()
-
 #include "BTU_Full.hh"
+
 #include "pism/util/pism_options.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "BedrockColumn.hh"
 
 namespace pism {
 namespace energy {
@@ -33,11 +33,11 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
   : BedThermalUnit(g),
     m_bootstrapping_needed(false) {
 
-  m_k = m_config->get_double("energy.bedrock_thermal_conductivity");
+  m_k = m_config->get_double("energy.bedrock_thermal.conductivity");
 
   const double
-    rho = m_config->get_double("energy.bedrock_thermal_density"),
-    c   = m_config->get_double("energy.bedrock_thermal_specific_heat_capacity");
+    rho = m_config->get_double("energy.bedrock_thermal.density"),
+    c   = m_config->get_double("energy.bedrock_thermal.specific_heat_capacity");
   // build constant diffusivity for heat equation
   m_D   = m_k / (rho * c);
 
@@ -76,6 +76,8 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
                     "K", "");
     m_temp.metadata().set_double("valid_min", 0.0);
   }
+
+  m_column.reset(new BedrockColumn("bedrock_column", *m_config, vertical_spacing(), Mz()));
 }
 
 BTU_Full::~BTU_Full() {
@@ -144,94 +146,27 @@ void BTU_Full::write_model_state_impl(const PIO &output) const {
   m_temp.write(output);
 }
 
-/*! Because the grid for the bedrock thermal layer is equally-spaced, and because
-  the heat equation being solved in the bedrock is time-invariant (%e.g. no advection
-  at evolving velocity and no time-dependence to physical constants), the explicit
-  time-stepping can compute the maximum stable time step easily.  The basic scheme
-  is
-  \f[T_k^{n+1} = T_k^n + R (T_{k-1}^n - 2 T_k^n + T_{k+1}^n)\f]
-  where
-  \f[R = \frac{k \Delta t}{\rho c \Delta z^2} = \frac{D \Delta t}{\Delta z^2}.\f]
-  The stability condition is that the coefficients of temperatures on the right are
-  all nonnegative, equivalently \f$1-2R\ge 0\f$ or \f$R\le 1/2\f$ or
-  \f[\Delta t \le \frac{\Delta z^2}{2 D}.\f]
-  This is a formula for the maximum stable timestep.  For more, see [\ref MortonMayers].
-
-  The above describes the general case where Mbz > 1.
-*/
 MaxTimestep BTU_Full::max_timestep_impl(double t) const {
   (void) t;
-
-  const double dz = vertical_spacing();
-  // max dt from stability; in seconds
-  return MaxTimestep(dz * dz / (2.0 * m_D), "bedrock thermal layer");
+  // No time step restriction: we are using an unconditionally stable method.
+  return MaxTimestep("bedrock thermal layer");
 }
 
 
 /** Perform a step of the bedrock thermal model.
-
-    @todo The old scheme had better stability properties, as follows:
-
-    Because there is no advection, the simplest centered implicit (backward Euler) scheme is easily "bombproof" without choosing \f$\lambda\f$, or other complications.  It has this scaled form,
-    \anchor bedrockeqn
-    \f[ -R_b T_{k-1}^{n+1} + \left(1 + 2 R_b\right) T_k^{n+1} - R_b T_{k+1}^{n+1}
-    = T_k^n, \tag{bedrockeqn} \f]
-    where
-    \f[ R_b = \frac{k_b \Delta t}{\rho_b c_b \Delta z^2}. \f]
-    This is unconditionally stable for a pure bedrock problem, and has a maximum principle, without any further qualification [\ref MortonMayers].
-
-    @todo Now a trapezoid rule could be used
 */
 void BTU_Full::update_impl(const IceModelVec2S &bedrock_top_temperature,
                            double t, double dt) {
+  (void) t;
 
   if (m_bootstrapping_needed) {
     bootstrap(bedrock_top_temperature);
     m_bootstrapping_needed = false;
   }
 
-  // CHECK: is the desired time interval a forward step?; backward heat equation not good!
   if (dt < 0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "BTU_Full::update() does not allow negative timesteps");
+    throw RuntimeError(PISM_ERROR_LOCATION, "dt < 0 is not allowed");
   }
-
-  // CHECK: is desired time-interval equal to [t, t+dt] where t = t + dt?
-  if (not gsl_isnan(m_t) and not gsl_isnan(m_dt)) { // this check should not fire on first use
-    bool contiguous = true;
-
-    if (fabs(m_t + m_dt) < 1) {
-      if (fabs(t - (m_t + m_dt)) >= 1e-12) { // check if the absolute difference is small
-        contiguous = false;
-      }
-    } else {
-      if (fabs(t - (m_t + m_dt)) / (m_t + m_dt) >= 1e-12) { // check if the relative difference is small
-        contiguous = false;
-      }
-    }
-
-    if (not contiguous) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "BTU_Full::update() requires next update to be contiguous with last;\n"
-                                    "  stored:     t = %f s,    dt = %f s\n"
-                                    "  desired: t = %f s, dt = %f s",
-                                    m_t, m_dt, t, dt); }
-  }
-
-  // CHECK: is desired time-step too long?
-  MaxTimestep max_dt = max_timestep(t);
-  if (max_dt.finite() and max_dt.value() < dt) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "BTU_Full::update() thinks you asked for too big a timestep.");
-  }
-
-  // o.k., we have checked; we are going to do the desired timestep!
-  m_t  = t;
-  m_dt = dt;
-
-  double dz = this->vertical_spacing();
-  const int  k0  = m_Mbz - 1;          // Tb[k0] = ice/bed interface temp, at z=0
-
-  const double R  = m_D * dt / (dz * dz);
-
-  std::vector<double> Tbnew(m_Mbz);
 
   IceModelVec::AccessList list{&m_temp, &m_bottom_surface_flux, &bedrock_top_temperature};
 
@@ -240,33 +175,25 @@ void BTU_Full::update_impl(const IceModelVec2S &bedrock_top_temperature,
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double *Tbold = m_temp.get_column(i, j); // Tbold actually points into temp memory
-      Tbold[k0] = bedrock_top_temperature(i, j);  // sets Dirichlet explicit-in-time b.c. at top of bedrock column
+      double *T = m_temp.get_column(i, j);
 
-      const double Tbold_negone = Tbold[1] + 2 * m_bottom_surface_flux(i, j) * dz / m_k;
-      Tbnew[0] = Tbold[0] + R * (Tbold_negone - 2 * Tbold[0] + Tbold[1]);
-      for (int k = 1; k < k0; k++) { // working upward from base
-        Tbnew[k] = Tbold[k] + R * (Tbold[k-1] - 2 * Tbold[k] + Tbold[k+1]);
-      }
-      Tbnew[k0] = bedrock_top_temperature(i, j);
+      m_column->solve(dt, m_bottom_surface_flux(i, j), bedrock_top_temperature(i, j),
+                      T,  // input
+                      T); // output
 
-      // Check that Tbnew is positive:
-      for (int k = 0; k <= k0; ++k) {
-        if (Tbnew[k] <= 0.0) {
+      // Check that T is positive:
+      for (unsigned int k = 0; k < m_Mbz; ++k) {
+        if (T[k] <= 0.0) {
           throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                         "invalid bedrock temperature: %f Kelvin at %d,%d,%d",
-                                        Tbnew[k], i, j, k);
+                                        T[k], i, j, k);
         }
       }
-
-      m_temp.set_column(i, j, &Tbnew[0]); // copy from Tbnew into temp memory
     }
   } catch (...) {
     loop.failed();
   }
   loop.check();
-
-
 
   update_flux_through_top_surface();
 }

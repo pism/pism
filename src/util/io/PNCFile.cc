@@ -192,7 +192,7 @@ int PNCFile::def_var_impl(const std::string &name, IO_Type nctype, const std::ve
   stat = ncmpi_def_var(m_file_id, name.c_str(), pism_type_to_nc_type(nctype),
                        static_cast<int>(dims.size()), &dimids[0], &varid); check(PISM_ERROR_LOCATION, stat);
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   if (stat != NC_NOERR) {
     fprintf(stderr, "def_var: filename = %s, var = %s, dims:", m_filename.c_str(),
             name.c_str());
@@ -533,7 +533,7 @@ int PNCFile::get_var_double(const std::string &variable_name,
   std::vector<unsigned int> imap = imap_input;
   int stat, varid, ndims = static_cast<int>(start.size());
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   if (mapped) {
     if (start.size() != count.size() ||
         start.size() != imap.size()) {
@@ -585,7 +585,7 @@ int PNCFile::put_var_double(const std::string &variable_name,
                             bool mapped) const {
   int stat, varid, ndims = static_cast<int>(start.size());
   std::vector<unsigned int> imap = imap_input;
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   if (mapped) {
     if (start.size() != count.size() ||
         start.size() != imap.size()) {

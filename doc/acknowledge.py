@@ -36,7 +36,9 @@ information on additional citations.
 .. code::
 """
 
-import csv, time, sys
+import csv
+import time
+import sys
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -47,7 +49,7 @@ options = parser.parse_args()
 year = time.gmtime(time.time())[0]
 funding = {}
 
-with open("funding.csv", "rb") as f:
+with open("funding.csv", "r") as f:
     reader = csv.reader(f, skipinitialspace=True, quoting=csv.QUOTE_ALL)
 
     funding = {}
@@ -66,6 +68,7 @@ with open("funding.csv", "rb") as f:
             except:
                 funding[agency] = [number]
 
+
 def join(strings):
     assert len(strings) > 0
     if len(strings) == 1:
@@ -75,6 +78,7 @@ def join(strings):
     else:
         return join(["{}, {}".format(strings[0], strings[1]),
                      join(strings[2:])])
+
 
 grants = []
 for k, v in funding.items():

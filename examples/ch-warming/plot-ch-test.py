@@ -13,7 +13,7 @@ Ts = ch_warming.T_surface(t, mean=268.15, amplitude=6, summer_peak_day=365/2)
 melt_season_length = np.count_nonzero(Ts > ch_warming.T_melting)
 print("The melt season is {} weeks long.".format(melt_season_length / 7))
 
-plt.figure(figsize=(10,5))
+plt.figure(figsize=(10, 5))
 plt.plot(t / 86400, Ts)
 plt.xlabel("time, days")
 plt.ylabel("Air temperature, Kelvin")
@@ -21,9 +21,9 @@ plt.grid()
 plt.savefig("air-temperature.png")
 
 N = z.size - 16
-plt.figure(figsize=(10,5))
+plt.figure(figsize=(10, 5))
 plt.title("Ice temperature at depth over time")
-plt.pcolormesh(times / year_length, z[N:], T_ice.T[N:,:])
+plt.pcolormesh(times / year_length, z[N:], T_ice.T[N:, :])
 plt.xlabel("time, years")
 plt.ylabel("z, meters")
 plt.colorbar()
@@ -31,9 +31,9 @@ plt.grid()
 plt.savefig("ice-temperature.png")
 
 N = z.size - 16
-plt.figure(figsize=(10,5))
+plt.figure(figsize=(10, 5))
 plt.title("Temperature in the CH system")
-plt.pcolormesh(times / year_length, z[N:], T_ch.T[N:,:])
+plt.pcolormesh(times / year_length, z[N:], T_ch.T[N:, :])
 plt.xlabel("time, years")
 plt.ylabel("z, meters")
 plt.colorbar()
@@ -41,19 +41,19 @@ plt.grid()
 plt.savefig("ch-temperature.png")
 
 N = z.size - 16
-plt.figure(figsize=(10,5))
+plt.figure(figsize=(10, 5))
 plt.title("Water fraction in the CH system")
-plt.pcolormesh(times / year_length, z[N:], W_ch.T[N:,:])
+plt.pcolormesh(times / year_length, z[N:], W_ch.T[N:, :])
 plt.xlabel("time, years")
 plt.ylabel("z, meters")
 plt.colorbar()
 plt.grid()
 plt.savefig("ch-water-fraction.png")
 
-plt.figure(figsize=(10,5))
-N=z.size-16
+plt.figure(figsize=(10, 5))
+N = z.size-16
 for k in np.r_[N:z.size]:
-    plt.plot(times/year_length, T_ice[:,k])
+    plt.plot(times/year_length, T_ice[:, k])
 
 plt.xlabel("time, years")
 plt.ylabel("temperature, Kelvin")

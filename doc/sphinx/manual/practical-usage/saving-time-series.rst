@@ -72,14 +72,6 @@ several scalar diagnostics:
   ``output.ice_free_thickness_standard`` (in meters). Corresponding quantities without the
   suffix *do* include areas with a thin, "seasonal" ice cover.
 
-- The ``sub_shelf_ice_flux`` may be non-zero even if ``ice_area_glacierized_shelf`` (floating
-  ice area) is zero. This is due to the fact that during time-stepping fluxes are computed
-  before calving is applied, and the ice area is computed *after* calving. Hence ice that
-  is calved off experiences top-surface and basal fluxes, but does not contribute to the
-  reported area. This is a small error that approaches zero as the grid is refined. In
-  this case ``sub_shelf_ice_flux`` should be added to the calving flux during
-  post-processing. [#]_
-
 - Ice volume and area are computed and then split among floating and grounded portions:
   ``ice_volume_glacierized`` :math:`\mapsto` (``ice_volume_glacierized_shelf``,
   ``ice_volume_glacierized_grounded``) while ``ice_area_glacierized`` :math:`\mapsto`
@@ -92,16 +84,11 @@ several scalar diagnostics:
   ``ice_area_glacierized`` :math:`\mapsto`
   (``ice_area_glacierized_cold_base``, ``ice_area_glacierized_temperate_base``).
 
-- If a PISM input file contains the ``proj4`` global attribute with a PROJ.4 string
-  defining the projection then PISM computes corrected cell areas using this information,
-  grid parameters, and the WGS84 reference ellipsoid. This yields areas and volumes with
-  greater accuracy.
-
-- The sea-level-relevant ice volume ``slvol`` is the total grounded ice volume minus the
-  amount of ice, that, in liquid form, would fill up the regions with bedrock below sea
-  level, if this ice were removed. That is, ``slvol`` is the sea level rise potential of
-  the ice sheet at that time. The result is reported in sea-level equivalent, i.e. meters
-  of sea level rise.
+- The sea level rise potential :var:`sea_level_rise_potential` is the increase in sea
+  level (in meters) that would result from melting all the grounded ice not displacing sea
+  water and distributing the corresponding *fresh water* volume uniformly over the entire
+  global ocean (:math:`362.5 \cdot 10^6\, km^2`, see :cite:`Cogley2011`). This follows the
+  definition used in the SeaRISE project :cite:`Bindschadler2013SeaRISE`.
 
 - Fields ``max_diffusivity`` and ``max_hor_vel`` relate to PISM time-stepping. These
   quantities appear in per-time-step form in the standard output from PISM (i.e. at
@@ -109,7 +96,3 @@ several scalar diagnostics:
   sub-steps for the SIA stress balance (sub-)model. ``max_hor_vel`` determines the
   CFL-type restriction for mass continuity and conservation of energy contributions of the
   SSA stress balance (i.e. sliding) velocity.
-
-.. rubric:: Footnotes
-
-.. [#] This will be fixed in a later release of PISM.

@@ -330,6 +330,7 @@ def add_history(nc):
     else:
         nc.history = historystr
 
+
 if __name__ == "__main__":
     from argparse import ArgumentParser
     import os

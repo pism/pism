@@ -4,7 +4,8 @@ Tests of PISM's ocean models and modifiers.
 """
 
 import PISM
-import sys, os
+import sys
+import os
 import numpy as np
 from unittest import TestCase
 import netCDF4
@@ -32,10 +33,10 @@ log.set_threshold(1)
 
 options = PISM.PETSc.Options()
 
+
 def create_geometry(grid):
     geometry = PISM.Geometry(grid)
 
-    geometry.cell_area.set(grid.dx() * grid.dy())
     geometry.latitude.set(0.0)
     geometry.longitude.set(0.0)
 
@@ -49,9 +50,11 @@ def create_geometry(grid):
 
     return geometry
 
+
 def sample(vec):
     with PISM.vec.Access(nocomm=[vec]):
         return vec[0, 0]
+
 
 def create_dummy_forcing_file(filename, variable_name, units, value):
     f = netCDF4.Dataset(filename, "w")
@@ -64,12 +67,14 @@ def create_dummy_forcing_file(filename, variable_name, units, value):
     delta_T[0] = value
     f.close()
 
+
 def dummy_grid():
     "Create a dummy grid"
     ctx = PISM.Context()
     params = PISM.GridParameters(ctx.config)
     params.ownership_ranges_from_options(ctx.size)
     return PISM.IceGrid(ctx.ctx, params)
+
 
 def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)
@@ -84,13 +89,16 @@ def create_given_input_file(filename, grid, temperature, mass_flux):
     M.set(mass_flux)
     M.write(filename)
 
+
 def check(vec, value):
     "Check if values of vec are almost equal to value."
     np.testing.assert_almost_equal(sample(vec), value)
 
+
 def check_difference(A, B, value):
     "Check if the difference between A and B is almost equal to value."
     np.testing.assert_almost_equal(sample(A) - sample(B), value)
+
 
 def check_ratio(A, B, value):
     "Check if the ratio of A and B is almost equal to value."
@@ -100,10 +108,12 @@ def check_ratio(A, B, value):
     else:
         np.testing.assert_almost_equal(sample(A), 0.0)
 
+
 def check_model(model, T, SMB, MBP):
     check(model.shelf_base_temperature(), T)
     check(model.shelf_base_mass_flux(), SMB)
     check(model.melange_back_pressure_fraction(), MBP)
+
 
 def check_modifier(model, modifier, dT, dSMB, dMBP):
     check_difference(modifier.shelf_base_temperature(),
@@ -118,22 +128,23 @@ def check_modifier(model, modifier, dT, dSMB, dMBP):
                      model.melange_back_pressure_fraction(),
                      dMBP)
 
+
 def constant_test():
     "Model Constant"
 
     depth = 1000.0                  # meters
 
     # compute mass flux
-    melt_rate   = config.get_double("ocean.constant.melt_rate", "m second-1")
+    melt_rate = config.get_double("ocean.constant.melt_rate", "m second-1")
     ice_density = config.get_double("constants.ice.density")
-    mass_flux   = melt_rate * ice_density
+    mass_flux = melt_rate * ice_density
 
     # compute pressure melting temperature
-    T0          = config.get_double("constants.fresh_water.melting_point_temperature")
-    beta_CC     = config.get_double("constants.ice.beta_Clausius_Clapeyron")
-    g           = config.get_double("constants.standard_gravity")
+    T0 = config.get_double("constants.fresh_water.melting_point_temperature")
+    beta_CC = config.get_double("constants.ice.beta_Clausius_Clapeyron")
+    g = config.get_double("constants.standard_gravity")
 
-    pressure  = ice_density * g * depth
+    pressure = ice_density * g * depth
     T_melting = T0 - beta_CC * pressure
 
     melange_back_pressure = 1.0
@@ -151,6 +162,7 @@ def constant_test():
 
     assert model.max_timestep(0).infinite() == True
 
+
 def pik_test():
     "Model PIK"
     grid = dummy_grid()
@@ -160,16 +172,16 @@ def pik_test():
 
     # compute pressure melting temperature
     ice_density = config.get_double("constants.ice.density")
-    T0          = config.get_double("constants.fresh_water.melting_point_temperature")
-    beta_CC     = config.get_double("constants.ice.beta_Clausius_Clapeyron")
-    g           = config.get_double("constants.standard_gravity")
+    T0 = config.get_double("constants.fresh_water.melting_point_temperature")
+    beta_CC = config.get_double("constants.ice.beta_Clausius_Clapeyron")
+    g = config.get_double("constants.standard_gravity")
 
-    pressure  = ice_density * g * depth
+    pressure = ice_density * g * depth
     T_melting = T0 - beta_CC * pressure
 
     melange_back_pressure = 0.0
 
-    mass_flux = 5.36591610659e-06 # stored mass flux value returned by the model
+    mass_flux = 5.36591610659e-06  # stored mass flux value returned by the model
 
     # create the model
     geometry.ice_thickness.set(depth)
@@ -183,6 +195,7 @@ def pik_test():
 
     assert model.max_timestep(0).infinite() == True
 
+
 class GivenTest(TestCase):
     "Test the Given class"
 
@@ -191,8 +204,8 @@ class GivenTest(TestCase):
         self.geometry = create_geometry(self.grid)
         self.filename = "given_input.nc"
 
-        self.temperature           = 263.0
-        self.mass_flux             = 3e-3
+        self.temperature = 263.0
+        self.mass_flux = 3e-3
         self.melange_back_pressure = 0.0
 
         create_given_input_file(self.filename, self.grid, self.temperature, self.mass_flux)
@@ -213,15 +226,16 @@ class GivenTest(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
+
 class GivenTHTest(TestCase):
     def setUp(self):
 
-        depth                      = 1000.0
-        salinity                   = 35.0
-        potential_temperature      = 270.0
+        depth = 1000.0
+        salinity = 35.0
+        potential_temperature = 270.0
         self.melange_back_pressure = 0.0
-        self.temperature           = 270.17909999999995
-        self.mass_flux             = -6.489250000000001e-05
+        self.temperature = 270.17909999999995
+        self.mass_flux = -6.489250000000001e-05
 
         self.grid = dummy_grid()
         self.geometry = create_geometry(self.grid)
@@ -259,6 +273,7 @@ class GivenTHTest(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
+
 class DeltaT(TestCase):
     def setUp(self):
         self.filename = "delta_T_input.nc"
@@ -285,6 +300,7 @@ class DeltaT(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
+
 class DeltaSMB(TestCase):
     def setUp(self):
         self.filename = "delta_SMB_input.nc"
@@ -306,6 +322,37 @@ class DeltaSMB(TestCase):
         modifier.update(self.geometry, 0, 1)
 
         check_modifier(self.model, modifier, 0.0, self.dSMB, 0.0)
+
+    def tearDown(self):
+        os.remove(self.filename)
+
+class AnomalyBMB(TestCase):
+    def setUp(self):
+        self.filename = "delta_BMB_input.nc"
+        self.grid = dummy_grid()
+        self.geometry = create_geometry(self.grid)
+        self.model = PISM.OceanConstant(self.grid)
+        self.dBMB = -5.0
+
+        delta_BMB = PISM.IceModelVec2S(self.grid, "shelf_base_mass_flux_anomaly",
+                                       PISM.WITHOUT_GHOSTS)
+        delta_BMB.set_attrs("climate_forcing",
+                            "2D shelf base mass flux anomaly", "kg m-2 s-1", "")
+        delta_BMB.set(self.dBMB)
+
+        delta_BMB.dump(self.filename)
+
+    def runTest(self):
+        "Modifier Anomaly"
+
+        config.set_string("ocean.anomaly.file", self.filename)
+
+        modifier = PISM.OceanAnomaly(self.grid, self.model)
+
+        modifier.init(self.geometry)
+        modifier.update(self.geometry, 0, 1)
+
+        check_modifier(self.model, modifier, 0.0, self.dBMB, 0.0)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -347,6 +394,7 @@ class FracMBP(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
+
 class FracSMB(TestCase):
     def setUp(self):
         self.filename = "frac_SMB_input.nc"
@@ -384,6 +432,7 @@ class FracSMB(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
+
 def create_delta_T_file(filename):
     """Create a delta_T input file covering the interval [0, 4] years. When used with the
     'Cache' modifier with the update interval of 2, this data will be sampled every 2
@@ -400,11 +449,12 @@ def create_delta_T_file(filename):
     delta_T.units = "Kelvin"
     t[:] = [0.5, 1.5, 2.5, 3.5]
     t[:] *= seconds_per_year
-    t_bnds[:,0] = [0, 1, 2, 3]
-    t_bnds[:,1] = [1, 2, 3, 4]
-    t_bnds[:,:] *= seconds_per_year
+    t_bnds[:, 0] = [0, 1, 2, 3]
+    t_bnds[:, 1] = [1, 2, 3, 4]
+    t_bnds[:, :] *= seconds_per_year
     delta_T[:] = [1, 2, 3, 4]
     f.close()
+
 
 class Cache(TestCase):
     def setUp(self):
@@ -413,7 +463,7 @@ class Cache(TestCase):
         self.geometry = create_geometry(self.grid)
 
         self.constant = PISM.OceanConstant(self.grid)
-        self.delta_T  = PISM.OceanDeltaT(self.grid, self.constant)
+        self.delta_T = PISM.OceanDeltaT(self.grid, self.constant)
 
         create_delta_T_file(self.filename)
         options.setValue("-ocean_delta_T_file", self.filename)
@@ -427,7 +477,7 @@ class Cache(TestCase):
 
         modifier.init(self.geometry)
 
-        t  = 0
+        t = 0
         dt = seconds_per_year
 
         diff = []
@@ -435,7 +485,7 @@ class Cache(TestCase):
             modifier.update(self.geometry, t, dt)
 
             original = sample(self.constant.shelf_base_temperature())
-            cached   = sample(modifier.shelf_base_temperature())
+            cached = sample(modifier.shelf_base_temperature())
 
             diff.append(cached - original)
 
@@ -445,6 +495,7 @@ class Cache(TestCase):
 
     def tearDown(self):
         os.remove(self.filename)
+
 
 class DeltaSL(TestCase):
     def setUp(self):
@@ -473,6 +524,7 @@ class DeltaSL(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
+
 def create_delta_SL_file(filename, grid, sea_level_offset):
     PISM.util.prepare_output(filename)
 
@@ -480,6 +532,7 @@ def create_delta_SL_file(filename, grid, sea_level_offset):
     SL.set_attrs("forcing", "sea level forcing", "meters", "")
     SL.set(sea_level_offset)
     SL.write(filename)
+
 
 class DeltaSL2D(TestCase):
     def setUp(self):
