@@ -443,29 +443,27 @@ void IceModelVec2T::get_record(int n) {
   end_access();
 }
 
-//! \brief Given the time t and the current selected time-step dt,
-//! determines the maximum possible time-step this IceModelVec2T allows.
-/*!
-  Returns -1 if any time step is OK at t.
- */
+//! @brief Given the time t determines the maximum possible time-step this IceModelVec2T
+//! allows.
 MaxTimestep IceModelVec2T::max_timestep(double t) const {
   // only allow going to the next record
-  auto l = upper_bound(m_time_bounds.begin(), m_time_bounds.end(), t);
-  if (l != m_time_bounds.end()) {
-    double tmp = *l - t;
 
-    if (tmp > 1.0) {                // never take time-steps shorter than 1 second
-      return MaxTimestep(tmp);
-    } else if ((l + 1) != m_time_bounds.end() and
-               (l + 2) != m_time_bounds.end()) {
-      return MaxTimestep(*(l + 2) - *l);
-    } else {
-      return MaxTimestep();
-    }
+  // find the index k such that m_time[k] <= x < m_time[k + 1]
+  size_t k = gsl_interp_bsearch(m_time.data(), t, 0, m_time.size());
+
+  // end of the corresponding interval
+  double
+    t_next = m_time_bounds[2 * k + 1],
+    dt     = std::max(t_next - t, 0.0);
+
+  if (dt > 1.0) {               // never take time-steps shorter than 1 second
+    return MaxTimestep(dt);
+  } else if (k + 1 < m_time.size()) {
+    dt = m_time_bounds[2 * (k + 1) + 1] - m_time_bounds[2 * (k + 1)];
+    return MaxTimestep(dt);
   } else {
     return MaxTimestep();
   }
-
 }
 
 /*
