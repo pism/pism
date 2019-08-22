@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <algorithm>            // min_element and max_element
+#include <gsl/gsl_interp.h>
 
 #include "Timeseries.hh"
 #include "pism_utilities.hh"
@@ -202,48 +203,31 @@ void Timeseries::scale(double scaling_factor) {
  */
 double Timeseries::operator()(double t) const {
 
-  // piecewise-constant case:
   if (m_use_bounds) {
-    auto j = lower_bound(m_time_bounds.begin(), m_time_bounds.end(), t); // binary search
+    // piecewise-constant case
 
-    if (j == m_time_bounds.end()) {
-      return m_values.back(); // out of range (on the right)
+    size_t k = gsl_interp_bsearch(m_time.data(), t, 0, m_time.size());
+
+    return m_values[k];
+  } else {
+    // piecewise-linear case
+
+    // extrapolation on the left
+    if (t < m_time[0]) {
+      return m_values[0];
     }
 
-    int i = (int)(j - m_time_bounds.begin());
+    size_t k = gsl_interp_bsearch(m_time.data(), t, 0, m_time.size());
 
-    if (i == 0) {
-      return m_values[0];         // out of range (on the left)
+    // extrapolation on the right
+    if (k + 1 >= m_time.size()) {
+      return m_values.back();
     }
 
-    if (i % 2 == 0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "time bounds array in %s does not represent continguous time intervals.\n"
-                                    "(PISM was trying to compute %s at time %3.3f seconds.)",
-                                    m_bounds.get_name().c_str(), name().c_str(), t);
-    }
+    double alpha = (t - m_time[k]) / (m_time[k + 1] - m_time[k]);
 
-    return m_values[(i-1)/2];
+    return m_values[k] * alpha + m_values[k + 1] * (1.0 - alpha);
   }
-
-  // piecewise-linear case:
-  auto end = m_time.end();
-
-  auto j = lower_bound(m_time.begin(), end, t); // binary search
-
-  if (j == end) {
-    return m_values.back(); // out of range (on the right)
-  }
-
-  int i = (int)(j - m_time.begin());
-
-  if (i == 0) {
-    return m_values[0];   // out of range (on the left)
-  }
-
-  double dt = m_time[i] - m_time[i - 1];
-  double dv = m_values[i] - m_values[i - 1];
-
-  return m_values[i - 1] + (t - m_time[i - 1]) / dt * dv;
 }
 
 //! Get a value of timeseries by index.
