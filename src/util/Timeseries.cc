@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018 Constantine Khroulev
+// Copyright (C) 2009--2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -74,50 +74,45 @@ void Timeseries::set_use_bounds(bool flag) {
 void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log) {
 
   bool exists, found_by_standard_name;
-  std::vector<std::string> dims;
-  std::string time_name, standard_name = m_variable.get_string("standard_name"),
+  std::string standard_name = m_variable.get_string("standard_name"),
     name_found;
 
   nc.inq_var(name(), standard_name,
              exists, name_found, found_by_standard_name);
 
-  if (!exists) {
+  if (not exists) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' ('%s') in '%s'.\n",
                                   name().c_str(), standard_name.c_str(),
                                   nc.inq_filename().c_str());
   }
 
-  dims = nc.inq_vardims(name_found);
+  auto dims = nc.inq_vardims(name_found);
 
   if (dims.size() != 1) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Variable '%s' in '%s' depends on %d dimensions,\n"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Variable '%s' in '%s' depends on %d dimensions,\n"
                                   "but a time-series variable can only depend on 1 dimension.",
                                   name().c_str(),
                                   nc.inq_filename().c_str(),
                                   (int)dims.size());
   }
 
-  time_name = dims[0];
+  auto time_name = dims[0];
 
   TimeseriesMetadata tmp_dim = m_dimension;
   tmp_dim.set_name(time_name);
 
   io::read_timeseries(nc, tmp_dim, time_manager, log, m_time);
-  bool is_increasing = true;
-  for (unsigned int j = 1; j < m_time.size(); ++j) {
-    if (m_time[j] - m_time[j-1] < 1e-16) {
-      is_increasing = false;
-      break;
-    }
-  }
-  if (!is_increasing) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "dimension '%s' has to be strictly increasing (read from '%s').",
+
+  if (not is_increasing(m_time)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "dimension '%s' has to be strictly increasing (read from '%s').",
                                   tmp_dim.get_name().c_str(), nc.inq_filename().c_str());
   }
 
   std::string time_bounds_name = nc.get_att_text(time_name, "bounds");
 
-  if (!time_bounds_name.empty()) {
+  if (not time_bounds_name.empty()) {
     m_use_bounds = true;
 
     set_bounds_units();
