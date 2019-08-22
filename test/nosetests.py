@@ -1032,3 +1032,57 @@ class PrincipalStrainRates(TestCase):
 
     def tearDown(self):
         pass
+
+def test_constant_interpolation():
+    "Piecewise-constant interpolation in Timeseries"
+
+    ctx = PISM.Context()
+    ts = PISM.Timeseries(ctx.com, ctx.unit_system, "test", "time")
+
+    t = [0, 1, 2, 3]
+    y = [2, 3, 1]
+    N = len(y)
+
+    for k in range(N):
+        ts.append(y[k], t[k], t[k + 1])
+
+    # extrapolation on the left
+    assert ts(t[0] - 1) == y[0]
+    # extrapolation on the right
+    assert ts(t[-1] + 1) == y[-1]
+    # interior intervals
+    for k in range(N):
+        T = 0.5 * (t[k] + t[k + 1])
+
+        assert ts(T) == y[k], (ts(T), y[k])
+
+def test_timeseries_linear_interpolation():
+    "Linear interpolation in Timeseries"
+
+    ctx = PISM.Context()
+    ts = PISM.Timeseries(ctx.com, ctx.unit_system, "test", "time")
+
+    def f(x):
+        "a linear function that can be reproduced exactly"
+        return 2.0 * x - 3.0
+
+    N = 4
+    t = np.arange(N + 1, dtype=np.float64)
+
+    for k in range(N):
+        # use right end point
+        ts.append(f(t[k + 1]), t[k], t[k + 1])
+
+    ts.set_use_bounds(False)
+
+    # extrapolation on the left (note that t[0] is not used)
+    assert ts(t[1] - 1) == f(t[1])
+
+    # extrapolation on the right
+    assert ts(t[-1] + 1) == f(t[-1])
+
+    # interior intervals
+    for k in range(1, N):
+        T = 0.5 * (t[k] + t[k + 1])
+
+        assert ts(T) == f(T), (T, ts(T), f(T))

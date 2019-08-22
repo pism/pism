@@ -71,11 +71,13 @@ void Interpolation::init_linear(const double *input_x, unsigned int input_x_size
   m_right.resize(output_x_size);
   m_alpha.resize(output_x_size);
 
-  // the trivial case
+  // the trivial case (the code below requires input_x_size >= 2)
   if (input_x_size < 2) {
-    m_left[0]  = 0;
-    m_right[0] = 0;
-    m_alpha[0] = 0.0;
+    for (unsigned int k = 0; k < output_x_size; ++k) {
+      m_left[k]  = 0.0;
+      m_right[k] = 0.0;
+      m_alpha[k] = 0.0;
+    }
     return;
   }
 
@@ -93,27 +95,25 @@ void Interpolation::init_linear(const double *input_x, unsigned int input_x_size
 
     unsigned int
       L = gsl_interp_bsearch(input_x, x, 0, input_x_size),
-      R = L + 1 < input_x_size ? L + 1 : L;
+      R = L + 1;
 
-    m_left[i] = L;
-    m_right[i] = R;
-
-    if (L != R) {        // protect from division by zero
-      if (x <= input_x[R]) {
-        // regular case
-        m_alpha[i] = (x - input_x[L]) / (input_x[R] - input_x[L]);
-      } else {
-        // extrapolation on the right
-        m_alpha[i] = 1.0;
-      }
+    double alpha = 0.0;
+    if (x >= input_x[L] and R < input_x_size) {
+      // regular case
+      alpha = (x - input_x[L]) / (input_x[R] - input_x[L]);
     } else {
-      // this corresponds to extrapolation on the left
-      m_alpha[i] = 0.0;
+      // extrapolation
+      alpha = 0.0;
+      R = L;
     }
 
-    assert(m_left[i] >= 0 and m_left[i] < (int)input_x_size);
-    assert(m_right[i] >= 0 and m_right[i] < (int)input_x_size);
-    assert(m_alpha[i] >= 0.0 and m_alpha[i] <= 1.0);
+    assert(L < input_x_size);
+    assert(R < input_x_size);
+    assert(alpha >= 0.0 and alpha <= 1.0);
+
+    m_left[i]  = L;
+    m_right[i] = R;
+    m_alpha[i] = alpha;
   }
 
   init_weights_linear(input_x, input_x_size, output_x, output_x_size);

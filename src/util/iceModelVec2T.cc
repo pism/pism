@@ -226,21 +226,16 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
       }
     } else {
       // only one time record; set fake time bounds:
-      m_time_bounds.resize(2);
-      m_time_bounds[0] = m_time[0] - 1;
-      m_time_bounds[1] = m_time[0] + 1;
+      m_time_bounds = {m_time[0] - 1.0, m_time[0] + 1};
     }
 
   } else {
     // no time dimension; assume that we have only one record and set the time
     // to 0
-    m_time.resize(1);
-    m_time[0] = 0;
+    m_time = {0.0};
 
     // set fake time bounds:
-    m_time_bounds.resize(2);
-    m_time_bounds[0] = -1;
-    m_time_bounds[1] =  1;
+    m_time_bounds = {-1.0, 1.0};
   }
 
   if (not is_increasing(m_time)) {
@@ -268,15 +263,12 @@ void IceModelVec2T::init_constant(double value) {
   set_record(0);
 
   // set the time to zero
-  m_time.resize(1);
-  m_time[0] = 0;
+  m_time = {0.0};
   m_N = 1;
   m_first = 0;
 
   // set fake time bounds:
-  m_time_bounds.resize(2);
-  m_time_bounds[0] = -1;
-  m_time_bounds[1] =  1;
+  m_time_bounds = {-1.0, 1.0};
 }
 
 //! Read some data to make sure that the interval (t, t + dt) is covered.
