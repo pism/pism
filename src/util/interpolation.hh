@@ -107,6 +107,7 @@ public:
   void interpolate(const double *input, double *output) const;
 
   double integral(const double *input) const;
+  double integral(const std::vector<double> &input) const;
   double interval_length() const;
 private:
   //! Interpolation indexes

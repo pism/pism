@@ -91,10 +91,9 @@ void Interpolation::init_linear(const double *input_x, unsigned int input_x_size
   for (unsigned int i = 0; i < output_x_size; ++i) {
     double x = output_x[i];
 
-    // gsl_interp_bsearch always returns an index "L" such that "L + 1" is valid
-    unsigned int L = gsl_interp_bsearch(input_x, x, 0, input_x_size - 1);
-
-    unsigned int R = x > input_x[L] ? L + 1 : L;
+    unsigned int
+      L = gsl_interp_bsearch(input_x, x, 0, input_x_size),
+      R = L + 1 < input_x_size ? L + 1 : L;
 
     m_left[i] = L;
     m_right[i] = R;
@@ -289,7 +288,7 @@ void Interpolation::init_weights_linear(const double *x,
     al = m_left[0],
     ar = m_right[0],
     bl = m_left[N],
-    br = m_left[N];
+    br = m_right[N];
 
   double
     a = output_x[0],
@@ -339,6 +338,10 @@ double Interpolation::integral(const double *input) const {
     result += input[k] * m_w[k];
   }
   return result;
+}
+
+double Interpolation::integral(const std::vector<double> &input) const {
+  return integral(input.data());
 }
 
 double Interpolation::interval_length() const {
