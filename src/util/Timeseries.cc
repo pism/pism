@@ -206,7 +206,14 @@ double Timeseries::operator()(double t) const {
   if (m_use_bounds) {
     // piecewise-constant case
 
-    size_t k = gsl_interp_bsearch(m_time.data(), t, 0, m_time.size());
+    size_t k = 0;
+    if (t < m_time[0]) {
+      k = 0;
+    } else if (t >= m_time.back()) {
+      k = m_time.size() - 1;
+    } else {
+      k = gsl_interp_bsearch(m_time.data(), t, 0, m_time.size()) + 1;
+    }
 
     return m_values[k];
   } else {
