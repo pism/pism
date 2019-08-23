@@ -123,6 +123,14 @@ void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log
     tmp_bounds.set_string("units", tmp_dim.get_string("units"));
 
     io::read_time_bounds(nc, tmp_bounds, time_manager, log, m_time_bounds);
+
+    // Time bounds override the time dimension read from the input file.
+    //
+    // NB: we use the right end point of each interval to be consistent with
+    // Timeseries::append()
+    for (unsigned int k = 0; k < m_time.size(); ++k) {
+      m_time[k] = m_time_bounds[2 * k + 1];
+    }
   } else {
     m_use_bounds = false;
   }
