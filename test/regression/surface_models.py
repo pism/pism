@@ -4,81 +4,21 @@ Tests of PISM's surface models and modifiers.
 """
 
 import PISM
-import sys
+from PISM.testing import *
 import os
 import numpy as np
 from unittest import TestCase
-import netCDF4
 
 config = PISM.Context().config
-
-# reduce the grid size to speed this up
-config.set_double("grid.Mx", 3)
-config.set_double("grid.My", 3)
-config.set_double("grid.Mz", 5)
 
 seconds_per_year = 365 * 86400
 # ensure that this is the correct year length
 config.set_string("time.calendar", "365_day")
 
-log = PISM.Context().log
 # silence models' initialization messages
-log.set_threshold(1)
+PISM.Context().log.set_threshold(1)
 
 options = PISM.PETSc.Options()
-
-
-def create_geometry(grid):
-    geometry = PISM.Geometry(grid)
-
-    geometry.latitude.set(0.0)
-    geometry.longitude.set(0.0)
-
-    geometry.bed_elevation.set(0.0)
-    geometry.sea_level_elevation.set(0.0)
-
-    geometry.ice_thickness.set(0.0)
-    geometry.ice_area_specific_volume.set(0.0)
-
-    geometry.ensure_consistency(0.0)
-
-    return geometry
-
-
-def sample(vec):
-    with PISM.vec.Access(nocomm=[vec]):
-        return vec[0, 0]
-
-
-def create_dummy_forcing_file(filename, variable_name, units, value):
-    f = netCDF4.Dataset(filename, "w")
-    f.createDimension("time", 1)
-    t = f.createVariable("time", "d", ("time",))
-    t.units = "seconds"
-    delta_T = f.createVariable(variable_name, "d", ("time",))
-    delta_T.units = units
-    t[0] = 0.0
-    delta_T[0] = value
-    f.close()
-
-
-def dummy_grid():
-    "Create a dummy grid"
-    ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config)
-    params.ownership_ranges_from_options(ctx.size)
-    return PISM.IceGrid(ctx.ctx, params)
-
-
-def check(vec, value):
-    "Check if values of vec are almost equal to value."
-    np.testing.assert_almost_equal(sample(vec), value)
-
-
-def check_difference(A, B, value):
-    "Check if the difference between A and B is almost equal to value."
-    np.testing.assert_almost_equal(sample(A) - sample(B), value)
-
 
 def check_model(model, T, omega, SMB, mass=0.0, thickness=0.0):
     check(model.mass_flux(), SMB)
@@ -87,6 +27,8 @@ def check_model(model, T, omega, SMB, mass=0.0, thickness=0.0):
     check(model.layer_mass(), mass)
     check(model.layer_thickness(), thickness)
 
+def surface_simple(grid):
+    return PISM.SurfaceSimple(grid, PISM.AtmosphereUniform(grid))
 
 def check_modifier(model, modifier, T=0.0, omega=0.0, SMB=0.0, mass=0.0, thickness=0.0):
     check_difference(modifier.mass_flux(),
@@ -109,7 +51,6 @@ def check_modifier(model, modifier, T=0.0, omega=0.0, SMB=0.0, mass=0.0, thickne
                      model.layer_thickness(),
                      thickness)
 
-
 def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)
 
@@ -123,16 +64,15 @@ def create_given_input_file(filename, grid, temperature, mass_flux):
     M.set(mass_flux)
     M.write(filename)
 
-
 class DeltaT(TestCase):
     def setUp(self):
         self.filename = "delta_T_input.nc"
-        self.grid = dummy_grid()
-        self.model = PISM.SurfaceEISMINTII(self.grid, ord('A'))
+        self.grid = shallow_grid()
+        self.model = surface_simple(self.grid)
         self.dT = -5.0
-        self.geometry = create_geometry(self.grid)
+        self.geometry = PISM.Geometry(self.grid)
 
-        create_dummy_forcing_file(self.filename, "delta_T", "Kelvin", self.dT)
+        create_scalar_forcing(self.filename, "delta_T", "Kelvin", [self.dT], [0])
 
     def runTest(self):
         "Modifier Delta_T"
@@ -149,17 +89,16 @@ class DeltaT(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
-
 class LapseRates(TestCase):
     def setUp(self):
         self.filename = "reference_surface.nc"
-        self.grid = dummy_grid()
-        self.model = PISM.SurfaceEISMINTII(self.grid, ord('A'))
+        self.grid = shallow_grid()
+        self.model = surface_simple(self.grid)
         self.dTdz = 1.0         # 1 Kelvin per km
         self.dT = -1.0
         self.dz = 1000.0
 
-        self.geometry = create_geometry(self.grid)
+        self.geometry = PISM.Geometry(self.grid)
 
         # save current surface elevation to use it as a "reference" surface elevation
         self.geometry.ice_surface_elevation.dump(self.filename)
@@ -185,11 +124,26 @@ class LapseRates(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
+def test_surface_elevation():
+    pass
 
-if __name__ == "__main__":
+def test_surface_given():
+    pass
 
-    t = LapseRates()
+def test_surface_pdd():
+    pass
 
-    t.setUp()
-    t.runTest()
-    t.tearDown()
+def test_surface_pik():
+    pass
+
+def test_surface_simple():
+    pass
+
+def test_surface_anomaly():
+    pass
+
+def test_surface_cache():
+    pass
+
+def test_surface_forcing():
+    pass
