@@ -13,6 +13,10 @@ ctx.ctx.time().init_calendar("360_day")
 # suppress all output
 ctx.log.set_threshold(1)
 
+def compare(v, value):
+    with PISM.vec.Access(nocomm=v):
+        numpy.testing.assert_almost_equal(v[0, 0], value)
+
 class ForcingInput(unittest.TestCase):
 
     def setUp(self):
@@ -125,19 +129,20 @@ class ForcingInput(unittest.TestCase):
         forcing.update(t, dt)
         forcing.average(t, dt)
 
-        numpy.testing.assert_almost_equal(forcing.numpy()[0, 0], self.f[N])
+        compare(forcing, self.f[N])
 
         # average with a zero length
         forcing.average(t, 0.0)
 
-        numpy.testing.assert_almost_equal(forcing.numpy()[0, 0], self.f[N])
+        compare(forcing, self.f[N])
+
 
         # average() with only one record
         forcing = self.forcing(self.filename, buffer_size=1)
         forcing.update(0, 1)
         forcing.average(0, 1)
 
-        numpy.testing.assert_almost_equal(forcing.numpy()[0, 0], self.f[0])
+        compare(forcing, self.f[0])
 
     def test_extrapolation_left(self):
         "Extrapolation on the left"
@@ -147,8 +152,8 @@ class ForcingInput(unittest.TestCase):
         dt = self.tb[1] * 86400 + 1
         forcing.update(0, dt)
         forcing.interp(t)
-        with PISM.vec.Access(nocomm=forcing):
-            numpy.testing.assert_almost_equal(forcing[0, 0], self.f[0])
+
+        compare(forcing, self.f[0])
 
     def test_extrapolation_right(self):
         "Extrapolation on the right"
@@ -157,8 +162,8 @@ class ForcingInput(unittest.TestCase):
         t = self.tb[-1] * 86400
         forcing.update(0, t)
         forcing.interp(t + 1)
-        with PISM.vec.Access(nocomm=forcing):
-            numpy.testing.assert_almost_equal(forcing[0, 0], self.f[-1])
+
+        compare(forcing, self.f[-1])
 
     def test_interp_1(self):
         "Interpolation using interp(t)"
@@ -168,8 +173,8 @@ class ForcingInput(unittest.TestCase):
         t = self.tb[N] * 86400 + 1
         forcing.update(0, t)
         forcing.interp(t)
-        with PISM.vec.Access(nocomm=forcing):
-            numpy.testing.assert_almost_equal(forcing[0, 0], self.f[N])
+
+        compare(forcing, self.f[N])
 
     def test_interp_2(self):
         "Interpolation using init_interpolation(ts) and interp(i, j)"
@@ -183,9 +188,7 @@ class ForcingInput(unittest.TestCase):
         forcing.init_interpolation(ts)
 
         with PISM.vec.Access(nocomm=forcing):
-            data = forcing.interp(0, 0)
-
-        numpy.testing.assert_almost_equal(self.f, data)
+            numpy.testing.assert_almost_equal(forcing.interp(0, 0), self.f)
 
     def test_one_record(self):
         "Input file with only one time record"
@@ -210,9 +213,7 @@ class ForcingInput(unittest.TestCase):
     def check_forcing(self, forcing, value, t, dt):
         forcing.update(t, dt)
         forcing.average(t, dt)
-
-        with PISM.vec.Access(nocomm=forcing):
-            numpy.testing.assert_almost_equal(value, forcing[0, 0])
+        compare(forcing, value)
 
     def test_large_update_interval(self):
         "Test update() calls with an update interval past the last available time"
@@ -222,7 +223,7 @@ class ForcingInput(unittest.TestCase):
         forcing.init_interpolation([1e12])
 
         with PISM.vec.Access(nocomm=forcing):
-            numpy.testing.assert_almost_equal(self.f[-1], forcing.interp(0, 0))
+            numpy.testing.assert_almost_equal(forcing.interp(0, 0), self.f[-1])
 
     def test_buffer_too_small(self):
         "Reading periodic data that does not fit in the buffer"
@@ -281,8 +282,7 @@ class ForcingInput(unittest.TestCase):
             forcing.update(t, dt)
             forcing.interp(t)
 
-            with PISM.vec.Access(nocomm=forcing):
-                numpy.testing.assert_almost_equal(forcing[0, 0], self.f[month])
+            compare(forcing, self.f[month])
 
         # second month
         check(1)
