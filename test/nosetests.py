@@ -15,6 +15,8 @@ import sys
 import numpy as np
 from unittest import TestCase
 
+ctx = PISM.Context()
+
 def create_dummy_grid():
     "Create a dummy grid"
     ctx = PISM.Context()
@@ -1019,7 +1021,7 @@ class PrincipalStrainRates(TestCase):
     def setUp(self):
         self.ctx = PISM.Context()
 
-    def runTest(self):
+    def test_principal_strain_rates(self):
         "Test principal strain rate computation"
         errors = np.array([self.error(M) for M in [10, 20, 40]])
 
@@ -1086,3 +1088,54 @@ def test_timeseries_linear_interpolation():
         T = 0.5 * (t[k] + t[k + 1])
 
         assert ts(T) == f(T), (T, ts(T), f(T))
+
+def test_trapezoid_integral():
+    "Linear integration weights"
+    x = [0.0, 0.5, 1.0, 2.0]
+    y = [2.0, 2.5, 3.0, 2.0]
+
+    def f(a, b):
+        return PISM.Interpolation(PISM.LINEAR, x, [a, b]).integral(y)
+
+    assert f(0, 2) == 5.0
+    assert f(0, 0.5) + f(0.5, 1) + f(1, 1.5) + f(1.5, 2) == f(0, 2)
+    assert f(0, 0.5) + f(0.5, 1.5) + f(1.5, 2) == f(0, 2)
+    assert f(0, 0.25) + f(0.25, 1.75) + f(1.75, 2) == f(0, 2)
+
+    # constant extrapolation:
+    assert f(-2, -1) == 1 * y[0]
+    assert f(-2, 0) == 2 * y[0]
+    assert f(2, 5) == 3 * y[-1]
+    assert f(3, 4) == 1 * y[-1]
+
+def test_linear_periodic():
+    "Linear (periodic) interpolation"
+
+    period = 1.0
+    x_p = np.linspace(0, 0.9, 10) + 0.05
+    y_p = np.sin(2 * np.pi * x_p)
+
+    # grid with end points added (this makes periodic interpolation unnecessary)
+    x = np.r_[0, x_p, 1]
+    y = np.sin(2 * np.pi * x)
+
+    # target grid
+    xx = np.linspace(0, 1, 21)
+
+    yy_p = PISM.Interpolation(PISM.LINEAR_PERIODIC, x_p, xx, period).interpolate(y_p)
+
+    yy = PISM.Interpolation(PISM.LINEAR, x, xx).interpolate(y)
+
+    np.testing.assert_almost_equal(yy, yy_p)
+
+def test_nearest_neighbor():
+    "Nearest neighbor interpolation"
+    x = [-1, 1]
+    y = [0, 1]
+
+    xx = np.linspace(-0.9, 0.9, 10)
+    yy = np.ones_like(xx) * (xx > 0)
+
+    zz = PISM.Interpolation(PISM.NEAREST, x, xx).interpolate(y)
+
+    np.testing.assert_almost_equal(yy, zz)
