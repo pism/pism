@@ -212,7 +212,7 @@ class GivenTest(TestCase):
 
         config.set_string("ocean.given.file", self.filename)
 
-    def runTest(self):
+    def test_ocean_given(self):
         "Model Given"
 
         model = PISM.OceanGiven(self.grid)
@@ -259,7 +259,7 @@ class GivenTHTest(TestCase):
 
         config.set_string("ocean.th.file", self.filename)
 
-    def runTest(self):
+    def test_ocean_th(self):
         "Model GivenTH"
 
         model = PISM.OceanGivenTH(self.grid)
@@ -285,7 +285,7 @@ class DeltaT(TestCase):
 
         create_dummy_forcing_file(self.filename, "delta_T", "Kelvin", self.dT)
 
-    def runTest(self):
+    def test_ocean_delta_t(self):
         "Modifier Delta_T"
 
         modifier = PISM.OceanDeltaT(self.grid, self.model)
@@ -311,7 +311,7 @@ class DeltaSMB(TestCase):
 
         create_dummy_forcing_file(self.filename, "delta_mass_flux", "kg m-2 s-1", self.dSMB)
 
-    def runTest(self):
+    def test_ocean_delta_smb(self):
         "Modifier Delta_SMB"
 
         modifier = PISM.OceanDeltaSMB(self.grid, self.model)
@@ -342,7 +342,7 @@ class AnomalyBMB(TestCase):
 
         delta_BMB.dump(self.filename)
 
-    def runTest(self):
+    def test_ocean_anomaly(self):
         "Modifier Anomaly"
 
         config.set_string("ocean.anomaly.file", self.filename)
@@ -367,7 +367,7 @@ class FracMBP(TestCase):
 
         create_dummy_forcing_file(self.filename, "frac_MBP", "1", self.dMBP)
 
-    def runTest(self):
+    def test_ocean_frac_mpb(self):
         "Modifier Frac_MBP"
 
         modifier = PISM.OceanFracMBP(self.grid, self.model)
@@ -405,7 +405,7 @@ class FracSMB(TestCase):
 
         create_dummy_forcing_file(self.filename, "frac_mass_flux", "1", self.dSMB)
 
-    def runTest(self):
+    def test_ocean_frac_smb(self):
         "Modifier Frac_SMB"
 
         modifier = PISM.OceanFracSMB(self.grid, self.model)
@@ -470,7 +470,7 @@ class Cache(TestCase):
 
         config.set_double("ocean.cache.update_interval", 2.0)
 
-    def runTest(self):
+    def test_ocean_cache(self):
         "Modifier Cache"
 
         modifier = PISM.OceanCache(self.grid, self.delta_T)
@@ -507,7 +507,7 @@ class DeltaSL(TestCase):
 
         create_dummy_forcing_file(self.filename, "delta_SL", "meters", self.dSL)
 
-    def runTest(self):
+    def test_ocean_delta_sl(self):
         "Modifier Delta_SL"
 
         modifier = PISM.SeaLevelDelta(self.grid, self.model)
@@ -544,7 +544,7 @@ class DeltaSL2D(TestCase):
 
         create_delta_SL_file(self.filename, self.grid, self.dSL)
 
-    def runTest(self):
+    def test_ocean_delta_sl_2d(self):
         "Modifier Delta_SL_2D"
 
         modifier = PISM.SeaLevelDelta2D(self.grid, self.model)
