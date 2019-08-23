@@ -11,6 +11,8 @@ if (Pism_BUILD_PYTHON_BINDINGS AND NOSE_EXECUTABLE)
   message(STATUS "Enabling PISM Python tests that use nose")
   add_test(NAME "Python:nose:misc"
     COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/nosetests.py)
+  add_test(NAME "Python:nose:IceModelVec2T"
+    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/icemodelvec2t.py)
   add_test(NAME "Python:nose:enthalpy:converter"
     COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/enthalpy/converter.py)
   add_test(NAME "Python:nose:enthalpy:column"
