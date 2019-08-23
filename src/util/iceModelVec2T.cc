@@ -56,7 +56,8 @@ IceModelVec2T::Ptr IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
                                                const std::string &standard_name,
                                                int max_buffer_size,
                                                int evaluations_per_year,
-                                               bool periodic) {
+                                               bool periodic,
+                                               InterpolationType interpolation_type) {
 
   int n_records = file.inq_nrecords(short_name, standard_name,
                                     grid->ctx()->unit_system());
@@ -82,14 +83,18 @@ IceModelVec2T::Ptr IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
   // LCOV_EXCL_STOP
 
   return IceModelVec2T::Ptr(new IceModelVec2T(grid, short_name, n_records,
-                                              evaluations_per_year));
+                                              evaluations_per_year, interpolation_type));
 }
 
 
 IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name,
                              unsigned int n_records,
-                             unsigned int n_evaluations_per_year)
-  : IceModelVec2S() {
+                             unsigned int n_evaluations_per_year,
+                             InterpolationType interpolation_type)
+  : IceModelVec2S(),
+    m_n_evaluations_per_year(n_evaluations_per_year),
+    m_interp_type(interpolation_type)
+{
   m_has_ghosts           = false;
   m_array3                 = NULL;
   m_first                  = -1;
@@ -97,10 +102,6 @@ IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_na
   m_report_range         = false;
   m_period               = 0;
   m_reference_time       = 0.0;
-  m_n_evaluations_per_year = 53;
-  m_interp_type = PIECEWISE_CONSTANT;
-
-  m_n_evaluations_per_year = n_evaluations_per_year;
 
   const unsigned int width = 1;
 
