@@ -91,21 +91,17 @@ IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_na
                              unsigned int n_records,
                              unsigned int n_evaluations_per_year,
                              InterpolationType interpolation_type)
-  : IceModelVec2S(),
+  : IceModelVec2S(grid, short_name, WITHOUT_GHOSTS, 1),
+    m_array3(nullptr),
+    m_n_records(n_records),
+    m_N(0),
     m_n_evaluations_per_year(n_evaluations_per_year),
-    m_interp_type(interpolation_type)
+    m_first(-1),
+    m_interp_type(interpolation_type),
+    m_period(0),
+    m_reference_time(0.0)
 {
-  m_has_ghosts           = false;
-  m_array3                 = NULL;
-  m_first                  = -1;
-  m_N                      = 0;
-  m_report_range         = false;
-  m_period               = 0;
-  m_reference_time       = 0.0;
-
-  const unsigned int width = 1;
-
-  IceModelVec2S::create(grid, short_name, WITHOUT_GHOSTS, width);
+  m_report_range = false;
 
   // LCOV_EXCL_START
   if (n_records > IceGrid::max_dm_dof) {
@@ -118,7 +114,6 @@ IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_na
 
   // initialize the m_da3 member:
   m_da3 = m_grid->get_dm(n_records, this->m_da_stencil_width);
-  m_n_records = n_records;
 
   // allocate the 3D Vec:
   PetscErrorCode ierr = DMCreateGlobalVector(*m_da3, m_v3.rawptr());
