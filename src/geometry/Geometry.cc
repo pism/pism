@@ -84,6 +84,15 @@ Geometry::Geometry(IceGrid::ConstPtr grid)
 
   ice_surface_elevation.set_attrs("diagnostic", "ice upper surface elevation",
                                   "m", "surface_altitude");
+
+  // make sure all the fields are initialized
+  latitude.set(0.0);
+  longitude.set(0.0);
+  bed_elevation.set(0.0);
+  sea_level_elevation.set(0.0);
+  ice_thickness.set(0.0);
+  ice_area_specific_volume.set(0.0);
+  ensure_consistency(0.0);
 }
 
 void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness) {
