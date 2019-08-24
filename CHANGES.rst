@@ -40,6 +40,7 @@ Changes since v1.1
   step (its computational cost is negligible) and the Lingle-Clark model is updated
   *exactly* every `bed_deformation.lc.update_interval` years, limiting PISM's time step
   length.
+- Fix units of the precipitation lapse rate (`(kg m-2/year)/km` instead of `(m/year)/km`).
 
 Changes from v1.0 to v1.1
 =========================

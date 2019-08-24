@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -33,7 +33,7 @@ LapseRates::LapseRates(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> 
   m_surface(grid, "ice_surface_elevation", WITHOUT_GHOSTS) {
 
   m_precip_lapse_rate = m_config->get_double("atmosphere.lapse_rate.precipitation_lapse_rate",
-                                             "(m / s) / m");
+                                             "(kg m-2 / s) / m");
 
   {
     options::Real T_lapse_rate("-temp_lapse_rate",
@@ -80,9 +80,9 @@ void LapseRates::init_impl(const Geometry &geometry) {
 
   m_log->message(2,
                  "   air temperature lapse rate: %3.3f K per km\n"
-                 "   precipitation lapse rate:   %3.3f m year-1 per km\n",
+                 "   precipitation lapse rate:   %3.3f (kg m-2 year-1) per km\n",
                  convert(m_sys, m_temp_lapse_rate, "K / m", "K / km"),
-                 convert(m_sys, m_precip_lapse_rate, "(m / s) / m", "(m / year) / km"));
+                 convert(m_sys, m_precip_lapse_rate, "(kg m-2 / s) / m", "(kg m-2 / year) / km"));
 
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.lapse_rate");
 

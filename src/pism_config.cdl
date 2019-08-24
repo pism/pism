@@ -147,7 +147,7 @@ netcdf pism_config {
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate = 0.0;
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_doc = "Elevation lapse rate for the surface mass balance";
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_type = "scalar";
-    pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_units = "(m / year) / km";
+    pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_units = "(kg m-2 / year) / km";
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_option = "precip_lapse_rate";
 
     pism_config:atmosphere.uniform.precipitation = 1000;

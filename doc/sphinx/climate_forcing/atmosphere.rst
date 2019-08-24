@@ -275,7 +275,7 @@ elevation lapse rates. It uses the following options.
 
     \gamma = -\frac{dT}{dz}.
 
-- :opt:`-precip_lapse_rate` gives the precipitation lapse rate, in `(m/year)/km`.
+- :opt:`-precip_lapse_rate` gives the precipitation lapse rate, in :math:`(kg / (m^{2} year)) / km`.
   Here `\gamma = -\frac{dM}{dz}`.
 - :opt:`-atmosphere_lapse_rate_file` specifies a file containing the reference surface
   elevation field (standard name: :var:`surface_altitude`). This file may contain several
