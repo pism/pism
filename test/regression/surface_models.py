@@ -74,8 +74,8 @@ class DeltaT(TestCase):
 
         create_scalar_forcing(self.filename, "delta_T", "Kelvin", [self.dT], [0])
 
-    def runTest(self):
-        "Modifier Delta_T"
+    def test_surface_delta_t(self):
+        "Modifier 'delta_T'"
 
         modifier = PISM.SurfaceDeltaT(self.grid, self.model)
 
@@ -107,8 +107,8 @@ class LapseRates(TestCase):
 
         options.setValue("-temp_lapse_rate", self.dTdz)
 
-    def runTest(self):
-        "Modifier lapse_rate"
+    def test_surface_lapse_rate(self):
+        "Modifier 'lapse_rate'"
 
         modifier = PISM.SurfaceLapseRates(self.grid, self.model)
 
