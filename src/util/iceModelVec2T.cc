@@ -82,6 +82,10 @@ IceModelVec2T::Ptr IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
   }
   // LCOV_EXCL_STOP
 
+  if (periodic and interpolation_type == LINEAR) {
+    interpolation_type = LINEAR_PERIODIC;
+  }
+
   return IceModelVec2T::Ptr(new IceModelVec2T(grid, short_name, n_records,
                                               evaluations_per_year, interpolation_type));
 }
