@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -101,15 +101,13 @@ protected:
 
   template<typename T>
   std::string key_list(std::map<std::string, T> list) {
-    std::string result;
-    auto k = list.begin();
-    result = "[" + (k++)->first;
-    for (; k != list.end(); k++) {
-      result += ", " + k->first;
-    }
-    result += "]";
+    std::vector<std::string> keys;
 
-    return result;
+    for (auto i : list) {
+      keys.push_back(i.first);
+    }
+
+    return "[" + join(keys, ", ") + "]";
   }
 
   std::shared_ptr<Model> model(const std::string &type) {
