@@ -152,14 +152,16 @@ def grid_from_file_test():
     enthalpy.set(80e3)
 
     output_file = "test_grid_from_file.nc"
-    pio = PISM.util.prepare_output(output_file)
+    try:
+        pio = PISM.util.prepare_output(output_file)
 
-    enthalpy.write(pio)
+        enthalpy.write(pio)
 
-    pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READONLY)
+        pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READONLY)
 
-    grid2 = PISM.IceGrid.FromFile(grid.ctx(), pio, "enthalpy", PISM.CELL_CORNER)
-
+        grid2 = PISM.IceGrid.FromFile(ctx.ctx, pio, "enthalpy", PISM.CELL_CORNER)
+    finally:
+        os.remove(output_file)
 
 def create_special_vecs_test():
     "Test helpers used to create standard PISM fields"
@@ -304,14 +306,16 @@ def modelvecs_test():
 
     # test write()
     output_file = "test_ModelVecs.nc"
-    pio = PISM.util.prepare_output(output_file)
-    pio.close()
+    try:
+        pio = PISM.util.prepare_output(output_file)
+        pio.close()
 
-    vecs.write(output_file)
+        vecs.write(output_file)
 
-    # test writeall()
-    vecs.writeall(output_file)
-
+        # test writeall()
+        vecs.writeall(output_file)
+    finally:
+        os.remove(output_file)
 
 def sia_test():
     "Test the PISM.sia module"
@@ -363,13 +367,16 @@ def util_test():
     grid = create_dummy_grid()
 
     output_file = "test_pism_util.nc"
-    pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READWRITE_MOVE)
-    pio.close()
+    try:
+        pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READWRITE_MOVE)
+        pio.close()
 
-    PISM.util.writeProvenance(output_file)
-    PISM.util.writeProvenance(output_file, message="history string")
+        PISM.util.writeProvenance(output_file)
+        PISM.util.writeProvenance(output_file, message="history string")
 
-    PISM.util.fileHasVariable(output_file, "data")
+        PISM.util.fileHasVariable(output_file, "data")
+    finally:
+        os.remove(output_file)
 
     # Test PISM.util.Bunch
     b = PISM.util.Bunch(a=1, b="string")
@@ -384,31 +391,39 @@ def logging_test():
 
     import PISM.logging as L
 
-    PISM.PIO(grid.com, "netcdf3", "log.nc", PISM.PISM_READWRITE_MOVE)
-    c = L.CaptureLogger("log.nc")
+    log_filename = "log.nc"
+    try:
+        PISM.PIO(grid.com, "netcdf3", log_filename, PISM.PISM_READWRITE_MOVE)
+        c = L.CaptureLogger(log_filename)
 
-    L.clear_loggers()
+        L.clear_loggers()
 
-    L.add_logger(L.print_logger)
-    L.add_logger(c)
+        L.add_logger(L.print_logger)
+        L.add_logger(c)
 
-    L.log("log message\n", L.kError)
+        L.log("log message\n", L.kError)
 
-    L.logError("error message\n")
+        L.logError("error message\n")
 
-    L.logWarning("warning message\n")
+        L.logWarning("warning message\n")
 
-    L.logMessage("log message (again)\n")
+        L.logMessage("log message (again)\n")
 
-    L.logDebug("debug message\n")
+        L.logDebug("debug message\n")
 
-    L.logPrattle("prattle message\n")
+        L.logPrattle("prattle message\n")
 
-    c.write()                   # default arguments
-    c.readOldLog()
+        c.write()                   # default arguments
+        c.readOldLog()
+    finally:
+        os.remove(log_filename)
 
-    PISM.PIO(grid.com, "netcdf3", "other_log.nc", PISM.PISM_READWRITE_MOVE)
-    c.write("other_log.nc", "other_log")  # non-default arguments
+    log_filename = "other_log.nc"
+    try:
+        PISM.PIO(grid.com, "netcdf3", log_filename, PISM.PISM_READWRITE_MOVE)
+        c.write(log_filename, "other_log")  # non-default arguments
+    finally:
+        os.remove(log_filename)
 
 
 def column_interpolation_test(plot=False):
@@ -704,11 +719,14 @@ def ssa_trivial_test():
         def exactSolution(self, i, j, x, y):
             return [0, 0]
 
-    Mx = 11
-    My = 11
-    test_case = TrivialSSARun(Mx, My)
-    test_case.run("ssa_trivial.nc")
-
+    output_file = "ssa_trivial.nc"
+    try:
+        Mx = 11
+        My = 11
+        test_case = TrivialSSARun(Mx, My)
+        test_case.run(output_file)
+    finally:
+        os.remove(output_file)
 
 def epsg_test():
     "Test EPSG to CF conversion."
