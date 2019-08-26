@@ -11,8 +11,6 @@ from unittest import TestCase
 
 config = PISM.Context().config
 
-config.set_string("ocean.delta_sl_2d.file", "delta_SL_input.nc")
-
 seconds_per_year = 365 * 86400
 # ensure that this is the correct year length
 config.set_string("time.calendar", "365_day")
@@ -425,23 +423,28 @@ class DeltaSL(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
-def create_delta_SL_file(filename, grid, sea_level_offset):
-    PISM.util.prepare_output(filename)
-
-    SL = PISM.IceModelVec2S(grid, "delta_SL", PISM.WITHOUT_GHOSTS)
-    SL.set_attrs("forcing", "sea level forcing", "meters", "")
-    SL.set(sea_level_offset)
-    SL.write(filename)
-
 class DeltaSL2D(TestCase):
+    def create_delta_SL_file(self, filename, times, sea_level_offsets):
+        output = PISM.util.prepare_output(filename, append_time=False)
+
+        SL = PISM.IceModelVec2S(self.grid, "delta_SL", PISM.WITHOUT_GHOSTS)
+        SL.set_attrs("forcing", "sea level forcing", "meters", "")
+
+        for k in range(len(times)):
+            PISM.append_time(output, config, times[k])
+            SL.set(sea_level_offsets[k])
+            SL.write(output)
+
     def setUp(self):
-        self.filename = config.get_string("ocean.delta_sl_2d.file")
+        self.filename = "delta_SL_input.nc"
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.model = PISM.SeaLevel(self.grid)
         self.dSL = -5.0
 
-        create_delta_SL_file(self.filename, self.grid, self.dSL)
+        self.create_delta_SL_file(self.filename, [0, seconds_per_year], [0, 2 * self.dSL])
+
+        config.set_string("ocean.delta_sl_2d.file", self.filename)
 
     def test_ocean_delta_sl_2d(self):
         "Modifier Delta_SL_2D"
@@ -449,7 +452,9 @@ class DeltaSL2D(TestCase):
         modifier = PISM.SeaLevelDelta2D(self.grid, self.model)
 
         modifier.init(self.geometry)
-        modifier.update(self.geometry, 0, 1)
+        # Use a one second time step to try to sample sea level forcing midway through the
+        # interval from 0 to 1 year.
+        modifier.update(self.geometry, 0.5 * seconds_per_year, 1)
 
         check_difference(modifier.elevation(),
                          self.model.elevation(),

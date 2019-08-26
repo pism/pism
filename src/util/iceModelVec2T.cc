@@ -103,6 +103,12 @@ IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_na
 {
   m_report_range = false;
 
+  if (not (m_interp_type == PIECEWISE_CONSTANT or
+           m_interp_type == LINEAR or
+           m_interp_type == LINEAR_PERIODIC)) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "unsupported interpolation type");
+  }
+
   // LCOV_EXCL_START
   if (n_records > IceGrid::max_dm_dof) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -199,7 +205,17 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
     std::string bounds_name = nc.get_att_text(time_name, "bounds");
 
     if (m_time.size() > 1) {
-      if (not bounds_name.empty()) {
+
+      if (m_interp_type == PIECEWISE_CONSTANT) {
+        if (bounds_name.empty()) {
+          // no time bounds attribute
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "Variable '%s' does not have the time_bounds attribute.\n"
+                                        "Cannot use time-dependent forcing data '%s' (%s) without time bounds.",
+                                        time_name.c_str(),  m_metadata[0].get_string("long_name").c_str(),
+                                        m_metadata[0].get_name().c_str());
+        }
+
         // read time bounds data from a file
         TimeBoundsMetadata tb(bounds_name, time_name, m_grid->ctx()->unit_system());
         tb.set_string("units", time_units);
@@ -213,13 +229,17 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
           m_time[k] = m_time_bounds[2*k + 0];
         }
       } else {
-        // no time bounds attribute
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "Variable '%s' does not have the time_bounds attribute.\n"
-                                      "Cannot use time-dependent forcing data '%s' (%s) without time bounds.",
-                                      time_name.c_str(),  m_metadata[0].get_string("long_name").c_str(),
-                                      m_metadata[0].get_name().c_str());
+        // fake time step length used to generate the right end point of the last interval
+        // TODO: figure out if there is a better way to do this.
+        double dt = 1.0;
+        size_t N = m_time.size();
+        m_time_bounds.resize(2 * N);
+        for (size_t k = 0; k < N; ++k) {
+          m_time_bounds[2 * k + 0] = m_time[k];
+          m_time_bounds[2 * k + 1] = k + 1 < N ? m_time[k + 1] : m_time[k] + dt;
+        }
       }
+
     } else {
       // only one time record; set fake time bounds:
       m_time_bounds = {m_time[0] - 1.0, m_time[0] + 1};

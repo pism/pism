@@ -283,6 +283,13 @@ void Interpolation::init_weights_linear(const double *x,
                                         unsigned int x_size,
                                         const double *output_x,
                                         unsigned int output_x_size) {
+
+  if (output_x_size == 1) {
+    m_w = {0.0};
+    m_interval_length = 0.0;
+    return;
+  }
+
   int
     N = output_x_size - 1,
     al = m_left[0],
