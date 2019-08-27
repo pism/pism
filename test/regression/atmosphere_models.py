@@ -227,7 +227,7 @@ class Given(TestCase):
     def test_atmosphere_given(self):
         "Model 'given'"
 
-        model = PISM.AtmosphereGiven(self.grid)
+        model = PISM.AtmosphereFactory(self.grid).create("given")
 
         model.init(self.geometry)
         model.update(self.geometry, 0, 1)
