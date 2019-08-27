@@ -319,6 +319,20 @@
 
 %include pism_inverse.i
 
+%include "coupler/util/PCFactory.hh"
+
+%shared_ptr(pism::PCFactory<pism::ocean::OceanModel>)
+%template(_OceanFactoryBase) pism::PCFactory<pism::ocean::OceanModel>;
+
+%shared_ptr(pism::PCFactory<pism::ocean::sea_level::SeaLevel>)
+%template(_SeaLevelFactoryBase) pism::PCFactory<pism::ocean::sea_level::SeaLevel>;
+
+%shared_ptr(pism::PCFactory<pism::atmosphere::AtmosphereModel>)
+%template(_AtmosphereFactoryBase) pism::PCFactory<pism::atmosphere::AtmosphereModel>;
+
+%shared_ptr(pism::PCFactory<SurfaceModel>)
+%template(_SurfaceFactoryBase) pism::PCFactory<pism::surface::SurfaceModel>;
+
 %include pism_ocean.i
 
 /* surface models use atmosphere models as inputs so we need to define atmosphere models first */

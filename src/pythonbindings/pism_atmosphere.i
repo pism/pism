@@ -69,3 +69,7 @@
 %shared_ptr(pism::atmosphere::Uniform)
 %rename(AtmosphereUniform) pism::atmosphere::Uniform;
 %include "coupler/atmosphere/Uniform.hh"
+
+%shared_ptr(pism::atmosphere::Factory)
+%rename(AtmosphereFactory) pism::atmosphere::Factory;
+%include "coupler/atmosphere/Factory.hh"

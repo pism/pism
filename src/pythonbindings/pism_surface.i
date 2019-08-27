@@ -9,6 +9,7 @@
 #include "coupler/surface/Simple.hh"
 #include "coupler/surface/TemperatureIndex.hh"
 #include "coupler/surface/GivenClimate.hh"
+#include "coupler/surface/Factory.hh"
 %}
 
 %shared_ptr(pism::surface::SurfaceModel)
@@ -57,3 +58,7 @@
 %shared_ptr(pism::surface::TemperatureIndex)
 %rename(SurfaceTemperatureIndex) pism::surface::TemperatureIndex;
 %include "coupler/surface/TemperatureIndex.hh"
+
+%shared_ptr(pism::surface::Factory)
+%rename(SurfaceFactory) pism::surface::Factory;
+%include "coupler/surface/Factory.hh"
