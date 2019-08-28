@@ -180,9 +180,11 @@ void Interpolation::init_piecewise_constant(const double *input_x, unsigned int 
 
   // the trivial case
   if (input_x_size < 2) {
-    m_left[0]  = 0;
-    m_right[0] = 0;
-    m_alpha[0] = 0.0;
+    for (unsigned int i = 0; i < output_x_size; ++i) {
+      m_left[i]  = 0;
+      m_right[i] = 0;
+      m_alpha[i] = 0.0;
+    }
     return;
   }
 
@@ -213,15 +215,19 @@ void Interpolation::init_linear_periodic(const double *input_x, unsigned int inp
                                          const double *output_x, unsigned int output_x_size,
                                          double period) {
 
+  assert(period > 0);
+
   m_left.resize(output_x_size);
   m_right.resize(output_x_size);
   m_alpha.resize(output_x_size);
 
   // the trivial case
   if (input_x_size < 2) {
-    m_left[0]  = 0;
-    m_right[0] = 0;
-    m_alpha[0] = 0.0;
+    for (unsigned int i = 0; i < output_x_size; ++i) {
+      m_left[i]  = 0;
+      m_right[i] = 0;
+      m_alpha[i] = 0.0;
+    }
     return;
   }
 
@@ -257,6 +263,7 @@ void Interpolation::init_linear_periodic(const double *input_x, unsigned int inp
       double
         x0 = input_x[0],
         dx = (period - x_l) + x0;
+      assert(dx > 0);
       if (x > x0) {
         // interval from the last point of the input grid to the period
         alpha = (x - x_l) / dx;
