@@ -1,10 +1,12 @@
 FROM archlinux/base:latest
-RUN groupadd -r runner -g 1000 && useradd -u 1000 -r -g runner -m -d /runner -s /sbin/nologin -c 'CI' runner && chmod 755 /runner
-RUN yes | pacman -Sqy git binutils sudo go
-WORKDIR /runner/build
+RUN pacman -Sy
+RUN pacman --noconfirm -S git base-devel
+
+RUN useradd -m --shell=/bin/nologin build && usermod -L build
+RUN echo "build ALL = NOPASSWD: /usr/bin/pacman" >> /etc/sudoers
+USER build
+WORKDIR /home/build/
 RUN git clone https://aur.archlinux.org/yay.git
-WORKDIR /runner/build/yay
-USER runner:runner
-RUN makepkg -si
-USER root:root
-RUN yay -Sy pism
+WORKDIR yay
+RUN makepkg --noconfirm -si
+RUN yay --noconfirm --answerdiff=None -Sy pism
