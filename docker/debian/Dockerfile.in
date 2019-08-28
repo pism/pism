@@ -1,5 +1,18 @@
 FROM debian:buster
-RUN apt-get update && apt-get install -y ${PISM_DEBIAN_PACKAGE_LIST}
-RUN groupadd -r runner -g 1000 && useradd -u 1000 -r -g runner -m -d /runner -s /sbin/nologin -c 'CI' runner && chmod 755 /runner
-WORKDIR /runner
-USER runner
+RUN apt-get update
+RUN apt-get install -y git cmake libgsl-dev libnetcdf-dev libfftw3-dev libudunits2-dev petsc-dev
+RUN apt-get install -y g++
+RUN apt-get install -y netcdf-bin
+
+RUN useradd -m --shell=/bin/nologin builder && usermod -L builder
+USER builder
+
+RUN mkdir -p /home/builder/local/build/pism
+WORKDIR /home/builder/local
+RUN git clone --depth=1 git://github.com/pism/pism.git
+
+WORKDIR build/pism
+ENV PISM_INSTALL_PREFIX=/home/builder/
+ENV CC=mpicc CXX=mpicxx
+RUN cmake ../../pism
+RUN make install
