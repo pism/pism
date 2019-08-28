@@ -7,7 +7,7 @@ Use with nose (https://pypi.python.org/pypi/nose/) and coverage.py
 
 Run this to get a coverage report:
 
-nosetests --with-coverage --cover-branches --cover-html --cover-package=PISM test/nosetests.py
+nosetests --with-coverage --cover-branches --cover-html --cover-package=PISM test/miscellaneous.py
 """
 
 import PISM
