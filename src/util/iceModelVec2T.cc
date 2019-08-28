@@ -553,10 +553,11 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
 
   assert(m_first >= 0);
 
+  auto time = m_grid->ctx()->time();
+
   // Compute "periodized" times if necessary.
   std::vector<double> times_requested(ts.size());
   if (m_period != 0) {
-    auto time = m_grid->ctx()->time();
     for (unsigned int k = 0; k < ts.size(); ++k) {
       times_requested[k] = time->mod(ts[k] - m_reference_time, m_period);
     }
@@ -565,7 +566,8 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
   }
 
   m_interp.reset(new Interpolation(m_interp_type, &m_time[m_first], m_N,
-                                   times_requested.data(), times_requested.size()));
+                                   times_requested.data(), times_requested.size(),
+                                   time->years_to_seconds(m_period)));
 }
 
 /** 
