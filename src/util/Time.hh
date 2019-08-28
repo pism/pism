@@ -163,9 +163,14 @@ public:
   //! 'years' using the year length corresponding to the calendar.
   virtual double convert_time_interval(double T, const std::string &units) const;
 
-protected:
+  //! Convert time interval length in years into seconds using the year length
+  //! corresponding to the chosen calendar.
   double years_to_seconds(double input) const;
+
+  //! Convert time interval length in seconds into years using the year length
+  //! corresponding to the chosen calendar.
   double seconds_to_years(double input) const;
+protected:
 
   std::vector<double> parse_list(const std::string &spec) const;
   std::vector<double> parse_range(const std::string &spec) const;
