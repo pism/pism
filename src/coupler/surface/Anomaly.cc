@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -36,14 +36,14 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
 
     PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
 
-
     m_ice_surface_temp_anomaly = IceModelVec2T::ForcingField(m_grid,
                                                              file,
                                                              "ice_surface_temp_anomaly",
                                                              "", // no standard name
                                                              buffer_size,
                                                              evaluations_per_year,
-                                                             periodic);
+                                                             periodic,
+                                                             LINEAR);
 
     m_climatic_mass_balance_anomaly = IceModelVec2T::ForcingField(m_grid,
                                                                   file,

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -78,7 +78,8 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                                                 "", // no standard name
                                                 buffer_size,
                                                 evaluations_per_year,
-                                                periodic);
+                                                periodic,
+                                                LINEAR);
 
     m_salinity_ocean = IceModelVec2T::ForcingField(m_grid,
                                                    file,
@@ -86,7 +87,8 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                                                    "", // no standard name
                                                    buffer_size,
                                                    evaluations_per_year,
-                                                   periodic);
+                                                   periodic,
+                                                   LINEAR);
   }
 
   m_theta_ocean->set_attrs("climate_forcing",

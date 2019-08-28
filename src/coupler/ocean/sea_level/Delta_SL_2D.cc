@@ -37,7 +37,6 @@ Delta_SL_2D::Delta_SL_2D(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> in)
 
     PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
 
-
     m_forcing = IceModelVec2T::ForcingField(m_grid,
                                             file,
                                             "delta_SL",

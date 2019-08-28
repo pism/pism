@@ -75,7 +75,8 @@ Pico::Pico(IceGrid::ConstPtr g)
                                                 "", // no standard name
                                                 buffer_size,
                                                 evaluations_per_year,
-                                                periodic);
+                                                periodic,
+                                                LINEAR);
 
     m_salinity_ocean = IceModelVec2T::ForcingField(m_grid,
                                                    file,
@@ -83,7 +84,8 @@ Pico::Pico(IceGrid::ConstPtr g)
                                                    "", // no standard name
                                                    buffer_size,
                                                    evaluations_per_year,
-                                                   periodic);
+                                                   periodic,
+                                                   LINEAR);
   }
 
   m_theta_ocean->set_attrs("climate_forcing",

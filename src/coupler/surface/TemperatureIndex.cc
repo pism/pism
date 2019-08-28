@@ -92,7 +92,8 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
                                                 "air_temp_sd", "",
                                                 max_buffer_size,
                                                 evaluations_per_year,
-                                                m_sd_period > 0);
+                                                m_sd_period > 0,
+                                                LINEAR);
     m_sd_file_set = true;
   } else {
     m_air_temp_sd.reset(new IceModelVec2T(m_grid, "air_temp_sd", 1, 1));
