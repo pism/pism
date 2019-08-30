@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2019 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -33,6 +33,7 @@
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/pism_config.hh"  // Pism_DEBUG
 
 namespace pism {
 
@@ -395,14 +396,14 @@ public:
   }
 
   inline T& operator()(int i, int j) {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
     check_array_indices(i, j, 0);
 #endif
     return static_cast<T**>(m_array)[j][i];
   }
 
   inline const T& operator()(int i, int j) const {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
     check_array_indices(i, j, 0);
 #endif
     return static_cast<T**>(m_array)[j][i];

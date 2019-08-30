@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,13 +22,11 @@
 #include <vector>
 #include <memory>
 
-#include "pism_utilities.hh"
-#include "Units.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/Units.hh"
 #include "pism/util/ConfigInterface.hh"
 
 namespace pism {
-
-class Config;
 
 std::string calendar_from_options(MPI_Comm com, const Config& config);
 
@@ -152,12 +150,8 @@ public:
   //! \brief Returns current time, in years. Only for reporting.
   virtual std::string date() const;
 
-#if (PISM_DEBUG==1)
   //! \brief Returns current time, in years. Only for debugging.
-  virtual double current_years() const {
-    return seconds_to_years(current());
-  }
-#endif
+  double current_years() const;
 
   //! Date corresponding to the beginning of the run.
   virtual std::string start_date() const;

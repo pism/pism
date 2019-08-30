@@ -59,7 +59,7 @@ TridiagonalSystem::TridiagonalSystem(unsigned int max_size,
 
 //! Zero all entries.
 void TridiagonalSystem::reset() {
-#if PISM_DEBUG==1
+#if Pism_DEBUG==1
   memset(&m_L[0],    0, (m_max_system_size)*sizeof(double));
   memset(&m_U[0],    0, (m_max_system_size)*sizeof(double));
   memset(&m_D[0],    0, (m_max_system_size)*sizeof(double));
@@ -327,7 +327,7 @@ void columnSystemCtx::init_column(int i, int j,
   m_solver->reset();
 
   // post-condition
-#if PISM_DEBUG==1
+#if Pism_DEBUG==1
   // check if m_ks is valid
   if (m_ks >= m_z.size()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ks = %d computed at i = %d, j = %d is invalid,\n"

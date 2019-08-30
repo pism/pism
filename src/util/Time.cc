@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -603,6 +603,10 @@ double Time::convert_time_interval(double T, const std::string &units) const {
     return this->seconds_to_years(T); // uses year length here
   }
   return convert(m_unit_system, T, "seconds", units);
+}
+
+double Time::current_years() const {
+  return seconds_to_years(current());
 }
 
 } // end of namespace pism

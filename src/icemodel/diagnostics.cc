@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -39,7 +39,7 @@
 #include "pism/util/projection.hh"
 #include "pism/earth/BedDef.hh"
 
-#if (PISM_USE_PROJ4==1)
+#if (Pism_USE_PROJ==1)
 #include "pism/util/Proj.hh"
 #endif
 
@@ -1688,12 +1688,11 @@ LatLonBounds::LatLonBounds(const IceModel *m,
 
   m_proj_string = proj_string;
 
-#if (PISM_USE_PROJ4==1)
-  // create PROJ.4 objects to check if proj_string is OK.
-  Proj lonlat("+proj=latlong +datum=WGS84 +ellps=WGS84");
-  Proj pism(m_proj_string);
+#if (Pism_USE_PROJ==1)
+  // create PROJ objects to check if proj_string is OK.
+  Proj crs(m_proj_string);
 #endif
-  // If PISM_USE_PROJ4 is not 1 we don't need to check validity of m_proj_string: this diagnostic
+  // If PISM_USE_PROJ is not 1 we don't need to check validity of m_proj_string: this diagnostic
   // will not be available and so this code will not run.
 }
 
@@ -2333,11 +2332,11 @@ void IceModel::init_diagnostics() {
     {"rank", f(new Rank(this))},
   };
 
-#if (PISM_USE_PROJ4==1)
-  std::string proj4 = m_grid->get_mapping_info().proj4;
-  if (not proj4.empty()) {
-    m_diagnostics["lat_bnds"] = f(new LatLonBounds(this, "lat", proj4));
-    m_diagnostics["lon_bnds"] = f(new LatLonBounds(this, "lon", proj4));
+#if (Pism_USE_PROJ==1)
+  std::string proj = m_grid->get_mapping_info().proj;
+  if (not proj.empty()) {
+    m_diagnostics["lat_bnds"] = f(new LatLonBounds(this, "lat", proj));
+    m_diagnostics["lon_bnds"] = f(new LatLonBounds(this, "lon", proj));
   }
 #endif
 

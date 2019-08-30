@@ -78,7 +78,7 @@
 .. _NumPy: http://www.numpy.org/
 .. _PETSc-installation: https://www.mcs.anl.gov/petsc/documentation/installation.html
 .. _PETSc: https://www.mcs.anl.gov/petsc/
-.. _PROJ.4: https://proj4.org/
+.. _PROJ: https://proj.org/
 .. _PnetCDF: https://trac.mcs.anl.gov/projects/parallel-netcdf
 .. _Python: https://www.python.org
 .. _Sphinx: http://www.sphinx-doc.org/en/master/usage/installation.html

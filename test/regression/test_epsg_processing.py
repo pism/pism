@@ -26,21 +26,21 @@ files = ["pisms-output.nc",
 # create an input file
 run(PISMS + " -verbose 1 -Mx 3 -My 3 -Mz 5 -y 10 -o pisms-output.nc")
 
-# add the PROJ.4 string
+# add the PROJ string
 nc = Dataset("pisms-output.nc", "a")
-nc.proj4 = "+init=epsg:3413"
+nc.proj = "+init=epsg:3413"
 nc.close()
 
-print("Test running PISM initialized from a file w/o mapping  but with proj4...")
+print("Test running PISM initialized from a file w/o mapping  but with proj...")
 assert run(PISMR + " -verbose 1 -i pisms-output.nc -y 10 -o both-consistent.nc") == 0
 
-print("Test that the mapping variable was initialized using the proj4 attribute...")
+print("Test that the mapping variable was initialized using the proj attribute...")
 nc = Dataset("both-consistent.nc", "r")
 mapping = nc.variables["mapping"]
 assert mapping.grid_mapping_name == "polar_stereographic"
 nc.close()
 
-print("Test re-starting PISM with consistent proj4 and mapping...")
+print("Test re-starting PISM with consistent proj and mapping...")
 assert run(PISMR + " -verbose 1 -i both-consistent.nc -o pismr-output.nc") == 0
 
 # remove a required string attribute

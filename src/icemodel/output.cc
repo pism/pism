@@ -152,10 +152,10 @@ void IceModel::write_mapping(const PIO &file) {
     }
     io::write_attributes(file, mapping, PISM_DOUBLE);
 
-    // Write the PROJ.4 string to mapping:proj4_params (for CDO).
-    std::string proj4 = m_grid->get_mapping_info().proj4;
-    if (not proj4.empty()) {
-      file.put_att_text(name, "proj4_params", proj4);
+    // Write the PROJ string to mapping:proj_params (for CDO).
+    std::string proj = m_grid->get_mapping_info().proj;
+    if (not proj.empty()) {
+      file.put_att_text(name, "proj_params", proj);
     }
   }
 }

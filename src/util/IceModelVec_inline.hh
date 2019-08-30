@@ -26,28 +26,28 @@
 namespace pism {
 
 inline double& IceModelVec2::operator() (int i, int j, int k) {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   check_array_indices(i, j, k);
 #endif
   return static_cast<double***>(m_array)[j][i][k];
 }
 
 inline const double& IceModelVec2::operator() (int i, int j, int k) const {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   check_array_indices(i, j, k);
 #endif
   return static_cast<double***>(m_array)[j][i][k];
 }
 
 inline double& IceModelVec2S::operator() (int i, int j) {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
   return static_cast<double**>(m_array)[j][i];
 }
 
 inline const double& IceModelVec2S::operator()(int i, int j) const {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
   return static_cast<double**>(m_array)[j][i];
@@ -81,7 +81,7 @@ inline StarStencil<double> IceModelVec2Stag::star(int i, int j) const {
 }
 
 inline int IceModelVec2Int::as_int(int i, int j) const {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
   const double **a = (const double**) m_array;
@@ -102,14 +102,14 @@ inline StarStencil<int> IceModelVec2Int::int_star(int i, int j) const {
 
 
 inline Vector2& IceModelVec2V::operator()(int i, int j) {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
   return static_cast<Vector2**>(m_array)[j][i];
 }
 
 inline const Vector2& IceModelVec2V::operator()(int i, int j) const {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
   return static_cast<Vector2**>(m_array)[j][i];
@@ -130,14 +130,14 @@ inline StarStencil<Vector2> IceModelVec2V::star(int i, int j) const {
 }
 
 inline double& IceModelVec3D::operator() (int i, int j, int k) {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   check_array_indices(i, j, k);
 #endif
   return static_cast<double***>(m_array)[j][i][k];
 }
 
 inline const double& IceModelVec3D::operator() (int i, int j, int k) const {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   check_array_indices(i, j, k);
 #endif
   return static_cast<double***>(m_array)[j][i][k];

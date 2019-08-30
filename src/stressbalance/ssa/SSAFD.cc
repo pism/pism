@@ -772,7 +772,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
 
   ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
   PISM_CHK(ierr, "MatAssemblyEnd");
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   ierr = MatSetOption(A,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);
   PISM_CHK(ierr, "MatSetOption");
 #endif

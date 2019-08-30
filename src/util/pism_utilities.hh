@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,9 +34,6 @@ namespace pism {
 #ifndef __GNUC__
 #  define  __attribute__(x)  /* nothing */
 #endif
-
-extern const char *PISM_Revision;
-extern const char *PISM_DefaultConfigFile;
 
 double get_time();
 std::string timestamp(MPI_Comm com);
@@ -115,6 +112,8 @@ int GlobalSum(MPI_Comm comm, int input);
 std::string version();
 
 std::string printf(const char *format, ...) __attribute__((format(printf, 1, 2)));
+
+void validate_format_string(const std::string &format);
 
 } // end of namespace pism
 

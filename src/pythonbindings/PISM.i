@@ -49,7 +49,7 @@
 #include "util/Diagnostic.hh"
 #include "util/Config.hh"
 
-#ifdef PISM_USE_JANSSON
+#if (Pism_USE_JANSSON==1)
 #include "util/ConfigJSON.hh"
 #endif
 
@@ -66,6 +66,15 @@
 #include "util/Time.hh"
 #include "util/Time_Calendar.hh"
 %}
+
+// Tell SWIG that the following variables are truly constant
+%immutable pism::revision;
+%immutable pism::config_file;
+%immutable pism::petsc_configure_flags;
+%immutable pism::petsc4py_version;
+%immutable pism::swig_version;
+%immutable pism::cmake_version;
+%include "pism/pism_config.hh"
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
 %include "petsc4py/petsc4py.i"
@@ -169,10 +178,6 @@
 }
 
 
-// Tell SWIG that the following variables are truly constant
-%immutable pism::PISM_Revision;
-%immutable pism::PISM_DefaultConfigFile;
-
 /* PISM header with no dependence on other PISM headers. */
 %include "util/pism_utilities.hh"
 %include "util/interpolation.hh"
@@ -207,7 +212,7 @@
 %include "util/ConfigInterface.hh"
 %include "util/Config.hh"
 
-#ifdef PISM_USE_JANSSON
+#if (Pism_USE_JANSSON==1)
 %shared_ptr(pism::ConfigJSON);
 %include "util/ConfigJSON.hh"
 #endif

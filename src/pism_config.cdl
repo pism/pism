@@ -854,7 +854,7 @@ netcdf pism_config {
     pism_config:grid.Mz_option = "Mz";
 
     pism_config:grid.recompute_longitude_and_latitude = "yes";
-    pism_config:grid.recompute_longitude_and_latitude_doc = "Re-compute longitude and latitude using grid information and provided projection parameters. Requires PROJ.4.";
+    pism_config:grid.recompute_longitude_and_latitude_doc = "Re-compute longitude and latitude using grid information and provided projection parameters. Requires PROJ.";
     pism_config:grid.recompute_longitude_and_latitude_type = "boolean";
 
     pism_config:grid.ice_vertical_spacing = "quadratic";
