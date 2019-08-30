@@ -1,5 +1,6 @@
 PISM, a Parallel Ice Sheet Model
 ================================
+[![CircleCI](https://circleci.com/gh/pism/pism/tree/dev.svg?style=svg)](https://circleci.com/gh/pism/pism/tree/dev)
 
 The Parallel Ice Sheet Model is an open source, parallel, high-resolution ice sheet model:
 
