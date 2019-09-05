@@ -80,7 +80,7 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
     m_f = 2.0 * 7.2921e-5 * sin(m_latitude * M_PI / 180.0);
 
     m_u = -sin(m_wind_direction * 2.0 * M_PI / 360.0) * m_wind_speed;
-    m_v = cos(m_wind_direction * 2.0 * M_PI / 360.0) * m_wind_speed;
+    m_v = -cos(m_wind_direction * 2.0 * M_PI / 360.0) * m_wind_speed;
 
     m_Cw = m_rho_Sref * m_Theta_m / m_gamma;
   }

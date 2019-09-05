@@ -61,7 +61,7 @@ class Constants(object):
         self.f = 2 * 7.2921e-5 * np.sin(self.latitude * np.pi / 180.0)
 
         self.u = -np.sin(self.direction * 2 * np.pi / 360) * self.speed
-        self.v = np.cos(self.direction * 2 * np.pi / 360) * self.speed
+        self.v = -np.cos(self.direction * 2 * np.pi / 360) * self.speed
 
         self.Cw = self.rho_Sref * self.Theta_m / self.gamma
 
