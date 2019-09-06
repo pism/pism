@@ -49,6 +49,8 @@ Changes since v1.1
   2D sea level forcing results in a smoothly changing sea level.
 - Add regression tests for most of PISM's `surface`, `atmosphere`, `ocean`, and
   `sea_level` components.
+- Implement orographic precipitation following Smith and Barstad, *A linear theory of
+  orographic precipitation*, 2004.
 
 Changes from v1.0 to v1.1
 =========================
