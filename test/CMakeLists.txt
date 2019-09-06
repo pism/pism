@@ -29,6 +29,8 @@ if (Pism_BUILD_PYTHON_BINDINGS AND NOSE_EXECUTABLE)
     COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/regression/surface_models.py)
   add_test(NAME "Python:nose:atmosphere"
     COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/regression/atmosphere_models.py)
+  add_test(NAME "Python:nose:atmosphere:LTOP"
+    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/regression/orographic_precipitation.py)
   add_test(NAME "Python:Verification:nose:bed_deformation:LC"
     COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/beddef_lc.py)
   add_test(NAME "Python:Verification:nose:bed_deformation:iso"
