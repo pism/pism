@@ -311,3 +311,103 @@ It takes the following options:
 
 See also to ``-surface ...,anomaly`` (section :ref:`sec-surface-anomaly`), which is
 similar, but applies anomalies at the surface level.
+
+.. _sec-orographic-precipitation:
+
+Orographic precipitation
+++++++++++++++++++++++++
+
+:|options|: :opt:`-atmosphere ...,orographic_precipitation`
+:|variables|: None
+:|implementation|: ``pism::atmosphere::OrographicPrecipitation``
+
+This modifier implements the linear orographic precipitation model described in
+:cite:`SmithBarstad2004` with a modification incorporating the influence of the Coriolis
+force from :cite:`SmithBarstadBonneau2005`.
+
+We compute the Fourier transform of the precipitation field using the formula below (see
+equation 49 in :cite:`SmithBarstad2004` or equation 3 in :cite:`SmithBarstadBonneau2005`).
+
+.. math::
+   :label: eq-orographic-precipitation
+
+   \hat P_{\text{LT}}(k, l) = \frac{C_w i \sigma \hat h(k, l)}
+   {(1 - i m H_w) (1 + i \sigma \tau_c) (1 + i \sigma \tau_f)},
+
+where `h` is the surface elevation, `C_w = \rho_{S_{\text{ref}}} \Gamma_m / \gamma`
+relates the condensation rate to vertical motion (see the appendix of
+:cite:`SmithBarstad2004`), `m` is the vertical wavenumber (see equation 6 in
+:cite:`SmithBarstadBonneau2005`), and `\sigma` is the intrinsic frequency. The rest of the
+constants are defined in the table below.
+
+The spatial pattern of precipitation is recovered using an inverse Fourier transform
+followed by post-processing:
+
+.. math::
+   :label: eq-orographic-post-processing
+
+   P = \max(P_{\text{pre}} + P_{\text{LT}}, 0) \cdot S + P_{\text{post}}.
+
+It is implemented as a "modifier" that overrides the precipitation field provided by an
+input model. Use it with a model providing air temperatures to get a complete model. For
+example, ``-atmosphere yearly_cycle,orographic_precipitation ...`` would use the annual
+temperature cycle from ``yearly_cycle`` combined with precipitation computed using this
+model.
+
+The only spatially-variable input of this model is the surface elevation (`h` above)
+modeled by PISM. It is controlled by a number of configuration parameters. See parameters
+with the prefix ``atmosphere.orographic_precipitation``.
+
+.. list-table:: Parameters controlling orographic precipitation
+   :header-rows: 1
+   :widths: 1,2
+
+   * - Parameter
+     - Description
+
+   * - ``background_precip_pre``
+     - Background precipitation `P_{\text{pre}}` in :eq:`eq-orographic-post-processing`
+
+   * - ``background_precip_post``
+     - Background precipitation `P_{\text{post}}` in :eq:`eq-orographic-post-processing`
+
+   * - ``scale_factor``
+     - Scaling factor `S` in :eq:`eq-orographic-post-processing`
+
+   * - ``conversion_time``
+     - Conversion time of cloud water into hydrometeors `\tau_c`
+
+   * - ``fallout_time``
+     - Fallout time `\tau_f`
+
+   * - ``water_vapor_scale_height``
+     - Moist layer depth `H_w`
+
+   * - ``moist_stability_frequency``
+     - Moist stability frequency `N_m`
+
+   * - ``wind_speed``
+     - Wind speed
+
+   * - ``wind_direction``
+     - Wind direction. `0` corresponds to the wind from the north, `90` from the east, and
+       so on.
+
+   * - ``lapse_rate``
+     - Lapse rate `\gamma`. Note that here `\gamma < 0`.
+
+   * - ``moist_adiabatic_lapse_rate``
+     - Moist adiabatic lapse rate `\Gamma_m`. Note that here `\Gamma_m < 0`.
+
+   * - ``reference_density``
+     - Reference density `\rho_{S_{\text{ref}}}` (see equation A3 in :cite:`SmithBarstad2004`)
+
+   * - ``coriolis_latitude``
+     - Average latitude of the modeling domain used to include the influence of the
+       Coriolis force (see equation 6 in :cite:`SmithBarstadBonneau2005`)
+
+   * - ``truncate``
+     - If set, negative precipitation values are truncated as in
+       :eq:`eq-orographic-post-processing`, otherwise the post-processing formula is
+
+       `P = (P_{\text{pre}} + P_{\text{LT}}) \cdot S + P_{\text{post}}`.
