@@ -73,8 +73,8 @@ void IBIceModel::createVecs() {
 
   // Sent back to IceBin
   ice_top_senth.create(m_grid, "ice_top_senth", pism::WITHOUT_GHOSTS);
-  emI_ice.create(m_grid, "emI_ice", pism::WITHOUT_GHOSTS);
-  emI_land.create(m_grid, "emI_land", pism::WITHOUT_GHOSTS);
+  elevmask_ice.create(m_grid, "elevmask_ice", pism::WITHOUT_GHOSTS);
+  elevmask_land.create(m_grid, "elevmask_land", pism::WITHOUT_GHOSTS);
 
   std::cout << "IBIceModel Conservation Formulas:" << std::endl;
   cur.print_formulas(std::cout);
@@ -331,8 +331,8 @@ void IBIceModel::prepare_outputs(double time_s) {
   auto &cell_type(this->cell_type());
   AccessList access{
     &m_ice_enthalpy, &m_ice_thickness,        // INPUTS
-    &ice_surface_elevation, &bed_topography, &cell_type,
-    &ice_top_senth, &emI_ice, &emI_land };                 // OUTPUT
+    &ice_surface_elevation, &cell_type,
+    &ice_top_senth, &elevmask_ice, &elevmask_land };                 // OUTPUT
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
       double const *Enth = m_ice_enthalpy.get_column(i, j);
@@ -342,21 +342,21 @@ void IBIceModel::prepare_outputs(double time_s) {
       double senth = Enth[ks];   // [J kg-1]
       ice_top_senth(i,j) = senth;
 
-      // emI_ice, emI_land: Used by IceBin for elevation and masking
-      switch(cell_type(i,j)) {
-        case IceMask::GROUNDED_ICE :
-        case IceMask::FLOATING_ICE :
-          emI_ice(i,j) = ice_surface_elevation(i,j);
-          emI_land(i,j) = ice_surface_elevation(i,j);
+      // elevmask_ice and elevmask_land: Used by IceBin for elevation and masking
+      switch((int)cell_type(i,j)) {
+        case MASK_GROUNDED:
+        case MASK_FLOATING:
+          elevmask_ice(i,j) = ice_surface_elevation(i,j);
+          elevmask_land(i,j) = ice_surface_elevation(i,j);
         break;
-        case IceMask::ICE_FREE_OCEAN :
+        case MASK_ICE_FREE_BEDROCK:
+          elevmask_ice(i,j) = nan;
+          elevmask_land(i,j) = ice_surface_elevation(i,j);
+        break;
+        case MASK_ICE_FREE_OCEAN:
         case IceMask::UNKNOWN :
-          emI_ice(i,j) = NaN;
-          emI_land(i,j) = NaN;
-        break;
-        case IceMask::ICE_FREE_BEDROCK :
-          emI_ice(i,j) = NaN;
-          emI_land(i,j) = bed_topography(i,j);
+          elevmask_ice(i,j) = nan;
+          elevmask_land(i,j) = nan;
         break;
       }
     }
