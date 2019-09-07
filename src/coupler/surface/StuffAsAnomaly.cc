@@ -28,9 +28,9 @@ namespace surface {
 StuffAsAnomaly::StuffAsAnomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
   : SurfaceModel(g, input),
     m_mass_flux(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
-    m_temp(m_grid, "ice_surface_temp", WITHOUT_GHOSTS),
     m_mass_flux_0(m_grid, "mass_flux_0", WITHOUT_GHOSTS),
     m_mass_flux_input(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
+    m_temp(m_grid, "ice_surface_temp", WITHOUT_GHOSTS),
     m_temp_0(m_grid, "ice_surface_temp_0", WITHOUT_GHOSTS),
     m_temp_input(m_grid, "ice_surface_temp", WITHOUT_GHOSTS) {
 

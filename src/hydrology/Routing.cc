@@ -252,14 +252,16 @@ protected:
 } // end of namespace diagnostics
 
 Routing::Routing(IceGrid::ConstPtr g)
-  : Hydrology(g), m_dx(g->dx()), m_dy(g->dy()),
+  : Hydrology(g),
+    m_V(m_grid, "water_velocity", WITHOUT_GHOSTS),
     m_Wstag(m_grid, "W_staggered", WITH_GHOSTS, 1),
     m_K(m_grid, "K_staggered", WITH_GHOSTS, 1),
     m_Q(m_grid, "advection_flux", WITH_GHOSTS, 1),
-    m_R(m_grid, "potential_workspace", WITH_GHOSTS, 1), // box stencil used
-    m_V(m_grid, "water_velocity", WITHOUT_GHOSTS),
     m_Wnew(m_grid, "W_new", WITHOUT_GHOSTS),
-    m_Wtillnew(m_grid, "Wtill_new", WITHOUT_GHOSTS) {
+    m_Wtillnew(m_grid, "Wtill_new", WITHOUT_GHOSTS),
+    m_R(m_grid, "potential_workspace", WITH_GHOSTS, 1), // box stencil used
+    m_dx(g->dx()),
+    m_dy(g->dy()) {
 
   m_W.metadata().set_string("pism_intent", "model_state");
 

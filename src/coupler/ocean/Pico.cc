@@ -50,15 +50,16 @@ namespace pism {
 namespace ocean {
 
 Pico::Pico(IceGrid::ConstPtr g)
-  : CompleteOceanModel(g, NULL), m_geometry(new PicoGeometry(g)),
-    m_basin_mask(m_grid, "basins", WITH_GHOSTS),
+  : CompleteOceanModel(g, NULL),
     m_Soc(m_grid, "pico_salinity", WITHOUT_GHOSTS),
     m_Soc_box0(m_grid, "pico_salinity_box0", WITHOUT_GHOSTS),
     m_Toc(m_grid, "pico_temperature", WITHOUT_GHOSTS),
     m_Toc_box0(m_grid, "pico_temperature_box0", WITHOUT_GHOSTS),
     m_T_star(m_grid, "pico_T_star", WITHOUT_GHOSTS),
     m_overturning(m_grid, "pico_overturning", WITHOUT_GHOSTS),
-    m_basal_melt_rate(m_grid, "pico_basal_melt_rate", WITHOUT_GHOSTS) {
+    m_basal_melt_rate(m_grid, "pico_basal_melt_rate", WITHOUT_GHOSTS),
+    m_basin_mask(m_grid, "basins", WITH_GHOSTS),
+    m_geometry(new PicoGeometry(g)) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
 
