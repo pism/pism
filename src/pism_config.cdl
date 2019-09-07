@@ -160,23 +160,6 @@ netcdf pism_config {
     pism_config:atmosphere.uniform.temperature_type = "scalar";
     pism_config:atmosphere.uniform.temperature_units = "Kelvin";
 
-    pism_config:atmosphere.orographic_precipitation.file = "";
-    pism_config:atmosphere.orographic_precipitation.file_doc = "Input file temperature field.";
-    pism_config:atmosphere.orographic_precipitation.file_type = "string";
-    pism_config:atmosphere.orographic_precipitation.file_option = "orographic_precipitation_file";
-
-    pism_config:atmosphere.orographic_precipitation.period = 0;
-    pism_config:atmosphere.orographic_precipitation.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:atmosphere.orographic_precipitation.period_type = "integer";
-    pism_config:atmosphere.orographic_precipitation.period_option = "orographic_precipitation_period";
-    pism_config:atmosphere.orographic_precipitation.period_units = "years";
-
-    pism_config:atmosphere.orographic_precipitation.reference_year = 0;
-    pism_config:atmosphere.orographic_precipitation.reference_year_doc = "Reference year to use when ``atmosphere.orographic_precipitation.period`` is active.";
-    pism_config:atmosphere.orographic_precipitation.reference_year_option = "orographic_precipitation_reference_year";
-    pism_config:atmosphere.orographic_precipitation.reference_year_type = "integer";
-    pism_config:atmosphere.orographic_precipitation.reference_year_units = "years";
-
     pism_config:atmosphere.orographic_precipitation.grid_size_factor = 2;
     pism_config:atmosphere.orographic_precipitation.grid_size_factor_doc = "The spectral grid size is (Z*(grid.Mx - 1) + 1, Z*(grid.My - 1) + 1) where Z is given by this parameter.";
     pism_config:atmosphere.orographic_precipitation.grid_size_factor_type = "integer";
