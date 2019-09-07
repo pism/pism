@@ -98,6 +98,10 @@ void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, do
   rank0.check();
 
   m_precipitation->get_from_proc0(*m_work0);
+
+  // convert from mm/s to kg / (m^2 s):
+  double water_density = m_config->get_double("constants.fresh_water.density");
+  m_precipitation->scale(1000.0 * water_density);
 }
 
 void OrographicPrecipitation::precip_time_series_impl(int i, int j, std::vector<double> &result) const {

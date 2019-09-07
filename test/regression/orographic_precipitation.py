@@ -50,9 +50,9 @@ def triangle_ridge_exact(x, u, Cw, tau, A=500.0, d=50e3):
             return 0
 
     try:
-        return 3600 * np.array([P(t) for t in x])
+        return np.array([P(t) for t in x])
     except TypeError:
-        return 3600 * P(x)
+        return P(x)
 
 def run_model(grid, orography):
     "Run the PISM implementation of the model to compare to the Python version."
@@ -74,8 +74,11 @@ def run_model(grid, orography):
     model.init(geometry)
     model.update(geometry, 0, 1)
 
-    # convert from mm/s to mm/hour
-    return model.mean_precipitation().numpy() * 3600
+    config = PISM.Context().config
+    water_density = config.get_double("constants.fresh_water.density")
+
+    # convert from kg / (m^2 s) to mm/s
+    return model.mean_precipitation().numpy() / (1000.0 * water_density)
 
 def max_error(spacing, wind_direction):
     # Set conversion time to zero (we could set fallout time to zero instead: it does not
