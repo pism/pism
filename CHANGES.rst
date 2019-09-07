@@ -41,6 +41,14 @@ Changes since v1.1
   *exactly* every `bed_deformation.lc.update_interval` years, limiting PISM's time step
   length.
 - Fix units of the precipitation lapse rate (`(kg m-2/year)/km` instead of `(m/year)/km`).
+- Use linear interpolation in time for 2D time-dependent forcings that are interpreted as
+  "snapshots" of a quantity. For example: ice surface temperature is interpreted as a
+  snapshot while climatic mass balance is interpreted as a time-average over a specified
+  interval. (Flux forcing fields such as the SMB are interpreted as piecewise-constant in
+  time to simplify mass and flux accounting.) In particular, this change ensures that the
+  2D sea level forcing results in a smoothly changing sea level.
+- Add regression tests for most of PISM's `surface`, `atmosphere`, `ocean`, and
+  `sea_level` components.
 
 Changes from v1.0 to v1.1
 =========================
