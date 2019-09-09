@@ -14,3 +14,6 @@ ENV PISM_INSTALL_PREFIX=/home/builder/
 ENV CC=mpicc CXX=mpicxx
 RUN cmake ../../pism
 RUN make install
+
+# Set PYTHONPATH so that "import PISM" succeeds.
+ENV PYTHONPATH=$PISM_INSTALL_PREFIX/lib/python2.7/site-packages:$PYTHONPATH
