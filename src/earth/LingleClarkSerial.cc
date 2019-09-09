@@ -71,6 +71,18 @@ LingleClarkSerial::LingleClarkSerial(const Config &config,
   // set parameters
   m_include_elastic = include_elastic;
 
+  if (include_elastic) {
+    // check if the extended grid is large enough (it has to be at least twice the size of
+    // the physical grid so that the load in one corner of the domain affects the grid
+    // point in the opposite corner).
+
+    if (config.get_double("bed_deformation.lc.grid_size_factor") < 2) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "bed_deformation.lc.elastic_model"
+                                    " requires bed_deformation.lc.grid_size_factor > 1");
+    }
+  }
+
   // grid parameters
   m_Mx = Mx;
   m_My = My;
@@ -438,6 +450,9 @@ void LingleClarkSerial::step(double dt, Vec H) {
 void LingleClarkSerial::compute_elastic_response(Vec H, Vec dE) {
 
   // Compute fft2(load_density * H)
+  //
+  // Note that here the load is placed in the corner of the array on the extended grid
+  // (offsets i0 and j0 are zero).
   {
     clear_fftw_array(m_fftw_input, m_Nx, m_Ny);
     set_real_part(H, m_load_density, m_Mx, m_My, m_Nx, m_Ny, 0, 0, m_fftw_input);
@@ -445,6 +460,9 @@ void LingleClarkSerial::compute_elastic_response(Vec H, Vec dE) {
   }
 
   // fft2(m_response_matrix) * fft2(load_density*H)
+  //
+  // Compute the product of Fourier transforms of the LRM and the load. This uses C++'s
+  // native support for complex arithmetic.
   {
     FFTWArray
       input(m_fftw_input, m_Nx, m_Ny),
@@ -457,6 +475,11 @@ void LingleClarkSerial::compute_elastic_response(Vec H, Vec dE) {
     }
   }
 
+  // Compute the inverse transform and extract the elastic response.
+  //
+  // Here the offsets are:
+  // i0 = m_Nx / 2,
+  // j0 = m_Ny / 2.
   fftw_execute(m_dft_inverse);
   get_real_part(m_fftw_output, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, m_Nx, m_Ny,
                 m_Nx/2, m_Ny/2, dE);
