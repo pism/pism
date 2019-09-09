@@ -41,9 +41,13 @@ private:
   static const int N = 42;
   static const double rmkm[N];
   static const double GE[N];
-  // FIXME: hide copy constructor and assignment
+
   gsl_interp_accel* acc;
   gsl_spline*       spline;
+
+  // disable copy constructor and the assignment operator:
+  greens_elastic(const greens_elastic &other);
+  greens_elastic& operator=(const greens_elastic&);
 };
 
 //! @brief Parameters used to access elastic Green's function from the
