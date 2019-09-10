@@ -146,6 +146,63 @@ Vec LingleClarkSerial::viscous_displacement() const {
   return m_Uv;
 }
 
+void LingleClarkSerial::compute_load_response_matrix(fftw_complex *output) {
+
+  FFTWArray LRM(output, m_Nx, m_Ny);
+
+  greens_elastic G;
+  ge_data ge_data {m_dx, m_dy, 0, 0, &G};
+
+  int Nx2 = m_Nx / 2;
+  int Ny2 = m_Ny / 2;
+
+  // Top half
+  for (int j = 0; j <= Ny2; ++j) {
+    // Top left quarter
+    for (int i = 0; i <= Nx2; ++i) {
+      ge_data.p = Nx2 - i;
+      ge_data.q = Ny2 - j;
+
+      LRM(i, j) = dblquad_cubature(ge_integrand,
+                                   -m_dx / 2, m_dx / 2,
+                                   -m_dy / 2, m_dy / 2,
+                                   1.0e-8, &ge_data);
+    }
+
+    // Top right quarter
+    //
+    // Note: Nx2 = m_Nx / 2 (using integer division!), so
+    //
+    // - If m_Nx is even then 2 * Nx2 == m_Nx. So i < m_Nx implies i < 2 * Nx2 and
+    //   2 * Nx2 - i > 0.
+    //
+    // - If m_Nx is odd then 2 * Nx2 == m_Nx - 1 or m_Nx == 2 * Nx2 + 1. So i < m_Nx
+    //   implies i < 2 * Nx2 + 1, which is the same as 2 * Nx2 - i > -1 or
+    //   2 * Nx2 - i >= 0.
+    //
+    // Also, i == Nx2 + 1 gives 2 * Nx2 - i == Nx2 - 1
+    //
+    // So, in both cases (even and odd) 0 <= 2 * Nx2 - i <= Nx2 - 1.
+    //
+    // This means that LRM(2 * Nx2 - i, j) will not use indexes that are out of bounds
+    // *and* will only use values computed in the for loop above.
+    for (int i = Nx2 + 1; i < m_Nx; ++i) {
+      assert(2 * Nx2 - i >= 0);
+      LRM(i, j) = LRM(2 * Nx2 - i, j);
+    }
+  } // End of the loop over the top half
+
+    // Bottom half
+    //
+    // See the comment above the "top right quarter" loop.
+  for (int j = Ny2 + 1; j < m_Ny; ++j) {
+    for (int i = 0; i < m_Nx; ++i) {
+      assert(2 * Ny2 - j >= 0);
+      LRM(i, j) = LRM(i, 2 * Ny2 - j);
+    }
+  }
+}
+
 /**
  * Pre-compute coefficients used by the model.
  */
@@ -164,59 +221,7 @@ void LingleClarkSerial::precompute_coefficients() {
                        "     computing spherical elastic load response matrix ...");
     PISM_CHK(ierr, "PetscPrintf");
 
-    FFTWArray LRM(m_fftw_input, m_Nx, m_Ny);
-
-    greens_elastic G;
-    ge_data ge_data{ m_dx, m_dy, 0, 0, &G };
-
-    int Nx2 = m_Nx / 2;
-    int Ny2 = m_Ny / 2;
-
-    // Top half
-    for (int j = 0; j <= Ny2; ++j) {
-      // Top left quarter
-      for (int i = 0; i <= Nx2; ++i) {
-        ge_data.p = Nx2 - i;
-        ge_data.q = Ny2 - j;
-
-        LRM(i, j) = dblquad_cubature(ge_integrand,
-                                     -m_dx / 2, m_dx / 2,
-                                     -m_dy / 2, m_dy / 2,
-                                     1.0e-8, &ge_data);
-      }
-
-      // Top right quarter
-      //
-      // Note: Nx2 = m_Nx / 2 (using integer division!), so
-      //
-      // - If m_Nx is even then 2 * Nx2 == m_Nx. So i < m_Nx implies i < 2 * Nx2 and
-      //   2 * Nx2 - i > 0.
-      //
-      // - If m_Nx is odd then 2 * Nx2 == m_Nx - 1 or m_Nx == 2 * Nx2 + 1. So i < m_Nx
-      //   implies i < 2 * Nx2 + 1, which is the same as 2 * Nx2 - i > -1 or
-      //   2 * Nx2 - i >= 0.
-      //
-      // Also, i == Nx2 + 1 gives 2 * Nx2 - i == Nx2 - 1
-      //
-      // So, in both cases (even and odd) 0 <= 2 * Nx2 - i <= Nx2 - 1.
-      //
-      // This means that LRM(2 * Nx2 - i, j) will not use indexes that are out of bounds
-      // *and* will only use values computed in the for loop above.
-      for (int i = Nx2 + 1; i < m_Nx; ++i) {
-        assert(2 * Nx2 - i >= 0);
-        LRM(i, j) = LRM(2 * Nx2 - i, j);
-      }
-    } // End of the loop over the top half
-
-    // Bottom half
-    //
-    // See the comment above the "top right quarter" loop.
-    for (int j = Ny2 + 1; j < m_Ny; ++j) {
-      for (int i = 0; i < m_Nx; ++i) {
-        assert(2 * Ny2 - j >= 0);
-        LRM(i, j) = LRM(i, 2 * Ny2 - j);
-      }
-    }
+    compute_load_response_matrix(m_fftw_input);
 
     // Compute fft2(LRM) and save it in m_lrm_hat
     {

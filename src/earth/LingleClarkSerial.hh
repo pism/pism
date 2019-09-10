@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015, 2017, 2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -71,6 +71,8 @@ public:
   Vec total_displacement() const;
 
   Vec viscous_displacement() const;
+
+  void compute_load_response_matrix(fftw_complex *output);
 private:
   void compute_elastic_response(Vec H, Vec dE);
 
