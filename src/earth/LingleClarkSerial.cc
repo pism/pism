@@ -34,24 +34,6 @@
 namespace pism {
 namespace bed {
 
-template <class T>
-class VecAccessor2D {
-public:
-  VecAccessor2D(T* a, int Mx, int My, int i_offset, int j_offset)
-    : m_Mx(Mx), m_My(My), m_i_offset(i_offset), m_j_offset(j_offset), m_array(a) {}
-
-  VecAccessor2D(T* a, int Mx, int My)
-    : m_Mx(Mx), m_My(My), m_i_offset(0), m_j_offset(0), m_array(a) {}
-
-  inline T& operator()(int i, int j) {
-    return m_array[(m_j_offset + j) + m_My * (m_i_offset + i)];
-  }
-
-private:
-  int m_Mx, m_My, m_i_offset, m_j_offset;
-  T* m_array;
-};
-
 /*!
  * @param[in] config configuration database
  * @param[in] include_elastic include elastic deformation component
@@ -284,7 +266,7 @@ void LingleClarkSerial::uplift_problem(Vec load_thickness, Vec bed_uplift,
   }
 
   {
-    VecAccessor2D<fftw_complex>
+    FFTWArray
       u0_hat(m_fftw_input, m_Nx, m_Ny),
       load_hat(m_loadhat, m_Nx, m_Ny),
       uplift_hat(m_fftw_output, m_Nx, m_Ny);
@@ -296,8 +278,7 @@ void LingleClarkSerial::uplift_problem(Vec load_thickness, Vec bed_uplift,
           A = - 2.0 * m_eta * sqrt(C),
           B = m_mantle_density * m_standard_gravity + m_D * C * C;
 
-        u0_hat(i, j)[0] = (load_hat(i, j)[0] + A * uplift_hat(i, j)[0]) / B;
-        u0_hat(i, j)[1] = (load_hat(i, j)[1] + A * uplift_hat(i, j)[1]) / B;
+        u0_hat(i, j) = (load_hat(i, j) + A * uplift_hat(i, j)) / B;
       }
     }
   }
