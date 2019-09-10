@@ -2,6 +2,7 @@
 
 import numpy as np
 from scipy.integrate import dblquad
+from scipy.signal import fftconvolve
 
 import PISM
 from PISM.util import convert
@@ -68,7 +69,7 @@ def lrm_naive(Mx, My, dx, dy):
 
 Lx = convert(2000, "km", "m")
 
-Mx = 101
+Mx = 51
 My = Mx
 
 def test_elastic(grid):
@@ -95,8 +96,8 @@ def test_elastic(grid):
     # add the disc load
     with PISM.vec.Access(nocomm=geometry.ice_thickness):
         for (i, j) in grid.points():
-            if i == Mx2 and j == My2:
-            # if abs(i - Mx2) < 4 and abs(j - My2) < 4:
+            # if i == Mx2 and j == My2:
+            if abs(i - Mx2) < 4 and abs(j - My2) < 4:
                 geometry.ice_thickness[i, j] = 1000.0
 
     # dt of zero disables the viscous part of the model, so all we get is the elastic
@@ -107,23 +108,27 @@ def test_elastic(grid):
             bed_model.bed_elevation().numpy(),
             bed_model.total_displacement().numpy())
 
-def elastic_model(thk, LRM, rho):
-    return np.fft.ifft2(np.fft.fft2(rho * thk) * np.fft.fft2(LRM))
-
-
 if __name__ == "__main__":
     ctx = PISM.Context()
     ctx.config.set_boolean("bed_deformation.lc.elastic_model", True)
-    ctx.config.set_double("bed_deformation.lc.grid_size_factor", 4)
+    ctx.config.set_double("bed_deformation.lc.grid_size_factor", 2)
 
     grid = PISM.IceGrid.Shallow(ctx.ctx, Lx, Lx, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     dx = grid.dx()
     dy = grid.dy()
 
-    # load_response_matrix = lrm(Mx, My, dx, dy)
+    Z = int(ctx.config.get_double("bed_deformation.lc.grid_size_factor"))
+    rho = ctx.config.get_double("constants.ice.density")
 
+    Nx = Z * (Mx - 1) + 1
+    Ny = Z * (My - 1) + 1
+
+    # load_response_matrix = lrm(Nx, Ny, dx, dy)
+    load_response_matrix = LRM
     H, b, db = test_elastic(grid)
+
+    db_scipy = fftconvolve(rho * H, load_response_matrix, mode="same")
 
     import pylab as plt
     size=(5,5)
@@ -133,13 +138,18 @@ if __name__ == "__main__":
     plt.colorbar()
 
     plt.figure(figsize=size)
-    plt.imshow(b)
-    plt.title("bed")
+    plt.imshow(db_scipy)
+    plt.title("scipy")
     plt.colorbar()
 
     plt.figure(figsize=size)
     plt.imshow(db)
-    plt.title("displacement")
+    plt.title("PISM")
+    plt.colorbar()
+
+    plt.figure(figsize=size)
+    plt.imshow(np.fabs(db - db_scipy))
+    plt.title("difference")
     plt.colorbar()
 
     plt.show()
