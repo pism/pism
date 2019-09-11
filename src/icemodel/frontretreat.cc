@@ -139,7 +139,7 @@ void IceModel::front_retreat_step() {
       m_geometry.ensure_consistency(thickness_threshold);
 
       if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving) {
-        remove_narrow_tongues(m_geometry.cell_type, m_geometry.ice_thickness);
+        remove_narrow_tongues(m_geometry, m_geometry.ice_thickness);
 
         m_geometry.ensure_consistency(thickness_threshold);
       }
