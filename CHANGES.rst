@@ -53,6 +53,23 @@ Changes since v1.1
   orographic precipitation*, 2004.
 - Rename command-line options `-ssa_rtol` to `-ssafd_picard_rtol` and `-ssa_maxi` to
   `-ssafd_picard_maxi` to make it clear that they control Picard iterations.
+- Fix the implementation of the elastic part of the Lingle-Clark bed deformation model.
+  See `issue 424`_. To update this model we need to compute the discrete convolution of
+  current load with the load response matrix (the discrete equivalent of computing the
+  convolution of the load with the Green's function).
+
+  The load response matrix itself is approximated using quadrature and a one-dimensional
+  interpolant for the tabulated Green's function.
+
+  The old code used a "naive" implementation of the discrete convolution which was *both*
+  slow and broken. The new implementation uses FFT to compute the discrete convolution,
+  making it faster and (surprisingly) easier to implement.
+
+  PISM now includes a regression test covering this. Unfortunately we don't have an exact
+  solution to compare to, so the best we can do is this: a) compare PISM's FFT-based
+  convolution to `scipy.signal.fftconvolve()` and b) compare PISM's load response matrix
+  to an independent implementation using `scipy.integrate.dblquad()` (instead of
+  `adapt_integrate()` by Steven G. Johnson).
 
 Changes from v1.0 to v1.1
 =========================
@@ -624,6 +641,7 @@ Miscellaneous
 .. _issue 363: https://github.com/pism/pism/issues/363
 .. _issue 405: https://github.com/pism/pism/issues/405
 .. _issue 422: https://github.com/pism/pism/issues/422
+.. _issue 424: https://github.com/pism/pism/issues/424
 .. _ocean models: http://pism-docs.org/sphinx/climate_forcing/ocean.html
 ..
    Local Variables:
