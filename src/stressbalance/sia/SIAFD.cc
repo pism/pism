@@ -23,6 +23,7 @@
 #include "BedSmoother.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/rheology/FlowLawFactory.hh"
+#include "pism/rheology/grain_size_vostok.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
@@ -54,7 +55,7 @@ SIAFD::SIAFD(IceGrid::ConstPtr g)
   // bed smoother
   m_bed_smoother = new BedSmoother(m_grid, m_stencil_width);
 
-  m_second_to_kiloyear = units::convert(m_sys, 1, "second", "1000 years");
+  m_seconds_per_year = units::convert(m_sys, 1, "second", "years");
 
   {
     rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
@@ -568,6 +569,8 @@ void SIAFD::compute_diffusivity(bool full_update,
     limit_diffusivity            = m_config->get_boolean("stress_balance.sia.limit_diffusivity"),
     use_age                      = compute_grain_size_using_age or e_age_coupling;
 
+  rheology::grain_size_vostok gs_vostok;
+
   // get "theta" from Schoof (2003) bed smoothness calculation and the
   // thickness relative to the smoothed bed; each IceModelVec2S involved must
   // have stencil width WIDE_GHOSTS for this too work
@@ -651,7 +654,8 @@ void SIAFD::compute_diffusivity(bool full_update,
 
           if (compute_grain_size_using_age) {
             for (int k = 0; k <= ks; ++k) {
-              ice_grain_size[k] = grainSizeVostok(A[k]);
+              // convert age from seconds to years:
+              ice_grain_size[k] = gs_vostok(A[k] * m_seconds_per_year);
             }
           }
 
@@ -938,61 +942,6 @@ void SIAFD::compute_3d_horizontal_velocity(const Geometry &geometry,
   // Communicate to get ghosts:
   u_out.update_ghosts();
   v_out.update_ghosts();
-}
-
-//! Use the Vostok core as a source of a relationship between the age of the ice and the grain size.
-/*! A data set is interpolated here. The intention is that the softness of the
-  ice has nontrivial dependence on its age, through its grainsize, because of
-  variable dustiness of the global climate. The grainsize is partly determined
-  by at which point in the glacial cycle the given ice fell as snow.
-
-  The data is from [\ref DeLaChapelleEtAl98] and [\ref LipenkovEtAl89]. In
-  particular, Figure A2 in the former reference was hand-sampled with an
-  attempt to include the ``wiggles'' in that figure. Ages of the oldest ice (>=
-  300 ka) were estimated in a necessarily ad hoc way. The age value of 10000 ka
-  was added simply to give interpolation for very old ice; ages beyond that get
-  constant extrapolation. Linear interpolation is done between the samples.
-
-  FIXME: Use GSL's interpolation code.
- */
-double SIAFD::grainSizeVostok(double age_seconds) const {
-  const int numPoints = 22;
-  const double ageAt[numPoints] = {  // ages in ka
-    0.0000e+00, 5.0000e+01, 1.0000e+02, 1.2500e+02, 1.5000e+02,
-    1.5800e+02, 1.6500e+02, 1.7000e+02, 1.8000e+02, 1.8800e+02,
-    2.0000e+02, 2.2500e+02, 2.4500e+02, 2.6000e+02, 3.0000e+02,
-    3.2000e+02, 3.5000e+02, 4.0000e+02, 5.0000e+02, 6.0000e+02,
-    8.0000e+02, 1.0000e+04 };
-  const double gsAt[numPoints] = {   // grain sizes in m
-    1.8000e-03, 2.2000e-03, 3.0000e-03, 4.0000e-03, 4.3000e-03,
-    3.0000e-03, 3.0000e-03, 4.6000e-03, 3.4000e-03, 3.3000e-03,
-    5.9000e-03, 6.2000e-03, 5.4000e-03, 6.8000e-03, 3.5000e-03,
-    6.0000e-03, 8.0000e-03, 8.3000e-03, 3.6000e-03, 3.8000e-03,
-    9.5000e-03, 1.0000e-02 };
-  const double a = age_seconds * m_second_to_kiloyear; // Age in ka
-  int l = 0;               // Left end of the binary search
-  int r = numPoints - 1;   // Right end
-
-  // If we are out of range
-  if (a < ageAt[l]) {
-    return gsAt[l];
-  } else if (a > ageAt[r]) {
-    return gsAt[r];
-  }
-  // Binary search for the interval
-  while (r > l + 1) {
-    const int j = (r + l) / 2;
-    if (a < ageAt[j]) {
-      r = j;
-    } else {
-      l = j;
-    }
-  }
-  if ((r == l) || (std::abs(r - l) > 1)) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "binary search in grainSizeVostok: oops");
-  }
-  // Linear interpolation on the interval
-  return gsAt[l] + (a - ageAt[l]) * (gsAt[r] - gsAt[l]) / (ageAt[r] - ageAt[l]);
 }
 
 //! Determine if `accumulation_time` corresponds to an interglacial period.

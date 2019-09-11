@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -99,8 +99,6 @@ protected:
 
   virtual void compute_I(const Geometry &geometry);
 
-  virtual double grainSizeVostok(double age) const;
-
   bool interglacial(double accumulation_time);
 
   const unsigned int m_stencil_width;
@@ -123,7 +121,7 @@ protected:
   int m_event_sia;
 
   // unit conversion
-  double m_second_to_kiloyear;
+  double m_seconds_per_year;
   // enhancement factor-age coupling parameters
   double m_holocene_start;
   double m_eemian_start;
