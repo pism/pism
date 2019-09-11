@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -333,7 +333,6 @@ double Time_Calendar::calendar_year_start(double T) const {
 }
 
 
-// FIXME: this feeds invalid dates to utInvCalendar2_cal! (step 1 year from Feb 29...)
 double Time_Calendar::increment_date(double T, int years) const {
   int year, month, day, hour, minute;
   double second, result;
