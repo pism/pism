@@ -44,11 +44,13 @@ namespace bed {
  * @param[in] Nx extended grid size in the X direction
  * @param[in] Ny extended grid size in the Y direction
  */
-LingleClarkSerial::LingleClarkSerial(const Config &config,
+LingleClarkSerial::LingleClarkSerial(Logger::ConstPtr log,
+                                     const Config &config,
                                      bool include_elastic,
                                      int Mx, int My,
                                      double dx, double dy,
-                                     int Nx, int Ny) {
+                                     int Nx, int Ny)
+  : m_log(log) {
 
   // set parameters
   m_include_elastic = include_elastic;
@@ -207,7 +209,6 @@ void LingleClarkSerial::compute_load_response_matrix(fftw_complex *output) {
  * Pre-compute coefficients used by the model.
  */
 void LingleClarkSerial::precompute_coefficients() {
-  PetscErrorCode ierr = 0;
 
   // Coefficients for Fourier spectral method Laplacian
   // MATLAB version:  cx=(pi/Lx)*[0:Nx/2 Nx/2-1:-1:1]
@@ -216,21 +217,14 @@ void LingleClarkSerial::precompute_coefficients() {
 
   // compare geforconv.m
   if (m_include_elastic) {
-
-    ierr = PetscPrintf(PETSC_COMM_SELF,
-                       "     computing spherical elastic load response matrix ...");
-    PISM_CHK(ierr, "PetscPrintf");
-
-    compute_load_response_matrix(m_fftw_input);
-
-    // Compute fft2(LRM) and save it in m_lrm_hat
+    m_log->message(2, "     computing spherical elastic load response matrix ...");
     {
+      compute_load_response_matrix(m_fftw_input);
+      // Compute fft2(LRM) and save it in m_lrm_hat
       fftw_execute(m_dft_forward);
       copy_fftw_array(m_fftw_output, m_lrm_hat, m_Nx, m_Ny);
     }
-
-    ierr = PetscPrintf(PETSC_COMM_SELF, " done\n");
-    PISM_CHK(ierr, "PetscPrintf");
+    m_log->message(2, " done\n");
   }
 }
 

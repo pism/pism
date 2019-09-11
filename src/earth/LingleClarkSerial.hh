@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 
@@ -55,7 +56,8 @@ namespace bed {
 */
 class LingleClarkSerial {
 public:
-  LingleClarkSerial(const Config &config,
+  LingleClarkSerial(Logger::ConstPtr log,
+                    const Config &config,
                     bool include_elastic,
                     int Mx, int My,
                     double dx, double dy,
@@ -134,6 +136,8 @@ private:
   fftw_plan m_dft_inverse;
 
   void tweak(Vec load_thickness, Vec U, int Nx, int Ny, double time);
+
+  Logger::ConstPtr m_log;
 };
 
 } // end of namespace bed
