@@ -45,6 +45,7 @@ public:
             const IceModelVec2S &sea_level_elevation,
             double dt);
 
+  IceModelVec2S::Ptr elastic_load_response_matrix() const;
 protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;

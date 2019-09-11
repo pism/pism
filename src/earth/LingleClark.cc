@@ -26,6 +26,7 @@
 #include "pism/util/Vars.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/fftw_utilities.hh"
 #include "LingleClarkSerial.hh"
 
 namespace pism {
@@ -161,6 +162,41 @@ void LingleClark::bootstrap_impl(const IceModelVec2S &bed_elevation,
 
   // compute bed relief
   m_topg.add(-1.0, m_bed_displacement, m_relief);
+}
+
+/*!
+ * Return the load response matrix for the elastic response.
+ *
+ * This method is used for testing only.
+ */
+IceModelVec2S::Ptr LingleClark::elastic_load_response_matrix() const {
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_extended_grid, "lrm", WITHOUT_GHOSTS));
+
+  int
+    Nx = m_extended_grid->Mx(),
+    Ny = m_extended_grid->My();
+
+  auto lrm0 = result->allocate_proc0_copy();
+
+  {
+    ParallelSection rank0(m_grid->com);
+    try {
+      if (m_grid->rank() == 0) {
+        std::vector<std::complex<double> > array(Nx * Ny);
+
+        m_serial_model->compute_load_response_matrix((fftw_complex*)array.data());
+
+        get_real_part((fftw_complex*)array.data(), 1.0, Nx, Ny, Nx, Ny, 0, 0, *lrm0);
+      }
+    } catch (...) {
+      rank0.failed();
+    }
+    rank0.check();
+  }
+
+  result->get_from_proc0(*lrm0);
+
+  return result;
 }
 
 /*! Initialize the Lingle-Clark bed deformation model.
