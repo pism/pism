@@ -1,155 +1,137 @@
 #!/usr/bin/env python
 
+from unittest import TestCase
+
 import numpy as np
-from scipy.integrate import dblquad
-from scipy.signal import fftconvolve
+import scipy.integrate
+import scipy.signal
 
 import PISM
-from PISM.util import convert
 
+# silence models' initialization messages
+PISM.Context().log.set_threshold(1)
 
-ge = PISM.greens_elastic()
+class LingleClarkElastic(TestCase):
+    @staticmethod
+    def lrm(Mx, My, dx, dy):
+        "Compute the load response matrix, taking advantage of its symmetry."
 
-def ge_integrand(eta, xi, dx, dy, p, q):
-    xi_shift  = p * dx - xi
-    eta_shift = q * dy - eta
-    r         = np.sqrt(xi_shift * xi_shift + eta_shift * eta_shift)
+        ge = PISM.greens_elastic()
 
-    return ge(r)
+        def ge_integrand(eta, xi, dx, dy, p, q):
+            xi_shift  = p * dx - xi
+            eta_shift = q * dy - eta
+            r         = np.sqrt(xi_shift * xi_shift + eta_shift * eta_shift)
 
-def f(dx, dy, p, q):
-    return dblquad(ge_integrand,
-                   -dx/2.0, dx/2.0,
-                   lambda x: -dy / 2.0, lambda x: dy / 2.0,
-                   (dx, dy, p, q), epsrel=1e-8)[0]
+            return ge(r)
 
-def lrm(Mx, My, dx, dy):
-    "Compute the load response matrix, taking advantage of its symmetry."
-    Mx2 = int(Mx) // 2
-    My2 = int(My) // 2
+        def f(dx, dy, p, q):
+            return scipy.integrate.dblquad(ge_integrand,
+                                           -dx/2.0, dx/2.0,
+                                           lambda x: -dy / 2.0, lambda x: dy / 2.0,
+                                           (dx, dy, p, q), epsrel=1e-8)[0]
 
-    a = np.zeros((My, Mx))
+        Mx2 = int(Mx) // 2
+        My2 = int(My) // 2
 
-    # top half
-    for j in range(My2 + 1):
-        # top left quarter
-        for i in range(Mx2 + 1):
-            p = Mx2 - i
-            q = My2 - j
+        a = np.zeros((My, Mx))
 
-            a[j, i] = f(dx, dy, p, q)
+        # top half
+        for j in range(My2 + 1):
+            # top left quarter
+            for i in range(Mx2 + 1):
+                p = Mx2 - i
+                q = My2 - j
 
-        # top right quarter
-        for i in range(Mx2 + 1, Mx):
-            a[j, i] = a[j, 2 * Mx2 - i]
+                a[j, i] = f(dx, dy, p, q)
 
-    # bottom half
-    for j in range(My2 + 1, My):
-        for i in range(Mx):
-            a[j, i] = a[2 * My2 - j, i]
+            # top right quarter
+            for i in range(Mx2 + 1, Mx):
+                a[j, i] = a[j, 2 * Mx2 - i]
 
-    return a
+        # bottom half
+        for j in range(My2 + 1, My):
+            for i in range(Mx):
+                a[j, i] = a[2 * My2 - j, i]
 
-def lrm_naive(Mx, My, dx, dy):
-    "Naive LRM computation used to test the optimized one"
-    Mx2 = int(Mx) // 2
-    My2 = int(My) // 2
+        return a
 
-    a = np.zeros((My, Mx))
+    @staticmethod
+    def run_model(grid):
+        geometry = PISM.Geometry(grid)
 
-    # top half
-    for j in range(My):
-        for i in range(Mx):
-            p = abs(Mx2 - i)
-            q = abs(My2 - j)
+        bed_model = PISM.LingleClark(grid)
 
-            a[j, i] = f(dx, dy, p, q)
+        bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
 
-    return a
+        # start with a flat bed, no ice, and no uplift
+        geometry.bed_elevation.set(0.0)
+        geometry.ice_thickness.set(0.0)
+        geometry.sea_level_elevation.set(-1000.0) # everything is grounded
+        geometry.ensure_consistency(0.0)
 
-Lx = convert(2000, "km", "m")
+        bed_uplift.set(0.0)
 
-Mx = 51
-My = Mx
+        bed_model.bootstrap(geometry.bed_elevation, bed_uplift, geometry.ice_thickness,
+                            geometry.sea_level_elevation)
 
-def test_elastic(grid):
-    geometry = PISM.Geometry(grid)
+        Mx2 = int(grid.Mx()) // 2
+        My2 = int(grid.My()) // 2
 
-    bed_model = PISM.LingleClark(grid)
+        # add the load
+        with PISM.vec.Access(nocomm=geometry.ice_thickness):
+            for (i, j) in grid.points():
+                # if i == Mx2 and j == My2:
+                if abs(i - Mx2) < 2 and abs(j - My2) < 2:
+                    geometry.ice_thickness[i, j] = 1000.0
 
-    bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
+        # dt of zero disables the viscous part of the model, so all we get is the elastic
+        # response
+        bed_model.step(geometry.ice_thickness, geometry.sea_level_elevation, 0)
 
-    # start with a flat bed, no ice, and no uplift
-    geometry.bed_elevation.set(0.0)
-    geometry.ice_thickness.set(0.0)
-    geometry.sea_level_elevation.set(-1000.0)
-    geometry.ensure_consistency(0.0)
+        return (geometry.ice_thickness.numpy(),
+                bed_model.total_displacement().numpy(),
+                bed_model.elastic_load_response_matrix().numpy())
 
-    bed_uplift.set(0.0)
+    def setUp(self):
+        self.ctx = PISM.Context()
 
-    bed_model.bootstrap(geometry.bed_elevation, bed_uplift, geometry.ice_thickness,
-                        geometry.sea_level_elevation)
+        self.elastic = self.ctx.config.get_boolean("bed_deformation.lc.elastic_model")
+        self.ctx.config.set_boolean("bed_deformation.lc.elastic_model", True)
 
-    Mx2 = int(grid.Mx()) // 2
-    My2 = int(grid.My()) // 2
+        self.size_factor = self.ctx.config.get_double("bed_deformation.lc.grid_size_factor")
+        self.ctx.config.set_double("bed_deformation.lc.grid_size_factor", 2)
 
-    # add the disc load
-    with PISM.vec.Access(nocomm=geometry.ice_thickness):
-        for (i, j) in grid.points():
-            # if i == Mx2 and j == My2:
-            if abs(i - Mx2) < 4 and abs(j - My2) < 4:
-                geometry.ice_thickness[i, j] = 1000.0
+        Lx = 2000e3
+        Mx = 11
+        My = 2 * Mx             # non-square grid
 
-    # dt of zero disables the viscous part of the model, so all we get is the elastic
-    # response
-    bed_model.step(geometry.ice_thickness, geometry.sea_level_elevation, 0)
+        self.grid = PISM.IceGrid.Shallow(self.ctx.ctx, Lx, Lx,
+                                         0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
-    return (geometry.ice_thickness.numpy(),
-            bed_model.bed_elevation().numpy(),
-            bed_model.total_displacement().numpy())
+        self.H, self.db_pism, self.lrm_pism = self.run_model(self.grid)
 
-if __name__ == "__main__":
-    ctx = PISM.Context()
-    ctx.config.set_boolean("bed_deformation.lc.elastic_model", True)
-    ctx.config.set_double("bed_deformation.lc.grid_size_factor", 2)
+    def convolution_test(self):
+        "Compare PISM's FFTW-based convolution to scipy.signal.fftconvolve()"
+        rho = self.ctx.config.get_double("constants.ice.density")
 
-    grid = PISM.IceGrid.Shallow(ctx.ctx, Lx, Lx, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+        db_scipy = scipy.signal.fftconvolve(rho * self.H, self.lrm_pism, mode="same")
 
-    dx = grid.dx()
-    dy = grid.dy()
+        np.testing.assert_allclose(self.db_pism, db_scipy, rtol=1e-12)
 
-    Z = int(ctx.config.get_double("bed_deformation.lc.grid_size_factor"))
-    rho = ctx.config.get_double("constants.ice.density")
+    def lrm_test(self):
+        "Compare PISM's load response matrix to the one computed using scipy.integrate.dblquad()"
 
-    Nx = Z * (Mx - 1) + 1
-    Ny = Z * (My - 1) + 1
+        dx = self.grid.dx()
+        dy = self.grid.dy()
 
-    # load_response_matrix = lrm(Nx, Ny, dx, dy)
-    load_response_matrix = LRM
-    H, b, db = test_elastic(grid)
+        Ny, Nx = self.lrm_pism.shape
+        lrm_python = self.lrm(Nx, Ny, dx, dy)
 
-    db_scipy = fftconvolve(rho * H, load_response_matrix, mode="same")
+        # This is a crappy relative tolerance. Oh well...
+        np.testing.assert_allclose(self.lrm_pism, lrm_python, rtol=1e-2)
 
-    import pylab as plt
-    size=(5,5)
-    plt.figure(figsize=size)
-    plt.imshow(H)
-    plt.title("thickness")
-    plt.colorbar()
-
-    plt.figure(figsize=size)
-    plt.imshow(db_scipy)
-    plt.title("scipy")
-    plt.colorbar()
-
-    plt.figure(figsize=size)
-    plt.imshow(db)
-    plt.title("PISM")
-    plt.colorbar()
-
-    plt.figure(figsize=size)
-    plt.imshow(np.fabs(db - db_scipy))
-    plt.title("difference")
-    plt.colorbar()
-
-    plt.show()
+    def tearDown(self):
+        # reset configuration parameters
+        self.ctx.config.set_boolean("bed_deformation.lc.elastic_model", self.elastic)
+        self.ctx.config.set_double("bed_deformation.lc.grid_size_factor", self.size_factor)
