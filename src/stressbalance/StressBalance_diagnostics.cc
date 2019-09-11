@@ -286,27 +286,26 @@ PSB_velbase_mag::PSB_velbase_mag(const StressBalance *m)
 }
 
 IceModelVec::Ptr PSB_velbase_mag::compute_impl() const {
-  // FIXME: compute this using PSB_velbase.
-
-  IceModelVec2S tmp(m_grid, "tmp", WITHOUT_GHOSTS);
+  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
 
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "velbase_mag", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec3
-    &u3 = model->velocity_u(),
-    &v3 = model->velocity_v();
+  auto velbase = IceModelVec2V::ToVector(PSB_velbase(model).compute());
 
-  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  result->set_to_magnitude(*velbase);
 
-  u3.getHorSlice(*result, 0.0); // result = u_{z=0}
-  v3.getHorSlice(tmp, 0.0);    // tmp = v_{z=0}
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  result->set_to_magnitude(*result, tmp);
+  IceModelVec::AccessList list{&mask, result.get()};
 
-  // mask out ice-free areas
-  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
-  result->mask_by(*thickness, fill_value);
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.ice_free(i, j)) {
+      (*result)(i, j) = fill_value;
+    }
+  }
 
   return result;
 }
@@ -326,28 +325,26 @@ PSB_velsurf_mag::PSB_velsurf_mag(const StressBalance *m)
 }
 
 IceModelVec::Ptr PSB_velsurf_mag::compute_impl() const {
-
-  // FIXME: Compute this using PSB_velsurf.
-
-  IceModelVec2S tmp(m_grid, "tmp", WITHOUT_GHOSTS);
+  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
 
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "velsurf_mag", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec3
-    &u3 = model->velocity_u(),
-    &v3 = model->velocity_v();
+  auto velsurf = IceModelVec2V::ToVector(PSB_velsurf(model).compute());
 
-  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  result->set_to_magnitude(*velsurf);
 
-  u3.getSurfaceValues(*result, *thickness);
-  v3.getSurfaceValues(tmp, *thickness);
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  result->set_to_magnitude(*result, tmp);
+  IceModelVec::AccessList list{&mask, result.get()};
 
-  // mask out ice-free areas
-  double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
-  result->mask_by(*thickness, fill_value);
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.ice_free(i, j)) {
+      (*result)(i, j) = fill_value;
+    }
+  }
 
   return result;
 }
