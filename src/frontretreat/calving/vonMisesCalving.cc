@@ -26,7 +26,6 @@
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/frontretreat/util/remove_narrow_tongues.hh"
 
 namespace pism {
 namespace calving {

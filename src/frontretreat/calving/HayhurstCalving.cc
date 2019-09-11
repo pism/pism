@@ -23,7 +23,6 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/frontretreat/util/remove_narrow_tongues.hh"
 
 namespace pism {
 namespace calving {
