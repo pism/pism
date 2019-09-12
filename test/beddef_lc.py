@@ -7,7 +7,6 @@ Used as a verification (and regression) test for LingleClarkSerial::bootstrap().
 """
 
 import PISM
-import pylab as plt
 import numpy as np
 from PISM.util import convert
 
@@ -169,8 +168,32 @@ def compare_time_dependent(N):
     return diff_origin, diff_max, diff_average, dx
 
 
+def time_dependent_test():
+    "Time dependent bed deformation (disc load)"
+    diff = np.array([compare_time_dependent(n)[:3] for n in [34, 67]])
+
+    stored = [[0.01023591, 5.19786964, 0.93575341],
+              [0.04744501, 4.11548251, 0.69969177]]
+
+    return np.testing.assert_almost_equal(diff, stored)
+
+
+def steady_state_test():
+    "Steady state bed deformation (disc load)"
+    Ns = 10 * np.arange(1, 5) + 1
+    diff = np.array([compare_steady_state(n) for n in Ns])
+
+    stored = [[3.20730323e-02, 1.55400133e+01, 3.81424848e+00],
+              [5.82577650e-03, 1.10354567e+01, 1.92997362e+00],
+              [1.62485905e-02, 9.53012210e+00, 1.75301378e+00],
+              [1.95503166e-02, 7.60885504e+00, 1.37961265e+00]]
+
+    return np.testing.assert_almost_equal(diff, stored)
+
+
 def verify_steady_state():
     "Set up a grid refinement study and produce convergence plots."
+
     Ns = 101 + 10 * np.arange(0, 10)
 
     diff = np.array([compare_steady_state(n) for n in Ns])
@@ -186,6 +209,7 @@ def verify_steady_state():
     plt.grid(True)
     plt.xlabel("log10(1/N)")
     plt.ylabel("log10(error)")
+    plt.title("Convergence rates for the steady-state problem")
     plt.show()
 
 
@@ -216,27 +240,11 @@ def verify_time_dependent():
     plt.grid(True)
     plt.xlabel("dx, km")
     plt.ylabel("log10(error)")
+    plt.title("Convergence rates for the time-dependent problem")
     plt.show()
 
+if __name__ == "__main__":
+    import pylab as plt
 
-def time_dependent_test():
-    "Time dependent bed deformation (disc load)"
-    diff = np.array([compare_time_dependent(n)[:3] for n in [34, 67]])
-
-    stored = [[0.01023591, 5.19786964, 0.93575341],
-              [0.04744501, 4.11548251, 0.69969177]]
-
-    return np.testing.assert_almost_equal(diff, stored)
-
-
-def steady_state_test():
-    "Steady state bed deformation (disc load)"
-    Ns = 10 * np.arange(1, 5) + 1
-    diff = np.array([compare_steady_state(n) for n in Ns])
-
-    stored = [[3.20730323e-02, 1.55400133e+01, 3.81424848e+00],
-              [5.82577650e-03, 1.10354567e+01, 1.92997362e+00],
-              [1.62485905e-02, 9.53012210e+00, 1.75301378e+00],
-              [1.95503166e-02, 7.60885504e+00, 1.37961265e+00]]
-
-    return np.testing.assert_almost_equal(diff, stored)
+    verify_time_dependent()
+    verify_steady_state()

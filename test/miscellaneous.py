@@ -430,7 +430,6 @@ def column_interpolation_test(plot=False):
     """Test ColumnInterpolation by interpolating from the coarse grid to the
     fine grid and back."""
     import numpy as np
-    import pylab as plt
 
     Lz = 1000.0
     Mz = 41
@@ -482,7 +481,7 @@ def column_interpolation_test(plot=False):
 
         f_roundtrip = interp.fine_to_coarse(f_fine)
 
-        def plot():
+        if plot:
             plt.figure()
             plt.plot(z, f, 'o-', label="original coarse-grid data")
             plt.plot(z_fine, f_fine, 'o-', label="interpolated onto the fine grid")
@@ -492,8 +491,6 @@ def column_interpolation_test(plot=False):
             plt.title(title)
             plt.grid(True)
 
-        if plot:
-            plot()
 
         delta = np.linalg.norm(f - f_roundtrip, ord=1)
         delta_numpy = np.linalg.norm(f_fine - f_fine_numpy, ord=1)
@@ -502,6 +499,9 @@ def column_interpolation_test(plot=False):
 
         return delta, delta_numpy
 
+    if plot:
+        import pylab as plt
+
     linear_delta, linear_delta_numpy = test_linear_interp()
 
     quadratic_delta, _ = test_quadratic_interp()
@@ -509,9 +509,7 @@ def column_interpolation_test(plot=False):
     if plot:
         plt.show()
 
-    if (linear_delta > 1e-12 or
-            linear_delta_numpy > 1e-12 or
-            quadratic_delta > 1e-3):
+    if (linear_delta > 1e-12 or linear_delta_numpy > 1e-12 or quadratic_delta > 1e-3):
         return False
     return True
 
@@ -561,7 +559,6 @@ def linear_interpolation_test(plot=False):
     if plot:
         import pylab as plt
 
-        plt.hold(True)
         plt.plot(x_output, F_interpolated, 'o-', color='blue', label="interpolated result")
         plt.plot(x_output, F_desired, 'x-', color='green', label="desired result")
         plt.plot(x_input, values, 'o-', color='red', label="input")
