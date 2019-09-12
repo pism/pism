@@ -49,6 +49,8 @@ set(PISMUTIL_SRC
   pism_options.cc
   pism_utilities.cc
   projection.cc
+  label_components.cc
+  connected_components.cc
   )
 
 if(Pism_USE_JANSSON)

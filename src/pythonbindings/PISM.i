@@ -65,6 +65,7 @@
 
 #include "util/Time.hh"
 #include "util/Time_Calendar.hh"
+#include "util/label_components.hh"
 %}
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
@@ -328,3 +329,5 @@
 %include pism_verification.i
 
 %include "energy/bootstrapping.hh"
+
+%include "util/label_components.hh"
