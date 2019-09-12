@@ -1,18 +1,29 @@
 FROM debian:buster
 RUN apt-get update
-RUN apt-get install -y git cmake g++ netcdf-bin libgsl-dev libnetcdf-dev libfftw3-dev libudunits2-dev petsc-dev
+# tools and libraries needed to build PISM
+RUN apt-get install -y git cmake g++ netcdf-bin libgsl-dev libnetcdf-dev libfftw3-dev libudunits2-dev libproj-dev libpnetcdf-dev petsc-dev python-petsc4py swig
+# Python modules needed to run test scripts
+RUN apt-get install -y python-netcdf4 python-numpy python-scipy python-nose
 
-RUN useradd -m --shell=/bin/nologin builder && usermod -L builder
+RUN useradd -m --shell=/bin/false builder && usermod -L builder
 USER builder
 
+# Run mkdir instead of using WORKDIR so that these directories are owned by builder.
 RUN mkdir -p /home/builder/local/build/pism
 WORKDIR /home/builder/local
 RUN git clone --depth=1 git://github.com/pism/pism.git
 
 WORKDIR build/pism
-ENV PISM_INSTALL_PREFIX=/home/builder/
-ENV CC=mpicc CXX=mpicxx
-RUN cmake ../../pism
+ENV PISM_INSTALL_PREFIX=/home/builder/ CC=mpicc CXX=mpicxx
+RUN cmake \
+        -DCMAKE_CXX_FLAGS=-Wno-cast-function-type \
+        -DPism_BUILD_EXTRA_EXECS=1 \
+        -DPism_BUILD_PYTHON_BINDINGS=1 \
+        -DPism_USE_PROJ=1 \
+        -DPism_USE_PNETCDF=1 \
+        -DPism_USE_PARALLEL_NETCDF4=0 \
+        -DCMAKE_BUILD_TYPE=Release \
+        ../../pism
 RUN make install
 
 # Set PYTHONPATH so that "import PISM" succeeds.
