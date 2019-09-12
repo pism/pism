@@ -15,7 +15,6 @@ Used as a regression test for PISM.LingleClark.
 
 import PISM
 from PISM.util import convert
-import pylab as plt
 import numpy as np
 import os
 
@@ -96,20 +95,10 @@ def run(dt, restart=False):
 
     return model
 
-
 def compare_vec(v1, v2):
     "Compare two vecs."
-    try:
-        np.testing.assert_equal(v1.numpy(), v2.numpy())
-        print("{} is the same".format(v1.get_name()))
-    except:
-        plt.figure(figsize=(10, 10))
-        diff = v1.numpy() - v2.numpy()
-        max_diff = np.max(np.fabs(diff))
-        m = plt.imshow(diff, origin="lower")
-        plt.colorbar(m)
-        plt.title("{}, max. difference {}".format(v1.get_name(), max_diff))
-
+    print("Comparing {}".format(v1.get_name()))
+    np.testing.assert_equal(v1.numpy(), v2.numpy())
 
 def compare(model1, model2):
     "Compare two models"
