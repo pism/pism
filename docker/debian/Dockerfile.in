@@ -1,9 +1,10 @@
 FROM debian:buster
 RUN apt-get update
-# tools and libraries needed to build PISM
+# Tools and libraries needed to build PISM
 RUN apt-get install -y git cmake g++ netcdf-bin libgsl-dev libnetcdf-dev libfftw3-dev libudunits2-dev libproj-dev libpnetcdf-dev petsc-dev python-petsc4py swig
-# Python modules needed to run test scripts
+# Tools needed to run test scripts
 RUN apt-get install -y python-netcdf4 python-numpy python-scipy python-nose
+RUN apt-get install -y nco
 
 RUN useradd -m --shell=/bin/false builder && usermod -L builder
 USER builder
