@@ -134,8 +134,9 @@ class LTOP(object):
 
 def triangle_ridge_grid(dx=5e4, dy=5e4):
     "Allocate the grid for the synthetic geometry test."
-    x_min, x_max   = -100e3, 100e3
-    y_min, y_max   = -100e3, 100e3
+
+    x_min, x_max = -100e3, 100e3
+    y_min, y_max = -100e3, 100e3
 
     Mx = int((x_max - x_min) / dx) + 1
     My = int((y_max - y_min) / dy) + 1
@@ -207,22 +208,12 @@ def max_error(spacing, direction):
 
     return np.max(np.fabs(P - P_exact))
 
-def convergence_rate(error, direction, plot):
-    dxs = [2000, 1000]
+def convergence_rate(dxs, error, direction, plot):
     errors = [error(dx, direction) for dx in dxs]
 
     p = np.polyfit(np.log10(dxs), np.log10(errors), 1)
 
     if plot:
-        import pylab as plt
-
-        def log_plot(x, y, style, label):
-            plt.plot(np.log10(x), np.log10(y), style, label=label)
-            plt.xticks(np.log10(x), x)
-
-        def log_fit_plot(x, p, label):
-            plt.plot(np.log10(x), np.polyval(p, np.log10(x)), label=label)
-
         wind_direction = {0 : "north", 90 : "east", 180 : "south", 270 : "west"}
 
         plt.figure()
@@ -239,10 +230,21 @@ def convergence_rate(error, direction, plot):
 
 def ltop_test(plot=False):
     "Comparing to the 'triangle ridge' exact solution"
-    assert convergence_rate(max_error,   0, plot) > 1.9
-    assert convergence_rate(max_error,  90, plot) > 1.9
-    assert convergence_rate(max_error, 180, plot) > 1.9
-    assert convergence_rate(max_error, 270, plot) > 1.9
+    dxs = [2000, 1000]
+
+    assert convergence_rate(dxs, max_error,   0, plot) > 1.9
+    assert convergence_rate(dxs, max_error,  90, plot) > 1.9
+    assert convergence_rate(dxs, max_error, 180, plot) > 1.9
+    assert convergence_rate(dxs, max_error, 270, plot) > 1.9
 
 if __name__ == "__main__":
+    import pylab as plt
+
+    def log_plot(x, y, style, label):
+        plt.plot(np.log10(x), np.log10(y), style, label=label)
+        plt.xticks(np.log10(x), x)
+
+    def log_fit_plot(x, p, label):
+        plt.plot(np.log10(x), np.polyval(p, np.log10(x)), label=label)
+
     ltop_test(plot=True)

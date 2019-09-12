@@ -134,8 +134,7 @@ def max_error(spacing, wind_direction):
 
     return np.max(np.fabs(P - P_exact))
 
-def convergence_rate(error, wind_direction, plot):
-    dxs = [2000, 1000, 500]
+def convergence_rate(dxs, error, wind_direction, plot):
     errors = [error(dx, wind_direction) for dx in dxs]
 
     p = np.polyfit(np.log10(dxs), np.log10(errors), 1)
@@ -143,10 +142,7 @@ def convergence_rate(error, wind_direction, plot):
     if plot:
         import pylab as plt
 
-        direction = {0 : "north",
-                     90 : "east",
-                     180 : "south",
-                     270 : "west"}
+        direction = {0 : "north", 90 : "east", 180 : "south", 270 : "west"}
 
         def log_plot(x, y, style, label):
             plt.plot(np.log10(x), np.log10(y), style, label=label)
@@ -167,12 +163,13 @@ def convergence_rate(error, wind_direction, plot):
 
     return p[0]
 
-def ltop_test(plot=False):
+def ltop_test(dxs=[2000, 1000, 500], plot=False):
     "Orographic precipitation (triangle ridge test case)"
-    assert convergence_rate(max_error,   0, plot) > 1.99
-    assert convergence_rate(max_error,  90, plot) > 1.99
-    assert convergence_rate(max_error, 180, plot) > 1.99
-    assert convergence_rate(max_error, 270, plot) > 1.99
+
+    assert convergence_rate(dxs, max_error,   0, plot) > 1.99
+    assert convergence_rate(dxs, max_error,  90, plot) > 1.99
+    assert convergence_rate(dxs, max_error, 180, plot) > 1.99
+    assert convergence_rate(dxs, max_error, 270, plot) > 1.99
 
 if __name__ == "__main__":
-    ltop_test(plot=True)
+    ltop_test(dxs=[2000, 1000, 500, 250, 125], plot=True)

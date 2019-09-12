@@ -84,5 +84,5 @@ def node_type_test():
     spy_vec(mask, 1.0)
     plt.show()
 
-
-node_type_test()
+if __name__ == "__main__":
+    node_type_test()
