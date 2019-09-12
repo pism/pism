@@ -37,3 +37,7 @@ ENV OMPI_MCA_btl="^vader"
 # Allow oversubscribing (i.e. running more MPI processes than the number of cores
 # available). Run "ompi_info --all" to get the list of MCA parameters.
 ENV OMPI_MCA_rmaps_base_oversubscribe=yes
+
+# This should succeed:
+# ENV CTEST_OUTPUT_ON_FAILURE=1
+# RUN make test
