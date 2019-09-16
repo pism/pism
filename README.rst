@@ -1,6 +1,6 @@
 PISM, a Parallel Ice Sheet Model
 ================================
-[![CircleCI](https://circleci.com/gh/pism/pism/tree/dev.svg?style=svg)](https://circleci.com/gh/pism/pism/tree/dev)
+|cipism|_
 
 The Parallel Ice Sheet Model is an open source, parallel, high-resolution ice sheet model:
 
@@ -37,6 +37,8 @@ Want to contribute? Great! See `Committing to PISM <pism-contribute_>`_.
 
 .. URLs
 
+.. |cipism| image:: https://circleci.com/gh/pism/pism/tree/dev.svg?style=svg
+.. _cipism: https://circleci.com/gh/pism/pism/tree/dev
 .. _uaf: http://www.uaf.edu/
 .. _pik: http://www.pik-potsdam.de/
 .. _pism-docs: http://www.pism-docs.org/
