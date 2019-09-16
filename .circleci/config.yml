@@ -16,7 +16,7 @@ jobs:
             PISM_INSTALL_PREFIX=~/pism
             cmake ..
             -DPism_BUILD_PYTHON_BINDINGS=Yes
-            -DPism_USE_PROJ4=Yes
+            -DPism_USE_PROJ=Yes
             && make
 
       - run:
