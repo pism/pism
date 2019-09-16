@@ -3,6 +3,11 @@ jobs:
   build:
     docker:
       - image: admesg/pism-debian:0.1.5
+        environment:
+          PETSC_DIR: /usr/lib/petscdir/petsc3.10/x86_64-linux-gnu-real
+          OMPI_MCA_rmaps_base_oversubscribe: yes
+          OMPI_MCA_btl: "^vader"
+          CTEST_OUTPUT_ON_FAILURE: 1
 
     steps:
       - checkout
@@ -12,7 +17,6 @@ jobs:
           command: >-
             mkdir -p build && cd build &&
             CC=mpicc CXX=mpicxx
-            PETSC_DIR=/usr/lib/petscdir/petsc3.10/x86_64-linux-gnu-real
             PISM_INSTALL_PREFIX=~/pism
             cmake ..
             -DPism_BUILD_PYTHON_BINDINGS=Yes
@@ -23,4 +27,4 @@ jobs:
           name: Run PISM test suite
           command: >-
             export PYTHONPATH=$PWD/build/site-packages:$PYTHONPATH &&
-            cd build && env CTEST_OUTPUT_ON_FAILURE=1 make test
+            cd build && make test
