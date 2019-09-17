@@ -9,34 +9,25 @@ endif ()
 
 if (Pism_BUILD_PYTHON_BINDINGS AND NOSE_EXECUTABLE)
   message(STATUS "Enabling PISM Python tests that use nose")
-  add_test(NAME "Python:nose:misc"
-    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/miscellaneous.py)
-  add_test(NAME "Python:nose:IceModelVec2T"
-    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/icemodelvec2t.py)
-  add_test(NAME "Python:nose:enthalpy:converter"
-    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/enthalpy/converter.py)
-  add_test(NAME "Python:nose:enthalpy:column"
-    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/enthalpy/column.py)
-  add_test(NAME "Python:nose:sia:bed_smoother"
-    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/bed_smoother.py)
-  add_test(NAME "Python:nose:bed_deformation:LC"
-    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${PROJECT_SOURCE_DIR}/examples/python/bed_deformation.py)
-  add_test(NAME "Python:nose:bed_deformation:LC:restart"
-    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/beddef_lc_restart.py)
-  add_test(NAME "Python:nose:ocean"
-    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/regression/ocean_models.py)
-  add_test(NAME "Python:nose:surface"
-    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/regression/surface_models.py)
-  add_test(NAME "Python:nose:atmosphere"
-    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/regression/atmosphere_models.py)
-  add_test(NAME "Python:nose:atmosphere:LTOP"
-    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/regression/orographic_precipitation.py)
-  add_test(NAME "Python:Verification:nose:bed_deformation:LC"
-    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/beddef_lc.py)
-  add_test(NAME "Python:Verification:nose:bed_deformation:iso"
-    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/beddef_iso.py)
-  add_test(NAME "Python:Verification:nose:mass_transport"
-    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/mass_transport.py)
-  add_test(NAME "Python:Verification:nose:btu"
-    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/bedrock_column.py)
+
+  macro(pism_nose_test name executable)
+    add_test(NAME ${name}
+      COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/${executable}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+  endmacro()
+
+  pism_nose_test("Python:nose:misc" miscellaneous.py)
+  pism_nose_test("Python:nose:IceModelVec2T" icemodelvec2t.py)
+  pism_nose_test("Python:nose:enthalpy:converter" enthalpy/converter.py)
+  pism_nose_test("Python:nose:enthalpy:column" enthalpy/column.py)
+  pism_nose_test("Python:nose:sia:bed_smoother" bed_smoother.py)
+  pism_nose_test("Python:nose:bed_deformation:LC:restart" beddef_lc_restart.py)
+  pism_nose_test("Python:nose:ocean" regression/ocean_models.py)
+  pism_nose_test("Python:nose:surface" regression/surface_models.py)
+  pism_nose_test("Python:nose:atmosphere" regression/atmosphere_models.py)
+  pism_nose_test("Python:nose:atmosphere:LTOP" regression/orographic_precipitation.py)
+  pism_nose_test("Python:Verification:nose:bed_deformation:LC" beddef_lc.py)
+  pism_nose_test("Python:Verification:nose:bed_deformation:iso" beddef_iso.py)
+  pism_nose_test("Python:Verification:nose:mass_transport" mass_transport.py)
+  pism_nose_test("Python:Verification:nose:btu" bedrock_column.py)
 endif()
