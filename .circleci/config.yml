@@ -15,16 +15,19 @@ jobs:
       - run:
           name: Build PISM
           command: >-
-            mkdir -p build && cd build &&
+            mkdir -p build &&
+            cd build &&
             CC=mpicc CXX=mpicxx
-            PISM_INSTALL_PREFIX=~/pism
             cmake ..
+            -DCMAKE_BUILD_TYPE=Debug
             -DPism_BUILD_PYTHON_BINDINGS=Yes
-            -DPism_USE_PROJ=Yes
-            && make
+            -DPism_BUILD_EXTRA_EXECS=Yes
+            -DPism_USE_PROJ=Yes &&
+            make
 
       - run:
           name: Run PISM test suite
           command: >-
-            export PYTHONPATH=$PWD/build/site-packages:$PYTHONPATH &&
-            cd build && make test
+            cd build &&
+            export PYTHONPATH=$PWD/site-packages:$PYTHONPATH &&
+            make test
