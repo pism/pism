@@ -20,6 +20,9 @@ import os
 
 ctx = PISM.Context()
 
+# silence initialization messages
+ctx.log.set_threshold(1)
+
 # disc load parameters
 disc_radius = convert(1000, "km", "m")
 disc_thickness = 1000.0         # meters
@@ -84,7 +87,7 @@ def run(dt, restart=False):
             model = PISM.LingleClark(grid)
 
             # initialize
-            PISM.PETSc.Options().setValue("-i", filename)
+            ctx.config.set_string("input.file", filename)
             options = PISM.process_input_options(grid.com, ctx.config)
             model.init(options, geometry.ice_thickness, geometry.sea_level_elevation)
         finally:
