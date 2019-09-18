@@ -273,8 +273,8 @@ void Interpolation::init_linear_periodic(const double *input_x, unsigned int inp
       }
     }
 
-    assert(L >= 0 and L < input_x_size);
-    assert(R >= 0 and R < input_x_size);
+    assert(L < input_x_size);
+    assert(R < input_x_size);
     assert(alpha >= 0.0 and alpha <= 1.0);
 
     m_left[i]  = L;
