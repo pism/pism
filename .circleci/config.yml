@@ -20,6 +20,7 @@ jobs:
             CC=mpicc CXX=mpicxx
             cmake ..
             -DCMAKE_BUILD_TYPE=Debug
+            -DCMAKE_CXX_FLAGS=-Wno-cast-function-type
             -DPism_BUILD_PYTHON_BINDINGS=Yes
             -DPism_BUILD_EXTRA_EXECS=Yes
             -DPism_USE_PROJ=Yes &&
