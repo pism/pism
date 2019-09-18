@@ -5,9 +5,14 @@ RUN apt-get install -y git cmake g++ netcdf-bin libgsl-dev libnetcdf-dev libfftw
 # Tools needed to run test scripts
 RUN apt-get install -y python-netcdf4 python-numpy python-scipy python-nose
 RUN apt-get install -y nco
+RUN apt-get install -y wget
 
 RUN useradd -m --shell=/bin/false builder && usermod -L builder
 USER builder
+
+# Install parallel HDF5 and NetCDF by building them from sources.
+COPY build_netcdf.sh /tmp/
+RUN /tmp/build_netcdf.sh
 
 # Add a flag needed to use OpenMPI in a Docker container.
 # See https://github.com/open-mpi/ompi/issues/4948
