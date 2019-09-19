@@ -157,7 +157,7 @@
 
 #. :config:`atmosphere.lapse_rate.precipitation_lapse_rate` (*scalar*)
 
-   :Value: 0 ((m / year) / km)
+   :Value: 0 ((kg m-2 / year) / km)
    :Option: :opt:`-precip_lapse_rate`
    :Description: Elevation lapse rate for the surface mass balance
 
@@ -170,6 +170,95 @@
 
    :Value: 273.150000 (Kelvin)
    :Description: Air temperature used by the 'uniform' atmosphere model.
+
+#. :config:`atmosphere.orographic_precipitation.grid_size_factor` (*integer*)
+
+   :Value: 2
+   :Description: The spectral grid size is (Z*(grid.Mx - 1) + 1, Z*(grid.My - 1) + 1) where Z is given by this parameter.
+
+#. :config:`atmosphere.orographic_precipitation.background_precip_pre` (*scalar*)
+
+   :Value: 0 (mm/hr)
+   :Option: :opt:`-background_precip_pre`
+   :Description: Adding background precipitation before truncation
+
+#. :config:`atmosphere.orographic_precipitation.background_precip_post` (*scalar*)
+
+   :Value: 0 (mm/hr)
+   :Option: :opt:`-background_precip_post`
+   :Description: Adding background precipitation after truncation
+
+#. :config:`atmosphere.orographic_precipitation.scale_factor` (*scalar*)
+
+   :Value: 1 (1)
+   :Option: :opt:`-scale_factor`
+   :Description: Precipitation scaling factor
+
+#. :config:`atmosphere.orographic_precipitation.conversion_time` (*scalar*)
+
+   :Value: 1000 (s)
+   :Option: :opt:`-conversion_time`
+   :Description: Cloud conversion time
+
+#. :config:`atmosphere.orographic_precipitation.fallout_time` (*scalar*)
+
+   :Value: 1000 (s)
+   :Option: :opt:`-fallout_time`
+   :Description: Fallout time
+
+#. :config:`atmosphere.orographic_precipitation.moist_stability_frequency` (*scalar*)
+
+   :Value: 0.050000 (1/s)
+   :Option: :opt:`-moist_stability_frequency`
+   :Description: Moist stability frequency
+
+#. :config:`atmosphere.orographic_precipitation.wind_direction` (*scalar*)
+
+   :Value: 270 (degrees)
+   :Option: :opt:`-wind_direction`
+   :Description: The direction the wind is coming from
+
+#. :config:`atmosphere.orographic_precipitation.wind_speed` (*scalar*)
+
+   :Value: 10 (m/s)
+   :Option: :opt:`-wind_speed`
+   :Description: The direction the wind is coming from
+
+#. :config:`atmosphere.orographic_precipitation.water_vapor_scale_height` (*scalar*)
+
+   :Value: 2500 (m)
+   :Option: :opt:`-water_vapor_scale_height`
+   :Description: Water vapor scale height
+
+#. :config:`atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate` (*scalar*)
+
+   :Value: -6.500000 (K / km)
+   :Option: :opt:`-moist_adiabatic_lapse_rate`
+   :Description: Water vapor scale height
+
+#. :config:`atmosphere.orographic_precipitation.lapse_rate` (*scalar*)
+
+   :Value: -5.800000 (K / km)
+   :Option: :opt:`-lapse_rate`
+   :Description: Lapse rate
+
+#. :config:`atmosphere.orographic_precipitation.reference_density` (*scalar*)
+
+   :Value: 0.007400 (kg m-3)
+   :Option: :opt:`-reference_density`
+   :Description: Water vapor scale height
+
+#. :config:`atmosphere.orographic_precipitation.coriolis_latitude` (*scalar*)
+
+   :Value: 0 (degrees_N)
+   :Option: :opt:`-coriolis_latitude`
+   :Description: Latitude used to compute Coriolis force
+
+#. :config:`atmosphere.orographic_precipitation.truncate` (*boolean*)
+
+   :Value: true
+   :Option: :opt:`-truncate`
+   :Description: Truncate precipitation at 0
 
 #. :config:`basal_resistance.beta_ice_free_bedrock` (*scalar*)
 
@@ -336,10 +425,10 @@
    :Option: :opt:`-bed_def`
    :Description: Selects a bed deformation model to use. 'iso' is point-wise isostasy, 'lc' is the Lingle-Clark model (see :cite:`LingleClark`, requires FFTW3).
 
-#. :config:`bed_deformation.update_interval` (*scalar*)
+#. :config:`bed_deformation.lc.update_interval` (*scalar*)
 
    :Value: 10 (years)
-   :Description: Interval between bed deformation updates
+   :Description: Interval between updates of the Lingle-Clark model
 
 #. :config:`bed_deformation.bed_topography_delta_file` (*string*)
 
@@ -556,6 +645,11 @@
    :Value: true
    :Option: :opt:`-subgl_basal_melt`
    :Description: If geometry.grounded_cell_fraction is set, use the fractional floatation mask to interpolate the basal melt rate at the grounding line between grounded and floating values.
+
+#. :config:`energy.bedrock_thermal.file` (*string*)
+
+   :Value: *no default*
+   :Description: Name of the file containing the geothermal flux field :var:`bheatflx`. Leave empty to read it from the :config:`input.file`.
 
 #. :config:`energy.bedrock_thermal.conductivity` (*scalar*)
 
@@ -1751,7 +1845,7 @@
 
    :Value: 300
    :Option: :opt:`-ssafd_picard_maxi`
-   :Description: Maximum number of iterations for the ice viscosity computation, in the SSAFD object
+   :Description: Maximum number of Picard iterations for the ice viscosity computation, in the SSAFD object
 
 #. :config:`stress_balance.ssa.fd.nuH_iter_failure_underrelaxation` (*scalar*)
 
