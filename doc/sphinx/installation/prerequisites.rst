@@ -21,9 +21,14 @@ This table lists required dependencies for PISM alphabetically.
 Before installing these "by hand", check sections :ref:`sec-install-debian` and
 :ref:`sec-install-macos` for specific how-to.
 
-In particular, if multiple MPI implementations (e.g. MPICH and Open-MPI) are installed
+In particular, if multiple MPI implementations (e.g. MPICH and Open MPI) are installed
 then PETSc can under some situations "get confused" and throw MPI-related errors. Even
 package systems have been known to allow this confusion.
+
+.. note::
+
+   We recommend un-installing all MPI libraries except one. In most cases there is no
+   reason to have both Open MPI and MPICH, for example.
 
 Optional libraries listed below are needed for certain PISM features, namely computing
 longitude, latitude coordinates of grid points and parallel I/O. These libraries are
@@ -35,7 +40,7 @@ recommended, but not strictly required:
    PROJ_,  version `\ge` 5.0 (used to compute longitude-latitude grid coordinates and cell bounds)
    PnetCDF_, Can be used for parallel I/O
 
-Python_ 2.x is needed for the PETSc installation process; a number of PISM's pre- and
+Python_ is needed for the PETSc installation process; a number of PISM's pre- and
 post-processing scripts also use Python (either 2.7 or 3.x), while Git_ is usually needed
 to download the PISM code.
 
