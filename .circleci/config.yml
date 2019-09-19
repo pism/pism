@@ -4,7 +4,7 @@ jobs:
     docker:
       - image: ckhrulev/pism-debian:0.1.0
         environment:
-          PETSC_DIR: /usr/lib/petscdir/petsc3.10/x86_64-linux-gnu-real
+          PETSC_DIR: /usr/lib/petsc/
           # Allow oversubscribing (i.e. running more MPI processes than the number of cores
           # available). Run "ompi_info --all" to get the list of MCA parameters.
           OMPI_MCA_rmaps_base_oversubscribe: yes
