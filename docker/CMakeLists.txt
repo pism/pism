@@ -11,5 +11,8 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 mark_as_advanced(PISM_DEBIAN_PACKAGE_LIST)
 
+set(DOCKER_USERNAME "ckhrulev" CACHE STRING "Docker user name to use when building images")
+mark_as_advanced(DOCKER_USERNAME)
+
 add_subdirectory(debian)
 add_subdirectory(archlinux)

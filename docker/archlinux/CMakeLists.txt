@@ -1,6 +1,6 @@
-configure_file(Dockerfile.in Dockerfile)
-configure_file(${Pism_SOURCE_DIR}/doc/sphinx/installation/arch-install-yay.sh arch-install-yay.sh)
+configure_file(Dockerfile Dockerfile COPYONLY)
 
+# No image version tag: this Docker image should not be pushed to the Docker Hub.
 add_custom_target(docker-archlinux
-  COMMAND docker build -t ckhrulev/pism-arch .
+  COMMAND docker build -t ${DOCKER_USERNAME}/pism-archlinux .
   VERBATIM)

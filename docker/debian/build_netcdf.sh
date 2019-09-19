@@ -1,10 +1,15 @@
 #!/bin/bash
 
+# This script is used to build HDF5 and NetCDF with parallel I/O support in the
+# Debian-based Docker image used to run PISM's regression tests.
+
 set -x
 set -e
 
 prefix=${HOME}/local/
 N=4
+
+#!/bin/bash
 
 build_hdf5() {
     # download and build HDF5
@@ -28,6 +33,7 @@ build_hdf5() {
 }
 
 build_netcdf() {
+    # download and build netcdf
     build_dir=${prefix}/build/netcdf/
     mkdir -p ${build_dir}
     cd ${build_dir}
