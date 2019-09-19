@@ -48,6 +48,13 @@ struct Range {
   double min, max;
 };
 
+// NB: Do not change the order of elements in this struct. IceModelVec2S::box() and
+// IceModelVec2Int::int_box() depend on it.
+template <typename T>
+struct BoxStencil {
+  T ij, n, nw, w, sw, s, se, e, ne;
+};
+
 class PetscAccessible {
 public:
   virtual ~PetscAccessible() {}
@@ -468,6 +475,7 @@ public:
   inline double& operator() (int i, int j);
   inline const double& operator()(int i, int j) const;
   inline StarStencil<double> star(int i, int j) const;
+  inline BoxStencil<double> box(int i, int j) const;
 };
 
 
@@ -484,6 +492,7 @@ public:
 
   inline int as_int(int i, int j) const;
   inline StarStencil<int> int_star(int i, int j) const;
+  inline BoxStencil<int> int_box(int i, int j) const;
 };
 
 /** Class for storing and accessing 2D vector fields used in IceModel.
