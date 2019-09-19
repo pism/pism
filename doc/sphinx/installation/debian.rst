@@ -1,7 +1,7 @@
 .. _sec-install-debian:
 
-Installing prerequisites using Debian packages
-----------------------------------------------
+Installing prerequisites on Debian or Ubuntu
+--------------------------------------------
 
 You should be able to use your package manager to get the prerequisites for PISM. Install
 the following packages using ``apt-get`` or ``synaptic`` or similar. All of these are
@@ -24,5 +24,8 @@ You may be able to install these by running
 
 (You may need to change this command to match your package system.)
 
-Once done, see :ref:`sec-install-petsc` to install PETSc from source and then
-:ref:`sec-install-pism` for building PISM itself.
+The command above takes care of all PISM prerequisites, including PETSc. Set
+``PETSC_DIR=/usr/lib/petsc``\ [#]_ and follow the steps in :ref:`sec-install-pism` to build PISM
+itself.
+
+.. [#] In this case you do not need to set ``PETSC_ARCH``.
