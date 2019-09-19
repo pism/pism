@@ -616,7 +616,7 @@ netcdf pism_config {
     pism_config:energy.basal_melt.use_grounded_cell_fraction_type  = "boolean";
 
     pism_config:energy.bedrock_thermal.file = "";
-    pism_config:energy.bedrock_thermal.file_doc = "Name of the file containing the geothermal flux field `bheatflx`. Leave empty to read it from the `input.file`.";
+    pism_config:energy.bedrock_thermal.file_doc = "Name of the file containing the geothermal flux field :var:`bheatflx`. Leave empty to read it from the :config:`input.file`.";
     pism_config:energy.bedrock_thermal.file_type = "string";
 
     pism_config:energy.bedrock_thermal.conductivity = 3.0;
