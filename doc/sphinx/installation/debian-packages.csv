@@ -1,21 +1,23 @@
-cdo, used in some pre-processing scripts
-cmake, required to configure PISM
-cmake-curses-gui, a text-based easy interface for CMake
-g++, required to build PISM
-git, used to get PISM source code
-libblas-dev, BLAS is required by PETSc
-libfftw3-dev, required by PISM
+git, used to download PISM's source code
+cmake, used to configure PISM
+cmake-curses-gui, optional; a text-based interface for CMake
+g++, used to build PISM
+netcdf-bin, ``ncgen`` is used during the build process
+swig, optional; used to build PISM's Python bindings
+petsc-dev, required by PISM
 libgsl-dev, required by PISM
-liblapack-dev, LAPACK is required by PETSc
-libmpich-dev, MPI is required to run PISM in parallel
 libnetcdf-dev, required by PISM
-libproj-dev, used to compute longitude and latitude coordinates of grid points
+libfftw3-dev, required by PISM
 libudunits2-dev, required by PISM
-libx11-dev, X windows is useful to get graphics through PETSc
-mpich, MPI is required to run PISM in parallel
-nco, used in many pre-processing scripts
-ncview, view fields in NetCDF files
-netcdf-bin, required: ``ncgen`` is used during the build process
-python-dev, (helps with scripts; perhaps not essential)
-python-netcdf4, used in most post-processing scripts
-python-pyproj, used in some pre-processing scripts
+libproj-dev, optional; used to compute longitude and latitude coordinates of grid points
+libpnetcdf-dev, optional; used for parallel I/O
+python-petsc4py, optional; used by PISM's Python bindings
+python-netcdf4, optional; used in most post-processing scripts
+python-numpy, optional; used in some pre- and post-processing scripts
+python-scipy, optional; used in some pre- and post-processing scripts
+python-nose, optional; used by PISM's regression tests
+nco, optional; used in many pre-processing scripts
+cdo, optional; used in some pre-processing scripts
+ncview, optional; a nice tool for examining NetCDF datasets
+python-pyproj, optional; used in some pre-processing scripts
+libx11-dev, optional; used by PISM's run-time viewers

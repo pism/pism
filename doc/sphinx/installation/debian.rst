@@ -1,7 +1,7 @@
 .. _sec-install-debian:
 
-Installing prerequisites from Debian packages
----------------------------------------------
+Installing prerequisites using Debian packages
+----------------------------------------------
 
 You should be able to use your package manager to get the prerequisites for PISM. Install
 the following packages using ``apt-get`` or ``synaptic`` or similar. All of these are
@@ -17,7 +17,6 @@ You may be able to install these by running
 
 .. literalinclude:: code/install_libraries.sh
    :language: bash
-   :lines: 3-
 
 .. only:: html
 
