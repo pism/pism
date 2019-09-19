@@ -1,16 +1,12 @@
 FROM debian:buster
-RUN apt-get update
-# Tools and libraries needed to build PISM
-RUN apt-get install -y git cmake g++ netcdf-bin libgsl-dev libnetcdf-dev libfftw3-dev libudunits2-dev libproj-dev libpnetcdf-dev petsc-dev python-petsc4py swig
-# Tools needed to run test scripts
-RUN apt-get install -y python-netcdf4 python-numpy python-scipy python-nose
-RUN apt-get install -y nco
-RUN apt-get install -y wget
+RUN apt-get update && apt-get install -y wget ${PISM_DEBIAN_PACKAGE_LIST}
 
-RUN useradd -m --shell=/bin/false builder && usermod -L builder
+RUN useradd --create-home --system --shell=/bin/false builder && usermod --lock builder
 USER builder
 
 # Install parallel HDF5 and NetCDF by building them from sources.
+#
+# Uses wget installed above.
 COPY build_netcdf.sh /tmp/
 RUN /tmp/build_netcdf.sh
 
