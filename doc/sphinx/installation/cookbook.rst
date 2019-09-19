@@ -13,7 +13,6 @@ cases; please `e-mail us <pism-email_>`_ if you need help.
 
    debian.rst
    macos.rst
-   sources.rst
 
    petsc.rst
    pism.rst
