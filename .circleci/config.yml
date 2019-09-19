@@ -1,6 +1,13 @@
 version: 2
 jobs:
   build:
+
+    # Ignore the master branch for now (we should remove this once CircleCI support is
+    # merged into master).
+    branches:
+      ignore:
+        - master
+
     docker:
       - image: ckhrulev/pism-debian:0.1.0
         environment:
