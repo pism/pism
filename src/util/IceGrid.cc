@@ -748,21 +748,17 @@ void IceGrid::compute_point_neighbors(double X, double Y,
   i_right = i_left + 1;
   j_top = j_bottom + 1;
 
-  if (i_left < 0) {
-    i_left = i_right;
-  }
+  i_left = std::max(i_left, 0);
+  i_right = std::max(i_right, 0);
 
-  if (i_right > (int)m_impl->Mx - 1) {
-    i_right = i_left;
-  }
+  i_left = std::min(i_left, (int)m_impl->Mx - 1);
+  i_right = std::min(i_right, (int)m_impl->Mx - 1);
 
-  if (j_bottom < 0) {
-    j_bottom = j_top;
-  }
+  j_bottom = std::max(j_bottom, 0);
+  j_top = std::max(j_top, 0);
 
-  if (j_top > (int)m_impl->My - 1) {
-    j_top = j_bottom;
-  }
+  j_bottom = std::min(j_bottom, (int)m_impl->My - 1);
+  j_top = std::min(j_top, (int)m_impl->My - 1);
 }
 
 std::vector<int> IceGrid::compute_point_neighbors(double X, double Y) const {
