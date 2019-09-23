@@ -445,7 +445,13 @@ void Gradual::gradually_fill(const double dt,
           if (mask::ocean(gc.mask(sea_level(i, j), bed(i, j), thk(i, j)))) {
             target_ij = sea_level(i, j);
           } else {
-            target_ij = bed(i, j) + m_alpha_lake * thk(i, j);
+            if (mask::ocean(gc.mask(sea_level(i, j), current_ij, bed(i, j), thk(i, j)))) {
+              // if "real" lake, gradually empty it to floatation level
+              target_ij = bed(i, j) + m_alpha_lake * thk(i, j);
+            } else {
+              //else (if it is below floatation level) immediately get rid of it.
+              target_ij = current_ij;
+            }
           }
         }
 
@@ -467,7 +473,7 @@ void Gradual::gradually_fill(const double dt,
             }
           }
 
-          const double new_level = ( disappear ? current_ij : min_ij ) + std::min(dh_max, (target_ij - min_ij));
+          const double new_level = ( disappear ? current_ij : min_ij ) + std::min(dh_max, std::abs(target_ij - min_ij));
 
           if ( (new_level > current_ij) or disappear ) {
             if (disappear and (new_level >= target_ij)) {
@@ -477,7 +483,7 @@ void Gradual::gradually_fill(const double dt,
             }
           }
         } else {
-          const double new_level = ( disappear ? current_ij : max_ij ) - std::min(dh_max, (max_ij - target_ij));
+          const double new_level = ( disappear ? current_ij : max_ij ) - std::min(dh_max, std::abs(max_ij - target_ij));
 
           if ( (new_level < current_ij) or disappear ) {
             if (disappear and (new_level <= target_ij)) {
