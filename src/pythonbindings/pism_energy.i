@@ -25,12 +25,16 @@ using pism::MaskValue;
 
 %shared_ptr(pism::energy::EnthalpyModel)
 %shared_ptr(pism::energy::DummyEnergyModel)
+%feature("notabstract") pism::energy::EnthalpyModel;
+%feature("notabstract") pism::energy::DummyEnergyModel;
 %include "energy/EnthalpyModel.hh"
 
 %shared_ptr(pism::energy::TemperatureModel)
+%feature("notabstract") pism::energy::TemperatureModel;
 %include "energy/TemperatureModel.hh"
 
 %shared_ptr(pism::energy::EnthalpyModel_Regional)
+%feature("notabstract") pism::energy::EnthalpyModel_Regional;
 %include "regional/EnthalpyModel_Regional.hh"
 
 %ignore pism::energy::BedrockColumn::solve(double, double, double, const double *, double *);
