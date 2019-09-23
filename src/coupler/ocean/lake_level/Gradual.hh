@@ -32,7 +32,7 @@ public:
   ~Gradual();
 
 private:
-  double m_max_lake_fill_rate;
+  double m_max_lake_fill_rate, m_alpha_lake;
   bool m_use_const_fill_rate, m_init_lakes_filled;
 
   IceModelVec2S m_target_level, m_min_level, m_max_level, m_min_basin, m_max_sl_basin,

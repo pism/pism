@@ -93,6 +93,8 @@ Gradual::Gradual(IceGrid::ConstPtr grid,
   m_lake_fill_rate.metadata().set_double("_FillValue", m_fill_value);
   m_lake_fill_rate.metadata().set_string("glaciological_units", "m year-1");
 
+  m_alpha_lake = m_config->get_double("constants.fresh_water.density") / m_config->get_double("constants.ice.density");
+
   m_init_lakes_filled = false;
 }
 
@@ -429,38 +431,58 @@ void Gradual::gradually_fill(const double dt,
 
       if (gc.islake(lake_level(i, j))) {
         const double min_ij = min_level(i, j),
-                     max_ij = max_level(i, j);
-        const bool unbalanced_level = (min_ij != max_ij);
-        const double current_ij = lake_level(i, j),
-                     target_ij  = target_level(i, j);
+                     max_ij = max_level(i, j),
+                     current_ij = lake_level(i, j),
+                     target_level_ij  = target_level(i, j);
+        const bool unbalanced_level = (min_ij != max_ij),
+                   disappear = not gc.islake(target_level_ij);
 
-        if (not m_use_const_fill_rate) {
+        double target_ij = target_level_ij;
+
+        // if lakes vanish ...
+        if (disappear) {
+          // ... and become ocean, set to sea level, else to floatation level
+          if (mask::ocean(gc.mask(sea_level(i, j), bed(i, j), thk(i, j)))) {
+            target_ij = sea_level(i, j);
+          } else {
+            target_ij = bed(i, j) + m_alpha_lake * thk(i, j);
+          }
+        }
+
+        const bool rising = (current_ij < target_ij);
+
+        if (not m_use_const_fill_rate or not rising) {
           dh_max = max_fill_rate * dt;
         }
 
-        const bool rising = ((current_ij < target_ij) and gc.islake(target_ij));
         if (rising) {
           //Only if rising, adjust fill rate to mass loss of ice sheet
           if (not (m_use_const_fill_rate or unbalanced_level)) {
             const double fill_rate_ij = fill_rate(i, j);
 
-            if (gc.islake(fill_rate_ij) and (fill_rate_ij <= max_fill_rate)) {
+            if (gc.islake(fill_rate_ij) and (fill_rate_ij <= max_fill_rate) and not disappear) {
               dh_max = fill_rate_ij * dt;
+            } else {
+              dh_max = max_fill_rate * dt;
             }
           }
 
-          const double new_level = min_ij + std::min(dh_max, (target_ij - min_ij));
-          if (new_level > current_ij) {
-            lake_level(i, j) = new_level;
+          const double new_level = ( disappear ? current_ij : min_ij ) + std::min(dh_max, (target_ij - min_ij));
+
+          if ( (new_level > current_ij) or disappear ) {
+            if (disappear and (new_level >= target_ij)) {
+              lake_level(i, j) = m_fill_value;
+            } else {
+              lake_level(i, j) = new_level;
+            }
           }
         } else {
-          const double dh_ij = gc.islake(target_ij) ? (current_ij - target_ij) : dh_max,
-                       new_level = (gc.islake(target_ij) ? max_ij : current_ij) - std::min(dh_max, dh_ij);
+          const double new_level = ( disappear ? current_ij : max_ij ) - std::min(dh_max, (max_ij - target_ij));
 
-          if ( (new_level < bed(i, j) and  not gc.islake(target_ij)) or mask::ocean(gc.mask(sea_level(i, j), bed(i, j), thk(i, j))) ) {
-            lake_level(i, j) = m_fill_value;
-          } else {
-            if (new_level < current_ij) {
+          if ( (new_level < current_ij) or disappear ) {
+            if (disappear and (new_level <= target_ij)) {
+              lake_level(i, j) = m_fill_value;
+            } else {
               lake_level(i, j) = new_level;
             }
           }
