@@ -14,6 +14,11 @@ Changes from v1.1.4 to v1.1.5
   step (its computational cost is negligible) and the Lingle-Clark model is updated
   *exactly* every `bed_deformation.lc.update_interval` years, limiting PISM's time step
   length.
+- PICO: compute basal melt rate at "grounded ice" or "ice-free ocean" grid cells that are
+  next to floating ice as an average of the basal melt rate at their neighbors containing
+  floating ice. This makes PICO compatible with `geometry.grounded_cell_fraction` and
+  `energy.basal_melt.use_grounded_cell_fraction` (see command-line option
+  `-subgl_basal_melt`).
 
 Changes from v1.1.3 to v1.1.4
 =============================
