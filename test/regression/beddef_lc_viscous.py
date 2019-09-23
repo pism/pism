@@ -224,7 +224,7 @@ def verify_steady_state():
     plt.show()
 
 
-def verify_time_dependent(show=True):
+def verify_time_dependent():
     "Set up a spatial grid refinement study and produce convergence plots."
 
     dxs = [15, 30, 60, 125, 250, 500]
@@ -258,8 +258,9 @@ def verify_time_dependent(show=True):
     plt.show()
 
 if __name__ == "__main__":
+    import pylab as plt
     log.message(2, "  Creating convergence plots (spatial refinement)...\n")
     log.message(2, "  1. Steady state problem...\n")
-    verify_steady_state(show=False)
+    verify_steady_state()
     log.message(2, "  2. Time-dependent problem...\n")
-    verify_time_dependent(show=True)
+    verify_time_dependent()
