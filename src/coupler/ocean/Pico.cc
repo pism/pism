@@ -646,44 +646,45 @@ void Pico::process_other_boxes(const PicoPhysics &physics,
 }
 
 /*!
-* extend basal melt rates to grounded and ocean neighbors for consitency with subgl_melt.
-* note that melt rates are then simply interpolated into partially floating cells, they
-* are not included in the calculations of pico
+* Extend basal melt rates to grounded and ocean neighbors for consitency with subgl_melt.
+* Note that melt rates are then simply interpolated into partially floating cells, they
+* are not included in the calculations of PICO.
 */
-void Pico::extend_basal_melt_rates(const IceModelVec2CellType &mask, IceModelVec2S &basal_melt_rate) {
+void Pico::extend_basal_melt_rates(const IceModelVec2CellType &cell_type, IceModelVec2S &basal_melt_rate) {
 
-	IceModelVec::AccessList list{ &mask, &basal_melt_rate };
+  IceModelVec::AccessList list{&cell_type, &basal_melt_rate};
 
-	for (Points p(*m_grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
 
-		const int i = p.i(), j = p.j();
+    const int i = p.i(), j = p.j();
 
-		bool potential_partially_filled_cell =
-			((mask.as_int(i, j) == MASK_GROUNDED or mask.as_int(i, j) == MASK_ICE_FREE_OCEAN ) and
-			 (mask.as_int(i-1, j) == MASK_FLOATING or mask.as_int(i+1, j) == MASK_FLOATING or
-			  mask.as_int(i, j-1) == MASK_FLOATING or mask.as_int(i, j+1) == MASK_FLOATING or
-			  mask.as_int(i-1, j-1) == MASK_FLOATING or mask.as_int(i-1, j+1) == MASK_FLOATING or
-			  mask.as_int(i+1, j-1) == MASK_FLOATING or mask.as_int(i+1, j+1) == MASK_FLOATING) );
+    auto M = cell_type.int_box(i, j);
 
-		if (potential_partially_filled_cell){
-			double melt_average = 0.0;
-			int N = 0;
+    bool potential_partially_filled_cell =
+      ((M.ij == MASK_GROUNDED or M.ij == MASK_ICE_FREE_OCEAN) and
+       (M.w  == MASK_FLOATING or M.e == MASK_FLOATING or M.s == MASK_FLOATING or M.n == MASK_FLOATING or
+        M.sw == MASK_FLOATING or M.nw == MASK_FLOATING or M.se == MASK_FLOATING or M.ne == MASK_FLOATING) );
 
-			if (mask.as_int(i-1,j) == MASK_FLOATING) { melt_average += basal_melt_rate(i-1,j); N++; }
-			if (mask.as_int(i,j-1) == MASK_FLOATING) { melt_average += basal_melt_rate(i,j-1); N++; }
-			if (mask.as_int(i+1,j) == MASK_FLOATING) { melt_average += basal_melt_rate(i+1,j); N++; }
-			if (mask.as_int(i,j+1) == MASK_FLOATING) { melt_average += basal_melt_rate(i,j+1); N++; }
-			if (mask.as_int(i-1,j-1) == MASK_FLOATING) { melt_average += basal_melt_rate(i-1,j-1); N++; }
-			if (mask.as_int(i+1,j-1) == MASK_FLOATING) { melt_average += basal_melt_rate(i+1,j-1); N++; }
-			if (mask.as_int(i-1,j+1) == MASK_FLOATING) { melt_average += basal_melt_rate(i-1,j+1); N++; }
-			if (mask.as_int(i+1,j+1) == MASK_FLOATING) { melt_average += basal_melt_rate(i+1,j+1); N++; }
+    if (potential_partially_filled_cell) {
+      auto BMR = basal_melt_rate.box(i, j);
 
-			if (N != 0) { // If there are floating neigbors, return average melt rates
-				basal_melt_rate(i, j) = melt_average / N;
-			}
-		}
+      int N = 0;
+      double melt_sum = 0.0;
 
-	}
+      melt_sum += M.nw == MASK_FLOATING ? (++N, BMR.nw) : 0.0;
+      melt_sum += M.n  == MASK_FLOATING ? (++N, BMR.n)  : 0.0;
+      melt_sum += M.ne == MASK_FLOATING ? (++N, BMR.ne) : 0.0;
+      melt_sum += M.e  == MASK_FLOATING ? (++N, BMR.e)  : 0.0;
+      melt_sum += M.se == MASK_FLOATING ? (++N, BMR.se) : 0.0;
+      melt_sum += M.s  == MASK_FLOATING ? (++N, BMR.s)  : 0.0;
+      melt_sum += M.sw == MASK_FLOATING ? (++N, BMR.sw) : 0.0;
+      melt_sum += M.w  == MASK_FLOATING ? (++N, BMR.w)  : 0.0;
+
+      if (N != 0) { // If there are floating neigbors, return average melt rates
+        basal_melt_rate(i, j) = melt_sum / N;
+      }
+    }
+  } // end of the loop over grid points
 }
 
 
