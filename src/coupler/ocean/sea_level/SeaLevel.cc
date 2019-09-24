@@ -166,8 +166,9 @@ protected:
 
     const IceModelVec2S &sl  = model->elevation(),
                         &bed = *m_grid->variables().get_2d_scalar("bedrock_altitude"),
-                        &thk = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-    IceModelVec::AccessList list{ &sl, &bed, &thk };
+                        &thk = *m_grid->variables().get_2d_scalar("land_ice_thickness"),
+                        &ll = *m_grid->variables().get_2d_scalar("lake_level");
+    IceModelVec::AccessList list{ &sl, &bed, &thk, &ll };
     list.add(*result);
 
     GeometryCalculator gc(*m_config);
@@ -175,7 +176,7 @@ protected:
     for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask::ocean(gc.mask(sl(i, j), bed(i,j), thk(i, j)))) {
+    if ( (mask::ocean(gc.mask(sl(i, j), bed(i,j), thk(i, j)))) and not (mask::ocean(gc.mask(m_fill_value, bed(i,j), thk(i, j), ll(i, j)))) ) {
       (*result)(i, j) = sl(i, j) - bed(i, j);
     } else {
       (*result)(i, j) = m_fill_value;
