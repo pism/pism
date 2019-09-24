@@ -1,44 +1,46 @@
 .. include:: ../global.txt
 
+.. default-role:: literal
+
 How do I...?
 ============
-
-.. default-role:: literal
 
 .. contents::
 
 Create and use configuration flags and parameters
 -------------------------------------------------
 
-- Edit |config-cdl|. Each flag or parameter is stored as a NetCDF attribute and
-  should have a corresponding "_doc" attribute describing its meaning.
+- Edit |config-cdl|. Each flag or parameter is stored as a NetCDF attribute and should
+  have a corresponding "`_doc`" attribute describing its meaning and the "`_type`"
+  defining the type. All scalar parameters have to have "`_units`" set as well.
 
 .. code-block:: none
 
-   pism_config:standard_gravity = 9.81;
-   pism_config:standard_gravity_doc = "m s-2; acceleration due to gravity on Earth geoid";
+   pism_config:constants.standard_gravity = 9.81;
+   pism_config:constants.standard_gravity_doc = "acceleration due to gravity on Earth geoid";
+   pism_config:constants.standard_gravity_type = "scalar";
+   pism_config:constants.standard_gravity_units = "meter second-2";
 
-- One can access these parameters using the `Config` class. `IceModel`\ [#]_ has an
-  instance of this class as a data member `m_config`, so no additional code is necessary to
-  initialize the configuration database.
+- One can access these parameters using the `Config` class. `IceModel` and all classes
+  derived from `Component` have an pointer to an instance of this class as a data member
+  `m_config`, so no additional code is necessary to initialize the configuration database.
 
-To use a parameter, do
+To use a scalar parameter, do
 
 .. code-block:: c++
 
-   double g = m_config->get_double("standard_gravity");
+   double g = m_config->get_double("constants.standard_gravity");
 
 To use a flag, do
 
 .. code-block:: c++
 
-   bool compute_age = config->get_boolean("do_age");
+   bool compute_age = config->get_boolean("age.enabled");
 
 .. note::
 
-   - It is a good idea to avoid calling `m_config->get_double()` and
-     `m_config->get_boolean()` from within loops: looking up a parameter by its name is
-     slow.
+   - It is best to avoid calling `m_config->get_...()` from within loops: looking up a
+     parameter by its name is slow.
    - Please see :ref:`sec-parameter-list` for a list of flags and parameters currently
      used in PISM.
 
@@ -61,31 +63,25 @@ PISM uses the following classes to manage 2D and 3D fields, their I/O and metada
    * - `IceModelVec2T`
      - 2D time-dependent fields (used to read and store forcing data)
    * - `IceModelVec3`
-     - scalar 3D fields (within the ice)
+     - scalar 3D fields (usually within the ice)
 
 Please see the documentation of these classes for more info. The base class `IceModelVec` is
-a virtual class, so code should use the above derived classes. Only the derived classes
-have `create()` methods, in particular.
+a virtual class, so code should use the above derived classes.
 
-To create a scalar field, for example, one needs to create an instance of one of the
-classes listed above and then call "create" to allocate it.
+To create a scalar field, for example, one needs to create an instance of `IceModelVec2S`
+and then set its metadata:
 
 .. code-block:: c++
 
    // land ice thickness
-   ice_thickness.create(grid, "thk", WITH_GHOSTS, 2);
+   IceModelVec2S ice_thickness(grid, "thk", WITH_GHOSTS, 2);
    ice_thickness.set_attrs("model_state", "land ice thickness",
                            "m", "land_ice_thickness");
    ice_thickness.metadata().set_double("valid_min", 0.0);
 
 Here `grid` is an `IceGrid` instance, `thk` is the name of the NetCDF variable,
 `WITH_GHOSTS` means that storage for "ghost" ("halo") points will be allocated, and "2" is
-the number of ghosts (in other words: needed stencil width).
-
-The `IceModelVec` destructor takes care of undoing all that's done by the `create()` call.
-Therefore you don't need to explicitly de-allocate variables unless you dynamically
-created the `IceModelVec` (or derived) instance using the C++ "`new`" operator. (In which
-case "`delete`" should be used.)
+the number of ghosts (in other words: required stencil width).
 
 The `IceModelVec::set_attrs()` call sets commonly used NetCDF variable attributes seen in
 PISM output files:
@@ -93,21 +89,22 @@ PISM output files:
 .. list-table::
 
    * - `pism_intent`
-     - the only important case is "model_state", see below
+     - variables that are a part of the model state of a sub-model should have
+       `pism_intent` set to "model_state"
    * - `long_name`
      - the (descriptive) long name used for plotting, etc (a free-form string)
    * - `units`
-     - units used *in the code*. Does not have to match units in a file
+     - units used *in the code*; does not have to match units in a file.
    * - `standard_name`
      - CF standard name, if defined, or an empty string.
 
-The third call above `ice_thickness.metadata()` allows accessing variable metadata and
-adding arbitrary named attributes. See `VariableMetadata` for details.
+The `ice_thickness.metadata()` call above allows accessing variable metadata and
+adding arbitrary attributes. See `VariableMetadata` for details.
 
 The CF convention covers some attribute semantics, including `valid_min` in this example.
 
 PISM will automatically convert units from ones present in an input file into internal
-units defines by the `set_attrs()` call (see above).
+units defines by the `set_attrs()` call above.
 
 If you want PISM to save data in units other than internal ones, first set these
 "glaciological" units:
@@ -121,257 +118,83 @@ Read data from a file
 
 There are at least three cases of "reading data from a file":
 
-- reading a field stored in an input file on a grid matching the one used by the current
-  run (restarting a run) and
-- reading a field stored in an input file on a different grid, interpolating onto the
-  current grid (bootstrapping).
-- reading a field stored in a file **other** than the input file using interpolation
-  (assuming that grids are compatible but not identical)
+1. reading a field stored in an input file on a grid matching the one used by the current
+   run (restarting a run),
+2. reading a field stored in an input file on a different grid, interpolating onto the
+   current grid (bootstrapping), and
+3. reading a field stored in a file **other** than the input file using interpolation
+   (assuming that grids are compatible but not identical)
 
-FIXME
+.. code-block:: c++
+
+   // case 1, using a file name
+   unsigned int time = 0;
+   std::string filename = "filename.nc";
+   ice_thickness.read(filename, time);
+
+   // case 1, using an existing PIO instance (file is already open)
+   PIO file(communicator, "guess_mode", filename, PISM_READONLY);
+   ice_thickness.read(file, time);
+
+   RegriddingFlag flag = OPTIONAL;
+   double default_value = 0.0;
+   // cases 2 and 3 (interpolation)
+   ice_thickness.regrid(filename, flag, default_value);
+
+   // cases 2 and 3 (interpolation) using an existing PIO instance
+   ice_thickness.regrid(file, flag, default_value);
+
+When interpolating ("regridding") a field, the ``flag`` specifies whether a variable is
+required (``flag`` is ``CRITICAL`` or ``CRITICAL_FILL_MISSING``) or optional (``flag`` is
+``OPTIONAL`` or ``OPTIONAL_FILL_MISSING``). PISM will stop with an error message if a
+required variable is not found in an input file.
+
+Flag values of ``CRITICAL_FILL_MISSING`` and ``OPTIONAL_FILL_MISSING`` replaces "missing"
+values matching the ``_FillValue`` attribute by the default value.
+
+If ``flag`` is ``OPTIONAL`` or ``OPTIONAL_FILL_MISSING`` PISM will fill the variable with
+``default_value`` if it was not found in the file.
 
 Write data to a file
 --------------------
 
-To write a field stored in an `IceModelVec` to an already "prepared" file, just call
+`IceModelVec::define()` will define all spatial dimensions used by a variable. However, we
+usually need to "prepare" a file by defining the time dimension and appending a value to
+the time variable.
 
 .. code-block:: c++
 
-   precip.write(filename);
+   PIO file(m_grid->com, m_config->get_string("output.format"),
+            filename, PISM_READWRITE_CLOBBER);
 
-The file referred to by "filename" here has to have the time "time" dimension created,
-that is, it must be prepared (other dimensions are created automatically, if needed). No
-action is needed to be able to write to an output ("-o") file, a snapshot file or the
-like; IceModel has already prepared it.
+   io::define_time(file, *m_grid->ctx());
+   io::append_time(file, *m_grid->ctx()->config(), current_time);
 
-If you do need to "prepare" a file, do:
+When a file is opened with the mode `PISM_READWRITE_CLOBBER`, PISM checks if this file is
+present overwrites if it is; to append to an existing file, use `PISM_READWRITE`. To move
+the file aside (appending "`~`" to the file name), use `PISM_READWRITE_MOVE`.
 
-.. code-block:: c++
+A newly-created file is "empty" and contains no records. The `io::append_time()` call
+creates a record corresponding to the `current_time` (in seconds).
 
-   PIO nc(grid.com, grid.config.get_string("output_format"));
-
-   std::string time_name = config.get_string("time_dimension_name");
-   nc.open(filename, PISM_WRITE); // append == false
-   nc.def_time(time_name, grid.time->calendar(),
-               grid.time->CF_units_string());
-   nc.append_time(time_name, grid.time->current());
-   nc.close();
-
-When a file is opened with the `PISM_WRITE` mode, PISM checks if this file is present and
-moves it aside if it is; to append to an existing file, use
+To write a field to an already "prepared" file, call
 
 .. code-block:: c++
 
-   nc.open(filename, PISM_WRITE, true); // append == true
+   precip.write("filename.nc");
+   // or, if the file is already open and a PIO instance is available:
 
-A newly-created file is "empty" and contains no records. The `nc.append_time()` call
-creates a record corresponding to a particular model year.
-
-Create IceModelVec instances that are data members of a class
--------------------------------------------------------------
-
-To add a new variable to IceModel, allocate it in the createVecs() method.
-
-If `pism_intent` is set to `model_state` and a variable is added to the "variables"
-dictionary (see PISMVars), IceModel will automatically read this variable from a file it
-is re-starting from and will always write it to an output, snapshot and backup files.
-
-.. code-block:: c++
-
-   variables.add(ice_thickness);
+   precip.write.(file);
 
 Read scalar forcing data
 ------------------------
 
-PISM uses instances of the `Timeseries` class to read scalar forcing data; please see
-`PA_delta_T` for an example.
+PISM uses instances of the `ScalarForcing` class to read scalar forcing data; please see
+`pism::surface::Delta_T` for an example.
 
-The following snippet illustrates creating a `Timeseries` instance and reading data from a
-file.
-
-.. code-block:: c++
-
-   std::string offset_name = "delta_T";
-
-   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
-   offset->set_string("units", "Kelvin");
-   offset->set_dimension_units(grid.time->units_string(), "");
-
-   verbPrintf(2, g.com,
-              "  reading %s data from forcing file %s...\n",
-              offset->short_name.c_str(), filename.c_str());
-
-   PIO nc(g.com, "netcdf3", grid.get_unit_system());
-   nc.open(filename, PISM_NOWRITE);
-   {
-     offset->read(nc, grid.time);
-   }
-   nc.close();
-
-   // use offset
-
-   delete offset; // when done
-
-
-To use `offset`, call
-
-.. code-block:: c++
-
-   double data = (*offset)(time);
-
-to get the value corresponding to the time `time` in seconds. The value returned will be
-computed using linear interpolation.
 
 Read 2D forcing fields
 ----------------------
 
 PISM uses instances of the `IceModelVec2T` class to read 2D forcing fields that
-vary in time; please see PSDirectForcing for an example.
-
-The following snippet from PSDirectForcing::init() illustrates creating an
-IceModelVec2T object and reading data from a file.
-
-.. code-block:: c++
-
-   IceModelVec2T temperature;
-   temperature.set_n_records((unsigned int) config.get_double("climate_forcing_buffer_size"));
-   temperature.create(grid, "artm", WITHOUT_GHOSTS);
-   temperature.set_attrs("climate_forcing",
-                         "temperature of the ice at the ice surface but below firn processes",
-                         "Kelvin", "");
-   temperature.init(filename);
-
-
-@section using_vars Using fields managed by IceModel in a surface model to implement a parameterization
-
-Please see PA_SeaRISE_Greenland::init() and PA_SeaRISE_Greenland::update() for an example.
-
-@section writing_components Managing I/O in a PISMComponent derived class
-
-A PISM component needs to implement the following I/O methods:
-
-- init(). It is not an I/O method per se, but most PISM components
-  read their input fields there; see PA_SeaRISE_Greenland::init().
-- add_vars_to_output(), which adds variable names to the list of
-  fields that need to be written. See
-  PSTemperatureIndex::add_vars_to_output_impl() for an example.
-- define_variables(), which defines variables. (See
-  PSTemperatureIndex::define_variables().)
-- write_variables(), which writes data; see
-  PSTemperatureIndex::write_variables().
-
-Why are all these methods needed? In PISM we separate defining and writing NetCDF
-variables because defining all the NetCDF variables before writing data is a lot faster
-than defining a variable, writing it, defining the second variable, etc. (See `The NetCDF
-Users' Guide <netcdf-classic-format_>`_ for a technical explanation.)
-
-Within `IceModel` the following steps are done to write 2D and 3D fields to an
-output file:
-
-- Assemble the list of variables to be written (see
-  IceModel::set_output_size()); calls add_vars_to_output()
-- Create a NetCDF file
-- Define all the variables in the file (see IceModel::write_variables());
-  calls define_variables()
-- Write all the variables to the file (same method); calls write_variables().
-
-Add a new "diagnostic" quantity to an atmosphere model
-------------------------------------------------------
-
-To add a new "diagnostic" quantity (i.e. a 2D or 3D field that needs to be saved to an
-output file but is not permanently stored in memory and is computed on demand), do the
-following.
-
-Create the class implementing the diagnostic
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Assuming that PA_foo is the atmosphere model we're working with and "bar" is
-the name of the new quantity, we need to add this code
-
-.. code-block:: c++
-
-   class PA_foo_bar : public PISMDiag<PA_foo>
-   {
-   public:
-     PA_foo_bar(PA_foo *m, IceGrid &g, PISMVars &my_vars);
-     virtual IceModelVec::Ptr compute();
-   };
-
-to a header (`.hh`) file and implement it in a `.cc` file.
-
-See `IceModel_diagnostics.cc` for examples. Generally speaking, in every class
-implementing a "diagnostic" quantity
-
-- the constructor sets metadata
-- you have access to a data member "var" of an atmosphere model as
-  "model->var"; you might need to add
-
-.. code-block:: c++
-
-   friend class PA_foo_bar;
-
-to the definition of PA_foo if you need to access a private data member (see the
-definition of IceModel for one example).
-
-- when working with atmosphere models and other classes derived from PISMComponent, you
-  can access the config database as "model->config".
-- the `PISMDiagnostic::compute()` method allocates memory and performs the computation.
-- to use a field managed by IceModel, use "variables":
-
-.. code-block:: c++
-
-   const IceModelVec2S *surface = variables.get_2d_scalar("surface_altitude");
-
-- the **caller** of the `PISMDiagnostic::compute()` method has to de-allocate the field
-  returned by `PISMDiagnostic::compute()`
-
-Note that in almost every (current) implementation of `PISMDiagnostic::compute()` you see
-
-.. code-block:: c++
-
-   IceModelVec::Ptr ...::compute() {
-     const PetscScalar fillval = -0.01;
-
-     <...>
-
-     // 1
-     IceModelVec2S::Ptr result(new IceModelVec2S);
-     result->create(grid, "hardav", WITHOUT_GHOSTS);
-     result->metadata(0) = m_vars[0];
-
-     <...>
-
-     // 2
-     return result;
-   }
-
-
-The block marked "1" allocates a 2D field and copies metadata stored in `m_vars[0]`, while
-the block marked "2" returns a pointer to a 2D field, which gets cast to a pointer to a
-"generic" field.
-
-This allows us to have the same interface for both 2D and 3D diagnostics.
-
-"Register" the new diagnostic.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-To make the new diagnostic field available (i.e. to be able to use the new `PA_foo_bar`
-class), implement `PA_foo::diagnostics_impl()` or `PA_foo::ts_diagnostics_impl()`.
-
-.. code-block:: c++
-
-   std::map<std::string, Diagnostic::Ptr> PA_foo_bar::diagnostics_impl() const {
-     return {{"name", Diagnostic::Ptr(new PA_foo_bar(this))}};
-   }
-
-Note that if you are implementing this method in a "modifier" of a surface model, you need
-to remember to call
-
-.. code-block:: c++
-
-   input_model->diagnostics();
-
-.. rubric:: Footnotes
-
-.. [#] And all classes derived from `Component`.
-
+vary in time; please see `pism::surface::Given` for an example.
