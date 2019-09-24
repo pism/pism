@@ -93,7 +93,7 @@ Gradual::Gradual(IceGrid::ConstPtr grid,
   m_lake_fill_rate.metadata().set_double("_FillValue", m_fill_value);
   m_lake_fill_rate.metadata().set_string("glaciological_units", "m year-1");
 
-  m_alpha_lake = m_config->get_double("constants.fresh_water.density") / m_config->get_double("constants.ice.density");
+  m_alpha_lake = m_config->get_double("constants.ice.density") / m_config->get_double("constants.fresh_water.density");
 
   m_init_lakes_filled = false;
 }
