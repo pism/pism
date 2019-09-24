@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2015, 2017, 2018 The PISM Authors
+# Copyright (C) 2009-2015, 2017, 2018, 2019 The PISM Authors
 
 # PISM Greenland spinup using either constant present-day climate or modeled
 # paleoclimate.  See README.md.
@@ -294,7 +294,7 @@ else
 fi
 
 # show remaining setup options:
-PISM="${PISM_BIN}${PISM_EXEC}"
+PISM="${PISM_BIN}/${PISM_EXEC}"
 echo "$SCRIPTNAME      executable = '$PISM'"
 echo "$SCRIPTNAME         coupler = '$COUPLER'"
 echo "$SCRIPTNAME        dynamics = '$PHYS'"
