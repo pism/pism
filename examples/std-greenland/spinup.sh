@@ -244,7 +244,7 @@ fi
 if [ -n "${PISM_BIN:+1}" ] ; then  # check if env var is already set
   echo "$SCRIPTNAME     PISM_BIN = $PISM_BIN  (already set)"
 else
-  PISM_BIN=""    # just a guess
+  PISM_BIN="."    # just a guess
   echo "$SCRIPTNAME     PISM_BIN = $PISM_BIN"
 fi
 
