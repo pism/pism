@@ -445,7 +445,7 @@ void Gradual::gradually_fill(const double dt,
           if (mask::ocean(gc.mask(sea_level(i, j), bed(i, j), thk(i, j)))) {
             target_ij = sea_level(i, j);
           } else {
-            if (mask::ocean(gc.mask(sea_level(i, j), current_ij, bed(i, j), thk(i, j)))) {
+            if (mask::ocean(gc.mask(sea_level(i, j), bed(i, j), thk(i, j), current_ij))) {
               // if "real" lake, gradually empty it to floatation level
               target_ij = bed(i, j) + m_alpha_lake * thk(i, j);
             } else {
