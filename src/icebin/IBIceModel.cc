@@ -6,6 +6,7 @@
 #include <base/util/io/PIO.hh>
 #include <base/util/io/io_helpers.hh>
 #include <base/util/Mask.hh>
+#include <earth/PISMBedDef.hh>
 
 #include <icebin/IBIceModel.hh>
 #include <icebin/IBSurfaceModel.hh>
@@ -350,13 +351,13 @@ void IBIceModel::prepare_outputs(double time_s) {
           elevmask_land(i,j) = ice_surface_elevation(i,j);
         break;
         case MASK_ICE_FREE_BEDROCK:
-          elevmask_ice(i,j) = nan;
+          elevmask_ice(i,j) = NaN;
           elevmask_land(i,j) = ice_surface_elevation(i,j);
         break;
         case MASK_ICE_FREE_OCEAN:
-        case IceMask::UNKNOWN :
-          elevmask_ice(i,j) = nan;
-          elevmask_land(i,j) = nan;
+        case MASK_UNKNOWN :
+          elevmask_ice(i,j) = NaN;
+          elevmask_land(i,j) = NaN;
         break;
       }
     }
