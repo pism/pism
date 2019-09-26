@@ -472,7 +472,7 @@ void LingleClarkSerial::compute_elastic_response(Vec H, Vec dE) {
   }
 
   fftw_execute(m_dft_inverse);
-  get_fftw_output(m_Ue, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, m_Nx/2, m_Ny/2);
+  get_fftw_output(dE, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, m_Nx/2, m_Ny/2);
 }
 
 /*! Compute total displacement by combining viscous and elastic contributions.
