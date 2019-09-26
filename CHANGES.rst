@@ -19,6 +19,16 @@ Changes from v1.1.4 to v1.1.5
   floating ice. This makes PICO compatible with `geometry.grounded_cell_fraction` and
   `energy.basal_melt.use_grounded_cell_fraction` (see command-line option
   `-subgl_basal_melt`).
+- Fix the implementation of the elastic part of the Lingle-Clark bed deformation model.
+  See `issue 424`_. To update this model we need to compute the discrete convolution of
+  current load with the load response matrix (the discrete equivalent of computing the
+  convolution of the load with the Green's function).
+
+  The load response matrix itself is approximated using quadrature and a one-dimensional
+  interpolant for the tabulated Green's function.
+
+  The old code used a "naive" implementation of the discrete convolution which was *both*
+  slow and broken. The new implementation uses FFT to compute the discrete convolution.
 
 Changes from v1.1.3 to v1.1.4
 =============================
@@ -627,6 +637,7 @@ Miscellaneous
 .. _issue 363: https://github.com/pism/pism/issues/363
 .. _issue 409: https://github.com/pism/pism/issues/409
 .. _issue 422: https://github.com/pism/pism/issues/422
+.. _issue 424: https://github.com/pism/pism/issues/424
 .. _ocean models: http://pism-docs.org/sphinx/climate_forcing/ocean.html
 ..
    Local Variables:
