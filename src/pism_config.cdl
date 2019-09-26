@@ -375,7 +375,7 @@ netcdf pism_config {
     pism_config:basal_yield_stress.slippery_grounding_lines_option = "tauc_slippery_grounding_lines";
     pism_config:basal_yield_stress.slippery_grounding_lines_type = "boolean";
 
-    pism_config:bed_deformation.lc.elastic_model = "no";
+    pism_config:bed_deformation.lc.elastic_model = "yes";
     pism_config:bed_deformation.lc.elastic_model_doc = "Use the elastic part of the Lingle-Clark bed deformation model.";
     pism_config:bed_deformation.lc.elastic_model_option = "bed_def_lc_elastic_model";
     pism_config:bed_deformation.lc.elastic_model_type = "boolean";

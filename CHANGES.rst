@@ -70,6 +70,11 @@ Changes since v1.1
   convolution to `scipy.signal.fftconvolve()` and b) compare PISM's load response matrix
   to an independent implementation using `scipy.integrate.dblquad()` (instead of
   `adapt_integrate()` by Steven G. Johnson).
+- The configuration parameter `bed_deformation.lc.elastic_model` is set to "on" by
+  default. This means that now `-bed_def lc` enables *both* the elastic and the viscous
+  part of the Lingle-Clark model. In previous PISM versions `-bed_def lc` turned on the
+  viscous part of the model and an extra command-line option (`-bed_def_lc_elastic_model`)
+  was required to turn on the elastic part.
 
 Changes from v1.0 to v1.1
 =========================
