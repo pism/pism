@@ -303,6 +303,8 @@ void IceModel::write_extras() {
       io::define_time(file, *m_ctx);
       file.put_att_text(time_name, "bounds", "time_bounds");
 
+      io::define_time_bounds(m_extra_bounds, file);
+
       write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
       m_extra_file_is_ready = true;

@@ -156,6 +156,8 @@ public:
   void move_if_exists(const std::string &filename, int rank_to_use = 0);
   void remove_if_exists(const std::string &filename, int rank_to_use = 0);
 
+  void del_att(const std::string &variable_name, const std::string &att_name) const;
+
 protected:
   // implementations:
 
@@ -249,6 +251,8 @@ protected:
   virtual int integer_open_mode(IO_Mode input) const = 0;
 
   std::string get_filename_impl() const;
+
+  virtual int del_att_impl(const std::string &variable_name, const std::string &att_name) const = 0;
 
 protected:
   // internal:

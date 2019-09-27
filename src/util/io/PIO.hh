@@ -129,6 +129,8 @@ public:
                        const double *op) const;
 
   std::string backend_type() const;
+
+  void del_att(const std::string &variable_name, const std::string &att_name) const;
 private:
   struct Impl;
   Impl *m_impl;

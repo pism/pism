@@ -174,6 +174,7 @@ void NCFile::redef() const {
 }
 
 void NCFile::def_dim(const std::string &name, size_t length) const {
+  redef();
   int stat = this->def_dim_impl(name,length); check(PISM_ERROR_LOCATION, stat);
 }
 
@@ -212,6 +213,7 @@ void NCFile::get_vara_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,
                             const std::vector<unsigned int> &count,
                             double *ip) const {
+  enddef();
   int stat = this->get_vara_double_impl(variable_name, start, count, ip); check(PISM_ERROR_LOCATION, stat);
 }
 
@@ -219,6 +221,7 @@ void NCFile::put_vara_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,
                             const std::vector<unsigned int> &count,
                             const double *op) const {
+  enddef();
   int stat = this->put_vara_double_impl(variable_name, start, count, op); check(PISM_ERROR_LOCATION, stat);
 }
 
@@ -227,6 +230,7 @@ void NCFile::get_varm_double(const std::string &variable_name,
                             const std::vector<unsigned int> &count,
                             const std::vector<unsigned int> &imap,
                             double *ip) const {
+  enddef();
   int stat = this->get_varm_double_impl(variable_name, start, count, imap, ip); check(PISM_ERROR_LOCATION, stat);
 }
 
@@ -235,6 +239,7 @@ void NCFile::put_varm_double(const std::string &variable_name,
                             const std::vector<unsigned int> &count,
                             const std::vector<unsigned int> &imap,
                             const double *op) const {
+  enddef();
   int stat = this->put_varm_double_impl(variable_name, start, count, imap, op); check(PISM_ERROR_LOCATION, stat);
 }
 
@@ -300,6 +305,10 @@ void NCFile::move_if_exists(const std::string &filename, int rank_to_use) {
 
 void NCFile::remove_if_exists(const std::string &filename, int rank_to_use) {
   int stat = this->remove_if_exists_impl(filename, rank_to_use); check(PISM_ERROR_LOCATION, stat);
+}
+
+void NCFile::del_att(const std::string &variable_name, const std::string &att_name) const {
+  int stat = this->del_att_impl(variable_name, att_name); check(PISM_ERROR_LOCATION, stat);
 }
 
 } // end of namespace io

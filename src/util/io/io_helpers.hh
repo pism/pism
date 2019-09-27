@@ -88,7 +88,7 @@ void define_timeseries(const TimeseriesMetadata& var,
                        const PIO &nc, IO_Type nctype);
 
 void define_time_bounds(const TimeBoundsMetadata& var,
-                        const PIO &nc, IO_Type nctype);
+                        const PIO &nc, IO_Type nctype = PISM_DOUBLE);
 
 void read_timeseries(const PIO &nc, const TimeseriesMetadata &metadata,
                      const Time &time, const Logger &log, std::vector<double> &data);

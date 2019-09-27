@@ -205,8 +205,6 @@ void NetCDFConfig::write_impl(const PIO &nc) const {
   bool variable_exists = nc.inq_var(m_data.get_name());
 
   if (not variable_exists) {
-    nc.redef();
-
     nc.def_var(m_data.get_name(),
                PISM_BYTE, std::vector<std::string>());
 

@@ -434,11 +434,23 @@ int PNCFile::get_att_text_impl(const std::string &variable_name, const std::stri
   return 0;
 }
 
+int PNCFile::del_att_impl(const std::string &variable_name, const std::string &att_name) const {
+  int stat, varid = -1;
+
+  if (variable_name == "PISM_GLOBAL") {
+    varid = NC_GLOBAL;
+  } else {
+    stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
+  }
+
+  // Now read the string and see if we succeeded:
+  stat = ncmpi_del_att(m_file_id, varid, att_name.c_str()); check(PISM_ERROR_LOCATION, stat);
+
+  return 0;
+}
 
 int PNCFile::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, const std::vector<double> &data) const {
   int stat = 0;
-
-  redef();
 
   int varid = -1;
 
@@ -457,8 +469,6 @@ int PNCFile::put_att_double_impl(const std::string &variable_name, const std::st
 
 int PNCFile::put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
   int stat = 0, varid = -1;
-
-  redef();
 
   if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;

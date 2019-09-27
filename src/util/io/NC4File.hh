@@ -110,6 +110,8 @@ protected:
   virtual int set_fill_impl(int fillmode, int &old_modep) const;
 
   virtual std::string get_format_impl() const;
+
+  virtual int del_att_impl(const std::string &variable_name, const std::string &att_name) const;
 protected:
   virtual int set_access_mode(int varid, bool mapped) const;
   virtual int get_put_var_double(const std::string &variable_name,

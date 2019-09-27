@@ -870,8 +870,6 @@ int NC3File::put_att_double_impl(const std::string &variable_name, const std::st
                                IO_Type nctype, const std::vector<double> &data) const {
   int stat = 0;
 
-  redef();
-
   if (m_rank == 0) {
     int varid = -1;
 
@@ -900,8 +898,6 @@ int NC3File::put_att_double_impl(const std::string &variable_name, const std::st
 int NC3File::put_att_text_impl(const std::string &variable_name, const std::string &att_name,
                                const std::string &value) const {
   int stat = 0;
-
-  redef();
 
   if (m_rank == 0) {
     int varid = -1;
@@ -1018,6 +1014,27 @@ std::string NC3File::get_format_impl() const {
   default:
     return "netcdf4";
   }
+}
+
+int NC3File::del_att_impl(const std::string &variable_name, const std::string &att_name) const {
+  int stat = 0;
+
+  if (m_rank == 0) {
+    int varid = -1;
+
+    if (variable_name == "PISM_GLOBAL") {
+      varid = NC_GLOBAL;
+    } else {
+      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
+    }
+
+    stat = nc_del_att(m_file_id, varid, att_name.c_str()); check(PISM_ERROR_LOCATION, stat);
+  }
+
+  MPI_Barrier(m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
+
+  return stat;
 }
 
 } // end of namespace io

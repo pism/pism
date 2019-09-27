@@ -200,6 +200,14 @@ void PIO::open(const string &filename, IO_Mode mode) {
   }
 }
 
+void PIO::del_att(const std::string &variable_name, const std::string &att_name) const {
+  try {
+    m_impl->nc->del_att(variable_name, att_name);
+  } catch (RuntimeError &e) {
+    e.add_context("deleting the attribute %s:%s", variable_name.c_str(), att_name.c_str());
+    throw;
+  }
+}
 
 void PIO::close() {
   try {
@@ -583,7 +591,6 @@ void PIO::append_history(const string &history) const {
 void PIO::put_att_double(const string &var_name, const string &att_name, IO_Type nctype,
                          const vector<double> &values) const {
   try {
-    m_impl->nc->redef();
     m_impl->nc->put_att_double(var_name, att_name, nctype, values);
   } catch (RuntimeError &e) {
     e.add_context("writing double attribute '%s:%s' in '%s'",
@@ -605,8 +612,6 @@ void PIO::put_att_double(const string &var_name, const string &att_name, IO_Type
 void PIO::put_att_text(const string &var_name, const string &att_name,
                        const string &value) const {
   try {
-    m_impl->nc->redef();
-
     string tmp = value + "\0";    // ensure that the string is null-terminated
 
     m_impl->nc->put_att_text(var_name, att_name, tmp);
@@ -698,7 +703,6 @@ void PIO::get_vara_double(const string &variable_name,
                           const vector<unsigned int> &count,
                           double *ip) const {
   try {
-    m_impl->nc->enddef();
     m_impl->nc->get_vara_double(variable_name, start, count, ip);
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' from '%s'", variable_name.c_str(), inq_filename().c_str());
@@ -712,7 +716,6 @@ void PIO::put_vara_double(const string &variable_name,
                           const vector<unsigned int> &count,
                           const double *op) const {
   try {
-    m_impl->nc->enddef();
     m_impl->nc->put_vara_double(variable_name, start, count, op);
   } catch (RuntimeError &e) {
     e.add_context("writing variable '%s' to '%s'", variable_name.c_str(), inq_filename().c_str());
@@ -725,7 +728,6 @@ void PIO::get_varm_double(const string &variable_name,
                           const vector<unsigned int> &count,
                           const vector<unsigned int> &imap, double *ip) const {
   try {
-    m_impl->nc->enddef();
     m_impl->nc->get_varm_double(variable_name, start, count, imap, ip);
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' from '%s'", variable_name.c_str(), inq_filename().c_str());
@@ -739,7 +741,6 @@ void PIO::put_varm_double(const string &variable_name,
                           const vector<unsigned int> &imap,
                           const double *op) const {
   try {
-    m_impl->nc->enddef();
     m_impl->nc->put_varm_double(variable_name, start, count, imap, op);
   } catch (RuntimeError &e) {
     e.add_context("writing variable '%s' to '%s'", variable_name.c_str(), inq_filename().c_str());

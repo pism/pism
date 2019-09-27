@@ -148,7 +148,6 @@ void IceModel::write_mapping(const PIO &file) {
   std::string name = mapping.get_name();
   if (mapping.has_attributes()) {
     if (not file.inq_var(name)) {
-      file.redef();
       file.def_var(name, PISM_DOUBLE, {});
     }
     io::write_attributes(file, mapping, PISM_DOUBLE);
@@ -164,7 +163,6 @@ void IceModel::write_mapping(const PIO &file) {
 void IceModel::write_run_stats(const PIO &file) {
   update_run_stats();
   if (not file.inq_var(m_run_stats.get_name())) {
-    file.redef();
     file.def_var(m_run_stats.get_name(), PISM_DOUBLE, {});
   }
   io::write_attributes(file, m_run_stats, PISM_DOUBLE);

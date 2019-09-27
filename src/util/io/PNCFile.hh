@@ -123,6 +123,8 @@ protected:
 
   virtual std::string get_format_impl() const;
 
+  virtual int del_att_impl(const std::string &variable_name, const std::string &att_name) const;
+
 private:
   std::vector<std::string> mpi_io_hints;
   virtual int integer_open_mode(IO_Mode input) const;
