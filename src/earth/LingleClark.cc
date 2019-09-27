@@ -32,8 +32,12 @@
 namespace pism {
 namespace bed {
 
-LingleClark::LingleClark(IceGrid::ConstPtr g)
-  : BedDef(g), m_load_thickness(g, "load_thickness", WITHOUT_GHOSTS) {
+LingleClark::LingleClark(IceGrid::ConstPtr grid)
+  : BedDef(grid),
+    m_total_displacement(m_grid, "bed_displacement", WITHOUT_GHOSTS),
+    m_relief(m_grid, "bed_relief", WITHOUT_GHOSTS),
+    m_load_thickness(grid, "load_thickness", WITHOUT_GHOSTS),
+    m_elastic_displacement(grid, "elastic_bed_displacement", WITHOUT_GHOSTS) {
 
   m_time_name = m_config->get_string("time.dimension_name") + "_lingle_clark";
   m_t_last = m_grid->ctx()->time()->current();
@@ -48,20 +52,24 @@ LingleClark::LingleClark(IceGrid::ConstPtr g)
 
   // A work vector. This storage is used to put thickness change on rank 0 and to get the plate
   // displacement change back.
-  m_bed_displacement.create(m_grid, "bed_displacement", WITHOUT_GHOSTS);
-  m_bed_displacement.set_attrs("internal",
-                               "total (viscous and elastic) displacement "
-                               "in the Lingle-Clark bed deformation model",
-                               "meters", "");
+  m_total_displacement.set_attrs("internal",
+                                 "total (viscous and elastic) displacement "
+                                 "in the Lingle-Clark bed deformation model",
+                                 "meters", "");
 
-  m_work0 = m_bed_displacement.allocate_proc0_copy();
+  m_work0 = m_total_displacement.allocate_proc0_copy();
 
-  m_relief.create(m_grid, "bed_relief", WITHOUT_GHOSTS);
   m_relief.set_attrs("internal",
                      "bed relief relative to the modeled bed displacement",
                      "meters", "");
 
   bool use_elastic_model = m_config->get_boolean("bed_deformation.lc.elastic_model");
+
+  m_elastic_displacement.set_attrs("model state",
+                                   "elastic part of the displacement in the "
+                                   "Lingle-Clark bed deformation model; "
+                                   "see BuelerLingleBrown", "meters", "");
+  m_elastic_displacement0 = m_elastic_displacement.allocate_proc0_copy();
 
   const int
     Mx = m_grid->Mx(),
@@ -79,21 +87,21 @@ LingleClark::LingleClark(IceGrid::ConstPtr g)
                                      m_grid->x0(), m_grid->y0(),
                                      Nx, Ny, CELL_CORNER, NOT_PERIODIC);
 
-  m_viscous_bed_displacement.create(m_extended_grid,
-                                    "viscous_bed_displacement", WITHOUT_GHOSTS);
-  m_viscous_bed_displacement.set_attrs("model state",
-                                       "bed displacement in the viscous half-space "
-                                       "bed deformation model; "
-                                       "see BuelerLingleBrown", "meters", "");
+  m_viscous_displacement.create(m_extended_grid,
+                                "viscous_bed_displacement", WITHOUT_GHOSTS);
+  m_viscous_displacement.set_attrs("model state",
+                                   "bed displacement in the viscous half-space "
+                                   "bed deformation model; "
+                                   "see BuelerLingleBrown", "meters", "");
 
   // coordinate variables of the extended grid should have different names
-  m_viscous_bed_displacement.metadata().get_x().set_name("x_lc");
-  m_viscous_bed_displacement.metadata().get_y().set_name("y_lc");
+  m_viscous_displacement.metadata().get_x().set_name("x_lc");
+  m_viscous_displacement.metadata().get_y().set_name("y_lc");
 
   // do not point to auxiliary coordinates "lon" and "lat".
-  m_viscous_bed_displacement.metadata().set_string("coordinates", "");
+  m_viscous_displacement.metadata().set_string("coordinates", "");
 
-  m_viscous_bed_displacement0 = m_viscous_bed_displacement.allocate_proc0_copy();
+  m_viscous_displacement0 = m_viscous_displacement.allocate_proc0_copy();
 
   ParallelSection rank0(m_grid->com);
   try {
@@ -118,6 +126,9 @@ LingleClark::~LingleClark() {
  * response using ice thickness.
  *
  * Then compute the bed relief as the difference between bed elevation and total bed displacement.
+ *
+ * This method has to initialize m_viscous_displacement, m_elastic_displacement,
+ * m_total_displacement, and m_relief.
  */
 void LingleClark::bootstrap_impl(const IceModelVec2S &bed_elevation,
                                  const IceModelVec2S &bed_uplift,
@@ -147,7 +158,10 @@ void LingleClark::bootstrap_impl(const IceModelVec2S &bed_elevation,
         ierr = VecCopy(m_serial_model->total_displacement(), *m_work0);
         PISM_CHK(ierr, "VecCopy");
 
-        ierr = VecCopy(m_serial_model->viscous_displacement(), *m_viscous_bed_displacement0);
+        ierr = VecCopy(m_serial_model->viscous_displacement(), *m_viscous_displacement0);
+        PISM_CHK(ierr, "VecCopy");
+
+        ierr = VecCopy(m_serial_model->elastic_displacement(), *m_elastic_displacement0);
         PISM_CHK(ierr, "VecCopy");
       }
     } catch (...) {
@@ -156,12 +170,14 @@ void LingleClark::bootstrap_impl(const IceModelVec2S &bed_elevation,
     rank0.check();
   }
 
-  m_viscous_bed_displacement.get_from_proc0(*m_viscous_bed_displacement0);
+  m_viscous_displacement.get_from_proc0(*m_viscous_displacement0);
 
-  m_bed_displacement.get_from_proc0(*m_work0);
+  m_elastic_displacement.get_from_proc0(*m_elastic_displacement0);
+
+  m_total_displacement.get_from_proc0(*m_work0);
 
   // compute bed relief
-  m_topg.add(-1.0, m_bed_displacement, m_relief);
+  m_topg.add(-1.0, m_total_displacement, m_relief);
 }
 
 /*!
@@ -230,8 +246,10 @@ void LingleClark::init_impl(const InputOptions &opts, const IceModelVec2S &ice_t
   m_topg_last.copy_from(m_topg);
 
   if (opts.type == INIT_RESTART) {
-    // Set m_viscous_bed_displacement by reading from the input file.
-    m_viscous_bed_displacement.read(opts.filename, opts.record);
+    // Set viscous displacement by reading from the input file.
+    m_viscous_displacement.read(opts.filename, opts.record);
+    // Set elastic displacement by reading from the input file.
+    m_elastic_displacement.read(opts.filename, opts.record);
   } else if (opts.type == INIT_BOOTSTRAP) {
     this->bootstrap(m_topg, m_uplift, ice_thickness, sea_level_elevation);
   } else {
@@ -240,23 +258,25 @@ void LingleClark::init_impl(const InputOptions &opts, const IceModelVec2S &ice_t
 
   // Try re-gridding plate_displacement.
   regrid("Lingle-Clark bed deformation model",
-         m_viscous_bed_displacement, REGRID_WITHOUT_REGRID_VARS);
+         m_viscous_displacement, REGRID_WITHOUT_REGRID_VARS);
+  regrid("Lingle-Clark bed deformation model",
+         m_elastic_displacement, REGRID_WITHOUT_REGRID_VARS);
 
   compute_load(m_topg, ice_thickness, sea_level_elevation,
                m_load_thickness);
 
-  // Now that m_viscous_bed_displacement is finally initialized, put it on rank 0 and initialize
-  // m_serial_model itself.
+  // Now that viscous displacement and elastic displacement are finally initialized,
+  // put them on rank 0 and initialize the serial model itself.
   {
-    m_load_thickness.put_on_proc0(*m_work0);
-    m_viscous_bed_displacement.put_on_proc0(*m_viscous_bed_displacement0);
+    m_viscous_displacement.put_on_proc0(*m_viscous_displacement0);
+    m_elastic_displacement.put_on_proc0(*m_work0);
 
     ParallelSection rank0(m_grid->com);
     try {
-      if (m_grid->rank() == 0) {  // only processor zero does the step
+      if (m_grid->rank() == 0) {  // only processor zero does the work
         PetscErrorCode ierr = 0;
 
-        m_serial_model->init(*m_work0, *m_viscous_bed_displacement0);
+        m_serial_model->init(*m_viscous_displacement0, *m_work0);
 
         ierr = VecCopy(m_serial_model->total_displacement(), *m_work0);
         PISM_CHK(ierr, "VecCopy");
@@ -267,10 +287,10 @@ void LingleClark::init_impl(const InputOptions &opts, const IceModelVec2S &ice_t
     rank0.check();
   }
 
-  m_bed_displacement.get_from_proc0(*m_work0);
+  m_total_displacement.get_from_proc0(*m_work0);
 
   // compute bed relief
-  m_topg.add(-1.0, m_bed_displacement, m_relief);
+  m_topg.add(-1.0, m_total_displacement, m_relief);
 }
 
 MaxTimestep LingleClark::max_timestep_impl(double t) const {
@@ -298,15 +318,17 @@ MaxTimestep LingleClark::max_timestep_impl(double t) const {
 
 /*!
  * Get total bed displacement on the PISM grid.
- *
- * This method uses the fact that m_bed_displacement is used to store bed displacement
  */
 const IceModelVec2S& LingleClark::total_displacement() const {
-  return m_bed_displacement;
+  return m_total_displacement;
 }
 
 const IceModelVec2S& LingleClark::viscous_displacement() const {
-  return m_viscous_bed_displacement;
+  return m_viscous_displacement;
+}
+
+const IceModelVec2S& LingleClark::elastic_displacement() const {
+  return m_elastic_displacement;
 }
 
 const IceModelVec2S& LingleClark::relief() const {
@@ -332,7 +354,10 @@ void LingleClark::step(const IceModelVec2S &ice_thickness,
       ierr = VecCopy(m_serial_model->total_displacement(), *m_work0);
       PISM_CHK(ierr, "VecCopy");
 
-      ierr = VecCopy(m_serial_model->viscous_displacement(), *m_viscous_bed_displacement0);
+      ierr = VecCopy(m_serial_model->viscous_displacement(), *m_viscous_displacement0);
+      PISM_CHK(ierr, "VecCopy");
+
+      ierr = VecCopy(m_serial_model->elastic_displacement(), *m_elastic_displacement0);
       PISM_CHK(ierr, "VecCopy");
     }
   } catch (...) {
@@ -340,13 +365,15 @@ void LingleClark::step(const IceModelVec2S &ice_thickness,
   }
   rank0.check();
 
-  m_viscous_bed_displacement.get_from_proc0(*m_viscous_bed_displacement0);
+  m_viscous_displacement.get_from_proc0(*m_viscous_displacement0);
 
-  m_bed_displacement.get_from_proc0(*m_work0);
+  m_elastic_displacement.get_from_proc0(*m_elastic_displacement0);
+
+  m_total_displacement.get_from_proc0(*m_work0);
 
   // Update bed elevation using bed displacement and relief.
   {
-    m_bed_displacement.add(1.0, m_relief, m_topg);
+    m_total_displacement.add(1.0, m_relief, m_topg);
     // Increment the topg state counter. SIAFD relies on this!
     m_topg.inc_state_counter();
   }
@@ -378,7 +405,8 @@ void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
 
 void LingleClark::define_model_state_impl(const PIO &output) const {
   BedDef::define_model_state_impl(output);
-  m_viscous_bed_displacement.define(output);
+  m_viscous_displacement.define(output);
+  m_elastic_displacement.define(output);
 
   if (not output.inq_var(m_time_name)) {
     output.def_var(m_time_name, PISM_DOUBLE, {});
@@ -393,14 +421,16 @@ void LingleClark::define_model_state_impl(const PIO &output) const {
 void LingleClark::write_model_state_impl(const PIO &output) const {
   BedDef::write_model_state_impl(output);
 
-  m_viscous_bed_displacement.write(output);
+  m_viscous_displacement.write(output);
+  m_elastic_displacement.write(output);
 
   output.put_vara_double(m_time_name, {0}, {1}, &m_t_last);
 }
 
 DiagnosticList LingleClark::diagnostics_impl() const {
   DiagnosticList result = {
-    {"viscous_bed_displacement", Diagnostic::wrap(m_viscous_bed_displacement)},
+    {"viscous_bed_displacement", Diagnostic::wrap(m_viscous_displacement)},
+    {"elastic_bed_displacement", Diagnostic::wrap(m_elastic_displacement)},
   };
   return combine(result, BedDef::diagnostics_impl());
 }

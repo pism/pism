@@ -39,6 +39,8 @@ public:
 
   const IceModelVec2S& viscous_displacement() const;
 
+  const IceModelVec2S& elastic_displacement() const;
+
   const IceModelVec2S& relief() const;
 
   void step(const IceModelVec2S &ice_thickness,
@@ -64,7 +66,7 @@ protected:
                    double t, double dt);
 
   //! Total (viscous and elastic) bed displacement.
-  IceModelVec2S m_bed_displacement;
+  IceModelVec2S m_total_displacement;
 
   //! Storage on rank zero. Used to pass the load to the serial deformation model and get
   //! bed displacement back.
@@ -83,9 +85,14 @@ protected:
   IceGrid::Ptr m_extended_grid;
 
   //! Viscous displacement on the extended grid (part of the model state).
-  IceModelVec2S m_viscous_bed_displacement;
+  IceModelVec2S m_viscous_displacement;
   //! rank 0 storage using the extended grid
-  petsc::Vec::Ptr m_viscous_bed_displacement0;
+  petsc::Vec::Ptr m_viscous_displacement0;
+
+  //! Elastic bed displacement (part of the model state)
+  IceModelVec2S m_elastic_displacement;
+  //! rank 0 storage for the elastic displacement
+  petsc::Vec::Ptr m_elastic_displacement0;
 
   //! time of the last bed deformation update
   double m_t_last;

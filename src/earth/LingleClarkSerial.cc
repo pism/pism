@@ -148,6 +148,13 @@ Vec LingleClarkSerial::viscous_displacement() const {
   return m_Uv;
 }
 
+/*!
+ * Return elastic plate displacement.
+ */
+Vec LingleClarkSerial::elastic_displacement() const {
+  return m_Ue;
+}
+
 void LingleClarkSerial::compute_load_response_matrix(fftw_complex *output) {
 
   FFTWArray LRM(output, m_Nx, m_Ny);
@@ -324,17 +331,19 @@ void LingleClarkSerial::bootstrap(Vec thickness, Vec uplift) {
 /*!
  * Initialize using provided plate displacement.
  *
- * @param[in] V initial viscous plate displacement on the extended grid
+ * @param[in] viscous_displacement initial viscous plate displacement (meters) on the extended grid
+ * @param[in] elastic_displacement initial viscous plate displacement (meters) on the regular grid
  *
  * Sets m_Uv, m_Ue, m_U.
  */
-void LingleClarkSerial::init(Vec thickness, Vec viscous_displacement) {
+void LingleClarkSerial::init(Vec viscous_displacement,
+                             Vec elastic_displacement) {
   PetscErrorCode ierr = 0;
 
   ierr = VecCopy(viscous_displacement, m_Uv);  PISM_CHK(ierr, "VecCopy");
 
   if (m_include_elastic) {
-    compute_elastic_response(thickness, m_Ue);
+    ierr = VecCopy(elastic_displacement, m_Ue);  PISM_CHK(ierr, "VecCopy");
   } else {
     ierr = VecSet(m_Ue, 0.0); PISM_CHK(ierr, "VecSet");
   }

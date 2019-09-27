@@ -64,7 +64,8 @@ public:
                     int Nx, int Ny);
   ~LingleClarkSerial();
 
-  void init(Vec thickness, Vec viscous_displacement);
+  void init(Vec viscous_displacement,
+            Vec elastic_displacement);
 
   void bootstrap(Vec thickness, Vec uplift);
 
@@ -73,6 +74,8 @@ public:
   Vec total_displacement() const;
 
   Vec viscous_displacement() const;
+
+  Vec elastic_displacement() const;
 
   void compute_load_response_matrix(fftw_complex *output);
 private:
