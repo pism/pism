@@ -52,6 +52,8 @@ See sections listed below for various technical details.
 
    coding_guidelines.rst
 
+   git-introduction.rst
+
    git-branches.rst
 
    development-workflow.rst
