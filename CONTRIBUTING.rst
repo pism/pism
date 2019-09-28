@@ -1,11 +1,3 @@
-.. _github-help-fork: https://help.github.com/en/articles/fork-a-repo
-.. _github-pull-request-create: https://help.github.com/en/articles/creating-a-pull-request
-.. _github-pull-request-allow-edits: https://help.github.com/en/articles/allowing-changes-to-a-pull-request-branch-created-from-a-fork
-
-.. |pism-github-url| replace:: https://github.com/pism/pism
-.. |pism-issues-url| replace:: https://github.com/pism/pism/issues
-.. |pism-email| replace:: uaf-pism@alaska.educ
-
 Contributing to PISM
 ====================
 
@@ -14,11 +6,12 @@ There are many ways you can contribute to PISM:
 - Fix typos, inaccuracies, and omissions in the manual.
 - Improve documentation of existing features.
 - Provide additional examples.
+- Add new tests for existing code.
 - Report issues with the code or documentation.
 - Fix bugs in PISM.
 - Implement new features.
 
-Please see *Contributing to PISM* in PISM's manual for some guidelines.
+Please see `Contributing to PISM <pism-contributing_>`_ in PISM's manual for some guidelines.
 
 In summary: documentation and code contributions are preferred via pull requests to
 |pism-github-url|.
@@ -46,3 +39,19 @@ that your effort is well-directed.
    By submitting code, the contributor gives irretrievable consent to the redistribution
    and modification of the contributed source code as described in the PISM's open source
    license.
+
+.. URLs
+
+.. _github-help-fork: https://help.github.com/en/articles/fork-a-repo
+.. _github-pull-request-create: https://help.github.com/en/articles/creating-a-pull-request
+.. _github-pull-request-allow-edits: https://help.github.com/en/articles/allowing-changes-to-a-pull-request-branch-created-from-a-fork
+.. _pism-contributing: http://pism-docs.org/sphinx/contributing/
+
+.. |pism-github-url| replace:: https://github.com/pism/pism
+.. |pism-issues-url| replace:: https://github.com/pism/pism/issues
+.. |pism-email| replace:: uaf-pism@alaska.educ
+
+..
+   Local Variables:
+   fill-column: 90
+   End:
