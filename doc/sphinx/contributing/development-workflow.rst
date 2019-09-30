@@ -17,6 +17,7 @@ The recommended development workflow is:
    a) Compile.
    b) Fix any compilation errors and warnings. Repeat until your code compiles without
       warnings.
+   c) Push your code to GitHub for review or to get help with b).
 
 #. Add verification or regression tests.
 #. Test your code and repeat 2a and 2b until all tests pass.
@@ -107,6 +108,24 @@ errors are often caused by these). Consider using Valgrind_ to detect them.
 
    Your code will run much, much slower when using Valgrind, so it is important to find
    a small test case reproducing the error.
+
+.. _sec-continuous-integration:
+
+Debugging issues caught by automatic tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Every time somebody pushes changes to PISM's repository on GitHub the continuous
+integration system attempts to build PISM and (if it was built successfully) run a suite
+of tests.
+
+It is often helpful to be able to run the same tests locally. To do this, install Docker_
+and `CircleCI CLI`_ (command-line interface), then run
+
+.. code-block:: none
+
+   circleci local execute
+
+in PISM's source code directory.
 
 .. _sec-editing-the-manual:
 

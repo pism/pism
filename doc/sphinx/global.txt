@@ -117,6 +117,9 @@
 .. _sphinx-autobuild: https://pypi.org/project/sphinx-autobuild/
 .. _keep-a-change-log: https://keepachangelog.com/
 
+.. _CircleCI CLI: https://circleci.com/docs/2.0/local-cli/
+.. _Docker: https://www.docker.com/
+
 .. PISM-related external links
 
 .. _pism-github: https://github.com/pism/pism
