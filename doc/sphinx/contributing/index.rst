@@ -59,5 +59,3 @@ See sections listed below for various technical details.
    development-workflow.rst
 
    how-to.rst
-
-   example-component.rst
