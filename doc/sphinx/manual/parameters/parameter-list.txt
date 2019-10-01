@@ -394,7 +394,7 @@
 
 #. :config:`bed_deformation.lc.elastic_model` (*boolean*)
 
-   :Value: no
+   :Value: yes
    :Option: :opt:`-bed_def_lc_elastic_model`
    :Description: Use the elastic part of the Lingle-Clark bed deformation model.
 
