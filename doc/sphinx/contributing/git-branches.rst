@@ -37,6 +37,11 @@ In |pism-github-url| branches are named using the name of the person responsible
 branch as a prefix. For example, `ckhroulev/pnetcdf` is the name of Constantine Khroulev's
 branch containing improvements of the I/O code using PnetCDF_.
 
+.. note::
+
+   Please commit all your changes to "topic" branches. The `master` and `dev` branches are
+   managed by PISM developers at UAF.
+
 .. rubric:: Footnotes
 
 .. [#] This model may not be perfect but works well for a project of PISM's size.
