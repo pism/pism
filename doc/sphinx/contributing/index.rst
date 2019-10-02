@@ -5,6 +5,10 @@
 Contributing to PISM
 ====================
 
+Bug reports, contributions of code, documentation, and tests are always appreciated.
+
+Please see :ref:`sec-bug-reports` for bug reporting guidelines.
+
 .. note::
 
    By submitting code, the contributor gives irretrievable consent to the redistribution
@@ -49,6 +53,8 @@ See sections listed below for various technical details.
 .. toctree::
    :caption: Contents
    :titlesonly:
+
+   bug-reporting.rst
 
    coding_guidelines.rst
 
