@@ -1,11 +1,15 @@
 .. include:: ../global.txt
 
+.. default-role:: literal
+
 .. _sec-contributing:
 
 Contributing to PISM
 ====================
 
 Bug reports, contributions of code, documentation, and tests are always appreciated.
+
+You will need a GitHub_ account and some familiarity with Git_\ [#]_.
 
 Please see :ref:`sec-bug-reports` for bug reporting guidelines.
 
@@ -25,11 +29,18 @@ Contributions are preferred via pull requests to |pism-github-url|.
    b. Test your changes.
    c. Add verification or regression tests (optional but **strongly encouraged**).
    d. Update documentation, if necessary.
-   e. Update the change log ``CHANGES.rst``. If your contribution contains a bug fix,
+   e. Update the change log `CHANGES.rst`. If your contribution contains a bug fix,
       please describe the bug and its effects.
 
 #. `Create a pull request <github-pull-request-create_>`_ and make sure to `allow
    edits from maintainers. <github-pull-request-allow-edits_>`_
+
+   Every time you push your code to GitHub_ CircleCI_ will
+
+   - build it with pedantic compiler settings, treating all compiler warnings as errors
+   - run `make test` in the build directory.
+
+   Please make sure all tests pass (you will get an e-mail if there was a failure).
 
 If you are planning a large contribution we encourage you to open an issue at
 |pism-issues-url| or e-mail us at |pism-email| and interact with us frequently to ensure
@@ -65,3 +76,8 @@ See sections listed below for various technical details.
    development-workflow.rst
 
    how-to.rst
+
+.. rubric:: Footnotes
+
+.. [#] Please see :ref:`sec-git-introduction` for a brief introduction and `Git
+       documentation`_ for more.

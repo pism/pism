@@ -101,7 +101,7 @@ Debugging
 A debugger such as GDB_ or LLDB_ can be very useful.\ [#]_ There are many online tutorials
 for both.
 
-Some of the more troublesome bugs involve memory access errors (*segmentation fault*,
+Some of the more troublesome bugs involve memory access errors (*segmentation fault*
 errors are often caused by these). Consider using Valgrind_ to detect them.
 
 .. note::

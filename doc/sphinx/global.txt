@@ -65,6 +65,7 @@
 .. _Fink: http://www.finkproject.org/
 .. _GSL: http://www.gnu.org/software/gsl/
 .. _Git: https://git-scm.com/
+.. _Git documentation: https://git-scm.com/doc
 .. _Homebrew: https://brew.sh/
 .. _IDV: https://www.unidata.ucar.edu/software/idv/
 .. _LaTeX: https://www.latex-project.org/
@@ -117,6 +118,8 @@
 .. _sphinx-autobuild: https://pypi.org/project/sphinx-autobuild/
 .. _keep-a-change-log: https://keepachangelog.com/
 
+.. _GitHub: https://github.com/
+.. _CircleCI: https://circleci.com/
 .. _CircleCI CLI: https://circleci.com/docs/2.0/local-cli/
 .. _Docker: https://www.docker.com/
 

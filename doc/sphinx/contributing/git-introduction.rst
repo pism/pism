@@ -12,12 +12,12 @@ Git introduction for PISM developers
 Recommended Git configuration
 -----------------------------
 
-Set name and e-mail address
+Set name and e-mail address:
 
 .. code-block:: bash
 
-   $ git config --global user.name "John Doe"
-   $ git config --global user.email johndoe@example.com
+   git config --global user.name "John Doe"
+   git config --global user.email johndoe@example.com
 
 Do not push local branches nonexistent on upstream by default:
 
