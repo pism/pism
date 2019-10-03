@@ -122,6 +122,7 @@
 .. _CircleCI: https://circleci.com/
 .. _CircleCI CLI: https://circleci.com/docs/2.0/local-cli/
 .. _Docker: https://www.docker.com/
+.. _MPICH: https://www.mpich.org/
 
 .. PISM-related external links
 
