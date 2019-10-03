@@ -1,7 +1,7 @@
+.. default-role:: literal
+
 PISM coding guidelines
 ======================
-
-.. default-role:: literal
 
 .. contents::
 
@@ -100,6 +100,20 @@ Namespaces
 
 Everything in PISM goes into the `pism` namespace. See the source code browser for more
 namespaces (roughly one per sub-system).
+
+Notable namespaces include:
+
+- ``atmosphere``
+- ``bed``
+- ``calving``
+- ``energy``
+- ``frontalmelt``
+- ``hydrology``
+- ``ocean``
+- ``rheology``
+- ``sea_level``
+- ``stressbalance``
+- ``surface``
 
 Using directives and declarations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
