@@ -167,17 +167,29 @@
    :Option: :opt:`-precip_lapse_rate`
    :Description: Elevation lapse rate for the surface mass balance
 
+#. :config:`atmosphere.lapse_rate.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_lapse_rate_reference_year`
+   :Description: Reference year to use when ``atmosphere.lapse_rate.period`` is active.
+
 #. :config:`atmosphere.lapse_rate.temperature_lapse_rate` (*number*)
 
    :Value: 0 (Kelvin / km)
    :Option: :opt:`-temp_lapse_rate`
    :Description: Elevation lapse rate for the surface temperature
 
-#. :config:`atmosphere.lapse_rate.reference_year` (*integer*)
+#. :config:`atmosphere.model` (*string*)
 
-   :Value: 0
-   :Option: :opt:`-atmosphere_lapse_rate_reference_year`
-   :Description: Reference year to use when ``atmosphere.lapse_rate.period`` is active.
+   :Value: given
+   :Option: :opt:`-atmosphere`
+   :Description: Comma-separated list of selected atmosphere models.
+
+#. :config:`atmosphere.one_station.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_one_station_file`
+   :Description: Specifies a file containing scalar time-series 'precipitation' and 'air_temp'.
 
 #. :config:`atmosphere.orographic_precipitation.background_precip_post` (*number*)
 
@@ -268,18 +280,6 @@
    :Option: :opt:`-wind_speed`
    :Description: The direction the wind is coming from
 
-#. :config:`atmosphere.model` (*string*)
-
-   :Value: given
-   :Option: :opt:`-atmosphere`
-   :Description: Comma-separated list of selected atmosphere models.
-
-#. :config:`atmosphere.one_station.file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-atmosphere_one_station_file`
-   :Description: Specifies a file containing scalar time-series 'precipitation' and 'air_temp'.
-
 #. :config:`atmosphere.paleo_precip.exp_factor_for_temperature` (*number*)
 
    :Value: 0.070417 (Kelvin-1)
@@ -321,6 +321,12 @@
    :Value: 0.070417 (Kelvin-1)
    :Description: = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`
 
+#. :config:`atmosphere.searise_greenland.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_searise_greenland_file`
+   :Description: Name of the file containing a precipitation field.
+
 #. :config:`atmosphere.uniform.precipitation` (*number*)
 
    :Value: 1000 (kg m-2 year-1)
@@ -330,12 +336,6 @@
 
    :Value: 273.150000 (Kelvin)
    :Description: Air temperature used by the 'uniform' atmosphere model.
-
-#. :config:`atmosphere.searise_greenland.file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-atmosphere_searise_greenland_file`
-   :Description: Name of the file containing a precipitation field.
 
 #. :config:`atmosphere.yearly_cycle.file` (*string*)
 
@@ -1944,6 +1944,11 @@
    :Option: :opt:`-stress_balance`
    :Description: Stress balance model
 
+#. :config:`stress_balance.prescribed_sliding.file` (*string*)
+
+   :Value: *no default*
+   :Description: The name of the file containing prescribed sliding velocity (variable names: `ubar`, `vbar`).
+
 #. :config:`stress_balance.sia.Glen_exponent` (*number*)
 
    :Value: 3 (pure number)
@@ -2255,17 +2260,17 @@
    :Option: :opt:`-surface_lapse_rate_reference_year`
    :Description: Reference year to use when ``surface.lapse_rate.period`` is active.
 
-#. :config:`surface.lapse_rate.temperature_lapse_rate` (*number*)
-
-   :Value: 0 (K / km)
-   :Option: :opt:`-temp_lapse_rate`
-   :Description: Lapse rate for the temperature at the top of the ice.
-
 #. :config:`surface.lapse_rate.smb_lapse_rate` (*number*)
 
    :Value: 0 ((m / year) / km)
    :Option: :opt:`-smb_lapse_rate`
    :Description: Lapse rate for the surface mass balance.
+
+#. :config:`surface.lapse_rate.temperature_lapse_rate` (*number*)
+
+   :Value: 0 (K / km)
+   :Option: :opt:`-temp_lapse_rate`
+   :Description: Lapse rate for the temperature at the top of the ice.
 
 #. :config:`surface.model` (*string*)
 
@@ -2298,12 +2303,6 @@
    :Value: 0.003297 (meter / (Kelvin day))
    :Description: EISMINT-Greenland value :cite:`RitzEISMINT`; = (3 mm liquid-water-equivalent) / (pos degree day)
 
-#. :config:`surface.pdd.fausto.enabled` (*flag*)
-
-   :Value: false
-   :Option: :opt:`-pdd_fausto`
-   :Description: Set PDD parameters using formulas (6) and (7) in :cite:`Faustoetal2009`
-
 #. :config:`surface.pdd.fausto.T_c` (*number*)
 
    :Value: 272.150000 (Kelvin)
@@ -2333,6 +2332,12 @@
 
    :Value: 0.003000 (meter / (Kelvin day))
    :Description: water-equivalent thickness; for formula (6) in :cite:`Faustoetal2009`
+
+#. :config:`surface.pdd.fausto.enabled` (*flag*)
+
+   :Value: false
+   :Option: :opt:`-pdd_fausto`
+   :Description: Set PDD parameters using formulas (6) and (7) in :cite:`Faustoetal2009`
 
 #. :config:`surface.pdd.fausto.latitude_beta_w` (*number*)
 
@@ -2387,6 +2392,24 @@
    :Value: 5 (Kelvin)
    :Description: std dev of daily temp variation; = EISMINT-Greenland value :cite:`RitzEISMINT`
 
+#. :config:`surface.pdd.std_dev.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-pdd_sd_file`
+   :Description: The name of the file to read `air_temp_sd` (standard deviation of air temperature) from.
+
+#. :config:`surface.pdd.std_dev.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-pdd_sd_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`surface.pdd.std_dev.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-pdd_sd_reference_year`
+   :Description: Reference year to use when ``surface.pdd.std_dev.period`` is active.
+
 #. :config:`surface.pdd.std_dev_lapse_lat_base` (*number*)
 
    :Value: 72 (degree_north)
@@ -2411,24 +2434,6 @@
 
    :Value: no
    :Description: Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by geometry.ice_free_thickness_standard.
-
-#. :config:`surface.pdd.std_dev.file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-pdd_sd_file`
-   :Description: The name of the file to read `air_temp_sd` (standard deviation of air temperature) from.
-
-#. :config:`surface.pdd.std_dev.period` (*integer*)
-
-   :Value: 0
-   :Option: :opt:`-pdd_sd_period`
-   :Description: Length of the period of the climate forcing data. Set to zero to disable.
-
-#. :config:`surface.pdd.std_dev.reference_year` (*integer*)
-
-   :Value: 0
-   :Option: :opt:`-pdd_sd_reference_year`
-   :Description: Reference year to use when ``surface.pdd.std_dev.period`` is active.
 
 #. :config:`surface.pressure` (*number*)
 

@@ -159,17 +159,27 @@ netcdf pism_config {
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_type = "number";
     pism_config:atmosphere.lapse_rate.precipitation_lapse_rate_units = "(kg m-2 / year) / km";
 
+    pism_config:atmosphere.lapse_rate.reference_year = 0;
+    pism_config:atmosphere.lapse_rate.reference_year_doc = "Reference year to use when ``atmosphere.lapse_rate.period`` is active.";
+    pism_config:atmosphere.lapse_rate.reference_year_option = "atmosphere_lapse_rate_reference_year";
+    pism_config:atmosphere.lapse_rate.reference_year_type = "integer";
+    pism_config:atmosphere.lapse_rate.reference_year_units = "years";
+
     pism_config:atmosphere.lapse_rate.temperature_lapse_rate = 0.0;
     pism_config:atmosphere.lapse_rate.temperature_lapse_rate_doc = "Elevation lapse rate for the surface temperature";
     pism_config:atmosphere.lapse_rate.temperature_lapse_rate_option = "temp_lapse_rate";
     pism_config:atmosphere.lapse_rate.temperature_lapse_rate_type = "number";
     pism_config:atmosphere.lapse_rate.temperature_lapse_rate_units = "Kelvin / km";
 
-    pism_config:atmosphere.lapse_rate.reference_year = 0;
-    pism_config:atmosphere.lapse_rate.reference_year_doc = "Reference year to use when ``atmosphere.lapse_rate.period`` is active.";
-    pism_config:atmosphere.lapse_rate.reference_year_option = "atmosphere_lapse_rate_reference_year";
-    pism_config:atmosphere.lapse_rate.reference_year_type = "integer";
-    pism_config:atmosphere.lapse_rate.reference_year_units = "years";
+    pism_config:atmosphere.model = "given";
+    pism_config:atmosphere.model_doc = "Comma-separated list of selected atmosphere models.";
+    pism_config:atmosphere.model_option = "atmosphere";
+    pism_config:atmosphere.model_type = "string";
+
+    pism_config:atmosphere.one_station.file = "";
+    pism_config:atmosphere.one_station.file_doc = "Specifies a file containing scalar time-series 'precipitation' and 'air_temp'.";
+    pism_config:atmosphere.one_station.file_option = "atmosphere_one_station_file";
+    pism_config:atmosphere.one_station.file_type = "string";
 
     pism_config:atmosphere.orographic_precipitation.background_precip_post = 0;
     pism_config:atmosphere.orographic_precipitation.background_precip_post_doc = "Adding background precipitation after truncation";
@@ -259,16 +269,6 @@ netcdf pism_config {
     pism_config:atmosphere.orographic_precipitation.wind_speed_type = "number";
     pism_config:atmosphere.orographic_precipitation.wind_speed_units = "m/s";
 
-    pism_config:atmosphere.model = "given";
-    pism_config:atmosphere.model_doc = "Comma-separated list of selected atmosphere models.";
-    pism_config:atmosphere.model_option = "atmosphere";
-    pism_config:atmosphere.model_type = "string";
-
-    pism_config:atmosphere.one_station.file = "";
-    pism_config:atmosphere.one_station.file_doc = "Specifies a file containing scalar time-series 'precipitation' and 'air_temp'.";
-    pism_config:atmosphere.one_station.file_option = "atmosphere_one_station_file";
-    pism_config:atmosphere.one_station.file_type = "string";
-
     pism_config:atmosphere.paleo_precip.exp_factor_for_temperature = 0.07041666667;
     pism_config:atmosphere.paleo_precip.exp_factor_for_temperature_doc = "= 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`";
     pism_config:atmosphere.paleo_precip.exp_factor_for_temperature_type = "number";
@@ -307,6 +307,11 @@ netcdf pism_config {
     pism_config:atmosphere.precip_exponential_factor_for_temperature_type = "number";
     pism_config:atmosphere.precip_exponential_factor_for_temperature_units = "Kelvin-1";
 
+    pism_config:atmosphere.searise_greenland.file = "";
+    pism_config:atmosphere.searise_greenland.file_doc = "Name of the file containing a precipitation field.";
+    pism_config:atmosphere.searise_greenland.file_option = "atmosphere_searise_greenland_file";
+    pism_config:atmosphere.searise_greenland.file_type = "string";
+
     pism_config:atmosphere.uniform.precipitation = 1000;
     pism_config:atmosphere.uniform.precipitation_doc = "Precipitation used by the 'uniform' atmosphere model.";
     pism_config:atmosphere.uniform.precipitation_type = "number";
@@ -316,11 +321,6 @@ netcdf pism_config {
     pism_config:atmosphere.uniform.temperature_doc = "Air temperature used by the 'uniform' atmosphere model.";
     pism_config:atmosphere.uniform.temperature_type = "number";
     pism_config:atmosphere.uniform.temperature_units = "Kelvin";
-
-    pism_config:atmosphere.searise_greenland.file = "";
-    pism_config:atmosphere.searise_greenland.file_doc = "Name of the file containing a precipitation field.";
-    pism_config:atmosphere.searise_greenland.file_option = "atmosphere_searise_greenland_file";
-    pism_config:atmosphere.searise_greenland.file_type = "string";
 
     pism_config:atmosphere.yearly_cycle.file = "";
     pism_config:atmosphere.yearly_cycle.file_doc = "Name of the file containing mean annual and mean July temperatures (`air_temp_mean_annual` and `air_temp_mean_summer`) and the `precipitation` field.";
@@ -1820,6 +1820,10 @@ netcdf pism_config {
     pism_config:stress_balance.model_option = "stress_balance";
     pism_config:stress_balance.model_type = "keyword";
 
+    pism_config:stress_balance.prescribed_sliding.file = "";
+    pism_config:stress_balance.prescribed_sliding.file_doc = "The name of the file containing prescribed sliding velocity (variable names: `ubar`, `vbar`).";
+    pism_config:stress_balance.prescribed_sliding.file_type = "string";
+
     pism_config:stress_balance.sia.Glen_exponent = 3.0;
     pism_config:stress_balance.sia.Glen_exponent_doc = "Glen exponent in ice flow law for SIA";
     pism_config:stress_balance.sia.Glen_exponent_option = "sia_n";
@@ -2023,10 +2027,6 @@ netcdf pism_config {
     pism_config:surface.anomaly.reference_year_type = "integer";
     pism_config:surface.anomaly.reference_year_units = "years";
 
-    pism_config:stress_balance.prescribed_sliding.file = "";
-    pism_config:stress_balance.prescribed_sliding.file_doc = "The name of the file containing prescribed sliding velocity (variable names: `ubar`, `vbar`).";
-    pism_config:stress_balance.prescribed_sliding.file_type = "string";
-
     pism_config:surface.cache.update_interval = 10;
     pism_config:surface.cache.update_interval_doc = "Update interval (in years) for the `-surface cache` modifier.";
     pism_config:surface.cache.update_interval_type = "integer";
@@ -2116,17 +2116,17 @@ netcdf pism_config {
     pism_config:surface.lapse_rate.reference_year_type = "integer";
     pism_config:surface.lapse_rate.reference_year_units = "years";
 
-    pism_config:surface.lapse_rate.temperature_lapse_rate = 0;
-    pism_config:surface.lapse_rate.temperature_lapse_rate_doc = "Lapse rate for the temperature at the top of the ice.";
-    pism_config:surface.lapse_rate.temperature_lapse_rate_option = "temp_lapse_rate";
-    pism_config:surface.lapse_rate.temperature_lapse_rate_type = "number";
-    pism_config:surface.lapse_rate.temperature_lapse_rate_units = "K / km";
-
     pism_config:surface.lapse_rate.smb_lapse_rate = 0;
     pism_config:surface.lapse_rate.smb_lapse_rate_doc = "Lapse rate for the surface mass balance.";
     pism_config:surface.lapse_rate.smb_lapse_rate_option = "smb_lapse_rate";
     pism_config:surface.lapse_rate.smb_lapse_rate_type = "number";
     pism_config:surface.lapse_rate.smb_lapse_rate_units = "(m / year) / km";
+
+    pism_config:surface.lapse_rate.temperature_lapse_rate = 0;
+    pism_config:surface.lapse_rate.temperature_lapse_rate_doc = "Lapse rate for the temperature at the top of the ice.";
+    pism_config:surface.lapse_rate.temperature_lapse_rate_option = "temp_lapse_rate";
+    pism_config:surface.lapse_rate.temperature_lapse_rate_type = "number";
+    pism_config:surface.lapse_rate.temperature_lapse_rate_units = "K / km";
 
     pism_config:surface.model = "given";
     pism_config:surface.model_doc = "Comma-separated list of selected surface models.";
@@ -2158,11 +2158,6 @@ netcdf pism_config {
     pism_config:surface.pdd.factor_snow_type = "number";
     pism_config:surface.pdd.factor_snow_units = "meter / (Kelvin day)";
 
-    pism_config:surface.pdd.fausto.enabled = "false";
-    pism_config:surface.pdd.fausto.enabled_doc = "Set PDD parameters using formulas (6) and (7) in :cite:`Faustoetal2009`";
-    pism_config:surface.pdd.fausto.enabled_type = "flag";
-    pism_config:surface.pdd.fausto.enabled_option = "pdd_fausto";
-
     pism_config:surface.pdd.fausto.T_c = 272.15;
     pism_config:surface.pdd.fausto.T_c_doc = "= -1 + 273.15; for formula (6) in :cite:`Faustoetal2009`";
     pism_config:surface.pdd.fausto.T_c_type = "number";
@@ -2192,6 +2187,11 @@ netcdf pism_config {
     pism_config:surface.pdd.fausto.beta_snow_w_doc = "water-equivalent thickness; for formula (6) in :cite:`Faustoetal2009`";
     pism_config:surface.pdd.fausto.beta_snow_w_type = "number";
     pism_config:surface.pdd.fausto.beta_snow_w_units = "meter / (Kelvin day)";
+
+    pism_config:surface.pdd.fausto.enabled = "false";
+    pism_config:surface.pdd.fausto.enabled_doc = "Set PDD parameters using formulas (6) and (7) in :cite:`Faustoetal2009`";
+    pism_config:surface.pdd.fausto.enabled_option = "pdd_fausto";
+    pism_config:surface.pdd.fausto.enabled_type = "flag";
 
     pism_config:surface.pdd.fausto.latitude_beta_w = 72.0;
     pism_config:surface.pdd.fausto.latitude_beta_w_doc = "latitude below which to use warm case, in formula (6) in :cite:`Faustoetal2009`";
@@ -2242,6 +2242,23 @@ netcdf pism_config {
     pism_config:surface.pdd.std_dev_type = "number";
     pism_config:surface.pdd.std_dev_units = "Kelvin";
 
+    pism_config:surface.pdd.std_dev.file = "";
+    pism_config:surface.pdd.std_dev.file_doc = "The name of the file to read `air_temp_sd` (standard deviation of air temperature) from.";
+    pism_config:surface.pdd.std_dev.file_option = "pdd_sd_file";
+    pism_config:surface.pdd.std_dev.file_type = "string";
+
+    pism_config:surface.pdd.std_dev.period = 0;
+    pism_config:surface.pdd.std_dev.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:surface.pdd.std_dev.period_option = "pdd_sd_period";
+    pism_config:surface.pdd.std_dev.period_type = "integer";
+    pism_config:surface.pdd.std_dev.period_units = "years";
+
+    pism_config:surface.pdd.std_dev.reference_year = 0;
+    pism_config:surface.pdd.std_dev.reference_year_doc = "Reference year to use when ``surface.pdd.std_dev.period`` is active.";
+    pism_config:surface.pdd.std_dev.reference_year_option = "pdd_sd_reference_year";
+    pism_config:surface.pdd.std_dev.reference_year_type = "integer";
+    pism_config:surface.pdd.std_dev.reference_year_units = "years";
+
     pism_config:surface.pdd.std_dev_lapse_lat_base = 72.0;
     pism_config:surface.pdd.std_dev_lapse_lat_base_doc = "std_dev is a function of latitude, with value surface.pdd.std_dev at this latitude; this value only active if surface.pdd.std_dev_lapse_lat_rate is nonzero";
     pism_config:surface.pdd.std_dev_lapse_lat_base_type = "number";
@@ -2265,23 +2282,6 @@ netcdf pism_config {
     pism_config:surface.pdd.std_dev_use_param = "no";
     pism_config:surface.pdd.std_dev_use_param_doc = "Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by geometry.ice_free_thickness_standard.";
     pism_config:surface.pdd.std_dev_use_param_type = "flag";
-
-    pism_config:surface.pdd.std_dev.file = "";
-    pism_config:surface.pdd.std_dev.file_doc = "The name of the file to read `air_temp_sd` (standard deviation of air temperature) from.";
-    pism_config:surface.pdd.std_dev.file_option = "pdd_sd_file";
-    pism_config:surface.pdd.std_dev.file_type = "string";
-
-    pism_config:surface.pdd.std_dev.period = 0;
-    pism_config:surface.pdd.std_dev.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:surface.pdd.std_dev.period_option = "pdd_sd_period";
-    pism_config:surface.pdd.std_dev.period_type = "integer";
-    pism_config:surface.pdd.std_dev.period_units = "years";
-
-    pism_config:surface.pdd.std_dev.reference_year = 0;
-    pism_config:surface.pdd.std_dev.reference_year_doc = "Reference year to use when ``surface.pdd.std_dev.period`` is active.";
-    pism_config:surface.pdd.std_dev.reference_year_option = "pdd_sd_reference_year";
-    pism_config:surface.pdd.std_dev.reference_year_type = "integer";
-    pism_config:surface.pdd.std_dev.reference_year_units = "years";
 
     pism_config:surface.pressure = 0.0;
     pism_config:surface.pressure_doc = "atmospheric pressure; = pressure at ice surface";
