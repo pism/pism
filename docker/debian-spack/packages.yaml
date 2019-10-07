@@ -1,0 +1,33 @@
+packages:
+
+  # Spack and PETSc require Python
+  python:
+    paths:
+      python@2.7.15: /usr
+    buildable: False
+
+  # PETSc and PISM require MPI
+  openmpi:
+    paths:
+      openmpi@2.1.1: /usr
+    buildable: False
+
+  # PISM requires CMake
+  cmake:
+    paths:
+      cmake@3.10.2: /usr
+    buildable: False
+
+  # PISM requires NetCDF (the library and ncgen for the build process)
+  netcdf:
+    paths:
+      netcdf@4.6.0: /usr
+    buildable: False
+
+  # PISM requires GSL
+  gsl:
+    paths:
+      gsl@2.4: /usr
+    buildable: False
+
+  # Consider adding BLAS.
