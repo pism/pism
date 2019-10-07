@@ -30,3 +30,8 @@ Once installed, the PISM binaries (e.g. ``pismr``, ``pisms``, various Python
 tools) are available in the PATH and do not require further intervention to
 work. It is recommended that the installation is manually verified with the
 instructions in section :ref:`sec-install-quick-tests`.
+
+.. note::
+
+   The AUR package for PISM is maintained by Julien Seguinot (|jseguinot-email|);
+   please e-mail him with questions about it.
