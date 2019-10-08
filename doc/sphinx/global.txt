@@ -30,6 +30,9 @@
 .. |pism-docs| replace:: http://www.pism-docs.org
 .. |petsc-download| replace:: https://www.mcs.anl.gov/petsc/download/index.html
 
+.. |efischer-email| replace:: elizabeth.fischer@columbia.edu
+.. |jseguinot-email| replace:: seguinot@vaw.baug.ethz.ch
+
 .. |pism-browser| replace:: PISM *Source Code Browser*
 
 .. |config-cdl| replace:: ``src/pism_config.cdl``
@@ -123,6 +126,8 @@
 .. _CircleCI CLI: https://circleci.com/docs/2.0/local-cli/
 .. _Docker: https://www.docker.com/
 .. _MPICH: https://www.mpich.org/
+.. _Spack: https://spack.io/
+.. _Spack documentation: https://spack.readthedocs.io/en/latest/
 
 .. PISM-related external links
 
