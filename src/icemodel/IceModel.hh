@@ -221,6 +221,7 @@ protected:
   virtual void save_variables(const PIO &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
+                              double time,
                               IO_Type default_diagnostics_type = PISM_FLOAT);
 
   virtual void define_model_state(const PIO &file);

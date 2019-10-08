@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018 PISM Authors
+/* Copyright (C) 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -293,7 +293,10 @@ void IceModel::write_extras() {
 
     save_variables(file,
                    m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
-                   m_extra_vars, PISM_FLOAT);
+                   m_extra_vars,
+                   0.5 * (m_last_extra + current_time), // use the mid-point of the
+                                                        // current reporting interval
+                   PISM_FLOAT);
 
     // Get the length of the time dimension *after* it is appended to.
     unsigned int time_length = file.inq_dimlen(time_name);

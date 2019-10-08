@@ -68,7 +68,7 @@ int IceModel::process_signals() {
     pism_signal = 0;
 
     PIO file(m_grid->com, m_config->get_string("output.format"), file_name, PISM_READWRITE_MOVE);
-    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars);
+    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
 
     // flush all the time-series buffers:
     flush_timeseries();

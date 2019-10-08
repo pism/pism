@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018 PISM Authors
+/* Copyright (C) 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -163,7 +163,7 @@ void IceModel::write_snapshot() {
 
     write_run_stats(file);
 
-    save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars);
+    save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
   }
   profiling.end("io.snapshots");
 }

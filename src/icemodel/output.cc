@@ -136,7 +136,8 @@ void IceModel::save_results() {
 
     write_run_stats(file);
 
-    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars);
+    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
+                   m_time->current());
   }
   profiling.end("io.model_state");
 }
@@ -172,6 +173,7 @@ void IceModel::write_run_stats(const PIO &file) {
 void IceModel::save_variables(const PIO &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
+                              double time,
                               IO_Type default_diagnostics_type) {
 
   // define the time dimension if necessary (no-op if it is already defined)
@@ -180,7 +182,7 @@ void IceModel::save_variables(const PIO &file,
   // Note: it is time-dependent, so we need to define time first.
   io::define_timeseries(m_timestamp, file, PISM_FLOAT);
   // append to the time dimension
-  io::append_time(file, *m_config, m_grid->ctx()->time()->current());
+  io::append_time(file, *m_config, time);
 
   // Write metadata *before* everything else:
   //

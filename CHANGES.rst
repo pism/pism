@@ -75,6 +75,8 @@ Changes since v1.1
   part of the Lingle-Clark model. In previous PISM versions `-bed_def lc` turned on the
   viscous part of the model and an extra command-line option (`-bed_def_lc_elastic_model`)
   was required to turn on the elastic part.
+- Fix `issue 327`_: now PISM uses mid-points of reporting intervals when saving to the
+  `-extra_file`. This makes PISM's output files easier to process using CDO.
 
 Changes from v1.0 to v1.1
 =========================
@@ -628,6 +630,7 @@ Miscellaneous
 .. _issue 324: https://github.com/pism/pism/issues/324
 .. _issue 325: https://github.com/pism/pism/issues/325
 .. _issue 326: https://github.com/pism/pism/issues/326
+.. _issue 327: https://github.com/pism/pism/issues/327
 .. _issue 328: https://github.com/pism/pism/issues/328
 .. _issue 330: https://github.com/pism/pism/issues/330
 .. _issue 334: https://github.com/pism/pism/issues/334
