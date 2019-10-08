@@ -76,6 +76,15 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_s
     mapping.set_string("grid_mapping_name", "polar_stereographic");
     mapping.set_double("false_easting", 0.0);
     break;
+  case 5936:
+    mapping.set_double("latitude_of_projection_origin", 90.0);
+    mapping.set_double("scale_factor_at_projection_origin", 1.0);
+    mapping.set_double("straight_vertical_longitude_from_pole", -150.0);
+    mapping.set_double("standard_parallel", 90.0);
+    mapping.set_double("false_northing", 2000000.0);
+    mapping.set_string("grid_mapping_name", "polar_stereographic");
+    mapping.set_double("false_easting", 2000000..0);
+    break;
   case 26710:
     mapping.set_double("longitude_of_central_meridian", -123.0);
     mapping.set_double("false_easting", 500000.0);
