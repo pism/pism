@@ -357,3 +357,5 @@
 
 %shared_ptr(pism::Poisson)
 %include "util/Poisson.hh"
+
+pism_class(pism::FractureDensity, "pism/fracturedensity/FractureDensity.hh")
