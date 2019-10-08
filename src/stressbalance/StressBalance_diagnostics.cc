@@ -861,7 +861,8 @@ IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() const {
   // copy_from updates ghosts
   velocity.copy_from(*IceModelVec2V::ToVector(PSB_velbar(model).compute()));
 
-  model->compute_2D_stresses(velocity, hardness, cell_type, *result);
+  stressbalance::compute_2D_stresses(*model->shallow()->flow_law(),
+                                     velocity, hardness, cell_type, *result);
 
   return result;
 }

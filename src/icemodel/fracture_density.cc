@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2018 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2011-2019 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -68,10 +68,11 @@ void IceModel::update_fracture_density() {
                         m_energy_model->enthalpy(),
                         hardness);
 
-  m_stress_balance->compute_2D_stresses(ssa_velocity,
-                                        hardness,
-                                        m_geometry.cell_type,
-                                        deviatoric_stresses);
+  stressbalance::compute_2D_stresses(*m_stress_balance->shallow()->flow_law(),
+                                     ssa_velocity,
+                                     hardness,
+                                     m_geometry.cell_type,
+                                     deviatoric_stresses);
 
   IceModelVec::AccessList list{&ssa_velocity, &strain_rates, &deviatoric_stresses,
       &m_geometry.ice_thickness, &D, &D_new, &m_geometry.cell_type};
