@@ -91,6 +91,15 @@
 
 %include <std_shared_ptr.i>
 
+// Add a PISM class
+%define pism_class(name, header)
+%{
+  #include header
+%}
+%shared_ptr(name)
+%include header
+%enddef
+
 %template(SizetVector) std::vector<size_t>;
 %template(IntVector) std::vector<int>;
 %template(UnsignedIntVector) std::vector<unsigned int>;
