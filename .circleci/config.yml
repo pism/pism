@@ -1,0 +1,57 @@
+version: 2
+jobs:
+  build:
+
+    # Ignore the master branch for now (we should remove this once CircleCI support is
+    # merged into master).
+    branches:
+      ignore:
+        - master
+
+    docker:
+      - image: ckhrulev/pism-debian:0.1.0
+        environment:
+          # Print output on failure when running "make test"
+          CTEST_OUTPUT_ON_FAILURE: 1
+
+    steps:
+      - checkout
+
+      - run:
+          name: Build PISM
+          # CMAKE_BUILD_TYPE=Debug enables pedantic compiler warnings and one or two extra
+          # tests.
+          #
+          # CMAKE_CXX_FLAGS is set to a) disable warnings caused by OpenMPI internals and
+          # b) treat all warnings as errors except for the one about the "noreturn"
+          # attribute.
+          #
+          # This branch requires matplotlib for Python tests, so we disable them for now.
+          #
+          # PROJ, NetCDF built with parallel I/O, and PnetCDF are optional dependencies but
+          # we should build and test the code that uses them. The same applies to ICEBIN.
+          #
+          # CMAKE_FIND_ROOT_PATH points to HDF5 and NetCDF with support for parallel I/O.
+          # (Parallel HDF5 and NetCDF from Debian did not work.)
+          command: >-
+            mkdir -p build && cd build &&
+            PETSC_DIR=/usr/lib/petsc/ CC=mpicc CXX=mpicxx
+            cmake ..
+            -DCMAKE_BUILD_TYPE=Debug
+            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf"
+            -DCMAKE_CXX_FLAGS="-Wno-cast-function-type -Werror -Wno-error=suggest-attribute=noreturn"
+            -DPism_USE_PROJ4=Yes
+            -DPism_USE_PARALLEL_NETCDF4=Yes
+            -DPism_USE_PNETCDF=Yes
+            -DPism_BUILD_PYTHON_BINDINGS=NO
+            -DPism_BUILD_EXTRA_EXECS=Yes
+            -DPism_BUILD_ICEBIN=Yes
+            &&
+            make
+
+      - run:
+          name: Run PISM test suite
+          command: >-
+            cd build &&
+            export PYTHONPATH=$PWD/site-packages:$PYTHONPATH &&
+            make test
