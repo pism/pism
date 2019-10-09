@@ -42,6 +42,8 @@ void RoutingSteady::restart_impl(const PIO& input_file, int record) {
 }
 
 void RoutingSteady::bootstrap_impl(const PIO& input_file, const IceModelVec2S& ice_thickness) {
+  (void) ice_thickness;
+
   double bwat_default = m_config->get_double("bootstrapping.defaults.bwat");
   m_W.regrid(input_file, OPTIONAL, bwat_default);
 
@@ -59,6 +61,7 @@ void RoutingSteady::init_impl(const IceModelVec2S& W_till,
 }
 
 void RoutingSteady::update_impl(double t, double dt, const Inputs& inputs) {
+  (void) t;
 
   ice_bottom_surface(*inputs.geometry, m_bottom_surface);
 
@@ -163,8 +166,6 @@ void RoutingSteady::compute_velocity(const IceModelVec2Stag &W,
   P.copy_from(pressure);  // yes, it updates ghosts
 
   IceModelVec::AccessList list{&P, &W, &bed, &result};
-
-  const double S = 1.0;
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
