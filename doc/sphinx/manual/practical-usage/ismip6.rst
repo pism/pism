@@ -39,6 +39,8 @@ The surface mass balance is computed using the following formula:
 
    SMB(x,y,t) = SMB_ref(x,y) + aSMB(x,y,t) + dSMBdz(x,y) * [h(x,y,t) - h_ref(x,y)]
 
+.. _sec-ismip6-frontal-melt:
+
 Frontal melt parameterization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
