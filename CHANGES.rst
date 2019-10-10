@@ -63,6 +63,13 @@ Changes since v1.1
   at the beginning of the run (if requested).
 - Bug fix: ensure that land ice area fraction (diagnostic variable `sftgif`) never
   exceeds 1.
+- Add a new subglacial hydrology model `steady`. It adds an approximation of the
+  subglacial water flux to the `null` model. This approximation uses the assumption that
+  the subglacial water system instantaneously reaches the steady state after a change in
+  the water input rate from the surface. At high grid resolutions (~1km and higher) this
+  is likely to be cheaper than using the `routing` model to obtain the flux needed by the
+  frontal melt parameterization (above). Note that *this is a different model* and so when
+  switching to it *re-tuning of the frontal melt parameterization will be necessary*.
 
 Changes from v1.0 to v1.1
 =========================
