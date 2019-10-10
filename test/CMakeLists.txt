@@ -37,4 +37,6 @@ if (Pism_BUILD_PYTHON_BINDINGS AND NOSE_EXECUTABLE)
     COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/mass_transport.py)
   add_test(NAME "Python:Verification:nose:btu"
     COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/bedrock_column.py)
+  add_test(NAME "Python:nose:hydrology:steady"
+    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/regression/hydrology_steady_test.py)
 endif()
