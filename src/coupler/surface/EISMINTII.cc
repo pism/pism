@@ -133,7 +133,7 @@ void EISMINTII::initialize_using_formulas() {
   }
 
   // convert from "m second-1" to "kg m-2 s-1"
-  m_mass_flux->scale(m_config->get_double("constants.ice.density"));
+  m_mass_flux->scale(m_config->get_number("constants.ice.density"));
 }
 
 void EISMINTII::update_impl(const Geometry &geometry, double t, double dt) {

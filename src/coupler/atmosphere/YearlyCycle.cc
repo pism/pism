@@ -38,7 +38,7 @@ YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
     m_air_temp_mean_summer(m_grid, "air_temp_mean_summer", WITHOUT_GHOSTS),
     m_precipitation(m_grid, "precipitation", WITHOUT_GHOSTS) {
 
-  m_snow_temp_summer_day = m_config->get_double("atmosphere.fausto_air_temp.summer_peak_day");
+  m_snow_temp_summer_day = m_config->get_number("atmosphere.fausto_air_temp.summer_peak_day");
 
   m_air_temp_mean_annual.set_attrs("diagnostic",
                                    "mean annual near-surface air temperature"

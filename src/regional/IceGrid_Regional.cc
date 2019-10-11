@@ -26,6 +26,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/io/PIO.hh"
+#include "pism/util/Component.hh" // process_input_options
 
 namespace pism {
 
@@ -82,14 +83,14 @@ static void subset_extent(const std::string& axis,
  */
 IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
 
-  const options::String input_file("-i", "Specifies a PISM input file");
-  const bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+  auto options = process_input_options(ctx->com(), ctx->config());
+
   const options::RealList x_range("-x_range",
                                   "range of X coordinates in the selected subset", {});
   const options::RealList y_range("-y_range",
                                   "range of Y coordinates in the selected subset", {});
 
-  if (input_file.is_set() and bootstrap and x_range.is_set() and y_range.is_set()) {
+  if (options.type == INIT_BOOTSTRAP and x_range.is_set() and y_range.is_set()) {
     // bootstrapping; get domain size defaults from an input file, allow overriding all grid
     // parameters using command-line options
 
@@ -107,7 +108,7 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
                                       "bedrock_altitude", "thk", "topg"};
     bool grid_info_found = false;
 
-    PIO file(ctx->com(), "netcdf3", input_file, PISM_READONLY);
+    PIO file(ctx->com(), "netcdf3", options.filename, PISM_READONLY);
     for (auto name : names) {
 
       grid_info_found = file.inq_var(name);
@@ -140,15 +141,10 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
     }
 
     if (not grid_info_found) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no geometry information found in '%s'",
-                                    input_file->c_str());
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "no geometry information found in '%s'",
+                                    options.filename.c_str());
     }
-
-    // ignore -Lx, -Ly, -Mx, -My
-    options::ignored(*ctx->log(), "-Mx");
-    options::ignored(*ctx->log(), "-My");
-    options::ignored(*ctx->log(), "-Lx");
-    options::ignored(*ctx->log(), "-Ly");
 
     // process options controlling vertical grid parameters, overriding values read from a file
     input_grid.vertical_grid_from_options(ctx->config());

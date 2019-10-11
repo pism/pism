@@ -40,8 +40,7 @@ namespace atmosphere {
 // Atmosphere
 
 Factory::Factory(IceGrid::ConstPtr g)
-  : PCFactory<AtmosphereModel>(g) {
-  m_option = "atmosphere";
+  : PCFactory<AtmosphereModel>(g, "atmosphere.model") {
 
   add_model<PIK>("pik");
   add_model<Given>("given");

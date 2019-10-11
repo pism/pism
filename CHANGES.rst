@@ -90,6 +90,8 @@ Changes from v1.0 to v1.1
 - Add 5 more parameterizations of near-surface air temperature to `-atmosphere pik`.
 - PISM stops with an error message if the name of a parameter in a `-config_override` file
   does not match any of the known PISM parameters.
+- Fix `issue 375`_ (could not use `-config_override` to control the
+  bed-elevation-dependent parameterization of the till friction angle).
 - PISM stops with an error message if the diffusivity of the SIA flow exceeds a given
   threshold (see `stress_balance.sia.max_diffusivity`). Extremely high SIA diffusivities
   often mean that the setup is not "shallow enough"; in a situation like this it might

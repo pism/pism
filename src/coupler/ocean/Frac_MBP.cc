@@ -27,7 +27,7 @@ Frac_MBP::Frac_MBP(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
   m_forcing.reset(new ScalarForcing(g->ctx(),
-                                    "-ocean_frac_MBP",
+                                    "ocean.frac_MBP",
                                     "frac_MBP",
                                     "1", "1",
                                     "melange back pressure fraction"));

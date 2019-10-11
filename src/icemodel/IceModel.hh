@@ -272,7 +272,7 @@ protected:
   energy::BedThermalUnit *m_btu;
   energy::EnergyModel *m_energy_model;
 
-  AgeModel *m_age_model;
+  std::shared_ptr<AgeModel> m_age_model;
 
   calving::IcebergRemover     *m_iceberg_remover;
   calving::OceanKill          *m_ocean_kill_calving;

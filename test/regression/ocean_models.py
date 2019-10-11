@@ -11,18 +11,23 @@ from unittest import TestCase
 
 config = PISM.Context().config
 
+# reduce the grid size to speed this up
+config.set_number("grid.Mx", 3)
+config.set_number("grid.My", 5)
+config.set_number("grid.Mz", 5)
+
+config.set_string("ocean.delta_sl_2d.file", "delta_SL_input.nc")
+
 seconds_per_year = 365 * 86400
 # ensure that this is the correct year length
 config.set_string("time.calendar", "365_day")
 
 # change the default melange back pressure fraction from 0 to 1. The default of zero makes
 # it hard to test the modifier that scales this value.
-config.set_double("ocean.constant.melange_back_pressure_fraction", 1.0)
+config.set_number("ocean.constant.melange_back_pressure_fraction", 1.0)
 
 # silence models' initialization messages
 PISM.Context().log.set_threshold(1)
-
-options = PISM.PETSc.Options()
 
 def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)
@@ -62,14 +67,14 @@ def constant_test():
     depth = 1000.0                  # meters
 
     # compute mass flux
-    melt_rate = config.get_double("ocean.constant.melt_rate", "m second-1")
-    ice_density = config.get_double("constants.ice.density")
+    melt_rate = config.get_number("ocean.constant.melt_rate", "m second-1")
+    ice_density = config.get_number("constants.ice.density")
     mass_flux = melt_rate * ice_density
 
     # compute pressure melting temperature
-    T0 = config.get_double("constants.fresh_water.melting_point_temperature")
-    beta_CC = config.get_double("constants.ice.beta_Clausius_Clapeyron")
-    g = config.get_double("constants.standard_gravity")
+    T0 = config.get_number("constants.fresh_water.melting_point_temperature")
+    beta_CC = config.get_number("constants.ice.beta_Clausius_Clapeyron")
+    g = config.get_number("constants.standard_gravity")
 
     pressure = ice_density * g * depth
     T_melting = T0 - beta_CC * pressure
@@ -98,10 +103,10 @@ def pik_test():
     depth = 1000.0                  # meters
 
     # compute pressure melting temperature
-    ice_density = config.get_double("constants.ice.density")
-    T0 = config.get_double("constants.fresh_water.melting_point_temperature")
-    beta_CC = config.get_double("constants.ice.beta_Clausius_Clapeyron")
-    g = config.get_double("constants.standard_gravity")
+    ice_density = config.get_number("constants.ice.density")
+    T0 = config.get_number("constants.fresh_water.melting_point_temperature")
+    beta_CC = config.get_number("constants.ice.beta_Clausius_Clapeyron")
+    g = config.get_number("constants.standard_gravity")
 
     pressure = ice_density * g * depth
     T_melting = T0 - beta_CC * pressure
@@ -214,7 +219,7 @@ class DeltaT(TestCase):
 
         modifier = PISM.OceanDeltaT(self.grid, self.model)
 
-        options.setValue("-ocean_delta_T_file", self.filename)
+        config.set_string("ocean.delta_T.file", self.filename)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
@@ -240,7 +245,7 @@ class DeltaSMB(TestCase):
 
         modifier = PISM.OceanDeltaSMB(self.grid, self.model)
 
-        options.setValue("-ocean_delta_mass_flux_file", self.filename)
+        config.set_string("ocean.delta_mass_flux.file", self.filename)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
@@ -296,7 +301,7 @@ class FracMBP(TestCase):
 
         modifier = PISM.OceanFracMBP(self.grid, self.model)
 
-        options.setValue("-ocean_frac_MBP_file", self.filename)
+        config.set_string("ocean.frac_MBP.file", self.filename)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
@@ -333,7 +338,7 @@ class FracSMB(TestCase):
 
         modifier = PISM.OceanFracSMB(self.grid, self.model)
 
-        options.setValue("-ocean_frac_mass_flux_file", self.filename)
+        config.set_string("ocean.frac_mass_flux.file", self.filename)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
@@ -367,9 +372,9 @@ class Cache(TestCase):
         time_bounds = np.array([0, 1, 1, 2, 2, 3, 3, 4]) * seconds_per_year
         create_scalar_forcing(self.filename, "delta_T", "Kelvin", [1, 2, 3, 4],
                               times=None, time_bounds=time_bounds)
-        options.setValue("-ocean_delta_T_file", self.filename)
 
-        config.set_double("ocean.cache.update_interval", 2.0)
+        config.set_string("ocean.delta_T.file", self.filename)
+        config.set_number("ocean.cache.update_interval", 2.0)
 
     def test_ocean_cache(self):
         "Modifier Cache"
@@ -411,7 +416,7 @@ class DeltaSL(TestCase):
 
         modifier = PISM.SeaLevelDelta(self.grid, self.model)
 
-        options.setValue("-ocean_delta_sl_file", self.filename)
+        config.set_string("ocean.delta_sl.file", self.filename)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)

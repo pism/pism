@@ -4,19 +4,19 @@ netcdf pism_overrides {
 
     pism_overrides:surface.force_to_thickness.alpha = 1.0;
     pism_overrides:surface.force_to_thickness.alpha_doc = "exponential coefficient in force-to-thickness mechanism";
-    pism_overrides:surface.force_to_thickness.alpha_type = "scalar";
+    pism_overrides:surface.force_to_thickness.alpha_type = "number";
     pism_overrides:surface.force_to_thickness.alpha_units = "year-1";
     pism_overrides:surface.force_to_thickness.alpha_option = "force_to_thickness_alpha";
 
     pism_overrides:surface.force_to_thickness.ice_free_alpha_factor = 1.0;
     pism_overrides:surface.force_to_thickness.ice_free_alpha_factor_doc = "surface.force_to_thickness.alpha is multiplied by this factor in areas that are ice-free according to the target ice thickness and surface.force_to_thickness.ice_free_thickness_threshold";
-    pism_overrides:surface.force_to_thickness.ice_free_alpha_factor_type = "scalar";
+    pism_overrides:surface.force_to_thickness.ice_free_alpha_factor_type = "number";
     pism_overrides:surface.force_to_thickness.ice_free_alpha_factor_units = "1";
     pism_overrides:surface.force_to_thickness.ice_free_alpha_factor_option = "force_to_thickness_ice_free_alpha_factor";
 
     pism_overrides:geometry.ice_free_thickness_standard = 10.0;
     pism_overrides:geometry.ice_free_thickness_standard_doc = "If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN.";
-    pism_overrides:geometry.ice_free_thickness_standard_type = "scalar";
+    pism_overrides:geometry.ice_free_thickness_standard_type = "number";
     pism_overrides:geometry.ice_free_thickness_standard_units = "meters";
 
     pism_overrides:stress_balance.sia.bed_smoother.range = 0.;

@@ -213,7 +213,7 @@ void Elevation::compute_mass_flux(const IceModelVec2S &surface, IceModelVec2S &r
   loop.check();
 
   // convert from m second-1 ice equivalent to kg m-2 s-1:
-  result.scale(m_config->get_double("constants.ice.density"));
+  result.scale(m_config->get_number("constants.ice.density"));
 }
 
 void Elevation::compute_temperature(const IceModelVec2S &surface, IceModelVec2S &result) const {

@@ -138,7 +138,7 @@ To re-format a file, commit it to the repository, then run
 (Here `-i` tells clang-format to edit files "in place." Note that editing in place is
 safe because you added it to the repository.)
 
-Boolean operators should be surrounded by spaces
+Logical operators should be surrounded by spaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: c++

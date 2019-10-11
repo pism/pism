@@ -69,8 +69,8 @@ BedSmoother::BedSmoother(IceGrid::ConstPtr g, int MAX_GHOSTS)
     m_C4p0 = m_C4.allocate_proc0_copy();
   }
 
-  m_Glen_exponent = m_config->get_double("stress_balance.sia.Glen_exponent"); // choice is SIA; see #285
-  m_smoothing_range = m_config->get_double("stress_balance.sia.bed_smoother.range");
+  m_Glen_exponent = m_config->get_number("stress_balance.sia.Glen_exponent"); // choice is SIA; see #285
+  m_smoothing_range = m_config->get_number("stress_balance.sia.bed_smoother.range");
 
   if (m_smoothing_range > 0.0) {
     log.message(2,
@@ -366,7 +366,7 @@ void BedSmoother::theta(const IceModelVec2S &usurf, IceModelVec2S &result) const
   assert(usurf.stencil_width()        >= GHOSTS);
 
   const double
-    theta_min = m_config->get_double("stress_balance.sia.bed_smoother.theta_min"),
+    theta_min = m_config->get_number("stress_balance.sia.bed_smoother.theta_min"),
     theta_max = 1.0;
 
   ParallelSection loop(m_grid->com);

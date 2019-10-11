@@ -11,14 +11,17 @@ from unittest import TestCase
 
 config = PISM.Context().config
 
+# reduce the grid size to speed this up
+config.set_number("grid.Mx", 3)
+config.set_number("grid.My", 5) # non-square grid
+config.set_number("grid.Mz", 2)
+
 seconds_per_year = 365 * 86400
 # ensure that this is the correct year length
 config.set_string("time.calendar", "365_day")
 
 # silence models' initialization messages
 PISM.Context().log.set_threshold(1)
-
-options = PISM.PETSc.Options()
 
 def write_state(model):
     "Test writing of the model state"
@@ -173,7 +176,7 @@ class DeltaT(TestCase):
 
         modifier = PISM.AtmosphereDeltaT(self.grid, self.model)
 
-        options.setValue("-atmosphere_delta_T_file", self.filename)
+        config.set_string("atmosphere.delta_T.file", self.filename)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
@@ -191,7 +194,7 @@ class DeltaP(TestCase):
 
         create_scalar_forcing(self.filename, "delta_P", "kg m-2 s-1", [self.dP], [0])
 
-        options.setValue("-atmosphere_delta_P_file", self.filename)
+        config.set_string("atmosphere.delta_P.file", self.filename)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -250,7 +253,7 @@ class SeaRISE(TestCase):
         output = PISM.util.prepare_output(self.filename)
         precipitation(self.grid, self.P).write(output)
 
-        options.setValue("-atmosphere_searise_greenland_file", self.filename)
+        config.set_string("atmosphere.searise_greenland.file", self.filename)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -289,7 +292,7 @@ class YearlyCycle(TestCase):
         T_summer.set(self.T_summer)
         T_summer.write(output)
 
-        options.setValue("-atmosphere_yearly_cycle_file", self.filename)
+        config.set_string("atmosphere.yearly_cycle.file", self.filename)
 
         # FIXME: test "-atmosphere_yearly_cycle_scaling_file", too
 
@@ -306,7 +309,7 @@ class YearlyCycle(TestCase):
         one_year = 365 * 86400.0
         model.update(self.geometry, 0, one_year)
 
-        summer_peak = config.get_double("atmosphere.fausto_air_temp.summer_peak_day") / 365.0
+        summer_peak = config.get_number("atmosphere.fausto_air_temp.summer_peak_day") / 365.0
 
         ts = np.linspace(0, one_year, 13)
         cycle = np.cos(2.0 * np.pi * (ts / one_year - summer_peak))
@@ -339,7 +342,7 @@ class OneStation(TestCase):
 
         output.close()
 
-        options.setValue("-atmosphere_one_station_file", self.filename)
+        config.set_string("atmosphere.one_station.file", self.filename)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -362,8 +365,8 @@ class Uniform(TestCase):
         self.P = 5.0
         self.T = 250.0
 
-        config.set_double("atmosphere.uniform.temperature", self.T)
-        config.set_double("atmosphere.uniform.precipitation", self.P)
+        config.set_number("atmosphere.uniform.temperature", self.T)
+        config.set_number("atmosphere.uniform.precipitation", self.P)
 
     def test_atmosphere_uniform(self):
         "Model 'uniform'"
@@ -426,7 +429,7 @@ class PaleoPrecip(TestCase):
 
         create_scalar_forcing(self.filename, "delta_T", "Kelvin", [self.dT], [0])
 
-        options.setValue("-atmosphere_paleo_precip_file", self.filename)
+        config.set_string("atmosphere.paleo_precip.file", self.filename)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -454,7 +457,7 @@ class FracP(TestCase):
 
         create_scalar_forcing(self.filename, "frac_P", "1", [self.P_ratio], [0])
 
-        options.setValue("-atmosphere_frac_P_file", self.filename)
+        config.set_string("atmosphere.frac_P.file", self.filename)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -493,9 +496,9 @@ class LapseRates(TestCase):
 
         config.set_string("atmosphere.lapse_rate.file", self.filename)
 
-        config.set_double("atmosphere.lapse_rate.precipitation_lapse_rate", self.dPdz)
+        config.set_number("atmosphere.lapse_rate.precipitation_lapse_rate", self.dPdz)
 
-        options.setValue("-temp_lapse_rate", self.dTdz)
+        config.set_number("atmosphere.lapse_rate.temperature_lapse_rate", self.dTdz)
 
     def tearDown(self):
         os.remove(self.filename)

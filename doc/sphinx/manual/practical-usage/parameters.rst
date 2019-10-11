@@ -83,7 +83,7 @@ what was different about ``mars.nc``:
                    pism_config:ssafd_relative_convergence_units = "1" ;
    -               pism_config:constants.standard_gravity_doc = "acceleration due to gravity on Earth geoid" ;
    +               pism_config:constants.standard_gravity_doc = "m s-2; standard gravity on Mars" ;
-                   pism_config:constants.standard_gravity_type = "scalar" ;
+                   pism_config:constants.standard_gravity_type = "number" ;
    @@ -1057,3 +1057,3 @@
                    pism_config:ssafd_relative_convergence = 0.0001 ;
    -               pism_config:constants.standard_gravity = 9.81 ;

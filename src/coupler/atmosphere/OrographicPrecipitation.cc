@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -39,7 +39,7 @@ OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr grid,
   const int
     Mx = m_grid->Mx(),
     My = m_grid->My(),
-    Z  = m_config->get_double("atmosphere.orographic_precipitation.grid_size_factor"),
+    Z  = m_config->get_number("atmosphere.orographic_precipitation.grid_size_factor"),
     Nx = Z * (Mx - 1) + 1,
     Ny = Z * (My - 1) + 1;
 
@@ -100,7 +100,7 @@ void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, do
   m_precipitation->get_from_proc0(*m_work0);
 
   // convert from mm/s to kg / (m^2 s):
-  double water_density = m_config->get_double("constants.fresh_water.density");
+  double water_density = m_config->get_number("constants.fresh_water.density");
   m_precipitation->scale(1000.0 * water_density);
 }
 

@@ -68,7 +68,7 @@ def run(Mx, My, t_final, part_grid, C=1.0):
 
     config = PISM.Context().config
 
-    config.set_boolean("geometry.part_grid.enabled", part_grid)
+    config.set_flag("geometry.part_grid.enabled", part_grid)
 
     grid = PISM.IceGrid_Shallow(ctx, 1, 1, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 

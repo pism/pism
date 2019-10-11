@@ -155,8 +155,8 @@ void IceCompModel::initTestsKO() {
 void IceCompModel::getCompSourcesTestFG() {
 
   const double
-    ice_rho   = m_config->get_double("constants.ice.density"),
-    ice_c     = m_config->get_double("constants.ice.specific_heat_capacity");
+    ice_rho   = m_config->get_number("constants.ice.density"),
+    ice_c     = m_config->get_number("constants.ice.specific_heat_capacity");
 
   // before temperature and flow step, set strain_heating_c from exact values
 
@@ -386,8 +386,8 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
   }
 
   const double
-    ice_rho   = m_config->get_double("constants.ice.density"),
-    ice_c     = m_config->get_double("constants.ice.specific_heat_capacity");
+    ice_rho   = m_config->get_number("constants.ice.density"),
+    ice_c     = m_config->get_number("constants.ice.specific_heat_capacity");
 
   const IceModelVec3 &strain_heating3 = m_stress_balance->volumetric_strain_heating();
 

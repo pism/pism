@@ -53,7 +53,7 @@ void CalvingAtThickness::init() {
 
   std::string threshold_file = m_config->get_string("calving.thickness_calving.threshold_file");
 
-  double calving_threshold = m_config->get_double("calving.thickness_calving.threshold");
+  double calving_threshold = m_config->get_number("calving.thickness_calving.threshold");
 
   m_calving_threshold.set(calving_threshold);
 

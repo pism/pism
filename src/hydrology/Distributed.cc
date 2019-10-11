@@ -39,12 +39,12 @@ Distributed::Distributed(IceGrid::ConstPtr g)
   m_P.set_attrs("model_state",
                 "pressure of transportable water in subglacial layer",
                 "Pa", "");
-  m_P.metadata().set_double("valid_min", 0.0);
+  m_P.metadata().set_number("valid_min", 0.0);
 
   m_Pnew.set_attrs("internal",
                    "new transportable subglacial water pressure during update",
                    "Pa", "");
-  m_Pnew.metadata().set_double("valid_min", 0.0);
+  m_Pnew.metadata().set_number("valid_min", 0.0);
 }
 
 Distributed::~Distributed() {
@@ -68,12 +68,12 @@ void Distributed::bootstrap_impl(const PIO &input_file,
                                  const IceModelVec2S &ice_thickness) {
   Routing::bootstrap_impl(input_file, ice_thickness);
 
-  double bwp_default = m_config->get_double("bootstrapping.defaults.bwp");
+  double bwp_default = m_config->get_number("bootstrapping.defaults.bwp");
   m_P.regrid(input_file, OPTIONAL, bwp_default);
 
   regrid("Hydrology", m_P);
 
-  bool init_P_from_steady = m_config->get_boolean("hydrology.distributed.init_p_from_steady");
+  bool init_P_from_steady = m_config->get_flag("hydrology.distributed.init_p_from_steady");
 
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
     m_log->message(2,
@@ -184,11 +184,11 @@ void Distributed::P_from_W_steady(const IceModelVec2S &W,
                                   IceModelVec2S &result) {
 
   const double
-    ice_softness                   = m_config->get_double("flow_law.isothermal_Glen.ice_softness"),
-    creep_closure_coefficient      = m_config->get_double("hydrology.creep_closure_coefficient"),
-    cavitation_opening_coefficient = m_config->get_double("hydrology.cavitation_opening_coefficient"),
-    Glen_exponent                  = m_config->get_double("stress_balance.sia.Glen_exponent"),
-    Wr                             = m_config->get_double("hydrology.roughness_scale");
+    ice_softness                   = m_config->get_number("flow_law.isothermal_Glen.ice_softness"),
+    creep_closure_coefficient      = m_config->get_number("hydrology.creep_closure_coefficient"),
+    cavitation_opening_coefficient = m_config->get_number("hydrology.cavitation_opening_coefficient"),
+    Glen_exponent                  = m_config->get_number("stress_balance.sia.Glen_exponent"),
+    Wr                             = m_config->get_number("hydrology.roughness_scale");
 
   const double CC = cavitation_opening_coefficient / (creep_closure_coefficient * ice_softness);
 
@@ -236,12 +236,12 @@ void Distributed::update_P(double dt,
                            IceModelVec2S &P_new) const {
 
   const double
-    n    = m_config->get_double("stress_balance.sia.Glen_exponent"),
-    A    = m_config->get_double("flow_law.isothermal_Glen.ice_softness"),
-    c1   = m_config->get_double("hydrology.cavitation_opening_coefficient"),
-    c2   = m_config->get_double("hydrology.creep_closure_coefficient"),
-    Wr   = m_config->get_double("hydrology.roughness_scale"),
-    phi0 = m_config->get_double("hydrology.regularizing_porosity");
+    n    = m_config->get_number("stress_balance.sia.Glen_exponent"),
+    A    = m_config->get_number("flow_law.isothermal_Glen.ice_softness"),
+    c1   = m_config->get_number("hydrology.cavitation_opening_coefficient"),
+    c2   = m_config->get_number("hydrology.creep_closure_coefficient"),
+    Wr   = m_config->get_number("hydrology.roughness_scale"),
+    phi0 = m_config->get_number("hydrology.regularizing_porosity");
 
   // update Pnew from time step
   const double
@@ -313,15 +313,15 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
 
   const double
     t_final = t + dt,
-    dt_max  = m_config->get_double("hydrology.maximum_time_step", "seconds"),
-    phi0    = m_config->get_double("hydrology.regularizing_porosity");
+    dt_max  = m_config->get_number("hydrology.maximum_time_step", "seconds"),
+    phi0    = m_config->get_number("hydrology.regularizing_porosity");
 
   // make sure W,P have valid ghosts before starting hydrology steps
   m_W.update_ghosts();
   m_P.update_ghosts();
 
 #if (Pism_DEBUG==1)
-  double tillwat_max = m_config->get_double("hydrology.tillwat_max");
+  double tillwat_max = m_config->get_number("hydrology.tillwat_max");
 #endif
 
   unsigned int step_counter = 0;

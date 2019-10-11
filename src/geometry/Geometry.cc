@@ -29,7 +29,7 @@ namespace pism {
 Geometry::Geometry(IceGrid::ConstPtr grid)
   // FIXME: ideally these fields should be "global", i.e. without ghosts.
   // (However this may increase communication costs...)
-  : m_stencil_width(grid->ctx()->config()->get_double("grid.max_stencil_width")),
+  : m_stencil_width(grid->ctx()->config()->get_number("grid.max_stencil_width")),
     latitude(grid, "lat", WITHOUT_GHOSTS),
     longitude(grid, "lon", WITHOUT_GHOSTS),
     bed_elevation(grid, "topg", WITH_GHOSTS, m_stencil_width),
@@ -43,12 +43,12 @@ Geometry::Geometry(IceGrid::ConstPtr grid)
   latitude.set_attrs("mapping", "latitude", "degree_north", "latitude");
   latitude.set_time_independent(true);
   latitude.metadata().set_string("grid_mapping", "");
-  latitude.metadata().set_doubles("valid_range", {-90.0, 90.0});
+  latitude.metadata().set_numbers("valid_range", {-90.0, 90.0});
 
   longitude.set_attrs("mapping", "longitude", "degree_east", "longitude");
   longitude.set_time_independent(true);
   longitude.metadata().set_string("grid_mapping", "");
-  longitude.metadata().set_doubles("valid_range", {-180.0, 180.0});
+  longitude.metadata().set_numbers("valid_range", {-180.0, 180.0});
 
   bed_elevation.set_attrs("model_state", "bedrock surface elevation",
                           "m", "bedrock_altitude");
@@ -59,7 +59,7 @@ Geometry::Geometry(IceGrid::ConstPtr grid)
 
   ice_thickness.set_attrs("model_state", "land ice thickness",
                           "m", "land_ice_thickness");
-  ice_thickness.metadata().set_double("valid_min", 0.0);
+  ice_thickness.metadata().set_number("valid_min", 0.0);
 
   ice_area_specific_volume.set_attrs("model_state",
                                      "ice-volume-per-area in partially-filled grid cells",
@@ -72,7 +72,7 @@ Geometry::Geometry(IceGrid::ConstPtr grid)
 
   cell_type.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
                       "", "");
-  cell_type.metadata().set_doubles("flag_values", {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED,
+  cell_type.metadata().set_numbers("flag_values", {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED,
                                                    MASK_FLOATING, MASK_ICE_FREE_OCEAN});
   cell_type.metadata().set_string("flag_meanings",
                                   "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
@@ -172,8 +172,8 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
   ice_surface_elevation.update_ghosts();
 
   const double
-    ice_density = config->get_double("constants.ice.density"),
-    ocean_density = config->get_double("constants.sea_water.density");
+    ice_density = config->get_number("constants.ice.density"),
+    ocean_density = config->get_number("constants.sea_water.density");
 
   compute_grounded_cell_fraction(ice_density,
                                  ocean_density,

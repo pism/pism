@@ -31,7 +31,7 @@ Lx = 2 * disc_radius
 Ly = Lx
 N = 101
 
-ctx.config.set_double("bed_deformation.lc.grid_size_factor", 2)
+ctx.config.set_number("bed_deformation.lc.grid_size_factor", 2)
 
 dt = convert(1000.0, "years", "seconds")
 

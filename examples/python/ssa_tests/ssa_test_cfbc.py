@@ -71,10 +71,10 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
     def _initPhysics(self):
         config = self.config
 
-        config.set_double("flow_law.isothermal_Glen.ice_softness",
-                          pow(1.9e8, -config.get_double("stress_balance.ssa.Glen_exponent")))
-        config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", False)
-        config.set_boolean("stress_balance.calving_front_stress_bc", True)
+        config.set_number("flow_law.isothermal_Glen.ice_softness",
+                          pow(1.9e8, -config.get_number("stress_balance.ssa.Glen_exponent")))
+        config.set_flag("stress_balance.ssa.compute_surface_gradient_inward", False)
+        config.set_flag("stress_balance.calving_front_stress_bc", True)
         config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
@@ -101,8 +101,8 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
         vel_bc = vecs.vel_bc
         ice_mask = vecs.mask
 
-        ocean_rho = self.config.get_double("constants.sea_water.density")
-        ice_rho = self.config.get_double("constants.ice.density")
+        ocean_rho = self.config.get_number("constants.sea_water.density")
+        ice_rho = self.config.get_number("constants.ice.density")
 
         x_min = grid.x(0)
         with PISM.vec.Access(comm=[thickness, surface, bc_mask, vel_bc, ice_mask]):
@@ -139,7 +139,7 @@ if __name__ == '__main__':
 
     config = PISM.Context().config
 
-    tc = test_cfbc(int(config.get_double("grid.Mx")),
-                   int(config.get_double("grid.My")))
+    tc = test_cfbc(int(config.get_number("grid.Mx")),
+                   int(config.get_number("grid.My")))
 
     tc.run(config.get_string("output.file_name"))

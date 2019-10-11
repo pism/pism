@@ -38,25 +38,25 @@ FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
     throw RuntimeError(PISM_ERROR_LOCATION, "EC is NULL in FlowLaw::FlowLaw()");
   }
 
-  m_standard_gravity   = config.get_double("constants.standard_gravity");
-  m_ideal_gas_constant = config.get_double("constants.ideal_gas_constant");
+  m_standard_gravity   = config.get_number("constants.standard_gravity");
+  m_ideal_gas_constant = config.get_number("constants.ideal_gas_constant");
 
-  m_rho                = config.get_double("constants.ice.density");
-  m_beta_CC_grad       = config.get_double("constants.ice.beta_Clausius_Clapeyron") * m_rho * m_standard_gravity;
-  m_melting_point_temp = config.get_double("constants.fresh_water.melting_point_temperature");
-  m_e                  = config.get_double(prefix + "enhancement_factor");
-  m_e_interglacial     = config.get_double(prefix + "enhancement_factor_interglacial");
-  m_n                  = config.get_double(prefix + "Glen_exponent");
+  m_rho                = config.get_number("constants.ice.density");
+  m_beta_CC_grad       = config.get_number("constants.ice.beta_Clausius_Clapeyron") * m_rho * m_standard_gravity;
+  m_melting_point_temp = config.get_number("constants.fresh_water.melting_point_temperature");
+  m_e                  = config.get_number(prefix + "enhancement_factor");
+  m_e_interglacial     = config.get_number(prefix + "enhancement_factor_interglacial");
+  m_n                  = config.get_number(prefix + "Glen_exponent");
   m_viscosity_power    = (1.0 - m_n) / (2.0 * m_n);
   m_hardness_power     = -1.0 / m_n;
 
-  m_A_cold = config.get_double("flow_law.Paterson_Budd.A_cold");
-  m_A_warm = config.get_double("flow_law.Paterson_Budd.A_warm");
-  m_Q_cold = config.get_double("flow_law.Paterson_Budd.Q_cold");
-  m_Q_warm = config.get_double("flow_law.Paterson_Budd.Q_warm");
-  m_crit_temp = config.get_double("flow_law.Paterson_Budd.T_critical");
-  m_schoofLen = config.get_double("flow_law.Schoof_regularizing_length", "m"); // convert to meters
-  m_schoofVel = config.get_double("flow_law.Schoof_regularizing_velocity", "m second-1"); // convert to m second-1
+  m_A_cold = config.get_number("flow_law.Paterson_Budd.A_cold");
+  m_A_warm = config.get_number("flow_law.Paterson_Budd.A_warm");
+  m_Q_cold = config.get_number("flow_law.Paterson_Budd.Q_cold");
+  m_Q_warm = config.get_number("flow_law.Paterson_Budd.Q_warm");
+  m_crit_temp = config.get_number("flow_law.Paterson_Budd.T_critical");
+  m_schoofLen = config.get_number("flow_law.Schoof_regularizing_length", "m"); // convert to meters
+  m_schoofVel = config.get_number("flow_law.Schoof_regularizing_velocity", "m second-1"); // convert to m second-1
   m_schoofReg = PetscSqr(m_schoofVel/m_schoofLen);
 }
 

@@ -65,7 +65,7 @@ public:
     set_attrs("pressure of transportable water in subglacial layer"
               " as fraction of the overburden pressure", "",
               "", "", 0);
-    m_vars[0].set_double("_FillValue", m_fill_value);
+    m_vars[0].set_number("_FillValue", m_fill_value);
   }
 
 protected:
@@ -200,8 +200,8 @@ void hydraulic_potential(const IceModelVec2S &W,
 
   Config::ConstPtr config = grid->ctx()->config();
 
-  double rg = (config->get_double("constants.fresh_water.density") *
-               config->get_double("constants.standard_gravity"));
+  double rg = (config->get_number("constants.fresh_water.density") *
+               config->get_number("constants.standard_gravity"));
 
   IceModelVec::AccessList list{&P, &P_overburden, &W, &mask, &bed, &result};
 
@@ -265,19 +265,19 @@ Routing::Routing(IceGrid::ConstPtr g)
 
   m_W.metadata().set_string("pism_intent", "model_state");
 
-  m_rg    = (m_config->get_double("constants.fresh_water.density") *
-             m_config->get_double("constants.standard_gravity"));
+  m_rg    = (m_config->get_number("constants.fresh_water.density") *
+             m_config->get_number("constants.standard_gravity"));
 
   // auxiliary variables which NEED ghosts
   m_Wstag.set_attrs("internal",
                     "cell face-centered (staggered) values of water layer thickness",
                     "m", "");
-  m_Wstag.metadata().set_double("valid_min", 0.0);
+  m_Wstag.metadata().set_number("valid_min", 0.0);
 
   m_K.set_attrs("internal",
                 "cell face-centered (staggered) values of nonlinear conductivity",
                 "", "");
-  m_K.metadata().set_double("valid_min", 0.0);
+  m_K.metadata().set_number("valid_min", 0.0);
 
   m_Q.set_attrs("internal",
                 "cell face-centered (staggered) components of advective subglacial water flux",
@@ -298,21 +298,21 @@ Routing::Routing(IceGrid::ConstPtr g)
   m_Wnew.set_attrs("internal",
                    "new thickness of transportable subglacial water layer during update",
                    "m", "");
-  m_Wnew.metadata().set_double("valid_min", 0.0);
+  m_Wnew.metadata().set_number("valid_min", 0.0);
 
   m_Wtillnew.set_attrs("internal",
                        "new thickness of till (subglacial) water layer during update",
                        "m", "");
-  m_Wtillnew.metadata().set_double("valid_min", 0.0);
+  m_Wtillnew.metadata().set_number("valid_min", 0.0);
 
   {
-    double alpha = m_config->get_double("hydrology.thickness_power_in_flux");
+    double alpha = m_config->get_number("hydrology.thickness_power_in_flux");
     if (alpha < 1.0) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "alpha = %f < 1 which is not allowed", alpha);
     }
 
-    if (m_config->get_double("hydrology.tillwat_max") < 0.0) {
+    if (m_config->get_number("hydrology.tillwat_max") < 0.0) {
       throw RuntimeError(PISM_ERROR_LOCATION,
                          "hydrology::Routing: hydrology.tillwat_max is negative.\n"
                          "This is not allowed.");
@@ -341,7 +341,7 @@ void Routing::bootstrap_impl(const PIO &input_file,
                              const IceModelVec2S &ice_thickness) {
   Hydrology::bootstrap_impl(input_file, ice_thickness);
 
-  double bwat_default = m_config->get_double("bootstrapping.defaults.bwat");
+  double bwat_default = m_config->get_number("bootstrapping.defaults.bwat");
   m_W.regrid(input_file, OPTIONAL, bwat_default);
 
   regrid("Hydrology", m_W);
@@ -439,9 +439,9 @@ void Routing::compute_conductivity(const IceModelVec2Stag &W,
                                    IceModelVec2Stag &result,
                                    double &KW_max) const {
   const double
-    k     = m_config->get_double("hydrology.hydraulic_conductivity"),
-    alpha = m_config->get_double("hydrology.thickness_power_in_flux"),
-    beta  = m_config->get_double("hydrology.gradient_power_in_flux"),
+    k     = m_config->get_number("hydrology.hydraulic_conductivity"),
+    alpha = m_config->get_number("hydrology.thickness_power_in_flux"),
+    beta  = m_config->get_number("hydrology.gradient_power_in_flux"),
     betapow = (beta - 2.0) / 2.0;
 
   IceModelVec::AccessList list({&result, &W});
@@ -533,12 +533,12 @@ void wall_melt(const Routing &model,
   Config::ConstPtr config = grid->ctx()->config();
 
   const double
-    k     = config->get_double("hydrology.hydraulic_conductivity"),
-    L     = config->get_double("constants.fresh_water.latent_heat_of_fusion"),
-    alpha = config->get_double("hydrology.thickness_power_in_flux"),
-    beta  = config->get_double("hydrology.gradient_power_in_flux"),
-    g     = config->get_double("constants.standard_gravity"),
-    rhow  = config->get_double("constants.fresh_water.density"),
+    k     = config->get_number("hydrology.hydraulic_conductivity"),
+    L     = config->get_number("constants.fresh_water.latent_heat_of_fusion"),
+    alpha = config->get_number("hydrology.thickness_power_in_flux"),
+    beta  = config->get_number("hydrology.gradient_power_in_flux"),
+    g     = config->get_number("constants.standard_gravity"),
+    rhow  = config->get_number("constants.fresh_water.density"),
     rg    = rhow * g,
     CC    = k / (L * rhow);
 
@@ -727,8 +727,8 @@ void Routing::update_Wtill(double dt,
                            const IceModelVec2S &input_rate,
                            IceModelVec2S &Wtill_new) {
   const double
-    tillwat_max = m_config->get_double("hydrology.tillwat_max"),
-    C           = m_config->get_double("hydrology.tillwat_decay_rate", "m / second");
+    tillwat_max = m_config->get_number("hydrology.tillwat_max"),
+    C           = m_config->get_number("hydrology.tillwat_decay_rate", "m / second");
 
   IceModelVec::AccessList list{&Wtill, &Wtill_new, &input_rate};
 
@@ -821,7 +821,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
 
   const double
     t_final = t + dt,
-    dt_max  = m_config->get_double("hydrology.maximum_time_step", "seconds");
+    dt_max  = m_config->get_number("hydrology.maximum_time_step", "seconds");
 
   // make sure W has valid ghosts before starting hydrology steps
   m_W.update_ghosts();
@@ -834,7 +834,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     double huge_number = 1e6;
     check_bounds(m_W, huge_number);
 
-    check_bounds(m_Wtill, m_config->get_double("hydrology.tillwat_max"));
+    check_bounds(m_Wtill, m_config->get_number("hydrology.tillwat_max"));
 #endif
 
     water_thickness_staggered(m_W,

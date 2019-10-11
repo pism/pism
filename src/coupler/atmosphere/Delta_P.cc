@@ -28,7 +28,7 @@ Delta_P::Delta_P(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in) {
 
   m_forcing.reset(new ScalarForcing(grid->ctx(),
-                                    "-atmosphere_delta_P",
+                                    "atmosphere.delta_P",
                                     "delta_P",
                                     "kg m-2 second-1",
                                     "kg m-2 year-1",

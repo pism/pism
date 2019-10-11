@@ -41,7 +41,7 @@ namespace stressbalance {
 
 SIAFD::SIAFD(IceGrid::ConstPtr g)
   : SSB_Modifier(g),
-    m_stencil_width(m_config->get_double("grid.max_stencil_width")),
+    m_stencil_width(m_config->get_number("grid.max_stencil_width")),
     m_work_2d_0(m_grid, "work_vector_2d_0", WITH_GHOSTS, m_stencil_width),
     m_work_2d_1(m_grid, "work_vector_2d_1", WITH_GHOSTS, m_stencil_width),
     m_h_x(m_grid, "h_x", WITH_GHOSTS),
@@ -62,9 +62,9 @@ SIAFD::SIAFD(IceGrid::ConstPtr g)
     m_flow_law = ice_factory.create();
   }
 
-  const bool compute_grain_size_using_age = m_config->get_boolean("stress_balance.sia.grain_size_age_coupling");
-  const bool age_model_enabled = m_config->get_boolean("age.enabled");
-  const bool e_age_coupling = m_config->get_boolean("stress_balance.sia.e_age_coupling");
+  const bool compute_grain_size_using_age = m_config->get_flag("stress_balance.sia.grain_size_age_coupling");
+  const bool age_model_enabled = m_config->get_flag("age.enabled");
+  const bool e_age_coupling = m_config->get_flag("stress_balance.sia.e_age_coupling");
 
   if (compute_grain_size_using_age) {
     if (not FlowLawUsesGrainSize(*m_flow_law)) {
@@ -85,9 +85,9 @@ SIAFD::SIAFD(IceGrid::ConstPtr g)
                          "age is needed for age-dependent flow enhancement");
   }
 
-  m_eemian_start   = m_config->get_double("time.eemian_start", "seconds");
-  m_eemian_end     = m_config->get_double("time.eemian_end", "seconds");
-  m_holocene_start = m_config->get_double("time.holocene_start", "seconds");
+  m_eemian_start   = m_config->get_number("time.eemian_start", "seconds");
+  m_eemian_end     = m_config->get_number("time.eemian_end", "seconds");
+  m_holocene_start = m_config->get_number("time.holocene_start", "seconds");
 }
 
 SIAFD::~SIAFD() {
@@ -107,7 +107,7 @@ void SIAFD::init() {
 
   // implements an option e.g. described in @ref Greve97Greenland that is the
   // enhancement factor is coupled to the age of the ice
-  if (m_config->get_boolean("stress_balance.sia.e_age_coupling")) {
+  if (m_config->get_flag("stress_balance.sia.e_age_coupling")) {
     m_log->message(2,
                    "  using age-dependent enhancement factor:\n"
                    "  e=%f for ice accumulated during interglacial periods\n"
@@ -532,7 +532,7 @@ void SIAFD::surface_gradient_haseloff(const Inputs &inputs,
  *
  * The trapezoidal rule is used to approximate the integral.
  *
- * \param[in]  full_update the boolean flag specitying if we're doing a "full" update.
+ * \param[in]  full_update the flag specitying if we're doing a "full" update.
  * \param[in]  h_x x-component of the surface gradient, on the staggered grid
  * \param[in]  h_y y-component of the surface gradient, on the staggered grid
  * \param[out] result diffusivity of the SIA flow
@@ -561,12 +561,12 @@ void SIAFD::compute_diffusivity(bool full_update,
     current_time                    = m_grid->ctx()->time()->current(),
     enhancement_factor              = m_flow_law->enhancement_factor(),
     enhancement_factor_interglacial = m_flow_law->enhancement_factor_interglacial(),
-    D_limit                         = m_config->get_double("stress_balance.sia.max_diffusivity");
+    D_limit                         = m_config->get_number("stress_balance.sia.max_diffusivity");
 
   const bool
-    compute_grain_size_using_age = m_config->get_boolean("stress_balance.sia.grain_size_age_coupling"),
-    e_age_coupling               = m_config->get_boolean("stress_balance.sia.e_age_coupling"),
-    limit_diffusivity            = m_config->get_boolean("stress_balance.sia.limit_diffusivity"),
+    compute_grain_size_using_age = m_config->get_flag("stress_balance.sia.grain_size_age_coupling"),
+    e_age_coupling               = m_config->get_flag("stress_balance.sia.e_age_coupling"),
+    limit_diffusivity            = m_config->get_flag("stress_balance.sia.limit_diffusivity"),
     use_age                      = compute_grain_size_using_age or e_age_coupling;
 
   rheology::grain_size_vostok gs_vostok;
@@ -606,7 +606,7 @@ void SIAFD::compute_diffusivity(bool full_update,
 
   std::vector<double> depth(Mz), stress(Mz), pressure(Mz), E(Mz), flow(Mz);
   std::vector<double> delta_ij(Mz);
-  std::vector<double> A(Mz), ice_grain_size(Mz, m_config->get_double("constants.ice.grain_size", "m"));
+  std::vector<double> A(Mz), ice_grain_size(Mz, m_config->get_number("constants.ice.grain_size", "m"));
   std::vector<double> e_factor(Mz, enhancement_factor);
 
   double D_max = 0.0;

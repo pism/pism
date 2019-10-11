@@ -28,7 +28,7 @@ namespace bed {
 
 PointwiseIsostasy::PointwiseIsostasy(IceGrid::ConstPtr g)
   : BedDef(g) {
-  m_load_last.create(m_grid, "load_last", WITH_GHOSTS, m_config->get_double("grid.max_stencil_width"));
+  m_load_last.create(m_grid, "load_last", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width"));
 }
 
 PointwiseIsostasy::~PointwiseIsostasy() {
@@ -71,10 +71,10 @@ void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
   (void) t;
 
   const double
-    mantle_density = m_config->get_double("bed_deformation.mantle_density"),
-    load_density   = m_config->get_double("constants.ice.density"),
-    ocean_density  = m_config->get_double("constants.sea_water.density"),
-    ice_density    = m_config->get_double("constants.ice.density"),
+    mantle_density = m_config->get_number("bed_deformation.mantle_density"),
+    load_density   = m_config->get_number("constants.ice.density"),
+    ocean_density  = m_config->get_number("constants.sea_water.density"),
+    ice_density    = m_config->get_number("constants.ice.density"),
     f              = load_density / mantle_density;
 
   //! Our goal: topg = topg_last - f*(load - load_last)

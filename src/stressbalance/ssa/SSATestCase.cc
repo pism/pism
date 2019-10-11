@@ -40,7 +40,7 @@ SSATestCase::SSATestCase(Context::Ptr ctx, int Mx, int My,
     m_geometry(m_grid),
     m_ssa(NULL) {
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
 
   // yield stress for basal till (plastic or pseudo-plastic model)
   m_tauc.create(m_grid, "tauc", WITH_GHOSTS, WIDE_STENCIL);
@@ -64,17 +64,17 @@ SSATestCase::SSATestCase(Context::Ptr ctx, int Mx, int My,
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("output.fill_value"), "m year-1", "m second-1");
+  double fill_value = units::convert(sys, config->get_number("output.fill_value"), "m year-1", "m second-1");
 
   m_bc_values.metadata(0).set_string("glaciological_units", "m year-1");
-  m_bc_values.metadata(0).set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_bc_values.metadata(0).set_double("valid_max", units::convert(m_sys,  1e6, "m year-1", "m second-1"));
-  m_bc_values.metadata(0).set_double("_FillValue", fill_value);
+  m_bc_values.metadata(0).set_number("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_bc_values.metadata(0).set_number("valid_max", units::convert(m_sys,  1e6, "m year-1", "m second-1"));
+  m_bc_values.metadata(0).set_number("_FillValue", fill_value);
 
   m_bc_values.metadata(1).set_string("glaciological_units", "m year-1");
-  m_bc_values.metadata(1).set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_bc_values.metadata(1).set_double("valid_max", units::convert(m_sys,  1e6, "m year-1", "m second-1"));
-  m_bc_values.metadata(1).set_double("_FillValue", fill_value);
+  m_bc_values.metadata(1).set_number("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_bc_values.metadata(1).set_number("valid_max", units::convert(m_sys,  1e6, "m year-1", "m second-1"));
+  m_bc_values.metadata(1).set_number("_FillValue", fill_value);
 
   m_bc_values.set(fill_value);
 
@@ -83,7 +83,7 @@ SSATestCase::SSATestCase(Context::Ptr ctx, int Mx, int My,
   m_bc_mask.set_attrs("model_state",
                       "grounded_dragging_floating integer mask", "", "");
 
-  m_bc_mask.metadata().set_doubles("flag_values", {0.0, 1.0});
+  m_bc_mask.metadata().set_numbers("flag_values", {0.0, 1.0});
   m_bc_mask.metadata().set_string("flag_meanings",
                                   "no_data ssa.dirichlet_bc_location");
 
@@ -112,7 +112,7 @@ void SSATestCase::init() {
 void SSATestCase::run() {
   m_ctx->log()->message(2, "* Solving the SSA stress balance ...\n");
 
-  m_geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
+  m_geometry.ensure_consistency(m_config->get_number("stress_balance.ice_free_thickness_standard"));
 
   Inputs inputs;
   inputs.melange_back_pressure = &m_melange_back_pressure;
@@ -146,8 +146,8 @@ void SSATestCase::report(const std::string &testname) {
     gmaxuerr   = 0.0,
     gmaxverr   = 0.0;
 
-  if (m_config->get_boolean("basal_resistance.pseudo_plastic.enabled") &&
-      m_config->get_double("basal_resistance.pseudo_plastic.q") != 1.0) {
+  if (m_config->get_flag("basal_resistance.pseudo_plastic.enabled") &&
+      m_config->get_number("basal_resistance.pseudo_plastic.q") != 1.0) {
     m_ctx->log()->message(1,
                           "WARNING: numerical errors not valid for pseudo-plastic till\n");
   }

@@ -62,13 +62,13 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   m_log->message(2, "starting Test %c ...\n", m_testname);
 
   // Override some defaults from parent class
-  m_config->set_double("stress_balance.sia.enhancement_factor", 1.0);
+  m_config->set_number("stress_balance.sia.enhancement_factor", 1.0);
   // none use bed smoothing & bed roughness parameterization
-  m_config->set_double("stress_balance.sia.bed_smoother.range", 0.0);
+  m_config->set_number("stress_balance.sia.bed_smoother.range", 0.0);
 
   // set values of flags in run()
-  m_config->set_boolean("geometry.update.enabled", true);
-  m_config->set_boolean("geometry.update.use_basal_melt_rate", false);
+  m_config->set_flag("geometry.update.enabled", true);
+  m_config->set_flag("geometry.update.use_basal_melt_rate", false);
 
   // flow law settings
   switch (m_testname) {
@@ -81,7 +81,7 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
     {
       m_config->set_string("stress_balance.sia.flow_law", "isothermal_glen");
       const double year = convert(m_sys, 1.0, "year", "seconds");
-      m_config->set_double("flow_law.isothermal_Glen.ice_softness", 1.0e-16 / year);
+      m_config->set_number("flow_law.isothermal_Glen.ice_softness", 1.0e-16 / year);
       break;
     }
   case 'V':
@@ -90,8 +90,8 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
       const double
         hardness = 1.9e8,
         softness = pow(hardness,
-                       -m_config->get_double("stress_balance.ssa.Glen_exponent"));
-      m_config->set_double("flow_law.isothermal_Glen.ice_softness", softness);
+                       -m_config->get_number("stress_balance.ssa.Glen_exponent"));
+      m_config->set_number("flow_law.isothermal_Glen.ice_softness", softness);
       break;
     }
   case 'F':
@@ -112,42 +112,42 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   }
 
   if ((m_testname == 'F') || (m_testname == 'G') || (m_testname == 'K') || (m_testname == 'O')) {
-    m_config->set_boolean("energy.enabled", true);
+    m_config->set_flag("energy.enabled", true);
     // essentially turn off run-time reporting of extremely low computed
     // temperatures; *they will be reported as errors* anyway
-    m_config->set_double("energy.minimum_allowed_temperature", 0.0);
-    m_config->set_double("energy.max_low_temperature_count", 1000000);
+    m_config->set_number("energy.minimum_allowed_temperature", 0.0);
+    m_config->set_number("energy.max_low_temperature_count", 1000000);
   } else {
-    m_config->set_boolean("energy.enabled", false);
+    m_config->set_flag("energy.enabled", false);
   }
 
-  m_config->set_boolean("ocean.always_grounded", true);
+  m_config->set_flag("ocean.always_grounded", true);
 
   // special considerations for K and O wrt thermal bedrock and pressure-melting
   if ((m_testname == 'K') || (m_testname == 'O')) {
-    m_config->set_boolean("energy.allow_temperature_above_melting", false);
+    m_config->set_flag("energy.allow_temperature_above_melting", false);
   } else {
     // note temps are generally allowed to go above pressure melting in verify
-    m_config->set_boolean("energy.allow_temperature_above_melting", true);
+    m_config->set_flag("energy.allow_temperature_above_melting", true);
   }
 
   if (m_testname == 'V') {
     // no sub-shelf melting
-    m_config->set_boolean("geometry.update.use_basal_melt_rate", false);
+    m_config->set_flag("geometry.update.use_basal_melt_rate", false);
 
     // this test is isothermal
-    m_config->set_boolean("energy.enabled", false);
+    m_config->set_flag("energy.enabled", false);
 
     // use the SSA solver
     m_config->set_string("stress_balance_model", "ssa");
 
     // this certainly is not a "dry simulation"
-    m_config->set_boolean("ocean.always_grounded", false);
+    m_config->set_flag("ocean.always_grounded", false);
 
-    m_config->set_boolean("stress_balance.ssa.dirichlet_bc", true);
+    m_config->set_flag("stress_balance.ssa.dirichlet_bc", true);
   }
 
-  m_config->set_boolean("energy.temperature_based", true);
+  m_config->set_flag("energy.temperature_based", true);
 }
 
 void IceCompModel::allocate_storage() {
@@ -173,9 +173,9 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     if (m_testname == 'K') {
       m_log->message(1,
                      "setting material properties of bedrock to those of ice in Test K\n");
-      m_config->set_double("energy.bedrock_thermal.density", m_config->get_double("constants.ice.density"));
-      m_config->set_double("energy.bedrock_thermal.conductivity", m_config->get_double("constants.ice.thermal_conductivity"));
-      m_config->set_double("energy.bedrock_thermal.specific_heat_capacity", m_config->get_double("constants.ice.specific_heat_capacity"));
+      m_config->set_number("energy.bedrock_thermal.density", m_config->get_number("constants.ice.density"));
+      m_config->set_number("energy.bedrock_thermal.conductivity", m_config->get_number("constants.ice.thermal_conductivity"));
+      m_config->set_number("energy.bedrock_thermal.specific_heat_capacity", m_config->get_number("constants.ice.specific_heat_capacity"));
       m_bedrock_is_ice_forK = true;
     } else {
       m_log->message(1,
@@ -188,9 +188,9 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     // (note Mbz=1 also, by default, but want ice/rock interface to see
     // pure ice from the point of view of applying geothermal boundary
     // condition, especially in tests F and G)
-    m_config->set_double("energy.bedrock_thermal.density", m_config->get_double("constants.ice.density"));
-    m_config->set_double("energy.bedrock_thermal.conductivity", m_config->get_double("constants.ice.thermal_conductivity"));
-    m_config->set_double("energy.bedrock_thermal.specific_heat_capacity", m_config->get_double("constants.ice.specific_heat_capacity"));
+    m_config->set_number("energy.bedrock_thermal.density", m_config->get_number("constants.ice.density"));
+    m_config->set_number("energy.bedrock_thermal.conductivity", m_config->get_number("constants.ice.thermal_conductivity"));
+    m_config->set_number("energy.bedrock_thermal.specific_heat_capacity", m_config->get_number("constants.ice.specific_heat_capacity"));
   }
 
   energy::BTUGrid bed_vertical_grid = energy::BTUGrid::FromOptions(m_grid->ctx());
@@ -226,7 +226,7 @@ void IceCompModel::allocate_bed_deformation() {
   IceModel::allocate_bed_deformation();
 
   // for simple isostasy
-  m_f = m_config->get_double("constants.ice.density") / m_config->get_double("bed_deformation.mantle_density");
+  m_f = m_config->get_number("constants.ice.density") / m_config->get_number("bed_deformation.mantle_density");
 
   std::string bed_def_model = m_config->get_string("bed_deformation.model");
 
@@ -466,10 +466,10 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
   }
 
   double
-    seawater_density = m_config->get_double("constants.sea_water.density"),
-    ice_density      = m_config->get_double("constants.ice.density"),
-    Glen_n           = m_config->get_double("stress_balance.sia.Glen_exponent"),
-    standard_gravity = m_config->get_double("constants.standard_gravity");
+    seawater_density = m_config->get_number("constants.sea_water.density"),
+    ice_density      = m_config->get_number("constants.ice.density"),
+    Glen_n           = m_config->get_number("stress_balance.sia.Glen_exponent"),
+    standard_gravity = m_config->get_number("constants.standard_gravity");
 
   // area of grid square in square km:
   const double   a = m_grid->dx() * m_grid->dy() * 1e-3 * 1e-3;

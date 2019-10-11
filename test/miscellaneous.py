@@ -587,7 +587,7 @@ def pism_context_test():
     ctx = PISM.cpp.Context(com, system, config, EC, time, logger, "greenland")
 
     print(ctx.com().Get_size())
-    print(ctx.config().get_double("constants.standard_gravity"))
+    print(ctx.config().get_number("constants.standard_gravity"))
     print(ctx.enthalpy_converter().L(273.15))
     print(ctx.time().current())
     print(PISM.convert(ctx.unit_system(), 1, "km", "m"))
@@ -711,7 +711,7 @@ def ssa_trivial_test():
             se.set_min_thickness(4000 * 10)
 
             # For the benefit of SSAFD on a non-periodic grid
-            self.config.set_boolean("ssa.compute_surface_gradient_inward", True)
+            self.config.set_flag("ssa.compute_surface_gradient_inward", True)
 
         def exactSolution(self, i, j, x, y):
             return [0, 0]
@@ -947,7 +947,7 @@ def vertical_extrapolation_during_regridding_test():
         pass
 
     # allow extrapolation during regridding
-    ctx.config.set_boolean("grid.allow_extrapolation", True)
+    ctx.config.set_flag("grid.allow_extrapolation", True)
 
     # regrid from test.nc
     ctx.ctx.log().disable()

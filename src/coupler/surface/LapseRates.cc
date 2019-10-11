@@ -31,29 +31,20 @@ LapseRates::LapseRates(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(g, in) {
 
   {
-    m_smb_lapse_rate = 0;
-    m_smb_lapse_rate = options::Real("-smb_lapse_rate",
-                                     "Elevation lapse rate for the surface mass balance,"
-                                     " in m year-1 per km",
-                                     m_smb_lapse_rate);
-    // convert from [m year-1 / km] to [kg m-2 year-1 / km]
-    m_smb_lapse_rate *= m_config->get_double("constants.ice.density");
-    m_smb_lapse_rate = units::convert(m_sys, m_smb_lapse_rate,
-                                      "(kg m-2) year-1 / km", "(kg m-2) second-1 / m");
+    m_smb_lapse_rate = m_config->get_number("surface.lapse_rate.smb_lapse_rate",
+                                            "(m / s) / m");
+    // convert from [m s-1 / m] to [kg m-2 s-1 / m]
+    m_smb_lapse_rate *= m_config->get_number("constants.ice.density");
   }
 
-  {
-    options::Real T_lapse_rate("-temp_lapse_rate",
-                               "Elevation lapse rate for the temperature, in K per km",
-                               m_temp_lapse_rate);
-    m_temp_lapse_rate = units::convert(m_sys, T_lapse_rate, "K/km", "K/m");
-  }
+  m_temp_lapse_rate = m_config->get_number("surface.lapse_rate.temperature_lapse_rate",
+                                           "K / m");
 
   {
     ForcingOptions opt(*m_grid->ctx(), "surface.lapse_rate");
 
-    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    unsigned int buffer_size = m_config->get_number("climate_forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
     PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
@@ -86,7 +77,7 @@ void LapseRates::init_impl(const Geometry &geometry) {
   m_log->message(2,
                  "  [using temperature and mass balance lapse corrections]\n");
 
-  double ice_density = m_config->get_double("constants.ice.density");
+  double ice_density = m_config->get_number("constants.ice.density");
   m_log->message(2,
                  "   ice upper-surface temperature lapse rate: %3.3f K per km\n"
                  "   ice-equivalent surface mass balance lapse rate: %3.3f m year-1 per km\n",

@@ -96,11 +96,11 @@ class LingleClarkElastic(TestCase):
     def setUp(self):
         self.ctx = PISM.Context()
 
-        self.elastic = self.ctx.config.get_boolean("bed_deformation.lc.elastic_model")
-        self.ctx.config.set_boolean("bed_deformation.lc.elastic_model", True)
+        self.elastic = self.ctx.config.get_flag("bed_deformation.lc.elastic_model")
+        self.ctx.config.set_flag("bed_deformation.lc.elastic_model", True)
 
-        self.size_factor = self.ctx.config.get_double("bed_deformation.lc.grid_size_factor")
-        self.ctx.config.set_double("bed_deformation.lc.grid_size_factor", 2)
+        self.size_factor = self.ctx.config.get_number("bed_deformation.lc.grid_size_factor")
+        self.ctx.config.set_number("bed_deformation.lc.grid_size_factor", 2)
 
         Lx = 2000e3
         Mx = 11
@@ -113,7 +113,7 @@ class LingleClarkElastic(TestCase):
 
     def convolution_test(self):
         "Compare PISM's FFTW-based convolution to scipy.signal.fftconvolve()"
-        rho = self.ctx.config.get_double("constants.ice.density")
+        rho = self.ctx.config.get_number("constants.ice.density")
 
         db_scipy = scipy.signal.fftconvolve(rho * self.H, self.lrm_pism, mode="same")
 
@@ -133,5 +133,5 @@ class LingleClarkElastic(TestCase):
 
     def tearDown(self):
         # reset configuration parameters
-        self.ctx.config.set_boolean("bed_deformation.lc.elastic_model", self.elastic)
-        self.ctx.config.set_double("bed_deformation.lc.grid_size_factor", self.size_factor)
+        self.ctx.config.set_flag("bed_deformation.lc.elastic_model", self.elastic)
+        self.ctx.config.set_number("bed_deformation.lc.grid_size_factor", self.size_factor)

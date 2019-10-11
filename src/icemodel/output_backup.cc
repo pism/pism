@@ -41,7 +41,7 @@ void IceModel::init_backups() {
   //! Write a backup (i.e. an intermediate result of a run).
 void IceModel::write_backup() {
 
-  double backup_interval = m_config->get_double("output.backup_interval");
+  double backup_interval = m_config->get_number("output.backup_interval");
 
   double wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time);
 

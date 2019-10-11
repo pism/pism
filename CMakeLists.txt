@@ -56,8 +56,8 @@ option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
 option (Pism_ENABLE_DOCUMENTATION "Enable targets building PISM's documentation." ON)
 
 # PISM will eventually use Jansson to read configuration files.
-set (Pism_USE_JANSSON OFF)
-# option (Pism_USE_JANSSON "Use Jansson to read configuration files." OFF)
+# set (Pism_USE_JANSSON OFF)
+option (Pism_USE_JANSSON "Use Jansson to read configuration files." OFF)
 
 option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF)
 mark_as_advanced (Pism_TEST_USING_VALGRIND)

@@ -30,8 +30,8 @@ namespace calving {
 
 FloatKill::FloatKill(IceGrid::ConstPtr g)
   : Component(g) {
-  m_margin_only = m_config->get_boolean("calving.float_kill.margin_only");
-  m_calve_near_grounding_line = m_config->get_boolean("calving.float_kill.calve_near_grounding_line");
+  m_margin_only = m_config->get_flag("calving.float_kill.margin_only");
+  m_calve_near_grounding_line = m_config->get_flag("calving.float_kill.calve_near_grounding_line");
 }
 
 FloatKill::~FloatKill() {

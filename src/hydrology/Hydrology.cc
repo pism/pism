@@ -47,7 +47,7 @@ public:
     double fill_value = units::convert(m_sys, m_fill_value,
                                        m_vars[0].get_string("glaciological_units"),
                                        m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", fill_value);
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -77,7 +77,7 @@ public:
     double fill_value = units::convert(m_sys, m_fill_value,
                                        m_vars[0].get_string("glaciological_units"),
                                        m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", fill_value);
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -106,7 +106,7 @@ public:
     double fill_value = units::convert(m_sys, m_fill_value,
                                        m_vars[0].get_string("glaciological_units"),
                                        m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", fill_value);
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -135,7 +135,7 @@ public:
     double fill_value = units::convert(m_sys, m_fill_value,
                                        m_vars[0].get_string("glaciological_units"),
                                        m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", fill_value);
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -162,7 +162,7 @@ public:
     double fill_value = units::convert(m_sys, m_fill_value,
                                        m_vars[0].get_string("glaciological_units"),
                                        m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", fill_value);
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -191,7 +191,7 @@ public:
     double fill_value = units::convert(m_sys, m_fill_value,
                                        m_vars[0].get_string("glaciological_units"),
                                        m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", fill_value);
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -218,7 +218,7 @@ public:
     double fill_value = units::convert(m_sys, m_fill_value,
                                        m_vars[0].get_string("glaciological_units"),
                                        m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", fill_value);
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -247,7 +247,7 @@ public:
     double fill_value = units::convert(m_sys, m_fill_value,
                                        m_vars[0].get_string("glaciological_units"),
                                        m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", fill_value);
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -292,16 +292,16 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
   m_Wtill.set_attrs("model_state",
                     "effective thickness of subglacial water stored in till",
                     "m", "");
-  m_Wtill.metadata().set_double("valid_min", 0.0);
+  m_Wtill.metadata().set_number("valid_min", 0.0);
 
   m_Pover.set_attrs("internal", "overburden pressure", "Pa", "");
-  m_Pover.metadata().set_double("valid_min", 0.0);
+  m_Pover.metadata().set_number("valid_min", 0.0);
 
   // needs ghosts in Routing and Distributed
   m_W.set_attrs("diagnostic",
                 "thickness of transportable subglacial water layer",
                 "m", "");
-  m_W.metadata().set_double("valid_min", 0.0);
+  m_W.metadata().set_number("valid_min", 0.0);
 
   // storage for water conservation reporting quantities
   {
@@ -372,7 +372,7 @@ void Hydrology::bootstrap_impl(const PIO &input_file,
                                const IceModelVec2S &ice_thickness) {
   (void) ice_thickness;
 
-  double tillwat_default = m_config->get_double("bootstrapping.defaults.tillwat");
+  double tillwat_default = m_config->get_number("bootstrapping.defaults.tillwat");
   m_Wtill.regrid(input_file, OPTIONAL, tillwat_default);
 
   // whether or not we could initialize from file, we could be asked to regrid from file
@@ -426,7 +426,7 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
   // kg = m * (kg / m^3) * m^2
 
   double
-    water_density = m_config->get_double("constants.fresh_water.density"),
+    water_density = m_config->get_number("constants.fresh_water.density"),
     kg_per_m      = water_density * m_grid->cell_area();
 
   list.add({&m_flow_change, &m_input_change});
@@ -474,8 +474,8 @@ void Hydrology::compute_overburden_pressure(const IceModelVec2S &ice_thickness,
   // FIXME issue #15
 
   const double
-    ice_density      = m_config->get_double("constants.ice.density"),
-    standard_gravity = m_config->get_double("constants.standard_gravity");
+    ice_density      = m_config->get_number("constants.ice.density"),
+    standard_gravity = m_config->get_number("constants.standard_gravity");
 
   IceModelVec::AccessList list{&ice_thickness, &result};
 
@@ -588,8 +588,8 @@ void Hydrology::compute_input_rate(const IceModelVec2CellType &mask,
   }
 
   const double
-    ice_density   = m_config->get_double("constants.ice.density"),
-    water_density = m_config->get_double("constants.fresh_water.density"),
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.fresh_water.density"),
     C             = ice_density / water_density;
 
   for (Points p(*m_grid); p; p.next()) {
@@ -639,7 +639,7 @@ void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
       &no_model_mask_change};
 
   double
-    fresh_water_density = m_config->get_double("constants.fresh_water.density"),
+    fresh_water_density = m_config->get_number("constants.fresh_water.density"),
     kg_per_m            = m_grid->cell_area() * fresh_water_density; // kg m-1
 
   for (Points p(*m_grid); p; p.next()) {

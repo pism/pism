@@ -60,7 +60,7 @@ LingleClarkSerial::LingleClarkSerial(Logger::ConstPtr log,
     // the physical grid so that the load in one corner of the domain affects the grid
     // point in the opposite corner).
 
-    if (config.get_double("bed_deformation.lc.grid_size_factor") < 2) {
+    if (config.get_number("bed_deformation.lc.grid_size_factor") < 2) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "bed_deformation.lc.elastic_model"
                                     " requires bed_deformation.lc.grid_size_factor > 1");
@@ -75,12 +75,12 @@ LingleClarkSerial::LingleClarkSerial(Logger::ConstPtr log,
   m_Nx = Nx;
   m_Ny = Ny;
 
-  m_load_density   = config.get_double("constants.ice.density");
-  m_mantle_density = config.get_double("bed_deformation.mantle_density");
-  m_eta            = config.get_double("bed_deformation.mantle_viscosity");
-  m_D              = config.get_double("bed_deformation.lithosphere_flexural_rigidity");
+  m_load_density   = config.get_number("constants.ice.density");
+  m_mantle_density = config.get_number("bed_deformation.mantle_density");
+  m_eta            = config.get_number("bed_deformation.mantle_viscosity");
+  m_D              = config.get_number("bed_deformation.lithosphere_flexural_rigidity");
 
-  m_standard_gravity = config.get_double("constants.standard_gravity");
+  m_standard_gravity = config.get_number("constants.standard_gravity");
 
   // derive more parameters
   m_Lx        = 0.5 * (m_Nx - 1.0) * m_dx;

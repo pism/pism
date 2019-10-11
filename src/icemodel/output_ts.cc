@@ -60,7 +60,7 @@ void IceModel::init_timeseries() {
   // prepare the output file
   {
     // default behavior is to move the file aside if it exists already; option allows appending
-    bool append = m_config->get_boolean("output.timeseries.append");
+    bool append = m_config->get_flag("output.timeseries.append");
     IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
     PIO file(m_grid->com, "netcdf3", m_ts_filename, mode);      // Use NetCDF-3 to write time-series.
     // add the last saved time to the list of requested times so that the first time is interpreted
@@ -89,7 +89,7 @@ void IceModel::init_timeseries() {
 //! Computes the maximum time-step we can take and still hit all `-ts_times`.
 MaxTimestep IceModel::ts_max_timestep(double my_t) {
 
-  if ((not m_config->get_boolean("time_stepping.hit_ts_times")) or
+  if ((not m_config->get_flag("time_stepping.hit_ts_times")) or
       m_ts_diagnostics.empty()) {
     return MaxTimestep("reporting (-ts_times)");
   }

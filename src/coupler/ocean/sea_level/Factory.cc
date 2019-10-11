@@ -29,8 +29,7 @@ namespace ocean {
 namespace sea_level {
 
 Factory::Factory(IceGrid::ConstPtr grid)
-  : PCFactory<SeaLevel>(grid) {
-  m_option = "sea_level";
+  : PCFactory<SeaLevel>(grid, "sea_level.model") {
 
   add_model<SeaLevel>("constant");
   set_default("constant");

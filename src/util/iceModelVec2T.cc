@@ -398,7 +398,7 @@ void IceModelVec2T::update(unsigned int start) {
 
   PIO nc(m_grid->com, "guess_mode", m_filename, PISM_READONLY);
 
-  const bool allow_extrapolation = m_grid->ctx()->config()->get_boolean("grid.allow_extrapolation");
+  const bool allow_extrapolation = m_grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 
   for (unsigned int j = 0; j < missing; ++j) {
     {

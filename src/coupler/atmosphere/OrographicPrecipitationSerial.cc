@@ -59,21 +59,21 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   }
 
   {
-    m_background_precip_pre  = config.get_double("atmosphere.orographic_precipitation.background_precip_pre", "m/s");
-    m_background_precip_post = config.get_double("atmosphere.orographic_precipitation.background_precip_post");
+    m_background_precip_pre  = config.get_number("atmosphere.orographic_precipitation.background_precip_pre", "m/s");
+    m_background_precip_post = config.get_number("atmosphere.orographic_precipitation.background_precip_post");
 
-    m_precip_scale_factor = config.get_double("atmosphere.orographic_precipitation.scale_factor");
-    m_tau_c               = config.get_double("atmosphere.orographic_precipitation.conversion_time");
-    m_tau_f               = config.get_double("atmosphere.orographic_precipitation.fallout_time");
-    m_Hw                  = config.get_double("atmosphere.orographic_precipitation.water_vapor_scale_height");
-    m_Nm                  = config.get_double("atmosphere.orographic_precipitation.moist_stability_frequency");
-    m_wind_speed          = config.get_double("atmosphere.orographic_precipitation.wind_speed");
-    m_wind_direction      = config.get_double("atmosphere.orographic_precipitation.wind_direction");
-    m_gamma               = config.get_double("atmosphere.orographic_precipitation.lapse_rate");
-    m_Theta_m             = config.get_double("atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate");
-    m_rho_Sref            = config.get_double("atmosphere.orographic_precipitation.reference_density");
-    m_latitude            = config.get_double("atmosphere.orographic_precipitation.coriolis_latitude");
-    m_truncate            = config.get_boolean("atmosphere.orographic_precipitation.truncate");
+    m_precip_scale_factor = config.get_number("atmosphere.orographic_precipitation.scale_factor");
+    m_tau_c               = config.get_number("atmosphere.orographic_precipitation.conversion_time");
+    m_tau_f               = config.get_number("atmosphere.orographic_precipitation.fallout_time");
+    m_Hw                  = config.get_number("atmosphere.orographic_precipitation.water_vapor_scale_height");
+    m_Nm                  = config.get_number("atmosphere.orographic_precipitation.moist_stability_frequency");
+    m_wind_speed          = config.get_number("atmosphere.orographic_precipitation.wind_speed");
+    m_wind_direction      = config.get_number("atmosphere.orographic_precipitation.wind_direction");
+    m_gamma               = config.get_number("atmosphere.orographic_precipitation.lapse_rate");
+    m_Theta_m             = config.get_number("atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate");
+    m_rho_Sref            = config.get_number("atmosphere.orographic_precipitation.reference_density");
+    m_latitude            = config.get_number("atmosphere.orographic_precipitation.coriolis_latitude");
+    m_truncate            = config.get_flag("atmosphere.orographic_precipitation.truncate");
 
 
     // derived constants

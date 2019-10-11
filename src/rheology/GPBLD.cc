@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,10 +32,10 @@ GPBLD::GPBLD(const std::string &prefix,
   : FlowLaw(prefix, config, ec) {
   m_name = "Glen-Paterson-Budd-Lliboutry-Duval";
 
-  m_T_0              = config.get_double("constants.fresh_water.melting_point_temperature"); // K
-  m_water_frac_coeff = config.get_double("flow_law.gpbld.water_frac_coeff");
-  m_water_frac_observed_limit
-    = config.get_double("flow_law.gpbld.water_frac_observed_limit");
+  m_T_0              = config.get_number("constants.fresh_water.melting_point_temperature"); // K
+  m_water_frac_coeff = config.get_number("flow_law.gpbld.water_frac_coeff");
+
+  m_water_frac_observed_limit = config.get_number("flow_law.gpbld.water_frac_observed_limit");
 }
 
 //! The softness factor in the Glen-Paterson-Budd-Lliboutry-Duval flow law.  For constitutive law form.

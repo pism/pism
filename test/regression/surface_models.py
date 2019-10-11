@@ -11,6 +11,11 @@ from unittest import TestCase, SkipTest
 
 config = PISM.Context().config
 
+# reduce the grid size to speed this up
+config.set_number("grid.Mx", 3)
+config.set_number("grid.My", 5)
+config.set_number("grid.Mz", 5)
+
 seconds_per_year = 365 * 86400
 # ensure that this is the correct year length
 config.set_string("time.calendar", "365_day")
@@ -79,7 +84,7 @@ class DeltaT(TestCase):
 
         modifier = PISM.SurfaceDeltaT(self.grid, self.model)
 
-        options.setValue("-surface_delta_T_file", self.filename)
+        config.set_string("surface.delta_T.file", self.filename)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
@@ -104,8 +109,7 @@ class LapseRates(TestCase):
         self.geometry.ice_surface_elevation.dump(self.filename)
 
         config.set_string("surface.lapse_rate.file", self.filename)
-
-        options.setValue("-temp_lapse_rate", self.dTdz)
+        config.set_number("surface.lapse_rate.temperature_lapse_rate", self.dTdz)
 
     def test_surface_lapse_rate(self):
         "Modifier 'lapse_rate'"
@@ -173,7 +177,7 @@ def test_surface_elevation():
                      "{},{},{},{},{}".format(M_min, M_max, z_min, z_ela, z_max))
 
     T = PISM.util.convert(0.5 * (T_min + T_max), "Celsius", "Kelvin")
-    SMB = PISM.util.convert(1.87504, "m/year", "m/s") * config.get_double("constants.ice.density")
+    SMB = PISM.util.convert(1.87504, "m/year", "m/s") * config.get_number("constants.ice.density")
 
     atmosphere = PISM.AtmosphereUniform(grid)
     model = PISM.SurfaceElevation(grid, atmosphere)
@@ -186,8 +190,8 @@ def test_surface_elevation():
 
 class TemperatureIndex(TestCase):
     def setUp(self):
-        self.air_temp = config.get_double("atmosphere.uniform.temperature")
-        self.precip = config.get_double("atmosphere.uniform.precipitation")
+        self.air_temp = config.get_number("atmosphere.uniform.temperature")
+        self.precip = config.get_number("atmosphere.uniform.precipitation")
 
         self.grid = shallow_grid()
 
@@ -200,23 +204,23 @@ class TemperatureIndex(TestCase):
         self.T = 273.15 + T_above_zero
         self.dt = dt_days * 86400
 
-        ice_density = config.get_double("constants.ice.density")
-        beta_ice = config.get_double("surface.pdd.factor_ice")
-        refreeze_fraction = config.get_double("surface.pdd.refreeze")
+        ice_density = config.get_number("constants.ice.density")
+        beta_ice = config.get_number("surface.pdd.factor_ice")
+        refreeze_fraction = config.get_number("surface.pdd.refreeze")
         PDD = dt_days * T_above_zero
         ice_melted = PDD * beta_ice
         refreeze = ice_melted * refreeze_fraction
         self.SMB = -(ice_melted - refreeze) * ice_density / self.dt
 
-        config.set_double("atmosphere.uniform.temperature", self.T)
+        config.set_number("atmosphere.uniform.temperature", self.T)
         # disable daily variability so that we can compute the number of PDDs exactly
-        config.set_double("surface.pdd.std_dev", 0.0)
+        config.set_number("surface.pdd.std_dev", 0.0)
         # no precipitation
-        config.set_double("atmosphere.uniform.precipitation", 0)
+        config.set_number("atmosphere.uniform.precipitation", 0)
 
     def tearDown(self):
-        config.set_double("atmosphere.uniform.temperature", self.air_temp)
-        config.set_double("atmosphere.uniform.precipitation", self.precip)
+        config.set_number("atmosphere.uniform.temperature", self.air_temp)
+        config.set_number("atmosphere.uniform.precipitation", self.precip)
 
     def test_surface_pdd(self):
         "Model 'pdd'"
@@ -322,9 +326,10 @@ class Cache(TestCase):
         time_bounds = np.array([0, 1, 1, 2, 2, 3, 3, 4]) * seconds_per_year
         create_scalar_forcing(self.filename, "delta_T", "Kelvin", [1, 2, 3, 4],
                               times=None, time_bounds=time_bounds)
-        options.setValue("-surface_delta_T_file", self.filename)
 
-        config.set_double("surface.cache.update_interval", 2.0)
+        config.set_string("surface.delta_T.file", self.filename)
+
+        config.set_number("surface.cache.update_interval", 2.0)
 
     def test_surface_cache(self):
         "Modifier 'cache'"
@@ -360,8 +365,8 @@ class Forcing(TestCase):
 
         config.set_string("surface.force_to_thickness_file", self.filename)
 
-        ice_density = config.get_double("constants.ice.density")
-        alpha = config.get_double("surface.force_to_thickness.alpha", "second-1")
+        ice_density = config.get_number("constants.ice.density")
+        alpha = config.get_number("surface.force_to_thickness.alpha", "second-1")
 
         self.H = 500.0
         self.H_target = 1000.0

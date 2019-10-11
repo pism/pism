@@ -26,7 +26,7 @@ Delta_T::Delta_T(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
   m_forcing.reset(new ScalarForcing(g->ctx(),
-                                    "-ocean_delta_T",
+                                    "ocean.delta_T",
                                     "delta_T",
                                     "Kelvin",
                                     "Kelvin",
