@@ -696,7 +696,7 @@ netcdf pism_config {
     pism_config:constants.sea_water.density_units = "kg meter-3";
 
     pism_config:constants.sea_water.specific_heat_capacity = 3985.0;
-    pism_config:constants.sea_water.specific_heat_capacity_doc = "at 35 psu, value taken from http://www.kayelaby.npl.co.uk/general_physics/2_7/2_7_9.html";
+    pism_config:constants.sea_water.specific_heat_capacity_doc = "at 35 psu, value taken from `Kaye and Laby`_, section 2.7.9";
     pism_config:constants.sea_water.specific_heat_capacity_type = "number";
     pism_config:constants.sea_water.specific_heat_capacity_units = "Joule / (kg Kelvin)";
 
