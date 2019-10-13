@@ -1,5 +1,12 @@
 FROM debian:buster
-RUN apt-get update && apt-get install -y wget ${PISM_DEBIAN_PACKAGE_LIST}
+RUN apt-get update && apt-get install -y \
+        ccache \
+        clang \
+        doxygen \
+        python3-sphinx \
+        python3-sphinxcontrib.bibtex \
+        wget \
+        ${PISM_DEBIAN_PACKAGE_LIST}
 
 RUN useradd --create-home --system --shell=/bin/false builder && usermod --lock builder
 USER builder
