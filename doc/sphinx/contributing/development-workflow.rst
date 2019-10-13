@@ -99,9 +99,8 @@ Your editor needs to provide the ability to jump from a compiler's error message
 relevant part of the code. In Emacs, use `M-x compile` to start a compilation and `M-x
 recompile` to re-run it.
 
-It is also useful if the editor helps you to navigate through the nested classes of the
-project and to find where in the code a function is explicitly defined. This can for
-example be done with the IDE KDevelop_.
+An editor that can help you navigate the code and find function definitions, etc is also
+helpful; try an IDE such as KDevelop_, for example.
 
 .. _sec-compiling-pism:
 
