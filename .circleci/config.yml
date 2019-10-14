@@ -114,12 +114,11 @@ jobs:
           name: Build the manual
           command: |
             mkdir -p build
-            cmake -B build -S doc/ -DCMAKE_INSTALL_PREFIX=$PWD/tmp -DPism_DOC_DIR="manual"
+            cmake -B build -S doc/ -DCMAKE_INSTALL_PREFIX=/tmp/pism -DPism_DOC_DIR="manual"
             make -C build install
-            tar -czf pism-manual.tgz tmp/manual/html
+            tar -czf pism-manual.tgz -C /tmp/pism/manual/html .
       - store_artifacts:
           path: pism-manual.tgz
-          destination: doc
 
 workflows:
   version: 2
