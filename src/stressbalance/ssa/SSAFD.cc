@@ -218,7 +218,7 @@ void SSAFD::init_impl() {
   m_nuh_viewer_size = viewer_size;
   m_view_nuh = options::Bool("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer");
 
-  if (m_config->get_boolean("stress_balance.calving_front_stress_bc")) {
+  if (m_config->get_flag("stress_balance.calving_front_stress_bc")) {
     m_log->message(2,
                "  using PISM-PIK calving-front stress boundary condition ...\n");
   }
@@ -254,16 +254,16 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     dx                        = m_grid->dx(),
     dy                        = m_grid->dy(),
     ice_free_default_velocity = 0.0,
-    standard_gravity          = m_config->get_double("constants.standard_gravity"),
-    rho_ocean                 = m_config->get_double("constants.sea_water.density"),
-    rho_ice                   = m_config->get_double("constants.ice.density");
+    standard_gravity          = m_config->get_number("constants.standard_gravity"),
+    rho_ocean                 = m_config->get_number("constants.sea_water.density"),
+    rho_ice                   = m_config->get_number("constants.ice.density");
 
   const bool
-    use_cfbc          = m_config->get_boolean("stress_balance.calving_front_stress_bc"),
-    is_dry_simulation = m_config->get_boolean("ocean.always_grounded");
+    use_cfbc          = m_config->get_flag("stress_balance.calving_front_stress_bc"),
+    is_dry_simulation = m_config->get_flag("ocean.always_grounded");
 
   // FIXME: bedrock_boundary is a misleading name
-  bool bedrock_boundary = m_config->get_boolean("stress_balance.ssa.dirichlet_bc");
+  bool bedrock_boundary = m_config->get_flag("stress_balance.ssa.dirichlet_bc");
 
   compute_driving_stress(*inputs.geometry, m_taud);
 
@@ -462,14 +462,14 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
   const double
     dx                    = m_grid->dx(),
     dy                    = m_grid->dy(),
-    beta_ice_free_bedrock = m_config->get_double("basal_resistance.beta_ice_free_bedrock");
+    beta_ice_free_bedrock = m_config->get_number("basal_resistance.beta_ice_free_bedrock");
 
-  const bool use_cfbc     = m_config->get_boolean("stress_balance.calving_front_stress_bc");
+  const bool use_cfbc     = m_config->get_flag("stress_balance.calving_front_stress_bc");
   const bool replace_zero_diagonal_entries =
-    m_config->get_boolean("stress_balance.ssa.fd.replace_zero_diagonal_entries");
+    m_config->get_flag("stress_balance.ssa.fd.replace_zero_diagonal_entries");
 
   // FIXME: bedrock_boundary is a misleading name
-  const bool bedrock_boundary = m_config->get_boolean("stress_balance.ssa.dirichlet_bc");
+  const bool bedrock_boundary = m_config->get_flag("stress_balance.ssa.dirichlet_bc");
 
   ierr = MatZeroEntries(A);
   PISM_CHK(ierr, "MatZeroEntries");
@@ -480,18 +480,18 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
     list.add(*inputs.bc_mask);
   }
 
-  const bool sub_gl = m_config->get_boolean("geometry.grounded_cell_fraction");
+  const bool sub_gl = m_config->get_flag("geometry.grounded_cell_fraction");
   if (sub_gl) {
     list.add(grounded_fraction);
   }
 
   // handles friction of the ice cell along ice-free bedrock margins when bedrock higher than ice
   // surface (in simplified setups)
-  bool lateral_drag_enabled=m_config->get_boolean("stress_balance.ssa.fd.lateral_drag.enabled");
+  bool lateral_drag_enabled=m_config->get_flag("stress_balance.ssa.fd.lateral_drag.enabled");
   if (lateral_drag_enabled) {
     list.add({&thickness, &bed, &surface});
   }
-  double lateral_drag_viscosity=m_config->get_double("stress_balance.ssa.fd.lateral_drag.viscosity");
+  double lateral_drag_viscosity=m_config->get_number("stress_balance.ssa.fd.lateral_drag.viscosity");
   double HminFrozen=0.0;
 
   /* matrix assembly loop */
@@ -815,7 +815,7 @@ roughly twice as slow.  The outputs of PETSc options `-ksp_monitor_singular_valu
 
 The outer loop terminates when the effective viscosity times thickness
 is no longer changing much, according to the tolerance set by the
-option `-ssa_rtol`. The outer loop also terminates when a maximum
+option `-ssafd_picard_rtol`. The outer loop also terminates when a maximum
 number of iterations is exceeded. We save the velocity from the last
 time step in order to have a better estimate of the effective
 viscosity than the u=v=0 result.
@@ -851,16 +851,16 @@ void SSAFD::solve(const Inputs &inputs) {
     try {
       if (k == 0) {
         // default strategy
-        picard_iteration(inputs, m_config->get_double("stress_balance.ssa.epsilon"), 1.0);
+        picard_iteration(inputs, m_config->get_number("stress_balance.ssa.epsilon"), 1.0);
 
         break;
       } else if (k == 1) {
         // try underrelaxing the iteration
-        const double underrelax = m_config->get_double("stress_balance.ssa.fd.nuH_iter_failure_underrelaxation");
+        const double underrelax = m_config->get_number("stress_balance.ssa.fd.nuH_iter_failure_underrelaxation");
         m_log->message(1,
                    "  re-trying with effective viscosity under-relaxation (parameter = %.2f) ...\n",
                    underrelax);
-        picard_iteration(inputs, m_config->get_double("stress_balance.ssa.epsilon"), underrelax);
+        picard_iteration(inputs, m_config->get_number("stress_balance.ssa.epsilon"), underrelax);
 
         break;
       } else if (k == 2) {
@@ -879,8 +879,8 @@ void SSAFD::solve(const Inputs &inputs) {
   }
 
   // Post-process velocities if the user asked for it:
-  if (m_config->get_boolean("stress_balance.ssa.fd.brutal_sliding")) {
-    const double brutal_sliding_scaleFactor = m_config->get_double("stress_balance.ssa.fd.brutal_sliding_scale");
+  if (m_config->get_flag("stress_balance.ssa.fd.brutal_sliding")) {
+    const double brutal_sliding_scaleFactor = m_config->get_number("stress_balance.ssa.fd.brutal_sliding_scale");
     m_velocity.scale(brutal_sliding_scaleFactor);
 
     m_velocity.update_ghosts();
@@ -934,8 +934,8 @@ void SSAFD::picard_manager(const Inputs &inputs,
   PetscInt    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
   KSPConvergedReason  reason;
 
-  unsigned int max_iterations = static_cast<int>(m_config->get_double("stress_balance.ssa.fd.max_iterations"));
-  double ssa_relative_tolerance = m_config->get_double("stress_balance.ssa.fd.relative_convergence");
+  unsigned int max_iterations = static_cast<int>(m_config->get_number("stress_balance.ssa.fd.max_iterations"));
+  double ssa_relative_tolerance = m_config->get_number("stress_balance.ssa.fd.relative_convergence");
   char tempstr[100] = "";
   bool verbose = m_log->get_threshold() >= 2,
     very_verbose = m_log->get_threshold() > 2;
@@ -945,7 +945,7 @@ void SSAFD::picard_manager(const Inputs &inputs,
 
   m_stdout_ssa.clear();
 
-  bool use_cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
+  bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
 
   if (use_cfbc == true) {
     compute_nuH_staggered_cfbc(*inputs.geometry, nuH_regularization, m_nuH);
@@ -1010,7 +1010,7 @@ void SSAFD::picard_manager(const Inputs &inputs,
 
     // limit ice speed
     {
-      auto max_speed = m_config->get_double("stress_balance.ssa.fd.max_speed", "m second-1");
+      auto max_speed = m_config->get_number("stress_balance.ssa.fd.max_speed", "m second-1");
       int high_speed_counter = 0;
 
       IceModelVec::AccessList list{&m_velocity_global};
@@ -1105,7 +1105,7 @@ void SSAFD::picard_manager(const Inputs &inputs,
 void SSAFD::picard_strategy_regularization(const Inputs &inputs) {
   // this has no units; epsilon goes up by this ratio when previous value failed
   const double DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
-  double nuH_regularization = m_config->get_double("stress_balance.ssa.epsilon");
+  double nuH_regularization = m_config->get_number("stress_balance.ssa.epsilon");
   unsigned int k = 0, max_tries = 5;
 
   if (nuH_regularization <= 0.0) {
@@ -1268,7 +1268,7 @@ void SSAFD::fracture_induced_softening(const IceModelVec2S *fracture_density) {
   }
 
   const double
-    epsilon = m_config->get_double("fracture_density.softening_lower_limit"),
+    epsilon = m_config->get_number("fracture_density.softening_lower_limit"),
     n_glen  = m_flow_law->exponent();
 
   IceModelVec::AccessList list{&m_hardness, fracture_density};

@@ -28,7 +28,7 @@ Delta_T::Delta_T(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(g, in) {
 
   m_forcing.reset(new ScalarForcing(g->ctx(),
-                                    "-surface_delta_T",
+                                    "surface.delta_T",
                                     "delta_T",
                                     "Kelvin",
                                     "Kelvin",

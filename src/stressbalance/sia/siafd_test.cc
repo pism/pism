@@ -57,8 +57,8 @@ static void compute_strain_heating_errors(const IceModelVec3 &strain_heating,
   const double LforFG = 750000; // m
 
   const double
-    ice_rho   = grid.ctx()->config()->get_double("constants.ice.density"),
-    ice_c     = grid.ctx()->config()->get_double("constants.ice.specific_heat_capacity");
+    ice_rho   = grid.ctx()->config()->get_number("constants.ice.density"),
+    ice_c     = grid.ctx()->config()->get_number("constants.ice.specific_heat_capacity");
 
   IceModelVec::AccessList list{&thickness, &strain_heating};
 
@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = context_from_options(com, "siafd_test");
     Config::Ptr config = ctx->config();
 
-    config->set_boolean("stress_balance.sia.grain_size_age_coupling", false);
+    config->set_flag("stress_balance.sia.grain_size_age_coupling", false);
     config->set_string("stress_balance.sia.flow_law", "arr");
 
     set_config_from_options(*config);
@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
     P.horizontal_size_from_options();
 
     double Lz = 4000.0;
-    unsigned int Mz = config->get_double("grid.Mz");
+    unsigned int Mz = config->get_number("grid.Mz");
 
     P.z = IceGrid::compute_vertical_levels(Lz, Mz, EQUAL);
     P.ownership_ranges_from_options(ctx->size());
@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
 
     EnthalpyConverter::Ptr EC(new ColdEnthalpyConverter(*config));
 
-    const int WIDE_STENCIL = config->get_double("grid.max_stencil_width");
+    const int WIDE_STENCIL = config->get_number("grid.max_stencil_width");
 
     IceModelVec3
       enthalpy(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL),
@@ -354,7 +354,7 @@ int main(int argc, char *argv[]) {
                   geometry.ice_thickness,
                   enthalpy);
 
-    geometry.ensure_consistency(config->get_double("geometry.ice_free_thickness_standard"));
+    geometry.ensure_consistency(config->get_number("geometry.ice_free_thickness_standard"));
 
     // Initialize the SIA solver:
     stress_balance.init();

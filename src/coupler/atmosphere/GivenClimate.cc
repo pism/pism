@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,8 +31,8 @@ Given::Given(IceGrid::ConstPtr g)
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.given");
 
   {
-    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    unsigned int buffer_size = m_config->get_number("climate_forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
     PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
@@ -43,7 +43,8 @@ Given::Given(IceGrid::ConstPtr g)
                                              "", // no standard name
                                              buffer_size,
                                              evaluations_per_year,
-                                             periodic);
+                                             periodic,
+                                             LINEAR);
 
     m_precipitation = IceModelVec2T::ForcingField(m_grid,
                                                   file,
@@ -57,8 +58,8 @@ Given::Given(IceGrid::ConstPtr g)
   {
     m_air_temp->set_attrs("diagnostic", "mean annual near-surface air temperature",
                           "Kelvin", "", 0);
-    m_air_temp->metadata(0).set_double("valid_min", 0.0);
-    m_air_temp->metadata(0).set_double("valid_max", 323.15); // 50 C
+    m_air_temp->metadata(0).set_number("valid_min", 0.0);
+    m_air_temp->metadata(0).set_number("valid_max", 323.15); // 50 C
   }
   {
     m_precipitation->set_attrs("model_state", "precipitation rate",

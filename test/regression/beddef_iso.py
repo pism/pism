@@ -12,8 +12,8 @@ def exact(ice_thickness_change):
 
     config = PISM.Context().config
 
-    ice_density    = config.get_double("constants.ice.density")
-    mantle_density = config.get_double("bed_deformation.mantle_density")
+    ice_density    = config.get_number("constants.ice.density")
+    mantle_density = config.get_number("bed_deformation.mantle_density")
 
     return -(ice_density / mantle_density) * ice_thickness_change
 

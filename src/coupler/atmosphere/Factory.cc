@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,6 +32,7 @@
 #include "CosineYearlyCycle.hh"
 #include "WeatherStation.hh"
 #include "Uniform.hh"
+#include "OrographicPrecipitation.hh"
 #include "IndexForcing.hh"
 
 namespace pism {
@@ -40,8 +41,7 @@ namespace atmosphere {
 // Atmosphere
 
 Factory::Factory(IceGrid::ConstPtr g)
-  : PCFactory<AtmosphereModel>(g) {
-  m_option = "atmosphere";
+  : PCFactory<AtmosphereModel>(g, "atmosphere.model") {
 
   add_model<PIK>("pik");
   add_model<Given>("given");
@@ -58,6 +58,7 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_modifier<Delta_P>("delta_P");
   add_modifier<Delta_T>("delta_T");
   add_modifier<LapseRates>("lapse_rate");
+  add_modifier<OrographicPrecipitation>("orographic_precipitation");
 }
 
 Factory::~Factory() {

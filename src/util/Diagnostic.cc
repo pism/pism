@@ -38,7 +38,7 @@ Diagnostic::Diagnostic(IceGrid::ConstPtr g)
   : m_grid(g),
     m_sys(g->ctx()->unit_system()),
     m_config(g->ctx()->config()),
-    m_fill_value(m_config->get_double("output.fill_value")) {
+    m_fill_value(m_config->get_number("output.fill_value")) {
   // empty
 }
 
@@ -167,7 +167,7 @@ TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr g, const std::string &name)
   m_current_time = 0;
   m_start        = 0;
 
-  m_buffer_size = (size_t)m_config->get_double("output.timeseries.buffer_size");
+  m_buffer_size = (size_t)m_config->get_number("output.timeseries.buffer_size");
 
   m_ts.variable().set_string("ancillary_variables", name + "_aux");
 

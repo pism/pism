@@ -103,6 +103,8 @@ private:
                            IceModelVec2S &T_star,
                            IceModelVec2S &Toc,
                            IceModelVec2S &Soc);
+  void extend_basal_melt_rates(const IceModelVec2CellType &mask,
+                          IceModelVec2S &basal_melt_rate); 
 
   void beckmann_goosse(const PicoPhysics &physics,
                        const IceModelVec2S &ice_thickness,

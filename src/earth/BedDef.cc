@@ -16,8 +16,6 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>       // GSL_NAN
-
 #include "BedDef.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Time.hh"
@@ -31,9 +29,7 @@ namespace bed {
 BedDef::BedDef(IceGrid::ConstPtr g)
   : Component(g) {
 
-  m_t_beddef_last = GSL_NAN;
-
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
 
   m_topg.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   m_topg.set_attrs("model_state", "bedrock surface elevation",
@@ -118,8 +114,6 @@ void BedDef::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickn
   (void) ice_thickness;
   (void) sea_level_elevation;
 
-  m_t_beddef_last = m_grid->ctx()->time()->start();
-
   switch (opts.type) {
   case INIT_RESTART:
     // read bed elevation and uplift rate from file
@@ -133,9 +127,9 @@ void BedDef::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickn
   case INIT_BOOTSTRAP:
     // bootstrapping
     m_topg.regrid(opts.filename, OPTIONAL,
-                  m_config->get_double("bootstrapping.defaults.bed"));
+                  m_config->get_number("bootstrapping.defaults.bed"));
     m_uplift.regrid(opts.filename, OPTIONAL,
-                    m_config->get_double("bootstrapping.defaults.uplift"));
+                    m_config->get_number("bootstrapping.defaults.uplift"));
     break;
   case INIT_OTHER:
   default:
@@ -214,8 +208,8 @@ void compute_load(const IceModelVec2S &bed_elevation,
   Config::ConstPtr config = result.grid()->ctx()->config();
 
   const double
-    ice_density   = config->get_double("constants.ice.density"),
-    ocean_density = config->get_double("constants.sea_water.density");
+    ice_density   = config->get_number("constants.ice.density"),
+    ocean_density = config->get_number("constants.sea_water.density");
 
   IceModelVec::AccessList list{&bed_elevation, &ice_thickness, &sea_level_elevation, &result};
 

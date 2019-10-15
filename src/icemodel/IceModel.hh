@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -98,7 +98,10 @@ class IceModelVec2CellType;
 class IceModelVec2T;
 class Component;
 
-struct FractureFields {
+class FractureFields {
+private:
+  const unsigned int m_stencil_width;
+public:
   FractureFields(IceGrid::ConstPtr grid);
 
   IceModelVec2S density;
@@ -218,6 +221,7 @@ protected:
   virtual void save_variables(const PIO &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
+                              double time,
                               IO_Type default_diagnostics_type = PISM_FLOAT);
 
   virtual void define_model_state(const PIO &file);
@@ -268,7 +272,7 @@ protected:
   energy::BedThermalUnit *m_btu;
   energy::EnergyModel *m_energy_model;
 
-  AgeModel *m_age_model;
+  std::shared_ptr<AgeModel> m_age_model;
 
   calving::IcebergRemover     *m_iceberg_remover;
   calving::OceanKill          *m_ocean_kill_calving;

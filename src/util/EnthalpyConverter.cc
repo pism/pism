@@ -53,18 +53,18 @@ namespace pism {
 */
 
 EnthalpyConverter::EnthalpyConverter(const Config &config) {
-  m_p_air       = config.get_double("surface.pressure"); // Pa
-  m_g           = config.get_double("constants.standard_gravity"); // m s-2
-  m_beta        = config.get_double("constants.ice.beta_Clausius_Clapeyron"); // K Pa-1
-  m_rho_i       = config.get_double("constants.ice.density"); // kg m-3
-  m_c_i         = config.get_double("constants.ice.specific_heat_capacity"); // J kg-1 K-1
-  m_c_w         = config.get_double("constants.fresh_water.specific_heat_capacity"); // J kg-1 K-1
-  m_L           = config.get_double("constants.fresh_water.latent_heat_of_fusion"); // J kg-1
-  m_T_melting   = config.get_double("constants.fresh_water.melting_point_temperature"); // K
-  m_T_tolerance = config.get_double("enthalpy_converter.relaxed_is_temperate_tolerance"); // K
-  m_T_0         = config.get_double("enthalpy_converter.T_reference"); // K
+  m_p_air       = config.get_number("surface.pressure"); // Pa
+  m_g           = config.get_number("constants.standard_gravity"); // m s-2
+  m_beta        = config.get_number("constants.ice.beta_Clausius_Clapeyron"); // K Pa-1
+  m_rho_i       = config.get_number("constants.ice.density"); // kg m-3
+  m_c_i         = config.get_number("constants.ice.specific_heat_capacity"); // J kg-1 K-1
+  m_c_w         = config.get_number("constants.fresh_water.specific_heat_capacity"); // J kg-1 K-1
+  m_L           = config.get_number("constants.fresh_water.latent_heat_of_fusion"); // J kg-1
+  m_T_melting   = config.get_number("constants.fresh_water.melting_point_temperature"); // K
+  m_T_tolerance = config.get_number("enthalpy_converter.relaxed_is_temperate_tolerance"); // K
+  m_T_0         = config.get_number("enthalpy_converter.T_reference"); // K
 
-  m_do_cold_ice_methods  = config.get_boolean("energy.temperature_based");
+  m_do_cold_ice_methods  = config.get_flag("energy.temperature_based");
 }
 
 EnthalpyConverter::~EnthalpyConverter() {

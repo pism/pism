@@ -39,7 +39,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_layer_mass(IceGrid::ConstPtr grid) {
 
   result->set_attrs("climate_forcing", "mass held in the surface layer", "kg", "");
 
-  result->metadata().set_double("valid_min", 0.0);
+  result->metadata().set_number("valid_min", 0.0);
 
   return result;
 }
@@ -52,7 +52,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_layer_thickness(IceGrid::ConstPtr grid
                     "thickness of the surface process layer at the top surface of the ice",
                     "m", "");
 
-  result->metadata().set_double("valid_min", 0.0);
+  result->metadata().set_number("valid_min", 0.0);
 
   return result;
 }
@@ -66,7 +66,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_liquid_water_fraction(IceGrid::ConstPt
                     "liquid water fraction of the ice at the top surface",
                     "1", "");
 
-  result->metadata().set_doubles("valid_range", {0.0, 1.0});
+  result->metadata().set_numbers("valid_range", {0.0, 1.0});
 
   return result;
 }
@@ -81,9 +81,9 @@ IceModelVec2S::Ptr SurfaceModel::allocate_mass_flux(IceGrid::ConstPtr grid) {
   result->metadata().set_string("glaciological_units", "kg m-2 year-1");
 
   Config::ConstPtr config = grid->ctx()->config();
-  const double smb_max = config->get_double("surface.given.smb_max", "kg m-2 second-1");
+  const double smb_max = config->get_number("surface.given.smb_max", "kg m-2 second-1");
 
-  result->metadata().set_doubles("valid_range", {-smb_max, smb_max});
+  result->metadata().set_numbers("valid_range", {-smb_max, smb_max});
 
   return result;
 }
@@ -96,7 +96,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_temperature(IceGrid::ConstPtr grid) {
                     "temperature of the ice at the ice surface but below firn processes",
                     "Kelvin", "");
 
-  result->metadata().set_doubles("valid_range", {0.0, 323.15}); // [0C, 50C]
+  result->metadata().set_numbers("valid_range", {0.0, 323.15}); // [0C, 50C]
 
   return result;
 }

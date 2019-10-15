@@ -73,10 +73,10 @@ void PIK::update_impl(const Geometry &geometry, double t, double dt) {
 void PIK::melting_point_temperature(const IceModelVec2S &depth,
                                     IceModelVec2S &result) const {
   const double
-    T0          = m_config->get_double("constants.fresh_water.melting_point_temperature"), // K
-    beta_CC     = m_config->get_double("constants.ice.beta_Clausius_Clapeyron"),
-    g           = m_config->get_double("constants.standard_gravity"),
-    ice_density = m_config->get_double("constants.ice.density");
+    T0          = m_config->get_number("constants.fresh_water.melting_point_temperature"), // K
+    beta_CC     = m_config->get_number("constants.ice.beta_Clausius_Clapeyron"),
+    g           = m_config->get_number("constants.standard_gravity"),
+    ice_density = m_config->get_number("constants.ice.density");
 
   IceModelVec::AccessList list{&depth, &result};
 
@@ -94,10 +94,10 @@ void PIK::melting_point_temperature(const IceModelVec2S &depth,
  */
 void PIK::mass_flux(const IceModelVec2S &ice_thickness, IceModelVec2S &result) const {
   const double
-    melt_factor       = m_config->get_double("ocean.pik_melt_factor"),
-    L                 = m_config->get_double("constants.fresh_water.latent_heat_of_fusion"),
-    sea_water_density = m_config->get_double("constants.sea_water.density"),
-    ice_density       = m_config->get_double("constants.ice.density"),
+    melt_factor       = m_config->get_number("ocean.pik_melt_factor"),
+    L                 = m_config->get_number("constants.fresh_water.latent_heat_of_fusion"),
+    sea_water_density = m_config->get_number("constants.sea_water.density"),
+    ice_density       = m_config->get_number("constants.ice.density"),
     c_p_ocean         = 3974.0, // J/(K*kg), specific heat capacity of ocean mixed layer
     gamma_T           = 1e-4,   // m/s, thermal exchange velocity
     ocean_salinity    = 35.0,   // g/kg

@@ -25,7 +25,6 @@
 #include "SeariseGreenland.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/ConfigInterface.hh"
 
@@ -49,21 +48,19 @@ SeaRISEGreenland::~SeaRISEGreenland() {
 void SeaRISEGreenland::init_impl(const Geometry &geometry) {
 
   m_log->message(2,
-             "* Initializing SeaRISE-Greenland atmosphere model based on the Fausto et al (2009)\n"
-             "  air temperature parameterization and using stored time-independent precipitation...\n");
+                 "* Initializing SeaRISE-Greenland atmosphere model based on the Fausto et al (2009)\n"
+                 "  air temperature parameterization and using stored time-independent precipitation...\n");
 
   m_reference =
     "R. S. Fausto, A. P. Ahlstrom, D. V. As, C. E. Boggild, and S. J. Johnsen, 2009. "
     "A new present-day temperature parameterization for Greenland. J. Glaciol. 55 (189), 95-105.";
 
-  std::string option_prefix = "-atmosphere_searise_greenland";
-  options::String precip_file(option_prefix + "_file",
-                              "Specifies a file with boundary conditions");
+  auto precip_file = m_config->get_string("atmosphere.searise_greenland.file");
 
-  if (precip_file.is_set()) {
+  if (not precip_file.empty()) {
     m_log->message(2,
-                   "  * Option '-atmosphere_searise_greenland %s' is set...\n",
-                   precip_file->c_str());
+                   "  * Reading precipitation from '%s'...\n",
+                   precip_file.c_str());
 
     YearlyCycle::init_internal(precip_file,
                                true, /* do regrid */
@@ -93,14 +90,14 @@ void SeaRISEGreenland::update_impl(const Geometry &geometry, double t, double dt
   (void) dt;
 
   const double
-    d_ma     = m_config->get_double("atmosphere.fausto_air_temp.d_ma"),      // K
-    gamma_ma = m_config->get_double("atmosphere.fausto_air_temp.gamma_ma"),  // K m-1
-    c_ma     = m_config->get_double("atmosphere.fausto_air_temp.c_ma"),      // K (degN)-1
-    kappa_ma = m_config->get_double("atmosphere.fausto_air_temp.kappa_ma"),  // K (degW)-1
-    d_mj     = m_config->get_double("atmosphere.fausto_air_temp.d_mj"),      // SAME UNITS as for _ma ...
-    gamma_mj = m_config->get_double("atmosphere.fausto_air_temp.gamma_mj"),
-    c_mj     = m_config->get_double("atmosphere.fausto_air_temp.c_mj"),
-    kappa_mj = m_config->get_double("atmosphere.fausto_air_temp.kappa_mj");
+    d_ma     = m_config->get_number("atmosphere.fausto_air_temp.d_ma"),      // K
+    gamma_ma = m_config->get_number("atmosphere.fausto_air_temp.gamma_ma"),  // K m-1
+    c_ma     = m_config->get_number("atmosphere.fausto_air_temp.c_ma"),      // K (degN)-1
+    kappa_ma = m_config->get_number("atmosphere.fausto_air_temp.kappa_ma"),  // K (degW)-1
+    d_mj     = m_config->get_number("atmosphere.fausto_air_temp.d_mj"),      // SAME UNITS as for _ma ...
+    gamma_mj = m_config->get_number("atmosphere.fausto_air_temp.gamma_mj"),
+    c_mj     = m_config->get_number("atmosphere.fausto_air_temp.c_mj"),
+    kappa_mj = m_config->get_number("atmosphere.fausto_air_temp.kappa_mj");
 
 
   // initialize pointers to fields the parameterization depends on:

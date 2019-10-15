@@ -24,11 +24,10 @@
 
 namespace pism {
 namespace surface {
-class Factory : public PCFactory<SurfaceModel> {
-  typedef atmosphere::AtmosphereModel InputModel;
+class Factory : protected PCFactory<SurfaceModel> {
 
 public:
-  Factory(IceGrid::ConstPtr g, std::shared_ptr<InputModel> input);
+  Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input);
   ~Factory();
 
   std::shared_ptr<SurfaceModel> create();
@@ -36,6 +35,8 @@ public:
 
   void set_default(const std::string &type);
 private:
+  typedef atmosphere::AtmosphereModel InputModel;
+
   class SurfaceModelCreator {
   public:
     virtual std::shared_ptr<SurfaceModel> create(IceGrid::ConstPtr grid,

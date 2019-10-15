@@ -7,19 +7,21 @@ Used as a verification (and regression) test for LingleClarkSerial::bootstrap().
 """
 
 import PISM
-import pylab as plt
 import numpy as np
 from PISM.util import convert
 
 config = PISM.Context().config
 log = PISM.Context().log
 
+config.set_number("bed_deformation.lc.grid_size_factor", 2)
+config.set_flag("bed_deformation.lc.elastic_model", False)
+
 # constants
-standard_gravity = config.get_double("constants.standard_gravity")
-ice_density = config.get_double("constants.ice.density")
-mantle_density = config.get_double("bed_deformation.mantle_density")
-mantle_viscosity = config.get_double("bed_deformation.mantle_viscosity")
-lithosphere_flexural_rigidity = config.get_double("bed_deformation.lithosphere_flexural_rigidity")
+standard_gravity = config.get_number("constants.standard_gravity")
+ice_density = config.get_number("constants.ice.density")
+mantle_density = config.get_number("bed_deformation.mantle_density")
+mantle_viscosity = config.get_number("bed_deformation.mantle_viscosity")
+lithosphere_flexural_rigidity = config.get_number("bed_deformation.lithosphere_flexural_rigidity")
 
 # disc load parameters
 disc_radius = convert(1000, "km", "m")
@@ -49,12 +51,15 @@ def exact(dics_radius, disc_thickness, t, L, N):
     return (r, z)
 
 
-def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
+def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, Nx, dt):
     "Use the LingleClark class to compute plate deflection."
-    M = int(2 * N - 1)
+
+    Ny = Nx
+    Mx = int(2 * Nx - 1)
+    My = int(2 * Ny - 1)
 
     ctx = PISM.Context().ctx
-    grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+    grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     bed_model = PISM.LingleClark(grid)
 
@@ -87,27 +92,30 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
         if t + dt > t_end:
             dt = t_end - t
 
-        bed_model.update(ice_thickness, sea_level, t, dt)
+        bed_model.step(ice_thickness, sea_level, dt)
 
         t += dt
         log.message(2, ".")
     log.message(2, "\n")
 
     # extract half of the x grid
-    r = grid.x()[N-1:]
+    r = grid.x()[Nx-1:]
 
     # extract values along the x direction (along the radius of the disc)
-    z = bed_model.bed_elevation().numpy()[N-1, N-1:]
+    z = bed_model.bed_elevation().numpy()[Ny-1, Nx-1:]
 
     return r, z
 
 
-def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
+def modeled_steady_state(dics_radius, disc_thickness, time, L, Nx):
     "Use the LingleClark class to compute plate deflection."
-    M = int(2 * N - 1)
+
+    Ny = Nx
+    Mx = int(2 * Nx - 1)
+    My = int(2 * Ny - 1)
 
     ctx = PISM.Context().ctx
-    grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+    grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     bed_model = PISM.LingleClark(grid)
 
@@ -133,10 +141,10 @@ def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
     bed_model.bootstrap(bed, bed_uplift, ice_thickness, sea_level)
 
     # extract half of the x grid
-    r = grid.x()[N-1:]
+    r = grid.x()[Nx-1:]
 
     # extract values along the x direction (along the radius of the disc)
-    z = bed_model.total_displacement().numpy()[N-1, N-1:]
+    z = bed_model.total_displacement().numpy()[Ny-1, Nx-1:]
 
     return r, z
 
@@ -169,11 +177,38 @@ def compare_time_dependent(N):
     return diff_origin, diff_max, diff_average, dx
 
 
+def time_dependent_test():
+    "Time dependent bed deformation (disc load)"
+    diff = np.array([compare_time_dependent(n)[:3] for n in [34, 67]])
+
+    stored = [[0.04099917, 5.05854,    0.93909436],
+              [0.05710513, 4.14329508, 0.71246272]]
+
+    return np.testing.assert_almost_equal(diff, stored)
+
+
+def steady_state_test():
+    "Steady state bed deformation (disc load)"
+    Ns = 10 * np.arange(1, 5) + 1
+    diff = np.array([compare_steady_state(n) for n in Ns])
+
+    stored = [[ 0.0399697,  15.71882867,  3.80458833],
+              [ 0.04592036, 11.43876195,  1.94967725],
+              [ 0.04357962,  9.7207298,   1.76262896],
+              [ 0.04019595,  7.71929661,  1.38746767]]
+
+    return np.testing.assert_almost_equal(diff, stored)
+
+
 def verify_steady_state():
     "Set up a grid refinement study and produce convergence plots."
+
     Ns = 101 + 10 * np.arange(0, 10)
 
     diff = np.array([compare_steady_state(n) for n in Ns])
+
+    plt.figure()
+    plt.title("Steady state")
 
     d = np.log10(diff)
     log_n = np.log10(1.0 / Ns)
@@ -186,6 +221,7 @@ def verify_steady_state():
     plt.grid(True)
     plt.xlabel("log10(1/N)")
     plt.ylabel("log10(error)")
+    plt.title("Convergence rates for the steady-state problem")
     plt.show()
 
 
@@ -203,6 +239,9 @@ def verify_time_dependent():
 
     diff = np.array([compare_time_dependent(n) for n in Ns])
 
+    plt.figure()
+    plt.title("Time-dependent")
+
     d = np.log10(diff)
     dx = diff[:, 3] / 1000.0    # convert to km
     log_dx = np.log10(dx)
@@ -216,27 +255,13 @@ def verify_time_dependent():
     plt.grid(True)
     plt.xlabel("dx, km")
     plt.ylabel("log10(error)")
+    plt.title("Convergence rates for the time-dependent problem")
     plt.show()
 
-
-def time_dependent_test():
-    "Time dependent bed deformation (disc load)"
-    diff = np.array([compare_time_dependent(n)[:3] for n in [34, 67]])
-
-    stored = [[0.01023591, 5.19786964, 0.93575341],
-              [0.04744501, 4.11548251, 0.69969177]]
-
-    return np.testing.assert_almost_equal(diff, stored)
-
-
-def steady_state_test():
-    "Steady state bed deformation (disc load)"
-    Ns = 10 * np.arange(1, 5) + 1
-    diff = np.array([compare_steady_state(n) for n in Ns])
-
-    stored = [[3.20730323e-02, 1.55400133e+01, 3.81424848e+00],
-              [5.82577650e-03, 1.10354567e+01, 1.92997362e+00],
-              [1.62485905e-02, 9.53012210e+00, 1.75301378e+00],
-              [1.95503166e-02, 7.60885504e+00, 1.37961265e+00]]
-
-    return np.testing.assert_almost_equal(diff, stored)
+if __name__ == "__main__":
+    import pylab as plt
+    log.message(2, "  Creating convergence plots (spatial refinement)...\n")
+    log.message(2, "  1. Steady state problem...\n")
+    verify_steady_state()
+    log.message(2, "  2. Time-dependent problem...\n")
+    verify_time_dependent()

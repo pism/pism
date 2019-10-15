@@ -210,7 +210,7 @@ IceGrid::Ptr IceGrid::Shallow(Context::ConstPtr ctx,
     p.registration = registration;
     p.periodicity = periodicity;
 
-    double Lz = ctx->config()->get_double("grid.Lz");
+    double Lz = ctx->config()->get_number("grid.Lz");
     p.z.resize(3);
     p.z[0] = 0.0;
     p.z[1] = 0.5 * Lz;
@@ -254,7 +254,7 @@ IceGrid::IceGrid(Context::ConstPtr context, const GridParameters &p)
     m_impl->compute_horizontal_coordinates();
 
     {
-      unsigned int stencil_width = (unsigned int)context->config()->get_double("grid.max_stencil_width");
+      unsigned int stencil_width = (unsigned int)context->config()->get_number("grid.max_stencil_width");
 
       try {
         petsc::DM::Ptr tmp = this->get_dm(1, stencil_width);
@@ -318,7 +318,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (p.z.size() < 2) {
-      double Lz = ctx->config()->get_double("grid.Lz");
+      double Lz = ctx->config()->get_number("grid.Lz");
       log.message(3,
                   "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
                   "         Using 2 levels and Lz of %3.3fm\n",
@@ -748,21 +748,17 @@ void IceGrid::compute_point_neighbors(double X, double Y,
   i_right = i_left + 1;
   j_top = j_bottom + 1;
 
-  if (i_left < 0) {
-    i_left = i_right;
-  }
+  i_left = std::max(i_left, 0);
+  i_right = std::max(i_right, 0);
 
-  if (i_right > (int)m_impl->Mx - 1) {
-    i_right = i_left;
-  }
+  i_left = std::min(i_left, (int)m_impl->Mx - 1);
+  i_right = std::min(i_right, (int)m_impl->Mx - 1);
 
-  if (j_bottom < 0) {
-    j_bottom = j_top;
-  }
+  j_bottom = std::max(j_bottom, 0);
+  j_top = std::max(j_top, 0);
 
-  if (j_top > (int)m_impl->My - 1) {
-    j_top = j_bottom;
-  }
+  j_bottom = std::min(j_bottom, (int)m_impl->My - 1);
+  j_top = std::min(j_top, (int)m_impl->My - 1);
 }
 
 std::vector<int> IceGrid::compute_point_neighbors(double X, double Y) const {
@@ -1182,21 +1178,21 @@ void GridParameters::ownership_ranges_from_options(unsigned int size) {
 
 //! Initialize from a configuration database. Does not try to compute ownership ranges.
 void GridParameters::init_from_config(Config::ConstPtr config) {
-  Lx = config->get_double("grid.Lx");
-  Ly = config->get_double("grid.Ly");
+  Lx = config->get_number("grid.Lx");
+  Ly = config->get_number("grid.Ly");
 
   x0 = 0.0;
   y0 = 0.0;
 
-  Mx = config->get_double("grid.Mx");
-  My = config->get_double("grid.My");
+  Mx = config->get_number("grid.Mx");
+  My = config->get_number("grid.My");
 
   periodicity = string_to_periodicity(config->get_string("grid.periodicity"));
   registration = string_to_registration(config->get_string("grid.registration"));
 
-  double Lz = config->get_double("grid.Lz");
-  unsigned int Mz = config->get_double("grid.Mz");
-  double lambda = config->get_double("grid.lambda");
+  double Lz = config->get_number("grid.Lz");
+  unsigned int Mz = config->get_number("grid.Mz");
+  double lambda = config->get_number("grid.lambda");
   SpacingType s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
   z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
   // does not set ownership ranges because we don't know if these settings are final
@@ -1272,9 +1268,9 @@ void GridParameters::horizontal_extent_from_options() {
 }
 
 void GridParameters::vertical_grid_from_options(Config::ConstPtr config) {
-  double Lz = z.size() > 0 ? z.back() : config->get_double("grid.Lz");
-  int Mz = z.size() > 0 ? z.size() : config->get_double("grid.Mz");
-  double lambda = config->get_double("grid.lambda");
+  double Lz = z.size() > 0 ? z.back() : config->get_number("grid.Lz");
+  int Mz = z.size() > 0 ? z.size() : config->get_number("grid.Mz");
+  double lambda = config->get_number("grid.lambda");
   SpacingType s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
 
   z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
@@ -1322,14 +1318,16 @@ void GridParameters::validate() const {
 /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
  */
 IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
-  options::String input_file("-i", "Specifies a PISM input file");
-  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+  auto config = ctx->config();
 
-  GridRegistration r = string_to_registration(ctx->config()->get_string("grid.registration"));
+  auto input_file = config->get_string("input.file");
+  bool bootstrap = config->get_flag("input.bootstrap");
+
+  GridRegistration r = string_to_registration(config->get_string("grid.registration"));
 
   Logger::ConstPtr log = ctx->log();
 
-  if (input_file.is_set() and (not bootstrap)) {
+  if (not input_file.empty() and (not bootstrap)) {
     // These options are ignored because we're getting *all* the grid
     // parameters from a file.
     options::ignored(*log, "-Mx");
@@ -1343,11 +1341,11 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
 
     // get grid from a PISM input file
     return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, r);
-  } else if (input_file.is_set() and bootstrap) {
+  } else if (not input_file.empty() and bootstrap) {
     // bootstrapping; get domain size defaults from an input file, allow overriding all grid
     // parameters using command-line options
 
-    GridParameters input_grid(ctx->config());
+    GridParameters input_grid(config);
 
     std::vector<std::string> names = {"land_ice_thickness", "bedrock_altitude",
                                       "thk", "topg"};
@@ -1374,13 +1372,13 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
 
     if (not grid_info_found) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no geometry information found in '%s'",
-                                    input_file->c_str());
+                                    input_file.c_str());
     }
 
     // process all possible options controlling grid parameters, overriding values read from a file
     input_grid.horizontal_size_from_options();
     input_grid.horizontal_extent_from_options();
-    input_grid.vertical_grid_from_options(ctx->config());
+    input_grid.vertical_grid_from_options(config);
     input_grid.ownership_ranges_from_options(ctx->size());
 
     IceGrid::Ptr result(new IceGrid(ctx, input_grid));
@@ -1392,7 +1390,7 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
     log->message(2,
                  "  setting computational box for ice from '%s' and\n"
                  "    user options: [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
-                 input_file->c_str(),
+                 input_file.c_str(),
                  km(result->x0() - result->Lx()),
                  km(result->x0() + result->Lx()),
                  km(result->y0() - result->Ly()),
@@ -1403,7 +1401,8 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
   } else {
     // This covers the two remaining cases "-i is not set, -bootstrap is set" and "-i is not set,
     // -bootstrap is not set either".
-    throw RuntimeError(PISM_ERROR_LOCATION, "Please set the input file using the \"-i\" command-line option.");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "Please set the input file using the \"-i\" command-line option.");
   }
 }
 

@@ -92,8 +92,8 @@ void IceModel::combine_basal_melt_rate(const Geometry &geometry,
                                        const IceModelVec2S &grounded_basal_melt_rate,
                                        IceModelVec2S &result) {
 
-  const bool sub_gl = (m_config->get_boolean("geometry.grounded_cell_fraction") and
-                       m_config->get_boolean("energy.basal_melt.use_grounded_cell_fraction"));
+  const bool sub_gl = (m_config->get_flag("geometry.grounded_cell_fraction") and
+                       m_config->get_flag("energy.basal_melt.use_grounded_cell_fraction"));
 
   IceModelVec::AccessList list{&geometry.cell_type,
       &grounded_basal_melt_rate, &shelf_base_mass_flux, &result};
@@ -101,7 +101,7 @@ void IceModel::combine_basal_melt_rate(const Geometry &geometry,
     list.add(geometry.cell_grounded_fraction);
   }
 
-  double ice_density = m_config->get_double("constants.ice.density");
+  double ice_density = m_config->get_number("constants.ice.density");
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -135,10 +135,10 @@ void bedrock_surface_temperature(const IceModelVec2S &sea_level,
   Config::ConstPtr config = grid->ctx()->config();
 
   const double
-    T0                     = config->get_double("constants.fresh_water.melting_point_temperature"),
-    beta_CC_grad_sea_water = (config->get_double("constants.ice.beta_Clausius_Clapeyron") *
-                              config->get_double("constants.sea_water.density") *
-                              config->get_double("constants.standard_gravity")); // K m-1
+    T0                     = config->get_number("constants.fresh_water.melting_point_temperature"),
+    beta_CC_grad_sea_water = (config->get_number("constants.ice.beta_Clausius_Clapeyron") *
+                              config->get_number("constants.sea_water.density") *
+                              config->get_number("constants.standard_gravity")); // K m-1
 
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 

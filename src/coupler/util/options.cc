@@ -56,7 +56,7 @@ ForcingOptions::ForcingOptions(const Context &ctx,
   }
 
   {
-    auto P = config.get_double(prefix + ".period");
+    auto P = config.get_number(prefix + ".period");
 
     if (P < 0.0) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -67,7 +67,7 @@ ForcingOptions::ForcingOptions(const Context &ctx,
   }
 
   {
-    auto ref_year = config.get_double(prefix + ".reference_year");
+    auto ref_year = config.get_number(prefix + ".reference_year");
 
     this->reference_time = units::convert(ctx.unit_system(), ref_year, "years", "seconds");
   }

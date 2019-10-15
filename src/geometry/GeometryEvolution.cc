@@ -88,49 +88,59 @@ struct GeometryEvolution::Impl {
 
 GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
   : profile(grid->ctx()->profiling()),
-    gc(*grid->ctx()->config()) {
+    gc(*grid->ctx()->config()),
+    flux_divergence(grid, "flux_divergence", WITHOUT_GHOSTS),
+    conservation_error(grid, "conservation_error", WITHOUT_GHOSTS),
+    effective_SMB(grid, "effective_SMB", WITHOUT_GHOSTS),
+    effective_BMB(grid, "effective_BMB", WITHOUT_GHOSTS),
+    thickness_change(grid, "thickness_change", WITHOUT_GHOSTS),
+    ice_area_specific_volume_change(grid, "ice_area_specific_volume_change", WITHOUT_GHOSTS),
+    flux_staggered(grid, "flux_staggered", WITH_GHOSTS),
+    input_velocity(grid, "input_velocity", WITH_GHOSTS),
+    bed_elevation(grid, "bed_elevation", WITH_GHOSTS),
+    sea_level(grid, "sea_level", WITH_GHOSTS),
+    ice_thickness(grid, "ice_thickness", WITH_GHOSTS),
+    area_specific_volume(grid, "area_specific_volume", WITH_GHOSTS),
+    surface_elevation(grid, "surface_elevation", WITH_GHOSTS),
+    cell_type(grid, "cell_type", WITH_GHOSTS),
+    residual(grid, "residual", WITH_GHOSTS),
+    thickness(grid, "thickness", WITH_GHOSTS),
+    velocity_bc_mask(grid, "velocity_bc_mask", WITH_GHOSTS) {
 
   Config::ConstPtr config = grid->ctx()->config();
 
-  gc.set_icefree_thickness(config->get_double("geometry.ice_free_thickness_standard"));
+  gc.set_icefree_thickness(config->get_number("geometry.ice_free_thickness_standard"));
 
   // constants
   {
-    ice_density   = config->get_double("constants.ice.density");
-    use_bmr       = config->get_boolean("geometry.update.use_basal_melt_rate");
-    use_part_grid = config->get_boolean("geometry.part_grid.enabled");
+    ice_density   = config->get_number("constants.ice.density");
+    use_bmr       = config->get_flag("geometry.update.use_basal_melt_rate");
+    use_part_grid = config->get_flag("geometry.part_grid.enabled");
   }
 
   // reported quantities
   {
     // This is the only reported field that is ghosted (we need ghosts to compute flux divergence).
-    flux_staggered.create(grid, "flux_staggered", WITH_GHOSTS);
     flux_staggered.set_attrs("diagnostic", "fluxes through cell interfaces (sides)"
                              " on the staggered grid",
                              "m2 s-1", "");
     flux_staggered.metadata().set_string("glaciological_units", "m2 year-1");
 
-    flux_divergence.create(grid, "flux_divergence", WITHOUT_GHOSTS);
     flux_divergence.set_attrs("diagnostic", "flux divergence", "m s-1", "");
     flux_divergence.metadata().set_string("glaciological_units", "m year-1");
 
-    conservation_error.create(grid, "conservation_error", WITHOUT_GHOSTS);
     conservation_error.set_attrs("diagnostic",
                                  "conservation error due to enforcing non-negativity of"
                                  " ice thickness (over the last time step)", "meters", "");
 
-    effective_SMB.create(grid, "effective_SMB", WITHOUT_GHOSTS);
     effective_SMB.set_attrs("internal", "effective surface mass balance over the last time step",
                             "meters", "");
 
-    effective_BMB.create(grid, "effective_BMB", WITHOUT_GHOSTS);
     effective_BMB.set_attrs("internal", "effective basal mass balance over the last time step",
                             "meters", "");
 
-    thickness_change.create(grid, "thickness_change", WITHOUT_GHOSTS);
     thickness_change.set_attrs("internal", "change in thickness due to flow", "meters", "");
 
-    ice_area_specific_volume_change.create(grid, "ice_area_specific_volume_change", WITHOUT_GHOSTS);
     ice_area_specific_volume_change.set_attrs("interval",
                                               "change in area-specific volume due to flow",
                                               "meters3 / meters2", "");
@@ -138,43 +148,33 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
 
   // internal storage
   {
-    input_velocity.create(grid, "input_velocity", WITH_GHOSTS);
     input_velocity.set_attrs("internal", "ghosted copy of the input velocity",
                              "meters / second", "");
 
-    bed_elevation.create(grid, "bed_elevation", WITH_GHOSTS);
     bed_elevation.set_attrs("internal", "ghosted copy of the bed elevation",
                             "meters", "");
 
-    sea_level.create(grid, "sea_level", WITH_GHOSTS);
     sea_level.set_attrs("internal", "ghosted copy of the sea level elevation",
                         "meters", "");
 
-    ice_thickness.create(grid, "ice_thickness", WITH_GHOSTS);
     ice_thickness.set_attrs("internal", "working (ghosted) copy of the ice thickness",
                             "meters", "");
 
-    area_specific_volume.create(grid, "area_specific_volume", WITH_GHOSTS);
     area_specific_volume.set_attrs("internal", "working (ghosted) copy of the area specific volume",
                                    "meters3 / meters2", "");
 
-    surface_elevation.create(grid, "surface_elevation", WITH_GHOSTS);
     surface_elevation.set_attrs("internal", "working (ghosted) copy of the surface elevation",
                                 "meters", "");
 
-    cell_type.create(grid, "cell_type", WITH_GHOSTS);
     cell_type.set_attrs("internal", "working (ghosted) copy of the cell type mask",
                         "", "");
 
-    residual.create(grid, "residual", WITH_GHOSTS);
     residual.set_attrs("internal", "residual area specific volume",
                        "meters3 / meters2", "");
 
-    thickness.create(grid, "thickness", WITH_GHOSTS);
     thickness.set_attrs("internal", "thickness (temporary storage)",
                         "meters", "");
 
-    velocity_bc_mask.create(grid, "velocity_bc_mask", WITH_GHOSTS);
     velocity_bc_mask.set_attrs("internal", "ghosted copy of the velocity B.C. mask"
                                " (1 at velocity B.C. location, 0 elsewhere)",
                                "", "");
@@ -775,7 +775,7 @@ void GeometryEvolution::update_in_place(double dt,
     See [@ref Albrechtetal2011].
   */
   if (m_impl->use_part_grid) {
-    const int max_n_iterations = m_config->get_double("geometry.part_grid.max_iterations");
+    const int max_n_iterations = m_config->get_number("geometry.part_grid.max_iterations");
 
     bool done = false;
     for (int i = 0; i < max_n_iterations and not done; ++i) {

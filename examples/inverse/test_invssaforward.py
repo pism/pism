@@ -63,7 +63,7 @@ def adjustTauc(mask, tauc):
     """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
 
     grid = mask.grid()
-    high_tauc = grid.ctx().config().get_double("basal_yield_stress.ice_free_bedrock")
+    high_tauc = grid.ctx().config().get_number("basal_yield_stress.ice_free_bedrock")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
         for (i, j) in grid.points():
@@ -430,11 +430,11 @@ if __name__ == "__main__":
 
     input_filename = config.get_string("input.file")
     inv_data_filename = PISM.OptionString("-inv_data", "inverse data file", input_filename).value()
-    use_design_prior = config.get_boolean("inverse.use_design_prior")
+    use_design_prior = config.get_flag("inverse.use_design_prior")
     design_var = PISM.OptionKeyword("-inv_ssa",
                                     "design variable for inversion",
                                     "tauc,hardav", "tauc").value()
-    using_zeta_fixed_mask = config.get_boolean("inverse.use_zeta_fixed_mask")
+    using_zeta_fixed_mask = config.get_flag("inverse.use_zeta_fixed_mask")
 
     ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename, inv_data_filename, design_var)
     ssarun.setup()

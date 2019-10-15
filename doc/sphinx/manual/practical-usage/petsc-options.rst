@@ -67,7 +67,7 @@ scalability, but it gives results which are dependent on the number of processor
 preconditioner type can be chosen with :opt:`-ssafd_pc_type`. Several choices are
 possible, but for solving the ice stream and shelf equations we recommend only
 ``bjacobi``, ``ilu``, and ``asm``. Of these it is not currently clear which is fastest;
-they are all about the same for ``ssa_testi`` with high tolerances (e.g. ``-ssa_rtol
+they are all about the same for ``ssa_testi`` with high tolerances (e.g. ``-ssafd_picard_rtol
 1e-7`` ``-ssafd_ksp_rtol 1e-12``). The default (as set by PISM) is ``bjacobi``. To force
 no preconditioning, which removes processor-number-dependence of results but may make the
 solves fail, use ``-ssafd_pc_type none``.
