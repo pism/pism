@@ -147,7 +147,8 @@ if (Pism_USE_EVERYTRACE)
 endif()
 
 if (Pism_BUILD_PYTHON_BINDINGS)
-  find_package(Python REQUIRED)
+  find_package(PythonInterp REQUIRED)
+  find_package(PythonLibs REQUIRED)
   find_package(PETSc4Py REQUIRED)
   find_package(SWIG REQUIRED)
 

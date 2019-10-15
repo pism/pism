@@ -1,7 +1,7 @@
 if (Pism_BUILD_PYTHON_BINDINGS)
   include(${SWIG_USE_FILE})
 
-  include_directories (. ${PETSC4PY_INCLUDES} ${PYTHON_INCLUDES} ${Pism_SOURCE_DIR}/src)
+  include_directories (. ${PETSC4PY_INCLUDES} ${PYTHON_INCLUDE_DIRS} ${Pism_SOURCE_DIR}/src)
 
   set(PISM_PYTHON_BINDING_LIBRARIES "pism")
 
@@ -54,7 +54,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       LANGUAGE python
       SOURCES PISM.i pism_python.cc)
   endif()
-  SWIG_LINK_LIBRARIES(cpp ${PYTHON_LIBRARY} ${PISM_PYTHON_BINDING_LIBRARIES})
+  SWIG_LINK_LIBRARIES(cpp ${PYTHON_LIBRARIES} ${PISM_PYTHON_BINDING_LIBRARIES})
 
   # Disable compiler warnings:
   SET_SOURCE_FILES_PROPERTIES(${swig_generated_file_fullname}
