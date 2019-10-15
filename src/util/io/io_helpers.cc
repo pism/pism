@@ -1507,5 +1507,26 @@ void read_valid_range(const PIO &nc, const std::string &name, VariableMetadata &
   }
 }
 
+/*!
+ * Return the name of the time dimension corresponding to a NetCDF variable.
+ *
+ * Returns an empty string if this variable is time-independent.
+ */
+std::string time_dimension(units::System::Ptr unit_system,
+                           const PIO &file,
+                           const std::string &variable_name) {
+
+  auto dims = file.inq_vardims(variable_name);
+
+  for (auto d : dims) {
+    if (file.inq_dimtype(d, unit_system) == T_AXIS) {
+      return d;
+    }
+  }
+
+  return "";
+}
+
+
 } // end of namespace io
 } // end of namespace pism
