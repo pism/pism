@@ -83,7 +83,7 @@ macro(pism_set_revision_tag)
 endmacro(pism_set_revision_tag)
 
 macro(pism_set_install_prefix)
-  # Allow setting a custom install prefix using the PISM_INSRALL_PREFIX environment variable.
+  # Allow setting a custom install prefix using the PISM_INSTALL_PREFIX environment variable.
   string (LENGTH "$ENV{PISM_INSTALL_PREFIX}" INSTALL_PREFIX_LENGTH)
   if (INSTALL_PREFIX_LENGTH)
     set (CMAKE_INSTALL_PREFIX $ENV{PISM_INSTALL_PREFIX} CACHE PATH "PISM install prefix" FORCE)
