@@ -177,37 +177,23 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
                                   m_filename.c_str());
   }
 
-  // find the time dimension:
-  std::vector<std::string> dims;
-  dims = nc.inq_vardims(name_found);
-  
-  std::string dimname = "";
-  bool time_found = false;
-  for (unsigned int i = 0; i < dims.size(); ++i) {
-    dimname = dims[i];
+  auto time_name = io::time_dimension(m_grid->ctx()->unit_system(),
+                                      nc, name_found);
 
-    AxisType dimtype = nc.inq_dimtype(dimname, m_grid->ctx()->unit_system());
-
-    if (dimtype == T_AXIS) {
-      time_found = true;
-      break;
-    }
-  }
-
-  if (time_found) {
+  if (not time_name.empty()) {
     // we're found the time dimension
-    TimeseriesMetadata time_dimension(dimname, dimname, m_grid->ctx()->unit_system());
+    TimeseriesMetadata time_dimension(time_name, time_name, m_grid->ctx()->unit_system());
 
     time_dimension.set_string("units", m_grid->ctx()->time()->units_string());
     io::read_timeseries(nc, time_dimension,
                         *m_grid->ctx()->time(), log, m_time);
 
-    std::string bounds_name = nc.get_att_text(dimname, "bounds");
+    std::string bounds_name = nc.get_att_text(time_name, "bounds");
 
     if (m_time.size() > 1) {
       if (not bounds_name.empty()) {
         // read time bounds data from a file
-        TimeBoundsMetadata tb(bounds_name, dimname, m_grid->ctx()->unit_system());
+        TimeBoundsMetadata tb(bounds_name, time_name, m_grid->ctx()->unit_system());
         tb.set_string("units", time_dimension.get_string("units"));
 
         io::read_time_bounds(nc, tb, *m_grid->ctx()->time(),
@@ -223,7 +209,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                       "Variable '%s' does not have the time_bounds attribute.\n"
                                       "Cannot use time-dependent forcing data '%s' (%s) without time bounds.",
-                                      dimname.c_str(),  m_metadata[0].get_string("long_name").c_str(),
+                                      time_name.c_str(),  m_metadata[0].get_string("long_name").c_str(),
                                       m_metadata[0].get_name().c_str());
       }
     } else {
