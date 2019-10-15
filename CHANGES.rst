@@ -77,6 +77,8 @@ Changes since v1.1
   was required to turn on the elastic part.
 - Fix `issue 327`_: now PISM uses mid-points of reporting intervals when saving to the
   `-extra_file`. This makes PISM's output files easier to process using CDO.
+- Add contributing guidelines to the User's Manual.
+
 
 Changes from v1.0 to v1.1
 =========================
