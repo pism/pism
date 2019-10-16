@@ -228,41 +228,6 @@ double grounded_area_fraction(double a, double b, double c) {
                                 "the logic in grounded_area_fraction failed! Please submit a bug report.");
 }
 
-// This structure extracts the box stencil information from an IceModelVec2S.
-struct Box {
-  double ij, n, nw, w, sw, s, se, e, ne;
-
-  Box(double ij_,
-      double n_, double nw_, double w_, double sw_,
-      double s_, double se_, double e_, double ne_) {
-    ij = ij_;
-    n  = n_;
-    nw = nw_;
-    w  = w_;
-    sw = sw_;
-    s  = s_;
-    se = se_;
-    e  = e_;
-    ne = ne_;
-  }
-  Box(const IceModelVec2S &X, int i, int j) {
-    const int
-      E = i + 1,
-      W = i - 1,
-      N = j + 1,
-      S = j - 1;
-    ij = X(i, j);
-    n  = X(i, N);
-    nw = X(W, N);
-    w  = X(W, j);
-    sw = X(W, S);
-    s  = X(i, S);
-    se = X(E, S);
-    e  = X(E, j);
-    ne = X(E, N);
-  }
-};
-
 /*!
  * The flotation criterion.
  */
@@ -273,19 +238,21 @@ static double F(GeometryCalculator &gc ,double SL, double B, double H, double al
   return shelf_depth - water_depth;
 }
 
+typedef BoxStencil<double> Box;
+
 /*!
  * Compute the flotation criterion at all the points in the box stencil.
  */
 static Box F(GeometryCalculator &gc ,const Box &SL, const Box &B, const Box &H, double alpha) {
-  return Box(F(gc, SL.ij, B.ij, H.ij, alpha),
-             F(gc, SL.n,  B.n,  H.n,  alpha),
-             F(gc, SL.nw, B.nw, H.nw, alpha),
-             F(gc, SL.w,  B.w,  H.w,  alpha),
-             F(gc, SL.sw, B.sw, H.sw, alpha),
-             F(gc, SL.s,  B.s,  H.s,  alpha),
-             F(gc, SL.se, B.se, H.se, alpha),
-             F(gc, SL.e,  B.e,  H.e,  alpha),
-             F(gc, SL.ne, B.ne, H.ne, alpha));
+  return {F(gc, SL.ij, B.ij, H.ij, alpha),
+          F(gc, SL.n,  B.n,  H.n,  alpha),
+          F(gc, SL.nw, B.nw, H.nw, alpha),
+          F(gc, SL.w,  B.w,  H.w,  alpha),
+          F(gc, SL.sw, B.sw, H.sw, alpha),
+          F(gc, SL.s,  B.s,  H.s,  alpha),
+          F(gc, SL.se, B.se, H.se, alpha),
+          F(gc, SL.e,  B.e,  H.e,  alpha),
+          F(gc, SL.ne, B.ne, H.ne, alpha)};
 }
 
 /*!
@@ -318,11 +285,11 @@ void compute_grounded_cell_fraction(double ice_density,
   try {
     for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
-      Box
-        S(sea_level,      i, j),
-        H(ice_thickness,  i, j),
-        B(bed_topography, i, j),
-        L(lake_level,     i, j);
+
+      auto S = sea_level.box(i, j);
+      auto H = ice_thickness.box(i, j);
+      auto B = bed_topography.box(i, j);
+      auto L = lake_level.box(i, j);
 
       double *alpha;
       Box *WL;
@@ -333,7 +300,8 @@ void compute_grounded_cell_fraction(double ice_density,
         alpha = &alpha_fresh;
         WL = &L;
       }
-      Box f = F(gc ,*WL, B, H, *alpha);
+
+      auto f = F(gc, *WL, B, H, *alpha);
 
       /*
         NW----------------N----------------NE

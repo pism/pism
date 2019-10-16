@@ -37,10 +37,8 @@ namespace pism {
 namespace surface {
 
 Factory::Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : PCFactory<SurfaceModel>(g),
+  : PCFactory<SurfaceModel>(g, "surface.model"),
   m_input(input) {
-
-  m_option = "surface";
 
   add_surface_model<Elevation>("elevation");
   add_surface_model<Given>("given");
@@ -70,20 +68,10 @@ void Factory::set_default(const std::string &name) {
 }
 
 std::shared_ptr<SurfaceModel> Factory::create() {
-  // build a list of available models:
-  auto model_list = key_list(m_surface_models);
 
-  // build a list of available modifiers:
-  auto modifier_list = key_list(m_modifiers);
+  auto choices = m_grid->ctx()->config()->get_string(m_parameter);
 
-  std::string description = ("Sets up the PISM " + m_option + " model."
-                             " Available models: " + model_list +
-                             " Available modifiers: " + modifier_list);
-
-  // Get the command-line option:
-  options::StringList choices("-" + m_option, description, m_default_type);
-
-  return create(choices.to_string());
+  return create(choices);
 }
 
 
@@ -109,9 +97,9 @@ std::shared_ptr<SurfaceModel> Factory::create(const std::string &type) {
 std::shared_ptr<SurfaceModel> Factory::surface_model(const std::string &type,
                                                      std::shared_ptr<InputModel> input) {
   if (m_surface_models.find(type) == m_surface_models.end()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s model \"%s\" is not available.\n"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot allocate %s \"%s\".\n"
                                   "Available models:    %s\n",
-                                  m_option.c_str(), type.c_str(),
+                                  m_parameter.c_str(), type.c_str(),
                                   key_list(m_surface_models).c_str());
   }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -136,17 +136,18 @@ void Inputs::dump(const char *filename) const {
 StressBalance::StressBalance(IceGrid::ConstPtr g,
                              ShallowStressBalance *sb,
                              SSB_Modifier *ssb_mod)
-  : Component(g), m_shallow_stress_balance(sb), m_modifier(ssb_mod) {
+  : Component(g),
+    m_w(m_grid, "wvel_rel", WITHOUT_GHOSTS),
+    m_strain_heating(m_grid, "strain_heating", WITHOUT_GHOSTS),
+    m_shallow_stress_balance(sb),
+    m_modifier(ssb_mod) {
 
-  // allocate the vertical velocity field:
-  m_w.create(m_grid, "wvel_rel", WITHOUT_GHOSTS);
   m_w.set_attrs("diagnostic",
                 "vertical velocity of ice, relative to base of ice directly below",
                 "m s-1", "");
   m_w.set_time_independent(false);
   m_w.metadata().set_string("glaciological_units", "m year-1");
 
-  m_strain_heating.create(m_grid, "strain_heating", WITHOUT_GHOSTS);
   m_strain_heating.set_attrs("internal",
                              "rate of strain heating in ice (dissipation heating)",
                              "W m-3", "");

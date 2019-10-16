@@ -156,7 +156,7 @@ macro(pism_find_prerequisites)
   endif (DEFINED PETSC_VERSION)
 
   # MPI
-  find_package (MPI REQUIRED)
+  find_package (MPI REQUIRED COMPONENTS C)
 
   # Other required libraries
   find_package (UDUNITS2 REQUIRED)

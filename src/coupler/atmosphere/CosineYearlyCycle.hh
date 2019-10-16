@@ -24,7 +24,7 @@
 #include "YearlyCycle.hh"
 
 namespace pism {
-class Timeseries;
+class ScalarForcing;
 
 namespace atmosphere {
 
@@ -39,7 +39,7 @@ protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(const Geometry &geometry, double t, double dt);
 
-  std::unique_ptr<Timeseries> m_A;                 // amplitude scaling
+  std::unique_ptr<ScalarForcing> m_A; // amplitude scaling
 };
 
 } // end of namespace atmosphere

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,24 +38,25 @@ CalvingInputs::CalvingInputs() {
 }
 
 CalvingFrontRetreat::CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width)
-  : Component(g) {
+  : Component(g),
+    m_mask(m_grid, "m_mask", WITH_GHOSTS, mask_stencil_width),
+    m_tmp(m_grid, "temporary_storage", WITH_GHOSTS, 1),
+    m_horizontal_calving_rate(m_grid, "horizontal_calving_rate", WITHOUT_GHOSTS),
+    m_surface_topography(m_grid, "m_surface_topography", WITH_GHOSTS, 1) {
 
-  m_tmp.create(m_grid, "temporary_storage", WITH_GHOSTS, 1);
   m_tmp.set_attrs("internal", "additional mass loss at points near the calving front",
                   "m", "");
 
-  m_horizontal_calving_rate.create(m_grid, "horizontal_calving_rate", WITHOUT_GHOSTS);
-  m_horizontal_calving_rate.set_attrs("diagnostic", "calving rate", "m second-1", "land_ice_calving_rate");
+  m_horizontal_calving_rate.set_attrs("diagnostic", "calving rate", "m second-1",
+                                      "land_ice_calving_rate");
   m_horizontal_calving_rate.set_time_independent(false);
   m_horizontal_calving_rate.metadata().set_string("glaciological_units", "m year-1");
 
-  m_mask.create(m_grid, "m_mask", WITH_GHOSTS, mask_stencil_width);
   m_mask.set_attrs("internal", "cell type mask", "", "");
 
-  m_surface_topography.create(m_grid, "m_surface_topography", WITH_GHOSTS, 1);
   m_surface_topography.set_attrs("internal", "surface topography", "m", "surface_altitude");
 
-  m_restrict_timestep = m_config->get_boolean("calving.front_retreat.use_cfl");
+  m_restrict_timestep = m_config->get_flag("calving.front_retreat.use_cfl");
 }
 
 CalvingFrontRetreat::~CalvingFrontRetreat() {
@@ -136,7 +137,7 @@ void CalvingFrontRetreat::prepare_mask(const IceModelVec2CellType &input,
 
   output.copy_from(input);
 
-  if (m_config->get_boolean("calving.front_retreat.wrap_around")) {
+  if (m_config->get_flag("calving.front_retreat.wrap_around")) {
     return;
   }
 
@@ -319,7 +320,7 @@ void CalvingFrontRetreat::update(double dt,
   ice_thickness.update_ghosts();
 
   // update mask
-  gc.set_icefree_thickness(m_config->get_double("stress_balance.ice_free_thickness_standard"));
+  gc.set_icefree_thickness(m_config->get_number("stress_balance.ice_free_thickness_standard"));
   gc.compute_mask(sea_level, bed_topography, ice_thickness, lake_level, mask);
 
   // remove narrow ice tongues

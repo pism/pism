@@ -78,13 +78,13 @@ void IceModel::update_fracture_density() {
 
   D_new.copy_from(D);
 
-  const bool dirichlet_bc = m_config->get_boolean("stress_balance.ssa.dirichlet_bc");
+  const bool dirichlet_bc = m_config->get_flag("stress_balance.ssa.dirichlet_bc");
   if (dirichlet_bc) {
     list.add(m_ssa_dirichlet_bc_mask);
     list.add(m_ssa_dirichlet_bc_values);
   }
 
-  const bool write_fd = m_config->get_boolean("fracture_density.write_fields");
+  const bool write_fd = m_config->get_flag("fracture_density.write_fields");
   if (write_fd) {
     list.add({&m_fracture->growth_rate, &m_fracture->healing_rate,
           &m_fracture->flow_enhancement, &m_fracture->toughness, &A, &A_new});
@@ -127,21 +127,21 @@ void IceModel::update_fracture_density() {
                     " gamma=%.2f, sigma_cr=%.2f, gammah=%.2f, healing_cr=%.1e and soft_res=%f \n",
                  gamma, initThreshold, gammaheal, healThreshold, soft_residual);
 
-  bool do_fracground = m_config->get_boolean("fracture_density.include_grounded_ice");
+  bool do_fracground = m_config->get_flag("fracture_density.include_grounded_ice");
 
-  double fdBoundaryValue = m_config->get_double("fracture_density.phi0");
+  double fdBoundaryValue = m_config->get_number("fracture_density.phi0");
 
-  bool constant_healing = m_config->get_boolean("fracture_density.constant_healing");
+  bool constant_healing = m_config->get_flag("fracture_density.constant_healing");
 
-  bool fracture_weighted_healing = m_config->get_boolean("fracture_density.fracture_weighted_healing");
+  bool fracture_weighted_healing = m_config->get_flag("fracture_density.fracture_weighted_healing");
 
-  bool max_shear_stress = m_config->get_boolean("fracture_density.max_shear_stress");
+  bool max_shear_stress = m_config->get_flag("fracture_density.max_shear_stress");
 
-  bool lefm = m_config->get_boolean("fracture_density.lefm");
+  bool lefm = m_config->get_flag("fracture_density.lefm");
 
-  bool constant_fd = m_config->get_boolean("fracture_density.constant_fd");
+  bool constant_fd = m_config->get_flag("fracture_density.constant_fd");
 
-  bool fd2d_scheme = m_config->get_boolean("fracture_density.fd2d_scheme");
+  bool fd2d_scheme = m_config->get_flag("fracture_density.fd2d_scheme");
 
   const double one_year = units::convert(m_sys, 1.0, "year", "seconds");
 

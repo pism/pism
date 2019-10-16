@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -53,9 +53,9 @@ using pism::mask::ice_free;
 ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
   : Component(g), m_basal_sliding_law(NULL), m_flow_law(NULL), m_EC(g->ctx()->enthalpy_converter()) {
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
 
-  if (m_config->get_boolean("basal_resistance.pseudo_plastic.enabled") == true) {
+  if (m_config->get_flag("basal_resistance.pseudo_plastic.enabled") == true) {
     m_basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(*m_config);
   } else {
     m_basal_sliding_law = new IceBasalResistancePlasticLaw(*m_config);
@@ -303,8 +303,8 @@ IceModelVec::Ptr SSB_taud::compute_impl() const {
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2S *surface = m_grid->variables().get_2d_scalar("surface_altitude");
 
-  double standard_gravity = m_config->get_double("constants.standard_gravity"),
-    ice_density = m_config->get_double("constants.ice.density");
+  double standard_gravity = m_config->get_number("constants.standard_gravity"),
+    ice_density = m_config->get_number("constants.ice.density");
 
   IceModelVec::AccessList list{surface, thickness, result.get()};
 
@@ -444,10 +444,11 @@ void PrescribedSliding::update(const Inputs &inputs, bool full_update) {
 void PrescribedSliding::init_impl() {
   ShallowStressBalance::init_impl();
 
-  options::String input_filename("-prescribed_sliding_file",
-                                 "name of the file to read velocity fields from");
-  if (not input_filename.is_set()) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "option -prescribed_sliding_file is required.");
+  auto input_filename = m_config->get_string("stress_balance.prescribed_sliding.file");
+
+  if (input_filename.empty()) {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "stress_balance.prescribed_sliding.file is required.");
   }
 
   m_velocity.regrid(input_filename, CRITICAL);

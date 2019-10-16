@@ -9,8 +9,8 @@ config = ctx.config
 
 config.set_string("grid.ice_vertical_spacing", "equal")
 
-k = config.get_double("constants.ice.thermal_conductivity")
-T_melting = config.get_double("constants.fresh_water.melting_point_temperature")
+k = config.get_number("constants.ice.thermal_conductivity")
+T_melting = config.get_number("constants.fresh_water.melting_point_temperature")
 
 EC = ctx.enthalpy_converter
 pressure = np.vectorize(EC.pressure)

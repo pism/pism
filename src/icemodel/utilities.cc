@@ -68,7 +68,7 @@ int IceModel::process_signals() {
     pism_signal = 0;
 
     PIO file(m_grid->com, m_config->get_string("output.format"), file_name, PISM_READWRITE_MOVE);
-    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars);
+    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
 
     // flush all the time-series buffers:
     flush_timeseries();
@@ -104,9 +104,9 @@ void IceModel::update_run_stats() {
     m_run_stats.set_string("long_name", "Run statistics");
   }
 
-  m_run_stats.set_double("wall_clock_hours", wall_clock_hours);
-  m_run_stats.set_double("processor_hours", proc_hours);
-  m_run_stats.set_double("model_years_per_processor_hour", mypph);
+  m_run_stats.set_number("wall_clock_hours", wall_clock_hours);
+  m_run_stats.set_number("processor_hours", proc_hours);
+  m_run_stats.set_number("model_years_per_processor_hour", mypph);
 }
 
 //! Get time and user/host name and add it to the given string.

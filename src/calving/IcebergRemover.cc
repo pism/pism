@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,9 +29,9 @@ namespace pism {
 namespace calving {
 
 IcebergRemover::IcebergRemover(IceGrid::ConstPtr g)
-  : Component(g) {
+  : Component(g),
+    m_iceberg_mask(m_grid, "iceberg_mask", WITHOUT_GHOSTS){
 
-  m_iceberg_mask.create(m_grid, "iceberg_mask", WITHOUT_GHOSTS);
   m_mask_p0 = m_iceberg_mask.allocate_proc0_copy();
 }
 

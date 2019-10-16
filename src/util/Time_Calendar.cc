@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -78,8 +78,8 @@ Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
     throw;
   }
 
-  m_run_start = increment_date(0, (int)m_config->get_double("time.start_year"));
-  m_run_end   = increment_date(m_run_start, (int)m_config->get_double("time.run_length"));
+  m_run_start = increment_date(0, (int)m_config->get_number("time.start_year"));
+  m_run_end   = increment_date(m_run_start, (int)m_config->get_number("time.run_length"));
 
   m_time_in_seconds = m_run_start;
 }
@@ -99,7 +99,7 @@ bool Time_Calendar::process_ys(double &result) {
       throw;
     }
   } else {
-    result = m_config->get_double("time.start_year", "seconds");
+    result = m_config->get_number("time.start_year", "seconds");
   }
   return ys.is_set();
 }
@@ -115,7 +115,7 @@ bool Time_Calendar::process_y(double &result) {
     }
     result = years_to_seconds(y);
   } else {
-    result = m_config->get_double("time.run_length", "seconds");
+    result = m_config->get_number("time.run_length", "seconds");
   }
   return y.is_set();
 }
@@ -133,8 +133,8 @@ bool Time_Calendar::process_ye(double &result) {
       throw;
     }
   } else {
-    result = (m_config->get_double("time.start_year", "seconds") +
-              m_config->get_double("time.run_length", "seconds"));
+    result = (m_config->get_number("time.start_year", "seconds") +
+              m_config->get_number("time.run_length", "seconds"));
   }
   return ye.is_set();
 }
@@ -333,7 +333,6 @@ double Time_Calendar::calendar_year_start(double T) const {
 }
 
 
-// FIXME: this feeds invalid dates to utInvCalendar2_cal! (step 1 year from Feb 29...)
 double Time_Calendar::increment_date(double T, int years) const {
   int year, month, day, hour, minute;
   double second, result;

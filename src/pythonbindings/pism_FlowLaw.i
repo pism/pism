@@ -5,6 +5,7 @@
 #include "rheology/PatersonBudd.hh"
 #include "rheology/PatersonBuddCold.hh"
 #include "rheology/PatersonBuddWarm.hh"
+#include "rheology/grain_size_vostok.hh"
 %}
 
 %shared_ptr(pism::rheology::FlowLaw)
@@ -20,3 +21,5 @@
 %include "rheology/PatersonBuddWarm.hh"
 
 %include "rheology/FlowLawFactory.hh"
+
+%include "rheology/grain_size_vostok.hh"

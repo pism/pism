@@ -16,6 +16,8 @@ add_library (boundary OBJECT
   ./atmosphere/Paleo_precip.cc
   ./atmosphere/Anomaly.cc
   ./atmosphere/WeatherStation.cc
+  ./atmosphere/OrographicPrecipitation.cc
+  ./atmosphere/OrographicPrecipitationSerial.cc
   ./atmosphere/Factory.cc
   ./atmosphere/Uniform.cc
   ./ocean/OceanModel.cc

@@ -44,8 +44,8 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(const SIAFD *m)
 
   set_attrs("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA", "",
             "1", "", 0);
-  m_vars[0].set_double("valid_min", 0);
-  m_vars[0].set_double("valid_max", 1);
+  m_vars[0].set_number("valid_min", 0);
+  m_vars[0].set_number("valid_max", 1);
 }
 
 IceModelVec::Ptr SIAFD_schoofs_theta::compute_impl() const {

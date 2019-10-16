@@ -44,10 +44,10 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
   m_lake_level_max = 1000.;
   m_lake_level_dh  = 10.;
 
-  m_icefree_thickness = m_config->get_double("geometry.ice_free_thickness_standard");
+  m_icefree_thickness = m_config->get_number("geometry.ice_free_thickness_standard");
 
-  const double ice_density        = m_config->get_double("constants.ice.density"),
-               freshwater_density = m_config->get_double("constants.fresh_water.density");
+  const double ice_density        = m_config->get_number("constants.ice.density"),
+               freshwater_density = m_config->get_number("constants.fresh_water.density");
   m_drho = ice_density / freshwater_density;
 
   m_filter_map = true;
@@ -70,7 +70,7 @@ void LakeCC::init_impl(const Geometry &geometry) {
   tmp.set_attrs("diagnostic",
                 "lake level elevation, relative to the geoid",
                 "meter", "");
-  tmp.metadata().set_double("_FillValue", m_fill_value);
+  tmp.metadata().set_number("_FillValue", m_fill_value);
 
   InputOptions opts = process_input_options(m_grid->com, m_config);
 

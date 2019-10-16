@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -48,7 +48,7 @@ void BTU_Verification::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
   (void) bedrock_top_temperature;
 
   std::vector<double> Tbcol(m_Mbz),
-    zlevels = m_temp.levels();
+    zlevels = m_temp->levels();
 
   double time = m_grid->ctx()->time()->current();
 
@@ -74,12 +74,12 @@ void BTU_Verification::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
   }
 
   // copy column values into 3D arrays
-  IceModelVec::AccessList list(m_temp);
+  IceModelVec::AccessList list(*m_temp);
 
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
-      m_temp.set_column(p.i(), p.j(), &Tbcol[0]);
+      m_temp->set_column(p.i(), p.j(), &Tbcol[0]);
     }
   } catch (...) {
     loop.failed();

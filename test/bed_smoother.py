@@ -76,14 +76,14 @@ def set_config():
     config.set_string("grid.periodicity", "none")
     config.set_string("grid.registration", "corner")
 
-    config.set_double("grid.Mx", 81)
-    config.set_double("grid.My", 81)
+    config.set_number("grid.Mx", 81)
+    config.set_number("grid.My", 81)
 
-    config.set_double("grid.Lx", 1200e3)
-    config.set_double("grid.Ly", 1200e3)
+    config.set_number("grid.Lx", 1200e3)
+    config.set_number("grid.Ly", 1200e3)
 
-    config.set_double("stress_balance.sia.Glen_exponent", 3.0)
-    config.set_double("stress_balance.sia.bed_smoother.range", 50.0e3)
+    config.set_number("stress_balance.sia.Glen_exponent", 3.0)
+    config.set_number("stress_balance.sia.bed_smoother.range", 50.0e3)
 
 
 def smooth(topg, topg_smoothed, usurf, theta):

@@ -52,7 +52,7 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g,
   m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencil_width);
   m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencil_width);
 
-  m_tauc_copy.create(m_grid, "tauc", WITH_GHOSTS, m_config->get_double("grid.max_stencil_width"));
+  m_tauc_copy.create(m_grid, "tauc", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width"));
   m_tauc_copy.set_attrs("diagnostic",
                         "yield stress for basal till (plastic or pseudo-plastic model)",
                         "Pa", "");
@@ -98,10 +98,10 @@ void IP_SSATaucForwardProblem::init() {
     geometry.ice_thickness.copy_from(*m_grid->variables().get_2d_scalar("land_ice_thickness"));
     geometry.bed_elevation.copy_from(*m_grid->variables().get_2d_scalar("bedrock_altitude"));
     geometry.sea_level_elevation.set(0.0);
-    geometry.lake_level_elevation.set(m_config->get_double("output.fill_value"));
+    geometry.lake_level_elevation.set(m_config->get_number("output.fill_value"));
     geometry.ice_area_specific_volume.set(0.0);
 
-    geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
+    geometry.ensure_consistency(m_config->get_number("stress_balance.ice_free_thickness_standard"));
 
     stressbalance::Inputs inputs;
 
@@ -387,7 +387,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
 void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                IceModelVec2V &du,
                                                                Vec dzeta) {
-  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_double("grid.max_stencil_width"));
+  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_number("grid.max_stencil_width"));
   petsc::DMDAVecArray dzeta_a(da2, dzeta);
   this->apply_jacobian_design_transpose(u, du, (double**)dzeta_a.get());
 }

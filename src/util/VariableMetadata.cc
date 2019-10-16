@@ -93,8 +93,8 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
 
   if (has_attribute("valid_min") and has_attribute("valid_max")) {
     double
-      valid_min = get_double("valid_min"),
-      valid_max = get_double("valid_max");
+      valid_min = get_number("valid_min"),
+      valid_max = get_number("valid_max");
     if ((min < valid_min) or (max > valid_max)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are outside the valid range [%e, %e] (%s).\n"
                                     "computed min = %e %s, computed max = %e %s",
@@ -102,7 +102,7 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
                                     valid_min, valid_max, units, min, units, max, units);
     }
   } else if (has_attribute("valid_min")) {
-    double valid_min = get_double("valid_min");
+    double valid_min = get_number("valid_min");
     if (min < valid_min) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are less than the valid minimum (%e %s).\n"
                                     "computed min = %e %s, computed max = %e %s",
@@ -110,7 +110,7 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
                                     valid_min, units, min, units, max, units);
     }
   } else if (has_attribute("valid_max")) {
-    double valid_max = get_double("valid_max");
+    double valid_max = get_number("valid_max");
     if (max > valid_max) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are greater than the valid maximum (%e %s).\n"
                                     "computed min = %e %s, computed max = %e %s",
@@ -289,12 +289,12 @@ void VariableMetadata::set_name(const std::string &name) {
 }
 
 //! Set a scalar attribute to a single (scalar) value.
-void VariableMetadata::set_double(const std::string &name, double value) {
+void VariableMetadata::set_number(const std::string &name, double value) {
   m_doubles[name] = std::vector<double>(1, value);
 }
 
 //! Set a scalar attribute to a single (scalar) value.
-void VariableMetadata::set_doubles(const std::string &name, const std::vector<double> &values) {
+void VariableMetadata::set_numbers(const std::string &name, const std::vector<double> &values) {
   m_doubles[name] = values;
 }
 
@@ -311,7 +311,7 @@ std::string VariableMetadata::get_name() const {
 }
 
 //! Get a single-valued scalar attribute.
-double VariableMetadata::get_double(const std::string &name) const {
+double VariableMetadata::get_number(const std::string &name) const {
   auto j = m_doubles.find(name);
   if (j != m_doubles.end()) {
     return (j->second)[0];
@@ -322,7 +322,7 @@ double VariableMetadata::get_double(const std::string &name) const {
 }
 
 //! Get an array-of-doubles attribute.
-std::vector<double> VariableMetadata::get_doubles(const std::string &name) const {
+std::vector<double> VariableMetadata::get_numbers(const std::string &name) const {
   auto j = m_doubles.find(name);
   if (j != m_doubles.end()) {
     return j->second;

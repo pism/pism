@@ -35,7 +35,7 @@ Cache::Cache(IceGrid::ConstPtr grid, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(grid, in) {
 
   m_next_update_time = m_grid->ctx()->time()->current();
-  m_update_interval_years = m_config->get_double("surface.cache.update_interval", "years");
+  m_update_interval_years = m_config->get_number("surface.cache.update_interval", "years");
 
   if (m_update_interval_years <= 0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,

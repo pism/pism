@@ -30,7 +30,7 @@ Delta_T::Delta_T(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in) {
 
   m_forcing.reset(new ScalarForcing(grid->ctx(),
-                                    "-atmosphere_delta_T",
+                                    "atmosphere.delta_T",
                                     "delta_T",
                                     "Kelvin",
                                     "Kelvin",

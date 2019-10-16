@@ -61,8 +61,8 @@ public:
 
     const double valid_range = c(1e6);
 
-    m_vars[0].set_doubles("valid_range",  {-valid_range, valid_range});
-    m_vars[0].set_double("_FillValue", m_fill_value);
+    m_vars[0].set_numbers("valid_range",  {-valid_range, valid_range});
+    m_vars[0].set_number("_FillValue", m_fill_value);
     m_vars[0].set_string("cell_methods", "time: mean");
 
     m_last_amount.set_attrs("internal",
@@ -76,7 +76,7 @@ protected:
     result->metadata() = m_vars[0];
 
     if (m_interval_length > 0.0) {
-      double ice_density = m_config->get_double("constants.ice.density");
+      double ice_density = m_config->get_number("constants.ice.density");
 
       auto cell_area = m_grid->cell_area();
 
@@ -112,7 +112,7 @@ protected:
     const IceModelVec2S& thickness = model->geometry().ice_thickness;
     const IceModelVec2S& area_specific_volume = model->geometry().ice_area_specific_volume;
 
-    double ice_density = m_config->get_double("constants.ice.density");
+    double ice_density = m_config->get_number("constants.ice.density");
 
     IceModelVec::AccessList list{&m_last_amount, &thickness, &area_specific_volume};
 
@@ -164,7 +164,7 @@ public:
       external_units    = "Gt year-1";
     }
 
-    m_factor = m_config->get_double("constants.ice.density");
+    m_factor = m_config->get_number("constants.ice.density");
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
     m_accumulator.metadata().set_string("units", accumulator_units);
@@ -174,7 +174,7 @@ public:
 
     double fill_value = units::convert(m_sys, m_fill_value,
                                        external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", fill_value);
     m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
   }
 
@@ -212,7 +212,7 @@ public:
                                 : "tendency_of_ice_mass_due_to_surface_mass_flux",
                                 TOTAL_CHANGE),
     m_kind(kind) {
-    m_factor = m_config->get_double("constants.ice.density");
+    m_factor = m_config->get_number("constants.ice.density");
 
     std::string
       name              = "tendency_of_ice_amount_due_to_surface_mass_flux",
@@ -237,7 +237,7 @@ public:
 
     double fill_value = units::convert(m_sys, m_fill_value,
                                        external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", fill_value);
     m_vars[0].set_string("cell_methods", "time: mean");
     m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
   }
@@ -275,7 +275,7 @@ public:
                                 : "tendency_of_ice_mass_due_to_basal_mass_flux",
                                 TOTAL_CHANGE),
     m_kind(kind) {
-    m_factor = m_config->get_double("constants.ice.density");
+    m_factor = m_config->get_number("constants.ice.density");
 
     std::string
       name              = "tendency_of_ice_amount_due_to_basal_mass_flux",
@@ -298,7 +298,7 @@ public:
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
 
     double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", fill_value);
     m_vars[0].set_string("cell_methods", "time: mean");
     m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
   }
@@ -335,7 +335,7 @@ public:
                                 : "tendency_of_ice_mass_due_to_conservation_error" ,
                                 TOTAL_CHANGE),
     m_kind(kind) {
-    m_factor = m_config->get_double("constants.ice.density");
+    m_factor = m_config->get_number("constants.ice.density");
 
     std::string
       name              = "tendency_of_ice_amount_due_to_conservation_error",
@@ -359,7 +359,7 @@ public:
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
 
     double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", fill_value);
     m_vars[0].set_string("cell_methods", "time: mean");
     m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
   }
@@ -398,7 +398,7 @@ public:
                                 TOTAL_CHANGE),
     m_kind(kind) {
 
-    m_factor = m_config->get_double("constants.ice.density");
+    m_factor = m_config->get_number("constants.ice.density");
 
     std::string
       name              = "tendency_of_ice_amount_due_to_discharge",
@@ -423,7 +423,7 @@ public:
     m_vars[0].set_string("cell_methods", "time: mean");
 
     double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", fill_value);
     m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
   }
 

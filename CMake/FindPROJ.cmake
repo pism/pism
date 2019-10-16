@@ -1,9 +1,9 @@
 # - Find PROJ
-# Find the native proj.4 includes and library
+# Find the native PROJ includes and library
 #
 #  PROJ_INCLUDES    - where to find proj.h
-#  PROJ_LIBRARIES   - List of libraries when using proj.4.
-#  PROJ_FOUND       - True if proj.4 found.
+#  PROJ_LIBRARIES   - List of libraries when using PROJ.
+#  PROJ_FOUND       - True if PROJ found.
 
 if (PROJ_INCLUDES)
   # Already in cache, be silent

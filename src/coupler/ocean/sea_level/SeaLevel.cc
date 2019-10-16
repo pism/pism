@@ -35,7 +35,7 @@ SeaLevel::SeaLevel(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> input)
   : Component(grid),
     m_input_model(input),
     m_sea_level(grid, "sea_level", WITHOUT_GHOSTS),
-    m_fill_value(m_config->get_double("output.fill_value")) {
+    m_fill_value(m_config->get_number("output.fill_value")) {
 
   m_sea_level.set_attrs("diagnostic",
                         "sea level elevation, relative to the geoid",
@@ -131,7 +131,7 @@ public:
     m_vars = {SpatialVariableMetadata(m_sys, "sea_level")};
 
     set_attrs("sea level elevation, relative to the geoid", "", "meters", "meters", 0);
-    metadata().set_double("_FillValue", m_fill_value);
+    metadata().set_number("_FillValue", m_fill_value);
   }
 
 protected:
@@ -155,7 +155,7 @@ public:
     m_vars = {SpatialVariableMetadata(m_sys, "ocean_depths")};
 
     set_attrs("ocean depth", "", "meters", "meters", 0);
-    metadata().set_double("_FillValue", m_fill_value);
+    metadata().set_number("_FillValue", m_fill_value);
   }
 
 protected:

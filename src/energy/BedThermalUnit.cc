@@ -35,22 +35,18 @@ namespace pism {
 namespace energy {
 
 BTUGrid::BTUGrid(Context::ConstPtr ctx) {
-  Mbz = (unsigned int) ctx->config()->get_double("grid.Mbz");
-  Lbz = ctx->config()->get_double("grid.Lbz");
+  Mbz = (unsigned int) ctx->config()->get_number("grid.Mbz");
+  Lbz = ctx->config()->get_number("grid.Lbz");
 }
 
 
 BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
   BTUGrid result(ctx);
 
-  InputOptions opts = process_input_options(ctx->com(), ctx->config());
-
-  const Logger &log = *ctx->log();
+  Config::ConstPtr config = ctx->config();
+  InputOptions opts = process_input_options(ctx->com(), config);
 
   if (opts.type == INIT_RESTART) {
-    options::ignored(log, "-Mbz");
-    options::ignored(log, "-Lbz");
-
     // If we're initializing from a file we need to get the number of bedrock
     // levels and the depth of the bed thermal layer from it:
     PIO input_file(ctx->com(), "guess_mode", opts.filename, PISM_READONLY);
@@ -62,7 +58,7 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
       result.Mbz = info.z_len;
       result.Lbz = -info.z_min;
     } else {
-      // override values we got using config.get_double() in the constructor
+      // override values we got using config.get_number() in the constructor
       result.Mbz = 1;
       result.Lbz = 0;
     }
@@ -70,23 +66,12 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
     input_file.close();
   } else {
     // Bootstrapping or initializing without an input file.
-    options::Integer M("-Mbz", "number of levels in bedrock thermal layer",
-                       result.Mbz);
+    result.Mbz = config->get_number("grid.Mbz");
+    result.Lbz = config->get_number("grid.Lbz");
 
-    options::Real L("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
-                    result.Lbz);
-
-    if (M.is_set() and M == 1) {
-      options::ignored(log, "-Lbz");
+    if (result.Mbz == 1) {
       result.Lbz = 0;
       result.Mbz = 1;
-    } else {
-      if (M.is_set() ^ L.is_set()) {
-        throw RuntimeError(PISM_ERROR_LOCATION, "please specify both -Mbz and -Lbz");
-      }
-
-      result.Lbz = L;
-      result.Mbz = M;
     }
   }
 
@@ -161,7 +146,7 @@ void BedThermalUnit::init_impl(const InputOptions &opts) {
       break;
     case INIT_BOOTSTRAP:
       m_bottom_surface_flux.regrid(opts.filename, OPTIONAL,
-                                   m_config->get_double("bootstrapping.defaults.geothermal_flux"));
+                                   m_config->get_number("bootstrapping.defaults.geothermal_flux"));
       break;
     case INIT_OTHER:
     default:
@@ -173,7 +158,7 @@ void BedThermalUnit::init_impl(const InputOptions &opts) {
 }
 
 void BedThermalUnit::initialize_bottom_surface_flux() {
-  const double heat_flux = m_config->get_double("bootstrapping.defaults.geothermal_flux");
+  const double heat_flux = m_config->get_number("bootstrapping.defaults.geothermal_flux");
 
   m_log->message(2, "  using constant geothermal flux %f W m-2 ...\n",
                  heat_flux);

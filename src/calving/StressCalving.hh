@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2018 PISM Authors
+/* Copyright (C) 2016, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,8 +33,8 @@ public:
   virtual ~StressCalving();
 
 protected:
+  const unsigned int m_stencil_width;
   mutable IceModelVec2 m_strain_rates;
-  const int m_stencil_width;
 };
 
 

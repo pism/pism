@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,16 +26,6 @@
 
 namespace pism {
 
-IceModelVec3Custom::IceModelVec3Custom()
-{
-  // empty
-}
-
-IceModelVec3Custom::~IceModelVec3Custom()
-{
-  // empty
-}
-
 /** 
  * Allocate storage and set metadata.
  *
@@ -48,11 +38,11 @@ IceModelVec3Custom::~IceModelVec3Custom()
  * @return 0 on success
  */
 
-void IceModelVec3Custom::create(IceGrid::ConstPtr mygrid,
-                                const std::string &short_name,
-                                const std::string &z_name,
-                                const std::vector<double> &zlevels,
-                                const std::map<std::string, std::string> &z_attrs) {
+IceModelVec3Custom::IceModelVec3Custom(IceGrid::ConstPtr mygrid,
+                                       const std::string &short_name,
+                                       const std::string &z_name,
+                                       const std::vector<double> &zlevels,
+                                       const std::map<std::string, std::string> &z_attrs) {
   PetscErrorCode ierr;
   assert(m_v == NULL);
 
@@ -77,6 +67,11 @@ void IceModelVec3Custom::create(IceGrid::ConstPtr mygrid,
   for (auto z_attr : z_attrs) {
     m_metadata[0].get_z().set_string(z_attr.first, z_attr.second);
   }
+}
+
+IceModelVec3Custom::~IceModelVec3Custom()
+{
+  // empty
 }
 
 } // end of namespace pism

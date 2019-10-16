@@ -41,10 +41,10 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
   PetscErrorCode ierr;
   IceGrid::ConstPtr grid = m_d0.grid();
 
-  double stressScale = grid->ctx()->config()->get_double("inverse.design.param_tauc_scale");
+  double stressScale = grid->ctx()->config()->get_number("inverse.design.param_tauc_scale");
   m_constraintsScale = grid->Lx()*grid->Ly()*4*stressScale;
 
-  m_velocityScale = grid->ctx()->config()->get_double("inverse.ssa.velocity_scale", "m second-1");
+  m_velocityScale = grid->ctx()->config()->get_number("inverse.ssa.velocity_scale", "m second-1");
 
 
   int design_stencil_width = m_d0.stencil_width();

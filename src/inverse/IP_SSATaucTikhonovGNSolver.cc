@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -29,46 +29,43 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem 
                                                        DesignVec &d0, StateVec &u_obs, double eta,
                                                        IPInnerProductFunctional<DesignVec> &designFunctional,
                                                        IPInnerProductFunctional<StateVec> &stateFunctional)
-  : m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
-    m_designFunctional(designFunctional), m_stateFunctional(stateFunctional),
-    m_target_misfit(0.0) {
+  : m_design_stencil_width(d0.stencil_width()),
+    m_state_stencil_width(u_obs.stencil_width()),
+    m_ssaforward(ssaforward),
+    m_x(d0.grid(), "x", WITH_GHOSTS, m_design_stencil_width),
+    m_tmp_D1Global(d0.grid(), "work vector", WITHOUT_GHOSTS, 0),
+    m_tmp_D2Global(d0.grid(), "work vector", WITHOUT_GHOSTS, 0),
+    m_tmp_D1Local(d0.grid(), "work vector", WITH_GHOSTS, m_design_stencil_width),
+    m_tmp_D2Local(d0.grid(), "work vector", WITH_GHOSTS, m_design_stencil_width),
+    m_tmp_S1Global(d0.grid(), "work vector", WITHOUT_GHOSTS, 0),
+    m_tmp_S2Global(d0.grid(), "work vector", WITHOUT_GHOSTS, 0),
+    m_tmp_S1Local(d0.grid(), "work vector", WITH_GHOSTS, m_state_stencil_width),
+    m_tmp_S2Local(d0.grid(), "work vector", WITH_GHOSTS, m_state_stencil_width),
+    m_GN_rhs(d0.grid(), "GN_rhs", WITHOUT_GHOSTS, 0),
+    m_d0(d0),
+    m_dGlobal(d0.grid(), "d (sans ghosts)", WITHOUT_GHOSTS, 0),
+    m_d_diff(d0.grid(), "d_diff", WITH_GHOSTS, m_design_stencil_width),
+    m_d_diff_lin(d0.grid(), "d_diff linearized", WITH_GHOSTS, m_design_stencil_width),
+    m_h(d0.grid(), "h", WITH_GHOSTS, m_design_stencil_width),
+    m_hGlobal(d0.grid(), "h (sans ghosts)", WITHOUT_GHOSTS),
+    m_dalpha_rhs(d0.grid(), "dalpha rhs", WITHOUT_GHOSTS),
+    m_dh_dalpha(d0.grid(), "dh_dalpha", WITH_GHOSTS, m_design_stencil_width),
+    m_dh_dalphaGlobal(d0.grid(), "dh_dalpha", WITHOUT_GHOSTS),
+    m_grad_design(d0.grid(), "grad design", WITHOUT_GHOSTS),
+    m_grad_state(d0.grid(), "grad design", WITHOUT_GHOSTS),
+    m_gradient(d0.grid(), "grad design", WITHOUT_GHOSTS),
+    m_u_obs(u_obs),
+    m_u_diff(d0.grid(), "du", WITH_GHOSTS, m_state_stencil_width),
+    m_eta(eta),
+    m_designFunctional(designFunctional),
+    m_stateFunctional(stateFunctional),
+    m_target_misfit(0.0)
+{
   PetscErrorCode ierr;
   IceGrid::ConstPtr grid = m_d0.grid();
   m_comm = grid->com;
 
-  unsigned int design_stencil_width = m_d0.stencil_width();
-  unsigned int state_stencil_width = m_u_obs.stencil_width();
-
-  m_x.create(grid, "x", WITH_GHOSTS, design_stencil_width);
-
-  m_tmp_D1Global.create(grid, "work vector", WITHOUT_GHOSTS, 0);
-  m_tmp_D2Global.create(grid, "work vector", WITHOUT_GHOSTS, 0);
-  m_tmp_S1Global.create(grid, "work vector", WITHOUT_GHOSTS, 0);
-  m_tmp_S2Global.create(grid, "work vector", WITHOUT_GHOSTS, 0);
-
-  m_tmp_D1Local.create(grid, "work vector", WITH_GHOSTS, design_stencil_width);
-  m_tmp_D2Local.create(grid, "work vector", WITH_GHOSTS, design_stencil_width);
-  m_tmp_S1Local.create(grid, "work vector", WITH_GHOSTS, state_stencil_width);
-  m_tmp_S2Local.create(grid, "work vector", WITH_GHOSTS, state_stencil_width);
-
-  m_GN_rhs.create(grid, "GN_rhs", WITHOUT_GHOSTS, 0);
-
-  m_dGlobal.create(grid, "d (sans ghosts)", WITHOUT_GHOSTS, 0);
-
-  m_d.reset(new DesignVec(grid, "d", WITH_GHOSTS, design_stencil_width));
-  m_d_diff.create(grid, "d_diff", WITH_GHOSTS, design_stencil_width);
-  m_d_diff_lin.create(grid, "d_diff linearized", WITH_GHOSTS, design_stencil_width);
-  m_h.create(grid, "h", WITH_GHOSTS, design_stencil_width);
-  m_hGlobal.create(grid, "h (sans ghosts)", WITHOUT_GHOSTS);
-
-  m_dalpha_rhs.create(grid, "dalpha rhs", WITHOUT_GHOSTS);
-  m_dh_dalpha.create(grid, "dh_dalpha", WITH_GHOSTS, design_stencil_width);
-  m_dh_dalphaGlobal.create(grid, "dh_dalpha", WITHOUT_GHOSTS);
-  m_u_diff.create(grid, "du", WITH_GHOSTS, state_stencil_width);
-
-  m_grad_design.create(grid, "grad design", WITHOUT_GHOSTS);
-  m_grad_state.create(grid, "grad design", WITHOUT_GHOSTS);
-  m_gradient.create(grid, "grad design", WITHOUT_GHOSTS);
+  m_d.reset(new DesignVec(grid, "d", WITH_GHOSTS, m_design_stencil_width));
 
   ierr = KSPCreate(grid->com, m_ksp.rawptr());
   PISM_CHK(ierr, "KSPCreate");
@@ -111,9 +108,9 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem 
   m_iter_max = 1000;
   m_iter_max = options::Integer("-inv_gn_iter_max", "", m_iter_max);
 
-  m_tikhonov_atol = grid->ctx()->config()->get_double("inverse.tikhonov.atol");
-  m_tikhonov_rtol = grid->ctx()->config()->get_double("inverse.tikhonov.rtol");
-  m_tikhonov_ptol = grid->ctx()->config()->get_double("inverse.tikhonov.ptol");
+  m_tikhonov_atol = grid->ctx()->config()->get_number("inverse.tikhonov.atol");
+  m_tikhonov_rtol = grid->ctx()->config()->get_number("inverse.tikhonov.rtol");
+  m_tikhonov_ptol = grid->ctx()->config()->get_number("inverse.tikhonov.ptol");
 
   m_log = d0.grid()->ctx()->log();
 }

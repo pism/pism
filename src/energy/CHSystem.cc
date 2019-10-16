@@ -158,9 +158,9 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
       &m_work};
 
   double
-    margin_threshold = m_config->get_double("energy.margin_ice_thickness_limit"),
-    T_pm = m_config->get_double("constants.fresh_water.melting_point_temperature"),
-    residual_water_fraction = m_config->get_double("energy.ch_warming.residual_water_fraction");
+    margin_threshold = m_config->get_number("energy.margin_ice_thickness_limit"),
+    T_pm = m_config->get_number("constants.fresh_water.melting_point_temperature"),
+    residual_water_fraction = m_config->get_number("energy.ch_warming.residual_water_fraction");
 
   const std::vector<double> &z = m_grid->z();
   const unsigned int Mz = m_grid->Mz();

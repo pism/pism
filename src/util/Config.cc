@@ -28,9 +28,9 @@
 
 namespace pism {
 
-NetCDFConfig::NetCDFConfig(MPI_Comm new_com, const std::string &name, units::System::Ptr system)
+NetCDFConfig::NetCDFConfig(MPI_Comm com, const std::string &name, units::System::Ptr system)
   : Config(system),
-    m_com(new_com),
+    m_com(com),
     m_data(name, system) {
 }
 
@@ -43,30 +43,49 @@ bool NetCDFConfig::is_set_impl(const std::string &name) const {
 
 // doubles
 
-double NetCDFConfig::get_double_impl(const std::string &name) const {
+double NetCDFConfig::get_number_impl(const std::string &name) const {
   const VariableMetadata::DoubleAttrs& doubles = m_data.get_all_doubles();
   if (doubles.find(name) != doubles.end()) {
-    return m_data.get_double(name);
+    return m_data.get_number(name);
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "parameter '%s' is unset. (Parameters read from '%s'.)",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "parameter '%s' is unset. (Parameters read from '%s'.)",
                                   name.c_str(), m_config_filename.c_str());
   }
 
   return 0;                     // can't happen
 }
 
+std::vector<double> NetCDFConfig::get_numbers_impl(const std::string &name) const {
+  const VariableMetadata::DoubleAttrs& doubles = m_data.get_all_doubles();
+  if (doubles.find(name) != doubles.end()) {
+    return m_data.get_numbers(name);
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "parameter '%s' is unset. (Parameters read from '%s'.)",
+                                  name.c_str(), m_config_filename.c_str());
+  }
+
+  return {};                    // can't happen
+}
+
 Config::Doubles NetCDFConfig::all_doubles_impl() const {
   Doubles result;
 
   for (auto d : m_data.get_all_doubles()) {
-    result[d.first] = d.second[0];
+    result[d.first] = d.second;
   }
   return result;
 }
 
 
-void NetCDFConfig::set_double_impl(const std::string &name, double value) {
-  m_data.set_double(name, value);
+void NetCDFConfig::set_number_impl(const std::string &name, double value) {
+  m_data.set_number(name, value);
+}
+
+void NetCDFConfig::set_numbers_impl(const std::string &name,
+                                    const std::vector<double> &values) {
+  m_data.set_numbers(name, values);
 }
 
 // strings
@@ -92,8 +111,8 @@ Config::Strings NetCDFConfig::all_strings_impl() const {
     std::string value = s.second;
 
     auto k = strings.find(name + "_type");
-    if (k != strings.end() and k->second == "boolean") {
-      // Booleans are stored as strings. Skip them.
+    if (k != strings.end() and k->second == "flag") {
+      // Flags are stored as strings. Skip them.
       continue;
     }
 
@@ -106,7 +125,7 @@ void NetCDFConfig::set_string_impl(const std::string &name, const std::string &v
   m_data.set_string(name, value);
 }
 
-// booleans
+// flags
 
 static bool string_is_false(const std::string &value) {
   return value == "false" or value == "off" or value == "no";
@@ -116,7 +135,7 @@ static bool string_is_true(const std::string &value) {
   return value == "true" or value == "on" or value == "yes";
 }
 
-bool NetCDFConfig::get_boolean_impl(const std::string &name) const {
+bool NetCDFConfig::get_flag_impl(const std::string &name) const {
   const VariableMetadata::StringAttrs& strings = m_data.get_all_strings();
   auto j = strings.find(name);
   if (j != strings.end()) {
@@ -131,7 +150,7 @@ bool NetCDFConfig::get_boolean_impl(const std::string &name) const {
       return true;
     }
 
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Parameter '%s' (%s) cannot be interpreted as a boolean.\n"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Parameter '%s' (%s) cannot be interpreted as a flag.\n"
                                   "Please make sure that it is set to one of 'true', 'yes', 'on', 'false', 'no', 'off'.",
                                   name.c_str(), value.c_str());
   }
@@ -142,8 +161,8 @@ bool NetCDFConfig::get_boolean_impl(const std::string &name) const {
   return true;                  // will never happen
 }
 
-Config::Booleans NetCDFConfig::all_booleans_impl() const {
-  Booleans result;
+Config::Flags NetCDFConfig::all_flags_impl() const {
+  Flags result;
 
   for (auto b : m_data.get_all_strings()) {
     std::string name = b.first;
@@ -158,8 +177,8 @@ Config::Booleans NetCDFConfig::all_booleans_impl() const {
   return result;
 }
 
-//! Set a value of a boolean flag.
-void NetCDFConfig::set_boolean_impl(const std::string &name, bool value) {
+//! Set a value of a flag flag.
+void NetCDFConfig::set_flag_impl(const std::string &name, bool value) {
   if (value) {
     m_data.set_string(name, "true");
   } else {
@@ -169,7 +188,7 @@ void NetCDFConfig::set_boolean_impl(const std::string &name, bool value) {
 
 // file I/O
 
-//! Read boolean flags and double parameters from a NetCDF file.
+//! Read flag flags and double parameters from a NetCDF file.
 /*!
   Erases all the present parameters before reading.
 */

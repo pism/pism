@@ -1,5 +1,4 @@
 import PISM
-import time
 import numpy as np
 import pylab as plt
 
@@ -10,12 +9,6 @@ import pylab as plt
 np.set_printoptions(precision=5, suppress=True, linewidth=100)
 
 ctx = PISM.Context()
-
-ice_density = ctx.config.get_double("constants.ice.density")
-ocean_density = ctx.config.get_double("constants.sea_water.density")
-
-mu = ice_density / ocean_density
-
 
 def allocate_grid(ctx):
     params = PISM.GridParameters(ctx.config)
@@ -30,7 +23,6 @@ def allocate_grid(ctx):
     params.ownership_ranges_from_options(ctx.size)
     return PISM.IceGrid(ctx.ctx, params)
 
-
 def allocate_storage(grid):
     ice_thickness = PISM.model.createIceThicknessVec(grid)
 
@@ -39,35 +31,13 @@ def allocate_storage(grid):
 
     return ice_thickness, mask
 
-
-def print_vec(vec):
-    v0 = vec.allocate_proc0_copy()
-    vec.put_on_proc0(v0.get())
-
-    shape = vec.get_dm().get().sizes
-
-    print(vec.get_name())
-    print(v0.get()[:].reshape(shape, order="f"))
-
-
 def spy_vec(vec, value):
-    v0 = vec.allocate_proc0_copy()
-    vec.put_on_proc0(v0.get())
-
-    shape = vec.get_dm().get().sizes
-
-    array = v0.get()[:].reshape(shape, order="f")
-
-    print(vec.get_name())
-    print(array)
-
     plt.title(vec.get_name())
-    plt.imshow(array, interpolation="nearest")
-
+    plt.imshow(vec.numpy(), interpolation="nearest")
 
 def init(H, vec):
 
-    grid = vec.get_grid()
+    grid = vec.grid()
 
     K = 5
     R = 2
@@ -89,7 +59,6 @@ def init(H, vec):
                 vec[i, j] = 0.0
 
     vec.update_ghosts()
-
 
 def node_type_test():
 
@@ -115,5 +84,5 @@ def node_type_test():
     spy_vec(mask, 1.0)
     plt.show()
 
-
-node_type_test()
+if __name__ == "__main__":
+    node_type_test()
