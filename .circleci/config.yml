@@ -9,7 +9,6 @@ jobs:
       CC: ccache mpicc
       CXX: ccache mpicxx
       CCACHE_COMPRESS: 1
-      CTEST_OUTPUT_ON_FAILURE: 1
       PETSC_DIR: /usr/lib/petsc/
       PYTHONPATH: /home/builder/project/build/site-packages
 
@@ -50,10 +49,10 @@ jobs:
             -DPism_BUILD_ICEBIN=Yes
       - run:
           name: Build PISM using GCC
-          command: make -C build all
+          command: make -C build -j4 all
       - run:
           name: Run regression tests
-          command: make -C build test
+          command: cd build && ctest -j 4 --output-on-failure
       - save_cache:
           key: ccache-gcc-{{ .Branch }}-{{ .BuildNum }}
           paths:
@@ -65,7 +64,6 @@ jobs:
 
     environment:
       CCACHE_COMPRESS: 1
-      CTEST_OUTPUT_ON_FAILURE: 1
       PETSC_DIR: /usr/lib/petsc/
       PYTHONPATH: /home/builder/project/build/site-packages
 
@@ -95,10 +93,10 @@ jobs:
             -DPism_BUILD_ICEBIN=Yes
       - run:
           name: Build PISM using Clang
-          command: make -C build all
+          command: make -C build -j4 all
       - run:
           name: Run regression tests
-          command: make -C build test
+          command: cd build && ctest -j 4 --output-on-failure
       - save_cache:
           key: ccache-clang-{{ .Branch }}-{{ .BuildNum }}
           paths:
