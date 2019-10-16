@@ -50,7 +50,7 @@ jobs:
             -DPism_BUILD_ICEBIN=Yes
       - run:
           name: Build PISM using GCC
-          command: make -C build all
+          command: make -C build -j4 all
       - run:
           name: Run regression tests
           command: make -C build test
@@ -95,7 +95,7 @@ jobs:
             -DPism_BUILD_ICEBIN=Yes
       - run:
           name: Build PISM using Clang
-          command: make -C build all
+          command: make -C build -j4 all
       - run:
           name: Run regression tests
           command: make -C build test
