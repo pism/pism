@@ -49,7 +49,7 @@ FrontalMeltPhysics::FrontalMeltPhysics(const Config &config) {
  * @returns frontal melt rate, m / day.
  */
 double FrontalMeltPhysics::frontal_melt_from_undercutting(double h, double q_sg, double TF) const {
-  if (h <= 0.0 or q_sg <= 0.0 or TF <= 0.0) {
+  if (h <= 0.0 or q_sg < 0.0 or TF < 0.0) {
     return 0.0;
   }
 
