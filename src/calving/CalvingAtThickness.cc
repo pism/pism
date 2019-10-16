@@ -33,11 +33,9 @@ namespace pism {
 namespace calving {
 
 CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
-  : Component(g) {
-
-  m_old_mask.create(m_grid, "old_mask", WITH_GHOSTS, 1);
-
-  m_calving_threshold.create(m_grid, "calving_threshold", WITHOUT_GHOSTS);
+  : Component(g),
+    m_calving_threshold(m_grid, "calving_threshold", WITHOUT_GHOSTS),
+    m_old_mask(m_grid, "old_mask", WITH_GHOSTS, 1) {
 
   m_calving_threshold.set_attrs("diagnostic",
                                 "threshold used by the 'calving at threshold' calving method",
@@ -57,7 +55,7 @@ void CalvingAtThickness::init() {
 
   std::string threshold_file = m_config->get_string("calving.thickness_calving.threshold_file");
 
-  double calving_threshold = m_config->get_double("calving.thickness_calving.threshold");
+  double calving_threshold = m_config->get_number("calving.thickness_calving.threshold");
 
   m_calving_threshold.set(calving_threshold);
 

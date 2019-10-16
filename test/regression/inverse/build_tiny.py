@@ -28,7 +28,7 @@ Hext = 0.    # m ice thickeness beyond the cliff
 
 tauc_hi = 2e6       # Pa
 tauc_lo = 1e4       # Pa
-tauc_free_bedrock = config.get_double('basal_yield_stress.ice_free_bedrock')
+tauc_free_bedrock = config.get_number('basal_yield_stress.ice_free_bedrock')
 
 EC = PISM.EnthalpyConverter(PISM.Context().config)
 enth0 = EC.enthalpy(273.15, 0.01, 0)  # 0.01 water fraction
@@ -57,13 +57,13 @@ if __name__ == '__main__':
 
     config = PISM.Context().config
 
-    config.set_double("grid.Mx", Mx, PISM.CONFIG_DEFAULT)
-    config.set_double("grid.My", My, PISM.CONFIG_DEFAULT)
+    config.set_number("grid.Mx", Mx, PISM.CONFIG_DEFAULT)
+    config.set_number("grid.My", My, PISM.CONFIG_DEFAULT)
 
     # Build the grid.
     p = PISM.GridParameters(config)
-    p.Mx = int(config.get_double("grid.Mx"))
-    p.My = int(config.get_double("grid.My"))
+    p.Mx = int(config.get_number("grid.Mx"))
+    p.My = int(config.get_number("grid.My"))
     p.Lx = Lx
     p.Ly = Ly
     z = PISM.IceGrid.compute_vertical_levels(Lz, Mz, PISM.EQUAL, 4.0)

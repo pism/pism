@@ -30,7 +30,7 @@
 namespace pism {
 
 void IceModel::view_field(const IceModelVec *field) {
-  unsigned int viewer_size = (unsigned int)m_config->get_double("output.runtime.viewer.size");
+  unsigned int viewer_size = (unsigned int)m_config->get_number("output.runtime.viewer.size");
 
   unsigned int dims = field->ndims();
 

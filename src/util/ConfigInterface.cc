@@ -96,7 +96,7 @@ void Config::import_from(const Config &other) {
 
   for (auto p : other.all_doubles()) {
     if (member(p.first, parameters)) {
-      this->set_double(p.first, p.second, CONFIG_USER);
+      this->set_numbers(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "unrecognized parameter %s in %s",
@@ -114,9 +114,9 @@ void Config::import_from(const Config &other) {
     }
   }
 
-  for (auto p : other.all_booleans()) {
+  for (auto p : other.all_flags()) {
     if (member(p.first, parameters)) {
-      this->set_boolean(p.first, p.second, CONFIG_USER);
+      this->set_flag(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "unrecognized parameter %s in %s",
@@ -141,18 +141,18 @@ Config::Doubles Config::all_doubles() const {
   return this->all_doubles_impl();
 }
 
-double Config::get_double(const std::string &name, UseFlag flag) const {
+double Config::get_number(const std::string &name, UseFlag flag) const {
   if (flag == REMEMBER_THIS_USE) {
     m_impl->parameters_used.insert(name);
   }
-  return this->get_double_impl(name);
+  return this->get_number_impl(name);
 }
 
-double Config::get_double(const std::string &name,
+double Config::get_number(const std::string &name,
                           const std::string &units,
                           UseFlag flag) const {
-  double value = this->get_double(name, flag);
-  std::string input_units = this->get_string(name + "_units");
+  double value = this->get_number(name, flag);
+  std::string input_units = this->units(name);
 
   try {
     return units::convert(m_impl->unit_system, value, input_units, units);
@@ -163,7 +163,33 @@ double Config::get_double(const std::string &name,
   }
 }
 
-void Config::set_double(const std::string &name, double value,
+std::vector<double> Config::get_numbers(const std::string &name, UseFlag flag) const {
+  if (flag == REMEMBER_THIS_USE) {
+    m_impl->parameters_used.insert(name);
+  }
+  return this->get_numbers_impl(name);
+}
+
+std::vector<double> Config::get_numbers(const std::string &name,
+                                        const std::string &units,
+                                        UseFlag flag) const {
+  auto value       = this->get_numbers(name, flag);
+  auto input_units = this->units(name);
+
+  try {
+    units::Converter converter(m_impl->unit_system, input_units, units);
+    for (unsigned int k = 0; k < value.size(); ++k) {
+      value[k] = converter(value[k]);
+    }
+    return value;
+  } catch (RuntimeError &e) {
+    e.add_context("converting \"%s\" from \"%s\" to \"%s\"",
+                  name.c_str(), input_units.c_str(), units.c_str());
+    throw;
+  }
+}
+
+void Config::set_number(const std::string &name, double value,
                         ConfigSettingFlag flag) {
   std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
 
@@ -177,7 +203,25 @@ void Config::set_double(const std::string &name, double value,
     return;
   }
 
-  this->set_double_impl(name, value);
+  this->set_number_impl(name, value);
+}
+
+void Config::set_numbers(const std::string &name,
+                         const std::vector<double> &values,
+                         ConfigSettingFlag flag) {
+  std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
+
+  if (flag == CONFIG_USER) {
+    set_by_user.insert(name);
+  }
+
+  // stop if we're setting the default value and this parameter was set by user already
+  if (flag == CONFIG_DEFAULT and
+      set_by_user.find(name) != set_by_user.end()) {
+    return;
+  }
+
+  this->set_numbers_impl(name, values);
 }
 
 Config::Strings Config::all_strings() const {
@@ -209,18 +253,18 @@ void Config::set_string(const std::string &name,
   this->set_string_impl(name, value);
 }
 
-Config::Booleans Config::all_booleans() const {
-  return this->all_booleans_impl();
+Config::Flags Config::all_flags() const {
+  return this->all_flags_impl();
 }
 
-bool Config::get_boolean(const std::string& name, UseFlag flag) const {
+bool Config::get_flag(const std::string& name, UseFlag flag) const {
   if (flag == REMEMBER_THIS_USE) {
     m_impl->parameters_used.insert(name);
   }
-  return this->get_boolean_impl(name);
+  return this->get_flag_impl(name);
 }
 
-void Config::set_boolean(const std::string& name, bool value,
+void Config::set_flag(const std::string& name, bool value,
                          ConfigSettingFlag flag) {
   std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
 
@@ -234,15 +278,23 @@ void Config::set_boolean(const std::string& name, bool value,
     return;
   }
 
-  this->set_boolean_impl(name, value);
+  this->set_flag_impl(name, value);
 }
 
 static bool special_parameter(const std::string &name) {
-  return (ends_with(name, "_doc") or
-          ends_with(name, "_units") or
-          ends_with(name, "_type") or
-          ends_with(name, "_option") or
-          ends_with(name, "_choices"));
+  for (auto suffix : {"_doc", "_units", "_type", "_option", "_choices"}) {
+    if (ends_with(name, suffix)) {
+      return true;
+    }
+  }
+
+  // The NetCDF-based configuration database stores parameters as attributes of a variable
+  // and CF conventions require that all variables have a "long name."
+  if (name == "long_name") {
+    return true;
+  }
+
+  return false;
 }
 
 void print_config(const Logger &log, int verbosity_threshhold, const Config &config) {
@@ -274,10 +326,10 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
 
     std::string padding(max_name_size - name.size(), ' ');
 
-    if (strings[name + "_type"] == "keyword") {
+    if (config.type(name) == "keyword") {
       log.message(v, "  %s%s = \"%s\" (allowed choices: %s)\n",
                   name.c_str(), padding.c_str(), value.c_str(),
-                  strings[name + "_choices"].c_str());
+                  config.choices(name).c_str());
     } else {
       log.message(v, "  %s%s = \"%s\"\n", name.c_str(), padding.c_str(), value.c_str());
     }
@@ -295,9 +347,9 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
   // print doubles
   for (auto d : config.all_doubles()) {
     std::string name  = d.first;
-    double      value = d.second;
+    double      value = d.second[0];
 
-    std::string units = strings[name + "_units"]; // will be empty if not set
+    std::string units = config.units(name); // will be empty if not set
     std::string padding(max_name_size - name.size(), ' ');
 
     if (fabs(value) >= 1.0e7 or fabs(value) <= 1.0e-4) {
@@ -309,17 +361,17 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
   }
 
   log.message(v,
-             "### Booleans:\n"
+             "### Flags:\n"
              "###\n");
 
   // find max. name size
   max_name_size = 0;
-  for (auto b : config.all_booleans()) {
+  for (auto b : config.all_flags()) {
     max_name_size = std::max(max_name_size, b.first.size());
   }
 
-  // print booleans
-  for (auto b : config.all_booleans()) {
+  // print flags
+  for (auto b : config.all_flags()) {
     std::string name  = b.first;
     std::string value = b.second ? "true" : "false";
     std::string padding(max_name_size - name.size(), ' ');
@@ -343,7 +395,7 @@ void print_unused_parameters(const Logger &log, int verbosity_threshhold,
 
   for (auto p : parameters_set) {
 
-    if (ends_with(p, "_doc")) {
+    if (special_parameter(p)) {
       continue;
     }
 
@@ -362,7 +414,7 @@ void print_unused_parameters(const Logger &log, int verbosity_threshhold,
 /*!
  * Use the command-line option `option` to set the configuration parameter `parameter_name`.
  *
- * When called as `set_boolean_from_option(config, "foo", "bar")`,
+ * When called as `set_flag_from_option(config, "foo", "bar")`,
  *
  * sets the configuration parameter `bar` to `true` if
  *
@@ -380,12 +432,12 @@ void print_unused_parameters(const Logger &log, int verbosity_threshhold,
  *
  * `-foo X` with `X` not equal to `yes`, `no`, `true`, `True`, `false`, `False` results in an error.
  */
-void set_boolean_from_option(Config &config, const std::string &option,
+void set_flag_from_option(Config &config, const std::string &option,
                              const std::string &parameter_name) {
 
   // get the default value
-  bool value = config.get_boolean(parameter_name, Config::FORGET_THIS_USE);
-  std::string doc = config.get_string(parameter_name + "_doc", Config::FORGET_THIS_USE);
+  bool value = config.get_flag(parameter_name, Config::FORGET_THIS_USE);
+  std::string doc = config.doc(parameter_name);
 
   // process the command-line option
   options::String opt("-" + option, doc, value ? "true" : "false", options::ALLOW_EMPTY);
@@ -428,12 +480,12 @@ void set_boolean_from_option(Config &config, const std::string &option,
     }
   }
 
-  config.set_boolean(parameter_name, value, CONFIG_USER);
+  config.set_flag(parameter_name, value, CONFIG_USER);
 }
 
 //! Sets a configuration parameter from a command-line option.
 /*!
-  If called as scalar_from_option("foo", "foo"), checks -foo and calls set("foo", value).
+  If called as number_from_option("foo", "foo"), checks -foo and calls set("foo", value).
 
   Does nothing if -foo was not set.
 
@@ -441,28 +493,85 @@ void set_boolean_from_option(Config &config, const std::string &option,
   input units and converted as needed. (This allows saving parameters without
   converting again.)
 */
-void set_scalar_from_option(Config &config, const std::string &name, const std::string &parameter) {
-  options::Real option("-" + name,
-                       config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
-                       config.get_double(parameter, Config::FORGET_THIS_USE));
+void set_number_from_option(Config &config, const std::string &name, const std::string &parameter) {
+  options::Real option("-" + name, config.doc(parameter),
+                       config.get_number(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
-    config.set_double(parameter, option, CONFIG_USER);
+    config.set_number(parameter, option, CONFIG_USER);
+  }
+}
+
+/*!
+ * Use a command-line option -option to set a parameter that is a list of numbers.
+ *
+ * The length of the list given as an argument to the command-line option has to be the
+ * same as the length of the default value of the parameter *unless* the length of the
+ * default value is less than 2. This default value length is used to disable this check.
+ */
+void set_number_list_from_option(Config &config, const std::string &option,
+                                 const std::string &parameter) {
+  auto default_value = config.get_numbers(parameter, Config::FORGET_THIS_USE);
+  options::RealList list("-" + option, config.doc(parameter), default_value);
+
+  if (list.is_set()) {
+    if (default_value.size() < 2 and list->size() != default_value.size()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Option -%s requires a list of %d numbers (got %d instead).",
+                                    option.c_str(),
+                                    (int)default_value.size(),
+                                    (int)list->size());
+    }
+
+    config.set_numbers(parameter, list, CONFIG_USER);
+  }
+}
+
+/*!
+ * Use a command-line option -option to set a parameter that is a list of integers.
+ *
+ * The length of the list given as an argument to the command-line option has to be the
+ * same as the length of the default value of the parameter *unless* the length of the
+ * default value is less than 2. This default value length is used to disable this check.
+ */
+void set_integer_list_from_option(Config &config, const std::string &option,
+                                  const std::string &parameter) {
+  std::vector<int> default_value;
+
+  for (auto v : config.get_numbers(parameter, Config::FORGET_THIS_USE)) {
+    default_value.push_back(v);
+  }
+
+  options::IntegerList list("-" + option, config.doc(parameter), default_value);
+
+  std::vector<double> value;
+  for (auto v : list.value()) {
+    value.push_back(v);
+  }
+
+  if (list.is_set()) {
+    if (default_value.size() < 2 and value.size() != default_value.size()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Option -%s requires a list of %d integers (got %d instead).",
+                                    option.c_str(),
+                                    (int)default_value.size(),
+                                    (int)value.size());
+    }
+
+    config.set_numbers(parameter, value, CONFIG_USER);
   }
 }
 
 void set_integer_from_option(Config &config, const std::string &name, const std::string &parameter) {
-  options::Integer option("-" + name,
-                          config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
-                          config.get_double(parameter, Config::FORGET_THIS_USE));
+  options::Integer option("-" + name, config.doc(parameter),
+                          config.get_number(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
-    config.set_double(parameter, option, CONFIG_USER);
+    config.set_number(parameter, option, CONFIG_USER);
   }
 }
 
 void set_string_from_option(Config &config, const std::string &name, const std::string &parameter) {
 
-  options::String value("-" + name,
-                        config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
+  options::String value("-" + name, config.doc(parameter),
                         config.get_string(parameter, Config::FORGET_THIS_USE));
   if (value.is_set()) {
     config.set_string(parameter, value, CONFIG_USER);
@@ -479,9 +588,7 @@ void set_keyword_from_option(Config &config, const std::string &name,
                              const std::string &parameter,
                              const std::string &choices) {
 
-  options::Keyword keyword("-" + name,
-                           config.get_string(parameter + "_doc", Config::FORGET_THIS_USE),
-                           choices,
+  options::Keyword keyword("-" + name, config.doc(parameter), choices,
                            config.get_string(parameter, Config::FORGET_THIS_USE));
 
   if (keyword.is_set()) {
@@ -500,10 +607,10 @@ void set_parameter_from_options(Config &config, const std::string &name) {
   // a different (possibly shorter) command-line option.
   std::string option = name;
 
-  if (config.is_set(name + "_option")) { // there is a short version of the command-line option
+  if (not config.option(name).empty()) { // there is a short version of the command-line option
     std::string
-      short_option = config.get_string(name + "_option"),
-      description  = config.get_string(name + "_doc");
+      short_option = config.option(name),
+      description  = config.doc(name);
 
     if (options::Bool("-" + short_option, description) or
         options::Bool("-no_" + short_option, description)) { // short option is set
@@ -518,25 +625,18 @@ void set_parameter_from_options(Config &config, const std::string &name) {
     }
   }
 
-  std::string type = "string";
-  if (config.is_set(name + "_type")) {
-    // will get marked as "used", but that's OK
-    type = config.get_string(name + "_type");
-  }
+  std::string type = config.type(name);
 
   if (type == "string") {
     set_string_from_option(config, option, name);
-  } else if (type == "boolean") {
-    set_boolean_from_option(config, option, name);
-  } else if (type == "scalar") {
-    set_scalar_from_option(config, option, name);
+  } else if (type == "flag") {
+    set_flag_from_option(config, option, name);
+  } else if (type == "number") {
+    set_number_from_option(config, option, name);
   } else if (type == "integer") {
     set_integer_from_option(config, option, name);
   } else if (type == "keyword") {
-    // will be marked as "used" and will fail if not set
-    std::string choices = config.get_string(name + "_choices");
-
-    set_keyword_from_option(config, option, name, choices);
+    set_keyword_from_option(config, option, name, config.choices(name));
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "parameter type \"%s\" is invalid", type.c_str());
   }
@@ -551,7 +651,7 @@ void set_config_from_options(Config &config) {
     set_parameter_from_options(config, s.first);
   }
 
-  for (auto b : config.all_booleans()) {
+  for (auto b : config.all_flags()) {
     set_parameter_from_options(config, b.first);
   }
 
@@ -563,15 +663,15 @@ void set_config_from_options(Config &config) {
 
     if (energy.is_set()) {
       if (energy == "none") {
-        config.set_boolean("energy.enabled", false, CONFIG_USER);
+        config.set_flag("energy.enabled", false, CONFIG_USER);
         // Allow selecting cold ice flow laws in isothermal mode.
-        config.set_boolean("energy.temperature_based", true, CONFIG_USER);
+        config.set_flag("energy.temperature_based", true, CONFIG_USER);
       } else if (energy == "cold") {
-        config.set_boolean("energy.enabled", true, CONFIG_USER);
-        config.set_boolean("energy.temperature_based", true, CONFIG_USER);
+        config.set_flag("energy.enabled", true, CONFIG_USER);
+        config.set_flag("energy.temperature_based", true, CONFIG_USER);
       } else if (energy == "enthalpy") {
-        config.set_boolean("energy.enabled", true, CONFIG_USER);
-        config.set_boolean("energy.temperature_based", false, CONFIG_USER);
+        config.set_flag("energy.enabled", true, CONFIG_USER);
+        config.set_flag("energy.temperature_based", false, CONFIG_USER);
       } else {
         throw RuntimeError(PISM_ERROR_LOCATION, "this can't happen: options::Keyword validates input");
       }
@@ -581,10 +681,10 @@ void set_config_from_options(Config &config) {
   // -topg_to_phi
   {
     std::vector<double> defaults = {
-      config.get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
-      config.get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max"),
-      config.get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min"),
-      config.get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max")
+      config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
+      config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max"),
+      config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min"),
+      config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max")
     };
 
     options::RealList topg_to_phi("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max",
@@ -595,18 +695,18 @@ void set_config_from_options(Config &config) {
                                       "option -topg_to_phi expected 4 numbers; got %d",
                                       (int)topg_to_phi->size());
       }
-      config.set_boolean("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled", true);
-      config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min", topg_to_phi[0]);
-      config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max", topg_to_phi[1]);
-      config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min", topg_to_phi[2]);
-      config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max", topg_to_phi[3]);
+      config.set_flag("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled", true);
+      config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min", topg_to_phi[0]);
+      config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max", topg_to_phi[1]);
+      config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min", topg_to_phi[2]);
+      config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max", topg_to_phi[3]);
     }
   }
   // Ice shelves
 
   bool nu_bedrock = options::Bool("-nu_bedrock", "constant viscosity near margins");
   if (nu_bedrock) {
-    config.set_boolean("stress_balance.ssa.fd.lateral_drag.enabled", true, CONFIG_USER);
+    config.set_flag("stress_balance.ssa.fd.lateral_drag.enabled", true, CONFIG_USER);
   }
 
   // Shortcuts
@@ -615,34 +715,34 @@ void set_config_from_options(Config &config) {
   // and in particular NOT  "-calving eigen_calving")
   bool pik = options::Bool("-pik", "enable suite of PISM-PIK mechanisms");
   if (pik) {
-    config.set_boolean("stress_balance.calving_front_stress_bc", true, CONFIG_USER);
-    config.set_boolean("geometry.part_grid.enabled", true, CONFIG_USER);
-    config.set_boolean("geometry.remove_icebergs", true, CONFIG_USER);
-    config.set_boolean("geometry.grounded_cell_fraction", true, CONFIG_USER);
+    config.set_flag("stress_balance.calving_front_stress_bc", true, CONFIG_USER);
+    config.set_flag("geometry.part_grid.enabled", true, CONFIG_USER);
+    config.set_flag("geometry.remove_icebergs", true, CONFIG_USER);
+    config.set_flag("geometry.grounded_cell_fraction", true, CONFIG_USER);
   }
 
   if (config.get_string("calving.methods").find("eigen_calving") != std::string::npos) {
-    config.set_boolean("geometry.part_grid.enabled", true, CONFIG_USER);
+    config.set_flag("geometry.part_grid.enabled", true, CONFIG_USER);
     // eigen-calving requires a wider stencil:
-    config.set_double("grid.max_stencil_width", 3);
+    config.set_number("grid.max_stencil_width", 3);
   }
 
   // all calving mechanisms require iceberg removal
   if (not config.get_string("calving.methods").empty()) {
-    config.set_boolean("geometry.remove_icebergs", true, CONFIG_USER);
+    config.set_flag("geometry.remove_icebergs", true, CONFIG_USER);
   }
 
   // geometry.remove_icebergs requires part_grid
-  if (config.get_boolean("geometry.remove_icebergs")) {
-    config.set_boolean("geometry.part_grid.enabled", true, CONFIG_USER);
+  if (config.get_flag("geometry.remove_icebergs")) {
+    config.set_flag("geometry.part_grid.enabled", true, CONFIG_USER);
   }
 
   bool test_climate_models = options::Bool("-test_climate_models",
                                            "Disable ice dynamics to test climate models");
   if (test_climate_models) {
     config.set_string("stress_balance.model", "none", CONFIG_USER);
-    config.set_boolean("energy.enabled", false, CONFIG_USER);
-    config.set_boolean("age.enabled", false, CONFIG_USER);
+    config.set_flag("energy.enabled", false, CONFIG_USER);
+    config.set_flag("age.enabled", false, CONFIG_USER);
     // let the user decide if they want to use "-no_mass" or not
   }
 
@@ -682,20 +782,20 @@ ConfigWithPrefix::ConfigWithPrefix(Config::ConstPtr c, const std::string &prefix
   // empty
 }
 
-double ConfigWithPrefix::get_double(const std::string &name) const {
-  return m_config->get_double(m_prefix + name);
+double ConfigWithPrefix::get_number(const std::string &name) const {
+  return m_config->get_number(m_prefix + name);
 }
 
-double ConfigWithPrefix::get_double(const std::string &name, const std::string &units) const {
-  return m_config->get_double(m_prefix + name, units);
+double ConfigWithPrefix::get_number(const std::string &name, const std::string &units) const {
+  return m_config->get_number(m_prefix + name, units);
 }
 
 std::string ConfigWithPrefix::get_string(const std::string &name) const {
   return m_config->get_string(m_prefix + name);
 }
 
-bool ConfigWithPrefix::get_boolean(const std::string& name) const {
-  return m_config->get_boolean(m_prefix + name);
+bool ConfigWithPrefix::get_flag(const std::string& name) const {
+  return m_config->get_flag(m_prefix + name);
 }
 
 void ConfigWithPrefix::reset_prefix(const std::string &prefix) {
@@ -713,11 +813,37 @@ std::set<std::string> Config::keys() const {
     result.insert(p.first);
   }
 
-  for (auto p : all_booleans()) {
+  for (auto p : all_flags()) {
     result.insert(p.first);
   }
 
   return result;
 }
+
+std::string Config::doc(const std::string &parameter) const {
+  return this->get_string(parameter + "_doc", Config::FORGET_THIS_USE);
+}
+
+std::string Config::units(const std::string &parameter) const {
+  return this->get_string(parameter + "_units", Config::FORGET_THIS_USE);
+}
+
+std::string Config::type(const std::string &parameter) const {
+  return this->get_string(parameter + "_type", Config::FORGET_THIS_USE);
+}
+
+std::string Config::option(const std::string &parameter) const {
+  if (this->is_set(parameter + "_option")) {
+    return this->get_string(parameter + "_option", Config::FORGET_THIS_USE);
+  } else {
+    return "";
+  }
+}
+
+std::string Config::choices(const std::string &parameter) const {
+  return this->get_string(parameter + "_choices", Config::FORGET_THIS_USE);
+}
+
+
 
 } // end of namespace pism

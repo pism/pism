@@ -302,8 +302,8 @@ IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(ForwardProblem &forwa
 
   m_grid = m_d0.grid();
 
-  m_tikhonov_atol = m_grid->ctx()->config()->get_double("inverse.tikhonov.atol");
-  m_tikhonov_rtol = m_grid->ctx()->config()->get_double("inverse.tikhonov.rtol");
+  m_tikhonov_atol = m_grid->ctx()->config()->get_number("inverse.tikhonov.atol");
+  m_tikhonov_rtol = m_grid->ctx()->config()->get_number("inverse.tikhonov.rtol");
 
   int design_stencil_width = m_d0.stencil_width();
   int state_stencil_width = m_u_obs.stencil_width();

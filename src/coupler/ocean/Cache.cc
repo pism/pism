@@ -36,7 +36,7 @@ Cache::Cache(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
   m_next_update_time = m_grid->ctx()->time()->current();
-  m_update_interval_years = m_config->get_double("ocean.cache.update_interval");
+  m_update_interval_years = m_config->get_number("ocean.cache.update_interval");
 
   if (m_update_interval_years < 1) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,

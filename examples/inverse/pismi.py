@@ -230,7 +230,7 @@ def adjustTauc(mask, tauc):
     logMessage("  Adjusting initial estimate of 'tauc' to match PISM model for floating ice and ice-free bedrock.\n")
 
     grid = mask.grid()
-    high_tauc = grid.ctx().config().get_double("basal_yield_stress.ice_free_bedrock")
+    high_tauc = grid.ctx().config().get_number("basal_yield_stress.ice_free_bedrock")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
         for (i, j) in grid.points():
@@ -259,7 +259,7 @@ def run():
     com = context.com
     PISM.set_abort_on_sigint(True)
 
-    WIDE_STENCIL = int(config.get_double("grid.max_stencil_width"))
+    WIDE_STENCIL = int(config.get_number("grid.max_stencil_width"))
 
     usage = \
         """  pismi.py [-i IN.nc [-o OUT.nc]]/[-a INOUT.nc] [-inv_data inv_data.nc] [-inv_forward model]
@@ -324,7 +324,7 @@ def run():
     do_pause = PISM.OptionBool("-inv_pause", "pause each iteration")
 
     do_restart = PISM.OptionBool("-inv_restart", "Restart a stopped computation.")
-    use_design_prior = config.get_boolean("inverse.use_design_prior")
+    use_design_prior = config.get_flag("inverse.use_design_prior")
 
     prep_module = PISM.OptionString("-inv_prep_module",
                                     "Python module used to do final setup of inverse solver")
@@ -332,7 +332,7 @@ def run():
 
     is_regional = PISM.OptionBool("-regional", "Compute SIA/SSA using regional model semantics")
 
-    using_zeta_fixed_mask = config.get_boolean("inverse.use_zeta_fixed_mask")
+    using_zeta_fixed_mask = config.get_flag("inverse.use_zeta_fixed_mask")
 
     inv_method = config.get_string("inverse.ssa.method")
 
@@ -559,8 +559,8 @@ def run():
 
     r_mag.set_attrs("diagnostic", "magnitude of mismatch between observed surface velocities and their reconstrution by inversion",
                     "m s-1", "inv_ssa_residual", 0)
-    r_mag.metadata().set_double("_FillValue", convert(-0.01, 'm/year', 'm/s'))
-    r_mag.metadata().set_double("valid_min", 0.0)
+    r_mag.metadata().set_number("_FillValue", convert(-0.01, 'm/year', 'm/s'))
+    r_mag.metadata().set_number("valid_min", 0.0)
     r_mag.metadata().set_string("glaciological_units", "m year-1")
 
     r_mag.set_to_magnitude(residual)

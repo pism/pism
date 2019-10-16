@@ -540,26 +540,13 @@ void PIO::def_var(const string &name, IO_Type nctype, const vector<string> &dims
   }
 }
 
-void PIO::get_1d_var(const string &name, unsigned int s, unsigned int c,
-                     vector<double> &result) const {
-  vector<unsigned int> start(1), count(1);
-
-  result.resize(c);
-
-  start[0] = s;
-  count[0] = c;
-
-  // this call will handle errors
-  get_vara_double(name, start, count, &result[0]);
-}
-
 
 //! Write a 1D (usually a coordinate) variable.
 void PIO::put_1d_var(const string &name, unsigned int s, unsigned int c,
                      const vector<double> &data) const {
   vector<unsigned int> start(1, s), count(1, c);
 
-  put_vara_double(name, start, count, &data[0]);
+  put_vara_double(name, start, count, data.data());
 }
 
 
@@ -569,7 +556,9 @@ void PIO::get_dim(const string &name, vector<double> &data) const {
     unsigned int dim_length = 0;
     m_impl->nc->inq_dimlen(name, dim_length);
 
-    get_1d_var(name, 0, dim_length, data);
+    data.resize(dim_length);
+
+    get_vara_double(name, {0}, {dim_length}, data.data());
   } catch (RuntimeError &e) {
     e.add_context("reading dimension '%s' from '%s'", name.c_str(), inq_filename().c_str());
     throw;

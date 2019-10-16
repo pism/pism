@@ -6,17 +6,6 @@ advection of enthalpy in the column. Tests PISM's enthalpy solver.
 import PISM
 from PISM.util import convert
 import numpy as np
-import pylab as plt
-
-
-def log_plot(x, y, style, label):
-    plt.plot(log10(x), log10(y), style, label=label)
-    plt.xticks(log10(x), x)
-
-
-def log_fit_plot(x, p, label):
-    plt.plot(log10(x), np.polyval(p, log10(x)), label=label)
-
 
 log10 = np.log10
 
@@ -26,9 +15,9 @@ config = ctx.config
 
 config.set_string("grid.ice_vertical_spacing", "equal")
 
-k = config.get_double("constants.ice.thermal_conductivity")
-c = config.get_double("constants.ice.specific_heat_capacity")
-rho = config.get_double("constants.ice.density")
+k = config.get_number("constants.ice.thermal_conductivity")
+c = config.get_number("constants.ice.specific_heat_capacity")
+rho = config.get_number("constants.ice.density")
 K = k / c
 # alpha squared
 alpha2 = k / (c * rho)
@@ -92,7 +81,7 @@ class EnthalpyColumn(object):
         self.sys.init(1, 1, False, ice_thickness)
 
 
-def diffusion_convergence_rate_time(title, error_func):
+def diffusion_convergence_rate_time(title, error_func, plot=False):
     "Compute the convergence rate with refinement in time."
     dts = 2.0**np.arange(10)
 
@@ -104,13 +93,13 @@ def diffusion_convergence_rate_time(title, error_func):
     p_max = np.polyfit(log10(dts), log10(max_errors), 1)
     p_avg = np.polyfit(log10(dts), log10(avg_errors), 1)
 
-    if True:
+    if plot:
         plt.figure()
         plt.title(title + "\nTesting convergence as dt -> 0")
         log_plot(dts, max_errors, 'o', "max errors")
         log_plot(dts, avg_errors, 'o', "avg errors")
-        log_fit_plot(dts, p_max, "max: dt^{}".format(p_max[0]))
-        log_fit_plot(dts, p_avg, "avg: dt^{}".format(p_avg[0]))
+        log_fit_plot(dts, p_max, "max: dt^{:.2}".format(p_max[0]))
+        log_fit_plot(dts, p_avg, "avg: dt^{:.2}".format(p_avg[0]))
         plt.axis('tight')
         plt.grid(True)
         plt.legend(loc="best")
@@ -118,7 +107,7 @@ def diffusion_convergence_rate_time(title, error_func):
     return p_max[0], p_avg[0]
 
 
-def diffusion_convergence_rate_space(title, error_func):
+def diffusion_convergence_rate_space(title, error_func, plot=False):
     "Compute the convergence rate with refinement in space."
     Mz = np.array(2.0**np.arange(3, 10), dtype=int)
     dzs = 1000.0 / Mz
@@ -135,13 +124,13 @@ def diffusion_convergence_rate_space(title, error_func):
     p_max = np.polyfit(log10(dzs), log10(max_errors), 1)
     p_avg = np.polyfit(log10(dzs), log10(avg_errors), 1)
 
-    if True:
+    if plot:
         plt.figure()
         plt.title(title + "\nTesting convergence as dz -> 0")
         log_plot(dzs, max_errors, 'o', "max errors")
         log_plot(dzs, avg_errors, 'o', "avg errors")
-        log_fit_plot(dzs, p_max, "max: dz^{}".format(p_max[0]))
-        log_fit_plot(dzs, p_avg, "avg: dz^{}".format(p_avg[0]))
+        log_fit_plot(dzs, p_max, "max: dz^{:.2}".format(p_max[0]))
+        log_fit_plot(dzs, p_avg, "avg: dz^{:.2}".format(p_avg[0]))
         plt.axis('tight')
         plt.grid(True)
         plt.legend(loc="best")
@@ -330,9 +319,9 @@ def errors_advection_up(plot_results=True, T_final=1000.0, dt=100, Mz=101):
     """
     w = 1.0
 
-    config.set_double("constants.ice.thermal_conductivity", 0.0)
+    config.set_number("constants.ice.thermal_conductivity", 0.0)
     column = EnthalpyColumn(Mz, dt)
-    config.set_double("constants.ice.thermal_conductivity", k)
+    config.set_number("constants.ice.thermal_conductivity", k)
 
     Lz = column.Lz
     z = np.array(column.sys.z())
@@ -389,9 +378,9 @@ def errors_advection_down(plot_results=True, T_final=1000.0, dt=100, Mz=101):
     """
     w = -1.0
 
-    config.set_double("constants.ice.thermal_conductivity", 0.0)
+    config.set_number("constants.ice.thermal_conductivity", 0.0)
     column = EnthalpyColumn(Mz, dt)
-    config.set_double("constants.ice.thermal_conductivity", k)
+    config.set_number("constants.ice.thermal_conductivity", k)
 
     Lz = column.Lz
     z = np.array(column.sys.z())
@@ -439,7 +428,7 @@ def errors_advection_down(plot_results=True, T_final=1000.0, dt=100, Mz=101):
     return max_error, avg_error
 
 
-def advection_convergence_rate_time(title, error_func):
+def advection_convergence_rate_time(title, error_func, plot=False):
     "Compute the convergence rate with refinement in time."
     dts = np.linspace(1, 101, 11)
     Mz = 1001
@@ -456,13 +445,13 @@ def advection_convergence_rate_time(title, error_func):
     p_max = np.polyfit(log10(dts), log10(max_errors), 1)
     p_avg = np.polyfit(log10(dts), log10(avg_errors), 1)
 
-    if True:
+    if plot:
         plt.figure()
         plt.title(title + "\nTesting convergence as dt -> 0")
         log_plot(dts, max_errors, 'o', "max errors")
         log_plot(dts, avg_errors, 'o', "avg errors")
-        log_fit_plot(dts, p_max, "max: dt^{}".format(p_max[0]))
-        log_fit_plot(dts, p_avg, "avg: dt^{}".format(p_avg[0]))
+        log_fit_plot(dts, p_max, "max: dt^{:.2}".format(p_max[0]))
+        log_fit_plot(dts, p_avg, "avg: dt^{:.2}".format(p_avg[0]))
         plt.axis('tight')
         plt.grid(True)
         plt.legend(loc="best")
@@ -470,7 +459,7 @@ def advection_convergence_rate_time(title, error_func):
     return p_max[0], p_avg[0]
 
 
-def advection_convergence_rate_space(title, error_func):
+def advection_convergence_rate_space(title, error_func, plot=False):
     "Compute the convergence rate with refinement in time."
     dt = 0.4
     Mzs = np.linspace(500, 5000, 11, dtype="i")
@@ -489,13 +478,13 @@ def advection_convergence_rate_space(title, error_func):
     p_max = np.polyfit(log10(dzs), log10(max_errors), 1)
     p_avg = np.polyfit(log10(dzs), log10(avg_errors), 1)
 
-    if True:
+    if plot:
         plt.figure()
         plt.title(title + "\nTesting convergence as dz -> 0")
         log_plot(dzs, max_errors, 'o', "max errors")
         log_plot(dzs, avg_errors, 'o', "avg errors")
-        log_fit_plot(dzs, p_max, "max: dz^{}".format(p_max[0]))
-        log_fit_plot(dzs, p_avg, "avg: dz^{}".format(p_avg[0]))
+        log_fit_plot(dzs, p_max, "max: dz^{:.2}".format(p_max[0]))
+        log_fit_plot(dzs, p_avg, "avg: dz^{:.2}".format(p_avg[0]))
         plt.axis('tight')
         plt.grid(True)
         plt.legend(loc="best")
@@ -503,37 +492,48 @@ def advection_convergence_rate_space(title, error_func):
     return p_max[0], p_avg[0]
 
 
-def diffusion_DN_test():
+def diffusion_DN_test(plot=False):
     assert diffusion_convergence_rate_time("Diffusion: Dirichlet at the base, Neumann at the surface",
-                                           errors_DN)[1] > 0.93
+                                           errors_DN, plot)[1] > 0.93
     assert diffusion_convergence_rate_space("Diffusion: Dirichlet at the base, Neumann at the surface",
-                                            errors_DN)[1] > 2.0
+                                            errors_DN, plot)[1] > 2.0
 
 
-def diffusion_ND_test():
+def diffusion_ND_test(plot=False):
     assert diffusion_convergence_rate_time("Diffusion: Neumann at the base, Dirichlet at the surface",
-                                           errors_ND)[1] > 0.93
+                                           errors_ND, plot)[1] > 0.93
     assert diffusion_convergence_rate_space("Diffusion: Neumann at the base, Dirichlet at the surface",
-                                            errors_ND)[1] > 2.0
+                                            errors_ND, plot)[1] > 2.0
 
 
-def advection_up_test():
+def advection_up_test(plot=False):
     assert advection_convergence_rate_time("Advection: Upward flow",
-                                           errors_advection_up)[1] > 0.87
+                                           errors_advection_up, plot)[1] > 0.87
     assert advection_convergence_rate_space("Advection: Upward flow",
-                                            errors_advection_up)[1] > 0.96
+                                            errors_advection_up, plot)[1] > 0.96
 
 
-def advection_down_test():
+def advection_down_test(plot=False):
     assert advection_convergence_rate_time("Advection: Downward flow",
-                                           errors_advection_down)[1] > 0.87
+                                           errors_advection_down, plot)[1] > 0.87
     assert advection_convergence_rate_space("Advection: Downward flow",
-                                            errors_advection_down)[1] > 0.96
+                                            errors_advection_down, plot)[1] > 0.96
 
 
 if __name__ == "__main__":
-    diffusion_ND_test()
-    diffusion_DN_test()
-    advection_up_test()
-    advection_down_test()
+    import pylab as plt
+
+    def log_plot(x, y, style, label):
+        plt.plot(log10(x), log10(y), style, label=label)
+        plt.xticks(log10(x), ["{:.2f}".format(t) for t in x])
+        plt.xlabel("log10(spacing)")
+        plt.ylabel("log10(error)")
+
+    def log_fit_plot(x, p, label):
+        plt.plot(log10(x), np.polyval(p, log10(x)), label=label)
+
+    diffusion_ND_test(plot=True)
+    diffusion_DN_test(plot=True)
+    advection_up_test(plot=True)
+    advection_down_test(plot=True)
     plt.show()

@@ -6,7 +6,7 @@ Building PETSc
 --------------
 
 PISM is built on top of PETSc_, which is actively developed and an up-to-date PETSc
-distribution is unlikely to be available in package repositories. Download the PETSc
+distribution may not be available in package repositories. Download the PETSc
 source by grabbing the current gzipped tarball at:
 
     |petsc-download|
@@ -30,10 +30,6 @@ first:
       ./config/configure.py --with-shared-libraries \
                             --with-debugging=0 \
                             --with-fc=0
-
-   .. note::
-
-      PETSc's ``configure.py`` requires Python 2.x (Python 3.x is not supported yet).
 
    You need to define the environment variables ``PETSC_DIR`` and ``PETSC_ARCH`` [#]_ --
    one way is shown here -- *before* running the configuration script. Turning off the
@@ -70,9 +66,8 @@ first:
    process; take note of this value. One may always reconfigure with additional
    ``PETSC_ARCH`` as needed.
 
-#. After ``configure.py`` finishes, you will need to ``make all test`` in the PETSc
-   directory and watch the result. If the X Windows system is functional some example
-   viewers will appear; as noted you will need the X header files for this to work.
+#. After ``configure.py`` finishes, you will need to run ``make all test`` in the PETSc
+   directory and watch the result.
 
 .. rubric:: Footnotes
 

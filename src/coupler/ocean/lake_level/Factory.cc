@@ -30,8 +30,7 @@ namespace ocean {
 namespace lake_level {
 
 Factory::Factory(IceGrid::ConstPtr grid)
-  : PCFactory<LakeLevel>(grid) {
-  m_option = "lake_level";
+  : PCFactory<LakeLevel>(grid, "lake_level.model") {
 
   add_model<LakeLevel>("null");
   add_model<LakeCC>("lakecc");

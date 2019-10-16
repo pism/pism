@@ -220,7 +220,7 @@ void IceModelVec2::regrid_impl(const PIO &file, RegriddingFlag flag,
   // the same way v is
   petsc::TemporaryGlobalVec tmp(da2);
 
-  const bool allow_extrapolation = m_grid->ctx()->config()->get_boolean("grid.allow_extrapolation");
+  const bool allow_extrapolation = m_grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 
   for (unsigned int j = 0; j < m_dof; ++j) {
     {
@@ -477,10 +477,10 @@ void IceModelVec2::create(IceGrid::ConstPtr grid, const std::string & name,
   m_dof  = dof;
   m_grid = grid;
 
-  if ((m_dof != 1) || (stencil_width > m_grid->ctx()->config()->get_double("grid.max_stencil_width"))) {
+  if ((m_dof != 1) || (stencil_width > m_grid->ctx()->config()->get_number("grid.max_stencil_width"))) {
     m_da_stencil_width = stencil_width;
   } else {
-    m_da_stencil_width = m_grid->ctx()->config()->get_double("grid.max_stencil_width");
+    m_da_stencil_width = m_grid->ctx()->config()->get_number("grid.max_stencil_width");
   }
 
   // initialize the da member:

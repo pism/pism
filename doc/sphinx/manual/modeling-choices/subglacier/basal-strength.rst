@@ -301,8 +301,7 @@ regarded as uncertain, important, and subject to parameter studies to assess its
 
 ..
    FIXME: EVOLVING CODE: If the :config:`basal_yield_stress.add_transportable_water`
-   configuration flag is set (either in the configuration file or using the
-   :opt:`-tauc_add_transportable_water` option), then the above formula becomes FIXME
+   configuration flag is set then the above formula becomes...
 
 .. list-table:: Command-line options controlling how till effective pressure `N_{till}` in
                 equation :eq:`eq-mohrcoulomb` is determined

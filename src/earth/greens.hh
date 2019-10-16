@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2014, 2015, 2017 Ed Bueler
+// Copyright (C) 2007--2009, 2014, 2015, 2017, 2019 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -19,15 +19,10 @@
 #ifndef __greens_hh
 #define __greens_hh
 
+#include <gsl/gsl_spline.h>
+
 namespace pism {
 namespace bed {
-
-//! @brief Parameters used to access elastic Green's function from the
-//! [@ref Farrell] earth model.
-struct ge_params {
-   double dx, dy;
-   int    p, q; 
-};
 
 //! @brief The integrand in defining the elastic Green's function from
 //! the [@ref Farrell] earth model.
@@ -35,30 +30,40 @@ struct ge_params {
  * For G^E(r), the Green's function of spherical layered elastic earth
  * model. From data in \ref LingleClark. See also \ref BLKfastearth.
  */
-double ge_integrand(unsigned ndim, const double* xiANDeta, void* params);
+double ge_integrand(unsigned ndim, const double* args, void* data);
 
-//! @brief Parameters used to describe the response of the viscous
-//! half-space model to a disc load.
-struct vd_params {
-   double t, R0, rk, rho, grav, D, eta;
+class greens_elastic {
+public:
+  greens_elastic();
+  ~greens_elastic();
+  double operator()(double r);
+private:
+  static const int N = 42;
+  static const double rmkm[N];
+  static const double GE[N];
+
+  gsl_interp_accel* acc;
+  gsl_spline*       spline;
+
+  // disable copy constructor and the assignment operator:
+  greens_elastic(const greens_elastic &other);
+  greens_elastic& operator=(const greens_elastic&);
 };
 
-//! @brief Integrand defining the response of the viscous half-space
-//! model to a disc load.
-/*!
- * For the solution of the disc load case of the viscous half-space
- * model, see appendix B of \ref BLK2006earth. See also \ref
- * LingleClark and \ref BLKfastearth.
- */
-double vd_integrand (double kappa, void * paramsIN);
+//! @brief Parameters used to access elastic Green's function from the
+//! [@ref Farrell] earth model.
+struct ge_data {
+  double dx, dy;
+  int    p, q;
+  greens_elastic *G;
+};
 
 //! @brief Actually compute the response of the viscous half-space
 //! model in \ref LingleClark, to a disc load.
-double viscDisc(double t, double H0, double R0, double r, 
+double viscDisc(double t, double H0, double R0, double r,
                 double rho, double rho_ice, double grav, double D, double eta);
 
 } // end of namespace bed
 } // end of namespace pism
 
 #endif  /* __greens_hh */
-

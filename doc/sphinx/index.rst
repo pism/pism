@@ -18,6 +18,8 @@ This *Manual* was built using revision |git-revision| committed on |git-date|.
 
    technical/index.rst
 
+   contributing/index.rst
+
    authorship.rst
 
    zzz_references_html.rst

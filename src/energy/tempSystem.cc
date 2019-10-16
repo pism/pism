@@ -55,9 +55,9 @@ tempSystemCtx::tempSystemCtx(const std::vector<double>& storage_grid,
   m_T_w.resize(Mz);
 
   // set physical constants
-  m_ice_density = config.get_double("constants.ice.density");
-  m_ice_c       = config.get_double("constants.ice.specific_heat_capacity");
-  m_ice_k       = config.get_double("constants.ice.thermal_conductivity");
+  m_ice_density = config.get_number("constants.ice.density");
+  m_ice_c       = config.get_number("constants.ice.specific_heat_capacity");
+  m_ice_k       = config.get_number("constants.ice.thermal_conductivity");
 
   // set derived constants
   m_nu    = m_dt / m_dz;

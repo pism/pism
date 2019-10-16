@@ -132,7 +132,7 @@ void IceCompModel::initTestFG() {
     sea_level.set(0.0);
 
     IceModelVec2S lake_level(m_grid, "lake_level", WITHOUT_GHOSTS);
-    lake_level.set(m_config->get_double("output.fill_value"));
+    lake_level.set(m_config->get_number("output.fill_value"));
 
     m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness,
                         sea_level);
@@ -151,7 +151,7 @@ void IceCompModel::initTestsKO() {
   sea_level.set(0.0);
 
   IceModelVec2S lake_level(m_grid, "lake_level", WITHOUT_GHOSTS);
-  lake_level.set(m_config->get_double("output.fill_value"));
+  lake_level.set(m_config->get_number("output.fill_value"));
 
   m_geometry.ice_thickness.set(3000.0);
 
@@ -162,8 +162,8 @@ void IceCompModel::initTestsKO() {
 void IceCompModel::getCompSourcesTestFG() {
 
   const double
-    ice_rho   = m_config->get_double("constants.ice.density"),
-    ice_c     = m_config->get_double("constants.ice.specific_heat_capacity");
+    ice_rho   = m_config->get_number("constants.ice.density"),
+    ice_c     = m_config->get_number("constants.ice.specific_heat_capacity");
 
   // before temperature and flow step, set strain_heating_c from exact values
 
@@ -393,8 +393,8 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
   }
 
   const double
-    ice_rho   = m_config->get_double("constants.ice.density"),
-    ice_c     = m_config->get_double("constants.ice.specific_heat_capacity");
+    ice_rho   = m_config->get_number("constants.ice.density"),
+    ice_c     = m_config->get_number("constants.ice.specific_heat_capacity");
 
   const IceModelVec3 &strain_heating3 = m_stress_balance->volumetric_strain_heating();
 

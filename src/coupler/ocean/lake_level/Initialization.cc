@@ -32,7 +32,7 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid,
 
   m_lake_level.metadata().set_name("effective_lake_level_elevation");
   m_lake_level.metadata().set_string("pism_intent", "model_state");
-  m_lake_level.metadata().set_double("_FillValue", m_fill_value);
+  m_lake_level.metadata().set_number("_FillValue", m_fill_value);
 }
 
 void InitializationHelper::update_impl(const Geometry &geometry, double t, double dt) {

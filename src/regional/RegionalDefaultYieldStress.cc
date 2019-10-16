@@ -49,7 +49,7 @@ void RegionalDefaultYieldStress::update_impl(const YieldStressInputs &inputs) {
 
   const IceModelVec2Int &nmm = *inputs.no_model_mask;
 
-  double high_tauc = m_config->get_double("regional.no_model_yield_stress", "Pa");
+  double high_tauc = m_config->get_number("regional.no_model_yield_stress", "Pa");
 
   // now set tauc to a big value in no_model_strip
   IceModelVec::AccessList list{&nmm, &m_basal_yield_stress};

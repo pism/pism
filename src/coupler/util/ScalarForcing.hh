@@ -54,12 +54,12 @@ protected:
 
   std::unique_ptr<Timeseries> m_data;
 
-  std::string m_option_prefix;
+  std::string m_prefix;
 
   // in years
-  unsigned int m_bc_period;
+  unsigned int m_period;
   // in seconds
-  double m_bc_reference_time;
+  double m_reference_time;
 
   double m_current;
 };

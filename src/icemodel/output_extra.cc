@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018 PISM Authors
+/* Copyright (C) 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,7 +29,7 @@ namespace pism {
 MaxTimestep IceModel::extras_max_timestep(double my_t) {
 
   if ((not m_save_extra) or
-      (not m_config->get_boolean("time_stepping.hit_extra_times"))) {
+      (not m_config->get_flag("time_stepping.hit_extra_times"))) {
     return MaxTimestep("reporting (-extra_times)");
   }
 
@@ -97,8 +97,8 @@ void IceModel::init_extras() {
   m_extra_filename   = m_config->get_string("output.extra.file");
   std::string times  = m_config->get_string("output.extra.times");
   std::string vars   = m_config->get_string("output.extra.vars");
-  bool        split  = m_config->get_boolean("output.extra.split");
-  bool        append = m_config->get_boolean("output.extra.append");
+  bool        split  = m_config->get_flag("output.extra.split");
+  bool        append = m_config->get_flag("output.extra.append");
 
   bool extra_file_set = not m_extra_filename.empty();
   bool times_set = not times.empty();
@@ -270,7 +270,7 @@ void IceModel::write_extras() {
                  filename, m_time->date().c_str());
 
   // default behavior is to move the file aside if it exists already; option allows appending
-  bool append = m_config->get_boolean("output.extra.append");
+  bool append = m_config->get_flag("output.extra.append");
   IO_Mode mode = m_extra_file_is_ready or append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 
   const Profiling &profiling = m_ctx->profiling();
@@ -293,7 +293,10 @@ void IceModel::write_extras() {
 
     save_variables(file,
                    m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
-                   m_extra_vars, PISM_FLOAT);
+                   m_extra_vars,
+                   0.5 * (m_last_extra + current_time), // use the mid-point of the
+                                                        // current reporting interval
+                   PISM_FLOAT);
 
     // Get the length of the time dimension *after* it is appended to.
     unsigned int time_length = file.inq_dimlen(time_name);

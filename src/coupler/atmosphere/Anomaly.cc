@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,8 +32,8 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.anomaly");
 
   {
-    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    unsigned int buffer_size = m_config->get_number("climate_forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
     PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
@@ -44,7 +44,8 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
                                                      "", // no standard name
                                                      buffer_size,
                                                      evaluations_per_year,
-                                                     periodic);
+                                                     periodic,
+                                                     LINEAR);
 
     m_precipitation_anomaly = IceModelVec2T::ForcingField(m_grid,
                                                           file,

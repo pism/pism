@@ -52,8 +52,8 @@ SeaLevel2DCC::SeaLevel2DCC(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in)
 
   m_offset = 0.0;
 
-  const double ice_density = m_config->get_double("constants.ice.density"),
-               ocean_density = m_config->get_double("constants.sea_water.density");
+  const double ice_density = m_config->get_number("constants.ice.density"),
+               ocean_density = m_config->get_number("constants.sea_water.density");
   m_drho = ice_density/ocean_density;
 }
 
