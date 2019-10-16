@@ -45,7 +45,7 @@ void ConstantYieldStress::init_impl(const Geometry &geometry,
   m_log->message(2, "* Initializing the constant basal yield stress model...\n");
 
   InputOptions opts = process_input_options(m_grid->com, m_config);
-  const double tauc = m_config->get_double("basal_yield_stress.constant.value");
+  const double tauc = m_config->get_number("basal_yield_stress.constant.value");
 
   switch (opts.type) {
   case INIT_RESTART:

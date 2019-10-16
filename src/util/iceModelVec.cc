@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2019 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -53,7 +53,7 @@ IceModelVec::IceModelVec() {
   reset_attrs(0);
 
   m_state_counter = 0;
-  m_interpolation_type = BILINEAR;
+  m_interpolation_type = LINEAR;
 
   m_zlevels.resize(1);
   m_zlevels[0] = 0.0;
@@ -434,7 +434,7 @@ void IceModelVec::regrid_impl(const PIO &file, RegriddingFlag flag,
                        " only supports IceModelVecs with dof == 1.");
   }
 
-  bool allow_extrapolation = m_grid->ctx()->config()->get_boolean("grid.allow_extrapolation");
+  bool allow_extrapolation = m_grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 
   if (m_has_ghosts) {
     petsc::TemporaryGlobalVec tmp(m_da);

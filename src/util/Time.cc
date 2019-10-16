@@ -140,8 +140,8 @@ Time::Time(Config::ConstPtr conf,
 
   init_calendar(calendar_string);
 
-  m_run_start = years_to_seconds(m_config->get_double("time.start_year"));
-  m_run_end   = increment_date(m_run_start, (int)m_config->get_double("time.run_length"));
+  m_run_start = years_to_seconds(m_config->get_number("time.start_year"));
+  m_run_end   = increment_date(m_run_start, (int)m_config->get_number("time.run_length"));
 
   m_time_in_seconds = m_run_start;
 }
@@ -242,20 +242,20 @@ std::string Time::CF_units_to_PISM_units(const std::string &input) const {
 }
 
 bool Time::process_ys(double &result) {
-  options::Real ys("-ys", "Start year", m_config->get_double("time.start_year"));
+  options::Real ys("-ys", "Start year", m_config->get_number("time.start_year"));
   result = years_to_seconds(ys);
   return ys.is_set();
 }
 
 bool Time::process_y(double &result) {
-  options::Real y("-y", "Run length, in years", m_config->get_double("time.run_length"));
+  options::Real y("-y", "Run length, in years", m_config->get_number("time.run_length"));
   result = years_to_seconds(y);
   return y.is_set();
 }
 
 bool Time::process_ye(double &result) {
   options::Real ye("-ye", "End year",
-                      m_config->get_double("time.start_year") + m_config->get_double("time.run_length"));
+                      m_config->get_number("time.start_year") + m_config->get_number("time.run_length"));
   result = years_to_seconds(ye);
   return ye.is_set();
 }
@@ -324,7 +324,7 @@ void Time::init(const Logger &log) {
   } else if (y_set == true) {
     m_run_end = m_run_start + y_seconds;
   } else {
-    m_run_end = increment_date(m_run_start, (int)m_config->get_double("time.run_length"));
+    m_run_end = increment_date(m_run_start, (int)m_config->get_number("time.run_length"));
   }
 }
 

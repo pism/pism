@@ -31,7 +31,7 @@ namespace calving {
 EigenCalving::EigenCalving(IceGrid::ConstPtr grid)
   : StressCalving(grid, 2) {
 
-  m_K = m_config->get_double("calving.eigen_calving.K");
+  m_K = m_config->get_number("calving.eigen_calving.K");
 }
 
 EigenCalving::~EigenCalving() {

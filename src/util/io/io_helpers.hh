@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,6 +26,7 @@
 
 #include "IO_Flags.hh"
 #include "pism/util/Units.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 

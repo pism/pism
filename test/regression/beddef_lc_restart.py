@@ -15,11 +15,13 @@ Used as a regression test for PISM.LingleClark.
 
 import PISM
 from PISM.util import convert
-import pylab as plt
 import numpy as np
 import os
 
 ctx = PISM.Context()
+
+# silence initialization messages
+ctx.log.set_threshold(1)
 
 # disc load parameters
 disc_radius = convert(1000, "km", "m")
@@ -29,18 +31,9 @@ Lx = 2 * disc_radius
 Ly = Lx
 N = 101
 
+ctx.config.set_number("bed_deformation.lc.grid_size_factor", 2)
+
 dt = convert(1000.0, "years", "seconds")
-
-
-def allocate_storage(grid):
-    ice_thickness = PISM.IceModelVec2S(grid, "thk", PISM.WITHOUT_GHOSTS)
-    ice_thickness.metadata().set_string("standard_name", "land_ice_thickness")
-    bed = PISM.IceModelVec2S(grid, "topg", PISM.WITHOUT_GHOSTS)
-    bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
-    sea_level = PISM.IceModelVec2S(grid, "sea_level", PISM.WITHOUT_GHOSTS)
-
-    return ice_thickness, bed, bed_uplift, sea_level
-
 
 def add_disc_load(ice_thickness, radius, thickness):
     "Add a disc load with a given radius and thickness."
@@ -61,23 +54,26 @@ def run(dt, restart=False):
 
     model = PISM.LingleClark(grid)
 
-    ice_thickness, bed, bed_uplift, sea_level = allocate_storage(grid)
-    grid.variables().add(ice_thickness)
+    geometry = PISM.Geometry(grid)
+
+    bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
 
     # start with a flat bed, no ice, and no uplift
-    bed.set(0.0)
+    geometry.bed_elevation.set(0.0)
+    geometry.ice_thickness.set(0.0)
+    geometry.sea_level_elevation.set(0.0)
+    geometry.ensure_consistency(0.0)
+
     bed_uplift.set(0.0)
-    ice_thickness.set(0.0)
-    sea_level.set(0.0)
 
     # initialize the model
-    model.bootstrap(bed, bed_uplift, ice_thickness, sea_level)
+    model.bootstrap(geometry.bed_elevation, bed_uplift, geometry.ice_thickness, geometry.sea_level_elevation)
 
     # add the disc load
-    add_disc_load(ice_thickness, disc_radius, disc_thickness)
+    add_disc_load(geometry.ice_thickness, disc_radius, disc_thickness)
 
     # do 1 step
-    model.step(ice_thickness, sea_level, dt)
+    model.step(geometry.ice_thickness, geometry.sea_level_elevation, dt)
 
     if restart:
         # save the model state
@@ -93,31 +89,21 @@ def run(dt, restart=False):
             model = PISM.LingleClark(grid)
 
             # initialize
-            PISM.PETSc.Options().setValue("-i", filename)
+            ctx.config.set_string("input.file", filename)
             options = PISM.process_input_options(grid.com, ctx.config)
-            model.init(options, ice_thickness, sea_level)
+            model.init(options, geometry.ice_thickness, geometry.sea_level_elevation)
         finally:
             os.remove(filename)
 
     # do 1 more step
-    model.step(ice_thickness, sea_level, dt)
+    model.step(geometry.ice_thickness, geometry.sea_level_elevation, dt)
 
     return model
 
-
 def compare_vec(v1, v2):
     "Compare two vecs."
-    try:
-        np.testing.assert_equal(v1.numpy(), v2.numpy())
-        print("{} is the same".format(v1.get_name()))
-    except:
-        plt.figure(figsize=(10, 10))
-        diff = v1.numpy() - v2.numpy()
-        max_diff = np.max(np.fabs(diff))
-        m = plt.imshow(diff, origin="lower")
-        plt.colorbar(m)
-        plt.title("{}, max. difference {}".format(v1.get_name(), max_diff))
-
+    print("Comparing {}".format(v1.get_name()))
+    np.testing.assert_equal(v1.numpy(), v2.numpy())
 
 def compare(model1, model2):
     "Compare two models"

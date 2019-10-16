@@ -58,7 +58,7 @@ void EnthalpyModel::bootstrap_impl(const PIO &input_file,
                  input_file.inq_filename().c_str());
 
   m_basal_melt_rate.regrid(input_file, OPTIONAL,
-                           m_config->get_double("bootstrapping.defaults.bmelt"));
+                           m_config->get_number("bootstrapping.defaults.bmelt"));
 
   regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
 
@@ -112,9 +112,9 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
 
   const double
-    ice_density           = m_config->get_double("constants.ice.density"), // kg m-3
-    bulgeEnthMax          = m_config->get_double("energy.enthalpy.cold_bulge_max"), // J kg-1
-    target_water_fraction = m_config->get_double("energy.drainage_target_water_fraction");
+    ice_density           = m_config->get_number("constants.ice.density"), // kg m-3
+    bulgeEnthMax          = m_config->get_number("energy.enthalpy.cold_bulge_max"), // J kg-1
+    target_water_fraction = m_config->get_number("energy.drainage_target_water_fraction");
 
   energy::DrainageCalculator dc(*m_config);
 
@@ -150,7 +150,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
       &cell_type, &u3, &v3, &w3, &strain_heating3, &m_basal_melt_rate, &m_ice_enthalpy,
       &m_work};
 
-  double margin_threshold = m_config->get_double("energy.margin_ice_thickness_limit");
+  double margin_threshold = m_config->get_number("energy.margin_ice_thickness_limit");
 
   unsigned int liquifiedCount = 0;
 

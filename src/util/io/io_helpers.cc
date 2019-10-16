@@ -264,9 +264,8 @@ void define_time(const PIO &nc, const std::string &name, const std::string &cale
 void append_time(const PIO &nc, const std::string &name, double value) {
   try {
     unsigned int start = nc.inq_dimlen(name);
-    std::vector<double> data(1, value);
 
-    nc.put_1d_var(name, start, 1, data);
+    nc.put_vara_double(name, {start}, {1}, &value);
   } catch (RuntimeError &e) {
     e.add_context("appending to the time dimension in \"" + nc.inq_filename() + "\"");
     throw;
@@ -283,7 +282,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
     define_dimension(file, grid.Mx(), var.get_x());
     file.put_att_double(x_name, "spacing_meters", PISM_DOUBLE,
                         grid.x(1) - grid.x(0));
-    file.put_1d_var(x_name, 0, grid.x().size(), grid.x());
+    file.put_vara_double(x_name, {0}, {(unsigned int)grid.x().size()}, grid.x().data());
   }
 
   // y
@@ -292,7 +291,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
     define_dimension(file, grid.My(), var.get_y());
     file.put_att_double(y_name, "spacing_meters", PISM_DOUBLE,
                         grid.y(1) - grid.y(0));
-    file.put_1d_var(y_name, 0, grid.y().size(), grid.y());
+    file.put_vara_double(y_name, {0}, {(unsigned int)grid.y().size()}, grid.y().data());
   }
 
   // z
@@ -322,7 +321,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
                             dz_max);
       }
 
-      file.put_1d_var(z_name, 0, levels.size(), levels);
+      file.put_vara_double(z_name, {0}, {(unsigned int)levels.size()}, levels.data());
     }
   }
 }
@@ -1087,7 +1086,7 @@ void read_timeseries(const PIO &nc, const TimeseriesMetadata &metadata,
 
     data.resize(length);          // memory allocation happens here
 
-    nc.get_1d_var(name_found, 0, length, data);
+    nc.get_vara_double(name_found, {0}, {length}, data.data());
 
     units::System::Ptr system = metadata.unit_system();
     bool input_has_units = false;
@@ -1155,9 +1154,7 @@ void write_timeseries(const PIO &nc, const TimeseriesMetadata &metadata, size_t 
                   metadata.get_string("units"),
                   metadata.get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
 
-    nc.put_1d_var(name,
-                  static_cast<unsigned int>(t_start),
-                  static_cast<unsigned int>(tmp.size()), tmp);
+    nc.put_vara_double(name, {(unsigned int)t_start}, {(unsigned int)tmp.size()}, tmp.data());
 
   } catch (RuntimeError &e) {
     e.add_context("writing time-series variable '%s' to '%s'", name.c_str(),
@@ -1233,13 +1230,7 @@ void read_time_bounds(const PIO &nc,
 
     data.resize(2*length);                // memory allocation happens here
 
-    std::vector<unsigned int> start(2), count(2);
-    start[0] = 0;
-    start[1] = 0;
-    count[0] = length;
-    count[1] = 2;
-
-    nc.get_vara_double(name, start, count, &data[0]);
+    nc.get_vara_double(name, {0, 0}, {length, 2}, &data[0]);
 
     // Find the corresponding 'time' variable. (We get units from the 'time'
     // variable, because according to CF-1.5 section 7.1 a "boundary variable"
@@ -1359,7 +1350,7 @@ void read_attributes(const PIO &nc,
         variable.set_string(attribute_name,
                             nc.get_att_text(variable_name, attribute_name));
       } else {
-        variable.set_doubles(attribute_name,
+        variable.set_numbers(attribute_name,
                              nc.get_att_double(variable_name, attribute_name));
       }
     } // end of for (int j = 0; j < nattrs; ++j)
@@ -1400,19 +1391,19 @@ void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type n
 
     std::vector<double> bounds(2);
     if (variable.has_attribute("valid_range")) {
-      bounds = variable.get_doubles("valid_range");
+      bounds = variable.get_numbers("valid_range");
     } else {
       if (variable.has_attribute("valid_min")) {
-        bounds[0]  = variable.get_double("valid_min");
+        bounds[0]  = variable.get_number("valid_min");
       }
       if (variable.has_attribute("valid_max")) {
-        bounds[1]  = variable.get_double("valid_max");
+        bounds[1]  = variable.get_number("valid_max");
       }
     }
 
     double fill_value = 0.0;
     if (variable.has_attribute("_FillValue")) {
-      fill_value = variable.get_double("_FillValue");
+      fill_value = variable.get_number("_FillValue");
     }
 
     // We need to save valid_min, valid_max and valid_range in the units
@@ -1498,17 +1489,17 @@ void read_valid_range(const PIO &nc, const std::string &name, VariableMetadata &
 
     std::vector<double> bounds = nc.get_att_double(name, "valid_range");
     if (bounds.size() == 2) {             // valid_range is present
-      variable.set_double("valid_min", c(bounds[0]));
-      variable.set_double("valid_max", c(bounds[1]));
+      variable.set_number("valid_min", c(bounds[0]));
+      variable.set_number("valid_max", c(bounds[1]));
     } else {                      // valid_range has the wrong length or is missing
       bounds = nc.get_att_double(name, "valid_min");
       if (bounds.size() == 1) {           // valid_min is present
-        variable.set_double("valid_min", c(bounds[0]));
+        variable.set_number("valid_min", c(bounds[0]));
       }
 
       bounds = nc.get_att_double(name, "valid_max");
       if (bounds.size() == 1) {           // valid_max is present
-        variable.set_double("valid_max", c(bounds[0]));
+        variable.set_number("valid_max", c(bounds[0]));
       }
     }
   } catch (RuntimeError &e) {

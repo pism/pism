@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 PISM Authors
+/* Copyright (C) 2017, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -41,7 +41,7 @@ void IceModel::init_backups() {
   //! Write a backup (i.e. an intermediate result of a run).
 void IceModel::write_backup() {
 
-  double backup_interval = m_config->get_double("output.backup_interval");
+  double backup_interval = m_config->get_number("output.backup_interval");
 
   double wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time);
 
@@ -68,7 +68,7 @@ void IceModel::write_backup() {
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
     write_run_stats(file);
 
-    save_variables(file, INCLUDE_MODEL_STATE, m_backup_vars);
+    save_variables(file, INCLUDE_MODEL_STATE, m_backup_vars, m_time->current());
   }
   profiling.end("io.backup");
   double backup_end_time = get_time();

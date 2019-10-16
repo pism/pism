@@ -13,7 +13,7 @@ There are five kinds of options and parameters:
 #. Strings (mostly file names),
 #. Scalars (a number representing a physical quantify, usually with units),
 #. Integers (an integer number, usually corresponding to a count),
-#. Booleans (True/False, on/off, yes/no),
+#. Flags (True/False, on/off, yes/no),
 #. Keywords (one of a given set of strings).
 
 Each parameter can be set using the command-line option consisting of a dash followed by

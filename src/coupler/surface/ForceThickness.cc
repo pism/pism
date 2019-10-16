@@ -38,10 +38,10 @@ namespace surface {
 ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
   : SurfaceModel(g, input) {
 
-  m_alpha                        = m_config->get_double("surface.force_to_thickness.alpha", "s-1");
-  m_alpha_ice_free_factor        = m_config->get_double("surface.force_to_thickness.ice_free_alpha_factor");
-  m_ice_free_thickness_threshold = m_config->get_double("surface.force_to_thickness.ice_free_thickness_threshold");
-  m_start_time                   = m_config->get_double("surface.force_to_thickness.start_time", "seconds");
+  m_alpha                        = m_config->get_number("surface.force_to_thickness.alpha", "s-1");
+  m_alpha_ice_free_factor        = m_config->get_number("surface.force_to_thickness.ice_free_alpha_factor");
+  m_ice_free_thickness_threshold = m_config->get_number("surface.force_to_thickness.ice_free_thickness_threshold");
+  m_start_time                   = m_config->get_number("surface.force_to_thickness.start_time", "seconds");
 
   m_target_thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
   // will set attributes in init()
@@ -234,7 +234,7 @@ void ForceThickness::adjust_mass_flux(double time,
   m_log->message(5,
                  "    updating surface mass balance using -force_to_thickness mechanism ...");
 
-  double ice_density = m_config->get_double("constants.ice.density");
+  double ice_density = m_config->get_number("constants.ice.density");
 
   IceModelVec::AccessList list{&cell_type, &ice_thickness,
       &m_target_thickness, &m_ftt_mask, &result};

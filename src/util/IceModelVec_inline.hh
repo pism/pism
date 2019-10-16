@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -66,6 +66,18 @@ inline StarStencil<double> IceModelVec2S::star(int i, int j) const {
   return result;
 }
 
+inline BoxStencil<double> IceModelVec2S::box(int i, int j) const {
+  const IceModelVec2S &x = *this;
+
+  const int
+      E = i + 1,
+      W = i - 1,
+      N = j + 1,
+      S = j - 1;
+
+  return {x(i, j), x(i, N), x(W, N), x(W, j), x(W, S), x(i, S), x(E, S), x(E, j), x(E, N)};
+}
+
 inline StarStencil<double> IceModelVec2Stag::star(int i, int j) const {
   const IceModelVec2Stag &self = *this;
 
@@ -100,6 +112,18 @@ inline StarStencil<int> IceModelVec2Int::int_star(int i, int j) const {
   return result;
 }
 
+inline BoxStencil<int> IceModelVec2Int::int_box(int i, int j) const {
+  const IceModelVec2Int &x = *this;
+
+  const int
+      E = i + 1,
+      W = i - 1,
+      N = j + 1,
+      S = j - 1;
+
+  return {x.as_int(i, j), x.as_int(i, N), x.as_int(W, N), x.as_int(W, j), x.as_int(W, S),
+          x.as_int(i, S), x.as_int(E, S), x.as_int(E, j), x.as_int(E, N)};
+}
 
 inline Vector2& IceModelVec2V::operator()(int i, int j) {
 #if (Pism_DEBUG==1)

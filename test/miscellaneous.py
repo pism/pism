@@ -7,13 +7,17 @@ Use with nose (https://pypi.python.org/pypi/nose/) and coverage.py
 
 Run this to get a coverage report:
 
-nosetests --with-coverage --cover-branches --cover-html --cover-package=PISM test/nosetests.py
+nosetests --with-coverage --cover-branches --cover-html --cover-package=PISM test/miscellaneous.py
 """
 
 import PISM
 import sys
+import os
 import numpy as np
 from unittest import TestCase
+
+ctx = PISM.Context()
+ctx.log.set_threshold(0)
 
 def create_dummy_grid():
     "Create a dummy grid"
@@ -148,14 +152,16 @@ def grid_from_file_test():
     enthalpy.set(80e3)
 
     output_file = "test_grid_from_file.nc"
-    pio = PISM.util.prepare_output(output_file)
+    try:
+        pio = PISM.util.prepare_output(output_file)
 
-    enthalpy.write(pio)
+        enthalpy.write(pio)
 
-    pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READONLY)
+        pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READONLY)
 
-    grid2 = PISM.IceGrid.FromFile(grid.ctx(), pio, "enthalpy", PISM.CELL_CORNER)
-
+        grid2 = PISM.IceGrid.FromFile(ctx.ctx, pio, "enthalpy", PISM.CELL_CORNER)
+    finally:
+        os.remove(output_file)
 
 def create_special_vecs_test():
     "Test helpers used to create standard PISM fields"
@@ -300,14 +306,16 @@ def modelvecs_test():
 
     # test write()
     output_file = "test_ModelVecs.nc"
-    pio = PISM.util.prepare_output(output_file)
-    pio.close()
+    try:
+        pio = PISM.util.prepare_output(output_file)
+        pio.close()
 
-    vecs.write(output_file)
+        vecs.write(output_file)
 
-    # test writeall()
-    vecs.writeall(output_file)
-
+        # test writeall()
+        vecs.writeall(output_file)
+    finally:
+        os.remove(output_file)
 
 def sia_test():
     "Test the PISM.sia module"
@@ -359,13 +367,16 @@ def util_test():
     grid = create_dummy_grid()
 
     output_file = "test_pism_util.nc"
-    pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READWRITE_MOVE)
-    pio.close()
+    try:
+        pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READWRITE_MOVE)
+        pio.close()
 
-    PISM.util.writeProvenance(output_file)
-    PISM.util.writeProvenance(output_file, message="history string")
+        PISM.util.writeProvenance(output_file)
+        PISM.util.writeProvenance(output_file, message="history string")
 
-    PISM.util.fileHasVariable(output_file, "data")
+        PISM.util.fileHasVariable(output_file, "data")
+    finally:
+        os.remove(output_file)
 
     # Test PISM.util.Bunch
     b = PISM.util.Bunch(a=1, b="string")
@@ -380,38 +391,45 @@ def logging_test():
 
     import PISM.logging as L
 
-    PISM.PIO(grid.com, "netcdf3", "log.nc", PISM.PISM_READWRITE_MOVE)
-    c = L.CaptureLogger("log.nc")
+    log_filename = "log.nc"
+    try:
+        PISM.PIO(grid.com, "netcdf3", log_filename, PISM.PISM_READWRITE_MOVE)
+        c = L.CaptureLogger(log_filename)
 
-    L.clear_loggers()
+        L.clear_loggers()
 
-    L.add_logger(L.print_logger)
-    L.add_logger(c)
+        L.add_logger(L.print_logger)
+        L.add_logger(c)
 
-    L.log("log message\n", L.kError)
+        L.log("log message\n", L.kError)
 
-    L.logError("error message\n")
+        L.logError("error message\n")
 
-    L.logWarning("warning message\n")
+        L.logWarning("warning message\n")
 
-    L.logMessage("log message (again)\n")
+        L.logMessage("log message (again)\n")
 
-    L.logDebug("debug message\n")
+        L.logDebug("debug message\n")
 
-    L.logPrattle("prattle message\n")
+        L.logPrattle("prattle message\n")
 
-    c.write()                   # default arguments
-    c.readOldLog()
+        c.write()                   # default arguments
+        c.readOldLog()
+    finally:
+        os.remove(log_filename)
 
-    PISM.PIO(grid.com, "netcdf3", "other_log.nc", PISM.PISM_READWRITE_MOVE)
-    c.write("other_log.nc", "other_log")  # non-default arguments
+    log_filename = "other_log.nc"
+    try:
+        PISM.PIO(grid.com, "netcdf3", log_filename, PISM.PISM_READWRITE_MOVE)
+        c.write(log_filename, "other_log")  # non-default arguments
+    finally:
+        os.remove(log_filename)
 
 
 def column_interpolation_test(plot=False):
     """Test ColumnInterpolation by interpolating from the coarse grid to the
     fine grid and back."""
     import numpy as np
-    import pylab as plt
 
     Lz = 1000.0
     Mz = 41
@@ -463,7 +481,7 @@ def column_interpolation_test(plot=False):
 
         f_roundtrip = interp.fine_to_coarse(f_fine)
 
-        def plot():
+        if plot:
             plt.figure()
             plt.plot(z, f, 'o-', label="original coarse-grid data")
             plt.plot(z_fine, f_fine, 'o-', label="interpolated onto the fine grid")
@@ -473,8 +491,6 @@ def column_interpolation_test(plot=False):
             plt.title(title)
             plt.grid(True)
 
-        if plot:
-            plot()
 
         delta = np.linalg.norm(f - f_roundtrip, ord=1)
         delta_numpy = np.linalg.norm(f_fine - f_fine_numpy, ord=1)
@@ -483,6 +499,9 @@ def column_interpolation_test(plot=False):
 
         return delta, delta_numpy
 
+    if plot:
+        import pylab as plt
+
     linear_delta, linear_delta_numpy = test_linear_interp()
 
     quadratic_delta, _ = test_quadratic_interp()
@@ -490,9 +509,7 @@ def column_interpolation_test(plot=False):
     if plot:
         plt.show()
 
-    if (linear_delta > 1e-12 or
-            linear_delta_numpy > 1e-12 or
-            quadratic_delta > 1e-3):
+    if (linear_delta > 1e-12 or linear_delta_numpy > 1e-12 or quadratic_delta > 1e-3):
         return False
     return True
 
@@ -531,7 +548,7 @@ def linear_interpolation_test(plot=False):
 
     values = F(x_input)
 
-    i = PISM.LinearInterpolation(x_input, x_output)
+    i = PISM.Interpolation(PISM.LINEAR, x_input, x_output)
 
     F_interpolated = i.interpolate(values)
 
@@ -542,7 +559,6 @@ def linear_interpolation_test(plot=False):
     if plot:
         import pylab as plt
 
-        plt.hold(True)
         plt.plot(x_output, F_interpolated, 'o-', color='blue', label="interpolated result")
         plt.plot(x_output, F_desired, 'x-', color='green', label="desired result")
         plt.plot(x_input, values, 'o-', color='red', label="input")
@@ -571,7 +587,7 @@ def pism_context_test():
     ctx = PISM.cpp.Context(com, system, config, EC, time, logger, "greenland")
 
     print(ctx.com().Get_size())
-    print(ctx.config().get_double("constants.standard_gravity"))
+    print(ctx.config().get_number("constants.standard_gravity"))
     print(ctx.enthalpy_converter().L(273.15))
     print(ctx.time().current())
     print(PISM.convert(ctx.unit_system(), 1, "km", "m"))
@@ -695,16 +711,19 @@ def ssa_trivial_test():
             se.set_min_thickness(4000 * 10)
 
             # For the benefit of SSAFD on a non-periodic grid
-            self.config.set_boolean("ssa.compute_surface_gradient_inward", True)
+            self.config.set_flag("ssa.compute_surface_gradient_inward", True)
 
         def exactSolution(self, i, j, x, y):
             return [0, 0]
 
-    Mx = 11
-    My = 11
-    test_case = TrivialSSARun(Mx, My)
-    test_case.run("ssa_trivial.nc")
-
+    output_file = "ssa_trivial.nc"
+    try:
+        Mx = 11
+        My = 11
+        test_case = TrivialSSARun(Mx, My)
+        test_case.run(output_file)
+    finally:
+        os.remove(output_file)
 
 def epsg_test():
     "Test EPSG to CF conversion."
@@ -928,7 +947,7 @@ def vertical_extrapolation_during_regridding_test():
         pass
 
     # allow extrapolation during regridding
-    ctx.config.set_boolean("grid.allow_extrapolation", True)
+    ctx.config.set_flag("grid.allow_extrapolation", True)
 
     # regrid from test.nc
     ctx.ctx.log().disable()
@@ -1019,7 +1038,7 @@ class PrincipalStrainRates(TestCase):
     def setUp(self):
         self.ctx = PISM.Context()
 
-    def runTest(self):
+    def test_principal_strain_rates(self):
         "Test principal strain rate computation"
         errors = np.array([self.error(M) for M in [10, 20, 40]])
 
@@ -1032,3 +1051,147 @@ class PrincipalStrainRates(TestCase):
 
     def tearDown(self):
         pass
+
+def test_constant_interpolation():
+    "Piecewise-constant interpolation in Timeseries"
+
+    ctx = PISM.Context()
+    ts = PISM.Timeseries(ctx.com, ctx.unit_system, "test", "time")
+
+    t = [0, 1, 2, 3]
+    y = [2, 3, 1]
+    N = len(y)
+
+    for k in range(N):
+        ts.append(y[k], t[k], t[k + 1])
+
+    # extrapolation on the left
+    assert ts(t[0] - 1) == y[0]
+    # extrapolation on the right
+    assert ts(t[-1] + 1) == y[-1]
+    # interior intervals
+    for k in range(N):
+        T = 0.5 * (t[k] + t[k + 1])
+
+        assert ts(T) == y[k], (ts(T), y[k])
+
+def test_timeseries_linear_interpolation():
+    "Linear interpolation in Timeseries"
+
+    ctx = PISM.Context()
+    ts = PISM.Timeseries(ctx.com, ctx.unit_system, "test", "time")
+
+    def f(x):
+        "a linear function that can be reproduced exactly"
+        return 2.0 * x - 3.0
+
+    N = 4
+    t = np.arange(N + 1, dtype=np.float64)
+
+    for k in range(N):
+        # use right end point
+        ts.append(f(t[k + 1]), t[k], t[k + 1])
+
+    ts.set_use_bounds(False)
+
+    # extrapolation on the left (note that t[0] is not used)
+    assert ts(t[1] - 1) == f(t[1])
+
+    # extrapolation on the right
+    assert ts(t[-1] + 1) == f(t[-1])
+
+    # interior intervals
+    for k in range(1, N):
+        T = 0.5 * (t[k] + t[k + 1])
+
+        assert ts(T) == f(T), (T, ts(T), f(T))
+
+def test_trapezoid_integral():
+    "Linear integration weights"
+    x = [0.0, 0.5, 1.0, 2.0]
+    y = [2.0, 2.5, 3.0, 2.0]
+
+    def f(a, b):
+        return PISM.Interpolation(PISM.LINEAR, x, [a, b]).integral(y)
+
+    assert f(0, 2) == 5.0
+    assert f(0, 0.5) + f(0.5, 1) + f(1, 1.5) + f(1.5, 2) == f(0, 2)
+    assert f(0, 0.5) + f(0.5, 1.5) + f(1.5, 2) == f(0, 2)
+    assert f(0, 0.25) + f(0.25, 1.75) + f(1.75, 2) == f(0, 2)
+
+    # constant extrapolation:
+    assert f(-2, -1) == 1 * y[0]
+    assert f(-2, 0) == 2 * y[0]
+    assert f(2, 5) == 3 * y[-1]
+    assert f(3, 4) == 1 * y[-1]
+
+def test_linear_periodic():
+    "Linear (periodic) interpolation"
+
+    period = 1.0
+    x_p = np.linspace(0, 0.9, 10) + 0.05
+    y_p = np.sin(2 * np.pi * x_p)
+
+    # grid with end points added (this makes periodic interpolation unnecessary)
+    x = np.r_[0, x_p, 1]
+    y = np.sin(2 * np.pi * x)
+
+    # target grid
+    xx = np.linspace(0, 1, 21)
+
+    yy_p = PISM.Interpolation(PISM.LINEAR_PERIODIC, x_p, xx, period).interpolate(y_p)
+
+    yy = PISM.Interpolation(PISM.LINEAR, x, xx).interpolate(y)
+
+    np.testing.assert_almost_equal(yy, yy_p)
+
+def test_nearest_neighbor():
+    "Nearest neighbor interpolation"
+    x = [-1, 1]
+    y = [0, 1]
+
+    xx = np.linspace(-0.9, 0.9, 10)
+    yy = np.ones_like(xx) * (xx > 0)
+
+    zz = PISM.Interpolation(PISM.NEAREST, x, xx).interpolate(y)
+
+    np.testing.assert_almost_equal(yy, zz)
+
+class AgeModel(TestCase):
+    def setUp(self):
+        self.output_file = "age.nc"
+        self.grid = self.create_dummy_grid()
+
+    def create_dummy_grid(self):
+        "Create a dummy grid"
+        params = PISM.GridParameters(ctx.config)
+        params.ownership_ranges_from_options(ctx.size)
+        return PISM.IceGrid(ctx.ctx, params)
+
+    def test_age_model_runs(self):
+        "Check if AgeModel runs"
+        ice_thickness = PISM.model.createIceThicknessVec(self.grid)
+
+        u = PISM.IceModelVec3(self.grid, "u", PISM.WITHOUT_GHOSTS)
+        v = PISM.IceModelVec3(self.grid, "v", PISM.WITHOUT_GHOSTS)
+        w = PISM.IceModelVec3(self.grid, "w", PISM.WITHOUT_GHOSTS)
+
+        ice_thickness.set(4000.0)
+        u.set(0.0)
+        v.set(0.0)
+        w.set(0.0)
+
+        model = PISM.AgeModel(self.grid, None)
+        input_options = PISM.process_input_options(ctx.com, ctx.config)
+        model.init(input_options)
+
+        inputs = PISM.AgeModelInputs(ice_thickness, u, v, w)
+
+        dt = PISM.util.convert(1, "years", "seconds")
+
+        model.update(0, dt, inputs)
+
+        model.age().dump(self.output_file)
+
+    def tearDown(self):
+        os.remove(self.output_file)

@@ -54,13 +54,13 @@ MaxTimestep IceModel::max_timestep_diffusivity() {
     const double
       dx = m_grid->dx(),
       dy = m_grid->dy(),
-      adaptive_timestepping_ratio = m_config->get_double("time_stepping.adaptive_ratio"),
+      adaptive_timestepping_ratio = m_config->get_number("time_stepping.adaptive_ratio"),
       grid_factor                 = 1.0 / (dx*dx) + 1.0 / (dy*dy);
 
     return MaxTimestep(adaptive_timestepping_ratio * 2.0 / (D_max * grid_factor),
                        "diffusivity");
   } else {
-    return MaxTimestep(m_config->get_double("time_stepping.maximum_time_step", "seconds"),
+    return MaxTimestep(m_config->get_number("time_stepping.maximum_time_step", "seconds"),
                        "max time step");
   }
 }
@@ -78,11 +78,11 @@ MaxTimestep IceModel::max_timestep_diffusivity() {
  */
 unsigned int IceModel::skip_counter(double input_dt, double input_dt_diffusivity) {
 
-  if (not m_config->get_boolean("time_stepping.skip.enabled")) {
+  if (not m_config->get_flag("time_stepping.skip.enabled")) {
     return 0;
   }
 
-  const unsigned int skip_max = static_cast<int>(m_config->get_double("time_stepping.skip.max"));
+  const unsigned int skip_max = static_cast<int>(m_config->get_number("time_stepping.skip.max"));
 
   if (input_dt_diffusivity > 0.0) {
     const double conservativeFactor = 0.95;
@@ -143,8 +143,8 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
   }
 
   // Always consider the maximum allowed time-step length.
-  if (m_config->get_double("time_stepping.maximum_time_step") > 0.0) {
-    restrictions.push_back(MaxTimestep(m_config->get_double("time_stepping.maximum_time_step",
+  if (m_config->get_number("time_stepping.maximum_time_step") > 0.0) {
+    restrictions.push_back(MaxTimestep(m_config->get_number("time_stepping.maximum_time_step",
                                                             "seconds"),
                                        "max"));
   }
@@ -163,7 +163,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
   }
 
   // mass continuity stability criteria
-  if (m_config->get_boolean("geometry.update.enabled")) {
+  if (m_config->get_flag("geometry.update.enabled")) {
     CFLData cfl = m_stress_balance->max_timestep_cfl_2d();
 
     restrictions.push_back(MaxTimestep(cfl.dt_max.value(), "2D CFL"));
@@ -172,7 +172,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 
   // Hit multiples of X years, if requested.
   {
-    const int timestep_hit_multiples = static_cast<int>(m_config->get_double("time_stepping.hit_multiples"));
+    const int timestep_hit_multiples = static_cast<int>(m_config->get_number("time_stepping.hit_multiples"));
     if (timestep_hit_multiples > 0) {
       const double epsilon = 1.0; // 1 second tolerance
       double

@@ -103,7 +103,7 @@ def enthalpy_of_water_test():
     """Test the dependence of the enthalpy of water at T_m(p) on p."""
 
     config = PISM.Context().config
-    c_w = config.get_double("constants.fresh_water.specific_heat_capacity")
+    c_w = config.get_number("constants.fresh_water.specific_heat_capacity")
 
     EC = converters["Default"]
 
@@ -228,7 +228,7 @@ def plot_converter(name, EC):
         E_wet[i] = EC.enthalpy(T_melting[i], 0.95, p[i])
         omega[i] = EC.water_fraction(E_cts[i] + delta_E, p[i]) * 100.0
 
-    plt.figure(figsize=(15, 10))
+    plt.figure(figsize=(15, 8))
     plt.subplot(2, 2, 1)
     plt.title("%s enthalpy converter" % name)
     plt.plot(Z, E, label="constant enthalpy", lw=2)
@@ -259,14 +259,11 @@ def plot_converter(name, EC):
     plt.ylabel("J/kg")
     plt.grid()
 
+if __name__ == "__main__":
 
-def compare():
+    import pylab as plt
+
     for name, converter in list(converters.items()):
         plot_converter(name, converter)
 
     plt.show()
-
-
-if __name__ == "__main__":
-    import pylab as plt
-    compare()

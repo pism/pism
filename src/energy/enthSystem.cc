@@ -55,14 +55,14 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_U_ks = GSL_NAN;
   m_B_ks = GSL_NAN;
 
-  m_ice_density = config.get_double("constants.ice.density");
-  m_ice_c   = config.get_double("constants.ice.specific_heat_capacity");
-  m_ice_k   = config.get_double("constants.ice.thermal_conductivity");
-  m_p_air   = config.get_double("surface.pressure");
+  m_ice_density = config.get_number("constants.ice.density");
+  m_ice_c   = config.get_number("constants.ice.specific_heat_capacity");
+  m_ice_k   = config.get_number("constants.ice.thermal_conductivity");
+  m_p_air   = config.get_number("surface.pressure");
 
-  m_exclude_horizontal_advection = config.get_boolean("energy.margin_exclude_horizontal_advection");
-  m_exclude_vertical_advection   = config.get_boolean("energy.margin_exclude_vertical_advection");
-  m_exclude_strain_heat          = config.get_boolean("energy.margin_exclude_strain_heating");
+  m_exclude_horizontal_advection = config.get_flag("energy.margin_exclude_horizontal_advection");
+  m_exclude_vertical_advection   = config.get_flag("energy.margin_exclude_vertical_advection");
+  m_exclude_strain_heat          = config.get_flag("energy.margin_exclude_strain_heating");
 
   size_t Mz = m_z.size();
   m_Enth.resize(Mz);
@@ -78,7 +78,7 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_nu = m_dt / m_dz;
 
   double
-    ratio = config.get_double(prefix + ".temperate_ice_thermal_conductivity_ratio"),
+    ratio = config.get_number(prefix + ".temperate_ice_thermal_conductivity_ratio"),
     K     = m_ice_k / m_ice_c,
     K0    = (ratio * m_ice_k) / m_ice_c;
 
@@ -86,7 +86,7 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_R_cold = K * m_R_factor;
   m_R_temp = K0 * m_R_factor;
 
-  if (config.get_boolean("energy.temperature_dependent_thermal_conductivity")) {
+  if (config.get_flag("energy.temperature_dependent_thermal_conductivity")) {
     m_k_depends_on_T = true;
   } else {
     m_k_depends_on_T = false;

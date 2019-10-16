@@ -56,8 +56,8 @@ option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
 option (Pism_ENABLE_DOCUMENTATION "Enable targets building PISM's documentation." ON)
 
 # PISM will eventually use Jansson to read configuration files.
-set (Pism_USE_JANSSON OFF)
-# option (Pism_USE_JANSSON "Use Jansson to read configuration files." OFF)
+# set (Pism_USE_JANSSON OFF)
+option (Pism_USE_JANSSON "Use Jansson to read configuration files." OFF)
 
 option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF)
 mark_as_advanced (Pism_TEST_USING_VALGRIND)
@@ -169,7 +169,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 endif ()
 
 add_custom_target (etags
-  COMMAND find . -regex ".*\\.(c|cc|h|hh)" | xargs etags --class-qualify --no-defines
+  COMMAND find . -iname *.cc -o -iname *.hh -o -iname *.c -o -iname *.h | xargs etags --class-qualify --no-defines
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
   VERBATIM
 )
@@ -214,3 +214,5 @@ ENABLE_TESTING()
 include(CTest)
 add_subdirectory (test)
 add_subdirectory (test/regression)
+
+add_subdirectory (docker)

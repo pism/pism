@@ -48,9 +48,21 @@ correctly.
       make       # do this if you changed something with CMake
       make test
 
-   in the build directory. The message at the bottom should say "``100% tests passed, 0
-   tests failed out of XX``" or similar. Feel free to `send us <pism-email_>`_ the output
-   of ``make test``. if any failed tests cannot be resolved.
+   in the build directory.
+
+   The message at the bottom of the output should say
+
+      ``100% tests passed, 0 tests failed out of XX``
+
+   or similar.
+
+   Feel free to `e-mail us <pism-email_>`_ about any test failures you see. Please run
+
+   .. code-block:: bash
+
+      ctest --output-on-failure > make-test.log
+
+   and send us the ``make-test.log`` that this produces.
 
 Next steps
 ==========

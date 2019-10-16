@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -47,11 +47,13 @@ FFTWArray::FFTWArray(fftw_complex *a, int Mx, int My)
 std::vector<double> fftfreq(int M, double d) {
   std::vector<double> result(M);
 
-  for (int i = 0; i <= M / 2; i++) {
+  int N = M % 2 ? M / 2 : M / 2 - 1;
+
+  for (int i = 0; i <= N; i++) {
     result[i] = i;
   }
 
-  for (int i = M / 2 + 1; i < M; i++) {
+  for (int i = N + 1; i < M; i++) {
     result[i] = i - M;
   }
 

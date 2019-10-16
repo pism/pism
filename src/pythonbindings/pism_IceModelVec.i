@@ -121,7 +121,20 @@ using namespace pism;
     }
 };
 
+%ignore pism::IceModelVec2T::interp(int, int, double*);
+%extend pism::IceModelVec2T
+{
+std::vector<double> interp(int i, int j) {
+  std::vector<double> result;
+  $self->interp(i, j, result);
+  return result;
+}
+};
+
 %ignore pism::StarStencil::operator[];
+%include "util/StarStencil.hh"
+%template(DoubleStar) pism::StarStencil<double>;
+
 %include "util/iceModelVec.hh"
 %include "util/IceModelVec2CellType.hh"
 %include "util/iceModelVec2T.hh"

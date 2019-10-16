@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -90,10 +90,12 @@ void AtmosphereModel::init_timeseries(const std::vector<double> &ts) const {
 }
 
 void AtmosphereModel::precip_time_series(int i, int j, std::vector<double> &result) const {
+  result.resize(m_ts_times.size());
   this->precip_time_series_impl(i, j, result);
 }
 
 void AtmosphereModel::temp_time_series(int i, int j, std::vector<double> &result) const {
+  result.resize(m_ts_times.size());
   this->temp_time_series_impl(i, j, result);
 }
 

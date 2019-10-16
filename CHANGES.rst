@@ -32,6 +32,51 @@ Changes since v1.1
 - PISM uses the new (v5.x) PROJ API, so PROJ 5.0 or later is required to compute
   longitude-latitude grid coordinates and cell bounds. (Tested using PROJ v5.2.0 and
   v6.1.1.)
+- Rename `bed_deformation.update_interval` to `bed_deformation.lc.update_interval` and fix
+  its interpretation: before this change both bed deformation models (point-wise isostasy
+  and the Lingle-Clark model) updated *not more often than* every
+  `bed_deformation.update_interval` years. This lead to issues with stopped and re-started
+  simulations (see `issue 422`_). Now the point-wise isostasy model is updated every time
+  step (its computational cost is negligible) and the Lingle-Clark model is updated
+  *exactly* every `bed_deformation.lc.update_interval` years, limiting PISM's time step
+  length.
+- Fix units of the precipitation lapse rate (`(kg m-2/year)/km` instead of `(m/year)/km`).
+- Use linear interpolation in time for 2D time-dependent forcings that are interpreted as
+  "snapshots" of a quantity. For example: ice surface temperature is interpreted as a
+  snapshot while climatic mass balance is interpreted as a time-average over a specified
+  interval. (Flux forcing fields such as the SMB are interpreted as piecewise-constant in
+  time to simplify mass and flux accounting.) In particular, this change ensures that the
+  2D sea level forcing results in a smoothly changing sea level.
+- Add regression tests for most of PISM's `surface`, `atmosphere`, `ocean`, and
+  `sea_level` components.
+- Implement orographic precipitation following Smith and Barstad, *A linear theory of
+  orographic precipitation*, 2004.
+- Rename command-line options `-ssa_rtol` to `-ssafd_picard_rtol` and `-ssa_maxi` to
+  `-ssafd_picard_maxi` to make it clear that they control Picard iterations.
+- Fix the implementation of the elastic part of the Lingle-Clark bed deformation model.
+  See `issue 424`_. To update this model we need to compute the discrete convolution of
+  current load with the load response matrix (the discrete equivalent of computing the
+  convolution of the load with the Green's function).
+
+  The load response matrix itself is approximated using quadrature and a one-dimensional
+  interpolant for the tabulated Green's function.
+
+  The old code used a "naive" implementation of the discrete convolution which was *both*
+  slow and broken. The new implementation uses FFT to compute the discrete convolution,
+  making it faster and (surprisingly) easier to implement.
+
+  PISM now includes a regression test covering this. Unfortunately we don't have an exact
+  solution to compare to, so the best we can do is this: a) compare PISM's FFT-based
+  convolution to `scipy.signal.fftconvolve()` and b) compare PISM's load response matrix
+  to an independent implementation using `scipy.integrate.dblquad()` (instead of
+  `adapt_integrate()` by Steven G. Johnson).
+- The configuration parameter `bed_deformation.lc.elastic_model` is set to "on" by
+  default. This means that now `-bed_def lc` enables *both* the elastic and the viscous
+  part of the Lingle-Clark model. In previous PISM versions `-bed_def lc` turned on the
+  viscous part of the model and an extra command-line option (`-bed_def_lc_elastic_model`)
+  was required to turn on the elastic part.
+- Fix `issue 327`_: now PISM uses mid-points of reporting intervals when saving to the
+  `-extra_file`. This makes PISM's output files easier to process using CDO.
 
 Changes from v1.0 to v1.1
 =========================
@@ -45,6 +90,8 @@ Changes from v1.0 to v1.1
 - Add 5 more parameterizations of near-surface air temperature to `-atmosphere pik`.
 - PISM stops with an error message if the name of a parameter in a `-config_override` file
   does not match any of the known PISM parameters.
+- Fix `issue 375`_ (could not use `-config_override` to control the
+  bed-elevation-dependent parameterization of the till friction angle).
 - PISM stops with an error message if the diffusivity of the SIA flow exceeds a given
   threshold (see `stress_balance.sia.max_diffusivity`). Extremely high SIA diffusivities
   often mean that the setup is not "shallow enough"; in a situation like this it might
@@ -585,6 +632,7 @@ Miscellaneous
 .. _issue 324: https://github.com/pism/pism/issues/324
 .. _issue 325: https://github.com/pism/pism/issues/325
 .. _issue 326: https://github.com/pism/pism/issues/326
+.. _issue 327: https://github.com/pism/pism/issues/327
 .. _issue 328: https://github.com/pism/pism/issues/328
 .. _issue 330: https://github.com/pism/pism/issues/330
 .. _issue 334: https://github.com/pism/pism/issues/334
@@ -602,6 +650,8 @@ Miscellaneous
 .. _issue 402: https://github.com/pism/pism/issues/402
 .. _issue 363: https://github.com/pism/pism/issues/363
 .. _issue 405: https://github.com/pism/pism/issues/405
+.. _issue 422: https://github.com/pism/pism/issues/422
+.. _issue 424: https://github.com/pism/pism/issues/424
 .. _ocean models: http://pism-docs.org/sphinx/climate_forcing/ocean.html
 ..
    Local Variables:

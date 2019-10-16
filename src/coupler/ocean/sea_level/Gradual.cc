@@ -43,12 +43,12 @@ Gradual::Gradual(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in)
   m_target_level.create(m_grid, "target_sea_level", WITHOUT_GHOSTS);
   m_target_level.set_attrs("model_state", "target sea level",
                            "m", "target_sea_level");
-  m_target_level.metadata().set_double("_FillValue", m_fill_value);
+  m_target_level.metadata().set_number("_FillValue", m_fill_value);
 
   m_min_basin.create(m_grid, "min_sl_bed", WITHOUT_GHOSTS);
   m_min_basin.set_attrs("model_state", "min sl bed",
                       "m", "min_sl_bed");
-  m_min_basin.metadata().set_double("_FillValue", m_fill_value);
+  m_min_basin.metadata().set_number("_FillValue", m_fill_value);
 
   m_max_ll_basin.create(m_grid, "max_ll_basin", WITHOUT_GHOSTS);
   m_max_ll_basin.set_attrs("model_state", "max ll basin",
@@ -56,7 +56,7 @@ Gradual::Gradual(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in)
   m_max_ll_basin.metadata().set_double("_FillValue", m_fill_value);
 
   m_expansion_mask.create(m_grid, "sl_expansion_mask", WITHOUT_GHOSTS);
-  m_expansion_mask.metadata().set_double("_FillValue", m_fill_value);
+  m_expansion_mask.metadata().set_number("_FillValue", m_fill_value);
 
   m_bootstrap = false;
 }
@@ -79,7 +79,7 @@ void Gradual::init_impl(const Geometry &geometry) {
     tmp.set_attrs("diagnostic",
                   "sea level elevation, relative to the geoid",
                   "meter", "");
-    tmp.metadata().set_double("_FillValue", m_fill_value);
+    tmp.metadata().set_number("_FillValue", m_fill_value);
 
     InputOptions opts = process_input_options(m_grid->com, m_config);
 

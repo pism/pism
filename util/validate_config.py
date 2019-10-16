@@ -8,7 +8,7 @@ import copy
 integer_t = {"type": "integer"}
 number_t = {"type": "number"}
 string_t = {"type": "string"}
-boolean_t = {"type": "boolean"}
+flag_t = {"type": "flag"}
 
 # A generic entry:
 entry = {
@@ -55,9 +55,9 @@ keyword['properties']['choices'] = {
 }
 
 # configuration flags
-boolean = copy.deepcopy(entry)
-boolean['properties']['type'] = gen_type("boolean")
-boolean['properties']['value'] = boolean_t
+flag = copy.deepcopy(entry)
+flag['properties']['type'] = gen_type("flag")
+flag['properties']['value'] = flag_t
 
 # assembled schema
 config_schema = {
@@ -68,7 +68,7 @@ config_schema = {
         "integer": integer,
         "string": string,
         "keyword": keyword,
-        "boolean": boolean,
+        "flag": flag,
     },
     "properties": {
         "doc": string_t,
@@ -83,7 +83,7 @@ config_schema = {
             {"$ref": "#/definitions/integer"},
             {"$ref": "#/definitions/string"},
             {"$ref": "#/definitions/keyword"},
-            {"$ref": "#/definitions/boolean"},
+            {"$ref": "#/definitions/flag"},
         ]
     }
 }

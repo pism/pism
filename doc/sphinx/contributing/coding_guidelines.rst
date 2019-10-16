@@ -1,7 +1,7 @@
+.. default-role:: literal
+
 PISM coding guidelines
 ======================
-
-.. default-role:: literal
 
 .. contents::
 
@@ -101,6 +101,20 @@ Namespaces
 Everything in PISM goes into the `pism` namespace. See the source code browser for more
 namespaces (roughly one per sub-system).
 
+Notable namespaces include:
+
+- ``atmosphere``
+- ``bed``
+- ``calving``
+- ``energy``
+- ``frontalmelt``
+- ``hydrology``
+- ``ocean``
+- ``rheology``
+- ``sea_level``
+- ``stressbalance``
+- ``surface``
+
 Using directives and declarations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -124,7 +138,7 @@ To re-format a file, commit it to the repository, then run
 (Here `-i` tells clang-format to edit files "in place." Note that editing in place is
 safe because you added it to the repository.)
 
-Boolean operators should be surrounded by spaces
+Logical operators should be surrounded by spaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: c++

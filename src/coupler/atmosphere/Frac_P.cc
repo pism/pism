@@ -28,7 +28,7 @@ Frac_P::Frac_P(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in) {
 
   m_forcing.reset(new ScalarForcing(grid->ctx(),
-                                    "-atmosphere_frac_P",
+                                    "atmosphere.frac_P",
                                     "frac_P",
                                     "1", "1",
                                     "precipitation multiplier, pure fraction"));

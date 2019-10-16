@@ -13,7 +13,7 @@ Example::Example(IceGrid::ConstPtr g)
 
   // assume that climate_forcing.buffer_size is big enough
   m_shelf_melt_rate.create(m_grid, "shelf_base_melt_rate",
-                           m_config->get_double("climate_forcing.buffer_size"));
+                           m_config->get_number("climate_forcing.buffer_size"));
   m_shelf_melt_rate.set_attrs("internal", "shelf base melt rate", "m / second", "");
 }
 

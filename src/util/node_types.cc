@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -81,7 +81,7 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
         S = j - 1,
         W = i - 1;
 
-      // booleans indicating whether the current node and its neighbors are "icy"
+      // flags indicating whether the current node and its neighbors are "icy"
       const bool
         icy_ij = H(i, j) >= H_min,
         icy_nw = H(W, N) >= H_min,
@@ -93,7 +93,7 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
         icy_sw = H(W, S) >= H_min,
         icy_w  = H(W, j) >= H_min;
 
-      // booleans indicating whether neighboring elements are "icy" (and element is icy if all its
+      // flags indicating whether neighboring elements are "icy" (and element is icy if all its
       // nodes are icy)
       const bool
         ne_element_is_icy = (icy_ij and icy_e and icy_ne and icy_n),

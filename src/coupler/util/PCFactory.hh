@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -35,26 +35,16 @@ template <class Model>
 class PCFactory {
 public:
 
-  PCFactory<Model>(IceGrid::ConstPtr g)
-  : m_grid(g) {}
+  PCFactory<Model>(IceGrid::ConstPtr g, const std::string &parameter)
+    : m_parameter(parameter), m_grid(g)  {}
   ~PCFactory<Model>() {}
 
   //! Creates a boundary model. Processes command-line options.
   virtual std::shared_ptr<Model> create() {
-    // build a list of available models:
-    auto model_list = key_list(m_models);
 
-    // build a list of available modifiers:
-    auto modifier_list = key_list(m_modifiers);
+    auto choices = m_grid->ctx()->config()->get_string(m_parameter);
 
-    std::string description = ("Sets up the PISM " + m_option + " model."
-                               " Available models: " + model_list +
-                               " Available modifiers: " + modifier_list);
-
-    // Get the command-line option:
-    options::StringList choices("-" + m_option, description, m_default_type);
-
-    return create(choices.to_string());
+    return create(choices);
   }
 
   //! Creates a boundary model.
@@ -101,25 +91,20 @@ protected:
 
   template<typename T>
   std::string key_list(std::map<std::string, T> list) {
-    std::string result = "[";
+    std::vector<std::string> keys;
 
-    if (!list.empty()) {
-      auto k = list.begin();
-      result += (k++)->first;
-      for (; k != list.end(); k++) {
-        result += ", " + k->first;
-      }
+    for (auto i : list) {
+      keys.push_back(i.first);
     }
-    result += "]";
 
-    return result;
+    return "[" + join(keys, ", ") + "]";
   }
 
   std::shared_ptr<Model> model(const std::string &type) {
     if (m_models.find(type) == m_models.end()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s model \"%s\" is not available.\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot allocate %s \"%s\".\n"
                                     "Available models:    %s\n",
-                                    m_option.c_str(), type.c_str(),
+                                    m_parameter.c_str(), type.c_str(),
                                     key_list(m_models).c_str());
     }
 
@@ -129,9 +114,9 @@ protected:
   template<class T>
   std::shared_ptr<Model> modifier(const std::string &type, std::shared_ptr<T> input) {
     if (m_modifiers.find(type) == m_modifiers.end()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s modifier \"%s\" is not available.\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot allocate %s modifier \"%s\".\n"
                                     "Available modifiers:    %s\n",
-                                    m_option.c_str(), type.c_str(),
+                                    m_parameter.c_str(), type.c_str(),
                                     key_list(m_modifiers).c_str());
     }
 
@@ -172,7 +157,7 @@ protected:
     }
   };
 
-  std::string m_default_type, m_option;
+  std::string m_default_type, m_parameter;
   std::map<std::string, std::shared_ptr<ModelCreator> > m_models;
   std::map<std::string, std::shared_ptr<ModifierCreator> > m_modifiers;
   IceGrid::ConstPtr m_grid;

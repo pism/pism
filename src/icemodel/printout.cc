@@ -167,11 +167,11 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
                                 double delta_t,
                                 double volume,  double area,
                                 double /* meltfrac */,  double max_diffusivity) {
-  const bool do_energy = m_config->get_boolean("energy.enabled");
-  const int log10scalevol  = static_cast<int>(m_config->get_double("output.runtime.volume_scale_factor_log10")),
-            log10scalearea = static_cast<int>(m_config->get_double("output.runtime.area_scale_factor_log10"));
+  const bool do_energy = m_config->get_flag("energy.enabled");
+  const int log10scalevol  = static_cast<int>(m_config->get_number("output.runtime.volume_scale_factor_log10")),
+            log10scalearea = static_cast<int>(m_config->get_number("output.runtime.area_scale_factor_log10"));
   const std::string time_units = m_config->get_string("output.runtime.time_unit_name");
-  const bool use_calendar = m_config->get_boolean("output.runtime.time_use_calendar");
+  const bool use_calendar = m_config->get_flag("output.runtime.time_use_calendar");
 
   const double scalevol  = pow(10.0, static_cast<double>(log10scalevol)),
                scalearea = pow(10.0, static_cast<double>(log10scalearea));

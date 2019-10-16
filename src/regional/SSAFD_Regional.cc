@@ -43,7 +43,7 @@ void SSAFD_Regional::init() {
 
   m_log->message(2, "  using the regional version of the SSA solver...\n");
 
-  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
+  if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
     m_log->message(2, "  using stored SSA velocities as Dirichlet B.C. in the no_model_strip...\n");
   }
 }

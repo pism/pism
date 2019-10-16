@@ -8,22 +8,14 @@ PISM's "bedrock thermal unit".
 import PISM
 from PISM.util import convert
 import numpy as np
-import pylab as plt
-
-def log_plot(x, y, style, label):
-    plt.plot(log10(x), log10(y), style, label=label)
-    plt.xticks(log10(x), x)
-
-def log_fit_plot(x, p, label):
-    plt.plot(log10(x), np.polyval(p, log10(x)), label=label)
 
 log10 = np.log10
 
 ctx = PISM.Context()
 
-k = ctx.config.get_double("energy.bedrock_thermal.conductivity")
-c = ctx.config.get_double("energy.bedrock_thermal.specific_heat_capacity")
-rho = ctx.config.get_double("energy.bedrock_thermal.density")
+k = ctx.config.get_number("energy.bedrock_thermal.conductivity")
+c = ctx.config.get_number("energy.bedrock_thermal.specific_heat_capacity")
+rho = ctx.config.get_number("energy.bedrock_thermal.density")
 K = k / c
 # alpha squared
 alpha2 = k / (c * rho)
@@ -48,8 +40,8 @@ def convergence_rate_time(error_func, plot):
         plt.title("Heat equation in the bedrock column\nconvergence as dt -> 0")
         log_plot(dts, max_errors, 'o', "max errors")
         log_plot(dts, avg_errors, 'o', "avg errors")
-        log_fit_plot(dts, p_max, "max: dt^{}".format(p_max[0]))
-        log_fit_plot(dts, p_avg, "avg: dt^{}".format(p_avg[0]))
+        log_fit_plot(dts, p_max, "max: dt^{:.3}".format(p_max[0]))
+        log_fit_plot(dts, p_avg, "avg: dt^{:.3}".format(p_avg[0]))
         plt.axis('tight')
         plt.grid(True)
         plt.legend(loc="best")
@@ -82,8 +74,8 @@ def convergence_rate_space(error_func, plot):
         plt.title("Heat equation in the bedrock column\nconvergence as dz -> 0")
         log_plot(dzs, max_errors, 'o', "max errors")
         log_plot(dzs, avg_errors, 'o', "avg errors")
-        log_fit_plot(dzs, p_max, "max: dz^{}".format(p_max[0]))
-        log_fit_plot(dzs, p_avg, "avg: dz^{}".format(p_avg[0]))
+        log_fit_plot(dzs, p_max, "max: dz^{:.3}".format(p_max[0]))
+        log_fit_plot(dzs, p_avg, "avg: dz^{:.3}".format(p_avg[0]))
         plt.axis('tight')
         plt.grid(True)
         plt.legend(loc="best")
@@ -161,5 +153,14 @@ def test(plot=False):
     assert convergence_rate_space(errors, plot)[1] > 1.89
 
 if __name__ == "__main__":
+    import pylab as plt
+
+    def log_plot(x, y, style, label):
+        plt.plot(log10(x), log10(y), style, label=label)
+        plt.xticks(log10(x), x)
+
+    def log_fit_plot(x, p, label):
+        plt.plot(log10(x), np.polyval(p, log10(x)), label=label)
+
     test(plot=True)
     plt.show()

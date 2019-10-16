@@ -34,7 +34,7 @@ LakeLevel::LakeLevel(IceGrid::ConstPtr grid, std::shared_ptr<LakeLevel> input)
   : Component(grid),
     m_input_model(input),
     m_lake_level(grid, "lake_level", WITHOUT_GHOSTS),
-    m_fill_value(m_config->get_double("output.fill_value")) {
+    m_fill_value(m_config->get_number("output.fill_value")) {
 
   m_lake_level.set_attrs("diagnostic",
                          "lake level elevation, relative to the geoid",
@@ -122,7 +122,7 @@ public:
     m_vars = {SpatialVariableMetadata(m_sys, "lake_level_real")};
 
     set_attrs("lake level elevation, relative to the geoid", "", "meters", "meters", 0);
-    metadata().set_double("_FillValue", m_fill_value);
+    metadata().set_number("_FillValue", m_fill_value);
   }
 
 protected:
@@ -172,7 +172,7 @@ public:
     m_vars = {SpatialVariableMetadata(m_sys, "lake_depth")};
 
     set_attrs("lake depth", "", "meters", "meters", 0);
-    metadata().set_double("_FillValue", m_fill_value);
+    metadata().set_number("_FillValue", m_fill_value);
   }
 
 protected:
