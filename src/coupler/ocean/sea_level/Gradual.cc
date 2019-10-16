@@ -53,7 +53,7 @@ Gradual::Gradual(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in)
   m_max_ll_basin.create(m_grid, "max_ll_basin", WITHOUT_GHOSTS);
   m_max_ll_basin.set_attrs("model_state", "max ll basin",
                            "m", "max_ll_basin");
-  m_max_ll_basin.metadata().set_double("_FillValue", m_fill_value);
+  m_max_ll_basin.metadata().set_number("_FillValue", m_fill_value);
 
   m_expansion_mask.create(m_grid, "sl_expansion_mask", WITHOUT_GHOSTS);
   m_expansion_mask.metadata().set_number("_FillValue", m_fill_value);
