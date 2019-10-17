@@ -63,6 +63,7 @@
 #include "pism/age/AgeModel.hh"
 #include "pism/energy/EnthalpyModel.hh"
 #include "pism/energy/TemperatureModel.hh"
+#include "pism/fracturedensity/FractureDensity.hh"
 
 namespace pism {
 
@@ -658,6 +659,11 @@ void IceModel::allocate_submodels() {
   allocate_bed_deformation();
 
   allocate_couplers();
+
+  if (m_config->get_flag("fracture_density.enabled")) {
+    m_fracture.reset(new FractureDensity(m_grid, m_stress_balance->shallow()->flow_law()));
+    m_submodels["fracture_density"] = m_fracture.get();
+  }
 }
 
 
@@ -812,6 +818,21 @@ void IceModel::misc_setup() {
   if (m_surface_input_for_hydrology) {
     m_surface_input_for_hydrology->init(m_config->get_string("hydrology.surface_input_file"),
                                         0, 0);
+  }
+
+  if (m_fracture) {
+    if (opts.type == INIT_OTHER) {
+      m_fracture->initialize();
+    } else {
+      // initializing from a file
+      PIO file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
+
+      if (opts.type == INIT_RESTART) {
+        m_fracture->restart(file, opts.record);
+      } else if (opts.type == INIT_BOOTSTRAP) {
+        m_fracture->bootstrap(file);
+      }
+    }
   }
 }
 

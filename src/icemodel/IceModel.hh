@@ -80,6 +80,7 @@ class IcebergRemover;
 }
 
 class FrontalMelt;
+class FractureDensity;
 
 namespace energy {
 class BedThermalUnit;
@@ -97,26 +98,6 @@ class AgeModel;
 class IceModelVec2CellType;
 class IceModelVec2T;
 class Component;
-
-class FractureFields {
-private:
-  const unsigned int m_stencil_width;
-public:
-  FractureFields(IceGrid::ConstPtr grid);
-
-  IceModelVec2S density;
-  IceModelVec2S growth_rate;
-  IceModelVec2S healing_rate;
-  IceModelVec2S flow_enhancement;
-  IceModelVec2S age;
-  IceModelVec2S toughness;
-
-  //! major and minor principal components of horizontal strain-rate tensor (temporary storage)
-  IceModelVec2 strain_rates;
-
-  //! components of horizontal stress tensor along axes and shear stress (temporary storage)
-  IceModelVec2 deviatoric_stresses;
-};
 
 //! The base class for PISM. Contains all essential variables, parameters, and flags for modelling
 //! an ice sheet.
@@ -301,7 +282,7 @@ protected:
   //! temperature at the top surface of the bedrock thermal layer
   IceModelVec2S m_bedtoptemp;
 
-  FractureFields *m_fracture;
+  std::shared_ptr<FractureDensity> m_fracture;
 
   //! mask to determine Dirichlet boundary locations
   IceModelVec2Int m_ssa_dirichlet_bc_mask;

@@ -951,11 +951,6 @@ netcdf pism_config {
     pism_config:fracture_density.softening_lower_limit_type = "number";
     pism_config:fracture_density.softening_lower_limit_units = "1";
 
-    pism_config:fracture_density.write_fields = "no";
-    pism_config:fracture_density.write_fields_doc = "Writing of fracture density related fields to nc-file.";
-    pism_config:fracture_density.write_fields_option = "write_fd_fields";
-    pism_config:fracture_density.write_fields_type = "flag";
-
     pism_config:geometry.grounded_cell_fraction  = "false";
     pism_config:geometry.grounded_cell_fraction_doc = "Linear interpolation scheme ('LI' in Gladstone et al. 2010) expanded to two dimensions is used if switched on in order to evaluate the position of the grounding line on a subgrid scale.";
     pism_config:geometry.grounded_cell_fraction_option = "subgl";

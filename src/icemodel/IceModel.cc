@@ -54,62 +54,9 @@
 #include "pism/energy/EnergyModel.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism/util/iceModelVec2T.hh"
+#include "pism/fracturedensity/FractureDensity.hh"
 
 namespace pism {
-
-FractureFields::FractureFields(IceGrid::ConstPtr grid)
-  : m_stencil_width(grid->ctx()->config()->get_number("grid.max_stencil_width")),
-    density(grid, "fracture_density", WITH_GHOSTS, m_stencil_width),
-    growth_rate(grid, "fracture_growth_rate", WITH_GHOSTS, m_stencil_width),
-    healing_rate(grid, "fracture_healing_rate", WITH_GHOSTS, m_stencil_width),
-    flow_enhancement(grid, "fracture_flow_enhancement", WITH_GHOSTS, m_stencil_width),
-    age(grid, "fracture_age", WITH_GHOSTS, m_stencil_width),
-    toughness(grid, "fracture_toughness", WITH_GHOSTS, m_stencil_width),
-    strain_rates(grid, "strain_rates", WITH_GHOSTS,
-                 2, // stencil width, has to match or exceed the "offset" in eigenCalving
-                 2),
-    deviatoric_stresses(grid, "sigma", WITH_GHOSTS, 2 /* stencil width */, 3) {
-
-  density.set_attrs("model_state", "fracture density in ice shelf", "", "");
-  density.metadata().set_number("valid_max", 1.0);
-  density.metadata().set_number("valid_min", 0.0);
-
-  growth_rate.set_attrs("model_state", "fracture growth rate", "second-1", "");
-  growth_rate.metadata().set_number("valid_min", 0.0);
-
-  healing_rate.set_attrs("model_state", "fracture healing rate", "second-1", "");
-
-  flow_enhancement.set_attrs("model_state", "fracture-induced flow enhancement", "", "");
-
-  age.set_attrs("model_state", "age since fracturing", "years", "");
-
-  toughness.set_attrs("model_state", "fracture toughness", "Pa", "");
-
-  strain_rates.metadata(0).set_name("eigen1");
-  strain_rates.set_attrs("internal",
-                         "major principal component of horizontal strain-rate",
-                         "second-1", "", 0);
-
-  strain_rates.metadata(1).set_name("eigen2");
-  strain_rates.set_attrs("internal",
-                         "minor principal component of horizontal strain-rate",
-                         "second-1", "", 1);
-
-  deviatoric_stresses.metadata(0).set_name("sigma_xx");
-  deviatoric_stresses.set_attrs("internal",
-                                "deviatoric stress in x direction",
-                                "Pa", "", 0);
-
-  deviatoric_stresses.metadata(1).set_name("sigma_yy");
-  deviatoric_stresses.set_attrs("internal",
-                                "deviatoric stress in y direction",
-                                "Pa", "", 1);
-
-  deviatoric_stresses.metadata(2).set_name("sigma_xy");
-  deviatoric_stresses.set_attrs("internal",
-                                "deviatoric shear stress",
-                                "Pa", "", 2);
-}
 
 IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   : m_grid(g),
@@ -219,8 +166,6 @@ IceModel::~IceModel() {
   delete m_btu;
   delete m_energy_model;
 
-  delete m_fracture;
-
   delete m_iceberg_remover;
   delete m_ocean_kill_calving;
   delete m_float_kill_calving;
@@ -329,17 +274,6 @@ void IceModel::allocate_storage() {
     m_grid->variables().add(m_ssa_dirichlet_bc_values);
   }
 
-  if (m_config->get_flag("fracture_density.enabled")) {
-    m_fracture = new FractureFields(m_grid);
-
-    m_grid->variables().add(m_fracture->toughness);
-    m_grid->variables().add(m_fracture->age);
-    m_grid->variables().add(m_fracture->flow_enhancement);
-    m_grid->variables().add(m_fracture->healing_rate);
-    m_grid->variables().add(m_fracture->growth_rate);
-    m_grid->variables().add(m_fracture->density);
-  }
-
   // Add some variables to the list of "model state" fields.
   m_model_state.insert(&m_ssa_dirichlet_bc_mask);
   m_model_state.insert(&m_ssa_dirichlet_bc_values);
@@ -404,7 +338,7 @@ stressbalance::Inputs IceModel::stress_balance_inputs() {
   }
 
   if (m_config->get_flag("fracture_density.enabled")) {
-    result.fracture_density = &m_fracture->density;
+    result.fracture_density = &m_fracture->density();
   }
 
   return result;
