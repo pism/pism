@@ -267,6 +267,8 @@
 %shared_ptr(pism::Component)
 %include "util/Component.hh"
 
+%include geometry.i
+
 %include "basalstrength/basal_resistance.hh"
 
 %include pism_FlowLaw.i
@@ -289,8 +291,6 @@
 %shared_ptr(pism::MohrCoulombYieldStress)
 %include "basalstrength/YieldStress.hh"
 %include "basalstrength/MohrCoulombYieldStress.hh"
-
-%include geometry.i
 
 %rename(StressBalanceInputs) pism::stressbalance::Inputs;
 
