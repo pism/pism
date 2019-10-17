@@ -19,7 +19,7 @@
 
 #include "FractureDensity.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/stressbalance/stressBalance.hh"
+#include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 
