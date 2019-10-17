@@ -1465,7 +1465,7 @@
    :Option: :opt:`-ocean_cache_update_interval`
    :Description: update interval of the 'cache' ocean modifier
 
-#. :config:`ocean.constant.melange_back_pressure_fraction` (*number*)
+#. :config:`ocean.melange_back_pressure_fraction` (*number*)
 
    :Value: 0 (1)
    :Description: default melange back pressure fraction in the 'contant' ocean model

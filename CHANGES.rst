@@ -78,6 +78,9 @@ Changes since v1.1
 - Fix `issue 327`_: now PISM uses mid-points of reporting intervals when saving to the
   `-extra_file`. This makes PISM's output files easier to process using CDO.
 - Add contributing guidelines to the User's Manual.
+- Rename `ocean.constant.melange_back_pressure_fraction` to
+  `ocean.melange_back_pressure_fraction` and document its interaction with `-ocean
+  ...,frac_MBP`.
 
 
 Changes from v1.0 to v1.1

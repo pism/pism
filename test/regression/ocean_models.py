@@ -22,10 +22,6 @@ seconds_per_year = 365 * 86400
 # ensure that this is the correct year length
 config.set_string("time.calendar", "365_day")
 
-# change the default melange back pressure fraction from 0 to 1. The default of zero makes
-# it hard to test the modifier that scales this value.
-config.set_number("ocean.constant.melange_back_pressure_fraction", 1.0)
-
 # silence models' initialization messages
 PISM.Context().log.set_threshold(1)
 
@@ -79,7 +75,7 @@ def constant_test():
     pressure = ice_density * g * depth
     T_melting = T0 - beta_CC * pressure
 
-    melange_back_pressure = 1.0
+    melange_back_pressure = 0.0
 
     grid = shallow_grid()
     geometry = PISM.Geometry(grid)
@@ -295,6 +291,7 @@ class FracMBP(TestCase):
         self.dMBP = 0.5
 
         create_scalar_forcing(self.filename, "frac_MBP", "1", [self.dMBP], [0])
+        config.set_number("ocean.melange_back_pressure_fraction", 1.0)
 
     def test_ocean_frac_mpb(self):
         "Modifier Frac_MBP"
@@ -322,6 +319,8 @@ class FracMBP(TestCase):
 
     def tearDown(self):
         os.remove(self.filename)
+        config.set_number("ocean.melange_back_pressure_fraction", 0.0)
+
 
 class FracSMB(TestCase):
     def setUp(self):

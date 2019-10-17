@@ -288,7 +288,7 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
   m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
   m_shelf_base_mass_flux->scale(physics.ice_density());
 
-  m_melange_back_pressure_fraction->set(0.0);
+  m_melange_back_pressure_fraction->set(m_config->get_number("ocean.melange_back_pressure_fraction"));
 }
 
 

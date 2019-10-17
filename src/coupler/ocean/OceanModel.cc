@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -64,7 +64,7 @@ OceanModel::OceanModel(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> input)
   if (not input) {
     m_melange_back_pressure_fraction = allocate_melange_back_pressure(g);
     // set the default value
-    m_melange_back_pressure_fraction->set(0.0);
+    m_melange_back_pressure_fraction->set(m_config->get_number("ocean.melange_back_pressure_fraction"));
   }
 }
 
