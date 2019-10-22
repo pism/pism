@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,38 +17,40 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _PISMOCEANKILL_H_
-#define _PISMOCEANKILL_H_
+#ifndef HAYHURSTCALVING_H
+#define HAYHURSTCALVING_H
 
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec.hh"
 
 namespace pism {
+
+class Geometry;
+
 namespace calving {
 
-/**
- * This class implements the "ocean_kill" mechanism: calving at a
- * fixed calving front determined using ice thickness.
- *
- * FIXME: the ice extent computation should depend on the current sea
- * level elevation (I suppose).
- */
-class OceanKill : public Component {
+class HayhurstCalving : public Component {
 public:
-  OceanKill(IceGrid::ConstPtr g);
-  virtual ~OceanKill();
+  HayhurstCalving(IceGrid::ConstPtr grid);
+  virtual ~HayhurstCalving();
 
   void init();
-  void update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
-  const IceModelVec2Int& mask() const;
+
+  void update(const IceModelVec2CellType &cell_type, const IceModelVec2S &ice_thickness,
+              const IceModelVec2S &sea_level, const IceModelVec2S &bed_elevation);
+
+  const IceModelVec2S &calving_rate() const;
 
 protected:
-  virtual DiagnosticList diagnostics_impl() const;
+  DiagnosticList diagnostics_impl() const;
+  
+protected:
+  IceModelVec2S m_calving_rate;
 
-  IceModelVec2Int m_mask;
+  double m_B_tilde, m_exponent_r, m_sigma_threshold;
+
 };
 
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* _PISMOCEANKILL_H_ */
+#endif /* HAYHURSTCALVING_H */

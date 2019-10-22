@@ -144,13 +144,12 @@ StressBalance::StressBalance(IceGrid::ConstPtr g,
 
   m_w.set_attrs("diagnostic",
                 "vertical velocity of ice, relative to base of ice directly below",
-                "m s-1", "");
+                "m s-1", "m year-1", "", 0);
   m_w.set_time_independent(false);
-  m_w.metadata().set_string("glaciological_units", "m year-1");
 
   m_strain_heating.set_attrs("internal",
                              "rate of strain heating in ice (dissipation heating)",
-                             "W m-3", "");
+                             "W m-3", "W m-3", "", 0);
 }
 
 StressBalance::~StressBalance() {

@@ -18,7 +18,7 @@
  */
 
 #include "IcebergRemover.hh"
-#include "connected_components.hh"
+#include "pism/util/connected_components.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"

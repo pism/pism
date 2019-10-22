@@ -45,46 +45,46 @@ FractureDensity::FractureDensity(IceGrid::ConstPtr grid,
     m_velocity(grid, "ghosted_velocity", WITH_GHOSTS, 1),
     m_flow_law(flow_law) {
 
-  m_density.set_attrs("model_state", "fracture density in ice shelf", "", "");
+  m_density.set_attrs("model_state", "fracture density in ice shelf", "1", "1", "", 0);
   m_density.metadata().set_number("valid_max", 1.0);
   m_density.metadata().set_number("valid_min", 0.0);
 
-  m_growth_rate.set_attrs("model_state", "fracture growth rate", "second-1", "");
+  m_growth_rate.set_attrs("model_state", "fracture growth rate", "second-1", "m second-1", "", 0);
   m_growth_rate.metadata().set_number("valid_min", 0.0);
 
-  m_healing_rate.set_attrs("model_state", "fracture healing rate", "second-1", "");
+  m_healing_rate.set_attrs("model_state", "fracture healing rate", "second-1", "second-1", "", 0);
 
-  m_flow_enhancement.set_attrs("model_state", "fracture-induced flow enhancement", "", "");
+  m_flow_enhancement.set_attrs("model_state", "fracture-induced flow enhancement", "", "", "", 0);
 
-  m_age.set_attrs("model_state", "age since fracturing", "seconds", "");
+  m_age.set_attrs("model_state", "age since fracturing", "seconds", "seconds", "", 0);
   m_age.metadata().set_string("glaciological_units", "years");
 
-  m_toughness.set_attrs("model_state", "fracture toughness", "Pa", "");
+  m_toughness.set_attrs("model_state", "fracture toughness", "Pa", "Pa", "", 0);
 
   m_strain_rates.metadata(0).set_name("eigen1");
   m_strain_rates.set_attrs("internal",
-                         "major principal component of horizontal strain-rate",
-                         "second-1", "", 0);
+                           "major principal component of horizontal strain-rate",
+                           "second-1", "second-1", "", 0);
 
   m_strain_rates.metadata(1).set_name("eigen2");
   m_strain_rates.set_attrs("internal",
-                         "minor principal component of horizontal strain-rate",
-                         "second-1", "", 1);
+                           "minor principal component of horizontal strain-rate",
+                           "second-1", "second-1", "", 1);
 
   m_deviatoric_stresses.metadata(0).set_name("sigma_xx");
   m_deviatoric_stresses.set_attrs("internal",
-                                "deviatoric stress in x direction",
-                                "Pa", "", 0);
+                                  "deviatoric stress in x direction",
+                                  "Pa", "Pa", "", 0);
 
   m_deviatoric_stresses.metadata(1).set_name("sigma_yy");
   m_deviatoric_stresses.set_attrs("internal",
-                                "deviatoric stress in y direction",
-                                "Pa", "", 1);
+                                  "deviatoric stress in y direction",
+                                  "Pa", "Pa", "", 1);
 
   m_deviatoric_stresses.metadata(2).set_name("sigma_xy");
   m_deviatoric_stresses.set_attrs("internal",
-                                "deviatoric shear stress",
-                                "Pa", "", 2);
+                                  "deviatoric shear stress",
+                                  "Pa", "Pa", "", 2);
 }
 
 FractureDensity::~FractureDensity() {

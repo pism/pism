@@ -31,7 +31,7 @@ IceModelVec2S::Ptr OceanModel::allocate_shelf_base_temperature(IceGrid::ConstPtr
   IceModelVec2S::Ptr result(new IceModelVec2S(g, "shelfbtemp", WITHOUT_GHOSTS));
   result->set_attrs("diagnostic",
                     "ice temperature at the bottom of floating ice",
-                    "Kelvin", "");
+                    "Kelvin", "Kelvin", "", 0);
   return result;
 }
 
@@ -39,8 +39,7 @@ IceModelVec2S::Ptr OceanModel::allocate_shelf_base_mass_flux(IceGrid::ConstPtr g
   IceModelVec2S::Ptr result(new IceModelVec2S(g, "shelfbmassflux", WITHOUT_GHOSTS));
 
   result->set_attrs("diagnostic", "shelf base mass flux",
-                    "kg m-2 s-1", "");
-  result->metadata().set_string("glaciological_units", "kg m-2 year-1");
+                    "kg m-2 s-1", "kg m-2 year-1", "", 0);
 
   return result;
 }
@@ -51,7 +50,7 @@ IceModelVec2S::Ptr OceanModel::allocate_melange_back_pressure(IceGrid::ConstPtr 
 
   result->set_attrs("diagnostic",
                     "melange back pressure fraction",
-                    "1", "");
+                    "1", "1", "", 0);
   result->set(0.0);
 
   return result;

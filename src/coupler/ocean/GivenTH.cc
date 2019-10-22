@@ -93,11 +93,11 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
 
   m_theta_ocean->set_attrs("climate_forcing",
                            "potential temperature of the adjacent ocean",
-                           "Kelvin", "");
+                           "Kelvin", "Kelvin", "", 0);
 
   m_salinity_ocean->set_attrs("climate_forcing",
                               "salinity of the adjacent ocean",
-                              "g/kg", "");
+                              "g/kg", "g/kg", "", 0);
 }
 
 GivenTH::~GivenTH() {

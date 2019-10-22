@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018 PISM Authors
+// Copyright (C) 2008-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -84,6 +84,11 @@ void PIK::update_impl(const Geometry &geometry, double t, double dt) {
     const int i = p.i(), j   = p.j();
     (*m_temperature)(i, j) = 273.15 + 30 - 0.0075 * surface_elevation(i, j) - 0.68775 * latitude(i, j) * (-1.0);
   }
+  
+  dummy_accumulation(*m_mass_flux, *m_accumulation);
+  dummy_melt(*m_mass_flux, *m_melt);
+  dummy_runoff(*m_mass_flux, *m_runoff);
+
 }
 
 const IceModelVec2S &PIK::mass_flux_impl() const {
@@ -92,6 +97,18 @@ const IceModelVec2S &PIK::mass_flux_impl() const {
 
 const IceModelVec2S &PIK::temperature_impl() const {
   return *m_temperature;
+}
+
+const IceModelVec2S &PIK::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S &PIK::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S &PIK::runoff_impl() const {
+  return *m_runoff;
 }
 
 void PIK::define_model_state_impl(const PIO &output) const {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,28 +17,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef FRONTALMELT_H
-#define FRONTALMELT_H
-
-#include "CalvingFrontRetreat.hh"
+#ifndef LABEL_COMPONENTS_H
+#define LABEL_COMPONENTS_H
 
 namespace pism {
 
-class FrontalMelt : public CalvingFrontRetreat {
-public:
-  FrontalMelt(IceGrid::ConstPtr grid);
-  virtual ~FrontalMelt();
+class IceModelVec2Int;
 
-  void init();
-
-protected:
-  virtual DiagnosticList diagnostics_impl() const;
-
-  void compute_calving_rate(const CalvingInputs &inputs,
-                            IceModelVec2S &result) const;
-};
+void label_components(IceModelVec2Int &mask, bool identify_icebergs, double mask_grounded);
 
 } // end of namespace pism
 
-
-#endif /* FRONTALMELT_H */
+#endif /* LABEL_COMPONENTS_H */

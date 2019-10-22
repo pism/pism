@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
+// Copyright (C) 2010--2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -87,16 +87,19 @@ protected:
   virtual void define_state_impl(const PIO &output) const;
   virtual void write_state_impl(const PIO &output) const;
 
-  void set_attrs(const std::string &my_long_name,
-                 const std::string &my_standard_name,
-                 const std::string &my_units,
-                 const std::string &my_glaciological_units,
+  void set_attrs(const std::string &long_name,
+                 const std::string &standard_name,
+                 const std::string &units,
+                 const std::string &glaciological_units,
                  unsigned int N = 0);
 
   virtual void update_impl(double dt);
   virtual void reset_impl();
 
   virtual IceModelVec::Ptr compute_impl() const = 0;
+
+  double to_internal(double x) const;
+  double to_external(double x) const;
 
   //! the grid
   IceGrid::ConstPtr m_grid;
@@ -241,12 +244,7 @@ protected:
       result->copy_from(m_accumulator);
       result->scale(1.0 / m_interval_length);
     } else {
-      std::string
-        out = Diagnostic::m_vars.at(0).get_string("glaciological_units"),
-        in  = Diagnostic::m_vars.at(0).get_string("units");
-      const double
-        fill = convert(Diagnostic::m_sys, Diagnostic::m_fill_value, out, in);
-      result->set(fill);
+      result->set(Diagnostic::to_internal(Diagnostic::m_fill_value));
     }
 
     return result;
@@ -295,6 +293,13 @@ protected:
    * itself is computed in evaluate_rate().
    */
   virtual double compute() = 0;
+
+  /*!
+   * Set internal (MKS) and "glaciological" units.
+   *
+   * glaciological_units is ignored if output.use_MKS is set.
+   */
+  void set_units(const std::string &units, const std::string &glaciological_units);
 
   //! the grid
   IceGrid::ConstPtr m_grid;

@@ -23,16 +23,16 @@
 #include "pism/basalstrength/ConstantYieldStress.hh"
 #include "pism/basalstrength/MohrCoulombYieldStress.hh"
 #include "pism/basalstrength/basal_resistance.hh"
-#include "pism/calving/CalvingAtThickness.hh"
-#include "pism/calving/EigenCalving.hh"
-#include "pism/calving/vonMisesCalving.hh"
-#include "pism/calving/FloatKill.hh"
-#include "pism/calving/IcebergRemover.hh"
-#include "pism/calving/OceanKill.hh"
-#include "pism/calving/FrontalMelt.hh"
+#include "pism/frontretreat/util/IcebergRemover.hh"
+#include "pism/frontretreat/calving/CalvingAtThickness.hh"
+#include "pism/frontretreat/calving/EigenCalving.hh"
+#include "pism/frontretreat/calving/FloatKill.hh"
+#include "pism/frontretreat/calving/HayhurstCalving.hh"
+#include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/hydrology/NullTransport.hh"
 #include "pism/hydrology/Routing.hh"
+#include "pism/hydrology/SteadyState.hh"
 #include "pism/hydrology/Distributed.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/stressbalance/sia/SIAFD.hh"
@@ -64,6 +64,9 @@
 #include "pism/energy/EnthalpyModel.hh"
 #include "pism/energy/TemperatureModel.hh"
 #include "pism/fracturedensity/FractureDensity.hh"
+#include "pism/frontretreat/FrontRetreat.hh"
+#include "pism/frontretreat/PrescribedRetreat.hh"
+#include "pism/coupler/frontalmelt/Factory.hh"
 
 namespace pism {
 
@@ -223,7 +226,7 @@ void IceModel::model_state_setup() {
         W.set(m_config->get_number("bootstrapping.defaults.bwat"));
         P.set(m_config->get_number("bootstrapping.defaults.bwp"));
 
-        m_subglacial_hydrology->initialize(W_till, W, P);
+        m_subglacial_hydrology->init(W_till, W, P);
         break;
       }
     }
@@ -509,13 +512,13 @@ void IceModel::allocate_iceberg_remover() {
   if (m_config->get_flag("geometry.remove_icebergs")) {
 
     // this will throw an exception on failure
-    m_iceberg_remover = new calving::IcebergRemover(m_grid);
+    m_iceberg_remover.reset(new calving::IcebergRemover(m_grid));
 
     // Iceberg Remover does not have a state, so it is OK to
     // initialize here.
     m_iceberg_remover->init();
 
-    m_submodels["iceberg remover"] = m_iceberg_remover;
+    m_submodels["iceberg remover"] = m_iceberg_remover.get();
   }
 }
 
@@ -591,6 +594,8 @@ void IceModel::allocate_subglacial_hydrology() {
     m_subglacial_hydrology.reset(new NullTransport(m_grid));
   } else if (hydrology_model == "routing") {
     m_subglacial_hydrology.reset(new Routing(m_grid));
+  } else if (hydrology_model == "steady") {
+    m_subglacial_hydrology.reset(new SteadyState(m_grid));
   } else if (hydrology_model == "distributed") {
     m_subglacial_hydrology.reset(new Distributed(m_grid));
   } else {
@@ -767,6 +772,8 @@ void IceModel::misc_setup() {
 #endif
 
   init_calving();
+  init_frontal_melt();
+  init_front_retreat();
   init_diagnostics();
   init_snapshots();
   init_backups();
@@ -836,88 +843,116 @@ void IceModel::misc_setup() {
   }
 }
 
+void IceModel::init_frontal_melt() {
+
+  auto frontal_melt = m_config->get_string("frontal_melt.models");
+
+  if (not frontal_melt.empty()) {
+    if (not m_config->get_flag("geometry.part_grid.enabled")) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "ERROR: frontal melt models require geometry.part_grid.enabled");
+    }
+
+    m_frontal_melt = frontalmelt::Factory(m_grid).create(frontal_melt);
+
+    m_frontal_melt->init(m_geometry);
+
+    m_submodels["frontal melt"] = m_frontal_melt.get();
+
+    if (not m_front_retreat) {
+      m_front_retreat.reset(new FrontRetreat(m_grid));
+    }
+  }
+}
+
+void IceModel::init_front_retreat() {
+  auto front_retreat_file = m_config->get_string("geometry.front_retreat.prescribed.file");
+
+  if (not front_retreat_file.empty()) {
+    m_prescribed_retreat.reset(new PrescribedRetreat(m_grid));
+
+    m_prescribed_retreat->init();
+
+    m_submodels["prescribed front retreat"] = m_prescribed_retreat.get();
+  }
+}
+
 //! \brief Initialize calving mechanisms.
 void IceModel::init_calving() {
 
   std::set<std::string> methods = set_split(m_config->get_string("calving.methods"), ',');
 
-  if (methods.find("ocean_kill") != methods.end()) {
-
-    if (not m_ocean_kill_calving) {
-      m_ocean_kill_calving = new calving::OceanKill(m_grid);
-    }
-
-    m_ocean_kill_calving->init();
-    methods.erase("ocean_kill");
-
-    m_submodels["ocean kill calving"] = m_ocean_kill_calving;
-  }
-
   if (methods.find("thickness_calving") != methods.end()) {
 
     if (not m_thickness_threshold_calving) {
-      m_thickness_threshold_calving = new calving::CalvingAtThickness(m_grid);
+      m_thickness_threshold_calving.reset(new calving::CalvingAtThickness(m_grid));
     }
 
     m_thickness_threshold_calving->init();
     methods.erase("thickness_calving");
 
-    m_submodels["thickness threshold calving"] = m_thickness_threshold_calving;
+    m_submodels["thickness threshold calving"] = m_thickness_threshold_calving.get();
   }
 
 
   if (methods.find("eigen_calving") != methods.end()) {
 
     if (not m_eigen_calving) {
-      m_eigen_calving = new calving::EigenCalving(m_grid);
+      m_eigen_calving.reset(new calving::EigenCalving(m_grid));
     }
 
     m_eigen_calving->init();
     methods.erase("eigen_calving");
 
-    m_submodels["eigen calving"] = m_eigen_calving;
+    m_submodels["eigen calving"] = m_eigen_calving.get();
   }
 
   if (methods.find("vonmises_calving") != methods.end()) {
 
     if (not m_vonmises_calving) {
-      m_vonmises_calving = new calving::vonMisesCalving(m_grid,
-                                                        m_stress_balance->shallow()->flow_law());
+      m_vonmises_calving.reset(new calving::vonMisesCalving(m_grid,
+                                                            m_stress_balance->shallow()->flow_law()));
     }
 
     m_vonmises_calving->init();
     methods.erase("vonmises_calving");
 
-    m_submodels["von Mises calving"] = m_vonmises_calving;
+    m_submodels["von Mises calving"] = m_vonmises_calving.get();
   }
 
-  if (methods.find("frontal_melt") != methods.end()) {
+  if (methods.find("hayhurst_calving") != methods.end()) {
 
-    if (not m_frontal_melt) {
-      m_frontal_melt = new FrontalMelt(m_grid);
+    if (not m_hayhurst_calving) {
+      m_hayhurst_calving.reset(new calving::HayhurstCalving(m_grid));
     }
 
-    m_frontal_melt->init();
-    methods.erase("frontal_melt");
+    m_hayhurst_calving->init();
+    methods.erase("hayhurst_calving");
 
-    m_submodels["frontal melt"] = m_frontal_melt;
+    m_submodels["Hayhurst calving"] = m_hayhurst_calving.get();
   }
 
   if (methods.find("float_kill") != methods.end()) {
     if (not m_float_kill_calving) {
-      m_float_kill_calving = new calving::FloatKill(m_grid);
+      m_float_kill_calving.reset(new calving::FloatKill(m_grid));
     }
 
     m_float_kill_calving->init();
     methods.erase("float_kill");
 
-    m_submodels["float kill calving"] = m_float_kill_calving;
+    m_submodels["float kill calving"] = m_float_kill_calving.get();
   }
 
   if (not methods.empty()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "PISM ERROR: calving method(s) [%s] are not supported.\n",
                                   set_join(methods, ",").c_str());
+  }
+
+  // allocate front retreat code if necessary
+  if ((m_eigen_calving or m_vonmises_calving) and
+      not m_front_retreat) {
+    m_front_retreat.reset(new FrontRetreat(m_grid));
   }
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,16 +33,15 @@ BedDef::BedDef(IceGrid::ConstPtr g)
 
   m_topg.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   m_topg.set_attrs("model_state", "bedrock surface elevation",
-                   "m", "bedrock_altitude");
+                   "m", "m", "bedrock_altitude", 0);
 
   m_topg_last.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   m_topg_last.set_attrs("model_state", "bedrock surface elevation",
-                        "m", "bedrock_altitude");
+                        "m", "m", "bedrock_altitude", 0);
 
   m_uplift.create(m_grid, "dbdt", WITHOUT_GHOSTS);
   m_uplift.set_attrs("model_state", "bedrock uplift rate",
-                     "m s-1", "tendency_of_bedrock_altitude");
-  m_uplift.metadata().set_string("glaciological_units", "mm year-1");
+                     "m s-1", "mm year-1", "tendency_of_bedrock_altitude", 0);
 }
 
 BedDef::~BedDef() {
@@ -170,7 +169,8 @@ void BedDef::apply_topg_offset(const std::string &filename) {
 
   IceModelVec2S topg_delta;
   topg_delta.create(m_grid, "topg_delta", WITHOUT_GHOSTS);
-  topg_delta.set_attrs("internal", "bed topography correction", "meters", "");
+  topg_delta.set_attrs("internal", "bed topography correction",
+                       "meters", "meters", "", 0);
 
   topg_delta.regrid(filename, CRITICAL);
 

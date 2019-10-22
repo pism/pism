@@ -36,7 +36,8 @@ MaxTimestep IceModel::extras_max_timestep(double my_t) {
   return reporting_max_timestep(m_extra_times, my_t, "reporting (-extra_times)");
 }
 
-static std::set<std::string> process_extra_shortcuts(const std::set<std::string> &input) {
+static std::set<std::string> process_extra_shortcuts(const Config &config,
+                                                     const std::set<std::string> &input) {
   std::set<std::string> result = input;
 
   // process shortcuts
@@ -83,6 +84,21 @@ static std::set<std::string> process_extra_shortcuts(const std::set<std::string>
     result.insert("tendency_of_subglacial_water_mass_at_grounded_margins");
     result.insert("tendency_of_subglacial_water_mass_at_grounding_line");
     result.insert("tendency_of_subglacial_water_mass_at_domain_boundary");
+  }
+
+  if (result.find("ismip6") != result.end()) {
+
+    const char *flag_name = "output.ISMIP6";
+
+    if (not config.get_flag(flag_name)) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Please set %s to save ISMIP6 diagnostics "
+                                    "(-extra_vars ismip6).", flag_name);
+    }
+
+    result.erase("ismip6");
+    for (auto v : set_split(config.get_string("output.ISMIP6_extra_variables"), ',')) {
+      result.insert(v);
+    }
   }
 
   return result;
@@ -187,7 +203,7 @@ void IceModel::init_extras() {
   }
 
   if (not vars.empty()) {
-    m_extra_vars = process_extra_shortcuts(set_split(vars, ','));
+    m_extra_vars = process_extra_shortcuts(*m_config, set_split(vars, ','));
     m_log->message(2, "variables requested: %s\n", vars.c_str());
   } else {
     m_log->message(2,
@@ -240,7 +256,10 @@ void IceModel::write_extras() {
     // called).
     m_last_extra = current_time;
 
-    return;
+    // ISMIP6 runs need to save diagnostics at the beginning of the run
+    if (not m_config->get_flag("output.ISMIP6")) {
+      return;
+    }
   }
 
   if (saving_after < m_time->start()) {

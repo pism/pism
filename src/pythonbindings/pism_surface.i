@@ -1,4 +1,5 @@
 %{
+#include "coupler/surface/ISMIP6Climate.hh"
 #include "coupler/surface/EISMINTII.hh"
 #include "coupler/surface/Delta_T.hh"
 #include "coupler/surface/ConstantPIK.hh"
@@ -9,8 +10,9 @@
 #include "coupler/surface/Simple.hh"
 #include "coupler/surface/TemperatureIndex.hh"
 #include "coupler/surface/GivenClimate.hh"
-#include "coupler/surface/Factory.hh"
 #include "coupler/surface/ForceThickness.hh"
+#include "coupler/surface/Initialization.hh"
+#include "coupler/surface/Factory.hh"
 %}
 
 %shared_ptr(pism::surface::SurfaceModel)
@@ -27,6 +29,10 @@
 %rename(SurfaceEISMINTII) pism::surface::EISMINTII;
 %feature("notabstract") pism::surface::EISMINTII;
 %include "coupler/surface/EISMINTII.hh"
+
+%shared_ptr(pism::surface::ISMIP6)
+%rename(SurfaceISMIP6) pism::surface::ISMIP6;
+%include "coupler/surface/ISMIP6Climate.hh"
 
 %shared_ptr(pism::surface::PIK)
 %rename(SurfacePIK) pism::surface::PIK;
@@ -64,6 +70,11 @@
 %rename(SurfaceForceThickness) pism::surface::ForceThickness;
 %include "coupler/surface/ForceThickness.hh"
 
+%shared_ptr(pism::surface::InitializationHelper)
+%rename(SurfaceInitialization) pism::surface::InitializationHelper;
+%include "coupler/surface/Initialization.hh"
+
 %shared_ptr(pism::surface::Factory)
+
 %rename(SurfaceFactory) pism::surface::Factory;
 %include "coupler/surface/Factory.hh"

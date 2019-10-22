@@ -38,17 +38,6 @@ add_library (pism
   basalstrength/ConstantYieldStress.cc
   basalstrength/MohrCoulombYieldStress.cc
   basalstrength/YieldStress.cc
-  calving/CalvingAtThickness.cc
-  calving/CalvingFrontRetreat.cc
-  calving/EigenCalving.cc
-  calving/FloatKill.cc
-  calving/FrontalMelt.cc
-  calving/IcebergRemover.cc
-  calving/OceanKill.cc
-  calving/StressCalving.cc
-  calving/connected_components.cc
-  calving/remove_narrow_tongues.cc
-  calving/vonMisesCalving.cc
   energy/BedrockColumn.cc
   energy/BTU_Full.cc
   energy/BTU_Minimal.cc
@@ -61,16 +50,15 @@ add_library (pism
   energy/bootstrapping.cc
   energy/enthSystem.cc
   energy/tempSystem.cc
-  energy/utilities.cc
+  energy/utilities.cc  
   geometry/Geometry.cc
   geometry/GeometryEvolution.cc
   geometry/grounded_cell_fraction.cc
   geometry/part_grid_threshold_thickness.cc
   icemodel/IceModel.cc
-  icemodel/calving.cc
+  icemodel/frontretreat.cc
   icemodel/diagnostics.cc
   icemodel/diagnostics.cc
-  icemodel/diagnostics.hh
   icemodel/energy.cc
   icemodel/flux_balance.hh
   icemodel/fracture_density.cc
@@ -88,6 +76,7 @@ add_library (pism
   fracturedensity/FractureDensity.cc
   util/ColumnSystem.cc
   util/pism_signal.c
+  $<TARGET_OBJECTS:frontretreat>
   $<TARGET_OBJECTS:hydrology>
   $<TARGET_OBJECTS:flowlaws>
   $<TARGET_OBJECTS:stressbalance>
@@ -179,6 +168,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/
 add_subdirectory (coupler)
 add_subdirectory (earth)
 add_subdirectory (external)
+add_subdirectory (frontretreat)
 add_subdirectory (hydrology)
 add_subdirectory (inverse)
 add_subdirectory (regional)

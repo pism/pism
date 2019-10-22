@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -15,40 +15,29 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
-
-#ifndef VONMISESCALVING_H
-#define VONMISESCALVING_H
-
-#include "StressCalving.hh"
+ */
 
 namespace pism {
 
-class IceModelVec2S;
+class Config;
 
-namespace rheology {
-class FlowLaw;
-} // end of namespace rheology
+namespace frontalmelt {
 
-namespace calving {
-
-class vonMisesCalving : public StressCalving {
+class FrontalMeltPhysics {
 public:
-  vonMisesCalving(IceGrid::ConstPtr grid, std::shared_ptr<const rheology::FlowLaw> flow_law);
-  virtual ~vonMisesCalving();
+  FrontalMeltPhysics(const Config &config);
 
-  void init();
+  double frontal_melt_from_undercutting(double ice_thickness,
+                                        double discharge_flux,
+                                        double potential_temperature) const;
 
-protected:
-  virtual DiagnosticList diagnostics_impl() const;
+  double frontal_melt_from_ismip6(double ice_thickness,
+                                        double discharge_flux,
+                                        double potential_temperature) const;
 
-  void compute_calving_rate(const CalvingInputs &inputs,
-                            IceModelVec2S &result) const;
-
-  std::shared_ptr<const rheology::FlowLaw> m_flow_law;
+private:
+  double m_A, m_B, m_alpha, m_beta;
 };
 
-} // end of namespace calving
+} // end of namespace frontalmelt
 } // end of namespace pism
-
-#endif /* VONMISESCALVING_H */

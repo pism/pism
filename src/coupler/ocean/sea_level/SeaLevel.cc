@@ -35,7 +35,7 @@ SeaLevel::SeaLevel(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> input)
 
   m_sea_level.set_attrs("diagnostic",
                         "sea level elevation, relative to the geoid",
-                        "meter", "");
+                        "meter", "meter", "", 0);
 }
 
 // "Model" constructor (returns sea level is zero).

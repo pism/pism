@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2018 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2019 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -82,7 +82,7 @@ SSA::SSA(IceGrid::ConstPtr g)
   // grounded_dragging_floating integer mask
   m_mask.create(m_grid, "ssa_mask", WITH_GHOSTS, WIDE_STENCIL);
   m_mask.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
-                  "", "");
+                   "", "", "", 0);
   std::vector<double> mask_values(4);
   mask_values[0] = MASK_ICE_FREE_BEDROCK;
   mask_values[1] = MASK_GROUNDED;
@@ -94,11 +94,11 @@ SSA::SSA(IceGrid::ConstPtr g)
 
   m_taud.create(m_grid, "taud", WITHOUT_GHOSTS);
   m_taud.set_attrs("diagnostic",
-                 "X-component of the driving shear stress at the base of ice",
-                 "Pa", "", 0);
+                   "X-component of the driving shear stress at the base of ice",
+                   "Pa", "Pa", "", 0);
   m_taud.set_attrs("diagnostic",
-                 "Y-component of the driving shear stress at the base of ice",
-                 "Pa", "", 1);
+                   "Y-component of the driving shear stress at the base of ice",
+                   "Pa", "Pa", "", 1);
 
 
   // override velocity metadata

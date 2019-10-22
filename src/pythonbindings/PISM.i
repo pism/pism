@@ -66,6 +66,7 @@
 #include "util/Time.hh"
 #include "util/Time_Calendar.hh"
 #include "util/Poisson.hh"
+#include "util/label_components.hh"
 %}
 
 // Tell SWIG that the following variables are truly constant
@@ -267,6 +268,7 @@
 %shared_ptr(pism::Component)
 %include "util/Component.hh"
 
+/* GeometryEvolution is a Component, so this has to go after Component.hh */
 %include geometry.i
 
 %include "basalstrength/basal_resistance.hh"
@@ -332,6 +334,9 @@
 
 %include "coupler/util/PCFactory.hh"
 
+%shared_ptr(pism::PCFactory< pism::surface::SurfaceModel >)
+%template(_SurfaceFactoryBase) pism::PCFactory<pism::surface::SurfaceModel>;
+
 %shared_ptr(pism::PCFactory<pism::ocean::OceanModel>)
 %template(_OceanFactoryBase) pism::PCFactory<pism::ocean::OceanModel>;
 
@@ -341,15 +346,16 @@
 %shared_ptr(pism::PCFactory<pism::atmosphere::AtmosphereModel>)
 %template(_AtmosphereFactoryBase) pism::PCFactory<pism::atmosphere::AtmosphereModel>;
 
-%shared_ptr(pism::PCFactory<SurfaceModel>)
-%template(_SurfaceFactoryBase) pism::PCFactory<pism::surface::SurfaceModel>;
-
 %include pism_ocean.i
+
+%include pism_frontalmelt.i
 
 /* surface models use atmosphere models as inputs so we need to define atmosphere models first */
 %include pism_atmosphere.i
 
 %include pism_surface.i
+
+%include pism_calving.i
 
 %include pism_verification.i
 
@@ -359,3 +365,4 @@
 %include "util/Poisson.hh"
 
 pism_class(pism::FractureDensity, "pism/fracturedensity/FractureDensity.hh")
+%include "util/label_components.hh"

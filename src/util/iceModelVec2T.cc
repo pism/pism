@@ -188,21 +188,16 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
                                   m_filename.c_str());
   }
 
-  std::string time_name;
-  bool time_found = false;
-  for (auto d : nc.inq_vardims(name_found)) {
-    if (nc.inq_dimtype(d, m_grid->ctx()->unit_system()) == T_AXIS) {
-      time_found = true;
-      time_name = d;
-      break;
-    }
-  }
+  auto time_name = io::time_dimension(m_grid->ctx()->unit_system(),
+                                      nc, name_found);
 
-  if (time_found) {
+  if (not time_name.empty()) {
     // we're found the time dimension
     TimeseriesMetadata time_dimension(time_name, time_name, m_grid->ctx()->unit_system());
+
     auto time_units = m_grid->ctx()->time()->units_string();
     time_dimension.set_string("units", time_units);
+
     io::read_timeseries(nc, time_dimension,
                         *m_grid->ctx()->time(), log, m_time);
 
@@ -333,7 +328,9 @@ void IceModelVec2T::update(double t, double dt) {
   // check if all the records necessary to cover this interval fit in the
   // buffer:
   if (N > m_n_records) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "IceModelVec2T::update(): timestep is too big");
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot read %d records of %s (buffer size: %d)",
+                                  N, m_name.c_str(), m_n_records);
   }
 
   update(first);
@@ -376,7 +373,7 @@ void IceModelVec2T::update(unsigned int start) {
   if (missing <= 0) {
     return;
   }
-  
+
   m_N = kept + missing;
 
   Time::ConstPtr t = m_grid->ctx()->time();
@@ -503,7 +500,7 @@ void IceModelVec2T::interp(double t) {
 }
 
 
-/** 
+/**
  * Compute the average value over the time interval `[t, t + dt]`.
  *
  * @param t  start of the time interval, in seconds
@@ -570,7 +567,7 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
                                    time->years_to_seconds(m_period)));
 }
 
-/** 
+/**
  * \brief Compute values of the time-series using precomputed indices
  * (and piecewise-constant interpolation).
  *

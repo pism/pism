@@ -45,35 +45,34 @@ SSATestCase::SSATestCase(Context::Ptr ctx, int Mx, int My,
   // yield stress for basal till (plastic or pseudo-plastic model)
   m_tauc.create(m_grid, "tauc", WITH_GHOSTS, WIDE_STENCIL);
   m_tauc.set_attrs("diagnostic",
-                   "yield stress for basal till (plastic or pseudo-plastic model)", "Pa", "");
+                   "yield stress for basal till (plastic or pseudo-plastic model)",
+                   "Pa", "Pa", "", 0);
 
   // enthalpy
   m_ice_enthalpy.create(m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
   m_ice_enthalpy.set_attrs("model_state",
-                       "ice enthalpy (includes sensible heat, latent heat, pressure)",
-                       "J kg-1", "");
+                           "ice enthalpy (includes sensible heat, latent heat, pressure)",
+                           "J kg-1", "J kg-1", "", 0);
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
   m_bc_values.create(m_grid, "_bc", WITH_GHOSTS, WIDE_STENCIL); // u_bc and v_bc
   m_bc_values.set_attrs("intent",
-                     "X-component of the SSA velocity boundary conditions",
-                     "m s-1", "", 0);
+                        "X-component of the SSA velocity boundary conditions",
+                        "m s-1", "m year-1", "", 0);
   m_bc_values.set_attrs("intent",
-                     "Y-component of the SSA velocity boundary conditions",
-                     "m s-1", "", 1);
+                        "Y-component of the SSA velocity boundary conditions",
+                        "m s-1", "m year-1", "", 1);
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
   double fill_value = units::convert(sys, config->get_number("output.fill_value"), "m year-1", "m second-1");
 
-  m_bc_values.metadata(0).set_string("glaciological_units", "m year-1");
-  m_bc_values.metadata(0).set_number("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_bc_values.metadata(0).set_number("valid_max", units::convert(m_sys,  1e6, "m year-1", "m second-1"));
+  auto large_number = units::convert(m_sys,  1e6, "m year-1", "m second-1");
+
+  m_bc_values.metadata(0).set_numbers("valid_range", {-large_number, large_number});
   m_bc_values.metadata(0).set_number("_FillValue", fill_value);
 
-  m_bc_values.metadata(1).set_string("glaciological_units", "m year-1");
-  m_bc_values.metadata(1).set_number("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_bc_values.metadata(1).set_number("valid_max", units::convert(m_sys,  1e6, "m year-1", "m second-1"));
+  m_bc_values.metadata(1).set_numbers("valid_range", {-large_number, large_number});
   m_bc_values.metadata(1).set_number("_FillValue", fill_value);
 
   m_bc_values.set(fill_value);
@@ -81,7 +80,8 @@ SSATestCase::SSATestCase(Context::Ptr ctx, int Mx, int My,
   // Dirichlet B.C. mask
   m_bc_mask.create(m_grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
   m_bc_mask.set_attrs("model_state",
-                      "grounded_dragging_floating integer mask", "", "");
+                      "grounded_dragging_floating integer mask",
+                      "", "", "", 0);
 
   m_bc_mask.metadata().set_numbers("flag_values", {0.0, 1.0});
   m_bc_mask.metadata().set_string("flag_meanings",
@@ -90,7 +90,8 @@ SSATestCase::SSATestCase(Context::Ptr ctx, int Mx, int My,
   m_melange_back_pressure.create(m_grid, "melange_back_pressure_fraction",
                                  WITH_GHOSTS, WIDE_STENCIL);
   m_melange_back_pressure.set_attrs("boundary_condition",
-                                    "melange back pressure fraction", "", "");
+                                    "melange back pressure fraction",
+                                    "", "", "", 0);
   m_melange_back_pressure.set(0.0);
 }
 
@@ -339,12 +340,10 @@ void SSATestCase::write(const std::string &filename) {
   exact.create(m_grid, "_exact", WITHOUT_GHOSTS);
   exact.set_attrs("diagnostic",
                   "X-component of the SSA exact solution",
-                  "m s-1", "", 0);
+                  "m s-1", "m year-1", "", 0);
   exact.set_attrs("diagnostic",
                   "Y-component of the SSA exact solution",
-                  "m s-1", "", 1);
-  exact.metadata(0).set_string("glaciological_units", "m year-1");
-  exact.metadata(1).set_string("glaciological_units", "m year-1");
+                  "m s-1", "m year-1", "", 1);
 
   IceModelVec::AccessList list(exact);
   for (Points p(*m_grid); p; p.next()) {

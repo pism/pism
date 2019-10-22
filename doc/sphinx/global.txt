@@ -131,6 +131,7 @@
 .. _KDevelop: https://www.kdevelop.org/
 .. _Kaye and Laby: https://web.archive.org/web/20190506031327/http://www.kayelaby.npl.co.uk/
 
+.. _Ismip6-greenland: http://www.climate-cryosphere.org/wiki/index.php?title=ISMIP6-Projections-Greenland
 
 .. PISM-related external links
 

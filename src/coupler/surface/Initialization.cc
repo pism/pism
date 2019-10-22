@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,45 +38,56 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid, std::shared_p
     m_mass_flux.create(m_grid, "effective_climatic_mass_balance", WITHOUT_GHOSTS);
     m_mass_flux.set_attrs("model_state",
                           "surface mass balance (accumulation/ablation) rate, as seen by the ice dynamics code (used for restarting)",
-                          "kg m-2 s-1", "");
+                          "kg m-2 s-1", "kg m-2 year-1", "", 0);
     m_mass_flux.set_time_independent(false);
-    m_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
 
     m_temperature.create(m_grid, "effective_ice_surface_temp", WITHOUT_GHOSTS);
     m_temperature.set_attrs("model_state",
                             "temperature of the ice at the ice surface but below firn processes, as seen by the ice dynamics code (used for restarting)",
-                            "Kelvin", "");
+                            "Kelvin", "Kelvin", "", 0);
     m_temperature.set_time_independent(false);
 
     m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
     m_liquid_water_fraction->metadata().set_name("effective_ice_surface_liquid_water_fraction");
     m_liquid_water_fraction->set_attrs("model_state",
                                        "liquid water fraction of the ice at the top surface, as seen by the ice dynamics code (used for restarting)",
-                                       "1", "");
+                                       "1", "1", "", 0);
     m_liquid_water_fraction->set_time_independent(false);
 
     m_layer_mass = allocate_layer_mass(grid);
     m_layer_mass->metadata().set_name("effective_surface_layer_mass");
     m_layer_mass->set_attrs("model_state",
                             "mass held in the surface layer, as seen by the ice dynamics code (used for restarting)",
-                            "kg",
-                            "");
+                            "kg", "kg",
+                            "", 0);
     m_layer_mass->set_time_independent(false);
 
     m_layer_thickness = allocate_layer_thickness(grid);
     m_layer_thickness->metadata().set_name("effective_surface_layer_thickness");
     m_layer_thickness->set_attrs("model_state",
                                  "thickness of the surface layer, as seen by the ice dynamics code (used for restarting)",
-                                 "meters", "");
+                                 "meters", "meters", "", 0);
     m_layer_thickness->set_time_independent(false);
   }
+
+  m_accumulation = allocate_accumulation(grid);
+  m_accumulation->set_name("effective_" + m_accumulation->get_name());
+
+  m_melt = allocate_melt(grid);
+  m_melt->set_name("effective_" + m_melt->get_name());
+
+  m_runoff = allocate_runoff(grid);
+  m_runoff->set_name("effective_" + m_runoff->get_name());
 
   // collect pointers
   m_variables = {&m_mass_flux,
                  &m_temperature,
                  m_liquid_water_fraction.get(),
                  m_layer_mass.get(),
-                 m_layer_thickness.get()};
+                 m_layer_thickness.get(),
+                 m_accumulation.get(),
+                 m_melt.get(),
+                 m_runoff.get()};
 }
 
 void InitializationHelper::init_impl(const Geometry &geometry) {
@@ -115,6 +126,9 @@ void InitializationHelper::update_impl(const Geometry &geometry, double t, doubl
   m_liquid_water_fraction->copy_from(m_input_model->liquid_water_fraction());
   m_layer_mass->copy_from(m_input_model->layer_mass());
   m_layer_thickness->copy_from(m_input_model->layer_thickness());
+  m_accumulation->copy_from(m_input_model->accumulation());
+  m_melt->copy_from(m_input_model->melt());
+  m_runoff->copy_from(m_input_model->runoff());
 }
 
 const IceModelVec2S &InitializationHelper::layer_thickness_impl() const {
@@ -135,6 +149,18 @@ const IceModelVec2S &InitializationHelper::liquid_water_fraction_impl() const {
 
 const IceModelVec2S &InitializationHelper::layer_mass_impl() const {
   return *m_layer_mass;
+}
+
+const IceModelVec2S &InitializationHelper::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S &InitializationHelper::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S &InitializationHelper::runoff_impl() const {
+  return *m_runoff;
 }
 
 void InitializationHelper::define_model_state_impl(const PIO &output) const {

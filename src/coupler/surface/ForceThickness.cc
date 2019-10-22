@@ -49,12 +49,16 @@ ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel
   m_ftt_mask.create(m_grid, "ftt_mask", WITHOUT_GHOSTS);
   m_ftt_mask.set_attrs("diagnostic",
                        "mask specifying where to apply the force-to-thickness mechanism",
-                       "", ""); // no units and no standard name
+                       "", "", "", 0); // no units and no standard name
   m_ftt_mask.set(1.0); // default: applied in whole domain
   m_ftt_mask.metadata().set_output_type(PISM_BYTE);
   m_ftt_mask.metadata().set_time_independent(true);
 
   m_mass_flux = allocate_mass_flux(g);
+
+  m_accumulation = allocate_accumulation(g);
+  m_melt         = allocate_melt(g);
+  m_runoff       = allocate_runoff(g);
 }
 
 ForceThickness::~ForceThickness() {
@@ -93,8 +97,8 @@ void ForceThickness::init_impl(const Geometry &geometry) {
     // set attributes for the read stage; see below for reset
     m_target_thickness.set_attrs("diagnostic",
                                  "target thickness for force-to-thickness mechanism (hit this at end of run)",
-                                 "m",
-                                 "land_ice_thickness"); // standard_name *to read by*
+                                 "m", "m",
+                                 "land_ice_thickness", 0); // standard_name *to read by*
 
     m_target_thickness.regrid(input_file, CRITICAL);
 
@@ -102,8 +106,8 @@ void ForceThickness::init_impl(const Geometry &geometry) {
     m_target_thickness.metadata(0).set_name("ftt_target_thk");
     m_target_thickness.set_attrs("diagnostic",
                                  "target thickness for force-to-thickness mechanism (wants to hit this at end of run)",
-                                 "m",
-                                 "");  // no CF standard_name, to put it mildly
+                                 "m", "m",
+                                 "", 0);  // no CF standard_name, to put it mildly
   }
 
   {
@@ -262,10 +266,26 @@ void ForceThickness::update_impl(const Geometry &geometry, double t, double dt) 
                    geometry.ice_thickness,
                    geometry.cell_type,
                    *m_mass_flux);
+  
+  dummy_accumulation(*m_mass_flux, *m_accumulation);
+  dummy_melt(*m_mass_flux, *m_melt);
+  dummy_runoff(*m_mass_flux, *m_runoff);
 }
 
 const IceModelVec2S &ForceThickness::mass_flux_impl() const {
   return *m_mass_flux;
+}
+
+const IceModelVec2S &ForceThickness::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S &ForceThickness::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S &ForceThickness::runoff_impl() const {
+  return *m_runoff;
 }
 
 /*!

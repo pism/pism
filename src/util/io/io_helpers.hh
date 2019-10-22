@@ -109,6 +109,10 @@ void write_time_bounds(const PIO &nc, const TimeBoundsMetadata &metadata,
                        size_t t_start, const std::vector<double> &data,
                        IO_Type nctype = PISM_DOUBLE);
 
+std::string time_dimension(units::System::Ptr unit_system,
+                           const PIO &file,
+                           const std::string &variable_name);
+
 void read_attributes(const PIO &nc, const std::string &variable_name, VariableMetadata &variable);
 
 void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type nctype);

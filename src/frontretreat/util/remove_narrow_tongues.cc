@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #include "remove_narrow_tongues.hh"
 
 #include "pism/util/IceGrid.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 
@@ -57,19 +57,21 @@ namespace pism {
  *
  * @return 0 on success
  */
-void remove_narrow_tongues(const IceModelVec2CellType &mask,
+void remove_narrow_tongues(const Geometry &geometry,
                            IceModelVec2S &ice_thickness) {
+
+  auto &mask      = geometry.cell_type;
+  auto &bed       = geometry.bed_elevation;
+  auto &sea_level = geometry.sea_level_elevation;
 
   IceGrid::ConstPtr grid = mask.grid();
 
-  IceModelVec::AccessList list{&mask, &ice_thickness};
+  IceModelVec::AccessList list{&mask, &bed, &sea_level, &ice_thickness};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    if (mask.ice_free(i, j)) {
-      // FIXME: it might be better to have access to bedrock elevation b(i,j)
-      // and sea level SL so that the predicate can be
-      //   mask.ice_free(i,j) or (mask.grounded_ice(i,j) and (b(i,j) >= SL)))
+    if (mask.ice_free(i,j) or
+        (mask.grounded_ice(i,j) and bed(i,j) >= sea_level(i, j))) {
       continue;
     }
 

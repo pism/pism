@@ -64,19 +64,15 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
   m_velocity.create(m_grid, "bar", WITH_GHOSTS, WIDE_STENCIL); // components ubar, vbar
   m_velocity.set_attrs("model_state",
                        "thickness-advective ice velocity (x-component)", 
-                       "m s-1", "", 0);
+                       "m s-1", "m year-1", "", 0);
   m_velocity.set_attrs("model_state",
                        "thickness-advective ice velocity (y-component)",
-                       "m s-1", "", 1);
-
-  m_velocity.metadata(0).set_string("glaciological_units", "m year-1");
-  m_velocity.metadata(1).set_string("glaciological_units", "m year-1");
+                       "m s-1", "m year-1", "", 1);
 
   m_basal_frictional_heating.create(m_grid, "bfrict", WITHOUT_GHOSTS);
   m_basal_frictional_heating.set_attrs("diagnostic",
                                        "basal frictional heating",
-                                       "W m-2", "");
-  m_basal_frictional_heating.metadata().set_string("glaciological_units", "mW m-2");
+                                       "W m-2", "mW m-2", "", 0);
 }
 
 ShallowStressBalance::~ShallowStressBalance() {
@@ -126,6 +122,11 @@ DiagnosticList ShallowStressBalance::diagnostics_impl() const {
     {"taud",     Diagnostic::Ptr(new SSB_taud(this))},
     {"taud_mag", Diagnostic::Ptr(new SSB_taud_mag(this))}
   };
+
+  if(m_config->get_flag("output.ISMIP6")) {
+    result["strbasemag"] = Diagnostic::Ptr(new SSB_taub_mag(this));
+  }
+
   return result;
 }
 
@@ -312,14 +313,16 @@ IceModelVec::Ptr SSB_taub::compute_impl() const {
 SSB_taub_mag::SSB_taub_mag(const ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
 
+  auto ismip6 = m_config->get_flag("output.ISMIP6");
+
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "taub_mag")};
+  m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "strbasemag" : "taub_mag")};
 
   set_attrs("magnitude of the basal shear stress at the base of ice",
-            "magnitude_of_land_ice_basal_drag", // InitMIP "standard" name
+            "land_ice_basal_drag", // ISMIP6 "standard" name
             "Pa", "Pa", 0);
   m_vars[0].set_string("comment",
-                     "this field is purely diagnostic (not used by the model)");
+                       "this field is purely diagnostic (not used by the model)");
 }
 
 IceModelVec::Ptr SSB_taub_mag::compute_impl() const {

@@ -24,8 +24,7 @@ namespace calving {
 
 StressCalving::StressCalving(IceGrid::ConstPtr grid,
                              unsigned int stencil_width)
-  // mask has to have a wider stencil to be able to call is_marginal() away from the current cell
-  : CalvingFrontRetreat(grid, stencil_width + 1),
+  : Component(grid),
     m_stencil_width(stencil_width),
     m_strain_rates(m_grid, "strain_rates", WITH_GHOSTS,
                    m_stencil_width,
@@ -34,13 +33,24 @@ StressCalving::StressCalving(IceGrid::ConstPtr grid,
   m_strain_rates.metadata(0).set_name("eigen1");
   m_strain_rates.set_attrs("internal",
                            "major principal component of horizontal strain-rate",
-                           "second-1", "", 0);
+                           "second-1", "second-1", "", 0);
 
   m_strain_rates.metadata(1).set_name("eigen2");
   m_strain_rates.set_attrs("internal",
                            "minor principal component of horizontal strain-rate",
-                           "second-1", "", 1);
+                           "second-1", "second-1", "", 1);
+
+  m_calving_rate.create(m_grid, "calving_rate", WITHOUT_GHOSTS);
+  m_calving_rate.set_attrs("internal", "horizontal calving rate", "m s-1", "m year-1", "", 0);
+
+  m_cell_type.create(m_grid, "cell_type", WITH_GHOSTS);
+  m_cell_type.set_attrs("internal", "cell type mask", "", "", "", 0);
 }
+
+const IceModelVec2S &StressCalving::calving_rate() const {
+  return m_calving_rate;
+}
+
 
 StressCalving::~StressCalving() {
   // empty

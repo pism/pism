@@ -48,7 +48,7 @@ protected:
   virtual void bootstrap_impl(const PIO &input_file,
                               const IceModelVec2S &ice_thickness);
 
-  virtual void initialize_impl(const IceModelVec2S &W_till,
+  virtual void init_impl(const IceModelVec2S &W_till,
                                const IceModelVec2S &W,
                                const IceModelVec2S &P);
 

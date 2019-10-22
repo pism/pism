@@ -55,8 +55,8 @@ LapseRates::LapseRates(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> 
                                                       evaluations_per_year,
                                                       periodic,
                                                       LINEAR);
-    m_reference_surface->set_attrs("climate_forcing", "ice surface elevation", "m",
-                                   "surface_altitude", 0);
+    m_reference_surface->set_attrs("climate_forcing", "ice surface elevation",
+                                   "m", "m", "surface_altitude", 0);
   }
 
   m_precipitation = allocate_precipitation(grid);

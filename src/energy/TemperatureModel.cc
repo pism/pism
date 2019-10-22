@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,7 +34,8 @@ TemperatureModel::TemperatureModel(IceGrid::ConstPtr grid,
 
   m_ice_temperature.create(m_grid, "temp", WITH_GHOSTS);
   m_ice_temperature.set_attrs("model_state",
-                              "ice temperature", "K", "land_ice_temperature");
+                              "ice temperature",
+                              "K", "K", "land_ice_temperature", 0);
   m_ice_temperature.metadata().set_number("valid_min", 0.0);
 }
 

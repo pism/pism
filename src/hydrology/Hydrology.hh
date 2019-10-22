@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 PISM Authors
+// Copyright (C) 2012-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,7 @@
 namespace pism {
 
 class IceModelVec2CellType;
+class Geometry;
 
 //! @brief Sub-glacial hydrology models and related diagnostics.
 namespace hydrology {
@@ -37,9 +38,7 @@ public:
   // modeling domain (set to NULL in whole-ice-sheet configurations)
   const IceModelVec2Int      *no_model_mask;
   // geometry
-  const IceModelVec2CellType *cell_type;
-  const IceModelVec2S        *ice_thickness;
-  const IceModelVec2S        *bed_elevation;
+  const Geometry *geometry;
   // hydrological inputs
   const IceModelVec2S        *surface_input_rate;
   const IceModelVec2S        *basal_melt_rate;
@@ -121,7 +120,7 @@ public:
   void bootstrap(const PIO &input_file,
                  const IceModelVec2S &ice_thickness);
 
-  void initialize(const IceModelVec2S &W_till,
+  void init(const IceModelVec2S &W_till,
                   const IceModelVec2S &W,
                   const IceModelVec2S &P);
 
@@ -130,7 +129,8 @@ public:
   const IceModelVec2S& till_water_thickness() const;
   const IceModelVec2S& subglacial_water_thickness() const;
   const IceModelVec2S& overburden_pressure() const;
-  const IceModelVec2S& total_input_rate() const;
+  const IceModelVec2S& surface_input_rate() const;
+  const IceModelVec2V& flux() const;
 
   const IceModelVec2S& mass_change() const;
   const IceModelVec2S& mass_change_at_grounded_margin() const;
@@ -146,7 +146,7 @@ protected:
   virtual void bootstrap_impl(const PIO &input_file,
                               const IceModelVec2S &ice_thickness);
 
-  virtual void initialize_impl(const IceModelVec2S &W_till,
+  virtual void init_impl(const IceModelVec2S &W_till,
                                const IceModelVec2S &W,
                                const IceModelVec2S &P);
 
@@ -159,11 +159,17 @@ protected:
   void compute_overburden_pressure(const IceModelVec2S &ice_thickness,
                                    IceModelVec2S &result) const;
 
-  void compute_input_rate(const IceModelVec2CellType &mask,
-                          const IceModelVec2S &basal_melt_rate,
-                          const IceModelVec2S *surface_input_rate,
-                          IceModelVec2S &result);
+  void compute_surface_input_rate(const IceModelVec2CellType &mask,
+                                  const IceModelVec2S *surface_input_rate,
+                                  IceModelVec2S &result);
+
+  void compute_basal_melt_rate(const IceModelVec2CellType &mask,
+                               const IceModelVec2S &basal_melt_rate,
+                               IceModelVec2S &result);
 protected:
+  // water flux on the regular grid
+  IceModelVec2V m_Q;
+
   //! effective thickness of basal water stored in till
   IceModelVec2S m_Wtill;
 
@@ -173,8 +179,11 @@ protected:
   //! overburden pressure
   IceModelVec2S m_Pover;
 
-  // total input rate, combining basal melt rate and the input from the surface
-  IceModelVec2S m_input_rate;
+  // surface input rate
+  IceModelVec2S m_surface_input_rate;
+
+  // input rate due to basal melt
+  IceModelVec2S m_basal_melt_rate;
 
   // change due to flow for the current hydrology time step
   IceModelVec2S m_flow_change_incremental;

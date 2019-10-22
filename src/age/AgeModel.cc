@@ -62,11 +62,13 @@ AgeModel::AgeModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_
     m_work(m_grid, "work_vector", WITHOUT_GHOSTS),
     m_stress_balance(stress_balance) {
 
-  m_ice_age.set_attrs("model_state", "age of ice", "s", "" /* no standard name*/);
-  m_ice_age.metadata().set_string("glaciological_units", "years");
+  m_ice_age.set_attrs("model_state", "age of ice",
+                      "s", "years", "" /* no standard name*/, 0);
+
   m_ice_age.metadata().set_number("valid_min", 0.0);
 
-  m_work.set_attrs("internal", "new values of age during time step", "s", "");
+  m_work.set_attrs("internal", "new values of age during time step",
+                   "s", "s", "", 0);
 }
 
 /*!

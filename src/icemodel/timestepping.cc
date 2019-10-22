@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,12 +28,14 @@
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/util/Component.hh" // ...->max_timestep()
 
-#include "pism/calving/EigenCalving.hh"
-#include "pism/calving/vonMisesCalving.hh"
-#include "pism/calving/FrontalMelt.hh"
+#include "pism/frontretreat/calving/EigenCalving.hh"
+#include "pism/frontretreat/calving/HayhurstCalving.hh"
+#include "pism/frontretreat/calving/vonMisesCalving.hh"
+#include "pism/frontretreat/FrontRetreat.hh"
 
 #include "pism/energy/EnergyModel.hh"
 #include "pism/coupler/OceanModel.hh"
+#include "pism/coupler/FrontalMelt.hh"
 
 namespace pism {
 
@@ -118,28 +120,35 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
     }
   }
 
-  // calving code needs additional inputs to compute time step restrictions
-  {
-    CalvingInputs inputs;
+  // mechanisms that use a retreat rate
+  if (m_config->get_flag("geometry.front_retreat.use_cfl") and
+      (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_frontal_melt)) {
+    // at least one of front retreat mechanisms is active
 
-    inputs.geometry = &m_geometry;
-    inputs.bc_mask  = &m_ssa_dirichlet_bc_mask;
-
-    inputs.ice_velocity         = &m_stress_balance->shallow()->velocity();
-    inputs.ice_enthalpy         = &m_energy_model->enthalpy();
-    inputs.shelf_base_mass_flux = &m_ocean->shelf_base_mass_flux();
+    IceModelVec2S &retreat_rate = m_work2d[0];
+    retreat_rate.set(0.0);
 
     if (m_eigen_calving) {
-      restrictions.push_back(m_eigen_calving->max_timestep(inputs, current_time));
+      retreat_rate.add(1.0, m_eigen_calving->calving_rate());
+    }
+
+    if (m_hayhurst_calving) {
+      retreat_rate.add(1.0, m_hayhurst_calving->calving_rate());
     }
 
     if (m_vonmises_calving) {
-      restrictions.push_back(m_vonmises_calving->max_timestep(inputs, current_time));
+      retreat_rate.add(1.0, m_vonmises_calving->calving_rate());
     }
 
     if (m_frontal_melt) {
-      restrictions.push_back(m_frontal_melt->max_timestep(inputs, current_time));
+      retreat_rate.add(1.0, m_frontal_melt->retreat_rate());
     }
+
+    assert(m_front_retreat);
+
+    restrictions.push_back(m_front_retreat->max_timestep(m_geometry.cell_type,
+                                                         m_ssa_dirichlet_bc_mask,
+                                                         retreat_rate));
   }
 
   // Always consider the maximum allowed time-step length.

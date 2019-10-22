@@ -68,6 +68,12 @@
    :Option: :opt:`-atmosphere_delta_T_reference_year`
    :Description: Reference year to use when ``atmosphere.delta_T.period`` is active.
 
+#. :config:`atmosphere.models` (*string*)
+
+   :Value: given
+   :Option: :opt:`-atmosphere`
+   :Description: Comma-separated list of atmosphere melt models and modifiers.
+
 #. :config:`atmosphere.fausto_air_temp.c_ma` (*number*)
 
    :Value: -0.718900 (Kelvin / degree_north)
@@ -605,11 +611,20 @@
    :Option: :opt:`-eigen_calving_K`
    :Description: Set proportionality constant to determine calving rate from strain rates.  Note references :cite:`Levermannetal2012`, :cite:`Martinetal2011` use K in range `10^{9}` to `3 \times 10^{11}` m a, that is, `3 \times 10^{16}` to `10^{19}` m s.
 
-#. :config:`calving.float_kill.calve_near_grounding_line` (*flag*)
+#. :config:`calving.hayhurst_calving.B_tilde` (*number*)
 
-   :Value: yes
-   :Option: :opt:`-float_kill_calve_near_grounding_line`
-   :Description: Calve floating ice near the grounding line.
+   :Value: 65 ((MPa)^r / year)
+   :Description: Effective damage rate :cite:`Mercenier2018`
+
+#. :config:`calving.hayhurst_calving.exponent_r` (*number*)
+
+   :Value: 0.430000 (1)
+   :Description: Damage law exponent :cite:`Mercenier2018`
+
+#. :config:`calving.hayhurst_calving.sigma_threshold` (*number*)
+
+   :Value: 0.170000 (MPa)
+   :Description: Damage threshold stress :cite:`Mercenier2018`
 
 #. :config:`calving.float_kill.margin_only` (*flag*)
 
@@ -617,29 +632,17 @@
    :Option: :opt:`-float_kill_margin_only`
    :Description: Apply float_kill at ice margin cells only.
 
-#. :config:`calving.front_retreat.use_cfl` (*flag*)
+#. :config:`calving.float_kill.calve_near_grounding_line` (*flag*)
 
-   :Value: false
-   :Option: :opt:`-calving_cfl`
-   :Description: apply CFL criterion for eigen-calving rate front retreat
-
-#. :config:`calving.front_retreat.wrap_around` (*flag*)
-
-   :Value: false
-   :Option: :opt:`-calving_wrap_around`
-   :Description: If true, wrap around domain boundaries. This may be needed in some regional synthetic geometry setups.
+   :Value: yes
+   :Option: :opt:`-float_kill_calve_near_grounding_line`
+   :Description: Calve floating ice near the grounding line.
 
 #. :config:`calving.methods` (*string*)
 
    :Value: *no default*
    :Option: :opt:`-calving`
-   :Description: comma-separated list of calving methods; one or more of 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'
-
-#. :config:`calving.ocean_kill.file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-ocean_kill_file`
-   :Description: Input file containing ice thickness and bed elevation used to compute maximum ice extent.
+   :Description: comma-separated list of calving methods; one or more of 'eigen_calving', 'float_kill', 'thickness_calving'
 
 #. :config:`calving.thickness_calving.threshold` (*number*)
 
@@ -653,11 +656,45 @@
    :Option: :opt:`-thickness_calving_threshold_file`
    :Description: Name of the file containing the spatially-variable thickness calving threshold.
 
-#. :config:`calving.vonmises.sigma_max` (*number*)
+#. :config:`calving.vonmises_calving.use_custom_flow_law` (*flag*)
+
+   :Value: no
+   :Option: :opt:`-vonmises_calving_use_custom_flow_law`
+   :Description: Use custom flow law in the von Mises stress computation
+
+#. :config:`calving.vonmises_calving.flow_law` (*keyword*)
+
+   :Value: ``gpbld``
+   :Choices: ``arr, arrwarm, gpbld, hooke, isothermal_glen, pb``
+   :Description: The custom flow law for the von Mises stress computation
+
+#. :config:`calving.vonmises_calving.Glen_exponent` (*number*)
+
+   :Value: 3 (pure number)
+   :Option: :opt:`-vonmises_calving_n`
+   :Description: Glen exponent in ice flow law for von Mises calving
+
+#. :config:`calving.vonmises_calving.enhancement_factor` (*number*)
+
+   :Value: 1 (1)
+   :Description: Flow enhancement factor used by the flow law in the von Mises stress computation
+
+#. :config:`calving.vonmises_calving.enhancement_factor_interglacial` (*number*)
+
+   :Value: 1 (1)
+   :Description: Flow enhancement factor used by the flow law in the von Mises stress computation (for ice accumulated during interglacial periods).
+
+#. :config:`calving.vonmises_calving.sigma_max` (*number*)
 
    :Value: 1000000 (Pa)
-   :Option: :opt:`-vonmises_calving_sigma_max`
+   :Option: :opt:`-vonmises_calving_calving_sigma_max`
    :Description: Set maximum tensile stress.  Note references :cite:`Morlighem2016` use 1.0e6 Pa.
+
+#. :config:`calving.vonmises_calving.threshold_file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-vonmises_calving_threshold_file`
+   :Description: Name of the file containing the spatially-variable vonmises_calving calving threshold.
 
 #. :config:`input.forcing.buffer_size` (*integer*)
 
@@ -1004,11 +1041,124 @@
    :Option: :opt:`-fracture_softening`
    :Description: epsilon in equation (6) in Albrecht and Levermann, 'Fracture-induced softening for large-scale ice dynamics'
 
-#. :config:`fracture_density.write_fields` (*flag*)
+#. :config:`frontal_melt.models` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-frontal_melt`
+   :Description: Comma-separated list of frontal melt models and modifiers. (Leave empty to disable.)
+
+#. :config:`frontal_melt.include_floating_ice` (*flag*)
 
    :Value: no
-   :Option: :opt:`-write_fd_fields`
-   :Description: Writing of fracture density related fields to nc-file.
+   :Description: Apply frontal melt to all grid icy cells next to ocean cells
+
+#. :config:`frontal_melt.constant.melt_rate` (*number*)
+
+   :Value: 1 (m / day)
+   :Option: :opt:`-frontal_melt_rate`
+   :Description: default melt rate used by the 'constant' frontal_melt model
+
+#. :config:`frontal_melt.discharge_given.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-frontal_melt_discharge_given_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`frontal_melt.discharge_given.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-frontal_melt_discharge_given_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`frontal_melt.discharge_given.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-frontal_melt_discharge_given_reference_year`
+   :Description: Reference year to use when ``frontal_melt.discharge_given.period`` is active.
+
+#. :config:`frontal_melt.given.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-frontal_melt_given_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`frontal_melt.given.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-frontal_melt_given_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`frontal_melt.given.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-frontal_melt_given_reference_year`
+   :Description: Reference year to use when ``frontal_melt.given.period`` is active.
+
+#. :config:`frontal_melt.routing.parameter_a` (*number*)
+
+   :Value: 0.000300 (m-alpha day^(alpha-1) Celsius-beta)
+   :Description: parameter A in eqn. 1 in :cite:`Xu2013`
+
+#. :config:`frontal_melt.routing.parameter_b` (*number*)
+
+   :Value: 0.150000 (m day^(alpha-1) Celsius-beta)
+   :Description: parameter B in eqn. 1 in :cite:`Xu2013`
+
+#. :config:`frontal_melt.routing.power_alpha` (*number*)
+
+   :Value: 0.390000 (1)
+   :Description: exponent `\alpha` in eqn. 1 in :cite:`Xu2013`
+
+#. :config:`frontal_melt.routing.power_beta` (*number*)
+
+   :Value: 1.180000 (1)
+   :Description: exponent `\beta` in eqn. 1 in :cite:`Xu2013`
+
+#. :config:`frontal_melt.routing.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-frontal_melt_routing_file`
+   :Description: Name of the file containing climate forcing fields.
+
+#. :config:`frontal_melt.routing.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-frontal_melt_routing_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`frontal_melt.routing.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-frontal_melt_routing_reference_year`
+   :Description: Reference year to use when ``frontal_melt.routing.period`` is active.
+
+#. :config:`geometry.front_retreat.wrap_around` (*flag*)
+
+   :Value: false
+   :Option: :opt:`-front_retreat_wrap_around`
+   :Description: If true, wrap around domain boundaries. This may be needed in some regional synthetic geometry setups.
+
+#. :config:`geometry.front_retreat.use_cfl` (*flag*)
+
+   :Value: false
+   :Option: :opt:`-front_retreat_cfl`
+   :Description: apply CFL criterion for eigen-calving rate front retreat
+
+#. :config:`geometry.front_retreat.prescribed.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-front_retreat_file`
+   :Description: Name of the file containing the maximum ice extent mask `land_ice_area_fraction_retreat`
+
+#. :config:`geometry.front_retreat.prescribed.period` (*integer*)
+
+   :Value: 0
+   :Description: Length of the period of the front retreat data. Set to zero to disable.
+
+#. :config:`geometry.front_retreat.prescribed.reference_year` (*integer*)
+
+   :Value: 0
+   :Description: Reference year to use when `geometry.front_retreat.prescribed.period` is active.
 
 #. :config:`geometry.grounded_cell_fraction` (*flag*)
 
@@ -1181,7 +1331,7 @@
 #. :config:`hydrology.model` (*keyword*)
 
    :Value: ``null``
-   :Choices: ``null, routing, distributed``
+   :Choices: ``null, routing, steady, distributed``
    :Option: :opt:`-hydrology`
    :Description: Basal hydrology sub-model.
 
@@ -1269,6 +1419,51 @@
    :Value: *no default*
    :Option: :opt:`-regrid_vars`
    :Description: Comma-separated list of variables to regrid. Leave empty to regrid all model state variables.
+
+#. :config:`hydrology.surface_input_from_runoff` (*flag*)
+
+   :Value: no
+   :Description: Use surface runoff as surface input.
+
+#. :config:`hydrology.routing.include_floating_ice` (*flag*)
+
+   :Value: no
+   :Description: Route subglacial water under ice shelves. This may be appropriate if a shelf is close to floatation. Note that this has no effect on ice flow.
+
+#. :config:`hydrology.add_water_input_to_till_storage` (*flag*)
+
+   :Value: yes
+   :Description: Add surface input to water stored in till. If no it will be added to the transportable water.
+
+#. :config:`hydrology.steady.potential_n_iterations` (*integer*)
+
+   :Value: 1000
+   :Description: maxinum number of iterations to take while pre-processing hydraulic potential
+
+#. :config:`hydrology.steady.potential_delta` (*number*)
+
+   :Value: 10000 (Pa)
+   :Description: potential adjustment used to fill sinks (smaller values require more iterations but produce fewer artifacts)
+
+#. :config:`hydrology.steady.n_iterations` (*integer*)
+
+   :Value: 7500
+   :Description: maxinum number of iterations to use in while estimating steady-state water flux
+
+#. :config:`hydrology.steady.volume_ratio` (*number*)
+
+   :Value: 0.100000 (1)
+   :Description: water volume ratio used as the stopping criterion
+
+#. :config:`hydrology.steady.input_rate_scaling` (*number*)
+
+   :Value: 1.000000e+07 (seconds)
+   :Description: input rate scaling
+
+#. :config:`hydrology.steady.flux_update_interval` (*number*)
+
+   :Value: 1 (years)
+   :Description: interval between updates of the steady state flux
 
 #. :config:`inverse.design.cH1` (*number*)
 
@@ -1441,6 +1636,18 @@
    :Option: :opt:`-dry`
    :Description: Dry (ocean-less) simulation; ice is considered grounded regardless of ice thickness, bed elevation, and sea level.
 
+#. :config:`ocean.models` (*string*)
+
+   :Value: constant
+   :Option: :opt:`-ocean`
+   :Description: Comma-separated list of ocean models and modifiers.
+
+#. :config:`sea_level.models` (*string*)
+
+   :Value: constant
+   :Option: :opt:`-sea_level`
+   :Description: Comma-separated list of sea level models and modifiers.
+
 #. :config:`ocean.anomaly.file` (*string*)
 
    :Value: *no default*
@@ -1468,7 +1675,7 @@
 #. :config:`ocean.melange_back_pressure_fraction` (*number*)
 
    :Value: 0 (1)
-   :Description: default melange back pressure fraction in the 'contant' ocean model
+   :Description: default melange back pressure fraction
 
 #. :config:`ocean.constant.melt_rate` (*number*)
 
@@ -1822,7 +2029,7 @@
 
 #. :config:`output.sizes.big_2d` (*string*)
 
-   :Value: ``age, bfrict, bheatflx, bmelt, bwp, bwprel, dbdt, effbwp, enthalpybase, enthalpysurf, flux_divergence, hardav, hydroinput, lat, litho_temp, lon, nuH, ocean_kill_mask, rank, tempbase, tempicethk, tempicethk_basal, temppabase, tempsurf, thk, thksmooth, tillphi, topg, velbar, velbase, wallmelt, wvelbase``
+   :Value: ``age, bfrict, bheatflx, bmelt, bwp, bwprel, dbdt, effbwp, enthalpybase, enthalpysurf, flux_divergence, hardav, hydroinput, lat, litho_temp, lon, nuH, rank, tempbase, tempicethk, tempicethk_basal, temppabase, tempsurf, thk, thksmooth, tillphi, topg, velbar, velbase, wallmelt, wvelbase``
    :Description: Comma-separated list of variables to write to the output (in addition to model_state variables and variables listed in output.sizes.medium) if 'big_2d' output size is selected. Does not include fields written by boundary models.
 
 #. :config:`output.sizes.medium` (*string*)
@@ -1835,6 +2042,16 @@
    :Value: *no default*
    :Option: :opt:`-save_file`
    :Description: Snapshot (output) file name (or prefix, if saving to individual files).
+
+#. :config:`output.ISMIP6_extra_variables` (*string*)
+
+   :Value: ``lithk, orog, topg, hfgeoubed, acabf, libmassbfgr, libmassbffl, dlithkdt, velsurf, zvelsurf, velbase, zvelbase, velmean, litemptop, litempbotgr, litempbotfl, strbasemag, licalvf, lifmassbf, sftgif, sftgrf, sftflf``
+   :Description: Comma-separated list of fields reported by models participating in ISMIP6 simulations.
+
+#. :config:`output.ISMIP6_ts_variables` (*string*)
+
+   :Value: ``lim, limnsw, iareagr, iareafl, tendacabf, tendlibmassbf, tendlibmassbffl, tendlicalvf, tendlifmassbf``
+   :Description: Comma-separated list of scalar variables (time series) reported by models participating in ISMIP6 simulations.
 
 #. :config:`output.snapshot.size` (*keyword*)
 
@@ -1883,6 +2100,16 @@
    :Value: *no default*
    :Option: :opt:`-ts_vars`
    :Description: Requested scalar (time-series) diagnostics. Leave empty to save all available diagnostics.
+
+#. :config:`output.use_MKS` (*flag*)
+
+   :Value: false
+   :Description: Use MKS units in output files.
+
+#. :config:`output.ISMIP6` (*flag*)
+
+   :Value: false
+   :Description: Follow ISMIP6 conventions (units, variable names, "standard names") when writing output variables.
 
 #. :config:`output.variable_order` (*keyword*)
 
@@ -2167,6 +2394,12 @@
    :Option: :opt:`-surface_anomaly_reference_year`
    :Description: Reference year to use when ``surface.anomaly.period`` is active.
 
+#. :config:`surface.models` (*string*)
+
+   :Value: given
+   :Option: :opt:`-surface`
+   :Description: Comma-separated list of surface models and modifiers.
+
 #. :config:`surface.cache.update_interval` (*integer*)
 
    :Value: 10
@@ -2241,6 +2474,29 @@
 
    :Value: 91000 (kg m-2 year-1)
    :Description: Maximum climatic mass balance value (used to check input data). Corresponds to 100 m/year ice equivalent.
+
+#. :config:`surface.ismip6.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-surface_ismip6_file`
+   :Description: Name of the file containing climate forcing anomaly fields.
+
+#. :config:`surface.ismip6.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-surface_ismip6_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`surface.ismip6.reference_year` (*integer*)
+
+   :Value: 0
+   :Description: Reference year to use when ``surface.ismip6.period`` is active.
+
+#. :config:`surface.ismip6.reference_file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-surface_ismip6_reference_file`
+   :Description: Name of the file containing reference climate forcing fields.
 
 #. :config:`surface.lapse_rate.file` (*string*)
 

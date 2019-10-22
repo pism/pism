@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,6 +32,11 @@ EigenCalving::EigenCalving(IceGrid::ConstPtr grid)
   : StressCalving(grid, 2) {
 
   m_K = m_config->get_number("calving.eigen_calving.K");
+
+  m_calving_rate.metadata().set_name("eigen_calving_rate");
+  m_calving_rate.set_attrs("diagnostic",
+                           "horizontal calving rate due to eigen-calving",
+                           "m s-1", "m year-1", "", 0);
 }
 
 EigenCalving::~EigenCalving() {
@@ -50,31 +55,30 @@ void EigenCalving::init() {
   }
 
   m_strain_rates.set(0.0);
-
 }
 
 //! \brief Uses principal strain rates to apply "eigencalving" with constant K.
 /*!
   See equation (26) in [\ref Winkelmannetal2011].
 */
-void EigenCalving::compute_calving_rate(const CalvingInputs &inputs,
-                                        IceModelVec2S &result) const {
+void EigenCalving::update(const IceModelVec2CellType &cell_type,
+                          const IceModelVec2V &ice_velocity) {
 
-  prepare_mask(inputs.geometry->cell_type, m_mask);
+  // make a copy with a wider stencil
+  m_cell_type.copy_from(cell_type);
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
 
-  // eigenCalvOffset allows adjusting the transition from
-  // compressive to extensive flow regime
+  // eigenCalvOffset allows adjusting the transition from compressive to extensive flow
+  // regime
   const double eigenCalvOffset = 0.0;
 
-  stressbalance::compute_2D_principal_strain_rates(*inputs.ice_velocity,
-                                                   m_mask,
+  stressbalance::compute_2D_principal_strain_rates(ice_velocity, m_cell_type,
                                                    m_strain_rates);
   m_strain_rates.update_ghosts();
 
-  IceModelVec::AccessList list{&m_mask, &result, &m_strain_rates};
+  IceModelVec::AccessList list{&m_cell_type, &m_calving_rate, &m_strain_rates};
 
   // Compute the horizontal calving rate
   for (Points pt(*m_grid); pt; pt.next()) {
@@ -82,7 +86,7 @@ void EigenCalving::compute_calving_rate(const CalvingInputs &inputs,
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
     // have floating ice neighbors after the mass continuity step
-    if (m_mask.ice_free_ocean(i, j) and m_mask.next_to_floating_ice(i, j)) {
+    if (m_cell_type.ice_free_ocean(i, j) and m_cell_type.next_to_floating_ice(i, j)) {
 
       // Average of strain-rate eigenvalues in adjacent floating grid cells to be used for
       // eigen-calving:
@@ -93,7 +97,7 @@ void EigenCalving::compute_calving_rate(const CalvingInputs &inputs,
         int N = 0;
         for (int p = -1; p < 2; p += 2) {
           const int I = i + p * offset;
-          if (m_mask.floating_ice(I, j) and not m_mask.ice_margin(I, j)) {
+          if (m_cell_type.floating_ice(I, j) and not m_cell_type.ice_margin(I, j)) {
             eigen1 += m_strain_rates(I, j, 0);
             eigen2 += m_strain_rates(I, j, 1);
             N += 1;
@@ -102,7 +106,7 @@ void EigenCalving::compute_calving_rate(const CalvingInputs &inputs,
 
         for (int q = -1; q < 2; q += 2) {
           const int J = j + q * offset;
-          if (m_mask.floating_ice(i, J) and not m_mask.ice_margin(i, J)) {
+          if (m_cell_type.floating_ice(i, J) and not m_cell_type.ice_margin(i, J)) {
             eigen1 += m_strain_rates(i, J, 0);
             eigen2 += m_strain_rates(i, J, 1);
             N += 1;
@@ -121,22 +125,19 @@ void EigenCalving::compute_calving_rate(const CalvingInputs &inputs,
       // [m*s^1] hence, eigen_calving_K has units [m*s]
       if (eigen2 > eigenCalvOffset and eigen1 > 0.0) {
         // spreading in all directions
-        result(i, j) = m_K * eigen1 * (eigen2 - eigenCalvOffset);
+        m_calving_rate(i, j) = m_K * eigen1 * (eigen2 - eigenCalvOffset);
       } else {
-        result(i, j) = 0.0;
+        m_calving_rate(i, j) = 0.0;
       }
 
     } else { // end of "if (ice_free_ocean and next_to_floating)"
-      result(i, j) = 0.0;
+      m_calving_rate(i, j) = 0.0;
     }
   } // end of the loop over grid points
-
 }
 
 DiagnosticList EigenCalving::diagnostics_impl() const {
-  return {{"eigen_calving_rate",
-        Diagnostic::Ptr(new CalvingRate(this, "eigen_calving_rate",
-                                        "horizontal calving rate due to eigen-calving"))}};
+  return {{"eigen_calving_rate", Diagnostic::wrap(m_calving_rate)}};
 }
 
 } // end of namespace calving

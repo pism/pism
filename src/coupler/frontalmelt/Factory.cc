@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -15,35 +15,31 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
-#ifndef _PISMEIGENCALVING_H_
-#define _PISMEIGENCALVING_H_
+ */
 
-#include "StressCalving.hh"
+#include "Factory.hh"
+
+// frontal melt models:
+#include "Constant.hh"
+#include "DischargeGiven.hh"
+#include "DischargeRouting.hh"
+#include "Given.hh"
 
 namespace pism {
+namespace frontalmelt {
+// FrontalMelt
+Factory::Factory(IceGrid::ConstPtr g)
+  : PCFactory<FrontalMelt>(g, "frontal_melt.models") {
 
-namespace calving {
+  add_model<Constant>("constant");
+  add_model<DischargeGiven>("discharge_given");
+  add_model<DischargeRouting>("routing");
+  add_model<Given>("given");
+}
 
-class EigenCalving : public StressCalving {
-public:
-  EigenCalving(IceGrid::ConstPtr grid);
-  virtual ~EigenCalving();
+Factory::~Factory() {
+  // empty
+}
 
-  void init();
-
-  // empty methods that we're required to implement:
-protected:
-  virtual DiagnosticList diagnostics_impl() const;
-
-  void compute_calving_rate(const CalvingInputs &inputs,
-                            IceModelVec2S &result) const;
-
-protected:
-  double m_K;
-};
-
-} // end of namespace calving
+} // end of namespace frontalmelt
 } // end of namespace pism
-
-#endif /* _PISMEIGENCALVING_H_ */

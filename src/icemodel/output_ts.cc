@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018 PISM Authors
+/* Copyright (C) 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,6 +23,23 @@
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
+
+/*!
+ * Process -ts_vars shortcuts.
+ */
+static std::set<std::string> process_ts_shortcuts(const Config &config,
+                                                  const std::set<std::string> &input) {
+  std::set<std::string> result = input;
+
+  if (result.find("ismip6") != result.end()) {
+    result.erase("ismip6");
+    for (auto v : set_split(config.get_string("output.ISMIP6_ts_variables"), ',')) {
+      result.insert(v);
+    }
+  }
+
+  return result;
+}
 
 //! Initializes the code writing scalar time-series.
 void IceModel::init_timeseries() {
@@ -52,9 +69,10 @@ void IceModel::init_timeseries() {
   m_log->message(2, "  saving scalar time-series to '%s'\n", m_ts_filename.c_str());
   m_log->message(2, "  times requested: %s\n", times.c_str());
 
-  auto vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
-  if (not vars.empty()) {
-    m_log->message(2, "variables requested: %s\n", set_join(vars, ",").c_str());
+  m_ts_vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
+  if (not m_ts_vars.empty()) {
+    m_ts_vars = process_ts_shortcuts(*m_config, m_ts_vars);
+    m_log->message(2, "variables requested: %s\n", set_join(m_ts_vars, ",").c_str());
   }
 
   // prepare the output file

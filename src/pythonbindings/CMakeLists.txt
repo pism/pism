@@ -30,6 +30,8 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     pism_options.i
     pism_surface.i
     pism_verification.i
+    pism_frontalmelt.i
+    pism_calving.i
     )
 
   set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-I${CMAKE_BINARY_DIR}" APPEND)

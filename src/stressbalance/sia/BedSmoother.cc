@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -41,24 +41,24 @@ BedSmoother::BedSmoother(IceGrid::ConstPtr g, int MAX_GHOSTS)
     //   their prospective uses
     m_topgsmooth.create(m_grid, "topgsmooth", WITH_GHOSTS, MAX_GHOSTS);
     m_topgsmooth.set_attrs("bed_smoother_tool",
-                         "smoothed bed elevation, in bed roughness parameterization",
-                         "m", "");
+                           "smoothed bed elevation, in bed roughness parameterization",
+                           "m", "m", "", 0);
     m_maxtl.create(m_grid, "maxtl", WITH_GHOSTS, MAX_GHOSTS);
     m_maxtl.set_attrs("bed_smoother_tool",
-                    "maximum elevation in local topography patch, in bed roughness parameterization",
-                    "m", "");
+                      "maximum elevation in local topography patch, in bed roughness parameterization",
+                      "m", "m", "", 0);
     m_C2.create(m_grid, "C2bedsmooth", WITH_GHOSTS, MAX_GHOSTS);
     m_C2.set_attrs("bed_smoother_tool",
-                 "polynomial coeff of H^-2, in bed roughness parameterization",
-                 "m2", "");
+                   "polynomial coeff of H^-2, in bed roughness parameterization",
+                   "m2", "m2", "", 0);
     m_C3.create(m_grid, "C3bedsmooth", WITH_GHOSTS, MAX_GHOSTS);
     m_C3.set_attrs("bed_smoother_tool",
-                 "polynomial coeff of H^-3, in bed roughness parameterization",
-                 "m3", "");
+                   "polynomial coeff of H^-3, in bed roughness parameterization",
+                   "m3", "m3", "", 0);
     m_C4.create(m_grid, "C4bedsmooth", WITH_GHOSTS, MAX_GHOSTS);
     m_C4.set_attrs("bed_smoother_tool",
-                 "polynomial coeff of H^-4, in bed roughness parameterization",
-                 "m4", "");
+                   "polynomial coeff of H^-4, in bed roughness parameterization",
+                   "m4", "m4", "", 0);
 
     // allocate Vecs that live on processor 0:
     m_topgp0 = m_topgsmooth.allocate_proc0_copy();

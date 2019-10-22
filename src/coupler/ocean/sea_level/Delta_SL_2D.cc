@@ -47,7 +47,7 @@ Delta_SL_2D::Delta_SL_2D(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> in)
                                             LINEAR);
     m_forcing->set_attrs("climate_forcing",
                          "two-dimensional sea level offsets",
-                         "meters", "");
+                         "meters", "meters", "", 0);
   }
 }
 

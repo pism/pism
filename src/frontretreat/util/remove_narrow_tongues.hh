@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,10 +22,10 @@
 
 namespace pism {
 
-class IceModelVec2CellType;
 class IceModelVec2S;
+class Geometry;
 
-void remove_narrow_tongues(const IceModelVec2CellType &mask, IceModelVec2S &ice_thickness);
+void remove_narrow_tongues(const Geometry &geometry, IceModelVec2S &ice_thickness);
 
 } // end of namespace pism
 

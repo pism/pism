@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -47,8 +47,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
 
   m_shelf_base_mass_flux_anomaly->set_attrs("climate_forcing",
                                              "anomaly of the shelf base mass flux rate",
-                                             "kg m-2 s-1", "");
-  m_shelf_base_mass_flux_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
+                                            "kg m-2 s-1", "kg m-2 year-1", "", 0);
 
   m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
 

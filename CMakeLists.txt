@@ -86,22 +86,13 @@ endif (CMAKE_BUILD_TYPE MATCHES "Debug")
 
 # Add -fPIC to C and CXX flags.
 if (Pism_ADD_FPIC)
-  if (NOT CMAKE_C_FLAGS MATCHES "-fPIC")
-    message (STATUS "Adding -fPIC to C compiler flags.")
-    set (CMAKE_C_FLAGS "-fPIC ${CMAKE_C_FLAGS}" CACHE STRING "C compiler flags" FORCE)
-  endif()
-
-  if (NOT CMAKE_CXX_FLAGS MATCHES "-fPIC")
-    message (STATUS "Adding -fPIC to C++ compiler flags.")
-    set (CMAKE_CXX_FLAGS "-fPIC ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
-  endif()
+  add_compile_options(-fPIC)
 endif ()
 
 if (Pism_CODE_COVERAGE)
-  if (NOT CMAKE_CXX_FLAGS MATCHES "-fprofile-arcs")
-    message (STATUS "Adding -fprofile-arcs -ftest-coverage to C++ compiler flags.")
-    set (CMAKE_CXX_FLAGS "-fprofile-arcs -ftest-coverage -g -O0 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
-  endif()
+  add_compile_options(-fprofile-arcs -ftest-coverage -g -O0)
+  add_link_options(--coverage)
+
   add_custom_target (coverage_report
     # remove coverage data from src/pythonbindings
     COMMAND lcov --directory ${Pism_BINARY_DIR}/src/pythonbindings -z

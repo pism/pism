@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -131,14 +131,13 @@ int main(int argc, char *argv[]) {
     {
       heat_flux_at_ice_base.create(grid, "upward_heat_flux_at_ice_base", WITHOUT_GHOSTS);
       heat_flux_at_ice_base.set_attrs("",
-                     "upward geothermal flux at bedrock thermal layer base",
-                     "W m-2", "");
-      heat_flux_at_ice_base.metadata().set_string("glaciological_units", "mW m-2");
+                                      "upward geothermal flux at bedrock thermal layer base",
+                                      "W m-2", "mW m-2", "", 0);
 
       bedtoptemp.create(grid, "bedtoptemp", WITHOUT_GHOSTS);
       bedtoptemp.set_attrs("",
-                            "temperature at top of bedrock thermal layer",
-                            "K", "");
+                           "temperature at top of bedrock thermal layer",
+                           "K", "K", "", 0);
     }
 
     // initialize BTU object:

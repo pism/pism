@@ -51,6 +51,8 @@ set(PISMUTIL_SRC
   projection.cc
   fftw_utilities.cc
   Poisson.cc
+  label_components.cc
+  connected_components.cc
   )
 
 if(Pism_USE_JANSSON)

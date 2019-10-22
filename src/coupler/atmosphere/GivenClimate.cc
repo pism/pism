@@ -57,14 +57,12 @@ Given::Given(IceGrid::ConstPtr g)
 
   {
     m_air_temp->set_attrs("diagnostic", "mean annual near-surface air temperature",
-                          "Kelvin", "", 0);
-    m_air_temp->metadata(0).set_number("valid_min", 0.0);
-    m_air_temp->metadata(0).set_number("valid_max", 323.15); // 50 C
+                          "Kelvin", "Kelvin", "", 0);
+    m_air_temp->metadata(0).set_numbers("valid_range", {0.0, 323.15}); // (0 C, 50 C)
   }
   {
     m_precipitation->set_attrs("model_state", "precipitation rate",
-                               "kg m-2 second-1", "precipitation_flux", 0);
-    m_precipitation->metadata(0).set_string("glaciological_units", "kg m-2 year-1");
+                               "kg m-2 second-1", "kg m-2 year-1", "precipitation_flux", 0);
   }
 }
 

@@ -91,40 +91,45 @@ Pico::Pico(IceGrid::ConstPtr g)
 
   m_theta_ocean->set_attrs("climate_forcing",
                            "potential temperature of the adjacent ocean",
-                           "Kelvin", "");
+                           "Kelvin", "Kelvin", "", 0);
 
   m_salinity_ocean->set_attrs("climate_forcing",
                               "salinity of the adjacent ocean",
-                              "g/kg", "");
+                              "g/kg", "g/kg", "", 0);
 
-  m_basin_mask.set_attrs("climate_forcing", "mask determines basins for PICO", "", "");
+  m_basin_mask.set_attrs("climate_forcing", "mask determines basins for PICO",
+                         "", "", "", 0);
 
   // computed salinity in ocean boxes
-  m_Soc.set_attrs("model_state", "ocean salinity field", "g/kg", "ocean salinity field");
+  m_Soc.set_attrs("model_state", "ocean salinity field",
+                  "g/kg", "g/kg", "ocean salinity field", 0);
   m_Soc.metadata().set_number("_FillValue", 0.0);
 
   // salinity input for box 1
-  m_Soc_box0.set_attrs("model_state", "ocean base salinity field", "g/kg",
-                       "ocean base salinity field");
+  m_Soc_box0.set_attrs("model_state", "ocean base salinity field",
+                       "g/kg", "g/kg", "", 0);
   m_Soc_box0.metadata().set_number("_FillValue", 0.0);
 
   // computed temperature in ocean boxes
-  m_Toc.set_attrs("model_state", "ocean temperature field", "K", "ocean temperature field");
+  m_Toc.set_attrs("model_state", "ocean temperature field",
+                  "K", "K", "", 0);
   m_Toc.metadata().set_number("_FillValue", 0.0);
 
   // temperature input for box 1
-  m_Toc_box0.set_attrs("model_state", "ocean base temperature", "K", "ocean base temperature");
+  m_Toc_box0.set_attrs("model_state", "ocean base temperature",
+                       "K", "K", "", 0);
   m_Toc_box0.metadata().set_number("_FillValue", 0.0);
 
-  m_T_star.set_attrs("model_state", "T_star field", "degree C", "T_star field");
+  m_T_star.set_attrs("model_state", "T_star field",
+                     "degree C", "degree C", "", 0);
   m_T_star.metadata().set_number("_FillValue", 0.0);
 
-  m_overturning.set_attrs("model_state", "cavity overturning", "m^3 s-1", "cavity overturning");
+  m_overturning.set_attrs("model_state", "cavity overturning",
+                          "m^3 s-1", "m^3 s-1", "", 0);
   m_overturning.metadata().set_number("_FillValue", 0.0);
 
-  m_basal_melt_rate.set_attrs("model_state", "PICO sub-shelf melt rate", "m/s",
-                              "PICO sub-shelf melt rate");
-  m_basal_melt_rate.metadata().set_string("glaciological_units", "m year-1");
+  m_basal_melt_rate.set_attrs("model_state", "PICO sub-shelf melt rate",
+                              "m s-1", "m year-1", "", 0);
   m_basal_melt_rate.metadata().set_number("_FillValue", 0.0);
 
   m_shelf_base_temperature->metadata().set_number("_FillValue", 0.0);

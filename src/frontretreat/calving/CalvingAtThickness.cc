@@ -22,8 +22,6 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/geometry/part_grid_threshold_thickness.hh"
-
 
 namespace pism {
 
@@ -32,13 +30,13 @@ namespace calving {
 
 CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
   : Component(g),
-    m_calving_threshold(m_grid, "calving_threshold", WITHOUT_GHOSTS),
+    m_calving_threshold(m_grid, "thickness_calving_threshold", WITHOUT_GHOSTS),
     m_old_mask(m_grid, "old_mask", WITH_GHOSTS, 1) {
 
   m_calving_threshold.set_attrs("diagnostic",
                                 "threshold used by the 'calving at threshold' calving method",
-                                "m",
-                                ""); // no standard name
+                                "m", "m",
+                                "", 0); // no standard name
   m_calving_threshold.set_time_independent(true);
 }
 
@@ -106,7 +104,7 @@ const IceModelVec2S& CalvingAtThickness::threshold() const {
 }
 
 DiagnosticList CalvingAtThickness::diagnostics_impl() const {
-  return {{"calving_threshold", Diagnostic::wrap(m_calving_threshold)}};
+  return {{"thickness_calving_threshold", Diagnostic::wrap(m_calving_threshold)}};
 }
 
 } // end of namespace calving

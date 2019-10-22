@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -49,6 +49,7 @@ protected:
   void model_state_setup();
 
   void energy_step();
+  void hydrology_step();
 
   stressbalance::Inputs stress_balance_inputs();
   energy::Inputs energy_model_inputs();

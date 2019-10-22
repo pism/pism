@@ -158,7 +158,7 @@ void IceCompModel::allocate_storage() {
 
   m_strain_heating3_comp.create(m_grid,"strain_heating_comp", WITHOUT_GHOSTS);
   m_strain_heating3_comp.set_attrs("internal","rate of compensatory strain heating in ice",
-                                 "W m-3", "");
+                                   "W m-3", "W m-3", "", 0);
 }
 
 void IceCompModel::allocate_bedrock_thermal_unit() {

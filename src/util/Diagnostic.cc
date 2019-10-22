@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -61,6 +61,26 @@ void Diagnostic::reset() {
 
 void Diagnostic::reset_impl() {
   // empty
+}
+
+/*!
+ * Convert from external (output) units to internal units.
+ */
+double Diagnostic::to_internal(double x) const {
+  std::string
+    out = m_vars.at(0).get_string("glaciological_units"),
+    in  = m_vars.at(0).get_string("units");
+  return convert(m_sys, x, out, in);
+}
+
+/*!
+ * Convert from internal to external (output) units.
+ */
+double Diagnostic::to_external(double x) const {
+  std::string
+    out = m_vars.at(0).get_string("glaciological_units"),
+    in  = m_vars.at(0).get_string("units");
+  return convert(m_sys, x, in, out);
 }
 
 //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
@@ -138,7 +158,7 @@ void Diagnostic::set_attrs(const std::string &long_name,
 
   m_vars[N].set_string("units", units);
 
-  if (not glaciological_units.empty()) {
+  if (not (m_config->get_flag("output.use_MKS") or glaciological_units.empty())) {
     m_vars[N].set_string("glaciological_units", glaciological_units);
   }
 }
@@ -179,6 +199,15 @@ TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr g, const std::string &name)
 
 TSDiagnostic::~TSDiagnostic() {
   flush();
+}
+
+void TSDiagnostic::set_units(const std::string &units,
+                             const std::string &glaciological_units) {
+  m_ts.variable().set_string("units", units);
+
+  if (not m_config->get_flag("output.use_MKS")) {
+    m_ts.variable().set_string("glaciological_units", glaciological_units);
+  }
 }
 
 TSSnapshotDiagnostic::TSSnapshotDiagnostic(IceGrid::ConstPtr g, const std::string &name)
