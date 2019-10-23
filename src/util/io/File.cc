@@ -210,7 +210,7 @@ void File::open(const std::string &filename, IO_Mode mode) {
   }
 }
 
-void File::del_att(const std::string &variable_name, const std::string &att_name) const {
+void File::remove_attribute(const std::string &variable_name, const std::string &att_name) const {
   try {
     m_impl->nc->del_att(variable_name, att_name);
   } catch (RuntimeError &e) {

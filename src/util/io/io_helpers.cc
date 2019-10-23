@@ -329,7 +329,7 @@ static void write_dimension_data(const File &file, const std::string &name,
   if (not written) {
     file.put_vara_double(name, {0}, {(unsigned int)data.size()}, data.data());
     file.redef();
-    file.del_att(name, "not_written");
+    file.remove_attribute(name, "not_written");
   }
 }
 
@@ -779,7 +779,7 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
       return;
     } else {
       file.redef();
-      file.del_att(var.get_name(), "not_written");
+      file.remove_attribute(var.get_name(), "not_written");
     }
   }
 

@@ -102,27 +102,6 @@ public:
 
   bool find_variable(const std::string &short_name) const;
 
-  // attributes
-
-  void del_att(const std::string &variable_name, const std::string &att_name) const;
-
-  void append_history(const std::string &history) const;
-
-  std::string attribute_name(const std::string &var_name, unsigned int n) const;
-
-  IO_Type attribute_type(const std::string &var_name, const std::string &att_name) const;
-
-  void write_attribute(const std::string &var_name, const std::string &att_name,
-                      IO_Type nctype, const std::vector<double> &values) const;
-
-  void write_attribute(const std::string &var_name, const std::string &att_name,
-                       const std::string &value) const;
-
-  std::vector<double> read_double_attribute(const std::string &var_name,
-                                            const std::string &att_name) const;
-
-  std::string read_text_attribute(const std::string &var_name, const std::string &att_name) const;
-
   void get_vara_double(const std::string &variable_name,
                        const std::vector<unsigned int> &start,
                        const std::vector<unsigned int> &count,
@@ -143,6 +122,27 @@ public:
                        const std::vector<unsigned int> &count,
                        const std::vector<unsigned int> &imap,
                        const double *op) const;
+
+  // attributes
+
+  void remove_attribute(const std::string &variable_name, const std::string &att_name) const;
+
+  std::string attribute_name(const std::string &var_name, unsigned int n) const;
+
+  IO_Type attribute_type(const std::string &var_name, const std::string &att_name) const;
+
+  void write_attribute(const std::string &var_name, const std::string &att_name,
+                      IO_Type nctype, const std::vector<double> &values) const;
+
+  void write_attribute(const std::string &var_name, const std::string &att_name,
+                       const std::string &value) const;
+
+  std::vector<double> read_double_attribute(const std::string &var_name,
+                                            const std::string &att_name) const;
+
+  std::string read_text_attribute(const std::string &var_name, const std::string &att_name) const;
+
+  void append_history(const std::string &history) const;
 private:
   struct Impl;
   Impl *m_impl;
