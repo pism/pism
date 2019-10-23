@@ -236,13 +236,13 @@ TSDiagnosticList AtmosphereModel::ts_diagnostics_impl() const {
   return {};
 }
 
-void AtmosphereModel::define_model_state_impl(const PIO &output) const {
+void AtmosphereModel::define_model_state_impl(const File &output) const {
   if (m_input_model) {
     m_input_model->define_model_state(output);
   }
 }
 
-void AtmosphereModel::write_model_state_impl(const PIO &output) const {
+void AtmosphereModel::write_model_state_impl(const File &output) const {
   if (m_input_model) {
     m_input_model->write_model_state(output);
   }

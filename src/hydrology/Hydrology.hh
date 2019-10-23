@@ -115,9 +115,9 @@ public:
   Hydrology(IceGrid::ConstPtr g);
   virtual ~Hydrology();
 
-  void restart(const PIO &input_file, int record);
+  void restart(const File &input_file, int record);
 
-  void bootstrap(const PIO &input_file,
+  void bootstrap(const File &input_file,
                  const IceModelVec2S &ice_thickness);
 
   void init(const IceModelVec2S &W_till,
@@ -141,9 +141,9 @@ public:
   const IceModelVec2S& mass_change_due_to_lateral_flow() const;
 
 protected:
-  virtual void restart_impl(const PIO &input_file, int record);
+  virtual void restart_impl(const File &input_file, int record);
 
-  virtual void bootstrap_impl(const PIO &input_file,
+  virtual void bootstrap_impl(const File &input_file,
                               const IceModelVec2S &ice_thickness);
 
   virtual void init_impl(const IceModelVec2S &W_till,
@@ -153,8 +153,8 @@ protected:
   virtual void update_impl(double t, double dt, const Inputs& inputs) = 0;
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   void compute_overburden_pressure(const IceModelVec2S &ice_thickness,
                                    IceModelVec2S &result) const;

@@ -20,7 +20,7 @@
 #include <cassert>
 
 #include "iceModelVec2T.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism_utilities.hh"
 #include "Time.hh"
 #include "IceGrid.hh"
@@ -51,7 +51,7 @@ namespace pism {
  * @param[in] periodic true if this forcing field should be interpreted as periodic
  */
 IceModelVec2T::Ptr IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
-                                               const PIO &file,
+                                               const File &file,
                                                const std::string &short_name,
                                                const std::string &standard_name,
                                                int max_buffer_size,
@@ -176,7 +176,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
-  PIO nc(m_grid->com, "guess_mode", m_filename, PISM_READONLY);
+  File nc(m_grid->com, "guess_mode", m_filename, PISM_READONLY);
   std::string name_found;
   bool exists, found_by_standard_name;
   nc.inq_var(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"),
@@ -393,7 +393,7 @@ void IceModelVec2T::update(unsigned int start) {
     m_report_range = true;
   }
 
-  PIO nc(m_grid->com, "guess_mode", m_filename, PISM_READONLY);
+  File nc(m_grid->com, "guess_mode", m_filename, PISM_READONLY);
 
   const bool allow_extrapolation = m_grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 

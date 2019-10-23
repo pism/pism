@@ -37,7 +37,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
     unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
+    File file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
 
     m_temperature = IceModelVec2T::ForcingField(m_grid,
                                                 file,
@@ -128,12 +128,12 @@ const IceModelVec2S &Given::runoff_impl() const {
   return *m_runoff;
 }
 
-void Given::define_model_state_impl(const PIO &output) const {
+void Given::define_model_state_impl(const File &output) const {
   m_mass_flux->define(output);
   m_temperature->define(output);
 }
 
-void Given::write_model_state_impl(const PIO &output) const {
+void Given::write_model_state_impl(const File &output) const {
   m_mass_flux->write(output);
   m_temperature->write(output);
 }

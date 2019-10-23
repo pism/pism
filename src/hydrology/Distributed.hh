@@ -48,9 +48,9 @@ public:
   const IceModelVec2S& subglacial_water_pressure() const;
 
 protected:
-  virtual void restart_impl(const PIO &input_file, int record);
+  virtual void restart_impl(const File &input_file, int record);
 
-  virtual void bootstrap_impl(const PIO &input_file,
+  virtual void bootstrap_impl(const File &input_file,
                               const IceModelVec2S &ice_thickness);
 
   virtual void init_impl(const IceModelVec2S &W_till,
@@ -63,8 +63,8 @@ protected:
 
   std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 
-  void define_model_state_impl(const PIO &output) const;
-  void write_model_state_impl(const PIO &output) const;
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
 
   void check_P_bounds(IceModelVec2S &P,
                       const IceModelVec2S &P_o,

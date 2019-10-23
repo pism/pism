@@ -56,12 +56,12 @@ const IceModelVec2S& BedDef::uplift() const {
   return m_uplift;
 }
 
-void BedDef::define_model_state_impl(const PIO &output) const {
+void BedDef::define_model_state_impl(const File &output) const {
   m_uplift.define(output);
   m_topg.define(output);
 }
 
-void BedDef::write_model_state_impl(const PIO &output) const {
+void BedDef::write_model_state_impl(const File &output) const {
   m_uplift.write(output);
   m_topg.write(output);
 }

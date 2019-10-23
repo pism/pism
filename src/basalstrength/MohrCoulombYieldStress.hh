@@ -40,8 +40,8 @@ protected:
                          const IceModelVec2S &till_water_thickness,
                          const IceModelVec2S &overburden_pressure);
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
 

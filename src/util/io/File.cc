@@ -24,7 +24,7 @@ using std::shared_ptr;
 
 #include <petscvec.h>
 
-#include "PIO.hh"
+#include "File.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/VariableMetadata.hh"
@@ -49,7 +49,7 @@ namespace pism {
 using std::string;
 using std::vector;
 
-struct PIO::Impl {
+struct File::Impl {
   MPI_Comm com;
   std::string backend_type;
   io::NCFile::Ptr nc;
@@ -77,14 +77,14 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, string mode) {
   }
 }
 
-PIO::PIO(MPI_Comm com, const std::string &backend, const std::string &filename, IO_Mode mode)
+File::File(MPI_Comm com, const std::string &backend, const std::string &filename, IO_Mode mode)
   : m_impl(new Impl) {
   m_impl->com          = com;
   m_impl->backend_type = backend;
   m_impl->nc           = create_backend(m_impl->com, m_impl->backend_type);
 
   if (backend != "guess_mode" && not m_impl->nc) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "failed to allocate an I/O backend (class PIO)");
+    throw RuntimeError(PISM_ERROR_LOCATION, "failed to allocate an I/O backend (class File)");
   }
 
   if (filename.empty()) {
@@ -95,7 +95,7 @@ PIO::PIO(MPI_Comm com, const std::string &backend, const std::string &filename, 
   this->open(filename, mode);
 }
 
-PIO::~PIO() {
+File::~File() {
   if (m_impl->nc and not inq_filename().empty()) {
     try {
       // a file is still open, so we try to close it
@@ -108,12 +108,12 @@ PIO::~PIO() {
   delete m_impl;
 }
 
-MPI_Comm PIO::com() const {
+MPI_Comm File::com() const {
   return m_impl->com;
 }
 
 // Chooses the best I/O backend for reading from 'filename'.
-void PIO::detect_mode(const string &filename) {
+void File::detect_mode(const string &filename) {
   assert(not (bool)m_impl->nc);
 
   string format;
@@ -146,15 +146,15 @@ void PIO::detect_mode(const string &filename) {
   }
 
   if (not m_impl->nc) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "failed to allocate an I/O backend (class PIO)");
+    throw RuntimeError(PISM_ERROR_LOCATION, "failed to allocate an I/O backend (class File)");
   }
 }
 
-std::string PIO::backend_type() const {
+std::string File::backend_type() const {
   return m_impl->backend_type;
 }
 
-void PIO::open(const string &filename, IO_Mode mode) {
+void File::open(const string &filename, IO_Mode mode) {
   try {
 
     if (mode == PISM_READONLY || mode == PISM_READWRITE) {
@@ -200,7 +200,7 @@ void PIO::open(const string &filename, IO_Mode mode) {
   }
 }
 
-void PIO::del_att(const std::string &variable_name, const std::string &att_name) const {
+void File::del_att(const std::string &variable_name, const std::string &att_name) const {
   try {
     m_impl->nc->del_att(variable_name, att_name);
   } catch (RuntimeError &e) {
@@ -209,7 +209,7 @@ void PIO::del_att(const std::string &variable_name, const std::string &att_name)
   }
 }
 
-void PIO::close() {
+void File::close() {
   try {
     m_impl->nc->close();
   } catch (RuntimeError &e) {
@@ -218,7 +218,7 @@ void PIO::close() {
   }
 }
 
-void PIO::redef() const {
+void File::redef() const {
   try {
     m_impl->nc->redef();
   } catch (RuntimeError &e) {
@@ -228,7 +228,7 @@ void PIO::redef() const {
 }
 
 
-void PIO::enddef() const {
+void File::enddef() const {
   try {
     m_impl->nc->enddef();
   } catch (RuntimeError &e) {
@@ -237,13 +237,13 @@ void PIO::enddef() const {
   }
 }
 
-string PIO::inq_filename() const {
+string File::inq_filename() const {
   return m_impl->nc->filename();
 }
 
 
 //! \brief Get the number of records. Uses the length of an unlimited dimension.
-unsigned int PIO::inq_nrecords() const {
+unsigned int File::inq_nrecords() const {
   try {
     string dim;
     m_impl->nc->inq_unlimdim(dim);
@@ -262,7 +262,7 @@ unsigned int PIO::inq_nrecords() const {
 
 //! \brief Get the number of records of a certain variable. Uses the length of
 //! an associated "time" dimension.
-unsigned int PIO::inq_nrecords(const string &name, const string &std_name,
+unsigned int File::inq_nrecords(const string &name, const string &std_name,
                                units::System::Ptr unit_system) const {
   try {
     bool exists = false, found_by_standard_name = false;
@@ -298,7 +298,7 @@ unsigned int PIO::inq_nrecords(const string &name, const string &std_name,
 /*!
  * Sets "result" to the short name found.
  */
-void PIO::inq_var(const string &short_name, const string &std_name, bool &exists,
+void File::inq_var(const string &short_name, const string &std_name, bool &exists,
                   string &result, bool &found_by_standard_name) const {
   try {
     exists = false;
@@ -352,7 +352,7 @@ void PIO::inq_var(const string &short_name, const string &std_name, bool &exists
 }
 
 //! \brief Checks if a variable exists.
-bool PIO::inq_var(const string &name) const {
+bool File::inq_var(const string &name) const {
   try {
     bool exists = false;
     m_impl->nc->inq_varid(name, exists);
@@ -363,7 +363,7 @@ bool PIO::inq_var(const string &name) const {
   }
 }
 
-vector<string> PIO::inq_vardims(const string &name) const {
+vector<string> File::inq_vardims(const string &name) const {
   try {
     vector<string> result;
     m_impl->nc->inq_vardimid(name, result);
@@ -376,7 +376,7 @@ vector<string> PIO::inq_vardims(const string &name) const {
 
 
 //! \brief Checks if a dimension exists.
-bool PIO::inq_dim(const string &name) const {
+bool File::inq_dim(const string &name) const {
   try {
     bool exists = false;
     m_impl->nc->inq_dimid(name, exists);
@@ -391,7 +391,7 @@ bool PIO::inq_dim(const string &name) const {
 /*!
  * Sets result to 0 if a dimension does not exist.
  */
-unsigned int PIO::inq_dimlen(const string &name) const {
+unsigned int File::inq_dimlen(const string &name) const {
   try {
     bool exists = false;
     m_impl->nc->inq_dimid(name, exists);
@@ -412,7 +412,7 @@ unsigned int PIO::inq_dimlen(const string &name) const {
 /*!
  * The "type" is one of X_AXIS, Y_AXIS, Z_AXIS, T_AXIS.
  */
-AxisType PIO::inq_dimtype(const string &name,
+AxisType File::inq_dimtype(const string &name,
                           units::System::Ptr unit_system) const {
   try {
     string axis, standard_name, units;
@@ -483,7 +483,7 @@ AxisType PIO::inq_dimtype(const string &name,
   return UNKNOWN_AXIS;          // will never happen
 }
 
-void PIO::inq_dim_limits(const string &name, double *min, double *max) const {
+void File::inq_dim_limits(const string &name, double *min, double *max) const {
   try {
     vector<double> data;
     get_dim(name, data);
@@ -509,7 +509,7 @@ void PIO::inq_dim_limits(const string &name, double *min, double *max) const {
   }
 }
 
-void PIO::def_dim(const std::string &name, size_t length) const {
+void File::def_dim(const std::string &name, size_t length) const {
   try {
     m_impl->nc->def_dim(name, length);
   } catch (RuntimeError &e) {
@@ -519,7 +519,7 @@ void PIO::def_dim(const std::string &name, size_t length) const {
 }
 
 //! \brief Define a variable.
-void PIO::def_var(const string &name, IO_Type nctype, const vector<string> &dims) const {
+void File::def_var(const string &name, IO_Type nctype, const vector<string> &dims) const {
   try {
     m_impl->nc->def_var(name, nctype, dims);
 
@@ -549,7 +549,7 @@ void PIO::def_var(const string &name, IO_Type nctype, const vector<string> &dims
 }
 
 //! \brief Get dimension data (a coordinate variable).
-void PIO::get_dim(const string &name, vector<double> &data) const {
+void File::get_dim(const string &name, vector<double> &data) const {
   try {
     unsigned int dim_length = 0;
     m_impl->nc->inq_dimlen(name, dim_length);
@@ -567,7 +567,7 @@ void PIO::get_dim(const string &name, vector<double> &data) const {
 /*!
  * Use put_att_text("PISM_GLOBAL", "history", ...) to overwrite "history".
  */
-void PIO::append_history(const string &history) const {
+void File::append_history(const string &history) const {
   try {
     string old_history = get_att_text("PISM_GLOBAL", "history");
     redef();
@@ -579,7 +579,7 @@ void PIO::append_history(const string &history) const {
 }
 
 //! \brief Write a multiple-valued double attribute.
-void PIO::put_att_double(const string &var_name, const string &att_name, IO_Type nctype,
+void File::put_att_double(const string &var_name, const string &att_name, IO_Type nctype,
                          const vector<double> &values) const {
   try {
     m_impl->nc->put_att_double(var_name, att_name, nctype, values);
@@ -591,7 +591,7 @@ void PIO::put_att_double(const string &var_name, const string &att_name, IO_Type
 }
 
 //! \brief Write a single-valued double attribute.
-void PIO::put_att_double(const string &var_name, const string &att_name, IO_Type nctype,
+void File::put_att_double(const string &var_name, const string &att_name, IO_Type nctype,
                          double value) const {
   vector<double> tmp(1, value);
 
@@ -600,7 +600,7 @@ void PIO::put_att_double(const string &var_name, const string &att_name, IO_Type
 }
 
 //! \brief Write a text attribute.
-void PIO::put_att_text(const string &var_name, const string &att_name,
+void File::put_att_text(const string &var_name, const string &att_name,
                        const string &value) const {
   try {
     string tmp = value + "\0";    // ensure that the string is null-terminated
@@ -614,7 +614,7 @@ void PIO::put_att_text(const string &var_name, const string &att_name,
 }
 
 //! \brief Get a double attribute.
-vector<double> PIO::get_att_double(const string &var_name, const string &att_name) const {
+vector<double> File::get_att_double(const string &var_name, const string &att_name) const {
   try {
     IO_Type att_type;
     m_impl->nc->inq_atttype(var_name, att_name, att_type);
@@ -642,7 +642,7 @@ vector<double> PIO::get_att_double(const string &var_name, const string &att_nam
 }
 
 //! \brief Get a text attribute.
-string PIO::get_att_text(const string &var_name, const string &att_name) const {
+string File::get_att_text(const string &var_name, const string &att_name) const {
   try {
     string result;
     m_impl->nc->get_att_text(var_name, att_name, result);
@@ -653,7 +653,7 @@ string PIO::get_att_text(const string &var_name, const string &att_name) const {
   }
 }
 
-unsigned int PIO::inq_nattrs(const string &var_name) const {
+unsigned int File::inq_nattrs(const string &var_name) const {
   try {
     int result = 0;
     m_impl->nc->inq_varnatts(var_name, result);
@@ -665,7 +665,7 @@ unsigned int PIO::inq_nattrs(const string &var_name) const {
 }
 
 
-string PIO::inq_attname(const string &var_name, unsigned int n) const {
+string File::inq_attname(const string &var_name, unsigned int n) const {
   try {
     string result;
     m_impl->nc->inq_attname(var_name, n, result);
@@ -677,7 +677,7 @@ string PIO::inq_attname(const string &var_name, unsigned int n) const {
 }
 
 
-IO_Type PIO::inq_atttype(const string &var_name, const string &att_name) const {
+IO_Type File::inq_atttype(const string &var_name, const string &att_name) const {
   try {
     IO_Type result;
     m_impl->nc->inq_atttype(var_name, att_name, result);
@@ -689,7 +689,7 @@ IO_Type PIO::inq_atttype(const string &var_name, const string &att_name) const {
 }
 
 
-void PIO::get_vara_double(const string &variable_name,
+void File::get_vara_double(const string &variable_name,
                           const vector<unsigned int> &start,
                           const vector<unsigned int> &count,
                           double *ip) const {
@@ -702,7 +702,7 @@ void PIO::get_vara_double(const string &variable_name,
 }
 
 
-void PIO::put_vara_double(const string &variable_name,
+void File::put_vara_double(const string &variable_name,
                           const vector<unsigned int> &start,
                           const vector<unsigned int> &count,
                           const double *op) const {
@@ -714,7 +714,7 @@ void PIO::put_vara_double(const string &variable_name,
   }
 }
 
-void PIO::get_varm_double(const string &variable_name,
+void File::get_varm_double(const string &variable_name,
                           const vector<unsigned int> &start,
                           const vector<unsigned int> &count,
                           const vector<unsigned int> &imap, double *ip) const {
@@ -726,7 +726,7 @@ void PIO::get_varm_double(const string &variable_name,
   }
 }
 
-void PIO::put_varm_double(const string &variable_name,
+void File::put_varm_double(const string &variable_name,
                           const vector<unsigned int> &start,
                           const vector<unsigned int> &count,
                           const vector<unsigned int> &imap,
@@ -739,7 +739,7 @@ void PIO::put_varm_double(const string &variable_name,
   }
 }
 
-unsigned int PIO::inq_nvars() const {
+unsigned int File::inq_nvars() const {
   int n_vars = 0;
 
   try {
@@ -752,7 +752,7 @@ unsigned int PIO::inq_nvars() const {
   return n_vars;
 }
 
-std::string PIO::inq_varname(unsigned int id) const {
+std::string File::inq_varname(unsigned int id) const {
   std::string result;
   try {
     m_impl->nc->inq_varname(id, result);

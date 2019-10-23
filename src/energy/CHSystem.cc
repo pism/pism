@@ -24,7 +24,7 @@
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/energy/enthSystem.hh"
 #include "pism/util/IceModelVec2CellType.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "utilities.hh"
 #include "pism/util/pism_utilities.hh"
 
@@ -70,7 +70,7 @@ CHSystem::~CHSystem() {
   // empty
 }
 
-void CHSystem::restart_impl(const PIO &input_file, int record) {
+void CHSystem::restart_impl(const File &input_file, int record) {
 
   m_log->message(2, "* Restarting the cryo-hydrologic system from %s...\n",
                  input_file.inq_filename().c_str());
@@ -80,7 +80,7 @@ void CHSystem::restart_impl(const PIO &input_file, int record) {
   regrid_enthalpy();
 }
 
-void CHSystem::bootstrap_impl(const PIO &input_file,
+void CHSystem::bootstrap_impl(const File &input_file,
                               const IceModelVec2S &ice_thickness,
                               const IceModelVec2S &surface_temperature,
                               const IceModelVec2S &climatic_mass_balance,
@@ -238,11 +238,11 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
   loop.check();
 }
 
-void CHSystem::define_model_state_impl(const PIO &output) const {
+void CHSystem::define_model_state_impl(const File &output) const {
   m_ice_enthalpy.define(output);
 }
 
-void CHSystem::write_model_state_impl(const PIO &output) const {
+void CHSystem::write_model_state_impl(const File &output) const {
   m_ice_enthalpy.write(output);
 }
 

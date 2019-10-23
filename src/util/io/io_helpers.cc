@@ -21,7 +21,7 @@
 #include <cassert>
 
 #include "io_helpers.hh"
-#include "PIO.hh"
+#include "File.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
@@ -140,7 +140,7 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
   }
 }
 
-static void compute_start_and_count(const PIO& file,
+static void compute_start_and_count(const File& file,
                                     units::System::Ptr unit_system,
                                     const std::string &short_name,
                                     unsigned int t_start, unsigned int t_count,
@@ -197,7 +197,7 @@ static void compute_start_and_count(const PIO& file,
 }
 
 //! \brief Define a dimension \b and the associated coordinate variable. Set attributes.
-void define_dimension(const PIO &file, unsigned long int length,
+void define_dimension(const File &file, unsigned long int length,
                       const VariableMetadata &metadata) {
   std::string name = metadata.get_name();
   try {
@@ -216,7 +216,7 @@ void define_dimension(const PIO &file, unsigned long int length,
 
 
 //! Prepare a file for output.
-void define_time(const PIO &file, const Context &ctx) {
+void define_time(const File &file, const Context &ctx) {
   const Time &time = *ctx.time();
   const Config &config = *ctx.config();
 
@@ -228,7 +228,7 @@ void define_time(const PIO &file, const Context &ctx) {
 }
 
 //! Prepare a file for output.
-void append_time(const PIO &file, const Config &config, double time_seconds) {
+void append_time(const File &file, const Config &config, double time_seconds) {
   append_time(file, config.get_string("time.dimension_name"),
               time_seconds);
 }
@@ -237,7 +237,7 @@ void append_time(const PIO &file, const Config &config, double time_seconds) {
  * Define a time dimension and the corresponding coordinate variable. Does nothing if the time
  * variable is already present.
  */
-void define_time(const PIO &file, const std::string &name, const std::string &calendar,
+void define_time(const File &file, const std::string &name, const std::string &calendar,
                  const std::string &units, units::System::Ptr unit_system) {
   try {
     if (file.inq_var(name)) {
@@ -259,7 +259,7 @@ void define_time(const PIO &file, const std::string &name, const std::string &ca
 }
 
 //! \brief Append to the time dimension.
-void append_time(const PIO &file, const std::string &name, double value) {
+void append_time(const File &file, const std::string &name, double value) {
   try {
     unsigned int start = file.inq_dimlen(name);
 
@@ -272,7 +272,7 @@ void append_time(const PIO &file, const std::string &name, double value) {
 
 //! \brief Define dimensions a variable depends on.
 static void define_dimensions(const SpatialVariableMetadata& var,
-                              const IceGrid& grid, const PIO &file) {
+                              const IceGrid& grid, const File &file) {
 
   // x
   std::string x_name = var.get_x().get_name();
@@ -323,7 +323,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
   }
 }
 
-static void write_dimension_data(const PIO &file, const std::string &name,
+static void write_dimension_data(const File &file, const std::string &name,
                                  const std::vector<double> &data) {
   bool written = file.inq_atttype(name, "not_written") == PISM_NAT;
   if (not written) {
@@ -334,7 +334,7 @@ static void write_dimension_data(const PIO &file, const std::string &name,
 }
 
 void write_dimensions(const SpatialVariableMetadata& var,
-                      const IceGrid& grid, const PIO &file) {
+                      const IceGrid& grid, const File &file) {
   // x
   std::string x_name = var.get_x().get_name();
   if (file.inq_dim(x_name)) {
@@ -362,7 +362,7 @@ void write_dimensions(const SpatialVariableMetadata& var,
  * @param var_name name of the variable to check
  * @returns false if storage orders match, true otherwise
  */
-static bool use_mapped_io(const PIO &file,
+static bool use_mapped_io(const File &file,
                           units::System::Ptr unit_system,
                           const std::string &var_name) {
 
@@ -404,7 +404,7 @@ static bool use_mapped_io(const PIO &file,
 }
 
 //! \brief Read an array distributed according to the grid.
-static void get_vec(const PIO &file, const IceGrid &grid, const std::string &var_name,
+static void get_vec(const File &file, const IceGrid &grid, const std::string &var_name,
                     unsigned int z_count, unsigned int t_start, double *output) {
   try {
     std::vector<unsigned int> start, count, imap;
@@ -436,7 +436,7 @@ static void get_vec(const PIO &file, const IceGrid &grid, const std::string &var
 /*!
  * This method always writes to the last record in the file.
  */
-static void put_vec(const PIO &file, const IceGrid &grid, const std::string &var_name,
+static void put_vec(const File &file, const IceGrid &grid, const std::string &var_name,
                     unsigned int z_count, const double *input) {
   try {
     // switch to data mode and perform all delayed write operations
@@ -467,13 +467,13 @@ static void put_vec(const PIO &file, const IceGrid &grid, const std::string &var
     }
 
   } catch (RuntimeError &e) {
-    e.add_context("writing variable '%s' to '%s' in PIO::put_vec()",
+    e.add_context("writing variable '%s' to '%s' in File::put_vec()",
                   var_name.c_str(), file.inq_filename().c_str());
     throw;
   }
 }
 
-static void regrid_vec_generic(const PIO &file, const IceGrid &grid,
+static void regrid_vec_generic(const File &file, const IceGrid &grid,
                                const std::string &variable_name,
                                const std::vector<double> &zlevels_out,
                                unsigned int t_start,
@@ -539,7 +539,7 @@ static void regrid_vec_generic(const PIO &file, const IceGrid &grid,
 
 //! \brief Read a PETSc Vec from a file, using bilinear (or trilinear)
 //! interpolation to put it on the grid defined by "grid" and zlevels_out.
-static void regrid_vec(const PIO &file, const IceGrid &grid, const std::string &var_name,
+static void regrid_vec(const File &file, const IceGrid &grid, const std::string &var_name,
                        const std::vector<double> &zlevels_out,
                        unsigned int t_start,
                        InterpolationType interpolation_type,
@@ -563,7 +563,7 @@ static void regrid_vec(const PIO &file, const IceGrid &grid, const std::string &
  * @param default_value default value to replace `_FillValue` with
  * @param[out] output resulting interpolated field
  */
-static void regrid_vec_fill_missing(const PIO &file, const IceGrid &grid,
+static void regrid_vec_fill_missing(const File &file, const IceGrid &grid,
                                     const std::string &var_name,
                                     const std::vector<double> &zlevels_out,
                                     unsigned int t_start,
@@ -581,7 +581,7 @@ static void regrid_vec_fill_missing(const PIO &file, const IceGrid &grid,
 
 //! Define a NetCDF variable corresponding to a VariableMetadata object.
 void define_spatial_variable(const SpatialVariableMetadata &var,
-                             const IceGrid &grid, const PIO &file,
+                             const IceGrid &grid, const File &file,
                              IO_Type default_type,
                              const std::string &variable_order) {
   std::vector<std::string> dims;
@@ -671,7 +671,7 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
 /*! This also converts data from input units to internal units if needed.
  */
 void read_spatial_variable(const SpatialVariableMetadata &var,
-                           const IceGrid& grid, const PIO &file,
+                           const IceGrid& grid, const File &file,
                            unsigned int time, double *output) {
 
   const Logger &log = *grid.ctx()->log();
@@ -761,7 +761,7 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
  */
 void write_spatial_variable(const SpatialVariableMetadata &var,
                             const IceGrid& grid,
-                            const PIO &file,
+                            const File &file,
                             const double *input) {
 
   auto name = var.get_name();
@@ -824,7 +824,7 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
   - uses the last record in the file
 */
 void regrid_spatial_variable(SpatialVariableMetadata &var,
-                             const IceGrid& grid, const PIO &file,
+                             const IceGrid& grid, const File &file,
                              RegriddingFlag flag, bool report_range,
                              bool allow_extrapolation,
                              double default_value,
@@ -959,7 +959,7 @@ static void check_grid_overlap(const grid_info &input, const IceGrid &internal,
 }
 
 void regrid_spatial_variable(SpatialVariableMetadata &variable,
-                             const IceGrid& grid, const PIO &file,
+                             const IceGrid& grid, const File &file,
                              unsigned int t_start, RegriddingFlag flag,
                              bool report_range,
                              bool allow_extrapolation,
@@ -1070,7 +1070,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
 
 //! Define a NetCDF variable corresponding to a time-series.
 void define_timeseries(const TimeseriesMetadata& var,
-                       const PIO &file, IO_Type nctype) {
+                       const File &file, IO_Type nctype) {
 
   std::string name = var.get_name();
   std::string dimension_name = var.get_dimension_name();
@@ -1092,7 +1092,7 @@ void define_timeseries(const TimeseriesMetadata& var,
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
-void read_timeseries(const PIO &file, const TimeseriesMetadata &metadata,
+void read_timeseries(const File &file, const TimeseriesMetadata &metadata,
                      const Time &time, const Logger &log, std::vector<double> &data) {
 
   std::string name = metadata.get_name();
@@ -1162,7 +1162,7 @@ void read_timeseries(const PIO &file, const TimeseriesMetadata &metadata,
   }
 }
 
-void write_timeseries(const PIO &file, const TimeseriesMetadata &metadata, size_t t_start,
+void write_timeseries(const File &file, const TimeseriesMetadata &metadata, size_t t_start,
                       double data, IO_Type nctype) {
   std::vector<double> vector_data(1, data);
 
@@ -1174,7 +1174,7 @@ void write_timeseries(const PIO &file, const TimeseriesMetadata &metadata, size_
  *
  * Always use glaciological units when saving time-series.
  */
-void write_timeseries(const PIO &file, const TimeseriesMetadata &metadata, size_t t_start,
+void write_timeseries(const File &file, const TimeseriesMetadata &metadata, size_t t_start,
                       const std::vector<double> &data,
                       IO_Type nctype) {
 
@@ -1203,7 +1203,7 @@ void write_timeseries(const PIO &file, const TimeseriesMetadata &metadata, size_
 }
 
 void define_time_bounds(const TimeBoundsMetadata& var,
-                        const PIO &file, IO_Type nctype) {
+                        const File &file, IO_Type nctype) {
   std::string name = var.get_name();
   std::string dimension_name = var.get_dimension_name();
   std::string bounds_name = var.get_bounds_name();
@@ -1225,7 +1225,7 @@ void define_time_bounds(const TimeBoundsMetadata& var,
   write_attributes(file, var, nctype);
 }
 
-void read_time_bounds(const PIO &file,
+void read_time_bounds(const File &file,
                       const TimeBoundsMetadata &metadata,
                       const Time &time, const Logger &log,
                       std::vector<double> &data) {
@@ -1308,7 +1308,7 @@ void read_time_bounds(const PIO &file,
   }
 }
 
-void write_time_bounds(const PIO &file, const TimeBoundsMetadata &metadata,
+void write_time_bounds(const File &file, const TimeBoundsMetadata &metadata,
                        size_t t_start, const std::vector<double> &data, IO_Type nctype) {
   std::string name = metadata.get_name();
   try {
@@ -1361,7 +1361,7 @@ bool file_exists(MPI_Comm com, const std::string &filename) {
   }
 }
 
-void read_attributes(const PIO &file,
+void read_attributes(const File &file,
                      const std::string &variable_name,
                      VariableMetadata &variable) {
   try {
@@ -1402,7 +1402,7 @@ void read_attributes(const PIO &file,
 
   - Skips empty text attributes.
 */
-void write_attributes(const PIO &file, const VariableMetadata &variable, IO_Type nctype) {
+void write_attributes(const File &file, const VariableMetadata &variable, IO_Type nctype) {
   std::string var_name = variable.get_name();
 
   try {
@@ -1504,7 +1504,7 @@ void write_attributes(const PIO &file, const VariableMetadata &variable, IO_Type
 /*! Reads `valid_min`, `valid_max` and `valid_range` attributes; if \c
   valid_range is found, sets the pair `valid_min` and `valid_max` instead.
 */
-void read_valid_range(const PIO &file, const std::string &name, VariableMetadata &variable) {
+void read_valid_range(const File &file, const std::string &name, VariableMetadata &variable) {
   try {
     // Never reset valid_min/max if they were set internally
     if (variable.has_attribute("valid_min") or
@@ -1545,7 +1545,7 @@ void read_valid_range(const PIO &file, const std::string &name, VariableMetadata
  * Returns an empty string if this variable is time-independent.
  */
 std::string time_dimension(units::System::Ptr unit_system,
-                           const PIO &file,
+                           const File &file,
                            const std::string &variable_name) {
 
   auto dims = file.inq_vardims(variable_name);

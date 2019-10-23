@@ -98,7 +98,7 @@ class ForcingInput(unittest.TestCase):
 
     def forcing(self, filename, buffer_size=12, periodic=False):
         "Allocate and initialize forcing"
-        input_file = PISM.PIO(ctx.com, "netcdf3", self.filename, PISM.PISM_READONLY)
+        input_file = PISM.File(ctx.com, "netcdf3", self.filename, PISM.PISM_READONLY)
         forcing = PISM.IceModelVec2T.ForcingField(self.grid, input_file, "v", "",
                                                   buffer_size, 52, periodic)
         forcing.metadata().set_string("long_name", "test field")

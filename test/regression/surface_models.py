@@ -28,7 +28,7 @@ def write_state(model, filename):
     "Write the state of the model to a file"
 
     PISM.util.prepare_output(filename)
-    f = PISM.PIO(model.grid().ctx().com(), "netcdf3",
+    f = PISM.File(model.grid().ctx().com(), "netcdf3",
                  filename, PISM.PISM_READWRITE)
     model.define_model_state(f)
     model.write_model_state(f)

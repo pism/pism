@@ -24,7 +24,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/pism_signal.h"
@@ -67,7 +67,7 @@ int IceModel::process_signals() {
        file_name);
     pism_signal = 0;
 
-    PIO file(m_grid->com, m_config->get_string("output.format"), file_name, PISM_READWRITE_MOVE);
+    File file(m_grid->com, m_config->get_string("output.format"), file_name, PISM_READWRITE_MOVE);
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
 
     // flush all the time-series buffers:

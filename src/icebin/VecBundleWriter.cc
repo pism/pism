@@ -2,7 +2,7 @@
 // https://github.com/pism/pism/commit/443050f30743d6c2ef431c53e87dc6eb19a73dfd
 
 #include <pism/util/Time.hh>
-#include <pism/util/io/PIO.hh>
+#include <pism/util/io/File.hh>
 #include <pism/util/io/io_helpers.hh>
 #include <pism/icebin/VecBundleWriter.hh>
 
@@ -17,7 +17,7 @@ VecBundleWriter::VecBundleWriter(pism::IceGrid::Ptr _grid, std::string const &_f
 }
 
 void VecBundleWriter::init() {
-  pism::PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
+  pism::File nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
                fname, PISM_READWRITE_MOVE);
 
   io::define_time(nc,
@@ -33,7 +33,7 @@ void VecBundleWriter::init() {
 
 /** Dump the value of the Vectors at curent PISM simulation time. */
 void VecBundleWriter::write(double time_s) {
-  pism::PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
+  pism::File nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
                fname.c_str(), PISM_READWRITE); // append to file
 
   io::append_time(nc, m_grid->ctx()->config()->get_string("time.dimension_name"), time_s);

@@ -30,7 +30,7 @@
 
 namespace pism {
 
-class PIO;
+class File;
 namespace units {
 class System;
 }
@@ -57,7 +57,7 @@ std::string spacing_to_string(SpacingType s);
 class grid_info {
 public:
   grid_info();
-  grid_info(const PIO &file, const std::string &variable,
+  grid_info(const File &file, const std::string &variable,
             units::System::Ptr unit_system,
             GridRegistration registration);
   void report(const Logger &log, int threshold, units::System::Ptr s) const;
@@ -103,7 +103,7 @@ public:
                  GridRegistration r);
   //! Initialize grid defaults from a configuration database and a NetCDF variable.
   GridParameters(Context::ConstPtr ctx,
-                 const PIO &file,
+                 const File &file,
                  const std::string &variable_name,
                  GridRegistration r);
 
@@ -143,7 +143,7 @@ public:
   std::vector<unsigned int> procs_y;
 private:
   void init_from_config(Config::ConstPtr config);
-  void init_from_file(Context::ConstPtr ctx, const PIO &file,
+  void init_from_file(Context::ConstPtr ctx, const File &file,
                       const std::string &variable_name,
                       GridRegistration r);
 };
@@ -227,7 +227,7 @@ public:
                      Periodicity p);
 
   static Ptr FromFile(Context::ConstPtr ctx,
-                      const PIO &file, const std::string &var_name,
+                      const File &file, const std::string &var_name,
                       GridRegistration r);
 
   static Ptr FromFile(Context::ConstPtr ctx,

@@ -42,7 +42,7 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
@@ -129,10 +129,10 @@ void IceModel::model_state_setup() {
 
   const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
 
-  std::unique_ptr<PIO> input_file;
+  std::unique_ptr<File> input_file;
 
   if (use_input_file) {
-    input_file.reset(new PIO(m_grid->com, "guess_mode", input.filename, PISM_READONLY));
+    input_file.reset(new File(m_grid->com, "guess_mode", input.filename, PISM_READONLY));
   }
 
   // Initialize 2D fields owned by IceModel (ice geometry, etc)
@@ -324,7 +324,7 @@ void IceModel::model_state_setup() {
  * This method should eventually go away as IceModel turns into a "coupler" and all physical
  * processes are handled by sub-models.
  */
-void IceModel::restart_2d(const PIO &input_file, unsigned int last_record) {
+void IceModel::restart_2d(const File &input_file, unsigned int last_record) {
   std::string filename = input_file.inq_filename();
 
   m_log->message(2, "initializing 2D fields from NetCDF file '%s'...\n", filename.c_str());
@@ -334,7 +334,7 @@ void IceModel::restart_2d(const PIO &input_file, unsigned int last_record) {
   }
 }
 
-void IceModel::bootstrap_2d(const PIO &input_file) {
+void IceModel::bootstrap_2d(const File &input_file) {
 
   m_log->message(2, "bootstrapping from file '%s'...\n", input_file.inq_filename().c_str());
 
@@ -449,7 +449,7 @@ void IceModel::regrid() {
   m_log->message(2, "regridding from file %s ...\n", filename.c_str());
 
   {
-    PIO regrid_file(m_grid->com, "guess_mode", filename, PISM_READONLY);
+    File regrid_file(m_grid->com, "guess_mode", filename, PISM_READONLY);
     for (auto v : m_model_state) {
       if (regrid_vars.find(v->get_name()) != regrid_vars.end()) {
         v->regrid(regrid_file, CRITICAL);
@@ -715,7 +715,7 @@ void IceModel::misc_setup() {
 
   if (not (opts.type == INIT_OTHER)) {
     // initializing from a file
-    PIO nc(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
+    File nc(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
 
     std::string source = nc.get_att_text("PISM_GLOBAL", "source");
 
@@ -814,7 +814,7 @@ void IceModel::misc_setup() {
 
     // read in the state (accumulators) if we are re-starting a run
     if (opts.type == INIT_RESTART) {
-      PIO file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
+      File file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
       for (auto d : m_diagnostics) {
         d.second->init(file, opts.record);
       }
@@ -831,7 +831,7 @@ void IceModel::misc_setup() {
       m_fracture->initialize();
     } else {
       // initializing from a file
-      PIO file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
+      File file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
 
       if (opts.type == INIT_RESTART) {
         m_fracture->restart(file, opts.record);

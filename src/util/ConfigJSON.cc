@@ -23,7 +23,7 @@
 #include "ConfigJSON.hh"
 #include "error_handling.hh"
 #include "pism_utilities.hh"
-#include "io/PIO.hh"
+#include "io/File.hh"
 
 namespace pism {
 
@@ -343,12 +343,12 @@ bool ConfigJSON::get_flag_impl(const std::string &name) const {
   return get_value<bool, int>(m_data, name, "b", "flag");
 }
 
-void ConfigJSON::read_impl(const PIO &nc) {
+void ConfigJSON::read_impl(const File &nc) {
   std::string config_string = nc.get_att_text("PISM_GLOBAL", "pism_config");
   this->init_from_string(config_string);
 }
 
-void ConfigJSON::write_impl(const PIO &nc) const {
+void ConfigJSON::write_impl(const File &nc) const {
   nc.put_att_text("PISM_GLOBAL", "pism_config", this->dump());
 }
 

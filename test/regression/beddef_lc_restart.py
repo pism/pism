@@ -80,7 +80,7 @@ def run(dt, restart=False):
         filename = "lingle_clark_model_state.nc"
         try:
             PISM.util.prepare_output(filename)
-            f = PISM.PIO(grid.com, "netcdf3", filename, PISM.PISM_READWRITE)
+            f = PISM.File(grid.com, "netcdf3", filename, PISM.PISM_READWRITE)
             model.write_model_state(f)
             f.close()
 

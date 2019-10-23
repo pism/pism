@@ -30,7 +30,7 @@
 #include "ConfigInterface.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/projection.hh"
@@ -290,7 +290,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
                                const std::vector<std::string> &var_names,
                                GridRegistration r) {
 
-  PIO file(ctx->com(), "netcdf3", filename, PISM_READONLY);
+  File file(ctx->com(), "netcdf3", filename, PISM_READONLY);
 
   for (auto name : var_names) {
     if (file.inq_var(name)) {
@@ -306,7 +306,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
 
 //! Create a grid from a file, get information from variable `var_name`.
 IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
-                               const PIO &file,
+                               const File &file,
                                const std::string &var_name,
                                GridRegistration r) {
   try {
@@ -1069,7 +1069,7 @@ void grid_info::report(const Logger &log, int threshold, units::System::Ptr s) c
               this->t_len, units::convert(s, this->time, "seconds", "years"));
 }
 
-grid_info::grid_info(const PIO &file, const std::string &variable,
+grid_info::grid_info(const File &file, const std::string &variable,
                      units::System::Ptr unit_system,
                      GridRegistration r) {
   try {
@@ -1199,7 +1199,7 @@ void GridParameters::init_from_config(Config::ConstPtr config) {
 }
 
 void GridParameters::init_from_file(Context::ConstPtr ctx,
-                                    const PIO &file,
+                                    const File &file,
                                     const std::string &variable_name,
                                     GridRegistration r) {
   int size = 0;
@@ -1221,7 +1221,7 @@ void GridParameters::init_from_file(Context::ConstPtr ctx,
 }
 
 GridParameters::GridParameters(Context::ConstPtr ctx,
-                               const PIO &file,
+                               const File &file,
                                const std::string &variable_name,
                                GridRegistration r) {
   init_from_file(ctx, file, variable_name, r);
@@ -1231,7 +1231,7 @@ GridParameters::GridParameters(Context::ConstPtr ctx,
                                const std::string &filename,
                                const std::string &variable_name,
                                GridRegistration r) {
-  PIO nc(ctx->com(), "netcdf3", filename, PISM_READONLY);
+  File nc(ctx->com(), "netcdf3", filename, PISM_READONLY);
   init_from_file(ctx, nc, variable_name, r);
 }
 
@@ -1351,7 +1351,7 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
                                       "thk", "topg"};
     bool grid_info_found = false;
 
-    PIO nc(ctx->com(), "netcdf3", input_file, PISM_READONLY);
+    File nc(ctx->com(), "netcdf3", input_file, PISM_READONLY);
 
     for (auto name : names) {
 

@@ -24,7 +24,7 @@
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 
 namespace pism {
 
@@ -82,7 +82,7 @@ void ScalarForcing::init() {
                         "  reading %s data from forcing file %s...\n",
                         m_data->name().c_str(), file.c_str());
 
-  PIO nc(m_ctx->com(), "netcdf3", file, PISM_READONLY);
+  File nc(m_ctx->com(), "netcdf3", file, PISM_READONLY);
   {
     m_data->read(nc, *m_ctx->time(), *m_ctx->log());
   }

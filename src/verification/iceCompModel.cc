@@ -33,7 +33,7 @@
 #include "pism/rheology/PatersonBuddCold.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/coupler/ocean/Constant.hh"
 #include "pism/coupler/SeaLevel.hh"
@@ -251,7 +251,7 @@ void IceCompModel::allocate_couplers() {
   m_submodels["sea level forcing"] = m_sea_level.get();
 }
 
-void IceCompModel::bootstrap_2d(const PIO &input_file) {
+void IceCompModel::bootstrap_2d(const File &input_file) {
   (void) input_file;
   throw RuntimeError(PISM_ERROR_LOCATION, "pismv (IceCompModel) does not support bootstrapping.");
 }
@@ -741,7 +741,7 @@ void IceCompModel::reportErrors() {
     m_log->message(2, "Also writing errors to '%s'...\n", report_file->c_str());
 
     // Find the number of records in this file:
-    PIO nc(m_grid->com, "netcdf3", report_file, mode); // OK to use netcdf3
+    File nc(m_grid->com, "netcdf3", report_file, mode); // OK to use netcdf3
 
     start = nc.inq_dimlen("N");
 

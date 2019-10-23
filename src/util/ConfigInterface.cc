@@ -20,7 +20,7 @@
 #include <mpi.h>
 #include <cmath>
 
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "ConfigInterface.hh"
 #include "Units.hh"
 #include "pism_utilities.hh"
@@ -63,17 +63,17 @@ Config::~Config() {
 
 void Config::read(MPI_Comm com, const std::string &file) {
 
-  PIO nc(com, "netcdf3", file, PISM_READONLY); // OK to use netcdf3
+  File nc(com, "netcdf3", file, PISM_READONLY); // OK to use netcdf3
   this->read(nc);
 }
 
-void Config::read(const PIO &nc) {
+void Config::read(const File &nc) {
   this->read_impl(nc);
 
   m_impl->filename = nc.inq_filename();
 }
 
-void Config::write(const PIO &nc) const {
+void Config::write(const File &nc) const {
   this->write_impl(nc);
 }
 
@@ -81,7 +81,7 @@ void Config::write(MPI_Comm com, const std::string &file, bool append) const {
 
   IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 
-  PIO nc(com, "netcdf3", file, mode); // OK to use netcdf3
+  File nc(com, "netcdf3", file, mode); // OK to use netcdf3
 
   this->write(nc);
 }

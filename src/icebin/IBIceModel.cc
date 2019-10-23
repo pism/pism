@@ -2,7 +2,7 @@
 
 #include <pism/energy/BedThermalUnit.hh>
 #include <pism/util/EnthalpyConverter.hh>
-#include <pism/util/io/PIO.hh>
+#include <pism/util/io/File.hh>
 #include <pism/util/io/io_helpers.hh>
 #include "pism/energy/EnergyModel.hh"
 
@@ -238,11 +238,11 @@ void IBIceModel::accumulateFluxes_massContExplicitStep(int i, int j,
 }
 
 
-void IBIceModel::prepare_nc(std::string const &fname, std::unique_ptr<PIO> &nc) {
+void IBIceModel::prepare_nc(std::string const &fname, std::unique_ptr<File> &nc) {
 
-  //    nc.reset(new PIO(m_grid->com, m_grid->ctx()->config()->get_string("output.format")));
+  //    nc.reset(new File(m_grid->com, m_grid->ctx()->config()->get_string("output.format")));
 
-  nc.reset(new PIO(m_grid->com, m_config->get_string("output.format"),
+  nc.reset(new File(m_grid->com, m_config->get_string("output.format"),
                    fname, PISM_READWRITE_MOVE));
 
   io::define_time(*nc, m_grid->ctx()->config()->get_string("time.dimension_name"), m_grid->ctx()->time()->calendar(),

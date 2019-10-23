@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PIO_H_
-#define _PIO_H_
+#ifndef _PISM_FILE_ACCESS_H_
+#define _PISM_FILE_ACCESS_H_
 
 #include <vector>
 #include <string>
@@ -34,11 +34,11 @@ enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 /*!
  * Hides the low-level NetCDF wrapper.
  */
-class PIO
+class File
 {
 public:
-  PIO(MPI_Comm com, const std::string &backend, const std::string &filename, IO_Mode mode);
-  ~PIO();
+  File(MPI_Comm com, const std::string &backend, const std::string &filename, IO_Mode mode);
+  ~File();
 
   MPI_Comm com() const;
 
@@ -137,10 +137,10 @@ private:
   void detect_mode(const std::string &filename);
 
   // disable copying and assignments
-  PIO(const PIO &other);
-  PIO & operator=(const PIO &);
+  File(const File &other);
+  File & operator=(const File &);
 };
 
 } // end of namespace pism
 
-#endif /* _PIO_H_ */
+#endif /* _PISM_FILE_ACCESS_H_ */

@@ -40,8 +40,8 @@ protected:
   const IceModelVec2S& melt_impl() const;
   const IceModelVec2S& runoff_impl() const;
 
-  void define_model_state_impl(const PIO &output) const;
-  void write_model_state_impl(const PIO &output) const;
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
 
   IceModelVec2T::Ptr m_mass_flux;
   IceModelVec2T::Ptr m_temperature;

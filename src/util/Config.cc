@@ -18,7 +18,7 @@
  */
 
 #include "Config.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
 #include "io/io_helpers.hh"
@@ -192,7 +192,7 @@ void NetCDFConfig::set_flag_impl(const std::string &name, bool value) {
 /*!
   Erases all the present parameters before reading.
 */
-void NetCDFConfig::read_impl(const PIO &nc) {
+void NetCDFConfig::read_impl(const File &nc) {
 
   io::read_attributes(nc, m_data.get_name(), m_data);
 
@@ -200,7 +200,7 @@ void NetCDFConfig::read_impl(const PIO &nc) {
 }
 
 //! Write a config variable to a file (with all its attributes).
-void NetCDFConfig::write_impl(const PIO &nc) const {
+void NetCDFConfig::write_impl(const File &nc) const {
 
   bool variable_exists = nc.inq_var(m_data.get_name());
 

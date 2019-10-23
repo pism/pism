@@ -29,7 +29,7 @@
 #include "ConfigInterface.hh"
 #include "iceModelVec.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/io/io_helpers.hh"
 
 namespace pism {
@@ -76,16 +76,16 @@ public:
 
   SpatialVariableMetadata& metadata(unsigned int N = 0);
 
-  void define(const PIO &file, IO_Type default_type) const;
+  void define(const File &file, IO_Type default_type) const;
 
-  void init(const PIO &input, unsigned int time);
-  void define_state(const PIO &output) const;
-  void write_state(const PIO &output) const;
+  void init(const File &input, unsigned int time);
+  void define_state(const File &output) const;
+  void write_state(const File &output) const;
 protected:
-  virtual void define_impl(const PIO &file, IO_Type default_type) const;
-  virtual void init_impl(const PIO &input, unsigned int time);
-  virtual void define_state_impl(const PIO &output) const;
-  virtual void write_state_impl(const PIO &output) const;
+  virtual void define_impl(const File &file, IO_Type default_type) const;
+  virtual void init_impl(const File &input, unsigned int time);
+  virtual void define_state_impl(const File &output) const;
+  virtual void write_state_impl(const File &output) const;
 
   void set_attrs(const std::string &long_name,
                  const std::string &standard_name,
@@ -189,7 +189,7 @@ public:
     m_accumulator.set(0.0);
   }
 protected:
-  void init_impl(const PIO &input, unsigned int time) {
+  void init_impl(const File &input, unsigned int time) {
     if (input.inq_var(m_accumulator.get_name())) {
       m_accumulator.read(input, time);
     } else {
@@ -205,12 +205,12 @@ protected:
     }
   }
 
-  void define_state_impl(const PIO &output) const {
+  void define_state_impl(const File &output) const {
     m_accumulator.define(output);
     io::define_timeseries(m_time_since_reset, output, PISM_DOUBLE);
   }
 
-  void write_state_impl(const PIO &output) const {
+  void write_state_impl(const File &output) const {
     m_accumulator.write(output);
 
     const unsigned int
@@ -277,12 +277,12 @@ public:
 
   void flush();
 
-  void init(const PIO &output_file,
+  void init(const File &output_file,
             std::shared_ptr<std::vector<double>> requested_times);
 
   const VariableMetadata &metadata() const;
 
-  void define(const PIO &file) const;
+  void define(const File &file) const;
 
 protected:
   virtual void update_impl(double t0, double t1) = 0;

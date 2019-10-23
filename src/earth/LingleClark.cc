@@ -18,7 +18,7 @@
 
 #include "LingleClark.hh"
 
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -230,7 +230,7 @@ void LingleClark::init_impl(const InputOptions &opts, const IceModelVec2S &ice_t
   m_log->message(2, "* Initializing the Lingle-Clark bed deformation model...\n");
 
   if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
-    PIO input_file(m_grid->com, "netcdf3", opts.filename, PISM_READONLY);
+    File input_file(m_grid->com, "netcdf3", opts.filename, PISM_READONLY);
 
     if (input_file.inq_var(m_time_name)) {
       input_file.get_vara_double(m_time_name, {0}, {1}, &m_t_last);
@@ -404,7 +404,7 @@ void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
   }
 }
 
-void LingleClark::define_model_state_impl(const PIO &output) const {
+void LingleClark::define_model_state_impl(const File &output) const {
   BedDef::define_model_state_impl(output);
   m_viscous_displacement.define(output);
   m_elastic_displacement.define(output);
@@ -419,7 +419,7 @@ void LingleClark::define_model_state_impl(const PIO &output) const {
   }
 }
 
-void LingleClark::write_model_state_impl(const PIO &output) const {
+void LingleClark::write_model_state_impl(const File &output) const {
   BedDef::write_model_state_impl(output);
 
   m_viscous_displacement.write(output);

@@ -26,7 +26,7 @@
 #include "pism_options.hh"
 #include "pism_utilities.hh"
 #include "error_handling.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/Logger.hh"
 
 namespace pism {
@@ -46,7 +46,7 @@ std::string calendar_from_options(MPI_Comm com, const Config &config) {
   // "calendar" attribute is found.
   options::String time_file("-time_file", "name of the file specifying the run duration");
   if (time_file.is_set()) {
-    PIO nc(com, "netcdf3", time_file, PISM_READONLY);    // OK to use netcdf3
+    File nc(com, "netcdf3", time_file, PISM_READONLY);    // OK to use netcdf3
 
     std::string time_name = config.get_string("time.dimension_name");
     if (nc.inq_var(time_name)) {
@@ -86,7 +86,7 @@ void initialize_time(MPI_Comm com, const std::string &dimension_name,
   options::String input_file("-i", "Specifies a PISM input file");
 
   if (input_file.is_set()) {
-    PIO nc(com, "netcdf3", input_file, PISM_READONLY);     // OK to use netcdf3
+    File nc(com, "netcdf3", input_file, PISM_READONLY);     // OK to use netcdf3
     time.init_from_input_file(nc, dimension_name, log);
   }
 
@@ -94,7 +94,7 @@ void initialize_time(MPI_Comm com, const std::string &dimension_name,
 }
 
 //! Get the reference date from a file.
-std::string reference_date_from_file(const PIO &nc,
+std::string reference_date_from_file(const File &nc,
                                      const std::string &time_name) {
 
   if (not nc.inq_var(time_name)) {
@@ -265,7 +265,7 @@ bool Time::process_ye(double &result) {
 /**
  * FIXME: This crude implementation does not use reference dates and does not convert units.
  */
-void Time::init_from_input_file(const PIO &nc,
+void Time::init_from_input_file(const File &nc,
                                 const std::string &time_name,
                                 const Logger &log) {
   unsigned int time_length = nc.inq_dimlen(time_name);

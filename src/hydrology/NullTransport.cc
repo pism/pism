@@ -59,11 +59,11 @@ void NullTransport::initialization_message() const {
   }
 }
 
-void NullTransport::restart_impl(const PIO &input_file, int record) {
+void NullTransport::restart_impl(const File &input_file, int record) {
   Hydrology::restart_impl(input_file, record);
 }
 
-void NullTransport::bootstrap_impl(const PIO &input_file,
+void NullTransport::bootstrap_impl(const File &input_file,
                                    const IceModelVec2S &ice_thickness) {
   Hydrology::bootstrap_impl(input_file, ice_thickness);
 }

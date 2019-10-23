@@ -25,7 +25,7 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
@@ -131,7 +131,7 @@ void MohrCoulombYieldStress::init_impl(const Geometry &geometry,
 
     if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
 
-      PIO nc(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
+      File nc(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
       bool tillphi_present = nc.inq_var(m_till_phi.metadata().get_name());
 
       if (tillphi_present) {
@@ -185,11 +185,11 @@ void MohrCoulombYieldStress::set_till_friction_angle(const IceModelVec2S &input)
 }
 
 
-void MohrCoulombYieldStress::define_model_state_impl(const PIO &output) const {
+void MohrCoulombYieldStress::define_model_state_impl(const File &output) const {
   m_till_phi.define(output);
 }
 
-void MohrCoulombYieldStress::write_model_state_impl(const PIO &output) const {
+void MohrCoulombYieldStress::write_model_state_impl(const File &output) const {
   m_till_phi.write(output);
 }
 

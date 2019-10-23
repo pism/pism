@@ -27,7 +27,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/basalstrength/ConstantYieldStress.hh"
 #include "RegionalDefaultYieldStress.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "EnthalpyModel_Regional.hh"
@@ -114,10 +114,10 @@ void IceRegionalModel::model_state_setup() {
   if (m_ch_system) {
     const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
 
-    std::unique_ptr<PIO> input_file;
+    std::unique_ptr<File> input_file;
 
     if (use_input_file) {
-      input_file.reset(new PIO(m_grid->com, "guess_mode", input.filename, PISM_READONLY));
+      input_file.reset(new File(m_grid->com, "guess_mode", input.filename, PISM_READONLY));
     }
 
     switch (input.type) {
@@ -241,7 +241,7 @@ void IceRegionalModel::allocate_basal_yield_stress() {
  * - usurf_stored
  * - thk_stored
  */
-void IceRegionalModel::bootstrap_2d(const PIO &input_file) {
+void IceRegionalModel::bootstrap_2d(const File &input_file) {
 
   IceModel::bootstrap_2d(input_file);
 

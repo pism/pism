@@ -22,7 +22,7 @@
 #include "Timeseries.hh"
 #include "pism_utilities.hh"
 #include "IceGrid.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "Time.hh"
 #include "ConfigInterface.hh"
 
@@ -72,7 +72,7 @@ void Timeseries::set_use_bounds(bool flag) {
 
 
 //! Read timeseries data from a NetCDF file `filename`.
-void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log) {
+void Timeseries::read(const File &nc, const Time &time_manager, const Logger &log) {
 
   bool exists, found_by_standard_name;
   std::string standard_name = m_variable.get_string("standard_name"),
@@ -173,7 +173,7 @@ void Timeseries::report_range(const Logger &log) {
 }
 
 //! Write timeseries data to a NetCDF file `filename`.
-void Timeseries::write(const PIO &nc) const {
+void Timeseries::write(const File &nc) const {
   // write the dimensional variable; this call should go first
   io::write_timeseries(nc, m_dimension, 0, m_time);
   io::write_timeseries(nc, m_variable, 0, m_values);

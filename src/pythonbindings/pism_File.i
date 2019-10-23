@@ -1,16 +1,16 @@
 %{
-#include "util/io/PIO.hh"
+#include "util/io/File.hh"
 #include "util/io/io_helpers.hh"
 %}
 
+%ignore pism::File::get_vara_double(const std::string &, const std::vector<unsigned int> &, const std::vector<unsigned int> &, double *) const;
+%ignore pism::File::put_vara_double(const std::string &, const std::vector<unsigned int> &, const std::vector<unsigned int> &, const double *) const;
+
 %include "util/io/IO_Flags.hh"
-%include "util/io/PIO.hh"               // include before VariableMetadata
+%include "util/io/File.hh"
 %include "util/io/io_helpers.hh"
 
-%ignore pism::PIO::get_vara_double(const std::string &, const std::vector<unsigned int> &, const std::vector<unsigned int> &, double *) const;
-%ignore pism::PIO::put_vara_double(const std::string &, const std::vector<unsigned int> &, const std::vector<unsigned int> &, const double *) const;
-
-%extend pism::PIO
+%extend pism::File
 {
   void put_vara_double(const std::string &variable_name,
                        const std::vector<unsigned int> &start,

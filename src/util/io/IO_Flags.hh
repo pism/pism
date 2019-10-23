@@ -22,10 +22,10 @@
 
 namespace pism {
 
-// I/O Flags used by PIO and NCFile. They are used in both interfaces,
-// but I want to be able to create Python wrappers for PIO without
-// exposing NCFile, and NCFile should compile without PIO, so it does
-// not belong in either PIO.hh or PISMNCFile.hh.
+// I/O Flags used by File and NCFile. They are used in both interfaces,
+// but I want to be able to create Python wrappers for File without
+// exposing NCFile, and NCFile should compile without File, so it does
+// not belong in either File.hh or PISMNCFile.hh.
 
 // This is a subset of NetCDF data-types.
 enum IO_Type {

@@ -21,7 +21,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Vars.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/icebin/IBSurfaceModel.hh"
 
@@ -102,7 +102,7 @@ const IceModelVec2S &IBSurfaceModel::temperature_impl() const {
   return surface_temp;
 }
 
-void IBSurfaceModel::define_model_state_impl(const PIO &output) const {
+void IBSurfaceModel::define_model_state_impl(const File &output) const {
   SurfaceModel::define_model_state_impl(output);
   icebin_enthxfer.define(output);
   icebin_wflux.define(output);
@@ -111,7 +111,7 @@ void IBSurfaceModel::define_model_state_impl(const PIO &output) const {
   surface_temp.define(output);
 }
 
-void IBSurfaceModel::write_model_state_impl(const PIO &output) const {
+void IBSurfaceModel::write_model_state_impl(const File &output) const {
   SurfaceModel::write_model_state_impl(output);
   icebin_enthxfer.write(output);
   icebin_wflux.write(output);

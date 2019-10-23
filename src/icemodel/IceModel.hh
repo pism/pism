@@ -189,7 +189,7 @@ protected:
   void reset_counters();
 
   // see iMbootstrap.cc
-  virtual void bootstrap_2d(const PIO &input_file);
+  virtual void bootstrap_2d(const File &input_file);
 
   // see iMoptions.cc
   virtual void process_options();
@@ -198,32 +198,32 @@ protected:
   virtual void compute_lat_lon();
 
   // see iMIO.cc
-  virtual void restart_2d(const PIO &input_file, unsigned int record);
+  virtual void restart_2d(const File &input_file, unsigned int record);
   virtual void initialize_2d();
 
   enum OutputKind {INCLUDE_MODEL_STATE = 0, JUST_DIAGNOSTICS};
-  virtual void save_variables(const PIO &file,
+  virtual void save_variables(const File &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
                               double time,
                               IO_Type default_diagnostics_type = PISM_FLOAT);
 
-  virtual void define_model_state(const PIO &file);
-  virtual void write_model_state(const PIO &file);
+  virtual void define_model_state(const File &file);
+  virtual void write_model_state(const File &file);
 
   enum HistoryTreatment {OVERWRITE_HISTORY = 0, PREPEND_HISTORY};
   enum MappingTreatment {WRITE_MAPPING = 0, SKIP_MAPPING};
-  virtual void write_metadata(const PIO &file, MappingTreatment mapping_flag,
+  virtual void write_metadata(const File &file, MappingTreatment mapping_flag,
                               HistoryTreatment history_flag);
 
-  virtual void write_mapping(const PIO &file);
-  virtual void write_run_stats(const PIO &file);
+  virtual void write_mapping(const File &file);
+  virtual void write_run_stats(const File &file);
 
 
-  virtual void define_diagnostics(const PIO &file,
+  virtual void define_diagnostics(const File &file,
                                   const std::set<std::string> &variables,
                                   IO_Type default_type);
-  virtual void write_diagnostics(const PIO &file,
+  virtual void write_diagnostics(const File &file,
                                  const std::set<std::string> &variables);
 
   //! Computational grid
@@ -420,7 +420,7 @@ protected:
   double m_last_extra;
   std::set<std::string> m_extra_vars;
   TimeBoundsMetadata m_extra_bounds;
-  std::unique_ptr<PIO> m_extra_file;
+  std::unique_ptr<File> m_extra_file;
   void init_extras();
   void write_extras();
   MaxTimestep extras_max_timestep(double my_t);

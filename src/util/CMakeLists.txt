@@ -29,7 +29,7 @@ set(PISMUTIL_SRC
   iceModelVec3Custom.cc
   interpolation.cc
   io/LocalInterpCtx.cc
-  io/PIO.cc
+  io/File.cc
   io/NC3File.cc
   io/NC4File.cc
   io/NCFile.cc

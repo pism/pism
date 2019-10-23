@@ -23,7 +23,7 @@
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/MaxTimestep.hh"
@@ -73,7 +73,7 @@ void WeatherStation::init_impl(const Geometry &geometry) {
                  "  - Reading air temperature and precipitation from '%s'...\n",
                  filename.c_str());
 
-  PIO nc(m_grid->com, "netcdf3", filename, PISM_READONLY);
+  File nc(m_grid->com, "netcdf3", filename, PISM_READONLY);
   {
     m_precipitation_timeseries.read(nc, *m_grid->ctx()->time(), *m_grid->ctx()->log());
     m_air_temp_timeseries.read(nc, *m_grid->ctx()->time(), *m_grid->ctx()->log());

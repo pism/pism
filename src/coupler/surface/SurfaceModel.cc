@@ -22,7 +22,7 @@
 
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/IceGrid.hh"
@@ -336,7 +336,7 @@ void SurfaceModel::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-void SurfaceModel::define_model_state_impl(const PIO &output) const {
+void SurfaceModel::define_model_state_impl(const File &output) const {
   if (m_atmosphere) {
     m_atmosphere->define_model_state(output);
   }
@@ -346,7 +346,7 @@ void SurfaceModel::define_model_state_impl(const PIO &output) const {
   }
 }
 
-void SurfaceModel::write_model_state_impl(const PIO &output) const {
+void SurfaceModel::write_model_state_impl(const File &output) const {
   if (m_atmosphere) {
     m_atmosphere->write_model_state(output);
   }

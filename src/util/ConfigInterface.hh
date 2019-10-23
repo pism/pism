@@ -32,7 +32,7 @@
 
 namespace pism {
 
-class PIO;
+class File;
 class Logger;
 
 
@@ -79,8 +79,8 @@ public:
   void write(MPI_Comm com, const std::string &filename, bool append = true) const;
   std::string filename() const;
 
-  void read(const PIO &nc);
-  void write(const PIO &nc) const;
+  void read(const File &nc);
+  void write(const File &nc) const;
 
   bool is_set(const std::string &name) const;
 
@@ -122,8 +122,8 @@ public:
   std::string choices(const std::string &parameter) const;
   // Implementations
 protected:
-  virtual void read_impl(const PIO &nc) = 0;
-  virtual void write_impl(const PIO &nc) const = 0;
+  virtual void read_impl(const File &nc) = 0;
+  virtual void write_impl(const File &nc) const = 0;
 
   virtual bool is_set_impl(const std::string &name) const = 0;
 

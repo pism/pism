@@ -25,7 +25,7 @@
 
 #include "Time_Calendar.hh"
 #include "pism_options.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/external/calcalcs/utCalendar2_cal.h"
 #include "pism/external/calcalcs/calcalcs.h"
 #include "ConfigInterface.hh"
@@ -139,7 +139,7 @@ bool Time_Calendar::process_ye(double &result) {
   return ye.is_set();
 }
 
-void Time_Calendar::init_from_input_file(const PIO &nc,
+void Time_Calendar::init_from_input_file(const File &nc,
                                          const std::string &time_name,
                                          const Logger &log) {
   try {
@@ -212,7 +212,7 @@ void Time_Calendar::init_from_file(const std::string &filename, const Logger &lo
   try {
     std::string time_name = m_config->get_string("time.dimension_name");
 
-    PIO nc(m_com, "netcdf3", filename, PISM_READONLY); // OK to use netcdf3
+    File nc(m_com, "netcdf3", filename, PISM_READONLY); // OK to use netcdf3
 
     // Set the calendar name from file.
     std::string new_calendar = nc.get_att_text(time_name, "calendar");

@@ -25,7 +25,7 @@
 #include "pism/util/pism_options.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/Component.hh" // process_input_options
 
 namespace pism {
@@ -108,7 +108,7 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
                                       "bedrock_altitude", "thk", "topg"};
     bool grid_info_found = false;
 
-    PIO file(ctx->com(), "netcdf3", options.filename, PISM_READONLY);
+    File file(ctx->com(), "netcdf3", options.filename, PISM_READONLY);
     for (auto name : names) {
 
       grid_info_found = file.inq_var(name);

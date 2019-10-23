@@ -176,7 +176,7 @@ MaxTimestep SteadyState::max_timestep_impl(double t) const {
   return MaxTimestep(dt, "hydrology 'steady'");
 }
 
-void SteadyState::define_model_state_impl(const PIO& output) const {
+void SteadyState::define_model_state_impl(const File& output) const {
   NullTransport::define_model_state_impl(output);
 
   if (not output.inq_var(m_time_name)) {
@@ -191,14 +191,14 @@ void SteadyState::define_model_state_impl(const PIO& output) const {
   m_Q.define(output);
 }
 
-void SteadyState::write_model_state_impl(const PIO& output) const {
+void SteadyState::write_model_state_impl(const File& output) const {
   NullTransport::write_model_state_impl(output);
 
   output.put_vara_double(m_time_name, {0}, {1}, &m_t_last);
   m_Q.write(output);
 }
 
-void SteadyState::restart_impl(const PIO &input_file, int record) {
+void SteadyState::restart_impl(const File &input_file, int record) {
   NullTransport::restart_impl(input_file, record);
 
   init_time(m_config->get_string("hydrology.surface_input_file"));
@@ -217,7 +217,7 @@ void SteadyState::restart_impl(const PIO &input_file, int record) {
   regrid("hydrology 'steady'", m_Q, REGRID_WITHOUT_REGRID_VARS);
 }
 
-void SteadyState::bootstrap_impl(const PIO &input_file,
+void SteadyState::bootstrap_impl(const File &input_file,
                                  const IceModelVec2S &ice_thickness) {
   NullTransport::bootstrap_impl(input_file, ice_thickness);
 
@@ -274,7 +274,7 @@ void SteadyState::init_time(const std::string &input_file) {
 
   std::string variable_name = "water_input_rate";
 
-  PIO file(m_grid->com, "guess_mode", input_file, PISM_READONLY);
+  File file(m_grid->com, "guess_mode", input_file, PISM_READONLY);
 
   auto time_name = io::time_dimension(m_grid->ctx()->unit_system(),
                                       file, variable_name);

@@ -21,7 +21,7 @@
 #include "SSAFEM.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
@@ -251,7 +251,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
   global_attributes.set_string("source", std::string("PISM ") + pism::revision);
 
   // Find the number of records in this file:
-  PIO nc(m_grid->com, "netcdf3", filename, mode);      // OK to use NetCDF3.
+  File nc(m_grid->com, "netcdf3", filename, mode);      // OK to use NetCDF3.
   start = nc.inq_dimlen("N");
 
   io::write_attributes(nc, global_attributes, PISM_DOUBLE);
@@ -320,7 +320,7 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/,
 void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
-  PIO file(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
+  File file(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
           filename, PISM_READWRITE_MOVE);
   io::define_time(file, *m_grid->ctx());
   io::append_time(file, *m_config, 0.0);

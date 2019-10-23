@@ -72,7 +72,7 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
     unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
+    File file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
 
     {
       m_mass_flux_anomaly = IceModelVec2T::ForcingField(m_grid,
@@ -148,7 +148,7 @@ void ISMIP6::init_impl(const Geometry &geometry) {
   {
     // File with reference surface elevation, temperature, and climatic mass balance
     auto reference_filename = m_config->get_string("surface.ismip6.reference_file");
-    PIO reference_file(m_grid->com, "guess_mode", reference_filename, PISM_READONLY);
+    File reference_file(m_grid->com, "guess_mode", reference_filename, PISM_READONLY);
 
     m_mass_flux_reference.regrid(reference_file, CRITICAL);
     m_surface_reference.regrid(reference_file, CRITICAL);

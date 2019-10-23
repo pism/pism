@@ -33,13 +33,13 @@ EnthalpyModel_Regional::EnthalpyModel_Regional(IceGrid::ConstPtr grid,
                                      "m s-1", "m s-1", "", 0);
 }
 
-void EnthalpyModel_Regional::restart_impl(const PIO &input_file, int record) {
+void EnthalpyModel_Regional::restart_impl(const File &input_file, int record) {
   EnthalpyModel::restart_impl(input_file, record);
 
   m_basal_melt_rate_stored.copy_from(m_basal_melt_rate);
 }
 
-void EnthalpyModel_Regional::bootstrap_impl(const PIO &input_file,
+void EnthalpyModel_Regional::bootstrap_impl(const File &input_file,
                                             const IceModelVec2S &ice_thickness,
                                             const IceModelVec2S &surface_temperature,
                                             const IceModelVec2S &climatic_mass_balance,

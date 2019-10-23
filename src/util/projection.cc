@@ -23,7 +23,7 @@
 #include "projection.hh"
 #include "VariableMetadata.hh"
 #include "error_handling.hh"
-#include "io/PIO.hh"
+#include "io/File.hh"
 #include "io/io_helpers.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/iceModelVec.hh"
@@ -178,7 +178,7 @@ void check_consistency_epsg(const MappingInfo &info) {
   }
 }
 
-MappingInfo get_projection_info(const PIO &input_file, const std::string &mapping_name,
+MappingInfo get_projection_info(const File &input_file, const std::string &mapping_name,
                                 units::System::Ptr unit_system) {
   MappingInfo result(mapping_name, unit_system);
 

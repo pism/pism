@@ -80,7 +80,7 @@ void IceModel::init_timeseries() {
     // default behavior is to move the file aside if it exists already; option allows appending
     bool append = m_config->get_flag("output.timeseries.append");
     IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
-    PIO file(m_grid->com, "netcdf3", m_ts_filename, mode);      // Use NetCDF-3 to write time-series.
+    File file(m_grid->com, "netcdf3", m_ts_filename, mode);      // Use NetCDF-3 to write time-series.
     // add the last saved time to the list of requested times so that the first time is interpreted
     // as the end of a reporting time step
     if (append and file.inq_dimlen("time") > 0) {
@@ -124,7 +124,7 @@ void IceModel::flush_timeseries() {
 
   // update run_stats in the time series output file
   if (not m_ts_diagnostics.empty()) {
-    PIO file(m_grid->com, "netcdf3", m_ts_filename, PISM_READWRITE);
+    File file(m_grid->com, "netcdf3", m_ts_filename, PISM_READWRITE);
     write_run_stats(file);
   }
 }

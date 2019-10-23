@@ -29,7 +29,7 @@
 #include "pism/util/Diagnostic.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 
 #include "pism/util/Vars.hh"
@@ -74,7 +74,7 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
 }
 
 //! Write time-independent metadata to a file.
-void IceModel::write_metadata(const PIO &file, MappingTreatment mapping_flag,
+void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag,
                               HistoryTreatment history_flag) {
   if (mapping_flag == WRITE_MAPPING) {
     write_mapping(file);
@@ -130,7 +130,7 @@ void IceModel::save_results() {
   profiling.begin("io.model_state");
   if (m_config->get_string("output.size") != "none") {
     m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
-    PIO file(m_grid->com, m_config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
+    File file(m_grid->com, m_config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
@@ -142,7 +142,7 @@ void IceModel::save_results() {
   profiling.end("io.model_state");
 }
 
-void IceModel::write_mapping(const PIO &file) {
+void IceModel::write_mapping(const File &file) {
   // only write mapping if it is set.
   const VariableMetadata &mapping = m_grid->get_mapping_info().mapping;
   std::string name = mapping.get_name();
@@ -160,7 +160,7 @@ void IceModel::write_mapping(const PIO &file) {
   }
 }
 
-void IceModel::write_run_stats(const PIO &file) {
+void IceModel::write_run_stats(const File &file) {
   update_run_stats();
   if (not file.inq_var(m_run_stats.get_name())) {
     file.def_var(m_run_stats.get_name(), PISM_DOUBLE, {});
@@ -168,7 +168,7 @@ void IceModel::write_run_stats(const PIO &file) {
   io::write_attributes(file, m_run_stats, PISM_DOUBLE);
 }
 
-void IceModel::save_variables(const PIO &file,
+void IceModel::save_variables(const File &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
                               double time,
@@ -245,7 +245,7 @@ void IceModel::save_variables(const PIO &file,
   }
 }
 
-void IceModel::define_diagnostics(const PIO &file, const std::set<std::string> &variables,
+void IceModel::define_diagnostics(const File &file, const std::set<std::string> &variables,
                                   IO_Type default_type) {
   for (auto variable : variables) {
     auto diag = m_diagnostics.find(variable);
@@ -258,7 +258,7 @@ void IceModel::define_diagnostics(const PIO &file, const std::set<std::string> &
 
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated IceModelVecs.
-void IceModel::write_diagnostics(const PIO &file, const std::set<std::string> &variables) {
+void IceModel::write_diagnostics(const File &file, const std::set<std::string> &variables) {
   for (auto variable : variables) {
     auto diag = m_diagnostics.find(variable);
 
@@ -268,7 +268,7 @@ void IceModel::write_diagnostics(const PIO &file, const std::set<std::string> &v
   }
 }
 
-void IceModel::define_model_state(const PIO &file) {
+void IceModel::define_model_state(const File &file) {
   for (auto v : m_model_state) {
     v->define(file);
   }
@@ -282,7 +282,7 @@ void IceModel::define_model_state(const PIO &file) {
   }
 }
 
-void IceModel::write_model_state(const PIO &file) {
+void IceModel::write_model_state(const File &file) {
   for (auto v : m_model_state) {
     v->write(file);
   }

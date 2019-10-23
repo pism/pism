@@ -147,7 +147,7 @@ void IceModel::init_extras() {
   }
 
   if (append) {
-    PIO file(m_grid->com, m_config->get_string("output.format"), m_extra_filename, PISM_READONLY);
+    File file(m_grid->com, m_config->get_string("output.format"), m_extra_filename, PISM_READONLY);
 
     std::string time_name = m_config->get_string("time.dimension_name");
     if (file.inq_var(time_name)) {
@@ -295,7 +295,7 @@ void IceModel::write_extras() {
   profiling.begin("io.extra_file");
   {
     if (not m_extra_file) {
-      m_extra_file.reset(new PIO(m_grid->com,
+      m_extra_file.reset(new File(m_grid->com,
                                  m_config->get_string("output.format"),
                                  filename, mode));
     }
