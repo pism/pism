@@ -66,7 +66,9 @@ void Inputs::dump(const char *filename) const {
   Context::ConstPtr ctx = geometry->ice_thickness.grid()->ctx();
   Config::ConstPtr config = ctx->config();
 
-  File output(ctx->com(), config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
+  File output(ctx->com(), filename,
+              string_to_backend(config->get_string("output.format")),
+              PISM_READWRITE_MOVE);
 
   config->write(output);
 

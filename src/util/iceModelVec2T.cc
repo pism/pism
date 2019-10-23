@@ -59,7 +59,7 @@ IceModelVec2T::Ptr IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
                                                bool periodic,
                                                InterpolationType interpolation_type) {
 
-  int n_records = file.inq_nrecords(short_name, standard_name,
+  int n_records = file.nrecords(short_name, standard_name,
                                     grid->ctx()->unit_system());
 
   if (not periodic) {
@@ -176,12 +176,9 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
-  File nc(m_grid->com, "guess_mode", m_filename, PISM_READONLY);
-  std::string name_found;
-  bool exists, found_by_standard_name;
-  nc.inq_var(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"),
-             exists, name_found, found_by_standard_name);
-  if (not exists) {
+  File nc(m_grid->com, m_filename, PISM_GUESS, PISM_READONLY);
+  auto var = nc.find_variable(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"));
+  if (not var.exists) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "can't find %s (%s) in %s.",
                                   m_metadata[0].get_string("long_name").c_str(),
                                   m_metadata[0].get_name().c_str(),
@@ -189,7 +186,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   }
 
   auto time_name = io::time_dimension(m_grid->ctx()->unit_system(),
-                                      nc, name_found);
+                                      nc, var.name);
 
   if (not time_name.empty()) {
     // we're found the time dimension
@@ -201,7 +198,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
     io::read_timeseries(nc, time_dimension,
                         *m_grid->ctx()->time(), log, m_time);
 
-    std::string bounds_name = nc.get_att_text(time_name, "bounds");
+    std::string bounds_name = nc.read_text_attribute(time_name, "bounds");
 
     if (m_time.size() > 1) {
 
@@ -393,7 +390,7 @@ void IceModelVec2T::update(unsigned int start) {
     m_report_range = true;
   }
 
-  File nc(m_grid->com, "guess_mode", m_filename, PISM_READONLY);
+  File nc(m_grid->com, m_filename, PISM_GUESS, PISM_READONLY);
 
   const bool allow_extrapolation = m_grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 

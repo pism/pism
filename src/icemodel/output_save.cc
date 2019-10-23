@@ -153,7 +153,10 @@ void IceModel::write_snapshot() {
   profiling.begin("io.snapshots");
   IO_Mode mode = m_snapshots_file_is_ready ? PISM_READWRITE : PISM_READWRITE_MOVE;
   {
-    File file(m_grid->com, m_config->get_string("output.format"), filename, mode);
+    File file(m_grid->com,
+              filename,
+              string_to_backend(m_config->get_string("output.format")),
+              mode);
 
     if (not m_snapshots_file_is_ready) {
       write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);

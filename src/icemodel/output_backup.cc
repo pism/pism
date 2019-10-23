@@ -62,8 +62,10 @@ void IceModel::write_backup() {
   double backup_start_time = get_time();
   profiling.begin("io.backup");
   {
-    File file(m_grid->com, m_config->get_string("output.format"),
-             m_backup_filename, PISM_READWRITE_MOVE);
+    File file(m_grid->com,
+              m_backup_filename,
+              string_to_backend(m_config->get_string("output.format")),
+              PISM_READWRITE_MOVE);
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
     write_run_stats(file);

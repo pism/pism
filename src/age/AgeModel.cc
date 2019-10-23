@@ -194,9 +194,9 @@ void AgeModel::init(const InputOptions &opts) {
   double initial_age_years = m_config->get_number("age.initial_value", "years");
 
   if (opts.type == INIT_RESTART) {
-    File input_file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
+    File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
 
-    if (input_file.inq_var("age")) {
+    if (input_file.find_variable("age")) {
       m_ice_age.read(input_file, opts.record);
     } else {
       m_log->message(2,

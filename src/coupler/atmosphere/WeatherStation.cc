@@ -73,7 +73,7 @@ void WeatherStation::init_impl(const Geometry &geometry) {
                  "  - Reading air temperature and precipitation from '%s'...\n",
                  filename.c_str());
 
-  File nc(m_grid->com, "netcdf3", filename, PISM_READONLY);
+  File nc(m_grid->com, filename, PISM_NETCDF3, PISM_READONLY);
   {
     m_precipitation_timeseries.read(nc, *m_grid->ctx()->time(), *m_grid->ctx()->log());
     m_air_temp_timeseries.read(nc, *m_grid->ctx()->time(), *m_grid->ctx()->log());

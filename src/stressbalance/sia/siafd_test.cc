@@ -387,7 +387,7 @@ int main(int argc, char *argv[]) {
                  geometry.ice_thickness, u3, v3, w3, sigma);
 
     // Write results to an output file:
-    File file(grid->com, "netcdf3", output_file, PISM_READWRITE_MOVE);
+    File file(grid->com, output_file, PISM_NETCDF3, PISM_READWRITE_MOVE);
     io::define_time(file, *ctx);
     io::append_time(file, *ctx->config(), ctx->time()->current());
 

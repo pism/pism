@@ -145,7 +145,7 @@ void Time_Calendar::init_from_input_file(const File &nc,
   try {
     // Set the calendar name from file, unless we are re-starting from a PISM run using the "none"
     // calendar.
-    std::string new_calendar = nc.get_att_text(time_name, "calendar");
+    std::string new_calendar = nc.read_text_attribute(time_name, "calendar");
     if (not new_calendar.empty() and
         not (new_calendar == "none")) {
       init_calendar(new_calendar);
@@ -174,9 +174,9 @@ void Time_Calendar::init_from_input_file(const File &nc,
                 "* Time t = %s (calendar: %s) found in '%s'; setting current time\n",
                 this->date().c_str(),
                 this->calendar().c_str(),
-                nc.inq_filename().c_str());
+                nc.filename().c_str());
   } catch (RuntimeError &e) {
-    e.add_context("initializing model time from \"%s\"", nc.inq_filename().c_str());
+    e.add_context("initializing model time from \"%s\"", nc.filename().c_str());
     throw;
   }
 }
@@ -212,10 +212,10 @@ void Time_Calendar::init_from_file(const std::string &filename, const Logger &lo
   try {
     std::string time_name = m_config->get_string("time.dimension_name");
 
-    File nc(m_com, "netcdf3", filename, PISM_READONLY); // OK to use netcdf3
+    File nc(m_com, filename, PISM_NETCDF3, PISM_READONLY); // OK to use netcdf3
 
     // Set the calendar name from file.
-    std::string new_calendar = nc.get_att_text(time_name, "calendar");
+    std::string new_calendar = nc.read_text_attribute(time_name, "calendar");
     if (not new_calendar.empty()) {
       init_calendar(new_calendar);
     }
@@ -228,7 +228,7 @@ void Time_Calendar::init_from_file(const std::string &filename, const Logger &lo
 
     // Read time information from the file.
     std::vector<double> time;
-    std::string time_bounds_name = nc.get_att_text(time_name, "bounds");
+    std::string time_bounds_name = nc.read_text_attribute(time_name, "bounds");
     if (not time_bounds_name.empty()) {
       // use the time bounds
       TimeBoundsMetadata bounds(time_bounds_name, time_name, m_unit_system);

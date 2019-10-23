@@ -190,13 +190,13 @@ public:
   }
 protected:
   void init_impl(const File &input, unsigned int time) {
-    if (input.inq_var(m_accumulator.get_name())) {
+    if (input.find_variable(m_accumulator.get_name())) {
       m_accumulator.read(input, time);
     } else {
       m_accumulator.set(0.0);
     }
 
-    if (input.inq_var(m_time_since_reset.get_name())) {
+    if (input.find_variable(m_time_since_reset.get_name())) {
       input.get_vara_double(m_time_since_reset.get_name(),
                             {time}, {1}, // start, count
                             &m_interval_length);
@@ -214,7 +214,7 @@ protected:
     m_accumulator.write(output);
 
     const unsigned int
-      time_length = output.inq_dimlen(m_time_since_reset.get_dimension_name()),
+      time_length = output.dimension_length(m_time_since_reset.get_dimension_name()),
       t_start = time_length > 0 ? time_length - 1 : 0;
     io::write_timeseries(output, m_time_since_reset, t_start, m_interval_length, PISM_DOUBLE);
   }

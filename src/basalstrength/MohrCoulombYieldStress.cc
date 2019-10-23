@@ -131,8 +131,8 @@ void MohrCoulombYieldStress::init_impl(const Geometry &geometry,
 
     if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
 
-      File nc(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
-      bool tillphi_present = nc.inq_var(m_till_phi.metadata().get_name());
+      File nc(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      bool tillphi_present = nc.find_variable(m_till_phi.metadata().get_name());
 
       if (tillphi_present) {
         m_log->message(2,

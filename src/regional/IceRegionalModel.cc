@@ -117,7 +117,7 @@ void IceRegionalModel::model_state_setup() {
     std::unique_ptr<File> input_file;
 
     if (use_input_file) {
-      input_file.reset(new File(m_grid->com, "guess_mode", input.filename, PISM_READONLY));
+      input_file.reset(new File(m_grid->com, input.filename, PISM_GUESS, PISM_READONLY));
     }
 
     switch (input.type) {

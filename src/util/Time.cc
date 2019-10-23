@@ -46,11 +46,11 @@ std::string calendar_from_options(MPI_Comm com, const Config &config) {
   // "calendar" attribute is found.
   options::String time_file("-time_file", "name of the file specifying the run duration");
   if (time_file.is_set()) {
-    File nc(com, "netcdf3", time_file, PISM_READONLY);    // OK to use netcdf3
+    File nc(com, time_file, PISM_NETCDF3, PISM_READONLY);    // OK to use netcdf3
 
     std::string time_name = config.get_string("time.dimension_name");
-    if (nc.inq_var(time_name)) {
-      std::string tmp = nc.get_att_text(time_name, "calendar");
+    if (nc.find_variable(time_name)) {
+      std::string tmp = nc.read_text_attribute(time_name, "calendar");
       if (not tmp.empty()) {
         result = tmp;
       }
@@ -86,7 +86,7 @@ void initialize_time(MPI_Comm com, const std::string &dimension_name,
   options::String input_file("-i", "Specifies a PISM input file");
 
   if (input_file.is_set()) {
-    File nc(com, "netcdf3", input_file, PISM_READONLY);     // OK to use netcdf3
+    File nc(com, input_file, PISM_NETCDF3, PISM_READONLY);     // OK to use netcdf3
     time.init_from_input_file(nc, dimension_name, log);
   }
 
@@ -97,11 +97,11 @@ void initialize_time(MPI_Comm com, const std::string &dimension_name,
 std::string reference_date_from_file(const File &nc,
                                      const std::string &time_name) {
 
-  if (not nc.inq_var(time_name)) {
+  if (not nc.find_variable(time_name)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "'%s' variable is not present in '%s'.",
-                                  time_name.c_str(), nc.inq_filename().c_str());
+                                  time_name.c_str(), nc.filename().c_str());
   }
-  std::string time_units = nc.get_att_text(time_name, "units");
+  std::string time_units = nc.read_text_attribute(time_name, "units");
 
   // Check if the time_units includes a reference date.
   size_t position = time_units.find("since");
@@ -268,7 +268,7 @@ bool Time::process_ye(double &result) {
 void Time::init_from_input_file(const File &nc,
                                 const std::string &time_name,
                                 const Logger &log) {
-  unsigned int time_length = nc.inq_dimlen(time_name);
+  unsigned int time_length = nc.dimension_length(time_name);
 
   bool ys = options::Bool("-ys", "starting time");
   if (not ys and time_length > 0) {
@@ -279,7 +279,7 @@ void Time::init_from_input_file(const File &nc,
     this->set(T);
     log.message(2,
                 "* Time t = %s found in '%s'; setting current time\n",
-                this->date().c_str(), nc.inq_filename().c_str());
+                this->date().c_str(), nc.filename().c_str());
   }
 }
 

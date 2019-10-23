@@ -93,7 +93,7 @@ FractureDensity::~FractureDensity() {
 
 void FractureDensity::restart(const File &input_file, int record) {
   m_log->message(2, "* Restarting the fracture density model from %s...\n",
-                 input_file.inq_filename().c_str());
+                 input_file.filename().c_str());
 
   m_density.read(input_file, record);
   m_age.read(input_file, record);
@@ -104,7 +104,7 @@ void FractureDensity::restart(const File &input_file, int record) {
 
 void FractureDensity::bootstrap(const File &input_file) {
   m_log->message(2, "* Bootstrapping the fracture density model from %s...\n",
-                 input_file.inq_filename().c_str());
+                 input_file.filename().c_str());
 
   m_density.regrid(input_file, OPTIONAL, 0.0);
   m_age.regrid(input_file, OPTIONAL, 0.0);

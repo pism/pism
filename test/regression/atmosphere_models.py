@@ -332,11 +332,11 @@ class OneStation(TestCase):
         output = PISM.util.prepare_output(self.filename, append_time=True)
 
         output.redef()
-        output.def_var("precipitation", PISM.PISM_DOUBLE, [time_name])
-        output.put_att_text("precipitation", "units", "kg m-2 s-1")
+        output.define_variable("precipitation", PISM.PISM_DOUBLE, [time_name])
+        output.write_attribute("precipitation", "units", "kg m-2 s-1")
 
-        output.def_var("air_temp", PISM.PISM_DOUBLE, [time_name])
-        output.put_att_text("air_temp", "units", "Kelvin")
+        output.define_variable("air_temp", PISM.PISM_DOUBLE, [time_name])
+        output.write_attribute("air_temp", "units", "Kelvin")
 
         output.put_vara_double("precipitation", [0], [1], [self.P])
         output.put_vara_double("air_temp", [0], [1], [self.T])

@@ -120,7 +120,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     int buffer_size = m_config->get_number("input.forcing.buffer_size");
     int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
 
-    File file(m_grid->com, "netcdf3", surface_input_file, PISM_READONLY);
+    File file(m_grid->com, surface_input_file, PISM_NETCDF3, PISM_READONLY);
 
     m_surface_input_for_hydrology = IceModelVec2T::ForcingField(m_grid,
                                                                 file,
@@ -422,7 +422,9 @@ void IceModel::step(bool do_mass_continuity,
 
     std::string o_file = filename_add_suffix(output_file,
                                              "_stressbalance_failed", "");
-    File file(m_grid->com, m_config->get_string("output.format"), o_file, PISM_READWRITE_MOVE);
+    File file(m_grid->com, o_file,
+              string_to_backend(m_config->get_string("output.format")),
+              PISM_READWRITE_MOVE);
 
     update_run_stats();
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
@@ -645,7 +647,10 @@ void IceModel::step(bool do_mass_continuity,
 
     std::string o_file = filename_add_suffix(output_file,
                                              "_max_thickness", "");
-    File file(m_grid->com, m_config->get_string("output.format"), o_file, PISM_READWRITE_MOVE);
+    File file(m_grid->com,
+              o_file,
+              string_to_backend(m_config->get_string("output.format")),
+              PISM_READWRITE_MOVE);
 
     update_run_stats();
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);

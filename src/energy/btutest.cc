@@ -218,8 +218,10 @@ int main(int argc, char *argv[]) {
                  max_error, 100.0*max_error/FF, avg_error);
     log->message(1, "NUM ERRORS DONE\n");
 
-    File file(grid->com, grid->ctx()->config()->get_string("output.format"),
-            outname, PISM_READWRITE_MOVE);
+    File file(grid->com,
+              outname,
+              string_to_backend(config->get_string("output.format")),
+              PISM_READWRITE_MOVE);
 
     io::define_time(file, *ctx);
     io::append_time(file, *ctx->config(), ctx->time()->current());

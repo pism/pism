@@ -157,7 +157,7 @@ def grid_from_file_test():
 
         enthalpy.write(pio)
 
-        pio = PISM.File(grid.com, "netcdf3", output_file, PISM.PISM_READONLY)
+        pio = PISM.File(grid.com, output_file, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
 
         grid2 = PISM.IceGrid.FromFile(ctx.ctx, pio, "enthalpy", PISM.CELL_CORNER)
     finally:
@@ -368,7 +368,7 @@ def util_test():
 
     output_file = "test_pism_util.nc"
     try:
-        pio = PISM.File(grid.com, "netcdf3", output_file, PISM.PISM_READWRITE_MOVE)
+        pio = PISM.File(grid.com, output_file, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
         pio.close()
 
         PISM.util.writeProvenance(output_file)
@@ -393,7 +393,7 @@ def logging_test():
 
     log_filename = "log.nc"
     try:
-        PISM.File(grid.com, "netcdf3", log_filename, PISM.PISM_READWRITE_MOVE)
+        PISM.File(grid.com, log_filename, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
         c = L.CaptureLogger(log_filename)
 
         L.clear_loggers()
@@ -420,7 +420,7 @@ def logging_test():
 
     log_filename = "other_log.nc"
     try:
-        PISM.File(grid.com, "netcdf3", log_filename, PISM.PISM_READWRITE_MOVE)
+        PISM.File(grid.com, log_filename, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
         c.write(log_filename, "other_log")  # non-default arguments
     finally:
         os.remove(log_filename)
@@ -826,14 +826,17 @@ netcdf string_attribute_test {
 
     def compare(backend):
         try:
-            pio = PISM.File(PISM.PETSc.COMM_WORLD, backend, basename + ".nc", PISM.PISM_READONLY)
+            pio = PISM.File(PISM.PETSc.COMM_WORLD,
+                            basename + ".nc",
+                            PISM.string_to_backend(backend),
+                            PISM.PISM_READONLY)
         except:
             # Don't fail if backend creation failed: PISM may not have
             # been compiled with parallel I/O enabled.
             return
 
-        read_string = pio.get_att_text("PISM_GLOBAL", "string_attribute")
-        read_text = pio.get_att_text("PISM_GLOBAL", "text_attribute")
+        read_string = pio.read_text_attribute("PISM_GLOBAL", "string_attribute")
+        read_text = pio.read_text_attribute("PISM_GLOBAL", "text_attribute")
 
         # check that written and read strings are the same
         print("written string: '%s'" % attribute)

@@ -242,14 +242,16 @@ void IBIceModel::prepare_nc(std::string const &fname, std::unique_ptr<File> &nc)
 
   //    nc.reset(new File(m_grid->com, m_grid->ctx()->config()->get_string("output.format")));
 
-  nc.reset(new File(m_grid->com, m_config->get_string("output.format"),
-                   fname, PISM_READWRITE_MOVE));
+  nc.reset(new File(m_grid->com,
+                    fname,
+                    string_to_backend(m_config->get_string("output.format")),
+                    PISM_READWRITE_MOVE));
 
   io::define_time(*nc, m_grid->ctx()->config()->get_string("time.dimension_name"), m_grid->ctx()->time()->calendar(),
                   m_grid->ctx()->time()->CF_units_string(), m_grid->ctx()->unit_system());
 
   // These are in iMtimseries, but not listed as required in iceModelVec.hh
-  //    nc->put_att_text(m_config.get_string("time.dimension_name"),
+  //    nc->write_attribute(m_config.get_string("time.dimension_name"),
   //                           "bounds", "time_bounds");
   //    write_metadata(nc, true, false);
   //  nc->close():

@@ -741,9 +741,9 @@ void IceCompModel::reportErrors() {
     m_log->message(2, "Also writing errors to '%s'...\n", report_file->c_str());
 
     // Find the number of records in this file:
-    File nc(m_grid->com, "netcdf3", report_file, mode); // OK to use netcdf3
+    File nc(m_grid->com, report_file, PISM_NETCDF3, mode); // OK to use netcdf3
 
-    start = nc.inq_dimlen("N");
+    start = nc.dimension_length("N");
 
     io::write_attributes(nc, m_output_global_attributes, PISM_DOUBLE);
 

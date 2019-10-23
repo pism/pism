@@ -498,7 +498,7 @@ void IceModelVec::define(const File &nc, IO_Type default_type) const {
   name to find the variable to read attributes from.
  */
 void IceModelVec::read_attributes(const std::string &filename, int N) {
-  File nc(m_grid->com, "netcdf3", filename, PISM_READONLY); // OK to use netcdf3
+  File nc(m_grid->com, filename, PISM_NETCDF3, PISM_READONLY); // OK to use netcdf3
   io::read_attributes(nc, metadata(N).get_name(), metadata(N));
 }
 
@@ -541,8 +541,9 @@ void IceModelVec::write_impl(const File &file) const {
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 void IceModelVec::dump(const char filename[]) const {
-  File file(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
-           filename, PISM_READWRITE_CLOBBER);
+  File file(m_grid->com, filename,
+            string_to_backend(m_grid->ctx()->config()->get_string("output.format")),
+            PISM_READWRITE_CLOBBER);
 
   io::define_time(file, *m_grid->ctx());
   io::append_time(file, *m_grid->ctx()->config(), m_grid->ctx()->time()->current());
@@ -815,20 +816,22 @@ std::vector<double> IceModelVec::norm_all(int n) const {
 
 void IceModelVec::write(const std::string &filename) const {
   // We expect the file to be present and ready to write into.
-  File nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
-         filename, PISM_READWRITE);
+  File nc(m_grid->com,
+          filename,
+          string_to_backend(m_grid->ctx()->config()->get_string("output.format")),
+          PISM_READWRITE);
 
   this->write(nc);
 }
 
 void IceModelVec::read(const std::string &filename, unsigned int time) {
-  File nc(m_grid->com, "guess_mode", filename, PISM_READONLY);
+  File nc(m_grid->com, filename, PISM_GUESS, PISM_READONLY);
   this->read(nc, time);
 }
 
 void IceModelVec::regrid(const std::string &filename, RegriddingFlag flag,
                                    double default_value) {
-  File nc(m_grid->com, "guess_mode", filename, PISM_READONLY);
+  File nc(m_grid->com, filename, PISM_GUESS, PISM_READONLY);
 
   try {
     this->regrid(nc, flag, default_value);

@@ -30,6 +30,19 @@ namespace pism {
 
 enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
+enum IOBackend {PISM_GUESS, PISM_NETCDF3, PISM_NETCDF4_PARALLEL, PISM_PNETCDF};
+
+/*!
+ * Convert a string to PISM's backend type.
+ */
+IOBackend string_to_backend(const std::string &backend);
+
+struct VariableLookupData {
+  bool exists;
+  bool found_using_standard_name;
+  std::string name;
+};
+
 //! \brief High-level PISM I/O class.
 /*!
  * Hides the low-level NetCDF wrapper.
@@ -37,8 +50,10 @@ enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 class File
 {
 public:
-  File(MPI_Comm com, const std::string &backend, const std::string &filename, IO_Mode mode);
+  File(MPI_Comm com, const std::string &filename, IOBackend backend, IO_Mode mode);
   ~File();
+
+  IOBackend backend() const;
 
   MPI_Comm com() const;
 
@@ -48,61 +63,65 @@ public:
 
   void enddef() const;
 
-  std::string inq_filename() const;
+  std::string filename() const;
 
-  unsigned int inq_nrecords() const;
+  unsigned int nrecords() const;
 
-  unsigned int inq_nrecords(const std::string &name, const std::string &std_name,
-                            units::System::Ptr unit_system) const;
+  unsigned int nrecords(const std::string &name, const std::string &std_name,
+                        units::System::Ptr unit_system) const;
 
-  void inq_var(const std::string &short_name, const std::string &std_name, bool &exists,
-               std::string &result, bool &found_by_standard_name) const;
+  unsigned int nvariables() const;
 
-  bool inq_var(const std::string &short_name) const;
+  unsigned int nattributes(const std::string &var_name) const;
 
-  std::vector<std::string> inq_vardims(const std::string &name) const;
-
-  bool inq_dim(const std::string &name) const;
-
-  unsigned int inq_dimlen(const std::string &name) const;
-
-  AxisType inq_dimtype(const std::string &name,
-                       units::System::Ptr unit_system) const;
+  // dimensions
 
   void inq_dim_limits(const std::string &name, double *min, double *max) const;
 
-  void def_dim(const std::string &name, size_t length) const;
+  void define_dimension(const std::string &name, size_t length) const;
 
-  void def_var(const std::string &name, IO_Type nctype,
-               const std::vector<std::string> &dims) const;
+  unsigned int dimension_length(const std::string &name) const;
 
-  void get_dim(const std::string &name, std::vector<double> &result) const;
+  std::vector<std::string> dimensions(const std::string &variable_name) const;
+
+  bool find_dimension(const std::string &name) const;
+
+  AxisType dimension_type(const std::string &name,
+                       units::System::Ptr unit_system) const;
+
+  std::vector<double> read_dimension(const std::string &name) const;
+
+  // variables
+
+  std::string variable_name(unsigned int id) const;
+
+  void define_variable(const std::string &name, IO_Type nctype,
+                       const std::vector<std::string> &dims) const;
+
+  VariableLookupData find_variable(const std::string &short_name, const std::string &std_name) const;
+
+  bool find_variable(const std::string &short_name) const;
+
+  // attributes
+
+  void del_att(const std::string &variable_name, const std::string &att_name) const;
 
   void append_history(const std::string &history) const;
 
-  unsigned int inq_nvars() const;
+  std::string attribute_name(const std::string &var_name, unsigned int n) const;
 
-  std::string inq_varname(unsigned int id) const;
+  IO_Type attribute_type(const std::string &var_name, const std::string &att_name) const;
 
-  unsigned int inq_nattrs(const std::string &var_name) const;
-
-  std::string inq_attname(const std::string &var_name, unsigned int n) const;
-
-  IO_Type inq_atttype(const std::string &var_name, const std::string &att_name) const;
-
-  void put_att_double(const std::string &var_name, const std::string &att_name,
+  void write_attribute(const std::string &var_name, const std::string &att_name,
                       IO_Type nctype, const std::vector<double> &values) const;
 
-  void put_att_double(const std::string &var_name, const std::string &att_name,
-                      IO_Type nctype, double value) const;
+  void write_attribute(const std::string &var_name, const std::string &att_name,
+                       const std::string &value) const;
 
-  void put_att_text(const std::string &var_name, const std::string &att_name,
-                    const std::string &value) const;
+  std::vector<double> read_double_attribute(const std::string &var_name,
+                                            const std::string &att_name) const;
 
-  std::vector<double> get_att_double(const std::string &var_name,
-                                     const std::string &att_name) const;
-
-  std::string get_att_text(const std::string &var_name, const std::string &att_name) const;
+  std::string read_text_attribute(const std::string &var_name, const std::string &att_name) const;
 
   void get_vara_double(const std::string &variable_name,
                        const std::vector<unsigned int> &start,
@@ -124,10 +143,6 @@ public:
                        const std::vector<unsigned int> &count,
                        const std::vector<unsigned int> &imap,
                        const double *op) const;
-
-  std::string backend_type() const;
-
-  void del_att(const std::string &variable_name, const std::string &att_name) const;
 private:
   struct Impl;
   Impl *m_impl;

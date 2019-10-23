@@ -78,7 +78,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
     int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
     int max_buffer_size = (unsigned int) m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, "netcdf3", sd_file, PISM_READONLY);
+    File file(m_grid->com, sd_file, PISM_NETCDF3, PISM_READONLY);
     m_air_temp_sd = IceModelVec2T::ForcingField(m_grid, file,
                                                 "air_temp_sd", "",
                                                 max_buffer_size,

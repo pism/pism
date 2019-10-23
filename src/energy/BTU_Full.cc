@@ -100,9 +100,9 @@ void BTU_Full::init_impl(const InputOptions &opts) {
     const int temp_revision = m_temp->state_counter();
 
     if (opts.type == INIT_RESTART) {
-      File input_file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
+      File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
 
-      if (input_file.inq_var("litho_temp")) {
+      if (input_file.find_variable("litho_temp")) {
         m_temp->read(input_file, opts.record);
       }
       // otherwise the bedrock temperature is either interpolated from a -regrid_file or filled

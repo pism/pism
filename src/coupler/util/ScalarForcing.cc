@@ -82,7 +82,7 @@ void ScalarForcing::init() {
                         "  reading %s data from forcing file %s...\n",
                         m_data->name().c_str(), file.c_str());
 
-  File nc(m_ctx->com(), "netcdf3", file, PISM_READONLY);
+  File nc(m_ctx->com(), file, PISM_NETCDF3, PISM_READONLY);
   {
     m_data->read(nc, *m_ctx->time(), *m_ctx->log());
   }

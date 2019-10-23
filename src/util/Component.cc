@@ -63,10 +63,10 @@ InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config) {
 
   // get the index of the last record in the input file
   if (not input_filename.empty()) {
-    File input_file(com, "guess_mode", input_filename, PISM_READONLY);
+    File input_file(com, input_filename, PISM_GUESS, PISM_READONLY);
 
     // Find the index of the last record in the input file.
-    unsigned int last_record = input_file.inq_nrecords();
+    unsigned int last_record = input_file.nrecords();
     if (last_record > 0) {
       last_record -= 1;
     }

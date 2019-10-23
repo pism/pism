@@ -179,13 +179,13 @@ MaxTimestep SteadyState::max_timestep_impl(double t) const {
 void SteadyState::define_model_state_impl(const File& output) const {
   NullTransport::define_model_state_impl(output);
 
-  if (not output.inq_var(m_time_name)) {
-    output.def_var(m_time_name, PISM_DOUBLE, {});
+  if (not output.find_variable(m_time_name)) {
+    output.define_variable(m_time_name, PISM_DOUBLE, {});
 
-    output.put_att_text(m_time_name, "long_name",
+    output.write_attribute(m_time_name, "long_name",
                         "time of the last update of the steady state subglacial water flux");
-    output.put_att_text(m_time_name, "calendar", m_grid->ctx()->time()->calendar());
-    output.put_att_text(m_time_name, "units", m_grid->ctx()->time()->CF_units_string());
+    output.write_attribute(m_time_name, "calendar", m_grid->ctx()->time()->calendar());
+    output.write_attribute(m_time_name, "units", m_grid->ctx()->time()->CF_units_string());
   }
 
   m_Q.define(output);
@@ -205,7 +205,7 @@ void SteadyState::restart_impl(const File &input_file, int record) {
 
   // Read m_t_last
   {
-    if (input_file.inq_var(m_time_name)) {
+    if (input_file.find_variable(m_time_name)) {
       input_file.get_vara_double(m_time_name, {0}, {1}, &m_t_last);
     } else {
       m_t_last = m_grid->ctx()->time()->current();
@@ -225,7 +225,7 @@ void SteadyState::bootstrap_impl(const File &input_file,
 
   // Read m_t_last
   {
-    if (input_file.inq_var(m_time_name)) {
+    if (input_file.find_variable(m_time_name)) {
       input_file.get_vara_double(m_time_name, {0}, {1}, &m_t_last);
     } else {
       m_t_last = m_grid->ctx()->time()->current();
@@ -233,7 +233,7 @@ void SteadyState::bootstrap_impl(const File &input_file,
   }
 
   // Read water flux
-  if (input_file.inq_var(m_Q.metadata().get_name())) {
+  if (input_file.find_variable(m_Q.metadata().get_name())) {
     // Regrid from the input file.
     m_Q.regrid(input_file, CRITICAL);
 
@@ -274,7 +274,7 @@ void SteadyState::init_time(const std::string &input_file) {
 
   std::string variable_name = "water_input_rate";
 
-  File file(m_grid->com, "guess_mode", input_file, PISM_READONLY);
+  File file(m_grid->com, input_file, PISM_GUESS, PISM_READONLY);
 
   auto time_name = io::time_dimension(m_grid->ctx()->unit_system(),
                                       file, variable_name);
@@ -284,7 +284,7 @@ void SteadyState::init_time(const std::string &input_file) {
     return;
   }
 
-  std::string bounds_name = file.get_att_text(time_name, "bounds");
+  std::string bounds_name = file.read_text_attribute(time_name, "bounds");
 
   if (bounds_name.empty()) {
     // no time bounds attribute

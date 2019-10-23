@@ -147,10 +147,13 @@ void IceModel::init_extras() {
   }
 
   if (append) {
-    File file(m_grid->com, m_config->get_string("output.format"), m_extra_filename, PISM_READONLY);
+    File file(m_grid->com,
+              m_extra_filename,
+              string_to_backend(m_config->get_string("output.format")),
+              PISM_READONLY);
 
     std::string time_name = m_config->get_string("time.dimension_name");
-    if (file.inq_var(time_name)) {
+    if (file.find_variable(time_name)) {
       double time_max;
 
       file.inq_dim_limits(time_name, NULL, &time_max);
@@ -296,8 +299,9 @@ void IceModel::write_extras() {
   {
     if (not m_extra_file) {
       m_extra_file.reset(new File(m_grid->com,
-                                 m_config->get_string("output.format"),
-                                 filename, mode));
+                                  filename,
+                                  string_to_backend(m_config->get_string("output.format")),
+                                  mode));
     }
 
     std::string time_name = m_config->get_string("time.dimension_name");
@@ -305,7 +309,7 @@ void IceModel::write_extras() {
     if (not m_extra_file_is_ready) {
       // Prepare the file:
       io::define_time(*m_extra_file, *m_ctx);
-      m_extra_file->put_att_text(time_name, "bounds", "time_bounds");
+      m_extra_file->write_attribute(time_name, "bounds", "time_bounds");
 
       io::define_time_bounds(m_extra_bounds, *m_extra_file);
 
@@ -324,7 +328,7 @@ void IceModel::write_extras() {
                    PISM_FLOAT);
 
     // Get the length of the time dimension *after* it is appended to.
-    unsigned int time_length = m_extra_file->inq_dimlen(time_name);
+    unsigned int time_length = m_extra_file->dimension_length(time_name);
     size_t time_start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
 
     io::write_time_bounds(*m_extra_file, m_extra_bounds,

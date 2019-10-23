@@ -162,13 +162,13 @@ EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
 
 void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int record) {
 
-  if (input_file.inq_var("enthalpy")) {
+  if (input_file.find_variable("enthalpy")) {
     if (do_regrid) {
       m_ice_enthalpy.regrid(input_file, CRITICAL);
     } else {
       m_ice_enthalpy.read(input_file, record);
     }
-  } else if (input_file.inq_var("temp")) {
+  } else if (input_file.find_variable("temp")) {
     IceModelVec3
       &temp    = m_work,
       &liqfrac = m_ice_enthalpy;
@@ -188,7 +188,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
 
     const IceModelVec2S & ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-    if (input_file.inq_var("liqfrac")) {
+    if (input_file.find_variable("liqfrac")) {
       SpatialVariableMetadata enthalpy_metadata = m_ice_enthalpy.metadata();
 
       liqfrac.set_name("liqfrac");
@@ -218,7 +218,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "neither enthalpy nor temperature was found in '%s'.\n",
-                                  input_file.inq_filename().c_str());
+                                  input_file.filename().c_str());
   }
 }
 
@@ -239,7 +239,7 @@ void EnergyModel::regrid_enthalpy() {
   std::string enthalpy_name = m_ice_enthalpy.metadata().get_name();
 
   if (regrid_vars.empty() or member(enthalpy_name, regrid_vars)) {
-    File regrid_file(m_grid->com, "guess_mode", regrid_filename, PISM_READONLY);
+    File regrid_file(m_grid->com, regrid_filename, PISM_GUESS, PISM_READONLY);
     init_enthalpy(regrid_file, true, 0);
   }
 }

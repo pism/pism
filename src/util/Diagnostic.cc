@@ -356,9 +356,9 @@ void TSDiagnostic::flush() {
 
   std::string dimension_name = m_ts.dimension().get_name();
 
-  File file(m_grid->com, "netcdf3", m_output_filename, PISM_READWRITE); // OK to use netcdf3
+  File file(m_grid->com, m_output_filename, PISM_NETCDF3, PISM_READWRITE); // OK to use netcdf3
 
-  unsigned int len = file.inq_dimlen(dimension_name);
+  unsigned int len = file.dimension_length(dimension_name);
 
   if (len > 0) {
     double last_time = 0.0;
@@ -381,12 +381,12 @@ void TSDiagnostic::flush() {
 
 void TSDiagnostic::init(const File &output_file,
                         std::shared_ptr<std::vector<double>> requested_times) {
-  m_output_filename = output_file.inq_filename();
+  m_output_filename = output_file.filename();
 
   m_times = requested_times;
 
   // Get the number of records in the file (for appending):
-  m_start = output_file.inq_dimlen(m_ts.dimension().get_name());
+  m_start = output_file.dimension_length(m_ts.dimension().get_name());
 }
 
 const VariableMetadata &TSDiagnostic::metadata() const {

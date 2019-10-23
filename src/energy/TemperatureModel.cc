@@ -46,13 +46,13 @@ const IceModelVec3 & TemperatureModel::temperature() const {
 void TemperatureModel::restart_impl(const File &input_file, int record) {
 
   m_log->message(2, "* Restarting the temperature-based energy balance model from %s...\n",
-                 input_file.inq_filename().c_str());
+                 input_file.filename().c_str());
 
   m_basal_melt_rate.read(input_file, record);
 
   const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  if (input_file.inq_var(m_ice_temperature.metadata().get_name())) {
+  if (input_file.find_variable(m_ice_temperature.metadata().get_name())) {
     m_ice_temperature.read(input_file, record);
   } else {
     init_enthalpy(input_file, false, record);
@@ -72,7 +72,7 @@ void TemperatureModel::bootstrap_impl(const File &input_file,
                                       const IceModelVec2S &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the temperature-based energy balance model from %s...\n",
-                 input_file.inq_filename().c_str());
+                 input_file.filename().c_str());
 
   m_basal_melt_rate.regrid(input_file, OPTIONAL,
                            m_config->get_number("bootstrapping.defaults.bmelt"));

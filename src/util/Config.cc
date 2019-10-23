@@ -196,16 +196,16 @@ void NetCDFConfig::read_impl(const File &nc) {
 
   io::read_attributes(nc, m_data.get_name(), m_data);
 
-  m_config_filename = nc.inq_filename();
+  m_config_filename = nc.filename();
 }
 
 //! Write a config variable to a file (with all its attributes).
 void NetCDFConfig::write_impl(const File &nc) const {
 
-  bool variable_exists = nc.inq_var(m_data.get_name());
+  bool variable_exists = nc.find_variable(m_data.get_name());
 
   if (not variable_exists) {
-    nc.def_var(m_data.get_name(),
+    nc.define_variable(m_data.get_name(),
                PISM_BYTE, std::vector<std::string>());
 
     io::write_attributes(nc, m_data, PISM_DOUBLE);

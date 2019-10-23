@@ -60,8 +60,8 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
     m_log->message(2, "* Reading effective ocean model outputs from '%s' for re-starting...\n",
                    opts.filename.c_str());
 
-    File file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
-    const unsigned int time_length = file.inq_nrecords();
+    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+    const unsigned int time_length = file.nrecords();
     const unsigned int last_record = time_length > 0 ? time_length - 1 : 0;
 
     m_melange_back_pressure_fraction->read(file, last_record);

@@ -63,14 +63,14 @@ Config::~Config() {
 
 void Config::read(MPI_Comm com, const std::string &file) {
 
-  File nc(com, "netcdf3", file, PISM_READONLY); // OK to use netcdf3
+  File nc(com, file, PISM_NETCDF3, PISM_READONLY); // OK to use netcdf3
   this->read(nc);
 }
 
 void Config::read(const File &nc) {
   this->read_impl(nc);
 
-  m_impl->filename = nc.inq_filename();
+  m_impl->filename = nc.filename();
 }
 
 void Config::write(const File &nc) const {
@@ -81,7 +81,7 @@ void Config::write(MPI_Comm com, const std::string &file, bool append) const {
 
   IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 
-  File nc(com, "netcdf3", file, mode); // OK to use netcdf3
+  File nc(com, file, PISM_NETCDF3, mode); // OK to use netcdf3
 
   this->write(nc);
 }

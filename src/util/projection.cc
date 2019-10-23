@@ -182,12 +182,12 @@ MappingInfo get_projection_info(const File &input_file, const std::string &mappi
                                 units::System::Ptr unit_system) {
   MappingInfo result(mapping_name, unit_system);
 
-  result.proj = input_file.get_att_text("PISM_GLOBAL", "proj");
+  result.proj = input_file.read_text_attribute("PISM_GLOBAL", "proj");
 
   std::string::size_type position = result.proj.find("+init=epsg:");
   bool proj_is_epsg = position != std::string::npos;
 
-  if (input_file.inq_var(mapping_name)) {
+  if (input_file.find_variable(mapping_name)) {
     // input file has a mapping variable
 
     io::read_attributes(input_file, mapping_name, result.mapping);
@@ -197,7 +197,7 @@ MappingInfo get_projection_info(const File &input_file, const std::string &mappi
       try {
         check_consistency_epsg(result);
       } catch (RuntimeError &e) {
-        e.add_context("getting projection info from %s", input_file.inq_filename().c_str());
+        e.add_context("getting projection info from %s", input_file.filename().c_str());
         throw;
       }
     } else {

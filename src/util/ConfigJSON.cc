@@ -344,12 +344,12 @@ bool ConfigJSON::get_flag_impl(const std::string &name) const {
 }
 
 void ConfigJSON::read_impl(const File &nc) {
-  std::string config_string = nc.get_att_text("PISM_GLOBAL", "pism_config");
+  std::string config_string = nc.read_text_attribute("PISM_GLOBAL", "pism_config");
   this->init_from_string(config_string);
 }
 
 void ConfigJSON::write_impl(const File &nc) const {
-  nc.put_att_text("PISM_GLOBAL", "pism_config", this->dump());
+  nc.write_attribute("PISM_GLOBAL", "pism_config", this->dump());
 }
 
 bool ConfigJSON::is_set_impl(const std::string &name) const {

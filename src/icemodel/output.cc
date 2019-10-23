@@ -85,7 +85,7 @@ void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag,
   if (history_flag == PREPEND_HISTORY) {
     VariableMetadata tmp = m_output_global_attributes;
 
-    std::string old_history = file.get_att_text("PISM_GLOBAL", "history");
+    std::string old_history = file.read_text_attribute("PISM_GLOBAL", "history");
 
     tmp.set_name("PISM_GLOBAL");
     tmp.set_string("history", tmp.get_string("history") + old_history);
@@ -130,7 +130,10 @@ void IceModel::save_results() {
   profiling.begin("io.model_state");
   if (m_config->get_string("output.size") != "none") {
     m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
-    File file(m_grid->com, m_config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
+    File file(m_grid->com,
+              filename,
+              string_to_backend(m_config->get_string("output.format")),
+              PISM_READWRITE_MOVE);
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
@@ -147,23 +150,23 @@ void IceModel::write_mapping(const File &file) {
   const VariableMetadata &mapping = m_grid->get_mapping_info().mapping;
   std::string name = mapping.get_name();
   if (mapping.has_attributes()) {
-    if (not file.inq_var(name)) {
-      file.def_var(name, PISM_DOUBLE, {});
+    if (not file.find_variable(name)) {
+      file.define_variable(name, PISM_DOUBLE, {});
     }
     io::write_attributes(file, mapping, PISM_DOUBLE);
 
     // Write the PROJ string to mapping:proj_params (for CDO).
     std::string proj = m_grid->get_mapping_info().proj;
     if (not proj.empty()) {
-      file.put_att_text(name, "proj_params", proj);
+      file.write_attribute(name, "proj_params", proj);
     }
   }
 }
 
 void IceModel::write_run_stats(const File &file) {
   update_run_stats();
-  if (not file.inq_var(m_run_stats.get_name())) {
-    file.def_var(m_run_stats.get_name(), PISM_DOUBLE, {});
+  if (not file.find_variable(m_run_stats.get_name())) {
+    file.define_variable(m_run_stats.get_name(), PISM_DOUBLE, {});
   }
   io::write_attributes(file, m_run_stats, PISM_DOUBLE);
 }
@@ -201,9 +204,9 @@ void IceModel::save_variables(const File &file,
     // than one NetCDF variable. Moreover, here we're concerned with file contents, not
     // the list of requested variables.
     std::set<std::string> var_names;
-    unsigned int n_vars = file.inq_nvars();
+    unsigned int n_vars = file.nvariables();
     for (unsigned int k = 0; k < n_vars; ++k) {
-      var_names.insert(file.inq_varname(k));
+      var_names.insert(file.variable_name(k));
     }
 
     // If this output file contains variables lat and lon...
@@ -212,21 +215,21 @@ void IceModel::save_variables(const File &file,
       // add the coordinates attribute to all variables that use x and y dimensions
       for (auto v : var_names) {
         std::set<std::string> dims;
-        for (auto d : file.inq_vardims(v)) {
+        for (auto d : file.dimensions(v)) {
           dims.insert(d);
         }
 
         if (not member(v, {"lat", "lon", "lat_bnds", "lon_bnds"}) and
             member("x", dims) and member("y", dims)) {
-          file.put_att_text(v, "coordinates", "lat lon");
+          file.write_attribute(v, "coordinates", "lat lon");
         }
       }
 
       // and if it also contains lat_bnds and lon_bnds, add the bounds attribute to lat
       // and lon.
       if (member("lat_bnds", var_names) and member("lon_bnds", var_names)) {
-        file.put_att_text("lat", "bounds", "lat_bnds");
-        file.put_att_text("lon", "bounds", "lon_bnds");
+        file.write_attribute("lat", "bounds", "lat_bnds");
+        file.write_attribute("lon", "bounds", "lon_bnds");
       }
     }
   }
@@ -238,7 +241,7 @@ void IceModel::save_variables(const File &file,
 
   // find out how much time passed since the beginning of the run and save it to the output file
   {
-    unsigned int time_length = file.inq_dimlen(m_config->get_string("time.dimension_name"));
+    unsigned int time_length = file.dimension_length(m_config->get_string("time.dimension_name"));
     size_t start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
     io::write_timeseries(file, m_timestamp, start,
                          wall_clock_hours(m_grid->com, m_start_time));

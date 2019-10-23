@@ -28,8 +28,10 @@ def write_state(model, filename):
     "Write the state of the model to a file"
 
     PISM.util.prepare_output(filename)
-    f = PISM.File(model.grid().ctx().com(), "netcdf3",
-                 filename, PISM.PISM_READWRITE)
+    f = PISM.File(model.grid().ctx().com(),
+                  filename,
+                  PISM.PISM_NETCDF3,
+                  PISM.PISM_READWRITE)
     model.define_model_state(f)
     model.write_model_state(f)
 
@@ -746,8 +748,8 @@ class ISMIP6(TestCase):
                 v.write(out)
 
         out.redef()
-        out.put_att_text("time", "bounds", "time_bounds")
-        out.put_att_text("time", "units", "seconds since 2000-1-1")
+        out.write_attribute("time", "bounds", "time_bounds")
+        out.write_attribute("time", "units", "seconds since 2000-1-1")
 
         out.close()
 
