@@ -548,16 +548,6 @@ void PIO::def_var(const string &name, IO_Type nctype, const vector<string> &dims
   }
 }
 
-
-//! Write a 1D (usually a coordinate) variable.
-void PIO::put_1d_var(const string &name, unsigned int s, unsigned int c,
-                     const vector<double> &data) const {
-  vector<unsigned int> start(1, s), count(1, c);
-
-  put_vara_double(name, start, count, data.data());
-}
-
-
 //! \brief Get dimension data (a coordinate variable).
 void PIO::get_dim(const string &name, vector<double> &data) const {
   try {

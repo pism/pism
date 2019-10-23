@@ -323,10 +323,11 @@ static void define_dimensions(const SpatialVariableMetadata& var,
   }
 }
 
-static void write_dimension_data(const PIO &file, const std::string &name, const std::vector<double> &data) {
+static void write_dimension_data(const PIO &file, const std::string &name,
+                                 const std::vector<double> &data) {
   bool written = file.inq_atttype(name, "not_written") == PISM_NAT;
   if (not written) {
-    file.put_1d_var(name, 0, data.size(), data);
+    file.put_vara_double(name, {0}, {(unsigned int)data.size()}, data.data());
     file.redef();
     file.del_att(name, "not_written");
   }

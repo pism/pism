@@ -78,9 +78,6 @@ public:
 
   void get_dim(const std::string &name, std::vector<double> &result) const;
 
-  void put_1d_var(const std::string &name, unsigned int start, unsigned int count,
-                  const std::vector<double> &data) const;
-
   void append_history(const std::string &history) const;
 
   unsigned int inq_nvars() const;
