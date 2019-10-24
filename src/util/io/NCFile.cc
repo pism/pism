@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -260,10 +260,6 @@ void NCFile::inq_varid(const std::string &variable_name, bool &result) const {
 
 void NCFile::inq_varname(unsigned int j, std::string &result) const {
   int stat = this->inq_varname_impl(j, result); check(PISM_ERROR_LOCATION, stat);
-}
-
-void NCFile::inq_vartype(const std::string &variable_name, IO_Type &result) const {
-  int stat = this->inq_vartype_impl(variable_name, result); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::get_att_double(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const {

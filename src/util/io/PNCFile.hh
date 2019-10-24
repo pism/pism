@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -95,8 +95,6 @@ protected:
   int inq_varid_impl(const std::string &variable_name, bool &exists) const;
 
   int inq_varname_impl(unsigned int j, std::string &result) const;
-
-  int inq_vartype_impl(const std::string &variable_name, IO_Type &result) const;
 
   // att
   int get_att_double_impl(const std::string &variable_name, const std::string &att_name,
