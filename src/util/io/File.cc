@@ -43,6 +43,7 @@ using std::shared_ptr;
 #endif
 
 #include "pism/util/error_handling.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -128,13 +129,13 @@ void File::detect_mode(const std::string &filename) {
 
   std::string format;
   {
-    io::NC3File nc3(m_impl->com);
+    io::NC3File file(m_impl->com);
 
     // detect_mode is private, so the caller will handle the failure
     // of open and add context
-    nc3.open(filename, PISM_READONLY);
-    format = nc3.get_format();
-    nc3.close();
+    file.open(filename, PISM_READONLY);
+    format = file.get_format();
+    file.close();
   }
 
   std::vector<IOBackend> modes;
@@ -185,9 +186,9 @@ void File::open(const std::string &filename, IO_Mode mode) {
       assert((bool)m_impl->nc);
 
       if (mode == PISM_READWRITE_MOVE) {
-        m_impl->nc->move_if_exists(filename);
+        io::move_if_exists(m_impl->com, filename);
       } else {
-        m_impl->nc->remove_if_exists(filename);
+        io::remove_if_exists(m_impl->com, filename);
       }
 
       m_impl->nc->create(filename);
@@ -281,14 +282,13 @@ unsigned int File::nrecords(const std::string &name, const std::string &std_name
       return 0;
     }
 
-    std::vector<std::string> dims;
-    m_impl->nc->inq_vardimid(var.name, dims);
+    auto dims = dimensions(var.name);
 
-    for (unsigned int j = 0; j < dims.size(); ++j) {
-      AxisType dimtype = dimension_type(dims[j], unit_system);
+    for (auto d : dims) {
+      AxisType dimtype = dimension_type(d, unit_system);
 
       if (dimtype == T_AXIS) {
-        return this->dimension_length(dims[j]);
+        return this->dimension_length(d);
       }
     }
 
@@ -313,14 +313,12 @@ VariableLookupData File::find_variable(const std::string &short_name, const std:
 
     if (not std_name.empty()) {
 
-      int n_variables;
-      m_impl->nc->inq_nvars(n_variables);
+      int n_variables = nvariables();
 
       for (int j = 0; j < n_variables; ++j) {
-        std::string name;
-        m_impl->nc->inq_varname(j, name);
-
-        std::string attribute = read_text_attribute(name, "standard_name");
+        std::string
+          name      = variable_name(j),
+          attribute = read_text_attribute(name, "standard_name");
 
         if (attribute.empty()) {
           continue;
@@ -424,26 +422,19 @@ unsigned int File::dimension_length(const std::string &name) const {
 AxisType File::dimension_type(const std::string &name,
                           units::System::Ptr unit_system) const {
   try {
-    std::string axis, standard_name, units;
-    units::Unit tmp_units(unit_system, "1");
-    bool exists;
-
-    m_impl->nc->inq_varid(name, exists);
-
-    if (not exists) {
+    if (not find_variable(name)) {
       throw RuntimeError(PISM_ERROR_LOCATION, "coordinate variable " + name + " is missing");
     }
 
-    axis          = read_text_attribute(name, "axis");
-    standard_name = read_text_attribute(name, "standard_name");
-    units         = read_text_attribute(name, "units");
+    std::string
+      axis          = read_text_attribute(name, "axis"),
+      standard_name = read_text_attribute(name, "standard_name"),
+      units         = read_text_attribute(name, "units");
 
     // check if it has units compatible with "seconds":
 
-    tmp_units = units::Unit(unit_system, units);
-
     units::Unit seconds(unit_system, "seconds");
-    if (units::are_convertible(tmp_units, seconds)) {
+    if (units::are_convertible(units::Unit(unit_system, units), seconds)) {
       return T_AXIS;
     }
 
@@ -617,8 +608,7 @@ void File::write_attribute(const std::string &var_name, const std::string &att_n
 //! \brief Get a double attribute.
 std::vector<double> File::read_double_attribute(const std::string &var_name, const std::string &att_name) const {
   try {
-    IO_Type att_type;
-    m_impl->nc->inq_atttype(var_name, att_name, att_type);
+    auto att_type = attribute_type(var_name, att_name);
 
     // Give an understandable error message if a string attribute was found when
     // a number (or a list of numbers) was expected. (We've seen datasets with
@@ -626,7 +616,8 @@ std::vector<double> File::read_double_attribute(const std::string &var_name, con
     if (att_type == PISM_CHAR) {
       std::string tmp = read_text_attribute(var_name, att_name);
 
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "attribute %s is a string '%s'; expected a number or a list of numbers",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "attribute %s is a string '%s'; expected a number or a list of numbers",
                                     att_name.c_str(), tmp.c_str());
     } else {
       // In this case att_type might be PISM_NAT (if an attribute does not

@@ -892,7 +892,7 @@ int NC3File::set_fill_impl(int fillmode, int &old_modep) const {
   return stat;
 }
 
-std::string NC3File::get_format_impl() const {
+std::string NC3File::get_format() const {
   int format;
 
   if (m_rank == 0) {

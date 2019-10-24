@@ -120,6 +120,10 @@ void read_valid_range(const File &nc, const std::string &name, VariableMetadata 
 
 bool file_exists(MPI_Comm com, const std::string &filename);
 
+void move_if_exists(MPI_Comm com, const std::string &file_to_move, int rank_to_use = 0);
+
+void remove_if_exists(MPI_Comm com, const std::string &file_to_remove, int rank_to_use = 0);
+
 } // end of namespace io
 } // end of namespace pism
 

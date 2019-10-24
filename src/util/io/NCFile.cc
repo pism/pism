@@ -44,10 +44,6 @@ std::string NCFile::filename() const {
   return m_filename;
 }
 
-std::string NCFile::get_format() const {
-  return this->get_format_impl();
-}
-
 int NCFile::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, double value) const {
   std::vector<double> tmp(1);
   tmp[0] = value;
@@ -60,75 +56,6 @@ static void check(const ErrorLocation &where, int return_code) {
   if (return_code != NC_NOERR) {
     throw RuntimeError(where, nc_strerror(return_code));
   }
-}
-
-//! \brief Moves the file aside (file.nc -> file.nc~).
-/*!
- * Note: only processor 0 does the renaming.
- */
-int NCFile::move_if_exists_impl(const std::string &file_to_move, int rank_to_use) {
-  int stat = 0, rank = 0;
-  MPI_Comm_rank(m_com, &rank);
-  std::string backup_filename = file_to_move + "~";
-
-  if (rank == rank_to_use) {
-    bool exists = false;
-
-    // Check if the file exists:
-    if (FILE *f = fopen(file_to_move.c_str(), "r")) {
-      fclose(f);
-      exists = true;
-    } else {
-      exists = false;
-    }
-
-    if (exists) {
-      stat = rename(file_to_move.c_str(), backup_filename.c_str());
-      if (stat != 0) {
-        fprintf(stderr, "PISM ERROR: can't move '%s' to '%s'.\n", file_to_move.c_str(), backup_filename.c_str());
-      }
-
-    }
-
-  } // end of "if (rank == rank_to_use)"
-
-  int global_stat = 0;
-  MPI_Allreduce(&stat, &global_stat, 1, MPI_INT, MPI_SUM, m_com);
-
-  return global_stat;
-}
-
-//! \brief Check if a file is present are remove it.
-/*!
- * Note: only processor 0 does the job.
- */
-int NCFile::remove_if_exists_impl(const std::string &file_to_remove, int rank_to_use) {
-  int stat = 0, rank = 0;
-  MPI_Comm_rank(m_com, &rank);
-
-  if (rank == rank_to_use) {
-    bool exists = false;
-
-    // Check if the file exists:
-    if (FILE *f = fopen(file_to_remove.c_str(), "r")) {
-      fclose(f);
-      exists = true;
-    } else {
-      exists = false;
-    }
-
-    if (exists) {
-      stat = remove(file_to_remove.c_str());
-      if (stat != 0) {
-        fprintf(stderr, "PISM ERROR: can't remove '%s'.\n", file_to_remove.c_str());
-      }
-    }
-  } // end of "if (rank == rank_to_use)"
-
-  int global_stat = 0;
-  MPI_Allreduce(&stat, &global_stat, 1, MPI_INT, MPI_SUM, m_com);
-
-  return global_stat;
 }
 
 int NCFile::def_var_chunking_impl(const std::string &name,
@@ -277,14 +204,6 @@ void NCFile::inq_atttype(const std::string &variable_name, const std::string &at
 
 void NCFile::set_fill(int fillmode, int &old_modep) const {
   int stat = this->set_fill_impl(fillmode, old_modep); check(PISM_ERROR_LOCATION, stat);
-}
-
-void NCFile::move_if_exists(const std::string &filename, int rank_to_use) {
-  int stat = this->move_if_exists_impl(filename, rank_to_use); check(PISM_ERROR_LOCATION, stat);
-}
-
-void NCFile::remove_if_exists(const std::string &filename, int rank_to_use) {
-  int stat = this->remove_if_exists_impl(filename, rank_to_use); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::del_att(const std::string &variable_name, const std::string &att_name) const {

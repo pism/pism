@@ -137,11 +137,6 @@ public:
 
   std::string filename() const;
 
-  std::string get_format() const;
-
-  void move_if_exists(const std::string &filename, int rank_to_use = 0);
-  void remove_if_exists(const std::string &filename, int rank_to_use = 0);
-
   void del_att(const std::string &variable_name, const std::string &att_name) const;
 
 protected:
@@ -216,11 +211,6 @@ protected:
 
   // misc
   virtual int set_fill_impl(int fillmode, int &old_modep) const = 0;
-
-  virtual std::string get_format_impl() const = 0;
-
-  virtual int move_if_exists_impl(const std::string &filename, int rank_to_use = 0);
-  virtual int remove_if_exists_impl(const std::string &filename, int rank_to_use = 0);
 
   virtual int del_att_impl(const std::string &variable_name, const std::string &att_name) const = 0;
 

@@ -588,21 +588,5 @@ int NC4File::get_put_var_double(const std::string &variable_name,
   return stat;
 }
 
-std::string NC4File::get_format_impl() const {
-  int format, stat;
-
-  stat = nc_inq_format(m_file_id, &format); check(PISM_ERROR_LOCATION, stat);
-
-  switch(format) {
-  case NC_FORMAT_CLASSIC:
-  case NC_FORMAT_64BIT:
-    return "netcdf3";
-  case NC_FORMAT_NETCDF4:
-  case NC_FORMAT_NETCDF4_CLASSIC:
-  default:
-    return "netcdf4";
-  }
-}
-
 } // end of namespace io
 } // end of namespace pism

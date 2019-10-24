@@ -1513,6 +1513,73 @@ std::string time_dimension(units::System::Ptr unit_system,
   return "";
 }
 
+//! \brief Moves the file aside (file.nc -> file.nc~).
+/*!
+ * Note: only one processor does the renaming.
+ */
+void move_if_exists(MPI_Comm com, const std::string &file_to_move, int rank_to_use) {
+  int stat = 0, rank = 0;
+  MPI_Comm_rank(com, &rank);
+  std::string backup_filename = file_to_move + "~";
+
+  if (rank == rank_to_use) {
+    bool exists = false;
+
+    // Check if the file exists:
+    if (FILE *f = fopen(file_to_move.c_str(), "r")) {
+      fclose(f);
+      exists = true;
+    } else {
+      exists = false;
+    }
+
+    if (exists) {
+      stat = rename(file_to_move.c_str(), backup_filename.c_str());
+    }
+  } // end of "if (rank == rank_to_use)"
+
+  int global_stat = 0;
+  MPI_Allreduce(&stat, &global_stat, 1, MPI_INT, MPI_SUM, com);
+
+  if (global_stat != 0) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "PISM ERROR: can't move '%s' to '%s'",
+                                  file_to_move.c_str(), backup_filename.c_str());
+  }
+}
+
+//! \brief Check if a file is present are remove it.
+/*!
+ * Note: only processor 0 does the job.
+ */
+void remove_if_exists(MPI_Comm com, const std::string &file_to_remove, int rank_to_use) {
+  int stat = 0, rank = 0;
+  MPI_Comm_rank(com, &rank);
+
+  if (rank == rank_to_use) {
+    bool exists = false;
+
+    // Check if the file exists:
+    if (FILE *f = fopen(file_to_remove.c_str(), "r")) {
+      fclose(f);
+      exists = true;
+    } else {
+      exists = false;
+    }
+
+    if (exists) {
+      stat = remove(file_to_remove.c_str());
+    }
+  } // end of "if (rank == rank_to_use)"
+
+  int global_stat = 0;
+  MPI_Allreduce(&stat, &global_stat, 1, MPI_INT, MPI_SUM, com);
+
+  if (global_stat != 0) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "PISM ERROR: can't remove '%s'", file_to_remove.c_str());
+  }
+}
 
 } // end of namespace io
 } // end of namespace pism

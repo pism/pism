@@ -30,6 +30,8 @@ public:
   NC3File(MPI_Comm com);
   virtual ~NC3File();
 
+  std::string get_format() const;
+
 protected:
   // implementations:
   // open/create/close
@@ -97,8 +99,6 @@ protected:
 
   // misc
   int set_fill_impl(int fillmode, int &old_modep) const;
-
-  std::string get_format_impl() const;
 
   virtual int del_att_impl(const std::string &variable_name, const std::string &att_name) const;
 private:

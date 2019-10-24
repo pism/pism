@@ -108,8 +108,6 @@ protected:
   // misc
   int set_fill_impl(int fillmode, int &old_modep) const;
 
-  virtual std::string get_format_impl() const;
-
   virtual int del_att_impl(const std::string &variable_name, const std::string &att_name) const;
 
 private:

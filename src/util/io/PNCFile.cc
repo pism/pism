@@ -588,9 +588,5 @@ void PNCFile::init_hints() {
   }
 }
 
-std::string PNCFile::get_format_impl() const {
-  return "netcdf3";
-}
-
 } // end of namespace io
 } // end of namespace pism
