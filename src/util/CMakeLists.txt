@@ -69,4 +69,9 @@ if (Pism_USE_PNETCDF)
   list(APPEND PISMUTIL_SRC io/PNCFile.cc)
 endif()
 
+# Check if PnetCDF parallel I/O is enabled and add a source code file if necessary.
+if (Pism_USE_PIO)
+  list(APPEND PISMUTIL_SRC io/ParallelIO.cc)
+endif()
+
 add_library (util OBJECT ${PISMUTIL_SRC})
