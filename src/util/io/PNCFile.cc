@@ -151,18 +151,6 @@ int PNCFile::inq_unlimdim_impl(std::string &result) const {
   return stat;
 }
 
-int PNCFile::inq_dimname_impl(int j, std::string &result) const {
-  int stat;
-  char dimname[NC_MAX_NAME];
-  memset(dimname, 0, NC_MAX_NAME);
-
-  stat = ncmpi_inq_dimname(m_file_id, j, dimname); check(PISM_ERROR_LOCATION, stat);
-
-  result = dimname;
-
-  return stat;
-}
-
 int PNCFile::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
   std::vector<int> dimids;
   int stat, varid;

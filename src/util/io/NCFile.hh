@@ -80,8 +80,6 @@ public:
 
   void inq_unlimdim(std::string &result) const;
 
-  void inq_dimname(int j, std::string &result) const;
-
   // var
   void def_var(const std::string &name, IO_Type nctype,
                const std::vector<std::string> &dims) const;
@@ -167,8 +165,6 @@ protected:
   virtual int inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const = 0;
 
   virtual int inq_unlimdim_impl(std::string &result) const = 0;
-
-  virtual int inq_dimname_impl(int j, std::string &result) const = 0;
 
   // var
   virtual int def_var_impl(const std::string &name, IO_Type nctype,

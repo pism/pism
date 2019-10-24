@@ -222,26 +222,6 @@ int NC3File::inq_unlimdim_impl(std::string &result) const {
   return stat;
 }
 
-int NC3File::inq_dimname_impl(int j, std::string &result) const {
-  int stat = 0;
-  char dimname[NC_MAX_NAME];
-  memset(dimname, 0, NC_MAX_NAME);
-
-  if (m_rank == 0) {
-    stat = nc_inq_dimname(m_file_id, j, dimname); check(PISM_ERROR_LOCATION, stat);
-  }
-
-  MPI_Barrier(m_com);
-
-  MPI_Bcast(&stat,   1, MPI_INT, 0, m_com);
-  MPI_Bcast(dimname, NC_MAX_NAME, MPI_CHAR, 0, m_com);
-
-  result = dimname;
-
-  return stat;
-}
-
-
 //! \brief Define a variable.
 int NC3File::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
   int stat = 0;

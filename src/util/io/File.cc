@@ -404,9 +404,7 @@ bool File::find_dimension(const std::string &name) const {
  */
 unsigned int File::dimension_length(const std::string &name) const {
   try {
-    bool exists = false;
-    m_impl->nc->inq_dimid(name, exists);
-    if (exists) {
+    if (find_dimension(name)) {
       unsigned int result = 0;
       m_impl->nc->inq_dimlen(name, result);
       return result;
@@ -562,12 +560,11 @@ void File::define_variable(const std::string &name, IO_Type nctype, const std::v
 //! \brief Get dimension data (a coordinate variable).
 std::vector<double>  File::read_dimension(const std::string &name) const {
   try {
-    unsigned int dim_length = 0;
-    m_impl->nc->inq_dimlen(name, dim_length);
+    unsigned int length = dimension_length(name);
 
-    std::vector<double> result(dim_length);
+    std::vector<double> result(length);
 
-    read_variable(name, {0}, {dim_length}, result.data());
+    read_variable(name, {0}, {length}, result.data());
 
     return result;
   } catch (RuntimeError &e) {

@@ -53,8 +53,6 @@ protected:
 
   int inq_unlimdim_impl(std::string &result) const;
 
-  int inq_dimname_impl(int j, std::string &result) const;
-
   // var
   int def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
 
