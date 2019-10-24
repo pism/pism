@@ -102,26 +102,20 @@ public:
 
   bool find_variable(const std::string &short_name) const;
 
-  void get_vara_double(const std::string &variable_name,
+  void read_variable(const std::string &variable_name,
                        const std::vector<unsigned int> &start,
                        const std::vector<unsigned int> &count,
                        double *ip) const;
 
-  void put_vara_double(const std::string &variable_name,
-                       const std::vector<unsigned int> &start,
-                       const std::vector<unsigned int> &count,
-                       const double *op) const;
+  void read_variable_transposed(const std::string &variable_name,
+                                const std::vector<unsigned int> &start,
+                                const std::vector<unsigned int> &count,
+                                const std::vector<unsigned int> &imap, double *ip) const;
 
-  void get_varm_double(const std::string &variable_name,
-                       const std::vector<unsigned int> &start,
-                       const std::vector<unsigned int> &count,
-                       const std::vector<unsigned int> &imap, double *ip) const;
-
-  void put_varm_double(const std::string &variable_name,
-                       const std::vector<unsigned int> &start,
-                       const std::vector<unsigned int> &count,
-                       const std::vector<unsigned int> &imap,
-                       const double *op) const;
+  void write_variable(const std::string &variable_name,
+                      const std::vector<unsigned int> &start,
+                      const std::vector<unsigned int> &count,
+                      const double *op) const;
 
   // attributes
 

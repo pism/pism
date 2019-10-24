@@ -197,9 +197,9 @@ protected:
     }
 
     if (input.find_variable(m_time_since_reset.get_name())) {
-      input.get_vara_double(m_time_since_reset.get_name(),
-                            {time}, {1}, // start, count
-                            &m_interval_length);
+      input.read_variable(m_time_since_reset.get_name(),
+                          {time}, {1}, // start, count
+                          &m_interval_length);
     } else {
       m_interval_length = 0.0;
     }

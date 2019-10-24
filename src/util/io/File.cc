@@ -567,7 +567,7 @@ std::vector<double>  File::read_dimension(const std::string &name) const {
 
     std::vector<double> result(dim_length);
 
-    get_vara_double(name, {0}, {dim_length}, result.data());
+    read_variable(name, {0}, {dim_length}, result.data());
 
     return result;
   } catch (RuntimeError &e) {
@@ -693,7 +693,7 @@ IO_Type File::attribute_type(const std::string &var_name, const std::string &att
 }
 
 
-void File::get_vara_double(const std::string &variable_name,
+void File::read_variable(const std::string &variable_name,
                            const std::vector<unsigned int> &start,
                            const std::vector<unsigned int> &count,
                           double *ip) const {
@@ -706,7 +706,7 @@ void File::get_vara_double(const std::string &variable_name,
 }
 
 
-void File::put_vara_double(const std::string &variable_name,
+void File::write_variable(const std::string &variable_name,
                            const std::vector<unsigned int> &start,
                            const std::vector<unsigned int> &count,
                           const double *op) const {
@@ -718,27 +718,14 @@ void File::put_vara_double(const std::string &variable_name,
   }
 }
 
-void File::get_varm_double(const std::string &variable_name,
-                           const std::vector<unsigned int> &start,
-                           const std::vector<unsigned int> &count,
-                          const std::vector<unsigned int> &imap, double *ip) const {
+void File::read_variable_transposed(const std::string &variable_name,
+                                    const std::vector<unsigned int> &start,
+                                    const std::vector<unsigned int> &count,
+                                    const std::vector<unsigned int> &imap, double *ip) const {
   try {
     m_impl->nc->get_varm_double(variable_name, start, count, imap, ip);
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' from '%s'", variable_name.c_str(), filename().c_str());
-    throw;
-  }
-}
-
-void File::put_varm_double(const std::string &variable_name,
-                          const std::vector<unsigned int> &start,
-                          const std::vector<unsigned int> &count,
-                          const std::vector<unsigned int> &imap,
-                          const double *op) const {
-  try {
-    m_impl->nc->put_varm_double(variable_name, start, count, imap, op);
-  } catch (RuntimeError &e) {
-    e.add_context("writing variable '%s' to '%s'", variable_name.c_str(), filename().c_str());
     throw;
   }
 }

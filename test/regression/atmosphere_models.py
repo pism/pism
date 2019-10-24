@@ -338,8 +338,8 @@ class OneStation(TestCase):
         output.define_variable("air_temp", PISM.PISM_DOUBLE, [time_name])
         output.write_attribute("air_temp", "units", "Kelvin")
 
-        output.put_vara_double("precipitation", [0], [1], [self.P])
-        output.put_vara_double("air_temp", [0], [1], [self.T])
+        output.write_variable("precipitation", [0], [1], [self.P])
+        output.write_variable("air_temp", [0], [1], [self.T])
 
         output.close()
 

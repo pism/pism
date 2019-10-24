@@ -263,7 +263,7 @@ void append_time(const File &file, const std::string &name, double value) {
   try {
     unsigned int start = file.dimension_length(name);
 
-    file.put_vara_double(name, {start}, {1}, &value);
+    file.write_variable(name, {start}, {1}, &value);
   } catch (RuntimeError &e) {
     e.add_context("appending to the time dimension in \"" + file.filename() + "\"");
     throw;
@@ -327,7 +327,7 @@ static void write_dimension_data(const File &file, const std::string &name,
                                  const std::vector<double> &data) {
   bool written = file.attribute_type(name, "not_written") == PISM_NAT;
   if (not written) {
-    file.put_vara_double(name, {0}, {(unsigned int)data.size()}, data.data());
+    file.write_variable(name, {0}, {(unsigned int)data.size()}, data.data());
     file.redef();
     file.remove_attribute(name, "not_written");
   }
@@ -362,7 +362,7 @@ void write_dimensions(const SpatialVariableMetadata& var,
  * @param var_name name of the variable to check
  * @returns false if storage orders match, true otherwise
  */
-static bool use_mapped_io(const File &file,
+static bool use_transposed_io(const File &file,
                           units::System::Ptr unit_system,
                           const std::string &var_name) {
 
@@ -404,8 +404,10 @@ static bool use_mapped_io(const File &file,
 }
 
 //! \brief Read an array distributed according to the grid.
-static void get_vec(const File &file, const IceGrid &grid, const std::string &var_name,
-                    unsigned int z_count, unsigned int t_start, double *output) {
+static void read_distributed_array(const File &file, const IceGrid &grid,
+                                   const std::string &var_name,
+                                   unsigned int z_count, unsigned int t_start,
+                                   double *output) {
   try {
     std::vector<unsigned int> start, count, imap;
     const unsigned int t_count = 1;
@@ -418,11 +420,11 @@ static void get_vec(const File &file, const IceGrid &grid, const std::string &va
                             0, z_count,
                             start, count, imap);
 
-    bool mapped_io = use_mapped_io(file, grid.ctx()->unit_system(), var_name);
-    if (mapped_io == true) {
-      file.get_varm_double(var_name, start, count, imap, output);
+    bool transposed_io = use_transposed_io(file, grid.ctx()->unit_system(), var_name);
+    if (transposed_io) {
+      file.read_variable_transposed(var_name, start, count, imap, output);
     } else {
-      file.get_vara_double(var_name, start, count, output);
+      file.read_variable(var_name, start, count, output);
     }
 
   } catch (RuntimeError &e) {
@@ -436,7 +438,7 @@ static void get_vec(const File &file, const IceGrid &grid, const std::string &va
 /*!
  * This method always writes to the last record in the file.
  */
-static void put_vec(const File &file, const IceGrid &grid, const std::string &var_name,
+static void write_distributed_array(const File &file, const IceGrid &grid, const std::string &var_name,
                     unsigned int z_count, const double *input) {
   try {
     // switch to data mode and perform all delayed write operations
@@ -457,10 +459,10 @@ static void put_vec(const File &file, const IceGrid &grid, const std::string &va
                             0, z_count,
                             start, count, imap);
 
-    file.put_vara_double(var_name, start, count, input);
+    file.write_variable(var_name, start, count, input);
 
   } catch (RuntimeError &e) {
-    e.add_context("writing variable '%s' to '%s' in put_vec()",
+    e.add_context("writing variable '%s' to '%s' in write_distributed_array()",
                   var_name.c_str(), file.filename().c_str());
     throw;
   }
@@ -495,12 +497,12 @@ static void regrid_vec_generic(const File &file, const IceGrid &grid,
                             lic.start[Z], lic.count[Z],
                             start, count, imap);
 
-    bool mapped_io = use_mapped_io(file, grid.ctx()->unit_system(), variable_name);
+    bool transposed_io = use_transposed_io(file, grid.ctx()->unit_system(), variable_name);
     profiling.begin("io.regridding.read");
-    if (mapped_io) {
-      file.get_varm_double(variable_name, start, count, imap, &buffer[0]);
+    if (transposed_io) {
+      file.read_variable_transposed(variable_name, start, count, imap, &buffer[0]);
     } else {
-      file.get_vara_double(variable_name, start, count, &buffer[0]);
+      file.read_variable(variable_name, start, count, &buffer[0]);
     }
     profiling.end("io.regridding.read");
 
@@ -691,7 +693,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
   const std::vector<double>& zlevels = variable.get_levels();
   unsigned int nlevels = std::max(zlevels.size(), (size_t)1);
 
-  get_vec(file, grid, var.name, nlevels, time, output);
+  read_distributed_array(file, grid, var.name, nlevels, time, output);
 
   std::string input_units = file.read_text_attribute(var.name, "units");
   const std::string &internal_units = variable.get_string("units");
@@ -765,9 +767,9 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
                      units,
                      glaciological_units).convert_doubles(&tmp[0], tmp.size());
 
-    put_vec(file, grid, name, nlevels, &tmp[0]);
+    write_distributed_array(file, grid, name, nlevels, &tmp[0]);
   } else {
-    put_vec(file, grid, name, nlevels, input);
+    write_distributed_array(file, grid, name, nlevels, input);
   }
 }
 
@@ -1077,7 +1079,7 @@ void read_timeseries(const File &file, const TimeseriesMetadata &metadata,
 
     data.resize(length);          // memory allocation happens here
 
-    file.get_vara_double(var.name, {0}, {length}, data.data());
+    file.read_variable(var.name, {0}, {length}, data.data());
 
     units::System::Ptr system = metadata.unit_system();
     bool input_has_units = false;
@@ -1145,7 +1147,7 @@ void write_timeseries(const File &file, const TimeseriesMetadata &metadata, size
                      metadata.get_string("units"),
                      metadata.get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
 
-    file.put_vara_double(name, {(unsigned int)t_start}, {(unsigned int)tmp.size()}, tmp.data());
+    file.write_variable(name, {(unsigned int)t_start}, {(unsigned int)tmp.size()}, tmp.data());
 
   } catch (RuntimeError &e) {
     e.add_context("writing time-series variable '%s' to '%s'", name.c_str(),
@@ -1217,7 +1219,7 @@ void read_time_bounds(const File &file,
 
     data.resize(2*length);                // memory allocation happens here
 
-    file.get_vara_double(name, {0, 0}, {length, 2}, data.data());
+    file.read_variable(name, {0, 0}, {length, 2}, data.data());
 
     // Find the corresponding 'time' variable. (We get units from the 'time'
     // variable, because according to CF-1.5 section 7.1 a "boundary variable"
@@ -1282,7 +1284,7 @@ void write_time_bounds(const File &file, const TimeBoundsMetadata &metadata,
       start{static_cast<unsigned int>(t_start), 0},
       count{static_cast<unsigned int>(tmp.size()) / 2, 2};
 
-      file.put_vara_double(name, start, count, &tmp[0]);
+      file.write_variable(name, start, count, &tmp[0]);
 
   } catch (RuntimeError &e) {
     e.add_context("writing time-bounds variable '%s' to '%s'", name.c_str(),

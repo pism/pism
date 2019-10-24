@@ -233,7 +233,7 @@ void LingleClark::init_impl(const InputOptions &opts, const IceModelVec2S &ice_t
     File input_file(m_grid->com, opts.filename, PISM_NETCDF3, PISM_READONLY);
 
     if (input_file.find_variable(m_time_name)) {
-      input_file.get_vara_double(m_time_name, {0}, {1}, &m_t_last);
+      input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
     } else {
       m_t_last = m_grid->ctx()->time()->current();
     }
@@ -425,7 +425,7 @@ void LingleClark::write_model_state_impl(const File &output) const {
   m_viscous_displacement.write(output);
   m_elastic_displacement.write(output);
 
-  output.put_vara_double(m_time_name, {0}, {1}, &m_t_last);
+  output.write_variable(m_time_name, {0}, {1}, &m_t_last);
 }
 
 DiagnosticList LingleClark::diagnostics_impl() const {

@@ -194,7 +194,7 @@ void SteadyState::define_model_state_impl(const File& output) const {
 void SteadyState::write_model_state_impl(const File& output) const {
   NullTransport::write_model_state_impl(output);
 
-  output.put_vara_double(m_time_name, {0}, {1}, &m_t_last);
+  output.write_variable(m_time_name, {0}, {1}, &m_t_last);
   m_Q.write(output);
 }
 
@@ -206,7 +206,7 @@ void SteadyState::restart_impl(const File &input_file, int record) {
   // Read m_t_last
   {
     if (input_file.find_variable(m_time_name)) {
-      input_file.get_vara_double(m_time_name, {0}, {1}, &m_t_last);
+      input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
     } else {
       m_t_last = m_grid->ctx()->time()->current();
     }
@@ -226,7 +226,7 @@ void SteadyState::bootstrap_impl(const File &input_file,
   // Read m_t_last
   {
     if (input_file.find_variable(m_time_name)) {
-      input_file.get_vara_double(m_time_name, {0}, {1}, &m_t_last);
+      input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
     } else {
       m_t_last = m_grid->ctx()->time()->current();
     }
