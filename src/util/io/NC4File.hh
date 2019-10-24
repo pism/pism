@@ -51,8 +51,6 @@ protected:
 
   virtual int inq_dimname_impl(int j, std::string &result) const;
 
-  virtual int inq_ndims_impl(int &result) const;
-
   // var
   virtual int def_var_chunking_impl(const std::string &name,
                                     std::vector<size_t> &dimensions) const;

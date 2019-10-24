@@ -144,16 +144,6 @@ int NC4File::inq_dimname_impl(int j, std::string &result) const {
   return stat;
 }
 
-
-int NC4File::inq_ndims_impl(int &result) const {
-  int stat;
-
-  stat = nc_inq_ndims(m_file_id, &result); check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
-}
-
-
 // var
 int NC4File::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
   std::vector<int> dimids;

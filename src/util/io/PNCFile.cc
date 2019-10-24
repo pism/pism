@@ -163,15 +163,6 @@ int PNCFile::inq_dimname_impl(int j, std::string &result) const {
   return stat;
 }
 
-
-int PNCFile::inq_ndims_impl(int &result) const {
-  int stat;
-
-  stat = ncmpi_inq_ndims(m_file_id, &result); check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
-}
-
 int PNCFile::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
   std::vector<int> dimids;
   int stat, varid;

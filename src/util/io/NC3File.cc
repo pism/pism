@@ -242,21 +242,6 @@ int NC3File::inq_dimname_impl(int j, std::string &result) const {
 }
 
 
-int NC3File::inq_ndims_impl(int &result) const {
-  int stat = 0;
-
-  if (m_rank == 0) {
-    stat = nc_inq_ndims(m_file_id, &result); check(PISM_ERROR_LOCATION, stat);
-  }
-
-  MPI_Barrier(m_com);
-  MPI_Bcast(&result, 1, MPI_INT, 0, m_com);
-  MPI_Bcast(&stat,   1, MPI_INT,      0, m_com);
-
-  return stat;
-}
-
-
 //! \brief Define a variable.
 int NC3File::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
   int stat = 0;

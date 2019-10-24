@@ -192,10 +192,6 @@ void NCFile::inq_dimname(int j, std::string &result) const {
   int stat = this->inq_dimname_impl(j,result); check(PISM_ERROR_LOCATION, stat);
 }
 
-void NCFile::inq_ndims(int &result) const {
-  int stat = this->inq_ndims_impl(result); check(PISM_ERROR_LOCATION, stat);
-}
-
 void NCFile::def_var(const std::string &name, IO_Type nctype,
                     const std::vector<std::string> &dims) const {
   redef();
