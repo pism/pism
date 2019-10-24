@@ -219,6 +219,7 @@ protected:                      // data members
   MPI_Comm m_com;
   int m_file_id;
   std::string m_filename;
+private:
   mutable bool m_define_mode;
 };
 
