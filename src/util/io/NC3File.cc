@@ -35,6 +35,13 @@
 namespace pism {
 namespace io {
 
+//! \brief Prints an error message; for debugging.
+static void check(const ErrorLocation &where, int return_code) {
+  if (return_code != NC_NOERR) {
+    throw RuntimeError(where, nc_strerror(return_code));
+  }
+}
+
 NC3File::NC3File(MPI_Comm c)
   : NCFile(c), m_rank(0) {
   MPI_Comm_rank(m_com, &m_rank);
@@ -51,22 +58,14 @@ NC3File::~NC3File() {
   }
 }
 
-
-int NC3File::integer_open_mode(IO_Mode input) const {
-  if (input == PISM_READONLY) {
-    return NC_NOWRITE;
-  } else {
-    return NC_WRITE;
-  }
-}
-
 // open/create/close
 int NC3File::open_impl(const std::string &fname, IO_Mode mode) {
   int stat = 0;
 
+  int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;
+
   if (m_rank == 0) {
-    int nc_mode = integer_open_mode(mode);
-    stat = nc_open(fname.c_str(), nc_mode, &m_file_id);
+    stat = nc_open(fname.c_str(), open_mode, &m_file_id);
   }
 
   MPI_Barrier(m_com);
@@ -418,38 +417,17 @@ int NC3File::get_var_double(const std::string &variable_name,
   return stat;
 }
 
-int NC3File::put_varm_double_impl(const std::string &variable_name,
-                                 const std::vector<unsigned int> &start,
-                                 const std::vector<unsigned int> &count,
-                                 const std::vector<unsigned int> &imap, const double *op) const {
-  return this->put_var_double(variable_name,
-                              start, count, imap, op, true);
-}
-
 int NC3File::put_vara_double_impl(const std::string &variable_name,
-                                 const std::vector<unsigned int> &start,
-                                 const std::vector<unsigned int> &count,
+                                 const std::vector<unsigned int> &start_input,
+                                 const std::vector<unsigned int> &count_input,
                                  const double *op) const {
-  std::vector<unsigned int> dummy;
-  return this->put_var_double(variable_name,
-                              start, count, dummy, op, false);
-}
-
-
-//! \brief Put variable data (mapped).
-int NC3File::put_var_double(const std::string &variable_name,
-                            const std::vector<unsigned int> &start_input,
-                            const std::vector<unsigned int> &count_input,
-                            const std::vector<unsigned int> &imap_input, const double *op,
-                            bool mapped) const {
+  // make copies of start and count so that we can use them in MPI_Recv() calls below
   std::vector<unsigned int> start = start_input;
   std::vector<unsigned int> count = count_input;
-  std::vector<unsigned int> imap = imap_input;
   const int start_tag = 1,
     count_tag = 2,
     data_tag =  3,
-    imap_tag =  4,
-    chunk_size_tag = 5;
+    chunk_size_tag = 4;
   int stat = 0, com_size = 0, ndims = static_cast<int>(start.size());
   std::vector<double> processor_0_buffer;
   MPI_Status mpi_stat;
@@ -457,23 +435,11 @@ int NC3File::put_var_double(const std::string &variable_name,
     processor_0_chunk_size = 0;
 
 #if (Pism_DEBUG==1)
-  if (mapped) {
-    if (start.size() != count.size() ||
-        start.size() != imap.size()) {
-      fprintf(stderr, "start, count and imap arrays have to have the same size\n");
-      return NC_EINVAL;           // invalid argument error code
-    }
-  } else {
-    if (start.size() != count.size()) {
-      fprintf(stderr, "start and count arrays have to have the same size\n");
-      return NC_EINVAL;           // invalid argument error code
-    }
+  if (start.size() != count.size()) {
+    fprintf(stderr, "start and count arrays have to have the same size\n");
+    return NC_EINVAL;           // invalid argument error code
   }
 #endif
-
-  if (not mapped) {
-    imap.resize(ndims);
-  }
 
   // get the size of the communicator
   MPI_Comm_size(m_com, &com_size);
@@ -487,15 +453,15 @@ int NC3File::put_var_double(const std::string &variable_name,
   // buffer processor 0 will need
   MPI_Reduce(&local_chunk_size, &processor_0_chunk_size, 1, MPI_UNSIGNED, MPI_MAX, 0, m_com);
 
-  // now we need to send start, count and imap data to processor 0 and receive data
+  // now we need to send start and count data to processor 0 and receive data
   if (m_rank == 0) {
     processor_0_buffer.resize(processor_0_chunk_size);
 
-    // MPI calls below require C datatypes (so that we don't have to worry
-    // about sizes of size_t and ptrdiff_t), so we make local copies of start,
-    // count, and imap to use in the nc_get_varm_double() call.
+    // MPI calls below require C datatypes (so that we don't have to worry about sizes of
+    // size_t and ptrdiff_t), so we make local copies of start and count to use in the
+    // nc_get_vara_double() call.
     std::vector<size_t> nc_start(ndims), nc_count(ndims);
-    std::vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
+    std::vector<ptrdiff_t> nc_stride(ndims);
     int varid;
 
     stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
@@ -503,11 +469,10 @@ int NC3File::put_var_double(const std::string &variable_name,
     for (int r = 0; r < com_size; ++r) {
 
       if (r != 0) {
-        // Note: start, count, imap, and local_chunk_size on processor zero are
-        // used *before* they get overwritten by these calls
+        // Note: start, count, and local_chunk_size on processor zero are used *before*
+        // they get overwritten by these calls
         MPI_Recv(&start[0],         ndims, MPI_UNSIGNED, r, start_tag,      m_com, &mpi_stat);
         MPI_Recv(&count[0],         ndims, MPI_UNSIGNED, r, count_tag,      m_com, &mpi_stat);
-        MPI_Recv(&imap[0],          ndims, MPI_UNSIGNED, r, imap_tag,       m_com, &mpi_stat);
         MPI_Recv(&local_chunk_size, 1,     MPI_UNSIGNED, r, chunk_size_tag, m_com, &mpi_stat);
 
         MPI_Recv(&processor_0_buffer[0], local_chunk_size, MPI_DOUBLE, r, data_tag, m_com, &mpi_stat);
@@ -517,27 +482,21 @@ int NC3File::put_var_double(const std::string &variable_name,
         }
       }
 
-      // This for loop uses start, count and imap passed in as arguments when r
-      // == 0. For r > 0 they are overwritten by MPI_Recv calls above.
+      // This for loop uses start and count passed in as arguments when r == 0. For r > 0
+      // they are overwritten by MPI_Recv calls above.
       for (int k = 0; k < ndims; ++k) {
         nc_start[k]  = start[k];
         nc_count[k]  = count[k];
-        nc_imap[k]   = imap[k];
         nc_stride[k] = 1;       // fill with ones; this way it works even with
                                 // NetCDF versions with a bug affecting the
                                 // stride == NULL case.
       }
 
-      if (mapped) {
-        stat = nc_put_varm_double(m_file_id, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                                  &processor_0_buffer[0]); check(PISM_ERROR_LOCATION, stat);
-      } else {
-        stat = nc_put_vara_double(m_file_id, varid, &nc_start[0], &nc_count[0],
-                                  &processor_0_buffer[0]); check(PISM_ERROR_LOCATION, stat);
-      }
+      stat = nc_put_vara_double(m_file_id, varid, &nc_start[0], &nc_count[0],
+                                &processor_0_buffer[0]); check(PISM_ERROR_LOCATION, stat);
 
       if (stat != NC_NOERR) {
-        fprintf(stderr, "NetCDF call nc_put_var?_double failed with return code %d, '%s'\n",
+        fprintf(stderr, "NetCDF call nc_put_vara_double() failed with return code %d, '%s'\n",
                 stat, nc_strerror(stat));
         fprintf(stderr, "while writing '%s' to '%s'\n",
                 variable_name.c_str(), m_filename.c_str());
@@ -549,17 +508,12 @@ int NC3File::put_var_double(const std::string &variable_name,
         for (int k = 0; k < ndims; ++k) {
           fprintf(stderr, "count[%d] = %d\n", k, count[k]);
         }
-
-        for (int k = 0; k < ndims; ++k) {
-          fprintf(stderr, "imap[%d] = %d\n", k, imap[k]);
-        }
       }
 
     } // end of the for loop
   } else {
     MPI_Send(&start[0],          ndims, MPI_UNSIGNED, 0, start_tag,      m_com);
     MPI_Send(&count[0],          ndims, MPI_UNSIGNED, 0, count_tag,      m_com);
-    MPI_Send(&imap[0],           ndims, MPI_UNSIGNED, 0, imap_tag,       m_com);
     MPI_Send(&local_chunk_size,  1,     MPI_UNSIGNED, 0, chunk_size_tag, m_com);
 
     MPI_Send(const_cast<double*>(op), local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com);

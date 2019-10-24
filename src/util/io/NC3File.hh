@@ -76,12 +76,6 @@ protected:
                       const std::vector<unsigned int> &imap,
                       double *ip) const;
 
-  int put_varm_double_impl(const std::string &variable_name,
-                      const std::vector<unsigned int> &start,
-                      const std::vector<unsigned int> &count,
-                      const std::vector<unsigned int> &imap,
-                      const double *op) const;
-
   int inq_nvars_impl(int &result) const;
 
   int inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const;
@@ -97,7 +91,6 @@ protected:
 
   int get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const;
 
-  using NCFile::put_att_double_impl;
   int put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const;
 
   int put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const;
@@ -114,19 +107,12 @@ protected:
   virtual int del_att_impl(const std::string &variable_name, const std::string &att_name) const;
 private:
   int m_rank;
-  int integer_open_mode(IO_Mode input) const;
 
   int get_var_double(const std::string &variable_name,
                      const std::vector<unsigned int> &start,
                      const std::vector<unsigned int> &count,
                      const std::vector<unsigned int> &imap, double *ip,
-                     bool mapped) const;
-
-  int put_var_double(const std::string &variable_name,
-                     const std::vector<unsigned int> &start,
-                     const std::vector<unsigned int> &count,
-                     const std::vector<unsigned int> &imap, const double *op,
-                     bool mapped) const;
+                     bool transposed) const;
 };
 
 } // end of namespace io

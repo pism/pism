@@ -39,17 +39,9 @@ PNCFile::~PNCFile() {
   MPI_Info_free(&m_mpi_info);
 }
 
-void PNCFile::check(const ErrorLocation &where, int return_code) const {
+static void check(const ErrorLocation &where, int return_code) {
   if (return_code != NC_NOERR) {
     throw RuntimeError(where, ncmpi_strerror(return_code));
-  }
-}
-
-int PNCFile::integer_open_mode(IO_Mode input) const {
-  if (input == PISM_READONLY) {
-    return NC_NOWRITE;
-  } else {
-    return NC_WRITE;
   }
 }
 
@@ -58,8 +50,10 @@ int PNCFile::open_impl(const std::string &fname, IO_Mode mode) {
 
   init_hints();
 
-  int nc_mode = integer_open_mode(mode);
-  stat = ncmpi_open(m_com, fname.c_str(), nc_mode, m_mpi_info, &m_file_id); check(PISM_ERROR_LOCATION, stat);
+  int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;
+
+  stat = ncmpi_open(m_com, fname.c_str(), open_mode, m_mpi_info, &m_file_id);
+  check(PISM_ERROR_LOCATION, stat);
 
   return stat;
 }
@@ -217,12 +211,34 @@ int PNCFile::get_vara_double_impl(const std::string &variable_name,
 
 
 int PNCFile::put_vara_double_impl(const std::string &variable_name,
-                                 const std::vector<unsigned int> &start,
-                                 const std::vector<unsigned int> &count,
-                                 const double *op) const {
-  std::vector<unsigned int> dummy;
-  return this->put_var_double(variable_name,
-                              start, count, dummy, op, false);
+                                  const std::vector<unsigned int> &start,
+                                  const std::vector<unsigned int> &count,
+                                  const double *op) const {
+  int stat, varid, ndims = static_cast<int>(start.size());
+
+#if (Pism_DEBUG==1)
+  if (start.size() != count.size()) {
+    fprintf(stderr, "start and count arrays have to have the same size\n");
+    return NC_EINVAL;           // invalid argument error code
+  }
+#endif
+
+  std::vector<MPI_Offset> nc_start(ndims), nc_count(ndims), nc_stride(ndims);
+
+  stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid);
+  check(PISM_ERROR_LOCATION, stat);
+
+  for (int j = 0; j < ndims; ++j) {
+    nc_start[j]  = start[j];
+    nc_count[j]  = count[j];
+    nc_stride[j] = 1;
+  }
+
+  stat = ncmpi_put_vara_double_all(m_file_id, varid,
+                                   &nc_start[0], &nc_count[0],
+                                   op); check(PISM_ERROR_LOCATION, stat);
+
+  return stat;
 }
 
 
@@ -233,16 +249,6 @@ int PNCFile::get_varm_double_impl(const std::string &variable_name,
                                  double *ip) const {
   return this->get_var_double(variable_name,
                               start, count, imap, ip, true);
-}
-
-
-int PNCFile::put_varm_double_impl(const std::string &variable_name,
-                                 const std::vector<unsigned int> &start,
-                                 const std::vector<unsigned int> &count,
-                                 const std::vector<unsigned int> &imap,
-                                 const double *op) const {
-  return this->put_var_double(variable_name,
-                              start, count, imap, op, true);
 }
 
 
@@ -524,12 +530,12 @@ int PNCFile::get_var_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,
                             const std::vector<unsigned int> &count,
                             const std::vector<unsigned int> &imap_input, double *ip,
-                            bool mapped) const {
+                            bool transposed) const {
   std::vector<unsigned int> imap = imap_input;
   int stat, varid, ndims = static_cast<int>(start.size());
 
 #if (Pism_DEBUG==1)
-  if (mapped) {
+  if (transposed) {
     if (start.size() != count.size() ||
         start.size() != imap.size()) {
       fprintf(stderr, "start, count and imap arrays have to have the same size\n");
@@ -543,7 +549,7 @@ int PNCFile::get_var_double(const std::string &variable_name,
   }
 #endif
 
-  if (not mapped) {
+  if (not transposed) {
     imap.resize(ndims);
   }
 
@@ -559,7 +565,7 @@ int PNCFile::get_var_double(const std::string &variable_name,
     nc_stride[j] = 1;
   }
 
-  if (mapped) {
+  if (transposed) {
     stat = ncmpi_get_varm_double_all(m_file_id, varid,
                                      &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
                                      ip); check(PISM_ERROR_LOCATION, stat);
@@ -573,56 +579,6 @@ int PNCFile::get_var_double(const std::string &variable_name,
 }
 
 
-int PNCFile::put_var_double(const std::string &variable_name,
-                            const std::vector<unsigned int> &start,
-                            const std::vector<unsigned int> &count,
-                            const std::vector<unsigned int> &imap_input, const double *op,
-                            bool mapped) const {
-  int stat, varid, ndims = static_cast<int>(start.size());
-  std::vector<unsigned int> imap = imap_input;
-#if (Pism_DEBUG==1)
-  if (mapped) {
-    if (start.size() != count.size() ||
-        start.size() != imap.size()) {
-      fprintf(stderr, "start, count and imap arrays have to have the same size\n");
-      return NC_EINVAL;           // invalid argument error code
-    }
-  } else {
-    if (start.size() != count.size()) {
-      fprintf(stderr, "start and count arrays have to have the same size\n");
-      return NC_EINVAL;           // invalid argument error code
-    }
-  }
-#endif
-
-  if (not mapped) {
-    imap.resize(ndims);
-  }
-
-  std::vector<MPI_Offset> nc_start(ndims), nc_count(ndims),
-    nc_imap(ndims), nc_stride(ndims);
-
-  stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
-
-  for (int j = 0; j < ndims; ++j) {
-    nc_start[j] = start[j];
-    nc_count[j] = count[j];
-    nc_imap[j]  = imap[j];
-    nc_stride[j] = 1;
-  }
-
-  if (mapped) {
-    stat = ncmpi_put_varm_double_all(m_file_id, varid,
-                                     &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                                     op); check(PISM_ERROR_LOCATION, stat);
-  } else {
-    stat = ncmpi_put_vara_double_all(m_file_id, varid,
-                                     &nc_start[0], &nc_count[0],
-                                     op); check(PISM_ERROR_LOCATION, stat);
-  }
-
-  return stat;
-}
 
 
 void PNCFile::init_hints() {

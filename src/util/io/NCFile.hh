@@ -29,8 +29,6 @@
 
 namespace pism {
 
-class ErrorLocation;
-
 //! Input and output code (NetCDF wrappers, etc)
 namespace io {
 
@@ -107,12 +105,6 @@ public:
                        const std::vector<unsigned int> &count,
                        const std::vector<unsigned int> &imap,
                        double *ip) const;
-
-  void put_varm_double(const std::string &variable_name,
-                       const std::vector<unsigned int> &start,
-                       const std::vector<unsigned int> &count,
-                       const std::vector<unsigned int> &imap,
-                       const double *op) const;
 
   void inq_nvars(int &result) const;
 
@@ -205,12 +197,6 @@ protected:
                                    const std::vector<unsigned int> &imap,
                                    double *ip) const = 0;
 
-  virtual int put_varm_double_impl(const std::string &variable_name,
-                                   const std::vector<unsigned int> &start,
-                                   const std::vector<unsigned int> &count,
-                                   const std::vector<unsigned int> &imap,
-                                   const double *op) const = 0;
-
   virtual int inq_nvars_impl(int &result) const = 0;
 
   virtual int inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const = 0;
@@ -244,13 +230,7 @@ protected:
   virtual int move_if_exists_impl(const std::string &filename, int rank_to_use = 0);
   virtual int remove_if_exists_impl(const std::string &filename, int rank_to_use = 0);
 
-  virtual int integer_open_mode(IO_Mode input) const = 0;
-
   virtual int del_att_impl(const std::string &variable_name, const std::string &att_name) const = 0;
-
-protected:
-  // internal:
-  virtual void check(const ErrorLocation &where, int return_code) const;
 
 protected:                      // data members
 

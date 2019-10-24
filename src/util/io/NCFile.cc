@@ -56,7 +56,7 @@ int NCFile::put_att_double_impl(const std::string &variable_name, const std::str
 }
 
 //! \brief Prints an error message; for debugging.
-void NCFile::check(const ErrorLocation &where, int return_code) const {
+static void check(const ErrorLocation &where, int return_code) {
   if (return_code != NC_NOERR) {
     throw RuntimeError(where, nc_strerror(return_code));
   }
@@ -221,7 +221,8 @@ void NCFile::put_vara_double(const std::string &variable_name,
                             const std::vector<unsigned int> &count,
                             const double *op) const {
   enddef();
-  int stat = this->put_vara_double_impl(variable_name, start, count, op); check(PISM_ERROR_LOCATION, stat);
+  int stat = this->put_vara_double_impl(variable_name, start, count, op);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::get_varm_double(const std::string &variable_name,
@@ -230,16 +231,8 @@ void NCFile::get_varm_double(const std::string &variable_name,
                             const std::vector<unsigned int> &imap,
                             double *ip) const {
   enddef();
-  int stat = this->get_varm_double_impl(variable_name, start, count, imap, ip); check(PISM_ERROR_LOCATION, stat);
-}
-
-void NCFile::put_varm_double(const std::string &variable_name,
-                            const std::vector<unsigned int> &start,
-                            const std::vector<unsigned int> &count,
-                            const std::vector<unsigned int> &imap,
-                            const double *op) const {
-  enddef();
-  int stat = this->put_varm_double_impl(variable_name, start, count, imap, op); check(PISM_ERROR_LOCATION, stat);
+  int stat = this->get_varm_double_impl(variable_name, start, count, imap, ip);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::inq_nvars(int &result) const {

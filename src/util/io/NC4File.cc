@@ -35,6 +35,13 @@
 namespace pism {
 namespace io {
 
+//! \brief Prints an error message; for debugging.
+static void check(const ErrorLocation &where, int return_code) {
+  if (return_code != NC_NOERR) {
+    throw RuntimeError(where, nc_strerror(return_code));
+  }
+}
+
 NC4File::NC4File(MPI_Comm c, unsigned int compression_level)
   : NCFile(c), m_compression_level(compression_level) {
   // empty
@@ -199,7 +206,7 @@ int NC4File::get_varm_double_impl(const std::string &variable_name,
   return this->get_put_var_double(variable_name,
                                   start, count, imap, op,
                                   true /*get*/,
-                                  true /*mapped*/);
+                                  true /*transposed*/);
 }
 
 int NC4File::get_vara_double_impl(const std::string &variable_name,
@@ -210,18 +217,7 @@ int NC4File::get_vara_double_impl(const std::string &variable_name,
   return this->get_put_var_double(variable_name,
                                   start, count, dummy, op,
                                   true /*get*/,
-                                  false /*not mapped*/);
-}
-
-
-int NC4File::put_varm_double_impl(const std::string &variable_name,
-                                  const std::vector<unsigned int> &start,
-                                  const std::vector<unsigned int> &count,
-                                  const std::vector<unsigned int> &imap, const double *op) const {
-  return this->get_put_var_double(variable_name,
-                                  start, count, imap, const_cast<double*>(op),
-                                  false /*put*/,
-                                  true /*mapped*/);
+                                  false /*not transposed*/);
 }
 
 int NC4File::put_vara_double_impl(const std::string &variable_name,
@@ -232,7 +228,7 @@ int NC4File::put_vara_double_impl(const std::string &variable_name,
   return this->get_put_var_double(variable_name,
                                   start, count, dummy, const_cast<double*>(op),
                                   false /*put*/,
-                                  false /*not mapped*/);
+                                  false /*not transposed*/);
 }
 
 
@@ -548,12 +544,12 @@ int NC4File::get_put_var_double(const std::string &variable_name,
                                 const std::vector<unsigned int> &imap_input,
                                 double *op,
                                 bool get,
-                                bool mapped) const {
+                                bool transposed) const {
   int stat, varid, ndims = static_cast<int>(start.size());
   std::vector<unsigned int> imap = imap_input;
 
 #if (Pism_DEBUG==1)
-  if (mapped) {
+  if (transposed) {
     if (start.size() != count.size() ||
         start.size() != imap.size()) {
       fprintf(stderr, "start, count and imap arrays have to have the same size\n");
@@ -567,7 +563,7 @@ int NC4File::get_put_var_double(const std::string &variable_name,
   }
 #endif
 
-  if (not mapped) {
+  if (not transposed) {
     imap.resize(ndims);
   }
 
@@ -583,11 +579,11 @@ int NC4File::get_put_var_double(const std::string &variable_name,
     nc_stride[j] = 1;
   }
 
-  if (mapped) {
+  if (transposed) {
 
-    stat = set_access_mode(varid, mapped); check(PISM_ERROR_LOCATION, stat);
+    stat = set_access_mode(varid, transposed); check(PISM_ERROR_LOCATION, stat);
 
-    if (get == true) {
+    if (get) {
       stat = nc_get_varm_double(m_file_id, varid,
                                 &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
                                 op); check(PISM_ERROR_LOCATION, stat);
@@ -598,9 +594,9 @@ int NC4File::get_put_var_double(const std::string &variable_name,
     }
   } else {
 
-    stat = set_access_mode(varid, mapped); check(PISM_ERROR_LOCATION, stat);
+    stat = set_access_mode(varid, transposed); check(PISM_ERROR_LOCATION, stat);
 
-    if (get == true) {
+    if (get) {
       stat = nc_get_vara_double(m_file_id, varid,
                                 &nc_start[0], &nc_count[0],
                                 op); check(PISM_ERROR_LOCATION, stat);

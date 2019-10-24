@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -35,8 +35,6 @@ protected:
   int open_impl(const std::string &filename, IO_Mode mode);
 
   int create_impl(const std::string &filename);
-protected:
-  int integer_open_mode(IO_Mode input) const;
 };
 
 
