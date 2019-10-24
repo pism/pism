@@ -81,8 +81,7 @@ void append_time(const File &nc, const std::string &name, double time_seconds);
 
 void define_spatial_variable(const SpatialVariableMetadata &var,
                              const IceGrid &grid, const File &nc,
-                             IO_Type nctype,
-                             const std::string &variable_order);
+                             IO_Type nctype);
 
 void define_timeseries(const TimeseriesMetadata& var,
                        const File &nc, IO_Type nctype);

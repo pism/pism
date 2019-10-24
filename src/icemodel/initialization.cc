@@ -774,13 +774,6 @@ void IceModel::misc_setup() {
   init_timeseries();
   init_extras();
 
-  // Make sure that we use the output.variable_order that works with NetCDF-4 parallel I/O.
-  std::string o_format = m_config->get_string("output.format");
-  if (o_format == "netcdf4_parallel" and m_config->get_string("output.variable_order") != "yxz") {
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "output format netcdf4_parallel requires -o_order yxz.");
-  }
-
   // a report on whether PISM-PIK modifications of IceModel are in use
   {
     std::vector<std::string> pik_methods;

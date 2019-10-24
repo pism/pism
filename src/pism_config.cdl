@@ -1978,12 +1978,6 @@ netcdf pism_config {
     pism_config:output.ISMIP6_type = "flag";
     pism_config:output.ISMIP6_doc = "Follow ISMIP6 conventions (units, variable names, \"standard names\") when writing output variables.";
 
-    pism_config:output.variable_order = "yxz";
-    pism_config:output.variable_order_choices = "xyz,yxz,zyx";
-    pism_config:output.variable_order_doc = "Variable order to use in output files.";
-    pism_config:output.variable_order_option = "o_order";
-    pism_config:output.variable_order_type = "keyword";
-
     pism_config:regional.no_model_strip = 5.0;
     pism_config:regional.no_model_strip_doc = "Default width of the 'no model strip' in regional setups.";
     pism_config:regional.no_model_strip_option = "no_model_strip";

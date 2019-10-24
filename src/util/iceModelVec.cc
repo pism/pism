@@ -485,11 +485,10 @@ void IceModelVec::read_impl(const File &nc, const unsigned int time) {
 
 //! \brief Define variables corresponding to an IceModelVec in a file opened using `nc`.
 void IceModelVec::define(const File &nc, IO_Type default_type) const {
-  std::string order = m_grid->ctx()->config()->get_string("output.variable_order");
   for (unsigned int j = 0; j < m_dof; ++j) {
     IO_Type type = metadata(j).get_output_type();
     type = type == PISM_NAT ? default_type : type;
-    io::define_spatial_variable(metadata(j), *m_grid, nc, type, order);
+    io::define_spatial_variable(metadata(j), *m_grid, nc, type);
   }
 }
 

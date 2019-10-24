@@ -136,6 +136,7 @@ Changes since v1.1
   (see `hydrology.surface_input_from_runoff`).
 - Implement 2D and scalar grounding line flux diagnostics `grounding_line_flux`. See
   `issue #300`_.
+- Remove `output.variable_order`. Now PISM always uses `y,x,z` in output files.
 
 Changes from v1.0 to v1.1
 =========================

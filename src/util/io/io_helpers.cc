@@ -279,7 +279,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
   if (not file.find_dimension(x_name)) {
     define_dimension(file, grid.Mx(), var.get_x());
     file.write_attribute(x_name, "spacing_meters", PISM_DOUBLE,
-                        {grid.x(1) - grid.x(0)});
+                         {grid.x(1) - grid.x(0)});
     file.write_attribute(x_name, "not_written", PISM_INT, {1.0});
   }
 
@@ -288,7 +288,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
   if (not file.find_dimension(y_name)) {
     define_dimension(file, grid.My(), var.get_y());
     file.write_attribute(y_name, "spacing_meters", PISM_DOUBLE,
-                        {grid.y(1) - grid.y(0)});
+                         {grid.y(1) - grid.y(0)});
     file.write_attribute(y_name, "not_written", PISM_INT, {1.0});
   }
 
@@ -457,17 +457,10 @@ static void put_vec(const File &file, const IceGrid &grid, const std::string &va
                             0, z_count,
                             start, count, imap);
 
-    if (grid.ctx()->config()->get_string("output.variable_order") == "yxz") {
-      // Use the faster and safer (avoids a NetCDF bug) call if the array storage
-      // orders in the memory and in NetCDF files are the same.
-      file.put_vara_double(var_name, start, count, input);
-    } else {
-      // Revert to "mapped" I/O otherwise.
-      file.put_varm_double(var_name, start, count, imap, input);
-    }
+    file.put_vara_double(var_name, start, count, input);
 
   } catch (RuntimeError &e) {
-    e.add_context("writing variable '%s' to '%s' in File::put_vec()",
+    e.add_context("writing variable '%s' to '%s' in put_vec()",
                   var_name.c_str(), file.filename().c_str());
     throw;
   }
@@ -582,8 +575,7 @@ static void regrid_vec_fill_missing(const File &file, const IceGrid &grid,
 //! Define a NetCDF variable corresponding to a VariableMetadata object.
 void define_spatial_variable(const SpatialVariableMetadata &var,
                              const IceGrid &grid, const File &file,
-                             IO_Type default_type,
-                             const std::string &variable_order) {
+                             IO_Type default_type) {
   std::vector<std::string> dims;
   std::string name = var.get_name();
 
@@ -593,51 +585,20 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
 
   define_dimensions(var, grid, file);
 
-  std::string order = variable_order;
-  // "..._bounds" should be stored with grid corners (corresponding to
-  // the "z" dimension here) last, so we override the variable storage
-  // order here
-  if (ends_with(name, "_bnds") and order == "zyx") {
-    order = "yxz";
-  }
-
   std::string
     x = var.get_x().get_name(),
     y = var.get_y().get_name(),
-    z = var.get_z().get_name(),
-    t = "";
+    z = var.get_z().get_name();
 
   if (not var.get_time_independent()) {
-    t = grid.ctx()->config()->get_string("time.dimension_name");
+    dims.push_back(grid.ctx()->config()->get_string("time.dimension_name"));
   }
 
-  if (not t.empty()) {
-    dims.push_back(t);
-  }
-
-  // Use t,x,y,z(zb) variable order: it is weird, but matches the in-memory
-  // storage order and so is *a lot* faster.
-  if (order == "xyz") {
-    dims.push_back(x);
-    dims.push_back(y);
-  }
-
-  // Use the t,y,x,z variable order: also weird, somewhat slower, but 2D fields
-  // are stored in the "natural" order.
-  if (order == "yxz") {
-    dims.push_back(y);
-    dims.push_back(x);
-  }
+  dims.push_back(y);
+  dims.push_back(x);
 
   if (not z.empty()) {
     dims.push_back(z);
-  }
-
-  // Use the t,z(zb),y,x variables order: more natural for plotting and post-processing,
-  // but requires transposing data while writing and is *a lot* slower.
-  if (order == "zyx") {
-    dims.push_back(y);
-    dims.push_back(x);
   }
 
   assert(dims.size() > 1);

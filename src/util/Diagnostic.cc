@@ -134,8 +134,7 @@ void Diagnostic::define(const File &file, IO_Type default_type) const {
 //! Define NetCDF variables corresponding to a diagnostic quantity.
 void Diagnostic::define_impl(const File &file, IO_Type default_type) const {
   for (auto &v : m_vars) {
-    io::define_spatial_variable(v, *m_grid, file, default_type,
-                                m_grid->ctx()->config()->get_string("output.variable_order"));
+    io::define_spatial_variable(v, *m_grid, file, default_type);
   }
 }
 
