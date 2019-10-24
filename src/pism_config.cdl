@@ -1804,6 +1804,11 @@ netcdf pism_config {
     pism_config:sea_level.model_option = "sea_level";
     pism_config:sea_level.model_type = "string";
 
+    pism_config:lake_level.model = "null";
+    pism_config:lake_level.model_doc = "Lake level elevation forcing models.";
+    pism_config:lake_level.model_option = "lake_level";
+    pism_config:lake_level.model_type = "string";
+
     pism_config:stress_balance.calving_front_stress_bc = "no";
     pism_config:stress_balance.calving_front_stress_bc_doc = "Apply CFBC condition as in :cite:`Albrechtetal2011`, :cite:`Winkelmannetal2011`.  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in :cite:`BBssasliding`.";
     pism_config:stress_balance.calving_front_stress_bc_option = "cfbc";
