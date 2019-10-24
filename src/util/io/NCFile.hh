@@ -122,9 +122,6 @@ public:
   void put_att_double(const std::string &variable_name, const std::string &att_name,
                       IO_Type xtype, const std::vector<double> &data) const;
 
-  void put_att_double(const std::string &variable_name, const std::string &att_name,
-                      IO_Type xtype, double value) const;
-
   void put_att_text(const std::string &variable_name, const std::string &att_name,
                     const std::string &value) const;
 
@@ -200,8 +197,6 @@ protected:
   virtual int get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const = 0;
 
   virtual int put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const = 0;
-
-  virtual int put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, double value) const;
 
   virtual int put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const = 0;
 

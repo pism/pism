@@ -44,13 +44,6 @@ std::string NCFile::filename() const {
   return m_filename;
 }
 
-int NCFile::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, double value) const {
-  std::vector<double> tmp(1);
-  tmp[0] = value;
-  put_att_double(variable_name, att_name, nctype, tmp);
-  return 0;
-}
-
 //! \brief Prints an error message; for debugging.
 static void check(const ErrorLocation &where, int return_code) {
   if (return_code != NC_NOERR) {
@@ -82,6 +75,7 @@ void NCFile::create(const std::string &filename) {
 void NCFile::close() {
   int stat = this->close_impl(); check(PISM_ERROR_LOCATION, stat);
   m_filename.clear();
+  m_file_id = -1;
 }
 
 void NCFile::enddef() const {
@@ -184,10 +178,6 @@ void NCFile::get_att_text(const std::string &variable_name, const std::string &a
 
 void NCFile::put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const {
   int stat = this->put_att_double_impl(variable_name, att_name, xtype, data); check(PISM_ERROR_LOCATION, stat);
-}
-
-void NCFile::put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, double value) const {
-  int stat = this->put_att_double_impl(variable_name, att_name, xtype, value); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::put_att_text(const std::string &variable_name, const std::string &att_name, const std::string &value) const {

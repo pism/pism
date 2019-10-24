@@ -413,7 +413,6 @@ int PNCFile::del_att_impl(const std::string &variable_name, const std::string &a
     stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
   }
 
-  // Now read the string and see if we succeeded:
   stat = ncmpi_del_att(m_file_id, varid, att_name.c_str()); check(PISM_ERROR_LOCATION, stat);
 
   return 0;
