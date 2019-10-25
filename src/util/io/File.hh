@@ -143,8 +143,6 @@ private:
 
   void open(const std::string &filename, IO_Mode mode);
 
-  void detect_mode(const std::string &filename);
-
   // disable copying and assignments
   File(const File &other);
   File & operator=(const File &);

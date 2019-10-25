@@ -74,6 +74,41 @@ IOBackend string_to_backend(const std::string &backend) {
                                 "unknown or unsupported I/O backend: %s", backend.c_str());
 }
 
+// Chooses the best available I/O backend for reading from 'filename'.
+static IOBackend choose_backend(MPI_Comm com, const std::string &filename) {
+
+  std::string format;
+  {
+    // This is the rank-0-only purely-serial mode of accessing NetCDF files, but it
+    // supports all the kinds of NetCDF, so this is fine.
+    io::NC3File file(com);
+
+    file.open(filename, PISM_READONLY);
+    format = file.get_format();
+    file.close();
+  }
+
+  if (format == "netcdf4") {
+#if (Pism_USE_PIO==1)
+    return PISM_PIO;
+#endif
+
+#if (Pism_USE_PARALLEL_NETCDF4==1)
+    return PISM_NETCDF4_PARALLEL;
+#endif
+  } else {
+#if (Pism_USE_PIO==1)
+    return PISM_PIO;
+#endif
+
+#if (Pism_USE_PNETCDF==1)
+    return PISM_PNETCDF;
+#endif
+  }
+
+  return PISM_NETCDF3;
+}
+
 static io::NCFile::Ptr create_backend(MPI_Comm com, IOBackend backend) {
   int size = 1;
   MPI_Comm_size(com, &size);
@@ -102,18 +137,20 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IOBackend backend) {
 
 File::File(MPI_Comm com, const std::string &filename, IOBackend backend, IO_Mode mode)
   : m_impl(new Impl) {
-  m_impl->com          = com;
-  m_impl->backend = backend;
-  m_impl->nc           = create_backend(m_impl->com, m_impl->backend);
-
-  if (backend != PISM_GUESS && not m_impl->nc) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "failed to allocate an I/O backend (class File)");
-  }
 
   if (filename.empty()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "cannot open file: provided file name is empty");
   }
+
+  if (backend == PISM_GUESS) {
+    m_impl->backend = choose_backend(com, filename);
+  } else {
+    m_impl->backend = backend;
+  }
+
+  m_impl->com = com;
+  m_impl->nc  = create_backend(m_impl->com, m_impl->backend);
 
   this->open(filename, mode);
 }
@@ -135,44 +172,6 @@ MPI_Comm File::com() const {
   return m_impl->com;
 }
 
-// Chooses the best I/O backend for reading from 'filename'.
-void File::detect_mode(const std::string &filename) {
-  assert(not (bool)m_impl->nc);
-
-  std::string format;
-  {
-    io::NC3File file(m_impl->com);
-
-    // detect_mode is private, so the caller will handle the failure
-    // of open and add context
-    file.open(filename, PISM_READONLY);
-    format = file.get_format();
-    file.close();
-  }
-
-  std::vector<IOBackend> modes;
-  if (format == "netcdf4") {
-    modes.push_back(PISM_NETCDF4_PARALLEL);
-    modes.push_back(PISM_NETCDF3);
-  } else {
-    modes.push_back(PISM_PNETCDF);
-    modes.push_back(PISM_NETCDF3);
-  }
-
-  for (unsigned int j = 0; j < modes.size(); ++j) {
-    m_impl->nc = create_backend(m_impl->com, modes[j]);
-
-    if (m_impl->nc) {
-      m_impl->backend = modes[j];
-      break;
-    }
-  }
-
-  if (not m_impl->nc) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "failed to allocate an I/O backend (class File)");
-  }
-}
-
 IOBackend File::backend() const {
   return m_impl->backend;
 }
@@ -180,22 +179,12 @@ IOBackend File::backend() const {
 void File::open(const std::string &filename, IO_Mode mode) {
   try {
 
-    if (mode == PISM_READONLY || mode == PISM_READWRITE) {
-      if (not m_impl->nc and m_impl->backend == PISM_GUESS) {
-        detect_mode(filename);
-      }
-    }
-
     // opening for reading
     if (mode == PISM_READONLY) {
 
-      assert((bool)m_impl->nc);
       m_impl->nc->open(filename, mode);
 
-    } else if (mode == PISM_READWRITE_CLOBBER ||
-               mode == PISM_READWRITE_MOVE) {
-
-      assert((bool)m_impl->nc);
+    } else if (mode == PISM_READWRITE_CLOBBER or mode == PISM_READWRITE_MOVE) {
 
       if (mode == PISM_READWRITE_MOVE) {
         io::move_if_exists(m_impl->com, filename);
@@ -208,7 +197,6 @@ void File::open(const std::string &filename, IO_Mode mode) {
       int old_fill;
       m_impl->nc->set_fill(PISM_NOFILL, old_fill);
     } else if (mode == PISM_READWRITE) {                      // mode == PISM_READWRITE
-      assert((bool)m_impl->nc);
 
       m_impl->nc->open(filename, mode);
 
