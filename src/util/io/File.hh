@@ -30,7 +30,7 @@ namespace pism {
 
 enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
-enum IOBackend {PISM_GUESS, PISM_NETCDF3, PISM_NETCDF4_PARALLEL, PISM_PNETCDF};
+enum IOBackend {PISM_GUESS, PISM_NETCDF3, PISM_NETCDF4_PARALLEL, PISM_PNETCDF, PISM_PIO};
 
 /*!
  * Convert a string to PISM's backend type.

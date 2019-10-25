@@ -42,6 +42,10 @@ using std::shared_ptr;
 #include "PNCFile.hh"
 #endif
 
+#if (Pism_USE_PIO==1)
+#include "ParallelIO.hh"
+#endif
+
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
 
@@ -63,14 +67,18 @@ IOBackend string_to_backend(const std::string &backend) {
   if (backend == "pnetcdf") {
     return PISM_PNETCDF;
   }
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown I/O backend: %s", backend.c_str());
+  if (backend == "pio") {
+    return PISM_PIO;
+  }
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "unknown or unsupported I/O backend: %s", backend.c_str());
 }
 
 static io::NCFile::Ptr create_backend(MPI_Comm com, IOBackend backend) {
   int size = 1;
   MPI_Comm_size(com, &size);
 
-  if (backend == PISM_NETCDF3 or size == 1) {
+  if (backend == PISM_NETCDF3) {
     return io::NCFile::Ptr(new io::NC3File(com));
   }
 #if (Pism_USE_PARALLEL_NETCDF4==1)
@@ -83,9 +91,13 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IOBackend backend) {
     return io::NCFile::Ptr(new io::PNCFile(com));
   }
 #endif
-  else {
-    return io::NCFile::Ptr();       // a "NULL" pointer
+#if (Pism_USE_PIO==1)
+  else if (backend == PISM_PIO) {
+    return io::NCFile::Ptr(new io::ParallelIO(com));
   }
+#endif
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "unknown or unsupported I/O backend: %d", backend);
 }
 
 File::File(MPI_Comm com, const std::string &filename, IOBackend backend, IO_Mode mode)
