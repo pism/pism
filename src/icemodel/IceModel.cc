@@ -21,6 +21,14 @@
 #include <algorithm>
 #include <petscsys.h>
 
+#include "pism/pism_config.hh"
+
+#if (Pism_USE_PIO==1)
+// Why do I need this???
+#define _NETCDF
+#include <pio.h>
+#endif
+
 #include "IceModel.hh"
 
 #include "pism/basalstrength/YieldStress.hh"
@@ -72,6 +80,27 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     m_ts_times(new std::vector<double>()),
     m_extra_bounds("time_bounds", m_config->get_string("time.dimension_name"), m_sys),
     m_timestamp("timestamp", m_config->get_string("time.dimension_name"), m_sys) {
+
+  m_pio_iosysid = -1;
+#if (Pism_USE_PIO==1)
+  {
+    int ierr = PIOc_set_iosystem_error_handling(PIO_DEFAULT, PIO_BCAST_ERROR, NULL);
+    if (ierr != 0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Failed to initialize ParallelIO");
+    }
+
+    int
+      base      = m_config->get_number("output.pio.base"),
+      stride    = m_config->get_number("output.pio.stride"),
+      n_writers = m_config->get_number("output.pio.n_writers");
+
+    ierr = PIOc_Init_Intracomm(m_ctx->com(), n_writers, stride, base, PIO_REARR_BOX,
+                               &m_pio_iosysid);
+    if (ierr != 0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Failed to initialize ParallelIO");
+    }
+  }
+#endif
 
   m_extra_bounds.set_string("units", m_time->units_string());
 
@@ -150,6 +179,12 @@ void IceModel::reset_counters() {
 
 
 IceModel::~IceModel() {
+
+#if (Pism_USE_PIO==1)
+  if (PIOc_free_iosystem(m_pio_iosysid) != PIO_NOERR) {
+    m_log->message(1, "Error: failed to de-allocate a ParallelIO I/O system\n");
+  }
+#endif
 
   delete m_beddef;
 
@@ -424,7 +459,8 @@ void IceModel::step(bool do_mass_continuity,
                                              "_stressbalance_failed", "");
     File file(m_grid->com, o_file,
               string_to_backend(m_config->get_string("output.format")),
-              PISM_READWRITE_MOVE);
+              PISM_READWRITE_MOVE,
+              m_pio_iosysid);
 
     update_run_stats();
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);

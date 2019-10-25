@@ -24,7 +24,7 @@ namespace io {
 
 class ParallelIO : public NCFile {
 public:
-  ParallelIO(MPI_Comm com);
+  ParallelIO(MPI_Comm com, int iosysid);
   virtual ~ParallelIO();
 protected:
   // open/create/close
@@ -96,6 +96,8 @@ protected:
   int set_fill_impl(int fillmode, int &old_modep) const;
 
   int del_att_impl(const std::string &variable_name, const std::string &att_name) const;
+private:
+  int m_iosysid;
 };
 
 } // end of namespace io

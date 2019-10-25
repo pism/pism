@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cassert>
+
 // Why do I need this???
 #define _NETCDF
 #include <pio.h>
@@ -31,14 +33,17 @@ namespace pism {
 namespace io {
 
 static void check(const ErrorLocation &where, int return_code) {
-  if (return_code != NC_NOERR) {
-    throw RuntimeError(where, nc_strerror(return_code)); // FIXME: nc_strerror() probably is not right
+  char message[PIO_MAX_NAME + 1];
+  if (return_code != PIO_NOERR) {
+    PIOc_strerror(return_code, message);
+    throw RuntimeError(where, message);
   }
 }
 
-ParallelIO::ParallelIO(MPI_Comm com)
-  : NCFile(com) {
-  // empty
+ParallelIO::ParallelIO(MPI_Comm com, int iosysid)
+  : NCFile(com),
+    m_iosysid(iosysid) {
+  assert(iosysid != -1);
 }
 
 ParallelIO::~ParallelIO() {
@@ -46,10 +51,9 @@ ParallelIO::~ParallelIO() {
 }
 
 int ParallelIO::open_impl(const std::string &filename, IO_Mode mode) {
-  int iosysid = 0;              // FIXME
+  int open_mode = mode == PISM_READONLY ? PIO_NOWRITE : PIO_WRITE;
 
-  int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;
-  int stat = PIOc_open(iosysid, filename.c_str(), open_mode, &m_file_id);
+  int stat = PIOc_open(m_iosysid, filename.c_str(), open_mode, &m_file_id);
   check(PISM_ERROR_LOCATION, stat);
 
   return stat;
@@ -57,11 +61,22 @@ int ParallelIO::open_impl(const std::string &filename, IO_Mode mode) {
 
 int ParallelIO::create_impl(const std::string &filename) {
 
-  int iosysid = 0;              // FIXME
+  // find the best available I/O type
+  int iotype = 0;
+  for (int t : {PIO_IOTYPE_PNETCDF, PIO_IOTYPE_NETCDF4P, PIO_IOTYPE_NETCDF4C, PIO_IOTYPE_NETCDF}) {
+    if (PIOc_iotype_available(t)) {
+      iotype = t;
+      break;
+    }
+  }
 
-  // For some reason PIOc_createfile() takes a pointer to this...
-  int iotype = PIO_IOTYPE_PNETCDF;
-  int stat = PIOc_createfile(iosysid, &m_file_id, &iotype, filename.c_str(), NC_CLOBBER | NC_64BIT_DATA);
+  int mode = NC_CLOBBER;
+  if (iotype == PIO_IOTYPE_PNETCDF) {
+    mode |= NC_64BIT_DATA;
+  }
+
+  int stat = PIOc_createfile(m_iosysid, &m_file_id, &iotype, filename.c_str(),
+                             mode);
   check(PISM_ERROR_LOCATION, stat);
 
   return stat;
@@ -119,7 +134,7 @@ int ParallelIO::inq_dimlen_impl(const std::string &dimension_name, unsigned int 
 
 int ParallelIO::inq_unlimdim_impl(std::string &result) const {
   int stat, dimid;
-  char dimname[NC_MAX_NAME];
+  char dimname[PIO_MAX_NAME + 1];
 
   stat = PIOc_inq_unlimdim(m_file_id, &dimid); check(PISM_ERROR_LOCATION, stat);
 
@@ -245,8 +260,8 @@ int ParallelIO::inq_vardimid_impl(const std::string &variable_name, std::vector<
   stat = PIOc_inq_vardimid(m_file_id, varid, dimids.data()); check(PISM_ERROR_LOCATION, stat);
 
   for (int k = 0; k < ndims; ++k) {
-    char name[NC_MAX_NAME];
-    memset(name, 0, NC_MAX_NAME);
+    char name[PIO_MAX_NAME];
+    memset(name, 0, PIO_MAX_NAME);
 
     stat = PIOc_inq_dimname(m_file_id, dimids[k], name); check(PISM_ERROR_LOCATION, stat);
 
@@ -260,7 +275,7 @@ int ParallelIO::inq_varnatts_impl(const std::string &variable_name, int &result)
   int stat, varid = -1;
 
   if (variable_name == "PISM_GLOBAL") {
-    varid = NC_GLOBAL;
+    varid = PIO_GLOBAL;
   } else {
     stat = PIOc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
   }
@@ -288,8 +303,8 @@ int ParallelIO::inq_varid_impl(const std::string &variable_name, bool &exists) c
 
 int ParallelIO::inq_varname_impl(unsigned int j, std::string &result) const {
   int stat;
-  char varname[NC_MAX_NAME];
-  memset(varname, 0, NC_MAX_NAME);
+  char varname[PIO_MAX_NAME];
+  memset(varname, 0, PIO_MAX_NAME);
 
   stat = PIOc_inq_varname(m_file_id, j, varname); check(PISM_ERROR_LOCATION, stat);
 
@@ -416,8 +431,8 @@ int ParallelIO::put_att_text_impl(const std::string &variable_name,
 int ParallelIO::inq_attname_impl(const std::string &variable_name,
                                  unsigned int n, std::string &result) const {
   int stat;
-  char name[NC_MAX_NAME];
-  memset(name, 0, NC_MAX_NAME);
+  char name[PIO_MAX_NAME];
+  memset(name, 0, PIO_MAX_NAME);
 
   int varid = -1;
 
@@ -464,7 +479,7 @@ int ParallelIO::inq_atttype_impl(const std::string &variable_name,
 // misc
 int ParallelIO::set_fill_impl(int fillmode, int &old_modep) const {
 
-  int stat = ncmpi_set_fill(m_file_id, fillmode, &old_modep);
+  int stat = PIOc_set_fill(m_file_id, fillmode, &old_modep);
   check(PISM_ERROR_LOCATION, stat);
 
   return stat;

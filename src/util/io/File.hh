@@ -50,7 +50,8 @@ struct VariableLookupData {
 class File
 {
 public:
-  File(MPI_Comm com, const std::string &filename, IOBackend backend, IO_Mode mode);
+  File(MPI_Comm com, const std::string &filename, IOBackend backend, IO_Mode mode,
+       int iosysid = -1);
   ~File();
 
   IOBackend backend() const;

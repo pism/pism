@@ -226,6 +226,9 @@ protected:
   virtual void write_diagnostics(const File &file,
                                  const std::set<std::string> &variables);
 
+  //! IO System ID used by the ParallelIO library.
+  int m_pio_iosysid;
+
   //! Computational grid
   const IceGrid::Ptr m_grid;
   //! Configuration flags and parameters

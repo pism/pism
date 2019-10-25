@@ -133,7 +133,8 @@ void IceModel::save_results() {
     File file(m_grid->com,
               filename,
               string_to_backend(m_config->get_string("output.format")),
-              PISM_READWRITE_MOVE);
+              PISM_READWRITE_MOVE,
+              m_pio_iosysid);
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
