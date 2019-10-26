@@ -107,6 +107,20 @@ int NC3File::close_impl() {
 }
 
 
+int NC3File::sync_impl() const {
+  int stat = 0;
+
+  if (m_rank == 0) {
+    stat = nc_sync(m_file_id);
+  }
+
+  MPI_Barrier(m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
+
+  return stat;
+}
+
+
 //! \brief Exit define mode.
 int NC3File::enddef_impl() const {
   int stat = 0;

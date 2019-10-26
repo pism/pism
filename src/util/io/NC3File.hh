@@ -39,6 +39,8 @@ protected:
 
   int create_impl(const std::string &filename);
 
+  int sync_impl() const;
+
   int close_impl();
 
   // redef/enddef

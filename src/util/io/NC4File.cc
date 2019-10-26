@@ -53,11 +53,16 @@ NC4File::~NC4File() {
 
 // open/create/close
 
+int NC4File::sync_impl() const {
+
+  int stat = nc_sync(m_file_id); check(PISM_ERROR_LOCATION, stat);
+
+  return stat;
+}
 
 int NC4File::close_impl() {
-  int stat;
 
-  stat = nc_close(m_file_id); check(PISM_ERROR_LOCATION, stat);
+  int stat = nc_close(m_file_id); check(PISM_ERROR_LOCATION, stat);
 
   m_file_id = -1;
 

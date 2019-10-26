@@ -70,6 +70,13 @@ int PNCFile::create_impl(const std::string &fname) {
   return stat;
 }
 
+int PNCFile::sync_impl() const {
+
+  int stat = ncmpi_sync(m_file_id); check(PISM_ERROR_LOCATION, stat);
+
+  return stat;
+}
+
 
 int PNCFile::close_impl() {
   int stat = ncmpi_close(m_file_id); check(PISM_ERROR_LOCATION, stat);

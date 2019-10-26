@@ -82,6 +82,13 @@ int ParallelIO::create_impl(const std::string &filename) {
   return stat;
 }
 
+int ParallelIO::sync_impl() const {
+
+  int stat = PIOc_sync(m_file_id); check(PISM_ERROR_LOCATION, stat);
+
+  return stat;
+}
+
 int ParallelIO::close_impl() {
   int stat = PIOc_closefile(m_file_id); check(PISM_ERROR_LOCATION, stat);
   return 0;

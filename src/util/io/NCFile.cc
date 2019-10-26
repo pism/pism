@@ -72,6 +72,10 @@ void NCFile::create(const std::string &filename) {
   m_define_mode = true;
 }
 
+int NCFile::sync() const {
+  return this->sync_impl();
+}
+
 void NCFile::close() {
   int stat = this->close_impl(); check(PISM_ERROR_LOCATION, stat);
   m_filename.clear();

@@ -30,6 +30,7 @@ protected:
   // open/create/close
   int open_impl(const std::string &filename, IO_Mode mode);
   int create_impl(const std::string &filename);
+  int sync_impl() const;
   int close_impl();
 
   // redef/enddef

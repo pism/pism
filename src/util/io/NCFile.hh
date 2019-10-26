@@ -64,6 +64,8 @@ public:
 
   void create(const std::string &filename);
 
+  int sync() const;
+
   void close();
 
   // redef/enddef
@@ -142,6 +144,7 @@ protected:
   // open/create/close
   virtual int open_impl(const std::string &filename, IO_Mode mode) = 0;
   virtual int create_impl(const std::string &filename) = 0;
+  virtual int sync_impl() const = 0;
   virtual int close_impl() = 0;
 
   // redef/enddef

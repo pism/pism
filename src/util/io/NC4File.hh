@@ -33,6 +33,9 @@ public:
 protected:
   // implementations:
   // open/create/close
+
+  virtual int sync_impl() const;
+
   virtual int close_impl();
 
   // redef/enddef
