@@ -34,6 +34,13 @@
 #include "pism/util/Vars.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/projection.hh"
+#include "pism/pism_config.hh"
+
+#if (Pism_USE_PIO==1)
+// Why do I need this???
+#define _NETCDF
+#include <pio.h>
+#endif
 
 namespace pism {
 
@@ -108,6 +115,9 @@ struct IceGrid::Impl {
 
   //! GSL binary search accelerator used to speed up kBelowHeight().
   gsl_interp_accel *bsearch_accel;
+
+  //! ParallelIO I/O decompositions.
+  std::map<int, int> io_decompositions;
 };
 
 IceGrid::Impl::Impl(Context::ConstPtr context)
@@ -340,6 +350,16 @@ IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
 
 IceGrid::~IceGrid() {
   gsl_interp_accel_free(m_impl->bsearch_accel);
+
+#if (Pism_USE_PIO==1)
+  for (auto p : m_impl->io_decompositions) {
+    int ierr = PIOc_freedecomp(m_impl->ctx->pio_iosys_id(), p.second);
+    if (ierr != PIO_NOERR) {
+      m_impl->ctx->log()->message(1, "Failed to de-allocate a ParallelIO decomposition");
+    }
+  }
+#endif
+
   delete m_impl;
 }
 
@@ -1410,6 +1430,52 @@ void IceGrid::set_mapping_info(const MappingInfo &info) {
   // FIXME: re-compute lat/lon coordinates
 }
 
+#if (Pism_USE_PIO==1)
+static int pio_decomp_hash(int dof, int output_datatype) {
+  if (dof < 0 or dof > IceGrid::max_dm_dof) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Invalid dof argument: %d", dof);
+  }
 
+  // pio.h includes netcdf.h and netcdf.h defines NC_FIRSTUSERTYPEID which exceeds
+  // all constants corresponding to built-in types
+  return NC_FIRSTUSERTYPEID * dof + output_datatype;
+}
+#endif
+
+int IceGrid::pio_io_decomposition(int dof, int output_datatype) const {
+  int result = 0;
+#if (Pism_USE_PIO==1)
+  {
+    int hash = pio_decomp_hash(dof, output_datatype);
+    result = m_impl->io_decompositions[hash];
+
+    if (result == 0) {
+
+      int ndims = dof < 2 ? 2 : 3;
+
+      std::vector<int> gdimlen;
+      if (ndims == 2) {
+        gdimlen = {(int)My(), (int)Mx()};
+      } else {
+        gdimlen = {(int)My(), (int)Mx(), dof};
+      }
+
+      // the last element is not used if ndims == 2
+      std::vector<long int> start{ys(), xs(), 0}, count{ym(), xm(), dof};
+
+      int stat = PIOc_InitDecomp_bc(m_impl->ctx->pio_iosys_id(),
+                                    output_datatype, ndims, gdimlen.data(),
+                                    start.data(), count.data(), &result);
+      m_impl->io_decompositions[hash] = result;
+      if (stat != PIO_NOERR) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "Failed to create a ParallelIO I/O decomposition");
+      }
+    }
+  }
+#endif
+  return result;
+}
 
 } // end of namespace pism

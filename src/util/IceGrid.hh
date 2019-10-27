@@ -295,6 +295,8 @@ public:
   Vars& variables();
   const Vars& variables() const;
 
+  int pio_io_decomposition(int dof, int output_datatype) const;
+
   //! Maximum number of degrees of freedom supported by PISM.
   /*!
    * This is also the maximum number of records an IceModelVec2T can hold.
