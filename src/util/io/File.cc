@@ -230,6 +230,15 @@ void File::close() {
   }
 }
 
+void File::sync() const {
+  try {
+    m_impl->nc->sync();
+  } catch (RuntimeError &e) {
+    e.add_context("synchronizing \"" + filename() + "\"");
+    throw;
+  }
+}
+
 void File::redef() const {
   try {
     m_impl->nc->redef();

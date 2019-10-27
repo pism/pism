@@ -64,6 +64,8 @@ public:
 
   void enddef() const;
 
+  void sync() const;
+
   std::string filename() const;
 
   unsigned int nrecords() const;
