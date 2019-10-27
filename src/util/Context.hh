@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -72,6 +72,8 @@ public:
 
   ConfigPtr config();
   TimePtr time();
+
+  int pio_iosys_id() const;
 private:
   class Impl;
   Impl *m_impl;

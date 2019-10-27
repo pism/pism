@@ -134,7 +134,7 @@ void IceModel::save_results() {
               filename,
               string_to_backend(m_config->get_string("output.format")),
               PISM_READWRITE_MOVE,
-              m_pio_iosysid);
+              m_ctx->pio_iosys_id());
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
