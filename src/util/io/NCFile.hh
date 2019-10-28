@@ -29,6 +29,8 @@
 
 namespace pism {
 
+class IceGrid;
+
 //! Input and output code (NetCDF wrappers, etc)
 namespace io {
 
@@ -97,6 +99,12 @@ public:
                        const std::vector<unsigned int> &start,
                        const std::vector<unsigned int> &count,
                        const double *op) const;
+
+  void write_darray(const std::string &variable_name,
+                    const IceGrid &grid,
+                    unsigned int z_count,
+                    unsigned int record,
+                    const double *input);
 
   void get_varm_double(const std::string &variable_name,
                        const std::vector<unsigned int> &start,
@@ -177,6 +185,12 @@ protected:
                                    const std::vector<unsigned int> &start,
                                    const std::vector<unsigned int> &count,
                                    const double *op) const = 0;
+
+  virtual void write_darray_impl(const std::string &variable_name,
+                                 const IceGrid &grid,
+                                 unsigned int z_count,
+                                 unsigned int record,
+                                 const double *input);
 
   virtual int get_varm_double_impl(const std::string &variable_name,
                                    const std::vector<unsigned int> &start,

@@ -450,7 +450,7 @@ unsigned int File::dimension_length(const std::string &name) const {
  * The "type" is one of X_AXIS, Y_AXIS, Z_AXIS, T_AXIS.
  */
 AxisType File::dimension_type(const std::string &name,
-                          units::System::Ptr unit_system) const {
+                              units::System::Ptr unit_system) const {
   try {
     if (not find_variable(name)) {
       throw RuntimeError(PISM_ERROR_LOCATION, "coordinate variable " + name + " is missing");
@@ -725,8 +725,8 @@ void File::read_variable(const std::string &variable_name,
 
 
 void File::write_variable(const std::string &variable_name,
-                           const std::vector<unsigned int> &start,
-                           const std::vector<unsigned int> &count,
+                          const std::vector<unsigned int> &start,
+                          const std::vector<unsigned int> &count,
                           const double *op) const {
   try {
     m_impl->nc->put_vara_double(variable_name, start, count, op);
@@ -735,6 +735,24 @@ void File::write_variable(const std::string &variable_name,
     throw;
   }
 }
+
+
+void File::write_distributed_array(const std::string &variable_name,
+                                   const IceGrid &grid,
+                                   unsigned int z_count,
+                                   const double *input) const {
+  try {
+    unsigned int t_length = nrecords();
+    assert(t_length > 0);
+
+    m_impl->nc->write_darray(variable_name, grid, z_count, t_length - 1, input);
+  } catch (RuntimeError &e) {
+    e.add_context("writing distributed array '%s' to '%s'",
+                  variable_name.c_str(), filename().c_str());
+    throw;
+  }
+}
+
 
 void File::read_variable_transposed(const std::string &variable_name,
                                     const std::vector<unsigned int> &start,

@@ -21,6 +21,7 @@
 #include <cstdio>               // fprintf, stderr, rename, remove
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/IceGrid.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
@@ -141,6 +142,56 @@ void NCFile::put_vara_double(const std::string &variable_name,
   int stat = this->put_vara_double_impl(variable_name, start, count, op);
   check(PISM_ERROR_LOCATION, stat);
 }
+
+
+void NCFile::write_darray(const std::string &variable_name,
+                          const IceGrid &grid,
+                          unsigned int z_count,
+                          unsigned int record,
+                          const double *input) {
+  enddef();
+  this->write_darray_impl(variable_name, grid, z_count, record, input);
+}
+
+/*!
+ * The default implementation computes start and count and calls put_vara_double()
+ */
+void NCFile::write_darray_impl(const std::string &variable_name,
+                               const IceGrid &grid,
+                               unsigned int z_count,
+                               unsigned int record,
+                               const double *input) {
+  std::vector<std::string> dims;
+  this->inq_vardimid(variable_name, dims);
+
+  unsigned int ndims = dims.size();
+
+  bool time_dependent = ((z_count  > 1 and ndims == 4) or
+                         (z_count == 1 and ndims == 3));
+
+  std::vector<unsigned int> start, count;
+
+  // time
+  if (time_dependent) {
+    start.push_back(record);
+    count.push_back(1);
+  }
+
+  // y
+  start.push_back(grid.ys());
+  count.push_back(grid.ym());
+
+  // x
+  start.push_back(grid.xs());
+  count.push_back(grid.xm());
+
+  // z (these are not used when writing 2D fields)
+  start.push_back(0);
+  count.push_back(z_count);
+
+  this->put_vara_double(variable_name, start, count, input);
+}
+
 
 void NCFile::get_varm_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,

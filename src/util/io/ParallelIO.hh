@@ -67,6 +67,12 @@ protected:
                            const std::vector<unsigned int> &count,
                            const double *op) const;
 
+  void write_darray_impl(const std::string &variable_name,
+                         const IceGrid &grid,
+                         unsigned int z_count,
+                         unsigned int record,
+                         const double *input);
+
   int get_varm_double_impl(const std::string &variable_name,
                            const std::vector<unsigned int> &start,
                            const std::vector<unsigned int> &count,

@@ -27,6 +27,7 @@
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/pism_type_conversion.hh"
+#include "pism/util/IceGrid.hh"
 #include "File.hh"
 
 namespace pism {
@@ -252,6 +253,60 @@ int ParallelIO::put_vara_double_impl(const std::string &variable_name,
   return stat;
 
 }
+
+template<typename T>
+std::vector<T> convert_data(const double *input, size_t length) {
+  std::vector<T> buffer(length);
+  for (size_t k = 0; k < length; ++k) {
+    buffer[k] = static_cast<T>(input[k]);
+  }
+  return buffer;
+}
+
+void ParallelIO::write_darray_impl(const std::string &variable_name,
+                                   const IceGrid &grid,
+                                   unsigned int z_count,
+                                   unsigned int record,
+                                   const double *input) {
+
+  int stat = 0, varid;
+
+  stat = PIOc_inq_varid(m_file_id, variable_name.c_str(), &varid);
+  check(PISM_ERROR_LOCATION, stat);
+
+  int type = 0;
+  stat = PIOc_inq_vartype(m_file_id, varid, &type);
+
+  int decompid = grid.pio_io_decomposition(z_count, type);
+
+  size_t length = grid.xm() * grid.ym() * z_count;
+
+  switch (type) {
+  case PIO_DOUBLE:
+    // no conversion necessary
+    stat = PIOc_put_vard_double(m_file_id, varid, decompid, (PIO_Offset)record, input);
+    check(PISM_ERROR_LOCATION, stat);
+    break;
+  case PIO_FLOAT:
+    {
+      auto buffer = convert_data<float>(input, length);
+      stat = PIOc_put_vard_float(m_file_id, varid, decompid, (PIO_Offset)record, buffer.data());
+      check(PISM_ERROR_LOCATION, stat);
+      break;
+    }
+  case PIO_INT:
+    {
+      auto buffer = convert_data<int>(input, length);
+      stat = PIOc_put_vard_int(m_file_id, varid, decompid, (PIO_Offset)record, buffer.data());
+      check(PISM_ERROR_LOCATION, stat);
+      break;
+    }
+  default:
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "ParallelIO: type conversion is not supported");
+  }
+}
+
 
 int ParallelIO::get_varm_double_impl(const std::string &variable_name,
                                      const std::vector<unsigned int> &start,

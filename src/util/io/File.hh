@@ -30,6 +30,8 @@ namespace pism {
 
 enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
+class IceGrid;
+
 /*!
  * Convert a string to PISM's backend type.
  */
@@ -117,6 +119,11 @@ public:
                       const std::vector<unsigned int> &start,
                       const std::vector<unsigned int> &count,
                       const double *op) const;
+
+  void write_distributed_array(const std::string &variable_name,
+                               const IceGrid &grid,
+                               unsigned int z_count,
+                               const double *input) const;
 
   // attributes
 

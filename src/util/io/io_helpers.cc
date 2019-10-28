@@ -438,41 +438,6 @@ static void read_distributed_array(const File &file, const IceGrid &grid,
   }
 }
 
-//! \brief Write an array distributed according to the grid.
-/*!
- * This method always writes to the last record in the file.
- */
-static void write_distributed_array(const File &file, const IceGrid &grid,
-                                    const std::string &var_name,
-                                    unsigned int z_count, const double *input) {
-  try {
-    // switch to data mode and perform all delayed write operations
-    file.enddef();
-
-    unsigned int t_length = file.dimension_length(grid.ctx()->config()->get_string("time.dimension_name"));
-
-    assert(t_length >= 1);
-
-    std::vector<unsigned int> start, count, imap;
-    const unsigned int t_count = 1;
-    compute_start_and_count(file,
-                            grid.ctx()->unit_system(),
-                            var_name,
-                            t_length - 1, t_count,
-                            grid.xs(), grid.xm(),
-                            grid.ys(), grid.ym(),
-                            0, z_count,
-                            start, count, imap);
-
-    file.write_variable(var_name, start, count, input);
-
-  } catch (RuntimeError &e) {
-    e.add_context("writing variable '%s' to '%s' in write_distributed_array()",
-                  var_name.c_str(), file.filename().c_str());
-    throw;
-  }
-}
-
 static void regrid_vec_generic(const File &file, const IceGrid &grid,
                                const std::string &variable_name,
                                const std::vector<double> &zlevels_out,
@@ -776,9 +741,9 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
                      units,
                      glaciological_units).convert_doubles(&tmp[0], tmp.size());
 
-    write_distributed_array(file, grid, name, nlevels, &tmp[0]);
+    file.write_distributed_array(name, grid, nlevels, &tmp[0]);
   } else {
-    write_distributed_array(file, grid, name, nlevels, input);
+    file.write_distributed_array(name, grid, nlevels, input);
   }
 }
 
