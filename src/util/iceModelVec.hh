@@ -167,7 +167,7 @@ T interpolate(const F &field, double x, double y) {
 
   If you need to "prepare" a file, do:
   \code
-  File file(grid.com, grid.config.get_string("output.format"));
+  File file(grid.com, PISM_NETCDF3);
   io::prepare_for_output(file, *grid.ctx());
   \endcode
 

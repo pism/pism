@@ -65,7 +65,8 @@ void IceModel::write_backup() {
     File file(m_grid->com,
               m_backup_filename,
               string_to_backend(m_config->get_string("output.format")),
-              PISM_READWRITE_MOVE);
+              PISM_READWRITE_MOVE,
+              m_ctx->pio_iosys_id());
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
     write_run_stats(file);

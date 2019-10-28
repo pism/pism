@@ -61,29 +61,29 @@ Config::~Config() {
   delete m_impl;
 }
 
-void Config::read(MPI_Comm com, const std::string &file) {
+void Config::read(MPI_Comm com, const std::string &filename) {
 
-  File nc(com, file, PISM_NETCDF3, PISM_READONLY); // OK to use netcdf3
-  this->read(nc);
+  File file(com, filename, PISM_NETCDF3, PISM_READONLY); // OK to use netcdf3
+  this->read(file);
 }
 
-void Config::read(const File &nc) {
-  this->read_impl(nc);
+void Config::read(const File &file) {
+  this->read_impl(file);
 
-  m_impl->filename = nc.filename();
+  m_impl->filename = file.filename();
 }
 
-void Config::write(const File &nc) const {
-  this->write_impl(nc);
+void Config::write(const File &file) const {
+  this->write_impl(file);
 }
 
-void Config::write(MPI_Comm com, const std::string &file, bool append) const {
+void Config::write(MPI_Comm com, const std::string &filename, bool append) const {
 
   IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 
-  File nc(com, file, PISM_NETCDF3, mode); // OK to use netcdf3
+  File file(com, filename, PISM_NETCDF3, mode); // OK to use netcdf3
 
-  this->write(nc);
+  this->write(file);
 }
 
 //! \brief Returns the name of the file used to initialize the database.

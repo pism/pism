@@ -86,7 +86,8 @@ void ForceThickness::init_impl(const Geometry &geometry) {
                  m_ice_free_thickness_threshold);
 
   // check of the input file is really there and regrid the target thickness
-  File file(m_grid->com, input_file, PISM_GUESS, PISM_READONLY);
+  File file(m_grid->com, input_file, PISM_GUESS, PISM_READONLY,
+            m_grid->ctx()->pio_iosys_id());
 
   m_log->message(2,
                  "    reading target thickness 'thk' from %s ...\n"

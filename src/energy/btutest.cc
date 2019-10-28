@@ -221,7 +221,8 @@ int main(int argc, char *argv[]) {
     File file(grid->com,
               outname,
               string_to_backend(config->get_string("output.format")),
-              PISM_READWRITE_MOVE);
+              PISM_READWRITE_MOVE,
+              ctx->pio_iosys_id());
 
     io::define_time(file, *ctx);
     io::append_time(file, *ctx->config(), ctx->time()->current());

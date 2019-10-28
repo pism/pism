@@ -1247,8 +1247,8 @@ GridParameters::GridParameters(Context::ConstPtr ctx,
                                const std::string &filename,
                                const std::string &variable_name,
                                GridRegistration r) {
-  File nc(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
-  init_from_file(ctx, nc, variable_name, r);
+  File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
+  init_from_file(ctx, file, variable_name, r);
 }
 
 
@@ -1367,19 +1367,19 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
                                       "thk", "topg"};
     bool grid_info_found = false;
 
-    File nc(ctx->com(), input_file, PISM_NETCDF3, PISM_READONLY);
+    File file(ctx->com(), input_file, PISM_NETCDF3, PISM_READONLY);
 
     for (auto name : names) {
 
-      grid_info_found = nc.find_variable(name);
+      grid_info_found = file.find_variable(name);
       if (not grid_info_found) {
         // Failed to find using a short name. Try using name as a
         // standard name...
-        grid_info_found = nc.find_variable("unlikely_name", name).exists;
+        grid_info_found = file.find_variable("unlikely_name", name).exists;
       }
 
       if (grid_info_found) {
-        input_grid = GridParameters(ctx, nc, name, r);
+        input_grid = GridParameters(ctx, file, name, r);
         break;
       }
     }

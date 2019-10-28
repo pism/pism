@@ -653,7 +653,8 @@ void IceModel::step(bool do_mass_continuity,
     File file(m_grid->com,
               o_file,
               string_to_backend(m_config->get_string("output.format")),
-              PISM_READWRITE_MOVE);
+              PISM_READWRITE_MOVE,
+              m_ctx->pio_iosys_id());
 
     update_run_stats();
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);

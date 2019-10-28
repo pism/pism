@@ -117,7 +117,8 @@ void IceRegionalModel::model_state_setup() {
     std::unique_ptr<File> input_file;
 
     if (use_input_file) {
-      input_file.reset(new File(m_grid->com, input.filename, PISM_GUESS, PISM_READONLY));
+      input_file.reset(new File(m_grid->com, input.filename, PISM_GUESS, PISM_READONLY,
+                                m_grid->ctx()->pio_iosys_id()));
     }
 
     switch (input.type) {

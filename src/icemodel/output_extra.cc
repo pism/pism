@@ -147,10 +147,7 @@ void IceModel::init_extras() {
   }
 
   if (append) {
-    File file(m_grid->com,
-              m_extra_filename,
-              string_to_backend(m_config->get_string("output.format")),
-              PISM_READONLY);
+    File file(m_grid->com, m_extra_filename, PISM_NETCDF3, PISM_READONLY);
 
     std::string time_name = m_config->get_string("time.dimension_name");
     if (file.find_variable(time_name)) {
@@ -301,7 +298,8 @@ void IceModel::write_extras() {
       m_extra_file.reset(new File(m_grid->com,
                                   filename,
                                   string_to_backend(m_config->get_string("output.format")),
-                                  mode));
+                                  mode,
+                                  m_ctx->pio_iosys_id()));
     }
 
     std::string time_name = m_config->get_string("time.dimension_name");

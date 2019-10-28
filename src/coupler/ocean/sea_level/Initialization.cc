@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -48,7 +48,8 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
     m_log->message(2, "* Reading effective sea level forcing from '%s' for re-starting...\n",
                    opts.filename.c_str());
 
-    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY,
+              m_grid->ctx()->pio_iosys_id());
     const unsigned int time_length = file.nrecords();
     const unsigned int last_record = time_length > 0 ? time_length - 1 : 0;
 

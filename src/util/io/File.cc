@@ -18,7 +18,6 @@
 
 #include <cassert>
 #include <cstdio>
-#include <deque>
 #include <memory>
 using std::shared_ptr;
 
@@ -144,6 +143,10 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
       backend == PISM_PIO_NETCDF4P or
       backend == PISM_PIO_NETCDF4C or
       backend == PISM_PIO_NETCDF) {
+    if (iosysid == -1) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "To use ParallelIO you have to pass iosysid to File");
+    }
     return io::NCFile::Ptr(new io::ParallelIO(com, iosysid, backend));
   }
 #endif
@@ -161,6 +164,7 @@ File::File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mod
   }
 
   if (backend == PISM_GUESS) {
+    assert(iosysid != -1);
     m_impl->backend = choose_backend(com, filename);
   } else {
     m_impl->backend = backend;

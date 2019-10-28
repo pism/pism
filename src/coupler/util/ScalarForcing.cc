@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -58,11 +58,11 @@ void ScalarForcing::init() {
 
   Config::ConstPtr config = m_ctx->config();
 
-  auto   file           = config->get_string(m_prefix + ".file");
+  auto   filename       = config->get_string(m_prefix + ".file");
   int    period         = config->get_number(m_prefix + ".period");
   double reference_year = config->get_number(m_prefix + ".reference_year");
 
-  if (file.empty()) {
+  if (filename.empty()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "%s.file is required", m_prefix.c_str());
   }
@@ -80,11 +80,11 @@ void ScalarForcing::init() {
 
   m_ctx->log()->message(2,
                         "  reading %s data from forcing file %s...\n",
-                        m_data->name().c_str(), file.c_str());
+                        m_data->name().c_str(), filename.c_str());
 
-  File nc(m_ctx->com(), file, PISM_NETCDF3, PISM_READONLY);
+  File file(m_ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
   {
-    m_data->read(nc, *m_ctx->time(), *m_ctx->log());
+    m_data->read(file, *m_ctx->time(), *m_ctx->log());
   }
 }
 

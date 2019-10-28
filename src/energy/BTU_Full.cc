@@ -100,7 +100,8 @@ void BTU_Full::init_impl(const InputOptions &opts) {
     const int temp_revision = m_temp->state_counter();
 
     if (opts.type == INIT_RESTART) {
-      File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY,
+                      m_grid->ctx()->pio_iosys_id());
 
       if (input_file.find_variable("litho_temp")) {
         m_temp->read(input_file, opts.record);

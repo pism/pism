@@ -156,7 +156,8 @@ void IceModel::write_snapshot() {
     File file(m_grid->com,
               filename,
               string_to_backend(m_config->get_string("output.format")),
-              mode);
+              mode,
+              m_ctx->pio_iosys_id());
 
     if (not m_snapshots_file_is_ready) {
       write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);

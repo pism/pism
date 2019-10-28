@@ -49,7 +49,7 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
   if (opts.type == INIT_RESTART) {
     // If we're initializing from a file we need to get the number of bedrock
     // levels and the depth of the bed thermal layer from it:
-    File input_file(ctx->com(), opts.filename, PISM_GUESS, PISM_READONLY);
+    File input_file(ctx->com(), opts.filename, PISM_NETCDF3, PISM_READONLY);
 
     if (input_file.find_variable("litho_temp")) {
       grid_info info(input_file, "litho_temp", ctx->unit_system(),

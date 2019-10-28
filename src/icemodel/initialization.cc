@@ -132,7 +132,8 @@ void IceModel::model_state_setup() {
   std::unique_ptr<File> input_file;
 
   if (use_input_file) {
-    input_file.reset(new File(m_grid->com, input.filename, PISM_GUESS, PISM_READONLY));
+    input_file.reset(new File(m_grid->com, input.filename, PISM_GUESS, PISM_READONLY,
+                              m_grid->ctx()->pio_iosys_id()));
   }
 
   // Initialize 2D fields owned by IceModel (ice geometry, etc)
@@ -443,7 +444,8 @@ void IceModel::regrid() {
   m_log->message(2, "regridding from file %s ...\n", filename.c_str());
 
   {
-    File regrid_file(m_grid->com, filename, PISM_GUESS, PISM_READONLY);
+    File regrid_file(m_grid->com, filename, PISM_GUESS, PISM_READONLY,
+                     m_grid->ctx()->pio_iosys_id());
     for (auto v : m_model_state) {
       if (regrid_vars.find(v->get_name()) != regrid_vars.end()) {
         v->regrid(regrid_file, CRITICAL);
@@ -709,9 +711,10 @@ void IceModel::misc_setup() {
 
   if (not (opts.type == INIT_OTHER)) {
     // initializing from a file
-    File nc(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY,
+              m_grid->ctx()->pio_iosys_id());
 
-    std::string source = nc.read_text_attribute("PISM_GLOBAL", "source");
+    std::string source = file.read_text_attribute("PISM_GLOBAL", "source");
 
     if (opts.type == INIT_RESTART) {
       // If it's missing, print a warning
@@ -801,7 +804,8 @@ void IceModel::misc_setup() {
 
     // read in the state (accumulators) if we are re-starting a run
     if (opts.type == INIT_RESTART) {
-      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY,
+                m_grid->ctx()->pio_iosys_id());
       for (auto d : m_diagnostics) {
         d.second->init(file, opts.record);
       }
@@ -818,7 +822,8 @@ void IceModel::misc_setup() {
       m_fracture->initialize();
     } else {
       // initializing from a file
-      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY,
+                m_grid->ctx()->pio_iosys_id());
 
       if (opts.type == INIT_RESTART) {
         m_fracture->restart(file, opts.record);

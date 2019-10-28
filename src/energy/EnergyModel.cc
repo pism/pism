@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -239,7 +239,8 @@ void EnergyModel::regrid_enthalpy() {
   std::string enthalpy_name = m_ice_enthalpy.metadata().get_name();
 
   if (regrid_vars.empty() or member(enthalpy_name, regrid_vars)) {
-    File regrid_file(m_grid->com, regrid_filename, PISM_GUESS, PISM_READONLY);
+    File regrid_file(m_grid->com, regrid_filename, PISM_GUESS, PISM_READONLY,
+                     m_grid->ctx()->pio_iosys_id());
     init_enthalpy(regrid_file, true, 0);
   }
 }

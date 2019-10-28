@@ -245,7 +245,8 @@ void IBIceModel::prepare_nc(std::string const &fname, std::unique_ptr<File> &nc)
   nc.reset(new File(m_grid->com,
                     fname,
                     string_to_backend(m_config->get_string("output.format")),
-                    PISM_READWRITE_MOVE));
+                    PISM_READWRITE_MOVE,
+                    m_grid->ctx()->pio_iosys_id()));
 
   io::define_time(*nc, m_grid->ctx()->config()->get_string("time.dimension_name"), m_grid->ctx()->time()->calendar(),
                   m_grid->ctx()->time()->CF_units_string(), m_grid->ctx()->unit_system());

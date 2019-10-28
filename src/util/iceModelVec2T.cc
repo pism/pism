@@ -176,8 +176,9 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
-  File nc(m_grid->com, m_filename, PISM_GUESS, PISM_READONLY);
-  auto var = nc.find_variable(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"));
+  File file(m_grid->com, m_filename, PISM_GUESS, PISM_READONLY,
+            m_grid->ctx()->pio_iosys_id());
+  auto var = file.find_variable(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"));
   if (not var.exists) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "can't find %s (%s) in %s.",
                                   m_metadata[0].get_string("long_name").c_str(),
@@ -186,7 +187,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   }
 
   auto time_name = io::time_dimension(m_grid->ctx()->unit_system(),
-                                      nc, var.name);
+                                      file, var.name);
 
   if (not time_name.empty()) {
     // we're found the time dimension
@@ -195,10 +196,10 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
     auto time_units = m_grid->ctx()->time()->units_string();
     time_dimension.set_string("units", time_units);
 
-    io::read_timeseries(nc, time_dimension,
+    io::read_timeseries(file, time_dimension,
                         *m_grid->ctx()->time(), log, m_time);
 
-    std::string bounds_name = nc.read_text_attribute(time_name, "bounds");
+    std::string bounds_name = file.read_text_attribute(time_name, "bounds");
 
     if (m_time.size() > 1) {
 
@@ -216,7 +217,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
         TimeBoundsMetadata tb(bounds_name, time_name, m_grid->ctx()->unit_system());
         tb.set_string("units", time_units);
 
-        io::read_time_bounds(nc, tb, *m_grid->ctx()->time(),
+        io::read_time_bounds(file, tb, *m_grid->ctx()->time(),
                              log, m_time_bounds);
 
         // time bounds data overrides the time variable: we make t[j] be the
@@ -390,14 +391,15 @@ void IceModelVec2T::update(unsigned int start) {
     m_report_range = true;
   }
 
-  File nc(m_grid->com, m_filename, PISM_GUESS, PISM_READONLY);
+  File file(m_grid->com, m_filename, PISM_GUESS, PISM_READONLY,
+            m_grid->ctx()->pio_iosys_id());
 
   const bool allow_extrapolation = m_grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 
   for (unsigned int j = 0; j < missing; ++j) {
     {
       petsc::VecArray tmp_array(m_v);
-      io::regrid_spatial_variable(m_metadata[0], *m_grid, nc, start + j, CRITICAL,
+      io::regrid_spatial_variable(m_metadata[0], *m_grid, file, start + j, CRITICAL,
                                   m_report_range, allow_extrapolation,
                                   0.0, m_interpolation_type, tmp_array.get());
     }
