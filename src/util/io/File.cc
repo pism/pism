@@ -53,11 +53,11 @@ namespace pism {
 
 struct File::Impl {
   MPI_Comm com;
-  IOBackend backend;
+  IO_Backend backend;
   io::NCFile::Ptr nc;
 };
 
-IOBackend string_to_backend(const std::string &backend) {
+IO_Backend string_to_backend(const std::string &backend) {
   if (backend == "netcdf3") {
     return PISM_NETCDF3;
   }
@@ -67,15 +67,24 @@ IOBackend string_to_backend(const std::string &backend) {
   if (backend == "pnetcdf") {
     return PISM_PNETCDF;
   }
-  if (backend == "pio") {
-    return PISM_PIO;
+  if (backend == "pio_pnetcdf") {
+    return PISM_PIO_PNETCDF;
+  }
+  if (backend == "pio_netcdf") {
+    return PISM_PIO_NETCDF;
+  }
+  if (backend == "pio_netcdf4c") {
+    return PISM_PIO_NETCDF4C;
+  }
+  if (backend == "pio_netcdf4p") {
+    return PISM_PIO_NETCDF4P;
   }
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "unknown or unsupported I/O backend: %s", backend.c_str());
 }
 
 // Chooses the best available I/O backend for reading from 'filename'.
-static IOBackend choose_backend(MPI_Comm com, const std::string &filename) {
+static IO_Backend choose_backend(MPI_Comm com, const std::string &filename) {
 
   std::string format;
   {
@@ -90,26 +99,30 @@ static IOBackend choose_backend(MPI_Comm com, const std::string &filename) {
 
   if (format == "netcdf4") {
 #if (Pism_USE_PIO==1)
-    return PISM_PIO;
+    return io::ParallelIO::best_iotype(false); // netcdf3 == false
 #endif
 
 #if (Pism_USE_PARALLEL_NETCDF4==1)
     return PISM_NETCDF4_PARALLEL;
 #endif
+
   } else {
+
 #if (Pism_USE_PIO==1)
-    return PISM_PIO;
+    return io::ParallelIO::best_iotype(true); // netcdf3 == true
 #endif
 
 #if (Pism_USE_PNETCDF==1)
     return PISM_PNETCDF;
 #endif
+
   }
 
+  // this choice is appropriate for both NetCDF-3 and NetCDF-4
   return PISM_NETCDF3;
 }
 
-static io::NCFile::Ptr create_backend(MPI_Comm com, IOBackend backend, int iosysid) {
+static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosysid) {
   int size = 1;
   MPI_Comm_size(com, &size);
 
@@ -117,25 +130,28 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IOBackend backend, int iosys
     return io::NCFile::Ptr(new io::NC3File(com));
   }
 #if (Pism_USE_PARALLEL_NETCDF4==1)
-  else if (backend == PISM_NETCDF4_PARALLEL) {
+  if (backend == PISM_NETCDF4_PARALLEL) {
     return io::NCFile::Ptr(new io::NC4_Par(com));
   }
 #endif
 #if (Pism_USE_PNETCDF==1)
-  else if (backend == PISM_PNETCDF) {
+  if (backend == PISM_PNETCDF) {
     return io::NCFile::Ptr(new io::PNCFile(com));
   }
 #endif
 #if (Pism_USE_PIO==1)
-  else if (backend == PISM_PIO) {
-    return io::NCFile::Ptr(new io::ParallelIO(com, iosysid));
+  if (backend == PISM_PIO_PNETCDF or
+      backend == PISM_PIO_NETCDF4P or
+      backend == PISM_PIO_NETCDF4C or
+      backend == PISM_PIO_NETCDF) {
+    return io::NCFile::Ptr(new io::ParallelIO(com, iosysid, backend));
   }
 #endif
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "unknown or unsupported I/O backend: %d", backend);
 }
 
-File::File(MPI_Comm com, const std::string &filename, IOBackend backend, IO_Mode mode,
+File::File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mode mode,
            int iosysid)
   : m_impl(new Impl) {
 
@@ -173,7 +189,7 @@ MPI_Comm File::com() const {
   return m_impl->com;
 }
 
-IOBackend File::backend() const {
+IO_Backend File::backend() const {
   return m_impl->backend;
 }
 

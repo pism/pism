@@ -18,14 +18,17 @@
  */
 
 #include "NCFile.hh"
+#include "IO_Flags.hh"
 
 namespace pism {
 namespace io {
 
 class ParallelIO : public NCFile {
 public:
-  ParallelIO(MPI_Comm com, int iosysid);
+  ParallelIO(MPI_Comm com, int iosysid, IO_Backend iotype);
   virtual ~ParallelIO();
+
+  static IO_Backend best_iotype(bool netcdf3);
 protected:
   // open/create/close
   int open_impl(const std::string &filename, IO_Mode mode);
@@ -99,6 +102,7 @@ protected:
   int del_att_impl(const std::string &variable_name, const std::string &att_name) const;
 private:
   int m_iosysid;
+  int m_iotype;
 };
 
 } // end of namespace io

@@ -30,12 +30,10 @@ namespace pism {
 
 enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
-enum IOBackend {PISM_GUESS, PISM_NETCDF3, PISM_NETCDF4_PARALLEL, PISM_PNETCDF, PISM_PIO};
-
 /*!
  * Convert a string to PISM's backend type.
  */
-IOBackend string_to_backend(const std::string &backend);
+IO_Backend string_to_backend(const std::string &backend);
 
 struct VariableLookupData {
   bool exists;
@@ -50,11 +48,11 @@ struct VariableLookupData {
 class File
 {
 public:
-  File(MPI_Comm com, const std::string &filename, IOBackend backend, IO_Mode mode,
+  File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mode mode,
        int iosysid = -1);
   ~File();
 
-  IOBackend backend() const;
+  IO_Backend backend() const;
 
   MPI_Comm com() const;
 
@@ -90,7 +88,7 @@ public:
   bool find_dimension(const std::string &name) const;
 
   AxisType dimension_type(const std::string &name,
-                       units::System::Ptr unit_system) const;
+                          units::System::Ptr unit_system) const;
 
   std::vector<double> read_dimension(const std::string &name) const;
 

@@ -27,7 +27,7 @@
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/pism_type_conversion.hh"
-
+#include "File.hh"
 
 namespace pism {
 namespace io {
@@ -40,10 +40,43 @@ static void check(const ErrorLocation &where, int return_code) {
   }
 }
 
-ParallelIO::ParallelIO(MPI_Comm com, int iosysid)
+IO_Backend ParallelIO::best_iotype(bool netcdf3) {
+  if (PIOc_iotype_available(PIO_IOTYPE_PNETCDF) and netcdf3) {
+    return PISM_PIO_PNETCDF;
+  }
+  if (PIOc_iotype_available(PIO_IOTYPE_NETCDF4P)) {
+    return PISM_PIO_NETCDF4P;
+  }
+  if (PIOc_iotype_available(PIO_IOTYPE_NETCDF4C)) {
+    return PISM_PIO_NETCDF4C;
+  }
+  // always available and supports all file formats
+  return PISM_PIO_NETCDF;
+}
+
+
+ParallelIO::ParallelIO(MPI_Comm com, int iosysid, IO_Backend iotype)
   : NCFile(com),
     m_iosysid(iosysid) {
   assert(iosysid != -1);
+
+  switch (iotype) {
+  case PISM_PIO_PNETCDF:
+    m_iotype = PIO_IOTYPE_PNETCDF;
+    break;
+  case PISM_PIO_NETCDF4P:
+    m_iotype = PIO_IOTYPE_NETCDF4P;
+    break;
+  case PISM_PIO_NETCDF4C:
+    m_iotype = PIO_IOTYPE_NETCDF4C;
+    break;
+  case PISM_PIO_NETCDF:
+    m_iotype = PIO_IOTYPE_NETCDF;
+    break;
+  default:
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "invalid iotype in ParallelIO");
+  }
 }
 
 ParallelIO::~ParallelIO() {
@@ -61,21 +94,12 @@ int ParallelIO::open_impl(const std::string &filename, IO_Mode mode) {
 
 int ParallelIO::create_impl(const std::string &filename) {
 
-  // find the best available I/O type
-  int iotype = 0;
-  for (int t : {PIO_IOTYPE_PNETCDF, PIO_IOTYPE_NETCDF4P, PIO_IOTYPE_NETCDF4C, PIO_IOTYPE_NETCDF}) {
-    if (PIOc_iotype_available(t)) {
-      iotype = t;
-      break;
-    }
-  }
-
   int mode = NC_CLOBBER;
-  if (iotype == PIO_IOTYPE_PNETCDF) {
+  if (m_iotype == PIO_IOTYPE_PNETCDF) {
     mode |= NC_64BIT_DATA;
   }
 
-  int stat = PIOc_createfile(m_iosysid, &m_file_id, &iotype, filename.c_str(),
+  int stat = PIOc_createfile(m_iosysid, &m_file_id, &m_iotype, filename.c_str(),
                              mode);
   check(PISM_ERROR_LOCATION, stat);
 
