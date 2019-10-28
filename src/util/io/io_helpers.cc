@@ -155,7 +155,8 @@ static void compute_start_and_count(const File& file,
 
   assert(ndims > 0);
   if (ndims == 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Cannot compute start and count: variable %s is a scalar.",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Cannot compute start and count: variable %s is a scalar.",
                                   short_name.c_str());
   }
 
@@ -441,8 +442,9 @@ static void read_distributed_array(const File &file, const IceGrid &grid,
 /*!
  * This method always writes to the last record in the file.
  */
-static void write_distributed_array(const File &file, const IceGrid &grid, const std::string &var_name,
-                    unsigned int z_count, const double *input) {
+static void write_distributed_array(const File &file, const IceGrid &grid,
+                                    const std::string &var_name,
+                                    unsigned int z_count, const double *input) {
   try {
     // switch to data mode and perform all delayed write operations
     file.enddef();
@@ -648,7 +650,8 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
   if (not var.exists) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' (%s) in '%s'.",
                                   variable.get_name().c_str(),
-                                  variable.get_string("standard_name").c_str(), file.filename().c_str());
+                                  variable.get_string("standard_name").c_str(),
+                                  file.filename().c_str());
   }
 
   // Sanity check: the variable in an input file should have the expected
@@ -682,12 +685,15 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
     if (axes.size() != matching_dim_count) {
 
       // Print the error message and stop:
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "found the %dD variable %s (%s) in '%s' while trying to read\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "found the %dD variable %s (%s) in '%s' while trying to read\n"
                                     "'%s' ('%s'), which is %d-dimensional.",
-                                    input_ndims, var.name.c_str(),
+                                    input_ndims,
+                                    var.name.c_str(),
                                     join(input_dims, ",").c_str(),
                                     file.filename().c_str(),
-                                    variable.get_name().c_str(), variable.get_string("long_name").c_str(),
+                                    variable.get_name().c_str(),
+                                    variable.get_string("long_name").c_str(),
                                     static_cast<int>(axes.size()));
     }
   }

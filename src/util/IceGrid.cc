@@ -54,7 +54,6 @@ struct IceGrid::Impl {
 
   void compute_horizontal_coordinates();
 
-
   Context::ConstPtr ctx;
 
   MappingInfo mapping_info;
@@ -1443,6 +1442,12 @@ static int pio_decomp_hash(int dof, int output_datatype) {
 }
 #endif
 
+/*!
+ * initialize an I/O decomposition
+ *
+ * @param[in] dof size of the last dimension (usually z)
+ * @param[in] output_datatype an integer specifying a data type (`PIO_DOUBLE`, etc)
+ */
 int IceGrid::pio_io_decomposition(int dof, int output_datatype) const {
   int result = 0;
 #if (Pism_USE_PIO==1)
@@ -1454,14 +1459,8 @@ int IceGrid::pio_io_decomposition(int dof, int output_datatype) const {
 
       int ndims = dof < 2 ? 2 : 3;
 
-      std::vector<int> gdimlen;
-      if (ndims == 2) {
-        gdimlen = {(int)My(), (int)Mx()};
-      } else {
-        gdimlen = {(int)My(), (int)Mx(), dof};
-      }
-
       // the last element is not used if ndims == 2
+      std::vector<int> gdimlen{(int)My(), (int)Mx(), dof};
       std::vector<long int> start{ys(), xs(), 0}, count{ym(), xm(), dof};
 
       int stat = PIOc_InitDecomp_bc(m_impl->ctx->pio_iosys_id(),
