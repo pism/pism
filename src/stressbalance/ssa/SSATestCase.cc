@@ -269,7 +269,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
   // Always write the test name:
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("test");
-  io::write_timeseries(file, err, (size_t)start, testname[0], PISM_BYTE);
+  io::write_timeseries(file, err, (size_t)start, testname[0], PISM_INT);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("max_velocity");

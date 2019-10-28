@@ -65,7 +65,7 @@ void IceRegionalModel::allocate_storage() {
   m_no_model_mask.metadata().set_numbers("flag_values", {0, 1});
   m_no_model_mask.metadata().set_string("flag_meanings", "normal special_treatment");
   m_no_model_mask.set_time_independent(true);
-  m_no_model_mask.metadata().set_output_type(PISM_BYTE);
+  m_no_model_mask.metadata().set_output_type(PISM_INT);
   m_no_model_mask.set(0);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1

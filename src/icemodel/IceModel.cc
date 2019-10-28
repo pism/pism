@@ -225,7 +225,7 @@ void IceModel::allocate_storage() {
                                       "", "", "", 0);
     m_ssa_dirichlet_bc_mask.metadata().set_numbers("flag_values", {0, 1});
     m_ssa_dirichlet_bc_mask.metadata().set_string("flag_meanings", "no_data bc_condition");
-    m_ssa_dirichlet_bc_mask.metadata().set_output_type(PISM_BYTE);
+    m_ssa_dirichlet_bc_mask.metadata().set_output_type(PISM_INT);
     m_ssa_dirichlet_bc_mask.set_time_independent(true);
 
     // FIXME: this is used by the inverse modeling code. Do NOT get

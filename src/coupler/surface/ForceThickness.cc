@@ -51,7 +51,7 @@ ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel
                        "mask specifying where to apply the force-to-thickness mechanism",
                        "", "", "", 0); // no units and no standard name
   m_ftt_mask.set(1.0); // default: applied in whole domain
-  m_ftt_mask.metadata().set_output_type(PISM_BYTE);
+  m_ftt_mask.metadata().set_output_type(PISM_INT);
   m_ftt_mask.metadata().set_time_independent(true);
 
   m_mass_flux = allocate_mass_flux(g);
