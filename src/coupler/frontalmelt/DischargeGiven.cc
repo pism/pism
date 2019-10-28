@@ -35,7 +35,7 @@ DischargeGiven::DischargeGiven(IceGrid::ConstPtr grid)
                  "* Initializing the frontal melt model\n"
                  "  UAF-UT\n");
 
-  unsigned int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
+  unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
 
   m_theta_ocean.reset(new IceModelVec2T(grid, "theta_ocean", 1, evaluations_per_year));
   m_theta_ocean->set_attrs("climate_forcing",
