@@ -132,8 +132,7 @@ void IceModel::model_state_setup() {
   std::unique_ptr<File> input_file;
 
   if (use_input_file) {
-    input_file.reset(new File(m_grid->com, input.filename, PISM_GUESS, PISM_READONLY,
-                              m_grid->ctx()->pio_iosys_id()));
+    input_file.reset(new File(m_grid->com, input.filename, PISM_GUESS, PISM_READONLY));
   }
 
   // Initialize 2D fields owned by IceModel (ice geometry, etc)
@@ -444,8 +443,7 @@ void IceModel::regrid() {
   m_log->message(2, "regridding from file %s ...\n", filename.c_str());
 
   {
-    File regrid_file(m_grid->com, filename, PISM_GUESS, PISM_READONLY,
-                     m_grid->ctx()->pio_iosys_id());
+    File regrid_file(m_grid->com, filename, PISM_GUESS, PISM_READONLY);
     for (auto v : m_model_state) {
       if (regrid_vars.find(v->get_name()) != regrid_vars.end()) {
         v->regrid(regrid_file, CRITICAL);
@@ -711,8 +709,7 @@ void IceModel::misc_setup() {
 
   if (not (opts.type == INIT_OTHER)) {
     // initializing from a file
-    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY,
-              m_grid->ctx()->pio_iosys_id());
+    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
 
     std::string source = file.read_text_attribute("PISM_GLOBAL", "source");
 
@@ -804,8 +801,7 @@ void IceModel::misc_setup() {
 
     // read in the state (accumulators) if we are re-starting a run
     if (opts.type == INIT_RESTART) {
-      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY,
-                m_grid->ctx()->pio_iosys_id());
+      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
       for (auto d : m_diagnostics) {
         d.second->init(file, opts.record);
       }
@@ -822,8 +818,7 @@ void IceModel::misc_setup() {
       m_fracture->initialize();
     } else {
       // initializing from a file
-      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY,
-                m_grid->ctx()->pio_iosys_id());
+      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
 
       if (opts.type == INIT_RESTART) {
         m_fracture->restart(file, opts.record);

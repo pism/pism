@@ -176,8 +176,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
-  File file(m_grid->com, m_filename, PISM_GUESS, PISM_READONLY,
-            m_grid->ctx()->pio_iosys_id());
+  File file(m_grid->com, m_filename, PISM_GUESS, PISM_READONLY);
   auto var = file.find_variable(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"));
   if (not var.exists) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "can't find %s (%s) in %s.",
@@ -391,8 +390,7 @@ void IceModelVec2T::update(unsigned int start) {
     m_report_range = true;
   }
 
-  File file(m_grid->com, m_filename, PISM_GUESS, PISM_READONLY,
-            m_grid->ctx()->pio_iosys_id());
+  File file(m_grid->com, m_filename, PISM_GUESS, PISM_READONLY);
 
   const bool allow_extrapolation = m_grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 

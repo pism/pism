@@ -274,8 +274,7 @@ void SteadyState::init_time(const std::string &input_file) {
 
   std::string variable_name = "water_input_rate";
 
-  File file(m_grid->com, input_file, PISM_GUESS, PISM_READONLY,
-            m_grid->ctx()->pio_iosys_id());
+  File file(m_grid->com, input_file, PISM_GUESS, PISM_READONLY);
 
   auto time_name = io::time_dimension(m_grid->ctx()->unit_system(),
                                       file, variable_name);

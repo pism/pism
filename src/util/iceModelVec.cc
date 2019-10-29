@@ -826,15 +826,13 @@ void IceModelVec::write(const std::string &filename) const {
 }
 
 void IceModelVec::read(const std::string &filename, unsigned int time) {
-  File file(m_grid->com, filename, PISM_GUESS, PISM_READONLY,
-          m_grid->ctx()->pio_iosys_id());
+  File file(m_grid->com, filename, PISM_GUESS, PISM_READONLY);
   this->read(file, time);
 }
 
 void IceModelVec::regrid(const std::string &filename, RegriddingFlag flag,
                                    double default_value) {
-  File file(m_grid->com, filename, PISM_GUESS, PISM_READONLY,
-          m_grid->ctx()->pio_iosys_id());
+  File file(m_grid->com, filename, PISM_GUESS, PISM_READONLY);
 
   try {
     this->regrid(file, flag, default_value);

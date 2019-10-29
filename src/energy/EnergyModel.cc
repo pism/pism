@@ -239,8 +239,7 @@ void EnergyModel::regrid_enthalpy() {
   std::string enthalpy_name = m_ice_enthalpy.metadata().get_name();
 
   if (regrid_vars.empty() or member(enthalpy_name, regrid_vars)) {
-    File regrid_file(m_grid->com, regrid_filename, PISM_GUESS, PISM_READONLY,
-                     m_grid->ctx()->pio_iosys_id());
+    File regrid_file(m_grid->com, regrid_filename, PISM_GUESS, PISM_READONLY);
     init_enthalpy(regrid_file, true, 0);
   }
 }

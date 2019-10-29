@@ -97,24 +97,13 @@ static IO_Backend choose_backend(MPI_Comm com, const std::string &filename) {
   }
 
   if (format == "netcdf4") {
-#if (Pism_USE_PIO==1)
-    return io::ParallelIO::best_iotype(false); // netcdf3 == false
-#endif
-
 #if (Pism_USE_PARALLEL_NETCDF4==1)
     return PISM_NETCDF4_PARALLEL;
 #endif
-
   } else {
-
-#if (Pism_USE_PIO==1)
-    return io::ParallelIO::best_iotype(true); // netcdf3 == true
-#endif
-
 #if (Pism_USE_PNETCDF==1)
     return PISM_PNETCDF;
 #endif
-
   }
 
   // this choice is appropriate for both NetCDF-3 and NetCDF-4
@@ -164,7 +153,6 @@ File::File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mod
   }
 
   if (backend == PISM_GUESS) {
-    assert(iosysid != -1);
     m_impl->backend = choose_backend(com, filename);
   } else {
     m_impl->backend = backend;

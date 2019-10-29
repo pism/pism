@@ -142,8 +142,7 @@ void SSA::init_impl() {
   // and read the initial guess (unless asked not to).
   if (opts.type == INIT_RESTART) {
     if (m_config->get_flag("stress_balance.ssa.read_initial_guess")) {
-      File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY,
-                      m_grid->ctx()->pio_iosys_id());
+      File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
       bool u_ssa_found = input_file.find_variable("u_ssa");
       bool v_ssa_found = input_file.find_variable("v_ssa");
       unsigned int start = input_file.nrecords() - 1;
