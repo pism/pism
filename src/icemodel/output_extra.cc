@@ -331,6 +331,8 @@ void IceModel::write_extras() {
 
     io::write_time_bounds(*m_extra_file, m_extra_bounds,
                           time_start, {m_last_extra, current_time});
+    // make sure all changes are written
+    m_extra_file->sync();
   }
   profiling.end("io.extra_file");
 
