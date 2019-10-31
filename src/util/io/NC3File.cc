@@ -42,6 +42,14 @@ static void check(const ErrorLocation &where, int return_code) {
   }
 }
 
+//! call MPI_Abort() if a NetCDF call failed
+static void check_and_abort(MPI_Comm com, const ErrorLocation &where, int return_code) {
+  if (return_code != NC_NOERR) {
+    fprintf(stderr, "%s:%d: %s\n", where.filename, where.line_number, nc_strerror(return_code));
+    MPI_Abort(com, -1);
+  }
+}
+
 NC3File::NC3File(MPI_Comm c)
   : NCFile(c), m_rank(0) {
   MPI_Comm_rank(m_com, &m_rank);
@@ -278,11 +286,6 @@ void NC3File::get_vara_double_impl(const std::string &variable_name,
 }
 
 //! \brief Get variable data.
-/*!
- * FIXME: it is hard to implement sensible error checking here: if a call on rank 0 fails
- * the rest will most likely get stuck in a blocking MPI call, so we might as well
- * abort...
- */
 void NC3File::get_var_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start_input,
                             const std::vector<unsigned int> &count_input,
@@ -333,6 +336,7 @@ void NC3File::get_var_double(const std::string &variable_name,
     int varid;
 
     stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid);
+    check_and_abort(m_com, PISM_ERROR_LOCATION, stat);
 
     for (int r = 0; r < com_size; ++r) {
 
@@ -363,6 +367,7 @@ void NC3File::get_var_double(const std::string &variable_name,
         stat = nc_get_vara_double(m_file_id, varid, &nc_start[0], &nc_count[0],
                                   &processor_0_buffer[0]);
       }
+      check_and_abort(m_com, PISM_ERROR_LOCATION, stat);
 
       if (r != 0) {
         MPI_Send(&processor_0_buffer[0], local_chunk_size, MPI_DOUBLE, r, data_tag, m_com);
@@ -371,7 +376,6 @@ void NC3File::get_var_double(const std::string &variable_name,
           ip[k] = processor_0_buffer[k];
         }
       }
-
     } // end of the for loop
 
   } else {
@@ -384,11 +388,6 @@ void NC3File::get_var_double(const std::string &variable_name,
   }
 }
 
-/*!
- * FIXME: it is hard to implement sensible error checking here: if a call on rank 0 fails
- * the rest will most likely get stuck in a blocking MPI call, so we might as well
- * abort...
- */
 void NC3File::put_vara_double_impl(const std::string &variable_name,
                                  const std::vector<unsigned int> &start_input,
                                  const std::vector<unsigned int> &count_input,
@@ -436,7 +435,8 @@ void NC3File::put_vara_double_impl(const std::string &variable_name,
     std::vector<ptrdiff_t> nc_stride(ndims);
     int varid;
 
-    stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
+    stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid);
+    check_and_abort(m_com, PISM_ERROR_LOCATION, stat);
 
     for (int r = 0; r < com_size; ++r) {
 
@@ -465,23 +465,8 @@ void NC3File::put_vara_double_impl(const std::string &variable_name,
       }
 
       stat = nc_put_vara_double(m_file_id, varid, &nc_start[0], &nc_count[0],
-                                &processor_0_buffer[0]); check(PISM_ERROR_LOCATION, stat);
-
-      if (stat != NC_NOERR) {
-        fprintf(stderr, "NetCDF call nc_put_vara_double() failed with return code %d, '%s'\n",
-                stat, nc_strerror(stat));
-        fprintf(stderr, "while writing '%s' to '%s'\n",
-                variable_name.c_str(), m_filename.c_str());
-
-        for (int k = 0; k < ndims; ++k) {
-          fprintf(stderr, "start[%d] = %d\n", k, start[k]);
-        }
-
-        for (int k = 0; k < ndims; ++k) {
-          fprintf(stderr, "count[%d] = %d\n", k, count[k]);
-        }
-      }
-
+                                &processor_0_buffer[0]);
+      check_and_abort(m_com, PISM_ERROR_LOCATION, stat);
     } // end of the for loop
   } else {
     MPI_Send(&start[0],          ndims, MPI_UNSIGNED, 0, start_tag,      m_com);
