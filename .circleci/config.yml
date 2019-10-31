@@ -1,7 +1,7 @@
 version: 2
 
 jobs:
-  build:
+  build-gcc:
     docker:
       - image: ckhrulev/pism-debian:0.1.1
 
@@ -58,6 +58,39 @@ jobs:
           paths:
             - ~/.ccache
 
+  build-gcc-minimal:
+    docker:
+      - image: ckhrulev/pism-debian:0.1.1
+
+    environment:
+      CC: ccache mpicc
+      CXX: ccache mpicxx
+      CCACHE_COMPRESS: 1
+      PETSC_DIR: /usr/lib/petsc/
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - ccache-gcc-minimal-{{ .Branch }}
+      - run:
+          name: Create the build directory
+          command: mkdir -p build
+      - run:
+          name: Configure PISM
+          command: >-
+            cmake -B build -S .
+            -DCMAKE_BUILD_TYPE=Debug
+            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf"
+            -DCMAKE_CXX_FLAGS="-Wno-cast-function-type -Werror -Wno-error=suggest-attribute=noreturn"
+      - run:
+          name: Build PISM using GCC
+          command: make -C build -j4 all
+      - save_cache:
+          key: ccache-gcc-{{ .Branch }}-{{ .BuildNum }}
+          paths:
+            - ~/.ccache
+
   build-clang:
     docker:
       - image: ckhrulev/pism-debian:0.1.1
@@ -102,6 +135,40 @@ jobs:
           paths:
             - ~/.ccache
 
+  build-clang-minimal:
+    docker:
+      - image: ckhrulev/pism-debian:0.1.1
+
+    environment:
+      CCACHE_COMPRESS: 1
+      PETSC_DIR: /usr/lib/petsc/
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - ccache-clang-minimal-{{ .Branch }}
+      - run:
+          name: Create the build directory
+          command: mkdir -p build
+      - run:
+          name: Configure PISM
+          command: >-
+            CC="ccache $(mpicc -show | sed s/gcc/clang/)"
+            CXX="ccache $(mpicxx -show | sed s/g++/clang++/)"
+            cmake -B build -S .
+            -DCMAKE_BUILD_TYPE=Debug
+            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf"
+            -DCMAKE_C_FLAGS="-Werror -Wno-unused-command-line-argument"
+            -DCMAKE_CXX_FLAGS="-Werror -Wno-unused-command-line-argument"
+      - run:
+          name: Build PISM using Clang
+          command: make -C build -j4 all
+      - save_cache:
+          key: ccache-clang-{{ .Branch }}-{{ .BuildNum }}
+          paths:
+            - ~/.ccache
+
   build-manual:
     docker:
       - image: ckhrulev/pism-debian:0.1.1
@@ -122,6 +189,8 @@ workflows:
   version: 2
   build-and-test:
     jobs:
-      - build
+      - build-gcc
+      - build-gcc-minimal
       - build-clang
+      - build-clang-minimal
       - build-manual
