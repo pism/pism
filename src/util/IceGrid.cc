@@ -1473,6 +1473,9 @@ int IceGrid::pio_io_decomposition(int dof, int output_datatype) const {
       }
     }
   }
+#else
+  (void) dof;
+  (void) output_datatype;
 #endif
   return result;
 }
