@@ -84,16 +84,14 @@ ParallelIO::~ParallelIO() {
   // empty
 }
 
-int ParallelIO::open_impl(const std::string &filename, IO_Mode mode) {
+void ParallelIO::open_impl(const std::string &filename, IO_Mode mode) {
   int open_mode = mode == PISM_READONLY ? PIO_NOWRITE : PIO_WRITE;
 
   int stat = PIOc_open(m_iosysid, filename.c_str(), open_mode, &m_file_id);
   check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
 }
 
-int ParallelIO::create_impl(const std::string &filename) {
+void ParallelIO::create_impl(const std::string &filename) {
 
   int mode = NC_CLOBBER;
   if (m_iotype == PIO_IOTYPE_PNETCDF) {
@@ -103,55 +101,46 @@ int ParallelIO::create_impl(const std::string &filename) {
   int stat = PIOc_createfile(m_iosysid, &m_file_id, &m_iotype, filename.c_str(),
                              mode);
   check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
 }
 
-int ParallelIO::sync_impl() const {
+void ParallelIO::sync_impl() const {
 
   int stat = PIOc_sync(m_file_id); check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
 }
 
-int ParallelIO::close_impl() {
+void ParallelIO::close_impl() {
   int stat = PIOc_closefile(m_file_id); check(PISM_ERROR_LOCATION, stat);
-  return 0;
 }
 
 // redef/enddef
-int ParallelIO::enddef_impl() const {
+void ParallelIO::enddef_impl() const {
   int stat = PIOc_enddef(m_file_id); check(PISM_ERROR_LOCATION, stat);
-  return 0;
 }
 
-int ParallelIO::redef_impl() const {
+void ParallelIO::redef_impl() const {
   int stat = PIOc_redef(m_file_id); check(PISM_ERROR_LOCATION, stat);
-  return 0;
 }
 
 // dim
-int ParallelIO::def_dim_impl(const std::string &name, size_t length) const {
+void ParallelIO::def_dim_impl(const std::string &name, size_t length) const {
   int dim_id = 0;
-  int stat = PIOc_def_dim(m_file_id, name.c_str(), length, &dim_id); check(PISM_ERROR_LOCATION, stat);
-  return 0;
+  int stat = PIOc_def_dim(m_file_id, name.c_str(), length, &dim_id);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
-int ParallelIO::inq_dimid_impl(const std::string &dimension_name, bool &exists) const {
-  int tmp, stat;
+void ParallelIO::inq_dimid_impl(const std::string &dimension_name, bool &exists) const {
+  int tmp;
 
-  stat = PIOc_inq_dimid(m_file_id, dimension_name.c_str(), &tmp);
+  int stat = PIOc_inq_dimid(m_file_id, dimension_name.c_str(), &tmp);
 
   if (stat == PIO_NOERR) {
     exists = true;
   } else {
     exists = false;
   }
-
-  return 0;
 }
 
-int ParallelIO::inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const {
+void ParallelIO::inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const {
   int stat, dimid = -1;
   PIO_Offset len;
 
@@ -160,11 +149,9 @@ int ParallelIO::inq_dimlen_impl(const std::string &dimension_name, unsigned int 
   stat = PIOc_inq_dimlen(m_file_id, dimid, &len); check(PISM_ERROR_LOCATION, stat);
 
   result = static_cast<unsigned int>(len);
-
-  return stat;
 }
 
-int ParallelIO::inq_unlimdim_impl(std::string &result) const {
+void ParallelIO::inq_unlimdim_impl(std::string &result) const {
   int stat, dimid;
   char dimname[PIO_MAX_NAME + 1];
 
@@ -177,12 +164,10 @@ int ParallelIO::inq_unlimdim_impl(std::string &result) const {
 
     result = dimname;
   }
-
-  return stat;
 }
 
 // var
-int ParallelIO::def_var_impl(const std::string &name, IO_Type nctype,
+void ParallelIO::def_var_impl(const std::string &name, IO_Type nctype,
                              const std::vector<std::string> &dims) const {
   std::vector<int> dimids;
   int stat, varid;
@@ -194,20 +179,18 @@ int ParallelIO::def_var_impl(const std::string &name, IO_Type nctype,
   }
 
   stat = PIOc_def_var(m_file_id, name.c_str(), pism_type_to_nc_type(nctype),
-                      static_cast<int>(dims.size()), dimids.data(), &varid); check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
+                      static_cast<int>(dims.size()), dimids.data(), &varid);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
-int ParallelIO::def_var_chunking_impl(const std::string &name,
+void ParallelIO::def_var_chunking_impl(const std::string &name,
                                       std::vector<size_t> &dimensions) const {
   (void) name;
   (void) dimensions;
   // FIXME
-  return 0;
 }
 
-int ParallelIO::get_vara_double_impl(const std::string &variable_name,
+void ParallelIO::get_vara_double_impl(const std::string &variable_name,
                                      const std::vector<unsigned int> &start,
                                      const std::vector<unsigned int> &count,
                                      double *input) const {
@@ -226,11 +209,9 @@ int ParallelIO::get_vara_double_impl(const std::string &variable_name,
 
   stat = PIOc_get_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(), input);
   check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
 }
 
-int ParallelIO::put_vara_double_impl(const std::string &variable_name,
+void ParallelIO::put_vara_double_impl(const std::string &variable_name,
                                      const std::vector<unsigned int> &start,
                                      const std::vector<unsigned int> &count,
                                      const double *output) const {
@@ -249,9 +230,6 @@ int ParallelIO::put_vara_double_impl(const std::string &variable_name,
 
   stat = PIOc_put_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(), output);
   check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
-
 }
 
 template<typename T>
@@ -308,7 +286,7 @@ void ParallelIO::write_darray_impl(const std::string &variable_name,
 }
 
 
-int ParallelIO::get_varm_double_impl(const std::string &variable_name,
+void ParallelIO::get_varm_double_impl(const std::string &variable_name,
                                      const std::vector<unsigned int> &start,
                                      const std::vector<unsigned int> &count,
                                      const std::vector<unsigned int> &imap,
@@ -322,12 +300,11 @@ int ParallelIO::get_varm_double_impl(const std::string &variable_name,
                                 "ParallelIO does not support transposed access");
 }
 
-int ParallelIO::inq_nvars_impl(int &result) const {
+void ParallelIO::inq_nvars_impl(int &result) const {
   int stat = PIOc_inq_nvars(m_file_id, &result); check(PISM_ERROR_LOCATION, stat);
-  return stat;
 }
 
-int ParallelIO::inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const {
+void ParallelIO::inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const {
   int stat, ndims, varid = -1;
   std::vector<int> dimids;
 
@@ -337,7 +314,7 @@ int ParallelIO::inq_vardimid_impl(const std::string &variable_name, std::vector<
 
   if (ndims == 0) {
     result.clear();
-    return 0;
+    return;
   }
 
   result.resize(ndims);
@@ -353,41 +330,22 @@ int ParallelIO::inq_vardimid_impl(const std::string &variable_name, std::vector<
 
     result[k] = name;
   }
-
-  return 0;
 }
 
-int ParallelIO::inq_varnatts_impl(const std::string &variable_name, int &result) const {
-  int stat, varid = -1;
-
-  if (variable_name == "PISM_GLOBAL") {
-    varid = PIO_GLOBAL;
-  } else {
-    stat = PIOc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
-  }
-
-  stat = PIOc_inq_varnatts(m_file_id, varid, &result); check(PISM_ERROR_LOCATION, stat);
-
-  return 0;
+void ParallelIO::inq_varnatts_impl(const std::string &variable_name, int &result) const {
+  int stat = PIOc_inq_varnatts(m_file_id, get_varid(variable_name), &result);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
-int ParallelIO::inq_varid_impl(const std::string &variable_name, bool &exists) const {
+void ParallelIO::inq_varid_impl(const std::string &variable_name, bool &exists) const {
   int stat, flag = -1;
 
   stat = PIOc_inq_varid(m_file_id, variable_name.c_str(), &flag);
 
-  if (stat == NC_NOERR) {
-    flag = 1;
-  } else {
-    flag = 0;
-  }
-
-  exists = (flag == 1);
-
-  return 0;
+  exists = (stat == PIO_NOERR);
 }
 
-int ParallelIO::inq_varname_impl(unsigned int j, std::string &result) const {
+void ParallelIO::inq_varname_impl(unsigned int j, std::string &result) const {
   int stat;
   char varname[PIO_MAX_NAME];
   memset(varname, 0, PIO_MAX_NAME);
@@ -395,61 +353,48 @@ int ParallelIO::inq_varname_impl(unsigned int j, std::string &result) const {
   stat = PIOc_inq_varname(m_file_id, j, varname); check(PISM_ERROR_LOCATION, stat);
 
   result = varname;
-
-  return stat;
 }
 
 // att
-int ParallelIO::get_att_double_impl(const std::string &variable_name,
+void ParallelIO::get_att_double_impl(const std::string &variable_name,
                                     const std::string &att_name,
                                     std::vector<double> &result) const {
-  int stat, len, varid = -1;
-  PIO_Offset attlen;
-
   // Read the attribute length:
-  if (variable_name == "PISM_GLOBAL") {
-    varid = NC_GLOBAL;
-  } else {
-    stat = PIOc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
-  }
+  int varid = get_varid(variable_name);
 
-  stat = PIOc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
+  PIO_Offset attlen = 0;
+  int stat = PIOc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
 
+  int len = 0;
   if (stat == NC_NOERR) {
     len = static_cast<int>(attlen);
   } else if (stat == NC_ENOTATT) {
     len = 0;
   } else {
     check(PISM_ERROR_LOCATION, stat);
-    len = 0;
   }
 
   if (len == 0) {
     result.clear();
-    return 0;
+    return;
   }
 
   result.resize(len);
 
   stat = PIOc_get_att_double(m_file_id, varid, att_name.c_str(), result.data());
   check(PISM_ERROR_LOCATION, stat);
-
-  return 0;
 }
 
-int ParallelIO::get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const {
-  int stat, len, varid = -1;
-
-  // Read the attribute length:
+void ParallelIO::get_att_text_impl(const std::string &variable_name,
+                                   const std::string &att_name,
+                                   std::string &result) const {
   PIO_Offset attlen;
 
-  if (variable_name == "PISM_GLOBAL") {
-    varid = NC_GLOBAL;
-  } else {
-    stat = PIOc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
-  }
+  int varid = get_varid(variable_name);
 
-  stat = PIOc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
+  int stat = PIOc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
+
+  int len = 0;
   if (stat == NC_NOERR) {
     len = static_cast<int>(attlen);
   } else {
@@ -459,98 +404,49 @@ int ParallelIO::get_att_text_impl(const std::string &variable_name, const std::s
   // Allocate some memory or clear result.
   if (len == 0) {
     result.clear();
-    return 0;
+    return;
   }
 
-  std::vector<char> str(len + 1, '\0');
-
   // Now read the string and see if we succeeded:
+  std::vector<char> str(len + 1, 0);
   stat = PIOc_get_att_text(m_file_id, varid, att_name.c_str(), str.data());
   check(PISM_ERROR_LOCATION, stat);
 
   result = str.data();
-
-  return 0;
-
 }
 
-int ParallelIO::put_att_double_impl(const std::string &variable_name,
+void ParallelIO::put_att_double_impl(const std::string &variable_name,
                                     const std::string &att_name,
                                     IO_Type xtype,
                                     const std::vector<double> &data) const {
-  int stat = 0;
-
-  int varid = -1;
-
-  if (variable_name == "PISM_GLOBAL") {
-    varid = NC_GLOBAL;
-  } else {
-    stat = PIOc_inq_varid(m_file_id, variable_name.c_str(), &varid);
-    check(PISM_ERROR_LOCATION, stat);
-  }
-
-  stat = PIOc_put_att_double(m_file_id, varid, att_name.c_str(),
-                             pism_type_to_nc_type(xtype), data.size(), data.data());
+  int stat = PIOc_put_att_double(m_file_id, get_varid(variable_name), att_name.c_str(),
+                                 pism_type_to_nc_type(xtype), data.size(), data.data());
   check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
 }
 
-int ParallelIO::put_att_text_impl(const std::string &variable_name,
+void ParallelIO::put_att_text_impl(const std::string &variable_name,
                                   const std::string &att_name,
                                   const std::string &value) const {
-  int stat = 0, varid = -1;
-
-  if (variable_name == "PISM_GLOBAL") {
-    varid = NC_GLOBAL;
-  } else {
-    stat = PIOc_inq_varid(m_file_id, variable_name.c_str(), &varid);
-    check(PISM_ERROR_LOCATION, stat);
-  }
-
-  stat = PIOc_put_att_text(m_file_id, varid, att_name.c_str(), value.size(), value.c_str());
+  int stat = PIOc_put_att_text(m_file_id, get_varid(variable_name), att_name.c_str(),
+                               value.size(), value.c_str());
   check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
 }
 
-int ParallelIO::inq_attname_impl(const std::string &variable_name,
+void ParallelIO::inq_attname_impl(const std::string &variable_name,
                                  unsigned int n, std::string &result) const {
-  int stat;
-  char name[PIO_MAX_NAME];
-  memset(name, 0, PIO_MAX_NAME);
+  std::vector<char> name(PIO_MAX_NAME + 1, 0);
 
-  int varid = -1;
-
-  if (variable_name == "PISM_GLOBAL") {
-    varid = NC_GLOBAL;
-  } else {
-    stat = PIOc_inq_varid(m_file_id, variable_name.c_str(), &varid);
-    check(PISM_ERROR_LOCATION, stat);
-  }
-
-  stat = PIOc_inq_attname(m_file_id, varid, n, name);
+  int stat = PIOc_inq_attname(m_file_id, get_varid(variable_name), n, name.data());
   check(PISM_ERROR_LOCATION, stat);
 
-  result = name;
-
-  return stat;
+  result = name.data();
 }
 
-int ParallelIO::inq_atttype_impl(const std::string &variable_name,
+void ParallelIO::inq_atttype_impl(const std::string &variable_name,
                                  const std::string &att_name,
                                  IO_Type &result) const {
-  int stat, varid = -1;
   nc_type tmp;
-
-  if (variable_name == "PISM_GLOBAL") {
-    varid = NC_GLOBAL;
-  } else {
-    stat = PIOc_inq_varid(m_file_id, variable_name.c_str(), &varid);
-    check(PISM_ERROR_LOCATION, stat);
-  }
-
-  stat = PIOc_inq_atttype(m_file_id, varid, att_name.c_str(), &tmp);
+  int stat = PIOc_inq_atttype(m_file_id, get_varid(variable_name), att_name.c_str(), &tmp);
   if (stat == PIO_ENOTATT) {
     tmp = NC_NAT;
   } else {
@@ -558,34 +454,30 @@ int ParallelIO::inq_atttype_impl(const std::string &variable_name,
   }
 
   result = nc_type_to_pism_type(tmp);
-
-  return 0;
 }
 
 // misc
-int ParallelIO::set_fill_impl(int fillmode, int &old_modep) const {
+void ParallelIO::set_fill_impl(int fillmode, int &old_modep) const {
 
   int stat = PIOc_set_fill(m_file_id, fillmode, &old_modep);
   check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
-
 }
 
-int ParallelIO::del_att_impl(const std::string &variable_name, const std::string &att_name) const {
-  int stat, varid = -1;
-
-  if (variable_name == "PISM_GLOBAL") {
-    varid = NC_GLOBAL;
-  } else {
-    stat = PIOc_inq_varid(m_file_id, variable_name.c_str(), &varid);
-    check(PISM_ERROR_LOCATION, stat);
-  }
-
-  stat = PIOc_del_att(m_file_id, varid, att_name.c_str());
+void ParallelIO::del_att_impl(const std::string &variable_name,
+                              const std::string &att_name) const {
+  int stat = PIOc_del_att(m_file_id, get_varid(variable_name), att_name.c_str());
   check(PISM_ERROR_LOCATION, stat);
+}
 
-  return 0;
+int ParallelIO::get_varid(const std::string &variable_name) const {
+  if (variable_name == "PISM_GLOBAL") {
+    return NC_GLOBAL;
+  } else {
+    int varid = -2;
+    int stat = PIOc_inq_varid(m_file_id, variable_name.c_str(), &varid);
+    check(PISM_ERROR_LOCATION, stat);
+    return varid;
+  }
 }
 
 } // end of namespace io

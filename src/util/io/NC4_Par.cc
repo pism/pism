@@ -38,7 +38,7 @@ static void check(const ErrorLocation &where, int return_code) {
   }
 }
 
-int NC4_Par::open_impl(const std::string &fname, IO_Mode mode) {
+void NC4_Par::open_impl(const std::string &fname, IO_Mode mode) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
@@ -47,10 +47,10 @@ int NC4_Par::open_impl(const std::string &fname, IO_Mode mode) {
 
   stat = nc_open_par(fname.c_str(), open_mode, m_com, info, &m_file_id);
 
-  return stat;
+  check(PISM_ERROR_LOCATION, stat);
 }
 
-int NC4_Par::create_impl(const std::string &fname) {
+void NC4_Par::create_impl(const std::string &fname) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
@@ -58,10 +58,10 @@ int NC4_Par::create_impl(const std::string &fname) {
                        NC_NETCDF4 | NC_MPIIO,
                        m_com, info, &m_file_id);
 
-  return stat;
+  check(PISM_ERROR_LOCATION, stat);
 }
 
-int NC4_Par::set_access_mode(int varid, bool transposed) const {
+void NC4_Par::set_access_mode(int varid, bool transposed) const {
   int stat;
 
   if (transposed) {
@@ -77,8 +77,6 @@ int NC4_Par::set_access_mode(int varid, bool transposed) const {
     // works in this case).
     stat = nc_var_par_access(m_file_id, varid, NC_COLLECTIVE); check(PISM_ERROR_LOCATION, stat);
   }
-
-  return stat;
 }
 
 

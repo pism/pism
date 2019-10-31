@@ -29,21 +29,15 @@ namespace pism {
 namespace io {
 
 int NC4_Serial::open_impl(const std::string &fname, IO_Mode mode) {
-  int stat;
-
   int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;
 
-  stat = nc_open(fname.c_str(), open_mode, &m_file_id);
-
-  return stat;
+  int stat = nc_open(fname.c_str(), open_mode, &m_file_id);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 int NC4_Serial::create_impl(const std::string &fname) {
-  int stat;
-
-  stat = nc_create(fname.c_str(), NC_NETCDF4, &m_file_id);
-
-  return stat;
+  int stat = nc_create(fname.c_str(), NC_NETCDF4, &m_file_id);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 } // end of namespace io

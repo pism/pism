@@ -66,7 +66,7 @@ public:
 
   void create(const std::string &filename);
 
-  int sync() const;
+  void sync() const;
 
   void close();
 
@@ -150,38 +150,38 @@ protected:
   // implementations:
 
   // open/create/close
-  virtual int open_impl(const std::string &filename, IO_Mode mode) = 0;
-  virtual int create_impl(const std::string &filename) = 0;
-  virtual int sync_impl() const = 0;
-  virtual int close_impl() = 0;
+  virtual void open_impl(const std::string &filename, IO_Mode mode) = 0;
+  virtual void create_impl(const std::string &filename) = 0;
+  virtual void sync_impl() const = 0;
+  virtual void close_impl() = 0;
 
   // redef/enddef
-  virtual int enddef_impl() const = 0;
+  virtual void enddef_impl() const = 0;
 
-  virtual int redef_impl() const = 0;
+  virtual void redef_impl() const = 0;
 
   // dim
-  virtual int def_dim_impl(const std::string &name, size_t length) const = 0;
+  virtual void def_dim_impl(const std::string &name, size_t length) const = 0;
 
-  virtual int inq_dimid_impl(const std::string &dimension_name, bool &exists) const = 0;
+  virtual void inq_dimid_impl(const std::string &dimension_name, bool &exists) const = 0;
 
-  virtual int inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const = 0;
+  virtual void inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const = 0;
 
-  virtual int inq_unlimdim_impl(std::string &result) const = 0;
+  virtual void inq_unlimdim_impl(std::string &result) const = 0;
 
   // var
-  virtual int def_var_impl(const std::string &name, IO_Type nctype,
+  virtual void def_var_impl(const std::string &name, IO_Type nctype,
                            const std::vector<std::string> &dims) const = 0;
 
-  virtual int def_var_chunking_impl(const std::string &name,
+  virtual void def_var_chunking_impl(const std::string &name,
                                     std::vector<size_t> &dimensions) const;
 
-  virtual int get_vara_double_impl(const std::string &variable_name,
+  virtual void get_vara_double_impl(const std::string &variable_name,
                                    const std::vector<unsigned int> &start,
                                    const std::vector<unsigned int> &count,
                                    double *ip) const = 0;
 
-  virtual int put_vara_double_impl(const std::string &variable_name,
+  virtual void put_vara_double_impl(const std::string &variable_name,
                                    const std::vector<unsigned int> &start,
                                    const std::vector<unsigned int> &count,
                                    const double *op) const = 0;
@@ -192,39 +192,39 @@ protected:
                                  unsigned int record,
                                  const double *input);
 
-  virtual int get_varm_double_impl(const std::string &variable_name,
+  virtual void get_varm_double_impl(const std::string &variable_name,
                                    const std::vector<unsigned int> &start,
                                    const std::vector<unsigned int> &count,
                                    const std::vector<unsigned int> &imap,
                                    double *ip) const = 0;
 
-  virtual int inq_nvars_impl(int &result) const = 0;
+  virtual void inq_nvars_impl(int &result) const = 0;
 
-  virtual int inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const = 0;
+  virtual void inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const = 0;
 
-  virtual int inq_varnatts_impl(const std::string &variable_name, int &result) const = 0;
+  virtual void inq_varnatts_impl(const std::string &variable_name, int &result) const = 0;
 
-  virtual int inq_varid_impl(const std::string &variable_name, bool &exists) const = 0;
+  virtual void inq_varid_impl(const std::string &variable_name, bool &exists) const = 0;
 
-  virtual int inq_varname_impl(unsigned int j, std::string &result) const = 0;
+  virtual void inq_varname_impl(unsigned int j, std::string &result) const = 0;
 
   // att
-  virtual int get_att_double_impl(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const = 0;
+  virtual void get_att_double_impl(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const = 0;
 
-  virtual int get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const = 0;
+  virtual void get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const = 0;
 
-  virtual int put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const = 0;
+  virtual void put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const = 0;
 
-  virtual int put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const = 0;
+  virtual void put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const = 0;
 
-  virtual int inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const = 0;
+  virtual void inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const = 0;
 
-  virtual int inq_atttype_impl(const std::string &variable_name, const std::string &att_name, IO_Type &result) const = 0;
+  virtual void inq_atttype_impl(const std::string &variable_name, const std::string &att_name, IO_Type &result) const = 0;
 
   // misc
-  virtual int set_fill_impl(int fillmode, int &old_modep) const = 0;
+  virtual void set_fill_impl(int fillmode, int &old_modep) const = 0;
 
-  virtual int del_att_impl(const std::string &variable_name, const std::string &att_name) const = 0;
+  virtual void del_att_impl(const std::string &variable_name, const std::string &att_name) const = 0;
 
 protected:                      // data members
 

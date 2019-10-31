@@ -32,9 +32,9 @@ public:
   virtual ~NC4_Serial() {}
 protected:
   // open/create/close
-  int open_impl(const std::string &filename, IO_Mode mode);
+  void open_impl(const std::string &filename, IO_Mode mode);
 
-  int create_impl(const std::string &filename);
+  void create_impl(const std::string &filename);
 };
 
 
