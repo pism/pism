@@ -109,9 +109,6 @@ order, as opposed to the more convenient (e.g. for NetCDF tools) ``t,z,y,x`` ord
 reason is that PISM uses the ``y,x,z`` order internally,\ [#]_ and therefore writing an
 array in a different order is an inherently-expensive operation.
 
-You can, however, choose any one of the three supported output orders using the
-:opt:`-o_order` option with one of ``xyz``, ``yxz``, and ``zyx`` as the argument.
-
 To transpose dimensions in an existing file, use the ``ncpdq`` ("permute dimensions
 quickly") tool from the NCO_ suite. For example, run
 
@@ -131,6 +128,16 @@ variable record cannot exceed 4 gigabytes.) Build PISM with parallel NetCDF-4 an
 In addition to ``-o_format netcdf4_parallel`` and ``netcdf3`` (default) modes, PISM can be
 built with PnetCDF for best I/O performance. The option ``-o_format pnetcdf`` turns "on"
 PnetCDF I/O code. (PnetCDF seems to be somewhat fragile, though, so use at your own risk.)
+
+Building PISM with NCAR's ParallelIO_ library adds up to four more choices:
+
+- ``pio_pnetcdf`` (parallel, using the CDF5 version of the NetCDF format),
+- ``pio_netcdf4p`` (parallel, using the HDF5-based NetCDF format),
+- ``pio_netcdf4c`` (serial, HDF5-based compressed NetCDF-4 format),
+- ``pio_netcdf`` (serial, but using data aggregation in ParallelIO).
+
+We recommend performing a number of test runs to determine the best choice for your
+simulations.
 
 .. rubric:: Footnotes
 

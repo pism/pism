@@ -137,6 +137,12 @@ Changes since v1.1
 - Implement 2D and scalar grounding line flux diagnostics `grounding_line_flux`. See
   `issue #300`_.
 - Remove `output.variable_order`. Now PISM always uses `y,x,z` in output files.
+- Allow using NCAR's ParallelIO library to write output files. If ParallelIO is compiled
+  with parallel NetCDF-4 and PnetCDF libraries, this adds four new choices for
+  `output.format`: `pio_pnetcdf` (parallel, using the CDF5 version of the NetCDF format),
+  `pio_netcdf4p` (parallel, using the HDF5-based NetCDF format), `pio_netcdf4c` (serial,
+  HDF5-based compressed NetCDF-4 format), `pio_netcdf` (serial).
+
 
 Changes from v1.0 to v1.1
 =========================
