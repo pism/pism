@@ -138,6 +138,8 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
     }
     return io::NCFile::Ptr(new io::ParallelIO(com, iosysid, backend));
   }
+#else
+  (void) iosysid;               // silence a compiler warning
 #endif
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "unknown or unsupported I/O backend: %d", backend);
