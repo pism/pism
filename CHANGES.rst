@@ -134,6 +134,8 @@ Changes since v1.1
   parameterization will be necessary*.
 - Add the ability to pass surface runoff modeled by PISM to a subglacial hydrology model
   (see `hydrology.surface_input_from_runoff`).
+- Implement 2D and scalar grounding line flux diagnostics `grounding_line_flux`. See
+  `issue #300`_.
 
 Changes from v1.0 to v1.1
 =========================
@@ -682,6 +684,7 @@ Miscellaneous
 .. _issue 222: https://github.com/pism/pism/issues/222
 .. _issue 237: https://github.com/pism/pism/issues/237
 .. _issue 292: https://github.com/pism/pism/issues/292
+.. _issue 300: https://github.com/pism/pism/issues/300
 .. _issue 302: https://github.com/pism/pism/issues/302
 .. _issue 313: https://github.com/pism/pism/issues/313
 .. _issue 321: https://github.com/pism/pism/issues/321
