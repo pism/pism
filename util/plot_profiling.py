@@ -109,23 +109,25 @@ def plot(data, total, grand_total):
         else:
             return n
 
+    names = [e[0] for e in events]
     times = [e[1] for e in events]
     times_percent = [100.0 * t / float(total) for t in times]
 
     if grand_total is not None:
-        labels = ["\n(%3.1f s, %3.1f%%)" % (time, 100.0 * time / grand_total) for time in times]
+        comments = ["(%3.1f s, %3.1f%%)" % (time, 100.0 * time / grand_total) for time in times]
     else:
-        labels = ["\n(%3.1f s)" % time for time in times]
+        comments = ["(%3.1f s)" % time for time in times]
 
-    labels = [name + comment for name, comment in zip(names, labels)]
+    labels = [better_name(name) + " " + comment for name, comment in zip(names, comments)]
 
     explode = [0.05]*len(times)
     plt.pie(times_percent, autopct="%3.1f%%", labels=labels, colors=colors, startangle=0.0, explode=explode)
+    plt.margins(x=0.2, y=0.1)
     plt.axis('equal')
 
 
 def figure(title, event_list, total, grand_total=None):
-    plt.figure()
+    plt.figure(figsize=(10,5))
     plt.title("%s (%s)" % (title, filename))
     data = get_data(event_list)
     plot(aggregate(data, total), total, grand_total)
