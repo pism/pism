@@ -20,8 +20,8 @@ effective pressure on the till.
 
 .. note::
 
-   Both models described here provide all diagnostic quantities needed for mass
-   accounting, even though the simpler model is not mass-conserving. See
+   Both ``null`` and ``routing`` described here provide all diagnostic quantities needed
+   for mass accounting, even though ``null`` is not mass-conserving. See
    :ref:`sec-mass-conservation-hydrology` for details.
 
 .. list-table:: Command-line options to choose the hydrology model
@@ -58,6 +58,11 @@ from surface runoff, for example. Also option :opt:`-hydrology_bmelt_file` allow
 to replace the computed ``basal_melt_rate_grounded`` rate by values read from a file,
 thereby effectively decoupling the hydrology model from the ice dynamics
 (esp. conservation of energy).
+
+To use water runoff computed by a PISM surface model, set
+:config:`hydrology.surface_input_from_runoff`. (The :ref:`sec-surface-pdd` computes runoff
+using computed melt and the assumption that a fraction of this melt re-freezes, all other
+models assume that all melt turns into runoff.)
 
 .. list-table:: Subglacial hydrology command-line options which apply to all hydrology models
    :name: tab-hydrology

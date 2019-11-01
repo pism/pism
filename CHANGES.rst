@@ -132,6 +132,8 @@ Changes since v1.1
   model to obtain the flux needed by the frontal melt parameterization (above). Note that
   *this is a different model* and so when switching to it *re-tuning of the frontal melt
   parameterization will be necessary*.
+- Add the ability to pass surface runoff modeled by PISM to a subglacial hydrology model
+  (see `hydrology.surface_input_from_runoff`).
 
 Changes from v1.0 to v1.1
 =========================
