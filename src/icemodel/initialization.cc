@@ -744,7 +744,7 @@ void IceModel::misc_setup() {
       Mz = m_grid->Mz();
     std::string output_format = m_config->get_string("output.format");
     if (Mx * My * Mz * sizeof(double) > two_to_thirty_two - 4 and
-        (output_format == PISM_NETCDF3 or output_format == "pnetcdf")) {
+        (output_format == PISM_NETCDF3)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "The computational grid is too big to fit in a NetCDF-3 file.\n"
                                     "Each 3D variable requires %lu Mb.\n"
