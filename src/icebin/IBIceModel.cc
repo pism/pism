@@ -260,7 +260,9 @@ void IBIceModel::prepare_nc(std::string const &fname, std::unique_ptr<PIO> &nc) 
   //  nc->close():
 }
 
-/** @param t0 Time of last time we coupled. */
+/** Differences and divides by accumulated time over coupling timestep.
+Eg, to convert [kg m-2] --> [kg m-2 s-1]
+@param t0 Time of last time we coupled. */
 void IBIceModel::set_rate(double dt) {
 
   printf("BEGIN IBIceModel::set_rate(dt=%f)\n", dt);
@@ -291,7 +293,7 @@ printf("IBIceModel::set_rate(dt=%f)\n", dt);
           if (base_ii->flags & (MassEnergyBudget::DELTA | MassEnergyBudget::EPSILON)) {
             vrate(i, j) = (vcur(i, j) - vbase(i, j)) * by_dt;
           } else {
-            // Or else just copy the to rate
+            // Or else just copy the to "rate"
             vrate(i, j) = vcur(i, j);
           }
         }

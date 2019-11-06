@@ -133,10 +133,17 @@ public:
     static const int MASS = 1;
     static const int ENTH = 2;
 
-    static const int TOTAL = 4;     // To be differenced at the end.
+    // No post-processing: Value written to NetCDF is same as accumulated value.
+    // Good for things taht are set once.
+    // (eg: total.mass and total.enth, which are not wrten to NetCDF).
+    static const int TOTAL = 4;
+    // Variable to be accumulated, differenced and /dt at end;
+    // and also go into computation of epsilon
     static const int DELTA = 8;
+    // Do NOT include in computation of epsilon, since this flag IS
+    // for the varaiable epsilon (and also pism_smb)
     static const int EPSILON = 16;      // To be differenced at the end.
-    static const int ADVECTION = 32;    // This energy term is due to advection of a related mass term.
+    static const int ADVECTION = 32;    // This energy term is due to advection of a related mass term (not acted upon)
 
     // ======================== Summary of above variables
     // This makes it easy to difference two MassEnergyBudget instances.

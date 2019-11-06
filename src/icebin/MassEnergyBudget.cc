@@ -85,14 +85,18 @@ void MassEnergyBudget::create(pism::IceGrid::ConstPtr grid, std::string const &p
 		"m-2 s-1", "calving");
 	add_massenth(calving, DELTA, "calving.mass", "calving.enth");
 
+    // SMB as seen by PISM in iMgeometry.cc massContExplicitSte().
+    // Used to check icebin_smb.mass, but does not figure into
+    // contract.
 	pism_smb.create(grid, prefix+"pism_smb",
 		ghostedp, width);
 	pism_smb.set_attrs("diagnostic",
 		"pism_smb",
 		"m-2 s-1", "pism_smb");
 	// No DELTA< does not participate in epsilon computation
-	add_massenth(pism_smb, 0, "pism_smb.mass", "pism_smb.enth");
+	add_massenth(pism_smb, EPSILON, "pism_smb.mass", "pism_smb.enth");
 
+    // accumulation / ablation, as provided by Icebin
 	smb.create(grid, prefix+"smb",
 		ghostedp, width);
 	smb.set_attrs("diagnostic",
@@ -197,6 +201,9 @@ void MassEnergyBudget::set_epsilon(pism::IceGrid::ConstPtr grid)
 	total.mass.end_access();
 
 	for (auto &ii : all_vecs) {
+        // This normally does not include things marked EPSILON
+        // (which is mutually exclusive with DELTA)
+        // This excluded epsilon (ourself), as well as redundant pism_smb
 		if ((ii.flags & (DELTA | MASS)) != (DELTA | MASS)) continue;
 
 		printf("epsilon.mass: %s\n", ii.vec.get_name().c_str());
