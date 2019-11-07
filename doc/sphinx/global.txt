@@ -86,7 +86,7 @@
 .. _PETSc-installation: https://www.mcs.anl.gov/petsc/documentation/installation.html
 .. _PETSc: https://www.mcs.anl.gov/petsc/
 .. _PROJ: https://proj.org/
-.. _PnetCDF: https://trac.mcs.anl.gov/projects/parallel-netcdf
+.. _PnetCDF: https://parallel-netcdf.github.io/
 .. _Python: https://www.python.org
 .. _Sphinx: http://www.sphinx-doc.org/en/master/usage/installation.html
 .. _sphinxcontrib.bibtex: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/
@@ -133,6 +133,10 @@
 
 .. _Ismip6-greenland: http://www.climate-cryosphere.org/wiki/index.php?title=ISMIP6-Projections-Greenland
 .. _ParallelIO: https://ncar.github.io/ParallelIO/
+
+.. _HDF5: https://portal.hdfgroup.org/display/HDF5/HDF5
+.. _Lustre: http://lustre.org/
+
 .. PISM-related external links
 
 .. _pism-github: https://github.com/pism/pism
