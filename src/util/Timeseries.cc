@@ -22,7 +22,7 @@
 #include "Timeseries.hh"
 #include "pism_utilities.hh"
 #include "IceGrid.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "Time.hh"
 #include "ConfigInterface.hh"
 
@@ -72,29 +72,26 @@ void Timeseries::set_use_bounds(bool flag) {
 
 
 //! Read timeseries data from a NetCDF file `filename`.
-void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log) {
+void Timeseries::read(const File &nc, const Time &time_manager, const Logger &log) {
 
-  bool exists, found_by_standard_name;
-  std::string standard_name = m_variable.get_string("standard_name"),
-    name_found;
+  std::string standard_name = m_variable.get_string("standard_name");
 
-  nc.inq_var(name(), standard_name,
-             exists, name_found, found_by_standard_name);
+  auto var = nc.find_variable(name(), standard_name);
 
-  if (not exists) {
+  if (not var.exists) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' ('%s') in '%s'.\n",
                                   name().c_str(), standard_name.c_str(),
-                                  nc.inq_filename().c_str());
+                                  nc.filename().c_str());
   }
 
-  auto dims = nc.inq_vardims(name_found);
+  auto dims = nc.dimensions(var.name);
 
   if (dims.size() != 1) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Variable '%s' in '%s' depends on %d dimensions,\n"
                                   "but a time-series variable can only depend on 1 dimension.",
                                   name().c_str(),
-                                  nc.inq_filename().c_str(),
+                                  nc.filename().c_str(),
                                   (int)dims.size());
   }
 
@@ -108,10 +105,10 @@ void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log
   if (not is_increasing(m_time)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "dimension '%s' has to be strictly increasing (read from '%s').",
-                                  tmp_dim.get_name().c_str(), nc.inq_filename().c_str());
+                                  tmp_dim.get_name().c_str(), nc.filename().c_str());
   }
 
-  std::string time_bounds_name = nc.get_att_text(time_name, "bounds");
+  std::string time_bounds_name = nc.read_text_attribute(time_name, "bounds");
 
   if (not time_bounds_name.empty()) {
     m_use_bounds = true;
@@ -141,7 +138,7 @@ void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variables %s and %s in %s have different numbers of values.",
                                   m_dimension.get_name().c_str(),
                                   m_variable.get_name().c_str(),
-                                  nc.inq_filename().c_str());
+                                  nc.filename().c_str());
   }
 
   report_range(log);
@@ -173,7 +170,7 @@ void Timeseries::report_range(const Logger &log) {
 }
 
 //! Write timeseries data to a NetCDF file `filename`.
-void Timeseries::write(const PIO &nc) const {
+void Timeseries::write(const File &nc) const {
   // write the dimensional variable; this call should go first
   io::write_timeseries(nc, m_dimension, 0, m_time);
   io::write_timeseries(nc, m_variable, 0, m_values);

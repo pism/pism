@@ -21,7 +21,7 @@
 #include "SSAFEM.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
@@ -251,63 +251,63 @@ void SSATestCase::report_netcdf(const std::string &testname,
   global_attributes.set_string("source", std::string("PISM ") + pism::revision);
 
   // Find the number of records in this file:
-  PIO nc(m_grid->com, "netcdf3", filename, mode);      // OK to use NetCDF3.
-  start = nc.inq_dimlen("N");
+  File file(m_grid->com, filename, PISM_NETCDF3, mode);      // OK to use NetCDF3.
+  start = file.dimension_length("N");
 
-  io::write_attributes(nc, global_attributes, PISM_DOUBLE);
+  io::write_attributes(file, global_attributes, PISM_DOUBLE);
 
   // Write the dimension variable:
-  io::write_timeseries(nc, err, (size_t)start, (double)(start + 1), PISM_INT);
+  io::write_timeseries(file, err, (size_t)start, (double)(start + 1), PISM_INT);
 
   // Always write grid parameters:
   err.set_name("dx");
   err.set_string("units", "meters");
-  io::write_timeseries(nc, err, (size_t)start, m_grid->dx());
+  io::write_timeseries(file, err, (size_t)start, m_grid->dx());
   err.set_name("dy");
-  io::write_timeseries(nc, err, (size_t)start, m_grid->dy());
+  io::write_timeseries(file, err, (size_t)start, m_grid->dy());
 
   // Always write the test name:
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("test");
-  io::write_timeseries(nc, err, (size_t)start, testname[0], PISM_BYTE);
+  io::write_timeseries(file, err, (size_t)start, testname[0], PISM_INT);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("max_velocity");
   err.set_string("units", "m year-1");
   err.set_string("long_name", "maximum ice velocity magnitude error");
-  io::write_timeseries(nc, err, (size_t)start, max_vector);
+  io::write_timeseries(file, err, (size_t)start, max_vector);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("relative_velocity");
   err.set_string("units", "percent");
   err.set_string("long_name", "relative ice velocity magnitude error");
-  io::write_timeseries(nc, err, (size_t)start, rel_vector);
+  io::write_timeseries(file, err, (size_t)start, rel_vector);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("maximum_u");
   err.set_string("units", "m year-1");
   err.set_string("long_name", "maximum error in the X-component of the ice velocity");
-  io::write_timeseries(nc, err, (size_t)start, max_u);
+  io::write_timeseries(file, err, (size_t)start, max_u);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("maximum_v");
   err.set_string("units", "m year-1");
   err.set_string("long_name", "maximum error in the Y-component of the ice velocity");
-  io::write_timeseries(nc, err, (size_t)start, max_v);
+  io::write_timeseries(file, err, (size_t)start, max_v);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("average_u");
   err.set_string("units", "m year-1");
   err.set_string("long_name", "average error in the X-component of the ice velocity");
-  io::write_timeseries(nc, err, (size_t)start, avg_u);
+  io::write_timeseries(file, err, (size_t)start, avg_u);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("average_v");
   err.set_string("units", "m year-1");
   err.set_string("long_name", "average error in the Y-component of the ice velocity");
-  io::write_timeseries(nc, err, (size_t)start, avg_v);
+  io::write_timeseries(file, err, (size_t)start, avg_v);
 
-  nc.close();
+  file.close();
 }
 
 void SSATestCase::exactSolution(int /*i*/, int /*j*/,
@@ -320,8 +320,7 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/,
 void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
-  PIO file(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
-          filename, PISM_READWRITE_MOVE);
+  File file(m_grid->com, filename, PISM_NETCDF3, PISM_READWRITE_MOVE);
   io::define_time(file, *m_grid->ctx());
   io::append_time(file, *m_config, 0.0);
 

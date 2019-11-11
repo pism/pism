@@ -23,7 +23,7 @@
 #include "pism/energy/utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/Vars.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 
 namespace pism {
 namespace energy {
@@ -43,16 +43,16 @@ const IceModelVec3 & TemperatureModel::temperature() const {
   return m_ice_temperature;
 }
 
-void TemperatureModel::restart_impl(const PIO &input_file, int record) {
+void TemperatureModel::restart_impl(const File &input_file, int record) {
 
   m_log->message(2, "* Restarting the temperature-based energy balance model from %s...\n",
-                 input_file.inq_filename().c_str());
+                 input_file.filename().c_str());
 
   m_basal_melt_rate.read(input_file, record);
 
   const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  if (input_file.inq_var(m_ice_temperature.metadata().get_name())) {
+  if (input_file.find_variable(m_ice_temperature.metadata().get_name())) {
     m_ice_temperature.read(input_file, record);
   } else {
     init_enthalpy(input_file, false, record);
@@ -65,14 +65,14 @@ void TemperatureModel::restart_impl(const PIO &input_file, int record) {
   compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
 }
 
-void TemperatureModel::bootstrap_impl(const PIO &input_file,
+void TemperatureModel::bootstrap_impl(const File &input_file,
                                       const IceModelVec2S &ice_thickness,
                                       const IceModelVec2S &surface_temperature,
                                       const IceModelVec2S &climatic_mass_balance,
                                       const IceModelVec2S &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the temperature-based energy balance model from %s...\n",
-                 input_file.inq_filename().c_str());
+                 input_file.filename().c_str());
 
   m_basal_melt_rate.regrid(input_file, OPTIONAL,
                            m_config->get_number("bootstrapping.defaults.bmelt"));
@@ -359,13 +359,13 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   compute_enthalpy_cold(m_work, ice_thickness, m_work);
 }
 
-void TemperatureModel::define_model_state_impl(const PIO &output) const {
+void TemperatureModel::define_model_state_impl(const File &output) const {
   m_ice_temperature.define(output);
   m_basal_melt_rate.define(output);
   // ice enthalpy is not a part of the model state
 }
 
-void TemperatureModel::write_model_state_impl(const PIO &output) const {
+void TemperatureModel::write_model_state_impl(const File &output) const {
   m_ice_temperature.write(output);
   m_basal_melt_rate.write(output);
   // ice enthalpy is not a part of the model state

@@ -34,8 +34,8 @@ public:
   FractureDensity(IceGrid::ConstPtr grid, std::shared_ptr<const rheology::FlowLaw> flow_law);
   virtual ~FractureDensity();
 
-  void restart(const PIO &input_file, int record);
-  void bootstrap(const PIO &input_file);
+  void restart(const File &input_file, int record);
+  void bootstrap(const File &input_file);
   void initialize(const IceModelVec2S &density, const IceModelVec2S &age);
   void initialize();
 
@@ -54,8 +54,8 @@ public:
 
 private:
 
-  void define_model_state_impl(const PIO &output) const;
-  void write_model_state_impl(const PIO &output) const;
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
 
   DiagnosticList diagnostics_impl() const;
 

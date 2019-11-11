@@ -23,7 +23,7 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
@@ -142,10 +142,10 @@ void SSA::init_impl() {
   // and read the initial guess (unless asked not to).
   if (opts.type == INIT_RESTART) {
     if (m_config->get_flag("stress_balance.ssa.read_initial_guess")) {
-      PIO input_file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
-      bool u_ssa_found = input_file.inq_var("u_ssa");
-      bool v_ssa_found = input_file.inq_var("v_ssa");
-      unsigned int start = input_file.inq_nrecords() - 1;
+      File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      bool u_ssa_found = input_file.find_variable("u_ssa");
+      bool v_ssa_found = input_file.find_variable("v_ssa");
+      unsigned int start = input_file.nrecords() - 1;
 
       if (u_ssa_found and v_ssa_found) {
         m_log->message(3, "Reading u_ssa and v_ssa...\n");
@@ -352,11 +352,11 @@ const IceModelVec2V& SSA::driving_stress() const {
 }
 
 
-void SSA::define_model_state_impl(const PIO &output) const {
+void SSA::define_model_state_impl(const File &output) const {
   m_velocity.define(output);
 }
 
-void SSA::write_model_state_impl(const PIO &output) const {
+void SSA::write_model_state_impl(const File &output) const {
   m_velocity.write(output);
 }
 

@@ -344,7 +344,7 @@ void Routing::initialization_message() const {
   }
 }
 
-void Routing::restart_impl(const PIO &input_file, int record) {
+void Routing::restart_impl(const File &input_file, int record) {
   Hydrology::restart_impl(input_file, record);
 
   m_W.read(input_file, record);
@@ -352,7 +352,7 @@ void Routing::restart_impl(const PIO &input_file, int record) {
   regrid("Hydrology", m_W);
 }
 
-void Routing::bootstrap_impl(const PIO &input_file,
+void Routing::bootstrap_impl(const File &input_file,
                              const IceModelVec2S &ice_thickness) {
   Hydrology::bootstrap_impl(input_file, ice_thickness);
 
@@ -370,12 +370,12 @@ void Routing::init_impl(const IceModelVec2S &W_till,
   m_W.copy_from(W);
 }
 
-void Routing::define_model_state_impl(const PIO &output) const {
+void Routing::define_model_state_impl(const File &output) const {
   Hydrology::define_model_state_impl(output);
   m_W.define(output);
 }
 
-void Routing::write_model_state_impl(const PIO &output) const {
+void Routing::write_model_state_impl(const File &output) const {
   Hydrology::write_model_state_impl(output);
   m_W.write(output);
 }

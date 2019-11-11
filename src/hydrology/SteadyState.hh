@@ -43,17 +43,17 @@ protected:
 
   void init_impl(const IceModelVec2S &W_till, const IceModelVec2S &W, const IceModelVec2S &P);
 
-  void bootstrap_impl(const PIO &input_file,
+  void bootstrap_impl(const File &input_file,
                       const IceModelVec2S &ice_thickness);
-  void restart_impl(const PIO &input_file, int record);
+  void restart_impl(const File &input_file, int record);
 
   void update_impl(double t, double dt, const Inputs& inputs);
 
   std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
   MaxTimestep max_timestep_impl(double t) const;
-  void define_model_state_impl(const PIO &output) const;
-  void write_model_state_impl(const PIO &output) const;
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
 
   std::shared_ptr<EmptyingProblem> m_emptying_problem;
 

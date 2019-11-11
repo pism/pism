@@ -88,9 +88,9 @@ public:
   const IceModelVec2Stag& velocity_staggered() const;
 
 protected:
-  virtual void restart_impl(const PIO &input_file, int record);
+  virtual void restart_impl(const File &input_file, int record);
 
-  virtual void bootstrap_impl(const PIO &input_file,
+  virtual void bootstrap_impl(const File &input_file,
                               const IceModelVec2S &ice_thickness);
 
   virtual void init_impl(const IceModelVec2S &W_till,
@@ -102,8 +102,8 @@ protected:
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
   virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   double max_timestep_W_diff(double KW_max) const;
   double max_timestep_W_cfl() const;

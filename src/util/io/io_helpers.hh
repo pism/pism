@@ -35,7 +35,7 @@ class SpatialVariableMetadata;
 class TimeseriesMetadata;
 class TimeBoundsMetadata;
 class IceGrid;
-class PIO;
+class File;
 class Time;
 class Logger;
 class Context;
@@ -44,7 +44,7 @@ class Config;
 namespace io {
 
 void regrid_spatial_variable(SpatialVariableMetadata &var,
-                             const IceGrid& grid, const PIO &nc,
+                             const IceGrid& grid, const File &nc,
                              RegriddingFlag flag, bool do_report_range,
                              bool allow_extrapolation,
                              double default_value,
@@ -52,7 +52,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
                              double *output);
 
 void regrid_spatial_variable(SpatialVariableMetadata &var,
-                             const IceGrid& grid, const PIO &nc,
+                             const IceGrid& grid, const File &nc,
                              unsigned int t_start,
                              RegriddingFlag flag, bool do_report_range,
                              bool allow_extrapolation,
@@ -61,65 +61,68 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
                              double *output);
 
 void read_spatial_variable(const SpatialVariableMetadata &var,
-                           const IceGrid& grid, const PIO &nc,
+                           const IceGrid& grid, const File &nc,
                            unsigned int time, double *output);
 
 void write_spatial_variable(const SpatialVariableMetadata &var,
-                            const IceGrid& grid, const PIO &nc,
+                            const IceGrid& grid, const File &nc,
                             const double *input);
 
-void define_dimension(const PIO &nc, unsigned long int length,
+void define_dimension(const File &nc, unsigned long int length,
                       const VariableMetadata &metadata);
 
-void define_time(const PIO &file, const Context &ctx);
+void define_time(const File &file, const Context &ctx);
 
-void define_time(const PIO &nc, const std::string &name, const std::string &calendar,
+void define_time(const File &nc, const std::string &name, const std::string &calendar,
                  const std::string &units, units::System::Ptr unit_system);
 
-void append_time(const PIO &file, const Config &ctx, double time_seconds);
-void append_time(const PIO &nc, const std::string &name, double time_seconds);
+void append_time(const File &file, const Config &ctx, double time_seconds);
+void append_time(const File &nc, const std::string &name, double time_seconds);
 
 void define_spatial_variable(const SpatialVariableMetadata &var,
-                             const IceGrid &grid, const PIO &nc,
-                             IO_Type nctype,
-                             const std::string &variable_order);
+                             const IceGrid &grid, const File &nc,
+                             IO_Type nctype);
 
 void define_timeseries(const TimeseriesMetadata& var,
-                       const PIO &nc, IO_Type nctype);
+                       const File &nc, IO_Type nctype);
 
 void define_time_bounds(const TimeBoundsMetadata& var,
-                        const PIO &nc, IO_Type nctype);
+                        const File &nc, IO_Type nctype = PISM_DOUBLE);
 
-void read_timeseries(const PIO &nc, const TimeseriesMetadata &metadata,
+void read_timeseries(const File &nc, const TimeseriesMetadata &metadata,
                      const Time &time, const Logger &log, std::vector<double> &data);
 
-void write_timeseries(const PIO &nc, const TimeseriesMetadata &metadata,
+void write_timeseries(const File &nc, const TimeseriesMetadata &metadata,
                       size_t t_start, const std::vector<double> &data,
                       IO_Type nctype = PISM_DOUBLE);
 
-void write_timeseries(const PIO &nc, const TimeseriesMetadata &metadata,
+void write_timeseries(const File &nc, const TimeseriesMetadata &metadata,
                       size_t t_start, double data,
                       IO_Type nctype = PISM_DOUBLE);
 
-void read_time_bounds(const PIO &nc,
+void read_time_bounds(const File &nc,
                       const TimeBoundsMetadata &metadata,
                       const Time &time, const Logger &log, std::vector<double> &data);
 
-void write_time_bounds(const PIO &nc, const TimeBoundsMetadata &metadata,
+void write_time_bounds(const File &nc, const TimeBoundsMetadata &metadata,
                        size_t t_start, const std::vector<double> &data,
                        IO_Type nctype = PISM_DOUBLE);
 
 std::string time_dimension(units::System::Ptr unit_system,
-                           const PIO &file,
+                           const File &file,
                            const std::string &variable_name);
 
-void read_attributes(const PIO &nc, const std::string &variable_name, VariableMetadata &variable);
+void read_attributes(const File &nc, const std::string &variable_name, VariableMetadata &variable);
 
-void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type nctype);
+void write_attributes(const File &nc, const VariableMetadata &variable, IO_Type nctype);
 
-void read_valid_range(const PIO &nc, const std::string &name, VariableMetadata &variable);
+void read_valid_range(const File &nc, const std::string &name, VariableMetadata &variable);
 
 bool file_exists(MPI_Comm com, const std::string &filename);
+
+void move_if_exists(MPI_Comm com, const std::string &file_to_move, int rank_to_use = 0);
+
+void remove_if_exists(MPI_Comm com, const std::string &file_to_remove, int rank_to_use = 0);
 
 } // end of namespace io
 } // end of namespace pism

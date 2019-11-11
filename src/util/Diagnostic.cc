@@ -88,30 +88,30 @@ unsigned int Diagnostic::n_variables() const {
   return m_vars.size();
 }
 
-void Diagnostic::init(const PIO &input, unsigned int time) {
+void Diagnostic::init(const File &input, unsigned int time) {
   this->init_impl(input, time);
 }
 
-void Diagnostic::define_state(const PIO &output) const {
+void Diagnostic::define_state(const File &output) const {
   this->define_state_impl(output);
 }
 
-void Diagnostic::write_state(const PIO &output) const {
+void Diagnostic::write_state(const File &output) const {
   this->write_state_impl(output);
 }
 
-void Diagnostic::init_impl(const PIO &input, unsigned int time) {
+void Diagnostic::init_impl(const File &input, unsigned int time) {
   (void) input;
   (void) time;
   // empty
 }
 
-void Diagnostic::define_state_impl(const PIO &output) const {
+void Diagnostic::define_state_impl(const File &output) const {
   (void) output;
   // empty
 }
 
-void Diagnostic::write_state_impl(const PIO &output) const {
+void Diagnostic::write_state_impl(const File &output) const {
   (void) output;
   // empty
 }
@@ -127,15 +127,14 @@ SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
   return m_vars[N];
 }
 
-void Diagnostic::define(const PIO &file, IO_Type default_type) const {
+void Diagnostic::define(const File &file, IO_Type default_type) const {
   this->define_impl(file, default_type);
 }
 
 //! Define NetCDF variables corresponding to a diagnostic quantity.
-void Diagnostic::define_impl(const PIO &file, IO_Type default_type) const {
+void Diagnostic::define_impl(const File &file, IO_Type default_type) const {
   for (auto &v : m_vars) {
-    io::define_spatial_variable(v, *m_grid, file, default_type,
-                                m_grid->ctx()->config()->get_string("output.variable_order"));
+    io::define_spatial_variable(v, *m_grid, file, default_type);
   }
 }
 
@@ -343,7 +342,7 @@ void TSFluxDiagnostic::update_impl(double t0, double t1) {
   evaluate(t0, t1, this->compute());
 }
 
-void TSDiagnostic::define(const PIO &file) const {
+void TSDiagnostic::define(const File &file) const {
   io::define_timeseries(m_ts.variable(), file, PISM_DOUBLE);
   io::define_time_bounds(m_ts.bounds(), file, PISM_DOUBLE);
 }
@@ -356,9 +355,9 @@ void TSDiagnostic::flush() {
 
   std::string dimension_name = m_ts.dimension().get_name();
 
-  PIO file(m_grid->com, "netcdf3", m_output_filename, PISM_READWRITE); // OK to use netcdf3
+  File file(m_grid->com, m_output_filename, PISM_NETCDF3, PISM_READWRITE); // OK to use netcdf3
 
-  unsigned int len = file.inq_dimlen(dimension_name);
+  unsigned int len = file.dimension_length(dimension_name);
 
   if (len > 0) {
     double last_time = 0.0;
@@ -379,14 +378,14 @@ void TSDiagnostic::flush() {
   m_ts.reset();
 }
 
-void TSDiagnostic::init(const PIO &output_file,
+void TSDiagnostic::init(const File &output_file,
                         std::shared_ptr<std::vector<double>> requested_times) {
-  m_output_filename = output_file.inq_filename();
+  m_output_filename = output_file.filename();
 
   m_times = requested_times;
 
   // Get the number of records in the file (for appending):
-  m_start = output_file.inq_dimlen(m_ts.dimension().get_name());
+  m_start = output_file.dimension_length(m_ts.dimension().get_name());
 }
 
 const VariableMetadata &TSDiagnostic::metadata() const {

@@ -36,8 +36,8 @@ public:
   ~PSFormulas();
 protected:
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   const IceModelVec2S& mass_flux_impl() const;
   const IceModelVec2S& temperature_impl() const;

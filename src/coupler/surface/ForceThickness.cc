@@ -28,7 +28,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
@@ -51,7 +51,7 @@ ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel
                        "mask specifying where to apply the force-to-thickness mechanism",
                        "", "", "", 0); // no units and no standard name
   m_ftt_mask.set(1.0); // default: applied in whole domain
-  m_ftt_mask.metadata().set_output_type(PISM_BYTE);
+  m_ftt_mask.metadata().set_output_type(PISM_INT);
   m_ftt_mask.metadata().set_time_independent(true);
 
   m_mass_flux = allocate_mass_flux(g);
@@ -86,7 +86,7 @@ void ForceThickness::init_impl(const Geometry &geometry) {
                  m_ice_free_thickness_threshold);
 
   // check of the input file is really there and regrid the target thickness
-  PIO file(m_grid->com, "guess_mode", input_file, PISM_READONLY);
+  File file(m_grid->com, input_file, PISM_GUESS, PISM_READONLY);
 
   m_log->message(2,
                  "    reading target thickness 'thk' from %s ...\n"
@@ -306,7 +306,7 @@ MaxTimestep ForceThickness::max_timestep_impl(double my_t) const {
   return std::min(input_max_dt, MaxTimestep(max_dt, "surface forcing"));
 }
 
-void ForceThickness::define_model_state_impl(const PIO &output) const {
+void ForceThickness::define_model_state_impl(const File &output) const {
   m_ftt_mask.define(output);
   m_target_thickness.define(output);
 
@@ -315,7 +315,7 @@ void ForceThickness::define_model_state_impl(const PIO &output) const {
   }
 }
 
-void ForceThickness::write_model_state_impl(const PIO &output) const {
+void ForceThickness::write_model_state_impl(const File &output) const {
   m_ftt_mask.write(output);
   m_target_thickness.write(output);
 

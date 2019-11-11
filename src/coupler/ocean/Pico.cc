@@ -68,7 +68,7 @@ Pico::Pico(IceGrid::ConstPtr g)
     unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
+    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
     m_theta_ocean = IceModelVec2T::ForcingField(m_grid,
                                                 file,
@@ -179,7 +179,7 @@ void Pico::init_impl(const Geometry &geometry) {
   }
 }
 
-void Pico::define_model_state_impl(const PIO &output) const {
+void Pico::define_model_state_impl(const File &output) const {
 
   m_basin_mask.define(output);
   m_Soc_box0.define(output);
@@ -189,7 +189,7 @@ void Pico::define_model_state_impl(const PIO &output) const {
   OceanModel::define_model_state_impl(output);
 }
 
-void Pico::write_model_state_impl(const PIO &output) const {
+void Pico::write_model_state_impl(const File &output) const {
 
   m_basin_mask.write(output);
   m_Soc_box0.write(output);

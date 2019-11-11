@@ -18,7 +18,7 @@
 
 #include "LingleClark.hh"
 
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -230,10 +230,10 @@ void LingleClark::init_impl(const InputOptions &opts, const IceModelVec2S &ice_t
   m_log->message(2, "* Initializing the Lingle-Clark bed deformation model...\n");
 
   if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
-    PIO input_file(m_grid->com, "netcdf3", opts.filename, PISM_READONLY);
+    File input_file(m_grid->com, opts.filename, PISM_NETCDF3, PISM_READONLY);
 
-    if (input_file.inq_var(m_time_name)) {
-      input_file.get_vara_double(m_time_name, {0}, {1}, &m_t_last);
+    if (input_file.find_variable(m_time_name)) {
+      input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
     } else {
       m_t_last = m_grid->ctx()->time()->current();
     }
@@ -404,28 +404,28 @@ void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
   }
 }
 
-void LingleClark::define_model_state_impl(const PIO &output) const {
+void LingleClark::define_model_state_impl(const File &output) const {
   BedDef::define_model_state_impl(output);
   m_viscous_displacement.define(output);
   m_elastic_displacement.define(output);
 
-  if (not output.inq_var(m_time_name)) {
-    output.def_var(m_time_name, PISM_DOUBLE, {});
+  if (not output.find_variable(m_time_name)) {
+    output.define_variable(m_time_name, PISM_DOUBLE, {});
 
-    output.put_att_text(m_time_name, "long_name",
+    output.write_attribute(m_time_name, "long_name",
                         "time of the last update of the Lingle-Clark bed deformation model");
-    output.put_att_text(m_time_name, "calendar", m_grid->ctx()->time()->calendar());
-    output.put_att_text(m_time_name, "units", m_grid->ctx()->time()->CF_units_string());
+    output.write_attribute(m_time_name, "calendar", m_grid->ctx()->time()->calendar());
+    output.write_attribute(m_time_name, "units", m_grid->ctx()->time()->CF_units_string());
   }
 }
 
-void LingleClark::write_model_state_impl(const PIO &output) const {
+void LingleClark::write_model_state_impl(const File &output) const {
   BedDef::write_model_state_impl(output);
 
   m_viscous_displacement.write(output);
   m_elastic_displacement.write(output);
 
-  output.put_vara_double(m_time_name, {0}, {1}, &m_t_last);
+  output.write_variable(m_time_name, {0}, {1}, &m_t_last);
 }
 
 DiagnosticList LingleClark::diagnostics_impl() const {

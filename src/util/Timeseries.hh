@@ -27,7 +27,7 @@
 namespace pism {
 
 class IceGrid;
-class PIO;
+class File;
 class Time;
 class Logger;
 
@@ -77,8 +77,8 @@ public:
   Timeseries(MPI_Comm com, units::System::Ptr units_system,
              const std::string &name, const std::string &dimension_name);
   
-  void read(const PIO &nc, const Time &time_manager, const Logger &log);
-  void write(const PIO &nc) const;
+  void read(const File &nc, const Time &time_manager, const Logger &log);
+  void write(const File &nc) const;
   double operator()(double time) const;
   double operator[](unsigned int j) const;
   double average(double t, double dt, unsigned int N) const;

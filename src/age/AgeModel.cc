@@ -22,7 +22,7 @@
 #include "pism/age/AgeColumnSystem.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Vars.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 
 namespace pism {
 
@@ -194,9 +194,9 @@ void AgeModel::init(const InputOptions &opts) {
   double initial_age_years = m_config->get_number("age.initial_value", "years");
 
   if (opts.type == INIT_RESTART) {
-    PIO input_file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
+    File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
 
-    if (input_file.inq_var("age")) {
+    if (input_file.find_variable("age")) {
       m_ice_age.read(input_file, opts.record);
     } else {
       m_log->message(2,
@@ -213,11 +213,11 @@ void AgeModel::init(const InputOptions &opts) {
   regrid("Age Model", m_ice_age, REGRID_WITHOUT_REGRID_VARS);
 }
 
-void AgeModel::define_model_state_impl(const PIO &output) const {
+void AgeModel::define_model_state_impl(const File &output) const {
   m_ice_age.define(output);
 }
 
-void AgeModel::write_model_state_impl(const PIO &output) const {
+void AgeModel::write_model_state_impl(const File &output) const {
   m_ice_age.write(output);
 }
 

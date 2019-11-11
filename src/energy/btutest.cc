@@ -21,7 +21,7 @@ static char help[] =
 
 #include "pism/util/pism_options.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/verification/BTU_Verification.hh"
 #include "pism/energy/BTU_Minimal.hh"
@@ -218,8 +218,11 @@ int main(int argc, char *argv[]) {
                  max_error, 100.0*max_error/FF, avg_error);
     log->message(1, "NUM ERRORS DONE\n");
 
-    PIO file(grid->com, grid->ctx()->config()->get_string("output.format"),
-            outname, PISM_READWRITE_MOVE);
+    File file(grid->com,
+              outname,
+              string_to_backend(config->get_string("output.format")),
+              PISM_READWRITE_MOVE,
+              ctx->pio_iosys_id());
 
     io::define_time(file, *ctx);
     io::append_time(file, *ctx->config(), ctx->time()->current());

@@ -173,7 +173,7 @@ MaxTimestep FrontalMelt::max_timestep_impl(double t) const {
   }
 }
 
-void FrontalMelt::define_model_state_impl(const PIO &output) const {
+void FrontalMelt::define_model_state_impl(const File &output) const {
   if (m_input_model) {
     return m_input_model->define_model_state(output);
   } else {
@@ -181,7 +181,7 @@ void FrontalMelt::define_model_state_impl(const PIO &output) const {
   }
 }
 
-void FrontalMelt::write_model_state_impl(const PIO &output) const {
+void FrontalMelt::write_model_state_impl(const File &output) const {
   if (m_input_model) {
     return m_input_model->write_model_state(output);
   } else {

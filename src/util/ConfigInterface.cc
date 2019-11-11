@@ -20,7 +20,7 @@
 #include <mpi.h>
 #include <cmath>
 
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "ConfigInterface.hh"
 #include "Units.hh"
 #include "pism_utilities.hh"
@@ -61,29 +61,29 @@ Config::~Config() {
   delete m_impl;
 }
 
-void Config::read(MPI_Comm com, const std::string &file) {
+void Config::read(MPI_Comm com, const std::string &filename) {
 
-  PIO nc(com, "netcdf3", file, PISM_READONLY); // OK to use netcdf3
-  this->read(nc);
+  File file(com, filename, PISM_NETCDF3, PISM_READONLY); // OK to use netcdf3
+  this->read(file);
 }
 
-void Config::read(const PIO &nc) {
-  this->read_impl(nc);
+void Config::read(const File &file) {
+  this->read_impl(file);
 
-  m_impl->filename = nc.inq_filename();
+  m_impl->filename = file.filename();
 }
 
-void Config::write(const PIO &nc) const {
-  this->write_impl(nc);
+void Config::write(const File &file) const {
+  this->write_impl(file);
 }
 
-void Config::write(MPI_Comm com, const std::string &file, bool append) const {
+void Config::write(MPI_Comm com, const std::string &filename, bool append) const {
 
   IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 
-  PIO nc(com, "netcdf3", file, mode); // OK to use netcdf3
+  File file(com, filename, PISM_NETCDF3, mode); // OK to use netcdf3
 
-  this->write(nc);
+  this->write(file);
 }
 
 //! \brief Returns the name of the file used to initialize the database.

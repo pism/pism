@@ -91,9 +91,9 @@ FractureDensity::~FractureDensity() {
   // empty
 }
 
-void FractureDensity::restart(const PIO &input_file, int record) {
+void FractureDensity::restart(const File &input_file, int record) {
   m_log->message(2, "* Restarting the fracture density model from %s...\n",
-                 input_file.inq_filename().c_str());
+                 input_file.filename().c_str());
 
   m_density.read(input_file, record);
   m_age.read(input_file, record);
@@ -102,9 +102,9 @@ void FractureDensity::restart(const PIO &input_file, int record) {
   regrid("Fracture density model", m_age, REGRID_WITHOUT_REGRID_VARS);
 }
 
-void FractureDensity::bootstrap(const PIO &input_file) {
+void FractureDensity::bootstrap(const File &input_file) {
   m_log->message(2, "* Bootstrapping the fracture density model from %s...\n",
-                 input_file.inq_filename().c_str());
+                 input_file.filename().c_str());
 
   m_density.regrid(input_file, OPTIONAL, 0.0);
   m_age.regrid(input_file, OPTIONAL, 0.0);
@@ -121,12 +121,12 @@ void FractureDensity::initialize() {
   m_age.set(0.0);
 }
 
-void FractureDensity::define_model_state_impl(const PIO &output) const {
+void FractureDensity::define_model_state_impl(const File &output) const {
   m_density.define(output);
   m_age.define(output);
 }
 
-void FractureDensity::write_model_state_impl(const PIO &output) const {
+void FractureDensity::write_model_state_impl(const File &output) const {
   m_density.write(output);
   m_age.write(output);
 }

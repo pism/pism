@@ -22,7 +22,7 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
@@ -57,7 +57,7 @@ void Distributed::initialization_message() const {
                  "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
 }
 
-void Distributed::restart_impl(const PIO &input_file, int record) {
+void Distributed::restart_impl(const File &input_file, int record) {
   Routing::restart_impl(input_file, record);
 
   m_P.read(input_file, record);
@@ -65,7 +65,7 @@ void Distributed::restart_impl(const PIO &input_file, int record) {
   regrid("Hydrology", m_P);
 }
 
-void Distributed::bootstrap_impl(const PIO &input_file,
+void Distributed::bootstrap_impl(const File &input_file,
                                  const IceModelVec2S &ice_thickness) {
   Routing::bootstrap_impl(input_file, ice_thickness);
 
@@ -108,12 +108,12 @@ void Distributed::init_impl(const IceModelVec2S &W_till,
   m_P.copy_from(P);
 }
 
-void Distributed::define_model_state_impl(const PIO &output) const {
+void Distributed::define_model_state_impl(const File &output) const {
   Routing::define_model_state_impl(output);
   m_P.define(output);
 }
 
-void Distributed::write_model_state_impl(const PIO &output) const {
+void Distributed::write_model_state_impl(const File &output) const {
   Routing::write_model_state_impl(output);
   m_P.write(output);
 }

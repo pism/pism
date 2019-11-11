@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #include "EnergyModel.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/Vars.hh"
 #include "utilities.hh"
 #include "pism/util/EnthalpyConverter.hh"
@@ -160,15 +160,15 @@ EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
   }
 }
 
-void EnergyModel::init_enthalpy(const PIO &input_file, bool do_regrid, int record) {
+void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int record) {
 
-  if (input_file.inq_var("enthalpy")) {
+  if (input_file.find_variable("enthalpy")) {
     if (do_regrid) {
       m_ice_enthalpy.regrid(input_file, CRITICAL);
     } else {
       m_ice_enthalpy.read(input_file, record);
     }
-  } else if (input_file.inq_var("temp")) {
+  } else if (input_file.find_variable("temp")) {
     IceModelVec3
       &temp    = m_work,
       &liqfrac = m_ice_enthalpy;
@@ -188,7 +188,7 @@ void EnergyModel::init_enthalpy(const PIO &input_file, bool do_regrid, int recor
 
     const IceModelVec2S & ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-    if (input_file.inq_var("liqfrac")) {
+    if (input_file.find_variable("liqfrac")) {
       SpatialVariableMetadata enthalpy_metadata = m_ice_enthalpy.metadata();
 
       liqfrac.set_name("liqfrac");
@@ -218,7 +218,7 @@ void EnergyModel::init_enthalpy(const PIO &input_file, bool do_regrid, int recor
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "neither enthalpy nor temperature was found in '%s'.\n",
-                                  input_file.inq_filename().c_str());
+                                  input_file.filename().c_str());
   }
 }
 
@@ -239,17 +239,17 @@ void EnergyModel::regrid_enthalpy() {
   std::string enthalpy_name = m_ice_enthalpy.metadata().get_name();
 
   if (regrid_vars.empty() or member(enthalpy_name, regrid_vars)) {
-    PIO regrid_file(m_grid->com, "guess_mode", regrid_filename, PISM_READONLY);
+    File regrid_file(m_grid->com, regrid_filename, PISM_GUESS, PISM_READONLY);
     init_enthalpy(regrid_file, true, 0);
   }
 }
 
 
-void EnergyModel::restart(const PIO &input_file, int record) {
+void EnergyModel::restart(const File &input_file, int record) {
   this->restart_impl(input_file, record);
 }
 
-void EnergyModel::bootstrap(const PIO &input_file,
+void EnergyModel::bootstrap(const File &input_file,
                             const IceModelVec2S &ice_thickness,
                             const IceModelVec2S &surface_temperature,
                             const IceModelVec2S &climatic_mass_balance,

@@ -48,7 +48,7 @@ class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
             grid = self.grid
             vecs = self.modeldata.vecs
 
-            pio = PISM.PIO(grid.com, "netcdf3", filename, PISM.PISM_READWRITE)  # append mode!
+            pio = PISM.File(grid.com, filename, PISM.PISM_NETCDF3, PISM.PISM_READWRITE)
 
             self.modeldata.vecs.write(filename)
             pio.close()

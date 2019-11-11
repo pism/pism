@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,12 +32,11 @@ public:
   virtual ~NC4_Par() {}
 protected:
   // open/create/close
-  virtual int open_impl(const std::string &filename, IO_Mode mode);
+  virtual void open_impl(const std::string &filename, IO_Mode mode);
 
-  virtual int create_impl(const std::string &filename);
+  virtual void create_impl(const std::string &filename);
 
-  virtual int integer_open_mode(IO_Mode input) const;
-  virtual int set_access_mode(int varid, bool mapped) const;
+  virtual void set_access_mode(int varid, bool mapped) const;
 };
 
 

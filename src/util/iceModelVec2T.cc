@@ -20,7 +20,7 @@
 #include <cassert>
 
 #include "iceModelVec2T.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism_utilities.hh"
 #include "Time.hh"
 #include "IceGrid.hh"
@@ -51,7 +51,7 @@ namespace pism {
  * @param[in] periodic true if this forcing field should be interpreted as periodic
  */
 IceModelVec2T::Ptr IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
-                                               const PIO &file,
+                                               const File &file,
                                                const std::string &short_name,
                                                const std::string &standard_name,
                                                int max_buffer_size,
@@ -59,7 +59,7 @@ IceModelVec2T::Ptr IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
                                                bool periodic,
                                                InterpolationType interpolation_type) {
 
-  int n_records = file.inq_nrecords(short_name, standard_name,
+  int n_records = file.nrecords(short_name, standard_name,
                                     grid->ctx()->unit_system());
 
   if (not periodic) {
@@ -176,12 +176,9 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
-  PIO nc(m_grid->com, "guess_mode", m_filename, PISM_READONLY);
-  std::string name_found;
-  bool exists, found_by_standard_name;
-  nc.inq_var(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"),
-             exists, name_found, found_by_standard_name);
-  if (not exists) {
+  File file(m_grid->com, m_filename, PISM_GUESS, PISM_READONLY);
+  auto var = file.find_variable(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"));
+  if (not var.exists) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "can't find %s (%s) in %s.",
                                   m_metadata[0].get_string("long_name").c_str(),
                                   m_metadata[0].get_name().c_str(),
@@ -189,7 +186,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   }
 
   auto time_name = io::time_dimension(m_grid->ctx()->unit_system(),
-                                      nc, name_found);
+                                      file, var.name);
 
   if (not time_name.empty()) {
     // we're found the time dimension
@@ -198,10 +195,10 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
     auto time_units = m_grid->ctx()->time()->units_string();
     time_dimension.set_string("units", time_units);
 
-    io::read_timeseries(nc, time_dimension,
+    io::read_timeseries(file, time_dimension,
                         *m_grid->ctx()->time(), log, m_time);
 
-    std::string bounds_name = nc.get_att_text(time_name, "bounds");
+    std::string bounds_name = file.read_text_attribute(time_name, "bounds");
 
     if (m_time.size() > 1) {
 
@@ -219,7 +216,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
         TimeBoundsMetadata tb(bounds_name, time_name, m_grid->ctx()->unit_system());
         tb.set_string("units", time_units);
 
-        io::read_time_bounds(nc, tb, *m_grid->ctx()->time(),
+        io::read_time_bounds(file, tb, *m_grid->ctx()->time(),
                              log, m_time_bounds);
 
         // time bounds data overrides the time variable: we make t[j] be the
@@ -393,14 +390,14 @@ void IceModelVec2T::update(unsigned int start) {
     m_report_range = true;
   }
 
-  PIO nc(m_grid->com, "guess_mode", m_filename, PISM_READONLY);
+  File file(m_grid->com, m_filename, PISM_GUESS, PISM_READONLY);
 
   const bool allow_extrapolation = m_grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 
   for (unsigned int j = 0; j < missing; ++j) {
     {
       petsc::VecArray tmp_array(m_v);
-      io::regrid_spatial_variable(m_metadata[0], *m_grid, nc, start + j, CRITICAL,
+      io::regrid_spatial_variable(m_metadata[0], *m_grid, file, start + j, CRITICAL,
                                   m_report_range, allow_extrapolation,
                                   0.0, m_interpolation_type, tmp_array.get());
     }

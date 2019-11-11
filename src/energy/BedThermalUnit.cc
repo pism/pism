@@ -19,7 +19,7 @@
 #include <gsl/gsl_math.h>       // GSL_NAN
 
 #include "BedThermalUnit.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_options.hh"
@@ -49,9 +49,9 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
   if (opts.type == INIT_RESTART) {
     // If we're initializing from a file we need to get the number of bedrock
     // levels and the depth of the bed thermal layer from it:
-    PIO input_file(ctx->com(), "guess_mode", opts.filename, PISM_READONLY);
+    File input_file(ctx->com(), opts.filename, PISM_NETCDF3, PISM_READONLY);
 
-    if (input_file.inq_var("litho_temp")) {
+    if (input_file.find_variable("litho_temp")) {
       grid_info info(input_file, "litho_temp", ctx->unit_system(),
                      CELL_CENTER); // grid registration is irrelevant
 
@@ -186,11 +186,11 @@ unsigned int BedThermalUnit::Mz() const {
   return this->Mz_impl();
 }
 
-void BedThermalUnit::define_model_state_impl(const PIO &output) const {
+void BedThermalUnit::define_model_state_impl(const File &output) const {
   m_bottom_surface_flux.define(output);
 }
 
-void BedThermalUnit::write_model_state_impl(const PIO &output) const {
+void BedThermalUnit::write_model_state_impl(const File &output) const {
   m_bottom_surface_flux.write(output);
 }
 

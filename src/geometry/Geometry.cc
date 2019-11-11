@@ -77,7 +77,7 @@ Geometry::Geometry(IceGrid::ConstPtr grid)
                                                    MASK_FLOATING, MASK_ICE_FREE_OCEAN});
   cell_type.metadata().set_string("flag_meanings",
                                   "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
-  cell_type.metadata().set_output_type(PISM_BYTE);
+  cell_type.metadata().set_output_type(PISM_INT);
 
   cell_grounded_fraction.set_attrs("internal",
                                    "fractional grounded/floating mask (floating=0, grounded=1)",

@@ -39,7 +39,7 @@ public:
   const energy::CHSystem* cryo_hydrologic_system() const;
 
 protected:
-  virtual void bootstrap_2d(const PIO &input_file);
+  virtual void bootstrap_2d(const File &input_file);
 
   void allocate_geometry_evolution();
   void allocate_storage();

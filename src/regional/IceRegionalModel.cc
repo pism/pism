@@ -27,7 +27,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/basalstrength/ConstantYieldStress.hh"
 #include "RegionalDefaultYieldStress.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "EnthalpyModel_Regional.hh"
@@ -65,7 +65,7 @@ void IceRegionalModel::allocate_storage() {
   m_no_model_mask.metadata().set_numbers("flag_values", {0, 1});
   m_no_model_mask.metadata().set_string("flag_meanings", "normal special_treatment");
   m_no_model_mask.set_time_independent(true);
-  m_no_model_mask.metadata().set_output_type(PISM_BYTE);
+  m_no_model_mask.metadata().set_output_type(PISM_INT);
   m_no_model_mask.set(0);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
@@ -114,10 +114,10 @@ void IceRegionalModel::model_state_setup() {
   if (m_ch_system) {
     const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
 
-    std::unique_ptr<PIO> input_file;
+    std::unique_ptr<File> input_file;
 
     if (use_input_file) {
-      input_file.reset(new PIO(m_grid->com, "guess_mode", input.filename, PISM_READONLY));
+      input_file.reset(new File(m_grid->com, input.filename, PISM_GUESS, PISM_READONLY));
     }
 
     switch (input.type) {
@@ -241,7 +241,7 @@ void IceRegionalModel::allocate_basal_yield_stress() {
  * - usurf_stored
  * - thk_stored
  */
-void IceRegionalModel::bootstrap_2d(const PIO &input_file) {
+void IceRegionalModel::bootstrap_2d(const File &input_file) {
 
   IceModel::bootstrap_2d(input_file);
 

@@ -26,7 +26,7 @@
 #include "pism/util/Time.hh"
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/Mask.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
@@ -78,7 +78,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
     int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
     int max_buffer_size = (unsigned int) m_config->get_number("input.forcing.buffer_size");
 
-    PIO file(m_grid->com, "netcdf3", sd_file, PISM_READONLY);
+    File file(m_grid->com, sd_file, PISM_NETCDF3, PISM_READONLY);
     m_air_temp_sd = IceModelVec2T::ForcingField(m_grid, file,
                                                 "air_temp_sd", "",
                                                 max_buffer_size,
@@ -489,13 +489,13 @@ const IceModelVec2S& TemperatureIndex::air_temp_sd() const {
   return *m_air_temp_sd;
 }
 
-void TemperatureIndex::define_model_state_impl(const PIO &output) const {
+void TemperatureIndex::define_model_state_impl(const File &output) const {
   SurfaceModel::define_model_state_impl(output);
   m_firn_depth.define(output, PISM_DOUBLE);
   m_snow_depth.define(output, PISM_DOUBLE);
 }
 
-void TemperatureIndex::write_model_state_impl(const PIO &output) const {
+void TemperatureIndex::write_model_state_impl(const File &output) const {
   SurfaceModel::write_model_state_impl(output);
   m_firn_depth.write(output);
   m_snow_depth.write(output);

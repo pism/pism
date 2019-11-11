@@ -176,37 +176,37 @@ MaxTimestep SteadyState::max_timestep_impl(double t) const {
   return MaxTimestep(dt, "hydrology 'steady'");
 }
 
-void SteadyState::define_model_state_impl(const PIO& output) const {
+void SteadyState::define_model_state_impl(const File& output) const {
   NullTransport::define_model_state_impl(output);
 
-  if (not output.inq_var(m_time_name)) {
-    output.def_var(m_time_name, PISM_DOUBLE, {});
+  if (not output.find_variable(m_time_name)) {
+    output.define_variable(m_time_name, PISM_DOUBLE, {});
 
-    output.put_att_text(m_time_name, "long_name",
+    output.write_attribute(m_time_name, "long_name",
                         "time of the last update of the steady state subglacial water flux");
-    output.put_att_text(m_time_name, "calendar", m_grid->ctx()->time()->calendar());
-    output.put_att_text(m_time_name, "units", m_grid->ctx()->time()->CF_units_string());
+    output.write_attribute(m_time_name, "calendar", m_grid->ctx()->time()->calendar());
+    output.write_attribute(m_time_name, "units", m_grid->ctx()->time()->CF_units_string());
   }
 
   m_Q.define(output);
 }
 
-void SteadyState::write_model_state_impl(const PIO& output) const {
+void SteadyState::write_model_state_impl(const File& output) const {
   NullTransport::write_model_state_impl(output);
 
-  output.put_vara_double(m_time_name, {0}, {1}, &m_t_last);
+  output.write_variable(m_time_name, {0}, {1}, &m_t_last);
   m_Q.write(output);
 }
 
-void SteadyState::restart_impl(const PIO &input_file, int record) {
+void SteadyState::restart_impl(const File &input_file, int record) {
   NullTransport::restart_impl(input_file, record);
 
   init_time(m_config->get_string("hydrology.surface_input_file"));
 
   // Read m_t_last
   {
-    if (input_file.inq_var(m_time_name)) {
-      input_file.get_vara_double(m_time_name, {0}, {1}, &m_t_last);
+    if (input_file.find_variable(m_time_name)) {
+      input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
     } else {
       m_t_last = m_grid->ctx()->time()->current();
     }
@@ -217,7 +217,7 @@ void SteadyState::restart_impl(const PIO &input_file, int record) {
   regrid("hydrology 'steady'", m_Q, REGRID_WITHOUT_REGRID_VARS);
 }
 
-void SteadyState::bootstrap_impl(const PIO &input_file,
+void SteadyState::bootstrap_impl(const File &input_file,
                                  const IceModelVec2S &ice_thickness) {
   NullTransport::bootstrap_impl(input_file, ice_thickness);
 
@@ -225,15 +225,15 @@ void SteadyState::bootstrap_impl(const PIO &input_file,
 
   // Read m_t_last
   {
-    if (input_file.inq_var(m_time_name)) {
-      input_file.get_vara_double(m_time_name, {0}, {1}, &m_t_last);
+    if (input_file.find_variable(m_time_name)) {
+      input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
     } else {
       m_t_last = m_grid->ctx()->time()->current();
     }
   }
 
   // Read water flux
-  if (input_file.inq_var(m_Q.metadata().get_name())) {
+  if (input_file.find_variable(m_Q.metadata().get_name())) {
     // Regrid from the input file.
     m_Q.regrid(input_file, CRITICAL);
 
@@ -274,7 +274,7 @@ void SteadyState::init_time(const std::string &input_file) {
 
   std::string variable_name = "water_input_rate";
 
-  PIO file(m_grid->com, "guess_mode", input_file, PISM_READONLY);
+  File file(m_grid->com, input_file, PISM_GUESS, PISM_READONLY);
 
   auto time_name = io::time_dimension(m_grid->ctx()->unit_system(),
                                       file, variable_name);
@@ -284,7 +284,7 @@ void SteadyState::init_time(const std::string &input_file) {
     return;
   }
 
-  std::string bounds_name = file.get_att_text(time_name, "bounds");
+  std::string bounds_name = file.read_text_attribute(time_name, "bounds");
 
   if (bounds_name.empty()) {
     // no time bounds attribute

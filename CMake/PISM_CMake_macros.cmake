@@ -174,6 +174,10 @@ macro(pism_find_prerequisites)
     find_package (PROJ REQUIRED)
   endif()
 
+  if (Pism_USE_PIO)
+    find_package (ParallelIO REQUIRED)
+  endif()
+
   if (Pism_USE_PARALLEL_NETCDF4)
     # Try to find netcdf_par.h. We assume that NetCDF was compiled with
     # parallel I/O if this header is present.
@@ -249,6 +253,11 @@ macro(pism_set_dependencies)
   if (Pism_USE_PROJ)
     include_directories (${PROJ_INCLUDES})
     list (APPEND Pism_EXTERNAL_LIBS ${PROJ_LIBRARIES})
+  endif()
+
+  if (Pism_USE_PIO)
+    include_directories (${ParallelIO_INCLUDES})
+    list (APPEND Pism_EXTERNAL_LIBS ${ParallelIO_LIBRARIES})
   endif()
 
   if (Pism_USE_PNETCDF)

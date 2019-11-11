@@ -39,7 +39,7 @@
 namespace pism {
 
 class IceGrid;
-class PIO;
+class File;
 
 //! What "kind" of a vector to create: with or without ghosts.
 enum IceModelVecKind {WITHOUT_GHOSTS=0, WITH_GHOSTS=1};
@@ -167,7 +167,7 @@ T interpolate(const F &field, double x, double y) {
 
   If you need to "prepare" a file, do:
   \code
-  PIO file(grid.com, grid.config.get_string("output.format"));
+  File file(grid.com, PISM_NETCDF3);
   io::prepare_for_output(file, *grid.ctx());
   \endcode
 
@@ -252,17 +252,17 @@ public:
                  const std::string &standard_name,
                  unsigned int component);
   virtual void  read_attributes(const std::string &filename, int component = 0);
-  virtual void  define(const PIO &nc, IO_Type default_type = PISM_DOUBLE) const;
+  virtual void  define(const File &nc, IO_Type default_type = PISM_DOUBLE) const;
 
   void read(const std::string &filename, unsigned int time);
-  void read(const PIO &nc, unsigned int time);
+  void read(const File &nc, unsigned int time);
 
   void  write(const std::string &filename) const;
-  void  write(const PIO &nc) const;
+  void  write(const File &nc) const;
 
   void  regrid(const std::string &filename, RegriddingFlag flag,
                double default_value = 0.0);
-  void  regrid(const PIO &nc, RegriddingFlag flag,
+  void  regrid(const File &nc, RegriddingFlag flag,
                double default_value = 0.0);
 
   virtual void  begin_access() const;
@@ -290,10 +290,10 @@ protected:
   bool m_report_range;
 
   void global_to_local(petsc::DM::Ptr dm, Vec source, Vec destination) const;
-  virtual void read_impl(const PIO &nc, unsigned int time);
-  virtual void regrid_impl(const PIO &nc, RegriddingFlag flag,
+  virtual void read_impl(const File &nc, unsigned int time);
+  virtual void regrid_impl(const File &nc, RegriddingFlag flag,
                                      double default_value = 0.0);
-  virtual void write_impl(const PIO &nc) const;
+  virtual void write_impl(const File &nc) const;
 
   std::vector<double> m_zlevels;
 
@@ -383,10 +383,10 @@ public:
   void create(IceGrid::ConstPtr grid, const std::string &short_name,
               IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
 protected:
-  virtual void read_impl(const PIO &nc, const unsigned int time);
-  virtual void regrid_impl(const PIO &nc, RegriddingFlag flag,
+  virtual void read_impl(const File &nc, const unsigned int time);
+  virtual void regrid_impl(const File &nc, RegriddingFlag flag,
                                      double default_value = 0.0);
-  virtual void write_impl(const PIO &nc) const;
+  virtual void write_impl(const File &nc) const;
 };
 
 //! A "fat" storage vector for combining related fields (such as SSAFEM coefficients).

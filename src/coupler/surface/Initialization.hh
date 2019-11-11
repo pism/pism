@@ -54,8 +54,8 @@ protected:
   const IceModelVec2S& melt_impl() const;
   const IceModelVec2S& runoff_impl() const;
 
-  void define_model_state_impl(const PIO &output) const;
-  void write_model_state_impl(const PIO &output) const;
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
 
 private:
   // store pointers to fields so that we can iterate over them

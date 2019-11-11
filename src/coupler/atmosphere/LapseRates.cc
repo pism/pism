@@ -45,7 +45,7 @@ LapseRates::LapseRates(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> 
     unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
+    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
     m_reference_surface = IceModelVec2T::ForcingField(m_grid,
                                                       file,

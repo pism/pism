@@ -21,7 +21,7 @@
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/iceModelVec2T.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
@@ -359,12 +359,12 @@ Hydrology::~Hydrology() {
   // empty
 }
 
-void Hydrology::restart(const PIO &input_file, int record) {
+void Hydrology::restart(const File &input_file, int record) {
   initialization_message();
   this->restart_impl(input_file, record);
 }
 
-void Hydrology::bootstrap(const PIO &input_file,
+void Hydrology::bootstrap(const File &input_file,
                           const IceModelVec2S &ice_thickness) {
   initialization_message();
   this->bootstrap_impl(input_file, ice_thickness);
@@ -377,14 +377,14 @@ void Hydrology::init(const IceModelVec2S &W_till,
   this->init_impl(W_till, W, P);
 }
 
-void Hydrology::restart_impl(const PIO &input_file, int record) {
+void Hydrology::restart_impl(const File &input_file, int record) {
   m_Wtill.read(input_file, record);
 
   // whether or not we could initialize from file, we could be asked to regrid from file
   regrid("Hydrology", m_Wtill);
 }
 
-void Hydrology::bootstrap_impl(const PIO &input_file,
+void Hydrology::bootstrap_impl(const File &input_file,
                                const IceModelVec2S &ice_thickness) {
   (void) ice_thickness;
 
@@ -475,11 +475,11 @@ DiagnosticList Hydrology::diagnostics_impl() const {
   return result;
 }
 
-void Hydrology::define_model_state_impl(const PIO &output) const {
+void Hydrology::define_model_state_impl(const File &output) const {
   m_Wtill.define(output);
 }
 
-void Hydrology::write_model_state_impl(const PIO &output) const {
+void Hydrology::write_model_state_impl(const File &output) const {
   m_Wtill.write(output);
 }
 

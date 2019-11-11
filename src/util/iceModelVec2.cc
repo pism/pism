@@ -27,7 +27,7 @@ using std::dynamic_pointer_cast;
 #include <petscdraw.h>
 #include <petscdmda.h>
 
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
 #include "ConfigInterface.hh"
@@ -138,7 +138,7 @@ void IceModelVec2S::mask_by(const IceModelVec2S &M, double fill) {
   inc_state_counter();          // mark as modified
 }
 
-void IceModelVec2::write_impl(const PIO &file) const {
+void IceModelVec2::write_impl(const File &file) const {
 
   assert(m_v != NULL);
 
@@ -168,7 +168,7 @@ void IceModelVec2::write_impl(const PIO &file) const {
   }
 }
 
-void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
+void IceModelVec2::read_impl(const File &nc, const unsigned int time) {
 
   if ((m_dof == 1) and (not m_has_ghosts)) {
     IceModelVec::read_impl(nc, time);
@@ -205,7 +205,7 @@ void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
   }
 }
 
-void IceModelVec2::regrid_impl(const PIO &file, RegriddingFlag flag,
+void IceModelVec2::regrid_impl(const File &file, RegriddingFlag flag,
                                double default_value) {
   if ((m_dof == 1) and (not m_has_ghosts)) {
     IceModelVec::regrid_impl(file, flag, default_value);

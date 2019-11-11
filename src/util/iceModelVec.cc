@@ -20,7 +20,7 @@
 
 #include "pism_utilities.hh"
 #include "iceModelVec.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "Time.hh"
 #include "IceGrid.hh"
 #include "ConfigInterface.hh"
@@ -431,10 +431,10 @@ void IceModelVec::set_attrs(const std::string &pism_intent,
   metadata(N).set_string("standard_name", standard_name);
 }
 
-//! Gets an IceModelVec from a file `nc`, interpolating onto the current grid.
+//! Gets an IceModelVec from a file `file`, interpolating onto the current grid.
 /*! Stops if the variable was not found and `critical` == true.
  */
-void IceModelVec::regrid_impl(const PIO &file, RegriddingFlag flag,
+void IceModelVec::regrid_impl(const File &file, RegriddingFlag flag,
                               double default_value) {
   if (m_dof != 1) {
     throw RuntimeError(PISM_ERROR_LOCATION, "This method (IceModelVec::regrid_impl)"
@@ -461,7 +461,7 @@ void IceModelVec::regrid_impl(const PIO &file, RegriddingFlag flag,
 }
 
 //! Reads appropriate NetCDF variable(s) into an IceModelVec.
-void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
+void IceModelVec::read_impl(const File &file, const unsigned int time) {
 
   m_grid->ctx()->log()->message(3, "  Reading %s...\n", m_name.c_str());
 
@@ -474,32 +474,31 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
     petsc::TemporaryGlobalVec tmp(m_da);
     petsc::VecArray tmp_array(tmp);
 
-    io::read_spatial_variable(metadata(0), *m_grid, nc, time, tmp_array.get());
+    io::read_spatial_variable(metadata(0), *m_grid, file, time, tmp_array.get());
 
     global_to_local(m_da, tmp, m_v);
   } else {
     petsc::VecArray v_array(m_v);
-    io::read_spatial_variable(metadata(0), *m_grid, nc, time, v_array.get());
+    io::read_spatial_variable(metadata(0), *m_grid, file, time, v_array.get());
   }
 }
 
-//! \brief Define variables corresponding to an IceModelVec in a file opened using `nc`.
-void IceModelVec::define(const PIO &nc, IO_Type default_type) const {
-  std::string order = m_grid->ctx()->config()->get_string("output.variable_order");
+//! \brief Define variables corresponding to an IceModelVec in a file opened using `file`.
+void IceModelVec::define(const File &file, IO_Type default_type) const {
   for (unsigned int j = 0; j < m_dof; ++j) {
     IO_Type type = metadata(j).get_output_type();
     type = type == PISM_NAT ? default_type : type;
-    io::define_spatial_variable(metadata(j), *m_grid, nc, type, order);
+    io::define_spatial_variable(metadata(j), *m_grid, file, type);
   }
 }
 
-//! \brief Read attributes from the corresponding variable in `nc`.
+//! \brief Read attributes from the corresponding variable in `filename`.
 /*! Note that unlike read() and regrid(), this method does not use the standard
   name to find the variable to read attributes from.
  */
 void IceModelVec::read_attributes(const std::string &filename, int N) {
-  PIO nc(m_grid->com, "netcdf3", filename, PISM_READONLY); // OK to use netcdf3
-  io::read_attributes(nc, metadata(N).get_name(), metadata(N));
+  File file(m_grid->com, filename, PISM_NETCDF3, PISM_READONLY); // OK to use netcdf3
+  io::read_attributes(file, metadata(N).get_name(), metadata(N));
 }
 
 
@@ -516,7 +515,7 @@ const SpatialVariableMetadata& IceModelVec::metadata(unsigned int N) const {
 }
 
 //! Writes an IceModelVec to a NetCDF file.
-void IceModelVec::write_impl(const PIO &file) const {
+void IceModelVec::write_impl(const File &file) const {
 
   if (m_dof != 1) {
     throw RuntimeError(PISM_ERROR_LOCATION, "This method (IceModelVec::write_impl) only supports"
@@ -541,8 +540,10 @@ void IceModelVec::write_impl(const PIO &file) const {
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 void IceModelVec::dump(const char filename[]) const {
-  PIO file(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
-           filename, PISM_READWRITE_CLOBBER);
+  File file(m_grid->com, filename,
+            string_to_backend(m_grid->ctx()->config()->get_string("output.format")),
+            PISM_READWRITE_CLOBBER,
+            m_grid->ctx()->pio_iosys_id());
 
   io::define_time(file, *m_grid->ctx());
   io::append_time(file, *m_grid->ctx()->config(), m_grid->ctx()->time()->current());
@@ -815,23 +816,26 @@ std::vector<double> IceModelVec::norm_all(int n) const {
 
 void IceModelVec::write(const std::string &filename) const {
   // We expect the file to be present and ready to write into.
-  PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
-         filename, PISM_READWRITE);
+  File file(m_grid->com,
+            filename,
+            string_to_backend(m_grid->ctx()->config()->get_string("output.format")),
+            PISM_READWRITE,
+            m_grid->ctx()->pio_iosys_id());
 
-  this->write(nc);
+  this->write(file);
 }
 
 void IceModelVec::read(const std::string &filename, unsigned int time) {
-  PIO nc(m_grid->com, "guess_mode", filename, PISM_READONLY);
-  this->read(nc, time);
+  File file(m_grid->com, filename, PISM_GUESS, PISM_READONLY);
+  this->read(file, time);
 }
 
 void IceModelVec::regrid(const std::string &filename, RegriddingFlag flag,
                                    double default_value) {
-  PIO nc(m_grid->com, "guess_mode", filename, PISM_READONLY);
+  File file(m_grid->com, filename, PISM_GUESS, PISM_READONLY);
 
   try {
-    this->regrid(nc, flag, default_value);
+    this->regrid(file, flag, default_value);
   } catch (RuntimeError &e) {
     e.add_context("regridding '%s' from '%s'",
                   this->get_name().c_str(), filename.c_str());
@@ -857,21 +861,21 @@ void IceModelVec::regrid(const std::string &filename, RegriddingFlag flag,
  * fill the whole IceModelVec with `default_value` if could not find
  * the variable.
  *
- * @param nc input file
+ * @param file input file
  * @param flag regridding mode, see above
  * @param default_value default value, meaning depends on the
  *        regridding mode flag
  *
  * @return 0 on success
  */
-void IceModelVec::regrid(const PIO &nc, RegriddingFlag flag,
+void IceModelVec::regrid(const File &file, RegriddingFlag flag,
                          double default_value) {
   m_grid->ctx()->log()->message(3, "  [%s] Regridding %s...\n",
                                 timestamp(m_grid->com).c_str(), m_name.c_str());
   double start_time = get_time();
   m_grid->ctx()->profiling().begin("io.regridding");
   {
-    this->regrid_impl(nc, flag, default_value);
+    this->regrid_impl(file, flag, default_value);
     inc_state_counter();          // mark as modified
   }
   m_grid->ctx()->profiling().end("io.regridding");
@@ -886,20 +890,20 @@ void IceModelVec::regrid(const PIO &nc, RegriddingFlag flag,
   }
 }
 
-void IceModelVec::read(const PIO &nc, const unsigned int time) {
-  this->read_impl(nc, time);
+void IceModelVec::read(const File &file, const unsigned int time) {
+  this->read_impl(file, time);
   inc_state_counter();          // mark as modified
 }
 
-void IceModelVec::write(const PIO &nc) const {
-  define(nc);
+void IceModelVec::write(const File &file) const {
+  define(file);
 
   m_grid->ctx()->log()->message(3, "  [%s] Writing %s...",
                                timestamp(m_grid->com).c_str(),
                                m_name.c_str());
 
   double start_time = get_time();
-  write_impl(nc);
+  write_impl(file);
   double end_time = get_time();
 
   const double

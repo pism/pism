@@ -43,9 +43,9 @@ public:
   virtual ~NullTransport();
 
 protected:
-  virtual void restart_impl(const PIO &input_file, int record);
+  virtual void restart_impl(const File &input_file, int record);
 
-  virtual void bootstrap_impl(const PIO &input_file,
+  virtual void bootstrap_impl(const File &input_file,
                               const IceModelVec2S &ice_thickness);
 
   virtual void init_impl(const IceModelVec2S &W_till,

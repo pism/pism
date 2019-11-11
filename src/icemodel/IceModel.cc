@@ -21,6 +21,8 @@
 #include <algorithm>
 #include <petscsys.h>
 
+#include "pism/pism_config.hh"
+
 #include "IceModel.hh"
 
 #include "pism/basalstrength/YieldStress.hh"
@@ -51,7 +53,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/age/AgeModel.hh"
 #include "pism/energy/EnergyModel.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/iceModelVec2T.hh"
 #include "pism/fracturedensity/FractureDensity.hh"
 
@@ -120,7 +122,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     int buffer_size = m_config->get_number("input.forcing.buffer_size");
     int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
 
-    PIO file(m_grid->com, "netcdf3", surface_input_file, PISM_READONLY);
+    File file(m_grid->com, surface_input_file, PISM_NETCDF3, PISM_READONLY);
 
     m_surface_input_for_hydrology = IceModelVec2T::ForcingField(m_grid,
                                                                 file,
@@ -223,7 +225,7 @@ void IceModel::allocate_storage() {
                                       "", "", "", 0);
     m_ssa_dirichlet_bc_mask.metadata().set_numbers("flag_values", {0, 1});
     m_ssa_dirichlet_bc_mask.metadata().set_string("flag_meanings", "no_data bc_condition");
-    m_ssa_dirichlet_bc_mask.metadata().set_output_type(PISM_BYTE);
+    m_ssa_dirichlet_bc_mask.metadata().set_output_type(PISM_INT);
     m_ssa_dirichlet_bc_mask.set_time_independent(true);
 
     // FIXME: this is used by the inverse modeling code. Do NOT get
@@ -422,7 +424,10 @@ void IceModel::step(bool do_mass_continuity,
 
     std::string o_file = filename_add_suffix(output_file,
                                              "_stressbalance_failed", "");
-    PIO file(m_grid->com, m_config->get_string("output.format"), o_file, PISM_READWRITE_MOVE);
+    File file(m_grid->com, o_file,
+              string_to_backend(m_config->get_string("output.format")),
+              PISM_READWRITE_MOVE,
+              m_ctx->pio_iosys_id());
 
     update_run_stats();
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
@@ -645,7 +650,11 @@ void IceModel::step(bool do_mass_continuity,
 
     std::string o_file = filename_add_suffix(output_file,
                                              "_max_thickness", "");
-    PIO file(m_grid->com, m_config->get_string("output.format"), o_file, PISM_READWRITE_MOVE);
+    File file(m_grid->com,
+              o_file,
+              string_to_backend(m_config->get_string("output.format")),
+              PISM_READWRITE_MOVE,
+              m_ctx->pio_iosys_id());
 
     update_run_stats();
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
