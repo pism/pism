@@ -222,7 +222,7 @@ endmacro()
 macro(pism_set_dependencies)
 
   # Set include and library directories for *required* libraries.
-  include_directories (
+  include_directories (BEFORE
     ${PETSC_INCLUDES}
     ${FFTW_INCLUDES}
     ${GSL_INCLUDES}
