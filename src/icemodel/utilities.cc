@@ -98,19 +98,12 @@ void IceModel::update_run_stats() {
   double
     wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time),
     proc_hours       = m_grid->size() * wall_clock_hours,
-    mypph            = units::convert(m_sys,
-                                      m_time->current() - m_time->start(),
-                                      "seconds", "years") / proc_hours;
-
-  // time-independent info
-  {
-    m_run_stats.set_string("source", std::string("PISM ") + pism::revision);
-    m_run_stats.set_string("long_name", "Run statistics");
-  }
+    model_years      = units::convert(m_sys, m_time->current() - m_time->start(),
+                                      "seconds", "years");
 
   m_run_stats.set_number("wall_clock_hours", wall_clock_hours);
   m_run_stats.set_number("processor_hours", proc_hours);
-  m_run_stats.set_number("model_years_per_processor_hour", mypph);
+  m_run_stats.set_number("model_years_per_processor_hour", model_years / proc_hours);
 }
 
 //! Get time and user/host name and add it to the given string.

@@ -75,6 +75,12 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     m_extra_bounds("time_bounds", m_config->get_string("time.dimension_name"), m_sys),
     m_timestamp("timestamp", m_config->get_string("time.dimension_name"), m_sys) {
 
+  // time-independent info
+  {
+    m_run_stats.set_string("source", std::string("PISM ") + pism::revision);
+    m_run_stats.set_string("long_name", "Run statistics");
+  }
+
   m_extra_bounds.set_string("units", m_time->units_string());
 
   m_timestamp.set_string("units", "hours");
