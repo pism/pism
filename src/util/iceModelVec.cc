@@ -545,8 +545,10 @@ void IceModelVec::dump(const char filename[]) const {
             PISM_READWRITE_CLOBBER,
             m_grid->ctx()->pio_iosys_id());
 
-  io::define_time(file, *m_grid->ctx());
-  io::append_time(file, *m_grid->ctx()->config(), m_grid->ctx()->time()->current());
+  if (not m_metadata[0].get_time_independent()) {
+    io::define_time(file, *m_grid->ctx());
+    io::append_time(file, *m_grid->ctx()->config(), m_grid->ctx()->time()->current());
+  }
 
   define(file, PISM_DOUBLE);
   write(file);

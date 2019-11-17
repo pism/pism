@@ -222,8 +222,12 @@ void NC3File::inq_unlimdim_impl(std::string &result) const {
     int dimid;
     stat = nc_inq_unlimdim(m_file_id, &dimid);
 
-    if (stat == NC_NOERR) {
+    // nc_inq_unlimdim() sets dimid to -1 if there is no unlimited dimension
+    if (stat == NC_NOERR and dimid != -1) {
       stat = nc_inq_dimname(m_file_id, dimid, dimname.data());
+    } else {
+      // leave dimname empty
+      stat = NC_NOERR;
     }
   }
 
@@ -558,7 +562,7 @@ void NC3File::inq_varnatts_impl(const std::string &variable_name, int &result) c
     if (varid >= NC_GLOBAL) {
       stat = nc_inq_varnatts(m_file_id, varid, &result);
     } else {
-      stat = varid;
+      stat = varid;             // LCOV_EXCL_LINE
     }
   }
   MPI_Barrier(m_com);
@@ -620,7 +624,7 @@ void NC3File::get_att_double_impl(const std::string &variable_name,
     if (varid >= NC_GLOBAL) {
       stat = nc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
     } else {
-      stat = varid;
+      stat = varid;             // LCOV_EXCL_LINE
     }
 
     if (stat == NC_NOERR) {
@@ -737,7 +741,7 @@ void NC3File::get_att_text_impl(const std::string &variable_name,
         stat = NC_NOERR;
       }
     } else {
-      stat = varid;
+      stat = varid;             // LCOV_EXCL_LINE
     }
   }
   MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
@@ -766,7 +770,7 @@ void NC3File::put_att_double_impl(const std::string &variable_name, const std::s
       stat = nc_put_att_double(m_file_id, varid, att_name.c_str(),
                                pism_type_to_nc_type(nctype), data.size(), &data[0]);
     } else {
-      stat = varid;
+      stat = varid;             // LCOV_EXCL_LINE
     }
   }
 
@@ -792,7 +796,7 @@ void NC3File::put_att_text_impl(const std::string &variable_name, const std::str
     if (varid >= NC_GLOBAL) {
       stat = nc_put_att_text(m_file_id, varid, att_name.c_str(), value.size(), value.c_str());
     } else {
-      stat = varid;
+      stat = varid;             // LCOV_EXCL_LINE
     }
   }
 
@@ -816,7 +820,7 @@ void NC3File::inq_attname_impl(const std::string &variable_name, unsigned int n,
     if (varid >= NC_GLOBAL) {
       stat = nc_inq_attname(m_file_id, varid, n, name.data()); check(PISM_ERROR_LOCATION, stat);
     } else {
-      stat = varid;
+      stat = varid;             // LCOV_EXCL_LINE
     }
   }
   MPI_Barrier(m_com);
@@ -849,7 +853,7 @@ void NC3File::inq_atttype_impl(const std::string &variable_name, const std::stri
         tmp = static_cast<int>(nctype);
       }
     } else {
-      stat = varid;
+      stat = varid;             // LCOV_EXCL_LINE
     }
   }
   MPI_Barrier(m_com);

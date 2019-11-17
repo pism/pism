@@ -66,6 +66,7 @@ void NCFile::create(const std::string &filename) {
 }
 
 void NCFile::sync() const {
+  enddef();
   this->sync_impl();
 }
 
@@ -251,6 +252,7 @@ void NCFile::inq_atttype(const std::string &variable_name,
 }
 
 void NCFile::set_fill(int fillmode, int &old_modep) const {
+  redef();
   this->set_fill_impl(fillmode, old_modep);
 }
 

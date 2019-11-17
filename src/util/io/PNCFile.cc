@@ -124,7 +124,7 @@ void PNCFile::inq_dimlen_impl(const std::string &dimension_name, unsigned int &r
 
 
 void PNCFile::inq_unlimdim_impl(std::string &result) const {
-  int stat, dimid;
+  int stat = NC_NOERR, dimid = -1;
   char dimname[NC_MAX_NAME];
 
   stat = ncmpi_inq_unlimdim(m_file_id, &dimid); check(PISM_ERROR_LOCATION, stat);

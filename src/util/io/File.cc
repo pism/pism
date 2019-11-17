@@ -571,6 +571,10 @@ void File::define_variable(const std::string &name, IO_Type nctype, const std::v
 //! \brief Get dimension data (a coordinate variable).
 std::vector<double>  File::read_dimension(const std::string &name) const {
   try {
+    if (not find_variable(name)) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "coordinate variable not found");
+    }
+
     unsigned int length = dimension_length(name);
 
     std::vector<double> result(length);
@@ -656,6 +660,13 @@ std::vector<double> File::read_double_attribute(const std::string &var_name, con
 //! \brief Get a text attribute.
 std::string File::read_text_attribute(const std::string &var_name, const std::string &att_name) const {
   try {
+    auto att_type = attribute_type(var_name, att_name);
+    if (att_type != PISM_NAT and att_type != PISM_CHAR) {
+      // attribute exists and is not a string
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "attribute %s is not a string", att_name.c_str());
+    }
+
     std::string result;
     m_impl->nc->get_att_text(var_name, att_name, result);
     return result;

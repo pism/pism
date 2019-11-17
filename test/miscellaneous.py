@@ -800,58 +800,6 @@ def regridding_test():
     os.remove("thk1.nc")
 
 
-def netcdf_string_attribute_test():
-    "Test reading a NetCDF-4 string attribute."
-    import os
-
-    basename = "string_attribute_test"
-    attribute = "string attribute"
-
-    def setup():
-        cdl = """
-netcdf string_attribute_test {
-  string :string_attribute = "%s" ;
-  :text_attribute = "%s" ;
-}
-""" % (attribute, attribute)
-        with open(basename + ".cdl", "w") as f:
-            f.write(cdl)
-
-        os.system("ncgen -4 %s.cdl" % basename)
-
-    def teardown():
-        # remove the temporary file
-        os.remove(basename + ".nc")
-        os.remove(basename + ".cdl")
-
-    def compare(backend):
-        try:
-            pio = PISM.File(PISM.PETSc.COMM_WORLD,
-                            basename + ".nc",
-                            PISM.string_to_backend(backend),
-                            PISM.PISM_READONLY)
-        except:
-            # Don't fail if backend creation failed: PISM may not have
-            # been compiled with parallel I/O enabled.
-            return
-
-        read_string = pio.read_text_attribute("PISM_GLOBAL", "string_attribute")
-        read_text = pio.read_text_attribute("PISM_GLOBAL", "text_attribute")
-
-        # check that written and read strings are the same
-        print("written string: '%s'" % attribute)
-        print("read string:    '%s'" % read_string)
-        print("read text:      '%s'" % read_text)
-        assert read_string == attribute
-        assert read_text == attribute
-
-    setup()
-
-    compare("netcdf3")
-    compare("netcdf4_parallel")
-
-    teardown()
-
 
 def interpolation_weights_test():
     "Test 2D interpolation weights."

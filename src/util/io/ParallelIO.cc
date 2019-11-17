@@ -152,7 +152,7 @@ void ParallelIO::inq_dimlen_impl(const std::string &dimension_name, unsigned int
 }
 
 void ParallelIO::inq_unlimdim_impl(std::string &result) const {
-  int stat, dimid;
+  int stat = PIO_NOERR, dimid = -1;
   char dimname[PIO_MAX_NAME + 1];
 
   stat = PIOc_inq_unlimdim(m_file_id, &dimid); check(PISM_ERROR_LOCATION, stat);

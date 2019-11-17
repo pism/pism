@@ -21,7 +21,7 @@
 #include <cstring>              // memset
 #include <cstdio>               // stderr, fprintf
 
-// The following is a stupid kludge necessary to make NetCDF 4.x work in
+// The ing is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
 #ifndef MPI_INCLUDED
 #define MPI_INCLUDED 1
@@ -106,7 +106,7 @@ void NC4File::inq_dimlen_impl(const std::string &dimension_name, unsigned int &r
 }
 
 void NC4File::inq_unlimdim_impl(std::string &result) const {
-  int dimid;
+  int dimid = -1;
   std::vector<char> dimname(NC_MAX_NAME + 1, 0);
 
   int stat = nc_inq_unlimdim(m_file_id, &dimid); check(PISM_ERROR_LOCATION, stat);
@@ -417,6 +417,17 @@ void NC4File::get_put_var_double(const std::string &variable_name,
                                 bool transposed) const {
   int stat, varid, ndims = static_cast<int>(start.size());
   std::vector<unsigned int> imap = imap_input;
+
+#if (Pism_DEBUG==1)
+  if (start.size() != count.size()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "start and count arrays have to have the same size");
+  }
+  if (transposed and start.size() != imap.size()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "start and imap arrays have to have the same size");
+  }
+#endif
 
   if (not transposed) {
     imap.resize(ndims);
