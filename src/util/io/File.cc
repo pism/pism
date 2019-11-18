@@ -288,7 +288,7 @@ unsigned int File::nrecords() const {
     e.add_context("getting the number of records in file \"" + filename() + "\"");
     throw;
   }
-  return 0;                     // will never happen
+  return 0;                     // LCOV_EXCL_LINE
 }
 
 //! \brief Get the number of records of a certain variable. Uses the length of
@@ -318,7 +318,7 @@ unsigned int File::nrecords(const std::string &name, const std::string &std_name
                   name.c_str(), std_name.c_str(), filename().c_str());
     throw;
   }
-  return 0;                     // will never happen
+  return 0;                     // LCOV_EXCL_LINE
 }
 
 
@@ -500,7 +500,7 @@ AxisType File::dimension_type(const std::string &name,
                   name.c_str(), filename().c_str());
     throw;
   }
-  return UNKNOWN_AXIS;          // will never happen
+  return UNKNOWN_AXIS;          // LCOV_EXCL_LINE
 }
 
 void File::define_dimension(const std::string &name, size_t length) const {
