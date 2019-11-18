@@ -418,17 +418,6 @@ void NC4File::get_put_var_double(const std::string &variable_name,
   int stat, varid, ndims = static_cast<int>(start.size());
   std::vector<unsigned int> imap = imap_input;
 
-#if (Pism_DEBUG==1)
-  if (start.size() != count.size()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "start and count arrays have to have the same size");
-  }
-  if (transposed and start.size() != imap.size()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "start and imap arrays have to have the same size");
-  }
-#endif
-
   if (not transposed) {
     imap.resize(ndims);
   }

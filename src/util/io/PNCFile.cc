@@ -170,13 +170,6 @@ void PNCFile::put_vara_double_impl(const std::string &variable_name,
                                   const double *op) const {
   int stat, varid, ndims = static_cast<int>(start.size());
 
-#if (Pism_DEBUG==1)
-  if (start.size() != count.size()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "start and count arrays have to have the same size");
-  }
-#endif
-
   std::vector<MPI_Offset> nc_start(ndims), nc_count(ndims), nc_stride(ndims);
 
   stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid);
@@ -403,21 +396,6 @@ void PNCFile::get_var_double(const std::string &variable_name,
                             bool transposed) const {
   std::vector<unsigned int> imap = imap_input;
   int stat, varid, ndims = static_cast<int>(start.size());
-
-#if (Pism_DEBUG==1)
-  if (transposed) {
-    if (start.size() != count.size() ||
-        start.size() != imap.size()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "start, count and imap arrays have to have the same size");
-    }
-  } else {
-    if (start.size() != count.size()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "start and count arrays have to have the same size");
-    }
-  }
-#endif
 
   if (not transposed) {
     imap.resize(ndims);

@@ -123,6 +123,13 @@ void NCFile::get_vara_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,
                             const std::vector<unsigned int> &count,
                             double *ip) const {
+#if (Pism_DEBUG==1)
+  if (start.size() != count.size()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "start and count arrays have to have the same size");
+  }
+#endif
+
   enddef();
   this->get_vara_double_impl(variable_name, start, count, ip);
 }
@@ -131,6 +138,13 @@ void NCFile::put_vara_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,
                             const std::vector<unsigned int> &count,
                             const double *op) const {
+#if (Pism_DEBUG==1)
+  if (start.size() != count.size()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "start and count arrays have to have the same size");
+  }
+#endif
+
   enddef();
   this->put_vara_double_impl(variable_name, start, count, op);
 }
@@ -190,6 +204,15 @@ void NCFile::get_varm_double(const std::string &variable_name,
                             const std::vector<unsigned int> &count,
                             const std::vector<unsigned int> &imap,
                             double *ip) const {
+
+#if (Pism_DEBUG==1)
+  if (start.size() != count.size() or
+      start.size() != imap.size()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "start, count and imap arrays have to have the same size");
+  }
+#endif
+
   enddef();
   this->get_varm_double_impl(variable_name, start, count, imap, ip);
 }

@@ -409,13 +409,6 @@ void NC3File::put_vara_double_impl(const std::string &variable_name,
   unsigned int local_chunk_size = 1,
     processor_0_chunk_size = 0;
 
-#if (Pism_DEBUG==1)
-  if (start.size() != count.size()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "start and count arrays have to have the same size");
-  }
-#endif
-
   // get the size of the communicator
   MPI_Comm_size(m_com, &com_size);
 
