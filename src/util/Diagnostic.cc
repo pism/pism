@@ -360,8 +360,8 @@ void TSDiagnostic::flush() {
   unsigned int len = file.dimension_length(dimension_name);
 
   if (len > 0) {
-    double last_time = 0.0;
-    file.inq_dim_limits(dimension_name, NULL, &last_time);
+    double last_time = vector_max(file.read_dimension(dimension_name));
+
     if (last_time < m_ts.times().front()) {
       m_start = len;
     }

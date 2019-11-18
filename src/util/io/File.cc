@@ -503,32 +503,6 @@ AxisType File::dimension_type(const std::string &name,
   return UNKNOWN_AXIS;          // will never happen
 }
 
-void File::inq_dim_limits(const std::string &name, double *min, double *max) const {
-  try {
-    auto data = read_dimension(name);
-
-    double
-      my_min = data[0],
-      my_max = data[0];
-    for (auto x : data) {
-      my_min = std::min(x, my_min);
-      my_max = std::max(x, my_max);
-    }
-
-    if (min != NULL) {
-      *min = my_min;
-    }
-
-    if (max != NULL) {
-      *max = my_max;
-    }
-
-  } catch (RuntimeError &e) {
-    e.add_context("getting limits of dimension '%s' in '%s'", name.c_str(), filename().c_str());
-    throw;
-  }
-}
-
 void File::define_dimension(const std::string &name, size_t length) const {
   try {
     m_impl->nc->def_dim(name, length);

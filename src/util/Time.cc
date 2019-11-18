@@ -272,9 +272,8 @@ void Time::init_from_input_file(const File &file,
 
   bool ys = options::Bool("-ys", "starting time");
   if (not ys and time_length > 0) {
-    double T = 0.0;
     // Set the default starting time to be equal to the last time saved in the input file
-    file.inq_dim_limits(time_name, NULL, &T);
+    double T = vector_max(file.read_dimension(time_name));
     this->set_start(T);
     this->set(T);
     log.message(2,

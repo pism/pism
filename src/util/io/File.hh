@@ -79,8 +79,6 @@ public:
 
   // dimensions
 
-  void inq_dim_limits(const std::string &name, double *min, double *max) const;
-
   void define_dimension(const std::string &name, size_t length) const;
 
   unsigned int dimension_length(const std::string &name) const;

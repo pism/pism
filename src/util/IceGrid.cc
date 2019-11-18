@@ -1112,10 +1112,11 @@ grid_info::grid_info(const File &file, const std::string &variable,
       switch (dimtype) {
       case X_AXIS:
         {
-          double x_min = 0.0, x_max = 0.0;
-          file.inq_dim_limits(dimension_name, &x_min, &x_max);
           this->x = file.read_dimension(dimension_name);
           this->x_len = this->x.size();
+          double
+            x_min = vector_min(this->x),
+            x_max = vector_max(this->x);
           this->x0 = 0.5 * (x_min + x_max);
           this->Lx = 0.5 * (x_max - x_min);
           if (r == CELL_CENTER) {
@@ -1126,10 +1127,11 @@ grid_info::grid_info(const File &file, const std::string &variable,
         }
       case Y_AXIS:
         {
-          double y_min = 0.0, y_max = 0.0;
-          file.inq_dim_limits(dimension_name, &y_min, &y_max);
           this->y = file.read_dimension(dimension_name);
           this->y_len = this->y.size();
+          double
+            y_min = vector_min(this->y),
+            y_max = vector_max(this->y);
           this->y0 = 0.5 * (y_min + y_max);
           this->Ly = 0.5 * (y_max - y_min);
           if (r == CELL_CENTER) {
@@ -1140,15 +1142,16 @@ grid_info::grid_info(const File &file, const std::string &variable,
         }
       case Z_AXIS:
         {
-          file.inq_dim_limits(dimension_name, &this->z_min, &this->z_max);
           this->z = file.read_dimension(dimension_name);
           this->z_len = this->z.size();
+          this->z_min = vector_min(this->z);
+          this->z_max = vector_max(this->z);
           break;
         }
       case T_AXIS:
         {
           this->t_len = file.dimension_length(dimension_name);
-          file.inq_dim_limits(dimension_name, NULL, &this->time);
+          this->time = vector_max(file.read_dimension(dimension_name));
           break;
         }
       default:

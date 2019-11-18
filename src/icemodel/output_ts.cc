@@ -86,8 +86,8 @@ void IceModel::init_timeseries() {
     if (append and file.dimension_length("time") > 0) {
       double
         epsilon = 1.0,          // one second
-        t       = 0.0;
-      file.inq_dim_limits("time", NULL, &t);
+        t       = vector_max(file.read_dimension("time"));
+
       // add this time only if it is strictly before the first requested one
       if (t + epsilon < m_ts_times->front()) {
         m_ts_times->insert(m_ts_times->begin(), t);

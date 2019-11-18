@@ -402,4 +402,20 @@ void validate_format_string(const std::string &format) {
   }
 }
 
+double vector_min(const std::vector<double> &input) {
+  double my_min = input[0];
+  for (auto x : input) {
+    my_min = std::min(x, my_min);
+  }
+  return my_min;
+}
+
+double vector_max(const std::vector<double> &input) {
+  double my_max = input[0];
+  for (auto x : input) {
+    my_max = std::max(x, my_max);
+  }
+  return my_max;
+}
+
 } // end of namespace pism

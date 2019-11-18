@@ -90,6 +90,10 @@ inline double clip(double x, double a, double b) {
   return std::min(std::max(a, x), b);
 }
 
+double vector_min(const std::vector<double> &input);
+
+double vector_max(const std::vector<double> &input);
+
 // parallel
 void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op);
 
