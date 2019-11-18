@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2018 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2019 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -524,24 +524,21 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
         // be prescribed and is a temperature-independent free (user determined) parameter
 
         // direct neighbors
-        int
-          M_e = m_mask.as_int(i + 1,j),
-          M_w = m_mask.as_int(i - 1,j),
-          M_n = m_mask.as_int(i,j + 1),
-          M_s = m_mask.as_int(i,j - 1);
+        auto M = m_mask.int_star(i, j);
+        auto H = thickness.star(i, j);
 
-        if (thickness(i,j) > HminFrozen) {
-          if (bed(i-1,j) > surface(i,j) && ice_free_land(M_w)) {
-            c_w = lateral_drag_viscosity * 0.5 * (thickness(i,j)+thickness(i-1,j));
+        if (H.ij > HminFrozen) {
+          if (bed(i - 1, j) > surface(i, j) and ice_free_land(M.w)) {
+            c_w = lateral_drag_viscosity * 0.5 * (H.ij + H.w);
           }
-          if (bed(i+1,j) > surface(i,j) && ice_free_land(M_e)) {
-            c_e = lateral_drag_viscosity * 0.5 * (thickness(i,j)+thickness(i+1,j));
+          if (bed(i + 1, j) > surface(i, j) and ice_free_land(M.e)) {
+            c_e = lateral_drag_viscosity * 0.5 * (H.ij + H.e);
           }
-          if (bed(i,j+1) > surface(i,j) && ice_free_land(M_n)) {
-            c_n = lateral_drag_viscosity * 0.5 * (thickness(i,j)+thickness(i,j+1));
+          if (bed(i, j + 1) > surface(i, j) and ice_free_land(M.n)) {
+            c_n = lateral_drag_viscosity * 0.5 * (H.ij + H.n);
           }
-          if (bed(i,j-1) > surface(i,j) && ice_free_land(M_s)) {
-            c_s = lateral_drag_viscosity * 0.5 * (thickness(i,j)+thickness(i+1,j));
+          if (bed(i, j - 1) > surface(i, j) and ice_free_land(M.s)) {
+            c_s = lateral_drag_viscosity * 0.5 * (H.ij + H.s);
           }
         }
       }
@@ -559,23 +556,13 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
       int M_ij = m_mask.as_int(i,j);
 
       if (use_cfbc) {
-        int
-          // direct neighbors
-          M_e = m_mask.as_int(i + 1,j),
-          M_w = m_mask.as_int(i - 1,j),
-          M_n = m_mask.as_int(i,j + 1),
-          M_s = m_mask.as_int(i,j - 1),
-          // "diagonal" neighbors
-          M_ne = m_mask.as_int(i + 1,j + 1),
-          M_se = m_mask.as_int(i + 1,j - 1),
-          M_nw = m_mask.as_int(i - 1,j + 1),
-          M_sw = m_mask.as_int(i - 1,j - 1);
+        auto M = m_mask.int_box(i, j);
 
         // Note: this sets velocities at both ice-free ocean and ice-free
         // bedrock to zero. This means that we need to set boundary conditions
         // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
         // to be consistent.
-        if (ice_free(M_ij)) {
+        if (ice_free(M.ij)) {
           set_diagonal_matrix_entry(A, i, j, m_scaling);
           continue;
         }
@@ -585,60 +572,60 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
           // at a CFBC location.
           if (bedrock_boundary) {
 
-            if (ice_free_ocean(M_e))
+            if (ice_free_ocean(M.e))
               aPP = 0;
-            if (ice_free_ocean(M_w))
+            if (ice_free_ocean(M.w))
               aMM = 0;
-            if (ice_free_ocean(M_n))
+            if (ice_free_ocean(M.n))
               bPP = 0;
-            if (ice_free_ocean(M_s))
+            if (ice_free_ocean(M.s))
               bMM = 0;
 
             // decide whether to use centered or one-sided differences
-            if (ice_free_ocean(M_n) || ice_free_ocean(M_ne))
+            if (ice_free_ocean(M.n) || ice_free_ocean(M.ne))
               aPn = 0;
-            if (ice_free_ocean(M_e) || ice_free_ocean(M_ne))
+            if (ice_free_ocean(M.e) || ice_free_ocean(M.ne))
               bPe = 0;
-            if (ice_free_ocean(M_e) || ice_free_ocean(M_se))
+            if (ice_free_ocean(M.e) || ice_free_ocean(M.se))
               bMe = 0;
-            if (ice_free_ocean(M_s) || ice_free_ocean(M_se))
+            if (ice_free_ocean(M.s) || ice_free_ocean(M.se))
               aPs = 0;
-            if (ice_free_ocean(M_s) || ice_free_ocean(M_sw))
+            if (ice_free_ocean(M.s) || ice_free_ocean(M.sw))
               aMs = 0;
-            if (ice_free_ocean(M_w) || ice_free_ocean(M_sw))
+            if (ice_free_ocean(M.w) || ice_free_ocean(M.sw))
               bMw = 0;
-            if (ice_free_ocean(M_w) || ice_free_ocean(M_nw))
+            if (ice_free_ocean(M.w) || ice_free_ocean(M.nw))
               bPw = 0;
-            if (ice_free_ocean(M_n) || ice_free_ocean(M_nw))
+            if (ice_free_ocean(M.n) || ice_free_ocean(M.nw))
               aMn = 0;
 
           } else {                // if (not bedrock_boundary)
 
-            if (ice_free(M_e))
+            if (ice_free(M.e))
               aPP = 0;
-            if (ice_free(M_w))
+            if (ice_free(M.w))
               aMM = 0;
-            if (ice_free(M_n))
+            if (ice_free(M.n))
               bPP = 0;
-            if (ice_free(M_s))
+            if (ice_free(M.s))
               bMM = 0;
 
             // decide whether to use centered or one-sided differences
-            if (ice_free(M_n) || ice_free(M_ne))
+            if (ice_free(M.n) || ice_free(M.ne))
               aPn = 0;
-            if (ice_free(M_e) || ice_free(M_ne))
+            if (ice_free(M.e) || ice_free(M.ne))
               bPe = 0;
-            if (ice_free(M_e) || ice_free(M_se))
+            if (ice_free(M.e) || ice_free(M.se))
               bMe = 0;
-            if (ice_free(M_s) || ice_free(M_se))
+            if (ice_free(M.s) || ice_free(M.se))
               aPs = 0;
-            if (ice_free(M_s) || ice_free(M_sw))
+            if (ice_free(M.s) || ice_free(M.sw))
               aMs = 0;
-            if (ice_free(M_w) || ice_free(M_sw))
+            if (ice_free(M.w) || ice_free(M.sw))
               bMw = 0;
-            if (ice_free(M_w) || ice_free(M_nw))
+            if (ice_free(M.w) || ice_free(M.nw))
               bPw = 0;
-            if (ice_free(M_n) || ice_free(M_nw))
+            if (ice_free(M.n) || ice_free(M.nw))
               aMn = 0;
 
           } // end of the else clause following "if (bedrock_boundary)"
@@ -1632,24 +1619,18 @@ void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
  */
 bool SSAFD::is_marginal(int i, int j, bool ssa_dirichlet_bc) {
 
-  StarStencil<int> M = m_mask.int_star(i, j);
-  const int
-    // "diagonal" neighbors
-    M_ne = m_mask.as_int(i + 1,j + 1),
-    M_se = m_mask.as_int(i + 1,j - 1),
-    M_nw = m_mask.as_int(i - 1,j + 1),
-    M_sw = m_mask.as_int(i - 1,j - 1);
+  auto M = m_mask.int_box(i, j);
 
   if (ssa_dirichlet_bc) {
     return icy(M.ij) &&
       (ice_free(M.e) || ice_free(M.w) || ice_free(M.n) || ice_free(M.s) ||
-       ice_free(M_ne) || ice_free(M_se) || ice_free(M_nw) || ice_free(M_sw));
+       ice_free(M.ne) || ice_free(M.se) || ice_free(M.nw) || ice_free(M.sw));
   } else {
     return icy(M.ij) &&
       (ice_free_ocean(M.e) || ice_free_ocean(M.w) ||
        ice_free_ocean(M.n) || ice_free_ocean(M.s) ||
-       ice_free_ocean(M_ne) || ice_free_ocean(M_se) ||
-       ice_free_ocean(M_nw) || ice_free_ocean(M_sw));
+       ice_free_ocean(M.ne) || ice_free_ocean(M.se) ||
+       ice_free_ocean(M.nw) || ice_free_ocean(M.sw));
   }
 }
 
