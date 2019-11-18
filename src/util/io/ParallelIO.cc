@@ -333,7 +333,14 @@ void ParallelIO::inq_vardimid_impl(const std::string &variable_name, std::vector
 }
 
 void ParallelIO::inq_varnatts_impl(const std::string &variable_name, int &result) const {
-  int stat = PIOc_inq_varnatts(m_file_id, get_varid(variable_name), &result);
+  int varid = get_varid(variable_name);
+
+  int stat = PIO_NOERR;
+  if (varid == PIO_GLOBAL) {
+    stat = PIOc_inq_natts(m_file_id, &result);
+  } else {
+    stat = PIOc_inq_varnatts(m_file_id, varid, &result);
+  }
   check(PISM_ERROR_LOCATION, stat);
 }
 
