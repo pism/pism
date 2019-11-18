@@ -25,9 +25,9 @@ tar zxf netcdf-c-${version}.tar.gz
 pushd netcdf-c-${version}
 
 CC=${hdf5}/bin/h5pcc ./configure \
-  --enable-netcdf4 \
-  --disable-dap \
-  --prefix=${prefix} 2>&1 | tee netcdf_configure.log
+        --enable-netcdf4 \
+        --disable-dap \
+        --prefix=${prefix} 2>&1 | tee netcdf_configure.log
 
 make all 2>&1 | tee netcdf_compile.log
 make install 2>&1 | tee netcdf_install.log

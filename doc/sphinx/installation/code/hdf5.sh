@@ -21,7 +21,8 @@ tar xzf hdf5-${version}.tar.gz
 
 pushd hdf5-${version}
 
-CC=mpicc ./configure \
+CC=mpicc CFLAGS=-w ./configure \
+  --disable-static \
   --enable-parallel \
   --prefix=${prefix} 2>&1 | tee hdf5_configure.log
 

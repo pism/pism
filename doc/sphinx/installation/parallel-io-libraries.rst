@@ -40,7 +40,7 @@ First, install HDF5_ with parallel I/O:
    :language: bash
    :linenos:
    :lines: 7-
-   :emphasize-lines: 18-20
+   :emphasize-lines: 18-21
 
 Lines 18-20 are the important ones: to compile parallel HDF5 one should use the MPI
 compiler wrapper ``mpicc`` and run ``configure`` with the option ``--enable-parallel``.
