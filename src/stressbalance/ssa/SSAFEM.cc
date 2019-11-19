@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2019 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -653,16 +653,18 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
             const bool floating = ocean(m_gc.mask(sea_level, bed, H));
 
             // ocean pressure difference at a quadrature point
-            const double dP = ocean_pressure_difference(floating, is_dry_simulation,
-                                                        H, bed, sea_level,
-                                                        ice_density, ocean_density,
-                                                        standard_gravity);
+            const double dP = margin_pressure_difference(floating, is_dry_simulation,
+                                                         H, bed, sea_level,
+                                                         ice_density, ocean_density,
+                                                         standard_gravity);
 
             // This integral contributes to the residual at 2 nodes (the ones incident to the
             // current side). This is is written in a way that allows *adding* (... += ...) the
             // boundary contribution in the residual computation.
             I[n0] += W * (- psi[0] * dP) * outward_normal[side];
             I[n1] += W * (- psi[1] * dP) * outward_normal[side];
+            // FIXME: I need to include the special case corresponding to ice margins next
+            // to fjord walls, nunataks, etc. In this case dP == 0.
           } // q-loop
 
         } // loop over element sides

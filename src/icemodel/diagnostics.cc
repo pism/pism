@@ -112,7 +112,7 @@ IceModelVec::Ptr CalvingFrontPressureDifference::compute_impl() const {
       const int i = p.i(), j = p.j();
 
       if (mask.icy(i, j) and mask.next_to_ice_free_ocean(i, j)) {
-        (*result)(i, j) = stressbalance::ocean_pressure_difference(mask.ocean(i, j), dry_mode,
+        (*result)(i, j) = stressbalance::margin_pressure_difference(mask.ocean(i, j), dry_mode,
                                                                    H(i, j), bed(i, j), sea_level(i, j),
                                                                    rho_ice, rho_ocean, g);
       } else {

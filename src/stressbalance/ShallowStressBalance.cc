@@ -32,9 +32,9 @@ namespace pism {
 namespace stressbalance {
 
 //! Evaluate the ocean pressure difference term in the calving-front BC.
-double ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed,
-                                 double sea_level, double rho_ice, double rho_ocean,
-                                 double g) {
+double margin_pressure_difference(bool shelf, bool dry_mode, double H, double bed,
+                                  double sea_level, double rho_ice, double rho_ocean,
+                                  double g) {
   if (shelf) {
     // floating shelf
     return 0.5 * rho_ice * g * (1.0 - (rho_ice / rho_ocean)) * H * H;

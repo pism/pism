@@ -248,6 +248,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   const IceModelVec2S
     &thickness             = inputs.geometry->ice_thickness,
     &bed                   = inputs.geometry->bed_elevation,
+    &surface               = inputs.geometry->ice_surface_elevation,
     &sea_level             = inputs.geometry->sea_level_elevation,
     *melange_back_pressure = inputs.melange_back_pressure;
 
@@ -270,15 +271,15 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
 
   IceModelVec::AccessList list{&m_taud, &m_b};
 
-  if (inputs.bc_values && inputs.bc_mask) {
+  if (inputs.bc_values and inputs.bc_mask) {
     list.add({inputs.bc_values, inputs.bc_mask});
   }
 
   if (use_cfbc) {
-    list.add({&thickness, &bed, &m_mask, &sea_level});
+    list.add({&thickness, &bed, &surface, &m_mask, &sea_level});
   }
 
-  if (use_cfbc && melange_back_pressure != NULL) {
+  if (use_cfbc and melange_back_pressure) {
     list.add(*melange_back_pressure);
   }
 
@@ -287,8 +288,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (inputs.bc_values != NULL &&
-        inputs.bc_mask->as_int(i, j) == 1) {
+    if (inputs.bc_values and inputs.bc_mask->as_int(i, j) == 1) {
       m_b(i, j).u = m_scaling * (*inputs.bc_values)(i, j).u;
       m_b(i, j).v = m_scaling * (*inputs.bc_values)(i, j).v;
       continue;
@@ -297,63 +297,87 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     if (use_cfbc) {
       double H_ij = thickness(i,j);
 
-      int
-        M_ij = m_mask.as_int(i,j),
-        M_e  = m_mask.as_int(i + 1,j),
-        M_w  = m_mask.as_int(i - 1,j),
-        M_n  = m_mask.as_int(i,j + 1),
-        M_s  = m_mask.as_int(i,j - 1);
+      auto M = m_mask.int_star(i, j);
 
       // Note: this sets velocities at both ice-free ocean and ice-free
       // bedrock to zero. This means that we need to set boundary conditions
       // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
       // to be consistent.
-      if (ice_free(M_ij)) {
+      if (ice_free(M.ij)) {
         m_b(i, j).u = m_scaling * ice_free_default_velocity;
         m_b(i, j).v = m_scaling * ice_free_default_velocity;
         continue;
       }
 
       if (is_marginal(i, j, bedrock_boundary)) {
-        int aMM = 1, aPP = 1, bMM = 1, bPP = 1;
+        // weights at the west, east, south, and north cell faces
+        int w_w = 0, w_e = 0, w_s = 0, w_n = 0;
         // direct neighbors
         if (bedrock_boundary) {
-          if (ice_free_ocean(M_e))
-            aPP = 0;
-          if (ice_free_ocean(M_w))
-            aMM = 0;
-          if (ice_free_ocean(M_n))
-            bPP = 0;
-          if (ice_free_ocean(M_s))
-            bMM = 0;
+          if (ice_free_ocean(M.e))
+            w_e = 1;
+          if (ice_free_ocean(M.w))
+            w_w = 1;
+          if (ice_free_ocean(M.n))
+            w_n = 1;
+          if (ice_free_ocean(M.s))
+            w_s = 1;
         } else {
-          if (ice_free(M_e))
-            aPP = 0;
-          if (ice_free(M_w))
-            aMM = 0;
-          if (ice_free(M_n))
-            bPP = 0;
-          if (ice_free(M_s))
-            bMM = 0;
+          if (ice_free(M.e))
+            w_e = 1;
+          if (ice_free(M.w))
+            w_w = 1;
+          if (ice_free(M.n))
+            w_n = 1;
+          if (ice_free(M.s))
+            w_s = 1;
         }
 
-        double ocean_pressure = ocean_pressure_difference(ocean(M_ij), is_dry_simulation,
-                                                          H_ij, bed(i,j), sea_level(i, j),
-                                                          rho_ice, rho_ocean, standard_gravity);
+        double delta_p = margin_pressure_difference(ocean(M.ij), is_dry_simulation,
+                                                    H_ij, bed(i, j), sea_level(i, j),
+                                                    rho_ice, rho_ocean, standard_gravity);
 
-        if (melange_back_pressure != NULL) {
+        if (melange_back_pressure) {
           double lambda = (*melange_back_pressure)(i, j);
 
           // adjust the "pressure difference term" using the provided
           // "melange back pressure fraction".
-          ocean_pressure *= (1.0 - lambda);
+          delta_p *= (1.0 - lambda);
+        }
+
+        {
+          // fjord walls, nunataks, etc
+          //
+          // Override weights if we are at the margin and the grid cell on the other side
+          // of the interface is ice-free and above the level of the ice surface.
+          //
+          // This effectively sets the pressure difference at the corresponding interface
+          // to zero, which is exactly what we need.
+          auto b = bed.star(i, j);
+          double h = surface(i, j);
+
+          if (ice_free(M.n) and b.n > h) {
+            w_n = 0;
+          }
+          if (ice_free(M.e) and b.e > h) {
+            w_e = 0;
+          }
+          if (ice_free(M.s) and b.s > h) {
+            w_s = 0;
+          }
+          if (ice_free(M.w) and b.w > h) {
+            w_w = 0;
+          }
         }
 
         // Note that if the current cell is "marginal" but not a CFBC
         // location, the following two lines are equaivalent to the "usual
         // case" below.
-        m_b(i, j).u = m_taud(i,j).u + (aMM - aPP) * ocean_pressure / dx;
-        m_b(i, j).v = m_taud(i,j).v + (bMM - bPP) * ocean_pressure / dy;
+        //
+        // Note: signs below (+w_e, -w_w, etc) are explained by directions of outward
+        // normal vectors at corresponding cell faces.
+        m_b(i, j).u = m_taud(i,j).u + (w_e - w_w) * delta_p / dx;
+        m_b(i, j).v = m_taud(i,j).v + (w_n - w_s) * delta_p / dy;
 
         continue;
       } // end of "if (is_marginal(i, j))"
