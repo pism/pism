@@ -551,18 +551,20 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
         // direct neighbors
         auto M = m_mask.int_star(i, j);
         auto H = thickness.star(i, j);
+        auto b = bed.star(i, j);
+        double h = surface(i, j);
 
         if (H.ij > HminFrozen) {
-          if (bed(i - 1, j) > surface(i, j) and ice_free_land(M.w)) {
+          if (b.w > h and ice_free_land(M.w)) {
             c_w = lateral_drag_viscosity * 0.5 * (H.ij + H.w);
           }
-          if (bed(i + 1, j) > surface(i, j) and ice_free_land(M.e)) {
+          if (b.e > h and ice_free_land(M.e)) {
             c_e = lateral_drag_viscosity * 0.5 * (H.ij + H.e);
           }
-          if (bed(i, j + 1) > surface(i, j) and ice_free_land(M.n)) {
+          if (b.n > h and ice_free_land(M.n)) {
             c_n = lateral_drag_viscosity * 0.5 * (H.ij + H.n);
           }
-          if (bed(i, j - 1) > surface(i, j) and ice_free_land(M.s)) {
+          if (b.s > h and ice_free_land(M.s)) {
             c_s = lateral_drag_viscosity * 0.5 * (H.ij + H.s);
           }
         }
