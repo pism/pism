@@ -253,12 +253,12 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     *melange_back_pressure = inputs.melange_back_pressure;
 
   const double
-    dx                        = m_grid->dx(),
-    dy                        = m_grid->dy(),
-    ice_free_default_velocity = 0.0,
-    standard_gravity          = m_config->get_number("constants.standard_gravity"),
-    rho_ocean                 = m_config->get_number("constants.sea_water.density"),
-    rho_ice                   = m_config->get_number("constants.ice.density");
+    dx                     = m_grid->dx(),
+    dy                     = m_grid->dy(),
+    ice_free_default_speed = 0.0,
+    standard_gravity       = m_config->get_number("constants.standard_gravity"),
+    rho_ocean              = m_config->get_number("constants.sea_water.density"),
+    rho_ice                = m_config->get_number("constants.ice.density");
 
   const bool
     use_cfbc          = m_config->get_flag("stress_balance.calving_front_stress_bc"),
@@ -304,33 +304,33 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
       // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
       // to be consistent.
       if (ice_free(M.ij)) {
-        m_b(i, j).u = m_scaling * ice_free_default_velocity;
-        m_b(i, j).v = m_scaling * ice_free_default_velocity;
+        m_b(i, j).u = m_scaling * ice_free_default_speed;
+        m_b(i, j).v = m_scaling * ice_free_default_speed;
         continue;
       }
 
       if (is_marginal(i, j, bedrock_boundary)) {
         // weights at the west, east, south, and north cell faces
-        int w_w = 0, w_e = 0, w_s = 0, w_n = 0;
+        int W = 0, E = 0, S = 0, N = 0;
         // direct neighbors
         if (bedrock_boundary) {
           if (ice_free_ocean(M.e))
-            w_e = 1;
+            E = 1;
           if (ice_free_ocean(M.w))
-            w_w = 1;
+            W = 1;
           if (ice_free_ocean(M.n))
-            w_n = 1;
+            N = 1;
           if (ice_free_ocean(M.s))
-            w_s = 1;
+            S = 1;
         } else {
           if (ice_free(M.e))
-            w_e = 1;
+            E = 1;
           if (ice_free(M.w))
-            w_w = 1;
+            W = 1;
           if (ice_free(M.n))
-            w_n = 1;
+            N = 1;
           if (ice_free(M.s))
-            w_s = 1;
+            S = 1;
         }
 
         double delta_p = margin_pressure_difference(ocean(M.ij), is_dry_simulation,
@@ -357,16 +357,16 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
           double h = surface(i, j);
 
           if (ice_free(M.n) and b.n > h) {
-            w_n = 0;
+            N = 0;
           }
           if (ice_free(M.e) and b.e > h) {
-            w_e = 0;
+            E = 0;
           }
           if (ice_free(M.s) and b.s > h) {
-            w_s = 0;
+            S = 0;
           }
           if (ice_free(M.w) and b.w > h) {
-            w_w = 0;
+            W = 0;
           }
         }
 
@@ -374,10 +374,10 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
         // location, the following two lines are equaivalent to the "usual
         // case" below.
         //
-        // Note: signs below (+w_e, -w_w, etc) are explained by directions of outward
+        // Note: signs below (+E, -W, etc) are explained by directions of outward
         // normal vectors at corresponding cell faces.
-        m_b(i, j).u = m_taud(i,j).u + (w_e - w_w) * delta_p / dx;
-        m_b(i, j).v = m_taud(i,j).v + (w_n - w_s) * delta_p / dy;
+        m_b(i, j).u = m_taud(i,j).u + (E - W) * delta_p / dx;
+        m_b(i, j).v = m_taud(i,j).v + (N - S) * delta_p / dy;
 
         continue;
       } // end of "if (is_marginal(i, j))"
@@ -575,8 +575,24 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
       const int sten = 18;
       MatStencil row, col[sten];
 
-      int aMn = 1, aPn = 1, aMM = 1, aPP = 1, aMs = 1, aPs = 1;
-      int bPw = 1, bPP = 1, bPe = 1, bMw = 1, bMM = 1, bMe = 1;
+      // |-----+-----+---+-----+-----|
+      // | NW  | NNW | N | NNE | NE  |
+      // | WNW |     | | |     | ENE |
+      // | W   |-----|-o-|-----| E   |
+      // | WSW |     | | |     | ESE |
+      // | SW  | SSW | S | SSE | SE  |
+      // |-----+-----+---+-----+-----|
+      //
+      // We use compass rose notation for weights corresponding to interfaces between
+      // cells around the current one (i, j). Here N corresponds to the interface between
+      // the cell (i, j) and the one to the north of it.
+      int N = 1, E = 1, S = 1, W = 1;
+
+      // Similarly, we use compass rose notation for weights used to switch between
+      // centered and one-sided finite differences. Here NNE is the interface between
+      // cells N and NE, ENE - between E and NE, etc.
+      int NNW = 1, NNE = 1, SSW = 1, SSE = 1;
+      int WNW = 1, ENE = 1, WSW = 1, ESE = 1;
 
       int M_ij = m_mask.as_int(i,j);
 
@@ -599,60 +615,60 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
           if (bedrock_boundary) {
 
             if (ice_free_ocean(M.e))
-              aPP = 0;
+              E = 0;
             if (ice_free_ocean(M.w))
-              aMM = 0;
+              W = 0;
             if (ice_free_ocean(M.n))
-              bPP = 0;
+              N = 0;
             if (ice_free_ocean(M.s))
-              bMM = 0;
+              S = 0;
 
             // decide whether to use centered or one-sided differences
             if (ice_free_ocean(M.n) || ice_free_ocean(M.ne))
-              aPn = 0;
+              NNE = 0;
             if (ice_free_ocean(M.e) || ice_free_ocean(M.ne))
-              bPe = 0;
+              ENE = 0;
             if (ice_free_ocean(M.e) || ice_free_ocean(M.se))
-              bMe = 0;
+              ESE = 0;
             if (ice_free_ocean(M.s) || ice_free_ocean(M.se))
-              aPs = 0;
+              SSE = 0;
             if (ice_free_ocean(M.s) || ice_free_ocean(M.sw))
-              aMs = 0;
+              SSW = 0;
             if (ice_free_ocean(M.w) || ice_free_ocean(M.sw))
-              bMw = 0;
+              WSW = 0;
             if (ice_free_ocean(M.w) || ice_free_ocean(M.nw))
-              bPw = 0;
+              WNW = 0;
             if (ice_free_ocean(M.n) || ice_free_ocean(M.nw))
-              aMn = 0;
+              NNW = 0;
 
           } else {                // if (not bedrock_boundary)
 
             if (ice_free(M.e))
-              aPP = 0;
+              E = 0;
             if (ice_free(M.w))
-              aMM = 0;
+              W = 0;
             if (ice_free(M.n))
-              bPP = 0;
+              N = 0;
             if (ice_free(M.s))
-              bMM = 0;
+              S = 0;
 
             // decide whether to use centered or one-sided differences
             if (ice_free(M.n) || ice_free(M.ne))
-              aPn = 0;
+              NNE = 0;
             if (ice_free(M.e) || ice_free(M.ne))
-              bPe = 0;
+              ENE = 0;
             if (ice_free(M.e) || ice_free(M.se))
-              bMe = 0;
+              ESE = 0;
             if (ice_free(M.s) || ice_free(M.se))
-              aPs = 0;
+              SSE = 0;
             if (ice_free(M.s) || ice_free(M.sw))
-              aMs = 0;
+              SSW = 0;
             if (ice_free(M.w) || ice_free(M.sw))
-              bMw = 0;
+              WSW = 0;
             if (ice_free(M.w) || ice_free(M.nw))
-              bPw = 0;
+              WNW = 0;
             if (ice_free(M.n) || ice_free(M.nw))
-              aMn = 0;
+              NNW = 0;
 
           } // end of the else clause following "if (bedrock_boundary)"
         }   // end of "if (is_marginal(i, j, bedrock_boundary))"
@@ -663,22 +679,22 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
 
       /* Coefficients of the discretization of the first equation; u first, then v. */
       double eq1[] = {
-        0,  -c_n*bPP/dy2,  0,
-        -4*c_w*aMM/dx2,  (c_n*bPP+c_s*bMM)/dy2+(4*c_e*aPP+4*c_w*aMM)/dx2,  -4*c_e*aPP/dx2,
-        0,  -c_s*bMM/dy2,  0,
-        c_w*aMM*bPw/d2+c_n*aMn*bPP/d4,  (c_n*aPn*bPP-c_n*aMn*bPP)/d4+(c_w*aMM*bPP-c_e*aPP*bPP)/d2,  -c_e*aPP*bPe/d2-c_n*aPn*bPP/d4,
-        (c_w*aMM*bMw-c_w*aMM*bPw)/d2+(c_n*aMM*bPP-c_s*aMM*bMM)/d4,  (c_n*aPP*bPP-c_n*aMM*bPP-c_s*aPP*bMM+c_s*aMM*bMM)/d4+(c_e*aPP*bPP-c_w*aMM*bPP-c_e*aPP*bMM+c_w*aMM*bMM)/d2,  (c_e*aPP*bPe-c_e*aPP*bMe)/d2+(c_s*aPP*bMM-c_n*aPP*bPP)/d4,
-        -c_w*aMM*bMw/d2-c_s*aMs*bMM/d4,  (c_s*aMs*bMM-c_s*aPs*bMM)/d4+(c_e*aPP*bMM-c_w*aMM*bMM)/d2,  c_e*aPP*bMe/d2+c_s*aPs*bMM/d4,
+        0,  -c_n*N/dy2,  0,
+        -4*c_w*W/dx2,  (c_n*N+c_s*S)/dy2+(4*c_e*E+4*c_w*W)/dx2,  -4*c_e*E/dx2,
+        0,  -c_s*S/dy2,  0,
+        c_w*W*WNW/d2+c_n*NNW*N/d4,  (c_n*NNE*N-c_n*NNW*N)/d4+(c_w*W*N-c_e*E*N)/d2,  -c_e*E*ENE/d2-c_n*NNE*N/d4,
+        (c_w*W*WSW-c_w*W*WNW)/d2+(c_n*W*N-c_s*W*S)/d4,  (c_n*E*N-c_n*W*N-c_s*E*S+c_s*W*S)/d4+(c_e*E*N-c_w*W*N-c_e*E*S+c_w*W*S)/d2,  (c_e*E*ENE-c_e*E*ESE)/d2+(c_s*E*S-c_n*E*N)/d4,
+        -c_w*W*WSW/d2-c_s*SSW*S/d4,  (c_s*SSW*S-c_s*SSE*S)/d4+(c_e*E*S-c_w*W*S)/d2,  c_e*E*ESE/d2+c_s*SSE*S/d4,
       };
 
       /* Coefficients of the discretization of the second equation; u first, then v. */
       double eq2[] = {
-        c_w*aMM*bPw/d4+c_n*aMn*bPP/d2,  (c_n*aPn*bPP-c_n*aMn*bPP)/d2+(c_w*aMM*bPP-c_e*aPP*bPP)/d4,  -c_e*aPP*bPe/d4-c_n*aPn*bPP/d2,
-        (c_w*aMM*bMw-c_w*aMM*bPw)/d4+(c_n*aMM*bPP-c_s*aMM*bMM)/d2,  (c_n*aPP*bPP-c_n*aMM*bPP-c_s*aPP*bMM+c_s*aMM*bMM)/d2+(c_e*aPP*bPP-c_w*aMM*bPP-c_e*aPP*bMM+c_w*aMM*bMM)/d4,  (c_e*aPP*bPe-c_e*aPP*bMe)/d4+(c_s*aPP*bMM-c_n*aPP*bPP)/d2,
-        -c_w*aMM*bMw/d4-c_s*aMs*bMM/d2,  (c_s*aMs*bMM-c_s*aPs*bMM)/d2+(c_e*aPP*bMM-c_w*aMM*bMM)/d4,  c_e*aPP*bMe/d4+c_s*aPs*bMM/d2,
-        0,  -4*c_n*bPP/dy2,  0,
-        -c_w*aMM/dx2,  (4*c_n*bPP+4*c_s*bMM)/dy2+(c_e*aPP+c_w*aMM)/dx2,  -c_e*aPP/dx2,
-        0,  -4*c_s*bMM/dy2,  0,
+        c_w*W*WNW/d4+c_n*NNW*N/d2,  (c_n*NNE*N-c_n*NNW*N)/d2+(c_w*W*N-c_e*E*N)/d4,  -c_e*E*ENE/d4-c_n*NNE*N/d2,
+        (c_w*W*WSW-c_w*W*WNW)/d4+(c_n*W*N-c_s*W*S)/d2,  (c_n*E*N-c_n*W*N-c_s*E*S+c_s*W*S)/d2+(c_e*E*N-c_w*W*N-c_e*E*S+c_w*W*S)/d4,  (c_e*E*ENE-c_e*E*ESE)/d4+(c_s*E*S-c_n*E*N)/d2,
+        -c_w*W*WSW/d4-c_s*SSW*S/d2,  (c_s*SSW*S-c_s*SSE*S)/d2+(c_e*E*S-c_w*W*S)/d4,  c_e*E*ESE/d4+c_s*SSE*S/d2,
+        0,  -4*c_n*N/dy2,  0,
+        -c_w*W/dx2,  (4*c_n*N+4*c_s*S)/dy2+(c_e*E+c_w*W)/dx2,  -c_e*E/dx2,
+        0,  -4*c_s*S/dy2,  0,
       };
 
       /* i indices */
