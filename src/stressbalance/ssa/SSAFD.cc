@@ -528,7 +528,8 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
       // Handle the easy case: provided Dirichlet boundary conditions
       if (inputs.bc_values && inputs.bc_mask && inputs.bc_mask->as_int(i,j) == 1) {
         // set diagonal entry to one (scaled); RHS entry will be known velocity;
-        set_diagonal_matrix_entry(A, i, j, m_scaling);
+        set_diagonal_matrix_entry(A, i, j, 0, m_scaling);
+        set_diagonal_matrix_entry(A, i, j, 1, m_scaling);
         continue;
       }
 
@@ -587,7 +588,8 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
         // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
         // to be consistent.
         if (ice_free(M.ij)) {
-          set_diagonal_matrix_entry(A, i, j, m_scaling);
+          set_diagonal_matrix_entry(A, i, j, 0, m_scaling);
+          set_diagonal_matrix_entry(A, i, j, 1, m_scaling);
           continue;
         }
 
@@ -1605,25 +1607,19 @@ void SSAFD::update_nuH_viewers() {
   tmp.view(m_nuh_viewer, petsc::Viewer::Ptr());
 }
 
-void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
+void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j, int component,
                                       double value) {
-  PetscErrorCode ierr;
   MatStencil row, col;
+
   row.i = i;
   row.j = j;
+  row.c = component;
+
   col.i = i;
   col.j = j;
+  col.c = component;
 
-  row.c = 0;
-  col.c = 0;
-
-  ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &value, INSERT_VALUES);
-  PISM_CHK(ierr, "MatSetValuesStencil");
-
-  row.c = 1;
-  col.c = 1;
-
-  ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &value, INSERT_VALUES);
+  PetscErrorCode ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &value, INSERT_VALUES);
   PISM_CHK(ierr, "MatSetValuesStencil");
 }
 
