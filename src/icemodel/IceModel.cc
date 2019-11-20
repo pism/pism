@@ -978,10 +978,11 @@ void IceModel::prune_diagnostics() {
     available.insert(d.first);
   }
 
+  auto m_extra_stop = m_config->get_flag("output.extra.stop_missing");
   warn_about_missing(*m_log, m_output_vars,   "output",     available, false);
   warn_about_missing(*m_log, m_snapshot_vars, "snapshot",   available, false);
   warn_about_missing(*m_log, m_backup_vars,   "backup",     available, false);
-  warn_about_missing(*m_log, m_extra_vars,    "diagnostic", available, true);
+  warn_about_missing(*m_log, m_extra_vars,    "diagnostic", available, m_extra_stop);
 
   // get the list of requested diagnostics
   auto requested = set_split(m_config->get_string("output.runtime.viewer.variables"), ',');

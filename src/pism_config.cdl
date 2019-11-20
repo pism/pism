@@ -1826,6 +1826,11 @@ netcdf pism_config {
     pism_config:output.extra.append_option = "extra_append";
     pism_config:output.extra.append_type = "flag";
 
+    pism_config:output.extra.stop_missing = "yes";
+    pism_config:output.extra.stop_missing_doc = "Stop if requested variable is not available instead of warning.";
+    pism_config:output.extra.stop_missing_option = "extra_stop_missing";
+    pism_config:output.extra.stop_missing_type = "flag";
+
     pism_config:output.extra.file = "";
     pism_config:output.extra.file_doc = "Name of the output file containing spatially-variable diagnostics.";
     pism_config:output.extra.file_option = "extra_file";
