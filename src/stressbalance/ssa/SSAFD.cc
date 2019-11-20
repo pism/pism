@@ -255,10 +255,13 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   const double
     dx                     = m_grid->dx(),
     dy                     = m_grid->dy(),
-    ice_free_default_speed = 0.0,
     standard_gravity       = m_config->get_number("constants.standard_gravity"),
     rho_ocean              = m_config->get_number("constants.sea_water.density"),
     rho_ice                = m_config->get_number("constants.ice.density");
+
+  // This constant is for debugging: simulations should not depend on the choice of
+  // velocity used in ice-free areas.
+  const Vector2 ice_free_velocity(0.0, 0.0);
 
   const bool
     use_cfbc          = m_config->get_flag("stress_balance.calving_front_stress_bc"),
@@ -304,8 +307,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
       // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
       // to be consistent.
       if (ice_free(M.ij)) {
-        m_b(i, j).u = m_scaling * ice_free_default_speed;
-        m_b(i, j).v = m_scaling * ice_free_default_speed;
+        m_b(i, j) = m_scaling * ice_free_velocity;
         continue;
       }
 
@@ -487,6 +489,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
   const double
     dx                    = m_grid->dx(),
     dy                    = m_grid->dy(),
+    beta_lateral_margin   = m_config->get_number("basal_resistance.beta_lateral_margin"),
     beta_ice_free_bedrock = m_config->get_number("basal_resistance.beta_ice_free_bedrock");
 
   const bool use_cfbc     = m_config->get_flag("stress_balance.calving_front_stress_bc");
@@ -499,7 +502,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
   ierr = MatZeroEntries(A);
   PISM_CHK(ierr, "MatZeroEntries");
 
-  IceModelVec::AccessList list{&m_nuH, &tauc, &vel, &m_mask};
+  IceModelVec::AccessList list{&m_nuH, &tauc, &vel, &m_mask, &bed, &surface};
 
   if (inputs.bc_values && inputs.bc_mask) {
     list.add(*inputs.bc_mask);
@@ -574,8 +577,8 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
       // non-zeros get allocated, even though we use only 13 (or 14). The
       // remaining 5 (or 4) coefficients are zeros, but we set them anyway,
       // because this makes the code easier to understand.
-      const int sten = 18;
-      MatStencil row, col[sten];
+      const int n_nonzeros = 18;
+      MatStencil row, col[n_nonzeros];
 
       // |-----+-----+---+-----+-----|
       // | NW  | NNW | N | NNE | NE  |
@@ -734,8 +737,9 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
        *    IceBasalResistancePlasticLaw::drag() methods.  These may be a plastic,
        *    pseudo-plastic, or linear friction law.  Dragging is done implicitly
        *    (i.e. on left side of SSA eqns).  */
-      double beta = 0.0;
+      double beta_u = 0.0, beta_v = 0.0;
       if (include_basal_shear) {
+        double beta = 0.0;
         if (grounded_ice(M_ij)) {
           beta = m_basal_sliding_law->drag(tauc(i,j), vel(i,j).u, vel(i,j).v);
         } else if (ice_free_land(M_ij)) {
@@ -749,11 +753,30 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
             beta = grounded_fraction(i,j) * m_basal_sliding_law->drag(tauc(i,j), vel(i,j).u, vel(i,j).v);
           }
         }
+        beta_u = beta;
+        beta_v = beta;
+      }
+
+      {
+        // Set very high basal drag *in the direction along the boundary* at locations
+        // bordering "fjord walls".
+
+        auto M = m_mask.int_star(i, j);
+        auto b = bed.star(i, j);
+        double h = surface(i, j);
+
+        if ((ice_free(M.n) and b.n > h) or (ice_free(M.s) and b.s > h)) {
+          beta_u = beta_lateral_margin;
+        }
+
+        if ((ice_free(M.e) and b.e > h) or (ice_free(M.w) and b.w > h)) {
+          beta_v = beta_lateral_margin;
+        }
       }
 
       // add beta to diagonal entries
-      eq1[4]  += beta;
-      eq2[13] += beta;
+      eq1[4]  += beta_u;
+      eq2[13] += beta_v;
 
       // check diagonal entries:
       const double eps = 1e-16;
@@ -778,7 +801,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
 
       row.i = i;
       row.j = j;
-      for (int m = 0; m < sten; m++) {
+      for (int m = 0; m < n_nonzeros; m++) {
         col[m].i = I[m];
         col[m].j = J[m];
         col[m].c = C[m];
@@ -786,12 +809,12 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
 
       // set coefficients of the first equation:
       row.c = 0;
-      ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq1, INSERT_VALUES);
+      ierr = MatSetValuesStencil(A, 1, &row, n_nonzeros, col, eq1, INSERT_VALUES);
       PISM_CHK(ierr, "MatSetValuesStencil");
 
       // set coefficients of the second equation:
       row.c = 1;
-      ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq2, INSERT_VALUES);
+      ierr = MatSetValuesStencil(A, 1, &row, n_nonzeros, col, eq2, INSERT_VALUES);
       PISM_CHK(ierr, "MatSetValuesStencil");
     } // i,j-loop
   } catch (...) {

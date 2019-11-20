@@ -352,6 +352,11 @@ netcdf pism_config {
     pism_config:basal_resistance.beta_ice_free_bedrock_type = "number";
     pism_config:basal_resistance.beta_ice_free_bedrock_units = "Pascal second meter-1";
 
+    pism_config:basal_resistance.beta_lateral_margin = 1e12;
+    pism_config:basal_resistance.beta_lateral_margin_doc = "high value of `\\beta` used to simulate drag at lateral ice margins (fjord walls, etc); the default value is chosen to disable flow in the direction along a margin";
+    pism_config:basal_resistance.beta_lateral_margin_type = "number";
+    pism_config:basal_resistance.beta_lateral_margin_units = "Pascal second meter-1";
+
     pism_config:basal_resistance.plastic.regularization = 0.01;
     pism_config:basal_resistance.plastic.regularization_doc = "Set the value of `\\epsilon` regularization of plastic till; this is the second `\\epsilon` in formula (4.1) in :cite:`SchoofStream`";
     pism_config:basal_resistance.plastic.regularization_option = "plastic_reg";
