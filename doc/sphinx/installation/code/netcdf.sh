@@ -9,7 +9,8 @@ set -x
 
 hdf5=~/local/hdf5
 
-# 4.7.1 does not work on macOS, 4.7.2 has a bug #1502 that breaks parallel I/O.
+# 4.7.1 does not work on macOS, 4.7.2 has a bug #1502
+# that breaks parallel I/O.
 # Use 4.7.3 once it is released.
 version=4.7.0
 prefix=$HOME/local/netcdf
@@ -24,7 +25,7 @@ tar zxf netcdf-c-${version}.tar.gz
 
 pushd netcdf-c-${version}
 
-CC=${hdf5}/bin/h5pcc ./configure \
+CC=mpicc CPPFLAGS=-I${hdf5}/include LDFLAGS=-L${hdf5}/lib ./configure \
         --enable-netcdf4 \
         --disable-dap \
         --prefix=${prefix} 2>&1 | tee netcdf_configure.log

@@ -20,14 +20,15 @@ tar xzf pnetcdf-${version}.tar.gz
 
 pushd pnetcdf-${version}
 
-CFLAGS="-fPIC" ./configure \
+./configure \
       --prefix=${prefix} \
       --enable-shared \
+      --disable-static \
       --disable-cxx \
-      --disable-fortran 2>&1 | tee pnetcdf_configure.log
+      --disable-fortran
 
-make all 2>&1 | tee pnetcdf_compile.log
-make install 2>&1 | tee pnetcdf_install.log
+make all
+make install
 
 popd
 popd

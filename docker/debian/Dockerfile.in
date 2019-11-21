@@ -15,11 +15,16 @@ USER builder
 #
 # Uses wget installed above.
 COPY hdf5.sh /tmp/
-COPY netcdf.sh /tmp/
 RUN /tmp/hdf5.sh
+
+COPY pnetcdf.sh /tmp/
+RUN /tmp/pnetcdf.sh
+
+COPY netcdf.sh /tmp/
 RUN /tmp/netcdf.sh
 
-# Install old PETSc (3.5)
+COPY parallelio.sh /tmp/
+# RUN /tmp/parallelio.sh
 
 # Add a flag needed to use OpenMPI in a Docker container.
 # See https://github.com/open-mpi/ompi/issues/4948

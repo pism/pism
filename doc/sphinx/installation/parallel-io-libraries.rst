@@ -51,11 +51,11 @@ Next, install NetCDF *using this HDF5 library*.
    :language: bash
    :linenos:
    :lines: 7-
-   :emphasize-lines: 21-24
+   :emphasize-lines: 20-22
 
 Here we use the compiler wrapper provided by HDF5 (``h5pcc``) to select the parallel HDF5
-library installed earlier. The option ``--enable-netcdf4`` is also needed;
-``--disable-dap`` is optional (it disables a NetCDF feature not used by PISM).
+library installed earlier. NetCDF's build system automatically detects that we are using
+parallel HDF5 and builds NetCDF with parallel I/O enabled.
 
 .. _sec-install-pnetcdf:
 
