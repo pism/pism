@@ -19,22 +19,26 @@ if PISM.Pism_USE_PIO:
 
 ctx = PISM.Context().ctx
 
+backend_names = {PISM.PISM_NETCDF3 : "netcdf3",
+                 PISM.PISM_NETCDF4_PARALLEL : "netcdf4_parallel",
+                 PISM.PISM_PNETCDF : "pnetcdf",
+                 PISM.PISM_PIO_NETCDF : "pio_netcdf",
+                 PISM.PISM_PIO_NETCDF4P : "pio_netcdf4p",
+                 PISM.PISM_PIO_NETCDF4C : "pio_netcdf4c",
+                 PISM.PISM_PIO_PNETCDF: "pio_pnetcdf"}
+
+def fail(backend):
+    assert False, "test failed (backend = {})".format(backend_names[backend])
+
 def test_string_to_backend():
     "PISM.string_to_backend()"
-    matches = {"netcdf3" : PISM.PISM_NETCDF3,
-               "netcdf4_parallel": PISM.PISM_NETCDF4_PARALLEL,
-               "pnetcdf" : PISM.PISM_PNETCDF,
-               "pio_netcdf" : PISM.PISM_PIO_NETCDF,
-               "pio_netcdf4p" : PISM.PISM_PIO_NETCDF4P,
-               "pio_netcdf4c" : PISM.PISM_PIO_NETCDF4C,
-               "pio_pnetcdf" : PISM.PISM_PIO_PNETCDF}
 
-    for k, v in matches.items():
-        assert PISM.string_to_backend(k) == v
+    for backend, name in backend_names.items():
+        assert PISM.string_to_backend(name) == backend
 
     try:
         PISM.string_to_backend("invalid")
-        assert False, "failed to catch an error"
+        return False
     except RuntimeError:
         pass
 
@@ -45,7 +49,7 @@ class File(TestCase):
             try:
                 f = PISM.File(ctx.com(), "", backend, PISM.PISM_READONLY,
                               ctx.pio_iosys_id())
-                assert False, "failed to catch an error"
+                fail(backend)
             except RuntimeError:
                 pass
 
@@ -54,7 +58,7 @@ class File(TestCase):
             try:
                 f = PISM.File(ctx.com(), "missing_file.nc", backend, PISM.PISM_READONLY,
                               ctx.pio_iosys_id())
-                assert False, "failed to catch an error"
+                fail(backend)
             except RuntimeError:
                 pass
 
@@ -82,7 +86,10 @@ class File(TestCase):
                               ctx.pio_iosys_id())
         finally:
             os.remove("test_filename.nc")
-            os.remove("test_filename.nc~")
+            try:
+                os.remove("test_filename.nc~")
+            except:
+                pass
 
     def test_backend(self):
         "File.backend()"
@@ -110,7 +117,7 @@ class File(TestCase):
             try:
                 f.close()
                 # closing twice is an error
-                assert False, "failed to catch an error"
+                fail(backend)
             except RuntimeError:
                 pass
 
@@ -237,7 +244,7 @@ class File(TestCase):
 
             try:
                 f.dimension_type("z", ctx.unit_system())
-                assert False, "failed to catch an error"
+                fail(backend)
             except RuntimeError:
                 pass
 
@@ -268,7 +275,7 @@ class File(TestCase):
 
             try:
                 f.read_dimension("z")
-                assert False, "failed to catch an error"
+                fail(backend)
             except RuntimeError:
                 pass
 
@@ -284,7 +291,7 @@ class File(TestCase):
             # invalid variable index
             try:
                 f.variable_name(1000)
-                assert False, "failed to catch an error"
+                fail(backend)
             except RuntimeError:
                 pass
 
@@ -299,14 +306,14 @@ class File(TestCase):
             # defining an existing variable should fail
             try:
                 f.define_variable("var_{}".format(backend), PISM.PISM_DOUBLE, ["y", "x"])
-                assert False, "failed to catch an error"
+                fail(backend)
             except RuntimeError:
                 pass
 
             # defining a variable depending on a non-existent dimension should fail gracefully
             try:
                 f.define_variable("var_{}_1".format(backend), PISM.PISM_DOUBLE, ["y", "x", "z"])
-                assert False, "failed to catch an error"
+                fail(backend)
             except RuntimeError:
                 pass
             f.close()
@@ -339,7 +346,7 @@ class File(TestCase):
 
             try:
                 f.find_variable("v", "standard_name")
-                assert False, "failed to catch an inconsistency in an input file"
+                fail(backend)
             except RuntimeError:
                 pass
 
@@ -354,7 +361,7 @@ class File(TestCase):
             if PISM.Pism_DEBUG:
                 try:
                     f.read_variable("v", [1, 1], [1, 1, 1])
-                    assert False, "failed to catch an error, backend {}".format(backend)
+                    fail(backend)
                 except RuntimeError:
                     pass
 
@@ -376,7 +383,7 @@ class File(TestCase):
             if PISM.Pism_DEBUG:
                 try:
                     f.write_variable("v", [1, 1], [1, 1, 1], [200.0])
-                    assert False, "failed to catch an error, backend {}".format(backend)
+                    fail(backend)
                 except RuntimeError:
                     pass
 
@@ -452,7 +459,7 @@ class File(TestCase):
             # type mismatch: fail with a helpful message
             try:
                 f.read_double_attribute("x", "units")
-                assert False, "failed to catch an error"
+                fail(backend)
             except RuntimeError:
                 pass
 
@@ -473,7 +480,7 @@ class File(TestCase):
             # throw an error in case of a type mismatch
             try:
                 f.read_text_attribute("x", "spacing_meters")
-                assert False, "failed to catch an error, backend={}".format(backend)
+                fail(backend)
             except RuntimeError:
                 pass
 
