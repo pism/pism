@@ -6,7 +6,7 @@ mark_as_advanced(CUT_EXECUTABLE SED_EXECUTABLE XARGS_EXECUTABLE)
 execute_process(
   COMMAND ${CUT_EXECUTABLE} -f1 -d, ${Pism_SOURCE_DIR}/doc/sphinx/installation/debian-packages.csv
   COMMAND ${XARGS_EXECUTABLE}
-  COMMAND ${SED_EXECUTABLE} "s/libx11-dev//;s/ncview//;s/cdo//"
+  COMMAND ${SED_EXECUTABLE} "s/``//g;s/libx11-dev//;s/ncview//;s/cdo//"
   OUTPUT_VARIABLE PISM_DEBIAN_PACKAGE_LIST
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 mark_as_advanced(PISM_DEBIAN_PACKAGE_LIST)

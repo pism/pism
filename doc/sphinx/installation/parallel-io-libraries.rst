@@ -34,28 +34,34 @@ Section :ref:`sec-pism-io-performance` explains how to use them in PISM.
 Installing HDF5-based parallel NetCDF
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-First, install HDF5_ with parallel I/O:
+.. _sec-install-hdf5:
+
+Installing  HDF5
+~~~~~~~~~~~~~~~~
 
 .. literalinclude:: code/hdf5.sh
    :language: bash
    :linenos:
    :lines: 7-
-   :emphasize-lines: 18-21
 
-Lines 18-20 are the important ones: to compile parallel HDF5 one should use the MPI
-compiler wrapper ``mpicc`` and run ``configure`` with the option ``--enable-parallel``.
+To compile parallel HDF5 one should use the MPI compiler wrapper ``mpicc`` and run
+``configure`` with the option ``--enable-parallel``. The flag ``-w`` is not important: it
+hides numerous compiler warnings emitted when building HDF5.
 
-Next, install NetCDF *using this HDF5 library*.
+.. _sec-install-netcdf:
+
+Installing NetCDF
+~~~~~~~~~~~~~~~~~
 
 .. literalinclude:: code/netcdf.sh
    :language: bash
    :linenos:
    :lines: 7-
-   :emphasize-lines: 20-22
 
-Here we use the compiler wrapper provided by HDF5 (``h5pcc``) to select the parallel HDF5
-library installed earlier. NetCDF's build system automatically detects that we are using
-parallel HDF5 and builds NetCDF with parallel I/O enabled.
+Here we use the same compiler wrapper and set ``CPPFLAGS`` and ``LDFLAGS`` to select the
+parallel HDF5 library installed earlier. The option ``--enable-netcdf4`` is required for
+parallel I/O; ``--disable-dap`` is not required (it disables a NetCDF feature not used by
+PISM).
 
 .. _sec-install-pnetcdf:
 
@@ -66,7 +72,6 @@ Installing PnetCDF
    :language: bash
    :linenos:
    :lines: 7-
-   :emphasize-lines: 17-21
 
 Here we disable PnetCDF's C++ and Fortran APIs and build the shared library.
 
@@ -79,7 +84,6 @@ Installing NCAR ParallelIO
    :language: bash
    :linenos:
    :lines: 7-
-   :emphasize-lines: 20-26
 
 Here we use CMake's variable ``CMAKE_FIND_ROOT_PATH`` to tell CMake to use libraries in
 ``~/local/netcdf`` and ``~/local/pnetcdf``, to install in ``~/local/parallelio``, and to
