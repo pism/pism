@@ -3,7 +3,7 @@ version: 2
 jobs:
   build-gcc:
     docker:
-      - image: ckhrulev/pism-debian:0.1.1
+      - image: ckhrulev/pism-debian:0.1.2
 
     environment:
       CC: ccache mpicc
@@ -39,11 +39,12 @@ jobs:
           command: >-
             cmake -B build -S .
             -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf"
+            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf;$HOME/local/pnetcdf;$HOME/local/parallelio"
             -DCMAKE_CXX_FLAGS="-Wno-cast-function-type -Werror -Wno-error=suggest-attribute=noreturn"
             -DPism_USE_PROJ=Yes
             -DPism_USE_PARALLEL_NETCDF4=Yes
             -DPism_USE_PNETCDF=Yes
+            -DPism_USE_PIO=Yes
             -DPism_BUILD_PYTHON_BINDINGS=Yes
             -DPism_BUILD_EXTRA_EXECS=Yes
             -DPism_BUILD_ICEBIN=Yes
@@ -60,7 +61,7 @@ jobs:
 
   build-gcc-minimal:
     docker:
-      - image: ckhrulev/pism-debian:0.1.1
+      - image: ckhrulev/pism-debian:0.1.2
 
     environment:
       CC: ccache mpicc
@@ -93,7 +94,7 @@ jobs:
 
   build-clang:
     docker:
-      - image: ckhrulev/pism-debian:0.1.1
+      - image: ckhrulev/pism-debian:0.1.2
 
     environment:
       CCACHE_COMPRESS: 1
@@ -115,12 +116,13 @@ jobs:
             CXX="ccache $(mpicxx -show | sed s/g++/clang++/)"
             cmake -B build -S .
             -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf"
+            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf;$HOME/local/pnetcdf;$HOME/local/parallelio"
             -DCMAKE_C_FLAGS="-Werror -Wno-unused-command-line-argument"
             -DCMAKE_CXX_FLAGS="-Werror -Wno-unused-command-line-argument"
             -DPism_USE_PROJ=Yes
             -DPism_USE_PARALLEL_NETCDF4=Yes
             -DPism_USE_PNETCDF=Yes
+            -DPism_USE_PIO=Yes
             -DPism_BUILD_PYTHON_BINDINGS=Yes
             -DPism_BUILD_EXTRA_EXECS=Yes
             -DPism_BUILD_ICEBIN=Yes
@@ -137,7 +139,7 @@ jobs:
 
   build-clang-minimal:
     docker:
-      - image: ckhrulev/pism-debian:0.1.1
+      - image: ckhrulev/pism-debian:0.1.2
 
     environment:
       CCACHE_COMPRESS: 1
@@ -171,7 +173,7 @@ jobs:
 
   build-manual:
     docker:
-      - image: ckhrulev/pism-debian:0.1.1
+      - image: ckhrulev/pism-debian:0.1.2
 
     steps:
       - checkout
