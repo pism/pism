@@ -9,10 +9,7 @@ set -x
 
 hdf5=~/local/hdf5
 
-# 4.7.1 does not work on macOS, 4.7.2 has a bug #1502
-# that breaks parallel I/O.
-# Use 4.7.3 once it is released.
-version=4.7.0
+version=4.7.3
 prefix=$HOME/local/netcdf
 build_dir=~/local/build/netcdf
 url=ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-c-${version}.tar.gz
