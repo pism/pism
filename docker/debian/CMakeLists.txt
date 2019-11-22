@@ -1,8 +1,8 @@
 configure_file(Dockerfile.in Dockerfile)
-configure_file(${Pism_SOURCE_DIR}/doc/sphinx/installation/code/hdf5.sh . COPYONLY)
-configure_file(${Pism_SOURCE_DIR}/doc/sphinx/installation/code/netcdf.sh . COPYONLY)
-configure_file(${Pism_SOURCE_DIR}/doc/sphinx/installation/code/pnetcdf.sh . COPYONLY)
-configure_file(${Pism_SOURCE_DIR}/doc/sphinx/installation/code/parallelio.sh . COPYONLY)
+
+foreach(script hdf5.sh netcdf.sh pnetcdf.sh parallelio.sh)
+  configure_file(${Pism_SOURCE_DIR}/doc/sphinx/installation/code/${script} . COPYONLY)
+endforeach()
 
 set(PISM_DOCKER_DEBIAN_VERSION 0.1.2)
 
