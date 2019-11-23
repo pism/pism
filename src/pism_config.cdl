@@ -352,7 +352,7 @@ netcdf pism_config {
     pism_config:basal_resistance.beta_ice_free_bedrock_type = "number";
     pism_config:basal_resistance.beta_ice_free_bedrock_units = "Pascal second meter-1";
 
-    pism_config:basal_resistance.beta_lateral_margin = 1e12;
+    pism_config:basal_resistance.beta_lateral_margin = 1e19;
     pism_config:basal_resistance.beta_lateral_margin_doc = "high value of `\\beta` used to simulate drag at lateral ice margins (fjord walls, etc); the default value is chosen to disable flow in the direction along a margin";
     pism_config:basal_resistance.beta_lateral_margin_type = "number";
     pism_config:basal_resistance.beta_lateral_margin_units = "Pascal second meter-1";
