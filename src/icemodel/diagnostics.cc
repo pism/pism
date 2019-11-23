@@ -111,13 +111,18 @@ IceModelVec::Ptr CalvingFrontPressureDifference::compute_impl() const {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (mask.icy(i, j) and mask.next_to_ice_free_ocean(i, j)) {
-        (*result)(i, j) = stressbalance::margin_pressure_difference(mask.ocean(i, j), dry_mode,
-                                                                   H(i, j), bed(i, j), sea_level(i, j),
-                                                                   rho_ice, rho_ocean, g);
+      double delta_p = 0.0;
+      if (mask.grounded_ice(i, j) and grid_edge(*m_grid, i, j)) {
+        delta_p = 0.0;
+      } else if (mask.icy(i, j) and mask.next_to_ice_free_ocean(i, j)) {
+        delta_p = stressbalance::margin_pressure_difference(mask.ocean(i, j), dry_mode,
+                                                            H(i, j), bed(i, j), sea_level(i, j),
+                                                            rho_ice, rho_ocean, g);
       } else {
-        (*result)(i, j) = m_fill_value;
+        delta_p = m_fill_value;
       }
+
+      (*result)(i, j) = delta_p;
     }
   } catch (...) {
     loop.failed();

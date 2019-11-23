@@ -326,6 +326,14 @@ inline bool in_null_strip(const IceGrid& grid, int i, int j, double strip_width)
            grid.y(j)  >= grid.y(grid.My()-1) - strip_width));
 }
 
+/*!
+ * Return `true` if a point `(i, j)` is at an edge of `grid`.
+ */
+inline bool grid_edge(const IceGrid &grid, int i, int j) {
+  return ((j == 0) or (j == (int)grid.My() - 1) or
+          (i == 0) or (i == (int)grid.Mx() - 1));
+}
+
 /** Iterator class for traversing the grid, including ghost points.
  *
  * Usage:

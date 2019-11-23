@@ -665,6 +665,9 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
             I[n1] += W * (- psi[1] * dP) * outward_normal[side];
             // FIXME: I need to include the special case corresponding to ice margins next
             // to fjord walls, nunataks, etc. In this case dP == 0.
+            //
+            // FIXME: set pressure difference to zero at grounded locations at domain
+            // boundaries.
           } // q-loop
 
         } // loop over element sides
