@@ -104,7 +104,7 @@ IceModelVec::Ptr CalvingFrontPressureDifference::compute_impl() const {
 
   const bool dry_mode = m_config->get_flag("ocean.always_grounded");
 
-  IceModelVec::AccessList list{&H, &bed, &mask, result.get()};
+  IceModelVec::AccessList list{&H, &bed, &mask, &sea_level, result.get()};
 
   ParallelSection loop(m_grid->com);
   try {
