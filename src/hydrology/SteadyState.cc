@@ -109,10 +109,17 @@ MaxTimestep SteadyState::max_timestep_impl(double t) const {
   double dt_forcing = 0.0;
   if (m_time.size() > 0) {
 
+    // the right end point of the last time interval in the forcing file
+    double t_last = m_time_bounds.back();
+
     double t_next = 0.0;
     if (t < m_time[0]) {
-      // allow stepping until the left end point of the first interval
+      // Allow stepping until the left end point of the first interval.
       t_next = m_time[0];
+    } else if (t >= t_last) {
+      // Went past the right end point of the last forcing intervals: no time step
+      // restriction from forcing.
+      t_next = t + m_update_interval;
     } else {
       // find the index k such that m_time[k] <= t < m_time[k + 1]
       size_t k = gsl_interp_bsearch(m_time.data(), t, 0, m_time.size());
@@ -141,7 +148,6 @@ MaxTimestep SteadyState::max_timestep_impl(double t) const {
   } else {
     dt_forcing = m_update_interval;
   }
-
 
   // compute the maximum time step using the update interval
   double dt_interval = 0.0;
