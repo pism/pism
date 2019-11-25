@@ -205,7 +205,6 @@ void SIAFD::compute_surface_gradient(const Inputs &inputs,
   } else if (method == "haseloff") {
 
     surface_gradient_haseloff(inputs.geometry->ice_surface_elevation,
-                              inputs.geometry->bed_elevation,
                               inputs.geometry->cell_type,
                               h_x, h_y);
 
@@ -374,24 +373,21 @@ void SIAFD::surface_gradient_mahaffy(const IceModelVec2S &ice_surface_elevation,
  * mask, and bed fields.)
  */
 void SIAFD::surface_gradient_haseloff(const IceModelVec2S &ice_surface_elevation,
-                                      const IceModelVec2S &bed_elevation,
                                       const IceModelVec2CellType &cell_type,
                                       IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
   const double
     dx = m_grid->dx(),
     dy = m_grid->dy();  // convenience
   const IceModelVec2S
-    &h = ice_surface_elevation,
-    &b = bed_elevation;
+    &h = ice_surface_elevation;
   IceModelVec2S
     &w_i = m_work_2d_0,
     &w_j = m_work_2d_1; // averaging weights
 
   const IceModelVec2CellType &mask = cell_type;
 
-  IceModelVec::AccessList list{&h_x, &h_y, &w_i, &w_j, &h, &mask, &b};
+  IceModelVec::AccessList list{&h_x, &h_y, &w_i, &w_j, &h, &mask};
 
-  assert(b.stencil_width()    >= 2);
   assert(mask.stencil_width() >= 2);
   assert(h.stencil_width()    >= 2);
   assert(h_x.stencil_width()  >= 1);
@@ -409,8 +405,8 @@ void SIAFD::surface_gradient_haseloff(const IceModelVec2S &ice_surface_elevation
         // marine margin
         h_x(i,j,0) = 0;
         w_i(i,j)   = 0;
-      } else if ((mask.icy(i,j) && mask.ice_free(i+1,j) && b(i+1,j) > h(i,j)) ||
-                 (mask.ice_free(i,j) && mask.icy(i+1,j) && b(i,j) > h(i+1,j))) {
+      } else if ((mask.icy(i,j) && mask.ice_free(i+1,j) && h(i+1,j) > h(i,j)) ||
+                 (mask.ice_free(i,j) && mask.icy(i+1,j) && h(i,j) > h(i+1,j))) {
         // ice next to a "cliff"
         h_x(i,j,0) = 0.0;
         w_i(i,j)   = 0;
@@ -428,8 +424,8 @@ void SIAFD::surface_gradient_haseloff(const IceModelVec2S &ice_surface_elevation
         // marine margin
         h_y(i,j,1) = 0.0;
         w_j(i,j)   = 0.0;
-      } else if ((mask.icy(i,j) && mask.ice_free(i,j+1) && b(i,j+1) > h(i,j)) ||
-                 (mask.ice_free(i,j) && mask.icy(i,j+1) && b(i,j) > h(i,j+1))) {
+      } else if ((mask.icy(i,j) && mask.ice_free(i,j+1) && h(i,j+1) > h(i,j)) ||
+                 (mask.ice_free(i,j) && mask.icy(i,j+1) && h(i,j) > h(i,j+1))) {
         // ice next to a "cliff"
         h_y(i,j,1) = 0.0;
         w_j(i,j)   = 0.0;
