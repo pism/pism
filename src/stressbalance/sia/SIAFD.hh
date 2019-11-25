@@ -72,11 +72,14 @@ protected:
   virtual void compute_surface_gradient(const Inputs &inputs,
                                         IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
 
-  virtual void surface_gradient_eta(const Inputs &inputs,
+  virtual void surface_gradient_eta(const IceModelVec2S &ice_thickness,
+                                    const IceModelVec2S &bed_elevation,
                                     IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
-  virtual void surface_gradient_haseloff(const Inputs &inputs,
+  virtual void surface_gradient_haseloff(const IceModelVec2S &ice_surface_elevation,
+                                         const IceModelVec2S &bed_elevation,
+                                         const IceModelVec2CellType &cell_type,
                                          IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
-  virtual void surface_gradient_mahaffy(const Inputs &inputs,
+  virtual void surface_gradient_mahaffy(const IceModelVec2S &ice_surface_elevation,
                                         IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
 
   virtual void compute_diffusivity(bool full_update,

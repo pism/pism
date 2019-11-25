@@ -198,15 +198,21 @@ void SIAFD::compute_surface_gradient(const Inputs &inputs,
 
   if (method == "eta") {
 
-    surface_gradient_eta(inputs, h_x, h_y);
+    surface_gradient_eta(inputs.geometry->ice_thickness,
+                         inputs.geometry->bed_elevation,
+                         h_x, h_y);
 
   } else if (method == "haseloff") {
 
-    surface_gradient_haseloff(inputs, h_x, h_y);
+    surface_gradient_haseloff(inputs.geometry->ice_surface_elevation,
+                              inputs.geometry->bed_elevation,
+                              inputs.geometry->cell_type,
+                              h_x, h_y);
 
   } else if (method == "mahaffy") {
 
-    surface_gradient_mahaffy(inputs, h_x, h_y);
+    surface_gradient_mahaffy(inputs.geometry->ice_surface_elevation,
+                             h_x, h_y);
 
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -216,7 +222,8 @@ void SIAFD::compute_surface_gradient(const Inputs &inputs,
 }
 
 //! \brief Compute the ice surface gradient using the eta-transformation.
-void SIAFD::surface_gradient_eta(const Inputs &inputs,
+void SIAFD::surface_gradient_eta(const IceModelVec2S &ice_thickness,
+                                 const IceModelVec2S &bed_elevation,
                                  IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
   const double n = m_flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
@@ -228,8 +235,8 @@ void SIAFD::surface_gradient_eta(const Inputs &inputs,
   // compute eta = H^{8/3}, which is more regular, on reg grid
 
   const IceModelVec2S
-    &H = inputs.geometry->ice_thickness,
-    &b = inputs.geometry->bed_elevation;
+    &H = ice_thickness,
+    &b = bed_elevation;
 
   IceModelVec::AccessList list{&eta, &H, &h_x, &h_y, &b};
 
@@ -291,11 +298,11 @@ void SIAFD::surface_gradient_eta(const Inputs &inputs,
 
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
-void SIAFD::surface_gradient_mahaffy(const Inputs &inputs,
+void SIAFD::surface_gradient_mahaffy(const IceModelVec2S &ice_surface_elevation,
                                      IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
   const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
 
-  const IceModelVec2S &h = inputs.geometry->ice_surface_elevation;
+  const IceModelVec2S &h = ice_surface_elevation;
 
   IceModelVec::AccessList list{&h_x, &h_y, &h};
 
@@ -366,19 +373,21 @@ void SIAFD::surface_gradient_mahaffy(const Inputs &inputs,
  * words, a purely local computation would require width=3 stencil of surface,
  * mask, and bed fields.)
  */
-void SIAFD::surface_gradient_haseloff(const Inputs &inputs,
+void SIAFD::surface_gradient_haseloff(const IceModelVec2S &ice_surface_elevation,
+                                      const IceModelVec2S &bed_elevation,
+                                      const IceModelVec2CellType &cell_type,
                                       IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
   const double
     dx = m_grid->dx(),
     dy = m_grid->dy();  // convenience
   const IceModelVec2S
-    &h = inputs.geometry->ice_surface_elevation,
-    &b = inputs.geometry->bed_elevation;
+    &h = ice_surface_elevation,
+    &b = bed_elevation;
   IceModelVec2S
     &w_i = m_work_2d_0,
     &w_j = m_work_2d_1; // averaging weights
 
-  const IceModelVec2CellType &mask = inputs.geometry->cell_type;
+  const IceModelVec2CellType &mask = cell_type;
 
   IceModelVec::AccessList list{&h_x, &h_y, &w_i, &w_j, &h, &mask, &b};
 
