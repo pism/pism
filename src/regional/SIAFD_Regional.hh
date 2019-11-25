@@ -34,7 +34,7 @@ public:
   virtual void init();
 protected:
   virtual void compute_surface_gradient(const Inputs &inputs,
-                                        IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
+                                        IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 };
 
 } // end of namespace stressbalance

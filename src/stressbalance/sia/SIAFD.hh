@@ -70,16 +70,16 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
 
   virtual void compute_surface_gradient(const Inputs &inputs,
-                                        IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
+                                        IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
   virtual void surface_gradient_eta(const IceModelVec2S &ice_thickness,
                                     const IceModelVec2S &bed_elevation,
-                                    IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
+                                    IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
   virtual void surface_gradient_haseloff(const IceModelVec2S &ice_surface_elevation,
                                          const IceModelVec2CellType &cell_type,
-                                         IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
+                                         IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
   virtual void surface_gradient_mahaffy(const IceModelVec2S &ice_surface_elevation,
-                                        IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
+                                        IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
   virtual void compute_diffusivity(bool full_update,
                                    const Geometry &geometry,
@@ -106,13 +106,13 @@ protected:
   const unsigned int m_stencil_width;
 
   //! temporary storage for eta, theta and the smoothed thickness
-  mutable IceModelVec2S m_work_2d_0;
-  mutable IceModelVec2S m_work_2d_1;
+  IceModelVec2S m_work_2d_0;
+  IceModelVec2S m_work_2d_1;
   //! temporary storage for the surface gradient and the diffusivity
-  mutable IceModelVec2Stag m_h_x, m_h_y, m_D;
+  IceModelVec2Stag m_h_x, m_h_y, m_D;
   //! temporary storage for delta on the staggered grid
-  mutable IceModelVec3 m_delta_0;
-  mutable IceModelVec3 m_delta_1;
+  IceModelVec3 m_delta_0;
+  IceModelVec3 m_delta_1;
   //! temporary storage used to store I and strain_heating on the staggered grid
   IceModelVec3 m_work_3d_0;
   IceModelVec3 m_work_3d_1;
