@@ -37,4 +37,5 @@ RUN cd /tmp &&\
 # Allow oversubscribing (i.e. running more MPI processes than the number of cores
 # available). Run "ompi_info --all" to get the list of MCA parameters.
 ENV OMPI_MCA_btl="^vader" \
-    OMPI_MCA_rmaps_base_oversubscribe=yes
+    OMPI_MCA_rmaps_base_oversubscribe=yes \
+    OMPI_MCA_btl_base_warn_component_unused=0
