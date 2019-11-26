@@ -247,9 +247,13 @@ void IceRegionalModel::bootstrap_2d(const File &input_file) {
 
   // no_model_mask
   {
-    // set using the no_model_strip parameter
-    double strip_width = m_config->get_number("regional.no_model_strip", "meters");
-    set_no_model_strip(*m_grid, strip_width, m_no_model_mask);
+    if (input_file.find_variable(m_no_model_mask.metadata().get_name())) {
+      m_no_model_mask.regrid(input_file, CRITICAL);
+    } else {
+      // set using the no_model_strip parameter
+      double strip_width = m_config->get_number("regional.no_model_strip", "meters");
+      set_no_model_strip(*m_grid, strip_width, m_no_model_mask);
+    }
 
     // m_no_model_mask was added to m_model_state, so
     // IceModel::regrid() will take care of regridding it, if necessary.
