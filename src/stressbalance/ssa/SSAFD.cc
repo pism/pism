@@ -775,11 +775,11 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
         double h = surface(i, j);
 
         if ((ice_free(M.n) and b.n > h) or (ice_free(M.s) and b.s > h)) {
-          beta_u = beta_lateral_margin;
+          beta_u += beta_lateral_margin;
         }
 
         if ((ice_free(M.e) and b.e > h) or (ice_free(M.w) and b.w > h)) {
-          beta_v = beta_lateral_margin;
+          beta_v += beta_lateral_margin;
         }
       }
 
