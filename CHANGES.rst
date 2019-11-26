@@ -142,6 +142,19 @@ Changes since v1.1
   `output.format`: `pio_pnetcdf` (parallel, using the CDF5 version of the NetCDF format),
   `pio_netcdf4p` (parallel, using the HDF5-based NetCDF format), `pio_netcdf4c` (serial,
   HDF5-based compressed NetCDF-4 format), `pio_netcdf` (serial).
+- Improve PISM's handling of ice margins at locations where an icy cell is next to an
+  ice-free cell that has surface elevation exceeding the surface elevation of ice (valley
+  glaciers, fjords, nunataks). Here we have to use one-sided finite differences to avoid
+  the influence of the surface elevation at ice-free locations on the estimate of the
+  driving stress. In the SSAFD code we also prescribe drag along the margin (see
+  `basal_resistance.beta_lateral_margin`) and a stress boundary condition assuming that at
+  these locations ice is in hydrostatic equilibrium with the rock next to it. In other
+  words, this boundary condition is the same as the calving front BC, but with a zero
+  pressure difference.
+- Improve handling of domain edges in regional simulations.
+- Add a configuration flag `output.extra.stop_missing` (default: yes). Set this flag to
+  "no" to make PISM warn about `-extra_vars` diagnostics that are requested but not
+  available instead of stopping with an error message.
 
 
 Changes from v1.0 to v1.1
