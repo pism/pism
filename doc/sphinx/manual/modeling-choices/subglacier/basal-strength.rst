@@ -150,6 +150,16 @@ where `C` is a constant, as for example in sections :ref:`sec-MISMIP` and
    -yield_stress constant \
    -tauc C
 
+.. _sec-lateral-drag:
+
+Lateral drag
+~~~~~~~~~~~~
+
+PISM prescribes lateral drag at ice margins next to ground with elevation above the ice.
+(This is relevant in outlet glaciers flowing through fjords, valley glaciers, and next to
+nunataks.) Set :config:`basal_resistance.beta_lateral_margin` to control the amount of
+additional drag at these margins.
+
 Determining the yield stress
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
