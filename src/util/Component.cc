@@ -146,10 +146,10 @@ void Component::write_model_state_impl(const File &output) const {
  *
  * @param[in] flag Regridding flag. If set to
  *            REGRID_WITHOUT_REGRID_VARS, regrid this variable by
- *            default, if =-regrid_vars= was not set. Otherwise a
- *            variable is only regridded if both =-regrid_file= and
- *            =-regrid_vars= are set *and* the name of the variable is
- *            found in the set of names given with =-regrid_vars=.
+ *            default, if `-regrid_vars` was not set. Otherwise a
+ *            variable is only regridded if both `-regrid_file` and
+ *            `-regrid_vars` are set *and* the name of the variable is
+ *            found in the set of names given with `-regrid_vars`.
  */
 void Component::regrid(const std::string &module_name, IceModelVec &variable,
                        RegriddingFlag flag) {
