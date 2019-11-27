@@ -28,11 +28,24 @@ class RegionalYieldStress : public YieldStress {
 public:
   RegionalYieldStress(std::shared_ptr<YieldStress> input);
   virtual ~RegionalYieldStress();
-protected:
-  virtual void init_impl(const YieldStressInputs &inputs);
-  virtual void update_impl(const YieldStressInputs &inputs, double t, double dt);
 private:
+  void restart_impl(const File &input_file, int record);
+
+  void bootstrap_impl(const File &input_file, const YieldStressInputs &inputs);
+
+  void init_impl(const YieldStressInputs &inputs);
+
+  void update_impl(const YieldStressInputs &inputs, double t, double dt);
+
+  void define_model_state_impl(const File &output) const;
+
+  void write_model_state_impl(const File &output) const;
+
+  DiagnosticList diagnostics_impl() const;
+
   std::shared_ptr<YieldStress> m_input;
+
+  double m_high_tauc;
 };
 
 } // end of namespace pism

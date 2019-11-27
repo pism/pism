@@ -46,18 +46,35 @@ public:
   YieldStress(IceGrid::ConstPtr g);
   virtual ~YieldStress();
 
+  void restart(const File &input_file, int record);
+
+  void bootstrap(const File &input_file, const YieldStressInputs &inputs);
+
   void init(const YieldStressInputs &inputs);
 
   void update(const YieldStressInputs &inputs, double t, double dt);
 
   const IceModelVec2S& basal_material_yield_stress();
+
+  std::string name() const;
 protected:
+  virtual void restart_impl(const File &input_file, int record) = 0;
+
+  virtual void bootstrap_impl(const File &input_file, const YieldStressInputs &inputs) = 0;
+
   virtual void init_impl(const YieldStressInputs &inputs) = 0;
+
   virtual void update_impl(const YieldStressInputs &inputs, double t, double dt) = 0;
+
+  virtual void define_model_state_impl(const File &output) const;
+
+  virtual void write_model_state_impl(const File &output) const;
 
   DiagnosticList diagnostics_impl() const;
 
   IceModelVec2S m_basal_yield_stress;
+
+  std::string m_name;
 };
 
 } // end of namespace pism

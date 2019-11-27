@@ -37,6 +37,7 @@ add_library (pism
   age/AgeModel.cc
   basalstrength/ConstantYieldStress.cc
   basalstrength/MohrCoulombYieldStress.cc
+  basalstrength/MohrCoulombPointwise.cc
   basalstrength/YieldStress.cc
   energy/BedrockColumn.cc
   energy/BTU_Full.cc

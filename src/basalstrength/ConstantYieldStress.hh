@@ -30,13 +30,16 @@ class ConstantYieldStress : public YieldStress {
 public:
   ConstantYieldStress(IceGrid::ConstPtr g);
   virtual ~ConstantYieldStress();
-protected:
-  virtual void init_impl(const YieldStressInputs &inputs);
-  virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(const YieldStressInputs &inputs, double t, double dt);
+private:
+  void restart_impl(const File &input_file, int record);
 
-  virtual void define_model_state_impl(const File &output) const;
-  virtual void write_model_state_impl(const File &output) const;
+  void bootstrap_impl(const File &input_file, const YieldStressInputs &inputs);
+
+  void init_impl(const YieldStressInputs &inputs);
+
+  void update_impl(const YieldStressInputs &inputs, double t, double dt);
+
+  MaxTimestep max_timestep_impl(double t) const;
 };
 
 } // end of namespace pism

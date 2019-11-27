@@ -18,26 +18,30 @@
  */
 
 #include "RegionalYieldStress.hh"
-#include "pism/util/Logger.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
 RegionalYieldStress::RegionalYieldStress(std::shared_ptr<YieldStress> input)
   : YieldStress(input->grid()), m_input(input) {
-  // empty
+
+  m_high_tauc = m_config->get_number("regional.no_model_yield_stress", "Pa");
+
+  m_name = "regional " + m_input->name();
 }
 
 RegionalYieldStress::~RegionalYieldStress() {
   // empty
 }
 
+/*!
+ * Set `basal_yield_stress` to `tauc` in areas indicated using `mask`.
+ */
 static void set_no_model_yield_stress(double tauc,
                                       const IceModelVec2Int &mask,
                                       IceModelVec2S &basal_yield_stress) {
-
   auto grid = mask.grid();
 
-  // now set tauc to a big value in no_model_strip
   IceModelVec::AccessList list{&mask, &basal_yield_stress};
 
   for (Points p(*grid); p; p.next()) {
@@ -47,30 +51,60 @@ static void set_no_model_yield_stress(double tauc,
       basal_yield_stress(i, j) = tauc;
     }
   }
+}
 
+void RegionalYieldStress::restart_impl(const File &input_file, int record) {
+  m_input->restart(input_file, record);
+
+  // Read in tauc from the input file (this field would have been written by this class
+  // and so it should contain the modification in "no model" areas).
+  m_basal_yield_stress.read(input_file, record);
+}
+
+void RegionalYieldStress::bootstrap_impl(const File &input_file, const YieldStressInputs &inputs) {
+  m_input->bootstrap(input_file, inputs);
+
+  m_basal_yield_stress.copy_from(m_input->basal_material_yield_stress());
+
+  set_no_model_yield_stress(m_high_tauc, *inputs.no_model_mask, m_basal_yield_stress);
 }
 
 void RegionalYieldStress::init_impl(const YieldStressInputs &inputs) {
   m_input->init(inputs);
 
-  m_log->message(2,
-                 "  using the regional version with strong till in no_model_mask area...\n");
+  m_basal_yield_stress.copy_from(m_input->basal_material_yield_stress());
 
-  double high_tauc = m_config->get_number("regional.no_model_yield_stress", "Pa");
-
-  set_no_model_yield_stress(high_tauc, *inputs.no_model_mask, m_basal_yield_stress);
+  set_no_model_yield_stress(m_high_tauc, *inputs.no_model_mask, m_basal_yield_stress);
 }
 
 void RegionalYieldStress::update_impl(const YieldStressInputs &inputs,
                                       double t, double dt) {
-
   m_input->update(inputs, t, dt);
 
-  const IceModelVec2Int &nmm = *inputs.no_model_mask;
+  m_basal_yield_stress.copy_from(m_input->basal_material_yield_stress());
 
-  double high_tauc = m_config->get_number("regional.no_model_yield_stress", "Pa");
+  set_no_model_yield_stress(m_high_tauc, *inputs.no_model_mask, m_basal_yield_stress);
+}
 
-  set_no_model_yield_stress(high_tauc, nmm, m_basal_yield_stress);
+void RegionalYieldStress::define_model_state_impl(const File &output) const {
+  m_input->define_model_state(output);
+
+  // define tauc (this is likely to be a no-op because m_input should have defined it by
+  // now)
+  m_basal_yield_stress.define(output);
+}
+
+void RegionalYieldStress::write_model_state_impl(const File &output) const {
+  m_input->write_model_state(output);
+  // Write basal yield stress that includes the modification containing high yield stress
+  // in "no model" areas, overwriting the field written by m_input.
+  m_basal_yield_stress.write(output);
+}
+
+DiagnosticList RegionalYieldStress::diagnostics_impl() const {
+  // Override the tauc diagnostic with the one that includes the regional modification
+  return combine({{"tauc", Diagnostic::wrap(m_basal_yield_stress)}},
+                 m_input->diagnostics());
 }
 
 } // end of namespace pism
