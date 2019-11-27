@@ -158,6 +158,10 @@ Changes since v1.1
 - Add the ability to use space- and time-dependent `delta` (minimum effective pressure on
   till as a fraction of overburden pressure) in the Mohr-Coulomb basal yield stress
   parameterization.
+- Yield stress models can be time-dependent.
+- Implement "regional" versions of all yield stress models (both Mohr-Coulomb and
+  constant). Previous versions did not support constant yield stress in regional model
+  configurations.
 
 
 Changes from v1.0 to v1.1

@@ -18,7 +18,8 @@
  */
 
 #include "RegionalYieldStress.hh"
-#include "pism/util/pism_utilities.hh"
+#include "pism/util/pism_utilities.hh" // pism::combine()
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 
@@ -56,9 +57,22 @@ static void set_no_model_yield_stress(double tauc,
 void RegionalYieldStress::restart_impl(const File &input_file, int record) {
   m_input->restart(input_file, record);
 
-  // Read in tauc from the input file (this field would have been written by this class
-  // and so it should contain the modification in "no model" areas).
-  m_basal_yield_stress.read(input_file, record);
+  // m_basal_yield_stress is a part of the model state for all yield stress models, so the
+  // call above should read it in.
+  m_basal_yield_stress.copy_from(m_input->basal_material_yield_stress());
+
+  IceModelVec2Int no_model_mask(m_grid, "no_model_mask", WITHOUT_GHOSTS);
+  no_model_mask.set_attrs("model_state",
+                          "mask: zeros (modeling domain) and ones"
+                          " (no-model buffer near grid edges)",
+                          "", "", "", 0); // no units and no standard name
+  // We are re-starting a simulation, so the input file has to contain no_model_mask.
+  no_model_mask.read(input_file, record);
+  // However, the used can set "-regrid_vars no_model_mask,...", so we have to try this,
+  // too.
+  regrid(name(), no_model_mask);
+
+  set_no_model_yield_stress(m_high_tauc, no_model_mask, m_basal_yield_stress);
 }
 
 void RegionalYieldStress::bootstrap_impl(const File &input_file, const YieldStressInputs &inputs) {
@@ -105,6 +119,20 @@ DiagnosticList RegionalYieldStress::diagnostics_impl() const {
   // Override the tauc diagnostic with the one that includes the regional modification
   return combine({{"tauc", Diagnostic::wrap(m_basal_yield_stress)}},
                  m_input->diagnostics());
+}
+
+MaxTimestep RegionalYieldStress::max_timestep_impl(double t) const {
+  auto dt = m_input->max_timestep(t);
+
+  if (dt.finite()) {
+    return MaxTimestep(dt.value(), name());
+  }
+
+  return MaxTimestep(name());
+}
+
+TSDiagnosticList RegionalYieldStress::ts_diagnostics_impl() const {
+  return m_input->ts_diagnostics();
 }
 
 } // end of namespace pism

@@ -24,6 +24,12 @@
 
 namespace pism {
 
+/*!
+ * Regional version of yield stress models. Sets high tauc in "no model" areas.
+ *
+ * Note: this class has to implement all the virtual methods of `Component` because it has
+ * to forward these calls to the model provided to its constructor.
+ */
 class RegionalYieldStress : public YieldStress {
 public:
   RegionalYieldStress(std::shared_ptr<YieldStress> input);
@@ -37,11 +43,15 @@ private:
 
   void update_impl(const YieldStressInputs &inputs, double t, double dt);
 
+  MaxTimestep max_timestep_impl(double t) const;
+
   void define_model_state_impl(const File &output) const;
 
   void write_model_state_impl(const File &output) const;
 
   DiagnosticList diagnostics_impl() const;
+
+  TSDiagnosticList ts_diagnostics_impl() const;
 
   std::shared_ptr<YieldStress> m_input;
 
