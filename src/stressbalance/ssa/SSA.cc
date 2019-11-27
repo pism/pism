@@ -183,6 +183,49 @@ void SSA::update(const Inputs &inputs, bool full_update) {
   }
 }
 
+/*!
+ * Compute the weight used to determine if the difference between locations `i,j` and `n`
+ * (neighbor) should be used in the computation of the surface gradient in
+ * SSA::compute_driving_stress().
+ *
+ * We avoid differencing across
+ *
+ * - ice margins if stress boundary condition at ice margins (CFBC) is active
+ * - grounding lines
+ * - ice margins next to ice free locations above the surface elevation of the ice (fjord
+ *   walls, nunataks, headwalls)
+ */
+static int weight(bool margin_bc, int M_ij, int M_n, double h_ij, double h_n) {
+  using mask::grounded;
+  using mask::icy;
+  using mask::floating_ice;
+  using mask::ice_free;
+  using mask::ice_free_ocean;
+
+  // grounding lines and calving fronts
+  if ((grounded(M_ij) and floating_ice(M_n)) or
+      (floating_ice(M_ij) and grounded(M_n)) or
+      (floating_ice(M_ij) and ice_free_ocean(M_n))) {
+    return 0;
+  }
+
+  // fjord walls, nunataks, headwalls
+  if ((icy(M_ij) and ice_free(M_n) and h_n > h_ij) or
+      (ice_free(M_ij) and icy(M_n) and h_ij > h_n)) {
+    return 0;
+  }
+
+  // This condition has to match the one used to implement the calving front stress
+  // boundary condition in SSAFD::assemble_rhs().
+  if (margin_bc and
+      ((icy(M_ij) and ice_free(M_n)) or
+       (ice_free(M_ij) and icy(M_n)))) {
+    return 0;
+  }
+
+  return 1;
+}
+
 //! \brief Compute the gravitational driving stress.
 /*!
 Computes the gravitational driving stress at the base of the ice:
@@ -201,12 +244,6 @@ void SSA::compute_driving_stress(const Geometry &geometry, IceModelVec2V &result
   const IceModelVec2S
     &ice_thickness = geometry.ice_thickness,
     &surface       = geometry.ice_surface_elevation;
-
-  using mask::grounded;
-  using mask::icy;
-  using mask::floating_ice;
-  using mask::ice_free;
-  using mask::ice_free_ocean;
 
   bool cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
   bool surface_gradient_inward = m_config->get_flag("stress_balance.ssa.compute_surface_gradient_inward");
@@ -254,39 +291,9 @@ void SSA::compute_driving_stress(const Geometry &geometry, IceModelVec2V &result
     // x-derivative
     double h_x = 0.0;
     {
-      double west = 1, east = 1;
-
-      // grounding line
-      if ((grounded(M.ij) and floating_ice(M.e)) or
-          (floating_ice(M.ij) and grounded(M.e)) or
-          (floating_ice(M.ij) and ice_free_ocean(M.e))) {
-        east = 0;
-      }
-      if ((grounded(M.ij) and floating_ice(M.w)) or
-          (floating_ice(M.ij) and grounded(M.w)) or
-          (floating_ice(M.ij) and ice_free_ocean(M.w))) {
-        west = 0;
-      }
-      // fjord walls, nunataks, ...
-      if ((icy(M.ij) and ice_free(M.e) and h.e > h.ij) or
-          (ice_free(M.ij) and icy(M.e) and h.ij > h.e)) {
-        east = 0;
-      }
-      if ((icy(M.ij) and ice_free(M.w) and h.w > h.ij) or
-          (ice_free(M.ij) and icy(M.w) and h.ij > h.w)) {
-        west = 0;
-      }
-
-      // This driving stress computation has to match the calving front
-      // stress boundary condition in SSAFD::assemble_rhs().
-      if (cfbc) {
-        if (icy(M.ij) and ice_free(M.e)) {
-          east = 0;
-        }
-        if (icy(M.ij) and ice_free(M.w)) {
-          west = 0;
-        }
-      }
+      double
+        west = weight(cfbc, M.ij, M.w, h.ij, h.w),
+        east = weight(cfbc, M.ij, M.e, h.ij, h.e);
 
       if (east + west > 0) {
         h_x = 1.0 / (west + east) * (west * surface.diff_x_stagE(i - 1, j) +
@@ -299,39 +306,9 @@ void SSA::compute_driving_stress(const Geometry &geometry, IceModelVec2V &result
     // y-derivative
     double h_y = 0.0;
     {
-      double south = 1, north = 1;
-
-      // grounding line
-      if ((grounded(M.ij) and floating_ice(M.n)) or
-          (floating_ice(M.ij) and grounded(M.n)) or
-          (floating_ice(M.ij) and ice_free_ocean(M.n))) {
-        north = 0;
-      }
-      if ((grounded(M.ij) and floating_ice(M.s)) or
-          (floating_ice(M.ij) and grounded(M.s)) or
-          (floating_ice(M.ij) and ice_free_ocean(M.s))) {
-        south = 0;
-      }
-      // fjord walls, nunataks, ...
-      if ((icy(M.ij) and ice_free(M.n) and h.n > h.ij) or
-          (ice_free(M.ij) and icy(M.n) and h.ij > h.n)) {
-        north = 0;
-      }
-      if ((icy(M.ij) and ice_free(M.s) and h.s > h.ij) or
-          (ice_free(M.ij) and icy(M.s) and h.ij > h.s)) {
-        south = 0;
-      }
-
-      // This driving stress computation has to match the calving front
-      // stress boundary condition in SSAFD::assemble_rhs().
-      if (cfbc) {
-        if (icy(M.ij) and ice_free(M.n)) {
-          north = 0;
-        }
-        if (icy(M.ij) and ice_free(M.s)) {
-          south = 0;
-        }
-      }
+      double
+        south = weight(cfbc, M.ij, M.s, h.ij, h.s),
+        north = weight(cfbc, M.ij, M.n, h.ij, h.n);
 
       if (north + south > 0) {
         h_y = 1.0 / (south + north) * (south * surface.diff_y_stagN(i, j - 1) +
