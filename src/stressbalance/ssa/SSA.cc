@@ -195,7 +195,10 @@ void SSA::update(const Inputs &inputs, bool full_update) {
  * - ice margins next to ice free locations above the surface elevation of the ice (fjord
  *   walls, nunataks, headwalls)
  */
-static int weight(bool margin_bc, int M_ij, int M_n, double h_ij, double h_n) {
+static int weight(bool margin_bc,
+                  int M_ij, int M_n,
+                  double h_ij, double h_n,
+                  int N_ij, int N_n) {
   using mask::grounded;
   using mask::icy;
   using mask::floating_ice;
@@ -223,6 +226,11 @@ static int weight(bool margin_bc, int M_ij, int M_n, double h_ij, double h_n) {
     return 0;
   }
 
+  // boundaries of the "no model" area
+  if ((N_ij == 0 and N_n == 1) or (N_ij == 1 and N_n == 0)) {
+    return 0;
+  }
+
   return 1;
 }
 
@@ -239,16 +247,20 @@ surface gradient. When the thickness at a grid point is very small (below \c
 minThickEtaTransform in the procedure), the formula is slightly modified to
 give a lower driving stress. The transformation is not used in floating ice.
  */
-void SSA::compute_driving_stress(const Geometry &geometry, IceModelVec2V &result) const {
-  // Shortcuts to improve readability.
-  const IceModelVec2S
-    &ice_thickness = geometry.ice_thickness,
-    &surface       = geometry.ice_surface_elevation;
+void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
+                                 const IceModelVec2S &surface_elevation,
+                                 const IceModelVec2CellType &cell_type,
+                                 const IceModelVec2Int *no_model_mask,
+                                 IceModelVec2V &result) const {
 
   bool cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
   bool surface_gradient_inward = m_config->get_flag("stress_balance.ssa.compute_surface_gradient_inward");
 
-  IceModelVec::AccessList list{&surface, &m_mask, &ice_thickness, &result};
+  IceModelVec::AccessList list{&surface_elevation, &cell_type, &ice_thickness, &result};
+
+  if (no_model_mask) {
+    list.add(*no_model_mask);
+  }
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -262,8 +274,8 @@ void SSA::compute_driving_stress(const Geometry &geometry, IceModelVec2V &result
     // Special case for verification tests.
     if (surface_gradient_inward) {
       double
-        h_x = surface.diff_x_p(i, j),
-        h_y = surface.diff_y_p(i, j);
+        h_x = surface_elevation.diff_x_p(i, j),
+        h_y = surface_elevation.diff_y_p(i, j);
       result(i, j) = - pressure * Vector2(h_x, h_y);
       continue;
     }
@@ -285,19 +297,24 @@ void SSA::compute_driving_stress(const Geometry &geometry, IceModelVec2V &result
     //
     // The y derivative is handled the same way.
 
-    auto M = m_mask.int_star(i, j);
-    auto h = surface.star(i, j);
+    auto M = cell_type.int_star(i, j);
+    auto h = surface_elevation.star(i, j);
+    StarStencil<int> N(0);
+
+    if (no_model_mask) {
+      N = no_model_mask->int_star(i, j);
+    }
 
     // x-derivative
     double h_x = 0.0;
     {
       double
-        west = weight(cfbc, M.ij, M.w, h.ij, h.w),
-        east = weight(cfbc, M.ij, M.e, h.ij, h.e);
+        west = weight(cfbc, M.ij, M.w, h.ij, h.w, N.ij, N.w),
+        east = weight(cfbc, M.ij, M.e, h.ij, h.e, N.ij, N.e);
 
       if (east + west > 0) {
-        h_x = 1.0 / (west + east) * (west * surface.diff_x_stagE(i - 1, j) +
-                                     east * surface.diff_x_stagE(i, j));
+        h_x = 1.0 / (west + east) * (west * surface_elevation.diff_x_stagE(i - 1, j) +
+                                     east * surface_elevation.diff_x_stagE(i, j));
       } else {
         h_x = 0.0;
       }
@@ -307,12 +324,12 @@ void SSA::compute_driving_stress(const Geometry &geometry, IceModelVec2V &result
     double h_y = 0.0;
     {
       double
-        south = weight(cfbc, M.ij, M.s, h.ij, h.s),
-        north = weight(cfbc, M.ij, M.n, h.ij, h.n);
+        south = weight(cfbc, M.ij, M.s, h.ij, h.s, N.ij, N.s),
+        north = weight(cfbc, M.ij, M.n, h.ij, h.n, N.ij, N.n);
 
       if (north + south > 0) {
-        h_y = 1.0 / (south + north) * (south * surface.diff_y_stagN(i, j - 1) +
-                                       north * surface.diff_y_stagN(i, j));
+        h_y = 1.0 / (south + north) * (south * surface_elevation.diff_y_stagN(i, j - 1) +
+                                       north * surface_elevation.diff_y_stagN(i, j));
       } else {
         h_y = 0.0;
       }

@@ -270,7 +270,11 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   // FIXME: bedrock_boundary is a misleading name
   bool bedrock_boundary = m_config->get_flag("stress_balance.ssa.dirichlet_bc");
 
-  compute_driving_stress(*inputs.geometry, m_taud);
+  compute_driving_stress(inputs.geometry->ice_thickness,
+                         inputs.geometry->ice_surface_elevation,
+                         m_mask,
+                         inputs.no_model_mask,
+                         m_taud);
 
   IceModelVec::AccessList list{&m_taud, &m_b};
 

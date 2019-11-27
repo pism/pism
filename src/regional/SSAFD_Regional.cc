@@ -60,9 +60,13 @@ void SSAFD_Regional::update(const Inputs &inputs, bool full_update) {
   m_no_model_mask = NULL;
 }
 
-void SSAFD_Regional::compute_driving_stress(const Geometry &geometry, IceModelVec2V &result) const {
+void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
+                                            const IceModelVec2S &surface_elevation,
+                                            const IceModelVec2CellType &cell_type,
+                                            const IceModelVec2Int *no_model_mask,
+                                            IceModelVec2V &result) const {
 
-  SSAFD::compute_driving_stress(geometry, result);
+  SSAFD::compute_driving_stress(ice_thickness, surface_elevation, cell_type, no_model_mask, result);
 
   const IceModelVec2Int &nmm = *m_no_model_mask;
 
