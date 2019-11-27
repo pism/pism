@@ -71,35 +71,64 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
   const IceModelVec2Int &nmm = *m_no_model_mask;
 
   const IceModelVec2S
-    &usurfstore = *m_h_stored,
-    &thkstore   = *m_H_stored;
+    &h_stored = *m_h_stored,
+    &H_stored = *m_H_stored;
 
-  IceModelVec::AccessList list{&result, &nmm, &usurfstore, &thkstore};
+  int
+    Mx = m_grid->Mx(),
+    My = m_grid->My();
+
+  IceModelVec::AccessList list{&result, &nmm, &h_stored, &H_stored};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double pressure = m_EC->pressure(thkstore(i,j));
+    auto M = nmm.int_star(i, j);
+
+    if (M.ij == 0) {
+      // this grid point is in the modeled area so we don't need to modify the driving
+      // stress
+      continue;
+    }
+
+    double pressure = m_EC->pressure(H_stored(i, j));
     if (pressure <= 0) {
-      pressure = 0;
+      result(i, j) = 0.0;
+      continue;
     }
 
-    if (nmm(i, j) > 0.5 || nmm(i - 1, j) > 0.5 || nmm(i + 1, j) > 0.5) {
-      if (i - 1 < 0 || i + 1 > (int)m_grid->Mx() - 1) {
-        result(i, j).u = 0;
+    // x-derivative
+    double h_x = 0.0;
+    {
+      double
+        west = M.w == 1 and i > 0,
+        east = M.e == 1 and i < Mx - 1;
+
+      if (east + west > 0) {
+        h_x = 1.0 / (west + east) * (west * h_stored.diff_x_stagE(i - 1, j) +
+                                     east * h_stored.diff_x_stagE(i, j));
       } else {
-        result(i, j).u = - pressure * usurfstore.diff_x(i,j);
+        h_x = 0.0;
       }
     }
 
-    if (nmm(i, j) > 0.5 || nmm(i, j - 1) > 0.5 || nmm(i, j + 1) > 0.5) {
-      if (j - 1 < 0 || j + 1 > (int)m_grid->My() - 1) {
-        result(i, j).v = 0;
+    // y-derivative
+    double h_y = 0.0;
+    {
+      double
+        south = M.s == 1 and j > 0,
+        north = M.n == 1 and j < My - 1;
+
+      if (north + south > 0) {
+        h_y = 1.0 / (south + north) * (south * h_stored.diff_y_stagN(i, j - 1) +
+                                       north * h_stored.diff_y_stagN(i, j));
       } else {
-        result(i, j).v = - pressure * usurfstore.diff_y(i,j);
+        h_y = 0.0;
       }
     }
-  }
+
+    result(i, j) = - pressure * Vector2(h_x, h_y);
+  } // end of the loop over grid points
 }
 
 } // end of namespace stressbalance
