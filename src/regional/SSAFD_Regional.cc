@@ -60,6 +60,16 @@ void SSAFD_Regional::update(const Inputs &inputs, bool full_update) {
   m_no_model_mask = NULL;
 }
 
+static int weight(int M_ij, int M_n, double h_ij, double h_n) {
+  // fjord walls, nunataks, headwalls
+  if ((mask::icy(M_ij) and mask::ice_free(M_n) and h_n > h_ij) or
+      (mask::ice_free(M_ij) and mask::icy(M_n) and h_ij > h_n)) {
+    return 0;
+  }
+
+  return 1;
+}
+
 void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
                                             const IceModelVec2S &surface_elevation,
                                             const IceModelVec2CellType &cell_type,
@@ -76,7 +86,7 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
     Mx = m_grid->Mx(),
     My = m_grid->My();
 
-  IceModelVec::AccessList list{&result, no_model_mask, m_h_stored, m_H_stored};
+  IceModelVec::AccessList list{&result, &cell_type, no_model_mask, m_h_stored, m_H_stored};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -95,9 +105,8 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
       continue;
     }
 
-    // FIXME: add special treatment for "cliffs"
-
     auto h = m_h_stored->star(i, j);
+    auto CT = cell_type.int_star(i, j);
 
     // x-derivative
     double h_x = 0.0;
@@ -105,6 +114,10 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
       double
         west = M.w == 1 and i > 0,
         east = M.e == 1 and i < Mx - 1;
+
+      // don't use differences spanning "cliffs"
+      west *= weight(CT.ij, CT.w, h.ij, h.w);
+      east *= weight(CT.ij, CT.e, h.ij, h.e);
 
       if (east + west > 0) {
         h_x = 1.0 / ((west + east) * dx) * (west * (h.ij - h.w) + east * (h.e - h.ij));
@@ -119,6 +132,10 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
       double
         south = M.s == 1 and j > 0,
         north = M.n == 1 and j < My - 1;
+
+      // don't use differences spanning "cliffs"
+      south *= weight(CT.ij, CT.s, h.ij, h.s);
+      north *= weight(CT.ij, CT.n, h.ij, h.n);
 
       if (north + south > 0) {
         h_y = 1.0 / ((south + north) * dy) * (south * (h.ij - h.s) + north * (h.n - h.ij));
