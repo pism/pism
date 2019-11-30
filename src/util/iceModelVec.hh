@@ -464,10 +464,6 @@ public:
   virtual double absmax() const;
   virtual double diff_x(int i, int j) const;
   virtual double diff_y(int i, int j) const;
-  virtual double diff_x_stagE(int i, int j) const;
-  virtual double diff_y_stagE(int i, int j) const;
-  virtual double diff_x_stagN(int i, int j) const;
-  virtual double diff_y_stagN(int i, int j) const;
   virtual double diff_x_p(int i, int j) const;
   virtual double diff_y_p(int i, int j) const;
 

@@ -68,22 +68,20 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
 
   SSAFD::compute_driving_stress(ice_thickness, surface_elevation, cell_type, no_model_mask, result);
 
-  const IceModelVec2Int &nmm = *m_no_model_mask;
-
-  const IceModelVec2S
-    &h_stored = *m_h_stored,
-    &H_stored = *m_H_stored;
+  double
+    dx = m_grid->dx(),
+    dy = m_grid->dy();
 
   int
     Mx = m_grid->Mx(),
     My = m_grid->My();
 
-  IceModelVec::AccessList list{&result, &nmm, &h_stored, &H_stored};
+  IceModelVec::AccessList list{&result, no_model_mask, m_h_stored, m_H_stored};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    auto M = nmm.int_star(i, j);
+    auto M = no_model_mask->int_star(i, j);
 
     if (M.ij == 0) {
       // this grid point is in the modeled area so we don't need to modify the driving
@@ -91,11 +89,15 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
       continue;
     }
 
-    double pressure = m_EC->pressure(H_stored(i, j));
+    double pressure = m_EC->pressure((*m_H_stored)(i, j));
     if (pressure <= 0) {
       result(i, j) = 0.0;
       continue;
     }
+
+    // FIXME: add special treatment for "cliffs"
+
+    auto h = m_h_stored->star(i, j);
 
     // x-derivative
     double h_x = 0.0;
@@ -105,8 +107,7 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
         east = M.e == 1 and i < Mx - 1;
 
       if (east + west > 0) {
-        h_x = 1.0 / (west + east) * (west * h_stored.diff_x_stagE(i - 1, j) +
-                                     east * h_stored.diff_x_stagE(i, j));
+        h_x = 1.0 / ((west + east) * dx) * (west * (h.ij - h.w) + east * (h.e - h.ij));
       } else {
         h_x = 0.0;
       }
@@ -120,8 +121,7 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
         north = M.n == 1 and j < My - 1;
 
       if (north + south > 0) {
-        h_y = 1.0 / (south + north) * (south * h_stored.diff_y_stagN(i, j - 1) +
-                                       north * h_stored.diff_y_stagN(i, j));
+        h_y = 1.0 / ((south + north) * dy) * (south * (h.ij - h.s) + north * (h.n - h.ij));
       } else {
         h_y = 0.0;
       }

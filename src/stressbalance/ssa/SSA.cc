@@ -256,6 +256,10 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
   bool cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
   bool surface_gradient_inward = m_config->get_flag("stress_balance.ssa.compute_surface_gradient_inward");
 
+  double
+    dx = m_grid->dx(),
+    dy = m_grid->dy();
+
   IceModelVec::AccessList list{&surface_elevation, &cell_type, &ice_thickness, &result};
 
   if (no_model_mask) {
@@ -313,8 +317,7 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
         east = weight(cfbc, M.ij, M.e, h.ij, h.e, N.ij, N.e);
 
       if (east + west > 0) {
-        h_x = 1.0 / (west + east) * (west * surface_elevation.diff_x_stagE(i - 1, j) +
-                                     east * surface_elevation.diff_x_stagE(i, j));
+        h_x = 1.0 / ((west + east) * dx) * (west * (h.ij - h.w) + east * (h.e - h.ij));
       } else {
         h_x = 0.0;
       }
@@ -328,8 +331,7 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
         north = weight(cfbc, M.ij, M.n, h.ij, h.n, N.ij, N.n);
 
       if (north + south > 0) {
-        h_y = 1.0 / (south + north) * (south * surface_elevation.diff_y_stagN(i, j - 1) +
-                                       north * surface_elevation.diff_y_stagN(i, j));
+        h_y = 1.0 / ((south + north) * dy) * (south * (h.ij - h.s) + north * (h.n - h.ij));
       } else {
         h_y = 0.0;
       }

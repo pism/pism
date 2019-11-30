@@ -233,65 +233,63 @@ void SIAFD::surface_gradient_eta(const IceModelVec2S &ice_thickness,
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
 
-  const IceModelVec2S
-    &H = ice_thickness,
-    &b = bed_elevation;
-
-  IceModelVec::AccessList list{&eta, &H, &h_x, &h_y, &b};
+  IceModelVec::AccessList list{&eta, &ice_thickness, &h_x, &h_y, &bed_elevation};
 
   unsigned int GHOSTS = eta.stencil_width();
-  assert(H.stencil_width() >= GHOSTS);
+  assert(ice_thickness.stencil_width() >= GHOSTS);
 
   for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    eta(i,j) = pow(H(i,j), etapow);
+    eta(i, j) = pow(ice_thickness(i, j), etapow);
   }
 
   // now use Mahaffy on eta to get grad h on staggered;
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
 
-  assert(b.stencil_width()   >= 2);
+  assert(bed_elevation.stencil_width() >= 2);
   assert(eta.stencil_width() >= 2);
   assert(h_x.stencil_width() >= 1);
   assert(h_y.stencil_width() >= 1);
 
-  for (int o=0; o<2; o++) {
+  for (PointsWithGhosts p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-    for (PointsWithGhosts p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
+    auto b = bed_elevation.box(i, j);
+    auto e = eta.box(i, j);
 
-      if (o==0) {     // If I-offset
-        const double mean_eta = 0.5 * (eta(i+1,j) + eta(i,j));
-        if (mean_eta > 0.0) {
-          const double factor = invpow * pow(mean_eta, dinvpow);
-          h_x(i,j,o) = factor * (eta(i+1,j) - eta(i,j)) / dx;
-          h_y(i,j,o) = factor * (+ eta(i+1,j+1) + eta(i,j+1)
-                                 - eta(i+1,j-1) - eta(i,j-1)) / (4.0*dy);
-        } else {
-          h_x(i,j,o) = 0.0;
-          h_y(i,j,o) = 0.0;
-        }
-        // now add bed slope to get actual h_x,h_y
-        h_x(i,j,o) += b.diff_x_stagE(i,j);
-        h_y(i,j,o) += b.diff_y_stagE(i,j);
-      } else {        // J-offset
-        const double mean_eta = 0.5 * (eta(i,j+1) + eta(i,j));
-        if (mean_eta > 0.0) {
-          const double factor = invpow * pow(mean_eta, dinvpow);
-          h_y(i,j,o) = factor * (eta(i,j+1) - eta(i,j)) / dy;
-          h_x(i,j,o) = factor * (+ eta(i+1,j+1) + eta(i+1,j)
-                                 - eta(i-1,j+1) - eta(i-1,j)) / (4.0*dx);
-        } else {
-          h_y(i,j,o) = 0.0;
-          h_x(i,j,o) = 0.0;
-        }
-        // now add bed slope to get actual h_x,h_y
-        h_y(i,j,o) += b.diff_y_stagN(i,j);
-        h_x(i,j,o) += b.diff_x_stagN(i,j);
+    // i-offset
+    {
+      double mean_eta = 0.5 * (e.e + e.ij);
+      if (mean_eta > 0.0) {
+        double factor = invpow * pow(mean_eta, dinvpow);
+        h_x(i, j, 0) = factor * (e.e - e.ij) / dx;
+        h_y(i, j, 0) = factor * (e.ne + e.n - e.se - e.s) / (4.0 * dy);
+      } else {
+        h_x(i, j, 0) = 0.0;
+        h_y(i, j, 0) = 0.0;
       }
+      // now add bed slope to get actual h_x, h_y
+      h_x(i, j, 0) += (b.e - b.ij) / dx;
+      h_y(i, j, 0) += (b.ne + b.n - b.se - b.s) / (4.0 * dy);
     }
-  }
+
+    // j-offset
+    {
+      double mean_eta = 0.5 * (e.n + e.ij);
+      if (mean_eta > 0.0) {
+        double factor = invpow * pow(mean_eta, dinvpow);
+        h_x(i, j, 1) = factor * (e.ne + e.e - e.nw - e.w) / (4.0 * dx);
+        h_y(i, j, 1) = factor * (e.n - e.ij) / dy;
+      } else {
+        h_x(i, j, 1) = 0.0;
+        h_y(i, j, 1) = 0.0;
+      }
+      // now add bed slope to get actual h_x, h_y
+      h_x(i, j, 1) += (b.ne + b.e - b.nw - b.w) / (4.0 * dx);
+      h_y(i, j, 1) += (b.n - b.ij) / dy;
+    }
+  } // end of the loop over grid points
 }
 
 

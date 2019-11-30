@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -151,10 +151,6 @@ public:
 namespace FD {
 inline double diff_x(const Scalar2DField &field, int i, int j) const;
 inline double diff_y(const Scalar2DField &field, int i, int j) const;
-inline double diff_x_stagE(const Scalar2DField &field, int i, int j) const;
-inline double diff_y_stagE(const Scalar2DField &field, int i, int j) const;
-inline double diff_x_stagN(const Scalar2DField &field, int i, int j) const;
-inline double diff_y_stagN(const Scalar2DField &field, int i, int j) const;
 inline double diff_x_p(const Scalar2DField &field, int i, int j) const;
 inline double diff_y_p(const Scalar2DField &field, int i, int j) const;
 }
