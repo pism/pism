@@ -440,8 +440,7 @@ void IceModel::step(bool do_mass_continuity,
 
   m_stdout_flags += (updateAtDepth ? "v" : "V");
 
-  //! \li determine the time step according to a variety of stability criteria;
-  //!  see determineTimeStep()
+  //! \li determine the time step according to a variety of stability criteria
   max_timestep(m_dt, m_skip_countdown);
 
   //! \li update the yield stress for the plastic till model (if appropriate)

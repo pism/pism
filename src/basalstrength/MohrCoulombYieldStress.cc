@@ -296,7 +296,7 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
   const IceModelVec2S        &sea_level      = inputs.geometry->sea_level_elevation;
 
   IceModelVec::AccessList list{&W_till, &m_till_phi, &m_basal_yield_stress, &cell_type,
-      &bed_topography, &sea_level, &ice_thickness};
+                               &bed_topography, &sea_level, &ice_thickness};
 
   if (add_transportable_water) {
     list.add(W_subglacial);
@@ -321,11 +321,11 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
       double water = W_till(i,j); // usual case
 
       if (slippery_grounding_lines and
-          bed_topography(i,j) <= sea_level(i, j) and
-          (cell_type.next_to_floating_ice(i,j) or cell_type.next_to_ice_free_ocean(i,j))) {
+          bed_topography(i, j) <= sea_level(i, j) and
+          (cell_type.next_to_floating_ice(i, j) or cell_type.next_to_ice_free_ocean(i, j))) {
         water = W_till_max;
       } else if (add_transportable_water) {
-        water = W_till(i,j) + tlftw * log(1.0 + W_subglacial(i,j) / tlftw);
+        water = W_till(i, j) + tlftw * log(1.0 + W_subglacial(i, j) / tlftw);
       }
 
       double P_overburden = ice_density * standard_gravity * ice_thickness(i, j);
