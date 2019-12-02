@@ -248,6 +248,7 @@ void IceModel::model_state_setup() {
     case INIT_OTHER:
       m_basal_yield_stress_model->init(inputs);
     }
+    m_basal_yield_stress.copy_from(m_basal_yield_stress_model->basal_material_yield_stress());
   }
 
   // Initialize the bedrock thermal layer model.
