@@ -288,11 +288,11 @@
 %include "util/Mask.hh"
 %include "pism_python.hh"
 
-%shared_ptr(pism::YieldStress)
-%shared_ptr(pism::ConstantYieldStress)
-%shared_ptr(pism::MohrCoulombYieldStress)
-%include "basalstrength/YieldStress.hh"
-%include "basalstrength/MohrCoulombYieldStress.hh"
+pism_class(pism::MohrCoulombPointwise, "pism/basalstrength/MohrCoulombPointwise.hh")
+pism_class(pism::YieldStress, "pism/basalstrength/YieldStress.hh")
+pism_class(pism::ConstantYieldStress, "pism/basalstrength/ConstantYieldStress.hh")
+pism_class(pism::MohrCoulombYieldStress, "pism/basalstrength/MohrCoulombYieldStress.hh")
+pism_class(pism::RegionalYieldStress, "pism/regional/RegionalYieldStress.hh")
 
 %rename(StressBalanceInputs) pism::stressbalance::Inputs;
 

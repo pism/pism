@@ -405,17 +405,6 @@ void IceModel::step(bool do_mass_continuity,
 
   const bool updateAtDepth  = (m_skip_countdown == 0);
 
-  //! \li update the yield stress for the plastic till model (if appropriate)
-  if (updateAtDepth and m_basal_yield_stress_model) {
-    profiling.begin("basal_yield_stress");
-    m_basal_yield_stress_model->update(yield_stress_inputs());
-    profiling.end("basal_yield_stress");
-    m_basal_yield_stress.copy_from(m_basal_yield_stress_model->basal_material_yield_stress());
-    m_stdout_flags += "y";
-  } else {
-    m_stdout_flags += "$";
-  }
-
   try {
     profiling.begin("stress_balance");
     m_stress_balance->update(stress_balance_inputs(), updateAtDepth);
@@ -451,9 +440,19 @@ void IceModel::step(bool do_mass_continuity,
 
   m_stdout_flags += (updateAtDepth ? "v" : "V");
 
-  //! \li determine the time step according to a variety of stability criteria;
-  //!  see determineTimeStep()
+  //! \li determine the time step according to a variety of stability criteria
   max_timestep(m_dt, m_skip_countdown);
+
+  //! \li update the yield stress for the plastic till model (if appropriate)
+  if (m_basal_yield_stress_model) {
+    profiling.begin("basal_yield_stress");
+    m_basal_yield_stress_model->update(yield_stress_inputs(), current_time, m_dt);
+    profiling.end("basal_yield_stress");
+    m_basal_yield_stress.copy_from(m_basal_yield_stress_model->basal_material_yield_stress());
+    m_stdout_flags += "y";
+  } else {
+    m_stdout_flags += "$";
+  }
 
   dt_TempAge += m_dt;
 

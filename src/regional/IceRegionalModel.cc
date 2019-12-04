@@ -26,7 +26,7 @@
 #include "SIAFD_Regional.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/basalstrength/ConstantYieldStress.hh"
-#include "RegionalDefaultYieldStress.hh"
+#include "RegionalYieldStress.hh"
 #include "pism/util/io/File.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
@@ -215,21 +215,13 @@ void IceRegionalModel::allocate_basal_yield_stress() {
     return;
   }
 
-  std::string model = m_config->get_string("stress_balance.model");
+  IceModel::allocate_basal_yield_stress();
 
-  // only these two use the yield stress (so far):
-  if (model == "ssa" or model == "ssa+sia") {
-    std::string yield_stress_model = m_config->get_string("basal_yield_stress.model");
+  if (m_basal_yield_stress_model) {
+    // IceModel allocated a basal yield stress model. This means that we are using a
+    // stress balance model that uses it and we need to add regional modifications.
+    m_basal_yield_stress_model.reset(new RegionalYieldStress(m_basal_yield_stress_model));
 
-    if (yield_stress_model == "constant") {
-      m_basal_yield_stress_model.reset(new ConstantYieldStress(m_grid));
-    } else if (yield_stress_model == "mohr_coulomb") {
-      m_basal_yield_stress_model.reset(new RegionalDefaultYieldStress(m_grid));
-    } else {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "yield stress model '%s' is not supported.",
-                                    yield_stress_model.c_str());
-    }
     m_submodels["basal yield stress"] = m_basal_yield_stress_model.get();
   }
 }
