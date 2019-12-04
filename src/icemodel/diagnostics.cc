@@ -1628,8 +1628,13 @@ public:
   IceMassFluxBasal(const IceModel *m)
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_basal_mass_flux") {
 
+    if (m_config->get_flag("output.ISMIP6")) {
+      m_ts.variable().set_name("tendlibmassbf");
+    }
+
     set_units("kg s-1", "Gt year-1");
     m_ts.variable().set_string("long_name", "total over ice domain of bottom surface ice mass flux");
+    m_ts.variable().set_string("standard_name", "tendency_of_land_ice_mass_due_to_basal_mass_balance");
     m_ts.variable().set_string("comment", "positive means ice gain");
   }
 
@@ -1666,10 +1671,6 @@ class IceMassFluxBasalGrounded : public TSDiag<TSFluxDiagnostic, IceModel>
 public:
   IceMassFluxBasalGrounded(const IceModel *m)
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_mass_flux_grounded") {
-
-    if (m_config->get_flag("output.ISMIP6")) {
-      m_ts.variable().set_name("tendlibmassbf");
-    }
 
     set_units("kg s-1", "Gt year-1");
     m_ts.variable().set_string("long_name", "total over grounded ice domain of basal mass flux");
@@ -2841,7 +2842,7 @@ void IceModel::init_diagnostics() {
     m_ts_diagnostics["iareagr"]         = m_ts_diagnostics["ice_area_glacierized_grounded"];
     m_ts_diagnostics["lim"]             = m_ts_diagnostics["ice_mass"];
     m_ts_diagnostics["tendacabf"]       = m_ts_diagnostics["tendency_of_ice_mass_due_to_surface_mass_flux"];
-    m_ts_diagnostics["tendlibmassbf"]   = m_ts_diagnostics["basal_mass_flux_grounded"];
+    m_ts_diagnostics["tendlibmassbf"]   = m_ts_diagnostics["tendency_of_ice_mass_due_to_basal_mass_flux"];
     m_ts_diagnostics["tendlibmassbffl"] = m_ts_diagnostics["basal_mass_flux_floating"];
     m_ts_diagnostics["tendlicalvf"]     = m_ts_diagnostics["tendency_of_ice_mass_due_to_calving"];
     m_ts_diagnostics["tendlifmassbf"]   = m_ts_diagnostics["tendency_of_ice_mass_due_to_discharge"];
