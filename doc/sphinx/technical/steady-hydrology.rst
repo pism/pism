@@ -65,7 +65,7 @@ water is added to the corresponding drainage basin due to the source term*.
 Next, consider a related initial boundary value problem
 
 .. math::
-   :label: eq-steady-hydro-aux
+   :label: eq-emptying-problem
 
    \diff{u}{t} = -\div (\V u)
 
@@ -122,7 +122,7 @@ outflow boundary *if we know the direction of the steady state flux*:
    \int_{\omega} \bq \cdot \n\; ds = \frac{1}{\tau(1 - \epsilon)} \int_0^T \int_{\omega} (\V u) \cdot \n\; ds.
 
 Here the right hand side of :eq:`eq-steady-hydro-3` can be estimated by advancing an
-explicit-in-time approximation of :eq:`eq-steady-hydro-aux` until `\int_B u` drops below
+explicit-in-time approximation of :eq:`eq-emptying-problem` until `\int_B u` drops below
 a chosen threshold.
 
 However, the direction of the steady state flux `\psi` depends on steady state
@@ -148,7 +148,7 @@ The approximation of `\tilde \psi` on a computational grid is computed as follow
 
 Next, note that it is not necessary to identify the drainage basin `B` for a terminus
 `\omega`: it is defined by `\psi` and therefore an approximation of
-:eq:`eq-steady-hydro-aux` will automatically distribute water inputs from the ice surface
+:eq:`eq-emptying-problem` will automatically distribute water inputs from the ice surface
 (or melting) along the ice margin.
 
 .. _sec-steady-hydro-algorithm:
@@ -156,7 +156,7 @@ Next, note that it is not necessary to identify the drainage basin `B` for a ter
 The algorithm
 ^^^^^^^^^^^^^
 
-Using an explicit time stepping approximation of :eq:`eq-steady-hydro-aux` we can estimate
+Using an explicit time stepping approximation of :eq:`eq-emptying-problem` we can estimate
 `\int_{\omega} \bq \cdot \n \; ds` as follows.
 
 #. Given ice thickness `H` and bed elevation `b` compute `\tilde \psi` by filling "dips"
