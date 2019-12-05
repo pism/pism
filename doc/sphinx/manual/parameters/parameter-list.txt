@@ -370,6 +370,11 @@
    :Value: 1.800000e+09 (Pascal second meter-1)
    :Description: value is for ice stream E from :cite:`HulbeMacAyeal`; thus sliding velocity, but we hope it doesn't matter much; at 100 m/year the linear sliding law gives 57040 Pa basal shear stress
 
+#. :config:`basal_resistance.beta_lateral_margin` (*number*)
+
+   :Value: 1.000000e+19 (Pascal second meter-1)
+   :Description: high value of `\beta` used to simulate drag at lateral ice margins (fjord walls, etc); the default value is chosen to disable flow in the direction along a margin
+
 #. :config:`basal_resistance.plastic.regularization` (*number*)
 
    :Value: 0.010000 (meter / year)
@@ -430,6 +435,24 @@
    :Value: *no default*
    :Option: :opt:`-tauc_to_phi`
    :Description: File containing the basal yield stress field that should be used to recover the till friction angle distribution.
+
+#. :config:`basal_yield_stress.mohr_coulomb.delta.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-mohr_coulomb_delta_file`
+   :Description: Name of the file containing space- and time-dependent variable `mohr_coulomb_delta` to use instead of `basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden`.
+
+#. :config:`basal_yield_stress.mohr_coulomb.delta.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-mohr_coulomb_delta_period`
+   :Description: Length of the period. Set to zero to disable.
+
+#. :config:`basal_yield_stress.mohr_coulomb.delta.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-mohr_coulomb_delta_reference_year`
+   :Description: Reference year to use when ``basal_yield_stress.mohr_coulomb.delta.period`` is active.
 
 #. :config:`basal_yield_stress.mohr_coulomb.till_cohesion` (*number*)
 
@@ -1367,10 +1390,20 @@
    :Option: :opt:`-hydrology_roughness_scale`
    :Description: W_r in notes; roughness scale determining maximum amount of cavitation opening in hydrology::Distributed
 
-#. :config:`hydrology.surface_input_file` (*string*)
+#. :config:`hydrology.surface_input.file` (*string*)
 
    :Value: *no default*
-   :Description: Basal hydrology sub.surface_input_file.
+   :Description: Name of the file containing ``water_input_rate``, the rate at which water from the ice surface is added to the subglacial hydrology system
+
+#. :config:`hydrology.surface_input.period` (*integer*)
+
+   :Value: 0
+   :Description: Length of the period of the water input rate. Set to zero to disable.
+
+#. :config:`hydrology.surface_input.reference_year` (*integer*)
+
+   :Value: 0
+   :Description: Reference year to use when ``hydrology.surface_input.period`` is active.
 
 #. :config:`hydrology.thickness_power_in_flux` (*number*)
 
@@ -1934,6 +1967,12 @@
    :Option: :opt:`-extra_append`
    :Description: Append to an existing output file.
 
+#. :config:`output.extra.stop_missing` (*flag*)
+
+   :Value: yes
+   :Option: :opt:`-extra_stop_missing`
+   :Description: Stop if requested variable is not available instead of warning.
+
 #. :config:`output.extra.file` (*string*)
 
    :Value: *no default*
@@ -1972,7 +2011,7 @@
 #. :config:`output.format` (*keyword*)
 
    :Value: ``netcdf3``
-   :Choices: ``netcdf3, netcdf4_parallel, pnetcdf``
+   :Choices: ``netcdf3, netcdf4_parallel, pnetcdf, pio_pnetcdf, pio_netcdf4p, pio_netcdf4c, pio_netcdf``
    :Option: :opt:`-o_format`
    :Description: The I/O format used for spatial fields; 'netcdf3' is the default, 'netcd4_parallel' is available if PISM was built with parallel NetCDF-4, and 'pnetcdf' is available if PISM was built with PnetCDF.
 
@@ -1980,6 +2019,21 @@
 
    :Value: 10 (meters)
    :Description: If ice is thinner than this standard then a grid cell is considered ice-free for purposes of reporting glacierized area, volume, etc.
+
+#. :config:`output.pio.n_writers` (*integer*)
+
+   :Value: 1
+   :Description: Number of I/O tasks to use
+
+#. :config:`output.pio.stride` (*integer*)
+
+   :Value: 1
+   :Description: Offset between I/O tasks
+
+#. :config:`output.pio.base` (*integer*)
+
+   :Value: 0
+   :Description: Rank of the first I/O task
 
 #. :config:`output.runtime.area_scale_factor_log10` (*integer*)
 
@@ -2110,13 +2164,6 @@
 
    :Value: false
    :Description: Follow ISMIP6 conventions (units, variable names, "standard names") when writing output variables.
-
-#. :config:`output.variable_order` (*keyword*)
-
-   :Value: ``yxz``
-   :Choices: ``xyz, yxz, zyx``
-   :Option: :opt:`-o_order`
-   :Description: Variable order to use in output files.
 
 #. :config:`regional.no_model_strip` (*number*)
 
