@@ -481,7 +481,7 @@ class FracP(TestCase):
 
 class LapseRates(TestCase):
     def setUp(self):
-        self.filename = "reference_surface.nc"
+        self.filename = "atmosphere_reference_surface.nc"
         self.grid = shallow_grid()
         self.model = PISM.AtmosphereUniform(self.grid)
         self.dTdz = 1.0         # Kelvin per km

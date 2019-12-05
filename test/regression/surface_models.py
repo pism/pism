@@ -191,7 +191,7 @@ class DeltaT(TestCase):
 
 class LapseRates(TestCase):
     def setUp(self):
-        self.filename = "reference_surface.nc"
+        self.filename = "surface_reference_surface.nc"
         self.output_filename = "lapse_rates_output.nc"
         self.grid     = shallow_grid()
         self.model    = surface_simple(self.grid)
