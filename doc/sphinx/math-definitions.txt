@@ -32,6 +32,7 @@
       \newcommand{\uppair}[2]{\left\{\begin{matrix} #1 \\ #2 \end{matrix}\right\}}
       \newcommand{\div}{\nabla \cdot}
       \newcommand{\V}{\mathbf{V}}
+      \newcommand{\Wtill}{W_{\mathrm{till}}}
 
 .. raw:: latex
 
@@ -66,6 +67,7 @@
    % hydrology
    \providecommand{\bq}{\mathbf{q}}
    \providecommand{\V}{\mathbf{V}} % velocity vector
+   \providecommand{\Wtill}{W_{\mathrm{till}}}
 
    % BOMBPROOF
    \providecommand{\Up}[2]{\operatorname{Up}\left(#1\big|#2\right)}
