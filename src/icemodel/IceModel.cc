@@ -56,6 +56,7 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/iceModelVec2T.hh"
 #include "pism/fracturedensity/FractureDensity.hh"
+#include "pism/coupler/util/options.hh" // ForcingOptions
 
 namespace pism {
 
@@ -123,12 +124,13 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     }
   }
 
-  auto surface_input_file = m_config->get_string("hydrology.surface_input_file");
+  auto surface_input_file = m_config->get_string("hydrology.surface_input.file");
   if (not surface_input_file.empty()) {
+    ForcingOptions surface_input(*m_ctx, "hydrology.surface_input");
     int buffer_size = m_config->get_number("input.forcing.buffer_size");
     int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
 
-    File file(m_grid->com, surface_input_file, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, surface_input.filename, PISM_NETCDF3, PISM_READONLY);
 
     m_surface_input_for_hydrology = IceModelVec2T::ForcingField(m_grid,
                                                                 file,
@@ -136,7 +138,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
                                                                 "", // no standard name
                                                                 buffer_size,
                                                                 evaluations_per_year,
-                                                                false); // not periodic
+                                                                surface_input.period);
     m_surface_input_for_hydrology->set_attrs("diagnostic",
                                              "water input rate for the subglacial hydrology model",
                                              "kg m-2 s-1", "kg m-2 year-1", "", 0);

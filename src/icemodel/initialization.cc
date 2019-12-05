@@ -67,6 +67,7 @@
 #include "pism/frontretreat/FrontRetreat.hh"
 #include "pism/frontretreat/PrescribedRetreat.hh"
 #include "pism/coupler/frontalmelt/Factory.hh"
+#include "pism/coupler/util/options.hh" // ForcingOptions
 
 namespace pism {
 
@@ -819,8 +820,10 @@ void IceModel::misc_setup() {
   }
 
   if (m_surface_input_for_hydrology) {
-    m_surface_input_for_hydrology->init(m_config->get_string("hydrology.surface_input_file"),
-                                        0, 0);
+    ForcingOptions surface_input(*m_ctx, "hydrology.surface_input");
+    m_surface_input_for_hydrology->init(surface_input.filename,
+                                        surface_input.period,
+                                        surface_input.reference_time);
   }
 
   if (m_fracture) {

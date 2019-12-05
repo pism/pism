@@ -71,7 +71,7 @@ models assume that all melt turns into runoff.)
 
    * - Option
      - Description
-   * - :opt:`-hydrology.surface_input_file`
+   * - :opt:`-hydrology.surface_input.file`
      - Specifies a NetCDF file which contains a time-dependent field ``water_input_rate``
        which has units of water thickness per time. This rate is *added to* the basal melt
        rate computed by the energy conservation code.
@@ -122,7 +122,7 @@ the ``null`` model. It *does not* model the steady state distribution of the sub
 water thickness.
 
 Here we assume that the water input from the surface read from the file specified using
-:config:`hydrology.surface_input_file` instantaneously percolates to the base of the ice
+:config:`hydrology.surface_input.file` instantaneously percolates to the base of the ice
 and enters the subglacial water system.
 
 We also assume that the subglacial drainage system instantaneously reaches its steady

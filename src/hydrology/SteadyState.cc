@@ -66,9 +66,9 @@ SteadyState::SteadyState(IceGrid::ConstPtr grid)
                        "'steady' hydrology requires hydrology.add_water_input_to_till_storage == false");
   }
 
-  if (m_config->get_string("hydrology.surface_input_file").empty()) {
+  if (m_config->get_string("hydrology.surface_input.file").empty()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "'steady' hydrology requires hydrology.surface_input_file");
+                                  "'steady' hydrology requires hydrology.surface_input.file");
   }
 }
 
@@ -207,7 +207,7 @@ void SteadyState::write_model_state_impl(const File& output) const {
 void SteadyState::restart_impl(const File &input_file, int record) {
   NullTransport::restart_impl(input_file, record);
 
-  init_time(m_config->get_string("hydrology.surface_input_file"));
+  init_time(m_config->get_string("hydrology.surface_input.file"));
 
   // Read m_t_last
   {
@@ -227,7 +227,7 @@ void SteadyState::bootstrap_impl(const File &input_file,
                                  const IceModelVec2S &ice_thickness) {
   NullTransport::bootstrap_impl(input_file, ice_thickness);
 
-  init_time(m_config->get_string("hydrology.surface_input_file"));
+  init_time(m_config->get_string("hydrology.surface_input.file"));
 
   // Read m_t_last
   {

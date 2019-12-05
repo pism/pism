@@ -11,7 +11,10 @@ Changes since v1.1
 - Add the `hydraulic_potential` diagnostic to `routing` and `distributed` subglacial
   hydrology models.
 - Variable `water_input_rate` containing water input rate for hydrology models (see
-  `hydrology.surface_input_file`) uses units of "kg m-2 s-1" instead of "m s-1".
+  `hydrology.surface_input.file`) uses units of "kg m-2 s-1" instead of "m s-1".
+- Rename `hydrology.surface_input_file` to `hydrology.surface_input.file`. Also, add
+  `hydrology.surface_input.period` and `hydrology.surface_input.reference_year` to support
+  periodic water input rates.
 - PISM uses configuration parameters to select surface, atmosphere, ocean, sea level, and
   frontal melt models. See `surface.models`, `atmosphere.models`, `ocean.models`,
   `sea_level.models`, and `frontal_melt.models`.

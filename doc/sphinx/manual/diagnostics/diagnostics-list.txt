@@ -78,12 +78,12 @@ Spatially-variable fields
 
    - ``bwatvel[0]``
 
-     :Units: m year-1
+     :Units: m s-1
      :Description: velocity of water in subglacial layer, i-offset
 
    - ``bwatvel[1]``
 
-     :Units: m year-1
+     :Units: m s-1
      :Description: velocity of water in subglacial layer, j-offset
 
 #. ``bwp``

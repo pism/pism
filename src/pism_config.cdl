@@ -1314,9 +1314,19 @@ netcdf pism_config {
     pism_config:hydrology.roughness_scale_type = "number";
     pism_config:hydrology.roughness_scale_units = "meters";
 
-    pism_config:hydrology.surface_input_file = "";
-    pism_config:hydrology.surface_input_file_doc = "Basal hydrology sub.surface_input_file.";
-    pism_config:hydrology.surface_input_file_type = "string";
+    pism_config:hydrology.surface_input.file = "";
+    pism_config:hydrology.surface_input.file_doc = "Name of the file containing ``water_input_rate``, the rate at which water from the ice surface is added to the subglacial hydrology system";
+    pism_config:hydrology.surface_input.file_type = "string";
+
+    pism_config:hydrology.surface_input.period = 0;
+    pism_config:hydrology.surface_input.period_doc = "Length of the period of the water input rate. Set to zero to disable.";
+    pism_config:hydrology.surface_input.period_type = "integer";
+    pism_config:hydrology.surface_input.period_units = "years";
+
+    pism_config:hydrology.surface_input.reference_year = 0;
+    pism_config:hydrology.surface_input.reference_year_doc = "Reference year to use when ``hydrology.surface_input.period`` is active.";
+    pism_config:hydrology.surface_input.reference_year_type = "integer";
+    pism_config:hydrology.surface_input.reference_year_units = "years";
 
     pism_config:hydrology.thickness_power_in_flux = 1.25;
     pism_config:hydrology.thickness_power_in_flux_doc = "power `\\alpha` in Darcy's law `q = - k W^{\\alpha} |\\nabla \\psi|^{\\beta-2} \\nabla \\psi`, for subglacial water layer; used by hydrology::Routing and hydrology::Distributed";

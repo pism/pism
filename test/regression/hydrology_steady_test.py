@@ -59,7 +59,7 @@ class SteadyHydrology(TestCase):
                     surface_input_rate[i, j] = 0
 
         ctx.config.set_flag("hydrology.add_water_input_to_till_storage", False)
-        ctx.config.set_string("hydrology.surface_input_file", self.surface_input_file)
+        ctx.config.set_string("hydrology.surface_input.file", self.surface_input_file)
 
         self.model = PISM.SteadyState(grid)
 
