@@ -125,7 +125,7 @@ Here the right hand side of :eq:`eq-steady-hydro-3` can be estimated by advancin
 explicit-in-time approximation of :eq:`eq-emptying-problem` until `\int_B u` drops below
 a chosen threshold.
 
-However, the direction of the steady state flux `\psi` depends on steady state
+However, the direction of the steady state flux `\bq` depends on steady state
 distributions of `W` and `\Wtill` and these quantities are expensive to compute.
 
 To avoid this issue we note that `W \ll H` and so `\psi` is well approximated by `\psi_0 =
