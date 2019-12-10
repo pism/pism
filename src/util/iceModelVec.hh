@@ -21,6 +21,7 @@
 
 #include <initializer_list>
 #include <memory>
+#include <cstdint>              // uint64_t
 
 #include <petscvec.h>
 #include <gsl/gsl_interp.h>     // gsl_interp_accel
@@ -344,6 +345,9 @@ public:
   //! Dump an IceModelVec to a file. *This is for debugging only.*
   //! Uses const char[] to make it easier to call it from gdb.
   void dump(const char filename[]) const;
+
+  uint64_t fletcher64() const;
+  std::string checksum() const;
 
   typedef pism::AccessList AccessList;
 protected:

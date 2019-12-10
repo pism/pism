@@ -1240,6 +1240,60 @@ void IceModelVec::get_from_proc0(Vec onp0) {
   inc_state_counter();          // mark as modified
 }
 
+/*!
+ * Compute a checksum of a vector.
+ *
+ * The result depends on the number of processors used.
+ *
+ * We assume that sizeof(double) == 2 * sizeof(uint32_t), i.e. double uses 64 bits.
+ */
+uint64_t IceModelVec::fletcher64() const {
+  MPI_Status mpi_stat;
+  const int checksum_tag = 42;
+
+  MPI_Comm com = m_grid->ctx()->com();
+
+  int rank = 0;
+  MPI_Comm_rank(com, &rank);
+
+  int comm_size = 0;
+  MPI_Comm_size(com, &comm_size);
+
+  PetscInt local_size = 0;
+  PetscErrorCode ierr = VecGetLocalSize(m_v, &local_size); PISM_CHK(ierr, "VecGetLocalSize");
+  uint64_t sum = 0;
+  {
+    petsc::VecArray v(m_v);
+    // compute checksums for local patches on all ranks
+    sum = pism::fletcher64((uint32_t*)v.get(), local_size * 2);
+  }
+
+  if (rank == 0) {
+    std::vector<uint64_t> sums(comm_size);
+
+    // gather checksums of patches on rank 0
+    sums[0] = sum;
+    for (int r = 1; r < comm_size; ++r) {
+      MPI_Recv(&sums[r], 1, MPI_UINT64_T, r, checksum_tag, com, &mpi_stat);
+    }
+
+    // compute the checksum of checksums
+    sum = pism::fletcher64((uint32_t*)sums.data(), comm_size * 2);
+  } else {
+    MPI_Send(&sum, 1, MPI_UINT64_T, 0, checksum_tag, com);
+  }
+
+  // broadcast to all ranks
+  MPI_Bcast(&sum, 1, MPI_UINT64_T, 0, com);
+
+  return sum;
+}
+
+std::string IceModelVec::checksum() const {
+  // unsigned long long is supposed to be at least 64 bit long
+  return pism::printf("%llx", (unsigned long long int)this->fletcher64());
+}
+
 void convert_vec(Vec v, units::System::Ptr system,
                  const std::string &spec1, const std::string &spec2) {
   units::Converter c(system, spec1, spec2);
