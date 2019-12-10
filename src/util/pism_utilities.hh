@@ -20,6 +20,8 @@
 #ifndef _PISM_UTILITIES_H_
 #define _PISM_UTILITIES_H_
 
+#include <cstdint>              // uint16_t, uint32_t
+
 #include <algorithm>            // std::min, std::max
 #include <string>
 #include <vector>
@@ -118,6 +120,8 @@ std::string version();
 std::string printf(const char *format, ...) __attribute__((format(printf, 1, 2)));
 
 void validate_format_string(const std::string &format);
+
+uint64_t fletcher64(const uint32_t *data, size_t len);
 
 } // end of namespace pism
 
