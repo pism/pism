@@ -11,6 +11,7 @@ nosetests --with-coverage --cover-branches --cover-html --cover-package=PISM tes
 """
 
 import PISM
+import PISM.testing
 import sys
 import os
 import numpy as np
@@ -1146,3 +1147,19 @@ class AgeModel(TestCase):
 
     def tearDown(self):
         os.remove(self.output_file)
+
+def checksum_test():
+    "Check if a small change in an IceModelVec affects checksum() output"
+    grid = PISM.testing.shallow_grid(Mx=101, My=201)
+
+    v = PISM.IceModelVec2S(grid, "dummy", PISM.WITHOUT_GHOSTS)
+    v.set(1e15)
+
+    old_checksum = v.checksum()
+
+    with PISM.vec.Access(nocomm=v):
+        for (i, j) in grid.points():
+            if i == 0 and j == 0:
+                v[i, j] += 1
+
+    assert old_checksum != v.checksum()
