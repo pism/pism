@@ -407,6 +407,18 @@ void IceModel::step(bool do_mass_continuity,
 
   const bool updateAtDepth  = (m_skip_countdown == 0);
 
+  // Combine basal melt rate in grounded (computed during the energy
+  // step) and floating (provided by an ocean model) areas.
+  //
+  // Basal melt rate may be used by a stress balance model to compute vertical velocity of
+  // ice.
+  {
+    combine_basal_melt_rate(m_geometry,
+                            m_ocean->shelf_base_mass_flux(),
+                            m_energy_model->basal_melt_rate(),
+                            m_basal_melt_rate);
+  }
+
   try {
     profiling.begin("stress_balance");
     m_stress_balance->update(stress_balance_inputs(), updateAtDepth);
@@ -558,16 +570,6 @@ void IceModel::step(bool do_mass_continuity,
   m_surface->update(m_geometry, current_time, m_dt);
   profiling.end("surface");
 
-  // Combine basal melt rate in grounded (computed during the energy
-  // step) and floating (provided by an ocean model) areas.
-  {
-    const IceModelVec2S &shelf_base_mass_flux = m_ocean->shelf_base_mass_flux();
-
-    combine_basal_melt_rate(m_geometry,
-                            shelf_base_mass_flux,
-                            m_energy_model->basal_melt_rate(),
-                            m_basal_melt_rate);
-  }
 
   if (do_mass_continuity) {
     // compute and apply effective surface and basal mass balance
