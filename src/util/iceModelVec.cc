@@ -1291,7 +1291,7 @@ uint64_t IceModelVec::fletcher64() const {
 
 std::string IceModelVec::checksum() const {
   // unsigned long long is supposed to be at least 64 bit long
-  return pism::printf("%llx", (unsigned long long int)this->fletcher64());
+  return pism::printf("%016llx", (unsigned long long int)this->fletcher64());
 }
 
 void convert_vec(Vec v, units::System::Ptr system,
