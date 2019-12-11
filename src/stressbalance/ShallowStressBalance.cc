@@ -64,10 +64,10 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
   m_velocity.create(m_grid, "bar", WITH_GHOSTS, WIDE_STENCIL); // components ubar, vbar
   m_velocity.set_attrs("model_state",
                        "thickness-advective ice velocity (x-component)", 
-                       "m s-1", "m year-1", "", 0);
+                       "m s-1", "m s-1", "", 0);
   m_velocity.set_attrs("model_state",
                        "thickness-advective ice velocity (y-component)",
-                       "m s-1", "m year-1", "", 1);
+                       "m s-1", "m s-1", "", 1);
 
   m_basal_frictional_heating.create(m_grid, "bfrict", WITHOUT_GHOSTS);
   m_basal_frictional_heating.set_attrs("diagnostic",
