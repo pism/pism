@@ -294,33 +294,33 @@ void Time::init(const Logger &log) {
   // override all this by using settings from -time_file, so that is
   // fine, too.
 
-  bool y_set = process_y(y_seconds);
+  bool y_set  = process_y(y_seconds);
   bool ys_set = process_ys(ys_seconds);
   bool ye_set = process_ye(ye_seconds);
 
-  if (ys_set && ye_set && y_set) {
+  if (ys_set and ye_set and y_set) {
     throw RuntimeError(PISM_ERROR_LOCATION, "all of -y, -ys, -ye are set.");
   }
 
-  if (y_set && ye_set) {
+  if (y_set and ye_set) {
     throw RuntimeError(PISM_ERROR_LOCATION, "using -y and -ye together is not allowed.");
   }
 
   // Set the start year if -ys is set, use the default otherwise.
-  if (ys_set == true) {
+  if (ys_set) {
     m_run_start = ys_seconds;
   }
 
   m_time_in_seconds = m_run_start;
 
-  if (ye_set == true) {
+  if (ye_set) {
     if (ye_seconds < m_time_in_seconds) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "-ye (%s) is less than -ys (%s) (or input file year or default).\n"
                                     "PISM cannot run backward in time.",
                                     date(ye_seconds).c_str(), date(m_run_start).c_str());
     }
     m_run_end = ye_seconds;
-  } else if (y_set == true) {
+  } else if (y_set) {
     m_run_end = m_run_start + y_seconds;
   } else {
     m_run_end = increment_date(m_run_start, (int)m_config->get_number("time.run_length"));
@@ -467,14 +467,14 @@ void Time::parse_interval_length(const std::string &spec, std::string &keyword, 
   // latter allows intervals of the form "0.5", which stands for "half
   // of a model year". This also discards interval specs such as "days
   // since 1-1-1", even though "days" is compatible with "seconds".
-  if (units::are_convertible(tmp, seconds) == true) {
+  if (units::are_convertible(tmp, seconds)) {
     units::Converter c(tmp, seconds);
 
     if (result) {
       *result = c(1.0);
     }
 
-  } else if (units::are_convertible(tmp, one) == true) {
+  } else if (units::are_convertible(tmp, one)) {
     units::Converter c(tmp, one);
 
     if (result) {
@@ -530,7 +530,7 @@ std::vector<double> Time::parse_range(const std::string &spec) const {
 
 void Time::parse_date(const std::string &spec, double *result) const {
 
-  if (spec.empty() == true) {
+  if (spec.empty()) {
     throw RuntimeError(PISM_ERROR_LOCATION, "got an empty date specification");
   }
 

@@ -112,12 +112,11 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 
   const double current_time = m_time->current();
 
-  // get time-stepping restrictions from sub-models
   std::vector<MaxTimestep> restrictions;
-  {
-    for (auto m : m_submodels) {
-      restrictions.push_back(m.second->max_timestep(current_time));
-    }
+
+  // get time-stepping restrictions from sub-models
+  for (auto m : m_submodels) {
+    restrictions.push_back(m.second->max_timestep(current_time));
   }
 
   // mechanisms that use a retreat rate
