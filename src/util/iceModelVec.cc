@@ -1294,6 +1294,12 @@ std::string IceModelVec::checksum() const {
   return pism::printf("%016llx", (unsigned long long int)this->fletcher64());
 }
 
+void IceModelVec::print_checksum(const char *prefix) const {
+  auto log = m_grid->ctx()->log();
+
+  log->message(1, "%s%s: %s\n", prefix, m_name.c_str(), checksum().c_str());
+}
+
 void convert_vec(Vec v, units::System::Ptr system,
                  const std::string &spec1, const std::string &spec2) {
   units::Converter c(system, spec1, spec2);

@@ -348,6 +348,7 @@ public:
 
   uint64_t fletcher64() const;
   std::string checksum() const;
+  void print_checksum(const char *prefix = "") const;
 
   typedef pism::AccessList AccessList;
 protected:
