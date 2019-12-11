@@ -40,6 +40,9 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<
 
   m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
   m_shelf_base_mass_flux->set_name("effective_shelf_base_mass_flux");
+  // use internal units when saving
+  auto units = m_shelf_base_mass_flux->metadata().get_string("units");
+  m_shelf_base_mass_flux->metadata().set_string("glaciological_units", units);
   m_shelf_base_mass_flux->metadata().set_string("pism_intent", "model_state");
 }
 
