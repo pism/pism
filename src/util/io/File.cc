@@ -581,6 +581,7 @@ void File::append_history(const std::string &history) const {
 void File::write_attribute(const std::string &var_name, const std::string &att_name, IO_Type nctype,
                            const std::vector<double> &values) const {
   try {
+    redef();
     m_impl->nc->put_att_double(var_name, att_name, nctype, values);
   } catch (RuntimeError &e) {
     e.add_context("writing double attribute '%s:%s' in '%s'",
@@ -593,9 +594,9 @@ void File::write_attribute(const std::string &var_name, const std::string &att_n
 void File::write_attribute(const std::string &var_name, const std::string &att_name,
                            const std::string &value) const {
   try {
-    std::string tmp = value + "\0";    // ensure that the string is null-terminated
-
-    m_impl->nc->put_att_text(var_name, att_name, tmp);
+    redef();
+    // ensure that the string is null-terminated
+    m_impl->nc->put_att_text(var_name, att_name, value + "\0");
   } catch (RuntimeError &e) {
     e.add_context("writing text attribute '%s:%s' in '%s'",
                   var_name.c_str(), att_name.c_str(), filename().c_str());
