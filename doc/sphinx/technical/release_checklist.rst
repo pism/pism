@@ -1,20 +1,24 @@
-PISM release checklist
-======================
+.. include:: ../global.txt
 
-#. Run `make manual_linkcheck` and fix any broken links in the manual.
-#. Create a "pre-release" branch starting from the "dev" branch and remove code that
+.. _sec-release-checklist:
+
+Release checklist
+=================
+
+#. Run ``make manual_linkcheck`` and fix any broken links in the manual.
+#. Create a "pre-release" branch starting from the "``dev``" branch and remove code that
    should not be a part of the release.
 #. Run ``make`` in the ``doc/sphinx`` directory to update lists of diagnostics and
    configuration parameters.
 #. Run ``make`` in the ``doc`` directory to update funding sources.
-#. Set ``Pism_BRANCH`` in ``CMakeLists.txt`` to "stable".
+#. Set ``Pism_BRANCH`` in ``CMakeLists.txt`` to "``stable``".
 #. Update ``version`` and ``release`` in ``doc/sphinx/conf.py``.
 #. Update ``CHANGES.rst``.
 #. Tag.
 
    ::
 
-      git tag -a v0.X -m "The v0.X release. See CHANGES.rst for the list of changes since v0.X-1."
+      git tag -a v1.X -m "The v1.X release. See CHANGES.rst for the list of changes since v1.X-1."
 
 #. Push.
 
