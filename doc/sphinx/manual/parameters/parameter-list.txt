@@ -2575,12 +2575,6 @@
    :Option: :opt:`-temp_lapse_rate`
    :Description: Lapse rate for the temperature at the top of the ice.
 
-#. :config:`surface.model` (*string*)
-
-   :Value: given
-   :Option: :opt:`-surface`
-   :Description: Comma-separated list of selected surface models.
-
 #. :config:`surface.pdd.air_temp_all_precip_as_rain` (*number*)
 
    :Value: 275.150000 (Kelvin)
