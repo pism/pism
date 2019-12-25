@@ -2,7 +2,9 @@
 
 all: update_diagnostics update_parameters installation/code/install_libraries.sh
 
-.INTERMEDIATE: diagnostics.json dummy.nc pism_config.nc
+INTERMEDIATE=diagnostics.json dummy.nc pism_config.nc
+
+.INTERMEDIATE: ${INTERMEDIATE}
 
 dummy.nc:
 	# use a thermal bedrock layer model and run for 1 year to complete the
@@ -21,6 +23,7 @@ dummy.nc:
 
 diagnostics.json: dummy.nc
 	pismr -i $^ \
+	      -bootstrap \
 	      -energy enthalpy \
 	      -bed_def iso \
 	      -surface pdd \
@@ -37,12 +40,15 @@ diagnostics.json: dummy.nc
 update_diagnostics: diagnostics.json
 	python ./list_diagnostics.py $^ > manual/diagnostics/diagnostics-list.txt
 
-pism_config.nc:
-	ncgen -o $@ ../../src/pism_config.cdl
+pism_config.nc: ../../src/pism_config.cdl
+	ncgen -o $@ $^
 
 update_parameters: pism_config.nc
 	python ./list_parameters.py $^ > manual/parameters/parameter-list.txt
 
 installation/code/install_libraries.sh: installation/debian-packages.csv Makefile
 	/bin/echo -n "sudo apt-get install -y " > $@
-	cut -f1 -d, $< | xargs >> $@
+	cut -f1 -d, $< | sed "s/\`//g" | xargs >> $@
+
+clean:
+	@rm -f ${INTERMEDIATE}
