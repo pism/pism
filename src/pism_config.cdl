@@ -176,11 +176,6 @@ netcdf pism_config {
     pism_config:atmosphere.lapse_rate.temperature_lapse_rate_type = "number";
     pism_config:atmosphere.lapse_rate.temperature_lapse_rate_units = "Kelvin / km";
 
-    pism_config:atmosphere.model = "given";
-    pism_config:atmosphere.model_doc = "Comma-separated list of selected atmosphere models.";
-    pism_config:atmosphere.model_option = "atmosphere";
-    pism_config:atmosphere.model_type = "string";
-
     pism_config:atmosphere.one_station.file = "";
     pism_config:atmosphere.one_station.file_doc = "Specifies a file containing scalar time-series 'precipitation' and 'air_temp'.";
     pism_config:atmosphere.one_station.file_option = "atmosphere_one_station_file";
@@ -1737,11 +1732,6 @@ netcdf pism_config {
     pism_config:ocean.given.reference_year_type = "integer";
     pism_config:ocean.given.reference_year_units = "years";
 
-    pism_config:ocean.model = "constant";
-    pism_config:ocean.model_doc = "Comma-separated list of selected ocean models.";
-    pism_config:ocean.model_option = "ocean";
-    pism_config:ocean.model_type = "string";
-
     pism_config:ocean.pico.continental_shelf_depth = -800.0;
     pism_config:ocean.pico.continental_shelf_depth_doc = "Determines the edge of the continental shelf to calculate mean ocean properties";
     pism_config:ocean.pico.continental_shelf_depth_option = "continental_shelf_depth";
@@ -2055,11 +2045,6 @@ netcdf pism_config {
     pism_config:run_info.title_doc = "Free-form string containing a concise description of the current run. This string is written to output files as the 'title' global attribute.";
     pism_config:run_info.title_option = "title";
     pism_config:run_info.title_type = "string";
-
-    pism_config:sea_level.model = "constant";
-    pism_config:sea_level.model_doc = "Sea level elevation forcing models.";
-    pism_config:sea_level.model_option = "sea_level";
-    pism_config:sea_level.model_type = "string";
 
     pism_config:stress_balance.calving_front_stress_bc = "no";
     pism_config:stress_balance.calving_front_stress_bc_doc = "Apply CFBC condition as in :cite:`Albrechtetal2011`, :cite:`Winkelmannetal2011`.  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in :cite:`BBssasliding`.";
