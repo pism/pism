@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -31,7 +31,9 @@
 namespace pism {
 namespace stressbalance {
 
-//! Evaluate the ocean pressure difference term in the calving-front BC.
+//! Evaluate the margin pressure difference term in the calving-front BC.
+//
+// Units: (kg / m3) * (m / s2) * m2 = Pa m
 double margin_pressure_difference(bool shelf, bool dry_mode, double H, double bed,
                                   double sea_level, double rho_ice, double rho_ocean,
                                   double g) {

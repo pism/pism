@@ -73,8 +73,9 @@ IceMarginPressureDifference::IceMarginPressureDifference(IceModel *m)
   m_vars = {SpatialVariableMetadata(m_sys, "ice_margin_pressure_difference")};
   m_vars[0].set_number("_FillValue", m_fill_value);
 
-  set_attrs("pressure difference at ice margins (including calving fronts)", "",
-            "", "", 0);
+  set_attrs("vertically-integrated pressure difference"
+            " at ice margins (including calving fronts)", "",
+            "Pa m", "Pa m", 0);
 }
 
 IceModelVec::Ptr IceMarginPressureDifference::compute_impl() const {

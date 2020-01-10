@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 PISM Authors
+// Copyright (C) 2012-2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -117,7 +117,7 @@ public:
     m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux")};
     m_accumulator.metadata().set_string("units", "m2");
 
-    set_attrs("advective subglacial water flux", "",
+    set_attrs("magnitude of the subglacial water flux", "",
               "m2 second-1", "m2 year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 

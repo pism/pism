@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -126,13 +126,15 @@ EmptyingProblem::EmptyingProblem(IceGrid::ConstPtr grid)
     m_adjustment(grid, "hydraulic_potential_adjustment", WITHOUT_GHOSTS),
     m_sinks(grid, "sinks", WITHOUT_GHOSTS) {
 
-  m_potential.set_attrs("diagnostic", "estimate of the steady state hydraulic potential",
+  m_potential.set_attrs("diagnostic", "estimate of the steady state hydraulic potential in the steady hydrology model",
                         "Pa", "Pa", "", 0);
 
   m_bottom_surface.set_attrs("internal", "ice bottom surface elevation",
                              "m", "m", "", 0);
 
-  m_W.set_attrs("diagnostic", "scaled water thickness (has no physical meaning)",
+  m_W.set_attrs("diagnostic",
+                "scaled water thickness in the steady state hydrology model"
+                " (has no physical meaning)",
                 "m", "m", "", 0);
 
   m_Vstag.set_attrs("diagnostic", "water velocity on the staggered grid",
@@ -142,11 +144,16 @@ EmptyingProblem::EmptyingProblem(IceGrid::ConstPtr grid)
 
   m_Q.set_attrs("diagnostic", "steady state water flux", "m2 s-1", "m2 s-1", "", 0);
 
-  m_q_sg.set_attrs("diagnostic", "effective water velocity", "m s-1", "m day-1", "", 0);
+  m_q_sg.set_attrs("diagnostic", "x-component of the effective water velocity in the steady-state hydrology model",
+                   "m s-1", "m day-1", "", 0);
+  m_q_sg.set_attrs("diagnostic", "y-component of the effective water velocity in the steady-state hydrology model",
+                   "m s-1", "m day-1", "", 1);
 
   m_sinks.set_attrs("diagnostic", "map of sinks in the domain (for debugging)", "", "", "", 0);
 
-  m_adjustment.set_attrs("diagnostic", "potential adjustment needed to fill sinks",
+  m_adjustment.set_attrs("diagnostic",
+                         "potential adjustment needed to fill sinks"
+                         " when computing an estimate of the steady-state hydraulic potential",
                          "Pa", "Pa", "", 0);
 
   m_eps_gradient = 1e-2;
@@ -465,7 +472,7 @@ void EmptyingProblem::compute_mask(const IceModelVec2CellType &cell_type,
 
 
 DiagnosticList EmptyingProblem::diagnostics() const {
-  return {{"hydraulic_potential", Diagnostic::wrap(m_potential)},
+  return {{"steady_state_hydraulic_potential", Diagnostic::wrap(m_potential)},
           {"hydraulic_potential_adjustment", Diagnostic::wrap(m_adjustment)},
           {"hydraulic_sinks", Diagnostic::wrap(m_sinks)},
           {"remaining_water_thickness", Diagnostic::wrap(m_W)},

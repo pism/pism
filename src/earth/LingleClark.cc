@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2019 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2019, 2020 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -68,7 +68,7 @@ LingleClark::LingleClark(IceGrid::ConstPtr grid)
   m_elastic_displacement.set_attrs("model state",
                                    "elastic part of the displacement in the "
                                    "Lingle-Clark bed deformation model; "
-                                   "see BuelerLingleBrown", "meters", "meters", "", 0);
+                                   "see :cite:`BLKfastearth`", "meters", "meters", "", 0);
   m_elastic_displacement0 = m_elastic_displacement.allocate_proc0_copy();
 
   const int
