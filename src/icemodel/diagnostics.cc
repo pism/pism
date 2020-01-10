@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -58,28 +58,28 @@ enum AreaType {GROUNDED, SHELF, BOTH};
 enum TermType {SMB, BMB, FLOW, ERROR};
 
 /*! @brief Ocean pressure difference at calving fronts. Used to debug CF boundary conditins. */
-class CalvingFrontPressureDifference : public Diag<IceModel>
+class IceMarginPressureDifference : public Diag<IceModel>
 {
 public:
-  CalvingFrontPressureDifference(IceModel *m);
+  IceMarginPressureDifference(IceModel *m);
 protected:
   IceModelVec::Ptr compute_impl() const;
 };
 
-CalvingFrontPressureDifference::CalvingFrontPressureDifference(IceModel *m)
+IceMarginPressureDifference::IceMarginPressureDifference(IceModel *m)
   : Diag<IceModel>(m) {
 
   /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "ocean_pressure_difference")};
+  m_vars = {SpatialVariableMetadata(m_sys, "ice_margin_pressure_difference")};
   m_vars[0].set_number("_FillValue", m_fill_value);
 
-  set_attrs("ocean pressure difference at calving fronts", "",
+  set_attrs("pressure difference at ice margins (including calving fronts)", "",
             "", "", 0);
 }
 
-IceModelVec::Ptr CalvingFrontPressureDifference::compute_impl() const {
+IceModelVec::Ptr IceMarginPressureDifference::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ocean_pressure_difference", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_margin_pressure_difference", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   IceModelVec2CellType mask(m_grid, "mask", WITH_GHOSTS);
@@ -2723,9 +2723,9 @@ void IceModel::init_diagnostics() {
     {"effective_viscosity", f(new IceViscosity(this))},
 
     // boundary conditions
-    {"ssa_bc_mask",               d::wrap(m_ssa_dirichlet_bc_mask)},
-    {"ssa_bc_vel",                d::wrap(m_ssa_dirichlet_bc_values)},
-    {"ocean_pressure_difference", f(new CalvingFrontPressureDifference(this))},
+    {"ssa_bc_mask",                    d::wrap(m_ssa_dirichlet_bc_mask)},
+    {"ssa_bc_vel",                     d::wrap(m_ssa_dirichlet_bc_values)},
+    {"ice_margin_pressure_difference", f(new IceMarginPressureDifference(this))},
 
     // balancing the books
     // tendency_of_ice_amount = (tendency_of_ice_amount_due_to_flow +

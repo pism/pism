@@ -181,6 +181,7 @@ Diagnostics
   It did *not* affect ice dynamics.
 - Implement 2D and scalar grounding line flux diagnostics `grounding_line_flux`. See
   `issue #300`_.
+- Rename `ocean_pressure_difference` to `ice_margin_pressure_difference`.
 
 Input and output
 ^^^^^^^^^^^^^^^^
