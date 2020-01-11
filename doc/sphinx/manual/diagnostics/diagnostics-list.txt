@@ -179,10 +179,27 @@ Spatially-variable fields
    :Units: kPascal second
    :Description: effective viscosity of ice
 
+#. ``effective_water_velocity``
+
+   - ``u_effective_water_velocity``
+
+     :Units: m day-1
+     :Description: x-component of the effective water velocity in the steady-state hydrology model
+
+   - ``v_effective_water_velocity``
+
+     :Units: m day-1
+     :Description: y-component of the effective water velocity in the steady-state hydrology model
+
 #. ``eigen_calving_rate``
 
    :Units: m year-1
    :Description: horizontal calving rate due to eigen-calving
+
+#. ``elastic_bed_displacement``
+
+   :Units: meters
+   :Description: elastic part of the displacement in the Lingle-Clark bed deformation model; see :cite:`BLKfastearth`
 
 #. ``enthalpy``
 
@@ -300,6 +317,16 @@ Spatially-variable fields
    :Units: Pa
    :Description: hydraulic potential in the subglacial hydrology system
 
+#. ``hydraulic_potential_adjustment``
+
+   :Units: Pa
+   :Description: potential adjustment needed to fill sinks when computing an estimate of the steady-state hydraulic potential
+
+#. ``hydraulic_sinks``
+
+   :Units: ---
+   :Description: map of sinks in the domain (for debugging)
+
 #. ``ice_area_specific_volume``
 
    :Units: m3/m2
@@ -310,6 +337,11 @@ Spatially-variable fields
 
    :Units: m
    :Description: ice bottom surface elevation
+
+#. ``ice_margin_pressure_difference``
+
+   :Units: Pa m
+   :Description: vertically-integrated pressure difference at ice margins (including calving fronts)
 
 #. ``ice_mass``
 
@@ -366,11 +398,6 @@ Spatially-variable fields
      :Units: kPa s m
      :Description: ice thickness times effective viscosity, j-offset
 
-#. ``ocean_pressure_difference``
-
-   :Units: ---
-   :Description: ocean pressure difference at calving fronts
-
 #. ``pressure``
 
    :Units: Pa
@@ -380,6 +407,11 @@ Spatially-variable fields
 
    :Units: 1
    :Description: processor rank
+
+#. ``remaining_water_thickness``
+
+   :Units: m
+   :Description: scaled water thickness in the steady state hydrology model (has no physical meaning)
 
 #. ``schoofs_theta``
 
@@ -441,6 +473,11 @@ Spatially-variable fields
      :Units: m year-1
      :Description: Y-component of the SSA velocity boundary conditions
 
+#. ``steady_state_hydraulic_potential``
+
+   :Units: Pa
+   :Description: estimate of the steady state hydraulic potential
+
 #. ``strain_rates``
 
    - ``eigen1``
@@ -461,7 +498,7 @@ Spatially-variable fields
 #. ``subglacial_water_flux_mag``
 
    :Units: m2 year-1
-   :Description: advective subglacial water flux
+   :Description: magnitude of the subglacial water flux
 
 #. ``subglacial_water_input_rate``
 
@@ -844,6 +881,11 @@ Spatially-variable fields
    :Units: m year-1
    :Description: magnitude of horizontal velocity of ice at ice surface
 
+#. ``viscous_bed_displacement``
+
+   :Units: meters
+   :Description: bed displacement in the viscous half-space bed deformation model; see BuelerLingleBrown
+
 #. ``vonmises_calving_rate``
 
    :Units: m year-1
@@ -1061,6 +1103,7 @@ Scalar time-series
 
    :Units: Gt year-1
    :Description: total over ice domain of bottom surface ice mass flux
+   :Standard name: ``tendency_of_land_ice_mass_due_to_basal_mass_balance``
    :Comment: positive means ice gain
 
 #. ``tendency_of_ice_mass_due_to_calving``
