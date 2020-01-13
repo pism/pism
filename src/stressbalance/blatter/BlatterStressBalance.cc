@@ -116,7 +116,11 @@ public:
 
 BlatterStressBalance::BlatterStressBalance(IceGrid::ConstPtr grid,
                                            EnthalpyConverter::Ptr e)
-  : ShallowStressBalance(grid), m_min_thickness(10.0) {
+  : ShallowStressBalance(grid),
+    m_u(grid, "uvel", WITH_GHOSTS),
+    m_v(grid, "vvel", WITH_GHOSTS),
+    m_strain_heating(grid, "strainheat", WITHOUT_GHOSTS), // never diff'ed in hor dirs
+    m_min_thickness(10.0) {
 
   Config::ConstPtr config = grid->ctx()->config();
 
@@ -138,44 +142,45 @@ BlatterStressBalance::BlatterStressBalance(IceGrid::ConstPtr grid,
                                          &this->m_ctx, this->m_snes.rawptr());
   PISM_CHK(ierr, "BlatterQ1_create");
 
-  // now allocate u, v, and strain_heating (strain heating)
-  m_u.create(grid, "uvel", WITH_GHOSTS);
   m_u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
                 "m s-1", "m year-1", "land_ice_x_velocity", 0);
 
-  m_v.create(grid, "vvel", WITH_GHOSTS);
   m_v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
                 "m s-1", "m year-1", "land_ice_y_velocity", 0);
 
-  // strain_heating
-  m_strain_heating.create(grid, "strainheat", WITHOUT_GHOSTS); // never diff'ed in hor dirs
   m_strain_heating.set_attrs("internal",
                              "rate of strain heating in ice (dissipation heating)",
                              "W m-3", "mW m-3", "", 0);
 
-  std::vector<double> sigma(blatter_Mz);
-  double dz = 1.0 / (blatter_Mz - 1);
-  for (int i = 0; i < blatter_Mz; ++i) {
-    sigma[i] = i * dz;
+
+  // Storage for u and v on the sigma vertical grid (for restarting)
+  //
+  // These IceModelVec3Custom instances use sigma levels computed here and so cannot be
+  // allocated in the member initializer list above
+  {
+    std::vector<double> sigma(blatter_Mz);
+    double dz = 1.0 / (blatter_Mz - 1);
+    for (int i = 0; i < blatter_Mz; ++i) {
+      sigma[i] = i * dz;
+    }
+    sigma.back() = 1.0;
+
+    std::map<std::string,std::string> z_attrs =
+      {{"axis", "Z"},
+       {"long_name", "scaled Z-coordinate in the ice (z_base=0, z_surface=1)"},
+       {"units", "1"},
+       {"positive", "up"}};
+
+    m_u_sigma.reset(new IceModelVec3Custom(grid, "uvel_sigma", "z_sigma", sigma, z_attrs));
+    m_u_sigma->set_attrs("diagnostic",
+                         "horizontal velocity of ice in the X direction on the sigma vertical grid",
+                         "m s-1", "m year-1", "", 0);
+
+    m_v_sigma.reset(new IceModelVec3Custom(grid, "vvel_sigma", "z_sigma", sigma, z_attrs));
+    m_v_sigma->set_attrs("diagnostic",
+                         "horizontal velocity of ice in the Y direction on the sigma vertical grid",
+                         "m s-1", "m year-1", "", 0);
   }
-  sigma.back() = 1.0;
-
-  std::map<std::string,std::string> z_attrs =
-    {{"axis", "Z"},
-     {"long_name", "scaled Z-coordinate in the ice (z_base=0, z_surface=1)"},
-     {"units", "1"},
-     {"positive", "up"}};
-
-  // storage for u and v on the sigma vertical grid (for restarting)
-  m_u_sigma.reset(new IceModelVec3Custom(grid, "uvel_sigma", "z_sigma", sigma, z_attrs));
-  m_u_sigma->set_attrs("diagnostic",
-                      "horizontal velocity of ice in the X direction on the sigma vertical grid",
-                       "m s-1", "m year-1", "", 0);
-
-  m_v_sigma.reset(new IceModelVec3Custom(grid, "vvel_sigma", "z_sigma", sigma, z_attrs));
-  m_v_sigma->set_attrs("diagnostic",
-                       "horizontal velocity of ice in the Y direction on the sigma vertical grid",
-                       "m s-1", "m year-1", "", 0);
 
   {
     rheology::FlowLawFactory ice_factory("stress_balance.blatter.", config, e);
