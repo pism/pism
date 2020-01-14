@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2019 Constantine Khroulev
+// Copyright (C) 2009--2020 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -238,7 +238,7 @@ double Timeseries::operator()(double t) const {
 
     double alpha = (t - m_time[k]) / (m_time[k + 1] - m_time[k]);
 
-    return m_values[k] * alpha + m_values[k + 1] * (1.0 - alpha);
+    return m_values[k] * (1.0 - alpha) + m_values[k + 1] * alpha;
   }
 }
 

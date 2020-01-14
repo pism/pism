@@ -1054,7 +1054,8 @@ def test_timeseries_linear_interpolation():
 
     # interior intervals
     for k in range(1, N):
-        T = 0.5 * (t[k] + t[k + 1])
+        dt = t[k + 1] - t[k]
+        T = t[k] + 0.25 * dt    # *not* the midpoint of the interval
 
         assert ts(T) == f(T), (T, ts(T), f(T))
 
