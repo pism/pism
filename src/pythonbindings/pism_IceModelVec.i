@@ -2,7 +2,7 @@
 /* Using directives needed to compile IceModelVec wrappers. */
 #include "util/IceModelVec2CellType.hh"
 #include "util/iceModelVec2T.hh"
-#include "util/IceModelVec3Custom.hh"
+#include "util/iceModelVec3Custom.hh"
 
 using namespace pism;
 %}
@@ -142,4 +142,4 @@ std::vector<double> interp(int i, int j) {
 %include "util/iceModelVec2T.hh"
 %include "util/Vector2.hh"
 
-%include "util/IceModelVec3Custom.hh"
+%include "util/iceModelVec3Custom.hh"
