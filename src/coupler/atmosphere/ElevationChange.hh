@@ -47,7 +47,11 @@ protected:
   void temp_time_series_impl(int i, int j, std::vector<double> &result) const;
 
 protected:
+  enum Method {SCALE, SHIFT};
+
+  Method m_precip_method;
   double m_precip_lapse_rate;
+  double m_precip_exp_factor;
   double m_temp_lapse_rate;
 
   IceModelVec2T::Ptr m_reference_surface;

@@ -79,6 +79,18 @@ Surface, atmosphere, ocean forcing
   temperature offsets is useful in other contexts, not just paleo-climate runs.
 - Rename `-atmosphere lapse_rate` to `elevation_change`. This modifier includes
   adjustments that depend on the change in surface elevation but are *not* lapse rates.
+- Rename `atmosphere.elevation_change.precipitation_lapse_rate` to
+  `atmosphere.elevation_change.precipitation.lapse_rate` ("." instead of "_").
+- Add `atmosphere.elevation_change.precipitation.method` (option `-precip_adjustment`).
+
+  Set it to "scale" to use scaling with `exp(C * dT)`, where
+
+  `C = atmosphere.precip_exponential_factor_for_temperature`
+
+  and `dT` is computed using provided reference surface elevation and
+  `atmosphere.elevation_change.temperature_lapse_rate`.
+
+  Set it to "shift" to use `atmosphere.elevation_change.precipitation.lapse_rate` instead.
 
 Calving
 ^^^^^^^

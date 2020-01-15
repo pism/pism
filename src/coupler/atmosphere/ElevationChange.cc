@@ -18,6 +18,8 @@
 
 #include "ElevationChange.hh"
 
+#include <cmath>                // std::exp()
+
 #include "pism/coupler/util/options.hh"
 #include "pism/coupler/util/lapse_rates.hh"
 #include "pism/util/io/io_helpers.hh"
@@ -32,11 +34,18 @@ ElevationChange::ElevationChange(IceGrid::ConstPtr grid, std::shared_ptr<Atmosph
   : AtmosphereModel(grid, in),
   m_surface(grid, "ice_surface_elevation", WITHOUT_GHOSTS) {
 
-  m_precip_lapse_rate = m_config->get_number("atmosphere.elevation_change.precipitation_lapse_rate",
+  m_precip_lapse_rate = m_config->get_number("atmosphere.elevation_change.precipitation.lapse_rate",
                                              "(kg m-2 / s) / m");
+
+  m_precip_exp_factor = m_config->get_number("atmosphere.precip_exponential_factor_for_temperature");
 
   m_temp_lapse_rate = m_config->get_number("atmosphere.elevation_change.temperature_lapse_rate",
                                            "K / m");
+
+  {
+    auto method = m_config->get_string("atmosphere.elevation_change.precipitation.method");
+    m_precip_method = method == "scale" ? SCALE : SHIFT;
+  }
 
   {
     ForcingOptions opt(*m_grid->ctx(), "atmosphere.elevation_change");
@@ -73,13 +82,21 @@ void ElevationChange::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
   m_log->message(2,
-                 "   [using air temperature and precipitation lapse corrections]\n");
+                 "   [using elevation-change-dependent adjustments of air temperature and precipitation]\n");
 
-  m_log->message(2,
-                 "   air temperature lapse rate: %3.3f K per km\n"
-                 "   precipitation lapse rate:   %3.3f (kg m-2 year-1) per km\n",
-                 convert(m_sys, m_temp_lapse_rate, "K / m", "K / km"),
-                 convert(m_sys, m_precip_lapse_rate, "(kg m-2 / s) / m", "(kg m-2 / year) / km"));
+    m_log->message(2,
+                   "   air temperature lapse rate: %3.3f K per km\n",
+                   convert(m_sys, m_temp_lapse_rate, "K / m", "K / km"));
+
+  if (m_precip_method == SHIFT) {
+    m_log->message(2,
+                   "   precipitation lapse rate:   %3.3f (kg m-2 year-1) per km\n",
+                   convert(m_sys, m_precip_lapse_rate, "(kg m-2 / s) / m", "(kg m-2 / year) / km"));
+  } else {
+    m_log->message(2,
+                   "   precipitation scaling factor with temperature: %3.3f Kelvin-1\n",
+                   m_precip_exp_factor);
+  }
 
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.elevation_change");
 
@@ -97,20 +114,45 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
   // temperature and precipitation time series
   m_surface.copy_from(geometry.ice_surface_elevation);
 
-  // precipitation
-  {
-    m_precipitation->copy_from(m_input_model->mean_precipitation());
-
-    lapse_rate_correction(m_surface, *m_reference_surface,
-                          m_precip_lapse_rate, *m_precipitation);
-  }
-
   // temperature
   {
     m_temperature->copy_from(m_input_model->mean_annual_temp());
 
     lapse_rate_correction(m_surface, *m_reference_surface,
                           m_temp_lapse_rate, *m_temperature);
+  }
+
+  // precipitation
+  {
+    m_precipitation->copy_from(m_input_model->mean_precipitation());
+
+    switch (m_precip_method) {
+    case SCALE:
+      {
+        const IceModelVec2S &input_temperature = m_input_model->mean_annual_temp();
+
+        IceModelVec::AccessList list{m_temperature.get(),
+                                     &input_temperature,
+                                     m_precipitation.get()};
+
+        for (Points p(*m_grid); p; p.next()) {
+          const int i = p.i(), j = p.j();
+
+          double dT = (*m_temperature)(i, j) - input_temperature(i, j);
+
+          (*m_precipitation)(i, j) *= std::exp(m_precip_exp_factor * dT);
+        }
+
+      }
+      break;
+    case SHIFT:
+    default:
+      {
+        lapse_rate_correction(m_surface, *m_reference_surface,
+                              m_precip_lapse_rate, *m_precipitation);
+      }
+      break;
+    }
   }
 }
 
@@ -155,14 +197,27 @@ void ElevationChange::temp_time_series_impl(int i, int j, std::vector<double> &r
 }
 
 void ElevationChange::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
-  std::vector<double> usurf(m_ts_times.size());
+  auto N = m_ts_times.size();
+  std::vector<double> usurf(N);
 
   m_input_model->precip_time_series(i, j, result);
 
   m_reference_surface->interp(i, j, usurf);
 
-  for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
-    result[m] -= m_precip_lapse_rate * (m_surface(i, j) - usurf[m]);
+  switch (m_precip_method) {
+  case SCALE:
+    {
+      for (unsigned int m = 0; m < N; ++m) {
+        double dT = -m_temp_lapse_rate * (m_surface(i, j) - usurf[m]);
+        result[m] *= std::exp(m_precip_exp_factor * dT);
+      }
+    }
+    break;
+  case SHIFT:
+    for (unsigned int m = 0; m < N; ++m) {
+      result[m] -= m_precip_lapse_rate * (m_surface(i, j) - usurf[m]);
+    }
+    break;
   }
 }
 

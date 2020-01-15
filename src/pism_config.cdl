@@ -158,11 +158,17 @@ netcdf pism_config {
     pism_config:atmosphere.elevation_change.period_type = "integer";
     pism_config:atmosphere.elevation_change.period_units = "years";
 
-    pism_config:atmosphere.elevation_change.precipitation_lapse_rate = 0.0;
-    pism_config:atmosphere.elevation_change.precipitation_lapse_rate_doc = "Elevation lapse rate for the surface mass balance";
-    pism_config:atmosphere.elevation_change.precipitation_lapse_rate_option = "precip_lapse_rate";
-    pism_config:atmosphere.elevation_change.precipitation_lapse_rate_type = "number";
-    pism_config:atmosphere.elevation_change.precipitation_lapse_rate_units = "(kg m-2 / year) / km";
+    pism_config:atmosphere.elevation_change.precipitation.lapse_rate = 0.0;
+    pism_config:atmosphere.elevation_change.precipitation.lapse_rate_doc = "Elevation lapse rate for the surface mass balance";
+    pism_config:atmosphere.elevation_change.precipitation.lapse_rate_option = "precip_lapse_rate";
+    pism_config:atmosphere.elevation_change.precipitation.lapse_rate_type = "number";
+    pism_config:atmosphere.elevation_change.precipitation.lapse_rate_units = "(kg m-2 / year) / km";
+
+    pism_config:atmosphere.elevation_change.precipitation.method = "shift";
+    pism_config:atmosphere.elevation_change.precipitation.method_doc = "Choose the precipitation adjustment method. ``scale``: use temperature-change-dependent scaling factor. ``shift``: use the precipitation lapse rate.";
+    pism_config:atmosphere.elevation_change.precipitation.method_option = "precip_adjustment";
+    pism_config:atmosphere.elevation_change.precipitation.method_type = "keyword";
+    pism_config:atmosphere.elevation_change.precipitation.method_choices = "scale,shift";
 
     pism_config:atmosphere.elevation_change.reference_year = 0;
     pism_config:atmosphere.elevation_change.reference_year_doc = "Reference year to use when ``atmosphere.elevation_change.period`` is active.";

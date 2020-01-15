@@ -497,7 +497,7 @@ class ElevationChange(TestCase):
 
         config.set_string("atmosphere.elevation_change.file", self.filename)
 
-        config.set_number("atmosphere.elevation_change.precipitation_lapse_rate", self.dPdz)
+        config.set_number("atmosphere.elevation_change.precipitation.lapse_rate", self.dPdz)
 
         config.set_number("atmosphere.elevation_change.temperature_lapse_rate", self.dTdz)
 
