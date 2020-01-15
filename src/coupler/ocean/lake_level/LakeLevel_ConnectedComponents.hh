@@ -2,7 +2,7 @@
 #define _LAKELEVEL_CONNECTEDCOMPONENTS_H_
 
 #include "pism/util/IceModelVec2CellType.hh"
-#include "pism/util/connected_components.hh"
+#include "pism/util/connected_components_lakecc.hh"
 
 namespace pism {
 

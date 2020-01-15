@@ -2,7 +2,7 @@
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/error_handling.hh"
 
-#include "connected_components.hh"
+#include "connected_components_lakecc.hh"
 
 namespace pism {
 
