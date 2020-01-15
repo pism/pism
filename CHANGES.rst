@@ -75,6 +75,8 @@ Surface, atmosphere, ocean forcing
 - Rename `ocean.constant.melange_back_pressure_fraction` to
   `ocean.melange_back_pressure_fraction` and document its interaction with `-ocean
   ...,frac_MBP`.
+- Rename `-atmosphere paleo_precip` to `precip_scaling`. Precipitation scaling using air
+  temperature offsets is useful in other contexts, not just paleo-climate runs.
 
 Calving
 ^^^^^^^

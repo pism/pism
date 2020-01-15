@@ -8,7 +8,7 @@
 #include "coupler/atmosphere/GivenClimate.hh"
 #include "coupler/atmosphere/LapseRates.hh"
 #include "coupler/atmosphere/PIK.hh"
-#include "coupler/atmosphere/Paleo_precip.hh"
+#include "coupler/atmosphere/PrecipitationScaling.hh"
 #include "coupler/atmosphere/SeariseGreenland.hh"
 #include "coupler/atmosphere/Uniform.hh"
 #include "coupler/atmosphere/WeatherStation.hh"
@@ -43,9 +43,9 @@
 %rename(AtmosphereLapseRates) pism::atmosphere::LapseRates;
 %include "coupler/atmosphere/LapseRates.hh"
 
-%shared_ptr(pism::atmosphere::PaleoPrecip)
-%rename(AtmospherePaleoPrecip) pism::atmosphere::PaleoPrecip;
-%include "coupler/atmosphere/Paleo_precip.hh"
+%shared_ptr(pism::atmosphere::PrecipitationScaling)
+%rename(AtmospherePrecipScaling) pism::atmosphere::PrecipitationScaling;
+%include "coupler/atmosphere/PrecipitationScaling.hh"
 
 %shared_ptr(pism::atmosphere::WeatherStation)
 %rename(AtmosphereWeatherStation) pism::atmosphere::WeatherStation;

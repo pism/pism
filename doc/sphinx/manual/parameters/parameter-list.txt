@@ -280,29 +280,6 @@
    :Option: :opt:`-wind_speed`
    :Description: The direction the wind is coming from
 
-#. :config:`atmosphere.paleo_precip.exp_factor_for_temperature` (*number*)
-
-   :Value: 0.070417 (Kelvin-1)
-   :Description: = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`
-
-#. :config:`atmosphere.paleo_precip.file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-atmosphere_paleo_precip_file`
-   :Description: Name of the file containing temperature offsets to use for a precipitation correction.
-
-#. :config:`atmosphere.paleo_precip.period` (*integer*)
-
-   :Value: 0
-   :Option: :opt:`-atmosphere_paleo_precip_period`
-   :Description: Length of the period of the climate forcing data. Set to zero to disable.
-
-#. :config:`atmosphere.paleo_precip.reference_year` (*integer*)
-
-   :Value: 0
-   :Option: :opt:`-atmosphere_paleo_precip_reference_year`
-   :Description: Reference year to use when ``atmosphere.paleo_precip.period`` is active.
-
 #. :config:`atmosphere.pik.file` (*string*)
 
    :Value: *no default*
@@ -319,7 +296,25 @@
 #. :config:`atmosphere.precip_exponential_factor_for_temperature` (*number*)
 
    :Value: 0.070417 (Kelvin-1)
-   :Description: = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`
+   :Description: = 0.169/2.4; in SeaRISE-Greenland formula for precipitation correction using air temperature offsets relative to present; a 7.3% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`
+
+#. :config:`atmosphere.precip_scaling.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_precip_scaling_file`
+   :Description: Name of the file containing temperature offsets to use for a precipitation correction.
+
+#. :config:`atmosphere.precip_scaling.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_precip_scaling_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`atmosphere.precip_scaling.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_precip_scaling_reference_year`
+   :Description: Reference year to use when ``atmosphere.precip_scaling.period`` is active.
 
 #. :config:`atmosphere.searise_greenland.file` (*string*)
 

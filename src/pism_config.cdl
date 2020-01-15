@@ -269,27 +269,22 @@ netcdf pism_config {
     pism_config:atmosphere.orographic_precipitation.wind_speed_type = "number";
     pism_config:atmosphere.orographic_precipitation.wind_speed_units = "m/s";
 
-    pism_config:atmosphere.paleo_precip.exp_factor_for_temperature = 0.07041666667;
-    pism_config:atmosphere.paleo_precip.exp_factor_for_temperature_doc = "= 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`";
-    pism_config:atmosphere.paleo_precip.exp_factor_for_temperature_type = "number";
-    pism_config:atmosphere.paleo_precip.exp_factor_for_temperature_units = "Kelvin-1";
+    pism_config:atmosphere.precip_scaling.file = "";
+    pism_config:atmosphere.precip_scaling.file_doc = "Name of the file containing temperature offsets to use for a precipitation correction.";
+    pism_config:atmosphere.precip_scaling.file_option = "atmosphere_precip_scaling_file";
+    pism_config:atmosphere.precip_scaling.file_type = "string";
 
-    pism_config:atmosphere.paleo_precip.file = "";
-    pism_config:atmosphere.paleo_precip.file_doc = "Name of the file containing temperature offsets to use for a precipitation correction.";
-    pism_config:atmosphere.paleo_precip.file_option = "atmosphere_paleo_precip_file";
-    pism_config:atmosphere.paleo_precip.file_type = "string";
+    pism_config:atmosphere.precip_scaling.period = 0;
+    pism_config:atmosphere.precip_scaling.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:atmosphere.precip_scaling.period_option = "atmosphere_precip_scaling_period";
+    pism_config:atmosphere.precip_scaling.period_type = "integer";
+    pism_config:atmosphere.precip_scaling.period_units = "years";
 
-    pism_config:atmosphere.paleo_precip.period = 0;
-    pism_config:atmosphere.paleo_precip.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:atmosphere.paleo_precip.period_option = "atmosphere_paleo_precip_period";
-    pism_config:atmosphere.paleo_precip.period_type = "integer";
-    pism_config:atmosphere.paleo_precip.period_units = "years";
-
-    pism_config:atmosphere.paleo_precip.reference_year = 0;
-    pism_config:atmosphere.paleo_precip.reference_year_doc = "Reference year to use when ``atmosphere.paleo_precip.period`` is active.";
-    pism_config:atmosphere.paleo_precip.reference_year_option = "atmosphere_paleo_precip_reference_year";
-    pism_config:atmosphere.paleo_precip.reference_year_type = "integer";
-    pism_config:atmosphere.paleo_precip.reference_year_units = "years";
+    pism_config:atmosphere.precip_scaling.reference_year = 0;
+    pism_config:atmosphere.precip_scaling.reference_year_doc = "Reference year to use when ``atmosphere.precip_scaling.period`` is active.";
+    pism_config:atmosphere.precip_scaling.reference_year_option = "atmosphere_precip_scaling_reference_year";
+    pism_config:atmosphere.precip_scaling.reference_year_type = "integer";
+    pism_config:atmosphere.precip_scaling.reference_year_units = "years";
 
     pism_config:atmosphere.pik.file = "";
     pism_config:atmosphere.pik.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
@@ -303,7 +298,7 @@ netcdf pism_config {
     pism_config:atmosphere.pik.parameterization_type = "keyword";
 
     pism_config:atmosphere.precip_exponential_factor_for_temperature = 0.07041666667;
-    pism_config:atmosphere.precip_exponential_factor_for_temperature_doc = "= 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`";
+    pism_config:atmosphere.precip_exponential_factor_for_temperature_doc = "= 0.169/2.4; in SeaRISE-Greenland formula for precipitation correction using air temperature offsets relative to present; a 7.3\% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`";
     pism_config:atmosphere.precip_exponential_factor_for_temperature_type = "number";
     pism_config:atmosphere.precip_exponential_factor_for_temperature_units = "Kelvin-1";
 

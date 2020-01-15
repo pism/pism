@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,7 +26,7 @@
 #include "Delta_T.hh"
 #include "Delta_P.hh"
 #include "Frac_P.hh"
-#include "Paleo_precip.hh"
+#include "PrecipitationScaling.hh"
 #include "PIK.hh"
 #include "Anomaly.hh"
 #include "CosineYearlyCycle.hh"
@@ -50,7 +50,7 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_model<Uniform>("uniform");
 
   add_modifier<Anomaly>("anomaly");
-  add_modifier<PaleoPrecip>("paleo_precip");
+  add_modifier<PrecipitationScaling>("precip_scaling");
   add_modifier<Frac_P>("frac_P");
   add_modifier<Delta_P>("delta_P");
   add_modifier<Delta_T>("delta_T");

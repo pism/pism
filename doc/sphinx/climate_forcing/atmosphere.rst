@@ -79,7 +79,7 @@ SeaRISE-Greenland
               :var:`lat`,
               :var:`precipitation` |flux|
 :|implementation|: ``pism::atmosphere::SeaRISEGreenland``
-:|seealso|: :ref:`sec-atmosphere-paleo-precip`
+:|seealso|: :ref:`sec-atmosphere-precip-scaling`
 
 This atmosphere model component implements a longitude, latitude, and elevation dependent
 near-surface air temperature parameterization and a cosine yearly cycle described in
@@ -91,10 +91,11 @@ file. To read time-independent precipitation from a different file, use the opti
 The air temperature parameterization is controlled by configuration parameters with the
 ``snow_temp_fausto`` prefix.
 
-See also the ``-atmosphere ...,paleo_precip`` modifier, section
-:ref:`sec-atmosphere-paleo-precip`, for an implementation of the SeaRISE-Greenland formula
-for paleo-precipitation correction from present; a 7.3\% change of precipitation rate for
-every one degree Celsius of temperature change :cite:`Huybrechts02`.
+See also the ``-atmosphere ...,precip_scaling`` modifier, section
+:ref:`sec-atmosphere-precip-scaling`, for an implementation of the SeaRISE-Greenland
+formula for precipitation adjustment using air temperature offsets relative to present; a
+7.3\% change of precipitation rate for every one degree Celsius of temperature change
+:cite:`Huybrechts02`.
 
 .. _sec-atmosphere-pik:
 
@@ -232,14 +233,14 @@ precipitation. It takes the following command-line options:
 - :opt:`-atmosphere_frac_P_reference_year` sets the reference year (section
   :ref:`sec-periodic-forcing`).
 
-.. _sec-atmosphere-paleo-precip:
+.. _sec-atmosphere-precip-scaling:
 
 Precipitation correction using scalar temperature offsets
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-:|options|: ``-atmosphere ...,paleo_precip``
+:|options|: ``-atmosphere ...,precip_scaling``
 :|variables|: :var:`delta_T` [degrees Kelvin]
-:|implementation|: ``pism::atmosphere::PaleoPrecip``
+:|implementation|: ``pism::atmosphere::PrecipitationScaling``
 
 This modifier implements the SeaRISE-Greenland formula for a precipitation correction from
 present; a 7.3\% change of precipitation rate for every one degree Celsius of air
@@ -249,11 +250,11 @@ in the format used by ``-atmosphere ...,delta_T`` modifier, see section :ref:`se
 
 It takes the following command-line options.
 
-- :opt:`-atmosphere_paleo_precip_file` sets the name of the file PISM will read
+- :opt:`-atmosphere_precip_scaling_file` sets the name of the file PISM will read
   :var:`delta_T` from.
-- :opt:`-atmosphere_paleo_precip_period` (*years*) sets the period of the forcing data
+- :opt:`-atmosphere_precip_scaling_period` (*years*) sets the period of the forcing data
   (section :ref:`sec-periodic-forcing`).
-- :opt:`-atmosphere_paleo_precip_reference_year` sets the reference year (section
+- :opt:`-atmosphere_precip_scaling_reference_year` sets the reference year (section
   :ref:`sec-periodic-forcing`).
 
 .. _sec-atmosphere-lapse-rate:

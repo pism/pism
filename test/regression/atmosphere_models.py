@@ -419,9 +419,9 @@ class Anomaly(TestCase):
         check_modifier(self.model, modifier, T=self.dT, P=self.dP,
                        ts=[0.5], Ts=[self.dT], Ps=[self.dP])
 
-class PaleoPrecip(TestCase):
+class PrecipScaling(TestCase):
     def setUp(self):
-        self.filename = "paleo_precip_input.nc"
+        self.filename = "precip_scaling_input.nc"
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -430,15 +430,15 @@ class PaleoPrecip(TestCase):
 
         create_scalar_forcing(self.filename, "delta_T", "Kelvin", [self.dT], [0])
 
-        config.set_string("atmosphere.paleo_precip.file", self.filename)
+        config.set_string("atmosphere.precip_scaling.file", self.filename)
 
     def tearDown(self):
         os.remove(self.filename)
 
-    def test_atmosphere_paleo_precip(self):
-        "Modifier 'paleo_precip'"
+    def test_atmosphere_precip_scaling(self):
+        "Modifier 'precip_scaling'"
 
-        modifier = PISM.AtmospherePaleoPrecip(self.grid, self.model)
+        modifier = PISM.AtmospherePrecipScaling(self.grid, self.model)
 
         modifier.init(self.geometry)
 
