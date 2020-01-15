@@ -264,7 +264,7 @@ Temperature and precipitation lapse rate corrections
 
 :|options|: :opt:`-atmosphere ...,lapse_rate`
 :|variables|: :var:`surface_altitude` (CF standard name)
-:|implementation|: ``pism::atmosphere::LapseRates``
+:|implementation|: ``pism::atmosphere::ElevationChange``
 
 The ``lapse_rate`` modifier allows for correcting air temperature and precipitation using
 elevation lapse rates. It uses the following options.

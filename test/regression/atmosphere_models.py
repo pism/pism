@@ -479,7 +479,7 @@ class FracP(TestCase):
                        ts=[0.5], Ts=[0], Ps=[0.00012676])
 
 
-class LapseRates(TestCase):
+class ElevationChange(TestCase):
     def setUp(self):
         self.filename = "atmosphere_reference_surface.nc"
         self.grid = shallow_grid()
@@ -495,19 +495,19 @@ class LapseRates(TestCase):
         # save current surface elevation to use it as a "reference" surface elevation
         self.geometry.ice_surface_elevation.dump(self.filename)
 
-        config.set_string("atmosphere.lapse_rate.file", self.filename)
+        config.set_string("atmosphere.elevation_change.file", self.filename)
 
-        config.set_number("atmosphere.lapse_rate.precipitation_lapse_rate", self.dPdz)
+        config.set_number("atmosphere.elevation_change.precipitation_lapse_rate", self.dPdz)
 
-        config.set_number("atmosphere.lapse_rate.temperature_lapse_rate", self.dTdz)
+        config.set_number("atmosphere.elevation_change.temperature_lapse_rate", self.dTdz)
 
     def tearDown(self):
         os.remove(self.filename)
 
-    def test_atmosphere_lapse_rate(self):
-        "Modifier 'lapse_rate'"
+    def test_atmosphere_elevation_change(self):
+        "Modifier 'elevation_change'"
 
-        modifier = PISM.AtmosphereLapseRates(self.grid, self.model)
+        modifier = PISM.AtmosphereElevationChange(self.grid, self.model)
 
         modifier.init(self.geometry)
 

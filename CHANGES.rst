@@ -77,6 +77,8 @@ Surface, atmosphere, ocean forcing
   ...,frac_MBP`.
 - Rename `-atmosphere paleo_precip` to `precip_scaling`. Precipitation scaling using air
   temperature offsets is useful in other contexts, not just paleo-climate runs.
+- Rename `-atmosphere lapse_rate` to `elevation_change`. This modifier includes
+  adjustments that depend on the change in surface elevation but are *not* lapse rates.
 
 Calving
 ^^^^^^^

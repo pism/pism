@@ -6,7 +6,7 @@
 #include "coupler/atmosphere/Factory.hh"
 #include "coupler/atmosphere/Frac_P.hh"
 #include "coupler/atmosphere/GivenClimate.hh"
-#include "coupler/atmosphere/LapseRates.hh"
+#include "coupler/atmosphere/ElevationChange.hh"
 #include "coupler/atmosphere/PIK.hh"
 #include "coupler/atmosphere/PrecipitationScaling.hh"
 #include "coupler/atmosphere/SeariseGreenland.hh"
@@ -39,9 +39,9 @@
 %rename(AtmosphereGiven) pism::atmosphere::Given;
 %include "coupler/atmosphere/GivenClimate.hh"
 
-%shared_ptr(pism::atmosphere::LapseRates)
-%rename(AtmosphereLapseRates) pism::atmosphere::LapseRates;
-%include "coupler/atmosphere/LapseRates.hh"
+%shared_ptr(pism::atmosphere::ElevationChange)
+%rename(AtmosphereElevationChange) pism::atmosphere::ElevationChange;
+%include "coupler/atmosphere/ElevationChange.hh"
 
 %shared_ptr(pism::atmosphere::PrecipitationScaling)
 %rename(AtmospherePrecipScaling) pism::atmosphere::PrecipitationScaling;

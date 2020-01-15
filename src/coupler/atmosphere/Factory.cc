@@ -21,7 +21,7 @@
 
 // atmosphere models:
 #include "GivenClimate.hh"
-#include "LapseRates.hh"
+#include "ElevationChange.hh"
 #include "SeariseGreenland.hh"
 #include "Delta_T.hh"
 #include "Delta_P.hh"
@@ -54,7 +54,7 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_modifier<Frac_P>("frac_P");
   add_modifier<Delta_P>("delta_P");
   add_modifier<Delta_T>("delta_T");
-  add_modifier<LapseRates>("lapse_rate");
+  add_modifier<ElevationChange>("elevation_change");
   add_modifier<OrographicPrecipitation>("orographic_precipitation");
 }
 

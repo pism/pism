@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "LapseRates.hh"
+#include "ElevationChange.hh"
 
 #include "pism/coupler/util/options.hh"
 #include "pism/coupler/util/lapse_rates.hh"
@@ -28,18 +28,18 @@
 namespace pism {
 namespace atmosphere {
 
-LapseRates::LapseRates(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
+ElevationChange::ElevationChange(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in),
   m_surface(grid, "ice_surface_elevation", WITHOUT_GHOSTS) {
 
-  m_precip_lapse_rate = m_config->get_number("atmosphere.lapse_rate.precipitation_lapse_rate",
+  m_precip_lapse_rate = m_config->get_number("atmosphere.elevation_change.precipitation_lapse_rate",
                                              "(kg m-2 / s) / m");
 
-  m_temp_lapse_rate = m_config->get_number("atmosphere.lapse_rate.temperature_lapse_rate",
+  m_temp_lapse_rate = m_config->get_number("atmosphere.elevation_change.temperature_lapse_rate",
                                            "K / m");
 
   {
-    ForcingOptions opt(*m_grid->ctx(), "atmosphere.lapse_rate");
+    ForcingOptions opt(*m_grid->ctx(), "atmosphere.elevation_change");
 
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
@@ -63,11 +63,11 @@ LapseRates::LapseRates(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> 
   m_temperature   = allocate_temperature(grid);
 }
 
-LapseRates::~LapseRates() {
+ElevationChange::~ElevationChange() {
   // empty
 }
 
-void LapseRates::init_impl(const Geometry &geometry) {
+void ElevationChange::init_impl(const Geometry &geometry) {
   using units::convert;
 
   m_input_model->init(geometry);
@@ -81,12 +81,12 @@ void LapseRates::init_impl(const Geometry &geometry) {
                  convert(m_sys, m_temp_lapse_rate, "K / m", "K / km"),
                  convert(m_sys, m_precip_lapse_rate, "(kg m-2 / s) / m", "(kg m-2 / year) / km"));
 
-  ForcingOptions opt(*m_grid->ctx(), "atmosphere.lapse_rate");
+  ForcingOptions opt(*m_grid->ctx(), "atmosphere.elevation_change");
 
   m_reference_surface->init(opt.filename, opt.period, opt.reference_time);
 }
 
-void LapseRates::update_impl(const Geometry &geometry, double t, double dt) {
+void ElevationChange::update_impl(const Geometry &geometry, double t, double dt) {
 
   m_input_model->update(geometry, t, dt);
 
@@ -114,35 +114,35 @@ void LapseRates::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const IceModelVec2S& LapseRates::mean_annual_temp_impl() const {
+const IceModelVec2S& ElevationChange::mean_annual_temp_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S& LapseRates::mean_precipitation_impl() const {
+const IceModelVec2S& ElevationChange::mean_precipitation_impl() const {
   return *m_precipitation;
 }
 
-void LapseRates::begin_pointwise_access_impl() const {
+void ElevationChange::begin_pointwise_access_impl() const {
   m_input_model->begin_pointwise_access();
 
   m_reference_surface->begin_access();
   m_surface.begin_access();
 }
 
-void LapseRates::end_pointwise_access_impl() const {
+void ElevationChange::end_pointwise_access_impl() const {
   m_input_model->end_pointwise_access();
 
   m_reference_surface->end_access();
   m_surface.end_access();
 }
 
-void LapseRates::init_timeseries_impl(const std::vector<double> &ts) const {
+void ElevationChange::init_timeseries_impl(const std::vector<double> &ts) const {
   AtmosphereModel::init_timeseries_impl(ts);
 
   m_reference_surface->init_interpolation(ts);
 }
 
-void LapseRates::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
+void ElevationChange::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
   std::vector<double> usurf(m_ts_times.size());
 
   m_input_model->temp_time_series(i, j, result);
@@ -154,7 +154,7 @@ void LapseRates::temp_time_series_impl(int i, int j, std::vector<double> &result
   }
 }
 
-void LapseRates::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
+void ElevationChange::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   std::vector<double> usurf(m_ts_times.size());
 
   m_input_model->precip_time_series(i, j, result);
