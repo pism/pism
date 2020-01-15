@@ -2368,34 +2368,46 @@ netcdf pism_config {
     pism_config:surface.ismip6.reference_file_type = "string";
     pism_config:surface.ismip6.reference_file_option = "surface_ismip6_reference_file";
 
-    pism_config:surface.lapse_rate.file = "";
-    pism_config:surface.lapse_rate.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
-    pism_config:surface.lapse_rate.file_option = "surface_lapse_rate_file";
-    pism_config:surface.lapse_rate.file_type = "string";
+    pism_config:surface.elevation_change.file = "";
+    pism_config:surface.elevation_change.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
+    pism_config:surface.elevation_change.file_option = "surface_elevation_change_file";
+    pism_config:surface.elevation_change.file_type = "string";
 
-    pism_config:surface.lapse_rate.period = 0;
-    pism_config:surface.lapse_rate.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:surface.lapse_rate.period_option = "surface_lapse_rate_period";
-    pism_config:surface.lapse_rate.period_type = "integer";
-    pism_config:surface.lapse_rate.period_units = "years";
+    pism_config:surface.elevation_change.period = 0;
+    pism_config:surface.elevation_change.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:surface.elevation_change.period_option = "surface_elevation_change_period";
+    pism_config:surface.elevation_change.period_type = "integer";
+    pism_config:surface.elevation_change.period_units = "years";
 
-    pism_config:surface.lapse_rate.reference_year = 0;
-    pism_config:surface.lapse_rate.reference_year_doc = "Reference year to use when ``surface.lapse_rate.period`` is active.";
-    pism_config:surface.lapse_rate.reference_year_option = "surface_lapse_rate_reference_year";
-    pism_config:surface.lapse_rate.reference_year_type = "integer";
-    pism_config:surface.lapse_rate.reference_year_units = "years";
+    pism_config:surface.elevation_change.reference_year = 0;
+    pism_config:surface.elevation_change.reference_year_doc = "Reference year to use when ``surface.elevation_change.period`` is active.";
+    pism_config:surface.elevation_change.reference_year_option = "surface_elevation_change_reference_year";
+    pism_config:surface.elevation_change.reference_year_type = "integer";
+    pism_config:surface.elevation_change.reference_year_units = "years";
 
-    pism_config:surface.lapse_rate.smb_lapse_rate = 0;
-    pism_config:surface.lapse_rate.smb_lapse_rate_doc = "Lapse rate for the surface mass balance.";
-    pism_config:surface.lapse_rate.smb_lapse_rate_option = "smb_lapse_rate";
-    pism_config:surface.lapse_rate.smb_lapse_rate_type = "number";
-    pism_config:surface.lapse_rate.smb_lapse_rate_units = "(m / year) / km";
+    pism_config:surface.elevation_change.smb.exp_factor = 0;
+    pism_config:surface.elevation_change.smb.exp_factor_doc = "Exponential for the surface mass balance.";
+    pism_config:surface.elevation_change.smb.exp_factor_option = "smb_exp_factor";
+    pism_config:surface.elevation_change.smb.exp_factor_type = "number";
+    pism_config:surface.elevation_change.smb.exp_factor_units = "Kelvin-1";
 
-    pism_config:surface.lapse_rate.temperature_lapse_rate = 0;
-    pism_config:surface.lapse_rate.temperature_lapse_rate_doc = "Lapse rate for the temperature at the top of the ice.";
-    pism_config:surface.lapse_rate.temperature_lapse_rate_option = "temp_lapse_rate";
-    pism_config:surface.lapse_rate.temperature_lapse_rate_type = "number";
-    pism_config:surface.lapse_rate.temperature_lapse_rate_units = "K / km";
+    pism_config:surface.elevation_change.smb.lapse_rate = 0;
+    pism_config:surface.elevation_change.smb.lapse_rate_doc = "Lapse rate for the surface mass balance.";
+    pism_config:surface.elevation_change.smb.lapse_rate_option = "smb_lapse_rate";
+    pism_config:surface.elevation_change.smb.lapse_rate_type = "number";
+    pism_config:surface.elevation_change.smb.lapse_rate_units = "(m / year) / km";
+
+    pism_config:surface.elevation_change.smb.method = "shift";
+    pism_config:surface.elevation_change.smb.method_doc = "Choose the SMB adjustment method. ``scale``: use temperature-change-dependent scaling factor. ``shift``: use the SMB lapse rate.";
+    pism_config:surface.elevation_change.smb.method_option = "smb_adjustment";
+    pism_config:surface.elevation_change.smb.method_type = "keyword";
+    pism_config:surface.elevation_change.smb.method_choices = "scale,shift";
+
+    pism_config:surface.elevation_change.temperature_lapse_rate = 0;
+    pism_config:surface.elevation_change.temperature_lapse_rate_doc = "Lapse rate for the temperature at the top of the ice.";
+    pism_config:surface.elevation_change.temperature_lapse_rate_option = "temp_lapse_rate";
+    pism_config:surface.elevation_change.temperature_lapse_rate_type = "number";
+    pism_config:surface.elevation_change.temperature_lapse_rate_units = "K / km";
 
     pism_config:surface.pdd.air_temp_all_precip_as_rain = 275.15;
     pism_config:surface.pdd.air_temp_all_precip_as_rain_doc = "threshold temperature above which all precipitation is rain; must exceed surface.pdd.air_temp_all_precip_as_snow to avoid division by zero, because difference is in a denominator";

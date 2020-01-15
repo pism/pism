@@ -189,7 +189,7 @@ class DeltaT(TestCase):
         os.remove(self.filename)
         os.remove(self.output_filename)
 
-class LapseRates(TestCase):
+class ElevationChange(TestCase):
     def setUp(self):
         self.filename = "surface_reference_surface.nc"
         self.output_filename = "lapse_rates_output.nc"
@@ -204,9 +204,9 @@ class LapseRates(TestCase):
         # save current surface elevation to use it as a "reference" surface elevation
         self.geometry.ice_surface_elevation.dump(self.filename)
 
-        config.set_string("surface.lapse_rate.file", self.filename)
-        config.set_number("surface.lapse_rate.temperature_lapse_rate", self.dTdz)
-        config.set_number("surface.lapse_rate.smb_lapse_rate", self.dSMBdz)
+        config.set_string("surface.elevation_change.file", self.filename)
+        config.set_number("surface.elevation_change.temperature_lapse_rate", self.dTdz)
+        config.set_number("surface.elevation_change.smb.lapse_rate", self.dSMBdz)
 
         ice_density = config.get_number("constants.ice.density")
 
@@ -218,7 +218,7 @@ class LapseRates(TestCase):
     def lapse_rate_test(self):
         "Modifier lapse_rate"
 
-        modifier = PISM.SurfaceLapseRates(self.grid, self.model)
+        modifier = PISM.SurfaceElevationChange(self.grid, self.model)
 
         modifier.init(self.geometry)
 

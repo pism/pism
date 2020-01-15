@@ -58,7 +58,7 @@ add_library (boundary OBJECT
   ./surface/Elevation.cc
   ./surface/GivenClimate.cc
   ./surface/ISMIP6Climate.cc
-  ./surface/LapseRates.cc
+  ./surface/ElevationChange.cc
   ./surface/Delta_T.cc
   ./surface/Simple.cc
   ./surface/TemperatureIndex.cc

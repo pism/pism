@@ -91,6 +91,18 @@ Surface, atmosphere, ocean forcing
   `atmosphere.elevation_change.temperature_lapse_rate`.
 
   Set it to "shift" to use `atmosphere.elevation_change.precipitation.lapse_rate` instead.
+- Rename `-surface lapse_rate` to `-surface elevation_change`: now this modifier includes
+  an adjustment that is not a lapse rate. Also, rename all related configuration
+  parameters.
+- Add a configuration parameter `surface.elevation_change.smb.method`: "scale" to use the
+  exponential factor (see `surface.elevation_change.smb.exp_factor`); "shift" to use the
+  lapse rate (see `surface.elevation_change.smb.lapse_rate`).
+- Add `surface.elevation_change.smb.exp_factor`:
+
+  `SMB = SMB_input * exp(C * dT),`
+
+  where `C = surface.elevation_change.smb.exp_factor` and `dT` is the change in surface
+  temperature computed using `surface.elevation_change.temperature_lapse_rate`.
 
 Calving
 ^^^^^^^
