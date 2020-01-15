@@ -2,8 +2,8 @@
 
 .. _sec-calving:
 
-Calving
--------
+Calving and front retreat
+-------------------------
 
 .. contents::
 
@@ -18,7 +18,7 @@ implemented in PISM.
    * - Option
      - Description
 
-   * - :opt:`-calving_cfl`
+   * - :opt:`-front_retreat_cfl`
      - Apply CFL-type criterion to reduce (limit) PISM's time step using the horizontal
        calving rate computed by ``eigen_calving`` or ``vonmises_calving``.
     
@@ -58,13 +58,6 @@ implemented in PISM.
    * - :opt:`-float_kill_calve_near_grounding_line`
      - Calve floating ice near the grounding line (this is the default). Disable using
        :opt:`-float_kill_calve_near_grounding_line off`.
-
-   * - :opt:`-calving ocean_kill`
-     - All ice flowing into grid cells marked as "ice free ocean", according to the ice
-       thickness in the provided file, is calved.
-
-   * - :opt:`-ocean_kill_file`
-     - Sets the file with the ``thk`` field used to compute maximum ice extent.
 
 To select several calving mechanisms, use a comma-separated list of keywords mentioned in
 :numref:`tab-calving`:
@@ -109,7 +102,7 @@ framework suitable to relate the calving rate produced by ``eigen_calving`` to t
 transport scheme at the ice shelf terminus. Ice shelf front advance and retreat due to
 calving are limited to a maximum of one grid cell length per (adaptive) time step. The
 calving rate (velocity) from ``eigen_calving`` can be used to limit the overall timestep
-of PISM--thus slowing down all of PISM--by using :opt:`-calving_cfl`. This "CFL"-type
+of PISM--thus slowing down all of PISM--by using :opt:`-front_retreat_cfl`. This "CFL"-type
 time-step limitation is definitely recommended in high-resolution runs which attempt to
 model calving position accurately. Without this option, under certain conditions where
 PISM's adaptive time step happens to be long enough, dendritic structures can appear at
@@ -161,7 +154,7 @@ where `B` is the ice hardness.
 
 Similar to ``eigen_calving``, the calving rate from ``vonmises_calving`` can be used to
 limit the overall timestep of PISM --- thus slowing down all of PISM --- by using
-:opt:`-calving_cfl`.
+:opt:`-front_retreat_cfl`.
 
 .. _sec-additional-calving:
 
@@ -190,12 +183,24 @@ Use the option :opt:`-float_kill_margin_only` to restrict this to cells at the i
 Sometimes it is useful to preserve a one-cell-wide shelf near the grounding line. To do
 this, set :config:`calving.float_kill.calve_near_grounding_line` to false.
 
-Option :opt:`-calving ocean_kill` chooses the calving mechanism removing ice in the "open
-ocean". It requires the option :opt:`-ocean_kill_file`, which specifies the file
-containing the ice thickness field ``thk``. (This can be the input file specified using
-``-i``.) Any locations which were ice-free (``thk == 0``) and which had bedrock elevation
-below sea level (``topg < 0``), in the provided data set, are marked as ice-free ocean.
-The resulting mask is not altered during the run, and is available as diagnostic field
-``ocean_kill_mask``. At these places any floating ice is removed at each step of the run.
-Ice shelves can exist in locations where a positive thickness was supplied in the provided
-data set.
+.. _sec-prescribed-retreat:
+
+Prescribed front retreat
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Option :opt:`-front_retreat_file` allows prescribing retreat of the ice front. The forcing
+file specified using this option should contain :var:`land_ice_area_fraction_retreat` ---
+a 2D field, possibly time-dependent, that contains ones in areas that may be covered by
+ice and zeros in areas that have to be ice-free. Values between `0` and `1` allow for a
+"partial" retreat on coarser grids.
+
+More precisely, :var:`land_ice_area_fraction_retreat` is a mask prescribing the *maximum
+ice extent* at a given time throughout a simulation; a certain rate of retreat can be
+prescribed by creating a field with an appropriately decreasing maximum extent.
+
+Changes in ice mass resulting from using this mechanism are reported as a part of the
+*discharge* (:var:`tendency_of_ice_mass_due_to_discharge`).
+
+.. note::
+
+   This replaces the :literal:`ocean_kill` mechanism available in previous PISM versions.

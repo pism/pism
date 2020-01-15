@@ -30,7 +30,7 @@ set(PISMUTIL_SRC
   iceModelVec3Custom.cc
   interpolation.cc
   io/LocalInterpCtx.cc
-  io/PIO.cc
+  io/File.cc
   io/NC3File.cc
   io/NC4File.cc
   io/NCFile.cc
@@ -52,6 +52,8 @@ set(PISMUTIL_SRC
   projection.cc
   fftw_utilities.cc
   Poisson.cc
+  label_components.cc
+  connected_components.cc
   )
 
 if(Pism_USE_JANSSON)
@@ -66,6 +68,11 @@ endif()
 # Check if PnetCDF parallel I/O is enabled and add a source code file if necessary.
 if (Pism_USE_PNETCDF)
   list(APPEND PISMUTIL_SRC io/PNCFile.cc)
+endif()
+
+# Check if PnetCDF parallel I/O is enabled and add a source code file if necessary.
+if (Pism_USE_PIO)
+  list(APPEND PISMUTIL_SRC io/ParallelIO.cc)
 endif()
 
 add_library (util OBJECT ${PISMUTIL_SRC})

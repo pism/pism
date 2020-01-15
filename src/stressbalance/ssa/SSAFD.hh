@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -80,7 +80,7 @@ protected:
 
   virtual void update_nuH_viewers();
 
-  virtual void set_diagonal_matrix_entry(Mat A, int i, int j,
+  void set_diagonal_matrix_entry(Mat A, int i, int j, int component,
                                          double value);
 
   virtual bool is_marginal(int i, int j, bool ssa_dirichlet_bc);

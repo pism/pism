@@ -12,8 +12,8 @@ used for 28 days (except during leap years) and not `365/12 = 30.4167` days.
 
 .. _sec-periodic-forcing:
 
-Periodic climate data
-+++++++++++++++++++++
+Periodic forcing
+++++++++++++++++
 
 All components reading time-dependent forcing data from files can interpret it as
 "periodic". The length of the period (in years) is specified using a :opt:`-..._period`

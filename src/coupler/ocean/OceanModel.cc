@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,7 +31,7 @@ IceModelVec2S::Ptr OceanModel::allocate_shelf_base_temperature(IceGrid::ConstPtr
   IceModelVec2S::Ptr result(new IceModelVec2S(g, "shelfbtemp", WITHOUT_GHOSTS));
   result->set_attrs("diagnostic",
                     "ice temperature at the bottom of floating ice",
-                    "Kelvin", "");
+                    "Kelvin", "Kelvin", "", 0);
   return result;
 }
 
@@ -39,8 +39,7 @@ IceModelVec2S::Ptr OceanModel::allocate_shelf_base_mass_flux(IceGrid::ConstPtr g
   IceModelVec2S::Ptr result(new IceModelVec2S(g, "shelfbmassflux", WITHOUT_GHOSTS));
 
   result->set_attrs("diagnostic", "shelf base mass flux",
-                    "kg m-2 s-1", "");
-  result->metadata().set_string("glaciological_units", "kg m-2 year-1");
+                    "kg m-2 s-1", "kg m-2 year-1", "", 0);
 
   return result;
 }
@@ -51,7 +50,7 @@ IceModelVec2S::Ptr OceanModel::allocate_melange_back_pressure(IceGrid::ConstPtr 
 
   result->set_attrs("diagnostic",
                     "melange back pressure fraction",
-                    "1", "");
+                    "1", "1", "", 0);
   result->set(0.0);
 
   return result;
@@ -64,13 +63,13 @@ OceanModel::OceanModel(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> input)
   if (not input) {
     m_melange_back_pressure_fraction = allocate_melange_back_pressure(g);
     // set the default value
-    m_melange_back_pressure_fraction->set(0.0);
+    m_melange_back_pressure_fraction->set(m_config->get_number("ocean.melange_back_pressure_fraction"));
   }
 }
 
 // "model" constructor
 OceanModel::OceanModel(IceGrid::ConstPtr g)
-  : OceanModel(g, nullptr) {
+  : OceanModel(g, std::shared_ptr<OceanModel>()) {
   // empty
 }
 
@@ -124,7 +123,7 @@ MaxTimestep OceanModel::max_timestep_impl(double t) const {
   }
 }
 
-void OceanModel::define_model_state_impl(const PIO &output) const {
+void OceanModel::define_model_state_impl(const File &output) const {
   if (m_input_model) {
     return m_input_model->define_model_state(output);
   } else {
@@ -132,7 +131,7 @@ void OceanModel::define_model_state_impl(const PIO &output) const {
   }
 }
 
-void OceanModel::write_model_state_impl(const PIO &output) const {
+void OceanModel::write_model_state_impl(const File &output) const {
   if (m_input_model) {
     return m_input_model->write_model_state(output);
   } else {

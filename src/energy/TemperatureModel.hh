@@ -32,9 +32,9 @@ public:
   const IceModelVec3 & temperature() const;
 
 protected:
-  void restart_impl(const PIO &input_file, int record);
+  void restart_impl(const File &input_file, int record);
 
-  void bootstrap_impl(const PIO &input_file,
+  void bootstrap_impl(const File &input_file,
                       const IceModelVec2S &ice_thickness,
                       const IceModelVec2S &surface_temperature,
                       const IceModelVec2S &climatic_mass_balance,
@@ -49,8 +49,8 @@ protected:
   using EnergyModel::update_impl;
   void update_impl(double t, double dt, const Inputs &inputs);
 
-  void define_model_state_impl(const PIO &output) const;
-  void write_model_state_impl(const PIO &output) const;
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
 
   void column_drainage(const double rho, const double c, const double L,
                        const double z, const double dz,

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018 David Maxwell
+# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018, 2019 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -448,7 +448,9 @@ if __name__ == "__main__":
     design_prior = createDesignVec(grid, design_var, '%s_prior' % design_var)
     long_name = design_prior.string_attr("long_name")
     units = design_prior.string_attr("units")
-    design_prior.set_attrs("", "best prior estimate for %s (used for inversion)" % long_name, units, "")
+    design_prior.set_attrs("",
+                           "best prior estimate for %s (used for inversion)" % long_name,
+                           units, units, "", 0)
     if PISM.util.fileHasVariable(inv_data_filename, "%s_prior" % design_var) and use_design_prior:
         PISM.logging.logMessage("  Reading '%s_prior' from inverse data file %s.\n" % (design_var, inv_data_filename))
         design_prior.regrid(inv_data_filename, critical=True)

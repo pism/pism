@@ -125,6 +125,6 @@ evolving ice thickness.
 Calving
 ^^^^^^^
 
-Set :config:`calving.front_retreat.wrap_around` to ``true`` to allow calving front retreat
+Set :config:`geometry.front_retreat.wrap_around` to ``true`` to allow calving front retreat
 due to calving to "wrap around" the computational domain. This may be necessary in some
 regional synthetic-geometry setups.

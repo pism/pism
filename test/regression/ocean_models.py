@@ -22,10 +22,6 @@ seconds_per_year = 365 * 86400
 # ensure that this is the correct year length
 config.set_string("time.calendar", "365_day")
 
-# change the default melange back pressure fraction from 0 to 1. The default of zero makes
-# it hard to test the modifier that scales this value.
-config.set_number("ocean.constant.melange_back_pressure_fraction", 1.0)
-
 # silence models' initialization messages
 PISM.Context().log.set_threshold(1)
 
@@ -33,12 +29,12 @@ def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)
 
     T = PISM.IceModelVec2S(grid, "shelfbtemp", PISM.WITHOUT_GHOSTS)
-    T.set_attrs("climate", "shelf base temperature", "Kelvin", "")
+    T.set_attrs("climate", "shelf base temperature", "Kelvin", "Kelvin", "", 0)
     T.set(temperature)
     T.write(filename)
 
     M = PISM.IceModelVec2S(grid, "shelfbmassflux", PISM.WITHOUT_GHOSTS)
-    M.set_attrs("climate", "shelf base mass flux", "kg m-2 s-1", "")
+    M.set_attrs("climate", "shelf base mass flux", "kg m-2 s-1", "kg m-2 s-1", "", 0)
     M.set(mass_flux)
     M.write(filename)
 
@@ -79,7 +75,7 @@ def constant_test():
     pressure = ice_density * g * depth
     T_melting = T0 - beta_CC * pressure
 
-    melange_back_pressure = 1.0
+    melange_back_pressure = 0.0
 
     grid = shallow_grid()
     geometry = PISM.Geometry(grid)
@@ -178,12 +174,12 @@ class GivenTHTest(TestCase):
         PISM.util.prepare_output(filename)
 
         Th = PISM.IceModelVec2S(self.grid, "theta_ocean", PISM.WITHOUT_GHOSTS)
-        Th.set_attrs("climate", "potential temperature", "Kelvin", "")
+        Th.set_attrs("climate", "potential temperature", "Kelvin", "Kelvin", "", 0)
         Th.set(potential_temperature)
         Th.write(filename)
 
         S = PISM.IceModelVec2S(self.grid, "salinity_ocean", PISM.WITHOUT_GHOSTS)
-        S.set_attrs("climate", "ocean salinity", "g/kg", "")
+        S.set_attrs("climate", "ocean salinity", "g/kg", "g/kg", "", 0)
         S.set(salinity)
         S.write(filename)
 
@@ -266,7 +262,7 @@ class AnomalyBMB(TestCase):
         delta_BMB = PISM.IceModelVec2S(self.grid, "shelf_base_mass_flux_anomaly",
                                        PISM.WITHOUT_GHOSTS)
         delta_BMB.set_attrs("climate_forcing",
-                            "2D shelf base mass flux anomaly", "kg m-2 s-1", "")
+                            "2D shelf base mass flux anomaly", "kg m-2 s-1", "kg m-2 s-1", "", 0)
         delta_BMB.set(self.dBMB)
 
         delta_BMB.dump(self.filename)
@@ -295,6 +291,7 @@ class FracMBP(TestCase):
         self.dMBP = 0.5
 
         create_scalar_forcing(self.filename, "frac_MBP", "1", [self.dMBP], [0])
+        config.set_number("ocean.melange_back_pressure_fraction", 1.0)
 
     def test_ocean_frac_mpb(self):
         "Modifier Frac_MBP"
@@ -322,6 +319,8 @@ class FracMBP(TestCase):
 
     def tearDown(self):
         os.remove(self.filename)
+        config.set_number("ocean.melange_back_pressure_fraction", 0.0)
+
 
 class FracSMB(TestCase):
     def setUp(self):
@@ -433,7 +432,7 @@ class DeltaSL2D(TestCase):
         output = PISM.util.prepare_output(filename, append_time=False)
 
         SL = PISM.IceModelVec2S(self.grid, "delta_SL", PISM.WITHOUT_GHOSTS)
-        SL.set_attrs("forcing", "sea level forcing", "meters", "")
+        SL.set_attrs("forcing", "sea level forcing", "meters", "meters", "", 0)
 
         for k in range(len(times)):
             PISM.append_time(output, config, times[k])

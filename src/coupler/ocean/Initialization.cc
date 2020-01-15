@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #include "Initialization.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/io/io_helpers.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/coupler/util/init_step.hh"
 
@@ -40,6 +40,9 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<
 
   m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
   m_shelf_base_mass_flux->set_name("effective_shelf_base_mass_flux");
+  // use internal units when saving
+  auto units = m_shelf_base_mass_flux->metadata().get_string("units");
+  m_shelf_base_mass_flux->metadata().set_string("glaciological_units", units);
   m_shelf_base_mass_flux->metadata().set_string("pism_intent", "model_state");
 }
 
@@ -60,8 +63,8 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
     m_log->message(2, "* Reading effective ocean model outputs from '%s' for re-starting...\n",
                    opts.filename.c_str());
 
-    PIO file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
-    const unsigned int time_length = file.inq_nrecords();
+    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+    const unsigned int time_length = file.nrecords();
     const unsigned int last_record = time_length > 0 ? time_length - 1 : 0;
 
     m_melange_back_pressure_fraction->read(file, last_record);
@@ -87,7 +90,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
   }
 }
 
-void InitializationHelper::define_model_state_impl(const PIO &output) const {
+void InitializationHelper::define_model_state_impl(const File &output) const {
   m_melange_back_pressure_fraction->define(output);
   m_shelf_base_mass_flux->define(output);
   m_shelf_base_temperature->define(output);
@@ -95,7 +98,7 @@ void InitializationHelper::define_model_state_impl(const PIO &output) const {
   m_input_model->define_model_state(output);
 }
 
-void InitializationHelper::write_model_state_impl(const PIO &output) const {
+void InitializationHelper::write_model_state_impl(const File &output) const {
   m_melange_back_pressure_fraction->write(output);
   m_shelf_base_mass_flux->write(output);
   m_shelf_base_temperature->write(output);

@@ -15,6 +15,8 @@ derivatives, follow the instructions in subsection :ref:`sec-install-arch`.
 
    prerequisites.rst
 
+   parallel-io-libraries.rst
+
    cookbook.rst
 
    quick-tests.rst

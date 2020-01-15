@@ -37,8 +37,8 @@ public:
   InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in);
 
 private:
-  void define_model_state_impl(const PIO &output) const;
-  void write_model_state_impl(const PIO &output) const;
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
 
   void update_impl(const Geometry &geometry, double t, double dt);
   void init_impl(const Geometry &geometry);

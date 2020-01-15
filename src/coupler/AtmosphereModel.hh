@@ -66,8 +66,8 @@ public:
 protected:
   virtual void init_impl(const Geometry &geometry) = 0;
   virtual void update_impl(const Geometry &geometry, double t, double dt) = 0;
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   virtual MaxTimestep max_timestep_impl(double my_t) const;
 

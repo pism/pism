@@ -53,7 +53,7 @@ void Constant::update_impl(const Geometry &geometry, double t, double dt) {
 
   m_shelf_base_mass_flux->set(mass_flux);
 
-  m_melange_back_pressure_fraction->set(m_config->get_number("ocean.constant.melange_back_pressure_fraction"));
+  m_melange_back_pressure_fraction->set(m_config->get_number("ocean.melange_back_pressure_fraction"));
 }
 
 void Constant::init_impl(const Geometry &geometry) {

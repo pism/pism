@@ -198,7 +198,7 @@ The PISM command done here is (essentially, and without showing diagnostic outpu
        -yield_stress constant -tauc 1e6 -pik -ssa_dirichlet_bc -ssa_e 0.6 \
        -y 100 -o prog_Mx211_yr100.nc -o_size big \
        -calving eigen_calving,thickness_calving -eigen_calving_K 1e17 \
-       -calving_cfl -thickness_calving_threshold 50.0
+       -front_retreat_cfl -thickness_calving_threshold 50.0
 
 Several of these options are different from those used in the diagnostic case. First,
 while the command ``-pik`` is the same as before, now each part of its expansion, namely
@@ -214,7 +214,7 @@ Option combination
 .. code-block:: none
 
        -calving eigen_calving,thickness_calving -eigen_calving_K 1e17 \
-       -calving_cfl -thickness_calving_threshold 50.0
+       -front_retreat_cfl -thickness_calving_threshold 50.0
 
 specifies that ice at the calving front will be removed if either a criterion on the
 product of principal stresses is satisfied :cite:`Levermannetal2012`, namely ``eigen_calving``

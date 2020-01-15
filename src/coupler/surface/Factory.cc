@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,8 +23,8 @@
 #include "Anomaly.hh"
 #include "Elevation.hh"
 #include "GivenClimate.hh"
+#include "ISMIP6Climate.hh"
 #include "LapseRates.hh"
-#include "StuffAsAnomaly.hh"
 #include "Delta_T.hh"
 #include "TemperatureIndex.hh"
 #include "Simple.hh"
@@ -37,43 +37,26 @@ namespace pism {
 namespace surface {
 
 Factory::Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : PCFactory<SurfaceModel>(g, "surface.model"),
-  m_input(input) {
+  : PCFactory<SurfaceModel>(g, "surface.models"),
+    m_input(input) {
 
   add_surface_model<Elevation>("elevation");
   add_surface_model<Given>("given");
+  add_surface_model<ISMIP6>("ismip6");
   add_surface_model<TemperatureIndex>("pdd");
   add_surface_model<PIK>("pik");
   add_surface_model<Simple>("simple");
-  set_default("given");
 
   add_modifier<Anomaly>("anomaly");
   add_modifier<Cache>("cache");
   add_modifier<Delta_T>("delta_T");
   add_modifier<ForceThickness>("forcing");
   add_modifier<LapseRates>("lapse_rate");
-  add_modifier<StuffAsAnomaly>("turn_into_anomaly");
 }
 
 Factory::~Factory() {
   // empty
 }
-
-void Factory::set_default(const std::string &name) {
-  if (m_surface_models.find(name) == m_surface_models.end()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "type %s is not registered", name.c_str());
-  } else {
-    m_default_type = name;
-  }
-}
-
-std::shared_ptr<SurfaceModel> Factory::create() {
-
-  auto choices = m_grid->ctx()->config()->get_string(m_parameter);
-
-  return create(choices);
-}
-
 
 std::shared_ptr<SurfaceModel> Factory::create(const std::string &type) {
 

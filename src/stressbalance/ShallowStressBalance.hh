@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010--2019 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -38,8 +38,8 @@ namespace stressbalance {
  * Vertically-averaged ocean pressure difference at the calving front, used in the implementation of
  * the stress boundary condition at the calving front in SSA stress balance solvers.
  */
-double ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed, double sea_level,
-                                 double rho_ice, double rho_ocean, double g);
+double margin_pressure_difference(bool shelf, bool dry_mode, double H, double bed, double sea_level,
+                                  double rho_ice, double rho_ocean, double g);
 
 class Inputs;
 
@@ -60,11 +60,6 @@ public:
 
   //! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
   const IceModelVec2S& basal_frictional_heating();
-
-  void compute_2D_stresses(const IceModelVec2V &velocity,
-                           const IceModelVec2S &hardness,
-                           const IceModelVec2CellType &cell_type,
-                           IceModelVec2 &result) const;
 
   void compute_basal_frictional_heating(const IceModelVec2V &velocity,
                                         const IceModelVec2S &tauc,

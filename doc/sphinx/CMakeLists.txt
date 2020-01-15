@@ -1,4 +1,5 @@
-find_package(Sphinx)
+find_program(SPHINX_EXECUTABLE sphinx-build)
+mark_as_advanced(SPHINX_EXECUTABLE)
 
 # HTML documentation requires Sphinx
 if (SPHINX_EXECUTABLE)

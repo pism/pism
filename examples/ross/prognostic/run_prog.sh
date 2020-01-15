@@ -46,7 +46,7 @@ exdt=1
 exvars="thk,mask,velsurf_mag,strain_rates,tendency_of_ice_mass_due_to_flow,tendency_of_ice_mass_due_to_discharge"
 cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -i $STARTNAME \
   -surface given -stress_balance ssa -yield_stress constant -tauc 1e6 -pik \
-  -calving eigen_calving,thickness_calving -eigen_calving_K $ECALV -calving_cfl \
+  -calving eigen_calving,thickness_calving -eigen_calving_K $ECALV -front_retreat_cfl \
   -ssa_dirichlet_bc -ssa_e $SSAE -ys 0 -y $YEARS -o $NAME -o_size big \
   -thickness_calving_threshold $CTHICK $STRONGKSP \
   -ts_file ts-${NAME} -ts_times 0:monthly:${YEARS} \

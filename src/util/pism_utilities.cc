@@ -416,4 +416,50 @@ void validate_format_string(const std::string &format) {
   }
 }
 
+double vector_min(const std::vector<double> &input) {
+  double my_min = input[0];
+  for (auto x : input) {
+    my_min = std::min(x, my_min);
+  }
+  return my_min;
+}
+
+double vector_max(const std::vector<double> &input) {
+  double my_max = input[0];
+  for (auto x : input) {
+    my_max = std::max(x, my_max);
+  }
+  return my_max;
+}
+
+
+/*!
+ * Fletcher's checksum
+ *
+ * See https://en.wikipedia.org/wiki/Fletcher%27s_checksum#Optimizations
+ */
+uint64_t fletcher64(const uint32_t *data, size_t length) {
+  // Accumulating a sum of block_size unsigned 32-bit integers in an unsigned 64-bit
+  // integer will not lead to an overflow.
+  //
+  // This constant is found by solving n * (n + 1) / 2 * (2^32 - 1) < (2^64 - 1).
+  static const size_t block_size = 92681;
+
+  uint64_t c0 = 0, c1 = 0;
+  while (length != 0) {
+    size_t block = std::min(block_size, length);
+
+    for (size_t i = 0; i < block; ++i) {
+      c0 = c0 + *data++;
+      c1 = c1 + c0;
+    }
+
+    c0 = c0 % UINT32_MAX;
+    c1 = c1 % UINT32_MAX;
+
+    length = length > block_size ? length - block_size : 0;
+  }
+  return (c1 << 32 | c0);
+}
+
 } // end of namespace pism
