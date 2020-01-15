@@ -64,12 +64,12 @@ void Verification::init_impl(const Geometry &geometry) {
   update(geometry, m_grid->ctx()->time()->current(), 0);
 }
 
-void Verification::define_model_state_impl(const PIO &output) const {
+void Verification::define_model_state_impl(const File &output) const {
   m_mass_flux->define(output);
   m_temperature->define(output);
 }
 
-void Verification::write_model_state_impl(const PIO &output) const {
+void Verification::write_model_state_impl(const File &output) const {
   m_mass_flux->write(output);
   m_temperature->write(output);
 }

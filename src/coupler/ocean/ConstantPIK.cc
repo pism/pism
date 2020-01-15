@@ -64,7 +64,7 @@ void PIK::update_impl(const Geometry &geometry, double t, double dt) {
 
   mass_flux(H, *m_shelf_base_mass_flux);
 
-  m_melange_back_pressure_fraction->set(0.0);
+  m_melange_back_pressure_fraction->set(m_config->get_number("ocean.melange_back_pressure_fraction"));
 }
 
 /*!

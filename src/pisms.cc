@@ -33,7 +33,7 @@ static char help[] =
 #include "pism/util/Logger.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 
 using namespace pism;
 

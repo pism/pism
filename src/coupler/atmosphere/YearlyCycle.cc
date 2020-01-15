@@ -41,22 +41,19 @@ YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
   m_snow_temp_summer_day = m_config->get_number("atmosphere.fausto_air_temp.summer_peak_day");
 
   m_air_temp_mean_annual.set_attrs("diagnostic",
-                                   "mean annual near-surface air temperature"
-                                   " (without sub-year time-dependence or forcing)",
-                                   "K",
-                                   "");  // no CF standard_name ??
+                                   "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
+                                   "K", "K",
+                                   "", 0);  // no CF standard_name
   m_air_temp_mean_annual.metadata().set_string("source", m_reference);
 
   m_air_temp_mean_summer.set_attrs("diagnostic",
-                                   "mean summer (NH: July/ SH: January) near-surface"
-                                   " air temperature (without sub-year time-dependence or forcing)",
-                                   "Kelvin",
-                                   "");  // no CF standard_name ??
+                                   "mean summer (NH: July/ SH: January) near-surface air temperature (without sub-year time-dependence or forcing)",
+                                   "Kelvin", "Kelvin",
+                                   "", 0);  // no CF standard_name
   m_air_temp_mean_summer.metadata().set_string("source", m_reference);
 
   m_precipitation.set_attrs("model_state", "precipitation rate",
-                            "kg m-2 second-1", "precipitation_flux", 0);
-  m_precipitation.metadata(0).set_string("glaciological_units", "kg m-2 year-1");
+                            "kg m-2 second-1", "kg m-2 year-1", "precipitation_flux", 0);
   m_precipitation.set_time_independent(true);
 }
 
@@ -87,11 +84,11 @@ void YearlyCycle::init_internal(const std::string &input_filename, bool do_regri
   }
 }
 
-void YearlyCycle::define_model_state_impl(const PIO &output) const {
+void YearlyCycle::define_model_state_impl(const File &output) const {
   m_precipitation.define(output);
 }
 
-void YearlyCycle::write_model_state_impl(const PIO &output) const {
+void YearlyCycle::write_model_state_impl(const File &output) const {
   m_precipitation.write(output);
 }
 

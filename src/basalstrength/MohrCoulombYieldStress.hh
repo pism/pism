@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "YieldStress.hh"
 
 #include "pism/util/iceModelVec.hh"
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 
@@ -35,30 +36,33 @@ public:
   virtual ~MohrCoulombYieldStress();
 
   void set_till_friction_angle(const IceModelVec2S &input);
-protected:
-  virtual void init_impl(const Geometry &geometry,
-                         const IceModelVec2S &till_water_thickness,
-                         const IceModelVec2S &overburden_pressure);
+private:
+  void restart_impl(const File &input_file, int record);
+  void bootstrap_impl(const File &input_file, const YieldStressInputs &inputs);
+  void init_impl(const YieldStressInputs &inputs);
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
 
-  virtual DiagnosticList diagnostics_impl() const;
+  DiagnosticList diagnostics_impl() const;
 
-  virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(const YieldStressInputs &inputs);
+  MaxTimestep max_timestep_impl(double t) const;
+  void update_impl(const YieldStressInputs &inputs, double t, double dt);
 
+  void finish_initialization(const YieldStressInputs &inputs);
 private:
   void till_friction_angle(const IceModelVec2S &bed_topography,
                            IceModelVec2S &result);
 
   void till_friction_angle(const IceModelVec2S &basal_yield_stress,
                            const IceModelVec2S &till_water_thickness,
-                           const IceModelVec2S &overburden_pressure,
+                           const IceModelVec2S &ice_thickness,
                            const IceModelVec2CellType &cell_type,
                            IceModelVec2S &result);
 
   IceModelVec2S m_till_phi;
+
+  IceModelVec2T::Ptr m_delta;
 };
 
 } // end of namespace pism

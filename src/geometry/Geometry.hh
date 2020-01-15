@@ -59,6 +59,18 @@ public:
   IceModelVec2S ice_surface_elevation;
 };
 
+void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result);
+
+double ice_volume(const Geometry &geometry, double thickness_threshold);
+double ice_area_floating(const Geometry &geometry, double thickness_threshold);
+double ice_area_grounded(const Geometry &geometry, double thickness_threshold);
+double ice_area(const Geometry &geometry, double thickness_threshold);
+double ice_volume_not_displacing_seawater(const Geometry &geometry,
+                                          double thickness_threshold);
+double sea_level_rise_potential(const Geometry &geometry, double thickness_threshold);
+
+void set_no_model_strip(const IceGrid &grid, double width, IceModelVec2Int &result);
+
 } // end of namespace pism
 
 #endif /* GEOMETRY_H */

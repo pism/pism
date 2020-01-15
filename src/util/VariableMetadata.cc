@@ -20,7 +20,7 @@
 #include <algorithm>
 
 #include "VariableMetadata.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism_options.hh"
 #include "IceGrid.hh"
 

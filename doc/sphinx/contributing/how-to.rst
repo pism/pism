@@ -132,8 +132,8 @@ There are at least three cases of "reading data from a file":
    std::string filename = "filename.nc";
    ice_thickness.read(filename, time);
 
-   // case 1, using an existing PIO instance (file is already open)
-   PIO file(communicator, "guess_mode", filename, PISM_READONLY);
+   // case 1, using an existing File instance (file is already open)
+   File file(communicator, "guess_mode", filename, PISM_READONLY);
    ice_thickness.read(file, time);
 
    RegriddingFlag flag = OPTIONAL;
@@ -141,7 +141,7 @@ There are at least three cases of "reading data from a file":
    // cases 2 and 3 (interpolation)
    ice_thickness.regrid(filename, flag, default_value);
 
-   // cases 2 and 3 (interpolation) using an existing PIO instance
+   // cases 2 and 3 (interpolation) using an existing File instance
    ice_thickness.regrid(file, flag, default_value);
 
 When interpolating ("regridding") a field, the ``flag`` specifies whether a variable is
@@ -164,8 +164,8 @@ the time variable.
 
 .. code-block:: c++
 
-   PIO file(m_grid->com, m_config->get_string("output.format"),
-            filename, PISM_READWRITE_CLOBBER);
+   File file(m_grid->com, m_config->get_string("output.format"),
+            filename, PISM_READWRITE_CLOBBER, m_grid->ctx()->pio_iosys_id());
 
    io::define_time(file, *m_grid->ctx());
    io::append_time(file, *m_grid->ctx()->config(), current_time);
@@ -182,7 +182,7 @@ To write a field to an already "prepared" file, call
 .. code-block:: c++
 
    precip.write("filename.nc");
-   // or, if the file is already open and a PIO instance is available:
+   // or, if the file is already open and a File instance is available:
 
    precip.write.(file);
 

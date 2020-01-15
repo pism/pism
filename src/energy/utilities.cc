@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -146,7 +146,7 @@ void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
   result.metadata(0).set_name("liqfrac");
   result.set_attrs("diagnostic",
                    "liquid water fraction in ice (between 0 and 1)",
-                   "1", "", 0);
+                   "1", "1", "", 0);
 
   IceModelVec::AccessList list{&result, &enthalpy, &ice_thickness};
 
@@ -189,7 +189,7 @@ void compute_cts(const IceModelVec3 &ice_enthalpy,
   result.metadata(0).set_name("cts");
   result.set_attrs("diagnostic",
                    "cts = E/E_s(p), so cold-temperate transition surface is at cts = 1",
-                   "", "", 0);
+                   "1", "1", "", 0);
 
   IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness, &result};
 

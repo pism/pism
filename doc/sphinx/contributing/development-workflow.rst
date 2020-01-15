@@ -234,6 +234,23 @@ possible. If a verification test is not an option, consider adding a *regression
 that compares computed results to a stored output from a trusted version of the code. This
 will make it easier to detect a regression, i.e. an undesirable change in model results.
 
+Here are some test writing tips:
+
+- Make sure that a verification test uses a grid that is not square (different number of
+  grid points in `x` and `y` directions).
+- If possible, write a test that performs a number of computations along a *refinement
+  path* and compare the computed convergence rate to the theoretical one.
+- Try to include tests ensuring that `x` and `y` directions are interchangeable: in most
+  cases flow from left to right should behave the save as from bottom towards the top, etc.
+
+  Here are two ways to do this:
+
+  - Repeat the test twice, the second time using transposed inputs, then transpose results
+    and compare.
+  - Repeat the test twice, once using a refinement path along `x` and the second time
+    along `y`; make sure that you see the same convergence rate.
+- It is good to check if the implementation preserves symmetries if the setup has any.
+
 Python bindings make it possible to test many PISM's components in isolation from the rest
 of the code. See tests in `test/regression` for some examples.
 

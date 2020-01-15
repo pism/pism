@@ -39,6 +39,10 @@ protected:
   const IceModelVec2S &mass_flux_impl() const;
   const IceModelVec2S &layer_thickness_impl() const;
 
+  virtual const IceModelVec2S& accumulation_impl() const;
+  virtual const IceModelVec2S& melt_impl() const;
+  virtual const IceModelVec2S& runoff_impl() const;
+
   MaxTimestep max_timestep_impl(double t) const;
 protected:
   // storage for the rest of the fields is inherited from SurfaceModel

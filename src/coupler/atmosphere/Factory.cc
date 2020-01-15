@@ -41,7 +41,7 @@ namespace atmosphere {
 // Atmosphere
 
 Factory::Factory(IceGrid::ConstPtr g)
-  : PCFactory<AtmosphereModel>(g, "atmosphere.model") {
+  : PCFactory<AtmosphereModel>(g, "atmosphere.models") {
 
   add_model<PIK>("pik");
   add_model<Given>("given");
@@ -50,7 +50,6 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_model<WeatherStation>("one_station");
   add_model<Uniform>("uniform");
   add_model<IndexForcing>("index");
-  set_default("given");
 
   add_modifier<Anomaly>("anomaly");
   add_modifier<PaleoPrecip>("paleo_precip");

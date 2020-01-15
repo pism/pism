@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
     print(header)
 
-    for parameter in var.ncattrs():     # assume that this list is sorted
+    for parameter in sorted(var.ncattrs()):
         if is_special(parameter):
             continue
 

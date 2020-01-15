@@ -61,16 +61,16 @@ GivenTH::Constants::Constants(const Config &config) {
 }
 
 GivenTH::GivenTH(IceGrid::ConstPtr g)
-  : CompleteOceanModel(g, nullptr) {
+  : CompleteOceanModel(g, std::shared_ptr<OceanModel>()) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.th");
 
   {
-    unsigned int buffer_size = m_config->get_number("climate_forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
+    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
+    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
     m_theta_ocean = IceModelVec2T::ForcingField(m_grid,
                                                 file,
@@ -93,11 +93,11 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
 
   m_theta_ocean->set_attrs("climate_forcing",
                            "potential temperature of the adjacent ocean",
-                           "Kelvin", "");
+                           "Kelvin", "Kelvin", "", 0);
 
   m_salinity_ocean->set_attrs("climate_forcing",
                               "salinity of the adjacent ocean",
-                              "g/kg", "");
+                              "g/kg", "g/kg", "", 0);
 }
 
 GivenTH::~GivenTH() {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #include <mpi.h>
 #include <cmath>
 
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "ConfigInterface.hh"
 #include "Units.hh"
 #include "pism_utilities.hh"
@@ -61,29 +61,29 @@ Config::~Config() {
   delete m_impl;
 }
 
-void Config::read(MPI_Comm com, const std::string &file) {
+void Config::read(MPI_Comm com, const std::string &filename) {
 
-  PIO nc(com, "netcdf3", file, PISM_READONLY); // OK to use netcdf3
-  this->read(nc);
+  File file(com, filename, PISM_NETCDF3, PISM_READONLY); // OK to use netcdf3
+  this->read(file);
 }
 
-void Config::read(const PIO &nc) {
-  this->read_impl(nc);
+void Config::read(const File &file) {
+  this->read_impl(file);
 
-  m_impl->filename = nc.inq_filename();
+  m_impl->filename = file.filename();
 }
 
-void Config::write(const PIO &nc) const {
-  this->write_impl(nc);
+void Config::write(const File &file) const {
+  this->write_impl(file);
 }
 
-void Config::write(MPI_Comm com, const std::string &file, bool append) const {
+void Config::write(MPI_Comm com, const std::string &filename, bool append) const {
 
   IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 
-  PIO nc(com, "netcdf3", file, mode); // OK to use netcdf3
+  File file(com, filename, PISM_NETCDF3, mode); // OK to use netcdf3
 
-  this->write(nc);
+  this->write(file);
 }
 
 //! \brief Returns the name of the file used to initialize the database.
@@ -744,6 +744,18 @@ void set_config_from_options(Config &config) {
     config.set_flag("energy.enabled", false, CONFIG_USER);
     config.set_flag("age.enabled", false, CONFIG_USER);
     // let the user decide if they want to use "-no_mass" or not
+  }
+
+  // If frontal melt code includes floating ice, routing hydrology should include it also.
+  if (config.get_string("hydrology.model") == "routing") {
+    if (config.get_flag("frontal_melt.include_floating_ice")) {
+      config.set_flag("hydrology.routing.include_floating_ice", true);
+    }
+  }
+
+  if (config.get_flag("output.ISMIP6")) {
+    // use MKS units in ISMIP6 mode
+    config.set_flag("output.use_MKS", true);
   }
 
   // old options

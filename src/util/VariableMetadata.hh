@@ -63,7 +63,7 @@ class Logger;
   - glaciological_units (saved to files as "units")
 
   Use the `name` of "PISM_GLOBAL" to read and write global attributes.
-  (See also PIO.)
+  (See also File.)
 
 */
 
