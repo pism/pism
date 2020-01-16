@@ -483,7 +483,6 @@ class ElevationChange(TestCase):
     def setUp(self):
         self.filename = "atmosphere_reference_surface.nc"
         self.grid = shallow_grid()
-        self.model = PISM.AtmosphereUniform(self.grid)
         self.dTdz = 1.0         # Kelvin per km
         self.dPdz = 1000.0      # (kg/m^2)/year per km
         self.dz = 1000.0        # m
@@ -504,10 +503,13 @@ class ElevationChange(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
-    def test_atmosphere_elevation_change(self):
-        "Modifier 'elevation_change'"
+    def test_atmosphere_elevation_change_shift(self):
+        "Modifier 'elevation_change': lapse rate"
 
-        modifier = PISM.AtmosphereElevationChange(self.grid, self.model)
+        config.set_string("atmosphere.elevation_change.precipitation.method", "shift")
+
+        model = PISM.AtmosphereUniform(self.grid)
+        modifier = PISM.AtmosphereElevationChange(self.grid, model)
 
         modifier.init(self.geometry)
 
@@ -516,5 +518,28 @@ class ElevationChange(TestCase):
 
         # check that the temperature changed accordingly
         modifier.update(self.geometry, 0, 1)
-        check_modifier(self.model, modifier, T=self.dT, P=self.dP,
+        check_modifier(model, modifier, T=self.dT, P=self.dP,
                        ts=[0.5], Ts=[self.dT], Ps=[self.dP])
+
+    def test_atmosphere_elevation_change_scale(self):
+        "Modifier 'elevation_change': scaling"
+
+        config.set_string("atmosphere.elevation_change.precipitation.method", "scale")
+
+        model = PISM.AtmosphereUniform(self.grid)
+        modifier = PISM.AtmosphereElevationChange(self.grid, model)
+
+        modifier.init(self.geometry)
+
+        # change surface elevation
+        self.geometry.ice_surface_elevation.shift(self.dz)
+
+        # check that the temperature changed accordingly
+        modifier.update(self.geometry, 0, 1)
+
+        C = config.get_number("atmosphere.precip_exponential_factor_for_temperature")
+        P = sample(model.mean_precipitation())
+        dP = np.exp(C * self.dT) * P - P
+
+        check_modifier(model, modifier, T=self.dT, P=dP,
+                       ts=[0.5], Ts=[self.dT], Ps=[dP])

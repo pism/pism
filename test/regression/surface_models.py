@@ -194,7 +194,6 @@ class ElevationChange(TestCase):
         self.filename = "surface_reference_surface.nc"
         self.output_filename = "lapse_rates_output.nc"
         self.grid     = shallow_grid()
-        self.model    = surface_simple(self.grid)
         self.dTdz     = 1.0         # 1 Kelvin per km
         self.dSMBdz   = 2.0         # m year-1 per km
         self.dz       = 1500.0      # m
@@ -208,31 +207,67 @@ class ElevationChange(TestCase):
         config.set_number("surface.elevation_change.temperature_lapse_rate", self.dTdz)
         config.set_number("surface.elevation_change.smb.lapse_rate", self.dSMBdz)
 
-        ice_density = config.get_number("constants.ice.density")
-
-        self.dSMB = self.dz * ice_density * convert(-self.dSMBdz,
-                                                    "kg m-2 year-1 / km",
-                                                    "kg m-2 s-1 / m")
         self.dT = self.dz * convert(-self.dTdz, "Kelvin / km", "Kelvin / m")
 
-    def lapse_rate_test(self):
-        "Modifier lapse_rate"
+    def test_elevation_change_shift(self):
+        "Modifier elevation_change: shift"
 
-        modifier = PISM.SurfaceElevationChange(self.grid, self.model)
+        config.set_string("surface.elevation_change.smb.method", "shift")
+
+        model    = surface_simple(self.grid)
+        modifier = PISM.SurfaceElevationChange(self.grid, model)
 
         modifier.init(self.geometry)
 
         # change surface elevation
         self.geometry.ice_surface_elevation.shift(self.dz)
 
-        # check that the temperature changed accordingly
+        # check changes in outputs
         modifier.update(self.geometry, 0, 1)
 
-        dA = 0.0 - sample(self.model.accumulation())
-        dM = dA - self.dSMB
+        ice_density = config.get_number("constants.ice.density")
+
+        dSMB = self.dz * ice_density * convert(-self.dSMBdz,
+                                               "kg m-2 year-1 / km",
+                                               "kg m-2 s-1 / m")
+        # shifting SMB by dSMB reduced accumulation to zero
+        dA = 0.0 - sample(model.accumulation())
+        dM = dA - dSMB
         dR = dM
 
-        check_modifier(self.model, modifier, T=self.dT, SMB=self.dSMB,
+        check_modifier(model, modifier, T=self.dT, SMB=dSMB,
+                       accumulation=dA, melt=dM, runoff=dR)
+
+        write_state(modifier, self.output_filename)
+        probe_interface(modifier)
+
+    def test_elevation_change_scale(self):
+        "Modifier elevation_change: scale"
+
+        config.set_string("surface.elevation_change.smb.method", "scale")
+        config.set_number("surface.elevation_change.smb.exp_factor", 1.0)
+
+        model    = surface_simple(self.grid)
+        modifier = PISM.SurfaceElevationChange(self.grid, model)
+
+        modifier.init(self.geometry)
+
+        # change surface elevation
+        self.geometry.ice_surface_elevation.shift(self.dz)
+
+        # check changes in outputs
+        modifier.update(self.geometry, 0, 1)
+
+        SMB = sample(model.mass_flux())
+        C = config.get_number("surface.elevation_change.smb.exp_factor")
+
+        dSMB = np.exp(C * self.dT) * SMB - SMB
+        # SMB stays positive, so all SMB corresponds to accumulation
+        dA = dSMB
+        dM = dA - dSMB
+        dR = dM
+
+        check_modifier(model, modifier, T=self.dT, SMB=dSMB,
                        accumulation=dA, melt=dM, runoff=dR)
 
         write_state(modifier, self.output_filename)
