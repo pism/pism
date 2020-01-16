@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011--2020 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -333,6 +333,10 @@ pism_class(pism::RegionalYieldStress, "pism/regional/RegionalYieldStress.hh")
 %include pism_inverse.i
 
 %include "coupler/util/PCFactory.hh"
+%{
+#include "coupler/util/options.hh"
+%}
+%include "coupler/util/options.hh"
 
 %shared_ptr(pism::PCFactory< pism::surface::SurfaceModel >)
 %template(_SurfaceFactoryBase) pism::PCFactory<pism::surface::SurfaceModel>;
