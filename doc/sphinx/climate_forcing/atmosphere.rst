@@ -170,7 +170,7 @@ and uses them at *all* grid points in the domain. In other words, resulting clim
 are constant in space but not necessarily in time.
 
 The :opt:`-atmosphere one_station` model should be used with a modifier such as
-``lapse_rate`` (see section :ref:`sec-atmosphere-lapse-rate`) to create spatial
+``elevation_change`` (see section :ref:`sec-atmosphere-elevation-change`) to create spatial
 variablitity.
 
 .. _sec-atmosphere-delta-t:
@@ -248,6 +248,11 @@ temperature change :cite:`Huybrechts02`. See `SeaRISE Greenland model initializa
 <SeaRISE-Greenland_>`_ for details. The input file should contain air temperature offsets
 in the format used by ``-atmosphere ...,delta_T`` modifier, see section :ref:`sec-atmosphere-delta-t`.
 
+This mechanisms increases precipitation by `100(\exp(C) - 1)` percent for each degree of
+temperature increase, where
+
+`C =` :config:`atmosphere.precip_exponential_factor_for_temperature`.
+
 It takes the following command-line options.
 
 - :opt:`-atmosphere_precip_scaling_file` sets the name of the file PISM will read
@@ -257,35 +262,68 @@ It takes the following command-line options.
 - :opt:`-atmosphere_precip_scaling_reference_year` sets the reference year (section
   :ref:`sec-periodic-forcing`).
 
-.. _sec-atmosphere-lapse-rate:
+.. _sec-atmosphere-elevation-change:
 
-Temperature and precipitation lapse rate corrections
-++++++++++++++++++++++++++++++++++++++++++++++++++++
+Adjustments using modeled change in surface elevation
++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-:|options|: :opt:`-atmosphere ...,lapse_rate`
+:|options|: :opt:`-atmosphere ...,elevation_change`
 :|variables|: :var:`surface_altitude` (CF standard name)
 :|implementation|: ``pism::atmosphere::ElevationChange``
 
-The ``lapse_rate`` modifier allows for correcting air temperature and precipitation using
-elevation lapse rates. It uses the following options.
+The ``elevation_change`` modifier adjusts air temperature and precipitation using modeled
+changes in surface elevation relative to a reference elevation read from a file.
 
-- :opt:`-temp_lapse_rate` gives the temperature lapse rate, in `K/km`. Note that we
-  use the following definition of the temperature lapse rate:
+The near-surface air temperature is modified using an elevation lapse rate `\gamma =`
+:config:`atmosphere.elevation_change.temperature_lapse_rate`. Here
+
+.. math::
+   \gamma = -\frac{dT}{dz}.
+
+Two methods of adjusting precipitation are available:
+
+- Scaling using an exponential factor
 
   .. math::
 
-    \gamma = -\frac{dT}{dz}.
+     \mathrm{P} = \mathrm{P_{input}} \cdot \exp(C \cdot \Delta T),
 
+  where `C =` :config:`atmosphere.precip_exponential_factor_for_temperature` and `\Delta
+  T` is the temperature difference produced by applying
+  :config:`atmosphere.elevation_change.temperature_lapse_rate`.
+
+  This mechanisms increases precipitation by `100(\exp(C) - 1)` percent for each degree of
+  temperature increase.
+
+  To use this method, set :opt:`-precip_adjustment scale`.
+
+- Elevation lapse rate for precipitation
+
+  .. math::
+
+     \mathrm{P} = \mathrm{P_{input}} - \Delta h \cdot \gamma,
+
+  where `\gamma =` :config:`atmosphere.elevation_change.precipitation.lapse_rate` and
+  `\Delta h` is the difference between modeled and reference surface elevations.
+
+  To use this method, set :opt:`-smb_adjustment shift`.
+
+It uses the following options.
+
+- :opt:`-temp_lapse_rate` gives the temperature lapse rate, in `K/km`. Note that we
+  use the following definition of the temperature lapse rate:
+- :opt:`-precip_adjustment` chooses the precipitation lapse rate (``shift``) or scaling
+  precipitation with an exponential factor (``scale``).
 - :opt:`-precip_lapse_rate` gives the precipitation lapse rate, in :math:`(kg / (m^{2} year)) / km`.
   Here `\gamma = -\frac{dM}{dz}`.
-- :opt:`-atmosphere_lapse_rate_file` specifies a file containing the reference surface
+- :opt:`-atmosphere_elevation_change_file` specifies a file containing the reference surface
   elevation field (standard name: :var:`surface_altitude`). This file may contain several
   surface elevation records to use lapse rate corrections relative to a time-dependent
   surface. If one record is provided, the reference surface elevation is assumed to be
   time-independent.
-- :opt:`-atmosphere_lapse_rate_period` gives the period, in model years; see section
+- :opt:`-atmosphere_elevation_change_period` gives the period, in model years; see section
   :ref:`sec-periodic-forcing`.
-- :opt:`-atmosphere_lapse_rate_reference_year` specifies the reference date; see section
+- :opt:`-atmosphere_elevation_change_reference_year` specifies the reference date; see section
   :ref:`sec-periodic-forcing`.
 
 .. _sec-atmosphere-anomaly:

@@ -68,6 +68,43 @@
    :Option: :opt:`-atmosphere_delta_T_reference_year`
    :Description: Reference year to use when ``atmosphere.delta_T.period`` is active.
 
+#. :config:`atmosphere.elevation_change.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-atmosphere_lapse_rate_file`
+   :Description: Name of the file containing the reference surface elevation field (variable ``usurf``).
+
+#. :config:`atmosphere.elevation_change.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_lapse_rate_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`atmosphere.elevation_change.precipitation.lapse_rate` (*number*)
+
+   :Value: 0 ((kg m-2 / year) / km)
+   :Option: :opt:`-precip_lapse_rate`
+   :Description: Elevation lapse rate for the surface mass balance
+
+#. :config:`atmosphere.elevation_change.precipitation.method` (*keyword*)
+
+   :Value: ``shift``
+   :Choices: ``scale, shift``
+   :Option: :opt:`-precip_adjustment`
+   :Description: Choose the precipitation adjustment method. ``scale``: use temperature-change-dependent scaling factor. ``shift``: use the precipitation lapse rate.
+
+#. :config:`atmosphere.elevation_change.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-atmosphere_lapse_rate_reference_year`
+   :Description: Reference year to use when ``atmosphere.elevation_change.period`` is active.
+
+#. :config:`atmosphere.elevation_change.temperature_lapse_rate` (*number*)
+
+   :Value: 0 (Kelvin / km)
+   :Option: :opt:`-temp_lapse_rate`
+   :Description: Elevation lapse rate for the surface temperature
+
 #. :config:`atmosphere.fausto_air_temp.c_ma` (*number*)
 
    :Value: -0.718900 (Kelvin / degree_north)
@@ -148,36 +185,6 @@
    :Value: 0
    :Option: :opt:`-atmosphere_given_reference_year`
    :Description: Reference year to use when ``atmosphere.given.period`` is active.
-
-#. :config:`atmosphere.lapse_rate.file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-atmosphere_lapse_rate_file`
-   :Description: Name of the file containing the reference surface elevation field (variable ``usurf``).
-
-#. :config:`atmosphere.lapse_rate.period` (*integer*)
-
-   :Value: 0
-   :Option: :opt:`-atmosphere_lapse_rate_period`
-   :Description: Length of the period of the climate forcing data. Set to zero to disable.
-
-#. :config:`atmosphere.lapse_rate.precipitation_lapse_rate` (*number*)
-
-   :Value: 0 ((kg m-2 / year) / km)
-   :Option: :opt:`-precip_lapse_rate`
-   :Description: Elevation lapse rate for the surface mass balance
-
-#. :config:`atmosphere.lapse_rate.reference_year` (*integer*)
-
-   :Value: 0
-   :Option: :opt:`-atmosphere_lapse_rate_reference_year`
-   :Description: Reference year to use when ``atmosphere.lapse_rate.period`` is active.
-
-#. :config:`atmosphere.lapse_rate.temperature_lapse_rate` (*number*)
-
-   :Value: 0 (Kelvin / km)
-   :Option: :opt:`-temp_lapse_rate`
-   :Description: Elevation lapse rate for the surface temperature
 
 #. :config:`atmosphere.models` (*string*)
 
@@ -2441,6 +2448,49 @@
    :Option: :opt:`-surface_delta_T_reference_year`
    :Description: Reference year to use when ``surface.delta_T.period`` is active.
 
+#. :config:`surface.elevation_change.file` (*string*)
+
+   :Value: *no default*
+   :Option: :opt:`-surface_elevation_change_file`
+   :Description: Name of the file containing the reference surface elevation field (variable ``usurf``).
+
+#. :config:`surface.elevation_change.period` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-surface_elevation_change_period`
+   :Description: Length of the period of the climate forcing data. Set to zero to disable.
+
+#. :config:`surface.elevation_change.reference_year` (*integer*)
+
+   :Value: 0
+   :Option: :opt:`-surface_elevation_change_reference_year`
+   :Description: Reference year to use when ``surface.elevation_change.period`` is active.
+
+#. :config:`surface.elevation_change.smb.exp_factor` (*number*)
+
+   :Value: 0 (Kelvin-1)
+   :Option: :opt:`-smb_exp_factor`
+   :Description: Exponential for the surface mass balance.
+
+#. :config:`surface.elevation_change.smb.lapse_rate` (*number*)
+
+   :Value: 0 ((m / year) / km)
+   :Option: :opt:`-smb_lapse_rate`
+   :Description: Lapse rate for the surface mass balance.
+
+#. :config:`surface.elevation_change.smb.method` (*keyword*)
+
+   :Value: ``shift``
+   :Choices: ``scale, shift``
+   :Option: :opt:`-smb_adjustment`
+   :Description: Choose the SMB adjustment method. ``scale``: use temperature-change-dependent scaling factor. ``shift``: use the SMB lapse rate.
+
+#. :config:`surface.elevation_change.temperature_lapse_rate` (*number*)
+
+   :Value: 0 (K / km)
+   :Option: :opt:`-temp_lapse_rate`
+   :Description: Lapse rate for the temperature at the top of the ice.
+
 #. :config:`surface.force_to_thickness.alpha` (*number*)
 
    :Value: 0.010000 (year-1)
@@ -2515,36 +2565,6 @@
 
    :Value: 0
    :Description: Reference year to use when ``surface.ismip6.period`` is active.
-
-#. :config:`surface.lapse_rate.file` (*string*)
-
-   :Value: *no default*
-   :Option: :opt:`-surface_lapse_rate_file`
-   :Description: Name of the file containing the reference surface elevation field (variable ``usurf``).
-
-#. :config:`surface.lapse_rate.period` (*integer*)
-
-   :Value: 0
-   :Option: :opt:`-surface_lapse_rate_period`
-   :Description: Length of the period of the climate forcing data. Set to zero to disable.
-
-#. :config:`surface.lapse_rate.reference_year` (*integer*)
-
-   :Value: 0
-   :Option: :opt:`-surface_lapse_rate_reference_year`
-   :Description: Reference year to use when ``surface.lapse_rate.period`` is active.
-
-#. :config:`surface.lapse_rate.smb_lapse_rate` (*number*)
-
-   :Value: 0 ((m / year) / km)
-   :Option: :opt:`-smb_lapse_rate`
-   :Description: Lapse rate for the surface mass balance.
-
-#. :config:`surface.lapse_rate.temperature_lapse_rate` (*number*)
-
-   :Value: 0 (K / km)
-   :Option: :opt:`-temp_lapse_rate`
-   :Description: Lapse rate for the temperature at the top of the ice.
 
 #. :config:`surface.models` (*string*)
 
