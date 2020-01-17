@@ -22,6 +22,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Mask.hh"
+#include "pism/util/ConfigInterface.hh"
 
 namespace pism {
 
@@ -67,7 +68,8 @@ void remove_narrow_tongues(const Geometry &geometry,
   auto &lake_level = geometry.lake_level_elevation;
 
   IceGrid::ConstPtr grid = mask.grid();
-  GeometryCalculator gc(grid->ctx()->config());
+  Config::ConstPtr config = grid->ctx()->config();
+  GeometryCalculator gc(*config);
 
   IceModelVec::AccessList list{&mask, &bed, &sea_level, &lake_level, &ice_thickness};
 
