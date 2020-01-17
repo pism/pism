@@ -155,6 +155,7 @@ void FrontRetreat::update_geometry(double dt,
 
   const IceModelVec2S &bed = geometry.bed_elevation;
   const IceModelVec2S &sea_level = geometry.sea_level_elevation;
+  const IceModelVec2S &lake_level = geometry.sea_level_elevation;
   const IceModelVec2S &surface_elevation = geometry.ice_surface_elevation;
 
   if (m_config->get_flag("geometry.front_retreat.wrap_around")) {
@@ -168,10 +169,11 @@ void FrontRetreat::update_geometry(double dt,
   const double dx = m_grid->dx();
 
   m_tmp.set(0.0);
+  GeometryCalculator gc(*m_config);
 
   IceModelVec::AccessList list{&ice_thickness, &bc_mask,
-      &bed, &sea_level, &m_cell_type, &Href, &m_tmp, &retreat_rate,
-      &surface_elevation};
+      &bed, &sea_level, &lake_level, &m_cell_type, &Href, &m_tmp,
+      &retreat_rate, &surface_elevation};
 
   // Prepare to loop over neighbors: directions
   const Direction dirs[] = {North, East, South, West};
@@ -219,18 +221,20 @@ void FrontRetreat::update_geometry(double dt,
 
           auto
             b  = bed.star(i, j),
-            sl = sea_level.star(i, j);
+            sl = sea_level.star(i, j),
+            ll = lake_level.star(i, j);
 
           for (int n = 0; n < 4; ++n) {
             Direction direction = dirs[n];
             int m = M[direction];
             int bc = BC[direction];
+            const double water_level = gc.water_level(sl[direction], b[direction], ll[direction]);
 
             // note: this is where the modified cell type mask is used to prevent
             // wrap-around
             if (bc == 0 and     // distribute to regular (*not* Dirichlet B.C.) neighbors only
                 (mask::floating_ice(m) or
-                 (mask::grounded_ice(m) and b[direction] < sl[direction]))) {
+                 (mask::grounded_ice(m) and b[direction] < water_level))) {
               N += 1;
             }
           }
@@ -253,10 +257,12 @@ void FrontRetreat::update_geometry(double dt,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
+    const double water_level = gc.water_level(sea_level(i, j), bed(i, j), lake_level(i, j));
+
     // Note: this condition has to match the one in step 1 above.
     if (bc_mask.as_int(i, j) == 0 and
         (m_cell_type.floating_ice(i, j) or
-         (m_cell_type.grounded_ice(i, j) and bed(i, j) < sea_level(i, j)))) {
+         (m_cell_type.grounded_ice(i, j) and bed(i, j) < water_level))) {
 
       const double delta_H = (m_tmp(i + 1, j) + m_tmp(i - 1, j) +
                               m_tmp(i, j + 1) + m_tmp(i, j - 1));
