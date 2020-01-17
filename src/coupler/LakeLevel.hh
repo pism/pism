@@ -53,8 +53,8 @@ protected:
 
   virtual MaxTimestep max_timestep_impl(double t) const;
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   virtual bool expandMargins_impl() const;
 

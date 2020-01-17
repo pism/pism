@@ -99,13 +99,13 @@ MaxTimestep LakeLevel::max_timestep_impl(double t) const {
   return MaxTimestep("lake level forcing");
 }
 
-void LakeLevel::define_model_state_impl(const PIO &output) const {
+void LakeLevel::define_model_state_impl(const File &output) const {
   if (m_input_model) {
     m_input_model->define_model_state(output);
   }
 }
 
-void LakeLevel::write_model_state_impl(const PIO &output) const {
+void LakeLevel::write_model_state_impl(const File &output) const {
   if (m_input_model) {
     m_input_model->write_model_state(output);
   }
