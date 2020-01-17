@@ -36,13 +36,14 @@ public:
   void init();
 
   void update(const IceModelVec2CellType &cell_type, const IceModelVec2S &ice_thickness,
-              const IceModelVec2S &sea_level, const IceModelVec2S &bed_elevation);
+              const IceModelVec2S &sea_level, const IceModelVec2S &lake_level,
+              const IceModelVec2S &bed_elevation);
 
   const IceModelVec2S &calving_rate() const;
 
 protected:
   DiagnosticList diagnostics_impl() const;
-  
+
 protected:
   IceModelVec2S m_calving_rate;
 
