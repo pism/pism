@@ -151,7 +151,8 @@ void IceModel::front_retreat_step() {
     }
 
     if (m_thickness_threshold_calving) {
-      m_thickness_threshold_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
+      m_thickness_threshold_calving->update(m_geometry.cell_type, m_geometry.ice_thickness,
+                                            m_geometry.lake_level_elevation);
     }
 
     compute_geometry_change(m_geometry.ice_thickness,

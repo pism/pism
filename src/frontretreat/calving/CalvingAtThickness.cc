@@ -89,9 +89,9 @@ void CalvingAtThickness::init() {
  *
  * @return 0 on success
  */
-void CalvingAtThickness::update(IceModelVec2S &lake_level,
-                                IceModelVec2CellType &pism_mask,
-                                IceModelVec2S &ice_thickness) {
+void CalvingAtThickness::update(IceModelVec2CellType &pism_mask,
+                                IceModelVec2S &ice_thickness,
+                                IceModelVec2S &lake_level) {
 
   // this call fills ghosts of m_old_mask
   m_old_mask.copy_from(pism_mask);
