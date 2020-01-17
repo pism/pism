@@ -34,7 +34,6 @@ Factory::Factory(IceGrid::ConstPtr grid)
 
   add_model<LakeLevel>("null");
   add_model<LakeCC>("lakecc");
-  set_default("null");
   add_modifier<Gradual>("gradual");
   add_modifier<Patch>("patch");
 }
