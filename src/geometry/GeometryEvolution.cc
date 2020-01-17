@@ -160,7 +160,7 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
                         "meters", "meters", "", 0);
 
     lake_level.set_attrs("internal", "ghosted copy of the lake level elevation",
-                         "meters", "");
+                         "meters", "meters", "", 0);
 
     ice_thickness.set_attrs("internal", "working (ghosted) copy of the ice thickness",
                             "meters", "meters", "", 0);

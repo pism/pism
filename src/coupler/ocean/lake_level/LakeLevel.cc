@@ -38,7 +38,7 @@ LakeLevel::LakeLevel(IceGrid::ConstPtr grid, std::shared_ptr<LakeLevel> input)
 
   m_lake_level.set_attrs("diagnostic",
                          "lake level elevation, relative to the geoid",
-                         "meter", "");
+                         "meter", "meter", "", 0);
 }
 
 // "Model" constructor (returns lake level is missing).

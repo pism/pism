@@ -60,8 +60,8 @@ Geometry::Geometry(IceGrid::ConstPtr grid)
                                 "sea_surface_height_above_reference_ellipsoid", 0);
 
   lake_level_elevation.set_attrs("model_state",
-                                 "lake level elevation above reference ellipsoid", "meters",
-                                 "lake_surface_height_above_reference_ellipsoid");
+                                 "lake level elevation above reference ellipsoid", "meters", "meters",
+                                 "lake_surface_height_above_reference_ellipsoid", 0);
 
   ice_thickness.set_attrs("model_state", "land ice thickness",
                           "m", "m", "land_ice_thickness", 0);
