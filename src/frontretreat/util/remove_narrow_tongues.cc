@@ -21,6 +21,7 @@
 
 #include "pism/util/IceGrid.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/Mask.hh"
 
 namespace pism {
 
@@ -60,18 +61,21 @@ namespace pism {
 void remove_narrow_tongues(const Geometry &geometry,
                            IceModelVec2S &ice_thickness) {
 
-  auto &mask      = geometry.cell_type;
-  auto &bed       = geometry.bed_elevation;
-  auto &sea_level = geometry.sea_level_elevation;
+  auto &mask       = geometry.cell_type;
+  auto &bed        = geometry.bed_elevation;
+  auto &sea_level  = geometry.sea_level_elevation;
+  auto &lake_level = geometry.lake_level_elevation;
 
   IceGrid::ConstPtr grid = mask.grid();
+  GeometryCalculator gc(grid->ctx()->config());
 
-  IceModelVec::AccessList list{&mask, &bed, &sea_level, &ice_thickness};
+  IceModelVec::AccessList list{&mask, &bed, &sea_level, &lake_level, &ice_thickness};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
+    const double water_level = gc.water_level(sea_level(i, j), bed(i, j), lake_level(i, j));
     if (mask.ice_free(i,j) or
-        (mask.grounded_ice(i,j) and bed(i,j) >= sea_level(i, j))) {
+        (mask.grounded_ice(i,j) and bed(i,j) >= water_level)) {
       continue;
     }
 
