@@ -74,7 +74,7 @@ void HayhurstCalving::update(const IceModelVec2CellType &cell_type,
 
   using std::min;
 
-  GeometryCalculator gc(*m_grid);
+  GeometryCalculator gc(*m_config);
 
   const double
     ice_density         = m_config->get_number("constants.ice.density"),
