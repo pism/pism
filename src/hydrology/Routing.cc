@@ -194,6 +194,7 @@ protected:
 void hydraulic_potential(const IceModelVec2S &W,
                          const IceModelVec2S &P,
                          const IceModelVec2S &sea_level,
+                         const IceModelVec2S &lake_level,
                          const IceModelVec2S &bed,
                          const IceModelVec2S &ice_thickness,
                          IceModelVec2S &result) {
@@ -202,19 +203,26 @@ void hydraulic_potential(const IceModelVec2S &W,
 
   Config::ConstPtr config = grid->ctx()->config();
 
-  double
-    ice_density       = config->get_number("constants.ice.density"),
-    sea_water_density = config->get_number("constants.sea_water.density"),
-    C                 = ice_density / sea_water_density,
-    rg                = (config->get_number("constants.fresh_water.density") *
-                         config->get_number("constants.standard_gravity"));
+  GeometryCalculator gc(*config);
 
-  IceModelVec::AccessList list{&P, &W, &sea_level, &ice_thickness, &bed, &result};
+  double
+    ice_density         = config->get_number("constants.ice.density"),
+    sea_water_density   = config->get_number("constants.sea_water.density"),
+    fresh_water_density = config->get_number("constants.fresh_water.density"),
+    C_sea               = ice_density / sea_water_density,
+    C_fresh             = ice_density / fresh_water_density,
+    rg                  = (config->get_number("constants.fresh_water.density") *
+                           config->get_number("constants.standard_gravity"));
+
+  IceModelVec::AccessList list{&P, &W, &sea_level, lake_level, &ice_thickness, &bed, &result};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double b = std::max(bed(i, j), sea_level(i, j) - C * ice_thickness(i, j));
+    const double C = !gc.islake(lake_level(i, j)) ? C_sea : C_fresh,
+                 water_level = gc.water_level(sea_level(i, j), bed(i, j), lake_level(i, j));
+
+    double b = std::max(bed(i, j), water_level - C * ice_thickness(i, j));
 
     result(i, j) = P(i, j) + rg * (b + W(i, j));
   }
@@ -239,13 +247,15 @@ protected:
     IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hydraulic_potential", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
 
-    const IceModelVec2S        &sea_level     = *m_grid->variables().get_2d_scalar("sea_level");
-    const IceModelVec2S        &bed_elevation = *m_grid->variables().get_2d_scalar("bedrock_altitude");
-    const IceModelVec2S        &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+    const IceModelVec2S        &sea_level      = *m_grid->variables().get_2d_scalar("sea_level");
+    const IceModelVec2S        &lake_level     = *m_grid->variables().get_2d_scalar("lake_level");
+    const IceModelVec2S        &bed_elevation  = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+    const IceModelVec2S        &ice_thickness  = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
     hydraulic_potential(model->subglacial_water_thickness(),
                         model->subglacial_water_pressure(),
                         sea_level,
+                        lake_level,
                         bed_elevation,
                         ice_thickness,
                         *result);
