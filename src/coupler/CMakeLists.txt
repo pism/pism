@@ -9,11 +9,11 @@ add_library (boundary OBJECT
   ./atmosphere/CosineYearlyCycle.cc
   ./atmosphere/GivenClimate.cc
   ./atmosphere/PIK.cc
-  ./atmosphere/LapseRates.cc
+  ./atmosphere/ElevationChange.cc
   ./atmosphere/Delta_T.cc
   ./atmosphere/Delta_P.cc
   ./atmosphere/Frac_P.cc
-  ./atmosphere/Paleo_precip.cc
+  ./atmosphere/PrecipitationScaling.cc
   ./atmosphere/Anomaly.cc
   ./atmosphere/WeatherStation.cc
   ./atmosphere/OrographicPrecipitation.cc
@@ -58,7 +58,7 @@ add_library (boundary OBJECT
   ./surface/Elevation.cc
   ./surface/GivenClimate.cc
   ./surface/ISMIP6Climate.cc
-  ./surface/LapseRates.cc
+  ./surface/ElevationChange.cc
   ./surface/Delta_T.cc
   ./surface/Simple.cc
   ./surface/TemperatureIndex.cc

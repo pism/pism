@@ -419,9 +419,9 @@ class Anomaly(TestCase):
         check_modifier(self.model, modifier, T=self.dT, P=self.dP,
                        ts=[0.5], Ts=[self.dT], Ps=[self.dP])
 
-class PaleoPrecip(TestCase):
+class PrecipScaling(TestCase):
     def setUp(self):
-        self.filename = "paleo_precip_input.nc"
+        self.filename = "precip_scaling_input.nc"
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -430,15 +430,15 @@ class PaleoPrecip(TestCase):
 
         create_scalar_forcing(self.filename, "delta_T", "Kelvin", [self.dT], [0])
 
-        config.set_string("atmosphere.paleo_precip.file", self.filename)
+        config.set_string("atmosphere.precip_scaling.file", self.filename)
 
     def tearDown(self):
         os.remove(self.filename)
 
-    def test_atmosphere_paleo_precip(self):
-        "Modifier 'paleo_precip'"
+    def test_atmosphere_precip_scaling(self):
+        "Modifier 'precip_scaling'"
 
-        modifier = PISM.AtmospherePaleoPrecip(self.grid, self.model)
+        modifier = PISM.AtmospherePrecipScaling(self.grid, self.model)
 
         modifier.init(self.geometry)
 
@@ -479,11 +479,10 @@ class FracP(TestCase):
                        ts=[0.5], Ts=[0], Ps=[0.00012676])
 
 
-class LapseRates(TestCase):
+class ElevationChange(TestCase):
     def setUp(self):
         self.filename = "atmosphere_reference_surface.nc"
         self.grid = shallow_grid()
-        self.model = PISM.AtmosphereUniform(self.grid)
         self.dTdz = 1.0         # Kelvin per km
         self.dPdz = 1000.0      # (kg/m^2)/year per km
         self.dz = 1000.0        # m
@@ -495,19 +494,22 @@ class LapseRates(TestCase):
         # save current surface elevation to use it as a "reference" surface elevation
         self.geometry.ice_surface_elevation.dump(self.filename)
 
-        config.set_string("atmosphere.lapse_rate.file", self.filename)
+        config.set_string("atmosphere.elevation_change.file", self.filename)
 
-        config.set_number("atmosphere.lapse_rate.precipitation_lapse_rate", self.dPdz)
+        config.set_number("atmosphere.elevation_change.precipitation.lapse_rate", self.dPdz)
 
-        config.set_number("atmosphere.lapse_rate.temperature_lapse_rate", self.dTdz)
+        config.set_number("atmosphere.elevation_change.temperature_lapse_rate", self.dTdz)
 
     def tearDown(self):
         os.remove(self.filename)
 
-    def test_atmosphere_lapse_rate(self):
-        "Modifier 'lapse_rate'"
+    def test_atmosphere_elevation_change_shift(self):
+        "Modifier 'elevation_change': lapse rate"
 
-        modifier = PISM.AtmosphereLapseRates(self.grid, self.model)
+        config.set_string("atmosphere.elevation_change.precipitation.method", "shift")
+
+        model = PISM.AtmosphereUniform(self.grid)
+        modifier = PISM.AtmosphereElevationChange(self.grid, model)
 
         modifier.init(self.geometry)
 
@@ -516,5 +518,28 @@ class LapseRates(TestCase):
 
         # check that the temperature changed accordingly
         modifier.update(self.geometry, 0, 1)
-        check_modifier(self.model, modifier, T=self.dT, P=self.dP,
+        check_modifier(model, modifier, T=self.dT, P=self.dP,
                        ts=[0.5], Ts=[self.dT], Ps=[self.dP])
+
+    def test_atmosphere_elevation_change_scale(self):
+        "Modifier 'elevation_change': scaling"
+
+        config.set_string("atmosphere.elevation_change.precipitation.method", "scale")
+
+        model = PISM.AtmosphereUniform(self.grid)
+        modifier = PISM.AtmosphereElevationChange(self.grid, model)
+
+        modifier.init(self.geometry)
+
+        # change surface elevation
+        self.geometry.ice_surface_elevation.shift(self.dz)
+
+        # check that the temperature changed accordingly
+        modifier.update(self.geometry, 0, 1)
+
+        C = config.get_number("atmosphere.precip_exponential_factor_for_temperature")
+        P = sample(model.mean_precipitation())
+        dP = np.exp(C * self.dT) * P - P
+
+        check_modifier(model, modifier, T=self.dT, P=dP,
+                       ts=[0.5], Ts=[self.dT], Ps=[dP])

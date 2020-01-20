@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "Paleo_precip.hh"
+#include "PrecipitationScaling.hh"
 
 #include "pism/coupler/util/ScalarForcing.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -24,34 +24,37 @@
 namespace pism {
 namespace atmosphere {
 
-PaleoPrecip::PaleoPrecip(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
+PrecipitationScaling::PrecipitationScaling(IceGrid::ConstPtr grid,
+                                           std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in) {
 
   m_forcing.reset(new ScalarForcing(grid->ctx(),
-                                    "atmosphere.paleo_precip",
+                                    "atmosphere.precip_scaling",
                                     "delta_T",
                                     "Kelvin",
                                     "Kelvin",
                                     "air temperature offsets"));
 
-  m_exp_factor = m_config->get_number("atmosphere.paleo_precip.exp_factor_for_temperature");
+  m_exp_factor = m_config->get_number("atmosphere.precip_exponential_factor_for_temperature");
 
   m_precipitation = allocate_precipitation(grid);
 }
 
-PaleoPrecip::~PaleoPrecip() {
+PrecipitationScaling::~PrecipitationScaling() {
   // empty
 }
 
-void PaleoPrecip::init_impl(const Geometry &geometry) {
+void PrecipitationScaling::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
-  m_log->message(2, "* Initializing paleo-precipitation correction using temperature offsets...\n");
+  m_log->message(2,
+                 "* Initializing precipitation scaling"
+                 " using temperature offsets...\n");
 
   m_forcing->init();
 }
 
-void PaleoPrecip::init_timeseries_impl(const std::vector<double> &ts) const {
+void PrecipitationScaling::init_timeseries_impl(const std::vector<double> &ts) const {
   AtmosphereModel::init_timeseries_impl(ts);
 
   m_scaling_values.resize(ts.size());
@@ -60,7 +63,7 @@ void PaleoPrecip::init_timeseries_impl(const std::vector<double> &ts) const {
   }
 }
 
-void PaleoPrecip::update_impl(const Geometry &geometry, double t, double dt) {
+void PrecipitationScaling::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
   m_forcing->update(t, dt);
 
@@ -68,11 +71,11 @@ void PaleoPrecip::update_impl(const Geometry &geometry, double t, double dt) {
   m_precipitation->scale(exp(m_exp_factor * m_forcing->value()));
 }
 
-const IceModelVec2S& PaleoPrecip::mean_precipitation_impl() const {
+const IceModelVec2S& PrecipitationScaling::mean_precipitation_impl() const {
   return *m_precipitation;
 }
 
-void PaleoPrecip::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
+void PrecipitationScaling::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   m_input_model->precip_time_series(i, j, result);
 
   for (unsigned int k = 0; k < m_scaling_values.size(); ++k) {
