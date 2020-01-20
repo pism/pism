@@ -96,6 +96,7 @@ Geometry::Geometry(IceGrid::ConstPtr grid)
   longitude.set(0.0);
   bed_elevation.set(0.0);
   sea_level_elevation.set(0.0);
+  lake_level_elevation.set(grid->ctx()->config()->get_number("output.fill_value"));
   ice_thickness.set(0.0);
   ice_area_specific_volume.set(0.0);
   ensure_consistency(0.0);
@@ -199,25 +200,33 @@ void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result) {
   auto grid = result.grid();
   auto config = grid->ctx()->config();
 
+  GeometryCalculator gc(*config);
+
   double
     ice_density   = config->get_number("constants.ice.density"),
-    water_density = config->get_number("constants.sea_water.density"),
-    alpha         = ice_density / water_density;
+    sea_water_density   = config->get_number("constants.sea_water.density"),
+    fresh_water_density = config->get_number("constants.fresh_water.density"),
+    alpha_sea           = ice_density / sea_water_density,
+    alpha_fresh         = ice_density / fresh_water_density;
 
   const IceModelVec2S &ice_thickness = geometry.ice_thickness;
   const IceModelVec2S &bed_elevation = geometry.bed_elevation;
   const IceModelVec2S &sea_level     = geometry.sea_level_elevation;
+  const IceModelVec2S &lake_level    = geometry.lake_level_elevation;
 
-  IceModelVec::AccessList list{&ice_thickness, &bed_elevation, &sea_level, &result};
+  IceModelVec::AccessList list{&ice_thickness, &bed_elevation, &sea_level, &lake_level, &result};
 
   ParallelSection loop(grid->com);
   try {
     for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
+      const double alpha = !gc.islake(lake_level(i, j)) ? alpha_sea : alpha_fresh,
+                   water_level = gc.water_level(sea_level(i, j), bed_elevation(i, j), lake_level(i, j));
+
       double
         b_grounded = bed_elevation(i, j),
-        b_floating = sea_level(i, j) - alpha * ice_thickness(i, j);
+        b_floating = water_level - alpha * ice_thickness(i, j);
 
       result(i, j) = std::max(b_grounded, b_floating);
     }
@@ -268,13 +277,16 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
   auto grid = geometry.ice_thickness.grid();
   auto config = grid->ctx()->config();
 
+  GeometryCalculator gc(*config);
+
   const double
     sea_water_density = config->get_number("constants.sea_water.density"),
     ice_density       = config->get_number("constants.ice.density"),
     cell_area         = grid->cell_area();
 
   IceModelVec::AccessList list{&geometry.cell_type, &geometry.ice_thickness,
-      &geometry.bed_elevation, &geometry.sea_level_elevation};
+      &geometry.bed_elevation, &geometry.sea_level_elevation,
+      &geometry.lake_level_elevation};
 
   double volume = 0.0;
 
@@ -286,7 +298,9 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
       thickness = geometry.ice_thickness(i, j),
       sea_level = geometry.sea_level_elevation(i, j);
 
-    if (geometry.cell_type.grounded(i, j) and thickness > thickness_threshold) {
+    const bool isLake = gc.islake(geometry.lake_level_elevation(i, j));
+
+    if ((geometry.cell_type.grounded(i, j) or isLake) and thickness > thickness_threshold) {
       const double cell_ice_volume = thickness * cell_area;
       if (bed > sea_level) {
         volume += cell_ice_volume;
