@@ -187,7 +187,7 @@ void IceModel::model_state_setup() {
   if (input.type == INIT_BOOTSTRAP) {
     IceModelVec2S tmp(m_grid, "topg", WITHOUT_GHOSTS);
     tmp.set_attrs("model_state", "bedrock surface elevation",
-                  "m", "bedrock_altitude");
+                  "m", "m", "bedrock_altitude", 0);
     // bootstrapping
     tmp.regrid(input.filename, OPTIONAL,
                m_config->get_number("bootstrapping.defaults.bed"));
@@ -197,8 +197,12 @@ void IceModel::model_state_setup() {
 
   //The lake model might need the ice discharge due to calving and frontal melting.
   //Initialize it as 0 and add it to m_grid->variables()
-  m_discharge.set(0.0);
-  m_grid->variables().add(m_discharge);
+  m_thickness_change.calving.set(0.0);
+  m_thickness_change.frontal_melt.set(0.0);
+  m_thickness_change.forced_retreat.set(0.0);
+  m_grid->variables().add(m_thickness_change.calving);
+  m_grid->variables().add(m_thickness_change.frontal_melt);
+  m_grid->variables().add(m_thickness_change.forced_retreat);
   m_grid->variables().add(m_geometry_evolution->bottom_surface_mass_balance());
 
   m_sea_level->init(m_geometry);

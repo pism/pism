@@ -203,15 +203,19 @@ void Gradual::compute_fill_rate(const double dt,
     Lacc.init(lake_level);
 
     const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area"),
-                        &discharge = *m_grid->variables().get_2d_scalar("discharge"),
-                        &bmb       = *m_grid->variables().get_2d_scalar("effective_BMB");
+                        &bmb       = *m_grid->variables().get_2d_scalar("effective_BMB"),
+                        &tc_calving        = *m_grid->variables().get_2d_scalar("thickness_change_due_to_calving"),
+                        &tc_frontal_melt   = *m_grid->variables().get_2d_scalar("thickness_change_due_to_frontal_melt"),
+                        &tc_forced_retreat = *m_grid->variables().get_2d_scalar("thickness_change_due_forced_retreat");
 
     IceModelVec2S mass_discharge(m_grid, "mass_discharge", WITHOUT_GHOSTS),
                   mass_basal(m_grid, "mass_basal", WITHOUT_GHOSTS);
 
     double rho_ice = m_config->get_number("constants.ice.density");
 
-    IceModelVec::AccessList list{ &cell_area, &discharge, &bmb, &mass_discharge, &mass_basal };
+    IceModelVec::AccessList list{ &cell_area, &tc_calving, &tc_frontal_melt,
+                                  &tc_forced_retreat, &bmb, &mass_discharge,
+                                  &mass_basal };
 
     //Update lake extend depending on exp_mask
     ParallelSection ParSec(m_grid->com);
@@ -224,7 +228,7 @@ void Gradual::compute_fill_rate(const double dt,
         double bml_ij = -bmb(i, j);
         bml_ij = (bml_ij >= 0.0) ? bml_ij : 0.0;
 
-        double discharge_ij = -discharge(i, j);
+        double discharge_ij = -1.0 * (tc_calving(i, j) + tc_frontal_melt(i, j) + tc_forced_retreat(i, j));
         discharge_ij = (discharge_ij >= 0.0) ? discharge_ij : 0.0;
 
         const double C = cell_area_ij * rho_ice / dt;
