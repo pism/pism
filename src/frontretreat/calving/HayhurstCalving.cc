@@ -79,13 +79,13 @@ void HayhurstCalving::update(const IceModelVec2CellType &cell_type,
   const double
     ice_density         = m_config->get_number("constants.ice.density"),
     sea_water_density   = m_config->get_number("constants.sea_water.density"),
-    fresh_water_density = m_config->get_number("constants.sea_water.density"),
+    fresh_water_density = m_config->get_number("constants.fresh_water.density"),
     gravity             = m_config->get_number("constants.standard_gravity"),
     // convert "Pa" to "MPa" and "m yr-1" to "m s-1"
     unit_scaling        = pow(1e-6, m_exponent_r) * convert(m_sys, 1.0, "m year-1", "m second-1");
 
   IceModelVec::AccessList list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
-                               &bed_elevation};
+                               &lake_level, &bed_elevation};
 
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
