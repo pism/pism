@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017, 2020 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -66,8 +66,8 @@ protected:
     Vector2 driving_stress;
   };
 
-  const IceModelVec2Int *m_bc_mask;
-  const IceModelVec2V *m_bc_values;
+  IceModelVec2Int m_bc_mask;
+  IceModelVec2V m_bc_values;
 
   GeometryCalculator m_gc;
   double m_alpha;

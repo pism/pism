@@ -44,8 +44,8 @@ namespace stressbalance {
  */
 SSAFEM::SSAFEM(IceGrid::ConstPtr g)
   : SSA(g),
-    m_bc_mask(NULL),
-    m_bc_values(NULL),
+    m_bc_mask(g, "bc_mask", WITH_GHOSTS),
+    m_bc_values(g, "_bc", WITH_GHOSTS),
     m_gc(*m_config),
     m_coefficients(g, "ssa_coefficients", WITH_GHOSTS, 1),
     m_element_index(*g),
@@ -263,10 +263,14 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
 */
 void SSAFEM::cache_inputs(const Inputs &inputs) {
 
-  // Hold on to pointers to the B.C. mask and values: they are needed in SNES callbacks and
+  // Make copies of BC mask and BC values: they are needed in SNES callbacks and
   // inputs.bc_{mask,values} are not available there.
-  m_bc_mask   = inputs.bc_mask;
-  m_bc_values = inputs.bc_values;
+  if (inputs.bc_mask and inputs.bc_values) {
+    m_bc_mask.copy_from(*inputs.bc_mask);
+    m_bc_values.copy_from(*inputs.bc_values);
+  } else {
+    m_bc_mask.set(0.0);
+  }
 
   const std::vector<double> &z = m_grid->z();
 
@@ -759,7 +763,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   }
 
   // Start access to Dirichlet data if present.
-  fem::DirichletData_Vector dirichlet_data(m_bc_mask, m_bc_values, m_dirichletScale);
+  fem::DirichletData_Vector dirichlet_data(&m_bc_mask, &m_bc_values, m_dirichletScale);
 
   // Storage for the current solution and its derivatives at quadrature points.
   Vector2 U[Nq_max], U_x[Nq_max], U_y[Nq_max];
@@ -963,7 +967,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   IceModelVec::AccessList list{&m_node_type, &m_coefficients};
 
   // Start access to Dirichlet data if present.
-  fem::DirichletData_Vector dirichlet_data(m_bc_mask, m_bc_values, m_dirichletScale);
+  fem::DirichletData_Vector dirichlet_data(&m_bc_mask, &m_bc_values, m_dirichletScale);
 
   // Storage for the current solution at quadrature points.
   Vector2 U[Nq_max], U_x[Nq_max], U_y[Nq_max];
