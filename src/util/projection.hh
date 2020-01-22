@@ -27,7 +27,7 @@
 
 namespace pism {
 
-class PIO;
+class File;
 class IceModelVec2S;
 class IceModelVec3D;
 
@@ -52,7 +52,7 @@ public:
 void check_consistency_epsg(const MappingInfo &info);
 
 /*! @brief Get projection info from a file. */
-MappingInfo get_projection_info(const PIO &input_file, const std::string &mapping_name,
+MappingInfo get_projection_info(const File &input_file, const std::string &mapping_name,
                                 units::System::Ptr unit_system);
 
 void compute_longitude(const std::string &projection, IceModelVec2S &result);

@@ -1,4 +1,5 @@
-find_package(Sphinx)
+find_program(SPHINX_EXECUTABLE sphinx-build)
+mark_as_advanced(SPHINX_EXECUTABLE)
 
 if (SPHINX_EXECUTABLE)
 

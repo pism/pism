@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -36,7 +36,7 @@ static char help[] =
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
@@ -326,13 +326,13 @@ int main(int argc, char *argv[]) {
     geometry.lake_level_elevation.set(config->get_number("output.fill_value"));
 
     // age of the ice; is not used here
-    age.set_attrs("diagnostic", "age of the ice", "s", "");
+    age.set_attrs("diagnostic", "age of the ice", "s", "s", "", 0);
     age.set(0.0);
 
     // enthalpy in the ice
     enthalpy.set_attrs("model_state",
                        "ice enthalpy (includes sensible heat, latent heat, pressure)",
-                       "J kg-1", "");
+                       "J kg-1", "J kg-1", "", 0);
     //
     enthalpy.set(EC->enthalpy(263.15, 0.0, EC->pressure(1000.0)));
 
@@ -363,7 +363,7 @@ int main(int argc, char *argv[]) {
     IceModelVec2S melange_back_pressure;
     melange_back_pressure.create(grid, "melange_back_pressure", WITHOUT_GHOSTS);
     melange_back_pressure.set_attrs("boundary_condition",
-                                    "melange back pressure fraction", "", "");
+                                    "melange back pressure fraction", "", "", "", 0);
     melange_back_pressure.set(0.0);
 
     bool full_update = true;
@@ -388,7 +388,7 @@ int main(int argc, char *argv[]) {
                  geometry.ice_thickness, u3, v3, w3, sigma);
 
     // Write results to an output file:
-    PIO file(grid->com, "netcdf3", output_file, PISM_READWRITE_MOVE);
+    File file(grid->com, output_file, PISM_NETCDF3, PISM_READWRITE_MOVE);
     io::define_time(file, *ctx);
     io::append_time(file, *ctx->config(), ctx->time()->current());
 

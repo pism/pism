@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015, 2017 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2015, 2017, 2019 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,8 +18,6 @@
 
 #ifndef __basal_resistance_hh
 #define __basal_resistance_hh
-
-#include <mpi.h>
 
 #include "pism/util/Units.hh"
 

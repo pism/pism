@@ -48,10 +48,10 @@ class ForcingInput(unittest.TestCase):
             bounds.set_string("units", units)
 
             output = PISM.util.prepare_output(filename, append_time=False)
-            output.put_att_text("time", "units", units)
+            output.write_attribute("time", "units", units)
 
             if use_bounds:
-                output.put_att_text("time", "bounds", "time_bounds")
+                output.write_attribute("time", "bounds", "time_bounds")
 
             if forward:
                 order = range(N)
@@ -98,7 +98,7 @@ class ForcingInput(unittest.TestCase):
 
     def forcing(self, filename, buffer_size=12, periodic=False):
         "Allocate and initialize forcing"
-        input_file = PISM.PIO(ctx.com, "netcdf3", self.filename, PISM.PISM_READONLY)
+        input_file = PISM.File(ctx.com, self.filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
         forcing = PISM.IceModelVec2T.ForcingField(self.grid, input_file, "v", "",
                                                   buffer_size, 52, periodic)
         forcing.metadata().set_string("long_name", "test field")

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2019 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -101,14 +101,14 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g)
   m_node_type.create(m_grid, "node_type", WITH_GHOSTS, 1);
   m_node_type.set_attrs("internal", // intent
                         "node types: interior, boundary, exterior", // long name
-                        "", ""); // no units or standard name
+                        "", "", "", 0); // no units or standard name
 
   // ElementMap::nodal_values() expects a ghosted IceModelVec2S. Ghosts if this field are never
   // assigned to and not communocated, though.
   m_boundary_integral.create(m_grid, "boundary_integral", WITH_GHOSTS, 1);
   m_boundary_integral.set_attrs("internal", // intent
                                 "residual contribution from lateral boundaries", // long name
-                                "", ""); // no units or standard name
+                                "", "", "", 0); // no units or standard name
 }
 
 SSA* SSAFEMFactory(IceGrid::ConstPtr g) {
@@ -670,16 +670,21 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
             const double water_density = !m_gc.islake(lake_level) ? ocean_density : fresh_water_density;
 
             // ocean pressure difference at a quadrature point
-            const double dP = ocean_pressure_difference(floating, is_dry_simulation,
-                                                        H, bed, water_level,
-                                                        ice_density, water_density,
-                                                        standard_gravity);
+            const double dP = margin_pressure_difference(floating, is_dry_simulation,
+                                                         H, bed, water_level,
+                                                         ice_density, water_density,
+                                                         standard_gravity);
 
             // This integral contributes to the residual at 2 nodes (the ones incident to the
             // current side). This is is written in a way that allows *adding* (... += ...) the
             // boundary contribution in the residual computation.
             I[n0] += W * (- psi[0] * dP) * outward_normal[side];
             I[n1] += W * (- psi[1] * dP) * outward_normal[side];
+            // FIXME: I need to include the special case corresponding to ice margins next
+            // to fjord walls, nunataks, etc. In this case dP == 0.
+            //
+            // FIXME: set pressure difference to zero at grounded locations at domain
+            // boundaries.
           } // q-loop
 
         } // loop over element sides

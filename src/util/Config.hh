@@ -37,8 +37,8 @@ public:
   ~NetCDFConfig();
 
 protected:
-  void read_impl(const PIO &nc);
-  void write_impl(const PIO &nc) const;
+  void read_impl(const File &nc);
+  void write_impl(const File &nc) const;
 
   bool is_set_impl(const std::string &name) const;
 

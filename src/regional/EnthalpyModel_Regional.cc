@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,16 +30,16 @@ EnthalpyModel_Regional::EnthalpyModel_Regional(IceGrid::ConstPtr grid,
   m_basal_melt_rate_stored.create(m_grid, "bmr_stored", WITHOUT_GHOSTS);
   m_basal_melt_rate_stored.set_attrs("internal",
                                      "time-independent basal melt rate in the no-model-strip",
-                                     "m s-1", "");
+                                     "m s-1", "m s-1", "", 0);
 }
 
-void EnthalpyModel_Regional::restart_impl(const PIO &input_file, int record) {
+void EnthalpyModel_Regional::restart_impl(const File &input_file, int record) {
   EnthalpyModel::restart_impl(input_file, record);
 
   m_basal_melt_rate_stored.copy_from(m_basal_melt_rate);
 }
 
-void EnthalpyModel_Regional::bootstrap_impl(const PIO &input_file,
+void EnthalpyModel_Regional::bootstrap_impl(const File &input_file,
                                             const IceModelVec2S &ice_thickness,
                                             const IceModelVec2S &surface_temperature,
                                             const IceModelVec2S &climatic_mass_balance,

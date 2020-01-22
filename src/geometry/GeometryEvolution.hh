@@ -153,6 +153,24 @@ private:
   IceModelVec2Int m_no_model_mask;
 };
 
+/*!
+ * Compute the grounding line flux.
+ *
+ * The units of `result` are "kg m-2". Negative flux corresponds to ice moving into
+ * the ocean, i.e. from grounded to floating areas.
+ *
+ * This convention makes it easier to compare this quantity to the surface mass balance or
+ * calving fluxes.
+ */
+void grounding_line_flux(const IceModelVec2CellType &cell_type,
+                         const IceModelVec2Stag &flux,
+                         double dt,
+                         InsertMode flag,
+                         IceModelVec2S &result);
+
+double total_grounding_line_flux(const IceModelVec2CellType &cell_type,
+                                 const IceModelVec2Stag &flux,
+                                 double dt);
 } // end of namespace pism
 
 #endif /* GEOMETRYEVOLUTION_H */

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2019 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -165,7 +165,7 @@ if __name__ == '__main__':
         tauc_true.metadata(0).set_name('tauc_true')
         tauc_true.set_attrs("diagnostic",
                             "value of basal yield stress used to generate synthetic SSA velocities",
-                            "Pa", "")
+                            "Pa", "Pa", "", 0)
         vecs.markForWriting(tauc_true)
     elif design_var == 'hardav':
         # Generate a prior guess for hardav
@@ -188,7 +188,7 @@ if __name__ == '__main__':
         hardav_true.metadata(0).set_name('hardav_true')
         hardav_true.set_attrs("diagnostic",
                               "vertically averaged ice hardness used to generate synthetic SSA velocities",
-                              "Pa s^0.33333", "")
+                              "Pa s^0.33333", "Pa s^0.33333", "", 0)
         vecs.markForWriting(hardav_true)
 
     vel_ssa_observed = vel_ssa    # vel_ssa = ssa_run.solve() earlier

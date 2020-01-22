@@ -69,7 +69,7 @@ void LakeCC::init_impl(const Geometry &geometry) {
   tmp.create(m_grid, "effective_lake_level_elevation", WITHOUT_GHOSTS);
   tmp.set_attrs("diagnostic",
                 "lake level elevation, relative to the geoid",
-                "meter", "");
+                "meter", "meter", "", 0);
   tmp.metadata().set_number("_FillValue", m_fill_value);
 
   InputOptions opts = process_input_options(m_grid->com, m_config);
@@ -79,8 +79,8 @@ void LakeCC::init_impl(const Geometry &geometry) {
     m_log->message(2, "* Reading lake level forcing from '%s' for re-starting...\n",
                    opts.filename.c_str());
 
-    PIO file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
-    const unsigned int time_length = file.inq_nrecords(),
+    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+    const unsigned int time_length = file.nrecords(),
                        last_record = time_length > 0 ? time_length - 1 : 0;
 
     tmp.read(file, last_record);

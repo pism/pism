@@ -21,7 +21,7 @@
 #include <algorithm>            // std::min
 #include <gsl/gsl_interp.h>
 
-#include "PIO.hh"
+#include "File.hh"
 #include "pism/util/pism_utilities.hh"
 #include "LocalInterpCtx.hh"
 #include "pism/util/ConfigInterface.hh"

@@ -51,6 +51,7 @@ option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
 option (Pism_BUILD_ICEBIN "Build PISM portions of IceBin library" OFF)
 option (Pism_BUILD_DOCS "Build PISM's documentation with 'make all'." OFF)
 option (Pism_USE_PROJ "Use PROJ to compute longitudes and latitudes." OFF)
+option (Pism_USE_PIO "Use NCAR's ParallelIO for I/O." OFF)
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
 option (Pism_ENABLE_DOCUMENTATION "Enable targets building PISM's documentation." ON)
@@ -86,25 +87,17 @@ endif (CMAKE_BUILD_TYPE MATCHES "Debug")
 
 # Add -fPIC to C and CXX flags.
 if (Pism_ADD_FPIC)
-  if (NOT CMAKE_C_FLAGS MATCHES "-fPIC")
-    message (STATUS "Adding -fPIC to C compiler flags.")
-    set (CMAKE_C_FLAGS "-fPIC ${CMAKE_C_FLAGS}" CACHE STRING "C compiler flags" FORCE)
-  endif()
-
-  if (NOT CMAKE_CXX_FLAGS MATCHES "-fPIC")
-    message (STATUS "Adding -fPIC to C++ compiler flags.")
-    set (CMAKE_CXX_FLAGS "-fPIC ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
-  endif()
+  add_compile_options(-fPIC)
 endif ()
 
 if (Pism_CODE_COVERAGE)
-  if (NOT CMAKE_CXX_FLAGS MATCHES "-fprofile-arcs")
-    message (STATUS "Adding -fprofile-arcs -ftest-coverage to C++ compiler flags.")
-    set (CMAKE_CXX_FLAGS "-fprofile-arcs -ftest-coverage -g -O0 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
-  endif()
+  add_compile_options(-fprofile-arcs -ftest-coverage -g -O0)
+  add_link_options(--coverage)
+
   add_custom_target (coverage_report
     # remove coverage data from src/pythonbindings
     COMMAND lcov --directory ${Pism_BINARY_DIR}/src/pythonbindings -z
+    COMMAND lcov --directory ${Pism_BINARY_DIR}/src/external -z
     COMMAND lcov --base-directory ${Pism_SOURCE_DIR} --directory src --quiet --no-external --capture -o pism-coverage.info
     COMMAND genhtml -t "PISM Coverage report" -o cover --demangle-cpp --legend pism-coverage.info
     WORKING_DIRECTORY ${Pism_BINARY_DIR}
@@ -147,7 +140,8 @@ if (Pism_USE_EVERYTRACE)
 endif()
 
 if (Pism_BUILD_PYTHON_BINDINGS)
-  find_package(Python REQUIRED)
+  find_package(PythonInterp REQUIRED)
+  find_package(PythonLibs REQUIRED)
   find_package(PETSc4Py REQUIRED)
   find_package(SWIG REQUIRED)
 

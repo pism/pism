@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -47,23 +47,24 @@ public:
   const IceModelVec2S& snow_depth() const;
   // these represent totals (not rates) over the time step
   const IceModelVec2S& air_temp_sd() const;
-  const IceModelVec2S& accumulation() const;
-  const IceModelVec2S& melt() const;
-  const IceModelVec2S& runoff() const;
 
 protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
   virtual MaxTimestep max_timestep_impl(double t) const;
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;
 
   virtual const IceModelVec2S& mass_flux_impl() const;
   virtual const IceModelVec2S& temperature_impl() const;
+  
+  virtual const IceModelVec2S& accumulation_impl() const;
+  virtual const IceModelVec2S& melt_impl() const;
+  virtual const IceModelVec2S& runoff_impl() const;
 
   double compute_next_balance_year_start(double time);
 protected:
@@ -97,13 +98,13 @@ protected:
   IceModelVec2T::Ptr m_air_temp_sd;
 
   //! total accumulation during the last time step
-  IceModelVec2S m_accumulation;
+  IceModelVec2S::Ptr m_accumulation;
 
   //! total melt during the last time step
-  IceModelVec2S m_melt;
+  IceModelVec2S::Ptr m_melt;
 
   //! total runoff during the last time step
-  IceModelVec2S m_runoff;
+  IceModelVec2S::Ptr m_runoff;
 
   bool m_sd_use_param, m_sd_file_set;
   int m_sd_period;

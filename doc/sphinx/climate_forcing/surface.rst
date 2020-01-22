@@ -70,7 +70,7 @@ For example, to use monthly records and period of 1 year, create a file (say,
    - This surface model *ignores* the atmosphere model selection made using the option
      :opt:`-atmosphere`.
    - PISM can handle files with virtually any number of records: it will read and store in
-     memory at most :config:`climate_forcing.buffer_size` records at any given time
+     memory at most :config:`input.forcing.buffer_size` records at any given time
      (default: 60, or 5 years' worth of monthly fields).
    - when preparing a file for use with this model, it is best to use the ``t,y,x``
      variable storage order: files using this order can be read in faster than ones using

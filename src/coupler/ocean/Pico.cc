@@ -50,7 +50,7 @@ namespace pism {
 namespace ocean {
 
 Pico::Pico(IceGrid::ConstPtr g)
-  : CompleteOceanModel(g, NULL),
+  : CompleteOceanModel(g, std::shared_ptr<OceanModel>()),
     m_Soc(m_grid, "pico_salinity", WITHOUT_GHOSTS),
     m_Soc_box0(m_grid, "pico_salinity_box0", WITHOUT_GHOSTS),
     m_Toc(m_grid, "pico_temperature", WITHOUT_GHOSTS),
@@ -64,11 +64,11 @@ Pico::Pico(IceGrid::ConstPtr g)
   ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
 
   {
-    unsigned int buffer_size = m_config->get_number("climate_forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
+    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
+    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
     m_theta_ocean = IceModelVec2T::ForcingField(m_grid,
                                                 file,
@@ -91,40 +91,45 @@ Pico::Pico(IceGrid::ConstPtr g)
 
   m_theta_ocean->set_attrs("climate_forcing",
                            "potential temperature of the adjacent ocean",
-                           "Kelvin", "");
+                           "Kelvin", "Kelvin", "", 0);
 
   m_salinity_ocean->set_attrs("climate_forcing",
                               "salinity of the adjacent ocean",
-                              "g/kg", "");
+                              "g/kg", "g/kg", "", 0);
 
-  m_basin_mask.set_attrs("climate_forcing", "mask determines basins for PICO", "", "");
+  m_basin_mask.set_attrs("climate_forcing", "mask determines basins for PICO",
+                         "", "", "", 0);
 
   // computed salinity in ocean boxes
-  m_Soc.set_attrs("model_state", "ocean salinity field", "g/kg", "ocean salinity field");
+  m_Soc.set_attrs("model_state", "ocean salinity field",
+                  "g/kg", "g/kg", "ocean salinity field", 0);
   m_Soc.metadata().set_number("_FillValue", 0.0);
 
   // salinity input for box 1
-  m_Soc_box0.set_attrs("model_state", "ocean base salinity field", "g/kg",
-                       "ocean base salinity field");
+  m_Soc_box0.set_attrs("model_state", "ocean base salinity field",
+                       "g/kg", "g/kg", "", 0);
   m_Soc_box0.metadata().set_number("_FillValue", 0.0);
 
   // computed temperature in ocean boxes
-  m_Toc.set_attrs("model_state", "ocean temperature field", "K", "ocean temperature field");
+  m_Toc.set_attrs("model_state", "ocean temperature field",
+                  "K", "K", "", 0);
   m_Toc.metadata().set_number("_FillValue", 0.0);
 
   // temperature input for box 1
-  m_Toc_box0.set_attrs("model_state", "ocean base temperature", "K", "ocean base temperature");
+  m_Toc_box0.set_attrs("model_state", "ocean base temperature",
+                       "K", "K", "", 0);
   m_Toc_box0.metadata().set_number("_FillValue", 0.0);
 
-  m_T_star.set_attrs("model_state", "T_star field", "degree C", "T_star field");
+  m_T_star.set_attrs("model_state", "T_star field",
+                     "degree C", "degree C", "", 0);
   m_T_star.metadata().set_number("_FillValue", 0.0);
 
-  m_overturning.set_attrs("model_state", "cavity overturning", "m^3 s-1", "cavity overturning");
+  m_overturning.set_attrs("model_state", "cavity overturning",
+                          "m^3 s-1", "m^3 s-1", "", 0);
   m_overturning.metadata().set_number("_FillValue", 0.0);
 
-  m_basal_melt_rate.set_attrs("model_state", "PICO sub-shelf melt rate", "m/s",
-                              "PICO sub-shelf melt rate");
-  m_basal_melt_rate.metadata().set_string("glaciological_units", "m year-1");
+  m_basal_melt_rate.set_attrs("model_state", "PICO sub-shelf melt rate",
+                              "m s-1", "m year-1", "", 0);
   m_basal_melt_rate.metadata().set_number("_FillValue", 0.0);
 
   m_shelf_base_temperature->metadata().set_number("_FillValue", 0.0);
@@ -174,7 +179,7 @@ void Pico::init_impl(const Geometry &geometry) {
   }
 }
 
-void Pico::define_model_state_impl(const PIO &output) const {
+void Pico::define_model_state_impl(const File &output) const {
 
   m_basin_mask.define(output);
   m_Soc_box0.define(output);
@@ -184,7 +189,7 @@ void Pico::define_model_state_impl(const PIO &output) const {
   OceanModel::define_model_state_impl(output);
 }
 
-void Pico::write_model_state_impl(const PIO &output) const {
+void Pico::write_model_state_impl(const File &output) const {
 
   m_basin_mask.write(output);
   m_Soc_box0.write(output);
@@ -288,7 +293,7 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
   m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
   m_shelf_base_mass_flux->scale(physics.ice_density());
 
-  m_melange_back_pressure_fraction->set(0.0);
+  m_melange_back_pressure_fraction->set(m_config->get_number("ocean.melange_back_pressure_fraction"));
 }
 
 

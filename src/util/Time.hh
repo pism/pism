@@ -102,7 +102,7 @@ public:
   //! \brief Intialize using command-line options.
   virtual void init(const Logger &log);
 
-  virtual void init_from_input_file(const PIO &nc,
+  virtual void init_from_input_file(const File &nc,
                                     const std::string &time_name,
                                     const Logger &log);
 
@@ -202,7 +202,7 @@ protected:
   std::string m_calendar_string;       //!< CF calendar string
 };
 
-std::string reference_date_from_file(const PIO &nc,
+std::string reference_date_from_file(const File &nc,
                                      const std::string &time_name);
 
 //! Create a Time instance by processing command-line options.

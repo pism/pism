@@ -1,364 +1,149 @@
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/error_handling.hh"
+/* Copyright (C) 2013, 2014, 2016 PISM Authors
+ *
+ * This file is part of PISM.
+ *
+ * PISM is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with PISM; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
 
-#include "connected_components.hh"
+#include <vector>
+#include <cmath>
 
-namespace pism {
-
-ConnectedComponentsBase::ConnectedComponentsBase(IceGrid::ConstPtr g):
-  m_grid(g) {
-  m_mask_run.create(m_grid, "mask_run", WITH_GHOSTS, 1);
-}
-
-ConnectedComponentsBase::~ConnectedComponentsBase() {
-  //empty
-}
-
-inline void ConnectedComponentsBase::resizeLists(VecList &lists, const int new_length) {
-  for (VecList::iterator it = lists.begin(); it != lists.end(); it++) {
-    it->second.resize(new_length);
-  }
-}
-
-inline void ConnectedComponentsBase::run_union(RunVec &parents, int run1, int run2) {
-  if ((parents[run1] == run2) or (parents[run2] == run1)) {
+void run_union(std::vector<unsigned int> &parent, unsigned int run1, unsigned int run2) {
+  if (parent[run1] == run2 || parent[run2] == run1) {
     return;
   }
 
-  run1 = trackParentRun(run1, parents);
-  run2 = trackParentRun(run2, parents);
+  while (parent[run1] != 0) {
+    run1 = parent[run1];
+  }
+
+  while (parent[run2] != 0) {
+    run2 = parent[run2];
+  }
 
   if (run1 > run2) {
-    parents[run1] = run2;
+    parent[run1] = run2;
   } else if (run1 < run2) {
-    parents[run2] = run1;
-  }
-}
-
-inline void ConnectedComponentsBase::check_cell(const int i, const int j, const bool isWest, const bool isSouth, const int mask_w, const int mask_s, int &run_number, VecList &lists, unsigned int &max_items) {
-  //Check Foreground Pixel
-  if (not isWest and (mask_w > 0)) {
-    // west neighbor is also foreground: continue the run
-    continueRun(i, j, run_number, lists);
+    parent[run2] = run1;
   } else {
-    //west neighbor is a background pixel (or this is westmost column): start a new run
-    int parent;
-    if (not isSouth and (mask_s > 0)) {
-      //check the pixel south and set the parent
-      parent = mask_s;
-    } else {
-      parent = 0;
-    }
-    startNewRun(i, j, run_number, parent, lists);
-  }
-
-  if (not isSouth and (mask_s > 0)) {
-    mergeRuns(run_number, mask_s, lists);
-  }
-
-  //resize vectors if 'max_items' are exceeded
-  if ((run_number + 1) >= max_items) {
-    max_items += m_grid->ym();
-    resizeLists(lists, max_items);
-  }
-}
-
-int ConnectedComponentsBase::trackParentRun(int run, const RunVec &parents) {
-  while (parents[run] != 0) {
-    run = parents[run];
-  }
-  return run;
-}
-
-void ConnectedComponentsBase::init_VecList(VecList &lists, const unsigned int size) {
-  RunVec parents(size), lengths(size), j_vec(size), i_vec(size);
-  lists["parents"] = parents;
-  lists["lengths"] = lengths;
-  lists["j"] = j_vec;
-  lists["i"] = i_vec;
-
-  for (unsigned int k = 0; k < 2; ++k) {
-    lists["parents"][k] = 0;
-    lists["lengths"][k] = 0;
-    lists["j"][k] = 0;
-    lists["i"][k] = 0;
-  }
-}
-
-void ConnectedComponentsBase::startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists) {
-  run_number += 1;
-  lists["i"][run_number] = i;
-  lists["j"][run_number] = j;
-  lists["lengths"][run_number] = 1;
-  lists["parents"][run_number] = parent;
-}
-
-void ConnectedComponentsBase::continueRun(const int i, const int j, int &run_number, VecList &lists) {
-  lists["lengths"][run_number] += 1;
-}
-
-void ConnectedComponentsBase::mergeRuns(const int run_number, const int run_south, VecList &lists) {
-  run_union(lists["parents"], run_south, run_number);
-}
-
-
-
-ConnectedComponents::ConnectedComponents(IceGrid::ConstPtr g)
-    : ConnectedComponentsBase(g),
-      m_i_local_first(m_grid->xs()),
-      m_i_local_last(m_i_local_first + m_grid->xm() - 1),
-      m_j_local_first(m_grid->ys()),
-      m_j_local_last(m_j_local_first + m_grid->ym() - 1),
-      m_i_global_first(0),
-      m_i_global_last(m_grid->Mx() - 1),
-      m_j_global_first(0),
-      m_j_global_last(m_grid->My() - 1) {
-
-  m_masks.push_back(&m_mask_run);
-}
-
-ConnectedComponents::~ConnectedComponents() {
-  //empty
-}
-
-void ConnectedComponents::compute_runs(int &run_number, VecList &lists, unsigned int &max_items) {
-  IceModelVec::AccessList list;
-  addFieldVecAccessList(m_masks, list);
-  addFieldVecAccessList(m_fields, list);
-
-  //Assign Pixels to runs
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (ForegroundCond(i, j)) {
-      bool isWest = (i <= m_i_local_first), isSouth = (j <= m_j_local_first);
-      const int mask_w = isWest  ? 0 : m_mask_run(i-1, j),
-                mask_s = isSouth ? 0 : m_mask_run(i, j-1);
-      check_cell(i, j, isWest, isSouth, mask_w, mask_s, run_number, lists, max_items);
-      m_mask_run(i, j) = run_number;
-    }
-  }
-
-  labelMask(run_number, lists);
-
-  //iteratively adapt fields amongst processor domains
-  bool updateAtBoundaries = true;
-  while (updateAtBoundaries) {
-    updateAtBoundaries = updateRunsAtBoundaries(lists);
-    labelMask(run_number, lists);
-  }
-}
-
-void ConnectedComponents::labelMask(int run_number, const VecList &lists) {
-  IceModelVec::AccessList list;
-  addFieldVecAccessList(m_masks, list);
-
-  const RunVec &i_vec   = lists.find("i")->second,
-               &j_vec   = lists.find("j")->second,
-               &len_vec = lists.find("lengths")->second,
-               &parents = lists.find("parents")->second;
-
-  for (int k = 0; k <= run_number; ++k) {
-    const int label = trackParentRun(k, parents);
-    for (unsigned int n = 0; n < len_vec[k]; ++n) {
-      const int i = i_vec[k] + n, j = j_vec[k];
-      m_mask_run(i, j) = label;
-    }
-  }
-}
-
-bool ConnectedComponents::updateRunsAtBoundaries(VecList &lists) {
-  IceModelVec::AccessList list;
-  addFieldVecAccessList(m_masks, list);
-  updateGhosts(m_masks);
-
-  bool changed = false;
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    bool isWest   = ((i == m_i_local_first) and not(i == m_i_global_first)),
-         isEast   = ((i == m_i_local_last) and not(i == m_i_global_last)),
-         isSouth  = ((j == m_j_local_first) and not(j == m_j_global_first)),
-         isNorth  = ((j == m_j_local_last) and not(j == m_j_global_last)),
-         isMargin = (isWest or isEast or isSouth or isNorth);
-
-    if (isMargin) {
-      treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
-    }
-  }
-
-  return (GlobalOr(m_grid->com, changed));
-}
-
-void ConnectedComponents::addFieldVecAccessList(FieldVec &fields, IceModelVec::AccessList &list) {
-  for (FieldVec::iterator it = fields.begin(); it != fields.end(); it++) {
-    IceModelVec *field = *it;
-    list.add(*field);
-  }
-}
-
-void ConnectedComponents::addFieldVecAccessList(ConstFieldVec &fields, IceModelVec::AccessList &list) {
-  for (ConstFieldVec::iterator it = fields.begin(); it != fields.end(); it++) {
-    const IceModelVec *field = *it;
-    list.add(*field);
-  }
-}
-
-void ConnectedComponents::updateGhosts(FieldVec &in) {
-  for (FieldVec::iterator it = in.begin(); it != in.end(); it++) {
-    IceModelVec *field = *it;
-    field->update_ghosts();
-  }
-}
-
-
-ConnectedComponentsSerial::ConnectedComponentsSerial(IceGrid::ConstPtr g)
-  : ConnectedComponentsBase(g) {
-  m_mask_run_vec_p0 = m_mask_run.allocate_proc0_copy();
-}
-
-ConnectedComponentsSerial::~ConnectedComponentsSerial() {
-  //empty
-}
-
-void ConnectedComponentsSerial::compute_runs(int &run_number, VecList &lists, unsigned int &max_items) {
-
-  m_mask_run.put_on_proc0(*m_mask_run_vec_p0);
-
-  ParallelSection rank0(m_grid->com);
-  try {
-    if (m_grid->rank() == 0) {
-      petsc::VecArray2D mask_run(*m_mask_run_vec_p0, m_grid->Mx(), m_grid->My());
-      //We need a global pointer to the array to be able to access it from ForegroundCond(i, j)
-      m_mask_run_p0_ptr = &mask_run;
-      for (int j = 0; j < m_grid->My(); j++) {
-        for (int i = 0; i < m_grid->Mx(); i++) {
-          if (ForegroundCond(i, j)) {
-            bool isWest = (i <= 0), isSouth = (j <= 0);
-            const int mask_w = isWest  ? 0 : mask_run(i-1, j),
-                      mask_s = isSouth ? 0 : mask_run(i, j-1);
-            check_cell(i, j, isWest, isSouth, mask_w, mask_s, run_number, lists, max_items);
-            mask_run(i, j) = run_number;
-          }
-        }
-      }
-    }
-  } catch (...) {
-    rank0.failed();
-  }
-  rank0.check();
-}
-
-
-SinkCC::SinkCC(IceGrid::ConstPtr g)
-  :ConnectedComponents(g) {
-  //empty
-}
-
-SinkCC::~SinkCC() {
-  //empty
-}
-
-void SinkCC::setRunSink(int run, RunVec &parents) {
-  if ((run == 0) or (run == 1)) {
     return;
   }
 
-  run = trackParentRun(run, parents);
-  if (run != 1) {
-    parents[run] = 1;
-  }
 }
 
-bool SinkCC::SinkCond(const int i, const int j) {
-  const int mask = m_mask_run(i, j);
-  return (mask == 1);
-}
+//! In-place labeling of connected components using a 2-scan algorithm with run-length encoding.
+void label_connected_components(double *image, unsigned int n_rows, unsigned int n_cols, bool identify_icebergs, double mask_grounded) {
+  unsigned int max_runs = 2*n_rows;
+  const double eps = 1e-6;
 
-void SinkCC::treatInnerMargin(const int i, const int j,
-                              const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
-                              VecList &lists, bool &changed) {
-  ConnectedComponents::treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
+  std::vector<unsigned int> parents(max_runs), lengths(max_runs),
+    rows(max_runs), columns(max_runs), mask(max_runs);
 
-  const int run = m_mask_run.as_int(i, j);
-  if (run > 1) {
-    //Lake at inner boundary
-    StarStencil<int> mask_star = m_mask_run.int_star(i, j);
-    bool WestSink = (isWest and (mask_star.w == 1)), EastSink = (isEast and (mask_star.e == 1)),
-         SouthSink = (isSouth and (mask_star.s == 1)), NorthSink = (isNorth and (mask_star.n == 1));
+  unsigned int run_number = 0, r, c, parent;
 
-    if (WestSink or EastSink or SouthSink or NorthSink) {
-      //Lake on other side overflowing
-      lists["parents"][run] = 1;
-      changed = true;
-    }
-  }
-}
+  // First scan
+  for (r = 0; r < n_rows; ++r) {
+    for (c = 0; c < n_cols; ++c) {
 
-void SinkCC::startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists) {
-  if (SinkCond(i, j)) {
-    parent = 1;
-  }
-  ConnectedComponents::startNewRun(i, j, run_number, parent, lists);
-}
+      if (image[r*n_cols + c] > 0.0) {
+        // looking at a foreground pixel
+        if (c > 0 && image[r*n_cols + (c-1)] > 0.0) {
+          // one to the left is also a foreground pixel; continue the run
+          lengths[run_number] += 1;
+        } else {
+          // one to the left is a background pixel (or this is column 0); start a new run
 
-void SinkCC::continueRun(const int i, const int j, int &run_number, VecList &lists) {
-  ConnectedComponents::continueRun(i, j, run_number, lists);
-  if (SinkCond(i, j)) {
-    setRunSink(run_number, lists["parents"]);
-  }
-}
+          // set the run just above as a parent (if present)
+          if (r > 0 && image[(r-1)*n_cols + c] > 0.0) {
+            parent = (unsigned int)image[(r-1)*n_cols + c];
+          } else {
+            parent = 0;
+          }
 
+          run_number += 1;
 
+          // allocate more storage (if needed)
+          if (run_number == max_runs) {
+            max_runs += n_rows;
+            parents.resize(max_runs);
+            lengths.resize(max_runs);
+            rows.resize(max_runs);
+            columns.resize(max_runs);
+            mask.resize(max_runs);
+          }
 
-MaskCC::MaskCC(IceGrid::ConstPtr g)
-  :SinkCC(g) {
-  //empty
-}
+          // Record this run
+          rows[run_number]    = r;
+          columns[run_number] = c;
+          lengths[run_number] = 1;
+          parents[run_number] = parent;
+          mask[run_number]    = 0;
+        }
 
-MaskCC::~MaskCC() {
-  //empty
-}
+        if (r > 0 && image[(r-1)*n_cols + c] > 0.0) {
+          run_union(parents, (unsigned int)image[(r-1)*n_cols + c], run_number);
+        }
 
-void MaskCC::compute_mask(IceModelVec2Int &mask) {
-  m_mask_run.copy_from(mask);
+        if (mask[run_number] == 0 && fabs(image[r*n_cols + c] - mask_grounded) < eps) {
+          mask[run_number] = 1;
+        }
 
-  VecList lists;
-  unsigned int max_items = 2 * m_grid->ym();
-  init_VecList(lists, max_items);
-
-  int run_number = 1;
-
-  compute_runs(run_number, lists, max_items);
-
-  labelOutMask(run_number, lists, mask);
-}
-
-bool MaskCC::ForegroundCond(const int i, const int j) const {
-  const int mask = m_mask_run.as_int(i, j);
-  return (mask > 0);
-}
-
-void MaskCC::labelOutMask(const int run_number, const VecList &lists, IceModelVec2Int &result) {
-  IceModelVec::AccessList list{&result};
-  result.set(0);
-
-  const RunVec &i_vec = lists.find("i")->second,
-               &j_vec = lists.find("j")->second,
-               &len_vec = lists.find("lengths")->second,
-               &parents = lists.find("parents")->second;
-
-  for(int k = 0; k <= run_number; ++k) {
-    const int label = trackParentRun(k, parents);
-    if (label > 1) {
-      const int j = j_vec[k];
-      for(int n = 0; n < len_vec[k]; ++n) {
-        const int i = i_vec[k] + n;
-        result(i, j) = 1;
+        image[r*n_cols + c] = run_number;
       }
     }
   }
-}
 
-} //namespace pism
+  // Assign labels to runs.
+  // This uses the fact that children always follow parents,
+  // so we can do just one sweep: by the time we get to a node (run),
+  // its parent already has a final label.
+  //
+  // We use "parents" to store labels here, because once a run's label is computed
+  // we don't need to know its parent run any more.
+
+  unsigned int label = 0;
+  std::vector<unsigned int> grounded(run_number + 1);
+  for (r = 0; r <= run_number; ++r) {
+    if (parents[r] == 0) {
+      parents[r] = label;
+      label += 1;
+    } else {
+      parents[r] = parents[parents[r]];
+    }
+
+    // remember current blob (parents[r]) as "grounded" if the current run is
+    // "grounded"
+    if (mask[r] == 1) {
+      grounded[parents[r]] = 1;
+    }
+  }
+
+  // Second scan (re-label)
+  if (identify_icebergs) {
+    for (r = 0; r <= run_number; ++r) {
+      for (c = 0; c < lengths[r]; ++c) {
+        image[rows[r]*n_cols + columns[r] + c] = 1 - grounded[parents[r]];
+      }
+    }
+  } else {
+    for (r = 0; r <= run_number; ++r) {
+      for (c = 0; c < lengths[r]; ++c) {
+        image[rows[r]*n_cols + columns[r] + c] = parents[r];
+      }
+    }
+  }
+
+  // Done!
+}

@@ -1,4 +1,4 @@
-# Boundary models (surface, atmosphere, ocean).
+# Boundary models (surface, atmosphere, ocean, frontalmelt).
 add_library (boundary OBJECT
   ./util/ScalarForcing.cc
   ./util/options.cc
@@ -20,6 +20,13 @@ add_library (boundary OBJECT
   ./atmosphere/OrographicPrecipitationSerial.cc
   ./atmosphere/Factory.cc
   ./atmosphere/Uniform.cc
+  ./frontalmelt/FrontalMelt.cc
+  ./frontalmelt/Constant.cc
+  ./frontalmelt/DischargeGiven.cc
+  ./frontalmelt/DischargeRouting.cc
+  ./frontalmelt/Given.cc
+  ./frontalmelt/FrontalMeltPhysics.cc
+  ./frontalmelt/Factory.cc
   ./ocean/OceanModel.cc
   ./ocean/CompleteOceanModel.cc
   ./ocean/Cache.cc
@@ -61,8 +68,8 @@ add_library (boundary OBJECT
   ./surface/Cache.cc
   ./surface/ConstantPIK.cc
   ./surface/Elevation.cc
-  ./surface/StuffAsAnomaly.cc
   ./surface/GivenClimate.cc
+  ./surface/ISMIP6Climate.cc
   ./surface/LapseRates.cc
   ./surface/Delta_T.cc
   ./surface/Simple.cc

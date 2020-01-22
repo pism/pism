@@ -75,14 +75,14 @@ class EnergyModel : public Component {
 public:
   EnergyModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
 
-  void restart(const PIO &input_file, int record);
+  void restart(const File &input_file, int record);
 
   /*! @brief Bootstrapping using heuristics. */
   /*!
    * Bootstrap by reading 2d fields (currently the basal melt rate) from a file and filling 3D
    * fields using heuristics.
    */
-  void bootstrap(const PIO &input_file,
+  void bootstrap(const File &input_file,
                  const IceModelVec2S &ice_thickness,
                  const IceModelVec2S &surface_temperature,
                  const IceModelVec2S &climatic_mass_balance,
@@ -107,9 +107,9 @@ protected:
 
   virtual MaxTimestep max_timestep_impl(double t) const;
 
-  virtual void restart_impl(const PIO &input_file, int record) = 0;
+  virtual void restart_impl(const File &input_file, int record) = 0;
 
-  virtual void bootstrap_impl(const PIO &input_file,
+  virtual void bootstrap_impl(const File &input_file,
                               const IceModelVec2S &ice_thickness,
                               const IceModelVec2S &surface_temperature,
                               const IceModelVec2S &climatic_mass_balance,
@@ -123,15 +123,15 @@ protected:
 
   virtual void update_impl(double t, double dt, const Inputs &inputs) = 0;
 
-  virtual void define_model_state_impl(const PIO &output) const = 0;
-  virtual void write_model_state_impl(const PIO &output) const = 0;
+  virtual void define_model_state_impl(const File &output) const = 0;
+  virtual void write_model_state_impl(const File &output) const = 0;
 
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;
 
   /*! @brief Initialize enthalpy by reading it from a file, or by reading temperature and liquid
       water fraction, or by reading the temperature field alone. */
-  void init_enthalpy(const PIO &input_file, bool regrid, int record);
+  void init_enthalpy(const File &input_file, bool regrid, int record);
 
   /*! @brief Regrid enthalpy from the -regrid_file. */
   void regrid_enthalpy();

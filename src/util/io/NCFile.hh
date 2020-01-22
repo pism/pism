@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@
 
 namespace pism {
 
-class ErrorLocation;
+class IceGrid;
 
 //! Input and output code (NetCDF wrappers, etc)
 namespace io {
@@ -66,6 +66,8 @@ public:
 
   void create(const std::string &filename);
 
+  void sync() const;
+
   void close();
 
   // redef/enddef
@@ -81,10 +83,6 @@ public:
   void inq_dimlen(const std::string &dimension_name, unsigned int &result) const;
 
   void inq_unlimdim(std::string &result) const;
-
-  void inq_dimname(int j, std::string &result) const;
-
-  void inq_ndims(int &result) const;
 
   // var
   void def_var(const std::string &name, IO_Type nctype,
@@ -102,17 +100,17 @@ public:
                        const std::vector<unsigned int> &count,
                        const double *op) const;
 
+  void write_darray(const std::string &variable_name,
+                    const IceGrid &grid,
+                    unsigned int z_count,
+                    unsigned int record,
+                    const double *input);
+
   void get_varm_double(const std::string &variable_name,
                        const std::vector<unsigned int> &start,
                        const std::vector<unsigned int> &count,
                        const std::vector<unsigned int> &imap,
                        double *ip) const;
-
-  void put_varm_double(const std::string &variable_name,
-                       const std::vector<unsigned int> &start,
-                       const std::vector<unsigned int> &count,
-                       const std::vector<unsigned int> &imap,
-                       const double *op) const;
 
   void inq_nvars(int &result) const;
 
@@ -124,8 +122,6 @@ public:
 
   void inq_varname(unsigned int j, std::string &result) const;
 
-  void inq_vartype(const std::string &variable_name, IO_Type &result) const;
-
   // att
   void get_att_double(const std::string &variable_name, const std::string &att_name,
                       std::vector<double> &result) const;
@@ -135,9 +131,6 @@ public:
 
   void put_att_double(const std::string &variable_name, const std::string &att_name,
                       IO_Type xtype, const std::vector<double> &data) const;
-
-  void put_att_double(const std::string &variable_name, const std::string &att_name,
-                      IO_Type xtype, double value) const;
 
   void put_att_text(const std::string &variable_name, const std::string &att_name,
                     const std::string &value) const;
@@ -149,119 +142,97 @@ public:
   // misc
   void set_fill(int fillmode, int &old_modep) const;
 
-  std::string get_filename() const;
+  std::string filename() const;
 
-  std::string get_format() const;
-
-  void move_if_exists(const std::string &filename, int rank_to_use = 0);
-  void remove_if_exists(const std::string &filename, int rank_to_use = 0);
+  void del_att(const std::string &variable_name, const std::string &att_name) const;
 
 protected:
   // implementations:
 
   // open/create/close
-  virtual int open_impl(const std::string &filename, IO_Mode mode) = 0;
-  virtual int create_impl(const std::string &filename) = 0;
-  virtual int close_impl() = 0;
+  virtual void open_impl(const std::string &filename, IO_Mode mode) = 0;
+  virtual void create_impl(const std::string &filename) = 0;
+  virtual void sync_impl() const = 0;
+  virtual void close_impl() = 0;
 
   // redef/enddef
-  virtual int enddef_impl() const = 0;
+  virtual void enddef_impl() const = 0;
 
-  virtual int redef_impl() const = 0;
+  virtual void redef_impl() const = 0;
 
   // dim
-  virtual int def_dim_impl(const std::string &name, size_t length) const = 0;
+  virtual void def_dim_impl(const std::string &name, size_t length) const = 0;
 
-  virtual int inq_dimid_impl(const std::string &dimension_name, bool &exists) const = 0;
+  virtual void inq_dimid_impl(const std::string &dimension_name, bool &exists) const = 0;
 
-  virtual int inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const = 0;
+  virtual void inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const = 0;
 
-  virtual int inq_unlimdim_impl(std::string &result) const = 0;
-
-  virtual int inq_dimname_impl(int j, std::string &result) const = 0;
-
-  virtual int inq_ndims_impl(int &result) const = 0;
+  virtual void inq_unlimdim_impl(std::string &result) const = 0;
 
   // var
-  virtual int def_var_impl(const std::string &name, IO_Type nctype,
+  virtual void def_var_impl(const std::string &name, IO_Type nctype,
                            const std::vector<std::string> &dims) const = 0;
 
-  virtual int def_var_chunking_impl(const std::string &name,
+  virtual void def_var_chunking_impl(const std::string &name,
                                     std::vector<size_t> &dimensions) const;
 
-  virtual int get_vara_double_impl(const std::string &variable_name,
+  virtual void get_vara_double_impl(const std::string &variable_name,
                                    const std::vector<unsigned int> &start,
                                    const std::vector<unsigned int> &count,
                                    double *ip) const = 0;
 
-  virtual int put_vara_double_impl(const std::string &variable_name,
+  virtual void put_vara_double_impl(const std::string &variable_name,
                                    const std::vector<unsigned int> &start,
                                    const std::vector<unsigned int> &count,
                                    const double *op) const = 0;
 
-  virtual int get_varm_double_impl(const std::string &variable_name,
+  virtual void write_darray_impl(const std::string &variable_name,
+                                 const IceGrid &grid,
+                                 unsigned int z_count,
+                                 unsigned int record,
+                                 const double *input);
+
+  virtual void get_varm_double_impl(const std::string &variable_name,
                                    const std::vector<unsigned int> &start,
                                    const std::vector<unsigned int> &count,
                                    const std::vector<unsigned int> &imap,
                                    double *ip) const = 0;
 
-  virtual int put_varm_double_impl(const std::string &variable_name,
-                                   const std::vector<unsigned int> &start,
-                                   const std::vector<unsigned int> &count,
-                                   const std::vector<unsigned int> &imap,
-                                   const double *op) const = 0;
+  virtual void inq_nvars_impl(int &result) const = 0;
 
-  virtual int inq_nvars_impl(int &result) const = 0;
+  virtual void inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const = 0;
 
-  virtual int inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const = 0;
+  virtual void inq_varnatts_impl(const std::string &variable_name, int &result) const = 0;
 
-  virtual int inq_varnatts_impl(const std::string &variable_name, int &result) const = 0;
+  virtual void inq_varid_impl(const std::string &variable_name, bool &exists) const = 0;
 
-  virtual int inq_varid_impl(const std::string &variable_name, bool &exists) const = 0;
-
-  virtual int inq_varname_impl(unsigned int j, std::string &result) const = 0;
-
-  virtual int inq_vartype_impl(const std::string &variable_name, IO_Type &result) const = 0;
+  virtual void inq_varname_impl(unsigned int j, std::string &result) const = 0;
 
   // att
-  virtual int get_att_double_impl(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const = 0;
+  virtual void get_att_double_impl(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const = 0;
 
-  virtual int get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const = 0;
+  virtual void get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const = 0;
 
-  virtual int put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const = 0;
+  virtual void put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const = 0;
 
-  virtual int put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, double value) const;
+  virtual void put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const = 0;
 
-  virtual int put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const = 0;
+  virtual void inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const = 0;
 
-  virtual int inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const = 0;
-
-  virtual int inq_atttype_impl(const std::string &variable_name, const std::string &att_name, IO_Type &result) const = 0;
+  virtual void inq_atttype_impl(const std::string &variable_name, const std::string &att_name, IO_Type &result) const = 0;
 
   // misc
-  virtual int set_fill_impl(int fillmode, int &old_modep) const = 0;
+  virtual void set_fill_impl(int fillmode, int &old_modep) const = 0;
 
-  virtual std::string get_format_impl() const = 0;
-
-  virtual int move_if_exists_impl(const std::string &filename, int rank_to_use = 0);
-  virtual int remove_if_exists_impl(const std::string &filename, int rank_to_use = 0);
-
-  virtual int integer_open_mode(IO_Mode input) const = 0;
-
-  std::string get_filename_impl() const;
-
-protected:
-  // internal:
-  virtual void check(const ErrorLocation &where, int return_code) const;
+  virtual void del_att_impl(const std::string &variable_name, const std::string &att_name) const = 0;
 
 protected:                      // data members
 
   MPI_Comm m_com;
   int m_file_id;
   std::string m_filename;
+private:
   mutable bool m_define_mode;
-  // negative values of m_[xy][ms] mean "not initialized"
-  mutable int m_xs, m_xm, m_ys, m_ym;
 };
 
 } // end of namespace io
