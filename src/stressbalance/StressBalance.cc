@@ -81,6 +81,7 @@ void Inputs::dump(const char *filename) const {
 
     geometry->bed_elevation.write(output);
     geometry->sea_level_elevation.write(output);
+    geometry->lake_level_elevation.write(output);
 
     geometry->ice_thickness.write(output);
     geometry->ice_area_specific_volume.write(output);
