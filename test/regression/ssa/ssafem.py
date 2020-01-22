@@ -8,20 +8,19 @@ config = ctx.config
 
 config.set_flag("stress_balance.calving_front_stress_bc", True)
 
-grid = shallow_grid(Mx=7, My=7, Lx=10e3, Ly=10e3)
+grid = shallow_grid(Mx=5, My=5, Lx=10e3, Ly=10e3)
 
 geometry = PISM.Geometry(grid)
 
-c = 3
+# grid center:
+c = 2
+# ice thickness:
 H = 1000.0
+
 with PISM.vec.Access(nocomm=[geometry.ice_thickness]):
     for (i, j) in grid.points():
-        if i == c and j == c:
-            geometry.ice_thickness[i, j] = 1 * H
-        elif abs(i - c) < c - 1 and abs(j - c) < c - 1:
-            geometry.ice_thickness[i, j] = 1 * H
-        elif (i == c and abs(j - c) < c) or (j == c and abs(i - c) < c):
-            geometry.ice_thickness[i, j] = 1 * H
+        if abs(i - c) < c and abs(j - c) < c:
+            geometry.ice_thickness[i, j] = H
         else:
             geometry.ice_thickness[i, j] = 0.0
 
@@ -56,9 +55,9 @@ ssa.update(inputs, full_update=True)
 f = PISM.util.prepare_output(config.get_string("output.file_name"))
 
 ssa.velocity().write(f)
-ssa.driving_stress().write(f)
 geometry.ice_thickness.write(f)
 geometry.bed_elevation.write(f)
 geometry.cell_type.write(f)
 enthalpy.write(f)
+tauc.write(f)
 f.close()
