@@ -100,9 +100,8 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
           sw_element_is_icy and se_element_is_icy) {
         // all four elements are icy: we are at an interior node
         result(i, j) = NODE_INTERIOR;
-      } else if (ne_element_is_icy or nw_element_is_icy or
-                 sw_element_is_icy or se_element_is_icy) {
-        // at least one element is icy: we are at a boundary node
+      } else if (icy.ij) {
+        // the current node is icy: we are at a boundary
         result(i, j) = NODE_BOUNDARY;
       } else {
         // all elements are ice-free: we are at an exterior node
