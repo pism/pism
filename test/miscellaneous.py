@@ -1252,3 +1252,13 @@ class ForcingOptions(TestCase):
         ctx.config.import_from(self.config)
 
         os.remove(self.filename)
+
+def test_bq2():
+    "2-point boundary quadrature"
+    dx = 1.0
+    dy = dx
+    Q = PISM.BoundaryQuadrature2(1, 1, 1)
+    for q in [0, 1]:
+        for s in [0, 1, 2, 3]:
+            psi = [Q.germ(s, q, k).val for k in [0, 1]]
+            assert sum(psi) == 1.0, "side = {}, q = {}, psi = {}".format(s, q, psi)
