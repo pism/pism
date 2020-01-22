@@ -689,8 +689,8 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 
             // test functions at nodes incident to the current side, evaluated at the quadrature point
             // q
-            psi[0] = Q->germ(side, q, n0).val;
-            psi[1] = Q->germ(side, q, n1).val;
+            psi[0] = Q->germ(side, q, 0).val;
+            psi[1] = Q->germ(side, q, 1).val;
 
             // Compute ice thickness and bed elevation at a quadrature point. This uses a 1D basis
             // expansion on the current side.
