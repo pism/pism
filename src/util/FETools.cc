@@ -182,9 +182,8 @@ static QuadPoint r_star(unsigned int side, double t) {
   const double L = 0.5 * (t + 1.0);
 
   const unsigned int
-    k  = n_chi - 1,             // largest allowed index
     j0 = side,
-    j1 = side % k + 1;
+    j1 = (side + 1) % n_chi;
 
   QuadPoint result;
   result.xi  = (1.0 - L) *  xi[j0] + L *  xi[j1];
@@ -195,6 +194,8 @@ static QuadPoint r_star(unsigned int side, double t) {
 
 BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy, double L)
   : BoundaryQuadrature(m_size) {
+
+  Q1ElementGeometry q1;
 
   // The Jacobian of the map from the reference element to a physical element.
   const double J[2][2] = {{0.5 * dx / L, 0.0},
@@ -222,10 +223,16 @@ BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy, double L)
 
       m_W[side][q] = weights[q] * dr.magnitude();
 
-      for (unsigned int k = 0; k < n_chi; ++k) {
-        // Compute the value of the current shape function and convert derivatives with respect to
-        // xi and eta into derivatives with respect to x and y:
-        m_germs[side][q][k] = multiply(J_inv, q1::chi(k, pt));
+      // Compute the value of the current shape function and convert derivatives with
+      // respect to xi and eta into derivatives with respect to x and y.
+      //
+      // Note that sides of Q1 elements are one-dimensional and have 2 shape functions.
+      for (int k = 0; k < 2; ++k) {
+        m_germs[side][q][k] = multiply(J_inv, q1::chi(q1.incident_node(side, k), pt));
+      }
+      // Fill the rest with zeros:
+      for (int k = 2; k < n_chi; ++k) {
+        m_germs[side][q][k] = {0.0, 0.0, 0.0};
       }
     } // end of loop over quadrature points
   } // end of loop over sides
