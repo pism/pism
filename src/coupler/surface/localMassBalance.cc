@@ -385,7 +385,7 @@ FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid::ConstPtr g)
   m_temp_mj.create(m_grid, "temp_mj_faustogreve", WITHOUT_GHOSTS);
   m_temp_mj.set_attrs("internal",
                     "mean July air temp from Fausto et al (2009) parameterization",
-                    "K", "");
+                      "K", "K", "", 0);
 }
 
 FaustoGrevePDDObject::~FaustoGrevePDDObject() {

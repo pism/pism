@@ -23,7 +23,7 @@
 #include "projection.hh"
 #include "VariableMetadata.hh"
 #include "error_handling.hh"
-#include "io/PIO.hh"
+#include "io/File.hh"
 #include "io/io_helpers.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/iceModelVec.hh"
@@ -75,6 +75,18 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_s
     mapping.set_number("false_northing", 0.0);
     mapping.set_string("grid_mapping_name", "polar_stereographic");
     mapping.set_number("false_easting", 0.0);
+    break;
+  case 3057:
+    mapping.set_string("grid_mapping_name", "lambert_conformal_conic") ;
+    mapping.set_number("longitude_of_central_meridian", -19.) ;
+    mapping.set_number("false_easting", 500000.) ;
+    mapping.set_number("false_northing", 500000.) ;
+    mapping.set_number("latitude_of_projection_origin", 65.) ;
+    mapping.set_numbers("standard_parallel", {64.25, 65.75}) ;
+    mapping.set_string("long_name", "CRS definition") ;
+    mapping.set_number("longitude_of_prime_meridian", 0.) ;
+    mapping.set_number("semi_major_axis", 6378137.) ;
+    mapping.set_number("inverse_flattening", 298.257222101) ;
     break;
   case 5936:
     mapping.set_number("latitude_of_projection_origin", 90.0);
@@ -166,16 +178,16 @@ void check_consistency_epsg(const MappingInfo &info) {
   }
 }
 
-MappingInfo get_projection_info(const PIO &input_file, const std::string &mapping_name,
+MappingInfo get_projection_info(const File &input_file, const std::string &mapping_name,
                                 units::System::Ptr unit_system) {
   MappingInfo result(mapping_name, unit_system);
 
-  result.proj = input_file.get_att_text("PISM_GLOBAL", "proj");
+  result.proj = input_file.read_text_attribute("PISM_GLOBAL", "proj");
 
   std::string::size_type position = result.proj.find("+init=epsg:");
   bool proj_is_epsg = position != std::string::npos;
 
-  if (input_file.inq_var(mapping_name)) {
+  if (input_file.find_variable(mapping_name)) {
     // input file has a mapping variable
 
     io::read_attributes(input_file, mapping_name, result.mapping);
@@ -185,7 +197,7 @@ MappingInfo get_projection_info(const PIO &input_file, const std::string &mappin
       try {
         check_consistency_epsg(result);
       } catch (RuntimeError &e) {
-        e.add_context("getting projection info from %s", input_file.inq_filename().c_str());
+        e.add_context("getting projection info from %s", input_file.filename().c_str());
         throw;
       }
     } else {

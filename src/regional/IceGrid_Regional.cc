@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,7 +25,7 @@
 #include "pism/util/pism_options.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/Component.hh" // process_input_options
 
 namespace pism {
@@ -108,16 +108,14 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
                                       "bedrock_altitude", "thk", "topg"};
     bool grid_info_found = false;
 
-    PIO file(ctx->com(), "netcdf3", options.filename, PISM_READONLY);
+    File file(ctx->com(), options.filename, PISM_NETCDF3, PISM_READONLY);
     for (auto name : names) {
 
-      grid_info_found = file.inq_var(name);
+      grid_info_found = file.find_variable(name);
       if (not grid_info_found) {
-        std::string dummy1;
-        bool dummy2;
         // Failed to find using a short name. Try using name as a
         // standard name...
-        file.inq_var("dummy", name, grid_info_found, dummy1, dummy2);
+        grid_info_found = file.find_variable("unlikely_name", name).exists;
       }
 
       if (grid_info_found) {

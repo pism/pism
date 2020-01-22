@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2018 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2019 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -68,30 +68,31 @@ SSAFD::SSAFD(IceGrid::ConstPtr g)
   m_velocity_old.create(m_grid, "velocity_old", WITH_GHOSTS);
   m_velocity_old.set_attrs("internal",
                            "old SSA velocity field; used for re-trying with a different epsilon",
-                           "m s-1", "");
+                           "m s-1", "m s-1", "", 0);
 
+  auto units = pism::printf("Pa s%f", 1.0 / m_flow_law->exponent());
   m_hardness.create(m_grid, "hardness", WITHOUT_GHOSTS);
   m_hardness.set_attrs("diagnostic",
                        "vertically-averaged ice hardness",
-                       pism::printf("Pa s%f", 1.0 / m_flow_law->exponent()),
-                       "");
+                       units, units,
+                       "", 0);
 
   m_nuH.create(m_grid, "nuH", WITH_GHOSTS);
   m_nuH.set_attrs("internal",
                   "ice thickness times effective viscosity",
-                  "Pa s m", "");
+                  "Pa s m", "Pa s m", "", 0);
 
   m_nuH_old.create(m_grid, "nuH_old", WITH_GHOSTS);
   m_nuH_old.set_attrs("internal",
                       "ice thickness times effective viscosity (before an update)",
-                      "Pa s m", "");
+                      "Pa s m", "Pa s m", "", 0);
 
   m_work.create(m_grid, "m_work", WITH_GHOSTS,
                 2, /* stencil width */
                 6  /* dof */);
   m_work.set_attrs("internal",
                    "temporary storage used to compute nuH",
-                   "", "");
+                   "", "", "", 0);
 
   m_scaling = 1.0e9;  // comparable to typical beta for an ice stream;
 
@@ -248,18 +249,22 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   const IceModelVec2S
     &thickness             = inputs.geometry->ice_thickness,
     &bed                   = inputs.geometry->bed_elevation,
+    &surface               = inputs.geometry->ice_surface_elevation,
     &sea_level             = inputs.geometry->sea_level_elevation,
     &lake_level            = inputs.geometry->lake_level_elevation,
     *melange_back_pressure = inputs.melange_back_pressure;
 
   const double
-    dx                        = m_grid->dx(),
-    dy                        = m_grid->dy(),
-    ice_free_default_velocity = 0.0,
-    standard_gravity          = m_config->get_number("constants.standard_gravity"),
-    rho_ocean                 = m_config->get_number("constants.sea_water.density"),
-    rho_fresh                 = m_config->get_number("constants.fresh_water.density"),
-    rho_ice                   = m_config->get_number("constants.ice.density");
+    dx                     = m_grid->dx(),
+    dy                     = m_grid->dy(),
+    standard_gravity       = m_config->get_number("constants.standard_gravity"),
+    rho_ocean              = m_config->get_number("constants.sea_water.density"),
+    rho_fresh              = m_config->get_number("constants.fresh_water.density"),
+    rho_ice                = m_config->get_number("constants.ice.density");
+
+  // This constant is for debugging: simulations should not depend on the choice of
+  // velocity used in ice-free areas.
+  const Vector2 ice_free_velocity(0.0, 0.0);
 
   const bool
     use_cfbc          = m_config->get_flag("stress_balance.calving_front_stress_bc"),
@@ -268,19 +273,23 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   // FIXME: bedrock_boundary is a misleading name
   bool bedrock_boundary = m_config->get_flag("stress_balance.ssa.dirichlet_bc");
 
-  compute_driving_stress(*inputs.geometry, m_taud);
+  compute_driving_stress(inputs.geometry->ice_thickness,
+                         inputs.geometry->ice_surface_elevation,
+                         m_mask,
+                         inputs.no_model_mask,
+                         m_taud);
 
   IceModelVec::AccessList list{&m_taud, &m_b};
 
-  if (inputs.bc_values && inputs.bc_mask) {
+  if (inputs.bc_values and inputs.bc_mask) {
     list.add({inputs.bc_values, inputs.bc_mask});
   }
 
   if (use_cfbc) {
-    list.add({&thickness, &bed, &m_mask, &sea_level, &lake_level});
+    list.add({&thickness, &bed, &surface, &m_mask, &sea_level, &lake_level});
   }
 
-  if (use_cfbc && melange_back_pressure != NULL) {
+  if (use_cfbc and melange_back_pressure) {
     list.add(*melange_back_pressure);
   }
 
@@ -289,8 +298,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (inputs.bc_values != NULL &&
-        inputs.bc_mask->as_int(i, j) == 1) {
+    if (inputs.bc_values and inputs.bc_mask->as_int(i, j) == 1) {
       m_b(i, j).u = m_scaling * (*inputs.bc_values)(i, j).u;
       m_b(i, j).v = m_scaling * (*inputs.bc_values)(i, j).v;
       continue;
@@ -299,67 +307,100 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     if (use_cfbc) {
       double H_ij = thickness(i,j);
 
-      int
-        M_ij = m_mask.as_int(i,j),
-        M_e  = m_mask.as_int(i + 1,j),
-        M_w  = m_mask.as_int(i - 1,j),
-        M_n  = m_mask.as_int(i,j + 1),
-        M_s  = m_mask.as_int(i,j - 1);
+      auto M = m_mask.int_star(i, j);
 
       // Note: this sets velocities at both ice-free ocean and ice-free
       // bedrock to zero. This means that we need to set boundary conditions
       // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
       // to be consistent.
-      if (ice_free(M_ij)) {
-        m_b(i, j).u = m_scaling * ice_free_default_velocity;
-        m_b(i, j).v = m_scaling * ice_free_default_velocity;
+      if (ice_free(M.ij)) {
+        m_b(i, j) = m_scaling * ice_free_velocity;
         continue;
       }
 
       if (is_marginal(i, j, bedrock_boundary)) {
-        int aMM = 1, aPP = 1, bMM = 1, bPP = 1;
+        // weights at the west, east, south, and north cell faces
+        int W = 0, E = 0, S = 0, N = 0;
         // direct neighbors
         if (bedrock_boundary) {
-          if (ice_free_ocean(M_e))
-            aPP = 0;
-          if (ice_free_ocean(M_w))
-            aMM = 0;
-          if (ice_free_ocean(M_n))
-            bPP = 0;
-          if (ice_free_ocean(M_s))
-            bMM = 0;
+          if (ice_free_ocean(M.e))
+            E = 1;
+          if (ice_free_ocean(M.w))
+            W = 1;
+          if (ice_free_ocean(M.n))
+            N = 1;
+          if (ice_free_ocean(M.s))
+            S = 1;
         } else {
-          if (ice_free(M_e))
-            aPP = 0;
-          if (ice_free(M_w))
-            aMM = 0;
-          if (ice_free(M_n))
-            bPP = 0;
-          if (ice_free(M_s))
-            bMM = 0;
+          if (ice_free(M.e))
+            E = 1;
+          if (ice_free(M.w))
+            W = 1;
+          if (ice_free(M.n))
+            N = 1;
+          if (ice_free(M.s))
+            S = 1;
         }
 
-        const double water_level = m_gc.water_level(sea_level(i, j), bed(i, j), lake_level(i, j));
-        const bool isLake = m_gc.islake(lake_level(i, j));
-        const double rho_water = !isLake ? rho_ocean : rho_fresh;
+        double delta_p = 0.0;
+        if (not (grid_edge(*m_grid, i, j) and mask::grounded(M.ij))) {
+          // In regional setups grounded ice may extend to the edge of the domain. This
+          // condition ensures that at a domain edge the ice behaves as if it extends past
+          // the edge without a change in geometry.
+          //
+          // We don't treat floating ice the same way because doing so would affect an
+          // existing "flowline" setup.
 
-        double ocean_pressure = ocean_pressure_difference(ocean(M_ij), is_dry_simulation,
-                                                          H_ij, bed(i,j), water_level,
-                                                          rho_ice, rho_water, standard_gravity);
+          const double water_level = m_gc.water_level(sea_level(i, j), bed(i, j), lake_level(i, j));
+          const bool   isLake = m_gc.islake(lake_level(i, j));
+          const double rho_water = !isLake ? rho_ocean : rho_fresh;
 
-        if (melange_back_pressure != NULL) {
+          delta_p = margin_pressure_difference(ocean(M.ij), is_dry_simulation,
+                                               H_ij, bed(i, j), water_level,
+                                               rho_ice, rho_water, standard_gravity);
+        }
+
+        if (melange_back_pressure) {
           double lambda = (*melange_back_pressure)(i, j);
 
           // adjust the "pressure difference term" using the provided
           // "melange back pressure fraction".
-          ocean_pressure *= (1.0 - lambda);
+          delta_p *= (1.0 - lambda);
+        }
+
+        {
+          // fjord walls, nunataks, etc
+          //
+          // Override weights if we are at the margin and the grid cell on the other side
+          // of the interface is ice-free and above the level of the ice surface.
+          //
+          // This effectively sets the pressure difference at the corresponding interface
+          // to zero, which is exactly what we need.
+          auto b = bed.star(i, j);
+          double h = surface(i, j);
+
+          if (ice_free(M.n) and b.n > h) {
+            N = 0;
+          }
+          if (ice_free(M.e) and b.e > h) {
+            E = 0;
+          }
+          if (ice_free(M.s) and b.s > h) {
+            S = 0;
+          }
+          if (ice_free(M.w) and b.w > h) {
+            W = 0;
+          }
         }
 
         // Note that if the current cell is "marginal" but not a CFBC
         // location, the following two lines are equaivalent to the "usual
         // case" below.
-        m_b(i, j).u = m_taud(i,j).u + (aMM - aPP) * ocean_pressure / dx;
-        m_b(i, j).v = m_taud(i,j).v + (bMM - bPP) * ocean_pressure / dy;
+        //
+        // Note: signs below (+E, -W, etc) are explained by directions of outward
+        // normal vectors at corresponding cell faces.
+        m_b(i, j).u = m_taud(i,j).u + (E - W) * delta_p / dx;
+        m_b(i, j).v = m_taud(i,j).v + (N - S) * delta_p / dy;
 
         continue;
       } // end of "if (is_marginal(i, j))"
@@ -469,6 +510,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
   const double
     dx                    = m_grid->dx(),
     dy                    = m_grid->dy(),
+    beta_lateral_margin   = m_config->get_number("basal_resistance.beta_lateral_margin"),
     beta_ice_free_bedrock = m_config->get_number("basal_resistance.beta_ice_free_bedrock");
 
   const bool use_cfbc     = m_config->get_flag("stress_balance.calving_front_stress_bc");
@@ -481,7 +523,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
   ierr = MatZeroEntries(A);
   PISM_CHK(ierr, "MatZeroEntries");
 
-  IceModelVec::AccessList list{&m_nuH, &tauc, &vel, &m_mask};
+  IceModelVec::AccessList list{&m_nuH, &tauc, &vel, &m_mask, &bed, &surface};
 
   if (inputs.bc_values && inputs.bc_mask) {
     list.add(*inputs.bc_mask);
@@ -510,7 +552,8 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
       // Handle the easy case: provided Dirichlet boundary conditions
       if (inputs.bc_values && inputs.bc_mask && inputs.bc_mask->as_int(i,j) == 1) {
         // set diagonal entry to one (scaled); RHS entry will be known velocity;
-        set_diagonal_matrix_entry(A, i, j, m_scaling);
+        set_diagonal_matrix_entry(A, i, j, 0, m_scaling);
+        set_diagonal_matrix_entry(A, i, j, 1, m_scaling);
         continue;
       }
 
@@ -530,24 +573,23 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
         // be prescribed and is a temperature-independent free (user determined) parameter
 
         // direct neighbors
-        int
-          M_e = m_mask.as_int(i + 1,j),
-          M_w = m_mask.as_int(i - 1,j),
-          M_n = m_mask.as_int(i,j + 1),
-          M_s = m_mask.as_int(i,j - 1);
+        auto M = m_mask.int_star(i, j);
+        auto H = thickness.star(i, j);
+        auto b = bed.star(i, j);
+        double h = surface(i, j);
 
-        if (thickness(i,j) > HminFrozen) {
-          if (bed(i-1,j) > surface(i,j) && ice_free_land(M_w)) {
-            c_w = lateral_drag_viscosity * 0.5 * (thickness(i,j)+thickness(i-1,j));
+        if (H.ij > HminFrozen) {
+          if (b.w > h and ice_free_land(M.w)) {
+            c_w = lateral_drag_viscosity * 0.5 * (H.ij + H.w);
           }
-          if (bed(i+1,j) > surface(i,j) && ice_free_land(M_e)) {
-            c_e = lateral_drag_viscosity * 0.5 * (thickness(i,j)+thickness(i+1,j));
+          if (b.e > h and ice_free_land(M.e)) {
+            c_e = lateral_drag_viscosity * 0.5 * (H.ij + H.e);
           }
-          if (bed(i,j+1) > surface(i,j) && ice_free_land(M_n)) {
-            c_n = lateral_drag_viscosity * 0.5 * (thickness(i,j)+thickness(i,j+1));
+          if (b.n > h and ice_free_land(M.n)) {
+            c_n = lateral_drag_viscosity * 0.5 * (H.ij + H.n);
           }
-          if (bed(i,j-1) > surface(i,j) && ice_free_land(M_s)) {
-            c_s = lateral_drag_viscosity * 0.5 * (thickness(i,j)+thickness(i+1,j));
+          if (b.s > h and ice_free_land(M.s)) {
+            c_s = lateral_drag_viscosity * 0.5 * (H.ij + H.s);
           }
         }
       }
@@ -556,33 +598,40 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
       // non-zeros get allocated, even though we use only 13 (or 14). The
       // remaining 5 (or 4) coefficients are zeros, but we set them anyway,
       // because this makes the code easier to understand.
-      const int sten = 18;
-      MatStencil row, col[sten];
+      const int n_nonzeros = 18;
+      MatStencil row, col[n_nonzeros];
 
-      int aMn = 1, aPn = 1, aMM = 1, aPP = 1, aMs = 1, aPs = 1;
-      int bPw = 1, bPP = 1, bPe = 1, bMw = 1, bMM = 1, bMe = 1;
+      // |-----+-----+---+-----+-----|
+      // | NW  | NNW | N | NNE | NE  |
+      // | WNW |     | | |     | ENE |
+      // | W   |-----|-o-|-----| E   |
+      // | WSW |     | | |     | ESE |
+      // | SW  | SSW | S | SSE | SE  |
+      // |-----+-----+---+-----+-----|
+      //
+      // We use compass rose notation for weights corresponding to interfaces between
+      // cells around the current one (i, j). Here N corresponds to the interface between
+      // the cell (i, j) and the one to the north of it.
+      int N = 1, E = 1, S = 1, W = 1;
+
+      // Similarly, we use compass rose notation for weights used to switch between
+      // centered and one-sided finite differences. Here NNE is the interface between
+      // cells N and NE, ENE - between E and NE, etc.
+      int NNW = 1, NNE = 1, SSW = 1, SSE = 1;
+      int WNW = 1, ENE = 1, WSW = 1, ESE = 1;
 
       int M_ij = m_mask.as_int(i,j);
 
       if (use_cfbc) {
-        int
-          // direct neighbors
-          M_e = m_mask.as_int(i + 1,j),
-          M_w = m_mask.as_int(i - 1,j),
-          M_n = m_mask.as_int(i,j + 1),
-          M_s = m_mask.as_int(i,j - 1),
-          // "diagonal" neighbors
-          M_ne = m_mask.as_int(i + 1,j + 1),
-          M_se = m_mask.as_int(i + 1,j - 1),
-          M_nw = m_mask.as_int(i - 1,j + 1),
-          M_sw = m_mask.as_int(i - 1,j - 1);
+        auto M = m_mask.int_box(i, j);
 
         // Note: this sets velocities at both ice-free ocean and ice-free
         // bedrock to zero. This means that we need to set boundary conditions
         // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
         // to be consistent.
-        if (ice_free(M_ij)) {
-          set_diagonal_matrix_entry(A, i, j, m_scaling);
+        if (ice_free(M.ij)) {
+          set_diagonal_matrix_entry(A, i, j, 0, m_scaling);
+          set_diagonal_matrix_entry(A, i, j, 1, m_scaling);
           continue;
         }
 
@@ -591,61 +640,61 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
           // at a CFBC location.
           if (bedrock_boundary) {
 
-            if (ice_free_ocean(M_e))
-              aPP = 0;
-            if (ice_free_ocean(M_w))
-              aMM = 0;
-            if (ice_free_ocean(M_n))
-              bPP = 0;
-            if (ice_free_ocean(M_s))
-              bMM = 0;
+            if (ice_free_ocean(M.e))
+              E = 0;
+            if (ice_free_ocean(M.w))
+              W = 0;
+            if (ice_free_ocean(M.n))
+              N = 0;
+            if (ice_free_ocean(M.s))
+              S = 0;
 
             // decide whether to use centered or one-sided differences
-            if (ice_free_ocean(M_n) || ice_free_ocean(M_ne))
-              aPn = 0;
-            if (ice_free_ocean(M_e) || ice_free_ocean(M_ne))
-              bPe = 0;
-            if (ice_free_ocean(M_e) || ice_free_ocean(M_se))
-              bMe = 0;
-            if (ice_free_ocean(M_s) || ice_free_ocean(M_se))
-              aPs = 0;
-            if (ice_free_ocean(M_s) || ice_free_ocean(M_sw))
-              aMs = 0;
-            if (ice_free_ocean(M_w) || ice_free_ocean(M_sw))
-              bMw = 0;
-            if (ice_free_ocean(M_w) || ice_free_ocean(M_nw))
-              bPw = 0;
-            if (ice_free_ocean(M_n) || ice_free_ocean(M_nw))
-              aMn = 0;
+            if (ice_free_ocean(M.n) || ice_free_ocean(M.ne))
+              NNE = 0;
+            if (ice_free_ocean(M.e) || ice_free_ocean(M.ne))
+              ENE = 0;
+            if (ice_free_ocean(M.e) || ice_free_ocean(M.se))
+              ESE = 0;
+            if (ice_free_ocean(M.s) || ice_free_ocean(M.se))
+              SSE = 0;
+            if (ice_free_ocean(M.s) || ice_free_ocean(M.sw))
+              SSW = 0;
+            if (ice_free_ocean(M.w) || ice_free_ocean(M.sw))
+              WSW = 0;
+            if (ice_free_ocean(M.w) || ice_free_ocean(M.nw))
+              WNW = 0;
+            if (ice_free_ocean(M.n) || ice_free_ocean(M.nw))
+              NNW = 0;
 
           } else {                // if (not bedrock_boundary)
 
-            if (ice_free(M_e))
-              aPP = 0;
-            if (ice_free(M_w))
-              aMM = 0;
-            if (ice_free(M_n))
-              bPP = 0;
-            if (ice_free(M_s))
-              bMM = 0;
+            if (ice_free(M.e))
+              E = 0;
+            if (ice_free(M.w))
+              W = 0;
+            if (ice_free(M.n))
+              N = 0;
+            if (ice_free(M.s))
+              S = 0;
 
             // decide whether to use centered or one-sided differences
-            if (ice_free(M_n) || ice_free(M_ne))
-              aPn = 0;
-            if (ice_free(M_e) || ice_free(M_ne))
-              bPe = 0;
-            if (ice_free(M_e) || ice_free(M_se))
-              bMe = 0;
-            if (ice_free(M_s) || ice_free(M_se))
-              aPs = 0;
-            if (ice_free(M_s) || ice_free(M_sw))
-              aMs = 0;
-            if (ice_free(M_w) || ice_free(M_sw))
-              bMw = 0;
-            if (ice_free(M_w) || ice_free(M_nw))
-              bPw = 0;
-            if (ice_free(M_n) || ice_free(M_nw))
-              aMn = 0;
+            if (ice_free(M.n) || ice_free(M.ne))
+              NNE = 0;
+            if (ice_free(M.e) || ice_free(M.ne))
+              ENE = 0;
+            if (ice_free(M.e) || ice_free(M.se))
+              ESE = 0;
+            if (ice_free(M.s) || ice_free(M.se))
+              SSE = 0;
+            if (ice_free(M.s) || ice_free(M.sw))
+              SSW = 0;
+            if (ice_free(M.w) || ice_free(M.sw))
+              WSW = 0;
+            if (ice_free(M.w) || ice_free(M.nw))
+              WNW = 0;
+            if (ice_free(M.n) || ice_free(M.nw))
+              NNW = 0;
 
           } // end of the else clause following "if (bedrock_boundary)"
         }   // end of "if (is_marginal(i, j, bedrock_boundary))"
@@ -656,22 +705,22 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
 
       /* Coefficients of the discretization of the first equation; u first, then v. */
       double eq1[] = {
-        0,  -c_n*bPP/dy2,  0,
-        -4*c_w*aMM/dx2,  (c_n*bPP+c_s*bMM)/dy2+(4*c_e*aPP+4*c_w*aMM)/dx2,  -4*c_e*aPP/dx2,
-        0,  -c_s*bMM/dy2,  0,
-        c_w*aMM*bPw/d2+c_n*aMn*bPP/d4,  (c_n*aPn*bPP-c_n*aMn*bPP)/d4+(c_w*aMM*bPP-c_e*aPP*bPP)/d2,  -c_e*aPP*bPe/d2-c_n*aPn*bPP/d4,
-        (c_w*aMM*bMw-c_w*aMM*bPw)/d2+(c_n*aMM*bPP-c_s*aMM*bMM)/d4,  (c_n*aPP*bPP-c_n*aMM*bPP-c_s*aPP*bMM+c_s*aMM*bMM)/d4+(c_e*aPP*bPP-c_w*aMM*bPP-c_e*aPP*bMM+c_w*aMM*bMM)/d2,  (c_e*aPP*bPe-c_e*aPP*bMe)/d2+(c_s*aPP*bMM-c_n*aPP*bPP)/d4,
-        -c_w*aMM*bMw/d2-c_s*aMs*bMM/d4,  (c_s*aMs*bMM-c_s*aPs*bMM)/d4+(c_e*aPP*bMM-c_w*aMM*bMM)/d2,  c_e*aPP*bMe/d2+c_s*aPs*bMM/d4,
+        0,  -c_n*N/dy2,  0,
+        -4*c_w*W/dx2,  (c_n*N+c_s*S)/dy2+(4*c_e*E+4*c_w*W)/dx2,  -4*c_e*E/dx2,
+        0,  -c_s*S/dy2,  0,
+        c_w*W*WNW/d2+c_n*NNW*N/d4,  (c_n*NNE*N-c_n*NNW*N)/d4+(c_w*W*N-c_e*E*N)/d2,  -c_e*E*ENE/d2-c_n*NNE*N/d4,
+        (c_w*W*WSW-c_w*W*WNW)/d2+(c_n*W*N-c_s*W*S)/d4,  (c_n*E*N-c_n*W*N-c_s*E*S+c_s*W*S)/d4+(c_e*E*N-c_w*W*N-c_e*E*S+c_w*W*S)/d2,  (c_e*E*ENE-c_e*E*ESE)/d2+(c_s*E*S-c_n*E*N)/d4,
+        -c_w*W*WSW/d2-c_s*SSW*S/d4,  (c_s*SSW*S-c_s*SSE*S)/d4+(c_e*E*S-c_w*W*S)/d2,  c_e*E*ESE/d2+c_s*SSE*S/d4,
       };
 
       /* Coefficients of the discretization of the second equation; u first, then v. */
       double eq2[] = {
-        c_w*aMM*bPw/d4+c_n*aMn*bPP/d2,  (c_n*aPn*bPP-c_n*aMn*bPP)/d2+(c_w*aMM*bPP-c_e*aPP*bPP)/d4,  -c_e*aPP*bPe/d4-c_n*aPn*bPP/d2,
-        (c_w*aMM*bMw-c_w*aMM*bPw)/d4+(c_n*aMM*bPP-c_s*aMM*bMM)/d2,  (c_n*aPP*bPP-c_n*aMM*bPP-c_s*aPP*bMM+c_s*aMM*bMM)/d2+(c_e*aPP*bPP-c_w*aMM*bPP-c_e*aPP*bMM+c_w*aMM*bMM)/d4,  (c_e*aPP*bPe-c_e*aPP*bMe)/d4+(c_s*aPP*bMM-c_n*aPP*bPP)/d2,
-        -c_w*aMM*bMw/d4-c_s*aMs*bMM/d2,  (c_s*aMs*bMM-c_s*aPs*bMM)/d2+(c_e*aPP*bMM-c_w*aMM*bMM)/d4,  c_e*aPP*bMe/d4+c_s*aPs*bMM/d2,
-        0,  -4*c_n*bPP/dy2,  0,
-        -c_w*aMM/dx2,  (4*c_n*bPP+4*c_s*bMM)/dy2+(c_e*aPP+c_w*aMM)/dx2,  -c_e*aPP/dx2,
-        0,  -4*c_s*bMM/dy2,  0,
+        c_w*W*WNW/d4+c_n*NNW*N/d2,  (c_n*NNE*N-c_n*NNW*N)/d2+(c_w*W*N-c_e*E*N)/d4,  -c_e*E*ENE/d4-c_n*NNE*N/d2,
+        (c_w*W*WSW-c_w*W*WNW)/d4+(c_n*W*N-c_s*W*S)/d2,  (c_n*E*N-c_n*W*N-c_s*E*S+c_s*W*S)/d2+(c_e*E*N-c_w*W*N-c_e*E*S+c_w*W*S)/d4,  (c_e*E*ENE-c_e*E*ESE)/d4+(c_s*E*S-c_n*E*N)/d2,
+        -c_w*W*WSW/d4-c_s*SSW*S/d2,  (c_s*SSW*S-c_s*SSE*S)/d2+(c_e*E*S-c_w*W*S)/d4,  c_e*E*ESE/d4+c_s*SSE*S/d2,
+        0,  -4*c_n*N/dy2,  0,
+        -c_w*W/dx2,  (4*c_n*N+4*c_s*S)/dy2+(c_e*E+c_w*W)/dx2,  -c_e*E/dx2,
+        0,  -4*c_s*S/dy2,  0,
       };
 
       /* i indices */
@@ -709,8 +758,9 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
        *    IceBasalResistancePlasticLaw::drag() methods.  These may be a plastic,
        *    pseudo-plastic, or linear friction law.  Dragging is done implicitly
        *    (i.e. on left side of SSA eqns).  */
-      double beta = 0.0;
+      double beta_u = 0.0, beta_v = 0.0;
       if (include_basal_shear) {
+        double beta = 0.0;
         if (grounded_ice(M_ij)) {
           beta = m_basal_sliding_law->drag(tauc(i,j), vel(i,j).u, vel(i,j).v);
         } else if (ice_free_land(M_ij)) {
@@ -724,11 +774,30 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
             beta = grounded_fraction(i,j) * m_basal_sliding_law->drag(tauc(i,j), vel(i,j).u, vel(i,j).v);
           }
         }
+        beta_u = beta;
+        beta_v = beta;
+      }
+
+      {
+        // Set very high basal drag *in the direction along the boundary* at locations
+        // bordering "fjord walls".
+
+        auto M = m_mask.int_star(i, j);
+        auto b = bed.star(i, j);
+        double h = surface(i, j);
+
+        if ((ice_free(M.n) and b.n > h) or (ice_free(M.s) and b.s > h)) {
+          beta_u += beta_lateral_margin;
+        }
+
+        if ((ice_free(M.e) and b.e > h) or (ice_free(M.w) and b.w > h)) {
+          beta_v += beta_lateral_margin;
+        }
       }
 
       // add beta to diagonal entries
-      eq1[4]  += beta;
-      eq2[13] += beta;
+      eq1[4]  += beta_u;
+      eq2[13] += beta_v;
 
       // check diagonal entries:
       const double eps = 1e-16;
@@ -753,7 +822,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
 
       row.i = i;
       row.j = j;
-      for (int m = 0; m < sten; m++) {
+      for (int m = 0; m < n_nonzeros; m++) {
         col[m].i = I[m];
         col[m].j = J[m];
         col[m].c = C[m];
@@ -761,12 +830,12 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
 
       // set coefficients of the first equation:
       row.c = 0;
-      ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq1, INSERT_VALUES);
+      ierr = MatSetValuesStencil(A, 1, &row, n_nonzeros, col, eq1, INSERT_VALUES);
       PISM_CHK(ierr, "MatSetValuesStencil");
 
       // set coefficients of the second equation:
       row.c = 1;
-      ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq2, INSERT_VALUES);
+      ierr = MatSetValuesStencil(A, 1, &row, n_nonzeros, col, eq2, INSERT_VALUES);
       PISM_CHK(ierr, "MatSetValuesStencil");
     } // i,j-loop
   } catch (...) {
@@ -1577,7 +1646,7 @@ void SSAFD::update_nuH_viewers() {
   tmp.create(m_grid, "nuH", WITHOUT_GHOSTS);
   tmp.set_attrs("temporary",
                 "log10 of (viscosity * thickness)",
-                "Pa s m", "");
+                "Pa s m", "Pa s m", "", 0);
 
   IceModelVec::AccessList list{&m_nuH, &tmp};
 
@@ -1600,25 +1669,19 @@ void SSAFD::update_nuH_viewers() {
   tmp.view(m_nuh_viewer, petsc::Viewer::Ptr());
 }
 
-void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
+void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j, int component,
                                       double value) {
-  PetscErrorCode ierr;
   MatStencil row, col;
+
   row.i = i;
   row.j = j;
+  row.c = component;
+
   col.i = i;
   col.j = j;
+  col.c = component;
 
-  row.c = 0;
-  col.c = 0;
-
-  ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &value, INSERT_VALUES);
-  PISM_CHK(ierr, "MatSetValuesStencil");
-
-  row.c = 1;
-  col.c = 1;
-
-  ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &value, INSERT_VALUES);
+  PetscErrorCode ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &value, INSERT_VALUES);
   PISM_CHK(ierr, "MatSetValuesStencil");
 }
 
@@ -1638,24 +1701,18 @@ void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
  */
 bool SSAFD::is_marginal(int i, int j, bool ssa_dirichlet_bc) {
 
-  StarStencil<int> M = m_mask.int_star(i, j);
-  const int
-    // "diagonal" neighbors
-    M_ne = m_mask.as_int(i + 1,j + 1),
-    M_se = m_mask.as_int(i + 1,j - 1),
-    M_nw = m_mask.as_int(i - 1,j + 1),
-    M_sw = m_mask.as_int(i - 1,j - 1);
+  auto M = m_mask.int_box(i, j);
 
   if (ssa_dirichlet_bc) {
     return icy(M.ij) &&
       (ice_free(M.e) || ice_free(M.w) || ice_free(M.n) || ice_free(M.s) ||
-       ice_free(M_ne) || ice_free(M_se) || ice_free(M_nw) || ice_free(M_sw));
+       ice_free(M.ne) || ice_free(M.se) || ice_free(M.nw) || ice_free(M.sw));
   } else {
     return icy(M.ij) &&
       (ice_free_ocean(M.e) || ice_free_ocean(M.w) ||
        ice_free_ocean(M.n) || ice_free_ocean(M.s) ||
-       ice_free_ocean(M_ne) || ice_free_ocean(M_se) ||
-       ice_free_ocean(M_nw) || ice_free_ocean(M_sw));
+       ice_free_ocean(M.ne) || ice_free_ocean(M.se) ||
+       ice_free_ocean(M.nw) || ice_free_ocean(M.sw));
   }
 }
 

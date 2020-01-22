@@ -111,6 +111,40 @@ const IceModelVec2S& Poisson::solution() const {
   return m_x;
 }
 
+// Maxima code deriving the discretization
+//
+// /* Shift in x and y directions. */
+// shift(expr, dx, dy) := op(expr)[args(expr)[1] + dx, args(expr)[2] + dy]$
+//
+// d_px(var) := (shift(var, 1, 0) - var)$
+// d_mx(var) := (var - shift(var, -1, 0))$
+//
+// d_py(var) := (shift(var, 0, 1) - var)$
+// d_my(var) := (var - shift(var, 0, -1))$
+//
+// constants : [C_x = 1 / (dx^2), C_y = 1 / (dy^2)]$
+//
+// /* discretization of -\nabla \dot (D \nabla W) */
+// L: (E * d_px(W[i, j]) - W * d_mx(W[i, j])) / dx^2 +
+//    (N * d_py(W[i, j]) - S * d_my(W[i, j])) / dy^2$
+//
+// /* discretization of the Poisson equation */
+// eq: - L = f;
+//
+// /* cleaned up equation */
+// s : map(lambda([x,y], solve(x, y)[1]), constants, [dx^2, dy^2]);
+// eq2 : at(eq, s);
+//
+// /* compute matrix coefficients */
+// for m: -1 thru 1 do (for n: -1 thru 1 do
+//   (c[2 - n, m + 2] : factor(ratcoef(lhs(eq2), W[i + m, j + n]))))$
+//
+// /* print results */
+// A : genmatrix(c, 3, 3);
+//
+// b : rhs(eq2);
+//
+// print(''out)$
 void Poisson::assemble_matrix(const IceModelVec2Int &mask, Mat A) {
   PetscErrorCode ierr = 0;
 

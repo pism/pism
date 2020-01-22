@@ -25,11 +25,9 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/pism_options.hh"
+#include "pism/util/ConfigInterface.hh"
 
 namespace pism {
-
-class Config;
 
 template <class Model>
 class PCFactory {
@@ -65,15 +63,6 @@ public:
     }
 
     return result;
-  }
-
-  //! Sets the default type name.
-  virtual void set_default(const std::string &name) {
-    if (m_models.find(name) == m_models.end()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "type %s is not registered", name.c_str());
-    } else {
-      m_default_type = name;
-    }
   }
 
 protected:
@@ -157,7 +146,7 @@ protected:
     }
   };
 
-  std::string m_default_type, m_parameter;
+  std::string m_parameter;
   std::map<std::string, std::shared_ptr<ModelCreator> > m_models;
   std::map<std::string, std::shared_ptr<ModifierCreator> > m_modifiers;
   IceGrid::ConstPtr m_grid;

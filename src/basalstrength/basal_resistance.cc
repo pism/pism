@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,16 +16,18 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cmath>                // pow, sqrt
+
 #include "basal_resistance.hh"
 
-#include <petscsys.h>
-
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Logger.hh"
 
 namespace pism {
+
+static double square(double x) {
+  return x * x;
+}
 
 /* Purely plastic */
 
@@ -41,13 +43,13 @@ void IceBasalResistancePlasticLaw::print_info(const Logger &log,
                                               int threshold,
                                               units::System::Ptr system) const {
   log.message(threshold, "Using purely plastic till with eps = %10.5e m year-1.\n",
-               units::convert(system, m_plastic_regularize, "m second-1", "m year-1"));
+              units::convert(system, m_plastic_regularize, "m second-1", "m year-1"));
 }
 
 
 //! Compute the drag coefficient for the basal shear stress.
 double IceBasalResistancePlasticLaw::drag(double tauc, double vx, double vy) const {
-  const double magreg2 = PetscSqr(m_plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
+  const double magreg2 = square(m_plastic_regularize) + square(vx) + square(vy);
 
   return tauc / sqrt(magreg2);
 }
@@ -61,7 +63,7 @@ double IceBasalResistancePlasticLaw::drag(double tauc, double vx, double vy) con
  */
 void IceBasalResistancePlasticLaw::drag_with_derivative(double tauc, double vx, double vy,
                                                         double *beta, double *dbeta) const {
-  const double magreg2 = PetscSqr(m_plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
+  const double magreg2 = square(m_plastic_regularize) + square(vx) + square(vy);
 
   *beta = tauc / sqrt(magreg2);
 
@@ -155,7 +157,7 @@ void IceBasalResistancePseudoPlasticLaw::print_info(const Logger &log,
   mathematical operation as  @f$ A^q = A^0 = 1 @f$ .)
 */
 double IceBasalResistancePseudoPlasticLaw::drag(double tauc, double vx, double vy) const {
-  const double magreg2 = PetscSqr(m_plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
+  const double magreg2 = square(m_plastic_regularize) + square(vx) + square(vy);
 
   if (m_sliding_scale_factor_reduces_tauc > 0.0) {
     double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_pseudo_q);
@@ -177,7 +179,7 @@ double IceBasalResistancePseudoPlasticLaw::drag(double tauc, double vx, double v
 void IceBasalResistancePseudoPlasticLaw::drag_with_derivative(double tauc, double vx, double vy,
                                                               double *beta, double *dbeta) const
 {
-  const double magreg2 = PetscSqr(m_plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
+  const double magreg2 = square(m_plastic_regularize) + square(vx) + square(vy);
 
   if (m_sliding_scale_factor_reduces_tauc > 0.0) {
     double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_pseudo_q);

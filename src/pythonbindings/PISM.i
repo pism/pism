@@ -66,6 +66,7 @@
 #include "util/Time.hh"
 #include "util/Time_Calendar.hh"
 #include "util/Poisson.hh"
+#include "util/label_components.hh"
 %}
 
 // Tell SWIG that the following variables are truly constant
@@ -90,6 +91,15 @@
 %include std_map.i
 
 %include <std_shared_ptr.i>
+
+// Add a PISM class
+%define pism_class(name, header)
+%{
+  #include header
+%}
+%shared_ptr(name)
+%include header
+%enddef
 
 %template(SizetVector) std::vector<size_t>;
 %template(IntVector) std::vector<int>;
@@ -235,10 +245,10 @@
 
 %include pism_IceGrid.i
 
-/* PIO uses IceGrid, so IceGrid has to be wrapped first. */
-%include pism_PIO.i
+/* File uses IceGrid, so IceGrid has to be wrapped first. */
+%include pism_File.i
 
-/* make sure PIO.i is included before VariableMetadata.hh */
+/* make sure pism_File.i is included before VariableMetadata.hh */
 %include pism_VariableMetadata.i
 
 /* Timeseries uses IceGrid and VariableMetadata so they have to be wrapped first. */
@@ -258,6 +268,9 @@
 %shared_ptr(pism::Component)
 %include "util/Component.hh"
 
+/* GeometryEvolution is a Component, so this has to go after Component.hh */
+%include geometry.i
+
 %include "basalstrength/basal_resistance.hh"
 
 %include pism_FlowLaw.i
@@ -275,13 +288,11 @@
 %include "util/Mask.hh"
 %include "pism_python.hh"
 
-%shared_ptr(pism::YieldStress)
-%shared_ptr(pism::ConstantYieldStress)
-%shared_ptr(pism::MohrCoulombYieldStress)
-%include "basalstrength/YieldStress.hh"
-%include "basalstrength/MohrCoulombYieldStress.hh"
-
-%include geometry.i
+pism_class(pism::MohrCoulombPointwise, "pism/basalstrength/MohrCoulombPointwise.hh")
+pism_class(pism::YieldStress, "pism/basalstrength/YieldStress.hh")
+pism_class(pism::ConstantYieldStress, "pism/basalstrength/ConstantYieldStress.hh")
+pism_class(pism::MohrCoulombYieldStress, "pism/basalstrength/MohrCoulombYieldStress.hh")
+pism_class(pism::RegionalYieldStress, "pism/regional/RegionalYieldStress.hh")
 
 %rename(StressBalanceInputs) pism::stressbalance::Inputs;
 
@@ -323,6 +334,9 @@
 
 %include "coupler/util/PCFactory.hh"
 
+%shared_ptr(pism::PCFactory< pism::surface::SurfaceModel >)
+%template(_SurfaceFactoryBase) pism::PCFactory<pism::surface::SurfaceModel>;
+
 %shared_ptr(pism::PCFactory<pism::ocean::OceanModel>)
 %template(_OceanFactoryBase) pism::PCFactory<pism::ocean::OceanModel>;
 
@@ -332,15 +346,16 @@
 %shared_ptr(pism::PCFactory<pism::atmosphere::AtmosphereModel>)
 %template(_AtmosphereFactoryBase) pism::PCFactory<pism::atmosphere::AtmosphereModel>;
 
-%shared_ptr(pism::PCFactory<SurfaceModel>)
-%template(_SurfaceFactoryBase) pism::PCFactory<pism::surface::SurfaceModel>;
-
 %include pism_ocean.i
+
+%include pism_frontalmelt.i
 
 /* surface models use atmosphere models as inputs so we need to define atmosphere models first */
 %include pism_atmosphere.i
 
 %include pism_surface.i
+
+%include pism_calving.i
 
 %include pism_verification.i
 
@@ -348,3 +363,6 @@
 
 %shared_ptr(pism::Poisson)
 %include "util/Poisson.hh"
+
+pism_class(pism::FractureDensity, "pism/fracturedensity/FractureDensity.hh")
+%include "util/label_components.hh"

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014, 2015, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2014, 2015, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,19 +24,16 @@
 
 namespace pism {
 namespace surface {
-class Factory : protected PCFactory<SurfaceModel> {
-
+class Factory : public PCFactory<SurfaceModel> {
 public:
-  Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input);
+  typedef atmosphere::AtmosphereModel InputModel;
+  Factory(IceGrid::ConstPtr g, std::shared_ptr<InputModel> input);
   ~Factory();
 
-  std::shared_ptr<SurfaceModel> create();
+  using PCFactory<SurfaceModel>::create;
   std::shared_ptr<SurfaceModel> create(const std::string &type);
 
-  void set_default(const std::string &type);
 private:
-  typedef atmosphere::AtmosphereModel InputModel;
-
   class SurfaceModelCreator {
   public:
     virtual std::shared_ptr<SurfaceModel> create(IceGrid::ConstPtr grid,

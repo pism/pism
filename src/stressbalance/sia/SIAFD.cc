@@ -192,21 +192,26 @@ void SIAFD::update(const IceModelVec2V &sliding_velocity,
   \param[out] h_y the Y-component of the surface gradient, on the staggered grid
 */
 void SIAFD::compute_surface_gradient(const Inputs &inputs,
-                                     IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
+                                     IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
 
   const std::string method = m_config->get_string("stress_balance.sia.surface_gradient_method");
 
   if (method == "eta") {
 
-    surface_gradient_eta(inputs, h_x, h_y);
+    surface_gradient_eta(inputs.geometry->ice_thickness,
+                         inputs.geometry->bed_elevation,
+                         h_x, h_y);
 
   } else if (method == "haseloff") {
 
-    surface_gradient_haseloff(inputs, h_x, h_y);
+    surface_gradient_haseloff(inputs.geometry->ice_surface_elevation,
+                              inputs.geometry->cell_type,
+                              h_x, h_y);
 
   } else if (method == "mahaffy") {
 
-    surface_gradient_mahaffy(inputs, h_x, h_y);
+    surface_gradient_mahaffy(inputs.geometry->ice_surface_elevation,
+                             h_x, h_y);
 
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -216,8 +221,9 @@ void SIAFD::compute_surface_gradient(const Inputs &inputs,
 }
 
 //! \brief Compute the ice surface gradient using the eta-transformation.
-void SIAFD::surface_gradient_eta(const Inputs &inputs,
-                                 IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
+void SIAFD::surface_gradient_eta(const IceModelVec2S &ice_thickness,
+                                 const IceModelVec2S &bed_elevation,
+                                 IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double n = m_flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
@@ -227,75 +233,73 @@ void SIAFD::surface_gradient_eta(const Inputs &inputs,
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
 
-  const IceModelVec2S
-    &H = inputs.geometry->ice_thickness,
-    &b = inputs.geometry->bed_elevation;
-
-  IceModelVec::AccessList list{&eta, &H, &h_x, &h_y, &b};
+  IceModelVec::AccessList list{&eta, &ice_thickness, &h_x, &h_y, &bed_elevation};
 
   unsigned int GHOSTS = eta.stencil_width();
-  assert(H.stencil_width() >= GHOSTS);
+  assert(ice_thickness.stencil_width() >= GHOSTS);
 
   for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    eta(i,j) = pow(H(i,j), etapow);
+    eta(i, j) = pow(ice_thickness(i, j), etapow);
   }
 
   // now use Mahaffy on eta to get grad h on staggered;
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
 
-  assert(b.stencil_width()   >= 2);
+  assert(bed_elevation.stencil_width() >= 2);
   assert(eta.stencil_width() >= 2);
   assert(h_x.stencil_width() >= 1);
   assert(h_y.stencil_width() >= 1);
 
-  for (int o=0; o<2; o++) {
+  for (PointsWithGhosts p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-    for (PointsWithGhosts p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
+    auto b = bed_elevation.box(i, j);
+    auto e = eta.box(i, j);
 
-      if (o==0) {     // If I-offset
-        const double mean_eta = 0.5 * (eta(i+1,j) + eta(i,j));
-        if (mean_eta > 0.0) {
-          const double factor = invpow * pow(mean_eta, dinvpow);
-          h_x(i,j,o) = factor * (eta(i+1,j) - eta(i,j)) / dx;
-          h_y(i,j,o) = factor * (+ eta(i+1,j+1) + eta(i,j+1)
-                                 - eta(i+1,j-1) - eta(i,j-1)) / (4.0*dy);
-        } else {
-          h_x(i,j,o) = 0.0;
-          h_y(i,j,o) = 0.0;
-        }
-        // now add bed slope to get actual h_x,h_y
-        h_x(i,j,o) += b.diff_x_stagE(i,j);
-        h_y(i,j,o) += b.diff_y_stagE(i,j);
-      } else {        // J-offset
-        const double mean_eta = 0.5 * (eta(i,j+1) + eta(i,j));
-        if (mean_eta > 0.0) {
-          const double factor = invpow * pow(mean_eta, dinvpow);
-          h_y(i,j,o) = factor * (eta(i,j+1) - eta(i,j)) / dy;
-          h_x(i,j,o) = factor * (+ eta(i+1,j+1) + eta(i+1,j)
-                                 - eta(i-1,j+1) - eta(i-1,j)) / (4.0*dx);
-        } else {
-          h_y(i,j,o) = 0.0;
-          h_x(i,j,o) = 0.0;
-        }
-        // now add bed slope to get actual h_x,h_y
-        h_y(i,j,o) += b.diff_y_stagN(i,j);
-        h_x(i,j,o) += b.diff_x_stagN(i,j);
+    // i-offset
+    {
+      double mean_eta = 0.5 * (e.e + e.ij);
+      if (mean_eta > 0.0) {
+        double factor = invpow * pow(mean_eta, dinvpow);
+        h_x(i, j, 0) = factor * (e.e - e.ij) / dx;
+        h_y(i, j, 0) = factor * (e.ne + e.n - e.se - e.s) / (4.0 * dy);
+      } else {
+        h_x(i, j, 0) = 0.0;
+        h_y(i, j, 0) = 0.0;
       }
+      // now add bed slope to get actual h_x, h_y
+      h_x(i, j, 0) += (b.e - b.ij) / dx;
+      h_y(i, j, 0) += (b.ne + b.n - b.se - b.s) / (4.0 * dy);
     }
-  }
+
+    // j-offset
+    {
+      double mean_eta = 0.5 * (e.n + e.ij);
+      if (mean_eta > 0.0) {
+        double factor = invpow * pow(mean_eta, dinvpow);
+        h_x(i, j, 1) = factor * (e.ne + e.e - e.nw - e.w) / (4.0 * dx);
+        h_y(i, j, 1) = factor * (e.n - e.ij) / dy;
+      } else {
+        h_x(i, j, 1) = 0.0;
+        h_y(i, j, 1) = 0.0;
+      }
+      // now add bed slope to get actual h_x, h_y
+      h_x(i, j, 1) += (b.ne + b.e - b.nw - b.w) / (4.0 * dx);
+      h_y(i, j, 1) += (b.n - b.ij) / dy;
+    }
+  } // end of the loop over grid points
 }
 
 
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
-void SIAFD::surface_gradient_mahaffy(const Inputs &inputs,
-                                     IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
+void SIAFD::surface_gradient_mahaffy(const IceModelVec2S &ice_surface_elevation,
+                                     IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
 
-  const IceModelVec2S &h = inputs.geometry->ice_surface_elevation;
+  const IceModelVec2S &h = ice_surface_elevation;
 
   IceModelVec::AccessList list{&h_x, &h_y, &h};
 
@@ -366,23 +370,22 @@ void SIAFD::surface_gradient_mahaffy(const Inputs &inputs,
  * words, a purely local computation would require width=3 stencil of surface,
  * mask, and bed fields.)
  */
-void SIAFD::surface_gradient_haseloff(const Inputs &inputs,
-                                      IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
+void SIAFD::surface_gradient_haseloff(const IceModelVec2S &ice_surface_elevation,
+                                      const IceModelVec2CellType &cell_type,
+                                      IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double
     dx = m_grid->dx(),
     dy = m_grid->dy();  // convenience
   const IceModelVec2S
-    &h = inputs.geometry->ice_surface_elevation,
-    &b = inputs.geometry->bed_elevation;
+    &h = ice_surface_elevation;
   IceModelVec2S
     &w_i = m_work_2d_0,
     &w_j = m_work_2d_1; // averaging weights
 
-  const IceModelVec2CellType &mask = inputs.geometry->cell_type;
+  const IceModelVec2CellType &mask = cell_type;
 
-  IceModelVec::AccessList list{&h_x, &h_y, &w_i, &w_j, &h, &mask, &b};
+  IceModelVec::AccessList list{&h_x, &h_y, &w_i, &w_j, &h, &mask};
 
-  assert(b.stencil_width()    >= 2);
   assert(mask.stencil_width() >= 2);
   assert(h.stencil_width()    >= 2);
   assert(h_x.stencil_width()  >= 1);
@@ -400,8 +403,8 @@ void SIAFD::surface_gradient_haseloff(const Inputs &inputs,
         // marine margin
         h_x(i,j,0) = 0;
         w_i(i,j)   = 0;
-      } else if ((mask.icy(i,j) && mask.ice_free(i+1,j) && b(i+1,j) > h(i,j)) ||
-                 (mask.ice_free(i,j) && mask.icy(i+1,j) && b(i,j) > h(i+1,j))) {
+      } else if ((mask.icy(i,j) && mask.ice_free(i+1,j) && h(i+1,j) > h(i,j)) ||
+                 (mask.ice_free(i,j) && mask.icy(i+1,j) && h(i,j) > h(i+1,j))) {
         // ice next to a "cliff"
         h_x(i,j,0) = 0.0;
         w_i(i,j)   = 0;
@@ -419,8 +422,8 @@ void SIAFD::surface_gradient_haseloff(const Inputs &inputs,
         // marine margin
         h_y(i,j,1) = 0.0;
         w_j(i,j)   = 0.0;
-      } else if ((mask.icy(i,j) && mask.ice_free(i,j+1) && b(i,j+1) > h(i,j)) ||
-                 (mask.ice_free(i,j) && mask.icy(i,j+1) && b(i,j) > h(i,j+1))) {
+      } else if ((mask.icy(i,j) && mask.ice_free(i,j+1) && h(i,j+1) > h(i,j)) ||
+                 (mask.ice_free(i,j) && mask.icy(i,j+1) && h(i,j) > h(i,j+1))) {
         // ice next to a "cliff"
         h_y(i,j,1) = 0.0;
         w_j(i,j)   = 0.0;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,39 +26,18 @@
 #include "SIAFD_Regional.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/basalstrength/ConstantYieldStress.hh"
-#include "RegionalDefaultYieldStress.hh"
-#include "pism/util/io/PIO.hh"
+#include "RegionalYieldStress.hh"
+#include "pism/util/io/File.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "EnthalpyModel_Regional.hh"
 #include "pism/energy/CHSystem.hh"
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/energy/utilities.hh"
+#include "pism/util/iceModelVec2T.hh"
+#include "pism/hydrology/Hydrology.hh"
 
 namespace pism {
-
-//! \brief Set no_model_mask variable to have value 1 in strip of width 'strip'
-//! m around edge of computational domain, and value 0 otherwise.
-static void set_no_model_strip(const IceGrid &grid, double width, IceModelVec2Int &result) {
-
-  if (width <= 0.0) {
-    return;
-  }
-
-  IceModelVec::AccessList list(result);
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (in_null_strip(grid, i, j, width)) {
-      result(i, j) = 1;
-    } else {
-      result(i, j) = 0;
-    }
-  }
-
-  result.update_ghosts();
-}
-
 
 IceRegionalModel::IceRegionalModel(IceGrid::Ptr g, Context::Ptr c)
   : IceModel(g, c) {
@@ -74,7 +53,7 @@ void IceRegionalModel::allocate_storage() {
 
   IceModel::allocate_storage();
 
-  m_log->message(2, 
+  m_log->message(2,
                  "  creating IceRegionalModel vecs ...\n");
 
   // stencil width of 2 needed by SIAFD_Regional::compute_surface_gradient()
@@ -82,11 +61,11 @@ void IceRegionalModel::allocate_storage() {
   m_no_model_mask.set_attrs("model_state",
                             "mask: zeros (modeling domain) and ones"
                             " (no-model buffer near grid edges)",
-                            "", ""); // no units and no standard name
+                            "", "", "", 0); // no units and no standard name
   m_no_model_mask.metadata().set_numbers("flag_values", {0, 1});
   m_no_model_mask.metadata().set_string("flag_meanings", "normal special_treatment");
   m_no_model_mask.set_time_independent(true);
-  m_no_model_mask.metadata().set_output_type(PISM_BYTE);
+  m_no_model_mask.metadata().set_output_type(PISM_INT);
   m_no_model_mask.set(0);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
@@ -94,16 +73,16 @@ void IceRegionalModel::allocate_storage() {
   m_usurf_stored.set_attrs("model_state",
                            "saved surface elevation for use to keep surface gradient constant"
                            " in no_model strip",
-                           "m",
-                           ""); //  no standard name
+                           "m", "m",
+                           "", 0); //  no standard name
 
   // stencil width of 1 needed for differentiation
   m_thk_stored.create(m_grid, "thkstore", WITH_GHOSTS, 1);
   m_thk_stored.set_attrs("model_state",
                          "saved ice thickness for use to keep driving stress constant"
                          " in no_model strip",
-                         "m",
-                         ""); //  no standard name
+                         "m", "m",
+                         "", 0); //  no standard name
 
   m_model_state.insert(&m_thk_stored);
   m_model_state.insert(&m_usurf_stored);
@@ -135,10 +114,10 @@ void IceRegionalModel::model_state_setup() {
   if (m_ch_system) {
     const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
 
-    std::unique_ptr<PIO> input_file;
+    std::unique_ptr<File> input_file;
 
     if (use_input_file) {
-      input_file.reset(new PIO(m_grid->com, "guess_mode", input.filename, PISM_READONLY));
+      input_file.reset(new File(m_grid->com, input.filename, PISM_GUESS, PISM_READONLY));
     }
 
     switch (input.type) {
@@ -236,21 +215,13 @@ void IceRegionalModel::allocate_basal_yield_stress() {
     return;
   }
 
-  std::string model = m_config->get_string("stress_balance.model");
+  IceModel::allocate_basal_yield_stress();
 
-  // only these two use the yield stress (so far):
-  if (model == "ssa" or model == "ssa+sia") {
-    std::string yield_stress_model = m_config->get_string("basal_yield_stress.model");
+  if (m_basal_yield_stress_model) {
+    // IceModel allocated a basal yield stress model. This means that we are using a
+    // stress balance model that uses it and we need to add regional modifications.
+    m_basal_yield_stress_model.reset(new RegionalYieldStress(m_basal_yield_stress_model));
 
-    if (yield_stress_model == "constant") {
-      m_basal_yield_stress_model.reset(new ConstantYieldStress(m_grid));
-    } else if (yield_stress_model == "mohr_coulomb") {
-      m_basal_yield_stress_model.reset(new RegionalDefaultYieldStress(m_grid));
-    } else {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "yield stress model '%s' is not supported.",
-                                    yield_stress_model.c_str());
-    }
     m_submodels["basal yield stress"] = m_basal_yield_stress_model.get();
   }
 }
@@ -262,15 +233,19 @@ void IceRegionalModel::allocate_basal_yield_stress() {
  * - usurf_stored
  * - thk_stored
  */
-void IceRegionalModel::bootstrap_2d(const PIO &input_file) {
+void IceRegionalModel::bootstrap_2d(const File &input_file) {
 
   IceModel::bootstrap_2d(input_file);
 
   // no_model_mask
   {
-    // set using the no_model_strip parameter
-    double strip_width = m_config->get_number("regional.no_model_strip", "meters");
-    set_no_model_strip(*m_grid, strip_width, m_no_model_mask);
+    if (input_file.find_variable(m_no_model_mask.metadata().get_name())) {
+      m_no_model_mask.regrid(input_file, CRITICAL);
+    } else {
+      // set using the no_model_strip parameter
+      double strip_width = m_config->get_number("regional.no_model_strip", "meters");
+      set_no_model_strip(*m_grid, strip_width, m_no_model_mask);
+    }
 
     // m_no_model_mask was added to m_model_state, so
     // IceModel::regrid() will take care of regridding it, if necessary.
@@ -443,6 +418,33 @@ void IceRegionalModel::init_diagnostics() {
     m_diagnostics["ch_liqfrac"]   = Diagnostic::Ptr(new CHLiquidWaterFraction(this));
     m_diagnostics["ch_heat_flux"] = Diagnostic::Ptr(new CHHeatFlux(this));
   }
+}
+
+void IceRegionalModel::hydrology_step() {
+  hydrology::Inputs inputs;
+
+  IceModelVec2S &sliding_speed = m_work2d[0];
+  sliding_speed.set_to_magnitude(m_stress_balance->advective_velocity());
+
+  inputs.no_model_mask      = &m_no_model_mask;
+  inputs.geometry           = &m_geometry;
+  inputs.surface_input_rate = nullptr;
+  inputs.basal_melt_rate    = &m_basal_melt_rate;
+  inputs.ice_sliding_speed  = &sliding_speed;
+
+  if (m_surface_input_for_hydrology) {
+    m_surface_input_for_hydrology->update(m_time->current(), m_dt);
+    m_surface_input_for_hydrology->average(m_time->current(), m_dt);
+    inputs.surface_input_rate = m_surface_input_for_hydrology.get();
+  } else if (m_config->get_flag("hydrology.surface_input_from_runoff")) {
+    // convert [kg m-2] to [kg m-2 s-1]
+    IceModelVec2S &surface_input_rate = m_work2d[1];
+    surface_input_rate.copy_from(m_surface->runoff());
+    surface_input_rate.scale(1.0 / m_dt);
+    inputs.surface_input_rate = &surface_input_rate;
+  }
+
+  m_subglacial_hydrology->update(m_time->current(), m_dt, inputs);
 }
 
 

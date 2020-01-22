@@ -38,7 +38,7 @@ LakeLevel::LakeLevel(IceGrid::ConstPtr grid, std::shared_ptr<LakeLevel> input)
 
   m_lake_level.set_attrs("diagnostic",
                          "lake level elevation, relative to the geoid",
-                         "meter", "");
+                         "meter", "meter", "", 0);
 }
 
 // "Model" constructor (returns lake level is missing).
@@ -99,13 +99,13 @@ MaxTimestep LakeLevel::max_timestep_impl(double t) const {
   return MaxTimestep("lake level forcing");
 }
 
-void LakeLevel::define_model_state_impl(const PIO &output) const {
+void LakeLevel::define_model_state_impl(const File &output) const {
   if (m_input_model) {
     m_input_model->define_model_state(output);
   }
 }
 
-void LakeLevel::write_model_state_impl(const PIO &output) const {
+void LakeLevel::write_model_state_impl(const File &output) const {
   if (m_input_model) {
     m_input_model->write_model_state(output);
   }

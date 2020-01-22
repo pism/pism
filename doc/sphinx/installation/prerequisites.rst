@@ -35,10 +35,11 @@ longitude, latitude coordinates of grid points and parallel I/O. These libraries
 recommended, but not strictly required:
 
 .. csv-table::
-   :header: Recommended Library, Comment
+   :header: Optional Library, Comment
 
    PROJ_,  version `\ge` 5.0 (used to compute longitude-latitude grid coordinates and cell bounds)
-   PnetCDF_, Can be used for parallel I/O
+   PnetCDF_, Can be used for faster parallel I/O
+   ParallelIO_, Can be used for faster parallel I/O
 
 Python_ is needed for the PETSc installation process; a number of PISM's pre- and
 post-processing scripts also use Python (either 2.7 or 3.x), while Git_ is usually needed

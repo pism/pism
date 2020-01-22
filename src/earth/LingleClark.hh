@@ -49,8 +49,8 @@ public:
 
   IceModelVec2S::Ptr elastic_load_response_matrix() const;
 protected:
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   DiagnosticList diagnostics_impl() const;
 

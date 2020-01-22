@@ -19,7 +19,7 @@
 #include "BTU_Full.hh"
 
 #include "pism/util/pism_options.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
@@ -74,7 +74,7 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
 
     m_temp->set_attrs("model_state",
                       "lithosphere (bedrock) temperature, in BTU_Full",
-                      "K", "");
+                      "K", "K", "", 0);
     m_temp->metadata().set_number("valid_min", 0.0);
   }
 
@@ -100,9 +100,9 @@ void BTU_Full::init_impl(const InputOptions &opts) {
     const int temp_revision = m_temp->state_counter();
 
     if (opts.type == INIT_RESTART) {
-      PIO input_file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
+      File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
 
-      if (input_file.inq_var("litho_temp")) {
+      if (input_file.find_variable("litho_temp")) {
         m_temp->read(input_file, opts.record);
       }
       // otherwise the bedrock temperature is either interpolated from a -regrid_file or filled
@@ -137,12 +137,12 @@ double BTU_Full::depth_impl() const {
   return m_Lbz;
 }
 
-void BTU_Full::define_model_state_impl(const PIO &output) const {
+void BTU_Full::define_model_state_impl(const File &output) const {
   m_bottom_surface_flux.define(output);
   m_temp->define(output);
 }
 
-void BTU_Full::write_model_state_impl(const PIO &output) const {
+void BTU_Full::write_model_state_impl(const File &output) const {
   m_bottom_surface_flux.write(output);
   m_temp->write(output);
 }

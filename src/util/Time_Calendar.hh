@@ -37,7 +37,7 @@ public:
   virtual void init_from_file(const std::string &filename, const Logger &log,
                               bool set_start_time);
 
-  virtual void init_from_input_file(const PIO &nc,
+  virtual void init_from_input_file(const File &nc,
                                     const std::string &time_name,
                                     const Logger &log);
 

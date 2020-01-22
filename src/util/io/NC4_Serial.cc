@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,29 +28,16 @@
 namespace pism {
 namespace io {
 
-int NC4_Serial::integer_open_mode(IO_Mode input) const {
-  if (input == PISM_READONLY) {
-    return NC_NOWRITE;
-  } else {
-    return NC_WRITE;
-  }
-}
-
 int NC4_Serial::open_impl(const std::string &fname, IO_Mode mode) {
-  int stat;
+  int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;
 
-  int nc_mode = integer_open_mode(mode);
-  stat = nc_open(fname.c_str(), nc_mode, &m_file_id);
-
-  return stat;
+  int stat = nc_open(fname.c_str(), open_mode, &m_file_id);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 int NC4_Serial::create_impl(const std::string &fname) {
-  int stat;
-
-  stat = nc_create(fname.c_str(), NC_NETCDF4, &m_file_id);
-
-  return stat;
+  int stat = nc_create(fname.c_str(), NC_NETCDF4, &m_file_id);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 } // end of namespace io

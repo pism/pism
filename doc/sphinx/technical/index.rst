@@ -14,3 +14,7 @@ Technical notes
    ssafd-cfbc.rst
 
    bombproof.rst
+
+   steady-hydrology.rst
+
+   release_checklist.rst

@@ -41,11 +41,11 @@ LapseRates::LapseRates(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> 
   {
     ForcingOptions opt(*m_grid->ctx(), "atmosphere.lapse_rate");
 
-    unsigned int buffer_size = m_config->get_number("climate_forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
+    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
+    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
     m_reference_surface = IceModelVec2T::ForcingField(m_grid,
                                                       file,
@@ -55,8 +55,8 @@ LapseRates::LapseRates(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> 
                                                       evaluations_per_year,
                                                       periodic,
                                                       LINEAR);
-    m_reference_surface->set_attrs("climate_forcing", "ice surface elevation", "m",
-                                   "surface_altitude", 0);
+    m_reference_surface->set_attrs("climate_forcing", "ice surface elevation",
+                                   "m", "m", "surface_altitude", 0);
   }
 
   m_precipitation = allocate_precipitation(grid);

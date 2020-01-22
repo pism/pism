@@ -27,15 +27,15 @@ namespace pism {
 namespace atmosphere {
 
 Given::Given(IceGrid::ConstPtr g)
-  : AtmosphereModel(g, nullptr) {
+  : AtmosphereModel(g, std::shared_ptr<AtmosphereModel>()) {
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.given");
 
   {
-    unsigned int buffer_size = m_config->get_number("climate_forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
+    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
+    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
     m_air_temp = IceModelVec2T::ForcingField(m_grid,
                                              file,
@@ -57,14 +57,12 @@ Given::Given(IceGrid::ConstPtr g)
 
   {
     m_air_temp->set_attrs("diagnostic", "mean annual near-surface air temperature",
-                          "Kelvin", "", 0);
-    m_air_temp->metadata(0).set_number("valid_min", 0.0);
-    m_air_temp->metadata(0).set_number("valid_max", 323.15); // 50 C
+                          "Kelvin", "Kelvin", "", 0);
+    m_air_temp->metadata(0).set_numbers("valid_range", {0.0, 323.15}); // (0 C, 50 C)
   }
   {
     m_precipitation->set_attrs("model_state", "precipitation rate",
-                               "kg m-2 second-1", "precipitation_flux", 0);
-    m_precipitation->metadata(0).set_string("glaciological_units", "kg m-2 year-1");
+                               "kg m-2 second-1", "kg m-2 year-1", "precipitation_flux", 0);
   }
 }
 

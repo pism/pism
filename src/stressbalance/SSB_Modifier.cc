@@ -37,23 +37,21 @@ SSB_Modifier::SSB_Modifier(IceGrid::ConstPtr g)
   m_D_max = 0.0;
 
   m_u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
-              "m s-1", "land_ice_x_velocity");
-  m_u.metadata().set_string("glaciological_units", "m year-1");
+                "m s-1", "m year-1", "land_ice_x_velocity", 0);
 
   m_v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
-              "m s-1", "land_ice_y_velocity");
-  m_v.metadata().set_string("glaciological_units", "m year-1");
+                "m s-1", "m year-1", "land_ice_y_velocity", 0);
 
    // never diff'ed in hor dirs
   m_strain_heating.set_attrs("internal",
-                           "rate of strain heating in ice (dissipation heating)",
-                           "W m-3", "");
-  m_strain_heating.metadata().set_string("glaciological_units", "mW m-3");
+                             "rate of strain heating in ice (dissipation heating)",
+                             "W m-3", "mW m-3", "", 0);
 
 
-  m_diffusive_flux.set_attrs("internal", 
-                           "diffusive (SIA) flux components on the staggered grid",
-                           "", "");
+  m_diffusive_flux.set_attrs("internal",
+                             "diffusive (SIA) flux components on the staggered grid",
+                             "", "", "", 0);
+
 }
 
 SSB_Modifier::~SSB_Modifier() {

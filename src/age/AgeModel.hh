@@ -52,8 +52,8 @@ public:
   const IceModelVec3 & age() const;
 protected:
   MaxTimestep max_timestep_impl(double t) const;
-  void define_model_state_impl(const PIO &output) const;
-  void write_model_state_impl(const PIO &output) const;
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
 
   IceModelVec3 m_ice_age;
   IceModelVec3 m_work;

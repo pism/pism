@@ -39,8 +39,8 @@ public:
   std::string dump() const;
 
 private:
-  virtual void read_impl(const PIO &nc);
-  virtual void write_impl(const PIO &nc) const;
+  virtual void read_impl(const File &nc);
+  virtual void write_impl(const File &nc) const;
 
   virtual bool is_set_impl(const std::string &name) const;
 

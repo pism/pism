@@ -38,22 +38,23 @@ Gradual::Gradual(IceGrid::ConstPtr grid,
   m_max_lake_fill_rate = units::convert(m_sys, 1.0, "m/years", "m/seconds");
   m_target_level.create(m_grid, "target_level", WITHOUT_GHOSTS);
   m_target_level.set_attrs("model_state", "target lake level",
-                           "m", "target_level");
+                           "m", "m","target_level", 0);
   m_target_level.metadata().set_number("_FillValue", m_fill_value);
 
   m_min_level.create(m_grid, "min_lake_level", WITHOUT_GHOSTS);
   m_min_level.set_attrs("model_state", "min lake level",
-                        "m", "min_level");
+                        "m", "m", "min_level", 0);
   m_min_level.metadata().set_number("_FillValue", m_fill_value);
 
   m_max_level.create(m_grid, "max_lake_level", WITHOUT_GHOSTS);
   m_max_level.set_attrs("model_state", "max lake level",
-                        "m", "max_level");
+                        "m", "m", "max_level", 0);
   m_max_level.metadata().set_number("_FillValue", m_fill_value);
 
   m_min_basin.create(m_grid, "min_lake_bed", WITHOUT_GHOSTS);
   m_min_basin.set_attrs("model_state", "min lake bed",
-                        "m", "min_bed");
+                        "m", "m", "min_bed", 0);
+
   m_min_basin.metadata().set_number("_FillValue", m_fill_value);
 
   m_max_sl_basin.create(m_grid, "max_sl_basin", WITHOUT_GHOSTS);
@@ -66,32 +67,28 @@ Gradual::Gradual(IceGrid::ConstPtr grid,
 
   m_lake_area.create(m_grid, "lake_surface_area", WITHOUT_GHOSTS);
   m_lake_area.set_attrs("model_state", "lake_surface_area",
-                        "m2", "lake_surface");
+                        "m2", "m2", "lake_surface", 0);
   m_lake_area.metadata().set_number("_FillValue", m_fill_value);
 
   m_lake_mass_input_discharge.create(m_grid, "lake_mass_input_due_to_discharge", WITHOUT_GHOSTS);
   m_lake_mass_input_discharge.set_attrs("model_state", "lake_mass_input_discharge",
-                                        "kg s-1", "lake_mass_input_discharge");
+                                        "kg s-1", "kg year-1", "lake_mass_input_discharge", 0);
   m_lake_mass_input_discharge.metadata().set_number("_FillValue", m_fill_value);
-  m_lake_mass_input_discharge.metadata().set_string("glaciological_units", "kg year-1");
 
   m_lake_mass_input_basal.create(m_grid, "lake_mass_input_due_to_basal melt", WITHOUT_GHOSTS);
   m_lake_mass_input_basal.set_attrs("model_state", "lake_mass_input_basal",
-                                    "kg s-1", "lake_mass_input_shelf");
+                                    "kg s-1", "kg year-1", "lake_mass_input_shelf", 0);
   m_lake_mass_input_basal.metadata().set_number("_FillValue", m_fill_value);
-  m_lake_mass_input_basal.metadata().set_string("glaciological_units", "kg year-1");
 
   m_lake_mass_input_total.create(m_grid, "lake_mass_input_total", WITHOUT_GHOSTS);
   m_lake_mass_input_total.set_attrs("model_state", "lake_mass_input_total",
-                                    "kg s-1", "lake_mass_input_total");
+                                    "kg s-1", "kg year-1", "lake_mass_input_total", 0);
   m_lake_mass_input_total.metadata().set_number("_FillValue", m_fill_value);
-  m_lake_mass_input_total.metadata().set_string("glaciological_units", "kg year-1");
 
   m_lake_fill_rate.create(m_grid, "lake_fill_rate", WITHOUT_GHOSTS);
   m_lake_fill_rate.set_attrs("model_state", "lake_fill_rate",
-                             "m s-1", "lake_level_rise");
+                             "m s-1", "m year-1", "lake_level_rise", 0);
   m_lake_fill_rate.metadata().set_number("_FillValue", m_fill_value);
-  m_lake_fill_rate.metadata().set_string("glaciological_units", "m year-1");
 
   m_alpha_lake = m_config->get_number("constants.ice.density") / m_config->get_number("constants.fresh_water.density");
 
@@ -112,7 +109,7 @@ void Gradual::init_impl(const Geometry &geometry) {
     tmp.create(m_grid, "effective_lake_level_elevation", WITHOUT_GHOSTS);
     tmp.set_attrs("diagnostic",
                   "lake level elevation, relative to the geoid",
-                  "meter", "");
+                  "meter", "m", "", 0);
     tmp.metadata().set_number("_FillValue", m_fill_value);
 
     InputOptions opts = process_input_options(m_grid->com, m_config);
@@ -122,9 +119,9 @@ void Gradual::init_impl(const Geometry &geometry) {
       m_log->message(2, "* Reading lake level forcing from '%s' for re-starting...\n",
                      opts.filename.c_str());
 
-      PIO file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
-      const unsigned int time_length = file.inq_nrecords(),
-                         last_record = time_length > 0 ? time_length - 1 : 0;
+      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      const unsigned int time_length = file.nrecords(),
+                        last_record = time_length > 0 ? time_length - 1 : 0;
 
       tmp.read(file, last_record);
 
@@ -243,15 +240,19 @@ void Gradual::compute_fill_rate(const double dt,
     Lacc.init(lake_level);
 
     const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area"),
-                        &discharge = *m_grid->variables().get_2d_scalar("discharge"),
-                        &bmb       = *m_grid->variables().get_2d_scalar("effective_BMB");
+                        &bmb       = *m_grid->variables().get_2d_scalar("effective_BMB"),
+                        &tc_calving        = *m_grid->variables().get_2d_scalar("thickness_change_due_to_calving"),
+                        &tc_frontal_melt   = *m_grid->variables().get_2d_scalar("thickness_change_due_to_frontal_melt"),
+                        &tc_forced_retreat = *m_grid->variables().get_2d_scalar("thickness_change_due_forced_retreat");
 
     IceModelVec2S mass_discharge(m_grid, "mass_discharge", WITHOUT_GHOSTS),
                   mass_basal(m_grid, "mass_basal", WITHOUT_GHOSTS);
 
     double rho_ice = m_config->get_number("constants.ice.density");
 
-    IceModelVec::AccessList list{ &cell_area, &discharge, &bmb, &mass_discharge, &mass_basal };
+    IceModelVec::AccessList list{ &cell_area, &tc_calving, &tc_frontal_melt,
+                                  &tc_forced_retreat, &bmb, &mass_discharge,
+                                  &mass_basal };
 
     //Update lake extend depending on exp_mask
     ParallelSection ParSec(m_grid->com);
@@ -264,7 +265,7 @@ void Gradual::compute_fill_rate(const double dt,
         double bml_ij = -bmb(i, j);
         bml_ij = (bml_ij >= 0.0) ? bml_ij : 0.0;
 
-        double discharge_ij = -discharge(i, j);
+        double discharge_ij = -1.0 * (tc_calving(i, j) + tc_frontal_melt(i, j) + tc_forced_retreat(i, j));
         discharge_ij = (discharge_ij >= 0.0) ? discharge_ij : 0.0;
 
         const double C = cell_area_ij * rho_ice / dt;

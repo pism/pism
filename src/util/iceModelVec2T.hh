@@ -45,7 +45,7 @@ public:
   typedef std::shared_ptr<IceModelVec2T> Ptr;
 
   static Ptr ForcingField(IceGrid::ConstPtr grid,
-                          const PIO &file,
+                          const File &file,
                           const std::string &short_name,
                           const std::string &standard_name,
                           int max_buffer_size,

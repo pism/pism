@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2017, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,6 +24,14 @@
 #include "Time.hh"
 #include "Logger.hh"
 #include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/pism_config.hh"
+
+#if (Pism_USE_PIO==1)
+// Why do I need this???
+#define _NETCDF
+#include <pio.h>
+#endif
 
 namespace pism {
 
@@ -37,7 +45,7 @@ public:
        LoggerPtr log,
        const std::string &p)
     : com(c), unit_system(sys), config(conf), enthalpy_converter(EC), time(t), prefix(p),
-      logger(log) {
+      logger(log), pio_iosys_id(-1) {
     // empty
   }
   MPI_Comm com;
@@ -48,17 +56,26 @@ public:
   std::string prefix;
   Profiling profiling;
   LoggerPtr logger;
+  int pio_iosys_id;
 };
 
 Context::Context(MPI_Comm c, UnitsSystemPtr sys,
-                 ConfigPtr conf, EnthalpyConverterPtr EC, TimePtr t,
+                 ConfigPtr config, EnthalpyConverterPtr EC, TimePtr t,
                  LoggerPtr L,
                  const std::string &p)
-  : m_impl(new Impl(c, sys, conf, EC, t, L, p)) {
+  : m_impl(new Impl(c, sys, config, EC, t, L, p)) {
   // empty
 }
 
 Context::~Context() {
+
+#if (Pism_USE_PIO==1)
+  if (m_impl->pio_iosys_id != -1 and
+      PIOc_free_iosystem(m_impl->pio_iosys_id) != PIO_NOERR) {
+    m_impl->logger->message(1, "Error: failed to de-allocate a ParallelIO I/O system\n");
+  }
+#endif
+
   delete m_impl;
 }
 
@@ -116,6 +133,39 @@ Context::ConstLoggerPtr Context::log() const {
 
 Context::LoggerPtr Context::log() {
   return m_impl->logger;
+}
+
+/*!
+ * I/O system id (the ParallelIO library)
+ */
+int Context::pio_iosys_id() const {
+#if (Pism_USE_PIO==1)
+  if (m_impl->pio_iosys_id == -1) {
+    int ierr = PIOc_set_iosystem_error_handling(PIO_DEFAULT, PIO_BCAST_ERROR, NULL);
+    if (ierr != 0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Failed to initialize ParallelIO");
+    }
+
+    int
+      base      = config()->get_number("output.pio.base"),
+      stride    = config()->get_number("output.pio.stride"),
+      n_writers = config()->get_number("output.pio.n_writers");
+
+    if (n_writers > this->size()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "number of ParallelIO writers (%d)"
+                                    " exceeds the communicator size (%d)",
+                                    n_writers, this->size());
+    }
+
+    ierr = PIOc_Init_Intracomm(m_impl->com, n_writers, stride, base, PIO_REARR_BOX,
+                               &m_impl->pio_iosys_id);
+    if (ierr != 0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Failed to initialize ParallelIO");
+    }
+  }
+#endif
+  return m_impl->pio_iosys_id;
 }
 
 Context::Ptr context_from_options(MPI_Comm com, const std::string &prefix) {

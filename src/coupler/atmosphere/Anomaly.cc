@@ -32,11 +32,11 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.anomaly");
 
   {
-    unsigned int buffer_size = m_config->get_number("climate_forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
+    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
+    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
     m_air_temp_anomaly = IceModelVec2T::ForcingField(m_grid,
                                                      file,
@@ -58,12 +58,11 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
 
   m_air_temp_anomaly->set_attrs("climate_forcing",
                                 "anomaly of the near-surface air temperature",
-                                "Kelvin", "");
+                                "Kelvin", "Kelvin", "", 0);
 
   m_precipitation_anomaly->set_attrs("climate_forcing",
                                      "anomaly of the ice-equivalent precipitation rate",
-                                     "kg m-2 second-1", "");
-  m_precipitation_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
+                                     "kg m-2 second-1", "kg m-2 year-1", "", 0);
 
   m_precipitation = allocate_precipitation(g);
   m_temperature   = allocate_temperature(g);

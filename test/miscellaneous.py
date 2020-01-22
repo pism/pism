@@ -11,6 +11,7 @@ nosetests --with-coverage --cover-branches --cover-html --cover-package=PISM tes
 """
 
 import PISM
+import PISM.testing
 import sys
 import os
 import numpy as np
@@ -157,7 +158,7 @@ def grid_from_file_test():
 
         enthalpy.write(pio)
 
-        pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READONLY)
+        pio = PISM.File(grid.com, output_file, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
 
         grid2 = PISM.IceGrid.FromFile(ctx.ctx, pio, "enthalpy", PISM.CELL_CORNER)
     finally:
@@ -368,7 +369,7 @@ def util_test():
 
     output_file = "test_pism_util.nc"
     try:
-        pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READWRITE_MOVE)
+        pio = PISM.File(grid.com, output_file, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
         pio.close()
 
         PISM.util.writeProvenance(output_file)
@@ -393,7 +394,7 @@ def logging_test():
 
     log_filename = "log.nc"
     try:
-        PISM.PIO(grid.com, "netcdf3", log_filename, PISM.PISM_READWRITE_MOVE)
+        PISM.File(grid.com, log_filename, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
         c = L.CaptureLogger(log_filename)
 
         L.clear_loggers()
@@ -420,7 +421,7 @@ def logging_test():
 
     log_filename = "other_log.nc"
     try:
-        PISM.PIO(grid.com, "netcdf3", log_filename, PISM.PISM_READWRITE_MOVE)
+        PISM.File(grid.com, log_filename, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
         c.write(log_filename, "other_log")  # non-default arguments
     finally:
         os.remove(log_filename)
@@ -800,55 +801,6 @@ def regridding_test():
     os.remove("thk1.nc")
 
 
-def netcdf_string_attribute_test():
-    "Test reading a NetCDF-4 string attribute."
-    import os
-
-    basename = "string_attribute_test"
-    attribute = "string attribute"
-
-    def setup():
-        cdl = """
-netcdf string_attribute_test {
-  string :string_attribute = "%s" ;
-  :text_attribute = "%s" ;
-}
-""" % (attribute, attribute)
-        with open(basename + ".cdl", "w") as f:
-            f.write(cdl)
-
-        os.system("ncgen -4 %s.cdl" % basename)
-
-    def teardown():
-        # remove the temporary file
-        os.remove(basename + ".nc")
-        os.remove(basename + ".cdl")
-
-    def compare(backend):
-        try:
-            pio = PISM.PIO(PISM.PETSc.COMM_WORLD, backend, basename + ".nc", PISM.PISM_READONLY)
-        except:
-            # Don't fail if backend creation failed: PISM may not have
-            # been compiled with parallel I/O enabled.
-            return
-
-        read_string = pio.get_att_text("PISM_GLOBAL", "string_attribute")
-        read_text = pio.get_att_text("PISM_GLOBAL", "text_attribute")
-
-        # check that written and read strings are the same
-        print("written string: '%s'" % attribute)
-        print("read string:    '%s'" % read_string)
-        print("read text:      '%s'" % read_text)
-        assert read_string == attribute
-        assert read_text == attribute
-
-    setup()
-
-    compare("netcdf3")
-    compare("netcdf4_parallel")
-
-    teardown()
-
 
 def interpolation_weights_test():
     "Test 2D interpolation weights."
@@ -1102,7 +1054,8 @@ def test_timeseries_linear_interpolation():
 
     # interior intervals
     for k in range(1, N):
-        T = 0.5 * (t[k] + t[k + 1])
+        dt = t[k + 1] - t[k]
+        T = t[k] + 0.25 * dt    # *not* the midpoint of the interval
 
         assert ts(T) == f(T), (T, ts(T), f(T))
 
@@ -1195,3 +1148,19 @@ class AgeModel(TestCase):
 
     def tearDown(self):
         os.remove(self.output_file)
+
+def checksum_test():
+    "Check if a small change in an IceModelVec affects checksum() output"
+    grid = PISM.testing.shallow_grid(Mx=101, My=201)
+
+    v = PISM.IceModelVec2S(grid, "dummy", PISM.WITHOUT_GHOSTS)
+    v.set(1e15)
+
+    old_checksum = v.checksum()
+
+    with PISM.vec.Access(nocomm=v):
+        for (i, j) in grid.points():
+            if i == 0 and j == 0:
+                v[i, j] += 1
+
+    assert old_checksum != v.checksum()

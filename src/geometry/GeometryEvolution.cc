@@ -125,64 +125,64 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
     // This is the only reported field that is ghosted (we need ghosts to compute flux divergence).
     flux_staggered.set_attrs("diagnostic", "fluxes through cell interfaces (sides)"
                              " on the staggered grid",
-                             "m2 s-1", "");
-    flux_staggered.metadata().set_string("glaciological_units", "m2 year-1");
+                             "m2 s-1", "m2 year-1", "", 0);
 
-    flux_divergence.set_attrs("diagnostic", "flux divergence", "m s-1", "");
-    flux_divergence.metadata().set_string("glaciological_units", "m year-1");
+    flux_divergence.set_attrs("diagnostic", "flux divergence", "m s-1", "m year-1", "", 0);
 
     conservation_error.set_attrs("diagnostic",
                                  "conservation error due to enforcing non-negativity of"
-                                 " ice thickness (over the last time step)", "meters", "");
+                                 " ice thickness (over the last time step)",
+                                 "meters", "meters", "", 0);
 
     effective_SMB.set_attrs("internal", "effective surface mass balance over the last time step",
-                            "meters", "");
+                            "meters", "meters", "", 0);
 
     effective_BMB.set_attrs("internal", "effective basal mass balance over the last time step",
-                            "meters", "");
+                            "meters", "meters", "", 0);
 
-    thickness_change.set_attrs("internal", "change in thickness due to flow", "meters", "");
+    thickness_change.set_attrs("internal", "change in thickness due to flow",
+                               "meters", "meters", "", 0);
 
     ice_area_specific_volume_change.set_attrs("interval",
                                               "change in area-specific volume due to flow",
-                                              "meters3 / meters2", "");
+                                              "meters3 / meters2", "meters3 / meters2", "", 0);
   }
 
   // internal storage
   {
     input_velocity.set_attrs("internal", "ghosted copy of the input velocity",
-                             "meters / second", "");
+                             "meters / second", "meters / second", "", 0);
 
     bed_elevation.set_attrs("internal", "ghosted copy of the bed elevation",
-                            "meters", "");
+                            "meters", "meters", "", 0);
 
     sea_level.set_attrs("internal", "ghosted copy of the sea level elevation",
-                        "meters", "");
+                        "meters", "meters", "", 0);
 
     lake_level.set_attrs("internal", "ghosted copy of the lake level elevation",
-                         "meters", "");
+                         "meters", "meters", "", 0);
 
     ice_thickness.set_attrs("internal", "working (ghosted) copy of the ice thickness",
-                            "meters", "");
+                            "meters", "meters", "", 0);
 
     area_specific_volume.set_attrs("internal", "working (ghosted) copy of the area specific volume",
-                                   "meters3 / meters2", "");
+                                   "meters3 / meters2", "meters3 / meters2", "", 0);
 
     surface_elevation.set_attrs("internal", "working (ghosted) copy of the surface elevation",
-                                "meters", "");
+                                "meters", "meters", "", 0);
 
     cell_type.set_attrs("internal", "working (ghosted) copy of the cell type mask",
-                        "", "");
+                        "", "", "", 0);
 
     residual.set_attrs("internal", "residual area specific volume",
-                       "meters3 / meters2", "");
+                       "meters3 / meters2", "meters3 / meters2", "", 0);
 
     thickness.set_attrs("internal", "thickness (temporary storage)",
-                        "meters", "");
+                        "meters", "meters", "", 0);
 
     velocity_bc_mask.set_attrs("internal", "ghosted copy of the velocity B.C. mask"
                                " (1 at velocity B.C. location, 0 elsewhere)",
-                               "", "");
+                               "", "", "", 0);
   }
 }
 
@@ -1162,7 +1162,7 @@ RegionalGeometryEvolution::RegionalGeometryEvolution(IceGrid::ConstPtr grid)
   : GeometryEvolution(grid) {
 
   m_no_model_mask.create(m_grid, "no_model_mask", WITH_GHOSTS);
-  m_no_model_mask.set_attrs("model_mask", "'no model' mask", "", "");
+  m_no_model_mask.set_attrs("model_mask", "'no model' mask", "", "", "", 0);
 }
 
 void RegionalGeometryEvolution::set_no_model_mask_impl(const IceModelVec2Int &mask) {
@@ -1259,5 +1259,126 @@ void GeometryEvolution::set_no_model_mask_impl(const IceModelVec2Int &mask) {
   // the default implementation is a no-op
 }
 
+void grounding_line_flux(const IceModelVec2CellType &cell_type,
+                         const IceModelVec2Stag &flux,
+                         double dt,
+                         InsertMode flag,
+                         IceModelVec2S &output) {
+
+  using mask::grounded;
+
+  auto grid = output.grid();
+
+  const double
+    dx = grid->dx(),
+    dy = grid->dy();
+
+  auto cell_area = grid->cell_area();
+
+  auto ice_density = grid->ctx()->config()->get_number("constants.ice.density");
+
+  IceModelVec::AccessList list{&cell_type, &flux, &output};
+
+  ParallelSection loop(grid->com);
+  try {
+    for (Points p(*grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double result = 0.0;
+
+      if (cell_type.ocean(i ,j)) {
+        auto M = cell_type.int_star(i, j);
+        auto Q = flux.star(i, j);
+
+        if (grounded(M.n) and Q.n <= 0.0) {
+          result += Q.n * dx;
+        }
+
+        if (grounded(M.e) and Q.e <= 0.0) {
+          result += Q.e * dy;
+        }
+
+        if (grounded(M.s) and Q.s >= 0.0) {
+          result -= Q.s * dx;
+        }
+
+        if (grounded(M.w) and Q.w >= 0.0) {
+          result -= Q.w * dy;
+        }
+
+        // convert from "m^3 / s" to "kg / m^2"
+        result *= dt * (ice_density / cell_area);
+      }
+
+      if (flag == ADD_VALUES) {
+        output(i, j) += result;
+      } else {
+        output(i, j) = result;
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+}
+
+/*!
+ * Compute the total grounding line flux over a time step, in kg.
+ */
+double total_grounding_line_flux(const IceModelVec2CellType &cell_type,
+                                 const IceModelVec2Stag &flux,
+                                 double dt) {
+  using mask::grounded;
+
+  auto grid = cell_type.grid();
+
+  const double
+    dx = grid->dx(),
+    dy = grid->dy();
+
+  auto ice_density = grid->ctx()->config()->get_number("constants.ice.density");
+
+  double total_flux = 0.0;
+
+  IceModelVec::AccessList list{&cell_type, &flux};
+
+  ParallelSection loop(grid->com);
+  try {
+    for (Points p(*grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double volume_flux = 0.0;
+
+      if (cell_type.ocean(i ,j)) {
+        auto M = cell_type.int_star(i, j);
+        auto Q = flux.star(i, j); // m^2 / s
+
+        if (grounded(M.n) and Q.n <= 0.0) {
+          volume_flux += Q.n * dx;
+        }
+
+        if (grounded(M.e) and Q.e <= 0.0) {
+          volume_flux += Q.e * dy;
+        }
+
+        if (grounded(M.s) and Q.s >= 0.0) {
+          volume_flux -= Q.s * dx;
+        }
+
+        if (grounded(M.w) and Q.w >= 0.0) {
+          volume_flux -= Q.w * dy;
+        }
+      }
+
+      // convert from "m^3 / s" to "kg" and sum up
+      total_flux += volume_flux * dt * ice_density;
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return GlobalSum(grid->com, total_flux);
+}
 
 } // end of namespace pism

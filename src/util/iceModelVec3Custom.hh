@@ -33,7 +33,7 @@ namespace pism {
  * vertical grid by the BlatterStressBalance class and for latitude
  * and longitude bounds by IceModel.
  *
- * \note DOF>1 2D data that should be stored in and read from several
+ * @note DOF>1 2D data that should be stored in and read from several
  * variables can be stored using IceModelVec2.
  */
 class IceModelVec3Custom : public IceModelVec3D {

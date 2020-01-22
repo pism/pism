@@ -24,6 +24,14 @@ and at the base of ice every 10 years. Times are specified using a comma-separat
 a MATLAB-style range. See :numref:`tab-extras` for all the options controlling this
 feature. The section :ref:`sec-extra_vars` list all the variable choices.
 
+.. note::
+
+   Some diagnostics are only available if the simulation uses a sub-model that provides
+   them. PISM will stop with an error message if a diagnostic is requested but not
+   available. To print a warning and continue instead of stopping, set
+   :config:`output.extra.stop_missing` to "false".
+
+
 Note that options :opt:`-extra_times`, :opt:`-save_times`, :opt:`-ts_times` take *dates*
 if a non-trivial calendar is selected. For example,
 

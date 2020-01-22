@@ -83,7 +83,7 @@ macro(pism_set_revision_tag)
 endmacro(pism_set_revision_tag)
 
 macro(pism_set_install_prefix)
-  # Allow setting a custom install prefix using the PISM_INSRALL_PREFIX environment variable.
+  # Allow setting a custom install prefix using the PISM_INSTALL_PREFIX environment variable.
   string (LENGTH "$ENV{PISM_INSTALL_PREFIX}" INSTALL_PREFIX_LENGTH)
   if (INSTALL_PREFIX_LENGTH)
     set (CMAKE_INSTALL_PREFIX $ENV{PISM_INSTALL_PREFIX} CACHE PATH "PISM install prefix" FORCE)
@@ -99,7 +99,7 @@ endmacro()
 
 # Set pedantic compiler flags
 macro(pism_set_pedantic_flags)
-  set (DEFAULT_PEDANTIC_FLAGS "-pedantic -Wall -Wextra -Wno-cast-qual -Wundef -Wshadow -Wpointer-arith -Wno-cast-align -Wwrite-strings -Wno-conversion -Wsign-compare -Wno-redundant-decls -Wno-inline -Wno-long-long -Wmissing-format-attribute -Wmissing-noreturn -Wpacked -Wdisabled-optimization -Wmultichar -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wendif-labels -Winvalid-pch -Wmissing-field-initializers -Wvariadic-macros -Wstrict-aliasing -funit-at-a-time -Wno-unknown-pragmas")
+  set (DEFAULT_PEDANTIC_FLAGS "-pedantic -Wall -Wextra -Wno-cast-qual -Wundef -Wshadow -Wpointer-arith -Wno-cast-align -Wwrite-strings -Wno-conversion -Wsign-compare -Wno-redundant-decls -Wno-inline -Wno-long-long -Wmissing-format-attribute -Wpacked -Wdisabled-optimization -Wmultichar -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wendif-labels -Winvalid-pch -Wmissing-field-initializers -Wvariadic-macros -Wstrict-aliasing -funit-at-a-time -Wno-unknown-pragmas")
   set (DEFAULT_PEDANTIC_CFLAGS "${DEFAULT_PEDANTIC_FLAGS} -std=c99")
   set (DEFAULT_PEDANTIC_CXXFLAGS "${DEFAULT_PEDANTIC_FLAGS} -Woverloaded-virtual")
   set (PEDANTIC_CFLAGS ${DEFAULT_PEDANTIC_CFLAGS} CACHE STRING "Compiler flags to enable pedantic warnings")
@@ -174,6 +174,10 @@ macro(pism_find_prerequisites)
     find_package (PROJ REQUIRED)
   endif()
 
+  if (Pism_USE_PIO)
+    find_package (ParallelIO REQUIRED)
+  endif()
+
   if (Pism_USE_PARALLEL_NETCDF4)
     # Try to find netcdf_par.h. We assume that NetCDF was compiled with
     # parallel I/O if this header is present.
@@ -218,7 +222,7 @@ endmacro()
 macro(pism_set_dependencies)
 
   # Set include and library directories for *required* libraries.
-  include_directories (
+  include_directories (BEFORE
     ${PETSC_INCLUDES}
     ${FFTW_INCLUDES}
     ${GSL_INCLUDES}
@@ -249,6 +253,11 @@ macro(pism_set_dependencies)
   if (Pism_USE_PROJ)
     include_directories (${PROJ_INCLUDES})
     list (APPEND Pism_EXTERNAL_LIBS ${PROJ_LIBRARIES})
+  endif()
+
+  if (Pism_USE_PIO)
+    include_directories (${ParallelIO_INCLUDES})
+    list (APPEND Pism_EXTERNAL_LIBS ${ParallelIO_LIBRARIES})
   endif()
 
   if (Pism_USE_PNETCDF)

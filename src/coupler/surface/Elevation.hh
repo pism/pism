@@ -28,6 +28,13 @@ namespace surface {
 class Elevation : public SurfaceModel {
 public:
   Elevation(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> input);
+
+protected:
+
+  virtual const IceModelVec2S& accumulation_impl() const;
+  virtual const IceModelVec2S& melt_impl() const;
+  virtual const IceModelVec2S& runoff_impl() const;
+  
 private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);

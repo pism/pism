@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@ static char help[] =
 
 #include "pism/util/pism_options.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/verification/BTU_Verification.hh"
 #include "pism/energy/BTU_Minimal.hh"
@@ -131,14 +131,13 @@ int main(int argc, char *argv[]) {
     {
       heat_flux_at_ice_base.create(grid, "upward_heat_flux_at_ice_base", WITHOUT_GHOSTS);
       heat_flux_at_ice_base.set_attrs("",
-                     "upward geothermal flux at bedrock thermal layer base",
-                     "W m-2", "");
-      heat_flux_at_ice_base.metadata().set_string("glaciological_units", "mW m-2");
+                                      "upward geothermal flux at bedrock thermal layer base",
+                                      "W m-2", "mW m-2", "", 0);
 
       bedtoptemp.create(grid, "bedtoptemp", WITHOUT_GHOSTS);
       bedtoptemp.set_attrs("",
-                            "temperature at top of bedrock thermal layer",
-                            "K", "");
+                           "temperature at top of bedrock thermal layer",
+                           "K", "K", "", 0);
     }
 
     // initialize BTU object:
@@ -219,8 +218,11 @@ int main(int argc, char *argv[]) {
                  max_error, 100.0*max_error/FF, avg_error);
     log->message(1, "NUM ERRORS DONE\n");
 
-    PIO file(grid->com, grid->ctx()->config()->get_string("output.format"),
-            outname, PISM_READWRITE_MOVE);
+    File file(grid->com,
+              outname,
+              string_to_backend(config->get_string("output.format")),
+              PISM_READWRITE_MOVE,
+              ctx->pio_iosys_id());
 
     io::define_time(file, *ctx);
     io::append_time(file, *ctx->config(), ctx->time()->current());

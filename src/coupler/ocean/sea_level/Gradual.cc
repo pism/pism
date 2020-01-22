@@ -42,12 +42,12 @@ Gradual::Gradual(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in)
 
   m_target_level.create(m_grid, "target_sea_level", WITHOUT_GHOSTS);
   m_target_level.set_attrs("model_state", "target sea level",
-                           "m", "target_sea_level");
+                           "m", "m", "target_sea_level", 0);
   m_target_level.metadata().set_number("_FillValue", m_fill_value);
 
   m_min_basin.create(m_grid, "min_sl_bed", WITHOUT_GHOSTS);
   m_min_basin.set_attrs("model_state", "min sl bed",
-                      "m", "min_sl_bed");
+                      "m", "m", "min_sl_bed", 0);
   m_min_basin.metadata().set_number("_FillValue", m_fill_value);
 
   m_max_ll_basin.create(m_grid, "max_ll_basin", WITHOUT_GHOSTS);
@@ -78,7 +78,7 @@ void Gradual::init_impl(const Geometry &geometry) {
     tmp.create(m_grid, "effective_sea_level_elevation", WITHOUT_GHOSTS);
     tmp.set_attrs("diagnostic",
                   "sea level elevation, relative to the geoid",
-                  "meter", "");
+                  "meter", "m", "", 0);
     tmp.metadata().set_number("_FillValue", m_fill_value);
 
     InputOptions opts = process_input_options(m_grid->com, m_config);
@@ -88,8 +88,8 @@ void Gradual::init_impl(const Geometry &geometry) {
       m_log->message(2, "* Reading sea level forcing from '%s' for re-starting...\n",
                     opts.filename.c_str());
 
-      PIO file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
-      const unsigned int time_length = file.inq_nrecords(),
+      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      const unsigned int time_length = file.nrecords(),
                          last_record = time_length > 0 ? time_length - 1 : 0;
 
       tmp.read(file, last_record);

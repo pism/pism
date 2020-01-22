@@ -57,7 +57,7 @@ def allocate(grid):
     bed = PISM.model.createBedrockElevationVec(grid)
     uplift = PISM.IceModelVec2S()
     uplift.create(grid, "uplift", PISM.WITHOUT_GHOSTS)
-    uplift.set_attrs("internal", "bed uplift", "m / second", "")
+    uplift.set_attrs("internal", "bed uplift", "m / second", "m / second", "", 0)
 
     sea_level = PISM.IceModelVec2S(grid, "sea_level", PISM.WITHOUT_GHOSTS)
 

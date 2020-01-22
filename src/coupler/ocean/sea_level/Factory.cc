@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,10 +31,9 @@ namespace ocean {
 namespace sea_level {
 
 Factory::Factory(IceGrid::ConstPtr grid)
-  : PCFactory<SeaLevel>(grid, "sea_level.model") {
+  : PCFactory<SeaLevel>(grid, "sea_level.models") {
 
   add_model<SeaLevel>("constant");
-  set_default("constant");
 
   add_modifier<Delta_SL>("delta_sl");
   add_modifier<Delta_SL_2D>("delta_sl_2d");
