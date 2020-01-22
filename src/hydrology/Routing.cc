@@ -214,7 +214,7 @@ void hydraulic_potential(const IceModelVec2S &W,
     rg                  = (config->get_number("constants.fresh_water.density") *
                            config->get_number("constants.standard_gravity"));
 
-  IceModelVec::AccessList list{&P, &W, &sea_level, lake_level, &ice_thickness, &bed, &result};
+  IceModelVec::AccessList list{&P, &W, &sea_level, &lake_level, &ice_thickness, &bed, &result};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();

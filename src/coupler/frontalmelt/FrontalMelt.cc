@@ -64,18 +64,21 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
   GeometryCalculator gc(*m_config);
 
   const IceModelVec2S
-    &bed_elevation       = geometry.bed_elevation,
-    &surface_elevation   = geometry.ice_surface_elevation,
-    &ice_thickness       = geometry.ice_thickness,
-    &sea_level_elevation = geometry.sea_level_elevation;
+    &bed_elevation        = geometry.bed_elevation,
+    &surface_elevation    = geometry.ice_surface_elevation,
+    &ice_thickness        = geometry.ice_thickness,
+    &sea_level_elevation  = geometry.sea_level_elevation,
+    &lake_level_elevation = geometry.lake_level_elevation;
   const IceModelVec2CellType &cell_type = geometry.cell_type;
 
   const double
     ice_density = m_config->get_number("constants.ice.density"),
-    alpha       = ice_density / m_config->get_number("constants.sea_water.density");
+    alpha_sea   = ice_density / m_config->get_number("constants.sea_water.density"),
+    alpha_fresh = ice_density / m_config->get_number("constants.fresh_water.density");
 
   IceModelVec::AccessList list{&cell_type, &frontal_melt_rate, &sea_level_elevation,
-                               &bed_elevation, &surface_elevation, &ice_thickness, &result};
+                               &lake_level_elevation, &bed_elevation, &surface_elevation,
+                               &ice_thickness, &result};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -84,8 +87,9 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
 
       if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j)) {
         const double
-          bed       = bed_elevation(i, j),
-          sea_level = sea_level_elevation(i, j);
+          bed        = bed_elevation(i, j),
+          sea_level  = sea_level_elevation(i, j),
+          lake_level = lake_level_elevation(i, j);
 
         auto H = ice_thickness.star(i, j);
         auto h = surface_elevation.star(i, j);
@@ -93,10 +97,13 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
 
         double H_threshold = part_grid_threshold_thickness(M, H, h, bed);
 
-        int m = gc.mask(sea_level, bed, H_threshold);
+        int m = gc.mask(sea_level, bed, H_threshold, lake_level);
+
+        double alpha = !gc.islake(lake_level) ? alpha_sea : alpha_fresh,
+               water_level = gc.water_level(sea_level, bed, lake_level);
 
         double H_submerged = (mask::grounded(m) ?
-                              std::max(sea_level - bed, 0.0) :
+                              std::max(water_level - bed, 0.0) :
                               alpha * H_threshold);
 
         result(i, j) = (H_submerged / H_threshold) * frontal_melt_rate(i, j);

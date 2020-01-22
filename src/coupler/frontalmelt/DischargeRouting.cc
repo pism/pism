@@ -25,7 +25,7 @@
 
 namespace pism {
 namespace frontalmelt {
-  
+
 DischargeRouting::DischargeRouting(IceGrid::ConstPtr grid)
   : FrontalMelt(grid, nullptr) {
 
@@ -91,17 +91,21 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
 
   m_theta_ocean->update(t, dt);
 
+  GeometryCalculator gc(*m_config);
+
   FrontalMeltPhysics physics(*m_config);
 
-  const IceModelVec2CellType &cell_type           = inputs.geometry->cell_type;
-  const IceModelVec2S        &bed_elevation       = inputs.geometry->bed_elevation;
-  const IceModelVec2S        &ice_thickness       = inputs.geometry->ice_thickness;
-  const IceModelVec2S        &sea_level_elevation = inputs.geometry->sea_level_elevation;
-  const IceModelVec2S        &water_flux          = *inputs.subglacial_water_flux;
+  const IceModelVec2CellType &cell_type            = inputs.geometry->cell_type;
+  const IceModelVec2S        &bed_elevation        = inputs.geometry->bed_elevation;
+  const IceModelVec2S        &ice_thickness        = inputs.geometry->ice_thickness;
+  const IceModelVec2S        &sea_level_elevation  = inputs.geometry->sea_level_elevation;
+  const IceModelVec2S        &lake_level_elevation = inputs.geometry->lake_level_elevation;
+  const IceModelVec2S        &water_flux           = *inputs.subglacial_water_flux;
 
   IceModelVec::AccessList list
     {&ice_thickness, &bed_elevation, &cell_type, &sea_level_elevation,
-     &water_flux, m_theta_ocean.get(), m_frontal_melt_rate.get()};
+     &lake_level_elevation, &water_flux, m_theta_ocean.get(),
+     m_frontal_melt_rate.get()};
 
   double
     seconds_per_day = 86400,
@@ -115,7 +119,10 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       // forcing is generally not available at the grounding line.
       double TF = (*m_theta_ocean)(i, j);
 
-      double water_depth = std::max(sea_level_elevation(i, j) - bed_elevation(i, j), 0.0),
+      double water_level = gc.water_level(sea_level_elevation(i, j), bed_elevation(i, j),
+                                          lake_level_elevation(i, j));
+
+      double water_depth = std::max(water_level - bed_elevation(i, j), 0.0),
         submerged_front_area = water_depth * grid_spacing;
 
       // Convert subglacial water flux (m^2/s) to an "effective subglacial freshwater

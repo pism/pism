@@ -25,7 +25,7 @@
 
 namespace pism {
 namespace frontalmelt {
-  
+
 DischargeGiven::DischargeGiven(IceGrid::ConstPtr grid)
   : FrontalMelt(grid, nullptr) {
 
@@ -117,14 +117,17 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
   m_theta_ocean->average(t, dt);
   m_subglacial_discharge->average(t, dt);
 
+  GeometryCalculator gc(*m_config);
+
   FrontalMeltPhysics physics(*m_config);
 
-  const IceModelVec2CellType &cell_type           = inputs.geometry->cell_type;
-  const IceModelVec2S        &bed_elevation       = inputs.geometry->bed_elevation;
-  const IceModelVec2S        &sea_level_elevation = inputs.geometry->sea_level_elevation;
+  const IceModelVec2CellType &cell_type            = inputs.geometry->cell_type;
+  const IceModelVec2S        &bed_elevation        = inputs.geometry->bed_elevation;
+  const IceModelVec2S        &sea_level_elevation  = inputs.geometry->sea_level_elevation;
+  const IceModelVec2S        &lake_level_elevation = inputs.geometry->lake_level_elevation;
 
   IceModelVec::AccessList list
-    {&bed_elevation, &cell_type, &sea_level_elevation,
+    {&bed_elevation, &cell_type, &sea_level_elevation, &lake_level_elevation,
      m_theta_ocean.get(), m_subglacial_discharge.get(), m_frontal_melt_rate.get()};
 
   double
@@ -148,7 +151,9 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
       // [flux / water_density  * (s / day) ] = m / day
       double q_sg = ((*m_subglacial_discharge)(i, j) / water_density) * seconds_per_day;
 
-      double water_depth = sea_level_elevation(i, j) - bed_elevation(i, j);
+      double water_level = gc.water_level(sea_level_elevation(i, j), bed_elevation(i, j),
+                                          lake_level_elevation(i, j));
+      double water_depth = water_level - bed_elevation(i, j);
 
       (*m_frontal_melt_rate)(i, j) = physics.frontal_melt_from_undercutting(water_depth, q_sg, TF);
       // convert from m / day to m / s
