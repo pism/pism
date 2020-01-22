@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -64,42 +64,37 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
 
   IceGrid::ConstPtr grid = ice_thickness.grid();
 
-  const IceModelVec2S &H     = ice_thickness;
-  const double        &H_min = thickness_threshold;
+  const double &H_min = thickness_threshold;
 
-  IceModelVec::AccessList list{&H, &result};
+  IceModelVec::AccessList list{&ice_thickness, &result};
 
   ParallelSection loop(grid->com);
   try {
     for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      // indexing shortcuts (to reduce chances of making typos below)
-      const int
-        N = j + 1,
-        E = i + 1,
-        S = j - 1,
-        W = i - 1;
+      auto H = ice_thickness.box(i, j);
 
       // flags indicating whether the current node and its neighbors are "icy"
-      const bool
-        icy_ij = H(i, j) >= H_min,
-        icy_nw = H(W, N) >= H_min,
-        icy_n  = H(i, N) >= H_min,
-        icy_ne = H(E, N) >= H_min,
-        icy_e  = H(E, j) >= H_min,
-        icy_se = H(E, S) >= H_min,
-        icy_s  = H(i, S) >= H_min,
-        icy_sw = H(W, S) >= H_min,
-        icy_w  = H(W, j) >= H_min;
+      BoxStencil<bool> icy;
+
+      icy.ij = H.ij >= H_min;
+      icy.nw = H.nw >= H_min;
+      icy.n  = H.n  >= H_min;
+      icy.ne = H.ne >= H_min;
+      icy.e  = H.e  >= H_min;
+      icy.se = H.se >= H_min;
+      icy.s  = H.s  >= H_min;
+      icy.sw = H.sw >= H_min;
+      icy.w  = H.w  >= H_min;
 
       // flags indicating whether neighboring elements are "icy" (and element is icy if all its
       // nodes are icy)
       const bool
-        ne_element_is_icy = (icy_ij and icy_e and icy_ne and icy_n),
-        nw_element_is_icy = (icy_ij and icy_n and icy_nw and icy_w),
-        sw_element_is_icy = (icy_ij and icy_w and icy_sw and icy_s),
-        se_element_is_icy = (icy_ij and icy_s and icy_se and icy_e);
+        ne_element_is_icy = (icy.ij and icy.e and icy.ne and icy.n),
+        nw_element_is_icy = (icy.ij and icy.n and icy.nw and icy.w),
+        sw_element_is_icy = (icy.ij and icy.w and icy.sw and icy.s),
+        se_element_is_icy = (icy.ij and icy.s and icy.se and icy.e);
 
       if (ne_element_is_icy and nw_element_is_icy and
           sw_element_is_icy and se_element_is_icy) {
