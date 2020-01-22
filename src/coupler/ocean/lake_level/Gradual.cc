@@ -59,7 +59,7 @@ Gradual::Gradual(IceGrid::ConstPtr grid,
 
   m_max_sl_basin.create(m_grid, "max_sl_basin", WITHOUT_GHOSTS);
   m_max_sl_basin.set_attrs("model_state", "max sl basin",
-                           "m", "max_sl_basin");
+                           "m", "m", "max_sl_basin", 0);
   m_max_sl_basin.metadata().set_number("_FillValue", m_fill_value);
 
   m_expansion_mask.create(m_grid, "expansion_mask", WITHOUT_GHOSTS);
