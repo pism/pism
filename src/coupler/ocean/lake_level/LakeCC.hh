@@ -45,6 +45,8 @@ private:
   bool m_filter_map, m_keep_existing_lakes, m_check_sl_diagonal;
   int m_n_filter;
   IceModelVec2Int m_valid_mask;
+  IceModelVec2S m_topg_overlay;
+  IceModelVec2S m_bed;
 
   void do_lake_update(const IceModelVec2S &bed, const IceModelVec2S &thk, const IceModelVec2S &sea_level, const IceModelVec2S &old_lake_level);
   void do_filter_map();
