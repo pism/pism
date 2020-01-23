@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "LapseRates.hh"
+#include "ElevationChange.hh"
 #include "pism/coupler/util/options.hh"
 #include "pism/coupler/util/lapse_rates.hh"
 #include "pism/util/io/io_helpers.hh"
@@ -27,21 +27,28 @@
 namespace pism {
 namespace surface {
 
-LapseRates::LapseRates(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
+ElevationChange::ElevationChange(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(g, in) {
 
   {
-    m_smb_lapse_rate = m_config->get_number("surface.lapse_rate.smb_lapse_rate",
+    m_smb_lapse_rate = m_config->get_number("surface.elevation_change.smb.lapse_rate",
                                             "(m / s) / m");
     // convert from [m s-1 / m] to [kg m-2 s-1 / m]
     m_smb_lapse_rate *= m_config->get_number("constants.ice.density");
+
+    m_smb_exp_factor = m_config->get_number("surface.elevation_change.smb.exp_factor");
   }
 
-  m_temp_lapse_rate = m_config->get_number("surface.lapse_rate.temperature_lapse_rate",
+  {
+    auto method = m_config->get_string("surface.elevation_change.smb.method");
+    m_smb_method = method == "scale" ? SCALE : SHIFT;
+  }
+
+  m_temp_lapse_rate = m_config->get_number("surface.elevation_change.temperature_lapse_rate",
                                            "K / m");
 
   {
-    ForcingOptions opt(*m_grid->ctx(), "surface.lapse_rate");
+    ForcingOptions opt(*m_grid->ctx(), "surface.elevation_change");
 
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
@@ -68,11 +75,11 @@ LapseRates::LapseRates(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   m_runoff       = allocate_runoff(g);
 }
 
-LapseRates::~LapseRates() {
+ElevationChange::~ElevationChange() {
   // empty
 }
 
-void LapseRates::init_impl(const Geometry &geometry) {
+void ElevationChange::init_impl(const Geometry &geometry) {
   using units::convert;
 
   m_input_model->init(geometry);
@@ -80,18 +87,26 @@ void LapseRates::init_impl(const Geometry &geometry) {
   m_log->message(2,
                  "  [using temperature and mass balance lapse corrections]\n");
 
-  double ice_density = m_config->get_number("constants.ice.density");
   m_log->message(2,
-                 "   ice upper-surface temperature lapse rate: %3.3f K per km\n"
-                 "   ice-equivalent surface mass balance lapse rate: %3.3f m year-1 per km\n",
-                 convert(m_sys, m_temp_lapse_rate, "K / m", "K / km"),
-                 convert(m_sys, m_smb_lapse_rate, "kg / (m2 second)", "kg / (m2 year)") / ice_density);
+                 "   ice upper-surface temperature lapse rate: %3.3f K per km\n",
+                 convert(m_sys, m_temp_lapse_rate, "K / m", "K / km"));
 
-  ForcingOptions opt(*m_grid->ctx(), "surface.lapse_rate");
+  if (m_smb_method == SHIFT) {
+    double ice_density = m_config->get_number("constants.ice.density");
+    m_log->message(2,
+                   "   ice-equivalent surface mass balance lapse rate: %3.3f m year-1 per km\n",
+                   convert(m_sys, m_smb_lapse_rate, "kg / (m2 second)", "kg / (m2 year)") / ice_density);
+  } else {
+    m_log->message(2,
+                   "   surface mass balance scaling factor with temperature: %3.3f Kelvin-1\n",
+                   m_smb_exp_factor);
+  }
+
+  ForcingOptions opt(*m_grid->ctx(), "surface.elevation_change");
   m_reference_surface->init(opt.filename, opt.period, opt.reference_time);
 }
 
-void LapseRates::update_impl(const Geometry &geometry, double t, double dt) {
+void ElevationChange::update_impl(const Geometry &geometry, double t, double dt) {
 
   m_input_model->update(geometry, t, dt);
 
@@ -100,13 +115,34 @@ void LapseRates::update_impl(const Geometry &geometry, double t, double dt) {
 
   const IceModelVec2S &surface = geometry.ice_surface_elevation;
 
-  m_mass_flux->copy_from(m_input_model->mass_flux());
-  lapse_rate_correction(surface, *m_reference_surface,
-                        m_smb_lapse_rate, *m_mass_flux);
-
   m_temperature->copy_from(m_input_model->temperature());
   lapse_rate_correction(surface, *m_reference_surface,
                         m_temp_lapse_rate, *m_temperature);
+
+  m_mass_flux->copy_from(m_input_model->mass_flux());
+
+  switch (m_smb_method) {
+  case SCALE:
+    {
+      IceModelVec::AccessList list{&surface, m_reference_surface.get(), m_mass_flux.get()};
+
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        double dT = -m_temp_lapse_rate * (surface(i, j) - (*m_reference_surface)(i, j));
+
+        (*m_mass_flux)(i, j) *= exp(m_smb_exp_factor * dT);
+      }
+    }
+    break;
+  default:
+  case SHIFT:
+    {
+      lapse_rate_correction(surface, *m_reference_surface,
+                            m_smb_lapse_rate, *m_mass_flux);
+    }
+    break;
+  }
 
   // This modifier changes m_mass_flux, so we need to compute accumulation, melt, and
   // runoff.
@@ -116,23 +152,23 @@ void LapseRates::update_impl(const Geometry &geometry, double t, double dt) {
 
 }
 
-const IceModelVec2S &LapseRates::mass_flux_impl() const {
+const IceModelVec2S &ElevationChange::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &LapseRates::temperature_impl() const {
+const IceModelVec2S &ElevationChange::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &LapseRates::accumulation_impl() const {
+const IceModelVec2S &ElevationChange::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &LapseRates::melt_impl() const {
+const IceModelVec2S &ElevationChange::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &LapseRates::runoff_impl() const {
+const IceModelVec2S &ElevationChange::runoff_impl() const {
   return *m_runoff;
 }
 

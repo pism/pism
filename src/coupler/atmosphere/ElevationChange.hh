@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PALAPSERATES_H_
-#define _PALAPSERATES_H_
+#ifndef _PAELEVATIONCHANGE_H_
+#define _PAELEVATIONCHANGE_H_
 
 #include "pism/coupler/AtmosphereModel.hh"
 
@@ -26,11 +26,11 @@
 namespace pism {
 namespace atmosphere {
 
-class LapseRates : public AtmosphereModel
+class ElevationChange : public AtmosphereModel
 {
 public:
-  LapseRates(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
-  virtual ~LapseRates();
+  ElevationChange(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
+  virtual ~ElevationChange();
 
 protected:
   void init_impl(const Geometry &geometry);
@@ -47,7 +47,11 @@ protected:
   void temp_time_series_impl(int i, int j, std::vector<double> &result) const;
 
 protected:
+  enum Method {SCALE, SHIFT};
+
+  Method m_precip_method;
   double m_precip_lapse_rate;
+  double m_precip_exp_factor;
   double m_temp_lapse_rate;
 
   IceModelVec2T::Ptr m_reference_surface;
@@ -60,5 +64,4 @@ protected:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif /* _PALAPSERATES_H_ */
-
+#endif /* _PAELEVATIONCHANGE_H_ */

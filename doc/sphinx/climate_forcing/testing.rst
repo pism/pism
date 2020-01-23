@@ -105,8 +105,8 @@ section :ref:`sec-surface-pdd`) is "reasonable":
 
 .. code-block:: none
 
-   pismr -i g20km_pre100.nc -atmosphere searise_greenland,paleo_precip \
-         -surface pdd -atmosphere_paleo_precip_file pism_dT.nc \
+   pismr -i g20km_pre100.nc -atmosphere searise_greenland,precip_scaling \
+         -surface pdd -atmosphere_precip_scaling_file pism_dT.nc \
          -extra_times 0:1week:3 -ys 0 -ye 3 \
          -extra_file pddmovie.nc -o_order zyx \
          -extra_vars climatic_mass_balance,air_temp_snapshot

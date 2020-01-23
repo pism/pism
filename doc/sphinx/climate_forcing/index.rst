@@ -24,7 +24,7 @@ PISM's climate forcing code has two kinds of components.
 - Ones that can be used as "stand-alone" models, such as the implementation of the PDD
   scheme (section :ref:`sec-surface-pdd`). These are *model components*.
 - Ones implementing "corrections" of various kinds, such as lapse rate corrections
-  (sections :ref:`sec-surface-lapse-rate` and :ref:`sec-atmosphere-lapse-rate`) or
+  (sections :ref:`sec-surface-elevation-change` and :ref:`sec-atmosphere-elevation-change`) or
   ice-core derived offsets (sections :ref:`sec-surface-delta-t` and
   :ref:`sec-ocean-delta-sl`, for example). These are called *modifier components* or
   *modifiers*.
