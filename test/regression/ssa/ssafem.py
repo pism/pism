@@ -8,19 +8,26 @@ config = ctx.config
 
 config.set_flag("stress_balance.calving_front_stress_bc", True)
 
-grid = shallow_grid(Mx=5, My=5, Lx=10e3, Ly=10e3)
+grid = shallow_grid(Mx=7, My=7, Lx=10e3, Ly=10e3)
 
 geometry = PISM.Geometry(grid)
 
 # grid center:
-c = 2
+c = 3
 # ice thickness:
 H = 1000.0
+# length (in grid cells) of peninsulas sticking out of the blob
+L = 1
+w = 3
 
 with PISM.vec.Access(nocomm=[geometry.ice_thickness]):
     for (i, j) in grid.points():
-        if abs(i - c) < c and abs(j - c) < c:
-            geometry.ice_thickness[i, j] = H
+        if i == c and j == c:
+            geometry.ice_thickness[i, j] = 1 * H
+        elif abs(i - c) < w - L and abs(j - c) < w - L:
+            geometry.ice_thickness[i, j] = 1 * H
+        elif (i == c and abs(j - c) < w) or (j == c and abs(i - c) < w):
+            geometry.ice_thickness[i, j] = 1 * H
         else:
             geometry.ice_thickness[i, j] = 0.0
 
@@ -50,10 +57,24 @@ ssa = PISM.SSAFEM(grid)
 
 ssa.init()
 
-ssa.update(inputs, full_update=True)
+try:
+    ssa.update(inputs, full_update=True)
+    print("succeeded")
+except:
+    print("failed")
+
+v_mag = PISM.IceModelVec2S(grid, "vel_mag", PISM.WITHOUT_GHOSTS)
+
+v_mag.set_to_magnitude(ssa.velocity())
+
+node_type = PISM.IceModelVec2Int(grid, "node_type", PISM.WITHOUT_GHOSTS)
+
+PISM.compute_node_types(geometry.ice_thickness, 1.0, node_type)
 
 f = PISM.util.prepare_output(config.get_string("output.file_name"))
 
+node_type.write(f)
+v_mag.write(f)
 ssa.velocity().write(f)
 geometry.ice_thickness.write(f)
 geometry.bed_elevation.write(f)
