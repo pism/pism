@@ -1164,3 +1164,57 @@ def checksum_test():
                 v[i, j] += 1
 
     assert old_checksum != v.checksum()
+
+class ForcingOptions(TestCase):
+    def setUp(self):
+        # store current configuration parameters
+        self.config = PISM.DefaultConfig(ctx.com, "pism_config", "-config", ctx.unit_system)
+        self.config.init_with_default(ctx.log)
+        self.config.import_from(ctx.config)
+
+        self.filename = "input.nc"
+        PISM.util.prepare_output(self.filename)
+
+    def test_without_file(self):
+        "ForcingOptions: xxx.file is not set"
+        ctx.config.set_string("input.file", "input.nc")
+
+        opt = PISM.ForcingOptions(ctx.ctx, "surface.given")
+
+        assert opt.filename == self.filename
+        assert opt.period == 0
+        assert opt.reference_time == 0
+
+    def test_with_file(self):
+        "ForcingOptions: xxx.file is set"
+        ctx.config.set_string("surface.given.file", self.filename)
+
+        opt = PISM.ForcingOptions(ctx.ctx, "surface.given")
+
+        assert opt.filename == self.filename
+        assert opt.period == 0
+        assert opt.reference_time == 0
+
+    def test_without_file_and_without_input_file(self):
+        "ForcingOptions: xxx.file is not set and -i is not set"
+        try:
+            opt = PISM.ForcingOptions(ctx.ctx, "surface.given")
+            assert False, "failed to stop with an error message"
+        except RuntimeError:
+            pass
+
+    def test_negative_period(self):
+        ctx.config.set_string("input.file", "input.nc")
+        ctx.config.set_number("surface.given.period", -1)
+
+        try:
+            opt = PISM.ForcingOptions(ctx.ctx, "surface.given")
+            assert False, "failed to catch negative xxx.period"
+        except RuntimeError:
+            pass
+
+    def tearDown(self):
+        # reset configuration parameters
+        ctx.config.import_from(self.config)
+
+        os.remove(self.filename)

@@ -476,7 +476,7 @@ Spatially-variable fields
 #. ``steady_state_hydraulic_potential``
 
    :Units: Pa
-   :Description: estimate of the steady state hydraulic potential
+   :Description: estimate of the steady state hydraulic potential in the steady hydrology model
 
 #. ``strain_rates``
 

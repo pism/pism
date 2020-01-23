@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PA_PALEO_PRECIP_H_
-#define _PA_PALEO_PRECIP_H_
+#ifndef PRECIPITATIONSCALING_H
+#define PRECIPITATIONSCALING_H
 
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/coupler/util/ScalarForcing.hh"
@@ -28,10 +28,11 @@ class ScalarForcing;
 
 namespace atmosphere {
 
-/** "Paleo-precipitation correction"
+/** Scaling precipitation using air temperature offsets
  *
- * This class implements the temperature-offset based precipitation
- * correction for use in paleo simulations.
+ * This class implements the adjustment used to capture the influence of changing air
+ * temperature on precipitation. It uses scalar temperature offsets read from a file as an
+ * input.
  *
  * @f[
  * P_{G}(x,y,t) = P_{G}(x,y,0)exp\left[\frac{0.169}{d}\left({\Delta}T(t)+ {\Delta}T_{SC}(t)\right)\right]
@@ -53,10 +54,10 @@ namespace atmosphere {
  * belonging to the set of uncertainties related to the conversion
  * between isotopic and temperature signals.
  */
-class PaleoPrecip : public AtmosphereModel {
+class PrecipitationScaling : public AtmosphereModel {
 public:
-  PaleoPrecip(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
-  virtual ~PaleoPrecip();
+  PrecipitationScaling(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
+  virtual ~PrecipitationScaling();
 
 protected:
   void init_impl(const Geometry &geometry);
@@ -79,4 +80,4 @@ protected:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif /* _PA_PALEO_PRECIP_H_ */
+#endif /* PRECIPITATIONSCALING_H */

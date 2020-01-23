@@ -6,7 +6,7 @@
 #include "coupler/surface/Cache.hh"
 #include "coupler/surface/Anomaly.hh"
 #include "coupler/surface/Elevation.hh"
-#include "coupler/surface/LapseRates.hh"
+#include "coupler/surface/ElevationChange.hh"
 #include "coupler/surface/Simple.hh"
 #include "coupler/surface/TemperatureIndex.hh"
 #include "coupler/surface/GivenClimate.hh"
@@ -54,9 +54,9 @@
 %rename(SurfaceElevation) pism::surface::Elevation;
 %include "coupler/surface/Elevation.hh"
 
-%shared_ptr(pism::surface::LapseRates)
-%rename(SurfaceLapseRates) pism::surface::LapseRates;
-%include "coupler/surface/LapseRates.hh"
+%shared_ptr(pism::surface::ElevationChange)
+%rename(SurfaceElevationChange) pism::surface::ElevationChange;
+%include "coupler/surface/ElevationChange.hh"
 
 %shared_ptr(pism::surface::Simple)
 %rename(SurfaceSimple) pism::surface::Simple;
