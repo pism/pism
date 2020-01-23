@@ -784,13 +784,15 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         int node_type[Nk];
         m_element.nodal_values(m_node_type, node_type);
 
-        // an element is "interior" if all its nodes are interior or boundary
-        const bool interior_element = (node_type[0] < NODE_EXTERIOR and
-                                       node_type[1] < NODE_EXTERIOR and
-                                       node_type[2] < NODE_EXTERIOR and
-                                       node_type[3] < NODE_EXTERIOR);
+        const int n_exterior_nodes = ((node_type[0] == NODE_EXTERIOR) +
+                                      (node_type[1] == NODE_EXTERIOR) +
+                                      (node_type[2] == NODE_EXTERIOR) +
+                                      (node_type[3] == NODE_EXTERIOR));
 
-        if (use_cfbc and (not interior_element)) {
+        // an element is "interior" if all its nodes are interior or boundary
+        const bool q1_interior_element = n_exterior_nodes == 0;
+
+        if (use_cfbc and (not q1_interior_element)) {
           // an exterior element in the CFBC case
           continue;
         }
@@ -988,13 +990,15 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
 
         int node_type[Nk];
         m_element.nodal_values(m_node_type, node_type);
-        // an element is "interior" if all its nodes are interior or boundary
-        const bool interior_element = (node_type[0] < NODE_EXTERIOR and
-                                       node_type[1] < NODE_EXTERIOR and
-                                       node_type[2] < NODE_EXTERIOR and
-                                       node_type[3] < NODE_EXTERIOR);
 
-        if (use_cfbc and (not interior_element)) {
+        const int n_exterior_nodes = ((node_type[0] == NODE_EXTERIOR) +
+                                      (node_type[1] == NODE_EXTERIOR) +
+                                      (node_type[2] == NODE_EXTERIOR) +
+                                      (node_type[3] == NODE_EXTERIOR));
+        // an element is "interior" if all its nodes are interior or boundary
+        const bool q1_interior_element = n_exterior_nodes == 0;
+
+        if (use_cfbc and (not q1_interior_element)) {
           // an exterior element in the CFBC case
           continue;
         }
