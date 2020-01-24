@@ -30,7 +30,7 @@ IndexForcing::IndexForcing(IceGrid::ConstPtr grid)
 
   m_ice_surface_elevation.create(m_grid, "m_ice_surface_elevation", WITHOUT_GHOSTS);
   m_ice_surface_elevation.set_attrs("internal", "ice surface elevation",
-                                    "meter ", "meter", "", 0);
+                                    "meters", "meters", "", 0);
 
   m_precip_exp_factor = m_config->get_number("atmosphere.precip_exponential_factor_for_temperature");
 
