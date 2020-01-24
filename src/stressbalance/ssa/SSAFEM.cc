@@ -345,7 +345,7 @@ void SSAFEM::quad_point_values(const fem::Quadrature &Q,
                                double *thickness,
                                double *tauc,
                                double *hardness) const {
-  const fem::Germs *test = Q.test_function_values();
+  auto test = Q.test_function_values();
   const unsigned int n = Q.n();
 
   for (unsigned int q = 0; q < n; q++) {
@@ -376,7 +376,7 @@ void SSAFEM::quad_point_values(const fem::Quadrature &Q,
 void SSAFEM::explicit_driving_stress(const fem::Quadrature &Q,
                                      const Coefficients *x,
                                      Vector2 *result) const {
-  const fem::Germs *test = Q.test_function_values();
+  auto test = Q.test_function_values();
   const unsigned int n = Q.n();
 
   for (unsigned int q = 0; q < n; q++) {
@@ -437,7 +437,7 @@ void SSAFEM::explicit_driving_stress(const fem::Quadrature &Q,
 void SSAFEM::driving_stress(const fem::Quadrature &Q,
                             const Coefficients *x,
                             Vector2 *result) const {
-  const fem::Germs *test = Q.test_function_values();
+  auto test = Q.test_function_values();
   const unsigned int n = Q.n();
 
   for (unsigned int q = 0; q < n; q++) {
@@ -559,9 +559,10 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 
   // P1 element geometry information (one per P1 element type)
   std::vector<fem::p1::ElementGeometry> p1;
-
+  std::vector<fem::p1::BoundaryQuadrature2> p1_bq;
   for (unsigned int k = 0; k < 4; ++k) {
     p1.push_back(fem::p1::ElementGeometry(k, dx, dy));
+    p1_bq.push_back(fem::p1::BoundaryQuadrature2(k, dx, dy, 1.0));
   }
 
   const unsigned int Nk = fem::q1::n_chi;
@@ -808,7 +809,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         const unsigned int Nq = Q.n();
 
         // An Nq by Nk array of test function values.
-        const fem::Germs *test = Q.test_function_values();
+        auto test = Q.test_function_values();
 
         // Jacobian times weights for quadrature.
         const double* W = Q.weights();
@@ -1016,7 +1017,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
 
         // Values of the finite element test functions at the quadrature points.
         // This is an Nq by Nk array of function germs
-        const fem::Germs *test = Q.test_function_values();
+        auto test = Q.test_function_values();
 
         int    mask[Nq_max];
         double thickness[Nq_max];

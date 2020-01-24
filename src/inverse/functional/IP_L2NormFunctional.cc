@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2020  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -122,7 +122,7 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
   IceModelVec::AccessList list{&x, &gradient};
 
   // An Nq by Nk array of test function values.
-  const fem::Germs *test = m_quadrature.test_function_values();
+  auto test = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
   const double* W = m_quadrature.weights();
@@ -260,7 +260,7 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
   IceModelVec::AccessList list{&x, &gradient};
 
   // An Nq by Nk array of test function values.
-  const fem::Germs *test = m_quadrature.test_function_values();
+  auto test = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
   const double* W = m_quadrature.weights();

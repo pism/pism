@@ -278,7 +278,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   double dB_q[Nq_max];
 
   // An Nq by Nk array of test function values.
-  const fem::Germs *test = m_quadrature.test_function_values();
+  auto test = m_quadrature.test_function_values();
 
   fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
                                         dirichletWeight);
@@ -448,7 +448,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   double dzeta_e[Nk];
 
   // An Nq by Nk array of test function values.
-  const fem::Germs *test = m_quadrature.test_function_values();
+  auto test = m_quadrature.test_function_values();
 
   // Aliases to help with notation consistency.
   const IceModelVec2Int *dirichletLocations = &m_bc_mask;

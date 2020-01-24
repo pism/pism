@@ -308,10 +308,6 @@ private:
 
 } // end of namespace p1
 
-
-// define Germs, which is an array of q1::n_chi "Germ"s
-typedef Germ Germs[q1::n_chi];
-
 //! The mapping from global to local degrees of freedom.
 /*! Computations of residual and Jacobian entries in the finite element method are done by iterating
   of the elements and adding the various contributions from each element. To do this, degrees of
@@ -501,6 +497,9 @@ public:
   Quadrature(unsigned int N);
   virtual ~Quadrature();
 
+  // define Germs, which is an array of q1::n_chi "Germ"s
+  typedef Germ Germs[q1::n_chi];
+
   //! Quadrature size (the number of points).
   unsigned int n() const {
     return m_Nq;
@@ -646,7 +645,7 @@ private:
 /*! There should be room for Q.N() values in the output array `result`. */
 template <typename T>
 void quadrature_point_values(Quadrature &Q, const T *x, T *result) {
-  const Germs *test = Q.test_function_values();
+  auto test = Q.test_function_values();
   const unsigned int n = Q.n();
   for (unsigned int q = 0; q < n; q++) {
     result[q] = 0.0;
@@ -664,7 +663,7 @@ void quadrature_point_values(Quadrature &Q, const T *x, T *result) {
 */
 template <typename T>
 void quadrature_point_values(Quadrature &Q, const T *x, T *vals, T *dx, T *dy) {
-  const Germs *test = Q.test_function_values();
+  auto test = Q.test_function_values();
   const unsigned int n = Q.n();
   for (unsigned int q = 0; q < n; q++) {
     vals[q] = 0.0;
