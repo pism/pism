@@ -284,6 +284,22 @@ private:
   unsigned int m_type;
 };
 
+/*
+//! 2-point quadrature for sides of Q1 quadrilateral elements.
+class BoundaryQuadrature2 : public BoundaryQuadrature {
+public:
+  BoundaryQuadrature2(double dx, double dy, double L);
+
+protected:
+  double weight_impl(unsigned int side, unsigned int q) const;
+  const Germ& germ_impl(unsigned int side, unsigned int q, unsigned int test_function) const;
+private:
+  //! Number of quadrature points per side.
+  static const unsigned int m_size = 2;
+  double m_W[n_sides][m_size];
+  Germ m_germs[n_sides][m_size][q1::n_chi];
+};
+*/
 } // end of namespace p1
 
 
