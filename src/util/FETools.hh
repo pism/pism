@@ -239,9 +239,9 @@ Germ chi(unsigned int k, const QuadPoint &p);
 
 //! Nodes incident to a side. Used to extract nodal values and add contributions.
 
-class Q1ElementGeometry : public ElementGeometry {
+class ElementGeometry : public pism::fem::ElementGeometry {
 public:
-  Q1ElementGeometry();
+  ElementGeometry();
 private:
   unsigned int incident_node_impl(unsigned int side, unsigned int k) const;
 };
@@ -273,33 +273,39 @@ namespace p1 {
 //! Evaluate a P1 shape function and its derivatives with respect to xi and eta.
 Germ chi(unsigned int k, const QuadPoint &p);
 
-//! Number of sides per element.
+//! Number of shape functions
+const int n_chi = 3;
+//! Number of sides per element
 const int n_sides = 3;
 
-class P1ElementGeometry : public ElementGeometry {
+class ElementGeometry : public pism::fem::ElementGeometry {
 public:
-  P1ElementGeometry(unsigned int type, double dx, double dy);
+  ElementGeometry(unsigned int type, double dx, double dy);
 private:
   unsigned int incident_node_impl(unsigned int side, unsigned int k) const;
   unsigned int m_type;
 };
 
-/*
+
 //! 2-point quadrature for sides of Q1 quadrilateral elements.
 class BoundaryQuadrature2 : public BoundaryQuadrature {
 public:
-  BoundaryQuadrature2(double dx, double dy, double L);
+  BoundaryQuadrature2(unsigned int type, double dx, double dy, double L);
 
 protected:
   double weight_impl(unsigned int side, unsigned int q) const;
   const Germ& germ_impl(unsigned int side, unsigned int q, unsigned int test_function) const;
 private:
-  //! Number of quadrature points per side.
+  //! Number of quadrature points per side
   static const unsigned int m_size = 2;
+  //! Number of shape functions per side
+  static const unsigned int m_n_chi = 2;
+  //! Quadrature weights
   double m_W[n_sides][m_size];
-  Germ m_germs[n_sides][m_size][q1::n_chi];
+  //! Values of shape functions and their partial derivatives at quadrature points
+  Germ m_germs[n_sides][m_size][m_n_chi];
 };
-*/
+
 } // end of namespace p1
 
 

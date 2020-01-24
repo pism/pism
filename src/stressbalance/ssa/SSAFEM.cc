@@ -552,16 +552,16 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
   const double dx = m_grid->dx(), dy = m_grid->dy();
 
   // Q1 element geometry information
-  fem::q1::Q1ElementGeometry q1;
+  fem::q1::ElementGeometry q1;
 
   // Q1 boundary quadratures
   fem::q1::BoundaryQuadrature2 q1_bq(dx, dy, 1.0);
 
   // P1 element geometry information (one per P1 element type)
-  std::vector<fem::p1::P1ElementGeometry> p1;
+  std::vector<fem::p1::ElementGeometry> p1;
 
   for (unsigned int k = 0; k < 4; ++k) {
-    p1.push_back(fem::p1::P1ElementGeometry(k, dx, dy));
+    p1.push_back(fem::p1::ElementGeometry(k, dx, dy));
   }
 
   const unsigned int Nk = fem::q1::n_chi;

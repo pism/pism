@@ -145,14 +145,14 @@ const Germ& BoundaryQuadrature::germ(unsigned int side,
 
 namespace q1 {
 
-Q1ElementGeometry::Q1ElementGeometry()
-  : ElementGeometry(q1::n_sides) {
+ElementGeometry::ElementGeometry()
+  : pism::fem::ElementGeometry(q1::n_sides) {
 
   // south, east, north, west
   m_normals = {{0.0, -1.0}, {1.0, 0.0}, {0.0, 1.0}, {-1.0, 0.0}};
 }
 
-unsigned int Q1ElementGeometry::incident_node_impl(unsigned int side, unsigned int k) const {
+unsigned int ElementGeometry::incident_node_impl(unsigned int side, unsigned int k) const {
   static const unsigned int nodes[q1::n_sides][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
 
   return nodes[side][k];
@@ -185,17 +185,14 @@ static QuadPoint r_star(unsigned int side, double t) {
     j0 = side,
     j1 = (side + 1) % n_chi;
 
-  QuadPoint result;
-  result.xi  = (1.0 - L) *  xi[j0] + L *  xi[j1];
-  result.eta = (1.0 - L) * eta[j0] + L * eta[j1];
-
-  return result;
+  return {(1.0 - L) *  xi[j0] + L *  xi[j1],
+          (1.0 - L) * eta[j0] + L * eta[j1]};
 }
 
 BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy, double L)
   : BoundaryQuadrature(m_size) {
 
-  Q1ElementGeometry q1;
+  ElementGeometry q1;
 
   // The Jacobian of the map from the reference element to a physical element.
   const double J[2][2] = {{0.5 * dx / L, 0.0},
@@ -244,7 +241,6 @@ double BoundaryQuadrature2::weight_impl(unsigned int side, unsigned int q) const
 const Germ& BoundaryQuadrature2::germ_impl(unsigned int side,
                                            unsigned int q,
                                            unsigned int k) const {
-
   return m_germs[side][q][k];
 }
 
@@ -252,8 +248,8 @@ const Germ& BoundaryQuadrature2::germ_impl(unsigned int side,
 
 namespace p1 {
 
-P1ElementGeometry::P1ElementGeometry(unsigned int type, double dx, double dy)
-  : ElementGeometry(p1::n_sides), m_type(type) {
+ElementGeometry::ElementGeometry(unsigned int type, double dx, double dy)
+  : pism::fem::ElementGeometry(p1::n_sides), m_type(type) {
 
   assert(type < q1::n_chi);
 
@@ -289,7 +285,7 @@ P1ElementGeometry::P1ElementGeometry(unsigned int type, double dx, double dy)
   }
 }
 
-unsigned int P1ElementGeometry::incident_node_impl(unsigned int side, unsigned int k) const {
+unsigned int ElementGeometry::incident_node_impl(unsigned int side, unsigned int k) const {
 //! Nodes incident to a side. Used to extract nodal values and add contributions.
   static const unsigned int nodes[q1::n_chi][p1::n_sides][2] = {
     {{0, 1}, {1, 3}, {3, 0}},
@@ -304,32 +300,109 @@ unsigned int P1ElementGeometry::incident_node_impl(unsigned int side, unsigned i
 //! P1 basis functions on the reference element with nodes (0,0), (1,0), (0,1).
 Germ chi(unsigned int k, const QuadPoint &pt) {
   assert(k < q1::n_chi);
-  Germ result;
 
   switch (k) {
   case 0:
-    result.val = 1.0 - pt.xi - pt.eta;
-    result.dx  = -1.0;
-    result.dy  = -1.0;
-    break;
+    return {1.0 - pt.xi - pt.eta, -1.0, -1.0};
   case 1:
-    result.val = pt.xi;
-    result.dx  = 1.0;
-    result.dy  = 0.0;
-    break;
+    return {pt.xi, 1.0, 0.0};
   case 2:
-    result.val = pt.eta;
-    result.dx  = 0.0;
-    result.dy  = 1.0;
-    break;
+    return {pt.eta, 0.0, 1.0};
   case 3:
   default:                      // the fourth (dummy) basis function
-    result.val = 0.0;
-    result.dx  = 0.0;
-    result.dy  = 0.0;
-    break;
+    return {0.0, 0.0, 0.0};
  }
-  return result;
+}
+
+// coordinates of reference element nodes
+static const double xi[n_chi]  = {0.0, 1.0, 0.0};
+static const double eta[n_chi] = {0.0, 0.0, 1.0};
+
+// Parameterization of sides of the P1 reference element (t \in [0, 1]).
+static QuadPoint r_star(unsigned int side, double t) {
+
+  // Map t (in [-1, 1]) to [0, 1] to simplify interpolation
+  const double L = 0.5 * (t + 1.0);
+
+  const unsigned int
+    j0 = side,
+    j1 = (side + 1) % n_chi;
+
+  return {(1.0 - L) *  xi[j0] + L *  xi[j1],
+          (1.0 - L) * eta[j0] + L * eta[j1]};
+}
+
+BoundaryQuadrature2::BoundaryQuadrature2(unsigned int type,
+                                         double dx, double dy, double L)
+  : BoundaryQuadrature(m_size) {
+
+  ElementGeometry p1(type, dx, dy);
+
+  // The Jacobian of the map from the reference element to a physical element.
+  double J[2][2] = {{0.0, 0.0}, {0.0, 0.0}};
+  switch (type) {
+  default:
+  case 0:
+    J[0][0] = dx / L;
+    J[1][1] = dy / L;
+    break;
+  case 1:
+    J[0][1] = dy / L;
+    J[1][0] = -dx / L;
+    break;
+  case 2:
+    J[0][0] = -dx / L;
+    J[1][1] = -dy / L;
+    break;
+  case 3:
+    J[0][1] = -dy / L;
+    J[1][0] = dx / L;
+    break;
+  }
+
+  // derivative of r_star(t) = (xi(t), eta(t)) (the parameterization of the selected side of the
+  // reference element) with respect to t. See fem_q1_boundary.mac for a derivation.
+  Vector2 dr_star[n_sides] = {{0.5, 0.0}, {-0.5, 0.5}, {0.0, -0.5}};
+
+  // 2-point Gaussian quadrature on [-1, 1].
+  const double points[m_size]  = {-1.0 / sqrt(3.0), 1.0 / sqrt(3.0)};
+  const double weights[m_size] = {1.0, 1.0};
+
+  // The inverse of the Jacobian
+  double J_inv[2][2];
+  invert(J, J_inv);
+
+  for (unsigned int side = 0; side < n_sides; ++side) {
+    // Magnitude of the derivative r(t) = (x(t), y(t)) (the parameterization of the current side of
+    // a physical element) with respect to t, computed using the chain rule.
+    const Vector2 dr = multiply(J, dr_star[side]);
+
+    for (unsigned int q = 0; q < m_size; ++q) {
+      QuadPoint pt = r_star(side, points[q]);
+
+      m_W[side][q] = weights[q] * dr.magnitude();
+
+      // Compute the value of the current shape function and convert derivatives with
+      // respect to xi and eta into derivatives with respect to x and y.
+      //
+      // Note that sides of P1 elements are one-dimensional and have 2 shape functions.
+      for (unsigned int k = 0; k < m_n_chi; ++k) {
+        m_germs[side][q][k] = multiply(J_inv, chi(p1.incident_node(side, k), pt));
+      }
+    } // end of loop over quadrature points
+  } // end of loop over sides
+}
+
+double BoundaryQuadrature2::weight_impl(unsigned int side, unsigned int q) const {
+  return m_W[side][q];
+}
+
+//! @brief Return the "germ" (value and partial derivatives) of a basis function @f$ \chi_k @f$
+//! evaluated at the point `pt` on the side `side` of an element.
+const Germ& BoundaryQuadrature2::germ_impl(unsigned int side,
+                                           unsigned int q,
+                                           unsigned int k) const {
+  return m_germs[side][q][k];
 }
 
 } // end of namespace p1
