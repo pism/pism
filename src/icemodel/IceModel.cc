@@ -187,8 +187,15 @@ void IceModel::allocate_storage() {
   m_grid->variables().add(m_geometry.ice_surface_elevation);
   m_grid->variables().add(m_geometry.ice_thickness);
   m_grid->variables().add(m_geometry.cell_type);
-  m_grid->variables().add(m_geometry.sea_level_elevation);
-  m_grid->variables().add(m_geometry.lake_level_elevation);
+
+  //In the Lake implementation the instance sea_level
+  //in m_grid->variables() is directly connected to the
+  //m_sea_level->elevation() to get a more up-to-date sea_level
+  //then is present in m_gepmetry!
+  //
+  //m_grid->variables().add(m_geometry.sea_level_elevation);
+  //m_grid->variables().add(m_geometry.lake_level_elevation);
+
   m_grid->variables().add(m_geometry.longitude);
   m_grid->variables().add(m_geometry.latitude);
 
