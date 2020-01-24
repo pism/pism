@@ -24,6 +24,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/coupler/util/options.hh"
 
 #include "LakeCC.hh"
 #include "LakeLevel_ConnectedComponents.hh"
