@@ -24,7 +24,6 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/coupler/util/options.hh"
 
 #include "LakeCC.hh"
 #include "LakeLevel_ConnectedComponents.hh"
@@ -148,10 +147,11 @@ void LakeCC::init_impl(const Geometry &geometry) {
                            "topography overlay",
                            "meter", "meter", "", 0);
   {
-    ForcingOptions opt(*m_grid->ctx(), "lake_level.lakecc.topg_overlay");
 
-    if (not opt.filename.empty()) {
-      m_topg_overlay.regrid(opt.filename, OPTIONAL, 0.0);
+    std::string overlay_file = m_config->get_string("lake_level.lakecc.topg_overlay_file");
+
+    if (not overlay_file.empty()) {
+      m_topg_overlay.regrid(overlay_file, OPTIONAL, 0.0);
     } else {
       m_topg_overlay.set(0.0);
     }
