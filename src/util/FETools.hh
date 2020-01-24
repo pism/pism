@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017 Jed Brown nd Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017, 2020 Jed Brown nd Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -265,7 +265,6 @@ private:
 } // end of namespace q1
 
 //! @brief P1 element embedded in a Q1 element.
-//! function at node 2).
 namespace p1 {
 //! Evaluate a P1 shape function and its derivatives with respect to xi and eta.
 Germ chi(unsigned int k, const QuadPoint &p);
