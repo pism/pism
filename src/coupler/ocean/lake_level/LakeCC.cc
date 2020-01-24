@@ -150,7 +150,11 @@ void LakeCC::init_impl(const Geometry &geometry) {
   {
     ForcingOptions opt(*m_grid->ctx(), "lake_level.lakecc.topg_overlay");
 
-    m_topg_overlay.regrid(opt.filename, OPTIONAL, 0.0);
+    if (not opt.filename.empty()) {
+      m_topg_overlay.regrid(opt.filename, OPTIONAL, 0.0);
+    } else {
+      m_topg_overlay.set(0.0);
+    }
   }
 
   m_bed.create(m_grid, "topg_lakecc", WITHOUT_GHOSTS);
