@@ -597,14 +597,6 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
     ys = m_element_index.ys,
     ym = m_element_index.ym;
 
-  // Consider a Q1 element with one exterior node and three interior (or boundary) nodes. This is
-  // not an interior element by itself, but it contains an embedded P1 element that *is* interior
-  // and should contribute. We need to find which of the four types of embedded P1 elements to use,
-  // but P1 elements are numbered by the node at the right angle of the reference element, not the
-  // "missing" node. This array maps "missing" nodes to "opposite" nodes, i.e. nodes used to choose
-  // P1 element types.
-  const int p1_element_number[4] = {2, 3, 0, 1};
-
   ParallelSection loop(m_grid->com);
   try {
     for (int j = ys; j < ys + ym; j++) {
@@ -638,13 +630,24 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
           int type = -1;
 
           for (unsigned int k = 0; k < Nk; ++k) {
+            // Consider a Q1 element with one exterior node and three
+            // interior (or boundary) nodes. This is not an interior
+            // element by itself, but it contains an embedded P1
+            // element that *is* interior and should contribute. We
+            // need to find which of the four types of embedded P1
+            // elements to use, but P1 elements are numbered using the
+            // node at the right angle of the reference element, not
+            // the "missing" node. Here we map "missing" nodes to
+            // "opposite" nodes, i.e. nodes used to choose P1 element
+            // types.
             if (node_type[k] == NODE_EXTERIOR) {
-              type = p1_element_number[k];
+              type = (k + 2) % 4;
               break;
             }
           }
 
           E = &p1[type];
+          // FIXME: I need to implement the boundary integral computation in the P1 case
           continue;
         } else {
           // an exterior node
@@ -687,8 +690,8 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 
             const double W = Q->weight(side, q);
 
-            // test functions at nodes incident to the current side, evaluated at the quadrature point
-            // q
+            // test functions at nodes incident to the current side, evaluated at the
+            // quadrature point q
             psi[0] = Q->germ(side, q, 0).val;
             psi[1] = Q->germ(side, q, 1).val;
 
