@@ -227,12 +227,8 @@ BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy, double L)
       // respect to xi and eta into derivatives with respect to x and y.
       //
       // Note that sides of Q1 elements are one-dimensional and have 2 shape functions.
-      for (int k = 0; k < 2; ++k) {
+      for (unsigned int k = 0; k < m_n_chi; ++k) {
         m_germs[side][q][k] = multiply(J_inv, q1::chi(q1.incident_node(side, k), pt));
-      }
-      // Fill the rest with zeros:
-      for (int k = 2; k < n_chi; ++k) {
-        m_germs[side][q][k] = {0.0, 0.0, 0.0};
       }
     } // end of loop over quadrature points
   } // end of loop over sides

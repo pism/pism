@@ -256,10 +256,14 @@ protected:
   double weight_impl(unsigned int side, unsigned int q) const;
   const Germ& germ_impl(unsigned int side, unsigned int q, unsigned int test_function) const;
 private:
-  //! Number of quadrature points per side.
+  //! Number of quadrature points per side
   static const unsigned int m_size = 2;
+  //! Number of shape functions per side
+  static const unsigned int m_n_chi = 2;
+  //! Quadrature weights
   double m_W[n_sides][m_size];
-  Germ m_germs[n_sides][m_size][q1::n_chi];
+  //! Values of shape functions and their partial derivatives at quadrature points
+  Germ m_germs[n_sides][m_size][m_n_chi];
 };
 
 } // end of namespace q1
