@@ -120,10 +120,6 @@ void IndexForcing::init_impl(const Geometry &geometry) {
   {
     ForcingOptions opt(*m_grid->ctx(), "atmosphere.index");
 
-    unsigned int buffer_size = m_config->get_number("climate_forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("climate_forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
-
     m_log->message(2,
                   "  initializing %s, %s, %s and %s from forcing file %s...\n",
                   m_T0->get_name().c_str(),
