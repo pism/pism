@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2019 Jed Brown and the PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2019, 2020 Jed Brown and the PISM Authors
 
    This file is part of PISM.
 
@@ -773,6 +773,9 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
 
           jw /= ctx->rhog;      /* residuals are scaled by this factor */
 
+          /* Store eta at the quadrature point 0 (i.e. at a location on the bottom face of
+           * the element). It is used to scale the diagonal entries at the base in the
+           * no-slip case. */
           if (q == 0) {
             etabase = eta;
           }
