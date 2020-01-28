@@ -458,7 +458,10 @@ ElementIterator::ElementIterator(const IceGrid &g) {
 }
 
 Element::Element(const IceGrid &grid)
-  : m_grid(grid) {
+  : m_i_offset({0, 1, 1, 0}),
+    m_j_offset({0, 0, 1, 1}),
+    m_n_chi(4),
+    m_grid(grid) {
   reset(0, 0);
 }
 
@@ -467,7 +470,7 @@ Element::~Element() {
 }
 
 void Element::nodal_values(const IceModelVec2Int &x_global, int *result) const {
-  for (unsigned int k = 0; k < q1::n_chi; ++k) {
+  for (int k = 0; k < m_n_chi; ++k) {
     const int
       ii = m_i + m_i_offset[k],
       jj = m_j + m_j_offset[k];
@@ -481,7 +484,7 @@ void Element::reset(int i, int j) {
   m_i = i;
   m_j = j;
 
-  for (unsigned int k = 0; k < fem::q1::n_chi; ++k) {
+  for (int k = 0; k < m_n_chi; ++k) {
     m_col[k].i = i + m_i_offset[k];
     m_col[k].j = j + m_j_offset[k];
     m_col[k].k = 0;
@@ -491,11 +494,11 @@ void Element::reset(int i, int j) {
     m_row[k].k = m_col[k].k;
   }
 
-  // We do not ever sum into rows that are not owned by the local rank.
+  // We never sum into rows that are not owned by the local rank.
   for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
     int pism_i = m_row[k].i, pism_j = m_row[k].j;
-    if (pism_i < m_grid.xs() || m_grid.xs() + m_grid.xm() - 1 < pism_i ||
-        pism_j < m_grid.ys() || m_grid.ys() + m_grid.ym() - 1 < pism_j) {
+    if (pism_i < m_grid.xs() or m_grid.xs() + m_grid.xm() - 1 < pism_i or
+        pism_j < m_grid.ys() or m_grid.ys() + m_grid.ym() - 1 < pism_j) {
       mark_row_invalid(k);
     }
   }
@@ -505,18 +508,12 @@ void Element::reset(int i, int j) {
   when inserting into the global residual or Jacobian arrays. */
 void Element::mark_row_invalid(int k) {
   m_row[k].i = m_row[k].j = m_invalid_dof;
-  // We are solving a 2D system, so MatStencil::k is not used. Here we
-  // use it to mark invalid rows.
-  m_row[k].k = 1;
 }
 
 /*!@brief Mark that the column corresponding to local degree of freedom `k` should not be updated
   when inserting into the global Jacobian arrays. */
 void Element::mark_col_invalid(int k) {
   m_col[k].i = m_col[k].j = m_invalid_dof;
-  // We are solving a 2D system, so MatStencil::k is not used. Here we
-  // use it to mark invalid columns.
-  m_col[k].k = 1;
 }
 
 //! Add the contributions of an element-local Jacobian to the global Jacobian vector.
@@ -537,9 +534,6 @@ void Element::add_contribution(const double *K, Mat J) const {
   PISM_CHK(ierr, "MatSetValuesBlockedStencil");
 }
 
-const int Element::m_i_offset[4] = {0, 1, 1, 0};
-const int Element::m_j_offset[4] = {0, 0, 1, 1};
-
 Quadrature::Quadrature(unsigned int N)
   : m_Nq(N) {
 
@@ -553,10 +547,6 @@ Quadrature::Quadrature(unsigned int N)
     free(m_W);
     throw std::runtime_error("Failed to allocate a Quadrature instance");
   }
-}
-
-Germ Quadrature::test_function_values(unsigned int q, unsigned int k) const {
-  return m_germs[q][k];
 }
 
 double Quadrature::weights(unsigned int q) const {
@@ -897,7 +887,8 @@ void DirichletData::finish(const IceModelVec *values) {
 //! @brief Constrain `element`, i.e. ensure that quadratures do not contribute to Dirichlet nodes by marking corresponding rows and columns as "invalid".
 void DirichletData::constrain(Element &element) {
   element.nodal_values(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < q1::n_chi; k++) {
+  auto n_chi = element.n_chi();
+  for (int k = 0; k < n_chi; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       // Mark any kind of Dirichlet node as not to be touched
       element.mark_row_invalid(k);

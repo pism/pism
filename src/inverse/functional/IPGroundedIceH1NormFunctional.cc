@@ -151,6 +151,8 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
+  auto &Q = m_quadrature;
+
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
@@ -160,9 +162,6 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   IceModelVec::AccessList list{&x, &gradient, &m_ice_mask};
 
   double gradient_e[Nk];
-
-  // An Nq by Nk array of test function values.
-  auto test = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
   const double* W = m_quadrature.weights();
@@ -207,8 +206,8 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
         const double &x_qq=x_q[q];
         const double &dxdx_qq=dxdx_q[q], &dxdy_qq=dxdy_q[q];
         for (unsigned int k=0; k<Nk; k++) {
-          gradient_e[k] += 2*W[q]*(m_cL2*x_qq*test[q][k].val +
-                                   m_cH1*(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy));
+          gradient_e[k] += 2*W[q]*(m_cL2*x_qq*Q.chi(q, k).val +
+                                   m_cH1*(dxdx_qq*Q.chi(q, k).dx + dxdy_qq*Q.chi(q, k).dy));
         } // k
       } // q
       m_element.add_contribution(gradient_e, gradient);
@@ -220,6 +219,8 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
   const unsigned int Nk = fem::q1::n_chi;
   const unsigned int Nq = m_quadrature.n();
+
+  auto &Q = m_quadrature;
 
   PetscErrorCode ierr;
   int         i, j;
@@ -234,10 +235,6 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
   fem::DirichletData_Scalar zeroLocs(m_dirichletIndices, NULL);
 
   IceModelVec::AccessList list(m_ice_mask);
-
-  // Values of the finite element test functions at the quadrature points.
-  // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
-  auto test = m_quadrature.test_function_values();
 
   // Loop through all the elements.
   const int
@@ -275,9 +272,9 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
       for (unsigned int q=0; q<Nq; q++) {
         for (unsigned int k = 0; k < Nk; k++) {   // Test functions
-          const fem::Germ &test_qk=test[q][k];
+          const fem::Germ &test_qk=Q.chi(q, k);
           for (unsigned int l = 0; l < Nk; l++) { // Trial functions
-            const fem::Germ &test_ql=test[q][l];
+            const fem::Germ &test_ql=Q.chi(q, l);
             K[k][l]     += W[q]*(m_cL2*test_qk.val*test_ql.val
               +  m_cH1*(test_qk.dx*test_ql.dx + test_qk.dy*test_ql.dy));
           } // l

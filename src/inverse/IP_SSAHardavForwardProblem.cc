@@ -241,6 +241,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
+  auto &Q = m_quadrature;
+
   IceModelVec::AccessList list{&m_coefficients, m_zeta, &u};
 
   IceModelVec2S *dzeta_local;
@@ -276,9 +278,6 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
   double dB_e[Nk];
   double dB_q[Nq_max];
-
-  // An Nq by Nk array of test function values.
-  auto test = m_quadrature.test_function_values();
 
   fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
                                         dirichletWeight);
@@ -357,7 +356,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           }
 
           for (unsigned int k = 0; k < Nk; k++) {
-            const fem::Germ &testqk = test[q][k];
+            const fem::Germ &testqk = Q.chi(q, k);
             du_e[k].u += W[q]*d_nuH*(testqk.dx*(2*Duqq[0] + Duqq[1]) + testqk.dy*Duqq[2]);
             du_e[k].v += W[q]*d_nuH*(testqk.dy*(2*Duqq[1] + Duqq[0]) + testqk.dx*Duqq[2]);
           }
@@ -426,6 +425,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
+  auto &Q = m_quadrature;
+
   IceModelVec::AccessList list{&m_coefficients, m_zeta, &u};
 
   IceModelVec2V *du_local;
@@ -446,9 +447,6 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   Vector2 du_dy_q[Nq_max];
 
   double dzeta_e[Nk];
-
-  // An Nq by Nk array of test function values.
-  auto test = m_quadrature.test_function_values();
 
   // Aliases to help with notation consistency.
   const IceModelVec2Int *dirichletLocations = &m_bc_mask;
@@ -527,7 +525,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
           }
 
           for (unsigned int k = 0; k < Nk; k++) {
-            dzeta_e[k] += W[q]*d_nuH_dB*test[q][k].val*((du_dx_q[q].u*(2*Duqq[0] + Duqq[1]) +
+            dzeta_e[k] += W[q]*d_nuH_dB*Q.chi(q, k).val*((du_dx_q[q].u*(2*Duqq[0] + Duqq[1]) +
                                                          du_dy_q[q].u*Duqq[2]) +
                                                         (du_dy_q[q].v*(2*Duqq[1] + Duqq[0]) +
                                                          du_dx_q[q].v*Duqq[2]));

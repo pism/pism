@@ -113,6 +113,8 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
+  auto &Q = m_quadrature;
+
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
@@ -120,9 +122,6 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
   double gradient_e[Nk];
 
   IceModelVec::AccessList list{&x, &gradient};
-
-  // An Nq by Nk array of test function values.
-  auto test = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
   const double* W = m_quadrature.weights();
@@ -153,7 +152,7 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
       for (unsigned int q = 0; q < Nq; q++) {
         const double x_qq = x_q[q];
         for (unsigned int k = 0; k < Nk; k++) {
-          gradient_e[k] += 2*W[q]*x_qq*test[q][k].val;
+          gradient_e[k] += 2*W[q]*x_qq*Q.chi(q, k).val;
         } // k
       } // q
       m_element.add_contribution(gradient_e, gradient);
@@ -251,6 +250,8 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
+  auto &Q = m_quadrature;
+
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
@@ -258,9 +259,6 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
   Vector2 gradient_e[Nk];
 
   IceModelVec::AccessList list{&x, &gradient};
-
-  // An Nq by Nk array of test function values.
-  auto test = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
   const double* W = m_quadrature.weights();
@@ -292,7 +290,7 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
       for (unsigned int q = 0; q < Nq; q++) {
         const Vector2 &x_qq = x_q[q];
         for (unsigned int k = 0; k < Nk; k++) {
-          double gcommon = 2*W[q]*test[q][k].val;
+          double gcommon = 2*W[q]*Q.chi(q, k).val;
           gradient_e[k].u += gcommon*x_qq.u;
           gradient_e[k].v += gcommon*x_qq.v;
         } // k

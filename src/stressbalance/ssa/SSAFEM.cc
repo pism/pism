@@ -104,7 +104,7 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g)
                         "node types: interior, boundary, exterior", // long name
                         "", "", "", 0); // no units or standard name
 
-  // ElementMap::nodal_values() expects a ghosted IceModelVec2S. Ghosts if this field are never
+  // Element::nodal_values() expects a ghosted IceModelVec2S. Ghosts if this field are never
   // assigned to and not communicated, though.
   m_boundary_integral.create(m_grid, "boundary_integral", WITH_GHOSTS, 1);
   m_boundary_integral.set_attrs("internal", // intent
@@ -345,8 +345,9 @@ void SSAFEM::quad_point_values(const fem::Quadrature &Q,
                                double *thickness,
                                double *tauc,
                                double *hardness) const {
-  auto test = Q.test_function_values();
+  // quadrature size
   const unsigned int n = Q.n();
+
 
   for (unsigned int q = 0; q < n; q++) {
     double
@@ -358,7 +359,7 @@ void SSAFEM::quad_point_values(const fem::Quadrature &Q,
     hardness[q]  = 0.0;
 
     for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
-      const fem::Germ &psi  = test[q][k];
+      const fem::Germ &psi  = Q.chi(q, k);
 
       thickness[q] += psi.val * x[k].thickness;
       bed          += psi.val * x[k].bed;
@@ -376,14 +377,13 @@ void SSAFEM::quad_point_values(const fem::Quadrature &Q,
 void SSAFEM::explicit_driving_stress(const fem::Quadrature &Q,
                                      const Coefficients *x,
                                      Vector2 *result) const {
-  auto test = Q.test_function_values();
   const unsigned int n = Q.n();
 
   for (unsigned int q = 0; q < n; q++) {
     result[q] = 0.0;
 
     for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
-      const fem::Germ &psi  = test[q][k];
+      const fem::Germ &psi  = Q.chi(q, k);
       result[q]  += psi.val * x[k].driving_stress;
     }
   }
@@ -437,7 +437,6 @@ void SSAFEM::explicit_driving_stress(const fem::Quadrature &Q,
 void SSAFEM::driving_stress(const fem::Quadrature &Q,
                             const Coefficients *x,
                             Vector2 *result) const {
-  auto test = Q.test_function_values();
   const unsigned int n = Q.n();
 
   for (unsigned int q = 0; q < n; q++) {
@@ -453,7 +452,7 @@ void SSAFEM::driving_stress(const fem::Quadrature &Q,
     result[q] = 0.0;
 
     for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
-      const fem::Germ &psi  = test[q][k];
+      const fem::Germ &psi  = Q.chi(q, k);
 
       b   += psi.val * x[k].bed;
       b_x += psi.dx * x[k].bed;
@@ -758,7 +757,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   IceModelVec::AccessList list{&m_node_type, &m_coefficients, &m_boundary_integral};
 
   // Set the boundary contribution of the residual. This is computed at the nodes, so we don't want
-  // to set it using ElementMap::add_contribution() because that would lead to
+  // to set it using Element::add_contribution() because that would lead to
   // double-counting. Also note that without CFBC m_boundary_integral is exactly zero.
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -807,9 +806,6 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
         // Number of quadrature points.
         const unsigned int Nq = Q.n();
-
-        // An Nq by Nk array of test function values.
-        auto test = Q.test_function_values();
 
         // Jacobian times weights for quadrature.
         const double* W = Q.weights();
@@ -881,7 +877,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
           // Loop over test functions.
           for (unsigned int k = 0; k < Nk; k++) {
-            const fem::Germ &psi = test[q][k];
+            const fem::Germ &psi = Q.chi(q, k);
 
             residual[k].u += jw * (eta * (psi.dx * (4.0 * u_x + 2.0 * v_y) + psi.dy * u_y_plus_v_x)
                                    - psi.val * (tau_b.u + tau_d[q].u));
@@ -1015,10 +1011,6 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
         // Jacobian times weights for quadrature.
         const double* W = Q.weights();
 
-        // Values of the finite element test functions at the quadrature points.
-        // This is an Nq by Nk array of function germs
-        auto test = Q.test_function_values();
-
         int    mask[Nq_max];
         double thickness[Nq_max];
         double tauc[Nq_max];
@@ -1073,7 +1065,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
           for (unsigned int l = 0; l < Nk; l++) { // Trial functions
 
             // Current trial function and its derivatives:
-            const fem::Germ &phi = test[q][l];
+            const fem::Germ &phi = Q.chi(q, l);
 
             // Derivatives of \gamma with respect to u_l and v_l:
             const double
@@ -1096,7 +1088,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
 
               // Current test function and its derivatives:
 
-              const fem::Germ &psi = test[q][k];
+              const fem::Germ &psi = Q.chi(q, k);
 
               if (eta == 0) {
                 ierr = PetscPrintf(PETSC_COMM_SELF, "eta=0 i %d j %d q %d k %d\n", i, j, q, k);

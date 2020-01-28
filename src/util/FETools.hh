@@ -328,14 +328,23 @@ private:
 class Element {
 public:
   Element(const IceGrid &grid);
-  ~Element();
+  virtual ~Element();
+
+  int n_chi() const {
+    return m_n_chi;
+  }
+
+  Vector2 normal(int side) const {
+    assert(side < m_n_chi);
+    return m_normals[side];
+  }
 
   /*! @brief Extract nodal values for the element (`i`,`j`) from global array `x_global`
       into the element-local array `result`.
   */
   template<typename T>
   void nodal_values(T const* const* x_global, T* result) const {
-    for (unsigned int k = 0; k < q1::n_chi; ++k) {
+    for (int k = 0; k < m_n_chi; ++k) {
       int i = 0, j = 0;
       local_to_global(k, i, j);
       result[k] = x_global[j][i];   // note the indexing order
@@ -347,7 +356,7 @@ public:
   */
   template<class C, typename T>
   void nodal_values(const C& x_global, T* result) const {
-    for (unsigned int k = 0; k < q1::n_chi; ++k) {
+    for (int k = 0; k < m_n_chi; ++k) {
       int i = 0, j = 0;
       local_to_global(k, i, j);
       result[k] = x_global(i, j);   // note the indexing order
@@ -364,8 +373,8 @@ public:
    */
   template<typename T>
   void add_contribution(const T *local, T** y_global) const {
-    for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
-      if (m_row[k].k == 1) {
+    for (int k = 0; k < m_n_chi; k++) {
+      if (m_row[k].i == m_invalid_dof) {
         // skip rows marked as "invalid"
         continue;
       }
@@ -378,8 +387,8 @@ public:
 
   template<class C, typename T>
   void add_contribution(const T *local, C& y_global) const {
-    for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
-      if (m_row[k].k == 1) {
+    for (int k = 0; k < m_n_chi; k++) {
+      if (m_row[k].i == m_invalid_dof) {
         // skip rows marked as "invalid"
         continue;
       }
@@ -392,18 +401,30 @@ public:
 
   void reset(int i, int j);
 
+  /*! @brief Add Jacobian contributions. */
+  void add_contribution(const double *K, Mat J) const;
+
   void mark_row_invalid(int k);
   void mark_col_invalid(int k);
 
   //! Convert a local degree of freedom index `k` to a global degree of freedom index (`i`,`j`).
-  void local_to_global(int k, int &i, int &j) const {
+  virtual void local_to_global(int k, int &i, int &j) const {
     i = m_i + m_i_offset[k];
     j = m_j + m_j_offset[k];
   }
 
-  /*! @brief Add Jacobian contributions. */
-  void add_contribution(const double *K, Mat J) const;
+protected:
 
+  //! grid offsets used to extract nodal values from the grid and add contributions from
+  //! an element to the residual and the Jacobian.
+  const std::vector<int> m_i_offset;
+  const std::vector<int> m_j_offset;
+
+  //! Number of nodes (and therefore the number of shape functions) in this particular
+  //! type of elements.
+  const int m_n_chi;
+
+  std::vector<Vector2> m_normals;
 private:
   //! Constant for marking invalid row/columns.
   //!
@@ -412,8 +433,6 @@ private:
   //! the stencil of width 1 (-1 *is* an allowed index). We use -2^30 and *don't* use PETSC_MIN_INT,
   //! because PETSC_MIN_INT depends on PETSc's configuration flags.
   static const int m_invalid_dof = -1073741824;
-  static const int m_i_offset[q1::n_chi];
-  static const int m_j_offset[q1::n_chi];
 
   //! Indices of the current element.
   int m_i, m_j;
@@ -497,18 +516,9 @@ public:
   Quadrature(unsigned int N);
   virtual ~Quadrature();
 
-  // define Germs, which is an array of q1::n_chi "Germ"s
-  typedef Germ Germs[q1::n_chi];
-
   //! Quadrature size (the number of points).
   unsigned int n() const {
     return m_Nq;
-  }
-
-  //! Vaues of `q1::n_chi` trial functions and their derivatives with respect to `x` and `y`, for
-  //! each of `n()` quadrature points.
-  const Germs* test_function_values() const {
-    return m_germs;
   }
 
   //! Determinant of the Jacobian of the map from the reference element to the physical element,
@@ -517,7 +527,14 @@ public:
     return m_W;
   }
 
-  Germ test_function_values(unsigned int q, unsigned int k) const;
+  /*!
+   * `chi(q, k)` returns values and partial derivatives of the `k`-th shape function at a
+   * quadrature point `q`.
+   */
+  Germ chi(unsigned int q, unsigned int k) const {
+    return m_germs[q][k];
+  }
+
   double weights(unsigned int q) const;
 
 protected:
@@ -525,6 +542,9 @@ protected:
   const unsigned int m_Nq;
 
   double *m_W;
+
+  // define Germs, which is an array of q1::n_chi "Germ"s
+  typedef Germ Germs[q1::n_chi];
 
   Germs* m_germs;
 
@@ -645,12 +665,11 @@ private:
 /*! There should be room for Q.N() values in the output array `result`. */
 template <typename T>
 void quadrature_point_values(Quadrature &Q, const T *x, T *result) {
-  auto test = Q.test_function_values();
   const unsigned int n = Q.n();
   for (unsigned int q = 0; q < n; q++) {
     result[q] = 0.0;
     for (unsigned int k = 0; k < q1::n_chi; k++) {
-      result[q] += test[q][k].val * x[k];
+      result[q] += Q.chi(q, k).val * x[k];
     }
   }
 }
@@ -663,14 +682,13 @@ void quadrature_point_values(Quadrature &Q, const T *x, T *result) {
 */
 template <typename T>
 void quadrature_point_values(Quadrature &Q, const T *x, T *vals, T *dx, T *dy) {
-  auto test = Q.test_function_values();
   const unsigned int n = Q.n();
   for (unsigned int q = 0; q < n; q++) {
     vals[q] = 0.0;
     dx[q]   = 0.0;
     dy[q]   = 0.0;
     for (unsigned int k = 0; k < q1::n_chi; k++) {
-      const Germ &psi = test[q][k];
+      const Germ &psi = Q.chi(q, k);
       vals[q] += psi.val * x[k];
       dx[q]   += psi.dx  * x[k];
       dy[q]   += psi.dy  * x[k];

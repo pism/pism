@@ -230,6 +230,8 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
+  auto &Q = m_quadrature;
+
   IceModelVec::AccessList list{&m_coefficients, m_zeta, &u};
 
   IceModelVec2S *dzeta_local;
@@ -265,9 +267,6 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
   double dtauc_e[Nk];
   double dtauc_q[Nq_max];
-
-  // An Nq by Nk array of test function values.
-  auto *test = m_quadrature.test_function_values();
 
   fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
                                         dirichletWeight);
@@ -343,8 +342,8 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           }
 
           for (unsigned int k = 0; k < Nk; k++) {
-            du_e[k].u += W[q]*dbeta*u_qq.u*test[q][k].val;
-            du_e[k].v += W[q]*dbeta*u_qq.v*test[q][k].val;
+            du_e[k].u += W[q]*dbeta*u_qq.u*Q.chi(q, k).val;
+            du_e[k].v += W[q]*dbeta*u_qq.v*Q.chi(q, k).val;
           }
         } // q
         m_element.add_contribution(du_e, du_a);
@@ -402,6 +401,8 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   const unsigned int Nq = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
+  auto &Q = m_quadrature;
+
   IceModelVec::AccessList list{&m_coefficients, m_zeta, &u};
 
   IceModelVec2V *du_local;
@@ -420,9 +421,6 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   Vector2 du_q[Nq_max];
 
   double dzeta_e[Nk];
-
-  // An Nq by Nk array of test function values.
-  auto *test = m_quadrature.test_function_values();
 
   // Aliases to help with notation consistency.
   const IceModelVec2Int *dirichletLocations = &m_bc_mask;
@@ -498,7 +496,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
           }
 
           for (unsigned int k=0; k<Nk; k++) {
-            dzeta_e[k] += W[q]*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*test[q][k].val;
+            dzeta_e[k] += W[q]*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*Q.chi(q, k).val;
           }
         } // q
 

@@ -82,6 +82,8 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
+  auto &Q = m_quadrature;
+
   // Clear the gradient before doing anything with it.
   gradient.set(0);
 
@@ -91,9 +93,6 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
   double gradient_e[Nk];
 
   IceModelVec::AccessList list{&x, &gradient};
-
-  // An Nq by Nk array of test function values.
-  auto test = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
   const double* W = m_quadrature.weights();
@@ -130,7 +129,7 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
         const double &dxdx_qq = dxdx_q[q], &dxdy_qq = dxdy_q[q];
         for (unsigned int k = 0; k < Nk; k++) {
           gradient_e[k] += m_c*W[q]*(m_lebesgue_exp)*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q], m_lebesgue_exp / 2 - 1)
-            *(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy);
+            *(dxdx_qq*Q.chi(q, k).dx + dxdy_qq*Q.chi(q, k).dy);
         } // k
       } // q
       m_element.add_contribution(gradient_e, gradient);
