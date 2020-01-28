@@ -134,7 +134,7 @@ static const unsigned int MAX_QUADRATURE_SIZE = 9;
   in the case of computing the residual):
 
   - Extract from the global degrees of freedom \f$c\f$ defining \f$w_h\f$ the local degrees of
-    freedom \f$d\f$ defining \f$\hat w_h\f$. (ElementMap)
+    freedom \f$d\f$ defining \f$\hat w_h\f$. (Element)
 
   - Evaluate the local trial function \f$w_h\f$ (values and derivatives as needed) at the quadrature
     points \f$x_q\f$ (Quadrature)
@@ -149,7 +149,7 @@ static const unsigned int MAX_QUADRATURE_SIZE = 9;
 
   - Each sum \f$y_k\f$ is the contribution of the current element to a residual entry \f$r_{ij}\f$,
     where local degree of freedom \f$k\f$ corresponds with global degree of freedom \f$(i,j)\f$. The
-    local contibutions now need to be added to the global residual vector (ElementMap).
+    local contibutions now need to be added to the global residual vector (Element).
 
   Computation of the Jacobian is similar, except that there are now multiple integrals per element
   (one for each local degree of freedom of \f$\hat w_h\f$).
@@ -158,8 +158,8 @@ static const unsigned int MAX_QUADRATURE_SIZE = 9;
   treated by the following classes, and discussed in their documentation:
 
   - Ghost elements (as well as periodic boundary conditions): ElementIterator
-  - Dirichlet data: ElementMap
-  - Vector valued functions: (ElementMap, Quadrature)
+  - Dirichlet data: Element
+  - Vector valued functions: (Element, Quadrature)
 
   The classes in this module are not intended to be a fancy finite element package. Their purpose is
   to clarify the steps that occur in the computation of residuals and Jacobians in SSAFEM, and to
@@ -315,20 +315,20 @@ private:
   for the purposes of local computation, (and the results added back again to the global residual
   and Jacobian arrays).
 
-  An ElementMap mediates the transfer between element-local and global degrees of freedom. In this
+  An Element mediates the transfer between element-local and global degrees of freedom. In this
   very concrete implementation, the global degrees of freedom are either scalars (double's) or
   vectors (Vector2's), one per node in the IceGrid, and the local degrees of freedom on the element
   are q1::n_chi (%i.e. four) scalars or vectors, one for each vertex of the element.
 
-  The ElementMap is also (perhaps awkwardly) overloaded to mediate transfering locally computed
+  The Element is also (perhaps awkwardly) overloaded to mediate transfering locally computed
   contributions to residual and Jacobian matrices to their global counterparts.
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class ElementMap {
+class Element {
 public:
-  ElementMap(const IceGrid &grid);
-  ~ElementMap();
+  Element(const IceGrid &grid);
+  ~Element();
 
   /*! @brief Extract nodal values for the element (`i`,`j`) from global array `x_global`
       into the element-local array `result`.
@@ -681,7 +681,7 @@ void quadrature_point_values(Quadrature &Q, const T *x, T *vals, T *dx, T *dy) {
 //* Parts shared by scalar and 2D vector Dirichlet data classes.
 class DirichletData {
 public:
-  void constrain(ElementMap &element);
+  void constrain(Element &element);
   operator bool() {
     return m_indices != NULL;
   }
@@ -703,8 +703,8 @@ public:
                        double weight = 1.0);
   ~DirichletData_Scalar();
 
-  void enforce(const ElementMap &element, double* x_e);
-  void enforce_homogeneous(const ElementMap &element, double* x_e);
+  void enforce(const Element &element, double* x_e);
+  void enforce_homogeneous(const Element &element, double* x_e);
   void fix_residual(double const *const *const x_global, double **r_global);
   void fix_residual_homogeneous(double **r_global);
   void fix_jacobian(Mat J);
@@ -718,8 +718,8 @@ public:
                        double weight);
   ~DirichletData_Vector();
 
-  void enforce(const ElementMap &element, Vector2* x_e);
-  void enforce_homogeneous(const ElementMap &element, Vector2* x_e);
+  void enforce(const Element &element, Vector2* x_e);
+  void enforce_homogeneous(const Element &element, Vector2* x_e);
   void fix_residual(Vector2 const *const *const x_global, Vector2 **r_global);
   void fix_residual_homogeneous(Vector2 **r);
   void fix_jacobian(Mat J);

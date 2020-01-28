@@ -457,16 +457,16 @@ ElementIterator::ElementIterator(const IceGrid &g) {
   lym = lyf - lys + 1;
 }
 
-ElementMap::ElementMap(const IceGrid &grid)
+Element::Element(const IceGrid &grid)
   : m_grid(grid) {
   reset(0, 0);
 }
 
-ElementMap::~ElementMap() {
+Element::~Element() {
   // empty
 }
 
-void ElementMap::nodal_values(const IceModelVec2Int &x_global, int *result) const {
+void Element::nodal_values(const IceModelVec2Int &x_global, int *result) const {
   for (unsigned int k = 0; k < q1::n_chi; ++k) {
     const int
       ii = m_i + m_i_offset[k],
@@ -475,9 +475,9 @@ void ElementMap::nodal_values(const IceModelVec2Int &x_global, int *result) cons
   }
 }
 
-/*!@brief Initialize the ElementMap to element (`i`, `j`) for the purposes of inserting into
+/*!@brief Initialize the Element to element (`i`, `j`) for the purposes of inserting into
   global residual and Jacobian arrays. */
-void ElementMap::reset(int i, int j) {
+void Element::reset(int i, int j) {
   m_i = i;
   m_j = j;
 
@@ -503,7 +503,7 @@ void ElementMap::reset(int i, int j) {
 
 /*!@brief Mark that the row corresponding to local degree of freedom `k` should not be updated
   when inserting into the global residual or Jacobian arrays. */
-void ElementMap::mark_row_invalid(int k) {
+void Element::mark_row_invalid(int k) {
   m_row[k].i = m_row[k].j = m_invalid_dof;
   // We are solving a 2D system, so MatStencil::k is not used. Here we
   // use it to mark invalid rows.
@@ -512,7 +512,7 @@ void ElementMap::mark_row_invalid(int k) {
 
 /*!@brief Mark that the column corresponding to local degree of freedom `k` should not be updated
   when inserting into the global Jacobian arrays. */
-void ElementMap::mark_col_invalid(int k) {
+void Element::mark_col_invalid(int k) {
   m_col[k].i = m_col[k].j = m_invalid_dof;
   // We are solving a 2D system, so MatStencil::k is not used. Here we
   // use it to mark invalid columns.
@@ -529,7 +529,7 @@ void ElementMap::mark_col_invalid(int k) {
  *  mark_row_invalid() and mark_col_invalid() are ignored. (Just as they
  *  should be.)
  */
-void ElementMap::add_contribution(const double *K, Mat J) const {
+void Element::add_contribution(const double *K, Mat J) const {
   PetscErrorCode ierr = MatSetValuesBlockedStencil(J,
                                                    fem::q1::n_chi, m_row,
                                                    fem::q1::n_chi, m_col,
@@ -537,8 +537,8 @@ void ElementMap::add_contribution(const double *K, Mat J) const {
   PISM_CHK(ierr, "MatSetValuesBlockedStencil");
 }
 
-const int ElementMap::m_i_offset[4] = {0, 1, 1, 0};
-const int ElementMap::m_j_offset[4] = {0, 0, 1, 1};
+const int Element::m_i_offset[4] = {0, 1, 1, 0};
+const int Element::m_j_offset[4] = {0, 0, 1, 1};
 
 Quadrature::Quadrature(unsigned int N)
   : m_Nq(N) {
@@ -895,7 +895,7 @@ void DirichletData::finish(const IceModelVec *values) {
 }
 
 //! @brief Constrain `element`, i.e. ensure that quadratures do not contribute to Dirichlet nodes by marking corresponding rows and columns as "invalid".
-void DirichletData::constrain(ElementMap &element) {
+void DirichletData::constrain(Element &element) {
   element.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < q1::n_chi; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
@@ -915,7 +915,7 @@ DirichletData_Scalar::DirichletData_Scalar(const IceModelVec2Int *indices,
   init(indices, m_values, weight);
 }
 
-void DirichletData_Scalar::enforce(const ElementMap &element, double* x_nodal) {
+void DirichletData_Scalar::enforce(const Element &element, double* x_nodal) {
   assert(m_values != NULL);
 
   element.nodal_values(*m_indices, m_indices_e);
@@ -928,7 +928,7 @@ void DirichletData_Scalar::enforce(const ElementMap &element, double* x_nodal) {
   }
 }
 
-void DirichletData_Scalar::enforce_homogeneous(const ElementMap &element, double* x_nodal) {
+void DirichletData_Scalar::enforce_homogeneous(const Element &element, double* x_nodal) {
   element.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < q1::n_chi; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
@@ -1011,7 +1011,7 @@ DirichletData_Vector::DirichletData_Vector(const IceModelVec2Int *indices,
   init(indices, m_values, weight);
 }
 
-void DirichletData_Vector::enforce(const ElementMap &element, Vector2* x_nodal) {
+void DirichletData_Vector::enforce(const Element &element, Vector2* x_nodal) {
   assert(m_values != NULL);
 
   element.nodal_values(*m_indices, m_indices_e);
@@ -1024,7 +1024,7 @@ void DirichletData_Vector::enforce(const ElementMap &element, Vector2* x_nodal) 
   }
 }
 
-void DirichletData_Vector::enforce_homogeneous(const ElementMap &element, Vector2* x_nodal) {
+void DirichletData_Vector::enforce_homogeneous(const Element &element, Vector2* x_nodal) {
   element.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < q1::n_chi; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node

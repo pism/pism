@@ -70,7 +70,7 @@ protected:
   IceGrid::ConstPtr m_grid;
 
   fem::ElementIterator m_element_index;
-  fem::ElementMap      m_element;
+  fem::Element      m_element;
   fem::Q1Quadrature4   m_quadrature;
 
 private:
