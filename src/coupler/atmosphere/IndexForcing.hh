@@ -64,6 +64,7 @@ private:
   double applyLapseRateP(double P, double h_ref, double h) const;
   double compute_T_ij(double T0, double T1, double h0, double h1, double h, double index) const;
   double compute_P_ij(double P0, double P1, double h0, double h1, double h, double index) const;
+  std::string m_option;
 
 };
 
