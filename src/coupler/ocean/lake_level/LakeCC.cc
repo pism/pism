@@ -146,8 +146,8 @@ void LakeCC::init_impl(const Geometry &geometry) {
   m_topg_overlay.set_attrs("internal",
                            "topography overlay",
                            "meter", "meter", "", 0);
-  {
 
+  {
     std::string overlay_file = m_config->get_string("lake_level.lakecc.topg_overlay_file");
 
     if (not overlay_file.empty()) {
