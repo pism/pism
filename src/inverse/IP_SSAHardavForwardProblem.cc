@@ -40,8 +40,7 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid::ConstPtr g,
     m_fixed_design_locations(NULL),
     m_design_param(tp),
     m_element_index(*m_grid),
-    m_element(*m_grid),
-    m_quadrature(g->dx(), g->dy(), 1.0),
+    m_element(*m_grid, fem::Q1Quadrature4()),
     m_rebuild_J_state(true) {
 
   PetscErrorCode ierr;
@@ -238,10 +237,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
                                                        Vector2 **du_a) {
 
   const unsigned int Nk     = fem::q1::n_chi;
-  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq     = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
-
-  auto &Q = m_quadrature;
 
   IceModelVec::AccessList list{&m_coefficients, m_zeta, &u};
 
@@ -283,9 +280,6 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
                                         dirichletWeight);
   fem::DirichletData_Scalar fixedZeta(m_fixed_design_locations, NULL);
 
-  // Jacobian times weights for quadrature.
-  const double* W = m_quadrature.weights();
-
   // Loop through all elements.
   const int
     xs = m_element_index.xs,
@@ -314,7 +308,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           dirichletBC.constrain(m_element);
           dirichletBC.enforce(m_element, u_e);
         }
-        quadrature_point_values(m_quadrature, u_e, U, U_x, U_y);
+        m_element.evaluate(u_e, U, U_x, U_y);
 
         // Compute dzeta at the nodes
         m_element.nodal_values(*dzeta_local, dzeta_e);
@@ -328,7 +322,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           m_design_param.toDesignVariable(zeta_e[k], NULL, dB_e + k);
           dB_e[k]*=dzeta_e[k];
         }
-        quadrature_point_values(m_quadrature, dB_e, dB_q);
+        m_element.evaluate(dB_e, dB_q);
 
         double thickness[Nq_max];
         {
@@ -339,7 +333,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
           m_element.nodal_values(m_coefficients, coeffs);
 
-          quad_point_values(m_quadrature, coeffs,
+          quad_point_values(m_element, coeffs,
                             mask, thickness, tauc, hardness);
         }
 
@@ -355,10 +349,12 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
             d_nuH *= (2.0 * thickness[q]);
           }
 
+          auto W = m_element.weight(q);
+
           for (unsigned int k = 0; k < Nk; k++) {
-            const fem::Germ &testqk = Q.chi(q, k);
-            du_e[k].u += W[q]*d_nuH*(testqk.dx*(2*Duqq[0] + Duqq[1]) + testqk.dy*Duqq[2]);
-            du_e[k].v += W[q]*d_nuH*(testqk.dy*(2*Duqq[1] + Duqq[0]) + testqk.dx*Duqq[2]);
+            const fem::Germ &testqk = m_element.chi(q, k);
+            du_e[k].u += W*d_nuH*(testqk.dx*(2*Duqq[0] + Duqq[1]) + testqk.dy*Duqq[2]);
+            du_e[k].v += W*d_nuH*(testqk.dy*(2*Duqq[1] + Duqq[0]) + testqk.dx*Duqq[2]);
           }
         } // q
         m_element.add_contribution(du_e, du_a);
@@ -422,10 +418,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
                                                                  double **dzeta_a) {
 
   const unsigned int Nk     = fem::q1::n_chi;
-  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq     = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
-
-  auto &Q = m_quadrature;
 
   IceModelVec::AccessList list{&m_coefficients, m_zeta, &u};
 
@@ -456,9 +450,6 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
                                         dirichletWeight);
 
-  // Jacobian times weights for quadrature.
-  const double* W = m_quadrature.weights();
-
   // Zero out the portion of the function we are responsible for computing.
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -485,13 +476,13 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
         if (dirichletBC) {
           dirichletBC.enforce_homogeneous(m_element, du_e);
         }
-        quadrature_point_values(m_quadrature, du_e, du_q, du_dx_q, du_dy_q);
+        m_element.evaluate(du_e, du_q, du_dx_q, du_dy_q);
 
         m_element.nodal_values(u, u_e);
         if (dirichletBC) {
           dirichletBC.enforce(m_element, u_e);
         }
-        quadrature_point_values(m_quadrature, u_e, U, U_x, U_y);
+        m_element.evaluate(u_e, U, U_x, U_y);
 
         // Zero out the element-local residual in prep for updating it.
         for (unsigned int k = 0; k < Nk; k++) {
@@ -507,7 +498,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
 
           m_element.nodal_values(m_coefficients, coeffs);
 
-          quad_point_values(m_quadrature, coeffs,
+          quad_point_values(m_element, coeffs,
                             mask, thickness, tauc, hardness);
         }
 
@@ -524,11 +515,13 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
             d_nuH_dB *= (2.0 * thickness[q]);
           }
 
+          auto W = m_element.weight(q);
+
           for (unsigned int k = 0; k < Nk; k++) {
-            dzeta_e[k] += W[q]*d_nuH_dB*Q.chi(q, k).val*((du_dx_q[q].u*(2*Duqq[0] + Duqq[1]) +
-                                                         du_dy_q[q].u*Duqq[2]) +
-                                                        (du_dy_q[q].v*(2*Duqq[1] + Duqq[0]) +
-                                                         du_dx_q[q].v*Duqq[2]));
+            dzeta_e[k] += W*d_nuH_dB*m_element.chi(q, k).val*((du_dx_q[q].u*(2*Duqq[0] + Duqq[1]) +
+                                                               du_dy_q[q].u*Duqq[2]) +
+                                                              (du_dy_q[q].v*(2*Duqq[1] + Duqq[0]) +
+                                                               du_dx_q[q].v*Duqq[2]));
           }
         } // q
 

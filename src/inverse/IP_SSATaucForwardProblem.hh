@@ -194,8 +194,7 @@ protected:
   IceModelVec2V  m_du_local;
 
   fem::ElementIterator m_element_index;
-  fem::Element      m_element;
-  fem::Q1Quadrature4   m_quadrature;
+  fem::Q1Element       m_element;
 
   /// KSP used in \ref apply_linearization and \ref apply_linearization_transpose
   petsc::KSP  m_ksp;

@@ -33,7 +33,7 @@ IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(IceGrid::ConstPtr gri
 void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   const unsigned int Nk     = fem::q1::n_chi;
-  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq     = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // The value of the objective
@@ -43,9 +43,6 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
   IceModelVec::AccessList list(x);
-
-  // Jacobian times weights for quadrature.
-  const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
@@ -65,10 +62,11 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
       if (dirichletBC) {
         dirichletBC.enforce_homogeneous(m_element, x_e);
       }
-      quadrature_point_values(m_quadrature, x_e, x_q, dxdx_q, dxdy_q);
+      m_element.evaluate(x_e, x_q, dxdx_q, dxdy_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
-        value += m_c*W[q]*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q], m_lebesgue_exp / 2);
+        auto W = m_element.weight(q);
+        value += m_c*W*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q], m_lebesgue_exp / 2);
       } // q
     } // j
   } // i
@@ -79,10 +77,8 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
   const unsigned int Nk     = fem::q1::n_chi;
-  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq     = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
-
-  auto &Q = m_quadrature;
 
   // Clear the gradient before doing anything with it.
   gradient.set(0);
@@ -93,9 +89,6 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
   double gradient_e[Nk];
 
   IceModelVec::AccessList list{&x, &gradient};
-
-  // Jacobian times weights for quadrature.
-  const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
@@ -118,7 +111,7 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
         dirichletBC.constrain(m_element);
         dirichletBC.enforce_homogeneous(m_element, x_e);
       }
-      quadrature_point_values(m_quadrature, x_e, x_q, dxdx_q, dxdy_q);
+      m_element.evaluate(x_e, x_q, dxdx_q, dxdy_q);
 
       // Zero out the element-local residual in preparation for updating it.
       for (unsigned int k = 0; k < Nk; k++) {
@@ -126,10 +119,11 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
       }
 
       for (unsigned int q = 0; q < Nq; q++) {
+        auto W = m_element.weight(q);
         const double &dxdx_qq = dxdx_q[q], &dxdy_qq = dxdy_q[q];
         for (unsigned int k = 0; k < Nk; k++) {
-          gradient_e[k] += m_c*W[q]*(m_lebesgue_exp)*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q], m_lebesgue_exp / 2 - 1)
-            *(dxdx_qq*Q.chi(q, k).dx + dxdy_qq*Q.chi(q, k).dy);
+          gradient_e[k] += m_c*W*(m_lebesgue_exp)*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q], m_lebesgue_exp / 2 - 1)
+            *(dxdx_qq*m_element.chi(q, k).dx + dxdy_qq*m_element.chi(q, k).dy);
         } // k
       } // q
       m_element.add_contribution(gradient_e, gradient);

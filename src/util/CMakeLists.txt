@@ -1,9 +1,13 @@
 # Create a list of files making up libpismutil so that we can add to it later:
 set(PISMUTIL_SRC
+  fem/DirichletData.cc
+  fem/Element.cc
+  fem/ElementIterator.cc
+  fem/FEM.cc
+  fem/Quadrature.cc
   ColumnInterpolation.cc
   Context.cc
   EnthalpyConverter.cc
-  FETools.cc
   IceGrid.cc
   Logger.cc
   Mask.cc

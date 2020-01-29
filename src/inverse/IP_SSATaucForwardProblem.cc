@@ -38,8 +38,7 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g,
     m_fixed_tauc_locations(NULL),
     m_tauc_param(tp),
     m_element_index(*m_grid),
-    m_element(*m_grid),
-    m_quadrature(g->dx(), g->dy(), 1.0),
+    m_element(*m_grid, fem::Q1Quadrature4()),
     m_rebuild_J_state(true) {
 
   PetscErrorCode ierr;
@@ -227,10 +226,8 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
                                                      IceModelVec2S &dzeta,
                                                      Vector2 **du_a) {
   const unsigned int Nk     = fem::q1::n_chi;
-  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq     = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
-
-  auto &Q = m_quadrature;
 
   IceModelVec::AccessList list{&m_coefficients, m_zeta, &u};
 
@@ -272,9 +269,6 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
                                         dirichletWeight);
   fem::DirichletData_Scalar fixedZeta(m_fixed_tauc_locations, NULL);
 
-  // Jacobian times weights for quadrature.
-  const double* W = m_quadrature.weights();
-
   // Loop through all elements.
   const int
     xs = m_element_index.xs,
@@ -303,7 +297,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           dirichletBC.constrain(m_element);
           dirichletBC.enforce(m_element, u_e);
         }
-        quadrature_point_values(m_quadrature, u_e, u_q);
+        m_element.evaluate(u_e, u_q);
 
         // Compute dzeta at the nodes
         m_element.nodal_values(*dzeta_local, dzeta_e);
@@ -317,7 +311,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           m_tauc_param.toDesignVariable(zeta_e[k], NULL, dtauc_e + k);
           dtauc_e[k] *= dzeta_e[k];
         }
-        quadrature_point_values(m_quadrature, dtauc_e, dtauc_q);
+        m_element.evaluate(dtauc_e, dtauc_q);
 
         int mask[Nq_max];
         {
@@ -328,7 +322,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
           m_element.nodal_values(m_coefficients, coeffs);
 
-          quad_point_values(m_quadrature, coeffs,
+          quad_point_values(m_element, coeffs,
                             mask, thickness, tauc, hardness);
         }
 
@@ -341,9 +335,11 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
             dbeta = m_basal_sliding_law->drag(dtauc_q[q], u_qq.u, u_qq.v);
           }
 
+          auto W = m_element.weight(q);
+
           for (unsigned int k = 0; k < Nk; k++) {
-            du_e[k].u += W[q]*dbeta*u_qq.u*Q.chi(q, k).val;
-            du_e[k].v += W[q]*dbeta*u_qq.v*Q.chi(q, k).val;
+            du_e[k].u += W*dbeta*u_qq.u*m_element.chi(q, k).val;
+            du_e[k].v += W*dbeta*u_qq.v*m_element.chi(q, k).val;
           }
         } // q
         m_element.add_contribution(du_e, du_a);
@@ -398,10 +394,8 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                IceModelVec2V &du,
                                                                double **dzeta_a) {
   const unsigned int Nk = fem::q1::n_chi;
-  const unsigned int Nq = m_quadrature.n();
+  const unsigned int Nq = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
-
-  auto &Q = m_quadrature;
 
   IceModelVec::AccessList list{&m_coefficients, m_zeta, &u};
 
@@ -430,9 +424,6 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
                                         dirichletWeight);
 
-  // Jacobian times weights for quadrature.
-  const double* W = m_quadrature.weights();
-
   // Zero out the portion of the function we are responsible for computing.
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -459,13 +450,13 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
         if (dirichletBC) {
           dirichletBC.enforce_homogeneous(m_element, du_e);
         }
-        quadrature_point_values(m_quadrature, du_e, du_q);
+        m_element.evaluate(du_e, du_q);
 
         m_element.nodal_values(u, u_e);
         if (dirichletBC) {
           dirichletBC.enforce(m_element, u_e);
         }
-        quadrature_point_values(m_quadrature, u_e, u_q);
+        m_element.evaluate(u_e, u_q);
 
         // Zero out the element-local residual in prep for updating it.
         for (unsigned int k=0; k<Nk; k++) {
@@ -481,7 +472,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
 
           m_element.nodal_values(m_coefficients, coeffs);
 
-          quad_point_values(m_quadrature, coeffs,
+          quad_point_values(m_element, coeffs,
                             mask, thickness, tauc, hardness);
         }
 
@@ -495,8 +486,10 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
             dbeta_dtauc = m_basal_sliding_law->drag(1., u_qq.u, u_qq.v);
           }
 
+          auto W = m_element.weight(q);
+
           for (unsigned int k=0; k<Nk; k++) {
-            dzeta_e[k] += W[q]*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*Q.chi(q, k).val;
+            dzeta_e[k] += W*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*m_element.chi(q, k).val;
           }
         } // q
 

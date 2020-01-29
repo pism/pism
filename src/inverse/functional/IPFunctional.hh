@@ -20,7 +20,7 @@
 #define IPFUNCTIONAL_HH_1E2DIXE6
 
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/FETools.hh"
+#include "pism/util/fem/FEM.hh"
 
 namespace pism {
 
@@ -43,9 +43,9 @@ public:
   IPFunctional(IceGrid::ConstPtr grid)
     : m_grid(grid),
       m_element_index(*m_grid),
-      m_element(*m_grid),
-      m_quadrature(grid->dx(), grid->dy(), 1.0)
+      m_element(*m_grid, fem::Q1Quadrature4())
   {
+    // empty
   }
 
   virtual ~IPFunctional() {};
@@ -70,8 +70,7 @@ protected:
   IceGrid::ConstPtr m_grid;
 
   fem::ElementIterator m_element_index;
-  fem::Element      m_element;
-  fem::Q1Quadrature4   m_quadrature;
+  fem::Q1Element       m_element;
 
 private:
   // Hide copy/assignment operations

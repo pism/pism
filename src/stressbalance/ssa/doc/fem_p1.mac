@@ -3,10 +3,10 @@ assume(dx > 0, dy > 0);
 
 /* Coordinates of the nodes of a Q1 rectangular element aligned with the coordinate system. */
 pts : [
-  [-dx/2, -dy/2],
-  [ dx/2, -dy/2],
-  [ dx/2,  dy/2],
-  [-dx/2,  dy/2]]$
+  [0,   0],
+  [dx,  0],
+  [dx, dy],
+  [0,  dy]]$
 
 /* Short-cuts for nodes */
 P0 : pts[1]$

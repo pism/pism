@@ -18,7 +18,7 @@
 
 #include "pism/util/IceGrid.hh"
 #include "SSAFEM.hh"
-#include "pism/util/FETools.hh"
+#include "pism/util/fem/FEM.hh"
 #include "pism/util/Mask.hh"
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/rheology/FlowLaw.hh"
@@ -42,15 +42,15 @@ namespace stressbalance {
  *
  *
  */
-SSAFEM::SSAFEM(IceGrid::ConstPtr g)
-  : SSA(g),
-    m_bc_mask(g, "bc_mask", WITH_GHOSTS),
-    m_bc_values(g, "_bc", WITH_GHOSTS),
+SSAFEM::SSAFEM(IceGrid::ConstPtr grid)
+  : SSA(grid),
+    m_bc_mask(grid, "bc_mask", WITH_GHOSTS),
+    m_bc_values(grid, "_bc", WITH_GHOSTS),
     m_gc(*m_config),
-    m_coefficients(g, "ssa_coefficients", WITH_GHOSTS, 1),
-    m_element_index(*g),
-    m_element(*g),
-    m_quadrature(g->dx(), g->dy(), 1.0) {
+    m_coefficients(grid, "ssa_coefficients", WITH_GHOSTS, 1),
+    m_element_index(*grid),
+    m_element(*grid, fem::Q1Quadrature4())
+{
 
   const double ice_density = m_config->get_number("constants.ice.density");
   m_alpha = 1 - ice_density / m_config->get_number("constants.sea_water.density");
@@ -339,15 +339,14 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
 }
 
 //! Compute quadrature point values of various coefficients given a quadrature `Q` and nodal values.
-void SSAFEM::quad_point_values(const fem::Quadrature &Q,
+void SSAFEM::quad_point_values(const fem::Element &E,
                                const Coefficients *x,
                                int *mask,
                                double *thickness,
                                double *tauc,
                                double *hardness) const {
   // quadrature size
-  const unsigned int n = Q.n();
-
+  unsigned int n = E.n_pts();
 
   for (unsigned int q = 0; q < n; q++) {
     double
@@ -359,7 +358,7 @@ void SSAFEM::quad_point_values(const fem::Quadrature &Q,
     hardness[q]  = 0.0;
 
     for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
-      const fem::Germ &psi  = Q.chi(q, k);
+      const fem::Germ &psi  = E.chi(q, k);
 
       thickness[q] += psi.val * x[k].thickness;
       bed          += psi.val * x[k].bed;
@@ -374,16 +373,16 @@ void SSAFEM::quad_point_values(const fem::Quadrature &Q,
 
 //! Compute gravitational driving stress at quadrature points.
 //! Uses explicitly-provided nodal values.
-void SSAFEM::explicit_driving_stress(const fem::Quadrature &Q,
+void SSAFEM::explicit_driving_stress(const fem::Element &E,
                                      const Coefficients *x,
                                      Vector2 *result) const {
-  const unsigned int n = Q.n();
+  const unsigned int n = E.n_pts();
 
   for (unsigned int q = 0; q < n; q++) {
     result[q] = 0.0;
 
     for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
-      const fem::Germ &psi  = Q.chi(q, k);
+      const fem::Germ &psi  = E.chi(q, k);
       result[q]  += psi.val * x[k].driving_stress;
     }
   }
@@ -434,10 +433,10 @@ void SSAFEM::explicit_driving_stress(const fem::Quadrature &Q,
    because @f$ z = z_{sl} @f$ defines the geoid surface and so *its gradient
    does not contribute to the driving stress*.
 */
-void SSAFEM::driving_stress(const fem::Quadrature &Q,
+void SSAFEM::driving_stress(const fem::Element &E,
                             const Coefficients *x,
                             Vector2 *result) const {
-  const unsigned int n = Q.n();
+  const unsigned int n = E.n_pts();
 
   for (unsigned int q = 0; q < n; q++) {
     double
@@ -451,8 +450,8 @@ void SSAFEM::driving_stress(const fem::Quadrature &Q,
 
     result[q] = 0.0;
 
-    for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
-      const fem::Germ &psi  = Q.chi(q, k);
+    for (int k = 0; k < E.n_chi(); k++) {
+      const fem::Germ &psi  = E.chi(q, k);
 
       b   += psi.val * x[k].bed;
       b_x += psi.dx * x[k].bed;
@@ -548,21 +547,16 @@ void SSAFEM::PointwiseNuHAndBeta(double thickness,
  */
 void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 
-  const double dx = m_grid->dx(), dy = m_grid->dy();
-
-  // Q1 element geometry information
-  fem::q1::ElementGeometry q1;
-
   // Q1 boundary quadratures
-  fem::q1::BoundaryQuadrature2 q1_bq(dx, dy, 1.0);
+  // fem::q1::BoundaryQuadrature2 q1_bq(dx, dy, 1.0);
 
   // P1 element geometry information (one per P1 element type)
-  std::vector<fem::p1::ElementGeometry> p1;
-  std::vector<fem::p1::BoundaryQuadrature2> p1_bq;
-  for (unsigned int k = 0; k < 4; ++k) {
-    p1.push_back(fem::p1::ElementGeometry(k, dx, dy));
-    p1_bq.push_back(fem::p1::BoundaryQuadrature2(k, dx, dy, 1.0));
-  }
+  // std::vector<fem::p1::ElementGeometry> p1;
+  // std::vector<fem::p1::BoundaryQuadrature2> p1_bq;
+  // for (unsigned int k = 0; k < 4; ++k) {
+  //   p1.push_back(fem::p1::ElementGeometry(k, dx, dy));
+  //   p1_bq.push_back(fem::p1::BoundaryQuadrature2(k, dx, dy, 1.0));
+  // }
 
   const unsigned int Nk = fem::q1::n_chi;
   using mask::ocean;
@@ -620,12 +614,12 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
         // an element is a "P1 interior" if it has exactly 1 exterior node
         const bool p1_interior_node = n_exterior_nodes == 1;
 
-        fem::ElementGeometry *E = NULL;
-        fem::BoundaryQuadrature *Q = NULL;
+        // fem::ElementGeometry *E = NULL;
+        // fem::BoundaryQuadrature *Q = NULL;
 
         if (q1_interior_element) {
-          E = &q1;
-          Q = &q1_bq;
+          // E = &m_element;
+          // Q = &m_q1_quadrature;
         } else if (p1_interior_node) {
           int type = -1;
 
@@ -646,7 +640,8 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
             }
           }
 
-          E = &p1[type];
+          // E = &p1[type];
+          // Q = &m_p1_quadrature;
           // FIXME: I need to implement the boundary integral computation in the P1 case
           continue;
         } else {
@@ -670,15 +665,15 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
         // second
         double psi[2] = {0.0, 0.0};
 
-        const unsigned int Nq = Q->n();
-        const unsigned int n_sides = E->n_sides();
+        const unsigned int Nq = m_element.n_pts();
+        const unsigned int n_sides = m_element.n_sides();
         // loop over element sides
-        for (unsigned int side = 0; side < n_sides; ++side) {
+        for (unsigned int s = 0; s < n_sides; ++s) {
 
           // nodes incident to the current side
           const int
-            n0 = E->incident_node(side, 0),
-            n1 = E->incident_node(side, 1);
+            n0 = s,
+            n1 = (n0 + 1) % n_sides;
 
           if (not (node_type[n0] == NODE_BOUNDARY and
                    node_type[n1] == NODE_BOUNDARY)) {
@@ -688,12 +683,13 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 
           for (unsigned int q = 0; q < Nq; ++q) {
 
-            const double W = Q->weight(side, q);
+            const double W = 0.0;//m_quadrature.weight(s, q);
 
             // test functions at nodes incident to the current side, evaluated at the
             // quadrature point q
-            psi[0] = Q->germ(side, q, 0).val;
-            psi[1] = Q->germ(side, q, 1).val;
+            // FIXME: this should be a boundary quadrature
+            psi[0] = m_element.chi(q, 0).val;
+            psi[1] = m_element.chi(q, 1).val;
 
             // Compute ice thickness and bed elevation at a quadrature point. This uses a 1D basis
             // expansion on the current side.
@@ -719,8 +715,8 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
             //
             // FIXME: set pressure difference to zero at grounded locations at domain
             // boundaries.
-            I[n0] += W * (- psi[0] * dP) * E->normal(side);
-            I[n1] += W * (- psi[1] * dP) * E->normal(side);
+            I[n0] += W * (- psi[0] * dP) * m_element.normal(s);
+            I[n1] += W * (- psi[1] * dP) * m_element.normal(s);
           } // q-loop
 
         } // loop over element sides
@@ -800,15 +796,8 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
           continue;
         }
 
-        // Note: without CFBC all elements are "interior".
-
-        fem::Quadrature &Q = m_quadrature;
-
         // Number of quadrature points.
-        const unsigned int Nq = Q.n();
-
-        // Jacobian times weights for quadrature.
-        const double* W = Q.weights();
+        const unsigned int Nq = m_element.n_pts();
 
         // Storage for the solution and residuals at element nodes.
         Vector2 residual[Nk];
@@ -823,12 +812,12 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
           Coefficients coeffs[Nk];
           m_element.nodal_values(m_coefficients, coeffs);
 
-          quad_point_values(Q, coeffs, mask, thickness, tauc, hardness);
+          quad_point_values(m_element, coeffs, mask, thickness, tauc, hardness);
 
           if (use_explicit_driving_stress) {
-            explicit_driving_stress(Q, coeffs, tau_d);
+            explicit_driving_stress(m_element, coeffs, tau_d);
           } else {
-            driving_stress(Q, coeffs, tau_d);
+            driving_stress(m_element, coeffs, tau_d);
           }
         }
 
@@ -848,8 +837,8 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
           }
 
           // Compute the solution values and its gradient at the quadrature points.
-          quadrature_point_values(Q, velocity_nodal, // input
-                                  U, U_x, U_y);   // outputs
+          m_element.evaluate(velocity_nodal, // input
+                                U, U_x, U_y);   // outputs
         }
 
         // Zero out the element-local residual in preparation for updating it.
@@ -861,6 +850,8 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         // loop over quadrature points:
         for (unsigned int q = 0; q < Nq; q++) {
 
+          auto W = m_element.weight(q);
+
           double eta = 0.0, beta = 0.0;
           PointwiseNuHAndBeta(thickness[q], hardness[q], mask[q], tauc[q],
                               U[q], U_x[q], U_y[q], // inputs
@@ -870,18 +861,17 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
           const Vector2 tau_b = U[q] * (- beta); // basal shear stress
 
           const double
-            jw           = W[q],
             u_x          = U_x[q].u,
             v_y          = U_y[q].v,
             u_y_plus_v_x = U_y[q].u + U_x[q].v;
 
           // Loop over test functions.
           for (unsigned int k = 0; k < Nk; k++) {
-            const fem::Germ &psi = Q.chi(q, k);
+            const fem::Germ &psi = m_element.chi(q, k);
 
-            residual[k].u += jw * (eta * (psi.dx * (4.0 * u_x + 2.0 * v_y) + psi.dy * u_y_plus_v_x)
+            residual[k].u += W * (eta * (psi.dx * (4.0 * u_x + 2.0 * v_y) + psi.dy * u_y_plus_v_x)
                                    - psi.val * (tau_b.u + tau_d[q].u));
-            residual[k].v += jw * (eta * (psi.dx * u_y_plus_v_x + psi.dy * (2.0 * u_x + 4.0 * v_y))
+            residual[k].v += W * (eta * (psi.dx * u_y_plus_v_x + psi.dy * (2.0 * u_x + 4.0 * v_y))
                                    - psi.val * (tau_b.v + tau_d[q].v));
           } // k (test functions)
         }   // q (quadrature points)
@@ -1003,13 +993,8 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
           continue;
         }
 
-        fem::Quadrature &Q = m_quadrature;
-
         // Number of quadrature points.
-        const unsigned int Nq = Q.n();
-
-        // Jacobian times weights for quadrature.
-        const double* W = Q.weights();
+        const unsigned int Nq = m_element.n_pts();
 
         int    mask[Nq_max];
         double thickness[Nq_max];
@@ -1020,7 +1005,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
           Coefficients coeffs[Nk];
           m_element.nodal_values(m_coefficients, coeffs);
 
-          quad_point_values(Q, coeffs,
+          quad_point_values(m_element, coeffs,
                             mask, thickness, tauc, hardness);
         }
 
@@ -1037,7 +1022,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
             dirichlet_data.constrain(m_element);
           }
           // Compute the values of the solution at the quadrature points.
-          quadrature_point_values(Q, velocity_nodal, U, U_x, U_y);
+          m_element.evaluate(velocity_nodal, U, U_x, U_y);
         }
 
         // Element-local Jacobian matrix (there are Nk vector valued degrees
@@ -1049,8 +1034,9 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
         PISM_CHK(ierr, "PetscMemzero");
 
         for (unsigned int q = 0; q < Nq; q++) {
+
           const double
-            jw           = W[q],
+            W            = m_element.weight(q),
             u            = U[q].u,
             v            = U[q].v,
             u_x          = U_x[q].u,
@@ -1065,7 +1051,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
           for (unsigned int l = 0; l < Nk; l++) { // Trial functions
 
             // Current trial function and its derivatives:
-            const fem::Germ &phi = Q.chi(q, l);
+            const fem::Germ &phi = m_element.chi(q, l);
 
             // Derivatives of \gamma with respect to u_l and v_l:
             const double
@@ -1088,7 +1074,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
 
               // Current test function and its derivatives:
 
-              const fem::Germ &psi = Q.chi(q, k);
+              const fem::Germ &psi = m_element.chi(q, k);
 
               if (eta == 0) {
                 ierr = PetscPrintf(PETSC_COMM_SELF, "eta=0 i %d j %d q %d k %d\n", i, j, q, k);
@@ -1096,17 +1082,17 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
               }
 
               // u-u coupling
-              K[k*2 + 0][l*2 + 0] += jw * (eta_u * (psi.dx * (4 * u_x + 2 * v_y) + psi.dy * u_y_plus_v_x)
-                                           + eta * (4 * psi.dx * phi.dx + psi.dy * phi.dy) - psi.val * taub_xu);
+              K[k*2 + 0][l*2 + 0] += W * (eta_u * (psi.dx * (4 * u_x + 2 * v_y) + psi.dy * u_y_plus_v_x)
+                                          + eta * (4 * psi.dx * phi.dx + psi.dy * phi.dy) - psi.val * taub_xu);
               // u-v coupling
-              K[k*2 + 0][l*2 + 1] += jw * (eta_v * (psi.dx * (4 * u_x + 2 * v_y) + psi.dy * u_y_plus_v_x)
-                                           + eta * (2 * psi.dx * phi.dy + psi.dy * phi.dx) - psi.val * taub_xv);
+              K[k*2 + 0][l*2 + 1] += W * (eta_v * (psi.dx * (4 * u_x + 2 * v_y) + psi.dy * u_y_plus_v_x)
+                                          + eta * (2 * psi.dx * phi.dy + psi.dy * phi.dx) - psi.val * taub_xv);
               // v-u coupling
-              K[k*2 + 1][l*2 + 0] += jw * (eta_u * (psi.dx * u_y_plus_v_x + psi.dy * (2 * u_x + 4 * v_y))
-                                           + eta * (psi.dx * phi.dy + 2 * psi.dy * phi.dx) - psi.val * taub_yu);
+              K[k*2 + 1][l*2 + 0] += W * (eta_u * (psi.dx * u_y_plus_v_x + psi.dy * (2 * u_x + 4 * v_y))
+                                          + eta * (psi.dx * phi.dy + 2 * psi.dy * phi.dx) - psi.val * taub_yu);
               // v-v coupling
-              K[k*2 + 1][l*2 + 1] += jw * (eta_v * (psi.dx * u_y_plus_v_x + psi.dy * (2 * u_x + 4 * v_y))
-                                           + eta * (psi.dx * phi.dx + 4 * psi.dy * phi.dy) - psi.val * taub_yv);
+              K[k*2 + 1][l*2 + 1] += W * (eta_v * (psi.dx * u_y_plus_v_x + psi.dy * (2 * u_x + 4 * v_y))
+                                          + eta * (psi.dx * phi.dx + 4 * psi.dy * phi.dy) - psi.val * taub_yv);
 
             } // l
           } // k

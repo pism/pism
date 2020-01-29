@@ -28,7 +28,7 @@ namespace inverse {
 void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   const unsigned int Nk     = fem::q1::n_chi;
-  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq     = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // The value of the objective
@@ -38,9 +38,6 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
   double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
   IceModelVec::AccessList list{&x, &m_ice_mask};
-
-  // Jacobian times weights for quadrature.
-  const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
@@ -69,10 +66,11 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
       if (dirichletBC) {
         dirichletBC.enforce_homogeneous(m_element, x_e);
       }
-      quadrature_point_values(m_quadrature, x_e, x_q, dxdx_q, dxdy_q);
+      m_element.evaluate(x_e, x_q, dxdx_q, dxdy_q);
 
       for (unsigned int q=0; q<Nq; q++) {
-        value += W[q]*(m_cL2*x_q[q]*x_q[q]+ m_cH1*(dxdx_q[q]*dxdx_q[q]+dxdy_q[q]*dxdy_q[q]));
+        auto W = m_element.weight(q);
+        value += W*(m_cL2*x_q[q]*x_q[q]+ m_cH1*(dxdx_q[q]*dxdx_q[q]+dxdy_q[q]*dxdy_q[q]));
       } // q
     } // j
   } // i
@@ -83,7 +81,7 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
 void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
 
   const unsigned int Nk     = fem::q1::n_chi;
-  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq     = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // The value of the objective
@@ -96,9 +94,6 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
 
   double b_e[Nk];
   double b_q[Nq_max], dbdx_q[Nq_max], dbdy_q[Nq_max];
-
-  // Jacobian times weights for quadrature.
-  const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
@@ -127,16 +122,17 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
       if (dirichletBC) {
         dirichletBC.enforce_homogeneous(m_element, a_e);
       }
-      quadrature_point_values(m_quadrature, a_e, a_q, dadx_q, dady_q);
+      m_element.evaluate(a_e, a_q, dadx_q, dady_q);
 
       m_element.nodal_values(b, b_e);
       if (dirichletBC) {
         dirichletBC.enforce_homogeneous(m_element, b_e);
       }
-      quadrature_point_values(m_quadrature, b_e, b_q, dbdx_q, dbdy_q);
+      m_element.evaluate(b_e, b_q, dbdx_q, dbdy_q);
 
       for (unsigned int q=0; q<Nq; q++) {
-        value += W[q]*(m_cL2*a_q[q]*b_q[q]+ m_cH1*(dadx_q[q]*dbdx_q[q]+dady_q[q]*dbdy_q[q]));
+        auto W = m_element.weight(q);
+        value += W*(m_cL2*a_q[q]*b_q[q]+ m_cH1*(dadx_q[q]*dbdx_q[q]+dady_q[q]*dbdy_q[q]));
       } // q
     } // j
   } // i
@@ -148,10 +144,8 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
 void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
   const unsigned int Nk     = fem::q1::n_chi;
-  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq     = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
-
-  auto &Q = m_quadrature;
 
   // Clear the gradient before doing anything with it!
   gradient.set(0);
@@ -162,9 +156,6 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   IceModelVec::AccessList list{&x, &gradient, &m_ice_mask};
 
   double gradient_e[Nk];
-
-  // Jacobian times weights for quadrature.
-  const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
@@ -195,7 +186,7 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
         dirichletBC.constrain(m_element);
         dirichletBC.enforce_homogeneous(m_element, x_e);
       }
-      quadrature_point_values(m_quadrature, x_e, x_q, dxdx_q, dxdy_q);
+      m_element.evaluate(x_e, x_q, dxdx_q, dxdy_q);
 
       // Zero out the element-local residual in prep for updating it.
       for (unsigned int k=0; k<Nk; k++) {
@@ -203,11 +194,12 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
       }
 
       for (unsigned int q=0; q<Nq; q++) {
+        auto W = m_element.weight(q);
         const double &x_qq=x_q[q];
         const double &dxdx_qq=dxdx_q[q], &dxdy_qq=dxdy_q[q];
         for (unsigned int k=0; k<Nk; k++) {
-          gradient_e[k] += 2*W[q]*(m_cL2*x_qq*Q.chi(q, k).val +
-                                   m_cH1*(dxdx_qq*Q.chi(q, k).dx + dxdy_qq*Q.chi(q, k).dy));
+          gradient_e[k] += 2*W*(m_cL2*x_qq*m_element.chi(q, k).val +
+                                   m_cH1*(dxdx_qq*m_element.chi(q, k).dx + dxdy_qq*m_element.chi(q, k).dy));
         } // k
       } // q
       m_element.add_contribution(gradient_e, gradient);
@@ -218,9 +210,7 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
 void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
   const unsigned int Nk = fem::q1::n_chi;
-  const unsigned int Nq = m_quadrature.n();
-
-  auto &Q = m_quadrature;
+  const unsigned int Nq = m_element.n_pts();
 
   PetscErrorCode ierr;
   int         i, j;
@@ -228,9 +218,6 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
   // Zero out the Jacobian in preparation for updating it.
   ierr = MatZeroEntries(form);
   PISM_CHK(ierr, "MatZeroEntries");
-
-  // Jacobian times weights for quadrature.
-  const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar zeroLocs(m_dirichletIndices, NULL);
 
@@ -271,11 +258,12 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
       PISM_CHK(ierr, "PetscMemzero");
 
       for (unsigned int q=0; q<Nq; q++) {
+        auto W = m_element.weight(q);
         for (unsigned int k = 0; k < Nk; k++) {   // Test functions
-          const fem::Germ &test_qk=Q.chi(q, k);
+          const fem::Germ &test_qk=m_element.chi(q, k);
           for (unsigned int l = 0; l < Nk; l++) { // Trial functions
-            const fem::Germ &test_ql=Q.chi(q, l);
-            K[k][l]     += W[q]*(m_cL2*test_qk.val*test_ql.val
+            const fem::Germ &test_ql=m_element.chi(q, l);
+            K[k][l]     += W*(m_cL2*test_qk.val*test_ql.val
               +  m_cH1*(test_qk.dx*test_ql.dx + test_qk.dy*test_ql.dy));
           } // l
         } // k
