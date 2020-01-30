@@ -557,6 +557,15 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
   //   p1.push_back(fem::p1::ElementGeometry(k, dx, dy));
   //   p1_bq.push_back(fem::p1::BoundaryQuadrature2(k, dx, dy, 1.0));
   // }
+  using fem::linear::chi;
+  using fem::Gaussian2;
+  double
+    dx = m_grid->dx(),
+    dy = m_grid->dy();
+  fem::Gaussian2 bq[] = {Gaussian2(dx), Gaussian2(dy), Gaussian2(dx), Gaussian2(dy)};
+  auto pts = bq[0].points();
+  double bq_chi[2][2] = {{chi(0, pts[0]).val, chi(0, pts[1]).val},
+                         {chi(1, pts[0]).val, chi(1, pts[1]).val}};
 
   const unsigned int Nk = fem::q1::n_chi;
   using mask::ocean;
@@ -665,7 +674,7 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
         // second
         double psi[2] = {0.0, 0.0};
 
-        const unsigned int Nq = m_element.n_pts();
+        const unsigned int Nq = 2;
         const unsigned int n_sides = m_element.n_sides();
         // loop over element sides
         for (unsigned int s = 0; s < n_sides; ++s) {
@@ -683,13 +692,12 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 
           for (unsigned int q = 0; q < Nq; ++q) {
 
-            const double W = 0.0;//m_quadrature.weight(s, q);
+            double W = bq[s].weights()[q];
 
             // test functions at nodes incident to the current side, evaluated at the
             // quadrature point q
-            // FIXME: this should be a boundary quadrature
-            psi[0] = m_element.chi(q, 0).val;
-            psi[1] = m_element.chi(q, 1).val;
+            psi[0] = bq_chi[q][0];
+            psi[1] = bq_chi[q][1];
 
             // Compute ice thickness and bed elevation at a quadrature point. This uses a 1D basis
             // expansion on the current side.
