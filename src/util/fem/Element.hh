@@ -36,21 +36,20 @@ namespace fem {
 class Quadrature;
 
 //! The mapping from global to local degrees of freedom.
-/*! Computations of residual and Jacobian entries in the finite element method are done by iterating
-  of the elements and adding the various contributions from each element. To do this, degrees of
-  freedom from the global vector of unknowns must be remapped to element-local degrees of freedom
-  for the purposes of local computation, (and the results added back again to the global residual
-  and Jacobian arrays).
+/*! Computations of residual and Jacobian entries in the finite element method are done by
+  iterating of the elements and adding the various contributions from each element. To do
+  this, degrees of freedom from the global vector of unknowns must be remapped to
+  element-local degrees of freedom for the purposes of local computation, (and the results
+  added back again to the global residual and Jacobian arrays).
 
-  An Element mediates the transfer between element-local and global degrees of freedom. In this
-  very concrete implementation, the global degrees of freedom are either scalars (double's) or
-  vectors (Vector2's), one per node in the IceGrid, and the local degrees of freedom on the element
-  are q1::n_chi (%i.e. four) scalars or vectors, one for each vertex of the element.
+  An Element mediates the transfer between element-local and global degrees of freedom and
+  provides values of shape functions at quadrature points. In this implementation, the
+  global degrees of freedom are either scalars (double's) or vectors (Vector2's), one per
+  node in the IceGrid, and the local degrees of freedom on the element are q1::n_chi or
+  p1::n_chi (%i.e. four or three) scalars or vectors, one for each vertex of the element.
 
-  The Element is also (perhaps awkwardly) overloaded to mediate transfering locally computed
-  contributions to residual and Jacobian matrices to their global counterparts.
-
-  See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
+  In addition to this, the Element transfers locally computed contributions to residual
+  and Jacobian matrices to their global counterparts.
 */
 class Element {
 public:
@@ -65,28 +64,32 @@ public:
    * quadrature point `q`.
    */
   Germ chi(unsigned int q, unsigned int k) const {
+    assert(q < m_Nq);
+    assert(k < m_n_chi);
     return m_germs[q][k];
   }
 
   //! Number of quadrature points
   int n_pts() const {
-    return m_weights.size();
+    return m_Nq;
   }
 
   double weight(unsigned int q) const {
+    assert(q < m_Nq);
     return m_weights[q];
   }
 
-  int n_sides() const {
+  unsigned int n_sides() const {
     return n_chi();
   }
 
-  Vector2 normal(int side) const {
+  Vector2 normal(unsigned int side) const {
     assert(side < m_n_chi);
     return m_normals[side];
   }
 
-  double side_length(int side) const {
+  double side_length(unsigned int side) const {
+    assert(side < m_n_chi);
     return m_side_lengths[side];
   }
 
@@ -97,7 +100,7 @@ public:
   void evaluate(const T *x, T *result) {
     for (unsigned int q = 0; q < m_Nq; q++) {
       result[q] = 0.0;
-      for (unsigned int k = 0; k < q1::n_chi; k++) { // FIXME: q1::n_chi hard-wired
+      for (unsigned int k = 0; k < m_n_chi; k++) {
         result[q] += m_germs[q][k].val * x[k];
       }
     }
@@ -112,7 +115,7 @@ public:
       vals[q] = 0.0;
       dx[q]   = 0.0;
       dy[q]   = 0.0;
-      for (unsigned int k = 0; k < q1::n_chi; k++) { // FIXME: q1::n_chi hard-wired
+      for (unsigned int k = 0; k < m_n_chi; k++) {
         const Germ &psi = m_germs[q][k];
         vals[q] += psi.val * x[k];
         dx[q]   += psi.dx  * x[k];
@@ -126,7 +129,7 @@ public:
   */
   template<typename T>
   void nodal_values(T const* const* x_global, T* result) const {
-    for (int k = 0; k < m_n_chi; ++k) {
+    for (unsigned int k = 0; k < m_n_chi; ++k) {
       int i = 0, j = 0;
       local_to_global(k, i, j);
       result[k] = x_global[j][i];   // note the indexing order
@@ -138,7 +141,7 @@ public:
   */
   template<class C, typename T>
   void nodal_values(const C& x_global, T* result) const {
-    for (int k = 0; k < m_n_chi; ++k) {
+    for (unsigned int k = 0; k < m_n_chi; ++k) {
       int i = 0, j = 0;
       local_to_global(k, i, j);
       result[k] = x_global(i, j);   // note the indexing order
@@ -155,7 +158,7 @@ public:
    */
   template<typename T>
   void add_contribution(const T *local, T** y_global) const {
-    for (int k = 0; k < m_n_chi; k++) {
+    for (unsigned int k = 0; k < m_n_chi; k++) {
       if (m_row[k].i == m_invalid_dof) {
         // skip rows marked as "invalid"
         continue;
@@ -169,7 +172,7 @@ public:
 
   template<class C, typename T>
   void add_contribution(const T *local, C& y_global) const {
-    for (int k = 0; k < m_n_chi; k++) {
+    for (unsigned int k = 0; k < m_n_chi; k++) {
       if (m_row[k].i == m_invalid_dof) {
         // skip rows marked as "invalid"
         continue;
@@ -190,7 +193,7 @@ public:
   void mark_col_invalid(int k);
 
   //! Convert a local degree of freedom index `k` to a global degree of freedom index (`i`,`j`).
-  void local_to_global(int k, int &i, int &j) const {
+  void local_to_global(unsigned int k, int &i, int &j) const {
     i = m_i + m_i_offset[k];
     j = m_j + m_j_offset[k];
   }
@@ -213,7 +216,7 @@ protected:
 
   //! Number of nodes (and therefore the number of shape functions) in this particular
   //! type of elements.
-  int m_n_chi;
+  unsigned int m_n_chi;
 
   std::vector<Vector2> m_normals;
 
@@ -254,7 +257,7 @@ private:
   std::vector<double> m_weights;
 
   // define Germs, which is an array of q1::n_chi "Germ"s
-  typedef Germ Germs[q1::n_chi];
+  typedef Germ Germs[m_n_chi_max];
 
   Germs* m_germs;
 };

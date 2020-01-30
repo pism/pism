@@ -99,7 +99,7 @@ void Element::initialize(ShapeFunction2 f,
 }
 
 void Element::nodal_values(const IceModelVec2Int &x_global, int *result) const {
-  for (int k = 0; k < m_n_chi; ++k) {
+  for (unsigned int k = 0; k < m_n_chi; ++k) {
     const int
       ii = m_i + m_i_offset[k],
       jj = m_j + m_j_offset[k];
@@ -113,7 +113,7 @@ void Element::reset(int i, int j) {
   m_i = i;
   m_j = j;
 
-  for (int k = 0; k < m_n_chi; ++k) {
+  for (unsigned int k = 0; k < m_n_chi; ++k) {
     m_col[k].i = i + m_i_offset[k];
     m_col[k].j = j + m_j_offset[k];
     m_col[k].k = 0;
@@ -124,7 +124,7 @@ void Element::reset(int i, int j) {
   }
 
   // We never sum into rows that are not owned by the local rank.
-  for (int k = 0; k < m_n_chi; k++) {
+  for (unsigned int k = 0; k < m_n_chi; k++) {
     int pism_i = m_row[k].i, pism_j = m_row[k].j;
     if (pism_i < m_grid.xs() or m_grid.xs() + m_grid.xm() - 1 < pism_i or
         pism_j < m_grid.ys() or m_grid.ys() + m_grid.ym() - 1 < pism_j) {
@@ -166,6 +166,9 @@ void Element::add_contribution(const double *K, Mat J) const {
 Q1Element::Q1Element(const IceGrid &grid, const Quadrature &quadrature)
   : Element(grid, quadrature) {
 
+  double dx = grid.dx();
+  double dy = grid.dy();
+
   m_i_offset = {0, 1, 1, 0};
   m_j_offset = {0, 0, 1, 1};
   m_n_chi = q1::n_chi;
@@ -173,13 +176,15 @@ Q1Element::Q1Element(const IceGrid &grid, const Quadrature &quadrature)
   // south, east, north, west
   m_normals = {{0.0, -1.0}, {1.0, 0.0}, {0.0, 1.0}, {-1.0, 0.0}};
 
-  m_side_lengths = {grid.dx(), grid.dy(), grid.dx(), grid.dy()};
+  m_side_lengths = {dx, dy, dx, dy};
 
-  m_J[0][0] = 0.5 * grid.dx();
+  // compute the Jacobian
+  m_J[0][0] = 0.5 * dx;
   m_J[0][1] = 0.0;
   m_J[1][0] = 0.0;
-  m_J[1][1] = 0.5 * grid.dy();
+  m_J[1][1] = 0.5 * dy;
 
+  // initialize germs and quadrature weights for the quadrature on this physical element
   initialize(q1::chi, q1::n_chi, quadrature.points(), quadrature.weights());
 }
 
@@ -189,7 +194,7 @@ P1Element::P1Element(const IceGrid &grid, const Quadrature &quadrature, int type
   double dx = grid.dx();
   double dy = grid.dy();
 
-  m_n_chi = 3;
+  m_n_chi = p1::n_chi;
 
   // outward pointing normals for all sides of a Q1 element with sides aligned with X and
   // Y axes
@@ -208,68 +213,54 @@ P1Element::P1Element(const IceGrid &grid, const Quadrature &quadrature, int type
   n13 /= n13.magnitude();
   n20 /= n20.magnitude();
 
-  // length of the diagonal
-  double D = std::sqrt(dx * dx + dy * dy);
+  // coordinates of nodes of a Q1 element this P1 element is embedded in (up to
+  // translation)
+  Vector2 p[] = {{0, 0}, {dx, 0}, {dx, dy}, {0, dy}};
+  std::vector<Vector2> pts;
 
   switch (type) {
   case 0:
-    m_i_offset = {};
-    m_j_offset = {};
+    m_i_offset = {0, 1, 0};
+    m_j_offset = {0, 0, 1};
     m_normals = {n01, n13, n30};
-    m_side_lengths = {dx, D, dy};
+    pts = {p[0], p[1], p[3]};
     break;
   case 1:
-    m_i_offset = {};
-    m_j_offset = {};
+    m_i_offset = {1, 1, 0};
+    m_j_offset = {0, 1, 0};
     m_normals = {n01, n12, n20};
-    m_side_lengths = {dy, D, dx};
+    pts = {p[1], p[2], p[0]};
     break;
   case 2:
-    m_i_offset = {};
-    m_j_offset = {};
+    m_i_offset = {1, 0, 1};
+    m_j_offset = {1, 1, 0};
     m_normals = {n12, n23, -1.0 * n13};
-    m_side_lengths = {dy, D, dx};
+    pts = {p[2], p[3], p[0]};
     break;
   case 3:
   default:
-    m_i_offset = {};
-    m_j_offset = {};
+    m_i_offset = {0, 0, 1};
+    m_j_offset = {1, 0, 1};
     m_normals = {n23, n30, -1.0 * n20};
-    m_side_lengths = {dx, D, dy};
+    pts = {p[3], p[0], p[2]};
     break;
   }
 
+  m_side_lengths.resize(n_sides());
+  // compute side lengths
+  for (unsigned int k = 0; k < n_sides(); ++k) {
+    m_side_lengths[k] = (pts[k] - pts[(k + 1) % 3]).magnitude();
+  }
+
+  // compute the Jacobian
+  m_J[0][0] = pts[1].u - pts[0].u;
+  m_J[0][1] = pts[1].v - pts[0].v;
+  m_J[1][0] = pts[2].u - pts[0].u;
+  m_J[1][1] = pts[2].v - pts[0].v;
+
+  // initialize germs and quadrature weights for the quadrature on this physical element
+  initialize(p1::chi, p1::n_chi, quadrature.points(), quadrature.weights());
 }
-
-// Jacobian for an aligned Q1 element
-// UniformQxQuadrature::UniformQxQuadrature(unsigned int size, double dx, double dy, double scaling)
-//   : Quadrature(size) {
-//   // We use uniform Cartesian coordinates, so the Jacobian is constant and diagonal on every
-//   // element.
-//   //
-//   // Note that the reference element is [-1,1]^2, hence the extra factor of 1/2.
-//   m_J[0][0] = 0.5 * dx / scaling;
-//   m_J[0][1] = 0.0;
-//   m_J[1][0] = 0.0;
-//   m_J[1][1] = 0.5 * dy / scaling;
-// }
-
-
-/** Jacobian for a P1 element
- */
-// P1Quadrature::P1Quadrature(unsigned int size,
-//                            const Vector2 &p1,
-//                            const Vector2 &p2,
-//                            const Vector2 &p3,
-//                            double L)
-//   : Quadrature(size) {
-
-//   m_J[0][0] = (p2.u - p1.u) / L;
-//   m_J[0][1] = (p2.v - p1.v) / L;
-//   m_J[1][0] = (p3.u - p1.u) / L;
-//   m_J[1][1] = (p3.v - p1.v) / L;
-// }
-
 
 } // end of namespace fem
 } // end of namespace pism
