@@ -319,16 +319,19 @@ pism_class(pism::RegionalYieldStress, "pism/regional/RegionalYieldStress.hh")
 
 %include "util/projection.hh"
 
+%rename(linear_chi) pism::fem::linear::chi;
+%rename(linear_n_chi) pism::fem::linear::n_chi;
+%rename(q0_chi) pism::fem::q0::chi;
+%rename(q0_n_chi) pism::fem::q0::n_chi;
+%rename(q0_n_sides) pism::fem::q0::n_sides;
 %rename(q1_chi) pism::fem::q1::chi;
 %rename(q1_n_chi) pism::fem::q1::n_chi;
 %rename(q1_n_sides) pism::fem::q1::n_sides;
-%rename(q1_incident_nodes) pism::fem::q1::incident_nodes;
 %rename(Q1ElementGeometry) pism::fem::q1::ElementGeometry;
 %rename(Q1BoundaryQuadrature2) pism::fem::q1::BoundaryQuadrature2;
 %rename(p1_chi) pism::fem::p1::chi;
 %rename(p1_n_chi) pism::fem::p1::n_chi;
 %rename(p1_n_sides) pism::fem::p1::n_sides;
-%rename(p1_incident_nodes) pism::fem::p1::incident_nodes;
 %rename(P1ElementGeometry) pism::fem::p1::ElementGeometry;
 %rename(P1BoundaryQuadrature2) pism::fem::p1::BoundaryQuadrature2;
 

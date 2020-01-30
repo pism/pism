@@ -169,6 +169,12 @@ struct QuadPoint {
 //! be used.
 const unsigned int MAX_QUADRATURE_SIZE = 9;
 
+//! 1D (linear) elements
+namespace linear {
+const int n_chi = 2;
+Germ chi(unsigned int k, const QuadPoint &pt);
+} // end of namespace linear
+
 //! Q0 element information
 // FIXME: not sure if Q0 is the right notation here.
 namespace q0 {

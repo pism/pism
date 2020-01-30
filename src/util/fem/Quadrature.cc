@@ -56,6 +56,14 @@ static void tensor_product_quadrature(unsigned int n,
     }
   }
 }
+Gaussian2::Gaussian2(double D) {
+
+  // coordinates and weights of the 2-point 1D Gaussian quadrature
+  double A = 1.0 / std::sqrt(3.0);
+
+  m_points  = {{-A, 0.0}, {A, 0.0}};
+  m_weights = {0.5 * D, 0.5 * D};
+}
 
 //! Two-by-two Gaussian quadrature on a rectangle.
 Q1Quadrature4::Q1Quadrature4() {

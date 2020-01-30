@@ -22,6 +22,22 @@
 namespace pism {
 namespace fem {
 
+namespace linear {
+
+//! Linear basis functions on the interval [-1, -1]
+Germ chi(unsigned int k, const QuadPoint &pt) {
+  // coordinates of reference element nodes
+  static const double xis[n_chi]  = {-1.0,  1.0};
+
+  assert(k < linear::n_chi);
+
+  return {0.5 * (1.0 + xis[k] * pt.xi),
+          0.5 * xis[k],
+          0.0};                         // unused
+}
+
+} // end of namespace linear
+
 namespace q0 {
 /*!
  * Piecewise-constant shape functions.

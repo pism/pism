@@ -68,6 +68,15 @@ protected:
   std::vector<double> m_weights;
 };
 
+
+/*!
+ * 2-point Gaussian quadrature on an interval of length D.
+ */
+class Gaussian2 : public Quadrature {
+ public:
+ Gaussian2(double D);
+};
+
 //! The 4-point Gaussian quadrature on the square [-1,1]*[-1,1]
 class Q1Quadrature4 : public Quadrature {
 public:
