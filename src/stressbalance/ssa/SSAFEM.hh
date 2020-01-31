@@ -137,7 +137,7 @@ protected:
   double m_epsilon_ssa;
 
   fem::ElementIterator m_element_index;
-  fem::Q1Element m_element;
+  fem::Q1Element m_q1_element;
   // fem::P1Element m_p1_element;
 
   // Support for direct specification of driving stress to the FEM SSA solver. This helps
