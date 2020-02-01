@@ -63,6 +63,14 @@ class Quadrature {
 public:
   const std::vector<QuadPoint>& points() const;
   const std::vector<double>& weights() const;
+
+  QuadPoint point(int k) const {
+    return m_points[k];
+  }
+
+  double weight(int k) const {
+    return m_weights[k];
+  }
 protected:
   std::vector<QuadPoint> m_points;
   std::vector<double> m_weights;
@@ -73,8 +81,8 @@ protected:
  * 2-point Gaussian quadrature on an interval of length D.
  */
 class Gaussian2 : public Quadrature {
- public:
- Gaussian2(double D);
+public:
+  Gaussian2(double D);
 };
 
 //! The 4-point Gaussian quadrature on the square [-1,1]*[-1,1]
