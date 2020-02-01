@@ -18,6 +18,7 @@
  */
 
 #include "FEM.hh"
+#include "pism/util/node_types.hh"
 
 namespace pism {
 namespace fem {
@@ -98,6 +99,38 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
 }
 
 } // end of namespace p1
+
+ElementType element_type(int node_type[q1::n_chi]) {
+
+  // number of exterior nodes in this element
+  const int n_exterior_nodes = ((node_type[0] == NODE_EXTERIOR) +
+                                (node_type[1] == NODE_EXTERIOR) +
+                                (node_type[2] == NODE_EXTERIOR) +
+                                (node_type[3] == NODE_EXTERIOR));
+
+  // an element is a "Q1 interior" if all its nodes are interior or boundary
+  if (n_exterior_nodes == 0) {
+    return ELEMENT_Q;
+  }
+
+  if (n_exterior_nodes == 1) {
+    // an element is a "P1 interior" if it has exactly 1 exterior node
+
+    for (unsigned int k = 0; k < q1::n_chi; ++k) {
+      // Consider a Q1 element with one exterior node and three interior (or boundary)
+      // nodes. This is not an interior element by itself, but it contains an embedded P1
+      // element that *is* interior and should contribute. We need to find which of the four
+      // types of embedded P1 elements to use, but P1 elements are numbered using the node
+      // at the right angle of the reference element, not the "missing" node. Here we map
+      // "missing" nodes to "opposite" nodes, i.e. nodes used to choose P1 element types.
+      if (node_type[k] == NODE_EXTERIOR) {
+        return ElementType((k + 2) % 4);
+      }
+    }
+  }
+
+  return ELEMENT_EXTERIOR;
+}
 
 } // end of namespace fem
 } // end of namespace pism

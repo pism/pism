@@ -197,6 +197,12 @@ const int n_chi = 3;
 const int n_sides = 3;
 } // end of namespace p1
 
+enum ElementType {ELEMENT_Q = -1,
+                  ELEMENT_P0 = 0, ELEMENT_P1 = 1, ELEMENT_P2 = 2, ELEMENT_P3 = 3,
+                  ELEMENT_EXTERIOR};
+
+ElementType element_type(int node_type[q1::n_chi]);
+
 } // end of namespace fem
 } // end of namespace pism
 
