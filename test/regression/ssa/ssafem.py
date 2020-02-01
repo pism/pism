@@ -17,7 +17,7 @@ c = 3
 # ice thickness:
 H = 1000.0
 # length (in grid cells) of peninsulas sticking out of the blob
-L = 0
+L = 1
 w = 3
 
 with PISM.vec.Access(nocomm=[geometry.ice_thickness]):
