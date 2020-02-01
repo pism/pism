@@ -157,8 +157,8 @@ void Element::mark_col_invalid(int k) {
  */
 void Element::add_contribution(const double *K, Mat J) const {
   PetscErrorCode ierr = MatSetValuesBlockedStencil(J,
-                                                   m_n_chi, m_row,
-                                                   m_n_chi, m_col,
+                                                   m_n_chi_max, m_row,
+                                                   m_n_chi_max, m_col,
                                                    K, ADD_VALUES);
   PISM_CHK(ierr, "MatSetValuesBlockedStencil");
 }
@@ -245,6 +245,10 @@ P1Element::P1Element(const IceGrid &grid, const Quadrature &quadrature, int type
     pts = {p[3], p[0], p[2]};
     break;
   }
+
+  // make sure add_contribution() ignores entries corresponding to the 4-th node
+  mark_row_invalid(3);
+  mark_col_invalid(3);
 
   m_side_lengths.resize(n_sides());
   // compute side lengths
