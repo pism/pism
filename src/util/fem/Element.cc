@@ -228,20 +228,20 @@ P1Element::P1Element(const IceGrid &grid, const Quadrature &quadrature, int type
   case 1:
     m_i_offset = {1, 1, 0};
     m_j_offset = {0, 1, 0};
-    m_normals = {n01, n12, n20};
+    m_normals = {n12, n20, n01};
     pts = {p[1], p[2], p[0]};
     break;
   case 2:
     m_i_offset = {1, 0, 1};
     m_j_offset = {1, 1, 0};
-    m_normals = {n12, n23, -1.0 * n13};
+    m_normals = {n23, -1.0 * n13, n12};
     pts = {p[2], p[3], p[0]};
     break;
   case 3:
   default:
     m_i_offset = {0, 0, 1};
     m_j_offset = {1, 0, 1};
-    m_normals = {n23, n30, -1.0 * n20};
+    m_normals = {n30, -1.0 * n20, n23};
     pts = {p[3], p[0], p[2]};
     break;
   }
