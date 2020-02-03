@@ -8,26 +8,23 @@ config = ctx.config
 
 config.set_flag("stress_balance.calving_front_stress_bc", True)
 
-grid = shallow_grid(Mx=3, My=3, Lx=10e3, Ly=10e3)
-
-geometry = PISM.Geometry(grid)
-
+M = 21
 # grid center:
-c = 1
+c = (M - 1) // 2
 # ice thickness:
 H = 1000.0
 # length (in grid cells) of peninsulas sticking out of the blob
 L = 1
-w = 2
+w = c
+
+grid = shallow_grid(Mx=M, My=M, Lx=10e3, Ly=10e3)
+
+geometry = PISM.Geometry(grid)
 
 with PISM.vec.Access(nocomm=[geometry.ice_thickness]):
     for (i, j) in grid.points():
-        if i == c and j == c:
-            geometry.ice_thickness[i, j] = 1 * H
-        elif abs(i - c) < w - L and abs(j - c) < w - L:
-            geometry.ice_thickness[i, j] = 1 * H
-        elif (i == c and abs(j - c) < w) or (j == c and abs(i - c) < w):
-            geometry.ice_thickness[i, j] = 1 * H
+        if abs(i - c) + abs(j - c) < w:
+            geometry.ice_thickness[i, j] = H
         else:
             geometry.ice_thickness[i, j] = 0.0
 
