@@ -99,7 +99,7 @@ void DirichletData_Scalar::enforce(const Element &element, double* x_nodal) {
   assert(m_values != NULL);
 
   element.nodal_values(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < q1::n_chi; k++) {
+  for (int k = 0; k < element.n_chi(); k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i = 0, j = 0;
       element.local_to_global(k, i, j);
@@ -110,7 +110,7 @@ void DirichletData_Scalar::enforce(const Element &element, double* x_nodal) {
 
 void DirichletData_Scalar::enforce_homogeneous(const Element &element, double* x_nodal) {
   element.nodal_values(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < q1::n_chi; k++) {
+  for (int k = 0; k < element.n_chi(); k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       x_nodal[k] = 0.;
     }
@@ -195,7 +195,7 @@ void DirichletData_Vector::enforce(const Element &element, Vector2* x_nodal) {
   assert(m_values != NULL);
 
   element.nodal_values(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < q1::n_chi; k++) {
+  for (int k = 0; k < element.n_chi(); k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i = 0, j = 0;
       element.local_to_global(k, i, j);
@@ -206,7 +206,7 @@ void DirichletData_Vector::enforce(const Element &element, Vector2* x_nodal) {
 
 void DirichletData_Vector::enforce_homogeneous(const Element &element, Vector2* x_nodal) {
   element.nodal_values(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < q1::n_chi; k++) {
+  for (int k = 0; k < element.n_chi(); k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       x_nodal[k].u = 0.0;
       x_nodal[k].v = 0.0;
