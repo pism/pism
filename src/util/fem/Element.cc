@@ -117,10 +117,12 @@ void Element::reset(int i, int j) {
     m_col[k].i = i + m_i_offset[k];
     m_col[k].j = j + m_j_offset[k];
     m_col[k].k = 0;
+    m_col[k].c = 0;
 
     m_row[k].i = m_col[k].i;
     m_row[k].j = m_col[k].j;
     m_row[k].k = m_col[k].k;
+    m_row[k].c = m_col[k].c;
   }
 
   // We never sum into rows that are not owned by the local rank.
@@ -246,6 +248,7 @@ P1Element::P1Element(const IceGrid &grid, const Quadrature &quadrature, int type
     break;
   }
 
+  reset(0, 0);
   // make sure add_contribution() ignores entries corresponding to the 4-th node
   mark_row_invalid(3);
   mark_col_invalid(3);
