@@ -152,8 +152,10 @@ void LakeCC::init_impl(const Geometry &geometry) {
 
     if (not overlay_file.empty()) {
       m_topg_overlay.regrid(overlay_file, OPTIONAL, 0.0);
+      m_use_topg_overlay = true;
     } else {
       m_topg_overlay.set(0.0);
+      m_use_topg_overlay = false;
     }
   }
 
@@ -168,9 +170,18 @@ void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
   const IceModelVec2S &thk = geometry.ice_thickness,
                       &ll  = geometry.lake_level_elevation,
                       &sl  = *m_grid->variables().get_2d_scalar("sea_level");
-  m_topg_overlay.add(1.0, geometry.bed_elevation, m_bed);
+
+  if (m_use_topg_overlay) {
+    m_topg_overlay.add(1.0, geometry.bed_elevation, m_bed);
+  } else {
+    m_bed.copy_from(geometry.bed_elevation);
+  }
 
   do_lake_update(m_bed, thk, sl, ll);
+
+  if (m_use_topg_overlay) {
+    transfer_lakes_to_pism_bed(geometry.bed_elevation, thk);
+  }
 
   if (m_filter_map) {
     do_filter_map();
@@ -227,6 +238,24 @@ void LakeCC::do_lake_update(const IceModelVec2S &bed, const IceModelVec2S &thk, 
   ParSec.check();
 
   m_log->message(2, "          Done!\n");
+}
+
+void LakeCC::transfer_lakes_to_pism_bed(const IceModelVec2S &bed, const IceModelVec2S &thk) {
+  IceModelVec::AccessList list({ &m_lake_level, &bed, &thk });
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const double ll_ij = m_lake_level(i, j);
+    // If cell is labled as lake on higher "resolved" bed,
+    // but is not valid on topography used by PISM -> set invalid
+    if ( m_gc.islake(ll_ij) and not
+         mask::ocean(m_gc.mask(m_fill_value, bed(i, j), thk(i, j), ll_ij)) ) {
+      m_lake_level(i, j) = m_fill_value;
+    }
+  }
+
+  m_lake_level.update_ghosts();
 }
 
 void LakeCC::do_filter_map() {

@@ -43,12 +43,14 @@ private:
   std::string m_option;
   double m_lake_level_min, m_lake_level_max, m_lake_level_dh, m_drho, m_icefree_thickness;
   bool m_filter_map, m_keep_existing_lakes, m_check_sl_diagonal;
+  bool m_use_topg_overlay;
   int m_n_filter;
   IceModelVec2Int m_valid_mask;
   IceModelVec2S m_topg_overlay;
   IceModelVec2S m_bed;
 
   void do_lake_update(const IceModelVec2S &bed, const IceModelVec2S &thk, const IceModelVec2S &sea_level, const IceModelVec2S &old_lake_level);
+  void transfer_lakes_to_pism_bed(const IceModelVec2S &bed, const IceModelVec2S &thk);
   void do_filter_map();
   void prepare_mask_validity(const IceModelVec2S &thk, const IceModelVec2S &bed, const IceModelVec2S &old_lake_level, IceModelVec2Int &valid_mask);
   void update_mask_sl_diagonal(const IceModelVec2S &sl, const IceModelVec2S &bed, const IceModelVec2S &thk, IceModelVec2Int &mask);
