@@ -16,6 +16,8 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <cstring>              // memset
+
 #include "Element.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/iceModelVec.hh"
@@ -50,12 +52,6 @@ static Germ multiply(const double A[2][2], const Germ &v) {
   return result;
 }
 
-// Multiply a matrix by a vector.
-static Vector2 multiply(const double A[2][2], const Vector2 &v) {
-  return {v.u * A[0][0] + v.v * A[0][1],
-          v.u * A[1][0] + v.v * A[1][1]};
-}
-
 Element::Element(const IceGrid &grid, const Quadrature &quadrature)
   : m_n_chi(0),
     m_Nq(quadrature.points().size()),
@@ -65,6 +61,10 @@ Element::Element(const IceGrid &grid, const Quadrature &quadrature)
   if (not m_germs) {
     throw std::runtime_error("Failed to allocate an Element instance");
   }
+
+  memset(m_row, 0, m_n_chi_max * sizeof(MatStencil));
+  memset(m_col, 0, m_n_chi_max * sizeof(MatStencil));
+  memset(m_germs, 0, m_Nq * m_n_chi_max * sizeof(Germ));
 
   reset(0, 0);
 }
