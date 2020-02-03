@@ -32,7 +32,7 @@ namespace pism {
 
    A node is can be *interior*, *boundary*, or *exterior*.
 
-   An element is considered *icy* if all four of its nodes have ice thickness above
+   An element is considered *icy* if at least three of its nodes have ice thickness above
    `thickness_threshold`.
 
    A node is considered *interior* if all of the elements it belongs to are icy.
@@ -88,13 +88,13 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
       icy.sw = H.sw >= H_min;
       icy.w  = H.w  >= H_min;
 
-      // flags indicating whether neighboring elements are "icy" (and element is icy if all its
-      // nodes are icy)
+      // flags indicating whether neighboring elements are "icy" (an element is icy if at
+      // least three of its nodes are icy)
       const bool
-        ne_element_is_icy = (icy.ij and icy.e and icy.ne and icy.n),
-        nw_element_is_icy = (icy.ij and icy.n and icy.nw and icy.w),
-        sw_element_is_icy = (icy.ij and icy.w and icy.sw and icy.s),
-        se_element_is_icy = (icy.ij and icy.s and icy.se and icy.e);
+        ne_element_is_icy = (icy.ij + icy.e + icy.ne + icy.n) >= 3,
+        nw_element_is_icy = (icy.ij + icy.n + icy.nw + icy.w) >= 3,
+        sw_element_is_icy = (icy.ij + icy.w + icy.sw + icy.s) >= 3,
+        se_element_is_icy = (icy.ij + icy.s + icy.se + icy.e) >= 3;
 
       if (ne_element_is_icy and nw_element_is_icy and
           sw_element_is_icy and se_element_is_icy) {
