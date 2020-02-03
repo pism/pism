@@ -71,14 +71,43 @@ node_type = PISM.IceModelVec2Int(grid, "node_type", PISM.WITHOUT_GHOSTS)
 
 PISM.compute_node_types(geometry.ice_thickness, 1.0, node_type)
 
-f = PISM.util.prepare_output(config.get_string("output.file_name"))
+def save_results(filename):
 
-node_type.write(f)
-v_mag.write(f)
-ssa.velocity().write(f)
-geometry.ice_thickness.write(f)
-geometry.bed_elevation.write(f)
-geometry.cell_type.write(f)
-enthalpy.write(f)
-tauc.write(f)
-f.close()
+    f = PISM.util.prepare_output(filename)
+
+    node_type.write(f)
+    v_mag.write(f)
+    ssa.velocity().write(f)
+    geometry.ice_thickness.write(f)
+    geometry.bed_elevation.write(f)
+    geometry.cell_type.write(f)
+    enthalpy.write(f)
+    tauc.write(f)
+    f.close()
+
+save_results(config.get_string("output.file_name"))
+
+def plot():
+    import pylab as plt
+    import numpy as np
+
+    x = np.array(grid.x())
+    dx = grid.dx()
+    y = np.array(grid.y())
+    dy = grid.dy()
+
+    v = ssa.velocity().numpy()
+
+    plt.figure(1)
+    plt.imshow(v[:,:,0])
+    plt.title("u")
+    plt.colorbar()
+
+    plt.figure(2)
+    plt.imshow(v[:,:,1])
+    plt.title("v")
+    plt.colorbar()
+
+    plt.show()
+
+# plot()
