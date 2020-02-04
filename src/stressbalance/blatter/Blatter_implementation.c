@@ -525,19 +525,19 @@ static PetscErrorCode compute_nonlinearity(BlatterQ1Ctx *ctx,
                                            PetscReal *eta,
                                            PetscReal *deta) {
   PetscErrorCode ierr;
-  PetscInt l, ll;
+  PetscInt p, q;
   PetscScalar second_invariant;
 
   du[0] = du[1] = du[2] = 0;
   dv[0] = dv[1] = dv[2] = 0;
   *u = 0;
   *v = 0;
-  for (l = 0; l < 8; l++) {
-    *u += phi[l] * velocity[l].u;
-    *v += phi[l] * velocity[l].v;
-    for (ll = 0; ll < 3; ll++) {
-      du[ll] += dphi[l][ll] * velocity[l].u;
-      dv[ll] += dphi[l][ll] * velocity[l].v;
+  for (p = 0; p < 8; p++) {
+    *u += phi[p] * velocity[p].u;
+    *v += phi[p] * velocity[p].v;
+    for (q = 0; q < 3; q++) {
+      du[q] += dphi[p][q] * velocity[p].u;
+      dv[q] += dphi[p][q] * velocity[p].v;
     }
   }
   second_invariant = Sqr(du[0]) + Sqr(dv[1]) + du[0]*dv[1] + 0.25*Sqr(du[1] + dv[0]) + 0.25*Sqr(du[2]) + 0.25*Sqr(dv[2]);
@@ -584,6 +584,7 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
 
       compute_surface_gradient(ctx->Q12D.dchi, parameters, dx, dy, ds);
 
+      /* loop over elements in the column */
       for (k = 0; k < zm - 1; k++) {
         PetscInt ls = 0;	/* starting index */
         Node element_velocity[8], *element_residual[8];
@@ -773,7 +774,7 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
 
           jw /= ctx->rhog;      /* residuals are scaled by this factor */
 
-          /* Store eta at the quadrature point 0 (i.e. at a location on the bottom face of
+          /* Store eta at the quadrature point 0 (i.e. at a location near the bottom face of
            * the element). It is used to scale the diagonal entries at the base in the
            * no-slip case. */
           if (q == 0) {
