@@ -604,12 +604,13 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
             element_velocity[l].u = 0;
             element_velocity[l].v = 0;
           }
-          /* The first 4 basis functions lie on the bottom layer, so their contribution is exactly 0, hence we can skip them */
+          /* The first 4 basis functions lie on the bottom layer, so their contribution is
+           * exactly 0 and we can skip them */
           ls = 4;
         }
 
         for (q = 0; q < 8; q++) {   /* for all quadrature points... */
-          PetscReal grad_z[3], phi[8], dphi[8][3], jw, eta, deta;
+          PetscReal grad_z[3], phi[8], dphi[8][3], W, eta, deta;
           PetscScalar du[3], dv[3], u, v;
 
           /* Compute various quantities at this quadrature point in the *physical* element */
@@ -618,14 +619,14 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
                              grad_z); /* output (partial derivatives of z with respect to xi,eta,zeta) */
 
           compute_element_info(ctx->Q13D.chi, ctx->Q13D.dchi, q, dx, dy, grad_z, /* inputs */
-                               phi, dphi, &jw); /* outputs (values of shape functions, their derivatives, det(J)*weight */
+                               phi, dphi, &W); /* outputs (values of shape functions, their derivatives, det(J)*weight */
 
           ierr = compute_nonlinearity(ctx, element_velocity, phi, dphi, /* inputs */
                                       &u, &v, du, dv, &eta, &deta); /* outputs u,v, partial derivatives of u,v,
                                                                      effective viscosity (eta), derivative of eta with respect to gamma */
           CHKERRQ(ierr);
 
-          jw /= ctx->rhog;      /* scales residuals to be O(1) */
+          W /= ctx->rhog;      /* scales residuals to be O(1) */
 
           if (q == 0) {
             etabase = eta;
@@ -633,8 +634,8 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
 
           for (l = ls; l < 8; l++) { /* test functions */
             const PetscReal *dp = dphi[l];
-            element_residual[l]->u += dp[0]*jw*eta*(4.0*du[0] + 2.0*dv[1]) + dp[1]*jw*eta*(du[1] + dv[0]) + dp[2]*jw*eta*du[2] + phi[l]*jw*ctx->rhog*ds[q][0];
-            element_residual[l]->v += dp[1]*jw*eta*(2.0*du[0] + 4.0*dv[1]) + dp[0]*jw*eta*(du[1] + dv[0]) + dp[2]*jw*eta*dv[2] + phi[l]*jw*ctx->rhog*ds[q][1];
+            element_residual[l]->u += dp[0]*W*eta*(4.0*du[0] + 2.0*dv[1]) + dp[1]*W*eta*(du[1] + dv[0]) + dp[2]*W*eta*du[2] + phi[l]*W*ctx->rhog*ds[q][0];
+            element_residual[l]->v += dp[1]*W*eta*(2.0*du[0] + 4.0*dv[1]) + dp[0]*W*eta*(du[1] + dv[0]) + dp[2]*W*eta*dv[2] + phi[l]*W*ctx->rhog*ds[q][1];
           }
         }             /* q-loop */
 
@@ -662,11 +663,11 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
           } else {              /* Integrate over bottom face to apply boundary condition */
 
             for (q = 0; q < 4; q++) { /* for each quadrature point on the basal face... */
-              /* Note: jw below can be thought of as an approximation
+              /* Note: W below can be thought of as an approximation
                  of the Jacobian*weight using the small bed slope
                  assumption. (It *is* correct in the flat bed case.)
                */
-              const PetscReal jw = 0.25*dx*dy / ctx->rhog,
+              const PetscReal W = 0.25*dx*dy / ctx->rhog,
                 *phi = ctx->Q12D.chi[q];
 
               PetscScalar u = 0, v = 0, tauc = 0;
@@ -681,8 +682,8 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
                                          &beta, NULL); CHKERRQ(ierr);
 
               for (l = 0; l < 4; l++) {
-                element_residual[ls + l]->u += phi[l]*jw*(beta*u);
-                element_residual[ls + l]->v += phi[l]*jw*(beta*v);
+                element_residual[ls + l]->u += phi[l]*W*(beta*u);
+                element_residual[ls + l]->v += phi[l]*W*(beta*v);
               }
             } /* end of the quadrature loop */
 
@@ -754,7 +755,7 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
         }
 
         for (q = 0; q < 8; q++) {
-          PetscReal grad_z[3], phi[8], dphi[8][3], jw, eta, deta;
+          PetscReal grad_z[3], phi[8], dphi[8][3], W, eta, deta;
           PetscScalar du[3], dv[3], u, v;
 
           /* Compute the gradient of z */
@@ -764,7 +765,7 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
           /* compute values of shape functions, their derivatives, and
              quadrature weights at a quadrature point q. */
           compute_element_info(ctx->Q13D.chi, ctx->Q13D.dchi, q, dx, dy, grad_z, /* inputs */
-                               phi, dphi, &jw); /* outputs */
+                               phi, dphi, &W); /* outputs */
 
           /* Compute u,v, their derivatives, plus effective viscosity and its
              derivative with respect to gamma. */
@@ -772,7 +773,7 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
                                       &u, &v, du, dv, &eta, &deta); /* outputs */
           CHKERRQ(ierr);
 
-          jw /= ctx->rhog;      /* residuals are scaled by this factor */
+          W /= ctx->rhog;      /* residuals are scaled by this factor */
 
           /* Store eta at the quadrature point 0 (i.e. at a location near the bottom face of
            * the element). It is used to scale the diagonal entries at the base in the
@@ -794,15 +795,15 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
                 dgdu = 2.0*du[0]*dpl[0] + dv[1]*dpl[0] + 0.5*(du[1] + dv[0])*dpl[1] + 0.5*du[2]*dpl[2];
                 dgdv = 2.0*dv[1]*dpl[1] + du[0]*dpl[1] + 0.5*(du[1] + dv[0])*dpl[0] + 0.5*dv[2]*dpl[2];
                 /* Picard part */
-                Ke[l*2 + 0][ll*2 + 0] += dp[0]*jw*eta*4.0*dpl[0] + dp[1]*jw*eta*dpl[1] + dp[2]*jw*eta*dpl[2];
-                Ke[l*2 + 0][ll*2 + 1] += dp[0]*jw*eta*2.0*dpl[1] + dp[1]*jw*eta*dpl[0];
-                Ke[l*2 + 1][ll*2 + 0] += dp[1]*jw*eta*2.0*dpl[0] + dp[0]*jw*eta*dpl[1];
-                Ke[l*2 + 1][ll*2 + 1] += dp[1]*jw*eta*4.0*dpl[1] + dp[0]*jw*eta*dpl[0] + dp[2]*jw*eta*dpl[2];
+                Ke[l*2 + 0][ll*2 + 0] += dp[0]*W*eta*4.0*dpl[0] + dp[1]*W*eta*dpl[1] + dp[2]*W*eta*dpl[2];
+                Ke[l*2 + 0][ll*2 + 1] += dp[0]*W*eta*2.0*dpl[1] + dp[1]*W*eta*dpl[0];
+                Ke[l*2 + 1][ll*2 + 0] += dp[1]*W*eta*2.0*dpl[0] + dp[0]*W*eta*dpl[1];
+                Ke[l*2 + 1][ll*2 + 1] += dp[1]*W*eta*4.0*dpl[1] + dp[0]*W*eta*dpl[0] + dp[2]*W*eta*dpl[2];
                 /* extra Newton terms */
-                Ke[l*2 + 0][ll*2 + 0] += dp[0]*jw*deta*dgdu*(4.0*du[0] + 2.0*dv[1]) + dp[1]*jw*deta*dgdu*(du[1] + dv[0]) + dp[2]*jw*deta*dgdu*du[2];
-                Ke[l*2 + 0][ll*2 + 1] += dp[0]*jw*deta*dgdv*(4.0*du[0] + 2.0*dv[1]) + dp[1]*jw*deta*dgdv*(du[1] + dv[0]) + dp[2]*jw*deta*dgdv*du[2];
-                Ke[l*2 + 1][ll*2 + 0] += dp[1]*jw*deta*dgdu*(4.0*dv[1] + 2.0*du[0]) + dp[0]*jw*deta*dgdu*(du[1] + dv[0]) + dp[2]*jw*deta*dgdu*dv[2];
-                Ke[l*2 + 1][ll*2 + 1] += dp[1]*jw*deta*dgdv*(4.0*dv[1] + 2.0*du[0]) + dp[0]*jw*deta*dgdv*(du[1] + dv[0]) + dp[2]*jw*deta*dgdv*dv[2];
+                Ke[l*2 + 0][ll*2 + 0] += dp[0]*W*deta*dgdu*(4.0*du[0] + 2.0*dv[1]) + dp[1]*W*deta*dgdu*(du[1] + dv[0]) + dp[2]*W*deta*dgdu*du[2];
+                Ke[l*2 + 0][ll*2 + 1] += dp[0]*W*deta*dgdv*(4.0*du[0] + 2.0*dv[1]) + dp[1]*W*deta*dgdv*(du[1] + dv[0]) + dp[2]*W*deta*dgdv*du[2];
+                Ke[l*2 + 1][ll*2 + 0] += dp[1]*W*deta*dgdu*(4.0*dv[1] + 2.0*du[0]) + dp[0]*W*deta*dgdu*(du[1] + dv[0]) + dp[2]*W*deta*dgdu*dv[2];
+                Ke[l*2 + 1][ll*2 + 1] += dp[1]*W*deta*dgdv*(4.0*dv[1] + 2.0*du[0]) + dp[0]*W*deta*dgdv*(du[1] + dv[0]) + dp[2]*W*deta*dgdv*dv[2];
               }
             } /* ll-loop (trial functions) */
           }   /* l-loop (test functions) */
@@ -819,11 +820,11 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
           } else {
 
             for (q = 0; q < 4; q++) {
-              /* Note: jw below can be thought of as an approximation
+              /* Note: W below can be thought of as an approximation
                  of the Jacobian*weight using the small bed slope
                  assumption. (It *is* correct in the flat bed case.)
                */
-              const PetscReal jw = 0.25*dx*dy / ctx->rhog,
+              const PetscReal W = 0.25*dx*dy / ctx->rhog,
                 *phi = ctx->Q12D.chi[q];
               PetscScalar u = 0, v = 0, tauc = 0;
               PetscReal beta,   /* basal drag coefficient; tau_{b,x} = beta*u; tau_{b,y} = beta*v */
@@ -844,10 +845,10 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
                 const PetscReal pp = phi[l];
                 for (ll = 0; ll < 4; ll++) {
                   const PetscReal ppl = phi[ll];
-                  Ke[l*2 + 0][ll*2 + 0] += pp*jw*beta*ppl + pp*jw*dbeta*u*u*ppl;
-                  Ke[l*2 + 0][ll*2 + 1] +=                  pp*jw*dbeta*u*v*ppl;
-                  Ke[l*2 + 1][ll*2 + 0] +=                  pp*jw*dbeta*v*u*ppl;
-                  Ke[l*2 + 1][ll*2 + 1] += pp*jw*beta*ppl + pp*jw*dbeta*v*v*ppl;
+                  Ke[l*2 + 0][ll*2 + 0] += pp*W*beta*ppl + pp*W*dbeta*u*u*ppl;
+                  Ke[l*2 + 0][ll*2 + 1] +=                 pp*W*dbeta*u*v*ppl;
+                  Ke[l*2 + 1][ll*2 + 0] +=                 pp*W*dbeta*v*u*ppl;
+                  Ke[l*2 + 1][ll*2 + 1] += pp*W*beta*ppl + pp*W*dbeta*v*v*ppl;
                 } /* ll-loop (trial functions) */
               } /* l-loop (test functions) */
             } /* q-loop */
