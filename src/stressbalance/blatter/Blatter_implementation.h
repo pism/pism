@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2015, 2016 Jed Brown and the PISM Authors
+/* Copyright (C) 2013, 2015, 2016, 2020 Jed Brown and the PISM Authors
  *
  * This file is part of PISM.
  *
@@ -44,6 +44,8 @@ typedef struct {
   PetscScalar thickness;
   /*! till yield stress */
   PetscScalar tauc;
+  /*! node type */
+  PetscScalar node_type;
 } PrmNode;
 
 typedef struct {

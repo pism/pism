@@ -29,6 +29,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/node_types.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -118,6 +119,7 @@ BlatterStressBalance::BlatterStressBalance(IceGrid::ConstPtr grid,
                                            EnthalpyConverter::Ptr e)
   : ShallowStressBalance(grid),
     m_ice_bottom_surface(grid, "ice_bottom_surface", WITHOUT_GHOSTS),
+    m_node_type(grid, "node_type", WITHOUT_GHOSTS),
     m_u(grid, "uvel", WITH_GHOSTS),
     m_v(grid, "vvel", WITH_GHOSTS),
     m_strain_heating(grid, "strainheat", WITHOUT_GHOSTS), // never diff'ed in hor dirs
@@ -245,7 +247,10 @@ void BlatterStressBalance::setup(const Inputs &inputs) {
 
   ice_bottom_surface(*inputs.geometry, m_ice_bottom_surface);
 
-  IceModelVec::AccessList list{&bed, &thickness, &tauc, &m_ice_bottom_surface};
+  compute_node_types(inputs.geometry->ice_thickness, m_min_thickness, m_node_type);
+
+  IceModelVec::AccessList list{&bed, &thickness, &tauc, &m_ice_bottom_surface,
+                               &m_node_type};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -259,6 +264,8 @@ void BlatterStressBalance::setup(const Inputs &inputs) {
       parameters(i, j).thickness += m_min_thickness;
 
     parameters(i, j).tauc = tauc(i,j);
+
+    parameters(i, j).node_type = m_node_type(i, j);
   }
 
   ierr = BlatterQ1_end_2D_parameter_access(da, PETSC_FALSE, &param_vec, parameters.address());

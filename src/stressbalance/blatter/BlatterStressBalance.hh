@@ -118,6 +118,7 @@ protected:
   void copy_velocity(Direction);
 
   IceModelVec2S m_ice_bottom_surface;
+  IceModelVec2Int m_node_type;
 
   IceModelVec3 m_u, m_v, m_strain_heating;
 
