@@ -117,6 +117,7 @@ public:
 BlatterStressBalance::BlatterStressBalance(IceGrid::ConstPtr grid,
                                            EnthalpyConverter::Ptr e)
   : ShallowStressBalance(grid),
+    m_ice_bottom_surface(grid, "ice_bottom_surface", WITHOUT_GHOSTS),
     m_u(grid, "uvel", WITH_GHOSTS),
     m_v(grid, "vvel", WITH_GHOSTS),
     m_strain_heating(grid, "strainheat", WITHOUT_GHOSTS), // never diff'ed in hor dirs

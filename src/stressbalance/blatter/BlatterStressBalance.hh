@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2016, 2018, 2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010-2016, 2018, 2019, 2020 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -116,6 +116,8 @@ protected:
   enum Direction {FROM_SNES_STORAGE, TO_SNES_STORAGE};
 
   void copy_velocity(Direction);
+
+  IceModelVec2S m_ice_bottom_surface;
 
   IceModelVec3 m_u, m_v, m_strain_heating;
 
