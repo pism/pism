@@ -232,10 +232,6 @@ void BlatterStressBalance::setup(const Inputs &inputs) {
   Vec param_vec;
   PointerWrapper2D<PrmNode> parameters;
   DM da;
-  double
-    ice_density = m_config->get_number("constants.ice.density"),
-    sea_water_density = m_config->get_number("constants.sea_water.density"),
-    alpha = ice_density / sea_water_density;
 
   ierr = SNESGetDM(this->m_snes, &da); PISM_CHK(ierr, "SNESGetDM");
 
@@ -247,19 +243,14 @@ void BlatterStressBalance::setup(const Inputs &inputs) {
     &thickness = inputs.geometry->ice_thickness,
     &tauc      = *inputs.basal_yield_stress;
 
-  IceModelVec::AccessList list{&bed, &thickness, &tauc};
+  ice_bottom_surface(*inputs.geometry, m_ice_bottom_surface);
+
+  IceModelVec::AccessList list{&bed, &thickness, &tauc, &m_ice_bottom_surface};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    // compute the elevation of the bottom surface of the ice
-    if (bed(i,j) > -alpha * thickness(i,j)) {
-      // grounded
-      parameters(i, j).ice_bottom = bed(i,j);
-    } else {
-      // floating
-      parameters(i, j).ice_bottom = -alpha * thickness(i,j);
-    }
+    parameters(i, j).ice_bottom = m_ice_bottom_surface(i, j);
 
     parameters(i, j).thickness = thickness(i,j);
 
