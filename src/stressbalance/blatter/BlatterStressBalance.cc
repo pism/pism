@@ -235,6 +235,8 @@ void BlatterStressBalance::setup(const Inputs &inputs) {
   PointerWrapper2D<PrmNode> parameters;
   DM da;
 
+  initialize_ice_hardness(*inputs.enthalpy, inputs.geometry->ice_thickness);
+
   ierr = SNESGetDM(this->m_snes, &da); PISM_CHK(ierr, "SNESGetDM");
 
   ierr = BlatterQ1_begin_2D_parameter_access(da, PETSC_FALSE, &param_vec, parameters.address());

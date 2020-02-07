@@ -516,6 +516,7 @@ static PetscErrorCode BlatterQ1_initial_guess(SNES snes, Vec X, void* ctx)
  */
 static PetscErrorCode compute_nonlinearity(BlatterQ1Ctx *ctx,
                                            const Node velocity[restrict],
+                                           const PetscReal hardness[restrict],
                                            const PetscReal phi[restrict],
                                            PetscReal dphi[restrict][3],
                                            PetscScalar *restrict u,
@@ -526,27 +527,31 @@ static PetscErrorCode compute_nonlinearity(BlatterQ1Ctx *ctx,
                                            PetscReal *deta) {
   PetscErrorCode ierr;
   PetscInt p, q;
-  PetscScalar second_invariant;
+  PetscScalar second_invariant, hardness_q;
 
+  /* Compute values of velocity components and their derivatives at the current quadrature
+     point. */
   du[0] = du[1] = du[2] = 0;
   dv[0] = dv[1] = dv[2] = 0;
   *u = 0;
   *v = 0;
+  hardness_q = 0.0;
   for (p = 0; p < 8; p++) {
     *u += phi[p] * velocity[p].u;
     *v += phi[p] * velocity[p].v;
+    hardness_q += phi[p] * hardness[p];
     for (q = 0; q < 3; q++) {
       du[q] += dphi[p][q] * velocity[p].u;
       dv[q] += dphi[p][q] * velocity[p].v;
     }
   }
-  second_invariant = Sqr(du[0]) + Sqr(dv[1]) + du[0]*dv[1] + 0.25*Sqr(du[1] + dv[0]) + 0.25*Sqr(du[2]) + 0.25*Sqr(dv[2]);
-  {				/* FIXME: this needs to be an argument */
-    PetscReal softness = 4e-25,
-      n = 3.0,
-      hardness = pow(softness, -1.0 / n);
-    ierr = ctx->nonlinear.viscosity(ctx, hardness, second_invariant, eta, deta); CHKERRQ(ierr);
-  }
+
+  second_invariant = (Sqr(du[0]) + Sqr(dv[1]) + du[0]*dv[1] +
+                      0.25*Sqr(du[1] + dv[0]) +
+                      0.25*Sqr(du[2]) +
+                      0.25*Sqr(dv[2]));
+
+  ierr = ctx->nonlinear.viscosity(ctx, hardness_q, second_invariant, eta, deta); CHKERRQ(ierr);
   return 0;
 }
 
@@ -564,6 +569,8 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
   PrmNode        **prm;
   Vec prm_local;
   PetscErrorCode ierr;
+  Vec hardness_local;
+  PetscReal ***hardness;
 
   PetscFunctionBegin;
   xs = info->zs;
@@ -576,6 +583,9 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
   ierr = BlatterQ1_begin_2D_parameter_access(info->da, PETSC_TRUE,
                                              &prm_local, &prm); CHKERRQ(ierr);
 
+  ierr = BlatterQ1_begin_hardness_access(info->da, PETSC_TRUE,
+                                         &hardness_local, &hardness); CHKERRQ(ierr);
+
   for (i = xs; i < xs + xm; i++) {
     for (j = ys; j < ys + ym; j++) {
       PrmNode parameters[4];            /* 4 nodes (in 2D) */
@@ -587,22 +597,24 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
       /* loop over elements in the column */
       for (k = 0; k < zm - 1; k++) {
         PetscInt ls = 0;	/* starting index */
-        Node element_velocity[8], *element_residual[8];
+        Node U_nodal[8], *R_nodal[8];
+        PetscReal hardness_nodal[8];
         PetscReal zn[8], etabase = 0;
 
         /* Compute z-coordinates of element nodes: */
         compute_nodal_z_coordinates(parameters, k, zm, zn);
 
         /* Get nodal values of velocity components: */
-        get_nodal_values_3d(velocity, i, j, k, element_velocity);
+        get_nodal_values_3d(velocity, i, j, k, U_nodal);
+        get_nodal_values_3d(hardness, i, j, k, hardness_nodal);
 
         /* Get pointers to residual components corresponding to element nodes: */
-        get_pointers_to_nodal_values_3d(residual, i, j, k, element_residual);
+        get_pointers_to_nodal_values_3d(residual, i, j, k, R_nodal);
 
         if (ctx->no_slip && k == 0) {
           for (l = 0; l < 4; l++) {
-            element_velocity[l].u = 0;
-            element_velocity[l].v = 0;
+            U_nodal[l].u = 0;
+            U_nodal[l].v = 0;
           }
           /* The first 4 basis functions lie on the bottom layer, so their contribution is
            * exactly 0 and we can skip them */
@@ -619,9 +631,9 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
                              grad_z); /* output (partial derivatives of z with respect to xi,eta,zeta) */
 
           compute_element_info(ctx->Q13D.chi, ctx->Q13D.dchi, q, dx, dy, grad_z, /* inputs */
-                               phi, dphi, &W); /* outputs (values of shape functions, their derivatives, det(J)*weight */
+                               phi, dphi, &W); /* outputs (values of shape functions, their derivatives, weights */
 
-          ierr = compute_nonlinearity(ctx, element_velocity, phi, dphi, /* inputs */
+          ierr = compute_nonlinearity(ctx, U_nodal, hardness_nodal, phi, dphi, /* inputs */
                                       &u, &v, du, dv, &eta, &deta); /* outputs u,v, partial derivatives of u,v,
                                                                      effective viscosity (eta), derivative of eta with respect to gamma */
           CHKERRQ(ierr);
@@ -634,8 +646,8 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
 
           for (l = ls; l < 8; l++) { /* test functions */
             const PetscReal *dp = dphi[l];
-            element_residual[l]->u += dp[0]*W*eta*(4.0*du[0] + 2.0*dv[1]) + dp[1]*W*eta*(du[1] + dv[0]) + dp[2]*W*eta*du[2] + phi[l]*W*ctx->rhog*ds[q][0];
-            element_residual[l]->v += dp[1]*W*eta*(2.0*du[0] + 4.0*dv[1]) + dp[0]*W*eta*(du[1] + dv[0]) + dp[2]*W*eta*dv[2] + phi[l]*W*ctx->rhog*ds[q][1];
+            R_nodal[l]->u += dp[0]*W*eta*(4.0*du[0] + 2.0*dv[1]) + dp[1]*W*eta*(du[1] + dv[0]) + dp[2]*W*eta*du[2] + phi[l]*W*ctx->rhog*ds[q][0];
+            R_nodal[l]->v += dp[1]*W*eta*(2.0*du[0] + 4.0*dv[1]) + dp[0]*W*eta*(du[1] + dv[0]) + dp[2]*W*eta*dv[2] + phi[l]*W*ctx->rhog*ds[q][1];
           }
         }             /* q-loop */
 
@@ -658,8 +670,8 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
             const PetscScalar
               diagu = 2*etabase / ctx->rhog*(dx*dy / dz + dx*dz / dy + 4*dy*dz / dx),
               diagv = 2*etabase / ctx->rhog*(dx*dy / dz + 4*dx*dz / dy + dy*dz / dx);
-            element_residual[0]->u = ctx->dirichlet_scale*diagu*velocity[i][j][k].u;
-            element_residual[0]->v = ctx->dirichlet_scale*diagv*velocity[i][j][k].v;
+            R_nodal[0]->u = ctx->dirichlet_scale*diagu*velocity[i][j][k].u;
+            R_nodal[0]->v = ctx->dirichlet_scale*diagv*velocity[i][j][k].v;
           } else {              /* Integrate over bottom face to apply boundary condition */
 
             for (q = 0; q < 4; q++) { /* for each quadrature point on the basal face... */
@@ -673,8 +685,8 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
               PetscScalar u = 0, v = 0, tauc = 0;
               PetscReal beta;   /* basal drag coefficient; tau_{b,x} = beta*u; tau_{b,y} = beta*v */
               for (l = 0; l < 4; l++) {
-                u += phi[l]*element_velocity[l].u;
-                v += phi[l]*element_velocity[l].v;
+                u += phi[l]*U_nodal[l].u;
+                v += phi[l]*U_nodal[l].v;
                 tauc += phi[l]*parameters[l].tauc;
               }
 
@@ -682,8 +694,8 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
                                          &beta, NULL); CHKERRQ(ierr);
 
               for (l = 0; l < 4; l++) {
-                element_residual[ls + l]->u += phi[l]*W*(beta*u);
-                element_residual[ls + l]->v += phi[l]*W*(beta*v);
+                R_nodal[ls + l]->u += phi[l]*W*(beta*u);
+                R_nodal[ls + l]->v += phi[l]*W*(beta*v);
               }
             } /* end of the quadrature loop */
 
@@ -693,6 +705,9 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
       } /* k-loop */
     } /* j-loop */
   } /* i-loop */
+
+  ierr = BlatterQ1_end_hardness_access(info->da, PETSC_TRUE,
+                                       &hardness_local, &hardness); CHKERRQ(ierr);
 
   ierr = BlatterQ1_end_2D_parameter_access(info->da, PETSC_TRUE, &prm_local, &prm); CHKERRQ(ierr);
 
@@ -710,6 +725,8 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
   PrmNode        **prm;
   Vec prm_local;
   PetscErrorCode ierr;
+  Vec hardness_local;
+  PetscReal ***hardness;
 
   (void)A;
 
@@ -727,6 +744,9 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
   ierr = BlatterQ1_begin_2D_parameter_access(info->da, PETSC_TRUE,
                                              &prm_local, &prm); CHKERRQ(ierr);
 
+  ierr = BlatterQ1_begin_hardness_access(info->da, PETSC_TRUE,
+                                         &hardness_local, &hardness); CHKERRQ(ierr);
+
   for (i = xs; i < xs + xm; i++) {
     for (j = ys; j < ys + ym; j++) {
       PrmNode parameters[4];            /* 4 nodes */
@@ -734,7 +754,8 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
 
       for (k = 0; k < zm - 1; k++) {
         PetscInt ls = 0;
-        Node element_velocity[8];
+        Node U_nodal[8];
+        PetscReal hardness_nodal[8];
         PetscReal zn[8], etabase = 0;
         PetscScalar Ke[8*2][8*2];
 
@@ -742,14 +763,15 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
 
         compute_nodal_z_coordinates(parameters, k, zm, zn);
 
-        get_nodal_values_3d(velocity, i, j, k, element_velocity);
+        get_nodal_values_3d(velocity, i, j, k, U_nodal);
+        get_nodal_values_3d(hardness, i, j, k, hardness_nodal);
 
         /* Ensure that values of velocity components at Dirichlet
            (no-slip) nodes are exactly equal to Dirichlet B.C. values. */
         if (ctx->no_slip && k == 0) {
           for (l = 0; l < 4; l++) {
-            element_velocity[l].u = 0.0;
-            element_velocity[l].v = 0.0;
+            U_nodal[l].u = 0.0;
+            U_nodal[l].v = 0.0;
           }
           ls = 4;
         }
@@ -769,7 +791,7 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
 
           /* Compute u,v, their derivatives, plus effective viscosity and its
              derivative with respect to gamma. */
-          ierr = compute_nonlinearity(ctx, element_velocity, phi, dphi, /* inputs */
+          ierr = compute_nonlinearity(ctx, U_nodal, hardness_nodal, phi, dphi, /* inputs */
                                       &u, &v, du, dv, &eta, &deta); /* outputs */
           CHKERRQ(ierr);
 
@@ -832,8 +854,8 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
 
               /* Compute u, v, \tau_c at a quadrature point on the bottom face using basis expansions: */
               for (l = 0; l < 4; l++) {
-                u += phi[l]*element_velocity[l].u;
-                v += phi[l]*element_velocity[l].v;
+                u += phi[l]*U_nodal[l].u;
+                v += phi[l]*U_nodal[l].v;
                 tauc += phi[l]*parameters[l].tauc;
               }
 
@@ -877,6 +899,10 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
       } /* k-loop */
     } /* j-loop */
   } /* i-loop */
+
+  ierr = BlatterQ1_end_hardness_access(info->da, PETSC_TRUE,
+                                       &hardness_local, &hardness); CHKERRQ(ierr);
+
   ierr = BlatterQ1_end_2D_parameter_access(info->da, PETSC_TRUE, &prm_local, &prm); CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
