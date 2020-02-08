@@ -60,7 +60,7 @@ IndexForcing::IndexForcing(IceGrid::ConstPtr grid)
                                   "glacial index"));
 
   {
-    auto filename = m_config->get_string(m_option + ".climate" + "_file");
+    auto filename = m_config->get_string(m_option + "_climate" + "_file");
 
     if (filename.empty()) {
       //If no extra file is specified, look in index file for climate data
