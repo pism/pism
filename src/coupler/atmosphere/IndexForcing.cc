@@ -122,21 +122,26 @@ IndexForcing::IndexForcing(IceGrid::ConstPtr grid)
 }
 
 void IndexForcing::init_impl(const Geometry &geometry) {
-  ForcingOptions opt(*m_grid->ctx(), m_option);
+  auto filename = m_config->get_string(m_option + "_climate" + "_file");
 
-  m_T0->init(opt.filename, 1, 0.0);
-  m_T1->init(opt.filename, 1, 0.0);
-  m_P0->init(opt.filename, 1, 0.0);
-  m_P1->init(opt.filename, 1, 0.0);
+  if (filename.empty()) {
+    //If no extra file is specified, look in index file for climate data
+    filename = m_config->get_string(m_option + ".file");
+  }
+
+  m_T0->init(filename, 1, 0.0);
+  m_T1->init(filename, 1, 0.0);
+  m_P0->init(filename, 1, 0.0);
+  m_P1->init(filename, 1, 0.0);
 
   m_index->init();
 
   m_log->message(2,
                  "  reading surface elevation at t0 & t1 data from forcing file %s...\n",
-                 opt.filename.c_str());
+                 filename.c_str());
 
-  m_h0.regrid(opt.filename, OPTIONAL, 0);
-  m_h1.regrid(opt.filename, OPTIONAL, 0);
+  m_h0.regrid(filename, OPTIONAL, 0);
+  m_h1.regrid(filename, OPTIONAL, 0);
 }
 
 
