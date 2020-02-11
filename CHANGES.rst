@@ -1,7 +1,7 @@
 .. default-role:: literal
 
-Changes since v1.1
-==================
+Changes from v1.1 to v1.2
+=========================
 
 Front retreat
 ^^^^^^^^^^^^^
