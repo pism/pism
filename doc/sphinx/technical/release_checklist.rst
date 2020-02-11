@@ -12,7 +12,7 @@ Release checklist
 #. Create a "pre-release" branch starting from the "``dev``" branch and remove code that
    should not be a part of the release.
 #. Set ``Pism_BRANCH`` in ``CMakeLists.txt`` to "``stable``".
-#. Update ``version`` and ``release`` in ``doc/sphinx/conf.py``.
+#. Update ``version``, ``release``, and ``copyright`` in ``doc/sphinx/conf.py``.
 #. Update ``CHANGES.rst``.
 #. Tag.
 
