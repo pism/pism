@@ -33,7 +33,7 @@ See the `Installing PISM <pism-installation_>`_ on ``pism-docs.org``.
 Support
 -------
 
-Please e-mail `uaf-pism@alaska.edu`_ with questions about PISM.
+Please e-mail `uaf-pism@alaska.edu <uaf-pism_>`_ with questions about PISM.
 
 You can also join the PISM workspace on `Slack <Slack-PISM_>`_.
 
@@ -62,6 +62,7 @@ Want to contribute? Great! See `Contributing to PISM <pism-contributing_>`_.
 .. _NASA-Cryosphere: http://ice.nasa.gov/
 .. _NSF-Polar: https://nsf.gov/geo/plr/about.jsp
 .. _Slack-PISM: https://join.slack.com/t/uaf-pism/shared_invite/enQtODc3Njc1ODg0ODM5LThmOTEyNjEwN2I3ZTU4YTc5OGFhNGMzOWQ1ZmUzMWUwZDAyMzRlMzBhZDg1NDY5MmQ1YWFjNDU4MDZiNTk3YmE
+.. _uaf-pism: mailto:uaf-pism@alaska.edu
 
 ..
    Local Variables:
