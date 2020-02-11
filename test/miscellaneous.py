@@ -1172,12 +1172,12 @@ class ForcingOptions(TestCase):
         self.config.init_with_default(ctx.log)
         self.config.import_from(ctx.config)
 
-        self.filename = "input.nc"
+        self.filename = "forcing-options-input.nc"
         PISM.util.prepare_output(self.filename)
 
     def test_without_file(self):
         "ForcingOptions: xxx.file is not set"
-        ctx.config.set_string("input.file", "input.nc")
+        ctx.config.set_string("input.file", self.filename)
 
         opt = PISM.ForcingOptions(ctx.ctx, "surface.given")
 
@@ -1204,7 +1204,8 @@ class ForcingOptions(TestCase):
             pass
 
     def test_negative_period(self):
-        ctx.config.set_string("input.file", "input.nc")
+        "ForcingOptions: negative period"
+        ctx.config.set_string("input.file", self.filename)
         ctx.config.set_number("surface.given.period", -1)
 
         try:
