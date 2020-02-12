@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,6 @@
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_options.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/MaxTimestep.hh"
 
@@ -134,7 +133,7 @@ void EISMINTII::initialize_using_formulas() {
   }
 
   // convert from "m second-1" to "kg m-2 s-1"
-  m_mass_flux->scale(m_config->get_double("constants.ice.density"));
+  m_mass_flux->scale(m_config->get_number("constants.ice.density"));
 }
 
 void EISMINTII::update_impl(const Geometry &geometry, double t, double dt) {
@@ -142,7 +141,10 @@ void EISMINTII::update_impl(const Geometry &geometry, double t, double dt) {
   (void) dt;
   (void) geometry;
 
-  // do nothing (but an implementation is required)
+  dummy_accumulation(*m_mass_flux, *m_accumulation);
+  dummy_melt(*m_mass_flux, *m_melt);
+  dummy_runoff(*m_mass_flux, *m_runoff);
+
 }
 
 } // end of namespace surface

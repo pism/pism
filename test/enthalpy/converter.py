@@ -103,7 +103,7 @@ def enthalpy_of_water_test():
     """Test the dependence of the enthalpy of water at T_m(p) on p."""
 
     config = PISM.Context().config
-    c_w = config.get_double("constants.fresh_water.specific_heat_capacity")
+    c_w = config.get_number("constants.fresh_water.specific_heat_capacity")
 
     EC = converters["Default"]
 
@@ -139,6 +139,21 @@ def invalid_inputs_test():
             print("skipped...")
             return
 
+        # temperature exceeds pressure melting
+        E = EC.enthalpy_permissive(T_melting + 1.0, 0.0, pressure)
+        # omega exceeds 1
+        E = EC.enthalpy_permissive(T_melting, 1.1, pressure)
+        # non-zero omega even though the ice is cold
+        E = EC.enthalpy_permissive(T_melting - 1.0, 0.1, pressure)
+        # negative omega
+        E = EC.enthalpy_permissive(T_melting, -0.1, pressure)
+
+        if not PISM.Pism_DEBUG:
+            # Skip remaining tests if PISM was built with Pism_DEBUG set to "OFF". (These
+            # checks are disabled in optimized builds, although we do ensure that
+            # EnthalpyConverter produces reasonable outputs even if it's fed garbage.)
+            return
+
         try:
             E = EC.temperature(E_liquid + 1.0, pressure)
             raise AssertionError("failed to catch E > E_liquid in temperature()")
@@ -157,23 +172,17 @@ def invalid_inputs_test():
         except RuntimeError:
             pass
 
-        E = EC.enthalpy_permissive(T_melting + 1.0, 0.0, pressure)
-
         try:
             E = EC.enthalpy(T_melting, -0.1, pressure)
             raise AssertionError("failed to catch omega < 0 in enthalpy()")
         except RuntimeError:
             pass
 
-        E = EC.enthalpy_permissive(T_melting, -0.1, pressure)
-
         try:
             E = EC.enthalpy(T_melting, 1.1, pressure)
             raise AssertionError("failed to catch omega > 1 in enthalpy()")
         except RuntimeError:
             pass
-
-        E = EC.enthalpy_permissive(T_melting, 1.1, pressure)
 
         try:
             E = EC.enthalpy(-1.0, 0.0, pressure)
@@ -187,7 +196,6 @@ def invalid_inputs_test():
         except RuntimeError:
             pass
 
-        E = EC.enthalpy_permissive(T_melting - 1.0, 0.1, pressure)
 
     try_all_converters(run)
 
@@ -220,7 +228,7 @@ def plot_converter(name, EC):
         E_wet[i] = EC.enthalpy(T_melting[i], 0.95, p[i])
         omega[i] = EC.water_fraction(E_cts[i] + delta_E, p[i]) * 100.0
 
-    plt.figure(figsize=(15, 10))
+    plt.figure(figsize=(15, 8))
     plt.subplot(2, 2, 1)
     plt.title("%s enthalpy converter" % name)
     plt.plot(Z, E, label="constant enthalpy", lw=2)
@@ -251,14 +259,11 @@ def plot_converter(name, EC):
     plt.ylabel("J/kg")
     plt.grid()
 
+if __name__ == "__main__":
 
-def compare():
+    import pylab as plt
+
     for name, converter in list(converters.items()):
         plot_converter(name, converter)
 
     plt.show()
-
-
-if __name__ == "__main__":
-    import pylab as plt
-    compare()

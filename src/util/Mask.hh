@@ -68,9 +68,9 @@ namespace mask {
 class GeometryCalculator {
 public:
   GeometryCalculator(const Config &config) {
-    m_alpha = 1 - config.get_double("constants.ice.density") / config.get_double("constants.sea_water.density");
-    m_is_dry_simulation = config.get_boolean("ocean.always_grounded");
-    m_icefree_thickness = config.get_double("geometry.ice_free_thickness_standard");
+    m_alpha = 1 - config.get_number("constants.ice.density") / config.get_number("constants.sea_water.density");
+    m_is_dry_simulation = config.get_flag("ocean.always_grounded");
+    m_icefree_thickness = config.get_number("geometry.ice_free_thickness_standard");
     if (m_icefree_thickness < 0.0) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "invalid ice-free thickness threshold: %f", m_icefree_thickness);

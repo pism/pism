@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/pism_signal.h"
@@ -67,8 +67,12 @@ int IceModel::process_signals() {
        file_name);
     pism_signal = 0;
 
-    PIO file(m_grid->com, m_config->get_string("output.format"), file_name, PISM_READWRITE_MOVE);
-    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars);
+    File file(m_grid->com,
+              file_name,
+              string_to_backend(m_config->get_string("output.format")),
+              PISM_READWRITE_MOVE,
+              m_ctx->pio_iosys_id());
+    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
 
     // flush all the time-series buffers:
     flush_timeseries();
@@ -94,19 +98,12 @@ void IceModel::update_run_stats() {
   double
     wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time),
     proc_hours       = m_grid->size() * wall_clock_hours,
-    mypph            = units::convert(m_sys,
-                                      m_time->current() - m_time->start(),
-                                      "seconds", "years") / proc_hours;
+    model_years      = units::convert(m_sys, m_time->current() - m_time->start(),
+                                      "seconds", "years");
 
-  // time-independent info
-  {
-    m_run_stats.set_string("source", std::string("PISM ") + PISM_Revision);
-    m_run_stats.set_string("long_name", "Run statistics");
-  }
-
-  m_run_stats.set_double("wall_clock_hours", wall_clock_hours);
-  m_run_stats.set_double("processor_hours", proc_hours);
-  m_run_stats.set_double("model_years_per_processor_hour", mypph);
+  m_run_stats.set_number("wall_clock_hours", wall_clock_hours);
+  m_run_stats.set_number("processor_hours", proc_hours);
+  m_run_stats.set_number("model_years_per_processor_hour", model_years / proc_hours);
 }
 
 //! Get time and user/host name and add it to the given string.

@@ -9,4 +9,5 @@ add_library (flowlaws OBJECT
   PatersonBudd.cc
   PatersonBuddCold.cc
   PatersonBuddWarm.cc
+  grain_size_vostok.cc
   )

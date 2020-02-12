@@ -24,7 +24,7 @@
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/energy/enthSystem.hh"
 #include "pism/util/IceModelVec2CellType.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "utilities.hh"
 #include "pism/util/pism_utilities.hh"
 
@@ -70,24 +70,24 @@ CHSystem::~CHSystem() {
   // empty
 }
 
-void CHSystem::restart_impl(const PIO &input_file, int record) {
+void CHSystem::restart_impl(const File &input_file, int record) {
 
   m_log->message(2, "* Restarting the cryo-hydrologic system from %s...\n",
-                 input_file.inq_filename().c_str());
+                 input_file.filename().c_str());
 
   init_enthalpy(input_file, false, record);
 
   regrid_enthalpy();
 }
 
-void CHSystem::bootstrap_impl(const PIO &input_file,
+void CHSystem::bootstrap_impl(const File &input_file,
                               const IceModelVec2S &ice_thickness,
                               const IceModelVec2S &surface_temperature,
                               const IceModelVec2S &climatic_mass_balance,
                               const IceModelVec2S &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the cryo-hydrologic warming model from %s...\n",
-                 input_file.inq_filename().c_str());
+                 input_file.filename().c_str());
 
   int enthalpy_revision = m_ice_enthalpy.state_counter();
   regrid_enthalpy();
@@ -158,9 +158,9 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
       &m_work};
 
   double
-    margin_threshold = m_config->get_double("energy.margin_ice_thickness_limit"),
-    T_pm = m_config->get_double("constants.fresh_water.melting_point_temperature"),
-    residual_water_fraction = m_config->get_double("energy.ch_warming.residual_water_fraction");
+    margin_threshold = m_config->get_number("energy.margin_ice_thickness_limit"),
+    T_pm = m_config->get_number("constants.fresh_water.melting_point_temperature"),
+    residual_water_fraction = m_config->get_number("energy.ch_warming.residual_water_fraction");
 
   const std::vector<double> &z = m_grid->z();
   const unsigned int Mz = m_grid->Mz();
@@ -238,11 +238,11 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
   loop.check();
 }
 
-void CHSystem::define_model_state_impl(const PIO &output) const {
+void CHSystem::define_model_state_impl(const File &output) const {
   m_ice_enthalpy.define(output);
 }
 
-void CHSystem::write_model_state_impl(const PIO &output) const {
+void CHSystem::write_model_state_impl(const File &output) const {
   m_ice_enthalpy.write(output);
 }
 

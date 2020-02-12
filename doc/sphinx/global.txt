@@ -27,8 +27,11 @@
 .. |petsc-min-version| replace:: 3.5
 
 .. |pism-email| replace:: uaf-pism@alaska.edu
-.. |pism-docs| replace:: http://www.pism-docs.org
+.. |pism-docs| replace:: https://pism-docs.org
 .. |petsc-download| replace:: https://www.mcs.anl.gov/petsc/download/index.html
+
+.. |efischer-email| replace:: elizabeth.fischer@columbia.edu
+.. |jseguinot-email| replace:: seguinot@vaw.baug.ethz.ch
 
 .. |pism-browser| replace:: PISM *Source Code Browser*
 
@@ -36,6 +39,8 @@
 .. |config-file| replace:: ``pism_config.nc``
 
 .. |pism-regional-tools-url| replace:: https://github.com/pism/regional-tools
+.. |pism-github-url| replace:: https://github.com/pism/pism
+.. |pism-issues-url| replace:: https://github.com/pism/pism/issues
 
 .. |mismip-url| replace:: http://homepages.ulb.ac.be/~fpattyn/mismip/
 .. |mismip3d-url| replace:: http://homepages.ulb.ac.be/~fpattyn/mismip3d/
@@ -58,11 +63,12 @@
 .. _cf-names-proposed: http://cfeditor.ceda.ac.uk/proposals/1
 .. _CMake: https://cmake.org/
 .. _CMake-cross-compiling: https://cmake.org/Wiki/CMake_Cross_Compiling
-.. _Enthought: https://www.enthought.com/product/enthought-python-distribution/
+.. _Enthought: https://www.enthought.com/
 .. _FFTW: http://www.fftw.org/
 .. _Fink: http://www.finkproject.org/
 .. _GSL: http://www.gnu.org/software/gsl/
 .. _Git: https://git-scm.com/
+.. _Git documentation: https://git-scm.com/doc
 .. _Homebrew: https://brew.sh/
 .. _IDV: https://www.unidata.ucar.edu/software/idv/
 .. _LaTeX: https://www.latex-project.org/
@@ -75,16 +81,17 @@
 .. _NCO: http://nco.sourceforge.net/
 .. _NetCDF: https://www.unidata.ucar.edu/software/netcdf/
 .. _netcdf-classic-format: https://www.unidata.ucar.edu/software/netcdf/docs/file_structure_and_performance.html#classic_file_parts
-.. _NumPy: http://www.numpy.org/
+.. _NumPy: https://www.numpy.org/
+.. _Open MPI: https://www.open-mpi.org
 .. _PETSc-installation: https://www.mcs.anl.gov/petsc/documentation/installation.html
 .. _PETSc: https://www.mcs.anl.gov/petsc/
-.. _PROJ.4: https://proj4.org/
-.. _PnetCDF: https://trac.mcs.anl.gov/projects/parallel-netcdf
+.. _PROJ: https://proj.org/
+.. _PnetCDF: https://parallel-netcdf.github.io/
 .. _Python: https://www.python.org
 .. _Sphinx: http://www.sphinx-doc.org/en/master/usage/installation.html
 .. _sphinxcontrib.bibtex: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/
 .. _UDUNITS: https://www.unidata.ucar.edu/software/udunits/
-.. _Ubuntu: https://www.ubuntu.com/desktop
+.. _Ubuntu: https://ubuntu.com/desktop
 .. _X: https://www.x.org/wiki/
 .. _XCode: https://developer.apple.com/xcode/
 .. _XQuartz: https://www.xquartz.org/
@@ -98,12 +105,44 @@
 .. _searise-greenland-data: http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
 .. _searise: http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment
 .. _mismip-code: http://homepages.ulb.ac.be/~fpattyn/mismip/MISMIP_distribution.tar
+.. _reStructuredText: https://docutils.readthedocs.io/en/sphinx-docs/user/rst/quickstart.html
+.. _Emacs: https://www.gnu.org/software/emacs/
+.. _GDB: https://www.gnu.org/software/gdb/
+.. _LLDB: https://lldb.llvm.org/
+.. _Valgrind: http://www.valgrind.org/
+.. _ccache: https://ccache.dev/
+
+.. _github-help-fork: https://help.github.com/en/articles/fork-a-repo
+.. _github-pull-request-create: https://help.github.com/en/articles/creating-a-pull-request
+.. _github-pull-request-allow-edits: https://help.github.com/en/articles/allowing-changes-to-a-pull-request-branch-created-from-a-fork
+
+.. _git-branching-model: https://nvie.com/posts/a-successful-git-branching-model/
+.. _git-fun-with-merges: https://gitster.livejournal.com/42247.html
+.. _sphinx-autobuild: https://pypi.org/project/sphinx-autobuild/
+.. _keep-a-change-log: https://keepachangelog.com/
+
+.. _GitHub: https://github.com/
+.. _CircleCI: https://circleci.com/
+.. _CircleCI CLI: https://circleci.com/docs/2.0/local-cli/
+.. _Docker: https://www.docker.com/
+.. _MPICH: https://www.mpich.org/
+.. _Spack: https://spack.io/
+.. _Spack documentation: https://spack.readthedocs.io/en/latest/
+.. _KDevelop: https://www.kdevelop.org/
+.. _Kaye and Laby: https://web.archive.org/web/20190506031327/http://www.kayelaby.npl.co.uk/
+
+.. _Ismip6-greenland: http://www.climate-cryosphere.org/wiki/index.php?title=ISMIP6-Projections-Greenland
+.. _ParallelIO: https://ncar.github.io/ParallelIO/
+
+.. _HDF5: https://portal.hdfgroup.org/display/HDF5/HDF5
+.. _Lustre: http://lustre.org/
 
 .. PISM-related external links
 
+.. _pism-github: https://github.com/pism/pism
 .. _pism-builds: https://github.com/pism/pism-builds
-.. _PISM: http://www.pism-docs.org/wiki/doku.php
-.. _pism-browser: http://www.pism-docs.org/doxy/html/index.html
+.. _PISM: https://pism-docs.org/wiki/doku.php
+.. _pism-browser: https://pism-docs.org/doxy/html/index.html
 .. _pism-email: mailto:uaf-pism@alaska.edu
 .. _pypismtools: https://github.com/pism/pypismtools
 .. _regional-tools: https://github.com/pism/regional-tools

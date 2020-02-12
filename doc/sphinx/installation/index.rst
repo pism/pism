@@ -6,13 +6,16 @@ Installing PISM
 +++++++++++++++
 
 The fastest path to a fully functional PISM installation is to use a Linux system with a
-Debian-based package system (e.g. Ubuntu_): Start by following subsection
-:ref:`sec-install-debian`, then :ref:`sec-install-petsc`, then :ref:`sec-install-pism` to
-install PISM itself.
+Debian- or Arch Linux-based package system (e.g. Ubuntu_). In Debian and derivatives,
+start by following subsection :ref:`sec-install-debian`, to install tools and libraries
+used by PISM and then :ref:`sec-install-pism` to install PISM itself. In Arch Linux and
+derivatives, follow the instructions in subsection :ref:`sec-install-arch`.
 
 .. toctree::
 
    prerequisites.rst
+
+   parallel-io-libraries.rst
 
    cookbook.rst
 

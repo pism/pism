@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -74,15 +74,15 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
   // use the non-periodic grid:
   P.periodicity = NOT_PERIODIC;
   // equal spacing is the default for all the tests except K
-  P.Lx = config->get_double("grid.Lx");
-  P.Ly = config->get_double("grid.Ly");
+  P.Lx = config->get_number("grid.Lx");
+  P.Ly = config->get_number("grid.Ly");
 
-  P.Mx = config->get_double("grid.Mx");
-  P.My = config->get_double("grid.My");
+  P.Mx = config->get_number("grid.Mx");
+  P.My = config->get_number("grid.My");
 
   SpacingType spacing = EQUAL;
-  double Lz = config->get_double("grid.Lz");
-  unsigned int Mz = config->get_double("grid.Mz");
+  double Lz = config->get_number("grid.Lz");
+  unsigned int Mz = config->get_number("grid.Mz");
 
   switch (testname) {
   case 'A':
@@ -111,8 +111,8 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
   case 'K':
   case 'O':
     // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
-    config->set_double("grid.Mbz", 2);
-    config->set_double("grid.Lbz", 1000);
+    config->set_number("grid.Mbz", 2);
+    config->set_number("grid.Lbz", 1000);
     P.Lx = 1000e3;
     P.Ly = P.Lx;
     Lz = 4000;
@@ -129,15 +129,20 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
   }
 
   P.z = IceGrid::compute_vertical_levels(Lz, Mz, spacing,
-                                         config->get_double("grid.lambda"));
+                                         config->get_number("grid.lambda"));
   return P;
 }
 
 IceGrid::Ptr pismv_grid(Context::Ptr ctx, char testname) {
-  options::String input_file("-i", "Specifies a PISM input file");
-  options::forbidden("-bootstrap");
+  auto config = ctx->config();
 
-  if (input_file.is_set()) {
+  auto input_file = config->get_string("input.file");
+
+  if (config->get_flag("input.bootstrap")) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "pisms does not support bootstrapping");
+  }
+
+  if (not input_file.empty()) {
     GridRegistration r = string_to_registration(ctx->config()->get_string("grid.registration"));
 
     // get grid from a PISM input file

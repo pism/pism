@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,7 +31,7 @@ IceModelVec2S::Ptr AtmosphereModel::allocate_temperature(IceGrid::ConstPtr grid)
   IceModelVec2S::Ptr result(new IceModelVec2S(grid, "air_temp", WITHOUT_GHOSTS));
 
   result->set_attrs("climate_forcing", "mean annual near-surface air temperature",
-                    "Kelvin", "");
+                    "Kelvin", "Kelvin", "", 0);
 
   return result;
 }
@@ -39,9 +39,8 @@ IceModelVec2S::Ptr AtmosphereModel::allocate_temperature(IceGrid::ConstPtr grid)
 IceModelVec2S::Ptr AtmosphereModel::allocate_precipitation(IceGrid::ConstPtr grid) {
   IceModelVec2S::Ptr result(new IceModelVec2S(grid, "precipitation", WITHOUT_GHOSTS));
   result->set_attrs("climate_forcing", "precipitation rate",
-                    "kg m-2 second-1",
-                    "precipitation_flux");
-  result->metadata(0).set_string("glaciological_units", "kg m-2 year-1");
+                    "kg m-2 second-1", "kg m-2 year-1",
+                    "precipitation_flux", 0);
 
   return result;
 }
@@ -90,10 +89,12 @@ void AtmosphereModel::init_timeseries(const std::vector<double> &ts) const {
 }
 
 void AtmosphereModel::precip_time_series(int i, int j, std::vector<double> &result) const {
+  result.resize(m_ts_times.size());
   this->precip_time_series_impl(i, j, result);
 }
 
 void AtmosphereModel::temp_time_series(int i, int j, std::vector<double> &result) const {
+  result.resize(m_ts_times.size());
   this->temp_time_series_impl(i, j, result);
 }
 
@@ -235,13 +236,13 @@ TSDiagnosticList AtmosphereModel::ts_diagnostics_impl() const {
   return {};
 }
 
-void AtmosphereModel::define_model_state_impl(const PIO &output) const {
+void AtmosphereModel::define_model_state_impl(const File &output) const {
   if (m_input_model) {
     m_input_model->define_model_state(output);
   }
 }
 
-void AtmosphereModel::write_model_state_impl(const PIO &output) const {
+void AtmosphereModel::write_model_state_impl(const File &output) const {
   if (m_input_model) {
     m_input_model->write_model_state(output);
   }

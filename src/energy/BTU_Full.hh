@@ -103,12 +103,12 @@ protected:
   virtual void update_impl(const IceModelVec2S &bedrock_top_temperature,
                            double t, double dt);
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 protected:
   //! bedrock thermal layer temperature, in degrees Kelvin; part of state; uses equally-spaced
   //! layers.
-  IceModelVec3Custom m_temp;
+  IceModelVec3Custom::Ptr m_temp;
 
   //! bedrock thermal conductivity
   double m_k;

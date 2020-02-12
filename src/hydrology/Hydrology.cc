@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 PISM Authors
+// Copyright (C) 2012-2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,10 +21,11 @@
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/iceModelVec2T.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace hydrology {
@@ -44,10 +45,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -57,33 +55,28 @@ protected:
   }
 };
 
-/*! @brief Report total input rate of subglacial water (basal melt rate plus input from
-  the surface).
+/*! @brief Report water input rate from the ice surface into the subglacial water system.
  */
 class TotalInputRate : public DiagAverageRate<Hydrology>
 {
 public:
   TotalInputRate(const Hydrology *m)
-    : DiagAverageRate<Hydrology>(m, "subglacial_water_input_rate", RATE) {
+    : DiagAverageRate<Hydrology>(m, "subglacial_water_input_rate_from_surface", RATE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_input_rate")};
+    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_input_rate_from_surface")};
     m_accumulator.metadata().set_string("units", "m");
 
-    set_attrs("total input rate of subglacial water "
-              "(basal melt rate plus input from the surface)", "",
-              "m second-1", "m year-1", 0);
+    set_attrs("water input rate from the ice surface into the subglacial water system",
+              "", "m second-1", "m year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
 protected:
   const IceModelVec2S& model_input() {
-    return model->total_input_rate();
+    return model->surface_input_rate();
   }
 };
 
@@ -103,10 +96,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -115,6 +105,40 @@ protected:
     return model->mass_change_due_to_input();
   }
 };
+
+/*! @brief Report advective subglacial water flux. */
+class SubglacialWaterFlux : public DiagAverageRate<Hydrology>
+{
+public:
+  SubglacialWaterFlux(const Hydrology *m)
+    : DiagAverageRate<Hydrology>(m, "subglacial_water_flux", RATE),
+      m_flux_magnitude(m_grid, "flux_magnitude", WITHOUT_GHOSTS){
+
+    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux")};
+    m_accumulator.metadata().set_string("units", "m2");
+
+    set_attrs("magnitude of the subglacial water flux", "",
+              "m2 second-1", "m2 year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
+
+    m_flux_magnitude.set_attrs("internal", "magnitude of the subglacial water flux",
+                               "m2 s-1", "m2 s-1", "", 0);
+  }
+
+protected:
+  void update_impl(double dt) {
+    m_flux_magnitude.set_to_magnitude(model->flux());
+
+    m_accumulator.add(dt, m_flux_magnitude);
+
+    m_interval_length += dt;
+  }
+
+  IceModelVec2S m_flux_magnitude;
+};
+
 
 /*! @brief Report water flux at the grounded margin. */
 class GroundedMarginFlux : public DiagAverageRate<Hydrology>
@@ -132,10 +156,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -159,10 +180,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -188,10 +206,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -215,10 +230,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -244,10 +256,7 @@ public:
               "kg second-1", "Gt year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to water gain");
   }
 
@@ -260,126 +269,133 @@ protected:
 } // end of namespace diagnostics
 
 Inputs::Inputs() {
-  surface_input_rate = NULL;
-  basal_melt_rate    = NULL;
-  cell_type          = NULL;
-  ice_thickness      = NULL;
-  bed_elevation      = NULL;
-  ice_sliding_speed  = NULL;
-  no_model_mask      = NULL;
+  geometry           = nullptr;
+  surface_input_rate = nullptr;
+  basal_melt_rate    = nullptr;
+  ice_sliding_speed  = nullptr;
+  no_model_mask      = nullptr;
 }
 
 Hydrology::Hydrology(IceGrid::ConstPtr g)
-  : Component(g) {
+  : Component(g),
+    m_Q(m_grid, "water_flux", WITHOUT_GHOSTS),
+    m_Wtill(m_grid, "tillwat", WITHOUT_GHOSTS),
+    m_W(m_grid, "bwat", WITH_GHOSTS, 1),
+    m_Pover(m_grid, "overburden_pressure", WITHOUT_GHOSTS),
+    m_surface_input_rate(m_grid, "water_input_rate_from_surface", WITHOUT_GHOSTS),
+    m_basal_melt_rate(m_grid, "water_input_rate_due_to_basal_melt", WITHOUT_GHOSTS),
+    m_flow_change_incremental(m_grid, "water_thickness_change_due_to_flow", WITHOUT_GHOSTS),
+    m_conservation_error_change(m_grid, "conservation_error_change", WITHOUT_GHOSTS),
+    m_grounded_margin_change(m_grid, "grounded_margin_change", WITHOUT_GHOSTS),
+    m_grounding_line_change(m_grid, "grounding_line_change", WITHOUT_GHOSTS),
+    m_input_change(m_grid, "water_mass_change_due_to_input", WITHOUT_GHOSTS),
+    m_no_model_mask_change(m_grid, "no_model_mask_change", WITHOUT_GHOSTS),
+    m_total_change(m_grid, "water_mass_change", WITHOUT_GHOSTS),
+    m_flow_change(m_grid, "water_mass_change_due_to_flow", WITHOUT_GHOSTS) {
 
-  m_input_rate.create(m_grid, "water_input_rate", WITHOUT_GHOSTS);
-  m_input_rate.set_attrs("internal",
-                         "hydrology model workspace for total input rate into subglacial water layer",
-                         "m s-1", "");
+  m_surface_input_rate.set_attrs("internal",
+                                 "hydrology model workspace for water input rate from the ice surface",
+                                 "m s-1", "m s-1", "", 0);
+
+  m_basal_melt_rate.set_attrs("internal",
+                              "hydrology model workspace for water input rate due to basal melt",
+                              "m s-1", "m s-1", "", 0);
 
   // *all* Hydrology classes have layer of water stored in till as a state variable
-  m_Wtill.create(m_grid, "tillwat", WITHOUT_GHOSTS);
   m_Wtill.set_attrs("model_state",
                     "effective thickness of subglacial water stored in till",
-                    "m", "");
-  m_Wtill.metadata().set_double("valid_min", 0.0);
+                    "m", "m", "", 0);
+  m_Wtill.metadata().set_number("valid_min", 0.0);
 
-  m_Pover.create(m_grid, "overburden_pressure", WITHOUT_GHOSTS);
-  m_Pover.set_attrs("internal", "overburden pressure", "Pa", "");
-  m_Pover.metadata().set_double("valid_min", 0.0);
+  m_Pover.set_attrs("internal", "overburden pressure",
+                    "Pa", "Pa", "", 0);
+  m_Pover.metadata().set_number("valid_min", 0.0);
 
   // needs ghosts in Routing and Distributed
-  m_W.create(m_grid, "bwat", WITH_GHOSTS, 1);
   m_W.set_attrs("diagnostic",
                 "thickness of transportable subglacial water layer",
-                "m", "");
-  m_W.metadata().set_double("valid_min", 0.0);
+                "m", "m", "", 0);
+  m_W.metadata().set_number("valid_min", 0.0);
+
+  m_Q.set_attrs("diagnostic", "advective subglacial water flux",
+                "m2 s-1", "m2 day-1", "", 0);
+  m_Q.set(0.0);
 
   // storage for water conservation reporting quantities
-  {
-    m_total_change.create(m_grid, "water_mass_change", WITHOUT_GHOSTS);
-    m_total_change.set_attrs("internal",
-                             "total change in water mass over one time step",
-                             "kg", "");
+  m_total_change.set_attrs("internal",
+                           "total change in water mass over one time step",
+                           "kg", "kg", "", 0);
 
-    m_input_change.create(m_grid, "water_mass_change_due_to_input", WITHOUT_GHOSTS);
-    m_input_change.set_attrs("internal",
-                             "change in water mass over one time step due to the input "
-                             "(basal melt and surface drainage)",
-                             "kg", "");
+  m_input_change.set_attrs("internal",
+                           "change in water mass over one time step due to the input "
+                           "(basal melt and surface drainage)",
+                           "kg", "kg", "", 0);
 
-    m_flow_change_incremental.create(m_grid, "water_thickness_change_due_to_flow", WITHOUT_GHOSTS);
 
-    m_flow_change.create(m_grid, "water_mass_change_due_to_flow", WITHOUT_GHOSTS);
-    m_flow_change.set_attrs("internal",
-                            "change in water mass due to lateral flow (over one time step)",
-                            "kg", "");
+  m_flow_change.set_attrs("internal",
+                          "change in water mass due to lateral flow (over one time step)",
+                          "kg", "kg", "", 0);
 
-    m_grounded_margin_change.create(m_grid, "grounded_margin_change", WITHOUT_GHOSTS);
-    m_grounded_margin_change.set_attrs("diagnostic",
-                                       "changes in subglacial water thickness at the grounded margin",
-                                       "kg", "");
-    m_grounding_line_change.create(m_grid, "grounding_line_change", WITHOUT_GHOSTS);
-    m_grounding_line_change.set_attrs("diagnostic",
-                                      "changes in subglacial water thickness at the grounding line",
-                                      "kg", "");
+  m_grounded_margin_change.set_attrs("diagnostic",
+                                     "changes in subglacial water thickness at the grounded margin",
+                                     "kg", "kg", "", 0);
+  m_grounding_line_change.set_attrs("diagnostic",
+                                    "changes in subglacial water thickness at the grounding line",
+                                    "kg", "kg", "", 0);
 
-    m_no_model_mask_change.create(m_grid, "no_model_mask_change", WITHOUT_GHOSTS);
-    m_no_model_mask_change.set_attrs("diagnostic",
-                                     "changes in subglacial water thickness at the edge of the modeling domain"
-                                     " (regional models)",
-                                     "kg", "");
+  m_no_model_mask_change.set_attrs("diagnostic",
+                                   "changes in subglacial water thickness at the edge of the modeling domain"
+                                   " (regional models)",
+                                   "kg", "kg", "", 0);
 
-    m_conservation_error_change.create(m_grid, "conservation_error_change", WITHOUT_GHOSTS);
-    m_conservation_error_change.set_attrs("diagnostic",
-                                          "changes in subglacial water thickness required "
-                                          "to preserve non-negativity or "
-                                          "keep water thickness within bounds",
-                                          "kg", "");
-  }
+  m_conservation_error_change.set_attrs("diagnostic",
+                                        "changes in subglacial water thickness required "
+                                        "to preserve non-negativity or "
+                                        "keep water thickness within bounds",
+                                        "kg", "kg", "", 0);
 }
 
 Hydrology::~Hydrology() {
   // empty
 }
 
-void Hydrology::restart(const PIO &input_file, int record) {
+void Hydrology::restart(const File &input_file, int record) {
   initialization_message();
   this->restart_impl(input_file, record);
 }
 
-void Hydrology::bootstrap(const PIO &input_file,
+void Hydrology::bootstrap(const File &input_file,
                           const IceModelVec2S &ice_thickness) {
   initialization_message();
   this->bootstrap_impl(input_file, ice_thickness);
 }
 
-void Hydrology::initialize(const IceModelVec2S &W_till,
+void Hydrology::init(const IceModelVec2S &W_till,
                            const IceModelVec2S &W,
                            const IceModelVec2S &P) {
   initialization_message();
-  this->initialize_impl(W_till, W, P);
+  this->init_impl(W_till, W, P);
 }
 
-void Hydrology::restart_impl(const PIO &input_file, int record) {
+void Hydrology::restart_impl(const File &input_file, int record) {
   m_Wtill.read(input_file, record);
 
   // whether or not we could initialize from file, we could be asked to regrid from file
   regrid("Hydrology", m_Wtill);
 }
 
-void Hydrology::bootstrap_impl(const PIO &input_file,
+void Hydrology::bootstrap_impl(const File &input_file,
                                const IceModelVec2S &ice_thickness) {
   (void) ice_thickness;
 
-  double tillwat_default = m_config->get_double("bootstrapping.defaults.tillwat");
+  double tillwat_default = m_config->get_number("bootstrapping.defaults.tillwat");
   m_Wtill.regrid(input_file, OPTIONAL, tillwat_default);
 
   // whether or not we could initialize from file, we could be asked to regrid from file
   regrid("Hydrology", m_Wtill);
 }
 
-void Hydrology::initialize_impl(const IceModelVec2S &W_till,
+void Hydrology::init_impl(const IceModelVec2S &W_till,
                                 const IceModelVec2S &W,
                                 const IceModelVec2S &P) {
   (void) W;
@@ -399,12 +415,14 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
     m_input_change.set(0.0);
   }
 
-  compute_overburden_pressure(*inputs.ice_thickness, m_Pover);
+  compute_overburden_pressure(inputs.geometry->ice_thickness, m_Pover);
 
-  compute_input_rate(*inputs.cell_type,
-                     *inputs.basal_melt_rate,
-                     inputs.surface_input_rate,
-                     m_input_rate);
+  compute_surface_input_rate(inputs.geometry->cell_type,
+                             inputs.surface_input_rate,
+                             m_surface_input_rate);
+  compute_basal_melt_rate(inputs.geometry->cell_type,
+                          *inputs.basal_melt_rate,
+                          m_basal_melt_rate);
 
   IceModelVec::AccessList list{&m_W, &m_Wtill, &m_total_change};
 
@@ -426,7 +444,7 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
   // kg = m * (kg / m^3) * m^2
 
   double
-    water_density = m_config->get_double("constants.fresh_water.density"),
+    water_density = m_config->get_number("constants.fresh_water.density"),
     kg_per_m      = water_density * m_grid->cell_area();
 
   list.add({&m_flow_change, &m_input_change});
@@ -451,16 +469,17 @@ DiagnosticList Hydrology::diagnostics_impl() const {
     {"tendency_of_subglacial_water_mass_at_grounded_margins",       Diagnostic::Ptr(new GroundedMarginFlux(this))},
     {"tendency_of_subglacial_water_mass_at_grounding_line",         Diagnostic::Ptr(new GroundingLineFlux(this))},
     {"tendency_of_subglacial_water_mass_at_domain_boundary",        Diagnostic::Ptr(new DomainBoundaryFlux(this))},
+    {"subglacial_water_flux_mag",                                   Diagnostic::Ptr(new SubglacialWaterFlux(this))},
   };
 
   return result;
 }
 
-void Hydrology::define_model_state_impl(const PIO &output) const {
+void Hydrology::define_model_state_impl(const File &output) const {
   m_Wtill.define(output);
 }
 
-void Hydrology::write_model_state_impl(const PIO &output) const {
+void Hydrology::write_model_state_impl(const File &output) const {
   m_Wtill.write(output);
 }
 
@@ -474,8 +493,8 @@ void Hydrology::compute_overburden_pressure(const IceModelVec2S &ice_thickness,
   // FIXME issue #15
 
   const double
-    ice_density      = m_config->get_double("constants.ice.density"),
-    standard_gravity = m_config->get_double("constants.standard_gravity");
+    ice_density      = m_config->get_number("constants.ice.density"),
+    standard_gravity = m_config->get_number("constants.standard_gravity");
 
   IceModelVec::AccessList list{&ice_thickness, &result};
 
@@ -500,8 +519,16 @@ const IceModelVec2S& Hydrology::subglacial_water_thickness() const {
   return m_W;
 }
 
-const IceModelVec2S& Hydrology::total_input_rate() const {
-  return m_input_rate;
+/*!
+ * Return subglacial water flux (time-average over the time step requested at the time of
+ * the update() call).
+ */
+const IceModelVec2V& Hydrology::flux() const {
+  return m_Q;
+}
+
+const IceModelVec2S& Hydrology::surface_input_rate() const {
+  return m_surface_input_rate;
 }
 
 const IceModelVec2S& Hydrology::mass_change_at_grounded_margin() const {
@@ -566,40 +593,65 @@ void check_bounds(const IceModelVec2S& W, double W_max) {
 }
 
 
-//! Compute the total water input rate into the basal hydrology layer in the ice-covered
+//! Compute the surface water input rate into the basal hydrology layer in the ice-covered
 //! region.
 /*!
   This method ignores the input rate in the ice-free region.
 
   @param[in] mask cell type mask
-  @param[in] basal melt rate (ice thickness per time)
-  @param[in] surface_input_rate surface input rate (water thickness per time); set to NULL to ignore
+  @param[in] surface_input_rate surface input rate (kg m-2 s-1); set to NULL to ignore
   @param[out] result resulting input rate (water thickness per time)
 */
-void Hydrology::compute_input_rate(const IceModelVec2CellType &mask,
-                                   const IceModelVec2S &basal_melt_rate,
-                                   const IceModelVec2S *surface_input_rate,
-                                   IceModelVec2S &result) {
+void Hydrology::compute_surface_input_rate(const IceModelVec2CellType &mask,
+                                           const IceModelVec2S *surface_input_rate,
+                                           IceModelVec2S &result) {
+
+  if (not surface_input_rate) {
+    result.set(0.0);
+    return;
+  }
+
+  IceModelVec::AccessList list{surface_input_rate, &mask, &result};
+
+  const double
+    water_density = m_config->get_number("constants.fresh_water.density");
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.icy(i, j)) {
+      result(i,j) = (*surface_input_rate)(i, j) / water_density;
+    } else {
+      result(i,j) = 0.0;
+    }
+  }
+}
+
+//! Compute the input rate into the basal hydrology layer in the ice-covered
+//! region due to basal melt rate.
+/*!
+  This method ignores the input in the ice-free region.
+
+  @param[in] mask cell type mask
+  @param[in] basal_melt_rate basal melt rate (ice thickness per time)
+  @param[out] result resulting input rate (water thickness per time)
+*/
+void Hydrology::compute_basal_melt_rate(const IceModelVec2CellType &mask,
+                                        const IceModelVec2S &basal_melt_rate,
+                                        IceModelVec2S &result) {
 
   IceModelVec::AccessList list{&basal_melt_rate, &mask, &result};
 
-  if (surface_input_rate) {
-    list.add(*surface_input_rate);
-  }
-
   const double
-    ice_density   = m_config->get_double("constants.ice.density"),
-    water_density = m_config->get_double("constants.fresh_water.density"),
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.fresh_water.density"),
     C             = ice_density / water_density;
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
-
-      double surface_input = surface_input_rate ? (*surface_input_rate)(i, j) : 0.0;
-
-      result(i,j) = C * basal_melt_rate(i, j) + surface_input;
+      result(i,j) = C * basal_melt_rate(i, j);
     } else {
       result(i,j) = 0.0;
     }
@@ -634,12 +686,15 @@ void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
                                IceModelVec2S &grounding_line_change,
                                IceModelVec2S &conservation_error_change,
                                IceModelVec2S &no_model_mask_change) {
+
+  bool include_floating = m_config->get_flag("hydrology.routing.include_floating_ice");
+
   IceModelVec::AccessList list{&water_thickness, &cell_type,
       &grounded_margin_change, &grounding_line_change, &conservation_error_change,
       &no_model_mask_change};
 
   double
-    fresh_water_density = m_config->get_double("constants.fresh_water.density"),
+    fresh_water_density = m_config->get_number("constants.fresh_water.density"),
     kg_per_m            = m_grid->cell_area() * fresh_water_density; // kg m-1
 
   for (Points p(*m_grid); p; p.next()) {
@@ -662,7 +717,8 @@ void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
       water_thickness(i, j) = 0.0;
     }
 
-    if (cell_type.ocean(i, j)) {
+    if ((include_floating and cell_type.ice_free_ocean(i, j)) or
+        (not include_floating and cell_type.ocean(i, j))) {
       grounding_line_change(i, j) += -water_thickness(i, j) * kg_per_m;
       water_thickness(i, j) = 0.0;
     }

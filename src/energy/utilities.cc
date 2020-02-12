@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -146,7 +146,7 @@ void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
   result.metadata(0).set_name("liqfrac");
   result.set_attrs("diagnostic",
                    "liquid water fraction in ice (between 0 and 1)",
-                   "1", "", 0);
+                   "1", "1", "", 0);
 
   IceModelVec::AccessList list{&result, &enthalpy, &ice_thickness};
 
@@ -189,7 +189,7 @@ void compute_cts(const IceModelVec3 &ice_enthalpy,
   result.metadata(0).set_name("cts");
   result.set_attrs("diagnostic",
                    "cts = E/E_s(p), so cold-temperate transition surface is at cts = 1",
-                   "", "", 0);
+                   "1", "1", "", 0);
 
   IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness, &result};
 
@@ -255,7 +255,7 @@ double total_ice_enthalpy(double thickness_threshold,
   }
   loop.check();
 
-  enthalpy_sum *= config->get_double("constants.ice.density");
+  enthalpy_sum *= config->get_number("constants.ice.density");
 
   return GlobalSum(grid->com, enthalpy_sum);
 }
@@ -282,7 +282,7 @@ the base of the ice.  Suppose the column of ice has height \f$H\f$, the ice
 thickness.
 
 There are two alternative bootstrap methods determined by the configuration parameter
-`config.get_double("bootstrapping.temperature_heuristic"))`. Allowed values are `"smb"` and
+`config.get_number("bootstrapping.temperature_heuristic"))`. Allowed values are `"smb"` and
 `"quartic_guess"`.
 
 1. If the `smb` method is chosen, which is the default, and if \f$m>0\f$,
@@ -353,12 +353,12 @@ void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
   }
 
   const double
-    ice_k       = config->get_double("constants.ice.thermal_conductivity"),
-    ice_density = config->get_double("constants.ice.density"),
-    ice_c       = config->get_double("constants.ice.specific_heat_capacity"),
+    ice_k       = config->get_number("constants.ice.thermal_conductivity"),
+    ice_density = config->get_number("constants.ice.density"),
+    ice_c       = config->get_number("constants.ice.specific_heat_capacity"),
     K           = ice_k / (ice_density * ice_c),
-    T_min       = config->get_double("energy.minimum_allowed_temperature"),
-    T_melting   = config->get_double("constants.fresh_water.melting_point_temperature",
+    T_min       = config->get_number("energy.minimum_allowed_temperature"),
+    T_melting   = config->get_number("constants.fresh_water.melting_point_temperature",
                                      "Kelvin");
 
   IceModelVec::AccessList list{&ice_surface_temp, &surface_mass_balance,

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -33,7 +33,7 @@ static char help[] =
 #include "pism/util/Logger.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 
 using namespace pism;
 
@@ -48,8 +48,8 @@ Context::Ptr pisms_context(MPI_Comm com) {
   Config::Ptr config = config_from_options(com, *logger, sys);
 
   config->set_string("time.calendar", "none");
-  config->set_double("grid.Lx", 750e3);
-  config->set_double("grid.Ly", 750e3);
+  config->set_number("grid.Lx", 750e3);
+  config->set_number("grid.Ly", 750e3);
   config->set_string("grid.periodicity", "none");
   config->set_string("grid.registration", "corner");
   config->set_string("stress_balance.sia.flow_law", "pb");
@@ -66,10 +66,15 @@ Context::Ptr pisms_context(MPI_Comm com) {
 }
 
 IceGrid::Ptr pisms_grid(Context::Ptr ctx) {
-  options::String input_file("-i", "Specifies a PISM input file");
-  options::forbidden("-bootstrap");
+  auto config = ctx->config();
 
-  if (input_file.is_set()) {
+  auto input_file = config->get_string("input.file");
+
+  if (config->get_flag("input.bootstrap")) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "pisms does not support bootstrapping");
+  }
+
+  if (not input_file.empty()) {
     GridRegistration r = string_to_registration(ctx->config()->get_string("grid.registration"));
 
     // get grid from a PISM input file

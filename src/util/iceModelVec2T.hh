@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018 Constantine Khroulev
+// Copyright (C) 2009--2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -45,15 +45,17 @@ public:
   typedef std::shared_ptr<IceModelVec2T> Ptr;
 
   static Ptr ForcingField(IceGrid::ConstPtr grid,
-                          const PIO &file,
+                          const File &file,
                           const std::string &short_name,
                           const std::string &standard_name,
                           int max_buffer_size,
                           int evaluations_per_year,
-                          bool periodic);
+                          bool periodic,
+                          InterpolationType interpolation_type = PIECEWISE_CONSTANT);
 
   IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name, unsigned int n_records,
-                unsigned int n_evaluations_per_year);
+                unsigned int n_evaluations_per_year,
+                InterpolationType interpolation_type = PIECEWISE_CONSTANT);
   virtual ~IceModelVec2T();
 
   unsigned int n_records();
@@ -95,7 +97,8 @@ private:
   //! "invalid" first value)
   int m_first;
 
-  std::vector<unsigned int> m_interp_indices;
+  InterpolationType m_interp_type;
+  std::shared_ptr<Interpolation> m_interp;
   unsigned int m_period;        // in years
   double m_reference_time;      // in seconds
 

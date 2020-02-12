@@ -1,9 +1,13 @@
 .. include:: ../../../global.txt
 
+.. include:: ../../../math-definitions.txt
+
 .. _sec-basestrength:
 
 Controlling basal strength
 --------------------------
+
+.. contents::
 
 When using option :opt:`-stress_balance ssa+sia`, the SIA+SSA hybrid stress balance, a
 model for basal resistance is required. This model for basal resistance is based, at least
@@ -150,6 +154,16 @@ where `C` is a constant, as for example in sections :ref:`sec-MISMIP` and
    -yield_stress constant \
    -tauc C
 
+.. _sec-lateral-drag:
+
+Lateral drag
+~~~~~~~~~~~~
+
+PISM prescribes lateral drag at ice margins next to ground with elevation above the ice.
+(This is relevant in outlet glaciers flowing through fjords, valley glaciers, and next to
+nunataks.) Set :config:`basal_resistance.beta_lateral_margin` to control the amount of
+additional drag at these margins.
+
 Determining the yield stress
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -168,10 +182,11 @@ In normal modelling cases, variations in yield stress are part of the explanatio
 locations of ice streams :cite:`SchoofStream`. The default model ``-yield_stress
 mohr_coulomb`` determines these variations in time and space. The value of `\tau_c` is
 determined in part by a subglacial hydrology model, including the modeled till-pore water
-amount ``tillwat`` (section :ref:`sec-subhydro`), which then determines the effective
-pressure `N_{till}` (see below). The value of `\tau_c` is also determined in part by a
-material property field `\phi=` :var:`tillphi`, the "till friction angle". These
-quantities are related by the Mohr-Coulomb criterion :cite:`CuffeyPaterson`:
+amount (`W_{till}`, NetCDF variable :var:`tillwat`; see :ref:`sec-subhydro`), which then
+determines the effective pressure `N_{till}` (see below). The value of `\tau_c` is also
+determined in part by a material property field `\phi`, the "till friction angle" (NetCDF
+variable :var:`tillphi`). These quantities are related by the Mohr-Coulomb criterion
+:cite:`CuffeyPaterson`:
 
 .. math::
    :label: eq-mohrcoulomb
@@ -219,19 +234,17 @@ unlikely to be a good modelling choice for real ice sheets.
        and all times. Only effective if used with ``-yield_stress constant``, because
        otherwise `\tau_c` is updated dynamically.
 
-We find that an effective, though heuristic, way to determine `\phi=` :var:`tillphi` in
+We find that an effective, though heuristic, way to determine `\phi` in
 :eq:`eq-mohrcoulomb` is to make it a function of bed elevation
 :cite:`AschwandenAdalgeirsdottirKhroulev`, :cite:`Martinetal2011`,
 :cite:`Winkelmannetal2011`. This heuristic is motivated by hypothesis that basal material
 with a marine history should be weak :cite:`HuybrechtsdeWolde`. PISM has a mechanism
-setting `\phi =` :var:`tillphi` to be a *piecewise-linear* function of bed elevation. The
+setting `\phi` to be a *piecewise-linear* function of bed elevation. The
 option is
 
 .. code-block:: none
 
    -topg_to_phi phimin,phimax,bmin,bmax
-
-.. include:: ../../../math-definitions.txt
 
 Thus the user supplies 4 parameters: `\phimin`, `\phimax`, `\bmin`, `\bmax`, where `b`
 stands for the bed elevation. To explain these, we define `M = (\phimax - \phimin) /
@@ -248,7 +261,8 @@ stands for the bed elevation. To explain these, we define `M = (\phimax - \phimi
    \end{cases}
 
 It is worth noting that an earth deformation model (see section :ref:`sec-beddef`) changes
-`b(x,y)=\mathrm{topg}` used in :eq:`eq-phipiecewise`, so that a sequence of runs such as
+`b(x,y)` (NetCDF variable :var:`topg`) used in :eq:`eq-phipiecewise`, so that a sequence
+of runs such as
 
 .. code-block:: none
 
@@ -265,8 +279,10 @@ warning during initialization of the second run:
    PISM WARNING: -topg_to_phi computation will override the 'tillphi' field
                  present in the input file 'bar.nc'!
 
-Omitting the :opt:`-topg_to_phi` option in the second run would make PISM continue with the
+Omitting :opt:`-topg_to_phi` in the second run would make PISM continue with the
 same :var:`tillphi` field which was set in the first run.
+
+.. _sec-effective-pressure:
 
 Determining the effective pressure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -276,16 +292,15 @@ the till `N_{till}` is determined by the modeled amount of water in the till. Lo
 effective pressure means that more of the weight of the ice is carried by the pressurized
 water in the till and thus the ice can slide more easily. That is, equation
 :eq:`eq-mohrcoulomb` sets the value of `\tau_c` proportionately to `N_{till}`. The amount
-of water in the till is, however, a nontrivial output of the hydrology (section
-:ref:`sec-subhydro`) and conservation-of-energy (section :ref:`sec-energy`) submodels in
-PISM.
+of water in the till is, however, a nontrivial output of the hydrology (see
+:ref:`sec-subhydro`) and conservation-of-energy (see :ref:`sec-energy`) submodels in PISM.
 
 Following :cite:`Tulaczyketal2000`, based on laboratory experiments with till extracted
 from an ice stream in Antarctica, :cite:`BuelervanPelt2015` propose the following
-parameterization which is used in PISM. It is based on the ratio `s=W_{till}/W_{till}^{max}`
-where `W_{till}=` :var:`tillwat` is the effective thickness of water in the till and
-`W_{till}^{max}=` :config:`hydrology.tillwat_max` is the maximum amount of water in the
-till (see section :ref:`sec-subhydro`):
+parameterization which is used in PISM. It is based on the ratio
+`s=W_{till}/W_{till}^{max}` where `W_{till}` is the effective thickness of water in the
+till and `W_{till}^{max}` (:config:`hydrology.tillwat_max`) is the maximum amount of water
+in the till (see section :ref:`sec-subhydro`):
 
 .. math::
    :label: eq-computeNtill
@@ -294,32 +309,67 @@ till (see section :ref:`sec-subhydro`):
 
 Here `P_o` is the ice overburden pressure, which is determined entirely by the ice
 thickness and density, and the remaining parameters are set by options in
-:numref:`tab-effective-pressure`. While there is experimental support for the default
-values of `C_c`, `e_0`, and `N_0`, the value of `\delta=`
-:config:`basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden` should be
-regarded as uncertain, important, and subject to parameter studies to assess its effect.
+:numref:`tab-effective-pressure`.
 
-..
-   FIXME: EVOLVING CODE: If the :config:`basal_yield_stress.add_transportable_water`
-   configuration flag is set (either in the configuration file or using the
-   :opt:`-tauc_add_transportable_water` option), then the above formula becomes FIXME
+.. note::
 
-.. list-table:: Command-line options controlling how till effective pressure `N_{till}` in
-                equation :eq:`eq-mohrcoulomb` is determined
+   While there is experimental support for the default values of `C_c`, `e_0`, and `N_0`,
+   the value of `\delta` should be regarded as uncertain, important, and subject to
+   parameter studies to assess its effect.
+
+.. list-table:: Parameters controlling how till effective pressure `N_{till}` in equation
+                :eq:`eq-mohrcoulomb` is determined. All these have prefix
+                ``basal_yield_stress.mohr_coulomb.``.
    :name: tab-effective-pressure
    :header-rows: 1
 
-   * - Option
+   * - Parameter
      - Description
-   * - :opt:`-till_reference_void_ratio`
-     - `= e_0` in :eq:`eq-computeNtill`, dimensionless, with default value 0.69
+   * - :config:`till_reference_void_ratio`
+     - `e_0` in :eq:`eq-computeNtill`, dimensionless, with default value 0.69
        :cite:`Tulaczyketal2000`
-   * - :opt:`-till_compressibility_coefficient`
-     - `= C_c` in :eq:`eq-computeNtill`, dimensionless, with default value 0.12
+   * - :config:`till_compressibility_coefficient`
+     - `C_c` in :eq:`eq-computeNtill`, dimensionless, with default value 0.12
        :cite:`Tulaczyketal2000`
-   * - :opt:`-till_effective_fraction_overburden`
-     - `= \delta` in :eq:`eq-computeNtill`, dimensionless, with default value 0.02
+   * - :config:`till_effective_fraction_overburden`
+     - `\delta` in :eq:`eq-computeNtill`, dimensionless, with default value 0.02
        :cite:`BuelervanPelt2015`
-   * - :opt:`-till_reference_effective_pressure`
-     - `= N_0` in :eq:`eq-computeNtill`, in Pa, with default value 1000.0
+   * - :config:`till_reference_effective_pressure`
+     - `N_0` in :eq:`eq-computeNtill`, in Pa, with default value 1000.0
        :cite:`Tulaczyketal2000`
+
+.. _sec-min-effective-pressure:
+
+Controlling minimum effective pressure
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The effective pressure `N_{till}` above satisfies (see equation 20 in
+:cite:`BuelervanPelt2015`)
+
+.. math::
+   :label: eq-mohr-coulomb-Ntill-bounds
+
+   \delta P_o \le N_{till} \le P_o.
+
+In other words, `\delta` controls the lower bound of the effective pressure. In addition
+to setting it using a configuration parameter (see :numref:`tab-effective-pressure`) one
+can use a space- and time-dependent field. Set
+:config:`basal_yield_stress.mohr_coulomb.delta.file` to the name of the file containing
+the variable :var:`mohr_coulomb_delta` (dimensionless, `units=1`). Just like when using
+other 2D time-dependent forcing, set
+:config:`basal_yield_stress.mohr_coulomb.delta.period` and
+:config:`basal_yield_stress.mohr_coulomb.delta.reference_year` to use periodic data. (See
+:ref:`sec-periodic-forcing` for details.)
+
+.. note::
+
+   PISM restricts the time step to capture changes in `\delta`. For example, if you
+   provide monthly records of `\delta` PISM will make sure no time step spans more than
+   one month.
+
+   PISM uses piecewise-linear interpolation in time for model times between records of
+   `\delta`.
+
+..
+   FIXME: EVOLVING CODE: If the :config:`basal_yield_stress.add_transportable_water`
+   configuration flag is set then the above formula becomes...

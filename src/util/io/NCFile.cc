@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,7 @@
 #include <cstdio>               // fprintf, stderr, rename, remove
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/IceGrid.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
@@ -33,178 +34,88 @@ namespace pism {
 namespace io {
 
 NCFile::NCFile(MPI_Comm c)
-  : m_com(c) {
-  m_file_id = -1;
-  m_define_mode = false;
+  : m_com(c), m_file_id(-1), m_define_mode(false) {
 }
 
 NCFile::~NCFile() {
   // empty
 }
 
-std::string NCFile::get_filename() const {
+std::string NCFile::filename() const {
   return m_filename;
 }
 
-std::string NCFile::get_format() const {
-  return this->get_format_impl();
-}
-
-int NCFile::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, double value) const {
-  std::vector<double> tmp(1);
-  tmp[0] = value;
-  put_att_double(variable_name, att_name, nctype, tmp);
-  return 0;
-}
-
-//! \brief Prints an error message; for debugging.
-void NCFile::check(const ErrorLocation &where, int return_code) const {
-  if (return_code != NC_NOERR) {
-    throw RuntimeError(where, nc_strerror(return_code));
-  }
-}
-
-//! \brief Moves the file aside (file.nc -> file.nc~).
-/*!
- * Note: only processor 0 does the renaming.
- */
-int NCFile::move_if_exists_impl(const std::string &file_to_move, int rank_to_use) {
-  int stat = 0, rank = 0;
-  MPI_Comm_rank(m_com, &rank);
-  std::string backup_filename = file_to_move + "~";
-
-  if (rank == rank_to_use) {
-    bool exists = false;
-
-    // Check if the file exists:
-    if (FILE *f = fopen(file_to_move.c_str(), "r")) {
-      fclose(f);
-      exists = true;
-    } else {
-      exists = false;
-    }
-
-    if (exists) {
-      stat = rename(file_to_move.c_str(), backup_filename.c_str());
-      if (stat != 0) {
-        fprintf(stderr, "PISM ERROR: can't move '%s' to '%s'.\n", file_to_move.c_str(), backup_filename.c_str());
-      }
-
-    }
-
-  } // end of "if (rank == rank_to_use)"
-
-  int global_stat = 0;
-  MPI_Allreduce(&stat, &global_stat, 1, MPI_INT, MPI_SUM, m_com);
-
-  return global_stat;
-}
-
-//! \brief Check if a file is present are remove it.
-/*!
- * Note: only processor 0 does the job.
- */
-int NCFile::remove_if_exists_impl(const std::string &file_to_remove, int rank_to_use) {
-  int stat = 0, rank = 0;
-  MPI_Comm_rank(m_com, &rank);
-
-  if (rank == rank_to_use) {
-    bool exists = false;
-
-    // Check if the file exists:
-    if (FILE *f = fopen(file_to_remove.c_str(), "r")) {
-      fclose(f);
-      exists = true;
-    } else {
-      exists = false;
-    }
-
-    if (exists) {
-      stat = remove(file_to_remove.c_str());
-      if (stat != 0) {
-        fprintf(stderr, "PISM ERROR: can't remove '%s'.\n", file_to_remove.c_str());
-      }
-    }
-  } // end of "if (rank == rank_to_use)"
-
-  int global_stat = 0;
-  MPI_Allreduce(&stat, &global_stat, 1, MPI_INT, MPI_SUM, m_com);
-
-  return global_stat;
-}
-
-int NCFile::def_var_chunking_impl(const std::string &name,
-                                  std::vector<size_t> &dimensions) const {
+void NCFile::def_var_chunking_impl(const std::string &name,
+                                   std::vector<size_t> &dimensions) const {
   (void) name;
   (void) dimensions;
   // the default implementation does nothing
-  return 0;
 }
 
 
 void NCFile::open(const std::string &filename, IO_Mode mode) {
-  int stat = this->open_impl(filename, mode); check(PISM_ERROR_LOCATION, stat);
+  this->open_impl(filename, mode);
   m_filename = filename;
   m_define_mode = false;
 }
 
 void NCFile::create(const std::string &filename) {
-  int stat = this->create_impl(filename); check(PISM_ERROR_LOCATION, stat);
+  this->create_impl(filename);
   m_filename = filename;
   m_define_mode = true;
 }
 
+void NCFile::sync() const {
+  enddef();
+  this->sync_impl();
+}
+
 void NCFile::close() {
-  int stat = this->close_impl(); check(PISM_ERROR_LOCATION, stat);
+  this->close_impl();
   m_filename.clear();
+  m_file_id = -1;
 }
 
 void NCFile::enddef() const {
   if (m_define_mode) {
-    int stat = this->enddef_impl(); check(PISM_ERROR_LOCATION, stat);
+    this->enddef_impl();
     m_define_mode = false;
   }
 }
 
 void NCFile::redef() const {
   if (not m_define_mode) {
-    int stat = this->redef_impl(); check(PISM_ERROR_LOCATION, stat);
+    this->redef_impl();
     m_define_mode = true;
   }
 }
 
 void NCFile::def_dim(const std::string &name, size_t length) const {
-  int stat = this->def_dim_impl(name,length); check(PISM_ERROR_LOCATION, stat);
+  redef();
+  this->def_dim_impl(name, length);
 }
 
 void NCFile::inq_dimid(const std::string &dimension_name, bool &exists) const {
-  int stat = this->inq_dimid_impl(dimension_name,exists); check(PISM_ERROR_LOCATION, stat);
+  this->inq_dimid_impl(dimension_name,exists);
 }
 
 void NCFile::inq_dimlen(const std::string &dimension_name, unsigned int &result) const {
-  int stat = this->inq_dimlen_impl(dimension_name,result); check(PISM_ERROR_LOCATION, stat);
+  this->inq_dimlen_impl(dimension_name,result);
 }
 
 void NCFile::inq_unlimdim(std::string &result) const {
-  int stat = this->inq_unlimdim_impl(result); check(PISM_ERROR_LOCATION, stat);
-}
-
-void NCFile::inq_dimname(int j, std::string &result) const {
-  int stat = this->inq_dimname_impl(j,result); check(PISM_ERROR_LOCATION, stat);
-}
-
-void NCFile::inq_ndims(int &result) const {
-  int stat = this->inq_ndims_impl(result); check(PISM_ERROR_LOCATION, stat);
+  this->inq_unlimdim_impl(result);
 }
 
 void NCFile::def_var(const std::string &name, IO_Type nctype,
                     const std::vector<std::string> &dims) const {
-  int stat = this->def_var_impl(name, nctype, dims); check(PISM_ERROR_LOCATION, stat);
+  redef();
+  this->def_var_impl(name, nctype, dims);
 }
 
 void NCFile::def_var_chunking(const std::string &name,
                               std::vector<size_t> &dimensions) const {
-  int stat = this->def_var_chunking_impl(name, dimensions); check(PISM_ERROR_LOCATION, stat);
+  this->def_var_chunking_impl(name, dimensions);
 }
 
 
@@ -212,94 +123,164 @@ void NCFile::get_vara_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,
                             const std::vector<unsigned int> &count,
                             double *ip) const {
-  int stat = this->get_vara_double_impl(variable_name, start, count, ip); check(PISM_ERROR_LOCATION, stat);
+#if (Pism_DEBUG==1)
+  if (start.size() != count.size()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "start and count arrays have to have the same size");
+  }
+#endif
+
+  enddef();
+  this->get_vara_double_impl(variable_name, start, count, ip);
 }
 
 void NCFile::put_vara_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,
                             const std::vector<unsigned int> &count,
                             const double *op) const {
-  int stat = this->put_vara_double_impl(variable_name, start, count, op); check(PISM_ERROR_LOCATION, stat);
+#if (Pism_DEBUG==1)
+  if (start.size() != count.size()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "start and count arrays have to have the same size");
+  }
+#endif
+
+  enddef();
+  this->put_vara_double_impl(variable_name, start, count, op);
 }
+
+
+void NCFile::write_darray(const std::string &variable_name,
+                          const IceGrid &grid,
+                          unsigned int z_count,
+                          unsigned int record,
+                          const double *input) {
+  enddef();
+  this->write_darray_impl(variable_name, grid, z_count, record, input);
+}
+
+/*!
+ * The default implementation computes start and count and calls put_vara_double()
+ */
+void NCFile::write_darray_impl(const std::string &variable_name,
+                               const IceGrid &grid,
+                               unsigned int z_count,
+                               unsigned int record,
+                               const double *input) {
+  std::vector<std::string> dims;
+  this->inq_vardimid(variable_name, dims);
+
+  unsigned int ndims = dims.size();
+
+  bool time_dependent = ((z_count  > 1 and ndims == 4) or
+                         (z_count == 1 and ndims == 3));
+
+  std::vector<unsigned int> start, count;
+
+  // time
+  if (time_dependent) {
+    start.push_back(record);
+    count.push_back(1);
+  }
+
+  // y
+  start.push_back(grid.ys());
+  count.push_back(grid.ym());
+
+  // x
+  start.push_back(grid.xs());
+  count.push_back(grid.xm());
+
+  // z (these are not used when writing 2D fields)
+  start.push_back(0);
+  count.push_back(z_count);
+
+  this->put_vara_double(variable_name, start, count, input);
+}
+
 
 void NCFile::get_varm_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,
                             const std::vector<unsigned int> &count,
                             const std::vector<unsigned int> &imap,
                             double *ip) const {
-  int stat = this->get_varm_double_impl(variable_name, start, count, imap, ip); check(PISM_ERROR_LOCATION, stat);
-}
 
-void NCFile::put_varm_double(const std::string &variable_name,
-                            const std::vector<unsigned int> &start,
-                            const std::vector<unsigned int> &count,
-                            const std::vector<unsigned int> &imap,
-                            const double *op) const {
-  int stat = this->put_varm_double_impl(variable_name, start, count, imap, op); check(PISM_ERROR_LOCATION, stat);
+#if (Pism_DEBUG==1)
+  if (start.size() != count.size() or
+      start.size() != imap.size()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "start, count and imap arrays have to have the same size");
+  }
+#endif
+
+  enddef();
+  this->get_varm_double_impl(variable_name, start, count, imap, ip);
 }
 
 void NCFile::inq_nvars(int &result) const {
-  int stat = this->inq_nvars_impl(result); check(PISM_ERROR_LOCATION, stat);
+  this->inq_nvars_impl(result);
 }
 
 void NCFile::inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const {
-  int stat = this->inq_vardimid_impl(variable_name, result); check(PISM_ERROR_LOCATION, stat);
+  this->inq_vardimid_impl(variable_name, result);
 }
 
 void NCFile::inq_varnatts(const std::string &variable_name, int &result) const {
-  int stat = this->inq_varnatts_impl(variable_name, result); check(PISM_ERROR_LOCATION, stat);
+  this->inq_varnatts_impl(variable_name, result);
 }
 
 void NCFile::inq_varid(const std::string &variable_name, bool &result) const {
-  int stat = this->inq_varid_impl(variable_name, result); check(PISM_ERROR_LOCATION, stat);
+  this->inq_varid_impl(variable_name, result);
 }
 
 void NCFile::inq_varname(unsigned int j, std::string &result) const {
-  int stat = this->inq_varname_impl(j, result); check(PISM_ERROR_LOCATION, stat);
+  this->inq_varname_impl(j, result);
 }
 
-void NCFile::inq_vartype(const std::string &variable_name, IO_Type &result) const {
-  int stat = this->inq_vartype_impl(variable_name, result); check(PISM_ERROR_LOCATION, stat);
+void NCFile::get_att_double(const std::string &variable_name,
+                            const std::string &att_name,
+                            std::vector<double> &result) const {
+  this->get_att_double_impl(variable_name, att_name, result);
 }
 
-void NCFile::get_att_double(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const {
-  int stat = this->get_att_double_impl(variable_name, att_name, result); check(PISM_ERROR_LOCATION, stat);
+void NCFile::get_att_text(const std::string &variable_name,
+                          const std::string &att_name,
+                          std::string &result) const {
+  this->get_att_text_impl(variable_name, att_name, result);
 }
 
-void NCFile::get_att_text(const std::string &variable_name, const std::string &att_name, std::string &result) const {
-  int stat = this->get_att_text_impl(variable_name, att_name, result); check(PISM_ERROR_LOCATION, stat);
+void NCFile::put_att_double(const std::string &variable_name,
+                            const std::string &att_name,
+                            IO_Type xtype,
+                            const std::vector<double> &data) const {
+  this->put_att_double_impl(variable_name, att_name, xtype, data);
 }
 
-void NCFile::put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const {
-  int stat = this->put_att_double_impl(variable_name, att_name, xtype, data); check(PISM_ERROR_LOCATION, stat);
+void NCFile::put_att_text(const std::string &variable_name,
+                          const std::string &att_name,
+                          const std::string &value) const {
+  this->put_att_text_impl(variable_name, att_name, value);
 }
 
-void NCFile::put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, double value) const {
-  int stat = this->put_att_double_impl(variable_name, att_name, xtype, value); check(PISM_ERROR_LOCATION, stat);
+void NCFile::inq_attname(const std::string &variable_name,
+                         unsigned int n,
+                         std::string &result) const {
+  this->inq_attname_impl(variable_name, n, result);
 }
 
-void NCFile::put_att_text(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
-  int stat = this->put_att_text_impl(variable_name, att_name, value); check(PISM_ERROR_LOCATION, stat);
-}
-
-void NCFile::inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const {
-  int stat = this->inq_attname_impl(variable_name, n, result); check(PISM_ERROR_LOCATION, stat);
-}
-
-void NCFile::inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
-  int stat = this->inq_atttype_impl(variable_name, att_name, result); check(PISM_ERROR_LOCATION, stat);
+void NCFile::inq_atttype(const std::string &variable_name,
+                         const std::string &att_name,
+                         IO_Type &result) const {
+  this->inq_atttype_impl(variable_name, att_name, result);
 }
 
 void NCFile::set_fill(int fillmode, int &old_modep) const {
-  int stat = this->set_fill_impl(fillmode, old_modep); check(PISM_ERROR_LOCATION, stat);
+  redef();
+  this->set_fill_impl(fillmode, old_modep);
 }
 
-void NCFile::move_if_exists(const std::string &filename, int rank_to_use) {
-  int stat = this->move_if_exists_impl(filename, rank_to_use); check(PISM_ERROR_LOCATION, stat);
-}
-
-void NCFile::remove_if_exists(const std::string &filename, int rank_to_use) {
-  int stat = this->remove_if_exists_impl(filename, rank_to_use); check(PISM_ERROR_LOCATION, stat);
+void NCFile::del_att(const std::string &variable_name, const std::string &att_name) const {
+  this->del_att_impl(variable_name, att_name);
 }
 
 } // end of namespace io

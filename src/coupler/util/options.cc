@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -44,7 +44,7 @@ ForcingOptions::ForcingOptions(const Context &ctx,
       this->filename = process_input_options(ctx.com(), ctx.config()).filename;
 
       log.message(2,
-                  "  - Option %s_file is not set. Trying the input file '%s'...\n",
+                  "  - Option %s.file is not set. Trying the input file '%s'...\n",
                   prefix.c_str(), this->filename.c_str());
     }
 
@@ -56,7 +56,7 @@ ForcingOptions::ForcingOptions(const Context &ctx,
   }
 
   {
-    auto P = config.get_double(prefix + ".period");
+    auto P = config.get_number(prefix + ".period");
 
     if (P < 0.0) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -67,7 +67,7 @@ ForcingOptions::ForcingOptions(const Context &ctx,
   }
 
   {
-    auto ref_year = config.get_double(prefix + ".reference_year");
+    auto ref_year = config.get_number(prefix + ".reference_year");
 
     this->reference_time = units::convert(ctx.unit_system(), ref_year, "years", "seconds");
   }

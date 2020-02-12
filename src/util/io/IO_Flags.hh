@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2018 PISM Authors
+/* Copyright (C) 2014, 2015, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,10 +22,10 @@
 
 namespace pism {
 
-// I/O Flags used by PIO and NCFile. They are used in both interfaces,
-// but I want to be able to create Python wrappers for PIO without
-// exposing NCFile, and NCFile should compile without PIO, so it does
-// not belong in either PIO.hh or PISMNCFile.hh.
+// I/O Flags used by File and NCFile. They are used in both interfaces,
+// but I want to be able to create Python wrappers for File without
+// exposing NCFile, and NCFile should compile without File, so it does
+// not belong in either File.hh or NCFile.hh.
 
 // This is a subset of NetCDF data-types.
 enum IO_Type {
@@ -37,6 +37,9 @@ enum IO_Type {
   PISM_FLOAT  = 5,              /* single precision floating point number */
   PISM_DOUBLE = 6               /* double precision floating point number */
 };
+
+enum IO_Backend {PISM_GUESS, PISM_NETCDF3, PISM_NETCDF4_PARALLEL, PISM_PNETCDF,
+                 PISM_PIO_PNETCDF, PISM_PIO_NETCDF, PISM_PIO_NETCDF4C, PISM_PIO_NETCDF4P};
 
 // This is a subset of NetCDF file modes. Use values that don't match
 // NetCDF flags so that we can detect errors caused by passing these
@@ -61,8 +64,6 @@ enum Fill_Mode {
 };
 
 enum RegriddingFlag {OPTIONAL, OPTIONAL_FILL_MISSING, CRITICAL, CRITICAL_FILL_MISSING};
-
-enum InterpolationType {BILINEAR, NEAREST};
 
 } // end of namespace pism
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,12 +30,11 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   ForcingOptions opt(*m_grid->ctx(), "surface.anomaly");
 
   {
-    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
-
+    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
     m_ice_surface_temp_anomaly = IceModelVec2T::ForcingField(m_grid,
                                                              file,
@@ -43,7 +42,8 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
                                                              "", // no standard name
                                                              buffer_size,
                                                              evaluations_per_year,
-                                                             periodic);
+                                                             periodic,
+                                                             LINEAR);
 
     m_climatic_mass_balance_anomaly = IceModelVec2T::ForcingField(m_grid,
                                                                   file,
@@ -57,14 +57,17 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   m_ice_surface_temp_anomaly->set_attrs("climate_forcing",
                                         "anomaly of the temperature of the ice at the ice surface"
                                         " but below firn processes",
-                                        "Kelvin", "");
+                                        "Kelvin", "Kelvin", "", 0);
   m_climatic_mass_balance_anomaly->set_attrs("climate_forcing",
                                              "anomaly of the surface mass balance (accumulation/ablation) rate",
-                                             "kg m-2 s-1", "");
-  m_climatic_mass_balance_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
+                                             "kg m-2 s-1", "kg m-2 year-1", "", 0);
 
   m_mass_flux = allocate_mass_flux(g);
   m_temperature = allocate_temperature(g);
+
+  m_accumulation = allocate_accumulation(g);
+  m_melt         = allocate_melt(g);
+  m_runoff       = allocate_runoff(g);
 }
 
 Anomaly::~Anomaly() {
@@ -102,6 +105,10 @@ void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
                                  *m_mass_flux);
   m_input_model->temperature().add(1.0, *m_ice_surface_temp_anomaly,
                                    *m_temperature);
+
+  dummy_accumulation(*m_mass_flux, *m_accumulation);
+  dummy_melt(*m_mass_flux, *m_melt);
+  dummy_runoff(*m_mass_flux, *m_runoff);
 }
 
 const IceModelVec2S &Anomaly::mass_flux_impl() const {
@@ -110,6 +117,18 @@ const IceModelVec2S &Anomaly::mass_flux_impl() const {
 
 const IceModelVec2S &Anomaly::temperature_impl() const {
   return *m_temperature;
+}
+
+const IceModelVec2S &Anomaly::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S &Anomaly::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S &Anomaly::runoff_impl() const {
+  return *m_runoff;
 }
 
 } // end of namespace surface

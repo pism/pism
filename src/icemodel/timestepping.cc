@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,12 +28,14 @@
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/util/Component.hh" // ...->max_timestep()
 
-#include "pism/calving/EigenCalving.hh"
-#include "pism/calving/vonMisesCalving.hh"
-#include "pism/calving/FrontalMelt.hh"
+#include "pism/frontretreat/calving/EigenCalving.hh"
+#include "pism/frontretreat/calving/HayhurstCalving.hh"
+#include "pism/frontretreat/calving/vonMisesCalving.hh"
+#include "pism/frontretreat/FrontRetreat.hh"
 
 #include "pism/energy/EnergyModel.hh"
 #include "pism/coupler/OceanModel.hh"
+#include "pism/coupler/FrontalMelt.hh"
 
 namespace pism {
 
@@ -54,13 +56,13 @@ MaxTimestep IceModel::max_timestep_diffusivity() {
     const double
       dx = m_grid->dx(),
       dy = m_grid->dy(),
-      adaptive_timestepping_ratio = m_config->get_double("time_stepping.adaptive_ratio"),
+      adaptive_timestepping_ratio = m_config->get_number("time_stepping.adaptive_ratio"),
       grid_factor                 = 1.0 / (dx*dx) + 1.0 / (dy*dy);
 
     return MaxTimestep(adaptive_timestepping_ratio * 2.0 / (D_max * grid_factor),
                        "diffusivity");
   } else {
-    return MaxTimestep(m_config->get_double("time_stepping.maximum_time_step", "seconds"),
+    return MaxTimestep(m_config->get_number("time_stepping.maximum_time_step", "seconds"),
                        "max time step");
   }
 }
@@ -78,11 +80,11 @@ MaxTimestep IceModel::max_timestep_diffusivity() {
  */
 unsigned int IceModel::skip_counter(double input_dt, double input_dt_diffusivity) {
 
-  if (not m_config->get_boolean("time_stepping.skip.enabled")) {
+  if (not m_config->get_flag("time_stepping.skip.enabled")) {
     return 0;
   }
 
-  const unsigned int skip_max = static_cast<int>(m_config->get_double("time_stepping.skip.max"));
+  const unsigned int skip_max = static_cast<int>(m_config->get_number("time_stepping.skip.max"));
 
   if (input_dt_diffusivity > 0.0) {
     const double conservativeFactor = 0.95;
@@ -110,41 +112,47 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 
   const double current_time = m_time->current();
 
-  // get time-stepping restrictions from sub-models
   std::vector<MaxTimestep> restrictions;
-  {
-    for (auto m : m_submodels) {
-      restrictions.push_back(m.second->max_timestep(current_time));
-    }
+
+  // get time-stepping restrictions from sub-models
+  for (auto m : m_submodels) {
+    restrictions.push_back(m.second->max_timestep(current_time));
   }
 
-  // calving code needs additional inputs to compute time step restrictions
-  {
-    CalvingInputs inputs;
+  // mechanisms that use a retreat rate
+  if (m_config->get_flag("geometry.front_retreat.use_cfl") and
+      (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_frontal_melt)) {
+    // at least one of front retreat mechanisms is active
 
-    inputs.geometry = &m_geometry;
-    inputs.bc_mask  = &m_ssa_dirichlet_bc_mask;
-
-    inputs.ice_velocity         = &m_stress_balance->shallow()->velocity();
-    inputs.ice_enthalpy         = &m_energy_model->enthalpy();
-    inputs.shelf_base_mass_flux = &m_ocean->shelf_base_mass_flux();
+    IceModelVec2S &retreat_rate = m_work2d[0];
+    retreat_rate.set(0.0);
 
     if (m_eigen_calving) {
-      restrictions.push_back(m_eigen_calving->max_timestep(inputs, current_time));
+      retreat_rate.add(1.0, m_eigen_calving->calving_rate());
+    }
+
+    if (m_hayhurst_calving) {
+      retreat_rate.add(1.0, m_hayhurst_calving->calving_rate());
     }
 
     if (m_vonmises_calving) {
-      restrictions.push_back(m_vonmises_calving->max_timestep(inputs, current_time));
+      retreat_rate.add(1.0, m_vonmises_calving->calving_rate());
     }
 
     if (m_frontal_melt) {
-      restrictions.push_back(m_frontal_melt->max_timestep(inputs, current_time));
+      retreat_rate.add(1.0, m_frontal_melt->retreat_rate());
     }
+
+    assert(m_front_retreat);
+
+    restrictions.push_back(m_front_retreat->max_timestep(m_geometry.cell_type,
+                                                         m_ssa_dirichlet_bc_mask,
+                                                         retreat_rate));
   }
 
   // Always consider the maximum allowed time-step length.
-  if (m_config->get_double("time_stepping.maximum_time_step") > 0.0) {
-    restrictions.push_back(MaxTimestep(m_config->get_double("time_stepping.maximum_time_step",
+  if (m_config->get_number("time_stepping.maximum_time_step") > 0.0) {
+    restrictions.push_back(MaxTimestep(m_config->get_number("time_stepping.maximum_time_step",
                                                             "seconds"),
                                        "max"));
   }
@@ -163,7 +171,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
   }
 
   // mass continuity stability criteria
-  if (m_config->get_boolean("geometry.update.enabled")) {
+  if (m_config->get_flag("geometry.update.enabled")) {
     CFLData cfl = m_stress_balance->max_timestep_cfl_2d();
 
     restrictions.push_back(MaxTimestep(cfl.dt_max.value(), "2D CFL"));
@@ -172,7 +180,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 
   // Hit multiples of X years, if requested.
   {
-    const int timestep_hit_multiples = static_cast<int>(m_config->get_double("time_stepping.hit_multiples"));
+    const int timestep_hit_multiples = static_cast<int>(m_config->get_number("time_stepping.hit_multiples"));
     if (timestep_hit_multiples > 0) {
       const double epsilon = 1.0; // 1 second tolerance
       double

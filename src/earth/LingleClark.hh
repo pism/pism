@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -39,15 +39,18 @@ public:
 
   const IceModelVec2S& viscous_displacement() const;
 
+  const IceModelVec2S& elastic_displacement() const;
+
   const IceModelVec2S& relief() const;
 
   void step(const IceModelVec2S &ice_thickness,
             const IceModelVec2S &sea_level_elevation,
             double dt);
 
+  IceModelVec2S::Ptr elastic_load_response_matrix() const;
 protected:
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   DiagnosticList diagnostics_impl() const;
 
@@ -63,7 +66,7 @@ protected:
                    double t, double dt);
 
   //! Total (viscous and elastic) bed displacement.
-  IceModelVec2S m_bed_displacement;
+  IceModelVec2S m_total_displacement;
 
   //! Storage on rank zero. Used to pass the load to the serial deformation model and get
   //! bed displacement back.
@@ -82,9 +85,23 @@ protected:
   IceGrid::Ptr m_extended_grid;
 
   //! Viscous displacement on the extended grid (part of the model state).
-  IceModelVec2S m_viscous_bed_displacement;
+  IceModelVec2S m_viscous_displacement;
   //! rank 0 storage using the extended grid
-  petsc::Vec::Ptr m_viscous_bed_displacement0;
+  petsc::Vec::Ptr m_viscous_displacement0;
+
+  //! Elastic bed displacement (part of the model state)
+  IceModelVec2S m_elastic_displacement;
+  //! rank 0 storage for the elastic displacement
+  petsc::Vec::Ptr m_elastic_displacement0;
+
+  //! time of the last bed deformation update
+  double m_t_last;
+  //! Update interval in seconds
+  double m_update_interval;
+  //! Temporal resolution to use when checking whether it's time to update
+  double m_t_eps;
+  //! Name of the variable used to store the last update time.
+  std::string m_time_name;
 };
 
 } // end of namespace bed

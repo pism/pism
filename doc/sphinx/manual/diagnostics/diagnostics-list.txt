@@ -78,12 +78,12 @@ Spatially-variable fields
 
    - ``bwatvel[0]``
 
-     :Units: m year-1
+     :Units: m s-1
      :Description: velocity of water in subglacial layer, i-offset
 
    - ``bwatvel[1]``
 
-     :Units: m year-1
+     :Units: m s-1
      :Description: velocity of water in subglacial layer, j-offset
 
 #. ``bwp``
@@ -95,11 +95,6 @@ Spatially-variable fields
 
    :Units: ---
    :Description: pressure of transportable water in subglacial layer as fraction of the overburden pressure
-
-#. ``calving_threshold``
-
-   :Units: m
-   :Description: threshold used by the 'calving at threshold' calving method
 
 #. ``cell_grounded_fraction``
 
@@ -184,10 +179,27 @@ Spatially-variable fields
    :Units: kPascal second
    :Description: effective viscosity of ice
 
+#. ``effective_water_velocity``
+
+   - ``u_effective_water_velocity``
+
+     :Units: m day-1
+     :Description: x-component of the effective water velocity in the steady-state hydrology model
+
+   - ``v_effective_water_velocity``
+
+     :Units: m day-1
+     :Description: y-component of the effective water velocity in the steady-state hydrology model
+
 #. ``eigen_calving_rate``
 
    :Units: m year-1
    :Description: horizontal calving rate due to eigen-calving
+
+#. ``elastic_bed_displacement``
+
+   :Units: meters
+   :Description: elastic part of the displacement in the Lingle-Clark bed deformation model; see :cite:`BLKfastearth`
 
 #. ``enthalpy``
 
@@ -238,8 +250,20 @@ Spatially-variable fields
 
 #. ``frontal_melt_rate``
 
+   :Units: m day-1
+   :Description: frontal melt rate
+
+#. ``frontal_melt_retreat_rate``
+
    :Units: m year-1
-   :Description: horizontal front retreat rate due to melt
+   :Description: retreat rate due to frontal melt
+   :Comment: takes into account what part of the front is submerged
+
+#. ``grounding_line_flux``
+
+   :Units: kg m-2 year-1
+   :Description: grounding line flux
+   :Comment: Positive flux corresponds to mass moving from the ocean to an icy grounded area. This convention makes it easier to compare grounding line flux to the total discharge into the ocean
 
 #. ``h_x``
 
@@ -275,24 +299,49 @@ Spatially-variable fields
    :Units: Pa s0.333333
    :Description: ice hardness computed using the SIA flow law
 
+#. ``heat_flux_from_bedrock``
+
+   :Units: mW m-2
+   :Description: upward geothermal flux at the top bedrock surface
+   :Standard name: ``upward_geothermal_heat_flux_at_ground_level_in_land_ice``
+   :Comment: positive values correspond to an upward flux
+
 #. ``height_above_flotation``
 
    :Units: m
    :Description: ice thickness in excess of the maximum floating ice thickness
    :Comment: shows how close to floatation the ice is at a given location
 
-#. ``hfgeoubed``
+#. ``hydraulic_potential``
 
-   :Units: mW m-2
-   :Description: upward geothermal flux at the top bedrock surface
-   :Standard name: ``upward_geothermal_heat_flux_at_ground_level``
-   :Comment: positive values correspond to an upward flux
+   :Units: Pa
+   :Description: hydraulic potential in the subglacial hydrology system
+
+#. ``hydraulic_potential_adjustment``
+
+   :Units: Pa
+   :Description: potential adjustment needed to fill sinks when computing an estimate of the steady-state hydraulic potential
+
+#. ``hydraulic_sinks``
+
+   :Units: ---
+   :Description: map of sinks in the domain (for debugging)
 
 #. ``ice_area_specific_volume``
 
    :Units: m3/m2
    :Description: ice-volume-per-area in partially-filled grid cells
    :Comment: this variable represents the amount of ice in a partially-filled cell and not the corresponding geometry, so thinking about it as 'thickness' is not helpful
+
+#. ``ice_base_elevation``
+
+   :Units: m
+   :Description: ice bottom surface elevation
+
+#. ``ice_margin_pressure_difference``
+
+   :Units: Pa m
+   :Description: vertically-integrated pressure difference at ice margins (including calving fronts)
 
 #. ``ice_mass``
 
@@ -306,8 +355,9 @@ Spatially-variable fields
 
 #. ``ice_surface_temp``
 
-   :Units: Kelvin
-   :Description: ice temperature at the ice surface
+   :Units: K
+   :Description: ice temperature at the top ice surface
+   :Standard name: ``temperature_at_top_of_ice_sheet_model``
 
 #. ``lat``
 
@@ -348,16 +398,6 @@ Spatially-variable fields
      :Units: kPa s m
      :Description: ice thickness times effective viscosity, j-offset
 
-#. ``ocean_kill_mask``
-
-   :Units: ---
-   :Description: mask specifying fixed calving front locations
-
-#. ``ocean_pressure_difference``
-
-   :Units: ---
-   :Description: ocean pressure difference at calving fronts
-
 #. ``pressure``
 
    :Units: Pa
@@ -367,6 +407,11 @@ Spatially-variable fields
 
    :Units: 1
    :Description: processor rank
+
+#. ``remaining_water_thickness``
+
+   :Units: m
+   :Description: scaled water thickness in the steady state hydrology model (has no physical meaning)
 
 #. ``schoofs_theta``
 
@@ -382,7 +427,7 @@ Spatially-variable fields
 
    :Units: 1
    :Description: fraction of a grid cell covered by floating ice
-   :Standard name: ``floating_ice_sheet_area_fraction``
+   :Standard name: ``floating_ice_shelf_area_fraction``
 
 #. ``sftgif``
 
@@ -428,6 +473,11 @@ Spatially-variable fields
      :Units: m year-1
      :Description: Y-component of the SSA velocity boundary conditions
 
+#. ``steady_state_hydraulic_potential``
+
+   :Units: Pa
+   :Description: estimate of the steady state hydraulic potential in the steady hydrology model
+
 #. ``strain_rates``
 
    - ``eigen1``
@@ -445,10 +495,15 @@ Spatially-variable fields
    :Units: mW m-3
    :Description: rate of strain heating in ice (dissipation heating)
 
+#. ``subglacial_water_flux_mag``
+
+   :Units: m2 year-1
+   :Description: magnitude of the subglacial water flux
+
 #. ``subglacial_water_input_rate``
 
    :Units: m year-1
-   :Description: total input rate of subglacial water (basal melt rate plus input from the surface)
+   :Description: water input rate from the ice surface into the subglacial water system
    :Comment: positive flux corresponds to water gain
 
 #. ``surface_accumulation_flux``
@@ -511,7 +566,7 @@ Spatially-variable fields
 
    :Units: Pa
    :Description: magnitude of the basal shear stress at the base of ice
-   :Standard name: ``magnitude_of_land_ice_basal_drag``
+   :Standard name: ``land_ice_basal_drag``
    :Comment: this field is purely diagnostic (not used by the model)
 
 #. ``tauc``
@@ -598,6 +653,13 @@ Spatially-variable fields
    :Description: average basal mass flux over reporting interval
    :Comment: positive flux corresponds to ice gain
 
+#. ``tendency_of_ice_amount_due_to_calving``
+
+   :Units: kg m-2 year-1
+   :Description: calving flux
+   :Standard name: ``land_ice_specific_mass_flux_due_to_calving``
+   :Comment: positive flux corresponds to ice gain
+
 #. ``tendency_of_ice_amount_due_to_conservation_error``
 
    :Units: kg m-2 year-1
@@ -607,7 +669,7 @@ Spatially-variable fields
 #. ``tendency_of_ice_amount_due_to_discharge``
 
    :Units: kg m-2 year-1
-   :Description: discharge (calving and frontal melt) flux
+   :Description: discharge flux (calving, frontal melt, forced retreat)
    :Standard name: ``land_ice_specific_mass_flux_due_to_calving_and_ice_front_melting``
    :Comment: positive flux corresponds to ice gain
 
@@ -621,6 +683,7 @@ Spatially-variable fields
 
    :Units: kg m-2 year-1
    :Description: average surface mass flux over reporting interval
+   :Standard name: ``land_ice_surface_specific_mass_balance_flux``
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_mass``
@@ -635,6 +698,12 @@ Spatially-variable fields
    :Standard name: ``tendency_of_land_ice_mass_due_to_basal_mass_balance``
    :Comment: positive flux corresponds to ice gain
 
+#. ``tendency_of_ice_mass_due_to_calving``
+
+   :Units: Gt year-1
+   :Description: calving flux
+   :Comment: positive flux corresponds to ice gain
+
 #. ``tendency_of_ice_mass_due_to_conservation_error``
 
    :Units: Gt year-1
@@ -644,7 +713,7 @@ Spatially-variable fields
 #. ``tendency_of_ice_mass_due_to_discharge``
 
    :Units: Gt year-1
-   :Description: discharge (calving and frontal melt) flux
+   :Description: discharge flux (calving, frontal melt, forced retreat)
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_mass_due_to_flow``
@@ -701,6 +770,11 @@ Spatially-variable fields
    :Description: subglacial water flux due to input
    :Comment: positive flux corresponds to water gain
 
+#. ``thickness_calving_threshold``
+
+   :Units: m
+   :Description: threshold used by the 'calving at threshold' calving method
+
 #. ``thk``
 
    :Units: m
@@ -741,7 +815,7 @@ Spatially-variable fields
 #. ``usurf``
 
    :Units: m
-   :Description: ice upper surface elevation
+   :Description: ice top surface elevation
    :Standard name: ``surface_altitude``
 
 #. ``uvel``
@@ -807,10 +881,20 @@ Spatially-variable fields
    :Units: m year-1
    :Description: magnitude of horizontal velocity of ice at ice surface
 
+#. ``viscous_bed_displacement``
+
+   :Units: meters
+   :Description: bed displacement in the viscous half-space bed deformation model; see BuelerLingleBrown
+
 #. ``vonmises_calving_rate``
 
    :Units: m year-1
    :Description: horizontal calving rate due to von Mises calving
+
+#. ``vonmises_calving_threshold``
+
+   :Units: Pa
+   :Description: threshold used by the 'von Mises' calving method
 
 #. ``vonmises_stress``
 
@@ -859,18 +943,26 @@ Scalar time-series
 
    :Units: Gt year-1
    :Description: total sub-shelf ice flux
+   :Standard name: ``tendency_of_land_ice_mass_due_to_basal_mass_balance``
    :Comment: positive means ice gain
 
 #. ``basal_mass_flux_grounded``
 
    :Units: Gt year-1
    :Description: total over grounded ice domain of basal mass flux
+   :Standard name: ``tendency_of_land_ice_mass_due_to_basal_mass_balance``
    :Comment: positive means ice gain
 
 #. ``dt``
 
    :Units: year
    :Description: mass continuity time step
+
+#. ``grounding_line_flux``
+
+   :Units: Gt year-1
+   :Description: total ice flux across the grounding line
+   :Comment: negative flux corresponds to ice loss into the ocean
 
 #. ``ice_area_glacierized``
 
@@ -886,11 +978,13 @@ Scalar time-series
 
    :Units: m2
    :Description: area of ice shelves in glacierized areas
+   :Standard name: ``floating_ice_shelf_area``
 
 #. ``ice_area_glacierized_grounded``
 
    :Units: m2
    :Description: area of grounded ice in glacierized areas
+   :Standard name: ``grounded_ice_sheet_area``
 
 #. ``ice_area_glacierized_temperate_base``
 
@@ -911,6 +1005,7 @@ Scalar time-series
 
    :Units: kg
    :Description: mass of the ice, including seasonal cover
+   :Standard name: ``land_ice_mass``
 
 #. ``ice_mass_glacierized``
 
@@ -961,6 +1056,7 @@ Scalar time-series
 
    :Units: kg
    :Description: mass of the ice not displacing sea water
+   :Standard name: ``land_ice_mass_not_displacing_sea_water``
 
 #. ``liquified_ice_flux``
 
@@ -1007,6 +1103,14 @@ Scalar time-series
 
    :Units: Gt year-1
    :Description: total over ice domain of bottom surface ice mass flux
+   :Standard name: ``tendency_of_land_ice_mass_due_to_basal_mass_balance``
+   :Comment: positive means ice gain
+
+#. ``tendency_of_ice_mass_due_to_calving``
+
+   :Units: Gt year-1
+   :Description: calving flux
+   :Standard name: ``tendency_of_land_ice_mass_due_to_calving``
    :Comment: positive means ice gain
 
 #. ``tendency_of_ice_mass_due_to_conservation_error``
@@ -1018,7 +1122,8 @@ Scalar time-series
 #. ``tendency_of_ice_mass_due_to_discharge``
 
    :Units: Gt year-1
-   :Description: discharge (calving & icebergs) flux
+   :Description: discharge flux (frontal melt, calving, forced retreat)
+   :Standard name: ``tendency_of_land_ice_mass_due_to_calving_and_ice_front_melting``
    :Comment: positive means ice gain
 
 #. ``tendency_of_ice_mass_due_to_flow``
@@ -1030,6 +1135,7 @@ Scalar time-series
 
    :Units: Gt year-1
    :Description: total over ice domain of top surface ice mass flux
+   :Standard name: ``tendency_of_land_ice_mass_due_to_surface_mass_balance``
    :Comment: positive means ice gain
 
 #. ``tendency_of_ice_mass_glacierized``

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 PISM Authors
+// Copyright (C) 2012-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,17 +21,18 @@
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/pism_utilities.hh" // clip
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace hydrology {
 
 NullTransport::NullTransport(IceGrid::ConstPtr g)
   : Hydrology(g) {
-  m_diffuse_tillwat    = m_config->get_boolean("hydrology.null_diffuse_till_water");
-  m_diffusion_time     = m_config->get_double("hydrology.null_diffusion_time", "seconds");
-  m_diffusion_distance = m_config->get_double("hydrology.null_diffusion_distance", "meters");
-  m_tillwat_max        = m_config->get_double("hydrology.tillwat_max", "meters");
-  m_tillwat_decay_rate = m_config->get_double("hydrology.tillwat_decay_rate", "m / second");
+  m_diffuse_tillwat    = m_config->get_flag("hydrology.null_diffuse_till_water");
+  m_diffusion_time     = m_config->get_number("hydrology.null_diffusion_time", "seconds");
+  m_diffusion_distance = m_config->get_number("hydrology.null_diffusion_distance", "meters");
+  m_tillwat_max        = m_config->get_number("hydrology.tillwat_max", "meters");
+  m_tillwat_decay_rate = m_config->get_number("hydrology.tillwat_decay_rate", "m / second");
 
   if (m_tillwat_max < 0.0) {
     throw RuntimeError(PISM_ERROR_LOCATION,
@@ -58,19 +59,19 @@ void NullTransport::initialization_message() const {
   }
 }
 
-void NullTransport::restart_impl(const PIO &input_file, int record) {
+void NullTransport::restart_impl(const File &input_file, int record) {
   Hydrology::restart_impl(input_file, record);
 }
 
-void NullTransport::bootstrap_impl(const PIO &input_file,
+void NullTransport::bootstrap_impl(const File &input_file,
                                    const IceModelVec2S &ice_thickness) {
   Hydrology::bootstrap_impl(input_file, ice_thickness);
 }
 
-void NullTransport::initialize_impl(const IceModelVec2S &W_till,
+void NullTransport::init_impl(const IceModelVec2S &W_till,
                                     const IceModelVec2S &W,
                                     const IceModelVec2S &P) {
-  Hydrology::initialize_impl(W_till, W, P);
+  Hydrology::init_impl(W_till, W, P);
 }
 
 MaxTimestep NullTransport::max_timestep_impl(double t) const {
@@ -111,25 +112,39 @@ MaxTimestep NullTransport::max_timestep_impl(double t) const {
 void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   (void) t;
 
+  bool add_surface_input = m_config->get_flag("hydrology.add_water_input_to_till_storage");
+
   // no transportable basal water
   m_W.set(0.0);
 
-  m_input_change.add(dt, m_input_rate);
+  m_input_change.add(dt, m_basal_melt_rate);
+  if (add_surface_input) {
+    m_input_change.add(dt, m_surface_input_rate);
+  }
 
   const double
-    water_density = m_config->get_double("constants.fresh_water.density"),
+    water_density = m_config->get_number("constants.fresh_water.density"),
     kg_per_m      = m_grid->cell_area() * water_density; // kg m-1
 
-  const IceModelVec2CellType &cell_type = *inputs.cell_type;
+  const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
 
-  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_input_rate,
+  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_basal_melt_rate,
       &m_conservation_error_change};
+
+  if (add_surface_input) {
+    list.add(m_surface_input_rate);
+  }
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double
-      W_old      = m_Wtill(i, j),
-      dW_input   = dt * m_input_rate(i, j);
+    double
+      W_old    = m_Wtill(i, j),
+      dW_input = dt * m_basal_melt_rate(i, j);
+
+    if (add_surface_input) {
+      dW_input += dt * m_surface_input_rate(i, j);
+    }
 
     if (W_old < 0.0) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -155,7 +170,7 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   }
 
   // remove water in ice-free areas and account for changes
-  enforce_bounds(*inputs.cell_type,
+  enforce_bounds(inputs.geometry->cell_type,
                  inputs.no_model_mask,
                  m_tillwat_max,
                  m_Wtill,

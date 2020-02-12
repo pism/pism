@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,32 +27,32 @@
 
 namespace pism {
 
-class PIO;
+class File;
 class IceModelVec2S;
 class IceModelVec3D;
 
-/*! @brief Convert a proj4 string with an EPSG code to a set of CF attributes. */
+/*! @brief Convert a proj string with an EPSG code to a set of CF attributes. */
 /*!
- * Fails if `proj4_string` does not contain an EPSG code.
+ * Fails if `proj_string` does not contain an EPSG code.
  */
-VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj4_string);
+VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_string);
 
 class MappingInfo {
 public:
   MappingInfo(const std::string &mapping_name, units::System::Ptr unit_system);
   VariableMetadata mapping;
-  std::string proj4;
+  std::string proj;
 };
 
-/*! @brief Check consistency of the "mapping" variable with the EPSG code in the proj4 string. */
+/*! @brief Check consistency of the "mapping" variable with the EPSG code in the proj string. */
 /*!
- * If the consistency check fails, throws RuntimeError explaining the failure. Fails if `info.proj4`
+ * If the consistency check fails, throws RuntimeError explaining the failure. Fails if `info.proj`
  * does not use an EPSG code.
  */
 void check_consistency_epsg(const MappingInfo &info);
 
 /*! @brief Get projection info from a file. */
-MappingInfo get_projection_info(const PIO &input_file, const std::string &mapping_name,
+MappingInfo get_projection_info(const File &input_file, const std::string &mapping_name,
                                 units::System::Ptr unit_system);
 
 void compute_longitude(const std::string &projection, IceModelVec2S &result);

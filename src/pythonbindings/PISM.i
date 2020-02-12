@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011--2020 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -49,7 +49,7 @@
 #include "util/Diagnostic.hh"
 #include "util/Config.hh"
 
-#ifdef PISM_USE_JANSSON
+#if (Pism_USE_JANSSON==1)
 #include "util/ConfigJSON.hh"
 #endif
 
@@ -65,7 +65,18 @@
 
 #include "util/Time.hh"
 #include "util/Time_Calendar.hh"
+#include "util/Poisson.hh"
+#include "util/label_components.hh"
 %}
+
+// Tell SWIG that the following variables are truly constant
+%immutable pism::revision;
+%immutable pism::config_file;
+%immutable pism::petsc_configure_flags;
+%immutable pism::petsc4py_version;
+%immutable pism::swig_version;
+%immutable pism::cmake_version;
+%include "pism/pism_config.hh"
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
 %include "petsc4py/petsc4py.i"
@@ -81,6 +92,15 @@
 
 %include <std_shared_ptr.i>
 
+// Add a PISM class
+%define pism_class(name, header)
+%{
+  #include header
+%}
+%shared_ptr(name)
+%include header
+%enddef
+
 %template(SizetVector) std::vector<size_t>;
 %template(IntVector) std::vector<int>;
 %template(UnsignedIntVector) std::vector<unsigned int>;
@@ -88,6 +108,7 @@
 %template(StringVector) std::vector<std::string>;
 %template(StringSet) std::set<std::string>;
 %template(DoubleVectorMap) std::map<std::string, std::vector<double> >;
+%template(BoolMap) std::map<std::string, bool >;
 %template(StringMap) std::map<std::string, std::string>;
 %template(DiagnosticMap) std::map<std::string, std::shared_ptr<pism::Diagnostic> >;
 
@@ -169,10 +190,6 @@
 }
 
 
-// Tell SWIG that the following variables are truly constant
-%immutable pism::PISM_Revision;
-%immutable pism::PISM_DefaultConfigFile;
-
 /* PISM header with no dependence on other PISM headers. */
 %include "util/pism_utilities.hh"
 %include "util/interpolation.hh"
@@ -207,7 +224,7 @@
 %include "util/ConfigInterface.hh"
 %include "util/Config.hh"
 
-#ifdef PISM_USE_JANSSON
+#if (Pism_USE_JANSSON==1)
 %shared_ptr(pism::ConfigJSON);
 %include "util/ConfigJSON.hh"
 #endif
@@ -228,10 +245,10 @@
 
 %include pism_IceGrid.i
 
-/* PIO uses IceGrid, so IceGrid has to be wrapped first. */
-%include pism_PIO.i
+/* File uses IceGrid, so IceGrid has to be wrapped first. */
+%include pism_File.i
 
-/* make sure PIO.i is included before VariableMetadata.hh */
+/* make sure pism_File.i is included before VariableMetadata.hh */
 %include pism_VariableMetadata.i
 
 /* Timeseries uses IceGrid and VariableMetadata so they have to be wrapped first. */
@@ -251,13 +268,16 @@
 %shared_ptr(pism::Component)
 %include "util/Component.hh"
 
+/* GeometryEvolution is a Component, so this has to go after Component.hh */
+%include geometry.i
+
 %include "basalstrength/basal_resistance.hh"
 
 %include pism_FlowLaw.i
 
 %include pism_ColumnSystem.i
 
-%include EnergyModel.i
+%include pism_energy.i
 
 /* SSAForwardRunFromInputFile sets up a yield stress model, which
  * requires a hydrology model.
@@ -268,13 +288,11 @@
 %include "util/Mask.hh"
 %include "pism_python.hh"
 
-%shared_ptr(pism::YieldStress)
-%shared_ptr(pism::ConstantYieldStress)
-%shared_ptr(pism::MohrCoulombYieldStress)
-%include "basalstrength/YieldStress.hh"
-%include "basalstrength/MohrCoulombYieldStress.hh"
-
-%include geometry.i
+pism_class(pism::MohrCoulombPointwise, "pism/basalstrength/MohrCoulombPointwise.hh")
+pism_class(pism::YieldStress, "pism/basalstrength/YieldStress.hh")
+pism_class(pism::ConstantYieldStress, "pism/basalstrength/ConstantYieldStress.hh")
+pism_class(pism::MohrCoulombYieldStress, "pism/basalstrength/MohrCoulombYieldStress.hh")
+pism_class(pism::RegionalYieldStress, "pism/regional/RegionalYieldStress.hh")
 
 %rename(StressBalanceInputs) pism::stressbalance::Inputs;
 
@@ -314,13 +332,41 @@
 
 %include pism_inverse.i
 
+%include "coupler/util/PCFactory.hh"
+%{
+#include "coupler/util/options.hh"
+%}
+%include "coupler/util/options.hh"
+
+%shared_ptr(pism::PCFactory< pism::surface::SurfaceModel >)
+%template(_SurfaceFactoryBase) pism::PCFactory<pism::surface::SurfaceModel>;
+
+%shared_ptr(pism::PCFactory<pism::ocean::OceanModel>)
+%template(_OceanFactoryBase) pism::PCFactory<pism::ocean::OceanModel>;
+
+%shared_ptr(pism::PCFactory<pism::ocean::sea_level::SeaLevel>)
+%template(_SeaLevelFactoryBase) pism::PCFactory<pism::ocean::sea_level::SeaLevel>;
+
+%shared_ptr(pism::PCFactory<pism::atmosphere::AtmosphereModel>)
+%template(_AtmosphereFactoryBase) pism::PCFactory<pism::atmosphere::AtmosphereModel>;
+
 %include pism_ocean.i
+
+%include pism_frontalmelt.i
 
 /* surface models use atmosphere models as inputs so we need to define atmosphere models first */
 %include pism_atmosphere.i
 
 %include pism_surface.i
 
+%include pism_calving.i
+
 %include pism_verification.i
 
 %include "energy/bootstrapping.hh"
+
+%shared_ptr(pism::Poisson)
+%include "util/Poisson.hh"
+
+pism_class(pism::FractureDensity, "pism/fracturedensity/FractureDensity.hh")
+%include "util/label_components.hh"

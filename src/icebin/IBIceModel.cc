@@ -2,7 +2,7 @@
 
 #include <pism/energy/BedThermalUnit.hh>
 #include <pism/util/EnthalpyConverter.hh>
-#include <pism/util/io/PIO.hh>
+#include <pism/util/io/File.hh>
 #include <pism/util/io/io_helpers.hh>
 #include "pism/energy/EnergyModel.hh"
 
@@ -143,7 +143,7 @@ void IBIceModel::massContExplicitStep(double dt,
 
   printf("BEGIN IBIceModel::MassContExplicitStep()\n");
 
-  _ice_density              = m_config->get_double("constants.ice.density");
+  _ice_density              = m_config->get_number("constants.ice.density");
   _meter_per_s_to_kg_per_m2 = dt * _ice_density;
 
 
@@ -238,18 +238,21 @@ void IBIceModel::accumulateFluxes_massContExplicitStep(int i, int j,
 }
 
 
-void IBIceModel::prepare_nc(std::string const &fname, std::unique_ptr<PIO> &nc) {
+void IBIceModel::prepare_nc(std::string const &fname, std::unique_ptr<File> &nc) {
 
-  //    nc.reset(new PIO(m_grid->com, m_grid->ctx()->config()->get_string("output.format")));
+  //    nc.reset(new File(m_grid->com, m_grid->ctx()->config()->get_string("output.format")));
 
-  nc.reset(new PIO(m_grid->com, m_config->get_string("output.format"),
-                   fname, PISM_READWRITE_MOVE));
+  nc.reset(new File(m_grid->com,
+                    fname,
+                    string_to_backend(m_config->get_string("output.format")),
+                    PISM_READWRITE_MOVE,
+                    m_grid->ctx()->pio_iosys_id()));
 
   io::define_time(*nc, m_grid->ctx()->config()->get_string("time.dimension_name"), m_grid->ctx()->time()->calendar(),
                   m_grid->ctx()->time()->CF_units_string(), m_grid->ctx()->unit_system());
 
   // These are in iMtimseries, but not listed as required in iceModelVec.hh
-  //    nc->put_att_text(m_config.get_string("time.dimension_name"),
+  //    nc->write_attribute(m_config.get_string("time.dimension_name"),
   //                           "bounds", "time_bounds");
   //    write_metadata(nc, true, false);
   //  nc->close():
@@ -343,7 +346,7 @@ void IBIceModel::prepare_outputs(double t0) {
 }
 
 void IBIceModel::prepare_initial_outputs() {
-  double ice_density = m_config->get_double("constants.ice.density", "kg m-3");
+  double ice_density = m_config->get_number("constants.ice.density", "kg m-3");
 
   const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
 
@@ -417,7 +420,7 @@ the idea from IceModel::get_threshold_thickness(...) (iMpartm_grid->cc).  */
 
 void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &mass2) {
   //   getInternalColumn() is allocated already
-  double ice_density = m_config->get_double("constants.ice.density", "kg m-3");
+  double ice_density = m_config->get_number("constants.ice.density", "kg m-3");
 
   const IceModelVec3 *ice_enthalpy = &m_energy_model->enthalpy();
 
@@ -467,7 +470,7 @@ void IBIceModel::construct_surface_temp(
   printf("BEGIN IBIceModel::merge_surface_temp default_val=%g\n", default_val);
   EnthalpyConverter::Ptr EC = ctx()->enthalpy_converter();
 
-  double ice_density = m_config->get_double("constants.ice.density");
+  double ice_density = m_config->get_number("constants.ice.density");
 
   const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
 

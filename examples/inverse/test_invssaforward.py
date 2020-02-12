@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018 David Maxwell
+# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018, 2019 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -63,7 +63,7 @@ def adjustTauc(mask, tauc):
     """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
 
     grid = mask.grid()
-    high_tauc = grid.ctx().config().get_double("basal_yield_stress.ice_free_bedrock")
+    high_tauc = grid.ctx().config().get_number("basal_yield_stress.ice_free_bedrock")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
         for (i, j) in grid.points():
@@ -430,11 +430,11 @@ if __name__ == "__main__":
 
     input_filename = config.get_string("input.file")
     inv_data_filename = PISM.OptionString("-inv_data", "inverse data file", input_filename).value()
-    use_design_prior = config.get_boolean("inverse.use_design_prior")
+    use_design_prior = config.get_flag("inverse.use_design_prior")
     design_var = PISM.OptionKeyword("-inv_ssa",
                                     "design variable for inversion",
                                     "tauc,hardav", "tauc").value()
-    using_zeta_fixed_mask = config.get_boolean("inverse.use_zeta_fixed_mask")
+    using_zeta_fixed_mask = config.get_flag("inverse.use_zeta_fixed_mask")
 
     ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename, inv_data_filename, design_var)
     ssarun.setup()
@@ -448,7 +448,9 @@ if __name__ == "__main__":
     design_prior = createDesignVec(grid, design_var, '%s_prior' % design_var)
     long_name = design_prior.string_attr("long_name")
     units = design_prior.string_attr("units")
-    design_prior.set_attrs("", "best prior estimate for %s (used for inversion)" % long_name, units, "")
+    design_prior.set_attrs("",
+                           "best prior estimate for %s (used for inversion)" % long_name,
+                           units, units, "", 0)
     if PISM.util.fileHasVariable(inv_data_filename, "%s_prior" % design_var) and use_design_prior:
         PISM.logging.logMessage("  Reading '%s_prior' from inverse data file %s.\n" % (design_var, inv_data_filename))
         design_prior.regrid(inv_data_filename, critical=True)

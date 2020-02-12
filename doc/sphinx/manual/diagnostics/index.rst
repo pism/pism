@@ -16,7 +16,7 @@
    - The Mohr-Coulomb basal yield stress model (-yield_stress mohr_coulomb)
    - The "routing" subglacial hydrology model (-hydrology routing)
    - All supported calving mechanisms (-calving
-     eigen_calving,thickness_calving,frontal_melt,ocean_kill,vonmises_calving)
+     eigen_calving,thickness_calving,frontal_melt,vonmises_calving)
 
    The "distributed" hydrology model does add more diagnostics, but it is not supported at
    this point (and not documented in the User's Manual).

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -48,7 +48,7 @@ class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
             grid = self.grid
             vecs = self.modeldata.vecs
 
-            pio = PISM.PIO(grid.com, "netcdf3", filename, PISM.PISM_READWRITE)  # append mode!
+            pio = PISM.File(grid.com, filename, PISM.PISM_NETCDF3, PISM.PISM_READWRITE)
 
             self.modeldata.vecs.write(filename)
             pio.close()
@@ -230,7 +230,7 @@ def adjustTauc(mask, tauc):
     logMessage("  Adjusting initial estimate of 'tauc' to match PISM model for floating ice and ice-free bedrock.\n")
 
     grid = mask.grid()
-    high_tauc = grid.ctx().config().get_double("basal_yield_stress.ice_free_bedrock")
+    high_tauc = grid.ctx().config().get_number("basal_yield_stress.ice_free_bedrock")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
         for (i, j) in grid.points():
@@ -259,7 +259,7 @@ def run():
     com = context.com
     PISM.set_abort_on_sigint(True)
 
-    WIDE_STENCIL = int(config.get_double("grid.max_stencil_width"))
+    WIDE_STENCIL = int(config.get_number("grid.max_stencil_width"))
 
     usage = \
         """  pismi.py [-i IN.nc [-o OUT.nc]]/[-a INOUT.nc] [-inv_data inv_data.nc] [-inv_forward model]
@@ -324,7 +324,7 @@ def run():
     do_pause = PISM.OptionBool("-inv_pause", "pause each iteration")
 
     do_restart = PISM.OptionBool("-inv_restart", "Restart a stopped computation.")
-    use_design_prior = config.get_boolean("inverse.use_design_prior")
+    use_design_prior = config.get_flag("inverse.use_design_prior")
 
     prep_module = PISM.OptionString("-inv_prep_module",
                                     "Python module used to do final setup of inverse solver")
@@ -332,7 +332,7 @@ def run():
 
     is_regional = PISM.OptionBool("-regional", "Compute SIA/SSA using regional model semantics")
 
-    using_zeta_fixed_mask = config.get_boolean("inverse.use_zeta_fixed_mask")
+    using_zeta_fixed_mask = config.get_flag("inverse.use_zeta_fixed_mask")
 
     inv_method = config.get_string("inverse.ssa.method")
 
@@ -356,7 +356,8 @@ def run():
     design_prior = createDesignVec(grid, design_var, '%s_prior' % design_var)
     long_name = design_prior.metadata().get_string("long_name")
     units = design_prior.metadata().get_string("units")
-    design_prior.set_attrs("", "best prior estimate for %s (used for inversion)" % long_name, units, "")
+    design_prior.set_attrs("", "best prior estimate for %s (used for inversion)" % long_name,
+                           units, units, "", 0)
     if PISM.util.fileHasVariable(inv_data_filename, "%s_prior" % design_var) and use_design_prior:
         PISM.logging.logMessage("  Reading '%s_prior' from inverse data file %s.\n" % (design_var, inv_data_filename))
         design_prior.regrid(inv_data_filename, critical=True)
@@ -409,7 +410,7 @@ def run():
     # If none of the above, copy from 'zeta_prior'.
     zeta = PISM.IceModelVec2S()
     zeta.create(grid, "zeta_inv", PISM.WITH_GHOSTS, WIDE_STENCIL)
-    zeta.set_attrs("diagnostic", "zeta_inv", "1", "zeta_inv")
+    zeta.set_attrs("diagnostic", "zeta_inv", "1", "1", "zeta_inv", 0)
     if do_restart:
         # Just to be sure, verify that we have a 'zeta_inv' in the output file.
         if not PISM.util.fileHasVariable(output_filename, 'zeta_inv'):
@@ -557,11 +558,11 @@ def run():
     r_mag = PISM.IceModelVec2S()
     r_mag.create(grid, "inv_ssa_residual", PISM.WITHOUT_GHOSTS, 0)
 
-    r_mag.set_attrs("diagnostic", "magnitude of mismatch between observed surface velocities and their reconstrution by inversion",
-                    "m s-1", "inv_ssa_residual", 0)
-    r_mag.metadata().set_double("_FillValue", convert(-0.01, 'm/year', 'm/s'))
-    r_mag.metadata().set_double("valid_min", 0.0)
-    r_mag.metadata().set_string("glaciological_units", "m year-1")
+    r_mag.set_attrs("diagnostic",
+                    "magnitude of mismatch between observed surface velocities and their reconstrution by inversion",
+                    "m s-1", "m year-1", "inv_ssa_residual", 0)
+    r_mag.metadata().set_number("_FillValue", convert(-0.01, 'm/year', 'm/s'))
+    r_mag.metadata().set_number("valid_min", 0.0)
 
     r_mag.set_to_magnitude(residual)
     r_mag.mask_by(vecs.land_ice_thickness)

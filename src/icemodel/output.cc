@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@
 #include "pism/util/Diagnostic.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 
 #include "pism/util/Vars.hh"
@@ -74,7 +74,7 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
 }
 
 //! Write time-independent metadata to a file.
-void IceModel::write_metadata(const PIO &file, MappingTreatment mapping_flag,
+void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag,
                               HistoryTreatment history_flag) {
   if (mapping_flag == WRITE_MAPPING) {
     write_mapping(file);
@@ -85,7 +85,7 @@ void IceModel::write_metadata(const PIO &file, MappingTreatment mapping_flag,
   if (history_flag == PREPEND_HISTORY) {
     VariableMetadata tmp = m_output_global_attributes;
 
-    std::string old_history = file.get_att_text("PISM_GLOBAL", "history");
+    std::string old_history = file.read_text_attribute("PISM_GLOBAL", "history");
 
     tmp.set_name("PISM_GLOBAL");
     tmp.set_string("history", tmp.get_string("history") + old_history);
@@ -106,9 +106,9 @@ void IceModel::save_results() {
 
     auto str = pism::printf(
       "PISM done. Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour.",
-      m_run_stats.get_double("wall_clock_hours"),
-      m_run_stats.get_double("processor_hours"),
-      m_run_stats.get_double("model_years_per_processor_hour"));
+      m_run_stats.get_number("wall_clock_hours"),
+      m_run_stats.get_number("processor_hours"),
+      m_run_stats.get_number("model_years_per_processor_hour"));
 
     prepend_history(str);
   }
@@ -130,48 +130,52 @@ void IceModel::save_results() {
   profiling.begin("io.model_state");
   if (m_config->get_string("output.size") != "none") {
     m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
-    PIO file(m_grid->com, m_config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
+    File file(m_grid->com,
+              filename,
+              string_to_backend(m_config->get_string("output.format")),
+              PISM_READWRITE_MOVE,
+              m_ctx->pio_iosys_id());
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
     write_run_stats(file);
 
-    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars);
+    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
+                   m_time->current());
   }
   profiling.end("io.model_state");
 }
 
-void IceModel::write_mapping(const PIO &file) {
+void IceModel::write_mapping(const File &file) {
   // only write mapping if it is set.
   const VariableMetadata &mapping = m_grid->get_mapping_info().mapping;
   std::string name = mapping.get_name();
   if (mapping.has_attributes()) {
-    if (not file.inq_var(name)) {
-      file.redef();
-      file.def_var(name, PISM_DOUBLE, {});
+    if (not file.find_variable(name)) {
+      file.define_variable(name, PISM_DOUBLE, {});
     }
     io::write_attributes(file, mapping, PISM_DOUBLE);
 
-    // Write the PROJ.4 string to mapping:proj4_params (for CDO).
-    std::string proj4 = m_grid->get_mapping_info().proj4;
-    if (not proj4.empty()) {
-      file.put_att_text(name, "proj4_params", proj4);
+    // Write the PROJ string to mapping:proj_params (for CDO).
+    std::string proj = m_grid->get_mapping_info().proj;
+    if (not proj.empty()) {
+      file.write_attribute(name, "proj_params", proj);
     }
   }
 }
 
-void IceModel::write_run_stats(const PIO &file) {
+void IceModel::write_run_stats(const File &file) {
   update_run_stats();
-  if (not file.inq_var(m_run_stats.get_name())) {
-    file.redef();
-    file.def_var(m_run_stats.get_name(), PISM_DOUBLE, {});
+  if (not file.find_variable(m_run_stats.get_name())) {
+    file.define_variable(m_run_stats.get_name(), PISM_DOUBLE, {});
   }
   io::write_attributes(file, m_run_stats, PISM_DOUBLE);
 }
 
-void IceModel::save_variables(const PIO &file,
+void IceModel::save_variables(const File &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
+                              double time,
                               IO_Type default_diagnostics_type) {
 
   // define the time dimension if necessary (no-op if it is already defined)
@@ -180,7 +184,7 @@ void IceModel::save_variables(const PIO &file,
   // Note: it is time-dependent, so we need to define time first.
   io::define_timeseries(m_timestamp, file, PISM_FLOAT);
   // append to the time dimension
-  io::append_time(file, *m_config, m_grid->ctx()->time()->current());
+  io::append_time(file, *m_config, time);
 
   // Write metadata *before* everything else:
   //
@@ -193,6 +197,44 @@ void IceModel::save_variables(const PIO &file,
   }
   define_diagnostics(file, variables, default_diagnostics_type);
 
+  // Done defining variables
+
+  {
+    // Note: we don't use "variables" (an argument of this method) here because it
+    // contains PISM's names of diagnostic quantities which (in some cases) map to more
+    // than one NetCDF variable. Moreover, here we're concerned with file contents, not
+    // the list of requested variables.
+    std::set<std::string> var_names;
+    unsigned int n_vars = file.nvariables();
+    for (unsigned int k = 0; k < n_vars; ++k) {
+      var_names.insert(file.variable_name(k));
+    }
+
+    // If this output file contains variables lat and lon...
+    if (member("lat", var_names) and member("lon", var_names)) {
+
+      // add the coordinates attribute to all variables that use x and y dimensions
+      for (auto v : var_names) {
+        std::set<std::string> dims;
+        for (auto d : file.dimensions(v)) {
+          dims.insert(d);
+        }
+
+        if (not member(v, {"lat", "lon", "lat_bnds", "lon_bnds"}) and
+            member("x", dims) and member("y", dims)) {
+          file.write_attribute(v, "coordinates", "lat lon");
+        }
+      }
+
+      // and if it also contains lat_bnds and lon_bnds, add the bounds attribute to lat
+      // and lon.
+      if (member("lat_bnds", var_names) and member("lon_bnds", var_names)) {
+        file.write_attribute("lat", "bounds", "lat_bnds");
+        file.write_attribute("lon", "bounds", "lon_bnds");
+      }
+    }
+  }
+
   if (kind == INCLUDE_MODEL_STATE) {
     write_model_state(file);
   }
@@ -200,14 +242,14 @@ void IceModel::save_variables(const PIO &file,
 
   // find out how much time passed since the beginning of the run and save it to the output file
   {
-    unsigned int time_length = file.inq_dimlen(m_config->get_string("time.dimension_name"));
+    unsigned int time_length = file.dimension_length(m_config->get_string("time.dimension_name"));
     size_t start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
     io::write_timeseries(file, m_timestamp, start,
                          wall_clock_hours(m_grid->com, m_start_time));
   }
 }
 
-void IceModel::define_diagnostics(const PIO &file, const std::set<std::string> &variables,
+void IceModel::define_diagnostics(const File &file, const std::set<std::string> &variables,
                                   IO_Type default_type) {
   for (auto variable : variables) {
     auto diag = m_diagnostics.find(variable);
@@ -220,7 +262,7 @@ void IceModel::define_diagnostics(const PIO &file, const std::set<std::string> &
 
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated IceModelVecs.
-void IceModel::write_diagnostics(const PIO &file, const std::set<std::string> &variables) {
+void IceModel::write_diagnostics(const File &file, const std::set<std::string> &variables) {
   for (auto variable : variables) {
     auto diag = m_diagnostics.find(variable);
 
@@ -230,7 +272,7 @@ void IceModel::write_diagnostics(const PIO &file, const std::set<std::string> &v
   }
 }
 
-void IceModel::define_model_state(const PIO &file) {
+void IceModel::define_model_state(const File &file) {
   for (auto v : m_model_state) {
     v->define(file);
   }
@@ -244,7 +286,7 @@ void IceModel::define_model_state(const PIO &file) {
   }
 }
 
-void IceModel::write_model_state(const PIO &file) {
+void IceModel::write_model_state(const File &file) {
   for (auto v : m_model_state) {
     v->write(file);
   }

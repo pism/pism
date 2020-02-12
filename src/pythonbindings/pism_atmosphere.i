@@ -1,17 +1,19 @@
 %{
 #include "coupler/atmosphere/Anomaly.hh"
-#include "coupler/atmosphere/PIK.hh"
 #include "coupler/atmosphere/CosineYearlyCycle.hh"
 #include "coupler/atmosphere/Delta_P.hh"
 #include "coupler/atmosphere/Delta_T.hh"
 #include "coupler/atmosphere/Factory.hh"
 #include "coupler/atmosphere/Frac_P.hh"
 #include "coupler/atmosphere/GivenClimate.hh"
-#include "coupler/atmosphere/Paleo_precip.hh"
+#include "coupler/atmosphere/ElevationChange.hh"
+#include "coupler/atmosphere/PIK.hh"
+#include "coupler/atmosphere/PrecipitationScaling.hh"
 #include "coupler/atmosphere/SeariseGreenland.hh"
 #include "coupler/atmosphere/Uniform.hh"
 #include "coupler/atmosphere/WeatherStation.hh"
 #include "coupler/atmosphere/YearlyCycle.hh"
+#include "coupler/atmosphere/OrographicPrecipitation.hh"
 %}
 
 %shared_ptr(pism::atmosphere::AtmosphereModel)
@@ -37,9 +39,13 @@
 %rename(AtmosphereGiven) pism::atmosphere::Given;
 %include "coupler/atmosphere/GivenClimate.hh"
 
-%shared_ptr(pism::atmosphere::PaleoPrecip)
-%rename(AtmospherePaleo_precip) pism::atmosphere::PaleoPrecip;
-%include "coupler/atmosphere/Paleo_precip.hh"
+%shared_ptr(pism::atmosphere::ElevationChange)
+%rename(AtmosphereElevationChange) pism::atmosphere::ElevationChange;
+%include "coupler/atmosphere/ElevationChange.hh"
+
+%shared_ptr(pism::atmosphere::PrecipitationScaling)
+%rename(AtmospherePrecipScaling) pism::atmosphere::PrecipitationScaling;
+%include "coupler/atmosphere/PrecipitationScaling.hh"
 
 %shared_ptr(pism::atmosphere::WeatherStation)
 %rename(AtmosphereWeatherStation) pism::atmosphere::WeatherStation;
@@ -64,3 +70,11 @@
 %shared_ptr(pism::atmosphere::Uniform)
 %rename(AtmosphereUniform) pism::atmosphere::Uniform;
 %include "coupler/atmosphere/Uniform.hh"
+
+%shared_ptr(pism::atmosphere::Factory)
+%rename(AtmosphereFactory) pism::atmosphere::Factory;
+%include "coupler/atmosphere/Factory.hh"
+
+%shared_ptr(pism::atmosphere::OrographicPrecipitation)
+%rename(AtmosphereOrographicPrecipitation) pism::atmosphere::OrographicPrecipitation;
+%include "coupler/atmosphere/OrographicPrecipitation.hh"

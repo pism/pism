@@ -63,7 +63,7 @@ class Logger;
   - glaciological_units (saved to files as "units")
 
   Use the `name` of "PISM_GLOBAL" to read and write global attributes.
-  (See also PIO.)
+  (See also File.)
 
 */
 
@@ -73,8 +73,8 @@ public:
   virtual ~VariableMetadata();
 
   // setters
-  void set_double(const std::string &name, double value);
-  void set_doubles(const std::string &name, const std::vector<double> &values);
+  void set_number(const std::string &name, double value);
+  void set_numbers(const std::string &name, const std::vector<double> &values);
   void set_name(const std::string &name);
   void set_string(const std::string &name, const std::string &value);
 
@@ -87,8 +87,8 @@ public:
   // getters
   units::System::Ptr unit_system() const;
 
-  double get_double(const std::string &name) const;
-  std::vector<double> get_doubles(const std::string &name) const;
+  double get_number(const std::string &name) const;
+  std::vector<double> get_numbers(const std::string &name) const;
   std::string get_name() const;
   std::string get_string(const std::string &name) const;
 

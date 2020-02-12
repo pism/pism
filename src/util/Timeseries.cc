@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018 Constantine Khroulev
+// Copyright (C) 2009--2020 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,11 +17,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <algorithm>            // min_element and max_element
+#include <gsl/gsl_interp.h>
 
 #include "Timeseries.hh"
 #include "pism_utilities.hh"
 #include "IceGrid.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "Time.hh"
 #include "ConfigInterface.hh"
 
@@ -71,53 +72,45 @@ void Timeseries::set_use_bounds(bool flag) {
 
 
 //! Read timeseries data from a NetCDF file `filename`.
-void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log) {
+void Timeseries::read(const File &nc, const Time &time_manager, const Logger &log) {
 
-  bool exists, found_by_standard_name;
-  std::vector<std::string> dims;
-  std::string time_name, standard_name = m_variable.get_string("standard_name"),
-    name_found;
+  std::string standard_name = m_variable.get_string("standard_name");
 
-  nc.inq_var(name(), standard_name,
-             exists, name_found, found_by_standard_name);
+  auto var = nc.find_variable(name(), standard_name);
 
-  if (!exists) {
+  if (not var.exists) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' ('%s') in '%s'.\n",
                                   name().c_str(), standard_name.c_str(),
-                                  nc.inq_filename().c_str());
+                                  nc.filename().c_str());
   }
 
-  dims = nc.inq_vardims(name_found);
+  auto dims = nc.dimensions(var.name);
 
   if (dims.size() != 1) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Variable '%s' in '%s' depends on %d dimensions,\n"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Variable '%s' in '%s' depends on %d dimensions,\n"
                                   "but a time-series variable can only depend on 1 dimension.",
                                   name().c_str(),
-                                  nc.inq_filename().c_str(),
+                                  nc.filename().c_str(),
                                   (int)dims.size());
   }
 
-  time_name = dims[0];
+  auto time_name = dims[0];
 
   TimeseriesMetadata tmp_dim = m_dimension;
   tmp_dim.set_name(time_name);
 
   io::read_timeseries(nc, tmp_dim, time_manager, log, m_time);
-  bool is_increasing = true;
-  for (unsigned int j = 1; j < m_time.size(); ++j) {
-    if (m_time[j] - m_time[j-1] < 1e-16) {
-      is_increasing = false;
-      break;
-    }
-  }
-  if (!is_increasing) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "dimension '%s' has to be strictly increasing (read from '%s').",
-                                  tmp_dim.get_name().c_str(), nc.inq_filename().c_str());
+
+  if (not is_increasing(m_time)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "dimension '%s' has to be strictly increasing (read from '%s').",
+                                  tmp_dim.get_name().c_str(), nc.filename().c_str());
   }
 
-  std::string time_bounds_name = nc.get_att_text(time_name, "bounds");
+  std::string time_bounds_name = nc.read_text_attribute(time_name, "bounds");
 
-  if (!time_bounds_name.empty()) {
+  if (not time_bounds_name.empty()) {
     m_use_bounds = true;
 
     set_bounds_units();
@@ -127,6 +120,14 @@ void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log
     tmp_bounds.set_string("units", tmp_dim.get_string("units"));
 
     io::read_time_bounds(nc, tmp_bounds, time_manager, log, m_time_bounds);
+
+    // Time bounds override the time dimension read from the input file.
+    //
+    // NB: we use the right end point of each interval to be consistent with
+    // Timeseries::append()
+    for (unsigned int k = 0; k < m_time.size(); ++k) {
+      m_time[k] = m_time_bounds[2 * k + 1];
+    }
   } else {
     m_use_bounds = false;
   }
@@ -137,7 +138,7 @@ void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variables %s and %s in %s have different numbers of values.",
                                   m_dimension.get_name().c_str(),
                                   m_variable.get_name().c_str(),
-                                  nc.inq_filename().c_str());
+                                  nc.filename().c_str());
   }
 
   report_range(log);
@@ -169,7 +170,7 @@ void Timeseries::report_range(const Logger &log) {
 }
 
 //! Write timeseries data to a NetCDF file `filename`.
-void Timeseries::write(const PIO &nc) const {
+void Timeseries::write(const File &nc) const {
   // write the dimensional variable; this call should go first
   io::write_timeseries(nc, m_dimension, 0, m_time);
   io::write_timeseries(nc, m_variable, 0, m_values);
@@ -207,48 +208,38 @@ void Timeseries::scale(double scaling_factor) {
  */
 double Timeseries::operator()(double t) const {
 
-  // piecewise-constant case:
   if (m_use_bounds) {
-    auto j = lower_bound(m_time_bounds.begin(), m_time_bounds.end(), t); // binary search
+    // piecewise-constant case
 
-    if (j == m_time_bounds.end()) {
-      return m_values.back(); // out of range (on the right)
+    size_t k = 0;
+    if (t < m_time[0]) {
+      k = 0;
+    } else if (t >= m_time.back()) {
+      k = m_time.size() - 1;
+    } else {
+      k = gsl_interp_bsearch(m_time.data(), t, 0, m_time.size()) + 1;
     }
 
-    int i = (int)(j - m_time_bounds.begin());
+    return m_values[k];
+  } else {
+    // piecewise-linear case
 
-    if (i == 0) {
-      return m_values[0];         // out of range (on the left)
+    // extrapolation on the left
+    if (t < m_time[0]) {
+      return m_values[0];
     }
 
-    if (i % 2 == 0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "time bounds array in %s does not represent continguous time intervals.\n"
-                                    "(PISM was trying to compute %s at time %3.3f seconds.)",
-                                    m_bounds.get_name().c_str(), name().c_str(), t);
+    size_t k = gsl_interp_bsearch(m_time.data(), t, 0, m_time.size());
+
+    // extrapolation on the right
+    if (k + 1 >= m_time.size()) {
+      return m_values.back();
     }
 
-    return m_values[(i-1)/2];
+    double alpha = (t - m_time[k]) / (m_time[k + 1] - m_time[k]);
+
+    return m_values[k] * (1.0 - alpha) + m_values[k + 1] * alpha;
   }
-
-  // piecewise-linear case:
-  auto end = m_time.end();
-
-  auto j = lower_bound(m_time.begin(), end, t); // binary search
-
-  if (j == end) {
-    return m_values.back(); // out of range (on the right)
-  }
-
-  int i = (int)(j - m_time.begin());
-
-  if (i == 0) {
-    return m_values[0];   // out of range (on the left)
-  }
-
-  double dt = m_time[i] - m_time[i - 1];
-  double dv = m_values[i] - m_values[i - 1];
-
-  return m_values[i - 1] + (t - m_time[i - 1]) / dt * dv;
 }
 
 //! Get a value of timeseries by index.
@@ -257,7 +248,7 @@ double Timeseries::operator()(double t) const {
  */
 double Timeseries::operator[](unsigned int j) const {
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   if (j >= m_values.size()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Timeseries %s: operator[]: invalid argument: size=%d, index=%d",
                                   m_variable.get_name().c_str(), (int)m_values.size(), j);

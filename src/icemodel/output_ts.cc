@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018 PISM Authors
+/* Copyright (C) 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,6 +23,23 @@
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
+
+/*!
+ * Process -ts_vars shortcuts.
+ */
+static std::set<std::string> process_ts_shortcuts(const Config &config,
+                                                  const std::set<std::string> &input) {
+  std::set<std::string> result = input;
+
+  if (result.find("ismip6") != result.end()) {
+    result.erase("ismip6");
+    for (auto v : set_split(config.get_string("output.ISMIP6_ts_variables"), ',')) {
+      result.insert(v);
+    }
+  }
+
+  return result;
+}
 
 //! Initializes the code writing scalar time-series.
 void IceModel::init_timeseries() {
@@ -52,24 +69,25 @@ void IceModel::init_timeseries() {
   m_log->message(2, "  saving scalar time-series to '%s'\n", m_ts_filename.c_str());
   m_log->message(2, "  times requested: %s\n", times.c_str());
 
-  auto vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
-  if (not vars.empty()) {
-    m_log->message(2, "variables requested: %s\n", set_join(vars, ",").c_str());
+  m_ts_vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
+  if (not m_ts_vars.empty()) {
+    m_ts_vars = process_ts_shortcuts(*m_config, m_ts_vars);
+    m_log->message(2, "variables requested: %s\n", set_join(m_ts_vars, ",").c_str());
   }
 
   // prepare the output file
   {
     // default behavior is to move the file aside if it exists already; option allows appending
-    bool append = m_config->get_boolean("output.timeseries.append");
+    bool append = m_config->get_flag("output.timeseries.append");
     IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
-    PIO file(m_grid->com, "netcdf3", m_ts_filename, mode);      // Use NetCDF-3 to write time-series.
+    File file(m_grid->com, m_ts_filename, PISM_NETCDF3, mode);      // Use NetCDF-3 to write time-series.
     // add the last saved time to the list of requested times so that the first time is interpreted
     // as the end of a reporting time step
-    if (append and file.inq_dimlen("time") > 0) {
+    if (append and file.dimension_length("time") > 0) {
       double
         epsilon = 1.0,          // one second
-        t       = 0.0;
-      file.inq_dim_limits("time", NULL, &t);
+        t       = vector_max(file.read_dimension("time"));
+
       // add this time only if it is strictly before the first requested one
       if (t + epsilon < m_ts_times->front()) {
         m_ts_times->insert(m_ts_times->begin(), t);
@@ -89,7 +107,7 @@ void IceModel::init_timeseries() {
 //! Computes the maximum time-step we can take and still hit all `-ts_times`.
 MaxTimestep IceModel::ts_max_timestep(double my_t) {
 
-  if ((not m_config->get_boolean("time_stepping.hit_ts_times")) or
+  if ((not m_config->get_flag("time_stepping.hit_ts_times")) or
       m_ts_diagnostics.empty()) {
     return MaxTimestep("reporting (-ts_times)");
   }
@@ -106,7 +124,7 @@ void IceModel::flush_timeseries() {
 
   // update run_stats in the time series output file
   if (not m_ts_diagnostics.empty()) {
-    PIO file(m_grid->com, "netcdf3", m_ts_filename, PISM_READWRITE);
+    File file(m_grid->com, m_ts_filename, PISM_NETCDF3, PISM_READWRITE);
     write_run_stats(file);
   }
 }

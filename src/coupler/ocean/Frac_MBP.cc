@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,7 +27,7 @@ Frac_MBP::Frac_MBP(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
   m_forcing.reset(new ScalarForcing(g->ctx(),
-                                    "-ocean_frac_MBP",
+                                    "ocean.frac_MBP",
                                     "frac_MBP",
                                     "1", "1",
                                     "melange back pressure fraction"));
@@ -44,6 +44,13 @@ void Frac_MBP::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
   m_log->message(2, "* Initializing melange back pressure fraction forcing...\n");
+
+  // Note: comparing it to zero using "==" *is* appropriate here.
+  if (m_config->get_number("ocean.melange_back_pressure_fraction") == 0.0) {
+    m_log->message(2,
+                   "WARNING: ocean.melange_back_pressure_fraction == 0.0.\n"
+                   "         -ocean ...,frac_MBP is inactive.");
+  }
 
   m_forcing->init();
 }

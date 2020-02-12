@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,88 +31,74 @@ namespace io {
 
 PNCFile::PNCFile(MPI_Comm c)
   : NCFile(c) {
-  // MPI_Info_create(&mpi_info);
-  mpi_info = MPI_INFO_NULL;
+  MPI_Info_create(&m_mpi_info);
 }
 
 
 PNCFile::~PNCFile() {
-  // MPI_Info_free(&mpi_info);
+  MPI_Info_free(&m_mpi_info);
 }
 
-void PNCFile::check(const ErrorLocation &where, int return_code) const {
+static void check(const ErrorLocation &where, int return_code) {
   if (return_code != NC_NOERR) {
     throw RuntimeError(where, ncmpi_strerror(return_code));
   }
 }
 
-int PNCFile::integer_open_mode(IO_Mode input) const {
-  if (input == PISM_READONLY) {
-    return NC_NOWRITE;
-  } else {
-    return NC_WRITE;
-  }
-}
-
-int PNCFile::open_impl(const std::string &fname, IO_Mode mode) {
+void PNCFile::open_impl(const std::string &fname, IO_Mode mode) {
   int stat;
 
   init_hints();
 
-  int nc_mode = integer_open_mode(mode);
-  stat = ncmpi_open(m_com, fname.c_str(), nc_mode, mpi_info, &m_file_id); check(PISM_ERROR_LOCATION, stat);
+  int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;
 
-  return stat;
+  stat = ncmpi_open(m_com, fname.c_str(), open_mode, m_mpi_info, &m_file_id);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 
-int PNCFile::create_impl(const std::string &fname) {
+void PNCFile::create_impl(const std::string &fname) {
   int stat;
 
   init_hints();
 
-  stat = ncmpi_create(m_com, fname.c_str(), NC_CLOBBER|NC_64BIT_OFFSET,
-                      mpi_info, &m_file_id); check(PISM_ERROR_LOCATION, stat);
+  stat = ncmpi_create(m_com, fname.c_str(), NC_CLOBBER|NC_64BIT_DATA,
+                      m_mpi_info, &m_file_id); check(PISM_ERROR_LOCATION, stat);
+}
 
-  return stat;
+void PNCFile::sync_impl() const {
+
+  int stat = ncmpi_sync(m_file_id); check(PISM_ERROR_LOCATION, stat);
 }
 
 
-int PNCFile::close_impl() {
+void PNCFile::close_impl() {
   int stat = ncmpi_close(m_file_id); check(PISM_ERROR_LOCATION, stat);
 
   m_file_id = -1;
-
-  return stat;
 }
 
 
-int PNCFile::enddef_impl() const {
+void PNCFile::enddef_impl() const {
 
   int stat = ncmpi_enddef(m_file_id); check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
 }
 
 
-int PNCFile::redef_impl() const {
+void PNCFile::redef_impl() const {
 
   int stat = ncmpi_redef(m_file_id); check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
 }
 
 
-int PNCFile::def_dim_impl(const std::string &name, size_t length) const {
+void PNCFile::def_dim_impl(const std::string &name, size_t length) const {
   int dimid = 0, stat;
 
   stat = ncmpi_def_dim(m_file_id, name.c_str(), length, &dimid); check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
 }
 
 
-int PNCFile::inq_dimid_impl(const std::string &dimension_name, bool &exists) const {
+void PNCFile::inq_dimid_impl(const std::string &dimension_name, bool &exists) const {
   int tmp, stat;
 
   stat = ncmpi_inq_dimid(m_file_id, dimension_name.c_str(), &tmp);
@@ -122,12 +108,10 @@ int PNCFile::inq_dimid_impl(const std::string &dimension_name, bool &exists) con
   } else {
     exists = false;
   }
-
-  return 0;
 }
 
 
-int PNCFile::inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const {
+void PNCFile::inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const {
   int stat, dimid = -1;
   MPI_Offset len;
 
@@ -136,13 +120,11 @@ int PNCFile::inq_dimlen_impl(const std::string &dimension_name, unsigned int &re
   stat = ncmpi_inq_dimlen(m_file_id, dimid, &len); check(PISM_ERROR_LOCATION, stat);
 
   result = static_cast<unsigned int>(len);
-
-  return stat;
 }
 
 
-int PNCFile::inq_unlimdim_impl(std::string &result) const {
-  int stat, dimid;
+void PNCFile::inq_unlimdim_impl(std::string &result) const {
+  int stat = NC_NOERR, dimid = -1;
   char dimname[NC_MAX_NAME];
 
   stat = ncmpi_inq_unlimdim(m_file_id, &dimid); check(PISM_ERROR_LOCATION, stat);
@@ -154,32 +136,9 @@ int PNCFile::inq_unlimdim_impl(std::string &result) const {
 
     result = dimname;
   }
-
-  return stat;
 }
 
-int PNCFile::inq_dimname_impl(int j, std::string &result) const {
-  int stat;
-  char dimname[NC_MAX_NAME];
-  memset(dimname, 0, NC_MAX_NAME);
-
-  stat = ncmpi_inq_dimname(m_file_id, j, dimname); check(PISM_ERROR_LOCATION, stat);
-
-  result = dimname;
-
-  return stat;
-}
-
-
-int PNCFile::inq_ndims_impl(int &result) const {
-  int stat;
-
-  stat = ncmpi_inq_ndims(m_file_id, &result); check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
-}
-
-int PNCFile::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
+void PNCFile::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
   std::vector<int> dimids;
   int stat, varid;
 
@@ -190,24 +149,12 @@ int PNCFile::def_var_impl(const std::string &name, IO_Type nctype, const std::ve
   }
 
   stat = ncmpi_def_var(m_file_id, name.c_str(), pism_type_to_nc_type(nctype),
-                       static_cast<int>(dims.size()), &dimids[0], &varid); check(PISM_ERROR_LOCATION, stat);
-
-#if (PISM_DEBUG==1)
-  if (stat != NC_NOERR) {
-    fprintf(stderr, "def_var: filename = %s, var = %s, dims:", m_filename.c_str(),
-            name.c_str());
-    for (unsigned int k = 0; k < dims.size(); ++k) {
-      fprintf(stderr, "%s(%d), ", dims[k].c_str(), dimids[k]);
-    }
-    fprintf(stderr, "\n");
-  }
-#endif
-
-  return stat;
+                       static_cast<int>(dims.size()), &dimids[0], &varid);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 
-int PNCFile::get_vara_double_impl(const std::string &variable_name,
+void PNCFile::get_vara_double_impl(const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
                                  const std::vector<unsigned int> &count,
                                  double *ip) const {
@@ -217,17 +164,30 @@ int PNCFile::get_vara_double_impl(const std::string &variable_name,
 }
 
 
-int PNCFile::put_vara_double_impl(const std::string &variable_name,
-                                 const std::vector<unsigned int> &start,
-                                 const std::vector<unsigned int> &count,
-                                 const double *op) const {
-  std::vector<unsigned int> dummy;
-  return this->put_var_double(variable_name,
-                              start, count, dummy, op, false);
+void PNCFile::put_vara_double_impl(const std::string &variable_name,
+                                  const std::vector<unsigned int> &start,
+                                  const std::vector<unsigned int> &count,
+                                  const double *op) const {
+  int stat, varid, ndims = static_cast<int>(start.size());
+
+  std::vector<MPI_Offset> nc_start(ndims), nc_count(ndims), nc_stride(ndims);
+
+  stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid);
+  check(PISM_ERROR_LOCATION, stat);
+
+  for (int j = 0; j < ndims; ++j) {
+    nc_start[j]  = start[j];
+    nc_count[j]  = count[j];
+    nc_stride[j] = 1;
+  }
+
+  stat = ncmpi_put_vara_double_all(m_file_id, varid,
+                                   &nc_start[0], &nc_count[0],
+                                   op); check(PISM_ERROR_LOCATION, stat);
 }
 
 
-int PNCFile::get_varm_double_impl(const std::string &variable_name,
+void PNCFile::get_varm_double_impl(const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
                                  const std::vector<unsigned int> &count,
                                  const std::vector<unsigned int> &imap,
@@ -237,26 +197,14 @@ int PNCFile::get_varm_double_impl(const std::string &variable_name,
 }
 
 
-int PNCFile::put_varm_double_impl(const std::string &variable_name,
-                                 const std::vector<unsigned int> &start,
-                                 const std::vector<unsigned int> &count,
-                                 const std::vector<unsigned int> &imap,
-                                 const double *op) const {
-  return this->put_var_double(variable_name,
-                              start, count, imap, op, true);
-}
-
-
-int PNCFile::inq_nvars_impl(int &result) const {
+void PNCFile::inq_nvars_impl(int &result) const {
   int stat;
 
   stat = ncmpi_inq_nvars(m_file_id, &result); check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
 }
 
 
-int PNCFile::inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const {
+void PNCFile::inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const {
   int stat, ndims, varid = -1;
   std::vector<int> dimids;
 
@@ -266,7 +214,7 @@ int PNCFile::inq_vardimid_impl(const std::string &variable_name, std::vector<std
 
   if (ndims == 0) {
     result.clear();
-    return 0;
+    return;
   }
 
   result.resize(ndims);
@@ -282,44 +230,37 @@ int PNCFile::inq_vardimid_impl(const std::string &variable_name, std::vector<std
 
     result[k] = name;
   }
-
-  return 0;
 }
 
-
-int PNCFile::inq_varnatts_impl(const std::string &variable_name, int &result) const {
-  int stat, varid = -1;
-
+int PNCFile::get_varid(const std::string &variable_name) const {
   if (variable_name == "PISM_GLOBAL") {
-    varid = NC_GLOBAL;
+    return NC_GLOBAL;
   } else {
-    stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
+    int varid = -1;
+    int stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid);
+    check(PISM_ERROR_LOCATION, stat);
+
+    return varid;
   }
+}
 
-  stat = ncmpi_inq_varnatts(m_file_id, varid, &result); check(PISM_ERROR_LOCATION, stat);
+void PNCFile::inq_varnatts_impl(const std::string &variable_name, int &result) const {
 
-  return 0;
+  int stat = ncmpi_inq_varnatts(m_file_id, get_varid(variable_name), &result);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 
-int PNCFile::inq_varid_impl(const std::string &variable_name, bool &exists) const {
+void PNCFile::inq_varid_impl(const std::string &variable_name, bool &exists) const {
   int stat, flag = -1;
 
   stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &flag);
 
-  if (stat == NC_NOERR) {
-    flag = 1;
-  } else {
-    flag = 0;
-  }
-
-  exists = (flag == 1);
-
-  return 0;
+  exists = (stat == NC_NOERR);
 }
 
 
-int PNCFile::inq_varname_impl(unsigned int j, std::string &result) const {
+void PNCFile::inq_varname_impl(unsigned int j, std::string &result) const {
   int stat;
   char varname[NC_MAX_NAME];
   memset(varname, 0, NC_MAX_NAME);
@@ -327,36 +268,16 @@ int PNCFile::inq_varname_impl(unsigned int j, std::string &result) const {
   stat = ncmpi_inq_varname(m_file_id, j, varname); check(PISM_ERROR_LOCATION, stat);
 
   result = varname;
-
-  return stat;
 }
 
-int PNCFile::inq_vartype_impl(const std::string &variable_name, IO_Type &result) const {
-  int stat, varid;
-  nc_type var_type;
-
-  stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
-
-  stat = ncmpi_inq_vartype(m_file_id, varid, &var_type); check(PISM_ERROR_LOCATION, stat);
-
-  result = nc_type_to_pism_type(var_type);
-
-  return 0;
-}
-
-
-int PNCFile::get_att_double_impl(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const {
-  int stat, len, varid = -1;
-  MPI_Offset attlen;
+void PNCFile::get_att_double_impl(const std::string &variable_name,
+                                  const std::string &att_name,
+                                  std::vector<double> &result) const {
+  int len, varid = get_varid(variable_name);
+  MPI_Offset attlen = 0;
 
   // Read the attribute length:
-  if (variable_name == "PISM_GLOBAL") {
-    varid = NC_GLOBAL;
-  } else {
-    stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
-  }
-
-  stat = ncmpi_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
+  int stat = ncmpi_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
 
   if (stat == NC_NOERR) {
     len = static_cast<int>(attlen);
@@ -369,7 +290,7 @@ int PNCFile::get_att_double_impl(const std::string &variable_name, const std::st
 
   if (len == 0) {
     result.clear();
-    return 0;
+    return;
   }
 
   result.resize(len);
@@ -382,128 +303,77 @@ int PNCFile::get_att_double_impl(const std::string &variable_name, const std::st
     fprintf(stderr, "Error reading the %s attribute; (varid %d, NetCDF error %s)",
             att_name.c_str(), varid, ncmpi_strerror(stat));
   }
-
-  return 0;
 }
 
 
-int PNCFile::get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const {
-  char *str = NULL;
-  int stat, len, varid = -1;
+void PNCFile::get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const {
+  int varid = get_varid(variable_name);
 
   // Read the attribute length:
-  MPI_Offset attlen;
+  MPI_Offset attlen = 0;
 
-  if (variable_name == "PISM_GLOBAL") {
-    varid = NC_GLOBAL;
-  } else {
-    stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
-  }
-
-  stat = ncmpi_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
-  if (stat == NC_NOERR) {
-    len = static_cast<int>(attlen);
-  } else {
-    len = 0;
-  }
+  int stat = ncmpi_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
+  int len = (stat == NC_NOERR) ? static_cast<int>(attlen) : 0;
 
   // Allocate some memory or set result to NULL and return:
   if (len == 0) {
     result.clear();
-    return 0;
+    return;
   }
 
-  str = new char[len + 1];
-  memset(str, 0, len + 1);
+  std::vector<char>str(len + 1, 0);
 
   // Now read the string and see if we succeeded:
-  stat = ncmpi_get_att_text(m_file_id, varid, att_name.c_str(), str);
+  stat = ncmpi_get_att_text(m_file_id, varid, att_name.c_str(), str.data());
+  check(PISM_ERROR_LOCATION, stat);
 
-  // On success, broadcast the string. On error, set str to "".
-  if (stat != NC_NOERR) {
-    fprintf(stderr, "Error reading the %s attribute; (variable %s, %s)",
-            att_name.c_str(), variable_name.c_str(), ncmpi_strerror(stat));
+  result = str.data();
+}
 
-    delete[] str;
-    return stat;
-  }
+void PNCFile::del_att_impl(const std::string &variable_name, const std::string &att_name) const {
+  int stat = ncmpi_del_att(m_file_id, get_varid(variable_name), att_name.c_str());
+  check(PISM_ERROR_LOCATION, stat);
+}
 
-  result = str;
+void PNCFile::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, const std::vector<double> &data) const {
 
-  delete[] str;
-  return 0;
+  int stat = ncmpi_put_att_double(m_file_id, get_varid(variable_name), att_name.c_str(),
+                                  pism_type_to_nc_type(nctype), data.size(), &data[0]);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 
-int PNCFile::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, const std::vector<double> &data) const {
-  int stat = 0;
-
-  redef();
-
-  int varid = -1;
-
-  if (variable_name == "PISM_GLOBAL") {
-    varid = NC_GLOBAL;
-  } else {
-    stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
-  }
-
-  stat = ncmpi_put_att_double(m_file_id, varid, att_name.c_str(),
-                              pism_type_to_nc_type(nctype), data.size(), &data[0]); check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
+void PNCFile::put_att_text_impl(const std::string &variable_name,
+                                const std::string &att_name,
+                                const std::string &value) const {
+  int stat = ncmpi_put_att_text(m_file_id, get_varid(variable_name),
+                                att_name.c_str(), value.size(), value.c_str());
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 
-int PNCFile::put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
-  int stat = 0, varid = -1;
-
-  redef();
-
-  if (variable_name == "PISM_GLOBAL") {
-    varid = NC_GLOBAL;
-  } else {
-    stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
-  }
-
-  stat = ncmpi_put_att_text(m_file_id, varid, att_name.c_str(), value.size(), value.c_str()); check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
-}
-
-
-int PNCFile::inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const {
+void PNCFile::inq_attname_impl(const std::string &variable_name,
+                               unsigned int n,
+                               std::string &result) const {
   int stat;
   char name[NC_MAX_NAME];
   memset(name, 0, NC_MAX_NAME);
 
-  int varid = -1;
-
-  if (variable_name == "PISM_GLOBAL") {
-    varid = NC_GLOBAL;
-  } else {
-    stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
-  }
+  int varid = get_varid(variable_name);
 
   stat = ncmpi_inq_attname(m_file_id, varid, n, name); check(PISM_ERROR_LOCATION, stat);
 
   result = name;
-
-  return stat;
 }
 
 
-int PNCFile::inq_atttype_impl(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
-  int stat, varid = -1;
-  nc_type tmp;
+void PNCFile::inq_atttype_impl(const std::string &variable_name,
+                               const std::string &att_name,
+                               IO_Type &result) const {
+  int varid = get_varid(variable_name);
 
-  if (variable_name == "PISM_GLOBAL") {
-    varid = NC_GLOBAL;
-  } else {
-    stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
-  }
-
-  stat = ncmpi_inq_atttype(m_file_id, varid, att_name.c_str(), &tmp);
+  nc_type tmp = NC_NAT;
+  int stat = ncmpi_inq_atttype(m_file_id, varid, att_name.c_str(), &tmp);
   if (stat == NC_ENOTATT) {
     tmp = NC_NAT;
   } else {
@@ -511,44 +381,23 @@ int PNCFile::inq_atttype_impl(const std::string &variable_name, const std::strin
   }
 
   result = nc_type_to_pism_type(tmp);
-
-  return 0;
 }
 
 
-int PNCFile::set_fill_impl(int fillmode, int &old_modep) const {
-  int stat;
-
-  stat = ncmpi_set_fill(m_file_id, fillmode, &old_modep); check(PISM_ERROR_LOCATION, stat);
-
-  return stat;
+void PNCFile::set_fill_impl(int fillmode, int &old_modep) const {
+  int stat = ncmpi_set_fill(m_file_id, fillmode, &old_modep); check(PISM_ERROR_LOCATION, stat);
 }
 
 
-int PNCFile::get_var_double(const std::string &variable_name,
+void PNCFile::get_var_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,
                             const std::vector<unsigned int> &count,
                             const std::vector<unsigned int> &imap_input, double *ip,
-                            bool mapped) const {
+                            bool transposed) const {
   std::vector<unsigned int> imap = imap_input;
   int stat, varid, ndims = static_cast<int>(start.size());
 
-#if (PISM_DEBUG==1)
-  if (mapped) {
-    if (start.size() != count.size() ||
-        start.size() != imap.size()) {
-      fprintf(stderr, "start, count and imap arrays have to have the same size\n");
-      return NC_EINVAL;           // invalid argument error code
-    }
-  } else {
-    if (start.size() != count.size()) {
-      fprintf(stderr, "start and count arrays have to have the same size\n");
-      return NC_EINVAL;           // invalid argument error code
-    }
-  }
-#endif
-
-  if (not mapped) {
+  if (not transposed) {
     imap.resize(ndims);
   }
 
@@ -564,75 +413,22 @@ int PNCFile::get_var_double(const std::string &variable_name,
     nc_stride[j] = 1;
   }
 
-  if (mapped) {
+  if (transposed) {
     stat = ncmpi_get_varm_double_all(m_file_id, varid,
                                      &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                                     ip); check(PISM_ERROR_LOCATION, stat);
+                                     ip);
+    check(PISM_ERROR_LOCATION, stat);
   } else {
     stat = ncmpi_get_vara_double_all(m_file_id, varid,
                                      &nc_start[0], &nc_count[0],
-                                     ip); check(PISM_ERROR_LOCATION, stat);
+                                     ip);
+    check(PISM_ERROR_LOCATION, stat);
   }
-
-  return stat;
 }
-
-
-int PNCFile::put_var_double(const std::string &variable_name,
-                            const std::vector<unsigned int> &start,
-                            const std::vector<unsigned int> &count,
-                            const std::vector<unsigned int> &imap_input, const double *op,
-                            bool mapped) const {
-  int stat, varid, ndims = static_cast<int>(start.size());
-  std::vector<unsigned int> imap = imap_input;
-#if (PISM_DEBUG==1)
-  if (mapped) {
-    if (start.size() != count.size() ||
-        start.size() != imap.size()) {
-      fprintf(stderr, "start, count and imap arrays have to have the same size\n");
-      return NC_EINVAL;           // invalid argument error code
-    }
-  } else {
-    if (start.size() != count.size()) {
-      fprintf(stderr, "start and count arrays have to have the same size\n");
-      return NC_EINVAL;           // invalid argument error code
-    }
-  }
-#endif
-
-  if (not mapped) {
-    imap.resize(ndims);
-  }
-
-  std::vector<MPI_Offset> nc_start(ndims), nc_count(ndims),
-    nc_imap(ndims), nc_stride(ndims);
-
-  stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
-
-  for (int j = 0; j < ndims; ++j) {
-    nc_start[j] = start[j];
-    nc_count[j] = count[j];
-    nc_imap[j]  = imap[j];
-    nc_stride[j] = 1;
-  }
-
-  if (mapped) {
-    stat = ncmpi_put_varm_double_all(m_file_id, varid,
-                                     &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                                     op); check(PISM_ERROR_LOCATION, stat);
-  } else {
-    stat = ncmpi_put_vara_double_all(m_file_id, varid,
-                                     &nc_start[0], &nc_count[0],
-                                     op); check(PISM_ERROR_LOCATION, stat);
-  }
-
-  return stat;
-}
-
 
 void PNCFile::init_hints() {
 
-  for (auto hint : mpi_io_hints) {
+  for (auto hint : m_mpi_io_hints) {
     std::istringstream arg(hint);
     std::vector<std::string> words;
     std::string word;
@@ -644,7 +440,7 @@ void PNCFile::init_hints() {
       // printf("Setting MPI I/O hint \"%s\" to \"%s\"...\n",
       //        words[0].c_str(), words[1].c_str());
 
-      MPI_Info_set(mpi_info,
+      MPI_Info_set(m_mpi_info,
                    const_cast<char*>(words[0].c_str()),
                    const_cast<char*>(words[1].c_str()));
     } else {
@@ -656,10 +452,6 @@ void PNCFile::init_hints() {
       }
     }
   }
-}
-
-std::string PNCFile::get_format_impl() const {
-  return "netcdf3";
 }
 
 } // end of namespace io

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2009--2019 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 #include "SSAFEM.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
@@ -40,57 +40,58 @@ SSATestCase::SSATestCase(Context::Ptr ctx, int Mx, int My,
     m_geometry(m_grid),
     m_ssa(NULL) {
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
 
   // yield stress for basal till (plastic or pseudo-plastic model)
   m_tauc.create(m_grid, "tauc", WITH_GHOSTS, WIDE_STENCIL);
   m_tauc.set_attrs("diagnostic",
-                   "yield stress for basal till (plastic or pseudo-plastic model)", "Pa", "");
+                   "yield stress for basal till (plastic or pseudo-plastic model)",
+                   "Pa", "Pa", "", 0);
 
   // enthalpy
   m_ice_enthalpy.create(m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
   m_ice_enthalpy.set_attrs("model_state",
-                       "ice enthalpy (includes sensible heat, latent heat, pressure)",
-                       "J kg-1", "");
+                           "ice enthalpy (includes sensible heat, latent heat, pressure)",
+                           "J kg-1", "J kg-1", "", 0);
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
   m_bc_values.create(m_grid, "_bc", WITH_GHOSTS, WIDE_STENCIL); // u_bc and v_bc
   m_bc_values.set_attrs("intent",
-                     "X-component of the SSA velocity boundary conditions",
-                     "m s-1", "", 0);
+                        "X-component of the SSA velocity boundary conditions",
+                        "m s-1", "m year-1", "", 0);
   m_bc_values.set_attrs("intent",
-                     "Y-component of the SSA velocity boundary conditions",
-                     "m s-1", "", 1);
+                        "Y-component of the SSA velocity boundary conditions",
+                        "m s-1", "m year-1", "", 1);
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("output.fill_value"), "m year-1", "m second-1");
+  double fill_value = units::convert(sys, config->get_number("output.fill_value"), "m year-1", "m second-1");
 
-  m_bc_values.metadata(0).set_string("glaciological_units", "m year-1");
-  m_bc_values.metadata(0).set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_bc_values.metadata(0).set_double("valid_max", units::convert(m_sys,  1e6, "m year-1", "m second-1"));
-  m_bc_values.metadata(0).set_double("_FillValue", fill_value);
+  auto large_number = units::convert(m_sys,  1e6, "m year-1", "m second-1");
 
-  m_bc_values.metadata(1).set_string("glaciological_units", "m year-1");
-  m_bc_values.metadata(1).set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_bc_values.metadata(1).set_double("valid_max", units::convert(m_sys,  1e6, "m year-1", "m second-1"));
-  m_bc_values.metadata(1).set_double("_FillValue", fill_value);
+  m_bc_values.metadata(0).set_numbers("valid_range", {-large_number, large_number});
+  m_bc_values.metadata(0).set_number("_FillValue", fill_value);
+
+  m_bc_values.metadata(1).set_numbers("valid_range", {-large_number, large_number});
+  m_bc_values.metadata(1).set_number("_FillValue", fill_value);
 
   m_bc_values.set(fill_value);
 
   // Dirichlet B.C. mask
   m_bc_mask.create(m_grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
   m_bc_mask.set_attrs("model_state",
-                      "grounded_dragging_floating integer mask", "", "");
+                      "grounded_dragging_floating integer mask",
+                      "", "", "", 0);
 
-  m_bc_mask.metadata().set_doubles("flag_values", {0.0, 1.0});
+  m_bc_mask.metadata().set_numbers("flag_values", {0.0, 1.0});
   m_bc_mask.metadata().set_string("flag_meanings",
                                   "no_data ssa.dirichlet_bc_location");
 
   m_melange_back_pressure.create(m_grid, "melange_back_pressure_fraction",
                                  WITH_GHOSTS, WIDE_STENCIL);
   m_melange_back_pressure.set_attrs("boundary_condition",
-                                    "melange back pressure fraction", "", "");
+                                    "melange back pressure fraction",
+                                    "", "", "", 0);
   m_melange_back_pressure.set(0.0);
 }
 
@@ -112,7 +113,7 @@ void SSATestCase::init() {
 void SSATestCase::run() {
   m_ctx->log()->message(2, "* Solving the SSA stress balance ...\n");
 
-  m_geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
+  m_geometry.ensure_consistency(m_config->get_number("stress_balance.ice_free_thickness_standard"));
 
   Inputs inputs;
   inputs.melange_back_pressure = &m_melange_back_pressure;
@@ -146,8 +147,8 @@ void SSATestCase::report(const std::string &testname) {
     gmaxuerr   = 0.0,
     gmaxverr   = 0.0;
 
-  if (m_config->get_boolean("basal_resistance.pseudo_plastic.enabled") &&
-      m_config->get_double("basal_resistance.pseudo_plastic.q") != 1.0) {
+  if (m_config->get_flag("basal_resistance.pseudo_plastic.enabled") &&
+      m_config->get_number("basal_resistance.pseudo_plastic.q") != 1.0) {
     m_ctx->log()->message(1,
                           "WARNING: numerical errors not valid for pseudo-plastic till\n");
   }
@@ -247,66 +248,66 @@ void SSATestCase::report_netcdf(const std::string &testname,
     mode = PISM_READWRITE_MOVE;
   }
 
-  global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);
+  global_attributes.set_string("source", std::string("PISM ") + pism::revision);
 
   // Find the number of records in this file:
-  PIO nc(m_grid->com, "netcdf3", filename, mode);      // OK to use NetCDF3.
-  start = nc.inq_dimlen("N");
+  File file(m_grid->com, filename, PISM_NETCDF3, mode);      // OK to use NetCDF3.
+  start = file.dimension_length("N");
 
-  io::write_attributes(nc, global_attributes, PISM_DOUBLE);
+  io::write_attributes(file, global_attributes, PISM_DOUBLE);
 
   // Write the dimension variable:
-  io::write_timeseries(nc, err, (size_t)start, (double)(start + 1), PISM_INT);
+  io::write_timeseries(file, err, (size_t)start, (double)(start + 1), PISM_INT);
 
   // Always write grid parameters:
   err.set_name("dx");
   err.set_string("units", "meters");
-  io::write_timeseries(nc, err, (size_t)start, m_grid->dx());
+  io::write_timeseries(file, err, (size_t)start, m_grid->dx());
   err.set_name("dy");
-  io::write_timeseries(nc, err, (size_t)start, m_grid->dy());
+  io::write_timeseries(file, err, (size_t)start, m_grid->dy());
 
   // Always write the test name:
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("test");
-  io::write_timeseries(nc, err, (size_t)start, testname[0], PISM_BYTE);
+  io::write_timeseries(file, err, (size_t)start, testname[0], PISM_INT);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("max_velocity");
   err.set_string("units", "m year-1");
   err.set_string("long_name", "maximum ice velocity magnitude error");
-  io::write_timeseries(nc, err, (size_t)start, max_vector);
+  io::write_timeseries(file, err, (size_t)start, max_vector);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("relative_velocity");
   err.set_string("units", "percent");
   err.set_string("long_name", "relative ice velocity magnitude error");
-  io::write_timeseries(nc, err, (size_t)start, rel_vector);
+  io::write_timeseries(file, err, (size_t)start, rel_vector);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("maximum_u");
   err.set_string("units", "m year-1");
   err.set_string("long_name", "maximum error in the X-component of the ice velocity");
-  io::write_timeseries(nc, err, (size_t)start, max_u);
+  io::write_timeseries(file, err, (size_t)start, max_u);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("maximum_v");
   err.set_string("units", "m year-1");
   err.set_string("long_name", "maximum error in the Y-component of the ice velocity");
-  io::write_timeseries(nc, err, (size_t)start, max_v);
+  io::write_timeseries(file, err, (size_t)start, max_v);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("average_u");
   err.set_string("units", "m year-1");
   err.set_string("long_name", "average error in the X-component of the ice velocity");
-  io::write_timeseries(nc, err, (size_t)start, avg_u);
+  io::write_timeseries(file, err, (size_t)start, avg_u);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("average_v");
   err.set_string("units", "m year-1");
   err.set_string("long_name", "average error in the Y-component of the ice velocity");
-  io::write_timeseries(nc, err, (size_t)start, avg_v);
+  io::write_timeseries(file, err, (size_t)start, avg_v);
 
-  nc.close();
+  file.close();
 }
 
 void SSATestCase::exactSolution(int /*i*/, int /*j*/,
@@ -319,8 +320,7 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/,
 void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
-  PIO file(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
-          filename, PISM_READWRITE_MOVE);
+  File file(m_grid->com, filename, PISM_NETCDF3, PISM_READWRITE_MOVE);
   io::define_time(file, *m_grid->ctx());
   io::append_time(file, *m_config, 0.0);
 
@@ -339,12 +339,10 @@ void SSATestCase::write(const std::string &filename) {
   exact.create(m_grid, "_exact", WITHOUT_GHOSTS);
   exact.set_attrs("diagnostic",
                   "X-component of the SSA exact solution",
-                  "m s-1", "", 0);
+                  "m s-1", "m year-1", "", 0);
   exact.set_attrs("diagnostic",
                   "Y-component of the SSA exact solution",
-                  "m s-1", "", 1);
-  exact.metadata(0).set_string("glaciological_units", "m year-1");
-  exact.metadata(1).set_string("glaciological_units", "m year-1");
+                  "m s-1", "m year-1", "", 1);
 
   IceModelVec::AccessList list(exact);
   for (Points p(*m_grid); p; p.next()) {

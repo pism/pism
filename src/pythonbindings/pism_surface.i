@@ -1,14 +1,18 @@
 %{
+#include "coupler/surface/ISMIP6Climate.hh"
 #include "coupler/surface/EISMINTII.hh"
 #include "coupler/surface/Delta_T.hh"
 #include "coupler/surface/ConstantPIK.hh"
 #include "coupler/surface/Cache.hh"
 #include "coupler/surface/Anomaly.hh"
 #include "coupler/surface/Elevation.hh"
-#include "coupler/surface/LapseRates.hh"
+#include "coupler/surface/ElevationChange.hh"
 #include "coupler/surface/Simple.hh"
 #include "coupler/surface/TemperatureIndex.hh"
 #include "coupler/surface/GivenClimate.hh"
+#include "coupler/surface/ForceThickness.hh"
+#include "coupler/surface/Initialization.hh"
+#include "coupler/surface/Factory.hh"
 %}
 
 %shared_ptr(pism::surface::SurfaceModel)
@@ -25,6 +29,10 @@
 %rename(SurfaceEISMINTII) pism::surface::EISMINTII;
 %feature("notabstract") pism::surface::EISMINTII;
 %include "coupler/surface/EISMINTII.hh"
+
+%shared_ptr(pism::surface::ISMIP6)
+%rename(SurfaceISMIP6) pism::surface::ISMIP6;
+%include "coupler/surface/ISMIP6Climate.hh"
 
 %shared_ptr(pism::surface::PIK)
 %rename(SurfacePIK) pism::surface::PIK;
@@ -46,9 +54,9 @@
 %rename(SurfaceElevation) pism::surface::Elevation;
 %include "coupler/surface/Elevation.hh"
 
-%shared_ptr(pism::surface::LapseRates)
-%rename(SurfaceLapseRates) pism::surface::LapseRates;
-%include "coupler/surface/LapseRates.hh"
+%shared_ptr(pism::surface::ElevationChange)
+%rename(SurfaceElevationChange) pism::surface::ElevationChange;
+%include "coupler/surface/ElevationChange.hh"
 
 %shared_ptr(pism::surface::Simple)
 %rename(SurfaceSimple) pism::surface::Simple;
@@ -57,3 +65,16 @@
 %shared_ptr(pism::surface::TemperatureIndex)
 %rename(SurfaceTemperatureIndex) pism::surface::TemperatureIndex;
 %include "coupler/surface/TemperatureIndex.hh"
+
+%shared_ptr(pism::surface::ForceThickness)
+%rename(SurfaceForceThickness) pism::surface::ForceThickness;
+%include "coupler/surface/ForceThickness.hh"
+
+%shared_ptr(pism::surface::InitializationHelper)
+%rename(SurfaceInitialization) pism::surface::InitializationHelper;
+%include "coupler/surface/Initialization.hh"
+
+%shared_ptr(pism::surface::Factory)
+
+%rename(SurfaceFactory) pism::surface::Factory;
+%include "coupler/surface/Factory.hh"

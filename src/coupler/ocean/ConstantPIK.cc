@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2019 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
 //
 // This file is part of PISM.
@@ -58,20 +58,25 @@ void PIK::update_impl(const Geometry &geometry, double t, double dt) {
 
   const IceModelVec2S &H = geometry.ice_thickness;
 
+  // Set shelf base temperature to the melting temperature at the base (depth within the
+  // ice equal to ice thickness).
   melting_point_temperature(H, *m_shelf_base_temperature);
 
   mass_flux(H, *m_shelf_base_mass_flux);
 
-  m_melange_back_pressure_fraction->set(0.0);
+  m_melange_back_pressure_fraction->set(m_config->get_number("ocean.melange_back_pressure_fraction"));
 }
 
+/*!
+ * Compute melting temperature at a given depth within the ice.
+ */
 void PIK::melting_point_temperature(const IceModelVec2S &depth,
                                     IceModelVec2S &result) const {
   const double
-    T0          = m_config->get_double("constants.fresh_water.melting_point_temperature"), // K
-    beta_CC     = m_config->get_double("constants.ice.beta_Clausius_Clapeyron"),
-    g           = m_config->get_double("constants.standard_gravity"),
-    ice_density = m_config->get_double("constants.ice.density");
+    T0          = m_config->get_number("constants.fresh_water.melting_point_temperature"), // K
+    beta_CC     = m_config->get_number("constants.ice.beta_Clausius_Clapeyron"),
+    g           = m_config->get_number("constants.standard_gravity"),
+    ice_density = m_config->get_number("constants.ice.density");
 
   IceModelVec::AccessList list{&depth, &result};
 
@@ -87,12 +92,12 @@ void PIK::melting_point_temperature(const IceModelVec2S &depth,
 /*!
  * Assumes that mass flux is proportional to the shelf-base heat flux.
  */
-void PIK::mass_flux(const IceModelVec2S &depth, IceModelVec2S &result) const {
+void PIK::mass_flux(const IceModelVec2S &ice_thickness, IceModelVec2S &result) const {
   const double
-    melt_factor       = m_config->get_double("ocean.pik_melt_factor"),
-    L                 = m_config->get_double("constants.fresh_water.latent_heat_of_fusion"),
-    sea_water_density = m_config->get_double("constants.sea_water.density"),
-    ice_density       = m_config->get_double("constants.ice.density"),
+    melt_factor       = m_config->get_number("ocean.pik_melt_factor"),
+    L                 = m_config->get_number("constants.fresh_water.latent_heat_of_fusion"),
+    sea_water_density = m_config->get_number("constants.sea_water.density"),
+    ice_density       = m_config->get_number("constants.ice.density"),
     c_p_ocean         = 3974.0, // J/(K*kg), specific heat capacity of ocean mixed layer
     gamma_T           = 1e-4,   // m/s, thermal exchange velocity
     ocean_salinity    = 35.0,   // g/kg
@@ -100,7 +105,7 @@ void PIK::mass_flux(const IceModelVec2S &depth, IceModelVec2S &result) const {
 
   //FIXME: gamma_T should be a function of the friction velocity, not a const
 
-  IceModelVec::AccessList list{&depth, &result};
+  IceModelVec::AccessList list{&ice_thickness, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -111,7 +116,7 @@ void PIK::mass_flux(const IceModelVec2S &depth, IceModelVec2S &result) const {
     // Pressure Melting Temperature, see beckmann_goosse03 eq. 2 for
     // details]
     double
-      shelfbaseelev = - (ice_density / sea_water_density) * depth(i,j),
+      shelfbaseelev = - (ice_density / sea_water_density) * ice_thickness(i,j),
       T_f           = 273.15 + (0.0939 -0.057 * ocean_salinity + 7.64e-4 * shelfbaseelev);
     // add 273.15 to convert from Celsius to Kelvin
 

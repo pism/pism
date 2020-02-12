@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,7 +38,7 @@ Diagnostic::Diagnostic(IceGrid::ConstPtr g)
   : m_grid(g),
     m_sys(g->ctx()->unit_system()),
     m_config(g->ctx()->config()),
-    m_fill_value(m_config->get_double("output.fill_value")) {
+    m_fill_value(m_config->get_number("output.fill_value")) {
   // empty
 }
 
@@ -63,35 +63,55 @@ void Diagnostic::reset_impl() {
   // empty
 }
 
+/*!
+ * Convert from external (output) units to internal units.
+ */
+double Diagnostic::to_internal(double x) const {
+  std::string
+    out = m_vars.at(0).get_string("glaciological_units"),
+    in  = m_vars.at(0).get_string("units");
+  return convert(m_sys, x, out, in);
+}
+
+/*!
+ * Convert from internal to external (output) units.
+ */
+double Diagnostic::to_external(double x) const {
+  std::string
+    out = m_vars.at(0).get_string("glaciological_units"),
+    in  = m_vars.at(0).get_string("units");
+  return convert(m_sys, x, in, out);
+}
+
 //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
 unsigned int Diagnostic::n_variables() const {
   return m_vars.size();
 }
 
-void Diagnostic::init(const PIO &input, unsigned int time) {
+void Diagnostic::init(const File &input, unsigned int time) {
   this->init_impl(input, time);
 }
 
-void Diagnostic::define_state(const PIO &output) const {
+void Diagnostic::define_state(const File &output) const {
   this->define_state_impl(output);
 }
 
-void Diagnostic::write_state(const PIO &output) const {
+void Diagnostic::write_state(const File &output) const {
   this->write_state_impl(output);
 }
 
-void Diagnostic::init_impl(const PIO &input, unsigned int time) {
+void Diagnostic::init_impl(const File &input, unsigned int time) {
   (void) input;
   (void) time;
   // empty
 }
 
-void Diagnostic::define_state_impl(const PIO &output) const {
+void Diagnostic::define_state_impl(const File &output) const {
   (void) output;
   // empty
 }
 
-void Diagnostic::write_state_impl(const PIO &output) const {
+void Diagnostic::write_state_impl(const File &output) const {
   (void) output;
   // empty
 }
@@ -107,15 +127,14 @@ SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
   return m_vars[N];
 }
 
-void Diagnostic::define(const PIO &file, IO_Type default_type) const {
+void Diagnostic::define(const File &file, IO_Type default_type) const {
   this->define_impl(file, default_type);
 }
 
 //! Define NetCDF variables corresponding to a diagnostic quantity.
-void Diagnostic::define_impl(const PIO &file, IO_Type default_type) const {
+void Diagnostic::define_impl(const File &file, IO_Type default_type) const {
   for (auto &v : m_vars) {
-    io::define_spatial_variable(v, *m_grid, file, default_type,
-                                m_grid->ctx()->config()->get_string("output.variable_order"));
+    io::define_spatial_variable(v, *m_grid, file, default_type);
   }
 }
 
@@ -138,7 +157,7 @@ void Diagnostic::set_attrs(const std::string &long_name,
 
   m_vars[N].set_string("units", units);
 
-  if (not glaciological_units.empty()) {
+  if (not (m_config->get_flag("output.use_MKS") or glaciological_units.empty())) {
     m_vars[N].set_string("glaciological_units", glaciological_units);
   }
 }
@@ -167,7 +186,7 @@ TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr g, const std::string &name)
   m_current_time = 0;
   m_start        = 0;
 
-  m_buffer_size = (size_t)m_config->get_double("output.timeseries.buffer_size");
+  m_buffer_size = (size_t)m_config->get_number("output.timeseries.buffer_size");
 
   m_ts.variable().set_string("ancillary_variables", name + "_aux");
 
@@ -179,6 +198,15 @@ TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr g, const std::string &name)
 
 TSDiagnostic::~TSDiagnostic() {
   flush();
+}
+
+void TSDiagnostic::set_units(const std::string &units,
+                             const std::string &glaciological_units) {
+  m_ts.variable().set_string("units", units);
+
+  if (not m_config->get_flag("output.use_MKS")) {
+    m_ts.variable().set_string("glaciological_units", glaciological_units);
+  }
 }
 
 TSSnapshotDiagnostic::TSSnapshotDiagnostic(IceGrid::ConstPtr g, const std::string &name)
@@ -314,7 +342,7 @@ void TSFluxDiagnostic::update_impl(double t0, double t1) {
   evaluate(t0, t1, this->compute());
 }
 
-void TSDiagnostic::define(const PIO &file) const {
+void TSDiagnostic::define(const File &file) const {
   io::define_timeseries(m_ts.variable(), file, PISM_DOUBLE);
   io::define_time_bounds(m_ts.bounds(), file, PISM_DOUBLE);
 }
@@ -327,13 +355,13 @@ void TSDiagnostic::flush() {
 
   std::string dimension_name = m_ts.dimension().get_name();
 
-  PIO file(m_grid->com, "netcdf3", m_output_filename, PISM_READWRITE); // OK to use netcdf3
+  File file(m_grid->com, m_output_filename, PISM_NETCDF3, PISM_READWRITE); // OK to use netcdf3
 
-  unsigned int len = file.inq_dimlen(dimension_name);
+  unsigned int len = file.dimension_length(dimension_name);
 
   if (len > 0) {
-    double last_time = 0.0;
-    file.inq_dim_limits(dimension_name, NULL, &last_time);
+    double last_time = vector_max(file.read_dimension(dimension_name));
+
     if (last_time < m_ts.times().front()) {
       m_start = len;
     }
@@ -350,14 +378,14 @@ void TSDiagnostic::flush() {
   m_ts.reset();
 }
 
-void TSDiagnostic::init(const PIO &output_file,
+void TSDiagnostic::init(const File &output_file,
                         std::shared_ptr<std::vector<double>> requested_times) {
-  m_output_filename = output_file.inq_filename();
+  m_output_filename = output_file.filename();
 
   m_times = requested_times;
 
   // Get the number of records in the file (for appending):
-  m_start = output_file.inq_dimlen(m_ts.dimension().get_name());
+  m_start = output_file.dimension_length(m_ts.dimension().get_name());
 }
 
 const VariableMetadata &TSDiagnostic::metadata() const {

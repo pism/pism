@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2016 PISM Authors
+/* Copyright (C) 2014, 2016, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,7 +23,7 @@
 #include "ConfigJSON.hh"
 #include "error_handling.hh"
 #include "pism_utilities.hh"
-#include "io/PIO.hh"
+#include "io/File.hh"
 
 namespace pism {
 
@@ -53,6 +53,66 @@ static json_t* find_json_value(json_t *root, const std::string &name) {
   return object;
 }
 
+/*!
+ * Convert an STL vector to a JSON array.
+ */
+static json_t* pack_json_array(const std::vector<double> &data) {
+  json_t *array = json_array();
+  if (array == NULL) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "failed to create an empty JSON array");
+  }
+
+  for (const auto &v : data) {
+    json_t *value = json_pack("f", v);
+    if (value == NULL) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "failed to pack a JSON number");
+    }
+    if (json_array_append_new(array, value) != 0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "failed to add an element to a JSON array");
+    }
+  }
+
+  return array;
+}
+
+/*!
+ * Convert a JSON array to an STL vector.
+ */
+std::vector<double> unpack_json_array(const char *name,
+                                      const json_t *input) {
+  std::vector<double> result;
+
+  if (json_typeof(input) != JSON_ARRAY) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "%s is not an array", name);
+  }
+
+  size_t N = json_array_size(input);
+
+  for (size_t k = 0; k < N; ++k) {
+    json_t *value = json_array_get(input, k);
+    if (value == NULL) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "failed to get an element of %s",
+                                    name);
+    }
+
+    double v = 0.0;
+    if (json_unpack(value, "F", &v) == 0) {
+      result.push_back(v);
+    } else {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "failed to convert an element of %s to double",
+                                    name);
+    }
+  }
+
+  return result;
+}
+
 
 template<typename PISMType, typename TMPType>
 static void get_all_values(json_t *root, const std::string &path,
@@ -68,7 +128,8 @@ static void get_all_values(json_t *root, const std::string &path,
       if (json_unpack(value, fmt, &tmp) == 0) {
         accum[parameter] = tmp;
       } else {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to json_unpack %s using format %s",
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "failed to json_unpack %s using format %s",
                                       parameter.c_str(), fmt);
       }
     } else if (value_type == JSON_OBJECT) {
@@ -77,6 +138,26 @@ static void get_all_values(json_t *root, const std::string &path,
   }
 }
 
+static void get_all_arrays(json_t *root, const std::string &path,
+                           std::map<std::string, std::vector<double> > &accum) {
+  const char *key;
+  json_t *value;
+
+  json_object_foreach(root, key, value) {
+    std::string parameter = path + key;
+
+    switch (json_typeof(value)) {
+    case JSON_ARRAY:
+      accum[parameter] = unpack_json_array(parameter.c_str(), value);
+      break;
+    case JSON_OBJECT:
+      get_all_arrays(value, parameter + ".", accum);
+      break;
+    default:
+      break;
+    }
+  }
+}
 
 template<typename PISMType, typename TMPType>
 static PISMType get_value(json_t *object, const std::string &name,
@@ -90,7 +171,8 @@ static PISMType get_value(json_t *object, const std::string &name,
   if (json_unpack(value, fmt, &tmp) == 0) {
     return tmp;
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to convert %s to a %s", name.c_str(), type_name);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "failed to convert %s to a %s", name.c_str(), type_name);
   }
 }
 
@@ -195,7 +277,16 @@ std::string ConfigJSON::dump() const {
 
 Config::Doubles ConfigJSON::all_doubles_impl() const {
   Config::Doubles result;
-  get_all_values<double, double>(m_data, "", JSON_REAL, "F", result);
+
+  std::map<std::string, double> scalars;
+  get_all_values<double, double>(m_data, "", JSON_REAL, "F", scalars);
+
+  for (const auto &p : scalars) {
+    result[p.first] = {p.second};
+  }
+
+  get_all_arrays(m_data, "", result);
+
   return result;
 }
 
@@ -205,18 +296,23 @@ Config::Strings ConfigJSON::all_strings_impl() const {
   return result;
 }
 
-Config::Booleans ConfigJSON::all_booleans_impl() const {
-  Config::Booleans result;
+Config::Flags ConfigJSON::all_flags_impl() const {
+  Config::Flags result;
   get_all_values<bool, int>(m_data, "", JSON_TRUE, "b", result);
   get_all_values<bool, int>(m_data, "", JSON_FALSE, "b", result);
   return result;
 }
 
-void ConfigJSON::set_double_impl(const std::string &name, double value) {
+void ConfigJSON::set_number_impl(const std::string &name, double value) {
   set_value(m_data, name, json_pack("f", value));
 }
 
-void ConfigJSON::set_boolean_impl(const std::string &name, bool value) {
+void ConfigJSON::set_numbers_impl(const std::string &name,
+                                  const std::vector<double> &values) {
+  set_value(m_data, name, pack_json_array(values));
+}
+
+void ConfigJSON::set_flag_impl(const std::string &name, bool value) {
   set_value(m_data, name, json_pack("b", value));
 }
 
@@ -224,30 +320,40 @@ void ConfigJSON::set_string_impl(const std::string &name, const std::string &val
   set_value(m_data, name, json_pack("s", value.c_str()));
 }
 
-double ConfigJSON::get_double_impl(const std::string &name) const {
-  return get_value<double, double>(m_data, name, "F", "double");
+double ConfigJSON::get_number_impl(const std::string &name) const {
+  return get_value<double, double>(m_data, name, "F", "number");
+}
+
+std::vector<double> ConfigJSON::get_numbers_impl(const std::string &name) const {
+  json_t *value = find_json_value(m_data, name);
+
+  if (value == NULL) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "%s was not found", name.c_str());
+  }
+
+  return unpack_json_array(name.c_str(), value);
 }
 
 std::string ConfigJSON::get_string_impl(const std::string &name) const {
   return get_value<std::string, const char *>(m_data, name, "s", "string");
 }
 
-bool ConfigJSON::get_boolean_impl(const std::string &name) const {
-  return get_value<bool, int>(m_data, name, "b", "boolean");
+bool ConfigJSON::get_flag_impl(const std::string &name) const {
+  return get_value<bool, int>(m_data, name, "b", "flag");
 }
 
-void ConfigJSON::read_impl(const PIO &nc) {
-  std::string config_string = nc.get_att_text("PISM_GLOBAL", "pism_config");
+void ConfigJSON::read_impl(const File &nc) {
+  std::string config_string = nc.read_text_attribute("PISM_GLOBAL", "pism_config");
   this->init_from_string(config_string);
 }
 
-void ConfigJSON::write_impl(const PIO &nc) const {
-  nc.put_att_text("PISM_GLOBAL", "pism_config", this->dump());
+void ConfigJSON::write_impl(const File &nc) const {
+  nc.write_attribute("PISM_GLOBAL", "pism_config", this->dump());
 }
 
 bool ConfigJSON::is_set_impl(const std::string &name) const {
-  json_t *value = find_json_value(m_data, name);
-  if (value == NULL) {
+  if (find_json_value(m_data, name) == NULL) {
     return false;
   } else {
     return true;

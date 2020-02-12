@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,7 +25,7 @@ namespace pism {
 namespace atmosphere {
 
 Uniform::Uniform(IceGrid::ConstPtr grid)
-  : AtmosphereModel(grid, nullptr) {
+  : AtmosphereModel(grid, std::shared_ptr<AtmosphereModel>()) {
   m_precipitation = allocate_precipitation(grid);
   m_temperature = allocate_temperature(grid);
 }
@@ -35,8 +35,8 @@ void Uniform::init_impl(const Geometry &geometry) {
 
   m_log->message(2, "* Initializing the test atmosphere model...\n");
 
-  m_temperature->set(m_config->get_double("atmosphere.uniform.temperature", "Kelvin"));
-  m_precipitation->set(m_config->get_double("atmosphere.uniform.precipitation", "kg m-2 s-1"));
+  m_temperature->set(m_config->get_number("atmosphere.uniform.temperature", "Kelvin"));
+  m_precipitation->set(m_config->get_number("atmosphere.uniform.precipitation", "kg m-2 s-1"));
 }
 
 void Uniform::update_impl(const Geometry &geometry, double t, double dt) {
@@ -63,6 +63,9 @@ void Uniform::end_pointwise_access_impl() const {
   m_temperature->end_access();
 }
 
+void Uniform::init_timeseries_impl(const std::vector<double> &ts) const {
+  m_ts_times = ts;
+}
 
 void Uniform::temp_time_series_impl(int i, int j, std::vector<double> &values) const {
   for (size_t k = 0; k < m_ts_times.size(); ++k) {

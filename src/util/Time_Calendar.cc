@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 
 #include "Time_Calendar.hh"
 #include "pism_options.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/external/calcalcs/utCalendar2_cal.h"
 #include "pism/external/calcalcs/calcalcs.h"
 #include "ConfigInterface.hh"
@@ -78,8 +78,8 @@ Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
     throw;
   }
 
-  m_run_start = increment_date(0, (int)m_config->get_double("time.start_year"));
-  m_run_end   = increment_date(m_run_start, (int)m_config->get_double("time.run_length"));
+  m_run_start = increment_date(0, (int)m_config->get_number("time.start_year"));
+  m_run_end   = increment_date(m_run_start, (int)m_config->get_number("time.run_length"));
 
   m_time_in_seconds = m_run_start;
 }
@@ -99,7 +99,7 @@ bool Time_Calendar::process_ys(double &result) {
       throw;
     }
   } else {
-    result = m_config->get_double("time.start_year", "seconds");
+    result = m_config->get_number("time.start_year", "seconds");
   }
   return ys.is_set();
 }
@@ -115,7 +115,7 @@ bool Time_Calendar::process_y(double &result) {
     }
     result = years_to_seconds(y);
   } else {
-    result = m_config->get_double("time.run_length", "seconds");
+    result = m_config->get_number("time.run_length", "seconds");
   }
   return y.is_set();
 }
@@ -133,19 +133,19 @@ bool Time_Calendar::process_ye(double &result) {
       throw;
     }
   } else {
-    result = (m_config->get_double("time.start_year", "seconds") +
-              m_config->get_double("time.run_length", "seconds"));
+    result = (m_config->get_number("time.start_year", "seconds") +
+              m_config->get_number("time.run_length", "seconds"));
   }
   return ye.is_set();
 }
 
-void Time_Calendar::init_from_input_file(const PIO &nc,
+void Time_Calendar::init_from_input_file(const File &nc,
                                          const std::string &time_name,
                                          const Logger &log) {
   try {
     // Set the calendar name from file, unless we are re-starting from a PISM run using the "none"
     // calendar.
-    std::string new_calendar = nc.get_att_text(time_name, "calendar");
+    std::string new_calendar = nc.read_text_attribute(time_name, "calendar");
     if (not new_calendar.empty() and
         not (new_calendar == "none")) {
       init_calendar(new_calendar);
@@ -174,9 +174,9 @@ void Time_Calendar::init_from_input_file(const PIO &nc,
                 "* Time t = %s (calendar: %s) found in '%s'; setting current time\n",
                 this->date().c_str(),
                 this->calendar().c_str(),
-                nc.inq_filename().c_str());
+                nc.filename().c_str());
   } catch (RuntimeError &e) {
-    e.add_context("initializing model time from \"%s\"", nc.inq_filename().c_str());
+    e.add_context("initializing model time from \"%s\"", nc.filename().c_str());
     throw;
   }
 }
@@ -212,35 +212,35 @@ void Time_Calendar::init_from_file(const std::string &filename, const Logger &lo
   try {
     std::string time_name = m_config->get_string("time.dimension_name");
 
-    PIO nc(m_com, "netcdf3", filename, PISM_READONLY); // OK to use netcdf3
+    File file(m_com, filename, PISM_NETCDF3, PISM_READONLY); // OK to use netcdf3
 
     // Set the calendar name from file.
-    std::string new_calendar = nc.get_att_text(time_name, "calendar");
+    std::string new_calendar = file.read_text_attribute(time_name, "calendar");
     if (not new_calendar.empty()) {
       init_calendar(new_calendar);
     }
 
     // Set the reference date of internal units.
     {
-      std::string date_string = reference_date_from_file(nc, time_name);
+      std::string date_string = reference_date_from_file(file, time_name);
       m_time_units = units::Unit(m_unit_system, "seconds " + date_string);
     }
 
     // Read time information from the file.
     std::vector<double> time;
-    std::string time_bounds_name = nc.get_att_text(time_name, "bounds");
+    std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
     if (not time_bounds_name.empty()) {
       // use the time bounds
       TimeBoundsMetadata bounds(time_bounds_name, time_name, m_unit_system);
       bounds.set_string("units", m_time_units.format());
 
-      io::read_time_bounds(nc, bounds, *this, log, time);
+      io::read_time_bounds(file, bounds, *this, log, time);
     } else {
       // use the time axis
       TimeseriesMetadata time_axis(time_name, time_name, m_unit_system);
       time_axis.set_string("units", m_time_units.format());
 
-      io::read_timeseries(nc, time_axis, *this, log, time);
+      io::read_timeseries(file, time_axis, *this, log, time);
     }
 
     // Set time.
@@ -333,7 +333,6 @@ double Time_Calendar::calendar_year_start(double T) const {
 }
 
 
-// FIXME: this feeds invalid dates to utInvCalendar2_cal! (step 1 year from Feb 29...)
 double Time_Calendar::increment_date(double T, int years) const {
   int year, month, day, hour, minute;
   double second, result;

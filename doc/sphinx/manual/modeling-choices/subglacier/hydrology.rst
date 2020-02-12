@@ -1,4 +1,5 @@
 .. include:: ../../../global.txt
+.. include:: ../../../math-definitions.txt
 
 .. _sec-subhydro:
 
@@ -6,21 +7,21 @@ Subglacial hydrology
 --------------------
 
 At the present time, two simple subglacial hydrology models are implemented *and
-documented* in PISM, namely ``-hydrology null`` and ``-hydrology routing``; see
-:numref:`tab-hydrologychoice` and :cite:`BuelervanPelt2015`. In both models, some of the
-water in the subglacial layer is stored locally in a layer of subglacial till by the
-hydrology model. In the ``routing`` model water is conserved by horizontally-transporting
-the excess water (namely ``bwat``) according to the gradient of the modeled hydraulic
-potential. In both hydrology models a state variable ``tillwat`` is the effective
-thickness of the layer of liquid water in the till; it is used to compute the effective
-pressure on the till (see :ref:`sec-basestrength`). The pressure of the transportable
-water ``bwat`` in the ``routing`` model does not relate directly to the effective pressure
-on the till.
+documented* in PISM, namely ``-hydrology null`` (and its modification ``steady``) and
+``-hydrology routing``; see :numref:`tab-hydrologychoice` and :cite:`BuelervanPelt2015`.
+In both models, some of the water in the subglacial layer is stored locally in a layer of
+subglacial till by the hydrology model. In the ``routing`` model water is conserved by
+horizontally-transporting the excess water (namely ``bwat``) according to the gradient of
+the modeled hydraulic potential. In both hydrology models a state variable ``tillwat`` is
+the effective thickness of the layer of liquid water in the till; it is used to compute
+the effective pressure on the till (see :ref:`sec-basestrength`). The pressure of the
+transportable water ``bwat`` in the ``routing`` model does not relate directly to the
+effective pressure on the till.
 
 .. note::
 
-   Both models described here provide all diagnostic quantities needed for mass
-   accounting, even though the simpler model is not mass-conserving. See
+   Both ``null`` and ``routing`` described here provide all diagnostic quantities needed
+   for mass accounting, even though ``null`` is not mass-conserving. See
    :ref:`sec-mass-conservation-hydrology` for details.
 
 .. list-table:: Command-line options to choose the hydrology model
@@ -35,6 +36,12 @@ on the till.
        the map-plane but much faster than ``-hydrology routing``. Based on "undrained
        plastic bed" model of :cite:`Tulaczyketal2000b`. The only state variable is
        ``tillwat``.
+
+   * - :opt:`-hydrology steady`
+     - A version of the ``null`` model that computes an approximation of the steady state
+       subglacial water flux that can be used as an input for a frontal melt
+       parameterization such as the one described in :ref:`sec-ismip6-frontal-melt`.
+
    * - :opt:`-hydrology routing`
      - A mass-conserving horizontal transport model in which the pressure of transportable
        water is equal to overburden pressure. The till layer remains in the model, so this
@@ -52,6 +59,11 @@ to replace the computed ``basal_melt_rate_grounded`` rate by values read from a 
 thereby effectively decoupling the hydrology model from the ice dynamics
 (esp. conservation of energy).
 
+To use water runoff computed by a PISM surface model, set
+:config:`hydrology.surface_input_from_runoff`. (The :ref:`sec-surface-pdd` computes runoff
+using computed melt and the assumption that a fraction of this melt re-freezes, all other
+models assume that all melt turns into runoff.)
+
 .. list-table:: Subglacial hydrology command-line options which apply to all hydrology models
    :name: tab-hydrology
    :header-rows: 1
@@ -59,7 +71,7 @@ thereby effectively decoupling the hydrology model from the ice dynamics
 
    * - Option
      - Description
-   * - :opt:`-hydrology.surface_input_file`
+   * - :opt:`-hydrology.surface_input.file`
      - Specifies a NetCDF file which contains a time-dependent field ``water_input_rate``
        which has units of water thickness per time. This rate is *added to* the basal melt
        rate computed by the energy conservation code.
@@ -71,6 +83,8 @@ thereby effectively decoupling the hydrology model from the ice dynamics
    * - :opt:`-hydrology_use_const_bmelt`
      - Replace the conservation-of-energy basal melt rate ``basal_melt_rate_grounded``
        with a constant.
+
+.. _sec-hydrology-null:
 
 The default model: ``-hydrology null``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -98,6 +112,79 @@ This ``-hydrology null`` model has been extensively tested in combination with t
 Mohr-Coulomb till (section :ref:`sec-basestrength`) for modelling ice streaming (see
 :cite:`AschwandenAdalgeirsdottirKhroulev` and :cite:`BBssasliding`, among others).
 
+.. _sec-hydrology-steady:
+
+"Steady state flow" model
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This model (``-hydrology steady``) adds an approximation of the subglacial water flux to
+the ``null`` model. It *does not* model the steady state distribution of the subglacial
+water thickness.
+
+Here we assume that the water input from the surface read from the file specified using
+:config:`hydrology.surface_input.file` instantaneously percolates to the base of the ice
+and enters the subglacial water system.
+
+We also assume that the subglacial drainage system instantaneously reaches its steady
+state. Under this assumption the water flux can be approximated by using an auxiliary
+problem that is computationally cheaper to solve, compared to using the mass conserving
+``routing`` model (at least at high grid resolutions).
+
+We solve
+
+.. math::
+   :label: eq-steady-hydro-aux
+
+   \diff{u}{t} = -\div (\V u)
+
+on the grounded part of the domain with the initial state `u_0 = \tau M`, where `\tau` is
+the scaling of the input rate (:config:`hydrology.steady.input_rate_scaling`) and `M` is
+the input rate read from an input file.
+
+The velocity field `\V` approximates the steady state flow direction. In this
+implementation `\V` is the normalized gradient of
+
+.. math::
+
+   \psi = \rho_i g H + \rho_w g b + \Delta \psi.
+
+Here `H` is the ice thickness, `b` is the bed elevation, `g` is the acceleration due to
+gravity and `\rho_i`, `\rho_w` are densities of ice and water, respectively.
+
+.. note::
+
+   Note that `\psi` ignores subglacial water thickness, producing flow patterns that are
+   more concentrated than would be seen in a model that includes it. This effect is
+   grid-dependent.
+
+   This implies that this code cannot model the distribution of the flow along the
+   grounding line of a particular outlet glacier but it *can* tell us how surface runoff
+   is distributed among the outlets.
+
+The term `\Delta \psi` is the adjustment needed to remove internal minima from the "raw"
+potential, filling any "lakes" it might have. This modification of `\psi` is performed
+using an iterative process; set :config:`hydrology.steady.potential_n_iterations` to
+control the maximum number of iterations and :config:`hydrology.steady.potential_delta` to
+affect the amount it is adjusted by at each iteration.
+
+The equation :eq:`eq-steady-hydro-aux` is advanced forward in time until `\int_{\Omega}u
+< \epsilon\int_{\Omega} u_0`, where `\epsilon` (:config:`hydrology.steady.volume_ratio`)
+is a fraction controlling the accuracy of the approximation: lower values of `\epsilon`
+would result in a better approximation and a higher computational cost (more iterations).
+Set :config:`hydrology.steady.n_iterations` to control the maximum number of these
+iterations.
+
+This model restricts the time step length in order to capture the temporal variability of
+the forcing: the flux is updated at least once for each time interval in the forcing file.
+
+In simulations with a slowly-varying surface input rate the flux has to be updated every
+once in a while to reflect changes in the flow pattern coming from changing geometry. Use
+:config:`hydrology.steady.flux_update_interval` (years) to set the update frequency.
+
+See :ref:`sec-steady-hydro` for technical details.
+
+.. _sec-hydrology-routing:
+
 The mass-conserving model: ``-hydrology routing``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -116,8 +203,6 @@ additional parameters are used in determining how the transportable water ``bwat
 in the model; see :numref:`tab-hydrologyrouting`. Specifically, the horizontal
 subglacial water flux is determined by a generalized Darcy flux relation :cite:`Clarke05`,
 :cite:`Schoofetal2012`
-
-.. include:: ../../../math-definitions.txt
 
 .. math::
    :label: eq-flux

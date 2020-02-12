@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -52,10 +52,10 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g,
   m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencil_width);
   m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencil_width);
 
-  m_tauc_copy.create(m_grid, "tauc", WITH_GHOSTS, m_config->get_double("grid.max_stencil_width"));
+  m_tauc_copy.create(m_grid, "tauc", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width"));
   m_tauc_copy.set_attrs("diagnostic",
                         "yield stress for basal till (plastic or pseudo-plastic model)",
-                        "Pa", "");
+                        "Pa", "Pa", "", 0);
 
   ierr = DMSetMatType(*m_da, MATBAIJ);
   PISM_CHK(ierr, "DMSetMatType");
@@ -100,7 +100,7 @@ void IP_SSATaucForwardProblem::init() {
     geometry.sea_level_elevation.set(0.0);
     geometry.ice_area_specific_volume.set(0.0);
 
-    geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
+    geometry.ensure_consistency(m_config->get_number("stress_balance.ice_free_thickness_standard"));
 
     stressbalance::Inputs inputs;
 
@@ -386,7 +386,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
 void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                IceModelVec2V &du,
                                                                Vec dzeta) {
-  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_double("grid.max_stencil_width"));
+  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_number("grid.max_stencil_width"));
   petsc::DMDAVecArray dzeta_a(da2, dzeta);
   this->apply_jacobian_design_transpose(u, du, (double**)dzeta_a.get());
 }

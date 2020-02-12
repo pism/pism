@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,6 +27,8 @@
 namespace pism {
 
 class Geometry {
+private:
+  const unsigned int m_stencil_width;
 public:
   Geometry(IceGrid::ConstPtr grid);
 
@@ -56,6 +58,18 @@ public:
   IceModelVec2S cell_grounded_fraction;
   IceModelVec2S ice_surface_elevation;
 };
+
+void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result);
+
+double ice_volume(const Geometry &geometry, double thickness_threshold);
+double ice_area_floating(const Geometry &geometry, double thickness_threshold);
+double ice_area_grounded(const Geometry &geometry, double thickness_threshold);
+double ice_area(const Geometry &geometry, double thickness_threshold);
+double ice_volume_not_displacing_seawater(const Geometry &geometry,
+                                          double thickness_threshold);
+double sea_level_rise_potential(const Geometry &geometry, double thickness_threshold);
+
+void set_no_model_strip(const IceGrid &grid, double width, IceModelVec2Int &result);
 
 } // end of namespace pism
 

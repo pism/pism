@@ -64,12 +64,12 @@ void Verification::init_impl(const Geometry &geometry) {
   update(geometry, m_grid->ctx()->time()->current(), 0);
 }
 
-void Verification::define_model_state_impl(const PIO &output) const {
+void Verification::define_model_state_impl(const File &output) const {
   m_mass_flux->define(output);
   m_temperature->define(output);
 }
 
-void Verification::write_model_state_impl(const PIO &output) const {
+void Verification::write_model_state_impl(const File &output) const {
   m_mass_flux->write(output);
   m_temperature->write(output);
 }
@@ -109,7 +109,7 @@ void Verification::update_L() {
   m_temperature->set(T0);
 
   const double
-    ice_density = m_config->get_double("constants.ice.density"),
+    ice_density = m_config->get_number("constants.ice.density"),
     a0          = units::convert(m_sys, 0.3, "m year-1", "m second-1"),
     L           = 750e3,
     Lsqr        = L * L;
@@ -168,7 +168,7 @@ void Verification::update_impl(const Geometry &geometry, double t, double dt) {
   }
 
   // convert from [m second-1] to [kg m-2 s-1]
-  m_mass_flux->scale(m_config->get_double("constants.ice.density"));
+  m_mass_flux->scale(m_config->get_number("constants.ice.density"));
 }
 
 /** Update climate inputs for tests A, B, C, D, E, H.
@@ -178,7 +178,7 @@ void Verification::update_impl(const Geometry &geometry, double t, double dt) {
 void Verification::update_ABCDH(double time) {
   double A0, T0, accum;
 
-  double f = m_config->get_double("constants.ice.density") / m_config->get_double("bed_deformation.mantle_density");
+  double f = m_config->get_number("constants.ice.density") / m_config->get_number("bed_deformation.mantle_density");
 
   rheology::PatersonBuddCold tgaIce("stress_balance.sia.", *m_config, m_EC);
 

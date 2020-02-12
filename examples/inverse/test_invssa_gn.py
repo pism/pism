@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018 David Maxwell
+# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018, 2019 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -33,7 +33,7 @@ def adjustTauc(mask, tauc):
     """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
 
     grid = mask.grid()
-    high_tauc = grid.ctx().config().get_double("basal_yield_stress.ice_free_bedrock")
+    high_tauc = grid.ctx().config().get_number("basal_yield_stress.ice_free_bedrock")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
         for (i, j) in grid.points():
@@ -67,8 +67,9 @@ if __name__ == "__main__":
     # a) tauc from the input file (default)
     # b) tauc_prior from the inv_datafile if -use_tauc_prior is set
     tauc_prior = PISM.model.createYieldStressVec(grid, 'tauc_prior')
-    tauc_prior.set_attrs(
-        "diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "")
+    tauc_prior.set_attrs("diagnostic",
+                         "initial guess for (pseudo-plastic) basal yield stress in an inversion",
+                         "Pa", "Pa", "", 0)
     tauc = PISM.model.createYieldStressVec(grid)
     if use_tauc_prior:
         tauc_prior.regrid(inv_data_filename, critical=True)
@@ -84,7 +85,7 @@ if __name__ == "__main__":
 
     # Convert tauc_prior -> zeta_prior
     zeta = PISM.IceModelVec2S()
-    WIDE_STENCIL = int(grid.ctx().config().get_double("grid.max_stencil_width"))
+    WIDE_STENCIL = int(grid.ctx().config().get_number("grid.max_stencil_width"))
     zeta.create(grid, "", PISM.WITH_GHOSTS, WIDE_STENCIL)
     ssarun.tauc_param.convertFromDesignVariable(tauc_prior, zeta)
     ssarun.ssa.linearize_at(zeta)
@@ -116,7 +117,7 @@ if __name__ == "__main__":
         vel_ssa_observed.add(-1, vel_sia_observed)
 
     (designFunctional, stateFunctional) = PISM.invert.ssa.createTikhonovFunctionals(ssarun)
-    eta = config.get_double("inverse.tikhonov.penalty_weight")
+    eta = config.get_number("inverse.tikhonov.penalty_weight")
 
     solver_gn = PISM.InvSSATikhonovGN(ssarun.ssa, zeta, vel_ssa_observed, eta, designFunctional, stateFunctional)
 

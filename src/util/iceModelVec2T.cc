@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018 Constantine Khroulev
+// Copyright (C) 2009--2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,11 +17,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <petsc.h>
-#include <algorithm>
 #include <cassert>
 
 #include "iceModelVec2T.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism_utilities.hh"
 #include "Time.hh"
 #include "IceGrid.hh"
@@ -30,6 +29,7 @@
 #include "error_handling.hh"
 #include "io/io_helpers.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 
@@ -51,14 +51,15 @@ namespace pism {
  * @param[in] periodic true if this forcing field should be interpreted as periodic
  */
 IceModelVec2T::Ptr IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
-                                               const PIO &file,
+                                               const File &file,
                                                const std::string &short_name,
                                                const std::string &standard_name,
                                                int max_buffer_size,
                                                int evaluations_per_year,
-                                               bool periodic) {
+                                               bool periodic,
+                                               InterpolationType interpolation_type) {
 
-  int n_records = file.inq_nrecords(short_name, standard_name,
+  int n_records = file.nrecords(short_name, standard_name,
                                     grid->ctx()->unit_system());
 
   if (not periodic) {
@@ -71,33 +72,58 @@ IceModelVec2T::Ptr IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
   // (atmosphere::Given) when "-surface given" (Given) is selected.
   n_records = std::max(n_records, 1);
 
+  // LCOV_EXCL_START
+  if (n_records > IceGrid::max_dm_dof) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot allocate storage for %d records of %s (%s)"
+                                  " (exceeds the maximum of %d)",
+                                  n_records, short_name.c_str(), standard_name.c_str(),
+                                  IceGrid::max_dm_dof);
+  }
+  // LCOV_EXCL_STOP
+
+  if (periodic and interpolation_type == LINEAR) {
+    interpolation_type = LINEAR_PERIODIC;
+  }
+
   return IceModelVec2T::Ptr(new IceModelVec2T(grid, short_name, n_records,
-                                              evaluations_per_year));
+                                              evaluations_per_year, interpolation_type));
 }
 
 
 IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name,
                              unsigned int n_records,
-                             unsigned int n_evaluations_per_year)
-  : IceModelVec2S() {
-  m_has_ghosts           = false;
-  m_array3                 = NULL;
-  m_first                  = -1;
-  m_N                      = 0;
-  m_report_range         = false;
-  m_period               = 0;
-  m_reference_time       = 0.0;
-  m_n_evaluations_per_year = 53;
+                             unsigned int n_evaluations_per_year,
+                             InterpolationType interpolation_type)
+  : IceModelVec2S(grid, short_name, WITHOUT_GHOSTS, 1),
+    m_array3(nullptr),
+    m_n_records(n_records),
+    m_N(0),
+    m_n_evaluations_per_year(n_evaluations_per_year),
+    m_first(-1),
+    m_interp_type(interpolation_type),
+    m_period(0),
+    m_reference_time(0.0)
+{
+  m_report_range = false;
 
-  m_n_evaluations_per_year = n_evaluations_per_year;
+  if (not (m_interp_type == PIECEWISE_CONSTANT or
+           m_interp_type == LINEAR or
+           m_interp_type == LINEAR_PERIODIC)) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "unsupported interpolation type");
+  }
 
-  const unsigned int width = 1;
-
-  IceModelVec2S::create(grid, short_name, WITHOUT_GHOSTS, width);
+  // LCOV_EXCL_START
+  if (n_records > IceGrid::max_dm_dof) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot allocate storage for %d records of %s"
+                                  " (exceeds the maximum of %d)",
+                                  n_records, short_name.c_str(), IceGrid::max_dm_dof);
+  }
+  // LCOV_EXCL_STOP
 
   // initialize the m_da3 member:
   m_da3 = m_grid->get_dm(n_records, this->m_da_stencil_width);
-  m_n_records = n_records;
 
   // allocate the 3D Vec:
   PetscErrorCode ierr = DMCreateGlobalVector(*m_da3, m_v3.rawptr());
@@ -150,84 +176,78 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
-  PIO nc(m_grid->com, "guess_mode", m_filename, PISM_READONLY);
-  std::string name_found;
-  bool exists, found_by_standard_name;
-  nc.inq_var(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"),
-             exists, name_found, found_by_standard_name);
-  if (not exists) {
+  File file(m_grid->com, m_filename, PISM_GUESS, PISM_READONLY);
+  auto var = file.find_variable(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"));
+  if (not var.exists) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "can't find %s (%s) in %s.",
                                   m_metadata[0].get_string("long_name").c_str(),
                                   m_metadata[0].get_name().c_str(),
                                   m_filename.c_str());
   }
 
-  // find the time dimension:
-  std::vector<std::string> dims;
-  dims = nc.inq_vardims(name_found);
-  
-  std::string dimname = "";
-  bool time_found = false;
-  for (unsigned int i = 0; i < dims.size(); ++i) {
-    dimname = dims[i];
+  auto time_name = io::time_dimension(m_grid->ctx()->unit_system(),
+                                      file, var.name);
 
-    AxisType dimtype = nc.inq_dimtype(dimname, m_grid->ctx()->unit_system());
-
-    if (dimtype == T_AXIS) {
-      time_found = true;
-      break;
-    }
-  }
-
-  if (time_found) {
+  if (not time_name.empty()) {
     // we're found the time dimension
-    TimeseriesMetadata time_dimension(dimname, dimname, m_grid->ctx()->unit_system());
+    TimeseriesMetadata time_dimension(time_name, time_name, m_grid->ctx()->unit_system());
 
-    time_dimension.set_string("units", m_grid->ctx()->time()->units_string());
-    io::read_timeseries(nc, time_dimension,
+    auto time_units = m_grid->ctx()->time()->units_string();
+    time_dimension.set_string("units", time_units);
+
+    io::read_timeseries(file, time_dimension,
                         *m_grid->ctx()->time(), log, m_time);
 
-    std::string bounds_name = nc.get_att_text(dimname, "bounds");
+    std::string bounds_name = file.read_text_attribute(time_name, "bounds");
 
     if (m_time.size() > 1) {
-      if (not bounds_name.empty()) {
-        // read time bounds data from a file
-        TimeBoundsMetadata tb(bounds_name, dimname, m_grid->ctx()->unit_system());
-        tb.set_string("units", time_dimension.get_string("units"));
 
-        io::read_time_bounds(nc, tb, *m_grid->ctx()->time(),
+      if (m_interp_type == PIECEWISE_CONSTANT) {
+        if (bounds_name.empty()) {
+          // no time bounds attribute
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "Variable '%s' does not have the time_bounds attribute.\n"
+                                        "Cannot use time-dependent forcing data '%s' (%s) without time bounds.",
+                                        time_name.c_str(),  m_metadata[0].get_string("long_name").c_str(),
+                                        m_metadata[0].get_name().c_str());
+        }
+
+        // read time bounds data from a file
+        TimeBoundsMetadata tb(bounds_name, time_name, m_grid->ctx()->unit_system());
+        tb.set_string("units", time_units);
+
+        io::read_time_bounds(file, tb, *m_grid->ctx()->time(),
                              log, m_time_bounds);
 
         // time bounds data overrides the time variable: we make t[j] be the
-        // right end-point of the j-th interval
+        // left end-point of the j-th interval
         for (unsigned int k = 0; k < m_time.size(); ++k) {
-          m_time[k] = m_time_bounds[2*k + 1];
+          m_time[k] = m_time_bounds[2*k + 0];
         }
       } else {
-        // no time bounds attribute
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "Variable '%s' does not have the time_bounds attribute.\n"
-                                      "Cannot use time-dependent forcing data '%s' (%s) without time bounds.",
-                                      dimname.c_str(),  m_metadata[0].get_string("long_name").c_str(),
-                                      m_metadata[0].get_name().c_str());
+        // fake time step length used to generate the right end point of the last interval
+        // TODO: figure out if there is a better way to do this.
+        double dt = 1.0;
+        size_t N = m_time.size();
+        m_time_bounds.resize(2 * N);
+        for (size_t k = 0; k < N; ++k) {
+          m_time_bounds[2 * k + 0] = m_time[k];
+          m_time_bounds[2 * k + 1] = k + 1 < N ? m_time[k + 1] : m_time[k] + dt;
+        }
       }
+
     } else {
       // only one time record; set fake time bounds:
-      m_time_bounds.resize(2);
-      m_time_bounds[0] = m_time[0] - 1;
-      m_time_bounds[1] = m_time[0] + 1;
+      m_time_bounds = {m_time[0] - 1.0, m_time[0] + 1};
     }
 
   } else {
     // no time dimension; assume that we have only one record and set the time
     // to 0
-    m_time.resize(1);
-    m_time[0] = 0;
+    m_time = {0.0};
 
     // set fake time bounds:
-    m_time_bounds.resize(2);
-    m_time_bounds[0] = -1;
-    m_time_bounds[1] =  1;
+    m_time_bounds = {-1.0, 1.0};
   }
 
   if (not is_increasing(m_time)) {
@@ -252,21 +272,19 @@ void IceModelVec2T::init_constant(double value) {
 
   // set constant value everywhere
   set(value);
+  set_record(0);
 
   // set the time to zero
-  m_time.resize(1);
-  m_time[0] = 0;
-  //N = 1 ;
+  m_time = {0.0};
+  m_N = 1;
+  m_first = 0;
 
   // set fake time bounds:
-  m_time_bounds.resize(2);
-  m_time_bounds[0] = -1;
-  m_time_bounds[1] =  1;
+  m_time_bounds = {-1.0, 1.0};
 }
 
 //! Read some data to make sure that the interval (t, t + dt) is covered.
 void IceModelVec2T::update(double t, double dt) {
-  unsigned int m, n, last;
 
   if (m_filename.empty()) {
     // We are not reading data from a file.
@@ -284,46 +302,35 @@ void IceModelVec2T::update(double t, double dt) {
   }
 
   if (m_N > 0) {
-    last = m_first + (m_N - 1);
+    unsigned int last = m_first + (m_N - 1);
 
     // find the interval covered by data held in memory:
-    double t0 = m_time_bounds[m_first * 2],
+    double
+      t0 = m_time_bounds[m_first * 2],
       t1 = m_time_bounds[last * 2 + 1];
 
     // just return if we have all the data we need:
-    if (t >= t0 && t + dt <= t1) {
+    if (t >= t0 and t + dt <= t1) {
       return;
     }
   }
 
-  // i will point to the smallest t so that t >= t 
-  auto i = lower_bound(m_time_bounds.begin(), m_time_bounds.end(), t);
+  Interpolation I(m_interp_type, m_time, {t, t + dt});
 
-  // j will point to the smallest t so that t >= t + dt
-  auto j = lower_bound(m_time_bounds.begin(), m_time_bounds.end(), t + dt);
-
-  // some of the the interval (t, t + dt) is outside of the
-  // time interval available in the file (on the right)
-  // 
-  if (i == m_time_bounds.end()) {
-    m = (int)(m_time.size() - 1);
-  } else {
-    m = (int)((i - m_time_bounds.begin() - 1) / 2);
-  }
-
-  if (j == m_time_bounds.end()) {
-    n = (int)(m_time.size() - 1);
-  } else {
-    n = (int)((j - m_time_bounds.begin() - 1) / 2);
-  }
+  unsigned int
+    first = I.left(0),
+    last  = I.right(1),
+    N     = last - first + 1;
 
   // check if all the records necessary to cover this interval fit in the
   // buffer:
-  if (n - m + 1 > m_n_records) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "IceModelVec2T::update(): timestep is too big");
+  if (N > m_n_records) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot read %d records of %s (buffer size: %d)",
+                                  N, m_name.c_str(), m_n_records);
   }
 
-  update(m);
+  update(first);
 }
 
 //! Update by reading at most n_records records from the file.
@@ -363,7 +370,7 @@ void IceModelVec2T::update(unsigned int start) {
   if (missing <= 0) {
     return;
   }
-  
+
   m_N = kept + missing;
 
   Time::ConstPtr t = m_grid->ctx()->time();
@@ -383,14 +390,14 @@ void IceModelVec2T::update(unsigned int start) {
     m_report_range = true;
   }
 
-  PIO nc(m_grid->com, "guess_mode", m_filename, PISM_READONLY);
+  File file(m_grid->com, m_filename, PISM_GUESS, PISM_READONLY);
 
-  const bool allow_extrapolation = m_grid->ctx()->config()->get_boolean("grid.allow_extrapolation");
+  const bool allow_extrapolation = m_grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 
   for (unsigned int j = 0; j < missing; ++j) {
     {
       petsc::VecArray tmp_array(m_v);
-      io::regrid_spatial_variable(m_metadata[0], *m_grid, nc, start + j, CRITICAL,
+      io::regrid_spatial_variable(m_metadata[0], *m_grid, file, start + j, CRITICAL,
                                   m_report_range, allow_extrapolation,
                                   0.0, m_interpolation_type, tmp_array.get());
     }
@@ -450,29 +457,27 @@ void IceModelVec2T::get_record(int n) {
   end_access();
 }
 
-//! \brief Given the time t and the current selected time-step dt,
-//! determines the maximum possible time-step this IceModelVec2T allows.
-/*!
-  Returns -1 if any time step is OK at t.
- */
+//! @brief Given the time t determines the maximum possible time-step this IceModelVec2T
+//! allows.
 MaxTimestep IceModelVec2T::max_timestep(double t) const {
   // only allow going to the next record
-  auto l = upper_bound(m_time_bounds.begin(), m_time_bounds.end(), t);
-  if (l != m_time_bounds.end()) {
-    double tmp = *l - t;
 
-    if (tmp > 1.0) {                // never take time-steps shorter than 1 second
-      return MaxTimestep(tmp);
-    } else if ((l + 1) != m_time_bounds.end() and
-               (l + 2) != m_time_bounds.end()) {
-      return MaxTimestep(*(l + 2) - *l);
-    } else {
-      return MaxTimestep();
-    }
+  // find the index k such that m_time[k] <= x < m_time[k + 1]
+  size_t k = gsl_interp_bsearch(m_time.data(), t, 0, m_time.size());
+
+  // end of the corresponding interval
+  double
+    t_next = m_time_bounds[2 * k + 1],
+    dt     = std::max(t_next - t, 0.0);
+
+  if (dt > 1.0) {               // never take time-steps shorter than 1 second
+    return MaxTimestep(dt);
+  } else if (k + 1 < m_time.size()) {
+    dt = m_time_bounds[2 * (k + 1) + 1] - m_time_bounds[2 * (k + 1)];
+    return MaxTimestep(dt);
   } else {
     return MaxTimestep();
   }
-
 }
 
 /*
@@ -486,15 +491,13 @@ MaxTimestep IceModelVec2T::max_timestep(double t) const {
  */
 void IceModelVec2T::interp(double t) {
 
-  std::vector<double> t_vector(1);
-  t_vector[0] = t;
-  init_interpolation(t_vector);
+  init_interpolation({t});
 
-  get_record(m_interp_indices[0]);
+  get_record(m_interp->left(0));
 }
 
 
-/** 
+/**
  * Compute the average value over the time interval `[t, t + dt]`.
  *
  * @param t  start of the time interval, in seconds
@@ -544,65 +547,24 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
 
   assert(m_first >= 0);
 
-  unsigned int
-    index = 0,
-    last  = m_first + m_N - 1;
-
-  size_t ts_length = ts.size();
+  auto time = m_grid->ctx()->time();
 
   // Compute "periodized" times if necessary.
-  std::vector<double> times_requested(ts_length);
+  std::vector<double> times_requested(ts.size());
   if (m_period != 0) {
-    for (unsigned int k = 0; k < ts_length; ++k) {
-      times_requested[k] = m_grid->ctx()->time()->mod(ts[k] - m_reference_time, m_period);
+    for (unsigned int k = 0; k < ts.size(); ++k) {
+      times_requested[k] = time->mod(ts[k] - m_reference_time, m_period);
     }
   } else {
-    for (unsigned int k = 0; k < ts_length; ++k) {
-      times_requested[k] = ts[k];
-    }
+    times_requested = ts;
   }
 
-  m_interp_indices.resize(ts_length);
-
-  if (m_time_bounds.size() == 0) {
-    for (unsigned int k = 0; k < ts_length; ++k) {
-      m_interp_indices[k] = 0;
-    }
-  }
-
-  for (unsigned int k = 0; k < ts_length; ++k) {
-
-    if (k > 0 && times_requested[k] < times_requested[k-1]) {
-      // reset the index: times_requested are not increasing!
-      index = 0;
-    }
-
-    // extrapolate on the left:
-    if (times_requested[k] < m_time_bounds[2*m_first]) {
-      m_interp_indices[k] = 0;
-      continue;
-    }
-
-    // extrapolate on the right:
-    if (times_requested[k] >= m_time_bounds[2*last + 1]) {
-      m_interp_indices[k] = m_N - 1;
-      continue;
-    }
-
-    while (index < m_N) {
-      if (m_time_bounds[2*(m_first + index) + 0] <= times_requested[k] &&
-          m_time_bounds[2*(m_first + index) + 1] >  times_requested[k]) {
-        break;
-      }
-
-      index++;
-    }
-
-    m_interp_indices[k] = index;
-  }
+  m_interp.reset(new Interpolation(m_interp_type, &m_time[m_first], m_N,
+                                   times_requested.data(), times_requested.size(),
+                                   time->years_to_seconds(m_period)));
 }
 
-/** 
+/**
  * \brief Compute values of the time-series using precomputed indices
  * (and piecewise-constant interpolation).
  *
@@ -612,11 +574,10 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
  */
 void IceModelVec2T::interp(int i, int j, std::vector<double> &result) {
   double ***a3 = (double***) m_array3;
-  unsigned int ts_length = m_interp_indices.size();
 
-  for (unsigned int k = 0; k < ts_length; ++k) {
-    result[k] = a3[j][i][m_interp_indices[k]];
-  }
+  result.resize(m_interp->alpha().size());
+
+  m_interp->interpolate(a3[j][i], result.data());
 }
 
 //! \brief Finds the average value at i,j over the interval (t, t +
@@ -625,7 +586,7 @@ void IceModelVec2T::interp(int i, int j, std::vector<double> &result) {
   Can (and should) be optimized. Later, though.
  */
 double IceModelVec2T::average(int i, int j) {
-  unsigned int M = m_interp_indices.size();
+  unsigned int M = m_interp->alpha().size();
   double result = 0.0;
 
   if (m_N == 1) {
@@ -636,7 +597,7 @@ double IceModelVec2T::average(int i, int j) {
 
     interp(i, j, values);
 
-    // rectangular rule (uses the fact that points are equally-spaces
+    // rectangular rule (uses the fact that points are equally-spaced
     // in time)
     result = 0;
     for (unsigned int k = 0; k < M; ++k) {

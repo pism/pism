@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,10 +30,17 @@
 #include "ConfigInterface.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/projection.hh"
+#include "pism/pism_config.hh"
+
+#if (Pism_USE_PIO==1)
+// Why do I need this???
+#define _NETCDF
+#include <pio.h>
+#endif
 
 namespace pism {
 
@@ -46,7 +53,6 @@ struct IceGrid::Impl {
                             const std::vector<unsigned int> &procs_y);
 
   void compute_horizontal_coordinates();
-
 
   Context::ConstPtr ctx;
 
@@ -108,6 +114,9 @@ struct IceGrid::Impl {
 
   //! GSL binary search accelerator used to speed up kBelowHeight().
   gsl_interp_accel *bsearch_accel;
+
+  //! ParallelIO I/O decompositions.
+  std::map<int, int> io_decompositions;
 };
 
 IceGrid::Impl::Impl(Context::ConstPtr context)
@@ -210,7 +219,7 @@ IceGrid::Ptr IceGrid::Shallow(Context::ConstPtr ctx,
     p.registration = registration;
     p.periodicity = periodicity;
 
-    double Lz = ctx->config()->get_double("grid.Lz");
+    double Lz = ctx->config()->get_number("grid.Lz");
     p.z.resize(3);
     p.z[0] = 0.0;
     p.z[1] = 0.5 * Lz;
@@ -254,10 +263,10 @@ IceGrid::IceGrid(Context::ConstPtr context, const GridParameters &p)
     m_impl->compute_horizontal_coordinates();
 
     {
-      unsigned int max_stencil_width = (unsigned int)context->config()->get_double("grid.max_stencil_width");
+      unsigned int stencil_width = (unsigned int)context->config()->get_number("grid.max_stencil_width");
 
       try {
-        petsc::DM::Ptr tmp = this->get_dm(1, max_stencil_width);
+        petsc::DM::Ptr tmp = this->get_dm(1, stencil_width);
       } catch (RuntimeError &e) {
         e.add_context("distributing a %d x %d grid across %d processors.",
                       Mx(), My(), size());
@@ -290,10 +299,10 @@ IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
                                const std::vector<std::string> &var_names,
                                GridRegistration r) {
 
-  PIO file(ctx->com(), "netcdf3", filename, PISM_READONLY);
+  File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
 
   for (auto name : var_names) {
-    if (file.inq_var(name)) {
+    if (file.find_variable(name)) {
       return FromFile(ctx, file, name, r);
     }
   }
@@ -306,7 +315,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
 
 //! Create a grid from a file, get information from variable `var_name`.
 IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
-                               const PIO &file,
+                               const File &file,
                                const std::string &var_name,
                                GridRegistration r) {
   try {
@@ -318,11 +327,11 @@ IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (p.z.size() < 2) {
-      double Lz = ctx->config()->get_double("grid.Lz");
+      double Lz = ctx->config()->get_number("grid.Lz");
       log.message(3,
                   "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
                   "         Using 2 levels and Lz of %3.3fm\n",
-                  var_name.c_str(), file.inq_filename().c_str(), Lz);
+                  var_name.c_str(), file.filename().c_str(), Lz);
 
       p.z = {0.0, Lz};
     }
@@ -333,13 +342,23 @@ IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
     return IceGrid::Ptr(new IceGrid(ctx, p));
   } catch (RuntimeError &e) {
     e.add_context("initializing computational grid from variable \"%s\" in \"%s\"",
-                  var_name.c_str(), file.inq_filename().c_str());
+                  var_name.c_str(), file.filename().c_str());
     throw;
   }
 }
 
 IceGrid::~IceGrid() {
   gsl_interp_accel_free(m_impl->bsearch_accel);
+
+#if (Pism_USE_PIO==1)
+  for (auto p : m_impl->io_decompositions) {
+    int ierr = PIOc_freedecomp(m_impl->ctx->pio_iosys_id(), p.second);
+    if (ierr != PIO_NOERR) {
+      m_impl->ctx->log()->message(1, "Failed to de-allocate a ParallelIO decomposition");
+    }
+  }
+#endif
+
   delete m_impl;
 }
 
@@ -748,21 +767,17 @@ void IceGrid::compute_point_neighbors(double X, double Y,
   i_right = i_left + 1;
   j_top = j_bottom + 1;
 
-  if (i_left < 0) {
-    i_left = i_right;
-  }
+  i_left = std::max(i_left, 0);
+  i_right = std::max(i_right, 0);
 
-  if (i_right > (int)m_impl->Mx - 1) {
-    i_right = i_left;
-  }
+  i_left = std::min(i_left, (int)m_impl->Mx - 1);
+  i_right = std::min(i_right, (int)m_impl->Mx - 1);
 
-  if (j_bottom < 0) {
-    j_bottom = j_top;
-  }
+  j_bottom = std::max(j_bottom, 0);
+  j_top = std::max(j_top, 0);
 
-  if (j_top > (int)m_impl->My - 1) {
-    j_top = j_bottom;
-  }
+  j_bottom = std::min(j_bottom, (int)m_impl->My - 1);
+  j_top = std::min(j_top, (int)m_impl->My - 1);
 }
 
 std::vector<int> IceGrid::compute_point_neighbors(double X, double Y) const {
@@ -798,16 +813,18 @@ std::vector<double> IceGrid::compute_interp_weights(double X, double Y) const{
 }
 
 // Computes the hash corresponding to the DM with given dof and stencil_width.
-static int dm_hash(int da_dof, int stencil_width) {
-  if (da_dof < 0 or da_dof > 10000) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Invalid da_dof argument: %d", da_dof);
+static int dm_hash(int dm_dof, int stencil_width) {
+  if (dm_dof < 0 or dm_dof > IceGrid::max_dm_dof) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Invalid dm_dof argument: %d", dm_dof);
   }
 
-  if (stencil_width < 0 or stencil_width > 10000) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Invalid stencil_width argument: %d", stencil_width);
+  if (stencil_width < 0 or stencil_width > IceGrid::max_stencil_width) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Invalid stencil_width argument: %d", stencil_width);
   }
 
-  return 10000 * da_dof + stencil_width;
+  return IceGrid::max_stencil_width * dm_dof + stencil_width;
 }
 
 //! @brief Get a PETSc DM ("distributed array manager") object for given `dof` (number of degrees of
@@ -1071,38 +1088,35 @@ void grid_info::report(const Logger &log, int threshold, units::System::Ptr s) c
               this->t_len, units::convert(s, this->time, "seconds", "years"));
 }
 
-grid_info::grid_info(const PIO &file, const std::string &variable,
+grid_info::grid_info(const File &file, const std::string &variable,
                      units::System::Ptr unit_system,
                      GridRegistration r) {
   try {
-    bool variable_exists, found_by_standard_name;
-    std::string name_found;
-
     reset();
 
-    filename = file.inq_filename();
+    filename = file.filename();
 
     // try "variable" as the standard_name first, then as the short name:
-    file.inq_var(variable, variable, variable_exists,
-                 name_found, found_by_standard_name);
+    auto var = file.find_variable(variable, variable);
 
-    if (not variable_exists) {
+    if (not var.exists) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable \"%s\" is missing", variable.c_str());
     }
 
-    std::vector<std::string> dims = file.inq_vardims(name_found);
+    auto dimensions = file.dimensions(var.name);
 
-    for (auto dimname : dims) {
+    for (auto dimension_name : dimensions) {
 
-      AxisType dimtype = file.inq_dimtype(dimname, unit_system);
+      AxisType dimtype = file.dimension_type(dimension_name, unit_system);
 
       switch (dimtype) {
       case X_AXIS:
         {
-          double x_min = 0.0, x_max = 0.0;
-          file.inq_dim_limits(dimname, &x_min, &x_max);
-          file.get_dim(dimname, this->x);
+          this->x = file.read_dimension(dimension_name);
           this->x_len = this->x.size();
+          double
+            x_min = vector_min(this->x),
+            x_max = vector_max(this->x);
           this->x0 = 0.5 * (x_min + x_max);
           this->Lx = 0.5 * (x_max - x_min);
           if (r == CELL_CENTER) {
@@ -1113,10 +1127,11 @@ grid_info::grid_info(const PIO &file, const std::string &variable,
         }
       case Y_AXIS:
         {
-          double y_min = 0.0, y_max = 0.0;
-          file.inq_dim_limits(dimname, &y_min, &y_max);
-          file.get_dim(dimname, this->y);
+          this->y = file.read_dimension(dimension_name);
           this->y_len = this->y.size();
+          double
+            y_min = vector_min(this->y),
+            y_max = vector_max(this->y);
           this->y0 = 0.5 * (y_min + y_max);
           this->Ly = 0.5 * (y_max - y_min);
           if (r == CELL_CENTER) {
@@ -1127,27 +1142,29 @@ grid_info::grid_info(const PIO &file, const std::string &variable,
         }
       case Z_AXIS:
         {
-          file.inq_dim_limits(dimname, &this->z_min, &this->z_max);
-          file.get_dim(dimname, this->z);
+          this->z = file.read_dimension(dimension_name);
           this->z_len = this->z.size();
+          this->z_min = vector_min(this->z);
+          this->z_max = vector_max(this->z);
           break;
         }
       case T_AXIS:
         {
-          this->t_len = file.inq_dimlen(dimname);
-          file.inq_dim_limits(dimname, NULL, &this->time);
+          this->t_len = file.dimension_length(dimension_name);
+          this->time = vector_max(file.read_dimension(dimension_name));
           break;
         }
       default:
         {
-          throw RuntimeError::formatted(PISM_ERROR_LOCATION, "can't figure out which direction dimension '%s' corresponds to.",
-                                        dimname.c_str());
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "can't figure out which direction dimension '%s' corresponds to.",
+                                        dimension_name.c_str());
         }
       } // switch
     }   // for loop
   } catch (RuntimeError &e) {
     e.add_context("getting grid information using variable '%s' in '%s'", variable.c_str(),
-                  file.inq_filename().c_str());
+                  file.filename().c_str());
     throw;
   }
 }
@@ -1180,28 +1197,28 @@ void GridParameters::ownership_ranges_from_options(unsigned int size) {
 
 //! Initialize from a configuration database. Does not try to compute ownership ranges.
 void GridParameters::init_from_config(Config::ConstPtr config) {
-  Lx = config->get_double("grid.Lx");
-  Ly = config->get_double("grid.Ly");
+  Lx = config->get_number("grid.Lx");
+  Ly = config->get_number("grid.Ly");
 
   x0 = 0.0;
   y0 = 0.0;
 
-  Mx = config->get_double("grid.Mx");
-  My = config->get_double("grid.My");
+  Mx = config->get_number("grid.Mx");
+  My = config->get_number("grid.My");
 
   periodicity = string_to_periodicity(config->get_string("grid.periodicity"));
   registration = string_to_registration(config->get_string("grid.registration"));
 
-  double Lz = config->get_double("grid.Lz");
-  unsigned int Mz = config->get_double("grid.Mz");
-  double lambda = config->get_double("grid.lambda");
+  double Lz = config->get_number("grid.Lz");
+  unsigned int Mz = config->get_number("grid.Mz");
+  double lambda = config->get_number("grid.lambda");
   SpacingType s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
   z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
   // does not set ownership ranges because we don't know if these settings are final
 }
 
 void GridParameters::init_from_file(Context::ConstPtr ctx,
-                                    const PIO &file,
+                                    const File &file,
                                     const std::string &variable_name,
                                     GridRegistration r) {
   int size = 0;
@@ -1223,7 +1240,7 @@ void GridParameters::init_from_file(Context::ConstPtr ctx,
 }
 
 GridParameters::GridParameters(Context::ConstPtr ctx,
-                               const PIO &file,
+                               const File &file,
                                const std::string &variable_name,
                                GridRegistration r) {
   init_from_file(ctx, file, variable_name, r);
@@ -1233,8 +1250,8 @@ GridParameters::GridParameters(Context::ConstPtr ctx,
                                const std::string &filename,
                                const std::string &variable_name,
                                GridRegistration r) {
-  PIO nc(ctx->com(), "netcdf3", filename, PISM_READONLY);
-  init_from_file(ctx, nc, variable_name, r);
+  File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
+  init_from_file(ctx, file, variable_name, r);
 }
 
 
@@ -1270,9 +1287,9 @@ void GridParameters::horizontal_extent_from_options() {
 }
 
 void GridParameters::vertical_grid_from_options(Config::ConstPtr config) {
-  double Lz = z.size() > 0 ? z.back() : config->get_double("grid.Lz");
-  int Mz = z.size() > 0 ? z.size() : config->get_double("grid.Mz");
-  double lambda = config->get_double("grid.lambda");
+  double Lz = z.size() > 0 ? z.back() : config->get_number("grid.Lz");
+  int Mz = z.size() > 0 ? z.size() : config->get_number("grid.Mz");
+  double lambda = config->get_number("grid.lambda");
   SpacingType s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
 
   z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
@@ -1320,14 +1337,16 @@ void GridParameters::validate() const {
 /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
  */
 IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
-  options::String input_file("-i", "Specifies a PISM input file");
-  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+  auto config = ctx->config();
 
-  GridRegistration r = string_to_registration(ctx->config()->get_string("grid.registration"));
+  auto input_file = config->get_string("input.file");
+  bool bootstrap = config->get_flag("input.bootstrap");
+
+  GridRegistration r = string_to_registration(config->get_string("grid.registration"));
 
   Logger::ConstPtr log = ctx->log();
 
-  if (input_file.is_set() and (not bootstrap)) {
+  if (not input_file.empty() and (not bootstrap)) {
     // These options are ignored because we're getting *all* the grid
     // parameters from a file.
     options::ignored(*log, "-Mx");
@@ -1341,44 +1360,42 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
 
     // get grid from a PISM input file
     return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, r);
-  } else if (input_file.is_set() and bootstrap) {
+  } else if (not input_file.empty() and bootstrap) {
     // bootstrapping; get domain size defaults from an input file, allow overriding all grid
     // parameters using command-line options
 
-    GridParameters input_grid(ctx->config());
+    GridParameters input_grid(config);
 
     std::vector<std::string> names = {"land_ice_thickness", "bedrock_altitude",
                                       "thk", "topg"};
     bool grid_info_found = false;
 
-    PIO nc(ctx->com(), "netcdf3", input_file, PISM_READONLY);
+    File file(ctx->com(), input_file, PISM_NETCDF3, PISM_READONLY);
 
     for (auto name : names) {
 
-      grid_info_found = nc.inq_var(name);
+      grid_info_found = file.find_variable(name);
       if (not grid_info_found) {
         // Failed to find using a short name. Try using name as a
         // standard name...
-        std::string dummy1;
-        bool dummy2;
-        nc.inq_var("dummy", name, grid_info_found, dummy1, dummy2);
+        grid_info_found = file.find_variable("unlikely_name", name).exists;
       }
 
       if (grid_info_found) {
-        input_grid = GridParameters(ctx, nc, name, r);
+        input_grid = GridParameters(ctx, file, name, r);
         break;
       }
     }
 
     if (not grid_info_found) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no geometry information found in '%s'",
-                                    input_file->c_str());
+                                    input_file.c_str());
     }
 
     // process all possible options controlling grid parameters, overriding values read from a file
     input_grid.horizontal_size_from_options();
     input_grid.horizontal_extent_from_options();
-    input_grid.vertical_grid_from_options(ctx->config());
+    input_grid.vertical_grid_from_options(config);
     input_grid.ownership_ranges_from_options(ctx->size());
 
     IceGrid::Ptr result(new IceGrid(ctx, input_grid));
@@ -1390,7 +1407,7 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
     log->message(2,
                  "  setting computational box for ice from '%s' and\n"
                  "    user options: [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
-                 input_file->c_str(),
+                 input_file.c_str(),
                  km(result->x0() - result->Lx()),
                  km(result->x0() + result->Lx()),
                  km(result->y0() - result->Ly()),
@@ -1401,7 +1418,8 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
   } else {
     // This covers the two remaining cases "-i is not set, -bootstrap is set" and "-i is not set,
     // -bootstrap is not set either".
-    throw RuntimeError(PISM_ERROR_LOCATION, "Please set the input file using the \"-i\" command-line option.");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "Please set the input file using the \"-i\" command-line option.");
   }
 }
 
@@ -1414,6 +1432,55 @@ void IceGrid::set_mapping_info(const MappingInfo &info) {
   // FIXME: re-compute lat/lon coordinates
 }
 
+#if (Pism_USE_PIO==1)
+static int pio_decomp_hash(int dof, int output_datatype) {
+  if (dof < 0 or dof > IceGrid::max_dm_dof) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Invalid dof argument: %d", dof);
+  }
 
+  // pio.h includes netcdf.h and netcdf.h defines NC_FIRSTUSERTYPEID which exceeds
+  // all constants corresponding to built-in types
+  return NC_FIRSTUSERTYPEID * dof + output_datatype;
+}
+#endif
+
+/*!
+ * initialize an I/O decomposition
+ *
+ * @param[in] dof size of the last dimension (usually z)
+ * @param[in] output_datatype an integer specifying a data type (`PIO_DOUBLE`, etc)
+ */
+int IceGrid::pio_io_decomposition(int dof, int output_datatype) const {
+  int result = 0;
+#if (Pism_USE_PIO==1)
+  {
+    int hash = pio_decomp_hash(dof, output_datatype);
+    result = m_impl->io_decompositions[hash];
+
+    if (result == 0) {
+
+      int ndims = dof < 2 ? 2 : 3;
+
+      // the last element is not used if ndims == 2
+      std::vector<int> gdimlen{(int)My(), (int)Mx(), dof};
+      std::vector<long int> start{ys(), xs(), 0}, count{ym(), xm(), dof};
+
+      int stat = PIOc_InitDecomp_bc(m_impl->ctx->pio_iosys_id(),
+                                    output_datatype, ndims, gdimlen.data(),
+                                    start.data(), count.data(), &result);
+      m_impl->io_decompositions[hash] = result;
+      if (stat != PIO_NOERR) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "Failed to create a ParallelIO I/O decomposition");
+      }
+    }
+  }
+#else
+  (void) dof;
+  (void) output_datatype;
+#endif
+  return result;
+}
 
 } // end of namespace pism

@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018 PISM Authors
+/* Copyright (C) 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,6 +17,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <netcdf.h>
+#ifdef NC_HAVE_META_H
+#include <netcdf_meta.h>
+#endif
+
 #include "IceModel.hh"
 
 #include "pism/util/pism_options.hh"
@@ -29,14 +34,15 @@ namespace pism {
 MaxTimestep IceModel::extras_max_timestep(double my_t) {
 
   if ((not m_save_extra) or
-      (not m_config->get_boolean("time_stepping.hit_extra_times"))) {
+      (not m_config->get_flag("time_stepping.hit_extra_times"))) {
     return MaxTimestep("reporting (-extra_times)");
   }
 
   return reporting_max_timestep(m_extra_times, my_t, "reporting (-extra_times)");
 }
 
-static std::set<std::string> process_extra_shortcuts(const std::set<std::string> &input) {
+static std::set<std::string> process_extra_shortcuts(const Config &config,
+                                                     const std::set<std::string> &input) {
   std::set<std::string> result = input;
 
   // process shortcuts
@@ -85,6 +91,21 @@ static std::set<std::string> process_extra_shortcuts(const std::set<std::string>
     result.insert("tendency_of_subglacial_water_mass_at_domain_boundary");
   }
 
+  if (result.find("ismip6") != result.end()) {
+
+    const char *flag_name = "output.ISMIP6";
+
+    if (not config.get_flag(flag_name)) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Please set %s to save ISMIP6 diagnostics "
+                                    "(-extra_vars ismip6).", flag_name);
+    }
+
+    result.erase("ismip6");
+    for (auto v : set_split(config.get_string("output.ISMIP6_extra_variables"), ',')) {
+      result.insert(v);
+    }
+  }
+
   return result;
 }
 
@@ -97,8 +118,8 @@ void IceModel::init_extras() {
   m_extra_filename   = m_config->get_string("output.extra.file");
   std::string times  = m_config->get_string("output.extra.times");
   std::string vars   = m_config->get_string("output.extra.vars");
-  bool        split  = m_config->get_boolean("output.extra.split");
-  bool        append = m_config->get_boolean("output.extra.append");
+  bool        split  = m_config->get_flag("output.extra.split");
+  bool        append = m_config->get_flag("output.extra.append");
 
   bool extra_file_set = not m_extra_filename.empty();
   bool times_set = not times.empty();
@@ -131,13 +152,11 @@ void IceModel::init_extras() {
   }
 
   if (append) {
-    PIO file(m_grid->com, m_config->get_string("output.format"), m_extra_filename, PISM_READONLY);
+    File file(m_grid->com, m_extra_filename, PISM_NETCDF3, PISM_READONLY);
 
     std::string time_name = m_config->get_string("time.dimension_name");
-    if (file.inq_var(time_name)) {
-      double time_max;
-
-      file.inq_dim_limits(time_name, NULL, &time_max);
+    if (file.find_variable(time_name)) {
+      double time_max = vector_max(file.read_dimension(time_name));
 
       while (m_next_extra + 1 < m_extra_times.size() && m_extra_times[m_next_extra + 1] < time_max) {
         m_next_extra++;
@@ -158,7 +177,6 @@ void IceModel::init_extras() {
       m_extra_times = tmp;
       m_next_extra = 0;
     }
-    file.close();
   }
 
   m_save_extra          = true;
@@ -186,8 +204,24 @@ void IceModel::init_extras() {
                "PISM WARNING: more than 500 times requested. This might fill your hard-drive!\n");
   }
 
+#ifdef NC_HAVE_META_H
+  {
+    if (100 * NC_VERSION_MAJOR + 10 * NC_VERSION_MINOR + NC_VERSION_PATCH < 473) {
+      if (m_extra_times.size() > 5000 and m_config->get_string("output.format") == "netcdf4_parallel") {
+        throw RuntimeError(PISM_ERROR_LOCATION,
+                           "more than 5000 times requested."
+                           "Please use -extra_split to avoid a crash caused by a bug in NetCDF versions older than 4.7.3.\n"
+                           "Alternatively\n"
+                           "- split this simulation into several runs and then concatenate results\n"
+                           "- select a different output.format value\n"
+                           "- upgrade NetCDF to 4.7.3");
+      }
+    }
+  }
+#endif
+
   if (not vars.empty()) {
-    m_extra_vars = process_extra_shortcuts(set_split(vars, ','));
+    m_extra_vars = process_extra_shortcuts(*m_config, set_split(vars, ','));
     m_log->message(2, "variables requested: %s\n", vars.c_str());
   } else {
     m_log->message(2,
@@ -240,7 +274,10 @@ void IceModel::write_extras() {
     // called).
     m_last_extra = current_time;
 
-    return;
+    // ISMIP6 runs need to save diagnostics at the beginning of the run
+    if (not m_config->get_flag("output.ISMIP6")) {
+      return;
+    }
   }
 
   if (saving_after < m_time->start()) {
@@ -270,40 +307,60 @@ void IceModel::write_extras() {
                  filename, m_time->date().c_str());
 
   // default behavior is to move the file aside if it exists already; option allows appending
-  bool append = m_config->get_boolean("output.extra.append");
+  bool append = m_config->get_flag("output.extra.append");
   IO_Mode mode = m_extra_file_is_ready or append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("io.extra_file");
   {
-    PIO file(m_grid->com, m_config->get_string("output.format"), filename, mode);
+    if (not m_extra_file) {
+      m_extra_file.reset(new File(m_grid->com,
+                                  filename,
+                                  string_to_backend(m_config->get_string("output.format")),
+                                  mode,
+                                  m_ctx->pio_iosys_id()));
+    }
+
     std::string time_name = m_config->get_string("time.dimension_name");
 
     if (not m_extra_file_is_ready) {
       // Prepare the file:
-      io::define_time(file, *m_ctx);
-      file.put_att_text(time_name, "bounds", "time_bounds");
+      io::define_time(*m_extra_file, *m_ctx);
+      m_extra_file->write_attribute(time_name, "bounds", "time_bounds");
 
-      write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+      io::define_time_bounds(m_extra_bounds, *m_extra_file);
+
+      write_metadata(*m_extra_file, WRITE_MAPPING, PREPEND_HISTORY);
 
       m_extra_file_is_ready = true;
     }
 
-    write_run_stats(file);
+    write_run_stats(*m_extra_file);
 
-    save_variables(file,
+    save_variables(*m_extra_file,
                    m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
-                   m_extra_vars, PISM_FLOAT);
+                   m_extra_vars,
+                   0.5 * (m_last_extra + current_time), // use the mid-point of the
+                                                        // current reporting interval
+                   PISM_FLOAT);
 
     // Get the length of the time dimension *after* it is appended to.
-    unsigned int time_length = file.inq_dimlen(time_name);
+    unsigned int time_length = m_extra_file->dimension_length(time_name);
     size_t time_start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
 
-    io::write_time_bounds(file, m_extra_bounds, time_start, {m_last_extra, current_time});
+    io::write_time_bounds(*m_extra_file, m_extra_bounds,
+                          time_start, {m_last_extra, current_time});
+    // make sure all changes are written
+    m_extra_file->sync();
   }
   profiling.end("io.extra_file");
 
   flush_timeseries();
+
+  if (m_split_extra) {
+    // each record is saved to a new file, so we can close this one
+    m_extra_file.reset(nullptr);
+  }
 
   m_last_extra = current_time;
 

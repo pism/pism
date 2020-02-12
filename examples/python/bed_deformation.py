@@ -57,7 +57,7 @@ def allocate(grid):
     bed = PISM.model.createBedrockElevationVec(grid)
     uplift = PISM.IceModelVec2S()
     uplift.create(grid, "uplift", PISM.WITHOUT_GHOSTS)
-    uplift.set_attrs("internal", "bed uplift", "m / second", "")
+    uplift.set_attrs("internal", "bed uplift", "m / second", "m / second", "", 0)
 
     sea_level = PISM.IceModelVec2S(grid, "sea_level", PISM.WITHOUT_GHOSTS)
 
@@ -77,14 +77,14 @@ def create_grid():
 def run(scenario, plot, pause, save):
 
     # set grid defaults
-    config.set_double("grid.Mx", 193)
-    config.set_double("grid.My", 129)
+    config.set_number("grid.Mx", 193)
+    config.set_number("grid.My", 129)
 
-    config.set_double("grid.Lx", 3000e3)
-    config.set_double("grid.Ly", 2000e3)
+    config.set_number("grid.Lx", 3000e3)
+    config.set_number("grid.Ly", 2000e3)
 
-    config.set_double("grid.Mz", 2)
-    config.set_double("grid.Lz", 1000)
+    config.set_number("grid.Mz", 2)
+    config.set_number("grid.Lz", 1000)
 
     scenarios = {"1": (False, False, 1000.0),
                  "2": (True,  False, 1000.0),
@@ -95,7 +95,7 @@ def run(scenario, plot, pause, save):
 
     print("Using scenario %s: elastic model = %s, use uplift = %s, H0 = %f m" % (scenario, elastic, use_uplift, H0))
 
-    config.set_boolean("bed_deformation.lc.elastic_model", elastic)
+    config.set_flag("bed_deformation.lc.elastic_model", elastic)
 
     grid = create_grid()
 

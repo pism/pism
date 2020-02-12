@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,24 +22,23 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Timeseries.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 
 namespace pism {
 
 ScalarForcing::ScalarForcing(Context::ConstPtr ctx,
-                             const std::string &option_prefix,
+                             const std::string &prefix,
                              const std::string &variable_name,
                              const std::string &units,
                              const std::string &glaciological_units,
                              const std::string &long_name)
-  : m_ctx(ctx), m_bc_period(0), m_bc_reference_time(0.0), m_current(0.0) {
+  : m_ctx(ctx), m_period(0), m_reference_time(0.0), m_current(0.0) {
 
   Config::ConstPtr config = ctx->config();
 
-  m_option_prefix = option_prefix;
+  m_prefix = prefix;
 
   m_data.reset(new Timeseries(ctx->com(), ctx->unit_system(),
                               variable_name,
@@ -56,40 +55,36 @@ ScalarForcing::~ScalarForcing() {
 }
 
 void ScalarForcing::init() {
-  options::String file(m_option_prefix + "_file", "Specifies a file with scalar forcing data");
-  options::Integer period(m_option_prefix + "_period",
-                          "Specifies the length of the climate data period", 0);
-  options::Real bc_reference_year(m_option_prefix + "_reference_year",
-                                  "Boundary condition reference year", 0.0);
 
-  if (not file.is_set()) {
+  Config::ConstPtr config = m_ctx->config();
+
+  auto   filename       = config->get_string(m_prefix + ".file");
+  int    period         = config->get_number(m_prefix + ".period");
+  double reference_year = config->get_number(m_prefix + ".reference_year");
+
+  if (filename.empty()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "command-line option %s_file is required.",
-                                  m_option_prefix.c_str());
+                                  "%s.file is required", m_prefix.c_str());
   }
 
-  if (period.value() < 0.0) {
+  if (period < 0.0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "invalid %s_period %d (period length cannot be negative)",
-                                  m_option_prefix.c_str(), period.value());
+                                  "invalid %s.period %d (period length cannot be negative)",
+                                  m_prefix.c_str(), period);
   }
 
-  m_bc_period = (unsigned int)period;
+  m_period = (unsigned int)period;
 
-  if (bc_reference_year.is_set()) {
-    m_bc_reference_time = units::convert(m_ctx->unit_system(),
-                                         bc_reference_year, "years", "seconds");
-  } else {
-    m_bc_reference_time = 0;
-  }
+  m_reference_time = units::convert(m_ctx->unit_system(),
+                                    reference_year, "years", "seconds");
 
   m_ctx->log()->message(2,
                         "  reading %s data from forcing file %s...\n",
-                        m_data->name().c_str(), file->c_str());
+                        m_data->name().c_str(), filename.c_str());
 
-  PIO nc(m_ctx->com(), "netcdf3", file, PISM_READONLY);
+  File file(m_ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
   {
-    m_data->read(nc, *m_ctx->time(), *m_ctx->log());
+    m_data->read(file, *m_ctx->time(), *m_ctx->log());
   }
 }
 
@@ -102,7 +97,7 @@ double ScalarForcing::value() const {
 }
 
 double ScalarForcing::value(double t) const {
-  t = m_ctx->time()->mod(t - m_bc_reference_time, m_bc_period);
+  t = m_ctx->time()->mod(t - m_reference_time, m_period);
 
   return (*m_data)(t);
 }

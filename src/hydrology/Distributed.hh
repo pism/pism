@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 PISM Authors
+// Copyright (C) 2012-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -48,12 +48,12 @@ public:
   const IceModelVec2S& subglacial_water_pressure() const;
 
 protected:
-  virtual void restart_impl(const PIO &input_file, int record);
+  virtual void restart_impl(const File &input_file, int record);
 
-  virtual void bootstrap_impl(const PIO &input_file,
+  virtual void bootstrap_impl(const File &input_file,
                               const IceModelVec2S &ice_thickness);
 
-  virtual void initialize_impl(const IceModelVec2S &W_till,
+  virtual void init_impl(const IceModelVec2S &W_till,
                                const IceModelVec2S &W,
                                const IceModelVec2S &P);
 
@@ -63,8 +63,8 @@ protected:
 
   std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 
-  void define_model_state_impl(const PIO &output) const;
-  void write_model_state_impl(const PIO &output) const;
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
 
   void check_P_bounds(IceModelVec2S &P,
                       const IceModelVec2S &P_o,
@@ -78,7 +78,8 @@ protected:
   void update_P(double dt,
                 const IceModelVec2CellType &cell_type,
                 const IceModelVec2S &sliding_speed,
-                const IceModelVec2S &total_input,
+                const IceModelVec2S &surface_input_rate,
+                const IceModelVec2S &basal_melt_rate,
                 const IceModelVec2S &P_overburden,
                 const IceModelVec2S &Wtill,
                 const IceModelVec2S &Wtill_new,

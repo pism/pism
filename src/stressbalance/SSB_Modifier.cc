@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -28,31 +28,30 @@ namespace pism {
 namespace stressbalance {
 
 SSB_Modifier::SSB_Modifier(IceGrid::ConstPtr g)
-  : Component(g), m_EC(g->ctx()->enthalpy_converter()) {
-
+  : Component(g),
+    m_EC(g->ctx()->enthalpy_converter()),
+    m_diffusive_flux(m_grid, "diffusive_flux", WITH_GHOSTS, 1),
+    m_u(m_grid, "uvel", WITH_GHOSTS),
+    m_v(m_grid, "vvel", WITH_GHOSTS),
+    m_strain_heating(m_grid, "strainheat", WITHOUT_GHOSTS) {
   m_D_max = 0.0;
 
-  m_u.create(m_grid, "uvel", WITH_GHOSTS);
   m_u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
-              "m s-1", "land_ice_x_velocity");
-  m_u.metadata().set_string("glaciological_units", "m year-1");
+                "m s-1", "m year-1", "land_ice_x_velocity", 0);
 
-  m_v.create(m_grid, "vvel", WITH_GHOSTS);
   m_v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
-              "m s-1", "land_ice_y_velocity");
-  m_v.metadata().set_string("glaciological_units", "m year-1");
+                "m s-1", "m year-1", "land_ice_y_velocity", 0);
 
-  m_strain_heating.create(m_grid, "strainheat", WITHOUT_GHOSTS); // never diff'ed in hor dirs
+   // never diff'ed in hor dirs
   m_strain_heating.set_attrs("internal",
-                           "rate of strain heating in ice (dissipation heating)",
-                           "W m-3", "");
-  m_strain_heating.metadata().set_string("glaciological_units", "mW m-3");
+                             "rate of strain heating in ice (dissipation heating)",
+                             "W m-3", "mW m-3", "", 0);
 
-  m_diffusive_flux.create(m_grid, "diffusive_flux", WITH_GHOSTS, 1);
-  m_diffusive_flux.set_attrs("internal", 
-                           "diffusive (SIA) flux components on the staggered grid",
-                           "", "");
-  
+
+  m_diffusive_flux.set_attrs("internal",
+                             "diffusive (SIA) flux components on the staggered grid",
+                             "", "", "", 0);
+
 }
 
 SSB_Modifier::~SSB_Modifier() {

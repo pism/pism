@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -66,7 +66,9 @@ void Inputs::dump(const char *filename) const {
   Context::ConstPtr ctx = geometry->ice_thickness.grid()->ctx();
   Config::ConstPtr config = ctx->config();
 
-  PIO output(ctx->com(), config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
+  File output(ctx->com(), filename,
+              string_to_backend(config->get_string("output.format")),
+              PISM_READWRITE_MOVE);
 
   config->write(output);
 
@@ -136,20 +138,20 @@ void Inputs::dump(const char *filename) const {
 StressBalance::StressBalance(IceGrid::ConstPtr g,
                              ShallowStressBalance *sb,
                              SSB_Modifier *ssb_mod)
-  : Component(g), m_shallow_stress_balance(sb), m_modifier(ssb_mod) {
+  : Component(g),
+    m_w(m_grid, "wvel_rel", WITHOUT_GHOSTS),
+    m_strain_heating(m_grid, "strain_heating", WITHOUT_GHOSTS),
+    m_shallow_stress_balance(sb),
+    m_modifier(ssb_mod) {
 
-  // allocate the vertical velocity field:
-  m_w.create(m_grid, "wvel_rel", WITHOUT_GHOSTS);
   m_w.set_attrs("diagnostic",
                 "vertical velocity of ice, relative to base of ice directly below",
-                "m s-1", "");
+                "m s-1", "m year-1", "", 0);
   m_w.set_time_independent(false);
-  m_w.metadata().set_string("glaciological_units", "m year-1");
 
-  m_strain_heating.create(m_grid, "strain_heating", WITHOUT_GHOSTS);
   m_strain_heating.set_attrs("internal",
                              "rate of strain heating in ice (dissipation heating)",
-                             "W m-3", "");
+                             "W m-3", "W m-3", "", 0);
 }
 
 StressBalance::~StressBalance() {
@@ -246,13 +248,6 @@ const IceModelVec2S& StressBalance::basal_frictional_heating() const {
 
 const IceModelVec3& StressBalance::volumetric_strain_heating() const {
   return m_strain_heating;
-}
-
-void StressBalance::compute_2D_stresses(const IceModelVec2V &velocity,
-                                        const IceModelVec2S &hardness,
-                                        const IceModelVec2CellType &cell_type,
-                                        IceModelVec2 &result) const {
-  m_shallow_stress_balance->compute_2D_stresses(velocity, hardness, cell_type, result);
 }
 
 //! Compute vertical velocity using incompressibility of the ice.
@@ -659,12 +654,12 @@ const SSB_Modifier* StressBalance::modifier() const {
 }
 
 
-void StressBalance::define_model_state_impl(const PIO &output) const {
+void StressBalance::define_model_state_impl(const File &output) const {
   m_shallow_stress_balance->define_model_state(output);
   m_modifier->define_model_state(output);
 }
 
-void StressBalance::write_model_state_impl(const PIO &output) const {
+void StressBalance::write_model_state_impl(const File &output) const {
   m_shallow_stress_balance->write_model_state(output);
   m_modifier->write_model_state(output);
 }
@@ -761,12 +756,105 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &V,
     const double A = 0.5 * (u_x + v_y),  // A = (1/2) trace(D)
       B   = 0.5 * (u_x - v_y),
       Dxy = 0.5 * (v_x + u_y),  // B^2 = A^2 - u_x v_y
-      q   = sqrt(PetscSqr(B) + PetscSqr(Dxy));
+      q   = sqrt(B*B + Dxy*Dxy);
     result(i,j,0) = A + q;
     result(i,j,1) = A - q; // q >= 0 so e1 >= e2
 
   }
 }
+
+//! @brief Compute 2D deviatoric stresses.
+/*! Note: IceModelVec2 result has to have dof == 3. */
+void compute_2D_stresses(const rheology::FlowLaw &flow_law,
+                         const IceModelVec2V &velocity,
+                         const IceModelVec2S &hardness,
+                         const IceModelVec2CellType &cell_type,
+                         IceModelVec2 &result) {
+
+  using mask::ice_free;
+
+  auto grid = result.grid();
+
+  const double
+    dx = grid->dx(),
+    dy = grid->dy();
+
+  if (result.ndof() != 3) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "result.get_dof() == 3 is required");
+  }
+
+  IceModelVec::AccessList list{&velocity, &hardness, &result, &cell_type};
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (cell_type.ice_free(i, j)) {
+      result(i,j,0) = 0.0;
+      result(i,j,1) = 0.0;
+      result(i,j,2) = 0.0;
+      continue;
+    }
+
+    StarStencil<int> m = cell_type.int_star(i,j);
+    StarStencil<Vector2> U = velocity.star(i,j);
+
+    // strain in units s-1
+    double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
+      east = 1, west = 1, south = 1, north = 1;
+
+    // Computes u_x using second-order centered finite differences written as
+    // weighted sums of first-order one-sided finite differences.
+    //
+    // Given the cell layout
+    // *----n----*
+    // |         |
+    // |         |
+    // w         e
+    // |         |
+    // |         |
+    // *----s----*
+    // east == 0 if the east neighbor of the current cell is ice-free. In
+    // this case we use the left- (west-) sided difference.
+    //
+    // If both neighbors in the east-west (x) direction are ice-free the
+    // x-derivative is set to zero (see u_x, v_x initialization above).
+    //
+    // Similarly in y-direction.
+    if (ice_free(m.e)) {
+      east = 0;
+    }
+    if (ice_free(m.w)) {
+      west = 0;
+    }
+    if (ice_free(m.n)) {
+      north = 0;
+    }
+    if (ice_free(m.s)) {
+      south = 0;
+    }
+
+    if (west + east > 0) {
+      u_x = 1.0 / (dx * (west + east)) * (west * (U.ij.u - U[West].u) + east * (U[East].u - U.ij.u));
+      v_x = 1.0 / (dx * (west + east)) * (west * (U.ij.v - U[West].v) + east * (U[East].v - U.ij.v));
+    }
+
+    if (south + north > 0) {
+      u_y = 1.0 / (dy * (south + north)) * (south * (U.ij.u - U[South].u) + north * (U[North].u - U.ij.u));
+      v_y = 1.0 / (dy * (south + north)) * (south * (U.ij.v - U[South].v) + north * (U[North].v - U.ij.v));
+    }
+
+    double nu = 0.0;
+    flow_law.effective_viscosity(hardness(i, j),
+                                 secondInvariant_2D(Vector2(u_x, v_x), Vector2(u_y, v_y)),
+                                 &nu, NULL);
+
+    //get deviatoric stresses
+    result(i,j,0) = 2.0*nu*u_x;
+    result(i,j,1) = 2.0*nu*v_y;
+    result(i,j,2) = nu*(u_y+v_x);
+  }
+}
+
 
 } // end of namespace stressbalance
 } // end of namespace pism

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,7 +23,7 @@
 #include "pism/energy/utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/Vars.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 
 namespace pism {
 namespace energy {
@@ -34,24 +34,25 @@ TemperatureModel::TemperatureModel(IceGrid::ConstPtr grid,
 
   m_ice_temperature.create(m_grid, "temp", WITH_GHOSTS);
   m_ice_temperature.set_attrs("model_state",
-                              "ice temperature", "K", "land_ice_temperature");
-  m_ice_temperature.metadata().set_double("valid_min", 0.0);
+                              "ice temperature",
+                              "K", "K", "land_ice_temperature", 0);
+  m_ice_temperature.metadata().set_number("valid_min", 0.0);
 }
 
 const IceModelVec3 & TemperatureModel::temperature() const {
   return m_ice_temperature;
 }
 
-void TemperatureModel::restart_impl(const PIO &input_file, int record) {
+void TemperatureModel::restart_impl(const File &input_file, int record) {
 
   m_log->message(2, "* Restarting the temperature-based energy balance model from %s...\n",
-                 input_file.inq_filename().c_str());
+                 input_file.filename().c_str());
 
   m_basal_melt_rate.read(input_file, record);
 
   const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  if (input_file.inq_var(m_ice_temperature.metadata().get_name())) {
+  if (input_file.find_variable(m_ice_temperature.metadata().get_name())) {
     m_ice_temperature.read(input_file, record);
   } else {
     init_enthalpy(input_file, false, record);
@@ -64,17 +65,17 @@ void TemperatureModel::restart_impl(const PIO &input_file, int record) {
   compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
 }
 
-void TemperatureModel::bootstrap_impl(const PIO &input_file,
+void TemperatureModel::bootstrap_impl(const File &input_file,
                                       const IceModelVec2S &ice_thickness,
                                       const IceModelVec2S &surface_temperature,
                                       const IceModelVec2S &climatic_mass_balance,
                                       const IceModelVec2S &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the temperature-based energy balance model from %s...\n",
-                 input_file.inq_filename().c_str());
+                 input_file.filename().c_str());
 
   m_basal_melt_rate.regrid(input_file, OPTIONAL,
-                           m_config->get_double("bootstrapping.defaults.bmelt"));
+                           m_config->get_number("bootstrapping.defaults.bmelt"));
   regrid("Temperature-based energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
 
   int temp_revision = m_ice_temperature.state_counter();
@@ -171,17 +172,17 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   Logger log(MPI_COMM_SELF, m_log->get_threshold());
 
   const double
-    ice_density        = m_config->get_double("constants.ice.density"),
-    ice_c              = m_config->get_double("constants.ice.specific_heat_capacity"),
-    L                  = m_config->get_double("constants.fresh_water.latent_heat_of_fusion"),
-    melting_point_temp = m_config->get_double("constants.fresh_water.melting_point_temperature"),
-    beta_CC_grad       = m_config->get_double("constants.ice.beta_Clausius_Clapeyron") * ice_density * m_config->get_double("constants.standard_gravity");
+    ice_density        = m_config->get_number("constants.ice.density"),
+    ice_c              = m_config->get_number("constants.ice.specific_heat_capacity"),
+    L                  = m_config->get_number("constants.fresh_water.latent_heat_of_fusion"),
+    melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature"),
+    beta_CC_grad       = m_config->get_number("constants.ice.beta_Clausius_Clapeyron") * ice_density * m_config->get_number("constants.standard_gravity");
 
-  const bool allow_above_melting = m_config->get_boolean("energy.allow_temperature_above_melting");
+  const bool allow_above_melting = m_config->get_flag("energy.allow_temperature_above_melting");
 
   // this is bulge limit constant in K; is max amount by which ice
   //   or bedrock can be lower than surface temperature
-  const double bulge_max  = m_config->get_double("energy.enthalpy.cold_bulge_max") / ice_c;
+  const double bulge_max  = m_config->get_number("energy.enthalpy.cold_bulge_max") / ice_c;
 
   inputs.check();
   const IceModelVec3
@@ -216,10 +217,10 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   std::vector<double> Tnew(Mz_fine); // post-processed solution
 
   // counts unreasonably low temperature values; deprecated?
-  unsigned int maxLowTempCount = m_config->get_double("energy.max_low_temperature_count");
-  const double T_minimum = m_config->get_double("energy.minimum_allowed_temperature");
+  unsigned int maxLowTempCount = m_config->get_number("energy.max_low_temperature_count");
+  const double T_minimum = m_config->get_number("energy.minimum_allowed_temperature");
 
-  double margin_threshold = m_config->get_double("energy.margin_ice_thickness_limit");
+  double margin_threshold = m_config->get_number("energy.margin_ice_thickness_limit");
 
   ParallelSection loop(m_grid->com);
   try {
@@ -358,13 +359,13 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   compute_enthalpy_cold(m_work, ice_thickness, m_work);
 }
 
-void TemperatureModel::define_model_state_impl(const PIO &output) const {
+void TemperatureModel::define_model_state_impl(const File &output) const {
   m_ice_temperature.define(output);
   m_basal_melt_rate.define(output);
   // ice enthalpy is not a part of the model state
 }
 
-void TemperatureModel::write_model_state_impl(const PIO &output) const {
+void TemperatureModel::write_model_state_impl(const File &output) const {
   m_ice_temperature.write(output);
   m_basal_melt_rate.write(output);
   // ice enthalpy is not a part of the model state

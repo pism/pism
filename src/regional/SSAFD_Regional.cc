@@ -43,7 +43,7 @@ void SSAFD_Regional::init() {
 
   m_log->message(2, "  using the regional version of the SSA solver...\n");
 
-  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
+  if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
     m_log->message(2, "  using stored SSA velocities as Dirichlet B.C. in the no_model_strip...\n");
   }
 }
@@ -60,42 +60,92 @@ void SSAFD_Regional::update(const Inputs &inputs, bool full_update) {
   m_no_model_mask = NULL;
 }
 
-void SSAFD_Regional::compute_driving_stress(const Geometry &geometry, IceModelVec2V &result) const {
+static int weight(int M_ij, int M_n, double h_ij, double h_n) {
+  // fjord walls, nunataks, headwalls
+  if ((mask::icy(M_ij) and mask::ice_free(M_n) and h_n > h_ij) or
+      (mask::ice_free(M_ij) and mask::icy(M_n) and h_ij > h_n)) {
+    return 0;
+  }
 
-  SSAFD::compute_driving_stress(geometry, result);
+  return 1;
+}
 
-  const IceModelVec2Int &nmm = *m_no_model_mask;
+void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
+                                            const IceModelVec2S &surface_elevation,
+                                            const IceModelVec2CellType &cell_type,
+                                            const IceModelVec2Int *no_model_mask,
+                                            IceModelVec2V &result) const {
 
-  const IceModelVec2S
-    &usurfstore = *m_h_stored,
-    &thkstore   = *m_H_stored;
+  SSAFD::compute_driving_stress(ice_thickness, surface_elevation, cell_type, no_model_mask, result);
 
-  IceModelVec::AccessList list{&result, &nmm, &usurfstore, &thkstore};
+  double
+    dx = m_grid->dx(),
+    dy = m_grid->dy();
+
+  int
+    Mx = m_grid->Mx(),
+    My = m_grid->My();
+
+  IceModelVec::AccessList list{&result, &cell_type, no_model_mask, m_h_stored, m_H_stored};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double pressure = m_EC->pressure(thkstore(i,j));
+    auto M = no_model_mask->int_star(i, j);
+
+    if (M.ij == 0) {
+      // this grid point is in the modeled area so we don't need to modify the driving
+      // stress
+      continue;
+    }
+
+    double pressure = m_EC->pressure((*m_H_stored)(i, j));
     if (pressure <= 0) {
-      pressure = 0;
+      result(i, j) = 0.0;
+      continue;
     }
 
-    if (nmm(i, j) > 0.5 || nmm(i - 1, j) > 0.5 || nmm(i + 1, j) > 0.5) {
-      if (i - 1 < 0 || i + 1 > (int)m_grid->Mx() - 1) {
-        result(i, j).u = 0;
+    auto h = m_h_stored->star(i, j);
+    auto CT = cell_type.int_star(i, j);
+
+    // x-derivative
+    double h_x = 0.0;
+    {
+      double
+        west = M.w == 1 and i > 0,
+        east = M.e == 1 and i < Mx - 1;
+
+      // don't use differences spanning "cliffs"
+      west *= weight(CT.ij, CT.w, h.ij, h.w);
+      east *= weight(CT.ij, CT.e, h.ij, h.e);
+
+      if (east + west > 0) {
+        h_x = 1.0 / ((west + east) * dx) * (west * (h.ij - h.w) + east * (h.e - h.ij));
       } else {
-        result(i, j).u = - pressure * usurfstore.diff_x(i,j);
+        h_x = 0.0;
       }
     }
 
-    if (nmm(i, j) > 0.5 || nmm(i, j - 1) > 0.5 || nmm(i, j + 1) > 0.5) {
-      if (j - 1 < 0 || j + 1 > (int)m_grid->My() - 1) {
-        result(i, j).v = 0;
+    // y-derivative
+    double h_y = 0.0;
+    {
+      double
+        south = M.s == 1 and j > 0,
+        north = M.n == 1 and j < My - 1;
+
+      // don't use differences spanning "cliffs"
+      south *= weight(CT.ij, CT.s, h.ij, h.s);
+      north *= weight(CT.ij, CT.n, h.ij, h.n);
+
+      if (north + south > 0) {
+        h_y = 1.0 / ((south + north) * dy) * (south * (h.ij - h.s) + north * (h.n - h.ij));
       } else {
-        result(i, j).v = - pressure * usurfstore.diff_y(i,j);
+        h_y = 0.0;
       }
     }
-  }
+
+    result(i, j) = - pressure * Vector2(h_x, h_y);
+  } // end of the loop over grid points
 }
 
 } // end of namespace stressbalance

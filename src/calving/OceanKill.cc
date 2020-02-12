@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,10 +30,9 @@ namespace pism {
 namespace calving {
 
 OceanKill::OceanKill(IceGrid::ConstPtr g)
-  : Component(g) {
-
-  m_mask.create(m_grid, "ocean_kill_mask", WITH_GHOSTS,
-                m_config->get_double("grid.max_stencil_width"));
+  : Component(g),
+    m_mask(m_grid, "ocean_kill_mask", WITH_GHOSTS,
+           m_config->get_number("grid.max_stencil_width")) {
 
   m_mask.set_attrs("internal",
                    "mask specifying fixed calving front locations",
@@ -55,7 +54,9 @@ void OceanKill::init() {
     throw RuntimeError(PISM_ERROR_LOCATION, "calving.ocean_kill.file cannot be empty");
   }
 
-  IceModelVec2S thickness, bed;
+  IceModelVec2S
+    thickness(m_grid, "thk", WITHOUT_GHOSTS),
+    bed(m_grid, "topg", WITHOUT_GHOSTS);
 
   {
     m_log->message(2,
@@ -63,12 +64,10 @@ void OceanKill::init() {
                "  ice thickness and bed topography from '%s'\n"
                "  assuming sea level elevation of 0 meters.\n", ocean_kill_file.c_str());
 
-    thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
     thickness.set_attrs("temporary", "land ice thickness",
                         "m", "land_ice_thickness");
-    thickness.metadata().set_double("valid_min", 0.0);
+    thickness.metadata().set_number("valid_min", 0.0);
 
-    bed.create(m_grid, "topg", WITHOUT_GHOSTS);
     bed.set_attrs("temporary", "bedrock surface elevation",
                   "m", "bedrock_altitude");
 

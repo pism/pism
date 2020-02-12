@@ -107,7 +107,7 @@ class of the PISM base class.
    F, ``pismv -test F -Mx 61 -My 61 -Mz 61 -y 25000``
    G, ``pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000``
    H, ``pismv -test H -Mx 61 -My 61 -Mz 11 -y 40034 -bed_def iso``
-   I, ``ssa_testi -ssa_method fd -Mx 5 -My 500 -ssa_rtol 1e-6 -ssafd_ksp_rtol 1e-11``
+   I, ``ssa_testi -ssa_method fd -Mx 5 -My 500 -ssafd_picard_rtol 1e-6 -ssafd_ksp_rtol 1e-11``
    J, ``ssa_testj -ssa_method fd -Mx 60 -My 60 -ssafd_ksp_rtol 1e-12``
    K, ``pismv -test K -Mx 6 -My 6 -Mz 401 -Mbz 101 -y 130000``
    L, ``pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000``

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -50,8 +50,12 @@ protected:
   const IceModelVec2S &mass_flux_impl() const;
   const IceModelVec2S &layer_thickness_impl() const;
 
-  void define_model_state_impl(const PIO &output) const;
-  void write_model_state_impl(const PIO &output) const;
+  const IceModelVec2S& accumulation_impl() const;
+  const IceModelVec2S& melt_impl() const;
+  const IceModelVec2S& runoff_impl() const;
+
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
 
 private:
   // store pointers to fields so that we can iterate over them

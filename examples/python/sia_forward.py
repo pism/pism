@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2018 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2018, 2019 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -52,10 +52,10 @@ registration = PISM.CELL_CENTER
 if is_regional:
     registration = PISM.CELL_CORNER
 
-input_file = PISM.PIO(ctx.com(), "netcdf3", input_filename, PISM.PISM_READONLY)
+input_file = PISM.File(ctx.com(), input_filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
 grid = PISM.IceGrid.FromFile(ctx, input_file, "enthalpy", registration)
 
-config.set_boolean("basal_resistance.pseudo_plastic.enabled", False)
+config.set_flag("basal_resistance.pseudo_plastic.enabled", False)
 
 enthalpyconverter = PISM.EnthalpyConverter(config)
 

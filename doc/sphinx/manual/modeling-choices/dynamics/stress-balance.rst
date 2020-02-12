@@ -126,13 +126,11 @@ melt rate which is, primarily, thermodynamically-determined (see :ref:`sec-energ
    * - Option
      - Description
 
-   * - :opt:`-ssa_maxi` (300)
+   * - :opt:`-ssafd_picard_maxi` (300)
      - Set the maximum allowed number of Picard (nonlinear) iterations in solving the
        shallow shelf approximation.
 
-       .. FIXME: this should be "ssafd_picard_maxi"?
-
-   * - :opt:`-ssa_rtol` (`10^{-4}`)
+   * - :opt:`-ssafd_picard_rtol` (`10^{-4}`)
      - The Picard iteration computes a vertically-averaged effective viscosity which is
        used to solve the equations for horizontal velocity. Then the new velocities are
        used to recompute an effective viscosity, and so on. This option sets the relative
@@ -140,13 +138,11 @@ melt rate which is, primarily, thermodynamically-determined (see :ref:`sec-energ
        successive values `\nu^{(k)}` of the vertically-averaged effective viscosity
        satisfy
 
-       .. FIXME: this should be "ssafd_picard_rtol"?
-
        .. math::
 
           \|(\nu^{(k)} - \nu^{(k-1)}) H\|_1 \le Z \|\nu^{(k)} H\|_1
 
-       where `Z=` ``ssa_rtol``.
+       where `Z=` ``ssafd_picard_rtol``.
 
    * - :opt:`-ssafd_ksp_rtol` (`10^{-5}`)
      - Set the relative change tolerance for the iteration inside the Krylov linear solver

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -36,8 +36,12 @@ protected:
   const IceModelVec2S &temperature_impl() const;
   const IceModelVec2S &mass_flux_impl() const;
 
-  void define_model_state_impl(const PIO &output) const;
-  void write_model_state_impl(const PIO &output) const;
+  const IceModelVec2S& accumulation_impl() const;
+  const IceModelVec2S& melt_impl() const;
+  const IceModelVec2S& runoff_impl() const;
+
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
 
   IceModelVec2T::Ptr m_mass_flux;
   IceModelVec2T::Ptr m_temperature;

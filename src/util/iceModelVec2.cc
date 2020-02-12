@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2019 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,7 @@ using std::dynamic_pointer_cast;
 #include <petscdraw.h>
 #include <petscdmda.h>
 
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
 #include "ConfigInterface.hh"
@@ -138,7 +138,7 @@ void IceModelVec2S::mask_by(const IceModelVec2S &M, double fill) {
   inc_state_counter();          // mark as modified
 }
 
-void IceModelVec2::write_impl(const PIO &file) const {
+void IceModelVec2::write_impl(const File &file) const {
 
   assert(m_v != NULL);
 
@@ -168,7 +168,7 @@ void IceModelVec2::write_impl(const PIO &file) const {
   }
 }
 
-void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
+void IceModelVec2::read_impl(const File &nc, const unsigned int time) {
 
   if ((m_dof == 1) and (not m_has_ghosts)) {
     IceModelVec::read_impl(nc, time);
@@ -205,7 +205,7 @@ void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
   }
 }
 
-void IceModelVec2::regrid_impl(const PIO &file, RegriddingFlag flag,
+void IceModelVec2::regrid_impl(const File &file, RegriddingFlag flag,
                                double default_value) {
   if ((m_dof == 1) and (not m_has_ghosts)) {
     IceModelVec::regrid_impl(file, flag, default_value);
@@ -220,7 +220,7 @@ void IceModelVec2::regrid_impl(const PIO &file, RegriddingFlag flag,
   // the same way v is
   petsc::TemporaryGlobalVec tmp(da2);
 
-  const bool allow_extrapolation = m_grid->ctx()->config()->get_boolean("grid.allow_extrapolation");
+  const bool allow_extrapolation = m_grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 
   for (unsigned int j = 0; j < m_dof; ++j) {
     {
@@ -332,34 +332,6 @@ double IceModelVec2S::diff_y(int i, int j) const {
   return ((*this)(i,j + 1) - (*this)(i,j - 1)) / (2 * m_grid->dy());
 }
 
-
-//! \brief Returns the x-derivative at East staggered point i+1/2,j approximated 
-//! using centered (obvious) finite differences.
-double IceModelVec2S::diff_x_stagE(int i, int j) const {
-  return ((*this)(i+1,j) - (*this)(i,j)) / (m_grid->dx());
-}
-
-//! \brief Returns the y-derivative at East staggered point i+1/2,j approximated 
-//! using centered finite differences.
-double IceModelVec2S::diff_y_stagE(int i, int j) const {
-  return ((*this)(i+1,j+1) + (*this)(i,j+1)
-           - (*this)(i+1,j-1) - (*this)(i,j-1)) / (4* m_grid->dy());
-}
-
-//! \brief Returns the x-derivative at North staggered point i,j+1/2 approximated 
-//! using centered finite differences.
-double IceModelVec2S::diff_x_stagN(int i, int j) const {
-  return ((*this)(i+1,j+1) + (*this)(i+1,j)
-           - (*this)(i-1,j+1) - (*this)(i-1,j)) / (4* m_grid->dx());
-}
-
-//! \brief Returns the y-derivative at North staggered point i,j+1/2 approximated 
-//! using centered (obvious) finite differences.
-double IceModelVec2S::diff_y_stagN(int i, int j) const {
-  return ((*this)(i,j+1) - (*this)(i,j)) / (m_grid->dy());
-}
-
-
 //! \brief Returns the x-derivative at i,j approximated using centered finite
 //! differences. Respects grid periodicity and uses one-sided FD at grid edges
 //! if necessary.
@@ -453,6 +425,10 @@ double IceModelVec2S::min() const {
 
 
 // IceModelVec2
+IceModelVec2::IceModelVec2(IceGrid::ConstPtr grid, const std::string &short_name,
+                           IceModelVecKind ghostedp, unsigned int stencil_width, int dof) {
+  create(grid, short_name, ghostedp, stencil_width, dof);
+}
 
 void IceModelVec2::get_component(unsigned int n, IceModelVec2S &result) const {
 
@@ -473,10 +449,10 @@ void IceModelVec2::create(IceGrid::ConstPtr grid, const std::string & name,
   m_dof  = dof;
   m_grid = grid;
 
-  if ((m_dof != 1) || (stencil_width > m_grid->ctx()->config()->get_double("grid.max_stencil_width"))) {
+  if ((m_dof != 1) || (stencil_width > m_grid->ctx()->config()->get_number("grid.max_stencil_width"))) {
     m_da_stencil_width = stencil_width;
   } else {
-    m_da_stencil_width = m_grid->ctx()->config()->get_double("grid.max_stencil_width");
+    m_da_stencil_width = m_grid->ctx()->config()->get_number("grid.max_stencil_width");
   }
 
   // initialize the da member:

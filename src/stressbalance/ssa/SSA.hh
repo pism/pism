@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -122,14 +122,18 @@ public:
 
   const IceModelVec2V& driving_stress() const;
 protected:
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   virtual void init_impl();
 
   virtual DiagnosticList diagnostics_impl() const;
 
-  virtual void compute_driving_stress(const Geometry &geometry, IceModelVec2V &result) const;
+  virtual void compute_driving_stress(const IceModelVec2S &ice_thickness,
+                                      const IceModelVec2S &surface_elevation,
+                                      const IceModelVec2CellType &cell_type,
+                                      const IceModelVec2Int *no_model_mask,
+                                      IceModelVec2V &result) const;
 
   virtual void solve(const Inputs &inputs) = 0;
 

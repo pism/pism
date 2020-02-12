@@ -91,7 +91,7 @@ private:
 
 private:
   // Utility function
-  void prepare_nc(std::string const &fname, std::unique_ptr<pism::PIO> &nc);
+  void prepare_nc(std::string const &fname, std::unique_ptr<pism::File> &nc);
 
 public:
   /** @param t0 Time of last time we coupled. */
@@ -100,10 +100,10 @@ public:
   void reset_rate();
 
 
-  std::unique_ptr<pism::PIO> pre_mass_nc; //!< Write variables every time massContPostHook() is called.
-  std::unique_ptr<pism::PIO> post_mass_nc;
-  std::unique_ptr<pism::PIO> pre_energy_nc;
-  std::unique_ptr<pism::PIO> post_energy_nc;
+  std::unique_ptr<pism::File> pre_mass_nc; //!< Write variables every time massContPostHook() is called.
+  std::unique_ptr<pism::File> post_mass_nc;
+  std::unique_ptr<pism::File> pre_energy_nc;
+  std::unique_ptr<pism::File> post_energy_nc;
 
   // see iceModel.cc for implementation of constructor and destructor:
   /** @param gcm_params Pointer to IceModel::gcm_params.  Lives at least as long as this object. */

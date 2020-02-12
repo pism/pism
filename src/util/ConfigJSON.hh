@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -39,23 +39,27 @@ public:
   std::string dump() const;
 
 private:
-  virtual void read_impl(const PIO &nc);
-  virtual void write_impl(const PIO &nc) const;
+  virtual void read_impl(const File &nc);
+  virtual void write_impl(const File &nc) const;
 
   virtual bool is_set_impl(const std::string &name) const;
 
   virtual Doubles all_doubles_impl() const;
-  virtual double get_double_impl(const std::string &name) const;
-  virtual void set_double_impl(const std::string &name, double value);
+  virtual double get_number_impl(const std::string &name) const;
+  virtual std::vector<double> get_numbers_impl(const std::string &name) const;
+
+  virtual void set_number_impl(const std::string &name, double value);
+  virtual void set_numbers_impl(const std::string &name,
+                                const std::vector<double> &values);
 
   virtual Strings all_strings_impl() const;
   virtual std::string get_string_impl(const std::string &name) const;
   virtual void set_string_impl(const std::string &name, const std::string &value);
 
-  virtual Booleans all_booleans_impl() const;
+  virtual Flags all_flags_impl() const;
 
-  virtual bool get_boolean_impl(const std::string& name) const;
-  virtual void set_boolean_impl(const std::string& name, bool value);
+  virtual bool get_flag_impl(const std::string& name) const;
+  virtual void set_flag_impl(const std::string& name, bool value);
 private:
   json_t *m_data;
 };

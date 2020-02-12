@@ -1,0 +1,198 @@
+version: 2
+
+jobs:
+  build-gcc:
+    docker:
+      - image: ckhrulev/pism-debian:0.1.2
+
+    environment:
+      CC: ccache mpicc
+      CXX: ccache mpicxx
+      CCACHE_COMPRESS: 1
+      PETSC_DIR: /usr/lib/petsc/
+      PYTHONPATH: /home/builder/project/build/site-packages
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - ccache-gcc-{{ .Branch }}
+      - run:
+          name: Create the build directory
+          command: mkdir -p build
+      - run:
+          name: Configure PISM
+          # CMAKE_BUILD_TYPE=Debug enables pedantic compiler warnings and one or two extra
+          # tests.
+          #
+          # CMAKE_CXX_FLAGS is set to a) disable warnings caused by OpenMPI internals and
+          # b) treat all warnings as errors except for the one about the "noreturn"
+          # attribute.
+          #
+          # We need Python bindings and extra executables for many regression tests.
+          #
+          # PROJ, NetCDF built with parallel I/O, and PnetCDF are optional dependencies but
+          # we should build and test the code that uses them. The same applies to ICEBIN.
+          #
+          # CMAKE_FIND_ROOT_PATH points to HDF5 and NetCDF with support for parallel I/O.
+          # (Parallel HDF5 and NetCDF from Debian did not work.)
+          command: >-
+            cmake -B build -S .
+            -DCMAKE_BUILD_TYPE=Debug
+            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf;$HOME/local/pnetcdf;$HOME/local/parallelio"
+            -DCMAKE_CXX_FLAGS="-Wno-cast-function-type -Werror -Wno-error=suggest-attribute=noreturn"
+            -DPism_USE_PROJ=Yes
+            -DPism_USE_PARALLEL_NETCDF4=Yes
+            -DPism_USE_PNETCDF=Yes
+            -DPism_USE_PIO=Yes
+            -DPism_BUILD_PYTHON_BINDINGS=Yes
+            -DPism_BUILD_EXTRA_EXECS=Yes
+            -DPism_BUILD_ICEBIN=Yes
+      - run:
+          name: Build PISM using GCC
+          command: make --no-print-directory -C build -j4 all
+      - run:
+          name: Run regression tests
+          command: cd build && ctest -j 4 --output-on-failure
+      - save_cache:
+          key: ccache-gcc-{{ .Branch }}-{{ .BuildNum }}
+          paths:
+            - ~/.ccache
+
+  build-gcc-minimal:
+    docker:
+      - image: ckhrulev/pism-debian:0.1.2
+
+    environment:
+      CC: ccache mpicc
+      CXX: ccache mpicxx
+      CCACHE_COMPRESS: 1
+      PETSC_DIR: /usr/lib/petsc/
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - ccache-gcc-minimal-{{ .Branch }}
+      - run:
+          name: Create the build directory
+          command: mkdir -p build
+      - run:
+          name: Configure PISM
+          command: >-
+            cmake -B build -S .
+            -DCMAKE_BUILD_TYPE=Debug
+            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf"
+            -DCMAKE_CXX_FLAGS="-Wno-cast-function-type -Werror -Wno-error=suggest-attribute=noreturn"
+      - run:
+          name: Build PISM using GCC
+          command: make --no-print-directory -C build -j4 all
+      - save_cache:
+          key: ccache-gcc-{{ .Branch }}-{{ .BuildNum }}
+          paths:
+            - ~/.ccache
+
+  build-clang:
+    docker:
+      - image: ckhrulev/pism-debian:0.1.2
+
+    environment:
+      CCACHE_COMPRESS: 1
+      PETSC_DIR: /usr/lib/petsc/
+      PYTHONPATH: /home/builder/project/build/site-packages
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - ccache-clang-{{ .Branch }}
+      - run:
+          name: Create the build directory
+          command: mkdir -p build
+      - run:
+          name: Configure PISM
+          command: >-
+            CC="ccache $(mpicc -show | sed s/gcc/clang/)"
+            CXX="ccache $(mpicxx -show | sed s/g++/clang++/)"
+            cmake -B build -S .
+            -DCMAKE_BUILD_TYPE=Debug
+            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf;$HOME/local/pnetcdf;$HOME/local/parallelio"
+            -DCMAKE_C_FLAGS="-Werror -Wno-unused-command-line-argument"
+            -DCMAKE_CXX_FLAGS="-Werror -Wno-unused-command-line-argument"
+            -DPism_USE_PROJ=Yes
+            -DPism_USE_PARALLEL_NETCDF4=Yes
+            -DPism_USE_PNETCDF=Yes
+            -DPism_USE_PIO=Yes
+            -DPism_BUILD_PYTHON_BINDINGS=Yes
+            -DPism_BUILD_EXTRA_EXECS=Yes
+            -DPism_BUILD_ICEBIN=Yes
+      - run:
+          name: Build PISM using Clang
+          command: make --no-print-directory -C build -j4 all
+      - run:
+          name: Run regression tests
+          command: cd build && ctest -j 4 --output-on-failure
+      - save_cache:
+          key: ccache-clang-{{ .Branch }}-{{ .BuildNum }}
+          paths:
+            - ~/.ccache
+
+  build-clang-minimal:
+    docker:
+      - image: ckhrulev/pism-debian:0.1.2
+
+    environment:
+      CCACHE_COMPRESS: 1
+      PETSC_DIR: /usr/lib/petsc/
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - ccache-clang-minimal-{{ .Branch }}
+      - run:
+          name: Create the build directory
+          command: mkdir -p build
+      - run:
+          name: Configure PISM
+          command: >-
+            CC="ccache $(mpicc -show | sed s/gcc/clang/)"
+            CXX="ccache $(mpicxx -show | sed s/g++/clang++/)"
+            cmake -B build -S .
+            -DCMAKE_BUILD_TYPE=Debug
+            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf"
+            -DCMAKE_C_FLAGS="-Werror -Wno-unused-command-line-argument"
+            -DCMAKE_CXX_FLAGS="-Werror -Wno-unused-command-line-argument"
+      - run:
+          name: Build PISM using Clang
+          command: make --no-print-directory -C build -j4 all
+      - save_cache:
+          key: ccache-clang-{{ .Branch }}-{{ .BuildNum }}
+          paths:
+            - ~/.ccache
+
+  build-manual:
+    docker:
+      - image: ckhrulev/pism-debian:0.1.2
+
+    steps:
+      - checkout
+      - run:
+          name: Build the manual
+          command: |
+            mkdir -p build
+            cmake -B build -S doc/ -DCMAKE_INSTALL_PREFIX=/tmp/pism -DPism_DOC_DIR="manual"
+            make -C build install
+            tar -czf pism-manual.tgz -C /tmp/pism/manual/html .
+      - store_artifacts:
+          path: pism-manual.tgz
+
+workflows:
+  version: 2
+  build-and-test:
+    jobs:
+      - build-gcc
+      - build-gcc-minimal
+      - build-clang
+      - build-clang-minimal
+      - build-manual

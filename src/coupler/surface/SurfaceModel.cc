@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2019 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -22,7 +22,7 @@
 
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/IceGrid.hh"
@@ -37,9 +37,10 @@ namespace surface {
 IceModelVec2S::Ptr SurfaceModel::allocate_layer_mass(IceGrid::ConstPtr grid) {
   IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_layer_mass", WITHOUT_GHOSTS));
 
-  result->set_attrs("climate_forcing", "mass held in the surface layer", "kg", "");
+  result->set_attrs("climate_forcing", "mass held in the surface layer",
+                    "kg", "kg", "", 0);
 
-  result->metadata().set_double("valid_min", 0.0);
+  result->metadata().set_number("valid_min", 0.0);
 
   return result;
 }
@@ -50,9 +51,9 @@ IceModelVec2S::Ptr SurfaceModel::allocate_layer_thickness(IceGrid::ConstPtr grid
 
   result->set_attrs("climate_forcing",
                     "thickness of the surface process layer at the top surface of the ice",
-                    "m", "");
+                    "m", "m", "", 0);
 
-  result->metadata().set_double("valid_min", 0.0);
+  result->metadata().set_number("valid_min", 0.0);
 
   return result;
 }
@@ -64,9 +65,9 @@ IceModelVec2S::Ptr SurfaceModel::allocate_liquid_water_fraction(IceGrid::ConstPt
 
   result->set_attrs("climate_forcing",
                     "liquid water fraction of the ice at the top surface",
-                    "1", "");
+                    "1", "1", "", 0);
 
-  result->metadata().set_doubles("valid_range", {0.0, 1.0});
+  result->metadata().set_numbers("valid_range", {0.0, 1.0});
 
   return result;
 }
@@ -77,13 +78,13 @@ IceModelVec2S::Ptr SurfaceModel::allocate_mass_flux(IceGrid::ConstPtr grid) {
 
   result->set_attrs("climate_forcing",
                     "surface mass balance (accumulation/ablation) rate",
-                    "kg m-2 second-1", "land_ice_surface_specific_mass_balance_flux");
-  result->metadata().set_string("glaciological_units", "kg m-2 year-1");
+                    "kg m-2 second-1", "kg m-2 year-1",
+                    "land_ice_surface_specific_mass_balance_flux", 0);
 
   Config::ConstPtr config = grid->ctx()->config();
-  const double smb_max = config->get_double("surface.given.smb_max", "kg m-2 second-1");
+  const double smb_max = config->get_number("surface.given.smb_max", "kg m-2 second-1");
 
-  result->metadata().set_doubles("valid_range", {-smb_max, smb_max});
+  result->metadata().set_numbers("valid_range", {-smb_max, smb_max});
 
   return result;
 }
@@ -94,24 +95,63 @@ IceModelVec2S::Ptr SurfaceModel::allocate_temperature(IceGrid::ConstPtr grid) {
 
   result->set_attrs("climate_forcing",
                     "temperature of the ice at the ice surface but below firn processes",
-                    "Kelvin", "");
+                    "Kelvin", "Kelvin", "", 0);
 
-  result->metadata().set_doubles("valid_range", {0.0, 323.15}); // [0C, 50C]
+  result->metadata().set_numbers("valid_range", {0.0, 323.15}); // [0C, 50C]
+
+  return result;
+}
+
+IceModelVec2S::Ptr SurfaceModel::allocate_accumulation(IceGrid::ConstPtr grid) {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_accumulation_flux", WITHOUT_GHOSTS));
+
+  result->set_attrs("diagnostic",
+                    "surface accumulation (precipitation minus rain)",
+                    "kg m-2", "kg m-2", "", 0);
+
+  return result;
+}
+
+IceModelVec2S::Ptr SurfaceModel::allocate_melt(IceGrid::ConstPtr grid) {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_melt_flux", WITHOUT_GHOSTS));
+
+  result->set_attrs("diagnostic",
+                    "surface melt",
+                    "kg m-2", "kg m-2", "", 0);
+
+  return result;
+}
+
+IceModelVec2S::Ptr SurfaceModel::allocate_runoff(IceGrid::ConstPtr grid) {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_runoff_flux", WITHOUT_GHOSTS));
+
+  result->set_attrs("diagnostic",
+                    "surface meltwater runoff",
+                    "kg m-2", "kg m-2", "", 0);
 
   return result;
 }
 
 SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid)
-  : Component(grid), m_input_model(nullptr), m_atmosphere(nullptr) {
+  : Component(grid) {
 
   m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
   m_layer_mass            = allocate_layer_mass(grid);
   m_layer_thickness       = allocate_layer_thickness(grid);
+  m_accumulation          = allocate_accumulation(grid);
+  m_melt                  = allocate_melt(grid);
+  m_runoff                = allocate_runoff(grid);
 
   // default values
   m_layer_thickness->set(0.0);
   m_layer_mass->set(0.0);
   m_liquid_water_fraction->set(0.0);
+  m_accumulation->set(0.0);
+  m_melt->set(0.0);
+  m_runoff->set(0.0);
 }
 
 SurfaceModel::SurfaceModel(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
@@ -131,6 +171,30 @@ SurfaceModel::~SurfaceModel() {
   // empty
 }
 
+
+//! \brief Returns accumulation
+/*!
+ * Basic surface models currently implemented in PISM do not model accumulation
+ */
+const IceModelVec2S& SurfaceModel::accumulation() const {
+  return accumulation_impl();
+}
+
+//! \brief Returns melt
+/*!
+ * Basic surface models currently implemented in PISM do not model melt
+ */
+const IceModelVec2S& SurfaceModel::melt() const {
+  return melt_impl();
+}
+
+//! \brief Returns runoff
+/*!
+ * Basic surface models currently implemented in PISM do not model runoff
+ */
+const IceModelVec2S& SurfaceModel::runoff() const {
+  return runoff_impl();
+}
 
 const IceModelVec2S& SurfaceModel::mass_flux() const {
   return mass_flux_impl();
@@ -166,6 +230,30 @@ const IceModelVec2S& SurfaceModel::layer_mass() const {
  */
 const IceModelVec2S& SurfaceModel::layer_thickness() const {
   return layer_thickness_impl();
+}
+
+const IceModelVec2S& SurfaceModel::accumulation_impl() const {
+  if (m_input_model) {
+    return m_input_model->accumulation();
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
+const IceModelVec2S& SurfaceModel::melt_impl() const {
+  if (m_input_model) {
+    return m_input_model->melt();
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
+}
+
+const IceModelVec2S& SurfaceModel::runoff_impl() const {
+  if (m_input_model) {
+    return m_input_model->runoff();
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
+  }
 }
 
 const IceModelVec2S& SurfaceModel::mass_flux_impl() const {
@@ -248,7 +336,7 @@ void SurfaceModel::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-void SurfaceModel::define_model_state_impl(const PIO &output) const {
+void SurfaceModel::define_model_state_impl(const File &output) const {
   if (m_atmosphere) {
     m_atmosphere->define_model_state(output);
   }
@@ -258,7 +346,7 @@ void SurfaceModel::define_model_state_impl(const PIO &output) const {
   }
 }
 
-void SurfaceModel::write_model_state_impl(const PIO &output) const {
+void SurfaceModel::write_model_state_impl(const File &output) const {
   if (m_atmosphere) {
     m_atmosphere->write_model_state(output);
   }
@@ -278,6 +366,59 @@ MaxTimestep SurfaceModel::max_timestep_impl(double t) const {
   }
 
   return MaxTimestep("surface model");
+}
+
+/*!
+ * Use the surface mass balance to compute dummy accumulation.
+ *
+ * This is used by surface models that compute the SMB but do not provide accumulation,
+ * melt, and runoff.
+ *
+ * We assume that the positive part of the SMB is accumulation and the negative part is
+ * runoff. This ensures that outputs of PISM's surface models satisfy "SMB = accumulation
+ * - runoff".
+ */
+void SurfaceModel::dummy_accumulation(const IceModelVec2S& smb, IceModelVec2S& result) {
+
+  IceModelVec::AccessList list{&result, &smb};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    result(i,j) = std::max(smb(i,j), 0.0);
+  }
+}
+
+/*!
+ * Use the surface mass balance to compute dummy runoff.
+ *
+ * This is used by surface models that compute the SMB but do not provide accumulation,
+ * melt, and runoff.
+ *
+ * We assume that the positive part of the SMB is accumulation and the negative part is
+ * runoff. This ensures that outputs of PISM's surface models satisfy "SMB = accumulation
+ * - runoff".
+ */
+void SurfaceModel::dummy_runoff(const IceModelVec2S& smb, IceModelVec2S& result) {
+
+  IceModelVec::AccessList list{&result, &smb};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    result(i,j) = std::max(-smb(i,j), 0.0);
+  }
+}
+
+/*!
+ * Use the surface mass balance to compute dummy runoff.
+ *
+ * This is used by surface models that compute the SMB but do not provide accumulation,
+ * melt, and runoff.
+ *
+ * We assume that all melt runs off, i.e. runoff = melt, but treat melt as a "derived"
+ * quantity.
+ */
+void SurfaceModel::dummy_melt(const IceModelVec2S& smb, IceModelVec2S& result) {
+  dummy_runoff(smb, result);
 }
 
 namespace diagnostics {
@@ -353,11 +494,16 @@ IceModelVec::Ptr PS_climatic_mass_balance::compute_impl() const {
 PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "ice_surface_temp")};
 
-  set_attrs("ice temperature at the ice surface", "",
-            "Kelvin", "Kelvin", 0);
+  auto ismip6 = m_config->get_flag("output.ISMIP6");
+
+  /* set metadata: */
+  m_vars = {SpatialVariableMetadata(m_sys,
+                                    ismip6 ? "litemptop" : "ice_surface_temp")};
+
+  set_attrs("ice temperature at the top ice surface",
+            "temperature_at_top_of_ice_sheet_model",
+            "K", "K", 0);
 }
 
 IceModelVec::Ptr PS_ice_surface_temp::compute_impl() const {
@@ -441,6 +587,10 @@ DiagnosticList SurfaceModel::diagnostics_impl() const {
     {"surface_layer_mass",                Diagnostic::Ptr(new PS_layer_mass(this))},
     {"surface_layer_thickness",           Diagnostic::Ptr(new PS_layer_thickness(this))}
   };
+
+  if (m_config->get_flag("output.ISMIP6")) {
+    result["litemptop"] = Diagnostic::Ptr(new PS_ice_surface_temp(this));
+  }
 
   if (m_atmosphere) {
     result = pism::combine(result, m_atmosphere->diagnostics());

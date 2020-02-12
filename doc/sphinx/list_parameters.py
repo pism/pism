@@ -77,7 +77,7 @@ def print_string(var, name, T):
                 doc(var, name)))
 
 
-def print_scalar(var, name, T):
+def print_number(var, name, T):
     V = "{} ({})".format(number_to_string(value(var, name)), units(var, name))
     print(entry(name, T, V, option(var, name), doc(var, name)))
 
@@ -118,10 +118,10 @@ def option(var, name):
         return None
 
 
-printers = {"string": print_string,
-            "scalar": print_scalar,
+printers = {"string":  print_string,
+            "number":  print_number,
             "integer": print_integer,
-            "boolean": print_string,
+            "flag":    print_string,
             "keyword": print_keyword}
 
 header = """.. -*- mode: rst -*-
@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
     print(header)
 
-    for parameter in var.ncattrs():     # assume that this list is sorted
+    for parameter in sorted(var.ncattrs()):
         if is_special(parameter):
             continue
 

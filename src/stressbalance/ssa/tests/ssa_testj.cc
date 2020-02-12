@@ -32,7 +32,7 @@ static char help[] =
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
@@ -46,7 +46,7 @@ class SSATestCaseJ: public SSATestCase
 public:
   SSATestCaseJ(Context::Ptr ctx, int Mx, int My, SSAFactory ssafactory)
     : SSATestCase(ctx, Mx, My, 300e3, 300e3, CELL_CENTER, XY_PERIODIC) {
-  m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", false);
+  m_config->set_flag("basal_resistance.pseudo_plastic.enabled", false);
 
   m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
   m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
@@ -70,8 +70,8 @@ void SSATestCaseJ::initializeSSACoefficients() {
   m_ice_enthalpy.set(enth0);
 
   /* use Ritz et al (2001) value of 30 MPa year for typical vertically-averaged viscosity */
-  double ocean_rho = m_config->get_double("constants.sea_water.density"),
-    ice_rho = m_config->get_double("constants.ice.density");
+  double ocean_rho = m_config->get_number("constants.sea_water.density"),
+    ice_rho = m_config->get_number("constants.ice.density");
   const double nu0 = units::convert(m_sys, 30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
   const double H0 = 500.;       /* 500 m typical thickness */
 
@@ -150,8 +150,8 @@ int main(int argc, char *argv[]) {
 
     // Parameters that can be overridden by command line options
 
-    unsigned int Mx = config->get_double("grid.Mx");
-    unsigned int My = config->get_double("grid.My");
+    unsigned int Mx = config->get_number("grid.Mx");
+    unsigned int My = config->get_number("grid.My");
 
     auto method = config->get_string("stress_balance.ssa.method");
     auto output = config->get_string("output.file_name");

@@ -56,11 +56,11 @@ std::string LocalMassBalance::method() const {
 
 PDDMassBalance::PDDMassBalance(Config::ConstPtr config, units::System::Ptr system)
   : LocalMassBalance(config, system) {
-  precip_as_snow     = m_config->get_boolean("surface.pdd.interpret_precip_as_snow");
-  Tmin               = m_config->get_double("surface.pdd.air_temp_all_precip_as_snow");
-  Tmax               = m_config->get_double("surface.pdd.air_temp_all_precip_as_rain");
-  pdd_threshold_temp = m_config->get_double("surface.pdd.positive_threshold_temp");
-  refreeze_ice_melt  = m_config->get_boolean("surface.pdd.refreeze_ice_melt");
+  precip_as_snow     = m_config->get_flag("surface.pdd.interpret_precip_as_snow");
+  Tmin               = m_config->get_number("surface.pdd.air_temp_all_precip_as_snow");
+  Tmax               = m_config->get_number("surface.pdd.air_temp_all_precip_as_rain");
+  pdd_threshold_temp = m_config->get_number("surface.pdd.positive_threshold_temp");
+  refreeze_ice_melt  = m_config->get_flag("surface.pdd.refreeze_ice_melt");
 
   m_method = "an expectation integral";
 }
@@ -70,7 +70,7 @@ PDDMassBalance::PDDMassBalance(Config::ConstPtr config, units::System::Ptr syste
     precipitation time-series.
  */
 unsigned int PDDMassBalance::get_timeseries_length(double dt) {
-  const unsigned int    NperYear = static_cast<unsigned int>(m_config->get_double("surface.pdd.max_evals_per_year"));
+  const unsigned int    NperYear = static_cast<unsigned int>(m_config->get_number("surface.pdd.max_evals_per_year"));
   const double dt_years = units::convert(m_unit_system, dt, "seconds", "years");
 
   return std::max(1U, static_cast<unsigned int>(ceil(NperYear * dt_years)));
@@ -272,7 +272,7 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
   // FIXME: need to add snow that hasn't melted, is this correct?
   // firn_depth += (snow_depth - snow_melted);
   // Turn firn into ice at X times accumulation
-  // firn_depth -= accumulation *  m_config->get_double("surface.pdd.firn_compaction_to_accumulation_ratio");
+  // firn_depth -= accumulation *  m_config->get_number("surface.pdd.firn_compaction_to_accumulation_ratio");
 
   const double smb = accumulation - runoff;
 
@@ -322,7 +322,7 @@ PDDrandMassBalance::~PDDrandMassBalance() {
   number of days or number of days plus one.
 
   Thus this method ignores
-  `config.get_double("surface.pdd.max_evals_per_year")`, which is
+  `config.get_number("surface.pdd.max_evals_per_year")`, which is
   used in the base class PDDMassBalance.
 
   Implementation of get_PDDs() requires returned N >= 2, so we
@@ -368,24 +368,24 @@ void PDDrandMassBalance::get_PDDs(double dt_series,
 FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid::ConstPtr g)
   : m_grid(g), m_config(g->ctx()->config()) {
 
-  m_beta_ice_w  = m_config->get_double("surface.pdd.fausto.beta_ice_w");
-  m_beta_snow_w = m_config->get_double("surface.pdd.fausto.beta_snow_w");
+  m_beta_ice_w  = m_config->get_number("surface.pdd.fausto.beta_ice_w");
+  m_beta_snow_w = m_config->get_number("surface.pdd.fausto.beta_snow_w");
 
-  m_T_c         = m_config->get_double("surface.pdd.fausto.T_c");
-  m_T_w         = m_config->get_double("surface.pdd.fausto.T_w");
-  m_beta_ice_c  = m_config->get_double("surface.pdd.fausto.beta_ice_c");
-  m_beta_snow_c = m_config->get_double("surface.pdd.fausto.beta_snow_c");
+  m_T_c         = m_config->get_number("surface.pdd.fausto.T_c");
+  m_T_w         = m_config->get_number("surface.pdd.fausto.T_w");
+  m_beta_ice_c  = m_config->get_number("surface.pdd.fausto.beta_ice_c");
+  m_beta_snow_c = m_config->get_number("surface.pdd.fausto.beta_snow_c");
 
-  m_fresh_water_density        = m_config->get_double("constants.fresh_water.density");
-  m_ice_density                = m_config->get_double("constants.ice.density");
-  m_pdd_fausto_latitude_beta_w = m_config->get_double("surface.pdd.fausto.latitude_beta_w");
-  m_refreeze_fraction = m_config->get_double("surface.pdd.refreeze");
+  m_fresh_water_density        = m_config->get_number("constants.fresh_water.density");
+  m_ice_density                = m_config->get_number("constants.ice.density");
+  m_pdd_fausto_latitude_beta_w = m_config->get_number("surface.pdd.fausto.latitude_beta_w");
+  m_refreeze_fraction = m_config->get_number("surface.pdd.refreeze");
 
 
   m_temp_mj.create(m_grid, "temp_mj_faustogreve", WITHOUT_GHOSTS);
   m_temp_mj.set_attrs("internal",
                     "mean July air temp from Fausto et al (2009) parameterization",
-                    "K", "");
+                      "K", "K", "", 0);
 }
 
 FaustoGrevePDDObject::~FaustoGrevePDDObject() {
@@ -439,10 +439,10 @@ void FaustoGrevePDDObject::update_temp_mj(const IceModelVec2S &surfelev,
                                           const IceModelVec2S &lat,
                                           const IceModelVec2S &lon) {
   const double
-    d_mj     = m_config->get_double("atmosphere.fausto_air_temp.d_mj"),      // K
-    gamma_mj = m_config->get_double("atmosphere.fausto_air_temp.gamma_mj"),  // K m-1
-    c_mj     = m_config->get_double("atmosphere.fausto_air_temp.c_mj"),      // K (degN)-1
-    kappa_mj = m_config->get_double("atmosphere.fausto_air_temp.kappa_mj");  // K (degW)-1
+    d_mj     = m_config->get_number("atmosphere.fausto_air_temp.d_mj"),      // K
+    gamma_mj = m_config->get_number("atmosphere.fausto_air_temp.gamma_mj"),  // K m-1
+    c_mj     = m_config->get_number("atmosphere.fausto_air_temp.c_mj"),      // K (degN)-1
+    kappa_mj = m_config->get_number("atmosphere.fausto_air_temp.kappa_mj");  // K (degW)-1
 
   const IceModelVec2S
     &h        = surfelev,

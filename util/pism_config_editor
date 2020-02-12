@@ -54,7 +54,7 @@ def parameter_info(event):
     if result["type"] == "keyword":
         result["choices"] = d[name + "_choices"]
 
-    if result["type"] not in ("keyword", "boolean", "string"):
+    if result["type"] not in ("keyword", "flag", "string"):
         result["units"] = d[name + "_units"]
 
     return result
@@ -124,7 +124,7 @@ def generic_dialog(event, func):
     footer.grid(row=j, column=0, columnspan=2)
 
     def is_valid(T, value):
-        if T == "scalar":
+        if T == "number":
             try:
                 dummy = float(value)
                 return True
@@ -136,7 +136,7 @@ def generic_dialog(event, func):
                 return True
             except:
                 return False
-        elif T == "boolean":
+        elif T == "flag":
             return value in ("True", "False")
         else:
             return True         # all strings are valid
@@ -148,7 +148,7 @@ def generic_dialog(event, func):
         print "setting %s to %s in the tree view" % (name, value)
 
     def ok_handler():
-        if info["type"] in ("keyword", "boolean"):
+        if info["type"] in ("keyword", "flag"):
             value = frame.value.get()
         else:
             value = frame.value.get(1.0, "end").strip()
@@ -225,7 +225,7 @@ def string_dialog(event):
     generic_dialog(event, string_handler)
 
 
-def boolean_handler(info, window, first_row):
+def flag_handler(info, window, first_row):
 
     value = tk.StringVar()
     value.set(str(info["value"]))
@@ -242,8 +242,8 @@ def boolean_handler(info, window, first_row):
     return j
 
 
-def boolean_dialog(event):
-    generic_dialog(event, boolean_handler)
+def flag_dialog(event):
+    generic_dialog(event, flag_handler)
 
 
 class App(object):
@@ -260,7 +260,7 @@ class App(object):
         tree.tag_bind('keyword', '<Double-Button-1>', keyword_dialog)
         tree.tag_bind('scalar', '<Double-Button-1>', scalar_dialog)
         tree.tag_bind('integer', '<Double-Button-1>', integer_dialog)
-        tree.tag_bind('boolean', '<Double-Button-1>', boolean_dialog)
+        tree.tag_bind('flag', '<Double-Button-1>', flag_dialog)
 
         tree.pack(side="left", fill="both", expand=True)
         tree["height"] = 40
@@ -305,7 +305,7 @@ class App(object):
                     parameter_type = config[k + "_type"]
                     if parameter_type == "integer":
                         parameter_value = int(parameter_value)
-                    if parameter_type not in ("string", "keyword", "boolean"):
+                    if parameter_type not in ("string", "keyword", "flag"):
                         parameter_units = config[k + "_units"]
                     else:
                         parameter_units = "---"

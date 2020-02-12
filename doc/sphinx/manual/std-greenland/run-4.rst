@@ -66,8 +66,8 @@ identified:
 
 .. code-block:: none
 
-     -atmosphere searise_greenland,delta_T,paleo_precip -surface pdd \
-     -atmosphere_paleo_precip_file pism_dT.nc -atmosphere_delta_T_file pism_dT.nc
+     -atmosphere searise_greenland,delta_T,precip_scaling -surface pdd \
+     -atmosphere_precip_scaling_file pism_dT.nc -atmosphere_delta_T_file pism_dT.nc
 
 Then the sea level forcing module providing both a time-dependent sea level to the ice
 dynamics core, is turned on with ``-sea_level constant,delta_sl`` and the file it needs is

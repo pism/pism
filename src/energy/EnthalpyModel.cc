@@ -23,7 +23,7 @@
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/energy/enthSystem.hh"
 #include "pism/util/IceModelVec2CellType.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "utilities.hh"
 #include "pism/util/pism_utilities.hh"
 
@@ -36,10 +36,10 @@ EnthalpyModel::EnthalpyModel(IceGrid::ConstPtr grid,
   // empty
 }
 
-void EnthalpyModel::restart_impl(const PIO &input_file, int record) {
+void EnthalpyModel::restart_impl(const File &input_file, int record) {
 
   m_log->message(2, "* Restarting the enthalpy-based energy balance model from %s...\n",
-                 input_file.inq_filename().c_str());
+                 input_file.filename().c_str());
 
   m_basal_melt_rate.read(input_file, record);
   init_enthalpy(input_file, false, record);
@@ -48,17 +48,17 @@ void EnthalpyModel::restart_impl(const PIO &input_file, int record) {
   regrid_enthalpy();
 }
 
-void EnthalpyModel::bootstrap_impl(const PIO &input_file,
+void EnthalpyModel::bootstrap_impl(const File &input_file,
                                    const IceModelVec2S &ice_thickness,
                                    const IceModelVec2S &surface_temperature,
                                    const IceModelVec2S &climatic_mass_balance,
                                    const IceModelVec2S &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the enthalpy-based energy balance model from %s...\n",
-                 input_file.inq_filename().c_str());
+                 input_file.filename().c_str());
 
   m_basal_melt_rate.regrid(input_file, OPTIONAL,
-                           m_config->get_double("bootstrapping.defaults.bmelt"));
+                           m_config->get_number("bootstrapping.defaults.bmelt"));
 
   regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
 
@@ -112,9 +112,9 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
 
   const double
-    ice_density           = m_config->get_double("constants.ice.density"), // kg m-3
-    bulgeEnthMax          = m_config->get_double("energy.enthalpy.cold_bulge_max"), // J kg-1
-    target_water_fraction = m_config->get_double("energy.drainage_target_water_fraction");
+    ice_density           = m_config->get_number("constants.ice.density"), // kg m-3
+    bulgeEnthMax          = m_config->get_number("energy.enthalpy.cold_bulge_max"), // J kg-1
+    target_water_fraction = m_config->get_number("energy.drainage_target_water_fraction");
 
   energy::DrainageCalculator dc(*m_config);
 
@@ -150,7 +150,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
       &cell_type, &u3, &v3, &w3, &strain_heating3, &m_basal_melt_rate, &m_ice_enthalpy,
       &m_work};
 
-  double margin_threshold = m_config->get_double("energy.margin_ice_thickness_limit");
+  double margin_threshold = m_config->get_number("energy.margin_ice_thickness_limit");
 
   unsigned int liquifiedCount = 0;
 
@@ -382,12 +382,12 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   m_stats.liquified_ice_volume = ((double) liquifiedCount) * dz * m_grid->cell_area();
 }
 
-void EnthalpyModel::define_model_state_impl(const PIO &output) const {
+void EnthalpyModel::define_model_state_impl(const File &output) const {
   m_ice_enthalpy.define(output);
   m_basal_melt_rate.define(output);
 }
 
-void EnthalpyModel::write_model_state_impl(const PIO &output) const {
+void EnthalpyModel::write_model_state_impl(const File &output) const {
   m_ice_enthalpy.write(output);
   m_basal_melt_rate.write(output);
 }

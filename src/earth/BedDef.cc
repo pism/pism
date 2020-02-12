@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,6 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>       // GSL_NAN
-
 #include "BedDef.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Time.hh"
@@ -31,22 +29,19 @@ namespace bed {
 BedDef::BedDef(IceGrid::ConstPtr g)
   : Component(g) {
 
-  m_t_beddef_last = GSL_NAN;
-
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
 
   m_topg.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   m_topg.set_attrs("model_state", "bedrock surface elevation",
-                   "m", "bedrock_altitude");
+                   "m", "m", "bedrock_altitude", 0);
 
   m_topg_last.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   m_topg_last.set_attrs("model_state", "bedrock surface elevation",
-                        "m", "bedrock_altitude");
+                        "m", "m", "bedrock_altitude", 0);
 
   m_uplift.create(m_grid, "dbdt", WITHOUT_GHOSTS);
   m_uplift.set_attrs("model_state", "bedrock uplift rate",
-                     "m s-1", "tendency_of_bedrock_altitude");
-  m_uplift.metadata().set_string("glaciological_units", "mm year-1");
+                     "m s-1", "mm year-1", "tendency_of_bedrock_altitude", 0);
 }
 
 BedDef::~BedDef() {
@@ -61,12 +56,12 @@ const IceModelVec2S& BedDef::uplift() const {
   return m_uplift;
 }
 
-void BedDef::define_model_state_impl(const PIO &output) const {
+void BedDef::define_model_state_impl(const File &output) const {
   m_uplift.define(output);
   m_topg.define(output);
 }
 
-void BedDef::write_model_state_impl(const PIO &output) const {
+void BedDef::write_model_state_impl(const File &output) const {
   m_uplift.write(output);
   m_topg.write(output);
 }
@@ -118,8 +113,6 @@ void BedDef::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickn
   (void) ice_thickness;
   (void) sea_level_elevation;
 
-  m_t_beddef_last = m_grid->ctx()->time()->start();
-
   switch (opts.type) {
   case INIT_RESTART:
     // read bed elevation and uplift rate from file
@@ -133,9 +126,9 @@ void BedDef::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickn
   case INIT_BOOTSTRAP:
     // bootstrapping
     m_topg.regrid(opts.filename, OPTIONAL,
-                  m_config->get_double("bootstrapping.defaults.bed"));
+                  m_config->get_number("bootstrapping.defaults.bed"));
     m_uplift.regrid(opts.filename, OPTIONAL,
-                    m_config->get_double("bootstrapping.defaults.uplift"));
+                    m_config->get_number("bootstrapping.defaults.uplift"));
     break;
   case INIT_OTHER:
   default:
@@ -176,7 +169,8 @@ void BedDef::apply_topg_offset(const std::string &filename) {
 
   IceModelVec2S topg_delta;
   topg_delta.create(m_grid, "topg_delta", WITHOUT_GHOSTS);
-  topg_delta.set_attrs("internal", "bed topography correction", "meters", "");
+  topg_delta.set_attrs("internal", "bed topography correction",
+                       "meters", "meters", "", 0);
 
   topg_delta.regrid(filename, CRITICAL);
 
@@ -214,8 +208,8 @@ void compute_load(const IceModelVec2S &bed_elevation,
   Config::ConstPtr config = result.grid()->ctx()->config();
 
   const double
-    ice_density   = config->get_double("constants.ice.density"),
-    ocean_density = config->get_double("constants.sea_water.density");
+    ice_density   = config->get_number("constants.ice.density"),
+    ocean_density = config->get_number("constants.sea_water.density");
 
   IceModelVec::AccessList list{&bed_elevation, &ice_thickness, &sea_level_elevation, &result};
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,17 +21,18 @@
 
 // atmosphere models:
 #include "GivenClimate.hh"
-#include "LapseRates.hh"
+#include "ElevationChange.hh"
 #include "SeariseGreenland.hh"
 #include "Delta_T.hh"
 #include "Delta_P.hh"
 #include "Frac_P.hh"
-#include "Paleo_precip.hh"
+#include "PrecipitationScaling.hh"
 #include "PIK.hh"
 #include "Anomaly.hh"
 #include "CosineYearlyCycle.hh"
 #include "WeatherStation.hh"
 #include "Uniform.hh"
+#include "OrographicPrecipitation.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -39,8 +40,7 @@ namespace atmosphere {
 // Atmosphere
 
 Factory::Factory(IceGrid::ConstPtr g)
-  : PCFactory<AtmosphereModel>(g) {
-  m_option = "atmosphere";
+  : PCFactory<AtmosphereModel>(g, "atmosphere.models") {
 
   add_model<PIK>("pik");
   add_model<Given>("given");
@@ -48,14 +48,14 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_model<CosineYearlyCycle>("yearly_cycle");
   add_model<WeatherStation>("one_station");
   add_model<Uniform>("uniform");
-  set_default("given");
 
   add_modifier<Anomaly>("anomaly");
-  add_modifier<PaleoPrecip>("paleo_precip");
+  add_modifier<PrecipitationScaling>("precip_scaling");
   add_modifier<Frac_P>("frac_P");
   add_modifier<Delta_P>("delta_P");
   add_modifier<Delta_T>("delta_T");
-  add_modifier<LapseRates>("lapse_rate");
+  add_modifier<ElevationChange>("elevation_change");
+  add_modifier<OrographicPrecipitation>("orographic_precipitation");
 }
 
 Factory::~Factory() {

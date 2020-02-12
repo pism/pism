@@ -46,8 +46,8 @@ protected:
   void update_impl(const Geometry &geometry, double t, double dt);
   MaxTimestep max_timestep_impl(double t) const;
 
-  void define_model_state_impl(const PIO &output) const;
-  void write_model_state_impl(const PIO &output) const;
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
 
   std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
@@ -103,6 +103,8 @@ private:
                            IceModelVec2S &T_star,
                            IceModelVec2S &Toc,
                            IceModelVec2S &Soc);
+  void extend_basal_melt_rates(const IceModelVec2CellType &mask,
+                          IceModelVec2S &basal_melt_rate); 
 
   void beckmann_goosse(const PicoPhysics &physics,
                        const IceModelVec2S &ice_thickness,

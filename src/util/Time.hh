@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,13 +22,11 @@
 #include <vector>
 #include <memory>
 
-#include "pism_utilities.hh"
-#include "Units.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/Units.hh"
 #include "pism/util/ConfigInterface.hh"
 
 namespace pism {
-
-class Config;
 
 std::string calendar_from_options(MPI_Comm com, const Config& config);
 
@@ -104,7 +102,7 @@ public:
   //! \brief Intialize using command-line options.
   virtual void init(const Logger &log);
 
-  virtual void init_from_input_file(const PIO &nc,
+  virtual void init_from_input_file(const File &nc,
                                     const std::string &time_name,
                                     const Logger &log);
 
@@ -152,12 +150,8 @@ public:
   //! \brief Returns current time, in years. Only for reporting.
   virtual std::string date() const;
 
-#if (PISM_DEBUG==1)
   //! \brief Returns current time, in years. Only for debugging.
-  virtual double current_years() const {
-    return seconds_to_years(current());
-  }
-#endif
+  double current_years() const;
 
   //! Date corresponding to the beginning of the run.
   virtual std::string start_date() const;
@@ -169,9 +163,14 @@ public:
   //! 'years' using the year length corresponding to the calendar.
   virtual double convert_time_interval(double T, const std::string &units) const;
 
-protected:
+  //! Convert time interval length in years into seconds using the year length
+  //! corresponding to the chosen calendar.
   double years_to_seconds(double input) const;
+
+  //! Convert time interval length in seconds into years using the year length
+  //! corresponding to the chosen calendar.
   double seconds_to_years(double input) const;
+protected:
 
   std::vector<double> parse_list(const std::string &spec) const;
   std::vector<double> parse_range(const std::string &spec) const;
@@ -203,7 +202,7 @@ protected:
   std::string m_calendar_string;       //!< CF calendar string
 };
 
-std::string reference_date_from_file(const PIO &nc,
+std::string reference_date_from_file(const File &nc,
                                      const std::string &time_name);
 
 //! Create a Time instance by processing command-line options.

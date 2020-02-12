@@ -5,6 +5,7 @@ from PISM.util import convert
 
 ctx = PISM.Context()
 
+ctx.log.set_threshold(1)
 
 def create_dummy_grid():
     "Create a dummy grid"
@@ -24,16 +25,13 @@ def setup():
 
     grid = create_dummy_grid()
 
-    zero = PISM.IceModelVec2S()
-    zero.create(grid, "zero", PISM.WITHOUT_GHOSTS)
+    zero = PISM.IceModelVec2S(grid, "zero", PISM.WITHOUT_GHOSTS)
     zero.set(0.0)
 
-    cell_type = PISM.IceModelVec2CellType()
-    cell_type.create(grid, "mask", PISM.WITHOUT_GHOSTS)
+    cell_type = PISM.IceModelVec2CellType(grid, "mask", PISM.WITHOUT_GHOSTS)
     cell_type.set(PISM.MASK_GROUNDED)
 
-    basal_heat_flux = PISM.IceModelVec2S()
-    basal_heat_flux.create(grid, "bheatflx", PISM.WITHOUT_GHOSTS)
+    basal_heat_flux = PISM.IceModelVec2S(grid, "bheatflx", PISM.WITHOUT_GHOSTS)
     basal_heat_flux.set(convert(10, "mW m-2", "W m-2"))
 
     ice_thickness = PISM.model.createIceThicknessVec(grid)
@@ -41,25 +39,19 @@ def setup():
     # TemperatureModel needs ice_thickness to set enthalpy in restart(...)
     grid.variables().add(ice_thickness)
 
-    shelf_base_temp = PISM.IceModelVec2S()
-    shelf_base_temp.create(grid, "shelfbtemp", PISM.WITHOUT_GHOSTS)
+    shelf_base_temp = PISM.IceModelVec2S(grid, "shelfbtemp", PISM.WITHOUT_GHOSTS)
     shelf_base_temp.set(260.0)
 
-    surface_temp = PISM.IceModelVec2S()
-    surface_temp.create(grid, "surface_temp", PISM.WITHOUT_GHOSTS)
+    surface_temp = PISM.IceModelVec2S(grid, "surface_temp", PISM.WITHOUT_GHOSTS)
     surface_temp.set(260.0)
 
-    strain_heating3 = PISM.IceModelVec3()
-    strain_heating3.create(grid, "sigma", PISM.WITHOUT_GHOSTS)
+    strain_heating3 = PISM.IceModelVec3(grid, "sigma", PISM.WITHOUT_GHOSTS)
 
-    u = PISM.IceModelVec3()
-    u.create(grid, "u", PISM.WITHOUT_GHOSTS)
+    u = PISM.IceModelVec3(grid, "u", PISM.WITHOUT_GHOSTS)
 
-    v = PISM.IceModelVec3()
-    v.create(grid, "v", PISM.WITHOUT_GHOSTS)
+    v = PISM.IceModelVec3(grid, "v", PISM.WITHOUT_GHOSTS)
 
-    w = PISM.IceModelVec3()
-    w.create(grid, "w", PISM.WITHOUT_GHOSTS)
+    w = PISM.IceModelVec3(grid, "w", PISM.WITHOUT_GHOSTS)
 
     ice_thickness.set(4000.0)
     u.set(0.0)
@@ -79,7 +71,7 @@ def setup():
     inputs.shelf_base_temp = shelf_base_temp
     inputs.surface_temp = surface_temp
     inputs.till_water_thickness = zero
-    inputs.strain_heating3 = strain_heating3
+    inputs.volumetric_heating_rate = strain_heating3
     inputs.u3 = u
     inputs.v3 = v
     inputs.w3 = w
@@ -93,19 +85,13 @@ def use_model(model):
     try:
         model.update(0, dt)
         raise Exception("this should fail")
-    except RuntimeError:
-        pass
-
-    try:
-        model.max_timestep(0)
-        raise Exception("this should fail")
-    except RuntimeError:
+    except TypeError:
         pass
 
     print(model.stdout_flags())
     stats = model.stats()
-    enthalpy = model.get_enthalpy()
-    bmr = model.get_basal_melt_rate()
+    enthalpy = model.enthalpy()
+    bmr = model.basal_melt_rate()
 
 
 def initialize(model):
@@ -119,9 +105,9 @@ def initialize(model):
 def test_interface():
     "Use the EnergyModel interface to make sure the code runs."
     for M in [PISM.EnthalpyModel, PISM.DummyEnergyModel, PISM.TemperatureModel]:
+
         model = M(grid, None)
 
-        print("")
         print("Testing %s..." % M)
 
         print("* Bootstrapping using provided basal melt rate...")

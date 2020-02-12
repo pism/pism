@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@
 
 namespace pism {
 
-class PIO;
+class File;
 namespace units {
 class System;
 }
@@ -57,7 +57,7 @@ std::string spacing_to_string(SpacingType s);
 class grid_info {
 public:
   grid_info();
-  grid_info(const PIO &file, const std::string &variable,
+  grid_info(const File &file, const std::string &variable,
             units::System::Ptr unit_system,
             GridRegistration registration);
   void report(const Logger &log, int threshold, units::System::Ptr s) const;
@@ -103,7 +103,7 @@ public:
                  GridRegistration r);
   //! Initialize grid defaults from a configuration database and a NetCDF variable.
   GridParameters(Context::ConstPtr ctx,
-                 const PIO &file,
+                 const File &file,
                  const std::string &variable_name,
                  GridRegistration r);
 
@@ -143,7 +143,7 @@ public:
   std::vector<unsigned int> procs_y;
 private:
   void init_from_config(Config::ConstPtr config);
-  void init_from_file(Context::ConstPtr ctx, const PIO &file,
+  void init_from_file(Context::ConstPtr ctx, const File &file,
                       const std::string &variable_name,
                       GridRegistration r);
 };
@@ -227,7 +227,7 @@ public:
                      Periodicity p);
 
   static Ptr FromFile(Context::ConstPtr ctx,
-                      const PIO &file, const std::string &var_name,
+                      const File &file, const std::string &var_name,
                       GridRegistration r);
 
   static Ptr FromFile(Context::ConstPtr ctx,
@@ -295,6 +295,16 @@ public:
   Vars& variables();
   const Vars& variables() const;
 
+  int pio_io_decomposition(int dof, int output_datatype) const;
+
+  //! Maximum number of degrees of freedom supported by PISM.
+  /*!
+   * This is also the maximum number of records an IceModelVec2T can hold.
+   */
+  static const int max_dm_dof = 10000;
+
+  //! Maximum stencil width supported by PISM.
+  static const int max_stencil_width = 10000;
 private:
   struct Impl;
   Impl *m_impl;
@@ -314,6 +324,14 @@ inline bool in_null_strip(const IceGrid& grid, int i, int j, double strip_width)
            grid.x(i)  >= grid.x(grid.Mx()-1) - strip_width ||
            grid.y(j)  <= grid.y(0) + strip_width           ||
            grid.y(j)  >= grid.y(grid.My()-1) - strip_width));
+}
+
+/*!
+ * Return `true` if a point `(i, j)` is at an edge of `grid`.
+ */
+inline bool grid_edge(const IceGrid &grid, int i, int j) {
+  return ((j == 0) or (j == (int)grid.My() - 1) or
+          (i == 0) or (i == (int)grid.Mx() - 1));
 }
 
 /** Iterator class for traversing the grid, including ghost points.

@@ -47,7 +47,7 @@ these classes*. (This is a summary.)
 - pism::VariableMetadata (variable metadata such as physical units)
 - pism::Config (configuration parameter database)
 - pism::Time (time management, including calendars)
-- pism::PIO (file I/O)
+- pism::File (file I/O)
 
 ### Some important infrastructure concepts and techniques:
 

@@ -112,7 +112,7 @@ bool IceModelVec3D::isLegalLevel(double z) const {
 //! Set all values of scalar quantity to given a single value in a particular column.
 void IceModelVec3D::set_column(int i, int j, double c) {
   PetscErrorCode ierr;
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   assert(m_array != NULL);
   check_array_indices(i, j, 0);
 #endif
@@ -151,7 +151,7 @@ const std::vector<double> IceModelVec3D::get_column_vector(int i, int j) const {
 
 //! Return value of scalar quantity at level z (m) above base of ice (by linear interpolation).
 double IceModelVec3D::getValZ(int i, int j, double z) const {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   assert(m_array != NULL);
   check_array_indices(i, j, 0);
 
@@ -183,7 +183,7 @@ double IceModelVec3D::getValZ(int i, int j, double z) const {
  */
 void  IceModelVec3::getHorSlice(Vec &gslice, double z) const {
 
-  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_grid->ctx()->config()->get_double("grid.max_stencil_width"));
+  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_grid->ctx()->config()->get_number("grid.max_stencil_width"));
 
   IceModelVec::AccessList list(*this);
   petsc::DMDAVecArray slice(da2, gslice);
@@ -240,21 +240,21 @@ void IceModelVec3::getSurfaceValues(IceModelVec2S &surface_values,
 }
 
 double* IceModelVec3D::get_column(int i, int j) {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
   return ((double***) m_array)[j][i];
 }
 
 const double* IceModelVec3D::get_column(int i, int j) const {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
   return ((double***) m_array)[j][i];
 }
 
 void  IceModelVec3D::set_column(int i, int j, const double *valsIN) {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
   double ***arr = (double***) m_array;

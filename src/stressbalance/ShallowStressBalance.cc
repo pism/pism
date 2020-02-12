@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -31,10 +31,12 @@
 namespace pism {
 namespace stressbalance {
 
-//! Evaluate the ocean pressure difference term in the calving-front BC.
-double ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed,
-                                 double sea_level, double rho_ice, double rho_ocean,
-                                 double g) {
+//! Evaluate the margin pressure difference term in the calving-front BC.
+//
+// Units: (kg / m3) * (m / s2) * m2 = Pa m
+double margin_pressure_difference(bool shelf, bool dry_mode, double H, double bed,
+                                  double sea_level, double rho_ice, double rho_ocean,
+                                  double g) {
   if (shelf) {
     // floating shelf
     return 0.5 * rho_ice * g * (1.0 - (rho_ice / rho_ocean)) * H * H;
@@ -53,9 +55,9 @@ using pism::mask::ice_free;
 ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
   : Component(g), m_basal_sliding_law(NULL), m_flow_law(NULL), m_EC(g->ctx()->enthalpy_converter()) {
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
 
-  if (m_config->get_boolean("basal_resistance.pseudo_plastic.enabled") == true) {
+  if (m_config->get_flag("basal_resistance.pseudo_plastic.enabled") == true) {
     m_basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(*m_config);
   } else {
     m_basal_sliding_law = new IceBasalResistancePlasticLaw(*m_config);
@@ -64,19 +66,15 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
   m_velocity.create(m_grid, "bar", WITH_GHOSTS, WIDE_STENCIL); // components ubar, vbar
   m_velocity.set_attrs("model_state",
                        "thickness-advective ice velocity (x-component)", 
-                       "m s-1", "", 0);
+                       "m s-1", "m s-1", "", 0);
   m_velocity.set_attrs("model_state",
                        "thickness-advective ice velocity (y-component)",
-                       "m s-1", "", 1);
-
-  m_velocity.metadata(0).set_string("glaciological_units", "m year-1");
-  m_velocity.metadata(1).set_string("glaciological_units", "m year-1");
+                       "m s-1", "m s-1", "", 1);
 
   m_basal_frictional_heating.create(m_grid, "bfrict", WITHOUT_GHOSTS);
   m_basal_frictional_heating.set_attrs("diagnostic",
                                        "basal frictional heating",
-                                       "W m-2", "");
-  m_basal_frictional_heating.metadata().set_string("glaciological_units", "mW m-2");
+                                       "W m-2", "mW m-2", "", 0);
 }
 
 ShallowStressBalance::~ShallowStressBalance() {
@@ -126,6 +124,11 @@ DiagnosticList ShallowStressBalance::diagnostics_impl() const {
     {"taud",     Diagnostic::Ptr(new SSB_taud(this))},
     {"taud_mag", Diagnostic::Ptr(new SSB_taud_mag(this))}
   };
+
+  if(m_config->get_flag("output.ISMIP6")) {
+    result["strbasemag"] = Diagnostic::Ptr(new SSB_taub_mag(this));
+  }
+
   return result;
 }
 
@@ -184,92 +187,6 @@ void ShallowStressBalance::compute_basal_frictional_heating(const IceModelVec2V 
 }
 
 
-//! \brief Compute 2D deviatoric stresses.
-/*! Note: IceModelVec2 result has to have dof == 3. */
-void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &velocity,
-                                               const IceModelVec2S &hardness,
-                                               const IceModelVec2CellType &cell_type,
-                                               IceModelVec2 &result) const {
-  const double
-    dx = m_grid->dx(),
-    dy = m_grid->dy();
-
-  if (result.ndof() != 3) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "result.get_dof() == 3 is required");
-  }
-
-  IceModelVec::AccessList list{&velocity, &hardness, &result, &cell_type};
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (cell_type.ice_free(i, j)) {
-      result(i,j,0) = 0.0;
-      result(i,j,1) = 0.0;
-      result(i,j,2) = 0.0;
-      continue;
-    }
-
-    StarStencil<int> m = cell_type.int_star(i,j);
-    StarStencil<Vector2> U = velocity.star(i,j);
-
-    // strain in units s-1
-    double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
-      east = 1, west = 1, south = 1, north = 1;
-
-    // Computes u_x using second-order centered finite differences written as
-    // weighted sums of first-order one-sided finite differences.
-    //
-    // Given the cell layout
-    // *----n----*
-    // |         |
-    // |         |
-    // w         e
-    // |         |
-    // |         |
-    // *----s----*
-    // east == 0 if the east neighbor of the current cell is ice-free. In
-    // this case we use the left- (west-) sided difference.
-    //
-    // If both neighbors in the east-west (x) direction are ice-free the
-    // x-derivative is set to zero (see u_x, v_x initialization above).
-    //
-    // Similarly in y-direction.
-    if (ice_free(m.e)) {
-      east = 0;
-    }
-    if (ice_free(m.w)) {
-      west = 0;
-    }
-    if (ice_free(m.n)) {
-      north = 0;
-    }
-    if (ice_free(m.s)) {
-      south = 0;
-    }
-
-    if (west + east > 0) {
-      u_x = 1.0 / (dx * (west + east)) * (west * (U.ij.u - U[West].u) + east * (U[East].u - U.ij.u));
-      v_x = 1.0 / (dx * (west + east)) * (west * (U.ij.v - U[West].v) + east * (U[East].v - U.ij.v));
-    }
-
-    if (south + north > 0) {
-      u_y = 1.0 / (dy * (south + north)) * (south * (U.ij.u - U[South].u) + north * (U[North].u - U.ij.u));
-      v_y = 1.0 / (dy * (south + north)) * (south * (U.ij.v - U[South].v) + north * (U[North].v - U.ij.v));
-    }
-
-    double nu = 0.0;
-    m_flow_law->effective_viscosity(hardness(i, j),
-                                    secondInvariant_2D(Vector2(u_x, v_x), Vector2(u_y, v_y)),
-                                    &nu, NULL);
-
-    //get deviatoric stresses
-    result(i,j,0) = 2.0*nu*u_x;
-    result(i,j,1) = 2.0*nu*v_y;
-    result(i,j,2) = nu*(u_y+v_x);
-  }
-}
-
 SSB_taud::SSB_taud(const ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
 
@@ -303,8 +220,8 @@ IceModelVec::Ptr SSB_taud::compute_impl() const {
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2S *surface = m_grid->variables().get_2d_scalar("surface_altitude");
 
-  double standard_gravity = m_config->get_double("constants.standard_gravity"),
-    ice_density = m_config->get_double("constants.ice.density");
+  double standard_gravity = m_config->get_number("constants.standard_gravity"),
+    ice_density = m_config->get_number("constants.ice.density");
 
   IceModelVec::AccessList list{surface, thickness, result.get()};
 
@@ -398,14 +315,16 @@ IceModelVec::Ptr SSB_taub::compute_impl() const {
 SSB_taub_mag::SSB_taub_mag(const ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
 
+  auto ismip6 = m_config->get_flag("output.ISMIP6");
+
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "taub_mag")};
+  m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "strbasemag" : "taub_mag")};
 
   set_attrs("magnitude of the basal shear stress at the base of ice",
-            "magnitude_of_land_ice_basal_drag", // InitMIP "standard" name
+            "land_ice_basal_drag", // ISMIP6 "standard" name
             "Pa", "Pa", 0);
   m_vars[0].set_string("comment",
-                     "this field is purely diagnostic (not used by the model)");
+                       "this field is purely diagnostic (not used by the model)");
 }
 
 IceModelVec::Ptr SSB_taub_mag::compute_impl() const {
@@ -444,10 +363,11 @@ void PrescribedSliding::update(const Inputs &inputs, bool full_update) {
 void PrescribedSliding::init_impl() {
   ShallowStressBalance::init_impl();
 
-  options::String input_filename("-prescribed_sliding_file",
-                                 "name of the file to read velocity fields from");
-  if (not input_filename.is_set()) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "option -prescribed_sliding_file is required.");
+  auto input_filename = m_config->get_string("stress_balance.prescribed_sliding.file");
+
+  if (input_filename.empty()) {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "stress_balance.prescribed_sliding.file is required.");
   }
 
   m_velocity.regrid(input_filename, CRITICAL);

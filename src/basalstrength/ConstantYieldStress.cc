@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,58 +26,52 @@
 
 namespace pism {
 
-ConstantYieldStress::ConstantYieldStress(IceGrid::ConstPtr g)
-  : YieldStress(g) {
+ConstantYieldStress::ConstantYieldStress(IceGrid::ConstPtr grid)
+  : YieldStress(grid) {
+
+  m_name = "constant yield stress model";
+}
+
+ConstantYieldStress::~ConstantYieldStress() {
   // empty
 }
 
-ConstantYieldStress::~ConstantYieldStress () {
-  // empty
+void ConstantYieldStress::restart_impl(const File &input_file, int record) {
+  m_basal_yield_stress.read(input_file, record);
+
+  regrid(name(), m_basal_yield_stress);
 }
 
-void ConstantYieldStress::init_impl(const Geometry &geometry,
-                                    const IceModelVec2S &till_water_thickness,
-                                    const IceModelVec2S &overburden_pressure) {
-  (void) geometry;
-  (void) till_water_thickness;
-  (void) overburden_pressure;
+void ConstantYieldStress::bootstrap_impl(const File &input_file,
+                                         const YieldStressInputs &inputs) {
+  (void) inputs;
 
-  m_log->message(2, "* Initializing the constant basal yield stress model...\n");
+  double tauc = m_config->get_number("basal_yield_stress.constant.value");
+  m_basal_yield_stress.regrid(input_file, OPTIONAL, tauc);
 
-  InputOptions opts = process_input_options(m_grid->com, m_config);
-  const double tauc = m_config->get_double("basal_yield_stress.constant.value");
+  regrid(name(), m_basal_yield_stress);
+}
 
-  switch (opts.type) {
-  case INIT_RESTART:
-    m_basal_yield_stress.read(opts.filename, opts.record);
-    break;
-  case INIT_BOOTSTRAP:
-    m_basal_yield_stress.regrid(opts.filename, OPTIONAL, tauc);
-    break;
-  case INIT_OTHER:
-  default:
-    // Set the constant value.
-    m_basal_yield_stress.set(tauc);
-  }
+void ConstantYieldStress::init_impl(const YieldStressInputs &inputs) {
+  (void) inputs;
 
-  regrid("ConstantYieldStress", m_basal_yield_stress);
+  double tauc = m_config->get_number("basal_yield_stress.constant.value");
+  // Set the constant value.
+  m_basal_yield_stress.set(tauc);
+
+  regrid(name(), m_basal_yield_stress);
 }
 
 MaxTimestep ConstantYieldStress::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep("constant yield stress");
+  return MaxTimestep(name());
 }
 
-void ConstantYieldStress::define_model_state_impl(const PIO &output) const {
-  m_basal_yield_stress.define(output);
-}
-
-void ConstantYieldStress::write_model_state_impl(const PIO &output) const {
-  m_basal_yield_stress.write(output);
-}
-
-void ConstantYieldStress::update_impl(const YieldStressInputs &inputs) {
+void ConstantYieldStress::update_impl(const YieldStressInputs &inputs,
+                                      double t, double dt) {
   (void) inputs;
+  (void) t;
+  (void) dt;
   // empty
 }
 

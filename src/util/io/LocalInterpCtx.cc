@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 #include <algorithm>            // std::min
 #include <gsl/gsl_interp.h>
 
-#include "PIO.hh"
+#include "File.hh"
 #include "pism/util/pism_utilities.hh"
 #include "LocalInterpCtx.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -127,22 +127,16 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   }
   allocation.check();
 
-  if (type == BILINEAR) {
-    x.reset(new LinearInterpolation(&input.x[start[X]], count[X],
-                                    &grid.x()[grid.xs()], grid.xm()));
+  if (type == LINEAR or type == NEAREST) {
+    x.reset(new Interpolation(type, &input.x[start[X]], count[X],
+                              &grid.x()[grid.xs()], grid.xm()));
 
-    y.reset(new LinearInterpolation(&input.y[start[Y]], count[Y],
-                                    &grid.y()[grid.ys()], grid.ym()));
-
-    z.reset(new LinearInterpolation(input.z, z_output));
-  } else {
-    x.reset(new NearestNeighbor(&input.x[start[X]], count[X],
-                                &grid.x()[grid.xs()], grid.xm()));
-
-    y.reset(new NearestNeighbor(&input.y[start[Y]], count[Y],
+    y.reset(new Interpolation(type, &input.y[start[Y]], count[Y],
                                 &grid.y()[grid.ys()], grid.ym()));
 
-    z.reset(new NearestNeighbor(input.z, z_output));
+    z.reset(new Interpolation(type, input.z, z_output));
+  } else {
+    throw RuntimeError(PISM_ERROR_LOCATION, "invalid interpolation type in LocalInterpCtx");
   }
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2019 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include <cassert>
 
 #include "Component.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "IceGrid.hh"
 #include "pism_utilities.hh"
 #include "VariableMetadata.hh"
@@ -47,8 +47,8 @@ InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config) {
 
   std::string input_filename = config->get_string("input.file");
 
-  bool bootstrap = config->get_boolean("input.bootstrap") and (not input_filename.empty());
-  bool restart   = (not config->get_boolean("input.bootstrap")) and (not input_filename.empty());
+  bool bootstrap = config->get_flag("input.bootstrap") and (not input_filename.empty());
+  bool restart   = (not config->get_flag("input.bootstrap")) and (not input_filename.empty());
 
   if (restart) {
     // re-start a run by initializing from an input file
@@ -63,10 +63,10 @@ InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config) {
 
   // get the index of the last record in the input file
   if (not input_filename.empty()) {
-    PIO input_file(com, "guess_mode", input_filename, PISM_READONLY);
+    File input_file(com, input_filename, PISM_NETCDF3, PISM_READONLY);
 
     // Find the index of the last record in the input file.
-    unsigned int last_record = input_file.inq_nrecords();
+    unsigned int last_record = input_file.nrecords();
     if (last_record > 0) {
       last_record -= 1;
     }
@@ -114,12 +114,12 @@ IceGrid::ConstPtr Component::grid() const {
  * This is needed to allow defining all the variables in an output file before any data is written
  * (an optimization needed to get decent performance writing NetCDF-3).
  */
-void Component::define_model_state(const PIO &output) const {
+void Component::define_model_state(const File &output) const {
   this->define_model_state_impl(output);
 }
 
 /*! @brief Write model state variables to an output file. */
-void Component::write_model_state(const PIO &output) const {
+void Component::write_model_state(const File &output) const {
   // define variables, if needed (this is a no-op if they are already defined)
   this->define_model_state(output);
 
@@ -127,12 +127,12 @@ void Component::write_model_state(const PIO &output) const {
 }
 
 /*! @brief The default (empty implementation). */
-void Component::define_model_state_impl(const PIO &output) const {
+void Component::define_model_state_impl(const File &output) const {
   (void) output;
 }
 
 /*! @brief The default (empty implementation). */
-void Component::write_model_state_impl(const PIO &output) const {
+void Component::write_model_state_impl(const File &output) const {
   (void) output;
 }
 
@@ -146,10 +146,10 @@ void Component::write_model_state_impl(const PIO &output) const {
  *
  * @param[in] flag Regridding flag. If set to
  *            REGRID_WITHOUT_REGRID_VARS, regrid this variable by
- *            default, if =-regrid_vars= was not set. Otherwise a
- *            variable is only regridded if both =-regrid_file= and
- *            =-regrid_vars= are set *and* the name of the variable is
- *            found in the set of names given with =-regrid_vars=.
+ *            default, if `-regrid_vars` was not set. Otherwise a
+ *            variable is only regridded if both `-regrid_file` and
+ *            `-regrid_vars` are set *and* the name of the variable is
+ *            found in the set of names given with `-regrid_vars`.
  */
 void Component::regrid(const std::string &module_name, IceModelVec &variable,
                        RegriddingFlag flag) {

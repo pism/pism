@@ -32,7 +32,7 @@
 
 namespace pism {
 
-class PIO;
+class File;
 class Logger;
 
 
@@ -79,19 +79,25 @@ public:
   void write(MPI_Comm com, const std::string &filename, bool append = true) const;
   std::string filename() const;
 
-  void read(const PIO &nc);
-  void write(const PIO &nc) const;
+  void read(const File &nc);
+  void write(const File &nc) const;
 
   bool is_set(const std::string &name) const;
 
   // doubles
-  typedef std::map<std::string, double> Doubles;
+  typedef std::map<std::string, std::vector<double> > Doubles;
   Doubles all_doubles() const;
 
-  double get_double(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
-  double get_double(const std::string &name, const std::string &units,
+  double get_number(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
+  double get_number(const std::string &name, const std::string &units,
                     UseFlag flag = REMEMBER_THIS_USE) const;
-  void set_double(const std::string &name, double value, ConfigSettingFlag flag = CONFIG_FORCE);
+  std::vector<double> get_numbers(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
+  std::vector<double> get_numbers(const std::string &name, const std::string &units,
+                                  UseFlag flag = REMEMBER_THIS_USE) const;
+
+  void set_number(const std::string &name, double value, ConfigSettingFlag flag = CONFIG_FORCE);
+  void set_numbers(const std::string &name, const std::vector<double> &values,
+                   ConfigSettingFlag flag = CONFIG_FORCE);
 
   // strings
   typedef std::map<std::string, std::string> Strings;
@@ -100,34 +106,43 @@ public:
   std::string get_string(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
   void set_string(const std::string &name, const std::string &value, ConfigSettingFlag flag = CONFIG_FORCE);
 
-  // booleans
-  typedef std::map<std::string, bool> Booleans;
-  Booleans all_booleans() const;
+  // flags
+  typedef std::map<std::string, bool> Flags;
+  Flags all_flags() const;
 
   std::set<std::string> keys() const;
 
-  bool get_boolean(const std::string& name, UseFlag flag = REMEMBER_THIS_USE) const;
-  void set_boolean(const std::string& name, bool value, ConfigSettingFlag flag = CONFIG_FORCE);
+  bool get_flag(const std::string& name, UseFlag flag = REMEMBER_THIS_USE) const;
+  void set_flag(const std::string& name, bool value, ConfigSettingFlag flag = CONFIG_FORCE);
 
+  std::string doc(const std::string &parameter) const;
+  std::string units(const std::string &parameter) const;
+  std::string type(const std::string &parameter) const;
+  std::string option(const std::string &parameter) const;
+  std::string choices(const std::string &parameter) const;
   // Implementations
 protected:
-  virtual void read_impl(const PIO &nc) = 0;
-  virtual void write_impl(const PIO &nc) const = 0;
+  virtual void read_impl(const File &nc) = 0;
+  virtual void write_impl(const File &nc) const = 0;
 
   virtual bool is_set_impl(const std::string &name) const = 0;
 
   virtual Doubles all_doubles_impl() const = 0;
-  virtual double get_double_impl(const std::string &name) const = 0;
-  virtual void set_double_impl(const std::string &name, double value) = 0;
+  virtual double get_number_impl(const std::string &name) const = 0;
+  virtual std::vector<double> get_numbers_impl(const std::string &name) const = 0;
+
+  virtual void set_number_impl(const std::string &name, double value) = 0;
+  virtual void set_numbers_impl(const std::string &name,
+                                const std::vector<double> &values) = 0;
 
   virtual Strings all_strings_impl() const = 0;
   virtual std::string get_string_impl(const std::string &name) const = 0;
   virtual void set_string_impl(const std::string &name, const std::string &value) = 0;
 
-  virtual Booleans all_booleans_impl() const = 0;
+  virtual Flags all_flags_impl() const = 0;
 
-  virtual bool get_boolean_impl(const std::string& name) const = 0;
-  virtual void set_boolean_impl(const std::string& name, bool value) = 0;
+  virtual bool get_flag_impl(const std::string& name) const = 0;
+  virtual void set_flag_impl(const std::string& name, bool value) = 0;
 private:
   struct Impl;
   Impl *m_impl;
@@ -137,12 +152,12 @@ class ConfigWithPrefix {
 public:
   ConfigWithPrefix(Config::ConstPtr c, const std::string &prefix);
 
-  double get_double(const std::string &name) const;
-  double get_double(const std::string &name, const std::string &units) const;
+  double get_number(const std::string &name) const;
+  double get_number(const std::string &name, const std::string &units) const;
 
   std::string get_string(const std::string &name) const;
 
-  bool get_boolean(const std::string& name) const;
+  bool get_flag(const std::string& name) const;
 
   void reset_prefix(const std::string &prefix);
 
@@ -159,12 +174,12 @@ void set_config_from_options(Config &config);
 //! Set one parameter using command-line options.
 void set_parameter_from_options(Config &config, const std::string &name);
 
-//! Set one boolean parameter using command-line options.
-void set_boolean_from_option(Config &config,
+//! Set one flag parameter using command-line options.
+void set_flag_from_option(Config &config,
                              const std::string &option,const std::string &parameter);
 
 //! Set one scalar parameter using command-line options.
-void set_scalar_from_option(Config &config,
+void set_number_from_option(Config &config,
                             const std::string &option, const std::string &parameter);
 
 //! Set one free-form string parameter using command-line options.

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2010--2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@
 #include "ConfigInterface.hh"
 #include "iceModelVec.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/io/io_helpers.hh"
 
 namespace pism {
@@ -76,27 +76,30 @@ public:
 
   SpatialVariableMetadata& metadata(unsigned int N = 0);
 
-  void define(const PIO &file, IO_Type default_type) const;
+  void define(const File &file, IO_Type default_type) const;
 
-  void init(const PIO &input, unsigned int time);
-  void define_state(const PIO &output) const;
-  void write_state(const PIO &output) const;
+  void init(const File &input, unsigned int time);
+  void define_state(const File &output) const;
+  void write_state(const File &output) const;
 protected:
-  virtual void define_impl(const PIO &file, IO_Type default_type) const;
-  virtual void init_impl(const PIO &input, unsigned int time);
-  virtual void define_state_impl(const PIO &output) const;
-  virtual void write_state_impl(const PIO &output) const;
+  virtual void define_impl(const File &file, IO_Type default_type) const;
+  virtual void init_impl(const File &input, unsigned int time);
+  virtual void define_state_impl(const File &output) const;
+  virtual void write_state_impl(const File &output) const;
 
-  void set_attrs(const std::string &my_long_name,
-                 const std::string &my_standard_name,
-                 const std::string &my_units,
-                 const std::string &my_glaciological_units,
+  void set_attrs(const std::string &long_name,
+                 const std::string &standard_name,
+                 const std::string &units,
+                 const std::string &glaciological_units,
                  unsigned int N = 0);
 
   virtual void update_impl(double dt);
   virtual void reset_impl();
 
   virtual IceModelVec::Ptr compute_impl() const = 0;
+
+  double to_internal(double x) const;
+  double to_external(double x) const;
 
   //! the grid
   IceGrid::ConstPtr m_grid;
@@ -186,34 +189,32 @@ public:
     m_accumulator.set(0.0);
   }
 protected:
-  void init_impl(const PIO &input, unsigned int time) {
-    if (input.inq_var(m_accumulator.get_name())) {
+  void init_impl(const File &input, unsigned int time) {
+    if (input.find_variable(m_accumulator.get_name())) {
       m_accumulator.read(input, time);
     } else {
       m_accumulator.set(0.0);
     }
 
-    if (input.inq_var(m_time_since_reset.get_name())) {
-      std::vector<double> data;
-      input.get_1d_var(m_time_since_reset.get_name(),
-                       time, 1, // start, count
-                       data);
-      m_interval_length = data[0];
+    if (input.find_variable(m_time_since_reset.get_name())) {
+      input.read_variable(m_time_since_reset.get_name(),
+                          {time}, {1}, // start, count
+                          &m_interval_length);
     } else {
       m_interval_length = 0.0;
     }
   }
 
-  void define_state_impl(const PIO &output) const {
+  void define_state_impl(const File &output) const {
     m_accumulator.define(output);
     io::define_timeseries(m_time_since_reset, output, PISM_DOUBLE);
   }
 
-  void write_state_impl(const PIO &output) const {
+  void write_state_impl(const File &output) const {
     m_accumulator.write(output);
 
     const unsigned int
-      time_length = output.inq_dimlen(m_time_since_reset.get_dimension_name()),
+      time_length = output.dimension_length(m_time_since_reset.get_dimension_name()),
       t_start = time_length > 0 ? time_length - 1 : 0;
     io::write_timeseries(output, m_time_since_reset, t_start, m_interval_length, PISM_DOUBLE);
   }
@@ -243,12 +244,7 @@ protected:
       result->copy_from(m_accumulator);
       result->scale(1.0 / m_interval_length);
     } else {
-      std::string
-        out = Diagnostic::m_vars.at(0).get_string("glaciological_units"),
-        in  = Diagnostic::m_vars.at(0).get_string("units");
-      const double
-        fill = convert(Diagnostic::m_sys, Diagnostic::m_fill_value, out, in);
-      result->set(fill);
+      result->set(Diagnostic::to_internal(Diagnostic::m_fill_value));
     }
 
     return result;
@@ -281,12 +277,12 @@ public:
 
   void flush();
 
-  void init(const PIO &output_file,
+  void init(const File &output_file,
             std::shared_ptr<std::vector<double>> requested_times);
 
   const VariableMetadata &metadata() const;
 
-  void define(const PIO &file) const;
+  void define(const File &file) const;
 
 protected:
   virtual void update_impl(double t0, double t1) = 0;
@@ -297,6 +293,13 @@ protected:
    * itself is computed in evaluate_rate().
    */
   virtual double compute() = 0;
+
+  /*!
+   * Set internal (MKS) and "glaciological" units.
+   *
+   * glaciological_units is ignored if output.use_MKS is set.
+   */
+  void set_units(const std::string &units, const std::string &glaciological_units);
 
   //! the grid
   IceGrid::ConstPtr m_grid;

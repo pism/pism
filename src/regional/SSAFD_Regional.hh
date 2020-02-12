@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,7 +33,11 @@ public:
   SSAFD_Regional(IceGrid::ConstPtr g);
   virtual ~SSAFD_Regional();
   virtual void init();
-  virtual void compute_driving_stress(const Geometry &geometry, IceModelVec2V &result) const;
+  virtual void compute_driving_stress(const IceModelVec2S &ice_thickness,
+                                      const IceModelVec2S &surface_elevation,
+                                      const IceModelVec2CellType &cell_type,
+                                      const IceModelVec2Int *no_model_mask,
+                                      IceModelVec2V &result) const;
 
 private:
   void update(const Inputs &inputs, bool full_update);

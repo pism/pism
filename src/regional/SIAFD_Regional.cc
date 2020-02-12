@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,14 +19,16 @@
 
 #include "SIAFD_Regional.hh"
 #include "pism/stressbalance/StressBalance.hh"
-
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 
 namespace stressbalance {
 
-SIAFD_Regional::SIAFD_Regional(IceGrid::ConstPtr g)
-  : SIAFD(g) {
+SIAFD_Regional::SIAFD_Regional(IceGrid::ConstPtr grid)
+  : SIAFD(grid),
+    m_h_x_no_model(grid, "h_x_no_model", WITH_GHOSTS),
+    m_h_y_no_model(grid, "h_y_no_model", WITH_GHOSTS) {
   // empty
 }
 
@@ -42,66 +44,69 @@ void SIAFD_Regional::init() {
 }
 
 void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
-                                              IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
+                                              IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
 
   SIAFD::compute_surface_gradient(inputs, h_x, h_y);
 
-  const IceModelVec2Int &nmm = *inputs.no_model_mask;
-  const IceModelVec2S &hst = *inputs.no_model_surface_elevation;
+  // this call updates ghosts of h_x_no_model and h_y_no_model
+  surface_gradient_haseloff(*inputs.no_model_surface_elevation,
+                            inputs.geometry->cell_type,
+                            m_h_x_no_model, m_h_y_no_model);
+
+  const IceModelVec2Int &no_model = *inputs.no_model_mask;
 
   const int Mx = m_grid->Mx(), My = m_grid->My();
-  const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
 
-  IceModelVec::AccessList list{&h_x, &h_y, &nmm, &hst};
+  IceModelVec::AccessList list{&h_x, &h_y, &no_model, &m_h_x_no_model, &m_h_y_no_model};
 
   for (PointsWithGhosts p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    // x-component, i-offset
-    if (nmm(i, j) > 0.5 || nmm(i + 1, j) > 0.5) {
+    auto M = no_model.int_box(i, j);
 
-      if (i < 0 || i + 1 > Mx - 1) {
+    // x-component, i-offset
+    if (M.ij > 0.5 or M.e > 0.5) {
+
+      if (i < 0 or i + 1 > Mx - 1) {
         h_x(i, j, 0) = 0.0;
       } else {
-        h_x(i, j, 0) = (hst(i + 1, j) - hst(i, j)) / dx;
+        h_x(i, j, 0) = m_h_x_no_model(i, j, 0);
       }
     }
 
     // x-component, j-offset
-    if (nmm(i - 1, j + 1) > 0.5 || nmm(i + 1, j + 1) > 0.5 ||
-        nmm(i - 1, j)     > 0.5 || nmm(i + 1, j)     > 0.5) {
+    if (M.nw > 0.5 or M.ne > 0.5 or M.w  > 0.5 or M.e  > 0.5) {
 
-      if (i - 1 < 0 || j + 1 > My - 1 || i + 1 > Mx - 1) {
+      if (i - 1 < 0 or j + 1 > My - 1 or i + 1 > Mx - 1) {
         h_x(i, j, 1) = 0.0;
       } else {
-        h_x(i, j, 1) = ( + hst(i + 1, j + 1) + hst(i + 1, j)
-                         - hst(i - 1, j + 1) - hst(i - 1, j)) / (4.0 * dx);
+        h_x(i, j, 1) = m_h_x_no_model(i, j, 1);
       }
 
     }
 
     // y-component, i-offset
-    if (nmm(i, j + 1) > 0.5 || nmm(i + 1, j + 1) > 0.5 ||
-        nmm(i, j - 1) > 0.5 || nmm(i + 1, j - 1) > 0.5) {
-      if (i < 0 || j + 1 > My - 1 || i + 1 > Mx - 1 || j - 1 < 0) {
+    if (M.n > 0.5 or M.ne > 0.5 or M.s > 0.5 or M.se > 0.5) {
+
+      if (i < 0 or j + 1 > My - 1 or i + 1 > Mx - 1 or j - 1 < 0) {
         h_y(i, j, 0) = 0.0;
       } else {
-        h_y(i, j, 0) = ( + hst(i + 1, j + 1) + hst(i, j + 1)
-                         - hst(i + 1, j - 1) - hst(i, j - 1)) / (4.0 * dy);
+        h_y(i, j, 0) = m_h_y_no_model(i, j, 0);
       }
+
     }
 
     // y-component, j-offset
-    if (nmm(i, j) > 0.5 || nmm(i, j + 1) > 0.5) {
+    if (M.ij > 0.5 or M.n > 0.5) {
 
-      if (j < 0 || j + 1 > My - 1) {
+      if (j < 0 or j + 1 > My - 1) {
         h_y(i, j, 1) = 0.0;
       } else {
-        h_y(i, j, 1) = (hst(i, j + 1) - hst(i, j)) / dy;
+        h_y(i, j, 1) = m_h_y_no_model(i, j, 1);
       }
-    }
 
-  }
+    }
+  } // end of the loop over grid points
 }
 
 } // end of namespace stressbalance

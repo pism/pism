@@ -1,10 +1,11 @@
-find_package(Sphinx)
+find_program(SPHINX_EXECUTABLE sphinx-build)
+mark_as_advanced(SPHINX_EXECUTABLE)
 
 # HTML documentation requires Sphinx
 if (SPHINX_EXECUTABLE)
 
   add_custom_target (manual_html ALL
-    COMMAND ${SPHINX_EXECUTABLE} -n -b html ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/html
+    COMMAND ${SPHINX_EXECUTABLE} -W -n -b html ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/html
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   add_custom_target (manual_linkcheck

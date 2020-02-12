@@ -75,7 +75,7 @@ cmd_frac="mpiexec -n $NN ${PISMPREFIX}pismr -i startfile_Mx${M}.nc -surface give
   ${ssa} -y ${YEARS} ${output} ${calving} -ocean_kill_file startfile_Mx${M}.nc \
   ${fractures} ${extra} ${timeseries}"
 
-# -ssa_rtol 1.0e-3 -ssa_eps 5.0e15
+# -ssafd_picard_rtol 1.0e-3 -ssa_eps 5.0e15
 
 echo "running command:"
 echo

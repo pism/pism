@@ -3,9 +3,9 @@
 .. only:: html
 
    .. in LaTeX I can just \usepackage{txfonts}...
-   
+
    `\require{cancel} \newcommand{\fint}{\cancel{\phantom{x}}\kern{-1.1em}\int}`
-   
+
 .. _sec-bed-roughness:
 
 Using Schoof's parameterized bed roughness technique in PISM
@@ -63,7 +63,7 @@ to `[L]`:
 
 .. math::
 
-   \nu = \frac{[D]}{[S]} \ll 1, \qquad \delta = \frac{[S]}{[L]} \ll 1.  
+   \nu = \frac{[D]}{[S]} \ll 1, \qquad \delta = \frac{[S]}{[L]} \ll 1.
 
 Specifically, there is an "inner" horizontal variable `x` describing the local
 topography on scales comparable to `[S]` or smaller, and an "outer" horizontal
@@ -74,16 +74,16 @@ In order to describe the Schoof scheme using PISM notation, we start by recallin
 continuity equation which is fundamental to any shallow ice theory:
 
 .. math::
-   
-    \frac{\partial H}{\partial t} = (M - S) - \nabla\cdot \mathbf{q}. 
+
+    \frac{\partial H}{\partial t} = (M - S) - \nabla\cdot \mathbf{q}.
 
 Within PISM this equation is handled by GeometryEvolution. Recall that `M-S` is the mass
 balance added to the ice column per time. (It plays no further role here.) In the SIA case
 with zero basal sliding, the horizontal mass flux is
 
 .. math::
-   
-    \mathbf{q} = - D_{SIA} \nabla h, 
+
+    \mathbf{q} = - D_{SIA} \nabla h,
 
 where `D_{SIA}\ge 0` is given next. Thus the mass continuity equation is *diffusive*. The
 diffusivity `D_{SIA}` is a function of the ice geometry and the ice flow law. In the
@@ -91,7 +91,7 @@ isothermal Glen power law (power `= n`) case we recall
 
 .. math::
    :label: eq-siadiffusivity
-   
+
    D_{SIA} = \Gamma H^{n+2} |\nabla h|^{n-1}
 
 where `\Gamma = 2 A (\rho g)^n / (n+2)` (c.f. details in :cite:`BLKCB`\).
@@ -104,20 +104,20 @@ locally-smoothed bed is computed by averaging `b_0` over a rectangular region of
 `2\lambda_1` by `2\lambda_2`, namely:
 
 .. math::
-   
+
     b_s(x_1,x_2) = \fint b_0(x_1+\xi_1,x_2+\xi_2)\,d\xi_1\,d\xi_2
 
 where the slashed integral symbol is defined as
 
 .. math::
-   
-    \fint F(\xi_1,\xi_2)\,d\xi_1\,d\xi_2 = \frac{1}{(2\lambda_1)(2\lambda_2)} \int_{-\lambda_1}^{\lambda_1} \int_{-\lambda_2}^{\lambda_2} F(\xi_1,\xi_2)\,d\xi_1\,d\xi_2. 
+
+    \fint F(\xi_1,\xi_2)\,d\xi_1\,d\xi_2 = \frac{1}{(2\lambda_1)(2\lambda_2)} \int_{-\lambda_1}^{\lambda_1} \int_{-\lambda_2}^{\lambda_2} F(\xi_1,\xi_2)\,d\xi_1\,d\xi_2.
 
 Consider also the "local bed topography"
 
 .. math::
-   
-    \tilde b(x_1,x_2,\xi_1,\xi_2) = b_0(x_1+\xi_1,x_2+\xi_2) - b_s(x_1,x_2). 
+
+    \tilde b(x_1,x_2,\xi_1,\xi_2) = b_0(x_1+\xi_1,x_2+\xi_2) - b_s(x_1,x_2).
 
 As a function of the local coordinates `\xi_1,\xi_2`, the local bed topography `\tilde b`
 is the amount by which the bed deviates from the "local average" `b_s(x_1,x_2)`. Generally
@@ -126,29 +126,29 @@ the smoothing domain, but these specific ranges are not required by the formulas
 Note that the average of the local bed topgraphy is zero by definition:
 
 .. math::
-   
-    \fint \tilde b(x_1,x_2,\xi_1,\xi_2)\,d\xi_1\,d\xi_2 = 0. 
+
+    \fint \tilde b(x_1,x_2,\xi_1,\xi_2)\,d\xi_1\,d\xi_2 = 0.
 
 The result of Schoof's scaling arguments (:cite:`Schoofbasaltopg2003`, equation (49)) is to
 modify the diffusivity by multiplying by a factor `0 \le \theta \le 1`:
 
 .. math::
-   
-    D = \theta(h(x_1,x_2),x_1,x_2) \, D_{SIA}. 
+
+    D = \theta(h(x_1,x_2),x_1,x_2) \, D_{SIA}.
 
 where `D_{SIA}` is defined by :eq:`eq-siadiffusivity` earlier, and
 
 .. math::
    :label: eq-thetadefn
-   
+
     \theta(h,x_1,x_2) = \left[ \fint \left(1 - \frac{\tilde b(x_1,x_2,\xi_1,\xi_2)}{H}\right)^{-(n+2)/n}\,d\xi_1\,d\xi_2 \right]^{-n}
 
 Here the ice thickness and ice surface elevation are related to the *smoothed* bed
 topography, so that in PISM notation
 
 .. math::
-   
-    H(t,x_1,x_2) = h(t,x_1,x_2) - b_s(x_1,x_2). 
+
+    H(t,x_1,x_2) = h(t,x_1,x_2) - b_s(x_1,x_2).
 
 This can be treated as the *definition* of the ice thickness `H` in the above formula for
 `\theta`.
@@ -172,8 +172,8 @@ theory, based on these recommendations plus some additional approximation.
 The averages appearing in his scaling arguments are over an infinite domain, e.g.
 
 .. math::
-   
-    f_s(x) = \lim_{R\to\infty} \frac{1}{2R} \int_{-R}^R f(\xi,x)\,d\xi. 
+
+    f_s(x) = \lim_{R\to\infty} \frac{1}{2R} \int_{-R}^R f(\xi,x)\,d\xi.
 
 For practical modeling use, Schoof specifically recommends averaging over some finite
 length scale which should be "considerably greater than the grid spacing, but much smaller
@@ -216,29 +216,29 @@ appears in :eq:`eq-thetadefn`, as follows.
 The fourth-order Taylor polynomial of the function `F(s)=(1-s)^{-k}` around `s=0` is
 
 .. math::
-   
-    P_4(s) = 1 + k s + \frac{k(k+1)}{2} s^2 + \dots + \frac{k(k+1)(k+2)(k+3)}{4!} s^4, 
+
+    P_4(s) = 1 + k s + \frac{k(k+1)}{2} s^2 + \dots + \frac{k(k+1)(k+2)(k+3)}{4!} s^4,
 
 so `F(s) = P_4(s) + O(s^5)`.  Let
 
 .. math::
-   
-    \omega(f,z) = \fint (1 - f(\xi) z)^{-k}\,d\xi 
+
+    \omega(f,z) = \fint (1 - f(\xi) z)^{-k}\,d\xi
 
 where `f` is some function and `z` a scalar.  Then
 
 .. math::
 
    \omega(f,z) &= \fint (1 - f(\xi) z)^{-k}\,d\xi = \fint P_4(f(\xi) z)\,d\xi + O((\max |f(\xi)|)^5 |z|^5)
-   
+
    &\approx 1 + k z \fint f(\xi)\,d\xi + \frac{k(k+1)}{2} z^2 \fint f(\xi)^2\,d\xi + \dots + \frac{k(k+1)(k+2)(k+3)}{4!} z^5 \fint f(\xi)^4\,d\xi.
 
 
 Now, `\theta` can be written
 
 .. math::
-   
-    \theta(h,x_1,x_2) = \left[ \omega(\tilde b(x_1,x_2,\cdot,\cdot), H^{-1}) \right]^{-n}.  
+
+    \theta(h,x_1,x_2) = \left[ \omega(\tilde b(x_1,x_2,\cdot,\cdot), H^{-1}) \right]^{-n}.
 
 So our strategy should be clear, to approximate `\omega(\tilde b(x_1,x2,\cdot,\cdot),
 H^{-1})` by the Taylor polynomial as a function of `H^{-1}`, whose the coefficients depend
@@ -256,8 +256,8 @@ this `f(\xi)` is zero, so that the first-order term drops out in the above expan
 where
 
 .. math::
-   
-    C_q(x_1,x_2) = \frac{k(k+1)\dots(k+q-1)}{q!} \fint \tilde b(x_1,x_2,\xi_1,\xi_2)^q\,d\xi_1\,d\xi_2 
+
+    C_q(x_1,x_2) = \frac{k(k+1)\dots(k+q-1)}{q!} \fint \tilde b(x_1,x_2,\xi_1,\xi_2)^q\,d\xi_1\,d\xi_2
 
 for `q=2,3,4` and `k = (n+2)/n`.
 
@@ -288,8 +288,8 @@ Thus it is desirable for the approximation `P_4(z)` to be convex on the same int
 and this is true. In fact,
 
 .. math::
-   
-    P_4''(s) =  k(k+1) \left[1 + (k+2) s + \frac{(k+2)(k+3)}{2} s^2\right], 
+
+    P_4''(s) =  k(k+1) \left[1 + (k+2) s + \frac{(k+2)(k+3)}{2} s^2\right],
 
 and this function turns out to be positive for all `s`. In fact we will show that the
 minimum of `P_4''(s)` is positive. That minimum occurs where `P_4'''(s)=0` or
@@ -297,8 +297,5 @@ minimum of `P_4''(s)` is positive. That minimum occurs where `P_4'''(s)=0` or
 constant. And
 
 .. math::
-   
-    P_4''(s_{min}) =  \frac{k(k+1)(k+4)}{2(k+3)} > 0. 
 
-
-
+    P_4''(s_{min}) =  \frac{k(k+1)(k+4)}{2(k+3)} > 0.

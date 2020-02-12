@@ -8,7 +8,7 @@ macro(pism_use_rpath)
   set (CMAKE_SKIP_BUILD_RPATH FALSE)
   # when building, don't use the install RPATH already
   # (but later on when installing)
-  set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
+  set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
   # the RPATH to be used when installing
   set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
   # add the automatically determined parts of the RPATH
@@ -23,7 +23,7 @@ endmacro(pism_use_rpath)
 # Set CMake variables to disable rpath
 macro(pism_dont_use_rpath)
   set (CMAKE_SKIP_BUILD_RPATH TRUE)
-  set (CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
+  set (CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
   set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
   set (CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 endmacro(pism_dont_use_rpath)
@@ -83,7 +83,7 @@ macro(pism_set_revision_tag)
 endmacro(pism_set_revision_tag)
 
 macro(pism_set_install_prefix)
-  # Allow setting a custom install prefix using the PISM_INSRALL_PREFIX environment variable.
+  # Allow setting a custom install prefix using the PISM_INSTALL_PREFIX environment variable.
   string (LENGTH "$ENV{PISM_INSTALL_PREFIX}" INSTALL_PREFIX_LENGTH)
   if (INSTALL_PREFIX_LENGTH)
     set (CMAKE_INSTALL_PREFIX $ENV{PISM_INSTALL_PREFIX} CACHE PATH "PISM install prefix" FORCE)
@@ -99,7 +99,7 @@ endmacro()
 
 # Set pedantic compiler flags
 macro(pism_set_pedantic_flags)
-  set (DEFAULT_PEDANTIC_FLAGS "-pedantic -Wall -Wextra -Wno-cast-qual -Wundef -Wshadow -Wpointer-arith -Wno-cast-align -Wwrite-strings -Wno-conversion -Wsign-compare -Wno-redundant-decls -Wno-inline -Wno-long-long -Wmissing-format-attribute -Wmissing-noreturn -Wpacked -Wdisabled-optimization -Wmultichar -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wendif-labels -Winvalid-pch -Wmissing-field-initializers -Wvariadic-macros -Wstrict-aliasing -funit-at-a-time -Wno-unknown-pragmas")
+  set (DEFAULT_PEDANTIC_FLAGS "-pedantic -Wall -Wextra -Wno-cast-qual -Wundef -Wshadow -Wpointer-arith -Wno-cast-align -Wwrite-strings -Wno-conversion -Wsign-compare -Wno-redundant-decls -Wno-inline -Wno-long-long -Wmissing-format-attribute -Wpacked -Wdisabled-optimization -Wmultichar -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wendif-labels -Winvalid-pch -Wmissing-field-initializers -Wvariadic-macros -Wstrict-aliasing -funit-at-a-time -Wno-unknown-pragmas")
   set (DEFAULT_PEDANTIC_CFLAGS "${DEFAULT_PEDANTIC_FLAGS} -std=c99")
   set (DEFAULT_PEDANTIC_CXXFLAGS "${DEFAULT_PEDANTIC_FLAGS} -Woverloaded-virtual")
   set (PEDANTIC_CFLAGS ${DEFAULT_PEDANTIC_CFLAGS} CACHE STRING "Compiler flags to enable pedantic warnings")
@@ -156,7 +156,7 @@ macro(pism_find_prerequisites)
   endif (DEFINED PETSC_VERSION)
 
   # MPI
-  find_package (MPI REQUIRED)
+  find_package (MPI REQUIRED COMPONENTS C)
 
   # Other required libraries
   find_package (UDUNITS2 REQUIRED)
@@ -170,8 +170,12 @@ macro(pism_find_prerequisites)
     find_package (PNetCDF REQUIRED)
   endif()
 
-  if (Pism_USE_PROJ4)
-    find_package (PROJ4 REQUIRED)
+  if (Pism_USE_PROJ)
+    find_package (PROJ REQUIRED)
+  endif()
+
+  if (Pism_USE_PIO)
+    find_package (ParallelIO REQUIRED)
   endif()
 
   if (Pism_USE_PARALLEL_NETCDF4)
@@ -218,7 +222,7 @@ endmacro()
 macro(pism_set_dependencies)
 
   # Set include and library directories for *required* libraries.
-  include_directories (
+  include_directories (BEFORE
     ${PETSC_INCLUDES}
     ${FFTW_INCLUDES}
     ${GSL_INCLUDES}
@@ -246,9 +250,14 @@ macro(pism_set_dependencies)
     list (APPEND Pism_EXTERNAL_LIBS ${JANSSON_LIBRARIES})
   endif()
 
-  if (Pism_USE_PROJ4)
-    include_directories (${PROJ4_INCLUDES})
-    list (APPEND Pism_EXTERNAL_LIBS ${PROJ4_LIBRARIES})
+  if (Pism_USE_PROJ)
+    include_directories (${PROJ_INCLUDES})
+    list (APPEND Pism_EXTERNAL_LIBS ${PROJ_LIBRARIES})
+  endif()
+
+  if (Pism_USE_PIO)
+    include_directories (${ParallelIO_INCLUDES})
+    list (APPEND Pism_EXTERNAL_LIBS ${ParallelIO_LIBRARIES})
   endif()
 
   if (Pism_USE_PNETCDF)
@@ -293,15 +302,15 @@ macro(pism_check_petsc_scalar_type)
   endif()
 endmacro()
 
-# Set version information that will be embedded in output files.
-macro(pism_set_version_info)
-  pism_petsc_get_variable("CONFIGURE_OPTIONS" PISM_PETSC_CONFIGURE_FLAGS)
-  add_definitions("-DPISM_PETSC_CONFIGURE_FLAGS=\"${PISM_PETSC_CONFIGURE_FLAGS}\"")
-
-  add_definitions("-DPISM_CMAKE_VERSION=\"${CMAKE_VERSION}\"")
-
-  if (Pism_BUILD_PYTHON_BINDINGS)
-    add_definitions("-DPISM_SWIG_VERSION=\"${SWIG_VERSION}\"")
-    add_definitions("-DPISM_PETSC4PY_VERSION=\"${Pism_PETSC4PY_VERSION}\"")
-  endif()
-endmacro()
+# Create a list of subdirectories.
+# See https://stackoverflow.com/questions/7787823/cmake-how-to-get-the-name-of-all-subdirectories-of-a-directory
+MACRO(SUBDIRLIST result curdir)
+  FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
+  SET(dirlist "")
+  FOREACH(child ${children})
+    IF(IS_DIRECTORY ${curdir}/${child})
+      LIST(APPEND dirlist ${child})
+    ENDIF()
+  ENDFOREACH()
+  SET(${result} ${dirlist})
+ENDMACRO()

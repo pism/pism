@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -73,19 +73,23 @@ class Hydrology;
 namespace calving {
 class EigenCalving;
 class vonMisesCalving;
-class OceanKill;
 class FloatKill;
+class HayhurstCalving;
 class CalvingAtThickness;
 class IcebergRemover;
 }
 
-class FrontalMelt;
+class FractureDensity;
 
 namespace energy {
 class BedThermalUnit;
 class Inputs;
 class EnergyModelStats;
 class EnergyModel;
+}
+
+namespace frontalmelt {
+  class FrontalMelt;
 }
 
 namespace bed {
@@ -97,23 +101,8 @@ class AgeModel;
 class IceModelVec2CellType;
 class IceModelVec2T;
 class Component;
-
-struct FractureFields {
-  FractureFields(IceGrid::ConstPtr grid);
-
-  IceModelVec2S density;
-  IceModelVec2S growth_rate;
-  IceModelVec2S healing_rate;
-  IceModelVec2S flow_enhancement;
-  IceModelVec2S age;
-  IceModelVec2S toughness;
-
-  //! major and minor principal components of horizontal strain-rate tensor (temporary storage)
-  IceModelVec2 strain_rates;
-
-  //! components of horizontal stress tensor along axes and shear stress (temporary storage)
-  IceModelVec2 deviatoric_stresses;
-};
+class FrontRetreat;
+class PrescribedRetreat;
 
 //! The base class for PISM. Contains all essential variables, parameters, and flags for modelling
 //! an ice sheet.
@@ -142,21 +131,18 @@ public:
   std::map<std::string, std::vector<VariableMetadata>> describe_diagnostics() const;
   std::map<std::string, std::vector<VariableMetadata>> describe_ts_diagnostics() const;
 
-  const IceModelVec2S &discharge() const;
+  const IceModelVec2S &calving() const;
+  const IceModelVec2S &frontal_melt() const;
+  const IceModelVec2S &forced_retreat() const;
 
-  double ice_volume(double thickness_threshold) const;
-  double ice_volume_not_displacing_seawater(double thickness_threshold) const;
-  double sea_level_rise_potential(double thickness_threshold) const;
   double ice_volume_temperate(double thickness_threshold) const;
   double ice_volume_cold(double thickness_threshold) const;
-  double ice_area(double thickness_threshold) const;
-  double ice_area_grounded(double thickness_threshold) const;
-  double ice_area_floating(double thickness_threshold) const;
   double ice_area_temperate(double thickness_threshold) const;
   double ice_area_cold(double thickness_threshold) const;
 
   const stressbalance::StressBalance* stress_balance() const;
   const ocean::OceanModel* ocean_model() const;
+  const frontalmelt::FrontalMelt* frontalmelt_model() const;
   const bed::BedDef* bed_model() const;
   const energy::BedThermalUnit* bedrock_thermal_model() const;
   const energy::EnergyModel* energy_balance_model() const;
@@ -190,7 +176,8 @@ protected:
   virtual void misc_setup();
   virtual void init_diagnostics();
   virtual void init_calving();
-
+  virtual void init_frontal_melt();
+  virtual void init_front_retreat();
   virtual void prune_diagnostics();
   virtual void update_diagnostics(double dt);
   virtual void reset_diagnostics();
@@ -202,7 +189,7 @@ protected:
   void reset_counters();
 
   // see iMbootstrap.cc
-  virtual void bootstrap_2d(const PIO &input_file);
+  virtual void bootstrap_2d(const File &input_file);
 
   // see iMoptions.cc
   virtual void process_options();
@@ -211,31 +198,32 @@ protected:
   virtual void compute_lat_lon();
 
   // see iMIO.cc
-  virtual void restart_2d(const PIO &input_file, unsigned int record);
+  virtual void restart_2d(const File &input_file, unsigned int record);
   virtual void initialize_2d();
 
   enum OutputKind {INCLUDE_MODEL_STATE = 0, JUST_DIAGNOSTICS};
-  virtual void save_variables(const PIO &file,
+  virtual void save_variables(const File &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
+                              double time,
                               IO_Type default_diagnostics_type = PISM_FLOAT);
 
-  virtual void define_model_state(const PIO &file);
-  virtual void write_model_state(const PIO &file);
+  virtual void define_model_state(const File &file);
+  virtual void write_model_state(const File &file);
 
   enum HistoryTreatment {OVERWRITE_HISTORY = 0, PREPEND_HISTORY};
   enum MappingTreatment {WRITE_MAPPING = 0, SKIP_MAPPING};
-  virtual void write_metadata(const PIO &file, MappingTreatment mapping_flag,
+  virtual void write_metadata(const File &file, MappingTreatment mapping_flag,
                               HistoryTreatment history_flag);
 
-  virtual void write_mapping(const PIO &file);
-  virtual void write_run_stats(const PIO &file);
+  virtual void write_mapping(const File &file);
+  virtual void write_run_stats(const File &file);
 
 
-  virtual void define_diagnostics(const PIO &file,
+  virtual void define_diagnostics(const File &file,
                                   const std::set<std::string> &variables,
                                   IO_Type default_type);
-  virtual void write_diagnostics(const PIO &file,
+  virtual void write_diagnostics(const File &file,
                                  const std::set<std::string> &variables);
 
   //! Computational grid
@@ -261,25 +249,28 @@ protected:
   std::map<std::string,const Component*> m_submodels;
 
   std::unique_ptr<hydrology::Hydrology> m_subglacial_hydrology;
-  std::unique_ptr<YieldStress> m_basal_yield_stress_model;
+  std::shared_ptr<YieldStress> m_basal_yield_stress_model;
 
   std::shared_ptr<IceModelVec2T> m_surface_input_for_hydrology;
 
   energy::BedThermalUnit *m_btu;
   energy::EnergyModel *m_energy_model;
 
-  AgeModel *m_age_model;
+  std::shared_ptr<AgeModel> m_age_model;
 
-  calving::IcebergRemover     *m_iceberg_remover;
-  calving::OceanKill          *m_ocean_kill_calving;
-  calving::FloatKill          *m_float_kill_calving;
-  calving::CalvingAtThickness *m_thickness_threshold_calving;
-  calving::EigenCalving       *m_eigen_calving;
-  calving::vonMisesCalving    *m_vonmises_calving;
-  FrontalMelt                 *m_frontal_melt;
+  std::shared_ptr<calving::IcebergRemover>     m_iceberg_remover;
+  std::shared_ptr<calving::FloatKill>          m_float_kill_calving;
+  std::shared_ptr<calving::CalvingAtThickness> m_thickness_threshold_calving;
+  std::shared_ptr<calving::EigenCalving>       m_eigen_calving;
+  std::shared_ptr<calving::HayhurstCalving>    m_hayhurst_calving;
+  std::shared_ptr<calving::vonMisesCalving>    m_vonmises_calving;
+  std::shared_ptr<PrescribedRetreat>           m_prescribed_retreat;
+
+  std::shared_ptr<FrontRetreat> m_front_retreat;
 
   std::shared_ptr<surface::SurfaceModel>      m_surface;
   std::shared_ptr<ocean::OceanModel>          m_ocean;
+  std::shared_ptr<frontalmelt::FrontalMelt>   m_frontal_melt;
   std::shared_ptr<ocean::sea_level::SeaLevel> m_sea_level;
 
   bed::BedDef *m_beddef;
@@ -297,7 +288,7 @@ protected:
   //! temperature at the top surface of the bedrock thermal layer
   IceModelVec2S m_bedtoptemp;
 
-  FractureFields *m_fracture;
+  std::shared_ptr<FractureDensity> m_fracture;
 
   //! mask to determine Dirichlet boundary locations
   IceModelVec2Int m_ssa_dirichlet_bc_mask;
@@ -329,6 +320,8 @@ protected:
   virtual void bedrock_thermal_model_step();
   virtual void energy_step();
 
+  virtual void hydrology_step();
+
   virtual void combine_basal_melt_rate(const Geometry &geometry,
                                        const IceModelVec2S &shelf_base_mass_flux,
                                        const IceModelVec2S &grounded_basal_melt_rate,
@@ -337,13 +330,14 @@ protected:
   enum ConsistencyFlag {REMOVE_ICEBERGS, DONT_REMOVE_ICEBERGS};
   void enforce_consistency_of_geometry(ConsistencyFlag flag);
 
-  virtual void do_calving();
+  virtual void front_retreat_step();
 
-  virtual void accumulate_discharge(const IceModelVec2S &thickness,
-                                    const IceModelVec2S &Href,
-                                    const IceModelVec2S &thickness_old,
-                                    const IceModelVec2S &Href_old,
-                                    IceModelVec2S &output);
+  void compute_geometry_change(const IceModelVec2S &thickness,
+                               const IceModelVec2S &Href,
+                               const IceModelVec2S &thickness_old,
+                               const IceModelVec2S &Href_old,
+                               InsertMode flag,
+                               IceModelVec2S &output);
 
   // see iMIO.cc
   virtual void regrid();
@@ -372,8 +366,20 @@ protected:
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
 
-  // discharge during the last time step
-  IceModelVec2S m_discharge;
+  struct ThicknessChanges {
+    ThicknessChanges(IceGrid::ConstPtr grid);
+
+    // calving during the last time step
+    IceModelVec2S calving;
+
+    // frontal melt during the last time step
+    IceModelVec2S frontal_melt;
+
+    // parameterized retreat
+    IceModelVec2S forced_retreat;
+  };
+
+  ThicknessChanges m_thickness_change;
 
   /*!
    * The set of variables that the "state" of IceModel consists of.
@@ -401,6 +407,7 @@ protected:
   std::string m_ts_filename;
   //! requested times for scalar time-series
   std::shared_ptr<std::vector<double>> m_ts_times;
+  std::set<std::string> m_ts_vars;
   void init_timeseries();
   void flush_timeseries();
   MaxTimestep ts_max_timestep(double my_t);
@@ -413,6 +420,7 @@ protected:
   double m_last_extra;
   std::set<std::string> m_extra_vars;
   TimeBoundsMetadata m_extra_bounds;
+  std::unique_ptr<File> m_extra_file;
   void init_extras();
   void write_extras();
   MaxTimestep extras_max_timestep(double my_t);

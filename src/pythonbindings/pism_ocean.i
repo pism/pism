@@ -14,6 +14,8 @@
 #include "coupler/ocean/PicoPhysics.hh"
 #include "coupler/ocean/sea_level/Delta_SL.hh"
 #include "coupler/ocean/sea_level/Delta_SL_2D.hh"
+#include "coupler/ocean/Factory.hh"
+#include "coupler/ocean/sea_level/Factory.hh"
 %}
 
 %shared_ptr(pism::ocean::OceanModel)
@@ -82,3 +84,11 @@
 %shared_ptr(pism::ocean::sea_level::Delta_SL_2D)
 %rename(SeaLevelDelta2D) pism::ocean::sea_level::Delta_SL_2D;
 %include "coupler/ocean/sea_level/Delta_SL_2D.hh"
+
+%shared_ptr(pism::ocean::Factory)
+%rename(OceanFactory) pism::ocean::Factory;
+%include "coupler/ocean/Factory.hh"
+
+%shared_ptr(pism::ocean::sea_level::Factory)
+%rename(SeaLevelFactory) pism::ocean::sea_level::Factory;
+%include "coupler/ocean/sea_level/Factory.hh"

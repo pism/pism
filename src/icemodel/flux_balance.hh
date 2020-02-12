@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018 PISM Authors
+/* Copyright (C) 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -55,19 +55,16 @@ public:
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
 
-    units::Converter c(m_sys, external_units, internal_units);
+    auto large_number = to_internal(1e6);
 
-    m_fill_value = c(m_fill_value);
-
-    const double valid_range = c(1e6);
-
-    m_vars[0].set_doubles("valid_range",  {-valid_range, valid_range});
-    m_vars[0].set_double("_FillValue", m_fill_value);
+    m_vars[0].set_numbers("valid_range",  {-large_number, large_number});
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("cell_methods", "time: mean");
 
+    auto units = internal_units + " second";
     m_last_amount.set_attrs("internal",
                             "ice amount at the time of the last report of " + name,
-                            internal_units + " second", "");
+                            units, units, "", 0);
   }
 protected:
   IceModelVec::Ptr compute_impl() const {
@@ -76,7 +73,7 @@ protected:
     result->metadata() = m_vars[0];
 
     if (m_interval_length > 0.0) {
-      double ice_density = m_config->get_double("constants.ice.density");
+      double ice_density = m_config->get_number("constants.ice.density");
 
       auto cell_area = m_grid->cell_area();
 
@@ -112,7 +109,7 @@ protected:
     const IceModelVec2S& thickness = model->geometry().ice_thickness;
     const IceModelVec2S& area_specific_volume = model->geometry().ice_area_specific_volume;
 
-    double ice_density = m_config->get_double("constants.ice.density");
+    double ice_density = m_config->get_number("constants.ice.density");
 
     IceModelVec::AccessList list{&m_last_amount, &thickness, &area_specific_volume};
 
@@ -164,17 +161,14 @@ public:
       external_units    = "Gt year-1";
     }
 
-    m_factor = m_config->get_double("constants.ice.density");
+    m_factor = m_config->get_number("constants.ice.density");
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
     m_accumulator.metadata().set_string("units", accumulator_units);
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
     m_vars[0].set_string("cell_methods", "time: mean");
-
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
   }
 
@@ -212,14 +206,16 @@ public:
                                 : "tendency_of_ice_mass_due_to_surface_mass_flux",
                                 TOTAL_CHANGE),
     m_kind(kind) {
-    m_factor = m_config->get_double("constants.ice.density");
+    m_factor = m_config->get_number("constants.ice.density");
+
+    auto ismip6 = m_config->get_flag("output.ISMIP6");
 
     std::string
-      name              = "tendency_of_ice_amount_due_to_surface_mass_flux",
+      name              = ismip6 ? "acabf" : "tendency_of_ice_amount_due_to_surface_mass_flux",
       accumulator_units = "kg m-2",
       long_name         = "average surface mass flux over reporting interval",
-      standard_name     = "",
-      internal_units    = "kg m-2 second-1",
+      standard_name     = "land_ice_surface_specific_mass_balance_flux",
+      internal_units    = "kg m-2 s-1",
       external_units    = "kg m-2 year-1";
     if (kind == MASS) {
       name              = "tendency_of_ice_mass_due_to_surface_mass_flux",
@@ -235,9 +231,7 @@ public:
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("cell_methods", "time: mean");
     m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
   }
@@ -275,7 +269,7 @@ public:
                                 : "tendency_of_ice_mass_due_to_basal_mass_flux",
                                 TOTAL_CHANGE),
     m_kind(kind) {
-    m_factor = m_config->get_double("constants.ice.density");
+    m_factor = m_config->get_number("constants.ice.density");
 
     std::string
       name              = "tendency_of_ice_amount_due_to_basal_mass_flux",
@@ -297,8 +291,7 @@ public:
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
 
-    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("cell_methods", "time: mean");
     m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
   }
@@ -335,7 +328,7 @@ public:
                                 : "tendency_of_ice_mass_due_to_conservation_error" ,
                                 TOTAL_CHANGE),
     m_kind(kind) {
-    m_factor = m_config->get_double("constants.ice.density");
+    m_factor = m_config->get_number("constants.ice.density");
 
     std::string
       name              = "tendency_of_ice_amount_due_to_conservation_error",
@@ -358,8 +351,7 @@ public:
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
 
-    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("cell_methods", "time: mean");
     m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
   }
@@ -398,18 +390,20 @@ public:
                                 TOTAL_CHANGE),
     m_kind(kind) {
 
-    m_factor = m_config->get_double("constants.ice.density");
+    m_factor = m_config->get_number("constants.ice.density");
+
+    auto ismip6 = m_config->get_flag("output.ISMIP6");
 
     std::string
-      name              = "tendency_of_ice_amount_due_to_discharge",
-      long_name         = "discharge (calving and frontal melt) flux",
+      name              = ismip6 ? "lifmassbf" : "tendency_of_ice_amount_due_to_discharge",
+      long_name         = "discharge flux (calving, frontal melt, forced retreat)",
       accumulator_units = "kg m-2",
       standard_name     = "land_ice_specific_mass_flux_due_to_calving_and_ice_front_melting",
-      internal_units    = "kg m-2 second-1",
+      internal_units    = "kg m-2 s-1",
       external_units    = "kg m-2 year-1";
     if (kind == MASS) {
       name              = "tendency_of_ice_mass_due_to_discharge";
-      long_name         = "discharge (calving and frontal melt) flux";
+      long_name         = "discharge flux (calving, frontal melt, forced retreat)";
       accumulator_units = "kg";
       standard_name     = "";
       internal_units    = "kg second-1";
@@ -422,17 +416,17 @@ public:
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
     m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
   }
 
 protected:
   void update_impl(double dt) {
-    const IceModelVec2S
-      &discharge = model->discharge();
+    const IceModelVec2S &calving = model->calving();
+    const IceModelVec2S &frontal_melt = model->frontal_melt();
+    const IceModelVec2S &forced_retreat = model->forced_retreat();
 
-    IceModelVec::AccessList list{&m_accumulator, &discharge};
+    IceModelVec::AccessList list{&m_accumulator, &calving, &frontal_melt, &forced_retreat};
 
     auto cell_area = m_grid->cell_area();
 
@@ -441,7 +435,70 @@ protected:
 
       double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
 
-      m_accumulator(i, j) += C * discharge(i, j);
+      m_accumulator(i, j) += C * (calving(i, j) + frontal_melt(i, j) + forced_retreat(i, j));
+    }
+
+    m_interval_length += dt;
+  }
+  AmountKind m_kind;
+};
+
+/*! @brief Report discharge (calving and frontal melt) flux. */
+class CalvingFlux : public DiagAverageRate<IceModel>
+{
+public:
+  CalvingFlux(const IceModel *m, AmountKind kind)
+    : DiagAverageRate<IceModel>(m,
+                                kind == AMOUNT
+                                ? "tendency_of_ice_amount_due_to_calving"
+                                : "tendency_of_ice_mass_due_to_calving",
+                                TOTAL_CHANGE),
+    m_kind(kind) {
+
+    m_factor = m_config->get_number("constants.ice.density");
+
+    auto ismip6 = m_config->get_flag("output.ISMIP6");
+
+    std::string
+      name              = ismip6 ? "licalvf" : "tendency_of_ice_amount_due_to_calving",
+      long_name         = "calving flux",
+      accumulator_units = "kg m-2",
+      standard_name     = "land_ice_specific_mass_flux_due_to_calving",
+      internal_units    = "kg m-2 s-1",
+      external_units    = "kg m-2 year-1";
+    if (kind == MASS) {
+      name              = "tendency_of_ice_mass_due_to_calving";
+      long_name         = "calving flux";
+      accumulator_units = "kg";
+      standard_name     = "";
+      internal_units    = "kg second-1";
+      external_units    = "Gt year-1";
+    }
+
+    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_accumulator.metadata().set_string("units", accumulator_units);
+
+    set_attrs(long_name, standard_name, internal_units, external_units, 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
+    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+  }
+
+protected:
+  void update_impl(double dt) {
+    const IceModelVec2S &calving = model->calving();
+
+    IceModelVec::AccessList list{&m_accumulator, &calving};
+
+    auto cell_area = m_grid->cell_area();
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
+
+      m_accumulator(i, j) += C * calving(i, j);
     }
 
     m_interval_length += dt;

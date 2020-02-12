@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -37,8 +37,8 @@ public:
   virtual const IceModelVec2S& mean_summer_temp() const;
 
 protected:
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   virtual void init_impl(const Geometry &geometry);
 
@@ -62,7 +62,6 @@ protected:
   double m_snow_temp_summer_day;
   std::string m_reference;
   IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_summer, m_precipitation;
-  mutable std::vector<double> m_ts_times;
   mutable std::vector<double> m_cosine_cycle;
 };
 

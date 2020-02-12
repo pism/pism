@@ -31,7 +31,7 @@ evolve together. These tools are required:
      - required to rebuild the |pism-browser|
 
 
-On a debian-based system you may be able to install these by running
+On a Debian-based system you may be able to install these by running
 
 .. literalinclude:: code/install_docu_libraries.sh
    :language: bash

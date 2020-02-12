@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,22 +33,20 @@ namespace pism {
  * vertical grid by the BlatterStressBalance class and for latitude
  * and longitude bounds by IceModel.
  *
- * \note DOF>1 2D data that should be stored in and read from several
+ * @note DOF>1 2D data that should be stored in and read from several
  * variables can be stored using IceModelVec2.
  */
 class IceModelVec3Custom : public IceModelVec3D {
 public:
-  IceModelVec3Custom();
+  IceModelVec3Custom(IceGrid::ConstPtr mygrid,
+                     const std::string &short_name,
+                     const std::string &z_name,
+                     const std::vector<double> &my_zlevels,
+                     const std::map<std::string, std::string> &z_attrs);
   virtual ~IceModelVec3Custom();
 
   typedef std::shared_ptr<IceModelVec3Custom> Ptr;
   typedef std::shared_ptr<const IceModelVec3Custom> ConstPtr;
-
-  virtual void create(IceGrid::ConstPtr mygrid,
-                      const std::string &short_name,
-                      const std::string &z_name,
-                      const std::vector<double> &my_zlevels,
-                      const std::map<std::string, std::string> &z_attrs);
 };
 
 } // end of namespace pism

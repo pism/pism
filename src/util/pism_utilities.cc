@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,6 +26,8 @@
 #include <fftw3.h>              // fftw_version
 #include <gsl/gsl_version.h>
 
+#include "pism/pism_config.hh"  // Pism_USE_XXX, version info
+
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
 #ifndef MPI_INCLUDED
@@ -33,11 +35,11 @@
 #endif
 #include <netcdf.h>             // nc_inq_libvers
 
-#if (PISM_USE_PROJ4==1)
+#if (Pism_USE_PROJ==1)
 #include "pism/util/Proj.hh"    // pj_release
 #endif
 
-#ifdef PISM_USE_JANSSON
+#if (Pism_USE_JANSSON==1)
 #include <jansson.h>            // JANSSON_VERSION
 #endif
 
@@ -46,10 +48,6 @@
 #include "error_handling.hh"
 
 namespace pism {
-
-const char *PISM_DefaultConfigFile = PISM_DEFAULT_CONFIG_FILE;
-
-const char *PISM_Revision = PISM_REVISION;
 
 //! Returns true if `str` ends with `suffix` and false otherwise.
 bool ends_with(const std::string &str, const std::string &suffix) {
@@ -183,21 +181,19 @@ std::string version() {
   char buffer[TEMPORARY_STRING_LENGTH];
   std::string result;
 
-  snprintf(buffer, sizeof(buffer), "PISM (%s)\n", PISM_Revision);
+  snprintf(buffer, sizeof(buffer), "PISM (%s)\n", pism::revision);
   result += buffer;
 
-  snprintf(buffer, sizeof(buffer), "CMake %s.\n", PISM_CMAKE_VERSION);
+  snprintf(buffer, sizeof(buffer), "CMake %s.\n", pism::cmake_version);
   result += buffer;
 
   PetscGetVersion(buffer, TEMPORARY_STRING_LENGTH);
   result += buffer;
   result += "\n";
 
-#ifdef PISM_PETSC_CONFIGURE_FLAGS
   snprintf(buffer, sizeof(buffer), "PETSc configure: %s\n",
-           PISM_PETSC_CONFIGURE_FLAGS);
+           pism::petsc_configure_flags);
   result += buffer;
-#endif
 
   // OpenMPI added MPI_Get_library_version in version 1.7 (relatively recently).
 #ifdef OPEN_MPI
@@ -219,23 +215,21 @@ std::string version() {
   snprintf(buffer, sizeof(buffer), "GSL %s.\n", GSL_VERSION);
   result += buffer;
 
-#if (PISM_USE_PROJ4==1)
-  snprintf(buffer, sizeof(buffer), "PROJ.4 %s.\n", pj_release);
+#if (Pism_USE_PROJ==1)
+  snprintf(buffer, sizeof(buffer), "PROJ %s.\n", pj_release);
   result += buffer;
 #endif
 
-#ifdef PISM_USE_JANSSON
+#if (Pism_USE_JANSSON==1)
   snprintf(buffer, sizeof(buffer), "Jansson %s.\n", JANSSON_VERSION);
   result += buffer;
 #endif
 
-#ifdef PISM_SWIG_VERSION
-  snprintf(buffer, sizeof(buffer), "SWIG %s.\n", PISM_SWIG_VERSION);
+#if (Pism_BUILD_PYTHON_BINDINGS==1)
+  snprintf(buffer, sizeof(buffer), "SWIG %s.\n", pism::swig_version);
   result += buffer;
-#endif
 
-#ifdef PISM_PETSC4PY_VERSION
-  snprintf(buffer, sizeof(buffer), "petsc4py %s.\n", PISM_PETSC4PY_VERSION);
+  snprintf(buffer, sizeof(buffer), "petsc4py %s.\n", pism::petsc4py_version);
   result += buffer;
 #endif
 
@@ -388,6 +382,70 @@ std::string printf(const char *format, ...) {
   }
   va_end(arglist);
   return result.substr(0, length);
+}
+
+/*!
+ * Validate a format string. In this application a format string should contain `%` exactly
+ * once, followed by `s` (i.e. `%s`).
+ *
+ * Throws RuntimeError if the provided string is invalid.
+ */
+void validate_format_string(const std::string &format) {
+  if (format.find("%s") == std::string::npos) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "format string %s does not contain %%s",
+                                  format.c_str());
+  }
+
+  if (format.find("%") != format.rfind("%")) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "format string %s contains more than one %%",
+                                  format.c_str());
+  }
+}
+
+double vector_min(const std::vector<double> &input) {
+  double my_min = input[0];
+  for (auto x : input) {
+    my_min = std::min(x, my_min);
+  }
+  return my_min;
+}
+
+double vector_max(const std::vector<double> &input) {
+  double my_max = input[0];
+  for (auto x : input) {
+    my_max = std::max(x, my_max);
+  }
+  return my_max;
+}
+
+
+/*!
+ * Fletcher's checksum
+ *
+ * See https://en.wikipedia.org/wiki/Fletcher%27s_checksum#Optimizations
+ */
+uint64_t fletcher64(const uint32_t *data, size_t length) {
+  // Accumulating a sum of block_size unsigned 32-bit integers in an unsigned 64-bit
+  // integer will not lead to an overflow.
+  //
+  // This constant is found by solving n * (n + 1) / 2 * (2^32 - 1) < (2^64 - 1).
+  static const size_t block_size = 92681;
+
+  uint64_t c0 = 0, c1 = 0;
+  while (length != 0) {
+    size_t block = std::min(block_size, length);
+
+    for (size_t i = 0; i < block; ++i) {
+      c0 = c0 + *data++;
+      c1 = c1 + c0;
+    }
+
+    c0 = c0 % UINT32_MAX;
+    c1 = c1 % UINT32_MAX;
+
+    length = length > block_size ? length - block_size : 0;
+  }
+  return (c1 << 32 | c0);
 }
 
 } // end of namespace pism

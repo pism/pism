@@ -13,10 +13,8 @@ Technical notes
 
    ssafd-cfbc.rst
 
-   coding_guidelines.rst
-
-   how-to.rst
-
-   icemodelvec2t.rst
-
    bombproof.rst
+
+   steady-hydrology.rst
+
+   release_checklist.rst

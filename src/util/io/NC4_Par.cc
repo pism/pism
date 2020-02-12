@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,39 +19,38 @@
 #include "NC4_Par.hh"
 #include "pism/util/error_handling.hh"
 
-// netcdf_par.h has to be included *after* mpi.h
+// netcdf_par.h has to be included *after* mpi.h and after netcdf.h
 //
 // note that we don't need to define MPI_INCLUDED because this code is built *only* if we
 // have a parallel NetCDF library.
 extern "C" {
-#include <netcdf_par.h>
 #include <netcdf.h>
+#include <netcdf_par.h>
 }
 
 namespace pism {
 namespace io {
 
-int NC4_Par::integer_open_mode(IO_Mode input) const {
-  if (input == PISM_READONLY) {
-    return NC_NOWRITE;
-  } else {
-    return NC_WRITE;
+//! \brief Prints an error message; for debugging.
+static void check(const ErrorLocation &where, int return_code) {
+  if (return_code != NC_NOERR) {
+    throw RuntimeError(where, nc_strerror(return_code));
   }
 }
 
-int NC4_Par::open_impl(const std::string &fname, IO_Mode mode) {
+void NC4_Par::open_impl(const std::string &fname, IO_Mode mode) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
-  int nc_mode = integer_open_mode(mode);
-  stat = nc_open_par(fname.c_str(),
-                     nc_mode | NC_MPIIO,
-                     m_com, info, &m_file_id);
+  int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;
+  open_mode = open_mode | NC_MPIIO;
 
-  return stat;
+  stat = nc_open_par(fname.c_str(), open_mode, m_com, info, &m_file_id);
+
+  check(PISM_ERROR_LOCATION, stat);
 }
 
-int NC4_Par::create_impl(const std::string &fname) {
+void NC4_Par::create_impl(const std::string &fname) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
@@ -59,16 +58,16 @@ int NC4_Par::create_impl(const std::string &fname) {
                        NC_NETCDF4 | NC_MPIIO,
                        m_com, info, &m_file_id);
 
-  return stat;
+  check(PISM_ERROR_LOCATION, stat);
 }
 
-int NC4_Par::set_access_mode(int varid, bool mapped) const {
+void NC4_Par::set_access_mode(int varid, bool transposed) const {
   int stat;
 
-  if (mapped) {
+  if (transposed) {
     // Use independent parallel access mode because it works. It would be
     // better to use collective mode, but I/O performance is ruined by
-    // "mapping" anyway.
+    // the transpose anyway.
     //
     // See https://bugtracking.unidata.ucar.edu/browse/NCF-152 for the description of the bug we're
     // avoiding here.
@@ -78,8 +77,6 @@ int NC4_Par::set_access_mode(int varid, bool mapped) const {
     // works in this case).
     stat = nc_var_par_access(m_file_id, varid, NC_COLLECTIVE); check(PISM_ERROR_LOCATION, stat);
   }
-
-  return stat;
 }
 
 

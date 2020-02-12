@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -57,8 +57,8 @@ public:
   const IceModelVec2S& uplift() const;
 
 protected:
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
 
@@ -76,9 +76,6 @@ protected:
   void compute_uplift(const IceModelVec2S &bed, const IceModelVec2S &bed_last,
                             double dt, IceModelVec2S &result);
 protected:
-  //! time of the last bed deformation update
-  double m_t_beddef_last;
-
   //! current bed elevation
   IceModelVec2S m_topg;
 

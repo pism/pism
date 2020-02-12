@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,15 +30,16 @@ class ConstantYieldStress : public YieldStress {
 public:
   ConstantYieldStress(IceGrid::ConstPtr g);
   virtual ~ConstantYieldStress();
-protected:
-  virtual void init_impl(const Geometry &geometry,
-                         const IceModelVec2S &till_water_thickness,
-                         const IceModelVec2S &overburden_pressure);
-  virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(const YieldStressInputs &inputs);
+private:
+  void restart_impl(const File &input_file, int record);
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  void bootstrap_impl(const File &input_file, const YieldStressInputs &inputs);
+
+  void init_impl(const YieldStressInputs &inputs);
+
+  void update_impl(const YieldStressInputs &inputs, double t, double dt);
+
+  MaxTimestep max_timestep_impl(double t) const;
 };
 
 } // end of namespace pism

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,7 +22,7 @@
 #include "pism/age/AgeColumnSystem.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Vars.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 
 namespace pism {
 
@@ -56,18 +56,19 @@ void AgeModelInputs::check() const {
 }
 
 AgeModel::AgeModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance)
-  : Component(grid), m_stress_balance(stress_balance) {
+  : Component(grid),
+    // FIXME: should be able to use width=1...
+    m_ice_age(m_grid, "age", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width")),
+    m_work(m_grid, "work_vector", WITHOUT_GHOSTS),
+    m_stress_balance(stress_balance) {
 
-  // FIXME: should be able to use width=1...
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
+  m_ice_age.set_attrs("model_state", "age of ice",
+                      "s", "years", "" /* no standard name*/, 0);
 
-  m_ice_age.create(m_grid, "age", WITH_GHOSTS, WIDE_STENCIL);
-  m_ice_age.set_attrs("model_state", "age of ice", "s", "" /* no standard name*/);
-  m_ice_age.metadata().set_string("glaciological_units", "years");
-  m_ice_age.metadata().set_double("valid_min", 0.0);
+  m_ice_age.metadata().set_number("valid_min", 0.0);
 
-  m_work.create(m_grid,"work_vector",WITHOUT_GHOSTS);
-  m_work.set_attrs("internal", "new values of age during time step", "s", "");
+  m_work.set_attrs("internal", "new values of age during time step",
+                   "s", "s", "", 0);
 }
 
 /*!
@@ -190,33 +191,33 @@ void AgeModel::init(const InputOptions &opts) {
   m_log->message(2, "* Initializing the age model...\n");
 
 
-  double initial_age_years = m_config->get_double("age.initial_value", "years");
+  double initial_age_years = m_config->get_number("age.initial_value", "years");
 
   if (opts.type == INIT_RESTART) {
-    PIO input_file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
+    File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
 
-    if (input_file.inq_var("age")) {
+    if (input_file.find_variable("age")) {
       m_ice_age.read(input_file, opts.record);
     } else {
       m_log->message(2,
                      "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
                      "  Setting it to %f years...\n",
                      opts.filename.c_str(), initial_age_years);
-      m_ice_age.set(m_config->get_double("age.initial_value", "seconds"));
+      m_ice_age.set(m_config->get_number("age.initial_value", "seconds"));
     }
   } else {
     m_log->message(2, " - setting initial age to %.4f years\n", initial_age_years);
-    m_ice_age.set(m_config->get_double("age.initial_value", "seconds"));
+    m_ice_age.set(m_config->get_number("age.initial_value", "seconds"));
   }
 
   regrid("Age Model", m_ice_age, REGRID_WITHOUT_REGRID_VARS);
 }
 
-void AgeModel::define_model_state_impl(const PIO &output) const {
+void AgeModel::define_model_state_impl(const File &output) const {
   m_ice_age.define(output);
 }
 
-void AgeModel::write_model_state_impl(const PIO &output) const {
+void AgeModel::write_model_state_impl(const File &output) const {
   m_ice_age.write(output);
 }
 
