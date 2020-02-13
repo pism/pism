@@ -16,7 +16,7 @@ papers.
 To acknowledge PISM funding please include the statement:
 
 
-    Development of PISM is supported by NSF grant PLR-1644277 and NASA grant NNX17AG65G.
+    Development of PISM is supported by NSF grants PLR-1603799 and PLR-1644277 and NASA grant NNX17AG65G.
 
 
 Citing
