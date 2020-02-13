@@ -44,8 +44,8 @@ Want to contribute? Great! See `Contributing to PISM <pism-contributing_>`_.
 
 .. URLs
 
-.. |cipism| image:: https://circleci.com/gh/pism/pism/tree/dev.svg?style=svg
-.. _cipism: https://circleci.com/gh/pism/pism/tree/dev
+.. |cipism| image:: https://circleci.com/gh/pism/pism/tree/master.svg?style=svg
+.. _cipism: https://circleci.com/gh/pism/pism/tree/master
 .. _uaf: http://www.uaf.edu/
 .. _pik: http://www.pik-potsdam.de/
 .. _pism-docs: http://www.pism-docs.org/
