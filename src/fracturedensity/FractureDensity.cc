@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -49,7 +49,7 @@ FractureDensity::FractureDensity(IceGrid::ConstPtr grid,
   m_density.metadata().set_number("valid_max", 1.0);
   m_density.metadata().set_number("valid_min", 0.0);
 
-  m_growth_rate.set_attrs("model_state", "fracture growth rate", "second-1", "m second-1", "", 0);
+  m_growth_rate.set_attrs("model_state", "fracture growth rate", "second-1", "second-1", "", 0);
   m_growth_rate.metadata().set_number("valid_min", 0.0);
 
   m_healing_rate.set_attrs("model_state", "fracture healing rate", "second-1", "second-1", "", 0);
