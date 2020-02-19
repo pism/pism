@@ -33,27 +33,30 @@ public:
 
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl(const Geometry &geometry, double my_t, double my_dt);
+  virtual void update_impl(const Geometry &geometry, double t, double dt);
   virtual void init_impl(const Geometry &geometry);
   virtual bool expandMargins_impl() const;
-  virtual DiagnosticList diagnostics_impl() const;
+
+  IceModelVec2S m_target_level;
 
 private:
   GeometryCalculator m_gc;
   std::string m_option;
-  double m_lake_level_min, m_lake_level_max, m_lake_level_dh, m_drho, m_icefree_thickness;
-  bool m_filter_map, m_keep_existing_lakes, m_check_sl_diagonal;
-  bool m_use_topg_overlay;
-  int m_n_filter;
-  IceModelVec2Int m_valid_mask;
-  IceModelVec2S m_topg_overlay;
-  IceModelVec2S m_bed;
 
-  void do_lake_update(const IceModelVec2S &bed, const IceModelVec2S &thk, const IceModelVec2S &sea_level, const IceModelVec2S &old_lake_level);
-  void transfer_lakes_to_pism_bed(const IceModelVec2S &bed, const IceModelVec2S &thk);
-  void do_filter_map();
-  void prepare_mask_validity(const IceModelVec2S &thk, const IceModelVec2S &bed, const IceModelVec2S &old_lake_level, IceModelVec2Int &valid_mask);
-  void update_mask_sl_diagonal(const IceModelVec2S &sl, const IceModelVec2S &bed, const IceModelVec2S &thk, IceModelVec2Int &mask);
+  double m_next_update_time;
+  int m_max_update_interval_years,
+      m_patch_iter;
+
+  bool checkOceanBasinsVanished(const IceModelVec2S &bed,
+                                const IceModelVec2S &old_sl,
+                                const IceModelVec2S &new_sl);
+  bool iterativelyPatchTargetLevel(const IceModelVec2S &bed,
+                                   const IceModelVec2S &thk,
+                                   const IceModelVec2S &sl);
+  unsigned int patch_lake_levels(const IceModelVec2S &bed,
+                                 const IceModelVec2S &thk,
+                                 const IceModelVec2S &sea_level,
+                                 IceModelVec2S &lake_level);
 };
 
 } // end of namespace lake_level
