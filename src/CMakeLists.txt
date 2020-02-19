@@ -51,7 +51,7 @@ add_library (pism
   energy/bootstrapping.cc
   energy/enthSystem.cc
   energy/tempSystem.cc
-  energy/utilities.cc  
+  energy/utilities.cc
   geometry/Geometry.cc
   geometry/GeometryEvolution.cc
   geometry/grounded_cell_fraction.cc
