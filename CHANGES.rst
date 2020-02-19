@@ -1,7 +1,7 @@
 .. default-role:: literal
 
-Changes since v1.1
-==================
+Changes from v1.1 to v1.2
+=========================
 
 Front retreat
 ^^^^^^^^^^^^^
@@ -242,6 +242,42 @@ Other
   v6.1.1.)
 - Add contributing guidelines to the User's Manual.
 
+Changes from v1.1.3 to v1.1.4
+=============================
+
+- PISM can be built with PROJ v6. (We define `ACCEPT_USE_OF_DEPRECATED_PROJ_API_H`. This
+  workaround will break once PROJ drops the deprecated API completely. See `issue 409`_.)
+- Fix a minor bug in the `routing` hydrology model (improper indexing in the code
+  computing hydraulic conductivity).
+
+Changes from v1.1.2 to v1.1.3
+=============================
+
+- Minor fixes of PISM's documentation.
+- Fix an unreported bug in the computation of the `flux` diagnostic. This bug affected
+  PISM's diagnostic variables `flux`, `velbar`, `velbar_mag`, and `vonmises_stress` (which
+  uses `velbar`).
+
+  It did *not* affect ice dynamics.
+
+Changes from v1.1.1 to v1.1.2
+=============================
+
+- Fix an unreported bug in `-surface ...,forcing`: PISM was ignoring the time step
+  restriction associated with this mechanism; large `surface.force_to_thickness.alpha`
+  could lead to uncontrolled growth of ice thickness.
+- Update the `-atmosphere pik` temperature parameterization for compatibility with paleo
+  simulations by Albrecht et al.
+- Switch to an unconditionally-stable method for the approximation of the heat equation in
+  columns of the bedrock thermal layer (backward Euler time discretization instead of
+  explicit time stepping).
+
+Changes from v1.1 to v1.1.1
+===========================
+
+- PISM supports CMake 3.1 again (v1.1 required CMake 3.13 for no good reason).
+- Fix PISM's `-regional` runs: disable ice flow, surface mass balance, and basal mass
+  balance effects on ice geometry in "no model" areas.
 
 Changes from v1.0 to v1.1
 =========================
@@ -810,11 +846,13 @@ Miscellaneous
 .. _issue 350: https://github.com/pism/pism/issues/350
 .. _issue 351: https://github.com/pism/pism/issues/351
 .. _issue 370: https://github.com/pism/pism/issues/370
+.. _issue 375: https://github.com/pism/pism/issues/375
 .. _issue 390: https://github.com/pism/pism/issues/390
 .. _issue 394: https://github.com/pism/pism/issues/394
 .. _issue 400: https://github.com/pism/pism/issues/400
 .. _issue 402: https://github.com/pism/pism/issues/402
 .. _issue 363: https://github.com/pism/pism/issues/363
+.. _issue 409: https://github.com/pism/pism/issues/409
 .. _issue 405: https://github.com/pism/pism/issues/405
 .. _issue 422: https://github.com/pism/pism/issues/422
 .. _issue 424: https://github.com/pism/pism/issues/424

@@ -1689,6 +1689,11 @@
    :Option: :opt:`-ocean_cache_update_interval`
    :Description: update interval of the 'cache' ocean modifier
 
+#. :config:`ocean.constant.melange_back_pressure_fraction` (*number*)
+
+   :Value: 0 (1)
+   :Description: default melange back pressure fraction in the 'contant' ocean model
+
 #. :config:`ocean.constant.melt_rate` (*number*)
 
    :Value: 0.051914 (m / year)
@@ -1887,21 +1892,6 @@
    :Value: 0.005000 (1)
    :Option: :opt:`-meltfactor_pik`
    :Description: dimensionless tuning parameter in the '-ocean pik' ocean heat flux parameterization; see :cite:`Martinetal2011`
-
-#. :config:`ocean.runoff_to_ocean_melt_b` (*number*)
-
-   :Value: 0.150000 (1)
-   :Description: parameter B in eqn. 1 in :cite:`Aschwanden2019`
-
-#. :config:`ocean.runoff_to_ocean_melt_power_alpha` (*number*)
-
-   :Value: 0.540000 (1)
-   :Description: exponent `\alpha` in eqn. 1 in :cite:`Xu2013`
-
-#. :config:`ocean.runoff_to_ocean_melt_power_beta` (*number*)
-
-   :Value: 1.170000 (1)
-   :Description: exponent `\beta` in eqn. 1 in :cite:`Xu2013`
 
 #. :config:`ocean.sub_shelf_heat_flux_into_ice` (*number*)
 
@@ -2733,11 +2723,6 @@
 
    :Value: 0 (Pascal)
    :Description: atmospheric pressure; = pressure at ice surface
-
-#. :config:`surface.temp_to_runoff_a` (*number*)
-
-   :Value: 0.500000 (K-1)
-   :Description: a in runoff=a * temp + b
 
 #. :config:`time.calendar` (*keyword*)
 

@@ -22,7 +22,4 @@ add_subdirectory(sphinx)
 if (PDFLATEX_COMPILER)
   # Source code browser:
   add_subdirectory (browser EXCLUDE_FROM_ALL)
-
-  # PISM's Python bindings docs:
-  add_subdirectory (pismpython EXCLUDE_FROM_ALL)
 endif ()                        # if PDFLATEX_COMPILER

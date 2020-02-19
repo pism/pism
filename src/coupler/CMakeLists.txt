@@ -40,7 +40,6 @@ add_library (boundary OBJECT
   ./ocean/Delta_SMB.cc
   ./ocean/Frac_MBP.cc
   ./ocean/Frac_SMB.cc
-  ./ocean/Runoff_SMB.cc
   ./ocean/Factory.cc
   ./ocean/Initialization.cc
   ./ocean/Pico.cc
