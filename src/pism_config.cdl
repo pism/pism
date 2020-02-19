@@ -1737,6 +1737,11 @@ netcdf pism_config {
     pism_config:lake_level.models_option = "lake_level";
     pism_config:lake_level.models_type = "string";
 
+    pism_config:lake_level.lakecc.topg_overlay_file = "";
+    pism_config:lake_level.lakecc.topg_overlay_file_doc = "Name of the file containing the topography overlay field used by the LakeCC model.";
+    pism_config:lake_level.lakecc.topg_overlay_file_type = "string";
+    pism_config:lake_level.lakecc.topg_overlay_file_option = "lakecc_topg_overlay_file";
+
     pism_config:ocean.pico.continental_shelf_depth = -800.0;
     pism_config:ocean.pico.continental_shelf_depth_doc = "Determines the edge of the continental shelf to calculate mean ocean properties";
     pism_config:ocean.pico.continental_shelf_depth_option = "continental_shelf_depth";

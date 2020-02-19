@@ -72,22 +72,24 @@ void LakeCC::init_impl(const Geometry &geometry) {
                 "meter", "meter", "", 0);
   tmp.metadata().set_number("_FillValue", m_fill_value);
 
-  InputOptions opts = process_input_options(m_grid->com, m_config);
+  {
+    InputOptions opts = process_input_options(m_grid->com, m_config);
 
-  if (opts.type == INIT_RESTART) {
+    if (opts.type == INIT_RESTART) {
 
-    m_log->message(2, "* Reading lake level forcing from '%s' for re-starting...\n",
-                   opts.filename.c_str());
+      m_log->message(2, "* Reading lake level forcing from '%s' for re-starting...\n",
+                    opts.filename.c_str());
 
-    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
-    const unsigned int time_length = file.nrecords(),
-                       last_record = time_length > 0 ? time_length - 1 : 0;
+      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      const unsigned int time_length = file.nrecords(),
+                        last_record = time_length > 0 ? time_length - 1 : 0;
 
-    tmp.read(file, last_record);
+      tmp.read(file, last_record);
 
-    file.close();
-  } else {
-    tmp.set(m_fill_value);
+      file.close();
+    } else {
+      tmp.set(m_fill_value);
+    }
   }
 
   // Support regridding. This is needed to ensure that initialization using "-i" is
@@ -140,16 +142,46 @@ void LakeCC::init_impl(const Geometry &geometry) {
                                         "If set lakes are kept even though they are enclosed or covered by ice. This might result in huge sub-glacial lakes.");
   m_check_sl_diagonal = options::Bool(m_option + "_check_sl_diagonal",
                                       "If set invalid SL cells are checked if a diagonal cell is ocean and if so, the mask is updated.");
+  m_topg_overlay.create(m_grid, "topg_overlay", WITHOUT_GHOSTS);
+  m_topg_overlay.set_attrs("internal",
+                           "topography overlay",
+                           "meter", "meter", "", 0);
+
+  {
+    std::string overlay_file = m_config->get_string("lake_level.lakecc.topg_overlay_file");
+
+    if (not overlay_file.empty()) {
+      m_topg_overlay.regrid(overlay_file, OPTIONAL, 0.0);
+      m_use_topg_overlay = true;
+    } else {
+      m_topg_overlay.set(0.0);
+      m_use_topg_overlay = false;
+    }
+  }
+
+  m_bed.create(m_grid, "topg_lakecc", WITHOUT_GHOSTS);
+  m_bed.set_attrs("diagnostic",
+                "bed topography as seen by LakeCC model",
+                "meter", "meter", "", 0);
 }
 
 void LakeCC::update_impl(const Geometry &geometry, double my_t, double my_dt) {
 
-  const IceModelVec2S &bed = geometry.bed_elevation,
-                      &thk = geometry.ice_thickness,
+  const IceModelVec2S &thk = geometry.ice_thickness,
                       &ll  = geometry.lake_level_elevation,
                       &sl  = *m_grid->variables().get_2d_scalar("sea_level");
 
-  do_lake_update(bed, thk, sl, ll);
+  if (m_use_topg_overlay) {
+    m_topg_overlay.add(1.0, geometry.bed_elevation, m_bed);
+  } else {
+    m_bed.copy_from(geometry.bed_elevation);
+  }
+
+  do_lake_update(m_bed, thk, sl, ll);
+
+  if (m_use_topg_overlay) {
+    transfer_lakes_to_pism_bed(geometry.bed_elevation, thk);
+  }
 
   if (m_filter_map) {
     do_filter_map();
@@ -208,6 +240,24 @@ void LakeCC::do_lake_update(const IceModelVec2S &bed, const IceModelVec2S &thk, 
   m_log->message(2, "          Done!\n");
 }
 
+void LakeCC::transfer_lakes_to_pism_bed(const IceModelVec2S &bed, const IceModelVec2S &thk) {
+  IceModelVec::AccessList list({ &m_lake_level, &bed, &thk });
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const double ll_ij = m_lake_level(i, j);
+    // If cell is labled as lake on higher "resolved" bed,
+    // but is not valid on topography used by PISM -> set invalid
+    if ( m_gc.islake(ll_ij) and not
+         mask::ocean(m_gc.mask(m_fill_value, bed(i, j), thk(i, j), ll_ij)) ) {
+      m_lake_level(i, j) = m_fill_value;
+    }
+  }
+
+  m_lake_level.update_ghosts();
+}
+
 void LakeCC::do_filter_map() {
   ParallelSection ParSec(m_grid->com);
   try {
@@ -224,6 +274,7 @@ DiagnosticList LakeCC::diagnostics_impl() const {
 
   DiagnosticList result = {
     { "lake_valid_mask",       Diagnostic::wrap(m_valid_mask) },
+    { "lakecc_topg",           Diagnostic::wrap(m_bed) },
   };
 
   return result;

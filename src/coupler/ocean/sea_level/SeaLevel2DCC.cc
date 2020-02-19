@@ -55,6 +55,27 @@ SeaLevel2DCC::SeaLevel2DCC(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in)
   const double ice_density = m_config->get_number("constants.ice.density"),
                ocean_density = m_config->get_number("constants.sea_water.density");
   m_drho = ice_density/ocean_density;
+
+  m_topg_overlay.create(m_grid, "topg_overlay", WITHOUT_GHOSTS);
+  m_topg_overlay.set_attrs("internal",
+                           "topography overlay",
+                           "meter", "meter", "", 0);
+
+  {
+    //FIXME: read overlay file from LakeCC model. Probably a different configuration name should be used.
+    std::string overlay_file = m_config->get_string("lake_level.lakecc.topg_overlay_file");
+
+    if (not overlay_file.empty()) {
+      m_topg_overlay.regrid(overlay_file, OPTIONAL, 0.0);
+    } else {
+      m_topg_overlay.set(0.0);
+    }
+  }
+
+  m_bed.create(m_grid, "topg_lakecc", WITHOUT_GHOSTS);
+  m_bed.set_attrs("diagnostic",
+                "bed topography as seen by LakeCC model",
+                "meter", "meter", "", 0);
 }
 
 SeaLevel2DCC::~SeaLevel2DCC() {
@@ -121,11 +142,12 @@ void SeaLevel2DCC::update_impl(const Geometry &geometry, double t, double dt) {
   }
 
   if (m_update) {
-    const IceModelVec2S &bed = geometry.bed_elevation,
-                        &thk = geometry.ice_thickness;
+    const IceModelVec2S &thk = geometry.ice_thickness;
+
+    m_topg_overlay.add(1.0, geometry.bed_elevation, m_bed);
 
     // Update sea level mask
-    do_sl_mask_update(bed, thk);
+    do_sl_mask_update(m_bed, thk);
     m_next_update_time = m_grid->ctx()->time()->increment_date(t, m_update_interval_years);
     if (not m_update_passive and (t != m_grid->ctx()->time()->start())) {
       m_update = false;
