@@ -38,8 +38,10 @@ protected:
   virtual void update_impl(const Geometry &geometry, double t, double dt);
   virtual void init_impl(const Geometry &geometry);
   virtual bool expandMargins_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
 
-  IceModelVec2S m_target_level;
+  IceModelVec2S m_target_level,
+                m_fill_rate;
 
 private:
   GeometryCalculator m_gc;
@@ -52,7 +54,8 @@ private:
          m_drho,
          m_lake_level_min,
          m_lake_level_max,
-         m_lake_level_dh;
+         m_lake_level_dh,
+         m_max_lake_fill_rate;
 
   int m_max_update_interval_years,
       m_patch_iter,
@@ -60,7 +63,8 @@ private:
 
   bool m_keep_existing_lakes,
        m_check_sl_diagonal,
-       m_use_topg_overlay;
+       m_use_topg_overlay,
+       m_use_const_fill_rate;
 
   bool checkOceanBasinsVanished(const IceModelVec2S &bed,
                                 const IceModelVec2S &old_sl,
@@ -78,6 +82,35 @@ private:
                     const IceModelVec2S &sea_level,
                     const IceModelVec2S &eff_lake_level,
                     IceModelVec2S &lake_level);
+  void compute_fill_rate(const double dt,
+                         const IceModelVec2S &lake_level,
+                         const IceModelVec2S &bmb,
+                         const IceModelVec2S &tc_calving,
+                         const IceModelVec2S &tc_frontal_melt,
+                         const IceModelVec2S &tc_forced_retreat,
+                         IceModelVec2S &lake_fill_rate);
+  void updateLakeLevelMinMax(const IceModelVec2S &lake_level,
+                             const IceModelVec2S &target_level,
+                             IceModelVec2S &min_level,
+                             IceModelVec2S &max_level);
+  bool prepareLakeLevel(const IceModelVec2S &target_level,
+                        const IceModelVec2S &bed,
+                        const IceModelVec2S &min_level,
+                        const IceModelVec2S &old_ll,
+                        const IceModelVec2S &old_sl,
+                        IceModelVec2S &min_basin,
+                        IceModelVec2S &lake_level);
+  void gradually_fill(const double dt,
+                      const double max_fill_rate,
+                      const IceModelVec2S &target_level,
+                      const IceModelVec2S &bed,
+                      const IceModelVec2S &thk,
+                      const IceModelVec2S &sea_level,
+                      const IceModelVec2S &min_level,
+                      const IceModelVec2S &max_level,
+                      const IceModelVec2S &min_bed,
+                      const IceModelVec2S &fill_rate,
+                      IceModelVec2S &lake_level);
 
 };
 

@@ -33,11 +33,20 @@ namespace lake_level {
 LakeCC::LakeCC(IceGrid::ConstPtr g)
   : LakeLevel(g),
     m_gc(*m_config),
-    m_target_level(m_grid, "target_lake_level", WITHOUT_GHOSTS) {
+    m_target_level(m_grid, "target_lake_level", WITHOUT_GHOSTS),
+    m_fill_rate(m_grid, "lake_fill_rate", WITHOUT_GHOSTS) {
 
   m_log->message(2, "  - Setting up LakeCC Model...\n");
 
   m_option = "-lakecc";
+
+  m_target_level.set_attrs("model_state", "target lake level",
+                           "meter", "meter", "target_level", 0);
+  m_target_level.metadata().set_number("_FillValue", m_fill_value);
+
+  m_fill_rate.set_attrs("model_state", "lake fill rate",
+                        "meter second-1", "meter year-1", "lake_fill_rate", 0);
+  m_fill_rate.metadata().set_number("_FillValue", m_fill_value);
 
   //Patch
   m_patch_iter = m_config->get_number("lake_level.lakecc.max_patch_iterations");
@@ -73,6 +82,14 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
                            "topography overlay",
                            "meter", "meter", "", 0);
 
+  //Gradual
+  m_max_lake_fill_rate = m_config->get_number("lake_level.lakecc.max_fill_rate", "meter second-1");
+
+  m_use_const_fill_rate = m_config->get_flag("lake_level.lakecc.use_constant_fill_rate");
+
+  if (m_use_const_fill_rate) {
+    m_fill_rate.set(m_max_lake_fill_rate);
+  }
 }
 
 LakeCC::~LakeCC() {
@@ -148,7 +165,10 @@ void LakeCC::init_impl(const Geometry &geometry) {
 void LakeCC::update_impl(const Geometry &geometry, double t, double dt) {
 
   const IceModelVec2S &old_sl = geometry.sea_level_elevation,
-                      &new_sl = *m_grid->variables().get_2d_scalar("sea_level");
+                      &new_sl = *m_grid->variables().get_2d_scalar("sea_level"),
+                      &bed    = geometry.bed_elevation,
+                      &thk    = geometry.ice_thickness,
+                      &old_ll = geometry.lake_level_elevation;
 
   bool full_update = false;
 
@@ -159,21 +179,23 @@ void LakeCC::update_impl(const Geometry &geometry, double t, double dt) {
 
   if (!full_update) {
     //Full update when ocean basins have vanished.
-    full_update = checkOceanBasinsVanished(geometry.bed_elevation,
-                                           old_sl, new_sl);
+    full_update = checkOceanBasinsVanished(bed,
+                                           old_sl,
+                                           new_sl);
   }
 
   if (!full_update) {
     //Full update when patch iteration does not finish.
-    full_update = iterativelyPatchTargetLevel(geometry.bed_elevation,
-                                              geometry.ice_thickness,
-                                              new_sl, m_target_level);
+    full_update = iterativelyPatchTargetLevel(bed,
+                                              thk,
+                                              new_sl,
+                                              m_target_level);
   }
 
   if (full_update) {
     //Update Target lake level using LakeCC model!
-    updateLakeCC(geometry.bed_elevation,
-                 geometry.ice_thickness,
+    updateLakeCC(bed,
+                 thk,
                  new_sl,
                  geometry.lake_level_elevation,
                  m_target_level);
@@ -182,6 +204,88 @@ void LakeCC::update_impl(const Geometry &geometry, double t, double dt) {
       //Reset next update time.
       m_next_update_time = m_grid->ctx()->time()->increment_date(t, m_max_update_interval_years);
     }
+  }
+
+
+
+
+  //Gradually fill
+  {
+
+    //Calculate basins that were filled by the ocean
+    IceModelVec2S old_sl_basins(m_grid, "sl_basins", WITHOUT_GHOSTS);
+    {
+      IceModelVec::AccessList list({ &old_sl_basins, &old_sl, &bed, &thk });
+
+      ParallelSection ParSec(m_grid->com);
+      try {
+        for (Points p(*m_grid); p; p.next()) {
+          const int i = p.i(), j = p.j();
+          if (mask::ocean(m_gc.mask(old_sl(i, j), bed(i, j), thk(i, j)))) {
+            old_sl_basins(i, j) = old_sl(i, j);
+          } else {
+            old_sl_basins(i, j) = m_fill_value;
+          }
+        }
+      } catch (...) {
+        ParSec.failed();
+      }
+      ParSec.check();
+
+      old_sl_basins.update_ghosts();
+    }
+
+    if (not m_use_const_fill_rate) {
+      const IceModelVec2S &bmb               = *m_grid->variables().get_2d_scalar("effective_BMB"),
+                          &tc_calving        = *m_grid->variables().get_2d_scalar("thickness_change_due_to_calving"),
+                          &tc_frontal_melt   = *m_grid->variables().get_2d_scalar("thickness_change_due_to_frontal_melt"),
+                          &tc_forced_retreat = *m_grid->variables().get_2d_scalar("thickness_change_due_forced_retreat");
+
+      compute_fill_rate(dt,
+                        m_target_level,
+                        bmb,
+                        tc_calving,
+                        tc_frontal_melt,
+                        tc_forced_retreat,
+                        m_fill_rate);
+    }
+
+    IceModelVec2S min_level(m_grid, "min_level", WITHOUT_GHOSTS),
+                  max_level(m_grid, "max_level", WITHOUT_GHOSTS),
+                  min_basin(m_grid, "min_basin", WITHOUT_GHOSTS);
+
+    updateLakeLevelMinMax(m_lake_level,
+                          m_target_level,
+                          min_level,
+                          max_level);
+
+    const bool LakeLevelChanged = prepareLakeLevel(m_target_level,
+                                                   bed,
+                                                   min_level,
+                                                   old_ll,
+                                                   old_sl_basins,
+                                                   min_basin,
+                                                   m_lake_level);
+
+    if (LakeLevelChanged) {
+      //if a new lake basin was added we need to update the min and max lake level
+      updateLakeLevelMinMax(m_lake_level,
+                            m_target_level,
+                            min_level,
+                            max_level);
+    }
+
+    gradually_fill(dt,
+                   m_max_lake_fill_rate,
+                   m_target_level,
+                   bed,
+                   thk,
+                   new_sl,
+                   min_level,
+                   max_level,
+                   min_basin,
+                   m_fill_rate,
+                   m_lake_level);
   }
 
 }
@@ -210,17 +314,16 @@ bool LakeCC::expandMargins_impl() const {
   return true;
 }
 
+// Write diagnostic variables to extra files if requested
+DiagnosticList LakeCC::diagnostics_impl() const {
 
+  DiagnosticList result = {
+    { "lake_gradual_target",       Diagnostic::wrap(m_target_level) },
+    { "lake_fill_rate",            Diagnostic::wrap(m_fill_rate) },
+  };
 
-
-
-
-
-
-
-
-
-
+  return result;
+}
 
 bool LakeCC::checkOceanBasinsVanished(const IceModelVec2S &bed,
                                       const IceModelVec2S &old_sl,
@@ -471,6 +574,275 @@ void LakeCC::updateLakeCC(const IceModelVec2S& bed,
   }
 
   lake_level.update_ghosts();
+}
+
+void LakeCC::compute_fill_rate(const double dt,
+                               const IceModelVec2S &lake_level,
+                               const IceModelVec2S &bmb,
+                               const IceModelVec2S &tc_calving,
+                               const IceModelVec2S &tc_frontal_melt,
+                               const IceModelVec2S &tc_forced_retreat,
+                               IceModelVec2S &lake_fill_rate) {
+
+  IceModelVec2S lake_area(m_grid, "lake_area", WITHOUT_GHOSTS),
+                lake_mass_input_discharge(m_grid, "lake_mass_input_discharge", WITHOUT_GHOSTS),
+                lake_mass_input_basal(m_grid, "lake_mass_input_basal", WITHOUT_GHOSTS);
+
+  {
+    //Initialize Lake accumulator
+    LakeAccumulatorCCSerial Lacc(m_grid, m_fill_value);
+    Lacc.init(lake_level);
+
+    IceModelVec2S mass_discharge(m_grid, "mass_discharge", WITHOUT_GHOSTS),
+                  mass_basal(m_grid, "mass_basal", WITHOUT_GHOSTS);
+
+    double rho_ice = m_config->get_number("constants.ice.density"),
+           cell_area = m_grid->cell_area();
+
+    IceModelVec::AccessList list({ &tc_calving, &tc_frontal_melt, &tc_forced_retreat,
+                                   &bmb, &mass_discharge, &mass_basal });
+
+    //Update lake extend depending on exp_mask
+    ParallelSection ParSec(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        //Convert from basal mass balance to basal mass loss [m].
+        double bml_ij = -bmb(i, j);
+        bml_ij = (bml_ij >= 0.0) ? bml_ij : 0.0;
+
+        double discharge_ij = -1.0 * (tc_calving(i, j) + tc_frontal_melt(i, j) + tc_forced_retreat(i, j));
+        discharge_ij = (discharge_ij >= 0.0) ? discharge_ij : 0.0;
+
+        const double C = cell_area * rho_ice / dt;
+
+        //Convert to mass flux [kg/s]
+        mass_discharge(i, j) = C * discharge_ij;
+        mass_basal(i, j)     = C * bml_ij;
+      }
+    } catch (...) {
+      ParSec.failed();
+    }
+    ParSec.check();
+
+    //Lake surface area
+    IceModelVec2S cell_area2D(m_grid, "ceall_area", WITHOUT_GHOSTS);
+    cell_area2D.set(cell_area);
+    Lacc.accumulate(cell_area2D, lake_area);
+
+    Lacc.accumulate(mass_discharge, lake_mass_input_discharge);
+    Lacc.accumulate(mass_basal, lake_mass_input_basal);
+  }
+
+  {
+    double rho_fresh_water = m_config->get_number("constants.fresh_water.density");
+
+    IceModelVec::AccessList list({ &lake_area, &lake_mass_input_discharge,
+                                   &lake_mass_input_basal, &lake_fill_rate });
+
+    //Update lake extend depending on exp_mask
+    ParallelSection ParSec(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        const double lake_area_ij = lake_area(i, j);
+        if (m_gc.islake(lake_area_ij)){
+          const double lake_mass_input_total_ij = lake_mass_input_discharge(i, j) + lake_mass_input_basal(i, j);
+          lake_fill_rate(i, j) = lake_mass_input_total_ij / (rho_fresh_water * lake_area_ij);
+        } else {
+          lake_fill_rate(i, j) = m_fill_value;
+        }
+      }
+    } catch (...) {
+      ParSec.failed();
+    }
+    ParSec.check();
+  }
+  lake_fill_rate.update_ghosts();
+}
+
+void LakeCC::updateLakeLevelMinMax(const IceModelVec2S &lake_level,
+                                   const IceModelVec2S &target_level,
+                                   IceModelVec2S &min_level,
+                                   IceModelVec2S &max_level) {
+  //Compute min max level
+  ParallelSection ParSec(m_grid->com);
+  try {
+    // Initialze LakeProperties Model
+    LakePropertiesCC LpCC(m_grid, m_fill_value, target_level, lake_level);
+    LpCC.getLakeProperties(min_level, max_level);
+  } catch (...) {
+    ParSec.failed();
+  }
+  ParSec.check();
+}
+
+bool LakeCC::prepareLakeLevel(const IceModelVec2S &target_level,
+                              const IceModelVec2S &bed,
+                              const IceModelVec2S &min_level,
+                              const IceModelVec2S &old_ll,
+                              const IceModelVec2S &old_sl,
+                              IceModelVec2S &min_basin,
+                              IceModelVec2S &lake_level) {
+
+  IceModelVec2Int exp_mask(m_grid, "exp_mask", WITHOUT_GHOSTS);
+  IceModelVec2S max_sl_basin(m_grid, "max_sl_basin", WITHOUT_GHOSTS);
+
+  { //Check which lake cells are newly added
+    ParallelSection ParSec(m_grid->com);
+    try {
+      FilterExpansionCC FExCC(m_grid, m_fill_value, bed, old_sl);
+      FExCC.filter_ext(lake_level, target_level, exp_mask, min_basin, max_sl_basin);
+    } catch (...) {
+      ParSec.failed();
+    }
+    ParSec.check();
+  }
+
+  bool MinMaxChanged = false;
+  {
+    IceModelVec::AccessList list({ &lake_level, &min_level, &min_basin,
+                                  &exp_mask, &old_ll, &max_sl_basin });
+
+    //Update lake extend depending on exp_mask
+    ParallelSection ParSec(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        const int mask_ij = exp_mask.as_int(i, j);
+        const bool new_lake = ( (mask_ij > 0) and not (m_gc.islake(min_level(i, j))) );
+        if ( mask_ij == 1 or new_lake ) {
+          if (max_sl_basin(i, j) != m_fill_value) {
+            lake_level(i, j) = max_sl_basin(i, j);
+          } else {
+            if (new_lake) {
+              lake_level(i, j) = min_basin(i, j);
+            } else {
+              //New basin added to existing lake
+              lake_level(i, j) = std::min(min_level(i, j), min_basin(i, j));
+            }
+          }
+          MinMaxChanged = true;
+        } else if (mask_ij == 2) {
+          //Extend existing lake by new cells
+          if ( m_gc.islake(old_ll(i, j)) ) {
+            lake_level(i, j) = old_ll(i, j);
+          } else {
+            lake_level(i, j) = min_level(i, j);
+          }
+        }
+      }
+    } catch (...) {
+      ParSec.failed();
+    }
+    ParSec.check();
+  }
+
+  lake_level.update_ghosts();
+
+  return (GlobalOr(m_grid->com, MinMaxChanged));
+}
+
+void LakeCC::gradually_fill(const double dt,
+                            const double max_fill_rate,
+                            const IceModelVec2S &target_level,
+                            const IceModelVec2S &bed,
+                            const IceModelVec2S &thk,
+                            const IceModelVec2S &sea_level,
+                            const IceModelVec2S &min_level,
+                            const IceModelVec2S &max_level,
+                            const IceModelVec2S &min_bed,
+                            const IceModelVec2S &fill_rate,
+                            IceModelVec2S &lake_level) {
+
+  double dh_max = max_fill_rate * dt;
+
+  IceModelVec::AccessList list{ &lake_level, &target_level,
+                                &min_level, &max_level, &min_bed,
+                                &sea_level, &bed, &thk };
+
+  if (not m_use_const_fill_rate) {
+    list.add(fill_rate);
+  }
+
+  //Update lakes
+  ParallelSection ParSec(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (m_gc.islake(lake_level(i, j))) {
+        const double min_ij = min_level(i, j),
+                     max_ij = max_level(i, j),
+                     current_ij = lake_level(i, j),
+                     target_level_ij  = target_level(i, j);
+        const bool unbalanced_level = (min_ij != max_ij),
+                   disappear = not m_gc.islake(target_level_ij);
+
+        double target_ij = target_level_ij;
+
+        // if lakes vanish ...
+        if (disappear) {
+          // ... and become ocean, set to sea level, else to floatation level
+          if (mask::ocean(m_gc.mask(sea_level(i, j), bed(i, j), thk(i, j)))) {
+            target_ij = sea_level(i, j);
+          } else {
+            if (mask::ocean(m_gc.mask(sea_level(i, j), bed(i, j), thk(i, j), current_ij))) {
+              // if "real" lake, gradually empty it to floatation level
+              target_ij = bed(i, j) + m_drho * thk(i, j);
+            } else {
+              //else (if it is below floatation level) immediately get rid of it.
+              target_ij = current_ij;
+            }
+          }
+        }
+
+        const bool rising = (current_ij < target_ij);
+
+        if (not m_use_const_fill_rate or not rising) {
+          dh_max = max_fill_rate * dt;
+        }
+
+        if (rising) {
+          //Only if rising, adjust fill rate to mass loss of ice sheet
+          if (not (m_use_const_fill_rate or unbalanced_level)) {
+            const double fill_rate_ij = fill_rate(i, j);
+
+            if (m_gc.islake(fill_rate_ij) and (fill_rate_ij <= max_fill_rate) and not disappear) {
+              dh_max = fill_rate_ij * dt;
+            } else {
+              dh_max = max_fill_rate * dt;
+            }
+          }
+
+          const double new_level = ( disappear ? current_ij : min_ij ) + std::min(dh_max, std::abs(target_ij - min_ij));
+
+          if ( (new_level > current_ij) or disappear ) {
+            if (disappear and (new_level >= target_ij)) {
+              lake_level(i, j) = m_fill_value;
+            } else {
+              lake_level(i, j) = new_level;
+            }
+          }
+        } else {
+          const double new_level = ( disappear ? current_ij : max_ij ) - std::min(dh_max, std::abs(max_ij - target_ij));
+
+          if ( (new_level < current_ij) or disappear ) {
+            if (disappear and (new_level <= target_ij)) {
+              lake_level(i, j) = m_fill_value;
+            } else {
+              lake_level(i, j) = new_level;
+            }
+          }
+        }
+      }
+    }
+  } catch (...) {
+    ParSec.failed();
+  }
+  ParSec.check();
 }
 
 } // end of namespace lake_level

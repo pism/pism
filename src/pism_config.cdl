@@ -1760,16 +1760,19 @@ netcdf pism_config {
     pism_config:lake_level.lakecc.zmin_doc = "Minimum lake level used by LakeCC.";
     pism_config:lake_level.lakecc.zmin_type = "number";
     pism_config:lake_level.lakecc.zmin_option = "lakecc_zmin";
+    pism_config:lake_level.lakecc.zmin_units = "meter";
 
     pism_config:lake_level.lakecc.zmax = "";
     pism_config:lake_level.lakecc.zmax_doc = "Maximum lake level used by LakeCC.";
     pism_config:lake_level.lakecc.zmax_type = "number";
     pism_config:lake_level.lakecc.zmax_option = "lakecc_zmax";
+    pism_config:lake_level.lakecc.zmax_units = "meter";
 
     pism_config:lake_level.lakecc.dz = "";
     pism_config:lake_level.lakecc.dz_doc = "Spacing between lake levels used by LakeCC.";
     pism_config:lake_level.lakecc.dz_type = "number";
     pism_config:lake_level.lakecc.dz_option = "lakecc_dz";
+    pism_config:lake_level.lakecc.dz_units = "meter";
 
     pism_config:lake_level.lakecc.filter_size = "4";
     pism_config:lake_level.lakecc.filter_size_doc = "Filter size used by LakeCC. Only keeps lakes that have at least one cell with N neighbors.)";
@@ -1785,6 +1788,17 @@ netcdf pism_config {
     pism_config:lake_level.lakecc.check_sl_diagonal_doc = "LakeCC checks if diagonal cell is ocean.";
     pism_config:lake_level.lakecc.check_sl_diagonal_option = "lakecc_check_sl_diagonal";
     pism_config:lake_level.lakecc.check_sl_diagonal_type = "flag";
+
+    pism_config:lake_level.lakecc.max_fill_rate = 1.0;
+    pism_config:lake_level.lakecc.max_fill_rate_doc = "Maximum fill rate used by LakeCC model";
+    pism_config:lake_level.lakecc.max_fill_rate_type = "number";
+    pism_config:lake_level.lakecc.max_fill_rate_option = "lakecc_dz";
+    pism_config:lake_level.lakecc.max_fill_rate_units = "meter year-1";
+
+    pism_config:lake_level.lakecc.use_constant_fill_rate = "yes";
+    pism_config:lake_level.lakecc.use_constant_fill_rate_doc = "LakeCC uses a constant fill rate ``lake_level.lakecc.max_fill_rate``.";
+    pism_config:lake_level.lakecc.use_constant_fill_rate_option = "lakecc_const_fill_rate";
+    pism_config:lake_level.lakecc.use_constant_fill_rate_type = "flag";
 
     pism_config:ocean.pico.continental_shelf_depth = -800.0;
     pism_config:ocean.pico.continental_shelf_depth_doc = "Determines the edge of the continental shelf to calculate mean ocean properties";
