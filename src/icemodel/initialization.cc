@@ -213,15 +213,17 @@ void IceModel::model_state_setup() {
   }
   m_grid->variables().add(m_sea_level->elevation());
 
-  m_lake_level->init(m_geometry);
-  m_grid->variables().add(m_lake_level->elevation());
-
   // Initialize a bed deformation model.
   if (m_beddef) {
     m_beddef->init(input, m_geometry.ice_thickness, m_sea_level->elevation());
     m_grid->variables().add(m_beddef->bed_elevation());
     m_grid->variables().add(m_beddef->uplift());
   }
+  m_geometry.bed_elevation.copy_from(m_beddef->bed_elevation());
+
+  //Initialize Lake model after the bed model
+  m_lake_level->init(m_geometry);
+  m_grid->variables().add(m_lake_level->elevation());
 
   // Now ice thickness, bed elevation, sea and lake level are available, so we can compute the ice
   // surface elevation and the cell type mask. This also ensures consistency of ice geometry.
