@@ -24,7 +24,6 @@
 #include "Delta_SL.hh"
 #include "Delta_SL_2D.hh"
 #include "SeaLevel2DCC.hh"
-#include "Gradual.hh"
 
 namespace pism {
 namespace ocean {
@@ -38,7 +37,6 @@ Factory::Factory(IceGrid::ConstPtr grid)
   add_modifier<Delta_SL>("delta_sl");
   add_modifier<Delta_SL_2D>("delta_sl_2d");
   add_modifier<SeaLevel2DCC>("sl2dcc");
-  add_modifier<Gradual>("gradual");
 }
 
 Factory::~Factory() {

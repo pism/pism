@@ -39,17 +39,8 @@ protected:
   virtual bool expandMargins_impl() const;
 
 private:
-  std::string m_option_prefix;
-  double m_next_update_time;
-  double m_drho, m_offset;
-  int m_update_interval_years;
-  bool m_update_periodic, m_update_passive, m_update_startup, m_update;
-  IceModelVec2Int m_mask;
-  IceModelVec2S m_topg_overlay;
-  IceModelVec2S m_bed;
+  std::string m_option;
 
-  void process_options();
-  void do_sl_mask_update(const IceModelVec2S &bed, const IceModelVec2S &thk);
 };
 
 } // end of namespace sea_level
