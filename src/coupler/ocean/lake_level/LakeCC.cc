@@ -38,7 +38,7 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
 
   m_log->message(2, "  - Setting up LakeCC Model...\n");
 
-  m_option = "-lakecc";
+  m_option = "lake_level.lakecc";
 
   m_target_level.set_attrs("model_state", "target lake level",
                            "meter", "meter", "target_level", 0);
@@ -49,8 +49,8 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
   m_fill_rate.metadata().set_number("_FillValue", m_fill_value);
 
   //Patch
-  m_patch_iter = m_config->get_number("lake_level.lakecc.max_patch_iterations");
-  m_max_update_interval_years = m_config->get_number("lake_level.lakecc.max_update_interval",
+  m_patch_iter = m_config->get_number(m_option + ".max_patch_iterations");
+  m_max_update_interval_years = m_config->get_number(m_option + ".max_update_interval",
                                 "years");
   if (m_max_update_interval_years < 0) {
     //Ful update every timestep requested
@@ -64,18 +64,18 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
                freshwater_density = m_config->get_number("constants.fresh_water.density");
   m_drho = ice_density / freshwater_density;
 
-  m_lake_level_min = m_config->get_number("lake_level.lakecc.zmin");
-  m_lake_level_max = m_config->get_number("lake_level.lakecc.zmax");
-  m_lake_level_dh  = m_config->get_number("lake_level.lakecc.dz");
+  m_lake_level_min = m_config->get_number(m_option + ".zmin");
+  m_lake_level_max = m_config->get_number(m_option + ".zmax");
+  m_lake_level_dh  = m_config->get_number(m_option + ".dz");
 
-  m_filter_size = m_config->get_number("lake_level.lakecc.filter_size");
+  m_filter_size = m_config->get_number(m_option + ".filter_size");
   if (m_filter_size < 0) {
     //No filtering at all
     m_filter_size = 0;
   }
 
-  m_check_sl_diagonal = m_config->get_flag("lake_level.lakecc.check_sl_diagonal");
-  m_keep_existing_lakes = m_config->get_flag("lake_level.lakecc.keep_existing_lakes");
+  m_check_sl_diagonal = m_config->get_flag(m_option + ".check_sl_diagonal");
+  m_keep_existing_lakes = m_config->get_flag(m_option + ".keep_existing_lakes");
 
   m_topg_overlay.create(m_grid, "topg_overlay", WITHOUT_GHOSTS);
   m_topg_overlay.set_attrs("internal",
@@ -83,9 +83,9 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
                            "meter", "meter", "", 0);
 
   //Gradual
-  m_max_lake_fill_rate = m_config->get_number("lake_level.lakecc.max_fill_rate", "meter second-1");
+  m_max_lake_fill_rate = m_config->get_number(m_option + ".max_fill_rate", "meter second-1");
 
-  m_use_const_fill_rate = m_config->get_flag("lake_level.lakecc.use_constant_fill_rate");
+  m_use_const_fill_rate = m_config->get_flag(m_option + ".use_constant_fill_rate");
 
   if (m_use_const_fill_rate) {
     m_fill_rate.set(m_max_lake_fill_rate);
@@ -100,15 +100,15 @@ void LakeCC::init_impl(const Geometry &geometry) {
 
   m_log->message(2, "  *Initializing LakeCC model.\n");
 
-  m_log->message(2, "  LakeCC: lake levels between %g and %gm, with %gm spacing\n",
+  m_log->message(3, "  LakeCC: lake levels between %g and %gm, with %gm spacing\n",
                  m_lake_level_min, m_lake_level_max, m_lake_level_dh);
 
   if (m_filter_size > 0) {
-    m_log->message(3, "  *LakeCC: Filter size: %i \n", m_filter_size);
+    m_log->message(3, "  LakeCC: Filter size: %i \n", m_filter_size);
   }
 
  {
-    std::string overlay_file = m_config->get_string("lake_level.lakecc.topg_overlay_file");
+    std::string overlay_file = m_config->get_string(m_option + ".topg_overlay_file");
 
     if (not overlay_file.empty()) {
       m_topg_overlay.regrid(overlay_file, OPTIONAL, 0.0);
@@ -123,8 +123,8 @@ void LakeCC::init_impl(const Geometry &geometry) {
 
   if (opts.type == INIT_RESTART) {
 
-    m_log->message(2, "* Reading lake level forcing from '%s' for re-starting...\n",
-                    opts.filename.c_str());
+    m_log->message(3, "* Reading lake level forcing from '%s' for re-starting...\n",
+                   opts.filename.c_str());
 
     File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
     const unsigned int time_length = file.nrecords(),
@@ -141,9 +141,9 @@ void LakeCC::init_impl(const Geometry &geometry) {
       //if it was not found...
       m_lake_level.set(m_fill_value);
 
-      bool init_filled = m_config->get_flag("lake_level.lakecc.init_filled");
+      bool init_filled = m_config->get_flag(m_option + ".init_filled");
       if (init_filled) {
-        m_log->message(2, "  *LakeCC: init with filled basins requested. Running LakeCC model.\n");
+        m_log->message(3, "  LakeCC: init with filled basins requested. Running LakeCC model.\n");
 
         const IceModelVec2S &sea_level = *m_grid->variables().get_2d_scalar("sea_level");
         updateLakeCC(geometry.bed_elevation,
@@ -155,8 +155,10 @@ void LakeCC::init_impl(const Geometry &geometry) {
     }
   }
 
-  m_log->message(3, "  *LakeCC: number of iterations used by patch-algorithm: %d \n", m_patch_iter);
-  m_log->message(3, "  *LakeCC: maximum interval of full update: %d years \n", m_max_update_interval_years);
+  m_log->message(3, "  LakeCC: number of iterations used by patch-algorithm: %d \n",
+                 m_patch_iter);
+  m_log->message(3, "  LakeCC: maximum interval of full update: %d years \n",
+                 m_max_update_interval_years);
 
   //Full update in first timestep
   m_next_update_time = m_grid->ctx()->time()->current();
@@ -192,6 +194,7 @@ void LakeCC::update_impl(const Geometry &geometry, double t, double dt) {
                                               m_target_level);
   }
 
+
   if (full_update) {
     //Update Target lake level using LakeCC model!
     updateLakeCC(bed,
@@ -205,8 +208,6 @@ void LakeCC::update_impl(const Geometry &geometry, double t, double dt) {
       m_next_update_time = m_grid->ctx()->time()->increment_date(t, m_max_update_interval_years);
     }
   }
-
-
 
 
   //Gradually fill
@@ -525,7 +526,7 @@ void LakeCC::updateLakeCC(const IceModelVec2S& bed,
 
 
 
-    m_log->message(2, "->LakeCC: Update of Lake Levels! \n");
+    m_log->message(3, "->LakeCC: Update of Lake Levels! \n");
 
     ParallelSection ParSec(m_grid->com);
     try {
@@ -537,7 +538,7 @@ void LakeCC::updateLakeCC(const IceModelVec2S& bed,
     }
     ParSec.check();
 
-    m_log->message(2, "          Done!\n");
+    m_log->message(3, "          Done!\n");
   }
 
 
