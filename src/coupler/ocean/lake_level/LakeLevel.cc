@@ -73,7 +73,7 @@ void LakeLevel::update_impl(const Geometry &geometry, double t, double dt) {
   if (m_input_model) {
     m_input_model->update(geometry, t, dt);
   } else {
-    m_lake_level.set(m_fill_value);
+    // do nothing
   }
 }
 
