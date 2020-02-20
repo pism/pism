@@ -1752,6 +1752,40 @@ netcdf pism_config {
     pism_config:lake_level.lakecc.max_patch_iterations_type = "integer";
     pism_config:lake_level.lakecc.max_patch_iterations_units = "pure number";
 
+    pism_config:lake_level.lakecc.init_filled = "no";
+    pism_config:lake_level.lakecc.init_filled_doc = "Initialize LakeCC model with filled lakes.";
+    pism_config:lake_level.lakecc.init_filled_type = "flag";
+
+    pism_config:lake_level.lakecc.zmin = "";
+    pism_config:lake_level.lakecc.zmin_doc = "Minimum lake level used by LakeCC.";
+    pism_config:lake_level.lakecc.zmin_type = "number";
+    pism_config:lake_level.lakecc.zmin_option = "lakecc_zmin";
+
+    pism_config:lake_level.lakecc.zmax = "";
+    pism_config:lake_level.lakecc.zmax_doc = "Maximum lake level used by LakeCC.";
+    pism_config:lake_level.lakecc.zmax_type = "number";
+    pism_config:lake_level.lakecc.zmax_option = "lakecc_zmax";
+
+    pism_config:lake_level.lakecc.dz = "";
+    pism_config:lake_level.lakecc.dz_doc = "Spacing between lake levels used by LakeCC.";
+    pism_config:lake_level.lakecc.dz_type = "number";
+    pism_config:lake_level.lakecc.dz_option = "lakecc_dz";
+
+    pism_config:lake_level.lakecc.filter_size = "4";
+    pism_config:lake_level.lakecc.filter_size_doc = "Filter size used by LakeCC. Only keeps lakes that have at least one cell with N neighbors.)";
+    pism_config:lake_level.lakecc.filter_size_type = "integer";
+    pism_config:lake_level.lakecc.filter_size_units = "pure number";
+
+    pism_config:lake_level.lakecc.keep_existing_lakes = "yes";
+    pism_config:lake_level.lakecc.keep_existing_lakes_doc = "LakeCC keeps lakes that were existing, even though they are entirely surrounded by ice.";
+    pism_config:lake_level.lakecc.keep_existing_lakes_option = "lakecc_keep_lakes";
+    pism_config:lake_level.lakecc.keep_existing_lakes_type = "flag";
+
+    pism_config:lake_level.lakecc.check_sl_diagonal = "yes";
+    pism_config:lake_level.lakecc.check_sl_diagonal_doc = "LakeCC checks if diagonal cell is ocean.";
+    pism_config:lake_level.lakecc.check_sl_diagonal_option = "lakecc_check_sl_diagonal";
+    pism_config:lake_level.lakecc.check_sl_diagonal_type = "flag";
+
     pism_config:ocean.pico.continental_shelf_depth = -800.0;
     pism_config:ocean.pico.continental_shelf_depth_doc = "Determines the edge of the continental shelf to calculate mean ocean properties";
     pism_config:ocean.pico.continental_shelf_depth_option = "continental_shelf_depth";

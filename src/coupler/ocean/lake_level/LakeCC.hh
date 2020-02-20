@@ -20,6 +20,8 @@
 #ifndef _POLAKECC_H_
 #define _POLAKECC_H_
 
+#include "pism/geometry/Geometry.hh"
+
 #include "pism/util/Mask.hh"
 #include "pism/coupler/LakeLevel.hh"
 
@@ -43,20 +45,40 @@ private:
   GeometryCalculator m_gc;
   std::string m_option;
 
-  double m_next_update_time;
+  IceModelVec2S m_topg_overlay;
+
+  double m_next_update_time,
+         m_icefree_thickness,
+         m_drho,
+         m_lake_level_min,
+         m_lake_level_max,
+         m_lake_level_dh;
+
   int m_max_update_interval_years,
-      m_patch_iter;
+      m_patch_iter,
+      m_filter_size;
+
+  bool m_keep_existing_lakes,
+       m_check_sl_diagonal,
+       m_use_topg_overlay;
 
   bool checkOceanBasinsVanished(const IceModelVec2S &bed,
                                 const IceModelVec2S &old_sl,
                                 const IceModelVec2S &new_sl);
   bool iterativelyPatchTargetLevel(const IceModelVec2S &bed,
                                    const IceModelVec2S &thk,
-                                   const IceModelVec2S &sl);
+                                   const IceModelVec2S &sl,
+                                   IceModelVec2S &target_level);
   unsigned int patch_lake_levels(const IceModelVec2S &bed,
                                  const IceModelVec2S &thk,
                                  const IceModelVec2S &sea_level,
                                  IceModelVec2S &lake_level);
+  void updateLakeCC(const IceModelVec2S &bed,
+                    const IceModelVec2S &thk,
+                    const IceModelVec2S &sea_level,
+                    const IceModelVec2S &eff_lake_level,
+                    IceModelVec2S &lake_level);
+
 };
 
 } // end of namespace lake_level
