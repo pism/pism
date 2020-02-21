@@ -1792,7 +1792,7 @@ netcdf pism_config {
     pism_config:lake_level.lakecc.max_fill_rate = 1.0;
     pism_config:lake_level.lakecc.max_fill_rate_doc = "Maximum fill rate used by LakeCC model";
     pism_config:lake_level.lakecc.max_fill_rate_type = "number";
-    pism_config:lake_level.lakecc.max_fill_rate_option = "lakecc_dz";
+    pism_config:lake_level.lakecc.max_fill_rate_option = "lakecc_max_rate";
     pism_config:lake_level.lakecc.max_fill_rate_units = "meter year-1";
 
     pism_config:lake_level.lakecc.use_constant_fill_rate = "yes";
@@ -2103,6 +2103,28 @@ netcdf pism_config {
     pism_config:sea_level.models_doc = "Comma-separated list of sea level models and modifiers.";
     pism_config:sea_level.models_option = "sea_level";
     pism_config:sea_level.models_type = "string";
+
+    pism_config:sea_level.sl2dcc.topg_overlay_file = "";
+    pism_config:sea_level.sl2dcc.topg_overlay_file_doc = "Name of the file containing the topography overlay field used by the SeaLevel2DCC model.";
+    pism_config:sea_level.sl2dcc.topg_overlay_file_type = "string";
+    pism_config:sea_level.sl2dcc.topg_overlay_file_option = "sl2dcc_topg_overlay_file";
+
+    pism_config:sea_level.sl2dcc.max_update_interval = "10";
+    pism_config:sea_level.sl2dcc.max_update_interval_doc = "Maximum time interval between full SeaLevel2DCC updates.";
+    pism_config:sea_level.sl2dcc.max_update_interval_type = "integer";
+    pism_config:sea_level.sl2dcc.max_update_interval_units = "years";
+
+    pism_config:sea_level.sl2dcc.max_fill_rate = 1.0;
+    pism_config:sea_level.sl2dcc.max_fill_rate_doc = "Maximum fill rate used by SeaLevel2DCC model";
+    pism_config:sea_level.sl2dcc.max_fill_rate_type = "number";
+    pism_config:sea_level.sl2dcc.max_fill_rate_option = "sl2dcc_max_rate";
+    pism_config:sea_level.sl2dcc.max_fill_rate_units = "meter year-1";
+
+    pism_config:sea_level.sl2dcc.sl_offset = 10.;
+    pism_config:sea_level.sl2dcc.sl_offset_doc = "Sea level offset used by SeaLevel2DCC to determine Sea Level mask. It does not increase the sea level seen by PISM.";
+    pism_config:sea_level.sl2dcc.sl_offset_type = "number";
+    pism_config:sea_level.sl2dcc.sl_offset_option = "sl2dcc_sl_offset";
+    pism_config:sea_level.sl2dcc.sl_offset_units = "meter";
 
     pism_config:stress_balance.calving_front_stress_bc = "no";
     pism_config:stress_balance.calving_front_stress_bc_doc = "Apply CFBC condition as in :cite:`Albrechtetal2011`, :cite:`Winkelmannetal2011`.  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in :cite:`BBssasliding`.";

@@ -20,6 +20,8 @@
 #ifndef _POSEALEVEL2DCC_H_
 #define _POSEALEVEL2DCC_H_
 
+#include "pism/geometry/Geometry.hh"
+
 #include "pism/coupler/SeaLevel.hh"
 #include "pism/util/iceModelVec.hh"
 
@@ -37,10 +39,40 @@ protected:
   virtual void update_impl(const Geometry &geometry, double my_t, double my_dt);
   virtual void init_impl(const Geometry &geometry);
   virtual bool expandMargins_impl() const;
+  virtual DiagnosticList diagnostics_impl() const;
+
+  IceModelVec2S m_target_level;
 
 private:
+  GeometryCalculator m_gc;
   std::string m_option;
 
+  IceModelVec2S m_topg_overlay;
+  IceModelVec2Int m_mask;
+
+  bool m_gradual_active,
+       m_use_topg_overlay;
+
+  int m_max_update_interval_years;
+
+  double m_max_fill_rate,
+         m_next_update_time,
+         m_sl_offset,
+         m_drho;
+
+  void update_mask(const IceModelVec2S &bed,
+                   const IceModelVec2S &thk,
+                   const IceModelVec2S &sea_level,
+                   IceModelVec2Int &mask);
+  void apply_mask(const IceModelVec2Int &mask,
+                  IceModelVec2S &sea_level);
+  void prepareSeaLevel(const IceModelVec2S &bed,
+                       const IceModelVec2S &target_level,
+                       IceModelVec2S &sea_level);
+  void gradually_fill(const double dt,
+                      const IceModelVec2S &bed,
+                      const IceModelVec2S &target_level,
+                      IceModelVec2S &sea_level);
 };
 
 } // end of namespace sea_level
