@@ -34,7 +34,8 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
   : LakeLevel(g),
     m_gc(*m_config),
     m_target_level(m_grid, "target_lake_level", WITHOUT_GHOSTS),
-    m_fill_rate(m_grid, "lake_fill_rate", WITHOUT_GHOSTS) {
+    m_fill_rate(m_grid, "lake_fill_rate", WITHOUT_GHOSTS),
+    m_topg_overlay(m_grid, "topg_overlay", WITHOUT_GHOSTS) {
 
   m_log->message(2, "  - Setting up LakeCC Model...\n");
 
@@ -77,7 +78,6 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
   m_check_sl_diagonal = m_config->get_flag(m_option + ".check_sl_diagonal");
   m_keep_existing_lakes = m_config->get_flag(m_option + ".keep_existing_lakes");
 
-  m_topg_overlay.create(m_grid, "topg_overlay", WITHOUT_GHOSTS);
   m_topg_overlay.set_attrs("internal",
                            "topography overlay",
                            "meter", "meter", "", 0);
@@ -160,6 +160,10 @@ void LakeCC::init_impl(const Geometry &geometry) {
   m_log->message(3, "  LakeCC: maximum interval of full update: %d years \n",
                  m_max_update_interval_years);
 
+  double max_fill_rate_m_y = m_config->get_number(m_option + ".max_fill_rate", "meter year-1");
+  m_log->message(3, "  LakeCC: maximum fill rate: %d meter/year \n",
+                 max_fill_rate_m_y);
+
   //Full update in first timestep
   m_next_update_time = m_grid->ctx()->time()->current();
 }
@@ -173,6 +177,10 @@ void LakeCC::update_impl(const Geometry &geometry, double t, double dt) {
                       &old_ll = geometry.lake_level_elevation;
 
   bool full_update = false;
+
+  if (m_max_update_interval_years <= 0) {
+    m_next_update_time = t;
+  }
 
   //Check is a complete update is due!
   if ((t >= m_next_update_time) or (fabs(t - m_next_update_time) < 1.0)) {
