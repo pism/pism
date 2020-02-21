@@ -361,4 +361,318 @@ void MaskCC::labelOutMask(const int run_number, const VecList &lists, IceModelVe
   }
 }
 
+
+FilterExpansionCC::FilterExpansionCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &bed, const IceModelVec2S &water_level)
+  : ValidCC<ConnectedComponents>(g), m_fill_value(fill_value), m_bed(&bed), m_water_level(&water_level) {
+
+  m_min_bed.create(m_grid, "min_bed_mask", WITH_GHOSTS, 1);
+  m_min_bed.set(m_fill_value);
+  m_max_wl.create(m_grid, "max_water_level", WITH_GHOSTS, 1);
+  m_max_wl.set(m_fill_value);
+
+  m_masks.push_back(&m_min_bed);
+  m_masks.push_back(&m_max_wl);
+  m_fields.push_back(m_bed);
+  m_fields.push_back(m_water_level);
+}
+
+FilterExpansionCC::~FilterExpansionCC() {
+  //empty
+}
+
+void FilterExpansionCC::filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin, IceModelVec2S &max_water_level) {
+  prepare_mask(current_level, target_level);
+  set_mask_validity(4);
+
+  VecList lists;
+  unsigned int max_items = 2 * m_grid->ym();
+  init_VecList(lists, max_items);
+
+  int run_number = 1;
+
+  compute_runs(run_number, lists, max_items);
+
+  labelMap(run_number, lists, mask, min_basin, max_water_level);
+}
+
+void FilterExpansionCC::filter_ext2(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin, IceModelVec2S &max_water_level) {
+  {
+    prepare_mask(current_level, target_level);
+    set_mask_validity(4);
+
+    VecList lists;
+    unsigned int max_items = 2 * m_grid->ym();
+    init_VecList(lists, max_items);
+
+    int run_number = 1;
+
+    compute_runs(run_number, lists, max_items);
+
+    labelMap(run_number, lists, mask, min_basin, max_water_level);
+  }
+
+  {
+    prepare_mask(target_level, current_level);
+    set_mask_validity(4);
+
+    VecList lists;
+    unsigned int max_items = 2 * m_grid->ym();
+    init_VecList(lists, max_items);
+
+    int run_number = 1;
+
+    compute_runs(run_number, lists, max_items);
+
+    labelMap2(run_number, lists, mask, min_basin, max_water_level);
+  }
+}
+
+void FilterExpansionCC::init_VecList(VecList &lists, const unsigned int length) {
+  ValidCC<ConnectedComponents>::init_VecList(lists, length);
+
+  RunVec min_bed_list(length);
+  RunVec max_wl_list(length);
+  lists["min_bed"] = min_bed_list;
+  lists["max_wl"]  = max_wl_list;
+
+  for (unsigned int k = 0; k < 2; ++k) {
+    lists["min_bed"][k] = m_fill_value;
+    lists["max_wl"][k]  = m_fill_value;
+  }
+}
+
+bool FilterExpansionCC::ForegroundCond(const int i, const int j) const {
+  const int mask = m_mask_run(i, j);
+
+  return ForegroundCond(mask);
+}
+
+void FilterExpansionCC::setRunMinBed(double level, int run, VecList &lists) {
+  if (run == 0) {
+    return;
+  }
+
+  run = trackParentRun(run, lists["parents"]);
+  if (isLake(level)) {
+    if (isLake(lists["min_bed"][run])) {
+      level = std::min(level, lists["min_bed"][run]);
+    }
+    lists["min_bed"][run] = level;
+  }
+}
+
+void FilterExpansionCC::setRunMaxWl(double level, int run, VecList &lists) {
+  if (run == 0) {
+    return;
+  }
+
+  if (level != m_fill_value) {
+    run = trackParentRun(run, lists["parents"]);
+    if (lists["max_wl"][run] != m_fill_value) {
+      level = std::max(level, lists["max_wl"][run]);
+    }
+    lists["max_wl"][run] = level;
+  }
+}
+
+void FilterExpansionCC::labelMask(int run_number, const VecList &lists) {
+  IceModelVec::AccessList list;
+  addFieldVecAccessList(m_masks, list);
+
+  const RunVec &i_vec = lists.find("i")->second,
+               &j_vec = lists.find("j")->second,
+               &len_vec   = lists.find("lengths")->second,
+               &parents   = lists.find("parents")->second,
+               &valid_vec = lists.find("valid")->second,
+               &min_bed   = lists.find("min_bed")->second,
+               &max_wl    = lists.find("max_wl")->second;
+
+  for (int k = 0; k <= run_number; ++k) {
+    const int label = trackParentRun(k, parents);
+    const int label_valid = valid_vec[label];
+    const double min_bed_label = min_bed[label],
+                 max_wl_label  = max_wl[label];
+    const int j = j_vec[k];
+    for (unsigned int n = 0; n < len_vec[k]; ++n) {
+      const int i = i_vec[k] + n;
+      m_mask_run(i, j) = label;
+      m_mask_validity(i, j) = label_valid;
+      m_min_bed(i, j) = min_bed_label;
+      m_max_wl(i, j)  = max_wl_label;
+    }
+  }
+}
+
+void FilterExpansionCC::treatInnerMargin(const int i, const int j,
+                                        const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
+                                        VecList &lists, bool &changed) {
+  ValidCC<ConnectedComponents>::treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
+
+  int run = m_mask_run.as_int(i, j);
+  if (run > 0) {
+    StarStencil<double> min_bed_star = m_min_bed.star(i, j),
+                        max_wl_star  = m_max_wl.star(i, j);
+
+    double min_bed = min_bed_star.ij,
+           max_wl  = max_wl_star.ij;
+
+    if (isWest) {
+      if (isLake(min_bed_star.w) and ((min_bed_star.w < min_bed) or not isLake(min_bed))) {
+        min_bed = min_bed_star.w;
+      }
+      if (isLake(max_wl_star.w) and ((max_wl_star.w > max_wl) or not isLake(max_wl))) {
+        max_wl = max_wl_star.w;
+      }
+    }
+    if (isNorth) {
+      if (isLake(min_bed_star.n) and ((min_bed_star.n < min_bed) or not isLake(min_bed))) {
+        min_bed = min_bed_star.n;
+      }
+      if (isLake(max_wl_star.n) and ((max_wl_star.n > max_wl) or not isLake(max_wl))) {
+        max_wl = max_wl_star.n;
+      }
+    }
+    if (isEast) {
+      if (isLake(min_bed_star.e) and ((min_bed_star.e < min_bed) or not isLake(min_bed))) {
+        min_bed = min_bed_star.e;
+      }
+      if (isLake(max_wl_star.e) and ((max_wl_star.e > max_wl) or not isLake(max_wl))) {
+        max_wl = max_wl_star.e;
+      }
+    }
+    if (isSouth) {
+      if (isLake(min_bed_star.s) and ((min_bed_star.s < min_bed) or not isLake(min_bed))) {
+        min_bed = min_bed_star.s;
+      }
+      if (isLake(max_wl_star.s) and ((max_wl_star.s > max_wl) or not isLake(max_wl))) {
+        max_wl = max_wl_star.s;
+      }
+    }
+    if (min_bed != min_bed_star.ij) {
+      setRunMinBed(min_bed, run, lists);
+      changed = true;
+    }
+    if (max_wl != max_wl_star.ij) {
+      setRunMaxWl(max_wl, run, lists);
+      changed = true;
+    }
+  }
+}
+
+void FilterExpansionCC::startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists) {
+  ValidCC<ConnectedComponents>::startNewRun(i, j, run_number, parent, lists);
+
+  lists["min_bed"][run_number] = (*m_bed)(i, j);
+  lists["max_wl"][run_number]  = (*m_water_level)(i, j);
+}
+
+void FilterExpansionCC::continueRun(const int i, const int j, int &run_number, VecList &lists) {
+  ValidCC<ConnectedComponents>::continueRun(i, j, run_number, lists);
+
+  setRunMinBed((*m_bed)(i, j), run_number, lists);
+  setRunMaxWl((*m_water_level)(i, j), run_number, lists);
+}
+
+void FilterExpansionCC::labelMap(const int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl) {
+  IceModelVec::AccessList list{ &mask, &min_bed, &max_wl};
+
+  mask.set(0);
+  min_bed.set(m_fill_value);
+  max_wl.set(m_fill_value);
+
+  const RunVec &i_vec = lists.find("i")->second,
+               &j_vec = lists.find("j")->second,
+               &len_vec = lists.find("lengths")->second,
+               &parents = lists.find("parents")->second,
+               &valid_list   = lists.find("valid")->second,
+               &min_bed_list = lists.find("min_bed")->second,
+               &max_wl_list  = lists.find("max_wl")->second;
+
+  for(int k = 0; k <= run_number; ++k) {
+    const int label = trackParentRun(k, parents);
+    if (label > 1) {
+      const int j = j_vec[k];
+      const bool valid = (valid_list[label] > 0);
+      const double min_bed_label = min_bed_list[label],
+                   max_wl_label  = max_wl_list[label];
+      for(int n = 0; n < len_vec[k]; ++n) {
+        const int i = i_vec[k] + n;
+        mask(i, j) = valid ? 1 : 2;
+        min_bed(i, j) = min_bed_label;
+        max_wl(i, j)  = max_wl_label;
+      }
+    }
+  }
+}
+
+void FilterExpansionCC::labelMap2(const int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl) {
+  IceModelVec::AccessList list{ &mask, &min_bed, &max_wl};
+
+  const RunVec &i_vec = lists.find("i")->second,
+               &j_vec = lists.find("j")->second,
+               &len_vec = lists.find("lengths")->second,
+               &parents = lists.find("parents")->second,
+               &valid_list   = lists.find("valid")->second,
+               &min_bed_list = lists.find("min_bed")->second,
+               &max_wl_list  = lists.find("max_wl")->second;
+
+  for(int k = 0; k <= run_number; ++k) {
+    const int label = trackParentRun(k, parents);
+    if (label > 1) {
+      const int j = j_vec[k];
+      const bool valid = (valid_list[label] > 0);
+      const double min_bed_label = min_bed_list[label],
+                   max_wl_label  = max_wl_list[label];
+      for(int n = 0; n < len_vec[k]; ++n) {
+        const int i = i_vec[k] + n;
+        mask(i, j) = valid ? -1 : -2;
+        min_bed(i, j) = min_bed_label;
+        max_wl(i, j)  = max_wl_label;
+      }
+    }
+  }
+}
+
+void FilterExpansionCC::prepare_mask(const IceModelVec2S &current_level, const IceModelVec2S &target_level) {
+  IceModelVec::AccessList list{ &m_mask_run, &current_level, &target_level};
+
+  m_mask_run.set(0);
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (isLake(target_level(i, j)) and not isLake(current_level(i, j))) {
+      m_mask_run(i, j) = 2;
+    }
+  }
+  m_mask_run.update_ghosts();
+}
+
+void FilterExpansionCC::set_mask_validity(const int n_filter) {
+  const Direction dirs[] = { North, East, South, West };
+
+  IceModelVec::AccessList list{ &m_mask_run, &m_mask_validity };
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    int n_neighbors = 0;
+    if (m_mask_run.as_int(i, j) > 1) {
+      StarStencil<int> mask_star = m_mask_run.int_star(i, j);
+      for (int n = 0; n < 4; ++n) {
+        const Direction direction = dirs[n];
+        if (mask_star[direction] > 1) {
+          ++n_neighbors;
+        }
+      }
+    }
+    //Set cell valid if number of neighbors exceeds threshold
+    if (n_neighbors >= n_filter) {
+      m_mask_validity(i, j) = 1;
+    } else {
+      m_mask_validity(i, j) = 0;
+    }
+  }
+  m_mask_validity.update_ghosts();
+}
+
 } //namespace pism

@@ -110,44 +110,6 @@ protected:
   virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
 };
 
-class FilterExpansionCC : public ValidCC<ConnectedComponents> {
-public:
-  FilterExpansionCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &bed, const IceModelVec2S &water_level);
-  ~FilterExpansionCC();
-  void filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin, IceModelVec2S &max_water_level);
-  void filter_ext2(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin, IceModelVec2S &max_water_level);
-
-protected:
-  virtual void init_VecList(VecList &lists, const unsigned int length);
-  virtual void labelMask(int run_number, const VecList &lists);
-  virtual void treatInnerMargin(const int i, const int j,
-                                const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
-                                VecList &lists, bool &changed);
-  virtual void startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists);
-  virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
-  virtual bool ForegroundCond(const int i, const int j) const;
-
-private:
-  const double m_fill_value;
-  const IceModelVec2S *m_bed, *m_water_level;
-  IceModelVec2S m_min_bed, m_max_wl;
-
-  void setRunMinBed(double level, int run, VecList &lists);
-  void setRunMaxWl(double level, int run, VecList &lists);
-  void labelMap(const int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl);
-  void labelMap2(const int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl);
-  void prepare_mask(const IceModelVec2S &current_level, const IceModelVec2S &target_level);
-  void set_mask_validity(const int n_filter);
-
-  inline bool ForegroundCond(const int mask) const {
-    return (mask > 1);
-  }
-
-  inline bool isLake(const double level) {
-    return (level != m_fill_value);
-  }
-};
-
 class LakeAccumulatorCCSerial : public ConnectedComponentsSerial {
 public:
   LakeAccumulatorCCSerial(IceGrid::ConstPtr g, const double fill_value);
