@@ -327,8 +327,8 @@ bool LakeCC::expandMargins_impl() const {
 DiagnosticList LakeCC::diagnostics_impl() const {
 
   DiagnosticList result = {
-    { "lake_gradual_target",       Diagnostic::wrap(m_target_level) },
-    { "lake_fill_rate",            Diagnostic::wrap(m_fill_rate) },
+    { "lakecc_gradual_target",       Diagnostic::wrap(m_target_level) },
+    { "lakecc_gradual_fill_rate",    Diagnostic::wrap(m_fill_rate) },
   };
 
   return result;
