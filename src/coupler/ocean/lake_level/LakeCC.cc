@@ -691,7 +691,7 @@ bool LakeCC::prepareLakeLevel(const IceModelVec2S &target_level,
                               const IceModelVec2S &bed,
                               const IceModelVec2S &min_level,
                               const IceModelVec2S &old_ll,
-                              const IceModelVec2S &old_sl,
+                              const IceModelVec2S &sl_basins,
                               IceModelVec2S &min_basin,
                               IceModelVec2S &lake_level) {
 
@@ -701,7 +701,7 @@ bool LakeCC::prepareLakeLevel(const IceModelVec2S &target_level,
   { //Check which lake cells are newly added
     ParallelSection ParSec(m_grid->com);
     try {
-      FilterExpansionCC FExCC(m_grid, m_fill_value, bed, old_sl);
+      FilterExpansionCC FExCC(m_grid, m_fill_value, bed, sl_basins);
       FExCC.filter_ext(lake_level, target_level, exp_mask, min_basin, max_sl_basin);
     } catch (...) {
       ParSec.failed();
@@ -723,13 +723,17 @@ bool LakeCC::prepareLakeLevel(const IceModelVec2S &target_level,
         const int mask_ij = exp_mask.as_int(i, j);
         const bool new_lake = ( (mask_ij > 0) and not (m_gc.islake(min_level(i, j))) );
         if ( mask_ij == 1 or new_lake ) {
+          //new lake or new basin added to existing lake
           if (max_sl_basin(i, j) != m_fill_value) {
+            //basin was previously occupied by the ocean
             lake_level(i, j) = max_sl_basin(i, j);
           } else {
+            //it was "dry" before
             if (new_lake) {
+              //Initialize new basin with its lowest basin elevation
               lake_level(i, j) = min_basin(i, j);
             } else {
-              //New basin added to existing lake
+              //New basin added to existing lake -> set to min level
               lake_level(i, j) = std::min(min_level(i, j), min_basin(i, j));
             }
           }
