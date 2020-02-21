@@ -161,7 +161,7 @@ void LakeCC::init_impl(const Geometry &geometry) {
                  m_max_update_interval_years);
 
   double max_fill_rate_m_y = m_config->get_number(m_option + ".max_fill_rate", "meter year-1");
-  m_log->message(3, "  LakeCC: maximum fill rate: %d meter/year \n",
+  m_log->message(3, "  LakeCC: maximum fill rate: %g meter/year \n",
                  max_fill_rate_m_y);
 
   //Full update in first timestep
@@ -220,7 +220,7 @@ void LakeCC::update_impl(const Geometry &geometry, double t, double dt) {
 
   //Gradually fill
   {
-
+/*
     //Calculate basins that were filled by the ocean
     IceModelVec2S old_sl_basins(m_grid, "sl_basins", WITHOUT_GHOSTS);
     {
@@ -243,7 +243,7 @@ void LakeCC::update_impl(const Geometry &geometry, double t, double dt) {
 
       old_sl_basins.update_ghosts();
     }
-
+*/
     if (not m_use_const_fill_rate) {
       const IceModelVec2S &bmb               = *m_grid->variables().get_2d_scalar("effective_BMB"),
                           &tc_calving        = *m_grid->variables().get_2d_scalar("thickness_change_due_to_calving"),
@@ -272,7 +272,7 @@ void LakeCC::update_impl(const Geometry &geometry, double t, double dt) {
                                                    bed,
                                                    min_level,
                                                    old_ll,
-                                                   old_sl_basins,
+                                                   old_sl,//old_sl_basins,
                                                    min_basin,
                                                    m_lake_level);
 
@@ -691,7 +691,7 @@ bool LakeCC::prepareLakeLevel(const IceModelVec2S &target_level,
                               const IceModelVec2S &bed,
                               const IceModelVec2S &min_level,
                               const IceModelVec2S &old_ll,
-                              const IceModelVec2S &sl_basins,
+                              const IceModelVec2S &sea_level,
                               IceModelVec2S &min_basin,
                               IceModelVec2S &lake_level) {
 
@@ -701,7 +701,7 @@ bool LakeCC::prepareLakeLevel(const IceModelVec2S &target_level,
   { //Check which lake cells are newly added
     ParallelSection ParSec(m_grid->com);
     try {
-      FilterExpansionCC FExCC(m_grid, m_fill_value, bed, sl_basins);
+      FilterExpansionCC FExCC(m_grid, m_fill_value, bed, sea_level);
       FExCC.filter_ext(lake_level, target_level, exp_mask, min_basin, max_sl_basin);
     } catch (...) {
       ParSec.failed();
