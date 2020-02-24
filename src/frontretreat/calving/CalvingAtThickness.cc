@@ -58,8 +58,7 @@ void CalvingAtThickness::init() {
   m_calving_threshold.set(calving_threshold);
 
   //Set default calving thickness threshold to negative value, i.e. use same value a for ocean
-  m_calving_threshold_lake = options::Real("-thickness_calving_threshold_lake",
-                                           "Threshold for thickness calving method used for lakes (m)", -1.0);
+  m_calving_threshold_lake = m_config->get_number("calving.thickness_calving.threshold_lakes");
 
   if (not threshold_file.empty()) {
     m_log->message(2,

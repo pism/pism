@@ -63,10 +63,7 @@ void SeaLevel::init_impl(const Geometry &geometry) {
     m_input_model->init(geometry);
   } else {
 
-    double const_sl = m_const_sl;
-    const_sl = options::Real("-ocean_const_sl",
-                             "Constant sea level elevation (m)", const_sl);
-    m_const_sl = const_sl;
+    m_const_sl = m_config->get_number("sea_level.constant.sea_level");
 
     // set the sea level
     m_sea_level.set(m_const_sl);

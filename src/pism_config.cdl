@@ -636,6 +636,12 @@ netcdf pism_config {
     pism_config:calving.thickness_calving.threshold_type = "number";
     pism_config:calving.thickness_calving.threshold_units = "meters";
 
+    pism_config:calving.thickness_calving.threshold_lakes = 50.0;
+    pism_config:calving.thickness_calving.threshold_lakes_doc = "When terminal ice thickness of floating ice shelf in a lake is less than this threshold, it will be calved off.";
+    pism_config:calving.thickness_calving.threshold_lakes_option = "thickness_calving_threshold_lakes";
+    pism_config:calving.thickness_calving.threshold_lakes_type = "number";
+    pism_config:calving.thickness_calving.threshold_lakes_units = "meters";
+
     pism_config:calving.thickness_calving.threshold_file = "";
     pism_config:calving.thickness_calving.threshold_file_doc = "Name of the file containing the spatially-variable thickness calving threshold.";
     pism_config:calving.thickness_calving.threshold_file_option = "thickness_calving_threshold_file";
@@ -2103,6 +2109,12 @@ netcdf pism_config {
     pism_config:sea_level.models_doc = "Comma-separated list of sea level models and modifiers.";
     pism_config:sea_level.models_option = "sea_level";
     pism_config:sea_level.models_type = "string";
+
+    pism_config:sea_level.constant.sea_level = "0.0";
+    pism_config:sea_level.constant.sea_level_doc = "Constant sea-level elevation.";
+    pism_config:sea_level.constant.sea_level_option = "const_sl";
+    pism_config:sea_level.constant.sea_level_type = "number";
+    pism_config:sea_level.constant.sea_level_units = "meters";
 
     pism_config:sea_level.sl2dcc.topg_overlay_file = "";
     pism_config:sea_level.sl2dcc.topg_overlay_file_doc = "Name of the file containing the topography overlay field used by the SeaLevel2DCC model.";
