@@ -1748,12 +1748,12 @@ netcdf pism_config {
     pism_config:lake_level.lakecc.topg_overlay_file_type = "string";
     pism_config:lake_level.lakecc.topg_overlay_file_option = "lakecc_topg_overlay_file";
 
-    pism_config:lake_level.lakecc.max_update_interval = "10";
+    pism_config:lake_level.lakecc.max_update_interval = 10;
     pism_config:lake_level.lakecc.max_update_interval_doc = "Maximum time interval between full LakeCC updates.";
     pism_config:lake_level.lakecc.max_update_interval_type = "integer";
     pism_config:lake_level.lakecc.max_update_interval_units = "years";
 
-    pism_config:lake_level.lakecc.max_patch_iterations = "10";
+    pism_config:lake_level.lakecc.max_patch_iterations = 10;
     pism_config:lake_level.lakecc.max_patch_iterations_doc = "Maximum time interval between full LakeCC updates.";
     pism_config:lake_level.lakecc.max_patch_iterations_type = "integer";
     pism_config:lake_level.lakecc.max_patch_iterations_units = "pure number";
@@ -1762,25 +1762,25 @@ netcdf pism_config {
     pism_config:lake_level.lakecc.init_filled_doc = "Initialize LakeCC model with filled lakes.";
     pism_config:lake_level.lakecc.init_filled_type = "flag";
 
-    pism_config:lake_level.lakecc.zmin = "";
+    pism_config:lake_level.lakecc.zmin = 0.0;
     pism_config:lake_level.lakecc.zmin_doc = "Minimum lake level used by LakeCC.";
     pism_config:lake_level.lakecc.zmin_type = "number";
     pism_config:lake_level.lakecc.zmin_option = "lakecc_zmin";
     pism_config:lake_level.lakecc.zmin_units = "meter";
 
-    pism_config:lake_level.lakecc.zmax = "";
+    pism_config:lake_level.lakecc.zmax = 1000.0;
     pism_config:lake_level.lakecc.zmax_doc = "Maximum lake level used by LakeCC.";
     pism_config:lake_level.lakecc.zmax_type = "number";
     pism_config:lake_level.lakecc.zmax_option = "lakecc_zmax";
     pism_config:lake_level.lakecc.zmax_units = "meter";
 
-    pism_config:lake_level.lakecc.dz = "";
+    pism_config:lake_level.lakecc.dz = 1.0;
     pism_config:lake_level.lakecc.dz_doc = "Spacing between lake levels used by LakeCC.";
     pism_config:lake_level.lakecc.dz_type = "number";
     pism_config:lake_level.lakecc.dz_option = "lakecc_dz";
     pism_config:lake_level.lakecc.dz_units = "meter";
 
-    pism_config:lake_level.lakecc.filter_size = "4";
+    pism_config:lake_level.lakecc.filter_size = 4;
     pism_config:lake_level.lakecc.filter_size_doc = "Filter size used by LakeCC. Only keeps lakes that have at least one cell with N neighbors.)";
     pism_config:lake_level.lakecc.filter_size_type = "integer";
     pism_config:lake_level.lakecc.filter_size_units = "pure number";
@@ -2110,7 +2110,7 @@ netcdf pism_config {
     pism_config:sea_level.models_option = "sea_level";
     pism_config:sea_level.models_type = "string";
 
-    pism_config:sea_level.constant.sea_level = "0.0";
+    pism_config:sea_level.constant.sea_level = 0.0;
     pism_config:sea_level.constant.sea_level_doc = "Constant sea-level elevation.";
     pism_config:sea_level.constant.sea_level_option = "const_sl";
     pism_config:sea_level.constant.sea_level_type = "number";
@@ -2121,7 +2121,7 @@ netcdf pism_config {
     pism_config:sea_level.sl2dcc.topg_overlay_file_type = "string";
     pism_config:sea_level.sl2dcc.topg_overlay_file_option = "sl2dcc_topg_overlay_file";
 
-    pism_config:sea_level.sl2dcc.max_update_interval = "10";
+    pism_config:sea_level.sl2dcc.max_update_interval = 10;
     pism_config:sea_level.sl2dcc.max_update_interval_doc = "Maximum time interval between full SeaLevel2DCC updates.";
     pism_config:sea_level.sl2dcc.max_update_interval_type = "integer";
     pism_config:sea_level.sl2dcc.max_update_interval_units = "years";
