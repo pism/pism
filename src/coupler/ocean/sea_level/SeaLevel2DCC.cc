@@ -99,7 +99,7 @@ void SeaLevel2DCC::init_impl(const Geometry &geometry) {
 
   {
     InputOptions opts = process_input_options(m_grid->com, m_config);
-    IceModelVec2S tmp(*m_grid, "effective_sea_level_elevation", WITHOUT_GHOSTS);
+    IceModelVec2S tmp(m_grid, "effective_sea_level_elevation", WITHOUT_GHOSTS);
 
     if (opts.type == INIT_RESTART) {
 
