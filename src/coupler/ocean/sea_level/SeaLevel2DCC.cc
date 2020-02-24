@@ -97,36 +97,40 @@ void SeaLevel2DCC::init_impl(const Geometry &geometry) {
   m_log->message(3, "  SeaLevel2DCC: maximum fill rate: %g meter/year \n",
                  max_fill_rate_m_y);
 
-  InputOptions opts = process_input_options(m_grid->com, m_config);
+  {
+    InputOptions opts = process_input_options(m_grid->com, m_config);
+    IceModelVec2S tmp(*m_grid, "effective_sea_level_elevation", WITHOUT_GHOSTS);
 
-  if (opts.type == INIT_RESTART) {
+    if (opts.type == INIT_RESTART) {
 
-    m_log->message(3, "* Reading sea level forcing from '%s' for re-starting...\n",
-                   opts.filename.c_str());
+      m_log->message(3, "* Reading sea level forcing from '%s' for re-starting...\n",
+                     opts.filename.c_str());
 
-    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
-    const unsigned int time_length = file.nrecords(),
-                      last_record = time_length > 0 ? time_length - 1 : 0;
+      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      const unsigned int time_length = file.nrecords(),
+                         last_record = time_length > 0 ? time_length - 1 : 0;
 
-    m_sea_level.read(file, last_record);
+      tmp.read(file, last_record);
 
-    file.close();
-  } else if (opts.type == INIT_BOOTSTRAP) {
-    try {
-      //effective_sea_level might be available in input file
-      m_sea_level.regrid(opts.filename, CRITICAL);
-    } catch (...) {
-      //if it was not found...
-      m_sea_level.copy_from(m_input_model->elevation());
+      file.close();
+    } else if (opts.type == INIT_BOOTSTRAP) {
+      try {
+        //effective_sea_level might be available in input file
+        tmp.regrid(opts.filename, CRITICAL);
+      } catch (...) {
+        //if it was not found...
+        tmp.copy_from(m_input_model->elevation());
 
-      update_mask(geometry.bed_elevation,
-                  geometry.ice_thickness,
-                  m_sea_level,
-                  m_mask);
+        update_mask(geometry.bed_elevation,
+                    geometry.ice_thickness,
+                    tmp,
+                    m_mask);
 
-      apply_mask(m_mask,
-                 m_sea_level);
+        apply_mask(m_mask,
+                   tmp);
+      }
     }
+    m_sea_level.copy_from(tmp);
   }
 
   //Full update in first timestep

@@ -120,40 +120,44 @@ void LakeCC::init_impl(const Geometry &geometry) {
     }
   }
 
-  InputOptions opts = process_input_options(m_grid->com, m_config);
+  {
+    InputOptions opts = process_input_options(m_grid->com, m_config);
+    IceModelVec2S tmp(*m_grid, "effective_lake_level_elevation", WITHOUT_GHOSTS);
 
-  if (opts.type == INIT_RESTART) {
+    if (opts.type == INIT_RESTART) {
 
-    m_log->message(3, "* Reading lake level forcing from '%s' for re-starting...\n",
-                   opts.filename.c_str());
+      m_log->message(3, "* Reading lake level forcing from '%s' for re-starting...\n",
+                     opts.filename.c_str());
 
-    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
-    const unsigned int time_length = file.nrecords(),
-                      last_record = time_length > 0 ? time_length - 1 : 0;
+      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      const unsigned int time_length = file.nrecords(),
+                         last_record = time_length > 0 ? time_length - 1 : 0;
 
-    m_lake_level.read(file, last_record);
+      tmp.read(file, last_record);
 
-    file.close();
-  } else if (opts.type == INIT_BOOTSTRAP) {
-    try {
-      //effective_lake_level might be available in input file
-      m_lake_level.regrid(opts.filename, CRITICAL);
-    } catch (...) {
-      //if it was not found...
-      m_lake_level.set(m_fill_value);
+      file.close();
+    } else if (opts.type == INIT_BOOTSTRAP) {
+      try {
+        //effective_lake_level might be available in input file
+        tmp.regrid(opts.filename, CRITICAL);
+      } catch (...) {
+        //if it was not found...
+        tmp.set(m_fill_value);
 
-      bool init_filled = m_config->get_flag(m_option + ".init_filled");
-      if (init_filled) {
-        m_log->message(3, "  LakeCC: init with filled basins requested. Running LakeCC model.\n");
+        bool init_filled = m_config->get_flag(m_option + ".init_filled");
+        if (init_filled) {
+          m_log->message(3, "  LakeCC: init with filled basins requested. Running LakeCC model.\n");
 
-        const IceModelVec2S &sea_level = *m_grid->variables().get_2d_scalar("sea_level");
-        updateLakeCC(geometry.bed_elevation,
-                     geometry.ice_thickness,
-                     sea_level,
-                     m_lake_level,
-                     m_lake_level);
+          const IceModelVec2S &sea_level = *m_grid->variables().get_2d_scalar("sea_level");
+          updateLakeCC(geometry.bed_elevation,
+                       geometry.ice_thickness,
+                       sea_level,
+                       tmp,
+                       tmp);
+        }
       }
     }
+    m_lake_level.copy_from(tmp);
   }
 
   m_log->message(3, "  LakeCC: number of iterations used by patch-algorithm: %d \n",
