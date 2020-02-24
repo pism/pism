@@ -123,8 +123,10 @@ void LakeCC::init_impl(const Geometry &geometry) {
   {
     InputOptions opts = process_input_options(m_grid->com, m_config);
     IceModelVec2S tmp(m_grid, "effective_lake_level_elevation", WITHOUT_GHOSTS);
-    tmp.set_attrs("model_state", "effective lake level elevation",
-                  "meter", "meter", "effective_lake_level_elevation", 0);
+    tmp.set_attrs("diagnostic",
+                  "lake level elevation, relative to the geoid",
+                  "meter", "meter", "", 0);
+    tmp.metadata().set_number("_FillValue", m_fill_value);
 
     if (opts.type == INIT_RESTART) {
 
