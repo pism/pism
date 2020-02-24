@@ -81,6 +81,7 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
   m_topg_overlay.set_attrs("internal",
                            "topography overlay",
                            "meter", "meter", "", 0);
+  m_topg_overlay.set_time_independent(true);
 
   //Gradual
   m_max_lake_fill_rate = m_config->get_number(m_option + ".max_fill_rate", "meter second-1");

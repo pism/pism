@@ -52,6 +52,7 @@ SeaLevel2DCC::SeaLevel2DCC(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in)
   m_topg_overlay.set_attrs("internal",
                            "topography overlay",
                            "meter", "meter", "", 0);
+  m_topg_overlay.set_time_independent(true);
 
   m_max_fill_rate = m_config->get_number(m_option + ".max_fill_rate", "meter second-1");
 
