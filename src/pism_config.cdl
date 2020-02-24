@@ -1780,6 +1780,12 @@ netcdf pism_config {
     pism_config:lake_level.lakecc.dz_option = "lakecc_dz";
     pism_config:lake_level.lakecc.dz_units = "meter";
 
+    pism_config:lake_level.lakecc.ice_free_thickness = 10.0;
+    pism_config:lake_level.lakecc.ice_free_thickness_doc = "If ice is thinner than this value LakeCC considers the cell as ice-free.";
+    pism_config:lake_level.lakecc.ice_free_thickness_type = "number";
+    pism_config:lake_level.lakecc.ice_free_thickness_option = "lakecc_ice_free_thickness";
+    pism_config:lake_level.lakecc.ice_free_thickness_units = "meter";
+
     pism_config:lake_level.lakecc.filter_size = 4;
     pism_config:lake_level.lakecc.filter_size_doc = "Filter size used by LakeCC. Only keeps lakes that have at least one cell with N neighbors.)";
     pism_config:lake_level.lakecc.filter_size_type = "integer";

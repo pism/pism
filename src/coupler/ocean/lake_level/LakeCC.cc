@@ -59,7 +59,7 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
   }
 
   //LakeCC
-  m_icefree_thickness = m_config->get_number("geometry.ice_free_thickness_standard");
+  m_icefree_thickness = m_config->get_number(m_option + ".ice_free_thickness");
 
   const double ice_density        = m_config->get_number("constants.ice.density"),
                freshwater_density = m_config->get_number("constants.fresh_water.density");
