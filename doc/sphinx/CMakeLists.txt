@@ -3,10 +3,14 @@ mark_as_advanced(SPHINX_EXECUTABLE)
 
 # HTML documentation requires Sphinx
 if (SPHINX_EXECUTABLE)
+  add_custom_command (OUTPUT pism_config.nc
+    COMMAND ${NCGEN_PROGRAM} -o pism_config.nc ${Pism_SOURCE_DIR}/src/pism_config.cdl
+    DEPENDS ${Pism_SOURCE_DIR}/src/pism_config.cdl)
 
   add_custom_target (manual_html ALL
-    COMMAND ${SPHINX_EXECUTABLE} -W -n -b html ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/html
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    COMMAND ${SPHINX_EXECUTABLE} -W -n -b html -D pism_config_file=${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/html
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS pism_config.nc)
 
   add_custom_target (manual_linkcheck
     COMMAND ${SPHINX_EXECUTABLE} -n -b linkcheck ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
@@ -28,7 +32,7 @@ if (SPHINX_EXECUTABLE AND PDFLATEX_COMPILER)
   find_program (MAKE_EXECUTABLE NAMES make gmake)
 
   add_custom_command (OUTPUT pism_manual.pdf
-    COMMAND ${SPHINX_EXECUTABLE} -b latex -t latex ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND ${SPHINX_EXECUTABLE} -E -b latex -t latex ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
     COMMAND ${MAKE_EXECUTABLE} all
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
 

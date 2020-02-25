@@ -133,7 +133,7 @@ law where the calving rate `c` is a functionally related to tensile stresses:
 
 where `\tilde{\sigma}` is the tensile von Mises stress and `\sigma_{max}` is a threshold
 that has units `Pa`. It can be set as a configuration parameter
-(:config:`calving.vonmises.sigma_max` in |config-cdl|). As the tensile fracture strength
+(:config:`calving.vonmises_calving.sigma_max` in |config-cdl|). As the tensile fracture strength
 is much smaller than the compressive fracture strenth, the effective tensile strain rate
 is defined as
 

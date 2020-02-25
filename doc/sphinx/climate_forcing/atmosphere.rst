@@ -397,56 +397,7 @@ The only spatially-variable input of this model is the surface elevation (`h` ab
 modeled by PISM. It is controlled by a number of configuration parameters. See parameters
 with the prefix ``atmosphere.orographic_precipitation``.
 
-.. list-table:: Parameters controlling orographic precipitation
-   :header-rows: 1
-   :widths: 1,2
+This model is controlled by
 
-   * - Parameter
-     - Description
-
-   * - ``background_precip_pre``
-     - Background precipitation `P_{\text{pre}}` in :eq:`eq-orographic-post-processing`
-
-   * - ``background_precip_post``
-     - Background precipitation `P_{\text{post}}` in :eq:`eq-orographic-post-processing`
-
-   * - ``scale_factor``
-     - Scaling factor `S` in :eq:`eq-orographic-post-processing`
-
-   * - ``conversion_time``
-     - Conversion time of cloud water into hydrometeors `\tau_c`
-
-   * - ``fallout_time``
-     - Fallout time `\tau_f`
-
-   * - ``water_vapor_scale_height``
-     - Moist layer depth `H_w`
-
-   * - ``moist_stability_frequency``
-     - Moist stability frequency `N_m`
-
-   * - ``wind_speed``
-     - Wind speed
-
-   * - ``wind_direction``
-     - Wind direction. `0` corresponds to the wind from the north, `90` from the east, and
-       so on.
-
-   * - ``lapse_rate``
-     - Lapse rate `\gamma`. Note that here `\gamma < 0`.
-
-   * - ``moist_adiabatic_lapse_rate``
-     - Moist adiabatic lapse rate `\Gamma_m`. Note that here `\Gamma_m < 0`.
-
-   * - ``reference_density``
-     - Reference density `\rho_{S_{\text{ref}}}` (see equation A3 in :cite:`SmithBarstad2004`)
-
-   * - ``coriolis_latitude``
-     - Average latitude of the modeling domain used to include the influence of the
-       Coriolis force (see equation 6 in :cite:`SmithBarstadBonneau2005`)
-
-   * - ``truncate``
-     - If set, negative precipitation values are truncated as in
-       :eq:`eq-orographic-post-processing`, otherwise the post-processing formula is
-
-       `P = (P_{\text{pre}} + P_{\text{LT}}) \cdot S + P_{\text{post}}`.
+.. pism-parameters::
+   :prefix: atmosphere.orographic_precipitation

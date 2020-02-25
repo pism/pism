@@ -187,7 +187,6 @@ PICO has one command-line option and 7 configuration parameters:
   determined by interpolating between 1 and number_of_boxes depending on its size and
   geometry such that larger ice shelves are resolved with more boxes; a value of 5 is
   suitable for the Antarctic setup.
-- :config:`ocean.pico.number_of_basins`
 - :config:`ocean.pico.exclude_ice_rises`: If set to true, grounding lines of ice rises are
   excluded in the geometrical routines that determine the ocean boxes; using this option
   is recommended.

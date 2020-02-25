@@ -18,7 +18,8 @@ nitpicky = True
 # ones.
 extensions = ['sphinx.ext.mathjax',
               'sphinx.ext.githubpages',
-              'sphinxcontrib.bibtex']
+              'sphinxcontrib.bibtex',
+              'pism_config']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
