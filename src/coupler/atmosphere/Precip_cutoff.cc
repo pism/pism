@@ -48,7 +48,7 @@ void Precip_cutoff::init_impl(const Geometry &geometry) {
   auto filename = m_config->get_string(m_option + ".cutoff_mask_file");
 
   if (not filename.empty()) {
-    m_mask.read(filename);
+    m_mask.regrid(filename, OPTIONAL, 0);
   } else {
     m_mask.set(0);
   }
