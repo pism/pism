@@ -56,6 +56,20 @@ void Precip_cutoff::init_impl(const Geometry &geometry) {
 
 }
 
+void Precip_cutoff::begin_pointwise_access_impl() const {
+  m_input_model->begin_pointwise_access();
+
+  m_mask.begin_access();
+  m_usurf.begin_access();
+}
+
+void Precip_cutoff::end_pointwise_access_impl() const {
+  m_input_model->end_pointwise_access();
+
+  m_mask.end_access();
+  m_usurf.end_access();
+}
+
 void Precip_cutoff::init_timeseries_impl(const std::vector<double> &ts) const {
   AtmosphereModel::init_timeseries_impl(ts);
 }

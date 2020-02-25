@@ -29,6 +29,9 @@ class Precip_cutoff : public AtmosphereModel {
 public:
   Precip_cutoff(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
   virtual ~Precip_cutoff();
+protected:
+  void begin_pointwise_access_impl() const;
+  void end_pointwise_access_impl() const;
 private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
