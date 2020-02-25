@@ -295,7 +295,7 @@ netcdf pism_config {
     pism_config:atmosphere.precip_cutoff.cutoff_height_doc = "Height above which precipitation is cut-off.";
     pism_config:atmosphere.precip_cutoff.cutoff_height_option = "precip_cutoff_height";
     pism_config:atmosphere.precip_cutoff.cutoff_height_type = "number";
-    pism_config:atmosphere.precip_cutoff.cutoff_height_unit = "meters";
+    pism_config:atmosphere.precip_cutoff.cutoff_height_units = "meters";
 
     pism_config:atmosphere.precip_cutoff.use_cutoff_height = "no";
     pism_config:atmosphere.precip_cutoff.use_cutoff_height_doc = "Flag indicating if precipitation should be cut off above the `cutoff_height`.";
