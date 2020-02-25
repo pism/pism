@@ -19,6 +19,7 @@
 #include "Precip_cutoff.hh"
 
 #include "pism/util/ConfigInterface.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace atmosphere {
