@@ -27,9 +27,13 @@ namespace atmosphere {
 Precip_cutoff::Precip_cutoff(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in),
     m_usurf(grid, "surface_elevation", WITHOUT_GHOSTS),
-    m_mask(grid, "precip_mask", WITHOUT_GHOSTS) {
+    m_mask(grid, "mask", WITHOUT_GHOSTS) {
 
   m_precipitation = allocate_precipitation(grid);
+
+  m_mask.set_attrs("climate_state", "precip cutoff mask",
+                   "", "", "precip_cutoff_mask", 0);
+  m_mask.set_time_independent(true);
 
   m_option = "atmosphere.precip_cutoff";
 
