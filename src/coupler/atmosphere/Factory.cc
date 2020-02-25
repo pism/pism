@@ -27,6 +27,7 @@
 #include "Delta_P.hh"
 #include "Frac_P.hh"
 #include "PrecipitationScaling.hh"
+#include "Precip_cutoff.hh"
 #include "PIK.hh"
 #include "Anomaly.hh"
 #include "CosineYearlyCycle.hh"
@@ -51,6 +52,7 @@ Factory::Factory(IceGrid::ConstPtr g)
 
   add_modifier<Anomaly>("anomaly");
   add_modifier<PrecipitationScaling>("precip_scaling");
+  add_modifier<Precip_cutoff>("precip_cutoff");
   add_modifier<Frac_P>("frac_P");
   add_modifier<Delta_P>("delta_P");
   add_modifier<Delta_T>("delta_T");
