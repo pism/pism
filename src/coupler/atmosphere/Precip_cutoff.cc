@@ -91,7 +91,7 @@ void Precip_cutoff::update_impl(const Geometry &geometry, double t, double dt) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const bool cutoff = (m_mask(i, j) == 1) or ( m_use_cutoff_height and (m_usurf(i, j) > m_cutoff_height) );
+    const bool cutoff = (m_mask.as_int(i, j) == 1) or ( m_use_cutoff_height and (m_usurf(i, j) > m_cutoff_height) );
     if (cutoff) {
       (*m_precipitation)(i, j) = 0.0;
     }
@@ -105,7 +105,7 @@ const IceModelVec2S& Precip_cutoff::mean_precipitation_impl() const {
 void Precip_cutoff::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   m_input_model->precip_time_series(i, j, result);
 
-  const bool cutoff = (m_mask(i, j) == 1) or ( m_use_cutoff_height and (m_usurf(i, j) > m_cutoff_height) );
+  const bool cutoff = (m_mask.as_int(i, j) == 1) or ( m_use_cutoff_height and (m_usurf(i, j) > m_cutoff_height) );
   if (cutoff) {
     for (unsigned int k = 0; k < result.size(); ++k) {
       result[k] = 0.0;
