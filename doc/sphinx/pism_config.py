@@ -30,6 +30,21 @@ def format_value(value, T):
 class config(nodes.literal):
     pass
 
+class softhyphen(nodes.Element):
+    pass
+
+def visit_softhyphen_html(self, node):
+    self.body.append('&shy;')
+
+def depart_softhyphen_html(self, node):
+    pass
+
+def visit_softhyphen_latex(self, node):
+    self.body.append(r"\-")
+
+def depart_softhyphen_latex(self, node):
+    pass
+
 def config_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     """Parse :config:`parameter` roles and create `config` nodes resolved
     in resolve_config_links()."""
@@ -186,7 +201,10 @@ def resolve_config_links(app, doctree, fromdocname):
         reference['refuri'] = "{}#{}".format(app.builder.get_relative_uri(fromdocname, docname),
                                              make_id(parameter))
 
-        reference += nodes.literal(parameter, parameter)
+        words = parameter.split(".")
+        reference += nodes.literal("", words[0])
+        for w in words[1:]:
+            reference += [softhyphen(), nodes.literal("", "." + w)]
 
         node.replace_self(reference)
 
@@ -239,6 +257,9 @@ def setup(app):
     app.add_config_value('pism_config_file', "pism_config.json", 'env')
 
     app.add_node(config)
+    app.add_node(softhyphen,
+                 html=(visit_softhyphen_html, depart_softhyphen_html),
+                 latex=(visit_softhyphen_latex, depart_softhyphen_latex))
     app.add_role('config', config_role)
     app.add_directive('pism-parameters', ParameterList)
 
