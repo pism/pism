@@ -230,29 +230,6 @@ void LakeCC::update_impl(const Geometry &geometry, double t, double dt) {
   //Gradually fill
   {
 
-    //Calculate basins that were filled by the ocean
-    IceModelVec2S old_sl_basins(m_grid, "sl_basins", WITHOUT_GHOSTS);
-    {
-      IceModelVec::AccessList list({ &old_sl_basins, &old_sl, &bed, &thk });
-
-      ParallelSection ParSec(m_grid->com);
-      try {
-        for (Points p(*m_grid); p; p.next()) {
-          const int i = p.i(), j = p.j();
-          if (mask::ocean(m_gc.mask(old_sl(i, j), bed(i, j), thk(i, j)))) {
-            old_sl_basins(i, j) = old_sl(i, j);
-          } else {
-            old_sl_basins(i, j) = m_fill_value;
-          }
-        }
-      } catch (...) {
-        ParSec.failed();
-      }
-      ParSec.check();
-
-      old_sl_basins.update_ghosts();
-    }
-
     if (not m_use_const_fill_rate) {
       const IceModelVec2S &bmb               = *m_grid->variables().get_2d_scalar("effective_BMB"),
                           &tc_calving        = *m_grid->variables().get_2d_scalar("thickness_change_due_to_calving"),
@@ -279,9 +256,10 @@ void LakeCC::update_impl(const Geometry &geometry, double t, double dt) {
 
     const bool LakeLevelChanged = prepareLakeLevel(m_target_level,
                                                    bed,
+                                                   thk,
                                                    min_level,
                                                    old_ll,
-                                                   old_sl_basins,
+                                                   old_sl,
                                                    min_basin,
                                                    m_lake_level);
 
@@ -698,11 +676,35 @@ void LakeCC::updateLakeLevelMinMax(const IceModelVec2S &lake_level,
 
 bool LakeCC::prepareLakeLevel(const IceModelVec2S &target_level,
                               const IceModelVec2S &bed,
+                              const IceModelVec2S &thk,
                               const IceModelVec2S &min_level,
                               const IceModelVec2S &old_ll,
                               const IceModelVec2S &sea_level,
                               IceModelVec2S &min_basin,
                               IceModelVec2S &lake_level) {
+
+  //Calculate basins that were filled by the ocean
+  IceModelVec2S old_sl_basins(m_grid, "sl_basins", WITHOUT_GHOSTS);
+  {
+    IceModelVec::AccessList list({ &old_sl_basins, &sea_level, &bed, &thk });
+
+    ParallelSection ParSec(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        if (mask::ocean(m_gc.mask(sea_level(i, j), bed(i, j), thk(i, j)))) {
+          old_sl_basins(i, j) = sea_level(i, j);
+        } else {
+          old_sl_basins(i, j) = m_fill_value;
+        }
+      }
+    } catch (...) {
+      ParSec.failed();
+    }
+    ParSec.check();
+
+    old_sl_basins.update_ghosts();
+  }
 
   IceModelVec2Int exp_mask(m_grid, "exp_mask", WITHOUT_GHOSTS);
   IceModelVec2S max_sl_basin(m_grid, "max_sl_basin", WITHOUT_GHOSTS);
@@ -710,7 +712,7 @@ bool LakeCC::prepareLakeLevel(const IceModelVec2S &target_level,
   { //Check which lake cells are newly added
     ParallelSection ParSec(m_grid->com);
     try {
-      FilterExpansionCC FExCC(m_grid, m_fill_value, bed, sea_level);
+      FilterExpansionCC FExCC(m_grid, m_fill_value, bed, old_sl_basins);
       FExCC.filter_ext(lake_level, target_level, exp_mask, min_basin, max_sl_basin);
     } catch (...) {
       ParSec.failed();
