@@ -65,7 +65,7 @@ void Precip_cutoff::update_impl(const Geometry &geometry, double t, double dt) {
 
   m_precipitation->copy_from(m_input_model->mean_precipitation());
 
-  m_usurf.copy_from(geometry.surface_elevation);
+  m_usurf.copy_from(geometry.ice_surface_elevation);
 
   IceModelVec::AccessList list{&m_mask, &m_usurf,
                                m_precipitation.get()};
