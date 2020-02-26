@@ -30,6 +30,7 @@ def format_value(value, T):
 class config(nodes.literal):
     pass
 
+# this node makes it possible to add soft hyphens to wrap long parameter names
 class softhyphen(nodes.Element):
     pass
 

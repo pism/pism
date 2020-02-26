@@ -24,7 +24,7 @@ netcdf pism_config {
     pism_config:atmosphere.anomaly.period_units = "years";
 
     pism_config:atmosphere.anomaly.reference_year = 0;
-    pism_config:atmosphere.anomaly.reference_year_doc = "Reference year to use when ``atmosphere.anomaly.period`` is active.";
+    pism_config:atmosphere.anomaly.reference_year_doc = "Reference year to use when :config:`atmosphere.anomaly.period` is active.";
     pism_config:atmosphere.anomaly.reference_year_option = "atmosphere_anomaly_reference_year";
     pism_config:atmosphere.anomaly.reference_year_type = "integer";
     pism_config:atmosphere.anomaly.reference_year_units = "years";
@@ -41,7 +41,7 @@ netcdf pism_config {
     pism_config:atmosphere.delta_P.period_units = "years";
 
     pism_config:atmosphere.delta_P.reference_year = 0;
-    pism_config:atmosphere.delta_P.reference_year_doc = "Reference year to use when ``atmosphere.delta_P.period`` is active.";
+    pism_config:atmosphere.delta_P.reference_year_doc = "Reference year to use when :config:`atmosphere.delta_P.period` is active.";
     pism_config:atmosphere.delta_P.reference_year_option = "atmosphere_delta_P_reference_year";
     pism_config:atmosphere.delta_P.reference_year_type = "integer";
     pism_config:atmosphere.delta_P.reference_year_units = "years";
@@ -58,7 +58,7 @@ netcdf pism_config {
     pism_config:atmosphere.delta_T.period_units = "years";
 
     pism_config:atmosphere.delta_T.reference_year = 0;
-    pism_config:atmosphere.delta_T.reference_year_doc = "Reference year to use when ``atmosphere.delta_T.period`` is active.";
+    pism_config:atmosphere.delta_T.reference_year_doc = "Reference year to use when :config:`atmosphere.delta_T.period` is active.";
     pism_config:atmosphere.delta_T.reference_year_option = "atmosphere_delta_T_reference_year";
     pism_config:atmosphere.delta_T.reference_year_type = "integer";
     pism_config:atmosphere.delta_T.reference_year_units = "years";
@@ -125,7 +125,7 @@ netcdf pism_config {
     pism_config:atmosphere.frac_P.period_units = "years";
 
     pism_config:atmosphere.frac_P.reference_year = 0;
-    pism_config:atmosphere.frac_P.reference_year_doc = "Reference year to use when ``atmosphere.frac_P.period`` is active.";
+    pism_config:atmosphere.frac_P.reference_year_doc = "Reference year to use when :config:`atmosphere.frac_P.period` is active.";
     pism_config:atmosphere.frac_P.reference_year_option = "atmosphere_frac_P_reference_year";
     pism_config:atmosphere.frac_P.reference_year_type = "integer";
     pism_config:atmosphere.frac_P.reference_year_units = "years";
@@ -142,7 +142,7 @@ netcdf pism_config {
     pism_config:atmosphere.given.period_units = "years";
 
     pism_config:atmosphere.given.reference_year = 0;
-    pism_config:atmosphere.given.reference_year_doc = "Reference year to use when ``atmosphere.given.period`` is active.";
+    pism_config:atmosphere.given.reference_year_doc = "Reference year to use when :config:`atmosphere.given.period` is active.";
     pism_config:atmosphere.given.reference_year_option = "atmosphere_given_reference_year";
     pism_config:atmosphere.given.reference_year_type = "integer";
     pism_config:atmosphere.given.reference_year_units = "years";
@@ -171,7 +171,7 @@ netcdf pism_config {
     pism_config:atmosphere.elevation_change.precipitation.method_choices = "scale,shift";
 
     pism_config:atmosphere.elevation_change.reference_year = 0;
-    pism_config:atmosphere.elevation_change.reference_year_doc = "Reference year to use when ``atmosphere.elevation_change.period`` is active.";
+    pism_config:atmosphere.elevation_change.reference_year_doc = "Reference year to use when :config:`atmosphere.elevation_change.period` is active.";
     pism_config:atmosphere.elevation_change.reference_year_option = "atmosphere_lapse_rate_reference_year";
     pism_config:atmosphere.elevation_change.reference_year_type = "integer";
     pism_config:atmosphere.elevation_change.reference_year_units = "years";
@@ -287,7 +287,7 @@ netcdf pism_config {
     pism_config:atmosphere.precip_scaling.period_units = "years";
 
     pism_config:atmosphere.precip_scaling.reference_year = 0;
-    pism_config:atmosphere.precip_scaling.reference_year_doc = "Reference year to use when ``atmosphere.precip_scaling.period`` is active.";
+    pism_config:atmosphere.precip_scaling.reference_year_doc = "Reference year to use when :config:`atmosphere.precip_scaling.period` is active.";
     pism_config:atmosphere.precip_scaling.reference_year_option = "atmosphere_precip_scaling_reference_year";
     pism_config:atmosphere.precip_scaling.reference_year_type = "integer";
     pism_config:atmosphere.precip_scaling.reference_year_units = "years";
@@ -339,7 +339,7 @@ netcdf pism_config {
     pism_config:atmosphere.yearly_cycle.scaling.period_units = "years";
 
     pism_config:atmosphere.yearly_cycle.scaling.reference_year = 0;
-    pism_config:atmosphere.yearly_cycle.scaling.reference_year_doc = "Reference year to use when ``atmosphere.yearly_cycle.scaling.period`` is active.";
+    pism_config:atmosphere.yearly_cycle.scaling.reference_year_doc = "Reference year to use when :config:`atmosphere.yearly_cycle.scaling.period` is active.";
     pism_config:atmosphere.yearly_cycle.scaling.reference_year_type = "integer";
     pism_config:atmosphere.yearly_cycle.scaling.reference_year_units = "years";
 
@@ -411,7 +411,7 @@ netcdf pism_config {
     pism_config:basal_yield_stress.mohr_coulomb.tauc_to_phi.file_type = "string";
 
     pism_config:basal_yield_stress.mohr_coulomb.delta.file = "";
-    pism_config:basal_yield_stress.mohr_coulomb.delta.file_doc = "Name of the file containing space- and time-dependent variable ``mohr_coulomb_delta`` to use instead of ``basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden``.";
+    pism_config:basal_yield_stress.mohr_coulomb.delta.file_doc = "Name of the file containing space- and time-dependent variable ``mohr_coulomb_delta`` to use instead of :config:`basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden`.";
     pism_config:basal_yield_stress.mohr_coulomb.delta.file_type = "string";
     pism_config:basal_yield_stress.mohr_coulomb.delta.file_option = "mohr_coulomb_delta_file";
 
@@ -422,7 +422,7 @@ netcdf pism_config {
     pism_config:basal_yield_stress.mohr_coulomb.delta.period_units = "years";
 
     pism_config:basal_yield_stress.mohr_coulomb.delta.reference_year = 0;
-    pism_config:basal_yield_stress.mohr_coulomb.delta.reference_year_doc = "Reference year to use when ``basal_yield_stress.mohr_coulomb.delta.period`` is active.";
+    pism_config:basal_yield_stress.mohr_coulomb.delta.reference_year_doc = "Reference year to use when :config:`basal_yield_stress.mohr_coulomb.delta.period` is active.";
     pism_config:basal_yield_stress.mohr_coulomb.delta.reference_year_option = "mohr_coulomb_delta_reference_year";
     pism_config:basal_yield_stress.mohr_coulomb.delta.reference_year_type = "integer";
     pism_config:basal_yield_stress.mohr_coulomb.delta.reference_year_units = "years";
@@ -1038,7 +1038,7 @@ netcdf pism_config {
     pism_config:frontal_melt.discharge_given.period_units = "years";
 
     pism_config:frontal_melt.discharge_given.reference_year = 0;
-    pism_config:frontal_melt.discharge_given.reference_year_doc = "Reference year to use when ``frontal_melt.discharge_given.period`` is active.";
+    pism_config:frontal_melt.discharge_given.reference_year_doc = "Reference year to use when :config:`frontal_melt.discharge_given.period` is active.";
     pism_config:frontal_melt.discharge_given.reference_year_option = "frontal_melt_discharge_given_reference_year";
     pism_config:frontal_melt.discharge_given.reference_year_type = "integer";
     pism_config:frontal_melt.discharge_given.reference_year_units = "years";
@@ -1055,7 +1055,7 @@ netcdf pism_config {
     pism_config:frontal_melt.given.period_units = "years";
 
     pism_config:frontal_melt.given.reference_year = 0;
-    pism_config:frontal_melt.given.reference_year_doc = "Reference year to use when ``frontal_melt.given.period`` is active.";
+    pism_config:frontal_melt.given.reference_year_doc = "Reference year to use when :config:`frontal_melt.given.period` is active.";
     pism_config:frontal_melt.given.reference_year_option = "frontal_melt_given_reference_year";
     pism_config:frontal_melt.given.reference_year_type = "integer";
     pism_config:frontal_melt.given.reference_year_units = "years";
@@ -1092,7 +1092,7 @@ netcdf pism_config {
     pism_config:frontal_melt.routing.period_units = "years";
 
     pism_config:frontal_melt.routing.reference_year = 0;
-    pism_config:frontal_melt.routing.reference_year_doc = "Reference year to use when ``frontal_melt.routing.period`` is active.";
+    pism_config:frontal_melt.routing.reference_year_doc = "Reference year to use when :config:`frontal_melt.routing.period` is active.";
     pism_config:frontal_melt.routing.reference_year_option = "frontal_melt_routing_reference_year";
     pism_config:frontal_melt.routing.reference_year_type = "integer";
     pism_config:frontal_melt.routing.reference_year_units = "years";
@@ -1158,7 +1158,7 @@ netcdf pism_config {
     pism_config:geometry.update.use_basal_melt_rate_type = "flag";
 
     pism_config:grid.Lbz = 1000;
-    pism_config:grid.Lbz_doc = "Thickness of the thermal bedrock layer. (Inactive if ``grid.Mbz`` < 2)";
+    pism_config:grid.Lbz_doc = "Thickness of the thermal bedrock layer. (Inactive if :config:`grid.Mbz` < 2)";
     pism_config:grid.Lbz_option = "Lbz";
     pism_config:grid.Lbz_type = "number";
     pism_config:grid.Lbz_units = "meters";
@@ -1325,7 +1325,7 @@ netcdf pism_config {
     pism_config:hydrology.surface_input.period_units = "years";
 
     pism_config:hydrology.surface_input.reference_year = 0;
-    pism_config:hydrology.surface_input.reference_year_doc = "Reference year to use when ``hydrology.surface_input.period`` is active.";
+    pism_config:hydrology.surface_input.reference_year_doc = "Reference year to use when :config:`hydrology.surface_input.period` is active.";
     pism_config:hydrology.surface_input.reference_year_type = "integer";
     pism_config:hydrology.surface_input.reference_year_units = "years";
 
@@ -1600,7 +1600,7 @@ netcdf pism_config {
     pism_config:ocean.anomaly.period_units = "years";
 
     pism_config:ocean.anomaly.reference_year = 0;
-    pism_config:ocean.anomaly.reference_year_doc = "Reference year to use when ``ocean.anomaly.period`` is active.";
+    pism_config:ocean.anomaly.reference_year_doc = "Reference year to use when :config:`ocean.anomaly.period` is active.";
     pism_config:ocean.anomaly.reference_year_option = "ocean_anomaly_reference_year";
     pism_config:ocean.anomaly.reference_year_type = "integer";
     pism_config:ocean.anomaly.reference_year_units = "years";
@@ -1634,7 +1634,7 @@ netcdf pism_config {
     pism_config:ocean.delta_T.period_units = "years";
 
     pism_config:ocean.delta_T.reference_year = 0;
-    pism_config:ocean.delta_T.reference_year_doc = "Reference year to use when ``ocean.delta_T.period`` is active.";
+    pism_config:ocean.delta_T.reference_year_doc = "Reference year to use when :config:`ocean.delta_T.period` is active.";
     pism_config:ocean.delta_T.reference_year_option = "ocean_delta_T_reference_year";
     pism_config:ocean.delta_T.reference_year_type = "integer";
     pism_config:ocean.delta_T.reference_year_units = "years";
@@ -1651,7 +1651,7 @@ netcdf pism_config {
     pism_config:ocean.delta_mass_flux.period_units = "years";
 
     pism_config:ocean.delta_mass_flux.reference_year = 0;
-    pism_config:ocean.delta_mass_flux.reference_year_doc = "Reference year to use when ``ocean.delta_mass_flux.period`` is active.";
+    pism_config:ocean.delta_mass_flux.reference_year_doc = "Reference year to use when :config:`ocean.delta_mass_flux.period` is active.";
     pism_config:ocean.delta_mass_flux.reference_year_option = "ocean_delta_mass_flux_reference_year";
     pism_config:ocean.delta_mass_flux.reference_year_type = "integer";
     pism_config:ocean.delta_mass_flux.reference_year_units = "years";
@@ -1668,7 +1668,7 @@ netcdf pism_config {
     pism_config:ocean.delta_sl.period_units = "years";
 
     pism_config:ocean.delta_sl.reference_year = 0;
-    pism_config:ocean.delta_sl.reference_year_doc = "Reference year to use when ``ocean.delta_sl.period`` is active.";
+    pism_config:ocean.delta_sl.reference_year_doc = "Reference year to use when :config:`ocean.delta_sl.period` is active.";
     pism_config:ocean.delta_sl.reference_year_option = "ocean_delta_sl_reference_year";
     pism_config:ocean.delta_sl.reference_year_type = "integer";
     pism_config:ocean.delta_sl.reference_year_units = "years";
@@ -1699,7 +1699,7 @@ netcdf pism_config {
     pism_config:ocean.frac_MBP.period_units = "years";
 
     pism_config:ocean.frac_MBP.reference_year = 0;
-    pism_config:ocean.frac_MBP.reference_year_doc = "Reference year to use when ``ocean.frac_MBP.period`` is active.";
+    pism_config:ocean.frac_MBP.reference_year_doc = "Reference year to use when :config:`ocean.frac_MBP.period` is active.";
     pism_config:ocean.frac_MBP.reference_year_option = "ocean_frac_MBP_reference_year";
     pism_config:ocean.frac_MBP.reference_year_type = "integer";
     pism_config:ocean.frac_MBP.reference_year_units = "years";
@@ -1716,7 +1716,7 @@ netcdf pism_config {
     pism_config:ocean.frac_mass_flux.period_units = "years";
 
     pism_config:ocean.frac_mass_flux.reference_year = 0;
-    pism_config:ocean.frac_mass_flux.reference_year_doc = "Reference year to use when ``ocean.frac_mass_flux.period`` is active.";
+    pism_config:ocean.frac_mass_flux.reference_year_doc = "Reference year to use when :config:`ocean.frac_mass_flux.period` is active.";
     pism_config:ocean.frac_mass_flux.reference_year_option = "ocean_frac_mass_flux_reference_year";
     pism_config:ocean.frac_mass_flux.reference_year_type = "integer";
     pism_config:ocean.frac_mass_flux.reference_year_units = "years";
@@ -1733,7 +1733,7 @@ netcdf pism_config {
     pism_config:ocean.given.period_units = "years";
 
     pism_config:ocean.given.reference_year = 0;
-    pism_config:ocean.given.reference_year_doc = "Reference year to use when ``ocean.given.period`` is active.";
+    pism_config:ocean.given.reference_year_doc = "Reference year to use when :config:`ocean.given.period` is active.";
     pism_config:ocean.given.reference_year_option = "ocean_given_reference_year";
     pism_config:ocean.given.reference_year_type = "integer";
     pism_config:ocean.given.reference_year_units = "years";
@@ -1784,7 +1784,7 @@ netcdf pism_config {
     pism_config:ocean.pico.period_units = "years";
 
     pism_config:ocean.pico.reference_year = 0;
-    pism_config:ocean.pico.reference_year_doc = "Reference year to use when ``ocean.pico.period`` is active.";
+    pism_config:ocean.pico.reference_year_doc = "Reference year to use when :config:`ocean.pico.period` is active.";
     pism_config:ocean.pico.reference_year_option = "ocean_pico_reference_year";
     pism_config:ocean.pico.reference_year_type = "integer";
     pism_config:ocean.pico.reference_year_units = "years";
@@ -1827,7 +1827,7 @@ netcdf pism_config {
     pism_config:ocean.th.period_units = "years";
 
     pism_config:ocean.th.reference_year = 0;
-    pism_config:ocean.th.reference_year_doc = "Reference year to use when ``ocean.th.period`` is active.";
+    pism_config:ocean.th.reference_year_doc = "Reference year to use when :config:`ocean.th.period` is active.";
     pism_config:ocean.th.reference_year_option = "ocean_th_reference_year";
     pism_config:ocean.th.reference_year_type = "integer";
     pism_config:ocean.th.reference_year_units = "years";
@@ -2270,7 +2270,7 @@ netcdf pism_config {
     pism_config:surface.anomaly.period_units = "years";
 
     pism_config:surface.anomaly.reference_year = 0;
-    pism_config:surface.anomaly.reference_year_doc = "Reference year to use when ``surface.anomaly.period`` is active.";
+    pism_config:surface.anomaly.reference_year_doc = "Reference year to use when :config:`surface.anomaly.period` is active.";
     pism_config:surface.anomaly.reference_year_option = "surface_anomaly_reference_year";
     pism_config:surface.anomaly.reference_year_type = "integer";
     pism_config:surface.anomaly.reference_year_units = "years";
@@ -2297,7 +2297,7 @@ netcdf pism_config {
     pism_config:surface.delta_T.period_units = "years";
 
     pism_config:surface.delta_T.reference_year = 0;
-    pism_config:surface.delta_T.reference_year_doc = "Reference year to use when ``surface.delta_T.period`` is active.";
+    pism_config:surface.delta_T.reference_year_doc = "Reference year to use when :config:`surface.delta_T.period` is active.";
     pism_config:surface.delta_T.reference_year_option = "surface_delta_T_reference_year";
     pism_config:surface.delta_T.reference_year_type = "integer";
     pism_config:surface.delta_T.reference_year_units = "years";
@@ -2342,7 +2342,7 @@ netcdf pism_config {
     pism_config:surface.given.period_units = "years";
 
     pism_config:surface.given.reference_year = 0;
-    pism_config:surface.given.reference_year_doc = "Reference year to use when ``surface.given.period`` is active.";
+    pism_config:surface.given.reference_year_doc = "Reference year to use when :config:`surface.given.period` is active.";
     pism_config:surface.given.reference_year_option = "surface_given_reference_year";
     pism_config:surface.given.reference_year_type = "integer";
     pism_config:surface.given.reference_year_units = "years";
@@ -2385,7 +2385,7 @@ netcdf pism_config {
     pism_config:surface.elevation_change.period_units = "years";
 
     pism_config:surface.elevation_change.reference_year = 0;
-    pism_config:surface.elevation_change.reference_year_doc = "Reference year to use when ``surface.elevation_change.period`` is active.";
+    pism_config:surface.elevation_change.reference_year_doc = "Reference year to use when :config:`surface.elevation_change.period` is active.";
     pism_config:surface.elevation_change.reference_year_option = "surface_elevation_change_reference_year";
     pism_config:surface.elevation_change.reference_year_type = "integer";
     pism_config:surface.elevation_change.reference_year_units = "years";
@@ -2535,7 +2535,7 @@ netcdf pism_config {
     pism_config:surface.pdd.std_dev.period_units = "years";
 
     pism_config:surface.pdd.std_dev.reference_year = 0;
-    pism_config:surface.pdd.std_dev.reference_year_doc = "Reference year to use when ``surface.pdd.std_dev.period`` is active.";
+    pism_config:surface.pdd.std_dev.reference_year_doc = "Reference year to use when :config:`surface.pdd.std_dev.period` is active.";
     pism_config:surface.pdd.std_dev.reference_year_option = "pdd_sd_reference_year";
     pism_config:surface.pdd.std_dev.reference_year_type = "integer";
     pism_config:surface.pdd.std_dev.reference_year_units = "years";
