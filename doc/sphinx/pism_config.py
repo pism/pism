@@ -68,23 +68,22 @@ class ParameterList(Directive):
     def list_entry(self, name, data):
         "Build an entry for the list of parameters."
 
-        para = nodes.paragraph()
-        para += nodes.target('', '', ids=[make_id(name)])
-        para += nodes.literal("", name)
-        para += nodes.Text(" ({})".format(data["type"]))
-
-        doc, _ = self.state.inline_text(data["doc"], self.lineno)
+        p1 = nodes.paragraph()
+        p1 += nodes.target('', '', ids=[make_id(name)])
+        p1 += nodes.literal("", name)
+        p1 += nodes.Text(" ({})".format(data["type"]))
 
         fl = nodes.field_list()
 
-        f = nodes.field()
-        value = nodes.paragraph()
-        value += format_value(data["value"], data["type"])
-        if "units" in data:
-            value += nodes.emphasis("", " ({})".format(data["units"]))
-        f += [nodes.field_name("", "Value"),
-              nodes.field_body("", value)]
-        fl += f
+        if True:
+            f = nodes.field()
+            value = nodes.paragraph()
+            value += format_value(data["value"], data["type"])
+            if "units" in data:
+                value += nodes.emphasis("", " ({})".format(data["units"]))
+            f += [nodes.field_name("", "Value"),
+                  nodes.field_body("", value)]
+            fl += f
 
         if "choices" in data:
             choices = format_value(data["choices"], "keyword")
@@ -100,14 +99,12 @@ class ParameterList(Directive):
                   nodes.field_body("", nodes.paragraph("", "", option))]
             fl += f
 
-        f = nodes.field()
-        f += [nodes.field_name("", "Description"),
-              nodes.field_body("", nodes.paragraph("", "", *doc))]
-        fl += f
+        p2 = nodes.paragraph()
+        doc, _ = self.state.inline_text(data["doc"], self.lineno)
+        p2 += doc
+        p2 += fl
 
-        para += fl
-
-        return para
+        return [p1, p2]
 
     def compact_list_entry(self, name, data):
         "Build an entry for the compact list of parameters."
