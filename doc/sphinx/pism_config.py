@@ -16,7 +16,11 @@ def make_id(parameter):
     return "config-" + parameter
 
 class config(nodes.literal):
-    pass
+    parameter = None
+
+    def __init__(self, parameter, text=None):
+        self.parameter = parameter
+        nodes.literal.__init__(self, parameter, text or parameter)
 
 # this node makes it possible to add soft hyphens to wrap long parameter names
 class softhyphen(nodes.Element):
@@ -45,7 +49,7 @@ def config_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
         prb = inliner.problematic(rawtext, rawtext, msg)
         return [prb], [msg]
 
-    return [config("", text)], []
+    return [config(text)], []
 
 class ParameterList(Directive):
     has_content = False
@@ -112,11 +116,11 @@ class ParameterList(Directive):
 
         return [p1, p2]
 
-    def compact_list_entry(self, name, data):
+    def compact_list_entry(self, name, text, data):
         "Build an entry for the compact list of parameters."
 
         p1 = nodes.paragraph()
-        p1 += config("", name)
+        p1 += config(name, text)
 
         if not (data["type"] == "string" and len(data["value"]) == 0):
             p1 += nodes.Text(" (")
@@ -174,8 +178,9 @@ class ParameterList(Directive):
                 # only the full parameter list items become targets
                 item += self.list_entry(name, pism_data[name])
             else:
-                item += self.compact_list_entry(name, pism_data[name])
-
+                item += self.compact_list_entry(name,
+                                                name.replace(prefix, ""),
+                                                pism_data[name])
             parameter_list += item
 
         if not parameters_found:
@@ -196,15 +201,14 @@ def resolve_config_links(app, doctree, fromdocname):
     docname = app.builder.env.pism_parameters["docname"]
 
     for node in doctree.traverse(config):
-        parameter = node.astext()
-
         reference = nodes.reference('', '')
+        reference['internal'] = True
         reference['refdocname'] = docname
         reference['refuri'] = "{}#{}".format(app.builder.get_relative_uri(fromdocname, docname),
-                                             make_id(parameter))
+                                             make_id(node.parameter))
 
         # Allow wrapping long parameter names
-        words = parameter.split(".")
+        words = node.astext().split(".")
         reference += nodes.literal("", words[0])
         for w in words[1:]:
             reference += [softhyphen(), nodes.literal("", "." + w)]
