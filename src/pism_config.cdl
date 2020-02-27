@@ -498,7 +498,7 @@ netcdf pism_config {
     pism_config:basal_yield_stress.slippery_grounding_lines_type = "flag";
 
     pism_config:bed_deformation.bed_topography_delta_file = "";
-    pism_config:bed_deformation.bed_topography_delta_file_doc = "The name of the file to read the topg_delta from. This field is added to the bed topography during initialization.";
+    pism_config:bed_deformation.bed_topography_delta_file_doc = "The name of the file to read the ``topg_delta`` from. This field is added to the bed topography during initialization.";
     pism_config:bed_deformation.bed_topography_delta_file_option = "topg_delta_file";
     pism_config:bed_deformation.bed_topography_delta_file_type = "string";
 
@@ -539,7 +539,7 @@ netcdf pism_config {
 
     pism_config:bed_deformation.model = "none";
     pism_config:bed_deformation.model_choices = "none,iso,lc";
-    pism_config:bed_deformation.model_doc = "Selects a bed deformation model to use. ``iso`` is point-wise isostasy, ``lc`` is the Lingle-Clark model (see :cite:`LingleClark`, requires FFTW3).";
+    pism_config:bed_deformation.model_doc = "Selects a bed deformation model to use. ``iso`` is point-wise isostasy, ``lc`` is the Lingle-Clark model (see :cite:`LingleClark`, requires FFTW_).";
     pism_config:bed_deformation.model_option = "bed_def";
     pism_config:bed_deformation.model_type = "keyword";
 
@@ -626,7 +626,7 @@ netcdf pism_config {
     pism_config:calving.float_kill.calve_near_grounding_line_type = "flag";
 
     pism_config:calving.methods = "";
-    pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of 'eigen_calving', 'float_kill', 'thickness_calving'";
+    pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of ``eigen_calving``, ``float_kill``, ``thickness_calving``";
     pism_config:calving.methods_option = "calving";
     pism_config:calving.methods_type = "string";
 
