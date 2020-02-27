@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -68,6 +68,8 @@ const IceModelVec2S &OrographicPrecipitation::mean_precipitation_impl() const {
 void OrographicPrecipitation::init_impl(const Geometry &geometry) {
   (void)geometry;
 
+  m_input_model->init(geometry);
+
   m_log->message(2, "* Initializing the atmosphere model computing precipitation using the\n"
                     "  Linear Theory of Orographic Precipitation model with scalar wind speeds...\n");
 
@@ -79,8 +81,7 @@ void OrographicPrecipitation::init_impl(const Geometry &geometry) {
 
 
 void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, double dt) {
-  (void)t;
-  (void)dt;
+  m_input_model->update(geometry, t, dt);
 
   geometry.ice_surface_elevation.put_on_proc0(*m_work0);
 
@@ -104,7 +105,8 @@ void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, do
   m_precipitation->scale(1000.0 * water_density);
 }
 
-void OrographicPrecipitation::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
+void OrographicPrecipitation::precip_time_series_impl(int i, int j,
+                                                      std::vector<double> &result) const {
 
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = (*m_precipitation)(i, j);
@@ -112,11 +114,13 @@ void OrographicPrecipitation::precip_time_series_impl(int i, int j, std::vector<
 }
 
 void OrographicPrecipitation::begin_pointwise_access_impl() const {
+  m_input_model->begin_pointwise_access();
   m_precipitation->begin_access();
 }
 
 void OrographicPrecipitation::end_pointwise_access_impl() const {
   m_precipitation->end_access();
+  m_input_model->end_pointwise_access();
 }
 
 } // end of namespace atmosphere
