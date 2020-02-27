@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019, 2020 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -59,8 +59,8 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   }
 
   {
-    m_background_precip_pre  = config.get_number("atmosphere.orographic_precipitation.background_precip_pre", "m/s");
-    m_background_precip_post = config.get_number("atmosphere.orographic_precipitation.background_precip_post");
+    m_background_precip_pre  = config.get_number("atmosphere.orographic_precipitation.background_precip_pre", "mm/s");
+    m_background_precip_post = config.get_number("atmosphere.orographic_precipitation.background_precip_post", "mm/s");
 
     m_precip_scale_factor = config.get_number("atmosphere.orographic_precipitation.scale_factor");
     m_tau_c               = config.get_number("atmosphere.orographic_precipitation.conversion_time");
