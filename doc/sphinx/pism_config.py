@@ -4,6 +4,7 @@ from docutils.core import publish_doctree
 from sphinx.errors import SphinxError
 import os
 import netCDF4
+import re
 
 # We store this using a global variable because this much data seems
 # to break Sphinx if we store it in an env attribute. (For small
@@ -13,19 +14,6 @@ pism_data = {}
 
 def make_id(parameter):
     return "config-" + parameter
-
-def format_value(value, T):
-    if T == "string" and len(value) == 0:
-        return nodes.emphasis("", "no default")
-
-    if T in ["string", "keyword" ]:
-        return nodes.literal(value, value.replace(",", ", "))
-
-    if T in ["number", "integer"]:
-        return nodes.Text("{:g}".format(value))
-
-    if T == "flag":
-        return nodes.Text(str(value))
 
 class config(nodes.literal):
     pass
@@ -63,7 +51,21 @@ class ParameterList(Directive):
     has_content = False
     required_arguments = 0
 
-    option_spec = {"prefix": directives.unchanged}
+    option_spec = {"prefix": directives.unchanged,
+                   "exclude": directives.unchanged}
+
+    def format_value(self, value, T):
+        if T == "string" and len(value) == 0:
+            return nodes.emphasis("", "empty string")
+
+        if T in ["string", "keyword" ]:
+            return nodes.literal(value, value.replace(",", ", "))
+
+        if T in ["number", "integer"]:
+            return nodes.Text("{:g}".format(value))
+
+        if T == "flag":
+            return nodes.Text(str(value))
 
     def list_entry(self, name, data):
         "Build an entry for the list of parameters."
@@ -71,29 +73,33 @@ class ParameterList(Directive):
         p1 = nodes.paragraph()
         p1 += nodes.target('', '', ids=[make_id(name)])
         p1 += nodes.literal("", name)
-        p1 += nodes.Text(" ({})".format(data["type"]))
 
         fl = nodes.field_list()
 
         if True:
             f = nodes.field()
+            f += [nodes.field_name("", "Type"),
+                  nodes.field_body("", nodes.Text(data["type"]))]
+            fl += f
+
+            f = nodes.field()
             value = nodes.paragraph()
-            value += format_value(data["value"], data["type"])
+            value += self.format_value(data["value"], data["type"])
             if "units" in data:
                 value += nodes.emphasis("", " ({})".format(data["units"]))
-            f += [nodes.field_name("", "Value"),
+            f += [nodes.field_name("", "Default value"),
                   nodes.field_body("", value)]
             fl += f
 
         if "choices" in data:
-            choices = format_value(data["choices"], "keyword")
+            choices = self.format_value(data["choices"], "keyword")
             f = nodes.field()
             f += [nodes.field_name("", "Choices"),
                   nodes.field_body("", nodes.paragraph("", "", choices))]
             fl += f
 
         if "option" in data:
-            option = format_value("-" + data["option"], "keyword")
+            option = self.format_value("-" + data["option"], "keyword")
             f = nodes.field()
             f += [nodes.field_name("", "Option"),
                   nodes.field_body("", nodes.paragraph("", "", option))]
@@ -109,32 +115,22 @@ class ParameterList(Directive):
     def compact_list_entry(self, name, data):
         "Build an entry for the compact list of parameters."
 
+        p1 = nodes.paragraph()
+        p1 += config("", name)
+
+        if not (data["type"] == "string" and len(data["value"]) == 0):
+            p1 += nodes.Text(" (")
+            p1 += self.format_value(data["value"], data["type"])
+            if "units" in data:
+                if data["units"] not in ["1", "pure number"]:
+                    p1 += nodes.emphasis("", " {units}".format(**data))
+            p1 += nodes.Text(")")
+
         doc, _ = self.state.inline_text(data["doc"], self.lineno)
+        p2 = nodes.paragraph()
+        p2 += doc
 
-        para = nodes.paragraph()
-        para += config("", name)
-        para += nodes.Text(" ")
-        para += doc
-        para += nodes.Text(" (Default: ")
-        para += format_value(data["value"], data["type"])
-        if "units" in data:
-            para += nodes.emphasis("", " ({})".format(data["units"]))
-
-        if "choices" in data:
-            para += nodes.Text(", ")
-            para += nodes.Text("choices: ")
-            choices = format_value(data["choices"], "keyword")
-            para += choices
-
-        if "option" in data:
-            para += nodes.Text(", ")
-            option = format_value("-" + data["option"], "keyword")
-            para += nodes.Text("option: ")
-            para += option
-
-        para += nodes.Text(".)")
-
-        return para
+        return [p1, p2]
 
     def run(self):
         env = self.state.document.settings.env
@@ -151,7 +147,12 @@ class ParameterList(Directive):
             # It is used in resolve_config_links() to build URIs.
             env.pism_parameters["docname"] = env.docname
 
-        full_list = prefix == ""
+        if "exclude" in self.options:
+            exclude = self.options["exclude"]
+        else:
+            exclude = None
+
+        full_list = prefix == "" and exclude == None
 
         parameter_list = nodes.enumerated_list()
 
@@ -161,8 +162,11 @@ class ParameterList(Directive):
             # skip parameters that don't have the desired prefix
             if not name.startswith(prefix):
                 continue
-            else:
-                parameters_found = True
+
+            if exclude and re.match(exclude, name):
+                continue
+
+            parameters_found = True
 
             item = nodes.list_item()
 
@@ -199,6 +203,7 @@ def resolve_config_links(app, doctree, fromdocname):
         reference['refuri'] = "{}#{}".format(app.builder.get_relative_uri(fromdocname, docname),
                                              make_id(parameter))
 
+        # Allow wrapping long parameter names
         words = parameter.split(".")
         reference += nodes.literal("", words[0])
         for w in words[1:]:
@@ -244,10 +249,12 @@ def init_pism_parameters(app):
                 pass
 
 def check_consistency(app, env):
+    """Check if we have a full parameter list with link targets"""
     if not "docname" in env.pism_parameters:
         raise SphinxError("make sure that this document contains a pism-parameters directive")
 
 def env_purge_doc(app, env, docname):
+    """Update the environment if the file containing the full list changed"""
     if "docname" in env.pism_parameters and docname == env.pism_parameters["docname"]:
         del env.pism_parameters["docname"]
 
