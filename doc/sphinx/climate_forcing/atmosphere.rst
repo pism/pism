@@ -17,7 +17,7 @@ Reading boundary conditions from a file
 
 .. note:: This is the default choice.
 
-This model is controlled by the following parameters.
+This model is controlled by the following parameters with the prefix ``atmosphere.given.``.
 
 .. pism-parameters::
    :prefix: atmosphere.given.
@@ -65,7 +65,8 @@ Optionally a time-dependent scalar amplitude scaling `A(t)` can be used. Specify
 file to read it from using the :opt:`-atmosphere_yearly_cycle_scaling_file` command-line
 option. Without this option `A(\mathrm{time}) \equiv 1`.
 
-This model is controlled by the following parameters.
+This model is controlled by the following parameters with the prefix
+``atmosphere.yearly_cycle.``.
 
 .. pism-parameters::
    :prefix: atmosphere.yearly_cycle.
@@ -395,9 +396,7 @@ model.
 
 The only spatially-variable input of this model is the surface elevation (`h` above)
 modeled by PISM. It is controlled by a number of configuration parameters. See parameters
-with the prefix ``atmosphere.orographic_precipitation``.
-
-This model is controlled by
+with the prefix ``atmosphere.orographic_precipitation.`` listed below.
 
 .. pism-parameters::
-   :prefix: atmosphere.orographic_precipitation
+   :prefix: atmosphere.orographic_precipitation.

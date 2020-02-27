@@ -308,7 +308,8 @@ in the till (see section :ref:`sec-subhydro`):
    N_{till} = \min\left\{P_o, N_0 \left(\frac{\delta P_o}{N_0}\right)^s \, 10^{(e_0/C_c) \left(1 - s\right).}\right\}
 
 Here `P_o` is the ice overburden pressure, which is determined entirely by the ice
-thickness and density, and the remaining parameters are listed below.
+thickness and density, and the remaining parameters are listed below (all of these have
+the prefix ``basal_yield_stress.mohr_coulomb.``).
 
 .. pism-parameters::
    :prefix: basal_yield_stress.mohr_coulomb.
