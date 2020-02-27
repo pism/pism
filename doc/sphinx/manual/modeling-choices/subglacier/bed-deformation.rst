@@ -64,12 +64,14 @@ Compare the :var:`topg`, :var:`usurf`, and :var:`dbdt` variables in the resultin
 files. See also the comparison done in :cite:`BLKfastearth`.
 
 To include "measured" uplift rates during initialization, use the option
-:opt:`-uplift_file` to specify the name of the file containing the field :var:`dbdt` (CF
-standard name: ``tendency_of_bedrock_altitude``).
+:opt:`-uplift_file` (parameter :config:`bed_deformation.bed_uplift_file`) to specify the
+name of the file containing the field :var:`dbdt` (CF standard name:
+``tendency_of_bedrock_altitude``).
 
-Use the :opt:`-topg_delta_file` option to apply a correction to the bed topography field
-read in from an input file. This sets the bed topography `b` at the beginning of a run as
-follows:
+Use the option :opt:`-topg_delta_file` (parameter
+:config:`bed_deformation.bed_topography_delta_file`) to apply a correction to the bed
+topography field read in from an input file. This sets the bed topography `b` at the
+beginning of a run as follows:
 
 .. math::
    :label: eq-bedcorrection

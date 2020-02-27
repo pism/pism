@@ -17,13 +17,10 @@ Reading boundary conditions from a file
 
 .. note:: This is the default choice.
 
-Command-line options:
+This model is controlled by the following parameters.
 
-- :opt:`-atmosphere_given_file` prescribes an input file
-- :opt:`-atmosphere_given_period` (*years*) makes PISM interpret data in
-  ``-atmosphere_given_file`` as periodic. See section :ref:`sec-periodic-forcing`.
-- :opt:`-atmosphere_given_reference_year` sets the reference model year; see section
-  :ref:`sec-periodic-forcing`.
+.. pism-parameters::
+   :prefix: atmosphere.given.
 
 A file ``foo.nc`` used with ``-atmosphere given -atmosphere_given_file foo.nc`` should
 contain several records; the :var:`time` variable should describe what model time these
@@ -59,15 +56,19 @@ where `t` is the year fraction "since last July"; the summer peak of the cycle i
 :config:`atmosphere.fausto_air_temp.summer_peak_day`, which is set to day `196` by
 default (approximately July 15).
 
-Here `T_{\text{mean annual}}` (variable :var:`air_temp_mean_annual`) and
-`T_{\text{mean July}}` (variable :var:`air_temp_mean_july`) are read from a file
-selected using the :opt:`-atmosphere_yearly_cycle_file` command-line option. A
-time-independent precipitation field (variable :var:`precipitation`) is read from the same
-file.
+Here `T_{\text{mean annual}}` (variable :var:`air_temp_mean_annual`) and `T_{\text{mean
+July}}` (variable :var:`air_temp_mean_july`) are read from a file selected using the
+command-line option :opt:`-atmosphere_yearly_cycle_file`. A time-independent precipitation
+field (variable :var:`precipitation`) is read from the same file.
 
 Optionally a time-dependent scalar amplitude scaling `A(t)` can be used. Specify a
 file to read it from using the :opt:`-atmosphere_yearly_cycle_scaling_file` command-line
 option. Without this option `A(\mathrm{time}) \equiv 1`.
+
+This model is controlled by the following parameters.
+
+.. pism-parameters::
+   :prefix: atmosphere.yearly_cycle.
 
 .. _sec-atmosphere-searise-greenland:
 
@@ -108,8 +109,7 @@ PIK
 
 This model component reads a time-independent precipitation field from an input file
 specified by :config:`atmosphere.pik.file` and computes near-surface air temperature using
-a parameterization selected using :config:`atmosphere.pik.parameterization` (command-line
-option :opt:`-atmosphere_pik`).
+a parameterization selected using :config:`atmosphere.pik.parameterization`.
 
 .. note::
 

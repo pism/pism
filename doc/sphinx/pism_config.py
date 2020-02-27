@@ -122,7 +122,7 @@ class ParameterList(Directive):
             p1 += nodes.Text(" (")
             p1 += self.format_value(data["value"], data["type"])
             if "units" in data:
-                if data["units"] not in ["1", "pure number"]:
+                if data["units"] not in ["1", "pure number", "count"]:
                     p1 += nodes.emphasis("", " {units}".format(**data))
             p1 += nodes.Text(")")
 
