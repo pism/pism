@@ -247,13 +247,13 @@ netcdf pism_config {
     pism_config:atmosphere.orographic_precipitation.reference_density_units = "kg m-3";
 
     pism_config:atmosphere.orographic_precipitation.scale_factor = 1;
-    pism_config:atmosphere.orographic_precipitation.scale_factor_doc = "Precipitation scaling factor";
+    pism_config:atmosphere.orographic_precipitation.scale_factor_doc = "Precipitation scaling factor `S`.";
     pism_config:atmosphere.orographic_precipitation.scale_factor_option = "scale_factor";
     pism_config:atmosphere.orographic_precipitation.scale_factor_type = "number";
     pism_config:atmosphere.orographic_precipitation.scale_factor_units = "1";
 
     pism_config:atmosphere.orographic_precipitation.truncate = "true";
-    pism_config:atmosphere.orographic_precipitation.truncate_doc = "Truncate precipitation at 0";
+    pism_config:atmosphere.orographic_precipitation.truncate_doc = "Truncate precipitation at 0, disallowing negative precipitation values.";
     pism_config:atmosphere.orographic_precipitation.truncate_option = "truncate";
     pism_config:atmosphere.orographic_precipitation.truncate_type = "flag";
 
@@ -270,7 +270,7 @@ netcdf pism_config {
     pism_config:atmosphere.orographic_precipitation.wind_direction_units = "degrees";
 
     pism_config:atmosphere.orographic_precipitation.wind_speed = 10;
-    pism_config:atmosphere.orographic_precipitation.wind_speed_doc = "The direction the wind is coming from";
+    pism_config:atmosphere.orographic_precipitation.wind_speed_doc = "The wind speed.";
     pism_config:atmosphere.orographic_precipitation.wind_speed_option = "wind_speed";
     pism_config:atmosphere.orographic_precipitation.wind_speed_type = "number";
     pism_config:atmosphere.orographic_precipitation.wind_speed_units = "m/s";
@@ -329,7 +329,7 @@ netcdf pism_config {
     pism_config:atmosphere.yearly_cycle.file_type = "string";
 
     pism_config:atmosphere.yearly_cycle.scaling.file = "";
-    pism_config:atmosphere.yearly_cycle.scaling.file_doc = "Name of the file containing amplitude scaling (`amplitude_scaling`) for the near-surface air temperature.";
+    pism_config:atmosphere.yearly_cycle.scaling.file_doc = "Name of the file containing amplitude scaling (``amplitude_scaling``) for the near-surface air temperature.";
     pism_config:atmosphere.yearly_cycle.scaling.file_option = "atmosphere_yearly_cycle_scaling_file";
     pism_config:atmosphere.yearly_cycle.scaling.file_type = "string";
 
@@ -1739,40 +1739,42 @@ netcdf pism_config {
     pism_config:ocean.given.reference_year_units = "years";
 
     pism_config:ocean.pico.continental_shelf_depth = -800.0;
-    pism_config:ocean.pico.continental_shelf_depth_doc = "Determines the edge of the continental shelf to calculate mean ocean properties";
+    pism_config:ocean.pico.continental_shelf_depth_doc = "Specifies the depth up to which oceanic input temperatures and salinities are averaged over the continental shelf areas in front of the ice shelf cavities.";
     pism_config:ocean.pico.continental_shelf_depth_option = "continental_shelf_depth";
     pism_config:ocean.pico.continental_shelf_depth_type = "number";
     pism_config:ocean.pico.continental_shelf_depth_units = "meters";
 
     pism_config:ocean.pico.exclude_ice_rises = "yes";
-    pism_config:ocean.pico.exclude_ice_rises_doc = "Exclude ice rises for box calculation in PICO";
+    pism_config:ocean.pico.exclude_ice_rises_doc = "If set to true, grounding lines of ice rises are excluded in the geometrical routines that determine the ocean boxes; using this option is recommended.";
     pism_config:ocean.pico.exclude_ice_rises_option = "exclude_icerises";
     pism_config:ocean.pico.exclude_ice_rises_type = "flag";
 
     pism_config:ocean.pico.file = "";
-    pism_config:ocean.pico.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:ocean.pico.file_doc = "Specifies the NetCDF file containing potential temperature
+  (:var:`theta_ocean`), salinity (:var:`salinity_ocean`) and ocean basins (:var:`basins`).";
     pism_config:ocean.pico.file_option = "ocean_pico_file";
     pism_config:ocean.pico.file_type = "string";
 
     pism_config:ocean.pico.heat_exchange_coefficent = 2e-5;
-    pism_config:ocean.pico.heat_exchange_coefficent_doc = "Turbulent heat exchange coefficient";
+    pism_config:ocean.pico.heat_exchange_coefficent_doc = "Sets the coefficient for turbulent heat
+  exchange from the ambient ocean across the boundary layer beneath the ice shelf base.";
     pism_config:ocean.pico.heat_exchange_coefficent_option = "gamma_T";
     pism_config:ocean.pico.heat_exchange_coefficent_type = "number";
     pism_config:ocean.pico.heat_exchange_coefficent_units = "meters second-1";
 
     pism_config:ocean.pico.maximum_ice_rise_area = 1e5;
-    pism_config:ocean.pico.maximum_ice_rise_area_doc = "Maximum ice rise area. Patches of grounded ice that are bugger than this are treated as continental ice sheets.";
+    pism_config:ocean.pico.maximum_ice_rise_area_doc = "Specifies an area threshold that separates ice rises from continental regions.";
     pism_config:ocean.pico.maximum_ice_rise_area_type = "number";
     pism_config:ocean.pico.maximum_ice_rise_area_units = "km2";
 
     pism_config:ocean.pico.number_of_boxes = 5;
-    pism_config:ocean.pico.number_of_boxes_doc = "Default maximum number of boxes (for the largest ice shelves)";
+    pism_config:ocean.pico.number_of_boxes_doc = "For each ice shelf the number of ocean boxes is determined by interpolating between 1 and number_of_boxes depending on its size and geometry such that larger ice shelves are resolved with more boxes; a value of 5 is suitable for the Antarctic setup.";
     pism_config:ocean.pico.number_of_boxes_option = "number_of_boxes";
     pism_config:ocean.pico.number_of_boxes_type = "integer";
     pism_config:ocean.pico.number_of_boxes_units = "pure number";
 
     pism_config:ocean.pico.overturning_coefficent = 1e6;
-    pism_config:ocean.pico.overturning_coefficent_doc = "Overturning stregth coefficient";
+    pism_config:ocean.pico.overturning_coefficent_doc = "Sets the overturning strength coefficient.";
     pism_config:ocean.pico.overturning_coefficent_option = "overturning_coeff";
     pism_config:ocean.pico.overturning_coefficent_type = "number";
     pism_config:ocean.pico.overturning_coefficent_units = "meters6 seconds-1 kg-1";
