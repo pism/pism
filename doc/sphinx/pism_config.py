@@ -60,7 +60,7 @@ class ParameterList(Directive):
 
     def format_value(self, value, T):
         if T == "string" and len(value) == 0:
-            return nodes.emphasis("", "empty string")
+            return nodes.emphasis("", "empty")
 
         if T in ["string", "keyword" ]:
             return nodes.literal(value, value.replace(",", ", "))
@@ -131,10 +131,11 @@ class ParameterList(Directive):
             p1 += nodes.Text(")")
 
         doc, _ = self.state.inline_text(data["doc"], self.lineno)
-        p2 = nodes.paragraph()
-        p2 += doc
 
-        return [p1, p2]
+        p1 += nodes.Text(" ")
+        p1 += doc
+
+        return p1
 
     def run(self):
         env = self.state.document.settings.env
