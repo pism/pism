@@ -102,7 +102,7 @@ void OrographicPrecipitation::update_impl(const Geometry &geometry, double t, do
 
   // convert from mm/s to kg / (m^2 s):
   double water_density = m_config->get_number("constants.fresh_water.density");
-  m_precipitation->scale(1000.0 * water_density);
+  m_precipitation->scale(1e-3 * water_density);
 }
 
 void OrographicPrecipitation::precip_time_series_impl(int i, int j,
