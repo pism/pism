@@ -8,7 +8,8 @@ Front retreat
 
 - Implement the ISMIP6 front retreat parameterization. Reads a time-dependent ice extent
   mask (variable name: `land_ice_area_fraction_retreat`) from a file specified using the
-  configuration parameter `geometry.front_retreat.prescribed.file`.
+  configuration parameter `geometry.front_retreat.prescribed.file`. This mechanism
+  replaces the old "`ocean_kill`" calving code.
 - Rename configuration parameters controlling front retreat because they are not
   calving-specific (`calving.front_retreat.use_cfl` to `geometry.front_retreat.use_cfl`
   and `calving.front_retreat.wrap_around` to `geometry.front_retreat.wrap_around`).
