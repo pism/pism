@@ -163,7 +163,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 endif ()
 
 add_custom_target (etags
-  COMMAND find . -iname *.cc -o -iname *.hh -o -iname *.c -o -iname *.h | xargs etags --class-qualify --no-defines
+  COMMAND find . -iname *.cc -o -iname *.hh -o -iname *.c -o -iname *.h | xargs etags --no-defines
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
   VERBATIM
 )
