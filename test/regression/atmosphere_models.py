@@ -26,8 +26,8 @@ PISM.Context().log.set_threshold(1)
 def write_state(model):
     "Test writing of the model state"
 
-    o_filename = "tmp_model_state.nc"
-    o_diagnostics = "tmp_diagnostics.nc"
+    o_filename = "atmosphere_model_state.nc"
+    o_diagnostics = "atmosphere_diagnostics.nc"
 
     try:
         output = PISM.util.prepare_output(o_filename)
@@ -160,7 +160,7 @@ class PIK(TestCase):
 
 class DeltaT(TestCase):
     def setUp(self):
-        self.filename = "delta_T_input.nc"
+        self.filename = "atmosphere_delta_T_input.nc"
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -186,7 +186,7 @@ class DeltaT(TestCase):
 
 class DeltaP(TestCase):
     def setUp(self):
-        self.filename = "delta_P_input.nc"
+        self.filename = "atmosphere_delta_P_input.nc"
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -272,7 +272,7 @@ class SeaRISE(TestCase):
 
 class YearlyCycle(TestCase):
     def setUp(self):
-        self.filename = "yearly_cycle.nc"
+        self.filename = "atmosphere_yearly_cycle.nc"
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
 
@@ -321,7 +321,7 @@ class YearlyCycle(TestCase):
 
 class OneStation(TestCase):
     def setUp(self):
-        self.filename = "one_station.nc"
+        self.filename = "atmosphere_one_station.nc"
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.T = 263.15
@@ -382,7 +382,7 @@ class Uniform(TestCase):
 
 class Anomaly(TestCase):
     def setUp(self):
-        self.filename = "delta_T_input.nc"
+        self.filename = "atmosphere_anomaly_input.nc"
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -421,7 +421,7 @@ class Anomaly(TestCase):
 
 class PrecipScaling(TestCase):
     def setUp(self):
-        self.filename = "precip_scaling_input.nc"
+        self.filename = "atmosphere_precip_scaling_input.nc"
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -449,7 +449,7 @@ class PrecipScaling(TestCase):
 
 class FracP(TestCase):
     def setUp(self):
-        self.filename = "frac_P_input.nc"
+        self.filename = "atmosphere_frac_P_input.nc"
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
