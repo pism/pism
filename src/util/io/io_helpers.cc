@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -1441,8 +1441,16 @@ void read_valid_range(const File &file, const std::string &name, VariableMetadat
     }
 
     // Read the units.
+    std::string file_units = file.read_text_attribute(name, "units");
+
+    if (file_units.empty()) {
+      // If the variable in the file does not have the units attribute we assume that
+      // units in the file match internal (PISM) units.
+      file_units = variable.get_string("units");
+    }
+
     units::Converter c(variable.unit_system(),
-                       file.read_text_attribute(name, "units"),
+                       file_units,
                        variable.get_string("units"));
 
     std::vector<double> bounds = file.read_double_attribute(name, "valid_range");
