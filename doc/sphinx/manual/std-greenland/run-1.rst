@@ -67,12 +67,12 @@ pism_Greenland_5km_v1.1.nc``". For more on these choices, see subsection
 :ref:`sec-climate-inputs`, and also the :ref:`Climate Forcing Manual
 <sec-climate-forcing>`.
 
-Then there are a couple of options related to ice dynamics. First is a minimal calving
-model which removes ice at the calving front location given by a thickness field in the
-input file ("``-calving ocean_kill``"); see section :ref:`sec-calving` for this and
-other calving options). Then there is a setting for enhanced ice softness ("``-sia_e
-3.0``"). See section :ref:`sec-rheology` for more on this enhancement parameter, which
-we also return to later in section :ref:`sec-paramstudy`.
+Then there are a couple of options related to ice dynamics. First is a minimal "calving"
+model which removes ice leaving the area covered by ice (or ice-free with the bed above
+the sea level) according to the input file ("``-front_retreat_file``"); see section
+:ref:`sec-calving` for this and other calving options). Then there is a setting for
+enhanced ice softness ("``-sia_e 3.0``"). See section :ref:`sec-rheology` for more on this
+enhancement parameter, which we also return to later in section :ref:`sec-paramstudy`.
 
 Then there are longish options describing the fields we want as output, including scalar
 time series ("``-ts_file ts_g20km_10ka.nc -ts_times -10000:yearly:0``"; see section

@@ -68,7 +68,7 @@ RUNTIME=1
 echo
 echo "$SCRIPTNAME  bootstrapping on $GRIDNAME grid plus SIA run for $RUNTIME a"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -i ${INNAME} -bootstrap $GRID \
-	$SIA_ENHANCEMENT $PIKPHYS_COUPLING -calving ocean_kill -ocean_kill_file ${INNAME} \
+	$SIA_ENHANCEMENT $PIKPHYS_COUPLING -front_retreat_file ${INNAME} \
 	-y $RUNTIME -o $RESNAMEONE"
 $DO $cmd
 #exit # <-- uncomment to stop here
@@ -79,7 +79,7 @@ RUNTIME=100
 echo
 echo "$SCRIPTNAME  short SIA run for $RUNTIME a"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -i $RESNAMEONE \
-	$SIA_ENHANCEMENT $PIKPHYS_COUPLING -calving ocean_kill -ocean_kill_file $RESNAMEONE \
+	$SIA_ENHANCEMENT $PIKPHYS_COUPLING -front_retreat_file ${INNAME} \
 	-y $RUNTIME -o $RESNAME"
 $DO $cmd
 
