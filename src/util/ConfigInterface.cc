@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -766,7 +766,7 @@ void set_config_from_options(Config &config) {
   options::deprecated("-sia", "-stress_balance ...");
   options::deprecated("-no_sia", "-stress_balance ...");
   options::deprecated("-hold_tauc", "-yield_stress constant");
-  options::deprecated("-ocean_kill", "-calving ocean_kill -ocean_kill_file foo.nc");
+  options::deprecated("-ocean_kill_file", "-front_retreat_file");
   options::deprecated("-eigen_calving", "-calving eigen_calving -eigen_calving_K XXX");
   options::deprecated("-calving_at_thickness",
                       "-calving thickness_calving -thickness_calving_threshold XXX");
