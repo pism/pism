@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2018  PISM authors
+# Copyright (C) 2009-2018, 2020  PISM authors
 
 # downloads development version of SeaRISE "Present Day Antarctica" master
 # dataset NetCDF file, adjusts metadata, breaks up, saves under new names,
@@ -51,6 +51,14 @@ ncks -O -v x,y,lat,lon,bheatflx,topg,thk,precipitation,air_temp,mapping \
 ncwa -O -a t $PISMVERSION $PISMVERSION
 # remove the time (t) coordinate variable
 ncks -O -x -v t $PISMVERSION $PISMVERSION
+# generate the maximum extent mask
+ncap2 -A \
+      -s 'land_ice_area_fraction_retreat=0 * thk' \
+      -s 'where(thk > 0 || topg > 0) land_ice_area_fraction_retreat=1' \
+      -s 'land_ice_area_fraction_retreat@units="1"' \
+      $PISMVERSION $PISMVERSION
+ncatted -a standard_name,land_ice_area_fraction_retreat,d,, $PISMVERSION
+
 echo "  PISM-readable file $PISMVERSION created; only has fields"
 echo "    used in bootstrapping."
 
