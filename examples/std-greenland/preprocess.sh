@@ -56,9 +56,10 @@ ncatted -O -a proj,global,c,c,"+proj=stere +lat_0=90 +lat_ts=71 +lon_0=-39 +k=1 
 ncap2 -A \
       -s 'land_ice_area_fraction_retreat=0 * thk' \
       -s 'where(thk > 0 || topg > 0) land_ice_area_fraction_retreat=1' \
-      -s 'land_ice_area_fraction_retreat@standard_name=""' \
       -s 'land_ice_area_fraction_retreat@units="1"' \
       $PISMVERSION $PISMVERSION
+ncatted -a standard_name,land_ice_area_fraction_retreat,d,, $PISMVERSION
+
 echo "done."
 echo
 
