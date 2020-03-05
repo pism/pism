@@ -175,8 +175,6 @@ double PicoPhysics::overturning(double Soc_box0, double Soc, double Toc_box0, do
 double PicoPhysics::T_star(double salinity, double temperature, double pressure) const {
   double T_s = theta_pm(salinity, pressure) - temperature; // in Kelvin
 
-  assert(T_s < 0.0);
-
   // Positive values are unphysical as temperatures below the pressure melting point would
   // be ice, but we are in the ocean. This should not occur because
   // set_ocean_input_fields(...) sets too cold temperatures to pressure melting point +
