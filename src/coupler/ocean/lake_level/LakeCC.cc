@@ -234,7 +234,7 @@ void LakeCC::update_impl(const Geometry &geometry, double t, double dt) {
       const IceModelVec2S &bmb               = *m_grid->variables().get_2d_scalar("effective_BMB"),
                           &tc_calving        = *m_grid->variables().get_2d_scalar("thickness_change_due_to_calving"),
                           &tc_frontal_melt   = *m_grid->variables().get_2d_scalar("thickness_change_due_to_frontal_melt"),
-                          &tc_forced_retreat = *m_grid->variables().get_2d_scalar("thickness_change_due_forced_retreat");
+                          &tc_forced_retreat = *m_grid->variables().get_2d_scalar("thickness_change_due_to_forced_retreat");
 
       compute_fill_rate(dt,
                         m_target_level,
