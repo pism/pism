@@ -37,12 +37,10 @@ WeatherStation::WeatherStation(IceGrid::ConstPtr grid)
     m_precipitation_timeseries(*grid, "precipitation", m_config->get_string("time.dimension_name")),
     m_air_temp_timeseries(*grid, "air_temp", m_config->get_string("time.dimension_name"))
 {
-  m_precipitation_timeseries.dimension().set_string("units", grid->ctx()->time()->units_string());
   m_precipitation_timeseries.variable().set_string("units", "kg m-2 second-1");
   m_precipitation_timeseries.variable().set_string("long_name",
                                                    "ice-equivalent precipitation rate");
 
-  m_air_temp_timeseries.dimension().set_string("units", grid->ctx()->time()->units_string());
   m_air_temp_timeseries.variable().set_string("units", "Kelvin");
   m_air_temp_timeseries.variable().set_string("long_name",
                                               "near-surface air temperature");

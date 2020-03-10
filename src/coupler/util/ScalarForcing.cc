@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019 PISM Authors
+/* Copyright (C) 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -46,8 +46,6 @@ ScalarForcing::ScalarForcing(std::shared_ptr<const Context> ctx,
   m_data->variable().set_string("units", units);
   m_data->variable().set_string("glaciological_units", glaciological_units);
   m_data->variable().set_string("long_name", long_name);
-
-  m_data->dimension().set_string("units", ctx->time()->units_string());
 }
 
 ScalarForcing::~ScalarForcing() {

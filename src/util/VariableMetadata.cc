@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009--2020 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -208,14 +208,14 @@ void VariableMetadata::report_range(const Logger &log, double min, double max,
   if (has_attribute("standard_name")) {
 
     if (found_by_standard_name) {
-      log.message(2, 
+      log.message(2,
                   " %s / standard_name=%-10s\n"
                   "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                   get_name().c_str(),
                   get_string("standard_name").c_str(), spacer.c_str(), min, max,
                   get_string("glaciological_units").c_str());
     } else {
-      log.message(2, 
+      log.message(2,
                   " %s / WARNING! standard_name=%s is missing, found by short_name\n"
                   "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                   get_name().c_str(),
@@ -224,7 +224,7 @@ void VariableMetadata::report_range(const Logger &log, double min, double max,
     }
 
   } else {
-    log.message(2, 
+    log.message(2,
                 " %s / %-10s\n"
                 "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                 get_name().c_str(),
@@ -434,7 +434,7 @@ bool set_contains(const std::set<std::string> &S, const VariableMetadata &variab
 }
 
 TimeseriesMetadata::TimeseriesMetadata(const std::string &name, const std::string &dimension_name,
-                           units::System::Ptr system)
+                                       units::System::Ptr system)
   : VariableMetadata(name, system, 0) {
   m_dimension_name = dimension_name;
 }
@@ -451,7 +451,7 @@ std::string TimeseriesMetadata::get_dimension_name() const {
 /// TimeBoundsMetadata
 
 TimeBoundsMetadata::TimeBoundsMetadata(const std::string &var_name, const std::string &dim_name,
-                           units::System::Ptr system)
+                                       units::System::Ptr system)
   : TimeseriesMetadata(var_name, dim_name, system) {
   m_bounds_name    = "nv";      // number of vertexes
 }

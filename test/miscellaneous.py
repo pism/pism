@@ -1004,60 +1004,86 @@ class PrincipalStrainRates(TestCase):
     def tearDown(self):
         pass
 
-def test_constant_interpolation():
-    "Piecewise-constant interpolation in Timeseries"
+class Timeseries(TestCase):
 
-    ctx = PISM.Context()
-    ts = PISM.Timeseries(ctx.com, ctx.unit_system, "test", "time")
+    def setUp(self):
+        self.filename_constant = "timeseries_constant.nc"
+        self.filename_linear = "timeseries_linear.nc"
 
-    t = [0, 1, 2, 3]
-    y = [2, 3, 1]
-    N = len(y)
 
-    for k in range(N):
-        ts.append(y[k], t[k], t[k + 1])
+        self.times_constant = [1, 2, 3]
+        self.values_constant = [2, 3, 1]
+        PISM.testing.create_scalar_forcing(self.filename_constant,
+                                           "v", "1",
+                                           self.values_constant,
+                                           times=None,
+                                           time_bounds=[0, 1, 1, 2, 2, 3])
 
-    # extrapolation on the left
-    assert ts(t[0] - 1) == y[0]
-    # extrapolation on the right
-    assert ts(t[-1] + 1) == y[-1]
-    # interior intervals
-    for k in range(N):
-        T = 0.5 * (t[k] + t[k + 1])
+        N = 4
+        self.times_linear = np.arange(N + 1, dtype=np.float64)
+        PISM.testing.create_scalar_forcing(self.filename_linear,
+                                           "v", "1",
+                                           self.f(self.times_linear),
+                                           times=self.times_linear)
 
-        assert ts(T) == y[k], (ts(T), y[k])
-
-def test_timeseries_linear_interpolation():
-    "Linear interpolation in Timeseries"
-
-    ctx = PISM.Context()
-    ts = PISM.Timeseries(ctx.com, ctx.unit_system, "test", "time")
-
-    def f(x):
+    def f(self, x):
         "a linear function that can be reproduced exactly"
         return 2.0 * x - 3.0
 
-    N = 4
-    t = np.arange(N + 1, dtype=np.float64)
+    def tearDown(self):
+        os.remove(self.filename_constant)
+        os.remove(self.filename_linear)
 
-    for k in range(N):
-        # use right end point
-        ts.append(f(t[k + 1]), t[k], t[k + 1])
+    def test_constant_interpolation(self):
+        "Piecewise-constant interpolation in Timeseries"
 
-    ts.set_use_bounds(False)
+        ctx = PISM.Context()
+        ts = PISM.Timeseries(ctx.com, ctx.unit_system, "v", "FIXME")
 
-    # extrapolation on the left (note that t[0] is not used)
-    assert ts(t[1] - 1) == f(t[1])
+        f = PISM.File(ctx.com, self.filename_constant, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
+        ts.read(f, ctx.time, ctx.log)
+        del f
 
-    # extrapolation on the right
-    assert ts(t[-1] + 1) == f(t[-1])
+        t = self.times_constant
+        y = self.values_constant
+        N = len(y)
 
-    # interior intervals
-    for k in range(1, N):
-        dt = t[k + 1] - t[k]
-        T = t[k] + 0.25 * dt    # *not* the midpoint of the interval
+        # extrapolation on the left
+        assert ts(t[0] - 1) == y[0]
+        # extrapolation on the right
+        assert ts(t[-1] + 1) == y[-1]
+        # interior intervals
+        for k in range(1, N):
+            dt = t[k] - t[k - 1]
+            T = t[k - 1] + 0.25 * dt    # *not* the midpoint of the interval
 
-        assert ts(T) == f(T), (T, ts(T), f(T))
+            assert ts(T) == y[k], (k, T, ts(T), y[k])
+
+    def test_timeseries_linear_interpolation(self):
+        "Linear interpolation in Timeseries"
+
+        ctx = PISM.Context()
+        ts = PISM.Timeseries(ctx.com, ctx.unit_system, "v", "FIXME")
+
+        f = PISM.File(ctx.com, self.filename_linear, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
+        ts.read(f, ctx.time, ctx.log)
+        del f
+
+        t = self.times_linear
+        N = len(t) - 1
+
+        # extrapolation on the left (note that t[0] is not used)
+        assert ts(t[0] - 1) == self.f(t[0]), "left extrapolation failed"
+
+        # extrapolation on the right
+        assert ts(t[-1] + 1) == self.f(t[-1]), "right extrapolation failed"
+
+        # interior intervals
+        for k in range(1, N):
+            dt = t[k + 1] - t[k]
+            T = t[k] + 0.25 * dt    # *not* the midpoint of the interval
+
+            assert ts(T) == self.f(T), (T, ts(T), self.f(T))
 
 def test_trapezoid_integral():
     "Linear integration weights"

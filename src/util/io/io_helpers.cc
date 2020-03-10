@@ -1032,8 +1032,7 @@ void read_timeseries(const File &file, const TimeseriesMetadata &metadata,
     // Find the variable:
     std::string
       long_name      = metadata.get_string("long_name"),
-      standard_name  = metadata.get_string("standard_name"),
-      dimension_name = metadata.get_dimension_name();
+      standard_name  = metadata.get_string("standard_name");
 
     auto var = file.find_variable(name, standard_name);
 
@@ -1046,12 +1045,14 @@ void read_timeseries(const File &file, const TimeseriesMetadata &metadata,
       throw RuntimeError(PISM_ERROR_LOCATION, "a time-series variable has to be one-dimensional");
     }
 
+    auto dimension_name = dims[0];
+
     unsigned int length = file.dimension_length(dimension_name);
     if (length <= 0) {
       throw RuntimeError(PISM_ERROR_LOCATION, "dimension " + dimension_name + " has length zero");
     }
 
-    data.resize(length);          // memory allocation happens here
+    data.resize(length);        // memory allocation happens here
 
     file.read_variable(var.name, {0}, {length}, data.data());
 
@@ -1088,14 +1089,6 @@ void read_timeseries(const File &file, const TimeseriesMetadata &metadata,
                   file.filename().c_str());
     throw;
   }
-}
-
-void write_timeseries(const File &file, const TimeseriesMetadata &metadata, size_t t_start,
-                      double data, IO_Type nctype) {
-  std::vector<double> vector_data(1, data);
-
-  // this call will handle errors
-  write_timeseries(file, metadata, t_start, vector_data, nctype);
 }
 
 /** @brief Write a time-series `data` to a file.

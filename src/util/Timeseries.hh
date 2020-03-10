@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2009, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2020 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -39,36 +39,28 @@ class Logger;
   implement forcing with scalar time-dependent parameters (such as
   paleo-climate forcing).
 
-  Note that every processor stores the whole time-series and calling append()
-  repeatedly will use a lot of memory.
-
-  Please use DiagnosticTimeseries to output long time-series.
-
   \subsection timeseries_example An example
 
   The following snippet from PAForcing::init() illustrates creating a Timeseries
   object and reading data from a file.
 
   \code
-  delta_T = new Timeseries(grid.com, grid.rank, "delta_T", "time");
-  ierr = delta_T->set_string("units", "Kelvin", ""); CHKERRQ(ierr);
-  ierr = delta_T->set_dimension_units("years", ""); CHKERRQ(ierr);
-  ierr = delta_T->set_attr("long_name", "near-surface air temperature offsets");
-  CHKERRQ(ierr);
-  
-  ierr = delta_T->read(dT_file); CHKERRQ(ierr);
+  Timeseries delta_T(grid, "delta_T", "time");
+  delta_T.variable().set_string("units", "Kelvin");
+
+  delta_T->read(dT_file);
   \endcode
 
   Call
   \code
-  double offset = (*delta_T)(time);
+  double offset = delta_T(time);
   \endcode
   to get the value corresponding to the time "time", in this case in years. The
   value returned will be computed using linear interpolation.
 
   It is also possible to get an n-th value from a time-series: just use square brackets:
   \code
-  double offset = (*delta_T)[10];
+  double offset = delta_T[10];
   \endcode
 */
 class Timeseries {
@@ -76,50 +68,30 @@ public:
   Timeseries(const IceGrid &g, const std::string &name, const std::string &dimension_name);
   Timeseries(MPI_Comm com, units::System::Ptr units_system,
              const std::string &name, const std::string &dimension_name);
+
+  std::string name() const;
   
   void read(const File &nc, const Time &time_manager, const Logger &log);
-  void write(const File &nc) const;
+
   double operator()(double time) const;
   double operator[](unsigned int j) const;
   double average(double t, double dt, unsigned int N) const;
-  void append(double value, double a, double b);
-
-  void reset();
 
   TimeseriesMetadata& variable();
-  TimeseriesMetadata& dimension();
-  TimeBoundsMetadata& bounds();
-
-  const TimeseriesMetadata& variable() const;
-  const TimeseriesMetadata& dimension() const;
-  const TimeBoundsMetadata& bounds() const;
-
-  const std::vector<double> &times() const;
-  const std::vector<double> &time_bounds() const;
-  const std::vector<double> &values() const;
-
-  void scale(double scaling_factor);
-
-  std::string name() const;
-
-  bool get_use_bounds() const;
-  void set_use_bounds(bool flag);
 
 private:
   MPI_Comm m_com;
 
   bool m_use_bounds;
 
-  TimeseriesMetadata m_dimension;
+  const units::System::Ptr m_unit_system;
+
   TimeseriesMetadata m_variable;
-  TimeBoundsMetadata m_bounds;
 
   std::vector<double> m_time;
   std::vector<double> m_values;
   std::vector<double> m_time_bounds;
 
-  void set_bounds_units();
-  void private_constructor(MPI_Comm com, const std::string &dimension_name);
   void report_range(const Logger &log);
 };
 

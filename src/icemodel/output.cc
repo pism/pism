@@ -251,7 +251,7 @@ void IceModel::save_variables(const File &file,
     unsigned int time_length = file.dimension_length(m_config->get_string("time.dimension_name"));
     size_t start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
     io::write_timeseries(file, m_timestamp, start,
-                         wall_clock_hours(m_grid->com, m_start_time));
+                         {wall_clock_hours(m_grid->com, m_start_time)});
   }
 }
 

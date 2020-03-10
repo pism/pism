@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2019 PISM Authors
+// Copyright (C) 2010--2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -216,7 +216,7 @@ protected:
     const unsigned int
       time_length = output.dimension_length(m_time_since_reset.get_dimension_name()),
       t_start = time_length > 0 ? time_length - 1 : 0;
-    io::write_timeseries(output, m_time_since_reset, t_start, m_interval_length, PISM_DOUBLE);
+    io::write_timeseries(output, m_time_since_reset, t_start, {m_interval_length}, PISM_DOUBLE);
   }
 
   virtual void update_impl(double dt) {
@@ -309,10 +309,19 @@ protected:
   const units::System::Ptr m_sys;
 
   //! time series object used to store computed values and metadata
-  Timeseries m_ts;
+  std::string m_time_name;
+
+  TimeseriesMetadata m_variable;
+  TimeseriesMetadata m_dimension;
+  TimeBoundsMetadata m_time_bounds;
+
+  // buffer for diagnostic time series
+  std::vector<double> m_time;
+  std::vector<double> m_bounds;
+  std::vector<double> m_values;
 
   //! requested times
-  std::shared_ptr<std::vector<double>> m_times;
+  std::shared_ptr<std::vector<double>> m_requested_times;
   //! index into m_times
   unsigned int m_current_time;
 
