@@ -207,7 +207,9 @@ protected:
 
   void define_state_impl(const File &output) const {
     m_accumulator.define(output);
-    io::define_timeseries(m_time_since_reset, output, PISM_DOUBLE);
+    io::define_timeseries(m_time_since_reset,
+                          Diagnostic::m_config->get_string("time.dimension_name"),
+                          output, PISM_DOUBLE);
   }
 
   void write_state_impl(const File &output) const {
@@ -216,7 +218,7 @@ protected:
     const unsigned int
       time_length = output.dimension_length(m_time_since_reset.get_dimension_name()),
       t_start = time_length > 0 ? time_length - 1 : 0;
-    io::write_timeseries(output, m_time_since_reset, t_start, {m_interval_length}, PISM_DOUBLE);
+    io::write_timeseries(output, m_time_since_reset, t_start, {m_interval_length});
   }
 
   virtual void update_impl(double dt) {

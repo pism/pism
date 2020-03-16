@@ -748,7 +748,7 @@ void IceCompModel::reportErrors() {
     io::write_attributes(file, m_output_global_attributes, PISM_DOUBLE);
 
     // Write the dimension variable:
-    io::write_timeseries(file, err, (size_t)start, {(double)(start + 1)}, PISM_INT);
+    io::write_timeseries(file, err, (size_t)start, {(double)(start + 1)});
 
     // Always write grid parameters:
     err.set_name("dx");
@@ -762,7 +762,7 @@ void IceCompModel::reportErrors() {
     // Always write the test name:
     err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
     err.set_name("test");
-    io::write_timeseries(file, err, (size_t)start, {(double)m_testname}, PISM_BYTE);
+    io::write_timeseries(file, err, (size_t)start, {(double)m_testname});
 
     if ((m_testname != 'K') && (m_testname != 'O')) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");

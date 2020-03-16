@@ -1000,11 +1000,11 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
 
 
 //! Define a NetCDF variable corresponding to a time-series.
-void define_timeseries(const TimeseriesMetadata& var,
+void define_timeseries(const VariableMetadata& var,
+                       const std::string &dimension_name,
                        const File &file, IO_Type nctype) {
 
   std::string name = var.get_name();
-  std::string dimension_name = var.get_dimension_name();
 
   if (file.find_variable(name)) {
     return;
@@ -1023,7 +1023,7 @@ void define_timeseries(const TimeseriesMetadata& var,
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
-void read_timeseries(const File &file, const TimeseriesMetadata &metadata,
+void read_timeseries(const File &file, const VariableMetadata &metadata,
                      const Time &time, const Logger &log, std::vector<double> &data) {
 
   std::string name = metadata.get_name();
@@ -1095,14 +1095,14 @@ void read_timeseries(const File &file, const TimeseriesMetadata &metadata,
  *
  * Always use glaciological units when saving time-series.
  */
-void write_timeseries(const File &file, const TimeseriesMetadata &metadata, size_t t_start,
-                      const std::vector<double> &data,
-                      IO_Type nctype) {
+void write_timeseries(const File &file, const VariableMetadata &metadata, size_t t_start,
+                      const std::vector<double> &data) {
 
   std::string name = metadata.get_name();
   try {
     if (not file.find_variable(name)) {
-      define_timeseries(metadata, file, nctype);
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "variable '%s' not found", name.c_str());
     }
 
     // create a copy of "data":
@@ -1123,11 +1123,11 @@ void write_timeseries(const File &file, const TimeseriesMetadata &metadata, size
   }
 }
 
-void define_time_bounds(const TimeBoundsMetadata& var,
+void define_time_bounds(const VariableMetadata& var,
+                        const std::string &dimension_name,
+                        const std::string &bounds_name,
                         const File &file, IO_Type nctype) {
   std::string name = var.get_name();
-  std::string dimension_name = var.get_dimension_name();
-  std::string bounds_name = var.get_bounds_name();
 
   if (file.find_variable(name)) {
     return;
@@ -1147,7 +1147,7 @@ void define_time_bounds(const TimeBoundsMetadata& var,
 }
 
 void read_time_bounds(const File &file,
-                      const TimeBoundsMetadata &metadata,
+                      const VariableMetadata &metadata,
                       const Time &time, const Logger &log,
                       std::vector<double> &data) {
 
@@ -1229,13 +1229,14 @@ void read_time_bounds(const File &file,
   }
 }
 
-void write_time_bounds(const File &file, const TimeBoundsMetadata &metadata,
-                       size_t t_start, const std::vector<double> &data, IO_Type nctype) {
+void write_time_bounds(const File &file, const VariableMetadata &metadata,
+                       size_t t_start, const std::vector<double> &data) {
   std::string name = metadata.get_name();
   try {
     bool variable_exists = file.find_variable(name);
     if (not variable_exists) {
-      define_time_bounds(metadata, file, nctype);
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' not found",
+                                    name.c_str());
     }
 
     // make a copy of "data"

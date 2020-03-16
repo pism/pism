@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -328,7 +328,8 @@ void IceModel::write_extras() {
       io::define_time(*m_extra_file, *m_ctx);
       m_extra_file->write_attribute(time_name, "bounds", "time_bounds");
 
-      io::define_time_bounds(m_extra_bounds, *m_extra_file);
+      io::define_time_bounds(m_extra_bounds,
+                             time_name, "nv", *m_extra_file);
 
       write_metadata(*m_extra_file, WRITE_MAPPING, PREPEND_HISTORY);
 

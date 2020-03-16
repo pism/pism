@@ -32,8 +32,6 @@ namespace pism {
 
 class VariableMetadata;
 class SpatialVariableMetadata;
-class TimeseriesMetadata;
-class TimeBoundsMetadata;
 class IceGrid;
 class File;
 class Time;
@@ -83,26 +81,27 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
                              const IceGrid &grid, const File &nc,
                              IO_Type nctype);
 
-void define_timeseries(const TimeseriesMetadata& var,
+void define_timeseries(const VariableMetadata& var,
+                       const std::string &dimension_name,
                        const File &nc, IO_Type nctype);
 
-void define_time_bounds(const TimeBoundsMetadata& var,
+void define_time_bounds(const VariableMetadata& var,
+                        const std::string &dimension_name,
+                        const std::string &bounds_name,
                         const File &nc, IO_Type nctype = PISM_DOUBLE);
 
-void read_timeseries(const File &nc, const TimeseriesMetadata &metadata,
+void read_timeseries(const File &nc, const VariableMetadata &metadata,
                      const Time &time, const Logger &log, std::vector<double> &data);
 
-void write_timeseries(const File &nc, const TimeseriesMetadata &metadata,
-                      size_t t_start, const std::vector<double> &data,
-                      IO_Type nctype = PISM_DOUBLE);
+void write_timeseries(const File &nc, const VariableMetadata &metadata,
+                      size_t t_start, const std::vector<double> &data);
 
 void read_time_bounds(const File &nc,
-                      const TimeBoundsMetadata &metadata,
+                      const VariableMetadata &metadata,
                       const Time &time, const Logger &log, std::vector<double> &data);
 
-void write_time_bounds(const File &nc, const TimeBoundsMetadata &metadata,
-                       size_t t_start, const std::vector<double> &data,
-                       IO_Type nctype = PISM_DOUBLE);
+void write_time_bounds(const File &nc, const VariableMetadata &metadata,
+                       size_t t_start, const std::vector<double> &data);
 
 std::string time_dimension(units::System::Ptr unit_system,
                            const File &file,

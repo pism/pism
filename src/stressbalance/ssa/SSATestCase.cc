@@ -257,7 +257,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
   io::write_attributes(file, global_attributes, PISM_DOUBLE);
 
   // Write the dimension variable:
-  io::write_timeseries(file, err, (size_t)start, {(double)(start + 1)}, PISM_INT);
+  io::write_timeseries(file, err, (size_t)start, {(double)(start + 1)});
 
   // Always write grid parameters:
   err.set_name("dx");
@@ -269,7 +269,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
   // Always write the test name:
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("test");
-  io::write_timeseries(file, err, (size_t)start, {(double)testname[0]}, PISM_INT);
+  io::write_timeseries(file, err, (size_t)start, {(double)testname[0]});
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("max_velocity");

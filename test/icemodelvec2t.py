@@ -50,6 +50,8 @@ class ForcingInput(unittest.TestCase):
             output = PISM.util.prepare_output(filename, append_time=False)
             output.write_attribute("time", "units", units)
 
+            PISM.define_time_bounds(bounds, "time", "nv", output, PISM.PISM_DOUBLE)
+
             if use_bounds:
                 output.write_attribute("time", "bounds", "time_bounds")
 

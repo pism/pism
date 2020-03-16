@@ -360,8 +360,9 @@ void TSFluxDiagnostic::update_impl(double t0, double t1) {
 }
 
 void TSDiagnostic::define(const File &file) const {
-  io::define_timeseries(m_variable, file, PISM_DOUBLE);
-  io::define_time_bounds(m_time_bounds, file, PISM_DOUBLE);
+  auto time_name = m_config->get_string("time.dimension_name");
+  io::define_timeseries(m_variable, time_name, file, PISM_DOUBLE);
+  io::define_time_bounds(m_time_bounds, time_name, "nv", file, PISM_DOUBLE);
 }
 
 void TSDiagnostic::flush() {
@@ -384,9 +385,22 @@ void TSDiagnostic::flush() {
     }
   }
 
+  auto time_name = m_config->get_string("time.dimension_name");
+
   if (len == m_start) {
+    if (not file.find_variable(m_dimension.get_name())) {
+      io::define_timeseries(m_dimension, time_name, file, PISM_DOUBLE);
+    }
     io::write_timeseries(file, m_dimension, m_start, m_time);
+
+    if (not file.find_variable(m_time_bounds.get_name())) {
+      io::define_time_bounds(m_time_bounds, time_name, "nv", file, PISM_DOUBLE);
+    }
     io::write_time_bounds(file, m_time_bounds, m_start, m_bounds);
+  }
+
+  if (not file.find_variable(m_variable.get_name())) {
+    io::define_timeseries(m_variable, time_name, file, PISM_DOUBLE);
   }
   io::write_timeseries(file, m_variable, m_start, m_values);
 
