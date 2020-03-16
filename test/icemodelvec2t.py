@@ -44,15 +44,14 @@ class ForcingInput(unittest.TestCase):
         self.f = numpy.sin(2.0 * numpy.pi * t / (N * dt))
 
         def write_data(filename, use_bounds=True, forward=True):
-            bounds = PISM.TimeBoundsMetadata("time_bounds", "time", ctx.unit_system)
+            bounds = PISM.VariableMetadata("time_bounds", ctx.unit_system)
             bounds.set_string("units", units)
 
             output = PISM.util.prepare_output(filename, append_time=False)
             output.write_attribute("time", "units", units)
 
-            PISM.define_time_bounds(bounds, "time", "nv", output, PISM.PISM_DOUBLE)
-
             if use_bounds:
+                PISM.define_time_bounds(bounds, "time", "nv", output, PISM.PISM_DOUBLE)
                 output.write_attribute("time", "bounds", "time_bounds")
 
             if forward:

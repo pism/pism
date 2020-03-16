@@ -734,7 +734,7 @@ void IceCompModel::reportErrors() {
 
   if (report_file.is_set()) {
     unsigned int start;
-    TimeseriesMetadata err("N", "N", m_sys);
+    VariableMetadata err("N", m_sys);
 
     err.set_string("units", "1");
 

@@ -227,7 +227,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
                                 double max_v,
                                 double avg_u,
                                 double avg_v) {
-  TimeseriesMetadata err("N", "N", m_grid->ctx()->unit_system());
+  VariableMetadata err("N", m_grid->ctx()->unit_system());
   unsigned int start;
   VariableMetadata global_attributes("PISM_GLOBAL", m_grid->ctx()->unit_system());
 

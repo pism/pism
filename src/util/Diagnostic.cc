@@ -183,9 +183,9 @@ TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr g, const std::string &name)
     m_config(g->ctx()->config()),
     m_sys(g->ctx()->unit_system()),
     m_time_name(g->ctx()->config()->get_string("time.dimension_name")),
-    m_variable(name, m_time_name, m_sys),
-    m_dimension(m_time_name, m_time_name, m_sys),
-    m_time_bounds(m_time_name + "_bounds", m_time_name, m_sys) {
+    m_variable(name, m_sys),
+    m_dimension(m_time_name, m_sys),
+    m_time_bounds(m_time_name + "_bounds", m_sys) {
 
   m_current_time = 0;
   m_start        = 0;

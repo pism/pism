@@ -1038,7 +1038,7 @@ class Timeseries(TestCase):
         "Piecewise-constant interpolation in Timeseries"
 
         ctx = PISM.Context()
-        ts = PISM.Timeseries(ctx.com, ctx.unit_system, "v", "FIXME")
+        ts = PISM.Timeseries(ctx.com, ctx.unit_system, "v")
 
         f = PISM.File(ctx.com, self.filename_constant, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
         ts.read(f, ctx.time, ctx.log)
@@ -1063,7 +1063,7 @@ class Timeseries(TestCase):
         "Linear interpolation in Timeseries"
 
         ctx = PISM.Context()
-        ts = PISM.Timeseries(ctx.com, ctx.unit_system, "v", "FIXME")
+        ts = PISM.Timeseries(ctx.com, ctx.unit_system, "v")
 
         f = PISM.File(ctx.com, self.filename_linear, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
         ts.read(f, ctx.time, ctx.log)

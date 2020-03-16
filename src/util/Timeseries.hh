@@ -65,9 +65,9 @@ class Logger;
 */
 class Timeseries {
 public:
-  Timeseries(const IceGrid &g, const std::string &name, const std::string &dimension_name);
+  Timeseries(const IceGrid &g, const std::string &name);
   Timeseries(MPI_Comm com, units::System::Ptr units_system,
-             const std::string &name, const std::string &dimension_name);
+             const std::string &name);
 
   std::string name() const;
   
@@ -77,7 +77,7 @@ public:
   double operator[](unsigned int j) const;
   double average(double t, double dt, unsigned int N) const;
 
-  TimeseriesMetadata& variable();
+  VariableMetadata& variable();
 
 private:
   MPI_Comm m_com;
@@ -86,7 +86,7 @@ private:
 
   const units::System::Ptr m_unit_system;
 
-  TimeseriesMetadata m_variable;
+  VariableMetadata m_variable;
 
   std::vector<double> m_time;
   std::vector<double> m_values;

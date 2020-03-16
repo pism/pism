@@ -160,7 +160,7 @@ void Time_Calendar::init_from_input_file(const File &nc,
     // bother checking for them.)
     std::vector<double> time;
     {
-      TimeseriesMetadata time_axis(time_name, time_name, m_unit_system);
+      VariableMetadata time_axis(time_name, m_unit_system);
       time_axis.set_string("units", m_time_units.format());
 
       io::read_timeseries(nc, time_axis, *this, log, time);
@@ -230,13 +230,13 @@ void Time_Calendar::init_from_file(const std::string &filename, const Logger &lo
     std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
     if (not time_bounds_name.empty()) {
       // use the time bounds
-      TimeBoundsMetadata bounds(time_bounds_name, time_name, m_unit_system);
+      VariableMetadata bounds(time_bounds_name, m_unit_system);
       bounds.set_string("units", m_time_units.format());
 
       io::read_time_bounds(file, bounds, *this, log, time);
     } else {
       // use the time axis
-      TimeseriesMetadata time_axis(time_name, time_name, m_unit_system);
+      VariableMetadata time_axis(time_name, m_unit_system);
       time_axis.set_string("units", m_time_units.format());
 
       io::read_timeseries(file, time_axis, *this, log, time);

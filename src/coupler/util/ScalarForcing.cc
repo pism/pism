@@ -40,9 +40,7 @@ ScalarForcing::ScalarForcing(std::shared_ptr<const Context> ctx,
 
   m_prefix = prefix;
 
-  m_data.reset(new Timeseries(ctx->com(), ctx->unit_system(),
-                              variable_name,
-                              config->get_string("time.dimension_name")));
+  m_data.reset(new Timeseries(ctx->com(), ctx->unit_system(), variable_name));
   m_data->variable().set_string("units", units);
   m_data->variable().set_string("glaciological_units", glaciological_units);
   m_data->variable().set_string("long_name", long_name);

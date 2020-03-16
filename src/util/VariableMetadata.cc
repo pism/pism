@@ -433,35 +433,4 @@ bool set_contains(const std::set<std::string> &S, const VariableMetadata &variab
   return member(variable.get_name(), S);
 }
 
-TimeseriesMetadata::TimeseriesMetadata(const std::string &name, const std::string &dimension_name,
-                                       units::System::Ptr system)
-  : VariableMetadata(name, system, 0) {
-  m_dimension_name = dimension_name;
-}
-
-TimeseriesMetadata::~TimeseriesMetadata()
-{
-  // empty
-}
-
-std::string TimeseriesMetadata::get_dimension_name() const {
-  return m_dimension_name;
-}
-
-/// TimeBoundsMetadata
-
-TimeBoundsMetadata::TimeBoundsMetadata(const std::string &var_name, const std::string &dim_name,
-                                       units::System::Ptr system)
-  : TimeseriesMetadata(var_name, dim_name, system) {
-  m_bounds_name    = "nv";      // number of vertexes
-}
-
-TimeBoundsMetadata::~TimeBoundsMetadata() {
-  // empty
-}
-
-std::string TimeBoundsMetadata::get_bounds_name() const {
-  return m_bounds_name;
-}
-
 } // end of namespace pism

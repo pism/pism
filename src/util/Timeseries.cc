@@ -33,24 +33,22 @@
 namespace pism {
 
 Timeseries::Timeseries(const IceGrid &grid,
-                       const std::string &name,
-                       const std::string &dimension_name)
+                       const std::string &name)
   : m_com(grid.ctx()->com()),
     m_use_bounds(true),
     m_unit_system(grid.ctx()->unit_system()),
-    m_variable(name, dimension_name, m_unit_system)
+    m_variable(name, m_unit_system)
 {
   // empty
 }
 
 Timeseries::Timeseries(MPI_Comm com,
                        units::System::Ptr unit_system,
-                       const std::string &name,
-                       const std::string &dimension_name)
+                       const std::string &name)
   : m_com(com),
     m_use_bounds(true),
     m_unit_system(unit_system),
-    m_variable(name, dimension_name, m_unit_system)
+    m_variable(name, m_unit_system)
 {
   // empty
 }
@@ -81,7 +79,7 @@ void Timeseries::read(const File &file, const Time &time_manager, const Logger &
 
   auto time_name = dims[0];
 
-  TimeseriesMetadata time_dimension(time_name, time_name, m_unit_system);
+  VariableMetadata time_dimension(time_name, m_unit_system);
   time_dimension.set_string("units", time_manager.units_string());
 
   io::read_timeseries(file, time_dimension, time_manager, log, m_time);
@@ -97,7 +95,7 @@ void Timeseries::read(const File &file, const Time &time_manager, const Logger &
   if (not time_bounds_name.empty()) {
     m_use_bounds = true;
 
-    TimeBoundsMetadata time_bounds(time_bounds_name, time_name, m_unit_system);
+    VariableMetadata time_bounds(time_bounds_name, m_unit_system);
     time_bounds.set_string("units", time_dimension.get_string("units"));
     time_bounds.set_string("glaciological_units", time_dimension.get_string("glaciological_units"));
 
@@ -229,7 +227,7 @@ std::string Timeseries::name() const {
   return m_variable.get_name();
 }
 
-TimeseriesMetadata& Timeseries::variable() {
+VariableMetadata& Timeseries::variable() {
   return m_variable;
 }
 

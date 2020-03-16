@@ -174,9 +174,7 @@ public:
     m_input_kind(kind),
     m_accumulator(Diagnostic::m_grid, name + "_accumulator", WITHOUT_GHOSTS),
     m_interval_length(0.0),
-    m_time_since_reset(name + "_time_since_reset",
-                        Diagnostic::m_config->get_string("time.dimension_name"),
-                        Diagnostic::m_sys) {
+    m_time_since_reset(name + "_time_since_reset", Diagnostic::m_sys) {
 
     m_time_since_reset.set_string("units", "seconds");
     m_time_since_reset.set_string("long_name",
@@ -215,8 +213,10 @@ protected:
   void write_state_impl(const File &output) const {
     m_accumulator.write(output);
 
+    auto time_name = Diagnostic::m_config->get_string("time.dimension_name");
+
     const unsigned int
-      time_length = output.dimension_length(m_time_since_reset.get_dimension_name()),
+      time_length = output.dimension_length(time_name),
       t_start = time_length > 0 ? time_length - 1 : 0;
     io::write_timeseries(output, m_time_since_reset, t_start, {m_interval_length});
   }
@@ -259,7 +259,7 @@ protected:
   IceModelVec2S m_accumulator;
   // length of the reporting interval, accumulated along with the cumulative quantity
   double m_interval_length;
-  TimeseriesMetadata m_time_since_reset;
+  VariableMetadata m_time_since_reset;
 
   // it should be enough to implement the constructor and this method
   virtual const IceModelVec2S& model_input() {
@@ -313,9 +313,9 @@ protected:
   //! time series object used to store computed values and metadata
   std::string m_time_name;
 
-  TimeseriesMetadata m_variable;
-  TimeseriesMetadata m_dimension;
-  TimeBoundsMetadata m_time_bounds;
+  VariableMetadata m_variable;
+  VariableMetadata m_dimension;
+  VariableMetadata m_time_bounds;
 
   // buffer for diagnostic time series
   std::vector<double> m_time;
