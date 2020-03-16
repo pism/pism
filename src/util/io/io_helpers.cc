@@ -156,7 +156,7 @@ static void compute_start_and_count(const File& file,
   assert(ndims > 0);
   if (ndims == 0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Cannot compute start and count: variable %s is a scalar.",
+                                  "Cannot compute start and count: variable '%s' is a scalar.",
                                   short_name.c_str());
   }
 
@@ -204,8 +204,7 @@ void define_dimension(const File &file, unsigned long int length,
   try {
     file.define_dimension(name, length);
 
-    std::vector<std::string> dims(1, name);
-    file.define_variable(name, PISM_DOUBLE, dims);
+    file.define_variable(name, PISM_DOUBLE, {name});
 
     write_attributes(file, metadata, PISM_DOUBLE);
 
@@ -367,8 +366,8 @@ void write_dimensions(const SpatialVariableMetadata& var,
  * @returns false if storage orders match, true otherwise
  */
 static bool use_transposed_io(const File &file,
-                          units::System::Ptr unit_system,
-                          const std::string &var_name) {
+                              units::System::Ptr unit_system,
+                              const std::string &var_name) {
 
   std::vector<std::string> dimnames = file.dimensions(var_name);
 
@@ -390,7 +389,7 @@ static bool use_transposed_io(const File &file,
       // assume that this variable has only one Z_AXIS in the file
       storage.push_back(dimtype);
     } else {
-      // an UNKNOWN_AXIS or T_AXIS at index != 0 was found, use mapped I/O
+      // an UNKNOWN_AXIS or T_AXIS at index != 0 was found, use transposed I/O
       return true;
     }
   }
@@ -399,10 +398,10 @@ static bool use_transposed_io(const File &file,
   assert(memory.size() <= 3);
 
   if (storage == memory) {
-    // same storage order, do not use mapped I/O
+    // same storage order, do not use transposed I/O
     return false;
   } else {
-    // different storage orders, use mapped I/O
+    // different storage orders, use transposed I/O
     return true;
   }
 }
@@ -470,9 +469,9 @@ static void regrid_vec_generic(const File &file, const IceGrid &grid,
     bool transposed_io = use_transposed_io(file, grid.ctx()->unit_system(), variable_name);
     profiling.begin("io.regridding.read");
     if (transposed_io) {
-      file.read_variable_transposed(variable_name, start, count, imap, &buffer[0]);
+      file.read_variable_transposed(variable_name, start, count, imap, buffer.data());
     } else {
-      file.read_variable(variable_name, start, count, &buffer[0]);
+      file.read_variable(variable_name, start, count, buffer.data());
     }
     profiling.end("io.regridding.read");
 
@@ -587,10 +586,10 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
   // lat_bnds, and lon_bnds should not have the grid_mapping attribute to support CDO (see issue
   // #384).
   const VariableMetadata &mapping = grid.get_mapping_info().mapping;
-  if (mapping.has_attributes() and not
-      (name == "lat_bnds" or name == "lon_bnds" or name == "lat" or name == "lon")) {
+  if (mapping.has_attributes() and
+      not member(name, {"lat_bnds", "lon_bnds", "lat", "lon"})) {
     file.write_attribute(var.get_name(), "grid_mapping",
-                      mapping.get_name());
+                         mapping.get_name());
   }
 
   if (var.get_time_independent()) {
@@ -623,9 +622,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
   // number of spatial dimensions.
   {
     // Set of spatial dimensions this field has.
-    std::set<int> axes;
-    axes.insert(X_AXIS);
-    axes.insert(Y_AXIS);
+    std::set<int> axes {X_AXIS, Y_AXIS};
     if (not variable.get_z().get_name().empty()) {
       axes.insert(Z_AXIS);
     }
@@ -664,7 +661,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
   }
 
   // make sure we have at least one level
-  const std::vector<double>& zlevels = variable.get_levels();
+  auto zlevels = variable.get_levels();
   unsigned int nlevels = std::max(zlevels.size(), (size_t)1);
 
   read_distributed_array(file, grid, var.name, nlevels, time, output);
@@ -739,9 +736,9 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
 
     units::Converter(var.unit_system(),
                      units,
-                     glaciological_units).convert_doubles(&tmp[0], tmp.size());
+                     glaciological_units).convert_doubles(tmp.data(), tmp.size());
 
-    file.write_distributed_array(name, grid, nlevels, &tmp[0]);
+    file.write_distributed_array(name, grid, nlevels, tmp.data());
   } else {
     file.write_distributed_array(name, grid, nlevels, input);
   }
@@ -1082,7 +1079,7 @@ void read_timeseries(const File &file, const VariableMetadata &metadata,
       input_units = internal_units;
     }
 
-    units::Converter(input_units, internal_units).convert_doubles(&data[0], data.size());
+    units::Converter(input_units, internal_units).convert_doubles(data.data(), data.size());
 
   } catch (RuntimeError &e) {
     e.add_context("reading time-series variable '%s' from '%s'", name.c_str(),
@@ -1108,11 +1105,11 @@ void write_timeseries(const File &file, const VariableMetadata &metadata, size_t
     // create a copy of "data":
     std::vector<double> tmp = data;
 
-    units::System::Ptr system = metadata.unit_system();
     // convert to glaciological units:
-    units::Converter(system,
+    units::Converter(metadata.unit_system(),
                      metadata.get_string("units"),
-                     metadata.get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
+                     metadata.get_string("glaciological_units")).convert_doubles(tmp.data(),
+                                                                                 tmp.size());
 
     file.write_variable(name, {(unsigned int)t_start}, {(unsigned int)tmp.size()}, tmp.data());
 
@@ -1175,7 +1172,8 @@ void read_time_bounds(const File &file,
     // Check that we have 2 vertices (interval end-points) per time record.
     unsigned int length = file.dimension_length(bounds_name);
     if (length != 2) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "time-bounds variable " + name + " has to have exactly 2 bounds per time record");
+      throw RuntimeError(PISM_ERROR_LOCATION,
+                         "time-bounds variable " + name + " has to have exactly 2 bounds per time record");
     }
 
     // Get the number of time records.
@@ -1192,7 +1190,8 @@ void read_time_bounds(const File &file,
     // variable, because according to CF-1.5 section 7.1 a "boundary variable"
     // may not have metadata set.)
     if (not file.find_variable(dimension_name)) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "time coordinate variable " + dimension_name + " is missing");
+      throw RuntimeError(PISM_ERROR_LOCATION,
+                         "time coordinate variable " + dimension_name + " is missing");
     }
 
     bool input_has_units = false;
@@ -1218,7 +1217,7 @@ void read_time_bounds(const File &file,
       input_units = internal_units;
     }
 
-    units::Converter(input_units, internal_units).convert_doubles(&data[0], data.size());
+    units::Converter(input_units, internal_units).convert_doubles(data.data(), data.size());
 
     // FIXME: check that time intervals described by the time bounds
     // variable are contiguous (without gaps) and stop if they are not.
@@ -1243,16 +1242,14 @@ void write_time_bounds(const File &file, const VariableMetadata &metadata,
     std::vector<double> tmp = data;
 
     // convert to glaciological units:
-    units::System::Ptr system = metadata.unit_system();
-    units::Converter(system,
+    units::Converter(metadata.unit_system(),
                      metadata.get_string("units"),
-                     metadata.get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
+                     metadata.get_string("glaciological_units")).convert_doubles(tmp.data(), tmp.size());
 
-    std::vector<unsigned int>
-      start{static_cast<unsigned int>(t_start), 0},
-      count{static_cast<unsigned int>(tmp.size()) / 2, 2};
-
-      file.write_variable(name, start, count, &tmp[0]);
+    file.write_variable(name,
+                        {(unsigned int)t_start, 0},
+                        {(unsigned int)tmp.size() / 2, 2},
+                        tmp.data());
 
   } catch (RuntimeError &e) {
     e.add_context("writing time-bounds variable '%s' to '%s'", name.c_str(),
@@ -1287,10 +1284,8 @@ void read_attributes(const File &file,
                      const std::string &variable_name,
                      VariableMetadata &variable) {
   try {
-    bool variable_exists = file.find_variable(variable_name);
-
-    if (not variable_exists) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable \"%s\" is missing", variable_name.c_str());
+    if (not file.find_variable(variable_name)) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' is missing", variable_name.c_str());
     }
 
     variable.clear_all_strings();
@@ -1404,10 +1399,7 @@ void write_attributes(const File &file, const VariableMetadata &variable, IO_Typ
       std::string name  = d.first;
       std::vector<double> values = d.second;
 
-      if (name == "valid_min"   or
-          name == "valid_max"   or
-          name == "valid_range" or
-          name == "_FillValue"  or
+      if (member(name, {"valid_min", "valid_max", "valid_range", "_FillValue"}) or
           values.empty()) {
         continue;
       }

@@ -345,7 +345,7 @@ class IceModelVec2S;
 class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2();
-  IceModelVec2(IceGrid::ConstPtr grid, const std::string &short_name,
+  IceModelVec2(IceGrid::ConstPtr grid, const std::string &name,
                IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
 
   typedef std::shared_ptr<IceModelVec2> Ptr;
@@ -361,7 +361,7 @@ public:
   virtual void set_component(unsigned int n, const IceModelVec2S &source);
   inline double& operator() (int i, int j, int k);
   inline const double& operator() (int i, int j, int k) const;
-  void create(IceGrid::ConstPtr grid, const std::string &short_name,
+  void create(IceGrid::ConstPtr grid, const std::string &name,
               IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
 protected:
   virtual void read_impl(const File &nc, const unsigned int time);
@@ -473,7 +473,7 @@ public:
 class IceModelVec2V : public IceModelVec2 {
 public:
   IceModelVec2V();
-  IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_name,
+  IceModelVec2V(IceGrid::ConstPtr grid, const std::string &name,
                 IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   ~IceModelVec2V();
 
@@ -482,7 +482,7 @@ public:
 
   static Ptr ToVector(IceModelVec::Ptr input);
 
-  void create(IceGrid::ConstPtr grid, const std::string &short_name,
+  void create(IceGrid::ConstPtr grid, const std::string &name,
               IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   virtual void copy_from(const IceModelVec &source);
   virtual void add(double alpha, const IceModelVec &x);
@@ -508,7 +508,7 @@ public:
 class IceModelVec2Stag : public IceModelVec2 {
 public:
   IceModelVec2Stag();
-  IceModelVec2Stag(IceGrid::ConstPtr grid, const std::string &short_name,
+  IceModelVec2Stag(IceGrid::ConstPtr grid, const std::string &name,
                    IceModelVecKind ghostedp, unsigned int stencil_width = 1);
 
   typedef std::shared_ptr<IceModelVec2Stag> Ptr;
@@ -516,7 +516,7 @@ public:
 
   static Ptr ToStaggered(IceModelVec::Ptr input);
 
-  void create(IceGrid::ConstPtr grid, const std::string &short_name,
+  void create(IceGrid::ConstPtr grid, const std::string &name,
               IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   virtual void staggered_to_regular(IceModelVec2S &result) const;
   virtual void staggered_to_regular(IceModelVec2V &result) const;
@@ -551,7 +551,7 @@ public:
   inline double& operator() (int i, int j, int k);
   inline const double& operator() (int i, int j, int k) const;
 protected:
-  void allocate(IceGrid::ConstPtr mygrid, const std::string &short_name,
+  void allocate(IceGrid::ConstPtr grid, const std::string &name,
                 IceModelVecKind ghostedp, const std::vector<double> &levels,
                 unsigned int stencil_width = 1);
 };
@@ -561,7 +561,7 @@ protected:
 class IceModelVec3 : public IceModelVec3D {
 public:
   IceModelVec3();
-  IceModelVec3(IceGrid::ConstPtr mygrid, const std::string &short_name,
+  IceModelVec3(IceGrid::ConstPtr grid, const std::string &name,
                IceModelVecKind ghostedp,
                unsigned int stencil_width = 1);
 
@@ -572,7 +572,7 @@ public:
 
   static Ptr To3DScalar(IceModelVec::Ptr input);
 
-  void create(IceGrid::ConstPtr mygrid, const std::string &short_name,
+  void create(IceGrid::ConstPtr grid, const std::string &name,
               IceModelVecKind ghostedp,
               unsigned int stencil_width = 1);
 
@@ -582,13 +582,13 @@ public:
   void sumColumns(IceModelVec2S &output, double A, double B) const;
 };
 
-/** 
+/**
  * Convert a PETSc Vec from the units in `from` into units in `to` (in place).
  *
  * @param v data to convert
  * @param system unit system
  * @param spec1 source unit specification string
- * @param spec2 destination unit specification string 
+ * @param spec2 destination unit specification string
  */
 void convert_vec(petsc::Vec &v, std::shared_ptr<units::System> system,
                  const std::string &spec1, const std::string &spec2);
@@ -625,4 +625,3 @@ void staggered_to_regular(const IceModelVec2CellType &cell_type,
 #include "IceModelVec_inline.hh"
 
 #endif /* __IceModelVec_hh */
-
