@@ -2329,7 +2329,7 @@
 
 #. :config:`stress_balance.ssa.fd.max_speed` (*number*)
 
-   :Value: 500000 (m yr-1)
+   :Value: 300000 (km s-1)
    :Option: :opt:`-ssafd_max_speed`
    :Description: Upper bound for the ice speed computed by the SSAFD solver.
 
