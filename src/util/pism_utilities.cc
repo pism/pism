@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,6 +19,7 @@
 
 #include "pism_utilities.hh"
 
+#include <cstdarg>              // va_list, va_start(), va_end()
 #include <sstream>              // istringstream, ostringstream
 #include <cstdio>               // vsnprintf
 

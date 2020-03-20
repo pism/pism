@@ -1,5 +1,21 @@
 .. default-role:: literal
 
+Changes from v1.2 to v1.2.1
+===========================
+
+- Use better notation for different lapse rates in the manual.
+- Fix bugs in the fracture density code and a related scrips.
+- Fix the orographic precipitation model.
+- Continue after warning about missing "units" in an input file
+- Stop if `-ocean_kill_file` is set.
+- Update all scripts that used `-ocean_kill_file` and use `-front_retreat_file` instead.
+- Improve regression tests.
+- Remove some old or unused code.
+- Fix #454 (PICO initialization fails with dummy values).
+- Use high yield stress in all ice-free areas (see #456).
+- Set stress_balance.ssa.fd.max_speed to about the speed of light. See #455. The default
+  value of this parameter should be high enough to disable this mechanism.
+
 Changes from v1.1 to v1.2
 =========================
 
@@ -8,7 +24,8 @@ Front retreat
 
 - Implement the ISMIP6 front retreat parameterization. Reads a time-dependent ice extent
   mask (variable name: `land_ice_area_fraction_retreat`) from a file specified using the
-  configuration parameter `geometry.front_retreat.prescribed.file`.
+  configuration parameter `geometry.front_retreat.prescribed.file`. This mechanism
+  replaces the old "`ocean_kill`" calving code.
 - Rename configuration parameters controlling front retreat because they are not
   calving-specific (`calving.front_retreat.use_cfl` to `geometry.front_retreat.use_cfl`
   and `calving.front_retreat.wrap_around` to `geometry.front_retreat.wrap_around`).
