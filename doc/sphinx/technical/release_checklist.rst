@@ -43,3 +43,4 @@ Release checklist
 #. Update the current PISM version on ``pism-docs.org``.
 #. Send an e-mail to CRYOLIST.
 #. Tell more people, if desired.
+#. Create a new "release" on https://github.com/pism/pism/releases
