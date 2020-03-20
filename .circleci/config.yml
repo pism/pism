@@ -183,9 +183,33 @@ jobs:
             mkdir -p build
             cmake -B build -S doc/ -DCMAKE_INSTALL_PREFIX=/tmp/pism -DPism_DOC_DIR="manual"
             make -C build install
-            tar -czf pism-manual.tgz -C /tmp/pism/manual/html .
-      - store_artifacts:
-          path: pism-manual.tgz
+      - persist_to_workspace:
+          root: /tmp/pism/manual
+          paths: html
+
+  deploy-manual:
+    docker:
+      - image: node:8.10.0
+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/pism/manual
+      - run:
+          name: Install and configure dependencies
+          command: |
+            npm install -g --silent gh-pages@2.0.1
+            git config user.email "ckhroulev@alaska.edu"
+            git config user.name "CI Builder (PISM manual)"
+      - add_ssh_keys:
+          fingerprints:
+            - "15:22:79:ff:0a:1d:aa:5a:8e:bb:e1:94:51:2e:67:2f"
+      - run:
+          name: Deploy the manual to GitHub Pages
+          command: >-
+            gh-pages --dotfiles
+            --message "[skip ci] Update the manual"
+            --dist /tmp/pism/manual/html
 
 workflows:
   version: 2
@@ -196,3 +220,13 @@ workflows:
       - build-clang
       - build-clang-minimal
       - build-manual
+      - deploy-manual:
+          requires:
+            - build-gcc
+            - build-gcc-minimal
+            - build-clang
+            - build-clang-minimal
+            - build-manual
+          filters:
+            branches:
+              only: dev
