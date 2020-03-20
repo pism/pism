@@ -194,7 +194,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: /tmp/pism/manual
+          at: manual
       - run:
           name: Install and configure dependencies
           command: |
@@ -209,7 +209,7 @@ jobs:
           command: >-
             gh-pages --dotfiles
             --message "[skip ci] Update the manual"
-            --dist /tmp/pism/manual/html
+            --dist manual/html
 
 workflows:
   version: 2
