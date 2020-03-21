@@ -446,7 +446,7 @@ netcdf pism_config {
     pism_config:basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden_units = "pure number";
 
     pism_config:basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water = 0.1;
-    pism_config:basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water_doc = "If basal_yield_stress.add_transportable_water = yes then the water amount in the transport system is added to tillwat in determining tauc.  Normally only the water in the till is used.  This factor multiplies the logarithm in that formula.";
+    pism_config:basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water_doc = "If :config:`basal_yield_stress.add_transportable_water` is set then the water amount in the transport system is added to ``tillwat`` in determining ``tauc``.  Normally only the water in the till is used.  This factor multiplies the logarithm in that formula.";
     pism_config:basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water_option = "till_log_factor_transportable_water";
     pism_config:basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water_type = "number";
     pism_config:basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water_units = "meters";
@@ -1683,7 +1683,7 @@ netcdf pism_config {
     pism_config:ocean.delta_sl_2d.period_units = "years";
 
     pism_config:ocean.delta_sl_2d.reference_year = 0;
-    pism_config:ocean.delta_sl_2d.reference_year_doc = "Reference year to use when ``ocean.delta_sl_2d.period`` is active.";
+    pism_config:ocean.delta_sl_2d.reference_year_doc = "Reference year to use when :config:`ocean.delta_sl_2d.period` is active.";
     pism_config:ocean.delta_sl_2d.reference_year_type = "integer";
     pism_config:ocean.delta_sl_2d.reference_year_units = "years";
 
@@ -2120,7 +2120,7 @@ netcdf pism_config {
     pism_config:stress_balance.sia.grain_size_age_coupling_type = "flag";
 
     pism_config:stress_balance.sia.limit_diffusivity = "no";
-    pism_config:stress_balance.sia.limit_diffusivity_doc = "Limit SIA diffusivity by `stress_balance.sia.max_diffusivity`.";
+    pism_config:stress_balance.sia.limit_diffusivity_doc = "Limit SIA diffusivity by :config:`stress_balance.sia.max_diffusivity`.";
     pism_config:stress_balance.sia.limit_diffusivity_option = "limit_sia_diffusivity";
     pism_config:stress_balance.sia.limit_diffusivity_type = "flag";
 
