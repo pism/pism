@@ -24,25 +24,6 @@
 namespace pism {
 namespace stressbalance {
 
-/*! @brief A no-cost wrapper around 3D arrays. Hides the indexing order. */
-template <typename T>
-class PointerWrapper3D {
-  T ***m_data;
-public:
-  PointerWrapper3D() {
-    m_data = NULL;
-  }
-
-  T**** address() {
-    return &m_data;
-  }
-
-  T& operator()(int i, int j, int k) {
-    // NOTE: this indexing order is important!
-    return m_data[k][j][i];
-  }
-};
-
 PetscErrorCode Poisson3::function_callback(DMDALocalInfo *info,
                                            const double ***x, double ***f,
                                            CallbackData *data) {
@@ -196,8 +177,8 @@ void Poisson3::update(const Inputs &inputs, bool) {
   int Mz = m_xx->levels().size();
 
   {
-    PointerWrapper3D<double> x;
-    ierr = DMDAVecGetArray(m_da, m_x, x.address()); PISM_CHK(ierr, "DMDAVecGetArray");
+    double ***x = nullptr;
+    ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
     IceModelVec::AccessList list{m_xx.get()};
 
@@ -207,11 +188,11 @@ void Poisson3::update(const Inputs &inputs, bool) {
       auto c = m_xx->get_column(i, j);
 
       for (int k = 0; k < Mz; ++k) {
-        c[k] = x(i, j, k);
+        c[k] = x[k][j][i];
       }
     }
 
-    ierr = DMDAVecRestoreArray(m_da, m_x, x.address()); PISM_CHK(ierr, "DMDAVecRestoreArray");
+    ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
   }
 }
 
