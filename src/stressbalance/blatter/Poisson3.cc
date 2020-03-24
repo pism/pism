@@ -160,7 +160,7 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid)
   }
 
   // set the initial guess
-  ierr = VecSet(m_x, 0.0);
+  ierr = VecSet(m_x, 1.0);
   PISM_CHK(ierr, "VecSet");
 
   {
