@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cassert>
+
 #include "Poisson3.hh"
 
 #include "pism/util/error_handling.hh"
@@ -40,18 +42,33 @@ PetscErrorCode Poisson3::function_callback(DMDALocalInfo *info,
 
 void Poisson3::compute_local_function(DMDALocalInfo *info,
                                       const double ***x, double ***f) {
-  const int
-    xs = info->xs,
-    ys = info->ys,
-    zs = info->zs,
-    xm = info->xm,
-    ym = info->ym,
-    zm = info->zm;
+  assert(info->sw == 1);
 
-  for (int k = zs; k < zs + zm; k++) {
-    for (int j = ys; j < ys + ym; j++) {
-      for (int i = xs; i < xs + xm; i++) {
+  // We start with ghost nodes in x and y directions to include contributions of elements
+  // not owned by the current rank. The whole column (in the z direction) is owned by the
+  // same rank, so this is not necessary there.
+  const int
+    gxs = info->gxs,
+    xs  = info->xs,
+    gys = info->gys,
+    ys  = info->ys,
+    gzs = info->gzs,
+    zs  = info->zs,
+    xm  = info->xm,
+    ym  = info->ym,
+    zm  = info->zm;
+
+  // loop over elements
+  for (int k = gzs; k < zs + zm; k++) {
+    for (int j = gys; j < ys + ym; j++) {
+      for (int i = gxs; i < xs + xm; i++) {
         f[k][j][i]  =  x[k][j][i];
+
+
+
+        if (i >= xs and j >= ys and k >= zs) {
+
+        }
       }
     }
   }
