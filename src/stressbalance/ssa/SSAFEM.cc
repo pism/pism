@@ -640,13 +640,13 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
         std::vector<Vector2> I(Nk);
 
         double H_nodal[Nk];
-        E->nodal_values(inputs.geometry->ice_thickness, H_nodal);
+        E->nodal_values(inputs.geometry->ice_thickness.array(), H_nodal);
 
         double b_nodal[Nk];
-        E->nodal_values(inputs.geometry->bed_elevation, b_nodal);
+        E->nodal_values(inputs.geometry->bed_elevation.array(), b_nodal);
 
         double sl_nodal[Nk];
-        E->nodal_values(inputs.geometry->sea_level_elevation, sl_nodal);
+        E->nodal_values(inputs.geometry->sea_level_elevation.array(), sl_nodal);
 
         // storage for values of test functions on a side of the element
         double psi[2] = {0.0, 0.0};
@@ -815,7 +815,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
         {
           Coefficients coeffs[Nk];
-          E->nodal_values(m_coefficients, coeffs);
+          E->nodal_values(m_coefficients.array(), coeffs);
 
           quad_point_values(*E, coeffs, mask, thickness, tauc, hardness);
 
@@ -1027,7 +1027,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
 
         {
           Coefficients coeffs[Nk];
-          E->nodal_values(m_coefficients, coeffs);
+          E->nodal_values(m_coefficients.array(), coeffs);
 
           quad_point_values(*E, coeffs,
                             mask, thickness, tauc, hardness);

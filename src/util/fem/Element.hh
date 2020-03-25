@@ -136,18 +136,6 @@ public:
     }
   }
 
-  /*! @brief Extract nodal values for the element (`i`,`j`) from global IceModelVec `x_global`
-    into the element-local array `result`.
-  */
-  template<class C, typename T>
-  void nodal_values(const C& x_global, T* result) const {
-    for (unsigned int k = 0; k < m_n_chi; ++k) {
-      int i = 0, j = 0;
-      local_to_global(k, i, j);
-      result[k] = x_global(i, j);   // note the indexing order
-    }
-  }
-
   /*! @brief Get nodal values of an integer mask. */
   void nodal_values(const IceModelVec2Int &x_global, int *result) const;
 

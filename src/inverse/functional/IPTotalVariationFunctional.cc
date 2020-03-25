@@ -58,7 +58,7 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
       m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_element.nodal_values(x, x_e);
+      m_element.nodal_values(x.array(), x_e);
       if (dirichletBC) {
         dirichletBC.enforce_homogeneous(m_element, x_e);
       }
@@ -106,7 +106,7 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
       m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_element.nodal_values(x, x_e);
+      m_element.nodal_values(x.array(), x_e);
       if (dirichletBC) {
         dirichletBC.constrain(m_element);
         dirichletBC.enforce_homogeneous(m_element, x_e);

@@ -381,6 +381,10 @@ public:
     set_begin_access_use_dof(false);
   }
 
+  T** array() {
+    return reinterpret_cast<T**>(m_array);
+  }
+
   inline T& operator()(int i, int j) {
 #if (Pism_DEBUG==1)
     check_array_indices(i, j, 0);
@@ -426,6 +430,7 @@ public:
               IceModelVecKind ghostedp, int width = 1);
   virtual void copy_from(const IceModelVec &source);
   double** array();
+  double const* const* array() const;
   virtual void set_to_magnitude(const IceModelVec2S &v_x, const IceModelVec2S &v_y);
   virtual void set_to_magnitude(const IceModelVec2V &input);
   virtual void mask_by(const IceModelVec2S &M, double fill = 0.0);

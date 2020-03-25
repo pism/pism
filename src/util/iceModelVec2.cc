@@ -98,6 +98,11 @@ double** IceModelVec2S::array() {
   return static_cast<double**>(m_array);
 }
 
+double const* const* IceModelVec2S::array() const {
+  return static_cast<double const* const*>(m_array);
+}
+
+
 //! Sets an IceModelVec2 to the magnitude of a 2D vector field with components `v_x` and `v_y`.
 /*! Computes the magnitude \b pointwise, so any of v_x, v_y and the IceModelVec
   this is called on can be the same.

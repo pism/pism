@@ -171,6 +171,7 @@ void IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
   IceModelVec::AccessList l{&u};
 
   petsc::DMDAVecArray rhs_a(m_da, RHS);
+
   this->compute_local_function(u.array(), (Vector2**)rhs_a.get());
 }
 
@@ -303,7 +304,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
         // Obtain the value of the solution at the nodes adjacent to the element,
         // fix dirichlet values, and compute values at quad pts.
-        m_element.nodal_values(u, u_e);
+        m_element.nodal_values(u.array(), u_e);
         if (dirichletBC) {
           dirichletBC.constrain(m_element);
           dirichletBC.enforce(m_element, u_e);
@@ -311,13 +312,13 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         m_element.evaluate(u_e, U, U_x, U_y);
 
         // Compute dzeta at the nodes
-        m_element.nodal_values(*dzeta_local, dzeta_e);
+        m_element.nodal_values(dzeta_local->array(), dzeta_e);
         if (fixedZeta) {
           fixedZeta.enforce_homogeneous(m_element, dzeta_e);
         }
 
         // Compute the change in hardav with respect to zeta at the quad points.
-        m_element.nodal_values(*m_zeta, zeta_e);
+        m_element.nodal_values(m_zeta->array(), zeta_e);
         for (unsigned int k=0; k<Nk; k++) {
           m_design_param.toDesignVariable(zeta_e[k], NULL, dB_e + k);
           dB_e[k]*=dzeta_e[k];
@@ -331,7 +332,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           double tauc[Nq_max];
           double hardness[Nq_max];
 
-          m_element.nodal_values(m_coefficients, coeffs);
+          m_element.nodal_values(m_coefficients.array(), coeffs);
 
           quad_point_values(m_element, coeffs,
                             mask, thickness, tauc, hardness);
@@ -472,13 +473,13 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
 
         // Obtain the value of the solution at the nodes adjacent to the element.
         // Compute the solution values and symmetric gradient at the quadrature points.
-        m_element.nodal_values(du, du_e);
+        m_element.nodal_values(du.array(), du_e);
         if (dirichletBC) {
           dirichletBC.enforce_homogeneous(m_element, du_e);
         }
         m_element.evaluate(du_e, du_q, du_dx_q, du_dy_q);
 
-        m_element.nodal_values(u, u_e);
+        m_element.nodal_values(u.array(), u_e);
         if (dirichletBC) {
           dirichletBC.enforce(m_element, u_e);
         }
@@ -496,7 +497,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
           double tauc[Nq_max];
           double hardness[Nq_max];
 
-          m_element.nodal_values(m_coefficients, coeffs);
+          m_element.nodal_values(m_coefficients.array(), coeffs);
 
           quad_point_values(m_element, coeffs,
                             mask, thickness, tauc, hardness);

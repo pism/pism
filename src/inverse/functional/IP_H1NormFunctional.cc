@@ -51,7 +51,7 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
       m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_element.nodal_values(x, x_e);
+      m_element.nodal_values(x.array(), x_e);
       if (dirichletBC) {
         dirichletBC.enforce_homogeneous(m_element, x_e);
       }
@@ -98,13 +98,13 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
       m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_element.nodal_values(a, a_e);
+      m_element.nodal_values(a.array(), a_e);
       if (dirichletBC) {
         dirichletBC.enforce_homogeneous(m_element, a_e);
       }
       m_element.evaluate(a_e, a_q, dadx_q, dady_q);
 
-      m_element.nodal_values(b, b_e);
+      m_element.nodal_values(b.array(), b_e);
       if (dirichletBC) {
         dirichletBC.enforce_homogeneous(m_element, b_e);
       }
@@ -153,7 +153,7 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
       m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_element.nodal_values(x, x_e);
+      m_element.nodal_values(x.array(), x_e);
       if (dirichletBC) {
         dirichletBC.constrain(m_element);
         dirichletBC.enforce_homogeneous(m_element, x_e);

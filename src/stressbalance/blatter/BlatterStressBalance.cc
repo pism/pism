@@ -30,6 +30,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/node_types.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace stressbalance {
