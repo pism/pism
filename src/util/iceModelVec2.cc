@@ -88,7 +88,7 @@ void  IceModelVec2S::create(IceGrid::ConstPtr grid, const std::string &name, Ice
 }
 
 
-double** IceModelVec2S::get_array() {
+double** IceModelVec2S::array() {
   begin_access();
   return static_cast<double**>(m_array);
 }

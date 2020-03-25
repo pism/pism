@@ -161,8 +161,8 @@ of the residual is returned in \a RHS.*/
 void IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V &RHS) {
 
   Vector2
-    **u_a   = u.get_array(),
-    **rhs_a = RHS.get_array();
+    **u_a   = u.array(),
+    **rhs_a = RHS.array();
 
   this->compute_local_function(u_a, rhs_a);
 
@@ -175,7 +175,7 @@ void IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V
 the method is identical to the assemble_residual returning values as a StateVec (an IceModelVec2V).*/
 void IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
 
-  Vector2 **u_a = u.get_array();
+  Vector2 **u_a = u.array();
   petsc::DMDAVecArray rhs_a(m_da, RHS);
   this->compute_local_function(u_a, (Vector2**)rhs_a.get());
   u.end_access();
@@ -191,7 +191,7 @@ to this method.
 */
 void IP_SSATaucForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac) {
 
-  Vector2 **u_a = u.get_array();
+  Vector2 **u_a = u.array();
 
   this->compute_local_jacobian(u_a, Jac);
 
@@ -204,7 +204,7 @@ void IP_SSATaucForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac
 */
 void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta,
                                                      IceModelVec2V &du) {
-  Vector2 **du_a = du.get_array();
+  Vector2 **du_a = du.array();
   this->apply_jacobian_design(u, dzeta, du_a);
   du.end_access();
 }
@@ -375,7 +375,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                IceModelVec2V &du,
                                                                IceModelVec2S &dzeta) {
-  double **dzeta_a = dzeta.get_array();
+  double **dzeta_a = dzeta.array();
   this->apply_jacobian_design_transpose(u, du, dzeta_a);
   dzeta.end_access();
 }
@@ -615,7 +615,7 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
   double                 dirichletWeight    = m_dirichletScale;
 
   m_du_global.copy_from(du);
-  Vector2 **du_a = m_du_global.get_array();
+  Vector2 **du_a = m_du_global.array();
   fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues, dirichletWeight);
 
   if (dirichletBC) {

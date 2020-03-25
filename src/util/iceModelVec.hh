@@ -457,7 +457,7 @@ public:
   void create(IceGrid::ConstPtr grid, const std::string &name,
               IceModelVecKind ghostedp, int width = 1);
   virtual void copy_from(const IceModelVec &source);
-  double** get_array();
+  double** array();
   virtual void set_to_magnitude(const IceModelVec2S &v_x, const IceModelVec2S &v_y);
   virtual void set_to_magnitude(const IceModelVec2V &input);
   virtual void mask_by(const IceModelVec2S &M, double fill = 0.0);
@@ -521,7 +521,7 @@ public:
   virtual void add(double alpha, const IceModelVec &x, IceModelVec &result) const;
 
   // I/O:
-  Vector2** get_array();
+  Vector2** array();
   inline Vector2& operator()(int i, int j);
   inline const Vector2& operator()(int i, int j) const;
   inline StarStencil<Vector2> star(int i, int j) const;

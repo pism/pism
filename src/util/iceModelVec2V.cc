@@ -66,7 +66,7 @@ void IceModelVec2V::create(IceGrid::ConstPtr grid, const std::string &short_name
   m_name = "vel" + short_name;
 }
 
-Vector2** IceModelVec2V::get_array() {
+Vector2** IceModelVec2V::array() {
   begin_access();
   return static_cast<Vector2**>(m_array);
 }

@@ -102,7 +102,7 @@ private:
   unsigned int m_period;        // in years
   double m_reference_time;      // in seconds
 
-  double*** get_array3();
+  double*** array3();
   void update(unsigned int start);
   void discard(int N);
   double average(int i, int j);

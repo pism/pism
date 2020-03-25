@@ -22,8 +22,8 @@ using namespace pism;
 
 %ignore pism::AccessList::AccessList(std::initializer_list<const PetscAccessible *>);
 
-%ignore pism::IceModelVec2S::get_array;
-%ignore pism::IceModelVec2V::get_array;
+%ignore pism::IceModelVec2S::array;
+%ignore pism::IceModelVec2V::array;
 
 %rename(_regrid) pism::IceModelVec::regrid;
 %extend pism::IceModelVec

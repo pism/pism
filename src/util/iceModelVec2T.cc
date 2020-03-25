@@ -138,7 +138,7 @@ unsigned int IceModelVec2T::n_records() {
   return m_n_records;
 }
 
-double*** IceModelVec2T::get_array3() {
+double*** IceModelVec2T::array3() {
   begin_access();
   return reinterpret_cast<double***>(m_array3);
 }
@@ -420,7 +420,7 @@ void IceModelVec2T::discard(int number) {
 
   m_N -= number;
 
-  double ***a3 = get_array3();
+  double ***a3 = array3();
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -434,8 +434,8 @@ void IceModelVec2T::discard(int number) {
 //! Sets the record number n to the contents of the (internal) Vec v.
 void IceModelVec2T::set_record(int n) {
 
-  double  **a2 = get_array();
-  double ***a3 = get_array3();
+  double  **a2 = array();
+  double ***a3 = array3();
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     a3[j][i][n] = a2[j][i];
@@ -447,8 +447,8 @@ void IceModelVec2T::set_record(int n) {
 //! Sets the (internal) Vec v to the contents of the nth record.
 void IceModelVec2T::get_record(int n) {
 
-  double  **a2 = get_array();
-  double ***a3 = get_array3();
+  double  **a2 = array();
+  double ***a3 = array3();
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     a2[j][i] = a3[j][i][n];
@@ -528,7 +528,7 @@ void IceModelVec2T::average(double t, double dt) {
 
   init_interpolation(ts);
 
-  double **a2 = get_array();         // calls begin_access()
+  double **a2 = array();         // calls begin_access()
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     a2[j][i] = average(i, j);
