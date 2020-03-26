@@ -155,6 +155,8 @@ struct Germ {
   double dx;
   //! Function derivative with respect to y.
   double dy;
+  //! Function derivative with respect to z.
+  double dz;
 };
 
 //! Coordinates of a quadrature point, in the (xi, eta) coordinate space (i.e. on the
@@ -162,6 +164,7 @@ struct Germ {
 struct QuadPoint {
   double xi;
   double eta;
+  double zeta;
 };
 
 //! Hard-wired maximum number of points a quadrature can use. This is used as the size of

@@ -34,7 +34,7 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
 
   return {0.5 * (1.0 + xis[k] * pt.xi),
           0.5 * xis[k],
-          0.0};                         // unused
+          0.0, 0.0};            // unused
 }
 
 } // end of namespace linear
@@ -76,7 +76,8 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
 
   return {0.25 * (1.0 + xi[k] * pt.xi) * (1.0 + eta[k] * pt.eta),
           0.25 * xi[k] * (1.0 + eta[k] * pt.eta),
-          0.25 * eta[k] * (1.0 + xi[k] * pt.xi)};
+          0.25 * eta[k] * (1.0 + xi[k] * pt.xi),
+          0.0};                 // unused
 }
 
 } // end of namespace q1
@@ -90,11 +91,11 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
   switch (k) {
   default:
   case 0:
-    return {1.0 - pt.xi - pt.eta, -1.0, -1.0};
+    return {1.0 - pt.xi - pt.eta, -1.0, -1.0, 0.0};
   case 1:
-    return {pt.xi, 1.0, 0.0};
+    return {pt.xi, 1.0, 0.0, 0.0};
   case 2:
-    return {pt.eta, 0.0, 1.0};
+    return {pt.eta, 0.0, 1.0, 0.0};
  }
 }
 

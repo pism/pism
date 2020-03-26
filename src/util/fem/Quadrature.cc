@@ -61,7 +61,7 @@ Gaussian2::Gaussian2(double D) {
   // coordinates and weights of the 2-point 1D Gaussian quadrature
   double A = 1.0 / std::sqrt(3.0);
 
-  m_points  = {{-A, 0.0}, {A, 0.0}};
+  m_points  = {{-A, 0.0, 0.0}, {A, 0.0, 0.0}};
   m_weights = {0.5 * D, 0.5 * D};
 }
 
@@ -139,9 +139,9 @@ P1Quadrature3::P1Quadrature3() {
     one_over_six   = 1.0 / 6.0,
     two_over_three = 2.0 / 3.0;
 
-  m_points = {{two_over_three, one_over_six},
-              {one_over_six,   two_over_three},
-              {one_over_six,   one_over_six}};
+  m_points = {{two_over_three, one_over_six, 0.0},
+              {one_over_six,   two_over_three, 0.0},
+              {one_over_six,   one_over_six, 0.0}};
 
   m_weights = {one_over_six, one_over_six, one_over_six};
 }
