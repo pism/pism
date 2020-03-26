@@ -133,5 +133,21 @@ ElementType element_type(int node_type[q1::n_chi]) {
   return ELEMENT_EXTERIOR;
 }
 
+namespace q13d {
+
+Germ chi(unsigned int k, const QuadPoint &p) {
+  /* Coordinated of the nodes of the reference element: */
+  double xis[8]   = {-1.0,  1.0,  1.0, -1.0, -1.0,  1.0, 1.0, -1.0};
+  double etas[8]  = {-1.0, -1.0,  1.0,  1.0, -1.0, -1.0, 1.0,  1.0};
+  double zetas[8] = {-1.0, -1.0, -1.0, -1.0,  1.0,  1.0, 1.0,  1.0};
+
+  return {0.125 * (1.0 + xis[k]*p.xi) * (1.0 + etas[k]*p.eta) * (1.0 + zetas[k]*p.zeta),
+          0.125 *   xis[k] * (1.0 + etas[k] * p.eta) * (1.0 + zetas[k] * p.zeta),
+          0.125 *  etas[k] * (1.0 +  xis[k] *  p.xi) * (1.0 + zetas[k] * p.zeta),
+          0.125 * zetas[k] * (1.0 +  xis[k] *  p.xi) * (1.0 +  etas[k] *  p.eta)};
+}
+
+} // end of namespace q13d
+
 } // end of namespace fem
 } // end of namespace pism

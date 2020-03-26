@@ -32,12 +32,12 @@ class IceModelVec2V;
 
 namespace fem {
 
-class Element;
+class Element2;
 
 //* Parts shared by scalar and 2D vector Dirichlet data classes.
 class DirichletData {
 public:
-  void constrain(Element &element);
+  void constrain(Element2 &element);
   operator bool() {
     return m_indices != NULL;
   }
@@ -59,8 +59,8 @@ public:
                        double weight = 1.0);
   ~DirichletData_Scalar();
 
-  void enforce(const Element &element, double* x_e);
-  void enforce_homogeneous(const Element &element, double* x_e);
+  void enforce(const Element2 &element, double* x_e);
+  void enforce_homogeneous(const Element2 &element, double* x_e);
   void fix_residual(double const *const *const x_global, double **r_global);
   void fix_residual_homogeneous(double **r_global);
   void fix_jacobian(Mat J);
@@ -74,8 +74,8 @@ public:
                        double weight);
   ~DirichletData_Vector();
 
-  void enforce(const Element &element, Vector2* x_e);
-  void enforce_homogeneous(const Element &element, Vector2* x_e);
+  void enforce(const Element2 &element, Vector2* x_e);
+  void enforce_homogeneous(const Element2 &element, Vector2* x_e);
   void fix_residual(Vector2 const *const *const x_global, Vector2 **r_global);
   void fix_residual_homogeneous(Vector2 **r);
   void fix_jacobian(Mat J);

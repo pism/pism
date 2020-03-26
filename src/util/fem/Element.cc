@@ -26,79 +26,135 @@
 namespace pism {
 namespace fem {
 
-//! Determinant of a square matrix of size 2.
-static double determinant(const double J[2][2]) {
-  return J[0][0] * J[1][1] - J[1][0] * J[0][1];
+struct Vector3 {
+  double x, y, z;
+};
+
+//! Determinant of a 3x3 matrix
+static double det(const double a[3][3]) {
+  return (a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1]) -
+          a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0]) +
+          a[0][2] * (a[1][0] * a[2][1] - a[1][1] * a[2][0]));
 }
 
-//! Compute the inverse of a two by two matrix.
-static void invert(const double A[2][2], double A_inv[2][2]) {
-  const double det_A = determinant(A);
+//! Cross product of two 3D vectors
+static Vector3 cross(const Vector3 &a, const Vector3 &b) {
+  return {a.y * b.z - a.z * b.y,
+          a.z * b.x - a.x * b.z,
+          a.x * b.y - a.y * b.x};
+}
+
+// extract a row of a 3x3 matrix
+static Vector3 row(const double A[3][3], size_t k) {
+  return {A[k][0], A[k][1], A[k][2]};
+}
+
+// extract a column of a 3x3 matrix
+static Vector3 column(const double A[3][3], size_t k) {
+  return {A[0][k], A[1][k], A[2][k]};
+}
+
+// dot product of a vector and a [dx, dy, dz] vector in Germ
+static double dot(const Vector3 &v, const Germ &a) {
+  return a.dx * v.x + a.dy * v.y + a.dz + v.z;
+}
+
+//! Invert a 3x3 matrix
+static void invert(const double A[3][3], double result[3][3]) {
+  const double det_A = det(A);
 
   assert(det_A != 0.0);
 
-  A_inv[0][0] =  A[1][1] / det_A;
-  A_inv[0][1] = -A[0][1] / det_A;
-  A_inv[1][0] = -A[1][0] / det_A;
-  A_inv[1][1] =  A[0][0] / det_A;
+  Vector3
+    x0 = column(A, 0),
+    x1 = column(A, 1),
+    x2 = column(A, 2),
+    a  = cross(x1, x2),
+    b  = cross(x2, x0),
+    c  = cross(x0, x1);
+
+  double A_cofactor[3][3] = {{a.x, a.y, a.z},
+                             {b.x, b.y, b.z},
+                             {c.x, c.y, c.z}};
+
+  // inverse(A) = 1/det(A) * transpose(A_cofactor)
+  for (int i = 0; i < 3; ++i) {
+    for (int j = 0; j < 3; ++j) {
+      // note the transpose on the RHS
+      result[i][j] = A_cofactor[j][i] / det_A;
+    }
+  }
 }
 
 //! Compute derivatives with respect to x,y using J^{-1} and derivatives with respect to xi, eta.
-static Germ multiply(const double A[2][2], const Germ &v) {
-  Germ result;
-  result.val = v.val;
-  result.dx  = v.dx * A[0][0] + v.dy * A[0][1];
-  result.dy  = v.dx * A[1][0] + v.dy * A[1][1];
-  return result;
+static Germ multiply(const double A[3][3], const Germ &v) {
+  return {v.val, dot(row(A, 0), v), dot(row(A, 1), v), dot(row(A, 2), v)};
 }
 
-Element::Element(const IceGrid &grid, const Quadrature &quadrature)
-  : m_n_chi(0),
-    m_Nq(quadrature.points().size()),
-    m_grid(grid) {
+Element::Element(const IceGrid &grid, int Nq, int n_chi, int block_size)
+  : m_n_chi(n_chi),
+    m_Nq(Nq),
+    m_J_block_size(block_size) {
 
-  m_germs = (Germs*) malloc(m_Nq * m_n_chi_max * sizeof(Germ));
-  if (not m_germs) {
+  // get sub-domain information from the grid:
+  auto da = grid.get_dm(1, 0);  // dof = 1, stencil_width = 0
+  PetscErrorCode ierr = DMDAGetLocalInfo(*da, &m_grid);
+  if (ierr != 0) {
     throw std::runtime_error("Failed to allocate an Element instance");
   }
+  // reset da: we don't want to end up depending on it
+  m_grid.da = NULL;
 
-  memset(m_row, 0, m_n_chi_max * sizeof(MatStencil));
-  memset(m_col, 0, m_n_chi_max * sizeof(MatStencil));
-  memset(m_germs, 0, m_Nq * m_n_chi_max * sizeof(Germ));
+  m_germs.resize(m_Nq * m_n_chi);
+  m_row.resize(m_J_block_size);
+  m_col.resize(m_J_block_size);
 
-  reset(0, 0);
+  // set m_J to the identity
+  m_J[0][0] = 1.0;
+  m_J[0][1] = 0.0;
+  m_J[0][2] = 0.0;
+  m_J[1][0] = 0.0;
+  m_J[1][1] = 1.0;
+  m_J[1][2] = 0.0;
+  m_J[2][0] = 0.0;
+  m_J[2][1] = 0.0;
+  m_J[2][2] = 1.0;
 }
 
 Element::~Element() {
-  free(m_germs);
-  m_germs = nullptr;
+  // empty
 }
 
 //! Initialize shape function values and quadrature weights of a 2D physical element.
 /** Assumes that the Jacobian does not depend on coordinates of the current quadrature point.
  */
-void Element::initialize(ShapeFunction2 f,
+void Element::initialize(ShapeFunction f,
                          unsigned int n_chi,
                          const std::vector<QuadPoint>& points,
                          const std::vector<double>& W) {
 
-  double J_inv[2][2];
+  double J_inv[3][3];
   invert(m_J, J_inv);
 
   for (unsigned int q = 0; q < m_Nq; q++) {
     for (unsigned int k = 0; k < n_chi; k++) {
-      m_germs[q][k] = multiply(J_inv, f(k, points[q]));
+      m_germs[q * m_n_chi + k] = multiply(J_inv, f(k, points[q]));
     }
   }
 
   m_weights.resize(m_Nq);
-  const double J_det = determinant(m_J);
+  const double J_det = det(m_J);
   for (unsigned int q = 0; q < m_Nq; q++) {
     m_weights[q] = J_det * W[q];
   }
 }
 
-void Element::nodal_values(const IceModelVec2Int &x_global, int *result) const {
+Element2::Element2(const IceGrid &grid, int Nq, int n_chi, int block_size)
+  : Element(grid, Nq, n_chi, block_size) {
+  // empty
+}
+
+void Element2::nodal_values(const IceModelVec2Int &x_global, int *result) const {
   for (unsigned int k = 0; k < m_n_chi; ++k) {
     const int
       ii = m_i + m_i_offset[k],
@@ -109,7 +165,7 @@ void Element::nodal_values(const IceModelVec2Int &x_global, int *result) const {
 
 /*!@brief Initialize the Element to element (`i`, `j`) for the purposes of inserting into
   global residual and Jacobian arrays. */
-void Element::reset(int i, int j) {
+void Element2::reset(int i, int j) {
   m_i = i;
   m_j = j;
 
@@ -128,8 +184,8 @@ void Element::reset(int i, int j) {
   // We never sum into rows that are not owned by the local rank.
   for (unsigned int k = 0; k < m_n_chi; k++) {
     int pism_i = m_row[k].i, pism_j = m_row[k].j;
-    if (pism_i < m_grid.xs() or m_grid.xs() + m_grid.xm() - 1 < pism_i or
-        pism_j < m_grid.ys() or m_grid.ys() + m_grid.ym() - 1 < pism_j) {
+    if (pism_i < m_grid.xs or m_grid.xs + m_grid.xm - 1 < pism_i or
+        pism_j < m_grid.ys or m_grid.ys + m_grid.ym - 1 < pism_j) {
       mark_row_invalid(k);
     }
   }
@@ -138,13 +194,13 @@ void Element::reset(int i, int j) {
 /*!@brief Mark that the row corresponding to local degree of freedom `k` should not be updated
   when inserting into the global residual or Jacobian arrays. */
 void Element::mark_row_invalid(int k) {
-  m_row[k].i = m_row[k].j = m_invalid_dof;
+  m_row[k].i = m_row[k].j = m_row[k].k = m_invalid_dof;
 }
 
 /*!@brief Mark that the column corresponding to local degree of freedom `k` should not be updated
   when inserting into the global Jacobian arrays. */
 void Element::mark_col_invalid(int k) {
-  m_col[k].i = m_col[k].j = m_invalid_dof;
+  m_col[k].i = m_col[k].j = m_col[k].k = m_invalid_dof;
 }
 
 //! Add the contributions of an element-local Jacobian to the global Jacobian vector.
@@ -159,21 +215,20 @@ void Element::mark_col_invalid(int k) {
  */
 void Element::add_contribution(const double *K, Mat J) const {
   PetscErrorCode ierr = MatSetValuesBlockedStencil(J,
-                                                   m_n_chi_max, m_row,
-                                                   m_n_chi_max, m_col,
+                                                   m_J_block_size, m_row.data(),
+                                                   m_J_block_size, m_col.data(),
                                                    K, ADD_VALUES);
   PISM_CHK(ierr, "MatSetValuesBlockedStencil");
 }
 
 Q1Element::Q1Element(const IceGrid &grid, const Quadrature &quadrature)
-  : Element(grid, quadrature) {
+  : Element2(grid, quadrature.weights().size(), q1::n_chi, q1::n_chi) {
 
   double dx = grid.dx();
   double dy = grid.dy();
 
   m_i_offset = {0, 1, 1, 0};
   m_j_offset = {0, 0, 1, 1};
-  m_n_chi = q1::n_chi;
 
   // south, east, north, west
   m_normals = {{0.0, -1.0}, {1.0, 0.0}, {0.0, 1.0}, {-1.0, 0.0}};
@@ -188,15 +243,14 @@ Q1Element::Q1Element(const IceGrid &grid, const Quadrature &quadrature)
 
   // initialize germs and quadrature weights for the quadrature on this physical element
   initialize(q1::chi, q1::n_chi, quadrature.points(), quadrature.weights());
+  reset(0, 0);
 }
 
 P1Element::P1Element(const IceGrid &grid, const Quadrature &quadrature, int type)
-  : Element(grid, quadrature) {
+  : Element2(grid, quadrature.weights().size(), p1::n_chi, q1::n_chi) {
 
   double dx = grid.dx();
   double dy = grid.dy();
-
-  m_n_chi = p1::n_chi;
 
   // outward pointing normals for all sides of a Q1 element with sides aligned with X and
   // Y axes
@@ -267,6 +321,7 @@ P1Element::P1Element(const IceGrid &grid, const Quadrature &quadrature, int type
 
   // initialize germs and quadrature weights for the quadrature on this physical element
   initialize(p1::chi, p1::n_chi, quadrature.points(), quadrature.weights());
+  reset(0, 0);
 }
 
 } // end of namespace fem

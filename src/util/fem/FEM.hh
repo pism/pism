@@ -206,6 +206,27 @@ enum ElementType {ELEMENT_Q = -1,
 
 ElementType element_type(int node_type[q1::n_chi]);
 
+//! Q1 element information.
+namespace q13d {
+
+//! Number of shape functions on a Q1 element.
+const int n_chi = 8;
+//! Number of sides per element.
+const int n_sides = 6;
+//! Evaluate a Q1 shape function and its derivatives with respect to xi and eta.
+Germ chi(unsigned int k, const QuadPoint &p);
+
+//! Nodes incident to a side. Used to extract nodal values and add contributions.
+const unsigned int incident_nodes[n_sides][4] =
+  {{0, 1, 2, 3},
+   {0, 1, 5, 4},
+   {1, 2, 6, 5},
+   {2, 3, 7, 6},
+   {3, 0, 4, 7},
+   {4, 5, 6, 7}
+};
+} // end of namespace q13d
+
 } // end of namespace fem
 } // end of namespace pism
 

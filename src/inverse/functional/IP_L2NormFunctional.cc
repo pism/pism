@@ -147,7 +147,7 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
           gradient_e[k] += 2*W*x_qq*m_element.chi(q, k).val;
         } // k
       } // q
-      m_element.add_contribution(gradient_e, gradient);
+      m_element.add_contribution(gradient_e, gradient.array());
     } // j
   } // i
 }
@@ -279,7 +279,7 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
           gradient_e[k].v += gcommon*x_qq.v;
         } // k
       } // q
-      m_element.add_contribution(gradient_e, gradient);
+      m_element.add_contribution(gradient_e, gradient.array());
     } // j
   } // i
 }

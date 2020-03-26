@@ -174,7 +174,7 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
                                    m_cH1*(dxdx_qq*m_element.chi(q, k).dx + dxdy_qq*m_element.chi(q, k).dy));
         } // k
       } // q
-      m_element.add_contribution(gradient_e, gradient);
+      m_element.add_contribution(gradient_e, gradient.array());
     } // j
   } // i
 }

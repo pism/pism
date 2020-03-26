@@ -74,7 +74,7 @@ void DirichletData::finish(const IceModelVec *values) {
 }
 
 //! @brief Constrain `element`, i.e. ensure that quadratures do not contribute to Dirichlet nodes by marking corresponding rows and columns as "invalid".
-void DirichletData::constrain(Element &element) {
+void DirichletData::constrain(Element2 &element) {
   element.nodal_values(m_indices->array(), m_indices_e);
   auto n_chi = element.n_chi();
   for (int k = 0; k < n_chi; k++) {
@@ -95,7 +95,7 @@ DirichletData_Scalar::DirichletData_Scalar(const IceModelVec2Int *indices,
   init(indices, m_values, weight);
 }
 
-void DirichletData_Scalar::enforce(const Element &element, double* x_nodal) {
+void DirichletData_Scalar::enforce(const Element2 &element, double* x_nodal) {
   assert(m_values != NULL);
 
   element.nodal_values(m_indices->array(), m_indices_e);
@@ -108,11 +108,11 @@ void DirichletData_Scalar::enforce(const Element &element, double* x_nodal) {
   }
 }
 
-void DirichletData_Scalar::enforce_homogeneous(const Element &element, double* x_nodal) {
+void DirichletData_Scalar::enforce_homogeneous(const Element2 &element, double* x_nodal) {
   element.nodal_values(m_indices->array(), m_indices_e);
   for (int k = 0; k < element.n_chi(); k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
-      x_nodal[k] = 0.;
+      x_nodal[k] = 0.0;
     }
   }
 }
@@ -191,7 +191,7 @@ DirichletData_Vector::DirichletData_Vector(const IceModelVec2Int *indices,
   init(indices, m_values, weight);
 }
 
-void DirichletData_Vector::enforce(const Element &element, Vector2* x_nodal) {
+void DirichletData_Vector::enforce(const Element2 &element, Vector2* x_nodal) {
   assert(m_values != NULL);
 
   element.nodal_values(m_indices->array(), m_indices_e);
@@ -204,12 +204,11 @@ void DirichletData_Vector::enforce(const Element &element, Vector2* x_nodal) {
   }
 }
 
-void DirichletData_Vector::enforce_homogeneous(const Element &element, Vector2* x_nodal) {
+void DirichletData_Vector::enforce_homogeneous(const Element2 &element, Vector2* x_nodal) {
   element.nodal_values(m_indices->array(), m_indices_e);
   for (int k = 0; k < element.n_chi(); k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
-      x_nodal[k].u = 0.0;
-      x_nodal[k].v = 0.0;
+      x_nodal[k] = 0.0;
     }
   }
 }

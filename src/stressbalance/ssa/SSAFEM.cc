@@ -616,7 +616,7 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
         int node_type[Nk];
         m_q1_element.nodal_values(m_node_type, node_type);
 
-        fem::Element *E = nullptr;
+        fem::Element2 *E = nullptr;
         {
           auto type = fem::element_type(node_type);
 
@@ -708,7 +708,7 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 
         } // loop over element sides
 
-        E->add_contribution(I.data(), m_boundary_integral);
+        E->add_contribution(I.data(), m_boundary_integral.array());
 
       } // i-loop
     } // j-loop
@@ -773,7 +773,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
     for (int j = ys; j < ys + ym; j++) {
       for (int i = xs; i < xs + xm; i++) {
 
-        fem::Element *E = nullptr;
+        fem::Element2 *E = nullptr;
         {
           m_q1_element.reset(i, j);
 
@@ -987,7 +987,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
     for (int j = ys; j < ys + ym; j++) {
       for (int i = xs; i < xs + xm; i++) {
 
-        fem::Element *E = nullptr;
+        fem::Element2 *E = nullptr;
         {
           m_q1_element.reset(i, j);
 
