@@ -104,6 +104,7 @@ public:
 
 protected:
   Element(const IceGrid &grid, int Nq, int n_chi, int block_size);
+  Element(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size);
 
   DMDALocalInfo m_grid;
 
@@ -122,10 +123,7 @@ protected:
 
   //! Number of nodes (and therefore the number of shape functions) in this particular
   //! type of elements.
-  unsigned int m_n_chi;
-
-  //! Number of sides (or faces) of an element
-  unsigned int m_n_sides;
+  const unsigned int m_n_chi;
 
   //! Jacobian of the map from the reference element to a physical element
   double m_J[3][3];
@@ -153,7 +151,8 @@ protected:
 
 private:
   Element()
-    : m_Nq(0),
+    : m_n_chi(0),
+      m_Nq(0),
       m_J_block_size(0) {
     // empty
   }
@@ -262,7 +261,6 @@ public:
 
 class Element3 : public Element {
 public:
-
   using Element::evaluate;
   /*! @brief Given nodal values, compute the values and partial derivatives at the
    *  quadrature points.*/
@@ -317,13 +315,35 @@ public:
     }
   }
 protected:
+  Element3(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size);
+
   std::vector<int> m_k_offset;
+
   int m_k;
+
   void local_to_global(int n, int &i, int &j, int &k) const {
     i = m_i + m_i_offset[n];
     j = m_j + m_j_offset[n];
     k = m_k + m_k_offset[n];
   }
+};
+
+//! @brief 3D Q1 element
+/* Regular grid in the x and y directions, scaled in the z direction.
+ *
+ */
+class Q1Element3 : public Element3 {
+public:
+  Q1Element3(const DMDALocalInfo &grid, double dx, double dy, const Quadrature &quadrature);
+
+  void reset(int i, int j, int k,
+             double const* const* bottom,
+             double const* const* top);
+private:
+  double m_dx;
+  double m_dy;
+  std::vector<QuadPoint> m_points;
+  std::vector<double> m_weights;
 };
 
 } // end of namespace fem

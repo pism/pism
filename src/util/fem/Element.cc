@@ -91,6 +91,18 @@ static Germ multiply(const double A[3][3], const Germ &v) {
   return {v.val, dot(row(A, 0), v), dot(row(A, 1), v), dot(row(A, 2), v)};
 }
 
+static void reset_matrix(double A[3][3]) {
+  A[0][0] = 1.0;
+  A[0][1] = 0.0;
+  A[0][2] = 0.0;
+  A[1][0] = 0.0;
+  A[1][1] = 1.0;
+  A[1][2] = 0.0;
+  A[2][0] = 0.0;
+  A[2][1] = 0.0;
+  A[2][2] = 1.0;
+}
+
 Element::Element(const IceGrid &grid, int Nq, int n_chi, int block_size)
   : m_n_chi(n_chi),
     m_Nq(Nq),
@@ -105,21 +117,31 @@ Element::Element(const IceGrid &grid, int Nq, int n_chi, int block_size)
   // reset da: we don't want to end up depending on it
   m_grid.da = NULL;
 
-  m_germs.resize(m_Nq * m_n_chi);
-  m_row.resize(m_J_block_size);
-  m_col.resize(m_J_block_size);
+  m_germs.resize(Nq * n_chi);
+  m_row.resize(block_size);
+  m_col.resize(block_size);
 
   // set m_J to the identity
-  m_J[0][0] = 1.0;
-  m_J[0][1] = 0.0;
-  m_J[0][2] = 0.0;
-  m_J[1][0] = 0.0;
-  m_J[1][1] = 1.0;
-  m_J[1][2] = 0.0;
-  m_J[2][0] = 0.0;
-  m_J[2][1] = 0.0;
-  m_J[2][2] = 1.0;
+  reset_matrix(m_J);
 }
+
+Element::Element(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size)
+  : m_n_chi(n_chi),
+    m_Nq(Nq),
+    m_J_block_size(block_size) {
+
+  m_grid = grid_info;
+  // reset da: we don't want to end up depending on it
+  m_grid.da = NULL;
+
+  m_germs.resize(Nq * n_chi);
+  m_row.resize(block_size);
+  m_col.resize(block_size);
+
+  // set m_J to the identity
+  reset_matrix(m_J);
+}
+
 
 Element::~Element() {
   // empty
@@ -322,6 +344,66 @@ P1Element::P1Element(const IceGrid &grid, const Quadrature &quadrature, int type
   // initialize germs and quadrature weights for the quadrature on this physical element
   initialize(p1::chi, p1::n_chi, quadrature.points(), quadrature.weights());
   reset(0, 0);
+}
+
+Element3::Element3(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size)
+  : Element(grid_info, Nq, n_chi, block_size) {
+  // empty
+}
+
+Q1Element3::Q1Element3(const DMDALocalInfo &grid_info,
+                       double dx,
+                       double dy,
+                       const Quadrature &quadrature)
+  : Element3(grid_info, quadrature.weights().size(), q13d::n_chi, q13d::n_chi),
+    m_dx(dx),
+    m_dy(dy),
+    m_points(quadrature.points()),
+    m_weights(quadrature.weights()){
+
+  m_i_offset = {0, 1, 1, 0, 0, 1, 1, 0};
+  m_j_offset = {0, 0, 1, 1, 0, 0, 1, 1};
+  m_k_offset = {0, 0, 0, 0, 1, 1, 1, 1};
+}
+
+
+/*! Initialize the element `i,j,k`.
+ *
+ *
+ * @param[in] i i-index of the lower left node
+ * @param[in] j j-index of the lower left node
+ * @param[in] k k-index of the lower left node
+ * @param[in] bottom nodal values of the bottom surface elevation
+ * @param[in] top nodal values of the top surface elevation
+ */
+void Q1Element3::reset(int i, int j, int k,
+                       double const* const* bottom,
+                       double const* const* top) {
+  m_i = i;
+  m_j = j;
+  m_k = k;
+
+  for (unsigned int n = 0; n < m_n_chi; ++n) {
+    m_col[n].i = i + m_i_offset[n];
+    m_col[n].j = j + m_j_offset[n];
+    m_col[n].k = k + m_k_offset[n];
+    m_col[k].c = 0;
+  }
+  m_row = m_col;
+
+  // - compute J
+
+  // initialize germs and quadrature weights for the quadrature on this physical element
+  initialize(q13d::chi, q13d::n_chi, m_points, m_weights);
+
+  // We never sum into rows that are not owned by the local rank.
+  for (unsigned int n = 0; n < m_n_chi; n++) {
+    int pism_i = m_row[n].i, pism_j = m_row[n].j;
+    if (pism_i < m_grid.xs or m_grid.xs + m_grid.xm - 1 < pism_i or
+        pism_j < m_grid.ys or m_grid.ys + m_grid.ym - 1 < pism_j) {
+      mark_row_invalid(n);
+    }
+  }
 }
 
 } // end of namespace fem
