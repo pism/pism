@@ -20,7 +20,7 @@
 #include <cassert>
 
 #include "Poisson3.hh"
-
+#include "pism/util/fem/FEM.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {
@@ -57,6 +57,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
     xm  = info->xm,
     ym  = info->ym,
     zm  = info->zm;
+
+  fem::Q1Element3 E(*info, m_grid->dx(), m_grid->dy(), fem::Q13DQuadrature8());
 
   // loop over elements
   for (int k = gzs; k < zs + zm; k++) {
