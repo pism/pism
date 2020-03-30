@@ -298,7 +298,7 @@ public:
    * Use this to add residual contributions.
    */
   template<typename T>
-  void add_contribution(const T *local, T** y_global) const {
+  void add_contribution(const T *local, T*** y_global) const {
     for (unsigned int n = 0; n < m_n_chi; n++) {
       if (m_row[n].i == m_invalid_dof) {
         // skip rows marked as "invalid"
