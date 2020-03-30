@@ -243,7 +243,7 @@ void Element::add_contribution(const double *K, Mat J) const {
   PISM_CHK(ierr, "MatSetValuesBlockedStencil");
 }
 
-Q1Element::Q1Element(const IceGrid &grid, const Quadrature &quadrature)
+Q1Element2::Q1Element2(const IceGrid &grid, const Quadrature &quadrature)
   : Element2(grid, quadrature.weights().size(), q1::n_chi, q1::n_chi) {
 
   double dx = grid.dx();
@@ -268,7 +268,7 @@ Q1Element::Q1Element(const IceGrid &grid, const Quadrature &quadrature)
   reset(0, 0);
 }
 
-P1Element::P1Element(const IceGrid &grid, const Quadrature &quadrature, int type)
+P1Element2::P1Element2(const IceGrid &grid, const Quadrature &quadrature, int type)
   : Element2(grid, quadrature.weights().size(), p1::n_chi, q1::n_chi) {
 
   double dx = grid.dx();

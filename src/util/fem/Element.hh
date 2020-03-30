@@ -248,15 +248,15 @@ protected:
 };
 
 //! Q1 element with sides parallel to X and Y axes
-class Q1Element : public Element2 {
+class Q1Element2 : public Element2 {
 public:
-  Q1Element(const IceGrid &grid, const Quadrature &quadrature);
+  Q1Element2(const IceGrid &grid, const Quadrature &quadrature);
 };
 
-//! P1 element embedded in Q1Element
-class P1Element : public Element2 {
+//! P1 element embedded in Q1Element2
+class P1Element2 : public Element2 {
 public:
-  P1Element(const IceGrid &grid, const Quadrature &quadrature, int N);
+  P1Element2(const IceGrid &grid, const Quadrature &quadrature, int N);
 };
 
 class Element3 : public Element {

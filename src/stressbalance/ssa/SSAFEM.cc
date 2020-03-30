@@ -567,12 +567,12 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 
   const unsigned int Nk = fem::q1::n_chi;
 
-  using fem::P1Element;
+  using fem::P1Element2;
   fem::P1Quadrature3 Q_p1;
-  P1Element p1_element[Nk] = {P1Element(*m_grid, Q_p1, 0),
-                              P1Element(*m_grid, Q_p1, 1),
-                              P1Element(*m_grid, Q_p1, 2),
-                              P1Element(*m_grid, Q_p1, 3)};
+  P1Element2 p1_element[Nk] = {P1Element2(*m_grid, Q_p1, 0),
+                               P1Element2(*m_grid, Q_p1, 1),
+                               P1Element2(*m_grid, Q_p1, 2),
+                               P1Element2(*m_grid, Q_p1, 3)};
 
   using mask::ocean;
 
@@ -737,12 +737,12 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   const unsigned int Nk = fem::q1::n_chi;
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
-  using fem::P1Element;
+  using fem::P1Element2;
   fem::P1Quadrature3 Q_p1;
-  P1Element p1_element[Nk] = {P1Element(*m_grid, Q_p1, 0),
-                              P1Element(*m_grid, Q_p1, 1),
-                              P1Element(*m_grid, Q_p1, 2),
-                              P1Element(*m_grid, Q_p1, 3)};
+  P1Element2 p1_element[Nk] = {P1Element2(*m_grid, Q_p1, 0),
+                               P1Element2(*m_grid, Q_p1, 1),
+                               P1Element2(*m_grid, Q_p1, 2),
+                               P1Element2(*m_grid, Q_p1, 3)};
 
   IceModelVec::AccessList list{&m_node_type, &m_coefficients, &m_boundary_integral};
 
@@ -956,12 +956,12 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
-  using fem::P1Element;
+  using fem::P1Element2;
   fem::P1Quadrature3 Q_p1;
-  P1Element p1_element[Nk] = {P1Element(*m_grid, Q_p1, 0),
-                              P1Element(*m_grid, Q_p1, 1),
-                              P1Element(*m_grid, Q_p1, 2),
-                              P1Element(*m_grid, Q_p1, 3)};
+  P1Element2 p1_element[Nk] = {P1Element2(*m_grid, Q_p1, 0),
+                               P1Element2(*m_grid, Q_p1, 1),
+                               P1Element2(*m_grid, Q_p1, 2),
+                               P1Element2(*m_grid, Q_p1, 3)};
 
   // Zero out the Jacobian in preparation for updating it.
   PetscErrorCode ierr = MatZeroEntries(Jac);

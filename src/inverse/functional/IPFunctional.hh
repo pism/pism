@@ -70,7 +70,7 @@ protected:
   IceGrid::ConstPtr m_grid;
 
   fem::ElementIterator m_element_index;
-  fem::Q1Element       m_element;
+  fem::Q1Element2       m_element;
 
 private:
   // Hide copy/assignment operations
