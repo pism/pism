@@ -60,17 +60,59 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
   fem::Q1Element3 E(*info, m_grid->dx(), m_grid->dy(), fem::Q13DQuadrature8());
 
+
+
+  double
+    Mz = info->mz,
+    F  = 1.0,                   // right hand side
+    b  = 0.0,                   // bottom elevation
+    H  = 1000.0;                // thickness
+
   // loop over elements
   for (int k = gzs; k < zs + zm; k++) {
     for (int j = gys; j < ys + ym; j++) {
       for (int i = gxs; i < xs + xm; i++) {
-        f[k][j][i]  =  x[k][j][i];
 
-
-
-        if (i >= xs and j >= ys and k >= zs) {
-
+        // Zero Dirichlet BC at the base
+        if (k == 0) {
+          f[k][j][i] = x[k][j][i];
+          continue;
         }
+
+        // reset residual to zero in preparation
+        double R[8];
+        for (int n = 0; n < 8; ++n) {
+          R[n] = 0.0;
+        }
+
+        // compute z-coordinates for the nodes of this element
+        std::vector<double> z(8, 0.0);
+        {
+          for (int n = 0; n < 4; ++n) {
+            z[n] = b + H * k / (Mz - 1.0);
+            z[n + 4] = H * (k + 1) / (Mz - 1.0);
+          }
+        }
+
+        E.reset(i, j, k, z);
+
+        // evaluate u, u_x, u_y, u_z at quadrature points
+        double u_nodal[8], u[8], u_x[8], u_y[8], u_z[8];
+        E.nodal_values(x, u_nodal);
+        E.evaluate(u_nodal, u, u_x, u_y, u_z);
+
+        // loop over all quadrature points
+        for (int q = 0; q < E.n_pts(); ++q) {
+          auto W = E.weight(q);
+
+          // loop over all test functions
+          for (int s = 0; s < E.n_chi(); ++s) {
+            const auto &psi = E.chi(q, s);
+
+            R[s] += W * (u_x[q] * psi.dx + u_y[q] * psi.dy + u_z[q] * psi.dz - F * psi.val);
+          }
+        }
+        E.add_contribution(R, f);
       }
     }
   }
