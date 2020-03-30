@@ -146,5 +146,21 @@ P1Quadrature3::P1Quadrature3() {
   m_weights = {one_over_six, one_over_six, one_over_six};
 }
 
+Q13DQuadrature8::Q13DQuadrature8() {
+  double xis[8]   = {-1.0,  1.0,  1.0, -1.0, -1.0,  1.0, 1.0, -1.0};
+  double etas[8]  = {-1.0, -1.0,  1.0,  1.0, -1.0, -1.0, 1.0,  1.0};
+  double zetas[8] = {-1.0, -1.0, -1.0, -1.0,  1.0,  1.0, 1.0,  1.0};
+
+  m_points.resize(8);
+  m_weights.resize(8);
+
+  double C = 1.0 / sqrt(3.0);
+
+  for (int k = 0; k < 8; ++k) {
+    m_points[k] = {C * xis[k], C * etas[k], C * zetas[k]};
+    m_weights[k] = 1.0;
+  }
+}
+
 } // end of namespace fem
 } // end of namespace pism

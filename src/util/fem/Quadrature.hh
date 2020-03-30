@@ -119,6 +119,14 @@ public:
   P1Quadrature3();
 };
 
+/*!
+ * 8-point Gaussian quadrature on the cube [-1,1]*[-1,1]*[-1,1]
+ */
+class Q13DQuadrature8 : public Quadrature {
+public:
+  Q13DQuadrature8();
+};
+
 } // end of namespace fem
 } // end of namespace pism
 
