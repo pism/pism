@@ -16,7 +16,7 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include <cstring>              // memset
+#include <cassert>              // assert
 
 #include "Element.hh"
 #include "pism/util/IceGrid.hh"
@@ -191,12 +191,8 @@ void Element2::reset(int i, int j) {
     m_col[k].j = j + m_j_offset[k];
     m_col[k].k = 0;
     m_col[k].c = 0;
-
-    m_row[k].i = m_col[k].i;
-    m_row[k].j = m_col[k].j;
-    m_row[k].k = m_col[k].k;
-    m_row[k].c = m_col[k].c;
   }
+  m_row = m_col;
 
   // We never sum into rows that are not owned by the local rank.
   for (unsigned int k = 0; k < m_n_chi; k++) {
@@ -376,7 +372,6 @@ Q1Element3::Q1Element3(const DMDALocalInfo &grid_info,
   }
 }
 
-
 /*! Initialize the element `i,j,k`.
  *
  *
@@ -386,12 +381,12 @@ Q1Element3::Q1Element3(const DMDALocalInfo &grid_info,
  * @param[in] z z-coordinates of the nodes of this element
  */
 void Q1Element3::reset(int i, int j, int k, const std::vector<double> &z) {
-  // record i,j,k corresponding to the current element
+  // Record i,j,k corresponding to the current element:
   m_i = i;
   m_j = j;
   m_k = k;
 
-  //
+  // Set row and column info used to add contributions:
   for (unsigned int n = 0; n < m_n_chi; ++n) {
     m_col[n].i = i + m_i_offset[n];
     m_col[n].j = j + m_j_offset[n];
@@ -400,7 +395,7 @@ void Q1Element3::reset(int i, int j, int k, const std::vector<double> &z) {
   }
   m_row = m_col;
 
-  // We never sum into rows that are not owned by the local rank.
+  // Mark rows that we don't own as invalid:
   for (unsigned int n = 0; n < m_n_chi; n++) {
     int pism_i = m_row[n].i, pism_j = m_row[n].j;
     if (pism_i < m_grid.xs or m_grid.xs + m_grid.xm - 1 < pism_i or
@@ -409,7 +404,7 @@ void Q1Element3::reset(int i, int j, int k, const std::vector<double> &z) {
     }
   }
 
-  // compute J^{-1} and use it to compute m_germs and m_weights
+  // Compute J^{-1} and use it to compute m_germs and m_weights:
   for (unsigned int q = 0; q < m_Nq; q++) {
 
     Vector3 dz{0.0, 0.0, 0.0};
@@ -426,11 +421,13 @@ void Q1Element3::reset(int i, int j, int k, const std::vector<double> &z) {
 
     double J_det = J[0][0] * J[1][1] * J[2][2];
 
-    m_weights[q] = J_det * m_w[q];
+    assert(J_det != 0.0);
 
     double J_inv[3][3] = {{1.0 / J[0][0],           0.0, -J[0][2] / (J[0][0] * J[2][2])},
                           {0.0,           1.0 / J[1][1], -J[1][2] / (J[1][1] * J[2][2])},
                           {0.0,                     0.0,                 1.0 / J[2][2]}};
+
+    m_weights[q] = J_det * m_w[q];
 
     for (unsigned int n = 0; n < m_n_chi; n++) {
       auto &chi = m_chi[q * m_n_chi + n];
