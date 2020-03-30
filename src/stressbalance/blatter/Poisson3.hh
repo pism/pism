@@ -51,7 +51,7 @@ protected:
 
   CallbackData m_callback_data;
 
-  void compute_local_function(DMDALocalInfo *info, const double ***xg, double ***yg);
+  void compute_residual(DMDALocalInfo *info, const double ***xg, double ***yg);
   static PetscErrorCode function_callback(DMDALocalInfo *info, const double ***x, double ***f,
                                           CallbackData *data);
 };

@@ -30,7 +30,7 @@ PetscErrorCode Poisson3::function_callback(DMDALocalInfo *info,
                                            const double ***x, double ***f,
                                            CallbackData *data) {
   try {
-    data->solver->compute_local_function(info, x, f);
+    data->solver->compute_residual(info, x, f);
   } catch (...) {
     MPI_Comm com = MPI_COMM_SELF;
     PetscErrorCode ierr = PetscObjectGetComm((PetscObject)data->da, &com); CHKERRQ(ierr);
@@ -40,8 +40,8 @@ PetscErrorCode Poisson3::function_callback(DMDALocalInfo *info,
   return 0;
 }
 
-void Poisson3::compute_local_function(DMDALocalInfo *info,
-                                      const double ***x, double ***f) {
+void Poisson3::compute_residual(DMDALocalInfo *info,
+                                const double ***x, double ***f) {
   assert(info->sw == 1);
 
   // We start with ghost nodes in x and y directions to include contributions of elements
