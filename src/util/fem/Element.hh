@@ -111,7 +111,8 @@ protected:
   // pointer to a shape function
   typedef Germ (*ShapeFunction)(unsigned int k, const QuadPoint &p);
 
-  void initialize(ShapeFunction f,
+  void initialize(const double J[3][3],
+                  ShapeFunction f,
                   unsigned int n_chi,
                   const std::vector<QuadPoint>& points,
                   const std::vector<double>& W);
@@ -125,16 +126,13 @@ protected:
   //! type of elements.
   const unsigned int m_n_chi;
 
-  //! Jacobian of the map from the reference element to a physical element
-  double m_J[3][3];
-
   //! Indices of the current element.
   int m_i, m_j;
 
   //! Number of quadrature points
   const unsigned int m_Nq;
 
-  const int m_J_block_size;
+  const int m_block_size;
 
   std::vector<Germ> m_germs;
 
@@ -149,16 +147,15 @@ protected:
   //! because PETSC_MIN_INT depends on PETSc's configuration flags.
   static const int m_invalid_dof = -1073741824;
 
+  //! Quadrature weights for a particular physical element
+  std::vector<double> m_weights;
 private:
   Element()
     : m_n_chi(0),
       m_Nq(0),
-      m_J_block_size(0) {
+      m_block_size(0) {
     // empty
   }
-
-  //! Quadrature weights
-  std::vector<double> m_weights;
 };
 
 class Element2 : public Element {
@@ -336,14 +333,20 @@ class Q1Element3 : public Element3 {
 public:
   Q1Element3(const DMDALocalInfo &grid, double dx, double dy, const Quadrature &quadrature);
 
-  void reset(int i, int j, int k,
-             double const* const* bottom,
-             double const* const* top);
+  void reset(int i, int j, int k, const std::vector<double> &z);
 private:
   double m_dx;
   double m_dy;
+
+  // values of shape functions and their derivatives with respect to xi,eta,zeta at all
+  // quadrature points
+  std::vector<Germ> m_chi;
+
+  // quadrature points (on the reference element)
   std::vector<QuadPoint> m_points;
-  std::vector<double> m_weights;
+
+  // quadrature weights (on the reference element)
+  std::vector<double> m_w;
 };
 
 } // end of namespace fem

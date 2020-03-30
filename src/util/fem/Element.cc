@@ -91,7 +91,7 @@ static Germ multiply(const double A[3][3], const Germ &v) {
   return {v.val, dot(row(A, 0), v), dot(row(A, 1), v), dot(row(A, 2), v)};
 }
 
-static void reset_matrix(double A[3][3]) {
+static void set_to_identity(double A[3][3]) {
   A[0][0] = 1.0;
   A[0][1] = 0.0;
   A[0][2] = 0.0;
@@ -106,7 +106,7 @@ static void reset_matrix(double A[3][3]) {
 Element::Element(const IceGrid &grid, int Nq, int n_chi, int block_size)
   : m_n_chi(n_chi),
     m_Nq(Nq),
-    m_J_block_size(block_size) {
+    m_block_size(block_size) {
 
   // get sub-domain information from the grid:
   auto da = grid.get_dm(1, 0);  // dof = 1, stencil_width = 0
@@ -120,15 +120,12 @@ Element::Element(const IceGrid &grid, int Nq, int n_chi, int block_size)
   m_germs.resize(Nq * n_chi);
   m_row.resize(block_size);
   m_col.resize(block_size);
-
-  // set m_J to the identity
-  reset_matrix(m_J);
 }
 
 Element::Element(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size)
   : m_n_chi(n_chi),
     m_Nq(Nq),
-    m_J_block_size(block_size) {
+    m_block_size(block_size) {
 
   m_grid = grid_info;
   // reset da: we don't want to end up depending on it
@@ -137,9 +134,6 @@ Element::Element(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_si
   m_germs.resize(Nq * n_chi);
   m_row.resize(block_size);
   m_col.resize(block_size);
-
-  // set m_J to the identity
-  reset_matrix(m_J);
 }
 
 
@@ -150,13 +144,14 @@ Element::~Element() {
 //! Initialize shape function values and quadrature weights of a 2D physical element.
 /** Assumes that the Jacobian does not depend on coordinates of the current quadrature point.
  */
-void Element::initialize(ShapeFunction f,
+void Element::initialize(const double J[3][3],
+                         ShapeFunction f,
                          unsigned int n_chi,
                          const std::vector<QuadPoint>& points,
                          const std::vector<double>& W) {
 
   double J_inv[3][3];
-  invert(m_J, J_inv);
+  invert(J, J_inv);
 
   for (unsigned int q = 0; q < m_Nq; q++) {
     for (unsigned int k = 0; k < n_chi; k++) {
@@ -165,7 +160,7 @@ void Element::initialize(ShapeFunction f,
   }
 
   m_weights.resize(m_Nq);
-  const double J_det = det(m_J);
+  const double J_det = det(J);
   for (unsigned int q = 0; q < m_Nq; q++) {
     m_weights[q] = J_det * W[q];
   }
@@ -225,7 +220,7 @@ void Element::mark_col_invalid(int k) {
   m_col[k].i = m_col[k].j = m_col[k].k = m_invalid_dof;
 }
 
-//! Add the contributions of an element-local Jacobian to the global Jacobian vector.
+//! Add the contributions of an element-local Jacobian to the global Jacobian matrix.
 /*! The element-local Jacobian should be given as a row-major array of
  *  Nk*Nk values in the scalar case or (2Nk)*(2Nk) values in the
  *  vector valued case.
@@ -237,8 +232,8 @@ void Element::mark_col_invalid(int k) {
  */
 void Element::add_contribution(const double *K, Mat J) const {
   PetscErrorCode ierr = MatSetValuesBlockedStencil(J,
-                                                   m_J_block_size, m_row.data(),
-                                                   m_J_block_size, m_col.data(),
+                                                   m_block_size, m_row.data(),
+                                                   m_block_size, m_col.data(),
                                                    K, ADD_VALUES);
   PISM_CHK(ierr, "MatSetValuesBlockedStencil");
 }
@@ -258,13 +253,16 @@ Q1Element2::Q1Element2(const IceGrid &grid, const Quadrature &quadrature)
   m_side_lengths = {dx, dy, dx, dy};
 
   // compute the Jacobian
-  m_J[0][0] = 0.5 * dx;
-  m_J[0][1] = 0.0;
-  m_J[1][0] = 0.0;
-  m_J[1][1] = 0.5 * dy;
+
+  double J[3][3];
+  set_to_identity(J);
+  J[0][0] = 0.5 * dx;
+  J[0][1] = 0.0;
+  J[1][0] = 0.0;
+  J[1][1] = 0.5 * dy;
 
   // initialize germs and quadrature weights for the quadrature on this physical element
-  initialize(q1::chi, q1::n_chi, quadrature.points(), quadrature.weights());
+  initialize(J, q1::chi, q1::n_chi, quadrature.points(), quadrature.weights());
   reset(0, 0);
 }
 
@@ -336,13 +334,15 @@ P1Element2::P1Element2(const IceGrid &grid, const Quadrature &quadrature, int ty
   }
 
   // compute the Jacobian
-  m_J[0][0] = pts[1].u - pts[0].u;
-  m_J[0][1] = pts[1].v - pts[0].v;
-  m_J[1][0] = pts[2].u - pts[0].u;
-  m_J[1][1] = pts[2].v - pts[0].v;
+  double J[3][3];
+  set_to_identity(J);
+  J[0][0] = pts[1].u - pts[0].u;
+  J[0][1] = pts[1].v - pts[0].v;
+  J[1][0] = pts[2].u - pts[0].u;
+  J[1][1] = pts[2].v - pts[0].v;
 
   // initialize germs and quadrature weights for the quadrature on this physical element
-  initialize(p1::chi, p1::n_chi, quadrature.points(), quadrature.weights());
+  initialize(J, p1::chi, p1::n_chi, quadrature.points(), quadrature.weights());
   reset(0, 0);
 }
 
@@ -359,11 +359,21 @@ Q1Element3::Q1Element3(const DMDALocalInfo &grid_info,
     m_dx(dx),
     m_dy(dy),
     m_points(quadrature.points()),
-    m_weights(quadrature.weights()){
+    m_w(quadrature.weights()) {
+
+  m_weights.resize(m_Nq);
 
   m_i_offset = {0, 1, 1, 0, 0, 1, 1, 0};
   m_j_offset = {0, 0, 1, 1, 0, 0, 1, 1};
   m_k_offset = {0, 0, 0, 0, 1, 1, 1, 1};
+
+  // store values of shape functions on the reference element
+  m_chi.resize(m_Nq * m_n_chi);
+  for (unsigned int q = 0; q < m_Nq; q++) {
+    for (unsigned int n = 0; n < m_n_chi; n++) {
+      m_chi[q * m_n_chi + n] = q13d::chi(n, m_points[q]);
+    }
+  }
 }
 
 
@@ -373,16 +383,15 @@ Q1Element3::Q1Element3(const DMDALocalInfo &grid_info,
  * @param[in] i i-index of the lower left node
  * @param[in] j j-index of the lower left node
  * @param[in] k k-index of the lower left node
- * @param[in] bottom nodal values of the bottom surface elevation
- * @param[in] top nodal values of the top surface elevation
+ * @param[in] z z-coordinates of the nodes of this element
  */
-void Q1Element3::reset(int i, int j, int k,
-                       double const* const* bottom,
-                       double const* const* top) {
+void Q1Element3::reset(int i, int j, int k, const std::vector<double> &z) {
+  // record i,j,k corresponding to the current element
   m_i = i;
   m_j = j;
   m_k = k;
 
+  //
   for (unsigned int n = 0; n < m_n_chi; ++n) {
     m_col[n].i = i + m_i_offset[n];
     m_col[n].j = j + m_j_offset[n];
@@ -391,17 +400,41 @@ void Q1Element3::reset(int i, int j, int k,
   }
   m_row = m_col;
 
-  // - compute J
-
-  // initialize germs and quadrature weights for the quadrature on this physical element
-  initialize(q13d::chi, q13d::n_chi, m_points, m_weights);
-
   // We never sum into rows that are not owned by the local rank.
   for (unsigned int n = 0; n < m_n_chi; n++) {
     int pism_i = m_row[n].i, pism_j = m_row[n].j;
     if (pism_i < m_grid.xs or m_grid.xs + m_grid.xm - 1 < pism_i or
         pism_j < m_grid.ys or m_grid.ys + m_grid.ym - 1 < pism_j) {
       mark_row_invalid(n);
+    }
+  }
+
+  // compute J^{-1} and use it to compute m_germs and m_weights
+  for (unsigned int q = 0; q < m_Nq; q++) {
+
+    Vector3 dz{0.0, 0.0, 0.0};
+    for (unsigned int n = 0; n < m_n_chi; ++n) {
+      auto &chi = m_chi[q * m_n_chi + n];
+      dz.x += chi.dx * z[n];
+      dz.y += chi.dy * z[n];
+      dz.z += chi.dz * z[n];
+    }
+
+    double J[3][3] = {{m_dx / 2.0,        0.0, dz.x},
+                      {       0.0, m_dy / 2.0, dz.y},
+                      {       0.0,        0.0, dz.z}};
+
+    double J_det = J[0][0] * J[1][1] * J[2][2];
+
+    m_weights[q] = J_det * m_w[q];
+
+    double J_inv[3][3] = {{1.0 / J[0][0],           0.0, -J[0][2] / (J[0][0] * J[2][2])},
+                          {0.0,           1.0 / J[1][1], -J[1][2] / (J[1][1] * J[2][2])},
+                          {0.0,                     0.0,                 1.0 / J[2][2]}};
+
+    for (unsigned int n = 0; n < m_n_chi; n++) {
+      auto &chi = m_chi[q * m_n_chi + n];
+      m_germs[q * m_n_chi + n] = multiply(J_inv, chi);
     }
   }
 }
