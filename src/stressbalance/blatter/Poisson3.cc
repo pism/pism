@@ -219,8 +219,8 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid)
        {"units", "1"},
        {"positive", "up"}};
 
-    m_xx.reset(new IceModelVec3Custom(grid, "xx", "z_sigma", sigma, z_attrs));
-    m_xx->set_attrs("diagnostic", "solution", "1", "1", "", 0);
+    m_solution.reset(new IceModelVec3Custom(grid, "xx", "z_sigma", sigma, z_attrs));
+    m_solution->set_attrs("diagnostic", "solution", "1", "1", "", 0);
   }
 }
 
@@ -235,18 +235,18 @@ void Poisson3::update(const Inputs &inputs, bool) {
 
   ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 
-  int Mz = m_xx->levels().size();
+  int Mz = m_solution->levels().size();
 
   {
     double ***x = nullptr;
     ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
-    IceModelVec::AccessList list{m_xx.get()};
+    IceModelVec::AccessList list{m_solution.get()};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      auto c = m_xx->get_column(i, j);
+      auto c = m_solution->get_column(i, j);
 
       for (int k = 0; k < Mz; ++k) {
         c[k] = x[k][j][i];
@@ -257,8 +257,8 @@ void Poisson3::update(const Inputs &inputs, bool) {
   }
 }
 
-IceModelVec3Custom::Ptr Poisson3::x() const {
-  return m_xx;
+IceModelVec3Custom::Ptr Poisson3::solution() const {
+  return m_solution;
 }
 
 

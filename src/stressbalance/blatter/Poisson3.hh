@@ -35,10 +35,10 @@ public:
 
   void update(const Inputs &inputs, bool);
 
-  IceModelVec3Custom::Ptr x() const;
+  IceModelVec3Custom::Ptr solution() const;
 protected:
 
-  IceModelVec3Custom::Ptr m_xx;
+  IceModelVec3Custom::Ptr m_solution;
 
   petsc::DM m_da;
   petsc::Vec m_x, m_r;
