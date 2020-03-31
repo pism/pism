@@ -287,7 +287,7 @@ public:
     for (unsigned int n = 0; n < m_n_chi; ++n) {
       int i = 0, j = 0, k = 0;
       local_to_global(n, i, j, k);
-      result[k] = x_global[k][j][i];   // note the indexing order
+      result[n] = x_global[k][j][i];   // note the indexing order
     }
   }
 
@@ -313,6 +313,7 @@ public:
   }
 protected:
   Element3(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size);
+  Element3(const IceGrid &grid, int Nq, int n_chi, int block_size);
 
   std::vector<int> m_k_offset;
 
@@ -332,6 +333,7 @@ protected:
 class Q1Element3 : public Element3 {
 public:
   Q1Element3(const DMDALocalInfo &grid, double dx, double dy, const Quadrature &quadrature);
+  Q1Element3(const IceGrid &grid, const Quadrature &quadrature);
 
   void reset(int i, int j, int k, const std::vector<double> &z);
 private:

@@ -88,7 +88,11 @@ static void invert(const double A[3][3], double result[3][3]) {
 
 //! Compute derivatives with respect to x,y using J^{-1} and derivatives with respect to xi, eta.
 static Germ multiply(const double A[3][3], const Germ &v) {
-  return {v.val, dot(row(A, 0), v), dot(row(A, 1), v), dot(row(A, 2), v)};
+  // FIXME: something is not right here
+  return {v.val,
+          dot(row(A, 0), v),
+          dot(row(A, 1), v),
+          dot(row(A, 2), v)};
 }
 
 static void set_to_identity(double A[3][3]) {
@@ -344,7 +348,15 @@ P1Element2::P1Element2(const IceGrid &grid, const Quadrature &quadrature, int ty
 
 Element3::Element3(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size)
   : Element(grid_info, Nq, n_chi, block_size) {
-  // empty
+  m_i = 0;
+  m_j = 0;
+  m_k = 0;
+}
+Element3::Element3(const IceGrid &grid, int Nq, int n_chi, int block_size)
+  : Element(grid, Nq, n_chi, block_size) {
+  m_i = 0;
+  m_j = 0;
+  m_k = 0;
 }
 
 Q1Element3::Q1Element3(const DMDALocalInfo &grid_info,
@@ -370,7 +382,31 @@ Q1Element3::Q1Element3(const DMDALocalInfo &grid_info,
       m_chi[q * m_n_chi + n] = q13d::chi(n, m_points[q]);
     }
   }
+  m_germs = m_chi;
 }
+
+Q1Element3::Q1Element3(const IceGrid &grid, const Quadrature &quadrature)
+  : Element3(grid, quadrature.weights().size(), q13d::n_chi, q13d::n_chi),
+    m_dx(grid.dx()),
+    m_dy(grid.dy()),
+    m_points(quadrature.points()),
+    m_w(quadrature.weights()) {
+
+  m_weights.resize(m_Nq);
+
+  m_i_offset = {0, 1, 1, 0, 0, 1, 1, 0};
+  m_j_offset = {0, 0, 1, 1, 0, 0, 1, 1};
+  m_k_offset = {0, 0, 0, 0, 1, 1, 1, 1};
+
+  // store values of shape functions on the reference element
+  m_chi.resize(m_Nq * m_n_chi);
+  for (unsigned int q = 0; q < m_Nq; q++) {
+    for (unsigned int n = 0; n < m_n_chi; n++) {
+      m_chi[q * m_n_chi + n] = q13d::chi(n, m_points[q]);
+    }
+  }
+}
+
 
 /*! Initialize the element `i,j,k`.
  *
@@ -391,7 +427,7 @@ void Q1Element3::reset(int i, int j, int k, const std::vector<double> &z) {
     m_col[n].i = i + m_i_offset[n];
     m_col[n].j = j + m_j_offset[n];
     m_col[n].k = k + m_k_offset[n];
-    m_col[k].c = 0;
+    m_col[n].c = 0;
   }
   m_row = m_col;
 
@@ -431,7 +467,10 @@ void Q1Element3::reset(int i, int j, int k, const std::vector<double> &z) {
 
     for (unsigned int n = 0; n < m_n_chi; n++) {
       auto &chi = m_chi[q * m_n_chi + n];
-      m_germs[q * m_n_chi + n] = multiply(J_inv, chi);
+      m_germs[q * m_n_chi + n] = {chi.val,
+                                  J_inv[0][0] * chi.dx + J_inv[0][1] * chi.dy + J_inv[0][2] * chi.dz,
+                                  J_inv[1][0] * chi.dx + J_inv[1][1] * chi.dy + J_inv[1][2] * chi.dz,
+                                  J_inv[2][0] * chi.dx + J_inv[2][1] * chi.dy + J_inv[2][2] * chi.dz};
     }
   }
 }

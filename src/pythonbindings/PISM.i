@@ -336,6 +336,7 @@ pism_class(pism::RegionalYieldStress, "pism/regional/RegionalYieldStress.hh")
 %rename(p1_n_sides) pism::fem::p1::n_sides;
 %rename(P1ElementGeometry) pism::fem::p1::ElementGeometry;
 %rename(P1BoundaryQuadrature2) pism::fem::p1::BoundaryQuadrature2;
+%rename(q13d_chi) pism::fem::q13d::chi;
 
 %include "util/fem/FEM.hh"
 %include "util/fem/DirichletData.hh"
