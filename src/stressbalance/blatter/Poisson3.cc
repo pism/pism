@@ -42,51 +42,54 @@ PetscErrorCode Poisson3::function_callback(DMDALocalInfo *info,
 
 void Poisson3::compute_residual(DMDALocalInfo *info,
                                 const double ***x, double ***f) {
+  // Stencil width of 1 is not very important, but it info->sw > 1 will lead to more
+  // redundant computation (we would be looping over elements that don't contribute to any
+  // owned nodes).
   assert(info->sw == 1);
 
-  // We start with ghost nodes in x and y directions to include contributions of elements
-  // not owned by the current rank. The whole column (in the z direction) is owned by the
-  // same rank, so this is not necessary there.
-  const int
-    gxs = info->gxs,
-    xs  = info->xs,
-    gys = info->gys,
-    ys  = info->ys,
-    gzs = info->gzs,
-    zs  = info->zs,
-    xm  = info->xm,
-    ym  = info->ym,
-    zm  = info->zm;
+  // compute grid spacing from domain dimensions and the grid size
+  double
+    Lx = m_grid->Lx(),
+    Ly = m_grid->Ly(),
+    dx = 2.0 * Lx / (info->mx - 1),
+    dy = 2.0 * Ly / (info->my - 1);
 
-  fem::Q1Element3 E(*info, m_grid->dx(), m_grid->dy(), fem::Q13DQuadrature8());
-
-
+  fem::Q1Element3 E(*info, dx, dy, fem::Q13DQuadrature8());
 
   double
-    Mz = info->mz,
-    F  = 1.0,                   // right hand side
-    b  = 0.0,                   // bottom elevation
-    H  = 1000.0;                // thickness
+    u_bc = 0.0,
+    Mz   = info->mz,
+    F    = 1.0,                 // right hand side
+    b    = 0.0,                 // bottom elevation
+    H    = 1.0;              // thickness
 
-  // loop over elements
-  for (int k = gzs; k < zs + zm; k++) {
-    for (int j = gys; j < ys + ym; j++) {
-      for (int i = gxs; i < xs + xm; i++) {
+  // reset global residual to zero in preparation
+  //
+  // here we loop over all the *owned* nodes
+  for (int k = info->zs; k < info->zs + info->zm; k++) {
+    for (int j = info->ys; j < info->ys + info->ym; j++) {
+      for (int i = info->xs; i < info->xs + info->xm; i++) {
+        f[k][j][i] = 0.0;
+      }
+    }
+  }
 
-        // Zero Dirichlet BC at the base
-        if (k == 0) {
-          f[k][j][i] = x[k][j][i];
-          continue;
-        }
+  std::vector<double> z(E.n_chi()), R(E.n_chi());
 
-        // reset residual to zero in preparation
-        double R[8];
-        for (int n = 0; n < 8; ++n) {
+  // loop over all the elements that have at least one owned node
+  for (int k = info->gzs; k < info->gzs + info->gzm - 1; k++) {
+    for (int j = info->gys; j < info->gys + info->gym - 1; j++) {
+      for (int i = info->gxs; i < info->gxs + info->gxm - 1; i++) {
+
+        // reset element residual to zero in preparation
+        for (size_t n = 0; n < R.size(); ++n) {
           R[n] = 0.0;
         }
 
         // compute z-coordinates for the nodes of this element
-        std::vector<double> z(8, 0.0);
+        //
+        // it would be nice to use E.local_to_global() here but we can't: we haven't
+        // called E.reset() yet
         {
           for (int n = 0; n < 4; ++n) {
             z[n] = b + H * k / (Mz - 1.0);
@@ -96,9 +99,22 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
         E.reset(i, j, k, z);
 
-        // evaluate u, u_x, u_y, u_z at quadrature points
-        double u_nodal[8], u[8], u_x[8], u_y[8], u_z[8];
+        // get nodal values of u
+        double u_nodal[8];
         E.nodal_values(x, u_nodal);
+
+        // take care of Dirichlet BC: don't contribute to Dirichlet nodes and set nodal
+        // values of the current iterate to the BC value
+        for (int n = 0; n < 8; ++n) {
+          auto I = E.local_to_global(n);
+          if (I.k == 0 or I.k == info->mz) {
+            E.mark_row_invalid(n);
+            u_nodal[n] = u_bc;
+          }
+        }
+
+        // evaluate u and its partial derivatives at quadrature points
+        double u[8], u_x[8], u_y[8], u_z[8];
         E.evaluate(u_nodal, u, u_x, u_y, u_z);
 
         // loop over all quadrature points
@@ -106,13 +122,27 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           auto W = E.weight(q);
 
           // loop over all test functions
-          for (int s = 0; s < E.n_chi(); ++s) {
-            const auto &psi = E.chi(q, s);
+          for (int t = 0; t < E.n_chi(); ++t) {
+            const auto &psi = E.chi(q, t);
 
-            R[s] += W * (u_x[q] * psi.dx + u_y[q] * psi.dy + u_z[q] * psi.dz - F * psi.val);
+            R[t] += W * (u_x[q] * psi.dx + u_y[q] * psi.dy + u_z[q] * psi.dz - F * psi.val);
           }
         }
-        E.add_contribution(R, f);
+
+        E.add_contribution(R.data(), f);
+      } // end of the loop over i
+    } // end of the loop over j
+  } // end of the loop over k
+
+  // Compute the residual at Dirichlet BC nodes
+  //
+  // Here we loop over all the *owned* nodes
+  for (int k = info->zs; k < info->zs + info->zm; k++) {
+    for (int j = info->ys; j < info->ys + info->ym; j++) {
+      for (int i = info->xs; i < info->xs + info->xm; i++) {
+        if (k == 0 or k == info->mz - 1) {
+          f[k][j][i] = u_bc - x[k][j][i];
+        }
       }
     }
   }
@@ -125,7 +155,11 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid)
   auto pism_da = grid->get_dm(1, 0);
 
   PetscInt dim, Mx, My, Nx, Ny;
-  PetscInt Mz = 4, Nz = 1, dof = 1, stencil_width = 1;
+  PetscInt
+    Mz            = m_config->get_number("grid.Mz"),
+    Nz            = 1,
+    dof           = 1,
+    stencil_width = 1;
 
   ierr = DMDAGetInfo(*pism_da,
                      &dim,
@@ -183,8 +217,8 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid)
     ierr = SNESCreate(PETSC_COMM_WORLD, m_snes.rawptr());
     PISM_CHK(ierr, "SNESCreate");
 
-    ierr = SNESSetOptionsPrefix(m_snes, "poi_");
-    PISM_CHK(ierr, "SNESSetOptionsPrefix");
+    // ierr = SNESSetOptionsPrefix(m_snes, "poi_");
+    // PISM_CHK(ierr, "SNESSetOptionsPrefix");
 
     ierr = SNESSetDM(m_snes, m_da);
     PISM_CHK(ierr, "SNESSetDM");
@@ -219,7 +253,7 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid)
        {"units", "1"},
        {"positive", "up"}};
 
-    m_solution.reset(new IceModelVec3Custom(grid, "xx", "z_sigma", sigma, z_attrs));
+    m_solution.reset(new IceModelVec3Custom(grid, "solution", "z_sigma", sigma, z_attrs));
     m_solution->set_attrs("diagnostic", "solution", "1", "1", "", 0);
   }
 }
