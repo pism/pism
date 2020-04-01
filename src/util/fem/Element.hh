@@ -279,15 +279,24 @@ public:
     }
   }
 
+  struct GlobalIndex {
+    int i, j, k;
+  };
+
+  GlobalIndex local_to_global(int n) const {
+    return {m_i + m_i_offset[n],
+            m_j + m_j_offset[n],
+            m_k + m_k_offset[n]};
+  }
+
   /*! @brief Extract nodal values for the element (`i`,`j`,`k`) from global array `x_global`
     into the element-local array `result`.
   */
   template<typename T>
   void nodal_values(T const* const* const* x_global, T* result) const {
     for (unsigned int n = 0; n < m_n_chi; ++n) {
-      int i = 0, j = 0, k = 0;
-      local_to_global(n, i, j, k);
-      result[n] = x_global[k][j][i];   // note the indexing order
+      auto I = local_to_global(n);
+      result[n] = x_global[I.k][I.j][I.i];   // note the indexing order
     }
   }
 
@@ -318,12 +327,6 @@ protected:
   std::vector<int> m_k_offset;
 
   int m_k;
-
-  void local_to_global(int n, int &i, int &j, int &k) const {
-    i = m_i + m_i_offset[n];
-    j = m_j + m_j_offset[n];
-    k = m_k + m_k_offset[n];
-  }
 };
 
 //! @brief 3D Q1 element
