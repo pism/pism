@@ -283,6 +283,12 @@ public:
     int i, j, k;
   };
 
+  GlobalIndex local_to_global(int i, int j, int k, int n) const {
+    return {i + m_i_offset[n],
+            j + m_j_offset[n],
+            k + m_k_offset[n]};
+  }
+
   GlobalIndex local_to_global(int n) const {
     return {m_i + m_i_offset[n],
             m_j + m_j_offset[n],
