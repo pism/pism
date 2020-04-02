@@ -41,7 +41,7 @@ protected:
   IceModelVec3Custom::Ptr m_solution;
 
   petsc::DM m_da;
-  petsc::Vec m_x, m_r;
+  petsc::Vec m_x;
   petsc::SNES m_snes;
 
   struct CallbackData {

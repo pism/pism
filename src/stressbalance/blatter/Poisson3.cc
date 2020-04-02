@@ -205,9 +205,6 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid)
     ierr = DMCreateGlobalVector(m_da, m_x.rawptr());
     PISM_CHK(ierr, "DMCreateGlobalVector");
 
-    ierr = VecDuplicate(m_x, m_r.rawptr());
-    PISM_CHK(ierr, "VecDuplicate");
-
     // ierr = DMCreateMatrix(m_da, m_J.rawptr());
     // PISM_CHK(ierr, "DMCreateMatrix");
   }
