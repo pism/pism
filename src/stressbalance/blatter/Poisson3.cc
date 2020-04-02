@@ -49,11 +49,14 @@ static double z(double b, double H, int Mz, int k) {
 }
 
 static bool dirichlet_node(const DMDALocalInfo *info, const fem::Element3::GlobalIndex& I) {
-  return I.k == 0 or I.k == info->mz - 1;
+  return
+    (I.i == 0 or I.i == info->mx - 1) or
+    (I.j == 0 or I.j == info->my - 1) or
+    (I.k == 0 or I.k == info->mz - 1);
 }
 
 static double u_bc(double x, double y, double z) {
-  return 0;
+  return x * x - y * y + z * z;
 }
 
 void Poisson3::compute_residual(DMDALocalInfo *info,
