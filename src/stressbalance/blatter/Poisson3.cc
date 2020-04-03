@@ -286,11 +286,43 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid)
 
     m_solution.reset(new IceModelVec3Custom(grid, "solution", "z_sigma", sigma, z_attrs));
     m_solution->set_attrs("diagnostic", "solution", "1", "1", "", 0);
+
+    m_exact.reset(new IceModelVec3Custom(grid, "exact", "z_sigma", sigma, z_attrs));
+    m_exact->set_attrs("diagnostic", "exact", "1", "1", "", 0);
   }
 }
 
 Poisson3::~Poisson3() {
   // empty
+}
+
+void Poisson3::exact_solution(double b, double H, IceModelVec3Custom &result) {
+  IceModelVec::AccessList list{&result};
+
+  // Compute grid spacing from domain dimensions and the grid size
+  double
+    Lx = m_grid->Lx(),
+    Ly = m_grid->Ly(),
+    dx = 2.0 * Lx / (m_grid->Mx() - 1),
+    dy = 2.0 * Ly / (m_grid->My() - 1);
+
+  int Mz = result.levels().size();
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double
+      xx = xy(Lx, dx, i),
+      yy = xy(Ly, dy, j);
+
+    auto c = result.get_column(i, j);
+
+    for (int k = 0; k < Mz; ++k) {
+      double zz = z(b, H, Mz, k);
+
+      c[k] = u_bc(xx, yy, zz);
+    }
+  }
 }
 
 void Poisson3::update(const Inputs &inputs, bool) {
@@ -300,9 +332,11 @@ void Poisson3::update(const Inputs &inputs, bool) {
 
   ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 
-  int Mz = m_solution->levels().size();
+  double b = 0.0, H = 1.0;
+  exact_solution(b, H, *m_exact);
 
   {
+    int Mz = m_solution->levels().size();
     double ***x = nullptr;
     ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
@@ -326,6 +360,9 @@ IceModelVec3Custom::Ptr Poisson3::solution() const {
   return m_solution;
 }
 
+IceModelVec3Custom::Ptr Poisson3::exact() const {
+  return m_exact;
+}
 
 } // end of namespace stressbalance
 } // end of namespace pism

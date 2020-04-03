@@ -36,9 +36,12 @@ public:
   void update(const Inputs &inputs, bool);
 
   IceModelVec3Custom::Ptr solution() const;
+  IceModelVec3Custom::Ptr exact() const;
 protected:
+  void exact_solution(double b, double H, IceModelVec3Custom &result);
 
   IceModelVec3Custom::Ptr m_solution;
+  IceModelVec3Custom::Ptr m_exact;
 
   petsc::DM m_da;
   petsc::Vec m_x;
