@@ -80,11 +80,6 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
     dx = 2.0 * Lx / (info->mx - 1),
     dy = 2.0 * Ly / (info->my - 1);
 
-  // vertical domain extent
-  double
-    b = 0.0,                    // bottom elevation
-    H = 1.0;                    // thickness
-
   fem::Q1Element3 E(*info, dx, dy, fem::Q13DQuadrature8());
 
   // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
@@ -100,7 +95,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           double
             xx = xy(Lx, dx, i),
             yy = xy(Ly, dy, j),
-            zz = z(b, H, info->mz, k);
+            zz = z(m_b, m_H, info->mz, k);
 
           f[k][j][i] = u_bc(xx, yy, zz) - x[k][j][i];
         } else {
@@ -137,7 +132,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
           x_nodal[n] = xy(Lx, dx, I.i);
           y_nodal[n] = xy(Ly, dy, I.j);
-          z_nodal[n] = z(b, H, info->mz, I.k);
+          z_nodal[n] = z(m_b, m_H, info->mz, I.k);
         }
 
         E.reset(i, j, k, z_nodal);
@@ -290,6 +285,9 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid)
     m_exact.reset(new IceModelVec3Custom(grid, "exact", "z_sigma", sigma, z_attrs));
     m_exact->set_attrs("diagnostic", "exact", "1", "1", "", 0);
   }
+
+  m_b = 0.0;
+  m_H = 1.0;
 }
 
 Poisson3::~Poisson3() {
@@ -342,8 +340,7 @@ void Poisson3::update(const Inputs &inputs, bool) {
 
   ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 
-  double b = 0.0, H = 1.0;
-  exact_solution(b, H, *m_exact);
+  exact_solution(m_b, m_H, *m_exact);
 
   {
     int Mz = m_solution->levels().size();

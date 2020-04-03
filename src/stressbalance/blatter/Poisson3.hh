@@ -40,6 +40,9 @@ public:
 
   double error() const;
 protected:
+  double m_b;
+  double m_H;
+
   void exact_solution(double b, double H, IceModelVec3Custom &result);
 
   IceModelVec3Custom::Ptr m_solution;
