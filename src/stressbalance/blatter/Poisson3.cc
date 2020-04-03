@@ -87,14 +87,25 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
   fem::Q1Element3 E(*info, dx, dy, fem::Q13DQuadrature8());
 
-  // Reset global residual to zero. This is necessary because we call
-  // DMDASNESSetFunctionLocal() with INSERT_VALUES.
+  // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
+  //
+  // Setting it to zero is necessary because we call DMDASNESSetFunctionLocal() with
+  // INSERT_VALUES.
   //
   // here we loop over all the *owned* nodes
   for (int k = info->zs; k < info->zs + info->zm; k++) {
     for (int j = info->ys; j < info->ys + info->ym; j++) {
       for (int i = info->xs; i < info->xs + info->xm; i++) {
-        f[k][j][i] = 0.0;
+        if (dirichlet_node(info, {i, j, k})) {
+          double
+            xx = xy(Lx, dx, i),
+            yy = xy(Ly, dy, j),
+            zz = z(b, H, info->mz, k);
+
+          f[k][j][i] = u_bc(xx, yy, zz) - x[k][j][i];
+        } else {
+          f[k][j][i] = 0.0;
+        }
       }
     }
   }
@@ -169,24 +180,6 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
       } // end of the loop over i
     } // end of the loop over j
   } // end of the loop over k
-
-  // Compute the residual at Dirichlet BC nodes
-  //
-  // Here we loop over all the *owned* nodes
-  for (int k = info->zs; k < info->zs + info->zm; k++) {
-    for (int j = info->ys; j < info->ys + info->ym; j++) {
-      for (int i = info->xs; i < info->xs + info->xm; i++) {
-        if (dirichlet_node(info, {i, j, k})) {
-          double
-            xx = xy(Lx, dx, i),
-            yy = xy(Ly, dy, j),
-            zz = z(b, H, info->mz, k);
-
-          f[k][j][i] = u_bc(xx, yy, zz) - x[k][j][i];
-        }
-      }
-    }
-  }
 }
 
 Poisson3::Poisson3(IceGrid::ConstPtr grid)
