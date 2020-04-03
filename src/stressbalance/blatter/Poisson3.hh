@@ -37,6 +37,8 @@ public:
 
   IceModelVec3Custom::Ptr solution() const;
   IceModelVec3Custom::Ptr exact() const;
+
+  double error() const;
 protected:
   void exact_solution(double b, double H, IceModelVec3Custom &result);
 

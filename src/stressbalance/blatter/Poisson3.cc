@@ -325,6 +325,16 @@ void Poisson3::exact_solution(double b, double H, IceModelVec3Custom &result) {
   }
 }
 
+double Poisson3::error() const {
+  IceModelVec3Custom difference(m_grid, "difference", "z_sigma",
+                                m_exact->levels(), {});
+
+  difference.copy_from(*m_exact);
+  difference.add(-1.0, *m_solution);
+
+  return difference.norm(NORM_INFINITY);
+}
+
 void Poisson3::update(const Inputs &inputs, bool) {
   (void) inputs;
 
