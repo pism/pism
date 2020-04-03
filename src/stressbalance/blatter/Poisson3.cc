@@ -59,6 +59,13 @@ static double u_bc(double x, double y, double z) {
   return x * x - y * y + z * z;
 }
 
+static double F(double x, double y, double z) {
+  (void) x;
+  (void) y;
+  (void) z;
+  return 2.0;
+}
+
 void Poisson3::compute_residual(DMDALocalInfo *info,
                                 const double ***x, double ***f) {
   // Stencil width of 1 is not very important, but it info->sw > 1 will lead to more
@@ -73,12 +80,12 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
     dx = 2.0 * Lx / (info->mx - 1),
     dy = 2.0 * Ly / (info->my - 1);
 
-  fem::Q1Element3 E(*info, dx, dy, fem::Q13DQuadrature8());
-
+  // vertical domain extent
   double
-    F = 2.0,                    // right hand side
     b = 0.0,                    // bottom elevation
     H = 1.0;                    // thickness
+
+  fem::Q1Element3 E(*info, dx, dy, fem::Q13DQuadrature8());
 
   // Reset global residual to zero. This is necessary because we call
   // DMDASNESSetFunctionLocal() with INSERT_VALUES.
@@ -92,11 +99,16 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
     }
   }
 
+  // values at element nodes
   int Nk = E.n_chi();
-  std::vector<double> z_nodal(Nk), R_nodal(Nk), u_nodal(Nk);
+  std::vector<double>
+    x_nodal(Nk), y_nodal(Nk), z_nodal(Nk),
+    R_nodal(Nk), u_nodal(Nk);
 
+  // values at quadrature points
   int Nq = E.n_pts();
   std::vector<double> u(Nq), u_x(Nq), u_y(Nq), u_z(Nq);
+  std::vector<double> xq(Nq), yq(Nq), zq(Nq);
 
   // loop over all the elements that have at least one owned node
   for (int k = info->gzs; k < info->gzs + info->gzm - 1; k++) {
@@ -108,10 +120,12 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           R_nodal[n] = 0.0;
         }
 
-        // compute z-coordinates for the nodes of this element
+        // compute coordinates of the nodes of this element
         for (int n = 0; n < Nk; ++n) {
           auto I = E.local_to_global(i, j, k, n);
 
+          x_nodal[n] = xy(Lx, dx, I.i);
+          y_nodal[n] = xy(Ly, dy, I.j);
           z_nodal[n] = z(b, H, info->mz, I.k);
         }
 
@@ -126,17 +140,17 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           auto I = E.local_to_global(n);
           if (dirichlet_node(info, I)) {
             E.mark_row_invalid(n);
-            double
-              xx  = xy(Lx, dx, I.i),
-              yy  = xy(Ly, dy, I.j),
-              zz = z(b, H, info->mz, I.k);
-
-            u_nodal[n] = u_bc(xx, yy, zz);
+            u_nodal[n] = u_bc(x_nodal[n], y_nodal[n], z_nodal[n]);
           }
         }
 
         // evaluate u and its partial derivatives at quadrature points
         E.evaluate(u_nodal.data(), u.data(), u_x.data(), u_y.data(), u_z.data());
+
+        // coordinates of quadrature points
+        E.evaluate(x_nodal.data(), xq.data());
+        E.evaluate(y_nodal.data(), yq.data());
+        E.evaluate(z_nodal.data(), zq.data());
 
         // loop over all quadrature points
         for (int q = 0; q < Nq; ++q) {
@@ -146,7 +160,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           for (int t = 0; t < Nk; ++t) {
             const auto &psi = E.chi(q, t);
 
-            R_nodal[t] += W * (u_x[q] * psi.dx + u_y[q] * psi.dy + u_z[q] * psi.dz - F * psi.val);
+            R_nodal[t] += W * (u_x[q] * psi.dx + u_y[q] * psi.dy + u_z[q] * psi.dz
+                               - F(xq[q], yq[q], zq[q]) * psi.val);
           }
         }
 
