@@ -56,19 +56,19 @@ static bool dirichlet_node(const DMDALocalInfo *info, const fem::Element3::Globa
 }
 
 static double u_bc(double x, double y, double z) {
-  return x * x - y * y + z * z;
+  return 2.0 * (1 + y) / ((3 + x) * (3 + x)  +  (1 + y) * (1 + y)) + z * z;
 }
 
 static double F(double x, double y, double z) {
   (void) x;
   (void) y;
   (void) z;
-  return 2.0;
+  return -2.0;
 }
 
 void Poisson3::compute_residual(DMDALocalInfo *info,
-                                const double ***x, double ***f) {
-  // Stencil width of 1 is not very important, but it info->sw > 1 will lead to more
+                                const double ***x, double ***R) {
+  // Stencil width of 1 is not very important, but if info->sw > 1 will lead to more
   // redundant computation (we would be looping over elements that don't contribute to any
   // owned nodes).
   assert(info->sw == 1);
@@ -97,9 +97,9 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
             yy = xy(Ly, dy, j),
             zz = z(m_b, m_H, info->mz, k);
 
-          f[k][j][i] = u_bc(xx, yy, zz) - x[k][j][i];
+          R[k][j][i] = u_bc(xx, yy, zz) - x[k][j][i];
         } else {
-          f[k][j][i] = 0.0;
+          R[k][j][i] = 0.0;
         }
       }
     }
@@ -171,50 +171,49 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           }
         }
 
-        E.add_contribution(R_nodal.data(), f);
+        E.add_contribution(R_nodal.data(), R);
       } // end of the loop over i
     } // end of the loop over j
   } // end of the loop over k
 }
 
-Poisson3::Poisson3(IceGrid::ConstPtr grid)
-  : ShallowStressBalance(grid) {
+Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz)
+  : ShallowStressBalance(grid), m_Mz(Mz) {
   int ierr = 0;
-
-  auto pism_da = grid->get_dm(1, 0);
-
-  PetscInt dim, Mx, My, Nx, Ny;
-  PetscInt
-    Mz            = m_config->get_number("grid.Mz"),
-    Nz            = 1,
-    dof           = 1,
-    stencil_width = 1;
-
-  ierr = DMDAGetInfo(*pism_da,
-                     &dim,
-                     &Mx,
-                     &My,
-                     NULL, /* Mz */
-                     &Nx,  /* number of processors in y-direction */
-                     &Ny,  /* number of processors in x-direction */
-                     NULL, /* ditto, z-direction */
-                     NULL, /* number of degrees of freedom per node */
-                     NULL, /* stencil width */
-                     NULL, NULL, NULL, /* types of ghost nodes at the boundary */
-                     NULL);            /* stencil width */
-  PISM_CHK(ierr, "DMDAGetInfo");
-  assert(dim == 2);
-
-  const PetscInt *lx, *ly;
-
-  ierr = DMDAGetOwnershipRanges(*pism_da, &lx, &ly, NULL);
 
   // DM
   {
+    auto pism_da = grid->get_dm(1, 0);
+
+    PetscInt dim, Mx, My, Nx, Ny;
+    PetscInt
+      Nz            = 1,
+      dof           = 1,
+      stencil_width = 1;
+
+    ierr = DMDAGetInfo(*pism_da,
+                       &dim,
+                       &Mx,
+                       &My,
+                       NULL, /* Mz */
+                       &Nx,  /* number of processors in y-direction */
+                       &Ny,  /* number of processors in x-direction */
+                       NULL, /* ditto, z-direction */
+                       NULL, /* number of degrees of freedom per node */
+                       NULL, /* stencil width */
+                       NULL, NULL, NULL, /* types of ghost nodes at the boundary */
+                       NULL);            /* stencil width */
+    PISM_CHK(ierr, "DMDAGetInfo");
+    assert(dim == 2);
+
+    const PetscInt *lx, *ly;
+
+    ierr = DMDAGetOwnershipRanges(*pism_da, &lx, &ly, NULL);
+
     ierr = DMDACreate3d(PETSC_COMM_WORLD,
                         DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE,
                         DMDA_STENCIL_BOX,
-                        Mx, My, Mz,
+                        Mx, My, m_Mz,
                         Nx, Ny, Nz,
                         dof,           // dof
                         stencil_width, // stencil width
@@ -262,13 +261,13 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid)
   }
 
   // set the initial guess
-  ierr = VecSet(m_x, 1.0);
+  ierr = VecSet(m_x, 0.0);
   PISM_CHK(ierr, "VecSet");
 
   {
-    std::vector<double> sigma(Mz);
-    double dz = 1.0 / (Mz - 1);
-    for (int i = 0; i < Mz; ++i) {
+    std::vector<double> sigma(m_Mz);
+    double dz = 1.0 / (m_Mz - 1);
+    for (int i = 0; i < m_Mz; ++i) {
       sigma[i] = i * dz;
     }
     sigma.back() = 1.0;
@@ -287,7 +286,7 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid)
   }
 
   m_b = 0.0;
-  m_H = 1.0;
+  m_H = 2.0;
 }
 
 Poisson3::~Poisson3() {
@@ -304,8 +303,6 @@ void Poisson3::exact_solution(double b, double H, IceModelVec3Custom &result) {
     dx = 2.0 * Lx / (m_grid->Mx() - 1),
     dy = 2.0 * Ly / (m_grid->My() - 1);
 
-  int Mz = result.levels().size();
-
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -315,8 +312,8 @@ void Poisson3::exact_solution(double b, double H, IceModelVec3Custom &result) {
 
     auto c = result.get_column(i, j);
 
-    for (int k = 0; k < Mz; ++k) {
-      double zz = z(b, H, Mz, k);
+    for (int k = 0; k < m_Mz; ++k) {
+      double zz = z(b, H, m_Mz, k);
 
       c[k] = u_bc(xx, yy, zz);
     }
@@ -343,7 +340,6 @@ void Poisson3::update(const Inputs &inputs, bool) {
   exact_solution(m_b, m_H, *m_exact);
 
   {
-    int Mz = m_solution->levels().size();
     double ***x = nullptr;
     ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
@@ -354,7 +350,7 @@ void Poisson3::update(const Inputs &inputs, bool) {
 
       auto c = m_solution->get_column(i, j);
 
-      for (int k = 0; k < Mz; ++k) {
+      for (int k = 0; k < m_Mz; ++k) {
         c[k] = x[k][j][i];
       }
     }

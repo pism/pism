@@ -30,7 +30,7 @@ namespace stressbalance {
 
 class Poisson3 : public ShallowStressBalance {
 public:
-  Poisson3(IceGrid::ConstPtr grid);
+  Poisson3(IceGrid::ConstPtr grid, int Mz);
   virtual ~Poisson3();
 
   void update(const Inputs &inputs, bool);
@@ -42,6 +42,7 @@ public:
 protected:
   double m_b;
   double m_H;
+  int m_Mz;
 
   void exact_solution(double b, double H, IceModelVec3Custom &result);
 
