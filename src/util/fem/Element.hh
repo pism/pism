@@ -238,6 +238,7 @@ public:
   }
 protected:
   Element2(const IceGrid &grid, int Nq, int n_chi, int block_size);
+  Element2(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size);
 
   std::vector<Vector2> m_normals;
 
@@ -248,6 +249,9 @@ protected:
 class Q1Element2 : public Element2 {
 public:
   Q1Element2(const IceGrid &grid, const Quadrature &quadrature);
+  Q1Element2(const DMDALocalInfo &grid_info,
+             double dx, double dy,
+             const Quadrature &quadrature);
 };
 
 //! P1 element embedded in Q1Element2

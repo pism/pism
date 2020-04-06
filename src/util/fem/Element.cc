@@ -175,6 +175,11 @@ Element2::Element2(const IceGrid &grid, int Nq, int n_chi, int block_size)
   // empty
 }
 
+Element2::Element2(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size)
+  : Element(grid_info, Nq, n_chi, block_size) {
+  // empty
+}
+
 void Element2::nodal_values(const IceModelVec2Int &x_global, int *result) const {
   for (unsigned int k = 0; k < m_n_chi; ++k) {
     const int
@@ -243,6 +248,34 @@ Q1Element2::Q1Element2(const IceGrid &grid, const Quadrature &quadrature)
 
   double dx = grid.dx();
   double dy = grid.dy();
+
+  m_i_offset = {0, 1, 1, 0};
+  m_j_offset = {0, 0, 1, 1};
+
+  // south, east, north, west
+  m_normals = {{0.0, -1.0}, {1.0, 0.0}, {0.0, 1.0}, {-1.0, 0.0}};
+
+  m_side_lengths = {dx, dy, dx, dy};
+
+  // compute the Jacobian
+
+  double J[3][3];
+  set_to_identity(J);
+  J[0][0] = 0.5 * dx;
+  J[0][1] = 0.0;
+  J[1][0] = 0.0;
+  J[1][1] = 0.5 * dy;
+
+  // initialize germs and quadrature weights for the quadrature on this physical element
+  initialize(J, q1::chi, q1::n_chi, quadrature.points(), quadrature.weights());
+  reset(0, 0);
+}
+
+Q1Element2::Q1Element2(const DMDALocalInfo &grid_info,
+                       double dx,
+                       double dy,
+                       const Quadrature &quadrature)
+  : Element2(grid_info, quadrature.weights().size(), q1::n_chi, q1::n_chi) {
 
   m_i_offset = {0, 1, 1, 0};
   m_j_offset = {0, 0, 1, 1};
