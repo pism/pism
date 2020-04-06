@@ -40,11 +40,9 @@ public:
 
   double error() const;
 protected:
-  double m_b;
-  double m_H;
   int m_Mz;
 
-  void exact_solution(double b, double H, IceModelVec3Custom &result);
+  void exact_solution(IceModelVec3Custom &result);
 
   IceModelVec3Custom::Ptr m_solution;
   IceModelVec3Custom::Ptr m_exact;

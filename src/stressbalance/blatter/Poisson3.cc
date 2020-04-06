@@ -66,6 +66,16 @@ static double F(double x, double y, double z) {
   return -2.0;
 }
 
+static double b(double x, double y) {
+  (void) x;
+  (void) y;
+  return 0.0;
+}
+
+static double H(double x, double y) {
+  return 1.0 + x*x + y*y;
+}
+
 void Poisson3::compute_residual(DMDALocalInfo *info,
                                 const double ***x, double ***R) {
   // Stencil width of 1 is not very important, but if info->sw > 1 will lead to more
@@ -95,7 +105,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           double
             xx = xy(Lx, dx, i),
             yy = xy(Ly, dy, j),
-            zz = z(m_b, m_H, info->mz, k);
+            zz = z(b(xx, yy), H(xx, yy), info->mz, k);
 
           R[k][j][i] = u_bc(xx, yy, zz) - x[k][j][i];
         } else {
@@ -132,7 +142,9 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
           x_nodal[n] = xy(Lx, dx, I.i);
           y_nodal[n] = xy(Ly, dy, I.j);
-          z_nodal[n] = z(m_b, m_H, info->mz, I.k);
+          z_nodal[n] = z(b(x_nodal[n], y_nodal[n]),
+                         H(x_nodal[n], y_nodal[n]),
+                         info->mz, I.k);
         }
 
         E.reset(i, j, k, z_nodal);
@@ -284,16 +296,13 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz)
     m_exact.reset(new IceModelVec3Custom(grid, "exact", "z_sigma", sigma, z_attrs));
     m_exact->set_attrs("diagnostic", "exact", "1", "1", "", 0);
   }
-
-  m_b = 0.0;
-  m_H = 2.0;
 }
 
 Poisson3::~Poisson3() {
   // empty
 }
 
-void Poisson3::exact_solution(double b, double H, IceModelVec3Custom &result) {
+void Poisson3::exact_solution(IceModelVec3Custom &result) {
   IceModelVec::AccessList list{&result};
 
   // Compute grid spacing from domain dimensions and the grid size
@@ -313,7 +322,7 @@ void Poisson3::exact_solution(double b, double H, IceModelVec3Custom &result) {
     auto c = result.get_column(i, j);
 
     for (int k = 0; k < m_Mz; ++k) {
-      double zz = z(b, H, m_Mz, k);
+      double zz = z(b(xx, yy), H(xx, yy), m_Mz, k);
 
       c[k] = u_bc(xx, yy, zz);
     }
@@ -337,7 +346,7 @@ void Poisson3::update(const Inputs &inputs, bool) {
 
   ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 
-  exact_solution(m_b, m_H, *m_exact);
+  exact_solution(*m_exact);
 
   {
     double ***x = nullptr;
