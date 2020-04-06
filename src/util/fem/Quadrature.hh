@@ -127,6 +127,11 @@ public:
   Q13DQuadrature8();
 };
 
+class Q13DQuadrature1 : public Quadrature {
+public:
+  Q13DQuadrature1();
+};
+
 } // end of namespace fem
 } // end of namespace pism
 

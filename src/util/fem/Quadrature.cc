@@ -162,5 +162,10 @@ Q13DQuadrature8::Q13DQuadrature8() {
   }
 }
 
+Q13DQuadrature1::Q13DQuadrature1() {
+  m_points = {{0.0, 0.0, 0.0}};
+  m_weights = {8.0};
+}
+
 } // end of namespace fem
 } // end of namespace pism
