@@ -65,6 +65,12 @@ Gaussian2::Gaussian2(double D) {
   m_weights = {0.5 * D, 0.5 * D};
 }
 
+//! One-point quadrature on a rectangle.
+Q1Quadrature1::Q1Quadrature1() {
+  m_points = {{0.0, 0.0, 0.0}};
+  m_weights = {4.0};
+}
+
 //! Two-by-two Gaussian quadrature on a rectangle.
 Q1Quadrature4::Q1Quadrature4() {
 

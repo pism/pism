@@ -86,6 +86,12 @@ public:
 };
 
 //! The 4-point Gaussian quadrature on the square [-1,1]*[-1,1]
+class Q1Quadrature1 : public Quadrature {
+public:
+  Q1Quadrature1();
+};
+
+//! The 4-point Gaussian quadrature on the square [-1,1]*[-1,1]
 class Q1Quadrature4 : public Quadrature {
 public:
   Q1Quadrature4();
