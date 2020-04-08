@@ -66,7 +66,7 @@ public:
    * `chi(q, k)` returns values and partial derivatives of the `k`-th shape function at a
    * quadrature point `q`.
    */
-  Germ chi(unsigned int q, unsigned int k) const {
+  const Germ& chi(unsigned int q, unsigned int k) const {
     assert(q < m_Nq);
     assert(k < m_n_chi);
     return m_germs[q * m_n_chi + k];
@@ -96,15 +96,15 @@ public:
     }
   }
 
+protected:
+  Element(const IceGrid &grid, int Nq, int n_chi, int block_size);
+  Element(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size);
+
   /*! @brief Add Jacobian contributions. */
   void add_contribution(const double *K, Mat J) const;
 
   void mark_row_invalid(int k);
   void mark_col_invalid(int k);
-
-protected:
-  Element(const IceGrid &grid, int Nq, int n_chi, int block_size);
-  Element(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size);
 
   DMDALocalInfo m_grid;
 
@@ -236,6 +236,10 @@ public:
       y_global[j][i] += local[k];   // note the indexing order
     }
   }
+
+  using Element::mark_row_invalid;
+  using Element::mark_col_invalid;
+
 protected:
   Element2(const IceGrid &grid, int Nq, int n_chi, int block_size);
   Element2(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size);
@@ -349,6 +353,9 @@ public:
   Q1Element3(const IceGrid &grid, const Quadrature &quadrature);
 
   void reset(int i, int j, int k, const std::vector<double> &z);
+
+  using Element::mark_row_invalid;
+  using Element::mark_col_invalid;
 private:
   double m_dx;
   double m_dy;
