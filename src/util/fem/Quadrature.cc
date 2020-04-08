@@ -44,12 +44,13 @@ static void tensor_product_quadrature(unsigned int n,
                                       const double *weights1,
                                       std::vector<QuadPoint>& points,
                                       std::vector<double>& weights) {
+  points.resize(n * n);
+  weights.resize(n * n);
+
   unsigned int q = 0;
   for (unsigned int j = 0; j < n; ++j) {
     for (unsigned int i = 0; i < n; ++i) {
-      points[q].xi = points1[i];
-      points[q].eta = points1[j];
-
+      points[q] = {points1[i], points1[j], 0.0};
       weights[q] = weights1[i] * weights1[j];
 
       ++q;
@@ -80,8 +81,6 @@ Q1Quadrature4::Q1Quadrature4() {
     points2[2]  = {-A, A},
     weights2[2] = {1.0, 1.0};
 
-  m_points.resize(4);
-  m_weights.resize(4);
   tensor_product_quadrature(2, points2, weights2, m_points, m_weights);
 }
 
@@ -96,8 +95,6 @@ Q1Quadrature9::Q1Quadrature9() {
     w2         = 8.0 / 9.0,
     weights3[3] = {w1, w2, w1};
 
-  m_points.resize(9);
-  m_weights.resize(9);
   tensor_product_quadrature(3, points3, weights3, m_points, m_weights);
 }
 
@@ -114,8 +111,6 @@ Q1Quadrature16::Q1Quadrature16() {
     w2          = (18.0 - sqrt(30.0)) / 36.0, // smaller
     weights4[4] = {w2, w1, w1, w2};
 
-  m_points.resize(16);
-  m_weights.resize(16);
   tensor_product_quadrature(4, points4, weights4, m_points, m_weights);
 }
 
@@ -131,8 +126,6 @@ Q1QuadratureN::Q1QuadratureN(unsigned int N) {
     w[k]  = 2.0 / N;
   }
 
-  m_points.resize(N * N);
-  m_weights.resize(N * N);
   tensor_product_quadrature(N, xi.data(), w.data(), m_points, m_weights);
 }
 
