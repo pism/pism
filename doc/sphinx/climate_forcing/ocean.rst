@@ -117,6 +117,8 @@ It takes two command-line option:
   :opt:`-no_clip_shelf_base_salinity` option or set the configuration parameter
   :config:`ocean.three_equation_model_clip_salinity`  to "no".
 
+See :ref:`sec-ocean-th-details` for implementation details.
+
 .. _sec-pico:
 
 PICO

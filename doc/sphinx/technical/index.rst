@@ -18,3 +18,5 @@ Technical notes
    steady-hydrology.rst
 
    release_checklist.rst
+
+   ocean-th.rst
