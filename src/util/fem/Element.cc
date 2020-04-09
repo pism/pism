@@ -508,5 +508,84 @@ void Q1Element3::reset(int i, int j, int k, const std::vector<double> &z) {
   }
 }
 
+Q1Element3Side::Q1Element3Side(double dx, double dy, const Quadrature &quadrature)
+  : m_dx(dx),
+    m_dy(dy),
+    m_points(quadrature.points()),
+    m_w(quadrature.weights()),
+    m_n_chi(q13d::n_chi),
+    m_Nq(m_w.size()) {
+
+  m_chi.resize(m_Nq * m_n_chi);
+  m_weights.resize(m_Nq);
+}
+
+void Q1Element3Side::reset(int side, const std::vector<double> &z) {
+
+  for (unsigned int q = 0; q < m_Nq; q++) {
+    auto pt = m_points[q];
+    QuadPoint P;
+    switch (side) {
+    case 0:
+      P = {-1.0, pt.xi, pt.eta};
+      break;
+    case 1:
+      P = { 1.0, pt.xi, pt.eta};
+      break;
+    case 2:
+      P = {pt.xi, -1.0, pt.eta};
+      break;
+    case 3:
+      P = {pt.xi,  1.0, pt.eta};
+      break;
+    case 4:
+      P = {pt.xi, pt.eta, -1.0};
+      break;
+    case 5:
+      P = {pt.xi, pt.eta,  1.0};
+      break;
+    }
+
+    // Compute dz/dxi, dz/deta and dz/dzeta.
+    Vector3 dz{0.0, 0.0, 0.0};
+    for (unsigned int n = 0; n < q13d::n_chi; ++n) {
+      auto chi = q13d::chi(n, P);
+
+      // FIXME: chi(n, point) for a particular side does not depend on the element
+      // geometry and could be computed in advance (in the constructor)
+      m_chi[q * q13d::n_chi + n] = chi;
+
+      dz.x += chi.dx * z[n];
+      dz.y += chi.dy * z[n];
+      dz.z += chi.dz * z[n];
+    }
+
+    m_weights[q] = m_w[q];
+
+    switch (side) {
+    case 0:
+    case 1:
+      m_weights[q] *= 0.5 * m_dy * dz.z;
+      break;
+    case 2:
+    case 3:
+      m_weights[q] *= 0.5 * m_dx * dz.z;
+      break;
+    case 4:
+    case 5:
+      {
+        double
+          a =  0.5 * m_dy * dz.x,
+          b =  0.5 * m_dx * dz.y,
+          c = 0.25 * m_dx * m_dy;
+        m_weights[q] *= sqrt(a * a + b * b + c * c);
+      }
+      break;
+    }
+  }
+
+}
+
+
 } // end of namespace fem
 } // end of namespace pism

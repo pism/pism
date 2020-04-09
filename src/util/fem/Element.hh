@@ -371,6 +371,64 @@ private:
   std::vector<double> m_w;
 };
 
+
+class Q1Element3Side {
+public:
+  Q1Element3Side(double dx, double dy, const Quadrature &quadrature);
+
+  //! Number of quadrature points
+  int n_pts() const {
+    return m_Nq;
+  }
+  double weight(unsigned int q) const {
+    assert(q < m_Nq);
+    return m_weights[q];
+  }
+
+  const Germ& chi(unsigned int q, unsigned int k) const {
+    assert(q < m_Nq);
+    assert(k < m_n_chi);
+    return m_chi[q * m_n_chi + k];
+  }
+
+  // z: nodal z coordinates for *all* nodes of the element
+  void reset(int side, const std::vector<double> &z);
+
+  //! @brief Given nodal values, compute the values at quadrature points.
+  //! The output array `result` should have enough elements to hold values at all
+  //! quadrature points.
+  template <typename T>
+  void evaluate(const T *x, T *result) {
+    for (unsigned int q = 0; q < m_Nq; q++) {
+      result[q] = 0.0;
+      for (unsigned int k = 0; k < m_n_chi; k++) {
+        result[q] += m_chi[q * m_n_chi + k].val * x[k];
+      }
+    }
+  }
+protected:
+  // grid spacing
+  double m_dx;
+  double m_dy;
+
+  // values of shape functions at all quadrature points and their derivatives with respect
+  // to xi, eta, zeta
+  std::vector<Germ> m_chi;
+
+  // quadrature points (on the reference element corresponding to a face)
+  std::vector<QuadPoint> m_points;
+
+  // quadrature weights (on the reference element corresponding to a face)
+  std::vector<double> m_w;
+
+  // quadrature weights (on the face of a physical element)
+  std::vector<double> m_weights;
+
+  // number of quadrature points
+  const unsigned int m_n_chi;
+  const unsigned int m_Nq;
+};
+
 } // end of namespace fem
 } // end of namespace pism
 

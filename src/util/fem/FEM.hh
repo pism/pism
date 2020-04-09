@@ -218,12 +218,12 @@ Germ chi(unsigned int k, const QuadPoint &p);
 
 //! Nodes incident to a side. Used to extract nodal values and add contributions.
 const unsigned int incident_nodes[n_sides][4] =
-  {{0, 1, 2, 3},
-   {0, 1, 5, 4},
-   {1, 2, 6, 5},
-   {2, 3, 7, 6},
-   {3, 0, 4, 7},
-   {4, 5, 6, 7}
+  {{3, 0, 4, 7},                // 0 - left,   xi   = -1
+   {1, 2, 6, 5},                // 1 - right,  xi   = +1
+   {0, 1, 5, 4},                // 2 - front,  eta  = -1
+   {2, 3, 7, 6},                // 3 - back,   eta  = +1
+   {0, 1, 2, 3},                // 4 - bottom, zeta = -1
+   {4, 5, 6, 7}                 // 1 - top,    zeta = +1
 };
 } // end of namespace q13d
 
