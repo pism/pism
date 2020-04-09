@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cmath>
+
 #include "MaxTimestep.hh"
 
 namespace pism {
@@ -28,7 +30,7 @@ MaxTimestep::MaxTimestep()
 }
 
 MaxTimestep::MaxTimestep(double v)
-  : m_finite(true), m_value(v) {
+  : m_finite(true), m_value(std::floor(v)) {
   // empty
 }
 
@@ -38,7 +40,7 @@ MaxTimestep::MaxTimestep(const std::string &new_description)
 }
 
 MaxTimestep::MaxTimestep(double v, const std::string &new_description)
-  : m_finite(true), m_value(v), m_description(new_description) {
+  : m_finite(true), m_value(std::floor(v)), m_description(new_description) {
   // empty
 }
 
