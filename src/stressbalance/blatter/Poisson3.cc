@@ -17,7 +17,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/* TODO
+ *
+ * - use non-constant b(x, y) and modify G_z() to account for the change
+ */
+
 #include <cassert>
+#include <cmath>                // std::pow, std::fabs
+
+using std::pow;
+using std::fabs;
 
 #include "Poisson3.hh"
 #include "pism/util/fem/FEM.hh"
@@ -50,22 +59,34 @@ static double z(double b, double H, int Mz, int k) {
 
 static bool dirichlet_node(const DMDALocalInfo *info, const fem::Element3::GlobalIndex& I) {
   return
-    (I.i == 0 or I.i == info->mx - 1) or
-    (I.j == 0 or I.j == info->my - 1) or
+    (I.i == info->mx - 1) or
+    (I.j == info->my - 1) or
     (I.k == info->mz - 1);
 }
 
 static bool neumann_node(const DMDALocalInfo *info, const fem::Element3::GlobalIndex& I) {
   (void) info;
-  return I.i == 0 or I.k == 0;
+  return I.i == 0 or I.j == 0 or I.k == 0;
 }
 
-// Dirichlet BC and the exact solution
+/*! Dirichlet BC and the exact solution
+
+ u : x*y*(z+1)^2+(2.0*(y+1))/((y+1)^2+(x+2)^2)$
+ grind('u = u);
+ grind(F = ratsimp(-(diff(u, x, 2) + diff(u, y, 2) + diff(u, z, 2))));
+ grind(G_x = subst(x=-1, diff(u, x)));
+ grind(G_y = subst(y=-1, diff(u, y)));
+ grind(G_z = subst(z=0, diff(u, z)));
+*/
 static double u_bc(double x, double y, double z) {
-  return 2.0 * (1 + y) / ((1 + x) * (1 + x) + (1 + y) * (1 + y)) + x * y * (z + 1) * (z + 1);
+  return x * y * pow(z + 1, 2.0) + (2.0 * (y + 1)) / (pow(y + 1, 2.0) + pow(x + 2, 2.0));
 }
 
-// right hand side
+/*!
+ * Right hand side
+ *
+ * F = - (diff(u, x, 2) + diff(u, y, 2) + diff(u, z, 2))
+ */
 static double F(double x, double y, double z) {
   (void) x;
   (void) y;
@@ -73,29 +94,31 @@ static double F(double x, double y, double z) {
   return -2.0 * x * y;
 }
 
-// Neumann BC
-// NEXT:
-//
-// - add Neumann BC on vertical faces
-// - use non-constant b(x,y) and modify G() to account for the change
-static double G_z(double x, double y, double z) {
-  (void) z;
-  return 2.0 * x * y;
+/*!
+ * Neumann BC
+ */
+static double G(double x, double y, double z) {
+  double eps = 1e-12;
+  if (fabs(x - (-1.0)) < eps) {
+    return y * pow(z + 1, 2.0) - (4.0 * (y + 1)) / pow(pow(y + 1, 2.0) + 1, 2.0);
+  } else if (fabs(y - (-1.0)) < eps) {
+    return x * pow(z + 1, 2.0) + 2.0 / pow(x + 2, 2.0);
+  } else if (fabs(z - 0.0) < eps) {
+    return 2.0 * x * y;
+  } else {
+    // We are not on a Neumann boundary. This value will not be used.
+    return 0.0;
+  }
 }
 
-static double G_x(double x, double y, double z) {
-  (void) x;
-  return y * (z + 1.0) * (z + 1.0);
-}
-
-// Bottom surface elevatipn
+// Bottom surface elevation
 static double b(double x, double y) {
   (void) x;
   (void) y;
   return 0.0;
 }
 
-// Thickness
+// Thickness of the domain
 static double H(double x, double y) {
   return 1.0 + x*x + y*y;
 }
@@ -143,15 +166,14 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
   // values at element nodes
   int Nk = E.n_chi();
-  std::vector<double> z_nodal(Nk);
 
   // hard-wired maximum number of nodes per element
   const int Nk_max = 8;
   assert(Nk <= Nk_max);
   double
     x_nodal[Nk_max], y_nodal[Nk_max],
-    R_nodal[Nk_max], u_nodal[Nk_max],
-    g_nodal[Nk_max];
+    R_nodal[Nk_max], u_nodal[Nk_max];
+  std::vector<double> z_nodal(Nk);
 
   // values at quadrature points
   int Nq = E.n_pts();
@@ -161,9 +183,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   double u[Nq_max], u_x[Nq_max], u_y[Nq_max], u_z[Nq_max];
   double xq[Nq_max], yq[Nq_max], zq[Nq_max];
 
-  const int Nq_face_max = 4;
-  assert(E_face.n_pts() <= Nq_face_max);
-  double g[Nq_face_max];
+  // make sure that xq, yq, zq and big enough for quadrature points on element faces
+  assert(E_face.n_pts() <= Nq_max);
 
   // loop over all the elements that have at least one owned node
   for (int k = info->gzs; k < info->gzs + info->gzm - 1; k++) {
@@ -192,7 +213,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
         E.nodal_values(x, u_nodal);
 
         // Take care of Dirichlet BC: don't contribute to Dirichlet nodes and set nodal
-        // values of the current iterate to the BC value.
+        // values of the current iterate to Dirichler BC values.
         for (int n = 0; n < Nk; ++n) {
           auto I = E.local_to_global(n);
           if (dirichlet_node(info, I)) {
@@ -223,14 +244,6 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           }
         }
 
-        // compute the Neumann BC function at the nodes of this element
-        //
-        // I could compute it directly at quadrature points but I don't want to compute
-        // x,y,z coordinates of quadrature points on each face
-        for (int n = 0; n < Nk; ++n) {
-          g_nodal[n] = G_z(x_nodal[n], y_nodal[n], z_nodal[n]);
-        }
-
         // loop over all faces
         for (int face = 0; face < fem::q13d::n_faces; ++face) {
           auto nodes = fem::q13d::incident_nodes[face];
@@ -253,16 +266,21 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
           E_face.reset(face, z_nodal);
 
-          E_face.evaluate(g_nodal, g);
+          // compute physical coordinates of quadrature points on this face
+          E_face.evaluate(x_nodal, xq);
+          E_face.evaluate(y_nodal, yq);
+          E_face.evaluate(z_nodal.data(), zq);
 
+          // loop over all quadrature points
           for (int q = 0; q < E_face.n_pts(); ++q) {
             auto W = E_face.weight(q);
 
+            // loop over all test functions
             for (int t = 0; t < Nk; ++t) {
               auto psi = E_face.chi(q, t);
 
               // FIXME: scaling goes here
-              R_nodal[t] += W * psi * g[q];
+              R_nodal[t] += W * psi * G(xq[q], yq[q], zq[q]);
             }
 
           }
