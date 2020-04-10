@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include <cassert>              // assert
+#include <cmath>                // std::sqrt()
 
 #include "Element.hh"
 #include "pism/util/IceGrid.hh"
@@ -516,12 +517,18 @@ Q1Element3Face::Q1Element3Face(double dx, double dy, const Quadrature &quadratur
     m_n_chi(q13d::n_chi),
     m_Nq(m_w.size()) {
 
+  // Note: here I set m_n_chi to q13d::n_chi (8) while each face has only four basis
+  // functions that are not zero on it. One could make evaluate() cheaper by omitting
+  // these zeros. (This would make the code somewhat more complex.)
+
   m_chi.resize(m_Nq * m_n_chi);
   m_weights.resize(m_Nq);
 }
 
 void Q1Element3Face::reset(int face, const std::vector<double> &z) {
 
+  // Turn coordinates of a 2D quadrature point on [-1,1]*[-1,1] into coordinates on a face
+  // of the cube [-1,1]*[-1,1]*[-1,1].
   for (unsigned int q = 0; q < m_Nq; q++) {
     auto pt = m_points[q];
     QuadPoint P;
@@ -549,16 +556,19 @@ void Q1Element3Face::reset(int face, const std::vector<double> &z) {
     // Compute dz/dxi, dz/deta and dz/dzeta.
     Vector3 dz{0.0, 0.0, 0.0};
     for (unsigned int n = 0; n < m_n_chi; ++n) {
-      auto chi = m_chi(n, P);
-
       // FIXME: chi(n, point) for a particular face does not depend on the element
       // geometry and could be computed in advance (in the constructor)
+      auto chi = q13d::chi(n, P);
+
       m_chi[q * m_n_chi + n] = chi.val;
 
       dz.x += chi.dx * z[n];
       dz.y += chi.dy * z[n];
       dz.z += chi.dz * z[n];
     }
+
+    // Use the magnitude of the normal to a face to turn quadrature weights on
+    // [-1,1]*[-1,1] into quadrature weights on a face of this physical element.
 
     m_weights[q] = m_w[q];
 
@@ -578,12 +588,11 @@ void Q1Element3Face::reset(int face, const std::vector<double> &z) {
           a =  0.5 * m_dy * dz.x,
           b =  0.5 * m_dx * dz.y,
           c = 0.25 * m_dx * m_dy;
-        m_weights[q] *= sqrt(a * a + b * b + c * c);
+        m_weights[q] *= std::sqrt(a * a + b * b + c * c);
       }
       break;
     }
-  }
-
+  } // end of the loop over quadrature points
 }
 
 

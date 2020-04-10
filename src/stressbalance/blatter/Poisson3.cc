@@ -125,6 +125,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
             yy = xy(Ly, dy, j),
             zz = z(b(xx, yy), H(xx, yy), info->mz, k);
 
+          // FIXME: scaling goes here
           R[k][j][i] = u_bc(xx, yy, zz) - x[k][j][i];
         } else {
           R[k][j][i] = 0.0;
@@ -135,26 +136,39 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
   // values at element nodes
   int Nk = E.n_chi();
-  std::vector<double>
-    x_nodal(Nk), y_nodal(Nk), z_nodal(Nk),
-    R_nodal(Nk), u_nodal(Nk);
+  std::vector<double> z_nodal(Nk);
+
+  // hard-wired maximum number of nodes per element
+  const int Nk_max = 8;
+  assert(Nk <= Nk_max);
+  double
+    x_nodal[Nk_max], y_nodal[Nk_max],
+    R_nodal[Nk_max], u_nodal[Nk_max],
+    g_nodal[Nk_max];
 
   // values at quadrature points
   int Nq = E.n_pts();
-  std::vector<double> u(Nq), u_x(Nq), u_y(Nq), u_z(Nq);
-  std::vector<double> xq(Nq), yq(Nq), zq(Nq);
+  // hard-wired maximum number of quadrature points per element
+  const int Nq_max = 16;
+  assert(Nq <= Nq_max);
+  double u[Nq_max], u_x[Nq_max], u_y[Nq_max], u_z[Nq_max];
+  double xq[Nq_max], yq[Nq_max], zq[Nq_max];
+
+  const int Nq_face_max = 4;
+  assert(E_face.n_pts() < Nq_face_max);
+  double g[Nq_face_max];
 
   // loop over all the elements that have at least one owned node
   for (int k = info->gzs; k < info->gzs + info->gzm - 1; k++) {
     for (int j = info->gys; j < info->gys + info->gym - 1; j++) {
       for (int i = info->gxs; i < info->gxs + info->gxm - 1; i++) {
 
-        // reset element residual to zero in preparation
+        // Reset element residual to zero in preparation.
         for (int n = 0; n < Nk; ++n) {
           R_nodal[n] = 0.0;
         }
 
-        // compute coordinates of the nodes of this element
+        // Compute coordinates of the nodes of this element.
         for (int n = 0; n < Nk; ++n) {
           auto I = E.local_to_global(i, j, k, n);
 
@@ -167,11 +181,11 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
         E.reset(i, j, k, z_nodal);
 
-        // get nodal values of u
-        E.nodal_values(x, u_nodal.data());
+        // Get nodal values of u.
+        E.nodal_values(x, u_nodal);
 
-        // take care of Dirichlet BC: don't contribute to Dirichlet nodes and set nodal
-        // values of the current iterate to the BC value
+        // Take care of Dirichlet BC: don't contribute to Dirichlet nodes and set nodal
+        // values of the current iterate to the BC value.
         for (int n = 0; n < Nk; ++n) {
           auto I = E.local_to_global(n);
           if (dirichlet_node(info, I)) {
@@ -181,12 +195,12 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
         }
 
         // evaluate u and its partial derivatives at quadrature points
-        E.evaluate(u_nodal.data(), u.data(), u_x.data(), u_y.data(), u_z.data());
+        E.evaluate(u_nodal, u, u_x, u_y, u_z);
 
         // coordinates of quadrature points
-        E.evaluate(x_nodal.data(), xq.data());
-        E.evaluate(y_nodal.data(), yq.data());
-        E.evaluate(z_nodal.data(), zq.data());
+        E.evaluate(x_nodal, xq);
+        E.evaluate(y_nodal, yq);
+        E.evaluate(z_nodal.data(), zq);
 
         // loop over all quadrature points
         for (int q = 0; q < Nq; ++q) {
@@ -196,6 +210,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           for (int t = 0; t < Nk; ++t) {
             const auto &psi = E.chi(q, t);
 
+            // FIXME: scaling goes here
             R_nodal[t] += W * (u_x[q] * psi.dx + u_y[q] * psi.dy + u_z[q] * psi.dz
                                - F(xq[q], yq[q], zq[q]) * psi.val);
           }
@@ -205,7 +220,6 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
         //
         // I could compute it directly at quadrature points but I don't want to compute
         // x,y,z coordinates of quadrature points on each face
-        std::vector<double> g_nodal(Nk);
         for (int n = 0; n < Nk; ++n) {
           g_nodal[n] = G(x_nodal[n], y_nodal[n], z_nodal[n]);
         }
@@ -216,7 +230,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           // loop over all nodes corresponding to this face. A face is a part of the
           // Neumann boundary if all four nodes are Neumann nodes. If a node is *both* a
           // Neumann and a Dirichlet node (this may happen), then we treat it as a Neumann
-          // node here: add_contribution() will do the right thing.
+          // node here: add_contribution() will do the right thing later.
           bool neumann = true;
           for (int n = 0; n < 4; ++n) {
             auto I = E.local_to_global(nodes[n]);
@@ -232,8 +246,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
           E_face.reset(face, z_nodal);
 
-          std::vector<double> g(E_face.n_pts());
-          E_face.evaluate(g_nodal.data(), g.data());
+          E_face.evaluate(g_nodal, g);
 
           for (int q = 0; q < E_face.n_pts(); ++q) {
             auto W = E_face.weight(q);
@@ -241,13 +254,14 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
             for (int t = 0; t < Nk; ++t) {
               auto psi = E_face.chi(q, t);
 
+              // FIXME: scaling goes here
               R_nodal[t] += W * psi * g[q];
             }
 
           }
         } // end of the loop over element faces
 
-        E.add_contribution(R_nodal.data(), R);
+        E.add_contribution(R_nodal, R);
       } // end of the loop over i
     } // end of the loop over j
   } // end of the loop over k

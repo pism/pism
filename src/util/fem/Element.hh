@@ -391,12 +391,9 @@ public:
     return m_chi[q * m_n_chi + k];
   }
 
-  // z: nodal z coordinates for *all* nodes of the element
+  // NB: here z contains nodal z coordinates for *all* nodes of the element
   void reset(int face, const std::vector<double> &z);
 
-  //! @brief Given nodal values, compute the values at quadrature points.
-  //! The output array `result` should have enough elements to hold values at all
-  //! quadrature points.
   template <typename T>
   void evaluate(const T *x, T *result) {
     for (unsigned int q = 0; q < m_Nq; q++) {
