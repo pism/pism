@@ -62,7 +62,7 @@ static bool neumann_node(const DMDALocalInfo *info, const fem::Element3::GlobalI
 
 // Dirichlet BC and the exact solution
 static double u_bc(double x, double y, double z) {
-  return 2.0 * (1 + y) / ((3 + x) * (3 + x)  +  (1 + y) * (1 + y)) + (z + 1) * (z + 1);
+  return 2.0 * (1 + y) / ((3 + x) * (3 + x)  +  (1 + y) * (1 + y)) + x * y * (z + 1) * (z + 1);
 }
 
 // right hand side
@@ -70,15 +70,13 @@ static double F(double x, double y, double z) {
   (void) x;
   (void) y;
   (void) z;
-  return -2.0;
+  return -2.0 * x * y;
 }
 
 // Neumann BC
 static double G(double x, double y, double z) {
-  (void) x;
-  (void) y;
   (void) z;
-  return 2.0;
+  return 2.0 * x * y;
 }
 
 // Bottom surface elevatipn
@@ -155,7 +153,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   double xq[Nq_max], yq[Nq_max], zq[Nq_max];
 
   const int Nq_face_max = 4;
-  assert(E_face.n_pts() < Nq_face_max);
+  assert(E_face.n_pts() <= Nq_face_max);
   double g[Nq_face_max];
 
   // loop over all the elements that have at least one owned node
