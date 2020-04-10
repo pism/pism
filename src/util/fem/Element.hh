@@ -372,9 +372,9 @@ private:
 };
 
 
-class Q1Element3Side {
+class Q1Element3Face {
 public:
-  Q1Element3Side(double dx, double dy, const Quadrature &quadrature);
+  Q1Element3Face(double dx, double dy, const Quadrature &quadrature);
 
   //! Number of quadrature points
   int n_pts() const {
@@ -392,7 +392,7 @@ public:
   }
 
   // z: nodal z coordinates for *all* nodes of the element
-  void reset(int side, const std::vector<double> &z);
+  void reset(int face, const std::vector<double> &z);
 
   //! @brief Given nodal values, compute the values at quadrature points.
   //! The output array `result` should have enough elements to hold values at all

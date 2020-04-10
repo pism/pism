@@ -212,12 +212,12 @@ namespace q13d {
 //! Number of shape functions on a Q1 element.
 const int n_chi = 8;
 //! Number of sides per element.
-const int n_sides = 6;
+const int n_faces = 6;
 //! Evaluate a Q1 shape function and its derivatives with respect to xi and eta.
 Germ chi(unsigned int k, const QuadPoint &p);
 
 //! Nodes incident to a side. Used to extract nodal values and add contributions.
-const unsigned int incident_nodes[n_sides][4] =
+const unsigned int incident_nodes[n_faces][4] =
   {{3, 0, 4, 7},                // 0 - left,   xi   = -1
    {1, 2, 6, 5},                // 1 - right,  xi   = +1
    {0, 1, 5, 4},                // 2 - front,  eta  = -1

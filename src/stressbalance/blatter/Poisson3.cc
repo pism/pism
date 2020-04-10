@@ -108,7 +108,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
     dy = 2.0 * Ly / (info->my - 1);
 
   fem::Q1Element3 E(*info, dx, dy, fem::Q13DQuadrature8());
-  fem::Q1Element3Side E_side(dx, dy, fem::Q1Quadrature4());
+  fem::Q1Element3Face E_face(dx, dy, fem::Q1Quadrature4());
 
   // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
   //
@@ -211,8 +211,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
         }
 
         // loop over all faces
-        for (int s = 0; s < fem::q13d::n_sides; ++s) {
-          auto nodes = fem::q13d::incident_nodes[s];
+        for (int face = 0; face < fem::q13d::n_faces; ++face) {
+          auto nodes = fem::q13d::incident_nodes[face];
           // loop over all nodes corresponding to this face. A face is a part of the
           // Neumann boundary if all four nodes are Neumann nodes. If a node is *both* a
           // Neumann and a Dirichlet node (this may happen), then we treat it as a Neumann
@@ -230,16 +230,16 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
             continue;
           }
 
-          E_side.reset(s, z_nodal);
+          E_face.reset(face, z_nodal);
 
-          std::vector<double> g(E_side.n_pts());
-          E_side.evaluate(g_nodal.data(), g.data());
+          std::vector<double> g(E_face.n_pts());
+          E_face.evaluate(g_nodal.data(), g.data());
 
-          for (int q = 0; q < E_side.n_pts(); ++q) {
-            auto W = E_side.weight(q);
+          for (int q = 0; q < E_face.n_pts(); ++q) {
+            auto W = E_face.weight(q);
 
             for (int t = 0; t < Nk; ++t) {
-              auto psi = E_side.chi(q, t);
+              auto psi = E_face.chi(q, t);
 
               R_nodal[t] += W * psi * g[q];
             }

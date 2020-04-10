@@ -508,7 +508,7 @@ void Q1Element3::reset(int i, int j, int k, const std::vector<double> &z) {
   }
 }
 
-Q1Element3Side::Q1Element3Side(double dx, double dy, const Quadrature &quadrature)
+Q1Element3Face::Q1Element3Face(double dx, double dy, const Quadrature &quadrature)
   : m_dx(dx),
     m_dy(dy),
     m_points(quadrature.points()),
@@ -520,12 +520,12 @@ Q1Element3Side::Q1Element3Side(double dx, double dy, const Quadrature &quadratur
   m_weights.resize(m_Nq);
 }
 
-void Q1Element3Side::reset(int side, const std::vector<double> &z) {
+void Q1Element3Face::reset(int face, const std::vector<double> &z) {
 
   for (unsigned int q = 0; q < m_Nq; q++) {
     auto pt = m_points[q];
     QuadPoint P;
-    switch (side) {
+    switch (face) {
     case 0:
       P = {-1.0, pt.xi, pt.eta};
       break;
@@ -548,12 +548,12 @@ void Q1Element3Side::reset(int side, const std::vector<double> &z) {
 
     // Compute dz/dxi, dz/deta and dz/dzeta.
     Vector3 dz{0.0, 0.0, 0.0};
-    for (unsigned int n = 0; n < q13d::n_chi; ++n) {
-      auto chi = q13d::chi(n, P);
+    for (unsigned int n = 0; n < m_n_chi; ++n) {
+      auto chi = m_chi(n, P);
 
-      // FIXME: chi(n, point) for a particular side does not depend on the element
+      // FIXME: chi(n, point) for a particular face does not depend on the element
       // geometry and could be computed in advance (in the constructor)
-      m_chi[q * q13d::n_chi + n] = chi.val;
+      m_chi[q * m_n_chi + n] = chi.val;
 
       dz.x += chi.dx * z[n];
       dz.y += chi.dy * z[n];
@@ -562,7 +562,7 @@ void Q1Element3Side::reset(int side, const std::vector<double> &z) {
 
     m_weights[q] = m_w[q];
 
-    switch (side) {
+    switch (face) {
     case 0:
     case 1:
       m_weights[q] *= 0.5 * m_dy * dz.z;
