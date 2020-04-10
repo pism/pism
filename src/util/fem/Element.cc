@@ -553,7 +553,7 @@ void Q1Element3Side::reset(int side, const std::vector<double> &z) {
 
       // FIXME: chi(n, point) for a particular side does not depend on the element
       // geometry and could be computed in advance (in the constructor)
-      m_chi[q * q13d::n_chi + n] = chi;
+      m_chi[q * q13d::n_chi + n] = chi.val;
 
       dz.x += chi.dx * z[n];
       dz.y += chi.dy * z[n];

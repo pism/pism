@@ -241,9 +241,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
             for (int t = 0; t < Nk; ++t) {
               auto psi = E_side.chi(q, t);
 
-              // note that psi.dx, psi.dy, and psi.dz were not computed and so correspond
-              // to derivatives with respect to xi,eta,zeta.
-              R_nodal[t] += W * psi.val * g[q];
+              R_nodal[t] += W * psi * g[q];
             }
 
           }

@@ -385,7 +385,7 @@ public:
     return m_weights[q];
   }
 
-  const Germ& chi(unsigned int q, unsigned int k) const {
+  const double& chi(unsigned int q, unsigned int k) const {
     assert(q < m_Nq);
     assert(k < m_n_chi);
     return m_chi[q * m_n_chi + k];
@@ -402,7 +402,7 @@ public:
     for (unsigned int q = 0; q < m_Nq; q++) {
       result[q] = 0.0;
       for (unsigned int k = 0; k < m_n_chi; k++) {
-        result[q] += m_chi[q * m_n_chi + k].val * x[k];
+        result[q] += m_chi[q * m_n_chi + k] * x[k];
       }
     }
   }
@@ -413,7 +413,7 @@ protected:
 
   // values of shape functions at all quadrature points and their derivatives with respect
   // to xi, eta, zeta
-  std::vector<Germ> m_chi;
+  std::vector<double> m_chi;
 
   // quadrature points (on the reference element corresponding to a face)
   std::vector<QuadPoint> m_points;
