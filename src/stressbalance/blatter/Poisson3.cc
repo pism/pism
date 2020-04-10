@@ -52,13 +52,20 @@ static bool dirichlet_node(const DMDALocalInfo *info, const fem::Element3::Globa
   return
     (I.i == 0 or I.i == info->mx - 1) or
     (I.j == 0 or I.j == info->my - 1) or
-    (I.k == 0 or I.k == info->mz - 1);
+    (I.k == info->mz - 1);
 }
 
+static bool neumann_node(const DMDALocalInfo *info, const fem::Element3::GlobalIndex& I) {
+  (void) info;
+  return I.k == 0;
+}
+
+// Dirichlet BC and the exact solution
 static double u_bc(double x, double y, double z) {
-  return 2.0 * (1 + y) / ((3 + x) * (3 + x)  +  (1 + y) * (1 + y)) + z * z;
+  return 2.0 * (1 + y) / ((3 + x) * (3 + x)  +  (1 + y) * (1 + y)) + (z + 1) * (z + 1);
 }
 
+// right hand side
 static double F(double x, double y, double z) {
   (void) x;
   (void) y;
@@ -66,12 +73,22 @@ static double F(double x, double y, double z) {
   return -2.0;
 }
 
+// Neumann BC
+static double G(double x, double y, double z) {
+  (void) x;
+  (void) y;
+  (void) z;
+  return 2.0;
+}
+
+// Bottom surface elevatipn
 static double b(double x, double y) {
   (void) x;
   (void) y;
   return 0.0;
 }
 
+// Thickness
 static double H(double x, double y) {
   return 1.0 + x*x + y*y;
 }
@@ -91,6 +108,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
     dy = 2.0 * Ly / (info->my - 1);
 
   fem::Q1Element3 E(*info, dx, dy, fem::Q13DQuadrature8());
+  fem::Q1Element3Side E_side(dx, dy, fem::Q1Quadrature4());
 
   // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
   //
@@ -182,6 +200,54 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
                                - F(xq[q], yq[q], zq[q]) * psi.val);
           }
         }
+
+        // compute the Neumann BC function at the nodes of this element
+        //
+        // I could compute it directly at quadrature points but I don't want to compute
+        // x,y,z coordinates of quadrature points on each face
+        std::vector<double> g_nodal(Nk);
+        for (int n = 0; n < Nk; ++n) {
+          g_nodal[n] = G(x_nodal[n], y_nodal[n], z_nodal[n]);
+        }
+
+        // loop over all faces
+        for (int s = 0; s < fem::q13d::n_sides; ++s) {
+          auto nodes = fem::q13d::incident_nodes[s];
+          // loop over all nodes corresponding to this face. A face is a part of the
+          // Neumann boundary if all four nodes are Neumann nodes. If a node is *both* a
+          // Neumann and a Dirichlet node (this may happen), then we treat it as a Neumann
+          // node here: add_contribution() will do the right thing.
+          bool neumann = true;
+          for (int n = 0; n < 4; ++n) {
+            auto I = E.local_to_global(nodes[n]);
+            if (not neumann_node(info, I)) {
+              neumann = false;
+              break;
+            }
+          }
+
+          if (not neumann) {
+            continue;
+          }
+
+          E_side.reset(s, z_nodal);
+
+          std::vector<double> g(E_side.n_pts());
+          E_side.evaluate(g_nodal.data(), g.data());
+
+          for (int q = 0; q < E_side.n_pts(); ++q) {
+            auto W = E_side.weight(q);
+
+            for (int t = 0; t < Nk; ++t) {
+              auto psi = E_side.chi(q, t);
+
+              // note that psi.dx, psi.dy, and psi.dz were not computed and so correspond
+              // to derivatives with respect to xi,eta,zeta.
+              R_nodal[t] += W * psi.val * g[q];
+            }
+
+          }
+        } // end of the loop over element faces
 
         E.add_contribution(R_nodal.data(), R);
       } // end of the loop over i
