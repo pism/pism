@@ -48,16 +48,18 @@ def verify():
     f = np.polyfit(np.log(dxs), np.log(errors), 1)
     F = np.exp(np.polyval(f, np.log(dxs)))
 
-    import pylab as plt
-    plt.loglog(dxs, errors, ".-")
-    plt.loglog(dxs, F, "--", label=f"dx^{f[0]:2.3f}")
-    plt.grid()
-    plt.legend()
-    plt.xlabel("dx")
-    plt.ylabel("error")
-    plt.show()
-
     write(P)
+
+    if PISM.Context().rank == 0:
+
+        import pylab as plt
+        plt.loglog(dxs, errors, ".-")
+        plt.loglog(dxs, F, "--", label=f"dx^{f[0]:2.3f}")
+        plt.grid()
+        plt.legend()
+        plt.xlabel("dx")
+        plt.ylabel("error")
+        plt.show()
 
 if __name__ == "__main__":
     verify()
