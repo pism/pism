@@ -57,12 +57,12 @@ static bool dirichlet_node(const DMDALocalInfo *info, const fem::Element3::Globa
 
 static bool neumann_node(const DMDALocalInfo *info, const fem::Element3::GlobalIndex& I) {
   (void) info;
-  return I.k == 0;
+  return I.i == 0 or I.k == 0;
 }
 
 // Dirichlet BC and the exact solution
 static double u_bc(double x, double y, double z) {
-  return 2.0 * (1 + y) / ((3 + x) * (3 + x)  +  (1 + y) * (1 + y)) + x * y * (z + 1) * (z + 1);
+  return 2.0 * (1 + y) / ((1 + x) * (1 + x) + (1 + y) * (1 + y)) + x * y * (z + 1) * (z + 1);
 }
 
 // right hand side
@@ -74,9 +74,18 @@ static double F(double x, double y, double z) {
 }
 
 // Neumann BC
-static double G(double x, double y, double z) {
+// NEXT:
+//
+// - add Neumann BC on vertical faces
+// - use non-constant b(x,y) and modify G() to account for the change
+static double G_z(double x, double y, double z) {
   (void) z;
   return 2.0 * x * y;
+}
+
+static double G_x(double x, double y, double z) {
+  (void) x;
+  return y * (z + 1.0) * (z + 1.0);
 }
 
 // Bottom surface elevatipn
@@ -219,7 +228,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
         // I could compute it directly at quadrature points but I don't want to compute
         // x,y,z coordinates of quadrature points on each face
         for (int n = 0; n < Nk; ++n) {
-          g_nodal[n] = G(x_nodal[n], y_nodal[n], z_nodal[n]);
+          g_nodal[n] = G_z(x_nodal[n], y_nodal[n], z_nodal[n]);
         }
 
         // loop over all faces
