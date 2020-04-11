@@ -374,6 +374,8 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz)
 
     ierr = DMSetUp(m_da);
     PISM_CHK(ierr, "DMSetUp");
+
+    setup_level(m_da);
   }
 
   // Vecs, Mat
@@ -433,6 +435,151 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz)
     m_exact->set_attrs("diagnostic", "exact", "1", "1", "", 0);
   }
 }
+
+void Poisson3::setup_level(DM dm)
+{
+  int ierr;
+
+  MPI_Comm comm;
+  ierr = PetscObjectGetComm((PetscObject)dm, &comm);
+  PISM_CHK(ierr, "PetscObjectGetComm");
+
+  // Get grid information
+  PetscInt Mx, My, Mz, mx, my, stencil_width;
+  DMDAStencilType stencil_type;
+  const PetscInt *lx, *ly;
+  {
+    ierr = DMDAGetInfo(dm,
+                       NULL,       // dimensions
+                       &Mx, &My, &Mz, // grid size
+                       &mx, &my, NULL, // number of processors in each direction
+                       NULL,           // number of degrees of freedom
+                       &stencil_width,
+                       NULL, NULL, NULL, // types of ghost nodes at the boundary
+                       &stencil_type);
+    PISM_CHK(ierr, "DMDAGetInfo");
+
+    ierr = DMDAGetOwnershipRanges(dm, &lx, &ly, NULL);
+    PISM_CHK(ierr, "DMDAGetOwnershipRanges");
+  }
+
+  // compute the number of parameters per map-plane location
+  int dof = sizeof(Parameters)/sizeof(double);
+
+  // Create a 2D DMDA and a global Vec, then stash them in the dm passed to this method.
+  {
+    DM  da;
+    Vec parameters;
+
+    ierr = DMDACreate2d(comm,
+                        DM_BOUNDARY_NONE, DM_BOUNDARY_NONE,
+                        stencil_type,
+                        Mx, My,
+                        mx, my,
+                        dof,
+                        stencil_width,
+                        lx, ly,
+                        &da);
+    PISM_CHK(ierr, "DMDACreate2d");
+
+    ierr = DMSetUp(da);
+    PISM_CHK(ierr, "DMSetUp");
+
+    ierr = DMCreateGlobalVector(da, &parameters);
+    PISM_CHK(ierr, "DMCreateGlobalVector");
+
+    ierr = PetscObjectCompose((PetscObject)dm, "2D_DM", (PetscObject)da);
+    PISM_CHK(ierr, "PetscObjectCompose");
+    ierr = PetscObjectCompose((PetscObject)dm, "2D_Vec", (PetscObject)parameters);
+    PISM_CHK(ierr, "PetscObjectCompose");
+
+    ierr = DMDestroy(&da);
+    PISM_CHK(ierr, "DMDestroy");
+
+    ierr = VecDestroy(&parameters);
+    PISM_CHK(ierr, "VecDestroy");
+  }
+
+
+  // get refinement level
+  PetscInt level = 0;
+  {
+    PetscInt refinelevel, coarsenlevel;
+    ierr = DMGetRefineLevel(dm, &refinelevel);
+    PISM_CHK(ierr, "DMGetRefineLevel");
+    ierr = DMGetCoarsenLevel(dm, &coarsenlevel);
+    PISM_CHK(ierr, "DMGetCoarsenLevel");
+    level = refinelevel - coarsenlevel;
+  }
+
+  // report
+  {
+    double Lx = m_grid->Lx(),
+      Ly = m_grid->Ly();
+    PetscPrintf(comm,
+                "Level %D domain size (m) %8.2g x %8.2g, num elements %3d x %3d x %3d (%8d), size (m) %g x %g\n",
+                level, Lx, Ly, Mx, My, Mz, Mx*My*Mz, Lx / Mx, Ly / My);
+  }
+}
+
+void Poisson3::begin_2d_access(DM da, bool local, Vec *X_out, Parameters ***prm) {
+  int ierr;
+
+  DM  da_2d;
+  Vec X;
+
+  ierr = PetscObjectQuery((PetscObject)da, "2D_DM", (PetscObject*)&da_2d);
+  PISM_CHK(ierr, "PetscObjectQuery");
+
+  if (!da_2d) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "No 2D_DM composed with given DMDA");
+  }
+
+  ierr = PetscObjectQuery((PetscObject)da, "2D_Vec", (PetscObject*)&X);
+  PISM_CHK(ierr, "PetscObjectQuery");
+
+  if (!X) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "No DMDA_2D_Vec composed with given DMDA");
+  }
+
+  if (local) {
+    ierr = DMGetLocalVector(da_2d, X_out);
+    PISM_CHK(ierr, "DMGetLocalVector");
+
+    ierr = DMGlobalToLocalBegin(da_2d, X, INSERT_VALUES, *X_out);
+    PISM_CHK(ierr, "DMGlobalToLocalBegin");
+
+    ierr = DMGlobalToLocalEnd(da_2d, X, INSERT_VALUES, *X_out);
+    PISM_CHK(ierr, "DMGlobalToLocalEnd");
+  } else {
+    *X_out = X;
+  }
+
+  ierr = DMDAVecGetArray(da_2d, *X_out, prm);
+  PISM_CHK(ierr, "DMDAVecGetArray");
+}
+
+void Poisson3::end_2d_access(DM da, bool local, Vec *X_out, Parameters ***prm) {
+  int ierr;
+
+  DM da_2d;
+
+  ierr = PetscObjectQuery((PetscObject)da, "2D_DM", (PetscObject*)&da_2d);
+  PISM_CHK(ierr, "PetscObjectQuery");
+
+  if (!da_2d) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "No 2D_DM composed with given DMDA");
+  }
+
+  ierr = DMDAVecRestoreArray(da_2d, *X_out, prm);
+  PISM_CHK(ierr, "DMDAVecRestoreArray");
+
+  if (local) {
+    ierr = DMRestoreLocalVector(da_2d, X_out);
+    PISM_CHK(ierr, "DMRestoreLocalVector");
+  }
+}
+
 
 Poisson3::~Poisson3() {
   // empty
