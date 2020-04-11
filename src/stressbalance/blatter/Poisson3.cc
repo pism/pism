@@ -614,6 +614,64 @@ void Poisson3::end_2d_access(DM da, bool local, Vec *X_out, Parameters ***prm) {
   }
 }
 
+void Poisson3::begin_3d_access(DM da, bool local, Vec *X_out, double ****prm) {
+  int ierr;
+
+  DM  da_3d;
+  Vec X;
+
+  ierr = PetscObjectQuery((PetscObject)da, "3D_DM", (PetscObject*)&da_3d);
+  PISM_CHK(ierr, "PetscObjectQuery");
+
+  if (!da_3d) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "No 3D_DM composed with given DMDA");
+  }
+
+  ierr = PetscObjectQuery((PetscObject)da, "3D_Vec", (PetscObject*)&X);
+  PISM_CHK(ierr, "PetscObjectQuery");
+
+  if (!X) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "No 3D_Vec composed with given DMDA");
+  }
+
+  if (local) {
+    ierr = DMGetLocalVector(da_3d, X_out);
+    PISM_CHK(ierr, "DMGetLocalVector");
+
+    ierr = DMGlobalToLocalBegin(da_3d, X, INSERT_VALUES, *X_out);
+    PISM_CHK(ierr, "DMGlobalToLocalBegin");
+
+    ierr = DMGlobalToLocalEnd(da_3d, X, INSERT_VALUES, *X_out);
+    PISM_CHK(ierr, "DMGlobalToLocalEnd");
+  } else {
+    *X_out = X;
+  }
+
+  ierr = DMDAVecGetArray(da_3d, *X_out, prm);
+  PISM_CHK(ierr, "DMDAVecGetArray");
+}
+
+void Poisson3::end_3d_access(DM da, bool local, Vec *X_out, double ****prm) {
+  int ierr;
+
+  DM da_3d;
+
+  ierr = PetscObjectQuery((PetscObject)da, "3D_DM", (PetscObject*)&da_3d);
+  PISM_CHK(ierr, "PetscObjectQuery");
+
+  if (!da_3d) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "No 3D_DM composed with given DMDA");
+  }
+
+  ierr = DMDAVecRestoreArray(da_3d, *X_out, prm);
+  PISM_CHK(ierr, "DMDAVecRestoreArray");
+
+  if (local) {
+    ierr = DMRestoreLocalVector(da_3d, X_out);
+    PISM_CHK(ierr, "DMRestoreLocalVector");
+  }
+}
+
 /*!
  * Bottom surface elevation
  */
@@ -662,6 +720,48 @@ void Poisson3::init_2d_parameters() {
   }
 
   end_2d_access(m_da, false, &X, &P);
+}
+
+/*!
+ * Set 2D parameters on the finest grid.
+ */
+void Poisson3::init_3d_parameters() {
+
+  DMDALocalInfo info;
+  int ierr = DMDAGetLocalInfo(m_da, &info);
+  PISM_CHK(ierr, "DMDAGetLocalInfo");
+
+  // Compute grid spacing from domain dimensions and the grid size
+  double
+    Lx = m_grid->Lx(),
+    Ly = m_grid->Ly(),
+    dx = 2.0 * Lx / (info.mx - 1),
+    dy = 2.0 * Ly / (info.my - 1);
+
+  Parameters **P2;
+  double ***P3;
+  Vec X2, X3;
+
+  begin_2d_access(m_da, false, &X2, &P2);
+  begin_3d_access(m_da, false, &X3, &P3);
+
+  for (int k = info.zs; k < info.zs + info.zm; k++) {
+    for (int j = info.ys; j < info.ys + info.ym; j++) {
+      for (int i = info.xs; i < info.xs + info.xm; i++) {
+        double
+          xx = xy(Lx, dx, i),
+          yy = xy(Ly, dy, j),
+          b  = P2[j][i].bed,
+          H  = P2[j][i].thickness,
+          zz = z(b, H, info.mz, k);
+
+        P3[k][j][i] = F(xx, yy, zz);
+      }
+    }
+  }
+
+  end_3d_access(m_da, false, &X3, &P3);
+  end_2d_access(m_da, false, &X2, &P2);
 }
 
 Poisson3::~Poisson3() {
@@ -718,6 +818,7 @@ void Poisson3::update(const Inputs &inputs, bool) {
   (void) inputs;
 
   init_2d_parameters();
+  init_3d_parameters();
 
   int ierr = 0;
 
