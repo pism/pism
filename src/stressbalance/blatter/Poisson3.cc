@@ -580,6 +580,37 @@ void Poisson3::end_2d_access(DM da, bool local, Vec *X_out, Parameters ***prm) {
   }
 }
 
+void Poisson3::init_2d_parameters() {
+
+  DMDALocalInfo info;
+  int ierr = DMDAGetLocalInfo(m_da, &info);
+  PISM_CHK(ierr, "DMDAGetLocalInfo");
+
+  // Compute grid spacing from domain dimensions and the grid size
+  double
+    Lx = m_grid->Lx(),
+    Ly = m_grid->Ly(),
+    dx = 2.0 * Lx / (info.mx - 1),
+    dy = 2.0 * Ly / (info.my - 1);
+
+  Parameters **P;
+  Vec X;
+
+  begin_2d_access(m_da, false, &X, &P);
+
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+      double x = xy(Lx, dx, i);
+      double y = xy(Ly, dy, j);
+
+
+      P[j][i].bed = b(x, y);
+      P[j][i].thickness = H(x, y);
+    }
+  }
+
+  end_2d_access(m_da, false, &X, &P);
+}
 
 Poisson3::~Poisson3() {
   // empty
@@ -624,6 +655,8 @@ double Poisson3::error() const {
 
 void Poisson3::update(const Inputs &inputs, bool) {
   (void) inputs;
+
+  init_2d_parameters();
 
   int ierr = 0;
 

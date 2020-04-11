@@ -67,6 +67,7 @@ protected:
   static PetscErrorCode function_callback(DMDALocalInfo *info, const double ***x, double ***f,
                                           CallbackData *data);
   void setup_level(DM dm);
+  void init_2d_parameters();
 
   // FIXME: wrap in a class
   void begin_2d_access(DM da, bool local, Vec *X_out, Parameters ***prm);
