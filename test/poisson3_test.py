@@ -37,8 +37,8 @@ def verify():
 
     dxs = []
     errors = []
-    for k in range(N):
-        M = 5 * 2**k
+    for k in range(1, N):
+        M = 2 * 2**k + 1
 
         P = run(M)
 
@@ -53,9 +53,8 @@ def verify():
     if PISM.Context().rank == 0:
 
         import pylab as plt
-        plt.loglog(dxs, errors, ".-")
-        plt.loglog(dxs, F, "--", label=f"dx^{f[0]:2.3f}")
-        plt.grid()
+        plt.loglog(dxs, errors, ".-", label="errors")
+        plt.loglog(dxs, F, "--", label=f"polyfit: dx^{f[0]:2.3f}")
         plt.legend()
         plt.xlabel("dx")
         plt.ylabel("error")

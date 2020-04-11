@@ -162,8 +162,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           double
             xx = xy(Lx, dx, i),
             yy = xy(Ly, dy, j),
-            b = P[j][i].bed,
-            H = P[j][i].thickness,
+            b  = P[j][i].bed,
+            H  = P[j][i].thickness,
             zz = z(b, H, info->mz, k);
 
           // FIXME: scaling goes here
@@ -513,11 +513,12 @@ void Poisson3::setup_level(DM dm)
 
   // report
   {
-    double Lx = m_grid->Lx(),
-      Ly = m_grid->Ly();
+    double
+      Lx = 2.0 * m_grid->Lx(),
+      Ly = 2.0 * m_grid->Ly();
     PetscPrintf(comm,
                 "Level %D domain size (m) %8.2g x %8.2g, num elements %3d x %3d x %3d (%8d), size (m) %g x %g\n",
-                level, Lx, Ly, Mx, My, Mz, Mx*My*Mz, Lx / Mx, Ly / My);
+                level, Lx, Ly, Mx, My, Mz, Mx*My*Mz, Lx / (Mx - 1), Ly / (My - 1));
   }
 }
 
