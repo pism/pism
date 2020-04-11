@@ -444,29 +444,29 @@ void Poisson3::setup_level(DM dm)
   PISM_CHK(ierr, "PetscObjectGetComm");
 
   // Get grid information
-  PetscInt Mx, My, Mz, mx, my, stencil_width;
+  PetscInt Mx, My, Mz, mx, my, mz, stencil_width;
   DMDAStencilType stencil_type;
-  const PetscInt *lx, *ly;
+  const PetscInt *lx, *ly, *lz;
   {
     ierr = DMDAGetInfo(dm,
                        NULL,       // dimensions
                        &Mx, &My, &Mz, // grid size
-                       &mx, &my, NULL, // number of processors in each direction
+                       &mx, &my, &mz, // number of processors in each direction
                        NULL,           // number of degrees of freedom
                        &stencil_width,
                        NULL, NULL, NULL, // types of ghost nodes at the boundary
                        &stencil_type);
     PISM_CHK(ierr, "DMDAGetInfo");
 
-    ierr = DMDAGetOwnershipRanges(dm, &lx, &ly, NULL);
+    ierr = DMDAGetOwnershipRanges(dm, &lx, &ly, &lz);
     PISM_CHK(ierr, "DMDAGetOwnershipRanges");
   }
 
-  // compute the number of parameters per map-plane location
-  int dof = sizeof(Parameters)/sizeof(double);
-
   // Create a 2D DMDA and a global Vec, then stash them in the dm passed to this method.
   {
+    // compute the number of parameters per map-plane location
+    int dof = sizeof(Parameters)/sizeof(double);
+
     DM  da;
     Vec parameters;
 
@@ -499,6 +499,40 @@ void Poisson3::setup_level(DM dm)
     PISM_CHK(ierr, "VecDestroy");
   }
 
+  // Create a 3D DMDA and a global Vec, then stash them in the dm passed to this method.
+  {
+    DM  da;
+    Vec parameters;
+    int dof = 1;
+
+    ierr = DMDACreate3d(comm,
+                        DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE,
+                        stencil_type,
+                        Mx, My, Mz,
+                        mx, my, mz,
+                        dof,
+                        stencil_width,
+                        lx, ly, lz,
+                        &da);
+    PISM_CHK(ierr, "DMDACreate3d");
+
+    ierr = DMSetUp(da);
+    PISM_CHK(ierr, "DMSetUp");
+
+    ierr = DMCreateGlobalVector(da, &parameters);
+    PISM_CHK(ierr, "DMCreateGlobalVector");
+
+    ierr = PetscObjectCompose((PetscObject)dm, "3D_DM", (PetscObject)da);
+    PISM_CHK(ierr, "PetscObjectCompose");
+    ierr = PetscObjectCompose((PetscObject)dm, "3D_Vec", (PetscObject)parameters);
+    PISM_CHK(ierr, "PetscObjectCompose");
+
+    ierr = DMDestroy(&da);
+    PISM_CHK(ierr, "DMDestroy");
+
+    ierr = VecDestroy(&parameters);
+    PISM_CHK(ierr, "VecDestroy");
+  }
 
   // get refinement level
   PetscInt level = 0;
