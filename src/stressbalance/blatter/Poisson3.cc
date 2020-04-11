@@ -61,22 +61,6 @@ static double z(double b, double H, int Mz, int k) {
 }
 
 /*!
- * Bottom surface elevation
- */
-static double b(double x, double y) {
-  (void) x;
-  (void) y;
-  return -1.0 + x + y;
-}
-
-/*!
- * Domain thickness
- */
-static double H(double x, double y) {
-  return 1.0 + x*x + y*y;
-}
-
-/*!
  * Returns true if a node is in the Dirichlet part of the boundary, false otherwise.
  */
 static bool dirichlet_node(const DMDALocalInfo *info, const fem::Element3::GlobalIndex& I) {
@@ -119,7 +103,7 @@ static double F(double x, double y, double z) {
 /*!
  * Neumann BC
  */
-static double G(double x, double y, double z) {
+static double G(double x, double y, double z, double b) {
 
   double u_x = (y * pow(z + 1, 2.0) -
                 (4.0 * (x + 2) * (y + 1)) / pow(pow(y + 1, 2.0) + pow(x + 2, 2.0), 2.0));
@@ -132,9 +116,9 @@ static double G(double x, double y, double z) {
     return u_x;
   } else if (fabs(y - (-1.0)) < eps) {
     return u_y;
-  } else if (fabs(z - b(x, y)) < eps) {
+  } else if (fabs(z - b) < eps) {
     // normal to the bottom surface {-b_x, -b_y, 1}
-    std::vector<double> n = {-1, -1, 1};
+    std::vector<double> n = {-1, -1, 1}; // magnitude: sqrt(3)
 
     return dot({u_x, u_y, u_z}, n) / sqrt(3); // normalize
   } else {
@@ -160,6 +144,11 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   fem::Q1Element3 E(*info, dx, dy, fem::Q13DQuadrature8());
   fem::Q1Element3Face E_face(dx, dy, fem::Q1Quadrature4());
 
+  Parameters **P;
+  Vec X;
+
+  begin_2d_access(info->da, true, &X, &P);
+
   // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
   //
   // Setting it to zero is necessary because we call DMDASNESSetFunctionLocal() with
@@ -173,7 +162,9 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           double
             xx = xy(Lx, dx, i),
             yy = xy(Ly, dy, j),
-            zz = z(b(xx, yy), H(xx, yy), info->mz, k);
+            b = P[j][i].bed,
+            H = P[j][i].thickness,
+            zz = z(b, H, info->mz, k);
 
           // FIXME: scaling goes here
           R[k][j][i] = u_exact(xx, yy, zz) - x[k][j][i];
@@ -192,7 +183,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   assert(Nk <= Nk_max);
   double
     x_nodal[Nk_max], y_nodal[Nk_max],
-    R_nodal[Nk_max], u_nodal[Nk_max];
+    R_nodal[Nk_max], u_nodal[Nk_max], b_nodal[Nk_max];
   std::vector<double> z_nodal(Nk);
 
   // values at quadrature points
@@ -201,7 +192,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   const int Nq_max = 16;
   assert(Nq <= Nq_max);
   double u[Nq_max], u_x[Nq_max], u_y[Nq_max], u_z[Nq_max];
-  double xq[Nq_max], yq[Nq_max], zq[Nq_max];
+  double xq[Nq_max], yq[Nq_max], zq[Nq_max], bq[Nq_max];
 
   // make sure that xq, yq, zq and big enough for quadrature points on element faces
   assert(E_face.n_pts() <= Nq_max);
@@ -220,11 +211,13 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
         for (int n = 0; n < Nk; ++n) {
           auto I = E.local_to_global(i, j, k, n);
 
+          double H = P[I.j][I.i].thickness;
+
+          b_nodal[n] = P[I.j][I.i].bed;
+
           x_nodal[n] = xy(Lx, dx, I.i);
           y_nodal[n] = xy(Ly, dy, I.j);
-          z_nodal[n] = z(b(x_nodal[n], y_nodal[n]),
-                         H(x_nodal[n], y_nodal[n]),
-                         info->mz, I.k);
+          z_nodal[n] = z(b_nodal[n], H, info->mz, I.k);
         }
 
         E.reset(i, j, k, z_nodal);
@@ -291,6 +284,10 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           E_face.evaluate(y_nodal, yq);
           E_face.evaluate(z_nodal.data(), zq);
 
+          // Compute the bed elevation at (below) quadrature points. This is needed to
+          // compute G() below
+          E_face.evaluate(b_nodal, bq);
+
           // loop over all quadrature points
           for (int q = 0; q < E_face.n_pts(); ++q) {
             auto W = E_face.weight(q);
@@ -300,7 +297,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
               auto psi = E_face.chi(q, t);
 
               // FIXME: scaling goes here
-              R_nodal[t] += W * psi * G(xq[q], yq[q], zq[q]);
+              R_nodal[t] += W * psi * G(xq[q], yq[q], zq[q], bq[q]);
             }
           }
         } // end of the loop over element faces
@@ -309,6 +306,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
       } // end of the loop over i
     } // end of the loop over j
   } // end of the loop over k
+
+  end_2d_access(info->da, true, &X, &P);
 }
 
 PetscErrorCode Poisson3::function_callback(DMDALocalInfo *info,
@@ -580,6 +579,25 @@ void Poisson3::end_2d_access(DM da, bool local, Vec *X_out, Parameters ***prm) {
   }
 }
 
+/*!
+ * Bottom surface elevation
+ */
+static double b(double x, double y) {
+  (void) x;
+  (void) y;
+  return -1.0 + x + y;
+}
+
+/*!
+ * Domain thickness
+ */
+static double H(double x, double y) {
+  return 1.0 + x*x + y*y;
+}
+
+/*!
+ * Set 2D parameters on the finest grid.
+ */
 void Poisson3::init_2d_parameters() {
 
   DMDALocalInfo info;
@@ -603,7 +621,6 @@ void Poisson3::init_2d_parameters() {
       double x = xy(Lx, dx, i);
       double y = xy(Ly, dy, j);
 
-
       P[j][i].bed = b(x, y);
       P[j][i].thickness = H(x, y);
     }
@@ -626,21 +643,30 @@ void Poisson3::exact_solution(IceModelVec3Custom &result) {
     dx = 2.0 * Lx / (m_grid->Mx() - 1),
     dy = 2.0 * Ly / (m_grid->My() - 1);
 
+  Parameters **P;
+  Vec X;
+
+  begin_2d_access(m_da, false, &X, &P);
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double
       xx = xy(Lx, dx, i),
-      yy = xy(Ly, dy, j);
+      yy = xy(Ly, dy, j),
+      b = P[j][i].bed,
+      H = P[j][i].thickness;
 
     auto c = result.get_column(i, j);
 
     for (int k = 0; k < m_Mz; ++k) {
-      double zz = z(b(xx, yy), H(xx, yy), m_Mz, k);
+      double zz = z(b, H, m_Mz, k);
 
       c[k] = u_exact(xx, yy, zz);
     }
   }
+
+  end_2d_access(m_da, false, &X, &P);
 }
 
 double Poisson3::error() const {
