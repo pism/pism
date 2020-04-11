@@ -17,11 +17,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* TODO
- *
- * - use non-constant b(x, y) and modify G_z() to account for the change
- */
-
 #include <cassert>
 #include <cmath>                // std::pow, std::fabs
 
@@ -35,35 +30,62 @@ using std::fabs;
 namespace pism {
 namespace stressbalance {
 
-PetscErrorCode Poisson3::function_callback(DMDALocalInfo *info,
-                                           const double ***x, double ***f,
-                                           CallbackData *data) {
-  try {
-    data->solver->compute_residual(info, x, f);
-  } catch (...) {
-    MPI_Comm com = MPI_COMM_SELF;
-    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)data->da, &com); CHKERRQ(ierr);
-    handle_fatal_errors(com);
-    SETERRQ(com, 1, "A PISM callback failed");
-  }
-  return 0;
+/*!
+ * dot product
+ */
+static double dot(const std::vector<double> &a, const std::vector<double> &b) {
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
+/*!
+ * x and y coordinates
+ *
+ * @param[in] L domain half-width
+ * @param[in] delta grid spacing
+ * @param[in] k node index
+ */
 static double xy(double L, double delta, int k) {
   return -L + k * delta;
 }
 
+/*!
+ * z coordinate
+ *
+ * @param[in] b surface elevation of the bottom of the domain
+ * @param[in] H domain thickness
+ * @param[in] Mz number of grid points in each vertical column
+ * @param[in] k node index in the z direction
+ */
 static double z(double b, double H, int Mz, int k) {
   return b + H * k / (Mz - 1.0);
 }
 
-static bool dirichlet_node(const DMDALocalInfo *info, const fem::Element3::GlobalIndex& I) {
-  return
-    (I.i == info->mx - 1) or
-    (I.j == info->my - 1) or
-    (I.k == info->mz - 1);
+/*!
+ * Bottom surface elevation
+ */
+static double b(double x, double y) {
+  (void) x;
+  (void) y;
+  return -1.0 + x + y;
 }
 
+/*!
+ * Domain thickness
+ */
+static double H(double x, double y) {
+  return 1.0 + x*x + y*y;
+}
+
+/*!
+ * Returns true if a node is in the Dirichlet part of the boundary, false otherwise.
+ */
+static bool dirichlet_node(const DMDALocalInfo *info, const fem::Element3::GlobalIndex& I) {
+  return (I.i == info->mx - 1) or (I.j == info->my - 1) or (I.k == info->mz - 1);
+}
+
+/*!
+ * Returns true if a node is in the Neumann part of the boundary, false otherwise.
+ */
 static bool neumann_node(const DMDALocalInfo *info, const fem::Element3::GlobalIndex& I) {
   (void) info;
   return I.i == 0 or I.j == 0 or I.k == 0;
@@ -71,14 +93,16 @@ static bool neumann_node(const DMDALocalInfo *info, const fem::Element3::GlobalI
 
 /*! Dirichlet BC and the exact solution
 
+ b : -1 + x + y;
+ n_b : [-diff(b, x), -diff(b, y), 1];
  u : x*y*(z+1)^2+(2.0*(y+1))/((y+1)^2+(x+2)^2)$
  grind('u = u);
  grind(F = ratsimp(-(diff(u, x, 2) + diff(u, y, 2) + diff(u, z, 2))));
- grind(G_x = subst(x=-1, diff(u, x)));
- grind(G_y = subst(y=-1, diff(u, y)));
- grind(G_z = subst(z=0, diff(u, z)));
+ grind(u_x = diff(u, x));
+ grind(u_y = diff(u, y));
+ grind(u_z = diff(u, z));
 */
-static double u_bc(double x, double y, double z) {
+static double u_exact(double x, double y, double z) {
   return x * y * pow(z + 1, 2.0) + (2.0 * (y + 1)) / (pow(y + 1, 2.0) + pow(x + 2, 2.0));
 }
 
@@ -88,8 +112,6 @@ static double u_bc(double x, double y, double z) {
  * F = - (diff(u, x, 2) + diff(u, y, 2) + diff(u, z, 2))
  */
 static double F(double x, double y, double z) {
-  (void) x;
-  (void) y;
   (void) z;
   return -2.0 * x * y;
 }
@@ -98,29 +120,27 @@ static double F(double x, double y, double z) {
  * Neumann BC
  */
 static double G(double x, double y, double z) {
+
+  double u_x = (y * pow(z + 1, 2.0) -
+                (4.0 * (x + 2) * (y + 1)) / pow(pow(y + 1, 2.0) + pow(x + 2, 2.0), 2.0));
+  double u_y = x * pow(z + 1, 2.0) + 2.0 / (pow(y + 1, 2.0) + pow(x + 2, 2.0)) -
+    (4.0 * pow(y + 1, 2.0)) / pow(pow(y + 1, 2.0) + pow(x + 2, 2.0), 2.0);
+  double u_z = 2 * x * y * (z + 1);
+
   double eps = 1e-12;
   if (fabs(x - (-1.0)) < eps) {
-    return y * pow(z + 1, 2.0) - (4.0 * (y + 1)) / pow(pow(y + 1, 2.0) + 1, 2.0);
+    return u_x;
   } else if (fabs(y - (-1.0)) < eps) {
-    return x * pow(z + 1, 2.0) + 2.0 / pow(x + 2, 2.0);
-  } else if (fabs(z - 0.0) < eps) {
-    return 2.0 * x * y;
+    return u_y;
+  } else if (fabs(z - b(x, y)) < eps) {
+    // normal to the bottom surface {-b_x, -b_y, 1}
+    std::vector<double> n = {-1, -1, 1};
+
+    return dot({u_x, u_y, u_z}, n) / sqrt(3); // normalize
   } else {
     // We are not on a Neumann boundary. This value will not be used.
     return 0.0;
   }
-}
-
-// Bottom surface elevation
-static double b(double x, double y) {
-  (void) x;
-  (void) y;
-  return 0.0;
-}
-
-// Thickness of the domain
-static double H(double x, double y) {
-  return 1.0 + x*x + y*y;
 }
 
 void Poisson3::compute_residual(DMDALocalInfo *info,
@@ -156,7 +176,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
             zz = z(b(xx, yy), H(xx, yy), info->mz, k);
 
           // FIXME: scaling goes here
-          R[k][j][i] = u_bc(xx, yy, zz) - x[k][j][i];
+          R[k][j][i] = u_exact(xx, yy, zz) - x[k][j][i];
         } else {
           R[k][j][i] = 0.0;
         }
@@ -218,7 +238,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           auto I = E.local_to_global(n);
           if (dirichlet_node(info, I)) {
             E.mark_row_invalid(n);
-            u_nodal[n] = u_bc(x_nodal[n], y_nodal[n], z_nodal[n]);
+            u_nodal[n] = u_exact(x_nodal[n], y_nodal[n], z_nodal[n]);
           }
         }
 
@@ -282,7 +302,6 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
               // FIXME: scaling goes here
               R_nodal[t] += W * psi * G(xq[q], yq[q], zq[q]);
             }
-
           }
         } // end of the loop over element faces
 
@@ -290,6 +309,20 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
       } // end of the loop over i
     } // end of the loop over j
   } // end of the loop over k
+}
+
+PetscErrorCode Poisson3::function_callback(DMDALocalInfo *info,
+                                           const double ***x, double ***f,
+                                           CallbackData *data) {
+  try {
+    data->solver->compute_residual(info, x, f);
+  } catch (...) {
+    MPI_Comm com = MPI_COMM_SELF;
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)data->da, &com); CHKERRQ(ierr);
+    handle_fatal_errors(com);
+    SETERRQ(com, 1, "A PISM callback failed");
+  }
+  return 0;
 }
 
 Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz)
@@ -427,7 +460,7 @@ void Poisson3::exact_solution(IceModelVec3Custom &result) {
     for (int k = 0; k < m_Mz; ++k) {
       double zz = z(b(xx, yy), H(xx, yy), m_Mz, k);
 
-      c[k] = u_bc(xx, yy, zz);
+      c[k] = u_exact(xx, yy, zz);
     }
   }
 }
@@ -481,5 +514,3 @@ IceModelVec3Custom::Ptr Poisson3::exact() const {
 
 } // end of namespace stressbalance
 } // end of namespace pism
-
-
