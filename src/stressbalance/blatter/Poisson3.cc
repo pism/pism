@@ -178,21 +178,20 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   }
 
   // values at element nodes
-  int Nk = E.n_chi();
-
-  // hard-wired maximum number of nodes per element
   const int Nk_max = 8;
+  int Nk = E.n_chi();
   assert(Nk <= Nk_max);
+
   double
     x_nodal[Nk_max], y_nodal[Nk_max],
     R_nodal[Nk_max], u_nodal[Nk_max], b_nodal[Nk_max], F_nodal[Nk_max];
   std::vector<double> z_nodal(Nk);
 
   // values at quadrature points
-  int Nq = E.n_pts();
-  // hard-wired maximum number of quadrature points per element
   const int Nq_max = 16;
+  int Nq = E.n_pts();
   assert(Nq <= Nq_max);
+
   double u[Nq_max], u_x[Nq_max], u_y[Nq_max], u_z[Nq_max];
   double xq[Nq_max], yq[Nq_max], zq[Nq_max], bq[Nq_max], Fq[Nq_max];
 
@@ -209,7 +208,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           R_nodal[n] = 0.0;
         }
 
-        // Compute coordinates of the nodes of this element.
+        // Compute coordinates of the nodes of this element and fetch nodal values of the
+        // bed elevation.
         for (int n = 0; n < Nk; ++n) {
           auto I = E.local_to_global(i, j, k, n);
 
@@ -222,6 +222,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           z_nodal[n] = z(b_nodal[n], H, info->mz, I.k);
         }
 
+        // compute values of chi, chi_x, chi_y, chi_z and quadrature weights at quadrature
+        // points on this physical element
         E.reset(i, j, k, z_nodal);
 
         // Get nodal values of F.

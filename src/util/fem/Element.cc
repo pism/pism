@@ -501,6 +501,8 @@ void Q1Element3::reset(int i, int j, int k, const std::vector<double> &z) {
 
     for (unsigned int n = 0; n < m_n_chi; n++) {
       auto &chi = m_chi[q * m_n_chi + n];
+      // FIXME: I should be able to use multiply() defined above, but there must be a bug
+      // there...
       m_germs[q * m_n_chi + n] = {chi.val,
                                   J_inv[0][0] * chi.dx + J_inv[0][1] * chi.dy + J_inv[0][2] * chi.dz,
                                   J_inv[1][0] * chi.dx + J_inv[1][1] * chi.dy + J_inv[1][2] * chi.dz,
@@ -532,6 +534,9 @@ void Q1Element3Face::reset(int face, const std::vector<double> &z) {
   for (unsigned int q = 0; q < m_Nq; q++) {
     auto pt = m_points[q];
     QuadPoint P;
+
+    // This expresses parameterizations of faces of the reference element: for example,
+    // face 0 is parameterized by (s, t) -> [-1, s, t].
     switch (face) {
     case 0:
       P = {-1.0, pt.xi, pt.eta};
@@ -556,8 +561,10 @@ void Q1Element3Face::reset(int face, const std::vector<double> &z) {
     // Compute dz/dxi, dz/deta and dz/dzeta.
     Vector3 dz{0.0, 0.0, 0.0};
     for (unsigned int n = 0; n < m_n_chi; ++n) {
-      // FIXME: chi(n, point) for a particular face does not depend on the element
-      // geometry and could be computed in advance (in the constructor)
+      // Note: chi(n, point) for a particular face does not depend on the element geometry
+      // and could be computed in advance (in the constructor). On the other hand, I
+      // expect that the number of faces in a Neumann boundary is relatively small and
+      // this optimization is not likely to pay off.
       auto chi = q13d::chi(n, P);
 
       m_chi[q * m_n_chi + n] = chi.val;
