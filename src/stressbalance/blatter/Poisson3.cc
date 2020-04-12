@@ -145,9 +145,11 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   fem::Q1Element3Face E_face(dx, dy, fem::Q1Quadrature4());
 
   Parameters **P;
-  Vec X;
+  double ***F;
+  Vec X2, X3;
 
-  begin_2d_access(info->da, true, &X, &P);
+  begin_2d_access(info->da, true, &X2, &P);
+  begin_3d_access(info->da, true, &X3, &F);
 
   // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
   //
@@ -183,7 +185,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   assert(Nk <= Nk_max);
   double
     x_nodal[Nk_max], y_nodal[Nk_max],
-    R_nodal[Nk_max], u_nodal[Nk_max], b_nodal[Nk_max];
+    R_nodal[Nk_max], u_nodal[Nk_max], b_nodal[Nk_max], F_nodal[Nk_max];
   std::vector<double> z_nodal(Nk);
 
   // values at quadrature points
@@ -192,7 +194,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   const int Nq_max = 16;
   assert(Nq <= Nq_max);
   double u[Nq_max], u_x[Nq_max], u_y[Nq_max], u_z[Nq_max];
-  double xq[Nq_max], yq[Nq_max], zq[Nq_max], bq[Nq_max];
+  double xq[Nq_max], yq[Nq_max], zq[Nq_max], bq[Nq_max], Fq[Nq_max];
 
   // make sure that xq, yq, zq and big enough for quadrature points on element faces
   assert(E_face.n_pts() <= Nq_max);
@@ -222,6 +224,9 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
         E.reset(i, j, k, z_nodal);
 
+        // Get nodal values of F.
+        E.nodal_values(F, F_nodal);
+
         // Get nodal values of u.
         E.nodal_values(x, u_nodal);
 
@@ -243,6 +248,9 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
         E.evaluate(y_nodal, yq);
         E.evaluate(z_nodal.data(), zq);
 
+        // evaluate F at quadrature points
+        E.evaluate(F_nodal, Fq);
+
         // loop over all quadrature points
         for (int q = 0; q < Nq; ++q) {
           auto W = E.weight(q);
@@ -253,7 +261,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
             // FIXME: scaling goes here
             R_nodal[t] += W * (u_x[q] * psi.dx + u_y[q] * psi.dy + u_z[q] * psi.dz
-                               - F(xq[q], yq[q], zq[q]) * psi.val);
+                               - Fq[q] * psi.val);
           }
         }
 
@@ -307,7 +315,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
     } // end of the loop over j
   } // end of the loop over k
 
-  end_2d_access(info->da, true, &X, &P);
+  end_3d_access(info->da, true, &X3, &F);
+  end_2d_access(info->da, true, &X2, &P);
 }
 
 PetscErrorCode Poisson3::function_callback(DMDALocalInfo *info,
