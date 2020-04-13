@@ -42,11 +42,6 @@ public:
 protected:
   int m_Mz;
 
-  struct Parameters {
-    double bed;
-    double thickness;
-  };
-
   void exact_solution(IceModelVec3Custom &result);
 
   IceModelVec3Custom::Ptr m_solution;
@@ -66,17 +61,9 @@ protected:
   void compute_residual(DMDALocalInfo *info, const double ***xg, double ***yg);
   static PetscErrorCode function_callback(DMDALocalInfo *info, const double ***x, double ***f,
                                           CallbackData *data);
-  void setup_level(DM dm);
+
   void init_2d_parameters();
   void init_3d_parameters();
-
-  // FIXME: wrap in a class
-  void begin_2d_access(DM da, bool local, Vec *X_out, Parameters ***prm);
-  void end_2d_access(DM da, bool local, Vec *X_out, Parameters ***prm);
-
-  // FIXME: wrap in a class
-  void begin_3d_access(DM da, bool local, Vec *X_out, double ****prm);
-  void end_3d_access(DM da, bool local, Vec *X_out, double ****prm);
 };
 
 } // end of namespace stressbalance
