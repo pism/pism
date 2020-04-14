@@ -31,6 +31,8 @@ struct GridInfo {
   double Lx;
   // half-width of the domain in the Y direction
   double Ly;
+  // minimum thickness (used to compute node types)
+  double min_thickness;
   // number of degrees of freedom in the 2D input Vec
   int dof;
 };
