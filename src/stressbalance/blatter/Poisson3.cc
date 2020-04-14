@@ -33,9 +33,20 @@ using std::fabs;
 namespace pism {
 namespace stressbalance {
 
+enum NodeType3D {
+  NODE_INTERIOR = -2,
+  NODE_BOUNDARY_DIRICHLET = -1,
+  NODE_BOUNDARY_NEUMANN   = 0,
+  NODE_EXTERIOR = 1
+};
+
 struct Parameters {
+  // elevation (z coordinate) of the bottom domain boundary
   double bed;
+  // thickness of the domain
   double thickness;
+  // NodeType3D stored as double
+  double node_type;
 };
 
 /*!
