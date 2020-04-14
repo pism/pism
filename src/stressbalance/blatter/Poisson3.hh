@@ -25,6 +25,8 @@
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 
+#include "grid_hierarchy.hh"    // GridInfo
+
 namespace pism {
 namespace stressbalance {
 
@@ -39,6 +41,7 @@ public:
   IceModelVec3Custom::Ptr exact() const;
 
   double error() const;
+
 protected:
   int m_Mz;
 
@@ -57,6 +60,7 @@ protected:
   };
 
   CallbackData m_callback_data;
+  GridInfo m_grid_info;
 
   void compute_residual(DMDALocalInfo *info, const double ***xg, double ***yg);
   static PetscErrorCode function_callback(DMDALocalInfo *info, const double ***x, double ***f,
