@@ -64,6 +64,9 @@ protected:
 
   void init_2d_parameters();
   void init_3d_parameters();
+
+  // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
+  PetscErrorCode setup(DM pism_da);
 };
 
 } // end of namespace stressbalance

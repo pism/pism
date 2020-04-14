@@ -35,131 +35,106 @@ struct Parameters {
   double thickness;
 };
 
-void begin_2d_access(DM da, bool local, Vec *X_out, Parameters ***prm) {
-  int ierr;
+enum ArrayType {GHOSTED, NOT_GHOSTED};
+/*!
+ * This template class manages access to 2D and 3D Vecs stored in a DM using
+ * `PetscObjectCompose`. Performs cleanup at the end of scope.
+ *
+ * @param[in] da SNES DM for the solution containing 2D and 3D DMs and Vecs
+ * @param[in] dim number of dimensions (2 or 3)
+ * @param[in] type NOT_GHOSTED -- for setting parameters; GHOSTED -- for accessing ghosts
+ *                 during residual and Jacobian evaluation
+ */
+template<typename T>
+class DataInput {
+public:
+  DataInput(DM da, int dim, ArrayType type)
+    : m_local(type == GHOSTED) {
+    int ierr;
 
-  DM  da_2d;
-  Vec X;
+    assert(dim == 2 or dim == 3);
 
-  ierr = PetscObjectQuery((PetscObject)da, "2D_DM", (PetscObject*)&da_2d);
-  PISM_CHK(ierr, "PetscObjectQuery");
+    if (dim == 2) {
+      ierr = setup(da, "2D_DM", "2D_Vec");
+    } else {
+      ierr = setup(da, "3D_DM", "3D_Vec");
+    }
 
-  if (!da_2d) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "Failed to get the 2D DM");
+    if (ierr != 0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Failed to create an DataInput instance");
+    }
   }
 
-  ierr = PetscObjectQuery((PetscObject)da, "2D_Vec", (PetscObject*)&X);
-  PISM_CHK(ierr, "PetscObjectQuery");
+  int setup(DM da, const char *dm_name, const char *vec_name) {
+    PetscErrorCode ierr;
 
-  if (!X) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "Failed to get the 2D Vec");
+    m_com = MPI_COMM_SELF;
+    ierr = PetscObjectGetComm((PetscObject)da, &m_com); CHKERRQ(ierr);
+
+    ierr = PetscObjectQuery((PetscObject)da, dm_name, (PetscObject*)&m_da); CHKERRQ(ierr);
+
+    if (!m_da) {
+      SETERRQ(m_com, 1, "Failed to get the inner DM");
+    }
+
+    Vec X;
+    ierr = PetscObjectQuery((PetscObject)da, vec_name, (PetscObject*)&X); CHKERRQ(ierr);
+
+    if (!X) {
+      SETERRQ(m_com, 1, "Failed to get the inner Vec");
+    }
+
+    if (m_local) {
+      ierr = DMGetLocalVector(m_da, &m_x); CHKERRQ(ierr);
+
+      ierr = DMGlobalToLocalBegin(m_da, X, INSERT_VALUES, m_x); CHKERRQ(ierr);
+
+      ierr = DMGlobalToLocalEnd(m_da, X, INSERT_VALUES, m_x); CHKERRQ(ierr);
+    } else {
+      m_x = X;
+    }
+
+    ierr = DMDAVecGetArray(m_da, m_x, &m_a); CHKERRQ(ierr);
+
+    return 0;
   }
 
-  if (local) {
-    ierr = DMGetLocalVector(da_2d, X_out);
-    PISM_CHK(ierr, "DMGetLocalVector");
+  ~DataInput() {
+    try {
+      PetscErrorCode ierr;
+      ierr = DMDAVecRestoreArray(m_da, m_x, &m_a);
+      PISM_CHK(ierr, "DMDAVecRestoreArray");
 
-    ierr = DMGlobalToLocalBegin(da_2d, X, INSERT_VALUES, *X_out);
-    PISM_CHK(ierr, "DMGlobalToLocalBegin");
-
-    ierr = DMGlobalToLocalEnd(da_2d, X, INSERT_VALUES, *X_out);
-    PISM_CHK(ierr, "DMGlobalToLocalEnd");
-  } else {
-    *X_out = X;
+      if (m_local) {
+        ierr = DMRestoreLocalVector(m_da, &m_x);
+        PISM_CHK(ierr, "DMRestoreLocalVector");
+      }
+    } catch (...) {
+      handle_fatal_errors(m_com);
+    }
   }
 
-  ierr = DMDAVecGetArray(da_2d, *X_out, prm);
-  PISM_CHK(ierr, "DMDAVecGetArray");
-}
-
-void end_2d_access(DM da, bool local, Vec *X_out, Parameters ***prm) {
-  int ierr;
-
-  DM da_2d;
-
-  ierr = PetscObjectQuery((PetscObject)da, "2D_DM", (PetscObject*)&da_2d);
-  PISM_CHK(ierr, "PetscObjectQuery");
-
-  if (!da_2d) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "failed to get the 2D DM");
+  operator T() {
+    return m_a;
   }
-
-  ierr = DMDAVecRestoreArray(da_2d, *X_out, prm);
-  PISM_CHK(ierr, "DMDAVecRestoreArray");
-
-  if (local) {
-    ierr = DMRestoreLocalVector(da_2d, X_out);
-    PISM_CHK(ierr, "DMRestoreLocalVector");
-  }
-}
-
-void begin_3d_access(DM da, bool local, Vec *X_out, double ****prm) {
-  int ierr;
-
-  DM  da_3d;
-  Vec X;
-
-  ierr = PetscObjectQuery((PetscObject)da, "3D_DM", (PetscObject*)&da_3d);
-  PISM_CHK(ierr, "PetscObjectQuery");
-
-  if (!da_3d) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "No 3D_DM composed with given DMDA");
-  }
-
-  ierr = PetscObjectQuery((PetscObject)da, "3D_Vec", (PetscObject*)&X);
-  PISM_CHK(ierr, "PetscObjectQuery");
-
-  if (!X) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "No 3D_Vec composed with given DMDA");
-  }
-
-  if (local) {
-    ierr = DMGetLocalVector(da_3d, X_out);
-    PISM_CHK(ierr, "DMGetLocalVector");
-
-    ierr = DMGlobalToLocalBegin(da_3d, X, INSERT_VALUES, *X_out);
-    PISM_CHK(ierr, "DMGlobalToLocalBegin");
-
-    ierr = DMGlobalToLocalEnd(da_3d, X, INSERT_VALUES, *X_out);
-    PISM_CHK(ierr, "DMGlobalToLocalEnd");
-  } else {
-    *X_out = X;
-  }
-
-  ierr = DMDAVecGetArray(da_3d, *X_out, prm);
-  PISM_CHK(ierr, "DMDAVecGetArray");
-}
-
-void end_3d_access(DM da, bool local, Vec *X_out, double ****prm) {
-  int ierr;
-
-  DM da_3d;
-
-  ierr = PetscObjectQuery((PetscObject)da, "3D_DM", (PetscObject*)&da_3d);
-  PISM_CHK(ierr, "PetscObjectQuery");
-
-  if (!da_3d) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "No 3D_DM composed with given DMDA");
-  }
-
-  ierr = DMDAVecRestoreArray(da_3d, *X_out, prm);
-  PISM_CHK(ierr, "DMDAVecRestoreArray");
-
-  if (local) {
-    ierr = DMRestoreLocalVector(da_3d, X_out);
-    PISM_CHK(ierr, "DMRestoreLocalVector");
-  }
-}
+private:
+  MPI_Comm m_com;
+  bool m_local;
+  DM m_da;
+  Vec m_x;
+  T m_a;
+};
 
 /*!
- * dot product
+ * dot product (used to compute normal derivatives)
  */
 static double dot(const std::vector<double> &a, const std::vector<double> &b) {
   return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
 /*!
- * x and y coordinates
+ * x and y coordinates of the nodes
  *
  * @param[in] L domain half-width
  * @param[in] delta grid spacing
@@ -170,7 +145,7 @@ static double xy(double L, double delta, int k) {
 }
 
 /*!
- * z coordinate
+ * z coordinates of the nodes
  *
  * @param[in] b surface elevation of the bottom of the domain
  * @param[in] H domain thickness
@@ -265,12 +240,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   fem::Q1Element3 E(*info, dx, dy, fem::Q13DQuadrature8());
   fem::Q1Element3Face E_face(dx, dy, fem::Q1Quadrature4());
 
-  Parameters **P;
-  double ***F;
-  Vec X2, X3;
-
-  begin_2d_access(info->da, true, &X2, &P);
-  begin_3d_access(info->da, true, &X3, &F);
+  DataInput<Parameters**> P(info->da, 2, GHOSTED);
+  DataInput<double***> F(info->da, 3, GHOSTED);
 
   // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
   //
@@ -348,7 +319,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
         E.reset(i, j, k, z_nodal);
 
         // Get nodal values of F.
-        E.nodal_values(F, F_nodal);
+        E.nodal_values((double***)F, F_nodal);
 
         // Get nodal values of u.
         E.nodal_values(x, u_nodal);
@@ -437,9 +408,6 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
       } // end of the loop over i
     } // end of the loop over j
   } // end of the loop over k
-
-  end_3d_access(info->da, true, &X3, &F);
-  end_2d_access(info->da, true, &X2, &P);
 }
 
 PetscErrorCode Poisson3::function_callback(DMDALocalInfo *info,
@@ -459,7 +427,7 @@ PetscErrorCode Poisson3::function_callback(DMDALocalInfo *info,
 /*!
  * Set up storage for 2D and 3D data inputs (DMDAs and Vecs)
  */
-PetscErrorCode setup_level(DM dm, double Lx, double Ly) {
+static PetscErrorCode setup_level(DM dm, double Lx, double Ly) {
   PetscErrorCode ierr;
 
   MPI_Comm comm;
@@ -570,32 +538,30 @@ PetscErrorCode setup_level(DM dm, double Lx, double Ly) {
  * @param[in] mat_name name to use when attaching the restriction matrix to `fine`
  */
 static PetscErrorCode create_restriction(DM fine, DM coarse,
-                                         const char dm_name[],
-                                         const char mat_name[]) {
+                                         const char *dm_name, const char *mat_name) {
   PetscErrorCode ierr;
   DM da_fine, da_coarse;
   Mat mat;
 
   /* Get the DM for parameters from the fine grid DM */
-  ierr = PetscObjectQuery((PetscObject)fine, dm_name,
-                          (PetscObject*)&da_fine); CHKERRQ(ierr);
-  if (!da_fine) SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-                         "No %s composed with given DMDA", dm_name);
+  ierr = PetscObjectQuery((PetscObject)fine, dm_name, (PetscObject *)&da_fine); CHKERRQ(ierr);
+  if (!da_fine) {
+    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA", dm_name);
+  }
 
   /* 2. get the DM for parameters from the coarse grid DM */
-  ierr = PetscObjectQuery((PetscObject)coarse, dm_name,
-                          (PetscObject*)&da_coarse); CHKERRQ(ierr);
-  if (!da_coarse) SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-                           "No %s composed with given DMDA", dm_name);
+  ierr = PetscObjectQuery((PetscObject)coarse, dm_name, (PetscObject *)&da_coarse); CHKERRQ(ierr);
+  if (!da_coarse) {
+    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA", dm_name);
+  }
 
   /* call DMCreateInterpolation */
-  ierr = DMCreateInterpolation(da_coarse, da_fine,
-                               &mat, PETSC_NULL); CHKERRQ(ierr);
+  ierr = DMCreateInterpolation(da_coarse, da_fine, &mat, PETSC_NULL); CHKERRQ(ierr);
 
   /* attach to the fine grid DM */
-  ierr = PetscObjectCompose((PetscObject)fine, mat_name,
-                            (PetscObject)mat); CHKERRQ(ierr);
-  ierr = MatDestroy(&mat); CHKERRQ(ierr);
+  ierr = PetscObjectCompose((PetscObject)fine, mat_name, (PetscObject)mat); CHKERRQ(ierr);
+  ierr = MatDestroy(&mat);
+  CHKERRQ(ierr);
 
   return 0;
 }
@@ -617,48 +583,44 @@ static PetscErrorCode restrict_data(DM fine, DM coarse,
   PetscFunctionBegin;
 
   /* get the restriction matrix from the fine grid DM */
-  ierr = PetscObjectQuery((PetscObject)fine, mat_name, (PetscObject *)&mat);
-  CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)fine, mat_name, (PetscObject *)&mat); CHKERRQ(ierr);
   if (!mat) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the restriction matrix");
   }
 
   /* get the DMDA from the fine grid DM */
-  ierr = PetscObjectQuery((PetscObject)fine, dm_name, (PetscObject *)&da_fine);
-  CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)fine, dm_name, (PetscObject *)&da_fine); CHKERRQ(ierr);
   if (!da_fine) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the fine grid DM");
   }
 
   /* get the storage vector from the fine grid DM */
-  ierr = PetscObjectQuery((PetscObject)fine, vec_name, (PetscObject *)&X_fine);
-  CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)fine, vec_name, (PetscObject *)&X_fine); CHKERRQ(ierr);
   if (!X_fine) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the fine grid Vec");
   }
 
   /* get the DMDA from the coarse grid DM */
-  ierr = PetscObjectQuery((PetscObject)coarse, dm_name, (PetscObject *)&da_coarse);
-  CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)coarse, dm_name, (PetscObject *)&da_coarse); CHKERRQ(ierr);
   if (!da_coarse) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the coarse grid DM");
   }
 
   /* get the storage vector from the coarse grid DM */
-  ierr = PetscObjectQuery((PetscObject)coarse, vec_name, (PetscObject *)&X_coarse);
-  CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)coarse, vec_name, (PetscObject *)&X_coarse); CHKERRQ(ierr);
   if (!X_coarse) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the coarse grid Vec");
   }
 
-  ierr = MatRestrict(mat, X_fine, X_coarse);
-  CHKERRQ(ierr);
+  ierr = MatRestrict(mat, X_fine, X_coarse); CHKERRQ(ierr);
 
   return 0;
 }
 
 /*!
  * Restrict 2D and 3D model parameters from a fine grid to a coarse grid.
+ *
+ * This hook is called every time SNES needs to update coarse-grid data.
  */
 static PetscErrorCode restriction_hook(DM fine,
                                        Mat mrestrict, Vec rscale, Mat inject,
@@ -723,98 +685,14 @@ static PetscErrorCode coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
 
 Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz)
   : ShallowStressBalance(grid), m_Mz(Mz) {
-  int ierr = 0;
 
-  // DM
-  {
-    auto pism_da = grid->get_dm(1, 0);
+  auto pism_da = grid->get_dm(1, 0);
 
-    PetscInt dim, Mx, My, Nx, Ny;
-    PetscInt
-      Nz            = 1,
-      dof           = 1,
-      stencil_width = 1;
-
-    ierr = DMDAGetInfo(*pism_da,
-                       &dim,
-                       &Mx,
-                       &My,
-                       NULL, /* Mz */
-                       &Nx,  /* number of processors in y-direction */
-                       &Ny,  /* number of processors in x-direction */
-                       NULL, /* ditto, z-direction */
-                       NULL, /* number of degrees of freedom per node */
-                       NULL, /* stencil width */
-                       NULL, NULL, NULL, /* types of ghost nodes at the boundary */
-                       NULL);            /* stencil width */
-    PISM_CHK(ierr, "DMDAGetInfo");
-    assert(dim == 2);
-
-    const PetscInt *lx, *ly;
-
-    ierr = DMDAGetOwnershipRanges(*pism_da, &lx, &ly, NULL);
-
-    ierr = DMDACreate3d(PETSC_COMM_WORLD,
-                        DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE,
-                        DMDA_STENCIL_BOX,
-                        Mx, My, m_Mz,
-                        Nx, Ny, Nz,
-                        dof,           // dof
-                        stencil_width, // stencil width
-                        lx, ly, NULL,
-                        m_da.rawptr());
-    PISM_CHK(ierr, "DMDACreate3d");
-
-    ierr = DMSetFromOptions(m_da);
-    PISM_CHK(ierr, "DMSetFromOptions");
-
-    ierr = DMSetUp(m_da);
-    PISM_CHK(ierr, "DMSetUp");
-
-    // set up 2D and 3D parameter storage
-    setup_level(m_da, m_grid->Lx(), m_grid->Ly());
-
-    // tell PETSc how to coarsen this grid
-    ierr = DMCoarsenHookAdd(m_da, coarsening_hook, restriction_hook,
-                            this); PISM_CHK(ierr, "DMCoarsenHookAdd");
-
+  int ierr = setup(*pism_da);
+  if (ierr != 0) {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "Failed to allocate a Poisson3 instance");
   }
-
-  // Vecs, Mat
-  {
-    ierr = DMCreateGlobalVector(m_da, m_x.rawptr());
-    PISM_CHK(ierr, "DMCreateGlobalVector");
-
-    // ierr = DMCreateMatrix(m_da, m_J.rawptr());
-    // PISM_CHK(ierr, "DMCreateMatrix");
-  }
-
-  // SNES
-  {
-    ierr = SNESCreate(PETSC_COMM_WORLD, m_snes.rawptr());
-    PISM_CHK(ierr, "SNESCreate");
-
-    // ierr = SNESSetOptionsPrefix(m_snes, "poi_");
-    // PISM_CHK(ierr, "SNESSetOptionsPrefix");
-
-    ierr = SNESSetDM(m_snes, m_da);
-    PISM_CHK(ierr, "SNESSetDM");
-
-    m_callback_data.da = m_da;
-    m_callback_data.solver = this;
-
-    ierr = DMDASNESSetFunctionLocal(m_da, INSERT_VALUES,
-                                    (DMDASNESFunction)function_callback,
-                                    &m_callback_data);
-    PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
-
-    ierr = SNESSetFromOptions(m_snes);
-    PISM_CHK(ierr, "SNESSetFromOptions");
-  }
-
-  // set the initial guess
-  ierr = VecSet(m_x, 0.0);
-  PISM_CHK(ierr, "VecSet");
 
   {
     std::vector<double> sigma(m_Mz);
@@ -836,6 +714,87 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz)
     m_exact.reset(new IceModelVec3Custom(grid, "exact", "z_sigma", sigma, z_attrs));
     m_exact->set_attrs("diagnostic", "exact", "1", "1", "", 0);
   }
+}
+
+PetscErrorCode Poisson3::setup(DM pism_da) {
+  PetscErrorCode ierr;
+  // DM
+  {
+    PetscInt dim, Mx, My, Nx, Ny;
+    PetscInt
+      Nz            = 1,
+      dof           = 1,
+      stencil_width = 1;
+
+    ierr = DMDAGetInfo(pism_da,
+                       &dim,
+                       &Mx,
+                       &My,
+                       NULL,             // Mz
+                       &Nx,              // number of processors in y-direction
+                       &Ny,              // number of processors in x-direction
+                       NULL,             // ditto, z-direction
+                       NULL,             // number of degrees of freedom per node
+                       NULL,             // stencil width
+                       NULL, NULL, NULL, // types of ghost nodes at the boundary
+                       NULL);            // stencil width
+    CHKERRQ(ierr);
+
+    assert(dim == 2);
+
+    const PetscInt *lx, *ly;
+    ierr = DMDAGetOwnershipRanges(pism_da, &lx, &ly, NULL); CHKERRQ(ierr);
+
+    ierr = DMDACreate3d(PETSC_COMM_WORLD,
+                        DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE,
+                        DMDA_STENCIL_BOX,
+                        Mx, My, m_Mz,
+                        Nx, Ny, Nz,
+                        dof,           // dof
+                        stencil_width, // stencil width
+                        lx, ly, NULL,
+                        m_da.rawptr()); CHKERRQ(ierr);
+
+    ierr = DMSetFromOptions(m_da); CHKERRQ(ierr);
+
+    ierr = DMSetUp(m_da); CHKERRQ(ierr);
+
+    // set up 2D and 3D parameter storage
+    ierr = setup_level(m_da, m_grid->Lx(), m_grid->Ly()); CHKERRQ(ierr);
+
+    // tell PETSc how to coarsen this grid and how to restrict data to a coarser grid
+    ierr = DMCoarsenHookAdd(m_da, coarsening_hook, restriction_hook, this); CHKERRQ(ierr);
+  }
+
+  // Vecs, Mat
+  {
+    ierr = DMCreateGlobalVector(m_da, m_x.rawptr()); CHKERRQ(ierr);
+
+    // ierr = DMCreateMatrix(m_da, m_J.rawptr()); CHKERRQ(ierr);
+  }
+
+  // SNES
+  {
+    ierr = SNESCreate(PETSC_COMM_WORLD, m_snes.rawptr()); CHKERRQ(ierr);
+
+    // ierr = SNESSetOptionsPrefix(m_snes, "poisson3_"); CHKERRQ(ierr);
+
+    ierr = SNESSetDM(m_snes, m_da); CHKERRQ(ierr);
+
+    m_callback_data.da = m_da;
+    m_callback_data.solver = this;
+
+    ierr = DMDASNESSetFunctionLocal(m_da, INSERT_VALUES,
+                                    (DMDASNESFunction)function_callback,
+                                    &m_callback_data); CHKERRQ(ierr);
+
+    ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
+  }
+
+  // set the initial guess
+  ierr = VecSet(m_x, 0.0); CHKERRQ(ierr);
+
+  return 0;
 }
 
 /*!
@@ -870,10 +829,7 @@ void Poisson3::init_2d_parameters() {
     dx = 2.0 * Lx / (info.mx - 1),
     dy = 2.0 * Ly / (info.my - 1);
 
-  Parameters **P;
-  Vec X;
-
-  begin_2d_access(m_da, false, &X, &P);
+  DataInput<Parameters**> P(m_da, 2, NOT_GHOSTED);
 
   for (int j = info.ys; j < info.ys + info.ym; j++) {
     for (int i = info.xs; i < info.xs + info.xm; i++) {
@@ -884,12 +840,10 @@ void Poisson3::init_2d_parameters() {
       P[j][i].thickness = H(x, y);
     }
   }
-
-  end_2d_access(m_da, false, &X, &P);
 }
 
 /*!
- * Set 2D parameters on the finest grid.
+ * Set 3D parameters on the finest grid.
  */
 void Poisson3::init_3d_parameters() {
 
@@ -904,12 +858,8 @@ void Poisson3::init_3d_parameters() {
     dx = 2.0 * Lx / (info.mx - 1),
     dy = 2.0 * Ly / (info.my - 1);
 
-  Parameters **P2;
-  double ***P3;
-  Vec X2, X3;
-
-  begin_2d_access(m_da, false, &X2, &P2);
-  begin_3d_access(m_da, false, &X3, &P3);
+  DataInput<Parameters**> P2(m_da, 2, NOT_GHOSTED);
+  DataInput<double***> P3(m_da, 3, NOT_GHOSTED);
 
   for (int k = info.zs; k < info.zs + info.zm; k++) {
     for (int j = info.ys; j < info.ys + info.ym; j++) {
@@ -925,9 +875,6 @@ void Poisson3::init_3d_parameters() {
       }
     }
   }
-
-  end_3d_access(m_da, false, &X3, &P3);
-  end_2d_access(m_da, false, &X2, &P2);
 }
 
 Poisson3::~Poisson3() {
@@ -944,10 +891,7 @@ void Poisson3::exact_solution(IceModelVec3Custom &result) {
     dx = 2.0 * Lx / (m_grid->Mx() - 1),
     dy = 2.0 * Ly / (m_grid->My() - 1);
 
-  Parameters **P;
-  Vec X;
-
-  begin_2d_access(m_da, false, &X, &P);
+  DataInput<Parameters**> P(m_da, 2, NOT_GHOSTED);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -966,8 +910,6 @@ void Poisson3::exact_solution(IceModelVec3Custom &result) {
       c[k] = u_exact(xx, yy, zz);
     }
   }
-
-  end_2d_access(m_da, false, &X, &P);
 }
 
 double Poisson3::error() const {
