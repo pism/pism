@@ -39,6 +39,25 @@ struct Parameters {
 };
 
 /*!
+ * Compute the padding needed to allow for `n_levels` of coarsening.
+ *
+ * @param[in] N number of grid points (nodes)
+ * @param[in] n_levels number of coarsening levels
+ *
+ * @return padding amount
+ */
+static int pad(int N, int n_levels) {
+  // number of spaces
+  int k = N - 1;
+  int C = 1;
+  for (int n = 0; n < n_levels; ++n) {
+    C *= 2;
+    k = (k % 2 ? k + 1: k) / 2;
+  }
+  return N - (C * k + 1);
+}
+
+/*!
  * dot product (used to compute normal derivatives)
  */
 static double dot(const std::vector<double> &a, const std::vector<double> &b) {
