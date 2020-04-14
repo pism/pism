@@ -26,6 +26,7 @@ using std::fabs;
 #include "Poisson3.hh"
 #include "pism/util/fem/FEM.hh"
 #include "pism/util/error_handling.hh"
+#include "DataInput.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -33,97 +34,6 @@ namespace stressbalance {
 struct Parameters {
   double bed;
   double thickness;
-};
-
-enum ArrayType {GHOSTED, NOT_GHOSTED};
-/*!
- * This template class manages access to 2D and 3D Vecs stored in a DM using
- * `PetscObjectCompose`. Performs cleanup at the end of scope.
- *
- * @param[in] da SNES DM for the solution containing 2D and 3D DMs and Vecs
- * @param[in] dim number of dimensions (2 or 3)
- * @param[in] type NOT_GHOSTED -- for setting parameters; GHOSTED -- for accessing ghosts
- *                 during residual and Jacobian evaluation
- */
-template<typename T>
-class DataInput {
-public:
-  DataInput(DM da, int dim, ArrayType type)
-    : m_local(type == GHOSTED) {
-    int ierr;
-
-    assert(dim == 2 or dim == 3);
-
-    if (dim == 2) {
-      ierr = setup(da, "2D_DM", "2D_Vec");
-    } else {
-      ierr = setup(da, "3D_DM", "3D_Vec");
-    }
-
-    if (ierr != 0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Failed to create an DataInput instance");
-    }
-  }
-
-  int setup(DM da, const char *dm_name, const char *vec_name) {
-    PetscErrorCode ierr;
-
-    m_com = MPI_COMM_SELF;
-    ierr = PetscObjectGetComm((PetscObject)da, &m_com); CHKERRQ(ierr);
-
-    ierr = PetscObjectQuery((PetscObject)da, dm_name, (PetscObject*)&m_da); CHKERRQ(ierr);
-
-    if (!m_da) {
-      SETERRQ(m_com, 1, "Failed to get the inner DM");
-    }
-
-    Vec X;
-    ierr = PetscObjectQuery((PetscObject)da, vec_name, (PetscObject*)&X); CHKERRQ(ierr);
-
-    if (!X) {
-      SETERRQ(m_com, 1, "Failed to get the inner Vec");
-    }
-
-    if (m_local) {
-      ierr = DMGetLocalVector(m_da, &m_x); CHKERRQ(ierr);
-
-      ierr = DMGlobalToLocalBegin(m_da, X, INSERT_VALUES, m_x); CHKERRQ(ierr);
-
-      ierr = DMGlobalToLocalEnd(m_da, X, INSERT_VALUES, m_x); CHKERRQ(ierr);
-    } else {
-      m_x = X;
-    }
-
-    ierr = DMDAVecGetArray(m_da, m_x, &m_a); CHKERRQ(ierr);
-
-    return 0;
-  }
-
-  ~DataInput() {
-    try {
-      PetscErrorCode ierr;
-      ierr = DMDAVecRestoreArray(m_da, m_x, &m_a);
-      PISM_CHK(ierr, "DMDAVecRestoreArray");
-
-      if (m_local) {
-        ierr = DMRestoreLocalVector(m_da, &m_x);
-        PISM_CHK(ierr, "DMRestoreLocalVector");
-      }
-    } catch (...) {
-      handle_fatal_errors(m_com);
-    }
-  }
-
-  operator T() {
-    return m_a;
-  }
-private:
-  MPI_Comm m_com;
-  bool m_local;
-  DM m_da;
-  Vec m_x;
-  T m_a;
 };
 
 /*!
