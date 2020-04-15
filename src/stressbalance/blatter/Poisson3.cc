@@ -29,24 +29,27 @@ using std::fabs;
 
 #include "DataInput.hh"
 #include "grid_hierarchy.hh"
+#include "pism/util/node_types.hh"
 
 namespace pism {
 namespace stressbalance {
-
-enum NodeType3D {
-  NODE_INTERIOR = -2,
-  NODE_BOUNDARY_DIRICHLET = -1,
-  NODE_BOUNDARY_NEUMANN   = 0,
-  NODE_EXTERIOR = 1
-};
 
 struct Parameters {
   // elevation (z coordinate) of the bottom domain boundary
   double bed;
   // thickness of the domain
   double thickness;
-  // NodeType3D stored as double
+  // NodeType stored as double
   double node_type;
+
+  // Define operator+=() so that I can use Element2::add_contribution() to compute node
+  // types.
+  inline Parameters& operator+=(const Parameters &other) {
+    thickness += other.thickness;
+    bed       += other.bed;
+    node_type += other.node_type;
+    return *this;
+  }
 };
 
 /*!
@@ -57,7 +60,7 @@ struct Parameters {
  *
  * @return padding amount
  */
-static int pad(int N, int n_levels) {
+int pad(int N, int n_levels) {
   // number of spaces
   int k = N - 1;
   int C = 1;
@@ -399,6 +402,92 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz)
   }
 }
 
+/*!
+ * Restrict 2D and 3D model parameters from a fine grid to a coarse grid.
+ *
+ * Re-compute node types from geometry.
+ *
+ * This hook is called every time SNES needs to update coarse-grid data.
+ */
+static PetscErrorCode p3_restriction_hook(DM fine,
+                                          Mat mrestrict, Vec rscale, Mat inject,
+                                          DM coarse, void *ctx) {
+  // Get rid of warnings about unused arguments
+  (void) mrestrict;
+  (void) rscale;
+  (void) inject;
+  GridInfo *grid_info = (GridInfo*)ctx;
+
+  PetscErrorCode ierr;
+  ierr = restrict_data(fine, coarse, "2D_DM", "2D_Restriction", "2D_Vec"); CHKERRQ(ierr);
+  ierr = restrict_data(fine, coarse, "3D_DM", "3D_Restriction", "3D_Vec"); CHKERRQ(ierr);
+
+  DataInput<Parameters**> P(coarse, 2, GHOSTED);
+
+  DMDALocalInfo info;
+  ierr = DMDAGetLocalInfo(coarse, &info); CHKERRQ(ierr);
+
+  // loop over all the owned nodes and reset node type
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+      P[j][i].node_type = 0;
+    }
+  }
+
+  // note that dx, dy, and quadrature don't matter here
+  fem::Q1Element2 E(info, 1.0, 1.0, fem::Q1Quadrature1());
+
+  Parameters p[fem::q1::n_chi];
+
+  // Loop over all the elements with at least one owned node and compute the number of icy
+  // elements each node belongs to.
+  for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
+    for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
+      E.reset(i, j);
+
+      E.nodal_values((Parameters**)P, p);
+
+      // An element is "interior" (contains ice) if all of its nodes have thickness above
+      // the threshold
+      bool interior = true;
+      for (int k = 0; k < fem::q1::n_chi; ++k) {
+        if (p[k].thickness < grid_info->min_thickness) {
+          interior = false;
+          break;
+        }
+      }
+
+      // Note: we need to reset bed and thickness to avoid changing these fields in
+      // add_contribution() below.
+      for (int k = 0; k < fem::q1::n_chi; ++k) {
+        p[k] = {0.0, 0.0, (double)interior};
+      }
+
+      E.add_contribution(p, (Parameters**)P);
+    }
+  }
+
+  // Loop over all the owned nodes and turn the number of "icy" elements this node belongs
+  // to into node type.
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+
+      switch ((int)P[j][i].node_type) {
+      case 4:
+        P[j][i].node_type = NODE_INTERIOR;
+        break;
+      case 0:
+        P[j][i].node_type = NODE_EXTERIOR;
+        break;
+      default:
+        P[j][i].node_type = NODE_BOUNDARY;
+      }
+    }
+  }
+
+  return 0;
+}
+
 PetscErrorCode Poisson3::setup(DM pism_da) {
   PetscErrorCode ierr;
   // DM
@@ -442,13 +531,18 @@ PetscErrorCode Poisson3::setup(DM pism_da) {
 
     ierr = DMSetUp(m_da); CHKERRQ(ierr);
 
-    m_grid_info = {m_grid->Lx(), m_grid->Ly(), sizeof(Parameters)/sizeof(double)};
+    double min_thickness = 0.1;
+
+    m_grid_info = {m_grid->Lx(),
+                   m_grid->Ly(),
+                   min_thickness,
+                   sizeof(Parameters)/sizeof(double)};
 
     // set up 2D and 3D parameter storage
     ierr = setup_level(m_da, m_grid_info); CHKERRQ(ierr);
 
     // tell PETSc how to coarsen this grid and how to restrict data to a coarser grid
-    ierr = DMCoarsenHookAdd(m_da, coarsening_hook, restriction_hook, &m_grid_info); CHKERRQ(ierr);
+    ierr = DMCoarsenHookAdd(m_da, coarsening_hook, p3_restriction_hook, &m_grid_info); CHKERRQ(ierr);
   }
 
   // Vecs, Mat
@@ -477,6 +571,7 @@ PetscErrorCode Poisson3::setup(DM pism_da) {
   }
 
   // set the initial guess
+  // FIXME: I will need to read this from a file
   ierr = VecSet(m_x, 0.0); CHKERRQ(ierr);
 
   return 0;
