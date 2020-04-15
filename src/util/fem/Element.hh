@@ -34,6 +34,10 @@ namespace pism {
 class IceGrid;
 class IceModelVec2Int;
 
+struct Vector3 {
+  double x, y, z;
+};
+
 namespace fem {
 
 class Quadrature;
@@ -391,6 +395,11 @@ public:
     return m_chi[q * m_n_chi + k];
   }
 
+  // outward pointing unit normal vector to an element face at the quadrature point q
+  const Vector3& normal(unsigned int q) const {
+    return m_normals[q];
+  }
+
   // NB: here z contains nodal z coordinates for *all* nodes of the element
   void reset(int face, const std::vector<double> &z);
 
@@ -414,6 +423,8 @@ protected:
 
   // quadrature points (on the reference element corresponding to a face)
   std::vector<QuadPoint> m_points;
+
+  std::vector<Vector3> m_normals;
 
   // quadrature weights (on the reference element corresponding to a face)
   std::vector<double> m_w;

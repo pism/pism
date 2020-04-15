@@ -27,10 +27,6 @@
 namespace pism {
 namespace fem {
 
-struct Vector3 {
-  double x, y, z;
-};
-
 //! Determinant of a 3x3 matrix
 static double det(const double a[3][3]) {
   return (a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1]) -
@@ -525,6 +521,7 @@ Q1Element3Face::Q1Element3Face(double dx, double dy, const Quadrature &quadratur
 
   m_chi.resize(m_Nq * m_n_chi);
   m_weights.resize(m_Nq);
+  m_normals.resize(m_Nq);
 }
 
 void Q1Element3Face::reset(int face, const std::vector<double> &z) {
@@ -579,14 +576,20 @@ void Q1Element3Face::reset(int face, const std::vector<double> &z) {
 
     m_weights[q] = m_w[q];
 
+    // Sign (-1 or +1) used to set normal orientation This relies of the order of faces in
+    // fem::q13d::incident_nodes and above (see the code setting QuadPoint P).
+    double sign = 2 * (face % 2) - 1;
+
     switch (face) {
     case 0:
     case 1:
       m_weights[q] *= 0.5 * m_dy * dz.z;
+      m_normals[q] = {sign, 0.0, 0.0};
       break;
     case 2:
     case 3:
       m_weights[q] *= 0.5 * m_dx * dz.z;
+      m_normals[q] = {0.0, sign, 0.0};
       break;
     case 4:
     case 5:
@@ -594,8 +597,12 @@ void Q1Element3Face::reset(int face, const std::vector<double> &z) {
         double
           a =  0.5 * m_dy * dz.x,
           b =  0.5 * m_dx * dz.y,
-          c = 0.25 * m_dx * m_dy;
-        m_weights[q] *= std::sqrt(a * a + b * b + c * c);
+          c = 0.25 * m_dx * m_dy,
+          M = std::sqrt(a * a + b * b + c * c);
+        m_weights[q] *= M;
+
+        M *= sign;
+        m_normals[q] = {a / M, b / M, c / M};
       }
       break;
     }
