@@ -33,10 +33,12 @@ dM(v, w) := sum(v[j] * diff(chi[j], w), j, 1, 8)$
 gradM(v) := [dM(v, xi), dM(v, eta), dM(v, zeta)];
 
 /* parameterizations of faces of the reference hexahedron */
+/* FIXME: make sure these parameterizations produce proper face
+orientations */
 faces : [
-  [-1, s,  t], [1, s, t],
-  [s, -1,  t], [s, 1, t],
-  [s,  t, -1], [s, t, 1]
+  [-1, -s,  t], [1, s, t],
+  [s, -1,  t], [-s, 1, t],
+  [-s,  t, -1], [s, t, 1]
 ]$
 
 /* equal spacing in the x and y directions */
