@@ -85,7 +85,7 @@ public:
   Gaussian2(double D);
 };
 
-//! The 4-point Gaussian quadrature on the square [-1,1]*[-1,1]
+//! The 1-point Gaussian quadrature on the square [-1,1]*[-1,1]
 class Q1Quadrature1 : public Quadrature {
 public:
   Q1Quadrature1();
