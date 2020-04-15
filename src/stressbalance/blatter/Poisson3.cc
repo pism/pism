@@ -74,8 +74,8 @@ int pad(int N, int n_levels) {
 /*!
  * dot product (used to compute normal derivatives)
  */
-static double dot(const std::vector<double> &a, const std::vector<double> &b) {
-  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+static double dot(const Vector3 &a, const Vector3 &b) {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
 /*!
@@ -143,27 +143,15 @@ static double F(double x, double y, double z) {
 /*!
  * Neumann BC
  */
-static double G(double x, double y, double z) {
+static double G(double x, double y, double z, const Vector3 &N) {
+  double
+    u_x = (y * pow(z + 1, 2.0) -
+           (4.0 * (x + 2) * (y + 1)) / pow(pow(y + 1, 2.0) + pow(x + 2, 2.0), 2.0)),
+    u_y = (x * pow(z + 1, 2.0) + 2.0 / (pow(y + 1, 2.0) + pow(x + 2, 2.0)) -
+           (4.0 * pow(y + 1, 2.0)) / pow(pow(y + 1, 2.0) + pow(x + 2, 2.0), 2.0)),
+    u_z = 2 * x * y * (z + 1);
 
-  double u_x = (y * pow(z + 1, 2.0) -
-                (4.0 * (x + 2) * (y + 1)) / pow(pow(y + 1, 2.0) + pow(x + 2, 2.0), 2.0));
-  double u_y = x * pow(z + 1, 2.0) + 2.0 / (pow(y + 1, 2.0) + pow(x + 2, 2.0)) -
-    (4.0 * pow(y + 1, 2.0)) / pow(pow(y + 1, 2.0) + pow(x + 2, 2.0), 2.0);
-
-  double eps = 1e-12;
-
-  if (fabs(x - (-1.0)) < eps) {
-    return u_x;
-  } else if (fabs(x - 1.0) < eps) {
-    return -u_x;
-  } else if (fabs(y - (-1.0)) < eps) {
-    return u_y;
-  } else if (fabs(y - 1.0) < eps) {
-    return -u_y;
-  } else {
-    // We are not on a Neumann boundary. This value will not be used.
-    return 0.0;
-  }
+  return dot({u_x, u_y, u_z}, N);
 }
 
 void Poisson3::compute_residual(DMDALocalInfo *info,
@@ -228,7 +216,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   assert(Nq <= Nq_max);
 
   double u[Nq_max], u_x[Nq_max], u_y[Nq_max], u_z[Nq_max];
-  double xq[Nq_max], yq[Nq_max], zq[Nq_max], bq[Nq_max], Fq[Nq_max];
+  double xq[Nq_max], yq[Nq_max], zq[Nq_max], Fq[Nq_max];
 
   // make sure that xq, yq, zq and big enough for quadrature points on element faces
   assert(E_face.n_pts() <= Nq_max);
@@ -268,7 +256,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
         E.nodal_values(x, u_nodal);
 
         // Take care of Dirichlet BC: don't contribute to Dirichlet nodes and set nodal
-        // values of the current iterate to Dirichler BC values.
+        // values of the current iterate to Dirichlet BC values.
         for (int n = 0; n < Nk; ++n) {
           auto I = E.local_to_global(n);
           if (dirichlet_node(info, I)) {
@@ -305,7 +293,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
         // loop over all faces
         for (int face = 0; face < fem::q13d::n_faces; ++face) {
           auto nodes = fem::q13d::incident_nodes[face];
-          // loop over all nodes corresponding to this face. A face is a part of the
+          // Loop over all nodes corresponding to this face. A face is a part of the
           // Neumann boundary if all four nodes are Neumann nodes. If a node is *both* a
           // Neumann and a Dirichlet node (this may happen), then we treat it as a Neumann
           // node here: add_contribution() will do the right thing later.
@@ -329,20 +317,17 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           E_face.evaluate(y_nodal, yq);
           E_face.evaluate(z_nodal.data(), zq);
 
-          // Compute the bed elevation at (below) quadrature points. This is needed to
-          // compute G() below
-          E_face.evaluate(b_nodal, bq);
-
           // loop over all quadrature points
           for (int q = 0; q < E_face.n_pts(); ++q) {
             auto W = E_face.weight(q);
+            auto N = E_face.normal(q);
 
             // loop over all test functions
             for (int t = 0; t < Nk; ++t) {
               auto psi = E_face.chi(q, t);
 
               // FIXME: scaling goes here
-              R_nodal[t] += W * psi * G(xq[q], yq[q], zq[q]);
+              R_nodal[t] += - W * psi * G(xq[q], yq[q], zq[q], N);
             }
           }
         } // end of the loop over element faces
