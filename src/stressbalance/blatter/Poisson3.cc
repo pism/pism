@@ -105,15 +105,14 @@ static double z(double b, double H, int Mz, int k) {
  * Returns true if a node is in the Dirichlet part of the boundary, false otherwise.
  */
 static bool dirichlet_node(const DMDALocalInfo *info, const fem::Element3::GlobalIndex& I) {
-  return (I.i == info->mx - 1) or (I.j == info->my - 1) or (I.k == info->mz - 1);
+  return I.k == 0 or (I.k == info->mz - 1);
 }
 
 /*!
  * Returns true if a node is in the Neumann part of the boundary, false otherwise.
  */
 static bool neumann_node(const DMDALocalInfo *info, const fem::Element3::GlobalIndex& I) {
-  (void) info;
-  return I.i == 0 or I.j == 0 or I.k == 0;
+  return (I.i == 0) or (I.j == 0) or (I.i == info->mx - 1) or (I.j == info->my - 1);
 }
 
 /*! Dirichlet BC and the exact solution
@@ -144,24 +143,23 @@ static double F(double x, double y, double z) {
 /*!
  * Neumann BC
  */
-static double G(double x, double y, double z, double b) {
+static double G(double x, double y, double z) {
 
   double u_x = (y * pow(z + 1, 2.0) -
                 (4.0 * (x + 2) * (y + 1)) / pow(pow(y + 1, 2.0) + pow(x + 2, 2.0), 2.0));
   double u_y = x * pow(z + 1, 2.0) + 2.0 / (pow(y + 1, 2.0) + pow(x + 2, 2.0)) -
     (4.0 * pow(y + 1, 2.0)) / pow(pow(y + 1, 2.0) + pow(x + 2, 2.0), 2.0);
-  double u_z = 2 * x * y * (z + 1);
 
   double eps = 1e-12;
+
   if (fabs(x - (-1.0)) < eps) {
     return u_x;
+  } else if (fabs(x - 1.0) < eps) {
+    return -u_x;
   } else if (fabs(y - (-1.0)) < eps) {
     return u_y;
-  } else if (fabs(z - b) < eps) {
-    // normal to the bottom surface {-b_x, -b_y, 1}
-    std::vector<double> n = {-1, -1, 1}; // magnitude: sqrt(3)
-
-    return dot({u_x, u_y, u_z}, n) / sqrt(3); // normalize
+  } else if (fabs(y - 1.0) < eps) {
+    return -u_y;
   } else {
     // We are not on a Neumann boundary. This value will not be used.
     return 0.0;
@@ -344,7 +342,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
               auto psi = E_face.chi(q, t);
 
               // FIXME: scaling goes here
-              R_nodal[t] += W * psi * G(xq[q], yq[q], zq[q], bq[q]);
+              R_nodal[t] += W * psi * G(xq[q], yq[q], zq[q]);
             }
           }
         } // end of the loop over element faces
@@ -583,14 +581,16 @@ PetscErrorCode Poisson3::setup(DM pism_da) {
 static double b(double x, double y) {
   (void) x;
   (void) y;
-  return -1.0 + x + y;
+  return 0.0;
 }
 
 /*!
  * Domain thickness
  */
 static double H(double x, double y) {
-  return 1.0 + x*x + y*y;
+  (void) x;
+  (void) y;
+  return 1.0;
 }
 
 /*!
