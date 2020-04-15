@@ -391,6 +391,9 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz)
  * Re-compute node types from geometry.
  *
  * This hook is called every time SNES needs to update coarse-grid data.
+ *
+ * FIXME: parameters restricted by this hook do not change from one SNES iteration to the
+ * next, so we can return early after the first one.
  */
 static PetscErrorCode p3_restriction_hook(DM fine,
                                           Mat mrestrict, Vec rscale, Mat inject,
@@ -471,6 +474,31 @@ static PetscErrorCode p3_restriction_hook(DM fine,
   return 0;
 }
 
+PetscErrorCode p3_coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
+  PetscErrorCode ierr;
+  GridInfo *grid_info = (GridInfo*)ctx;
+  PetscInt rlevel, clevel;
+
+  ierr = setup_level(dm_coarse, *grid_info); CHKERRQ(ierr);
+
+  ierr = DMGetRefineLevel(dm_coarse, &rlevel); CHKERRQ(ierr);
+  ierr = DMGetCoarsenLevel(dm_coarse, &clevel); CHKERRQ(ierr);
+  if (rlevel - clevel == 0) {
+    ierr = DMSetMatType(dm_coarse, MATAIJ); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_SELF, "setting matrix type on the coarse level");
+  }
+
+  ierr = DMCoarsenHookAdd(dm_coarse, p3_coarsening_hook, p3_restriction_hook, ctx); CHKERRQ(ierr);
+
+  // 2D
+  ierr = create_restriction(dm_fine, dm_coarse, "2D_DM", "2D_Restriction"); CHKERRQ(ierr);
+
+  // 3D
+  ierr = create_restriction(dm_fine, dm_coarse, "3D_DM", "3D_Restriction"); CHKERRQ(ierr);
+
+  return 0;
+}
+
 PetscErrorCode Poisson3::setup(DM pism_da) {
   PetscErrorCode ierr;
   // DM
@@ -525,7 +553,7 @@ PetscErrorCode Poisson3::setup(DM pism_da) {
     ierr = setup_level(m_da, m_grid_info); CHKERRQ(ierr);
 
     // tell PETSc how to coarsen this grid and how to restrict data to a coarser grid
-    ierr = DMCoarsenHookAdd(m_da, coarsening_hook, p3_restriction_hook, &m_grid_info); CHKERRQ(ierr);
+    ierr = DMCoarsenHookAdd(m_da, p3_coarsening_hook, p3_restriction_hook, &m_grid_info); CHKERRQ(ierr);
   }
 
   // Vecs, Mat
