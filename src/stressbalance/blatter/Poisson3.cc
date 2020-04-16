@@ -587,7 +587,7 @@ PetscErrorCode Poisson3::setup(DM pism_da) {
 
   // SNES
   {
-    ierr = SNESCreate(m_grid.com, m_snes.rawptr()); CHKERRQ(ierr);
+    ierr = SNESCreate(m_grid->com, m_snes.rawptr()); CHKERRQ(ierr);
 
     // ierr = SNESSetOptionsPrefix(m_snes, "poisson3_"); CHKERRQ(ierr);
 
