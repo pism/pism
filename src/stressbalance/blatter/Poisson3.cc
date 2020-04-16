@@ -34,6 +34,8 @@ using std::fabs;
 namespace pism {
 namespace stressbalance {
 
+const double u_exterior = 0.0;
+
 struct Parameters {
   // elevation (z coordinate) of the bottom domain boundary
   double bed;
@@ -41,15 +43,6 @@ struct Parameters {
   double thickness;
   // NodeType stored as double
   double node_type;
-
-  // Define operator+=() so that I can use Element2::add_contribution() to compute node
-  // types.
-  inline Parameters& operator+=(const Parameters &other) {
-    thickness += other.thickness;
-    bed       += other.bed;
-    node_type += other.node_type;
-    return *this;
-  }
 };
 
 /*!
@@ -105,7 +98,7 @@ static double z(double b, double H, int Mz, int k) {
  * Returns true if a node is in the Dirichlet part of the boundary, false otherwise.
  */
 static bool dirichlet_node(const DMDALocalInfo *info, const fem::Element3::GlobalIndex& I) {
-  return I.k == 0 or (I.k == info->mz - 1);
+  return (I.k == 0) or (I.k == info->mz - 1);
 }
 
 /*! Dirichlet BC and the exact solution
@@ -176,6 +169,15 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   for (int k = info->zs; k < info->zs + info->zm; k++) {
     for (int j = info->ys; j < info->ys + info->ym; j++) {
       for (int i = info->xs; i < info->xs + info->xm; i++) {
+
+        // nodes that don't belong to any icy elements
+        if ((int)P[j][i].node_type == NODE_EXTERIOR) {
+          // FIXME: scaling goes here
+          R[k][j][i] = u_exterior - x[k][j][i];
+          continue;
+        }
+
+        // Dirichlet nodes
         if (dirichlet_node(info, {i, j, k})) {
           double
             xx = xy(Lx, dx, i),
@@ -200,7 +202,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
   double
     x_nodal[Nk_max], y_nodal[Nk_max],
-    R_nodal[Nk_max], u_nodal[Nk_max], F_nodal[Nk_max], node_type[Nk_max];
+    R_nodal[Nk_max], u_nodal[Nk_max], F_nodal[Nk_max];
+  int node_type[Nk_max];
   std::vector<double> z_nodal(Nk);
 
   // values at quadrature points
@@ -224,8 +227,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           R_nodal[n] = 0.0;
         }
 
-        // Compute coordinates of the nodes of this element and fetch nodal values of the
-        // bed elevation.
+        // Compute coordinates of the nodes of this element and fetch node types.
         for (int n = 0; n < Nk; ++n) {
           auto I = E.local_to_global(i, j, k, n);
 
@@ -236,6 +238,22 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           x_nodal[n] = xy(Lx, dx, I.i);
           y_nodal[n] = xy(Ly, dy, I.j);
           z_nodal[n] = z(p.bed, p.thickness, info->mz, I.k);
+        }
+
+        // skip ice-free elements
+        {
+          // an element is exterior if one or more of its nodes are "exterior"
+          bool exterior = false;
+          for (int n = 0; n < Nk; ++n) {
+            if (node_type[n] == NODE_EXTERIOR) {
+              exterior = true;
+              break;
+            }
+          }
+
+          if (exterior) {
+            continue;
+          }
         }
 
         // compute values of chi, chi_x, chi_y, chi_z and quadrature weights at quadrature
@@ -292,37 +310,33 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           // node here: add_contribution() will do the right thing later.
           bool neumann = true;
           for (int n = 0; n < 4; ++n) {
-            int m = nodes[n];
-            if (not (node_type[m] == NODE_BOUNDARY)) {
+            if (not (node_type[nodes[n]] == NODE_BOUNDARY)) {
               neumann = false;
-              break;
             }
           }
 
-          if (not neumann) {
-            continue;
-          }
+          if (neumann) {
+            E_face.reset(face, z_nodal);
 
-          E_face.reset(face, z_nodal);
+            // compute physical coordinates of quadrature points on this face
+            E_face.evaluate(x_nodal, xq);
+            E_face.evaluate(y_nodal, yq);
+            E_face.evaluate(z_nodal.data(), zq);
 
-          // compute physical coordinates of quadrature points on this face
-          E_face.evaluate(x_nodal, xq);
-          E_face.evaluate(y_nodal, yq);
-          E_face.evaluate(z_nodal.data(), zq);
+            // loop over all quadrature points
+            for (int q = 0; q < E_face.n_pts(); ++q) {
+              auto W = E_face.weight(q);
+              auto N = E_face.normal(q);
 
-          // loop over all quadrature points
-          for (int q = 0; q < E_face.n_pts(); ++q) {
-            auto W = E_face.weight(q);
-            auto N = E_face.normal(q);
+              // loop over all test functions
+              for (int t = 0; t < Nk; ++t) {
+                auto psi = E_face.chi(q, t);
 
-            // loop over all test functions
-            for (int t = 0; t < Nk; ++t) {
-              auto psi = E_face.chi(q, t);
-
-              // FIXME: scaling goes here
-              R_nodal[t] += - W * psi * G(xq[q], yq[q], zq[q], N);
+                // FIXME: scaling goes here
+                R_nodal[t] += - W * psi * G(xq[q], yq[q], zq[q], N);
+              }
             }
-          }
+          } // end of "if (neumann)"
         } // end of the loop over element faces
 
         E.add_contribution(R_nodal, R);
@@ -425,13 +439,11 @@ void compute_node_type(DM da, double min_thickness) {
         }
       }
 
-      // Note: we need to reset bed and thickness to avoid changing these fields in
-      // add_contribution() below.
       for (int k = 0; k < fem::q1::n_chi; ++k) {
-        p[k] = {0.0, 0.0, (double)interior};
+        int ii, jj;
+        E.local_to_global(k, ii, jj);
+        P[jj][ii].node_type += interior;
       }
-
-      E.add_contribution(p, (Parameters**)P);
     }
   }
 
@@ -575,7 +587,7 @@ PetscErrorCode Poisson3::setup(DM pism_da) {
 
   // SNES
   {
-    ierr = SNESCreate(PETSC_COMM_WORLD, m_snes.rawptr()); CHKERRQ(ierr);
+    ierr = SNESCreate(m_grid.com, m_snes.rawptr()); CHKERRQ(ierr);
 
     // ierr = SNESSetOptionsPrefix(m_snes, "poisson3_"); CHKERRQ(ierr);
 
@@ -611,9 +623,11 @@ static double b(double x, double y) {
  * Domain thickness
  */
 static double H(double x, double y) {
-  (void) x;
-  (void) y;
-  return 1.0;
+  double w = 1.0;
+  if (fabs(x) <= w and fabs(y) <= w) {
+    return 1.0;
+  }
+  return 0.0;
 }
 
 /*!
@@ -707,6 +721,11 @@ void Poisson3::exact_solution(IceModelVec3Custom &result) {
       b = P[j][i].bed,
       H = P[j][i].thickness;
 
+    if ((int)P[j][i].node_type == NODE_EXTERIOR) {
+      result.set_column(i, j, u_exterior);
+      continue;
+    }
+
     auto c = result.get_column(i, j);
 
     for (int k = 0; k < m_Mz; ++k) {
@@ -733,9 +752,7 @@ void Poisson3::update(const Inputs &inputs, bool) {
   init_2d_parameters();
   init_3d_parameters();
 
-  int ierr = 0;
-
-  ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
+  int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 
   exact_solution(*m_exact);
 

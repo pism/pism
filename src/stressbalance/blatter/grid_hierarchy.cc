@@ -211,6 +211,8 @@ PetscErrorCode restrict_data(DM fine, DM coarse,
 
   ierr = MatRestrict(mat, X_fine, X_coarse); CHKERRQ(ierr);
 
+  // FIXME: we need to scale X_coarse here
+
   return 0;
 }
 
