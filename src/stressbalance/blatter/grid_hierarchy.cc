@@ -114,13 +114,13 @@ PetscErrorCode setup_level(DM dm, const GridInfo &grid_info) {
   // report
   {
     double
-      Lx = grid_info.Lx,
-      Ly = grid_info.Ly;
+      Wx = 2.0 * grid_info.Lx,
+      Wy = 2.0 * grid_info.Ly;
     ierr = PetscPrintf(comm,
                        "Level %D domain size (m) %8.2g x %8.2g,"
                        " num elements %3d x %3d x %3d (%8d), size (m) %g x %g\n",
-                       level, Lx, Ly,
-                       Mx, My, Mz, Mx*My*Mz, Lx / (Mx - 1), Ly / (My - 1)); CHKERRQ(ierr);
+                       level, Wx, Wy,
+                       Mx, My, Mz, Mx*My*Mz, Wx / (Mx - 1), Wy / (My - 1)); CHKERRQ(ierr);
   }
   return 0;
 }
