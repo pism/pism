@@ -108,13 +108,6 @@ static bool dirichlet_node(const DMDALocalInfo *info, const fem::Element3::Globa
   return I.k == 0 or (I.k == info->mz - 1);
 }
 
-/*!
- * Returns true if a node is in the Neumann part of the boundary, false otherwise.
- */
-static bool neumann_node(const DMDALocalInfo *info, const fem::Element3::GlobalIndex& I) {
-  return (I.i == 0) or (I.j == 0) or (I.i == info->mx - 1) or (I.j == info->my - 1);
-}
-
 /*! Dirichlet BC and the exact solution
 
  b : -1 + x + y;
@@ -207,7 +200,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
   double
     x_nodal[Nk_max], y_nodal[Nk_max],
-    R_nodal[Nk_max], u_nodal[Nk_max], b_nodal[Nk_max], F_nodal[Nk_max];
+    R_nodal[Nk_max], u_nodal[Nk_max], F_nodal[Nk_max], node_type[Nk_max];
   std::vector<double> z_nodal(Nk);
 
   // values at quadrature points
@@ -236,13 +229,13 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
         for (int n = 0; n < Nk; ++n) {
           auto I = E.local_to_global(i, j, k, n);
 
-          double H = P[I.j][I.i].thickness;
+          auto p = P[I.j][I.i];
 
-          b_nodal[n] = P[I.j][I.i].bed;
+          node_type[n] = p.node_type;
 
           x_nodal[n] = xy(Lx, dx, I.i);
           y_nodal[n] = xy(Ly, dy, I.j);
-          z_nodal[n] = z(b_nodal[n], H, info->mz, I.k);
+          z_nodal[n] = z(p.bed, p.thickness, info->mz, I.k);
         }
 
         // compute values of chi, chi_x, chi_y, chi_z and quadrature weights at quadrature
@@ -299,8 +292,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           // node here: add_contribution() will do the right thing later.
           bool neumann = true;
           for (int n = 0; n < 4; ++n) {
-            auto I = E.local_to_global(nodes[n]);
-            if (not neumann_node(info, I)) {
+            int m = nodes[n];
+            if (not (node_type[m] == NODE_BOUNDARY)) {
               neumann = false;
               break;
             }
@@ -386,6 +379,84 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz)
 }
 
 /*!
+ * Compute node type using domain thickness and the thickness threshold `min_thickness`.
+ *
+ * A node is *interior* if all four elements it belongs to contain ice.
+ *
+ * A node is *exterior* if it belongs to zero icy elements.
+ *
+ * A node that is neither interior nor exterior is a *boundary* node.
+ */
+void compute_node_type(DM da, double min_thickness) {
+  // Note that P provides access to a ghosted copy of 2D parameters, so changes to P have
+  // no lasting effect.
+  DataInput<Parameters**> P(da, 2, GHOSTED);
+
+  DMDALocalInfo info;
+  int ierr = DMDAGetLocalInfo(da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
+
+  // loop over all the owned nodes and reset node type
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+      P[j][i].node_type = 0;
+    }
+  }
+
+  // Note that dx, dy, and quadrature don't matter here.
+  fem::Q1Element2 E(info, 1.0, 1.0, fem::Q1Quadrature1());
+
+  Parameters p[fem::q1::n_chi];
+
+  // Loop over all the elements with at least one owned node and compute the number of icy
+  // elements each node belongs to.
+  for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
+    for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
+      E.reset(i, j);
+
+      E.nodal_values((Parameters**)P, p);
+
+      // An element is "interior" (contains ice) if all of its nodes have thickness above
+      // the threshold
+      bool interior = true;
+      for (int k = 0; k < fem::q1::n_chi; ++k) {
+        if (p[k].thickness < min_thickness) {
+          interior = false;
+          break;
+        }
+      }
+
+      // Note: we need to reset bed and thickness to avoid changing these fields in
+      // add_contribution() below.
+      for (int k = 0; k < fem::q1::n_chi; ++k) {
+        p[k] = {0.0, 0.0, (double)interior};
+      }
+
+      E.add_contribution(p, (Parameters**)P);
+    }
+  }
+
+  DataInput<Parameters**> result(da, 2, NOT_GHOSTED);
+
+  // Loop over all the owned nodes and turn the number of "icy" elements this node belongs
+  // to into node type.
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+
+      switch ((int)P[j][i].node_type) {
+      case 4:
+        result[j][i].node_type = NODE_INTERIOR;
+        break;
+      case 0:
+        result[j][i].node_type = NODE_EXTERIOR;
+        break;
+      default:
+        result[j][i].node_type = NODE_BOUNDARY;
+      }
+    }
+  }
+}
+
+/*!
  * Restrict 2D and 3D model parameters from a fine grid to a coarse grid.
  *
  * Re-compute node types from geometry.
@@ -408,68 +479,7 @@ static PetscErrorCode p3_restriction_hook(DM fine,
   ierr = restrict_data(fine, coarse, "2D_DM", "2D_Restriction", "2D_Vec"); CHKERRQ(ierr);
   ierr = restrict_data(fine, coarse, "3D_DM", "3D_Restriction", "3D_Vec"); CHKERRQ(ierr);
 
-  DataInput<Parameters**> P(coarse, 2, GHOSTED);
-
-  DMDALocalInfo info;
-  ierr = DMDAGetLocalInfo(coarse, &info); CHKERRQ(ierr);
-
-  // loop over all the owned nodes and reset node type
-  for (int j = info.ys; j < info.ys + info.ym; j++) {
-    for (int i = info.xs; i < info.xs + info.xm; i++) {
-      P[j][i].node_type = 0;
-    }
-  }
-
-  // note that dx, dy, and quadrature don't matter here
-  fem::Q1Element2 E(info, 1.0, 1.0, fem::Q1Quadrature1());
-
-  Parameters p[fem::q1::n_chi];
-
-  // Loop over all the elements with at least one owned node and compute the number of icy
-  // elements each node belongs to.
-  for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
-    for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
-      E.reset(i, j);
-
-      E.nodal_values((Parameters**)P, p);
-
-      // An element is "interior" (contains ice) if all of its nodes have thickness above
-      // the threshold
-      bool interior = true;
-      for (int k = 0; k < fem::q1::n_chi; ++k) {
-        if (p[k].thickness < grid_info->min_thickness) {
-          interior = false;
-          break;
-        }
-      }
-
-      // Note: we need to reset bed and thickness to avoid changing these fields in
-      // add_contribution() below.
-      for (int k = 0; k < fem::q1::n_chi; ++k) {
-        p[k] = {0.0, 0.0, (double)interior};
-      }
-
-      E.add_contribution(p, (Parameters**)P);
-    }
-  }
-
-  // Loop over all the owned nodes and turn the number of "icy" elements this node belongs
-  // to into node type.
-  for (int j = info.ys; j < info.ys + info.ym; j++) {
-    for (int i = info.xs; i < info.xs + info.xm; i++) {
-
-      switch ((int)P[j][i].node_type) {
-      case 4:
-        P[j][i].node_type = NODE_INTERIOR;
-        break;
-      case 0:
-        P[j][i].node_type = NODE_EXTERIOR;
-        break;
-      default:
-        P[j][i].node_type = NODE_BOUNDARY;
-      }
-    }
-  }
+  compute_node_type(coarse, grid_info->min_thickness);
 
   return 0;
 }
@@ -633,6 +643,8 @@ void Poisson3::init_2d_parameters() {
       P[j][i].thickness = H(x, y);
     }
   }
+
+  compute_node_type(m_da, m_grid_info.min_thickness);
 }
 
 /*!
