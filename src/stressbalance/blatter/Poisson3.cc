@@ -466,7 +466,38 @@ void compute_node_type(DM da, double min_thickness) {
       }
     }
   }
+
+  {
+    PetscPrintf(PETSC_COMM_SELF, "node type\n");
+    DataInput<Parameters**> P(da, 2, NOT_GHOSTED);
+    DMDALocalInfo info;
+    DMDAGetLocalInfo(da, &info);
+
+    for (int j = info.ys; j < info.ys + info.ym; j++) {
+      for (int i = info.xs; i < info.xs + info.xm; i++) {
+        PetscPrintf(PETSC_COMM_SELF, "%02d ", (int)result[j][i].node_type);
+      }
+      PetscPrintf(PETSC_COMM_SELF, "\n");
+    }
+    PetscPrintf(PETSC_COMM_SELF, "\n");
+  }
 }
+
+void print_thickness(DM da, const char *title) {
+  PetscPrintf(PETSC_COMM_SELF, "%s\n", title);
+  DataInput<Parameters**> P(da, 2, NOT_GHOSTED);
+  DMDALocalInfo info;
+  DMDAGetLocalInfo(da, &info);
+
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+      PetscPrintf(PETSC_COMM_SELF, "%02d ", (int)P[j][i].thickness);
+    }
+    PetscPrintf(PETSC_COMM_SELF, "\n");
+  }
+  PetscPrintf(PETSC_COMM_SELF, "\n");
+}
+
 
 /*!
  * Restrict 2D and 3D model parameters from a fine grid to a coarse grid.
@@ -490,6 +521,9 @@ static PetscErrorCode p3_restriction_hook(DM fine,
   PetscErrorCode ierr;
   ierr = restrict_data(fine, coarse, "2D_DM", "2D_Restriction", "2D_Vec"); CHKERRQ(ierr);
   ierr = restrict_data(fine, coarse, "3D_DM", "3D_Restriction", "3D_Vec"); CHKERRQ(ierr);
+
+  print_thickness(fine, "fine");
+  print_thickness(coarse, "coarse");
 
   compute_node_type(coarse, grid_info->min_thickness);
 
@@ -517,38 +551,6 @@ PetscErrorCode p3_coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
 
   // 3D
   ierr = create_restriction(dm_fine, dm_coarse, "3D_DM", "3D_Restriction"); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode p3_monitor(SNES snes, PetscInt its, PetscReal norm, void *mctx) {
-  Vec F;
-  DM da;
-  double ***a;
-
-  SNESGetDM(snes, &da);
-  SNESGetFunction(snes, &F, NULL, NULL);
-
-  DMDALocalInfo info;
-  DMDAGetLocalInfo(da, &info);
-
-  DMDAVecGetArray(da, F, &a);
-  {
-    PetscPrintf(PETSC_COMM_SELF, "residual (i = %d)\n", its);
-
-    for (int k = info.zs; k < info.zs + info.zm; k++) {
-      PetscPrintf(PETSC_COMM_SELF, "k = %d\n", k);
-      for (int j = info.ys; j < info.ys + info.ym; j++) {
-        for (int i = info.xs; i < info.xs + info.xm; i++) {
-          PetscPrintf(PETSC_COMM_SELF, "%g ", a[k][j][i]);
-        }
-        PetscPrintf(PETSC_COMM_SELF, "\n");
-      }
-      PetscPrintf(PETSC_COMM_SELF, "\n");
-    }
-    PetscPrintf(PETSC_COMM_SELF, "\n");
-  }
-  DMDAVecRestoreArray(da, F, &a);
 
   return 0;
 }
@@ -633,8 +635,6 @@ PetscErrorCode Poisson3::setup(DM pism_da) {
                                     &m_callback_data); CHKERRQ(ierr);
 
     ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
-
-    ierr = SNESMonitorSet(m_snes, p3_monitor, NULL, NULL); CHKERRQ(ierr);
   }
 
   // set the initial guess
