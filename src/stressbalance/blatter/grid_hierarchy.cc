@@ -67,7 +67,7 @@ PetscErrorCode setup_level(DM dm, const GridInfo &grid_info) {
     ierr = DMCreateGlobalVector(da, &parameters); CHKERRQ(ierr);
 
     ierr = PetscObjectCompose((PetscObject)dm, "2D_DM", (PetscObject)da); CHKERRQ(ierr);
-    ierr = PetscObjectCompose((PetscObject)dm, "2D_Vec", (PetscObject)parameters); CHKERRQ(ierr);
+    ierr = PetscObjectCompose((PetscObject)dm, "2D_DM_data", (PetscObject)parameters); CHKERRQ(ierr);
 
     ierr = DMDestroy(&da); CHKERRQ(ierr);
 
@@ -95,7 +95,7 @@ PetscErrorCode setup_level(DM dm, const GridInfo &grid_info) {
     ierr = DMCreateGlobalVector(da, &parameters); CHKERRQ(ierr);
 
     ierr = PetscObjectCompose((PetscObject)dm, "3D_DM", (PetscObject)da); CHKERRQ(ierr);
-    ierr = PetscObjectCompose((PetscObject)dm, "3D_Vec", (PetscObject)parameters); CHKERRQ(ierr);
+    ierr = PetscObjectCompose((PetscObject)dm, "3D_DM_data", (PetscObject)parameters); CHKERRQ(ierr);
 
     ierr = DMDestroy(&da); CHKERRQ(ierr);
 
@@ -134,11 +134,16 @@ PetscErrorCode setup_level(DM dm, const GridInfo &grid_info) {
  * @param[in] dm_name name of the DM for 2D or 3D parameters
  * @param[in] mat_name name to use when attaching the restriction matrix to `fine`
  */
-PetscErrorCode create_restriction(DM fine, DM coarse,
-                                  const char *dm_name, const char *mat_name) {
+PetscErrorCode create_restriction(DM fine, DM coarse, const char *dm_name) {
   PetscErrorCode ierr;
   DM da_fine, da_coarse;
   Mat mat;
+  Vec scale;
+
+  std::string
+    prefix = dm_name,
+    mat_name = prefix + "_restriction",
+    vec_name = prefix + "_scaling";
 
   /* Get the DM for parameters from the fine grid DM */
   ierr = PetscObjectQuery((PetscObject)fine, dm_name, (PetscObject *)&da_fine); CHKERRQ(ierr);
@@ -153,12 +158,14 @@ PetscErrorCode create_restriction(DM fine, DM coarse,
   }
 
   /* call DMCreateInterpolation */
-  ierr = DMCreateInterpolation(da_coarse, da_fine, &mat, PETSC_NULL); CHKERRQ(ierr);
+  ierr = DMCreateInterpolation(da_coarse, da_fine, &mat, &scale); CHKERRQ(ierr);
 
   /* attach to the fine grid DM */
-  ierr = PetscObjectCompose((PetscObject)fine, mat_name, (PetscObject)mat); CHKERRQ(ierr);
-  ierr = MatDestroy(&mat);
-  CHKERRQ(ierr);
+  ierr = PetscObjectCompose((PetscObject)fine, vec_name.c_str(), (PetscObject)scale); CHKERRQ(ierr);
+  ierr = VecDestroy(&scale); CHKERRQ(ierr);
+
+  ierr = PetscObjectCompose((PetscObject)fine, mat_name.c_str(), (PetscObject)mat); CHKERRQ(ierr);
+  ierr = MatDestroy(&mat); CHKERRQ(ierr);
 
   return 0;
 }
@@ -168,21 +175,28 @@ PetscErrorCode create_restriction(DM fine, DM coarse,
  *
  * This function uses the restriction matrix created by coarsening_hook().
  */
-PetscErrorCode restrict_data(DM fine, DM coarse,
-                             const char *dm_name,
-                             const char *mat_name,
-                             const char *vec_name) {
+PetscErrorCode restrict_data(DM fine, DM coarse, const char *dm_name) {
   PetscErrorCode ierr;
-  Vec X_fine, X_coarse;
+  Vec X_fine, X_coarse, scaling;
   DM da_fine, da_coarse;
   Mat mat;
 
-  PetscFunctionBegin;
+  std::string
+    prefix = dm_name,
+    mat_name = prefix + "_restriction",
+    scaling_name = prefix + "_scaling",
+    vec_name = prefix + "_data";
 
   /* get the restriction matrix from the fine grid DM */
-  ierr = PetscObjectQuery((PetscObject)fine, mat_name, (PetscObject *)&mat); CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)fine, mat_name.c_str(), (PetscObject *)&mat); CHKERRQ(ierr);
   if (!mat) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the restriction matrix");
+  }
+
+  /* get the scaling vector from the fine grid DM */
+  ierr = PetscObjectQuery((PetscObject)fine, scaling_name.c_str(), (PetscObject *)&scaling); CHKERRQ(ierr);
+  if (!scaling) {
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the scaling vector");
   }
 
   /* get the DMDA from the fine grid DM */
@@ -192,7 +206,7 @@ PetscErrorCode restrict_data(DM fine, DM coarse,
   }
 
   /* get the storage vector from the fine grid DM */
-  ierr = PetscObjectQuery((PetscObject)fine, vec_name, (PetscObject *)&X_fine); CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)fine, vec_name.c_str(), (PetscObject *)&X_fine); CHKERRQ(ierr);
   if (!X_fine) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the fine grid Vec");
   }
@@ -204,14 +218,14 @@ PetscErrorCode restrict_data(DM fine, DM coarse,
   }
 
   /* get the storage vector from the coarse grid DM */
-  ierr = PetscObjectQuery((PetscObject)coarse, vec_name, (PetscObject *)&X_coarse); CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)coarse, vec_name.c_str(), (PetscObject *)&X_coarse); CHKERRQ(ierr);
   if (!X_coarse) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the coarse grid Vec");
   }
 
   ierr = MatRestrict(mat, X_fine, X_coarse); CHKERRQ(ierr);
 
-  // FIXME: we need to scale X_coarse here
+  ierr = VecPointwiseMult(X_coarse, X_coarse, scaling); CHKERRQ(ierr);
 
   return 0;
 }
@@ -231,8 +245,8 @@ PetscErrorCode restriction_hook(DM fine,
   (void) ctx;
 
   PetscErrorCode ierr;
-  ierr = restrict_data(fine, coarse, "2D_DM", "2D_Restriction", "2D_Vec"); CHKERRQ(ierr);
-  ierr = restrict_data(fine, coarse, "3D_DM", "3D_Restriction", "3D_Vec"); CHKERRQ(ierr);
+  ierr = restrict_data(fine, coarse, "2D_DM"); CHKERRQ(ierr);
+  ierr = restrict_data(fine, coarse, "3D_DM"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -266,10 +280,10 @@ PetscErrorCode coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
   ierr = DMCoarsenHookAdd(dm_coarse, coarsening_hook, restriction_hook, ctx); CHKERRQ(ierr);
 
   // 2D
-  ierr = create_restriction(dm_fine, dm_coarse, "2D_DM", "2D_Restriction"); CHKERRQ(ierr);
+  ierr = create_restriction(dm_fine, dm_coarse, "2D_DM"); CHKERRQ(ierr);
 
   // 3D
-  ierr = create_restriction(dm_fine, dm_coarse, "3D_DM", "3D_Restriction"); CHKERRQ(ierr);
+  ierr = create_restriction(dm_fine, dm_coarse, "3D_DM"); CHKERRQ(ierr);
 
   return 0;
 }

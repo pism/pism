@@ -47,9 +47,9 @@ public:
     assert(dim == 2 or dim == 3);
 
     if (dim == 2) {
-      ierr = setup(da, "2D_DM", "2D_Vec");
+      ierr = setup(da, "2D_DM", "2D_DM_data");
     } else {
-      ierr = setup(da, "3D_DM", "3D_Vec");
+      ierr = setup(da, "3D_DM", "3D_DM_data");
     }
 
     if (ierr != 0) {

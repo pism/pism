@@ -39,13 +39,9 @@ struct GridInfo {
 
 PetscErrorCode setup_level(DM dm, const GridInfo &grid_info);
 
-PetscErrorCode create_restriction(DM fine, DM coarse,
-                                  const char *dm_name, const char *mat_name);
+PetscErrorCode create_restriction(DM fine, DM coarse, const char *dm_name);
 
-PetscErrorCode restrict_data(DM fine, DM coarse,
-                             const char *dm_name,
-                             const char *mat_name,
-                             const char *vec_name);
+PetscErrorCode restrict_data(DM fine, DM coarse, const char *dm_name);
 
 PetscErrorCode restriction_hook(DM fine,
                                 Mat mrestrict, Vec rscale, Mat inject,

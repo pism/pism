@@ -466,36 +466,6 @@ void compute_node_type(DM da, double min_thickness) {
       }
     }
   }
-
-  {
-    PetscPrintf(PETSC_COMM_SELF, "node type\n");
-    DataInput<Parameters**> P(da, 2, NOT_GHOSTED);
-    DMDALocalInfo info;
-    DMDAGetLocalInfo(da, &info);
-
-    for (int j = info.ys; j < info.ys + info.ym; j++) {
-      for (int i = info.xs; i < info.xs + info.xm; i++) {
-        PetscPrintf(PETSC_COMM_SELF, "%02d ", (int)result[j][i].node_type);
-      }
-      PetscPrintf(PETSC_COMM_SELF, "\n");
-    }
-    PetscPrintf(PETSC_COMM_SELF, "\n");
-  }
-}
-
-void print_thickness(DM da, const char *title) {
-  PetscPrintf(PETSC_COMM_SELF, "%s\n", title);
-  DataInput<Parameters**> P(da, 2, NOT_GHOSTED);
-  DMDALocalInfo info;
-  DMDAGetLocalInfo(da, &info);
-
-  for (int j = info.ys; j < info.ys + info.ym; j++) {
-    for (int i = info.xs; i < info.xs + info.xm; i++) {
-      PetscPrintf(PETSC_COMM_SELF, "%02d ", (int)P[j][i].thickness);
-    }
-    PetscPrintf(PETSC_COMM_SELF, "\n");
-  }
-  PetscPrintf(PETSC_COMM_SELF, "\n");
 }
 
 
@@ -519,11 +489,8 @@ static PetscErrorCode p3_restriction_hook(DM fine,
   GridInfo *grid_info = (GridInfo*)ctx;
 
   PetscErrorCode ierr;
-  ierr = restrict_data(fine, coarse, "2D_DM", "2D_Restriction", "2D_Vec"); CHKERRQ(ierr);
-  ierr = restrict_data(fine, coarse, "3D_DM", "3D_Restriction", "3D_Vec"); CHKERRQ(ierr);
-
-  print_thickness(fine, "fine");
-  print_thickness(coarse, "coarse");
+  ierr = restrict_data(fine, coarse, "2D_DM"); CHKERRQ(ierr);
+  ierr = restrict_data(fine, coarse, "3D_DM"); CHKERRQ(ierr);
 
   compute_node_type(coarse, grid_info->min_thickness);
 
@@ -547,10 +514,10 @@ PetscErrorCode p3_coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
   ierr = DMCoarsenHookAdd(dm_coarse, p3_coarsening_hook, p3_restriction_hook, ctx); CHKERRQ(ierr);
 
   // 2D
-  ierr = create_restriction(dm_fine, dm_coarse, "2D_DM", "2D_Restriction"); CHKERRQ(ierr);
+  ierr = create_restriction(dm_fine, dm_coarse, "2D_DM"); CHKERRQ(ierr);
 
   // 3D
-  ierr = create_restriction(dm_fine, dm_coarse, "3D_DM", "3D_Restriction"); CHKERRQ(ierr);
+  ierr = create_restriction(dm_fine, dm_coarse, "3D_DM"); CHKERRQ(ierr);
 
   return 0;
 }
