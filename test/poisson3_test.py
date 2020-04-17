@@ -7,14 +7,19 @@
 import PISM
 import PISM.testing as pt
 import numpy as np
+import pylab as plt
 
 config = PISM.Context().config
 
-def run(M):
+N = 6
 
-    grid = pt.shallow_grid(Mx=M, My=M, Lx=1, Ly=1)
+L = 1.0
 
-    pp = PISM.Poisson3(grid, M)
+def run(Mx, Mz, L):
+
+    grid = pt.shallow_grid(Mx=Mx, My=Mx, Lx=L, Ly=L)
+
+    pp = PISM.Poisson3(grid, Mz)
 
     inp = PISM.StressBalanceInputs()
 
@@ -22,43 +27,78 @@ def run(M):
 
     return pp
 
-def write(model):
+def write(model, filename):
 
-    output = PISM.util.prepare_output(config.get_string("output.file_name"))
+    output = PISM.util.prepare_output(filename)
 
     model.exact().write(output)
     model.solution().write(output)
 
     output.close()
 
-def verify():
-
-    N = 5
+def verify_1():
+    "Verification test checking the code excluding ice-free elements"
 
     dxs = []
     errors = []
     for k in range(1, N):
         M = 2 * 2**k + 1
 
-        P = run(M)
+        Mx = M + 2
+        Mz = M
+        dx = 2.0 * L / (M - 1)
 
-        dxs += [2.0 / M]
+        P = run(Mx, Mz, L + dx)
+
+        dxs += [dx]
         errors += [P.error()]
 
     f = np.polyfit(np.log(dxs), np.log(errors), 1)
     F = np.exp(np.polyval(f, np.log(dxs)))
 
-    write(P)
+    write(P, "output-ice-free.nc")
 
     if PISM.Context().rank == 0:
 
-        import pylab as plt
+        plt.figure()
+        plt.title("ice-free")
         plt.loglog(dxs, errors, ".-", label="errors")
         plt.loglog(dxs, F, "--", label=f"polyfit: dx^{f[0]:2.3f}")
         plt.legend()
         plt.xlabel("dx")
         plt.ylabel("error")
-        plt.show()
+
+def verify_2():
+    "Verification test with the whole domain filled with ice"
+
+    dxs = []
+    errors = []
+    for k in range(1, N):
+        M = 2 * 2**k + 1
+
+        dx = 2.0 * L / (M - 1)
+
+        P = run(M, M, L)
+
+        dxs += [dx]
+        errors += [P.error()]
+
+    f = np.polyfit(np.log(dxs), np.log(errors), 1)
+    F = np.exp(np.polyval(f, np.log(dxs)))
+
+    write(P, "output-icy.nc")
+
+    if PISM.Context().rank == 0:
+
+        plt.figure()
+        plt.title("icy")
+        plt.loglog(dxs, errors, ".-", label="errors")
+        plt.loglog(dxs, F, "--", label=f"polyfit: dx^{f[0]:2.3f}")
+        plt.legend()
+        plt.xlabel("dx")
+        plt.ylabel("error")
 
 if __name__ == "__main__":
-    verify()
+    verify_1()
+    verify_2()
+    plt.show()
