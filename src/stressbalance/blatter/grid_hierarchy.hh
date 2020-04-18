@@ -27,10 +27,8 @@
 namespace pism {
 
 struct GridInfo {
-  // half-width of the domain in the X direction
-  double Lx;
-  // half-width of the domain in the Y direction
-  double Ly;
+  double x_min, x_max;
+  double y_min, y_max;
   // minimum thickness (used to compute node types)
   double min_thickness;
   // number of degrees of freedom in the 2D input Vec

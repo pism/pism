@@ -114,8 +114,8 @@ PetscErrorCode setup_level(DM dm, const GridInfo &grid_info) {
   // report
   {
     double
-      Wx = 2.0 * grid_info.Lx,
-      Wy = 2.0 * grid_info.Ly;
+      Wx = grid_info.x_max - grid_info.x_min,
+      Wy = grid_info.y_max - grid_info.y_min;
     ierr = PetscPrintf(comm,
                        "Level %D domain size (m) %8.2g x %8.2g,"
                        " num elements %3d x %3d x %3d (%8d), size (m) %g x %g\n",

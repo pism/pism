@@ -32,7 +32,7 @@ namespace stressbalance {
 
 class Poisson3 : public ShallowStressBalance {
 public:
-  Poisson3(IceGrid::ConstPtr grid, int Mz);
+  Poisson3(IceGrid::ConstPtr grid, int Mz, int n_levels);
   virtual ~Poisson3();
 
   void update(const Inputs &inputs, bool);
@@ -43,8 +43,6 @@ public:
   double error() const;
 
 protected:
-  int m_Mz;
-
   void exact_solution(IceModelVec3Custom &result);
 
   IceModelVec3Custom::Ptr m_solution;
@@ -70,7 +68,7 @@ protected:
   void init_3d_parameters();
 
   // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
-  PetscErrorCode setup(DM pism_da);
+  PetscErrorCode setup(DM pism_da, int Mz, int n_levels);
 };
 
 } // end of namespace stressbalance

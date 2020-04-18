@@ -61,7 +61,7 @@ int pad(int N, int n_levels) {
     C *= 2;
     k = (k % 2 ? k + 1: k) / 2;
   }
-  return N - (C * k + 1);
+  return (C * k + 1) - N;
 }
 
 /*!
@@ -74,12 +74,12 @@ static double dot(const Vector3 &a, const Vector3 &b) {
 /*!
  * x and y coordinates of the nodes
  *
- * @param[in] L domain half-width
+ * @param[in] min minimum coordinate value
  * @param[in] delta grid spacing
  * @param[in] k node index
  */
-static double xy(double L, double delta, int k) {
-  return -L + k * delta;
+static double xy(double min, double delta, int k) {
+  return min + k * delta;
 }
 
 /*!
@@ -149,10 +149,12 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
   // Compute grid spacing from domain dimensions and the grid size
   double
-    Lx = m_grid->Lx(),
-    Ly = m_grid->Ly(),
-    dx = 2.0 * Lx / (info->mx - 1),
-    dy = 2.0 * Ly / (info->my - 1);
+    x_min = m_grid_info.x_min,
+    x_max = m_grid_info.x_max,
+    y_min = m_grid_info.y_min,
+    y_max = m_grid_info.y_max,
+    dx = (x_max - x_min) / (info->mx - 1),
+    dy = (y_max - y_min) / (info->my - 1);
 
   fem::Q1Element3 E(*info, dx, dy, fem::Q13DQuadrature8());
   fem::Q1Element3Face E_face(dx, dy, fem::Q1Quadrature4());
@@ -180,8 +182,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
         // Dirichlet nodes
         if (dirichlet_node(info, {i, j, k})) {
           double
-            xx = xy(Lx, dx, i),
-            yy = xy(Ly, dy, j),
+            xx = xy(x_min, dx, i),
+            yy = xy(y_min, dy, j),
             b  = P[j][i].bed,
             H  = P[j][i].thickness,
             zz = z(b, H, info->mz, k);
@@ -235,8 +237,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
           node_type[n] = p.node_type;
 
-          x_nodal[n] = xy(Lx, dx, I.i);
-          y_nodal[n] = xy(Ly, dy, I.j);
+          x_nodal[n] = xy(x_min, dx, I.i);
+          y_nodal[n] = xy(y_min, dy, I.j);
           z_nodal[n] = z(p.bed, p.thickness, info->mz, I.k);
         }
 
@@ -359,21 +361,22 @@ PetscErrorCode Poisson3::function_callback(DMDALocalInfo *info,
   return 0;
 }
 
-Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz)
-  : ShallowStressBalance(grid), m_Mz(Mz) {
+Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz, int n_levels)
+  : ShallowStressBalance(grid) {
 
   auto pism_da = grid->get_dm(1, 0);
 
-  int ierr = setup(*pism_da);
+  int ierr = setup(*pism_da, Mz, n_levels);
   if (ierr != 0) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "Failed to allocate a Poisson3 instance");
   }
 
   {
-    std::vector<double> sigma(m_Mz);
-    double dz = 1.0 / (m_Mz - 1);
-    for (int i = 0; i < m_Mz; ++i) {
+    int mz = Mz + pad(Mz, n_levels);
+    std::vector<double> sigma(mz);
+    double dz = 1.0 / (mz - 1);
+    for (int i = 0; i < mz; ++i) {
       sigma[i] = i * dz;
     }
     sigma.back() = 1.0;
@@ -499,17 +502,8 @@ static PetscErrorCode p3_restriction_hook(DM fine,
 
 PetscErrorCode p3_coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
   PetscErrorCode ierr;
-  GridInfo *grid_info = (GridInfo*)ctx;
-  PetscInt rlevel, clevel;
 
-  ierr = setup_level(dm_coarse, *grid_info); CHKERRQ(ierr);
-
-  ierr = DMGetRefineLevel(dm_coarse, &rlevel); CHKERRQ(ierr);
-  ierr = DMGetCoarsenLevel(dm_coarse, &clevel); CHKERRQ(ierr);
-  if (rlevel - clevel == 0) {
-    ierr = DMSetMatType(dm_coarse, MATAIJ); CHKERRQ(ierr);
-    PetscPrintf(PETSC_COMM_SELF, "setting matrix type on the coarse level");
-  }
+  ierr = setup_level(dm_coarse, *(GridInfo*)ctx); CHKERRQ(ierr);
 
   ierr = DMCoarsenHookAdd(dm_coarse, p3_coarsening_hook, p3_restriction_hook, ctx); CHKERRQ(ierr);
 
@@ -522,7 +516,7 @@ PetscErrorCode p3_coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
   return 0;
 }
 
-PetscErrorCode Poisson3::setup(DM pism_da) {
+PetscErrorCode Poisson3::setup(DM pism_da, int Mz, int n_levels) {
   PetscErrorCode ierr;
   // DM
   {
@@ -551,14 +545,55 @@ PetscErrorCode Poisson3::setup(DM pism_da) {
     const PetscInt *lx, *ly;
     ierr = DMDAGetOwnershipRanges(pism_da, &lx, &ly, NULL); CHKERRQ(ierr);
 
+    // make copies of lx and ly so that we can pad the domain
+    std::vector<PetscInt>  new_lx(Nx), new_ly(Ny);
+    {
+      for (int k = 0; k < Nx; ++k) {
+        new_lx[k] = lx[k];
+      }
+      for (int k = 0; k < Ny; ++k) {
+        new_ly[k] = ly[k];
+      }
+    }
+
+    double
+      x_max = m_grid->Lx(),
+      x_min = -x_max,
+      y_max = m_grid->Ly(),
+      y_min = -y_max;
+
+    // pad the domain and the grid to allow for n_levels multigrid levels
+    {
+      // x direction
+      {
+        int pad_x = pad(Mx, n_levels);
+
+        new_lx[Nx - 1] += pad_x;
+        Mx             += pad_x;
+        x_max          += pad_x * m_grid->dx();
+      }
+
+      // y direction
+      {
+        int pad_y = pad(My, n_levels);
+
+        new_ly[Ny - 1] += pad_y;
+        My             += pad_y;
+        y_max          += pad_y * m_grid->dy();
+      }
+
+      // z direction
+      Mz += pad(Mz, n_levels);
+    }
+
     ierr = DMDACreate3d(PETSC_COMM_WORLD,
                         DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE,
                         DMDA_STENCIL_BOX,
-                        Mx, My, m_Mz,
+                        Mx, My, Mz,
                         Nx, Ny, Nz,
                         dof,           // dof
                         stencil_width, // stencil width
-                        lx, ly, NULL,
+                        new_lx.data(), new_ly.data(), NULL,
                         m_da.rawptr()); CHKERRQ(ierr);
 
     ierr = DMSetFromOptions(m_da); CHKERRQ(ierr);
@@ -567,8 +602,8 @@ PetscErrorCode Poisson3::setup(DM pism_da) {
 
     double min_thickness = 0.1;
 
-    m_grid_info = {m_grid->Lx(),
-                   m_grid->Ly(),
+    m_grid_info = {x_min, x_max,
+                   y_min, y_max,
                    min_thickness,
                    sizeof(Parameters)/sizeof(double)};
 
@@ -642,17 +677,19 @@ void Poisson3::init_2d_parameters() {
 
   // Compute grid spacing from domain dimensions and the grid size
   double
-    Lx = m_grid->Lx(),
-    Ly = m_grid->Ly(),
-    dx = 2.0 * Lx / (info.mx - 1),
-    dy = 2.0 * Ly / (info.my - 1);
+    x_min = m_grid_info.x_min,
+    x_max = m_grid_info.x_max,
+    y_min = m_grid_info.y_min,
+    y_max = m_grid_info.y_max,
+    dx = (x_max - x_min) / (info.mx - 1),
+    dy = (y_max - y_min) / (info.my - 1);
 
   DataInput<Parameters**> P(m_da, 2, NOT_GHOSTED);
 
   for (int j = info.ys; j < info.ys + info.ym; j++) {
     for (int i = info.xs; i < info.xs + info.xm; i++) {
-      double x = xy(Lx, dx, i);
-      double y = xy(Ly, dy, j);
+      double x = xy(x_min, dx, i);
+      double y = xy(y_min, dy, j);
 
       P[j][i].bed = b(x, y);
       P[j][i].thickness = H(x, y);
@@ -673,10 +710,12 @@ void Poisson3::init_3d_parameters() {
 
   // Compute grid spacing from domain dimensions and the grid size
   double
-    Lx = m_grid->Lx(),
-    Ly = m_grid->Ly(),
-    dx = 2.0 * Lx / (info.mx - 1),
-    dy = 2.0 * Ly / (info.my - 1);
+    x_min = m_grid_info.x_min,
+    x_max = m_grid_info.x_max,
+    y_min = m_grid_info.y_min,
+    y_max = m_grid_info.y_max,
+    dx = (x_max - x_min) / (info.mx - 1),
+    dy = (y_max - y_min) / (info.my - 1);
 
   DataInput<Parameters**> P2(m_da, 2, NOT_GHOSTED);
   DataInput<double***> P3(m_da, 3, NOT_GHOSTED);
@@ -685,8 +724,8 @@ void Poisson3::init_3d_parameters() {
     for (int j = info.ys; j < info.ys + info.ym; j++) {
       for (int i = info.xs; i < info.xs + info.xm; i++) {
         double
-          xx = xy(Lx, dx, i),
-          yy = xy(Ly, dy, j),
+          xx = xy(x_min, dx, i),
+          yy = xy(y_min, dy, j),
           b  = P2[j][i].bed,
           H  = P2[j][i].thickness,
           zz = z(b, H, info.mz, k);
@@ -706,10 +745,12 @@ void Poisson3::exact_solution(IceModelVec3Custom &result) {
 
   // Compute grid spacing from domain dimensions and the grid size
   double
-    Lx = m_grid->Lx(),
-    Ly = m_grid->Ly(),
-    dx = 2.0 * Lx / (m_grid->Mx() - 1),
-    dy = 2.0 * Ly / (m_grid->My() - 1);
+    x_min = m_grid_info.x_min,
+    y_min = m_grid_info.y_min,
+    dx = m_grid->dx(),
+    dy = m_grid->dy();
+
+  int Mz = result.levels().size();
 
   DataInput<Parameters**> P(m_da, 2, NOT_GHOSTED);
 
@@ -717,8 +758,8 @@ void Poisson3::exact_solution(IceModelVec3Custom &result) {
     const int i = p.i(), j = p.j();
 
     double
-      xx = xy(Lx, dx, i),
-      yy = xy(Ly, dy, j),
+      xx = xy(x_min, dx, i),
+      yy = xy(y_min, dy, j),
       b = P[j][i].bed,
       H = P[j][i].thickness;
 
@@ -729,8 +770,8 @@ void Poisson3::exact_solution(IceModelVec3Custom &result) {
 
     auto c = result.get_column(i, j);
 
-    for (int k = 0; k < m_Mz; ++k) {
-      double zz = z(b, H, m_Mz, k);
+    for (int k = 0; k < Mz; ++k) {
+      double zz = z(b, H, Mz, k);
 
       c[k] = u_exact(xx, yy, zz);
     }
@@ -761,6 +802,8 @@ void Poisson3::update(const Inputs &inputs, bool) {
     double ***x = nullptr;
     ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
+    int Mz = m_solution->levels().size();
+
     IceModelVec::AccessList list{m_solution.get()};
 
     for (Points p(*m_grid); p; p.next()) {
@@ -768,7 +811,7 @@ void Poisson3::update(const Inputs &inputs, bool) {
 
       auto c = m_solution->get_column(i, j);
 
-      for (int k = 0; k < m_Mz; ++k) {
+      for (int k = 0; k < Mz; ++k) {
         c[k] = x[k][j][i];
       }
     }

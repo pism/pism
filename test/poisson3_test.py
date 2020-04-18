@@ -11,6 +11,8 @@ import pylab as plt
 
 config = PISM.Context().config
 
+n_levels = 2
+
 N = 6
 
 L = 1.0
@@ -19,7 +21,7 @@ def run(Mx, Mz, L):
 
     grid = pt.shallow_grid(Mx=Mx, My=Mx, Lx=L, Ly=L)
 
-    pp = PISM.Poisson3(grid, Mz)
+    pp = PISM.Poisson3(grid, Mz, n_levels)
 
     inp = PISM.StressBalanceInputs()
 
