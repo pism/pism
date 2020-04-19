@@ -175,7 +175,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
         // nodes that don't belong to any icy elements
         if ((int)P[j][i].node_type == NODE_EXTERIOR) {
           // FIXME: scaling goes here
-          R[k][j][i] = u_exterior - x[k][j][i];
+          R[k][j][i] = x[k][j][i] - u_exterior;
           continue;
         }
 
@@ -189,7 +189,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
             zz = z(b, H, info->mz, k);
 
           // FIXME: scaling goes here
-          R[k][j][i] = u_exact(xx, yy, zz) - x[k][j][i];
+          R[k][j][i] = x[k][j][i] - u_exact(xx, yy, zz);
         } else {
           R[k][j][i] = 0.0;
         }
