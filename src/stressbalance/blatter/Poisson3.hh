@@ -60,7 +60,12 @@ protected:
   CallbackData m_callback_data;
   GridInfo m_grid_info;
 
+  void compute_jacobian(DMDALocalInfo *info, const double ***x, Mat A, Mat J);
+
   void compute_residual(DMDALocalInfo *info, const double ***xg, double ***yg);
+  static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
+                                          const double ***x,
+                                          Mat A, Mat J, CallbackData *data);
   static PetscErrorCode function_callback(DMDALocalInfo *info, const double ***x, double ***f,
                                           CallbackData *data);
 

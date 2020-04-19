@@ -281,11 +281,6 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
         // evaluate u and its partial derivatives at quadrature points
         E.evaluate(u_nodal, u, u_x, u_y, u_z);
 
-        // coordinates of quadrature points
-        E.evaluate(x_nodal, xq);
-        E.evaluate(y_nodal, yq);
-        E.evaluate(z_nodal.data(), zq);
-
         // evaluate F at quadrature points
         E.evaluate(F_nodal, Fq);
 
@@ -347,11 +342,164 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   } // end of the loop over k
 }
 
+void Poisson3::compute_jacobian(DMDALocalInfo *info, const double ***x, Mat A, Mat J) {
+  (void) x;
+
+  // Zero out the Jacobian in preparation for updating it.
+  PetscErrorCode ierr = MatZeroEntries(J);
+  PISM_CHK(ierr, "MatZeroEntries");
+
+  // Stencil width of 1 is not very important, but if info->sw > 1 will lead to more
+  // redundant computation (we would be looping over elements that don't contribute to any
+  // owned nodes).
+  assert(info->sw == 1);
+
+  // Compute grid spacing from domain dimensions and the grid size
+  double
+    x_min = m_grid_info.x_min,
+    x_max = m_grid_info.x_max,
+    y_min = m_grid_info.y_min,
+    y_max = m_grid_info.y_max,
+    dx = (x_max - x_min) / (info->mx - 1),
+    dy = (y_max - y_min) / (info->my - 1);
+
+  fem::Q1Element3 E(*info, dx, dy, fem::Q13DQuadrature8());
+
+  DataInput<Parameters**> P(info->da, 2, GHOSTED);
+
+  const int Nk = fem::q13d::n_chi;
+  const int Nq = E.n_pts();
+
+  int node_type[Nk];
+  std::vector<double> z_nodal(Nk);
+
+  // loop over all the elements that have at least one owned node
+  for (int k = info->gzs; k < info->gzs + info->gzm - 1; k++) {
+    for (int j = info->gys; j < info->gys + info->gym - 1; j++) {
+      for (int i = info->gxs; i < info->gxs + info->gxm - 1; i++) {
+
+        // Element-local Jacobian matrix (there are Nk vector valued degrees of freedom
+        // per element, for a total of Nk*Nk = 64 entries in the local Jacobian.
+        double K[Nk][Nk];
+        ierr = PetscMemzero(K, sizeof(K));
+        PISM_CHK(ierr, "PetscMemzero");
+
+        // Compute coordinates of the nodes of this element and fetch node types.
+        for (int n = 0; n < Nk; ++n) {
+          auto I = E.local_to_global(i, j, k, n);
+
+          auto p = P[I.j][I.i];
+
+          node_type[n] = p.node_type;
+
+          z_nodal[n] = z(p.bed, p.thickness, info->mz, I.k);
+        }
+
+        // skip ice-free elements
+        {
+          // an element is exterior if one or more of its nodes are "exterior"
+          bool exterior = false;
+          for (int n = 0; n < Nk; ++n) {
+            if (node_type[n] == NODE_EXTERIOR) {
+              exterior = true;
+              break;
+            }
+          }
+
+          if (exterior) {
+            continue;
+          }
+        }
+
+        // compute values of chi, chi_x, chi_y, chi_z and quadrature weights at quadrature
+        // points on this physical element
+        E.reset(i, j, k, z_nodal);
+
+        // Don't contribute to Dirichlet nodes
+        for (int n = 0; n < Nk; ++n) {
+          auto I = E.local_to_global(n);
+          if (dirichlet_node(info, I)) {
+            E.mark_row_invalid(n);
+            E.mark_col_invalid(n);
+          }
+        }
+
+        // loop over all quadrature points
+        for (int q = 0; q < Nq; ++q) {
+          auto W = E.weight(q);
+
+          // loop over all test functions
+          for (int t = 0; t < Nk; ++t) {
+            auto psi = E.chi(q, t);
+
+            // loop over all trial functions
+            for (int s = 0; s < Nk; ++s) {
+              auto phi = E.chi(q, s);
+
+              // FIXME: scaling goes here
+              K[t][s] += W * (phi.dx * psi.dx + phi.dy * psi.dy + phi.dz * psi.dz);
+            }
+          }
+        } // end of the loop over q
+
+        E.add_contribution(&K[0][0], J);
+      } // end of the loop over i
+    } // end of the loop over j
+  } // end of the loop over k
+
+  // take care of Dirichlet nodes (both explicit and grid points outside the domain)
+  //
+  // here we loop over all the *owned* nodes
+  for (int k = info->zs; k < info->zs + info->zm; k++) {
+    for (int j = info->ys; j < info->ys + info->ym; j++) {
+      for (int i = info->xs; i < info->xs + info->xm; i++) {
+        if ((int)P[j][i].node_type == NODE_EXTERIOR or dirichlet_node(info, {i, j, k})) {
+          // FIXME: scaling goes here
+          double scaling = 1.0;
+          MatStencil row;
+          row.k = k;
+          row.j = j;
+          row.i = i;
+          ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &scaling, ADD_VALUES);
+          PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
+        }
+      }
+    }
+  }
+
+  ierr = MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyBegin");
+  ierr = MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyEnd");
+  if (A != J) {
+    ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyBegin");
+    ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyEnd");
+  }
+
+  ierr = MatSetOption(J, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
+  PISM_CHK(ierr, "MatSetOption");
+
+  ierr = MatSetOption(J, MAT_SYMMETRIC, PETSC_TRUE);
+  PISM_CHK(ierr, "MatSetOption");
+}
+
 PetscErrorCode Poisson3::function_callback(DMDALocalInfo *info,
                                            const double ***x, double ***f,
                                            CallbackData *data) {
   try {
     data->solver->compute_residual(info, x, f);
+  } catch (...) {
+    MPI_Comm com = MPI_COMM_SELF;
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)data->da, &com); CHKERRQ(ierr);
+    handle_fatal_errors(com);
+    SETERRQ(com, 1, "A PISM callback failed");
+  }
+  return 0;
+}
+
+PetscErrorCode Poisson3::jacobian_callback(DMDALocalInfo *info,
+                                           const double ***x,
+                                           Mat A, Mat J, CallbackData *data) {
+  try {
+    data->solver->compute_jacobian(info, x, A, J);
   } catch (...) {
     MPI_Comm com = MPI_COMM_SELF;
     PetscErrorCode ierr = PetscObjectGetComm((PetscObject)data->da, &com); CHKERRQ(ierr);
@@ -635,6 +783,11 @@ PetscErrorCode Poisson3::setup(DM pism_da, int Mz, int n_levels) {
     ierr = DMDASNESSetFunctionLocal(m_da, INSERT_VALUES,
                                     (DMDASNESFunction)function_callback,
                                     &m_callback_data); CHKERRQ(ierr);
+
+    ierr = DMDASNESSetJacobianLocal(m_da,
+                                    (DMDASNESJacobian)jacobian_callback,
+                                    &m_callback_data);
+    CHKERRQ(ierr);
 
     ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
   }
