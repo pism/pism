@@ -19,6 +19,7 @@
 
 #include <cassert>
 #include <cmath>                // std::pow, std::fabs
+#include <algorithm>            // std::max
 
 using std::pow;
 using std::fabs;
@@ -140,6 +141,10 @@ static double G(double x, double y, double z, const Vector3 &N) {
   return dot({u_x, u_y, u_z}, N);
 }
 
+static double dirichlet_scale(double dx, double dy, double dz) {
+  return dx * dy * dz * (1.0 / (dx * dx) + 1.0 / (dy * dy) + 1.0 / dz * dz);
+}
+
 void Poisson3::compute_residual(DMDALocalInfo *info,
                                 const double ***x, double ***R) {
   // Stencil width of 1 is not very important, but if info->sw > 1 will lead to more
@@ -174,8 +179,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
         // nodes that don't belong to any icy elements
         if ((int)P[j][i].node_type == NODE_EXTERIOR) {
-          // FIXME: scaling goes here
-          R[k][j][i] = x[k][j][i] - u_exterior;
+          double dz = std::max(P[j][i].thickness, m_grid_info.min_thickness) / (info->mz - 1);
+          R[k][j][i] = dirichlet_scale(dx, dy, dz) * (x[k][j][i] - u_exterior);
           continue;
         }
 
@@ -186,10 +191,10 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
             yy = xy(y_min, dy, j),
             b  = P[j][i].bed,
             H  = P[j][i].thickness,
-            zz = z(b, H, info->mz, k);
+            zz = z(b, H, info->mz, k),
+            dz = std::max(H, m_grid_info.min_thickness) / (info->mz - 1);
 
-          // FIXME: scaling goes here
-          R[k][j][i] = x[k][j][i] - u_exact(xx, yy, zz);
+          R[k][j][i] = dirichlet_scale(dx, dy, dz) * (x[k][j][i] - u_exact(xx, yy, zz));
         } else {
           R[k][j][i] = 0.0;
         }
@@ -292,7 +297,6 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           for (int t = 0; t < Nk; ++t) {
             const auto &psi = E.chi(q, t);
 
-            // FIXME: scaling goes here
             R_nodal[t] += W * (u_x[q] * psi.dx + u_y[q] * psi.dy + u_z[q] * psi.dz
                                - Fq[q] * psi.val);
           }
@@ -329,7 +333,6 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
               for (int t = 0; t < Nk; ++t) {
                 auto psi = E_face.chi(q, t);
 
-                // FIXME: scaling goes here
                 R_nodal[t] += - W * psi * G(xq[q], yq[q], zq[q], N);
               }
             }
@@ -436,7 +439,6 @@ void Poisson3::compute_jacobian(DMDALocalInfo *info, const double ***x, Mat A, M
             for (int s = 0; s < Nk; ++s) {
               auto phi = E.chi(q, s);
 
-              // FIXME: scaling goes here
               K[t][s] += W * (phi.dx * psi.dx + phi.dy * psi.dy + phi.dz * psi.dz);
             }
           }
@@ -454,8 +456,9 @@ void Poisson3::compute_jacobian(DMDALocalInfo *info, const double ***x, Mat A, M
     for (int j = info->ys; j < info->ys + info->ym; j++) {
       for (int i = info->xs; i < info->xs + info->xm; i++) {
         if ((int)P[j][i].node_type == NODE_EXTERIOR or dirichlet_node(info, {i, j, k})) {
-          // FIXME: scaling goes here
-          double scaling = 1.0;
+          double
+            dz = std::max(P[j][i].thickness, m_grid_info.min_thickness) / (info->mz - 1),
+            scaling = dirichlet_scale(dx, dy, dz);
           MatStencil row;
           row.k = k;
           row.j = j;

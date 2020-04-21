@@ -74,6 +74,8 @@ protected:
 
   // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
   PetscErrorCode setup(DM pism_da, int Mz, int n_levels);
+
+  double m_dirichlet_scale;
 };
 
 } // end of namespace stressbalance
