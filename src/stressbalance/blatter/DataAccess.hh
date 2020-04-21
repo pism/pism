@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef PISM_DATAINPUT_H
-#define PISM_DATAINPUT_H
+#ifndef PISM_DATAACCESS_H
+#define PISM_DATAACCESS_H
 
 #include <cassert>
 #include <petscdmda.h>
@@ -38,9 +38,9 @@ enum AccessType {GHOSTED, NOT_GHOSTED};
  *                 during residual and Jacobian evaluation
  */
 template<typename T>
-class DataInput {
+class DataAccess {
 public:
-  DataInput(DM da, int dim, AccessType type)
+  DataAccess(DM da, int dim, AccessType type)
     : m_local(type == GHOSTED) {
     int ierr;
 
@@ -54,7 +54,7 @@ public:
 
     if (ierr != 0) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Failed to create an DataInput instance");
+                                    "Failed to create an DataAccess instance");
     }
   }
 
@@ -92,7 +92,7 @@ public:
     return 0;
   }
 
-  ~DataInput() {
+  ~DataAccess() {
     try {
       PetscErrorCode ierr = DMDAVecRestoreArray(m_da, m_x, &m_a);
       PISM_CHK(ierr, "DMDAVecRestoreArray");
@@ -119,4 +119,4 @@ private:
 
 } // end of namespace pism
 
-#endif /* PISM_DATAINPUT_H */
+#endif /* PISM_DATAACCESS_H */

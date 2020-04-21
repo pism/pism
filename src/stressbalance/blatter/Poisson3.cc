@@ -28,7 +28,7 @@ using std::fabs;
 #include "pism/util/fem/FEM.hh"
 #include "pism/util/error_handling.hh"
 
-#include "DataInput.hh"
+#include "DataAccess.hh"
 #include "grid_hierarchy.hh"
 #include "pism/util/node_types.hh"
 
@@ -164,8 +164,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   fem::Q1Element3 E(*info, dx, dy, fem::Q13DQuadrature8());
   fem::Q1Element3Face E_face(dx, dy, fem::Q1Quadrature4());
 
-  DataInput<Parameters**> P(info->da, 2, GHOSTED);
-  DataInput<double***> F(info->da, 3, GHOSTED);
+  DataAccess<Parameters**> P(info->da, 2, GHOSTED);
+  DataAccess<double***> F(info->da, 3, GHOSTED);
 
   // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
   //
@@ -368,7 +368,7 @@ void Poisson3::compute_jacobian(DMDALocalInfo *info, const double ***x, Mat A, M
 
   fem::Q1Element3 E(*info, dx, dy, fem::Q13DQuadrature8());
 
-  DataInput<Parameters**> P(info->da, 2, GHOSTED);
+  DataAccess<Parameters**> P(info->da, 2, GHOSTED);
 
   const int Nk = fem::q13d::n_chi;
   const int Nq = E.n_pts();
@@ -558,7 +558,7 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz, int n_levels)
 void compute_node_type(DM da, double min_thickness) {
   // Note that P provides access to a ghosted copy of 2D parameters, so changes to P have
   // no lasting effect.
-  DataInput<Parameters**> P(da, 2, GHOSTED);
+  DataAccess<Parameters**> P(da, 2, GHOSTED);
 
   DMDALocalInfo info;
   int ierr = DMDAGetLocalInfo(da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
@@ -601,7 +601,7 @@ void compute_node_type(DM da, double min_thickness) {
     }
   }
 
-  DataInput<Parameters**> result(da, 2, NOT_GHOSTED);
+  DataAccess<Parameters**> result(da, 2, NOT_GHOSTED);
 
   // Loop over all the owned nodes and turn the number of "icy" elements this node belongs
   // to into node type.
@@ -840,7 +840,7 @@ void Poisson3::init_2d_parameters() {
     dx = (x_max - x_min) / (info.mx - 1),
     dy = (y_max - y_min) / (info.my - 1);
 
-  DataInput<Parameters**> P(m_da, 2, NOT_GHOSTED);
+  DataAccess<Parameters**> P(m_da, 2, NOT_GHOSTED);
 
   for (int j = info.ys; j < info.ys + info.ym; j++) {
     for (int i = info.xs; i < info.xs + info.xm; i++) {
@@ -873,8 +873,8 @@ void Poisson3::init_3d_parameters() {
     dx = (x_max - x_min) / (info.mx - 1),
     dy = (y_max - y_min) / (info.my - 1);
 
-  DataInput<Parameters**> P2(m_da, 2, NOT_GHOSTED);
-  DataInput<double***> P3(m_da, 3, NOT_GHOSTED);
+  DataAccess<Parameters**> P2(m_da, 2, NOT_GHOSTED);
+  DataAccess<double***> P3(m_da, 3, NOT_GHOSTED);
 
   for (int k = info.zs; k < info.zs + info.zm; k++) {
     for (int j = info.ys; j < info.ys + info.ym; j++) {
@@ -908,7 +908,7 @@ void Poisson3::exact_solution(IceModelVec3Custom &result) {
 
   int Mz = result.levels().size();
 
-  DataInput<Parameters**> P(m_da, 2, NOT_GHOSTED);
+  DataAccess<Parameters**> P(m_da, 2, NOT_GHOSTED);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
