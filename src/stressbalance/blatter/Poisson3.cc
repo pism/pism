@@ -161,8 +161,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
     dx = (x_max - x_min) / (info->mx - 1),
     dy = (y_max - y_min) / (info->my - 1);
 
-  fem::Q1Element3 E(*info, dx, dy, fem::Q13DQuadrature8());
-  fem::Q1Element3Face E_face(dx, dy, fem::Q1Quadrature4());
+  fem::Q1Element3 element(*info, dx, dy, fem::Q13DQuadrature8());
+  fem::Q1Element3Face face(dx, dy, fem::Q1Quadrature4());
 
   DataAccess<Parameters**> P(info->da, 2, GHOSTED);
   DataAccess<double***> F(info->da, 3, GHOSTED);
@@ -204,7 +204,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
   // values at element nodes
   const int Nk_max = 8;
-  int Nk = E.n_chi();
+  int Nk = element.n_chi();
   assert(Nk <= Nk_max);
 
   double
@@ -215,14 +215,14 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
   // values at quadrature points
   const int Nq_max = 16;
-  int Nq = E.n_pts();
+  int Nq = element.n_pts();
   assert(Nq <= Nq_max);
 
   double u[Nq_max], u_x[Nq_max], u_y[Nq_max], u_z[Nq_max];
   double xq[Nq_max], yq[Nq_max], zq[Nq_max], Fq[Nq_max];
 
   // make sure that xq, yq, zq and big enough for quadrature points on element faces
-  assert(E_face.n_pts() <= Nq_max);
+  assert(face.n_pts() <= Nq_max);
 
   // loop over all the elements that have at least one owned node
   for (int k = info->gzs; k < info->gzs + info->gzm - 1; k++) {
@@ -236,7 +236,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
         // Compute coordinates of the nodes of this element and fetch node types.
         for (int n = 0; n < Nk; ++n) {
-          auto I = E.local_to_global(i, j, k, n);
+          auto I = element.local_to_global(i, j, k, n);
 
           auto p = P[I.j][I.i];
 
@@ -265,37 +265,37 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
         // compute values of chi, chi_x, chi_y, chi_z and quadrature weights at quadrature
         // points on this physical element
-        E.reset(i, j, k, z_nodal);
+        element.reset(i, j, k, z_nodal);
 
         // Get nodal values of F.
-        E.nodal_values((double***)F, F_nodal);
+        element.nodal_values((double***)F, F_nodal);
 
         // Get nodal values of u.
-        E.nodal_values(x, u_nodal);
+        element.nodal_values(x, u_nodal);
 
         // Take care of Dirichlet BC: don't contribute to Dirichlet nodes and set nodal
         // values of the current iterate to Dirichlet BC values.
         for (int n = 0; n < Nk; ++n) {
-          auto I = E.local_to_global(n);
+          auto I = element.local_to_global(n);
           if (dirichlet_node(info, I)) {
-            E.mark_row_invalid(n);
+            element.mark_row_invalid(n);
             u_nodal[n] = u_exact(x_nodal[n], y_nodal[n], z_nodal[n]);
           }
         }
 
         // evaluate u and its partial derivatives at quadrature points
-        E.evaluate(u_nodal, u, u_x, u_y, u_z);
+        element.evaluate(u_nodal, u, u_x, u_y, u_z);
 
         // evaluate F at quadrature points
-        E.evaluate(F_nodal, Fq);
+        element.evaluate(F_nodal, Fq);
 
         // loop over all quadrature points
         for (int q = 0; q < Nq; ++q) {
-          auto W = E.weight(q);
+          auto W = element.weight(q);
 
           // loop over all test functions
           for (int t = 0; t < Nk; ++t) {
-            const auto &psi = E.chi(q, t);
+            const auto &psi = element.chi(q, t);
 
             R_nodal[t] += W * (u_x[q] * psi.dx + u_y[q] * psi.dy + u_z[q] * psi.dz
                                - Fq[q] * psi.val);
@@ -303,8 +303,8 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
         }
 
         // loop over all faces
-        for (int face = 0; face < fem::q13d::n_faces; ++face) {
-          auto nodes = fem::q13d::incident_nodes[face];
+        for (int f = 0; f < fem::q13d::n_faces; ++f) {
+          auto nodes = fem::q13d::incident_nodes[f];
           // Loop over all nodes corresponding to this face. A face is a part of the
           // Neumann boundary if all four nodes are Neumann nodes. If a node is *both* a
           // Neumann and a Dirichlet node (this may happen), then we treat it as a Neumann
@@ -317,21 +317,21 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           }
 
           if (neumann) {
-            E_face.reset(face, z_nodal);
+            face.reset(f, z_nodal);
 
             // compute physical coordinates of quadrature points on this face
-            E_face.evaluate(x_nodal, xq);
-            E_face.evaluate(y_nodal, yq);
-            E_face.evaluate(z_nodal.data(), zq);
+            face.evaluate(x_nodal, xq);
+            face.evaluate(y_nodal, yq);
+            face.evaluate(z_nodal.data(), zq);
 
             // loop over all quadrature points
-            for (int q = 0; q < E_face.n_pts(); ++q) {
-              auto W = E_face.weight(q);
-              auto N = E_face.normal(q);
+            for (int q = 0; q < face.n_pts(); ++q) {
+              auto W = face.weight(q);
+              auto N = face.normal(q);
 
               // loop over all test functions
               for (int t = 0; t < Nk; ++t) {
-                auto psi = E_face.chi(q, t);
+                auto psi = face.chi(q, t);
 
                 R_nodal[t] += - W * psi * G(xq[q], yq[q], zq[q], N);
               }
@@ -339,7 +339,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
           } // end of "if (neumann)"
         } // end of the loop over element faces
 
-        E.add_contribution(R_nodal, R);
+        element.add_contribution(R_nodal, R);
       } // end of the loop over i
     } // end of the loop over j
   } // end of the loop over k
@@ -366,12 +366,12 @@ void Poisson3::compute_jacobian(DMDALocalInfo *info, const double ***x, Mat A, M
     dx = (x_max - x_min) / (info->mx - 1),
     dy = (y_max - y_min) / (info->my - 1);
 
-  fem::Q1Element3 E(*info, dx, dy, fem::Q13DQuadrature8());
+  fem::Q1Element3 element(*info, dx, dy, fem::Q13DQuadrature8());
 
   DataAccess<Parameters**> P(info->da, 2, GHOSTED);
 
   const int Nk = fem::q13d::n_chi;
-  const int Nq = E.n_pts();
+  const int Nq = element.n_pts();
 
   int node_type[Nk];
   std::vector<double> z_nodal(Nk);
@@ -389,7 +389,7 @@ void Poisson3::compute_jacobian(DMDALocalInfo *info, const double ***x, Mat A, M
 
         // Compute coordinates of the nodes of this element and fetch node types.
         for (int n = 0; n < Nk; ++n) {
-          auto I = E.local_to_global(i, j, k, n);
+          auto I = element.local_to_global(i, j, k, n);
 
           auto p = P[I.j][I.i];
 
@@ -416,35 +416,35 @@ void Poisson3::compute_jacobian(DMDALocalInfo *info, const double ***x, Mat A, M
 
         // compute values of chi, chi_x, chi_y, chi_z and quadrature weights at quadrature
         // points on this physical element
-        E.reset(i, j, k, z_nodal);
+        element.reset(i, j, k, z_nodal);
 
         // Don't contribute to Dirichlet nodes
         for (int n = 0; n < Nk; ++n) {
-          auto I = E.local_to_global(n);
+          auto I = element.local_to_global(n);
           if (dirichlet_node(info, I)) {
-            E.mark_row_invalid(n);
-            E.mark_col_invalid(n);
+            element.mark_row_invalid(n);
+            element.mark_col_invalid(n);
           }
         }
 
         // loop over all quadrature points
         for (int q = 0; q < Nq; ++q) {
-          auto W = E.weight(q);
+          auto W = element.weight(q);
 
           // loop over all test functions
           for (int t = 0; t < Nk; ++t) {
-            auto psi = E.chi(q, t);
+            auto psi = element.chi(q, t);
 
             // loop over all trial functions
             for (int s = 0; s < Nk; ++s) {
-              auto phi = E.chi(q, s);
+              auto phi = element.chi(q, s);
 
               K[t][s] += W * (phi.dx * psi.dx + phi.dy * psi.dy + phi.dz * psi.dz);
             }
           }
         } // end of the loop over q
 
-        E.add_contribution(&K[0][0], J);
+        element.add_contribution(&K[0][0], J);
       } // end of the loop over i
     } // end of the loop over j
   } // end of the loop over k
