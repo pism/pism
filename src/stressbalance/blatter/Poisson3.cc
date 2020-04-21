@@ -431,18 +431,24 @@ void Poisson3::compute_jacobian(DMDALocalInfo *info, const double ***x, Mat A, M
         for (int q = 0; q < Nq; ++q) {
           auto W = element.weight(q);
 
-          // loop over all test functions
+          // loop over test and trial functions, computing the upper-triangular part of
+          // the element Jacobian
           for (int t = 0; t < Nk; ++t) {
             auto psi = element.chi(q, t);
-
-            // loop over all trial functions
-            for (int s = 0; s < Nk; ++s) {
+            for (int s = t; s < Nk; ++s) {
               auto phi = element.chi(q, s);
 
               K[t][s] += W * (phi.dx * psi.dx + phi.dy * psi.dy + phi.dz * psi.dz);
             }
           }
         } // end of the loop over q
+
+        // fill the lower-triangular part using the fact that J is symmetric
+        for (int t = 0; t < Nk; ++t) {
+          for (int s = 0; s < t; ++s) {
+            K[t][s] = K[s][t];
+          }
+        }
 
         element.add_contribution(&K[0][0], J);
       } // end of the loop over i
