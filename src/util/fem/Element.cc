@@ -202,7 +202,8 @@ void Element2::reset(int i, int j) {
 
   // We never sum into rows that are not owned by the local rank.
   for (unsigned int k = 0; k < m_n_chi; k++) {
-    int pism_i = m_row[k].i, pism_j = m_row[k].j;
+    int pism_i = 0, pism_j = 0;
+    local_to_global(k, pism_i, pism_j);
     if (pism_i < m_grid.xs or m_grid.xs + m_grid.xm - 1 < pism_i or
         pism_j < m_grid.ys or m_grid.ys + m_grid.ym - 1 < pism_j) {
       mark_row_invalid(k);
@@ -463,9 +464,9 @@ void Q1Element3::reset(int i, int j, int k, const std::vector<double> &z) {
 
   // Mark rows that we don't own as invalid:
   for (unsigned int n = 0; n < m_n_chi; n++) {
-    int pism_i = m_row[n].i, pism_j = m_row[n].j;
-    if (pism_i < m_grid.xs or m_grid.xs + m_grid.xm - 1 < pism_i or
-        pism_j < m_grid.ys or m_grid.ys + m_grid.ym - 1 < pism_j) {
+    auto I = local_to_global(n);
+    if (I.i < m_grid.xs or m_grid.xs + m_grid.xm - 1 < I.i or
+        I.j < m_grid.ys or m_grid.ys + m_grid.ym - 1 < I.j) {
       mark_row_invalid(n);
     }
   }
