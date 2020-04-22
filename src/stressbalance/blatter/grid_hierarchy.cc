@@ -104,12 +104,7 @@ PetscErrorCode setup_level(DM dm, const GridInfo &grid_info) {
 
   // get refinement level
   PetscInt level = 0;
-  {
-    PetscInt refinelevel, coarsenlevel;
-    ierr = DMGetRefineLevel(dm, &refinelevel); CHKERRQ(ierr);
-    ierr = DMGetCoarsenLevel(dm, &coarsenlevel); CHKERRQ(ierr);
-    level = refinelevel - coarsenlevel;
-  }
+  ierr = DMGetCoarsenLevel(dm, &level); CHKERRQ(ierr);
 
   // report
   {
