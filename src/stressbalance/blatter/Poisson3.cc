@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <cassert>
+#include <cassert>              // assert
 #include <cmath>                // std::pow, std::fabs
 #include <algorithm>            // std::max
-
-using std::pow;
-using std::fabs;
 
 #include "Poisson3.hh"
 #include "pism/util/fem/FEM.hh"
@@ -114,6 +111,7 @@ static bool dirichlet_node(const DMDALocalInfo *info, const fem::Element3::Globa
  grind(u_z = diff(u, z));
 */
 static double u_exact(double x, double y, double z) {
+  using std::pow;
   return x * y * pow(z + 1, 2.0) + (2.0 * (y + 1)) / (pow(y + 1, 2.0) + pow(x + 2, 2.0));
 }
 
@@ -131,6 +129,7 @@ static double F(double x, double y, double z) {
  * Neumann BC
  */
 static double G(double x, double y, double z, const Vector3 &N) {
+  using std::pow;
   double
     u_x = (y * pow(z + 1, 2.0) -
            (4.0 * (x + 2) * (y + 1)) / pow(pow(y + 1, 2.0) + pow(x + 2, 2.0), 2.0)),
@@ -774,8 +773,6 @@ PetscErrorCode Poisson3::setup(DM pism_da, int Mz, int n_levels) {
   // Vecs, Mat
   {
     ierr = DMCreateGlobalVector(m_da, m_x.rawptr()); CHKERRQ(ierr);
-
-    // ierr = DMCreateMatrix(m_da, m_J.rawptr()); CHKERRQ(ierr);
   }
 
   // SNES
@@ -795,8 +792,7 @@ PetscErrorCode Poisson3::setup(DM pism_da, int Mz, int n_levels) {
 
     ierr = DMDASNESSetJacobianLocal(m_da,
                                     (DMDASNESJacobian)jacobian_callback,
-                                    &m_callback_data);
-    CHKERRQ(ierr);
+                                    &m_callback_data); CHKERRQ(ierr);
 
     ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
   }
@@ -822,7 +818,7 @@ static double b(double x, double y) {
  */
 static double H(double x, double y) {
   double w = 1.0;
-  if (fabs(x) <= w and fabs(y) <= w) {
+  if (std::fabs(x) <= w and std::fabs(y) <= w) {
     return 1.0;
   }
   return 0.0;
