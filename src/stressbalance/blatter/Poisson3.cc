@@ -20,6 +20,7 @@
 #include <cassert>              // assert
 #include <cmath>                // std::pow, std::fabs
 #include <algorithm>            // std::max
+#include <cstring>              // memset
 
 #include "Poisson3.hh"
 #include "pism/util/fem/FEM.hh"
@@ -229,9 +230,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
       for (int i = info->gxs; i < info->gxs + info->gxm - 1; i++) {
 
         // Reset element residual to zero in preparation.
-        for (int n = 0; n < Nk; ++n) {
-          R_nodal[n] = 0.0;
-        }
+        memset(R_nodal, 0, sizeof(R_nodal));
 
         // Compute coordinates of the nodes of this element and fetch node types.
         for (int n = 0; n < Nk; ++n) {
@@ -383,8 +382,7 @@ void Poisson3::compute_jacobian(DMDALocalInfo *info, const double ***x, Mat A, M
         // Element-local Jacobian matrix (there are Nk vector valued degrees of freedom
         // per element, for a total of Nk*Nk = 64 entries in the local Jacobian.
         double K[Nk][Nk];
-        ierr = PetscMemzero(K, sizeof(K));
-        PISM_CHK(ierr, "PetscMemzero");
+        memset(K, 0, sizeof(K));
 
         // Compute coordinates of the nodes of this element and fetch node types.
         for (int n = 0; n < Nk; ++n) {
