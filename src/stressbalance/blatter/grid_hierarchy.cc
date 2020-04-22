@@ -37,14 +37,14 @@ PetscErrorCode setup_level(DM dm, const GridInfo &grid_info) {
   {
     ierr = DMDAGetInfo(dm,
                        NULL,          // dimensions
-                       &Mx, &My, &Mz, // grid size
-                       &mx, &my, &mz, // number of processors in each direction
+                       &Mz, &Mx, &My, // grid size (STORAGE_ORDER)
+                       &mz, &mx, &my, // number of processors in each direction (STORAGE_ORDER)
                        NULL,          // number of degrees of freedom
                        &stencil_width,
                        NULL, NULL, NULL, // types of ghost nodes at the boundary
                        &stencil_type); CHKERRQ(ierr);
 
-    ierr = DMDAGetOwnershipRanges(dm, &lx, &ly, &lz); CHKERRQ(ierr);
+    ierr = DMDAGetOwnershipRanges(dm, &lz, &lx, &ly); CHKERRQ(ierr); // STORAGE_ORDER
   }
 
   // Create a 2D DMDA and a global Vec, then stash them in dm.
@@ -78,16 +78,16 @@ PetscErrorCode setup_level(DM dm, const GridInfo &grid_info) {
   {
     DM  da;
     Vec parameters;
-    int n_3d_dof = 1;
+    int dof = 1;
 
     ierr = DMDACreate3d(comm,
-                        DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE,
+                        DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, // STORAGE_ORDER
                         stencil_type,
-                        Mx, My, Mz,
-                        mx, my, mz,
-                        n_3d_dof,
+                        Mz, Mx, My, // STORAGE_ORDER
+                        mz, mx, my, // STORAGE_ORDER
+                        dof,
                         stencil_width,
-                        lx, ly, lz,
+                        lz, lx, ly, // STORAGE_ORDER
                         &da); CHKERRQ(ierr);
 
     ierr = DMSetUp(da); CHKERRQ(ierr);

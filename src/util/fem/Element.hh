@@ -314,7 +314,7 @@ public:
   void nodal_values(T const* const* const* x_global, T* result) const {
     for (unsigned int n = 0; n < m_n_chi; ++n) {
       auto I = local_to_global(n);
-      result[n] = x_global[I.k][I.j][I.i];   // note the indexing order
+      result[n] = x_global[I.j][I.i][I.k]; // note the STORAGE_ORDER
     }
   }
 
@@ -331,11 +331,8 @@ public:
         // skip rows marked as "invalid"
         continue;
       }
-      const int
-        i = m_row[n].i,
-        j = m_row[n].j,
-        k = m_row[n].k;
-      y_global[k][j][i] += local[n];   // note the indexing order
+      auto I = local_to_global(n);
+      y_global[I.j][I.i][I.k] += local[n];   // note the STORAGE_ORDER
     }
   }
 protected:

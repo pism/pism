@@ -455,9 +455,9 @@ void Q1Element3::reset(int i, int j, int k, const std::vector<double> &z) {
 
   // Set row and column info used to add contributions:
   for (unsigned int n = 0; n < m_n_chi; ++n) {
-    m_col[n].i = i + m_i_offset[n];
-    m_col[n].j = j + m_j_offset[n];
-    m_col[n].k = k + m_k_offset[n];
+    m_col[n].i = k + m_k_offset[n]; // x -- z (STORAGE_ORDER)
+    m_col[n].j = i + m_i_offset[n]; // y -- x (STORAGE_ORDER)
+    m_col[n].k = j + m_j_offset[n]; // z -- y (STORAGE_ORDER)
     m_col[n].c = 0;
   }
   m_row = m_col;

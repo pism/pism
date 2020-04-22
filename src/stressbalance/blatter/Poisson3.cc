@@ -33,6 +33,58 @@
 namespace pism {
 namespace stressbalance {
 
+/* Transpose a DMDALocalInfo structure to map from PETSc's ordering to PISM's order needed
+   to ensure that vertical columns are stored contiguously in RAM.
+
+   (What a pain.)
+
+   Map from PETSc to PISM order:
+
+   | PETSc | PISM |
+   |-------+------|
+   | x     | z    |
+   | y     | x    |
+   | z     | y    |
+
+   Assuming that i, j, k indexes correspond to x, y, and z PETSc's indexing order is
+   [k][j][i]. After this transpose we have to use [j][i][k].
+
+   Note that this indexing order is compatible with the PETSc-standard indexing for 2D
+   Vecs.
+
+   All the lines changed to accommodate this transpose are marked with STORAGE_ORDER (so
+   that you can use grep to find them).
+ */
+static DMDALocalInfo transpose(const DMDALocalInfo &input) {
+  DMDALocalInfo result = input;
+
+  result.mx = input.my;
+  result.my = input.mz;
+  result.mz = input.mx;
+
+  result.xs = input.ys;
+  result.ys = input.zs;
+  result.zs = input.xs;
+
+  result.xm = input.ym;
+  result.ym = input.zm;
+  result.zm = input.xm;
+
+  result.gxs = input.gys;
+  result.gys = input.gzs;
+  result.gzs = input.gxs;
+
+  result.gxm = input.gym;
+  result.gym = input.gzm;
+  result.gzm = input.gxm;
+
+  result.bx = input.by;
+  result.by = input.bz;
+  result.bz = input.bx;
+
+  return result;
+}
+
 const double u_exterior = 0.0;
 
 struct Parameters {
@@ -96,8 +148,8 @@ static double z(double b, double H, int Mz, int k) {
 /*!
  * Returns true if a node is in the Dirichlet part of the boundary, false otherwise.
  */
-static bool dirichlet_node(const DMDALocalInfo *info, const fem::Element3::GlobalIndex& I) {
-  return (I.k == 0) or (I.k == info->mz - 1);
+static bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I) {
+  return (I.k == 0) or (I.k == info.mz - 1);
 }
 
 /*! Dirichlet BC and the exact solution
@@ -145,12 +197,14 @@ static double dirichlet_scale(double dx, double dy, double dz) {
   return dx * dy * dz * (1.0 / (dx * dx) + 1.0 / (dy * dy) + 1.0 / dz * dz);
 }
 
-void Poisson3::compute_residual(DMDALocalInfo *info,
+void Poisson3::compute_residual(DMDALocalInfo *petsc_info,
                                 const double ***x, double ***R) {
-  // Stencil width of 1 is not very important, but if info->sw > 1 will lead to more
+  auto info = transpose(*petsc_info);
+
+  // Stencil width of 1 is not very important, but if info.sw > 1 will lead to more
   // redundant computation (we would be looping over elements that don't contribute to any
   // owned nodes).
-  assert(info->sw == 1);
+  assert(info.sw == 1);
 
   // Compute grid spacing from domain dimensions and the grid size
   double
@@ -158,14 +212,14 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
     x_max = m_grid_info.x_max,
     y_min = m_grid_info.y_min,
     y_max = m_grid_info.y_max,
-    dx = (x_max - x_min) / (info->mx - 1),
-    dy = (y_max - y_min) / (info->my - 1);
+    dx = (x_max - x_min) / (info.mx - 1),
+    dy = (y_max - y_min) / (info.my - 1);
 
-  fem::Q1Element3 element(*info, dx, dy, fem::Q13DQuadrature8());
+  fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
   fem::Q1Element3Face face(dx, dy, fem::Q1Quadrature4());
 
-  DataAccess<Parameters**> P(info->da, 2, GHOSTED);
-  DataAccess<double***> F(info->da, 3, GHOSTED);
+  DataAccess<Parameters**> P(info.da, 2, GHOSTED);
+  DataAccess<double***> F(info.da, 3, GHOSTED);
 
   // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
   //
@@ -173,14 +227,14 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   // INSERT_VALUES.
   //
   // here we loop over all the *owned* nodes
-  for (int k = info->zs; k < info->zs + info->zm; k++) {
-    for (int j = info->ys; j < info->ys + info->ym; j++) {
-      for (int i = info->xs; i < info->xs + info->xm; i++) {
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+      for (int k = info.zs; k < info.zs + info.zm; k++) {
 
         // nodes that don't belong to any icy elements
         if ((int)P[j][i].node_type == NODE_EXTERIOR) {
-          double dz = std::max(P[j][i].thickness, m_grid_info.min_thickness) / (info->mz - 1);
-          R[k][j][i] = dirichlet_scale(dx, dy, dz) * (x[k][j][i] - u_exterior);
+          double dz = std::max(P[j][i].thickness, m_grid_info.min_thickness) / (info.mz - 1);
+          R[j][i][k] = dirichlet_scale(dx, dy, dz) * (x[j][i][k] - u_exterior); // STORAGE_ORDER
           continue;
         }
 
@@ -191,12 +245,12 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
             yy = xy(y_min, dy, j),
             b  = P[j][i].bed,
             H  = P[j][i].thickness,
-            zz = z(b, H, info->mz, k),
-            dz = std::max(H, m_grid_info.min_thickness) / (info->mz - 1);
+            zz = z(b, H, info.mz, k),
+            dz = std::max(H, m_grid_info.min_thickness) / (info.mz - 1);
 
-          R[k][j][i] = dirichlet_scale(dx, dy, dz) * (x[k][j][i] - u_exact(xx, yy, zz));
+          R[j][i][k] = dirichlet_scale(dx, dy, dz) * (x[j][i][k] - u_exact(xx, yy, zz)); // STORAGE_ORDER
         } else {
-          R[k][j][i] = 0.0;
+          R[j][i][k] = 0.0;     // STORAGE_ORDER
         }
       }
     }
@@ -225,9 +279,9 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   assert(face.n_pts() <= Nq_max);
 
   // loop over all the elements that have at least one owned node
-  for (int k = info->gzs; k < info->gzs + info->gzm - 1; k++) {
-    for (int j = info->gys; j < info->gys + info->gym - 1; j++) {
-      for (int i = info->gxs; i < info->gxs + info->gxm - 1; i++) {
+  for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
+    for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
+      for (int k = info.gzs; k < info.gzs + info.gzm - 1; k++) {
 
         // Reset element residual to zero in preparation.
         memset(R_nodal, 0, sizeof(R_nodal));
@@ -242,7 +296,7 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
 
           x_nodal[n] = xy(x_min, dx, I.i);
           y_nodal[n] = xy(y_min, dy, I.j);
-          z_nodal[n] = z(p.bed, p.thickness, info->mz, I.k);
+          z_nodal[n] = z(p.bed, p.thickness, info.mz, I.k);
         }
 
         // skip ice-free elements
@@ -343,17 +397,20 @@ void Poisson3::compute_residual(DMDALocalInfo *info,
   } // end of the loop over k
 }
 
-void Poisson3::compute_jacobian(DMDALocalInfo *info, const double ***x, Mat A, Mat J) {
+void Poisson3::compute_jacobian(DMDALocalInfo *petsc_info,
+                                const double ***x, Mat A, Mat J) {
+  auto info = transpose(*petsc_info);
+
   (void) x;
 
   // Zero out the Jacobian in preparation for updating it.
   PetscErrorCode ierr = MatZeroEntries(J);
   PISM_CHK(ierr, "MatZeroEntries");
 
-  // Stencil width of 1 is not very important, but if info->sw > 1 will lead to more
+  // Stencil width of 1 is not very important, but if info.sw > 1 will lead to more
   // redundant computation (we would be looping over elements that don't contribute to any
   // owned nodes).
-  assert(info->sw == 1);
+  assert(info.sw == 1);
 
   // Compute grid spacing from domain dimensions and the grid size
   double
@@ -361,12 +418,12 @@ void Poisson3::compute_jacobian(DMDALocalInfo *info, const double ***x, Mat A, M
     x_max = m_grid_info.x_max,
     y_min = m_grid_info.y_min,
     y_max = m_grid_info.y_max,
-    dx = (x_max - x_min) / (info->mx - 1),
-    dy = (y_max - y_min) / (info->my - 1);
+    dx = (x_max - x_min) / (info.mx - 1),
+    dy = (y_max - y_min) / (info.my - 1);
 
-  fem::Q1Element3 element(*info, dx, dy, fem::Q13DQuadrature8());
+  fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
 
-  DataAccess<Parameters**> P(info->da, 2, GHOSTED);
+  DataAccess<Parameters**> P(info.da, 2, GHOSTED);
 
   const int Nk = fem::q13d::n_chi;
   const int Nq = element.n_pts();
@@ -375,9 +432,9 @@ void Poisson3::compute_jacobian(DMDALocalInfo *info, const double ***x, Mat A, M
   std::vector<double> z_nodal(Nk);
 
   // loop over all the elements that have at least one owned node
-  for (int k = info->gzs; k < info->gzs + info->gzm - 1; k++) {
-    for (int j = info->gys; j < info->gys + info->gym - 1; j++) {
-      for (int i = info->gxs; i < info->gxs + info->gxm - 1; i++) {
+  for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
+    for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
+      for (int k = info.gzs; k < info.gzs + info.gzm - 1; k++) {
 
         // Element-local Jacobian matrix (there are Nk vector valued degrees of freedom
         // per element, for a total of Nk*Nk = 64 entries in the local Jacobian.
@@ -392,7 +449,7 @@ void Poisson3::compute_jacobian(DMDALocalInfo *info, const double ***x, Mat A, M
 
           node_type[n] = p.node_type;
 
-          z_nodal[n] = z(p.bed, p.thickness, info->mz, I.k);
+          z_nodal[n] = z(p.bed, p.thickness, info.mz, I.k);
         }
 
         // skip ice-free elements
@@ -455,17 +512,18 @@ void Poisson3::compute_jacobian(DMDALocalInfo *info, const double ***x, Mat A, M
   // take care of Dirichlet nodes (both explicit and grid points outside the domain)
   //
   // here we loop over all the *owned* nodes
-  for (int k = info->zs; k < info->zs + info->zm; k++) {
-    for (int j = info->ys; j < info->ys + info->ym; j++) {
-      for (int i = info->xs; i < info->xs + info->xm; i++) {
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+      for (int k = info.zs; k < info.zs + info.zm; k++) {
         if ((int)P[j][i].node_type == NODE_EXTERIOR or dirichlet_node(info, {i, j, k})) {
           double
-            dz = std::max(P[j][i].thickness, m_grid_info.min_thickness) / (info->mz - 1),
+            dz = std::max(P[j][i].thickness, m_grid_info.min_thickness) / (info.mz - 1),
             scaling = dirichlet_scale(dx, dy, dz);
           MatStencil row;
-          row.k = k;
-          row.j = j;
-          row.i = i;
+          row.i = k;            // STORAGE_ORDER
+          row.j = i;            // STORAGE_ORDER
+          row.k = j;            // STORAGE_ORDER
+          row.c = 0;
           ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &scaling, ADD_VALUES);
           PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
         }
@@ -565,6 +623,7 @@ void compute_node_type(DM da, double min_thickness) {
 
   DMDALocalInfo info;
   int ierr = DMDAGetLocalInfo(da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
+  info = transpose(info);
 
   // loop over all the owned nodes and reset node type
   for (int j = info.ys; j < info.ys + info.ym; j++) {
@@ -673,6 +732,8 @@ PetscErrorCode p3_coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
 PetscErrorCode Poisson3::setup(DM pism_da, int Mz, int n_levels) {
   PetscErrorCode ierr;
   // DM
+  //
+  // Note: in the PISM's DA pism_da PETSc's and PISM's meaning of x and y are the same.
   {
     PetscInt dim, Mx, My, Nx, Ny;
     PetscInt
@@ -741,13 +802,13 @@ PetscErrorCode Poisson3::setup(DM pism_da, int Mz, int n_levels) {
     }
 
     ierr = DMDACreate3d(PETSC_COMM_WORLD,
-                        DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE,
+                        DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, // STORAGE_ORDER
                         DMDA_STENCIL_BOX,
-                        Mx, My, Mz,
-                        Nx, Ny, Nz,
-                        dof,           // dof
-                        stencil_width, // stencil width
-                        new_lx.data(), new_ly.data(), NULL,
+                        Mz, Mx, My,                         // STORAGE_ORDER
+                        Nz, Nx, Ny,                         // STORAGE_ORDER
+                        dof,                                // dof
+                        stencil_width,                      // stencil width
+                        NULL, new_lx.data(), new_ly.data(), // STORAGE_ORDER
                         m_da.rawptr()); CHKERRQ(ierr);
 
     ierr = DMSetFromOptions(m_da); CHKERRQ(ierr);
@@ -830,6 +891,7 @@ void Poisson3::init_2d_parameters() {
   DMDALocalInfo info;
   int ierr = DMDAGetLocalInfo(m_da, &info);
   PISM_CHK(ierr, "DMDAGetLocalInfo");
+  info = transpose(info);
 
   // Compute grid spacing from domain dimensions and the grid size
   double
@@ -863,6 +925,7 @@ void Poisson3::init_3d_parameters() {
   DMDALocalInfo info;
   int ierr = DMDAGetLocalInfo(m_da, &info);
   PISM_CHK(ierr, "DMDAGetLocalInfo");
+  info = transpose(info);
 
   // Compute grid spacing from domain dimensions and the grid size
   double
@@ -876,9 +939,9 @@ void Poisson3::init_3d_parameters() {
   DataAccess<Parameters**> P2(m_da, 2, NOT_GHOSTED);
   DataAccess<double***> P3(m_da, 3, NOT_GHOSTED);
 
-  for (int k = info.zs; k < info.zs + info.zm; k++) {
-    for (int j = info.ys; j < info.ys + info.ym; j++) {
-      for (int i = info.xs; i < info.xs + info.xm; i++) {
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+      for (int k = info.zs; k < info.zs + info.zm; k++) {
         double
           xx = xy(x_min, dx, i),
           yy = xy(y_min, dy, j),
@@ -886,7 +949,7 @@ void Poisson3::init_3d_parameters() {
           H  = P2[j][i].thickness,
           zz = z(b, H, info.mz, k);
 
-        P3[k][j][i] = F(xx, yy, zz);
+        P3[j][i][k] = F(xx, yy, zz); // STORAGE_ORDER
       }
     }
   }
@@ -968,7 +1031,7 @@ void Poisson3::update(const Inputs &inputs, bool) {
       auto c = m_solution->get_column(i, j);
 
       for (int k = 0; k < Mz; ++k) {
-        c[k] = x[k][j][i];
+        c[k] = x[j][i][k];      // STORAGE_ORDER
       }
     }
 
