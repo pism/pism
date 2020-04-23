@@ -50,10 +50,10 @@ namespace stressbalance {
    [k][j][i]. After this transpose we have to use [j][i][k].
 
    Note that this indexing order is compatible with the PETSc-standard indexing for 2D
-   Vecs.
+   Vecs: [j][i].
 
-   All the lines changed to accommodate this transpose are marked with STORAGE_ORDER (so
-   that you can use grep to find them).
+   All the lines changed to implement this transpose are marked with STORAGE_ORDER: that
+   way you can use grep to find them.
  */
 static DMDALocalInfo transpose(const DMDALocalInfo &input) {
   DMDALocalInfo result = input;
@@ -154,8 +154,6 @@ static bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::Globa
 
 /*! Dirichlet BC and the exact solution
 
- b : -1 + x + y;
- n_b : [-diff(b, x), -diff(b, y), 1];
  u : x*y*(z+1)^2+(2.0*(y+1))/((y+1)^2+(x+2)^2)$
  grind('u = u);
  grind(F = ratsimp(-(diff(u, x, 2) + diff(u, y, 2) + diff(u, z, 2))));
