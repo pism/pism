@@ -33,116 +33,13 @@
 namespace pism {
 namespace stressbalance {
 
-/* Transpose a DMDALocalInfo structure to map from PETSc's ordering to PISM's order needed
-   to ensure that vertical columns are stored contiguously in RAM.
-
-   (What a pain.)
-
-   Map from PETSc to PISM order:
-
-   | PETSc | PISM |
-   |-------+------|
-   | x     | z    |
-   | y     | x    |
-   | z     | y    |
-
-   Assuming that i, j, k indexes correspond to x, y, and z PETSc's indexing order is
-   [k][j][i]. After this transpose we have to use [j][i][k].
-
-   Note that this indexing order is compatible with the PETSc-standard indexing for 2D
-   Vecs: [j][i].
-
-   All the lines changed to implement this transpose are marked with STORAGE_ORDER: that
-   way you can use grep to find them.
- */
-static DMDALocalInfo transpose(const DMDALocalInfo &input) {
-  DMDALocalInfo result = input;
-
-  result.mx = input.my;
-  result.my = input.mz;
-  result.mz = input.mx;
-
-  result.xs = input.ys;
-  result.ys = input.zs;
-  result.zs = input.xs;
-
-  result.xm = input.ym;
-  result.ym = input.zm;
-  result.zm = input.xm;
-
-  result.gxs = input.gys;
-  result.gys = input.gzs;
-  result.gzs = input.gxs;
-
-  result.gxm = input.gym;
-  result.gym = input.gzm;
-  result.gzm = input.gxm;
-
-  result.bx = input.by;
-  result.by = input.bz;
-  result.bz = input.bx;
-
-  return result;
-}
-
 const double u_exterior = 0.0;
-
-struct Parameters {
-  // elevation (z coordinate) of the bottom domain boundary
-  double bed;
-  // thickness of the domain
-  double thickness;
-  // NodeType stored as double
-  double node_type;
-};
-
-/*!
- * Compute the padding needed to allow for `n_levels` of coarsening.
- *
- * @param[in] N number of grid points (nodes)
- * @param[in] n_levels number of coarsening levels
- *
- * @return padding amount
- */
-int pad(int N, int n_levels) {
-  // number of spaces
-  int k = N - 1;
-  int C = 1;
-  for (int n = 0; n < n_levels; ++n) {
-    C *= 2;
-    k = (k % 2 ? k + 1: k) / 2;
-  }
-  return (C * k + 1) - N;
-}
 
 /*!
  * dot product (used to compute normal derivatives)
  */
 static double dot(const Vector3 &a, const Vector3 &b) {
   return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
-/*!
- * x and y coordinates of the nodes
- *
- * @param[in] min minimum coordinate value
- * @param[in] delta grid spacing
- * @param[in] k node index
- */
-static double xy(double min, double delta, int k) {
-  return min + k * delta;
-}
-
-/*!
- * z coordinates of the nodes
- *
- * @param[in] b surface elevation of the bottom of the domain
- * @param[in] H domain thickness
- * @param[in] Mz number of grid points in each vertical column
- * @param[in] k node index in the z direction
- */
-static double z(double b, double H, int Mz, int k) {
-  return b + H * k / (Mz - 1.0);
 }
 
 /*!
@@ -197,7 +94,7 @@ static double dirichlet_scale(double dx, double dy, double dz) {
 
 void Poisson3::compute_residual(DMDALocalInfo *petsc_info,
                                 const double ***x, double ***R) {
-  auto info = transpose(*petsc_info);
+  auto info = grid_transpose(*petsc_info);
 
   // Stencil width of 1 is not very important, but if info.sw > 1 will lead to more
   // redundant computation (we would be looping over elements that don't contribute to any
@@ -216,7 +113,7 @@ void Poisson3::compute_residual(DMDALocalInfo *petsc_info,
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
   fem::Q1Element3Face face(dx, dy, fem::Q1Quadrature4());
 
-  DataAccess<Parameters**> P(info.da, 2, GHOSTED);
+  DataAccess<ColumnInfo**> P(info.da, 2, GHOSTED);
   DataAccess<double***> F(info.da, 3, GHOSTED);
 
   // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
@@ -239,11 +136,11 @@ void Poisson3::compute_residual(DMDALocalInfo *petsc_info,
         // Dirichlet nodes
         if (dirichlet_node(info, {i, j, k})) {
           double
-            xx = xy(x_min, dx, i),
-            yy = xy(y_min, dy, j),
+            xx = grid_xy(x_min, dx, i),
+            yy = grid_xy(y_min, dy, j),
             b  = P[j][i].bed,
             H  = P[j][i].thickness,
-            zz = z(b, H, info.mz, k),
+            zz = grid_z(b, H, info.mz, k),
             dz = std::max(H, m_grid_info.min_thickness) / (info.mz - 1);
 
           R[j][i][k] = dirichlet_scale(dx, dy, dz) * (x[j][i][k] - u_exact(xx, yy, zz)); // STORAGE_ORDER
@@ -292,9 +189,9 @@ void Poisson3::compute_residual(DMDALocalInfo *petsc_info,
 
           node_type[n] = p.node_type;
 
-          x_nodal[n] = xy(x_min, dx, I.i);
-          y_nodal[n] = xy(y_min, dy, I.j);
-          z_nodal[n] = z(p.bed, p.thickness, info.mz, I.k);
+          x_nodal[n] = grid_xy(x_min, dx, I.i);
+          y_nodal[n] = grid_xy(y_min, dy, I.j);
+          z_nodal[n] = grid_z(p.bed, p.thickness, info.mz, I.k);
         }
 
         // skip ice-free elements
@@ -397,7 +294,7 @@ void Poisson3::compute_residual(DMDALocalInfo *petsc_info,
 
 void Poisson3::compute_jacobian(DMDALocalInfo *petsc_info,
                                 const double ***x, Mat A, Mat J) {
-  auto info = transpose(*petsc_info);
+  auto info = grid_transpose(*petsc_info);
 
   (void) x;
 
@@ -421,7 +318,7 @@ void Poisson3::compute_jacobian(DMDALocalInfo *petsc_info,
 
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
 
-  DataAccess<Parameters**> P(info.da, 2, GHOSTED);
+  DataAccess<ColumnInfo**> P(info.da, 2, GHOSTED);
 
   const int Nk = fem::q13d::n_chi;
   const int Nq = element.n_pts();
@@ -447,7 +344,7 @@ void Poisson3::compute_jacobian(DMDALocalInfo *petsc_info,
 
           node_type[n] = p.node_type;
 
-          z_nodal[n] = z(p.bed, p.thickness, info.mz, I.k);
+          z_nodal[n] = grid_z(p.bed, p.thickness, info.mz, I.k);
         }
 
         // skip ice-free elements
@@ -583,7 +480,7 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz, int n_levels)
   }
 
   {
-    int mz = Mz + pad(Mz, n_levels);
+    int mz = Mz + grid_padding(Mz, n_levels);
     std::vector<double> sigma(mz);
     double dz = 1.0 / (mz - 1);
     for (int i = 0; i < mz; ++i) {
@@ -602,83 +499,6 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz, int n_levels)
 
     m_exact.reset(new IceModelVec3Custom(grid, "exact", "z_sigma", sigma, z_attrs));
     m_exact->set_attrs("diagnostic", "exact", "1", "1", "", 0);
-  }
-}
-
-/*!
- * Compute node type using domain thickness and the thickness threshold `min_thickness`.
- *
- * A node is *interior* if all four elements it belongs to contain ice.
- *
- * A node is *exterior* if it belongs to zero icy elements.
- *
- * A node that is neither interior nor exterior is a *boundary* node.
- */
-void compute_node_type(DM da, double min_thickness) {
-  // Note that P provides access to a ghosted copy of 2D parameters, so changes to P have
-  // no lasting effect.
-  DataAccess<Parameters**> P(da, 2, GHOSTED);
-
-  DMDALocalInfo info;
-  int ierr = DMDAGetLocalInfo(da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
-  info = transpose(info);
-
-  // loop over all the owned nodes and reset node type
-  for (int j = info.ys; j < info.ys + info.ym; j++) {
-    for (int i = info.xs; i < info.xs + info.xm; i++) {
-      P[j][i].node_type = 0;
-    }
-  }
-
-  // Note that dx, dy, and quadrature don't matter here.
-  fem::Q1Element2 E(info, 1.0, 1.0, fem::Q1Quadrature1());
-
-  Parameters p[fem::q1::n_chi];
-
-  // Loop over all the elements with at least one owned node and compute the number of icy
-  // elements each node belongs to.
-  for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
-    for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
-      E.reset(i, j);
-
-      E.nodal_values((Parameters**)P, p);
-
-      // An element is "interior" (contains ice) if all of its nodes have thickness above
-      // the threshold
-      bool interior = true;
-      for (int k = 0; k < fem::q1::n_chi; ++k) {
-        if (p[k].thickness < min_thickness) {
-          interior = false;
-          break;
-        }
-      }
-
-      for (int k = 0; k < fem::q1::n_chi; ++k) {
-        int ii, jj;
-        E.local_to_global(k, ii, jj);
-        P[jj][ii].node_type += interior;
-      }
-    }
-  }
-
-  DataAccess<Parameters**> result(da, 2, NOT_GHOSTED);
-
-  // Loop over all the owned nodes and turn the number of "icy" elements this node belongs
-  // to into node type.
-  for (int j = info.ys; j < info.ys + info.ym; j++) {
-    for (int i = info.xs; i < info.xs + info.xm; i++) {
-
-      switch ((int)P[j][i].node_type) {
-      case 4:
-        result[j][i].node_type = NODE_INTERIOR;
-        break;
-      case 0:
-        result[j][i].node_type = NODE_EXTERIOR;
-        break;
-      default:
-        result[j][i].node_type = NODE_BOUNDARY;
-      }
-    }
   }
 }
 
@@ -779,7 +599,7 @@ PetscErrorCode Poisson3::setup(DM pism_da, int Mz, int n_levels) {
     {
       // x direction
       {
-        int pad_x = pad(Mx, n_levels);
+        int pad_x = grid_padding(Mx, n_levels);
 
         new_lx[Nx - 1] += pad_x;
         Mx             += pad_x;
@@ -788,7 +608,7 @@ PetscErrorCode Poisson3::setup(DM pism_da, int Mz, int n_levels) {
 
       // y direction
       {
-        int pad_y = pad(My, n_levels);
+        int pad_y = grid_padding(My, n_levels);
 
         new_ly[Ny - 1] += pad_y;
         My             += pad_y;
@@ -796,7 +616,7 @@ PetscErrorCode Poisson3::setup(DM pism_da, int Mz, int n_levels) {
       }
 
       // z direction
-      Mz += pad(Mz, n_levels);
+      Mz += grid_padding(Mz, n_levels);
     }
 
     ierr = DMDACreate3d(PETSC_COMM_WORLD,
@@ -818,7 +638,7 @@ PetscErrorCode Poisson3::setup(DM pism_da, int Mz, int n_levels) {
     m_grid_info = {x_min, x_max,
                    y_min, y_max,
                    min_thickness,
-                   sizeof(Parameters)/sizeof(double)};
+                   sizeof(ColumnInfo)/sizeof(double)};
 
     // set up 2D and 3D parameter storage
     ierr = setup_level(m_da, m_grid_info); CHKERRQ(ierr);
@@ -889,7 +709,7 @@ void Poisson3::init_2d_parameters() {
   DMDALocalInfo info;
   int ierr = DMDAGetLocalInfo(m_da, &info);
   PISM_CHK(ierr, "DMDAGetLocalInfo");
-  info = transpose(info);
+  info = grid_transpose(info);
 
   // Compute grid spacing from domain dimensions and the grid size
   double
@@ -900,12 +720,12 @@ void Poisson3::init_2d_parameters() {
     dx = (x_max - x_min) / (info.mx - 1),
     dy = (y_max - y_min) / (info.my - 1);
 
-  DataAccess<Parameters**> P(m_da, 2, NOT_GHOSTED);
+  DataAccess<ColumnInfo**> P(m_da, 2, NOT_GHOSTED);
 
   for (int j = info.ys; j < info.ys + info.ym; j++) {
     for (int i = info.xs; i < info.xs + info.xm; i++) {
-      double x = xy(x_min, dx, i);
-      double y = xy(y_min, dy, j);
+      double x = grid_xy(x_min, dx, i);
+      double y = grid_xy(y_min, dy, j);
 
       P[j][i].bed = b(x, y);
       P[j][i].thickness = H(x, y);
@@ -923,7 +743,7 @@ void Poisson3::init_3d_parameters() {
   DMDALocalInfo info;
   int ierr = DMDAGetLocalInfo(m_da, &info);
   PISM_CHK(ierr, "DMDAGetLocalInfo");
-  info = transpose(info);
+  info = grid_transpose(info);
 
   // Compute grid spacing from domain dimensions and the grid size
   double
@@ -934,18 +754,18 @@ void Poisson3::init_3d_parameters() {
     dx = (x_max - x_min) / (info.mx - 1),
     dy = (y_max - y_min) / (info.my - 1);
 
-  DataAccess<Parameters**> P2(m_da, 2, NOT_GHOSTED);
+  DataAccess<ColumnInfo**> P2(m_da, 2, NOT_GHOSTED);
   DataAccess<double***> P3(m_da, 3, NOT_GHOSTED);
 
   for (int j = info.ys; j < info.ys + info.ym; j++) {
     for (int i = info.xs; i < info.xs + info.xm; i++) {
       for (int k = info.zs; k < info.zs + info.zm; k++) {
         double
-          xx = xy(x_min, dx, i),
-          yy = xy(y_min, dy, j),
+          xx = grid_xy(x_min, dx, i),
+          yy = grid_xy(y_min, dy, j),
           b  = P2[j][i].bed,
           H  = P2[j][i].thickness,
-          zz = z(b, H, info.mz, k);
+          zz = grid_z(b, H, info.mz, k);
 
         P3[j][i][k] = F(xx, yy, zz); // STORAGE_ORDER
       }
@@ -969,14 +789,14 @@ void Poisson3::exact_solution(IceModelVec3Custom &result) {
 
   int Mz = result.levels().size();
 
-  DataAccess<Parameters**> P(m_da, 2, NOT_GHOSTED);
+  DataAccess<ColumnInfo**> P(m_da, 2, NOT_GHOSTED);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double
-      xx = xy(x_min, dx, i),
-      yy = xy(y_min, dy, j),
+      xx = grid_xy(x_min, dx, i),
+      yy = grid_xy(y_min, dy, j),
       b = P[j][i].bed,
       H = P[j][i].thickness;
 
@@ -988,7 +808,7 @@ void Poisson3::exact_solution(IceModelVec3Custom &result) {
     auto c = result.get_column(i, j);
 
     for (int k = 0; k < Mz; ++k) {
-      double zz = z(b, H, Mz, k);
+      double zz = grid_z(b, H, Mz, k);
 
       c[k] = u_exact(xx, yy, zz);
     }

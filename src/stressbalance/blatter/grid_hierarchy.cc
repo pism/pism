@@ -18,8 +18,105 @@
  */
 
 #include "grid_hierarchy.hh"
+#include "DataAccess.hh"
+#include "pism/util/fem/FEM.hh"
+#include "pism/util/node_types.hh"
 
 namespace pism {
+
+/*!
+ * x and y coordinates of the nodes
+ *
+ * @param[in] min minimum coordinate value
+ * @param[in] delta grid spacing
+ * @param[in] k node index
+ */
+double grid_xy(double min, double delta, int k) {
+  return min + k * delta;
+}
+
+/*!
+ * z coordinates of the nodes
+ *
+ * @param[in] b surface elevation of the bottom of the domain
+ * @param[in] H domain thickness
+ * @param[in] Mz number of grid points in each vertical column
+ * @param[in] k node index in the z direction
+ */
+double grid_z(double b, double H, int Mz, int k) {
+  return b + H * k / (Mz - 1.0);
+}
+
+/*!
+ * Compute the padding needed to allow for `n_levels` of coarsening.
+ *
+ * @param[in] N number of grid points (nodes)
+ * @param[in] n_levels number of coarsening levels
+ *
+ * @return padding amount
+ */
+int grid_padding(int N, int n_levels) {
+  // number of spaces
+  int k = N - 1;
+  int C = 1;
+  for (int n = 0; n < n_levels; ++n) {
+    C *= 2;
+    k = (k % 2 ? k + 1: k) / 2;
+  }
+  return (C * k + 1) - N;
+}
+
+/* Transpose a DMDALocalInfo structure to map from PETSc's ordering to PISM's order needed
+   to ensure that vertical columns are stored contiguously in RAM.
+
+   (What a pain.)
+
+   Map from PETSc to PISM order:
+
+   | PETSc | PISM |
+   |-------+------|
+   | x     | z    |
+   | y     | x    |
+   | z     | y    |
+
+   Assuming that i, j, k indexes correspond to x, y, and z PETSc's indexing order is
+   [k][j][i]. After this transpose we have to use [j][i][k].
+
+   Note that this indexing order is compatible with the PETSc-standard indexing for 2D
+   Vecs: [j][i].
+
+   All the lines changed to implement this transpose are marked with STORAGE_ORDER: that
+   way you can use grep to find them.
+ */
+DMDALocalInfo grid_transpose(const DMDALocalInfo &input) {
+  DMDALocalInfo result = input;
+
+  result.mx = input.my;
+  result.my = input.mz;
+  result.mz = input.mx;
+
+  result.xs = input.ys;
+  result.ys = input.zs;
+  result.zs = input.xs;
+
+  result.xm = input.ym;
+  result.ym = input.zm;
+  result.zm = input.xm;
+
+  result.gxs = input.gys;
+  result.gys = input.gzs;
+  result.gzs = input.gxs;
+
+  result.gxm = input.gym;
+  result.gym = input.gzm;
+  result.gzm = input.gxm;
+
+  result.bx = input.by;
+  result.by = input.bz;
+  result.bz = input.bx;
+
+  return result;
+}
 
 /*!
  * Set up storage for 2D and 3D data inputs (DMDAs and Vecs)
@@ -226,61 +323,80 @@ PetscErrorCode restrict_data(DM fine, DM coarse, const char *dm_name) {
 }
 
 /*!
- * Restrict 2D and 3D model parameters from a fine grid to a coarse grid.
+ * Compute node type using domain thickness and the thickness threshold `min_thickness`.
  *
- * This hook is called every time SNES needs to update coarse-grid data.
+ * A node is *interior* if all four elements it belongs to contain ice.
+ *
+ * A node is *exterior* if it belongs to zero icy elements.
+ *
+ * A node that is neither interior nor exterior is a *boundary* node.
  */
-PetscErrorCode restriction_hook(DM fine,
-                                Mat mrestrict, Vec rscale, Mat inject,
-                                DM coarse, void *ctx) {
-  // Get rid of warnings about unused arguments
-  (void) mrestrict;
-  (void) rscale;
-  (void) inject;
-  (void) ctx;
+void compute_node_type(DM da, double min_thickness) {
+  // Note that P provides access to a ghosted copy of 2D parameters, so changes to P have
+  // no lasting effect.
+  DataAccess<ColumnInfo**> P(da, 2, GHOSTED);
 
-  PetscErrorCode ierr;
-  ierr = restrict_data(fine, coarse, "2D_DM"); CHKERRQ(ierr);
-  ierr = restrict_data(fine, coarse, "3D_DM"); CHKERRQ(ierr);
+  DMDALocalInfo info;
+  int ierr = DMDAGetLocalInfo(da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
+  info = grid_transpose(info);
 
-  return 0;
-}
-
-/*! \brief Grid coarsening hook.
- *
- * This hook is called *once* when SNES sets up the next coarse level.
- *
- * This hook does three things:
- * - Set up the DM for the newly created coarse level.
- * - Set up the matrix type on the coarsest level to allow using
- *   direct solvers for the coarse problem.
- * - Set up the interpolation matrix that will be used by the
- *   restriction hook to set model parameters on the new coarse level.
- *
- * See restriction_hook().
- */
-PetscErrorCode coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
-  PetscErrorCode ierr;
-  GridInfo *grid_info = (GridInfo*)ctx;
-  PetscInt rlevel, clevel;
-
-  ierr = setup_level(dm_coarse, *grid_info); CHKERRQ(ierr);
-
-  ierr = DMGetRefineLevel(dm_coarse, &rlevel); CHKERRQ(ierr);
-  ierr = DMGetCoarsenLevel(dm_coarse, &clevel); CHKERRQ(ierr);
-  if (rlevel - clevel == 0) {
-    ierr = DMSetMatType(dm_coarse, MATAIJ); CHKERRQ(ierr);
+  // loop over all the owned nodes and reset node type
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+      P[j][i].node_type = 0;
+    }
   }
 
-  ierr = DMCoarsenHookAdd(dm_coarse, coarsening_hook, restriction_hook, ctx); CHKERRQ(ierr);
+  // Note that dx, dy, and quadrature don't matter here.
+  fem::Q1Element2 E(info, 1.0, 1.0, fem::Q1Quadrature1());
 
-  // 2D
-  ierr = create_restriction(dm_fine, dm_coarse, "2D_DM"); CHKERRQ(ierr);
+  ColumnInfo p[fem::q1::n_chi];
 
-  // 3D
-  ierr = create_restriction(dm_fine, dm_coarse, "3D_DM"); CHKERRQ(ierr);
+  // Loop over all the elements with at least one owned node and compute the number of icy
+  // elements each node belongs to.
+  for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
+    for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
+      E.reset(i, j);
 
-  return 0;
+      E.nodal_values((ColumnInfo**)P, p);
+
+      // An element is "interior" (contains ice) if all of its nodes have thickness above
+      // the threshold
+      bool interior = true;
+      for (int k = 0; k < fem::q1::n_chi; ++k) {
+        if (p[k].thickness < min_thickness) {
+          interior = false;
+          break;
+        }
+      }
+
+      for (int k = 0; k < fem::q1::n_chi; ++k) {
+        int ii, jj;
+        E.local_to_global(k, ii, jj);
+        P[jj][ii].node_type += interior;
+      }
+    }
+  }
+
+  DataAccess<ColumnInfo**> result(da, 2, NOT_GHOSTED);
+
+  // Loop over all the owned nodes and turn the number of "icy" elements this node belongs
+  // to into node type.
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+
+      switch ((int)P[j][i].node_type) {
+      case 4:
+        result[j][i].node_type = NODE_INTERIOR;
+        break;
+      case 0:
+        result[j][i].node_type = NODE_EXTERIOR;
+        break;
+      default:
+        result[j][i].node_type = NODE_BOUNDARY;
+      }
+    }
+  }
 }
 
 } // end of namespace pism
