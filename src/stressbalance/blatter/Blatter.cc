@@ -25,80 +25,74 @@
 #include "Blatter.hh"
 #include "pism/util/fem/FEM.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/Vector2.hh"
 
 #include "DataAccess.hh"
 #include "grid_hierarchy.hh"
 #include "pism/util/node_types.hh"
 
+#include "pism/rheology/FlowLaw.hh"
+
 namespace pism {
 namespace stressbalance {
 
-const double u_exterior = 0.0;
+const Vector2 u_exterior = {0.0, 0.0};
 
+/*!
+ * 2D input parameters
+ */
 struct Parameters : public ColumnInfo{
   // basal yield stress
   double tauc;
+  // sea level elevation (used to determine if a location is grounded)
+  double sea_level;
 };
-
-/*!
- * dot product (used to compute normal derivatives)
- */
-static double dot(const Vector3 &a, const Vector3 &b) {
-  return a.x * b.x + a.y * b.y + a.z * b.z;
-}
 
 /*!
  * Returns true if a node is in the Dirichlet part of the boundary, false otherwise.
  */
 static bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I) {
-  return (I.k == 0) or (I.k == info.mz - 1);
+  (void) info;
+  return I.k == 0;
 }
 
-/*! Dirichlet BC and the exact solution
-
- u : x*y*(z+1)^2+(2.0*(y+1))/((y+1)^2+(x+2)^2)$
- grind('u = u);
- grind(F = ratsimp(-(diff(u, x, 2) + diff(u, y, 2) + diff(u, z, 2))));
- grind(u_x = diff(u, x));
- grind(u_y = diff(u, y));
- grind(u_z = diff(u, z));
+/*! Dirichlet BC
 */
-static double u_exact(double x, double y, double z) {
-  using std::pow;
-  return x * y * pow(z + 1, 2.0) + (2.0 * (y + 1)) / (pow(y + 1, 2.0) + pow(x + 2, 2.0));
+static Vector2 u_bc(double x, double y, double z) {
+  (void) x;
+  (void) y;
+  (void) z;
+  return {0.0, 0.0};
 }
 
 /*!
  * Right hand side
- *
- * F = - (diff(u, x, 2) + diff(u, y, 2) + diff(u, z, 2))
  */
 static double F(double x, double y, double z) {
+  (void) x;
+  (void) y;
   (void) z;
-  return -2.0 * x * y;
+  return 0.0;
 }
 
 /*!
  * Neumann BC
  */
-static double G(double x, double y, double z, const Vector3 &N) {
-  using std::pow;
-  double
-    u_x = (y * pow(z + 1, 2.0) -
-           (4.0 * (x + 2) * (y + 1)) / pow(pow(y + 1, 2.0) + pow(x + 2, 2.0), 2.0)),
-    u_y = (x * pow(z + 1, 2.0) + 2.0 / (pow(y + 1, 2.0) + pow(x + 2, 2.0)) -
-           (4.0 * pow(y + 1, 2.0)) / pow(pow(y + 1, 2.0) + pow(x + 2, 2.0), 2.0)),
-    u_z = 2 * x * y * (z + 1);
-
-  return dot({u_x, u_y, u_z}, N);
+static Vector2 G(double x, double y, double z, const Vector3 &N) {
+  (void) x;
+  (void) y;
+  (void) z;
+  (void) N;
+  return {0.0, 0.0};
 }
 
-static double dirichlet_scale(double dx, double dy, double dz) {
-  return dx * dy * dz * (1.0 / (dx * dx) + 1.0 / (dy * dy) + 1.0 / dz * dz);
+static Vector2 dirichlet_scale(double dx, double dy, double dz) {
+  return {dx * dy / dz + dx * dz / dy + 4.0 * dy * dz / dx,
+          dx * dy / dz + 4.0 * dx * dz / dy + dy * dz / dx};
 }
 
 void Blatter::compute_residual(DMDALocalInfo *petsc_info,
-                                const double ***x, double ***R) {
+                               const Vector2 ***x, Vector2 ***R) {
   auto info = grid_transpose(*petsc_info);
 
   // Stencil width of 1 is not very important, but if info.sw > 1 will lead to more
@@ -131,24 +125,30 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
     for (int i = info.xs; i < info.xs + info.xm; i++) {
       for (int k = info.zs; k < info.zs + info.zm; k++) {
 
-        // nodes that don't belong to any icy elements
-        if ((int)P[j][i].node_type == NODE_EXTERIOR) {
-          double dz = std::max(P[j][i].thickness, m_grid_info.min_thickness) / (info.mz - 1);
-          R[j][i][k] = dirichlet_scale(dx, dy, dz) * (x[j][i][k] - u_exterior); // STORAGE_ORDER
-          continue;
-        }
-
         // Dirichlet nodes
-        if (dirichlet_node(info, {i, j, k})) {
-          double
-            xx = grid_xy(x_min, dx, i),
-            yy = grid_xy(y_min, dy, j),
-            b  = P[j][i].bed,
-            H  = P[j][i].thickness,
-            zz = grid_z(b, H, info.mz, k),
-            dz = std::max(H, m_grid_info.min_thickness) / (info.mz - 1);
+        if (dirichlet_node(info, {i, j, k}) or
+            (int)P[j][i].node_type == NODE_EXTERIOR) {
+          double dz = std::max(P[j][i].thickness, m_grid_info.min_thickness) / (info.mz - 1);
 
-          R[j][i][k] = dirichlet_scale(dx, dy, dz) * (x[j][i][k] - u_exact(xx, yy, zz)); // STORAGE_ORDER
+          // FIXME: eta should be included in the scaling
+          Vector2 s = dirichlet_scale(dx, dy, dz);
+
+          Vector2 U_bc;
+          if (dirichlet_node(info, {i, j, k})) {
+            double
+              xx = grid_xy(x_min, dx, i),
+              yy = grid_xy(y_min, dy, j),
+              b  = P[j][i].bed,
+              H  = P[j][i].thickness,
+              zz = grid_z(b, H, info.mz, k);
+            U_bc = u_bc(xx, yy, zz);
+          } else {
+            U_bc = u_exterior;
+          }
+
+          Vector2 r = x[j][i][k] - U_bc;
+
+          R[j][i][k] = {r.u * s.u, r.v * s.v}; // STORAGE_ORDER
         } else {
           R[j][i][k] = 0.0;     // STORAGE_ORDER
         }
@@ -161,19 +161,21 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   int Nk = element.n_chi();
   assert(Nk <= Nk_max);
 
-  double
-    x_nodal[Nk_max], y_nodal[Nk_max],
-    R_nodal[Nk_max], u_nodal[Nk_max], F_nodal[Nk_max];
-  int node_type[Nk_max];
+  double x_nodal[Nk_max], y_nodal[Nk_max], B_nodal[Nk_max], s_nodal[Nk_max];
   std::vector<double> z_nodal(Nk);
+
+  Vector2 R_nodal[Nk_max], u_nodal[Nk_max];
+  int node_type[Nk_max];
 
   // values at quadrature points
   const int Nq_max = 16;
   int Nq = element.n_pts();
   assert(Nq <= Nq_max);
 
-  double u[Nq_max], u_x[Nq_max], u_y[Nq_max], u_z[Nq_max];
-  double xq[Nq_max], yq[Nq_max], zq[Nq_max], Fq[Nq_max];
+  Vector2 u[Nq_max], u_x[Nq_max], u_y[Nq_max], u_z[Nq_max];
+  double xq[Nq_max], yq[Nq_max], zq[Nq_max], Bq[Nq_max];
+
+  double s[Nq_max], s_x[Nq_max], s_y[Nq_max], s_z[Nq_max];
 
   // make sure that xq, yq, zq and big enough for quadrature points on element faces
   assert(face.n_pts() <= Nq_max);
@@ -197,6 +199,8 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
           x_nodal[n] = grid_xy(x_min, dx, I.i);
           y_nodal[n] = grid_xy(y_min, dy, I.j);
           z_nodal[n] = grid_z(p.bed, p.thickness, info.mz, I.k);
+
+          s_nodal[n] = p.bed + p.thickness;
         }
 
         // skip ice-free elements
@@ -220,7 +224,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         element.reset(i, j, k, z_nodal);
 
         // Get nodal values of F.
-        element.nodal_values((double***)F, F_nodal);
+        element.nodal_values((double***)F, B_nodal);
 
         // Get nodal values of u.
         element.nodal_values(x, u_nodal);
@@ -231,26 +235,50 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
           auto I = element.local_to_global(n);
           if (dirichlet_node(info, I)) {
             element.mark_row_invalid(n);
-            u_nodal[n] = u_exact(x_nodal[n], y_nodal[n], z_nodal[n]);
+            u_nodal[n] = u_bc(x_nodal[n], y_nodal[n], z_nodal[n]);
           }
         }
 
         // evaluate u and its partial derivatives at quadrature points
         element.evaluate(u_nodal, u, u_x, u_y, u_z);
 
-        // evaluate F at quadrature points
-        element.evaluate(F_nodal, Fq);
+        // evaluate B (ice hardness) at quadrature points
+        element.evaluate(B_nodal, Bq);
+
+        // compute the surface gradient at quadrature points
+        // we could do this faster by using the fact that s does not depend on z
+        element.evaluate(s_nodal, s, s_x, s_y, s_z);
 
         // loop over all quadrature points
         for (int q = 0; q < Nq; ++q) {
           auto W = element.weight(q);
 
+          double
+            ux = u_x[q].u,
+            uy = u_y[q].u,
+            uz = u_z[q].u,
+            vx = u_x[q].v,
+            vy = u_y[q].v,
+            vz = u_z[q].v;
+
+          double gamma = (ux * ux + vy * vy + ux * vy +
+                          0.25 * ((uy + vx) * (uy + vx) + uz * uz + vz * vz));
+
+          double eta;
+          m_flow_law->effective_viscosity(Bq[q], gamma, &eta, nullptr);
+
           // loop over all test functions
           for (int t = 0; t < Nk; ++t) {
             const auto &psi = element.chi(q, t);
 
-            R_nodal[t] += W * (u_x[q] * psi.dx + u_y[q] * psi.dy + u_z[q] * psi.dz
-                               - Fq[q] * psi.val);
+            R_nodal[t].u += W * (eta * (psi.dx * (4.0 * ux + 2.0 * vy) +
+                                        psi.dy * (uy + vx) +
+                                        psi.dz * uz) +
+                                 psi.val * s_x[q]);
+            R_nodal[t].v += W * (eta * (psi.dx * (uy + vx) +
+                                        psi.dy * (2.0 * ux + 4.0 * vy) +
+                                        psi.dz * vz) +
+                                 psi.val * s_y[q]);
           }
         }
 
@@ -285,6 +313,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
               for (int t = 0; t < Nk; ++t) {
                 auto psi = face.chi(q, t);
 
+                // FIXME: stress BC
                 R_nodal[t] += - W * psi * G(xq[q], yq[q], zq[q], N);
               }
             }
@@ -298,7 +327,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 }
 
 void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
-                                const double ***x, Mat A, Mat J) {
+                               const Vector2 ***x, Mat A, Mat J) {
   auto info = grid_transpose(*petsc_info);
 
   (void) x;
@@ -324,11 +353,19 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
 
   DataAccess<Parameters**> P(info.da, 2, GHOSTED);
+  DataAccess<double***> hardness(info.da, 3, GHOSTED);
 
   const int Nk = fem::q13d::n_chi;
-  const int Nq = element.n_pts();
 
+  const int Nq_max = 16;
+  Vector2 u[Nq_max], u_x[Nq_max], u_y[Nq_max], u_z[Nq_max];
+  double Bq[Nq_max];
+  const int Nq = element.n_pts();
+  assert(Nq <= Nq_max);
+
+  Vector2 u_nodal[Nk];
   int node_type[Nk];
+  double x_nodal[Nk], y_nodal[Nk], B_nodal[Nk];
   std::vector<double> z_nodal(Nk);
 
   // loop over all the elements that have at least one owned node
@@ -338,7 +375,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
         // Element-local Jacobian matrix (there are Nk vector valued degrees of freedom
         // per element, for a total of Nk*Nk = 64 entries in the local Jacobian.
-        double K[Nk][Nk];
+        double K[2*Nk][2*Nk];
         memset(K, 0, sizeof(K));
 
         // Compute coordinates of the nodes of this element and fetch node types.
@@ -349,6 +386,8 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
           node_type[n] = p.node_type;
 
+          x_nodal[n] = grid_xy(x_min, dx, I.i);
+          y_nodal[n] = grid_xy(y_min, dy, I.j);
           z_nodal[n] = grid_z(p.bed, p.thickness, info.mz, I.k);
         }
 
@@ -372,18 +411,43 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
         // points on this physical element
         element.reset(i, j, k, z_nodal);
 
+        // Get nodal values of u.
+        element.nodal_values(x, u_nodal);
+
         // Don't contribute to Dirichlet nodes
         for (int n = 0; n < Nk; ++n) {
           auto I = element.local_to_global(n);
           if (dirichlet_node(info, I)) {
             element.mark_row_invalid(n);
             element.mark_col_invalid(n);
+            u_nodal[n] = u_bc(x_nodal[n], y_nodal[n], z_nodal[n]);
           }
         }
+
+        // evaluate partial derivatives at quadrature points
+        element.evaluate(u_nodal, u, u_x, u_y, u_z);
+
+        // evaluate hardness at quadrature points
+        element.nodal_values((double***)hardness, B_nodal);
+        element.evaluate(B_nodal, Bq);
 
         // loop over all quadrature points
         for (int q = 0; q < Nq; ++q) {
           auto W = element.weight(q);
+
+          double
+            ux = u_x[q].u,
+            uy = u_y[q].u,
+            uz = u_z[q].u,
+            vx = u_x[q].v,
+            vy = u_y[q].v,
+            vz = u_z[q].v;
+
+          double gamma = (ux * ux + vy * vy + ux * vy +
+                          0.25 * ((uy + vx) * (uy + vx) + uz * uz + vz * vz));
+
+          double eta, deta;
+          m_flow_law->effective_viscosity(Bq[q], gamma, &eta, &deta);
 
           // loop over test and trial functions, computing the upper-triangular part of
           // the element Jacobian
@@ -392,15 +456,44 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
             for (int s = t; s < Nk; ++s) {
               auto phi = element.chi(q, s);
 
-              K[t][s] += W * (phi.dx * psi.dx + phi.dy * psi.dy + phi.dz * psi.dz);
+              double
+                gamma_u = 2.0 * ux * phi.dx + vy * phi.dx + 0.5 * phi.dy * (uy + vx) + 0.5 * uz * phi.dz,
+                gamma_v = 2.0 * vy * phi.dy + ux * phi.dy + 0.5 * phi.dx * (uy + vx) + 0.5 * vz * phi.dz;
+
+              double
+                eta_u = deta * gamma_u,
+                eta_v = deta * gamma_v;
+
+              // Picard part
+              K[t * 2 + 0][s * 2 + 0] += W * eta * (4.0 * psi.dx * phi.dx + psi.dy * phi.dy + psi.dz * phi.dz);
+              K[t * 2 + 0][s * 2 + 1] += W * eta * (2.0 * psi.dx * phi.dy + psi.dy * phi.dx);
+              K[t * 2 + 1][s * 2 + 0] += W * eta * (2.0 * psi.dy * phi.dx + psi.dx * phi.dy);
+              K[t * 2 + 1][s * 2 + 1] += W * eta * (4.0 * psi.dy * phi.dy + psi.dx * phi.dx + psi.dz * phi.dz);
+              // extra Newton terms
+              K[t * 2 + 0][s * 2 + 0] += W * eta_u * (psi.dx * (4.0 * ux + 2.0 * vy) +
+                                                      psi.dy * (uy + vx) +
+                                                      psi.dz * uz);
+              K[t * 2 + 0][s * 2 + 1] += W * eta_v * (psi.dx * (4.0 * ux + 2.0 * vy) +
+                                                      psi.dy * (uy + vx) +
+                                                      psi.dz * uz);
+              K[t * 2 + 1][s * 2 + 0] += W * eta_u * (psi.dx * (uy + vx) +
+                                                      psi.dy * (4.0 * vy + 2.0 * ux) +
+                                                      psi.dz * vz);
+              K[t * 2 + 1][s * 2 + 1] += W * eta_v * (psi.dx * (uy + vx) +
+                                                      psi.dy * (4.0 * vy + 2.0 * ux) +
+                                                      psi.dz * vz);
             }
           }
         } // end of the loop over q
 
-        // fill the lower-triangular part using the fact that J is symmetric
+        // fill the lower-triangular part of the element Jacobian using the fact that J is
+        // symmetric
         for (int t = 0; t < Nk; ++t) {
           for (int s = 0; s < t; ++s) {
-            K[t][s] = K[s][t];
+            K[t * 2 + 0][s * 2 + 0] = K[s * 2 + 0][t * 2 + 0];
+            K[t * 2 + 1][s * 2 + 0] = K[s * 2 + 0][t * 2 + 1];
+            K[t * 2 + 0][s * 2 + 1] = K[s * 2 + 1][t * 2 + 0];
+            K[t * 2 + 1][s * 2 + 1] = K[s * 2 + 1][t * 2 + 1];
           }
         }
 
@@ -416,15 +509,18 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
     for (int i = info.xs; i < info.xs + info.xm; i++) {
       for (int k = info.zs; k < info.zs + info.zm; k++) {
         if ((int)P[j][i].node_type == NODE_EXTERIOR or dirichlet_node(info, {i, j, k})) {
+
           double
-            dz = std::max(P[j][i].thickness, m_grid_info.min_thickness) / (info.mz - 1),
-            scaling = dirichlet_scale(dx, dy, dz);
+            dz = std::max(P[j][i].thickness, m_grid_info.min_thickness) / (info.mz - 1);
+          auto scaling = dirichlet_scale(dx, dy, dz);
+          // FIXME: eta should be included in the scaling
+          double identity[4] = {scaling.u, 0, 0, scaling.v};
+
           MatStencil row;
           row.i = k;            // STORAGE_ORDER
           row.j = i;            // STORAGE_ORDER
           row.k = j;            // STORAGE_ORDER
-          row.c = 0;
-          ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &scaling, ADD_VALUES);
+          ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity, ADD_VALUES);
           PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
         }
       }
@@ -446,7 +542,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 }
 
 PetscErrorCode Blatter::function_callback(DMDALocalInfo *info,
-                                           const double ***x, double ***f,
+                                           const Vector2 ***x, Vector2 ***f,
                                            CallbackData *data) {
   try {
     data->solver->compute_residual(info, x, f);
@@ -460,7 +556,7 @@ PetscErrorCode Blatter::function_callback(DMDALocalInfo *info,
 }
 
 PetscErrorCode Blatter::jacobian_callback(DMDALocalInfo *info,
-                                           const double ***x,
+                                           const Vector2 ***x,
                                            Mat A, Mat J, CallbackData *data) {
   try {
     data->solver->compute_jacobian(info, x, A, J);
@@ -488,7 +584,7 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels)
   int ierr = setup(*pism_da, Mz, n_levels);
   if (ierr != 0) {
     throw RuntimeError(PISM_ERROR_LOCATION,
-                       "Failed to allocate a Blatter instance");
+                       "Failed to allocate a Blatter solver instance");
   }
 
   {
@@ -506,11 +602,11 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels)
        {"units", "1"},
        {"positive", "up"}};
 
-    m_solution.reset(new IceModelVec3Custom(grid, "solution", "z_sigma", sigma, z_attrs));
-    m_solution->set_attrs("diagnostic", "solution", "1", "1", "", 0);
+    m_u.reset(new IceModelVec3Custom(grid, "u_velocity", "z_sigma", sigma, z_attrs));
+    m_u->set_attrs("diagnostic", "u velocity component", "1", "1", "", 0);
 
-    m_exact.reset(new IceModelVec3Custom(grid, "exact", "z_sigma", sigma, z_attrs));
-    m_exact->set_attrs("diagnostic", "exact", "1", "1", "", 0);
+    m_v.reset(new IceModelVec3Custom(grid, "v_velocity", "z_sigma", sigma, z_attrs));
+    m_v->set_attrs("diagnostic", "v velocity component", "1", "1", "", 0);
   }
 }
 
@@ -567,7 +663,7 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels) {
     PetscInt dim, Mx, My, Nx, Ny;
     PetscInt
       Nz            = 1,
-      dof           = 1,
+      dof           = 2,        // u and v velocity components
       stencil_width = 1;
 
     ierr = DMDAGetInfo(pism_da,
@@ -655,10 +751,11 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels) {
     ierr = setup_level(m_da, m_grid_info); CHKERRQ(ierr);
 
     // tell PETSc how to coarsen this grid and how to restrict data to a coarser grid
-    ierr = DMCoarsenHookAdd(m_da, blatter_coarsening_hook, blatter_restriction_hook, &m_grid_info); CHKERRQ(ierr);
+    ierr = DMCoarsenHookAdd(m_da, blatter_coarsening_hook, blatter_restriction_hook, &m_grid_info);
+    CHKERRQ(ierr);
   }
 
-  // Vecs, Mat
+  // Vec
   {
     ierr = DMCreateGlobalVector(m_da, m_x.rawptr()); CHKERRQ(ierr);
   }
@@ -752,8 +849,7 @@ void Blatter::init_2d_parameters() {
 void Blatter::init_3d_parameters() {
 
   DMDALocalInfo info;
-  int ierr = DMDAGetLocalInfo(m_da, &info);
-  PISM_CHK(ierr, "DMDAGetLocalInfo");
+  int ierr = DMDAGetLocalInfo(m_da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
   info = grid_transpose(info);
 
   // Compute grid spacing from domain dimensions and the grid size
@@ -788,54 +884,6 @@ Blatter::~Blatter() {
   // empty
 }
 
-void Blatter::exact_solution(IceModelVec3Custom &result) {
-  IceModelVec::AccessList list{&result};
-
-  // Compute grid spacing from domain dimensions and the grid size
-  double
-    x_min = m_grid_info.x_min,
-    y_min = m_grid_info.y_min,
-    dx = m_grid->dx(),
-    dy = m_grid->dy();
-
-  int Mz = result.levels().size();
-
-  DataAccess<Parameters**> P(m_da, 2, NOT_GHOSTED);
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    double
-      xx = grid_xy(x_min, dx, i),
-      yy = grid_xy(y_min, dy, j),
-      b = P[j][i].bed,
-      H = P[j][i].thickness;
-
-    if ((int)P[j][i].node_type == NODE_EXTERIOR) {
-      result.set_column(i, j, u_exterior);
-      continue;
-    }
-
-    auto c = result.get_column(i, j);
-
-    for (int k = 0; k < Mz; ++k) {
-      double zz = grid_z(b, H, Mz, k);
-
-      c[k] = u_exact(xx, yy, zz);
-    }
-  }
-}
-
-double Blatter::error() const {
-  IceModelVec3Custom difference(m_grid, "difference", "z_sigma",
-                                m_exact->levels(), {});
-
-  difference.copy_from(*m_exact);
-  difference.add(-1.0, *m_solution);
-
-  return difference.norm(NORM_INFINITY);
-}
-
 void Blatter::update(const Inputs &inputs, bool) {
   (void) inputs;
 
@@ -844,23 +892,24 @@ void Blatter::update(const Inputs &inputs, bool) {
 
   int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 
-  exact_solution(*m_exact);
-
+  // copy the solution from m_x to m_u, m_v
   {
-    double ***x = nullptr;
+    Vector2 ***x = nullptr;
     ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
-    int Mz = m_solution->levels().size();
+    int Mz = m_u->levels().size();
 
-    IceModelVec::AccessList list{m_solution.get()};
+    IceModelVec::AccessList list{m_u.get(), m_v.get()};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      auto c = m_solution->get_column(i, j);
+      auto u = m_u->get_column(i, j);
+      auto v = m_v->get_column(i, j);
 
       for (int k = 0; k < Mz; ++k) {
-        c[k] = x[j][i][k];      // STORAGE_ORDER
+        u[k] = x[j][i][k].u;      // STORAGE_ORDER
+        v[k] = x[j][i][k].v;      // STORAGE_ORDER
       }
     }
 
@@ -868,12 +917,12 @@ void Blatter::update(const Inputs &inputs, bool) {
   }
 }
 
-IceModelVec3Custom::Ptr Blatter::solution() const {
-  return m_solution;
+IceModelVec3Custom::Ptr Blatter::u_velocity() const {
+  return m_u;
 }
 
-IceModelVec3Custom::Ptr Blatter::exact() const {
-  return m_exact;
+IceModelVec3Custom::Ptr Blatter::v_velocity() const {
+  return m_v;
 }
 
 } // end of namespace stressbalance

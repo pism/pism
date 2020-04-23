@@ -37,16 +37,13 @@ public:
 
   void update(const Inputs &inputs, bool);
 
-  IceModelVec3Custom::Ptr solution() const;
-  IceModelVec3Custom::Ptr exact() const;
-
-  double error() const;
+  IceModelVec3Custom::Ptr u_velocity() const;
+  IceModelVec3Custom::Ptr v_velocity() const;
 
 protected:
   void exact_solution(IceModelVec3Custom &result);
 
-  IceModelVec3Custom::Ptr m_solution;
-  IceModelVec3Custom::Ptr m_exact;
+  IceModelVec3Custom::Ptr m_u, m_v;
 
   petsc::DM m_da;
   petsc::Vec m_x;
@@ -60,13 +57,13 @@ protected:
   CallbackData m_callback_data;
   GridInfo m_grid_info;
 
-  void compute_jacobian(DMDALocalInfo *info, const double ***x, Mat A, Mat J);
+  void compute_jacobian(DMDALocalInfo *info, const Vector2 ***x, Mat A, Mat J);
 
-  void compute_residual(DMDALocalInfo *info, const double ***xg, double ***yg);
+  void compute_residual(DMDALocalInfo *info, const Vector2 ***xg, Vector2 ***yg);
   static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
-                                          const double ***x,
+                                          const Vector2 ***x,
                                           Mat A, Mat J, CallbackData *data);
-  static PetscErrorCode function_callback(DMDALocalInfo *info, const double ***x, double ***f,
+  static PetscErrorCode function_callback(DMDALocalInfo *info, const Vector2 ***x, Vector2 ***f,
                                           CallbackData *data);
 
   void init_2d_parameters();
