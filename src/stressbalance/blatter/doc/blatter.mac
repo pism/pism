@@ -1,0 +1,23 @@
+kill(all);
+
+depends([u, v], [x, y, z])$
+depends(s, [x, y])$
+depends(eta, [u, v])$
+
+ux : diff(u, x)$
+uy : diff(u, y)$
+uz : diff(u, z)$
+vx : diff(v, x)$
+vy : diff(v, y)$
+vz : diff(v, z)$
+
+M : matrix(
+  [4 * ux + 2 * vy, uy + vx, uz],
+  [uy + vx, 2 * ux + 4 * vy, vz]);
+
+grad_s : [diff(s, x), diff(s, y)];
+
+div(f) := diff(f[1], x) + diff(f[2], y) + diff(f[3], z);
+
+eq[i] := - div(eta * M[i]) = rho * g * grad_s[i];
+
