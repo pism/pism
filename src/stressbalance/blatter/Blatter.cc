@@ -45,12 +45,95 @@ const Vector2 u_exterior = {0.0, 0.0};
 /*!
  * 2D input parameters
  */
-struct Parameters : public ColumnInfo{
+struct Parameters {
+  // elevation (z coordinate) of the bottom domain boundary
+  double bed;
+  // thickness of the domain
+  double thickness;
+  // NodeType stored as double
+  double node_type;
   // basal yield stress
   double tauc;
   // sea level elevation (used to determine if a location is grounded)
   double sea_level;
 };
+
+/*!
+ * Compute node type using domain thickness and the thickness threshold `min_thickness`.
+ *
+ * A node is *interior* if all four elements it belongs to contain ice.
+ *
+ * A node is *exterior* if it belongs to zero icy elements.
+ *
+ * A node that is neither interior nor exterior is a *boundary* node.
+ */
+static void blatter_node_type(DM da, double min_thickness) {
+  // Note that P provides access to a ghosted copy of 2D parameters, so changes to P have
+  // no lasting effect.
+  DataAccess<Parameters**> P(da, 2, GHOSTED);
+
+  DMDALocalInfo info;
+  int ierr = DMDAGetLocalInfo(da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
+  info = grid_transpose(info);
+
+  // loop over all the owned nodes and reset node type
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+      P[j][i].node_type = 0;
+    }
+  }
+
+  // Note that dx, dy, and quadrature don't matter here.
+  fem::Q1Element2 E(info, 1.0, 1.0, fem::Q1Quadrature1());
+
+  Parameters p[fem::q1::n_chi];
+
+  // Loop over all the elements with at least one owned node and compute the number of icy
+  // elements each node belongs to.
+  for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
+    for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
+      E.reset(i, j);
+
+      E.nodal_values((Parameters**)P, p);
+
+      // An element is "interior" (contains ice) if all of its nodes have thickness above
+      // the threshold
+      bool interior = true;
+      for (int k = 0; k < fem::q1::n_chi; ++k) {
+        if (p[k].thickness < min_thickness) {
+          interior = false;
+          break;
+        }
+      }
+
+      for (int k = 0; k < fem::q1::n_chi; ++k) {
+        int ii, jj;
+        E.local_to_global(k, ii, jj);
+        P[jj][ii].node_type += interior;
+      }
+    }
+  }
+
+  DataAccess<Parameters**> result(da, 2, NOT_GHOSTED);
+
+  // Loop over all the owned nodes and turn the number of "icy" elements this node belongs
+  // to into node type.
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+
+      switch ((int)P[j][i].node_type) {
+      case 4:
+        result[j][i].node_type = NODE_INTERIOR;
+        break;
+      case 0:
+        result[j][i].node_type = NODE_EXTERIOR;
+        break;
+      default:
+        result[j][i].node_type = NODE_BOUNDARY;
+      }
+    }
+  }
+}
 
 /*!
  * Returns true if a node is in the Dirichlet part of the boundary, false otherwise.
@@ -625,7 +708,7 @@ static PetscErrorCode blatter_restriction_hook(DM fine,
   ierr = restrict_data(fine, coarse, "2D_DM"); CHKERRQ(ierr);
   ierr = restrict_data(fine, coarse, "3D_DM"); CHKERRQ(ierr);
 
-  compute_node_type(coarse, grid_info->min_thickness);
+  blatter_node_type(coarse, grid_info->min_thickness);
 
   return 0;
 }
@@ -732,7 +815,7 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels) {
 
     ierr = DMSetUp(m_da); CHKERRQ(ierr);
 
-    double min_thickness = 0.1;
+    double min_thickness = 10.0;
 
     m_grid_info = {x_min, x_max,
                    y_min, y_max,
@@ -797,24 +880,27 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
     &b         = inputs.geometry->bed_elevation,
     &sea_level = inputs.geometry->sea_level_elevation;
 
-  IceModelVec::AccessList list{&H, &b, &sea_level};
+  {
+    DataAccess<Parameters**> P(m_da, 2, NOT_GHOSTED);
 
-  DataAccess<Parameters**> P(m_da, 2, NOT_GHOSTED);
+    IceModelVec::AccessList list{&tauc, &H, &b, &sea_level};
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    double
-      b_grounded = b(i, j),
-      b_floating = sea_level(i, j) - alpha * H(i, j);
+      double
+        b_grounded = b(i, j),
+        b_floating = sea_level(i, j) - alpha * H(i, j);
 
-    P[j][i].tauc = tauc(i, j);
-    P[j][i].thickness = H(i, j);
-    P[j][i].sea_level = sea_level(i, j);
-    P[j][i].bed = std::max(b_grounded, b_floating);
+      P[j][i].tauc = tauc(i, j);
+      P[j][i].thickness = H(i, j);
+      P[j][i].sea_level = sea_level(i, j);
+      P[j][i].bed = std::max(b_grounded, b_floating);
+      P[j][i].node_type = NODE_EXTERIOR;
+    }
   }
 
-  compute_node_type(m_da, m_grid_info.min_thickness);
+  blatter_node_type(m_da, m_grid_info.min_thickness);
 }
 
 /*!
