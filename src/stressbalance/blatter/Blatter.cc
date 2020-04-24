@@ -32,6 +32,7 @@
 #include "pism/util/node_types.hh"
 
 #include "pism/rheology/FlowLaw.hh"
+#include "pism/rheology/FlowLawFactory.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -607,6 +608,15 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels)
 
     m_v.reset(new IceModelVec3Custom(grid, "v_velocity", "z_sigma", sigma, z_attrs));
     m_v->set_attrs("diagnostic", "v velocity component", "1", "1", "", 0);
+  }
+
+  {
+    rheology::FlowLawFactory ice_factory("stress_balance.blatter.", m_config, m_EC);
+    ice_factory.remove(ICE_GOLDSBY_KOHLSTEDT);
+
+    ice_factory.set_default(m_config->get_string("stress_balance.blatter.flow_law"));
+
+    m_flow_law = ice_factory.create();
   }
 }
 
