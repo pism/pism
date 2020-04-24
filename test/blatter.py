@@ -2,12 +2,18 @@
 """This script runs the Blatter stress balance solver.
 """
 
+import numpy as np
+
 import PISM
 import PISM.testing
 
 ctx = PISM.Context()
 
 config = ctx.config
+
+H_max = 1000.0
+Mz = int(config.get_number("stress_balance.blatter.Mz"))
+n_levels = 1
 
 grid = PISM.testing.shallow_grid(Mx=int(config.get_number("grid.Mx")),
                                  My=int(config.get_number("grid.My")),
@@ -22,11 +28,12 @@ enthalpy.set_attrs("internal", "enthalpy of ice", "J kg-1", "J kg-1", "", 0)
 yield_stress     = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
 yield_stress.set_attrs("internal", "basal yield stress", "Pa", "Pa", "", 0)
 
-with PISM.vec.Access(nocomm=geometry.bed_elevation):
+with PISM.vec.Access(nocomm=[geometry.bed_elevation, geometry.ice_thickness]):
     for (i, j) in grid.points():
-        geometry.bed_elevation[i, j] = (grid.x(i) + grid.Lx()) * 1e-4
+        r = PISM.radius(grid, i, j)
+        geometry.bed_elevation[i, j] = 0.0
+        geometry.ice_thickness[i, j] = np.sqrt(max(H_max**2 - (r / 10)**2, 0.0))
 
-geometry.ice_thickness.set(1000.0)
 geometry.sea_level_elevation.set(0.0)
 
 geometry.ensure_consistency(0.0)
@@ -48,9 +55,7 @@ PISM.bootstrap_ice_enthalpy(geometry.ice_thickness,
 
 yield_stress.set(config.get_number("basal_yield_stress.constant.value"))
 
-stress_balance = PISM.BlatterStressBalance(grid, ctx.enthalpy_converter)
-
-stress_balance.init()
+stress_balance = PISM.Blatter(grid, Mz, n_levels)
 
 inputs = PISM.StressBalanceInputs()
 
@@ -64,11 +69,8 @@ output_file = config.get_string("output.file_name")
 
 PISM.util.prepare_output(output_file)
 
-stress_balance.velocity_u().write(output_file)
-stress_balance.velocity_v().write(output_file)
-
-stress_balance.velocity_u_sigma().write(output_file)
-stress_balance.velocity_v_sigma().write(output_file)
+stress_balance.u_velocity().write(output_file)
+stress_balance.v_velocity().write(output_file)
 
 geometry.ice_thickness.write(output_file)
 geometry.bed_elevation.write(output_file)
