@@ -1,4 +1,4 @@
-pism_class(pism::stressbalance::BlatterStressBalance,
-           "pism/stressbalance/blatter/BlatterStressBalance.hh")
+pism_class(pism::stressbalance::Blatter,
+           "pism/stressbalance/blatter/Blatter.hh")
 pism_class(pism::stressbalance::Poisson3,
            "pism/stressbalance/blatter/Poisson3.hh")
