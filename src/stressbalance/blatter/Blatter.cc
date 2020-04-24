@@ -317,7 +317,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
         // loop over all quadrature points
         for (int q = 0; q < Nq; ++q) {
-          auto W = element.weight(q);
+          auto W = element.weight(q) / m_rhog;
 
           double
             ux = u_x[q].u,
@@ -340,11 +340,11 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
             R_nodal[t].u += W * (eta * (psi.dx * (4.0 * ux + 2.0 * vy) +
                                         psi.dy * (uy + vx) +
                                         psi.dz * uz) +
-                                 psi.val * s_x[q]);
+                                 psi.val * m_rhog * s_x[q]);
             R_nodal[t].v += W * (eta * (psi.dx * (uy + vx) +
                                         psi.dy * (2.0 * ux + 4.0 * vy) +
                                         psi.dz * vz) +
-                                 psi.val * s_y[q]);
+                                 psi.val * m_rhog * s_y[q]);
           }
         }
 
@@ -372,7 +372,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
             // loop over all quadrature points
             for (int q = 0; q < face.n_pts(); ++q) {
-              auto W = face.weight(q);
+              auto W = face.weight(q) / m_rhog;
               auto N = face.normal(q);
 
               // loop over all test functions
@@ -499,7 +499,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
         // loop over all quadrature points
         for (int q = 0; q < Nq; ++q) {
-          auto W = element.weight(q);
+          auto W = element.weight(q) / m_rhog;
 
           double
             ux = u_x[q].u,
@@ -683,6 +683,9 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels)
 
     m_flow_law = ice_factory.create();
   }
+
+  m_rhog = (m_config->get_number("constants.ice.density") *
+            m_config->get_number("constants.standard_gravity"));
 }
 
 /*!

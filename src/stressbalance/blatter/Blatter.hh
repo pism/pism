@@ -56,6 +56,7 @@ protected:
 
   CallbackData m_callback_data;
   GridInfo m_grid_info;
+  double m_rhog;
 
   void compute_jacobian(DMDALocalInfo *info, const Vector2 ***x, Mat A, Mat J);
 
