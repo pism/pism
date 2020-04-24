@@ -34,6 +34,9 @@
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/rheology/FlowLawFactory.hh"
 
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/geometry/Geometry.hh"
+
 namespace pism {
 namespace stressbalance {
 
@@ -63,27 +66,6 @@ static Vector2 u_bc(double x, double y, double z) {
   (void) x;
   (void) y;
   (void) z;
-  return {0.0, 0.0};
-}
-
-/*!
- * Right hand side
- */
-static double F(double x, double y, double z) {
-  (void) x;
-  (void) y;
-  (void) z;
-  return 0.0;
-}
-
-/*!
- * Neumann BC
- */
-static Vector2 G(double x, double y, double z, const Vector3 &N) {
-  (void) x;
-  (void) y;
-  (void) z;
-  (void) N;
   return {0.0, 0.0};
 }
 
@@ -315,7 +297,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
                 auto psi = face.chi(q, t);
 
                 // FIXME: stress BC
-                R_nodal[t] += - W * psi * G(xq[q], yq[q], zq[q], N);
+                R_nodal[t] += {0.0, 0.0};
               }
             }
           } // end of "if (neumann)"
@@ -604,10 +586,10 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels)
        {"positive", "up"}};
 
     m_u.reset(new IceModelVec3Custom(grid, "u_velocity", "z_sigma", sigma, z_attrs));
-    m_u->set_attrs("diagnostic", "u velocity component", "1", "1", "", 0);
+    m_u->set_attrs("diagnostic", "u velocity component", "m s-1", "m s-1", "", 0);
 
     m_v.reset(new IceModelVec3Custom(grid, "v_velocity", "z_sigma", sigma, z_attrs));
-    m_v->set_attrs("diagnostic", "v velocity component", "1", "1", "", 0);
+    m_v->set_attrs("diagnostic", "v velocity component", "m s-1", "m s-1", "", 0);
   }
 
   {
@@ -800,54 +782,36 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels) {
 }
 
 /*!
- * Bottom surface elevation
- */
-static double b(double x, double y) {
-  (void) x;
-  (void) y;
-  return 0.0;
-}
-
-/*!
- * Domain thickness
- */
-static double H(double x, double y) {
-  double w = 1.0;
-  if (std::fabs(x) <= w and std::fabs(y) <= w) {
-    return 1.0;
-  }
-  return 0.0;
-}
-
-/*!
  * Set 2D parameters on the finest grid.
  */
-void Blatter::init_2d_parameters() {
+void Blatter::init_2d_parameters(const Inputs &inputs) {
 
-  DMDALocalInfo info;
-  int ierr = DMDAGetLocalInfo(m_da, &info);
-  PISM_CHK(ierr, "DMDAGetLocalInfo");
-  info = grid_transpose(info);
-
-  // Compute grid spacing from domain dimensions and the grid size
   double
-    x_min = m_grid_info.x_min,
-    x_max = m_grid_info.x_max,
-    y_min = m_grid_info.y_min,
-    y_max = m_grid_info.y_max,
-    dx = (x_max - x_min) / (info.mx - 1),
-    dy = (y_max - y_min) / (info.my - 1);
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    alpha         = ice_density / water_density;
+
+  const IceModelVec2S
+    &tauc      = *inputs.basal_yield_stress,
+    &H         = inputs.geometry->ice_thickness,
+    &b         = inputs.geometry->bed_elevation,
+    &sea_level = inputs.geometry->sea_level_elevation;
+
+  IceModelVec::AccessList list{&H, &b, &sea_level};
 
   DataAccess<Parameters**> P(m_da, 2, NOT_GHOSTED);
 
-  for (int j = info.ys; j < info.ys + info.ym; j++) {
-    for (int i = info.xs; i < info.xs + info.xm; i++) {
-      double x = grid_xy(x_min, dx, i);
-      double y = grid_xy(y_min, dy, j);
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      P[j][i].bed = b(x, y);
-      P[j][i].thickness = H(x, y);
-    }
+    double
+      b_grounded = b(i, j),
+      b_floating = sea_level(i, j) - alpha * H(i, j);
+
+    P[j][i].tauc = tauc(i, j);
+    P[j][i].thickness = H(i, j);
+    P[j][i].sea_level = sea_level(i, j);
+    P[j][i].bed = std::max(b_grounded, b_floating);
   }
 
   compute_node_type(m_da, m_grid_info.min_thickness);
@@ -856,38 +820,50 @@ void Blatter::init_2d_parameters() {
 /*!
  * Set 3D parameters on the finest grid.
  */
-void Blatter::init_3d_parameters() {
+void Blatter::init_ice_hardness(const Inputs &inputs) {
+
+  auto enthalpy = inputs.enthalpy;
 
   DMDALocalInfo info;
   int ierr = DMDAGetLocalInfo(m_da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
   info = grid_transpose(info);
 
-  // Compute grid spacing from domain dimensions and the grid size
-  double
-    x_min = m_grid_info.x_min,
-    x_max = m_grid_info.x_max,
-    y_min = m_grid_info.y_min,
-    y_max = m_grid_info.y_max,
-    dx = (x_max - x_min) / (info.mx - 1),
-    dy = (y_max - y_min) / (info.my - 1);
+  const auto &zlevels = enthalpy->levels();
+  auto Mz = zlevels.size();
 
   DataAccess<Parameters**> P2(m_da, 2, NOT_GHOSTED);
   DataAccess<double***> P3(m_da, 3, NOT_GHOSTED);
 
-  for (int j = info.ys; j < info.ys + info.ym; j++) {
-    for (int i = info.xs; i < info.xs + info.xm; i++) {
-      for (int k = info.zs; k < info.zs + info.zm; k++) {
-        double
-          xx = grid_xy(x_min, dx, i),
-          yy = grid_xy(y_min, dy, j),
-          b  = P2[j][i].bed,
-          H  = P2[j][i].thickness,
-          zz = grid_z(b, H, info.mz, k);
+  IceModelVec::AccessList list{enthalpy};
 
-        P3[j][i][k] = F(xx, yy, zz); // STORAGE_ORDER
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double H  = P2[j][i].thickness;
+
+    const double *E = enthalpy->get_column(i, j);
+
+    for (int k = 0; k < info.mz; ++k) {
+      double
+        z        = grid_z(0.0, H, info.mz, k),
+        depth    = H - z,
+        pressure = m_EC->pressure(depth),
+        E_local  = 0.0;
+
+      auto k0 = m_grid->kBelowHeight(z);
+
+      if (k0 + 1 < Mz) {
+        double lambda = (z - zlevels[k0]) / (zlevels[k0 + 1] - zlevels[k0]);
+
+        E_local = (1.0 - lambda) * E[k0] + lambda * E[k0 + 1];
+      } else {
+        E_local = E[Mz - 1];
       }
+
+      P3[j][i][k] = m_flow_law->hardness(E_local, pressure);
     }
-  }
+
+  } // end of the loop over grid points
 }
 
 Blatter::~Blatter() {
@@ -897,8 +873,8 @@ Blatter::~Blatter() {
 void Blatter::update(const Inputs &inputs, bool) {
   (void) inputs;
 
-  init_2d_parameters();
-  init_3d_parameters();
+  init_2d_parameters(inputs);
+  init_ice_hardness(inputs);
 
   int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 

@@ -66,8 +66,8 @@ protected:
   static PetscErrorCode function_callback(DMDALocalInfo *info, const Vector2 ***x, Vector2 ***f,
                                           CallbackData *data);
 
-  void init_2d_parameters();
-  void init_3d_parameters();
+  void init_2d_parameters(const Inputs &inputs);
+  void init_ice_hardness(const Inputs &inputs);
 
   // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
   PetscErrorCode setup(DM pism_da, int Mz, int n_levels);
