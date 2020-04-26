@@ -860,10 +860,6 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels) {
     ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
   }
 
-  // set the initial guess
-  // FIXME: I will need to read this from a file
-  ierr = VecSet(m_x, 0.0); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -959,11 +955,15 @@ Blatter::~Blatter() {
   // empty
 }
 
-void Blatter::update(const Inputs &inputs, bool) {
+void Blatter::update(const Inputs &inputs, bool full_update) {
   (void) inputs;
 
   init_2d_parameters(inputs);
   init_ice_hardness(inputs);
+
+  if (full_update) {
+    int ierr = VecSet(m_x, 0.0); PISM_CHK(ierr, "VecSet");
+  }
 
   int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 
