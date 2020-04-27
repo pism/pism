@@ -37,13 +37,13 @@ public:
 
   void update(const Inputs &inputs, bool);
 
-  IceModelVec3Custom::Ptr velocity_u() const;
-  IceModelVec3Custom::Ptr velocity_v() const;
+  IceModelVec3Custom::Ptr velocity_u_sigma() const;
+  IceModelVec3Custom::Ptr velocity_v_sigma() const;
 
 protected:
   void exact_solution(IceModelVec3Custom &result);
 
-  IceModelVec3Custom::Ptr m_u, m_v;
+  IceModelVec3Custom::Ptr m_u_sigma, m_v_sigma;
 
   petsc::DM m_da;
   petsc::Vec m_x;

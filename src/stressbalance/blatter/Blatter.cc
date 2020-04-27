@@ -668,11 +668,11 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels)
        {"units", "1"},
        {"positive", "up"}};
 
-    m_u.reset(new IceModelVec3Custom(grid, "u_velocity", "z_sigma", sigma, z_attrs));
-    m_u->set_attrs("diagnostic", "u velocity component", "m s-1", "m s-1", "", 0);
+    m_u_sigma.reset(new IceModelVec3Custom(grid, "u_velocity", "z_sigma", sigma, z_attrs));
+    m_u_sigma->set_attrs("diagnostic", "u velocity component", "m s-1", "m s-1", "", 0);
 
-    m_v.reset(new IceModelVec3Custom(grid, "v_velocity", "z_sigma", sigma, z_attrs));
-    m_v->set_attrs("diagnostic", "v velocity component", "m s-1", "m s-1", "", 0);
+    m_v_sigma.reset(new IceModelVec3Custom(grid, "v_velocity", "z_sigma", sigma, z_attrs));
+    m_v_sigma->set_attrs("diagnostic", "v velocity component", "m s-1", "m s-1", "", 0);
   }
 
   {
@@ -963,8 +963,8 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
 
   if (full_update) {
     // FIXME: remove these once init() is implemented
-    m_u->set(0.0);
-    m_v->set(0.0);
+    m_u_sigma->set(0.0);
+    m_v_sigma->set(0.0);
     set_initial_guess();
   }
 
@@ -978,7 +978,7 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
 
   compute_averaged_velocity(m_velocity);
 
-  // copy the solution from m_x to m_u, m_v for re-starting
+  // copy the solution from m_x to m_u_sigma, m_v_sigma for re-starting
   copy_solution();
 }
 
@@ -986,15 +986,15 @@ void Blatter::copy_solution() {
   Vector2 ***x = nullptr;
   int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
-  int Mz = m_u->levels().size();
+  int Mz = m_u_sigma->levels().size();
 
-  IceModelVec::AccessList list{m_u.get(), m_v.get()};
+  IceModelVec::AccessList list{m_u_sigma.get(), m_v_sigma.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    auto u = m_u->get_column(i, j);
-    auto v = m_v->get_column(i, j);
+    auto u = m_u_sigma->get_column(i, j);
+    auto v = m_v_sigma->get_column(i, j);
 
     for (int k = 0; k < Mz; ++k) {
       u[k] = x[j][i][k].u;      // STORAGE_ORDER
@@ -1026,15 +1026,15 @@ void Blatter::set_initial_guess() {
   Vector2 ***x = nullptr;
   int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
-  int Mz = m_u->levels().size();
+  int Mz = m_u_sigma->levels().size();
 
-  IceModelVec::AccessList list{m_u.get(), m_v.get()};
+  IceModelVec::AccessList list{m_u_sigma.get(), m_v_sigma.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    auto u = m_u->get_column(i, j);
-    auto v = m_v->get_column(i, j);
+    auto u = m_u_sigma->get_column(i, j);
+    auto v = m_v_sigma->get_column(i, j);
 
     for (int k = 0; k < Mz; ++k) {
       x[j][i][k].u = u[k];      // STORAGE_ORDER
@@ -1053,7 +1053,7 @@ void Blatter::compute_averaged_velocity(IceModelVec2V &result) {
     Vector2 ***x = nullptr;
     ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
-    int Mz = m_u->levels().size();
+    int Mz = m_u_sigma->levels().size();
 
     IceModelVec::AccessList list{&result};
     DataAccess<Parameters**> P2(m_da, 2, NOT_GHOSTED);
@@ -1081,12 +1081,12 @@ void Blatter::compute_averaged_velocity(IceModelVec2V &result) {
   }
 }
 
-IceModelVec3Custom::Ptr Blatter::velocity_u() const {
-  return m_u;
+IceModelVec3Custom::Ptr Blatter::velocity_u_sigma() const {
+  return m_u_sigma;
 }
 
-IceModelVec3Custom::Ptr Blatter::velocity_v() const {
-  return m_v;
+IceModelVec3Custom::Ptr Blatter::velocity_v_sigma() const {
+  return m_v_sigma;
 }
 
 } // end of namespace stressbalance
