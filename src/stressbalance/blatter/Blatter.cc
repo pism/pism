@@ -831,7 +831,7 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels) {
 
     ierr = DMSetUp(m_da); CHKERRQ(ierr);
 
-    double min_thickness = 10.0;
+    double min_thickness = m_config->get_number("stress_balance.ice_free_thickness_standard");
 
     m_grid_info = {x_min, x_max,
                    y_min, y_max,
