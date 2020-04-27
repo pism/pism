@@ -37,8 +37,8 @@ public:
 
   void update(const Inputs &inputs, bool);
 
-  IceModelVec3Custom::Ptr u_velocity() const;
-  IceModelVec3Custom::Ptr v_velocity() const;
+  IceModelVec3Custom::Ptr velocity_u() const;
+  IceModelVec3Custom::Ptr velocity_v() const;
 
 protected:
   void exact_solution(IceModelVec3Custom &result);
@@ -73,7 +73,7 @@ protected:
   // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
   PetscErrorCode setup(DM pism_da, int Mz, int n_levels);
 
-  double m_dirichlet_scale;
+  void compute_averaged_velocity();
 };
 
 } // end of namespace stressbalance

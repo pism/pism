@@ -119,8 +119,9 @@ if __name__ == "__main__":
 
     PISM.util.prepare_output(output_file)
 
-    stress_balance.u_velocity().write(output_file)
-    stress_balance.v_velocity().write(output_file)
+    stress_balance.velocity_u().write(output_file)
+    stress_balance.velocity_v().write(output_file)
+    stress_balance.velocity().write(output_file)
 
     geometry.ice_thickness.write(output_file)
     geometry.bed_elevation.write(output_file)

@@ -967,6 +967,8 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
 
   int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 
+  compute_averaged_velocity();
+
   // copy the solution from m_x to m_u, m_v
   {
     Vector2 ***x = nullptr;
@@ -992,11 +994,46 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
   }
 }
 
-IceModelVec3Custom::Ptr Blatter::u_velocity() const {
+void Blatter::compute_averaged_velocity() {
+  PetscErrorCode ierr;
+
+  {
+    Vector2 ***x = nullptr;
+    ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
+
+    int Mz = m_u->levels().size();
+
+    IceModelVec::AccessList list{&m_velocity};
+    DataAccess<Parameters**> P2(m_da, 2, NOT_GHOSTED);
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double H = P2[j][i].thickness;
+
+      Vector2 V(0.0, 0.0);
+
+      if (H > 0.0) {
+        // use trapezoid rule to compute the column average
+        double dz = H / (Mz - 1);
+        for (int k = 0; k < Mz - 1; ++k) {
+          V += x[j][i][k] + x[j][i][k + 1]; // STORAGE_ORDER
+        }
+        V *= (0.5 * dz) / H;
+      }
+
+      m_velocity(i, j) = V;
+    }
+
+    ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
+  }
+}
+
+IceModelVec3Custom::Ptr Blatter::velocity_u() const {
   return m_u;
 }
 
-IceModelVec3Custom::Ptr Blatter::v_velocity() const {
+IceModelVec3Custom::Ptr Blatter::velocity_v() const {
   return m_v;
 }
 
