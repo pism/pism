@@ -962,6 +962,7 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
   init_ice_hardness(inputs);
 
   if (full_update) {
+    // FIXME: remove these once init() is implemented
     m_u->set(0.0);
     m_v->set(0.0);
     set_initial_guess();
@@ -969,9 +970,15 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
 
   int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 
-  compute_averaged_velocity();
+  // put basal velocity in m_velocity to use it in the next call
+  get_basal_velocity(m_velocity);
+  compute_basal_frictional_heating(m_velocity, *inputs.basal_yield_stress,
+                                   inputs.geometry->cell_type,
+                                   m_basal_frictional_heating);
 
-  // copy the solution from m_x to m_u, m_v
+  compute_averaged_velocity(m_velocity);
+
+  // copy the solution from m_x to m_u, m_v for re-starting
   copy_solution();
 }
 
@@ -996,8 +1003,24 @@ void Blatter::copy_solution() {
   }
 
   ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
-
 }
+
+void Blatter::get_basal_velocity(IceModelVec2V &result) {
+  Vector2 ***x = nullptr;
+  int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
+
+  IceModelVec::AccessList list{&result};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    result(i, j).u = x[j][i][0].u;      // STORAGE_ORDER
+    result(i, j).v = x[j][i][0].v;      // STORAGE_ORDER
+  }
+
+  ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
+}
+
 
 void Blatter::set_initial_guess() {
   Vector2 ***x = nullptr;
@@ -1023,7 +1046,7 @@ void Blatter::set_initial_guess() {
 }
 
 
-void Blatter::compute_averaged_velocity() {
+void Blatter::compute_averaged_velocity(IceModelVec2V &result) {
   PetscErrorCode ierr;
 
   {
@@ -1032,7 +1055,7 @@ void Blatter::compute_averaged_velocity() {
 
     int Mz = m_u->levels().size();
 
-    IceModelVec::AccessList list{&m_velocity};
+    IceModelVec::AccessList list{&result};
     DataAccess<Parameters**> P2(m_da, 2, NOT_GHOSTED);
 
     for (Points p(*m_grid); p; p.next()) {
@@ -1051,7 +1074,7 @@ void Blatter::compute_averaged_velocity() {
         V *= (0.5 * dz) / H;
       }
 
-      m_velocity(i, j) = V;
+      result(i, j) = V;
     }
 
     ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");

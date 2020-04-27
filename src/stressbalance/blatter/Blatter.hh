@@ -75,7 +75,8 @@ protected:
 
   void set_initial_guess();
   void copy_solution();
-  void compute_averaged_velocity();
+  void compute_averaged_velocity(IceModelVec2V &result);
+  void get_basal_velocity(IceModelVec2V &result);
 };
 
 } // end of namespace stressbalance
