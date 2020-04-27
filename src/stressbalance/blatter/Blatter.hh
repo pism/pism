@@ -73,6 +73,8 @@ protected:
   // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
   PetscErrorCode setup(DM pism_da, int Mz, int n_levels);
 
+  void set_initial_guess();
+  void copy_solution();
   void compute_averaged_velocity();
 };
 

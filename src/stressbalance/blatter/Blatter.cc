@@ -962,7 +962,9 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
   init_ice_hardness(inputs);
 
   if (full_update) {
-    int ierr = VecSet(m_x, 0.0); PISM_CHK(ierr, "VecSet");
+    m_u->set(0.0);
+    m_v->set(0.0);
+    set_initial_guess();
   }
 
   int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
@@ -970,29 +972,56 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
   compute_averaged_velocity();
 
   // copy the solution from m_x to m_u, m_v
-  {
-    Vector2 ***x = nullptr;
-    ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
-
-    int Mz = m_u->levels().size();
-
-    IceModelVec::AccessList list{m_u.get(), m_v.get()};
-
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      auto u = m_u->get_column(i, j);
-      auto v = m_v->get_column(i, j);
-
-      for (int k = 0; k < Mz; ++k) {
-        u[k] = x[j][i][k].u;      // STORAGE_ORDER
-        v[k] = x[j][i][k].v;      // STORAGE_ORDER
-      }
-    }
-
-    ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
-  }
+  copy_solution();
 }
+
+void Blatter::copy_solution() {
+  Vector2 ***x = nullptr;
+  int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
+
+  int Mz = m_u->levels().size();
+
+  IceModelVec::AccessList list{m_u.get(), m_v.get()};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    auto u = m_u->get_column(i, j);
+    auto v = m_v->get_column(i, j);
+
+    for (int k = 0; k < Mz; ++k) {
+      u[k] = x[j][i][k].u;      // STORAGE_ORDER
+      v[k] = x[j][i][k].v;      // STORAGE_ORDER
+    }
+  }
+
+  ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
+
+}
+
+void Blatter::set_initial_guess() {
+  Vector2 ***x = nullptr;
+  int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
+
+  int Mz = m_u->levels().size();
+
+  IceModelVec::AccessList list{m_u.get(), m_v.get()};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    auto u = m_u->get_column(i, j);
+    auto v = m_v->get_column(i, j);
+
+    for (int k = 0; k < Mz; ++k) {
+      x[j][i][k].u = u[k];      // STORAGE_ORDER
+      x[j][i][k].v = v[k];      // STORAGE_ORDER
+    }
+  }
+
+  ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
+}
+
 
 void Blatter::compute_averaged_velocity() {
   PetscErrorCode ierr;
