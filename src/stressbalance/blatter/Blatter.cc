@@ -643,7 +643,20 @@ PetscErrorCode Blatter::jacobian_callback(DMDALocalInfo *info,
  * @param[in] n_levels maximum number of grid levels to use
  */
 Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels)
-  : ShallowStressBalance(grid) {
+  : ShallowStressBalance(grid),
+    m_u(grid, "uvel", WITH_GHOSTS),
+    m_v(grid, "vvel", WITH_GHOSTS),
+    m_strain_heating(grid, "strainheat", WITHOUT_GHOSTS) {
+
+  m_u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
+                "m s-1", "m year-1", "land_ice_x_velocity", 0);
+
+  m_v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
+                "m s-1", "m year-1", "land_ice_y_velocity", 0);
+
+  m_strain_heating.set_attrs("internal",
+                             "rate of strain heating in ice (dissipation heating)",
+                             "W m-3", "mW m-3", "", 0);
 
   auto pism_da = grid->get_dm(1, 0);
 
@@ -980,6 +993,8 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
 
   // copy the solution from m_x to m_u_sigma, m_v_sigma for re-starting
   copy_solution();
+
+  transfer();
 }
 
 void Blatter::copy_solution() {
@@ -1049,36 +1064,90 @@ void Blatter::set_initial_guess() {
 void Blatter::compute_averaged_velocity(IceModelVec2V &result) {
   PetscErrorCode ierr;
 
-  {
-    Vector2 ***x = nullptr;
-    ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
+  Vector2 ***x = nullptr;
+  ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
-    int Mz = m_u_sigma->levels().size();
+  int Mz = m_u_sigma->levels().size();
 
-    IceModelVec::AccessList list{&result};
-    DataAccess<Parameters**> P2(m_da, 2, NOT_GHOSTED);
+  IceModelVec::AccessList list{&result};
+  DataAccess<Parameters**> P2(m_da, 2, NOT_GHOSTED);
 
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      double H = P2[j][i].thickness;
+    double H = P2[j][i].thickness;
 
-      Vector2 V(0.0, 0.0);
+    Vector2 V(0.0, 0.0);
 
-      if (H > 0.0) {
-        // use trapezoid rule to compute the column average
-        double dz = H / (Mz - 1);
-        for (int k = 0; k < Mz - 1; ++k) {
-          V += x[j][i][k] + x[j][i][k + 1]; // STORAGE_ORDER
-        }
-        V *= (0.5 * dz) / H;
+    if (H > 0.0) {
+      // use trapezoid rule to compute the column average
+      double dz = H / (Mz - 1);
+      for (int k = 0; k < Mz - 1; ++k) {
+        V += x[j][i][k] + x[j][i][k + 1]; // STORAGE_ORDER
       }
-
-      result(i, j) = V;
+      V *= (0.5 * dz) / H;
     }
 
-    ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
+    result(i, j) = V;
   }
+
+  ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
+}
+
+void Blatter::transfer() {
+  Vector2 ***x = nullptr;
+  int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
+
+  int
+    Mz_fem = m_u_sigma->levels().size(),
+    Mz     = m_grid->Mz();
+  const auto &zlevels = m_u.levels();
+
+  IceModelVec::AccessList list{&m_u, &m_v};
+  DataAccess<Parameters**> P2(m_da, 2, NOT_GHOSTED);
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    auto u = m_u.get_column(i, j);
+    auto v = m_v.get_column(i, j);
+
+    double H = P2[j][i].thickness;
+
+    if (H > 0.0) {
+      double dz = H / (Mz_fem - 1);
+
+      // compute 3D horizontal velocity
+      int m = 0;
+      for (int k = 0; k < Mz; ++k) {
+
+        // find the FEM grid level just below the current PISM grid level
+        while ((m + 1) * dz < zlevels[k] and m + 1 < Mz_fem) {
+          m++;
+        }
+
+        if (m + 1 < Mz_fem) {
+          // use linear interpolation
+          double
+            z0 = m * dz,
+            lambda = (zlevels[k] - z0) / dz;
+
+          u[k] = (x[j][i][m].u * (1 - lambda) + x[j][i][m + 1].u * lambda); // STORAGE_ORDER
+          v[k] = (x[j][i][m].v * (1 - lambda) + x[j][i][m + 1].v * lambda); // STORAGE_ORDER
+
+        } else {
+          // extrapolate above the surface
+          u[k] = x[j][i][Mz_fem - 1].u; // STORAGE_ORDER
+          v[k] = x[j][i][Mz_fem - 1].v; // STORAGE_ORDER
+        }
+      }	// k-loop
+    } else {
+      m_u.set_column(i, j, 0.0);
+      m_v.set_column(i, j, 0.0);
+    }
+  }
+
+  ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
 }
 
 IceModelVec3Custom::Ptr Blatter::velocity_u_sigma() const {
@@ -1087,6 +1156,14 @@ IceModelVec3Custom::Ptr Blatter::velocity_u_sigma() const {
 
 IceModelVec3Custom::Ptr Blatter::velocity_v_sigma() const {
   return m_v_sigma;
+}
+
+const IceModelVec3& Blatter::velocity_u() const {
+  return m_u;
+}
+
+const IceModelVec3& Blatter::velocity_v() const {
+  return m_v;
 }
 
 } // end of namespace stressbalance
