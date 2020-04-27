@@ -10,7 +10,7 @@ ctx = PISM.Context()
 config = ctx.config
 
 def inputs_from_file(filename):
-    grid = PISM.IceGrid.FromFile(ctx.ctx, filename, ["thk"], PISM.CELL_CENTER)
+    grid = PISM.IceGrid.FromFile(ctx.ctx, filename, ["enthalpy"], PISM.CELL_CENTER)
 
     geometry = PISM.Geometry(grid)
 
@@ -49,10 +49,16 @@ def inputs_from_file(filename):
 def inputs_from_formulas():
     H_max = 1000.0
 
-    grid = PISM.testing.shallow_grid(Mx=int(config.get_number("grid.Mx")),
-                                     My=int(config.get_number("grid.My")),
-                                     Lx=10e3,
-                                     Ly=10e3)
+    P = PISM.GridParameters(config)
+    P.Lx = 10e3
+    P.Ly = 10e3
+    P.x0 = 0
+    P.y0 = 0
+    P.horizontal_size_from_options()
+    P.vertical_grid_from_options(config)
+    P.ownership_ranges_from_options(ctx.size)
+
+    grid = PISM.IceGrid(ctx.ctx, P)
 
     geometry = PISM.Geometry(grid)
 
@@ -119,6 +125,8 @@ if __name__ == "__main__":
 
     PISM.util.prepare_output(output_file)
 
+    stress_balance.velocity_u_sigma().write(output_file)
+    stress_balance.velocity_v_sigma().write(output_file)
     stress_balance.velocity_u().write(output_file)
     stress_balance.velocity_v().write(output_file)
     stress_balance.velocity().write(output_file)
