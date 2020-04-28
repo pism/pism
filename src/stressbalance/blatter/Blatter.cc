@@ -33,6 +33,7 @@
 
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/rheology/FlowLawFactory.hh"
+#include "pism/basalstrength/basal_resistance.hh"
 
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
@@ -140,7 +141,8 @@ static void blatter_node_type(DM da, double min_thickness) {
  */
 static bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I) {
   (void) info;
-  return I.k == 0;
+  (void) I;
+  return false;
 }
 
 /*! Dirichlet BC
@@ -242,6 +244,8 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   double xq[Nq_max], yq[Nq_max], zq[Nq_max], Bq[Nq_max];
 
   double s[Nq_max], s_x[Nq_max], s_y[Nq_max], s_z[Nq_max];
+
+  double tauc_nodal[Nk_max], tauc[Nq_max];
 
   // make sure that xq, yq, zq and big enough for quadrature points on element faces
   assert(face.n_pts() <= Nq_max);
@@ -348,8 +352,43 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
           }
         }
 
-        // loop over all faces
-        for (int f = 0; f < fem::q13d::n_faces; ++f) {
+        // include basal drag
+        if (k == 0) {
+          // face 4 is the bottom face in fem::q13d::incident_nodes
+          face.reset(4, z_nodal);
+
+          face.evaluate(u_nodal, u);
+
+          for (int n = 0; n < Nk; ++n) {
+            auto I = element.local_to_global(n);
+
+            tauc_nodal[n] = P[I.j][I.i].tauc;
+          }
+
+          face.evaluate(tauc_nodal, tauc);
+
+          for (int q = 0; q < face.n_pts(); ++q) {
+            auto W = face.weight(q) / m_rhog;
+
+            double beta = 0.0;
+            // FIXME: use geometric info to determine if this location is grounded or floating
+            bool grounded = true;
+            if (grounded) {
+              beta = m_basal_sliding_law->drag(tauc[q], u[q].u, u[q].v);
+            }
+
+            // loop over all test functions
+            for (int t = 0; t < Nk; ++t) {
+              auto psi = face.chi(q, t);
+
+              R_nodal[t].u += W * psi * beta * u[q].u;
+              R_nodal[t].v += W * psi * beta * u[q].v;
+            }
+          }
+        }
+
+        // loop over all vertical faces (see fem::q13d::incident_nodes for the order)
+        for (int f = 0; f < 4; ++f) {
           auto nodes = fem::q13d::incident_nodes[f];
           // Loop over all nodes corresponding to this face. A face is a part of the
           // Neumann boundary if all four nodes are Neumann nodes. If a node is *both* a
@@ -417,6 +456,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
     dy = (y_max - y_min) / (info.my - 1);
 
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
+  fem::Q1Element3Face face(dx, dy, fem::Q1Quadrature4());
 
   DataAccess<Parameters**> P(info.da, 2, GHOSTED);
   DataAccess<double***> hardness(info.da, 3, GHOSTED);
@@ -433,6 +473,8 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   int node_type[Nk];
   double x_nodal[Nk], y_nodal[Nk], B_nodal[Nk];
   std::vector<double> z_nodal(Nk);
+
+  double tauc_nodal[Nk], tauc[Nq_max];
 
   // loop over all the elements that have at least one owned node
   for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
@@ -551,6 +593,48 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
             }
           }
         } // end of the loop over q
+
+        // include basal drag
+        if (k == 0) {
+          // face 4 is the bottom face in fem::q13d::incident_nodes
+          face.reset(4, z_nodal);
+
+          face.evaluate(u_nodal, u);
+
+          for (int n = 0; n < Nk; ++n) {
+            auto I = element.local_to_global(n);
+
+            tauc_nodal[n] = P[I.j][I.i].tauc;
+          }
+
+          face.evaluate(tauc_nodal, tauc);
+
+          for (int q = 0; q < face.n_pts(); ++q) {
+            auto W = face.weight(q) / m_rhog;
+
+            // FIXME: use geometric info to determine if this location is grounded or floating
+            bool grounded = true;
+            double beta = 0.0, dbeta = 0.0;
+            if (grounded) {
+              m_basal_sliding_law->drag_with_derivative(tauc[q], u[q].u, u[q].v, &beta, &dbeta);
+            }
+
+            // loop over all test functions
+            for (int t = 0; t < Nk; ++t) {
+              auto psi = face.chi(q, t);
+              for (int s = 0; s < Nk; ++s) {
+                auto phi = face.chi(q, s);
+
+                double p = psi * phi;
+
+                K[t * 2 + 0][s * 2 + 0] += W * p * (beta + dbeta * u[q].u * u[q].u);
+                K[t * 2 + 0][s * 2 + 1] += W * p * dbeta * u[q].u * u[q].v;
+                K[t * 2 + 1][s * 2 + 0] += W * p * dbeta * u[q].v * u[q].u;
+                K[t * 2 + 1][s * 2 + 1] += W * p * (beta + dbeta * u[q].v * u[q].v);
+              }
+            }
+          }
+        }
 
         // fill the lower-triangular part of the element Jacobian using the fact that J is
         // symmetric
