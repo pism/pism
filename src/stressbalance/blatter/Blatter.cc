@@ -645,18 +645,13 @@ PetscErrorCode Blatter::jacobian_callback(DMDALocalInfo *info,
 Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels)
   : ShallowStressBalance(grid),
     m_u(grid, "uvel", WITH_GHOSTS),
-    m_v(grid, "vvel", WITH_GHOSTS),
-    m_strain_heating(grid, "strainheat", WITHOUT_GHOSTS) {
+    m_v(grid, "vvel", WITH_GHOSTS) {
 
   m_u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
                 "m s-1", "m year-1", "land_ice_x_velocity", 0);
 
   m_v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
                 "m s-1", "m year-1", "land_ice_y_velocity", 0);
-
-  m_strain_heating.set_attrs("internal",
-                             "rate of strain heating in ice (dissipation heating)",
-                             "W m-3", "mW m-3", "", 0);
 
   auto pism_da = grid->get_dm(1, 0);
 
@@ -986,25 +981,9 @@ void Blatter::init_impl() {
       m_v_sigma->read(input_file, start);
 
       set_initial_guess(*m_u_sigma, *m_v_sigma);
-    }
-  } else if (opts.type == INIT_BOOTSTRAP) {
-    File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
-    bool u_found = input_file.find_variable("uvel");
-    bool v_found = input_file.find_variable("vvel");
-    bool thk_found = input_file.find_variable("thk");
-
-    if (u_found and v_found and thk_found) {
-      m_u.regrid(input_file, CRITICAL, 0.0);
-      m_v.regrid(input_file, CRITICAL, 0.0);
-
-      IceModelVec2S ice_thickness(m_grid, "thk", WITHOUT_GHOSTS);
-      ice_thickness.set_attrs("model_state", "land ice thickness",
-                              "m", "m", "land_ice_thickness", 0);
-      ice_thickness.metadata().set_number("valid_min", 0.0);
-
-      ice_thickness.regrid(input_file, CRITICAL, 0.0);
-
-      set_initial_guess(m_u, m_v, ice_thickness);
+    } else {
+      throw RuntimeError(PISM_ERROR_LOCATION,
+                         "uvel_sigma and vvel_sigma not found");
     }
   } else {
     int ierr = VecSet(m_x, 0.0); PISM_CHK(ierr, "VecSet");
@@ -1107,31 +1086,6 @@ void Blatter::set_initial_guess(const IceModelVec3Custom &u_sigma,
 
   ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
 }
-
-void Blatter::set_initial_guess(const IceModelVec3 &u, const IceModelVec3 &v,
-                                const IceModelVec2S &ice_thickness) {
-  Vector2 ***x = nullptr;
-  int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
-
-  int Mz = m_config->get_number("stress_balance.blatter.Mz");
-
-  IceModelVec::AccessList list{&u, &v, &ice_thickness};
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    double dz = ice_thickness(i, j) / (Mz - 1);
-
-    for (int k = 0; k < Mz; ++k) {
-      double z = k * dz;
-      x[j][i][k].u = u.getValZ(i, j, z);      // STORAGE_ORDER
-      x[j][i][k].v = v.getValZ(i, j, z);      // STORAGE_ORDER
-    }
-  }
-
-  ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
-}
-
 
 void Blatter::compute_averaged_velocity(IceModelVec2V &result) {
   PetscErrorCode ierr;

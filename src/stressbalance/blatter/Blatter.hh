@@ -47,8 +47,8 @@ protected:
   // u and v components of ice velocity on the sigma grid
   IceModelVec3Custom::Ptr m_u_sigma, m_v_sigma;
 
-  // u, v, and strain heating on the PISM grid
-  IceModelVec3 m_u, m_v, m_strain_heating;
+  // u and v on the PISM grid
+  IceModelVec3 m_u, m_v;
 
   // 3D dof=2 DM used by SNES
   petsc::DM m_da;
@@ -90,8 +90,6 @@ protected:
   PetscErrorCode setup(DM pism_da, int Mz, int n_levels);
 
   void set_initial_guess(const IceModelVec3Custom &u_sigma, const IceModelVec3Custom &v_sigma);
-
-  void set_initial_guess(const IceModelVec3 &u, const IceModelVec3 &v, const IceModelVec2S &ice_thickness);
 
   void copy_solution();
 
