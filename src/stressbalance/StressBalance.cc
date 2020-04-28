@@ -196,9 +196,7 @@ void StressBalance::update(const Inputs &inputs, bool full_update) {
 
       m_cfl_3d = ::pism::max_timestep_cfl_3d(inputs.geometry->ice_thickness,
                                              inputs.geometry->cell_type,
-                                             m_modifier->velocity_u(),
-                                             m_modifier->velocity_v(),
-                                             m_w);
+                                             u, v, m_w);
     }
 
     m_cfl_2d = ::pism::max_timestep_cfl_2d(inputs.geometry->ice_thickness,
