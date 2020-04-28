@@ -10,7 +10,7 @@ ctx = PISM.Context()
 config = ctx.config
 
 def inputs_from_file(filename):
-    grid = PISM.IceGrid.FromFile(ctx.ctx, filename, ["enthalpy"], PISM.CELL_CENTER)
+    grid = PISM.IceGrid.FromFile(ctx.ctx, filename, ["enthalpy", "thk"], PISM.CELL_CENTER)
 
     geometry = PISM.Geometry(grid)
 
@@ -111,6 +111,8 @@ if __name__ == "__main__":
 
     stress_balance = PISM.Blatter(grid, Mz, n_levels)
 
+    stress_balance.init()
+
     inputs = PISM.StressBalanceInputs()
 
     inputs.geometry = geometry
@@ -118,8 +120,6 @@ if __name__ == "__main__":
     inputs.enthalpy = enthalpy
 
     stress_balance.update(inputs, True)
-
-    stress_balance.update(inputs, False)
 
     output_file = config.get_string("output.file_name")
 
@@ -130,6 +130,14 @@ if __name__ == "__main__":
     stress_balance.velocity_u().write(output_file)
     stress_balance.velocity_v().write(output_file)
     stress_balance.velocity().write(output_file)
+
+    v_mag = PISM.IceModelVec2S(grid, "vel_mag", PISM.WITHOUT_GHOSTS)
+    v_mag.set_attrs("diagnostic",
+                    "magnitude of vertically-averaged horizontal velocity of ice",
+                    "m second-1", "m year-1", "", 0)
+    v_mag.set_to_magnitude(stress_balance.velocity())
+
+    v_mag.write(output_file)
 
     geometry.ice_thickness.write(output_file)
     geometry.bed_elevation.write(output_file)
