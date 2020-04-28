@@ -681,11 +681,11 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels)
        {"units", "1"},
        {"positive", "up"}};
 
-    m_u_sigma.reset(new IceModelVec3Custom(grid, "u_velocity", "z_sigma", sigma, z_attrs));
-    m_u_sigma->set_attrs("diagnostic", "u velocity component", "m s-1", "m s-1", "", 0);
+    m_u_sigma.reset(new IceModelVec3Custom(grid, "uvel_sigma", "z_sigma", sigma, z_attrs));
+    m_u_sigma->set_attrs("diagnostic", "u velocity component on the sigma grid", "m s-1", "m s-1", "", 0);
 
-    m_v_sigma.reset(new IceModelVec3Custom(grid, "v_velocity", "z_sigma", sigma, z_attrs));
-    m_v_sigma->set_attrs("diagnostic", "v velocity component", "m s-1", "m s-1", "", 0);
+    m_v_sigma.reset(new IceModelVec3Custom(grid, "vvel_sigma", "z_sigma", sigma, z_attrs));
+    m_v_sigma->set_attrs("diagnostic", "v velocity component on the sigma grid", "m s-1", "m s-1", "", 0);
   }
 
   {
@@ -968,18 +968,65 @@ Blatter::~Blatter() {
   // empty
 }
 
+void Blatter::init_impl() {
+  m_log->message(2, "* Initializing the Blatter stress balance...\n");
+
+  InputOptions opts = process_input_options(m_grid->com, m_config);
+
+  if (opts.type == INIT_RESTART) {
+    File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+    bool u_sigma_found = input_file.find_variable("uvel_sigma");
+    bool v_sigma_found = input_file.find_variable("vvel_sigma");
+    unsigned int start = input_file.nrecords() - 1;
+
+    if (u_sigma_found and v_sigma_found) {
+      m_log->message(3, "Reading uvel_sigma and vvel_sigma...\n");
+
+      m_u_sigma->read(input_file, start);
+      m_v_sigma->read(input_file, start);
+
+      set_initial_guess(*m_u_sigma, *m_v_sigma);
+    }
+  } else if (opts.type == INIT_BOOTSTRAP) {
+    File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+    bool u_found = input_file.find_variable("uvel");
+    bool v_found = input_file.find_variable("vvel");
+    bool thk_found = input_file.find_variable("thk");
+
+    if (u_found and v_found and thk_found) {
+      m_u.regrid(input_file, CRITICAL, 0.0);
+      m_v.regrid(input_file, CRITICAL, 0.0);
+
+      IceModelVec2S ice_thickness(m_grid, "thk", WITHOUT_GHOSTS);
+      ice_thickness.set_attrs("model_state", "land ice thickness",
+                              "m", "m", "land_ice_thickness", 0);
+      ice_thickness.metadata().set_number("valid_min", 0.0);
+
+      ice_thickness.regrid(input_file, CRITICAL, 0.0);
+
+      set_initial_guess(m_u, m_v, ice_thickness);
+    }
+  } else {
+    int ierr = VecSet(m_x, 0.0); PISM_CHK(ierr, "VecSet");
+  }
+}
+
+void Blatter::define_model_state_impl(const File &output) const {
+  m_u_sigma->define(output);
+  m_v_sigma->define(output);
+}
+
+void Blatter::write_model_state_impl(const File &output) const {
+  m_u_sigma->write(output);
+  m_v_sigma->write(output);
+}
+
 void Blatter::update(const Inputs &inputs, bool full_update) {
   (void) inputs;
+  (void) full_update;
 
   init_2d_parameters(inputs);
   init_ice_hardness(inputs);
-
-  if (full_update) {
-    // FIXME: remove these once init() is implemented
-    m_u_sigma->set(0.0);
-    m_v_sigma->set(0.0);
-    set_initial_guess();
-  }
 
   int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 
@@ -1037,23 +1084,48 @@ void Blatter::get_basal_velocity(IceModelVec2V &result) {
 }
 
 
-void Blatter::set_initial_guess() {
+void Blatter::set_initial_guess(const IceModelVec3Custom &u_sigma,
+                                const IceModelVec3Custom &v_sigma) {
   Vector2 ***x = nullptr;
   int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
   int Mz = m_u_sigma->levels().size();
 
-  IceModelVec::AccessList list{m_u_sigma.get(), m_v_sigma.get()};
+  IceModelVec::AccessList list{&u_sigma, &v_sigma};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    auto u = m_u_sigma->get_column(i, j);
-    auto v = m_v_sigma->get_column(i, j);
+    auto u = u_sigma.get_column(i, j);
+    auto v = v_sigma.get_column(i, j);
 
     for (int k = 0; k < Mz; ++k) {
       x[j][i][k].u = u[k];      // STORAGE_ORDER
       x[j][i][k].v = v[k];      // STORAGE_ORDER
+    }
+  }
+
+  ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
+}
+
+void Blatter::set_initial_guess(const IceModelVec3 &u, const IceModelVec3 &v,
+                                const IceModelVec2S &ice_thickness) {
+  Vector2 ***x = nullptr;
+  int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
+
+  int Mz = m_config->get_number("stress_balance.blatter.Mz");
+
+  IceModelVec::AccessList list{&u, &v, &ice_thickness};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double dz = ice_thickness(i, j) / (Mz - 1);
+
+    for (int k = 0; k < Mz; ++k) {
+      double z = k * dz;
+      x[j][i][k].u = u.getValZ(i, j, z);      // STORAGE_ORDER
+      x[j][i][k].v = v.getValZ(i, j, z);      // STORAGE_ORDER
     }
   }
 

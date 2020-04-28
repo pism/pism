@@ -44,14 +44,17 @@ public:
   const IceModelVec3& velocity_v() const;
 
 protected:
-  void exact_solution(IceModelVec3Custom &result);
-
+  // u and v components of ice velocity on the sigma grid
   IceModelVec3Custom::Ptr m_u_sigma, m_v_sigma;
 
+  // u, v, and strain heating on the PISM grid
   IceModelVec3 m_u, m_v, m_strain_heating;
 
+  // 3D dof=2 DM used by SNES
   petsc::DM m_da;
+  // storage for the solution
   petsc::Vec m_x;
+
   petsc::SNES m_snes;
 
   struct CallbackData {
@@ -63,12 +66,20 @@ protected:
   GridInfo m_grid_info;
   double m_rhog;
 
+  void init_impl();
+
+  void define_model_state_impl(const File &output) const;
+
+  void write_model_state_impl(const File &output) const;
+
   void compute_jacobian(DMDALocalInfo *info, const Vector2 ***x, Mat A, Mat J);
 
   void compute_residual(DMDALocalInfo *info, const Vector2 ***xg, Vector2 ***yg);
+
   static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
                                           const Vector2 ***x,
                                           Mat A, Mat J, CallbackData *data);
+
   static PetscErrorCode function_callback(DMDALocalInfo *info, const Vector2 ***x, Vector2 ***f,
                                           CallbackData *data);
 
@@ -78,10 +89,16 @@ protected:
   // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
   PetscErrorCode setup(DM pism_da, int Mz, int n_levels);
 
-  void set_initial_guess();
+  void set_initial_guess(const IceModelVec3Custom &u_sigma, const IceModelVec3Custom &v_sigma);
+
+  void set_initial_guess(const IceModelVec3 &u, const IceModelVec3 &v, const IceModelVec2S &ice_thickness);
+
   void copy_solution();
+
   void transfer();
+
   void compute_averaged_velocity(IceModelVec2V &result);
+
   void get_basal_velocity(IceModelVec2V &result);
 };
 
