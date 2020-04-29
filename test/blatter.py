@@ -93,7 +93,7 @@ def inputs_from_formulas():
                                 basal_heat_flux,
                                 enthalpy)
 
-    yield_stress.set(config.get_number("basal_yield_stress.constant.value"))
+    yield_stress.set(10 * config.get_number("basal_yield_stress.constant.value"))
 
     return grid, geometry, enthalpy, yield_stress
 
