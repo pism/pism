@@ -906,6 +906,9 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels) {
                         NULL, new_lx.data(), new_ly.data(), // STORAGE_ORDER
                         m_da.rawptr()); CHKERRQ(ierr);
 
+    // semi-coarsening: coarsen in the vertical direction only
+    ierr = DMDASetRefinementFactor(m_da, PETSC_IGNORE, 1, 1); CHKERRQ(ierr); // STORAGE_ORDER
+
     ierr = DMSetFromOptions(m_da); CHKERRQ(ierr);
 
     ierr = DMSetUp(m_da); CHKERRQ(ierr);
