@@ -2270,6 +2270,11 @@ netcdf pism_config {
     pism_config:stress_balance.blatter.enhancement_factor_interglacial = 1.0;
     pism_config:stress_balance.blatter.enhancement_factor_interglacial_doc = "Flow enhancement factor for Blatter stress balance solver; used for ice accumulated during interglacial periods.";
 
+    pism_config:stress_balance.blatter.coarsening_factor_units = "count";
+    pism_config:stress_balance.blatter.coarsening_factor_type = "integer";
+    pism_config:stress_balance.blatter.coarsening_factor = 2;
+    pism_config:stress_balance.blatter.coarsening_factor_doc = "Coarsening factor in the z direction (in the Blatter solver)";
+
     pism_config:stress_balance.blatter.Mz_units = "count";
     pism_config:stress_balance.blatter.Mz_type = "integer";
     pism_config:stress_balance.blatter.Mz = 5;

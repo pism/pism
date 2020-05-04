@@ -87,7 +87,7 @@ protected:
   void init_ice_hardness(const Inputs &inputs);
 
   // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
-  PetscErrorCode setup(DM pism_da, int Mz, int n_levels);
+  PetscErrorCode setup(DM pism_da, int Mz, int n_levels, int coarsening_factor);
 
   void set_initial_guess(const IceModelVec3Custom &u_sigma, const IceModelVec3Custom &v_sigma);
 

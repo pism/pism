@@ -739,7 +739,9 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels)
 
   auto pism_da = grid->get_dm(1, 0);
 
-  int ierr = setup(*pism_da, Mz, n_levels);
+  int coarsening_factor = m_config->get_number("stress_balance.blatter.coarsening_factor");
+
+  int ierr = setup(*pism_da, Mz, n_levels, coarsening_factor);
   if (ierr != 0) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "Failed to allocate a Blatter solver instance");
@@ -824,7 +826,7 @@ PetscErrorCode blatter_coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
   return 0;
 }
 
-PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels) {
+PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels, int coarsening_factor) {
   PetscErrorCode ierr;
   // DM
   //
@@ -907,7 +909,7 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels) {
                         m_da.rawptr()); CHKERRQ(ierr);
 
     // semi-coarsening: coarsen in the vertical direction only
-    ierr = DMDASetRefinementFactor(m_da, PETSC_IGNORE, 1, 1); CHKERRQ(ierr); // STORAGE_ORDER
+    ierr = DMDASetRefinementFactor(m_da, coarsening_factor, 1, 1); CHKERRQ(ierr); // STORAGE_ORDER
 
     ierr = DMSetFromOptions(m_da); CHKERRQ(ierr);
 
