@@ -107,7 +107,7 @@ if __name__ == "__main__":
         grid, geometry, enthalpy, yield_stress = inputs_from_file(input_file)
 
     Mz = int(config.get_number("stress_balance.blatter.Mz"))
-    n_levels = 1
+    n_levels = 0
 
     stress_balance = PISM.Blatter(grid, Mz, n_levels)
 
