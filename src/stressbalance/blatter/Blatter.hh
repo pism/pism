@@ -40,15 +40,9 @@ public:
   IceModelVec3Custom::Ptr velocity_u_sigma() const;
   IceModelVec3Custom::Ptr velocity_v_sigma() const;
 
-  const IceModelVec3& velocity_u() const;
-  const IceModelVec3& velocity_v() const;
-
 protected:
   // u and v components of ice velocity on the sigma grid
   IceModelVec3Custom::Ptr m_u_sigma, m_v_sigma;
-
-  // u and v on the PISM grid
-  IceModelVec3 m_u, m_v;
 
   // 3D dof=2 DM used by SNES
   petsc::DM m_da;
@@ -92,8 +86,6 @@ protected:
   void set_initial_guess(const IceModelVec3Custom &u_sigma, const IceModelVec3Custom &v_sigma);
 
   void copy_solution();
-
-  void transfer();
 
   void compute_averaged_velocity(IceModelVec2V &result);
 
