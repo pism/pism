@@ -1,5 +1,11 @@
 .. default-role:: literal
 
+Changes from v1.2.1 to v1.2.2
+=============================
+
+- Use `time.time()` instead of `time.clock()` in `examples/python/ssa_forward.py`
+  (contributed by Moritz Kreuzer).
+
 Changes from v1.2 to v1.2.1
 ===========================
 
