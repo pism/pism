@@ -725,13 +725,12 @@ PetscErrorCode Blatter::jacobian_callback(DMDALocalInfo *info,
  * @param[in] grid PISM's grid.
  * @param[in] Mz number of vertical levels
  * @param[in] n_levels maximum number of grid levels to use
+ * @param[in] coarsening_factor grid coarsening factor
  */
-Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels)
+Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor)
   : ShallowStressBalance(grid) {
 
   auto pism_da = grid->get_dm(1, 0);
-
-  int coarsening_factor = m_config->get_number("stress_balance.blatter.coarsening_factor");
 
   int ierr = setup(*pism_da, Mz, n_levels, coarsening_factor);
   if (ierr != 0) {
@@ -740,7 +739,7 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels)
   }
 
   {
-    int mz = Mz + grid_padding(Mz, n_levels);
+    int mz = Mz + grid_padding(Mz, coarsening_factor, n_levels);
     std::vector<double> sigma(mz);
     double dz = 1.0 / (mz - 1);
     for (int i = 0; i < mz; ++i) {
@@ -867,7 +866,7 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels, int coarsening_f
     {
       // x direction
       {
-        int pad_x = grid_padding(Mx, n_levels);
+        int pad_x = grid_padding(Mx, coarsening_factor, n_levels);
 
         new_lx[Nx - 1] += pad_x;
         Mx             += pad_x;
@@ -876,7 +875,7 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels, int coarsening_f
 
       // y direction
       {
-        int pad_y = grid_padding(My, n_levels);
+        int pad_y = grid_padding(My, coarsening_factor, n_levels);
 
         new_ly[Ny - 1] += pad_y;
         My             += pad_y;
@@ -884,7 +883,7 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels, int coarsening_f
       }
 
       // z direction
-      Mz += grid_padding(Mz, n_levels);
+      Mz += grid_padding(Mz, coarsening_factor, n_levels);
     }
 
     ierr = DMDACreate3d(PETSC_COMM_WORLD,

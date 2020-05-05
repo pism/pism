@@ -479,8 +479,10 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz, int n_levels)
                        "Failed to allocate a Poisson3 instance");
   }
 
+  int coarsening_factor = 2;
+
   {
-    int mz = Mz + grid_padding(Mz, n_levels);
+    int mz = Mz + grid_padding(Mz, coarsening_factor, n_levels);
     std::vector<double> sigma(mz);
     double dz = 1.0 / (mz - 1);
     for (int i = 0; i < mz; ++i) {
@@ -589,6 +591,8 @@ PetscErrorCode Poisson3::setup(DM pism_da, int Mz, int n_levels) {
       }
     }
 
+    int coarsening_factor = 2;
+
     double
       x_max = m_grid->Lx(),
       x_min = -x_max,
@@ -599,7 +603,7 @@ PetscErrorCode Poisson3::setup(DM pism_da, int Mz, int n_levels) {
     {
       // x direction
       {
-        int pad_x = grid_padding(Mx, n_levels);
+        int pad_x = grid_padding(Mx, coarsening_factor, n_levels);
 
         new_lx[Nx - 1] += pad_x;
         Mx             += pad_x;
@@ -608,7 +612,7 @@ PetscErrorCode Poisson3::setup(DM pism_da, int Mz, int n_levels) {
 
       // y direction
       {
-        int pad_y = grid_padding(My, n_levels);
+        int pad_y = grid_padding(My, coarsening_factor, n_levels);
 
         new_ly[Ny - 1] += pad_y;
         My             += pad_y;
@@ -616,7 +620,7 @@ PetscErrorCode Poisson3::setup(DM pism_da, int Mz, int n_levels) {
       }
 
       // z direction
-      Mz += grid_padding(Mz, n_levels);
+      Mz += grid_padding(Mz, coarsening_factor, n_levels);
     }
 
     ierr = DMDACreate3d(PETSC_COMM_WORLD,

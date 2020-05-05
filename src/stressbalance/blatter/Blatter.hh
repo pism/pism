@@ -32,7 +32,7 @@ namespace stressbalance {
 
 class Blatter : public ShallowStressBalance {
 public:
-  Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels);
+  Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor);
   virtual ~Blatter();
 
   void update(const Inputs &inputs, bool);

@@ -56,7 +56,7 @@ double grid_xy(double min, double delta, int k);
 
 double grid_z(double b, double H, int Mz, int k);
 
-int grid_padding(int N, int n_levels);
+int grid_padding(int N, int coarsening_factor, int n_levels);
 
 DMDALocalInfo grid_transpose(const DMDALocalInfo &input);
 

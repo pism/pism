@@ -2079,7 +2079,7 @@ netcdf pism_config {
     pism_config:stress_balance.ice_free_thickness_standard_units = "meters";
 
     pism_config:stress_balance.model = "sia";
-    pism_config:stress_balance.model_choices = "none,prescribed_sliding,weertman_sliding,sia,ssa,prescribed_sliding+sia,weertman_sliding+sia,ssa+sia";
+    pism_config:stress_balance.model_choices = "none,prescribed_sliding,weertman_sliding,sia,ssa,prescribed_sliding+sia,weertman_sliding+sia,ssa+sia,blatter";
     pism_config:stress_balance.model_doc = "Stress balance model";
     pism_config:stress_balance.model_option = "stress_balance";
     pism_config:stress_balance.model_type = "keyword";
@@ -2279,6 +2279,11 @@ netcdf pism_config {
     pism_config:stress_balance.blatter.Mz_type = "integer";
     pism_config:stress_balance.blatter.Mz = 5;
     pism_config:stress_balance.blatter.Mz_doc = "; Number of vertical grid levels in the ice (in the Blatter solver).";
+
+    pism_config:stress_balance.blatter.n_levels_units = "count";
+    pism_config:stress_balance.blatter.n_levels_type = "integer";
+    pism_config:stress_balance.blatter.n_levels = 1;
+    pism_config:stress_balance.blatter.n_levels_doc = "Number of multigrid levels to pad the grid for";
 
     pism_config:stress_balance.ssa.strength_extension.constant_nu = 9.48680701906572e+14;
     pism_config:stress_balance.ssa.strength_extension.constant_nu_doc = "The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 `Pa s^{1/3}` :cite:`MacAyealetal` and a typical strain rate of 0.001 year-1:  `\\nu = (\\bar B) / (2 \\cdot 0.001^{2/3})`.  Compare the value of 9.45e14 Pa s = 30 MPa year in :cite:`Ritzetal2001`.";

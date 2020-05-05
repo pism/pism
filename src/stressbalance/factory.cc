@@ -25,6 +25,9 @@
 #include "SSB_Modifier.hh"
 #include "pism/regional/SSAFD_Regional.hh"
 #include "pism/regional/SIAFD_Regional.hh"
+#include "blatter/Blatter.hh"
+#include "blatter/BlatterMod.hh"
+
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Context.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
@@ -35,9 +38,19 @@ namespace stressbalance {
 std::shared_ptr<StressBalance> create(const std::string &model,
                                       IceGrid::ConstPtr grid,
                                       bool regional) {
-  std::shared_ptr<ShallowStressBalance> sliding;
 
   auto config = grid->ctx()->config();
+
+  if (model == "blatter") {
+    int Mz = config->get_number("stress_balance.blatter.Mz");
+    int n_levels = config->get_number("stress_balance.blatter.n_levels");
+    int coarsening_factor = config->get_number("stress_balance.blatter.coarsening_factor");
+
+    std::shared_ptr<Blatter> blatter(new Blatter(grid, Mz, n_levels, coarsening_factor));
+    std::shared_ptr<BlatterMod> mod(new BlatterMod(blatter));
+
+    return std::shared_ptr<StressBalance>(new StressBalance(grid, blatter, mod));
+  }
 
   SSAFactory SSA;
   if (config->get_string("stress_balance.ssa.method") == "fd") {
@@ -46,6 +59,7 @@ std::shared_ptr<StressBalance> create(const std::string &model,
     SSA = SSAFEMFactory;
   }
 
+  std::shared_ptr<ShallowStressBalance> sliding;
   if (member(model, {"none", "sia"})) {
     sliding.reset(new ZeroSliding(grid));
   } else if (member(model, {"prescribed_sliding", "prescribed_sliding+sia"})) {

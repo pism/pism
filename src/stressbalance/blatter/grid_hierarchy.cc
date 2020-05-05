@@ -51,17 +51,18 @@ double grid_z(double b, double H, int Mz, int k) {
  * Compute the padding needed to allow for `n_levels` of coarsening.
  *
  * @param[in] N number of grid points (nodes)
+ * @param[in] factor coarsening factor
  * @param[in] n_levels number of coarsening levels
  *
  * @return padding amount
  */
-int grid_padding(int N, int n_levels) {
+int grid_padding(int N, int factor, int n_levels) {
   // number of spaces
   int k = N - 1;
   int C = 1;
   for (int n = 0; n < n_levels; ++n) {
-    C *= 2;
-    k = (k % 2 ? k + 1: k) / 2;
+    C *= factor;
+    k = (k % factor ? k + (factor - (k % factor)): k) / factor;
   }
   return (C * k + 1) - N;
 }
