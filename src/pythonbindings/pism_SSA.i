@@ -6,10 +6,13 @@
 #include "stressbalance/StressBalance.hh"
 %}
 
+%shared_ptr(pism::stressbalance::ShallowStressBalance)
+%shared_ptr(pism::stressbalance::SSB_Modifier)
+
 %shared_ptr(pism::stressbalance::StressBalance)
+
 %include "stressbalance/StressBalance.hh"
 
-%shared_ptr(pism::stressbalance::ShallowStressBalance)
 %shared_ptr(pism::stressbalance::ZeroSliding)
 %shared_ptr(pism::stressbalance::PrescribedSliding)
 %include "stressbalance/ShallowStressBalance.hh"

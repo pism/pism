@@ -109,7 +109,10 @@ if __name__ == "__main__":
     Mz = int(config.get_number("stress_balance.blatter.Mz"))
     n_levels = 0
 
-    stress_balance = PISM.Blatter(grid, Mz, n_levels)
+    model = PISM.Blatter(grid, Mz, n_levels)
+    mod = PISM.BlatterMod(model)
+
+    stress_balance = PISM.StressBalance(grid, model, mod)
 
     stress_balance.init()
 
@@ -125,17 +128,22 @@ if __name__ == "__main__":
 
     PISM.util.prepare_output(output_file)
 
-    stress_balance.velocity_u_sigma().write(output_file)
-    stress_balance.velocity_v_sigma().write(output_file)
+    model.velocity_u_sigma().write(output_file)
+    model.velocity_v_sigma().write(output_file)
     stress_balance.velocity_u().write(output_file)
     stress_balance.velocity_v().write(output_file)
-    stress_balance.velocity().write(output_file)
+    stress_balance.velocity_w().write(output_file)
+
+    stress_balance.advective_velocity().write(output_file)
+
+    stress_balance.basal_frictional_heating().write(output_file)
+    stress_balance.volumetric_strain_heating().write(output_file)
 
     v_mag = PISM.IceModelVec2S(grid, "vel_mag", PISM.WITHOUT_GHOSTS)
     v_mag.set_attrs("diagnostic",
                     "magnitude of vertically-averaged horizontal velocity of ice",
                     "m second-1", "m year-1", "", 0)
-    v_mag.set_to_magnitude(stress_balance.velocity())
+    v_mag.set_to_magnitude(stress_balance.advective_velocity())
 
     v_mag.write(output_file)
 
@@ -143,3 +151,5 @@ if __name__ == "__main__":
     geometry.bed_elevation.write(output_file)
     enthalpy.write(output_file)
     yield_stress.write(output_file)
+
+    print(stress_balance.max_diffusivity())
