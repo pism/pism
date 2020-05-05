@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,8 @@
 
 #ifndef _PISMSTRESSBALANCE_H_
 #define _PISMSTRESSBALANCE_H_
+
+#include <memory>               // std::shared_ptr
 
 #include "pism/util/Component.hh"     // derives from Component
 #include "pism/util/iceModelVec.hh"
@@ -78,7 +80,9 @@ public:
 class StressBalance : public Component
 {
 public:
-  StressBalance(IceGrid::ConstPtr g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod);
+  StressBalance(IceGrid::ConstPtr g,
+                std::shared_ptr<ShallowStressBalance> sb,
+                std::shared_ptr<SSB_Modifier> ssb_mod);
   virtual ~StressBalance();
 
   //! \brief Initialize the StressBalance object.
@@ -138,8 +142,8 @@ protected:
 
   IceModelVec3 m_w, m_strain_heating;
 
-  ShallowStressBalance *m_shallow_stress_balance;
-  SSB_Modifier *m_modifier;
+  std::shared_ptr<ShallowStressBalance> m_shallow_stress_balance;
+  std::shared_ptr<SSB_Modifier> m_modifier;
 };
 
 std::shared_ptr<StressBalance> create(const std::string &model_name,

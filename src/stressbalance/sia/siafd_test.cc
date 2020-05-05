@@ -340,8 +340,8 @@ int main(int argc, char *argv[]) {
     // We use SIA_Nonsliding and not SIAFD here because we need the z-component
     // of the ice velocity, which is computed using incompressibility of ice in
     // StressBalance::compute_vertical_velocity().
-    SIAFD *sia = new SIAFD(grid);
-    ZeroSliding *no_sliding = new ZeroSliding(grid);
+    std::shared_ptr<SIAFD> sia(new SIAFD(grid));
+    std::shared_ptr<ZeroSliding> no_sliding(new ZeroSliding(grid));
 
     // stress_balance will de-allocate no_sliding and sia.
     StressBalance stress_balance(grid, no_sliding, sia);

@@ -137,8 +137,8 @@ void Inputs::dump(const char *filename) const {
 }
 
 StressBalance::StressBalance(IceGrid::ConstPtr g,
-                             ShallowStressBalance *sb,
-                             SSB_Modifier *ssb_mod)
+                             std::shared_ptr<ShallowStressBalance> sb,
+                             std::shared_ptr<SSB_Modifier> ssb_mod)
   : Component(g),
     m_w(m_grid, "wvel_rel", WITHOUT_GHOSTS),
     m_strain_heating(m_grid, "strain_heating", WITHOUT_GHOSTS),
@@ -156,8 +156,6 @@ StressBalance::StressBalance(IceGrid::ConstPtr g,
 }
 
 StressBalance::~StressBalance() {
-  delete m_shallow_stress_balance;
-  delete m_modifier;
 }
 
 //! \brief Initialize the StressBalance object.
@@ -645,11 +643,11 @@ std::string StressBalance::stdout_report() const {
 }
 
 const ShallowStressBalance* StressBalance::shallow() const {
-  return m_shallow_stress_balance;
+  return m_shallow_stress_balance.get();
 }
 
 const SSB_Modifier* StressBalance::modifier() const {
-  return m_modifier;
+  return m_modifier.get();
 }
 
 
