@@ -108,8 +108,9 @@ if __name__ == "__main__":
 
     Mz = int(config.get_number("stress_balance.blatter.Mz"))
     n_levels = 0
+    coarsening_factor = int(config.get_number("stress_balance.blatter.coarsening_factor"))
 
-    model = PISM.Blatter(grid, Mz, n_levels)
+    model = PISM.Blatter(grid, Mz, n_levels, coarsening_factor)
     mod = PISM.BlatterMod(model)
 
     stress_balance = PISM.StressBalance(grid, model, mod)
