@@ -29,3 +29,6 @@
 %shared_ptr(pism::calving::vonMisesCalving)
 %rename(CalvingvonMisesCalving) pism::calving::vonMisesCalving;
 %include "frontretreat/calving/vonMisesCalving.hh"
+
+pism_class(pism::FrontRetreat,
+           "pism/frontretreat/FrontRetreat.hh")
