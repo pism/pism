@@ -1193,6 +1193,8 @@ void Blatter::compute_averaged_velocity(IceModelVec2V &result) {
   }
 
   ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
+
+  result.update_ghosts();
 }
 
 

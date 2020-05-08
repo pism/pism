@@ -94,6 +94,9 @@ void BlatterMod::transfer(const IceModelVec2S &ice_thickness) {
       m_v.set_column(i, j, 0.0);
     }
   }
+
+  m_u.update_ghosts();
+  m_v.update_ghosts();
 }
 
 /*!
