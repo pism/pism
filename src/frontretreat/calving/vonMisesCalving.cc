@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -125,7 +125,7 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
     // have floating ice neighbors after the mass continuity step
-    if (m_cell_type.ice_free_ocean(i, j) and m_cell_type.next_to_floating_ice(i, j)) {
+    if (m_cell_type.ice_free_ocean(i, j) and m_cell_type.next_to_ice(i, j)) {
 
       double
         velocity_magnitude = 0.0,
