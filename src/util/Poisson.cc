@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,7 +26,8 @@ Poisson::Poisson(IceGrid::ConstPtr grid)
   : m_grid(grid),
     m_log(grid->ctx()->log()),
     m_b(grid, "poisson_rhs", WITHOUT_GHOSTS),
-    m_x(grid, "poisson_x", WITHOUT_GHOSTS) {
+    m_x(grid, "poisson_x", WITHOUT_GHOSTS),
+    m_mask(grid, "poisson_mask", WITH_GHOSTS){
 
   m_da = m_x.dm();
 
@@ -55,11 +56,16 @@ Poisson::Poisson(IceGrid::ConstPtr grid)
  * Solve the Poisson equation on the domain defined by `mask == 1` with Dirichlet BC
  * provided in `bc` (used only where `mask == 0`, possibly redundant away from the domain)
  * with the constant right hand side `rhs`.
+ *
+ * Set the mask to 2 to use zero Neumann BC.
  */
 int Poisson::solve(const IceModelVec2Int& mask, const IceModelVec2S& bc, double rhs,
                    bool reuse_matrix) {
 
   PetscErrorCode ierr;
+
+  // make a ghosted copy of the mask
+  m_mask.copy_from(mask);
 
   if (reuse_matrix) {
     // Use non-zero initial guess. I assume that re-using the matrix means that the BC and
@@ -71,10 +77,10 @@ int Poisson::solve(const IceModelVec2Int& mask, const IceModelVec2S& bc, double 
     ierr = KSPSetInitialGuessNonzero(m_KSP, PETSC_FALSE);
     PISM_CHK(ierr, "KSPSetInitialGuessNonzero");
 
-    assemble_matrix(mask, m_A);
+    assemble_matrix(m_mask, m_A);
   }
 
-  assemble_rhs(rhs, mask, bc, m_b);
+  assemble_rhs(rhs, m_mask, bc, m_b);
 
   // Call PETSc to solve linear system by iterative method.
   ierr = KSPSetOperators(m_KSP, m_A, m_A);
@@ -191,16 +197,25 @@ void Poisson::assemble_matrix(const IceModelVec2Int &mask, Mat A) {
         col[m].j = J[m];
       }
 
-      if (mask.as_int(i, j) == 1) {
+      auto M = mask.int_star(i, j);
+
+      if (M.ij == 1) {
         // Regular location: use coefficients of the discretization of the Laplacian
 
-        // Weights taking care of edge cases. This corresponds to zero Neumann BC at the
-        // edges of the computational domain.
+        // Use zero Neumann BC if a neighbor is marked as a Neumann boundary
         double
-          N = j == My - 1 ? 0.0 : 1.0,
-          E = i == Mx - 1 ? 0.0 : 1.0,
-          W = i == 0      ? 0.0 : 1.0,
-          S = j == 0      ? 0.0 : 1.0;
+          N = M.n == 2 ? 0.0 : 1.0,
+          E = M.e == 2 ? 0.0 : 1.0,
+          W = M.w == 2 ? 0.0 : 1.0,
+          S = M.s == 2 ? 0.0 : 1.0;
+
+        // Use zero Neumann BC at edges of the computational domain
+        {
+          N = j == My - 1 ? 0.0 : N;
+          E = i == Mx - 1 ? 0.0 : E;
+          W = i == 0      ? 0.0 : W;
+          S = j == 0      ? 0.0 : S;
+        }
 
         // discretization of the Laplacian
         double L[ncol] = {- N * C_y,
