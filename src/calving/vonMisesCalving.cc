@@ -90,7 +90,7 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
     // have floating ice neighbors after the mass continuity step
-    if (mask.ice_free_ocean(i, j) and mask.next_to_floating_ice(i, j)) {
+    if (mask.ice_free_ocean(i, j) and mask.next_to_ice(i, j)) {
 
       double
         velocity_magnitude = 0.0,
