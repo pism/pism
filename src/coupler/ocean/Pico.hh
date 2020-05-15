@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016, 2018 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
+// Copyright (C) 2012-2016, 2018, 2020 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
 // and Matthias Mengel
 //
 // This file is part of PISM.
@@ -22,10 +22,12 @@
 
 #include "CompleteOceanModel.hh"
 
-#include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
+
+class IceModelVec2CellType;
+
 namespace ocean {
 
 class PicoGeometry;
