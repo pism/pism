@@ -163,6 +163,10 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
                                const Vector2 ***x, Vector2 ***R) {
   auto info = grid_transpose(*petsc_info);
 
+  double
+    g = m_config->get_number("constants.standard_gravity"),
+    rho_w = m_config->get_number("constants.sea_water.density");
+
   // Stencil width of 1 is not very important, but if info.sw > 1 will lead to more
   // redundant computation (we would be looping over elements that don't contribute to any
   // owned nodes).
@@ -229,7 +233,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   int Nk = element.n_chi();
   assert(Nk <= Nk_max);
 
-  double x_nodal[Nk_max], y_nodal[Nk_max], B_nodal[Nk_max], s_nodal[Nk_max];
+  double x_nodal[Nk_max], y_nodal[Nk_max], B_nodal[Nk_max], s_nodal[Nk_max], sl_nodal[Nk_max];
   std::vector<double> z_nodal(Nk);
 
   Vector2 R_nodal[Nk_max], u_nodal[Nk_max];
@@ -243,7 +247,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   Vector2 u[Nq_max], u_x[Nq_max], u_y[Nq_max], u_z[Nq_max];
   double xq[Nq_max], yq[Nq_max], zq[Nq_max], Bq[Nq_max];
 
-  double s[Nq_max], s_x[Nq_max], s_y[Nq_max], s_z[Nq_max];
+  double s[Nq_max], s_x[Nq_max], s_y[Nq_max], s_z[Nq_max], z_sl[Nq_max];
 
   double tauc_nodal[Nk_max], tauc[Nq_max];
 
@@ -271,6 +275,8 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
           z_nodal[n] = grid_z(p.bed, p.thickness, info.mz, I.k);
 
           s_nodal[n] = p.bed + p.thickness;
+
+          sl_nodal[n] = p.sea_level;
         }
 
         // skip ice-free elements
@@ -408,18 +414,21 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
             face.evaluate(x_nodal, xq);
             face.evaluate(y_nodal, yq);
             face.evaluate(z_nodal.data(), zq);
+            face.evaluate(sl_nodal, z_sl);
 
             // loop over all quadrature points
             for (int q = 0; q < face.n_pts(); ++q) {
               auto W = face.weight(q) / m_rhog;
-              auto N = face.normal(q);
+              auto N3 = face.normal(q);
+              Vector2 N = {N3.x, N3.y};
+
+              double p = rho_w * g * std::max(z_sl[q] - zq[q], 0.0);
 
               // loop over all test functions
               for (int t = 0; t < Nk; ++t) {
                 auto psi = face.chi(q, t);
 
-                // FIXME: stress BC
-                R_nodal[t] += {0.0, 0.0};
+                R_nodal[t] += W * psi * p * N;
               }
             }
           } // end of "if (neumann)"
