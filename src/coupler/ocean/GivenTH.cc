@@ -112,8 +112,26 @@ void GivenTH::init_impl(const Geometry &geometry) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.th");
 
+  // potential temperature is required
   m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
-  m_salinity_ocean->init(opt.filename, opt.period, opt.reference_time);
+
+  // read ocean salinity from a file if present, otherwise use a constant
+  {
+    File input(m_grid->com, opt.filename, PISM_GUESS, PISM_READONLY);
+
+    auto variable_name = m_salinity_ocean->metadata().get_name();
+
+    if (input.find_variable(variable_name)) {
+      m_salinity_ocean->init(opt.filename, opt.period, opt.reference_time);
+    } else {
+      double salinity = m_config->get_number("constants.sea_water.salinity", "g / kg");
+
+      m_salinity_ocean->init_constant(salinity);
+
+      m_log->message(2, "  Variable '%s' not found; using constant salinity: %f (g / kg).\n",
+                     variable_name.c_str(), salinity);
+    }
+  }
 
   // read time-independent data right away:
   if (m_theta_ocean->n_records() == 1 && m_salinity_ocean->n_records() == 1) {

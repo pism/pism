@@ -97,7 +97,9 @@ equations describing
 This model is described in :cite:`HollandJenkins1999` and :cite:`Hellmeretal1998`.
 
 Inputs are potential temperature (variable :var:`theta_ocean`) and salinity (variable
-:var:`salinity_ocean`) read from a file.
+:var:`salinity_ocean`) read from a file. A constant salinity (see
+:config:`constants.sea_water.salinity`) is used if the input file does not contain
+:var:`salinity_ocean`.
 
 No ocean circulation is modeled, so melt water computed by this model is not fed back into
 the surrounding ocean.

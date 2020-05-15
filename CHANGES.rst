@@ -3,6 +3,8 @@
 Changes since v1.2
 ==================
 
+- The three-equation ocean model `-ocean th` uses constant salinity (see
+  `constants.sea_water.salinity` if `salinity_ocean` is not present in the forcing file.)
 
 Changes from v1.1 to v1.2
 =========================

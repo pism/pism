@@ -749,6 +749,11 @@ netcdf pism_config {
     pism_config:constants.sea_water.density_type = "number";
     pism_config:constants.sea_water.density_units = "kg meter-3";
 
+    pism_config:constants.sea_water.salinity = 35.0;
+    pism_config:constants.sea_water.salinity_doc = "salinity of sea water";
+    pism_config:constants.sea_water.salinity_type = "number";
+    pism_config:constants.sea_water.salinity_units = "g / kg";
+
     pism_config:constants.sea_water.specific_heat_capacity = 3985.0;
     pism_config:constants.sea_water.specific_heat_capacity_doc = "at 35 psu, value taken from `Kaye and Laby`_, section 2.7.9";
     pism_config:constants.sea_water.specific_heat_capacity_type = "number";
