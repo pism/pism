@@ -25,6 +25,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/Context.hh"
 
 #include "SSB_diagnostics.hh"
 

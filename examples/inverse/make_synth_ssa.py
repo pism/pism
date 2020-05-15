@@ -148,9 +148,9 @@ if __name__ == '__main__':
                                                             " ice hardness in an inversion")
         vecs.add(hardav_prior, writing=True)
 
-    solve_t0 = time.clock()
+    solve_t0 = time.time()
     vel_ssa = ssa_run.solve()
-    solve_t = time.clock() - solve_t0
+    solve_t = time.time() - solve_t0
 
     PISM.verbPrintf(2, context.com, "Solve time %g seconds.\n", solve_t)
 

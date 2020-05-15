@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2020  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include "IP_SSATaucTaoTikhonovProblemLCL.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/ConfigInterface.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace inverse {
@@ -74,8 +75,7 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
 
   m_constraints.reset(new StateVec(grid,"PDE constraints",WITHOUT_GHOSTS,design_stencil_width));
 
-  DM da;
-  m_ssaforward.get_da(&da);
+  petsc::DM &da = m_ssaforward.get_da();
 
   ierr = DMSetMatType(da, MATBAIJ);
   PISM_CHK(ierr, "DMSetMatType");
@@ -256,7 +256,13 @@ void IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianDesign(Tao, Vec
 }
 
 void IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesign(Vec x, Vec y) {
-  m_dzeta.copy_from_vec(x);
+
+  {
+    // increment the reference counter so that it does not get destroyed by petsc::Vec::~Vec()
+    PetscObjectReference((PetscObject)x);
+    petsc::Vec tmp(x);
+    m_dzeta.copy_from_vec(tmp);
+  }
 
   m_ssaforward.set_design(m_d_Jdesign);
 
@@ -267,7 +273,13 @@ void IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesign(Vec x, Vec 
 }
 
 void IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesignTranspose(Vec x, Vec y) {
-  m_du.copy_from_vec(x);
+
+  {
+    // increment the reference counter so that it does not get destroyed by petsc::Vec::~Vec()
+    PetscObjectReference((PetscObject)x);
+    petsc::Vec tmp(x);
+    m_du.copy_from_vec(tmp);
+  }
 
   m_ssaforward.set_design(m_d_Jdesign);
 

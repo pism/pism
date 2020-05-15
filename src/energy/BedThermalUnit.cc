@@ -34,13 +34,13 @@
 namespace pism {
 namespace energy {
 
-BTUGrid::BTUGrid(Context::ConstPtr ctx) {
+BTUGrid::BTUGrid(std::shared_ptr<const Context> ctx) {
   Mbz = (unsigned int) ctx->config()->get_number("grid.Mbz");
   Lbz = ctx->config()->get_number("grid.Lbz");
 }
 
 
-BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
+BTUGrid BTUGrid::FromOptions(std::shared_ptr<const Context> ctx) {
   BTUGrid result(ctx);
 
   Config::ConstPtr config = ctx->config();
@@ -82,7 +82,7 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
  *
  */
 BedThermalUnit* BedThermalUnit::FromOptions(IceGrid::ConstPtr grid,
-                                            Context::ConstPtr ctx) {
+                                            std::shared_ptr<const Context> ctx) {
 
   BTUGrid bedrock_grid = BTUGrid::FromOptions(ctx);
 

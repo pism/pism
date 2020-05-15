@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2020 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -108,13 +108,13 @@ class PrescribedRetreat;
 //! an ice sheet.
 class IceModel {
 public:
-  IceModel(IceGrid::Ptr g, Context::Ptr context);
+  IceModel(IceGrid::Ptr g, std::shared_ptr<Context> context);
 
   // the destructor must be virtual merely because some members are virtual
   virtual ~IceModel();
 
   IceGrid::Ptr grid() const;
-  Context::Ptr ctx() const;
+  std::shared_ptr<Context> ctx() const;
 
   void init();
 
@@ -231,7 +231,7 @@ protected:
   //! Configuration flags and parameters
   const Config::Ptr m_config;
   //! Execution context
-  const Context::Ptr m_ctx;
+  const std::shared_ptr<Context> m_ctx;
   //! Unit system
   const units::System::Ptr m_sys;
   //! Logger
@@ -336,7 +336,7 @@ protected:
                                const IceModelVec2S &Href,
                                const IceModelVec2S &thickness_old,
                                const IceModelVec2S &Href_old,
-                               InsertMode flag,
+                               bool add_values,
                                IceModelVec2S &output);
 
   // see iMIO.cc
@@ -439,7 +439,7 @@ protected:
   // diagnostic viewers; see iMviewers.cc
   virtual void update_viewers();
   virtual void view_field(const IceModelVec *field);
-  std::map<std::string,petsc::Viewer::Ptr> m_viewers;
+  std::map<std::string,std::shared_ptr<petsc::Viewer> > m_viewers;
 
 private:
   TimeseriesMetadata m_timestamp;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,6 +23,7 @@
 #include "io/io_helpers.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 

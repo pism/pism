@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -31,6 +31,7 @@
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/Time.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -63,8 +64,8 @@ void Inputs::dump(const char *filename) const {
     return;
   }
 
-  Context::ConstPtr ctx = geometry->ice_thickness.grid()->ctx();
-  Config::ConstPtr config = ctx->config();
+  auto ctx = geometry->ice_thickness.grid()->ctx();
+  auto config = ctx->config();
 
   File output(ctx->com(), filename,
               string_to_backend(config->get_string("output.format")),
@@ -780,7 +781,7 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
     dy = grid->dy();
 
   if (result.ndof() != 3) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "result.get_dof() == 3 is required");
+    throw RuntimeError(PISM_ERROR_LOCATION, "result.ndof() == 3 is required");
   }
 
   IceModelVec::AccessList list{&velocity, &hardness, &result, &cell_type};

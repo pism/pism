@@ -36,7 +36,7 @@ class Timeseries;
  */
 class ScalarForcing {
 public:
-  ScalarForcing(Context::ConstPtr ctx,
+  ScalarForcing(std::shared_ptr<const Context> ctx,
                 const std::string &option_prefix,
                 const std::string &offset_name,
                 const std::string &units,
@@ -50,7 +50,7 @@ public:
   double value() const;
   double value(double t) const;
 protected:
-  Context::ConstPtr m_ctx;
+  std::shared_ptr<const Context> m_ctx;
 
   std::unique_ptr<Timeseries> m_data;
 

@@ -23,6 +23,7 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Vars.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace stressbalance {

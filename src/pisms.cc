@@ -37,7 +37,7 @@ static char help[] =
 
 using namespace pism;
 
-Context::Ptr pisms_context(MPI_Comm com) {
+std::shared_ptr<Context> pisms_context(MPI_Comm com) {
   // unit system
   units::System::Ptr sys(new units::System);
 
@@ -62,10 +62,10 @@ Context::Ptr pisms_context(MPI_Comm com) {
 
   EnthalpyConverter::Ptr EC(new EnthalpyConverter(*config));
 
-  return Context::Ptr(new Context(com, sys, config, EC, time, logger, "pisms"));
+  return std::shared_ptr<Context>(new Context(com, sys, config, EC, time, logger, "pisms"));
 }
 
-IceGrid::Ptr pisms_grid(Context::Ptr ctx) {
+IceGrid::Ptr pisms_grid(std::shared_ptr<Context> ctx) {
   auto config = ctx->config();
 
   auto input_file = config->get_string("input.file");
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
 
   try {
-    Context::Ptr ctx = pisms_context(com);
+    std::shared_ptr<Context> ctx = pisms_context(com);
     Logger::Ptr log = ctx->log();
 
     std::string usage =

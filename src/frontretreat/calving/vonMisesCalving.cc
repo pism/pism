@@ -26,6 +26,7 @@
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace calving {
@@ -102,6 +103,8 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
                              const IceModelVec3 &ice_enthalpy) {
 
   using std::max;
+  using std::sqrt;
+  using std::pow;
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
@@ -175,8 +178,8 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
       }
 
       // [\ref Morlighem2016] equation 6
-      const double effective_tensile_strain_rate = sqrt(0.5 * (PetscSqr(max(0.0, eigen1)) +
-                                                               PetscSqr(max(0.0, eigen2))));
+      const double effective_tensile_strain_rate = sqrt(0.5 * (pow(max(0.0, eigen1), 2) +
+                                                               pow(max(0.0, eigen2), 2)));
       // [\ref Morlighem2016] equation 7
       const double sigma_tilde = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate,
                                                             1.0 / glen_exponent);

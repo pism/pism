@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,6 +22,7 @@
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/error_handling.hh"
 #include "connected_components.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 

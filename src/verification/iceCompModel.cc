@@ -56,7 +56,7 @@ namespace pism {
 
 using units::convert;
 
-IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
+IceCompModel::IceCompModel(IceGrid::Ptr g, std::shared_ptr<Context> context, int mytest)
   : IceModel(g, context), m_testname(mytest), m_bedrock_is_ice_forK(false) {
 
   m_log->message(2, "starting Test %c ...\n", m_testname);

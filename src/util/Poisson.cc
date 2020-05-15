@@ -19,6 +19,9 @@
 
 #include "Poisson.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/petscwrappers/DM.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 

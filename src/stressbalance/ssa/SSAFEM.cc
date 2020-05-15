@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2019 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2020 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -30,6 +30,10 @@
 
 #include "pism/util/node_types.hh"
 
+#include "pism/util/petscwrappers/DM.hh"
+#include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/petscwrappers/Viewer.hh"
+
 namespace pism {
 namespace stressbalance {
 
@@ -43,6 +47,7 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g)
     m_bc_mask(NULL),
     m_bc_values(NULL),
     m_gc(*m_config),
+    m_coefficients(g, "ssa_coefficients", WITH_GHOSTS, 1),
     m_element_index(*g),
     m_element(*g),
     m_quadrature(g->dx(), g->dy(), 1.0) {
@@ -93,9 +98,6 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g)
 
   ierr = SNESSetFromOptions(m_snes);
   PISM_CHK(ierr, "SNESSetFromOptions");
-
-  // Allocate m_coefficients, which contains coefficient data at the nodes of all the elements.
-  m_coefficients.create(m_grid, "ssa_coefficients", WITH_GHOSTS, 1);
 
   m_node_type.create(m_grid, "node_type", WITH_GHOSTS, 1);
   m_node_type.set_attrs("internal", // intent

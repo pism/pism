@@ -2669,10 +2669,11 @@ public:
 
 protected:
   void update_impl(double dt) {
+    bool add_values = true;
     grounding_line_flux(model->geometry().cell_type,
                         model->geometry_evolution().flux_staggered(),
                         dt,
-                        ADD_VALUES,
+                        add_values,
                         m_accumulator);
 
     m_interval_length += dt;

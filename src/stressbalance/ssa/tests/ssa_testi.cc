@@ -50,7 +50,7 @@ const double B_schoof = 3.7e8; // Pa s^{1/3}; hardness
 
 class SSATestCaseI: public SSATestCase {
 public:
-  SSATestCaseI(Context::Ptr ctx, int Mx, int My, SSAFactory ssafactory)
+  SSATestCaseI(std::shared_ptr<Context> ctx, int Mx, int My, SSAFactory ssafactory)
     : SSATestCase(ctx,
                   Mx, My,
                   std::max(60.0e3, ((Mx - 1) / 2) * (2.0 * (3.0 * L_schoof) / (My - 1))),
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    Context::Ptr ctx = context_from_options(com, "ssa_testi");
+    std::shared_ptr<Context> ctx = context_from_options(com, "ssa_testi");
     Config::Ptr config = ctx->config();
 
     std::string usage = "\n"

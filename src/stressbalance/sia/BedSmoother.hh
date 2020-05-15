@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2020 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -106,7 +106,7 @@ protected:
 
   double m_Glen_exponent, m_smoothing_range;
 
-  petsc::Vec::Ptr m_topgp0,         //!< original bed elevation on processor 0
+  std::shared_ptr<petsc::Vec> m_topgp0,         //!< original bed elevation on processor 0
     m_topgsmoothp0,   //!< smoothed bed elevation on processor 0
     m_maxtlp0,        //!< maximum elevation at (i,j) of local topography (nearby patch)
     m_C2p0, m_C3p0, m_C4p0;

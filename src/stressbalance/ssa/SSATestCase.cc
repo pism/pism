@@ -30,7 +30,7 @@
 namespace pism {
 namespace stressbalance {
 
-SSATestCase::SSATestCase(Context::Ptr ctx, int Mx, int My,
+SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
                          double Lx, double Ly,
                          GridRegistration registration,
                          Periodicity periodicity)

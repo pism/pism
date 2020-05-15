@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -137,21 +137,21 @@ LingleClarkSerial::~LingleClarkSerial() {
 /*!
  * Return total displacement.
  */
-Vec LingleClarkSerial::total_displacement() const {
+const petsc::Vec& LingleClarkSerial::total_displacement() const {
   return m_U;
 }
 
 /*!
  * Return viscous plate displacement.
  */
-Vec LingleClarkSerial::viscous_displacement() const {
+const petsc::Vec& LingleClarkSerial::viscous_displacement() const {
   return m_Uv;
 }
 
 /*!
  * Return elastic plate displacement.
  */
-Vec LingleClarkSerial::elastic_displacement() const {
+const petsc::Vec& LingleClarkSerial::elastic_displacement() const {
   return m_Ue;
 }
 
@@ -249,8 +249,9 @@ void LingleClarkSerial::precompute_coefficients() {
  * @f$ \diff{u}{t} @f$ itself.
  *
  */
-void LingleClarkSerial::uplift_problem(Vec load_thickness, Vec bed_uplift,
-                                       Vec output) {
+void LingleClarkSerial::uplift_problem(petsc::Vec &load_thickness,
+                                       petsc::Vec &bed_uplift,
+                                       petsc::Vec &output) {
 
   // Compute fft2(-load_density * g * load_thickness)
   {
@@ -314,7 +315,7 @@ void LingleClarkSerial::uplift_problem(Vec load_thickness, Vec bed_uplift,
  *
  * Sets m_Uv, m_Ue, m_U.
  */
-void LingleClarkSerial::bootstrap(Vec thickness, Vec uplift) {
+void LingleClarkSerial::bootstrap(petsc::Vec &thickness, petsc::Vec &uplift) {
 
   // compute viscous displacement
   uplift_problem(thickness, uplift, m_Uv);
@@ -336,8 +337,8 @@ void LingleClarkSerial::bootstrap(Vec thickness, Vec uplift) {
  *
  * Sets m_Uv, m_Ue, m_U.
  */
-void LingleClarkSerial::init(Vec viscous_displacement,
-                             Vec elastic_displacement) {
+void LingleClarkSerial::init(petsc::Vec &viscous_displacement,
+                             petsc::Vec &elastic_displacement) {
   PetscErrorCode ierr = 0;
 
   ierr = VecCopy(viscous_displacement, m_Uv);  PISM_CHK(ierr, "VecCopy");
@@ -357,7 +358,7 @@ void LingleClarkSerial::init(Vec viscous_displacement,
  * @param[in] dt time step length
  * @param[in] H load thickness on the physical (Mx*My) grid
  */
-void LingleClarkSerial::step(double dt, Vec H) {
+void LingleClarkSerial::step(double dt, petsc::Vec &H) {
   // solves:
   //     (2 eta |grad| U^{n+1}) + (dt/2) * (rho_r g U^{n+1} + D grad^4 U^{n+1})
   //   = (2 eta |grad| U^n) - (dt/2) * (rho_r g U^n + D grad^4 U^n) - dt * rho g H_start
@@ -436,7 +437,7 @@ void LingleClarkSerial::step(double dt, Vec H) {
  * @param[in] H load thickness (ice equivalent meters)
  * @param[out] dE elastic plate displacement
  */
-void LingleClarkSerial::compute_elastic_response(Vec H, Vec dE) {
+void LingleClarkSerial::compute_elastic_response(petsc::Vec &H, petsc::Vec &dE) {
 
   // Compute fft2(load_density * H)
   //
@@ -480,7 +481,7 @@ void LingleClarkSerial::compute_elastic_response(Vec H, Vec dE) {
  * @param[in] dE elastic displacement
  * @param[out] dU total displacement
  */
-void LingleClarkSerial::update_displacement(Vec Uv, Vec Ue, Vec U) {
+void LingleClarkSerial::update_displacement(petsc::Vec &Uv, petsc::Vec &Ue, petsc::Vec &U) {
   // PISM grid
   petsc::VecArray2D
     u(U, m_Mx, m_My),
@@ -509,7 +510,7 @@ void LingleClarkSerial::update_displacement(Vec Uv, Vec Ue, Vec U) {
  * @param[in] Ny grid size
  * @param[in] time time, seconds (usually 0 or a large number approximating \infty)
  */
-void LingleClarkSerial::tweak(Vec load_thickness, Vec U, int Nx, int Ny, double time) {
+void LingleClarkSerial::tweak(petsc::Vec &load_thickness, petsc::Vec &U, int Nx, int Ny, double time) {
   PetscErrorCode ierr = 0;
   petsc::VecArray2D u(U, Nx, Ny);
 

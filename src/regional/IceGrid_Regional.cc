@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,6 +27,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/Component.hh" // process_input_options
+#include "pism/util/Context.hh"
 
 namespace pism {
 
@@ -81,7 +82,7 @@ static void subset_extent(const std::string& axis,
 //! Create a grid using command-line options and (possibly) an input file.
 /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
  */
-IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
+IceGrid::Ptr regional_grid_from_options(std::shared_ptr<Context> ctx) {
 
   auto options = process_input_options(ctx->com(), ctx->config());
 

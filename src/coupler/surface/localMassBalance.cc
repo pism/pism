@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -28,6 +28,7 @@
 #include "pism/util/ConfigInterface.hh"
 #include "localMassBalance.hh"
 #include "pism/util/IceGrid.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace surface {

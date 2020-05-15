@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2020 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -32,6 +32,8 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/petscwrappers/DM.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -1658,7 +1660,7 @@ void SSAFD::update_nuH_viewers() {
                                          m_grid->Lx(), m_grid->Ly()));
   }
 
-  tmp.view(m_nuh_viewer, petsc::Viewer::Ptr());
+  tmp.view(m_nuh_viewer, std::shared_ptr<petsc::Viewer>());
 }
 
 void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j, int component,

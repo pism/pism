@@ -44,7 +44,7 @@ namespace stressbalance {
 class SSATestCaseJ: public SSATestCase
 {
 public:
-  SSATestCaseJ(Context::Ptr ctx, int Mx, int My, SSAFactory ssafactory)
+  SSATestCaseJ(std::shared_ptr<Context> ctx, int Mx, int My, SSAFactory ssafactory)
     : SSATestCase(ctx, Mx, My, 300e3, 300e3, CELL_CENTER, XY_PERIODIC) {
   m_config->set_flag("basal_resistance.pseudo_plastic.enabled", false);
 
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    Context::Ptr ctx = context_from_options(com, "ssa_testj");
+    std::shared_ptr<Context> ctx = context_from_options(com, "ssa_testj");
     Config::Ptr config = ctx->config();
 
     std::string usage = "\n"

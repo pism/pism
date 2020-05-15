@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2018, 2020 Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -20,10 +20,7 @@
 #define OROGRAPHICPRECIPITATIONSERIAL_H
 
 #include <vector>
-
 #include <fftw3.h>
-#include <petscvec.h>
-#include <vector>
 
 #include "pism/util/petscwrappers/Vec.hh"
 
@@ -45,7 +42,7 @@ public:
 
   Vec precipitation() const;
 
-  void update(Vec surface_elevation);
+  void update(petsc::Vec &surface_elevation);
 
 private:
   // regularization

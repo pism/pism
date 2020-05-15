@@ -1203,7 +1203,7 @@ void read_time_bounds(const File &file,
     }
 
     bool input_has_units = false;
-    units::Unit input_units(internal_units.get_system(), "1");
+    units::Unit input_units(internal_units.system(), "1");
 
     std::string input_units_string = file.read_text_attribute(dimension_name, "units");
     input_units_string = time.CF_units_to_PISM_units(input_units_string);
@@ -1211,7 +1211,7 @@ void read_time_bounds(const File &file,
     if (input_units_string.empty() == true) {
       input_has_units = false;
     } else {
-      input_units = units::Unit(internal_units.get_system(), input_units_string);
+      input_units = units::Unit(internal_units.system(), input_units_string);
       input_has_units = true;
     }
 

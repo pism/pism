@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -82,7 +82,7 @@ private:
 
   // temporary storage
   IceModelVec2Int m_tmp;
-  petsc::Vec::Ptr m_tmp_p0;
+  std::shared_ptr<petsc::Vec> m_tmp_p0;
 };
 
 } // end of namespace ocean

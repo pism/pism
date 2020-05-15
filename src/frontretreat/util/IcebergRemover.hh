@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -58,7 +58,7 @@ public:
               IceModelVec2S &ice_thickness);
 protected:
   IceModelVec2S m_iceberg_mask;
-  petsc::Vec::Ptr m_mask_p0;
+  std::shared_ptr<petsc::Vec> m_mask_p0;
 };
 
 } // end of namespace calving

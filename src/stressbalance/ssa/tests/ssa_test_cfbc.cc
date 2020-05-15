@@ -55,7 +55,7 @@ static double u_exact(double V0, double H0, double C, double x) {
 
 class SSATestCaseCFBC: public SSATestCase {
 public:
-  SSATestCaseCFBC(Context::Ptr ctx, int Mx, int My, SSAFactory ssafactory)
+  SSATestCaseCFBC(std::shared_ptr<Context> ctx, int Mx, int My, SSAFactory ssafactory)
     : SSATestCase(ctx, Mx, My, 250e3, 250e3, CELL_CENTER, Y_PERIODIC) {
     V0 = units::convert(ctx->unit_system(), 300.0, "m year-1", "m second-1");
     H0 = 600.0;                 // meters
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    Context::Ptr ctx = context_from_options(com, "ssa_test_cfbc");
+    std::shared_ptr<Context> ctx = context_from_options(com, "ssa_test_cfbc");
     Config::Ptr config = ctx->config();
 
     std::string usage = "\n"

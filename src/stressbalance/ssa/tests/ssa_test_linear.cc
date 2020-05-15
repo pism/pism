@@ -53,7 +53,7 @@ namespace stressbalance {
 class SSATestCaseExp: public SSATestCase
 {
 public:
-  SSATestCaseExp(Context::Ptr ctx, int Mx, int My, SSAFactory ssafactory)
+  SSATestCaseExp(std::shared_ptr<Context> ctx, int Mx, int My, SSAFactory ssafactory)
     : SSATestCase(ctx, Mx, My, 50e3, 50e3, CELL_CORNER, NOT_PERIODIC) {
     L     = units::convert(ctx->unit_system(), 50, "km", "m"); // 50km half-width
     H0    = 500;                      // meters
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    Context::Ptr ctx = context_from_options(com, "ssa_test_linear");
+    std::shared_ptr<Context> ctx = context_from_options(com, "ssa_test_linear");
     Config::Ptr config = ctx->config();
 
     std::string usage = "\n"

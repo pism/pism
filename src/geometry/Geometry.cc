@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,6 +24,8 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/grounded_cell_fraction.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 

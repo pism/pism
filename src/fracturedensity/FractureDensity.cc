@@ -136,6 +136,8 @@ void FractureDensity::update(double dt,
                              const IceModelVec2V &velocity,
                              const IceModelVec2S &hardness,
                              const IceModelVec2S &bc_mask) {
+  using std::pow;
+
   const double
     dx = m_grid->dx(),
     dy = m_grid->dy();
@@ -263,9 +265,9 @@ void FractureDensity::update(double dt,
       txx    = m_deviatoric_stresses(i, j, 0),
       tyy    = m_deviatoric_stresses(i, j, 1),
       txy    = m_deviatoric_stresses(i, j, 2),
-      T1     = 0.5 * (txx + tyy) + sqrt(0.25 * PetscSqr(txx - tyy) + PetscSqr(txy)), //Pa
-      T2     = 0.5 * (txx + tyy) - sqrt(0.25 * PetscSqr(txx - tyy) + PetscSqr(txy)), //Pa
-      sigmat = sqrt(PetscSqr(T1) + PetscSqr(T2) - T1 * T2);
+      T1     = 0.5 * (txx + tyy) + sqrt(0.25 * pow(txx - tyy, 2) + pow(txy, 2)), //Pa
+      T2     = 0.5 * (txx + tyy) - sqrt(0.25 * pow(txx - tyy, 2) + pow(txy, 2)), //Pa
+      sigmat = sqrt(pow(T1, 2) + pow(T2, 2) - T1 * T2);
 
 
     ///max shear stress criterion (more stringent than von mises)
@@ -311,7 +313,7 @@ void FractureDensity::update(double dt,
         if (Ktwo == 0.0) {
           sigmatetanull = 0.0;
         } else { //eq15 in hulbe_ledoux10 or eq15 shayam_wu90
-          sigmatetanull = -2.0 * atan((sqrt(PetscSqr(Kone) + 8.0 * PetscSqr(Ktwo)) - Kone) / (4.0 * Ktwo));
+          sigmatetanull = -2.0 * atan((sqrt(pow(Kone, 2) + 8.0 * pow(Ktwo, 2)) - Kone) / (4.0 * Ktwo));
         }
 
         KSI = cos(0.5 * sigmatetanull) *

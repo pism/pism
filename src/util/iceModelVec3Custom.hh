@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2019 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,6 +21,7 @@
 #define _ICEMODELVEC3CUSTOM_H_
 
 #include <memory>
+#include <map>
 
 #include "iceModelVec.hh"
 

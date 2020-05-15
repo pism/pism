@@ -17,12 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <cassert>
-
 #include "iceModelVec3Custom.hh"
-#include "ConfigInterface.hh"
+
 #include "IceGrid.hh"
 #include "error_handling.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/IceModelVec_impl.hh"
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 
@@ -34,32 +35,30 @@ namespace pism {
  * @param z_name name of the NetCDF dimension and variable corresponding to the third dimension
  * @param z_levels "vertical" levels (values of z)
  * @param z_attrs attributes of the "z" coordinate variable
- *
- * @return 0 on success
  */
 IceModelVec3Custom::IceModelVec3Custom(IceGrid::ConstPtr grid,
                                        const std::string &name,
                                        const std::string &z_name,
                                        const std::vector<double> &z_levels,
                                        const std::map<std::string, std::string> &z_attrs) {
-  m_grid = grid;
-  m_name = name;
-  m_has_ghosts = false;
-  m_zlevels = z_levels;
-  m_da_stencil_width = 1;
-  m_dof = 1;
+  m_impl->grid = grid;
+  m_impl->name = name;
+  m_impl->ghosted = false;
+  m_impl->zlevels = z_levels;
+  m_impl->da_stencil_width = 1;
+  m_impl->dof = 1;
 
-  m_da = m_grid->get_dm(this->m_zlevels.size(), this->m_da_stencil_width);
+  m_impl->da = m_impl->grid->get_dm(m_impl->zlevels.size(), m_impl->da_stencil_width);
 
-  PetscErrorCode ierr = DMCreateGlobalVector(*m_da, m_v.rawptr());
+  PetscErrorCode ierr = DMCreateGlobalVector(*m_impl->da, m_impl->v.rawptr());
   PISM_CHK(ierr, "DMCreateGlobalVector");
 
-  m_metadata.push_back(SpatialVariableMetadata(m_grid->ctx()->unit_system(),
-                                               m_name, m_zlevels));
-  m_metadata[0].get_z().set_name(z_name);
+  m_impl->metadata.push_back(SpatialVariableMetadata(m_impl->grid->ctx()->unit_system(),
+                                                     m_impl->name, m_impl->zlevels));
+  m_impl->metadata[0].get_z().set_name(z_name);
 
   for (auto z_attr : z_attrs) {
-    m_metadata[0].get_z().set_string(z_attr.first, z_attr.second);
+    m_impl->metadata[0].get_z().set_string(z_attr.first, z_attr.second);
   }
 }
 

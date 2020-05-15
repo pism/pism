@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2020 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,7 @@
 
 #include <cstring>              // strncpy
 #include <cstdio>               // snprintf
+#include <gsl/gsl_interp.h>     // gsl_interp_bsearch()
 
 #include <algorithm>
 #include <set>
@@ -39,6 +40,7 @@
 #include "pism/util/projection.hh"
 #include "pism/util/Component.hh"
 #include "pism/energy/utilities.hh"
+
 
 namespace pism {
 

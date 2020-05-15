@@ -58,7 +58,7 @@ namespace stressbalance {
 class SSATestCaseConst: public SSATestCase
 {
 public:
-  SSATestCaseConst(Context::Ptr ctx, int Mx, int My, double q,
+  SSATestCaseConst(std::shared_ptr<Context> ctx, int Mx, int My, double q,
                    SSAFactory ssafactory):
     SSATestCase(ctx, Mx, My, 50e3, 50e3, CELL_CORNER, NOT_PERIODIC),
     basal_q(q)
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    Context::Ptr ctx = context_from_options(com, "ssa_test_const");
+    std::shared_ptr<Context> ctx = context_from_options(com, "ssa_test_const");
     Config::Ptr config = ctx->config();
 
     std::string usage = "\n"

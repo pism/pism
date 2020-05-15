@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019 PISM Authors
+/* Copyright (C) 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -86,7 +86,7 @@ void copy_fftw_array(fftw_complex *source, fftw_complex *destination, int Nx, in
 /*!
  * Sets the imaginary part to zero.
  */
-void set_real_part(Vec input,
+void set_real_part(petsc::Vec &input,
                    double normalization,
                    int Mx, int My,
                    int Nx, int Ny,
@@ -112,7 +112,7 @@ void get_real_part(fftw_complex *input,
                    int Mx, int My,
                    int Nx, int Ny,
                    int i0, int j0,
-                   Vec output) {
+                   petsc::Vec &output) {
   petsc::VecArray2D out(output, Mx, My);
   FFTWArray in(input, Nx, Ny, i0, j0);
   for (int j = 0; j < My; ++j) {

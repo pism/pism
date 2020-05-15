@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,8 +21,6 @@
 #define EMPTYINGPROBLEM_H
 
 #include "pism/util/Component.hh"
-#include "pism/util/petscwrappers/KSP.hh"
-#include "pism/util/petscwrappers/Mat.hh"
 
 namespace pism {
 

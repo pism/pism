@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,6 +27,7 @@
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/rheology/FlowLawFactory.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -1045,6 +1046,8 @@ PSB_vonmises_stress::PSB_vonmises_stress(const StressBalance *m)
 IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
 
   using std::max;
+  using std::sqrt;
+  using std::pow;
 
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "vonmises_stress", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
@@ -1093,8 +1096,8 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
         eigen2             = strain_rates(i, j, 1);
 
       // [\ref Morlighem2016] equation 6
-      const double effective_tensile_strain_rate = sqrt(0.5 * (PetscSqr(max(0.0, eigen1)) +
-                                                               PetscSqr(max(0.0, eigen2))));
+      const double effective_tensile_strain_rate = sqrt(0.5 * (pow(max(0.0, eigen1), 2) +
+                                                               pow(max(0.0, eigen2), 2)));
       // [\ref Morlighem2016] equation 7
       vonmises_stress(i, j) = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate,
                                                          1.0 / glen_exponent);

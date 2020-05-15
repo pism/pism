@@ -19,12 +19,10 @@
 #include "OrographicPrecipitationSerial.hh"
 
 #include <complex> // std::complex<double>, std::sqrt()
-#include <fftw3.h>
 #include <gsl/gsl_math.h> // M_PI
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/fftw_utilities.hh"
 
@@ -131,7 +129,7 @@ Vec OrographicPrecipitationSerial::precipitation() const {
  *
  * @param[in] surface_elevation surface on the physical (Mx*My) grid
  */
-void OrographicPrecipitationSerial::update(Vec surface_elevation) {
+void OrographicPrecipitationSerial::update(petsc::Vec &surface_elevation) {
   // solves:
   // Phat(k,l) = (Cw * i * sigma * Hhat(k,l)) /
   //             (1 - i * m * Hw) * (1 + i * sigma * tauc) * (1 + i * sigma * tauc);

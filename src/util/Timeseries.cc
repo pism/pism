@@ -29,6 +29,7 @@
 #include "error_handling.hh"
 #include "io/io_helpers.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 

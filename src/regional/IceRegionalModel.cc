@@ -39,7 +39,7 @@
 
 namespace pism {
 
-IceRegionalModel::IceRegionalModel(IceGrid::Ptr g, Context::Ptr c)
+IceRegionalModel::IceRegionalModel(IceGrid::Ptr g, std::shared_ptr<Context> c)
   : IceModel(g, c) {
   // empty
 

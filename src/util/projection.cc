@@ -247,10 +247,11 @@ static double triangle_area(double *A, double *B, double *C) {
     V1[j] = B[j] - A[j];
     V2[j] = C[j] - A[j];
   }
-
-  return 0.5*sqrt(PetscSqr(V1[1]*V2[2] - V2[1]*V1[2]) +
-                  PetscSqr(V1[0]*V2[2] - V2[0]*V1[2]) +
-                  PetscSqr(V1[0]*V2[1] - V2[0]*V1[1]));
+  using std::pow;
+  using std::sqrt;
+  return 0.5*sqrt(pow(V1[1]*V2[2] - V2[1]*V1[2], 2) +
+                  pow(V1[0]*V2[2] - V2[0]*V1[2], 2) +
+                  pow(V1[0]*V2[1] - V2[0]*V1[1], 2));
 }
 
 void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {

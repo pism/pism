@@ -5,6 +5,7 @@
 #include <pism/util/io/File.hh>
 #include <pism/util/io/io_helpers.hh>
 #include <pism/icebin/VecBundleWriter.hh>
+#include "pism/util/Context.hh"
 
 using namespace pism;
 

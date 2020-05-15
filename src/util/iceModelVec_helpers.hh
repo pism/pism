@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2016, 2017, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,8 @@
 
 #ifndef _ICEMODELVEC_HELPERS_H_
 #define _ICEMODELVEC_HELPERS_H_
+
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 

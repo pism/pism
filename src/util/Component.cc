@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2020 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -29,6 +29,7 @@
 #include "ConfigInterface.hh"
 #include "MaxTimestep.hh"
 #include "pism/util/Time.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2020 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -101,7 +101,7 @@ protected:
     m_default_pc_failure_max_count;
   
   bool m_view_nuh;
-  petsc::Viewer::Ptr m_nuh_viewer;
+  std::shared_ptr<petsc::Viewer> m_nuh_viewer;
   int m_nuh_viewer_size;
 
   class KSPFailure : public RuntimeError {

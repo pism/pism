@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019 PISM Authors
+/* Copyright (C) 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,7 @@
 #include "Initialization.hh"
 
 #include "pism/coupler/util/init_step.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace ocean {

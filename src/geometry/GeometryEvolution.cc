@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,6 +27,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 
@@ -1249,7 +1250,7 @@ void GeometryEvolution::set_no_model_mask_impl(const IceModelVec2Int &mask) {
 void grounding_line_flux(const IceModelVec2CellType &cell_type,
                          const IceModelVec2Stag &flux,
                          double dt,
-                         InsertMode flag,
+                         bool add_values,
                          IceModelVec2S &output) {
 
   using mask::grounded;
@@ -1297,7 +1298,7 @@ void grounding_line_flux(const IceModelVec2CellType &cell_type,
         result *= dt * (ice_density / cell_area);
       }
 
-      if (flag == ADD_VALUES) {
+      if (add_values) {
         output(i, j) += result;
       } else {
         output(i, j) = result;

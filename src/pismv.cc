@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019, 2020 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -38,7 +38,7 @@ static char help[] =
 using namespace pism;
 
 //! Allocate the PISMV (verification) context. Uses ColdEnthalpyConverter.
-Context::Ptr pismv_context(MPI_Comm com, const std::string &prefix) {
+std::shared_ptr<Context> pismv_context(MPI_Comm com, const std::string &prefix) {
   // unit system
   units::System::Ptr sys(new units::System);
 
@@ -60,7 +60,7 @@ Context::Ptr pismv_context(MPI_Comm com, const std::string &prefix) {
 
   EnthalpyConverter::Ptr EC = EnthalpyConverter::Ptr(new ColdEnthalpyConverter(*config));
 
-  return Context::Ptr(new Context(com, sys, config, EC, time, logger, prefix));
+  return std::shared_ptr<Context>(new Context(com, sys, config, EC, time, logger, prefix));
 }
 
 GridParameters pismv_grid_defaults(Config::Ptr config,
@@ -133,7 +133,7 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
   return P;
 }
 
-IceGrid::Ptr pismv_grid(Context::Ptr ctx, char testname) {
+IceGrid::Ptr pismv_grid(std::shared_ptr<Context> ctx, char testname) {
   auto config = ctx->config();
 
   auto input_file = config->get_string("input.file");
@@ -163,11 +163,11 @@ int main(int argc, char *argv[]) {
   MPI_Comm com = MPI_COMM_WORLD;
 
   petsc::Initializer petsc(argc, argv, help);
-  com = PETSC_COMM_WORLD;
+  com = MPI_COMM_WORLD;
       
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    Context::Ptr ctx = pismv_context(com, "pismv");
+    std::shared_ptr<Context> ctx = pismv_context(com, "pismv");
     Logger::Ptr log = ctx->log();
 
     std::string usage =

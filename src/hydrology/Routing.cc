@@ -30,6 +30,7 @@
 #include "pism/util/Vars.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace hydrology {

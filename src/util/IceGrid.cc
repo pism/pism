@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2020 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,6 +35,8 @@
 #include "pism/util/Logger.hh"
 #include "pism/util/projection.hh"
 #include "pism/pism_config.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/petscwrappers/DM.hh"
 
 #if (Pism_USE_PIO==1)
 // Why do I need this???
@@ -46,15 +48,15 @@ namespace pism {
 
 //! Internal structures of IceGrid.
 struct IceGrid::Impl {
-  Impl(Context::ConstPtr ctx);
+  Impl(std::shared_ptr<const Context> ctx);
 
-  petsc::DM::Ptr create_dm(int da_dof, int stencil_width) const;
+  std::shared_ptr<petsc::DM> create_dm(int da_dof, int stencil_width) const;
   void set_ownership_ranges(const std::vector<unsigned int> &procs_x,
                             const std::vector<unsigned int> &procs_y);
 
   void compute_horizontal_coordinates();
 
-  Context::ConstPtr ctx;
+  std::shared_ptr<const Context> ctx;
 
   MappingInfo mapping_info;
 
@@ -100,12 +102,12 @@ struct IceGrid::Impl {
   //! half width of the ice model grid in y-direction (m)
   double Ly;
 
-  std::map<int,petsc::DM::WeakPtr> dms;
+  std::map<int,std::weak_ptr<petsc::DM> > dms;
 
   // This DM is used for I/O operations and is not owned by any
   // IceModelVec (so far, anyway). We keep a pointer to it here to
   // avoid re-allocating it many times.
-  petsc::DM::Ptr dm_scalar_global;
+  std::shared_ptr<petsc::DM> dm_scalar_global;
 
   //! @brief A dictionary with pointers to IceModelVecs, for passing
   //! them from the one component to another (e.g. from IceModel to
@@ -119,7 +121,7 @@ struct IceGrid::Impl {
   std::map<int, int> io_decompositions;
 };
 
-IceGrid::Impl::Impl(Context::ConstPtr context)
+IceGrid::Impl::Impl(std::shared_ptr<const Context> context)
   : ctx(context), mapping_info("mapping", ctx->unit_system()) {
   // empty
 }
@@ -202,7 +204,7 @@ std::string registration_to_string(GridRegistration registration) {
 /*! @brief Initialize a uniform, shallow (3 z-levels) grid with half-widths (Lx,Ly) and Mx by My
  * nodes.
  */
-IceGrid::Ptr IceGrid::Shallow(Context::ConstPtr ctx,
+IceGrid::Ptr IceGrid::Shallow(std::shared_ptr<const Context> ctx,
                               double Lx, double Ly,
                               double x0, double y0,
                               unsigned int Mx, unsigned int My,
@@ -235,7 +237,7 @@ IceGrid::Ptr IceGrid::Shallow(Context::ConstPtr ctx,
 }
 
 //! @brief Create a PISM distributed computational grid.
-IceGrid::IceGrid(Context::ConstPtr context, const GridParameters &p)
+IceGrid::IceGrid(std::shared_ptr<const Context> context, const GridParameters &p)
   : com(context->com()), m_impl(new Impl(context)) {
 
   try {
@@ -266,7 +268,7 @@ IceGrid::IceGrid(Context::ConstPtr context, const GridParameters &p)
       unsigned int stencil_width = (unsigned int)context->config()->get_number("grid.max_stencil_width");
 
       try {
-        petsc::DM::Ptr tmp = this->get_dm(1, stencil_width);
+        std::shared_ptr<petsc::DM> tmp = this->get_dm(1, stencil_width);
       } catch (RuntimeError &e) {
         e.add_context("distributing a %d x %d grid across %d processors.",
                       Mx(), My(), size());
@@ -294,7 +296,7 @@ IceGrid::IceGrid(Context::ConstPtr context, const GridParameters &p)
 }
 
 //! Create a grid using one of variables in `var_names` in `file`.
-IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
+IceGrid::Ptr IceGrid::FromFile(std::shared_ptr<const Context> ctx,
                                const std::string &filename,
                                const std::vector<std::string> &var_names,
                                GridRegistration r) {
@@ -314,7 +316,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
 }
 
 //! Create a grid from a file, get information from variable `var_name`.
-IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
+IceGrid::Ptr IceGrid::FromFile(std::shared_ptr<const Context> ctx,
                                const File &file,
                                const std::string &var_name,
                                GridRegistration r) {
@@ -829,8 +831,8 @@ static int dm_hash(int dm_dof, int stencil_width) {
 
 //! @brief Get a PETSc DM ("distributed array manager") object for given `dof` (number of degrees of
 //! freedom per grid point) and stencil width.
-petsc::DM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
-  petsc::DM::Ptr result;
+std::shared_ptr<petsc::DM> IceGrid::get_dm(int da_dof, int stencil_width) const {
+  std::shared_ptr<petsc::DM> result;
 
   int j = dm_hash(da_dof, stencil_width);
 
@@ -854,13 +856,13 @@ GridRegistration IceGrid::registration() const {
 }
 
 //! Return execution context this grid corresponds to.
-Context::ConstPtr IceGrid::ctx() const {
+std::shared_ptr<const Context> IceGrid::ctx() const {
   return m_impl->ctx;
 }
 
 //! @brief Create a DM with the given number of `dof` (degrees of freedom per grid point) and
 //! stencil width.
-petsc::DM::Ptr IceGrid::Impl::create_dm(int da_dof, int stencil_width) const {
+std::shared_ptr<petsc::DM> IceGrid::Impl::create_dm(int da_dof, int stencil_width) const {
 
   ctx->log()->message(3,
                       "* Creating a DM with dof=%d and stencil_width=%d...\n",
@@ -882,7 +884,7 @@ petsc::DM::Ptr IceGrid::Impl::create_dm(int da_dof, int stencil_width) const {
   ierr = DMSetUp(result); PISM_CHK(ierr,"DMSetUp");
 #endif
 
-  return petsc::DM::Ptr(new petsc::DM(result));
+  return std::shared_ptr<petsc::DM>(new petsc::DM(result));
 }
 
 //! MPI rank.
@@ -1217,7 +1219,7 @@ void GridParameters::init_from_config(Config::ConstPtr config) {
   // does not set ownership ranges because we don't know if these settings are final
 }
 
-void GridParameters::init_from_file(Context::ConstPtr ctx,
+void GridParameters::init_from_file(std::shared_ptr<const Context> ctx,
                                     const File &file,
                                     const std::string &variable_name,
                                     GridRegistration r) {
@@ -1239,14 +1241,14 @@ void GridParameters::init_from_file(Context::ConstPtr ctx,
   z = input_grid.z;
 }
 
-GridParameters::GridParameters(Context::ConstPtr ctx,
+GridParameters::GridParameters(std::shared_ptr<const Context> ctx,
                                const File &file,
                                const std::string &variable_name,
                                GridRegistration r) {
   init_from_file(ctx, file, variable_name, r);
 }
 
-GridParameters::GridParameters(Context::ConstPtr ctx,
+GridParameters::GridParameters(std::shared_ptr<const Context> ctx,
                                const std::string &filename,
                                const std::string &variable_name,
                                GridRegistration r) {
@@ -1336,7 +1338,7 @@ void GridParameters::validate() const {
 //! Create a grid using command-line options and (possibly) an input file.
 /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
  */
-IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
+IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
   auto config = ctx->config();
 
   auto input_file = config->get_string("input.file");

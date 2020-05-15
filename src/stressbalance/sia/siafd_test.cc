@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -70,7 +70,7 @@ static void compute_strain_heating_errors(const IceModelVec3 &strain_heating,
       double
         xx = grid.x(i),
         yy = grid.y(j),
-        r  = sqrt(PetscSqr(xx) + PetscSqr(yy));
+        r  = sqrt(pow(xx, 2) + pow(yy, 2));
 
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {
         // only evaluate error if inside sheet and not at central
@@ -121,7 +121,7 @@ static void computeSurfaceVelocityErrors(const IceGrid &grid,
     const int i = p.i(), j = p.j();
 
     double xx = grid.x(i), yy = grid.y(j),
-      r = sqrt(PetscSqr(xx) + PetscSqr(yy));
+      r = sqrt(pow(xx, 2) + pow(yy, 2));
     if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
       // and not at central singularity
       const double H = ice_thickness(i, j);
@@ -132,8 +132,8 @@ static void computeSurfaceVelocityErrors(const IceGrid &grid,
       const double vex = (yy/r) * F.U[0];
       // note that because getValZ does linear interpolation and H is not exactly at
       // a grid point, this causes nonzero errors
-      const double Uerr = sqrt(PetscSqr(u3.getValZ(i,j,H) - uex) +
-                               PetscSqr(v3.getValZ(i,j,H) - vex));
+      const double Uerr = sqrt(pow(u3.getValZ(i,j,H) - uex, 2) +
+                               pow(v3.getValZ(i,j,H) - vex, 2));
       maxUerr = std::max(maxUerr,Uerr);
       avUerr += Uerr;
       const double Werr = fabs(w3.getValZ(i,j,H) - F.w[0]);
@@ -272,12 +272,12 @@ int main(int argc, char *argv[]) {
   MPI_Comm com = MPI_COMM_WORLD;
   petsc::Initializer petsc(argc, argv, help);
 
-  com = PETSC_COMM_WORLD;
+  com = MPI_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     // set default verbosity
-    Context::Ptr ctx = context_from_options(com, "siafd_test");
+    std::shared_ptr<Context> ctx = context_from_options(com, "siafd_test");
     Config::Ptr config = ctx->config();
 
     config->set_flag("stress_balance.sia.grain_size_age_coupling", false);

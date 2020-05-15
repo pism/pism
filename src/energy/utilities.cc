@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,6 +26,9 @@
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/pism_utilities.hh"
 #include "bootstrapping.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 namespace energy {
@@ -334,7 +337,7 @@ void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
                                IceModelVec3 &result) {
 
   IceGrid::ConstPtr      grid   = result.grid();
-  Context::ConstPtr      ctx    = grid->ctx();
+  std::shared_ptr<const Context> ctx = grid->ctx();
   Config::ConstPtr       config = ctx->config();
   Logger::ConstPtr       log    = ctx->log();
   EnthalpyConverter::Ptr EC     = ctx->enthalpy_converter();

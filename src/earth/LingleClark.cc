@@ -28,6 +28,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/fftw_utilities.hh"
 #include "LingleClarkSerial.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace bed {
@@ -142,7 +143,7 @@ void LingleClark::bootstrap_impl(const IceModelVec2S &bed_elevation,
   compute_load(bed_elevation, ice_thickness, sea_level_elevation,
                m_load_thickness);
 
-  petsc::Vec::Ptr thickness0 = m_load_thickness.allocate_proc0_copy();
+  std::shared_ptr<petsc::Vec> thickness0 = m_load_thickness.allocate_proc0_copy();
 
   // initialize the plate displacement
   {

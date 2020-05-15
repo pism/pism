@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,10 +19,13 @@
 
 #include "SteadyState.hh"
 
+#include <gsl/gsl_interp.h>     // gsl_interp_bsearch
+
 #include "EmptyingProblem.hh"
 
 #include "pism/util/Time.hh"    // m_grid->ctx()->time()->current()
 #include "pism/util/Profiling.hh"
+#include "pism/util/Context.hh"
 
 /* FIXMEs
  *

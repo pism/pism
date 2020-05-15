@@ -168,7 +168,7 @@ int Context::pio_iosys_id() const {
   return m_impl->pio_iosys_id;
 }
 
-Context::Ptr context_from_options(MPI_Comm com, const std::string &prefix) {
+std::shared_ptr<Context> context_from_options(MPI_Comm com, const std::string &prefix) {
   // unit system
   units::System::Ptr sys(new units::System);
 
@@ -185,7 +185,7 @@ Context::Ptr context_from_options(MPI_Comm com, const std::string &prefix) {
   // enthalpy converter
   EnthalpyConverter::Ptr EC(new EnthalpyConverter(*config));
 
-  return Context::Ptr(new Context(com, sys, config, EC, time, logger, prefix));
+  return std::shared_ptr<Context>(new Context(com, sys, config, EC, time, logger, prefix));
 }
 
 

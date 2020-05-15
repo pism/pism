@@ -28,7 +28,7 @@
 
 namespace pism {
 
-ScalarForcing::ScalarForcing(Context::ConstPtr ctx,
+ScalarForcing::ScalarForcing(std::shared_ptr<const Context> ctx,
                              const std::string &prefix,
                              const std::string &variable_name,
                              const std::string &units,

@@ -145,7 +145,7 @@ IceGrid::Ptr IceModel::grid() const {
 }
 
 //! Return the context this model is running in.
-Context::Ptr IceModel::ctx() const {
+std::shared_ptr<Context> IceModel::ctx() const {
   return m_ctx;
 }
 

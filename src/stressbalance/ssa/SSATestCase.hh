@@ -52,7 +52,7 @@ namespace stressbalance {
 class SSATestCase
 {
 public:
-  SSATestCase(Context::Ptr ctx, int Mx, int My,
+  SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
               double Lx, double Ly,
               GridRegistration registration,
               Periodicity periodicity);
@@ -86,7 +86,7 @@ protected:
                      double avg_v);
 
   MPI_Comm m_com;
-  const Context::Ptr m_ctx;
+  const std::shared_ptr<Context> m_ctx;
   const Config::Ptr m_config;
   IceGrid::Ptr m_grid;
   const units::System::Ptr m_sys;

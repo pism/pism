@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2004--2020 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -96,11 +96,11 @@ void IceModel::front_retreat_step() {
                                      m_frontal_melt->retreat_rate(),
                                      m_geometry.ice_area_specific_volume,
                                      m_geometry.ice_thickness);
-
+    bool add_values = false;
     compute_geometry_change(m_geometry.ice_thickness,
                             m_geometry.ice_area_specific_volume,
                             old_H, old_Href,
-                            INSERT_VALUES,
+                            add_values,
                             m_thickness_change.frontal_melt);
   } else {
     m_thickness_change.frontal_melt.set(0.0);
@@ -153,10 +153,11 @@ void IceModel::front_retreat_step() {
       m_thickness_threshold_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
     }
 
+    bool add_values = false;
     compute_geometry_change(m_geometry.ice_thickness,
                             m_geometry.ice_area_specific_volume,
                             old_H, old_Href,
-                            INSERT_VALUES,
+                            add_values,
                             m_thickness_change.calving);
   } else {
     m_thickness_change.calving.set(0.0);
@@ -172,10 +173,11 @@ void IceModel::front_retreat_step() {
                                  m_geometry.ice_thickness,
                                  m_geometry.ice_area_specific_volume);
 
+    bool add_values = false;
     compute_geometry_change(m_geometry.ice_thickness,
                             m_geometry.ice_area_specific_volume,
                             old_H, old_Href,
-                            INSERT_VALUES,
+                            add_values,
                             m_thickness_change.forced_retreat);
 
   } else {
@@ -191,10 +193,11 @@ void IceModel::front_retreat_step() {
 
     enforce_consistency_of_geometry(REMOVE_ICEBERGS);
 
+    bool add_values = true;
     compute_geometry_change(m_geometry.ice_thickness,
                             m_geometry.ice_area_specific_volume,
                             old_H, old_Href,
-                            ADD_VALUES,
+                            add_values,
                             m_thickness_change.calving);
   }
 }
@@ -208,15 +211,15 @@ void IceModel::front_retreat_step() {
  * @param Href current "reference ice thickness"
  * @param thickness_old old ice thickness
  * @param Href_old old "reference ice thickness"
- * @param[in] flag if `flag == ADD_VALUES`, add computed values to `output`, otherwise
- *                 overwrite them
+ * @param[in] add_values if `true`, add computed values to `output`, otherwise
+ *            overwrite them
  * @param[in,out] output computed change
  */
 void IceModel::compute_geometry_change(const IceModelVec2S &thickness,
                                        const IceModelVec2S &Href,
                                        const IceModelVec2S &thickness_old,
                                        const IceModelVec2S &Href_old,
-                                       InsertMode flag,
+                                       bool add_values,
                                        IceModelVec2S &output) {
 
   IceModelVec::AccessList list{&thickness, &thickness_old,
@@ -230,7 +233,7 @@ void IceModel::compute_geometry_change(const IceModelVec2S &thickness,
       H_new  = thickness(i, j) + Href(i, j),
       change = H_new - H_old;
 
-    if (flag == ADD_VALUES) {
+    if (add_values) {
       output(i, j) += change;
     } else {
       output(i, j) = change;

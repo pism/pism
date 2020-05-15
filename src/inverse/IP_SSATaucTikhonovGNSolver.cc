@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,8 @@
 #include "pism/util/pism_options.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace inverse {
@@ -135,7 +137,12 @@ void  IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
   DesignVec &GNx    = m_tmp_D2Global;
 
   // FIXME: Needless copies for now.
-  m_x.copy_from_vec(x);
+  {
+    // increment the reference counter so that it does not get destroyed by petsc::Vec::~Vec()
+    PetscObjectReference((PetscObject)x);
+    petsc::Vec tmp(x);
+    m_x.copy_from_vec(tmp);
+  }
 
   m_ssaforward.apply_linearization(m_x,Tx);
   Tx.update_ghosts();

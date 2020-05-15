@@ -37,7 +37,7 @@
 
 namespace pism {
 
-IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
+IceEISModel::IceEISModel(IceGrid::Ptr g, std::shared_ptr<Context> context, char experiment)
   : IceModel(g, context), m_experiment(experiment) {
 
   // the following flag must be here in constructor because

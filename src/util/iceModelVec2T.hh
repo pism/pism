@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2019 Constantine Khroulev
+// Copyright (C) 2009--2020 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -77,30 +77,9 @@ public:
   void init_interpolation(const std::vector<double> &ts);
 
 private:
-  std::vector<double> m_time,             //!< all the times available in filename
-    m_time_bounds;                //!< time bounds
-  std::string m_filename;         //!< file to read (regrid) from
-  petsc::DM::Ptr m_da3;
-  petsc::Vec m_v3;                       //!< a 3D Vec used to store records
-  mutable void ***m_array3;
+  struct Data;
 
-  //! maximum number of records to store in memory
-  unsigned int m_n_records;
-
-  //! number of records kept in memory
-  unsigned int m_N;
-
-  //! number of evaluations per year used to compute temporal averages
-  unsigned int m_n_evaluations_per_year;
-
-  //! in-file index of the first record stored in memory ("int" to allow first==-1 as an
-  //! "invalid" first value)
-  int m_first;
-
-  InterpolationType m_interp_type;
-  std::shared_ptr<Interpolation> m_interp;
-  unsigned int m_period;        // in years
-  double m_reference_time;      // in seconds
+  Data *m_data;
 
   double*** array3();
   void update(unsigned int start);

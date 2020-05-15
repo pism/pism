@@ -35,6 +35,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace surface {

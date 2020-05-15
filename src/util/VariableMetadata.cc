@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,7 @@
 
 #include <set>
 #include <algorithm>
+#include <cmath>
 
 #include "VariableMetadata.hh"
 #include "pism/util/io/File.hh"
@@ -420,7 +421,7 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
       continue;
     }
 
-    if ((fabs(values[0]) >= 1.0e7) || (fabs(values[0]) <= 1.0e-4)) {
+    if ((std::fabs(values[0]) >= 1.0e7) || (std::fabs(values[0]) <= 1.0e-4)) {
       // use scientific notation if a number is big or small
       log.message(verbosity_threshold, "  %s%s = %12.3e\n",
                   name.c_str(), padding.c_str(), values[0]);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -163,7 +163,7 @@ private:
 void grounding_line_flux(const IceModelVec2CellType &cell_type,
                          const IceModelVec2Stag &flux,
                          double dt,
-                         InsertMode flag,
+                         bool add_values,
                          IceModelVec2S &result);
 
 double total_grounding_line_flux(const IceModelVec2CellType &cell_type,

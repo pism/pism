@@ -50,7 +50,7 @@ namespace stressbalance {
 
 class SSATestCasePlug: public SSATestCase {
 public:
-  SSATestCasePlug(Context::Ptr ctx, int Mx, int My,
+  SSATestCasePlug(std::shared_ptr<Context> ctx, int Mx, int My,
                   double n, SSAFactory ssafactory)
     : SSATestCase(ctx, Mx, My, 50e3, 50e3, CELL_CORNER, NOT_PERIODIC) {
     H0    = 2000.;              // m
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    Context::Ptr ctx = context_from_options(com, "ssa_test_plug");
+    std::shared_ptr<Context> ctx = context_from_options(com, "ssa_test_plug");
     Config::Ptr config = ctx->config();
 
     std::string usage = "\n"

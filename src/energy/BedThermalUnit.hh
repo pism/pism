@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,7 @@
 
 namespace pism {
 
+class Context;
 class Vars;
 
 //! @brief Energy balance models and utilities.
@@ -33,8 +34,8 @@ namespace energy {
 
 // Vertical grid information for BTU_Full.
 struct BTUGrid {
-  BTUGrid(Context::ConstPtr ctx);
-  static BTUGrid FromOptions(Context::ConstPtr ctx);
+  BTUGrid(std::shared_ptr<const Context> ctx);
+  static BTUGrid FromOptions(std::shared_ptr<const Context> ctx);
 
   unsigned int Mbz;             // number of vertical levels
   double Lbz;                   // depth of the bed thermal layer
@@ -101,7 +102,7 @@ class BedThermalUnit : public Component {
 public:
 
   static BedThermalUnit* FromOptions(IceGrid::ConstPtr g,
-                                     Context::ConstPtr ctx);
+                                     std::shared_ptr<const Context> ctx);
 
   BedThermalUnit(IceGrid::ConstPtr g);
 

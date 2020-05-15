@@ -156,6 +156,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/
   FILES_MATCHING
   PATTERN "*.hh"
   PATTERN "*.h"
+  PATTERN "*_impl.hh" EXCLUDE
   PATTERN "external" EXCLUDE
   PATTERN "pythonbindings" EXCLUDE
   PATTERN "doc" EXCLUDE

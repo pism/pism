@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+#include <petsc.h>
 
 static char help[] =
   "Tests BedThermalUnit using Test K, without IceModel.\n\n";
@@ -41,7 +43,7 @@ static char help[] =
 #include "pism/util/Logger.hh"
 
 //! Allocate the PISMV (verification) context. Uses ColdEnthalpyConverter.
-pism::Context::Ptr btutest_context(MPI_Comm com, const std::string &prefix) {
+std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &prefix) {
   using namespace pism;
 
   // unit system
@@ -70,7 +72,7 @@ pism::Context::Ptr btutest_context(MPI_Comm com, const std::string &prefix) {
 
   EnthalpyConverter::Ptr EC = EnthalpyConverter::Ptr(new ColdEnthalpyConverter(*config));
 
-  return Context::Ptr(new Context(com, sys, config, EC, time, logger, prefix));
+  return std::shared_ptr<Context>(new Context(com, sys, config, EC, time, logger, prefix));
 }
 
 int main(int argc, char *argv[]) {
@@ -80,10 +82,10 @@ int main(int argc, char *argv[]) {
   MPI_Comm com = MPI_COMM_WORLD;
   petsc::Initializer petsc(argc, argv, help);
 
-  com = PETSC_COMM_WORLD;
+  com = MPI_COMM_WORLD;
 
   try {
-    Context::Ptr ctx = btutest_context(com, "btutest");
+    std::shared_ptr<Context> ctx = btutest_context(com, "btutest");
     Logger::Ptr log = ctx->log();
 
     std::string usage =

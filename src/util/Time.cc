@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2019 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -452,12 +452,12 @@ void Time::parse_interval_length(const std::string &spec, std::string &keyword, 
     return;
   }
 
-  units::Unit seconds(m_time_units.get_system(), "seconds"),
-    one(m_time_units.get_system(), "1"),
+  units::Unit seconds(m_time_units.system(), "seconds"),
+    one(m_time_units.system(), "1"),
     tmp = one;
 
   try {
-    tmp = units::Unit(m_time_units.get_system(), spec);
+    tmp = units::Unit(m_time_units.system(), spec);
   } catch (RuntimeError &e) {
     e.add_context("processing interval length " + spec);
     throw;

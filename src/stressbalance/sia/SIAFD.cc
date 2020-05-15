@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2020 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,6 +35,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 
 #include "pism/util/Time.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace stressbalance {
