@@ -20,6 +20,7 @@
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/Context.hh"
 
 #include "DirichletData.hh"
 
