@@ -201,17 +201,6 @@ double IceModelVec::norm(int n) const {
   return this->norm_all(n)[0];
 }
 
-//! Result: v <- sqrt(v), elementwise.  Calls VecSqrt(v).
-/*!
-Name avoids clash with sqrt() in math.h.
- */
-void IceModelVec::squareroot() {
-  assert(m_impl->v != NULL);
-
-  PetscErrorCode ierr = VecSqrtAbs(m_impl->v);
-  PISM_CHK(ierr, "VecSqrtAbs");
-}
-
 
 //! Result: v <- v + alpha * x. Calls VecAXPY.
 void IceModelVec::add(double alpha, const IceModelVec &x) {

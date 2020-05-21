@@ -234,7 +234,6 @@ public:
   std::vector<double> norm_all(int n) const;
 
   virtual void add(double alpha, const IceModelVec &x);
-  virtual void squareroot();
   virtual void shift(double alpha);
   virtual void scale(double alpha);
 
