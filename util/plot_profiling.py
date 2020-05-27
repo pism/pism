@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import pylab as plt
 import numpy as np
 from argparse import ArgumentParser

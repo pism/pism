@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # @package flowline
 # \brief This script aids in setting up and visualizing flow-line modeling runs.

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from pylab import figure, plot, xlabel, ylabel, title, show, axis, linspace, hold, subplot, grid, step
 import numpy as np

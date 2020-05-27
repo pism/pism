@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Computes and plots exact solution "test M", in preparation for implementing C
 # version for PISM verification.  Preliminary tests are possible with gridded

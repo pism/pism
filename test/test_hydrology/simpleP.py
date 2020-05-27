@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # see src/verification/tests/simpleP.c
 simpleP_c_result = """$ ./simpleP

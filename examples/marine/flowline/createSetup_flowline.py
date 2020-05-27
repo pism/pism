@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (C) 2011, 2013, 2014, 2016, 2018 Torsten Albrecht and Moritz Huetten
 
 # ./createSetup_flowline.py -a 0.0 -r 10.0

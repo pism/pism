@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from sys import exit
 
 # Import all necessary modules here so that if it fails, it fails early.

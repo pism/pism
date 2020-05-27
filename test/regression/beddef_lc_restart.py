@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """ Sets up and runs the Lingle-Clark bed deformation model.
 

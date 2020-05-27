@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # @package adjust_timeline
 # \author Andy Aschwanden, University of Alaska Fairbanks, USA

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (C) 2016-17 Andy Aschwanden
 
 import itertools

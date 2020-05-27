@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """This script shows how to use the fracture density model in isolation, i.e. separately
 from the rest of PISM.

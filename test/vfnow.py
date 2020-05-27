@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # @package vfnow
 # \author Ed Bueler and Constantine Khroulev, University of Alaska Fairbanks, USA

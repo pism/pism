@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # @package fill_missing
 # @brief This script solves the Laplace equation as a method of filling holes in map-plane data.

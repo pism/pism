@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Simple verification/regression tests for the heat equation in bedrock columns. Tests
 PISM's "bedrock thermal unit".

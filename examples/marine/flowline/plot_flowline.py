@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (C) 2011, 2014 Torsten Albrecht (torsten.albrecht@pik-potsdam.de)
 
 import numpy as np
