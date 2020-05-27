@@ -5,6 +5,9 @@ Changes from v1.2.1 to v1.2.2
 
 - Use `time.time()` instead of `time.clock()` in `examples/python/ssa_forward.py`
   (contributed by Moritz Kreuzer).
+- von Mises calving is applied at both floating and grounded ice fronts.
+- Update the list of Debian (Ubuntu) packages in the installation manual.
+- Use "python3" instead of "python" in all Python scripts.
 
 Changes from v1.2 to v1.2.1
 ===========================
