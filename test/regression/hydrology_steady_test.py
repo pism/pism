@@ -1,4 +1,4 @@
-#!/usr/bin/env
+#!/usr/bin/env python3
 from unittest import TestCase
 import numpy as np
 import os

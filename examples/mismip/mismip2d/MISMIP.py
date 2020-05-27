@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import numpy as np
 
 """This module contains MISMIP constants and parameters, as well as functions

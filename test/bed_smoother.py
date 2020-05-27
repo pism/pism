@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Simple testing program for Schoof (2003)-type bed smoothing and
 roughness- parameterization schemes. Allows comparison of computed

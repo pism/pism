@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2012, 2013, 2014, 2015, 2017 Ricarda Winkelmann, Torsten Albrecht,
 # Ed Bueler, and Constantine Khroulev

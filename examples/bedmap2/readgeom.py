@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # readgeom   reads bed elevation and ice thickness from BEDMAP2 files
 #            and either shows as figures or writes into NetCDF file
