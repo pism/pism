@@ -1,1 +1,1 @@
-sudo apt-get install -y git cmake cmake-curses-gui g++ netcdf-bin swig petsc-dev libgsl-dev libnetcdf-dev libfftw3-dev libudunits2-dev libproj-dev libpnetcdf-dev python-petsc4py python-netcdf4 python-numpy python-scipy python-nose nco cdo ncview python-pyproj libx11-dev
+sudo apt-get install -y git cmake cmake-curses-gui g++ netcdf-bin swig petsc-dev libgsl-dev libnetcdf-dev libfftw3-dev libudunits2-dev libproj-dev libpnetcdf-dev python3-petsc4py python3-netcdf4 python3-numpy python3-scipy python3-nose nco cdo ncview python3-pyproj libx11-dev
