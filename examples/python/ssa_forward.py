@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 #
 # Copyright (C) 2011, 2014, 2015, 2016, 2018 David Maxwell and Constantine Khroulev
 #
