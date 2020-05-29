@@ -45,6 +45,7 @@ jobs:
             -DPism_USE_PARALLEL_NETCDF4=Yes
             -DPism_USE_PNETCDF=Yes
             -DPism_USE_PIO=Yes
+            -DPython_ADDITIONAL_VERSIONS=3
             -DPism_BUILD_PYTHON_BINDINGS=Yes
             -DPism_BUILD_EXTRA_EXECS=Yes
             -DPism_BUILD_ICEBIN=Yes
@@ -123,6 +124,7 @@ jobs:
             -DPism_USE_PARALLEL_NETCDF4=Yes
             -DPism_USE_PNETCDF=Yes
             -DPism_USE_PIO=Yes
+            -DPython_ADDITIONAL_VERSIONS=3
             -DPism_BUILD_PYTHON_BINDINGS=Yes
             -DPism_BUILD_EXTRA_EXECS=Yes
             -DPism_BUILD_ICEBIN=Yes
