@@ -1,4 +1,5 @@
-find_program(NOSE_EXECUTABLE "nosetests")
+find_program(NOSE_EXECUTABLE
+  NAMES nosetests nosetests3)
 mark_as_advanced(NOSE_EXECUTABLE)
 
 if (Pism_DEBUG)
