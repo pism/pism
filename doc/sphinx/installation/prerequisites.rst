@@ -14,7 +14,7 @@ This table lists required dependencies for PISM alphabetically.
    FFTW_,        version `\ge` 3.1
    GSL_,         version `\ge` 1.15
    MPI_,         any recent version
-   NetCDF_ [#]_, version `\ge` 4.1
+   NetCDF_ [#]_, version `\ge` 4.4
    PETSc_ [#]_,  version `\ge` |petsc-min-version|
    UDUNITS_,     any recent version
 
