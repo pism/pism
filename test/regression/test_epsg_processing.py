@@ -28,7 +28,7 @@ run(PISMS + " -verbose 1 -Mx 3 -My 3 -Mz 5 -y 10 -o pisms-output.nc")
 
 # add the PROJ string
 nc = Dataset("pisms-output.nc", "a")
-nc.proj = "+init=epsg:3413"
+nc.proj = "epsg:3413"
 nc.close()
 
 print("Test running PISM initialized from a file w/o mapping  but with proj...")
