@@ -731,19 +731,20 @@ def epsg_test():
     l = PISM.StringLogger(PISM.PETSc.COMM_WORLD, 2)
     system = PISM.Context().unit_system
 
-    # test supported EPSG codes
-    for code in [3413, 3031]:
-        print("Trying code {}".format(code))
-        l.reset()
-        # +init at the beginning
-        v = PISM.epsg_to_cf(system, "+init=epsg:%d" % code)
-        # +init not at the beginning of the string
-        v = PISM.epsg_to_cf(system, "+units=m +init=epsg:%d" % code)
-        # +init followed by more options
-        v = PISM.epsg_to_cf(system, "+init=epsg:%d +units=m" % code)
-        v.report_to_stdout(l, 2)
-        print(l.get())
-        print("done.")
+    # test supported formats
+    for template in ["{epsg}:{code}",
+                     "+init={epsg}:{code}",
+                     "+units=m +init={epsg}:{code}",
+                     "+init={epsg}:{code} +units=m"]:
+        for epsg in ["EPSG", "epsg"]:
+            for code in [3413, 3031, 3057, 5936, 26710]:
+                string = template.format(epsg=epsg, code=code)
+                print("Trying {}".format(string))
+                l.reset()
+                v = PISM.epsg_to_cf(system, string)
+                v.report_to_stdout(l, 2)
+                print(l.get())
+                print("done.")
 
     # test that unsupported codes trigger an exception
     try:
@@ -759,7 +760,6 @@ def epsg_test():
         raise AssertionError("an invalid PROJ string failed to trigger an exception")
     except RuntimeError as e:
         print("invalid codes trigger exceptions: {}".format(e))
-
 
 def regridding_test():
     "Test 2D regridding: same input and target grids."
