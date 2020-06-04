@@ -310,7 +310,7 @@ void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
 static void compute_lon_lat(const std::string &projection,
                             LonLat which, IceModelVec2S &result) {
 
-  Proj crs(projection);
+  Proj crs(projection, "EPSG:4326");
 
 // Cell layout:
 // (nw)        (ne)
@@ -333,12 +333,12 @@ static void compute_lon_lat(const std::string &projection,
     PJ_COORD in, out;
 
     in.xy = {grid->x(i), grid->y(j)};
-    out = proj_trans(*crs, PJ_INV, in);
+    out = proj_trans(*crs, PJ_FWD, in);
 
     if (which == LONGITUDE) {
-      result(i, j) = proj_todeg(out.lp.lam);
+      result(i, j) = out.lp.phi;
     } else {
-      result(i, j) = proj_todeg(out.lp.phi);
+      result(i, j) = out.lp.lam;
     }
   }
 }
@@ -347,7 +347,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
                                    LonLat which,
                                    IceModelVec3D &result) {
 
-  Proj crs(projection);
+  Proj crs(projection, "EPSG:4326");
 
   IceGrid::ConstPtr grid = result.grid();
 
@@ -371,12 +371,12 @@ static void compute_lon_lat_bounds(const std::string &projection,
       in.xy = {x0 + x_offsets[k], y0 + y_offsets[k]};
 
       // compute lon,lat coordinates:
-      out = proj_trans(*crs, PJ_INV, in);
+      out = proj_trans(*crs, PJ_FWD, in);
 
       if (which == LATITUDE) {
-        values[k] = proj_todeg(out.lp.phi);
+        values[k] = out.lp.lam;
       } else {
-        values[k] = proj_todeg(out.lp.lam);
+        values[k] = out.lp.phi;
       }
     }
   }
