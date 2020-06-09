@@ -1937,8 +1937,9 @@ LatLonBounds::LatLonBounds(const IceModel *m,
   m_proj_string = proj_string;
 
 #if (Pism_USE_PROJ==1)
-  // create PROJ objects to check if proj_string is OK.
-  Proj crs(m_proj_string);
+  // create the transformation from the provided projection to lat,lon to check if
+  // proj_string is valid.
+  Proj crs(m_proj_string, "EPSG:4326");
 #endif
   // If PISM_USE_PROJ is not 1 we don't need to check validity of m_proj_string: this diagnostic
   // will not be available and so this code will not run.
