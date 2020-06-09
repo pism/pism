@@ -1,6 +1,12 @@
 cmake_minimum_required (VERSION 3.1)
 project (Pism C CXX)
 
+if (NOT (${CMAKE_VERSION} VERSION_LESS "3.12"))
+  # Policy CMP0074 was introduced in 3.12. See "cmake --help-policies" for details.
+  # use PackageName_ROOT variables
+  cmake_policy(SET CMP0074 NEW)
+endif()
+
 if (NOT (${CMAKE_VERSION} VERSION_LESS "3.13"))
   # Policy CMP0078 was introduced in 3.13. See "cmake --help-policies" for details.
   cmake_policy(SET CMP0078 OLD)       #controls names of SWIG targets
