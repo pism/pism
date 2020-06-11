@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Ed Bueler, Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017, 2020 Ed Bueler, Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -90,6 +90,9 @@ protected:
   const Config::Ptr m_config;
   IceGrid::Ptr m_grid;
   const units::System::Ptr m_sys;
+
+  //! "wide" stencil width
+  int m_stencil_width;
 
   // SSA model variables.
   EnthalpyConverter::Ptr m_enthalpyconverter;

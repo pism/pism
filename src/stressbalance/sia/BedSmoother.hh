@@ -82,22 +82,23 @@ public:
   BedSmoother(IceGrid::ConstPtr g, int MAX_GHOSTS);
   virtual ~BedSmoother();
 
-  virtual void preprocess_bed(const IceModelVec2S &topg);
+  void preprocess_bed(const IceModelVec2S &topg);
 
-  virtual void smoothed_thk(const IceModelVec2S &usurf,
-                            const IceModelVec2S &thk,
-                            const IceModelVec2CellType &mask,
-                            IceModelVec2S &thksmooth) const;
+  void smoothed_thk(const IceModelVec2S &usurf,
+                    const IceModelVec2S &thk,
+                    const IceModelVec2CellType &mask,
+                    IceModelVec2S &thksmooth) const;
 
-  virtual void theta(const IceModelVec2S &usurf, IceModelVec2S &result) const;
+  void theta(const IceModelVec2S &usurf, IceModelVec2S &result) const;
 
   const IceModelVec2S& smoothed_bed() const;
 protected:
+  IceGrid::ConstPtr m_grid;
+  const Config::ConstPtr m_config;
+
   //! smoothed bed elevation; set by calling preprocess_bed()
   IceModelVec2S m_topgsmooth;
 
-  IceGrid::ConstPtr m_grid;
-  const Config::ConstPtr m_config;
   IceModelVec2S m_maxtl, m_C2, m_C3, m_C4;
 
   /* number of grid points to smooth over; e.g. i=-Nx,-Nx+1,...,-1,0,1,...,Nx-1,Nx; note
@@ -114,8 +115,8 @@ protected:
   //! maximum elevation at (i,j) of local topography (nearby patch)
   std::shared_ptr<petsc::Vec> m_maxtlp0, m_C2p0, m_C3p0, m_C4p0;
 
-  virtual void preprocess_bed(const IceModelVec2S &topg,
-                              unsigned int Nx_in, unsigned int Ny_in);
+  void preprocess_bed(const IceModelVec2S &topg,
+                      unsigned int Nx_in, unsigned int Ny_in);
 
   void smooth_the_bed_on_proc0();
   void compute_coefficients_on_proc0();

@@ -23,6 +23,7 @@
 #include <memory>               // shared_ptr
 #include <cstdint>              // uint64_t
 #include <set>
+#include <map>
 
 #include "Vector2.hh"
 #include "StarStencil.hh"
@@ -113,13 +114,8 @@ T interpolate(const F &field, double x, double y) {
 
   ## Memory allocation
 
-  Creating an IceModelVec... object does not allocate memory for storing it
-  (some IceModelVecs serve as "references" and don't have their own storage).
-  To complete IceModelVec... creation, use the "create()" method:
-
   \code
-  IceModelVec2S var;
-  ierr = var.create(grid, "var_name", WITH_GHOSTS); CHKERRQ(ierr);
+  IceModelVec2S var(grid, "var_name", WITH_GHOSTS);
   // var is ready to use
   \endcode
 
@@ -215,7 +211,6 @@ T interpolate(const F &field, double x, double y) {
 */
 class IceModelVec : public PetscAccessible {
 public:
-  IceModelVec();
   virtual ~IceModelVec();
 
   typedef std::shared_ptr<IceModelVec> Ptr;
@@ -268,8 +263,8 @@ public:
 
   virtual void begin_access() const;
   virtual void end_access() const;
-  virtual void update_ghosts();
-  virtual void update_ghosts(IceModelVec &destination) const;
+  void update_ghosts();
+  void update_ghosts(IceModelVec &destination) const;
 
   std::shared_ptr<petsc::Vec> allocate_proc0_copy() const;
   void put_on_proc0(petsc::Vec &onp0) const;
@@ -286,6 +281,7 @@ public:
   void set_time_independent(bool flag);
 
 protected:
+  IceModelVec();
   struct Impl;
   Impl *m_impl;
 
@@ -304,7 +300,6 @@ protected:
 
   //! @brief Check array indices and warn if they are out of range.
   void check_array_indices(int i, int j, unsigned int k) const;
-  void reset_attrs(unsigned int N);
 
   void copy_to_vec(std::shared_ptr<petsc::DM> destination_da, petsc::Vec &destination) const;
   void get_dof(std::shared_ptr<petsc::DM> da_result, petsc::Vec &result, unsigned int n,
@@ -344,7 +339,6 @@ class IceModelVec2S;
     j-offset). */
 class IceModelVec2 : public IceModelVec {
 public:
-  IceModelVec2();
   IceModelVec2(IceGrid::ConstPtr grid, const std::string &name,
                IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
 
@@ -361,8 +355,6 @@ public:
   virtual void set_component(unsigned int n, const IceModelVec2S &source);
   inline double& operator() (int i, int j, int k);
   inline const double& operator() (int i, int j, int k) const;
-  void create(IceGrid::ConstPtr grid, const std::string &name,
-              IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
 protected:
   virtual void read_impl(const File &nc, const unsigned int time);
   virtual void regrid_impl(const File &nc, RegriddingFlag flag,
@@ -370,45 +362,12 @@ protected:
   virtual void write_impl(const File &nc) const;
 };
 
-//! A "fat" storage vector for combining related fields (such as SSAFEM coefficients).
-template<typename T>
-class IceModelVec2Fat : public IceModelVec2 {
-public:
-  IceModelVec2Fat(IceGrid::ConstPtr grid, const std::string &short_name,
-                  IceModelVecKind ghostedp, unsigned int stencil_width = 1)
-    : IceModelVec2(grid, short_name, ghostedp, stencil_width,
-                   sizeof(T) / sizeof(double)) {
-    set_begin_access_use_dof(false);
-  }
-
-  T** array() {
-    return reinterpret_cast<T**>(m_array);
-  }
-
-  inline T& operator()(int i, int j) {
-#if (Pism_DEBUG==1)
-    check_array_indices(i, j, 0);
-#endif
-    return static_cast<T**>(m_array)[j][i];
-  }
-
-  inline const T& operator()(int i, int j) const {
-#if (Pism_DEBUG==1)
-    check_array_indices(i, j, 0);
-#endif
-    return static_cast<T**>(m_array)[j][i];
-  }
-};
-
 class IceModelVec2V;
 
 /** A class for storing and accessing scalar 2D fields.
     IceModelVec2S is just IceModelVec2 with "dof == 1" */
 class IceModelVec2S : public IceModelVec2 {
-  friend class IceModelVec2V;
-  friend class IceModelVec2Stag;
 public:
-  IceModelVec2S();
   IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name,
                 IceModelVecKind ghostedp, int width = 1);
 
@@ -425,9 +384,6 @@ public:
   }
 
   // does not need a copy constructor, because it does not add any new data members
-  using IceModelVec2::create;
-  void create(IceGrid::ConstPtr grid, const std::string &name,
-              IceModelVecKind ghostedp, int width = 1);
   virtual void copy_from(const IceModelVec &source);
   double** array();
   double const* const* array() const;
@@ -460,7 +416,6 @@ public:
 //! floating-point scalars (instead of integers).
 class IceModelVec2Int : public IceModelVec2S {
 public:
-  IceModelVec2Int();
   IceModelVec2Int(IceGrid::ConstPtr grid, const std::string &name,
                   IceModelVecKind ghostedp, int width = 1);
 
@@ -472,47 +427,11 @@ public:
   inline BoxStencil<int> int_box(int i, int j) const;
 };
 
-/** Class for storing and accessing 2D vector fields used in IceModel.
-    IceModelVec2V is IceModelVec2 with "dof == 2". (Plus some extra methods, of course.)
-*/
-class IceModelVec2V : public IceModelVec2 {
-public:
-  IceModelVec2V();
-  IceModelVec2V(IceGrid::ConstPtr grid, const std::string &name,
-                IceModelVecKind ghostedp, unsigned int stencil_width = 1);
-  ~IceModelVec2V();
-
-  typedef std::shared_ptr<IceModelVec2V> Ptr;
-  typedef std::shared_ptr<const IceModelVec2V> ConstPtr;
-
-  static Ptr ToVector(IceModelVec::Ptr input);
-
-  void create(IceGrid::ConstPtr grid, const std::string &name,
-              IceModelVecKind ghostedp, unsigned int stencil_width = 1);
-  virtual void copy_from(const IceModelVec &source);
-  virtual void add(double alpha, const IceModelVec &x);
-  virtual void add(double alpha, const IceModelVec &x, IceModelVec &result) const;
-
-  // I/O:
-  Vector2** array();
-  inline Vector2& operator()(int i, int j);
-  inline const Vector2& operator()(int i, int j) const;
-  inline StarStencil<Vector2> star(int i, int j) const;
-
-  /*!
-   * Interpolation helper. See the pism::interpolate() for details.
-   */
-  Vector2 interpolate(double x, double y) const {
-    return pism::interpolate<IceModelVec2V, Vector2>(*this, x, y);
-  }
-};
-
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.
 //! Uses dof=2 storage. This class is identical to IceModelVec2V, except that
 //! components are not called `u` and `v` (to avoid confusion).
 class IceModelVec2Stag : public IceModelVec2 {
 public:
-  IceModelVec2Stag();
   IceModelVec2Stag(IceGrid::ConstPtr grid, const std::string &name,
                    IceModelVecKind ghostedp, unsigned int stencil_width = 1);
 
@@ -521,11 +440,7 @@ public:
 
   static Ptr ToStaggered(IceModelVec::Ptr input);
 
-  void create(IceGrid::ConstPtr grid, const std::string &name,
-              IceModelVecKind ghostedp, unsigned int stencil_width = 1);
-  virtual void staggered_to_regular(IceModelVec2S &result) const;
-  virtual void staggered_to_regular(IceModelVec2V &result) const;
-  virtual std::vector<double> absmaxcomponents() const;
+  std::vector<double> absmaxcomponents() const;
 
   //! Returns the values at interfaces of the cell i,j using the staggered grid.
   /*! The ij member of the return value is set to 0, since it has no meaning in
@@ -536,55 +451,48 @@ public:
 
 //! \brief A virtual class collecting methods common to ice and bedrock 3D
 //! fields.
-class IceModelVec3D : public IceModelVec {
+class IceModelVec3 : public IceModelVec {
 public:
-  IceModelVec3D();
-  virtual ~IceModelVec3D();
 
-  void set_column(int i, int j, double c);
-  void set_column(int i, int j, const double *valsIN);
-  double* get_column(int i, int j);
-  const double* get_column(int i, int j) const;
-
-  // testing methods (for use from Python)
-  void set_column(int i, int j, const std::vector<double> &valsIN);
-  const std::vector<double> get_column_vector(int i, int j) const;
-
-  virtual double getValZ(int i, int j, double z) const;
-  virtual bool isLegalLevel(double z) const;
-
-  inline double& operator() (int i, int j, int k);
-  inline const double& operator() (int i, int j, int k) const;
-protected:
-  void allocate(IceGrid::ConstPtr grid, const std::string &name,
-                IceModelVecKind ghostedp, const std::vector<double> &levels,
-                unsigned int stencil_width = 1);
-};
-
-
-//! Class for a 3d DA-based Vec for ice scalar quantities.
-class IceModelVec3 : public IceModelVec3D {
-public:
-  IceModelVec3();
-  IceModelVec3(IceGrid::ConstPtr grid, const std::string &name,
+  IceModelVec3(IceGrid::ConstPtr grid,
+               const std::string &name,
                IceModelVecKind ghostedp,
+               const std::vector<double> &levels,
                unsigned int stencil_width = 1);
+
+  IceModelVec3(IceGrid::ConstPtr grid,
+               const std::string &name,
+               const std::string &z_name,
+               const std::vector<double> &my_zlevels,
+               const std::map<std::string, std::string> &z_attrs);
 
   virtual ~IceModelVec3();
 
   typedef std::shared_ptr<IceModelVec3> Ptr;
   typedef std::shared_ptr<const IceModelVec3> ConstPtr;
 
+  void set_column(int i, int j, double c);
+  void set_column(int i, int j, const double *input);
+  double* get_column(int i, int j);
+  const double* get_column(int i, int j) const;
+
+  double interpolate(int i, int j, double z) const;
+
+  inline double& operator() (int i, int j, int k);
+  inline const double& operator() (int i, int j, int k) const;
+
+  // testing methods (for use from Python)
+  void set_column(int i, int j, const std::vector<double> &valsIN);
+  const std::vector<double> get_column_vector(int i, int j) const;
+
   static Ptr To3DScalar(IceModelVec::Ptr input);
 
-  void create(IceGrid::ConstPtr grid, const std::string &name,
-              IceModelVecKind ghostedp,
-              unsigned int stencil_width = 1);
+  void extract_surface(double z, IceModelVec2S &output) const;
+  void extract_surface(const IceModelVec2S &z, IceModelVec2S &output) const;
 
-  void  getHorSlice(IceModelVec2S &gslice, double z) const;
-  void  getSurfaceValues(IceModelVec2S &gsurf, const IceModelVec2S &myH) const;
-
-  void sumColumns(IceModelVec2S &output, double A, double B) const;
+  void sum_columns(double A, double B, IceModelVec2S &output) const;
+protected:
+  bool legal_level(double z) const;
 };
 
 /**

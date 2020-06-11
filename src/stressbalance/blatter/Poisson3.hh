@@ -20,7 +20,6 @@
 #define PISM_POISSON3_H
 
 #include "pism/stressbalance/ShallowStressBalance.hh"
-#include "pism/util/iceModelVec3Custom.hh"
 #include "pism/util/petscwrappers/SNES.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
@@ -37,16 +36,16 @@ public:
 
   void update(const Inputs &inputs, bool);
 
-  IceModelVec3Custom::Ptr solution() const;
-  IceModelVec3Custom::Ptr exact() const;
+  IceModelVec3::Ptr solution() const;
+  IceModelVec3::Ptr exact() const;
 
   double error() const;
 
 protected:
-  void exact_solution(IceModelVec3Custom &result);
+  void exact_solution(IceModelVec3 &result);
 
-  IceModelVec3Custom::Ptr m_solution;
-  IceModelVec3Custom::Ptr m_exact;
+  IceModelVec3::Ptr m_solution;
+  IceModelVec3::Ptr m_exact;
 
   petsc::DM m_da;
   petsc::Vec m_x;

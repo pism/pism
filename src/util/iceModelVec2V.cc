@@ -16,50 +16,26 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <memory>
-using std::dynamic_pointer_cast;
+#include <memory>               // std::dynamic_pointer_cast
 
-#include "iceModelVec.hh"
+#include "IceModelVec2V.hh"
+#include "IceModelVec_impl.hh"
+
 #include "pism_utilities.hh"
 #include "IceGrid.hh"
 
-#include "error_handling.hh"
-#include "iceModelVec_helpers.hh"
-#include "ConfigInterface.hh"
+#include "error_handling.hh"    // RuntimeError
+
+#include "iceModelVec_helpers.hh" // add_2d, copy_2d
+
 #include "pism/util/Context.hh"
-#include "pism/util/IceModelVec_impl.hh"
 #include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 
-IceModelVec2V::IceModelVec2V() : IceModelVec2() {
-  m_impl->dof = 2;
-  m_impl->begin_access_use_dof = false;
-}
-
 IceModelVec2V::IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_name,
                              IceModelVecKind ghostedp, unsigned int stencil_width)
-  : IceModelVec2() {
-  m_impl->dof = 2;
-  m_impl->begin_access_use_dof = false;
-
-  create(grid, short_name, ghostedp, stencil_width);
-}
-
-IceModelVec2V::Ptr IceModelVec2V::ToVector(IceModelVec::Ptr input) {
-  IceModelVec2V::Ptr result = dynamic_pointer_cast<IceModelVec2V,IceModelVec>(input);
-  if (not (bool)result) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "dynamic cast failure");
-  }
-  return result;
-}
-
-void IceModelVec2V::create(IceGrid::ConstPtr grid, const std::string &short_name,
-                           IceModelVecKind ghostedp,
-                           unsigned int stencil_width) {
-
-  IceModelVec2::create(grid, short_name, ghostedp,
-                       stencil_width, m_impl->dof);
+  : IceModelVec2Struct<Vector2>(grid, short_name, ghostedp, stencil_width) {
 
   auto sys = m_impl->grid->ctx()->unit_system();
 
@@ -69,8 +45,19 @@ void IceModelVec2V::create(IceGrid::ConstPtr grid, const std::string &short_name
   m_impl->name = "vel" + short_name;
 }
 
-Vector2** IceModelVec2V::array() {
-  return static_cast<Vector2**>(m_array);
+IceModelVec2V::~IceModelVec2V() {
+  // empty
+}
+
+IceModelVec2V::Ptr IceModelVec2V::ToVector(IceModelVec::Ptr input) {
+
+ IceModelVec2V::Ptr result = std::dynamic_pointer_cast<IceModelVec2V,IceModelVec>(input);
+
+  if (not (bool)result) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "dynamic cast failure");
+  }
+
+  return result;
 }
 
 void IceModelVec2V::add(double alpha, const IceModelVec &x) {

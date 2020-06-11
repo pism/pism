@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2019 PISM Authors
+/* Copyright (C) 2016, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,10 +31,6 @@ public:
 
   typedef std::shared_ptr<IceModelVec2CellType> Ptr;
   typedef std::shared_ptr<const IceModelVec2CellType> ConstPtr;
-  IceModelVec2CellType()
-    : IceModelVec2Int() {
-    // empty
-  }
 
   IceModelVec2CellType(IceGrid::ConstPtr grid, const std::string &name,
                        IceModelVecKind ghostedp, int width = 1)

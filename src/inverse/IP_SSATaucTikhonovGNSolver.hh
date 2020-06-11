@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019  David Maxwell
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019, 2020  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -112,7 +112,6 @@ protected:
   IP_SSATaucForwardProblem &m_ssaforward;
 
   DesignVec m_x;
-  DesignVec m_y;
 
   DesignVec m_tmp_D1Global;
   DesignVec m_tmp_D2Global;

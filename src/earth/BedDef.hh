@@ -76,6 +76,7 @@ protected:
   void compute_uplift(const IceModelVec2S &bed, const IceModelVec2S &bed_last,
                             double dt, IceModelVec2S &result);
 protected:
+  const int m_wide_stencil;
   //! current bed elevation
   IceModelVec2S m_topg;
 

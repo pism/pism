@@ -30,12 +30,12 @@ namespace pism {
 
 FrontRetreat::FrontRetreat(IceGrid::ConstPtr g)
   : Component(g),
+    m_cell_type(m_grid, "cell_type", WITH_GHOSTS, 1),
     m_tmp(m_grid, "temporary_storage", WITH_GHOSTS, 1) {
 
   m_tmp.set_attrs("internal", "additional mass loss at points near the front",
                   "m", "m", "", 0);
 
-  m_cell_type.create(m_grid, "cell_type", WITH_GHOSTS, 1);
   m_cell_type.set_attrs("internal", "cell type mask", "", "", "", 0);
 }
 

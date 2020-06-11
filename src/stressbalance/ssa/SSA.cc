@@ -73,26 +73,22 @@ double SSAStrengthExtension::get_min_thickness() const {
 
 
 SSA::SSA(IceGrid::ConstPtr g)
-  : ShallowStressBalance(g)
+  : ShallowStressBalance(g),
+    m_mask(m_grid, "ssa_mask", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width")),
+    m_taud(m_grid, "taud", WITHOUT_GHOSTS),
+    m_velocity_global(m_grid, "bar", WITHOUT_GHOSTS)
 {
+
   strength_extension = new SSAStrengthExtension(*m_config);
 
-  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
-
   // grounded_dragging_floating integer mask
-  m_mask.create(m_grid, "ssa_mask", WITH_GHOSTS, WIDE_STENCIL);
   m_mask.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
                    "", "", "", 0);
-  std::vector<double> mask_values(4);
-  mask_values[0] = MASK_ICE_FREE_BEDROCK;
-  mask_values[1] = MASK_GROUNDED;
-  mask_values[2] = MASK_FLOATING;
-  mask_values[3] = MASK_ICE_FREE_OCEAN;
+  std::vector<double> mask_values = {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING, MASK_ICE_FREE_OCEAN};
   m_mask.metadata().set_numbers("flag_values", mask_values);
   m_mask.metadata().set_string("flag_meanings",
                               "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
 
-  m_taud.create(m_grid, "taud", WITHOUT_GHOSTS);
   m_taud.set_attrs("diagnostic",
                    "X-component of the driving shear stress at the base of ice",
                    "Pa", "Pa", "", 0);
@@ -100,15 +96,12 @@ SSA::SSA(IceGrid::ConstPtr g)
                    "Y-component of the driving shear stress at the base of ice",
                    "Pa", "Pa", "", 1);
 
-
   // override velocity metadata
   m_velocity.metadata(0).set_name("u_ssa");
   m_velocity.metadata(0).set_string("long_name", "SSA model ice velocity in the X direction");
 
   m_velocity.metadata(1).set_name("v_ssa");
   m_velocity.metadata(1).set_string("long_name", "SSA model ice velocity in the Y direction");
-
-  m_velocity_global.create(m_grid, "bar", WITHOUT_GHOSTS);
 
   m_da = m_velocity_global.dm();
 

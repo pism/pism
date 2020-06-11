@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2019 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010--2020 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,7 @@
 
 #include "pism/util/Component.hh"
 #include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/util/EnthalpyConverter.hh"
 
 namespace pism {

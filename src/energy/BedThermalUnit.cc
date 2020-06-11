@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -95,17 +95,17 @@ BedThermalUnit* BedThermalUnit::FromOptions(IceGrid::ConstPtr grid,
 
 
 BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
-  : Component(g) {
+  : Component(g),
+    m_bottom_surface_flux(m_grid, "bheatflx", WITHOUT_GHOSTS),
+    m_top_surface_flux(m_grid, "heat_flux_from_bedrock", WITHOUT_GHOSTS) {
 
   {
-    m_top_surface_flux.create(m_grid, "heat_flux_from_bedrock", WITHOUT_GHOSTS);
     m_top_surface_flux.set_attrs("diagnostic", "upward geothermal flux at the top bedrock surface",
                                  "W m-2", "mW m-2",
                                  "upward_geothermal_heat_flux_at_ground_level_in_land_ice", 0);
     m_top_surface_flux.metadata().set_string("comment", "positive values correspond to an upward flux");
   }
   {
-    m_bottom_surface_flux.create(m_grid, "bheatflx", WITHOUT_GHOSTS);
     // PROPOSED standard_name = lithosphere_upward_heat_flux
     m_bottom_surface_flux.set_attrs("model_state",
                                     "upward geothermal flux at the bottom bedrock surface",

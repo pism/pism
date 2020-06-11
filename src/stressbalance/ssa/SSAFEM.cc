@@ -48,6 +48,8 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr grid)
     m_bc_values(grid, "_bc", WITH_GHOSTS),
     m_gc(*m_config),
     m_coefficients(grid, "ssa_coefficients", WITH_GHOSTS, 1),
+    m_node_type(m_grid, "node_type", WITH_GHOSTS, 1),
+    m_boundary_integral(m_grid, "boundary_integral", WITH_GHOSTS, 1),
     m_element_index(*grid),
     m_q1_element(*grid, fem::Q1Quadrature4())
 {
@@ -99,14 +101,12 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr grid)
   ierr = SNESSetFromOptions(m_snes);
   PISM_CHK(ierr, "SNESSetFromOptions");
 
-  m_node_type.create(m_grid, "node_type", WITH_GHOSTS, 1);
   m_node_type.set_attrs("internal", // intent
                         "node types: interior, boundary, exterior", // long name
                         "", "", "", 0); // no units or standard name
 
   // Element::nodal_values() expects a ghosted IceModelVec2S. Ghosts if this field are never
   // assigned to and not communicated, though.
-  m_boundary_integral.create(m_grid, "boundary_integral", WITH_GHOSTS, 1);
   m_boundary_integral.set_attrs("internal", // intent
                                 "residual contribution from lateral boundaries", // long name
                                 "", "", "", 0); // no units or standard name

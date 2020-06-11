@@ -86,8 +86,8 @@ void BlatterMod::transfer(const IceModelVec2S &ice_thickness) {
       for (int k = 0; k < Mz; ++k) {
         double sigma = std::min(zlevels[k] / H, 1.0);
 
-        u[k] = u_sigma->getValZ(i, j, sigma);
-        v[k] = v_sigma->getValZ(i, j, sigma);
+        u[k] = u_sigma->interpolate(i, j, sigma);
+        v[k] = v_sigma->interpolate(i, j, sigma);
       }
     } else {
       m_u.set_column(i, j, 0.0);

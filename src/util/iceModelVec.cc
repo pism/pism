@@ -19,6 +19,7 @@
 #include <cassert>
 
 #include "iceModelVec.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/util/IceModelVec_impl.hh"
 #include "iceModelVec_helpers.hh"
 
@@ -53,10 +54,6 @@ static void global_to_local(petsc::DM &dm, Vec source, Vec destination) {
 IceModelVec::IceModelVec() {
   m_impl = new Impl();
   m_array = nullptr;
-  // would resize "vars", but "grid" is not initialized, and so we
-  // cannot get the unit system:
-  // vars.resize(dof);
-  reset_attrs(0);
 }
 
 IceModelVec::~IceModelVec() {
@@ -92,7 +89,6 @@ std::vector<double> IceModelVec::levels() const {
   return m_impl->zlevels;
 }
 
-
 //! \brief Increment the object state counter.
 /*!
  * See the documentation of get_state_counter(). This method is the
@@ -104,24 +100,22 @@ void IceModelVec::inc_state_counter() {
   m_impl->state_counter++;
 }
 
-//! Returns the grid type of an IceModelVec. (This is the way to figure out if an IceModelVec is 2D or 3D).
+//! Returns the number of spatial dimensions.
 unsigned int IceModelVec::ndims() const {
-  if (m_impl->zlevels.size() > 1) {
-    return 3;
-  }
-
-  return 2;
+  return m_impl->zlevels.size() > 1 ? 3 : 2;
 }
 
 std::vector<int> IceModelVec::shape() const {
 
+  auto grid = m_impl->grid;
+
   if (ndims() == 3) {
-    return {(int)m_impl->grid->My(), (int)m_impl->grid->Mx(), (int)levels().size()};
+    return {(int)grid->My(), (int)grid->Mx(), (int)levels().size()};
   } else {
     if (ndof() == 1) {
-      return {(int)m_impl->grid->My(), (int)m_impl->grid->Mx()};
+      return {(int)grid->My(), (int)grid->Mx()};
     } else {
-      return {(int)m_impl->grid->My(), (int)m_impl->grid->Mx(), (int)ndof()};
+      return {(int)grid->My(), (int)grid->Mx(), (int)ndof()};
     }
   }
 }
@@ -168,7 +162,7 @@ Range IceModelVec::range() const {
 }
 
 /** Convert from `int` to PETSc's `NormType`.
- * 
+ *
  *
  * @param[in] input norm type as an integer
  *
@@ -309,7 +303,7 @@ void IceModelVec::set_dof(std::shared_ptr<petsc::DM> da_source, petsc::Vec &sour
   }
 
   petsc::DMDAVecArrayDOF tmp_src(da_source, source), tmp_v(m_impl->da, m_impl->v);
-  
+
   double
     ***source_a = static_cast<double***>(tmp_src.get()),
     ***result_a = static_cast<double***>(tmp_v.get());
@@ -380,17 +374,6 @@ void IceModelVec::set_name(const std::string &name) {
  */
 const std::string& IceModelVec::get_name() const {
   return m_impl->name;
-}
-
-//! Resets most IceModelVec attributes.
-void IceModelVec::reset_attrs(unsigned int N) {
-
-  m_impl->report_range = true;
-
-  if (N > 0 and N < m_impl->metadata.size()) {
-    metadata(N).clear_all_strings();
-    metadata(N).clear_all_doubles();
-  }
 }
 
 //! Sets NetCDF attributes of an IceModelVec object.
@@ -628,7 +611,7 @@ void  IceModelVec::update_ghosts() {
 
   ierr = DMLocalToLocalBegin(*m_impl->da, m_impl->v, INSERT_VALUES, m_impl->v);
   PISM_CHK(ierr, "DMLocalToLocalBegin");
-  
+
   ierr = DMLocalToLocalEnd(*m_impl->da, m_impl->v, INSERT_VALUES, m_impl->v);
   PISM_CHK(ierr, "DMLocalToLocalEnd");
 }
@@ -1229,6 +1212,8 @@ void IceModelVec::get_from_proc0(petsc::Vec &onp0) {
  * We assume that sizeof(double) == 2 * sizeof(uint32_t), i.e. double uses 64 bits.
  */
 uint64_t IceModelVec::fletcher64() const {
+  assert(sizeof(double) == 2 * sizeof(uint32_t));
+
   MPI_Status mpi_stat;
   const int checksum_tag = 42;
 
@@ -1309,6 +1294,9 @@ void staggered_to_regular(const IceModelVec2CellType &cell_type,
   using mask::grounded_ice;
   using mask::icy;
 
+  assert(cell_type.stencil_width() > 0);
+  assert(input.stencil_width() > 0);
+
   IceGrid::ConstPtr grid = result.grid();
 
   IceModelVec::AccessList list{&cell_type, &input, &result};
@@ -1352,6 +1340,9 @@ void staggered_to_regular(const IceModelVec2CellType &cell_type,
 
   using mask::grounded_ice;
   using mask::icy;
+
+  assert(cell_type.stencil_width() > 0);
+  assert(input.stencil_width() > 0);
 
   IceGrid::ConstPtr grid = result.grid();
 

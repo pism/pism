@@ -30,6 +30,7 @@
 #include "iceModelVec.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/util/io/io_helpers.hh"
 
 namespace pism {

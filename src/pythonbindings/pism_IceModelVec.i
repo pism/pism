@@ -2,7 +2,6 @@
 /* Using directives needed to compile IceModelVec wrappers. */
 #include "util/IceModelVec2CellType.hh"
 #include "util/iceModelVec2T.hh"
-#include "util/iceModelVec3Custom.hh"
 
 using namespace pism;
 %}
@@ -95,9 +94,8 @@ using namespace pism;
     %pythoncode "IceModelVec2V.py"
 };
 
-%ignore pism::IceModelVec3D::getInternalColumn(int,int) const;
-%ignore pism::IceModelVec3D::operator();
-%extend pism::IceModelVec3D
+%ignore pism::IceModelVec3::operator();
+%extend pism::IceModelVec3
 {
 
   double getitem(int i, int j, int k)
@@ -138,8 +136,13 @@ std::vector<double> interp(int i, int j) {
 %template(DoubleStar) pism::StarStencil<double>;
 
 %include "util/iceModelVec.hh"
+%include "util/IceModelVec2Struct.hh"
+
+%shared_ptr(pism::IceModelVec2Struct<Vector2>)
+%ignore pism::IceModelVec2Struct< Vector2 >::array() const;
+%template(_IceModelVec2Vector2) pism::IceModelVec2Struct<Vector2>;
+
+%include "util/IceModelVec2V.hh"
 %include "util/IceModelVec2CellType.hh"
 %include "util/iceModelVec2T.hh"
 %include "util/Vector2.hh"
-
-%include "util/iceModelVec3Custom.hh"

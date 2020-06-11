@@ -170,6 +170,7 @@ public:
   }
 
 protected:
+  const int m_stencil_width;
 
   /// Current value of zeta, provided from caller.
   IceModelVec2S   *m_zeta;

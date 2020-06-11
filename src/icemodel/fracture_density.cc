@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2019 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2011-2020 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@ void IceModel::update_fracture_density() {
   // This mask contains ones at the in-flow boundary according to the SSA Dirichlet BC
   // mask (if it is used) and at grounded grid points if
   // fracture_density.include_grounded_ice is not set.
-  auto &bc_mask = m_work2d[0];
+  auto &bc_mask = *m_work2d[0];
   {
     bool do_fracground = m_config->get_flag("fracture_density.include_grounded_ice");
     const bool dirichlet_bc = m_config->get_flag("stress_balance.ssa.dirichlet_bc");
@@ -62,7 +62,7 @@ void IceModel::update_fracture_density() {
   }
 
   // compute the vertically-averaged ice hardness
-  auto &hardness = m_work2d[1];
+  auto &hardness = *m_work2d[1];
   {
     rheology::averaged_hardness_vec(*m_stress_balance->shallow()->flow_law(),
                                     m_geometry.ice_thickness,

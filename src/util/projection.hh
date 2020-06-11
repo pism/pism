@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,7 +29,7 @@ namespace pism {
 
 class File;
 class IceModelVec2S;
-class IceModelVec3D;
+class IceModelVec3;
 
 /*! @brief Convert a proj string with an EPSG code to a set of CF attributes. */
 /*!
@@ -58,8 +58,8 @@ MappingInfo get_projection_info(const File &input_file, const std::string &mappi
 void compute_longitude(const std::string &projection, IceModelVec2S &result);
 void compute_latitude(const std::string &projection, IceModelVec2S &result);
 
-void compute_lon_bounds(const std::string &projection, IceModelVec3D &result);
-void compute_lat_bounds(const std::string &projection, IceModelVec3D &result);
+void compute_lon_bounds(const std::string &projection, IceModelVec3 &result);
+void compute_lat_bounds(const std::string &projection, IceModelVec3 &result);
 
 } // end of namespace pism
 

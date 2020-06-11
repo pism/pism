@@ -22,13 +22,13 @@
 #include <cassert>
 
 #include <memory>
-using std::dynamic_pointer_cast;
 
 #include <petscdraw.h>
 #include <petscdmda.h>
 
 #include "iceModelVec.hh"
 #include "iceModelVec_helpers.hh"
+#include "IceModelVec2V.hh"
 #include "pism/util/IceModelVec_impl.hh"
 
 #include "IceGrid.hh"
@@ -50,49 +50,27 @@ namespace pism {
 
 // methods for base class IceModelVec are in "iceModelVec.cc"
 
-IceModelVec2::IceModelVec2()
-  : IceModelVec() {
-  // empty
-}
-
 IceModelVec2::Ptr IceModelVec2::To2D(IceModelVec::Ptr input) {
-  IceModelVec2::Ptr result = dynamic_pointer_cast<IceModelVec2,IceModelVec>(input);
+  IceModelVec2::Ptr result = std::dynamic_pointer_cast<IceModelVec2,IceModelVec>(input);
   if (not (bool)result) {
     throw RuntimeError(PISM_ERROR_LOCATION, "dynamic cast failure");
   }
   return result;
-}
-
-IceModelVec2V::~IceModelVec2V() {
-  // empty
 }
 
 IceModelVec2S::Ptr IceModelVec2S::To2DScalar(IceModelVec::Ptr input) {
-  IceModelVec2S::Ptr result = dynamic_pointer_cast<IceModelVec2S,IceModelVec>(input);
+  IceModelVec2S::Ptr result = std::dynamic_pointer_cast<IceModelVec2S,IceModelVec>(input);
   if (not (bool)result) {
     throw RuntimeError(PISM_ERROR_LOCATION, "dynamic cast failure");
   }
   return result;
 }
 
-IceModelVec2S::IceModelVec2S() {
-  m_impl->begin_access_use_dof = false;
-}
-
 IceModelVec2S::IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name,
-                             IceModelVecKind ghostedp, int width) {
+                             IceModelVecKind ghostedp, int width)
+  : IceModelVec2(grid, name, ghostedp, width, 1) {
   m_impl->begin_access_use_dof = false;
-
-  create(grid, name, ghostedp, width);
 }
-
-
-void  IceModelVec2S::create(IceGrid::ConstPtr grid, const std::string &name,
-                            IceModelVecKind ghostedp, int width) {
-  assert(m_impl->v == NULL);
-  IceModelVec2::create(grid, name, ghostedp, width, m_impl->dof);
-}
-
 
 double** IceModelVec2S::array() {
   return static_cast<double**>(m_array);
@@ -120,7 +98,6 @@ void IceModelVec2S::set_to_magnitude(const IceModelVec2S &v_x,
   }
 
   inc_state_counter();          // mark as modified
-  
 }
 
 void IceModelVec2S::set_to_magnitude(const IceModelVec2V &input) {
@@ -131,9 +108,11 @@ void IceModelVec2S::set_to_magnitude(const IceModelVec2V &input) {
 
     (*this)(i, j) = input(i, j).magnitude();
   }
+
+  inc_state_counter();          // mark as modified
 }
 
-//! Masks out all the areas where \f$ M \le 0 \f$ by setting them to `fill`. 
+//! Masks out all the areas where \f$ M \le 0 \f$ by setting them to `fill`.
 void IceModelVec2S::mask_by(const IceModelVec2S &M, double fill) {
   IceModelVec::AccessList list{this, &M};
 
@@ -207,7 +186,7 @@ void IceModelVec2::read_impl(const File &nc, const unsigned int time) {
 
     IceModelVec2::set_dof(da2, tmp, j);
   }
-  
+
   // The calls above only set the values owned by a processor, so we need to
   // communicate if m_has_ghosts == true:
   if (m_impl->ghosted) {
@@ -349,7 +328,7 @@ double IceModelVec2S::diff_x_p(int i, int j) const {
   if (m_impl->grid->periodicity() & X_PERIODIC) {
     return diff_x(i,j);
   }
-  
+
   if (i == 0) {
     return ((*this)(i + 1,j) - (*this)(i,j)) / (m_impl->grid->dx());
   } else if (i == (int)m_impl->grid->Mx() - 1) {
@@ -366,7 +345,7 @@ double IceModelVec2S::diff_y_p(int i, int j) const {
   if (m_impl->grid->periodicity() & Y_PERIODIC) {
     return diff_y(i,j);
   }
-  
+
   if (j == 0) {
     return ((*this)(i,j + 1) - (*this)(i,j)) / (m_impl->grid->dy());
   } else if (j == (int)m_impl->grid->My() - 1) {
@@ -383,7 +362,7 @@ double IceModelVec2S::sum() const {
   double result = 0;
 
   IceModelVec::AccessList list(*this);
-  
+
   // sum up the local part:
   for (Points p(*m_impl->grid); p; p.next()) {
     result += (*this)(p.i(), p.j());
@@ -435,34 +414,19 @@ double IceModelVec2S::min() const {
 
 
 // IceModelVec2
-IceModelVec2::IceModelVec2(IceGrid::ConstPtr grid, const std::string &short_name,
+IceModelVec2::IceModelVec2(IceGrid::ConstPtr grid, const std::string &name,
                            IceModelVecKind ghostedp, unsigned int stencil_width, int dof) {
-  create(grid, short_name, ghostedp, stencil_width, dof);
-}
-
-void IceModelVec2::get_component(unsigned int n, IceModelVec2S &result) const {
-
-  IceModelVec2::get_dof(result.dm(), result.m_impl->v, n);
-}
-
-void IceModelVec2::set_component(unsigned int n, const IceModelVec2S &source) {
-
-  IceModelVec2::set_dof(source.dm(), source.m_impl->v, n);
-}
-
-void IceModelVec2::create(IceGrid::ConstPtr grid, const std::string & name,
-                           IceModelVecKind ghostedp,
-                           unsigned int stencil_width, int dof) {
   PetscErrorCode ierr;
-  assert(m_impl->v == NULL);
 
   m_impl->dof  = dof;
   m_impl->grid = grid;
 
-  if ((m_impl->dof != 1) || (stencil_width > m_impl->grid->ctx()->config()->get_number("grid.max_stencil_width"))) {
+  auto max_stencil_width = m_impl->grid->ctx()->config()->get_number("grid.max_stencil_width");
+
+  if ((m_impl->dof != 1) or (stencil_width > max_stencil_width)) {
     m_impl->da_stencil_width = stencil_width;
   } else {
-    m_impl->da_stencil_width = m_impl->grid->ctx()->config()->get_number("grid.max_stencil_width");
+    m_impl->da_stencil_width = max_stencil_width;
   }
 
   // initialize the da member:
@@ -477,7 +441,7 @@ void IceModelVec2::create(IceGrid::ConstPtr grid, const std::string & name,
   }
 
   m_impl->ghosted = (ghostedp == WITH_GHOSTS);
-  m_impl->name       = name;
+  m_impl->name    = name;
 
   if (m_impl->dof == 1) {
     m_impl->metadata.push_back(SpatialVariableMetadata(m_impl->grid->ctx()->unit_system(),
@@ -490,6 +454,14 @@ void IceModelVec2::create(IceGrid::ConstPtr grid, const std::string & name,
                                                                       m_impl->name.c_str(), j)));
     }
   }
+}
+
+void IceModelVec2::get_component(unsigned int n, IceModelVec2S &result) const {
+  get_dof(result.dm(), result.vec(), n);
+}
+
+void IceModelVec2::set_component(unsigned int n, const IceModelVec2S &source) {
+  set_dof(source.dm(), source.m_impl->v, n);
 }
 
 void IceModelVec2S::add(double alpha, const IceModelVec &x) {
@@ -506,14 +478,8 @@ void IceModelVec2S::copy_from(const IceModelVec &source) {
 
 // IceModelVec2Stag
 
-IceModelVec2Stag::IceModelVec2Stag()
-  : IceModelVec2() {
-  m_impl->dof = 2;
-  m_impl->begin_access_use_dof = true;
-}
-
 IceModelVec2Stag::Ptr IceModelVec2Stag::ToStaggered(IceModelVec::Ptr input) {
-  IceModelVec2Stag::Ptr result = dynamic_pointer_cast<IceModelVec2Stag,IceModelVec>(input);
+  IceModelVec2Stag::Ptr result = std::dynamic_pointer_cast<IceModelVec2Stag,IceModelVec>(input);
   if (not (bool)result) {
     throw RuntimeError(PISM_ERROR_LOCATION, "dynamic cast failure");
   }
@@ -523,51 +489,10 @@ IceModelVec2Stag::Ptr IceModelVec2Stag::ToStaggered(IceModelVec::Ptr input) {
 IceModelVec2Stag::IceModelVec2Stag(IceGrid::ConstPtr grid, const std::string &name,
                                    IceModelVecKind ghostedp,
                                    unsigned int stencil_width)
-  : IceModelVec2() {
-  m_impl->dof = 2;
+  : IceModelVec2(grid, name, ghostedp, stencil_width, 2) {
+
   m_impl->begin_access_use_dof = true;
-
-  create(grid, name, ghostedp, stencil_width);
 }
-
-void IceModelVec2Stag::create(IceGrid::ConstPtr grid, const std::string &name,
-                              IceModelVecKind ghostedp,
-                              unsigned int stencil_width) {
-
-  IceModelVec2::create(grid, name, ghostedp, stencil_width, m_impl->dof);
-}
-
-//! Averages staggered grid values of a scalar field and puts them on a regular grid.
-/*!
- * The current IceModelVec needs to have ghosts.
- */
-void IceModelVec2Stag::staggered_to_regular(IceModelVec2S &result) const {
-  IceModelVec::AccessList list{this, &result};
-
-  for (Points p(*m_impl->grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    result(i,j) = 0.25 * ((*this)(i,j,0) + (*this)(i,j,1)
-                          + (*this)(i,j-1,1) + (*this)(i-1,j,0));
-  }
-}
-
-//! \brief Averages staggered grid values of a 2D vector field (u on the
-//! i-offset, v on the j-offset) and puts them on a regular grid.
-/*!
- * The current IceModelVec needs to have ghosts.
- */
-void IceModelVec2Stag::staggered_to_regular(IceModelVec2V &result) const {
-  IceModelVec::AccessList list{this, &result};
-
-  for (Points p(*m_impl->grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    result(i,j).u = 0.5 * ((*this)(i-1,j,0) + (*this)(i,j,0));
-    result(i,j).v = 0.5 * ((*this)(i,j-1,1) + (*this)(i,j,1));
-  }
-}
-
 
 //! For each component, finds the maximum over all the absolute values.  Ignores ghosts.
 std::vector<double> IceModelVec2Stag::absmaxcomponents() const {
@@ -586,12 +511,6 @@ std::vector<double> IceModelVec2Stag::absmaxcomponents() const {
 
   return z;
 }
-
-IceModelVec2Int::IceModelVec2Int()
-  : IceModelVec2S() {
-  m_impl->interpolation_type = NEAREST;
-}
-
 
 IceModelVec2Int::IceModelVec2Int(IceGrid::ConstPtr grid, const std::string &name,
                                  IceModelVecKind ghostedp, int width)

@@ -17,12 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "DirichletData.hh"
+
 #include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Context.hh"
-
-#include "DirichletData.hh"
 
 namespace pism {
 namespace fem {

@@ -36,27 +36,26 @@ namespace inverse {
 IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid::ConstPtr g,
                                                        IPDesignVariableParameterization &tp)
   : SSAFEM(g),
+    m_stencil_width(1),
     m_zeta(NULL),
+    m_dzeta_local(m_grid, "d_zeta_local", WITH_GHOSTS, m_stencil_width),
     m_fixed_design_locations(NULL),
     m_design_param(tp),
+    m_du_global(m_grid, "linearization work vector (sans ghosts)",
+                WITHOUT_GHOSTS, m_stencil_width),
+    m_du_local(m_grid, "linearization work vector (with ghosts)",
+               WITH_GHOSTS, m_stencil_width),
+    m_hardav(m_grid, "hardav", WITH_GHOSTS, m_stencil_width),
     m_element_index(*m_grid),
     m_element(*m_grid, fem::Q1Quadrature4()),
-    m_rebuild_J_state(true) {
+    m_rebuild_J_state(true)
+{
 
   PetscErrorCode ierr;
-  int stencilWidth = 1;
 
   m_velocity_shared.reset(new IceModelVec2V(m_grid, "dummy", WITHOUT_GHOSTS));
   m_velocity_shared->metadata(0) = m_velocity.metadata(0);
   m_velocity_shared->metadata(1) = m_velocity.metadata(1);
-
-  m_dzeta_local.create(m_grid, "d_zeta_local", WITH_GHOSTS, stencilWidth);
-  m_hardav.create(m_grid, "hardav", WITH_GHOSTS, stencilWidth);
-
-  m_du_global.create(m_grid, "linearization work vector (sans ghosts)",
-                     WITHOUT_GHOSTS, stencilWidth);
-  m_du_local.create(m_grid, "linearization work vector (with ghosts)",
-                    WITH_GHOSTS, stencilWidth);
 
   ierr = DMSetMatType(*m_da, MATBAIJ);
   PISM_CHK(ierr, "DMSetMatType");

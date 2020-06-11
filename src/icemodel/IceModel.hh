@@ -42,6 +42,7 @@
 // IceModel owns a bunch of fields, so we have to include this.
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
@@ -239,6 +240,8 @@ protected:
   //! Time manager
   const Time::Ptr m_time;
 
+  const int m_wide_stencil;
+
   //! stores global attributes saved in a PISM output file
   VariableMetadata m_output_global_attributes;
 
@@ -362,7 +365,7 @@ protected:
 
   // working space (a convenience)
   static const int m_n_work2d = 3;
-  mutable IceModelVec2S m_work2d[m_n_work2d];
+  mutable std::vector<std::shared_ptr<IceModelVec2S> > m_work2d;
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
 

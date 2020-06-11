@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,7 +28,10 @@ StressCalving::StressCalving(IceGrid::ConstPtr grid,
     m_stencil_width(stencil_width),
     m_strain_rates(m_grid, "strain_rates", WITH_GHOSTS,
                    m_stencil_width,
-                   2 /* 2 components */) {
+                   2 /* 2 components */),
+    m_calving_rate(m_grid, "calving_rate", WITHOUT_GHOSTS),
+    m_cell_type(m_grid, "cell_type", WITH_GHOSTS)
+{
 
   m_strain_rates.metadata(0).set_name("eigen1");
   m_strain_rates.set_attrs("internal",
@@ -40,10 +43,8 @@ StressCalving::StressCalving(IceGrid::ConstPtr grid,
                            "minor principal component of horizontal strain-rate",
                            "second-1", "second-1", "", 1);
 
-  m_calving_rate.create(m_grid, "calving_rate", WITHOUT_GHOSTS);
   m_calving_rate.set_attrs("internal", "horizontal calving rate", "m s-1", "m year-1", "", 0);
 
-  m_cell_type.create(m_grid, "cell_type", WITH_GHOSTS);
   m_cell_type.set_attrs("internal", "cell type mask", "", "", "", 0);
 }
 

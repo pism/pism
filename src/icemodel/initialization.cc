@@ -219,9 +219,9 @@ void IceModel::model_state_setup() {
     case INIT_OTHER:
       {
         IceModelVec2S
-          &W_till = m_work2d[0],
-          &W      = m_work2d[1],
-          &P      = m_work2d[2];
+          &W_till = *m_work2d[0],
+          &W      = *m_work2d[1],
+          &P      = *m_work2d[2];
 
         W_till.set(m_config->get_number("bootstrapping.defaults.tillwat"));
         W.set(m_config->get_number("bootstrapping.defaults.bwat"));

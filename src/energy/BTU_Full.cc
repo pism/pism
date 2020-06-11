@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -70,7 +70,7 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
     }
     z.back() = 0.0;
 
-    m_temp.reset(new IceModelVec3Custom(m_grid, "litho_temp", "zb", z, attrs));
+    m_temp.reset(new IceModelVec3(m_grid, "litho_temp", "zb", z, attrs));
 
     m_temp->set_attrs("model_state",
                       "lithosphere (bedrock) temperature, in BTU_Full",
@@ -243,7 +243,7 @@ void BTU_Full::update_flux_through_top_surface() {
   }
 }
 
-const IceModelVec3Custom& BTU_Full::temperature() const {
+const IceModelVec3& BTU_Full::temperature() const {
   if (m_bootstrapping_needed) {
     throw RuntimeError(PISM_ERROR_LOCATION, "bedrock temperature is not available (bootstrapping is needed)");
   }

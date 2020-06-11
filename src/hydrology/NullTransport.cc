@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 PISM Authors
+// Copyright (C) 2012-2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,9 @@ namespace pism {
 namespace hydrology {
 
 NullTransport::NullTransport(IceGrid::ConstPtr g)
-  : Hydrology(g) {
+  : Hydrology(g),
+    m_Wtill_old(m_grid, "Wtill_old", WITH_GHOSTS) {
+
   m_diffuse_tillwat    = m_config->get_flag("hydrology.null_diffuse_till_water");
   m_diffusion_time     = m_config->get_number("hydrology.null_diffusion_time", "seconds");
   m_diffusion_distance = m_config->get_number("hydrology.null_diffusion_distance", "meters");
@@ -38,10 +40,6 @@ NullTransport::NullTransport(IceGrid::ConstPtr g)
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "hydrology::NullTransport: hydrology.tillwat_max is negative.\n"
                        "This is not allowed.");
-  }
-
-  if (m_diffuse_tillwat) {
-    m_Wtill_old.create(m_grid, "Wtill_old", WITH_GHOSTS);
   }
 }
 

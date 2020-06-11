@@ -54,9 +54,13 @@ double margin_pressure_difference(bool shelf, bool dry_mode, double H, double be
 using pism::mask::ice_free;
 
 ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
-  : Component(g), m_basal_sliding_law(NULL), m_flow_law(NULL), m_EC(g->ctx()->enthalpy_converter()) {
-
-  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
+  : Component(g),
+    m_basal_sliding_law(NULL),
+    m_flow_law(NULL),
+    m_EC(g->ctx()->enthalpy_converter()),
+    m_velocity(m_grid, "bar", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width")),
+    m_basal_frictional_heating(m_grid, "bfrict", WITHOUT_GHOSTS)
+{
 
   if (m_config->get_flag("basal_resistance.pseudo_plastic.enabled") == true) {
     m_basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(*m_config);
@@ -64,7 +68,6 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
     m_basal_sliding_law = new IceBasalResistancePlasticLaw(*m_config);
   }
 
-  m_velocity.create(m_grid, "bar", WITH_GHOSTS, WIDE_STENCIL); // components ubar, vbar
   m_velocity.set_attrs("model_state",
                        "thickness-advective ice velocity (x-component)", 
                        "m s-1", "m s-1", "", 0);
@@ -72,7 +75,6 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
                        "thickness-advective ice velocity (y-component)",
                        "m s-1", "m s-1", "", 1);
 
-  m_basal_frictional_heating.create(m_grid, "bfrict", WITHOUT_GHOSTS);
   m_basal_frictional_heating.set_attrs("diagnostic",
                                        "basal frictional heating",
                                        "W m-2", "mW m-2", "", 0);
@@ -213,8 +215,7 @@ SSB_taud::SSB_taud(const ShallowStressBalance *m)
  */
 IceModelVec::Ptr SSB_taud::compute_impl() const {
 
-  IceModelVec2V::Ptr result(new IceModelVec2V);
-  result->create(m_grid, "result", WITHOUT_GHOSTS);
+  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -285,8 +286,7 @@ SSB_taub::SSB_taub(const ShallowStressBalance *m)
 
 IceModelVec::Ptr SSB_taub::compute_impl() const {
 
-  IceModelVec2V::Ptr result(new IceModelVec2V);
-  result->create(m_grid, "result", WITHOUT_GHOSTS);
+  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
   result->metadata(1) = m_vars[1];
 

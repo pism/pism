@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -58,8 +58,8 @@ void AgeModelInputs::check() const {
 AgeModel::AgeModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance)
   : Component(grid),
     // FIXME: should be able to use width=1...
-    m_ice_age(m_grid, "age", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width")),
-    m_work(m_grid, "work_vector", WITHOUT_GHOSTS),
+    m_ice_age(m_grid, "age", WITH_GHOSTS, m_grid->z(), m_config->get_number("grid.max_stencil_width")),
+    m_work(m_grid, "work_vector", WITHOUT_GHOSTS, m_grid->z()),
     m_stress_balance(stress_balance) {
 
   m_ice_age.set_attrs("model_state", "age of ice",

@@ -496,10 +496,10 @@ Poisson3::Poisson3(IceGrid::ConstPtr grid, int Mz, int n_levels)
        {"units", "1"},
        {"positive", "up"}};
 
-    m_solution.reset(new IceModelVec3Custom(grid, "solution", "z_sigma", sigma, z_attrs));
+    m_solution.reset(new IceModelVec3(grid, "solution", "z_sigma", sigma, z_attrs));
     m_solution->set_attrs("diagnostic", "solution", "1", "1", "", 0);
 
-    m_exact.reset(new IceModelVec3Custom(grid, "exact", "z_sigma", sigma, z_attrs));
+    m_exact.reset(new IceModelVec3(grid, "exact", "z_sigma", sigma, z_attrs));
     m_exact->set_attrs("diagnostic", "exact", "1", "1", "", 0);
   }
 }
@@ -781,7 +781,7 @@ Poisson3::~Poisson3() {
   // empty
 }
 
-void Poisson3::exact_solution(IceModelVec3Custom &result) {
+void Poisson3::exact_solution(IceModelVec3 &result) {
   IceModelVec::AccessList list{&result};
 
   // Compute grid spacing from domain dimensions and the grid size
@@ -820,7 +820,7 @@ void Poisson3::exact_solution(IceModelVec3Custom &result) {
 }
 
 double Poisson3::error() const {
-  IceModelVec3Custom difference(m_grid, "difference", "z_sigma",
+  IceModelVec3 difference(m_grid, "difference", "z_sigma",
                                 m_exact->levels(), {});
 
   difference.copy_from(*m_exact);
@@ -861,11 +861,11 @@ void Poisson3::update(const Inputs &inputs, bool) {
   }
 }
 
-IceModelVec3Custom::Ptr Poisson3::solution() const {
+IceModelVec3::Ptr Poisson3::solution() const {
   return m_solution;
 }
 
-IceModelVec3Custom::Ptr Poisson3::exact() const {
+IceModelVec3::Ptr Poisson3::exact() const {
   return m_exact;
 }
 

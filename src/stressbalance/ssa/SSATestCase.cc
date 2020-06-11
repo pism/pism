@@ -34,28 +34,32 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
                          double Lx, double Ly,
                          GridRegistration registration,
                          Periodicity periodicity)
-  : m_com(ctx->com()), m_ctx(ctx), m_config(ctx->config()),
+  : m_com(ctx->com()),
+    m_ctx(ctx),
+    m_config(ctx->config()),
     m_grid(IceGrid::Shallow(m_ctx, Lx, Ly, 0.0, 0.0, Mx, My, registration, periodicity)),
     m_sys(ctx->unit_system()),
+    m_stencil_width(m_config->get_number("grid.max_stencil_width")),
+    m_tauc(m_grid, "tauc", WITH_GHOSTS, m_stencil_width),
+    m_melange_back_pressure(m_grid, "melange_back_pressure_fraction",
+                            WITH_GHOSTS, m_stencil_width),
+    m_ice_enthalpy(m_grid, "enthalpy", WITH_GHOSTS, m_grid->z(), m_stencil_width),
+    m_bc_values(m_grid, "_bc", WITH_GHOSTS, m_stencil_width), // u_bc and v_bc
+    m_bc_mask(m_grid, "bc_mask", WITH_GHOSTS, m_stencil_width),
     m_geometry(m_grid),
-    m_ssa(NULL) {
-
-  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
-
+    m_ssa(NULL)
+{
   // yield stress for basal till (plastic or pseudo-plastic model)
-  m_tauc.create(m_grid, "tauc", WITH_GHOSTS, WIDE_STENCIL);
   m_tauc.set_attrs("diagnostic",
                    "yield stress for basal till (plastic or pseudo-plastic model)",
                    "Pa", "Pa", "", 0);
 
   // enthalpy
-  m_ice_enthalpy.create(m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
   m_ice_enthalpy.set_attrs("model_state",
                            "ice enthalpy (includes sensible heat, latent heat, pressure)",
                            "J kg-1", "J kg-1", "", 0);
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
-  m_bc_values.create(m_grid, "_bc", WITH_GHOSTS, WIDE_STENCIL); // u_bc and v_bc
   m_bc_values.set_attrs("intent",
                         "X-component of the SSA velocity boundary conditions",
                         "m s-1", "m year-1", "", 0);
@@ -78,7 +82,6 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
   m_bc_values.set(fill_value);
 
   // Dirichlet B.C. mask
-  m_bc_mask.create(m_grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
   m_bc_mask.set_attrs("model_state",
                       "grounded_dragging_floating integer mask",
                       "", "", "", 0);
@@ -87,8 +90,6 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
   m_bc_mask.metadata().set_string("flag_meanings",
                                   "no_data ssa.dirichlet_bc_location");
 
-  m_melange_back_pressure.create(m_grid, "melange_back_pressure_fraction",
-                                 WITH_GHOSTS, WIDE_STENCIL);
   m_melange_back_pressure.set_attrs("boundary_condition",
                                     "melange back pressure fraction",
                                     "", "", "", 0);
@@ -335,8 +336,7 @@ void SSATestCase::write(const std::string &filename) {
   const IceModelVec2V &vel_ssa = m_ssa->velocity();
   vel_ssa.write(file);
 
-  IceModelVec2V exact;
-  exact.create(m_grid, "_exact", WITHOUT_GHOSTS);
+  IceModelVec2V exact(m_grid, "_exact", WITHOUT_GHOSTS);
   exact.set_attrs("diagnostic",
                   "X-component of the SSA exact solution",
                   "m s-1", "m year-1", "", 0);

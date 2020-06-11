@@ -35,25 +35,23 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g,
                                                    IPDesignVariableParameterization &tp)
   : SSAFEM(g),
     m_zeta(NULL),
+    m_dzeta_local(m_grid, "d_zeta_local", WITH_GHOSTS, 1),
+    m_tauc_copy(m_grid, "tauc", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width")),
     m_fixed_tauc_locations(NULL),
     m_tauc_param(tp),
+    m_du_global(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS),
+    m_du_local(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, 1),
     m_element_index(*m_grid),
     m_element(*m_grid, fem::Q1Quadrature4()),
-    m_rebuild_J_state(true) {
+    m_rebuild_J_state(true)
+{
 
   PetscErrorCode ierr;
-  int stencil_width = 1;
 
   m_velocity_shared.reset(new IceModelVec2V(m_grid, "dummy", WITHOUT_GHOSTS));
   m_velocity_shared->metadata(0) = m_velocity.metadata(0);
   m_velocity_shared->metadata(1) = m_velocity.metadata(1);
 
-  m_dzeta_local.create(m_grid, "d_zeta_local", WITH_GHOSTS, stencil_width);
-
-  m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencil_width);
-  m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencil_width);
-
-  m_tauc_copy.create(m_grid, "tauc", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width"));
   m_tauc_copy.set_attrs("diagnostic",
                         "yield stress for basal till (plastic or pseudo-plastic model)",
                         "Pa", "Pa", "", 0);

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -36,17 +36,16 @@ namespace surface {
 
 ///// "Force-to-thickness" mechanism
 ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
-  : SurfaceModel(g, input) {
+  : SurfaceModel(g, input),
+    m_target_thickness(m_grid, "thk", WITHOUT_GHOSTS),
+    m_ftt_mask(m_grid, "ftt_mask", WITHOUT_GHOSTS)
+{
 
   m_alpha                        = m_config->get_number("surface.force_to_thickness.alpha", "s-1");
   m_alpha_ice_free_factor        = m_config->get_number("surface.force_to_thickness.ice_free_alpha_factor");
   m_ice_free_thickness_threshold = m_config->get_number("surface.force_to_thickness.ice_free_thickness_threshold");
   m_start_time                   = m_config->get_number("surface.force_to_thickness.start_time", "seconds");
 
-  m_target_thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
-  // will set attributes in init()
-
-  m_ftt_mask.create(m_grid, "ftt_mask", WITHOUT_GHOSTS);
   m_ftt_mask.set_attrs("diagnostic",
                        "mask specifying where to apply the force-to-thickness mechanism",
                        "", "", "", 0); // no units and no standard name

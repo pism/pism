@@ -62,35 +62,36 @@ linear systems
   \f[ A x = b \f]
 where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
  */
-SSAFD::SSAFD(IceGrid::ConstPtr g)
-  : SSA(g) {
-  m_b.create(m_grid, "right_hand_side", WITHOUT_GHOSTS);
+SSAFD::SSAFD(IceGrid::ConstPtr grid)
+  : SSA(grid),
+    m_hardness(grid, "hardness", WITHOUT_GHOSTS),
+    m_nuH(grid, "nuH", WITH_GHOSTS),
+    m_nuH_old(grid, "nuH_old", WITH_GHOSTS),
+    m_work(grid, "work_vector", WITH_GHOSTS,
+           2, /* stencil width */
+           6  /* dof */),
+    m_b(grid, "right_hand_side", WITHOUT_GHOSTS),
+    m_velocity_old(grid, "velocity_old", WITH_GHOSTS)
+{
 
-  m_velocity_old.create(m_grid, "velocity_old", WITH_GHOSTS);
   m_velocity_old.set_attrs("internal",
                            "old SSA velocity field; used for re-trying with a different epsilon",
                            "m s-1", "m s-1", "", 0);
 
   auto units = pism::printf("Pa s%f", 1.0 / m_flow_law->exponent());
-  m_hardness.create(m_grid, "hardness", WITHOUT_GHOSTS);
+
   m_hardness.set_attrs("diagnostic",
                        "vertically-averaged ice hardness",
                        units, units,
                        "", 0);
 
-  m_nuH.create(m_grid, "nuH", WITH_GHOSTS);
   m_nuH.set_attrs("internal",
                   "ice thickness times effective viscosity",
                   "Pa s m", "Pa s m", "", 0);
 
-  m_nuH_old.create(m_grid, "nuH_old", WITH_GHOSTS);
   m_nuH_old.set_attrs("internal",
                       "ice thickness times effective viscosity (before an update)",
                       "Pa s m", "Pa s m", "", 0);
-
-  m_work.create(m_grid, "m_work", WITH_GHOSTS,
-                2, /* stencil width */
-                6  /* dof */);
   m_work.set_attrs("internal",
                    "temporary storage used to compute nuH",
                    "", "", "", 0);
@@ -1636,8 +1637,7 @@ void SSAFD::update_nuH_viewers() {
     return;
   }
 
-  IceModelVec2S tmp;
-  tmp.create(m_grid, "nuH", WITHOUT_GHOSTS);
+  IceModelVec2S tmp(m_grid, "nuH", WITHOUT_GHOSTS);
   tmp.set_attrs("temporary",
                 "log10 of (viscosity * thickness)",
                 "Pa s m", "Pa s m", "", 0);
@@ -1745,8 +1745,7 @@ SSAFD_nuH::SSAFD_nuH(const SSAFD *m)
 
 IceModelVec::Ptr SSAFD_nuH::compute_impl() const {
 
-  IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
-  result->create(m_grid, "nuH", WITH_GHOSTS);
+  IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "nuH", WITH_GHOSTS));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 

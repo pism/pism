@@ -762,10 +762,10 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_fa
        {"units", "1"},
        {"positive", "up"}};
 
-    m_u_sigma.reset(new IceModelVec3Custom(grid, "uvel_sigma", "z_sigma", sigma, z_attrs));
+    m_u_sigma.reset(new IceModelVec3(grid, "uvel_sigma", "z_sigma", sigma, z_attrs));
     m_u_sigma->set_attrs("diagnostic", "u velocity component on the sigma grid", "m s-1", "m s-1", "", 0);
 
-    m_v_sigma.reset(new IceModelVec3Custom(grid, "vvel_sigma", "z_sigma", sigma, z_attrs));
+    m_v_sigma.reset(new IceModelVec3(grid, "vvel_sigma", "z_sigma", sigma, z_attrs));
     m_v_sigma->set_attrs("diagnostic", "v velocity component on the sigma grid", "m s-1", "m s-1", "", 0);
   }
 
@@ -1147,8 +1147,8 @@ void Blatter::get_basal_velocity(IceModelVec2V &result) {
 }
 
 
-void Blatter::set_initial_guess(const IceModelVec3Custom &u_sigma,
-                                const IceModelVec3Custom &v_sigma) {
+void Blatter::set_initial_guess(const IceModelVec3 &u_sigma,
+                                const IceModelVec3 &v_sigma) {
   Vector2 ***x = nullptr;
   int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
@@ -1207,11 +1207,11 @@ void Blatter::compute_averaged_velocity(IceModelVec2V &result) {
 }
 
 
-IceModelVec3Custom::Ptr Blatter::velocity_u_sigma() const {
+IceModelVec3::Ptr Blatter::velocity_u_sigma() const {
   return m_u_sigma;
 }
 
-IceModelVec3Custom::Ptr Blatter::velocity_v_sigma() const {
+IceModelVec3::Ptr Blatter::velocity_v_sigma() const {
   return m_v_sigma;
 }
 

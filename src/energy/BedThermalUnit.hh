@@ -20,7 +20,7 @@
 #define _PISMBEDTHERMALUNIT_H_
 
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec3Custom.hh"
+#include "pism/util/iceModelVec.hh"
 
 #include "pism/util/Diagnostic.hh"
 

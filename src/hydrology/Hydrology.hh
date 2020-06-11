@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 PISM Authors
+// Copyright (C) 2012-2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #define _PISMHYDROLOGY_H_
 
 #include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/util/Component.hh"
 #include "pism/util/iceModelVec2T.hh"
 

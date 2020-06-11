@@ -870,8 +870,7 @@ def vertical_extrapolation_during_regridding_test():
     grid = PISM.IceGrid(ctx.ctx, params)
 
     # create an IceModelVec that uses this grid
-    v = PISM.IceModelVec3()
-    v.create(grid, "test", PISM.WITHOUT_GHOSTS)
+    v = PISM.IceModelVec3(grid, "test", PISM.WITHOUT_GHOSTS, grid.z())
     v.set(0.0)
 
     # set a column
@@ -890,8 +889,7 @@ def vertical_extrapolation_during_regridding_test():
     tall_grid = PISM.IceGrid(ctx.ctx, params)
 
     # create an IceModelVec that uses this grid
-    v_tall = PISM.IceModelVec3()
-    v_tall.create(tall_grid, "test", PISM.WITHOUT_GHOSTS)
+    v_tall = PISM.IceModelVec3(tall_grid, "test", PISM.WITHOUT_GHOSTS, tall_grid.z())
 
     # Try regridding without extrapolation. This should fail.
     try:
@@ -1158,9 +1156,9 @@ class AgeModel(TestCase):
         "Check if AgeModel runs"
         ice_thickness = PISM.model.createIceThicknessVec(self.grid)
 
-        u = PISM.IceModelVec3(self.grid, "u", PISM.WITHOUT_GHOSTS)
-        v = PISM.IceModelVec3(self.grid, "v", PISM.WITHOUT_GHOSTS)
-        w = PISM.IceModelVec3(self.grid, "w", PISM.WITHOUT_GHOSTS)
+        u = PISM.IceModelVec3(self.grid, "u", PISM.WITHOUT_GHOSTS, self.grid.z())
+        v = PISM.IceModelVec3(self.grid, "v", PISM.WITHOUT_GHOSTS, self.grid.z())
+        w = PISM.IceModelVec3(self.grid, "w", PISM.WITHOUT_GHOSTS, self.grid.z())
 
         ice_thickness.set(4000.0)
         u.set(0.0)

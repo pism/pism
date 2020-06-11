@@ -18,6 +18,7 @@
 
 #include "IP_L2NormFunctional.hh"
 #include "pism/util/IceGrid.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {

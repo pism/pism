@@ -129,20 +129,18 @@ void EnergyModelStats::sum(MPI_Comm com) {
 
 EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
                          stressbalance::StressBalance *stress_balance)
-  : Component(grid), m_stress_balance(stress_balance) {
+  : Component(grid),
+    m_ice_enthalpy(m_grid, "enthalpy", WITH_GHOSTS, m_grid->z(), m_config->get_number("grid.max_stencil_width")),
+    m_work(m_grid, "work_vector", WITHOUT_GHOSTS, m_grid->z()),
+    m_basal_melt_rate(m_grid, "basal_melt_rate_grounded", WITHOUT_GHOSTS),
+    m_stress_balance(stress_balance) {
 
-  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
+  // POSSIBLE standard name = land_ice_enthalpy
+  m_ice_enthalpy.set_attrs("model_state",
+                           "ice enthalpy (includes sensible heat, latent heat, pressure)",
+                           "J kg-1", "J kg-1", "", 0);
 
   {
-    m_ice_enthalpy.create(m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
-    // POSSIBLE standard name = land_ice_enthalpy
-    m_ice_enthalpy.set_attrs("model_state",
-                             "ice enthalpy (includes sensible heat, latent heat, pressure)",
-                             "J kg-1", "J kg-1", "", 0);
-  }
-
-  {
-    m_basal_melt_rate.create(m_grid, "basal_melt_rate_grounded", WITHOUT_GHOSTS);
     // ghosted to allow the "redundant" computation of tauc
     m_basal_melt_rate.set_attrs("model_state",
                                 "ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)",
@@ -153,12 +151,9 @@ EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
   }
 
   // a 3d work vector
-  {
-    m_work.create(m_grid, "work_vector", WITHOUT_GHOSTS);
-    m_work.set_attrs("internal",
-                     "usually new values of temperature or enthalpy during time step",
-                     "", "", "", 0);
-  }
+  m_work.set_attrs("internal",
+                   "usually new values of temperature or enthalpy during time step",
+                   "", "", "", 0);
 }
 
 void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int record) {
@@ -375,7 +370,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "enthalpy", WITHOUT_GHOSTS));
+    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "enthalpy", WITHOUT_GHOSTS, m_grid->z()));
     result->metadata(0) = m_vars[0];
 
     const IceModelVec3 &input = model->enthalpy();

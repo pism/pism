@@ -27,8 +27,10 @@ namespace pism {
 namespace bed {
 
 PointwiseIsostasy::PointwiseIsostasy(IceGrid::ConstPtr g)
-  : BedDef(g) {
-  m_load_last.create(m_grid, "load_last", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width"));
+  : BedDef(g),
+    m_load_last(m_grid, "load_last", WITHOUT_GHOSTS)
+{
+  // empty
 }
 
 PointwiseIsostasy::~PointwiseIsostasy() {
