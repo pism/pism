@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,6 +30,7 @@ class Vector2 {
 public:
   Vector2() : u(0), v(0) {}
   Vector2(double a, double b) : u(a), v(b) {}
+  Vector2(const Vector2 &other) : u(other.u), v(other.v) {}
 
   //! Magnitude squared.
   inline double magnitude_squared() const {
