@@ -37,7 +37,7 @@ recommended, but not strictly required:
 .. csv-table::
    :header: Optional Library, Comment
 
-   PROJ_,  version `\ge` 5.0 (used to compute longitude-latitude grid coordinates and cell bounds)
+   PROJ_,  version `\ge` 6.0 (used to compute longitude-latitude grid coordinates and cell bounds)
    PnetCDF_, Can be used for faster parallel I/O
    ParallelIO_, Can be used for faster parallel I/O
 
