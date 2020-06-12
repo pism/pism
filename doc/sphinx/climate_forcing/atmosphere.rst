@@ -17,13 +17,10 @@ Reading boundary conditions from a file
 
 .. note:: This is the default choice.
 
-Command-line options:
+This model is controlled by the following parameters with the prefix ``atmosphere.given.``.
 
-- :opt:`-atmosphere_given_file` prescribes an input file
-- :opt:`-atmosphere_given_period` (*years*) makes PISM interpret data in
-  ``-atmosphere_given_file`` as periodic. See section :ref:`sec-periodic-forcing`.
-- :opt:`-atmosphere_given_reference_year` sets the reference model year; see section
-  :ref:`sec-periodic-forcing`.
+.. pism-parameters::
+   :prefix: atmosphere.given.
 
 A file ``foo.nc`` used with ``-atmosphere given -atmosphere_given_file foo.nc`` should
 contain several records; the :var:`time` variable should describe what model time these
@@ -59,15 +56,20 @@ where `t` is the year fraction "since last July"; the summer peak of the cycle i
 :config:`atmosphere.fausto_air_temp.summer_peak_day`, which is set to day `196` by
 default (approximately July 15).
 
-Here `T_{\text{mean annual}}` (variable :var:`air_temp_mean_annual`) and
-`T_{\text{mean July}}` (variable :var:`air_temp_mean_july`) are read from a file
-selected using the :opt:`-atmosphere_yearly_cycle_file` command-line option. A
-time-independent precipitation field (variable :var:`precipitation`) is read from the same
-file.
+Here `T_{\text{mean annual}}` (variable :var:`air_temp_mean_annual`) and `T_{\text{mean
+July}}` (variable :var:`air_temp_mean_july`) are read from a file selected using the
+command-line option :opt:`-atmosphere_yearly_cycle_file`. A time-independent precipitation
+field (variable :var:`precipitation`) is read from the same file.
 
 Optionally a time-dependent scalar amplitude scaling `A(t)` can be used. Specify a
 file to read it from using the :opt:`-atmosphere_yearly_cycle_scaling_file` command-line
 option. Without this option `A(\mathrm{time}) \equiv 1`.
+
+This model is controlled by the following parameters with the prefix
+``atmosphere.yearly_cycle.``.
+
+.. pism-parameters::
+   :prefix: atmosphere.yearly_cycle.
 
 .. _sec-atmosphere-searise-greenland:
 
@@ -108,8 +110,7 @@ PIK
 
 This model component reads a time-independent precipitation field from an input file
 specified by :config:`atmosphere.pik.file` and computes near-surface air temperature using
-a parameterization selected using :config:`atmosphere.pik.parameterization` (command-line
-option :opt:`-atmosphere_pik`).
+a parameterization selected using :config:`atmosphere.pik.parameterization`.
 
 .. note::
 
@@ -395,58 +396,7 @@ model.
 
 The only spatially-variable input of this model is the surface elevation (`h` above)
 modeled by PISM. It is controlled by a number of configuration parameters. See parameters
-with the prefix ``atmosphere.orographic_precipitation``.
+with the prefix ``atmosphere.orographic_precipitation.`` listed below.
 
-.. list-table:: Parameters controlling orographic precipitation
-   :header-rows: 1
-   :widths: 1,2
-
-   * - Parameter
-     - Description
-
-   * - ``background_precip_pre``
-     - Background precipitation `P_{\text{pre}}` in :eq:`eq-orographic-post-processing`
-
-   * - ``background_precip_post``
-     - Background precipitation `P_{\text{post}}` in :eq:`eq-orographic-post-processing`
-
-   * - ``scale_factor``
-     - Scaling factor `S` in :eq:`eq-orographic-post-processing`
-
-   * - ``conversion_time``
-     - Conversion time of cloud water into hydrometeors `\tau_c`
-
-   * - ``fallout_time``
-     - Fallout time `\tau_f`
-
-   * - ``water_vapor_scale_height``
-     - Moist layer depth `H_w`
-
-   * - ``moist_stability_frequency``
-     - Moist stability frequency `N_m`
-
-   * - ``wind_speed``
-     - Wind speed
-
-   * - ``wind_direction``
-     - Wind direction. `0` corresponds to the wind from the north, `90` from the east, and
-       so on.
-
-   * - ``lapse_rate``
-     - Lapse rate `\gamma`. Note that here `\gamma < 0`.
-
-   * - ``moist_adiabatic_lapse_rate``
-     - Moist adiabatic lapse rate `\Gamma_m`. Note that here `\Gamma_m < 0`.
-
-   * - ``reference_density``
-     - Reference density `\rho_{S_{\text{ref}}}` (see equation A3 in :cite:`SmithBarstad2004`)
-
-   * - ``coriolis_latitude``
-     - Average latitude of the modeling domain used to include the influence of the
-       Coriolis force (see equation 6 in :cite:`SmithBarstadBonneau2005`)
-
-   * - ``truncate``
-     - If set, negative precipitation values are truncated as in
-       :eq:`eq-orographic-post-processing`, otherwise the post-processing formula is
-
-       `P = (P_{\text{pre}} + P_{\text{LT}}) \cdot S + P_{\text{post}}`.
+.. pism-parameters::
+   :prefix: atmosphere.orographic_precipitation.

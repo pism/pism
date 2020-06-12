@@ -308,35 +308,17 @@ in the till (see section :ref:`sec-subhydro`):
    N_{till} = \min\left\{P_o, N_0 \left(\frac{\delta P_o}{N_0}\right)^s \, 10^{(e_0/C_c) \left(1 - s\right).}\right\}
 
 Here `P_o` is the ice overburden pressure, which is determined entirely by the ice
-thickness and density, and the remaining parameters are set by options in
-:numref:`tab-effective-pressure`.
+thickness and density, and the remaining parameters are listed below (all of these have
+the prefix ``basal_yield_stress.mohr_coulomb.``).
+
+.. pism-parameters::
+   :prefix: basal_yield_stress.mohr_coulomb.
 
 .. note::
 
    While there is experimental support for the default values of `C_c`, `e_0`, and `N_0`,
    the value of `\delta` should be regarded as uncertain, important, and subject to
    parameter studies to assess its effect.
-
-.. list-table:: Parameters controlling how till effective pressure `N_{till}` in equation
-                :eq:`eq-mohrcoulomb` is determined. All these have prefix
-                ``basal_yield_stress.mohr_coulomb.``.
-   :name: tab-effective-pressure
-   :header-rows: 1
-
-   * - Parameter
-     - Description
-   * - :config:`till_reference_void_ratio`
-     - `e_0` in :eq:`eq-computeNtill`, dimensionless, with default value 0.69
-       :cite:`Tulaczyketal2000`
-   * - :config:`till_compressibility_coefficient`
-     - `C_c` in :eq:`eq-computeNtill`, dimensionless, with default value 0.12
-       :cite:`Tulaczyketal2000`
-   * - :config:`till_effective_fraction_overburden`
-     - `\delta` in :eq:`eq-computeNtill`, dimensionless, with default value 0.02
-       :cite:`BuelervanPelt2015`
-   * - :config:`till_reference_effective_pressure`
-     - `N_0` in :eq:`eq-computeNtill`, in Pa, with default value 1000.0
-       :cite:`Tulaczyketal2000`
 
 .. _sec-min-effective-pressure:
 
@@ -352,11 +334,10 @@ The effective pressure `N_{till}` above satisfies (see equation 20 in
    \delta P_o \le N_{till} \le P_o.
 
 In other words, `\delta` controls the lower bound of the effective pressure. In addition
-to setting it using a configuration parameter (see :numref:`tab-effective-pressure`) one
-can use a space- and time-dependent field. Set
-:config:`basal_yield_stress.mohr_coulomb.delta.file` to the name of the file containing
-the variable :var:`mohr_coulomb_delta` (dimensionless, `units=1`). Just like when using
-other 2D time-dependent forcing, set
+to setting it using a configuration parameter one can use a space- and time-dependent
+field. Set :config:`basal_yield_stress.mohr_coulomb.delta.file` to the name of the file
+containing the variable :var:`mohr_coulomb_delta` (dimensionless, `units=1`). Just like
+when using other 2D time-dependent forcing, set
 :config:`basal_yield_stress.mohr_coulomb.delta.period` and
 :config:`basal_yield_stress.mohr_coulomb.delta.reference_year` to use periodic data. (See
 :ref:`sec-periodic-forcing` for details.)

@@ -19,9 +19,6 @@
 .. role:: opt(literal)
    :class: option
 
-.. role:: config(literal)
-   :class: config
-
 .. substitutions
 
 .. |petsc-min-version| replace:: 3.5

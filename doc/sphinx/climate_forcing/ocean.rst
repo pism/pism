@@ -175,27 +175,10 @@ identified, standard values are used (**Warning:** this could strongly influence
 rates computed by PICO). In regions where the PICO geometry cannot be identified,
 :cite:`BeckmannGoosse2003` is applied.
 
-PICO has one command-line option and 7 configuration parameters:
+PICO uses the following configuration parameters (prefix: ``ocean.pico.``):
 
-- :opt:`-ocean_pico_file`: specifies the NetCDF file containing potential temperature
-  (:var:`theta_ocean`), salinity (:var:`salinity_ocean`) and ocean basins (:var:`basins`).
-- :config:`ocean.pico.heat_exchange_coefficent` sets the coefficient for turbulent heat
-  exchange from the ambient ocean across the boundary layer beneath the ice shelf base.
-- :config:`ocean.pico.overturning_coefficent`: sets the coefficient in the overturning
-  parameterization.
-- :config:`ocean.pico.number_of_boxes`: For each ice shelf the number of ocean boxes is
-  determined by interpolating between 1 and number_of_boxes depending on its size and
-  geometry such that larger ice shelves are resolved with more boxes; a value of 5 is
-  suitable for the Antarctic setup.
-- :config:`ocean.pico.number_of_basins`
-- :config:`ocean.pico.exclude_ice_rises`: If set to true, grounding lines of ice rises are
-  excluded in the geometrical routines that determine the ocean boxes; using this option
-  is recommended.
-- :config:`ocean.pico.continental_shelf_depth`: specifies the depth up to which oceanic
-  input temperatures and salinities are averaged over the continental shelf areas in front
-  of the ice shelf cavities.
-- :config:`ocean.pico.maximum_ice_rise_area`: specifies an area threshold that separates
-  ice rises from continental regions.
+.. pism-parameters::
+   :prefix: ocean.pico.
 
 .. _sec-ocean-delta-sl:
 

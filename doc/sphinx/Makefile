@@ -1,6 +1,6 @@
 # Run "make all" to update lists of diagnostics and configuration parameters.
 
-all: update_diagnostics update_parameters installation/code/install_libraries.sh
+all: update_diagnostics installation/code/install_libraries.sh
 
 INTERMEDIATE=diag.json diag-2.json dummy.nc pism_config.nc surface_input.nc
 
@@ -69,9 +69,6 @@ update_diagnostics: diag.json diag-2.json
 
 pism_config.nc: ../../src/pism_config.cdl
 	ncgen -o $@ $^
-
-update_parameters: pism_config.nc
-	python ./list_parameters.py $^ > manual/parameters/parameter-list.txt
 
 installation/code/install_libraries.sh: installation/debian-packages.csv Makefile
 	/bin/echo -n "sudo apt-get install -y " > $@

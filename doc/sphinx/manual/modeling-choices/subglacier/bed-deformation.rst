@@ -5,8 +5,8 @@
 Earth deformation models
 ------------------------
 
-The option :opt:`-bed_def` ``[iso, lc]`` turns one of the two available bed deformation
-models.
+The option :opt:`-bed_def` ``[iso, lc]`` (flag :config:`bed_deformation.model`) turns one
+of the two available bed deformation models.
 
 .. _sec-bed-def-iso:
 
@@ -24,7 +24,7 @@ multiple of the increase in ice thickness from the starting time:
 
 Here `f` is the density of ice divided by the density of the mantle, so its value is
 determined by the values of :config:`bed_deformation.mantle_density` and
-:config:`constants.ice.density` in the configuration file; see :ref:`sec-pism-defaults`.
+:config:`constants.ice.density` in the configuration file.
 For an example and verification, see Test H in :ref:`sec-verif`.
 
 .. _sec-bed-def-lc:
@@ -45,36 +45,12 @@ point observations and/or paleo ice load modeling, and if that uplift field is p
 NetCDF variable with standard name ``tendency_of_bedrock_altitude`` in the input file,
 then this model will initialize so that it starts with the given uplift rate.
 
-Parameters controlling the Lingle-Clark model are listed below.
+All parameters (except for :config:`constants.ice.density`) controlling the Lingle-Clark
+model are listed below (they all have the prefix ``bed.deformation.``).
 
-.. list-table:: Parameters controlling the Lingle-Clark bed deformation model
-   :header-rows: 1
-   :Widths: 2,1
-
-   * - Parameter
-     - Description
-
-   * - :config:`bed_deformation.lc.elastic_model`
-     - if "on" (the default), include the elastic part of the model
-
-   * - :config:`bed_deformation.lc.update_interval`
-     - time interval (years) between updates
-
-   * - :config:`bed_deformation.lc.grid_size_factor`
-     - ratio of the size of the grid used by this model to the size of PISM's physical
-       computational grid
-
-   * - :config:`constants.ice.density`
-     - density of ice (used to compute ice-equivalent load thickness)
-
-   * - :config:`bed_deformation.mantle_density`
-     - mantle density
-
-   * - :config:`bed_deformation.mantle_viscosity`
-     - mantle viscosity
-
-   * - :config:`bed_deformation.lithosphere_flexural_rigidity`
-     - flexural rigidity of the lithosphere
+.. pism-parameters::
+   :prefix: bed_deformation.
+   :exclude: bed_deformation.(model|bed_)
 
 Here are minimal example runs to compare these models:
 
@@ -88,12 +64,14 @@ Compare the :var:`topg`, :var:`usurf`, and :var:`dbdt` variables in the resultin
 files. See also the comparison done in :cite:`BLKfastearth`.
 
 To include "measured" uplift rates during initialization, use the option
-:opt:`-uplift_file` to specify the name of the file containing the field :var:`dbdt` (CF
-standard name: ``tendency_of_bedrock_altitude``).
+:opt:`-uplift_file` (parameter :config:`bed_deformation.bed_uplift_file`) to specify the
+name of the file containing the field :var:`dbdt` (CF standard name:
+``tendency_of_bedrock_altitude``).
 
-Use the :opt:`-topg_delta_file` option to apply a correction to the bed topography field
-read in from an input file. This sets the bed topography `b` at the beginning of a run as
-follows:
+Use the option :opt:`-topg_delta_file` (parameter
+:config:`bed_deformation.bed_topography_delta_file`) to apply a correction to the bed
+topography field read in from an input file. This sets the bed topography `b` at the
+beginning of a run as follows:
 
 .. math::
    :label: eq-bedcorrection
