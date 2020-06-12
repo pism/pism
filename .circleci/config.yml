@@ -35,12 +35,11 @@ jobs:
           # we should build and test the code that uses them. The same applies to ICEBIN.
           #
           # CMAKE_FIND_ROOT_PATH points to HDF5 and NetCDF with support for parallel I/O.
-          # (Parallel HDF5 and NetCDF from Debian did not work.)
           command: >-
             cmake -B build -S .
             -DCMAKE_BUILD_TYPE=Debug
             -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf;$HOME/local/pnetcdf;$HOME/local/parallelio"
-            -DCMAKE_CXX_FLAGS="-Wno-cast-function-type -Werror -Wno-error=suggest-attribute=noreturn"
+            -DCMAKE_CXX_FLAGS="-Wno-cast-function-type -Werror -Wno-error=suggest-attribute=noreturn -Wno-error=undef"
             -DPism_USE_PROJ=Yes
             -DPism_USE_PARALLEL_NETCDF4=Yes
             -DPism_USE_PNETCDF=Yes
@@ -84,7 +83,7 @@ jobs:
             cmake -B build -S .
             -DCMAKE_BUILD_TYPE=Debug
             -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf"
-            -DCMAKE_CXX_FLAGS="-Wno-cast-function-type -Werror -Wno-error=suggest-attribute=noreturn"
+            -DCMAKE_CXX_FLAGS="-Wno-cast-function-type -Werror -Wno-error=suggest-attribute=noreturn -Wno-error=undef"
       - run:
           name: Build PISM using GCC
           command: make --no-print-directory -C build -j4 all
