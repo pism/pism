@@ -6,6 +6,10 @@ if (Pism_DEBUG)
   add_test(NAME "Config:metadata_structure"
     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config_test.py pism_config.nc
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+
+  add_test(NAME "Config:parameters_are_sorted"
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/regression/sorted_parameters.sh ${PROJECT_SOURCE_DIR}/src/pism_config.cdl
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 endif ()
 
 if (Pism_BUILD_PYTHON_BINDINGS AND NOSE_EXECUTABLE)
