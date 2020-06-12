@@ -63,10 +63,40 @@ netcdf pism_config {
     pism_config:atmosphere.delta_T.reference_year_type = "integer";
     pism_config:atmosphere.delta_T.reference_year_units = "years";
 
-    pism_config:atmosphere.models = "given";
-    pism_config:atmosphere.models_doc = "Comma-separated list of atmosphere melt models and modifiers.";
-    pism_config:atmosphere.models_type = "string";
-    pism_config:atmosphere.models_option = "atmosphere";
+    pism_config:atmosphere.elevation_change.file = "";
+    pism_config:atmosphere.elevation_change.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
+    pism_config:atmosphere.elevation_change.file_option = "atmosphere_lapse_rate_file";
+    pism_config:atmosphere.elevation_change.file_type = "string";
+
+    pism_config:atmosphere.elevation_change.period = 0;
+    pism_config:atmosphere.elevation_change.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:atmosphere.elevation_change.period_option = "atmosphere_lapse_rate_period";
+    pism_config:atmosphere.elevation_change.period_type = "integer";
+    pism_config:atmosphere.elevation_change.period_units = "years";
+
+    pism_config:atmosphere.elevation_change.precipitation.lapse_rate = 0.0;
+    pism_config:atmosphere.elevation_change.precipitation.lapse_rate_doc = "Elevation lapse rate for the surface mass balance";
+    pism_config:atmosphere.elevation_change.precipitation.lapse_rate_option = "precip_lapse_rate";
+    pism_config:atmosphere.elevation_change.precipitation.lapse_rate_type = "number";
+    pism_config:atmosphere.elevation_change.precipitation.lapse_rate_units = "(kg m-2 / year) / km";
+
+    pism_config:atmosphere.elevation_change.precipitation.method = "shift";
+    pism_config:atmosphere.elevation_change.precipitation.method_choices = "scale,shift";
+    pism_config:atmosphere.elevation_change.precipitation.method_doc = "Choose the precipitation adjustment method. ``scale``: use temperature-change-dependent scaling factor. ``shift``: use the precipitation lapse rate.";
+    pism_config:atmosphere.elevation_change.precipitation.method_option = "precip_adjustment";
+    pism_config:atmosphere.elevation_change.precipitation.method_type = "keyword";
+
+    pism_config:atmosphere.elevation_change.reference_year = 0;
+    pism_config:atmosphere.elevation_change.reference_year_doc = "Reference year to use when :config:`atmosphere.elevation_change.period` is active.";
+    pism_config:atmosphere.elevation_change.reference_year_option = "atmosphere_lapse_rate_reference_year";
+    pism_config:atmosphere.elevation_change.reference_year_type = "integer";
+    pism_config:atmosphere.elevation_change.reference_year_units = "years";
+
+    pism_config:atmosphere.elevation_change.temperature_lapse_rate = 0.0;
+    pism_config:atmosphere.elevation_change.temperature_lapse_rate_doc = "Elevation lapse rate for the surface temperature";
+    pism_config:atmosphere.elevation_change.temperature_lapse_rate_option = "temp_lapse_rate";
+    pism_config:atmosphere.elevation_change.temperature_lapse_rate_type = "number";
+    pism_config:atmosphere.elevation_change.temperature_lapse_rate_units = "Kelvin / km";
 
     pism_config:atmosphere.fausto_air_temp.c_ma = -0.7189;
     pism_config:atmosphere.fausto_air_temp.c_ma_doc = "latitude-dependence coefficient for formula (1) in :cite:`Faustoetal2009`";
@@ -147,40 +177,10 @@ netcdf pism_config {
     pism_config:atmosphere.given.reference_year_type = "integer";
     pism_config:atmosphere.given.reference_year_units = "years";
 
-    pism_config:atmosphere.elevation_change.file = "";
-    pism_config:atmosphere.elevation_change.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
-    pism_config:atmosphere.elevation_change.file_option = "atmosphere_lapse_rate_file";
-    pism_config:atmosphere.elevation_change.file_type = "string";
-
-    pism_config:atmosphere.elevation_change.period = 0;
-    pism_config:atmosphere.elevation_change.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:atmosphere.elevation_change.period_option = "atmosphere_lapse_rate_period";
-    pism_config:atmosphere.elevation_change.period_type = "integer";
-    pism_config:atmosphere.elevation_change.period_units = "years";
-
-    pism_config:atmosphere.elevation_change.precipitation.lapse_rate = 0.0;
-    pism_config:atmosphere.elevation_change.precipitation.lapse_rate_doc = "Elevation lapse rate for the surface mass balance";
-    pism_config:atmosphere.elevation_change.precipitation.lapse_rate_option = "precip_lapse_rate";
-    pism_config:atmosphere.elevation_change.precipitation.lapse_rate_type = "number";
-    pism_config:atmosphere.elevation_change.precipitation.lapse_rate_units = "(kg m-2 / year) / km";
-
-    pism_config:atmosphere.elevation_change.precipitation.method = "shift";
-    pism_config:atmosphere.elevation_change.precipitation.method_doc = "Choose the precipitation adjustment method. ``scale``: use temperature-change-dependent scaling factor. ``shift``: use the precipitation lapse rate.";
-    pism_config:atmosphere.elevation_change.precipitation.method_option = "precip_adjustment";
-    pism_config:atmosphere.elevation_change.precipitation.method_type = "keyword";
-    pism_config:atmosphere.elevation_change.precipitation.method_choices = "scale,shift";
-
-    pism_config:atmosphere.elevation_change.reference_year = 0;
-    pism_config:atmosphere.elevation_change.reference_year_doc = "Reference year to use when :config:`atmosphere.elevation_change.period` is active.";
-    pism_config:atmosphere.elevation_change.reference_year_option = "atmosphere_lapse_rate_reference_year";
-    pism_config:atmosphere.elevation_change.reference_year_type = "integer";
-    pism_config:atmosphere.elevation_change.reference_year_units = "years";
-
-    pism_config:atmosphere.elevation_change.temperature_lapse_rate = 0.0;
-    pism_config:atmosphere.elevation_change.temperature_lapse_rate_doc = "Elevation lapse rate for the surface temperature";
-    pism_config:atmosphere.elevation_change.temperature_lapse_rate_option = "temp_lapse_rate";
-    pism_config:atmosphere.elevation_change.temperature_lapse_rate_type = "number";
-    pism_config:atmosphere.elevation_change.temperature_lapse_rate_units = "Kelvin / km";
+    pism_config:atmosphere.models = "given";
+    pism_config:atmosphere.models_doc = "Comma-separated list of atmosphere melt models and modifiers.";
+    pism_config:atmosphere.models_option = "atmosphere";
+    pism_config:atmosphere.models_type = "string";
 
     pism_config:atmosphere.one_station.file = "";
     pism_config:atmosphere.one_station.file_doc = "Specifies a file containing scalar time-series ``precipitation`` and ``air_temp``.";
@@ -275,6 +275,22 @@ netcdf pism_config {
     pism_config:atmosphere.orographic_precipitation.wind_speed_type = "number";
     pism_config:atmosphere.orographic_precipitation.wind_speed_units = "m/s";
 
+    pism_config:atmosphere.pik.file = "";
+    pism_config:atmosphere.pik.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
+    pism_config:atmosphere.pik.file_option = "atmosphere_pik_file";
+    pism_config:atmosphere.pik.file_type = "string";
+
+    pism_config:atmosphere.pik.parameterization = "martin";
+    pism_config:atmosphere.pik.parameterization_choices = "martin,huybrechts_dewolde,martin_huybrechts_dewolde,era_interim,era_interim_sin,era_interim_lon";
+    pism_config:atmosphere.pik.parameterization_doc = "Selects parameterizations of mean annual and mean summer near-surface air temperatures.";
+    pism_config:atmosphere.pik.parameterization_option = "atmosphere_pik";
+    pism_config:atmosphere.pik.parameterization_type = "keyword";
+
+    pism_config:atmosphere.precip_exponential_factor_for_temperature = 0.07041666667;
+    pism_config:atmosphere.precip_exponential_factor_for_temperature_doc = "= 0.169/2.4; in SeaRISE-Greenland formula for precipitation correction using air temperature offsets relative to present; a 7.3\% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`";
+    pism_config:atmosphere.precip_exponential_factor_for_temperature_type = "number";
+    pism_config:atmosphere.precip_exponential_factor_for_temperature_units = "Kelvin-1";
+
     pism_config:atmosphere.precip_scaling.file = "";
     pism_config:atmosphere.precip_scaling.file_doc = "Name of the file containing temperature offsets to use for a precipitation correction.";
     pism_config:atmosphere.precip_scaling.file_option = "atmosphere_precip_scaling_file";
@@ -291,22 +307,6 @@ netcdf pism_config {
     pism_config:atmosphere.precip_scaling.reference_year_option = "atmosphere_precip_scaling_reference_year";
     pism_config:atmosphere.precip_scaling.reference_year_type = "integer";
     pism_config:atmosphere.precip_scaling.reference_year_units = "years";
-
-    pism_config:atmosphere.pik.file = "";
-    pism_config:atmosphere.pik.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
-    pism_config:atmosphere.pik.file_option = "atmosphere_pik_file";
-    pism_config:atmosphere.pik.file_type = "string";
-
-    pism_config:atmosphere.pik.parameterization = "martin";
-    pism_config:atmosphere.pik.parameterization_choices = "martin,huybrechts_dewolde,martin_huybrechts_dewolde,era_interim,era_interim_sin,era_interim_lon";
-    pism_config:atmosphere.pik.parameterization_doc = "Selects parameterizations of mean annual and mean summer near-surface air temperatures.";
-    pism_config:atmosphere.pik.parameterization_option = "atmosphere_pik";
-    pism_config:atmosphere.pik.parameterization_type = "keyword";
-
-    pism_config:atmosphere.precip_exponential_factor_for_temperature = 0.07041666667;
-    pism_config:atmosphere.precip_exponential_factor_for_temperature_doc = "= 0.169/2.4; in SeaRISE-Greenland formula for precipitation correction using air temperature offsets relative to present; a 7.3\% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`";
-    pism_config:atmosphere.precip_exponential_factor_for_temperature_type = "number";
-    pism_config:atmosphere.precip_exponential_factor_for_temperature_units = "Kelvin-1";
 
     pism_config:atmosphere.searise_greenland.file = "";
     pism_config:atmosphere.searise_greenland.file_doc = "Name of the file containing a precipitation field.";
@@ -405,20 +405,15 @@ netcdf pism_config {
     pism_config:basal_yield_stress.model_option = "yield_stress";
     pism_config:basal_yield_stress.model_type = "keyword";
 
-    pism_config:basal_yield_stress.mohr_coulomb.tauc_to_phi.file = "";
-    pism_config:basal_yield_stress.mohr_coulomb.tauc_to_phi.file_doc = "File containing the basal yield stress field that should be used to recover the till friction angle distribution.";
-    pism_config:basal_yield_stress.mohr_coulomb.tauc_to_phi.file_option = "tauc_to_phi";
-    pism_config:basal_yield_stress.mohr_coulomb.tauc_to_phi.file_type = "string";
-
     pism_config:basal_yield_stress.mohr_coulomb.delta.file = "";
     pism_config:basal_yield_stress.mohr_coulomb.delta.file_doc = "Name of the file containing space- and time-dependent variable ``mohr_coulomb_delta`` to use instead of :config:`basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden`.";
-    pism_config:basal_yield_stress.mohr_coulomb.delta.file_type = "string";
     pism_config:basal_yield_stress.mohr_coulomb.delta.file_option = "mohr_coulomb_delta_file";
+    pism_config:basal_yield_stress.mohr_coulomb.delta.file_type = "string";
 
     pism_config:basal_yield_stress.mohr_coulomb.delta.period = 0;
     pism_config:basal_yield_stress.mohr_coulomb.delta.period_doc = "Length of the period. Set to zero to disable.";
-    pism_config:basal_yield_stress.mohr_coulomb.delta.period_type = "integer";
     pism_config:basal_yield_stress.mohr_coulomb.delta.period_option = "mohr_coulomb_delta_period";
+    pism_config:basal_yield_stress.mohr_coulomb.delta.period_type = "integer";
     pism_config:basal_yield_stress.mohr_coulomb.delta.period_units = "years";
 
     pism_config:basal_yield_stress.mohr_coulomb.delta.reference_year = 0;
@@ -426,6 +421,11 @@ netcdf pism_config {
     pism_config:basal_yield_stress.mohr_coulomb.delta.reference_year_option = "mohr_coulomb_delta_reference_year";
     pism_config:basal_yield_stress.mohr_coulomb.delta.reference_year_type = "integer";
     pism_config:basal_yield_stress.mohr_coulomb.delta.reference_year_units = "years";
+
+    pism_config:basal_yield_stress.mohr_coulomb.tauc_to_phi.file = "";
+    pism_config:basal_yield_stress.mohr_coulomb.tauc_to_phi.file_doc = "File containing the basal yield stress field that should be used to recover the till friction angle distribution.";
+    pism_config:basal_yield_stress.mohr_coulomb.tauc_to_phi.file_option = "tauc_to_phi";
+    pism_config:basal_yield_stress.mohr_coulomb.tauc_to_phi.file_type = "string";
 
     pism_config:basal_yield_stress.mohr_coulomb.till_cohesion = 0.0;
     pism_config:basal_yield_stress.mohr_coulomb.till_cohesion_doc = "cohesion of till; = `c_0` in most references; note Schoof uses zero but Paterson pp 168--169 gives range 0--40 kPa; but Paterson notes that \"... all the pairs `c_0` and `\\phi` in the table would give a yield stress for Ice Stream B that exceeds the basal shear stress there...\"";
@@ -600,6 +600,16 @@ netcdf pism_config {
     pism_config:calving.eigen_calving.K_type = "number";
     pism_config:calving.eigen_calving.K_units = "meter second";
 
+    pism_config:calving.float_kill.calve_near_grounding_line = "yes";
+    pism_config:calving.float_kill.calve_near_grounding_line_doc = "Calve floating ice near the grounding line.";
+    pism_config:calving.float_kill.calve_near_grounding_line_option = "float_kill_calve_near_grounding_line";
+    pism_config:calving.float_kill.calve_near_grounding_line_type = "flag";
+
+    pism_config:calving.float_kill.margin_only = "no";
+    pism_config:calving.float_kill.margin_only_doc = "Apply float_kill at ice margin cells only.";
+    pism_config:calving.float_kill.margin_only_option = "float_kill_margin_only";
+    pism_config:calving.float_kill.margin_only_type = "flag";
+
     pism_config:calving.hayhurst_calving.B_tilde = 65.0;
     pism_config:calving.hayhurst_calving.B_tilde_doc = "Effective damage rate :cite:`Mercenier2018`";
     pism_config:calving.hayhurst_calving.B_tilde_type = "number";
@@ -614,16 +624,6 @@ netcdf pism_config {
     pism_config:calving.hayhurst_calving.sigma_threshold_doc = "Damage threshold stress :cite:`Mercenier2018`";
     pism_config:calving.hayhurst_calving.sigma_threshold_type = "number";
     pism_config:calving.hayhurst_calving.sigma_threshold_units = "MPa";
-
-    pism_config:calving.float_kill.margin_only = "no";
-    pism_config:calving.float_kill.margin_only_doc = "Apply float_kill at ice margin cells only.";
-    pism_config:calving.float_kill.margin_only_option = "float_kill_margin_only";
-    pism_config:calving.float_kill.margin_only_type = "flag";
-
-    pism_config:calving.float_kill.calve_near_grounding_line = "yes";
-    pism_config:calving.float_kill.calve_near_grounding_line_doc = "Calve floating ice near the grounding line.";
-    pism_config:calving.float_kill.calve_near_grounding_line_option = "float_kill_calve_near_grounding_line";
-    pism_config:calving.float_kill.calve_near_grounding_line_type = "flag";
 
     pism_config:calving.methods = "";
     pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of ``eigen_calving``, ``float_kill``, ``thickness_calving``";
@@ -641,16 +641,6 @@ netcdf pism_config {
     pism_config:calving.thickness_calving.threshold_file_option = "thickness_calving_threshold_file";
     pism_config:calving.thickness_calving.threshold_file_type = "string";
 
-    pism_config:calving.vonmises_calving.use_custom_flow_law = "no";
-    pism_config:calving.vonmises_calving.use_custom_flow_law_doc = "Use custom flow law in the von Mises stress computation";
-    pism_config:calving.vonmises_calving.use_custom_flow_law_option = "vonmises_calving_use_custom_flow_law";
-    pism_config:calving.vonmises_calving.use_custom_flow_law_type = "flag";
-
-    pism_config:calving.vonmises_calving.flow_law = "gpbld";
-    pism_config:calving.vonmises_calving.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
-    pism_config:calving.vonmises_calving.flow_law_doc = "The custom flow law for the von Mises stress computation";
-    pism_config:calving.vonmises_calving.flow_law_type = "keyword";
-
     pism_config:calving.vonmises_calving.Glen_exponent = 3.0;
     pism_config:calving.vonmises_calving.Glen_exponent_doc = "Glen exponent in ice flow law for von Mises calving";
     pism_config:calving.vonmises_calving.Glen_exponent_option = "vonmises_calving_n";
@@ -667,6 +657,11 @@ netcdf pism_config {
     pism_config:calving.vonmises_calving.enhancement_factor_interglacial_type = "number";
     pism_config:calving.vonmises_calving.enhancement_factor_interglacial_units = "1";
 
+    pism_config:calving.vonmises_calving.flow_law = "gpbld";
+    pism_config:calving.vonmises_calving.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
+    pism_config:calving.vonmises_calving.flow_law_doc = "The custom flow law for the von Mises stress computation";
+    pism_config:calving.vonmises_calving.flow_law_type = "keyword";
+
     pism_config:calving.vonmises_calving.sigma_max = 1.0e6;
     pism_config:calving.vonmises_calving.sigma_max_doc = "Set maximum tensile stress.  Note references :cite:`Morlighem2016` use 1.0e6 Pa.";
     pism_config:calving.vonmises_calving.sigma_max_option = "vonmises_calving_calving_sigma_max";
@@ -678,15 +673,10 @@ netcdf pism_config {
     pism_config:calving.vonmises_calving.threshold_file_option = "vonmises_calving_threshold_file";
     pism_config:calving.vonmises_calving.threshold_file_type = "string";
 
-    pism_config:input.forcing.buffer_size = 60;
-    pism_config:input.forcing.buffer_size_doc = "number of 2D climate forcing records to keep in memory; = 5 years of monthly records";
-    pism_config:input.forcing.buffer_size_type = "integer";
-    pism_config:input.forcing.buffer_size_units = "count";
-
-    pism_config:input.forcing.evaluations_per_year = 52;
-    pism_config:input.forcing.evaluations_per_year_doc = "length of the time-series used to compute temporal averages of forcing data (such as mean annual temperature)";
-    pism_config:input.forcing.evaluations_per_year_type = "integer";
-    pism_config:input.forcing.evaluations_per_year_units = "count";
+    pism_config:calving.vonmises_calving.use_custom_flow_law = "no";
+    pism_config:calving.vonmises_calving.use_custom_flow_law_doc = "Use custom flow law in the von Mises stress computation";
+    pism_config:calving.vonmises_calving.use_custom_flow_law_option = "vonmises_calving_use_custom_flow_law";
+    pism_config:calving.vonmises_calving.use_custom_flow_law_type = "flag";
 
     pism_config:constants.fresh_water.density = 1000.0;
     pism_config:constants.fresh_water.density_doc = "density of fresh water";
@@ -1010,31 +1000,21 @@ netcdf pism_config {
     pism_config:fracture_density.softening_lower_limit_type = "number";
     pism_config:fracture_density.softening_lower_limit_units = "1";
 
-    pism_config:frontal_melt.models = "";
-    pism_config:frontal_melt.models_doc = "Comma-separated list of frontal melt models and modifiers. (Leave empty to disable.)";
-    pism_config:frontal_melt.models_type = "string";
-    pism_config:frontal_melt.models_option = "frontal_melt";
-
-    pism_config:frontal_melt.include_floating_ice = "no";
-    pism_config:frontal_melt.include_floating_ice_doc = "Apply frontal melt to all grid icy cells next to ocean cells";
-    pism_config:frontal_melt.inlude_floating_ice_option = "frontal_melt_everywhere";
-    pism_config:frontal_melt.include_floating_ice_type = "flag";
-
     pism_config:frontal_melt.constant.melt_rate = 1.0;
-    pism_config:frontal_melt.constant.melt_rate_units = "m / day";
     pism_config:frontal_melt.constant.melt_rate_doc = "default melt rate used by the ``constant`` frontal_melt model";
     pism_config:frontal_melt.constant.melt_rate_option = "frontal_melt_rate";
     pism_config:frontal_melt.constant.melt_rate_type = "number";
+    pism_config:frontal_melt.constant.melt_rate_units = "m / day";
 
     pism_config:frontal_melt.discharge_given.file = "";
     pism_config:frontal_melt.discharge_given.file_doc = "Name of the file containing climate forcing fields.";
-    pism_config:frontal_melt.discharge_given.file_type = "string";
     pism_config:frontal_melt.discharge_given.file_option = "frontal_melt_discharge_given_file";
+    pism_config:frontal_melt.discharge_given.file_type = "string";
 
     pism_config:frontal_melt.discharge_given.period = 0;
     pism_config:frontal_melt.discharge_given.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:frontal_melt.discharge_given.period_type = "integer";
     pism_config:frontal_melt.discharge_given.period_option = "frontal_melt_discharge_given_period";
+    pism_config:frontal_melt.discharge_given.period_type = "integer";
     pism_config:frontal_melt.discharge_given.period_units = "years";
 
     pism_config:frontal_melt.discharge_given.reference_year = 0;
@@ -1045,13 +1025,13 @@ netcdf pism_config {
 
     pism_config:frontal_melt.given.file = "";
     pism_config:frontal_melt.given.file_doc = "Name of the file containing climate forcing fields.";
-    pism_config:frontal_melt.given.file_type = "string";
     pism_config:frontal_melt.given.file_option = "frontal_melt_given_file";
+    pism_config:frontal_melt.given.file_type = "string";
 
     pism_config:frontal_melt.given.period = 0;
     pism_config:frontal_melt.given.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:frontal_melt.given.period_type = "integer";
     pism_config:frontal_melt.given.period_option = "frontal_melt_given_period";
+    pism_config:frontal_melt.given.period_type = "integer";
     pism_config:frontal_melt.given.period_units = "years";
 
     pism_config:frontal_melt.given.reference_year = 0;
@@ -1059,6 +1039,20 @@ netcdf pism_config {
     pism_config:frontal_melt.given.reference_year_option = "frontal_melt_given_reference_year";
     pism_config:frontal_melt.given.reference_year_type = "integer";
     pism_config:frontal_melt.given.reference_year_units = "years";
+
+    pism_config:frontal_melt.include_floating_ice = "no";
+    pism_config:frontal_melt.include_floating_ice_doc = "Apply frontal melt to all grid icy cells next to ocean cells";
+    pism_config:frontal_melt.include_floating_ice_type = "flag";
+
+    pism_config:frontal_melt.models = "";
+    pism_config:frontal_melt.models_doc = "Comma-separated list of frontal melt models and modifiers. (Leave empty to disable.)";
+    pism_config:frontal_melt.models_option = "frontal_melt";
+    pism_config:frontal_melt.models_type = "string";
+
+    pism_config:frontal_melt.routing.file = "";
+    pism_config:frontal_melt.routing.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:frontal_melt.routing.file_option = "frontal_melt_routing_file";
+    pism_config:frontal_melt.routing.file_type = "string";
 
     pism_config:frontal_melt.routing.parameter_a = 3e-4;
     pism_config:frontal_melt.routing.parameter_a_doc = "parameter A in eqn. 1 in :cite:`Xu2013`";
@@ -1070,6 +1064,12 @@ netcdf pism_config {
     pism_config:frontal_melt.routing.parameter_b_type = "number";
     pism_config:frontal_melt.routing.parameter_b_units = "m day^(alpha-1) Celsius-beta";
 
+    pism_config:frontal_melt.routing.period = 0;
+    pism_config:frontal_melt.routing.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:frontal_melt.routing.period_option = "frontal_melt_routing_period";
+    pism_config:frontal_melt.routing.period_type = "integer";
+    pism_config:frontal_melt.routing.period_units = "years";
+
     pism_config:frontal_melt.routing.power_alpha = 0.39;
     pism_config:frontal_melt.routing.power_alpha_doc = "exponent `\\alpha` in eqn. 1 in :cite:`Xu2013`";
     pism_config:frontal_melt.routing.power_alpha_type = "number";
@@ -1080,37 +1080,16 @@ netcdf pism_config {
     pism_config:frontal_melt.routing.power_beta_type = "number";
     pism_config:frontal_melt.routing.power_beta_units = "1";
 
-    pism_config:frontal_melt.routing.file = "";
-    pism_config:frontal_melt.routing.file_doc = "Name of the file containing climate forcing fields.";
-    pism_config:frontal_melt.routing.file_type = "string";
-    pism_config:frontal_melt.routing.file_option = "frontal_melt_routing_file";
-
-    pism_config:frontal_melt.routing.period = 0;
-    pism_config:frontal_melt.routing.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:frontal_melt.routing.period_type = "integer";
-    pism_config:frontal_melt.routing.period_option = "frontal_melt_routing_period";
-    pism_config:frontal_melt.routing.period_units = "years";
-
     pism_config:frontal_melt.routing.reference_year = 0;
     pism_config:frontal_melt.routing.reference_year_doc = "Reference year to use when :config:`frontal_melt.routing.period` is active.";
     pism_config:frontal_melt.routing.reference_year_option = "frontal_melt_routing_reference_year";
     pism_config:frontal_melt.routing.reference_year_type = "integer";
     pism_config:frontal_melt.routing.reference_year_units = "years";
 
-    pism_config:geometry.front_retreat.wrap_around = "false";
-    pism_config:geometry.front_retreat.wrap_around_doc = "If true, wrap around domain boundaries. This may be needed in some regional synthetic geometry setups.";
-    pism_config:geometry.front_retreat.wrap_around_option = "front_retreat_wrap_around";
-    pism_config:geometry.front_retreat.wrap_around_type = "flag";
-
-    pism_config:geometry.front_retreat.use_cfl = "false";
-    pism_config:geometry.front_retreat.use_cfl_doc = "apply CFL criterion for eigen-calving rate front retreat";
-    pism_config:geometry.front_retreat.use_cfl_option = "front_retreat_cfl";
-    pism_config:geometry.front_retreat.use_cfl_type = "flag";
-
     pism_config:geometry.front_retreat.prescribed.file = "";
     pism_config:geometry.front_retreat.prescribed.file_doc = "Name of the file containing the maximum ice extent mask `land_ice_area_fraction_retreat`";
-    pism_config:geometry.front_retreat.prescribed.file_type = "string";
     pism_config:geometry.front_retreat.prescribed.file_option = "front_retreat_file";
+    pism_config:geometry.front_retreat.prescribed.file_type = "string";
 
     pism_config:geometry.front_retreat.prescribed.period = 0;
     pism_config:geometry.front_retreat.prescribed.period_doc = "Length of the period of the front retreat data. Set to zero to disable.";
@@ -1121,6 +1100,16 @@ netcdf pism_config {
     pism_config:geometry.front_retreat.prescribed.reference_year_doc = "Reference year to use when `geometry.front_retreat.prescribed.period` is active.";
     pism_config:geometry.front_retreat.prescribed.reference_year_type = "integer";
     pism_config:geometry.front_retreat.prescribed.reference_year_units = "years";
+
+    pism_config:geometry.front_retreat.use_cfl = "false";
+    pism_config:geometry.front_retreat.use_cfl_doc = "apply CFL criterion for eigen-calving rate front retreat";
+    pism_config:geometry.front_retreat.use_cfl_option = "front_retreat_cfl";
+    pism_config:geometry.front_retreat.use_cfl_type = "flag";
+
+    pism_config:geometry.front_retreat.wrap_around = "false";
+    pism_config:geometry.front_retreat.wrap_around_doc = "If true, wrap around domain boundaries. This may be needed in some regional synthetic geometry setups.";
+    pism_config:geometry.front_retreat.wrap_around_option = "front_retreat_wrap_around";
+    pism_config:geometry.front_retreat.wrap_around_type = "flag";
 
     pism_config:geometry.grounded_cell_fraction  = "false";
     pism_config:geometry.grounded_cell_fraction_doc = "Linear interpolation scheme (\"LI\" in Gladstone et al. 2010) expanded to two dimensions is used if switched on in order to evaluate the position of the grounding line on a subgrid scale.";
@@ -1239,6 +1228,10 @@ netcdf pism_config {
     pism_config:grid.registration_doc = "horizontal grid registration";
     pism_config:grid.registration_type = "keyword";
 
+    pism_config:hydrology.add_water_input_to_till_storage = "yes";
+    pism_config:hydrology.add_water_input_to_till_storage_doc = "Add surface input to water stored in till. If no it will be added to the transportable water.";
+    pism_config:hydrology.add_water_input_to_till_storage_type = "flag";
+
     pism_config:hydrology.cavitation_opening_coefficient = 0.5;
     pism_config:hydrology.cavitation_opening_coefficient_doc = "c_1 in notes; coefficient of cavitation opening term in evolution of layer thickness in hydrology::Distributed";
     pism_config:hydrology.cavitation_opening_coefficient_option = "hydrology_cavitation_opening_coefficient";
@@ -1315,6 +1308,40 @@ netcdf pism_config {
     pism_config:hydrology.roughness_scale_type = "number";
     pism_config:hydrology.roughness_scale_units = "meters";
 
+    pism_config:hydrology.routing.include_floating_ice = "no";
+    pism_config:hydrology.routing.include_floating_ice_doc = "Route subglacial water under ice shelves. This may be appropriate if a shelf is close to floatation. Note that this has no effect on ice flow.";
+    pism_config:hydrology.routing.include_floating_ice_type = "flag";
+
+    pism_config:hydrology.steady.flux_update_interval = 1.0;
+    pism_config:hydrology.steady.flux_update_interval_doc = "interval between updates of the steady state flux";
+    pism_config:hydrology.steady.flux_update_interval_type = "number";
+    pism_config:hydrology.steady.flux_update_interval_units = "years";
+
+    pism_config:hydrology.steady.input_rate_scaling = 1e7;
+    pism_config:hydrology.steady.input_rate_scaling_doc = "input rate scaling";
+    pism_config:hydrology.steady.input_rate_scaling_type = "number";
+    pism_config:hydrology.steady.input_rate_scaling_units = "seconds";
+
+    pism_config:hydrology.steady.n_iterations = 7500;
+    pism_config:hydrology.steady.n_iterations_doc = "maxinum number of iterations to use in while estimating steady-state water flux";
+    pism_config:hydrology.steady.n_iterations_type = "integer";
+    pism_config:hydrology.steady.n_iterations_units = "count";
+
+    pism_config:hydrology.steady.potential_delta = 10000.0;
+    pism_config:hydrology.steady.potential_delta_doc = "potential adjustment used to fill sinks (smaller values require more iterations but produce fewer artifacts)";
+    pism_config:hydrology.steady.potential_delta_type = "number";
+    pism_config:hydrology.steady.potential_delta_units = "Pa";
+
+    pism_config:hydrology.steady.potential_n_iterations = 1000;
+    pism_config:hydrology.steady.potential_n_iterations_doc = "maxinum number of iterations to take while pre-processing hydraulic potential";
+    pism_config:hydrology.steady.potential_n_iterations_type = "integer";
+    pism_config:hydrology.steady.potential_n_iterations_units = "count";
+
+    pism_config:hydrology.steady.volume_ratio = 0.1;
+    pism_config:hydrology.steady.volume_ratio_doc = "water volume ratio used as the stopping criterion";
+    pism_config:hydrology.steady.volume_ratio_type = "number";
+    pism_config:hydrology.steady.volume_ratio_units = "1";
+
     pism_config:hydrology.surface_input.file = "";
     pism_config:hydrology.surface_input.file_doc = "Name of the file containing ``water_input_rate``, the rate at which water from the ice surface is added to the subglacial hydrology system";
     pism_config:hydrology.surface_input.file_type = "string";
@@ -1328,6 +1355,10 @@ netcdf pism_config {
     pism_config:hydrology.surface_input.reference_year_doc = "Reference year to use when :config:`hydrology.surface_input.period` is active.";
     pism_config:hydrology.surface_input.reference_year_type = "integer";
     pism_config:hydrology.surface_input.reference_year_units = "years";
+
+    pism_config:hydrology.surface_input_from_runoff = "no";
+    pism_config:hydrology.surface_input_from_runoff_doc = "Use surface runoff as surface input.";
+    pism_config:hydrology.surface_input_from_runoff_type = "flag";
 
     pism_config:hydrology.thickness_power_in_flux = 1.25;
     pism_config:hydrology.thickness_power_in_flux_doc = "power `\\alpha` in Darcy's law `q = - k W^{\\alpha} |\\nabla \\psi|^{\\beta-2} \\nabla \\psi`, for subglacial water layer; used by hydrology::Routing and hydrology::Distributed";
@@ -1362,6 +1393,16 @@ netcdf pism_config {
     pism_config:input.file_option = "i";
     pism_config:input.file_type = "string";
 
+    pism_config:input.forcing.buffer_size = 60;
+    pism_config:input.forcing.buffer_size_doc = "number of 2D climate forcing records to keep in memory; = 5 years of monthly records";
+    pism_config:input.forcing.buffer_size_type = "integer";
+    pism_config:input.forcing.buffer_size_units = "count";
+
+    pism_config:input.forcing.evaluations_per_year = 52;
+    pism_config:input.forcing.evaluations_per_year_doc = "length of the time-series used to compute temporal averages of forcing data (such as mean annual temperature)";
+    pism_config:input.forcing.evaluations_per_year_type = "integer";
+    pism_config:input.forcing.evaluations_per_year_units = "count";
+
     pism_config:input.regrid.file = "";
     pism_config:input.regrid.file_doc = "Regridding (input) file name";
     pism_config:input.regrid.file_option = "regrid_file";
@@ -1371,48 +1412,6 @@ netcdf pism_config {
     pism_config:input.regrid.vars_doc = "Comma-separated list of variables to regrid. Leave empty to regrid all model state variables.";
     pism_config:input.regrid.vars_option = "regrid_vars";
     pism_config:input.regrid.vars_type = "string";
-
-    pism_config:hydrology.surface_input_from_runoff = "no";
-    pism_config:hydrology.surface_input_from_runoff_doc = "Use surface runoff as surface input.";
-    pism_config:hydrology.surface_input_from_runoff_type = "flag";
-
-    pism_config:hydrology.routing.include_floating_ice = "no";
-    pism_config:hydrology.routing.include_floating_ice_doc = "Route subglacial water under ice shelves. This may be appropriate if a shelf is close to floatation. Note that this has no effect on ice flow.";
-    pism_config:hydrology.routing.include_floating_ice_type = "flag";
-
-    pism_config:hydrology.add_water_input_to_till_storage = "yes";
-    pism_config:hydrology.add_water_input_to_till_storage_doc = "Add surface input to water stored in till. If no it will be added to the transportable water.";
-    pism_config:hydrology.add_water_input_to_till_storage_type = "flag";
-
-    pism_config:hydrology.steady.potential_n_iterations = 1000;
-    pism_config:hydrology.steady.potential_n_iterations_doc = "maxinum number of iterations to take while pre-processing hydraulic potential";
-    pism_config:hydrology.steady.potential_n_iterations_type = "integer";
-    pism_config:hydrology.steady.potential_n_iterations_units = "count";
-
-    pism_config:hydrology.steady.potential_delta = 10000.0;
-    pism_config:hydrology.steady.potential_delta_doc = "potential adjustment used to fill sinks (smaller values require more iterations but produce fewer artifacts)";
-    pism_config:hydrology.steady.potential_delta_type = "number";
-    pism_config:hydrology.steady.potential_delta_units = "Pa";
-
-    pism_config:hydrology.steady.n_iterations = 7500;
-    pism_config:hydrology.steady.n_iterations_doc = "maxinum number of iterations to use in while estimating steady-state water flux";
-    pism_config:hydrology.steady.n_iterations_type = "integer";
-    pism_config:hydrology.steady.n_iterations_units = "count";
-
-    pism_config:hydrology.steady.volume_ratio = 0.1;
-    pism_config:hydrology.steady.volume_ratio_doc = "water volume ratio used as the stopping criterion";
-    pism_config:hydrology.steady.volume_ratio_type = "number";
-    pism_config:hydrology.steady.volume_ratio_units = "1";
-
-    pism_config:hydrology.steady.input_rate_scaling = 1e7;
-    pism_config:hydrology.steady.input_rate_scaling_doc = "input rate scaling";
-    pism_config:hydrology.steady.input_rate_scaling_type = "number";
-    pism_config:hydrology.steady.input_rate_scaling_units = "seconds";
-
-    pism_config:hydrology.steady.flux_update_interval = 1.0;
-    pism_config:hydrology.steady.flux_update_interval_doc = "interval between updates of the steady state flux";
-    pism_config:hydrology.steady.flux_update_interval_type = "number";
-    pism_config:hydrology.steady.flux_update_interval_units = "years";
 
     pism_config:inverse.design.cH1     = 0;
     pism_config:inverse.design.cH1_doc = "weight of derivative part of an H1 norm for inversion design variables";
@@ -1578,16 +1577,6 @@ netcdf pism_config {
     pism_config:ocean.always_grounded_option = "dry";
     pism_config:ocean.always_grounded_type = "flag";
 
-    pism_config:ocean.models = "constant";
-    pism_config:ocean.models_doc = "Comma-separated list of ocean models and modifiers.";
-    pism_config:ocean.models_type = "string";
-    pism_config:ocean.models_option = "ocean";
-
-    pism_config:sea_level.models = "constant";
-    pism_config:sea_level.models_doc = "Comma-separated list of sea level models and modifiers.";
-    pism_config:sea_level.models_type = "string";
-    pism_config:sea_level.models_option = "sea_level";
-
     pism_config:ocean.anomaly.file = "";
     pism_config:ocean.anomaly.file_doc = "Name of the file containing shelf basal mass flux offset fields.";
     pism_config:ocean.anomaly.file_option = "ocean_anomaly_file";
@@ -1610,11 +1599,6 @@ netcdf pism_config {
     pism_config:ocean.cache.update_interval_option = "ocean_cache_update_interval";
     pism_config:ocean.cache.update_interval_type = "integer";
     pism_config:ocean.cache.update_interval_units = "years";
-
-    pism_config:ocean.melange_back_pressure_fraction = 0.0;
-    pism_config:ocean.melange_back_pressure_fraction_doc = "default melange back pressure fraction";
-    pism_config:ocean.melange_back_pressure_fraction_type = "number";
-    pism_config:ocean.melange_back_pressure_fraction_units = "1";
 
     pism_config:ocean.constant.melt_rate = 0.05191419359084029;
     pism_config:ocean.constant.melt_rate_doc = "default melt rate used by the ``constant`` ocean model (computed as `Q / (L \\rho_i)`)";
@@ -1738,6 +1722,16 @@ netcdf pism_config {
     pism_config:ocean.given.reference_year_type = "integer";
     pism_config:ocean.given.reference_year_units = "years";
 
+    pism_config:ocean.melange_back_pressure_fraction = 0.0;
+    pism_config:ocean.melange_back_pressure_fraction_doc = "default melange back pressure fraction";
+    pism_config:ocean.melange_back_pressure_fraction_type = "number";
+    pism_config:ocean.melange_back_pressure_fraction_units = "1";
+
+    pism_config:ocean.models = "constant";
+    pism_config:ocean.models_doc = "Comma-separated list of ocean models and modifiers.";
+    pism_config:ocean.models_option = "ocean";
+    pism_config:ocean.models_type = "string";
+
     pism_config:ocean.pico.continental_shelf_depth = -800.0;
     pism_config:ocean.pico.continental_shelf_depth_doc = "Specifies the depth up to which oceanic input temperatures and salinities are averaged over the continental shelf areas in front of the ice shelf cavities.";
     pism_config:ocean.pico.continental_shelf_depth_option = "continental_shelf_depth";
@@ -1750,14 +1744,12 @@ netcdf pism_config {
     pism_config:ocean.pico.exclude_ice_rises_type = "flag";
 
     pism_config:ocean.pico.file = "";
-    pism_config:ocean.pico.file_doc = "Specifies the NetCDF file containing potential temperature
-  (:var:`theta_ocean`), salinity (:var:`salinity_ocean`) and ocean basins (:var:`basins`).";
+    pism_config:ocean.pico.file_doc = "Specifies the NetCDF file containing potential temperature (:var:`theta_ocean`), salinity (:var:`salinity_ocean`) and ocean basins (:var:`basins`).";
     pism_config:ocean.pico.file_option = "ocean_pico_file";
     pism_config:ocean.pico.file_type = "string";
 
     pism_config:ocean.pico.heat_exchange_coefficent = 2e-5;
-    pism_config:ocean.pico.heat_exchange_coefficent_doc = "Sets the coefficient for turbulent heat
-  exchange from the ambient ocean across the boundary layer beneath the ice shelf base.";
+    pism_config:ocean.pico.heat_exchange_coefficent_doc = "Sets the coefficient for turbulent heat exchange from the ambient ocean across the boundary layer beneath the ice shelf base.";
     pism_config:ocean.pico.heat_exchange_coefficent_option = "gamma_T";
     pism_config:ocean.pico.heat_exchange_coefficent_type = "number";
     pism_config:ocean.pico.heat_exchange_coefficent_units = "meters second-1";
@@ -1839,6 +1831,18 @@ netcdf pism_config {
     pism_config:ocean.three_equation_model_clip_salinity_option = "clip_shelf_base_salinity";
     pism_config:ocean.three_equation_model_clip_salinity_type = "flag";
 
+    pism_config:output.ISMIP6 = "false";
+    pism_config:output.ISMIP6_doc = "Follow ISMIP6 conventions (units, variable names, \"standard names\") when writing output variables.";
+    pism_config:output.ISMIP6_type = "flag";
+
+    pism_config:output.ISMIP6_extra_variables = "lithk,orog,topg,hfgeoubed,acabf,libmassbfgr,libmassbffl,dlithkdt,velsurf,zvelsurf,velbase,zvelbase,velmean,litemptop,litempbotgr,litempbotfl,strbasemag,licalvf,lifmassbf,sftgif,sftgrf,sftflf";
+    pism_config:output.ISMIP6_extra_variables_doc = "Comma-separated list of fields reported by models participating in ISMIP6 simulations.";
+    pism_config:output.ISMIP6_extra_variables_type = "string";
+
+    pism_config:output.ISMIP6_ts_variables = "lim,limnsw,iareagr,iareafl,tendacabf,tendlibmassbf,tendlibmassbffl,tendlicalvf,tendlifmassbf";
+    pism_config:output.ISMIP6_ts_variables_doc = "Comma-separated list of scalar variables (time series) reported by models participating in ISMIP6 simulations.";
+    pism_config:output.ISMIP6_ts_variables_type = "string";
+
     pism_config:output.backup_interval = 1.0;
     pism_config:output.backup_interval_doc = "wall-clock time between automatic backups";
     pism_config:output.backup_interval_option = "backup_interval";
@@ -1856,11 +1860,6 @@ netcdf pism_config {
     pism_config:output.extra.append_option = "extra_append";
     pism_config:output.extra.append_type = "flag";
 
-    pism_config:output.extra.stop_missing = "yes";
-    pism_config:output.extra.stop_missing_doc = "Stop if requested variable is not available instead of warning.";
-    pism_config:output.extra.stop_missing_option = "extra_stop_missing";
-    pism_config:output.extra.stop_missing_type = "flag";
-
     pism_config:output.extra.file = "";
     pism_config:output.extra.file_doc = "Name of the output file containing spatially-variable diagnostics.";
     pism_config:output.extra.file_option = "extra_file";
@@ -1870,6 +1869,11 @@ netcdf pism_config {
     pism_config:output.extra.split_doc = "Save spatially-variable diagnostics to separate files (one per time record).";
     pism_config:output.extra.split_option = "extra_split";
     pism_config:output.extra.split_type = "flag";
+
+    pism_config:output.extra.stop_missing = "yes";
+    pism_config:output.extra.stop_missing_doc = "Stop if requested variable is not available instead of warning.";
+    pism_config:output.extra.stop_missing_option = "extra_stop_missing";
+    pism_config:output.extra.stop_missing_type = "flag";
 
     pism_config:output.extra.times = "";
     pism_config:output.extra.times_doc = "List or a range of times defining reporting intervals for spatially-variable diagnostics.";
@@ -1902,6 +1906,11 @@ netcdf pism_config {
     pism_config:output.ice_free_thickness_standard_type = "number";
     pism_config:output.ice_free_thickness_standard_units = "meters";
 
+    pism_config:output.pio.base = 0;
+    pism_config:output.pio.base_doc = "Rank of the first I/O task";
+    pism_config:output.pio.base_type = "integer";
+    pism_config:output.pio.base_units = "count";
+
     pism_config:output.pio.n_writers = 1;
     pism_config:output.pio.n_writers_doc = "Number of I/O tasks to use";
     pism_config:output.pio.n_writers_type = "integer";
@@ -1911,11 +1920,6 @@ netcdf pism_config {
     pism_config:output.pio.stride_doc = "Offset between I/O tasks";
     pism_config:output.pio.stride_type = "integer";
     pism_config:output.pio.stride_units = "count";
-
-    pism_config:output.pio.base = 0;
-    pism_config:output.pio.base_doc = "Rank of the first I/O task";
-    pism_config:output.pio.base_type = "integer";
-    pism_config:output.pio.base_units = "count";
 
     pism_config:output.runtime.area_scale_factor_log10 = 6;
     pism_config:output.runtime.area_scale_factor_log10_doc = "an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout";
@@ -1971,14 +1975,6 @@ netcdf pism_config {
     pism_config:output.snapshot.file_option = "save_file";
     pism_config:output.snapshot.file_type = "string";
 
-    pism_config:output.ISMIP6_extra_variables = "lithk,orog,topg,hfgeoubed,acabf,libmassbfgr,libmassbffl,dlithkdt,velsurf,zvelsurf,velbase,zvelbase,velmean,litemptop,litempbotgr,litempbotfl,strbasemag,licalvf,lifmassbf,sftgif,sftgrf,sftflf";
-    pism_config:output.ISMIP6_extra_variables_doc = "Comma-separated list of fields reported by models participating in ISMIP6 simulations.";
-    pism_config:output.ISMIP6_extra_variables_type = "string";
-
-    pism_config:output.ISMIP6_ts_variables = "lim,limnsw,iareagr,iareafl,tendacabf,tendlibmassbf,tendlibmassbffl,tendlicalvf,tendlifmassbf";
-    pism_config:output.ISMIP6_ts_variables_doc = "Comma-separated list of scalar variables (time series) reported by models participating in ISMIP6 simulations.";
-    pism_config:output.ISMIP6_ts_variables_type = "string";
-
     pism_config:output.snapshot.size = "small";
     pism_config:output.snapshot.size_choices = "none,small,medium,big_2d,big";
     pism_config:output.snapshot.size_doc = "The \"size\" of a snapshot file. See parameters :config:`output.sizes.medium`, :config:`output.sizes.big_2d`, :config:`output.sizes.big`";
@@ -2021,12 +2017,8 @@ netcdf pism_config {
     pism_config:output.timeseries.variables_type = "string";
 
     pism_config:output.use_MKS = "false";
-    pism_config:output.use_MKS_type = "flag";
     pism_config:output.use_MKS_doc = "Use MKS units in output files.";
-
-    pism_config:output.ISMIP6 = "false";
-    pism_config:output.ISMIP6_type = "flag";
-    pism_config:output.ISMIP6_doc = "Follow ISMIP6 conventions (units, variable names, \"standard names\") when writing output variables.";
+    pism_config:output.use_MKS_type = "flag";
 
     pism_config:regional.no_model_strip = 5.0;
     pism_config:regional.no_model_strip_doc = "Default width of the \"no model strip\" in regional setups.";
@@ -2053,6 +2045,11 @@ netcdf pism_config {
     pism_config:run_info.title_doc = "Free-form string containing a concise description of the current run. This string is written to output files as the ``title`` global attribute.";
     pism_config:run_info.title_option = "title";
     pism_config:run_info.title_type = "string";
+
+    pism_config:sea_level.models = "constant";
+    pism_config:sea_level.models_doc = "Comma-separated list of sea level models and modifiers.";
+    pism_config:sea_level.models_option = "sea_level";
+    pism_config:sea_level.models_type = "string";
 
     pism_config:stress_balance.calving_front_stress_bc = "no";
     pism_config:stress_balance.calving_front_stress_bc_doc = "Apply CFBC condition as in :cite:`Albrechtetal2011`, :cite:`Winkelmannetal2011`.  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in :cite:`BBssasliding`.";
@@ -2277,11 +2274,6 @@ netcdf pism_config {
     pism_config:surface.anomaly.reference_year_type = "integer";
     pism_config:surface.anomaly.reference_year_units = "years";
 
-    pism_config:surface.models = "given";
-    pism_config:surface.models_doc = "Comma-separated list of surface models and modifiers.";
-    pism_config:surface.models_type = "string";
-    pism_config:surface.models_option = "surface";
-
     pism_config:surface.cache.update_interval = 10;
     pism_config:surface.cache.update_interval_doc = "Update interval (in years) for the `-surface cache` modifier.";
     pism_config:surface.cache.update_interval_type = "integer";
@@ -2303,6 +2295,47 @@ netcdf pism_config {
     pism_config:surface.delta_T.reference_year_option = "surface_delta_T_reference_year";
     pism_config:surface.delta_T.reference_year_type = "integer";
     pism_config:surface.delta_T.reference_year_units = "years";
+
+    pism_config:surface.elevation_change.file = "";
+    pism_config:surface.elevation_change.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
+    pism_config:surface.elevation_change.file_option = "surface_elevation_change_file";
+    pism_config:surface.elevation_change.file_type = "string";
+
+    pism_config:surface.elevation_change.period = 0;
+    pism_config:surface.elevation_change.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:surface.elevation_change.period_option = "surface_elevation_change_period";
+    pism_config:surface.elevation_change.period_type = "integer";
+    pism_config:surface.elevation_change.period_units = "years";
+
+    pism_config:surface.elevation_change.reference_year = 0;
+    pism_config:surface.elevation_change.reference_year_doc = "Reference year to use when :config:`surface.elevation_change.period` is active.";
+    pism_config:surface.elevation_change.reference_year_option = "surface_elevation_change_reference_year";
+    pism_config:surface.elevation_change.reference_year_type = "integer";
+    pism_config:surface.elevation_change.reference_year_units = "years";
+
+    pism_config:surface.elevation_change.smb.exp_factor = 0;
+    pism_config:surface.elevation_change.smb.exp_factor_doc = "Exponential for the surface mass balance.";
+    pism_config:surface.elevation_change.smb.exp_factor_option = "smb_exp_factor";
+    pism_config:surface.elevation_change.smb.exp_factor_type = "number";
+    pism_config:surface.elevation_change.smb.exp_factor_units = "Kelvin-1";
+
+    pism_config:surface.elevation_change.smb.lapse_rate = 0;
+    pism_config:surface.elevation_change.smb.lapse_rate_doc = "Lapse rate for the surface mass balance.";
+    pism_config:surface.elevation_change.smb.lapse_rate_option = "smb_lapse_rate";
+    pism_config:surface.elevation_change.smb.lapse_rate_type = "number";
+    pism_config:surface.elevation_change.smb.lapse_rate_units = "(m / year) / km";
+
+    pism_config:surface.elevation_change.smb.method = "shift";
+    pism_config:surface.elevation_change.smb.method_choices = "scale,shift";
+    pism_config:surface.elevation_change.smb.method_doc = "Choose the SMB adjustment method. ``scale``: use temperature-change-dependent scaling factor. ``shift``: use the SMB lapse rate.";
+    pism_config:surface.elevation_change.smb.method_option = "smb_adjustment";
+    pism_config:surface.elevation_change.smb.method_type = "keyword";
+
+    pism_config:surface.elevation_change.temperature_lapse_rate = 0;
+    pism_config:surface.elevation_change.temperature_lapse_rate_doc = "Lapse rate for the temperature at the top of the ice.";
+    pism_config:surface.elevation_change.temperature_lapse_rate_option = "temp_lapse_rate";
+    pism_config:surface.elevation_change.temperature_lapse_rate_type = "number";
+    pism_config:surface.elevation_change.temperature_lapse_rate_units = "K / km";
 
     pism_config:surface.force_to_thickness.alpha = 0.01;
     pism_config:surface.force_to_thickness.alpha_doc = "exponential coefficient in force-to-thickness mechanism";
@@ -2356,65 +2389,29 @@ netcdf pism_config {
 
     pism_config:surface.ismip6.file = "";
     pism_config:surface.ismip6.file_doc = "Name of the file containing climate forcing anomaly fields.";
-    pism_config:surface.ismip6.file_type = "string";
     pism_config:surface.ismip6.file_option = "surface_ismip6_file";
+    pism_config:surface.ismip6.file_type = "string";
 
     pism_config:surface.ismip6.period = 0;
     pism_config:surface.ismip6.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:surface.ismip6.period_type = "integer";
     pism_config:surface.ismip6.period_option = "surface_ismip6_period";
+    pism_config:surface.ismip6.period_type = "integer";
     pism_config:surface.ismip6.period_units = "years";
+
+    pism_config:surface.ismip6.reference_file = "";
+    pism_config:surface.ismip6.reference_file_doc = "Name of the file containing reference climate forcing fields.";
+    pism_config:surface.ismip6.reference_file_option = "surface_ismip6_reference_file";
+    pism_config:surface.ismip6.reference_file_type = "string";
 
     pism_config:surface.ismip6.reference_year = 0;
     pism_config:surface.ismip6.reference_year_doc = "Reference year to use when :config:`surface.ismip6.period` is active.";
     pism_config:surface.ismip6.reference_year_type = "integer";
     pism_config:surface.ismip6.reference_year_units = "years";
 
-    pism_config:surface.ismip6.reference_file = "";
-    pism_config:surface.ismip6.reference_file_doc = "Name of the file containing reference climate forcing fields.";
-    pism_config:surface.ismip6.reference_file_type = "string";
-    pism_config:surface.ismip6.reference_file_option = "surface_ismip6_reference_file";
-
-    pism_config:surface.elevation_change.file = "";
-    pism_config:surface.elevation_change.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
-    pism_config:surface.elevation_change.file_option = "surface_elevation_change_file";
-    pism_config:surface.elevation_change.file_type = "string";
-
-    pism_config:surface.elevation_change.period = 0;
-    pism_config:surface.elevation_change.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:surface.elevation_change.period_option = "surface_elevation_change_period";
-    pism_config:surface.elevation_change.period_type = "integer";
-    pism_config:surface.elevation_change.period_units = "years";
-
-    pism_config:surface.elevation_change.reference_year = 0;
-    pism_config:surface.elevation_change.reference_year_doc = "Reference year to use when :config:`surface.elevation_change.period` is active.";
-    pism_config:surface.elevation_change.reference_year_option = "surface_elevation_change_reference_year";
-    pism_config:surface.elevation_change.reference_year_type = "integer";
-    pism_config:surface.elevation_change.reference_year_units = "years";
-
-    pism_config:surface.elevation_change.smb.exp_factor = 0;
-    pism_config:surface.elevation_change.smb.exp_factor_doc = "Exponential for the surface mass balance.";
-    pism_config:surface.elevation_change.smb.exp_factor_option = "smb_exp_factor";
-    pism_config:surface.elevation_change.smb.exp_factor_type = "number";
-    pism_config:surface.elevation_change.smb.exp_factor_units = "Kelvin-1";
-
-    pism_config:surface.elevation_change.smb.lapse_rate = 0;
-    pism_config:surface.elevation_change.smb.lapse_rate_doc = "Lapse rate for the surface mass balance.";
-    pism_config:surface.elevation_change.smb.lapse_rate_option = "smb_lapse_rate";
-    pism_config:surface.elevation_change.smb.lapse_rate_type = "number";
-    pism_config:surface.elevation_change.smb.lapse_rate_units = "(m / year) / km";
-
-    pism_config:surface.elevation_change.smb.method = "shift";
-    pism_config:surface.elevation_change.smb.method_doc = "Choose the SMB adjustment method. ``scale``: use temperature-change-dependent scaling factor. ``shift``: use the SMB lapse rate.";
-    pism_config:surface.elevation_change.smb.method_option = "smb_adjustment";
-    pism_config:surface.elevation_change.smb.method_type = "keyword";
-    pism_config:surface.elevation_change.smb.method_choices = "scale,shift";
-
-    pism_config:surface.elevation_change.temperature_lapse_rate = 0;
-    pism_config:surface.elevation_change.temperature_lapse_rate_doc = "Lapse rate for the temperature at the top of the ice.";
-    pism_config:surface.elevation_change.temperature_lapse_rate_option = "temp_lapse_rate";
-    pism_config:surface.elevation_change.temperature_lapse_rate_type = "number";
-    pism_config:surface.elevation_change.temperature_lapse_rate_units = "K / km";
+    pism_config:surface.models = "given";
+    pism_config:surface.models_doc = "Comma-separated list of surface models and modifiers.";
+    pism_config:surface.models_option = "surface";
+    pism_config:surface.models_type = "string";
 
     pism_config:surface.pdd.air_temp_all_precip_as_rain = 275.15;
     pism_config:surface.pdd.air_temp_all_precip_as_rain_doc = "threshold temperature above which all precipitation is rain; must exceed :config:`surface.pdd.air_temp_all_precip_as_snow` to avoid division by zero, because difference is in a denominator";
