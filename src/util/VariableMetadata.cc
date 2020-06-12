@@ -85,11 +85,12 @@ units::System::Ptr VariableMetadata::unit_system() const {
  */
 void VariableMetadata::check_range(const std::string &filename, double min, double max) {
 
-  const std::string &units_string = get_string("units");
+  auto units_string = get_string("units");
+  auto name_string  = get_name();
   const char
     *units = units_string.c_str(),
-    *name = get_name().c_str(),
-    *file = filename.c_str();
+    *name  = name_string.c_str(),
+    *file  = filename.c_str();
 
   if (has_attribute("valid_min") and has_attribute("valid_max")) {
     double
