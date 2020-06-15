@@ -3,7 +3,7 @@ version: 2
 jobs:
   build-gcc:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1
+      - image: ckhrulev/pism-ubuntu:0.1.1
 
     environment:
       CC: ccache mpicc
@@ -61,7 +61,7 @@ jobs:
 
   build-gcc-minimal:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1
+      - image: ckhrulev/pism-ubuntu:0.1.1
 
     environment:
       CC: ccache mpicc
@@ -94,7 +94,7 @@ jobs:
 
   build-clang:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1
+      - image: ckhrulev/pism-ubuntu:0.1.1
 
     environment:
       CCACHE_COMPRESS: 1
@@ -140,7 +140,7 @@ jobs:
 
   build-clang-minimal:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1
+      - image: ckhrulev/pism-ubuntu:0.1.1
 
     environment:
       CCACHE_COMPRESS: 1
@@ -174,7 +174,7 @@ jobs:
 
   build-manual:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1
+      - image: ckhrulev/pism-ubuntu:0.1.1
 
     steps:
       - checkout

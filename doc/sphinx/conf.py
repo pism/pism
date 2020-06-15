@@ -7,9 +7,16 @@
 
 # -- General configuration ------------------------------------------------
 
+# Add the current directory to the Python path to help Sphinx find the pism_config
+# extension.
+import os
+import sys
+
+sys.path.append(os.path.abspath("."))
+
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-# needs_sphinx = '1.0'
+needs_sphinx = '3.0'
 
 nitpicky = True
 

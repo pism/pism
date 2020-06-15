@@ -13,7 +13,7 @@ evolve together. These tools are required:
 
    * - Tool
      - Comment
-   * - Sphinx_
+   * - Sphinx_ version 3.0 or newer
      - needed to rebuild this Manual
    * - sphinxcontrib.bibtex_
      - needed to rebuild this Manual and the documentation of PISM's Python bindings

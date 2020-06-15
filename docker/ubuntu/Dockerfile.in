@@ -3,10 +3,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
         ccache \
         clang \
-        python3-sphinx \
-        python3-sphinxcontrib.bibtex \
+        python3-pip \
         wget \
         ${PISM_DEBIAN_PACKAGE_LIST}
+
+# Ubuntu 20.04 provides a very old Sphinx version (v1.8.5) so we have to install a newer
+# one using PIP.
+RUN pip3 install -U sphinx sphinxcontrib-bibtex
 
 RUN useradd --create-home --system --shell=/bin/false builder && usermod --lock builder
 USER builder
