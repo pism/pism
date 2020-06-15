@@ -25,6 +25,10 @@ evolve together. These tools are required:
      - needed to rebuild the documentation of PISM's Python bindings
    * - Latexmk_
      - needed to rebuild the PDF version of this Manual
+   * - ``ncgen`` from NetCDF_
+     - needed to rebuild this Manual
+   * - netcdf4-python_
+     - needed to rebuild this Manual
    * - doxygen_
      - required to rebuild the |pism-browser|
    * - graphviz_
