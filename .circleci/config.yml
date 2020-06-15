@@ -51,13 +51,13 @@ jobs:
       - run:
           name: Build PISM using GCC
           command: make --no-print-directory -C build -j4 all
-      - run:
-          name: Run regression tests
-          command: cd build && ctest -j 4 --output-on-failure
       - save_cache:
           key: ccache-gcc-{{ .Branch }}-{{ .BuildNum }}
           paths:
             - ~/.ccache
+      - run:
+          name: Run regression tests
+          command: cd build && ctest -j 4 --output-on-failure
 
   build-gcc-minimal:
     docker:
@@ -130,13 +130,13 @@ jobs:
       - run:
           name: Build PISM using Clang
           command: make --no-print-directory -C build -j4 all
-      - run:
-          name: Run regression tests
-          command: cd build && ctest -j 4 --output-on-failure
       - save_cache:
           key: ccache-clang-{{ .Branch }}-{{ .BuildNum }}
           paths:
             - ~/.ccache
+      - run:
+          name: Run regression tests
+          command: cd build && ctest -j 4 --output-on-failure
 
   build-clang-minimal:
     docker:
