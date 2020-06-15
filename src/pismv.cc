@@ -199,7 +199,9 @@ int main(int argc, char *argv[]) {
     m.run();
     log->message(2, "done with run\n");
 
-    m.reportErrors();
+    if (not options::Bool("-no_report", "do not print the error report")) {
+      m.reportErrors();
+    }
 
     // provide a default output file name if no -o option is given.
     m.save_results();
