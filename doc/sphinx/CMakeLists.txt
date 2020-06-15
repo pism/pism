@@ -3,6 +3,9 @@ mark_as_advanced(SPHINX_EXECUTABLE)
 
 # HTML documentation requires Sphinx
 if (SPHINX_EXECUTABLE)
+  find_program (NCGEN_PROGRAM "ncgen" REQUIRED)
+  mark_as_advanced(NCGEN_PROGRAM)
+
   add_custom_command (OUTPUT pism_config.nc
     COMMAND ${NCGEN_PROGRAM} -o pism_config.nc ${Pism_SOURCE_DIR}/src/pism_config.cdl
     DEPENDS ${Pism_SOURCE_DIR}/src/pism_config.cdl)
