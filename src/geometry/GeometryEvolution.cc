@@ -84,7 +84,6 @@ struct GeometryEvolution::Impl {
   IceModelVec2CellType cell_type;            // ghosted; updated to maintain consistency
   IceModelVec2S        residual;             // ghosted; temporary storage
   IceModelVec2S        thickness;            // ghosted; temporary storage
-  IceModelVec2Int      velocity_bc_mask;
 };
 
 GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
@@ -105,8 +104,7 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
     surface_elevation(grid, "surface_elevation", WITH_GHOSTS),
     cell_type(grid, "cell_type", WITH_GHOSTS),
     residual(grid, "residual", WITH_GHOSTS),
-    thickness(grid, "thickness", WITH_GHOSTS),
-    velocity_bc_mask(grid, "velocity_bc_mask", WITH_GHOSTS) {
+    thickness(grid, "thickness", WITH_GHOSTS) {
 
   Config::ConstPtr config = grid->ctx()->config();
 
@@ -175,10 +173,6 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
 
     thickness.set_attrs("internal", "thickness (temporary storage)",
                         "meters", "meters", "", 0);
-
-    velocity_bc_mask.set_attrs("internal", "ghosted copy of the velocity B.C. mask"
-                               " (1 at velocity B.C. location, 0 elsewhere)",
-                               "", "", "", 0);
   }
 }
 
@@ -233,7 +227,6 @@ const IceModelVec2S& GeometryEvolution::conservation_error() const {
  * @param[in] dt time step, seconds
  * @param[in] advective_velocity advective (SSA) velocity
  * @param[in] diffusive_flux diffusive (SIA) flux
- * @param[in] velocity_bc_mask advective velocity Dirichlet B.C. mask
  * @param[in] velocity_bc_values advective velocity Dirichlet B.C. values
  * @param[in] thickness_bc_mask ice thickness Dirichlet B.C. mask
  *
@@ -242,7 +235,6 @@ const IceModelVec2S& GeometryEvolution::conservation_error() const {
 void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
                                   const IceModelVec2V    &advective_velocity,
                                   const IceModelVec2Stag &diffusive_flux,
-                                  const IceModelVec2Int  &velocity_bc_mask,
                                   const IceModelVec2Int  &thickness_bc_mask) {
 
   m_impl->profile.begin("ge.update_ghosted_copies");
@@ -253,7 +245,6 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
     m_impl->sea_level.copy_from(geometry.sea_level_elevation);
     m_impl->bed_elevation.copy_from(geometry.bed_elevation);
     m_impl->input_velocity.copy_from(advective_velocity);
-    m_impl->velocity_bc_mask.copy_from(velocity_bc_mask);
 
     // Compute cell_type and surface_elevation. Ghosts of results are updated.
     m_impl->gc.compute(m_impl->sea_level,          // in (uses ghosts)
@@ -269,7 +260,6 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
   compute_interface_fluxes(m_impl->cell_type,          // in (uses ghosts)
                            m_impl->ice_thickness,      // in (uses ghosts)
                            m_impl->input_velocity,     // in (uses ghosts)
-                           m_impl->velocity_bc_mask,   // in (uses ghosts)
                            diffusive_flux,             // in
                            m_impl->flux_staggered);    // out
   m_impl->profile.end("ge.interface_fluxes");
@@ -391,36 +381,37 @@ void GeometryEvolution::apply_mass_fluxes(Geometry &geometry) const {
 
 
 /*!
- * Prevent advective ice flow from floating ice to ice-free land, as well as in the ice-free areas.
+ * Prevent advective ice flow from floating ice to ice-free land, as well as in the
+ * ice-free areas.
  */
-static double limit_advective_velocity(int current, int neighbor, double velocity) {
+static double limit_advective_flux(int current, int neighbor, double input) {
 
   // Case 1: Flow between grounded_ice and grounded_ice.
   if (grounded_ice(current) and grounded_ice(neighbor)) {
-    return velocity;
+    return input;
   }
 
   // Cases 2 and 3: Flow between grounded_ice and floating_ice.
   if ((grounded_ice(current) and floating_ice(neighbor)) or
       (floating_ice(current) and grounded_ice(neighbor))) {
-    return velocity;
+    return input;
   }
 
   // Cases 4 and 5: Flow between grounded_ice and ice_free_land.
   if ((grounded_ice(current) and ice_free_land(neighbor)) or
       (ice_free_land(current) and grounded_ice(neighbor))) {
-    return velocity;
+    return input;
   }
 
   // Cases 6 and 7: Flow between grounded_ice and ice_free_ocean.
   if ((grounded_ice(current) and ice_free_ocean(neighbor)) or
       (ice_free_ocean(current) and grounded_ice(neighbor))) {
-    return velocity;
+    return input;
   }
 
   // Case 8: Flow between floating_ice and floating_ice.
   if (floating_ice(current) and floating_ice(neighbor)) {
-    return velocity;
+    return input;
   }
 
   // Cases 9 and 10: Flow between floating_ice and ice_free_land.
@@ -433,7 +424,7 @@ static double limit_advective_velocity(int current, int neighbor, double velocit
   // Cases 11 and 12: Flow between floating_ice and ice_free_ocean.
   if ((floating_ice(current) and ice_free_ocean(neighbor)) or
       (ice_free_ocean(current) and floating_ice(neighbor))) {
-    return velocity;
+    return input;
   }
 
   // Case 13: Flow between ice_free_land and ice_free_land.
@@ -536,21 +527,20 @@ static double limit_diffusive_flux(int current, int neighbor, double flux) {
 void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cell_type,
                                                  const IceModelVec2S        &ice_thickness,
                                                  const IceModelVec2V        &velocity,
-                                                 const IceModelVec2Int      &velocity_bc_mask,
                                                  const IceModelVec2Stag     &diffusive_flux,
                                                  IceModelVec2Stag           &output) {
 
-  IceModelVec::AccessList list{&cell_type, &velocity, &velocity_bc_mask, &ice_thickness,
-      &diffusive_flux, &output};
+  IceModelVec::AccessList list{&cell_type, &velocity, &ice_thickness,
+                               &diffusive_flux, &output};
 
   ParallelSection loop(m_grid->com);
   try {
+    // compute advective fluxes and put them in output
     for (Points p(*m_grid); p; p.next()) {
       const int
         i  = p.i(),
         j  = p.j(),
-        M  = cell_type(i, j),
-        BC = velocity_bc_mask.as_int(i, j);
+        M  = cell_type(i, j);
 
       const double H = ice_thickness(i, j);
       const Vector2 V  = velocity(i, j);
@@ -569,54 +559,23 @@ void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cel
         {
           const Vector2 V_n  = velocity(i_n, j_n);
 
-          // Regular case
-          {
-            if (icy(M) and icy(M_n)) {
-              // Case 1: both sides of the interface are icy
-              v = (n == 0 ? 0.5 * (V.u + V_n.u) : 0.5 * (V.v + V_n.v));
+          if (icy(M) and icy(M_n)) {
+            // Case 1: both sides of the interface are icy
+            v = (n == 0 ? 0.5 * (V.u + V_n.u) : 0.5 * (V.v + V_n.v));
 
-            } else if (icy(M) and ice_free(M_n)) {
-              // Case 2: icy cell next to an ice-free cell
-              v = (n == 0 ? V.u : V.v);
+          } else if (icy(M) and ice_free(M_n)) {
+            // Case 2: icy cell next to an ice-free cell
+            v = (n == 0 ? V.u : V.v);
 
-            } else if (ice_free(M) and icy(M_n)) {
-              // Case 3: ice-free cell next to icy cell
-              v = (n == 0 ? V_n.u : V_n.v);
+          } else if (ice_free(M) and icy(M_n)) {
+            // Case 3: ice-free cell next to icy cell
+            v = (n == 0 ? V_n.u : V_n.v);
 
-            } else if (ice_free(M) and ice_free(M_n)) {
-              // Case 4: both sides of the interface are ice-free
-              v = 0.0;
+          } else if (ice_free(M) and ice_free(M_n)) {
+            // Case 4: both sides of the interface are ice-free
+            v = 0.0;
 
-            }
           }
-
-          // The Dirichlet B.C. case:
-          {
-            const int BC_n = velocity_bc_mask.as_int(i_n, j_n);
-
-            if (BC == 1 and BC_n == 1) {
-              // Case 1: both sides of the interface are B.C. locations: average from
-              // the regular grid onto the staggered grid.
-              v = (n == 0 ? 0.5 * (V.u + V_n.u) : 0.5 * (V.v + V_n.v));
-
-            } else if (BC == 1 and BC_n == 0) {
-              // Case 2: at a Dirichlet B.C. location next to a regular location
-              v = (n == 0 ? V.u : V.v);
-
-            } else if (BC == 0 and BC_n == 1) {
-
-              // Case 3: at a regular location next to a Dirichlet B.C. location
-              v = (n == 0 ? V_n.u : V_n.v);
-
-            } else {
-              // Case 4: elsewhere.
-              // No Dirichlet B.C. adjustment here.
-            }
-
-          } // end of the Dirichlet B.C. case
-
-          // finally, limit advective velocities
-          v = limit_advective_velocity(M, M_n, v);
         }
 
         // advective flux
@@ -624,13 +583,35 @@ void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cel
           H_n         = ice_thickness(i_n, j_n),
           Q_advective = v * (v > 0.0 ? H : H_n); // first order upwinding
 
-        // diffusive flux
-        const double
-          Q_diffusive = limit_diffusive_flux(M, M_n, diffusive_flux(i, j, n));
-
-        output(i, j, n) = Q_diffusive + Q_advective;
+        output(i, j, n) = Q_advective;
       } // end of the loop over neighbors (n)
     }
+
+    // limit the advective flux and add the diffusive flux to it to get the total
+    for (Points p(*m_grid); p; p.next()) {
+      const int
+        i = p.i(),
+        j = p.j(),
+        M = cell_type(i, j);
+
+      for (int n = 0; n < 2; ++n) {
+        const int
+          oi  = 1 - n,               // offset in the i direction
+          oj  = n,                   // offset in the j direction
+          i_n = i + oi,              // i index of a neighbor
+          j_n = j + oj;              // j index of a neighbor
+
+        const int M_n = cell_type(i_n, j_n);
+
+        // diffusive flux
+        const double
+          Q_diffusive = limit_diffusive_flux(M, M_n, diffusive_flux(i, j, n)),
+          Q_advective = limit_advective_flux(M, M_n, output(i, j, n));
+
+        output(i, j, n) = Q_diffusive + Q_advective;
+      } // end of the loop over n
+    }
+
   } catch (...) {
     loop.failed();
   }
@@ -1163,12 +1144,11 @@ void RegionalGeometryEvolution::set_no_model_mask_impl(const IceModelVec2Int &ma
 void RegionalGeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cell_type,
                                                          const IceModelVec2S        &ice_thickness,
                                                          const IceModelVec2V        &velocity,
-                                                         const IceModelVec2Int      &velocity_bc_mask,
                                                          const IceModelVec2Stag     &diffusive_flux,
                                                          IceModelVec2Stag           &output) {
 
   GeometryEvolution::compute_interface_fluxes(cell_type, ice_thickness,
-                                              velocity, velocity_bc_mask, diffusive_flux,
+                                              velocity, diffusive_flux,
                                               output);
 
   IceModelVec::AccessList list{&m_no_model_mask, &output};

@@ -45,7 +45,6 @@ public:
   void flow_step(const Geometry &ice_geometry, double dt,
                  const IceModelVec2V    &advective_velocity,
                  const IceModelVec2Stag &diffusive_flux,
-                 const IceModelVec2Int  &velocity_bc_mask,
                  const IceModelVec2Int  &thickness_bc_mask);
 
   void source_term_step(const Geometry &geometry, double dt,
@@ -94,7 +93,6 @@ protected:
   virtual void compute_interface_fluxes(const IceModelVec2CellType &cell_type,
                                         const IceModelVec2S        &ice_thickness,
                                         const IceModelVec2V        &velocity,
-                                        const IceModelVec2Int      &velocity_bc_mask,
                                         const IceModelVec2Stag     &diffusive_flux,
                                         IceModelVec2Stag           &output);
 
@@ -135,7 +133,6 @@ protected:
   void compute_interface_fluxes(const IceModelVec2CellType &cell_type,
                                 const IceModelVec2S        &ice_thickness,
                                 const IceModelVec2V        &velocity,
-                                const IceModelVec2Int      &velocity_bc_mask,
                                 const IceModelVec2Stag     &diffusive_flux,
                                 IceModelVec2Stag           &output);
 

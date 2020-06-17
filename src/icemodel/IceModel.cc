@@ -534,7 +534,6 @@ void IceModel::step(bool do_mass_continuity,
                                       m_dt,
                                       m_stress_balance->advective_velocity(),
                                       m_stress_balance->diffusive_flux(),
-                                      m_ssa_dirichlet_bc_mask,
                                       thickness_bc_mask);
 
       m_geometry_evolution->apply_flux_divergence(m_geometry);

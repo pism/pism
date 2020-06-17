@@ -83,7 +83,6 @@ def run(Mx, My, t_final, part_grid, C=1.0):
 
     v         = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
     Q         = PISM.IceModelVec2Stag(grid, "Q", PISM.WITHOUT_GHOSTS)
-    v_bc_mask = PISM.IceModelVec2Int(grid, "v_bc_mask", PISM.WITHOUT_GHOSTS)
     H_bc_mask = PISM.IceModelVec2Int(grid, "H_bc_mask", PISM.WITHOUT_GHOSTS)
 
     ge = PISM.GeometryEvolution(grid)
@@ -101,7 +100,6 @@ def run(Mx, My, t_final, part_grid, C=1.0):
     geometry.ensure_consistency(0.0)
 
     set_velocity(spreading_velocity, v)
-    v_bc_mask.set(0.0)
     disc(H_bc_mask, 0, 0, 1, R_inner, R_inner)
 
     profiling = ctx.profiling()
@@ -126,7 +124,6 @@ def run(Mx, My, t_final, part_grid, C=1.0):
         ge.flow_step(geometry, dt,
                      v,
                      Q,
-                     v_bc_mask,
                      H_bc_mask)
         profiling.end("step")
 
