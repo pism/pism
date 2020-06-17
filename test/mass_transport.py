@@ -1,7 +1,7 @@
 import PISM
 import numpy as np
 
-""" Test mass transport code using a radially-symmetric setup in which
+""" Test mass transport code using a circularly-symmetric setup in which
 a disc expands uniformly in all directions. Given mass conservation,
 the thickness of this disc outside of the fixed circular area (the
 thickness Dirichlet B.C. area) is inversely proportional to the
@@ -180,8 +180,7 @@ def part_grid_convergence_test():
 
 
 def part_grid_symmetry_test():
-    """The initial condition and the velocity fields are radially
-    symmetric, so the result should be too."""
+    """Check that the result is circularly symmetric."""
 
     N = 51
 
