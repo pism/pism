@@ -557,25 +557,13 @@ void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cel
         // advective velocity at the current interface
         double v = 0.0;
         {
-          const Vector2 V_n  = velocity(i_n, j_n);
+          Vector2 V_n  = velocity(i_n, j_n);
+          int
+            W   = icy(M),
+            W_n = icy(M_n);
 
-          if (icy(M) and icy(M_n)) {
-            // Case 1: both sides of the interface are icy
-            v = (n == 0 ? 0.5 * (V.u + V_n.u) : 0.5 * (V.v + V_n.v));
-
-          } else if (icy(M) and ice_free(M_n)) {
-            // Case 2: icy cell next to an ice-free cell
-            v = (n == 0 ? V.u : V.v);
-
-          } else if (ice_free(M) and icy(M_n)) {
-            // Case 3: ice-free cell next to icy cell
-            v = (n == 0 ? V_n.u : V_n.v);
-
-          } else if (ice_free(M) and ice_free(M_n)) {
-            // Case 4: both sides of the interface are ice-free
-            v = 0.0;
-
-          }
+          auto v_staggered = (W * V + W_n * V_n) / std::max(W + W_n, 1);
+          v = n == 0 ? v_staggered.u : v_staggered.v;
         }
 
         // advective flux
