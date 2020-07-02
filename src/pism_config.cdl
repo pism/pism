@@ -308,6 +308,22 @@ netcdf pism_config {
     pism_config:atmosphere.pik.parameterization_option = "atmosphere_pik";
     pism_config:atmosphere.pik.parameterization_type = "keyword";
 
+    pism_config:atmosphere.precip_cutoff.cutoff_mask_file = "";
+    pism_config:atmosphere.precip_cutoff.cutoff_mask_file_doc = "The name of the file to read the precip_mask from.";
+    pism_config:atmosphere.precip_cutoff.cutoff_mask_file_option = "precip_cutoff_file";
+    pism_config:atmosphere.precip_cutoff.cutoff_mask_file_type = "string";
+
+    pism_config:atmosphere.precip_cutoff.cutoff_height = 3000.;
+    pism_config:atmosphere.precip_cutoff.cutoff_height_doc = "Height above which precipitation is cut-off.";
+    pism_config:atmosphere.precip_cutoff.cutoff_height_option = "precip_cutoff_height";
+    pism_config:atmosphere.precip_cutoff.cutoff_height_type = "number";
+    pism_config:atmosphere.precip_cutoff.cutoff_height_units = "meters";
+
+    pism_config:atmosphere.precip_cutoff.use_cutoff_height = "no";
+    pism_config:atmosphere.precip_cutoff.use_cutoff_height_doc = "Flag indicating if precipitation should be cut off above the `cutoff_height`.";
+    pism_config:atmosphere.precip_cutoff.use_cutoff_height_option = "use_precip_cutoff_height";
+    pism_config:atmosphere.precip_cutoff.use_cutoff_height_type = "flag";
+
     pism_config:atmosphere.precip_exponential_factor_for_temperature = 0.07041666667;
     pism_config:atmosphere.precip_exponential_factor_for_temperature_doc = "= 0.169/2.4; in SeaRISE-Greenland formula for precipitation correction using air temperature offsets relative to present; a 7.3\% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`";
     pism_config:atmosphere.precip_exponential_factor_for_temperature_type = "number";
