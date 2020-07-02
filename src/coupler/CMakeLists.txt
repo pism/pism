@@ -18,6 +18,7 @@ add_library (boundary OBJECT
   ./atmosphere/WeatherStation.cc
   ./atmosphere/OrographicPrecipitation.cc
   ./atmosphere/OrographicPrecipitationSerial.cc
+  ./atmosphere/IndexForcing.cc
   ./atmosphere/Factory.cc
   ./atmosphere/Uniform.cc
   ./frontalmelt/FrontalMelt.cc

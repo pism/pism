@@ -33,6 +33,7 @@
 #include "WeatherStation.hh"
 #include "Uniform.hh"
 #include "OrographicPrecipitation.hh"
+#include "IndexForcing.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -48,6 +49,7 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_model<CosineYearlyCycle>("yearly_cycle");
   add_model<WeatherStation>("one_station");
   add_model<Uniform>("uniform");
+  add_model<IndexForcing>("index");
 
   add_modifier<Anomaly>("anomaly");
   add_modifier<PrecipitationScaling>("precip_scaling");

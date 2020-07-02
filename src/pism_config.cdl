@@ -177,6 +177,28 @@ netcdf pism_config {
     pism_config:atmosphere.given.reference_year_type = "integer";
     pism_config:atmosphere.given.reference_year_units = "years";
 
+    pism_config:atmosphere.index.file = "";
+    pism_config:atmosphere.index.file_doc = "Name of the file containing climate forcing, glacial index and topography needed by the Atmosphere Index model.";
+    pism_config:atmosphere.index.file_option = "atmosphere_index_file";
+    pism_config:atmosphere.index.file_type = "string";
+
+    pism_config:atmosphere.index.period = 0;
+    pism_config:atmosphere.index.period_doc = "Length of the period of the glacial index timeseries. Set to zero to disable.";
+    pism_config:atmosphere.index.period_type = "integer";
+    pism_config:atmosphere.index.period_option = "atmosphere_index_period";
+    pism_config:atmosphere.index.period_units = "years";
+
+    pism_config:atmosphere.index.reference_year = 0;
+    pism_config:atmosphere.index.reference_year_doc = "Reference year to use when ``atmosphere.index.period`` is active.";
+    pism_config:atmosphere.index.reference_year_option = "atmosphere_index_reference_year";
+    pism_config:atmosphere.index.reference_year_type = "integer";
+    pism_config:atmosphere.index.reference_year_units = "years";
+
+    pism_config:atmosphere.index_climate_file = "";
+    pism_config:atmosphere.index_climate_file_doc = "The name of the file to read the index forcing climate and boundary conditions from. If not set, this data is read from atmosphere.index.file.";
+    pism_config:atmosphere.index_climate_file_option = "atmosphere_index_climate_file";
+    pism_config:atmosphere.index_climate_file_type = "string";
+
     pism_config:atmosphere.models = "given";
     pism_config:atmosphere.models_doc = "Comma-separated list of atmosphere melt models and modifiers.";
     pism_config:atmosphere.models_option = "atmosphere";
