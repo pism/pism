@@ -155,7 +155,7 @@ void FrontRetreat::update_geometry(double dt,
 
   const IceModelVec2S &bed = geometry.bed_elevation;
   const IceModelVec2S &sea_level = geometry.sea_level_elevation;
-  const IceModelVec2S &lake_level = geometry.sea_level_elevation;
+  const IceModelVec2S &lake_level = geometry.lake_level_elevation;
   const IceModelVec2S &surface_elevation = geometry.ice_surface_elevation;
 
   if (m_config->get_flag("geometry.front_retreat.wrap_around")) {
