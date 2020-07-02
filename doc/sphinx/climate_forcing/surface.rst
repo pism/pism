@@ -344,10 +344,10 @@ using modeled changes in surface elevation relative to a reference elevation rea
 file.
 
 The surface temperature is modified using an elevation lapse rate
-`\gamma =` :config:`surface.elevation_change.temperature_lapse_rate`. Here
+`\gamma_T =` :config:`surface.elevation_change.temperature_lapse_rate`. Here
 
 .. math::
-   \gamma = -\frac{dT}{dz}.
+   \gamma_T = -\frac{dT}{dz}.
 
 Two methods of adjusting the SMB are available:
 
@@ -370,9 +370,9 @@ Two methods of adjusting the SMB are available:
 
   .. math::
 
-     \mathrm{SMB} = \mathrm{SMB_{input}} - \Delta h \cdot \gamma,
+     \mathrm{SMB} = \mathrm{SMB_{input}} - \Delta h \cdot \gamma_M,
 
-  where `\gamma =` :config:`surface.elevation_change.smb.lapse_rate` and `\Delta h` is the
+  where `\gamma_M =` :config:`surface.elevation_change.smb.lapse_rate` and `\Delta h` is the
   difference between modeled and reference surface elevations.
 
   To use this method, set :opt:`-smb_adjustment shift`.
@@ -384,7 +384,7 @@ It uses the following options.
 - :opt:`-smb_adjustment` chooses SMB lapse rate (``shift``) or SMB scaling (``scale``).
 - :opt:`-smb_exp_factor` specifies the exponential factor used to scale the SMB
 - :opt:`-smb_lapse_rate` gives the surface mass balance lapse rate, in `m/year/km`.
-  Here, `\gamma=-\frac{dM}{dz}`.
+  Here, `\gamma_M=-\frac{dM}{dz}`.
 - :opt:`-surface_elevation_change_file` specifies the file containing the reference surface
   elevation field (standard name: :var:`surface_altitude`). This file can contain several
   surface elevation records to use lapse rate corrections relative to time-dependent

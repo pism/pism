@@ -274,11 +274,11 @@ Adjustments using modeled change in surface elevation
 The ``elevation_change`` modifier adjusts air temperature and precipitation using modeled
 changes in surface elevation relative to a reference elevation read from a file.
 
-The near-surface air temperature is modified using an elevation lapse rate `\gamma =`
+The near-surface air temperature is modified using an elevation lapse rate `\gamma_T =`
 :config:`atmosphere.elevation_change.temperature_lapse_rate`. Here
 
 .. math::
-   \gamma = -\frac{dT}{dz}.
+   \gamma_T = -\frac{dT}{dz}.
 
 Two methods of adjusting precipitation are available:
 
@@ -301,9 +301,9 @@ Two methods of adjusting precipitation are available:
 
   .. math::
 
-     \mathrm{P} = \mathrm{P_{input}} - \Delta h \cdot \gamma,
+     \mathrm{P} = \mathrm{P_{input}} - \Delta h \cdot \gamma_P,
 
-  where `\gamma =` :config:`atmosphere.elevation_change.precipitation.lapse_rate` and
+  where `\gamma_P =` :config:`atmosphere.elevation_change.precipitation.lapse_rate` and
   `\Delta h` is the difference between modeled and reference surface elevations.
 
   To use this method, set :opt:`-smb_adjustment shift`.
@@ -315,7 +315,7 @@ It uses the following options.
 - :opt:`-precip_adjustment` chooses the precipitation lapse rate (``shift``) or scaling
   precipitation with an exponential factor (``scale``).
 - :opt:`-precip_lapse_rate` gives the precipitation lapse rate, in :math:`(kg / (m^{2} year)) / km`.
-  Here `\gamma = -\frac{dM}{dz}`.
+  Here `\gamma_P = -\frac{dP}{dz}`.
 - :opt:`-atmosphere_elevation_change_file` specifies a file containing the reference surface
   elevation field (standard name: :var:`surface_altitude`). This file may contain several
   surface elevation records to use lapse rate corrections relative to a time-dependent

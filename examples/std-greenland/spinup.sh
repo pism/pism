@@ -156,9 +156,9 @@ grid="-Mx $myMx -My $myMy $vgrid -grid.recompute_longitude_and_latitude false -g
 
 # set stress balance from argument 5
 if [ -n "${PARAM_SIAE:+1}" ] ; then  # check if env var is already set
-  PHYS="-calving ocean_kill -ocean_kill_file ${PISM_DATANAME} -sia_e ${PARAM_SIAE}"
+  PHYS="-front_retreat_file ${PISM_DATANAME} -sia_e ${PARAM_SIAE}"
 else
-  PHYS="-calving ocean_kill -ocean_kill_file ${PISM_DATANAME} -sia_e 3.0"
+  PHYS="-front_retreat_file ${PISM_DATANAME} -sia_e 3.0"
 fi
 if [ -n "${USEPIK:+1}" ] ; then  # check if env var is already set
   PHYS="${PHYS} -pik -subgl"
