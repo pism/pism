@@ -14,3 +14,5 @@
 %shared_ptr(pism::GeometryEvolution)
 %shared_ptr(pism::RegionalGeometryEvolution)
 %include "geometry/GeometryEvolution.hh"
+
+pism_class(pism::MPDATA2, "pism/geometry/MPDATA2.hh")
