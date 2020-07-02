@@ -71,6 +71,7 @@ private:
                        IceModelVec2S &sea_level);
   void gradually_fill(const double dt,
                       const IceModelVec2S &bed,
+                      const IceModelVec2S &thk,
                       const IceModelVec2S &target_level,
                       IceModelVec2S &sea_level);
 };

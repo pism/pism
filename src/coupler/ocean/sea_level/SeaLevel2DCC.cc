@@ -176,6 +176,7 @@ void SeaLevel2DCC::update_impl(const Geometry &geometry, double t, double dt) {
 
     gradually_fill(dt,
                    geometry.bed_elevation,
+                   geometry.ice_thickness,
                    m_target_level,
                    m_sea_level);
   } else {
@@ -277,12 +278,13 @@ void SeaLevel2DCC::prepareSeaLevel(const IceModelVec2S &bed,
 
 void SeaLevel2DCC::gradually_fill(const double dt,
                                   const IceModelVec2S &bed,
+                                  const IceModelVec2S &thk,
                                   const IceModelVec2S &target_level,
                                   IceModelVec2S &sea_level) {
 
   double dh_max = m_max_fill_rate * dt;
 
-  IceModelVec::AccessList list({ &target_level, &sea_level, &bed });
+  IceModelVec::AccessList list({ &target_level, &sea_level, &bed, &thk });
 
   //Update SL
   ParallelSection ParSec(m_grid->com);
@@ -305,7 +307,7 @@ void SeaLevel2DCC::gradually_fill(const double dt,
           const double dh_ij = m_gc.islake(target_ij) ? (current_ij - target_ij) : dh_max,
                        new_level = current_ij - std::min(dh_max, dh_ij);
 
-          if ( (new_level < bed(i, j)) and not m_gc.islake(target_ij) ) {
+          if ( (new_level < (bed(i, j) + m_drho * thk(i, j))) and not m_gc.islake(target_ij) ) {
             //Ocean basin vanishes
             sea_level(i, j) = m_fill_value;
           } else {
