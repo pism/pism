@@ -125,8 +125,8 @@ def ice_surface_temp(grid, value):
 
 class Given(TestCase):
     def setUp(self):
-        self.filename = "given_input.nc"
-        self.output_filename = "given_output.nc"
+        self.filename = "surface_given_input.nc"
+        self.output_filename = "surface_given_output.nc"
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
 
@@ -161,8 +161,8 @@ class Given(TestCase):
 
 class DeltaT(TestCase):
     def setUp(self):
-        self.filename = "delta_T_input.nc"
-        self.output_filename = "delta_T_output.nc"
+        self.filename = "surface_delta_T_input.nc"
+        self.output_filename = "surface_delta_T_output.nc"
         self.grid = shallow_grid()
         self.model = surface_simple(self.grid)
         self.dT = -5.0
@@ -192,7 +192,7 @@ class DeltaT(TestCase):
 class ElevationChange(TestCase):
     def setUp(self):
         self.filename = "surface_reference_surface.nc"
-        self.output_filename = "lapse_rates_output.nc"
+        self.output_filename = "surface_lapse_rates_output.nc"
         self.grid     = shallow_grid()
         self.dTdz     = 1.0         # 1 Kelvin per km
         self.dSMBdz   = 2.0         # m year-1 per km
@@ -281,7 +281,7 @@ class Elevation(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
-        self.output_filename = "elevation_output.nc"
+        self.output_filename = "surface_elevation_output.nc"
 
         # change geometry just to make this a bit more interesting
         self.geometry.ice_thickness.set(1000.0)
@@ -340,7 +340,7 @@ class TemperatureIndex1(TestCase):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.atmosphere = PISM.AtmosphereUniform(self.grid)
-        self.output_filename = "pdd_output.nc"
+        self.output_filename = "surface_pdd_output.nc"
 
     def pdd_test(self):
         "Model 'pdd', test 1"
@@ -416,8 +416,8 @@ class TemperatureIndex2(TestCase):
 
 class PIK(TestCase):
     def setUp(self):
-        self.filename = "pik_input.nc"
-        self.output_filename = "pik_output.nc"
+        self.filename = "surface_pik_input.nc"
+        self.output_filename = "surface_pik_output.nc"
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
 
@@ -453,7 +453,7 @@ class PIK(TestCase):
 class Simple(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
-        self.output_filename = "simple_output.nc"
+        self.output_filename = "surface_simple_output.nc"
         self.atmosphere = PISM.AtmosphereUniform(self.grid)
         self.geometry = PISM.Geometry(self.grid)
 
@@ -481,7 +481,7 @@ class Simple(TestCase):
 class Anomaly(TestCase):
     def setUp(self):
         self.filename = "surface_anomaly_input.nc"
-        self.output_filename = "anomaly_output.nc"
+        self.output_filename = "surface_anomaly_output.nc"
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.model = surface_simple(self.grid)
@@ -533,8 +533,8 @@ class Anomaly(TestCase):
 
 class Cache(TestCase):
     def setUp(self):
-        self.filename = "dT.nc"
-        self.output_filename = "cache_output.nc"
+        self.filename = "surface_dT.nc"
+        self.output_filename = "surface_cache_output.nc"
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
 
@@ -583,8 +583,8 @@ class ForceThickness(TestCase):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.model = surface_simple(self.grid)
-        self.filename = "force_to_thickness_input.nc"
-        self.output_filename = "force_to_thickness_output.nc"
+        self.filename = "surface_force_to_thickness_input.nc"
+        self.output_filename = "surface_force_to_thickness_output.nc"
 
         self.H = 1000.0
         self.dH = 1000.0
@@ -634,7 +634,7 @@ class EISMINTII(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
-        self.output_filename = "eismint_output.nc"
+        self.output_filename = "surface_eismint_output.nc"
 
     def eismintii_test(self):
         "Model EISMINTII: define and write model state; get diagnostics"
@@ -661,7 +661,7 @@ class Initialization(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
-        self.output_filename = "init_output.nc"
+        self.output_filename = "surface_init_output.nc"
         self.model = surface_simple(self.grid)
 
     def initialization_test(self):

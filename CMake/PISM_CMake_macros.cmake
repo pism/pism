@@ -74,7 +74,7 @@ macro(pism_set_revision_tag)
 
   # Otherwise...
   if (NOT Pism_VERSION)
-    set (Pism_VERSION "no-version-control")
+    set (Pism_VERSION "v1.2.1")
   endif (NOT Pism_VERSION)
 
   set (Pism_REVISION_TAG "${Pism_BRANCH} ${Pism_VERSION}")
