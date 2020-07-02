@@ -73,10 +73,14 @@ def pism_bootstrap_file(filename, experiment, step, mode,
     xx = x(mode, N)
     yy = y(xx)
 
-    topg = bed_topography(experiment, xx)
-    thk = thickness(experiment, step, xx, calving_front, semianalytical_profile)
-    smb = surface_mass_balance(xx)
-    temp = ice_surface_temp(xx)
+    bed_elevation = bed_topography(experiment, xx)
+    ice_thickness = thickness(experiment, step, xx, calving_front, semianalytical_profile)
+    ice_surface_mass_balance = surface_mass_balance(xx)
+    ice_surface_temperature = ice_surface_temp(xx)
+
+    ice_extent = np.zeros_like(ice_thickness)
+    ice_extent[ice_thickness > 0] = 1
+    ice_extent[bed_elevation > 0] = 1
 
     nc = PISMNC.PISMDataset(filename, 'w', format="NETCDF3_CLASSIC")
 
@@ -86,24 +90,29 @@ def pism_bootstrap_file(filename, experiment, step, mode,
                        attrs={'units': 'm',
                               'long_name': 'bedrock surface elevation',
                               'standard_name': 'bedrock_altitude'})
-    nc.write('topg', topg)
+    nc.write('topg', bed_elevation)
 
     nc.define_2d_field('thk',
                        attrs={'units': 'm',
                               'long_name': 'ice thickness',
                               'standard_name': 'land_ice_thickness'})
-    nc.write('thk', thk)
+    nc.write('thk', ice_thickness)
 
     nc.define_2d_field('climatic_mass_balance',
                        attrs={'units': 'kg m-2 / s',
                               'long_name': 'ice-equivalent surface mass balance (accumulation/ablation) rate',
                               'standard_name': 'land_ice_surface_specific_mass_balance_flux'})
-    nc.write('climatic_mass_balance', smb)
+    nc.write('climatic_mass_balance', ice_surface_mass_balance)
 
     nc.define_2d_field('ice_surface_temp',
                        attrs={'units': 'Kelvin',
                               'long_name': 'annual average ice surface temperature, below firn processes'})
-    nc.write('ice_surface_temp', temp)
+    nc.write('ice_surface_temp', ice_surface_temperature)
+
+    nc.define_2d_field('land_ice_area_fraction_retreat',
+                       attrs={'units': '1',
+                              'long_name': 'mask defining the maximum ice extent'})
+    nc.write('land_ice_area_fraction_retreat', ice_extent)
 
     nc.close()
 

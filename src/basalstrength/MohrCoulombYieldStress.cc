@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019 PISM Authors
+// Copyright (C) 2004--2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -314,10 +314,8 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.ocean(i, j)) {
-      m_basal_yield_stress(i, j) = 0.0;
-    } else if (cell_type.ice_free(i, j)) {
-      m_basal_yield_stress(i, j) = high_tauc;  // large yield stress if grounded and ice-free
+    if (cell_type.ice_free(i, j)) {
+      m_basal_yield_stress(i, j) = high_tauc;  // large yield stress if ice-free
     } else { // grounded and there is some ice
 
       // user can ask that marine grounding lines get special treatment

@@ -78,7 +78,7 @@ def run_model(grid, orography):
     water_density = config.get_number("constants.fresh_water.density")
 
     # convert from kg / (m^2 s) to mm/s
-    return model.mean_precipitation().numpy() / (1000.0 * water_density)
+    return model.mean_precipitation().numpy() / (1e-3 * water_density)
 
 def max_error(spacing, wind_direction):
     # Set conversion time to zero (we could set fallout time to zero instead: it does not

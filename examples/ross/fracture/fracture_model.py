@@ -33,8 +33,8 @@ fracture.initialize()
 
 # read in the velocity field
 velocity = PISM.IceModelVec2V(grid, "_ssa_bc", PISM.WITHOUT_GHOSTS)
-velocity.set_attrs("", "x-component of the ice velocity", "m s-1", "", 0)
-velocity.set_attrs("", "y-component of the ice velocity", "m s-1", "", 1)
+velocity.set_attrs("", "x-component of the ice velocity", "m s-1", "m s-1", "", 0)
+velocity.set_attrs("", "y-component of the ice velocity", "m s-1", "m s-1", "", 1)
 velocity.regrid(filename)
 
 # find the longest time step we can take with this velocity field
