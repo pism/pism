@@ -1748,12 +1748,12 @@ netcdf pism_config {
     pism_config:lake_level.lakecc.topg_overlay_file_type = "string";
     pism_config:lake_level.lakecc.topg_overlay_file_option = "lakecc_topg_overlay_file";
 
-    pism_config:lake_level.lakecc.max_update_interval = 10;
+    pism_config:lake_level.lakecc.max_update_interval = 50;
     pism_config:lake_level.lakecc.max_update_interval_doc = "Maximum time interval between full LakeCC updates.";
     pism_config:lake_level.lakecc.max_update_interval_type = "integer";
     pism_config:lake_level.lakecc.max_update_interval_units = "years";
 
-    pism_config:lake_level.lakecc.max_patch_iterations = 10;
+    pism_config:lake_level.lakecc.max_patch_iterations = 5;
     pism_config:lake_level.lakecc.max_patch_iterations_doc = "Maximum time interval between full LakeCC updates.";
     pism_config:lake_level.lakecc.max_patch_iterations_type = "integer";
     pism_config:lake_level.lakecc.max_patch_iterations_units = "pure number";
