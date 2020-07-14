@@ -2100,6 +2100,11 @@ netcdf pism_config {
     pism_config:stress_balance.blatter.flow_law = "gpbld";
     pism_config:stress_balance.blatter.flow_law_doc = "The flow law used by the Blatter-Pattyn stress balance model.";
 
+    pism_config:stress_balance.blatter.max_cliff_height_units = "meter";
+    pism_config:stress_balance.blatter.max_cliff_height_type = "number";
+    pism_config:stress_balance.blatter.max_cliff_height = 200.0;
+    pism_config:stress_balance.blatter.max_cliff_height_doc = "Maximum allowed cliff height. This controls the surface slope limiter; the maximum slope is `\\Delta h / \\max(\\Delta x, \\Delta y)`.";
+
     pism_config:stress_balance.blatter.n_levels_units = "count";
     pism_config:stress_balance.blatter.n_levels_type = "integer";
     pism_config:stress_balance.blatter.n_levels = 1;

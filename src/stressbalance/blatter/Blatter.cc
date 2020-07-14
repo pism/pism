@@ -181,6 +181,11 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
     dx = (x_max - x_min) / (info.mx - 1),
     dy = (y_max - y_min) / (info.my - 1);
 
+  double
+    ds_max             = m_config->get_number("stress_balance.blatter.max_cliff_height"),
+    grad_s_max         = ds_max / std::max(dx, dy),
+    grad_s_squared_max = pow(grad_s_max, 2.0);
+
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
   fem::Q1Element3Face face(dx, dy, fem::Q1Quadrature4());
 
@@ -329,6 +334,13 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         for (int q = 0; q < Nq; ++q) {
           auto W = element.weight(q) / m_rhog;
 
+          // limit the surface slope to avoid artifacts near steep margins
+          Vector2 grad_s(s_x[q], s_y[q]);
+
+          if (grad_s.magnitude_squared() > grad_s_squared_max) {
+            grad_s = (grad_s_max / grad_s.magnitude()) * grad_s;
+          }
+
           double
             ux = u_x[q].u,
             uy = u_y[q].u,
@@ -350,11 +362,11 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
             R_nodal[t].u += W * (eta * (psi.dx * (4.0 * ux + 2.0 * vy) +
                                         psi.dy * (uy + vx) +
                                         psi.dz * uz) +
-                                 psi.val * m_rhog * s_x[q]);
+                                 psi.val * m_rhog * grad_s.u);
             R_nodal[t].v += W * (eta * (psi.dx * (uy + vx) +
                                         psi.dy * (2.0 * ux + 4.0 * vy) +
                                         psi.dz * vz) +
-                                 psi.val * m_rhog * s_y[q]);
+                                 psi.val * m_rhog * grad_s.v);
           }
         }
 
