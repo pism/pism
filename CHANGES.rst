@@ -7,7 +7,14 @@ Changes from v1.2.1 to v1.2.2
   (contributed by Moritz Kreuzer).
 - von Mises calving is applied at both floating and grounded ice fronts.
 - Update the list of Debian (Ubuntu) packages in the installation manual.
-- Use "python3" instead of "python" in all Python scripts.
+- Use "python3" instead of "python" in all Python scripts. This is needed
+  to support Ubuntu 20.04, for example.
+- Support Clang 10.0 and GCC 9.3.
+- Formally require PROJ 6.0 or newer. PISM v1.2 required PROJ 5.0 or later, but it turns
+  out that there are significant differences between PROJ 5.x and 6.x that make supporting
+  both version too complicated.
+- Fix `issue 462`_ (asymmetric `gl_mask` even though ice geometry is symmetric).
+- Update the minimal NetCDF version required by PISM (4.4 instead of 4.1).
 
 Changes from v1.2 to v1.2.1
 ===========================
@@ -882,6 +889,7 @@ Miscellaneous
 .. _issue 405: https://github.com/pism/pism/issues/405
 .. _issue 422: https://github.com/pism/pism/issues/422
 .. _issue 424: https://github.com/pism/pism/issues/424
+.. _issue 462: https://github.com/pism/pism/issues/462
 .. _ocean models: http://pism-docs.org/sphinx/climate_forcing/ocean.html
 ..
    Local Variables:
