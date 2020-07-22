@@ -1,69 +1,34 @@
-import PISM
-import time
-import numpy as np
+"""Check if the code computing the fraction of grid cells that is grounded produces
+symmetric outputs for symmetric inputs.
+"""
 
-np.set_printoptions(precision=5, suppress=True)
+import PISM
+import numpy as np
 
 ctx = PISM.Context()
 
-ice_density = ctx.config.get_number("constants.ice.density")
-ocean_density = ctx.config.get_number("constants.sea_water.density")
+def init(mu, L, sea_level, thickness, test_type="box"):
+    """Set ice thickness for the grounded fraction symmetry test.
 
-mu = ice_density / ocean_density
+    Parameters
+    ----------
+    mu :
+        the ratio of densities of ice and ocean water
+    L :
+        controls the ice thickness near the center of the domain
+    sea_level :
+        the sea level elevation
+    thickness :
+        the output argument
+    test_type :
+        controls the shape of the icy patch ("box" or "cross")
 
+    In the old implementation based on the ad hoc extension of the 1D LI parameterization
+    of grounding line position L corresponded to the grounded fraction in a cell
+    containing the grounding line. It does not have a clear meaning in the current
+    context, other than 0 corresponds to floatation thickness and 1 to double that.
 
-def allocate_grid(ctx):
-    params = PISM.GridParameters(ctx.config)
-    params.Lx = 1e5
-    params.Ly = 1e5
-    params.Lz = 1000
-    params.Mx = 7
-    params.My = 7
-    params.Mz = 5
-    params.periodicity = PISM.NOT_PERIODIC
-    params.registration = PISM.CELL_CORNER
-    params.ownership_ranges_from_options(ctx.size)
-    return PISM.IceGrid(ctx.ctx, params)
-
-
-def allocate_storage(grid):
-    ice_thickness = PISM.model.createIceThicknessVec(grid)
-
-    # not used, but needed by GeometryCalculator::compute()
-    surface = PISM.model.createIceSurfaceVec(grid)
-
-    bed_topography = PISM.model.createBedrockElevationVec(grid)
-
-    mask = PISM.model.createIceMaskVec(grid)
-
-    gl_mask = PISM.model.createGroundingLineMask(grid)
-    gl_mask_x = PISM.model.createGroundingLineMask(grid)
-    gl_mask_x.set_name("gl_mask_x")
-    gl_mask_y = PISM.model.createGroundingLineMask(grid)
-    gl_mask_y.set_name("gl_mask_y")
-
-    sea_level = PISM.model.createIceThicknessVec(grid)
-    sea_level.set_name("sea_level")
-
-    return ice_thickness, bed_topography, surface, mask, gl_mask, gl_mask_x, gl_mask_y, sea_level
-
-
-def compute_mask(sea_level, bed_topography, ice_thickness, mask, surface):
-    gc = PISM.GeometryCalculator(ctx.config)
-    gc.compute(sea_level, bed_topography, ice_thickness, mask, surface)
-
-
-def print_vec(vec):
-    v0 = vec.allocate_proc0_copy()
-    vec.put_on_proc0(v0.get())
-
-    shape = vec.get_dm().get().sizes
-
-    print(vec.get_name())
-    print(v0.get()[:].reshape(shape, order="f"))
-
-
-def init(mu, L, sea_level, vec, type="box"):
+    """
     k = {0.0: 8,
          0.25: 7,
          0.5: 6,
@@ -73,77 +38,70 @@ def init(mu, L, sea_level, vec, type="box"):
     H0 = (8.0 / k[L]) * (sea_level / mu)
     H1 = 0.5 * H0
 
-    grid = vec.grid()
+    grid = thickness.grid()
 
-    with PISM.vec.Access(nocomm=[vec]):
+    with PISM.vec.Access(thickness):
         for (i, j) in grid.points():
-            if type == "box" and abs(i - 3) < 2 and abs(j - 3) < 2:
-                vec[i, j] = H0
-            elif type == "cross" and abs(i - 3) < 2 and abs(j - 3) < 2 and (i == 3 or j == 3):
-                vec[i, j] = H0
+            if test_type == "box" and abs(i - 3) < 2 and abs(j - 3) < 2:
+                thickness[i, j] = H0
+            elif test_type == "cross" and abs(i - 3) < 2 and abs(j - 3) < 2 and (i == 3 or j == 3):
+                thickness[i, j] = H0
             else:
-                vec[i, j] = H1
+                thickness[i, j] = H1
 
             if abs(i - 3) >= 3 or abs(j - 3) >= 3:
-                vec[i, j] = 0.0
+                thickness[i, j] = 0.0
 
-    vec.update_ghosts()
+    thickness.update_ghosts()
 
+def run(L, test):
+    """Calls PISM's code to compute grounded cell fraction.
+
+    Parameters
+    ----------
+
+    L :
+        controls the thickness in the interior of the icy patch
+    test :
+        chooses the shape of the patch ("box" or "cross")
+    """
+    Lx, Ly = 1e5, 1e5
+    Mx, My = 7, 7
+    x0, y0 = 0.0, 0.0
+    grid = PISM.IceGrid.Shallow(ctx.ctx,
+                                Lx, Ly, x0, y0, Mx, My,
+                                PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+
+    sea_level = 500.0
+
+    geometry = PISM.Geometry(grid)
+
+    ice_density = ctx.config.get_number("constants.ice.density")
+    ocean_density = ctx.config.get_number("constants.sea_water.density")
+
+    init(ice_density / ocean_density, L, sea_level, geometry.ice_thickness, test)
+
+    geometry.bed_elevation.set(0.0)
+    geometry.sea_level_elevation.set(sea_level)
+
+    # this call computes the grounded fraction of each cell
+    geometry.ensure_consistency(0.0)
+
+    return geometry
+
+def check_symmetry(var):
+    """Check symmetry of a NumPy array"""
+    np.testing.assert_almost_equal(var, np.flipud(var))
+    np.testing.assert_almost_equal(var, np.fliplr(var))
+    np.testing.assert_almost_equal(var, np.flipud(np.fliplr(var)))
 
 def grounded_cell_fraction_test():
+    """Check grounded cell fraction symmetry for symmetric inputs"""
+    for test in ["box", "cross"]:
+        for L in [0.0, 0.25, 0.5, 0.75, 1.0]:
+            geometry = run(L, test)
 
-    # allocation
-    grid = allocate_grid(ctx)
+            check_symmetry(geometry.cell_grounded_fraction.numpy())
 
-    ice_thickness, bed_topography, surface, mask, gl_mask, gl_mask_x, gl_mask_y, _ = allocate_storage(grid)
-
-    bed_topography.set(0.0)
-
-    # initialization
-    sea_level = 500.0
-    for L in [0.0, 0.25, 0.5, 0.75, 1.0]:
-        init(mu, L, sea_level, ice_thickness, "box")
-
-        compute_mask(sea_level, bed_topography, ice_thickness, mask, surface)
-
-        # computation of gl_mask
-        PISM.compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
-                                            ice_thickness, bed_topography, mask, gl_mask,
-                                            gl_mask_x, gl_mask_y)
-
-        # inspection / comparison
-        print("L = %f" % L)
-        print_vec(mask)
-        print_vec(gl_mask_x)
-        print_vec(gl_mask_y)
-        print_vec(gl_mask)
-
-
-def new_grounded_cell_fraction_test():
-
-    # allocation
-    grid = allocate_grid(ctx)
-
-    ice_thickness, bed_topography, _, _, gl_mask, _, _, sea_level = allocate_storage(grid)
-
-    # initialization
-    bed_topography.set(0.0)
-    sl = 500.0
-    sea_level.set(sl)
-    for L in [0.0, 0.25, 0.5, 0.75, 1.0]:
-        init(mu, L, sl, ice_thickness, "box")
-
-        # computation of gl_mask
-        PISM.compute_grounded_cell_fraction(ice_density, ocean_density,
-                                            sea_level,
-                                            ice_thickness,
-                                            bed_topography,
-                                            gl_mask)
-
-        # inspection / comparison
-        print("L = %f" % L)
-        print_vec(gl_mask)
-
-
-grounded_cell_fraction_test()
-new_grounded_cell_fraction_test()
+if __name__ == "__main__":
+    grounded_cell_fraction_test()
