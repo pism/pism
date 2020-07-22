@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -278,12 +278,6 @@ void compute_grounded_cell_fraction(double ice_density,
     for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      auto S = sea_level.box(i, j);
-      auto H = ice_thickness.box(i, j);
-      auto B = bed_topography.box(i, j);
-
-      auto f = F(S, B, H, alpha);
-
       /*
         NW----------------N----------------NE
         |                 |                 |
@@ -300,27 +294,37 @@ void compute_grounded_cell_fraction(double ice_density,
         SW----------------S----------------SE
       */
 
-      double
-        f_o  = f.ij,
-        f_sw = 0.25 * (f.sw + f.s + f.ij + f.w),
-        f_se = 0.25 * (f.s + f.se + f.e + f.ij),
-        f_ne = 0.25 * (f.ij + f.e + f.ne + f.n),
-        f_nw = 0.25 * (f.w + f.ij + f.n + f.nw);
+      // compute the floatation function at 8 points surrounding the current grid point
+      BoxStencil<double> f;
+      {
+        auto S = sea_level.box(i, j);
+        auto H = ice_thickness.box(i, j);
+        auto B = bed_topography.box(i, j);
 
-      double
-        f_s = 0.5 * (f.ij + f.s),
-        f_e = 0.5 * (f.ij + f.e),
-        f_n = 0.5 * (f.ij + f.n),
-        f_w = 0.5 * (f.ij + f.w);
+        auto x = F(S, B, H, alpha);
 
-      double fraction = 0.125 * (grounded_area_fraction(f_o, f_ne, f_n) +
-                                 grounded_area_fraction(f_o, f_n,  f_nw) +
-                                 grounded_area_fraction(f_o, f_nw, f_w) +
-                                 grounded_area_fraction(f_o, f_w,  f_sw) +
-                                 grounded_area_fraction(f_o, f_sw, f_s) +
-                                 grounded_area_fraction(f_o, f_s,  f_se) +
-                                 grounded_area_fraction(f_o, f_se, f_e) +
-                                 grounded_area_fraction(f_o, f_e,  f_ne));
+        f.ij = x.ij;
+        f.sw = 0.25 * (x.sw + x.s + x.ij + x.w);
+        f.se = 0.25 * (x.s + x.se + x.e + x.ij);
+        f.ne = 0.25 * (x.ij + x.e + x.ne + x.n);
+        f.nw = 0.25 * (x.w + x.ij + x.n + x.nw);
+
+        f.s = 0.5 * (x.ij + x.s);
+        f.e = 0.5 * (x.ij + x.e);
+        f.n = 0.5 * (x.ij + x.n);
+        f.w = 0.5 * (x.ij + x.w);
+      }
+
+      // compute the grounding fraction for the current cell by breaking it into 8
+      // triangles
+      double fraction = 0.125 * (grounded_area_fraction(f.ij, f.ne, f.n) +
+                                 grounded_area_fraction(f.ij, f.n,  f.nw) +
+                                 grounded_area_fraction(f.ij, f.nw, f.w) +
+                                 grounded_area_fraction(f.ij, f.w,  f.sw) +
+                                 grounded_area_fraction(f.ij, f.sw, f.s) +
+                                 grounded_area_fraction(f.ij, f.s,  f.se) +
+                                 grounded_area_fraction(f.ij, f.se, f.e) +
+                                 grounded_area_fraction(f.ij, f.e,  f.ne));
 
       result(i, j) = clip(fraction, 0.0, 1.0);
 
