@@ -26,6 +26,8 @@
 #include "pism/geometry/grounded_cell_fraction.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"
+#include "pism/util/io/File.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -184,6 +186,28 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
                                  ice_thickness,
                                  bed_elevation,
                                  cell_grounded_fraction);
+}
+
+void Geometry::dump(const char *filename) const {
+  auto grid = ice_thickness.grid();
+
+  File file(grid->com, filename,
+            string_to_backend(grid->ctx()->config()->get_string("output.format")),
+            PISM_READWRITE_CLOBBER,
+            grid->ctx()->pio_iosys_id());
+
+  io::define_time(file, *grid->ctx());
+  io::append_time(file, *grid->ctx()->config(), 0.0);
+
+  latitude.write(file);
+  longitude.write(file);
+  bed_elevation.write(file);
+  sea_level_elevation.write(file);
+  ice_thickness.write(file);
+  ice_area_specific_volume.write(file);
+  cell_type.write(file);
+  cell_grounded_fraction.write(file);
+  ice_surface_elevation.write(file);
 }
 
 /*! Compute the elevation of the bottom surface of the ice.
