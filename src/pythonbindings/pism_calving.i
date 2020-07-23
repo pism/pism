@@ -32,3 +32,6 @@
 
 pism_class(pism::FrontRetreat,
            "pism/frontretreat/FrontRetreat.hh")
+
+pism_class(pism::calving::IcebergRemover,
+           "pism/frontretreat/util/IcebergRemover.hh")
