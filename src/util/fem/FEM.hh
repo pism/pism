@@ -21,7 +21,7 @@
 
 
 //! \brief Classes for implementing the Finite Element Method on an IceGrid.
-/*! \file FETools.hh We assume that the reader has a basic understanding of the finite element method. The
+/*! @file FEM.hh We assume that the reader has a basic understanding of the finite element method. The
   following is a reminder of the method that also gives the background for the how to implement it
   on an IceGrid with the tools in this module.
 
