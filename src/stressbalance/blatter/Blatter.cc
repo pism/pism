@@ -154,11 +154,6 @@ static Vector2 u_bc(double x, double y, double z) {
   return {0.0, 0.0};
 }
 
-static Vector2 dirichlet_scale(double dx, double dy, double dz) {
-  return {dx * dy / dz + dx * dz / dy + 4.0 * dy * dz / dx,
-          dx * dy / dz + 4.0 * dx * dz / dy + dy * dz / dx};
-}
-
 void Blatter::compute_residual(DMDALocalInfo *petsc_info,
                                const Vector2 ***x, Vector2 ***R) {
   auto info = grid_transpose(*petsc_info);
@@ -205,10 +200,9 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         // Dirichlet nodes
         if (dirichlet_node(info, {i, j, k}) or
             (int)P[j][i].node_type == NODE_EXTERIOR) {
-          double dz = std::max(P[j][i].thickness, m_grid_info.min_thickness) / (info.mz - 1);
 
-          // FIXME: eta should be included in the scaling
-          Vector2 s = dirichlet_scale(dx, dy, dz);
+          // Dirichlet scale
+          Vector2 s = {1.0, 1.0};
 
           Vector2 U_bc;
           if (dirichlet_node(info, {i, j, k})) {
@@ -681,10 +675,8 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
       for (int k = info.zs; k < info.zs + info.zm; k++) {
         if ((int)P[j][i].node_type == NODE_EXTERIOR or dirichlet_node(info, {i, j, k})) {
 
-          double
-            dz = std::max(P[j][i].thickness, m_grid_info.min_thickness) / (info.mz - 1);
-          auto scaling = dirichlet_scale(dx, dy, dz);
-          // FIXME: eta should be included in the scaling
+          // Dirichlet scaling
+          Vector2 scaling = {1.0, 1.0};
           double identity[4] = {scaling.u, 0, 0, scaling.v};
 
           MatStencil row;
