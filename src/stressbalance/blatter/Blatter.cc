@@ -168,6 +168,57 @@ static bool exterior_element(const int *node_type) {
 }
 
 /*!
+ * Return true if the current map-plane cell contains the grounding line, false otherwise.
+ *
+ * The code takes advantage of the ordering of element nodes: lower 4 first, then upper 4.
+ * This means that we can loop over the first 4 nodes and ignore the other 4.
+ */
+static bool grounding_line(const double *F) {
+
+  // number of nodes per map-plane cell
+  int N = 4;
+
+  bool
+    grounded = false,
+    floating = false;
+
+  for (int n = 0; n < N; ++n) {
+    if (F[n] <= 0.0) {
+      grounded = true;
+    } else {
+      floating = true;
+    }
+  }
+
+  return grounded and floating;
+}
+
+/*!
+ * Return true if the current vertical face is partially submerged.
+ */
+static bool partially_submerged_face(int face, const double *z, const double *z_sl) {
+  auto nodes = fem::q13d::incident_nodes[face];
+
+  // number of nodes per face
+  int N = 4;
+
+  bool
+    above = false,
+    below = false;
+
+  for (int n = 0; n < N; ++n) {
+    int k = nodes[n];
+    if (z[k] > z_sl[k]) {
+      above = true;
+    } else {
+      below = true;
+    }
+  }
+
+  return above and below;
+}
+
+/*!
  * Return true if the current face is a part of the Neumann boundary, false otherwise.
  *
  * A face is a part of the Neumann boundary if all four nodes are Neumann nodes. If a node
@@ -215,8 +266,10 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
     grad_s_squared_max = pow(grad_s_max, 2.0);
 
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
-  fem::Q1Element3Face face4(dx, dy, fem::Q1Quadrature4()),
-    *face = &face4;
+  fem::Q1Element3Face
+    face4(dx, dy, fem::Q1Quadrature4()),     // 4-point Gaussian quadrature
+    face100(dx, dy, fem::Q1QuadratureN(10)); // 100-point quadrature for grounding lines
+                                             // and partially-submerged faces
 
   DataAccess<Parameters**> P(info.da, 2, GHOSTED);
   DataAccess<double***> ice_hardness(info.da, 3, GHOSTED);
@@ -269,6 +322,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   const int Nq = 100;
   assert(element.n_pts() <= Nq);
   assert(face4.n_pts() <= Nq);
+  assert(face100.n_pts() <= Nq);
 
   // scalar quantities evaluated at quadrature points
   double x_nodal[Nk], xq[Nq];
@@ -391,10 +445,6 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
         // include basal drag
         if (k == 0) {
-          // face 4 is the bottom face in fem::q13d::incident_nodes
-          face->reset(4, z_nodal);
-
-          face->evaluate(u_nodal, u);
 
           for (int n = 0; n < Nk; ++n) {
             auto I = element.local_to_global(n);
@@ -403,6 +453,13 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
             f_nodal[n]    = P[I.j][I.i].floatation;
           }
 
+          // use an N*N-point equally-spaced quadrature at grounding lines
+          fem::Q1Element3Face *face = grounding_line(f_nodal) ? &face100 : &face4;
+
+          // face 4 is the bottom face in fem::q13d::incident_nodes
+          face->reset(4, z_nodal);
+
+          face->evaluate(u_nodal, u);
           face->evaluate(tauc_nodal, tauc);
           face->evaluate(f_nodal, floatation);
 
@@ -426,6 +483,9 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         for (int f = 0; f < 4; ++f) {
 
           if (neumann_bc_face(f, node_type)) {
+            // use an N*N-point equally-spaced quadrature at for partially-submerged faces
+            fem::Q1Element3Face *face = partially_submerged_face(f, z_nodal.data(), sl_nodal) ? &face100 : &face4;
+
             face->reset(f, z_nodal);
 
             // compute physical coordinates of quadrature points on this face
@@ -483,8 +543,10 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
     dy = (y_max - y_min) / (info.my - 1);
 
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
-  fem::Q1Element3Face face4(dx, dy, fem::Q1Quadrature4()),
-    *face = &face4;
+
+  fem::Q1Element3Face
+    face4(dx, dy, fem::Q1Quadrature4()),     // 4-point Gaussian quadrature
+    face100(dx, dy, fem::Q1QuadratureN(10)); // 100-point quadrature for grounding lines
 
   DataAccess<Parameters**> P(info.da, 2, GHOSTED);
   DataAccess<double***> hardness(info.da, 3, GHOSTED);
@@ -497,6 +559,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   const int Nq = 100;
   assert(element.n_pts() <= Nq);
   assert(face4.n_pts() <= Nq);
+  assert(face100.n_pts() <= Nq);
 
   // 2D vector quantities evaluated at quadrature points
   Vector2 u_nodal[Nk], u[Nq], u_x[Nq], u_y[Nq], u_z[Nq];
@@ -621,10 +684,6 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
         // include basal drag
         if (k == 0) {
-          // face 4 is the bottom face in fem::q13d::incident_nodes
-          face->reset(4, z_nodal);
-
-          face->evaluate(u_nodal, u);
 
           for (int n = 0; n < Nk; ++n) {
             auto I = element.local_to_global(n);
@@ -633,6 +692,12 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
             f_nodal[n]    = P[I.j][I.i].floatation;
           }
 
+          fem::Q1Element3Face *face = grounding_line(f_nodal) ? &face100 : &face4;
+
+          // face 4 is the bottom face in fem::q13d::incident_nodes
+          face->reset(4, z_nodal);
+
+          face->evaluate(u_nodal, u);
           face->evaluate(tauc_nodal, tauc);
           face->evaluate(f_nodal, floatation);
 
