@@ -213,7 +213,8 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
     grad_s_squared_max = pow(grad_s_max, 2.0);
 
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
-  fem::Q1Element3Face face(dx, dy, fem::Q1Quadrature4());
+  fem::Q1Element3Face face4(dx, dy, fem::Q1Quadrature4()),
+    *face = &face4;
 
   DataAccess<Parameters**> P(info.da, 2, GHOSTED);
   DataAccess<double***> F(info.da, 3, GHOSTED);
@@ -282,7 +283,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   double tauc_nodal[Nk_max], tauc[Nq_max];
 
   // make sure that xq, yq, zq and big enough for quadrature points on element faces
-  assert(face.n_pts() <= Nq_max);
+  assert(face->n_pts() <= Nq_max);
 
   // loop over all the elements that have at least one owned node
   for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
@@ -387,9 +388,9 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         // include basal drag
         if (k == 0) {
           // face 4 is the bottom face in fem::q13d::incident_nodes
-          face.reset(4, z_nodal);
+          face->reset(4, z_nodal);
 
-          face.evaluate(u_nodal, u);
+          face->evaluate(u_nodal, u);
 
           for (int n = 0; n < Nk; ++n) {
             auto I = element.local_to_global(n);
@@ -397,10 +398,10 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
             tauc_nodal[n] = P[I.j][I.i].tauc;
           }
 
-          face.evaluate(tauc_nodal, tauc);
+          face->evaluate(tauc_nodal, tauc);
 
-          for (int q = 0; q < face.n_pts(); ++q) {
-            auto W = face.weight(q) / m_rhog;
+          for (int q = 0; q < face->n_pts(); ++q) {
+            auto W = face->weight(q) / m_rhog;
 
             double beta = 0.0;
             // FIXME: use geometric info to determine if this location is grounded or floating
@@ -411,7 +412,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
             // loop over all test functions
             for (int t = 0; t < Nk; ++t) {
-              auto psi = face.chi(q, t);
+              auto psi = face->chi(q, t);
 
               R_nodal[t].u += W * psi * beta * u[q].u;
               R_nodal[t].v += W * psi * beta * u[q].v;
@@ -423,25 +424,25 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         for (int f = 0; f < 4; ++f) {
 
           if (neumann_bc_face(f, node_type)) {
-            face.reset(f, z_nodal);
+            face->reset(f, z_nodal);
 
             // compute physical coordinates of quadrature points on this face
-            face.evaluate(x_nodal, xq);
-            face.evaluate(y_nodal, yq);
-            face.evaluate(z_nodal.data(), zq);
-            face.evaluate(sl_nodal, z_sl);
+            face->evaluate(x_nodal, xq);
+            face->evaluate(y_nodal, yq);
+            face->evaluate(z_nodal.data(), zq);
+            face->evaluate(sl_nodal, z_sl);
 
             // loop over all quadrature points
-            for (int q = 0; q < face.n_pts(); ++q) {
-              auto W = face.weight(q) / m_rhog;
-              auto N3 = face.normal(q);
+            for (int q = 0; q < face->n_pts(); ++q) {
+              auto W = face->weight(q) / m_rhog;
+              auto N3 = face->normal(q);
               Vector2 N = {N3.x, N3.y};
 
               double p = rho_w * g * std::max(z_sl[q] - zq[q], 0.0);
 
               // loop over all test functions
               for (int t = 0; t < Nk; ++t) {
-                auto psi = face.chi(q, t);
+                auto psi = face->chi(q, t);
 
                 R_nodal[t] += W * psi * p * N;
               }
@@ -480,7 +481,8 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
     dy = (y_max - y_min) / (info.my - 1);
 
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
-  fem::Q1Element3Face face(dx, dy, fem::Q1Quadrature4());
+  fem::Q1Element3Face face4(dx, dy, fem::Q1Quadrature4()),
+    *face = &face4;
 
   DataAccess<Parameters**> P(info.da, 2, GHOSTED);
   DataAccess<double***> hardness(info.da, 3, GHOSTED);
@@ -610,9 +612,9 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
         // include basal drag
         if (k == 0) {
           // face 4 is the bottom face in fem::q13d::incident_nodes
-          face.reset(4, z_nodal);
+          face->reset(4, z_nodal);
 
-          face.evaluate(u_nodal, u);
+          face->evaluate(u_nodal, u);
 
           for (int n = 0; n < Nk; ++n) {
             auto I = element.local_to_global(n);
@@ -620,10 +622,10 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
             tauc_nodal[n] = P[I.j][I.i].tauc;
           }
 
-          face.evaluate(tauc_nodal, tauc);
+          face->evaluate(tauc_nodal, tauc);
 
-          for (int q = 0; q < face.n_pts(); ++q) {
-            auto W = face.weight(q) / m_rhog;
+          for (int q = 0; q < face->n_pts(); ++q) {
+            auto W = face->weight(q) / m_rhog;
 
             // FIXME: use geometric info to determine if this location is grounded or floating
             bool grounded = true;
@@ -634,9 +636,9 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
             // loop over all test functions
             for (int t = 0; t < Nk; ++t) {
-              auto psi = face.chi(q, t);
+              auto psi = face->chi(q, t);
               for (int s = 0; s < Nk; ++s) {
-                auto phi = face.chi(q, s);
+                auto phi = face->chi(q, s);
 
                 double p = psi * phi;
 
