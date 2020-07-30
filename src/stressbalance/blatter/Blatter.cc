@@ -57,6 +57,8 @@ struct Parameters {
   double tauc;
   // sea level elevation (used to determine if a location is grounded)
   double sea_level;
+  // floatation function (positive where floating, zero or negative where grounded)
+  double floatation;
 };
 
 /*!
@@ -275,6 +277,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   double s_nodal[Nk], s[Nq], s_x[Nq], s_y[Nq], s_z[Nq];
   double sl_nodal[Nk], z_sl[Nq];
   double tauc_nodal[Nk], tauc[Nq];
+  double f_nodal[Nk], floatation[Nq];
 
   std::vector<double> z_nodal(Nk);
   double zq[Nq];
@@ -397,19 +400,17 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
             auto I = element.local_to_global(n);
 
             tauc_nodal[n] = P[I.j][I.i].tauc;
+            f_nodal[n]    = P[I.j][I.i].floatation;
           }
 
           face->evaluate(tauc_nodal, tauc);
+          face->evaluate(f_nodal, floatation);
 
           for (int q = 0; q < face->n_pts(); ++q) {
             auto W = face->weight(q) / m_rhog;
 
-            double beta = 0.0;
-            // FIXME: use geometric info to determine if this location is grounded or floating
-            bool grounded = true;
-            if (grounded) {
-              beta = m_basal_sliding_law->drag(tauc[q], u[q].u, u[q].v);
-            }
+            bool grounded = floatation[q] <= 0.0;
+            double beta = grounded ? m_basal_sliding_law->drag(tauc[q], u[q].u, u[q].v) : 0.0;
 
             // loop over all test functions
             for (int t = 0; t < Nk; ++t) {
@@ -503,6 +504,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   // scalar quantities evaluated at quadrature points
   double B_nodal[Nk], Bq[Nq];
   double tauc_nodal[Nk], tauc[Nq];
+  double f_nodal[Nk], floatation[Nq];
 
   // scalar quantities evaluated at element nodes
   int node_type[Nk];
@@ -628,15 +630,16 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
             auto I = element.local_to_global(n);
 
             tauc_nodal[n] = P[I.j][I.i].tauc;
+            f_nodal[n]    = P[I.j][I.i].floatation;
           }
 
           face->evaluate(tauc_nodal, tauc);
+          face->evaluate(f_nodal, floatation);
 
           for (int q = 0; q < face->n_pts(); ++q) {
             auto W = face->weight(q) / m_rhog;
 
-            // FIXME: use geometric info to determine if this location is grounded or floating
-            bool grounded = true;
+            bool grounded = floatation[q] <= 0.0;
             double beta = 0.0, dbeta = 0.0;
             if (grounded) {
               m_basal_sliding_law->drag_with_derivative(tauc[q], u[q].u, u[q].v, &beta, &dbeta);
@@ -995,13 +998,16 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
 
       double
         b_grounded = b(i, j),
-        b_floating = sea_level(i, j) - alpha * H(i, j);
+        b_floating = sea_level(i, j) - alpha * H(i, j),
+        s_grounded = b(i, j) + H(i, j),
+        s_floating = sea_level(i, j) + (1.0 - alpha) * H(i, j);
 
       P[j][i].tauc = tauc(i, j);
       P[j][i].thickness = H(i, j);
       P[j][i].sea_level = sea_level(i, j);
       P[j][i].bed = std::max(b_grounded, b_floating);
       P[j][i].node_type = NODE_EXTERIOR;
+      P[j][i].floatation = s_floating - s_grounded;
     }
   }
 
