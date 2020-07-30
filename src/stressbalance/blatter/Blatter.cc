@@ -259,31 +259,32 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
     }
   }
 
-  // values at element nodes
-  const int Nk_max = 8;
-  int Nk = element.n_chi();
-  assert(Nk <= Nk_max);
+  // Maximum number of nodes per element.
+  const int Nk = fem::q13d::n_chi;
+  assert(element.n_chi() <= Nk);
 
-  double x_nodal[Nk_max], y_nodal[Nk_max], B_nodal[Nk_max], s_nodal[Nk_max], sl_nodal[Nk_max];
+  // Maximum number of quadrature points per element or face
+  const int Nq = 100;
+  assert(element.n_pts() <= Nq);
+  assert(face4.n_pts() <= Nq);
+
+  // scalar quantities evaluated at quadrature points
+  double x_nodal[Nk], xq[Nq];
+  double y_nodal[Nk], yq[Nq];
+  double B_nodal[Nk], Bq[Nq];
+  double s_nodal[Nk], s[Nq], s_x[Nq], s_y[Nq], s_z[Nq];
+  double sl_nodal[Nk], z_sl[Nq];
+  double tauc_nodal[Nk], tauc[Nq];
+
   std::vector<double> z_nodal(Nk);
+  double zq[Nq];
 
-  Vector2 R_nodal[Nk_max], u_nodal[Nk_max];
-  int node_type[Nk_max];
+  // 2D vector quantities evaluated at quadrature points
+  Vector2 u_nodal[Nk], u[Nq], u_x[Nq], u_y[Nq], u_z[Nq];
 
-  // values at quadrature points
-  const int Nq_max = 16;
-  int Nq = element.n_pts();
-  assert(Nq <= Nq_max);
-
-  Vector2 u[Nq_max], u_x[Nq_max], u_y[Nq_max], u_z[Nq_max];
-  double xq[Nq_max], yq[Nq_max], zq[Nq_max], Bq[Nq_max];
-
-  double s[Nq_max], s_x[Nq_max], s_y[Nq_max], s_z[Nq_max], z_sl[Nq_max];
-
-  double tauc_nodal[Nk_max], tauc[Nq_max];
-
-  // make sure that xq, yq, zq and big enough for quadrature points on element faces
-  assert(face->n_pts() <= Nq_max);
+  // quantities evaluated at element nodes
+  Vector2 R_nodal[Nk];
+  int node_type[Nk];
 
   // loop over all the elements that have at least one owned node
   for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
@@ -346,7 +347,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         element.evaluate(s_nodal, s, s_x, s_y, s_z);
 
         // loop over all quadrature points
-        for (int q = 0; q < Nq; ++q) {
+        for (int q = 0; q < element.n_pts(); ++q) {
           auto W = element.weight(q) / m_rhog;
 
           // limit the surface slope to avoid artifacts near steep margins
@@ -487,20 +488,27 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   DataAccess<Parameters**> P(info.da, 2, GHOSTED);
   DataAccess<double***> hardness(info.da, 3, GHOSTED);
 
+  // Maximum number of nodes per element
   const int Nk = fem::q13d::n_chi;
+  assert(element.n_chi() <= Nk);
 
-  const int Nq_max = 16;
-  Vector2 u[Nq_max], u_x[Nq_max], u_y[Nq_max], u_z[Nq_max];
-  double Bq[Nq_max];
-  const int Nq = element.n_pts();
-  assert(Nq <= Nq_max);
+  // Maximum number of quadrature points per element or face
+  const int Nq = 100;
+  assert(element.n_pts() <= Nq);
+  assert(face4.n_pts() <= Nq);
 
-  Vector2 u_nodal[Nk];
+  // 2D vector quantities evaluated at quadrature points
+  Vector2 u_nodal[Nk], u[Nq], u_x[Nq], u_y[Nq], u_z[Nq];
+
+  // scalar quantities evaluated at quadrature points
+  double B_nodal[Nk], Bq[Nq];
+  double tauc_nodal[Nk], tauc[Nq];
+
+  // scalar quantities evaluated at element nodes
   int node_type[Nk];
-  double x_nodal[Nk], y_nodal[Nk], B_nodal[Nk];
+  double x_nodal[Nk];
+  double y_nodal[Nk];
   std::vector<double> z_nodal(Nk);
-
-  double tauc_nodal[Nk], tauc[Nq_max];
 
   // loop over all the elements that have at least one owned node
   for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
@@ -555,7 +563,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
         element.evaluate(B_nodal, Bq);
 
         // loop over all quadrature points
-        for (int q = 0; q < Nq; ++q) {
+        for (int q = 0; q < element.n_pts(); ++q) {
           auto W = element.weight(q) / m_rhog;
 
           double
