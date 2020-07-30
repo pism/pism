@@ -154,6 +154,17 @@ static Vector2 u_bc(double x, double y, double z) {
   return {0.0, 0.0};
 }
 
+static bool exterior_element(const int *node_type) {
+  // number of nodes per map-plane cell
+  int N = 4;
+  for (int n = 0; n < N; ++n) {
+    if (node_type[n] == NODE_EXTERIOR) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void Blatter::compute_residual(DMDALocalInfo *petsc_info,
                                const Vector2 ***x, Vector2 ***R) {
   auto info = grid_transpose(*petsc_info);
@@ -278,20 +289,9 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
           sl_nodal[n] = p.sea_level;
         }
 
-        // skip ice-free elements
-        {
-          // an element is exterior if one or more of its nodes are "exterior"
-          bool exterior = false;
-          for (int n = 0; n < Nk; ++n) {
-            if (node_type[n] == NODE_EXTERIOR) {
-              exterior = true;
-              break;
-            }
-          }
-
-          if (exterior) {
-            continue;
-          }
+        // skip ice-free (exterior) elements
+        if (exterior_element(node_type)) {
+          continue;
         }
 
         // compute values of chi, chi_x, chi_y, chi_z and quadrature weights at quadrature
@@ -514,20 +514,9 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
           z_nodal[n] = grid_z(p.bed, p.thickness, info.mz, I.k);
         }
 
-        // skip ice-free elements
-        {
-          // an element is exterior if one or more of its nodes are "exterior"
-          bool exterior = false;
-          for (int n = 0; n < Nk; ++n) {
-            if (node_type[n] == NODE_EXTERIOR) {
-              exterior = true;
-              break;
-            }
-          }
-
-          if (exterior) {
-            continue;
-          }
+        // skip ice-free (exterior) elements
+        if (exterior_element(node_type)) {
+          continue;
         }
 
         // compute values of chi, chi_x, chi_y, chi_z and quadrature weights at quadrature
