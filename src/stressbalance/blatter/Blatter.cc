@@ -217,7 +217,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
     *face = &face4;
 
   DataAccess<Parameters**> P(info.da, 2, GHOSTED);
-  DataAccess<double***> F(info.da, 3, GHOSTED);
+  DataAccess<double***> ice_hardness(info.da, 3, GHOSTED);
 
   // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
   //
@@ -319,8 +319,8 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         // points on this physical element
         element.reset(i, j, k, z_nodal);
 
-        // Get nodal values of F.
-        element.nodal_values((double***)F, B_nodal);
+        // Get nodal values of ice hardness.
+        element.nodal_values((double***)ice_hardness, B_nodal);
 
         // Get nodal values of u.
         element.nodal_values(x, u_nodal);
