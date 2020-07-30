@@ -165,6 +165,26 @@ static bool exterior_element(const int *node_type) {
   return false;
 }
 
+/*!
+ * Return true if the current face is a part of the Neumann boundary, false otherwise.
+ *
+ * A face is a part of the Neumann boundary if all four nodes are Neumann nodes. If a node
+ * is *both* a Neumann and a Dirichlet node (this may happen), then we treat it as a
+ * Neumann node here: element.add_contribution() will do the right thing in this case.
+ */
+static bool neumann_bc_face(int face, const int *node_type) {
+  auto nodes = fem::q13d::incident_nodes[face];
+
+  // number of nodes per face
+  int N = 4;
+  for (int n = 0; n < N; ++n) {
+    if (not (node_type[nodes[n]] == NODE_BOUNDARY)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void Blatter::compute_residual(DMDALocalInfo *petsc_info,
                                const Vector2 ***x, Vector2 ***R) {
   auto info = grid_transpose(*petsc_info);
@@ -401,19 +421,8 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
         // loop over all vertical faces (see fem::q13d::incident_nodes for the order)
         for (int f = 0; f < 4; ++f) {
-          auto nodes = fem::q13d::incident_nodes[f];
-          // Loop over all nodes corresponding to this face. A face is a part of the
-          // Neumann boundary if all four nodes are Neumann nodes. If a node is *both* a
-          // Neumann and a Dirichlet node (this may happen), then we treat it as a Neumann
-          // node here: add_contribution() will do the right thing later.
-          bool neumann = true;
-          for (int n = 0; n < 4; ++n) {
-            if (not (node_type[nodes[n]] == NODE_BOUNDARY)) {
-              neumann = false;
-            }
-          }
 
-          if (neumann) {
+          if (neumann_bc_face(f, node_type)) {
             face.reset(f, z_nodal);
 
             // compute physical coordinates of quadrature points on this face
@@ -437,7 +446,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
                 R_nodal[t] += W * psi * p * N;
               }
             }
-          } // end of "if (neumann)"
+          } // end of "if (neumann_bc_face())"
         } // end of the loop over element faces
 
         element.add_contribution(R_nodal, R);
