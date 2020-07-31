@@ -405,7 +405,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
         // loop over all quadrature points
         for (int q = 0; q < element.n_pts(); ++q) {
-          auto W = element.weight(q) / m_rhog;
+          auto W = element.weight(q);
 
           // limit the surface slope to avoid artifacts near steep margins
           Vector2 grad_s(s_x[q], s_y[q]);
@@ -464,7 +464,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
           face->evaluate(f_nodal, floatation);
 
           for (int q = 0; q < face->n_pts(); ++q) {
-            auto W = face->weight(q) / m_rhog;
+            auto W = face->weight(q);
 
             bool grounded = floatation[q] <= 0.0;
             double beta = grounded ? m_basal_sliding_law->drag(tauc[q], u[q].u, u[q].v) : 0.0;
@@ -496,7 +496,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
             // loop over all quadrature points
             for (int q = 0; q < face->n_pts(); ++q) {
-              auto W = face->weight(q) / m_rhog;
+              auto W = face->weight(q);
               auto N3 = face->normal(q);
               Vector2 N = {N3.x, N3.y};
 
@@ -629,7 +629,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
         // loop over all quadrature points
         for (int q = 0; q < element.n_pts(); ++q) {
-          auto W = element.weight(q) / m_rhog;
+          auto W = element.weight(q);
 
           double
             ux = u_x[q].u,
@@ -702,7 +702,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
           face->evaluate(f_nodal, floatation);
 
           for (int q = 0; q < face->n_pts(); ++q) {
-            auto W = face->weight(q) / m_rhog;
+            auto W = face->weight(q);
 
             bool grounded = floatation[q] <= 0.0;
             double beta = 0.0, dbeta = 0.0;
