@@ -64,6 +64,9 @@ struct Parameters {
 /*!
  * Compute node type using domain thickness and the thickness threshold `min_thickness`.
  *
+ * An element contains ice if ice thickness at all its nodes equal or exceeds the
+ * `min_thickness` threshold.
+ *
  * A node is *interior* if all four elements it belongs to contain ice.
  *
  * A node is *exterior* if it belongs to zero icy elements.
@@ -140,6 +143,8 @@ static void blatter_node_type(DM da, double min_thickness) {
 
 /*!
  * Returns true if a node is in the Dirichlet part of the boundary, false otherwise.
+ *
+ * Used by verification tests.
  */
 static bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I) {
   (void) info;
@@ -156,6 +161,13 @@ static Vector2 u_bc(double x, double y, double z) {
   return {0.0, 0.0};
 }
 
+/*!
+ * Return true if an element does not contain ice, i.e. is a part of the "exterior" of the
+ * ice mass.
+ *
+ * @param[in] node_type node type at the nodes of an element (an array of 8 integers; only
+ *                      4 are used)
+ */
 static bool exterior_element(const int *node_type) {
   // number of nodes per map-plane cell
   int N = 4;
@@ -169,6 +181,9 @@ static bool exterior_element(const int *node_type) {
 
 /*!
  * Return true if the current map-plane cell contains the grounding line, false otherwise.
+ *
+ * This is used to determine whether to use more quadrature points to estimate integrals
+ * over the bottom face of the basal element.
  *
  * The code takes advantage of the ordering of element nodes: lower 4 first, then upper 4.
  * This means that we can loop over the first 4 nodes and ignore the other 4.
@@ -195,6 +210,9 @@ static bool grounding_line(const double *F) {
 
 /*!
  * Return true if the current vertical face is partially submerged.
+ *
+ * This is used to determine whether to use more quadrature points to estimate integrals
+ * over this face when computing lateral boundary conditions.
  */
 static bool partially_submerged_face(int face, const double *z, const double *z_sl) {
   auto nodes = fem::q13d::incident_nodes[face];
