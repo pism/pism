@@ -256,6 +256,65 @@ static bool neumann_bc_face(int face, const int *node_type) {
   return true;
 }
 
+/*! Set the residual at Dirichlet locations
+ *
+ * Compute the residual at Dirichlet locations and reset the residual to zero elsewhere.
+ *
+ * Setting it to zero is necessary because we call DMDASNESSetFunctionLocal() with
+ * INSERT_VALUES.
+ *
+ */
+static void residual_dirichlet(const GridInfo &grid_info,
+                               const DMDALocalInfo &info,
+                               Parameters **P,
+                               const Vector2 ***x,
+                               Vector2 ***R) {
+  double
+    x_min = grid_info.x_min,
+    x_max = grid_info.x_max,
+    y_min = grid_info.y_min,
+    y_max = grid_info.y_max,
+    dx = (x_max - x_min) / (info.mx - 1),
+    dy = (y_max - y_min) / (info.my - 1);
+
+  // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
+  //
+  // here we loop over all the *owned* nodes
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+      for (int k = info.zs; k < info.zs + info.zm; k++) {
+
+        // Dirichlet nodes
+        if (dirichlet_node(info, {i, j, k}) or
+            (int)P[j][i].node_type == NODE_EXTERIOR) {
+
+          // Dirichlet scale
+          Vector2 s = {1.0, 1.0};
+
+          Vector2 U_bc;
+          if (dirichlet_node(info, {i, j, k})) {
+            double
+              xx = grid_xy(x_min, dx, i),
+              yy = grid_xy(y_min, dy, j),
+              b  = P[j][i].bed,
+              H  = P[j][i].thickness,
+              zz = grid_z(b, H, info.mz, k);
+            U_bc = u_bc(xx, yy, zz);
+          } else {
+            U_bc = u_exterior;
+          }
+
+          Vector2 r = x[j][i][k] - U_bc;
+
+          R[j][i][k] = {r.u * s.u, r.v * s.v}; // STORAGE_ORDER
+        } else {
+          R[j][i][k] = 0.0;     // STORAGE_ORDER
+        }
+      }
+    }
+  }
+}
+
 void Blatter::compute_residual(DMDALocalInfo *petsc_info,
                                const Vector2 ***x, Vector2 ***R) {
   auto info = grid_transpose(*petsc_info);
@@ -295,45 +354,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   DataAccess<Parameters**> P(info.da, 2, GHOSTED);
   DataAccess<double***> ice_hardness(info.da, 3, GHOSTED);
 
-  // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
-  //
-  // Setting it to zero is necessary because we call DMDASNESSetFunctionLocal() with
-  // INSERT_VALUES.
-  //
-  // here we loop over all the *owned* nodes
-  for (int j = info.ys; j < info.ys + info.ym; j++) {
-    for (int i = info.xs; i < info.xs + info.xm; i++) {
-      for (int k = info.zs; k < info.zs + info.zm; k++) {
-
-        // Dirichlet nodes
-        if (dirichlet_node(info, {i, j, k}) or
-            (int)P[j][i].node_type == NODE_EXTERIOR) {
-
-          // Dirichlet scale
-          Vector2 s = {1.0, 1.0};
-
-          Vector2 U_bc;
-          if (dirichlet_node(info, {i, j, k})) {
-            double
-              xx = grid_xy(x_min, dx, i),
-              yy = grid_xy(y_min, dy, j),
-              b  = P[j][i].bed,
-              H  = P[j][i].thickness,
-              zz = grid_z(b, H, info.mz, k);
-            U_bc = u_bc(xx, yy, zz);
-          } else {
-            U_bc = u_exterior;
-          }
-
-          Vector2 r = x[j][i][k] - U_bc;
-
-          R[j][i][k] = {r.u * s.u, r.v * s.v}; // STORAGE_ORDER
-        } else {
-          R[j][i][k] = 0.0;     // STORAGE_ORDER
-        }
-      }
-    }
-  }
+  residual_dirichlet(m_grid_info, info, P, x, R);
 
   // Maximum number of nodes per element.
   const int Nk = fem::q13d::n_chi;
