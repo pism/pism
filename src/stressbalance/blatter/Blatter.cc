@@ -252,6 +252,9 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   assert(info.sw == 1);
 
   // Compute grid spacing from domain dimensions and the grid size
+  //
+  // FIXME: we don't need to re-compute dx and dy now that we don't coarsen in horizontal
+  // directions.
   double
     x_min = m_grid_info.x_min,
     x_max = m_grid_info.x_max,
@@ -534,6 +537,9 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   assert(info.sw == 1);
 
   // Compute grid spacing from domain dimensions and the grid size
+  //
+  // FIXME: we don't need to re-compute dx and dy now that we don't coarsen in horizontal
+  // directions.
   double
     x_min = m_grid_info.x_min,
     x_max = m_grid_info.x_max,
@@ -879,7 +885,11 @@ static PetscErrorCode blatter_restriction_hook(DM fine,
   GridInfo *grid_info = (GridInfo*)ctx;
 
   PetscErrorCode ierr;
+
+  // FIXME: we don't need to restrict in 2D now that we don't coarsen in horizontal
+  // directions.
   ierr = restrict_data(fine, coarse, "2D_DM"); CHKERRQ(ierr);
+
   ierr = restrict_data(fine, coarse, "3D_DM"); CHKERRQ(ierr);
 
   blatter_node_type(coarse, grid_info->min_thickness);
@@ -895,6 +905,9 @@ PetscErrorCode blatter_coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
   ierr = DMCoarsenHookAdd(dm_coarse, blatter_coarsening_hook, blatter_restriction_hook, ctx); CHKERRQ(ierr);
 
   // 2D
+  //
+  // FIXME: we don't need the 2D restriction now that we don't coarsen in horizontal
+  // directions.
   ierr = create_restriction(dm_fine, dm_coarse, "2D_DM"); CHKERRQ(ierr);
 
   // 3D
@@ -934,46 +947,14 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels, int coarsening_f
     const PetscInt *lx, *ly;
     ierr = DMDAGetOwnershipRanges(pism_da, &lx, &ly, NULL); CHKERRQ(ierr);
 
-    // make copies of lx and ly so that we can pad the domain
-    std::vector<PetscInt>  new_lx(Nx), new_ly(Ny);
-    {
-      for (int k = 0; k < Nx; ++k) {
-        new_lx[k] = lx[k];
-      }
-      for (int k = 0; k < Ny; ++k) {
-        new_ly[k] = ly[k];
-      }
-    }
-
     double
       x_max = m_grid->Lx(),
       x_min = -x_max,
       y_max = m_grid->Ly(),
       y_min = -y_max;
 
-    // pad the domain and the grid to allow for n_levels multigrid levels
-    {
-      // x direction
-      {
-        int pad_x = grid_padding(Mx, coarsening_factor, n_levels);
-
-        new_lx[Nx - 1] += pad_x;
-        Mx             += pad_x;
-        x_max          += pad_x * m_grid->dx();
-      }
-
-      // y direction
-      {
-        int pad_y = grid_padding(My, coarsening_factor, n_levels);
-
-        new_ly[Ny - 1] += pad_y;
-        My             += pad_y;
-        y_max          += pad_y * m_grid->dy();
-      }
-
-      // z direction
-      Mz += grid_padding(Mz, coarsening_factor, n_levels);
-    }
+    // pad the vertical grid to allow for n_levels multigrid levels
+    Mz += grid_padding(Mz, coarsening_factor, n_levels);
 
     ierr = DMDACreate3d(PETSC_COMM_WORLD,
                         DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, // STORAGE_ORDER
@@ -982,7 +963,7 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels, int coarsening_f
                         Nz, Nx, Ny,                         // STORAGE_ORDER
                         dof,                                // dof
                         stencil_width,                      // stencil width
-                        NULL, new_lx.data(), new_ly.data(), // STORAGE_ORDER
+                        NULL, lx, ly,                       // STORAGE_ORDER
                         m_da.rawptr()); CHKERRQ(ierr);
 
     // semi-coarsening: coarsen in the vertical direction only

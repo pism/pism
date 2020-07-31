@@ -146,6 +146,8 @@ PetscErrorCode setup_level(DM dm, const GridInfo &grid_info) {
   }
 
   // Create a 2D DMDA and a global Vec, then stash them in dm.
+  //
+  // FIXME: we don't need the 2D DMDA now that we don't coarsen in horizontal directions.
   {
     DM  da;
     Vec parameters;
