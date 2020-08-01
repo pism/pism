@@ -560,6 +560,37 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   } // end of the loop over k
 }
 
+/*!
+ * Set the Jacobian to identity at Dirichlet nodes.
+ */
+static void jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat J) {
+  PetscErrorCode ierr;
+
+  // take care of Dirichlet nodes (both explicit and grid points outside the domain)
+  //
+  // here we loop over all the *owned* nodes
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+      for (int k = info.zs; k < info.zs + info.zm; k++) {
+        if ((int)P[j][i].node_type == NODE_EXTERIOR or dirichlet_node(info, {i, j, k})) {
+
+          // Dirichlet scaling
+          Vector2 scaling = {1.0, 1.0};
+          double identity[4] = {scaling.u, 0, 0, scaling.v};
+
+          MatStencil row;
+          row.i = k;            // STORAGE_ORDER
+          row.j = i;            // STORAGE_ORDER
+          row.k = j;            // STORAGE_ORDER
+          ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity, ADD_VALUES);
+          PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
+        }
+      }
+    }
+  }
+
+}
+
 void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
                                const Vector2 ***x, Mat A, Mat J) {
   auto info = grid_transpose(*petsc_info);
@@ -788,28 +819,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
     } // end of the loop over j
   } // end of the loop over k
 
-  // take care of Dirichlet nodes (both explicit and grid points outside the domain)
-  //
-  // here we loop over all the *owned* nodes
-  for (int j = info.ys; j < info.ys + info.ym; j++) {
-    for (int i = info.xs; i < info.xs + info.xm; i++) {
-      for (int k = info.zs; k < info.zs + info.zm; k++) {
-        if ((int)P[j][i].node_type == NODE_EXTERIOR or dirichlet_node(info, {i, j, k})) {
-
-          // Dirichlet scaling
-          Vector2 scaling = {1.0, 1.0};
-          double identity[4] = {scaling.u, 0, 0, scaling.v};
-
-          MatStencil row;
-          row.i = k;            // STORAGE_ORDER
-          row.j = i;            // STORAGE_ORDER
-          row.k = j;            // STORAGE_ORDER
-          ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity, ADD_VALUES);
-          PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
-        }
-      }
-    }
-  }
+  jacobian_dirichlet(info, P, J);
 
   ierr = MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyBegin");
   ierr = MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyEnd");
