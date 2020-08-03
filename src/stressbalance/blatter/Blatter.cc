@@ -332,11 +332,6 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
     dx = m_grid_info.dx(info.mx),
     dy = m_grid_info.dy(info.my);
 
-  double
-    ds_max             = m_config->get_number("stress_balance.blatter.max_cliff_height"),
-    grad_s_max         = ds_max / std::max(dx, dy),
-    grad_s_squared_max = pow(grad_s_max, 2.0);
-
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
   fem::Q1Element3Face
     face4(dx, dy, fem::Q1Quadrature4()),     // 4-point Gaussian quadrature
@@ -480,19 +475,12 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         for (int q = 0; q < element.n_pts(); ++q) {
           auto W = element.weight(q);
 
-          // limit the surface slope to avoid artifacts near steep margins
-          Vector2 grad_s(s_x[q], s_y[q]);
-
-          if (grad_s.magnitude_squared() > grad_s_squared_max) {
-            grad_s = (grad_s_max / grad_s.magnitude()) * grad_s;
-          }
-
           // loop over all test functions
           for (int t = 0; t < Nk; ++t) {
             const auto &psi = element.chi(q, t);
 
-            R_nodal[t].u += W * psi.val * m_rhog * grad_s.u;
-            R_nodal[t].v += W * psi.val * m_rhog * grad_s.v;
+            R_nodal[t].u += W * psi.val * m_rhog * s_x[q];
+            R_nodal[t].v += W * psi.val * m_rhog * s_y[q];
           }
         }
 
