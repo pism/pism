@@ -376,10 +376,36 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   // quantities evaluated at element nodes
   Vector2 R_nodal[Nk];
   int node_type[Nk];
+  double b_nodal[Nk];
+  double H_nodal[Nk];
 
   // loop over all the elements that have at least one owned node
   for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
     for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
+
+      // Compute or fetch 2D geometric info
+      for (int n = 0; n < Nk; ++n) {
+        auto I = element.local_to_global(i, j, 0, n);
+
+        auto p = P[I.j][I.i];
+
+        node_type[n] = p.node_type;
+
+        x_nodal[n] = m_grid_info.x(dx, I.i);
+        y_nodal[n] = m_grid_info.y(dy, I.j);
+
+        s_nodal[n]  = p.bed + p.thickness;
+        sl_nodal[n] = p.sea_level;
+
+        b_nodal[n] = p.bed;
+        H_nodal[n] = p.thickness;
+      }
+
+      // skip ice-free (exterior) elements
+      if (exterior_element(node_type)) {
+        continue;
+      }
+
       for (int k = info.gzs; k < info.gzs + info.gzm - 1; k++) {
 
         // Reset element residual to zero in preparation.
@@ -388,23 +414,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         // Compute coordinates of the nodes of this element and fetch node types.
         for (int n = 0; n < Nk; ++n) {
           auto I = element.local_to_global(i, j, k, n);
-
-          auto p = P[I.j][I.i];
-
-          node_type[n] = p.node_type;
-
-          x_nodal[n] = m_grid_info.x(dx, I.i);
-          y_nodal[n] = m_grid_info.y(dy, I.j);
-          z_nodal[n] = grid_z(p.bed, p.thickness, info.mz, I.k);
-
-          s_nodal[n] = p.bed + p.thickness;
-
-          sl_nodal[n] = p.sea_level;
-        }
-
-        // skip ice-free (exterior) elements
-        if (exterior_element(node_type)) {
-          continue;
+          z_nodal[n] = grid_z(b_nodal[n], H_nodal[n], info.mz, I.k);
         }
 
         // compute values of chi, chi_x, chi_y, chi_z and quadrature weights at quadrature
@@ -434,7 +444,6 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         element.evaluate(B_nodal, Bq);
 
         // compute the surface gradient at quadrature points
-        // we could do this faster by using the fact that s does not depend on z
         element.evaluate(s_nodal, s, s_x, s_y, s_z);
 
         // loop over all quadrature points
