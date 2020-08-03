@@ -270,12 +270,8 @@ static void residual_dirichlet(const GridInfo &grid_info,
                                const Vector2 ***x,
                                Vector2 ***R) {
   double
-    x_min = grid_info.x_min,
-    x_max = grid_info.x_max,
-    y_min = grid_info.y_min,
-    y_max = grid_info.y_max,
-    dx = (x_max - x_min) / (info.mx - 1),
-    dy = (y_max - y_min) / (info.my - 1);
+    dx = grid_info.dx(info.mx),
+    dy = grid_info.dy(info.my);
 
   // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
   //
@@ -294,8 +290,8 @@ static void residual_dirichlet(const GridInfo &grid_info,
           Vector2 U_bc;
           if (dirichlet_node(info, {i, j, k})) {
             double
-              xx = grid_xy(x_min, dx, i),
-              yy = grid_xy(y_min, dy, j),
+              xx = grid_info.x(dx, i),
+              yy = grid_info.y(dy, j),
               b  = P[j][i].bed,
               H  = P[j][i].thickness,
               zz = grid_z(b, H, info.mz, k);
@@ -333,12 +329,8 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   // FIXME: we don't need to re-compute dx and dy now that we don't coarsen in horizontal
   // directions.
   double
-    x_min = m_grid_info.x_min,
-    x_max = m_grid_info.x_max,
-    y_min = m_grid_info.y_min,
-    y_max = m_grid_info.y_max,
-    dx = (x_max - x_min) / (info.mx - 1),
-    dy = (y_max - y_min) / (info.my - 1);
+    dx = m_grid_info.dx(info.mx),
+    dy = m_grid_info.dy(info.my);
 
   double
     ds_max             = m_config->get_number("stress_balance.blatter.max_cliff_height"),
@@ -401,8 +393,8 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
           node_type[n] = p.node_type;
 
-          x_nodal[n] = grid_xy(x_min, dx, I.i);
-          y_nodal[n] = grid_xy(y_min, dy, I.j);
+          x_nodal[n] = m_grid_info.x(dx, I.i);
+          y_nodal[n] = m_grid_info.y(dy, I.j);
           z_nodal[n] = grid_z(p.bed, p.thickness, info.mz, I.k);
 
           s_nodal[n] = p.bed + p.thickness;
@@ -611,12 +603,8 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   // FIXME: we don't need to re-compute dx and dy now that we don't coarsen in horizontal
   // directions.
   double
-    x_min = m_grid_info.x_min,
-    x_max = m_grid_info.x_max,
-    y_min = m_grid_info.y_min,
-    y_max = m_grid_info.y_max,
-    dx = (x_max - x_min) / (info.mx - 1),
-    dy = (y_max - y_min) / (info.my - 1);
+    dx = m_grid_info.dx(info.mx),
+    dy = m_grid_info.dy(info.my);
 
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
 
@@ -669,8 +657,8 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
           node_type[n] = p.node_type;
 
-          x_nodal[n] = grid_xy(x_min, dx, I.i);
-          y_nodal[n] = grid_xy(y_min, dy, I.j);
+          x_nodal[n] = m_grid_info.x(dx, I.i);
+          y_nodal[n] = m_grid_info.y(dy, I.j);
           z_nodal[n] = grid_z(p.bed, p.thickness, info.mz, I.k);
         }
 

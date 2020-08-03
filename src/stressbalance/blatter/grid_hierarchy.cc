@@ -25,17 +25,6 @@
 namespace pism {
 
 /*!
- * x and y coordinates of the nodes
- *
- * @param[in] min minimum coordinate value
- * @param[in] delta grid spacing
- * @param[in] k node index
- */
-double grid_xy(double min, double delta, int k) {
-  return min + k * delta;
-}
-
-/*!
  * z coordinates of the nodes
  *
  * @param[in] b surface elevation of the bottom of the domain
