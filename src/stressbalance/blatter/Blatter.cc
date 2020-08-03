@@ -443,19 +443,9 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         // evaluate B (ice hardness) at quadrature points
         element.evaluate(B_nodal, Bq);
 
-        // compute the surface gradient at quadrature points
-        element.evaluate(s_nodal, s, s_x, s_y, s_z);
-
         // loop over all quadrature points
         for (int q = 0; q < element.n_pts(); ++q) {
           auto W = element.weight(q);
-
-          // limit the surface slope to avoid artifacts near steep margins
-          Vector2 grad_s(s_x[q], s_y[q]);
-
-          if (grad_s.magnitude_squared() > grad_s_squared_max) {
-            grad_s = (grad_s_max / grad_s.magnitude()) * grad_s;
-          }
 
           double
             ux = u_x[q].u,
@@ -477,12 +467,32 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
             R_nodal[t].u += W * (eta * (psi.dx * (4.0 * ux + 2.0 * vy) +
                                         psi.dy * (uy + vx) +
-                                        psi.dz * uz) +
-                                 psi.val * m_rhog * grad_s.u);
+                                        psi.dz * uz));
             R_nodal[t].v += W * (eta * (psi.dx * (uy + vx) +
                                         psi.dy * (2.0 * ux + 4.0 * vy) +
-                                        psi.dz * vz) +
-                                 psi.val * m_rhog * grad_s.v);
+                                        psi.dz * vz));
+          }
+        }
+
+        // compute the surface gradient at quadrature points
+        element.evaluate(s_nodal, s, s_x, s_y, s_z);
+
+        for (int q = 0; q < element.n_pts(); ++q) {
+          auto W = element.weight(q);
+
+          // limit the surface slope to avoid artifacts near steep margins
+          Vector2 grad_s(s_x[q], s_y[q]);
+
+          if (grad_s.magnitude_squared() > grad_s_squared_max) {
+            grad_s = (grad_s_max / grad_s.magnitude()) * grad_s;
+          }
+
+          // loop over all test functions
+          for (int t = 0; t < Nk; ++t) {
+            const auto &psi = element.chi(q, t);
+
+            R_nodal[t].u += W * psi.val * m_rhog * grad_s.u;
+            R_nodal[t].v += W * psi.val * m_rhog * grad_s.v;
           }
         }
 
