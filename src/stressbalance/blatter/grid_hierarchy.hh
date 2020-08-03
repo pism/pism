@@ -35,25 +35,8 @@ struct GridInfo {
   int dof;
 };
 
-/*!
- * Groups parameters describing the geometry of each grid column
- *
- * top and bottom surfaces of the domain (and a grid column) are defined by `bed` and `bed
- * + thickness`
- *
- * `node_type` marks columns that are at the lateral boundary or outside of the domain.
- */
-struct ColumnInfo {
-  // elevation (z coordinate) of the bottom domain boundary
-  double bed;
-  // thickness of the domain
-  double thickness;
-  // NodeType stored as double
-  double node_type;
-};
 
 double grid_xy(double min, double delta, int k);
-
 double grid_z(double b, double H, int Mz, int k);
 
 int grid_padding(int N, int coarsening_factor, int n_levels);
@@ -65,8 +48,6 @@ PetscErrorCode setup_level(DM dm, const GridInfo &grid_info);
 PetscErrorCode create_restriction(DM fine, DM coarse, const char *dm_name);
 
 PetscErrorCode restrict_data(DM fine, DM coarse, const char *dm_name);
-
-void compute_node_type(DM da, double min_thickness);
 
 } // end of namespace pism
 
