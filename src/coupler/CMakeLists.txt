@@ -68,4 +68,6 @@ add_library (boundary OBJECT
   ./surface/Formulas.cc
   ./surface/EISMINTII.cc
   ./surface/NoGLRetreat.cc
+  ./surface/TemperatureIndexITM.cc
+  ./surface/localITM.cc
   )
