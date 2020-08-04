@@ -570,7 +570,6 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
         // basal boundary
         if (k == 0) {
-
           for (int n = 0; n < Nk; ++n) {
             auto I = element.local_to_global(n);
 
@@ -795,6 +794,8 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   double B_nodal[Nk];
   double tauc_nodal[Nk];
   double f_nodal[Nk];
+  double b_nodal[Nk];
+  double H_nodal[Nk];
 
   // scalar quantities evaluated at element nodes
   int node_type[Nk];
@@ -808,6 +809,25 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   // loop over all the elements that have at least one owned node
   for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
     for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
+
+      for (int n = 0; n < Nk; ++n) {
+        auto I = element.local_to_global(i, j, 0, n);
+
+        auto p = P[I.j][I.i];
+
+        node_type[n] = p.node_type;
+        b_nodal[n]   = p.bed;
+        H_nodal[n]   = p.thickness;
+
+        x_nodal[n] = m_grid_info.x(dx, I.i);
+        y_nodal[n] = m_grid_info.y(dy, I.j);
+      }
+
+      // skip ice-free (exterior) columns
+      if (exterior_element(node_type)) {
+        continue;
+      }
+
       for (int k = info.gzs; k < info.gzs + info.gzm - 1; k++) {
 
         // Element-local Jacobian matrix (there are Nk vector valued degrees of freedom
@@ -819,18 +839,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
         for (int n = 0; n < Nk; ++n) {
           auto I = element.local_to_global(i, j, k, n);
 
-          auto p = P[I.j][I.i];
-
-          node_type[n] = p.node_type;
-
-          x_nodal[n] = m_grid_info.x(dx, I.i);
-          y_nodal[n] = m_grid_info.y(dy, I.j);
-          z_nodal[n] = grid_z(p.bed, p.thickness, info.mz, I.k);
-        }
-
-        // skip ice-free (exterior) elements
-        if (exterior_element(node_type)) {
-          continue;
+          z_nodal[n] = grid_z(b_nodal[n], H_nodal[n], info.mz, I.k);
         }
 
         // compute values of chi, chi_x, chi_y, chi_z and quadrature weights at quadrature
@@ -856,7 +865,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
         jacobian_f(element, u_nodal, B_nodal, K);
 
-        // include basal drag
+        // basal boundary
         if (k == 0) {
           for (int n = 0; n < Nk; ++n) {
             auto I = element.local_to_global(n);
