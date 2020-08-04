@@ -311,13 +311,148 @@ static void residual_dirichlet(const GridInfo &grid_info,
   }
 }
 
+void Blatter::residual_source_term(const fem::Element3 &element,
+                                   const double *surface,
+                                   Vector2 *residual) {
+  double
+    *s   = m_work[0],
+    *s_x = m_work[1],
+    *s_y = m_work[2],
+    *s_z = m_work[3];
+
+  element.evaluate(surface, s, s_x, s_y, s_z);
+
+  for (int q = 0; q < element.n_pts(); ++q) {
+    auto W = element.weight(q);
+
+    // loop over all test functions
+    for (int t = 0; t < element.n_chi(); ++t) {
+      const auto &psi = element.chi(q, t);
+
+      residual[t].u += W * psi.val * m_rho_ice_g * s_x[q];
+      residual[t].v += W * psi.val * m_rho_ice_g * s_y[q];
+    }
+  }
+}
+
+void Blatter::residual_f(const fem::Element3 &element,
+                         const Vector2 *u_nodal,
+                         const double *B_nodal,
+                         Vector2 *residual) {
+
+  Vector2
+    *u   = m_work2[0],
+    *u_x = m_work2[1],
+    *u_y = m_work2[2],
+    *u_z = m_work2[3];
+
+  double *B = m_work[0];
+
+  // evaluate u and its partial derivatives at quadrature points
+  element.evaluate(u_nodal, u, u_x, u_y, u_z);
+
+  // evaluate B (ice hardness) at quadrature points
+  element.evaluate(B_nodal, B);
+
+  // loop over all quadrature points
+  for (int q = 0; q < element.n_pts(); ++q) {
+    auto W = element.weight(q);
+
+    double
+      ux = u_x[q].u,
+      uy = u_y[q].u,
+      uz = u_z[q].u,
+      vx = u_x[q].v,
+      vy = u_y[q].v,
+      vz = u_z[q].v;
+
+    double gamma = (ux * ux + vy * vy + ux * vy +
+                    0.25 * ((uy + vx) * (uy + vx) + uz * uz + vz * vz));
+
+    double eta;
+    m_flow_law->effective_viscosity(B[q], gamma, &eta, nullptr);
+
+    // loop over all test functions
+    for (int t = 0; t < element.n_chi(); ++t) {
+      const auto &psi = element.chi(q, t);
+
+      residual[t].u += W * (eta * (psi.dx * (4.0 * ux + 2.0 * vy) +
+                                   psi.dy * (uy + vx) +
+                                   psi.dz * uz));
+      residual[t].v += W * (eta * (psi.dx * (uy + vx) +
+                                   psi.dy * (2.0 * ux + 4.0 * vy) +
+                                   psi.dz * vz));
+    }
+  }
+}
+
+void Blatter::residual_basal(const fem::Element3 &element,
+                             const fem::Q1Element3Face &face,
+                             const double *tauc_nodal,
+                             const double *f_nodal,
+                             const Vector2 *u_nodal,
+                             Vector2 *residual) {
+
+  Vector2 *u = m_work2[0];
+
+  double
+    *tauc       = m_work[0],
+    *floatation = m_work[1];
+
+  face.evaluate(u_nodal, u);
+  face.evaluate(tauc_nodal, tauc);
+  face.evaluate(f_nodal, floatation);
+
+  for (int q = 0; q < face.n_pts(); ++q) {
+    auto W = face.weight(q);
+
+    bool grounded = floatation[q] <= 0.0;
+    double beta = grounded ? m_basal_sliding_law->drag(tauc[q], u[q].u, u[q].v) : 0.0;
+
+    // loop over all test functions
+    for (int t = 0; t < element.n_chi(); ++t) {
+      auto psi = face.chi(q, t);
+
+      residual[t].u += W * psi * beta * u[q].u;
+      residual[t].v += W * psi * beta * u[q].v;
+    }
+  }
+
+}
+
+void Blatter::residual_lateral(const fem::Element3 &element,
+                               const fem::Q1Element3Face &face,
+                               const double *z_nodal,
+                               const double *sl_nodal,
+                               Vector2 *residual) {
+  double
+    *z         = m_work[0],
+    *sea_level = m_work[1];
+
+  // compute physical coordinates of quadrature points on this face
+  face.evaluate(z_nodal, z);
+  face.evaluate(sl_nodal, sea_level);
+
+  // loop over all quadrature points
+  for (int q = 0; q < face.n_pts(); ++q) {
+    auto W = face.weight(q);
+    auto N3 = face.normal(q);
+    Vector2 N = {N3.x, N3.y};
+
+    double p = m_rho_ocean_g * std::max(sea_level[q] - z[q], 0.0);
+
+    // loop over all test functions
+    for (int t = 0; t < element.n_chi(); ++t) {
+      auto psi = face.chi(q, t);
+
+      residual[t] += W * psi * p * N;
+    }
+  }
+}
+
 void Blatter::compute_residual(DMDALocalInfo *petsc_info,
                                const Vector2 ***x, Vector2 ***R) {
   auto info = grid_transpose(*petsc_info);
-
-  double
-    g = m_config->get_number("constants.standard_gravity"),
-    rho_w = m_config->get_number("constants.sea_water.density");
 
   // Stencil width of 1 is not very important, but if info.sw > 1 will lead to more
   // redundant computation (we would be looping over elements that don't contribute to any
@@ -337,63 +472,55 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
     face4(dx, dy, fem::Q1Quadrature4()),     // 4-point Gaussian quadrature
     face100(dx, dy, fem::Q1QuadratureN(10)); // 100-point quadrature for grounding lines
                                              // and partially-submerged faces
-
-  DataAccess<Parameters**> P(info.da, 2, GHOSTED);
-  DataAccess<double***> ice_hardness(info.da, 3, GHOSTED);
-
-  residual_dirichlet(m_grid_info, info, P, x, R);
+  assert(element.n_pts() <= m_Nq);
+  assert(face4.n_pts() <= m_Nq);
+  assert(face100.n_pts() <= m_Nq);
 
   // Maximum number of nodes per element.
   const int Nk = fem::q13d::n_chi;
   assert(element.n_chi() <= Nk);
 
-  // Maximum number of quadrature points per element or face
-  const int Nq = 100;
-  assert(element.n_pts() <= Nq);
-  assert(face4.n_pts() <= Nq);
-  assert(face100.n_pts() <= Nq);
-
-  // scalar quantities evaluated at quadrature points
-  double x_nodal[Nk], xq[Nq];
-  double y_nodal[Nk], yq[Nq];
-  double B_nodal[Nk], Bq[Nq];
-  double s_nodal[Nk], s[Nq], s_x[Nq], s_y[Nq], s_z[Nq];
-  double sl_nodal[Nk], z_sl[Nq];
-  double tauc_nodal[Nk], tauc[Nq];
-  double f_nodal[Nk], floatation[Nq];
-
+  // scalar quantities
   std::vector<double> z_nodal(Nk);
-  double zq[Nq];
-
-  // 2D vector quantities evaluated at quadrature points
-  Vector2 u_nodal[Nk], u[Nq], u_x[Nq], u_y[Nq], u_z[Nq];
-
-  // quantities evaluated at element nodes
-  Vector2 R_nodal[Nk];
-  int node_type[Nk];
+  double x_nodal[Nk];
+  double y_nodal[Nk];
+  double B_nodal[Nk];
+  double sl_nodal[Nk];
+  double tauc_nodal[Nk];
+  double f_nodal[Nk];
   double b_nodal[Nk];
   double H_nodal[Nk];
+  double s_nodal[Nk];
+  int node_type[Nk];
+
+  // 2D vector quantities
+  Vector2 u_nodal[Nk];
+  Vector2 R_nodal[Nk];
+
+  DataAccess<Parameters**> P(info.da, 2, GHOSTED);
+  DataAccess<double***> ice_hardness(info.da, 3, GHOSTED);
+
+  // Compute the residual at Dirichlet nodes and set it to zero elsewhere.
+  residual_dirichlet(m_grid_info, info, P, x, R);
 
   // loop over all the elements that have at least one owned node
   for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
     for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
 
-      // Compute or fetch 2D geometric info
+      // Initialize 2D geometric info at element nodes
       for (int n = 0; n < Nk; ++n) {
         auto I = element.local_to_global(i, j, 0, n);
 
         auto p = P[I.j][I.i];
 
         node_type[n] = p.node_type;
+        s_nodal[n]   = p.bed + p.thickness;
+        sl_nodal[n]  = p.sea_level;
+        b_nodal[n]   = p.bed;
+        H_nodal[n]   = p.thickness;
 
         x_nodal[n] = m_grid_info.x(dx, I.i);
         y_nodal[n] = m_grid_info.y(dy, I.j);
-
-        s_nodal[n]  = p.bed + p.thickness;
-        sl_nodal[n] = p.sea_level;
-
-        b_nodal[n] = p.bed;
-        H_nodal[n] = p.thickness;
       }
 
       // skip ice-free (exterior) elements
@@ -401,6 +528,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         continue;
       }
 
+      // loop over elements in a column
       for (int k = info.gzs; k < info.gzs + info.gzm - 1; k++) {
 
         // Reset element residual to zero in preparation.
@@ -420,71 +548,27 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         element.nodal_values((double***)ice_hardness, B_nodal);
 
         // Get nodal values of u.
-        element.nodal_values(x, u_nodal);
+        {
+          element.nodal_values(x, u_nodal);
 
-        // Take care of Dirichlet BC: don't contribute to Dirichlet nodes and set nodal
-        // values of the current iterate to Dirichlet BC values.
-        for (int n = 0; n < Nk; ++n) {
-          auto I = element.local_to_global(n);
-          if (dirichlet_node(info, I)) {
-            element.mark_row_invalid(n);
-            u_nodal[n] = u_bc(x_nodal[n], y_nodal[n], z_nodal[n]);
+          // Take care of Dirichlet BC: don't contribute to Dirichlet nodes and set nodal
+          // values of the current iterate to Dirichlet BC values.
+          for (int n = 0; n < Nk; ++n) {
+            auto I = element.local_to_global(n);
+            if (dirichlet_node(info, I)) {
+              element.mark_row_invalid(n);
+              u_nodal[n] = u_bc(x_nodal[n], y_nodal[n], z_nodal[n]);
+            }
           }
         }
 
-        // evaluate u and its partial derivatives at quadrature points
-        element.evaluate(u_nodal, u, u_x, u_y, u_z);
+        // "main" part of the residual
+        residual_f(element, u_nodal, B_nodal, R_nodal);
 
-        // evaluate B (ice hardness) at quadrature points
-        element.evaluate(B_nodal, Bq);
+        // the "source term" (driving stress)
+        residual_source_term(element, s_nodal, R_nodal);
 
-        // loop over all quadrature points
-        for (int q = 0; q < element.n_pts(); ++q) {
-          auto W = element.weight(q);
-
-          double
-            ux = u_x[q].u,
-            uy = u_y[q].u,
-            uz = u_z[q].u,
-            vx = u_x[q].v,
-            vy = u_y[q].v,
-            vz = u_z[q].v;
-
-          double gamma = (ux * ux + vy * vy + ux * vy +
-                          0.25 * ((uy + vx) * (uy + vx) + uz * uz + vz * vz));
-
-          double eta;
-          m_flow_law->effective_viscosity(Bq[q], gamma, &eta, nullptr);
-
-          // loop over all test functions
-          for (int t = 0; t < Nk; ++t) {
-            const auto &psi = element.chi(q, t);
-
-            R_nodal[t].u += W * (eta * (psi.dx * (4.0 * ux + 2.0 * vy) +
-                                        psi.dy * (uy + vx) +
-                                        psi.dz * uz));
-            R_nodal[t].v += W * (eta * (psi.dx * (uy + vx) +
-                                        psi.dy * (2.0 * ux + 4.0 * vy) +
-                                        psi.dz * vz));
-          }
-        }
-
-        // compute the surface gradient at quadrature points
-        element.evaluate(s_nodal, s, s_x, s_y, s_z);
-
-        for (int q = 0; q < element.n_pts(); ++q) {
-          auto W = element.weight(q);
-
-          // loop over all test functions
-          for (int t = 0; t < Nk; ++t) {
-            const auto &psi = element.chi(q, t);
-
-            R_nodal[t].u += W * psi.val * m_rhog * s_x[q];
-            R_nodal[t].v += W * psi.val * m_rhog * s_y[q];
-          }
-        }
-
-        // include basal drag
+        // basal boundary
         if (k == 0) {
 
           for (int n = 0; n < Nk; ++n) {
@@ -496,61 +580,21 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
           // use an N*N-point equally-spaced quadrature at grounding lines
           fem::Q1Element3Face *face = grounding_line(f_nodal) ? &face100 : &face4;
-
           // face 4 is the bottom face in fem::q13d::incident_nodes
           face->reset(4, z_nodal);
 
-          face->evaluate(u_nodal, u);
-          face->evaluate(tauc_nodal, tauc);
-          face->evaluate(f_nodal, floatation);
-
-          for (int q = 0; q < face->n_pts(); ++q) {
-            auto W = face->weight(q);
-
-            bool grounded = floatation[q] <= 0.0;
-            double beta = grounded ? m_basal_sliding_law->drag(tauc[q], u[q].u, u[q].v) : 0.0;
-
-            // loop over all test functions
-            for (int t = 0; t < Nk; ++t) {
-              auto psi = face->chi(q, t);
-
-              R_nodal[t].u += W * psi * beta * u[q].u;
-              R_nodal[t].v += W * psi * beta * u[q].v;
-            }
-          }
+          residual_basal(element, *face, tauc_nodal, f_nodal, u_nodal, R_nodal);
         }
 
+        // lateral boundary
         // loop over all vertical faces (see fem::q13d::incident_nodes for the order)
-        for (int f = 0; f < 4; ++f) {
+        for (int f = 0; f < 4 and neumann_bc_face(f, node_type); ++f) {
+          // use an N*N-point equally-spaced quadrature at for partially-submerged faces
+          fem::Q1Element3Face *face = (partially_submerged_face(f, z_nodal.data(), sl_nodal) ?
+                                       &face100 : &face4);
+          face->reset(f, z_nodal);
 
-          if (neumann_bc_face(f, node_type)) {
-            // use an N*N-point equally-spaced quadrature at for partially-submerged faces
-            fem::Q1Element3Face *face = partially_submerged_face(f, z_nodal.data(), sl_nodal) ? &face100 : &face4;
-
-            face->reset(f, z_nodal);
-
-            // compute physical coordinates of quadrature points on this face
-            face->evaluate(x_nodal, xq);
-            face->evaluate(y_nodal, yq);
-            face->evaluate(z_nodal.data(), zq);
-            face->evaluate(sl_nodal, z_sl);
-
-            // loop over all quadrature points
-            for (int q = 0; q < face->n_pts(); ++q) {
-              auto W = face->weight(q);
-              auto N3 = face->normal(q);
-              Vector2 N = {N3.x, N3.y};
-
-              double p = rho_w * g * std::max(z_sl[q] - zq[q], 0.0);
-
-              // loop over all test functions
-              for (int t = 0; t < Nk; ++t) {
-                auto psi = face->chi(q, t);
-
-                R_nodal[t] += W * psi * p * N;
-              }
-            }
-          } // end of "if (neumann_bc_face())"
+          residual_lateral(element, *face, z_nodal.data(), sl_nodal, R_nodal);
         } // end of the loop over element faces
 
         element.add_contribution(R_nodal, R);
@@ -587,6 +631,122 @@ static void jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat J)
       }
     }
   }
+}
+
+void Blatter::jacobian_basal(const fem::Q1Element3Face &face,
+                             const double *tauc_nodal,
+                             const double *f_nodal,
+                             const Vector2 *velocity,
+                             double K[16][16]) {
+  int Nk = fem::q13d::n_chi;
+
+  Vector2 *u = m_work2[0];
+
+  double
+    *tauc = m_work[0],
+    *floatation = m_work[1];
+
+  face.evaluate(velocity, u);
+  face.evaluate(tauc_nodal, tauc);
+  face.evaluate(f_nodal, floatation);
+
+  for (int q = 0; q < face.n_pts(); ++q) {
+    auto W = face.weight(q);
+
+    bool grounded = floatation[q] <= 0.0;
+    double beta = 0.0, dbeta = 0.0;
+    if (grounded) {
+      m_basal_sliding_law->drag_with_derivative(tauc[q], u[q].u, u[q].v, &beta, &dbeta);
+    }
+
+    // loop over all test functions
+    for (int t = 0; t < Nk; ++t) {
+      auto psi = face.chi(q, t);
+      for (int s = 0; s < Nk; ++s) {
+        auto phi = face.chi(q, s);
+
+        double p = psi * phi;
+
+        K[t * 2 + 0][s * 2 + 0] += W * p * (beta + dbeta * u[q].u * u[q].u);
+        K[t * 2 + 0][s * 2 + 1] += W * p * dbeta * u[q].u * u[q].v;
+        K[t * 2 + 1][s * 2 + 0] += W * p * dbeta * u[q].v * u[q].u;
+        K[t * 2 + 1][s * 2 + 1] += W * p * (beta + dbeta * u[q].v * u[q].v);
+      }
+    }
+  }
+}
+
+void Blatter::jacobian_f(const fem::Element3 &element,
+                         const Vector2 *velocity,
+                         const double *hardness,
+                         double K[16][16]) {
+  int Nk = fem::q13d::n_chi;
+
+  Vector2
+    *u   = m_work2[0],
+    *u_x = m_work2[1],
+    *u_y = m_work2[2],
+    *u_z = m_work2[3];
+
+  double *B = m_work[0];
+
+  element.evaluate(velocity, u, u_x, u_y, u_z);
+  element.evaluate(hardness, B);
+
+  // loop over all quadrature points
+  for (int q = 0; q < element.n_pts(); ++q) {
+    auto W = element.weight(q);
+
+    double
+      ux = u_x[q].u,
+      uy = u_y[q].u,
+      uz = u_z[q].u,
+      vx = u_x[q].v,
+      vy = u_y[q].v,
+      vz = u_z[q].v;
+
+    double gamma = (ux * ux + vy * vy + ux * vy +
+                    0.25 * ((uy + vx) * (uy + vx) + uz * uz + vz * vz));
+
+    double eta, deta;
+    m_flow_law->effective_viscosity(B[q], gamma, &eta, &deta);
+
+    // loop over test and trial functions, computing the upper-triangular part of
+    // the element Jacobian
+    for (int t = 0; t < Nk; ++t) {
+      auto psi = element.chi(q, t);
+      for (int s = t; s < Nk; ++s) {
+        auto phi = element.chi(q, s);
+
+        double
+          gamma_u = 2.0 * ux * phi.dx + vy * phi.dx + 0.5 * phi.dy * (uy + vx) + 0.5 * uz * phi.dz,
+          gamma_v = 2.0 * vy * phi.dy + ux * phi.dy + 0.5 * phi.dx * (uy + vx) + 0.5 * vz * phi.dz;
+
+        double
+          eta_u = deta * gamma_u,
+          eta_v = deta * gamma_v;
+
+        // Picard part
+        K[t * 2 + 0][s * 2 + 0] += W * eta * (4.0 * psi.dx * phi.dx + psi.dy * phi.dy + psi.dz * phi.dz);
+        K[t * 2 + 0][s * 2 + 1] += W * eta * (2.0 * psi.dx * phi.dy + psi.dy * phi.dx);
+        K[t * 2 + 1][s * 2 + 0] += W * eta * (2.0 * psi.dy * phi.dx + psi.dx * phi.dy);
+        K[t * 2 + 1][s * 2 + 1] += W * eta * (4.0 * psi.dy * phi.dy + psi.dx * phi.dx + psi.dz * phi.dz);
+        // extra Newton terms
+        K[t * 2 + 0][s * 2 + 0] += W * eta_u * (psi.dx * (4.0 * ux + 2.0 * vy) +
+                                                psi.dy * (uy + vx) +
+                                                psi.dz * uz);
+        K[t * 2 + 0][s * 2 + 1] += W * eta_v * (psi.dx * (4.0 * ux + 2.0 * vy) +
+                                                psi.dy * (uy + vx) +
+                                                psi.dz * uz);
+        K[t * 2 + 1][s * 2 + 0] += W * eta_u * (psi.dx * (uy + vx) +
+                                                psi.dy * (4.0 * vy + 2.0 * ux) +
+                                                psi.dz * vz);
+        K[t * 2 + 1][s * 2 + 1] += W * eta_v * (psi.dx * (uy + vx) +
+                                                psi.dy * (4.0 * vy + 2.0 * ux) +
+                                                psi.dz * vz);
+      }
+    }
+  } // end of the loop over q
 
 }
 
@@ -619,32 +779,31 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
     face4(dx, dy, fem::Q1Quadrature4()),     // 4-point Gaussian quadrature
     face100(dx, dy, fem::Q1QuadratureN(10)); // 100-point quadrature for grounding lines
 
-  DataAccess<Parameters**> P(info.da, 2, GHOSTED);
-  DataAccess<double***> hardness(info.da, 3, GHOSTED);
-
   // Maximum number of nodes per element
   const int Nk = fem::q13d::n_chi;
   assert(element.n_chi() <= Nk);
 
   // Maximum number of quadrature points per element or face
-  const int Nq = 100;
-  assert(element.n_pts() <= Nq);
-  assert(face4.n_pts() <= Nq);
-  assert(face100.n_pts() <= Nq);
+  assert(element.n_pts() <= m_Nq);
+  assert(face4.n_pts() <= m_Nq);
+  assert(face100.n_pts() <= m_Nq);
 
-  // 2D vector quantities evaluated at quadrature points
-  Vector2 u_nodal[Nk], u[Nq], u_x[Nq], u_y[Nq], u_z[Nq];
+  // 2D vector quantities
+  Vector2 u_nodal[Nk];
 
-  // scalar quantities evaluated at quadrature points
-  double B_nodal[Nk], Bq[Nq];
-  double tauc_nodal[Nk], tauc[Nq];
-  double f_nodal[Nk], floatation[Nq];
+  // scalar quantities
+  double B_nodal[Nk];
+  double tauc_nodal[Nk];
+  double f_nodal[Nk];
 
   // scalar quantities evaluated at element nodes
   int node_type[Nk];
   double x_nodal[Nk];
   double y_nodal[Nk];
   std::vector<double> z_nodal(Nk);
+
+  DataAccess<Parameters**> P(info.da, 2, GHOSTED);
+  DataAccess<double***> hardness(info.da, 3, GHOSTED);
 
   // loop over all the elements that have at least one owned node
   for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
@@ -679,83 +838,26 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
         element.reset(i, j, k, z_nodal);
 
         // Get nodal values of u.
-        element.nodal_values(x, u_nodal);
+        {
+          element.nodal_values(x, u_nodal);
 
-        // Don't contribute to Dirichlet nodes
-        for (int n = 0; n < Nk; ++n) {
-          auto I = element.local_to_global(n);
-          if (dirichlet_node(info, I)) {
-            element.mark_row_invalid(n);
-            element.mark_col_invalid(n);
-            u_nodal[n] = u_bc(x_nodal[n], y_nodal[n], z_nodal[n]);
+          // Don't contribute to Dirichlet nodes
+          for (int n = 0; n < Nk; ++n) {
+            auto I = element.local_to_global(n);
+            if (dirichlet_node(info, I)) {
+              element.mark_row_invalid(n);
+              element.mark_col_invalid(n);
+              u_nodal[n] = u_bc(x_nodal[n], y_nodal[n], z_nodal[n]);
+            }
           }
         }
 
-        // evaluate partial derivatives at quadrature points
-        element.evaluate(u_nodal, u, u_x, u_y, u_z);
-
-        // evaluate hardness at quadrature points
         element.nodal_values((double***)hardness, B_nodal);
-        element.evaluate(B_nodal, Bq);
 
-        // loop over all quadrature points
-        for (int q = 0; q < element.n_pts(); ++q) {
-          auto W = element.weight(q);
-
-          double
-            ux = u_x[q].u,
-            uy = u_y[q].u,
-            uz = u_z[q].u,
-            vx = u_x[q].v,
-            vy = u_y[q].v,
-            vz = u_z[q].v;
-
-          double gamma = (ux * ux + vy * vy + ux * vy +
-                          0.25 * ((uy + vx) * (uy + vx) + uz * uz + vz * vz));
-
-          double eta, deta;
-          m_flow_law->effective_viscosity(Bq[q], gamma, &eta, &deta);
-
-          // loop over test and trial functions, computing the upper-triangular part of
-          // the element Jacobian
-          for (int t = 0; t < Nk; ++t) {
-            auto psi = element.chi(q, t);
-            for (int s = t; s < Nk; ++s) {
-              auto phi = element.chi(q, s);
-
-              double
-                gamma_u = 2.0 * ux * phi.dx + vy * phi.dx + 0.5 * phi.dy * (uy + vx) + 0.5 * uz * phi.dz,
-                gamma_v = 2.0 * vy * phi.dy + ux * phi.dy + 0.5 * phi.dx * (uy + vx) + 0.5 * vz * phi.dz;
-
-              double
-                eta_u = deta * gamma_u,
-                eta_v = deta * gamma_v;
-
-              // Picard part
-              K[t * 2 + 0][s * 2 + 0] += W * eta * (4.0 * psi.dx * phi.dx + psi.dy * phi.dy + psi.dz * phi.dz);
-              K[t * 2 + 0][s * 2 + 1] += W * eta * (2.0 * psi.dx * phi.dy + psi.dy * phi.dx);
-              K[t * 2 + 1][s * 2 + 0] += W * eta * (2.0 * psi.dy * phi.dx + psi.dx * phi.dy);
-              K[t * 2 + 1][s * 2 + 1] += W * eta * (4.0 * psi.dy * phi.dy + psi.dx * phi.dx + psi.dz * phi.dz);
-              // extra Newton terms
-              K[t * 2 + 0][s * 2 + 0] += W * eta_u * (psi.dx * (4.0 * ux + 2.0 * vy) +
-                                                      psi.dy * (uy + vx) +
-                                                      psi.dz * uz);
-              K[t * 2 + 0][s * 2 + 1] += W * eta_v * (psi.dx * (4.0 * ux + 2.0 * vy) +
-                                                      psi.dy * (uy + vx) +
-                                                      psi.dz * uz);
-              K[t * 2 + 1][s * 2 + 0] += W * eta_u * (psi.dx * (uy + vx) +
-                                                      psi.dy * (4.0 * vy + 2.0 * ux) +
-                                                      psi.dz * vz);
-              K[t * 2 + 1][s * 2 + 1] += W * eta_v * (psi.dx * (uy + vx) +
-                                                      psi.dy * (4.0 * vy + 2.0 * ux) +
-                                                      psi.dz * vz);
-            }
-          }
-        } // end of the loop over q
+        jacobian_f(element, u_nodal, B_nodal, K);
 
         // include basal drag
         if (k == 0) {
-
           for (int n = 0; n < Nk; ++n) {
             auto I = element.local_to_global(n);
 
@@ -768,34 +870,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
           // face 4 is the bottom face in fem::q13d::incident_nodes
           face->reset(4, z_nodal);
 
-          face->evaluate(u_nodal, u);
-          face->evaluate(tauc_nodal, tauc);
-          face->evaluate(f_nodal, floatation);
-
-          for (int q = 0; q < face->n_pts(); ++q) {
-            auto W = face->weight(q);
-
-            bool grounded = floatation[q] <= 0.0;
-            double beta = 0.0, dbeta = 0.0;
-            if (grounded) {
-              m_basal_sliding_law->drag_with_derivative(tauc[q], u[q].u, u[q].v, &beta, &dbeta);
-            }
-
-            // loop over all test functions
-            for (int t = 0; t < Nk; ++t) {
-              auto psi = face->chi(q, t);
-              for (int s = 0; s < Nk; ++s) {
-                auto phi = face->chi(q, s);
-
-                double p = psi * phi;
-
-                K[t * 2 + 0][s * 2 + 0] += W * p * (beta + dbeta * u[q].u * u[q].u);
-                K[t * 2 + 0][s * 2 + 1] += W * p * dbeta * u[q].u * u[q].v;
-                K[t * 2 + 1][s * 2 + 0] += W * p * dbeta * u[q].v * u[q].u;
-                K[t * 2 + 1][s * 2 + 1] += W * p * (beta + dbeta * u[q].v * u[q].v);
-              }
-            }
-          }
+          jacobian_basal(*face, tauc_nodal, f_nodal, u_nodal, K);
         }
 
         // fill the lower-triangular part of the element Jacobian using the fact that J is
@@ -905,8 +980,10 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_fa
     m_flow_law = ice_factory.create();
   }
 
-  m_rhog = (m_config->get_number("constants.ice.density") *
-            m_config->get_number("constants.standard_gravity"));
+  double g = m_config->get_number("constants.standard_gravity");
+
+  m_rho_ice_g = m_config->get_number("constants.ice.density") * g;
+  m_rho_ocean_g = m_config->get_number("constants.sea_water.density") * g;
 }
 
 /*!

@@ -23,10 +23,17 @@
 #include "pism/util/petscwrappers/SNES.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/fem/FEM.hh"
 
 #include "grid_hierarchy.hh"    // GridInfo
 
 namespace pism {
+
+namespace fem {
+class Element3;
+class Q1Element3Face;
+} // end of namespace fem
+
 namespace stressbalance {
 
 class Blatter : public ShallowStressBalance {
@@ -57,7 +64,15 @@ protected:
 
   CallbackData m_callback_data;
   GridInfo m_grid_info;
-  double m_rhog;
+  double m_rho_ice_g;
+  double m_rho_ocean_g;
+
+  static const int m_Nq = 100;
+  static const int m_n_work = 4;
+
+  double m_work[m_n_work][m_Nq];
+
+  Vector2 m_work2[m_n_work][m_Nq];
 
   void init_impl();
 
@@ -67,7 +82,40 @@ protected:
 
   void compute_jacobian(DMDALocalInfo *info, const Vector2 ***x, Mat A, Mat J);
 
+  void jacobian_f(const fem::Element3 &element,
+                  const Vector2 *u_nodal,
+                  const double *B_nodal,
+                  double K[16][16]);
+
+  void jacobian_basal(const fem::Q1Element3Face &face,
+                      const double *tauc_nodal,
+                      const double *f_nodal,
+                      const Vector2 *u_nodal,
+                      double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]);
+
   void compute_residual(DMDALocalInfo *info, const Vector2 ***xg, Vector2 ***yg);
+
+  void residual_f(const fem::Element3 &element,
+                  const Vector2 *u_nodal,
+                  const double *B_nodal,
+                  Vector2 *residual);
+
+  void residual_source_term(const fem::Element3 &element,
+                            const double *surface,
+                            Vector2 *residual);
+
+  void residual_basal(const fem::Element3 &element,
+                      const fem::Q1Element3Face &face,
+                      const double *tauc_nodal,
+                      const double *f_nodal,
+                      const Vector2 *u_nodal,
+                      Vector2 *residual);
+
+  void residual_lateral(const fem::Element3 &element,
+                        const fem::Q1Element3Face &face,
+                        const double *z_nodal,
+                        const double *sl_nodal,
+                        Vector2 *residual);
 
   static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
                                           const Vector2 ***x,
