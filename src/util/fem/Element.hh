@@ -91,7 +91,7 @@ public:
   //! The output array `result` should have enough elements to hold values at all
   //! quadrature points.
   template <typename T>
-  void evaluate(const T *x, T *result) {
+  void evaluate(const T *x, T *result) const {
     for (unsigned int q = 0; q < m_Nq; q++) {
       result[q] = 0.0;
       for (unsigned int k = 0; k < m_n_chi; k++) {
@@ -275,7 +275,7 @@ public:
    *  quadrature points.*/
   //! Output arrays should have enough elements to hold values at all quadrature points.`
   template <typename T>
-  void evaluate(const T *x, T *vals, T *dx, T *dy, T *dz) {
+  void evaluate(const T *x, T *vals, T *dx, T *dy, T *dz) const {
     for (unsigned int q = 0; q < m_Nq; q++) {
       vals[q] = 0.0;
       dx[q]   = 0.0;
@@ -401,7 +401,7 @@ public:
   void reset(int face, const std::vector<double> &z);
 
   template <typename T>
-  void evaluate(const T *x, T *result) {
+  void evaluate(const T *x, T *result) const {
     for (unsigned int q = 0; q < m_Nq; q++) {
       result[q] = 0.0;
       for (unsigned int k = 0; k < m_n_chi; k++) {
