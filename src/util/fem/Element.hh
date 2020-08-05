@@ -353,7 +353,7 @@ public:
   Q1Element3(const DMDALocalInfo &grid, double dx, double dy, const Quadrature &quadrature);
   Q1Element3(const IceGrid &grid, const Quadrature &quadrature);
 
-  void reset(int i, int j, int k, const std::vector<double> &z);
+  void reset(int i, int j, int k, const double *z);
 
   using Element::mark_row_invalid;
   using Element::mark_col_invalid;
@@ -398,7 +398,7 @@ public:
   }
 
   // NB: here z contains nodal z coordinates for *all* nodes of the element
-  void reset(int face, const std::vector<double> &z);
+  void reset(int face, const double *z);
 
   template <typename T>
   void evaluate(const T *x, T *result) const {

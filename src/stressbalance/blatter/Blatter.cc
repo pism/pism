@@ -481,7 +481,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   assert(element.n_chi() <= Nk);
 
   // scalar quantities
-  std::vector<double> z_nodal(Nk);
+  double z_nodal[Nk];
   double x_nodal[Nk];
   double y_nodal[Nk];
   double B_nodal[Nk];
@@ -589,11 +589,11 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         // loop over all vertical faces (see fem::q13d::incident_nodes for the order)
         for (int f = 0; f < 4 and neumann_bc_face(f, node_type); ++f) {
           // use an N*N-point equally-spaced quadrature at for partially-submerged faces
-          fem::Q1Element3Face *face = (partially_submerged_face(f, z_nodal.data(), sl_nodal) ?
+          fem::Q1Element3Face *face = (partially_submerged_face(f, z_nodal, sl_nodal) ?
                                        &face100 : &face4);
           face->reset(f, z_nodal);
 
-          residual_lateral(element, *face, z_nodal.data(), sl_nodal, R_nodal);
+          residual_lateral(element, *face, z_nodal, sl_nodal, R_nodal);
         } // end of the loop over element faces
 
         element.add_contribution(R_nodal, R);
@@ -801,7 +801,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   int node_type[Nk];
   double x_nodal[Nk];
   double y_nodal[Nk];
-  std::vector<double> z_nodal(Nk);
+  double z_nodal[Nk];
 
   DataAccess<Parameters**> P(info.da, 2, GHOSTED);
   DataAccess<double***> hardness(info.da, 3, GHOSTED);

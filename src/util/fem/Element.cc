@@ -448,7 +448,7 @@ Q1Element3::Q1Element3(const IceGrid &grid, const Quadrature &quadrature)
  * @param[in] k k-index of the lower left node
  * @param[in] z z-coordinates of the nodes of this element
  */
-void Q1Element3::reset(int i, int j, int k, const std::vector<double> &z) {
+void Q1Element3::reset(int i, int j, int k, const double *z) {
   // Record i,j,k corresponding to the current element:
   m_i = i;
   m_j = j;
@@ -526,7 +526,7 @@ Q1Element3Face::Q1Element3Face(double dx, double dy, const Quadrature &quadratur
   m_normals.resize(m_Nq);
 }
 
-void Q1Element3Face::reset(int face, const std::vector<double> &z) {
+void Q1Element3Face::reset(int face, const double *z) {
 
   // Turn coordinates of a 2D quadrature point on [-1,1]*[-1,1] into coordinates on a face
   // of the cube [-1,1]*[-1,1]*[-1,1].
