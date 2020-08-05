@@ -130,6 +130,8 @@ protected:
   // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
   PetscErrorCode setup(DM pism_da, int Mz, int n_levels, int coarsening_factor);
 
+  PetscErrorCode setup_2d_storage(DM dm, int dof);
+
   void set_initial_guess(const IceModelVec3 &u_sigma, const IceModelVec3 &v_sigma);
 
   void copy_solution();

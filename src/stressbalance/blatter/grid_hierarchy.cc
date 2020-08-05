@@ -34,19 +34,24 @@ PetscErrorCode DMInfo::setup(DM dm) {
   PetscErrorCode ierr;
   ierr = DMDAGetInfo(dm,
                      &dims,         // dimensions
-                     &Mz, &Mx, &My, // grid size (STORAGE_ORDER)
-                     &mz, &mx, &my, // number of processors in each direction (STORAGE_ORDER)
+                     &Mx, &My, &Mz, // grid size
+                     &mx, &my, &mz, // number of processors in each direction
                      &dof,          // number of degrees of freedom
                      &stencil_width,
-                     &bz, &bx, &by, // types of ghost nodes at the boundary (STORAGE_ORDER)
+                     &bx, &by, &bz, // types of ghost nodes at the boundary
                      &stencil_type); CHKERRQ(ierr);
 
-  ierr = DMDAGetOwnershipRanges(dm, &lz, &lx, &ly); // STORAGE_ORDER
+  ierr = DMDAGetOwnershipRanges(dm, &lx, &ly, &lz);
   CHKERRQ(ierr);
 
   return 0;
 }
 
+/*!
+ * Transpose DMInfo.
+ *
+ * NB: This uses the STORAGE_ORDER.
+ */
 DMInfo DMInfo::transpose() const {
   DMInfo result = *this;
 
@@ -157,43 +162,30 @@ DMDALocalInfo grid_transpose(const DMDALocalInfo &input) {
 /*!
  * Set up storage for 2D and 3D data inputs (DMDAs and Vecs)
  */
-PetscErrorCode setup_level(DM dm, const GridInfo &grid_info) {
+PetscErrorCode setup_level(DM dm, const GridInfo &domain) {
   PetscErrorCode ierr;
 
   MPI_Comm comm;
   ierr = PetscObjectGetComm((PetscObject)dm, &comm); CHKERRQ(ierr);
 
   // Get grid information
-  PetscInt Mx, My, Mz, mx, my, mz, stencil_width;
-  DMDAStencilType stencil_type;
-  const PetscInt *lx, *ly, *lz;
-  {
-    ierr = DMDAGetInfo(dm,
-                       NULL,          // dimensions
-                       &Mz, &Mx, &My, // grid size (STORAGE_ORDER)
-                       &mz, &mx, &my, // number of processors in each direction (STORAGE_ORDER)
-                       NULL,          // number of degrees of freedom
-                       &stencil_width,
-                       NULL, NULL, NULL, // types of ghost nodes at the boundary
-                       &stencil_type); CHKERRQ(ierr);
-
-    ierr = DMDAGetOwnershipRanges(dm, &lz, &lx, &ly); CHKERRQ(ierr); // STORAGE_ORDER
-  }
+  DMInfo info (dm);
 
   // Create a 3D DMDA and a global Vec, then stash them in dm.
   {
+
     DM  da;
     Vec parameters;
     int dof = 1;
 
     ierr = DMDACreate3d(comm,
-                        DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, // STORAGE_ORDER
-                        stencil_type,
-                        Mz, Mx, My, // STORAGE_ORDER
-                        mz, mx, my, // STORAGE_ORDER
+                        info.bx, info.by, info.bz,
+                        info.stencil_type,
+                        info.Mx, info.My, info.Mz,
+                        info.mx, info.my, info.mz,
                         dof,
-                        stencil_width,
-                        lz, lx, ly, // STORAGE_ORDER
+                        info.stencil_width,
+                        info.lx, info.ly, info.lz,
                         &da); CHKERRQ(ierr);
 
     ierr = DMSetUp(da); CHKERRQ(ierr);
@@ -208,15 +200,21 @@ PetscErrorCode setup_level(DM dm, const GridInfo &grid_info) {
     ierr = VecDestroy(&parameters); CHKERRQ(ierr);
   }
 
-  // get refinement level
+  // get coarsening level
   PetscInt level = 0;
   ierr = DMGetCoarsenLevel(dm, &level); CHKERRQ(ierr);
 
   // report
   {
+    info = info.transpose();
+    int
+      Mx = info.Mx,
+      My = info.My,
+      Mz = info.Mz;
+
     double
-      Wx = grid_info.x_max - grid_info.x_min,
-      Wy = grid_info.y_max - grid_info.y_min;
+      Wx = domain.x_max - domain.x_min,
+      Wy = domain.y_max - domain.y_min;
     ierr = PetscPrintf(comm,
                        "Level %D domain size (m) %8.2g x %8.2g,"
                        " num elements %3d x %3d x %3d (%8d), size (m) %g x %g\n",

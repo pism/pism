@@ -497,7 +497,8 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   Vector2 u_nodal[Nk];
   Vector2 R_nodal[Nk];
 
-  DataAccess<Parameters**> P(info.da, 2, GHOSTED);
+  // note: we use m_da below because all multigrid levels use the same 2D grid
+  DataAccess<Parameters**> P(m_da, 2, GHOSTED);
   DataAccess<double***> ice_hardness(info.da, 3, GHOSTED);
 
   // Compute the residual at Dirichlet nodes and set it to zero elsewhere.
@@ -803,7 +804,8 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   double y_nodal[Nk];
   double z_nodal[Nk];
 
-  DataAccess<Parameters**> P(info.da, 2, GHOSTED);
+  // note: we use m_da below because all multigrid levels use the same 2D grid
+  DataAccess<Parameters**> P(m_da, 2, GHOSTED);
   DataAccess<double***> hardness(info.da, 3, GHOSTED);
 
   // loop over all the elements that have at least one owned node
@@ -1016,13 +1018,7 @@ static PetscErrorCode blatter_restriction_hook(DM fine,
 
   PetscErrorCode ierr;
 
-  // FIXME: we don't need to restrict in 2D now that we don't coarsen in horizontal
-  // directions.
-  ierr = restrict_data(fine, coarse, "2D_DM"); CHKERRQ(ierr);
-
   ierr = restrict_data(fine, coarse, "3D_DM"); CHKERRQ(ierr);
-
-  blatter_node_type(coarse, grid_info->min_thickness);
 
   return 0;
 }
@@ -1034,14 +1030,48 @@ PetscErrorCode blatter_coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
 
   ierr = DMCoarsenHookAdd(dm_coarse, blatter_coarsening_hook, blatter_restriction_hook, ctx); CHKERRQ(ierr);
 
-  // 2D
-  //
-  // FIXME: we don't need the 2D restriction now that we don't coarsen in horizontal
-  // directions.
-  ierr = create_restriction(dm_fine, dm_coarse, "2D_DM"); CHKERRQ(ierr);
-
   // 3D
   ierr = create_restriction(dm_fine, dm_coarse, "3D_DM"); CHKERRQ(ierr);
+
+  return 0;
+}
+
+/*!
+ * Create a 2D DM and an associated 2D global Vec for storing input parameters.
+ */
+PetscErrorCode Blatter::setup_2d_storage(DM dm, int dof) {
+  PetscErrorCode ierr;
+
+  MPI_Comm comm;
+  ierr = PetscObjectGetComm((PetscObject)dm, &comm); CHKERRQ(ierr);
+
+  // Create a 2D DMDA and a global Vec, then stash them in dm.
+  DM  da;
+  Vec parameters;
+
+  // NB: we call transpose() here because the input dm is a transposed 3D DM
+  auto info = DMInfo(dm).transpose();
+
+  ierr = DMDACreate2d(comm,
+                      info.bx, info.by,
+                      info.stencil_type,
+                      info.Mx, info.My,
+                      info.mx, info.my,
+                      dof,
+                      info.stencil_width,
+                      info.lx, info.ly,
+                      &da); CHKERRQ(ierr);
+
+  ierr = DMSetUp(da); CHKERRQ(ierr);
+
+  ierr = DMCreateGlobalVector(da, &parameters); CHKERRQ(ierr);
+
+  ierr = PetscObjectCompose((PetscObject)dm, "2D_DM", (PetscObject)da); CHKERRQ(ierr);
+  ierr = PetscObjectCompose((PetscObject)dm, "2D_DM_data", (PetscObject)parameters); CHKERRQ(ierr);
+
+  ierr = DMDestroy(&da); CHKERRQ(ierr);
+
+  ierr = VecDestroy(&parameters); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1077,12 +1107,6 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels, int coarsening_f
     const PetscInt *lx, *ly;
     ierr = DMDAGetOwnershipRanges(pism_da, &lx, &ly, NULL); CHKERRQ(ierr);
 
-    double
-      x_max = m_grid->Lx(),
-      x_min = -x_max,
-      y_max = m_grid->Ly(),
-      y_min = -y_max;
-
     // pad the vertical grid to allow for n_levels multigrid levels
     Mz += grid_padding(Mz, coarsening_factor, n_levels);
 
@@ -1103,14 +1127,22 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels, int coarsening_f
 
     ierr = DMSetUp(m_da); CHKERRQ(ierr);
 
-    double min_thickness = m_config->get_number("stress_balance.ice_free_thickness_standard");
+    {
+      double
+        min_thickness = m_config->get_number("stress_balance.ice_free_thickness_standard"),
+        x_max = m_grid->Lx(),
+        x_min = -x_max,
+        y_max = m_grid->Ly(),
+        y_min = -y_max;
 
-    m_grid_info = {x_min, x_max,
-                   y_min, y_max,
-                   min_thickness,
-                   sizeof(Parameters)/sizeof(double)};
+      m_grid_info = {x_min, x_max,
+                     y_min, y_max,
+                     min_thickness,
+                     sizeof(Parameters)/sizeof(double)};
+    }
 
     // set up 2D and 3D parameter storage
+    ierr = setup_2d_storage(m_da, sizeof(Parameters)/sizeof(double)); CHKERRQ(ierr);
     ierr = setup_level(m_da, m_grid_info); CHKERRQ(ierr);
 
     // tell PETSc how to coarsen this grid and how to restrict data to a coarser grid
@@ -1178,11 +1210,11 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
         s_grounded = b(i, j) + H(i, j),
         s_floating = sea_level(i, j) + (1.0 - alpha) * H(i, j);
 
-      P[j][i].tauc = tauc(i, j);
-      P[j][i].thickness = H(i, j);
-      P[j][i].sea_level = sea_level(i, j);
-      P[j][i].bed = std::max(b_grounded, b_floating);
-      P[j][i].node_type = NODE_EXTERIOR;
+      P[j][i].tauc       = tauc(i, j);
+      P[j][i].thickness  = H(i, j);
+      P[j][i].sea_level  = sea_level(i, j);
+      P[j][i].bed        = std::max(b_grounded, b_floating);
+      P[j][i].node_type  = NODE_EXTERIOR;
       P[j][i].floatation = s_floating - s_grounded;
     }
   }
