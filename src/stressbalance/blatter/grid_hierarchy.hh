@@ -26,6 +26,24 @@
 
 namespace pism {
 
+/*!
+ * A structure wrapping outputs of DMDAGetInfo() and DMDAGetOwnershipRanges().
+ */
+class DMInfo {
+public:
+  DMInfo(DM dm);
+  DMInfo transpose() const;
+
+  PetscInt Mx, My, Mz;
+  PetscInt mx, my, mz;
+  PetscInt dims, dof, stencil_width;
+  DMDAStencilType stencil_type;
+  const PetscInt *lx, *ly, *lz;
+  DMBoundaryType bx, by, bz;
+private:
+  PetscErrorCode setup(DM dm);
+};
+
 struct GridInfo {
   double x_min, x_max;
   double y_min, y_max;

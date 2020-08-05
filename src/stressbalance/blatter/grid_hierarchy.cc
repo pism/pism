@@ -24,6 +24,51 @@
 
 namespace pism {
 
+DMInfo::DMInfo(DM dm) {
+  if (setup(dm) != 0) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "failed to get DM information");
+  }
+}
+
+PetscErrorCode DMInfo::setup(DM dm) {
+  PetscErrorCode ierr;
+  ierr = DMDAGetInfo(dm,
+                     &dims,         // dimensions
+                     &Mz, &Mx, &My, // grid size (STORAGE_ORDER)
+                     &mz, &mx, &my, // number of processors in each direction (STORAGE_ORDER)
+                     &dof,          // number of degrees of freedom
+                     &stencil_width,
+                     &bz, &bx, &by, // types of ghost nodes at the boundary (STORAGE_ORDER)
+                     &stencil_type); CHKERRQ(ierr);
+
+  ierr = DMDAGetOwnershipRanges(dm, &lz, &lx, &ly); // STORAGE_ORDER
+  CHKERRQ(ierr);
+
+  return 0;
+}
+
+DMInfo DMInfo::transpose() const {
+  DMInfo result = *this;
+
+  result.mx = this->my;
+  result.my = this->mz;
+  result.mz = this->mx;
+
+  result.Mx = this->My;
+  result.My = this->Mz;
+  result.Mz = this->Mx;
+
+  result.lx = this->ly;
+  result.ly = this->lz;
+  result.lz = this->lx;
+
+  result.bx = this->by;
+  result.by = this->bz;
+  result.bz = this->bx;
+
+  return result;
+}
+
 /*!
  * z coordinates of the nodes
  *
@@ -108,6 +153,7 @@ DMDALocalInfo grid_transpose(const DMDALocalInfo &input) {
   return result;
 }
 
+
 /*!
  * Set up storage for 2D and 3D data inputs (DMDAs and Vecs)
  */
@@ -132,35 +178,6 @@ PetscErrorCode setup_level(DM dm, const GridInfo &grid_info) {
                        &stencil_type); CHKERRQ(ierr);
 
     ierr = DMDAGetOwnershipRanges(dm, &lz, &lx, &ly); CHKERRQ(ierr); // STORAGE_ORDER
-  }
-
-  // Create a 2D DMDA and a global Vec, then stash them in dm.
-  //
-  // FIXME: we don't need the 2D DMDA now that we don't coarsen in horizontal directions.
-  {
-    DM  da;
-    Vec parameters;
-
-    ierr = DMDACreate2d(comm,
-                        DM_BOUNDARY_NONE, DM_BOUNDARY_NONE,
-                        stencil_type,
-                        Mx, My,
-                        mx, my,
-                        grid_info.dof,
-                        stencil_width,
-                        lx, ly,
-                        &da); CHKERRQ(ierr);
-
-    ierr = DMSetUp(da); CHKERRQ(ierr);
-
-    ierr = DMCreateGlobalVector(da, &parameters); CHKERRQ(ierr);
-
-    ierr = PetscObjectCompose((PetscObject)dm, "2D_DM", (PetscObject)da); CHKERRQ(ierr);
-    ierr = PetscObjectCompose((PetscObject)dm, "2D_DM_data", (PetscObject)parameters); CHKERRQ(ierr);
-
-    ierr = DMDestroy(&da); CHKERRQ(ierr);
-
-    ierr = VecDestroy(&parameters); CHKERRQ(ierr);
   }
 
   // Create a 3D DMDA and a global Vec, then stash them in dm.
