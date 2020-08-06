@@ -1085,42 +1085,26 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels, int coarsening_f
   //
   // Note: in the PISM's DA pism_da PETSc's and PISM's meaning of x and y are the same.
   {
-    PetscInt dim, Mx, My, Nx, Ny;
-    PetscInt
-      Nz            = 1,
-      dof           = 2,        // u and v velocity components
-      stencil_width = 1;
+    MPI_Comm comm;
+    ierr = PetscObjectGetComm((PetscObject)pism_da, &comm); CHKERRQ(ierr);
 
-    ierr = DMDAGetInfo(pism_da,
-                       &dim,
-                       &Mx,
-                       &My,
-                       NULL,             // Mz
-                       &Nx,              // number of processors in y-direction
-                       &Ny,              // number of processors in x-direction
-                       NULL,             // ditto, z-direction
-                       NULL,             // number of degrees of freedom per node
-                       NULL,             // stencil width
-                       NULL, NULL, NULL, // types of ghost nodes at the boundary
-                       NULL);            // stencil width
-    CHKERRQ(ierr);
-
-    assert(dim == 2);
-
-    const PetscInt *lx, *ly;
-    ierr = DMDAGetOwnershipRanges(pism_da, &lx, &ly, NULL); CHKERRQ(ierr);
+    DMInfo info(pism_da);
+    assert(info.dims == 2);
 
     // pad the vertical grid to allow for n_levels multigrid levels
-    Mz += grid_padding(Mz, coarsening_factor, n_levels);
+    info.Mz  = Mz + grid_padding(Mz, coarsening_factor, n_levels);
+    info.mz  = 1;
+    info.dof = 2;
+    info.stencil_width = 1;
 
-    ierr = DMDACreate3d(PETSC_COMM_WORLD,
+    ierr = DMDACreate3d(comm,
                         DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, // STORAGE_ORDER
                         DMDA_STENCIL_BOX,
-                        Mz, Mx, My,                         // STORAGE_ORDER
-                        Nz, Nx, Ny,                         // STORAGE_ORDER
-                        dof,                                // dof
-                        stencil_width,                      // stencil width
-                        NULL, lx, ly,                       // STORAGE_ORDER
+                        info.Mz, info.Mx, info.My, // STORAGE_ORDER
+                        info.mz, info.mx, info.my, // STORAGE_ORDER
+                        info.dof,                  // dof
+                        info.stencil_width,        // stencil width
+                        NULL, info.lx, info.ly,    // STORAGE_ORDER
                         m_da.rawptr()); CHKERRQ(ierr);
 
     // semi-coarsening: coarsen in the vertical direction only
