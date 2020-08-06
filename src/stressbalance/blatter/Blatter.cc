@@ -214,7 +214,7 @@ static bool grounding_line(const double *F) {
  * This is used to determine whether to use more quadrature points to estimate integrals
  * over this face when computing lateral boundary conditions.
  */
-static bool partially_submerged_face(int face, const double *z, const double *z_sl) {
+static bool partially_submerged_face(int face, const double *z, const double *sea_level) {
   auto nodes = fem::q13d::incident_nodes[face];
 
   // number of nodes per face
@@ -226,7 +226,7 @@ static bool partially_submerged_face(int face, const double *z, const double *z_
 
   for (int n = 0; n < N; ++n) {
     int k = nodes[n];
-    if (z[k] > z_sl[k]) {
+    if (z[k] > sea_level[k]) {
       above = true;
     } else {
       below = true;
@@ -471,7 +471,7 @@ void Blatter::residual_lateral(const fem::Element3 &element,
  * Computes the residual.
  */
 void Blatter::compute_residual(DMDALocalInfo *petsc_info,
-                               const Vector2 ***x, Vector2 ***R) {
+                               const Vector2 ***X, Vector2 ***R) {
   auto info = grid_transpose(*petsc_info);
 
   // Stencil width of 1 is not very important, but if info.sw > 1 will lead to more
@@ -479,13 +479,10 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   // owned nodes).
   assert(info.sw == 1);
 
-  // Compute grid spacing from domain dimensions and the grid size
-  //
-  // FIXME: we don't need to re-compute dx and dy now that we don't coarsen in horizontal
-  // directions.
+  // horizontal grid spacing is the same on all multigrid levels
   double
-    dx = m_grid_info.dx(info.mx),
-    dy = m_grid_info.dy(info.my);
+    dx = m_grid->dx(),
+    dy = m_grid->dy();
 
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
   fem::Q1Element3Face
@@ -501,22 +498,16 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   assert(element.n_chi() <= Nk);
 
   // scalar quantities
-  double z_nodal[Nk];
-  double x_nodal[Nk];
-  double y_nodal[Nk];
-  double B_nodal[Nk];
-  double sl_nodal[Nk];
-  double tauc_nodal[Nk];
-  double f_nodal[Nk];
-  double b_nodal[Nk];
-  double H_nodal[Nk];
-  double s_nodal[Nk];
+  double x[Nk], y[Nk], z[Nk];
+  double floatation[Nk], sea_level[Nk], bed_elevation[Nk], ice_thickness[Nk], surface_elevation[Nk];
+  double B[Nk], basal_yield_stress[Nk];
   int node_type[Nk];
 
   // 2D vector quantities
-  Vector2 u_nodal[Nk];
-  Vector2 R_nodal[Nk];
+  Vector2 velocity[Nk], R_nodal[Nk];
 
+  // FIXME: this communicates ghosts every time the residual is computed, which is excessive.
+  //
   // note: we use m_da below because all multigrid levels use the same 2D grid
   DataAccess<Parameters**> P(m_da, 2, GHOSTED);
   // note: we use info.da below because ice hardness is on the grid corresponding to the
@@ -524,7 +515,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   DataAccess<double***> ice_hardness(info.da, 3, GHOSTED);
 
   // Compute the residual at Dirichlet nodes and set it to zero elsewhere.
-  residual_dirichlet(m_grid_info, info, P, x, R);
+  residual_dirichlet(m_grid_info, info, P, X, R);
 
   // loop over all the elements that have at least one owned node
   for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
@@ -536,14 +527,14 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
         auto p = P[I.j][I.i];
 
-        node_type[n] = p.node_type;
-        s_nodal[n]   = p.bed + p.thickness;
-        sl_nodal[n]  = p.sea_level;
-        b_nodal[n]   = p.bed;
-        H_nodal[n]   = p.thickness;
+        node_type[n]         = p.node_type;
+        surface_elevation[n] = p.bed + p.thickness;
+        sea_level[n]         = p.sea_level;
+        bed_elevation[n]     = p.bed;
+        ice_thickness[n]     = p.thickness;
 
-        x_nodal[n] = m_grid_info.x(dx, I.i);
-        y_nodal[n] = m_grid_info.y(dy, I.j);
+        x[n] = m_grid_info.x(dx, I.i);
+        y[n] = m_grid_info.y(dy, I.j);
       }
 
       // skip ice-free (exterior) elements
@@ -557,22 +548,19 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         // Reset element residual to zero in preparation.
         memset(R_nodal, 0, sizeof(R_nodal));
 
-        // Compute coordinates of the nodes of this element and fetch node types.
+        // Compute z coordinates of the nodes of this element
         for (int n = 0; n < Nk; ++n) {
           auto I = element.local_to_global(i, j, k, n);
-          z_nodal[n] = grid_z(b_nodal[n], H_nodal[n], info.mz, I.k);
+          z[n] = grid_z(bed_elevation[n], ice_thickness[n], info.mz, I.k);
         }
 
-        // compute values of chi, chi_x, chi_y, chi_z and quadrature weights at quadrature
+        // Compute values of chi, chi_x, chi_y, chi_z and quadrature weights at quadrature
         // points on this physical element
-        element.reset(i, j, k, z_nodal);
+        element.reset(i, j, k, z);
 
-        // Get nodal values of ice hardness.
-        element.nodal_values((double***)ice_hardness, B_nodal);
-
-        // Get nodal values of u.
+        // Get nodal values of ice velocity.
         {
-          element.nodal_values(x, u_nodal);
+          element.nodal_values(X, velocity);
 
           // Take care of Dirichlet BC: don't contribute to Dirichlet nodes and set nodal
           // values of the current iterate to Dirichlet BC values.
@@ -580,43 +568,46 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
             auto I = element.local_to_global(n);
             if (dirichlet_node(info, I)) {
               element.mark_row_invalid(n);
-              u_nodal[n] = u_bc(x_nodal[n], y_nodal[n], z_nodal[n]);
+              velocity[n] = u_bc(x[n], y[n], z[n]);
             }
           }
         }
 
+        // Get nodal values of ice hardness.
+        element.nodal_values((double***)ice_hardness, B);
+
         // "main" part of the residual
-        residual_f(element, u_nodal, B_nodal, R_nodal);
+        residual_f(element, velocity, B, R_nodal);
 
         // the "source term" (driving stress)
-        residual_source_term(element, s_nodal, R_nodal);
+        residual_source_term(element, surface_elevation, R_nodal);
 
         // basal boundary
         if (k == 0) {
           for (int n = 0; n < Nk; ++n) {
             auto I = element.local_to_global(n);
 
-            tauc_nodal[n] = P[I.j][I.i].tauc;
-            f_nodal[n]    = P[I.j][I.i].floatation;
+            basal_yield_stress[n] = P[I.j][I.i].tauc;
+            floatation[n]   = P[I.j][I.i].floatation;
           }
 
           // use an N*N-point equally-spaced quadrature at grounding lines
-          fem::Q1Element3Face *face = grounding_line(f_nodal) ? &face100 : &face4;
+          fem::Q1Element3Face *face = grounding_line(floatation) ? &face100 : &face4;
           // face 4 is the bottom face in fem::q13d::incident_nodes
-          face->reset(4, z_nodal);
+          face->reset(4, z);
 
-          residual_basal(element, *face, tauc_nodal, f_nodal, u_nodal, R_nodal);
+          residual_basal(element, *face, basal_yield_stress, floatation, velocity, R_nodal);
         }
 
         // lateral boundary
         // loop over all vertical faces (see fem::q13d::incident_nodes for the order)
         for (int f = 0; f < 4 and neumann_bc_face(f, node_type); ++f) {
           // use an N*N-point equally-spaced quadrature at for partially-submerged faces
-          fem::Q1Element3Face *face = (partially_submerged_face(f, z_nodal, sl_nodal) ?
+          fem::Q1Element3Face *face = (partially_submerged_face(f, z, sea_level) ?
                                        &face100 : &face4);
-          face->reset(f, z_nodal);
+          face->reset(f, z);
 
-          residual_lateral(element, *face, z_nodal, sl_nodal, R_nodal);
+          residual_lateral(element, *face, z, sea_level, R_nodal);
         } // end of the loop over element faces
 
         element.add_contribution(R_nodal, R);
@@ -773,10 +764,8 @@ void Blatter::jacobian_f(const fem::Element3 &element,
 }
 
 void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
-                               const Vector2 ***x, Mat A, Mat J) {
+                               const Vector2 ***X, Mat A, Mat J) {
   auto info = grid_transpose(*petsc_info);
-
-  (void) x;
 
   // Zero out the Jacobian in preparation for updating it.
   PetscErrorCode ierr = MatZeroEntries(J);
@@ -787,13 +776,10 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   // owned nodes).
   assert(info.sw == 1);
 
-  // Compute grid spacing from domain dimensions and the grid size
-  //
-  // FIXME: we don't need to re-compute dx and dy now that we don't coarsen in horizontal
-  // directions.
+  // horizontal grid spacing is the same on all multigrid levels
   double
-    dx = m_grid_info.dx(info.mx),
-    dy = m_grid_info.dy(info.my);
+    dx = m_grid->dx(),
+    dy = m_grid->dy();
 
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
 
@@ -810,22 +796,17 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   assert(face4.n_pts() <= m_Nq);
   assert(face100.n_pts() <= m_Nq);
 
-  // 2D vector quantities
-  Vector2 u_nodal[Nk];
-
   // scalar quantities
-  double B_nodal[Nk];
-  double tauc_nodal[Nk];
-  double f_nodal[Nk];
-  double b_nodal[Nk];
-  double H_nodal[Nk];
-
-  // scalar quantities evaluated at element nodes
+  double x[Nk], y[Nk], z[Nk];
+  double floatation[Nk], bottom_elevation[Nk], ice_thickness[Nk];
+  double B_nodal[Nk], basal_yield_stress[Nk];
   int node_type[Nk];
-  double x_nodal[Nk];
-  double y_nodal[Nk];
-  double z_nodal[Nk];
 
+  // 2D vector quantities
+  Vector2 velocity[Nk];
+
+  // FIXME: this communicates ghosts every time the residual is computed, which is excessive.
+  //
   // note: we use m_da below because all multigrid levels use the same 2D grid
   DataAccess<Parameters**> P(m_da, 2, GHOSTED);
   // note: we use info.da below because ice hardness is on the grid corresponding to the
@@ -841,12 +822,12 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
         auto p = P[I.j][I.i];
 
-        node_type[n] = p.node_type;
-        b_nodal[n]   = p.bed;
-        H_nodal[n]   = p.thickness;
+        node_type[n]        = p.node_type;
+        bottom_elevation[n] = p.bed;
+        ice_thickness[n]    = p.thickness;
 
-        x_nodal[n] = m_grid_info.x(dx, I.i);
-        y_nodal[n] = m_grid_info.y(dy, I.j);
+        x[n] = m_grid_info.x(dx, I.i);
+        y[n] = m_grid_info.y(dy, I.j);
       }
 
       // skip ice-free (exterior) columns
@@ -865,16 +846,16 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
         for (int n = 0; n < Nk; ++n) {
           auto I = element.local_to_global(i, j, k, n);
 
-          z_nodal[n] = grid_z(b_nodal[n], H_nodal[n], info.mz, I.k);
+          z[n] = grid_z(bottom_elevation[n], ice_thickness[n], info.mz, I.k);
         }
 
         // compute values of chi, chi_x, chi_y, chi_z and quadrature weights at quadrature
         // points on this physical element
-        element.reset(i, j, k, z_nodal);
+        element.reset(i, j, k, z);
 
-        // Get nodal values of u.
+        // Get nodal values of ice velocity.
         {
-          element.nodal_values(x, u_nodal);
+          element.nodal_values(X, velocity);
 
           // Don't contribute to Dirichlet nodes
           for (int n = 0; n < Nk; ++n) {
@@ -882,30 +863,30 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
             if (dirichlet_node(info, I)) {
               element.mark_row_invalid(n);
               element.mark_col_invalid(n);
-              u_nodal[n] = u_bc(x_nodal[n], y_nodal[n], z_nodal[n]);
+              velocity[n] = u_bc(x[n], y[n], z[n]);
             }
           }
         }
 
         element.nodal_values((double***)hardness, B_nodal);
 
-        jacobian_f(element, u_nodal, B_nodal, K);
+        jacobian_f(element, velocity, B_nodal, K);
 
         // basal boundary
         if (k == 0) {
           for (int n = 0; n < Nk; ++n) {
             auto I = element.local_to_global(n);
 
-            tauc_nodal[n] = P[I.j][I.i].tauc;
-            f_nodal[n]    = P[I.j][I.i].floatation;
+            basal_yield_stress[n] = P[I.j][I.i].tauc;
+            floatation[n]         = P[I.j][I.i].floatation;
           }
 
-          fem::Q1Element3Face *face = grounding_line(f_nodal) ? &face100 : &face4;
+          fem::Q1Element3Face *face = grounding_line(floatation) ? &face100 : &face4;
 
           // face 4 is the bottom face in fem::q13d::incident_nodes
-          face->reset(4, z_nodal);
+          face->reset(4, z);
 
-          jacobian_basal(*face, tauc_nodal, f_nodal, u_nodal, K);
+          jacobian_basal(*face, basal_yield_stress, floatation, velocity, K);
         }
 
         // fill the lower-triangular part of the element Jacobian using the fact that J is
@@ -1104,30 +1085,42 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels, int coarsening_f
   //
   // Note: in the PISM's DA pism_da PETSc's and PISM's meaning of x and y are the same.
   {
-    DMInfo info(pism_da);
-
+    PetscInt dim, Mx, My, Nx, Ny;
     PetscInt
-      mz            = 1,        // number of processors in the Z direction
+      Nz            = 1,
       dof           = 2,        // u and v velocity components
       stencil_width = 1;
 
-    assert(info.dims == 2);
+    ierr = DMDAGetInfo(pism_da,
+                       &dim,
+                       &Mx,
+                       &My,
+                       NULL,             // Mz
+                       &Nx,              // number of processors in y-direction
+                       &Ny,              // number of processors in x-direction
+                       NULL,             // ditto, z-direction
+                       NULL,             // number of degrees of freedom per node
+                       NULL,             // stencil width
+                       NULL, NULL, NULL, // types of ghost nodes at the boundary
+                       NULL);            // stencil width
+    CHKERRQ(ierr);
+
+    assert(dim == 2);
+
+    const PetscInt *lx, *ly;
+    ierr = DMDAGetOwnershipRanges(pism_da, &lx, &ly, NULL); CHKERRQ(ierr);
 
     // pad the vertical grid to allow for n_levels multigrid levels
-    info.Mz += grid_padding(Mz, coarsening_factor, n_levels);
-
-    info.bx = m_grid->periodicity() | X_PERIODIC ?  DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE;
-    info.by = m_grid->periodicity() | Y_PERIODIC ?  DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE;
-    info.bz = DM_BOUNDARY_NONE;
+    Mz += grid_padding(Mz, coarsening_factor, n_levels);
 
     ierr = DMDACreate3d(PETSC_COMM_WORLD,
                         DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, // STORAGE_ORDER
                         DMDA_STENCIL_BOX,
-                        info.Mz, info.Mx, info.My, // STORAGE_ORDER
-                        mz, info.mx, info.my,      // STORAGE_ORDER
-                        dof,                       // dof
-                        stencil_width,             // stencil width
-                        NULL, info.lx, info.ly,    // STORAGE_ORDER
+                        Mz, Mx, My,                         // STORAGE_ORDER
+                        Nz, Nx, Ny,                         // STORAGE_ORDER
+                        dof,                                // dof
+                        stencil_width,                      // stencil width
+                        NULL, lx, ly,                       // STORAGE_ORDER
                         m_da.rawptr()); CHKERRQ(ierr);
 
     // semi-coarsening: coarsen in the vertical direction only
