@@ -160,7 +160,7 @@ DMDALocalInfo grid_transpose(const DMDALocalInfo &input) {
 
 
 /*!
- * Set up storage for 2D and 3D data inputs (DMDAs and Vecs)
+ * Set up storage for 3D data inputs (DMDAs and Vecs)
  */
 PetscErrorCode setup_level(DM dm, const GridInfo &domain) {
   PetscErrorCode ierr;
@@ -250,7 +250,7 @@ PetscErrorCode create_restriction(DM fine, DM coarse, const char *dm_name) {
     SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA", dm_name);
   }
 
-  /* 2. get the DM for parameters from the coarse grid DM */
+  /* Get the DM for parameters from the coarse grid DM */
   ierr = PetscObjectQuery((PetscObject)coarse, dm_name, (PetscObject *)&da_coarse); CHKERRQ(ierr);
   if (!da_coarse) {
     SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA", dm_name);

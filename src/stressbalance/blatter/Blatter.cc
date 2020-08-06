@@ -311,6 +311,10 @@ static void residual_dirichlet(const GridInfo &grid_info,
   }
 }
 
+/*! Computes the residual contribution of the "source term".
+ *
+ * This term contains the driving stress.
+ */
 void Blatter::residual_source_term(const fem::Element3 &element,
                                    const double *surface,
                                    Vector2 *residual) {
@@ -335,6 +339,9 @@ void Blatter::residual_source_term(const fem::Element3 &element,
   }
 }
 
+/*!
+ * Computes the residual contribution of the "main" part of the Blatter system.
+ */
 void Blatter::residual_f(const fem::Element3 &element,
                          const Vector2 *u_nodal,
                          const double *B_nodal,
@@ -386,6 +393,11 @@ void Blatter::residual_f(const fem::Element3 &element,
   }
 }
 
+/*!
+ * Computes the residual contribution of the basal boundary condition.
+ *
+ * This takes care of basal sliding.
+ */
 void Blatter::residual_basal(const fem::Element3 &element,
                              const fem::Q1Element3Face &face,
                              const double *tauc_nodal,
@@ -420,6 +432,11 @@ void Blatter::residual_basal(const fem::Element3 &element,
 
 }
 
+/*!
+ * Computes the residual contribution of lateral boundary conditions.
+ *
+ * This takes care of "calving front" stress boundary conditions.
+ */
 void Blatter::residual_lateral(const fem::Element3 &element,
                                const fem::Q1Element3Face &face,
                                const double *z_nodal,
@@ -450,6 +467,9 @@ void Blatter::residual_lateral(const fem::Element3 &element,
   }
 }
 
+/*!
+ * Computes the residual.
+ */
 void Blatter::compute_residual(DMDALocalInfo *petsc_info,
                                const Vector2 ***x, Vector2 ***R) {
   auto info = grid_transpose(*petsc_info);
@@ -476,7 +496,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   assert(face4.n_pts() <= m_Nq);
   assert(face100.n_pts() <= m_Nq);
 
-  // Maximum number of nodes per element.
+  // Number of nodes per element.
   const int Nk = fem::q13d::n_chi;
   assert(element.n_chi() <= Nk);
 
@@ -1084,42 +1104,30 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels, int coarsening_f
   //
   // Note: in the PISM's DA pism_da PETSc's and PISM's meaning of x and y are the same.
   {
-    PetscInt dim, Mx, My, Nx, Ny;
+    DMInfo info(pism_da);
+
     PetscInt
-      Nz            = 1,
+      mz            = 1,        // number of processors in the Z direction
       dof           = 2,        // u and v velocity components
       stencil_width = 1;
 
-    ierr = DMDAGetInfo(pism_da,
-                       &dim,
-                       &Mx,
-                       &My,
-                       NULL,             // Mz
-                       &Nx,              // number of processors in y-direction
-                       &Ny,              // number of processors in x-direction
-                       NULL,             // ditto, z-direction
-                       NULL,             // number of degrees of freedom per node
-                       NULL,             // stencil width
-                       NULL, NULL, NULL, // types of ghost nodes at the boundary
-                       NULL);            // stencil width
-    CHKERRQ(ierr);
-
-    assert(dim == 2);
-
-    const PetscInt *lx, *ly;
-    ierr = DMDAGetOwnershipRanges(pism_da, &lx, &ly, NULL); CHKERRQ(ierr);
+    assert(info.dims == 2);
 
     // pad the vertical grid to allow for n_levels multigrid levels
-    Mz += grid_padding(Mz, coarsening_factor, n_levels);
+    info.Mz += grid_padding(Mz, coarsening_factor, n_levels);
+
+    info.bx = m_grid->periodicity() | X_PERIODIC ?  DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE;
+    info.by = m_grid->periodicity() | Y_PERIODIC ?  DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE;
+    info.bz = DM_BOUNDARY_NONE;
 
     ierr = DMDACreate3d(PETSC_COMM_WORLD,
                         DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, // STORAGE_ORDER
                         DMDA_STENCIL_BOX,
-                        Mz, Mx, My,                         // STORAGE_ORDER
-                        Nz, Nx, Ny,                         // STORAGE_ORDER
-                        dof,                                // dof
-                        stencil_width,                      // stencil width
-                        NULL, lx, ly,                       // STORAGE_ORDER
+                        info.Mz, info.Mx, info.My, // STORAGE_ORDER
+                        mz, info.mx, info.my,      // STORAGE_ORDER
+                        dof,                       // dof
+                        stencil_width,             // stencil width
+                        NULL, info.lx, info.ly,    // STORAGE_ORDER
                         m_da.rawptr()); CHKERRQ(ierr);
 
     // semi-coarsening: coarsen in the vertical direction only

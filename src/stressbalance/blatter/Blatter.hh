@@ -85,7 +85,7 @@ protected:
   void jacobian_f(const fem::Element3 &element,
                   const Vector2 *u_nodal,
                   const double *B_nodal,
-                  double K[16][16]);
+                  double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]);
 
   void jacobian_basal(const fem::Q1Element3Face &face,
                       const double *tauc_nodal,
