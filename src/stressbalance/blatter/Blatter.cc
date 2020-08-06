@@ -499,6 +499,8 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
   // note: we use m_da below because all multigrid levels use the same 2D grid
   DataAccess<Parameters**> P(m_da, 2, GHOSTED);
+  // note: we use info.da below because ice hardness is on the grid corresponding to the
+  // current multigrid level
   DataAccess<double***> ice_hardness(info.da, 3, GHOSTED);
 
   // Compute the residual at Dirichlet nodes and set it to zero elsewhere.
@@ -806,6 +808,8 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
   // note: we use m_da below because all multigrid levels use the same 2D grid
   DataAccess<Parameters**> P(m_da, 2, GHOSTED);
+  // note: we use info.da below because ice hardness is on the grid corresponding to the
+  // current multigrid level
   DataAccess<double***> hardness(info.da, 3, GHOSTED);
 
   // loop over all the elements that have at least one owned node
@@ -1014,11 +1018,9 @@ static PetscErrorCode blatter_restriction_hook(DM fine,
   (void) mrestrict;
   (void) rscale;
   (void) inject;
-  GridInfo *grid_info = (GridInfo*)ctx;
+  (void) ctx;
 
-  PetscErrorCode ierr;
-
-  ierr = restrict_data(fine, coarse, "3D_DM"); CHKERRQ(ierr);
+  PetscErrorCode ierr = restrict_data(fine, coarse, "3D_DM"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1129,16 +1131,13 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels, int coarsening_f
 
     {
       double
-        min_thickness = m_config->get_number("stress_balance.ice_free_thickness_standard"),
         x_max = m_grid->Lx(),
         x_min = -x_max,
         y_max = m_grid->Ly(),
         y_min = -y_max;
 
       m_grid_info = {x_min, x_max,
-                     y_min, y_max,
-                     min_thickness,
-                     sizeof(Parameters)/sizeof(double)};
+                     y_min, y_max};
     }
 
     // set up 2D and 3D parameter storage
@@ -1219,7 +1218,9 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
     }
   }
 
-  blatter_node_type(m_da, m_grid_info.min_thickness);
+  double min_thickness = m_config->get_number("stress_balance.ice_free_thickness_standard");
+
+  blatter_node_type(m_da, min_thickness);
 }
 
 /*!

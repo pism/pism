@@ -47,10 +47,6 @@ private:
 struct GridInfo {
   double x_min, x_max;
   double y_min, y_max;
-  // minimum thickness (used to compute node types)
-  double min_thickness;
-  // number of 2D parameters on each grid level
-  int dof;
 
   double dx(int mx) const {
     return (x_max - x_min) / (mx - 1);
