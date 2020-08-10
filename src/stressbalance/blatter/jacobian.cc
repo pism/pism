@@ -19,87 +19,17 @@
 
 #include "Blatter.hh"
 
-#include "pism/util/node_types.hh"
+#include "DataAccess.hh"
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/rheology/FlowLaw.hh"
-#include "DataAccess.hh"
+#include "pism/util/node_types.hh"
 
 namespace pism {
 namespace stressbalance {
 
 /*!
- * Set the Jacobian to identity at Dirichlet nodes.
+ * Computes the Jacobian contribution of the "main" part of the Blatter system.
  */
-void Blatter::jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat J) {
-  PetscErrorCode ierr;
-
-  // take care of Dirichlet nodes (both explicit and grid points outside the domain)
-  //
-  // here we loop over all the *owned* nodes
-  for (int j = info.ys; j < info.ys + info.ym; j++) {
-    for (int i = info.xs; i < info.xs + info.xm; i++) {
-      for (int k = info.zs; k < info.zs + info.zm; k++) {
-        if ((int)P[j][i].node_type == NODE_EXTERIOR or dirichlet_node(info, {i, j, k})) {
-
-          // Dirichlet scaling
-          Vector2 scaling = {1.0, 1.0};
-          double identity[4] = {scaling.u, 0, 0, scaling.v};
-
-          MatStencil row;
-          row.i = k;            // STORAGE_ORDER
-          row.j = i;            // STORAGE_ORDER
-          row.k = j;            // STORAGE_ORDER
-          ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity, ADD_VALUES);
-          PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
-        }
-      }
-    }
-  }
-}
-
-void Blatter::jacobian_basal(const fem::Q1Element3Face &face,
-                             const double *tauc_nodal,
-                             const double *f_nodal,
-                             const Vector2 *velocity,
-                             double K[16][16]) {
-  int Nk = fem::q13d::n_chi;
-
-  Vector2 *u = m_work2[0];
-
-  double
-    *tauc = m_work[0],
-    *floatation = m_work[1];
-
-  face.evaluate(velocity, u);
-  face.evaluate(tauc_nodal, tauc);
-  face.evaluate(f_nodal, floatation);
-
-  for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
-
-    bool grounded = floatation[q] <= 0.0;
-    double beta = 0.0, dbeta = 0.0;
-    if (grounded) {
-      m_basal_sliding_law->drag_with_derivative(tauc[q], u[q].u, u[q].v, &beta, &dbeta);
-    }
-
-    // loop over all test functions
-    for (int t = 0; t < Nk; ++t) {
-      auto psi = face.chi(q, t);
-      for (int s = 0; s < Nk; ++s) {
-        auto phi = face.chi(q, s);
-
-        double p = psi * phi;
-
-        K[t * 2 + 0][s * 2 + 0] += W * p * (beta + dbeta * u[q].u * u[q].u);
-        K[t * 2 + 0][s * 2 + 1] += W * p * dbeta * u[q].u * u[q].v;
-        K[t * 2 + 1][s * 2 + 0] += W * p * dbeta * u[q].v * u[q].u;
-        K[t * 2 + 1][s * 2 + 1] += W * p * (beta + dbeta * u[q].v * u[q].v);
-      }
-    }
-  }
-}
-
 void Blatter::jacobian_f(const fem::Element3 &element,
                          const Vector2 *velocity,
                          const double *hardness,
@@ -174,6 +104,87 @@ void Blatter::jacobian_f(const fem::Element3 &element,
 
 }
 
+/*!
+ * Compute the Jacobian contribution of the basal boundary condition.
+ *
+ * This method implements basal sliding.
+ */
+void Blatter::jacobian_basal(const fem::Q1Element3Face &face,
+                             const double *tauc_nodal,
+                             const double *f_nodal,
+                             const Vector2 *velocity,
+                             double K[16][16]) {
+  int Nk = fem::q13d::n_chi;
+
+  Vector2 *u = m_work2[0];
+
+  double
+    *tauc       = m_work[0],
+    *floatation = m_work[1];
+
+  face.evaluate(velocity, u);
+  face.evaluate(tauc_nodal, tauc);
+  face.evaluate(f_nodal, floatation);
+
+  for (int q = 0; q < face.n_pts(); ++q) {
+    auto W = face.weight(q);
+
+    bool grounded = floatation[q] <= 0.0;
+    double beta = 0.0, dbeta = 0.0;
+    if (grounded) {
+      m_basal_sliding_law->drag_with_derivative(tauc[q], u[q].u, u[q].v, &beta, &dbeta);
+    }
+
+    // loop over all test functions
+    for (int t = 0; t < Nk; ++t) {
+      auto psi = face.chi(q, t);
+      for (int s = 0; s < Nk; ++s) {
+        auto phi = face.chi(q, s);
+
+        double p = psi * phi;
+
+        K[t * 2 + 0][s * 2 + 0] += W * p * (beta + dbeta * u[q].u * u[q].u);
+        K[t * 2 + 0][s * 2 + 1] += W * p * dbeta * u[q].u * u[q].v;
+        K[t * 2 + 1][s * 2 + 0] += W * p * dbeta * u[q].v * u[q].u;
+        K[t * 2 + 1][s * 2 + 1] += W * p * (beta + dbeta * u[q].v * u[q].v);
+      }
+    }
+  }
+}
+
+/*!
+ * Set the Jacobian to identity at Dirichlet nodes.
+ */
+void Blatter::jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat J) {
+  PetscErrorCode ierr;
+
+  // take care of Dirichlet nodes (both explicit and grid points outside the domain)
+  //
+  // here we loop over all the *owned* nodes
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+      for (int k = info.zs; k < info.zs + info.zm; k++) {
+        if ((int)P[j][i].node_type == NODE_EXTERIOR or dirichlet_node(info, {i, j, k})) {
+
+          // Dirichlet scaling
+          Vector2 scaling = {1.0, 1.0};
+          double identity[4] = {scaling.u, 0, 0, scaling.v};
+
+          MatStencil row;
+          row.i = k;            // STORAGE_ORDER
+          row.j = i;            // STORAGE_ORDER
+          row.k = j;            // STORAGE_ORDER
+          ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity, ADD_VALUES);
+          PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
+        }
+      }
+    }
+  }
+}
+
+/*!
+ * Compute the Jacobian matrix.
+ */
 void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
                                const Vector2 ***X, Mat A, Mat J) {
   auto info = grid_transpose(*petsc_info);
@@ -197,8 +208,6 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   // Maximum number of nodes per element
   const int Nk = fem::q13d::n_chi;
   assert(element.n_chi() <= Nk);
-
-  // Maximum number of quadrature points per element or face
   assert(element.n_pts() <= m_Nq);
 
   // scalar quantities
@@ -210,7 +219,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   // 2D vector quantities
   Vector2 velocity[Nk];
 
-  // FIXME: this communicates ghosts every time the residual is computed, which is excessive.
+  // FIXME: this communicates ghosts every time the Jacobian is computed, which is excessive.
   //
   // note: we use m_da below because all multigrid levels use the same 2D grid
   DataAccess<Parameters**> P(m_da, 2, GHOSTED);
@@ -227,9 +236,9 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
         auto p = P[I.j][I.i];
 
-        node_type[n]        = p.node_type;
         bottom_elevation[n] = p.bed;
         ice_thickness[n]    = p.thickness;
+        node_type[n]        = p.node_type;
 
         x[n] = m_grid_info.x(dx, I.i);
         y[n] = m_grid_info.y(dy, I.j);

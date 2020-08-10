@@ -19,98 +19,15 @@
 
 #include "Blatter.hh"
 
-#include "pism/rheology/FlowLaw.hh"
-#include "pism/basalstrength/basal_resistance.hh"
-#include "pism/util/node_types.hh"
 #include "DataAccess.hh"
+#include "pism/basalstrength/basal_resistance.hh"
+#include "pism/rheology/FlowLaw.hh"
+#include "pism/util/node_types.hh"
 
 namespace pism {
 namespace stressbalance {
 
 static const Vector2 u_exterior = {0.0, 0.0};
-
-/*! Set the residual at Dirichlet locations
- *
- * Compute the residual at Dirichlet locations and reset the residual to zero elsewhere.
- *
- * Setting it to zero is necessary because we call DMDASNESSetFunctionLocal() with
- * INSERT_VALUES.
- *
- */
-void Blatter::residual_dirichlet(const GridInfo &grid_info,
-                                 const DMDALocalInfo &info,
-                                 Parameters **P,
-                                 const Vector2 ***x,
-                                 Vector2 ***R) {
-  double
-    dx = grid_info.dx(info.mx),
-    dy = grid_info.dy(info.my);
-
-  // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
-  //
-  // here we loop over all the *owned* nodes
-  for (int j = info.ys; j < info.ys + info.ym; j++) {
-    for (int i = info.xs; i < info.xs + info.xm; i++) {
-      for (int k = info.zs; k < info.zs + info.zm; k++) {
-
-        // Dirichlet nodes
-        if (dirichlet_node(info, {i, j, k}) or
-            (int)P[j][i].node_type == NODE_EXTERIOR) {
-
-          // Dirichlet scale
-          Vector2 s = {1.0, 1.0};
-
-          Vector2 U_bc;
-          if (dirichlet_node(info, {i, j, k})) {
-            double
-              xx = grid_info.x(dx, i),
-              yy = grid_info.y(dy, j),
-              b  = P[j][i].bed,
-              H  = P[j][i].thickness,
-              zz = grid_z(b, H, info.mz, k);
-            U_bc = u_bc(xx, yy, zz);
-          } else {
-            U_bc = u_exterior;
-          }
-
-          Vector2 r = x[j][i][k] - U_bc;
-
-          R[j][i][k] = {r.u * s.u, r.v * s.v}; // STORAGE_ORDER
-        } else {
-          R[j][i][k] = 0.0;     // STORAGE_ORDER
-        }
-      }
-    }
-  }
-}
-
-/*! Computes the residual contribution of the "source term".
- *
- * This term contains the driving stress.
- */
-void Blatter::residual_source_term(const fem::Element3 &element,
-                                   const double *surface,
-                                   Vector2 *residual) {
-  double
-    *s   = m_work[0],
-    *s_x = m_work[1],
-    *s_y = m_work[2],
-    *s_z = m_work[3];
-
-  element.evaluate(surface, s, s_x, s_y, s_z);
-
-  for (int q = 0; q < element.n_pts(); ++q) {
-    auto W = element.weight(q);
-
-    // loop over all test functions
-    for (int t = 0; t < element.n_chi(); ++t) {
-      const auto &psi = element.chi(q, t);
-
-      residual[t].u += W * psi.val * m_rho_ice_g * s_x[q];
-      residual[t].v += W * psi.val * m_rho_ice_g * s_y[q];
-    }
-  }
-}
 
 /*!
  * Computes the residual contribution of the "main" part of the Blatter system.
@@ -162,6 +79,34 @@ void Blatter::residual_f(const fem::Element3 &element,
       residual[t].v += W * (eta * (psi.dx * (uy + vx) +
                                    psi.dy * (2.0 * ux + 4.0 * vy) +
                                    psi.dz * vz));
+    }
+  }
+}
+
+/*! Computes the residual contribution of the "source term".
+ *
+ * This term contains the driving stress.
+ */
+void Blatter::residual_source_term(const fem::Element3 &element,
+                                   const double *surface,
+                                   Vector2 *residual) {
+  double
+    *s   = m_work[0],
+    *s_x = m_work[1],
+    *s_y = m_work[2],
+    *s_z = m_work[3];
+
+  element.evaluate(surface, s, s_x, s_y, s_z);
+
+  for (int q = 0; q < element.n_pts(); ++q) {
+    auto W = element.weight(q);
+
+    // loop over all test functions
+    for (int t = 0; t < element.n_chi(); ++t) {
+      const auto &psi = element.chi(q, t);
+
+      residual[t].u += W * psi.val * m_rho_ice_g * s_x[q];
+      residual[t].v += W * psi.val * m_rho_ice_g * s_y[q];
     }
   }
 }
@@ -239,6 +184,61 @@ void Blatter::residual_lateral(const fem::Element3 &element,
   }
 }
 
+/*! Set the residual at Dirichlet locations
+ *
+ * Compute the residual at Dirichlet locations and reset the residual to zero elsewhere.
+ *
+ * Setting it to zero is necessary because we call DMDASNESSetFunctionLocal() with
+ * INSERT_VALUES.
+ *
+ */
+void Blatter::residual_dirichlet(const GridInfo &grid_info,
+                                 const DMDALocalInfo &info,
+                                 Parameters **P,
+                                 const Vector2 ***x,
+                                 Vector2 ***R) {
+  double
+    dx = grid_info.dx(info.mx),
+    dy = grid_info.dy(info.my);
+
+  // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
+  //
+  // here we loop over all the *owned* nodes
+  for (int j = info.ys; j < info.ys + info.ym; j++) {
+    for (int i = info.xs; i < info.xs + info.xm; i++) {
+      for (int k = info.zs; k < info.zs + info.zm; k++) {
+
+        // Dirichlet nodes
+        if (dirichlet_node(info, {i, j, k}) or
+            (int)P[j][i].node_type == NODE_EXTERIOR) {
+
+          // Dirichlet scale
+          Vector2 s = {1.0, 1.0};
+
+          Vector2 U_bc;
+          if (dirichlet_node(info, {i, j, k})) {
+            double
+              xx = grid_info.x(dx, i),
+              yy = grid_info.y(dy, j),
+              b  = P[j][i].bed,
+              H  = P[j][i].thickness,
+              zz = grid_z(b, H, info.mz, k);
+            U_bc = u_bc(xx, yy, zz);
+          } else {
+            U_bc = u_exterior;
+          }
+
+          Vector2 r = x[j][i][k] - U_bc;
+
+          R[j][i][k] = {r.u * s.u, r.v * s.v}; // STORAGE_ORDER
+        } else {
+          R[j][i][k] = 0.0;     // STORAGE_ORDER
+        }
+      }
+    }
+  }
+}
+
 /*!
  * Computes the residual.
  */
@@ -258,15 +258,14 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
 
-  assert(element.n_pts() <= m_Nq);
-
   // Number of nodes per element.
   const int Nk = fem::q13d::n_chi;
   assert(element.n_chi() <= Nk);
+  assert(element.n_pts() <= m_Nq);
 
   // scalar quantities
   double x[Nk], y[Nk], z[Nk];
-  double floatation[Nk], sea_level[Nk], bed_elevation[Nk], ice_thickness[Nk], surface_elevation[Nk];
+  double floatation[Nk], sea_level[Nk], bottom_elevation[Nk], ice_thickness[Nk], surface_elevation[Nk];
   double B[Nk], basal_yield_stress[Nk];
   int node_type[Nk];
 
@@ -294,11 +293,11 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
         auto p = P[I.j][I.i];
 
-        node_type[n]         = p.node_type;
-        surface_elevation[n] = p.bed + p.thickness;
-        sea_level[n]         = p.sea_level;
-        bed_elevation[n]     = p.bed;
+        bottom_elevation[n]  = p.bed;
         ice_thickness[n]     = p.thickness;
+        node_type[n]         = p.node_type;
+        sea_level[n]         = p.sea_level;
+        surface_elevation[n] = p.bed + p.thickness;
 
         x[n] = m_grid_info.x(dx, I.i);
         y[n] = m_grid_info.y(dy, I.j);
@@ -318,7 +317,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         // Compute z coordinates of the nodes of this element
         for (int n = 0; n < Nk; ++n) {
           auto I = element.local_to_global(i, j, k, n);
-          z[n] = grid_z(bed_elevation[n], ice_thickness[n], info.mz, I.k);
+          z[n] = grid_z(bottom_elevation[n], ice_thickness[n], info.mz, I.k);
         }
 
         // Compute values of chi, chi_x, chi_y, chi_z and quadrature weights at quadrature
