@@ -23,6 +23,7 @@
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/util/node_types.hh"
+#include "grid_hierarchy.hh"    // grid_transpose(), grid_z()
 
 namespace pism {
 namespace stressbalance {
@@ -192,14 +193,16 @@ void Blatter::residual_lateral(const fem::Element3 &element,
  * INSERT_VALUES.
  *
  */
-void Blatter::residual_dirichlet(const GridInfo &grid_info,
-                                 const DMDALocalInfo &info,
+void Blatter::residual_dirichlet(const DMDALocalInfo &info,
                                  Parameters **P,
                                  const Vector2 ***x,
                                  Vector2 ***R) {
+
   double
-    dx = grid_info.dx(info.mx),
-    dy = grid_info.dy(info.my);
+    x_min = m_grid->x0() - m_grid->Lx(),
+    y_min = m_grid->y0() - m_grid->Ly(),
+    dx    = m_grid->dx(),
+    dy    = m_grid->dy();
 
   // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
   //
@@ -218,8 +221,8 @@ void Blatter::residual_dirichlet(const GridInfo &grid_info,
           Vector2 U_bc;
           if (dirichlet_node(info, {i, j, k})) {
             double
-              xx = grid_info.x(dx, i),
-              yy = grid_info.y(dy, j),
+              xx = x_min + i * dx,
+              yy = y_min + j * dy,
               b  = P[j][i].bed,
               H  = P[j][i].thickness,
               zz = grid_z(b, H, info.mz, k);
@@ -253,8 +256,10 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
   // horizontal grid spacing is the same on all multigrid levels
   double
-    dx = m_grid->dx(),
-    dy = m_grid->dy();
+    x_min = m_grid->x0() - m_grid->Lx(),
+    y_min = m_grid->y0() - m_grid->Ly(),
+    dx    = m_grid->dx(),
+    dy    = m_grid->dy();
 
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
 
@@ -281,7 +286,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   DataAccess<double***> ice_hardness(info.da, 3, GHOSTED);
 
   // Compute the residual at Dirichlet nodes and set it to zero elsewhere.
-  residual_dirichlet(m_grid_info, info, P, X, R);
+  residual_dirichlet(info, P, X, R);
 
   // loop over all the elements that have at least one owned node
   for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
@@ -299,8 +304,8 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         sea_level[n]         = p.sea_level;
         surface_elevation[n] = p.bed + p.thickness;
 
-        x[n] = m_grid_info.x(dx, I.i);
-        y[n] = m_grid_info.y(dy, I.j);
+        x[n] = x_min + I.i * dx;
+        y[n] = y_min + I.j * dy;
       }
 
       // skip ice-free (exterior) elements

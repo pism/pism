@@ -25,8 +25,6 @@
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/fem/FEM.hh"
 
-#include "grid_hierarchy.hh"    // GridInfo
-
 namespace pism {
 
 namespace fem {
@@ -82,7 +80,6 @@ protected:
   };
 
   CallbackData m_callback_data;
-  GridInfo m_grid_info;
   double m_rho_ice_g;
   double m_rho_ocean_g;
 
@@ -131,8 +128,7 @@ protected:
 
   void compute_residual(DMDALocalInfo *info, const Vector2 ***xg, Vector2 ***yg);
 
-  void residual_dirichlet(const GridInfo &grid_info,
-                          const DMDALocalInfo &info,
+  void residual_dirichlet(const DMDALocalInfo &info,
                           Parameters **P,
                           const Vector2 ***x,
                           Vector2 ***R);

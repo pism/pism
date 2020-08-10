@@ -23,6 +23,7 @@
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/util/node_types.hh"
+#include "grid_hierarchy.hh"    // grid_transpose(), grid_z()
 
 namespace pism {
 namespace stressbalance {
@@ -200,8 +201,10 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
   // horizontal grid spacing is the same on all multigrid levels
   double
-    dx = m_grid->dx(),
-    dy = m_grid->dy();
+    x_min = m_grid->x0() - m_grid->Lx(),
+    y_min = m_grid->y0() - m_grid->Ly(),
+    dx    = m_grid->dx(),
+    dy    = m_grid->dy();
 
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
 
@@ -240,8 +243,8 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
         ice_thickness[n]    = p.thickness;
         node_type[n]        = p.node_type;
 
-        x[n] = m_grid_info.x(dx, I.i);
-        y[n] = m_grid_info.y(dy, I.j);
+        x[n] = x_min + I.i * dx;
+        y[n] = y_min + I.j * dy;
       }
 
       // skip ice-free (exterior) columns

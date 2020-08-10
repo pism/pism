@@ -407,17 +407,6 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels, int coarsening_f
 
     ierr = DMSetUp(m_da); CHKERRQ(ierr);
 
-    {
-      double
-        x_max = m_grid->Lx(),
-        x_min = -x_max,
-        y_max = m_grid->Ly(),
-        y_min = -y_max;
-
-      m_grid_info = {x_min, x_max,
-                     y_min, y_max};
-    }
-
     // set up 2D and 3D parameter storage
     ierr = setup_2d_storage(m_da, sizeof(Parameters)/sizeof(double)); CHKERRQ(ierr);
     ierr = setup_level(m_da); CHKERRQ(ierr);

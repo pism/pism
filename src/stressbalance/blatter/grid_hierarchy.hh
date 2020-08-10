@@ -44,28 +44,6 @@ private:
   PetscErrorCode setup(DM dm);
 };
 
-struct GridInfo {
-  double x_min, x_max;
-  double y_min, y_max;
-
-  double dx(int mx) const {
-    return (x_max - x_min) / (mx - 1);
-  }
-
-  double dy(int my) const {
-    return (y_max - y_min) / (my - 1);
-  }
-
-  double x(double dx, int k) const {
-    return x_min + dx * k;
-  }
-
-  double y(double dy, int k) const {
-    return y_min + dy * k;
-  }
-};
-
-
 double grid_z(double b, double H, int Mz, int k);
 
 int grid_padding(int N, int coarsening_factor, int n_levels);
