@@ -4,4 +4,5 @@ add_library (blatter OBJECT
   residual.cc
   jacobian.cc
   BlatterMod.cc
+  verification/blatter_mms.cc
   )
