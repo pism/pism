@@ -322,7 +322,7 @@ static PetscErrorCode blatter_restriction_hook(DM fine,
 PetscErrorCode blatter_coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
   PetscErrorCode ierr;
 
-  ierr = setup_level(dm_coarse, *(GridInfo*)ctx); CHKERRQ(ierr);
+  ierr = setup_level(dm_coarse); CHKERRQ(ierr);
 
   ierr = DMCoarsenHookAdd(dm_coarse, blatter_coarsening_hook, blatter_restriction_hook, ctx); CHKERRQ(ierr);
 
@@ -420,10 +420,10 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels, int coarsening_f
 
     // set up 2D and 3D parameter storage
     ierr = setup_2d_storage(m_da, sizeof(Parameters)/sizeof(double)); CHKERRQ(ierr);
-    ierr = setup_level(m_da, m_grid_info); CHKERRQ(ierr);
+    ierr = setup_level(m_da); CHKERRQ(ierr);
 
     // tell PETSc how to coarsen this grid and how to restrict data to a coarser grid
-    ierr = DMCoarsenHookAdd(m_da, blatter_coarsening_hook, blatter_restriction_hook, &m_grid_info);
+    ierr = DMCoarsenHookAdd(m_da, blatter_coarsening_hook, blatter_restriction_hook, NULL);
     CHKERRQ(ierr);
   }
 

@@ -162,7 +162,7 @@ DMDALocalInfo grid_transpose(const DMDALocalInfo &input) {
 /*!
  * Set up storage for 3D data inputs (DMDAs and Vecs)
  */
-PetscErrorCode setup_level(DM dm, const GridInfo &domain) {
+PetscErrorCode setup_level(DM dm) {
   PetscErrorCode ierr;
 
   MPI_Comm comm;
@@ -211,15 +211,9 @@ PetscErrorCode setup_level(DM dm, const GridInfo &domain) {
       Mx = info.Mx,
       My = info.My,
       Mz = info.Mz;
-
-    double
-      Wx = domain.x_max - domain.x_min,
-      Wy = domain.y_max - domain.y_min;
     ierr = PetscPrintf(comm,
-                       "Level %D domain size (m) %8.2g x %8.2g,"
-                       " num elements %3d x %3d x %3d (%8d), size (m) %g x %g\n",
-                       level, Wx, Wy,
-                       Mx, My, Mz, Mx*My*Mz, Wx / (Mx - 1), Wy / (My - 1)); CHKERRQ(ierr);
+                       "Level %D: %3d x %3d x %3d (%8d) elements\n",
+                       level, Mx, My, Mz, Mx * My * Mz); CHKERRQ(ierr);
   }
   return 0;
 }

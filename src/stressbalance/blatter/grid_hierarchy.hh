@@ -72,7 +72,7 @@ int grid_padding(int N, int coarsening_factor, int n_levels);
 
 DMDALocalInfo grid_transpose(const DMDALocalInfo &input);
 
-PetscErrorCode setup_level(DM dm, const GridInfo &grid_info);
+PetscErrorCode setup_level(DM dm);
 
 PetscErrorCode create_restriction(DM fine, DM coarse, const char *dm_name);
 
