@@ -350,16 +350,39 @@ protected:
  */
 class Q1Element3 : public Element3 {
 public:
-  Q1Element3(const DMDALocalInfo &grid, double dx, double dy, const Quadrature &quadrature);
+  Q1Element3(const DMDALocalInfo &grid,
+             const Quadrature &quadrature,
+             double dx,
+             double dy,
+             double x_min,
+             double y_min);
   Q1Element3(const IceGrid &grid, const Quadrature &quadrature);
 
   void reset(int i, int j, int k, const double *z);
+
+  // return the x coordinate of node n
+  double x(int n) {
+    return m_x_min + m_dx * (m_i + m_i_offset[n]);
+  }
+
+  // return the y coordinate of node n
+  double y(int n) {
+    return m_y_min + m_dy * (m_j + m_j_offset[n]);
+  }
+
+  // return the z coordinate of node n
+  double z(int n) {
+    return m_z_nodal[n];
+  }
 
   using Element::mark_row_invalid;
   using Element::mark_col_invalid;
 private:
   double m_dx;
   double m_dy;
+  double m_x_min;
+  double m_y_min;
+  double m_z_nodal[q13d::n_chi];
 
   // values of shape functions and their derivatives with respect to xi,eta,zeta at all
   // quadrature points

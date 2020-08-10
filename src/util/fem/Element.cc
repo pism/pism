@@ -392,12 +392,16 @@ Element3::Element3(const IceGrid &grid, int Nq, int n_chi, int block_size)
 }
 
 Q1Element3::Q1Element3(const DMDALocalInfo &grid_info,
+                       const Quadrature &quadrature,
                        double dx,
                        double dy,
-                       const Quadrature &quadrature)
+                       double x_min,
+                       double y_min)
   : Element3(grid_info, quadrature.weights().size(), q13d::n_chi, q13d::n_chi),
     m_dx(dx),
     m_dy(dy),
+    m_x_min(x_min),
+    m_y_min(y_min),
     m_points(quadrature.points()),
     m_w(quadrature.weights()) {
 
@@ -453,6 +457,11 @@ void Q1Element3::reset(int i, int j, int k, const double *z) {
   m_i = i;
   m_j = j;
   m_k = k;
+
+  // store z coordinates
+  for (unsigned int n = 0; n < m_n_chi; ++n) {
+    m_z_nodal[n] = z[n];
+  }
 
   // Set row and column info used to add contributions:
   for (unsigned int n = 0; n < m_n_chi; ++n) {

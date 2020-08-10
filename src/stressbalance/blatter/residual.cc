@@ -261,7 +261,8 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
     dx    = m_grid->dx(),
     dy    = m_grid->dy();
 
-  fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
+  fem::Q1Element3 element(info, fem::Q13DQuadrature8(),
+                          dx, dy, x_min, y_min);
 
   // Number of nodes per element.
   const int Nk = fem::q13d::n_chi;
