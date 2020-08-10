@@ -46,6 +46,25 @@ public:
   IceModelVec3::Ptr velocity_u_sigma() const;
   IceModelVec3::Ptr velocity_v_sigma() const;
 
+  /*!
+   * 2D input parameters
+   */
+  struct Parameters {
+    // elevation (z coordinate) of the bottom domain boundary
+    double bed;
+    // thickness of the domain
+    double thickness;
+    // NodeType stored as double
+    double node_type;
+    // basal yield stress
+    double tauc;
+    // sea level elevation (used to determine if a location is grounded)
+    double sea_level;
+    // floatation function (positive where floating, zero or negative where grounded)
+    double floatation;
+    // FIXME: Add Dirichlet BC at a map plane location.
+  };
+
 protected:
   // u and v components of ice velocity on the sigma grid
   IceModelVec3::Ptr m_u_sigma, m_v_sigma;
@@ -80,7 +99,21 @@ protected:
 
   void write_model_state_impl(const File &output) const;
 
+  bool exterior_element(const int *node_type);
+
+  bool grounding_line(const double *F);
+
+  bool partially_submerged_face(int face, const double *z, const double *sea_level);
+
+  bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
+
+  bool neumann_bc_face(int face, const int *node_type);
+
+  Vector2 u_bc(double x, double y, double z);
+
   void compute_jacobian(DMDALocalInfo *info, const Vector2 ***x, Mat A, Mat J);
+
+  void jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat J);
 
   void jacobian_f(const fem::Element3 &element,
                   const Vector2 *u_nodal,
@@ -94,6 +127,12 @@ protected:
                       double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]);
 
   void compute_residual(DMDALocalInfo *info, const Vector2 ***xg, Vector2 ***yg);
+
+  void residual_dirichlet(const GridInfo &grid_info,
+                          const DMDALocalInfo &info,
+                          Parameters **P,
+                          const Vector2 ***x,
+                          Vector2 ***R);
 
   void residual_f(const fem::Element3 &element,
                   const Vector2 *u_nodal,
