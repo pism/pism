@@ -216,7 +216,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   assert(element.n_pts() <= m_Nq);
 
   // scalar quantities
-  double x[Nk], y[Nk], z[Nk];
+  double z[Nk];
   double floatation[Nk], bottom_elevation[Nk], ice_thickness[Nk];
   double B_nodal[Nk], basal_yield_stress[Nk];
   int node_type[Nk];
@@ -244,9 +244,6 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
         bottom_elevation[n] = p.bed;
         ice_thickness[n]    = p.thickness;
         node_type[n]        = p.node_type;
-
-        x[n] = x_min + I.i * dx;
-        y[n] = y_min + I.j * dy;
       }
 
       // skip ice-free (exterior) columns
@@ -282,7 +279,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
             if (dirichlet_node(info, I)) {
               element.mark_row_invalid(n);
               element.mark_col_invalid(n);
-              velocity[n] = u_bc(x[n], y[n], z[n]);
+              velocity[n] = u_bc(element.x(n), element.y(n), element.z(n));
             }
           }
         }

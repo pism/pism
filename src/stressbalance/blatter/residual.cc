@@ -270,7 +270,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   assert(element.n_pts() <= m_Nq);
 
   // scalar quantities
-  double x[Nk], y[Nk], z[Nk];
+  double z[Nk];
   double floatation[Nk], sea_level[Nk], bottom_elevation[Nk], ice_thickness[Nk], surface_elevation[Nk];
   double B[Nk], basal_yield_stress[Nk];
   int node_type[Nk];
@@ -304,9 +304,6 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         node_type[n]         = p.node_type;
         sea_level[n]         = p.sea_level;
         surface_elevation[n] = p.bed + p.thickness;
-
-        x[n] = x_min + I.i * dx;
-        y[n] = y_min + I.j * dy;
       }
 
       // skip ice-free (exterior) elements
@@ -340,7 +337,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
             auto I = element.local_to_global(n);
             if (dirichlet_node(info, I)) {
               element.mark_row_invalid(n);
-              velocity[n] = u_bc(x[n], y[n], z[n]);
+              velocity[n] = u_bc(element.x(n), element.y(n), element.z(n));
             }
           }
         }
