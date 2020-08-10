@@ -194,18 +194,12 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
 
-  fem::Q1Element3Face
-    face4(dx, dy, fem::Q1Quadrature4()),     // 4-point Gaussian quadrature
-    face100(dx, dy, fem::Q1QuadratureN(10)); // 100-point quadrature for grounding lines
-
   // Maximum number of nodes per element
   const int Nk = fem::q13d::n_chi;
   assert(element.n_chi() <= Nk);
 
   // Maximum number of quadrature points per element or face
   assert(element.n_pts() <= m_Nq);
-  assert(face4.n_pts() <= m_Nq);
-  assert(face100.n_pts() <= m_Nq);
 
   // scalar quantities
   double x[Nk], y[Nk], z[Nk];
@@ -292,7 +286,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
             floatation[n]         = P[I.j][I.i].floatation;
           }
 
-          fem::Q1Element3Face *face = grounding_line(floatation) ? &face100 : &face4;
+          fem::Q1Element3Face *face = grounding_line(floatation) ? &m_face100 : &m_face4;
 
           // face 4 is the bottom face in fem::q13d::incident_nodes
           face->reset(4, z);

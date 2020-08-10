@@ -93,6 +93,9 @@ protected:
 
   Vector2 m_work2[m_n_work][m_Nq];
 
+  fem::Q1Element3Face m_face4;
+  fem::Q1Element3Face m_face100;
+
   void init_impl();
 
   void define_model_state_impl(const File &output) const;

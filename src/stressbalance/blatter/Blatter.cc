@@ -245,7 +245,13 @@ bool Blatter::neumann_bc_face(int face, const int *node_type) {
  * @param[in] coarsening_factor grid coarsening factor
  */
 Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor)
-  : ShallowStressBalance(grid) {
+  : ShallowStressBalance(grid),
+    m_face4(grid->dx(), grid->dy(), fem::Q1Quadrature4()),    // 4-point Gaussian quadrature
+    m_face100(grid->dx(), grid->dy(), fem::Q1QuadratureN(10)) // 100-point quadrature for grounding lines
+{
+
+  assert(m_face4.n_pts() <= m_Nq);
+  assert(m_face100.n_pts() <= m_Nq);
 
   auto pism_da = grid->get_dm(1, 0);
 

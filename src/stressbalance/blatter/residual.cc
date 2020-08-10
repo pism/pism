@@ -257,13 +257,8 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
     dy = m_grid->dy();
 
   fem::Q1Element3 element(info, dx, dy, fem::Q13DQuadrature8());
-  fem::Q1Element3Face
-    face4(dx, dy, fem::Q1Quadrature4()),     // 4-point Gaussian quadrature
-    face100(dx, dy, fem::Q1QuadratureN(10)); // 100-point quadrature for grounding lines
-                                             // and partially-submerged faces
+
   assert(element.n_pts() <= m_Nq);
-  assert(face4.n_pts() <= m_Nq);
-  assert(face100.n_pts() <= m_Nq);
 
   // Number of nodes per element.
   const int Nk = fem::q13d::n_chi;
@@ -364,7 +359,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
           }
 
           // use an N*N-point equally-spaced quadrature at grounding lines
-          fem::Q1Element3Face *face = grounding_line(floatation) ? &face100 : &face4;
+          fem::Q1Element3Face *face = grounding_line(floatation) ? &m_face100 : &m_face4;
           // face 4 is the bottom face in fem::q13d::incident_nodes
           face->reset(4, z);
 
@@ -376,7 +371,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         for (int f = 0; f < 4 and neumann_bc_face(f, node_type); ++f) {
           // use an N*N-point equally-spaced quadrature at for partially-submerged faces
           fem::Q1Element3Face *face = (partially_submerged_face(f, z, sea_level) ?
-                                       &face100 : &face4);
+                                       &m_face100 : &m_face4);
           face->reset(f, z);
 
           residual_lateral(element, *face, z, sea_level, R_nodal);
