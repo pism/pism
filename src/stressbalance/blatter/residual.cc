@@ -199,43 +199,40 @@ void Blatter::residual_dirichlet(const DMDALocalInfo &info,
                                  Vector2 ***R) {
 
   double
-    x_min = m_grid->x0() - m_grid->Lx(),
-    y_min = m_grid->y0() - m_grid->Ly(),
-    dx    = m_grid->dx(),
-    dy    = m_grid->dy();
+    x_min   = m_grid->x0() - m_grid->Lx(),
+    y_min   = m_grid->y0() - m_grid->Ly(),
+    dx      = m_grid->dx(),
+    dy      = m_grid->dy(),
+    scaling = 1.0;
 
   // Compute the residual at Dirichlet BC nodes and reset the residual to zero elsewhere.
   //
   // here we loop over all the *owned* nodes
   for (int j = info.ys; j < info.ys + info.ym; j++) {
     for (int i = info.xs; i < info.xs + info.xm; i++) {
+
+      // compute the residual at ice-free map plane locations
+      if ((int)P[j][i].node_type == NODE_EXTERIOR) {
+        for (int k = info.zs; k < info.zs + info.zm; k++) {
+          R[j][i][k] = scaling * (x[j][i][k] - u_exterior); // STORAGE_ORDER
+        }
+        continue;
+      }
+
       for (int k = info.zs; k < info.zs + info.zm; k++) {
+        // reset to zero
+        R[j][i][k] = 0.0;     // STORAGE_ORDER
 
-        // Dirichlet nodes
-        if (dirichlet_node(info, {i, j, k}) or
-            (int)P[j][i].node_type == NODE_EXTERIOR) {
-
-          // Dirichlet scale
-          Vector2 s = {1.0, 1.0};
-
-          Vector2 U_bc;
-          if (dirichlet_node(info, {i, j, k})) {
-            double
-              xx = x_min + i * dx,
-              yy = y_min + j * dy,
-              b  = P[j][i].bed,
-              H  = P[j][i].thickness,
-              zz = grid_z(b, H, info.mz, k);
-            U_bc = u_bc(xx, yy, zz);
-          } else {
-            U_bc = u_exterior;
-          }
-
-          Vector2 r = x[j][i][k] - U_bc;
-
-          R[j][i][k] = {r.u * s.u, r.v * s.v}; // STORAGE_ORDER
-        } else {
-          R[j][i][k] = 0.0;     // STORAGE_ORDER
+        // compute the residual at Dirichlet nodes in verification tests
+        if (dirichlet_node(info, {i, j, k})) {
+          double
+            xx = x_min + i * dx,
+            yy = y_min + j * dy,
+            b  = P[j][i].bed,
+            H  = P[j][i].thickness,
+            zz = grid_z(b, H, info.mz, k);
+          Vector2 U_bc = u_bc(xx, yy, zz);
+          R[j][i][k] = scaling * (x[j][i][k] - U_bc); // STORAGE_ORDER
         }
       }
     }

@@ -159,6 +159,9 @@ void Blatter::jacobian_basal(const fem::Q1Element3Face &face,
 void Blatter::jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat J) {
   PetscErrorCode ierr;
 
+  // Dirichlet scaling
+  Vector2 scaling = {1.0, 1.0};
+
   // take care of Dirichlet nodes (both explicit and grid points outside the domain)
   //
   // here we loop over all the *owned* nodes
@@ -167,8 +170,6 @@ void Blatter::jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat 
       for (int k = info.zs; k < info.zs + info.zm; k++) {
         if ((int)P[j][i].node_type == NODE_EXTERIOR or dirichlet_node(info, {i, j, k})) {
 
-          // Dirichlet scaling
-          Vector2 scaling = {1.0, 1.0};
           double identity[4] = {scaling.u, 0, 0, scaling.v};
 
           MatStencil row;
