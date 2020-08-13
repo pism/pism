@@ -26,7 +26,7 @@ def inputs_from_file(filename):
     yield_stress.regrid(filename, critical=False,
                         default_value=config.get_number("basal_yield_stress.constant.value"))
 
-    enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS)
+    enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
     enthalpy.set_attrs("internal", "enthalpy of ice", "J kg-1", "J kg-1", "", 0)
 
     ice_surface_temp = PISM.IceModelVec2S(grid, "ice_surface_temp", PISM.WITHOUT_GHOSTS)
@@ -62,7 +62,7 @@ def inputs_from_formulas():
 
     geometry = PISM.Geometry(grid)
 
-    enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS)
+    enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
     enthalpy.set_attrs("internal", "enthalpy of ice", "J kg-1", "J kg-1", "", 0)
 
     yield_stress = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
