@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """This script runs the Blatter stress balance solver.
 """
 
@@ -46,17 +46,43 @@ def inputs_from_file(filename):
 
     return grid, geometry, enthalpy, yield_stress
 
+def H(r):
+    SperA = 31556926.0
+    n = 3.0
+    H0 = 3600.0
+    R0 = 750000.0
+    t = 450 * SperA
+
+    # alpha=(2-(n+1)*lambda)/(5*n+3)=1/9
+    alpha = 1.0 / 9.0
+    # beta=(1+(2*n+1)*lambda)/(5*n+3)=1/18
+    beta = 1.0 / 18.0
+    # t0 = (beta/Gamma) * pow((2n+1)/(n+1),n)*(pow(R0,n+1)/pow(H0,2n+1))
+    t0 = 422.45 * SperA
+
+    Rmargin = R0 * pow(t / t0, beta);
+    if (r < Rmargin):
+        return H0 * pow(t / t0, -alpha) * pow(1.0 - pow(pow(t / t0, -beta) * (r / R0), (n + 1) / n),
+                                              n / (2*n + 1));
+    else:
+        return 0.0
+
+def H0(H_max, R_max, r):
+    return H_max * np.sqrt(max(1.0 - (r / R_max)**2, 0.0))
+
 def inputs_from_formulas():
     H_max = 1000.0
 
     P = PISM.GridParameters(config)
-    P.Lx = 10e3
-    P.Ly = 10e3
+    P.Lx = 800e3
+    P.Ly = 800e3
     P.x0 = 0
     P.y0 = 0
     P.horizontal_size_from_options()
     P.vertical_grid_from_options(config)
     P.ownership_ranges_from_options(ctx.size)
+
+    R_max = 750e3
 
     grid = PISM.IceGrid(ctx.ctx, P)
 
@@ -72,7 +98,7 @@ def inputs_from_formulas():
         for (i, j) in grid.points():
             r = PISM.radius(grid, i, j)
             geometry.bed_elevation[i, j] = 0.0
-            geometry.ice_thickness[i, j] = np.sqrt(max(H_max**2 - (r / 10)**2, 0.0))
+            geometry.ice_thickness[i, j] = H0(H_max, R_max, r)
 
     geometry.sea_level_elevation.set(0.0)
 
