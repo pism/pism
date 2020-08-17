@@ -166,5 +166,32 @@ Q13DQuadrature1::Q13DQuadrature1() {
   m_weights = {8.0};
 }
 
+Q13DQuadrature64::Q13DQuadrature64() {
+  const double
+    A     = sqrt(3.0 / 7.0 - (2.0 / 7.0) * sqrt(6.0 / 5.0)), // smaller magnitude
+    B     = sqrt(3.0 / 7.0 + (2.0 / 7.0) * sqrt(6.0 / 5.0)), // larger magnitude
+    pt[4] = {-B, -A, A, B};
+
+  // The weights w_i for Gaussian quadrature on the reference element with these
+  // quadrature points
+  const double
+    w1   = (18.0 + sqrt(30.0)) / 36.0, // larger
+    w2   = (18.0 - sqrt(30.0)) / 36.0, // smaller
+    w[4] = {w2, w1, w1, w2};
+
+  m_points.resize(64);
+  m_weights.resize(64);
+  int q = 0;
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      for (int k = 0; k < 4; ++k) {
+        m_points[q] = {pt[i], pt[j], pt[k]};
+        m_weights[q] = w[i] * w[j] * w[k];
+        ++q;
+      }
+    }
+  }
+}
+
 } // end of namespace fem
 } // end of namespace pism

@@ -133,11 +133,21 @@ public:
   Q13DQuadrature8();
 };
 
+/*!
+ * 1-point Gaussian quadrature on the cube [-1,1]*[-1,1]*[-1,1]
+ */
 class Q13DQuadrature1 : public Quadrature {
 public:
   Q13DQuadrature1();
 };
 
+/*!
+ * 64-point (4*4*4) Gaussian quadrature on the cube [-1,1]*[-1,1]*[-1,1]
+ */
+class Q13DQuadrature64 : public Quadrature {
+public:
+  Q13DQuadrature64();
+};
 } // end of namespace fem
 } // end of namespace pism
 
