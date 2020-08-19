@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -35,6 +35,8 @@ protected:
   void create_impl(const std::string &filename);
   void sync_impl() const;
   void close_impl();
+
+  void set_compression_level_impl(int level) const;
 
   // redef/enddef
   void enddef_impl() const;

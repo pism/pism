@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -109,7 +109,8 @@ protected:
                                  const std::vector<unsigned int> &imap, double *ip,
                                  bool get,
                                  bool mapped) const;
-  unsigned int m_compression_level;
+
+  mutable unsigned int m_compression_level;
 
   int get_varid(const std::string &variable_name) const;
 };

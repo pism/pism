@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -43,6 +43,15 @@ NCFile::~NCFile() {
 
 std::string NCFile::filename() const {
   return m_filename;
+}
+
+void NCFile::set_compression_level(int level) const {
+  set_compression_level_impl(level);
+}
+
+void NCFile::set_compression_level_impl(int level) const {
+  (void) level;
+  // the default implementation does nothing
 }
 
 void NCFile::def_var_chunking_impl(const std::string &name,
