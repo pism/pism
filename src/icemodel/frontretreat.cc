@@ -111,7 +111,9 @@ void IceModel::front_retreat_step() {
   }
 
   // calving
-  if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_float_kill_calving or m_thickness_threshold_calving) {
+  if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or
+      m_float_kill_calving or m_thickness_threshold_calving) {
+
     old_H.copy_from(m_geometry.ice_thickness);
     old_Href.copy_from(m_geometry.ice_area_specific_volume);
 
