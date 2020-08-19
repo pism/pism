@@ -31,6 +31,7 @@ set(PISMUTIL_SRC
   io/LocalInterpCtx.cc
   io/File.cc
   io/NC_Serial.cc
+  io/NC4_Serial.cc
   io/NC4File.cc
   io/NCFile.cc
   io/io_helpers.cc

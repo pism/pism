@@ -37,7 +37,7 @@ protected:
   // open/create/close
   void open_impl(const std::string &filename, IO_Mode mode);
 
-  void create_impl(const std::string &filename);
+  virtual void create_impl(const std::string &filename);
 
   void sync_impl() const;
 
@@ -58,7 +58,7 @@ protected:
   void inq_unlimdim_impl(std::string &result) const;
 
   // var
-  void def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
+  virtual void def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
 
   void get_vara_double_impl(const std::string &variable_name,
                       const std::vector<unsigned int> &start,
@@ -86,7 +86,7 @@ protected:
 
   void inq_varname_impl(unsigned int j, std::string &result) const;
 
-  void set_compression_level_impl(int level) const;
+  virtual void set_compression_level_impl(int level) const;
 
   // att
   void get_att_double_impl(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const;
@@ -105,16 +105,18 @@ protected:
   void set_fill_impl(int fillmode, int &old_modep) const;
 
   void del_att_impl(const std::string &variable_name, const std::string &att_name) const;
-private:
+
   int m_rank;
+
+  int get_varid(const std::string &variable_name) const;
+
+private:
 
   void get_var_double(const std::string &variable_name,
                      const std::vector<unsigned int> &start,
                      const std::vector<unsigned int> &count,
                      const std::vector<unsigned int> &imap, double *ip,
                      bool transposed) const;
-
-  int get_varid(const std::string &variable_name) const;
   };
 
 } // end of namespace io
