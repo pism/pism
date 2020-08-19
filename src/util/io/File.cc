@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -111,36 +111,50 @@ static IO_Backend choose_backend(MPI_Comm com, const std::string &filename) {
 }
 
 static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosysid) {
+  // disable a compiler warning
+  (void) iosysid;
+
   int size = 1;
   MPI_Comm_size(com, &size);
 
-  if (backend == PISM_NETCDF3) {
+  switch (backend) {
+  case PISM_NETCDF3:
     return io::NCFile::Ptr(new io::NC3File(com));
-  }
+
+  case PISM_NETCDF4_PARALLEL:
 #if (Pism_USE_PARALLEL_NETCDF4==1)
-  if (backend == PISM_NETCDF4_PARALLEL) {
     return io::NCFile::Ptr(new io::NC4_Par(com));
-  }
-#endif
-#if (Pism_USE_PNETCDF==1)
-  if (backend == PISM_PNETCDF) {
-    return io::NCFile::Ptr(new io::PNCFile(com));
-  }
-#endif
-#if (Pism_USE_PIO==1)
-  if (backend == PISM_PIO_PNETCDF or
-      backend == PISM_PIO_NETCDF4P or
-      backend == PISM_PIO_NETCDF4C or
-      backend == PISM_PIO_NETCDF) {
-    if (iosysid == -1) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "To use ParallelIO you have to pass iosysid to File");
-    }
-    return io::NCFile::Ptr(new io::ParallelIO(com, iosysid, backend));
-  }
 #else
-  (void) iosysid;               // silence a compiler warning
+    break;
 #endif
+
+  case PISM_PNETCDF:
+#if (Pism_USE_PNETCDF==1)
+    return io::NCFile::Ptr(new io::PNCFile(com));
+#else
+    break;
+#endif
+
+  case PISM_PIO_PNETCDF:
+  case PISM_PIO_NETCDF4P:
+  case PISM_PIO_NETCDF4C:
+  case PISM_PIO_NETCDF:
+#if (Pism_USE_PIO==1)
+    {
+      if (iosysid == -1) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "To use ParallelIO you have to pass iosysid to File");
+      }
+      return io::NCFile::Ptr(new io::ParallelIO(com, iosysid, backend));
+    }
+#else
+    break;
+#endif
+
+  case PISM_GUESS:
+    break;
+  } // end of switch (backend)
+
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "unknown or unsupported I/O backend: %d", backend);
 }
