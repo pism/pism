@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "NC3File.hh"
+#include "NC_Serial.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
@@ -50,29 +50,29 @@ static void check_and_abort(MPI_Comm com, const ErrorLocation &where, int return
   }
 }
 
-NC3File::NC3File(MPI_Comm c)
+NC_Serial::NC_Serial(MPI_Comm c)
   : NCFile(c), m_rank(0) {
   MPI_Comm_rank(m_com, &m_rank);
 }
 
-NC3File::~NC3File() {
+NC_Serial::~NC_Serial() {
   if (m_file_id >= 0) {
     if (m_rank == 0) {
       nc_close(m_file_id);
-      fprintf(stderr, "NC3File::~NC3File: NetCDF file %s is still open\n",
+      fprintf(stderr, "NC_Serial::~NC_Serial: NetCDF file %s is still open\n",
               m_filename.c_str());
     }
     m_file_id = -1;
   }
 }
 
-void NC3File::set_compression_level_impl(int level) const {
+void NC_Serial::set_compression_level_impl(int level) const {
   (void) level;
   // NetCDF-3 does not support compression.
 }
 
 // open/create/close
-void NC3File::open_impl(const std::string &fname, IO_Mode mode) {
+void NC_Serial::open_impl(const std::string &fname, IO_Mode mode) {
   int stat = NC_NOERR;
 
   int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;
@@ -89,7 +89,7 @@ void NC3File::open_impl(const std::string &fname, IO_Mode mode) {
 }
 
 //! \brief Create a NetCDF file.
-void NC3File::create_impl(const std::string &fname) {
+void NC_Serial::create_impl(const std::string &fname) {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
@@ -104,7 +104,7 @@ void NC3File::create_impl(const std::string &fname) {
 }
 
 //! \brief Close a NetCDF file.
-void NC3File::close_impl() {
+void NC_Serial::close_impl() {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
@@ -120,7 +120,7 @@ void NC3File::close_impl() {
 }
 
 
-void NC3File::sync_impl() const {
+void NC_Serial::sync_impl() const {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
@@ -135,7 +135,7 @@ void NC3File::sync_impl() const {
 
 
 //! \brief Exit define mode.
-void NC3File::enddef_impl() const {
+void NC_Serial::enddef_impl() const {
   int stat = NC_NOERR;
 
   int header_size = 200 * 1024;
@@ -151,7 +151,7 @@ void NC3File::enddef_impl() const {
 }
 
 //! \brief Enter define mode.
-void NC3File::redef_impl() const {
+void NC_Serial::redef_impl() const {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
@@ -166,7 +166,7 @@ void NC3File::redef_impl() const {
 
 
 //! \brief Define a dimension.
-void NC3File::def_dim_impl(const std::string &name, size_t length) const {
+void NC_Serial::def_dim_impl(const std::string &name, size_t length) const {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
@@ -180,7 +180,7 @@ void NC3File::def_dim_impl(const std::string &name, size_t length) const {
   check(PISM_ERROR_LOCATION, stat);
 }
 
-void NC3File::inq_dimid_impl(const std::string &dimension_name, bool &exists) const {
+void NC_Serial::inq_dimid_impl(const std::string &dimension_name, bool &exists) const {
   int stat, flag = -1;
 
   if (m_rank == 0) {
@@ -196,7 +196,7 @@ void NC3File::inq_dimid_impl(const std::string &dimension_name, bool &exists) co
 
 
 //! \brief Get a dimension length.
-void NC3File::inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const {
+void NC_Serial::inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
@@ -219,7 +219,7 @@ void NC3File::inq_dimlen_impl(const std::string &dimension_name, unsigned int &r
 }
 
 //! \brief Get an unlimited dimension.
-void NC3File::inq_unlimdim_impl(std::string &result) const {
+void NC_Serial::inq_unlimdim_impl(std::string &result) const {
   int stat = NC_NOERR;
   std::vector<char> dimname(NC_MAX_NAME + 1, 0);
 
@@ -247,7 +247,7 @@ void NC3File::inq_unlimdim_impl(std::string &result) const {
 }
 
 //! \brief Define a variable.
-void NC3File::def_var_impl(const std::string &name,
+void NC_Serial::def_var_impl(const std::string &name,
                            IO_Type nctype,
                            const std::vector<std::string> &dims) const {
   int stat = NC_NOERR;
@@ -277,7 +277,7 @@ void NC3File::def_var_impl(const std::string &name,
   check(PISM_ERROR_LOCATION, stat);
 }
 
-void NC3File::get_varm_double_impl(const std::string &variable_name,
+void NC_Serial::get_varm_double_impl(const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
                                  const std::vector<unsigned int> &count,
                                  const std::vector<unsigned int> &imap, double *op) const {
@@ -285,7 +285,7 @@ void NC3File::get_varm_double_impl(const std::string &variable_name,
                               start, count, imap, op, true);
 }
 
-void NC3File::get_vara_double_impl(const std::string &variable_name,
+void NC_Serial::get_vara_double_impl(const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
                                  const std::vector<unsigned int> &count,
                                  double *op) const {
@@ -295,7 +295,7 @@ void NC3File::get_vara_double_impl(const std::string &variable_name,
 }
 
 //! \brief Get variable data.
-void NC3File::get_var_double(const std::string &variable_name,
+void NC_Serial::get_var_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start_input,
                             const std::vector<unsigned int> &count_input,
                             const std::vector<unsigned int> &imap_input, double *ip,
@@ -397,7 +397,7 @@ void NC3File::get_var_double(const std::string &variable_name,
   }
 }
 
-void NC3File::put_vara_double_impl(const std::string &variable_name,
+void NC_Serial::put_vara_double_impl(const std::string &variable_name,
                                  const std::vector<unsigned int> &start_input,
                                  const std::vector<unsigned int> &count_input,
                                  const double *op) const {
@@ -480,7 +480,7 @@ void NC3File::put_vara_double_impl(const std::string &variable_name,
 }
 
 //! \brief Get the number of variables.
-void NC3File::inq_nvars_impl(int &result) const {
+void NC_Serial::inq_nvars_impl(int &result) const {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
@@ -495,7 +495,7 @@ void NC3File::inq_nvars_impl(int &result) const {
 }
 
 //! \brief Get dimensions a variable depends on.
-void NC3File::inq_vardimid_impl(const std::string &variable_name,
+void NC_Serial::inq_vardimid_impl(const std::string &variable_name,
                                 std::vector<std::string> &result) const {
   int stat, ndims, varid = -1;
   std::vector<int> dimids;
@@ -551,7 +551,7 @@ void NC3File::inq_vardimid_impl(const std::string &variable_name,
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-void NC3File::inq_varnatts_impl(const std::string &variable_name, int &result) const {
+void NC_Serial::inq_varnatts_impl(const std::string &variable_name, int &result) const {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
@@ -572,7 +572,7 @@ void NC3File::inq_varnatts_impl(const std::string &variable_name, int &result) c
 }
 
 //! \brief Finds a variable and sets the "exists" flag.
-void NC3File::inq_varid_impl(const std::string &variable_name, bool &exists) const {
+void NC_Serial::inq_varid_impl(const std::string &variable_name, bool &exists) const {
   int stat, flag = -1;
 
   if (m_rank == 0) {
@@ -586,7 +586,7 @@ void NC3File::inq_varid_impl(const std::string &variable_name, bool &exists) con
   exists = (flag == 1);
 }
 
-void NC3File::inq_varname_impl(unsigned int j, std::string &result) const {
+void NC_Serial::inq_varname_impl(unsigned int j, std::string &result) const {
   int stat = NC_NOERR;
   std::vector<char> varname(NC_MAX_NAME + 1, 0);
 
@@ -608,7 +608,7 @@ void NC3File::inq_varname_impl(unsigned int j, std::string &result) const {
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-void NC3File::get_att_double_impl(const std::string &variable_name,
+void NC_Serial::get_att_double_impl(const std::string &variable_name,
                                   const std::string &att_name,
                                   std::vector<double> &result) const {
   int stat = NC_NOERR, len = 0;
@@ -709,7 +709,7 @@ static int get_att_string(int ncid, int varid, const std::string &att_name,
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-void NC3File::get_att_text_impl(const std::string &variable_name,
+void NC_Serial::get_att_text_impl(const std::string &variable_name,
                                 const std::string &att_name, std::string &result) const {
   int stat = NC_NOERR;
 
@@ -757,7 +757,7 @@ void NC3File::get_att_text_impl(const std::string &variable_name,
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-void NC3File::put_att_double_impl(const std::string &variable_name, const std::string &att_name,
+void NC_Serial::put_att_double_impl(const std::string &variable_name, const std::string &att_name,
                                IO_Type nctype, const std::vector<double> &data) const {
   int stat = NC_NOERR;
 
@@ -784,7 +784,7 @@ void NC3File::put_att_double_impl(const std::string &variable_name, const std::s
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-void NC3File::put_att_text_impl(const std::string &variable_name, const std::string &att_name,
+void NC_Serial::put_att_text_impl(const std::string &variable_name, const std::string &att_name,
                                const std::string &value) const {
   int stat = NC_NOERR;
 
@@ -808,7 +808,7 @@ void NC3File::put_att_text_impl(const std::string &variable_name, const std::str
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-void NC3File::inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const {
+void NC_Serial::inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const {
   int stat = NC_NOERR;
   std::vector<char> name(NC_MAX_NAME + 1, 0);
 
@@ -834,7 +834,7 @@ void NC3File::inq_attname_impl(const std::string &variable_name, unsigned int n,
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-void NC3File::inq_atttype_impl(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
+void NC_Serial::inq_atttype_impl(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
   int stat, tmp;
 
   if (m_rank == 0) {
@@ -865,7 +865,7 @@ void NC3File::inq_atttype_impl(const std::string &variable_name, const std::stri
 
 
 //! \brief Sets the fill mode.
-void NC3File::set_fill_impl(int fillmode, int &old_modep) const {
+void NC_Serial::set_fill_impl(int fillmode, int &old_modep) const {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
@@ -879,7 +879,7 @@ void NC3File::set_fill_impl(int fillmode, int &old_modep) const {
   check(PISM_ERROR_LOCATION, stat);
 }
 
-std::string NC3File::get_format() const {
+std::string NC_Serial::get_format() const {
   int format;
 
   if (m_rank == 0) {
@@ -901,7 +901,7 @@ std::string NC3File::get_format() const {
   }
 }
 
-void NC3File::del_att_impl(const std::string &variable_name, const std::string &att_name) const {
+void NC_Serial::del_att_impl(const std::string &variable_name, const std::string &att_name) const {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
@@ -924,7 +924,7 @@ void NC3File::del_att_impl(const std::string &variable_name, const std::string &
  * If the value returned is NC_GLOBAL or greater, it is a varid, otherwise it is an error
  * code.
  */
-int NC3File::get_varid(const std::string &variable_name) const {
+int NC_Serial::get_varid(const std::string &variable_name) const {
   if (variable_name == "PISM_GLOBAL") {
     return NC_GLOBAL;
   }

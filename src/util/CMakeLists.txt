@@ -30,7 +30,7 @@ set(PISMUTIL_SRC
   interpolation.cc
   io/LocalInterpCtx.cc
   io/File.cc
-  io/NC3File.cc
+  io/NC_Serial.cc
   io/NC4File.cc
   io/NCFile.cc
   io/io_helpers.cc

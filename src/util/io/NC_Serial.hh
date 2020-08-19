@@ -24,11 +24,11 @@
 namespace pism {
 namespace io {
 
-class NC3File : public NCFile
+class NC_Serial : public NCFile
 {
 public:
-  NC3File(MPI_Comm com);
-  virtual ~NC3File();
+  NC_Serial(MPI_Comm com);
+  virtual ~NC_Serial();
 
   std::string get_format() const;
 

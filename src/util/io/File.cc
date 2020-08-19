@@ -29,7 +29,7 @@ using std::shared_ptr;
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
-#include "NC3File.hh"
+#include "NC_Serial.hh"
 
 #include "pism/pism_config.hh"
 
@@ -89,7 +89,7 @@ static IO_Backend choose_backend(MPI_Comm com, const std::string &filename) {
   {
     // This is the rank-0-only purely-serial mode of accessing NetCDF files, but it
     // supports all the kinds of NetCDF, so this is fine.
-    io::NC3File file(com);
+    io::NC_Serial file(com);
 
     file.open(filename, PISM_READONLY);
     format = file.get_format();
@@ -119,7 +119,7 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
 
   switch (backend) {
   case PISM_NETCDF3:
-    return io::NCFile::Ptr(new io::NC3File(com));
+    return io::NCFile::Ptr(new io::NC_Serial(com));
 
   case PISM_NETCDF4_PARALLEL:
 #if (Pism_USE_PARALLEL_NETCDF4==1)
