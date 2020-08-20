@@ -30,6 +30,7 @@ using std::shared_ptr;
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
 #include "NC_Serial.hh"
+#include "NC4_Serial.hh"
 
 #include "pism/pism_config.hh"
 
@@ -59,6 +60,9 @@ struct File::Impl {
 IO_Backend string_to_backend(const std::string &backend) {
   if (backend == "netcdf3") {
     return PISM_NETCDF3;
+  }
+  if (backend == "netcdf4_serial") {
+    return PISM_NETCDF4_SERIAL;
   }
   if (backend == "netcdf4_parallel") {
     return PISM_NETCDF4_PARALLEL;
@@ -120,7 +124,8 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
   switch (backend) {
   case PISM_NETCDF3:
     return io::NCFile::Ptr(new io::NC_Serial(com));
-
+  case PISM_NETCDF4_SERIAL:
+    return io::NCFile::Ptr(new io::NC4_Serial(com));
   case PISM_NETCDF4_PARALLEL:
 #if (Pism_USE_PARALLEL_NETCDF4==1)
     return io::NCFile::Ptr(new io::NC4_Par(com));
@@ -199,6 +204,10 @@ MPI_Comm File::com() const {
 
 IO_Backend File::backend() const {
   return m_impl->backend;
+}
+
+void File::set_compression_level(int level) const {
+  m_impl->nc->set_compression_level(level);
 }
 
 void File::open(const std::string &filename, IO_Mode mode) {

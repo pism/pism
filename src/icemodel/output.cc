@@ -180,6 +180,10 @@ void IceModel::save_variables(const File &file,
                               double time,
                               IO_Type default_diagnostics_type) {
 
+  // Compress 2D and 3D variables if output.compression_level > 0 and the output.format
+  // supports it.
+  file.set_compression_level(m_config->get_number("output.compression_level"));
+
   // define the time dimension if necessary (no-op if it is already defined)
   io::define_time(file, *m_grid->ctx());
   // define the "timestamp" (wall clock time since the beginning of the run)
