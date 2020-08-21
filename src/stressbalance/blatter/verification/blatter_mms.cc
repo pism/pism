@@ -1,17 +1,17 @@
-#include <cmath>
-
-#include "pism/util/Vector2.hh"
+#include "blatter_mms.hh"
 
 namespace pism {
 
-Vector2 exact_xy(double x, double y) {
+Vector2 exact_xy(double x, double y)
+{
   return {
     exp(x)*sin(2*M_PI*y),
     exp(x)*cos(2*M_PI*y)
   };
 }
 
-Vector2 source_xy(double x, double y, double B) {
+Vector2 source_xy(double x, double y, double B)
+{
   double x0 = 2*M_PI*y;
   double x1 = cos(x0);
   double x2 = pow(x1, 2);
@@ -27,14 +27,16 @@ Vector2 source_xy(double x, double y, double B) {
   };
 }
 
-Vector2 exact_xz(double x, double z, double B, double rhog, double s0, double alpha, double H) {
+Vector2 exact_xz(double x, double z, double B, double rhog, double s0, double alpha, double H)
+{
   return {
     2*H*alpha*rhog*x - 4*pow(alpha, 3)*pow(rhog, 3)*pow(x, 3)*(-pow(H, 4) + pow(-alpha*pow(x, 2) + s0 - z, 4))/pow(B, 3),
     0
   };
 }
 
-Vector2 source_xz(double x, double z, double B, double rhog, double s0, double alpha, double H) {
+Vector2 source_xz(double x, double z, double B, double rhog, double s0, double alpha, double H)
+{
   double x0 = pow(x, 6);
   double x1 = pow(alpha, 6);
   double x2 = pow(x, 2);
@@ -73,4 +75,5 @@ Vector2 source_xz(double x, double z, double B, double rhog, double s0, double a
     0
   };
 }
+
 } // end of namespace pism

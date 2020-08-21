@@ -6,11 +6,17 @@ from sympy.core import S
 
 from blatter import *
 
-def print_source(f_u, f_v, name="func", args=[]):
+def print_source(f_u, f_v, name="func", args=[], header=False):
     arguments = ", ".join(["double " + x for x in args])
 
     print("")
-    print("Vector2 {name}({arguments}) {{".format(arguments=arguments, name=name))
+    print("Vector2 {name}({arguments}){semicolon}".format(arguments=arguments,
+                                                          name=name,
+                                                          semicolon=";" if header else ""))
+    if header:
+        return
+
+    print("{")
 
     tmps, (u, v) = sp.cse([f_u, f_v])
 
@@ -24,10 +30,14 @@ def print_source(f_u, f_v, name="func", args=[]):
 
     print("}")
 
-def print_exact(u, v, name="exact", args=[]):
+def print_exact(u, v, name="exact", args=[], header=False):
     arguments = ", ".join(["double " + x for x in args])
     print("")
-    print("Vector2 {name}({arguments}) {{".format(arguments=arguments, name=name))
+    print("Vector2 {name}({arguments}){semicolon}".format(arguments=arguments, name=name,
+                                                          semicolon=";" if header else ""))
+    if header:
+        return
+    print("{")
     print("  return {")
     print("    {},".format(sp.ccode(u, standard="c99")))
     print("    {}".format(sp.ccode(v, standard="c99")))
@@ -87,32 +97,49 @@ def source_xy_albany():
 
     return f_u, f_v
 
-def main():
-
+def print_xy(header=False):
     u0, v0 = exact_xy()
     f_u, f_v = source_term(eta(u0, v0), u0, v0)
 
     def cleanup(expr):
         return expr.factor().collect([sin(2*pi*y), cos(2*pi*y)])
 
-    print("#include <cmath>")
-    print("")
-    print('#include "pism/util/Vector2.hh"')
-    print("")
-    print("namespace pism {")
-    print_exact(u0, v0, name="exact_xy", args=["x", "y"])
-    print_source(cleanup(f_u), cleanup(f_v), name="source_xy", args=["x", "y", "B"])
+    print_exact(u0, v0, name="exact_xy", args=["x", "y"], header=header)
+    print_source(cleanup(f_u), cleanup(f_v), name="source_xy", args=["x", "y", "B"], header=header)
+
+def print_xz(header=False):
 
     u0, v0 = exact_xz()
     f_u, f_v = source_term(eta(u0, v0), u0, v0)
 
     args = ["x", "z", "B", "rhog", "s0", "alpha", "H"]
-    print_exact(u0, v0, name="exact_xz", args=args)
-    print_source(f_u, f_v, name="source_xz", args=args)
+    print_exact(u0, v0, name="exact_xz", args=args, header=header)
+    print_source(f_u, f_v, name="source_xz", args=args, header=header)
+
+def main(header=False):
+    if header:
+        print("#include <cmath>")
+        print("")
+        print('#include "pism/util/Vector2.hh"')
+    else:
+        print('#include "blatter_mms.hh"')
+
+    print("")
+    print("namespace pism {")
+
+    print_xy(header)
+    print_xz(header)
+
+    print("")
     print("} // end of namespace pism")
 
-
-
 if __name__ == "__main__":
+    from argparse import ArgumentParser
 
-    main()
+    parser = ArgumentParser()
+    parser.add_argument("--header", dest="header", action="store_true",
+                        help="print function declarations for the header file")
+
+    options = parser.parse_args()
+
+    main(options.header)
