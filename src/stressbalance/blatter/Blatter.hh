@@ -105,26 +105,26 @@ protected:
 
   bool partially_submerged_face(int face, const double *z, const double *sea_level);
 
-  bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
+  virtual bool neumann_bc_face(int face, const int *node_type);
 
-  bool neumann_bc_face(int face, const int *node_type);
+  virtual bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
 
-  Vector2 u_bc(double x, double y, double z);
+  virtual Vector2 u_bc(double x, double y, double z);
 
   void compute_jacobian(DMDALocalInfo *info, const Vector2 ***x, Mat A, Mat J);
 
   void jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat J);
 
-  void jacobian_f(const fem::Element3 &element,
-                  const Vector2 *u_nodal,
-                  const double *B_nodal,
-                  double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]);
+  virtual void jacobian_f(const fem::Element3 &element,
+                          const Vector2 *u_nodal,
+                          const double *B_nodal,
+                          double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]);
 
-  void jacobian_basal(const fem::Q1Element3Face &face,
-                      const double *tauc_nodal,
-                      const double *f_nodal,
-                      const Vector2 *u_nodal,
-                      double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]);
+  virtual void jacobian_basal(const fem::Q1Element3Face &face,
+                              const double *tauc_nodal,
+                              const double *f_nodal,
+                              const Vector2 *u_nodal,
+                              double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]);
 
   void compute_residual(DMDALocalInfo *info, const Vector2 ***xg, Vector2 ***yg);
 
@@ -133,27 +133,27 @@ protected:
                           const Vector2 ***x,
                           Vector2 ***R);
 
-  void residual_f(const fem::Element3 &element,
-                  const Vector2 *u_nodal,
-                  const double *B_nodal,
-                  Vector2 *residual);
+  virtual void residual_f(const fem::Element3 &element,
+                          const Vector2 *u_nodal,
+                          const double *B_nodal,
+                          Vector2 *residual);
 
-  void residual_source_term(const fem::Element3 &element,
-                            const double *surface,
-                            Vector2 *residual);
+  virtual void residual_source_term(const fem::Element3 &element,
+                                    const double *surface,
+                                    Vector2 *residual);
 
-  void residual_basal(const fem::Element3 &element,
-                      const fem::Q1Element3Face &face,
-                      const double *tauc_nodal,
-                      const double *f_nodal,
-                      const Vector2 *u_nodal,
-                      Vector2 *residual);
+  virtual void residual_basal(const fem::Element3 &element,
+                              const fem::Q1Element3Face &face,
+                              const double *tauc_nodal,
+                              const double *f_nodal,
+                              const Vector2 *u_nodal,
+                              Vector2 *residual);
 
-  void residual_lateral(const fem::Element3 &element,
-                        const fem::Q1Element3Face &face,
-                        const double *z_nodal,
-                        const double *sl_nodal,
-                        Vector2 *residual);
+  virtual void residual_lateral(const fem::Element3 &element,
+                                const fem::Q1Element3Face &face,
+                                const double *z_nodal,
+                                const double *sl_nodal,
+                                Vector2 *residual);
 
   static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
                                           const Vector2 ***x,
