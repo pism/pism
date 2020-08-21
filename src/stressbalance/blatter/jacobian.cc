@@ -31,7 +31,7 @@ namespace stressbalance {
 /*!
  * Computes the Jacobian contribution of the "main" part of the Blatter system.
  */
-void Blatter::jacobian_f(const fem::Element3 &element,
+void Blatter::jacobian_f(const fem::Q1Element3 &element,
                          const Vector2 *velocity,
                          const double *hardness,
                          double K[16][16]) {

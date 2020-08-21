@@ -33,7 +33,7 @@ static const Vector2 u_exterior = {0.0, 0.0};
 /*!
  * Computes the residual contribution of the "main" part of the Blatter system.
  */
-void Blatter::residual_f(const fem::Element3 &element,
+void Blatter::residual_f(const fem::Q1Element3 &element,
                          const Vector2 *u_nodal,
                          const double *B_nodal,
                          Vector2 *residual) {
@@ -88,7 +88,7 @@ void Blatter::residual_f(const fem::Element3 &element,
  *
  * This term contains the driving stress.
  */
-void Blatter::residual_source_term(const fem::Element3 &element,
+void Blatter::residual_source_term(const fem::Q1Element3 &element,
                                    const double *surface,
                                    Vector2 *residual) {
   double
@@ -117,7 +117,7 @@ void Blatter::residual_source_term(const fem::Element3 &element,
  *
  * This takes care of basal sliding.
  */
-void Blatter::residual_basal(const fem::Element3 &element,
+void Blatter::residual_basal(const fem::Q1Element3 &element,
                              const fem::Q1Element3Face &face,
                              const double *tauc_nodal,
                              const double *f_nodal,
@@ -155,7 +155,7 @@ void Blatter::residual_basal(const fem::Element3 &element,
  *
  * This takes care of "calving front" stress boundary conditions.
  */
-void Blatter::residual_lateral(const fem::Element3 &element,
+void Blatter::residual_lateral(const fem::Q1Element3 &element,
                                const fem::Q1Element3Face &face,
                                const double *z_nodal,
                                const double *sl_nodal,

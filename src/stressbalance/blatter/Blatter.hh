@@ -115,7 +115,7 @@ protected:
 
   void jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat J);
 
-  virtual void jacobian_f(const fem::Element3 &element,
+  virtual void jacobian_f(const fem::Q1Element3 &element,
                           const Vector2 *u_nodal,
                           const double *B_nodal,
                           double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]);
@@ -133,23 +133,23 @@ protected:
                           const Vector2 ***x,
                           Vector2 ***R);
 
-  virtual void residual_f(const fem::Element3 &element,
+  virtual void residual_f(const fem::Q1Element3 &element,
                           const Vector2 *u_nodal,
                           const double *B_nodal,
                           Vector2 *residual);
 
-  virtual void residual_source_term(const fem::Element3 &element,
+  virtual void residual_source_term(const fem::Q1Element3 &element,
                                     const double *surface,
                                     Vector2 *residual);
 
-  virtual void residual_basal(const fem::Element3 &element,
+  virtual void residual_basal(const fem::Q1Element3 &element,
                               const fem::Q1Element3Face &face,
                               const double *tauc_nodal,
                               const double *f_nodal,
                               const Vector2 *u_nodal,
                               Vector2 *residual);
 
-  virtual void residual_lateral(const fem::Element3 &element,
+  virtual void residual_lateral(const fem::Q1Element3 &element,
                                 const fem::Q1Element3Face &face,
                                 const double *z_nodal,
                                 const double *sl_nodal,
