@@ -361,17 +361,17 @@ public:
   void reset(int i, int j, int k, const double *z);
 
   // return the x coordinate of node n
-  double x(int n) {
+  double x(int n) const {
     return m_x_min + m_dx * (m_i + m_i_offset[n]);
   }
 
   // return the y coordinate of node n
-  double y(int n) {
+  double y(int n) const {
     return m_y_min + m_dy * (m_j + m_j_offset[n]);
   }
 
   // return the z coordinate of node n
-  double z(int n) {
+  double z(int n) const {
     return m_z_nodal[n];
   }
 
