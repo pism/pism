@@ -1,4 +1,4 @@
-#include "blatter_mms.hh"
+#include "manufactured_solutions.hh"
 
 namespace pism {
 

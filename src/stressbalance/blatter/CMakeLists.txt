@@ -5,5 +5,5 @@ add_library (blatter OBJECT
   jacobian.cc
   BlatterMod.cc
   verification/BlatterTest1.cc
-  verification/blatter_mms.cc
+  verification/manufactured_solutions.cc
   )

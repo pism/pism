@@ -122,7 +122,7 @@ def main(header=False):
         print("")
         print('#include "pism/util/Vector2.hh"')
     else:
-        print('#include "blatter_mms.hh"')
+        print('#include "manufactured_solutions.hh"')
 
     print("")
     print("namespace pism {")

@@ -21,7 +21,7 @@
 
 #include "pism/rheology/IsothermalGlen.hh"
 
-#include "blatter_mms.hh"
+#include "manufactured_solutions.hh"
 
 namespace pism {
 namespace stressbalance {
