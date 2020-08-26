@@ -6,6 +6,10 @@ from sympy.core import S
 
 from blatter import *
 
+nx, ny, nz = sp.var("n_(x:z)")
+
+N = sp.Matrix([nx, ny, nz])
+
 def print_source(f_u, f_v, name="func", args=[], header=False):
     arguments = ", ".join(["double " + x for x in args])
 
@@ -55,21 +59,6 @@ def exact_xy():
     v0 = exp(x) * cos(2 * pi * y)
 
     return u0, v0
-
-def exact_xz():
-
-    s = s0 - alpha * x**2
-    s_x = s.diff(x)
-
-    np = n + 1
-    nm = n - 1
-
-    A = B**(-n)
-
-    u = (2 * A * rhog**n / np) * ((s - z)**np - H**np) * abs(s_x)**nm * s_x - rhog * H * s_x
-    v = S(0)
-
-    return u, v
 
 def source_xy_albany():
 
