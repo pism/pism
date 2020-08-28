@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2011-2012, 2014, 2016, 2017 The PISM Authors
 

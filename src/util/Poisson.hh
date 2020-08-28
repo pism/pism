@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -47,6 +47,7 @@ private:
   petsc::Mat m_A;
   IceModelVec2S m_b;
   IceModelVec2S m_x;
+  IceModelVec2Int m_mask;
 };
 
 } // end of namespace pism

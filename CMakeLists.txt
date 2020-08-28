@@ -1,6 +1,12 @@
 cmake_minimum_required (VERSION 3.1)
 project (Pism C CXX)
 
+if (NOT (${CMAKE_VERSION} VERSION_LESS "3.12"))
+  # Policy CMP0074 was introduced in 3.12. See "cmake --help-policies" for details.
+  # use PackageName_ROOT variables
+  cmake_policy(SET CMP0074 NEW)
+endif()
+
 if (NOT (${CMAKE_VERSION} VERSION_LESS "3.13"))
   # Policy CMP0078 was introduced in 3.13. See "cmake --help-policies" for details.
   cmake_policy(SET CMP0078 OLD)       #controls names of SWIG targets
@@ -163,7 +169,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 endif ()
 
 add_custom_target (etags
-  COMMAND find . -iname *.cc -o -iname *.hh -o -iname *.c -o -iname *.h | xargs etags --class-qualify --no-defines
+  COMMAND find . -iname *.cc -o -iname *.hh -o -iname *.c -o -iname *.h | xargs etags --no-defines
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
   VERBATIM
 )

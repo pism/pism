@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2012, 2014, 2016, 2018 Moritz Huetten and Torsten Albrecht
 

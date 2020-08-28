@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Computes exact similarity solution "test Q" at an initial time and after
 # a specified runtime.  Suggests a PISM run for this runtime.  The exact

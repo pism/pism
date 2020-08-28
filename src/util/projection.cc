@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -46,15 +46,31 @@ MappingInfo::MappingInfo(const std::string &mapping_name, units::System::Ptr uni
 VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_string) {
   VariableMetadata mapping("mapping", system);
 
-  std::string option = "+init=epsg:";
-  std::string::size_type pos = proj_string.find(option);
-  std::string epsg_code = proj_string.substr(pos + option.size());
-  char *endptr = NULL;
-  const char *str = epsg_code.c_str();
-  long int epsg = strtol(str, &endptr, 10);
-  if (endptr == str) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to parse EPSG code at '%s' in PROJ string '%s'",
-                                  epsg_code.c_str(), proj_string.c_str());
+  int auth_len = 5;             // length of "epsg:"
+  std::string::size_type position = std::string::npos;
+  for (auto &auth : {"epsg:", "EPSG:"}) {
+    position = proj_string.find(auth);
+    if (position != std::string::npos) {
+      break;
+    }
+  }
+
+  if (position == std::string::npos) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "could not parse EPSG code '%s'", proj_string.c_str());
+  }
+
+  long int epsg = 0;
+  {
+    std::string epsg_code = proj_string.substr(position + auth_len);
+    const char *str = epsg_code.c_str();
+    char *endptr = NULL;
+    epsg = strtol(str, &endptr, 10);
+    if (endptr == str) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "failed to parse EPSG code at '%s' in PROJ string '%s'",
+                                    epsg_code.c_str(), proj_string.c_str());
+    }
   }
 
   switch (epsg) {
@@ -184,8 +200,13 @@ MappingInfo get_projection_info(const File &input_file, const std::string &mappi
 
   result.proj = input_file.read_text_attribute("PISM_GLOBAL", "proj");
 
-  std::string::size_type position = result.proj.find("+init=epsg:");
-  bool proj_is_epsg = position != std::string::npos;
+  bool proj_is_epsg = false;
+  for (auto &auth : {"epsg:", "EPSG:"}) {
+    if (result.proj.find(auth) != std::string::npos) {
+      proj_is_epsg = true;
+      break;
+    }
+  }
 
   if (input_file.find_variable(mapping_name)) {
     // input file has a mapping variable
@@ -289,7 +310,7 @@ void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
 static void compute_lon_lat(const std::string &projection,
                             LonLat which, IceModelVec2S &result) {
 
-  Proj crs(projection);
+  Proj crs(projection, "EPSG:4326");
 
 // Cell layout:
 // (nw)        (ne)
@@ -312,12 +333,12 @@ static void compute_lon_lat(const std::string &projection,
     PJ_COORD in, out;
 
     in.xy = {grid->x(i), grid->y(j)};
-    out = proj_trans(*crs, PJ_INV, in);
+    out = proj_trans(*crs, PJ_FWD, in);
 
     if (which == LONGITUDE) {
-      result(i, j) = proj_todeg(out.lp.lam);
+      result(i, j) = out.lp.phi;
     } else {
-      result(i, j) = proj_todeg(out.lp.phi);
+      result(i, j) = out.lp.lam;
     }
   }
 }
@@ -326,7 +347,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
                                    LonLat which,
                                    IceModelVec3D &result) {
 
-  Proj crs(projection);
+  Proj crs(projection, "EPSG:4326");
 
   IceGrid::ConstPtr grid = result.grid();
 
@@ -350,12 +371,12 @@ static void compute_lon_lat_bounds(const std::string &projection,
       in.xy = {x0 + x_offsets[k], y0 + y_offsets[k]};
 
       // compute lon,lat coordinates:
-      out = proj_trans(*crs, PJ_INV, in);
+      out = proj_trans(*crs, PJ_FWD, in);
 
       if (which == LATITUDE) {
-        values[k] = proj_todeg(out.lp.phi);
+        values[k] = out.lp.lam;
       } else {
-        values[k] = proj_todeg(out.lp.lam);
+        values[k] = out.lp.phi;
       }
     }
   }

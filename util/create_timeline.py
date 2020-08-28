@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # @package create_timeline
 # \author Andy Aschwanden, University of Alaska Fairbanks, USA

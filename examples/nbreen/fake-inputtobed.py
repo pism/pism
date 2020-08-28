@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from PISMNC import PISMDataset as PNC
 import numpy as np

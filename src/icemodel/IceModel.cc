@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2020 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -594,10 +594,11 @@ void IceModel::step(bool do_mass_continuity,
       // the last call has to remove icebergs
       enforce_consistency_of_geometry(REMOVE_ICEBERGS);
 
+      bool add_values = true;
       compute_geometry_change(m_geometry.ice_thickness,
                               m_geometry.ice_area_specific_volume,
                               old_H, old_Href,
-                              ADD_VALUES,
+                              add_values,
                               m_thickness_change.calving);
     }
   }

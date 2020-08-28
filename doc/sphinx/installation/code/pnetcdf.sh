@@ -4,10 +4,10 @@ set -e
 set -u
 set -x
 
-# Install PnetCDF 1.12.0 in ~/local/pnetcdf,
+# Install PnetCDF 1.12.1 in ~/local/pnetcdf,
 # using ~/local/build/pnetcdf as a build directory.
 
-version=1.12.0
+version=1.12.1
 prefix=$HOME/local/pnetcdf
 build_dir=~/local/build/pnetcdf/
 url=https://parallel-netcdf.github.io/Release/pnetcdf-${version}.tar.gz

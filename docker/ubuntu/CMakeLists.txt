@@ -4,8 +4,8 @@ foreach(script hdf5.sh netcdf.sh pnetcdf.sh parallelio.sh)
   configure_file(${Pism_SOURCE_DIR}/doc/sphinx/installation/code/${script} . COPYONLY)
 endforeach()
 
-set(PISM_DOCKER_DEBIAN_VERSION 0.1.2)
+set(PISM_DOCKER_UBUNTU_VERSION 0.1)
 
-add_custom_target(docker-debian
-  COMMAND docker build -t ${DOCKER_USERNAME}/pism-debian:${PISM_DOCKER_DEBIAN_VERSION} .
+add_custom_target(docker-ubuntu
+  COMMAND docker build -t ${DOCKER_USERNAME}/pism-ubuntu:${PISM_DOCKER_UBUNTU_VERSION} .
   VERBATIM)

@@ -95,7 +95,7 @@ assuming that the calving front face is vertical (`\nz = 0`), this gives
    \end{array}
 
 
-Because we see boundary conditions for the SSA stress balance, in which the
+Because we seek boundary conditions for the SSA stress balance, in which the
 vertically-integrated forms of the stresses `\td{xx},\td{xy},\td{yy}` are balanced
 separately from the shear stresses `\td{xz},\td{yz}`, the third of the above equations can
 be omitted from the remaining analysis.

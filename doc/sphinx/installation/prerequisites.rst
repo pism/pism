@@ -14,7 +14,7 @@ This table lists required dependencies for PISM alphabetically.
    FFTW_,        version `\ge` 3.1
    GSL_,         version `\ge` 1.15
    MPI_,         any recent version
-   NetCDF_ [#]_, version `\ge` 4.1
+   NetCDF_ [#]_, version `\ge` 4.4
    PETSc_ [#]_,  version `\ge` |petsc-min-version|
    UDUNITS_,     any recent version
 
@@ -37,7 +37,7 @@ recommended, but not strictly required:
 .. csv-table::
    :header: Optional Library, Comment
 
-   PROJ_,  version `\ge` 5.0 (used to compute longitude-latitude grid coordinates and cell bounds)
+   PROJ_,  version `\ge` 6.0 (used to compute longitude-latitude grid coordinates and cell bounds)
    PnetCDF_, Can be used for faster parallel I/O
    ParallelIO_, Can be used for faster parallel I/O
 

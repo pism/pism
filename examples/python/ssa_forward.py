@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 #
 # Copyright (C) 2011, 2014, 2015, 2016, 2018 David Maxwell and Constantine Khroulev
 #
@@ -24,6 +24,7 @@ import time
 # The main code for a run follows:
 if __name__ == '__main__':
     context = PISM.Context()
+    config = context.config
     com = context.com
 
     PISM.set_abort_on_sigint(True)
@@ -54,9 +55,9 @@ if __name__ == '__main__':
 
     ssa_run.setup()
 
-    solve_t0 = time.clock()
+    solve_t0 = time.time()
     vel_ssa = ssa_run.solve()
-    solve_t = time.clock() - solve_t0
+    solve_t = time.time() - solve_t0
 
     PISM.verbPrintf(2, context.com, "Solve time %g seconds.\n", solve_t)
 

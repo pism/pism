@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2019 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2020 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -880,8 +880,9 @@ void IceModel::init_front_retreat() {
 void IceModel::init_calving() {
 
   std::set<std::string> methods = set_split(m_config->get_string("calving.methods"), ',');
+  bool allocate_front_retreat = false;
 
-  if (methods.find("thickness_calving") != methods.end()) {
+  if (member("thickness_calving", methods)) {
 
     if (not m_thickness_threshold_calving) {
       m_thickness_threshold_calving.reset(new calving::CalvingAtThickness(m_grid));
@@ -894,7 +895,8 @@ void IceModel::init_calving() {
   }
 
 
-  if (methods.find("eigen_calving") != methods.end()) {
+  if (member("eigen_calving", methods)) {
+    allocate_front_retreat = true;
 
     if (not m_eigen_calving) {
       m_eigen_calving.reset(new calving::EigenCalving(m_grid));
@@ -906,7 +908,8 @@ void IceModel::init_calving() {
     m_submodels["eigen calving"] = m_eigen_calving.get();
   }
 
-  if (methods.find("vonmises_calving") != methods.end()) {
+  if (member("vonmises_calving", methods)) {
+    allocate_front_retreat = true;
 
     if (not m_vonmises_calving) {
       m_vonmises_calving.reset(new calving::vonMisesCalving(m_grid,
@@ -919,7 +922,8 @@ void IceModel::init_calving() {
     m_submodels["von Mises calving"] = m_vonmises_calving.get();
   }
 
-  if (methods.find("hayhurst_calving") != methods.end()) {
+  if (member("hayhurst_calving", methods)) {
+    allocate_front_retreat = true;
 
     if (not m_hayhurst_calving) {
       m_hayhurst_calving.reset(new calving::HayhurstCalving(m_grid));
@@ -931,7 +935,7 @@ void IceModel::init_calving() {
     m_submodels["Hayhurst calving"] = m_hayhurst_calving.get();
   }
 
-  if (methods.find("float_kill") != methods.end()) {
+  if (member("float_kill", methods)) {
     if (not m_float_kill_calving) {
       m_float_kill_calving.reset(new calving::FloatKill(m_grid));
     }
@@ -949,8 +953,7 @@ void IceModel::init_calving() {
   }
 
   // allocate front retreat code if necessary
-  if ((m_eigen_calving or m_vonmises_calving) and
-      not m_front_retreat) {
+  if (not m_front_retreat and allocate_front_retreat) {
     m_front_retreat.reset(new FrontRetreat(m_grid));
   }
 }

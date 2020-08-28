@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Checks the structure of a PISM configuration file. (This is used as a regression test.)
 
 

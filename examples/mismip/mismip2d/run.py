@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import MISMIP
 
 # This scripts generates bash scripts that run MISMIP experiments and generates

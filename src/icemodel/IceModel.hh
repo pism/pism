@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2020 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -336,7 +336,7 @@ protected:
                                const IceModelVec2S &Href,
                                const IceModelVec2S &thickness_old,
                                const IceModelVec2S &Href_old,
-                               InsertMode flag,
+                               bool add_values,
                                IceModelVec2S &output);
 
   // see iMIO.cc
