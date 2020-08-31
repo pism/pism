@@ -6,6 +6,10 @@ Changes since v1.2
 - The three-equation ocean model `-ocean th` uses constant salinity (see
   `constants.sea_water.salinity`) if `salinity_ocean` is not present in the forcing file.
 - `fill_missing_petsc.py` uses homogeneous Neumann BC at domain boundaries.
+- Support 2D precipitation scaling in `-atmosphere ...,frac_P`. If the input file set
+  using `atmosphere.frac_P.file` contains a scalar time series `frac_P`, use that as a
+  time-dependent constant-in-space forcing. If the input file contains a 2D variable
+  `frac_P`, use that as a time-and-space-dependent forcing.
 
 Changes from v1.1 to v1.2
 =========================

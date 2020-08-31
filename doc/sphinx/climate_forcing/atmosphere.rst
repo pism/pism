@@ -216,23 +216,27 @@ atmosphere model. It takes the following command-line options.
 
 .. _sec-atmosphere-frac-p:
 
-Scalar precipitation scaling
-++++++++++++++++++++++++++++
+Precipitation scaling
++++++++++++++++++++++
 
 :|options|: ``-atmosphere ...,frac_P``
-:|variables|: :var:`frac_P` [no unit]
+:|variables|: :var:`frac_P` [1]
 :|implementation|: ``pism::atmosphere::Frac_P``
 
-This modifier scales precipitation output of an atmosphere model using a scalar
-time-dependent precipitation fraction, with a value of one corresponding to no change in
-precipitation. It takes the following command-line options:
+This modifier scales precipitation output of an atmosphere model using a time-dependent
+precipitation fraction, with a value of *one* corresponding to no change in precipitation.
+It supports both 1D (scalar) and 2D (spatially-variable) factors.
 
-- :opt:`-atmosphere_frac_P_file` sets the name of the file PISM will read :var:`frac_P`
-  from.
-- :opt:`-atmosphere_frac_P_period` (*years*) sets the period of the forcing data (section
-  :ref:`sec-periodic-forcing`).
-- :opt:`-atmosphere_frac_P_reference_year` sets the reference year (section
-  :ref:`sec-periodic-forcing`).
+If the variable :var:`frac_P` in the input file (see :config:`atmosphere.frac_P.file`) depends
+on time only it is used as a time-dependent constant-in-space scaling factor.
+
+If the variable :var:`frac_P` has more than one dimension PISM tries to use it as a
+time-and-space-dependent scaling factor.
+
+See configuration parameters with the prefix ``atmosphere.frac_P.``
+
+.. pism-parameters::
+   :prefix: atmosphere.frac_P.
 
 .. _sec-atmosphere-precip-scaling:
 

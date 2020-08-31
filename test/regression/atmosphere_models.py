@@ -447,7 +447,7 @@ class PrecipScaling(TestCase):
         check_modifier(self.model, modifier, P=1.3373514942327523e-05,
                        ts=[0.5], Ts=[0], Ps=[1.33735149e-05])
 
-class FracP(TestCase):
+class FracP1D(TestCase):
     def setUp(self):
         self.filename = "atmosphere_frac_P_input.nc"
         self.grid = shallow_grid()
@@ -464,7 +464,46 @@ class FracP(TestCase):
         os.remove(self.filename)
 
     def test_atmosphere_frac_p(self):
-        "Modifier 'frac_P'"
+        "Modifier 'frac_P': 1D scaling"
+
+        modifier = PISM.AtmosphereFracP(self.grid, self.model)
+
+        modifier.init(self.geometry)
+
+        modifier.update(self.geometry, 0, 1)
+
+        check_ratio(modifier.mean_precipitation(), self.model.mean_precipitation(),
+                    self.P_ratio)
+
+        check_modifier(self.model, modifier, T=0, P=0.00012675505856327396,
+                       ts=[0.5], Ts=[0], Ps=[0.00012676])
+
+class FracP2D(TestCase):
+    def setUp(self):
+        self.filename = "atmosphere_frac_P_input.nc"
+        self.grid = shallow_grid()
+        self.geometry = PISM.Geometry(self.grid)
+        self.geometry.ice_thickness.set(1000.0)
+        self.model = PISM.AtmosphereUniform(self.grid)
+        self.P_ratio = 5.0
+
+        frac_P = PISM.IceModelVec2S(self.grid, "frac_P", PISM.WITHOUT_GHOSTS)
+        frac_P.set_attrs("climate", "precipitation scaling", "1", "1", "", 0)
+        frac_P.set(self.P_ratio)
+
+        try:
+            output = PISM.util.prepare_output(self.filename)
+            frac_P.write(output)
+        finally:
+            output.close()
+
+        config.set_string("atmosphere.frac_P.file", self.filename)
+
+    def tearDown(self):
+        os.remove(self.filename)
+
+    def test_atmosphere_frac_p(self):
+        "Modifier 'frac_P': 2D scaling"
 
         modifier = PISM.AtmosphereFracP(self.grid, self.model)
 
