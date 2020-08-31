@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -146,6 +146,10 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
 
     result(i, j) = - pressure * Vector2(h_x, h_y);
   } // end of the loop over grid points
+}
+
+SSA * SSAFD_RegionalFactory(IceGrid::ConstPtr grid) {
+  return new SSAFD_Regional(grid);
 }
 
 } // end of namespace stressbalance
