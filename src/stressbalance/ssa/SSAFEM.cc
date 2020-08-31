@@ -103,7 +103,7 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g)
                         "", "", "", 0); // no units or standard name
 
   // ElementMap::nodal_values() expects a ghosted IceModelVec2S. Ghosts if this field are never
-  // assigned to and not communocated, though.
+  // assigned to and not communicated, though.
   m_boundary_integral.create(m_grid, "boundary_integral", WITH_GHOSTS, 1);
   m_boundary_integral.set_attrs("internal", // intent
                                 "residual contribution from lateral boundaries", // long name

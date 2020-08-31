@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -46,6 +46,8 @@ private:
   const IceModelVec2S   *m_H_stored;
   const IceModelVec2Int *m_no_model_mask;
 };
+
+SSA * SSAFD_RegionalFactory(IceGrid::ConstPtr grid);
 
 } // end of namespace stressbalance
 

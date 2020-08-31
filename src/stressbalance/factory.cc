@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018 PISM Authors
+/* Copyright (C) 2017, 2018, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,6 +26,8 @@
 #include "pism/regional/SSAFD_Regional.hh"
 #include "pism/regional/SIAFD_Regional.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/Context.hh"
+#include "pism/stressbalance/ssa/SSAFEM.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -35,6 +37,15 @@ std::shared_ptr<StressBalance> create(const std::string &model,
                                       bool regional) {
   ShallowStressBalance *sliding = NULL;
 
+  auto config = grid->ctx()->config();
+
+  SSAFactory SSA;
+  if (config->get_string("stress_balance.ssa.method") == "fd") {
+    SSA = regional ? SSAFD_RegionalFactory : SSAFDFactory;
+  } else {
+    SSA = SSAFEMFactory;
+  }
+
   if (member(model, {"none", "sia"})) {
     sliding = new ZeroSliding(grid);
   } else if (member(model, {"prescribed_sliding", "prescribed_sliding+sia"})) {
@@ -42,11 +53,7 @@ std::shared_ptr<StressBalance> create(const std::string &model,
   } else if (member(model, {"weertman_sliding", "weertman_sliding+sia"})) {
     sliding = new WeertmanSliding(grid);
   } else if (member(model, {"ssa", "ssa+sia"})) {
-    if (regional) {
-      sliding = new SSAFD_Regional(grid);
-    } else {
-      sliding = new SSAFD(grid);
-    }
+    sliding = SSA(grid);
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "invalid stress balance model: %s", model.c_str());
