@@ -506,7 +506,7 @@ class File(TestCase):
         self.file_inconsistent = "test_file_inconsistent.nc"
         self.file_dim_types = "test_file_dim_types.nc"
 
-        self.files = [self.file_with_time, self.file_without_time, self.file_inconsistent]
+        self.files = [self.file_with_time, self.file_without_time, self.file_inconsistent, self.file_dim_types]
 
         grid = PISM.testing.shallow_grid()
         vec = PISM.IceModelVec2S(grid, "v", PISM.WITHOUT_GHOSTS)
