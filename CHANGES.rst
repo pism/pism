@@ -10,6 +10,11 @@ Changes since v1.2
   using `atmosphere.frac_P.file` contains a scalar time series `frac_P`, use that as a
   time-dependent constant-in-space forcing. If the input file contains a 2D variable
   `frac_P`, use that as a time-and-space-dependent forcing.
+- Add a new `output.format` value: `netcdf4_serial` and `output.compression_level`. Use
+  `-o_format netcdf4_serial -output.compression_level N` (`N` between 1 and 9) to write
+  compressed NetCDF from rank 0.
+- Support writing compressed NetCDF in parallel with NetCDF 4.7.4 or newer and HDF5 1.10.3
+  or newer. Set `output.compression_level` to enable compression.
 
 Changes from v1.1 to v1.2
 =========================
