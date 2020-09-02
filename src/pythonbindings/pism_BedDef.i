@@ -1,5 +1,6 @@
 %{
 #include "earth/LingleClark.hh"
+#include "earth/Given.hh"
 #include "earth/greens.hh"
 %}
 
@@ -9,6 +10,10 @@
 %include "earth/BedDef.hh"
 %shared_ptr(pism::bed::LingleClark)
 %include "earth/LingleClark.hh"
+
+%shared_ptr(pism::bed::Given)
+%rename(GivenTopography) pism::bed::Given;
+%include "earth/Given.hh"
 
 %ignore pism::bed::ge_params;
 %ignore pism::bed::ge_integrand;

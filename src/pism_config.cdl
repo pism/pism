@@ -512,6 +512,16 @@ netcdf pism_config {
     pism_config:bed_deformation.bed_uplift_file_option = "uplift_file";
     pism_config:bed_deformation.bed_uplift_file_type = "string";
 
+    pism_config:bed_deformation.given.file = "";
+    pism_config:bed_deformation.given.file_doc = "Name of the file containing time-dependent :var:`topg_delta`.";
+    pism_config:bed_deformation.given.file_option = "topg_delta_file";
+    pism_config:bed_deformation.given.file_type = "string";
+
+    pism_config:bed_deformation.given.reference_file = "";
+    pism_config:bed_deformation.given.reference_file_doc = "Name of the file containing the reference bed topography :var:`topg`.";
+    pism_config:bed_deformation.given.reference_file_option = "topg_reference_file";
+    pism_config:bed_deformation.given.reference_file_type = "string";
+
     pism_config:bed_deformation.lc.elastic_model = "yes";
     pism_config:bed_deformation.lc.elastic_model_doc = "Use the elastic part of the Lingle-Clark bed deformation model.";
     pism_config:bed_deformation.lc.elastic_model_option = "bed_def_lc_elastic_model";
@@ -543,8 +553,8 @@ netcdf pism_config {
     pism_config:bed_deformation.mantle_viscosity_units = "Pascal second";
 
     pism_config:bed_deformation.model = "none";
-    pism_config:bed_deformation.model_choices = "none,iso,lc";
-    pism_config:bed_deformation.model_doc = "Selects a bed deformation model to use. ``iso`` is point-wise isostasy, ``lc`` is the Lingle-Clark model (see :cite:`LingleClark`, requires FFTW_).";
+    pism_config:bed_deformation.model_choices = "none,iso,lc,given";
+    pism_config:bed_deformation.model_doc = "Selects a bed deformation model to use. ``iso`` is point-wise isostasy, ``lc`` is the Lingle-Clark model (see :cite:`LingleClark`, requires FFTW_), ``given`` uses prescribed bed topography changes read from a file.";
     pism_config:bed_deformation.model_option = "bed_def";
     pism_config:bed_deformation.model_type = "keyword";
 

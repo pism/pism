@@ -55,6 +55,7 @@
 #include "pism/coupler/surface/Initialization.hh"
 #include "pism/earth/LingleClark.hh"
 #include "pism/earth/BedDef.hh"
+#include "pism/earth/Given.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/io/io_helpers.hh"
@@ -976,6 +977,9 @@ void IceModel::allocate_bed_deformation() {
   }
   else if (model == "lc") {
     m_beddef = new bed::LingleClark(m_grid);
+  }
+  else if (model == "given") {
+    m_beddef = new bed::Given(m_grid);
   }
 
   m_submodels["bed deformation"] = m_beddef;
