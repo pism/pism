@@ -64,7 +64,7 @@ netcdf pism_config {
     pism_config:atmosphere.delta_T.reference_year_units = "years";
 
     pism_config:atmosphere.elevation_change.file = "";
-    pism_config:atmosphere.elevation_change.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
+    pism_config:atmosphere.elevation_change.file_doc = "Name of the file containing the reference surface elevation field (variable :var:`usurf`).";
     pism_config:atmosphere.elevation_change.file_option = "atmosphere_lapse_rate_file";
     pism_config:atmosphere.elevation_change.file_type = "string";
 
@@ -183,7 +183,7 @@ netcdf pism_config {
     pism_config:atmosphere.models_type = "string";
 
     pism_config:atmosphere.one_station.file = "";
-    pism_config:atmosphere.one_station.file_doc = "Specifies a file containing scalar time-series ``precipitation`` and ``air_temp``.";
+    pism_config:atmosphere.one_station.file_doc = "Specifies a file containing scalar time-series :var:`precipitation` and :var:`air_temp`.";
     pism_config:atmosphere.one_station.file_option = "atmosphere_one_station_file";
     pism_config:atmosphere.one_station.file_type = "string";
 
@@ -276,7 +276,7 @@ netcdf pism_config {
     pism_config:atmosphere.orographic_precipitation.wind_speed_units = "m/s";
 
     pism_config:atmosphere.pik.file = "";
-    pism_config:atmosphere.pik.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
+    pism_config:atmosphere.pik.file_doc = "Name of the file containing the reference surface elevation field (variable :var:`usurf`).";
     pism_config:atmosphere.pik.file_option = "atmosphere_pik_file";
     pism_config:atmosphere.pik.file_type = "string";
 
@@ -324,12 +324,12 @@ netcdf pism_config {
     pism_config:atmosphere.uniform.temperature_units = "Kelvin";
 
     pism_config:atmosphere.yearly_cycle.file = "";
-    pism_config:atmosphere.yearly_cycle.file_doc = "Name of the file containing mean annual and mean July temperatures (``air_temp_mean_annual`` and ``air_temp_mean_summer``) and the ``precipitation`` field.";
+    pism_config:atmosphere.yearly_cycle.file_doc = "Name of the file containing mean annual and mean July temperatures (:var:`air_temp_mean_annual` and :var:`air_temp_mean_summer`) and the :var:`precipitation` field.";
     pism_config:atmosphere.yearly_cycle.file_option = "atmosphere_yearly_cycle_file";
     pism_config:atmosphere.yearly_cycle.file_type = "string";
 
     pism_config:atmosphere.yearly_cycle.scaling.file = "";
-    pism_config:atmosphere.yearly_cycle.scaling.file_doc = "Name of the file containing amplitude scaling (``amplitude_scaling``) for the near-surface air temperature.";
+    pism_config:atmosphere.yearly_cycle.scaling.file_doc = "Name of the file containing amplitude scaling (:var:`amplitude_scaling`) for the near-surface air temperature.";
     pism_config:atmosphere.yearly_cycle.scaling.file_option = "atmosphere_yearly_cycle_scaling_file";
     pism_config:atmosphere.yearly_cycle.scaling.file_type = "string";
 
@@ -406,7 +406,7 @@ netcdf pism_config {
     pism_config:basal_yield_stress.model_type = "keyword";
 
     pism_config:basal_yield_stress.mohr_coulomb.delta.file = "";
-    pism_config:basal_yield_stress.mohr_coulomb.delta.file_doc = "Name of the file containing space- and time-dependent variable ``mohr_coulomb_delta`` to use instead of :config:`basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden`.";
+    pism_config:basal_yield_stress.mohr_coulomb.delta.file_doc = "Name of the file containing space- and time-dependent variable :var:`mohr_coulomb_delta` to use instead of :config:`basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden`.";
     pism_config:basal_yield_stress.mohr_coulomb.delta.file_option = "mohr_coulomb_delta_file";
     pism_config:basal_yield_stress.mohr_coulomb.delta.file_type = "string";
 
@@ -446,7 +446,7 @@ netcdf pism_config {
     pism_config:basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden_units = "pure number";
 
     pism_config:basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water = 0.1;
-    pism_config:basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water_doc = "If :config:`basal_yield_stress.add_transportable_water` is set then the water amount in the transport system is added to ``tillwat`` in determining ``tauc``.  Normally only the water in the till is used.  This factor multiplies the logarithm in that formula.";
+    pism_config:basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water_doc = "If :config:`basal_yield_stress.add_transportable_water` is set then the water amount in the transport system is added to :var:`tillwat` in determining :var:`tauc`.  Normally only the water in the till is used.  This factor multiplies the logarithm in that formula.";
     pism_config:basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water_option = "till_log_factor_transportable_water";
     pism_config:basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water_type = "number";
     pism_config:basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water_units = "meters";
@@ -469,7 +469,7 @@ netcdf pism_config {
     pism_config:basal_yield_stress.mohr_coulomb.till_reference_void_ratio_units = "pure number";
 
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.enabled = "no";
-    pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.enabled_doc = "If the option ``-topg_to_phi`` is set then this will be set to \"yes\", and then ``MohrCoulombYieldStress`` will initialize the ``tillphi`` field using a piece-wise linear function of depth described by four parameters.";
+    pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.enabled_doc = "If the option ``-topg_to_phi`` is set then this will be set to \"yes\", and then ``MohrCoulombYieldStress`` will initialize the :var:`tillphi` field using a piece-wise linear function of depth described by four parameters.";
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.enabled_type = "flag";
 
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max = 15.0;
@@ -498,7 +498,7 @@ netcdf pism_config {
     pism_config:basal_yield_stress.slippery_grounding_lines_type = "flag";
 
     pism_config:bed_deformation.bed_topography_delta_file = "";
-    pism_config:bed_deformation.bed_topography_delta_file_doc = "The name of the file to read the ``topg_delta`` from. This field is added to the bed topography during initialization.";
+    pism_config:bed_deformation.bed_topography_delta_file_doc = "The name of the file to read the :var:`topg_delta` from. This field is added to the bed topography during initialization.";
     pism_config:bed_deformation.bed_topography_delta_file_option = "topg_delta_file";
     pism_config:bed_deformation.bed_topography_delta_file_type = "string";
 
@@ -544,12 +544,12 @@ netcdf pism_config {
     pism_config:bed_deformation.model_type = "keyword";
 
     pism_config:bootstrapping.defaults.bed = 1.0;
-    pism_config:bootstrapping.defaults.bed_doc = "bed elevation value to use if ``topg`` (``bedrock_altitude``) variable is absent in bootstrapping file";
+    pism_config:bootstrapping.defaults.bed_doc = "bed elevation value to use if :var:`topg` (``bedrock_altitude``) variable is absent in bootstrapping file";
     pism_config:bootstrapping.defaults.bed_type = "number";
     pism_config:bootstrapping.defaults.bed_units = "meters";
 
     pism_config:bootstrapping.defaults.bmelt = 0.0;
-    pism_config:bootstrapping.defaults.bmelt_doc = "basal melt rate value to use if variable ``bmelt`` is absent in bootstrapping file";
+    pism_config:bootstrapping.defaults.bmelt_doc = "basal melt rate value to use if variable :var:`bmelt` is absent in bootstrapping file";
     pism_config:bootstrapping.defaults.bmelt_type = "number";
     pism_config:bootstrapping.defaults.bmelt_units = "meter / second";
 
@@ -559,7 +559,7 @@ netcdf pism_config {
     pism_config:bootstrapping.defaults.bwat_units = "meters";
 
     pism_config:bootstrapping.defaults.bwp = 0.0;
-    pism_config:bootstrapping.defaults.bwp_doc = "basal water pressure value to use if variable ``bwp`` is absent in bootstrapping file; most hydrology models do not use this value because ``bwp`` is diagnostic";
+    pism_config:bootstrapping.defaults.bwp_doc = "basal water pressure value to use if variable :var:`bwp` is absent in bootstrapping file; most hydrology models do not use this value because :var:`bwp` is diagnostic";
     pism_config:bootstrapping.defaults.bwp_type = "number";
     pism_config:bootstrapping.defaults.bwp_units = "Pascal";
 
@@ -1343,7 +1343,7 @@ netcdf pism_config {
     pism_config:hydrology.steady.volume_ratio_units = "1";
 
     pism_config:hydrology.surface_input.file = "";
-    pism_config:hydrology.surface_input.file_doc = "Name of the file containing ``water_input_rate``, the rate at which water from the ice surface is added to the subglacial hydrology system";
+    pism_config:hydrology.surface_input.file_doc = "Name of the file containing :var:`water_input_rate`, the rate at which water from the ice surface is added to the subglacial hydrology system";
     pism_config:hydrology.surface_input.file_type = "string";
 
     pism_config:hydrology.surface_input.period = 0;
@@ -2073,7 +2073,7 @@ netcdf pism_config {
     pism_config:stress_balance.model_type = "keyword";
 
     pism_config:stress_balance.prescribed_sliding.file = "";
-    pism_config:stress_balance.prescribed_sliding.file_doc = "The name of the file containing prescribed sliding velocity (variable names: ``ubar``, ``vbar``).";
+    pism_config:stress_balance.prescribed_sliding.file_doc = "The name of the file containing prescribed sliding velocity (variable names: :var:`ubar`, :var:`vbar`).";
     pism_config:stress_balance.prescribed_sliding.file_type = "string";
 
     pism_config:stress_balance.sia.Glen_exponent = 3.0;
@@ -2302,7 +2302,7 @@ netcdf pism_config {
     pism_config:surface.delta_T.reference_year_units = "years";
 
     pism_config:surface.elevation_change.file = "";
-    pism_config:surface.elevation_change.file_doc = "Name of the file containing the reference surface elevation field (variable ``usurf``).";
+    pism_config:surface.elevation_change.file_doc = "Name of the file containing the reference surface elevation field (variable :var:`usurf`).";
     pism_config:surface.elevation_change.file_option = "surface_elevation_change_file";
     pism_config:surface.elevation_change.file_type = "string";
 
