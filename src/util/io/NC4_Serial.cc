@@ -80,6 +80,11 @@ void NC4_Serial::def_var_impl(const std::string &name,
       int varid = get_varid(name);
 
       stat = nc_def_var_deflate(m_file_id, varid, 0, 1, m_compression_level);
+
+      // The NetCDF version used by PISM may not support compression.
+      if (stat == NC_EINVAL) {
+        stat = NC_NOERR;
+      }
     }
   }
 

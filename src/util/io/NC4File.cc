@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -141,6 +141,12 @@ void NC4File::def_var_impl(const std::string &name,
   if (m_compression_level > 0 and dims.size() > 1) {
     stat = nc_inq_varid(m_file_id, name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
     stat = nc_def_var_deflate(m_file_id, varid, 0, 1, m_compression_level);
+
+    // The NetCDF version used by PISM may not support compression.
+    if (stat == NC_EINVAL) {
+      stat = NC_NOERR;
+    }
+
     check(PISM_ERROR_LOCATION, stat);
   }
 }
