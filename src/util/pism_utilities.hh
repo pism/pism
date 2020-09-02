@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -88,7 +88,8 @@ T combine(const T &a, const T&b) {
   return result;
 }
 
-inline double clip(double x, double a, double b) {
+template<typename T>
+inline T clip(T x, T a, T b) {
   return std::min(std::max(a, x), b);
 }
 

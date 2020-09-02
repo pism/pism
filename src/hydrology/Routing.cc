@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 PISM Authors
+// Copyright (C) 2012-2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -773,7 +773,7 @@ void Routing::update_Wtill(double dt,
     }
 
     Wtill_new(i, j) = clip(Wtill(i, j) + dt * (input_rate - C),
-                           0, tillwat_max);
+                           0.0, tillwat_max);
   }
 }
 
