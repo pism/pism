@@ -26,6 +26,7 @@
 #include <netcdf.h>
 
 #include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace io {
@@ -61,7 +62,7 @@ void NC4_Serial::create_impl(const std::string &fname) {
 }
 
 void NC4_Serial::set_compression_level_impl(int level) const {
-  m_compression_level = level;
+  m_compression_level = pism::clip(level, 0, 9);
 }
 
 void NC4_Serial::def_var_impl(const std::string &name,
