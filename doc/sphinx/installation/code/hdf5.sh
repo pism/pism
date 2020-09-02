@@ -4,13 +4,13 @@ set -e
 set -u
 set -x
 
-# Install HDF5 1.10.5 with parallel I/O in ~/local/hdf5,
+# Install HDF5 1.12.0 with parallel I/O in ~/local/hdf5,
 # using ~/local/build/hdf5 as the build directory.
 
-version=1.10.5
+version=1.12.0
 prefix=$HOME/local/hdf5
 build_dir=~/local/build/hdf5
-hdf5_site=https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10
+hdf5_site=https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12
 url=${hdf5_site}/hdf5-${version}/src/hdf5-${version}.tar.gz
 
 mkdir -p ${build_dir}

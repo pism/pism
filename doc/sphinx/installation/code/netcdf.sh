@@ -9,7 +9,7 @@ set -x
 
 hdf5=~/local/hdf5
 
-version=4.7.3
+version=4.7.4
 prefix=$HOME/local/netcdf
 build_dir=~/local/build/netcdf
 url=ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-c-${version}.tar.gz
