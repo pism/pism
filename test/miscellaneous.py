@@ -16,9 +16,13 @@ import sys
 import os
 import numpy as np
 from unittest import TestCase
+import uuid
 
 ctx = PISM.Context()
 ctx.log.set_threshold(0)
+
+def filename(prefix):
+    return prefix + str(uuid.uuid4()) + ".nc"
 
 def create_dummy_grid():
     "Create a dummy grid"
@@ -1007,42 +1011,43 @@ class PrincipalStrainRates(TestCase):
 class Timeseries(TestCase):
 
     def setUp(self):
-        self.filename_constant = "timeseries_constant.nc"
-        self.filename_linear = "timeseries_linear.nc"
-
+        self.filename = filename("timeseries-")
 
         self.times_constant = [1, 2, 3]
         self.values_constant = [2, 3, 1]
-        PISM.testing.create_scalar_forcing(self.filename_constant,
-                                           "v", "1",
+        PISM.testing.create_scalar_forcing(self.filename,
+                                           "v1", "1",
                                            self.values_constant,
                                            times=None,
-                                           time_bounds=[0, 1, 1, 2, 2, 3])
+                                           time_bounds=[0, 1, 1, 2, 2, 3],
+                                           time_name="time")
 
         N = 4
         self.times_linear = np.arange(N + 1, dtype=np.float64)
-        PISM.testing.create_scalar_forcing(self.filename_linear,
-                                           "v", "1",
+        PISM.testing.create_scalar_forcing(self.filename,
+                                           "v2", "1",
                                            self.f(self.times_linear),
-                                           times=self.times_linear)
+                                           times=self.times_linear,
+                                           time_name="time2")
 
     def f(self, x):
         "a linear function that can be reproduced exactly"
         return 2.0 * x - 3.0
 
     def tearDown(self):
-        os.remove(self.filename_constant)
-        os.remove(self.filename_linear)
+        os.remove(self.filename)
 
     def test_constant_interpolation(self):
         "Piecewise-constant interpolation in Timeseries"
 
         ctx = PISM.Context()
-        ts = PISM.Timeseries(ctx.com, ctx.unit_system, "v")
+        ts = PISM.Timeseries(ctx.com, ctx.unit_system, "v1")
 
-        f = PISM.File(ctx.com, self.filename_constant, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
-        ts.read(f, ctx.time, ctx.log)
-        del f
+        try:
+            f = PISM.File(ctx.com, self.filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
+            ts.read(f, ctx.time, ctx.log)
+        finally:
+            f.close()
 
         t = self.times_constant
         y = self.values_constant
@@ -1063,11 +1068,13 @@ class Timeseries(TestCase):
         "Linear interpolation in Timeseries"
 
         ctx = PISM.Context()
-        ts = PISM.Timeseries(ctx.com, ctx.unit_system, "v")
+        ts = PISM.Timeseries(ctx.com, ctx.unit_system, "v2")
 
-        f = PISM.File(ctx.com, self.filename_linear, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
-        ts.read(f, ctx.time, ctx.log)
-        del f
+        try:
+            f = PISM.File(ctx.com, self.filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
+            ts.read(f, ctx.time, ctx.log)
+        finally:
+            f.close()
 
         t = self.times_linear
         N = len(t) - 1
