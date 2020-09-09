@@ -188,7 +188,9 @@ void IceModel::save_variables(const File &file,
   io::define_time(file, *m_grid->ctx());
   // define the "timestamp" (wall clock time since the beginning of the run)
   // Note: it is time-dependent, so we need to define time first.
-  io::define_timeseries(m_timestamp, file, PISM_FLOAT);
+  io::define_timeseries(m_timestamp,
+                        m_config->get_string("time.dimension_name"),
+                        file, PISM_FLOAT);
   // append to the time dimension
   io::append_time(file, *m_config, time);
 
@@ -251,7 +253,7 @@ void IceModel::save_variables(const File &file,
     unsigned int time_length = file.dimension_length(m_config->get_string("time.dimension_name"));
     size_t start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
     io::write_timeseries(file, m_timestamp, start,
-                         wall_clock_hours(m_grid->com, m_start_time));
+                         {wall_clock_hours(m_grid->com, m_start_time)});
   }
 }
 

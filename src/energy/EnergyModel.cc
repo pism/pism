@@ -349,11 +349,11 @@ public:
     : TSDiag<TSFluxDiagnostic, EnergyModel>(m, "liquified_ice_flux") {
 
     set_units("m3 / second", "m3 / year");
-    m_ts.variable().set_string("long_name",
-                               "rate of ice loss due to liquefaction,"
-                               " averaged over the reporting interval");
-    m_ts.variable().set_string("comment", "positive means ice loss");
-    m_ts.variable().set_string("cell_methods", "time: mean");
+    m_variable.set_string("long_name",
+                          "rate of ice loss due to liquefaction,"
+                          " averaged over the reporting interval");
+    m_variable.set_string("comment", "positive means ice loss");
+    m_variable.set_string("cell_methods", "time: mean");
   }
 protected:
   double compute() {

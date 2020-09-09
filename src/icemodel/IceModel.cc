@@ -73,8 +73,8 @@ IceModel::IceModel(IceGrid::Ptr g, std::shared_ptr<Context> context)
     m_new_bed_elevation(true),
     m_thickness_change(g),
     m_ts_times(new std::vector<double>()),
-    m_extra_bounds("time_bounds", m_config->get_string("time.dimension_name"), m_sys),
-    m_timestamp("timestamp", m_config->get_string("time.dimension_name"), m_sys) {
+    m_extra_bounds("time_bounds", m_sys),
+    m_timestamp("timestamp", m_sys) {
 
   // time-independent info
   {

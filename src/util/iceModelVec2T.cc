@@ -238,7 +238,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
 
   if (not time_name.empty()) {
     // we're found the time dimension
-    TimeseriesMetadata time_dimension(time_name, time_name, ctx->unit_system());
+    VariableMetadata time_dimension(time_name, ctx->unit_system());
 
     auto time_units = ctx->time()->units_string();
     time_dimension.set_string("units", time_units);
@@ -262,7 +262,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
         }
 
         // read time bounds data from a file
-        TimeBoundsMetadata tb(bounds_name, time_name, ctx->unit_system());
+        VariableMetadata tb(bounds_name, ctx->unit_system());
         tb.set_string("units", time_units);
 
         io::read_time_bounds(file, tb, *ctx->time(), log, m_data->time_bounds);

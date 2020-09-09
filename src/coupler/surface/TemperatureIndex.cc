@@ -721,7 +721,7 @@ public:
     : TSDiag<TSFluxDiagnostic, TemperatureIndex>(m, "surface_accumulation_rate") {
 
     set_units("kg s-1", "kg year-1");
-    m_ts.variable().set_string("long_name", "surface accumulation rate (PDD model)");
+    m_variable.set_string("long_name", "surface accumulation rate (PDD model)");
   }
 
   double compute() {
@@ -738,7 +738,7 @@ public:
     : TSDiag<TSFluxDiagnostic, TemperatureIndex>(m, "surface_melt_rate") {
 
     set_units("kg s-1", "kg year-1");
-    m_ts.variable().set_string("long_name", "surface melt rate (PDD model)");
+    m_variable.set_string("long_name", "surface melt rate (PDD model)");
   }
 
   double compute() {
@@ -755,7 +755,7 @@ public:
     : TSDiag<TSFluxDiagnostic, TemperatureIndex>(m, "surface_runoff_rate") {
 
     set_units("kg s-1", "kg year-1");
-    m_ts.variable().set_string("long_name", "surface runoff rate (PDD model)");
+    m_variable.set_string("long_name", "surface runoff rate (PDD model)");
   }
 
   double compute() {

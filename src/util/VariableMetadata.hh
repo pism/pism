@@ -155,30 +155,6 @@ private:
                      const std::vector<double> &z_levels);
 };
 
-//! An internal class for reading, writing and converting time-series.
-class TimeseriesMetadata : public VariableMetadata {
-public:
-  TimeseriesMetadata(const std::string &name, const std::string &dimension_name,
-                     units::System::Ptr system);
-  virtual ~TimeseriesMetadata();
-
-  std::string get_dimension_name() const;
-private:
-  //! the name of the NetCDF dimension this timeseries depends on
-  std::string m_dimension_name;
-};
-
-class TimeBoundsMetadata : public TimeseriesMetadata
-{
-public:
-  TimeBoundsMetadata(const std::string &name, const std::string &dimension_name,
-                     units::System::Ptr system);
-  virtual ~TimeBoundsMetadata();
-  std::string get_bounds_name() const;
-private:
-  std::string m_bounds_name;
-};
-
 } // end of namespace pism
 
 #endif  // __VariableMetadata_hh

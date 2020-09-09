@@ -419,7 +419,7 @@ protected:
   unsigned int m_next_extra;
   double m_last_extra;
   std::set<std::string> m_extra_vars;
-  TimeBoundsMetadata m_extra_bounds;
+  VariableMetadata m_extra_bounds;
   std::unique_ptr<File> m_extra_file;
   void init_extras();
   void write_extras();
@@ -442,7 +442,7 @@ protected:
   std::map<std::string,std::shared_ptr<petsc::Viewer> > m_viewers;
 
 private:
-  TimeseriesMetadata m_timestamp;
+  VariableMetadata m_timestamp;
   double m_start_time;    // this is used in the wall-clock-time backup code
 };
 
