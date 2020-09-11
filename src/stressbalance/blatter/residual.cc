@@ -291,17 +291,12 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
     for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
 
       // Initialize 2D geometric info at element nodes
-      for (int n = 0; n < Nk; ++n) {
-        auto I = element.local_to_global(i, j, 0, n);
-
-        auto p = P[I.j][I.i];
-
-        bottom_elevation[n]  = p.bed;
-        ice_thickness[n]     = p.thickness;
-        node_type[n]         = p.node_type;
-        sea_level[n]         = p.sea_level;
-        surface_elevation[n] = p.bed + p.thickness;
-      }
+      nodal_parameter_values(element, P, i, j,
+                             node_type,
+                             bottom_elevation,
+                             ice_thickness,
+                             surface_elevation,
+                             sea_level);
 
       // skip ice-free (exterior) elements
       if (exterior_element(node_type)) {

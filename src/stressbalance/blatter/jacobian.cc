@@ -237,15 +237,13 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
     for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
 
-      for (int n = 0; n < Nk; ++n) {
-        auto I = element.local_to_global(i, j, 0, n);
-
-        auto p = P[I.j][I.i];
-
-        bottom_elevation[n] = p.bed;
-        ice_thickness[n]    = p.thickness;
-        node_type[n]        = p.node_type;
-      }
+      // Initialize 2D geometric info at element nodes
+      nodal_parameter_values(element, P, i, j,
+                             node_type,
+                             bottom_elevation,
+                             ice_thickness,
+                             NULL,
+                             NULL);
 
       // skip ice-free (exterior) columns
       if (exterior_element(node_type)) {

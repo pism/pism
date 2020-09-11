@@ -105,6 +105,16 @@ protected:
 
   bool partially_submerged_face(int face, const double *z, const double *sea_level);
 
+  virtual void nodal_parameter_values(const fem::Q1Element3 &element,
+                                      Parameters **P,
+                                      int i,
+                                      int j,
+                                      int *node_type,
+                                      double *bottom,
+                                      double *thickness,
+                                      double *surface,
+                                      double *sea_level) const;
+
   virtual bool neumann_bc_face(int face, const int *node_type);
 
   virtual bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);

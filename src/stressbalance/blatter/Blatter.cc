@@ -543,6 +543,40 @@ void Blatter::init_ice_hardness(const Inputs &inputs) {
   } // end of the loop over grid points
 }
 
+/*!
+ * Get values of 2D parameters at element nodes.
+ *
+ * This method is re-implemented by derived classes that use periodic boundary conditions.
+ */
+void Blatter::nodal_parameter_values(const fem::Q1Element3 &element,
+                                     Parameters **P,
+                                     int i,
+                                     int j,
+                                     int *node_type,
+                                     double *bottom_elevation,
+                                     double *ice_thickness,
+                                     double *surface_elevation,
+                                     double *sea_level) const {
+
+  for (int n = 0; n < fem::q13d::n_chi; ++n) {
+    auto I = element.local_to_global(i, j, 0, n);
+
+    auto p = P[I.j][I.i];
+
+    node_type[n]         = p.node_type;
+    bottom_elevation[n]  = p.bed;
+    ice_thickness[n]     = p.thickness;
+
+    if (surface_elevation) {
+      surface_elevation[n] = p.bed + p.thickness;
+    }
+
+    if (sea_level) {
+      sea_level[n]         = p.sea_level;
+    }
+  }
+}
+
 Blatter::~Blatter() {
   // empty
 }
