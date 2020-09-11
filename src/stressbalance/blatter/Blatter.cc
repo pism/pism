@@ -255,7 +255,7 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_fa
 
   auto pism_da = grid->get_dm(1, 0);
 
-  int ierr = setup(*pism_da, Mz, n_levels, coarsening_factor);
+  int ierr = setup(*pism_da, grid->periodicity(), Mz, n_levels, coarsening_factor);
   if (ierr != 0) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "Failed to allocate a Blatter solver instance");
@@ -372,7 +372,7 @@ PetscErrorCode Blatter::setup_2d_storage(DM dm, int dof) {
   return 0;
 }
 
-PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels, int coarsening_factor) {
+PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz, int n_levels, int coarsening_factor) {
   PetscErrorCode ierr;
   // DM
   //
@@ -390,8 +390,12 @@ PetscErrorCode Blatter::setup(DM pism_da, int Mz, int n_levels, int coarsening_f
     info.dof = 2;
     info.stencil_width = 1;
 
+    info.bx = periodicity & X_PERIODIC ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE;
+    info.by = periodicity & Y_PERIODIC ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE;
+    info.bz = DM_BOUNDARY_NONE;
+
     ierr = DMDACreate3d(comm,
-                        DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, // STORAGE_ORDER
+                        info.bz, info.bx, info.by, // STORAGE_ORDER
                         DMDA_STENCIL_BOX,
                         info.Mz, info.Mx, info.My, // STORAGE_ORDER
                         info.mz, info.mx, info.my, // STORAGE_ORDER
