@@ -47,6 +47,13 @@ void BlatterMod::init() {
   // empty
 }
 
+/*!
+ * Post-process ice velocity computed by the Blatter solver.
+ *
+ * - transfers velocity from the sigma grid onto PISM's vertical grid
+ *
+ * - estimates the maximum diffusivity used to compute the time step restriction
+ */
 void BlatterMod::update(const IceModelVec2V &sliding_velocity,
                         const Inputs &inputs,
                         bool full_update) {
@@ -64,6 +71,11 @@ void BlatterMod::update(const IceModelVec2V &sliding_velocity,
   m_diffusive_flux.set(0.0);
 }
 
+/*!
+ * Copy ice velocity from the sigma vertical grid onto PISM's vertical grid.
+ *
+ * Uses constant extrapolation above the ice surface.
+ */
 void BlatterMod::transfer(const IceModelVec2S &ice_thickness) {
 
   auto u_sigma = m_solver->velocity_u_sigma();
