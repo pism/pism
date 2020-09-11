@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2019 PISM Authors
+/* Copyright (C) 2014, 2015, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -85,7 +85,8 @@ protected:
   Vec m_v;
   IceGrid::ConstPtr m_grid;
   mutable void *m_array;
-  PISMDM::Ptr m_da;          //!< distributed mesh manager (DM)
+  //! distributed mesh manager (DM)
+  PISMDM::Ptr m_da;
   unsigned int m_dof;
 
   //! stores metadata (NetCDF variable attributes)

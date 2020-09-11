@@ -104,10 +104,13 @@ class IP_SSATaucForwardProblem : public stressbalance::SSAFEM
 {
 public:
 
-  typedef IceModelVec2S DesignVec; ///< The function space for the design variable, i.e. \f$\tau_c\f$.
-  typedef IceModelVec2V StateVec;  ///< The function space for the state variable, \f$u_{\rm SSA}\f$.
+  /// The function space for the design variable, i.e. \f$\tau_c\f$.
+  typedef IceModelVec2S DesignVec;
+  /// The function space for the state variable, \f$u_{\rm SSA}\f$.
+  typedef IceModelVec2V StateVec;
 
-  //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$ is parameterized.
+  //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$
+  //! is parameterized.
   IP_SSATaucForwardProblem(IceGrid::ConstPtr g,
                            IPDesignVariableParameterization &tp);
 

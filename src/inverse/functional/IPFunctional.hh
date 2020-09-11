@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -117,8 +117,8 @@ public:
     y.scale(0.5);
   }
 
-  //! Assembles the matrix \f$Q_{ij}\f$ corresponding to the bilinear form.
-  /*! If \f$\{x_i\}\f$ is a basis for the vector space IMVecType,
+  // Assembles the matrix \f$Q_{ij}\f$ corresponding to the bilinear form.
+  /* If \f$\{x_i\}\f$ is a basis for the vector space IMVecType,
     \f$Q_{ij}= Q(x_i, x_j)\f$. */
   // virtual void assemble_form(Mat Q) = 0;
 

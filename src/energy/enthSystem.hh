@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2017, 2018 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -98,7 +98,7 @@ protected:
     m_nu, m_R_cold, m_R_temp, m_R_factor;
 
   double m_ice_thickness,
-    m_lambda;              //!< implicit FD method parameter
+    m_lambda;              //! implicit FD method parameter
   double m_D0, m_U0, m_B0;   // coefficients of the first (basal) equation
   double m_L_ks, m_D_ks, m_U_ks, m_B_ks;   // coefficients of the last (surface) equation
   bool m_marginal, m_k_depends_on_T;

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -114,9 +114,13 @@ protected:
 protected:
   std::string m_name;
 
-  double m_rho,          //!< ice density
-    m_beta_CC_grad, //!< Clausius-Clapeyron gradient
-    m_melting_point_temp;  //!< for water, 273.15 K
+  //! ice density
+  double m_rho;
+  //! Clausius-Clapeyron gradient
+  double m_beta_CC_grad;
+  //! melting point temperature (for water, 273.15 K)
+  double m_melting_point_temp;
+
   EnthalpyConverter::Ptr m_EC;
 
   double softness_paterson_budd(double T_pa) const;
@@ -167,7 +171,6 @@ void averaged_hardness_vec(const FlowLaw &ice,
                            const IceModelVec3  &enthalpy,
                            IceModelVec2S &result);
 
-// Helper functions:
 bool FlowLawUsesGrainSize(const FlowLaw &flow_law);
 
 } // end of namespace rheology

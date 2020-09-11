@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015  David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2020  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -85,7 +85,8 @@ public:
   virtual void convertFromDesignVariable(IceModelVec2S &d, IceModelVec2S &zeta,  bool communicate = true);
 protected:
   
-  double m_d_scale;  ///< Value of \f$d\f$ in PISM units that equals 1 for IPDesignVariableParameterization's units.
+  /// Value of \f$d\f$ in PISM units that equals 1 for IPDesignVariableParameterization's units.
+  double m_d_scale;
 };
 
 //! Parameterization \f$d=d_{\rm scale}g(\zeta)\f$ with \f$g(\zeta)=\zeta\f$.

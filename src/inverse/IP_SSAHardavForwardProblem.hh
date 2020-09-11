@@ -104,8 +104,10 @@ class IP_SSAHardavForwardProblem : public stressbalance::SSAFEM
 {
 public:
 
-  typedef IceModelVec2S DesignVec; ///< The function space for the design variable, i.e. \f$\tau_c\f$.
-  typedef IceModelVec2V StateVec;  ///< The function space for the state variable, \f$u_{\rm SSA}\f$.
+  /// The function space for the design variable, i.e. \f$\tau_c\f$.
+  typedef IceModelVec2S DesignVec;
+  /// The function space for the state variable, \f$u_{\rm SSA}\f$.
+  typedef IceModelVec2V StateVec;
 
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$ is parameterized.
   IP_SSAHardavForwardProblem(IceGrid::ConstPtr g,
@@ -169,29 +171,39 @@ public:
 
 protected:
 
-  IceModelVec2S   *m_zeta;                   ///< Current value of zeta, provided from caller.
-  IceModelVec2S   m_dzeta_local;             ///< Storage for d_zeta with ghosts, if needed when an argument d_zeta is ghost-less.
+  /// Current value of zeta, provided from caller.
+  IceModelVec2S   *m_zeta;
+  /// Storage for d_zeta with ghosts, if needed when an argument d_zeta is ghost-less.
+  IceModelVec2S   m_dzeta_local;
 
-  IceModelVec2Int *m_fixed_design_locations;   ///< Locations where \f$\tau_c\f$ should not be adjusted.
+  /// Locations where \f$\tau_c\f$ should not be adjusted.
+  IceModelVec2Int *m_fixed_design_locations;
 
-  IPDesignVariableParameterization &m_design_param;     ///< The function taking \f$\zeta\f$ to \f$\tau_c\f$.
+  /// The function taking \f$\zeta\f$ to \f$\tau_c\f$.
+  IPDesignVariableParameterization &m_design_param;
 
   IceModelVec2V::Ptr m_velocity_shared;
 
-  IceModelVec2V  m_du_global;                ///< Temporary storage when state vectors need to be used without ghosts.
-  IceModelVec2V  m_du_local;                 ///< Temporary storage when state vectors need to be used with ghosts.
+  /// Temporary storage when state vectors need to be used without ghosts.
+  IceModelVec2V  m_du_global;
+  /// Temporary storage when state vectors need to be used with ghosts.
+  IceModelVec2V  m_du_local;
+  /// Vertically-averaged ice hardness.
   IceModelVec2S  m_hardav;
 
   fem::ElementIterator m_element_index;
   fem::ElementMap      m_element;
   fem::Q1Quadrature4   m_quadrature;
 
-  petsc::KSP  m_ksp;                                ///< KSP used in \ref apply_linearization and \ref apply_linearization_transpose  
-  petsc::Mat  m_J_state;                            ///< Mat used in \ref apply_linearization and \ref apply_linearization_transpose
+  /// KSP used in \ref apply_linearization and \ref apply_linearization_transpose
+  petsc::KSP  m_ksp;
+  /// Mat used in \ref apply_linearization and \ref apply_linearization_transpose
+  petsc::Mat  m_J_state;
 
   SNESConvergedReason m_reason;
 
-  bool m_rebuild_J_state;                    ///< Flag indicating that the state jacobian matrix needs rebuilding.
+  /// Flag indicating that the state jacobian matrix needs rebuilding.
+  bool m_rebuild_J_state;
 };
 
 } // end of namespace inverse

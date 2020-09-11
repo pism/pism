@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -117,7 +117,8 @@ protected:
   void update_impl(const IceModelVec2S &ice_thickness,
                    const IceModelVec2S &sea_level_elevation,
                    double t, double dt);
-  IceModelVec2S m_load_last;       //!< last ice load (ice-equivalent thickness)
+  //! last ice load (ice-equivalent thickness)
+  IceModelVec2S m_load_last;
 };
 
 } // end of namespace bed

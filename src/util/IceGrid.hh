@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2020 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -68,14 +68,27 @@ public:
   void report(const Logger &log, int threshold, std::shared_ptr<units::System> s) const;
   // dimension lengths
   unsigned int t_len, x_len, y_len, z_len;
-  double time,                  //!< current time (seconds)
-    x0,                         //!< x-coordinate of the domain center
-    y0,                         //!< y-coordinate of the domain center
-    Lx,                         //!< domain half-width
-    Ly,                         //!< domain half-height
-    z_min,                      //!< minimal value of the z dimension
-    z_max;                      //!< maximal value of the z dimension
-  std::vector<double> x, y, z;       //!< coordinates
+  //! current time (seconds)
+  double time;
+  //! x-coordinate of the domain center
+  double x0;
+  //! y-coordinate of the domain center
+  double y0;
+  //! domain half-width
+  double Lx;
+  //! domain half-height
+  double Ly;
+  //! minimal value of the z dimension
+  double z_min;
+  //! maximal value of the z dimension
+  double z_max;
+
+  //! x coordinates
+  std::vector<double> x;
+  //! y coordinates
+  std::vector<double> y;
+  //! z coordinates
+  std::vector<double> z;
   std::string filename;
 private:
   void reset();
