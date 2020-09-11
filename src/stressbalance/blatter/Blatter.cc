@@ -27,8 +27,8 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/Vector2.hh"
 
-#include "DataAccess.hh"
-#include "grid_hierarchy.hh"
+#include "util/DataAccess.hh"
+#include "util/grid_hierarchy.hh"
 #include "pism/util/node_types.hh"
 
 #include "pism/rheology/FlowLawFactory.hh"

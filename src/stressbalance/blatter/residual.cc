@@ -19,11 +19,11 @@
 
 #include "Blatter.hh"
 
-#include "DataAccess.hh"
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/util/node_types.hh"
-#include "grid_hierarchy.hh"    // grid_transpose(), grid_z()
+#include "util/DataAccess.hh"
+#include "util/grid_hierarchy.hh"    // grid_transpose(), grid_z()
 
 namespace pism {
 namespace stressbalance {
