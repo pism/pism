@@ -117,7 +117,7 @@ It takes two command-line option:
   ensure that we stay in the range of applicability of the melting point temperature
   parameterization; see :cite:`HollandJenkins1999`. To disable salinity clipping, use the
   :opt:`-no_clip_shelf_base_salinity` option or set the configuration parameter
-  :config:`ocean.three_equation_model_clip_salinity`  to "no".
+  :config:`ocean.th.clip_salinity`  to "no".
 
 See :ref:`sec-ocean-th-details` for implementation details.
 

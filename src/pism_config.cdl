@@ -1838,10 +1838,10 @@ netcdf pism_config {
     pism_config:ocean.th.reference_year_type = "integer";
     pism_config:ocean.th.reference_year_units = "years";
 
-    pism_config:ocean.th.three_equation_model_clip_salinity = "yes";
-    pism_config:ocean.th.three_equation_model_clip_salinity_doc = "Clip shelf base salinity so that it is in the range [4, 40] k/kg. See :cite:`HollandJenkins1999`.";
-    pism_config:ocean.th.three_equation_model_clip_salinity_option = "clip_shelf_base_salinity";
-    pism_config:ocean.th.three_equation_model_clip_salinity_type = "flag";
+    pism_config:ocean.th.clip_salinity = "yes";
+    pism_config:ocean.th.clip_salinity_doc = "Clip shelf base salinity so that it is in the range [4, 40] k/kg. See :cite:`HollandJenkins1999`.";
+    pism_config:ocean.th.clip_salinity_option = "clip_shelf_base_salinity";
+    pism_config:ocean.th.clip_salinity_type = "flag";
 
     pism_config:output.ISMIP6 = "false";
     pism_config:output.ISMIP6_doc = "Follow ISMIP6 conventions (units, variable names, \"standard names\") when writing output variables.";
