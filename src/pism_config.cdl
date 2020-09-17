@@ -1814,6 +1814,18 @@ netcdf pism_config {
     pism_config:ocean.th.file_option = "ocean_th_file";
     pism_config:ocean.th.file_type = "string";
 
+    pism_config:ocean.th.gamma_S = 5.05e-7;
+    pism_config:ocean.th.gamma_S_doc = "Turbulent salt transfer coefficient. See :cite:`HollandJenkins1999`.";
+    pism_config:ocean.th.gamma_S_option = "gamma_T";
+    pism_config:ocean.th.gamma_S_type = "number";
+    pism_config:ocean.th.gamma_S_units = "m s-1";
+
+    pism_config:ocean.th.gamma_T = 1.00e-4;
+    pism_config:ocean.th.gamma_T_doc = "Turbulent heat transfer coefficient. See :cite:`HollandJenkins1999`.";
+    pism_config:ocean.th.gamma_T_option = "gamma_T";
+    pism_config:ocean.th.gamma_T_type = "number";
+    pism_config:ocean.th.gamma_T_units = "m s-1";
+
     pism_config:ocean.th.period = 0;
     pism_config:ocean.th.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
     pism_config:ocean.th.period_option = "ocean_th_period";
@@ -1825,18 +1837,6 @@ netcdf pism_config {
     pism_config:ocean.th.reference_year_option = "ocean_th_reference_year";
     pism_config:ocean.th.reference_year_type = "integer";
     pism_config:ocean.th.reference_year_units = "years";
-
-    pism_config:ocean.th.gamma_T = 1.00e-4;
-    pism_config:ocean.th.gamma_T_doc = "Turbulent heat transfer coefficient. See :cite:`HollandJenkins1999`.";
-    pism_config:ocean.th.gamma_T_option = "gamma_T";
-    pism_config:ocean.th.gamma_T_type = "number";
-    pism_config:ocean.th.gamma_T_units = "m s-1";
-
-    pism_config:ocean.th.gamma_S = 5.05e-7;
-    pism_config:ocean.th.gamma_S_doc = "Turbulent salt transfer coefficient. See :cite:`HollandJenkins1999`.";
-    pism_config:ocean.th.gamma_S_option = "gamma_T";
-    pism_config:ocean.th.gamma_S_type = "number";
-    pism_config:ocean.th.gamma_S_units = "m s-1";
 
     pism_config:ocean.th.three_equation_model_clip_salinity = "yes";
     pism_config:ocean.th.three_equation_model_clip_salinity_doc = "Clip shelf base salinity so that it is in the range [4, 40] k/kg. See :cite:`HollandJenkins1999`.";
