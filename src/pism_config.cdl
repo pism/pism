@@ -1809,6 +1809,11 @@ netcdf pism_config {
     pism_config:ocean.sub_shelf_heat_flux_into_ice_type = "number";
     pism_config:ocean.sub_shelf_heat_flux_into_ice_units = "W meter-2";
 
+    pism_config:ocean.th.clip_salinity = "yes";
+    pism_config:ocean.th.clip_salinity_doc = "Clip shelf base salinity so that it is in the range [4, 40] k/kg. See :cite:`HollandJenkins1999`.";
+    pism_config:ocean.th.clip_salinity_option = "clip_shelf_base_salinity";
+    pism_config:ocean.th.clip_salinity_type = "flag";
+
     pism_config:ocean.th.file = "";
     pism_config:ocean.th.file_doc = "Name of the file containing climate forcing fields.";
     pism_config:ocean.th.file_option = "ocean_th_file";
@@ -1837,11 +1842,6 @@ netcdf pism_config {
     pism_config:ocean.th.reference_year_option = "ocean_th_reference_year";
     pism_config:ocean.th.reference_year_type = "integer";
     pism_config:ocean.th.reference_year_units = "years";
-
-    pism_config:ocean.th.clip_salinity = "yes";
-    pism_config:ocean.th.clip_salinity_doc = "Clip shelf base salinity so that it is in the range [4, 40] k/kg. See :cite:`HollandJenkins1999`.";
-    pism_config:ocean.th.clip_salinity_option = "clip_shelf_base_salinity";
-    pism_config:ocean.th.clip_salinity_type = "flag";
 
     pism_config:output.ISMIP6 = "false";
     pism_config:output.ISMIP6_doc = "Follow ISMIP6 conventions (units, variable names, \"standard names\") when writing output variables.";
