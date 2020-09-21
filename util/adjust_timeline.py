@@ -27,7 +27,7 @@ except:
     print("netCDF4 is not installed!")
     sys.exit(1)
 NC = netCDF.Dataset
-from netcdftime import utime, datetime
+from cftime import utime, datetime
 
 # Set up the option parser
 parser = ArgumentParser()
@@ -126,9 +126,7 @@ bnds_interval_since_refdate = cdftime.date2num(bnds_datelist)
 if interval_type == "mid":
     # mid-point value:
     # time[n] = (bnds[n] + bnds[n+1]) / 2
-    time_interval_since_refdate = (
-        bnds_interval_since_refdate[0:-1] + np.diff(bnds_interval_since_refdate) / 2
-    )
+    time_interval_since_refdate = bnds_interval_since_refdate[0:-1] + np.diff(bnds_interval_since_refdate) / 2
 elif interval_type == "start":
     time_interval_since_refdate = bnds_interval_since_refdate[:-1]
 else:
@@ -162,18 +160,14 @@ time_var.axis = "T"
 
 # create time bounds variable
 if bnds_var_name not in nc.variables:
-    time_bnds_var = nc.createVariable(
-        bnds_var_name, "d", dimensions=(time_dim, bnds_dim)
-    )
+    time_bnds_var = nc.createVariable(bnds_var_name, "d", dimensions=(time_dim, bnds_dim))
 else:
     time_bnds_var = nc.variables[bnds_var_name]
 time_bnds_var[:, 0] = bnds_interval_since_refdate[0:-1]
 time_bnds_var[:, 1] = bnds_interval_since_refdate[1::]
 
 # writing global attributes
-script_command = " ".join(
-    [time.ctime(), ":", __file__.split("/")[-1], " ".join([str(x) for x in args])]
-)
+script_command = " ".join([time.ctime(), ":", __file__.split("/")[-1], " ".join([str(x) for x in args])])
 nc.history = script_command
 nc.Conventions = "CF 1.5"
 nc.close()
