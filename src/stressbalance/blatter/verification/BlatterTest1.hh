@@ -17,6 +17,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#ifndef BLATTERTEST1_H
+#define BLATTERTEST1_H
+
 #include "pism/stressbalance/blatter/Blatter.hh"
 
 namespace pism {
@@ -60,3 +63,5 @@ protected:
 
 } // end of namespace stressbalance
 } // end of namespace pism
+
+#endif /* BLATTERTEST1_H */
