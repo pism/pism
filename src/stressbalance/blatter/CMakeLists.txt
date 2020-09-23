@@ -5,6 +5,7 @@ add_library (blatter OBJECT
   BlatterMod.cc
   util/grid_hierarchy.cc
   verification/BlatterTest1.cc
+  verification/BlatterTest2.cc
   verification/manufactured_solutions.cc
   ismip-hom/BlatterISMIPHOM.cc
   )
