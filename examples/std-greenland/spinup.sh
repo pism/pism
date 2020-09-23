@@ -294,7 +294,7 @@ else
 fi
 
 # show remaining setup options:
-PISM="${PISM_BIN}/${PISM_EXEC}"
+PISM="${PISM_BIN}${PISM_BIN:+/}${PISM_EXEC}"
 echo "$SCRIPTNAME      executable = '$PISM'"
 echo "$SCRIPTNAME         coupler = '$COUPLER'"
 echo "$SCRIPTNAME        dynamics = '$PHYS'"
