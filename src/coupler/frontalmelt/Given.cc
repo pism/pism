@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ namespace pism {
 namespace frontalmelt {
 
 Given::Given(IceGrid::ConstPtr g)
-  : FrontalMelt(g, nullptr) {
+  : FrontalMelt(g, std::shared_ptr<FrontalMelt>()) {
 
   m_frontal_melt_rate.reset(new IceModelVec2T(g, "frontal_melt_rate", 1, 1));
 
