@@ -27,7 +27,7 @@
 .. |pism-docs| replace:: https://pism-docs.org
 .. |petsc-download| replace:: https://www.mcs.anl.gov/petsc/download/index.html
 
-.. |efischer-email| replace:: elizabeth.fischer@columbia.edu
+.. |efischer-email| replace:: eafischer2@alaska.edu
 .. |jseguinot-email| replace:: seguinot@vaw.baug.ethz.ch
 
 .. |pism-browser| replace:: PISM *Source Code Browser*
