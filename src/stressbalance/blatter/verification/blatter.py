@@ -23,11 +23,8 @@ def grad(f):
     "Gradient"
     return sp.Matrix([f.diff(x), f.diff(y), f.diff(z)])
 
-# Glen exponent
-n = S(3)
-
 # constants
-sp.var("B, rhog, s0, alpha, H", real=True)
+sp.var("B, rhog, s0, alpha, H", real=True, positive=True)
 
 s = sp.Function("s")(x, y)
 
@@ -48,8 +45,10 @@ def second_invariant(u, v):
 
     return ux**2 + vy**2 + ux * vy + S(1) / 4 * ((uy + vx)**2 + (uz + wx)**2 + (vz + wy)**2)
 
-def eta(u, v):
+def eta(u, v, n):
     "Ice viscosity"
+
+    n = S(n)
 
     gamma = second_invariant(u, v)
 

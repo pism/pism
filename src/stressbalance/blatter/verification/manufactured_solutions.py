@@ -88,7 +88,7 @@ def source_xy_albany():
 
 def print_xy(header=False):
     u0, v0 = exact_xy()
-    f_u, f_v = source_term(eta(u0, v0), u0, v0)
+    f_u, f_v = source_term(eta(u0, v0, 3), u0, v0)
 
     def cleanup(expr):
         return expr.factor().collect([sin(2*pi*y), cos(2*pi*y)])
@@ -99,7 +99,7 @@ def print_xy(header=False):
 def print_xz(header=False):
 
     u0, v0 = exact_xz()
-    f_u, f_v = source_term(eta(u0, v0), u0, v0)
+    f_u, f_v = source_term(eta(u0, v0, 3), u0, v0)
 
     args = ["x", "z", "B", "rhog", "s0", "alpha", "H"]
     print_exact(u0, v0, name="exact_xz", args=args, header=header)
