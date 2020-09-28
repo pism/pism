@@ -628,16 +628,22 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
   int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 
   // report the number of iterations
+  SNESConvergedReason reason;
   {
     PetscInt            its, lits;
-    SNESConvergedReason reason;
     SNESGetIterationNumber(m_snes, &its);
     SNESGetConvergedReason(m_snes, &reason);
     SNESGetLinearSolveIterations(m_snes, &lits);
     m_log->message(2, "%s: SNES: %d, KSP: %d\n",
                    SNESConvergedReasons[reason], (int)its, (int)lits);
   }
-  // FIXME: check if SNESSolve() succeeded and try to recover
+
+  // FIXME: try to recover
+  if (reason < 0) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Solver failed. (reason: %s)",
+                                  SNESConvergedReasons[reason]);
+  }
 
   // put basal velocity in m_velocity to use it in the next call
   get_basal_velocity(m_velocity);
