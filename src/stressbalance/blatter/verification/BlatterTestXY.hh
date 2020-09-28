@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef BLATTERTEST2_H
-#define BLATTERTEST2_H
+#ifndef BLATTERTESTXY_H
+#define BLATTERTESTXY_H
 
 #include "pism/stressbalance/blatter/Blatter.hh"
 
@@ -26,26 +26,26 @@ namespace pism {
 namespace stressbalance {
 
 /*!
- * Implements Dirichlet BC and the source term for a verification test from Tezaur et al,
- * 2015 (), section 4.2.
+ * Implements Dirichlet BC and the source term for a verification test using the following
+ * exact solution:
  *
- * Domain: [-50km, 50km] * [-1, 1] * [b, s].
+ * u = exp(x) * sin(2 * pi * y)
+ * v = exp(x) * cos(2 * pi * y)
  *
- * Here b is the bed elevation, s is the surface elevation.
+ * Domain: [0, 1] * [0, 1] * [0, 1].
  *
- * s = b + H0, H0 = 1000m.
+ * Ice thickness is equal to 1 everywhere; bed elevation is 0 everywhere.
  *
  * Dirichlet BC are imposed at all the nodes along the lateral boundary.
  *
- * Natural boundary conditions are used on the top boundary.
+ * Natural boundary conditions are used on the top and bottom boundaries.
  *
- * The basal boundary condition includes the sliding condition and a correction for the
- * chosen manufactured solution.
- *
+ * Note: KSP iterations seem to stall when the default preconditioner is used. Use
+ * "-pc_type gamg" instead.
  */
-class BlatterTest2 : public Blatter {
+class BlatterTestXY : public Blatter {
 public:
-  BlatterTest2(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor);
+  BlatterTestXY(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor);
 
 protected:
   bool neumann_bc_face(int face, const int *node_type);
@@ -59,17 +59,9 @@ protected:
                             Vector2 *residual);
   //! constant ice hardness
   double m_B;
-
-  double m_alpha;
-
-  double m_s0;
-
-  double m_H0;
-
-  double m_rhog;
 };
 
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif /* BLATTERTEST2_H */
+#endif /* BLATTERTESTXY_H */

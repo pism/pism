@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef BLATTERTEST1_H
-#define BLATTERTEST1_H
+#ifndef BLATTERTESTXZ_H
+#define BLATTERTESTXZ_H
 
 #include "pism/stressbalance/blatter/Blatter.hh"
 
@@ -26,28 +26,28 @@ namespace pism {
 namespace stressbalance {
 
 /*!
- * Implements Dirichlet BC and the source term for a verification test using the following
- * exact solution:
+ * Implements Dirichlet BC and the source term for a verification test from Tezaur et al,
+ * 2015 (), section 4.2.
  *
- * u = exp(x) * sin(2 * pi * y)
- * v = exp(x) * cos(2 * pi * y)
+ * Domain: [-50km, 50km] * [-1, 1] * [b, s].
  *
- * Domain: [0, 1] * [0, 1] * [0, 1].
+ * Here b is the bed elevation, s is the surface elevation.
  *
- * Ice thickness is equal to 1 everywhere; bed elevation is 0 everywhere.
+ * s = b + H0, H0 = 1000m.
  *
  * Dirichlet BC are imposed at all the nodes along the lateral boundary.
  *
- * Natural boundary conditions are used on the top and bottom boundaries.
+ * Natural boundary conditions are used on the top boundary.
  *
- * Note: KSP iterations seem to stall when the default preconditioner is used. Use
- * "-pc_type gamg" instead.
+ * The basal boundary condition includes the sliding condition and a correction for the
+ * chosen manufactured solution.
+ *
  */
-class BlatterTest1 : public Blatter {
+class BlatterTestXZ : public Blatter {
 public:
-  BlatterTest1(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor);
+  BlatterTestXZ(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor);
 
-protected:
+private:
   bool neumann_bc_face(int face, const int *node_type);
 
   bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
@@ -57,11 +57,35 @@ protected:
   void residual_source_term(const fem::Q1Element3 &element,
                             const double *surface,
                             Vector2 *residual);
+
+  void residual_basal(const fem::Q1Element3 &element,
+                      const fem::Q1Element3Face &face,
+                      const double *tauc_nodal,
+                      const double *f_nodal,
+                      const Vector2 *u_nodal,
+                      Vector2 *residual);
+
+  void residual_surface(const fem::Q1Element3 &element,
+                        const fem::Q1Element3Face &face,
+                        Vector2 *residual);
+
   //! constant ice hardness
-  double m_B;
+  double m_A;
+
+  double m_alpha;
+
+  double m_s0;
+
+  double m_H0;
+
+  double m_rho;
+
+  double m_g;
+
+  double m_beta;
 };
 
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif /* BLATTERTEST1_H */
+#endif /* BLATTERTESTXZ_H */

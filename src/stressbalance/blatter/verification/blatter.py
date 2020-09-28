@@ -23,8 +23,8 @@ def grad(f):
     "Gradient"
     return sp.Matrix([f.diff(x), f.diff(y), f.diff(z)])
 
-# constants
-sp.var("B, rhog, s0, alpha, H", real=True, positive=True)
+# ice hardness
+B = sp.var("B", positive=True)
 
 s = sp.Function("s")(x, y)
 

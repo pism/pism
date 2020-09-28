@@ -4,8 +4,8 @@ add_library (blatter OBJECT
   jacobian.cc
   BlatterMod.cc
   util/grid_hierarchy.cc
-  verification/BlatterTest1.cc
-  verification/BlatterTest2.cc
+  verification/BlatterTestXY.cc
+  verification/BlatterTestXZ.cc
   verification/manufactured_solutions.cc
   ismip-hom/BlatterISMIPHOM.cc
   )
