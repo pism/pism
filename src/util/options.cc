@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,6 +18,8 @@
  */
 
 #include <sstream>
+#include <cstring>              // memset
+
 #include <petscsys.h>
 
 #include "pism_options.hh"

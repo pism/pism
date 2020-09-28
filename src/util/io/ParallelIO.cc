@@ -18,6 +18,7 @@
  */
 
 #include <cassert>
+#include <cstring>              // memset
 
 // Why do I need this???
 #define _NETCDF

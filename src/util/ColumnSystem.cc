@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019 PISM Authors
+// Copyright (C) 2004-2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include <cassert>
 #include <fstream>
 #include <iostream>
+#include <cstring>              // memset
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/iceModelVec.hh"
