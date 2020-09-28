@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2020 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -104,9 +104,6 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
   IceModelVec::AccessList list{&m_geometry.ice_thickness,
       &m_geometry.ice_surface_elevation, &m_bc_mask, &m_bc_values, &m_geometry.cell_type};
 
-  double ocean_rho = m_config->get_number("constants.sea_water.density"),
-    ice_rho = m_config->get_number("constants.ice.density");
-
   const double x_min = m_grid->x(0);
 
   for (Points p(*m_grid); p; p.next()) {
@@ -116,35 +113,23 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
 
     if (i != (int)m_grid->Mx() - 1) {
       m_geometry.ice_thickness(i, j) = H_exact(V0, H0, C, x - x_min);
-      m_geometry.cell_type(i, j)  = MASK_FLOATING;
     } else {
-      m_geometry.ice_thickness(i, j) = 0;
-      m_geometry.cell_type(i, j)  = MASK_ICE_FREE_OCEAN;
+      m_geometry.ice_thickness(i, j) = 0.0;
     }
 
-    m_geometry.ice_surface_elevation(i,j) = (1.0 - ice_rho / ocean_rho) * m_geometry.ice_thickness(i, j);
-
     if (i == 0) {
-      m_bc_mask(i, j)  = 1;
-      m_bc_values(i, j).u = V0;
-      m_bc_values(i, j).v = 0;
+      m_bc_mask(i, j)   = 1;
+      m_bc_values(i, j) = {V0, 0.0};
     } else {
-      m_bc_mask(i, j)  = 0;
-      m_bc_values(i, j).u = 0;
-      m_bc_values(i, j).v = 0;
+      m_bc_mask(i, j)   = 0;
+      m_bc_values(i, j) = {0.0, 0.0};
     }
   }
 
-
   // communicate what we have set
-  m_geometry.ice_surface_elevation.update_ghosts();
-
-  m_geometry.ice_thickness.update_ghosts();
+  m_geometry.ensure_consistency(0.0);
 
   m_bc_mask.update_ghosts();
-
-  m_geometry.cell_type.update_ghosts();
-
   m_bc_values.update_ghosts();
 }
 
