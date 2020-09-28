@@ -18,10 +18,7 @@
 
 #include "NC4File.hh"
 
-#include <cstring>              // memset
-#include <cstdio>               // stderr, fprintf
-
-// The ing is a stupid kludge necessary to make NetCDF 4.x work in
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
 #ifndef MPI_INCLUDED
 #define MPI_INCLUDED 1

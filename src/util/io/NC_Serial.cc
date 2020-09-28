@@ -24,7 +24,7 @@
 #define MPI_INCLUDED 1
 #endif
 #include <netcdf.h>
-#include <cstring>              // memset
+
 #include <cstdio>               // stderr, fprintf
 
 #include "pism/util/pism_utilities.hh" // join
