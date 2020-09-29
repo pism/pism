@@ -1665,6 +1665,23 @@ netcdf pism_config {
     pism_config:ocean.given.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:ocean.given.periodic_type = "flag";
 
+    pism_config:ocean.ismip6.file = "";
+    pism_config:ocean.ismip6.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:ocean.ismip6.file_option = "ocean_ismip6_file";
+    pism_config:ocean.ismip6.file_type = "string";
+
+    pism_config:ocean.ismip6.period = 0;
+    pism_config:ocean.ismip6.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:ocean.ismip6.period_option = "ocean_ismip6_period";
+    pism_config:ocean.ismip6.period_type = "integer";
+    pism_config:ocean.ismip6.period_units = "years";
+
+    pism_config:ocean.ismip6.reference_year = 0;
+    pism_config:ocean.ismip6.reference_year_doc = "Reference year to use when ``ocean.ismip6.period`` is active.";
+    pism_config:ocean.ismip6.reference_year_option = "ocean_ismip6_reference_year";
+    pism_config:ocean.ismip6.reference_year_type = "integer";
+    pism_config:ocean.ismip6.reference_year_units = "years";
+
     pism_config:ocean.models = "constant";
     pism_config:ocean.models_doc = "Comma-separated list of ocean models and modifiers";
     pism_config:ocean.models_option = "ocean";

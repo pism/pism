@@ -29,6 +29,7 @@
 #include "pism/coupler/ocean/Delta_MBP.hh"
 #include "pism/coupler/ocean/Frac_MBP.hh"
 #include "pism/coupler/ocean/Frac_SMB.hh"
+#include "pism/coupler/ocean/ISMIP6.hh"
 #include "pism/coupler/ocean/Runoff_SMB.hh"
 #include "pism/coupler/ocean/Cache.hh"
 #include "pism/coupler/ocean/GivenTH.hh"
@@ -45,6 +46,7 @@ Factory::Factory(std::shared_ptr<const Grid> g)
   add_model<Constant>("constant");
   add_model<Pico>("pico");
   add_model<Given>("given");
+  add_model<ISMIP6>("ismip6");
 
   add_modifier<Anomaly>("anomaly");
   add_modifier<Cache>("cache");
