@@ -226,7 +226,7 @@ const unsigned int incident_nodes[n_faces][4] =
    {0, 1, 5, 4},                // 2 - front,  eta  = -1
    {2, 3, 7, 6},                // 3 - back,   eta  = +1
    {0, 1, 2, 3},                // 4 - bottom, zeta = -1
-   {4, 5, 6, 7}                 // 1 - top,    zeta = +1
+   {4, 5, 6, 7}                 // 5 - top,    zeta = +1
 };
 } // end of namespace q13d
 
