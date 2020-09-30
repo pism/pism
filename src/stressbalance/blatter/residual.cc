@@ -151,6 +151,21 @@ void Blatter::residual_basal(const fem::Q1Element3 &element,
 }
 
 /*!
+ * Top surface contribution to the residual.
+ *
+ * Used by verification tests ONLY.
+ */
+void Blatter::residual_surface(const fem::Q1Element3 &element,
+                               const fem::Q1Element3Face &face,
+                               Vector2 *residual) {
+  (void) element;
+  (void) face;
+  (void) residual;
+  // In normal circumstances the top surface contribution is zero (natural BCs apply).
+}
+
+
+/*!
  * Computes the residual contribution of lateral boundary conditions.
  *
  * This takes care of "calving front" stress boundary conditions.
@@ -370,6 +385,14 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
           residual_lateral(element, *face, z, sea_level, R_nodal);
         } // end of the loop over element faces
+
+        // top boundary (verification tests only)
+        if (k == info.mz - 2) {
+          // face 5 is the top face in fem::q13d::incident_nodes
+          m_face4.reset(5, z);
+
+          residual_surface(element, m_face4, R_nodal);
+        }
 
         element.add_contribution(R_nodal, R);
       } // end of the loop over i
