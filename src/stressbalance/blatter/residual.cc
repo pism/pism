@@ -378,7 +378,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         // lateral boundary
         // loop over all vertical faces (see fem::q13d::incident_nodes for the order)
         for (int f = 0; f < 4 and neumann_bc_face(f, node_type); ++f) {
-          // use an N*N-point equally-spaced quadrature at for partially-submerged faces
+          // use an N*N-point equally-spaced quadrature for partially-submerged faces
           fem::Q1Element3Face *face = (partially_submerged_face(f, z, sea_level) ?
                                        &m_face100 : &m_face4);
           face->reset(f, z);

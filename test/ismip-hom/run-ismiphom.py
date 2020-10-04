@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """This script runs ISMIP-HOM experiments A-D using the Blatter stress balance solver.
 
-For experiments A and C and length scales of 5 and 10 km is helpful to use a good
+For experiments A and C and length scales of 5 and 10 km it is helpful to use a good
 preconditioner. Multigrid using semi-coarsening in the vertical direction appears to be
 very effective. At higher grid resolutions (i.e. when the coarse problem still has a large
 number of unknowns) using algebraic multigrid preconditioner on the coarse level may help.
