@@ -155,7 +155,7 @@ class TestXY(TestCase):
 
     def test(self):
         "Test that the convergence rate for the XY test is at least quadratic"
-        Ns = [31, 61, 121]
+        Ns = [11, 21]
         norms = [self.error_norm(N) for N in Ns]
 
         norms_u = [n[0] for n in norms]
@@ -406,10 +406,10 @@ class TestXZ(TestCase):
         "Test that the convergence rate for the XZ test is at least quadratic"
 
         # refinement path
-        Ns = [21, 41, 81]
+        Ns = [11, 21]
         # number of MG levels to use for a particular grid size, assuming the coarsening
         # factor of 4
-        mg_levels = [2, 3, 4]
+        mg_levels = [1, 2]
 
         norms = [self.error_norm(N, n_mg) for (N, n_mg) in zip(Ns, mg_levels)]
 
