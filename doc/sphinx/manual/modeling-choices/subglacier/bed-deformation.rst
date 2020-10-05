@@ -110,7 +110,7 @@ elevations that are closer to observed values.
 .. _sec-bed-def-given:
 
 Given bed deformation history
-===================
+=============================
 
 The last option ``-bed_def given`` can be used if a bed deformation history is known
 from an external solid-Earth model (e.g. relative sea level), relative to a reference
