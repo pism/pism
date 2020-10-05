@@ -35,6 +35,11 @@ Changes since v1.2
 - Add a new ocean modifier: `-ocean ...,delta_MBP`. This component reads scalar
   time-dependent melange pressure offsets (units: Pa) and uses them in the calving front
   boundary condition for the SSA.
+- The new `-bed_def given` class reads in a prescribed bed deformation history from a file
+  (e.g. from a solid-Earth model) relative to a (high-resolution) reference topography,
+  indicated by configuration parameter `bed_deformation.given.file` and
+  `bed_deformation.given.reference_file`, respectively.
+
 
 Changes from v1.1 to v1.2
 =========================

@@ -5,8 +5,9 @@
 Earth deformation models
 ------------------------
 
-The option :opt:`-bed_def` ``[iso, lc]`` (flag :config:`bed_deformation.model`) turns one
-of the two available bed deformation models.
+The option :opt:`-bed_def` ``[iso, lc, given]`` (flag :config:`bed_deformation.model`) turns one
+of the three available bed deformation models.
+
 
 .. _sec-bed-def-iso:
 
@@ -103,3 +104,42 @@ elevations that are closer to observed values.
    long bootstrapping simulation. This is the one and only reasonable example of using a
    viscous_bed_displacement field provided by the user. (Re-starting from a file created
    by PISM does not count.)
+
+
+
+.. _sec-bed-def-given:
+
+Given bed deformation history
+===================
+
+The last option ``-bed_def given`` can be used if a bed deformation history is known
+from an external solid-Earth model (e.g. relative sea level), relative to a reference
+topography. This is in particular expedient when running offline coupled simulation.  
+As a time-evolving version of :eq:`eq-bedcorrection`, this sets bed topography `b` to:
+
+.. math::
+
+   b(t,x,y) = b_{ref}(x,y) + \Delta b(t,x,y).
+
+This class hence uses two input files:
+
+1. Reference topography `b_{ref}(x,y)` (variable :var:`topg`, in meters).
+2. Time-dependent history of bed elevation changes `\Delta b(t,x,y)` relative to the 
+   reference topography (variable :var:`topg_delta`, in meters).
+    
+The first is specified using the option :opt:`-topg_reference_file` (configuration 
+parameter :config:`bed_deformation.given.reference_file`), the second one using 
+:opt:`-topg_delta_file` (:config:`bed_deformation.given.file`).
+
+This split makes it possible to combine high-resolution reference bed topography with
+low-spatial-frequency bed elevation changes that can be stored on a coarser grid covering
+the same domain.
+
+See also python regression test `test/regression/beddef_given.py`.
+
+
+
+
+
+
+
