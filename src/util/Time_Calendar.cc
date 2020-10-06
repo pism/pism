@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,8 +25,7 @@
 
 #include "Time_Calendar.hh"
 #include "pism_options.hh"
-#include "pism/util/io/PIO.hh"
-#include "pism/external/calcalcs/utCalendar2_cal.h"
+#include "pism/util/io/File.hh"
 #include "pism/external/calcalcs/calcalcs.h"
 #include "ConfigInterface.hh"
 #include "VariableMetadata.hh"
@@ -72,14 +71,14 @@ Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
   }
 
   try {
-    m_time_units = units::Unit(m_time_units.get_system(), "seconds since " + ref_date);
+    m_time_units = units::Unit(m_time_units.system(), "seconds since " + ref_date);
   } catch (RuntimeError &e) {
     e.add_context("setting time units");
     throw;
   }
 
-  m_run_start = increment_date(0, (int)m_config->get_double("time.start_year"));
-  m_run_end   = increment_date(m_run_start, (int)m_config->get_double("time.run_length"));
+  m_run_start = increment_date(0, (int)m_config->get_number("time.start_year"));
+  m_run_end   = increment_date(m_run_start, (int)m_config->get_number("time.run_length"));
 
   m_time_in_seconds = m_run_start;
 }
@@ -99,7 +98,7 @@ bool Time_Calendar::process_ys(double &result) {
       throw;
     }
   } else {
-    result = m_config->get_double("time.start_year", "seconds");
+    result = m_config->get_number("time.start_year", "seconds");
   }
   return ys.is_set();
 }
@@ -115,7 +114,7 @@ bool Time_Calendar::process_y(double &result) {
     }
     result = years_to_seconds(y);
   } else {
-    result = m_config->get_double("time.run_length", "seconds");
+    result = m_config->get_number("time.run_length", "seconds");
   }
   return y.is_set();
 }
@@ -133,19 +132,19 @@ bool Time_Calendar::process_ye(double &result) {
       throw;
     }
   } else {
-    result = (m_config->get_double("time.start_year", "seconds") +
-              m_config->get_double("time.run_length", "seconds"));
+    result = (m_config->get_number("time.start_year", "seconds") +
+              m_config->get_number("time.run_length", "seconds"));
   }
   return ye.is_set();
 }
 
-void Time_Calendar::init_from_input_file(const PIO &nc,
+void Time_Calendar::init_from_input_file(const File &nc,
                                          const std::string &time_name,
                                          const Logger &log) {
   try {
     // Set the calendar name from file, unless we are re-starting from a PISM run using the "none"
     // calendar.
-    std::string new_calendar = nc.get_att_text(time_name, "calendar");
+    std::string new_calendar = nc.read_text_attribute(time_name, "calendar");
     if (not new_calendar.empty() and
         not (new_calendar == "none")) {
       init_calendar(new_calendar);
@@ -161,7 +160,7 @@ void Time_Calendar::init_from_input_file(const PIO &nc,
     // bother checking for them.)
     std::vector<double> time;
     {
-      TimeseriesMetadata time_axis(time_name, time_name, m_unit_system);
+      VariableMetadata time_axis(time_name, m_unit_system);
       time_axis.set_string("units", m_time_units.format());
 
       io::read_timeseries(nc, time_axis, *this, log, time);
@@ -174,9 +173,9 @@ void Time_Calendar::init_from_input_file(const PIO &nc,
                 "* Time t = %s (calendar: %s) found in '%s'; setting current time\n",
                 this->date().c_str(),
                 this->calendar().c_str(),
-                nc.inq_filename().c_str());
+                nc.filename().c_str());
   } catch (RuntimeError &e) {
-    e.add_context("initializing model time from \"%s\"", nc.inq_filename().c_str());
+    e.add_context("initializing model time from \"%s\"", nc.filename().c_str());
     throw;
   }
 }
@@ -212,35 +211,35 @@ void Time_Calendar::init_from_file(const std::string &filename, const Logger &lo
   try {
     std::string time_name = m_config->get_string("time.dimension_name");
 
-    PIO nc(m_com, "netcdf3", filename, PISM_READONLY); // OK to use netcdf3
+    File file(m_com, filename, PISM_NETCDF3, PISM_READONLY); // OK to use netcdf3
 
     // Set the calendar name from file.
-    std::string new_calendar = nc.get_att_text(time_name, "calendar");
+    std::string new_calendar = file.read_text_attribute(time_name, "calendar");
     if (not new_calendar.empty()) {
       init_calendar(new_calendar);
     }
 
     // Set the reference date of internal units.
     {
-      std::string date_string = reference_date_from_file(nc, time_name);
+      std::string date_string = reference_date_from_file(file, time_name);
       m_time_units = units::Unit(m_unit_system, "seconds " + date_string);
     }
 
     // Read time information from the file.
     std::vector<double> time;
-    std::string time_bounds_name = nc.get_att_text(time_name, "bounds");
+    std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
     if (not time_bounds_name.empty()) {
       // use the time bounds
-      TimeBoundsMetadata bounds(time_bounds_name, time_name, m_unit_system);
+      VariableMetadata bounds(time_bounds_name, m_unit_system);
       bounds.set_string("units", m_time_units.format());
 
-      io::read_time_bounds(nc, bounds, *this, log, time);
+      io::read_time_bounds(file, bounds, *this, log, time);
     } else {
       // use the time axis
-      TimeseriesMetadata time_axis(time_name, time_name, m_unit_system);
+      VariableMetadata time_axis(time_name, m_unit_system);
       time_axis.set_string("units", m_time_units.format());
 
-      io::read_timeseries(nc, time_axis, *this, log, time);
+      io::read_timeseries(file, time_axis, *this, log, time);
     }
 
     // Set time.
@@ -263,112 +262,67 @@ double Time_Calendar::mod(double time, unsigned int) const {
 }
 
 double Time_Calendar::year_fraction(double T) const {
-  int year, month, day, hour, minute;
-  double second, year_start, next_year_start;
 
-  utCalendar2_cal(T, m_time_units.get(),
-                  &year, &month, &day, &hour, &minute, &second,
-                  m_calendar_string.c_str());
+  auto D = m_time_units.date(T, m_calendar_string);
 
-  utInvCalendar2_cal(year,
-                     1, 1,            // month, day
-                     0, 0, 0,         // hour, minute, second
-                     m_time_units.get(),
-                     &year_start,
-                     m_calendar_string.c_str());
+  units::DateTime D2{D.year, 1, 1, 0, 0, 0.0};
 
-  utInvCalendar2_cal(year + 1,
-                     1, 1,           // month, day
-                     0, 0, 0,        // hour, minute, second
-                     m_time_units.get(),
-                     &next_year_start,
-                     m_calendar_string.c_str());
+  auto year_start = m_time_units.time(D2, m_calendar_string);
+
+  D2.year += 1;
+  auto next_year_start = m_time_units.time(D2, m_calendar_string);
 
   return (T - year_start) / (next_year_start - year_start);
 }
 
 std::string Time_Calendar::date(double T) const {
   char tmp[256];
-  int year, month, day, hour, minute;
-  double second;
 
-  utCalendar2_cal(T, m_time_units.get(),
-                  &year, &month, &day, &hour, &minute, &second,
-                  m_calendar_string.c_str());
+  auto date = m_time_units.date(T, m_calendar_string);
 
-  snprintf(tmp, 256, "%04d-%02d-%02d", year, month, day);
+  snprintf(tmp, 256, "%04d-%02d-%02d", date.year, date.month, date.day);
 
   return std::string(tmp);
 }
 
-std::string Time_Calendar::date() const {
-  return this->date(m_time_in_seconds);
-}
-
-std::string Time_Calendar::start_date() const {
-  return this->date(m_run_start);
-}
-
-std::string Time_Calendar::end_date() const {
-  return this->date(m_run_end);
-}
-
 double Time_Calendar::calendar_year_start(double T) const {
-  int year, month, day, hour, minute;
-  double second, result;
+  auto D = m_time_units.date(T, m_calendar_string);
+
+  units::DateTime D2{D.year, 1, 1, 0, 0, 0.0};
+
+  return m_time_units.time(D2, m_calendar_string);
+}
+
+
+double Time_Calendar::increment_date(double T, int years) const {
 
   // Get the date corresponding to time T:
-  utCalendar2_cal(T, m_time_units.get(),
-                  &year, &month, &day, &hour, &minute, &second,
-                  m_calendar_string.c_str());
-
-  // Get the time in seconds corresponding to the beginning of the
-  // year.
-  utInvCalendar2_cal(year,
-                     1, 1, 0, 0, 0.0, // month, day, hour, minute, second
-                     m_time_units.get(), &result,
-                     m_calendar_string.c_str());
-
-  return result;
-}
-
-
-// FIXME: this feeds invalid dates to utInvCalendar2_cal! (step 1 year from Feb 29...)
-double Time_Calendar::increment_date(double T, int years) const {
-  int year, month, day, hour, minute;
-  double second, result;
-
-  // Get the date corresponding ti time T:
-  utCalendar2_cal(T, m_time_units.get(),
-                  &year, &month, &day, &hour, &minute, &second,
-                  m_calendar_string.c_str());
+  auto date = m_time_units.date(T, m_calendar_string);
 
   calcalcs_cal *cal = NULL;
   int errcode, leap = 0;
   cal = ccs_init_calendar(m_calendar_string.c_str());
   assert(cal != NULL);
-  errcode = ccs_isleap(cal, year + years, &leap);
+  errcode = ccs_isleap(cal, date.year + years, &leap);
   assert(errcode == 0);
   ccs_free_calendar(cal);
 
-  if (leap == 0 && month == 2 && day == 29) {
+  if (leap == 0 and date.month == 2 and date.day == 29) {
     PetscErrorCode ierr = PetscPrintf(m_com,
                                       "PISM WARNING: date %d year(s) since %d-%d-%d does not exist."
                                       " Using %d-%d-%d instead of %d-%d-%d.\n",
                                       years,
-                                      year, month, day,
-                                      year + years, month, day-1,
-                                      year + years, month, day);
+                                      date.year, date.month, date.day,
+                                      date.year + years, date.month, date.day-1,
+                                      date.year + years, date.month, date.day);
     PISM_CHK(ierr, "PetscPrintf");
-    day -= 1;
+    date.day -= 1;
   }
 
-  // Get the time in seconds corresponding to the new date.
-  utInvCalendar2_cal(year + years, month, day,
-                     hour, minute, second, m_time_units.get(), &result,
-                     m_calendar_string.c_str());
+  date.year += years;
 
-  return result;
+  // Return the time in seconds corresponding to the new date.
+  return m_time_units.time(date, m_calendar_string);
 }
 
 /**
@@ -408,7 +362,8 @@ void Time_Calendar::parse_date(const std::string &input, double *result) const {
 
     // an empty part in the date specification (corresponds to "--")
     if (tmp.empty() == true) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "date specification '%s' is invalid (can't have two '-' in a row)",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "date specification '%s' is invalid (can't have two '-' in a row)",
                                     spec.c_str());
     }
 
@@ -416,7 +371,8 @@ void Time_Calendar::parse_date(const std::string &input, double *result) const {
     char *endptr = NULL;
     long int n = strtol(tmp.c_str(), &endptr, 10);
     if (*endptr != '\0') {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "date specification '%s' is invalid ('%s' is not an integer)",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "date specification '%s' is invalid ('%s' is not an integer)",
                                     spec.c_str(), tmp.c_str());
     }
 
@@ -426,7 +382,8 @@ void Time_Calendar::parse_date(const std::string &input, double *result) const {
 
   // wrong number of parts in the YYYY-MM-DD date:
   if (numbers.size() != 3) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "date specification '%s' is invalid (should have 3 parts: YYYY-MM-DD, got %d)",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "date specification '%s' is invalid (should have 3 parts: YYYY-MM-DD, got %d)",
                                   spec.c_str(), (int)numbers.size());
   }
 
@@ -436,27 +393,27 @@ void Time_Calendar::parse_date(const std::string &input, double *result) const {
 
   calcalcs_cal *cal = ccs_init_calendar(m_calendar_string.c_str());
   if (cal == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "calendar string '%s' is invalid", m_calendar_string.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "calendar string '%s' is invalid",
+                                  m_calendar_string.c_str());
   }
 
   int dummy = 0;
   int errcode = ccs_date2jday(cal, numbers[0], numbers[1], numbers[2], &dummy);
   ccs_free_calendar(cal);
   if (errcode != 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "date %s is invalid in the %s calendar",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "date %s is invalid in the %s calendar",
                                   spec.c_str(), m_calendar_string.c_str());
   }
 
   // result is the *output* argument. If it is not NULL, then the user
   // asked us to convert a date to seconds since the reference time.
   if (result != NULL) {
-    double time = 0.0;
-    errcode = utInvCalendar2_cal(numbers[0], numbers[1], numbers[2], 0, 0, 0.0,
-                                 m_time_units.get(), &time, m_calendar_string.c_str());
-    if (errcode != 0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot convert '%s' to '%s'",
-                                    spec.c_str(), m_time_units.format().c_str());
-    }
+
+    units::DateTime d{numbers[0], numbers[1], numbers[2], 0, 0, 0.0};
+
+    auto time = m_time_units.time(d, m_calendar_string);
 
     *result = time;
   }
@@ -480,80 +437,59 @@ void Time_Calendar::parse_interval_length(const std::string &spec,
 
 
 void Time_Calendar::compute_times_monthly(std::vector<double> &result) const {
-  int errcode;
-
-  int year, month, day, hour, minute;
-  double second;
 
   double time = m_run_start;
+
   // get the date corresponding to the current time
-  errcode = utCalendar2_cal(time, m_time_units.get(),
-                            &year, &month, &day,
-                            &hour, &minute, &second,
-                            m_calendar_string.c_str());
-  PISM_C_CHK(errcode, 0, "utCalendar2_cal");
+  auto date = m_time_units.date(time, m_calendar_string);
+
+  // beginning of the current month
+  units::DateTime d{date.year, date.month, 1, 0, 0, 0.0};
 
   result.clear();
   while (true) {
-    // find the time corresponding to the beginning of the current
-    // month
-    errcode = utInvCalendar2_cal(year, month, 1, // year, month, day
-                                 0, 0, 0.0,      // hour, minute, second
-                                 m_time_units.get(), &time,
-                                 m_calendar_string.c_str());
-    PISM_C_CHK(errcode, 0, "utCalendar2_cal");
+    // find the time corresponding to the beginning of the current month
+    time = m_time_units.time(d, m_calendar_string);
 
     if (time > m_run_end) {
       break;
     }
 
-    if (time >= m_run_start && time <= m_run_end) {
+    if (time >= m_run_start and time <= m_run_end) {
       result.push_back(time);
     }
 
-    if (month == 12) {
-      year  += 1;
-      month  = 1;
+    if (d.month == 12) {
+      d.year  += 1;
+      d.month  = 1;
     } else {
-      month += 1;
+      d.month += 1;
     }
-
   }
 }
 
 void Time_Calendar::compute_times_yearly(std::vector<double> &result) const {
-  int errcode;
-
-  int year, month, day, hour, minute;
-  double second;
 
   double time = m_run_start;
   // get the date corresponding to the current time
-  errcode = utCalendar2_cal(time, m_time_units.get(),
-                            &year, &month, &day,
-                            &hour, &minute, &second,
-                            m_calendar_string.c_str());
-  PISM_C_CHK(errcode, 0, "utCalendar2_cal");
+  auto date = m_time_units.date(time, m_calendar_string);
+
+  units::DateTime d{date.year, 1, 1, 0, 0, 0.0};
 
   result.clear();
   while (true) {
-    // find the time corresponding to the beginning of the current
-    // year
-    errcode = utInvCalendar2_cal(year, 1, 1, // year, month, day
-                                 0, 0, 0.0,  // hour, minute, second
-                                 m_time_units.get(), &time,
-                                 m_calendar_string.c_str());
-    PISM_C_CHK(errcode, 0, "utInvCalendar2_cal");
+    // find the time corresponding to the beginning of the current year
+    time = m_time_units.time(d, m_calendar_string);
 
     if (time > m_run_end) {
       break;
     }
 
-    if (time >= m_run_start && time <= m_run_end) {
+    if (time >= m_run_start and time <= m_run_end) {
       result.push_back(time);
     }
 
-    year  += 1;
+    d.year += 1;
   }
 }
 

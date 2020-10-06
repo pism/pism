@@ -1,16 +1,298 @@
 .. default-role:: literal
 
-Changes since v1.0
+Changes since v1.2
 ==================
 
+- The three-equation ocean model `-ocean th` uses constant salinity (see
+  `constants.sea_water.salinity`) if `salinity_ocean` is not present in the forcing file.
+- `fill_missing_petsc.py` uses homogeneous Neumann BC at domain boundaries.
+- Support 2D precipitation scaling in `-atmosphere ...,frac_P`. If the input file set
+  using `atmosphere.frac_P.file` contains a scalar time series `frac_P`, use that as a
+  time-dependent constant-in-space forcing. If the input file contains a 2D variable
+  `frac_P`, use that as a time-and-space-dependent forcing.
+- Add a new `output.format` value: `netcdf4_serial` and `output.compression_level`. Use
+  `-o_format netcdf4_serial -output.compression_level N` (`N` between 1 and 9) to write
+  compressed NetCDF from rank 0.
+- Support writing compressed NetCDF in parallel with NetCDF 4.7.4 or newer and HDF5 1.10.3
+  or newer. Set `output.compression_level` to enable compression.
+
+Changes from v1.1 to v1.2
+=========================
+
+Front retreat
+^^^^^^^^^^^^^
+
+- Implement the ISMIP6 front retreat parameterization. Reads a time-dependent ice extent
+  mask (variable name: `land_ice_area_fraction_retreat`) from a file specified using the
+  configuration parameter `geometry.front_retreat.prescribed.file`. This mechanism
+  replaces the old "`ocean_kill`" calving code.
+- Rename configuration parameters controlling front retreat because they are not
+  calving-specific (`calving.front_retreat.use_cfl` to `geometry.front_retreat.use_cfl`
+  and `calving.front_retreat.wrap_around` to `geometry.front_retreat.wrap_around`).
+  Corresponding command-line options are renamed to `-front_retreat_cfl` and
+  `-front_retreat_wrap_around`.
+- Implement 3 frontal melt models: constant in time and space (`constant`), reading
+  frontal melt from a file (`given`), and using time- and space-dependent thermal ocean
+  forcing and modeled subglacial water flux in an implementation of the frontal melt
+  parameterization in Rignot et al 2016 (`routing`).
+- Now PISM combines retreat rates due to calving (eigen-calving and von Mises calving) and
+  a frontal melt parameterizations before using these to update ice geometry. This
+  simplifies and fixes the implementation of `geometry.front_retreat.use_cfl`.
+- Add a configuration parameter `frontal_melt.include_floating_ice`: `true` means "apply
+  computed frontal melt rates at *both* grounded and floating ice margins", `false` means
+  "apply computed frontal melt rates at grounded margins only."
+
+Subglacial hydrology
+^^^^^^^^^^^^^^^^^^^^
+
+- Add a new subglacial hydrology model `steady`. It adds an approximation of the
+  subglacial water flux to the `null` model. This approximation uses the assumption that
+  the subglacial water system instantaneously reaches the steady state after a change in
+  the water input rate from the surface or a change in ice geometry. At high grid
+  resolutions (~1km and higher) this is likely to be cheaper than using the `routing`
+  model to obtain the flux needed by the frontal melt parameterization (above). Note that
+  *this is a different model* and so when switching to it *re-tuning of the frontal melt
+  parameterization will be necessary*.
+- Variable `water_input_rate` containing water input rate for hydrology models (see
+  `hydrology.surface_input.file`) uses units of "kg m-2 s-1" instead of "m s-1".
+- Rename `hydrology.surface_input_file` to `hydrology.surface_input.file`. Also, add
+  `hydrology.surface_input.period` and `hydrology.surface_input.reference_year` to support
+  periodic water input rates.
+- Add the ability to pass surface runoff modeled by PISM to a subglacial hydrology model
+  (see `hydrology.surface_input_from_runoff`).
+- Add a configuration parameter `hydrology.routing.include_floating_ice` to allow routing
+  of subglacial water under floating ice. This may be appropriate when an outlet glacier
+  has a small floating tongue. This also produces an extension of
+  `subglacial_water_flux_mag` to floating areas, which is needed to model frontal melt
+  using the `routing` model (see above).
+- Add a configuration parameter `hydrology.add_water_input_to_till_storage`
+  (default: yes). If "yes", surface water input is added to till storage which (if it
+  overflows) then contributes to the amount of transportable subglacial water. If "no",
+  surface water input directly contributes to the amount of transportable water, bypassing
+  till storage. Basal melt rate always contributes to the amount of water stored in the
+  till.
+
+Surface, atmosphere, ocean forcing
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Use linear interpolation in time for 2D time-dependent forcings that are interpreted as
+  "snapshots" of a quantity. For example: ice surface temperature is interpreted as a
+  snapshot while climatic mass balance is interpreted as a time-average over a specified
+  interval. (Flux forcing fields such as the SMB are interpreted as piecewise-constant in
+  time to simplify mass and flux accounting.) In particular, this change ensures that the
+  2D sea level forcing results in a smoothly changing sea level.
+- Fix units of the precipitation lapse rate (`(kg m-2/year)/km` instead of `(m/year)/km`).
+- PISM uses configuration parameters to select surface, atmosphere, ocean, sea level, and
+  frontal melt models. See `surface.models`, `atmosphere.models`, `ocean.models`,
+  `sea_level.models`, and `frontal_melt.models`.
+- Implement orographic precipitation following Smith and Barstad, *A linear theory of
+  orographic precipitation*, 2004.
+- Add regression tests for most of PISM's `surface`, `atmosphere`, `ocean`, and
+  `sea_level` components.
+- Rename `ocean.constant.melange_back_pressure_fraction` to
+  `ocean.melange_back_pressure_fraction` and document its interaction with `-ocean
+  ...,frac_MBP`.
+- Rename `-atmosphere paleo_precip` to `precip_scaling`. Precipitation scaling using air
+  temperature offsets is useful in other contexts, not just paleo-climate runs.
+- Rename `-atmosphere lapse_rate` to `elevation_change`. This modifier includes
+  adjustments that depend on the change in surface elevation but are *not* lapse rates.
+- Rename `atmosphere.elevation_change.precipitation_lapse_rate` to
+  `atmosphere.elevation_change.precipitation.lapse_rate` ("." instead of "_").
+- Add `atmosphere.elevation_change.precipitation.method` (option `-precip_adjustment`).
+
+  Set it to "scale" to use scaling with `exp(C * dT)`, where
+
+  `C = atmosphere.precip_exponential_factor_for_temperature`
+
+  and `dT` is computed using provided reference surface elevation and
+  `atmosphere.elevation_change.temperature_lapse_rate`.
+
+  Set it to "shift" to use `atmosphere.elevation_change.precipitation.lapse_rate` instead.
+- Rename `-surface lapse_rate` to `-surface elevation_change`: now this modifier includes
+  an adjustment that is not a lapse rate. Also, rename all related configuration
+  parameters.
+- Add a configuration parameter `surface.elevation_change.smb.method`: "scale" to use the
+  exponential factor (see `surface.elevation_change.smb.exp_factor`); "shift" to use the
+  lapse rate (see `surface.elevation_change.smb.lapse_rate`).
+- Add `surface.elevation_change.smb.exp_factor`:
+
+  `SMB = SMB_input * exp(C * dT),`
+
+  where `C = surface.elevation_change.smb.exp_factor` and `dT` is the change in surface
+  temperature computed using `surface.elevation_change.temperature_lapse_rate`.
+
+Calving
+^^^^^^^
+
+- Add configuration parameters `calving.vonmises_calving.use_custom_flow_law`,
+  `calving.vonmises_calving.flow_law`, and `calving.vonmises_calving.Glen_exponent`. This
+  makes it possible to use a different flow law (and so a different Glen exponent) in the
+  stress balance model and the tensile von Mises stress computation.
+
+Energy balance
+^^^^^^^^^^^^^^
+
+- Switch to an unconditionally-stable method for the approximation of the heat equation in
+  columns of the bedrock thermal layer (backward Euler time discretization instead of
+  explicit time stepping).
+- Add a configuration parameter `energy.bedrock_thermal.file`. Use this to specify a
+  separate file containing the geothermal flux field (`bheatflx`). Leave it empty to read
+  `bheatflx` from the input file (`-i` and `input.file`).
+
+Bed deformation
+^^^^^^^^^^^^^^^
+
+- Fix the implementation of the elastic part of the Lingle-Clark bed deformation model.
+  See `issue 424`_. To update this model we need to compute the discrete convolution of
+  the current load with the load response matrix (the discrete equivalent of computing the
+  convolution of the load with the Green's function).
+
+  The load response matrix itself is approximated using quadrature and a one-dimensional
+  interpolant for the tabulated Green's function.
+
+  The old code used a "naive" implementation of the discrete convolution which was *both*
+  slow and broken. The new implementation uses FFT to compute the discrete convolution,
+  making it faster and (surprisingly) easier to implement.
+
+  PISM now includes a regression test covering this. Unfortunately we don't have an exact
+  solution to compare to, so the best we can do is this: a) compare PISM's FFT-based
+  convolution to `scipy.signal.fftconvolve()` and b) compare PISM's load response matrix
+  to an independent implementation using `scipy.integrate.dblquad()` (instead of
+  `adapt_integrate()` by Steven G. Johnson).
+- The configuration parameter `bed_deformation.lc.elastic_model` is set to "on" by
+  default. This means that now `-bed_def lc` enables *both* the elastic and the viscous
+  part of the Lingle-Clark model. In previous PISM versions `-bed_def lc` turned on the
+  viscous part of the model and an extra command-line option (`-bed_def_lc_elastic_model`)
+  was required to turn on the elastic part.
+- Rename `bed_deformation.update_interval` to `bed_deformation.lc.update_interval` and fix
+  its interpretation: before this change both bed deformation models (point-wise isostasy
+  and the Lingle-Clark model) updated *not more often than* every
+  `bed_deformation.update_interval` years. This lead to issues with stopped and re-started
+  simulations (see `issue 422`_). Now the point-wise isostasy model is updated every time
+  step (its computational cost is negligible) and the Lingle-Clark model is updated
+  *exactly* every `bed_deformation.lc.update_interval` years, limiting PISM's time step
+  length.
+
+Regional modeling
+^^^^^^^^^^^^^^^^^
+
+- Improve handling of domain edges in regional simulations.
+- Fix PISM's `-regional` runs: disable ice flow, surface mass balance, and basal mass
+  balance effects on ice geometry in "no model" areas.
+
+Stress balance
+^^^^^^^^^^^^^^
+
+- Improve PISM's handling of ice margins at locations where an icy cell is next to an
+  ice-free cell that has surface elevation exceeding the surface elevation of ice (valley
+  glaciers, fjords, nunataks). Here we have to use one-sided finite differences to avoid
+  the influence of the surface elevation at ice-free locations on the estimate of the
+  driving stress. In the SSAFD code we also prescribe drag along the margin (see
+  `basal_resistance.beta_lateral_margin`) and a stress boundary condition assuming that at
+  these locations ice is in hydrostatic equilibrium with the rock next to it. In other
+  words, this boundary condition is the same as the calving front BC, but with a zero
+  pressure difference.
+- Rename command-line options `-ssa_rtol` to `-ssafd_picard_rtol` and `-ssa_maxi` to
+  `-ssafd_picard_maxi` to make it clear that they control Picard iterations.
+
+Basal strength
+^^^^^^^^^^^^^^
+
+- Add the ability to use space- and time-dependent `delta` (minimum effective pressure on
+  till as a fraction of overburden pressure) in the Mohr-Coulomb basal yield stress
+  parameterization.
+- Yield stress models can be time-dependent.
+- Implement "regional" versions of all yield stress models (both Mohr-Coulomb and
+  constant). Previous versions did not support constant yield stress in regional model
+  configurations.
+
+Diagnostics
+^^^^^^^^^^^
+
+- Add configuration parameters `output.ISMIP6` (follow ISMIP6 conventions),
+  `output.use_MKS` (save output variables in MKS units), `output.ISMIP6_extra_variables`
+  (list of fields to report when `-extra_vars ismip6` is given), and
+  `output.ISMIP6_ts_variables` (list of scalar time series to report when `-ts_vars
+  ismip6` is given). When `output.ISMIP6` is set PISM saves spatially-variable diagnostics
+  at the beginning of the run (if requested).
+- Bug fix: ensure that land ice area fraction (diagnostic variable `sftgif`) never
+  exceeds 1.
+- Add the `hydraulic_potential` diagnostic to `routing` and `distributed` subglacial
+  hydrology models.
+- Fix an unreported bug in the computation of the `flux` diagnostic. This bug affected
+  PISM's diagnostic variables `flux`, `velbar`, `velbar_mag`, and `vonmises_stress` (which
+  uses `velbar`).
+
+  It did *not* affect ice dynamics.
+- Implement 2D and scalar grounding line flux diagnostics `grounding_line_flux`. See
+  `issue #300`_.
+- Rename `ocean_pressure_difference` to `ice_margin_pressure_difference`.
+
+Input and output
+^^^^^^^^^^^^^^^^
+
+- Add a configuration flag `output.extra.stop_missing` (default: yes). Set this flag to
+  "no" to make PISM warn about `-extra_vars` diagnostics that are requested but not
+  available instead of stopping with an error message.
+- Remove `output.variable_order`. Now PISM always uses `y,x,z` in output files.
+- Allow using NCAR's ParallelIO library to write output files. If ParallelIO is compiled
+  with parallel NetCDF-4 and PnetCDF libraries, this adds four new choices for
+  `output.format`: `pio_pnetcdf` (parallel, using the CDF5 version of the NetCDF format),
+  `pio_netcdf4p` (parallel, using the HDF5-based NetCDF format), `pio_netcdf4c` (serial,
+  HDF5-based compressed NetCDF-4 format), `pio_netcdf` (serial).
+- Fix `issue 327`_: now PISM uses mid-points of reporting intervals when saving to the
+  `-extra_file`. This makes PISM's output files easier to process using CDO.
+
+Other
+^^^^^
+
+- Provide better error messages when trying to read in a 2D field but the input file
+  contains a 3D variable (or trying to read a 3D field but the input contains a 2D
+  variable).
+- Provide better error messages when trying to allocate more than 10000 records of a
+  forcing field.
+- PISM supports CMake 3.1 again (v1.1 required CMake 3.13 for no good reason).
+- Use `pism/pism_config.hh` and `pism_config.cc` that are generated by CMake to include
+  build information in the binary. This should take care of `issue 405`_.
+- PISM uses the new (v5.x) PROJ API, so PROJ 5.0 or later is required to compute
+  longitude-latitude grid coordinates and cell bounds. (Tested using PROJ v5.2.0 and
+  v6.1.1.)
+- Add contributing guidelines to the User's Manual.
+
+
+Changes from v1.0 to v1.1
+=========================
+
+- PISM no longer attempts to use projection information to compute cell areas. This change
+  was prompted by better mass accounting: it is now clear that using numerical methods
+  designed for a uniform grid forces us to treat cells are equal in area. We may address
+  this issue later but do not have the resources to work on this topic in the near future.
+  Please use an equal-area projection for your simulations if distortions caused by
+  working in a projected coordinate system are a concern.
+- Add 5 more parameterizations of near-surface air temperature to `-atmosphere pik`.
 - PISM stops with an error message if the name of a parameter in a `-config_override` file
   does not match any of the known PISM parameters.
+- Fix `issue 375`_ (could not use `-config_override` to control the
+  bed-elevation-dependent parameterization of the till friction angle).
 - PISM stops with an error message if the diffusivity of the SIA flow exceeds a given
   threshold (see `stress_balance.sia.max_diffusivity`). Extremely high SIA diffusivities
   often mean that the setup is not "shallow enough"; in a situation like this it might
   make sense to re-evaluate model parameters before proceeding. (A short "smoothing" run
   might be helpful, too, if high diffusivities occur at the beginning of a simulation
   using ice thickness or bed topography not computed by PISM.)
+- The SIA stress balance model limits computed diffusivity at
+  `stress_balance.sia.max_diffusivity` if
+  `stress_balance.sia.limit_diffusivity` is set. This makes it
+  possible to speed up simulations in which high diffusivities at a
+  few isolated grid points force PISM to take very short time steps.
+  *This implies sacrificing accuracy at these grid points. Use with
+  caution!*
+- The SSAFD solver limits ice speed at a threshold specified by
+  `stress_balance.ssa.fd.max_speed`. This may be useful when the computed sliding speed is
+  abnormally high at a few isolated grid points, reducing the length of time steps PISM
+  can take. Capping ice speed makes it possible to ignore troublesome locations and speed
+  up some simulations. The default (500 km/year) is set high enough to deactivate this
+  mechanism.
 - Discard requested snapshot times that are outside of the modeled time interval. (This
   keeps PISM from overwriting a snapshot file written by one of the previous runs in a
   re-started simulation.)
@@ -19,6 +301,8 @@ Changes since v1.0
 - Added PICO, the *Potsdam Ice-shelf Cavity mOdel* (https://doi.org/10.5194/tc-2017-70).
   Use `-ocean pico` to enable and see the documentation of PISM's `ocean models`_ in the User's
   Manual for details.
+- Added `-ocean ...,anomaly`, an ocean model *modifier* that reads spatially-variable
+  sub-shelf mass flux anomalies from an input file.
 - Exclude ice shelves from the ocean load provided to bed deformation models. See `issue
   363`_.
 - Revert the change from v0.7 to v1.0 in the handling of energy conservation near ice
@@ -112,6 +396,9 @@ Changes since v1.0
 - Update the Debian/Ubuntu section of the installation manual.
 - Move the documentation of the BOMBPROOF numerical scheme for energy conservation from
   the source code browser into the manual.
+- Add an experimental implementation of a parameterization of cryo-hydrologic warming
+  based on *Cryo-hydrologic warming: A potential mechanism for rapid thermal response of
+  ice sheets* by Phillips et al, 2010.)
 
 Changes from v0.7 to v1.0
 =========================
@@ -520,6 +807,7 @@ Miscellaneous
 .. _issue 222: https://github.com/pism/pism/issues/222
 .. _issue 237: https://github.com/pism/pism/issues/237
 .. _issue 292: https://github.com/pism/pism/issues/292
+.. _issue 300: https://github.com/pism/pism/issues/300
 .. _issue 302: https://github.com/pism/pism/issues/302
 .. _issue 313: https://github.com/pism/pism/issues/313
 .. _issue 321: https://github.com/pism/pism/issues/321
@@ -527,6 +815,7 @@ Miscellaneous
 .. _issue 324: https://github.com/pism/pism/issues/324
 .. _issue 325: https://github.com/pism/pism/issues/325
 .. _issue 326: https://github.com/pism/pism/issues/326
+.. _issue 327: https://github.com/pism/pism/issues/327
 .. _issue 328: https://github.com/pism/pism/issues/328
 .. _issue 330: https://github.com/pism/pism/issues/330
 .. _issue 334: https://github.com/pism/pism/issues/334
@@ -543,6 +832,9 @@ Miscellaneous
 .. _issue 400: https://github.com/pism/pism/issues/400
 .. _issue 402: https://github.com/pism/pism/issues/402
 .. _issue 363: https://github.com/pism/pism/issues/363
+.. _issue 405: https://github.com/pism/pism/issues/405
+.. _issue 422: https://github.com/pism/pism/issues/422
+.. _issue 424: https://github.com/pism/pism/issues/424
 .. _ocean models: http://pism-docs.org/sphinx/climate_forcing/ocean.html
 ..
    Local Variables:

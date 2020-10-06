@@ -5,8 +5,13 @@
 Earth deformation models
 ------------------------
 
-The option :opt:`-bed_def` ``[iso, lc]`` turns one of the two available bed deformation
-models.
+The option :opt:`-bed_def` ``[iso, lc]`` (flag :config:`bed_deformation.model`) turns one
+of the two available bed deformation models.
+
+.. _sec-bed-def-iso:
+
+Point-wise isostasy
+===================
 
 The first model ``-bed_def iso``, is instantaneous pointwise isostasy. This model assumes
 that the bed at the starting time is in equilibrium with the load. Then, as the ice
@@ -18,9 +23,14 @@ multiple of the increase in ice thickness from the starting time:
    b(t,x,y) = b(0,x,y) - f \left[H(t,x,y) - H(0,x,y)\right].
 
 Here `f` is the density of ice divided by the density of the mantle, so its value is
-determined by setting the values of :config:`bed_deformation.mantle_density` and
-:config:`constants.ice.density` in the configuration file; see :ref:`sec-pism-defaults`.
+determined by the values of :config:`bed_deformation.mantle_density` and
+:config:`constants.ice.density` in the configuration file.
 For an example and verification, see Test H in :ref:`sec-verif`.
+
+.. _sec-bed-def-lc:
+
+Lingle-Clark
+============
 
 The second model ``-bed_def lc`` is much more physical. It is based on papers by Lingle
 and Clark :cite:`LingleClark` and Bueler and others :cite:`BLKfastearth`. It generalizes
@@ -35,6 +45,13 @@ point observations and/or paleo ice load modeling, and if that uplift field is p
 NetCDF variable with standard name ``tendency_of_bedrock_altitude`` in the input file,
 then this model will initialize so that it starts with the given uplift rate.
 
+All parameters (except for :config:`constants.ice.density`) controlling the Lingle-Clark
+model are listed below (they all have the prefix ``bed.deformation.``).
+
+.. pism-parameters::
+   :prefix: bed_deformation.
+   :exclude: bed_deformation.(model|bed_)
+
 Here are minimal example runs to compare these models:
 
 .. code-block:: none
@@ -47,15 +64,17 @@ Compare the :var:`topg`, :var:`usurf`, and :var:`dbdt` variables in the resultin
 files. See also the comparison done in :cite:`BLKfastearth`.
 
 To include "measured" uplift rates during initialization, use the option
-:opt:`-uplift_file` to specify the name of the file containing the field :var:`dbdt` (CF
-standard name: ``tendency_of_bedrock_altitude``).
+:opt:`-uplift_file` (parameter :config:`bed_deformation.bed_uplift_file`) to specify the
+name of the file containing the field :var:`dbdt` (CF standard name:
+``tendency_of_bedrock_altitude``).
 
-Use the :opt:`-topg_delta_file` option to apply a correction to the bed topography field
-read in from an input file. This sets the bed topography `b` at the beginning of a run as
-follows:
+Use the option :opt:`-topg_delta_file` (parameter
+:config:`bed_deformation.bed_topography_delta_file`) to apply a correction to the bed
+topography field read in from an input file. This sets the bed topography `b` at the
+beginning of a run as follows:
 
 .. math::
-   :name: eq-bedcorrection
+   :label: eq-bedcorrection
 
    b = b_{0} + \Delta b.
 

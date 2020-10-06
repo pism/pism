@@ -78,7 +78,7 @@ where `H\to 0`, because
 A singular coefficient of this type can be assumed to affect the stability of all
 time-stepping schemes. The current change `s=z-b` has no such singularizing effect
 though the change does result in added advection terms in the conservation of energy
-equation, which we now address. See `this page <bombproof_enth.md>`_ for more general
+equation, which we now address. See :ref:`sec-bombproof` for more general
 considerations about the conservation of energy equation.
 
 The new coordinates `(x,y,s)` are not orthogonal.

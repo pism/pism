@@ -1,6 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import PISM
+from PISM.util import convert
 from math import cos, pi
 
 # Simple testing program for Lingle & Clark bed deformation model.
@@ -26,17 +27,19 @@ config = ctx.config
 
 R0 = 1000e3
 
+
 def initialize_uplift(uplift):
     "Initialize the uplift field."
     grid = uplift.grid()
-    peak_uplift = PISM.convert(ctx.unit_system, 10, "mm/year", "m/second")
+    peak_uplift = convert(10, "mm/year", "m/second")
     with PISM.vec.Access(nocomm=[uplift]):
         for (i, j) in grid.points():
             r = PISM.radius(grid, i, j)
             if r < 1.5 * R0:
-                uplift[i, j] = peak_uplift * (cos(pi * (r / (1.5 * R0))) + 1.0) / 2.0;
+                uplift[i, j] = peak_uplift * (cos(pi * (r / (1.5 * R0))) + 1.0) / 2.0
             else:
                 uplift[i, j] = 0.0
+
 
 def initialize_thickness(thickness, H0):
     grid = thickness.grid()
@@ -48,16 +51,18 @@ def initialize_thickness(thickness, H0):
             else:
                 thickness[i, j] = 0.0
 
+
 def allocate(grid):
     H = PISM.model.createIceThicknessVec(grid)
     bed = PISM.model.createBedrockElevationVec(grid)
     uplift = PISM.IceModelVec2S()
     uplift.create(grid, "uplift", PISM.WITHOUT_GHOSTS)
-    uplift.set_attrs("internal", "bed uplift", "m / second", "")
+    uplift.set_attrs("internal", "bed uplift", "m / second", "m / second", "", 0)
 
     sea_level = PISM.IceModelVec2S(grid, "sea_level", PISM.WITHOUT_GHOSTS)
 
     return H, bed, uplift, sea_level
+
 
 def create_grid():
     P = PISM.GridParameters(config)
@@ -68,28 +73,29 @@ def create_grid():
 
     return PISM.IceGrid(ctx.ctx, P)
 
+
 def run(scenario, plot, pause, save):
 
     # set grid defaults
-    config.set_double("grid.Mx", 193)
-    config.set_double("grid.My", 129)
+    config.set_number("grid.Mx", 193)
+    config.set_number("grid.My", 129)
 
-    config.set_double("grid.Lx", 3000e3)
-    config.set_double("grid.Ly", 2000e3)
+    config.set_number("grid.Lx", 3000e3)
+    config.set_number("grid.Ly", 2000e3)
 
-    config.set_double("grid.Mz", 2)
-    config.set_double("grid.Lz", 1000)
+    config.set_number("grid.Mz", 2)
+    config.set_number("grid.Lz", 1000)
 
-    scenarios = {"1" : (False, False, 1000.0),
-                 "2" : (True,  False, 1000.0),
-                 "3" : (False, True,  0.0),
-                 "4" : (True,  True,  1000.0)}
+    scenarios = {"1": (False, False, 1000.0),
+                 "2": (True,  False, 1000.0),
+                 "3": (False, True,  0.0),
+                 "4": (True,  True,  1000.0)}
 
     elastic, use_uplift, H0 = scenarios[scenario]
 
     print("Using scenario %s: elastic model = %s, use uplift = %s, H0 = %f m" % (scenario, elastic, use_uplift, H0))
 
-    config.set_boolean("bed_deformation.lc.elastic_model", elastic)
+    config.set_flag("bed_deformation.lc.elastic_model", elastic)
 
     grid = create_grid()
 
@@ -113,7 +119,7 @@ def run(scenario, plot, pause, save):
     # now add the disc load
     initialize_thickness(thickness, H0)
 
-    dt = PISM.convert(ctx.unit_system, 100, "365 day", "seconds")
+    dt = convert(100, "365 day", "seconds")
 
     # the time-stepping loop
     while time.current() < time.end():
@@ -139,6 +145,7 @@ def run(scenario, plot, pause, save):
         model.bed_elevation().dump("bed_elevation.nc")
         model.uplift().dump("bed_uplift.nc")
 
+
 if __name__ == "__main__":
     scenario = PISM.OptionKeyword("-scenario", "choose one of 4 scenarios", "1,2,3,4", "1")
     plot = PISM.OptionBool("-plot", "Plot bed elevation and uplift.")
@@ -147,9 +154,11 @@ if __name__ == "__main__":
 
     run(scenario.value(), plot, pause, save)
 
+
 def scenario1_test():
     "Test if scenario 1 runs"
     run("1", False, False, False)
+
 
 def scenario3_test():
     "Test if scenario 3 runs"

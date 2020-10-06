@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,30 +22,34 @@
 
 #include <string>
 
-#include <proj_api.h>
+#include <proj.h>
 
 #include "pism/util/error_handling.hh"
 
 namespace pism {
 
-//! A wrapper for projPJ that makes sure `pj_free` is called.
+//! A wrapper for PJ that makes sure `pj_destroy` is called.
 class Proj {
 public:
-  Proj(const std::string &proj_string) {
-    m_proj = pj_init_plus(proj_string.c_str());
-    if (m_proj == NULL) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Failed to initialize projection '%s'.",
-                                    proj_string.c_str());
+  Proj(const std::string &input, const std::string &output) {
+    m_pj = proj_create_crs_to_crs(PJ_DEFAULT_CTX, input.c_str(), output.c_str(), 0);
+    if (m_pj == 0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Failed to initialize projection transformation '%s' to '%s' (errno: %d, %s).",
+                                    input.c_str(), output.c_str(),
+                                    proj_errno(0),
+                                    proj_errno_string(proj_errno(0)));
     }
   }
+
   ~Proj() {
-    pj_free(m_proj);
+    proj_destroy(m_pj);
   }
-  operator projPJ() {
-    return m_proj;
+  PJ* operator*() {
+    return m_pj;
   }
 private:
-  projPJ m_proj;
+  PJ *m_pj;
 };
 
 } // end of namespace pism

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ namespace bed {
 
 PointwiseIsostasy::PointwiseIsostasy(IceGrid::ConstPtr g)
   : BedDef(g) {
-  m_load_last.create(m_grid, "load_last", WITH_GHOSTS, m_config->get_double("grid.max_stencil_width"));
+  m_load_last.create(m_grid, "load_last", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width"));
 }
 
 PointwiseIsostasy::~PointwiseIsostasy() {
@@ -47,6 +47,18 @@ void PointwiseIsostasy::init_impl(const InputOptions &opts, const IceModelVec2S 
   compute_load(m_topg, ice_thickness, sea_level_elevation, m_load_last);
 }
 
+
+void PointwiseIsostasy::bootstrap_impl(const IceModelVec2S &bed_elevation,
+                                       const IceModelVec2S &bed_uplift,
+                                       const IceModelVec2S &ice_thickness,
+                                       const IceModelVec2S &sea_level_elevation) {
+  BedDef::bootstrap_impl(bed_elevation, bed_uplift, ice_thickness, sea_level_elevation);
+
+  // store initial load and bed elevation
+  compute_load(bed_elevation, ice_thickness, sea_level_elevation, m_load_last);
+  m_topg_last.copy_from(bed_elevation);
+}
+
 MaxTimestep PointwiseIsostasy::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep("bed_def iso");
@@ -56,29 +68,19 @@ MaxTimestep PointwiseIsostasy::max_timestep_impl(double t) const {
 void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
                                     const IceModelVec2S &sea_level_elevation,
                                     double t, double dt) {
-
-  double t_final = t + dt;
-
-  // Check if it's time to update:
-  double dt_beddef = t_final - m_t_beddef_last; // in seconds
-  if ((dt_beddef < m_config->get_double("bed_deformation.update_interval", "seconds") &&
-       t_final < m_grid->ctx()->time()->end()) ||
-      dt_beddef < 1e-12) {
-    return;
-  }
-
-  m_t_beddef_last = t_final;
+  (void) t;
 
   const double
-    mantle_density = m_config->get_double("bed_deformation.mantle_density"),
-    load_density   = m_config->get_double("constants.ice.density"),
-    ocean_density  = m_config->get_double("constants.sea_water.density"),
-    ice_density    = m_config->get_double("constants.ice.density"),
+    mantle_density = m_config->get_number("bed_deformation.mantle_density"),
+    load_density   = m_config->get_number("constants.ice.density"),
+    ocean_density  = m_config->get_number("constants.sea_water.density"),
+    ice_density    = m_config->get_number("constants.ice.density"),
     f              = load_density / mantle_density;
 
   //! Our goal: topg = topg_last - f*(load - load_last)
 
-  IceModelVec::AccessList list{&m_topg, &ice_thickness, &sea_level_elevation, &m_load_last};
+  IceModelVec::AccessList list{&m_topg, &m_topg_last,
+                               &ice_thickness, &sea_level_elevation, &m_load_last};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -99,7 +101,7 @@ void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
   loop.check();
 
   //! Finally, we need to update bed uplift, topg_last and load_last.
-  compute_uplift(m_topg, m_topg_last, dt_beddef, m_uplift);
+  compute_uplift(m_topg, m_topg_last, dt, m_uplift);
 
   m_topg_last.copy_from(m_topg);
 

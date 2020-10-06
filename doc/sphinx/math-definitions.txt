@@ -36,6 +36,9 @@
       \newcommand{\dtinv}{\Delta T_{\mathrm{inv}}}
       \newcommand{\dhinv}{\Delta h_{\mathrm{inv}}}
       \newcommand{\dhdtconv}{{\delta ht}_{\mathrm{conv}}}
+      \newcommand{\div}{\nabla \cdot}
+      \newcommand{\V}{\mathbf{V}}
+      \newcommand{\Wtill}{W_{\mathrm{till}}}
 
 .. raw:: latex
 
@@ -44,6 +47,7 @@
    % generic
    \providecommand{\Diff}[2]{ \frac{\mathrm{d}#1}{\mathrm{d}#2} }
    \providecommand{\diff}[2]{ \frac{\partial #1}{\partial #2} }
+   \providecommand{\div}{\nabla \cdot}
 
    % elevation-dependent surface model
    \providecommand{\var}[2]{ {#1}_{\text{#2}} }
@@ -76,6 +80,8 @@
 
    % hydrology
    \providecommand{\bq}{\mathbf{q}}
+   \providecommand{\V}{\mathbf{V}} % velocity vector
+   \providecommand{\Wtill}{W_{\mathrm{till}}}
 
    % BOMBPROOF
    \providecommand{\Up}[2]{\operatorname{Up}\left(#1\big|#2\right)}

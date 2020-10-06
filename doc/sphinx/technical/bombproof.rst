@@ -84,7 +84,7 @@ here and in the PISM source code versus "H" in :cite:`AschwandenBuelerKhroulevBl
 The conservation of energy equation is
 
 .. math::
-   :name: basicEnergy
+   :label: basicEnergy
 
    \rho \frac{dE}{dt} = -\nabla \cdot \mathbf{q} + Q,
 
@@ -98,7 +98,7 @@ Neglecting the dependence of conductivity and heat capacity on temperature
 :cite:`AschwandenBuelerKhroulevBlatter`, the heat flux in cold ice and temperate ice is
 
 .. math::
-   :name: heatflux
+   :label: heatflux
 
    \mathbf{q} =
    \begin{cases}
@@ -159,7 +159,7 @@ flux is constant, so
 Therefore the equation we initially analyze is
 
 .. math::
-   :name: basicShallow
+   :label: basicShallow
 
    \rho_i \left(\frac{\partial E}{\partial t} + \mathbf{U}\cdot \nabla E\right) = \frac{k_i}{c_i} \frac{\partial^2 E}{\partial z^2} + Q,
 
@@ -168,7 +168,7 @@ namely with respect to the vertical coordinate `z`.  Rewriting equation
 :eq:`basicShallow` to emphasize the vertical terms we have
 
 .. math::
-   :name: vertProblem
+   :label: vertProblem
 
     \rho_i \left(\frac{\partial E}{\partial t} + w \frac{\partial E}{\partial z}\right) 
          = \frac{k_i}{c_i}  \frac{\partial^2 E}{\partial z^2} + \Phi
@@ -188,7 +188,7 @@ the ``EnthalpyConverter`` class.) The boundary conditions to problem :eq:`vertPr
 are, therefore,
 
 .. math::
-   :name: columnbcs
+   :label: columnbcs
 
    E(t,x,y,z=H) &=E_s(t,x,y),\\
    -\frac{k_i}{c_i} \frac{\partial E}{\partial z}\Big|_{z=0} &= G.
@@ -233,7 +233,7 @@ The CFL stability condition for this part of the scheme is
 
 
 .. math::
-   :name: CFL
+   :label: CFL
 
    \Delta t \,\left( \left|\frac{u_{ijk}^n}{\Delta x}\right|
    + \left|\frac{v_{ijk}^n}{\Delta y}\right| \right) \le 1.
@@ -256,7 +256,7 @@ approximation to :eq:`vertProblem` is
 
 
 .. math::
-   :name: bombone
+   :label: bombone
 
     \rho_i &\left(
            \frac{E_k^{n+1} - E_k^n}{\Delta t}
@@ -300,7 +300,7 @@ Now multiply equation :eq:`bombone` by `\Delta t`, divide it by `\rho_i`,
 and rearrange:
 
 .. math::
-   :name: bombtwo
+   :label: bombtwo
 
     \left(-R - \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) E_{k-1}^{n+1}\\ +
     \left(1 + 2 R + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right) E_k^{n+1}\\ +
@@ -319,7 +319,7 @@ are adjacent gridded values of some abstract quantity at time step `t_n`, and
 if the next value satisfies the scheme
 
 .. math::
-   :name: abstractexplicit
+   :label: abstractexplicit
 
    U_k^{n+1} = C_{-1} U_{k-1}^n + C_0 U_k^n + C_{+1} U_{k+1}^n
 
@@ -337,7 +337,7 @@ smoother. The proof below shows the corresponding "wiggle-free" property for sch
 However, the pure implicit centered difference scheme (`\lambda=1`), namely
 
 .. math::
-   :name: centered
+   :label: centered
 
     &\left(-R - \nu w_k^n/2\right) E_{k-1}^{n+1} + \left(1 + 2 R\right) E_k^{n+1} \\
     &+ \left(-R + \nu w_k^n/2\right) E_{k+1}^{n+1}
@@ -367,7 +367,7 @@ equally-spaced vertical grid `z_0=0 < z_1 < \dots < z_N=H`, so that the upper gr
 coincides with the surface of the ice. With these assumptions, if
 
 .. math::
-   :name: lambdachoice
+   :label: lambdachoice
 
    \lambda = \min
    \left\{
@@ -410,7 +410,7 @@ In the case considered for the maximum principle, with `\Phi_k^n=0`,
 we can rewrite :eq:`bombtwo` as
 
 .. math::
-   :name: formax
+   :label: formax
 
     &\left(1 + 2 R + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right) E_k^{n+1} \\
     &= E_k^n + \left(R + \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) E_{k-1}^{n+1}
@@ -458,7 +458,7 @@ Let's assume the velocity is downward, `w_0<0`; the other case is similar.  Equa
 :eq:`bombtwo` becomes
 
 .. math::
-   :name: prevon
+   :label: prevon
 
     &\left(-R - \nu w_0 (\lambda/2)\right) E_{k-1}^{n+1}
     + \left(1 + 2 R - \nu w_0 (1-\lambda)\right) E_k^{n+1} \\
@@ -528,7 +528,7 @@ coefficients, which need no detail for now other than to note that `1 + B_- + B_
 Letting `{\bar e}^n = \max_k |e_k^n|` we have, because of the positivity of coefficients,
 
 .. math::
-   :name: prebound
+   :label: prebound
 
     A |e_k^{n+1}| \le {\bar e}^n + \left(B_- + B_+\right){\bar e}^{n+1} + \Delta t\,\bar\tau^n
 

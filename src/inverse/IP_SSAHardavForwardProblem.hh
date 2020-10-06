@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017  David Maxwell
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -163,8 +163,8 @@ public:
   virtual void apply_linearization_transpose(IceModelVec2V &du, IceModelVec2S &dzeta);
 
   //! Exposes the DMDA of the underlying grid for the benefit of TAO.
-  virtual void get_da(DM *da) {
-    *da = *m_da;
+  petsc::DM& get_da() const {
+    return *m_da;
   }
 
 protected:

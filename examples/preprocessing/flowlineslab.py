@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # creates an example flowline data set "slab.nc" which can be used with
 # flowline.py to show how to run PISM in flow-line mode

@@ -1,6 +1,6 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -20,7 +20,7 @@
 
 
 import PISM
-
+from PISM.util import convert
 help = \
     """
 SSA_TESTCFBC
@@ -37,10 +37,9 @@ usage of SSA_TEST_CFBC:
 """
 
 context = PISM.Context()
-unit_system = context.unit_system
 
 H0 = 600.          # meters
-V0 = PISM.convert(unit_system, 300, "m/year", "m/second")
+V0 = convert(300, "m/year", "m/second")
 C = 2.45e-18     # "typical constant ice parameter"
 T = 400          # time used to compute the calving front location
 
@@ -48,11 +47,14 @@ Q0 = V0 * H0
 Hc1 = 4. * C / Q0
 Hc2 = 1. / (H0 ** 4)
 
+
 def H_exact(x):
     return (Hc1 * x + Hc2) ** (-1 / 4.)
 
+
 def u_exact(x):
     return Q0 / H_exact(x)
+
 
 class test_cfbc(PISM.ssa.SSAExactTestCase):
 
@@ -69,10 +71,10 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
     def _initPhysics(self):
         config = self.config
 
-        config.set_double("flow_law.isothermal_Glen.ice_softness",
-                          pow(1.9e8, -config.get_double("stress_balance.ssa.Glen_exponent")))
-        config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", False)
-        config.set_boolean("stress_balance.calving_front_stress_bc", True)
+        config.set_number("flow_law.isothermal_Glen.ice_softness",
+                          pow(1.9e8, -config.get_number("stress_balance.ssa.Glen_exponent")))
+        config.set_flag("stress_balance.ssa.compute_surface_gradient_inward", False)
+        config.set_flag("stress_balance.calving_front_stress_bc", True)
         config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
@@ -99,8 +101,8 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
         vel_bc = vecs.vel_bc
         ice_mask = vecs.mask
 
-        ocean_rho = self.config.get_double("constants.sea_water.density")
-        ice_rho = self.config.get_double("constants.ice.density")
+        ocean_rho = self.config.get_number("constants.sea_water.density")
+        ice_rho = self.config.get_number("constants.ice.density")
 
         x_min = grid.x(0)
         with PISM.vec.Access(comm=[thickness, surface, bc_mask, vel_bc, ice_mask]):
@@ -132,17 +134,12 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
             u = 0
         return [u, 0]
 
+
 if __name__ == '__main__':
-    # if PISM.optionsSet('-usage') or PISM.optionsSet('-help'):
-    #   PISM.verbPrintf(1,context.com,help)
-    #   PISM.verbPrintf(1,context.com,usage)
 
-    Mx = PISM.optionsInt("-Mx", "Number of grid points in x-direction", default=61)
-    My = PISM.optionsInt("-My", "Number of grid points in y-direction", default=61)
-    output_file = PISM.optionsString("-o", "output file", default="ssa_test_cfbc.nc")
-    verbosity = PISM.optionsInt("-verbose", "verbosity level", default=3)
+    config = PISM.Context().config
 
-    context.config.set_string('ssa_method', 'fd')
+    tc = test_cfbc(int(config.get_number("grid.Mx")),
+                   int(config.get_number("grid.My")))
 
-    tc = test_cfbc(Mx, My)
-    tc.run(output_file)
+    tc.run(config.get_string("output.file_name"))

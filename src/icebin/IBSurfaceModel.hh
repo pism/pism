@@ -42,8 +42,8 @@ protected:
   virtual void update_impl(const Geometry &geometry, double t, double dt);
   virtual MaxTimestep max_timestep_impl(double t) const;
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   virtual const IceModelVec2S& mass_flux_impl() const;
   virtual const IceModelVec2S& temperature_impl() const;

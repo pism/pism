@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2014, 2016, 2017, 2018 The PISM Authors
+# Copyright (C) 2009-2014, 2016, 2017, 2018, 2019, 2020 The PISM Authors
 
 # Downloads SeaRISE "Present Day Greenland" master dataset NetCDF file, adjusts
 # metadata, and saves under new name ready for PISM.  See README.md.
@@ -52,7 +52,14 @@ ncatted -O -a units,climatic_mass_balance,m,c,"kg m-2 year-1" $PISMVERSION
 ncks -O -v mapping,lat,lon,bheatflx,topg,thk,precipitation,ice_surface_temp,climatic_mass_balance \
   $PISMVERSION $PISMVERSION
 # add projection information
-ncatted -O -a proj4,global,c,c,"+proj=stere +lat_0=90 +lat_ts=71 +lon_0=-39 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" $PISMVERSION
+ncatted -O -a proj,global,c,c,"+proj=stere +lat_0=90 +lat_ts=71 +lon_0=-39 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" $PISMVERSION
+ncap2 -A \
+      -s 'land_ice_area_fraction_retreat=0 * thk' \
+      -s 'where(thk > 0 || topg > 0) land_ice_area_fraction_retreat=1' \
+      -s 'land_ice_area_fraction_retreat@units="1"' \
+      $PISMVERSION $PISMVERSION
+ncatted -a standard_name,land_ice_area_fraction_retreat,d,, $PISMVERSION
+
 echo "done."
 echo
 

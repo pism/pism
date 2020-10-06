@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -34,15 +34,19 @@ public:
   ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input);
   virtual ~ForceThickness();
 protected:
-  virtual void init_impl(const Geometry &geometry);
-  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
 
-  virtual const IceModelVec2S& mass_flux_impl() const;
+  const IceModelVec2S& mass_flux_impl() const;
 
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  const IceModelVec2S& accumulation_impl() const;
+  const IceModelVec2S& melt_impl() const;
+  const IceModelVec2S& runoff_impl() const;
+
+  MaxTimestep max_timestep_impl(double t) const;
 private:
   void adjust_mass_flux(double time,
                         const IceModelVec2S &ice_thickness,

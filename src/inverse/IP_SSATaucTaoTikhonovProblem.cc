@@ -40,8 +40,8 @@ void IP_SSATaucTaoTikhonovProblem::connect(Tao tao) {
 void IP_SSATaucTaoTikhonovProblem::getVariableBounds(Tao /*tao*/, Vec lo, Vec hi) {
   double zeta_min = 0.0, zeta_max = 0.0, tauc_min = 0.0, tauc_max = 0.0;
 
-  tauc_min = m_grid->ctx()->config()->get_double("inverse.ssa.tauc_min");
-  tauc_max = m_grid->ctx()->config()->get_double("inverse.ssa.tauc_max");
+  tauc_min = m_grid->ctx()->config()->get_number("inverse.ssa.tauc_min");
+  tauc_max = m_grid->ctx()->config()->get_number("inverse.ssa.tauc_max");
 
   IPDesignVariableParameterization &tauc_param = m_forward.tauc_param();
   tauc_param.fromDesignVariable(tauc_min,&zeta_min);

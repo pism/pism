@@ -46,7 +46,7 @@ static char help[] =
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
@@ -58,7 +58,7 @@ namespace stressbalance {
 class SSATestCaseConst: public SSATestCase
 {
 public:
-  SSATestCaseConst(Context::Ptr ctx, int Mx, int My, double q,
+  SSATestCaseConst(std::shared_ptr<Context> ctx, int Mx, int My, double q,
                    SSAFactory ssafactory):
     SSATestCase(ctx, Mx, My, 50e3, 50e3, CELL_CORNER, NOT_PERIODIC),
     basal_q(q)
@@ -69,11 +69,11 @@ public:
     nu0   = units::convert(ctx->unit_system(), 30.0, "MPa year", "Pa s");
     tauc0 = 1.e4;               // Pa
 
-    m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", true);
-    m_config->set_double("basal_resistance.pseudo_plastic.q", basal_q);
+    m_config->set_flag("basal_resistance.pseudo_plastic.enabled", true);
+    m_config->set_number("basal_resistance.pseudo_plastic.q", basal_q);
 
     // Use a pseudo-plastic law with a constant q determined at run time
-    m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", true);
+    m_config->set_flag("basal_resistance.pseudo_plastic.enabled", true);
 
     // The following is irrelevant because we will force linear rheology later.
     m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
@@ -98,7 +98,7 @@ void SSATestCaseConst::initializeSSACoefficients() {
   m_ssa->strength_extension->set_min_thickness(0.5*H0);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", true);
+  m_config->set_flag("stress_balance.ssa.compute_surface_gradient_inward", true);
 
   // Set constant thickness, tauc
   m_bc_mask.set(0);
@@ -137,10 +137,10 @@ void SSATestCaseConst::initializeSSACoefficients() {
 void SSATestCaseConst::exactSolution(int /*i*/, int /*j*/,
                                      double /*x*/, double /*y*/,
                                      double *u, double *v) {
-  double earth_grav = m_config->get_double("constants.standard_gravity"),
-    tauc_threshold_velocity = m_config->get_double("basal_resistance.pseudo_plastic.u_threshold",
+  double earth_grav = m_config->get_number("constants.standard_gravity"),
+    tauc_threshold_velocity = m_config->get_number("basal_resistance.pseudo_plastic.u_threshold",
                                                    "m second-1"),
-    ice_rho = m_config->get_double("constants.ice.density");
+    ice_rho = m_config->get_number("constants.ice.density");
 
   *u = pow(ice_rho * earth_grav * H0 * dhdx / tauc0, 1./basal_q)*tauc_threshold_velocity;
   *v = 0;
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    Context::Ptr ctx = context_from_options(com, "ssa_test_const");
+    std::shared_ptr<Context> ctx = context_from_options(com, "ssa_test_const");
     Config::Ptr config = ctx->config();
 
     std::string usage = "\n"
@@ -176,11 +176,11 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    unsigned int Mx = config->get_double("grid.Mx");
-    unsigned int My = config->get_double("grid.My");
+    unsigned int Mx = config->get_number("grid.Mx");
+    unsigned int My = config->get_number("grid.My");
 
-    config->set_double("basal_resistance.pseudo_plastic.q", 1.0);
-    double basal_q = config->get_double("basal_resistance.pseudo_plastic.q");
+    config->set_number("basal_resistance.pseudo_plastic.q", 1.0);
+    double basal_q = config->get_number("basal_resistance.pseudo_plastic.q");
 
     auto method = config->get_string("stress_balance.ssa.method");
     auto output_file = config->get_string("output.file_name");

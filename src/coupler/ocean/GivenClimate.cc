@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,7 @@ namespace pism {
 namespace ocean {
 
 Given::Given(IceGrid::ConstPtr g)
-  : OceanModel(g, nullptr) {
+  : OceanModel(g, std::shared_ptr<OceanModel>()) {
 
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
   m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);
@@ -35,11 +35,11 @@ Given::Given(IceGrid::ConstPtr g)
   ForcingOptions opt(*m_grid->ctx(), "ocean.given");
 
   {
-    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
+    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
     m_shelfbtemp = IceModelVec2T::ForcingField(m_grid,
                                                file,
@@ -47,7 +47,8 @@ Given::Given(IceGrid::ConstPtr g)
                                                "", // no standard name
                                                buffer_size,
                                                evaluations_per_year,
-                                               periodic);
+                                               periodic,
+                                               LINEAR);
 
     m_shelfbmassflux = IceModelVec2T::ForcingField(m_grid,
                                                    file,
@@ -60,11 +61,10 @@ Given::Given(IceGrid::ConstPtr g)
 
   m_shelfbtemp->set_attrs("climate_forcing",
                           "absolute temperature at ice shelf base",
-                          "Kelvin", "");
+                          "Kelvin", "Kelvin", "", 0);
   m_shelfbmassflux->set_attrs("climate_forcing",
                               "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                              "kg m-2 s-1", "");
-  m_shelfbmassflux->metadata().set_string("glaciological_units", "kg m-2 year-1");
+                              "kg m-2 s-1", "kg m-2 year-1", "", 0);
 }
 
 Given::~Given() {

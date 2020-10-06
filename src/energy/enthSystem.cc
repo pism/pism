@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2018 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2018, 2020 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,6 +43,8 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_strain_heating3(strain_heating3),
   m_EC(EC) {
 
+  using std::pow;
+
   // set some values so we can check if init was called
   m_R_cold   = -1.0;
   m_R_temp   = -1.0;
@@ -55,14 +57,14 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_U_ks = GSL_NAN;
   m_B_ks = GSL_NAN;
 
-  m_ice_density = config.get_double("constants.ice.density");
-  m_ice_c   = config.get_double("constants.ice.specific_heat_capacity");
-  m_ice_k   = config.get_double("constants.ice.thermal_conductivity");
-  m_p_air   = config.get_double("surface.pressure");
+  m_ice_density = config.get_number("constants.ice.density");
+  m_ice_c   = config.get_number("constants.ice.specific_heat_capacity");
+  m_ice_k   = config.get_number("constants.ice.thermal_conductivity");
+  m_p_air   = config.get_number("surface.pressure");
 
-  m_exclude_horizontal_advection = config.get_boolean("energy.margin_exclude_horizontal_advection");
-  m_exclude_vertical_advection   = config.get_boolean("energy.margin_exclude_vertical_advection");
-  m_exclude_strain_heat          = config.get_boolean("energy.margin_exclude_strain_heating");
+  m_exclude_horizontal_advection = config.get_flag("energy.margin_exclude_horizontal_advection");
+  m_exclude_vertical_advection   = config.get_flag("energy.margin_exclude_vertical_advection");
+  m_exclude_strain_heat          = config.get_flag("energy.margin_exclude_strain_heating");
 
   size_t Mz = m_z.size();
   m_Enth.resize(Mz);
@@ -78,15 +80,15 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_nu = m_dt / m_dz;
 
   double
-    ratio = config.get_double(prefix + ".temperate_ice_thermal_conductivity_ratio"),
+    ratio = config.get_number(prefix + ".temperate_ice_thermal_conductivity_ratio"),
     K     = m_ice_k / m_ice_c,
     K0    = (ratio * m_ice_k) / m_ice_c;
 
-  m_R_factor = m_dt / (PetscSqr(m_dz) * m_ice_density);
+  m_R_factor = m_dt / (pow(m_dz, 2) * m_ice_density);
   m_R_cold = K * m_R_factor;
   m_R_temp = K0 * m_R_factor;
 
-  if (config.get_boolean("energy.temperature_dependent_thermal_conductivity")) {
+  if (config.get_flag("energy.temperature_dependent_thermal_conductivity")) {
     m_k_depends_on_T = true;
   } else {
     m_k_depends_on_T = false;
@@ -186,7 +188,7 @@ double enthSystemCtx::compute_lambda() {
 
 
 void enthSystemCtx::set_surface_dirichlet_bc(double E_surface) {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   if ((m_nu < 0.0) || (m_R_cold < 0.0) || (m_R_temp < 0.0)) {
     throw RuntimeError(PISM_ERROR_LOCATION, "setDirichletSurface() should only be called after\n"
                        "initAllColumns() in enthSystemCtx");
@@ -207,10 +209,11 @@ static inline double upwind(double u, double E_m, double E, double E_p, double d
 /** @param[in] heat_flux prescribed heat flux (positive means flux into the ice)
  */
 void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
+  using std::pow;
   // extract K from R[ks], so this code works even if K=K(T)
   // recall:   R = (ice_K / ice_density) * dt / PetscSqr(dz)
   const double
-    K = (m_ice_density * PetscSqr(m_dz) * m_R[m_ks]) / m_dt,
+    K = (m_ice_density * pow(m_dz, 2) * m_R[m_ks]) / m_dt,
     G = heat_flux / K;
 
   this->set_surface_neumann_bc(G);
@@ -277,7 +280,7 @@ This method should only be called if everything but the basal boundary condition
 is already set.
  */
 void enthSystemCtx::set_basal_dirichlet_bc(double Y) {
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   checkReadyToSolve();
   if (gsl_isnan(m_D0) == 0 || gsl_isnan(m_U0) == 0 || gsl_isnan(m_B0) == 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "setting basal boundary conditions twice in enthSystemCtx");
@@ -326,10 +329,11 @@ is already set.
 
  */
 void enthSystemCtx::set_basal_heat_flux(double heat_flux) {
+  using std::pow;
   // extract K from R[0], so this code works even if K=K(T)
   // recall:   R = (ice_K / ice_density) * dt / PetscSqr(dz)
   const double
-    K = (m_ice_density * PetscSqr(m_dz) * m_R[0]) / m_dt,
+    K = (m_ice_density * pow(m_dz, 2) * m_R[0]) / m_dt,
     G = - heat_flux / K;
 
   this->set_basal_neumann_bc(G);
@@ -426,7 +430,7 @@ void enthSystemCtx::assemble_R() {
   }
 
   // R[k] for k > m_ks are never used
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   for (unsigned int k = m_ks + 1; k < m_R.size(); ++k) {
     m_R[k] = GSL_NAN;
   }
@@ -480,7 +484,7 @@ void enthSystemCtx::solve(std::vector<double> &x) {
 
   TridiagonalSystem &S = *m_solver;
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   checkReadyToSolve();
   if (gsl_isnan(m_D0) || gsl_isnan(m_U0) || gsl_isnan(m_B0)) {
     throw RuntimeError(PISM_ERROR_LOCATION,
@@ -561,7 +565,7 @@ void enthSystemCtx::solve(std::vector<double> &x) {
     x[k] = m_B_ks;
   }
 
-#if (PISM_DEBUG==1)
+#if (Pism_DEBUG==1)
   // if success, mark column as done by making scheme params and b.c. coeffs invalid
   m_lambda = -1.0;
   m_D0     = GSL_NAN;

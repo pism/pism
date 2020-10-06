@@ -1,6 +1,6 @@
 #!/bin/bash
 
-N=4
+N=1
 M=101
 xx=$M
 yy=$M

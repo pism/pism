@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -50,8 +50,7 @@ void compute_cts(const IceModelVec3 &enthalpy,
 
 double total_ice_enthalpy(double thickness_threshold,
                           const IceModelVec3 &ice_enthalpy,
-                          const IceModelVec2S &ice_thickness,
-                          const IceModelVec2S &cell_area);
+                          const IceModelVec2S &ice_thickness);
 
 void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
                                const IceModelVec2S &ice_surface_temp,

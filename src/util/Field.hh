@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -41,17 +41,17 @@ public:
   void read_attrs(const std::string &filename, int component = 0);
 
   // input and output
-  void define(const PIO &nc, IO_Type output_datatype) const;
+  void define(const File &nc, IO_Type output_datatype) const;
 
   void read(const std::string &filename, unsigned int time);
-  void read(const PIO &nc, unsigned int time);
+  void read(const File &nc, unsigned int time);
 
   void write(const std::string &filename, IO_Type nctype = PISM_DOUBLE) const;
-  void write(const PIO &nc, IO_Type nctype = PISM_DOUBLE) const;
+  void write(const File &nc, IO_Type nctype = PISM_DOUBLE) const;
 
   void regrid(const std::string &filename, RegriddingFlag flag,
               double default_value = 0.0);
-  void regrid(const PIO &nc, RegriddingFlag flag,
+  void regrid(const File &nc, RegriddingFlag flag,
               double default_value = 0.0);
 
   // in-place modification
@@ -151,10 +151,6 @@ public:
 namespace FD {
 inline double diff_x(const Scalar2DField &field, int i, int j) const;
 inline double diff_y(const Scalar2DField &field, int i, int j) const;
-inline double diff_x_stagE(const Scalar2DField &field, int i, int j) const;
-inline double diff_y_stagE(const Scalar2DField &field, int i, int j) const;
-inline double diff_x_stagN(const Scalar2DField &field, int i, int j) const;
-inline double diff_y_stagN(const Scalar2DField &field, int i, int j) const;
 inline double diff_x_p(const Scalar2DField &field, int i, int j) const;
 inline double diff_y_p(const Scalar2DField &field, int i, int j) const;
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,7 +29,7 @@ namespace pism {
  *
  * @return A pointer to a new grid instance.
  */
-IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx);
+IceGrid::Ptr regional_grid_from_options(std::shared_ptr<Context> ctx);
 
 } // end of namespace pism
 

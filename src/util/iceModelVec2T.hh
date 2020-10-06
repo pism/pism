@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018 Constantine Khroulev
+// Copyright (C) 2009--2020 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -45,15 +45,17 @@ public:
   typedef std::shared_ptr<IceModelVec2T> Ptr;
 
   static Ptr ForcingField(IceGrid::ConstPtr grid,
-                          const PIO &file,
+                          const File &file,
                           const std::string &short_name,
                           const std::string &standard_name,
                           int max_buffer_size,
                           int evaluations_per_year,
-                          bool periodic);
+                          bool periodic,
+                          InterpolationType interpolation_type = PIECEWISE_CONSTANT);
 
   IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name, unsigned int n_records,
-                unsigned int n_evaluations_per_year);
+                unsigned int n_evaluations_per_year,
+                InterpolationType interpolation_type = PIECEWISE_CONSTANT);
   virtual ~IceModelVec2T();
 
   unsigned int n_records();
@@ -75,31 +77,11 @@ public:
   void init_interpolation(const std::vector<double> &ts);
 
 private:
-  std::vector<double> m_time,             //!< all the times available in filename
-    m_time_bounds;                //!< time bounds
-  std::string m_filename;         //!< file to read (regrid) from
-  petsc::DM::Ptr m_da3;
-  petsc::Vec m_v3;                       //!< a 3D Vec used to store records
-  mutable void ***m_array3;
+  struct Data;
 
-  //! maximum number of records to store in memory
-  unsigned int m_n_records;
+  Data *m_data;
 
-  //! number of records kept in memory
-  unsigned int m_N;
-
-  //! number of evaluations per year used to compute temporal averages
-  unsigned int m_n_evaluations_per_year;
-
-  //! in-file index of the first record stored in memory ("int" to allow first==-1 as an
-  //! "invalid" first value)
-  int m_first;
-
-  std::vector<unsigned int> m_interp_indices;
-  unsigned int m_period;        // in years
-  double m_reference_time;      // in seconds
-
-  double*** get_array3();
+  double*** array3();
   void update(unsigned int start);
   void discard(int N);
   double average(int i, int j);

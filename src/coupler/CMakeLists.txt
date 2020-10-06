@@ -1,22 +1,32 @@
-# Boundary models (surface, atmosphere, ocean).
+# Boundary models (surface, atmosphere, ocean, frontalmelt).
 add_library (boundary OBJECT
   ./util/ScalarForcing.cc
   ./util/options.cc
   ./util/lapse_rates.cc
   ./atmosphere/AtmosphereModel.cc
-  ./atmosphere/ConstantPIK.cc
   ./atmosphere/SeariseGreenland.cc
   ./atmosphere/YearlyCycle.cc
   ./atmosphere/CosineYearlyCycle.cc
   ./atmosphere/GivenClimate.cc
-  ./atmosphere/LapseRates.cc
+  ./atmosphere/PIK.cc
+  ./atmosphere/ElevationChange.cc
   ./atmosphere/Delta_T.cc
   ./atmosphere/Delta_P.cc
   ./atmosphere/Frac_P.cc
-  ./atmosphere/Paleo_precip.cc
+  ./atmosphere/PrecipitationScaling.cc
   ./atmosphere/Anomaly.cc
   ./atmosphere/WeatherStation.cc
+  ./atmosphere/OrographicPrecipitation.cc
+  ./atmosphere/OrographicPrecipitationSerial.cc
   ./atmosphere/Factory.cc
+  ./atmosphere/Uniform.cc
+  ./frontalmelt/FrontalMelt.cc
+  ./frontalmelt/Constant.cc
+  ./frontalmelt/DischargeGiven.cc
+  ./frontalmelt/DischargeRouting.cc
+  ./frontalmelt/Given.cc
+  ./frontalmelt/FrontalMeltPhysics.cc
+  ./frontalmelt/Factory.cc
   ./ocean/OceanModel.cc
   ./ocean/CompleteOceanModel.cc
   ./ocean/Cache.cc
@@ -24,6 +34,7 @@ add_library (boundary OBJECT
   ./ocean/Constant.cc
   ./ocean/GivenClimate.cc
   ./ocean/GivenTH.cc
+  ./ocean/Anomaly.cc
   ./ocean/Delta_T.cc
   ./ocean/Delta_SMB.cc
   ./ocean/Frac_MBP.cc
@@ -45,9 +56,9 @@ add_library (boundary OBJECT
   ./surface/Cache.cc
   ./surface/ConstantPIK.cc
   ./surface/Elevation.cc
-  ./surface/StuffAsAnomaly.cc
   ./surface/GivenClimate.cc
-  ./surface/LapseRates.cc
+  ./surface/ISMIP6Climate.cc
+  ./surface/ElevationChange.cc
   ./surface/Delta_T.cc
   ./surface/Simple.cc
   ./surface/TemperatureIndex.cc

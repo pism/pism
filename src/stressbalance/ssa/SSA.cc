@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2018 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2019 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
@@ -36,8 +36,8 @@ namespace pism {
 namespace stressbalance {
 
 SSAStrengthExtension::SSAStrengthExtension(const Config &config) {
-  m_min_thickness = config.get_double("stress_balance.ssa.strength_extension.min_thickness");
-  m_constant_nu = config.get_double("stress_balance.ssa.strength_extension.constant_nu");
+  m_min_thickness = config.get_number("stress_balance.ssa.strength_extension.min_thickness");
+  m_constant_nu = config.get_number("stress_balance.ssa.strength_extension.constant_nu");
 }
 
 //! Set strength = (viscosity times thickness).
@@ -77,28 +77,28 @@ SSA::SSA(IceGrid::ConstPtr g)
 {
   strength_extension = new SSAStrengthExtension(*m_config);
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
 
   // grounded_dragging_floating integer mask
   m_mask.create(m_grid, "ssa_mask", WITH_GHOSTS, WIDE_STENCIL);
   m_mask.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
-                  "", "");
+                   "", "", "", 0);
   std::vector<double> mask_values(4);
   mask_values[0] = MASK_ICE_FREE_BEDROCK;
   mask_values[1] = MASK_GROUNDED;
   mask_values[2] = MASK_FLOATING;
   mask_values[3] = MASK_ICE_FREE_OCEAN;
-  m_mask.metadata().set_doubles("flag_values", mask_values);
+  m_mask.metadata().set_numbers("flag_values", mask_values);
   m_mask.metadata().set_string("flag_meanings",
                               "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
 
   m_taud.create(m_grid, "taud", WITHOUT_GHOSTS);
   m_taud.set_attrs("diagnostic",
-                 "X-component of the driving shear stress at the base of ice",
-                 "Pa", "", 0);
+                   "X-component of the driving shear stress at the base of ice",
+                   "Pa", "Pa", "", 0);
   m_taud.set_attrs("diagnostic",
-                 "Y-component of the driving shear stress at the base of ice",
-                 "Pa", "", 1);
+                   "Y-component of the driving shear stress at the base of ice",
+                   "Pa", "Pa", "", 1);
 
 
   // override velocity metadata
@@ -141,11 +141,11 @@ void SSA::init_impl() {
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).
   if (opts.type == INIT_RESTART) {
-    if (m_config->get_boolean("stress_balance.ssa.read_initial_guess")) {
-      PIO input_file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
-      bool u_ssa_found = input_file.inq_var("u_ssa");
-      bool v_ssa_found = input_file.inq_var("v_ssa");
-      unsigned int start = input_file.inq_nrecords() - 1;
+    if (m_config->get_flag("stress_balance.ssa.read_initial_guess")) {
+      File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      bool u_ssa_found = input_file.find_variable("u_ssa");
+      bool v_ssa_found = input_file.find_variable("v_ssa");
+      unsigned int start = input_file.nrecords() - 1;
 
       if (u_ssa_found and v_ssa_found) {
         m_log->message(3, "Reading u_ssa and v_ssa...\n");
@@ -164,7 +164,7 @@ void SSA::update(const Inputs &inputs, bool full_update) {
   // update the cell type mask using the ice-free thickness threshold for stress balance
   // computations
   {
-    const double H_threshold = m_config->get_double("stress_balance.ice_free_thickness_standard");
+    const double H_threshold = m_config->get_number("stress_balance.ice_free_thickness_standard");
     GeometryCalculator gc(*m_config);
     gc.set_icefree_thickness(H_threshold);
 
@@ -183,6 +183,57 @@ void SSA::update(const Inputs &inputs, bool full_update) {
   }
 }
 
+/*!
+ * Compute the weight used to determine if the difference between locations `i,j` and `n`
+ * (neighbor) should be used in the computation of the surface gradient in
+ * SSA::compute_driving_stress().
+ *
+ * We avoid differencing across
+ *
+ * - ice margins if stress boundary condition at ice margins (CFBC) is active
+ * - grounding lines
+ * - ice margins next to ice free locations above the surface elevation of the ice (fjord
+ *   walls, nunataks, headwalls)
+ */
+static int weight(bool margin_bc,
+                  int M_ij, int M_n,
+                  double h_ij, double h_n,
+                  int N_ij, int N_n) {
+  using mask::grounded;
+  using mask::icy;
+  using mask::floating_ice;
+  using mask::ice_free;
+  using mask::ice_free_ocean;
+
+  // grounding lines and calving fronts
+  if ((grounded(M_ij) and floating_ice(M_n)) or
+      (floating_ice(M_ij) and grounded(M_n)) or
+      (floating_ice(M_ij) and ice_free_ocean(M_n))) {
+    return 0;
+  }
+
+  // fjord walls, nunataks, headwalls
+  if ((icy(M_ij) and ice_free(M_n) and h_n > h_ij) or
+      (ice_free(M_ij) and icy(M_n) and h_ij > h_n)) {
+    return 0;
+  }
+
+  // This condition has to match the one used to implement the calving front stress
+  // boundary condition in SSAFD::assemble_rhs().
+  if (margin_bc and
+      ((icy(M_ij) and ice_free(M_n)) or
+       (ice_free(M_ij) and icy(M_n)))) {
+    return 0;
+  }
+
+  // boundaries of the "no model" area
+  if ((N_ij == 0 and N_n == 1) or (N_ij == 1 and N_n == 0)) {
+    return 0;
+  }
+
+  return 1;
+}
+
 //! \brief Compute the gravitational driving stress.
 /*!
 Computes the gravitational driving stress at the base of the ice:
@@ -196,144 +247,97 @@ surface gradient. When the thickness at a grid point is very small (below \c
 minThickEtaTransform in the procedure), the formula is slightly modified to
 give a lower driving stress. The transformation is not used in floating ice.
  */
-void SSA::compute_driving_stress(const Geometry &geometry, IceModelVec2V &result) const {
-  // Shortcuts to improve readability.
-  const IceModelVec2S
-    &thk     = geometry.ice_thickness,
-    &surface = geometry.ice_surface_elevation,
-    &bed     = geometry.bed_elevation;
+void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
+                                 const IceModelVec2S &surface_elevation,
+                                 const IceModelVec2CellType &cell_type,
+                                 const IceModelVec2Int *no_model_mask,
+                                 IceModelVec2V &result) const {
 
-  const double n = m_flow_law->exponent(), // frequently n = 3
-    etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
-    invpow  = 1.0 / etapow,  // = 3/8
-    dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
-  const double minThickEtaTransform = 5.0; // m
-  const double dx=m_grid->dx(), dy=m_grid->dy();
+  bool cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
+  bool surface_gradient_inward = m_config->get_flag("stress_balance.ssa.compute_surface_gradient_inward");
 
-  bool cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
-  bool compute_surf_grad_inward_ssa = m_config->get_boolean("stress_balance.ssa.compute_surface_gradient_inward");
-  bool use_eta = (m_config->get_string("stress_balance.sia.surface_gradient_method") == "eta");
+  double
+    dx = m_grid->dx(),
+    dy = m_grid->dy();
 
-  IceModelVec::AccessList list{&surface, &bed, &m_mask, &thk, &result};
+  IceModelVec::AccessList list{&surface_elevation, &cell_type, &ice_thickness, &result};
+
+  if (no_model_mask) {
+    list.add(*no_model_mask);
+  }
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double pressure = m_EC->pressure(thk(i,j)); // FIXME issue #15
+    const double pressure = m_EC->pressure(ice_thickness(i, j)); // FIXME issue #15
     if (pressure <= 0.0) {
-      result(i,j).u = 0.0;
-      result(i,j).v = 0.0;
-    } else {
-      double h_x = 0.0, h_y = 0.0;
-      // FIXME: we need to handle grid periodicity correctly.
-      if (m_mask.grounded(i,j) && (use_eta == true)) {
-        // in grounded case, differentiate eta = H^{8/3} by chain rule
-        if (thk(i,j) > 0.0) {
-          const double myH = (thk(i,j) < minThickEtaTransform ?
-                              minThickEtaTransform : thk(i,j));
-          const double eta = pow(myH, etapow), factor = invpow * pow(eta, dinvpow);
-          h_x = factor * (pow(thk(i+1,j),etapow) - pow(thk(i-1,j),etapow)) / (2*dx);
-          h_y = factor * (pow(thk(i,j+1),etapow) - pow(thk(i,j-1),etapow)) / (2*dy);
-        }
-        // now add bed slope to get actual h_x,h_y
-        // FIXME: there is no reason to assume user's bed is periodized
-        h_x += bed.diff_x(i,j);
-        h_y += bed.diff_y(i,j);
-      } else {  // floating or eta transformation is not used
-        if (compute_surf_grad_inward_ssa) {
-          // Special case for verification tests.
-          h_x = surface.diff_x_p(i,j);
-          h_y = surface.diff_y_p(i,j);
-        } else {              // general case
+      result(i, j) = 0.0;
+      continue;
+    }
 
-          // To compute the x-derivative we use
-          // * away from the grounding line -- 2nd order centered difference
-          //
-          // * at the grounded cell near the grounding line -- 1st order
-          //   one-sided difference using the grounded neighbor
-          //
-          // * at the floating cell near the grounding line -- 1st order
-          //   one-sided difference using the floating neighbor
-          //
-          // All three cases can be combined by writing h_x as the weighted
-          // average of one-sided differences, with weights of 0 if a finite
-          // difference is not used and 1 if it is.
-          //
-          // The y derivative is handled the same way.
+    // Special case for verification tests.
+    if (surface_gradient_inward) {
+      double
+        h_x = surface_elevation.diff_x_p(i, j),
+        h_y = surface_elevation.diff_y_p(i, j);
+      result(i, j) = - pressure * Vector2(h_x, h_y);
+      continue;
+    }
 
-          // x-derivative
-          {
-            double west = 1, east = 1;
-            if ((m_mask.grounded(i,j) && m_mask.floating_ice(i+1,j)) ||
-                (m_mask.floating_ice(i,j) && m_mask.grounded(i+1,j)) ||
-                (m_mask.floating_ice(i,j) && m_mask.ice_free_ocean(i+1,j))) {
-              east = 0;
-            }
-            if ((m_mask.grounded(i,j) && m_mask.floating_ice(i-1,j)) ||
-                (m_mask.floating_ice(i,j) && m_mask.grounded(i-1,j)) ||
-                (m_mask.floating_ice(i,j) && m_mask.ice_free_ocean(i-1,j))) {
-              west = 0;
-            }
+    // To compute the x-derivative we use
+    //
+    // * away from the grounding line, ice margins, and no_model mask transitions -- 2nd
+    //   order centered difference
+    //
+    // * at the grounded cell near the grounding line -- 1st order
+    //   one-sided difference using the grounded neighbor
+    //
+    // * at the floating cell near the grounding line -- 1st order
+    //   one-sided difference using the floating neighbor
+    //
+    // All these cases can be combined by writing h_x as the weighted
+    // average of one-sided differences, with weights of 0 if a finite
+    // difference is not used and 1 if it is.
+    //
+    // The y derivative is handled the same way.
 
-            // This driving stress computation has to match the calving front
-            // stress boundary condition in SSAFD::assemble_rhs().
-            if (cfbc) {
-              if (m_mask.icy(i,j) && m_mask.ice_free(i+1,j)) {
-                east = 0;
-              }
-              if (m_mask.icy(i,j) && m_mask.ice_free(i-1,j)) {
-                west = 0;
-              }
-            }
+    auto M = cell_type.int_star(i, j);
+    auto h = surface_elevation.star(i, j);
+    StarStencil<int> N(0);
 
-            if (east + west > 0) {
-              h_x = 1.0 / (west + east) * (west * surface.diff_x_stagE(i-1,j) +
-                                           east * surface.diff_x_stagE(i,j));
-            } else {
-              h_x = 0.0;
-            }
-          }
+    if (no_model_mask) {
+      N = no_model_mask->int_star(i, j);
+    }
 
-          // y-derivative
-          {
-            double south = 1, north = 1;
-            if ((m_mask.grounded(i,j) && m_mask.floating_ice(i,j+1)) ||
-                (m_mask.floating_ice(i,j) && m_mask.grounded(i,j+1)) ||
-                (m_mask.floating_ice(i,j) && m_mask.ice_free_ocean(i,j+1))) {
-              north = 0;
-            }
-            if ((m_mask.grounded(i,j) && m_mask.floating_ice(i,j-1)) ||
-                (m_mask.floating_ice(i,j) && m_mask.grounded(i,j-1)) ||
-                (m_mask.floating_ice(i,j) && m_mask.ice_free_ocean(i,j-1))) {
-              south = 0;
-            }
+    // x-derivative
+    double h_x = 0.0;
+    {
+      double
+        west = weight(cfbc, M.ij, M.w, h.ij, h.w, N.ij, N.w),
+        east = weight(cfbc, M.ij, M.e, h.ij, h.e, N.ij, N.e);
 
-            // This driving stress computation has to match the calving front
-            // stress boundary condition in SSAFD::assemble_rhs().
-            if (cfbc) {
-              if (m_mask.icy(i,j) && m_mask.ice_free(i,j+1)) {
-                north = 0;
-              }
-              if (m_mask.icy(i,j) && m_mask.ice_free(i,j-1)) {
-                south = 0;
-              }
-            }
+      if (east + west > 0) {
+        h_x = 1.0 / ((west + east) * dx) * (west * (h.ij - h.w) + east * (h.e - h.ij));
+      } else {
+        h_x = 0.0;
+      }
+    }
 
-            if (north + south > 0) {
-              h_y = 1.0 / (south + north) * (south * surface.diff_y_stagN(i,j-1) +
-                                             north * surface.diff_y_stagN(i,j));
-            } else {
-              h_y = 0.0;
-            }
-          }
+    // y-derivative
+    double h_y = 0.0;
+    {
+      double
+        south = weight(cfbc, M.ij, M.s, h.ij, h.s, N.ij, N.s),
+        north = weight(cfbc, M.ij, M.n, h.ij, h.n, N.ij, N.n);
 
-        } // end of "general case"
+      if (north + south > 0) {
+        h_y = 1.0 / ((south + north) * dy) * (south * (h.ij - h.s) + north * (h.n - h.ij));
+      } else {
+        h_y = 0.0;
+      }
+    }
 
-      } // end of "floating or eta transformation is not used"
-
-      result(i,j).u = - pressure * h_x;
-      result(i,j).v = - pressure * h_y;
-    } // end of "(pressure > 0)"
+    result(i, j) = - pressure * Vector2(h_x, h_y);
   }
 }
 
@@ -352,11 +356,11 @@ const IceModelVec2V& SSA::driving_stress() const {
 }
 
 
-void SSA::define_model_state_impl(const PIO &output) const {
+void SSA::define_model_state_impl(const File &output) const {
   m_velocity.define(output);
 }
 
-void SSA::write_model_state_impl(const PIO &output) const {
+void SSA::write_model_state_impl(const File &output) const {
   m_velocity.write(output);
 }
 

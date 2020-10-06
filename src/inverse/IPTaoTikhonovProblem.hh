@@ -1,4 +1,4 @@
-// Copyright (C) 2012,2013,2014,2015,2016,2017  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012,2013,2014,2015,2016,2017,2020  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,8 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace inverse {
@@ -302,8 +304,8 @@ IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(ForwardProblem &forwa
 
   m_grid = m_d0.grid();
 
-  m_tikhonov_atol = m_grid->ctx()->config()->get_double("inverse.tikhonov.atol");
-  m_tikhonov_rtol = m_grid->ctx()->config()->get_double("inverse.tikhonov.rtol");
+  m_tikhonov_atol = m_grid->ctx()->config()->get_number("inverse.tikhonov.atol");
+  m_tikhonov_rtol = m_grid->ctx()->config()->get_number("inverse.tikhonov.rtol");
 
   int design_stencil_width = m_d0.stencil_width();
   int state_stencil_width = m_u_obs.stencil_width();
@@ -405,7 +407,12 @@ void IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(Tao tao,
                                                                         double *value, Vec gradient) {
   PetscErrorCode ierr;
   // Variable 'x' has no ghosts.  We need ghosts for computation with the design variable.
-  m_d->copy_from_vec(x);
+  {
+    // increment the reference counter so that it does not get destroyed by petsc::Vec::~Vec()
+    PetscObjectReference((PetscObject)x);
+    petsc::Vec tmp(x);
+    m_d->copy_from_vec(tmp);
+  }
 
   TerminationReason::Ptr reason = m_forward.linearize_at(*m_d);
   if (reason->failed()) {

@@ -27,7 +27,7 @@ namespace pism {
 class IceCompModel : public IceModel {
 
 public:
-  IceCompModel(IceGrid::Ptr g, Context::Ptr ctx, int mytest);
+  IceCompModel(IceGrid::Ptr g, std::shared_ptr<Context> ctx, int mytest);
   virtual ~IceCompModel() {}
   
   // re-defined steps of init() sequence:
@@ -38,7 +38,7 @@ public:
   virtual void allocate_energy_model();
 
   // NB! not virtual
-  void bootstrap_2d(const PIO &input_file) __attribute__((noreturn));
+  void bootstrap_2d(const File &input_file) __attribute__((noreturn));
 
   virtual void initialize_2d();
 

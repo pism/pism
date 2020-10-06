@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,6 +31,16 @@ public:
 
   typedef std::shared_ptr<IceModelVec2CellType> Ptr;
   typedef std::shared_ptr<const IceModelVec2CellType> ConstPtr;
+  IceModelVec2CellType()
+    : IceModelVec2Int() {
+    // empty
+  }
+
+  IceModelVec2CellType(IceGrid::ConstPtr grid, const std::string &name,
+                       IceModelVecKind ghostedp, int width = 1)
+    : IceModelVec2Int(grid, name, ghostedp, width) {
+    // empty
+  }
   
   inline bool ocean(int i, int j) const {
     return mask::ocean(as_int(i, j));

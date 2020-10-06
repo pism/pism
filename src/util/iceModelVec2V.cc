@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Constantine Khroulev
+// Copyright (C) 2009--2017, 2020 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,19 +26,22 @@ using std::dynamic_pointer_cast;
 #include "error_handling.hh"
 #include "iceModelVec_helpers.hh"
 #include "ConfigInterface.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/IceModelVec_impl.hh"
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 
 IceModelVec2V::IceModelVec2V() : IceModelVec2() {
-  m_dof = 2;
-  m_begin_end_access_use_dof = false;
+  m_impl->dof = 2;
+  m_impl->begin_access_use_dof = false;
 }
 
 IceModelVec2V::IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_name,
                              IceModelVecKind ghostedp, unsigned int stencil_width)
   : IceModelVec2() {
-  m_dof = 2;
-  m_begin_end_access_use_dof = false;
+  m_impl->dof = 2;
+  m_impl->begin_access_use_dof = false;
 
   create(grid, short_name, ghostedp, stencil_width);
 }
@@ -56,18 +59,17 @@ void IceModelVec2V::create(IceGrid::ConstPtr grid, const std::string &short_name
                            unsigned int stencil_width) {
 
   IceModelVec2::create(grid, short_name, ghostedp,
-                       stencil_width, m_dof);
+                       stencil_width, m_impl->dof);
 
-  units::System::Ptr sys = m_grid->ctx()->unit_system();
+  auto sys = m_impl->grid->ctx()->unit_system();
 
-  m_metadata[0] = SpatialVariableMetadata(sys, "u" + short_name);
-  m_metadata[1] = SpatialVariableMetadata(sys, "v" + short_name);
+  m_impl->metadata = {SpatialVariableMetadata(sys, "u" + short_name),
+                      SpatialVariableMetadata(sys, "v" + short_name)};
 
-  m_name = "vel" + short_name;
+  m_impl->name = "vel" + short_name;
 }
 
-Vector2** IceModelVec2V::get_array() {
-  begin_access();
+Vector2** IceModelVec2V::array() {
   return static_cast<Vector2**>(m_array);
 }
 

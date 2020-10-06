@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,8 +23,8 @@
 #include "Anomaly.hh"
 #include "Elevation.hh"
 #include "GivenClimate.hh"
-#include "LapseRates.hh"
-#include "StuffAsAnomaly.hh"
+#include "ISMIP6Climate.hh"
+#include "ElevationChange.hh"
 #include "Delta_T.hh"
 #include "TemperatureIndex.hh"
 #include "Simple.hh"
@@ -37,55 +37,26 @@ namespace pism {
 namespace surface {
 
 Factory::Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : PCFactory<SurfaceModel>(g),
-  m_input(input) {
-
-  m_option = "surface";
+  : PCFactory<SurfaceModel>(g, "surface.models"),
+    m_input(input) {
 
   add_surface_model<Elevation>("elevation");
   add_surface_model<Given>("given");
+  add_surface_model<ISMIP6>("ismip6");
   add_surface_model<TemperatureIndex>("pdd");
   add_surface_model<PIK>("pik");
   add_surface_model<Simple>("simple");
-  set_default("given");
 
   add_modifier<Anomaly>("anomaly");
   add_modifier<Cache>("cache");
   add_modifier<Delta_T>("delta_T");
   add_modifier<ForceThickness>("forcing");
-  add_modifier<LapseRates>("lapse_rate");
-  add_modifier<StuffAsAnomaly>("turn_into_anomaly");
+  add_modifier<ElevationChange>("elevation_change");
 }
 
 Factory::~Factory() {
   // empty
 }
-
-void Factory::set_default(const std::string &name) {
-  if (m_surface_models.find(name) == m_surface_models.end()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "type %s is not registered", name.c_str());
-  } else {
-    m_default_type = name;
-  }
-}
-
-std::shared_ptr<SurfaceModel> Factory::create() {
-  // build a list of available models:
-  auto model_list = key_list(m_surface_models);
-
-  // build a list of available modifiers:
-  auto modifier_list = key_list(m_modifiers);
-
-  std::string description = ("Sets up the PISM " + m_option + " model."
-                             " Available models: " + model_list +
-                             " Available modifiers: " + modifier_list);
-
-  // Get the command-line option:
-  options::StringList choices("-" + m_option, description, m_default_type);
-
-  return create(choices.to_string());
-}
-
 
 std::shared_ptr<SurfaceModel> Factory::create(const std::string &type) {
 
@@ -109,9 +80,9 @@ std::shared_ptr<SurfaceModel> Factory::create(const std::string &type) {
 std::shared_ptr<SurfaceModel> Factory::surface_model(const std::string &type,
                                                      std::shared_ptr<InputModel> input) {
   if (m_surface_models.find(type) == m_surface_models.end()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s model \"%s\" is not available.\n"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot allocate %s \"%s\".\n"
                                   "Available models:    %s\n",
-                                  m_option.c_str(), type.c_str(),
+                                  m_parameter.c_str(), type.c_str(),
                                   key_list(m_surface_models).c_str());
   }
 

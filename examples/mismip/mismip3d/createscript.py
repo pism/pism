@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2012-2015 Moritz Huetten and Torsten Albrecht (and Ed Bueler)
 
@@ -106,7 +106,7 @@ else:
 print('')
 print('stressbalance="-ssa_method fd -ssa_flow_law isothermal_glen -ssafd_ksp_rtol 1e-7"')
 print('basal="-yield_stress constant -pseudo_plastic -pseudo_plastic_q 0.333333333 -pseudo_plastic_uthreshold 3.155693e+07"')
-print('calvingfront="-cfbc -part_grid -calving ocean_kill"')
+print('calvingfront="-cfbc -part_grid"')
 if args.m == 1:
     print('modelopt="-stress_balance ssa" ')
 elif args.m == 2:
@@ -120,19 +120,19 @@ print('opts="-config_override MISMIP3D_conf.nc $stressbalance $basal $calvingfro
 print('')
 if args.e == 'Stnd':
     print('infile=MISMIP3D_Stnd_initialSetup.nc')
-    print('cmd="$pismr -i $infile -bootstrap -Mx $Mx -My 3 -Mz 15 -Lz 6000 -tauc 1.0e7 -ocean_kill_file $infile $opts"')
+    print('cmd="$pismr -i $infile -bootstrap -Mx $Mx -My 3 -Mz 15 -Lz 6000 -tauc 1.0e7 -front_retreat_file $infile $opts"')
 elif args.e == 'P10S':
     print('infile=MISMIP3D_P10S_initialSetup.nc')
-    print('cmp="$pismr -i $infile -bootstrap -Mx $Mx -My $My -Mz 15 -Lz 6000 -ocean_kill_file $infile $opts"')
+    print('cmp="$pismr -i $infile -bootstrap -Mx $Mx -My $My -Mz 15 -Lz 6000 -front_retreat_file $infile $opts"')
 elif args.e == 'P10R':
     print('infile=P10S.nc')
-    print('cmd="$pismr -i $infile -tauc 1.0e7 -ocean_kill_file $infile $opts"')
+    print('cmd="$pismr -i $infile -tauc 1.0e7 -front_retreat_file $infile $opts"')
 elif args.e == 'P75S':
     print('infile=MISMIP3D_P75S_initialSetup.nc')
-    print('cmd="$pismr -i $infile -bootstrap -Mx $Mx -My $My -Mz 15 -Lz 6000 -ocean_kill_file $infile $opts"')
+    print('cmd="$pismr -i $infile -bootstrap -Mx $Mx -My $My -Mz 15 -Lz 6000 -front_retreat_file $infile $opts"')
 elif args.e == 'P75R':
     print('infile=P75S.nc')
-    print('cmd="$pismr -i $infile -tauc 1.0e7 -ocean_kill_file $infile $opts"')
+    print('cmd="$pismr -i $infile -tauc 1.0e7 -front_retreat_file $infile $opts"')
 
 print('')
 print('echo "running command:"')

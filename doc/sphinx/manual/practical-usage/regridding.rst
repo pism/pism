@@ -5,8 +5,8 @@
 Regridding
 ----------
 
-FIXME: mention that -regrid_file without -regrid_vars re-grids model state variables for
-all selected sub-models.
+.. FIXME: Mention that -regrid_file without -regrid_vars re-grids model state variables
+   for all selected sub-models.
 
 It is common to want to interpolate a coarse grid model state onto a finer grid or vice
 versa. For example, one might want to do the EISMINT II experiment on the default grid,

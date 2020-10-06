@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
@@ -38,10 +38,10 @@ namespace surface {
 ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
   : SurfaceModel(g, input) {
 
-  m_alpha                        = m_config->get_double("surface.force_to_thickness.alpha", "s-1");
-  m_alpha_ice_free_factor        = m_config->get_double("surface.force_to_thickness.ice_free_alpha_factor");
-  m_ice_free_thickness_threshold = m_config->get_double("surface.force_to_thickness.ice_free_thickness_threshold");
-  m_start_time                   = m_config->get_double("surface.force_to_thickness.start_time", "seconds");
+  m_alpha                        = m_config->get_number("surface.force_to_thickness.alpha", "s-1");
+  m_alpha_ice_free_factor        = m_config->get_number("surface.force_to_thickness.ice_free_alpha_factor");
+  m_ice_free_thickness_threshold = m_config->get_number("surface.force_to_thickness.ice_free_thickness_threshold");
+  m_start_time                   = m_config->get_number("surface.force_to_thickness.start_time", "seconds");
 
   m_target_thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
   // will set attributes in init()
@@ -49,12 +49,16 @@ ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel
   m_ftt_mask.create(m_grid, "ftt_mask", WITHOUT_GHOSTS);
   m_ftt_mask.set_attrs("diagnostic",
                        "mask specifying where to apply the force-to-thickness mechanism",
-                       "", ""); // no units and no standard name
+                       "", "", "", 0); // no units and no standard name
   m_ftt_mask.set(1.0); // default: applied in whole domain
-  m_ftt_mask.metadata().set_output_type(PISM_BYTE);
+  m_ftt_mask.metadata().set_output_type(PISM_INT);
   m_ftt_mask.metadata().set_time_independent(true);
 
   m_mass_flux = allocate_mass_flux(g);
+
+  m_accumulation = allocate_accumulation(g);
+  m_melt         = allocate_melt(g);
+  m_runoff       = allocate_runoff(g);
 }
 
 ForceThickness::~ForceThickness() {
@@ -82,7 +86,7 @@ void ForceThickness::init_impl(const Geometry &geometry) {
                  m_ice_free_thickness_threshold);
 
   // check of the input file is really there and regrid the target thickness
-  PIO file(m_grid->com, "guess_mode", input_file, PISM_READONLY);
+  File file(m_grid->com, input_file, PISM_GUESS, PISM_READONLY);
 
   m_log->message(2,
                  "    reading target thickness 'thk' from %s ...\n"
@@ -93,8 +97,8 @@ void ForceThickness::init_impl(const Geometry &geometry) {
     // set attributes for the read stage; see below for reset
     m_target_thickness.set_attrs("diagnostic",
                                  "target thickness for force-to-thickness mechanism (hit this at end of run)",
-                                 "m",
-                                 "land_ice_thickness"); // standard_name *to read by*
+                                 "m", "m",
+                                 "land_ice_thickness", 0); // standard_name *to read by*
 
     m_target_thickness.regrid(input_file, CRITICAL);
 
@@ -102,8 +106,8 @@ void ForceThickness::init_impl(const Geometry &geometry) {
     m_target_thickness.metadata(0).set_name("ftt_target_thk");
     m_target_thickness.set_attrs("diagnostic",
                                  "target thickness for force-to-thickness mechanism (wants to hit this at end of run)",
-                                 "m",
-                                 "");  // no CF standard_name, to put it mildly
+                                 "m", "m",
+                                 "", 0);  // no CF standard_name, to put it mildly
   }
 
   {
@@ -234,7 +238,7 @@ void ForceThickness::adjust_mass_flux(double time,
   m_log->message(5,
                  "    updating surface mass balance using -force_to_thickness mechanism ...");
 
-  double ice_density = m_config->get_double("constants.ice.density");
+  double ice_density = m_config->get_number("constants.ice.density");
 
   IceModelVec::AccessList list{&cell_type, &ice_thickness,
       &m_target_thickness, &m_ftt_mask, &result};
@@ -262,10 +266,26 @@ void ForceThickness::update_impl(const Geometry &geometry, double t, double dt) 
                    geometry.ice_thickness,
                    geometry.cell_type,
                    *m_mass_flux);
+  
+  dummy_accumulation(*m_mass_flux, *m_accumulation);
+  dummy_melt(*m_mass_flux, *m_melt);
+  dummy_runoff(*m_mass_flux, *m_runoff);
 }
 
 const IceModelVec2S &ForceThickness::mass_flux_impl() const {
   return *m_mass_flux;
+}
+
+const IceModelVec2S &ForceThickness::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S &ForceThickness::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S &ForceThickness::runoff_impl() const {
+  return *m_runoff;
 }
 
 /*!
@@ -280,13 +300,13 @@ Therefore we set here
    \f[\Delta t = \frac{2}{\alpha}.\f]
  */
 MaxTimestep ForceThickness::max_timestep_impl(double my_t) const {
-  double max_dt = units::convert(m_sys, 2.0 / m_alpha, "years", "seconds");
+  double max_dt = 2.0 / m_alpha;
   MaxTimestep input_max_dt = m_input_model->max_timestep(my_t);
 
   return std::min(input_max_dt, MaxTimestep(max_dt, "surface forcing"));
 }
 
-void ForceThickness::define_model_state_impl(const PIO &output) const {
+void ForceThickness::define_model_state_impl(const File &output) const {
   m_ftt_mask.define(output);
   m_target_thickness.define(output);
 
@@ -295,7 +315,7 @@ void ForceThickness::define_model_state_impl(const PIO &output) const {
   }
 }
 
-void ForceThickness::write_model_state_impl(const PIO &output) const {
+void ForceThickness::write_model_state_impl(const File &output) const {
   m_ftt_mask.write(output);
   m_target_thickness.write(output);
 

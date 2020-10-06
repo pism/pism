@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,7 +25,9 @@
 #include "pism/util/pism_options.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
+#include "pism/util/Component.hh" // process_input_options
+#include "pism/util/Context.hh"
 
 namespace pism {
 
@@ -80,16 +82,16 @@ static void subset_extent(const std::string& axis,
 //! Create a grid using command-line options and (possibly) an input file.
 /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
  */
-IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
+IceGrid::Ptr regional_grid_from_options(std::shared_ptr<Context> ctx) {
 
-  const options::String input_file("-i", "Specifies a PISM input file");
-  const bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+  auto options = process_input_options(ctx->com(), ctx->config());
+
   const options::RealList x_range("-x_range",
                                   "range of X coordinates in the selected subset", {});
   const options::RealList y_range("-y_range",
                                   "range of Y coordinates in the selected subset", {});
 
-  if (input_file.is_set() and bootstrap and x_range.is_set() and y_range.is_set()) {
+  if (options.type == INIT_BOOTSTRAP and x_range.is_set() and y_range.is_set()) {
     // bootstrapping; get domain size defaults from an input file, allow overriding all grid
     // parameters using command-line options
 
@@ -107,16 +109,14 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
                                       "bedrock_altitude", "thk", "topg"};
     bool grid_info_found = false;
 
-    PIO file(ctx->com(), "netcdf3", input_file, PISM_READONLY);
+    File file(ctx->com(), options.filename, PISM_NETCDF3, PISM_READONLY);
     for (auto name : names) {
 
-      grid_info_found = file.inq_var(name);
+      grid_info_found = file.find_variable(name);
       if (not grid_info_found) {
-        std::string dummy1;
-        bool dummy2;
         // Failed to find using a short name. Try using name as a
         // standard name...
-        file.inq_var("dummy", name, grid_info_found, dummy1, dummy2);
+        grid_info_found = file.find_variable("unlikely_name", name).exists;
       }
 
       if (grid_info_found) {
@@ -140,15 +140,10 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
     }
 
     if (not grid_info_found) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no geometry information found in '%s'",
-                                    input_file->c_str());
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "no geometry information found in '%s'",
+                                    options.filename.c_str());
     }
-
-    // ignore -Lx, -Ly, -Mx, -My
-    options::ignored(*ctx->log(), "-Mx");
-    options::ignored(*ctx->log(), "-My");
-    options::ignored(*ctx->log(), "-Lx");
-    options::ignored(*ctx->log(), "-Ly");
 
     // process options controlling vertical grid parameters, overriding values read from a file
     input_grid.vertical_grid_from_options(ctx->config());

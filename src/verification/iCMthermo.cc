@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -155,8 +155,8 @@ void IceCompModel::initTestsKO() {
 void IceCompModel::getCompSourcesTestFG() {
 
   const double
-    ice_rho   = m_config->get_double("constants.ice.density"),
-    ice_c     = m_config->get_double("constants.ice.specific_heat_capacity");
+    ice_rho   = m_config->get_number("constants.ice.density"),
+    ice_c     = m_config->get_number("constants.ice.specific_heat_capacity");
 
   // before temperature and flow step, set strain_heating_c from exact values
 
@@ -386,8 +386,8 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
   }
 
   const double
-    ice_rho   = m_config->get_double("constants.ice.density"),
-    ice_c     = m_config->get_double("constants.ice.specific_heat_capacity");
+    ice_rho   = m_config->get_number("constants.ice.density"),
+    ice_c     = m_config->get_number("constants.ice.specific_heat_capacity");
 
   const IceModelVec3 &strain_heating3 = m_stress_balance->volumetric_strain_heating();
 
@@ -476,8 +476,10 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
           vex = (y/r) * P.U[0];
         // note that because getValZ does linear interpolation and H(i, j) is not exactly at
         // a grid point, this causes nonzero errors
-        const double Uerr = sqrt(PetscSqr(u3.getValZ(i, j, H) - uex) +
-                                 PetscSqr(v3.getValZ(i, j, H) - vex));
+        double
+          u_err = u3.getValZ(i, j, H) - uex,
+          v_err = v3.getValZ(i, j, H) - vex,
+          Uerr  = sqrt(u_err * u_err + v_err * v_err);
         maxUerr = std::max(maxUerr, Uerr);
         avUerr += Uerr;
         const double Werr = fabs(w3.getValZ(i, j, H) - P.w[0]);

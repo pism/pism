@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,9 +20,10 @@
 #include <algorithm> // max_element
 
 #include "PicoGeometry.hh"
-#include "pism/calving/connected_components.hh"
+#include "pism/util/connected_components.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace ocean {
@@ -39,9 +40,9 @@ PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
       m_ice_rises(grid, "pico_ice_rise_mask", WITH_GHOSTS),
       m_tmp(grid, "temporary_storage", WITHOUT_GHOSTS) {
 
-  m_boxes.metadata().set_double("_FillValue", 0.0);
+  m_boxes.metadata().set_number("_FillValue", 0.0);
 
-  m_ice_rises.metadata().set_doubles("flag_values",
+  m_ice_rises.metadata().set_numbers("flag_values",
                                      {OCEAN, RISE, CONTINENTAL, FLOATING});
   m_ice_rises.metadata().set_string("flag_meanings",
                                      "ocean ice_rise continental_ice_sheet, floating_ice");
@@ -76,11 +77,11 @@ const IceModelVec2Int &PicoGeometry::ice_rise_mask() const {
  * to date.
  */
 void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2CellType &cell_type) {
-  bool exclude_ice_rises = m_config->get_boolean("ocean.pico.exclude_ice_rises");
+  bool exclude_ice_rises = m_config->get_flag("ocean.pico.exclude_ice_rises");
 
-  int n_boxes = m_config->get_double("ocean.pico.number_of_boxes");
+  int n_boxes = m_config->get_number("ocean.pico.number_of_boxes");
 
-  double continental_shelf_depth = m_config->get_double("ocean.pico.continental_shelf_depth");
+  double continental_shelf_depth = m_config->get_number("ocean.pico.continental_shelf_depth");
 
   // these three could be done at the same time
   {
@@ -162,7 +163,7 @@ static void relabel(RelabelingType type,
     loop.check();
 
     for (unsigned int k = 0; k < area.size(); ++k) {
-      area[k] = grid->dx() * grid->dy() * GlobalSum(grid->com, area[k]);
+      area[k] = grid->cell_area() * GlobalSum(grid->com, area[k]);
     }
   }
 
@@ -314,7 +315,7 @@ void PicoGeometry::compute_ice_rises(const IceModelVec2CellType &cell_type, bool
     label_tmp();
 
     relabel(AREA_THRESHOLD,
-            m_config->get_double("ocean.pico.maximum_ice_rise_area", "m2"),
+            m_config->get_number("ocean.pico.maximum_ice_rise_area", "m2"),
             m_tmp);
   }
 

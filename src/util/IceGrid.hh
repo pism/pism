@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,21 +16,26 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __grid_hh
-#define __grid_hh
+#ifndef PISM_GRID_H
+#define PISM_GRID_H
 
 #include <cassert>
 #include <vector>
 #include <string>
-#include <memory>
+#include <memory>               // shared_ptr
 
-#include "pism/util/Context.hh"
-#include "pism/util/ConfigInterface.hh"
-#include "pism/util/petscwrappers/DM.hh"
+#include <mpi.h>                // MPI_Comm
 
 namespace pism {
 
-class PIO;
+class Context;
+class Config;
+
+namespace petsc {
+class DM;
+} // end of namespace petsc
+
+class File;
 namespace units {
 class System;
 }
@@ -57,10 +62,10 @@ std::string spacing_to_string(SpacingType s);
 class grid_info {
 public:
   grid_info();
-  grid_info(const PIO &file, const std::string &variable,
-            units::System::Ptr unit_system,
+  grid_info(const File &file, const std::string &variable,
+            std::shared_ptr<units::System> unit_system,
             GridRegistration registration);
-  void report(const Logger &log, int threshold, units::System::Ptr s) const;
+  void report(const Logger &log, int threshold, std::shared_ptr<units::System> s) const;
   // dimension lengths
   unsigned int t_len, x_len, y_len, z_len;
   double time,                  //!< current time (seconds)
@@ -94,16 +99,16 @@ public:
   GridParameters();
 
   //! Initialize grid defaults from a configuration database.
-  GridParameters(Config::ConstPtr config);
+  GridParameters(std::shared_ptr<const Config> config);
 
   //! Initialize grid defaults from a configuration database and a NetCDF variable.
-  GridParameters(Context::ConstPtr ctx,
+  GridParameters(std::shared_ptr<const Context> ctx,
                  const std::string &filename,
                  const std::string &variable_name,
                  GridRegistration r);
   //! Initialize grid defaults from a configuration database and a NetCDF variable.
-  GridParameters(Context::ConstPtr ctx,
-                 const PIO &file,
+  GridParameters(std::shared_ptr<const Context> ctx,
+                 const File &file,
                  const std::string &variable_name,
                  GridRegistration r);
 
@@ -112,7 +117,7 @@ public:
   //! Process -Lx, -Ly, -x0, -y0, -x_range, -y_range; set Lx, Ly, x0, y0.
   void horizontal_extent_from_options();
   //! Process -Mz and -Lz; set z;
-  void vertical_grid_from_options(Config::ConstPtr config);
+  void vertical_grid_from_options(std::shared_ptr<const Config> config);
   //! Re-compute ownership ranges. Uses current values of Mx and My.
   void ownership_ranges_from_options(unsigned int size);
 
@@ -142,8 +147,8 @@ public:
   //! Processor ownership ranges in the Y direction.
   std::vector<unsigned int> procs_y;
 private:
-  void init_from_config(Config::ConstPtr config);
-  void init_from_file(Context::ConstPtr ctx, const PIO &file,
+  void init_from_config(std::shared_ptr<const Config> config);
+  void init_from_file(std::shared_ptr<const Context> ctx, const File &file,
                       const std::string &variable_name,
                       GridRegistration r);
 };
@@ -214,29 +219,29 @@ public:
   typedef std::shared_ptr<IceGrid> Ptr;
   typedef std::shared_ptr<const IceGrid> ConstPtr;
 
-  IceGrid(Context::ConstPtr ctx, const GridParameters &p);
+  IceGrid(std::shared_ptr<const Context> ctx, const GridParameters &p);
 
   static std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
                                                      SpacingType spacing, double Lambda = 0.0);
 
-  static Ptr Shallow(Context::ConstPtr ctx,
+  static Ptr Shallow(std::shared_ptr<const Context> ctx,
                      double Lx, double Ly,
                      double x0, double y0,
                      unsigned int Mx, unsigned int My,
                      GridRegistration r,
                      Periodicity p);
 
-  static Ptr FromFile(Context::ConstPtr ctx,
-                      const PIO &file, const std::string &var_name,
+  static Ptr FromFile(std::shared_ptr<const Context> ctx,
+                      const File &file, const std::string &var_name,
                       GridRegistration r);
 
-  static Ptr FromFile(Context::ConstPtr ctx,
+  static Ptr FromFile(std::shared_ptr<const Context> ctx,
                       const std::string &file, const std::vector<std::string> &var_names,
                       GridRegistration r);
 
-  static Ptr FromOptions(Context::ConstPtr ctx);
+  static Ptr FromOptions(std::shared_ptr<const Context> ctx);
 
-  petsc::DM::Ptr get_dm(int dm_dof, int stencil_width) const;
+  std::shared_ptr<petsc::DM> get_dm(int dm_dof, int stencil_width) const;
 
   void report_parameters() const;
 
@@ -248,7 +253,7 @@ public:
 
   unsigned int kBelowHeight(double height) const;
 
-  Context::ConstPtr ctx() const;
+  std::shared_ptr<const Context> ctx() const;
 
   int xs() const;
   int xm() const;
@@ -266,6 +271,7 @@ public:
 
   double dx() const;
   double dy() const;
+  double cell_area() const;
 
   unsigned int Mx() const;
   unsigned int My() const;
@@ -294,6 +300,16 @@ public:
   Vars& variables();
   const Vars& variables() const;
 
+  int pio_io_decomposition(int dof, int output_datatype) const;
+
+  //! Maximum number of degrees of freedom supported by PISM.
+  /*!
+   * This is also the maximum number of records an IceModelVec2T can hold.
+   */
+  static const int max_dm_dof = 10000;
+
+  //! Maximum stencil width supported by PISM.
+  static const int max_stencil_width = 10000;
 private:
   struct Impl;
   Impl *m_impl;
@@ -313,6 +329,14 @@ inline bool in_null_strip(const IceGrid& grid, int i, int j, double strip_width)
            grid.x(i)  >= grid.x(grid.Mx()-1) - strip_width ||
            grid.y(j)  <= grid.y(0) + strip_width           ||
            grid.y(j)  >= grid.y(grid.My()-1) - strip_width));
+}
+
+/*!
+ * Return `true` if a point `(i, j)` is at an edge of `grid`.
+ */
+inline bool grid_edge(const IceGrid &grid, int i, int j) {
+  return ((j == 0) or (j == (int)grid.My() - 1) or
+          (i == 0) or (i == (int)grid.Mx() - 1));
 }
 
 /** Iterator class for traversing the grid, including ghost points.
@@ -376,4 +400,4 @@ public:
 
 } // end of namespace pism
 
-#endif  /* __grid_hh */
+#endif  /* PISM_GRID_H */

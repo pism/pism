@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -58,7 +58,7 @@ bool show_usage_check_req_opts(const Logger &log,
     keep_running = false,
     terminate = true;
 
-  log.message(2, "%s %s\n", execname.c_str(), PISM_Revision);
+  log.message(2, "%s %s\n", execname.c_str(), pism::revision);
 
   if (options::Bool("-version", "stop after printing print PISM version")) {
     log.message(2, pism::version());

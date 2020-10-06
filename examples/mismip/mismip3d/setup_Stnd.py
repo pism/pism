@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright (C) 2012, 2014 Moritz Huetten
+# Copyright (C) 2012, 2014, 2020 Moritz Huetten
 
 import sys
 import getopt
@@ -121,6 +121,10 @@ for i in range(0, nx):
     for j in range(0, ny):
         ice_surface_temp[j, i] = 268.15
 
+# create the maximum ice extent mask
+land_ice_area_fraction_retreat = np.zeros_like(thk)
+land_ice_area_fraction_retreat[thk > 0] = 1
+land_ice_area_fraction_retreat[topg > 0] = 1
 
 ##### define dimensions in NetCDF file #####
 ncfile = NC(WRIT_FILE, 'w', format='NETCDF3_CLASSIC')
@@ -160,6 +164,11 @@ vars = {'y':   	['m',
                                   'land_ice_surface_specific_mass_balance_flux',
                                   0.2 * ice_density,
                                   precip],
+        'land_ice_area_fraction_retreat' : ["1",
+                                            "maximum ice extent mask",
+                                            "",
+                                            -1,
+                                            land_ice_area_fraction_retreat]
         }
 
 for name in list(vars.keys()):

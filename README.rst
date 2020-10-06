@@ -1,5 +1,6 @@
 PISM, a Parallel Ice Sheet Model
 ================================
+|cipism|_
 
 The Parallel Ice Sheet Model is an open source, parallel, high-resolution ice sheet model:
 
@@ -29,18 +30,27 @@ Download and Install
 
 See the `Installing PISM <pism-installation_>`_ on ``pism-docs.org``.
 
+Support
+-------
+
+Please e-mail `uaf-pism@alaska.edu <uaf-pism_>`_ with questions about PISM.
+
+You can also join the PISM workspace on `Slack <Slack-PISM_>`_.
+
 Contributing
 ------------
 
-Want to contribute? Great! See `Committing to PISM <pism-contribute_>`_.
+Want to contribute? Great! See `Contributing to PISM <pism-contributing_>`_.
 
 .. URLs
 
+.. |cipism| image:: https://circleci.com/gh/pism/pism/tree/dev.svg?style=svg
+.. _cipism: https://circleci.com/gh/pism/pism/tree/dev
 .. _uaf: http://www.uaf.edu/
 .. _pik: http://www.pik-potsdam.de/
 .. _pism-docs: http://www.pism-docs.org/
 .. _pism-stable: http://www.pism-docs.org/wiki/doku.php?id=stable_version
-.. _pism-contribute: http://www.pism-docs.org/wiki/doku.php?id=committing
+.. _pism-contributing: http://pism-docs.org/sphinx/contributing/
 .. _pism-installation: http://pism-docs.org/sphinx/installation/
 .. _mpi: http://www.mcs.anl.gov/research/projects/mpi/
 .. _petsc: http://www.mcs.anl.gov/petsc/
@@ -51,6 +61,8 @@ Want to contribute? Great! See `Committing to PISM <pism-contribute_>`_.
 .. _NASA-MAP: http://map.nasa.gov/
 .. _NASA-Cryosphere: http://ice.nasa.gov/
 .. _NSF-Polar: https://nsf.gov/geo/plr/about.jsp
+.. _Slack-PISM: https://join.slack.com/t/uaf-pism/shared_invite/enQtODc3Njc1ODg0ODM5LThmOTEyNjEwN2I3ZTU4YTc5OGFhNGMzOWQ1ZmUzMWUwZDAyMzRlMzBhZDg1NDY5MmQ1YWFjNDU4MDZiNTk3YmE
+.. _uaf-pism: mailto:uaf-pism@alaska.edu
 
 ..
    Local Variables:

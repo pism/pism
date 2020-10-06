@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,8 @@
 #ifndef _PISM_UTILITIES_H_
 #define _PISM_UTILITIES_H_
 
+#include <cstdint>              // uint16_t, uint32_t
+
 #include <algorithm>            // std::min, std::max
 #include <string>
 #include <vector>
@@ -34,11 +36,6 @@ namespace pism {
 #ifndef __GNUC__
 #  define  __attribute__(x)  /* nothing */
 #endif
-
-extern const char *PISM_Revision;
-extern const char *PISM_DefaultConfigFile;
-
-const int TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
 
 double get_time();
 std::string timestamp(MPI_Comm com);
@@ -91,9 +88,14 @@ T combine(const T &a, const T&b) {
   return result;
 }
 
-inline double clip(double x, double a, double b) {
+template<typename T>
+inline T clip(T x, T a, T b) {
   return std::min(std::max(a, x), b);
 }
+
+double vector_min(const std::vector<double> &input);
+
+double vector_max(const std::vector<double> &input);
 
 // parallel
 void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op);
@@ -115,6 +117,12 @@ unsigned int GlobalSum(MPI_Comm comm, unsigned int input);
 int GlobalSum(MPI_Comm comm, int input);
 
 std::string version();
+
+std::string printf(const char *format, ...) __attribute__((format(printf, 1, 2)));
+
+void validate_format_string(const std::string &format);
+
+uint64_t fletcher64(const uint32_t *data, size_t len);
 
 } // end of namespace pism
 

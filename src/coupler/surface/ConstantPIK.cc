@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018 PISM Authors
+// Copyright (C) 2008-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "ConstantPIK.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_utilities.hh"
@@ -45,7 +45,7 @@ void PIK::init_impl(const Geometry &geometry) {
   m_log->message(2,
                  "* Initializing the constant-in-time surface processes model PIK.\n"
                  "  It reads surface mass balance directly from the file and holds it constant.\n"
-                 "  Ice upper-surface temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"
+                 "  Ice upper-surface temperature is parameterized as in Martin et al. 2011, equation (1).\n"
                  "  Any choice of atmosphere coupler (option '-atmosphere') is ignored.\n");
 
   InputOptions opts = process_input_options(m_grid->com, m_config);
@@ -84,6 +84,11 @@ void PIK::update_impl(const Geometry &geometry, double t, double dt) {
     const int i = p.i(), j   = p.j();
     (*m_temperature)(i, j) = 273.15 + 30 - 0.0075 * surface_elevation(i, j) - 0.68775 * latitude(i, j) * (-1.0);
   }
+  
+  dummy_accumulation(*m_mass_flux, *m_accumulation);
+  dummy_melt(*m_mass_flux, *m_melt);
+  dummy_runoff(*m_mass_flux, *m_runoff);
+
 }
 
 const IceModelVec2S &PIK::mass_flux_impl() const {
@@ -94,12 +99,24 @@ const IceModelVec2S &PIK::temperature_impl() const {
   return *m_temperature;
 }
 
-void PIK::define_model_state_impl(const PIO &output) const {
+const IceModelVec2S &PIK::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S &PIK::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S &PIK::runoff_impl() const {
+  return *m_runoff;
+}
+
+void PIK::define_model_state_impl(const File &output) const {
   m_mass_flux->define(output);
   SurfaceModel::define_model_state_impl(output);
 }
 
-void PIK::write_model_state_impl(const PIO &output) const {
+void PIK::write_model_state_impl(const File &output) const {
   m_mass_flux->write(output);
   SurfaceModel::write_model_state_impl(output);
 }

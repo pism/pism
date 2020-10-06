@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2020 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,11 +26,12 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/petscwrappers/Viewer.hh"
 
 namespace pism {
 
 void IceModel::view_field(const IceModelVec *field) {
-  unsigned int viewer_size = (unsigned int)m_config->get_double("output.runtime.viewer.size");
+  unsigned int viewer_size = (unsigned int)m_config->get_number("output.runtime.viewer.size");
 
   unsigned int dims = field->ndims();
 
@@ -40,7 +41,7 @@ void IceModel::view_field(const IceModelVec *field) {
 
   if (field->ndof() == 1) {    // scalar fields
     std::string name = field->metadata().get_string("short_name");
-    petsc::Viewer::Ptr viewer = m_viewers[name];
+    auto viewer = m_viewers[name];
 
     if (not viewer) {
       m_viewers[name].reset(new petsc::Viewer(m_grid->com, name, viewer_size, m_grid->Lx(), m_grid->Ly()));
@@ -52,13 +53,13 @@ void IceModel::view_field(const IceModelVec *field) {
       throw RuntimeError(PISM_ERROR_LOCATION, "get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
     }
 
-    v2d->view(viewer, petsc::Viewer::Ptr());
+    v2d->view(viewer, std::shared_ptr<petsc::Viewer>());
 
   } else if (field->ndof() == 2) { // vector fields
     std::string
       name_1 = field->metadata(0).get_string("short_name"),
       name_2 = field->metadata(1).get_string("short_name");
-    petsc::Viewer::Ptr
+    auto
       v1 = m_viewers[name_1],
       v2 = m_viewers[name_2];
 

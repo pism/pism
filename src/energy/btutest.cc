@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,12 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <petsc.h>
+
 static char help[] =
   "Tests BedThermalUnit using Test K, without IceModel.\n\n";
 
 #include "pism/util/pism_options.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/verification/BTU_Verification.hh"
 #include "pism/energy/BTU_Minimal.hh"
@@ -41,7 +43,7 @@ static char help[] =
 #include "pism/util/Logger.hh"
 
 //! Allocate the PISMV (verification) context. Uses ColdEnthalpyConverter.
-pism::Context::Ptr btutest_context(MPI_Comm com, const std::string &prefix) {
+std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &prefix) {
   using namespace pism;
 
   // unit system
@@ -53,10 +55,14 @@ pism::Context::Ptr btutest_context(MPI_Comm com, const std::string &prefix) {
   // configuration parameters
   Config::Ptr config = config_from_options(com, *logger, sys);
 
+  // default vertical grid parameters
+  config->set_number("grid.Mbz", 11);
+  config->set_number("grid.Lbz", 1000);
+
   config->set_string("time.calendar", "none");
   // when IceGrid constructor is called, these settings are used
-  config->set_double("time.start_year", 0.0);
-  config->set_double("time.run_length", 1.0);
+  config->set_number("time.start_year", 0.0);
+  config->set_number("time.run_length", 1.0);
 
   set_config_from_options(*config);
 
@@ -66,7 +72,7 @@ pism::Context::Ptr btutest_context(MPI_Comm com, const std::string &prefix) {
 
   EnthalpyConverter::Ptr EC = EnthalpyConverter::Ptr(new ColdEnthalpyConverter(*config));
 
-  return Context::Ptr(new Context(com, sys, config, EC, time, logger, prefix));
+  return std::shared_ptr<Context>(new Context(com, sys, config, EC, time, logger, prefix));
 }
 
 int main(int argc, char *argv[]) {
@@ -76,10 +82,10 @@ int main(int argc, char *argv[]) {
   MPI_Comm com = MPI_COMM_WORLD;
   petsc::Initializer petsc(argc, argv, help);
 
-  com = PETSC_COMM_WORLD;
+  com = MPI_COMM_WORLD;
 
   try {
-    Context::Ptr ctx = btutest_context(com, "btutest");
+    std::shared_ptr<Context> ctx = btutest_context(com, "btutest");
     Logger::Ptr log = ctx->log();
 
     std::string usage =
@@ -91,31 +97,18 @@ int main(int argc, char *argv[]) {
       "  -o             output file name; NetCDF format\n"
       "  -ys            start year in using Test K\n"
       "  -ye            end year in using Test K\n"
-      "  -dt            time step B (= positive float) in years\n"
-      "  -Mz            number of ice levels to use\n"
-      "  -Lz            height of ice/atmospher box\n";
-
-    // check required options
-    std::vector<std::string> required(1, "-Mbz");
+      "  -dt            time step B (= positive float) in years\n";
 
     bool done = show_usage_check_req_opts(*log, "BTUTEST %s (test program for BedThermalUnit)",
-                                          required, usage);
+                                          {"-Mbz"}, usage);
     if (done) {
       return 0;
     }
 
-    Config::Ptr config = ctx->config();
-
-    // Mbz and Lbz are used by the BedThermalUnit, not by IceGrid
-    config->set_double("grid.Mbz", 11);
-    config->set_double("grid.Lbz", 1000);
-
-    // Set default vertical grid parameters.
-    config->set_double("grid.Mz", 41);
-    config->set_double("grid.Lz", 4000);
-
     log->message(2,
                  "  initializing IceGrid from options ...\n");
+
+    Config::Ptr config = ctx->config();
 
     GridParameters P(config);
     P.Mx = 3;
@@ -140,14 +133,13 @@ int main(int argc, char *argv[]) {
     {
       heat_flux_at_ice_base.create(grid, "upward_heat_flux_at_ice_base", WITHOUT_GHOSTS);
       heat_flux_at_ice_base.set_attrs("",
-                     "upward geothermal flux at bedrock thermal layer base",
-                     "W m-2", "");
-      heat_flux_at_ice_base.metadata().set_string("glaciological_units", "mW m-2");
+                                      "upward geothermal flux at bedrock thermal layer base",
+                                      "W m-2", "mW m-2", "", 0);
 
       bedtoptemp.create(grid, "bedtoptemp", WITHOUT_GHOSTS);
       bedtoptemp.set_attrs("",
-                            "temperature at top of bedrock thermal layer",
-                            "K", "");
+                           "temperature at top of bedrock thermal layer",
+                           "K", "K", "", 0);
     }
 
     // initialize BTU object:
@@ -228,8 +220,11 @@ int main(int argc, char *argv[]) {
                  max_error, 100.0*max_error/FF, avg_error);
     log->message(1, "NUM ERRORS DONE\n");
 
-    PIO file(grid->com, grid->ctx()->config()->get_string("output.format"),
-            outname, PISM_READWRITE_MOVE);
+    File file(grid->com,
+              outname,
+              string_to_backend(config->get_string("output.format")),
+              PISM_READWRITE_MOVE,
+              ctx->pio_iosys_id());
 
     io::define_time(file, *ctx);
     io::append_time(file, *ctx->config(), ctx->time()->current());

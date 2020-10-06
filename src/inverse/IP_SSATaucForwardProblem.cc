@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019, 2020  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,8 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/petscwrappers/DM.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace inverse {
@@ -52,10 +54,10 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g,
   m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencil_width);
   m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencil_width);
 
-  m_tauc_copy.create(m_grid, "tauc", WITH_GHOSTS, m_config->get_double("grid.max_stencil_width"));
+  m_tauc_copy.create(m_grid, "tauc", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width"));
   m_tauc_copy.set_attrs("diagnostic",
                         "yield stress for basal till (plastic or pseudo-plastic model)",
-                        "Pa", "");
+                        "Pa", "Pa", "", 0);
 
   ierr = DMSetMatType(*m_da, MATBAIJ);
   PISM_CHK(ierr, "DMSetMatType");
@@ -95,13 +97,12 @@ void IP_SSATaucForwardProblem::init() {
   // I will need to fix this at some point.
   {
     Geometry geometry(m_grid);
-    geometry.cell_area.set(m_grid->dx() * m_grid->dy());
     geometry.ice_thickness.copy_from(*m_grid->variables().get_2d_scalar("land_ice_thickness"));
     geometry.bed_elevation.copy_from(*m_grid->variables().get_2d_scalar("bedrock_altitude"));
     geometry.sea_level_elevation.set(0.0);
     geometry.ice_area_specific_volume.set(0.0);
 
-    geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
+    geometry.ensure_consistency(m_config->get_number("stress_balance.ice_free_thickness_standard"));
 
     stressbalance::Inputs inputs;
 
@@ -160,26 +161,19 @@ TerminationReason::Ptr IP_SSATaucForwardProblem::linearize_at(IceModelVec2S &zet
 /* The value of \f$\zeta\f$ is set prior to this call via set_design or linearize_at. The value
 of the residual is returned in \a RHS.*/
 void IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V &RHS) {
+  IceModelVec::AccessList l{&u, &RHS};
 
-  Vector2
-    **u_a   = u.get_array(),
-    **rhs_a = RHS.get_array();
-
-  this->compute_local_function(u_a, rhs_a);
-
-  u.end_access();
-  RHS.end_access();
+  this->compute_local_function(u.array(), RHS.array());
 }
 
 //! Computes the residual function \f$\mathcal{R}(u, \zeta)\f$ defined in the class-level documentation.
 /* The return value is specified via a Vec for the benefit of certain TAO routines.  Otherwise,
 the method is identical to the assemble_residual returning values as a StateVec (an IceModelVec2V).*/
 void IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
+  IceModelVec::AccessList l{&u};
 
-  Vector2 **u_a = u.get_array();
   petsc::DMDAVecArray rhs_a(m_da, RHS);
-  this->compute_local_function(u_a, (Vector2**)rhs_a.get());
-  u.end_access();
+  this->compute_local_function(u.array(), (Vector2**)rhs_a.get());
 }
 
 //! Assembles the state Jacobian matrix.
@@ -191,12 +185,9 @@ to this method.
   @param[out] J computed state Jacobian.
 */
 void IP_SSATaucForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac) {
+  IceModelVec::AccessList l{&u};
 
-  Vector2 **u_a = u.get_array();
-
-  this->compute_local_jacobian(u_a, Jac);
-
-  u.end_access();
+  this->compute_local_jacobian(u.array(), Jac);
 }
 
 //! Applies the design Jacobian matrix to a perturbation of the design variable.
@@ -205,9 +196,9 @@ void IP_SSATaucForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac
 */
 void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta,
                                                      IceModelVec2V &du) {
-  Vector2 **du_a = du.get_array();
-  this->apply_jacobian_design(u, dzeta, du_a);
-  du.end_access();
+  IceModelVec::AccessList l{&du};
+
+  this->apply_jacobian_design(u, dzeta, du.array());
 }
 
 //! Applies the design Jacobian matrix to a perturbation of the design variable.
@@ -376,9 +367,9 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                IceModelVec2V &du,
                                                                IceModelVec2S &dzeta) {
-  double **dzeta_a = dzeta.get_array();
-  this->apply_jacobian_design_transpose(u, du, dzeta_a);
-  dzeta.end_access();
+  IceModelVec::AccessList l{&dzeta};
+
+  this->apply_jacobian_design_transpose(u, du, dzeta.array());
 }
 
 //! Applies the transpose of the design Jacobian matrix to a perturbation of the state variable.
@@ -387,7 +378,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
 void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                IceModelVec2V &du,
                                                                Vec dzeta) {
-  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_double("grid.max_stencil_width"));
+  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_number("grid.max_stencil_width"));
   petsc::DMDAVecArray dzeta_a(da2, dzeta);
   this->apply_jacobian_design_transpose(u, du, (double**)dzeta_a.get());
 }
@@ -616,14 +607,13 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
   double                 dirichletWeight    = m_dirichletScale;
 
   m_du_global.copy_from(du);
-  Vector2 **du_a = m_du_global.get_array();
+
   fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues, dirichletWeight);
 
   if (dirichletBC) {
-    dirichletBC.fix_residual_homogeneous(du_a);
+    IceModelVec::AccessList l{&m_du_global};
+    dirichletBC.fix_residual_homogeneous(m_du_global.array());
   }
-
-  m_du_global.end_access();
 
   // call PETSc to solve linear system by iterative method.
   ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state);

@@ -22,6 +22,7 @@
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 
@@ -47,7 +48,7 @@ CFLData max_timestep_cfl_3d(const IceModelVec2S &ice_thickness,
   IceGrid::ConstPtr grid = ice_thickness.grid();
   Config::ConstPtr config = grid->ctx()->config();
 
-  double dt_max = config->get_double("time_stepping.maximum_time_step", "seconds");
+  double dt_max = config->get_number("time_stepping.maximum_time_step", "seconds");
 
   IceModelVec::AccessList list{&ice_thickness, &u3, &v3, &w3, &cell_type};
 
@@ -118,7 +119,7 @@ CFLData max_timestep_cfl_2d(const IceModelVec2S &ice_thickness,
   IceGrid::ConstPtr grid = ice_thickness.grid();
   Config::ConstPtr config = grid->ctx()->config();
 
-  double dt_max = config->get_double("time_stepping.maximum_time_step", "seconds");
+  double dt_max = config->get_number("time_stepping.maximum_time_step", "seconds");
 
   const double
     dx = grid->dx(),

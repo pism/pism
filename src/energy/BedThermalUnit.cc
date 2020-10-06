@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include <gsl/gsl_math.h>       // GSL_NAN
 
 #include "BedThermalUnit.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_options.hh"
@@ -34,35 +34,31 @@
 namespace pism {
 namespace energy {
 
-BTUGrid::BTUGrid(Context::ConstPtr ctx) {
-  Mbz = (unsigned int) ctx->config()->get_double("grid.Mbz");
-  Lbz = ctx->config()->get_double("grid.Lbz");
+BTUGrid::BTUGrid(std::shared_ptr<const Context> ctx) {
+  Mbz = (unsigned int) ctx->config()->get_number("grid.Mbz");
+  Lbz = ctx->config()->get_number("grid.Lbz");
 }
 
 
-BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
+BTUGrid BTUGrid::FromOptions(std::shared_ptr<const Context> ctx) {
   BTUGrid result(ctx);
 
-  InputOptions opts = process_input_options(ctx->com(), ctx->config());
-
-  const Logger &log = *ctx->log();
+  Config::ConstPtr config = ctx->config();
+  InputOptions opts = process_input_options(ctx->com(), config);
 
   if (opts.type == INIT_RESTART) {
-    options::ignored(log, "-Mbz");
-    options::ignored(log, "-Lbz");
-
     // If we're initializing from a file we need to get the number of bedrock
     // levels and the depth of the bed thermal layer from it:
-    PIO input_file(ctx->com(), "guess_mode", opts.filename, PISM_READONLY);
+    File input_file(ctx->com(), opts.filename, PISM_NETCDF3, PISM_READONLY);
 
-    if (input_file.inq_var("litho_temp")) {
+    if (input_file.find_variable("litho_temp")) {
       grid_info info(input_file, "litho_temp", ctx->unit_system(),
                      CELL_CENTER); // grid registration is irrelevant
 
       result.Mbz = info.z_len;
       result.Lbz = -info.z_min;
     } else {
-      // override values we got using config.get_double() in the constructor
+      // override values we got using config.get_number() in the constructor
       result.Mbz = 1;
       result.Lbz = 0;
     }
@@ -70,23 +66,12 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
     input_file.close();
   } else {
     // Bootstrapping or initializing without an input file.
-    options::Integer M("-Mbz", "number of levels in bedrock thermal layer",
-                       result.Mbz);
+    result.Mbz = config->get_number("grid.Mbz");
+    result.Lbz = config->get_number("grid.Lbz");
 
-    options::Real L("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
-                    result.Lbz);
-
-    if (M.is_set() and M == 1) {
-      options::ignored(log, "-Lbz");
+    if (result.Mbz == 1) {
       result.Lbz = 0;
       result.Mbz = 1;
-    } else {
-      if (M.is_set() ^ L.is_set()) {
-        throw RuntimeError(PISM_ERROR_LOCATION, "please specify both -Mbz and -Lbz");
-      }
-
-      result.Lbz = L;
-      result.Mbz = M;
     }
   }
 
@@ -97,7 +82,7 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
  *
  */
 BedThermalUnit* BedThermalUnit::FromOptions(IceGrid::ConstPtr grid,
-                                            Context::ConstPtr ctx) {
+                                            std::shared_ptr<const Context> ctx) {
 
   BTUGrid bedrock_grid = BTUGrid::FromOptions(ctx);
 
@@ -115,9 +100,8 @@ BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
   {
     m_top_surface_flux.create(m_grid, "heat_flux_from_bedrock", WITHOUT_GHOSTS);
     m_top_surface_flux.set_attrs("diagnostic", "upward geothermal flux at the top bedrock surface",
-                                 "W m-2",
-                                 "upward_geothermal_heat_flux_at_ground_level"); // InitMIP "standard" name
-    m_top_surface_flux.metadata().set_string("glaciological_units", "mW m-2");
+                                 "W m-2", "mW m-2",
+                                 "upward_geothermal_heat_flux_at_ground_level_in_land_ice", 0);
     m_top_surface_flux.metadata().set_string("comment", "positive values correspond to an upward flux");
   }
   {
@@ -125,8 +109,8 @@ BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
     // PROPOSED standard_name = lithosphere_upward_heat_flux
     m_bottom_surface_flux.set_attrs("model_state",
                                     "upward geothermal flux at the bottom bedrock surface",
-                                    "W m-2", "");
-    m_bottom_surface_flux.metadata().set_string("glaciological_units", "mW m-2");
+                                    "W m-2", "mW m-2", "", 0);
+
     m_bottom_surface_flux.metadata().set_string("comment", "positive values correspond to an upward flux");
     m_bottom_surface_flux.set_time_independent(true);
   }
@@ -137,31 +121,43 @@ BedThermalUnit::~BedThermalUnit() {
 }
 
 void BedThermalUnit::init(const InputOptions &opts) {
-  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
-
   this->init_impl(opts);
 }
 
 //! \brief Initialize the bedrock thermal unit.
 void BedThermalUnit::init_impl(const InputOptions &opts) {
-  switch (opts.type) {
-  case INIT_RESTART:
-    m_bottom_surface_flux.read(opts.filename, opts.record);
-    break;
-  case INIT_BOOTSTRAP:
-    m_bottom_surface_flux.regrid(opts.filename, OPTIONAL,
-                                 m_config->get_double("bootstrapping.defaults.geothermal_flux"));
-    break;
-  case INIT_OTHER:
-  default:
-    initialize_bottom_surface_flux();
+  auto input_file = m_config->get_string("energy.bedrock_thermal.file");
+
+  if (not input_file.empty()) {
+    m_log->message(2, "  - Reading geothermal flux from '%s' ...\n",
+                   input_file.c_str());
+
+    m_bottom_surface_flux.regrid(input_file, CRITICAL);
+  } else {
+    m_log->message(2,
+                   "  - Parameter %s is not set. Reading geothermal flux from '%s'...\n",
+                   "energy.bedrock_thermal.file",
+                   opts.filename.c_str());
+
+    switch (opts.type) {
+    case INIT_RESTART:
+      m_bottom_surface_flux.read(opts.filename, opts.record);
+      break;
+    case INIT_BOOTSTRAP:
+      m_bottom_surface_flux.regrid(opts.filename, OPTIONAL,
+                                   m_config->get_number("bootstrapping.defaults.geothermal_flux"));
+      break;
+    case INIT_OTHER:
+    default:
+      initialize_bottom_surface_flux();
+    }
   }
 
   regrid("bedrock thermal layer", m_bottom_surface_flux, REGRID_WITHOUT_REGRID_VARS);
 }
 
 void BedThermalUnit::initialize_bottom_surface_flux() {
-  const double heat_flux = m_config->get_double("bootstrapping.defaults.geothermal_flux");
+  const double heat_flux = m_config->get_number("bootstrapping.defaults.geothermal_flux");
 
   m_log->message(2, "  using constant geothermal flux %f W m-2 ...\n",
                  heat_flux);
@@ -190,18 +186,23 @@ unsigned int BedThermalUnit::Mz() const {
   return this->Mz_impl();
 }
 
-void BedThermalUnit::define_model_state_impl(const PIO &output) const {
+void BedThermalUnit::define_model_state_impl(const File &output) const {
   m_bottom_surface_flux.define(output);
 }
 
-void BedThermalUnit::write_model_state_impl(const PIO &output) const {
+void BedThermalUnit::write_model_state_impl(const File &output) const {
   m_bottom_surface_flux.write(output);
 }
 
 DiagnosticList BedThermalUnit::diagnostics_impl() const {
-  return {
+  DiagnosticList result = {
     {"bheatflx",   Diagnostic::wrap(m_bottom_surface_flux)},
-    {"hfgeoubed", Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this))}};
+    {"heat_flux_from_bedrock", Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this))}};
+
+  if (m_config->get_flag("output.ISMIP6")) {
+    result["hfgeoubed"] = Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this));
+  }
+  return result;
 }
 
 void BedThermalUnit::update(const IceModelVec2S &bedrock_top_temperature,
@@ -219,7 +220,19 @@ const IceModelVec2S& BedThermalUnit::flux_through_bottom_surface() const {
 
 BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m)
   : Diag<BedThermalUnit>(m) {
-  m_vars = {model->flux_through_top_surface().metadata()};
+
+  auto ismip6 = m_config->get_flag("output.ISMIP6");
+
+  // set metadata:
+  m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "hfgeoubed" : "heat_flux_from_bedrock")};
+
+  set_attrs("upward geothermal flux at the top bedrock surface",
+            (ismip6 ?
+             "upward_geothermal_heat_flux_in_land_ice" :
+             "upward_geothermal_heat_flux_at_ground_level_in_land_ice"),
+            "W m-2", "mW m-2", 0);
+  m_vars[0].set_string("comment",
+                       "positive values correspond to an upward flux");
 }
 
 IceModelVec::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() const {

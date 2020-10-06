@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -47,7 +47,7 @@ private:
   void init_impl(const Geometry &geometry);
 
   void melting_point_temperature(const IceModelVec2S &depth, IceModelVec2S &result) const;
-  void mass_flux(const IceModelVec2S &depth, IceModelVec2S &result) const;
+  void mass_flux(const IceModelVec2S &ice_thickness, IceModelVec2S &result) const;
 };
 
 } // end of namespace ocean

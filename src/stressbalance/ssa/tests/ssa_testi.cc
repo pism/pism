@@ -31,7 +31,7 @@ static char help[] =
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
@@ -50,7 +50,7 @@ const double B_schoof = 3.7e8; // Pa s^{1/3}; hardness
 
 class SSATestCaseI: public SSATestCase {
 public:
-  SSATestCaseI(Context::Ptr ctx, int Mx, int My, SSAFactory ssafactory)
+  SSATestCaseI(std::shared_ptr<Context> ctx, int Mx, int My, SSAFactory ssafactory)
     : SSATestCase(ctx,
                   Mx, My,
                   std::max(60.0e3, ((Mx - 1) / 2) * (2.0 * (3.0 * L_schoof) / (My - 1))),
@@ -59,10 +59,10 @@ public:
                   NOT_PERIODIC) {
     m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
 
-    m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", false);
+    m_config->set_flag("basal_resistance.pseudo_plastic.enabled", false);
 
     m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
-    m_config->set_double("flow_law.isothermal_Glen.ice_softness", pow(B_schoof, -m_config->get_double("stress_balance.ssa.Glen_exponent")));
+    m_config->set_number("flow_law.isothermal_Glen.ice_softness", pow(B_schoof, -m_config->get_number("stress_balance.ssa.Glen_exponent")));
 
     m_ssa = ssafactory(m_grid);
   }
@@ -86,13 +86,13 @@ void SSATestCaseI::initializeSSACoefficients() {
   // ssa->strength_extension->set_min_thickness(2*H0_schoof);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", true);
-  m_config->set_double("stress_balance.ssa.epsilon", 0.0);  // don't use this lower bound
+  m_config->set_flag("stress_balance.ssa.compute_surface_gradient_inward", true);
+  m_config->set_number("stress_balance.ssa.epsilon", 0.0);  // don't use this lower bound
 
   IceModelVec::AccessList list{&m_tauc, &m_bc_values, &m_bc_mask, &m_geometry.ice_surface_elevation, &m_geometry.bed_elevation};
 
-  double standard_gravity = m_config->get_double("constants.standard_gravity"),
-    ice_rho = m_config->get_double("constants.ice.density");
+  double standard_gravity = m_config->get_number("constants.standard_gravity"),
+    ice_rho = m_config->get_number("constants.ice.density");
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    Context::Ptr ctx = context_from_options(com, "ssa_testi");
+    std::shared_ptr<Context> ctx = context_from_options(com, "ssa_testi");
     Config::Ptr config = ctx->config();
 
     std::string usage = "\n"
@@ -168,8 +168,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    unsigned int Mx = config->get_double("grid.Mx");
-    unsigned int My = config->get_double("grid.My");
+    unsigned int Mx = config->get_number("grid.Mx");
+    unsigned int My = config->get_number("grid.My");
 
     auto method = config->get_string("stress_balance.ssa.method");
     auto output_file = config->get_string("output.file_name");

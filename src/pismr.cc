@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
 
   try {
-    Context::Ptr ctx = context_from_options(com, "pismr");
+    std::shared_ptr<Context> ctx = context_from_options(com, "pismr");
     Logger::Ptr log = ctx->log();
 
     std::string usage =

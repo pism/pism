@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,7 @@
 #include "Factory.hh"
 
 // ocean models:
+#include "Anomaly.hh"
 #include "Constant.hh"
 #include "ConstantPIK.hh"
 #include "GivenClimate.hh"
@@ -36,16 +37,15 @@ namespace pism {
 namespace ocean {
 // Ocean
 Factory::Factory(IceGrid::ConstPtr g)
-  : PCFactory<OceanModel>(g) {
-  m_option = "ocean";
+  : PCFactory<OceanModel>(g, "ocean.models") {
 
   add_model<GivenTH>("th");
   add_model<PIK>("pik");
   add_model<Constant>("constant");
   add_model<Pico>("pico");
   add_model<Given>("given");
-  set_default("constant");
 
+  add_modifier<Anomaly>("anomaly");
   add_modifier<Cache>("cache");
   add_modifier<Delta_SMB>("delta_SMB");
   add_modifier<Frac_SMB>("frac_SMB");

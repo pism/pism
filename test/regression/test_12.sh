@@ -22,7 +22,7 @@ $MPIEXEC -n 2 $PISM_PATH/pismv -test B $GRID $OPTS $TS_OPTS
 
 set +x
 
-/usr/bin/env python <<EOF
+/usr/bin/env python3 <<EOF
 from numpy import diff, log10, floor
 from sys import exit
 try:
@@ -37,10 +37,10 @@ threshold = 10**(floor(log10(volume_max)) - 14) # 14 digits of accuracy
 diff_max = diff(volume).max()
 
 if diff_max < threshold:
-    print "diff(volume).max() = %f, threshold = %f" % (diff_max, threshold)
+    print("diff(volume).max() = %f, threshold = %f" % (diff_max, threshold))
     exit(0)
 else:
-    print "diff(volume).max() = %f > %f" % (diff_max, threshold)
+    print("diff(volume).max() = %f > %f" % (diff_max, threshold))
     exit(1)
 EOF
 

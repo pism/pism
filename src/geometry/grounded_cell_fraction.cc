@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,6 +23,7 @@
 #include "grounded_cell_fraction.hh"
 
 #include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh" // clip
 #include "pism/util/iceModelVec.hh"
 
 namespace pism {
@@ -157,6 +158,7 @@ double grounded_area_fraction(double a, double b, double c) {
     assert(not (invalid(ab) or invalid(ac)));
 
     double ratio = triangle_area({0.0, 0.0}, ab, ac) / total_area;
+    assert((ratio >= 0.0) and (ratio <= 1.0));
 
     if (a > 0.0) {
       return ratio;
@@ -169,6 +171,7 @@ double grounded_area_fraction(double a, double b, double c) {
     assert(not (invalid(ab) or invalid(bc)));
 
     double ratio = triangle_area({1.0, 0.0}, bc, ab) / total_area;
+    assert((ratio >= 0.0) and (ratio <= 1.0));
 
     if (b > 0.0) {
       return ratio;
@@ -181,6 +184,7 @@ double grounded_area_fraction(double a, double b, double c) {
     assert(not (invalid(bc) or invalid(ac)));
 
     double ratio = triangle_area({0.0, 1.0}, ac, bc) / total_area;
+    assert((ratio >= 0.0) and (ratio <= 1.0));
 
     if (c > 0.0) {
       return ratio;
@@ -194,6 +198,7 @@ double grounded_area_fraction(double a, double b, double c) {
   // the a == 0 case, the line F = 0 goes through A
   if (same(ab, ac)) {
     double ratio = triangle_area({1.0, 0.0}, bc, ab) / total_area;
+    assert((ratio >= 0.0) and (ratio <= 1.0));
 
     if (b > 0.0) {
       return ratio;
@@ -205,6 +210,7 @@ double grounded_area_fraction(double a, double b, double c) {
   // the b == 0 case and the c == 0 case
   if (same(ab, bc) or same(ac, bc)) {
     double ratio = triangle_area({0.0, 0.0}, ab, ac) / total_area;
+    assert((ratio >= 0.0) and (ratio <= 1.0));
 
     if (a > 0.0) {
       return ratio;
@@ -213,47 +219,13 @@ double grounded_area_fraction(double a, double b, double c) {
     }
   }
 
-  // FIXME: we need to cover the case of the line F=0 intersecting *two* nodes of the
-  // triangle, i.e. coinciding with a side of the triangle.
+  // Note: the case of F=0 coinciding with a side of the triangle is covered by if clauses
+  // above. For example, when F=0 coincides with AC, we have a = c = 0 and intersect_ac(a, c)
+  // returns an invalid intersection point.
 
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "the logic in grounded_area_fraction failed! Please submit a bug report.");
 }
-
-// This structure extracts the box stencil information from an IceModelVec2S.
-struct Box {
-  double ij, n, nw, w, sw, s, se, e, ne;
-
-  Box(double ij_,
-      double n_, double nw_, double w_, double sw_,
-      double s_, double se_, double e_, double ne_) {
-    ij = ij_;
-    n  = n_;
-    nw = nw_;
-    w  = w_;
-    sw = sw_;
-    s  = s_;
-    se = se_;
-    e  = e_;
-    ne = ne_;
-  }
-  Box(const IceModelVec2S &X, int i, int j) {
-    const int
-      E = i + 1,
-      W = i - 1,
-      N = j + 1,
-      S = j - 1;
-    ij = X(i, j);
-    n  = X(i, N);
-    nw = X(W, N);
-    w  = X(W, j);
-    sw = X(W, S);
-    s  = X(i, S);
-    se = X(E, S);
-    e  = X(E, j);
-    ne = X(E, N);
-  }
-};
 
 /*!
  * The flotation criterion.
@@ -265,19 +237,21 @@ static double F(double SL, double B, double H, double alpha) {
   return shelf_depth - water_depth;
 }
 
+typedef BoxStencil<double> Box;
+
 /*!
  * Compute the flotation criterion at all the points in the box stencil.
  */
 static Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
-  return Box(F(SL.ij, B.ij, H.ij, alpha),
-             F(SL.n,  B.n,  H.n,  alpha),
-             F(SL.nw, B.nw, H.nw, alpha),
-             F(SL.w,  B.w,  H.w,  alpha),
-             F(SL.sw, B.sw, H.sw, alpha),
-             F(SL.s,  B.s,  H.s,  alpha),
-             F(SL.se, B.se, H.se, alpha),
-             F(SL.e,  B.e,  H.e,  alpha),
-             F(SL.ne, B.ne, H.ne, alpha));
+  return {F(SL.ij, B.ij, H.ij, alpha),
+          F(SL.n,  B.n,  H.n,  alpha),
+          F(SL.nw, B.nw, H.nw, alpha),
+          F(SL.w,  B.w,  H.w,  alpha),
+          F(SL.sw, B.sw, H.sw, alpha),
+          F(SL.s,  B.s,  H.s,  alpha),
+          F(SL.se, B.se, H.se, alpha),
+          F(SL.e,  B.e,  H.e,  alpha),
+          F(SL.ne, B.ne, H.ne, alpha)};
 }
 
 /*!
@@ -304,13 +278,6 @@ void compute_grounded_cell_fraction(double ice_density,
     for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      Box
-        S(sea_level,      i, j),
-        H(ice_thickness,  i, j),
-        B(bed_topography, i, j);
-
-      Box f = F(S, B, H, alpha);
-
       /*
         NW----------------N----------------NE
         |                 |                 |
@@ -327,27 +294,39 @@ void compute_grounded_cell_fraction(double ice_density,
         SW----------------S----------------SE
       */
 
-      double
-        f_o  = f.ij,
-        f_sw = 0.25 + (f.sw + f.s + f.ij + f.w),
-        f_se = 0.25 * (f.s + f.se + f.e + f.ij),
-        f_ne = 0.25 * (f.ij + f.e + f.ne + f.n),
-        f_nw = 0.25 * (f.w + f.ij + f.n + f.nw);
+      // compute the floatation function at 8 points surrounding the current grid point
+      BoxStencil<double> f;
+      {
+        auto S = sea_level.box(i, j);
+        auto H = ice_thickness.box(i, j);
+        auto B = bed_topography.box(i, j);
 
-      double
-        f_s = 0.5 * (f.ij + f.s),
-        f_e = 0.5 * (f.ij + f.e),
-        f_n = 0.5 * (f.ij + f.n),
-        f_w = 0.5 * (f.ij + f.w);
+        auto x = F(S, B, H, alpha);
 
-      result(i, j) = 0.125 * (grounded_area_fraction(f_o, f_ne, f_n) +
-                              grounded_area_fraction(f_o, f_n,  f_nw) +
-                              grounded_area_fraction(f_o, f_nw, f_w) +
-                              grounded_area_fraction(f_o, f_w,  f_sw) +
-                              grounded_area_fraction(f_o, f_sw, f_s) +
-                              grounded_area_fraction(f_o, f_s,  f_se) +
-                              grounded_area_fraction(f_o, f_se, f_e) +
-                              grounded_area_fraction(f_o, f_e,  f_ne));
+        f.ij = x.ij;
+        f.sw = 0.25 * (x.sw + x.s + x.ij + x.w);
+        f.se = 0.25 * (x.s + x.se + x.e + x.ij);
+        f.ne = 0.25 * (x.ij + x.e + x.ne + x.n);
+        f.nw = 0.25 * (x.w + x.ij + x.n + x.nw);
+
+        f.s = 0.5 * (x.ij + x.s);
+        f.e = 0.5 * (x.ij + x.e);
+        f.n = 0.5 * (x.ij + x.n);
+        f.w = 0.5 * (x.ij + x.w);
+      }
+
+      // compute the grounding fraction for the current cell by breaking it into 8
+      // triangles
+      double fraction = 0.125 * (grounded_area_fraction(f.ij, f.ne, f.n) +
+                                 grounded_area_fraction(f.ij, f.n,  f.nw) +
+                                 grounded_area_fraction(f.ij, f.nw, f.w) +
+                                 grounded_area_fraction(f.ij, f.w,  f.sw) +
+                                 grounded_area_fraction(f.ij, f.sw, f.s) +
+                                 grounded_area_fraction(f.ij, f.s,  f.se) +
+                                 grounded_area_fraction(f.ij, f.se, f.e) +
+                                 grounded_area_fraction(f.ij, f.e,  f.ne));
+
+      result(i, j) = clip(fraction, 0.0, 1.0);
 
     }
   } catch (...) {

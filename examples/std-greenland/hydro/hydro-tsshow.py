@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Creates graph of three modeled hydrology-related time series from a single file.

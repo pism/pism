@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2009-2015, 2018 the PISM Authors
 
@@ -71,6 +71,7 @@ def def_var(nc, name, units, fillvalue):
     var = nc.createVariable(name, 'f', dimensions=("y", "x"), fill_value=fillvalue)
     var.units = units
     return var
+
 
 bed_var = def_var(nc, "topg", "m", fill_value)
 bed_var.standard_name = "bedrock_altitude"

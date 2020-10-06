@@ -30,9 +30,8 @@ balance from the Greenland-region climate model RACMO :cite:`Ettemaetal2009`.
 
 A regional ice flow model generally needs ice flow and stress boundary conditions. For
 this we use a 5 km grid, whole ice sheet, spun-up model state from PISM, described in
-Section :ref:`sec-start` of this *Manual*. You can download the large NetCDF result from
-the PISM website, or you can generate it by running a Section :ref:`sec-start` script.
-
+:ref:`sec-start` of this *Manual*. You can download the large NetCDF result from
+the PISM website, or you can generate it by running a script from :ref:`sec-start`.
 
 .. figure:: figures/jako-mask-topg.png
    :name: fig-jako-basin-topg
@@ -65,9 +64,8 @@ Preprocess the data and get the whole ice sheet model file
 Script ``preprocess.sh`` downloads and cleans the 1 km SeaRISE data, an 80 Mb file called
 ``Greenland1km.nc``. [#]_ The script also downloads the SeaRISE 5 km data set
 ``Greenland_5km_v1.1.nc``, which contains the RACMO surface mass balance field (not
-present in the 1 km data set). If you have already run the example in Section
-:ref:`sec-start` then you already have this file and you can link to it to avoid
-downloading:
+present in the 1 km data set). If you have already run the example in :ref:`sec-start`
+then you already have this file and you can link to it to avoid downloading:
 
 .. code-block:: none
 
@@ -282,7 +280,7 @@ Some more comments on this run are appropriate:
 
   .. code-block:: none
   
-       -regrid_file g5km_bc.nc -regrid_vars bmelt,tillwat,enthalpy,litho_temp,vel_ssa_bc
+     -regrid_file g5km_bc.nc -regrid_vars bmelt,tillwat,enthalpy,litho_temp,vel_ssa_bc
 
 - Dirichlet boundary conditions ``u_ssa_bc,v_ssa_bc`` are also regridded from
   ``g5km_bc.nc`` for the sliding SSA stress balance, and the option ``-ssa_dirichlet_bc``
@@ -291,17 +289,18 @@ Some more comments on this run are appropriate:
   velocity tangent to the north and south edges of the computational domain is
   significantly nonzero, which motivates this usage.
 
-- The calving front of the glacier is handled by the following option combination:
+- The calving front of the glacier is handled by the following command-line options:
 
   .. code-block:: none
   
-        -calving ocean_kill -ocean_kill_file jako.nc -pik
+     -front_retreat_file jako.nc -pik
 
   This choice uses the present-day ice extent, defined by SeaRISE data in
-  ``Greenland1km.nc``, to determine the location of the calving front. Recalling that
-  ``-pik`` includes ``-cfbc``, we are applying a PIK mechanism for the stress boundary
-  condition at the calving front. The other PIK mechanisms are largely inactive because of
-  ``-calving ocean_kill``, but they should do no harm (see section :ref:`sec-pism-pik`).
+  ``Greenland1km.nc``, to determine the location of the calving front (see
+  :ref:`sec-prescribed-retreat`). Recalling that ``-pik`` includes ``-cfbc``, we are
+  applying a PIK mechanism for the stress boundary condition at the calving front. The
+  other PIK mechanisms are largely inactive because prescribing the maximum ice extent,
+  but they should do no harm (see section :ref:`sec-pism-pik`).
 
 .. figure:: figures/jako-csurf.png
    :name: fig-jako-csurf
@@ -370,7 +369,7 @@ For this example ``PyPISMTools/colormaps/Full_saturation_spectrum_CCW.cpt`` was 
 .. rubric:: Footnotes
 
 .. [#] PISM can also do 1 km runs for the whole Greenland ice sheet; see this `news item
-       <http://www.pism-docs.org/wiki/doku.php?id=news:first1km>`_.
+       <https://pism-docs.org/wiki/doku.php?id=news:first1km>`_.
 
 .. [#] If this file is already present then no actual download occurs, and preprocessing
        proceeds. Thus: Do not worry about download time if you need to preprocess again.

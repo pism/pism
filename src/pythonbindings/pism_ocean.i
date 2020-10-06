@@ -3,6 +3,7 @@
 #include "coupler/ocean/Cache.hh"
 #include "coupler/ocean/ConstantPIK.hh"
 #include "coupler/ocean/Delta_SMB.hh"
+#include "coupler/ocean/Anomaly.hh"
 #include "coupler/ocean/Delta_T.hh"
 #include "coupler/ocean/Frac_SMB.hh"
 #include "coupler/ocean/Frac_MBP.hh"
@@ -13,6 +14,8 @@
 #include "coupler/ocean/PicoPhysics.hh"
 #include "coupler/ocean/sea_level/Delta_SL.hh"
 #include "coupler/ocean/sea_level/Delta_SL_2D.hh"
+#include "coupler/ocean/Factory.hh"
+#include "coupler/ocean/sea_level/Factory.hh"
 %}
 
 %shared_ptr(pism::ocean::OceanModel)
@@ -36,6 +39,10 @@
 %shared_ptr(pism::ocean::Delta_SMB)
 %rename(OceanDeltaSMB) pism::ocean::Delta_SMB;
 %include "coupler/ocean/Delta_SMB.hh"
+
+%shared_ptr(pism::ocean::Anomaly)
+%rename(OceanAnomaly) pism::ocean::Anomaly;
+%include "coupler/ocean/Anomaly.hh"
 
 %shared_ptr(pism::ocean::Delta_T)
 %rename(OceanDeltaT) pism::ocean::Delta_T;
@@ -77,3 +84,11 @@
 %shared_ptr(pism::ocean::sea_level::Delta_SL_2D)
 %rename(SeaLevelDelta2D) pism::ocean::sea_level::Delta_SL_2D;
 %include "coupler/ocean/sea_level/Delta_SL_2D.hh"
+
+%shared_ptr(pism::ocean::Factory)
+%rename(OceanFactory) pism::ocean::Factory;
+%include "coupler/ocean/Factory.hh"
+
+%shared_ptr(pism::ocean::sea_level::Factory)
+%rename(SeaLevelFactory) pism::ocean::sea_level::Factory;
+%include "coupler/ocean/sea_level/Factory.hh"

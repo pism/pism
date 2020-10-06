@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2015, 2017, 2018 The PISM Authors
+# Copyright (C) 2009-2015, 2017, 2018, 2019, 2020 The PISM Authors
 
 # PISM Greenland spinup using either constant present-day climate or modeled
 # paleoclimate.  See README.md.
@@ -102,7 +102,7 @@ if [ "$2" = "const" ]; then
 elif [ "$2" = "paleo" ]; then
   climname="paleo-climate"
   INLIST="$PISM_TEMPSERIES $PISM_SLSERIES"
-  COUPLER=" -bed_def lc -atmosphere searise_greenland,delta_T,paleo_precip -surface pdd -atmosphere_paleo_precip_file $PISM_TEMPSERIES -atmosphere_delta_T_file $PISM_TEMPSERIES -sea_level constant,delta_sl -ocean_delta_sl_file $PISM_SLSERIES"
+  COUPLER=" -bed_def lc -atmosphere searise_greenland,delta_T,precip_scaling -surface pdd -atmosphere_precip_scaling_file $PISM_TEMPSERIES -atmosphere_delta_T_file $PISM_TEMPSERIES -sea_level constant,delta_sl -ocean_delta_sl_file $PISM_SLSERIES"
 else
   echo "invalid second argument; must be in $CLIMLIST"
   exit
@@ -152,13 +152,13 @@ else
   exit
 fi
 
-grid="-Mx $myMx -My $myMy $vgrid -grid.correct_cell_areas false -grid.registration corner"
+grid="-Mx $myMx -My $myMy $vgrid -grid.recompute_longitude_and_latitude false -grid.registration corner"
 
 # set stress balance from argument 5
 if [ -n "${PARAM_SIAE:+1}" ] ; then  # check if env var is already set
-  PHYS="-calving ocean_kill -ocean_kill_file ${PISM_DATANAME} -sia_e ${PARAM_SIAE}"
+  PHYS="-front_retreat_file ${PISM_DATANAME} -sia_e ${PARAM_SIAE}"
 else
-  PHYS="-calving ocean_kill -ocean_kill_file ${PISM_DATANAME} -sia_e 3.0"
+  PHYS="-front_retreat_file ${PISM_DATANAME} -sia_e 3.0"
 fi
 if [ -n "${USEPIK:+1}" ] ; then  # check if env var is already set
   PHYS="${PHYS} -pik -subgl"
@@ -294,7 +294,7 @@ else
 fi
 
 # show remaining setup options:
-PISM="${PISM_BIN}${PISM_EXEC}"
+PISM="${PISM_BIN}/${PISM_EXEC}"
 echo "$SCRIPTNAME      executable = '$PISM'"
 echo "$SCRIPTNAME         coupler = '$COUPLER'"
 echo "$SCRIPTNAME        dynamics = '$PHYS'"

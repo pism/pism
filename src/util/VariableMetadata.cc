@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009--2020 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -18,9 +18,10 @@
 
 #include <set>
 #include <algorithm>
+#include <cmath>
 
 #include "VariableMetadata.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism_options.hh"
 #include "IceGrid.hh"
 
@@ -85,16 +86,17 @@ units::System::Ptr VariableMetadata::unit_system() const {
  */
 void VariableMetadata::check_range(const std::string &filename, double min, double max) {
 
-  const std::string &units_string = get_string("units");
+  auto units_string = get_string("units");
+  auto name_string  = get_name();
   const char
     *units = units_string.c_str(),
-    *name = get_name().c_str(),
-    *file = filename.c_str();
+    *name  = name_string.c_str(),
+    *file  = filename.c_str();
 
   if (has_attribute("valid_min") and has_attribute("valid_max")) {
     double
-      valid_min = get_double("valid_min"),
-      valid_max = get_double("valid_max");
+      valid_min = get_number("valid_min"),
+      valid_max = get_number("valid_max");
     if ((min < valid_min) or (max > valid_max)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are outside the valid range [%e, %e] (%s).\n"
                                     "computed min = %e %s, computed max = %e %s",
@@ -102,7 +104,7 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
                                     valid_min, valid_max, units, min, units, max, units);
     }
   } else if (has_attribute("valid_min")) {
-    double valid_min = get_double("valid_min");
+    double valid_min = get_number("valid_min");
     if (min < valid_min) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are less than the valid minimum (%e %s).\n"
                                     "computed min = %e %s, computed max = %e %s",
@@ -110,7 +112,7 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
                                     valid_min, units, min, units, max, units);
     }
   } else if (has_attribute("valid_max")) {
-    double valid_max = get_double("valid_max");
+    double valid_max = get_number("valid_max");
     if (max > valid_max) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are greater than the valid maximum (%e %s).\n"
                                     "computed min = %e %s, computed max = %e %s",
@@ -159,8 +161,6 @@ void SpatialVariableMetadata::init_internal(const std::string &name,
   m_z.set_string("units", "m");
   m_z.set_string("positive", "up");
 
-  set_string("coordinates", "lat lon");
-
   set_name(name);
 
   m_zlevels = z_levels;
@@ -174,11 +174,6 @@ void SpatialVariableMetadata::init_internal(const std::string &name,
     get_z().set_name("");
     m_n_spatial_dims = 2;
   }
-}
-
-SpatialVariableMetadata::SpatialVariableMetadata(const SpatialVariableMetadata &other)
-  : VariableMetadata(other), m_x(other.m_x), m_y(other.m_y), m_z(other.m_z) {
-  m_zlevels             = other.m_zlevels;
 }
 
 SpatialVariableMetadata::~SpatialVariableMetadata() {
@@ -213,14 +208,14 @@ void VariableMetadata::report_range(const Logger &log, double min, double max,
   if (has_attribute("standard_name")) {
 
     if (found_by_standard_name) {
-      log.message(2, 
+      log.message(2,
                   " %s / standard_name=%-10s\n"
                   "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                   get_name().c_str(),
                   get_string("standard_name").c_str(), spacer.c_str(), min, max,
                   get_string("glaciological_units").c_str());
     } else {
-      log.message(2, 
+      log.message(2,
                   " %s / WARNING! standard_name=%s is missing, found by short_name\n"
                   "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                   get_name().c_str(),
@@ -229,7 +224,7 @@ void VariableMetadata::report_range(const Logger &log, double min, double max,
     }
 
   } else {
-    log.message(2, 
+    log.message(2,
                 " %s / %-10s\n"
                 "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                 get_name().c_str(),
@@ -291,12 +286,12 @@ void VariableMetadata::set_name(const std::string &name) {
 }
 
 //! Set a scalar attribute to a single (scalar) value.
-void VariableMetadata::set_double(const std::string &name, double value) {
+void VariableMetadata::set_number(const std::string &name, double value) {
   m_doubles[name] = std::vector<double>(1, value);
 }
 
 //! Set a scalar attribute to a single (scalar) value.
-void VariableMetadata::set_doubles(const std::string &name, const std::vector<double> &values) {
+void VariableMetadata::set_numbers(const std::string &name, const std::vector<double> &values) {
   m_doubles[name] = values;
 }
 
@@ -313,7 +308,7 @@ std::string VariableMetadata::get_name() const {
 }
 
 //! Get a single-valued scalar attribute.
-double VariableMetadata::get_double(const std::string &name) const {
+double VariableMetadata::get_number(const std::string &name) const {
   auto j = m_doubles.find(name);
   if (j != m_doubles.end()) {
     return (j->second)[0];
@@ -324,7 +319,7 @@ double VariableMetadata::get_double(const std::string &name) const {
 }
 
 //! Get an array-of-doubles attribute.
-std::vector<double> VariableMetadata::get_doubles(const std::string &name) const {
+std::vector<double> VariableMetadata::get_numbers(const std::string &name) const {
   auto j = m_doubles.find(name);
   if (j != m_doubles.end()) {
     return j->second;
@@ -422,7 +417,7 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
       continue;
     }
 
-    if ((fabs(values[0]) >= 1.0e7) || (fabs(values[0]) <= 1.0e-4)) {
+    if ((std::fabs(values[0]) >= 1.0e7) || (std::fabs(values[0]) <= 1.0e-4)) {
       // use scientific notation if a number is big or small
       log.message(verbosity_threshold, "  %s%s = %12.3e\n",
                   name.c_str(), padding.c_str(), values[0]);
@@ -436,37 +431,6 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
 
 bool set_contains(const std::set<std::string> &S, const VariableMetadata &variable) {
   return member(variable.get_name(), S);
-}
-
-TimeseriesMetadata::TimeseriesMetadata(const std::string &name, const std::string &dimension_name,
-                           units::System::Ptr system)
-  : VariableMetadata(name, system, 0) {
-  m_dimension_name = dimension_name;
-}
-
-TimeseriesMetadata::~TimeseriesMetadata()
-{
-  // empty
-}
-
-std::string TimeseriesMetadata::get_dimension_name() const {
-  return m_dimension_name;
-}
-
-/// TimeBoundsMetadata
-
-TimeBoundsMetadata::TimeBoundsMetadata(const std::string &var_name, const std::string &dim_name,
-                           units::System::Ptr system)
-  : TimeseriesMetadata(var_name, dim_name, system) {
-  m_bounds_name    = "nv";      // number of vertexes
-}
-
-TimeBoundsMetadata::~TimeBoundsMetadata() {
-  // empty
-}
-
-std::string TimeBoundsMetadata::get_bounds_name() const {
-  return m_bounds_name;
 }
 
 } // end of namespace pism

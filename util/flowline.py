@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # @package flowline
 # \brief This script aids in setting up and visualizing flow-line modeling runs.
@@ -206,6 +206,7 @@ def expand_var(nc, out, name, direction):
             var2[get_slice(var2.dimensions, x=j)] = permute(var1)
         elif direction == 'y':
             var2[get_slice(var2.dimensions, y=j)] = permute(var1)
+
 
 parser = OptionParser()
 parser.usage = "usage: %prog -o foo.nc -d {x,y} {--collapse,--expand} file.nc"

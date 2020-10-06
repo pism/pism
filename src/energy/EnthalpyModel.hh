@@ -31,9 +31,9 @@ public:
   EnthalpyModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
 
 protected:
-  virtual void restart_impl(const PIO &input_file, int record);
+  virtual void restart_impl(const File &input_file, int record);
 
-  virtual void bootstrap_impl(const PIO &input_file,
+  virtual void bootstrap_impl(const File &input_file,
                               const IceModelVec2S &ice_thickness,
                               const IceModelVec2S &surface_temperature,
                               const IceModelVec2S &climatic_mass_balance,
@@ -48,8 +48,8 @@ protected:
   using EnergyModel::update_impl;
   virtual void update_impl(double t, double dt, const Inputs &inputs);
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 };
 
 /*! @brief The "dummy" energy balance model. Reads in enthalpy from a file, but does not update it. */
@@ -60,9 +60,9 @@ public:
 protected:
   MaxTimestep max_timestep_impl(double t) const;
 
-  void restart_impl(const PIO &input_file, int record);
+  void restart_impl(const File &input_file, int record);
 
-  void bootstrap_impl(const PIO &input_file,
+  void bootstrap_impl(const File &input_file,
                       const IceModelVec2S &ice_thickness,
                       const IceModelVec2S &surface_temperature,
                       const IceModelVec2S &climatic_mass_balance,

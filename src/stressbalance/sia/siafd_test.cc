@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -36,7 +36,7 @@ static char help[] =
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
@@ -57,8 +57,8 @@ static void compute_strain_heating_errors(const IceModelVec3 &strain_heating,
   const double LforFG = 750000; // m
 
   const double
-    ice_rho   = grid.ctx()->config()->get_double("constants.ice.density"),
-    ice_c     = grid.ctx()->config()->get_double("constants.ice.specific_heat_capacity");
+    ice_rho   = grid.ctx()->config()->get_number("constants.ice.density"),
+    ice_c     = grid.ctx()->config()->get_number("constants.ice.specific_heat_capacity");
 
   IceModelVec::AccessList list{&thickness, &strain_heating};
 
@@ -70,7 +70,7 @@ static void compute_strain_heating_errors(const IceModelVec3 &strain_heating,
       double
         xx = grid.x(i),
         yy = grid.y(j),
-        r  = sqrt(PetscSqr(xx) + PetscSqr(yy));
+        r  = sqrt(pow(xx, 2) + pow(yy, 2));
 
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {
         // only evaluate error if inside sheet and not at central
@@ -121,7 +121,7 @@ static void computeSurfaceVelocityErrors(const IceGrid &grid,
     const int i = p.i(), j = p.j();
 
     double xx = grid.x(i), yy = grid.y(j),
-      r = sqrt(PetscSqr(xx) + PetscSqr(yy));
+      r = sqrt(pow(xx, 2) + pow(yy, 2));
     if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
       // and not at central singularity
       const double H = ice_thickness(i, j);
@@ -132,8 +132,8 @@ static void computeSurfaceVelocityErrors(const IceGrid &grid,
       const double vex = (yy/r) * F.U[0];
       // note that because getValZ does linear interpolation and H is not exactly at
       // a grid point, this causes nonzero errors
-      const double Uerr = sqrt(PetscSqr(u3.getValZ(i,j,H) - uex) +
-                               PetscSqr(v3.getValZ(i,j,H) - vex));
+      const double Uerr = sqrt(pow(u3.getValZ(i,j,H) - uex, 2) +
+                               pow(v3.getValZ(i,j,H) - vex, 2));
       maxUerr = std::max(maxUerr,Uerr);
       avUerr += Uerr;
       const double Werr = fabs(w3.getValZ(i,j,H) - F.w[0]);
@@ -272,15 +272,15 @@ int main(int argc, char *argv[]) {
   MPI_Comm com = MPI_COMM_WORLD;
   petsc::Initializer petsc(argc, argv, help);
 
-  com = PETSC_COMM_WORLD;
+  com = MPI_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     // set default verbosity
-    Context::Ptr ctx = context_from_options(com, "siafd_test");
+    std::shared_ptr<Context> ctx = context_from_options(com, "siafd_test");
     Config::Ptr config = ctx->config();
 
-    config->set_boolean("stress_balance.sia.grain_size_age_coupling", false);
+    config->set_flag("stress_balance.sia.grain_size_age_coupling", false);
     config->set_string("stress_balance.sia.flow_law", "arr");
 
     set_config_from_options(*config);
@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
     P.horizontal_size_from_options();
 
     double Lz = 4000.0;
-    unsigned int Mz = config->get_double("grid.Mz");
+    unsigned int Mz = config->get_number("grid.Mz");
 
     P.z = IceGrid::compute_vertical_levels(Lz, Mz, EQUAL);
     P.ownership_ranges_from_options(ctx->size());
@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
 
     EnthalpyConverter::Ptr EC(new ColdEnthalpyConverter(*config));
 
-    const int WIDE_STENCIL = config->get_double("grid.max_stencil_width");
+    const int WIDE_STENCIL = config->get_number("grid.max_stencil_width");
 
     IceModelVec3
       enthalpy(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL),
@@ -325,13 +325,13 @@ int main(int argc, char *argv[]) {
     geometry.sea_level_elevation.set(0.0);
 
     // age of the ice; is not used here
-    age.set_attrs("diagnostic", "age of the ice", "s", "");
+    age.set_attrs("diagnostic", "age of the ice", "s", "s", "", 0);
     age.set(0.0);
 
     // enthalpy in the ice
     enthalpy.set_attrs("model_state",
                        "ice enthalpy (includes sensible heat, latent heat, pressure)",
-                       "J kg-1", "");
+                       "J kg-1", "J kg-1", "", 0);
     //
     enthalpy.set(EC->enthalpy(263.15, 0.0, EC->pressure(1000.0)));
 
@@ -354,7 +354,7 @@ int main(int argc, char *argv[]) {
                   geometry.ice_thickness,
                   enthalpy);
 
-    geometry.ensure_consistency(config->get_double("geometry.ice_free_thickness_standard"));
+    geometry.ensure_consistency(config->get_number("geometry.ice_free_thickness_standard"));
 
     // Initialize the SIA solver:
     stress_balance.init();
@@ -362,7 +362,7 @@ int main(int argc, char *argv[]) {
     IceModelVec2S melange_back_pressure;
     melange_back_pressure.create(grid, "melange_back_pressure", WITHOUT_GHOSTS);
     melange_back_pressure.set_attrs("boundary_condition",
-                                    "melange back pressure fraction", "", "");
+                                    "melange back pressure fraction", "", "", "", 0);
     melange_back_pressure.set(0.0);
 
     bool full_update = true;
@@ -387,7 +387,7 @@ int main(int argc, char *argv[]) {
                  geometry.ice_thickness, u3, v3, w3, sigma);
 
     // Write results to an output file:
-    PIO file(grid->com, "netcdf3", output_file, PISM_READWRITE_MOVE);
+    File file(grid->com, output_file, PISM_NETCDF3, PISM_READWRITE_MOVE);
     io::define_time(file, *ctx);
     io::append_time(file, *ctx->config(), ctx->time()->current());
 

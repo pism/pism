@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -33,11 +33,11 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
   ForcingOptions opt(*m_grid->ctx(), "surface.given");
 
   {
-    unsigned int buffer_size = m_config->get_double("climate_forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_double("climate_forcing.evaluations_per_year");
+    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
+    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
     bool periodic = opt.period > 0;
 
-    PIO file(m_grid->com, "netcdf3", opt.filename, PISM_READONLY);
+    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
     m_temperature = IceModelVec2T::ForcingField(m_grid,
                                                 file,
@@ -45,7 +45,8 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
                                                 "", // no standard name
                                                 buffer_size,
                                                 evaluations_per_year,
-                                                periodic);
+                                                periodic,
+                                                LINEAR);
 
     m_mass_flux = IceModelVec2T::ForcingField(m_grid,
                                               file,
@@ -58,29 +59,17 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
 
   m_temperature->set_attrs("climate_forcing",
                            "temperature of the ice at the ice surface but below firn processes",
-                           "Kelvin", "");
-  m_temperature->metadata().set_doubles("valid_range", {0.0, 323.15}); // [0C, 50C]
+                           "Kelvin", "Kelvin", "", 0);
+  m_temperature->metadata().set_numbers("valid_range", {0.0, 323.15}); // [0C, 50C]
 
-  const double smb_max = m_config->get_double("surface.given.smb_max", "kg m-2 second-1");
+  const double smb_max = m_config->get_number("surface.given.smb_max", "kg m-2 second-1");
 
   m_mass_flux->set_attrs("climate_forcing",
                          "surface mass balance (accumulation/ablation) rate",
-                         "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
-  m_mass_flux->metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_mass_flux->metadata().set_doubles("valid_range", {-smb_max, smb_max});
+                         "kg m-2 s-1", "kg m-2 year-1",
+                         "land_ice_surface_specific_mass_balance_flux", 0);
 
-  // this class uses the "modifier" version of the SurfaceModel constructor, so we need to
-  // allocate these here
-  {
-    m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
-    m_layer_mass            = allocate_layer_mass(grid);
-    m_layer_thickness       = allocate_layer_thickness(grid);
-
-    // default values
-    m_layer_thickness->set(0.0);
-    m_layer_mass->set(0.0);
-    m_liquid_water_fraction->set(0.0);
-  }
+  m_mass_flux->metadata().set_numbers("valid_range", {-smb_max, smb_max});
 }
 
 Given::~Given() {
@@ -112,6 +101,11 @@ void Given::update_impl(const Geometry &geometry, double t, double dt) {
 
   m_mass_flux->average(t, dt);
   m_temperature->average(t, dt);
+
+  dummy_accumulation(*m_mass_flux, *m_accumulation);
+  dummy_melt(*m_mass_flux, *m_melt);
+  dummy_runoff(*m_mass_flux, *m_runoff);
+
 }
 
 const IceModelVec2S &Given::mass_flux_impl() const {
@@ -122,12 +116,24 @@ const IceModelVec2S &Given::temperature_impl() const {
   return *m_temperature;
 }
 
-void Given::define_model_state_impl(const PIO &output) const {
+const IceModelVec2S &Given::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S &Given::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S &Given::runoff_impl() const {
+  return *m_runoff;
+}
+
+void Given::define_model_state_impl(const File &output) const {
   m_mass_flux->define(output);
   m_temperature->define(output);
 }
 
-void Given::write_model_state_impl(const PIO &output) const {
+void Given::write_model_state_impl(const File &output) const {
   m_mass_flux->write(output);
   m_temperature->write(output);
 }

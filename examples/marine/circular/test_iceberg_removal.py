@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2012, 2013, 2014, 2015 Ricarda Winkelmann, Torsten Albrecht,
 # Ed Bueler, and Constantine Khroulev
@@ -31,6 +31,7 @@ def R(x, y):
 
 def C(x, y):
     return np.sqrt(x ** 2 + y ** 2)
+
 
 if options.square:
     rad = R

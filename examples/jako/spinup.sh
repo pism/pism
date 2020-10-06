@@ -58,11 +58,11 @@ CLIMATE="-surface given,forcing -surface_given_file $CLIMATEFILE -force_to_thick
 #   '-pseudo_plastic -pseudo_plastic_q 0.25' plus '-tauc_slippery_grounding_lines'
 #   matches default choices in spinup.sh in examples/std-greenland/
 # but here we do not use -sia_e 3.0 but instead -sia_e 1.0
-PHYS="-calving ocean_kill -ocean_kill_file $BOOT -pik -sia_e 1.0 -stress_balance ssa+sia -topg_to_phi 15.0,40.0,-300.0,700.0 -till_effective_fraction_overburden 0.02 -pseudo_plastic -pseudo_plastic_q 0.25 -tauc_slippery_grounding_lines"
+PHYS="-front_retreat_file $BOOT -pik -sia_e 1.0 -stress_balance ssa+sia -topg_to_phi 15.0,40.0,-300.0,700.0 -till_effective_fraction_overburden 0.02 -pseudo_plastic -pseudo_plastic_q 0.25 -tauc_slippery_grounding_lines"
 
 SKIP=5
 
-LENGTH=2000   # model years
+LENGTH=${SPINUP_LENGTH:-2000}   # model years
 EXDT=20    # 20 year between saves, thus 100 frames
 
 cmd="$PISM_MPIDO $NN $PISM -i $BOOT -bootstrap -no_model_strip 10 \

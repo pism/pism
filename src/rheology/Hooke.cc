@@ -32,11 +32,11 @@ Hooke::Hooke(const std::string &prefix,
   : PatersonBudd(prefix, config, ec) {
   m_name = "Hooke";
 
-  m_Q_Hooke  = config.get_double("flow_law.Hooke.Q");
-  m_A_Hooke  = config.get_double("flow_law.Hooke.A");
-  m_C_Hooke  = config.get_double("flow_law.Hooke.C");
-  m_K_Hooke  = config.get_double("flow_law.Hooke.k");
-  m_Tr_Hooke = config.get_double("flow_law.Hooke.Tr");
+  m_Q_Hooke  = config.get_number("flow_law.Hooke.Q");
+  m_A_Hooke  = config.get_number("flow_law.Hooke.A");
+  m_C_Hooke  = config.get_number("flow_law.Hooke.C");
+  m_K_Hooke  = config.get_number("flow_law.Hooke.k");
+  m_Tr_Hooke = config.get_number("flow_law.Hooke.Tr");
 }
 
 Hooke::~Hooke() {

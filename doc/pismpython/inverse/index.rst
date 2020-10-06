@@ -1,6 +1,8 @@
-==========================
+.. include:: ../math-definitions.txt
+
+=====================
 PISM Inverse Problems
-==========================
+=====================
 
 PISM contains algorithms for solving two closely related inverse problems:
 

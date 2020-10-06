@@ -19,7 +19,7 @@
 #include "Elevation.hh"
 
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -167,6 +167,11 @@ void Elevation::update_impl(const Geometry &geometry, double t, double dt) {
 
   compute_mass_flux(geometry.ice_surface_elevation, *m_mass_flux);
   compute_temperature(geometry.ice_surface_elevation, *m_temperature);
+
+  dummy_accumulation(*m_mass_flux, *m_accumulation);
+  dummy_melt(*m_mass_flux, *m_melt);
+  dummy_runoff(*m_mass_flux, *m_runoff);
+  
 }
 
 const IceModelVec2S &Elevation::mass_flux_impl() const {
@@ -177,6 +182,18 @@ const IceModelVec2S &Elevation::temperature_impl() const {
   return *m_temperature;
 }
 
+const IceModelVec2S &Elevation::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S &Elevation::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S &Elevation::runoff_impl() const {
+  return *m_runoff;
+}
+  
 void Elevation::compute_mass_flux(const IceModelVec2S &surface, IceModelVec2S &result) const {
   double dabdz = -m_M_min/(m_z_ELA - m_z_M_min);
   double dacdz = m_M_max/(m_z_M_max - m_z_ELA);
@@ -213,7 +230,7 @@ void Elevation::compute_mass_flux(const IceModelVec2S &surface, IceModelVec2S &r
   loop.check();
 
   // convert from m second-1 ice equivalent to kg m-2 s-1:
-  result.scale(m_config->get_double("constants.ice.density"));
+  result.scale(m_config->get_number("constants.ice.density"));
 }
 
 void Elevation::compute_temperature(const IceModelVec2S &surface, IceModelVec2S &result) const {

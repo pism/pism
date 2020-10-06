@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright (C) 2012, 2014 Moritz Huetten
+# Copyright (C) 2012, 2014, 2020 Moritz Huetten
 
 # geometry setup MISMIP3D P75S/P10S-experiment
 
@@ -165,6 +165,10 @@ for i in range(0, nx):
     for j in range(0, ny):
         ice_surface_temp[j, i] = 268.15
 
+# create the maximum ice extent mask
+land_ice_area_fraction_retreat = np.zeros_like(thk)
+land_ice_area_fraction_retreat[thk > 0] = 1
+land_ice_area_fraction_retreat[topg > 0] = 1
 
 # number of grid cells
 Mx = x.shape[0]
@@ -257,6 +261,11 @@ vars = {'y':   	['m',
                  'yield_stress_for_basal_till',
                  1e6,
                  tauc],
+        'land_ice_area_fraction_retreat' : ["1",
+                                            "maximum ice extent mask",
+                                            "",
+                                            -1,
+                                            land_ice_area_fraction_retreat]
         }
 
 for name in list(vars.keys()):

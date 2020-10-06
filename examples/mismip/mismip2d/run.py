@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import MISMIP
 
 # This scripts generates bash scripts that run MISMIP experiments and generates
@@ -112,8 +112,7 @@ class Experiment:
                    "-gradient eta",
                    "-pseudo_plastic_q %e" % MISMIP.m(self.experiment),
                    "-pseudo_plastic_uthreshold %e" % MISMIP.secpera(),
-                   "-calving ocean_kill",  # calving at the present front
-                   "-ocean_kill_file %s" % input_file,
+                   "-front_retreat_file %s" % input_file, # prescribe the maximum ice extent
                    "-config_override %s" % config_filename,
                    "-ssa_method fd",
                    "-cfbc",                # calving front boundary conditions

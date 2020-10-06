@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2012, 2013, 2014, 2015, 2017 Ricarda Winkelmann, Torsten Albrecht,
 # Ed Bueler, and Constantine Khroulev
@@ -72,7 +72,7 @@ variables = {"thk": thk,
              "bc_mask": bc_mask,
              "u_ssa_bc": ubar,
              "v_ssa_bc": vbar,
-             "calving_threshold" : thk_threshold}
+             "calving_threshold": thk_threshold}
 
 piktests_utils.write_data(ncfile, variables)
 

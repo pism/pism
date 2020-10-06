@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import numpy as np
 
 """This module contains MISMIP constants and parameters, as well as functions
@@ -291,6 +291,7 @@ def plot_profile(experiment, step, out_file):
          color='black', transform=ax.transAxes)
     title("MISMIP experiment %s, step %d" % (experiment, step))
     savefig(out_file)
+
 
 if __name__ == "__main__":
     from optparse import OptionParser

@@ -1,0 +1,24 @@
+``cmake``, required; used to configure PISM
+``g++``, required; used to build PISM
+``git``, required; used to download PISM's source code
+``libfftw3-dev``, required by PISM
+``libgsl-dev``, required by PISM
+``libnetcdf-dev``, required by PISM
+``libudunits2-dev``, required by PISM
+``netcdf-bin``, required; ``ncgen`` is used during the build process
+``petsc-dev``, required by PISM
+``cdo``, optional; used in some pre-processing scripts
+``cmake-curses-gui``, optional; a text-based interface for CMake
+``libpnetcdf-dev``, optional; used for parallel I/O
+``libproj-dev``, optional; used to compute longitude and latitude coordinates of grid points
+``libx11-dev``, optional; used by PISM's run-time viewers
+``nco``, optional; used in many pre-processing scripts
+``ncview``, optional; a nice tool for examining NetCDF datasets
+``python3-dev``, optional; used by PISM's Python bindings
+``python3-netcdf4``, optional; used in most post-processing scripts
+``python3-nose``, optional; used by PISM's regression tests
+``python3-numpy``, optional; used in some pre- and post-processing scripts
+``python3-petsc4py``, optional; used by PISM's Python bindings
+``python3-pyproj``, optional; used in some pre-processing scripts
+``python3-scipy``, optional; used in some pre- and post-processing scripts
+``swig``, optional; used to build PISM's Python bindings

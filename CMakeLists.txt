@@ -1,6 +1,22 @@
 cmake_minimum_required (VERSION 3.1)
 project (Pism C CXX)
 
+if (NOT (${CMAKE_VERSION} VERSION_LESS "3.12"))
+  # Policy CMP0074 was introduced in 3.12. See "cmake --help-policies" for details.
+  # use PackageName_ROOT variables
+  cmake_policy(SET CMP0074 NEW)
+endif()
+
+if (NOT (${CMAKE_VERSION} VERSION_LESS "3.13"))
+  # Policy CMP0078 was introduced in 3.13. See "cmake --help-policies" for details.
+  cmake_policy(SET CMP0078 OLD)       #controls names of SWIG targets
+endif()
+
+if (NOT (${CMAKE_VERSION} VERSION_LESS "3.14"))
+  # Policy CMP0086 was introduced in 3.14. See "cmake --help-policies" for details.
+  cmake_policy(SET CMP0086 NEW)
+endif()
+
 # Require C++11 compiler support.
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -28,10 +44,10 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 pism_set_install_prefix()
 set(CMAKE_INSTALL_MESSAGE "LAZY")
 
-# Set Pism_DEFAULT_CONFIG_FILE (*after* we set the CMAKE_INSTALL_PREFIX above).
+# Set Pism_CONFIG_FILE (*after* we set the CMAKE_INSTALL_PREFIX above).
 pism_check_build_dir_location()
-set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/${Pism_SHARE_DIR}/pism_config.nc" CACHE STRING "" FORCE)
-mark_as_advanced (Pism_DEFAULT_CONFIG_FILE)
+set (Pism_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/${Pism_SHARE_DIR}/pism_config.nc" CACHE STRING "" FORCE)
+mark_as_advanced (Pism_CONFIG_FILE)
 file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
 
 # The default options cache
@@ -40,14 +56,15 @@ option (BUILD_SHARED_LIBS      "Build shared Pism libraries" ON)
 option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
 option (Pism_BUILD_ICEBIN "Build PISM portions of IceBin library" OFF)
 option (Pism_BUILD_DOCS "Build PISM's documentation with 'make all'." OFF)
-option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." OFF)
+option (Pism_USE_PROJ "Use PROJ to compute longitudes and latitudes." OFF)
+option (Pism_USE_PIO "Use NCAR's ParallelIO for I/O." OFF)
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
 option (Pism_ENABLE_DOCUMENTATION "Enable targets building PISM's documentation." ON)
 
 # PISM will eventually use Jansson to read configuration files.
-set (Pism_USE_JANSSON OFF)
-# option (Pism_USE_JANSSON "Use Jansson to read configuration files." OFF)
+# set (Pism_USE_JANSSON OFF)
+option (Pism_USE_JANSSON "Use Jansson to read configuration files." OFF)
 
 option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF)
 mark_as_advanced (Pism_TEST_USING_VALGRIND)
@@ -74,38 +91,20 @@ if (CMAKE_BUILD_TYPE MATCHES "Debug")
   option (Pism_GPROF_FLAGS        "Add flags necessary to profile with gprof." OFF)
 endif (CMAKE_BUILD_TYPE MATCHES "Debug")
 
-# Enable extra checks in the code:
-if (Pism_DEBUG)
-  message (STATUS "Adding -DPISM_DEBUG=1 to compiler flags.")
-  add_definitions (-DPISM_DEBUG=1)
-else()
-  message (STATUS "Adding -DPISM_DEBUG=0 to compiler flags.")
-  add_definitions (-DPISM_DEBUG=0)
-endif ()
-
 # Add -fPIC to C and CXX flags.
 if (Pism_ADD_FPIC)
-  if (NOT CMAKE_C_FLAGS MATCHES "-fPIC")
-    message (STATUS "Adding -fPIC to C compiler flags.")
-    set (CMAKE_C_FLAGS "-fPIC ${CMAKE_C_FLAGS}" CACHE STRING "C compiler flags" FORCE)
-  endif()
-
-  if (NOT CMAKE_CXX_FLAGS MATCHES "-fPIC")
-    message (STATUS "Adding -fPIC to C++ compiler flags.")
-    set (CMAKE_CXX_FLAGS "-fPIC ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
-  endif()
+  add_compile_options(-fPIC)
 endif ()
 
 if (Pism_CODE_COVERAGE)
-  if (NOT CMAKE_CXX_FLAGS MATCHES "-fprofile-arcs")
-    message (STATUS "Adding -fprofile-arcs -ftest-coverage to C++ compiler flags.")
-    set (CMAKE_CXX_FLAGS "-fprofile-arcs -ftest-coverage -g -O0 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
-  endif()
+  add_compile_options(-fprofile-arcs -ftest-coverage -g -O0)
+  add_link_options(--coverage)
+
   add_custom_target (coverage_report
     # remove coverage data from src/pythonbindings
-    COMMAND lcov -d ${Pism_BINARY_DIR}/src/pythonbindings -z
-    COMMAND lcov -d ${Pism_BINARY_DIR}/src/vdt -z
-    COMMAND lcov -q -b ${Pism_SOURCE_DIR} --no-external -d . -c -o pism-coverage.info
+    COMMAND lcov --directory ${Pism_BINARY_DIR}/src/pythonbindings -z
+    COMMAND lcov --directory ${Pism_BINARY_DIR}/src/external -z
+    COMMAND lcov --base-directory ${Pism_SOURCE_DIR} --directory src --quiet --no-external --capture -o pism-coverage.info
     COMMAND genhtml -t "PISM Coverage report" -o cover --demangle-cpp --legend pism-coverage.info
     WORKING_DIRECTORY ${Pism_BINARY_DIR}
     VERBATIM
@@ -126,10 +125,6 @@ if (Pism_GPROF_FLAGS)
   set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg -fno-omit-frame-pointer -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
 endif ()
 
-if (Pism_USE_JANSSON)
-  add_definitions (-DPISM_USE_JANSSON=1)
-endif()
-
 # Look for libraries using find_package(...), etc. Run CMake with -DPism_LOOK_FOR_LIBRARIES=OFF
 # to build on systems that rely on the module system to set all compiler and linker flags.
 if (Pism_LOOK_FOR_LIBRARIES)
@@ -141,7 +136,9 @@ pism_set_dependencies()
 
 # Make sure that PetscScalar is double (not complex<double>.)
 pism_check_petsc_scalar_type()
-pism_set_version_info()
+
+# Get PETSc's configuration flags (they will be written to output files).
+pism_petsc_get_variable("CONFIGURE_OPTIONS" Pism_PETSC_CONFIGURE_FLAGS)
 
 if (Pism_USE_EVERYTRACE)
   find_package(Everytrace REQUIRED)
@@ -149,7 +146,8 @@ if (Pism_USE_EVERYTRACE)
 endif()
 
 if (Pism_BUILD_PYTHON_BINDINGS)
-  find_package(Python REQUIRED)
+  find_package(PythonInterp REQUIRED)
+  find_package(PythonLibs REQUIRED)
   find_package(PETSc4Py REQUIRED)
   find_package(SWIG REQUIRED)
 
@@ -170,15 +168,8 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     CACHE PATH "Python extension module installation directory." )
 endif ()
 
-# Do cell area computations the right way if we have proj.4.
-if (Pism_USE_PROJ4)
-  add_definitions (-DPISM_USE_PROJ4=1)
-else()
-  add_definitions (-DPISM_USE_PROJ4=0)
-endif()
-
 add_custom_target (etags
-  COMMAND find . -regextype posix-extended -regex ".*\\.(c|cc|h|hh)" | xargs etags --class-qualify --no-defines
+  COMMAND find . -iname *.cc -o -iname *.hh -o -iname *.c -o -iname *.h | xargs etags --no-defines
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
   VERBATIM
 )
@@ -223,3 +214,5 @@ ENABLE_TESTING()
 include(CTest)
 add_subdirectory (test)
 add_subdirectory (test/regression)
+
+add_subdirectory (docker)

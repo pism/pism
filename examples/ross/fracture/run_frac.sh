@@ -44,9 +44,7 @@ output="-o $NAME -o_order zyx -o_size big"
 ssa="-stress_balance ssa -yield_stress constant -tauc 1e6 -ssa_dirichlet_bc -ssa_e ${SSAE} -part_grid -cfbc "
 #-pik:-part_grid -cfbc -kill_icebergs
 
-calving="-calving ocean_kill "
-
-extra="-extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} -extra_vars thk,mask,velsurf_mag,IcebergMask,fracture_density,fracture_flow_enhancement,fracture_growth_rate,fracture_healing_rate,fracture_toughness"
+extra="-extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} -extra_vars thk,mask,velsurf_mag,fracture_density,fracture_flow_enhancement,fracture_growth_rate,fracture_healing_rate,fracture_toughness"
 
 timeseries="-ts_file ts-${NAME} -ts_times 0:1:${YEARS}"
 
@@ -72,16 +70,24 @@ cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -i ../Ross_combined.nc -bootstrap -M
 
 # add "-verbose 4" to this command for additional internal info
 cmd_frac="mpiexec -n $NN ${PISMPREFIX}pismr -i startfile_Mx${M}.nc -surface given \
-  ${ssa} -y ${YEARS} ${output} ${calving} -ocean_kill_file startfile_Mx${M}.nc \
+  ${ssa} -y ${YEARS} ${output} -front_retreat_file startfile_Mx${M}.nc \
   ${fractures} ${extra} ${timeseries}"
 
-# -ssa_rtol 1.0e-3 -ssa_eps 5.0e15
+# -ssafd_picard_rtol 1.0e-3 -ssa_eps 5.0e15
 
 echo "running command:"
 echo
 echo "$cmd_diag"
 echo
 ${cmd_diag}
+
+ncap2 -A \
+      -s 'land_ice_area_fraction_retreat=0 * thk' \
+      -s 'where(thk > 0 || topg > 0) land_ice_area_fraction_retreat=1' \
+      -s 'land_ice_area_fraction_retreat@units="1"' \
+      startfile_Mx${M}.nc startfile_Mx${M}.nc
+ncatted -a standard_name,land_ice_area_fraction_retreat,d,, startfile_Mx${M}.nc
+
 echo
 echo "$cmd_frac"
 echo

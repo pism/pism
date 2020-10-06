@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 try:
     import netCDF4 as netCDF
@@ -149,6 +149,7 @@ class PISMDataset(netCDF.Dataset):
         var[:] = data
 
         return var
+
 
 if __name__ == "__main__":
     # produce a NetCDF file for testing

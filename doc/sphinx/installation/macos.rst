@@ -5,7 +5,7 @@
 Installing required libraries on macOS
 --------------------------------------
 
-Follow these steps to install PISM's prerequisites on the Mac OS X operating system.
+Follow these steps to install PISM's prerequisites on the macOS operating system.
 
 #. As PISM is distributed as source code only, you will need software developer’s tools,
    XCode_ and the *X window system server*, XQuartz_.

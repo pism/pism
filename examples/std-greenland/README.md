@@ -37,11 +37,6 @@ and SIA-only choices, and one with paleo-climate and SIA/SSA-hybrid choices.
 The first of these examples can be run in a few minutes of computer time,
 which should help you get started.
 
-To avoid requiring the PROJ.4 library to run this example `spinup.sh`
-disables the code computing cell areas using projection information.
-Remove `-grid.correct_cell_areas false` from `spinup.sh` if you have
-PROJ.4 and want to compute corrected cell areas.
-
 # SeaRISE Greenland background information
 
 The SeaRISE assessment process included PISM Greenland simulations among many

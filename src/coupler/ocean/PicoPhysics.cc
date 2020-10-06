@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2019 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include <cmath> // sqrt
+#include <cassert>              // assert
+#include <algorithm>            // std::min
 
 #include "PicoPhysics.hh"
 
@@ -28,24 +30,24 @@ namespace ocean {
 PicoPhysics::PicoPhysics(const Config &config) {
 
   // threshold between deep ocean and continental shelf
-  m_continental_shelf_depth = config.get_double("ocean.pico.continental_shelf_depth");
+  m_continental_shelf_depth = config.get_number("ocean.pico.continental_shelf_depth");
 
   // value for ocean temperature around Antarctica if no other data available (cold
   // conditions)
-  m_T_dummy = -1.5 + config.get_double("constants.fresh_water.melting_point_temperature");
+  m_T_dummy = -1.5 + config.get_number("constants.fresh_water.melting_point_temperature");
 
   // value for ocean salinity around Antarctica if no other data available (cold
   // conditions)
   m_S_dummy = 34.7;
 
-  m_earth_grav        = config.get_double("constants.standard_gravity");
-  m_ice_density       = config.get_double("constants.ice.density");
-  m_sea_water_density = config.get_double("constants.sea_water.density");
+  m_earth_grav        = config.get_number("constants.standard_gravity");
+  m_ice_density       = config.get_number("constants.ice.density");
+  m_sea_water_density = config.get_number("constants.sea_water.density");
   m_rho_star          = 1033;                                // kg/m^3
   m_nu                = m_ice_density / m_sea_water_density; // no unit
 
   //Joule / kg
-  m_latentHeat = config.get_double("constants.fresh_water.latent_heat_of_fusion");
+  m_latentHeat = config.get_number("constants.fresh_water.latent_heat_of_fusion");
 
   // J/(K*kg), specific heat capacity of ocean mixed layer
   m_c_p_ocean = 3974.0;
@@ -72,16 +74,16 @@ PicoPhysics::PicoPhysics(const Config &config) {
   m_beta  = 7.7e-4; // 1/psu
 
   // m s-1, best fit value in paper
-  m_gamma_T = config.get_double("ocean.pico.heat_exchange_coefficent");
+  m_gamma_T = config.get_number("ocean.pico.heat_exchange_coefficent");
 
   // m6 kg−1 s−1, best fit value in paper
-  m_overturning_coeff = config.get_double("ocean.pico.overturning_coefficent");
+  m_overturning_coeff = config.get_number("ocean.pico.overturning_coefficent");
 
   // for shelf cells where normal box model is not calculated, used in
   // calculate_basal_melt_missing_cells(), compare POConstantPIK m/s, thermal exchange
   // velocity for Beckmann-Goosse parameterization this is the same meltFactor as in
   // POConstantPIK
-  m_meltFactor = config.get_double("ocean.pik_melt_factor");
+  m_meltFactor = config.get_number("ocean.pik_melt_factor");
 }
 
 
@@ -171,13 +173,13 @@ double PicoPhysics::overturning(double Soc_box0, double Soc, double Toc_box0, do
 
 //! See equation A6 and lines before in PICO paper
 double PicoPhysics::T_star(double salinity, double temperature, double pressure) const {
-  // in Kelvin
-  // FIXME: check that this always stays negative.
-  // positive values are unphysical as colder temperatures
-  // than pressure melting point would be ice, but we are in the ocean.
-  // this should not occur as set_ocean_input_fields(...) sets
-  // sets too cold temperatures to pressure melting point + 0.001
-  return theta_pm(salinity, pressure) - temperature;
+  double T_s = theta_pm(salinity, pressure) - temperature; // in Kelvin
+
+  // Positive values are unphysical as temperatures below the pressure melting point would
+  // be ice, but we are in the ocean. This should not occur because
+  // set_ocean_input_fields(...) sets too cold temperatures to pressure melting point +
+  // 0.001
+  return std::min(T_s, 0.0);
 }
 
 //! calculate p coefficent for solving the quadratic temperature equation

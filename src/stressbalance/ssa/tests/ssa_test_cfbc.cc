@@ -33,7 +33,7 @@ static char help[] =
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
@@ -55,16 +55,16 @@ static double u_exact(double V0, double H0, double C, double x) {
 
 class SSATestCaseCFBC: public SSATestCase {
 public:
-  SSATestCaseCFBC(Context::Ptr ctx, int Mx, int My, SSAFactory ssafactory)
+  SSATestCaseCFBC(std::shared_ptr<Context> ctx, int Mx, int My, SSAFactory ssafactory)
     : SSATestCase(ctx, Mx, My, 250e3, 250e3, CELL_CENTER, Y_PERIODIC) {
     V0 = units::convert(ctx->unit_system(), 300.0, "m year-1", "m second-1");
     H0 = 600.0;                 // meters
     C  = 2.45e-18;
 
-    m_config->set_double("flow_law.isothermal_Glen.ice_softness",
-                         pow(1.9e8, -m_config->get_double("stress_balance.ssa.Glen_exponent")));
-    m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", false);
-    m_config->set_boolean("stress_balance.calving_front_stress_bc", true);
+    m_config->set_number("flow_law.isothermal_Glen.ice_softness",
+                         pow(1.9e8, -m_config->get_number("stress_balance.ssa.Glen_exponent")));
+    m_config->set_flag("stress_balance.ssa.compute_surface_gradient_inward", false);
+    m_config->set_flag("stress_balance.calving_front_stress_bc", true);
     m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
 
     m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
@@ -104,8 +104,8 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
   IceModelVec::AccessList list{&m_geometry.ice_thickness,
       &m_geometry.ice_surface_elevation, &m_bc_mask, &m_bc_values, &m_geometry.cell_type};
 
-  double ocean_rho = m_config->get_double("constants.sea_water.density"),
-    ice_rho = m_config->get_double("constants.ice.density");
+  double ocean_rho = m_config->get_number("constants.sea_water.density"),
+    ice_rho = m_config->get_number("constants.ice.density");
 
   const double x_min = m_grid->x(0);
 
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    Context::Ptr ctx = context_from_options(com, "ssa_test_cfbc");
+    std::shared_ptr<Context> ctx = context_from_options(com, "ssa_test_cfbc");
     Config::Ptr config = ctx->config();
 
     std::string usage = "\n"
@@ -192,8 +192,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    unsigned int Mx = config->get_double("grid.Mx");
-    unsigned int My = config->get_double("grid.My");
+    unsigned int Mx = config->get_number("grid.Mx");
+    unsigned int My = config->get_number("grid.My");
 
     auto method = config->get_string("stress_balance.ssa.method");
     auto output_file = config->get_string("output.file_name");

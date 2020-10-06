@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,6 +23,7 @@
 #include "io/io_helpers.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 
@@ -38,7 +39,7 @@ Diagnostic::Diagnostic(IceGrid::ConstPtr g)
   : m_grid(g),
     m_sys(g->ctx()->unit_system()),
     m_config(g->ctx()->config()),
-    m_fill_value(m_config->get_double("output.fill_value")) {
+    m_fill_value(m_config->get_number("output.fill_value")) {
   // empty
 }
 
@@ -63,35 +64,55 @@ void Diagnostic::reset_impl() {
   // empty
 }
 
+/*!
+ * Convert from external (output) units to internal units.
+ */
+double Diagnostic::to_internal(double x) const {
+  std::string
+    out = m_vars.at(0).get_string("glaciological_units"),
+    in  = m_vars.at(0).get_string("units");
+  return convert(m_sys, x, out, in);
+}
+
+/*!
+ * Convert from internal to external (output) units.
+ */
+double Diagnostic::to_external(double x) const {
+  std::string
+    out = m_vars.at(0).get_string("glaciological_units"),
+    in  = m_vars.at(0).get_string("units");
+  return convert(m_sys, x, in, out);
+}
+
 //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
 unsigned int Diagnostic::n_variables() const {
   return m_vars.size();
 }
 
-void Diagnostic::init(const PIO &input, unsigned int time) {
+void Diagnostic::init(const File &input, unsigned int time) {
   this->init_impl(input, time);
 }
 
-void Diagnostic::define_state(const PIO &output) const {
+void Diagnostic::define_state(const File &output) const {
   this->define_state_impl(output);
 }
 
-void Diagnostic::write_state(const PIO &output) const {
+void Diagnostic::write_state(const File &output) const {
   this->write_state_impl(output);
 }
 
-void Diagnostic::init_impl(const PIO &input, unsigned int time) {
+void Diagnostic::init_impl(const File &input, unsigned int time) {
   (void) input;
   (void) time;
   // empty
 }
 
-void Diagnostic::define_state_impl(const PIO &output) const {
+void Diagnostic::define_state_impl(const File &output) const {
   (void) output;
   // empty
 }
 
-void Diagnostic::write_state_impl(const PIO &output) const {
+void Diagnostic::write_state_impl(const File &output) const {
   (void) output;
   // empty
 }
@@ -107,15 +128,14 @@ SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
   return m_vars[N];
 }
 
-void Diagnostic::define(const PIO &file, IO_Type default_type) const {
+void Diagnostic::define(const File &file, IO_Type default_type) const {
   this->define_impl(file, default_type);
 }
 
 //! Define NetCDF variables corresponding to a diagnostic quantity.
-void Diagnostic::define_impl(const PIO &file, IO_Type default_type) const {
+void Diagnostic::define_impl(const File &file, IO_Type default_type) const {
   for (auto &v : m_vars) {
-    io::define_spatial_variable(v, *m_grid, file, default_type,
-                                m_grid->ctx()->config()->get_string("output.variable_order"));
+    io::define_spatial_variable(v, *m_grid, file, default_type);
   }
 }
 
@@ -138,7 +158,7 @@ void Diagnostic::set_attrs(const std::string &long_name,
 
   m_vars[N].set_string("units", units);
 
-  if (not glaciological_units.empty()) {
+  if (not (m_config->get_flag("output.use_MKS") or glaciological_units.empty())) {
     m_vars[N].set_string("glaciological_units", glaciological_units);
   }
 }
@@ -162,23 +182,35 @@ TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr g, const std::string &name)
   : m_grid(g),
     m_config(g->ctx()->config()),
     m_sys(g->ctx()->unit_system()),
-    m_ts(*g, name, g->ctx()->config()->get_string("time.dimension_name")) {
+    m_time_name(g->ctx()->config()->get_string("time.dimension_name")),
+    m_variable(name, m_sys),
+    m_dimension(m_time_name, m_sys),
+    m_time_bounds(m_time_name + "_bounds", m_sys) {
 
   m_current_time = 0;
   m_start        = 0;
 
-  m_buffer_size = (size_t)m_config->get_double("output.timeseries.buffer_size");
+  m_buffer_size = (size_t)m_config->get_number("output.timeseries.buffer_size");
 
-  m_ts.variable().set_string("ancillary_variables", name + "_aux");
+  m_variable.set_string("ancillary_variables", name + "_aux");
 
-  m_ts.dimension().set_string("calendar", m_grid->ctx()->time()->calendar());
-  m_ts.dimension().set_string("long_name", m_config->get_string("time.dimension_name"));
-  m_ts.dimension().set_string("axis", "T");
-  m_ts.dimension().set_string("units", m_grid->ctx()->time()->CF_units_string());
+  m_dimension.set_string("calendar", m_grid->ctx()->time()->calendar());
+  m_dimension.set_string("long_name", "time");
+  m_dimension.set_string("axis", "T");
+  m_dimension.set_string("units", m_grid->ctx()->time()->CF_units_string());
 }
 
 TSDiagnostic::~TSDiagnostic() {
   flush();
+}
+
+void TSDiagnostic::set_units(const std::string &units,
+                             const std::string &glaciological_units) {
+  m_variable.set_string("units", units);
+
+  if (not m_config->get_flag("output.use_MKS")) {
+    m_variable.set_string("glaciological_units", glaciological_units);
+  }
 }
 
 TSSnapshotDiagnostic::TSSnapshotDiagnostic(IceGrid::ConstPtr g, const std::string &name)
@@ -199,11 +231,11 @@ TSFluxDiagnostic::TSFluxDiagnostic(IceGrid::ConstPtr g, const std::string &name)
 void TSSnapshotDiagnostic::evaluate(double t0, double t1, double v) {
 
   // skip times before the beginning of this time step
-  while (m_current_time < m_times->size() and (*m_times)[m_current_time] < t0) {
+  while (m_current_time < m_requested_times->size() and (*m_requested_times)[m_current_time] < t0) {
     m_current_time += 1;
   }
 
-  while (m_current_time < m_times->size() and (*m_times)[m_current_time] <= t1) {
+  while (m_current_time < m_requested_times->size() and (*m_requested_times)[m_current_time] <= t1) {
     const unsigned int k = m_current_time;
     m_current_time += 1;
 
@@ -213,10 +245,16 @@ void TSSnapshotDiagnostic::evaluate(double t0, double t1, double v) {
     }
 
     const double
-      t_s = (*m_times)[k - 1],
-      t_e = (*m_times)[k];
+      t_s = (*m_requested_times)[k - 1],
+      t_e = (*m_requested_times)[k];
 
-    m_ts.append(v, t_s, t_e);
+    // store computed data in the buffer
+    {
+      m_time.push_back(t_e);
+      m_values.push_back(v);
+      m_bounds.push_back(t_s);
+      m_bounds.push_back(t_e);
+    }
   }
 }
 
@@ -225,7 +263,7 @@ void TSRateDiagnostic::evaluate(double t0, double t1, double change) {
   assert(t1 > t0);
 
   // skip times before and including the beginning of this time step
-  while (m_current_time < m_times->size() and (*m_times)[m_current_time] <= t0) {
+  while (m_current_time < m_requested_times->size() and (*m_requested_times)[m_current_time] <= t0) {
     m_current_time += 1;
   }
 
@@ -233,7 +271,7 @@ void TSRateDiagnostic::evaluate(double t0, double t1, double change) {
   unsigned int N = 0;
 
   // loop through requested times that are within this time step
-  while (m_current_time < m_times->size() and (*m_times)[m_current_time] <= t1) {
+  while (m_current_time < m_requested_times->size() and (*m_requested_times)[m_current_time] <= t1) {
     const unsigned int k = m_current_time;
     m_current_time += 1;
 
@@ -245,8 +283,8 @@ void TSRateDiagnostic::evaluate(double t0, double t1, double change) {
     }
 
     const double
-      t_s = (*m_times)[k - 1],
-      t_e = (*m_times)[k];
+      t_s = (*m_requested_times)[k - 1],
+      t_e = (*m_requested_times)[k];
 
     double rate = 0.0;
     if (N == 1) {
@@ -264,7 +302,14 @@ void TSRateDiagnostic::evaluate(double t0, double t1, double change) {
       rate = change / (t1 - t0);
     }
 
-    m_ts.append(rate, t_s, t_e);
+    // store computed data in the buffer
+    {
+      m_time.push_back(t_e);
+      m_values.push_back(rate);
+      m_bounds.push_back(t_s);
+      m_bounds.push_back(t_e);
+    }
+
     m_accumulator = 0.0;
   }
 
@@ -275,7 +320,7 @@ void TSRateDiagnostic::evaluate(double t0, double t1, double change) {
   } else {
     // if this time step contained some requested times we need to add the change since the last one
     // to the accumulator
-    const double dt = t1 - (*m_times)[m_current_time - 1];
+    const double dt = t1 - (*m_requested_times)[m_current_time - 1];
     if (dt > epsilon) {
       m_accumulator += change * (dt / (t1 - t0));
     }
@@ -314,54 +359,72 @@ void TSFluxDiagnostic::update_impl(double t0, double t1) {
   evaluate(t0, t1, this->compute());
 }
 
-void TSDiagnostic::define(const PIO &file) const {
-  io::define_timeseries(m_ts.variable(), file, PISM_DOUBLE);
-  io::define_time_bounds(m_ts.bounds(), file, PISM_DOUBLE);
+void TSDiagnostic::define(const File &file) const {
+  auto time_name = m_config->get_string("time.dimension_name");
+  io::define_timeseries(m_variable, time_name, file, PISM_DOUBLE);
+  io::define_time_bounds(m_time_bounds, time_name, "nv", file, PISM_DOUBLE);
 }
 
 void TSDiagnostic::flush() {
 
-  if (m_ts.times().empty()) {
+  if (m_time.empty()) {
     return;
   }
 
-  std::string dimension_name = m_ts.dimension().get_name();
+  std::string dimension_name = m_dimension.get_name();
 
-  PIO file(m_grid->com, "netcdf3", m_output_filename, PISM_READWRITE); // OK to use netcdf3
+  File file(m_grid->com, m_output_filename, PISM_NETCDF3, PISM_READWRITE); // OK to use netcdf3
 
-  unsigned int len = file.inq_dimlen(dimension_name);
+  unsigned int len = file.dimension_length(dimension_name);
 
   if (len > 0) {
-    double last_time = 0.0;
-    file.inq_dim_limits(dimension_name, NULL, &last_time);
-    if (last_time < m_ts.times().front()) {
+    double last_time = vector_max(file.read_dimension(dimension_name));
+
+    if (last_time < m_time.front()) {
       m_start = len;
     }
   }
 
+  auto time_name = m_config->get_string("time.dimension_name");
+
   if (len == m_start) {
-    io::write_timeseries(file, m_ts.dimension(), m_start, m_ts.times());
-    io::write_time_bounds(file, m_ts.bounds(), m_start, m_ts.time_bounds());
+    if (not file.find_variable(m_dimension.get_name())) {
+      io::define_timeseries(m_dimension, time_name, file, PISM_DOUBLE);
+    }
+    io::write_timeseries(file, m_dimension, m_start, m_time);
+
+    if (not file.find_variable(m_time_bounds.get_name())) {
+      io::define_time_bounds(m_time_bounds, time_name, "nv", file, PISM_DOUBLE);
+    }
+    io::write_time_bounds(file, m_time_bounds, m_start, m_bounds);
   }
-  io::write_timeseries(file, m_ts.variable(), m_start, m_ts.values());
 
-  m_start += m_ts.times().size();
+  if (not file.find_variable(m_variable.get_name())) {
+    io::define_timeseries(m_variable, time_name, file, PISM_DOUBLE);
+  }
+  io::write_timeseries(file, m_variable, m_start, m_values);
 
-  m_ts.reset();
+  m_start += m_time.size();
+
+  {
+    m_time.clear();
+    m_bounds.clear();
+    m_values.clear();
+  }
 }
 
-void TSDiagnostic::init(const PIO &output_file,
+void TSDiagnostic::init(const File &output_file,
                         std::shared_ptr<std::vector<double>> requested_times) {
-  m_output_filename = output_file.inq_filename();
+  m_output_filename = output_file.filename();
 
-  m_times = requested_times;
+  m_requested_times = requested_times;
 
   // Get the number of records in the file (for appending):
-  m_start = output_file.inq_dimlen(m_ts.dimension().get_name());
+  m_start = output_file.dimension_length(m_dimension.get_name());
 }
 
 const VariableMetadata &TSDiagnostic::metadata() const {
-  return m_ts.variable();
+  return m_variable;
 }
 
 } // end of namespace pism

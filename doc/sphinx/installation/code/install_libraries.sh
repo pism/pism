@@ -1,9 +1,1 @@
-#!/bin/bash
-
-sudo apt-get install \
-     g++ git cmake cmake-curses-gui cdo nco ncview \
-     mpich libmpich-dev \
-     libfftw3-dev libgsl-dev libproj-dev libudunits2-dev \
-     libx11-dev libblas-dev liblapack-dev \
-     netcdf-bin libnetcdf-dev \
-     python-dev python-pyproj python-netcdf4
+sudo apt-get install -y cmake g++ git libfftw3-dev libgsl-dev libnetcdf-dev libudunits2-dev netcdf-bin petsc-dev cdo cmake-curses-gui libpnetcdf-dev libproj-dev libx11-dev nco ncview python3-dev python3-netcdf4 python3-nose python3-numpy python3-petsc4py python3-pyproj python3-scipy swig

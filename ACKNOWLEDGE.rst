@@ -16,7 +16,7 @@ papers.
 To acknowledge PISM funding please include the statement:
 
 
-    Development of PISM is supported by NASA grant NNX17AG65G and NSF grants PLR-1603799 and PLR-1644277.
+    Development of PISM is supported by NSF grants PLR-1603799 and PLR-1644277 and NASA grant NNX17AG65G.
 
 
 Citing
@@ -40,7 +40,7 @@ information on additional citations.
         URL = {http://www.pism-docs.org},
        YEAR = {2015},
    }
-
+   
    @article {BBssasliding,
      AUTHOR = {E. Bueler and J. Brown},
       TITLE = {Shallow shelf approximation as a "sliding law" in a
@@ -51,7 +51,7 @@ information on additional citations.
        YEAR = {2009},
         URL = {http://www.agu.org/pubs/crossref/2009/2008JF001179.shtml},
    }
-
+   
    @article {Winkelmannetal2011,
      AUTHOR = {Winkelmann, R. and Martin, M. A. and Haseloff, M. and Albrecht, T.
                and Bueler, E. and Khroulev, C. and Levermann, A.},

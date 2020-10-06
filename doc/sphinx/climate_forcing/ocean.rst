@@ -97,7 +97,9 @@ equations describing
 This model is described in :cite:`HollandJenkins1999` and :cite:`Hellmeretal1998`.
 
 Inputs are potential temperature (variable :var:`theta_ocean`) and salinity (variable
-:var:`salinity_ocean`) read from a file.
+:var:`salinity_ocean`) read from a file. A constant salinity (see
+:config:`constants.sea_water.salinity`) is used if the input file does not contain
+:var:`salinity_ocean`.
 
 No ocean circulation is modeled, so melt water computed by this model is not fed back into
 the surrounding ocean.
@@ -115,7 +117,9 @@ It takes two command-line option:
   ensure that we stay in the range of applicability of the melting point temperature
   parameterization; see :cite:`HollandJenkins1999`. To disable salinity clipping, use the
   :opt:`-no_clip_shelf_base_salinity` option or set the configuration parameter
-  :config:`ocean.three_equation_model_clip_salinity`  to "no".
+  :config:`ocean.th.clip_salinity`  to "no".
+
+See :ref:`sec-ocean-th-details` for implementation details.
 
 .. _sec-pico:
 
@@ -152,7 +156,7 @@ The main equations reflect the
 #. overturning flux driven by the density difference between open-ocean and grounding-line box,
 #. boundary layer melt formulation.
 
-The PICO model is described in detail in :cite:`ReeseAlbrecht2017`.
+The PICO model is described in detail in :cite:`ReeseAlbrecht2018`.
 
 Inputs are potential temperature (variable :var:`theta_ocean`), salinity (variable
 :var:`salinity_ocean`) and ocean basin mask (variable :var:`basins`). Variables
@@ -171,27 +175,10 @@ identified, standard values are used (**Warning:** this could strongly influence
 rates computed by PICO). In regions where the PICO geometry cannot be identified,
 :cite:`BeckmannGoosse2003` is applied.
 
-PICO has one command-line option and 7 configuration parameters:
+PICO uses the following configuration parameters (prefix: ``ocean.pico.``):
 
-- :opt:`-ocean_pico_file`: specifies the NetCDF file containing potential temperature
-  (:var:`theta_ocean`), salinity (:var:`salinity_ocean`) and ocean basins (:var:`basins`).
-- :config:`ocean.pico.heat_exchange_coefficent` sets the coefficient for turbulent heat
-  exchange from the ambient ocean across the boundary layer beneath the ice shelf base.
-- :config:`ocean.pico.overturning_coefficent`: sets the coefficient in the overturning
-  parameterization.
-- :config:`ocean.pico.number_of_boxes`: For each ice shelf the number of ocean boxes is
-  determined by interpolating between 1 and number_of_boxes depending on its size and
-  geometry such that larger ice shelves are resolved with more boxes; a value of 5 is
-  suitable for the Antarctic setup.
-- :config:`ocean.pico.number_of_basins`
-- :config:`ocean.pico.exclude_ice_rises`: If set to true, grounding lines of ice rises are
-  excluded in the geometrical routines that determine the ocean boxes; using this option
-  is recommended.
-- :config:`ocean.pico.continental_shelf_depth`: specifies the depth up to which oceanic
-  input temperatures and salinities are averaged over the continental shelf areas in front
-  of the ice shelf cavities.
-- :config:`ocean.pico.maximum_ice_rise_area`: specifies an area threshold that separates
-  ice rises from continental regions.
+.. pism-parameters::
+   :prefix: ocean.pico.
 
 .. _sec-ocean-delta-sl:
 
@@ -297,6 +284,33 @@ It takes the following command-line options:
 - :opt:`-ocean_frac_SMB_reference_year` specifies the reference date; see section
   :ref:`sec-periodic-forcing`.
 
+.. _sec-ocean-anomaly:
+
+Two-dimensional sub-shelf mass flux offsets
++++++++++++++++++++++++++++++++++++++++++++
+
+:|options|: :opt:`-ocean ...,anomaly`
+:|variables|: :var:`shelf_base_mass_flux_anomaly` |flux|
+:|implementation|: ``pism::ocean::Anomaly``
+
+This modifier implements a spatially-variable version of ``-ocean ...,delta_SMB`` which
+applies time-dependent shelf base mass flux anomalies, as used for initMIP or LARMIP
+model intercomparisons.
+
+It takes the following command-line options:
+
+- :opt:`-ocean_anomaly_file` specifies a file containing the variable
+  :var:`shelf_base_mass_flux_anomaly`.
+- :opt:`-ocean_anomaly_period` (years) specifies the period of the forcing data, in
+  model years; see :ref:`sec-periodic-forcing`
+- :opt:`-ocean_anomaly_reference_year` specifies the reference year; see
+  :ref:`sec-periodic-forcing`
+
+  See also to ``-atmosphere ...,anomaly`` or
+  ``-surface ...,anomaly`` (section :ref:`sec-surface-anomaly`)
+  which is similar, but applies anomalies at the atmosphere or surface level,
+  respectively.
+
 .. _sec-ocean-frac-mbp:
 
 Scalar melange back pressure fraction
@@ -306,13 +320,21 @@ Scalar melange back pressure fraction
 :|variables|: :var:`frac_MBP`
 :|implementation|: ``pism::ocean::Frac_MBP``
 
-This modifier implements forcing using melange back pressure fraction offsets. The
-variable :var:`frac_MBP` should take on values from 0 to 1; it is understood as the
-fraction of the maximum melange back pressure possible at a given location. (We assume
-that melange back pressure cannot exceed the pressure of the ice column at a calving
-front.)
+This modifier implements forcing using melange back pressure fraction (scaling). The
+scalar time-dependent variable :var:`frac_MBP` should take on values from 0 to 1; it is
+understood as the fraction of the maximum melange back pressure possible at a given
+location. (We assume that melange back pressure cannot exceed the pressure of the ice
+column at a calving front.)
 
 Please see :ref:`sec-model-melange-pressure` for details.
+
+.. note::
+
+   This modifier *scales* the melange back pressure fraction provided by an ocean model.
+   The default value of :config:`ocean.melange_back_pressure_fraction` is zero and
+   *scaling it does nothing*.
+
+   We recommend setting :config:`ocean.melange_back_pressure_fraction` to 1.
 
 This modifier takes the following command-line options:
 

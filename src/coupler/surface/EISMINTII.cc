@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,6 @@
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_options.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/MaxTimestep.hh"
 
@@ -111,6 +110,8 @@ MaxTimestep EISMINTII::max_timestep_impl(double t) const {
 }
 
 void EISMINTII::initialize_using_formulas() {
+  using std::pow;
+  using std::sqrt;
 
   // center of the accumulation and surface temperature patterns
   double cx = 0.0, cy = 0.0;
@@ -124,7 +125,7 @@ void EISMINTII::initialize_using_formulas() {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double r = sqrt(PetscSqr(m_grid->x(i) - cx) + PetscSqr(m_grid->y(j) - cy));
+    const double r = sqrt(pow(m_grid->x(i) - cx, 2) + pow(m_grid->y(j) - cy, 2));
 
     // accumulation (formula (7) in [Payne et al 2000])
     (*m_mass_flux)(i,j) = std::min(m_M_max, m_S_b * (m_R_el-r));
@@ -134,7 +135,7 @@ void EISMINTII::initialize_using_formulas() {
   }
 
   // convert from "m second-1" to "kg m-2 s-1"
-  m_mass_flux->scale(m_config->get_double("constants.ice.density"));
+  m_mass_flux->scale(m_config->get_number("constants.ice.density"));
 }
 
 void EISMINTII::update_impl(const Geometry &geometry, double t, double dt) {
@@ -142,7 +143,10 @@ void EISMINTII::update_impl(const Geometry &geometry, double t, double dt) {
   (void) dt;
   (void) geometry;
 
-  // do nothing (but an implementation is required)
+  dummy_accumulation(*m_mass_flux, *m_accumulation);
+  dummy_melt(*m_mass_flux, *m_melt);
+  dummy_runoff(*m_mass_flux, *m_runoff);
+
 }
 
 } // end of namespace surface

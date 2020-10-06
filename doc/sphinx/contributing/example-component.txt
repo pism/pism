@@ -1,0 +1,63 @@
+.. include:: ../global.txt
+
+.. default-role:: literal
+
+.. _sec-writing-pism-components:
+
+Adding a new PISM component
+===========================
+
+This section describes the implementation of a simple ocean model component.
+
+Most of PISM's sub-models are derived from the abstract class `Component`. This class
+contains data members used in most sub-models and defines a common interface.
+
+Each sub-model has to be able to do the following.
+
+#. Initialize using an input file.
+
+   This can be trickier than you would think, especially when implementing a
+   *time-stepping* model.
+
+   As mentioned elsewhere in this manual, PISM supports two kinds of initialization:
+
+   #. Re-starting from the model state saved by PISM.
+   #. Initializing from a possibly incomplete model state using heuristics to replace
+      missing data. (This is what we call "bootstrapping".)
+
+   In both cases the user can choose to read a part of the model state from a different
+   file, interpolating from a different grid if necessary (this is what we call
+   "regridding").
+
+   All components need to support both kinds of initialization as well as regridding.
+
+   .. note::
+
+      When the grid chosen for a given simulation matches the one in the input file
+      *re-starting* using the command-line option `-i input.nc` has to produce a model
+      state equivalent to the one obtained using *bootstrapping* followed by *regridding*:
+      `-i input.nc -bootstrap -regrid_file input.nc`.
+
+   Getting initialization right is especially challenging in sub-models using time steps
+   different from PISM's mass-continuity time step. See `pism::earth::LingleClark` for an
+   example of a model like this.
+
+   Each new component should have a regression test ensuring that it can be stopped and
+   re-started without affecting results. Add an initialization method setting the state of
+   the model using provided `IceModelVec` instances: this makes writing such test much
+   easier.
+
+#. Save its model state to an output file.
+
+   To avoid a performance penalty when saving to a NetCDF-3 file this is performed in two
+   steps:
+
+   #. Define NetCDF variables, creating the file structure.
+   #. Write data to the file.
+
+#. Time-stepping sub-models need to provide the maximum allowable time step length at a
+   given model time.
+
+#. Provide lists of spatially-variable and scalar (time-series) diagnostics.
+
+FIXME: add more content.

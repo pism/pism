@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,7 @@
 
 namespace pism {
 
+class Context;
 class Vars;
 
 //! @brief Energy balance models and utilities.
@@ -33,8 +34,8 @@ namespace energy {
 
 // Vertical grid information for BTU_Full.
 struct BTUGrid {
-  BTUGrid(Context::ConstPtr ctx);
-  static BTUGrid FromOptions(Context::ConstPtr ctx);
+  BTUGrid(std::shared_ptr<const Context> ctx);
+  static BTUGrid FromOptions(std::shared_ptr<const Context> ctx);
 
   unsigned int Mbz;             // number of vertical levels
   double Lbz;                   // depth of the bed thermal layer
@@ -101,7 +102,7 @@ class BedThermalUnit : public Component {
 public:
 
   static BedThermalUnit* FromOptions(IceGrid::ConstPtr g,
-                                     Context::ConstPtr ctx);
+                                     std::shared_ptr<const Context> ctx);
 
   BedThermalUnit(IceGrid::ConstPtr g);
 
@@ -138,8 +139,8 @@ protected:
   virtual double depth_impl() const = 0;
   virtual unsigned int Mz_impl() const = 0;
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
 protected:
@@ -148,8 +149,6 @@ protected:
 
   //! upward heat flux through the top surface of the bed thermal layer
   IceModelVec2S m_top_surface_flux;
-
-  double m_t, m_dt;
 };
 
 class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {

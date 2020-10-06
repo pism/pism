@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018 Constantine Khroulev
+// Copyright (C) 2009--2018, 2020 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -63,7 +63,7 @@ class Logger;
   - glaciological_units (saved to files as "units")
 
   Use the `name` of "PISM_GLOBAL" to read and write global attributes.
-  (See also PIO.)
+  (See also File.)
 
 */
 
@@ -73,8 +73,8 @@ public:
   virtual ~VariableMetadata();
 
   // setters
-  void set_double(const std::string &name, double value);
-  void set_doubles(const std::string &name, const std::vector<double> &values);
+  void set_number(const std::string &name, double value);
+  void set_numbers(const std::string &name, const std::vector<double> &values);
   void set_name(const std::string &name);
   void set_string(const std::string &name, const std::string &value);
 
@@ -87,8 +87,8 @@ public:
   // getters
   units::System::Ptr unit_system() const;
 
-  double get_double(const std::string &name) const;
-  std::vector<double> get_doubles(const std::string &name) const;
+  double get_number(const std::string &name) const;
+  std::vector<double> get_numbers(const std::string &name) const;
   std::string get_name() const;
   std::string get_string(const std::string &name) const;
 
@@ -135,7 +135,6 @@ public:
   SpatialVariableMetadata(units::System::Ptr system, const std::string &name);
   SpatialVariableMetadata(units::System::Ptr system, const std::string &name,
                           const std::vector<double> &zlevels);
-  SpatialVariableMetadata(const SpatialVariableMetadata &other);
   virtual ~SpatialVariableMetadata();
 
   void set_levels(const std::vector<double> &levels);
@@ -154,30 +153,6 @@ private:
   std::vector<double> m_zlevels;
   void init_internal(const std::string &name,
                      const std::vector<double> &z_levels);
-};
-
-//! An internal class for reading, writing and converting time-series.
-class TimeseriesMetadata : public VariableMetadata {
-public:
-  TimeseriesMetadata(const std::string &name, const std::string &dimension_name,
-                     units::System::Ptr system);
-  virtual ~TimeseriesMetadata();
-
-  std::string get_dimension_name() const;
-private:
-  //! the name of the NetCDF dimension this timeseries depends on
-  std::string m_dimension_name;
-};
-
-class TimeBoundsMetadata : public TimeseriesMetadata
-{
-public:
-  TimeBoundsMetadata(const std::string &name, const std::string &dimension_name,
-                     units::System::Ptr system);
-  virtual ~TimeBoundsMetadata();
-  std::string get_bounds_name() const;
-private:
-  std::string m_bounds_name;
 };
 
 } // end of namespace pism

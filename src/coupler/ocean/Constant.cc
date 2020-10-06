@@ -45,24 +45,24 @@ void Constant::update_impl(const Geometry &geometry, double t, double dt) {
   const IceModelVec2S &ice_thickness = geometry.ice_thickness;
 
   const double
-    melt_rate   = m_config->get_double("ocean.constant.melt_rate", "m second-1"),
-    ice_density = m_config->get_double("constants.ice.density"),
+    melt_rate   = m_config->get_number("ocean.constant.melt_rate", "m second-1"),
+    ice_density = m_config->get_number("constants.ice.density"),
     mass_flux   = melt_rate * ice_density;
 
   melting_point_temperature(ice_thickness, *m_shelf_base_temperature);
 
   m_shelf_base_mass_flux->set(mass_flux);
 
-  m_melange_back_pressure_fraction->set(m_config->get_double("ocean.constant.melange_back_pressure_fraction"));
+  m_melange_back_pressure_fraction->set(m_config->get_number("ocean.melange_back_pressure_fraction"));
 }
 
 void Constant::init_impl(const Geometry &geometry) {
   (void) geometry;
 
-  if (not m_config->get_boolean("ocean.always_grounded")) {
+  if (not m_config->get_flag("ocean.always_grounded")) {
     m_log->message(2, "* Initializing the constant ocean model...\n");
     m_log->message(2, "  Sub-shelf melt rate set to %f m/year.\n",
-                   m_config->get_double("ocean.constant.melt_rate", "m year-1"));
+                   m_config->get_number("ocean.constant.melt_rate", "m year-1"));
 
   }
 }
@@ -78,10 +78,10 @@ MaxTimestep Constant::max_timestep_impl(double t) const {
 void Constant::melting_point_temperature(const IceModelVec2S& depth,
                                          IceModelVec2S &result) const {
   const double
-    T0          = m_config->get_double("constants.fresh_water.melting_point_temperature"),
-    beta_CC     = m_config->get_double("constants.ice.beta_Clausius_Clapeyron"),
-    g           = m_config->get_double("constants.standard_gravity"),
-    ice_density = m_config->get_double("constants.ice.density");
+    T0          = m_config->get_number("constants.fresh_water.melting_point_temperature"),
+    beta_CC     = m_config->get_number("constants.ice.beta_Clausius_Clapeyron"),
+    g           = m_config->get_number("constants.standard_gravity"),
+    ice_density = m_config->get_number("constants.ice.density");
 
   IceModelVec::AccessList list{&depth, &result};
 

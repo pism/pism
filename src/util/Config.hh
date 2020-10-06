@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,27 +37,28 @@ public:
   ~NetCDFConfig();
 
 protected:
-  void read_impl(const PIO &nc);
-  void write_impl(const PIO &nc) const;
+  void read_impl(const File &nc);
+  void write_impl(const File &nc) const;
 
   bool is_set_impl(const std::string &name) const;
 
   // doubles
   Doubles all_doubles_impl() const;
-  double get_double_impl(const std::string &name) const;
-  double get_double_impl(const std::string &name,
-                         const std::string &u1, const std::string &u2) const;
-  void set_double_impl(const std::string &name, double value);
+  double get_number_impl(const std::string &name) const;
+  std::vector<double> get_numbers_impl(const std::string &name) const;
 
+  void set_number_impl(const std::string &name, double value);
+  void set_numbers_impl(const std::string &name,
+                        const std::vector<double> &values);
   // strings
   Strings all_strings_impl() const;
   std::string get_string_impl(const std::string &name) const;
   void set_string_impl(const std::string &name, const std::string &value);
 
-  // booleans
-  Booleans all_booleans_impl() const;
-  bool get_boolean_impl(const std::string& name) const;
-  void set_boolean_impl(const std::string& name, bool value);
+  // flags
+  Flags all_flags_impl() const;
+  bool get_flag_impl(const std::string& name) const;
+  void set_flag_impl(const std::string& name, bool value);
 protected:
   MPI_Comm m_com;
   VariableMetadata m_data;

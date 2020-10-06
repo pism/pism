@@ -70,7 +70,7 @@ For example, to use monthly records and period of 1 year, create a file (say,
    - This surface model *ignores* the atmosphere model selection made using the option
      :opt:`-atmosphere`.
    - PISM can handle files with virtually any number of records: it will read and store in
-     memory at most :config:`climate_forcing.buffer_size` records at any given time
+     memory at most :config:`input.forcing.buffer_size` records at any given time
      (default: 60, or 5 years' worth of monthly fields).
    - when preparing a file for use with this model, it is best to use the ``t,y,x``
      variable storage order: files using this order can be read in faster than ones using
@@ -330,35 +330,69 @@ This modifier is identical to the corresponding atmosphere modifier, but applies
 at a different stage in the computation of top-surface boundary conditions needed by the
 ice dynamics core.
 
-.. _sec-surface-lapse-rate:
+.. _sec-surface-elevation-change:
 
-Lapse rate corrections
-++++++++++++++++++++++
+Adjustments using modeled change in surface elevation
++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-:|options|: ``-surface ...,lapse_rate``
+:|options|: ``-surface ...,elevation_change``
 :|variables|: :var:`surface_altitude` (CF standard name),
 :|implementation|: ``pism::surface::LapseRates``
 
-The ``lapse_rate`` modifier allows correcting ice-surface temperature and surface mass
-balance using elevation lapse rates. It uses the following options.
+The ``elevation_change`` modifier adjusts ice-surface temperature and surface mass balance
+using modeled changes in surface elevation relative to a reference elevation read from a
+file.
 
-- :opt:`-temp_lapse_rate` gives the temperature lapse rate, in `K/km`. Note that we
-  use the following definition of the temperature lapse rate:
+The surface temperature is modified using an elevation lapse rate
+`\gamma_T =` :config:`surface.elevation_change.temperature_lapse_rate`. Here
+
+.. math::
+   \gamma_T = -\frac{dT}{dz}.
+
+Two methods of adjusting the SMB are available:
+
+- Scaling using an exponential factor
 
   .. math::
 
-    \gamma = -\frac{dT}{dz}.
+     \mathrm{SMB} = \mathrm{SMB_{input}} \cdot \exp(C \cdot \Delta T),
 
+  where `C =` :config:`surface.elevation_change.smb.exp_factor` and `\Delta T` is the
+  temperature difference produced by applying
+  :config:`surface.elevation_change.temperature_lapse_rate`.
+
+  This mechanisms increases the SMB by `100(\exp(C) - 1)` percent for each degree of
+  temperature increase.
+
+  To use this method, set :opt:`-smb_adjustment scale`.
+
+- Elevation lapse rate for the SMB
+
+  .. math::
+
+     \mathrm{SMB} = \mathrm{SMB_{input}} - \Delta h \cdot \gamma_M,
+
+  where `\gamma_M =` :config:`surface.elevation_change.smb.lapse_rate` and `\Delta h` is the
+  difference between modeled and reference surface elevations.
+
+  To use this method, set :opt:`-smb_adjustment shift`.
+
+It uses the following options.
+
+- :opt:`-temp_lapse_rate` gives the temperature lapse rate, in `K/km`. Note that we
+  use the following definition of the temperature lapse rate:
+- :opt:`-smb_adjustment` chooses SMB lapse rate (``shift``) or SMB scaling (``scale``).
+- :opt:`-smb_exp_factor` specifies the exponential factor used to scale the SMB
 - :opt:`-smb_lapse_rate` gives the surface mass balance lapse rate, in `m/year/km`.
-  Here, `\gamma=-\frac{dM}{dz}`.
-- :opt:`-surface_lapse_rate_file` specifies the file containing the reference surface
+  Here, `\gamma_M=-\frac{dM}{dz}`.
+- :opt:`-surface_elevation_change_file` specifies the file containing the reference surface
   elevation field (standard name: :var:`surface_altitude`). This file can contain several
   surface elevation records to use lapse rate corrections relative to time-dependent
   surface. If one record is provided, the reference surface elevation is assumed to be
   time-independent.
-- :opt:`-surface_lapse_rate_period` gives the period, in model years, to use when
+- :opt:`-surface_elevation_change_period` gives the period, in model years, to use when
   interpreting data in the file given with ``-surface_given_file``,
-- :opt:`-surface_lapse_rate_reference_year` takes the time `T` in model years. The
+- :opt:`-surface_elevation_change_reference_year` takes the time `T` in model years. The
   record for `t` years in ``-surface_given_file`` is interpreted as corresponding to
   `t` years since `T`.
 

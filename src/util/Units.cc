@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,6 +19,10 @@
 
 #include "Units.hh"
 
+#include <udunits2.h>
+
+#include "pism/external/calcalcs/utCalendar2_cal.h"
+
 #include "pism/util/error_handling.hh"
 
 #include "pism_utilities.hh"
@@ -27,33 +31,36 @@ namespace pism {
 
 namespace units {
 
-class ut_system_deleter {
-public:
-  void operator()(ut_system* p) const {
-    ut_free_system(p);
+struct System::Impl {
+  Impl(const std::string &path) {
+    ut_system *tmp;
+
+    ut_set_error_message_handler(ut_ignore);
+
+    if (not path.empty()) {
+      tmp = ut_read_xml(path.c_str());
+    } else {
+      tmp = ut_read_xml(NULL);
+    }
+
+    if (tmp == NULL) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ut_read_xml(%s) failed", path.c_str());
+    }
+    ut_set_error_message_handler(ut_write_to_stderr);
+
+    system = tmp;
   }
+  ~Impl() {
+    ut_free_system(system);
+  }
+  ut_system *system;
 };
 
 /** Initialize the unit system by reading from an XML unit
  * definition file.
  */
 System::System(const std::string &path) {
-  ut_system *tmp;
-
-  ut_set_error_message_handler(ut_ignore);
-
-  if (not path.empty()) {
-    tmp = ut_read_xml(path.c_str());
-  } else {
-    tmp = ut_read_xml(NULL);
-  }
-
-  if (tmp == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ut_read_xml(%s) failed", path.c_str());
-  }
-  ut_set_error_message_handler(ut_write_to_stderr);
-
-  m_system = std::shared_ptr<ut_system>(tmp, ut_system_deleter());
+  m_impl.reset(new Impl(path));
 }
 
 //! \brief Convert a quantity from unit1 to unit2.
@@ -69,26 +76,46 @@ double convert(System::Ptr system, double input,
   return c(input);
 }
 
-Unit::Unit(System::Ptr system, const std::string &spec)
-  : m_unit(NULL), m_system(system) {
-  m_unit = ut_parse(m_system->m_system.get(), spec.c_str(), UT_ASCII);
-  if (m_unit == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unit specification '%s' is unknown or invalid",
-                                  spec.c_str());
+struct Unit::Impl {
+  Impl(System::Ptr sys, const std::string &spec)
+    : system(sys), unit_string(spec) {
+    unit = ut_parse(sys->m_impl->system, spec.c_str(), UT_ASCII);
+
+    if (unit == NULL) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "unit specification '%s' is unknown or invalid",
+                                    spec.c_str());
+    }
   }
-  m_unit_string = spec;
+  Impl(const Unit::Impl &other) {
+
+    unit = ut_clone(other.unit);
+    if (unit == NULL) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "ut_clone failed");
+    }
+
+    system      = other.system;
+    unit_string = other.unit_string;
+  }
+  ~Impl() {
+    reset();
+  }
+  void reset() {
+    ut_free(unit);
+    unit_string = "";
+  }
+
+  System::Ptr system;
+  std::string unit_string;
+  ut_unit *unit;
+};
+
+Unit::Unit(System::Ptr system, const std::string &spec) {
+  m_impl.reset(new Impl(system, spec));
 }
 
-Unit::Unit(const Unit &other)
-  : m_system(other.m_system) {
-
-  m_unit = ut_clone(other.m_unit);
-  if (m_unit == NULL) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "ut_clone failed");
-  }
-
-  m_system      = other.m_system;
-  m_unit_string = other.m_unit_string;
+Unit::Unit(const Unit &other) {
+  m_impl.reset(new Impl(*other.m_impl));
 }
 
 Unit& Unit::operator=(const Unit& other) {
@@ -98,86 +125,132 @@ Unit& Unit::operator=(const Unit& other) {
 
   reset();
 
-  m_system      = other.m_system;
-  m_unit_string = other.m_unit_string;
+  m_impl->system      = other.m_impl->system;
+  m_impl->unit_string = other.m_impl->unit_string;
 
-  m_unit = ut_clone(other.m_unit);
-  if (m_unit == NULL) {
+  m_impl->unit = ut_clone(other.m_impl->unit);
+  if (m_impl->unit == NULL) {
     throw RuntimeError(PISM_ERROR_LOCATION, "ut_clone failed");
   }
 
   return *this;
 }
 
-Unit::~Unit() {
-  reset();
+bool Unit::is_convertible(const Unit &other) const {
+  return ut_are_convertible(m_impl->unit, other.m_impl->unit) != 0;
 }
 
 std::string Unit::format() const {
-  return m_unit_string;
+  return m_impl->unit_string;
 }
 
 void Unit::reset() {
-  ut_free(m_unit);
-  m_unit = NULL;
+  m_impl->reset();
 }
 
-ut_unit* Unit::get() const {
-  return m_unit;
+System::Ptr Unit::system() const {
+  return m_impl->system;
 }
 
-System::Ptr Unit::get_system() const {
-  return m_system;
+DateTime Unit::date(double T, const std::string &calendar) const {
+  DateTime result;
+
+  int errcode = utCalendar2_cal(T, m_impl->unit,
+                                &result.year, &result.month, &result.day,
+                                &result.hour, &result.minute, &result.second,
+                                calendar.c_str());
+  if (errcode != 0) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot convert time %f to a date in calendar %s",
+                                  T, calendar.c_str());
+  }
+  return result;
 }
+
+double Unit::time(const DateTime &d, const std::string &calendar) const {
+  double result;
+
+  int errcode = utInvCalendar2_cal(d.year, d.month, d.day,
+                                   d.hour, d.minute, d.second,
+                                   m_impl->unit,
+                                   &result,
+                                   calendar.c_str());
+  if (errcode != 0) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot convert date and time %d-%d-%d %d:%d:%f to time in calendar %s",
+                                  d.year, d.month, d.day,
+                                  d.hour, d.minute, d.second,
+                                  calendar.c_str());
+  }
+  return result;
+}
+
+struct Converter::Impl {
+  Impl() {
+    converter = cv_get_trivial();
+  }
+  Impl(System::Ptr sys, const std::string &spec1, const std::string &spec2) {
+
+    Unit u1(sys, spec1), u2(sys, spec2);
+
+    if (not u1.is_convertible(u2)) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "cannot convert '%s' to '%s'",
+                                    spec1.c_str(), spec2.c_str());
+    }
+
+    converter = ut_get_converter(u1.m_impl->unit, u2.m_impl->unit);
+    if (not converter) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "cannot create a converter from %s to %s",
+                                    spec1.c_str(), spec2.c_str());
+    }
+
+  }
+  Impl(const Unit &u1, const Unit &u2) {
+    if (not u1.is_convertible(u2)) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot convert '%s' to '%s'",
+                                    u1.format().c_str(), u2.format().c_str());
+    }
+
+    converter = ut_get_converter(u1.m_impl->unit, u2.m_impl->unit);
+    if (not converter) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "failed to create a converter from '%s' to '%s'",
+                                    u1.format().c_str(), u2.format().c_str());
+    }
+
+  }
+  ~Impl() {
+    cv_free(converter);
+    converter = NULL;
+  }
+  cv_converter *converter;
+};
 
 Converter::Converter() {
-  m_converter = cv_get_trivial();
+  m_impl.reset(new Impl());
 }
 
 Converter::Converter(System::Ptr sys,
                      const std::string &spec1, const std::string &spec2) {
-
-  Unit u1(sys, spec1), u2(sys, spec2);
-
-  if (ut_are_convertible(u1.get(), u2.get()) == 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot convert '%s' to '%s'", spec1.c_str(), spec2.c_str());
-  }
-
-  m_converter = ut_get_converter(u1.get(), u2.get());
-  if (m_converter == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot create a converter from %s to %s",
-                                  spec1.c_str(), spec2.c_str());
-  }
+  m_impl.reset(new Impl(sys, spec1, spec2));
 }
 
 Converter::Converter(const Unit &u1, const Unit &u2) {
-  if (ut_are_convertible(u1.get(), u2.get()) == 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot convert '%s' to '%s'",
-                                  u1.format().c_str(), u2.format().c_str());
-  }
-
-  m_converter = ut_get_converter(u1.get(), u2.get());
-  if (m_converter == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to create a converter from '%s' to '%s'",
-                                  u1.format().c_str(), u2.format().c_str());
-  }
+  m_impl.reset(new Impl(u1, u2));
 }
 
 bool are_convertible(const Unit &u1, const Unit &u2) {
-  return ut_are_convertible(u1.get(), u2.get()) != 0;
-}
-
-Converter::~Converter() {
-  cv_free(m_converter);
-  m_converter = NULL;
+  return u1.is_convertible(u2);
 }
 
 double Converter::operator()(double input) const {
-  return cv_convert_double(m_converter, input);
+  return cv_convert_double(m_impl->converter, input);
 }
 
 void Converter::convert_doubles(double *data, size_t length) const {
-  cv_convert_doubles(m_converter, data, length, data);
+  cv_convert_doubles(m_impl->converter, data, length, data);
 }
 
 } // end of namespace units

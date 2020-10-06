@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2020 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -18,45 +18,51 @@
 
 #include <cassert>
 
-#include "pism_utilities.hh"
 #include "iceModelVec.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/IceModelVec_impl.hh"
+#include "iceModelVec_helpers.hh"
+
 #include "Time.hh"
 #include "IceGrid.hh"
 #include "ConfigInterface.hh"
 
 #include "error_handling.hh"
-#include "iceModelVec_helpers.hh"
 #include "io/io_helpers.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/petscwrappers/VecScatter.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/io/File.hh"
+#include "pism_utilities.hh"
 
 namespace pism {
 
+static void global_to_local(petsc::DM &dm, Vec source, Vec destination) {
+  PetscErrorCode ierr;
+
+  ierr = DMGlobalToLocalBegin(dm, source, INSERT_VALUES, destination);
+  PISM_CHK(ierr, "DMGlobalToLocalBegin");
+
+  ierr = DMGlobalToLocalEnd(dm, source, INSERT_VALUES, destination);
+  PISM_CHK(ierr, "DMGlobalToLocalEnd");
+}
+
 IceModelVec::IceModelVec() {
-  m_access_counter = 0;
-  m_array = NULL;
-
-  m_da.reset();
-  m_da_stencil_width = 1;
-  m_dof = 1;                    // default
-  m_begin_end_access_use_dof = true;
-
-  m_has_ghosts = true;
-
-  m_name = "unintialized variable";
-
+  m_impl = new Impl();
+  m_array = nullptr;
   // would resize "vars", but "grid" is not initialized, and so we
   // cannot get the unit system:
   // vars.resize(dof);
   reset_attrs(0);
+}
 
-  m_state_counter = 0;
-  m_interpolation_type = BILINEAR;
-
-  m_zlevels.resize(1);
-  m_zlevels[0] = 0.0;
+IceModelVec::~IceModelVec() {
+  assert(m_impl->access_counter == 0);
+  delete m_impl;
+  m_impl = nullptr;
 }
 
 //! \brief Get the object state counter.
@@ -71,19 +77,19 @@ IceModelVec::IceModelVec() {
  * See also inc_state_counter().
  */
 int IceModelVec::state_counter() const {
-  return m_state_counter;
+  return m_impl->state_counter;
 }
 
 IceGrid::ConstPtr IceModelVec::grid() const {
-  return m_grid;
+  return m_impl->grid;
 }
 
 unsigned int IceModelVec::ndof() const {
-  return m_dof;
+  return m_impl->dof;
 }
 
 std::vector<double> IceModelVec::levels() const {
-  return m_zlevels;
+  return m_impl->zlevels;
 }
 
 
@@ -95,21 +101,12 @@ std::vector<double> IceModelVec::levels() const {
  * change stored values.
  */
 void IceModelVec::inc_state_counter() {
-  m_state_counter++;
-}
-
-IceModelVec::~IceModelVec() {
-  assert(m_access_counter == 0);
-}
-
-//! Returns true if create() was called and false otherwise.
-bool IceModelVec::was_created() const {
-  return (m_v != NULL);
+  m_impl->state_counter++;
 }
 
 //! Returns the grid type of an IceModelVec. (This is the way to figure out if an IceModelVec is 2D or 3D).
 unsigned int IceModelVec::ndims() const {
-  if (m_zlevels.size() > 1) {
+  if (m_impl->zlevels.size() > 1) {
     return 3;
   }
 
@@ -119,12 +116,12 @@ unsigned int IceModelVec::ndims() const {
 std::vector<int> IceModelVec::shape() const {
 
   if (ndims() == 3) {
-    return {(int)m_grid->My(), (int)m_grid->Mx(), (int)levels().size()};
+    return {(int)m_impl->grid->My(), (int)m_impl->grid->Mx(), (int)levels().size()};
   } else {
     if (ndof() == 1) {
-      return {(int)m_grid->My(), (int)m_grid->Mx()};
+      return {(int)m_impl->grid->My(), (int)m_impl->grid->Mx()};
     } else {
-      return {(int)m_grid->My(), (int)m_grid->Mx(), (int)ndof()};
+      return {(int)m_impl->grid->My(), (int)m_impl->grid->Mx(), (int)ndof()};
     }
   }
 }
@@ -134,33 +131,38 @@ std::vector<int> IceModelVec::shape() const {
     variable which does not depend on the "time" dimension.
  */
 void IceModelVec::set_time_independent(bool flag) {
-  for (unsigned int j = 0; j < m_dof; ++j) {
-    m_metadata[j].set_time_independent(flag);
+  for (unsigned int j = 0; j < m_impl->dof; ++j) {
+    m_impl->metadata[j].set_time_independent(flag);
   }
 }
+
+void IceModelVec::set_begin_access_use_dof(bool flag) {
+  m_impl->begin_access_use_dof = flag;
+}
+
 
 //! Result: min <- min(v[j]), max <- max(v[j]).
 /*!
 PETSc manual correctly says "VecMin and VecMax are collective on Vec" but
-GlobalMax,GlobalMin \e are needed, when m_has_ghosts==true, to get correct
+GlobalMax,GlobalMin \e are needed, when m_impl->ghosted==true, to get correct
 values because Vecs created with DACreateLocalVector() are of type
 VECSEQ and not VECMPI.  See src/trypetsc/localVecMax.c.
  */
 Range IceModelVec::range() const {
   Range result;
   PetscErrorCode ierr;
-  assert(m_v != NULL);
+  assert(m_impl->v != NULL);
 
-  ierr = VecMin(m_v, NULL, &result.min);
+  ierr = VecMin(m_impl->v, NULL, &result.min);
   PISM_CHK(ierr, "VecMin");
 
-  ierr = VecMax(m_v, NULL, &result.max);
+  ierr = VecMax(m_impl->v, NULL, &result.max);
   PISM_CHK(ierr, "VecMax");
 
-  if (m_has_ghosts) {
+  if (m_impl->ghosted) {
     // needs a reduce operation; use GlobalMin and GlobalMax;
-    result.min = GlobalMin(m_grid->com, result.min);
-    result.max = GlobalMax(m_grid->com, result.max);
+    result.min = GlobalMin(m_impl->grid->com, result.min);
+    result.max = GlobalMax(m_impl->grid->com, result.max);
   }
   return result;
 }
@@ -172,7 +174,7 @@ Range IceModelVec::range() const {
  *
  * @return norm type as PETSc's `NormType`.
  */
-NormType IceModelVec::int_to_normtype(int input) const {
+static NormType int_to_normtype(int input) {
   assert(input == NORM_1 || input == NORM_2 || input == NORM_INFINITY);
 
   switch (input) {
@@ -199,25 +201,14 @@ double IceModelVec::norm(int n) const {
   return this->norm_all(n)[0];
 }
 
-//! Result: v <- sqrt(v), elementwise.  Calls VecSqrt(v).
-/*!
-Name avoids clash with sqrt() in math.h.
- */
-void IceModelVec::squareroot() {
-  assert(m_v != NULL);
-
-  PetscErrorCode ierr = VecSqrtAbs(m_v);
-  PISM_CHK(ierr, "VecSqrtAbs");
-}
-
 
 //! Result: v <- v + alpha * x. Calls VecAXPY.
 void IceModelVec::add(double alpha, const IceModelVec &x) {
-  assert(m_v != NULL && x.m_v != NULL);
+  assert(m_impl->v != NULL && x.m_impl->v != NULL);
 
   checkCompatibility("add", x);
 
-  PetscErrorCode ierr = VecAXPY(m_v, alpha, x.m_v);
+  PetscErrorCode ierr = VecAXPY(m_impl->v, alpha, x.m_impl->v);
   PISM_CHK(ierr, "VecAXPY");
 
   inc_state_counter();          // mark as modified
@@ -225,9 +216,9 @@ void IceModelVec::add(double alpha, const IceModelVec &x) {
 
 //! Result: v[j] <- v[j] + alpha for all j. Calls VecShift.
 void IceModelVec::shift(double alpha) {
-  assert(m_v != NULL);
+  assert(m_impl->v != NULL);
 
-  PetscErrorCode ierr = VecShift(m_v, alpha);
+  PetscErrorCode ierr = VecShift(m_impl->v, alpha);
   PISM_CHK(ierr, "VecShift");
 
   inc_state_counter();          // mark as modified
@@ -235,9 +226,9 @@ void IceModelVec::shift(double alpha) {
 
 //! Result: v <- v * alpha. Calls VecScale.
 void IceModelVec::scale(double alpha) {
-  assert(m_v != NULL);
+  assert(m_impl->v != NULL);
 
-  PetscErrorCode ierr = VecScale(m_v, alpha);
+  PetscErrorCode ierr = VecScale(m_impl->v, alpha);
   PISM_CHK(ierr, "VecScale");
 
   inc_state_counter();          // mark as modified
@@ -250,14 +241,15 @@ void IceModelVec::scale(double alpha) {
     DMLocalToGlobalBegin/End is broken in PETSc 3.5, so we roll our
     own.
  */
-void  IceModelVec::copy_to_vec(petsc::DM::Ptr destination_da, Vec destination) const {
-  assert(m_v != NULL);
+void  IceModelVec::copy_to_vec(std::shared_ptr<petsc::DM> destination_da,
+                               petsc::Vec &destination) const {
+  assert(m_impl->v != NULL);
 
   // m_dof > 1 for vector, staggered grid 2D fields, etc. In this case
   // zlevels.size() == 1. For 3D fields, m_dof == 1 (all 3D fields are
   // scalar) and zlevels.size() corresponds to dof of the underlying PETSc
   // DM object. So we want the bigger of the two numbers here.
-  unsigned int N = std::max((size_t)m_dof, m_zlevels.size());
+  unsigned int N = std::max((size_t)m_impl->dof, m_impl->zlevels.size());
 
   this->get_dof(destination_da, destination, 0, N);
 }
@@ -268,14 +260,14 @@ void  IceModelVec::copy_to_vec(petsc::DM::Ptr destination_da, Vec destination) c
   Unlike DMLocalToGlobalBegin/End, DMGlobalToLocalBegin/End is *not*
   broken in PETSc 3.5 (and ealier), so we can use it here.
  */
-void IceModelVec::copy_from_vec(Vec source) {
+void IceModelVec::copy_from_vec(petsc::Vec &source) {
   PetscErrorCode ierr;
-  assert(m_v != NULL);
+  assert(m_impl->v != NULL);
 
-  if (m_has_ghosts) {
-    global_to_local(m_da, source, m_v);
+  if (m_impl->ghosted) {
+    global_to_local(*m_impl->da, source, m_impl->v);
   } else {
-    ierr = VecCopy(source, m_v);
+    ierr = VecCopy(source, m_impl->v);
     PISM_CHK(ierr, "VecCopy");
   }
 
@@ -283,21 +275,22 @@ void IceModelVec::copy_from_vec(Vec source) {
 }
 
 
-void IceModelVec::get_dof(petsc::DM::Ptr da_result, Vec result,
+void IceModelVec::get_dof(std::shared_ptr<petsc::DM> da_result,
+                          petsc::Vec &result,
                           unsigned int start, unsigned int count) const {
-  if (start >= m_dof) {
+  if (start >= m_impl->dof) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid argument (start); got %d", start);
   }
 
-  petsc::DMDAVecArrayDOF tmp_res(da_result, result), tmp_v(m_da, m_v);
+  petsc::DMDAVecArrayDOF tmp_res(da_result, result), tmp_v(m_impl->da, m_impl->v);
 
   double
     ***result_a = static_cast<double***>(tmp_res.get()),
     ***source_a = static_cast<double***>(tmp_v.get());
 
-  ParallelSection loop(m_grid->com);
+  ParallelSection loop(m_impl->grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (Points p(*m_impl->grid); p; p.next()) {
       const int i = p.i(), j = p.j();
       PetscErrorCode ierr = PetscMemcpy(result_a[j][i], &source_a[j][i][start],
                                         count*sizeof(PetscScalar));
@@ -309,21 +302,21 @@ void IceModelVec::get_dof(petsc::DM::Ptr da_result, Vec result,
   loop.check();
 }
 
-void IceModelVec::set_dof(petsc::DM::Ptr da_source, Vec source,
+void IceModelVec::set_dof(std::shared_ptr<petsc::DM> da_source, petsc::Vec &source,
                           unsigned int start, unsigned int count) {
-  if (start >= m_dof) {
+  if (start >= m_impl->dof) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid argument (start); got %d", start);
   }
 
-  petsc::DMDAVecArrayDOF tmp_src(da_source, source), tmp_v(m_da, m_v);
+  petsc::DMDAVecArrayDOF tmp_src(da_source, source), tmp_v(m_impl->da, m_impl->v);
   
   double
     ***source_a = static_cast<double***>(tmp_src.get()),
     ***result_a = static_cast<double***>(tmp_v.get());
 
-  ParallelSection loop(m_grid->com);
+  ParallelSection loop(m_impl->grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (Points p(*m_impl->grid); p; p.next()) {
       const int i = p.i(), j = p.j();
       PetscErrorCode ierr = PetscMemcpy(&result_a[j][i][start], source_a[j][i],
                                         count*sizeof(PetscScalar));
@@ -340,11 +333,11 @@ void IceModelVec::set_dof(petsc::DM::Ptr da_source, Vec source,
 //! Result: v <- source.  Leaves metadata alone but copies values in Vec.  Uses VecCopy.
 void  IceModelVec::copy_from(const IceModelVec &source) {
   PetscErrorCode ierr;
-  assert(m_v != NULL && source.m_v != NULL);
+  assert(m_impl->v != NULL && source.m_impl->v != NULL);
 
   checkCompatibility("copy_from", source);
 
-  ierr = VecCopy(source.m_v, m_v);
+  ierr = VecCopy(source.m_impl->v, m_impl->v);
   PISM_CHK(ierr, "VecCopy");
 
   this->inc_state_counter();          // mark as modified
@@ -353,19 +346,19 @@ void  IceModelVec::copy_from(const IceModelVec &source) {
 //! @brief Get the stencil width of the current IceModelVec. Returns 0
 //! if ghosts are not available.
 unsigned int IceModelVec::stencil_width() const {
-  if (m_has_ghosts) {
-    return m_da_stencil_width;
+  if (m_impl->ghosted) {
+    return m_impl->da_stencil_width;
   } else {
     return 0;
   }
 }
 
-Vec IceModelVec::vec() {
-  return m_v;
+petsc::Vec& IceModelVec::vec() {
+  return m_impl->v;
 }
 
-petsc::DM::Ptr IceModelVec::dm() const {
-  return m_da;
+std::shared_ptr<petsc::DM> IceModelVec::dm() const {
+  return m_impl->da;
 }
 
 //! Sets the variable name to `name`.
@@ -374,7 +367,7 @@ petsc::DM::Ptr IceModelVec::dm() const {
  * NetCDF variable name. Use `metadata(...).set_name(...)` to set that.
  */
 void IceModelVec::set_name(const std::string &name) {
-  m_name = name;
+  m_impl->name = name;
 }
 
 //! @brief Get the name of an IceModelVec object.
@@ -386,15 +379,15 @@ void IceModelVec::set_name(const std::string &name) {
  * name of NetCDF variables an IceModelVec is saved to.)
  */
 const std::string& IceModelVec::get_name() const {
-  return m_name;
+  return m_impl->name;
 }
 
 //! Resets most IceModelVec attributes.
 void IceModelVec::reset_attrs(unsigned int N) {
 
-  m_report_range = true;
+  m_impl->report_range = true;
 
-  if (N > 0 && N < m_metadata.size()) {
+  if (N > 0 and N < m_impl->metadata.size()) {
     metadata(N).clear_all_strings();
     metadata(N).clear_all_doubles();
   }
@@ -412,6 +405,7 @@ void IceModelVec::reset_attrs(unsigned int N) {
 void IceModelVec::set_attrs(const std::string &pism_intent,
                             const std::string &long_name,
                             const std::string &units,
+                            const std::string &glaciological_units,
                             const std::string &standard_name,
                             unsigned int N) {
 
@@ -419,126 +413,133 @@ void IceModelVec::set_attrs(const std::string &pism_intent,
 
   metadata(N).set_string("units", units);
 
+  if (not m_impl->grid->ctx()->config()->get_flag("output.use_MKS")) {
+    metadata(N).set_string("glaciological_units", glaciological_units);
+  }
+
   metadata(N).set_string("pism_intent", pism_intent);
 
   metadata(N).set_string("standard_name", standard_name);
 }
 
-//! Gets an IceModelVec from a file `nc`, interpolating onto the current grid.
+//! Gets an IceModelVec from a file `file`, interpolating onto the current grid.
 /*! Stops if the variable was not found and `critical` == true.
  */
-void IceModelVec::regrid_impl(const PIO &file, RegriddingFlag flag,
+void IceModelVec::regrid_impl(const File &file, RegriddingFlag flag,
                               double default_value) {
-  if (m_dof != 1) {
+  if (m_impl->dof != 1) {
     throw RuntimeError(PISM_ERROR_LOCATION, "This method (IceModelVec::regrid_impl)"
                        " only supports IceModelVecs with dof == 1.");
   }
 
-  bool allow_extrapolation = m_grid->ctx()->config()->get_boolean("grid.allow_extrapolation");
+  bool allow_extrapolation = m_impl->grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 
-  if (m_has_ghosts) {
-    petsc::TemporaryGlobalVec tmp(m_da);
+  if (m_impl->ghosted) {
+    petsc::TemporaryGlobalVec tmp(m_impl->da);
     petsc::VecArray tmp_array(tmp);
 
-    io::regrid_spatial_variable(metadata(0), *m_grid, file, flag,
-                                m_report_range, allow_extrapolation,
-                                default_value, m_interpolation_type, tmp_array.get());
+    io::regrid_spatial_variable(metadata(0), *m_impl->grid, file, flag,
+                                m_impl->report_range, allow_extrapolation,
+                                default_value, m_impl->interpolation_type, tmp_array.get());
 
-    global_to_local(m_da, tmp, m_v);
+    global_to_local(*m_impl->da, tmp, m_impl->v);
   } else {
-    petsc::VecArray v_array(m_v);
-    io::regrid_spatial_variable(metadata(0), *m_grid,  file, flag,
-                                m_report_range, allow_extrapolation,
-                                default_value, m_interpolation_type, v_array.get());
+    petsc::VecArray v_array(m_impl->v);
+    io::regrid_spatial_variable(metadata(0), *m_impl->grid,  file, flag,
+                                m_impl->report_range, allow_extrapolation,
+                                default_value, m_impl->interpolation_type, v_array.get());
   }
 }
 
 //! Reads appropriate NetCDF variable(s) into an IceModelVec.
-void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
+void IceModelVec::read_impl(const File &file, const unsigned int time) {
 
-  m_grid->ctx()->log()->message(3, "  Reading %s...\n", m_name.c_str());
+  m_impl->grid->ctx()->log()->message(3, "  Reading %s...\n", m_impl->name.c_str());
 
-  if (m_dof != 1) {
+  if (m_impl->dof != 1) {
     throw RuntimeError(PISM_ERROR_LOCATION, "This method (IceModelVec::read_impl) only supports"
                        " IceModelVecs with dof == 1.");
   }
 
-  if (m_has_ghosts) {
-    petsc::TemporaryGlobalVec tmp(m_da);
+  if (m_impl->ghosted) {
+    petsc::TemporaryGlobalVec tmp(m_impl->da);
     petsc::VecArray tmp_array(tmp);
 
-    io::read_spatial_variable(metadata(0), *m_grid, nc, time, tmp_array.get());
+    io::read_spatial_variable(metadata(0), *m_impl->grid, file, time, tmp_array.get());
 
-    global_to_local(m_da, tmp, m_v);
+    global_to_local(*m_impl->da, tmp, m_impl->v);
   } else {
-    petsc::VecArray v_array(m_v);
-    io::read_spatial_variable(metadata(0), *m_grid, nc, time, v_array.get());
+    petsc::VecArray v_array(m_impl->v);
+    io::read_spatial_variable(metadata(0), *m_impl->grid, file, time, v_array.get());
   }
 }
 
-//! \brief Define variables corresponding to an IceModelVec in a file opened using `nc`.
-void IceModelVec::define(const PIO &nc, IO_Type default_type) const {
-  std::string order = m_grid->ctx()->config()->get_string("output.variable_order");
-  for (unsigned int j = 0; j < m_dof; ++j) {
+//! \brief Define variables corresponding to an IceModelVec in a file opened using `file`.
+void IceModelVec::define(const File &file, IO_Type default_type) const {
+  for (unsigned int j = 0; j < m_impl->dof; ++j) {
     IO_Type type = metadata(j).get_output_type();
     type = type == PISM_NAT ? default_type : type;
-    io::define_spatial_variable(metadata(j), *m_grid, nc, type, order);
+    io::define_spatial_variable(metadata(j), *m_impl->grid, file, type);
   }
 }
 
-//! \brief Read attributes from the corresponding variable in `nc`.
+//! \brief Read attributes from the corresponding variable in `filename`.
 /*! Note that unlike read() and regrid(), this method does not use the standard
   name to find the variable to read attributes from.
  */
 void IceModelVec::read_attributes(const std::string &filename, int N) {
-  PIO nc(m_grid->com, "netcdf3", filename, PISM_READONLY); // OK to use netcdf3
-  io::read_attributes(nc, metadata(N).get_name(), metadata(N));
+  File file(m_impl->grid->com, filename, PISM_NETCDF3, PISM_READONLY); // OK to use netcdf3
+  io::read_attributes(file, metadata(N).get_name(), metadata(N));
 }
 
 
 //! @brief Returns a reference to the SpatialVariableMetadata object
 //! containing metadata for the compoment N.
 SpatialVariableMetadata& IceModelVec::metadata(unsigned int N) {
-  assert(N < m_dof);
-  return m_metadata[N];
+  assert(N < m_impl->dof);
+  return m_impl->metadata[N];
 }
 
 const SpatialVariableMetadata& IceModelVec::metadata(unsigned int N) const {
-  assert(N < m_dof);
-  return m_metadata[N];
+  assert(N < m_impl->dof);
+  return m_impl->metadata[N];
 }
 
 //! Writes an IceModelVec to a NetCDF file.
-void IceModelVec::write_impl(const PIO &file) const {
+void IceModelVec::write_impl(const File &file) const {
 
-  if (m_dof != 1) {
+  if (m_impl->dof != 1) {
     throw RuntimeError(PISM_ERROR_LOCATION, "This method (IceModelVec::write_impl) only supports"
                        " IceModelVecs with dof == 1");
   }
 
-  if (m_has_ghosts) {
-    petsc::TemporaryGlobalVec tmp(m_da);
+  if (m_impl->ghosted) {
+    petsc::TemporaryGlobalVec tmp(m_impl->da);
 
-    this->copy_to_vec(m_da, tmp);
+    this->copy_to_vec(m_impl->da, tmp);
 
     petsc::VecArray tmp_array(tmp);
 
-    io::write_spatial_variable(metadata(0), *m_grid,  file,
+    io::write_spatial_variable(metadata(0), *m_impl->grid,  file,
                                tmp_array.get());
   } else {
-    petsc::VecArray v_array(m_v);
-    io::write_spatial_variable(metadata(0), *m_grid, file,
+    petsc::VecArray v_array(m_impl->v);
+    io::write_spatial_variable(metadata(0), *m_impl->grid, file,
                                v_array.get());
   }
 }
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 void IceModelVec::dump(const char filename[]) const {
-  PIO file(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
-           filename, PISM_READWRITE_CLOBBER);
+  File file(m_impl->grid->com, filename,
+            string_to_backend(m_impl->grid->ctx()->config()->get_string("output.format")),
+            PISM_READWRITE_CLOBBER,
+            m_impl->grid->ctx()->pio_iosys_id());
 
-  io::define_time(file, *m_grid->ctx());
-  io::append_time(file, *m_grid->ctx()->config(), m_grid->ctx()->time()->current());
+  if (not m_impl->metadata[0].get_time_independent()) {
+    io::define_time(file, *m_impl->grid->ctx());
+    io::append_time(file, *m_impl->grid->ctx()->config(), m_impl->grid->ctx()->time()->current());
+  }
 
   define(file, PISM_DOUBLE);
   write(file);
@@ -550,66 +551,66 @@ void IceModelVec::checkCompatibility(const char* func, const IceModelVec &other)
   // We have to use PetscInt because of VecGetSizes below.
   PetscInt X_size, Y_size;
 
-  if (m_dof != other.m_dof) {
+  if (m_impl->dof != other.m_impl->dof) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IceModelVec::%s(...): operands have different numbers of degrees of freedom",
                                   func);
   }
 
-  ierr = VecGetSize(m_v, &X_size);
+  ierr = VecGetSize(m_impl->v, &X_size);
   PISM_CHK(ierr, "VecGetSize");
 
-  ierr = VecGetSize(other.m_v, &Y_size);
+  ierr = VecGetSize(other.m_impl->v, &Y_size);
   PISM_CHK(ierr, "VecGetSize");
 
   if (X_size != Y_size) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IceModelVec::%s(...): incompatible Vec sizes (called as %s.%s(%s))",
-                                  func, m_name.c_str(), func, other.m_name.c_str());
+                                  func, m_impl->name.c_str(), func, other.m_impl->name.c_str());
   }
 }
 
 //! Checks if an IceModelVec is allocated and calls DAVecGetArray.
 void  IceModelVec::begin_access() const {
-  assert(m_v != NULL);
+  assert(m_impl->v != NULL);
 
-  if (m_access_counter < 0) {
+  if (m_impl->access_counter < 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "IceModelVec::begin_access(): m_access_counter < 0");
   }
 
-  if (m_access_counter == 0) {
+  if (m_impl->access_counter == 0) {
     PetscErrorCode ierr;
-    if (m_begin_end_access_use_dof == true) {
-      ierr = DMDAVecGetArrayDOF(*m_da, m_v, &m_array);
+    if (m_impl->begin_access_use_dof) {
+      ierr = DMDAVecGetArrayDOF(*m_impl->da, m_impl->v, &m_array);
       PISM_CHK(ierr, "DMDAVecGetArrayDOF");
     } else {
-      ierr = DMDAVecGetArray(*m_da, m_v, &m_array);
+      ierr = DMDAVecGetArray(*m_impl->da, m_impl->v, &m_array);
       PISM_CHK(ierr, "DMDAVecGetArray");
     }
   }
 
-  m_access_counter++;
+  m_impl->access_counter++;
 }
 
 //! Checks if an IceModelVec is allocated and calls DAVecRestoreArray.
 void  IceModelVec::end_access() const {
   PetscErrorCode ierr;
-  assert(m_v != NULL);
+  assert(m_impl->v != NULL);
 
   if (m_array == NULL) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "IceModelVec::end_access(): a == NULL (looks like begin_acces() was not called)");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "IceModelVec::end_access(): a == NULL (looks like begin_acces() was not called)");
   }
 
-  if (m_access_counter < 0) {
+  if (m_impl->access_counter < 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "IceModelVec::end_access(): m_access_counter < 0");
   }
 
-
-  m_access_counter--;
-  if (m_access_counter == 0) {
-    if (m_begin_end_access_use_dof == true) {
-      ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &m_array);
+  m_impl->access_counter--;
+  if (m_impl->access_counter == 0) {
+    if (m_impl->begin_access_use_dof) {
+      ierr = DMDAVecRestoreArrayDOF(*m_impl->da, m_impl->v, &m_array);
       PISM_CHK(ierr, "DMDAVecRestoreArrayDOF");
     } else {
-      ierr = DMDAVecRestoreArray(*m_da, m_v, &m_array);
+      ierr = DMDAVecRestoreArray(*m_impl->da, m_impl->v, &m_array);
       PISM_CHK(ierr, "DMDAVecRestoreArray");
     }
     m_array = NULL;
@@ -619,27 +620,17 @@ void  IceModelVec::end_access() const {
 //! Updates ghost points.
 void  IceModelVec::update_ghosts() {
   PetscErrorCode ierr;
-  if (not m_has_ghosts) {
+  if (not m_impl->ghosted) {
     return;
   }
 
-  assert(m_v != NULL);
+  assert(m_impl->v != NULL);
 
-  ierr = DMLocalToLocalBegin(*m_da, m_v, INSERT_VALUES, m_v);
+  ierr = DMLocalToLocalBegin(*m_impl->da, m_impl->v, INSERT_VALUES, m_impl->v);
   PISM_CHK(ierr, "DMLocalToLocalBegin");
   
-  ierr = DMLocalToLocalEnd(*m_da, m_v, INSERT_VALUES, m_v);
+  ierr = DMLocalToLocalEnd(*m_impl->da, m_impl->v, INSERT_VALUES, m_impl->v);
   PISM_CHK(ierr, "DMLocalToLocalEnd");
-}
-
-void IceModelVec::global_to_local(petsc::DM::Ptr dm, Vec source, Vec destination) const {
-  PetscErrorCode ierr;
-
-  ierr = DMGlobalToLocalBegin(*dm, source, INSERT_VALUES, destination);
-  PISM_CHK(ierr, "DMGlobalToLocalBegin");
-
-  ierr = DMGlobalToLocalEnd(*dm, source, INSERT_VALUES, destination);
-  PISM_CHK(ierr, "DMGlobalToLocalEnd");
 }
 
 
@@ -648,22 +639,22 @@ void  IceModelVec::update_ghosts(IceModelVec &destination) const {
   PetscErrorCode ierr;
 
   // Make sure it is allocated:
-  assert(m_v != NULL);
+  assert(m_impl->v != NULL);
   // Make sure "destination" has ghosts to update.
-  assert(destination.m_has_ghosts);
+  assert(destination.m_impl->ghosted);
 
-  if (m_has_ghosts and destination.m_has_ghosts) {
-    ierr = DMLocalToLocalBegin(*m_da, m_v, INSERT_VALUES, destination.vec());
+  if (m_impl->ghosted and destination.m_impl->ghosted) {
+    ierr = DMLocalToLocalBegin(*m_impl->da, m_impl->v, INSERT_VALUES, destination.vec());
     PISM_CHK(ierr, "DMLocalToLocalBegin");
 
-    ierr = DMLocalToLocalEnd(*m_da, m_v, INSERT_VALUES, destination.vec());
+    ierr = DMLocalToLocalEnd(*m_impl->da, m_impl->v, INSERT_VALUES, destination.vec());
     PISM_CHK(ierr, "DMLocalToLocalEnd");
 
     return;
   }
 
-  if (not m_has_ghosts and destination.m_has_ghosts) {
-    global_to_local(destination.dm(), m_v, destination.vec());
+  if (not m_impl->ghosted and destination.m_impl->ghosted) {
+    global_to_local(*destination.dm(), m_impl->v, destination.vec());
 
     return;
   }
@@ -673,9 +664,9 @@ void  IceModelVec::update_ghosts(IceModelVec &destination) const {
 
 //! Result: v[j] <- c for all j.
 void  IceModelVec::set(const double c) {
-  assert(m_v != NULL);
+  assert(m_impl->v != NULL);
 
-  PetscErrorCode ierr = VecSet(m_v,c);
+  PetscErrorCode ierr = VecSet(m_impl->v,c);
   PISM_CHK(ierr, "VecSet");
 
   inc_state_counter();          // mark as modified
@@ -683,28 +674,28 @@ void  IceModelVec::set(const double c) {
 
 void IceModelVec::check_array_indices(int i, int j, unsigned int k) const {
   double ghost_width = 0;
-  if (m_has_ghosts) {
-    ghost_width = m_da_stencil_width;
+  if (m_impl->ghosted) {
+    ghost_width = m_impl->da_stencil_width;
   }
-  // m_dof > 1 for vector, staggered grid 2D fields, etc. In this case
-  // zlevels.size() == 1. For 3D fields, m_dof == 1 (all 3D fields are
+  // m_impl->dof > 1 for vector, staggered grid 2D fields, etc. In this case
+  // zlevels.size() == 1. For 3D fields, m_impl->dof == 1 (all 3D fields are
   // scalar) and zlevels.size() corresponds to dof of the underlying PETSc
   // DM object. So we want the bigger of the two numbers here.
-  unsigned int N = std::max((size_t)m_dof, m_zlevels.size());
+  unsigned int N = std::max((size_t)m_impl->dof, m_impl->zlevels.size());
 
-  bool out_of_range = (i < m_grid->xs() - ghost_width) ||
-    (i > m_grid->xs() + m_grid->xm() + ghost_width) ||
-    (j < m_grid->ys() - ghost_width) ||
-    (j > m_grid->ys() + m_grid->ym() + ghost_width) ||
+  bool out_of_range = (i < m_impl->grid->xs() - ghost_width) ||
+    (i > m_impl->grid->xs() + m_impl->grid->xm() + ghost_width) ||
+    (j < m_impl->grid->ys() - ghost_width) ||
+    (j > m_impl->grid->ys() + m_impl->grid->ym() + ghost_width) ||
     (k >= N);
 
   if (out_of_range) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s(%d, %d, %d) is out of bounds",
-                                  m_name.c_str(), i, j, k);
+                                  m_impl->name.c_str(), i, j, k);
   }
 
   if (m_array == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s: begin_access() was not called", m_name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s: begin_access() was not called", m_impl->name.c_str());
   }
 }
 
@@ -752,53 +743,53 @@ void compute_params(const IceModelVec* const x, const IceModelVec* const y,
 
 //! \brief Computes the norm of all components.
 std::vector<double> IceModelVec::norm_all(int n) const {
-  assert(m_v != NULL);
+  assert(m_impl->v != NULL);
 
-  std::vector<double> result(m_dof);
+  std::vector<double> result(m_impl->dof);
 
-  NormType type = this->int_to_normtype(n);
+  NormType type = int_to_normtype(n);
 
-  if (m_dof > 1) {
-    PetscErrorCode ierr = VecStrideNormAll(m_v, type, &result[0]);
+  if (m_impl->dof > 1) {
+    PetscErrorCode ierr = VecStrideNormAll(m_impl->v, type, &result[0]);
     PISM_CHK(ierr, "VecStrideNormAll");
   } else {
-    PetscErrorCode ierr = VecNorm(m_v, type, &result[0]);
+    PetscErrorCode ierr = VecNorm(m_impl->v, type, &result[0]);
     PISM_CHK(ierr, "VecNorm");
   }
 
-  if (m_has_ghosts) {
+  if (m_impl->ghosted) {
     // needs a reduce operation; use GlobalMax() if NORM_INFINITY,
     // otherwise GlobalSum; carefully in NORM_2 case
     switch (type) {
     case NORM_1_AND_2: {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IceModelVec::norm_all(...): NORM_1_AND_2"
                                     " not implemented (called as %s.norm_all(...))",
-                                    m_name.c_str());
+                                    m_impl->name.c_str());
 
     }
     case NORM_1: {
-      for (unsigned int k = 0; k < m_dof; ++k) {
-        result[k] = GlobalSum(m_grid->com, result[k]);
+      for (unsigned int k = 0; k < m_impl->dof; ++k) {
+        result[k] = GlobalSum(m_impl->grid->com, result[k]);
       }
       return result;
     }
     case NORM_2: {
-      for (unsigned int k = 0; k < m_dof; ++k) {
+      for (unsigned int k = 0; k < m_impl->dof; ++k) {
         // undo sqrt in VecNorm before sum; sum up; take sqrt
-        result[k] = sqrt(GlobalSum(m_grid->com, result[k]*result[k]));
+        result[k] = sqrt(GlobalSum(m_impl->grid->com, result[k]*result[k]));
       }
       return result;
     }
     case NORM_INFINITY: {
-      for (unsigned int k = 0; k < m_dof; ++k) {
-        result[k] = GlobalMax(m_grid->com, result[k]);
+      for (unsigned int k = 0; k < m_impl->dof; ++k) {
+        result[k] = GlobalMax(m_impl->grid->com, result[k]);
       }
       return result;
     }
     default: {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IceModelVec::norm_all(...): unknown norm type"
                                     " (called as %s.norm_all(...))",
-                                    m_name.c_str());
+                                    m_impl->name.c_str());
     }
     } // switch
   } else {
@@ -808,23 +799,26 @@ std::vector<double> IceModelVec::norm_all(int n) const {
 
 void IceModelVec::write(const std::string &filename) const {
   // We expect the file to be present and ready to write into.
-  PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
-         filename, PISM_READWRITE);
+  File file(m_impl->grid->com,
+            filename,
+            string_to_backend(m_impl->grid->ctx()->config()->get_string("output.format")),
+            PISM_READWRITE,
+            m_impl->grid->ctx()->pio_iosys_id());
 
-  this->write(nc);
+  this->write(file);
 }
 
 void IceModelVec::read(const std::string &filename, unsigned int time) {
-  PIO nc(m_grid->com, "guess_mode", filename, PISM_READONLY);
-  this->read(nc, time);
+  File file(m_impl->grid->com, filename, PISM_GUESS, PISM_READONLY);
+  this->read(file, time);
 }
 
 void IceModelVec::regrid(const std::string &filename, RegriddingFlag flag,
                                    double default_value) {
-  PIO nc(m_grid->com, "guess_mode", filename, PISM_READONLY);
+  File file(m_impl->grid->com, filename, PISM_GUESS, PISM_READONLY);
 
   try {
-    this->regrid(nc, flag, default_value);
+    this->regrid(file, flag, default_value);
   } catch (RuntimeError &e) {
     e.add_context("regridding '%s' from '%s'",
                   this->get_name().c_str(), filename.c_str());
@@ -850,49 +844,49 @@ void IceModelVec::regrid(const std::string &filename, RegriddingFlag flag,
  * fill the whole IceModelVec with `default_value` if could not find
  * the variable.
  *
- * @param nc input file
+ * @param file input file
  * @param flag regridding mode, see above
  * @param default_value default value, meaning depends on the
  *        regridding mode flag
  *
  * @return 0 on success
  */
-void IceModelVec::regrid(const PIO &nc, RegriddingFlag flag,
+void IceModelVec::regrid(const File &file, RegriddingFlag flag,
                          double default_value) {
-  m_grid->ctx()->log()->message(3, "  [%s] Regridding %s...\n",
-                                timestamp(m_grid->com).c_str(), m_name.c_str());
+  m_impl->grid->ctx()->log()->message(3, "  [%s] Regridding %s...\n",
+                                timestamp(m_impl->grid->com).c_str(), m_impl->name.c_str());
   double start_time = get_time();
-  m_grid->ctx()->profiling().begin("io.regridding");
+  m_impl->grid->ctx()->profiling().begin("io.regridding");
   {
-    this->regrid_impl(nc, flag, default_value);
+    this->regrid_impl(file, flag, default_value);
     inc_state_counter();          // mark as modified
   }
-  m_grid->ctx()->profiling().end("io.regridding");
+  m_impl->grid->ctx()->profiling().end("io.regridding");
   double
     end_time   = get_time(),
     time_spent = end_time - start_time;
 
   if (time_spent > 1.0) {
-    m_grid->ctx()->log()->message(3, "  done in %f seconds.\n", time_spent);
+    m_impl->grid->ctx()->log()->message(3, "  done in %f seconds.\n", time_spent);
   } else {
-    m_grid->ctx()->log()->message(3, "  done.\n");
+    m_impl->grid->ctx()->log()->message(3, "  done.\n");
   }
 }
 
-void IceModelVec::read(const PIO &nc, const unsigned int time) {
-  this->read_impl(nc, time);
+void IceModelVec::read(const File &file, const unsigned int time) {
+  this->read_impl(file, time);
   inc_state_counter();          // mark as modified
 }
 
-void IceModelVec::write(const PIO &nc) const {
-  define(nc);
+void IceModelVec::write(const File &file) const {
+  define(file);
 
-  m_grid->ctx()->log()->message(3, "  [%s] Writing %s...",
-                               timestamp(m_grid->com).c_str(),
-                               m_name.c_str());
+  m_impl->grid->ctx()->log()->message(3, "  [%s] Writing %s...",
+                               timestamp(m_impl->grid->com).c_str(),
+                               m_impl->name.c_str());
 
   double start_time = get_time();
-  write_impl(nc);
+  write_impl(file);
   double end_time = get_time();
 
   const double
@@ -901,20 +895,20 @@ void IceModelVec::write(const PIO &nc) const {
     mb_double = sizeof(double) * size() / megabyte,
     mb_float =  sizeof(float) * size() / megabyte;
 
-  std::string timestamp = pism::timestamp(m_grid->com);
+  std::string timestamp = pism::timestamp(m_impl->grid->com);
   std::string spacer(timestamp.size(), ' ');
   if (time_spent > 1) {
-    m_grid->ctx()->log()->message(3,
+    m_impl->grid->ctx()->log()->message(3,
                                   "\n"
                                   "  [%s] Done writing %s (%f Mb double, %f Mb float)\n"
                                   "   %s  in %f seconds (%f minutes).\n"
                                   "   %s  Effective throughput: double: %f Mb/s, float: %f Mb/s.\n",
-                                  timestamp.c_str(), m_name.c_str(), mb_double, mb_float,
+                                  timestamp.c_str(), m_impl->name.c_str(), mb_double, mb_float,
                                   spacer.c_str(), time_spent, time_spent / 60.0,
                                   spacer.c_str(),
                                   mb_double / time_spent, mb_float / time_spent);
   } else {
-    m_grid->ctx()->log()->message(3, " done.\n");
+    m_impl->grid->ctx()->log()->message(3, " done.\n");
   }
 }
 
@@ -958,16 +952,16 @@ void AccessList::add(const std::vector<const PetscAccessible*> vecs) {
 
 //! Return the total number of elements in the *owned* part of an array.
 size_t IceModelVec::size() const {
-  // m_dof > 1 for vector, staggered grid 2D fields, etc. In this case
-  // zlevels.size() == 1. For 3D fields, m_dof == 1 (all 3D fields are
+  // m_impl->dof > 1 for vector, staggered grid 2D fields, etc. In this case
+  // zlevels.size() == 1. For 3D fields, m_impl->dof == 1 (all 3D fields are
   // scalar) and zlevels.size() corresponds to dof of the underlying PETSc
   // DM object.
 
   size_t
-    Mx = m_grid->Mx(),
-    My = m_grid->My(),
-    Mz = m_zlevels.size(),
-    dof = m_dof;
+    Mx = m_impl->grid->Mx(),
+    My = m_impl->grid->My(),
+    Mz = m_impl->zlevels.size(),
+    dof = m_impl->dof;
 
   return Mx * My * Mz * dof;
 }
@@ -1084,12 +1078,12 @@ Vec proc0_copy(DM dm, int start, int length) {
 
 /*! Allocate a copy on processor zero and the scatter needed to move data.
  */
-petsc::Vec::Ptr IceModelVec::allocate_proc0_copy() const {
+std::shared_ptr<petsc::Vec> IceModelVec::allocate_proc0_copy() const {
   PetscErrorCode ierr;
   Vec v_proc0 = NULL;
   Vec result = NULL;
 
-  ierr = PetscObjectQuery((PetscObject)m_da->get(), "v_proc0", (PetscObject*)&v_proc0);
+  ierr = PetscObjectQuery((PetscObject)m_impl->da->get(), "v_proc0", (PetscObject*)&v_proc0);
   PISM_CHK(ierr, "PetscObjectQuery")
                                                                                           ;
   if (v_proc0 == NULL) {
@@ -1099,11 +1093,11 @@ petsc::Vec::Ptr IceModelVec::allocate_proc0_copy() const {
     // PetscObjectCompose below.
     petsc::Vec natural_work;
     // create a work vector with natural ordering:
-    ierr = DMDACreateNaturalVector(*m_da, natural_work.rawptr());
+    ierr = DMDACreateNaturalVector(*m_impl->da, natural_work.rawptr());
     PISM_CHK(ierr, "DMDACreateNaturalVector");
 
     // this increments the reference counter of natural_work
-    ierr = PetscObjectCompose((PetscObject)m_da->get(), "natural_work",
+    ierr = PetscObjectCompose((PetscObject)m_impl->da->get(), "natural_work",
                               (PetscObject)((::Vec)natural_work));
     PISM_CHK(ierr, "PetscObjectCompose");
 
@@ -1118,12 +1112,12 @@ petsc::Vec::Ptr IceModelVec::allocate_proc0_copy() const {
     PISM_CHK(ierr, "VecScatterCreateToZero");
 
     // this increments the reference counter of scatter_to_zero
-    ierr = PetscObjectCompose((PetscObject)m_da->get(), "scatter_to_zero",
+    ierr = PetscObjectCompose((PetscObject)m_impl->da->get(), "scatter_to_zero",
                               (PetscObject)((::VecScatter)scatter_to_zero));
     PISM_CHK(ierr, "PetscObjectCompose");
 
     // this increments the reference counter of v_proc0
-    ierr = PetscObjectCompose((PetscObject)m_da->get(), "v_proc0",
+    ierr = PetscObjectCompose((PetscObject)m_impl->da->get(), "v_proc0",
                               (PetscObject)v_proc0);
     PISM_CHK(ierr, "PetscObjectCompose");
 
@@ -1136,19 +1130,19 @@ petsc::Vec::Ptr IceModelVec::allocate_proc0_copy() const {
     ierr = VecDuplicate(v_proc0, &result);
     PISM_CHK(ierr, "VecDuplicate");
   }
-  return petsc::Vec::Ptr(new petsc::Vec(result));
+  return std::shared_ptr<petsc::Vec>(new petsc::Vec(result));
 }
 
-void IceModelVec::put_on_proc0(Vec parallel, Vec onp0) const {
+void IceModelVec::put_on_proc0(petsc::Vec &parallel, petsc::Vec &onp0) const {
   PetscErrorCode ierr = 0;
   VecScatter scatter_to_zero = NULL;
   Vec natural_work = NULL;
 
-  ierr = PetscObjectQuery((PetscObject)m_da->get(), "scatter_to_zero",
+  ierr = PetscObjectQuery((PetscObject)m_impl->da->get(), "scatter_to_zero",
                           (PetscObject*)&scatter_to_zero);
   PISM_CHK(ierr, "PetscObjectQuery");
 
-  ierr = PetscObjectQuery((PetscObject)m_da->get(), "natural_work",
+  ierr = PetscObjectQuery((PetscObject)m_impl->da->get(), "natural_work",
                           (PetscObject*)&natural_work);
   PISM_CHK(ierr, "PetscObjectQuery");
 
@@ -1156,10 +1150,10 @@ void IceModelVec::put_on_proc0(Vec parallel, Vec onp0) const {
     throw RuntimeError(PISM_ERROR_LOCATION, "call allocate_proc0_copy() before calling put_on_proc0");
   }
 
-  ierr = DMDAGlobalToNaturalBegin(*m_da, parallel, INSERT_VALUES, natural_work);
+  ierr = DMDAGlobalToNaturalBegin(*m_impl->da, parallel, INSERT_VALUES, natural_work);
   PISM_CHK(ierr, "DMDAGlobalToNaturalBegin");
 
-  ierr = DMDAGlobalToNaturalEnd(*m_da, parallel, INSERT_VALUES, natural_work);
+  ierr = DMDAGlobalToNaturalEnd(*m_impl->da, parallel, INSERT_VALUES, natural_work);
   PISM_CHK(ierr, "DMDAGlobalToNaturalEnd");
 
   ierr = VecScatterBegin(scatter_to_zero, natural_work, onp0,
@@ -1173,26 +1167,26 @@ void IceModelVec::put_on_proc0(Vec parallel, Vec onp0) const {
 
 
 //! Puts a local IceModelVec2S on processor 0.
-void IceModelVec::put_on_proc0(Vec onp0) const {
-  if (m_has_ghosts) {
-    petsc::TemporaryGlobalVec tmp(m_da);
-    this->copy_to_vec(m_da, tmp);
+void IceModelVec::put_on_proc0(petsc::Vec &onp0) const {
+  if (m_impl->ghosted) {
+    petsc::TemporaryGlobalVec tmp(m_impl->da);
+    this->copy_to_vec(m_impl->da, tmp);
     put_on_proc0(tmp, onp0);
   } else {
-    put_on_proc0(m_v, onp0);
+    put_on_proc0(m_impl->v, onp0);
   }
 }
 
-void IceModelVec::get_from_proc0(Vec onp0, Vec parallel) {
+void IceModelVec::get_from_proc0(petsc::Vec &onp0, petsc::Vec &parallel) {
   PetscErrorCode ierr;
 
   VecScatter scatter_to_zero = NULL;
   Vec natural_work = NULL;
-  ierr = PetscObjectQuery((PetscObject)m_da->get(), "scatter_to_zero",
+  ierr = PetscObjectQuery((PetscObject)m_impl->da->get(), "scatter_to_zero",
                           (PetscObject*)&scatter_to_zero);
   PISM_CHK(ierr, "PetscObjectQuery");
 
-  ierr = PetscObjectQuery((PetscObject)m_da->get(), "natural_work",
+  ierr = PetscObjectQuery((PetscObject)m_impl->da->get(), "natural_work",
                           (PetscObject*)&natural_work);
   PISM_CHK(ierr, "PetscObjectQuery");
 
@@ -1208,26 +1202,86 @@ void IceModelVec::get_from_proc0(Vec onp0, Vec parallel) {
                        INSERT_VALUES, SCATTER_REVERSE);
   PISM_CHK(ierr, "VecScatterEnd");
 
-  ierr = DMDANaturalToGlobalBegin(*m_da, natural_work, INSERT_VALUES, parallel);
+  ierr = DMDANaturalToGlobalBegin(*m_impl->da, natural_work, INSERT_VALUES, parallel);
   PISM_CHK(ierr, "DMDANaturalToGlobalBegin");
 
-  ierr = DMDANaturalToGlobalEnd(*m_da, natural_work, INSERT_VALUES, parallel);
+  ierr = DMDANaturalToGlobalEnd(*m_impl->da, natural_work, INSERT_VALUES, parallel);
   PISM_CHK(ierr, "DMDANaturalToGlobalEnd");
 }
 
 //! Gets a local IceModelVec2 from processor 0.
-void IceModelVec::get_from_proc0(Vec onp0) {
-  if (m_has_ghosts) {
-    petsc::TemporaryGlobalVec tmp(m_da);
+void IceModelVec::get_from_proc0(petsc::Vec &onp0) {
+  if (m_impl->ghosted) {
+    petsc::TemporaryGlobalVec tmp(m_impl->da);
     get_from_proc0(onp0, tmp);
     this->copy_from_vec(tmp);
   } else {
-    get_from_proc0(onp0, m_v);
+    get_from_proc0(onp0, m_impl->v);
   }
   inc_state_counter();          // mark as modified
 }
 
-void convert_vec(Vec v, units::System::Ptr system,
+/*!
+ * Compute a checksum of a vector.
+ *
+ * The result depends on the number of processors used.
+ *
+ * We assume that sizeof(double) == 2 * sizeof(uint32_t), i.e. double uses 64 bits.
+ */
+uint64_t IceModelVec::fletcher64() const {
+  MPI_Status mpi_stat;
+  const int checksum_tag = 42;
+
+  MPI_Comm com = m_impl->grid->ctx()->com();
+
+  int rank = 0;
+  MPI_Comm_rank(com, &rank);
+
+  int comm_size = 0;
+  MPI_Comm_size(com, &comm_size);
+
+  PetscInt local_size = 0;
+  PetscErrorCode ierr = VecGetLocalSize(m_impl->v, &local_size); PISM_CHK(ierr, "VecGetLocalSize");
+  uint64_t sum = 0;
+  {
+    petsc::VecArray v(m_impl->v);
+    // compute checksums for local patches on all ranks
+    sum = pism::fletcher64((uint32_t*)v.get(), local_size * 2);
+  }
+
+  if (rank == 0) {
+    std::vector<uint64_t> sums(comm_size);
+
+    // gather checksums of patches on rank 0
+    sums[0] = sum;
+    for (int r = 1; r < comm_size; ++r) {
+      MPI_Recv(&sums[r], 1, MPI_UINT64_T, r, checksum_tag, com, &mpi_stat);
+    }
+
+    // compute the checksum of checksums
+    sum = pism::fletcher64((uint32_t*)sums.data(), comm_size * 2);
+  } else {
+    MPI_Send(&sum, 1, MPI_UINT64_T, 0, checksum_tag, com);
+  }
+
+  // broadcast to all ranks
+  MPI_Bcast(&sum, 1, MPI_UINT64_T, 0, com);
+
+  return sum;
+}
+
+std::string IceModelVec::checksum() const {
+  // unsigned long long is supposed to be at least 64 bit long
+  return pism::printf("%016llx", (unsigned long long int)this->fletcher64());
+}
+
+void IceModelVec::print_checksum(const char *prefix) const {
+  auto log = m_impl->grid->ctx()->log();
+
+  log->message(1, "%s%s: %s\n", prefix, m_impl->name.c_str(), checksum().c_str());
+}
+
+void convert_vec(petsc::Vec &v, units::System::Ptr system,
                  const std::string &spec1, const std::string &spec2) {
   units::Converter c(system, spec1, spec2);
 
@@ -1246,5 +1300,95 @@ bool set_contains(const std::set<std::string> &S, const IceModelVec &field) {
   // requested.
   return member(field.get_name(), S);
 }
+
+void staggered_to_regular(const IceModelVec2CellType &cell_type,
+                          const IceModelVec2Stag &input,
+                          bool include_floating_ice,
+                          IceModelVec2S &result) {
+
+  using mask::grounded_ice;
+  using mask::icy;
+
+  IceGrid::ConstPtr grid = result.grid();
+
+  IceModelVec::AccessList list{&cell_type, &input, &result};
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (cell_type.grounded_ice(i, j) or
+        (include_floating_ice and cell_type.icy(i, j))) {
+      auto M = cell_type.int_star(i, j);
+      auto F = input.star(i, j);
+
+      int n = 0, e = 0, s = 0, w = 0;
+      if (include_floating_ice) {
+        n = icy(M.n);
+        e = icy(M.e);
+        s = icy(M.s);
+        w = icy(M.w);
+      } else {
+        n = grounded_ice(M.n);
+        e = grounded_ice(M.e);
+        s = grounded_ice(M.s);
+        w = grounded_ice(M.w);
+      }
+
+      if (n + e + s + w > 0) {
+        result(i, j) = (n * F.n + e * F.e + s * F.s + w * F.w) / (n + e + s + w);
+      } else {
+        result(i, j) = 0.0;
+      }
+    } else {
+      result(i, j) = 0.0;
+    }
+  }
+}
+
+void staggered_to_regular(const IceModelVec2CellType &cell_type,
+                          const IceModelVec2Stag &input,
+                          bool include_floating_ice,
+                          IceModelVec2V &result) {
+
+  using mask::grounded_ice;
+  using mask::icy;
+
+  IceGrid::ConstPtr grid = result.grid();
+
+  IceModelVec::AccessList list{&cell_type, &input, &result};
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    auto M = cell_type.int_star(i, j);
+    auto F = input.star(i, j);
+
+    int n = 0, e = 0, s = 0, w = 0;
+    if (include_floating_ice) {
+      n = icy(M.n);
+      e = icy(M.e);
+      s = icy(M.s);
+      w = icy(M.w);
+    } else {
+      n = grounded_ice(M.n);
+      e = grounded_ice(M.e);
+      s = grounded_ice(M.s);
+      w = grounded_ice(M.w);
+    }
+
+    if (e + w > 0) {
+      result(i, j).u = (e * F.e + w * F.w) / (e + w);
+    } else {
+      result(i, j).u = 0.0;
+    }
+
+    if (n + s > 0) {
+      result(i, j).v = (n * F.n + s * F.s) / (n + s);
+    } else {
+      result(i, j).v = 0.0;
+    }
+  }
+}
+
 
 } // end of namespace pism

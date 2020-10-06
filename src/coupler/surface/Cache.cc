@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,6 +27,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace surface {
@@ -35,7 +36,7 @@ Cache::Cache(IceGrid::ConstPtr grid, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(grid, in) {
 
   m_next_update_time = m_grid->ctx()->time()->current();
-  m_update_interval_years = m_config->get_double("surface.cache.update_interval", "years");
+  m_update_interval_years = m_config->get_number("surface.cache.update_interval", "years");
 
   if (m_update_interval_years <= 0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -48,6 +49,9 @@ Cache::Cache(IceGrid::ConstPtr grid, std::shared_ptr<SurfaceModel> in)
     m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
     m_layer_mass            = allocate_layer_mass(grid);
     m_layer_thickness       = allocate_layer_thickness(grid);
+    m_accumulation          = allocate_accumulation(grid);
+    m_melt                  = allocate_melt(grid);
+    m_runoff                = allocate_runoff(grid);
   }
 }
 
@@ -87,6 +91,9 @@ void Cache::update_impl(const Geometry &geometry, double t, double dt) {
     m_liquid_water_fraction->copy_from(m_input_model->liquid_water_fraction());
     m_layer_mass->copy_from(m_input_model->layer_mass());
     m_layer_thickness->copy_from(m_input_model->layer_thickness());
+    m_accumulation->copy_from(m_input_model->accumulation());
+    m_melt->copy_from(m_input_model->melt());
+    m_runoff->copy_from(m_input_model->runoff());
   }
 }
 
@@ -133,6 +140,18 @@ const IceModelVec2S &Cache::liquid_water_fraction_impl() const {
 
 const IceModelVec2S &Cache::layer_mass_impl() const {
   return *m_layer_mass;
+}
+
+const IceModelVec2S& Cache::accumulation_impl() const {
+  return *m_accumulation;
+}
+
+const IceModelVec2S& Cache::melt_impl() const {
+  return *m_melt;
+}
+
+const IceModelVec2S& Cache::runoff_impl() const {
+  return *m_runoff;
 }
 
 } // end of namespace surface

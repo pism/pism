@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from sys import exit
 
 # Import all necessary modules here so that if it fails, it fails early.
@@ -248,6 +248,7 @@ def final_corrections(filename):
     mask_var[:] = mask
 
     nc.close()
+
 
 if __name__ == "__main__":
 

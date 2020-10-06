@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # @package vfnow
 # \author Ed Bueler and Constantine Khroulev, University of Alaska Fairbanks, USA
@@ -42,7 +42,7 @@ class PISMVerificationTest:
     Mz = [31] * N
     # no bedrock by default
     Mbz = [1] * N
-    # extra options (such as -y, -ys, -ssa_rtol)
+    # extra options (such as -y, -ys, -ssafd_picard_rtol)
     opts = ""
     executable = "pismv"
 
@@ -199,7 +199,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     I.Mx = [5] * 5
     I.My = [49, 193, 769, 3073, 12289]
     I.executable = "ssa_testi"
-    I.opts = "-ssa_method fd -ssa_rtol %1.e -ssafd_ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
+    I.opts = "-ssa_method fd -ssafd_picard_rtol %1.e -ssafd_ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
     tests['I'] = I
     # J
     J = PISMVerificationTest()
@@ -241,7 +241,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     M.Mx = [31, 61, 91, 121, 181]
     M.My = M.Mx
     M.Mz = [11] * 5
-    M.opts = "-ssa_rtol %1.e -ssafd_ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
+    M.opts = "-ssafd_picard_rtol %1.e -ssafd_ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
     tests['M'] = M
     # O
     O = PISMVerificationTest()
@@ -298,10 +298,11 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     I.path = "(lots of levels)"
     I.My = [51, 101, 151, 201, 401, 601, 801, 1001, 1501, 2001, 2501, 3073]
     I.Mx = [5] * len(I.My)
-    I.opts = "-ssa_method fd -ssa_rtol %1.e -ssafd_ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
+    I.opts = "-ssa_method fd -ssafd_picard_rtol %1.e -ssafd_ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
     tests['I_manual'] = I
 
     return tests
+
 
 from argparse import ArgumentParser
 
@@ -352,7 +353,7 @@ tests = define_refinement_paths(KSPRTOL, SSARTOL)
 
 manual_tests = ["B_manual", "G_manual", "K_manual", "I_manual"]
 if options.manual:
-    print("# VFNOW.PY: test(s) %s, using '%s...'\n" % (manual_tests, exec_prefix) + \
+    print("# VFNOW.PY: test(s) %s, using '%s...'\n" % (manual_tests, exec_prefix) +
           "#           and ignoring options -t and -l")
     for test in manual_tests:
         N = len(tests[test].Mx)

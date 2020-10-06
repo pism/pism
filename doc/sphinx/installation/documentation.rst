@@ -13,7 +13,7 @@ evolve together. These tools are required:
 
    * - Tool
      - Comment
-   * - Sphinx_
+   * - Sphinx_ version 3.0 or newer
      - needed to rebuild this Manual
    * - sphinxcontrib.bibtex_
      - needed to rebuild this Manual and the documentation of PISM's Python bindings
@@ -25,10 +25,27 @@ evolve together. These tools are required:
      - needed to rebuild the documentation of PISM's Python bindings
    * - Latexmk_
      - needed to rebuild the PDF version of this Manual
+   * - ``ncgen`` from NetCDF_
+     - needed to rebuild this Manual
+   * - netcdf4-python_
+     - needed to rebuild this Manual
    * - doxygen_
      - required to rebuild the |pism-browser|
    * - graphviz_
      - required to rebuild the |pism-browser|
+
+
+On a Debian-based system you may be able to install these by running
+
+.. literalinclude:: code/install_docu_libraries.sh
+   :language: bash
+   :lines: 3-
+
+.. only:: html
+
+   Click :download:`here <code/install_docu_libraries.sh>` to download this file.
+
+(You may need to change this command to match your package system.)
 
 Note that if you install Sphinx using MacPorts_, you will install a version that
 corresponds to your Python version, and its executables will have names with suffixes

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -113,8 +113,8 @@ void IceModel::print_summary(bool tempAndAge) {
   // get maximum diffusivity
   double max_diffusivity = m_stress_balance->max_diffusivity();
   // get volumes in m^3 and areas in m^2
-  double volume = ice_volume(0.0);
-  double area = ice_area(0.0);
+  double volume = ice_volume(m_geometry, 0.0);
+  double area = ice_area(m_geometry, 0.0);
 
   double meltfrac = 0.0;
   if (tempAndAge or m_log->get_threshold() >= 3) {
@@ -167,11 +167,11 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
                                 double delta_t,
                                 double volume,  double area,
                                 double /* meltfrac */,  double max_diffusivity) {
-  const bool do_energy = m_config->get_boolean("energy.enabled");
-  const int log10scalevol  = static_cast<int>(m_config->get_double("output.runtime.volume_scale_factor_log10")),
-            log10scalearea = static_cast<int>(m_config->get_double("output.runtime.area_scale_factor_log10"));
+  const bool do_energy = m_config->get_flag("energy.enabled");
+  const int log10scalevol  = static_cast<int>(m_config->get_number("output.runtime.volume_scale_factor_log10")),
+            log10scalearea = static_cast<int>(m_config->get_number("output.runtime.area_scale_factor_log10"));
   const std::string time_units = m_config->get_string("output.runtime.time_unit_name");
-  const bool use_calendar = m_config->get_boolean("output.runtime.time_use_calendar");
+  const bool use_calendar = m_config->get_flag("output.runtime.time_use_calendar");
 
   const double scalevol  = pow(10.0, static_cast<double>(log10scalevol)),
                scalearea = pow(10.0, static_cast<double>(log10scalearea));

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 PISM Authors
+// Copyright (C) 2012-2019 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -85,16 +85,15 @@ public:
   virtual ~Routing();
 
   const IceModelVec2S& subglacial_water_pressure() const;
-
   const IceModelVec2Stag& velocity_staggered() const;
 
 protected:
-  virtual void restart_impl(const PIO &input_file, int record);
+  virtual void restart_impl(const File &input_file, int record);
 
-  virtual void bootstrap_impl(const PIO &input_file,
+  virtual void bootstrap_impl(const File &input_file,
                               const IceModelVec2S &ice_thickness);
 
-  virtual void initialize_impl(const IceModelVec2S &W_till,
+  virtual void init_impl(const IceModelVec2S &W_till,
                                const IceModelVec2S &W,
                                const IceModelVec2S &P);
 
@@ -103,24 +102,26 @@ protected:
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
   virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   double max_timestep_W_diff(double KW_max) const;
   double max_timestep_W_cfl() const;
 protected:
 
-  // this model's auxiliary variables
-  IceModelVec2Stag m_V;
+  // edge-centered (staggered) advection flux
+  IceModelVec2Stag m_Qstag;
+
+  IceModelVec2Stag m_Qstag_average;
+
+  // edge-centered (staggered) water velocity
+  IceModelVec2Stag m_Vstag;
 
   // edge-centered (staggered) W values (averaged from regular)
   IceModelVec2Stag m_Wstag;
 
   // edge-centered (staggered) values of nonlinear conductivity
-  IceModelVec2Stag m_K;
-
-  // edge-centered (staggered) advection fluxes
-  IceModelVec2Stag m_Q;
+  IceModelVec2Stag m_Kstag;
 
   // work space
   IceModelVec2S m_Wnew, m_Wtillnew;
@@ -128,16 +129,14 @@ protected:
   // ghosted temporary storage; modified in compute_conductivity and compute_velocity
   mutable IceModelVec2S m_R;
 
+  double m_dx, m_dy;
+  double m_rg;
+
+  IceModelVec2S m_bottom_surface;
+
   void water_thickness_staggered(const IceModelVec2S &W,
                                  const IceModelVec2CellType &mask,
                                  IceModelVec2Stag &result);
-
-  void compute_hydraulic_potential(const IceModelVec2S &W,
-                                   const IceModelVec2S &P,
-                                   const IceModelVec2S &P_overburden,
-                                   const IceModelVec2S &bed,
-                                   const IceModelVec2CellType &mask,
-                                   IceModelVec2S &result) const;
 
   void compute_conductivity(const IceModelVec2Stag &W,
                             const IceModelVec2S &P,
@@ -163,23 +162,22 @@ protected:
                             const IceModelVec2Stag &Q,
                             IceModelVec2S &result);
   void update_W(double dt,
-                const IceModelVec2S &input_rate,
-                const IceModelVec2S &W,
+                const IceModelVec2S    &surface_input_rate,
+                const IceModelVec2S    &basal_melt_rate,
+                const IceModelVec2S    &W,
                 const IceModelVec2Stag &Wstag,
-                const IceModelVec2S &Wtill,
-                const IceModelVec2S &Wtill_new,
+                const IceModelVec2S    &Wtill,
+                const IceModelVec2S    &Wtill_new,
                 const IceModelVec2Stag &K,
                 const IceModelVec2Stag &Q,
                 IceModelVec2S &W_new);
 
-  void update_Wtill(double hdt,
+  void update_Wtill(double dt,
                     const IceModelVec2S &Wtill,
-                    const IceModelVec2S &input_rate,
+                    const IceModelVec2S &surface_input_rate,
+                    const IceModelVec2S &basal_melt_rate,
                     IceModelVec2S &Wtill_new);
-protected:
-  double m_dx, m_dy;
 
-  double m_rg;
 private:
   virtual void initialization_message() const;
 };

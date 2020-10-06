@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from pylab import close, figure, clf, hold, plot, xlabel, ylabel, xticks, yticks, axis, legend, title, grid, show, savefig
 from numpy import array, polyfit, polyval, log10, floor, ceil, unique
@@ -170,6 +170,7 @@ class Plotter:
                           test_name, "relative velocity errors")
                 self.plot('dx', ["maximum_u", "average_u"],
                           test_name, "velocity errors")
+
 
 from argparse import ArgumentParser
 parser = ArgumentParser()

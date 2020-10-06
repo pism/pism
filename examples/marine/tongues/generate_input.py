@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from PISMNC import PISMDataset as NC
 import numpy as np
 import argparse
@@ -25,6 +25,7 @@ def tongue(xx, x0, width):
     result = np.zeros_like(xx)
     result[:, x0:x0 + width] = 100.0
     return result
+
 
 thk = np.zeros_like(xx)
 

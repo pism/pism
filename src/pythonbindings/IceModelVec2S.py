@@ -1,11 +1,13 @@
-def __getitem__(self,*args):
-    return self.getitem(args[0][0],args[0][1])
+def __getitem__(self, *args):
+    return self.getitem(args[0][0], args[0][1])
 
-def __setitem__(self,*args):
-    if(len(args)==2):
-        self.setitem(args[0][0],args[0][1],args[1])
+
+def __setitem__(self, *args):
+    if(len(args) == 2):
+        self.setitem(args[0][0], args[0][1], args[1])
     else:
-        raise ValueError("__setitem__ requires 2 arguments; received %d" % len(args));
+        raise ValueError("__setitem__ requires 2 arguments; received %d" % len(args))
+
 
 def imshow(self, **kwargs):
     "Plot a 2D field using matplotlib.pylab.imshow()."

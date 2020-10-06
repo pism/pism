@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -33,11 +33,11 @@ static char help[] =
 #include "pism/util/Logger.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/io/PIO.hh"
+#include "pism/util/io/File.hh"
 
 using namespace pism;
 
-Context::Ptr pisms_context(MPI_Comm com) {
+std::shared_ptr<Context> pisms_context(MPI_Comm com) {
   // unit system
   units::System::Ptr sys(new units::System);
 
@@ -48,8 +48,8 @@ Context::Ptr pisms_context(MPI_Comm com) {
   Config::Ptr config = config_from_options(com, *logger, sys);
 
   config->set_string("time.calendar", "none");
-  config->set_double("grid.Lx", 750e3);
-  config->set_double("grid.Ly", 750e3);
+  config->set_number("grid.Lx", 750e3);
+  config->set_number("grid.Ly", 750e3);
   config->set_string("grid.periodicity", "none");
   config->set_string("grid.registration", "corner");
   config->set_string("stress_balance.sia.flow_law", "pb");
@@ -62,14 +62,19 @@ Context::Ptr pisms_context(MPI_Comm com) {
 
   EnthalpyConverter::Ptr EC(new EnthalpyConverter(*config));
 
-  return Context::Ptr(new Context(com, sys, config, EC, time, logger, "pisms"));
+  return std::shared_ptr<Context>(new Context(com, sys, config, EC, time, logger, "pisms"));
 }
 
-IceGrid::Ptr pisms_grid(Context::Ptr ctx) {
-  options::String input_file("-i", "Specifies a PISM input file");
-  options::forbidden("-bootstrap");
+IceGrid::Ptr pisms_grid(std::shared_ptr<Context> ctx) {
+  auto config = ctx->config();
 
-  if (input_file.is_set()) {
+  auto input_file = config->get_string("input.file");
+
+  if (config->get_flag("input.bootstrap")) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "pisms does not support bootstrapping");
+  }
+
+  if (not input_file.empty()) {
     GridRegistration r = string_to_registration(ctx->config()->get_string("grid.registration"));
 
     // get grid from a PISM input file
@@ -95,7 +100,7 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
 
   try {
-    Context::Ptr ctx = pisms_context(com);
+    std::shared_ptr<Context> ctx = pisms_context(com);
     Logger::Ptr log = ctx->log();
 
     std::string usage =

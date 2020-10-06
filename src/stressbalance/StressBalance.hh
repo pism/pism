@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -28,6 +28,10 @@ namespace pism {
 class IceModelVec2CellType;
 class Geometry;
 
+namespace rheology {
+class FlowLaw;
+} // end of namespace rheology
+
 //! Stress balance models and related diagnostics.
 namespace stressbalance {
 
@@ -42,12 +46,12 @@ public:
   bool new_bed_elevation;
 
   const IceModelVec2S *basal_melt_rate;
-  const IceModelVec2S *basal_yield_stress; // NOT USED YET
+  const IceModelVec2S *basal_yield_stress;
   const IceModelVec2S *melange_back_pressure;
   const IceModelVec2S *fracture_density;
 
-  const IceModelVec3  *enthalpy; // NOT USED YET
-  const IceModelVec3  *age;      // NOT USED YET
+  const IceModelVec3  *enthalpy;
+  const IceModelVec3  *age;
 
   const IceModelVec2Int *bc_mask;
   const IceModelVec2V *bc_values;
@@ -56,6 +60,8 @@ public:
   const IceModelVec2Int *no_model_mask;
   const IceModelVec2S *no_model_ice_thickness;
   const IceModelVec2S *no_model_surface_elevation;
+
+  void dump(const char *filename) const;
 };
 
 //! The class defining PISM's interface to the shallow stress balance code.
@@ -106,13 +112,6 @@ public:
 
   const IceModelVec3& volumetric_strain_heating() const;
 
-  // for the calving, etc.:
-
-  //! \brief Get the components of the 2D deviatoric stress tensor.
-  void compute_2D_stresses(const IceModelVec2V &velocity,
-                           const IceModelVec2CellType &mask,
-                           IceModelVec2 &result) const;
-
   //! \brief Produce a report string for the standard output.
   std::string stdout_report() const;
 
@@ -125,8 +124,8 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const File &output) const;
+  virtual void write_model_state_impl(const File &output) const;
 
   virtual void compute_vertical_velocity(const IceModelVec2CellType &mask,
                                          const IceModelVec3 &u,
@@ -150,6 +149,12 @@ std::shared_ptr<StressBalance> create(const std::string &model_name,
 void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
                                        const IceModelVec2CellType &mask,
                                        IceModelVec2 &result);
+
+void compute_2D_stresses(const rheology::FlowLaw &flow_law,
+                         const IceModelVec2V &velocity,
+                         const IceModelVec2S &hardness,
+                         const IceModelVec2CellType &cell_type,
+                         IceModelVec2 &result);
 
 } // end of namespace stressbalance
 } // end of namespace pism

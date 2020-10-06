@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # import modules:
 
 # @package pism_config_editor
@@ -218,6 +218,7 @@ def save(dict, changes, default_filename, default_varname):
     nc.close()
     return True
 
+
 from optparse import OptionParser
 
 parser = OptionParser()
@@ -249,6 +250,7 @@ print("PISM config file editor: using attributes from '%s' in '%s'." % (varname,
 
 def complete(text, state):
     return list_completer(text, state, list(dict.keys()))
+
 
 readline.parse_and_bind("tab: complete")
 readline.set_completer(complete)
