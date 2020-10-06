@@ -149,9 +149,9 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr grid)
 
   auto delta_file = m_config->get_string("basal_yield_stress.mohr_coulomb.delta.file");
 
-  InputOptions opts = process_input_options(m_grid->com, m_config);
+  //InputOptions opts = process_input_options(m_grid->com, m_config);
 
-  const double till_phi_default = m_config->get_number("basal_yield_stress.mohr_coulomb.till_phi_default");
+  //const double till_phi_default = m_config->get_number("basal_yield_stress.mohr_coulomb.till_phi_default");
 
   if (not delta_file.empty()) {
     ForcingOptions opt(*m_grid->ctx(), "basal_yield_stress.mohr_coulomb.delta");
@@ -240,7 +240,8 @@ void MohrCoulombYieldStress::bootstrap_impl(const File &input_file,
 
     } else {
 
-      m_log->message(2, "* No file set to read target surface elevation from... take 's'\n", input_file.filename().c_str());
+      m_log->message(2, "* No file set to read target surface elevation from... take '%s'\n", 
+                           input_file.filename().c_str());
       m_usurf.regrid(input_file, CRITICAL);
       m_target_usurf.copy_from(m_usurf); 
     }
@@ -382,8 +383,8 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
 
     //double t_current = m_grid->ctx()->time()->current();
 
-    double dt_years = t - m_last_time,
-           dt_inverse = t - m_last_inverse_time;
+    //double dt_years = t - m_last_time,
+    double dt_inverse = t - m_last_inverse_time;
 
     if (dt_inverse > dt_phi_inv) {
 
