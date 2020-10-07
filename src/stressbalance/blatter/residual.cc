@@ -172,14 +172,17 @@ void Blatter::residual_surface(const fem::Q1Element3 &element,
  */
 void Blatter::residual_lateral(const fem::Q1Element3 &element,
                                const fem::Q1Element3Face &face,
+                               const double *surface_nodal,
                                const double *z_nodal,
                                const double *sl_nodal,
                                Vector2 *residual) {
   double
     *z         = m_work[0],
-    *sea_level = m_work[1];
+    *s         = m_work[1],
+    *sea_level = m_work[2];
 
   // compute physical coordinates of quadrature points on this face
+  face.evaluate(surface_nodal, s);
   face.evaluate(z_nodal, z);
   face.evaluate(sl_nodal, sea_level);
 
@@ -189,13 +192,17 @@ void Blatter::residual_lateral(const fem::Q1Element3 &element,
     auto N3 = face.normal(q);
     Vector2 N = {N3.x, N3.y};
 
-    double p = m_rho_ocean_g * std::max(sea_level[q] - z[q], 0.0);
+    double
+      ice_depth   = s[q] - z[q],
+      p_ice       = m_rho_ice_g *   ice_depth,
+      water_depth = std::max(sea_level[q] - z[q], 0.0),
+      p_ocean     = m_rho_ocean_g * water_depth;
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      residual[t] += W * psi * p * N;
+      residual[t] += W * psi * (p_ice - p_ocean) * N;
     }
   }
 }
@@ -383,7 +390,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
                                        &m_face100 : &m_face4);
           face->reset(f, z);
 
-          residual_lateral(element, *face, z, sea_level, R_nodal);
+          residual_lateral(element, *face, surface_elevation, z, sea_level, R_nodal);
         } // end of the loop over element faces
 
         // top boundary (verification tests only)

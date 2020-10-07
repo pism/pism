@@ -165,6 +165,7 @@ protected:
 
   virtual void residual_lateral(const fem::Q1Element3 &element,
                                 const fem::Q1Element3Face &face,
+                                const double *surface_nodal,
                                 const double *z_nodal,
                                 const double *sl_nodal,
                                 Vector2 *residual);
