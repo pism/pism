@@ -8,6 +8,9 @@ pism_class(pism::stressbalance::BlatterTestXY,
 pism_class(pism::stressbalance::BlatterTestXZ,
            "pism/stressbalance/blatter/verification/BlatterTestXZ.hh")
 
+pism_class(pism::stressbalance::BlatterTestCFBC,
+           "pism/stressbalance/blatter/verification/BlatterTestCFBC.hh")
+
 pism_class(pism::stressbalance::BlatterISMIPHOM,
            "pism/stressbalance/blatter/ismip-hom/BlatterISMIPHOM.hh")
 

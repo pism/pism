@@ -450,7 +450,221 @@ class TestXZ(TestCase):
 
         show(f)
 
+class TestCFBC(TestCase):
+    """Constant viscosity 2D (x-z) verification test checking the implementation of CFBC.
+
+    u = 1/4 * x * z * g * (rho_w - rho_i)
+    v = 0
+
+    on a square 0 <= x <= 1, -1 <= z <= 0 with sea level at z = 0 (fully submerged).
+
+    Dirichet BC at x = 0, periodic in the Y direction, lateral BC at x = 1. No basal drag.
+
+    """
+    def setUp(self):
+        "Set PETSc options"
+
+        self.H = 1e3
+
+        self.opt = PISM.PETSc.Options()
+
+        self.opts = {"-snes_monitor": "",
+                     "-pc_type": "mg"
+                     }
+
+        for k, v in self.opts.items():
+            self.opt.setValue(k, v)
+
+        # the magnitude of the regularization constant affects the accuracy near the
+        # "dome"
+        config.set_number("flow_law.Schoof_regularizing_velocity", 1e-5)
+
+        # constant viscocity
+        n = 1.0
+        config.set_number("stress_balance.blatter.Glen_exponent", n)
+
+        config.set_number("flow_law.isothermal_Glen.ice_softness",
+                          PISM.util.convert(1e-6, "Pa-3 year-1", "Pa-3 s-1"))
+        A = config.get_number("flow_law.isothermal_Glen.ice_softness")
+        self.B = 1.0 / A              # note that n = 1
+
+    def tearDown(self):
+        "Clear PETSc options and configuration parameters"
+
+        # restore the default Glen exponent
+        config.set_number("stress_balance.blatter.Glen_exponent", 3.0)
+
+        for k, v in self.opts.items():
+            self.opt.delValue(k)
+
+    def inputs(self, N):
+        P = PISM.GridParameters(config)
+
+        # Domain: [0, 1] * [-dx, dx] * [-1, 0]
+        Lx = 1e3
+        Mx = N
+        dx = (2 * Lx) / (Mx - 1)
+
+        P.Lx = Lx
+        P.Mx = int(N)
+        P.x0 = Lx
+
+        P.Ly = dx
+        P.My = 3
+        P.y0 = 0.0
+
+        # this vertical grid is used to store ice enthalpy, not ice velocity, so 2 levels
+        # is enough
+        P.z = PISM.DoubleVector([0.0, self.H])
+        P.registration = PISM.CELL_CORNER
+        P.periodicity = PISM.Y_PERIODIC
+        P.ownership_ranges_from_options(ctx.size)
+
+        grid = PISM.IceGrid(ctx.ctx, P)
+
+        geometry = PISM.Geometry(grid)
+
+        enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
+        # initialize enthalpy (the value used here is irrelevant)
+        enthalpy.set(1e5)
+
+        yield_stress = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
+
+        yield_stress.set(0.0)
+
+        geometry.bed_elevation.set(-self.H)
+        geometry.ice_thickness.set(self.H)
+        geometry.ice_surface_elevation.set(0.0)
+        geometry.cell_type.set(PISM.MASK_FLOATING)
+        geometry.sea_level_elevation.set(0.0)
+
+        # do *not* call geometry.ensure_consistency(): we want to keep surface elevation
+        # at the sea levels
+
+        return geometry, enthalpy, yield_stress
+
+    def exact_solution(self, grid, bed, Z):
+        "Returns an array with the exact solution"
+        exact = PISM.IceModelVec3(grid, "exact", PISM.WITHOUT_GHOSTS, Z)
+        exact.set_attrs("exact", "x-component of the exact solution", "m / s", "m / year", "", 0)
+
+        rho_i = config.get_number("constants.ice.density")
+        rho_w = config.get_number("constants.sea_water.density")
+        g = config.get_number("constants.standard_gravity")
+
+        u = np.zeros_like(Z)
+        with PISM.vec.Access([bed, exact]):
+            for (i, j) in grid.points():
+                x = grid.x(i)
+                for k, z_sigma in enumerate(Z):
+                    z = bed[i, j] + self.H * z_sigma
+                    u[k] = 1.0 / (2.0 * self.B) * x * z * g * (rho_w - rho_i)
+                exact.set_column(i, j, u)
+
+        return exact
+
+    def error_norm(self, N, n_mg):
+        "Return the infinity norm of errors for the u component."
+        geometry, enthalpy, yield_stress = self.inputs(N)
+
+        # set the number of multigrid levels
+        self.opt.setValue("-pc_mg_levels", n_mg)
+
+        grid = enthalpy.grid()
+
+        blatter_Mz = N
+        # do not pad the vertical grid
+        n_levels = 0
+        coarsening_factor = 4
+
+        model = PISM.BlatterTestCFBC(grid, blatter_Mz, n_levels, coarsening_factor)
+
+        model.init()
+
+        inputs = PISM.StressBalanceInputs()
+
+        inputs.geometry = geometry
+        inputs.basal_yield_stress = yield_stress
+        inputs.enthalpy = enthalpy
+
+        # run the solver
+        model.update(inputs, True)
+
+        u_model_z = model.velocity_u_sigma().levels()
+
+        u_model = PISM.IceModelVec3(grid, "u_model", PISM.WITHOUT_GHOSTS, u_model_z)
+        u_model.set_attrs("model", "modeled velocity", "m / s", "m / year", "", 0)
+        u_model.copy_from(model.velocity_u_sigma())
+
+        u_model.dump("vel-{}-model.nc".format(N))
+
+        u_exact = self.exact_solution(grid, geometry.bed_elevation, u_model_z)
+
+        u_exact.dump("vel-{}-exact.nc".format(N))
+
+        # compute the error
+        u_error = PISM.IceModelVec3(grid, "error", PISM.WITHOUT_GHOSTS, u_model_z)
+        u_error.copy_from(u_exact)
+        u_error.add(-1.0, model.velocity_u_sigma())
+
+        u_error.dump("vel-{}-error.nc".format(N))
+
+        return u_error.norm(PISM.PETSc.NormType.NORM_INFINITY)
+
+    def test(self):
+        "Test that the convergence rate for the XZ test is at least quadratic"
+
+        # refinement path
+        Ns = [11, 21]
+        # number of MG levels to use for a particular grid size, assuming the coarsening
+        # factor of 4
+        mg_levels = [1, 2]
+
+        norms = [self.error_norm(N, n_mg) for (N, n_mg) in zip(Ns, mg_levels)]
+
+        # Compute the exponent for the convergence rate
+        expt_u = expt(Ns, norms)
+
+        print("U component conv. rate: dx^{}".format(expt_u))
+
+        # The convergence rate should be close to quadratic.
+        assert expt_u >= 2.0
+
+    def plot(self):
+        Ns = [11, 21, 41, 81]
+        mg_levels = [1, 2, 3, 4]
+
+        try:
+            self.setUp()
+            norms = [self.error_norm(N, n_mg) for (N, n_mg) in zip(Ns, mg_levels)]
+        finally:
+            self.tearDown()
+
+        # the domain is 100km long and 1km high
+        dxs = 100e3 / (np.array(Ns) - 1)
+
+        p = np.polyfit(np.log(dxs), np.log(norms), 1)
+        fit = np.exp(np.polyval(p, np.log(dxs)))
+
+        from bokeh.plotting import figure, show, output_file
+
+        output_file("test-xz.html")
+        f = figure(title = "Blatter-Pattyn stress balance: verification test XZ",
+                   x_axis_type="log", y_axis_type="log", x_axis_label="dx", y_axis_label="max error")
+        f.scatter(dxs, norms)
+        f.line(dxs, norms, legend_label="max error", line_width=2)
+        f.line(dxs, fit, line_dash="dashed", line_color="red", line_width=2,
+               legend_label="O(dx^{})".format(p[0]))
+
+
+        show(f)
+
 if __name__ == "__main__":
 
-    TestXY().plot()
-    TestXZ().plot()
+    # TestXY().plot()
+    # TestXZ().plot()
+
+    t = TestCFBC()
+    t.setUp()
+    print(t.error_norm(161, 3))
+    t.tearDown()

@@ -6,6 +6,7 @@ add_library (blatter OBJECT
   util/grid_hierarchy.cc
   verification/BlatterTestXY.cc
   verification/BlatterTestXZ.cc
+  verification/BlatterTestCFBC.cc
   verification/manufactured_solutions.cc
   ismip-hom/BlatterISMIPHOM.cc
   )
