@@ -16,7 +16,6 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <sstream>              // stringstream
 #include <algorithm>            // std::sort
 
 #include "IceModel.hh"
@@ -103,12 +102,11 @@ unsigned int IceModel::skip_counter(double input_dt, double input_dt_diffusivity
 The main loop in run() approximates many physical processes.  Several of these approximations,
 including the mass continuity and temperature equations in particular, involve stability
 criteria.  This procedure builds the length of the next time step by using these criteria and
-by incorporating choices made by options (e.g. <c>-max_dt</c>) and by derived classes.
+by incorporating choices made by options (e.g. `-max_dt`) and by derived classes.
 
-@param[out] dt_result computed maximum time step
-@param[in,out] skip_counter_result time-step skipping counter
+@param[in] counter current time-step skipping counter
  */
-void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result) {
+IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
 
   const double current_time = m_time->current();
 
@@ -120,9 +118,11 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
   }
 
   // mechanisms that use a retreat rate
-  if (m_config->get_flag("geometry.front_retreat.use_cfl") and
-      (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_frontal_melt)) {
-    // at least one of front retreat mechanisms is active
+  bool front_retreat = (m_eigen_calving or m_vonmises_calving or
+                        m_hayhurst_calving or m_frontal_melt);
+  if (front_retreat and m_config->get_flag("geometry.front_retreat.use_cfl")) {
+    // at least one of front retreat mechanisms is active *and* PISM is told to use a CFL
+    // restriction
 
     IceModelVec2S &retreat_rate = *m_work2d[0];
     retreat_rate.set(0.0);
@@ -151,10 +151,9 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
   }
 
   // Always consider the maximum allowed time-step length.
-  if (m_config->get_number("time_stepping.maximum_time_step") > 0.0) {
-    restrictions.push_back(MaxTimestep(m_config->get_number("time_stepping.maximum_time_step",
-                                                            "seconds"),
-                                       "max"));
+  double max_timestep = m_config->get_number("time_stepping.maximum_time_step", "seconds");
+  if (max_timestep > 0.0) {
+    restrictions.push_back(MaxTimestep(max_timestep, "max"));
   }
 
   // Never go past the end of a run.
@@ -178,31 +177,6 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
     restrictions.push_back(max_timestep_diffusivity());
   }
 
-  // Hit multiples of X years, if requested.
-  {
-    const int timestep_hit_multiples = static_cast<int>(m_config->get_number("time_stepping.hit_multiples"));
-    if (timestep_hit_multiples > 0) {
-      const double epsilon = 1.0; // 1 second tolerance
-      double
-        next_time = m_timestep_hit_multiples_last_time;
-
-      while (m_time->increment_date(next_time, timestep_hit_multiples) <= current_time + dt_result + epsilon) {
-        next_time = m_time->increment_date(next_time, timestep_hit_multiples);
-      }
-
-      if (next_time > current_time && next_time <= current_time + dt_result + epsilon) {
-        dt_result = next_time - current_time;
-        m_timestep_hit_multiples_last_time = next_time;
-
-        std::stringstream str;
-        str << "hit multiples of " << timestep_hit_multiples << " years";
-
-        restrictions.push_back(MaxTimestep(next_time - current_time, str.str()));
-
-      }
-    }
-  }
-
   // sort time step restrictions to find the strictest one
   std::sort(restrictions.begin(), restrictions.end());
 
@@ -210,28 +184,48 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
   // the first element is the max time step we can take
   MaxTimestep dt_max = restrictions[0];
   MaxTimestep dt_other = restrictions[1];
-  dt_result = dt_max.value();
-  m_adaptive_timestep_reason = (dt_max.description() +
-                                " (overrides " + dt_other.description() + ")");
+
+  TimesteppingInfo result;
+  result.dt = dt_max.value();
+  result.reason = (dt_max.description() + " (overrides " + dt_other.description() + ")");
+  result.skip_counter = 0;
+
+  // Hit multiples of X years, if requested.
+  {
+    int timestep_hit_multiples = static_cast<int>(m_config->get_number("time_stepping.hit_multiples"));
+    if (timestep_hit_multiples > 0) {
+      double
+        epsilon = 1.0, // 1 second tolerance
+        next_time = m_timestep_hit_multiples_last_time;
+
+      while (m_time->increment_date(next_time, timestep_hit_multiples) <= current_time + result.dt + epsilon) {
+        next_time = m_time->increment_date(next_time, timestep_hit_multiples);
+      }
+
+      if (next_time > current_time and next_time <= current_time + result.dt + epsilon) {
+        result.dt = next_time - current_time;
+        m_timestep_hit_multiples_last_time = next_time;
+
+        result.reason = pism::printf("hit multiples of %d yeard", timestep_hit_multiples);
+      }
+    }
+  }
 
   // the "skipping" mechanism
   {
-    if (dt_max.description() == "diffusivity" and skip_counter_result == 0) {
-      skip_counter_result = skip_counter(dt_other.value(), dt_max.value());
+    if (dt_max.description() == "diffusivity" and counter == 0) {
+      result.skip_counter = skip_counter(dt_other.value(), dt_max.value());
     }
 
     // "max" and "end of the run" limit the "big" time-step (in
     // the context of the "skipping" mechanism), so we might need to
     // reset the skip_counter_result to 1.
-
-    // FIXME: this string comparison is broken because m_adaptive_timestep_reason is
-    // modified to include "overrides ..." in it.
-    if ((m_adaptive_timestep_reason == "max" ||
-         m_adaptive_timestep_reason == "end of the run") &&
-        skip_counter_result > 1) {
-      skip_counter_result = 1;
+    if (member(dt_max.description(), {"max", "end of the run"}) and counter > 1) {
+      result.skip_counter = 1;
     }
   }
+
+  return result;
 }
 
 } // end of namespace pism

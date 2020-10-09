@@ -320,8 +320,14 @@ protected:
   // see iceModel.cc
   virtual void allocate_storage();
 
+  struct TimesteppingInfo {
+    double dt;
+    std::string reason;
+    unsigned int skip_counter;
+  };
+  virtual TimesteppingInfo max_timestep(unsigned int counter);
+
   virtual MaxTimestep max_timestep_diffusivity();
-  virtual void max_timestep(double &dt_result, unsigned int &skip_counter);
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
   // see energy.cc
