@@ -15,4 +15,12 @@ Vector2 blatter_xz_source_bed(double x, double z, double A, double rho, double g
 
 Vector2 blatter_xz_source_surface(double x, double z, double A, double rho, double g, double s_0, double alpha, double H, double beta);
 
+Vector2 blatter_xz_cfbc_exact(double x, double z, double B, double L, double rho_i, double rho_w);
+
+Vector2 blatter_xz_cfbc_source(double x, double z, double B, double L, double rho_i, double rho_w);
+
+Vector2 blatter_xz_cfbc_surface(double x, double z, double B, double L, double rho_i, double rho_w);
+
+Vector2 blatter_xz_cfbc_base(double x, double z, double B, double L, double rho_i, double rho_w);
+
 } // end of namespace pism

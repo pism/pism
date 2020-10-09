@@ -84,4 +84,37 @@ Vector2 blatter_xz_source_surface(double x, double z, double A, double rho, doub
   };
 }
 
+Vector2 blatter_xz_cfbc_exact(double x, double z, double B, double L, double rho_i, double rho_w)
+{
+  return {
+    (1.0/2.0)*L*g*z*(rho_i - rho_w)*sin(M_PI*x/L)/(M_PI*B),
+    0
+  };
+}
+
+Vector2 blatter_xz_cfbc_source(double x, double z, double B, double L, double rho_i, double rho_w)
+{
+  double x0 = M_PI/L;
+  return {
+    -g*x0*z*(rho_i - rho_w)*sin(x*x0),
+    0
+  };
+}
+
+Vector2 blatter_xz_cfbc_surface(double x, double z, double B, double L, double rho_i, double rho_w)
+{
+  return {
+    (1.0/4.0)*L*g*(rho_i - rho_w)*sin(M_PI*x/L)/M_PI,
+    0
+  };
+}
+
+Vector2 blatter_xz_cfbc_base(double x, double z, double B, double L, double rho_i, double rho_w)
+{
+  return {
+    -1.0/4.0*L*g*(rho_i - rho_w)*sin(M_PI*x/L)/M_PI,
+    0
+  };
+}
+
 } // end of namespace pism
