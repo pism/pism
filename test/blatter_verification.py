@@ -469,6 +469,7 @@ class TestCFBC(TestCase):
         self.opt = PISM.PETSc.Options()
 
         self.opts = {"-snes_monitor": "",
+                     "-ksp_monitor": "",
                      "-pc_type": "mg"
                      }
 
@@ -484,7 +485,7 @@ class TestCFBC(TestCase):
         config.set_number("stress_balance.blatter.Glen_exponent", n)
 
         config.set_number("flow_law.isothermal_Glen.ice_softness",
-                          PISM.util.convert(1e-6, "Pa-3 year-1", "Pa-3 s-1"))
+                          PISM.util.convert(1e-3, "Pa-3 year-1", "Pa-3 s-1"))
         A = config.get_number("flow_law.isothermal_Glen.ice_softness")
         self.B = 1.0 / A              # note that n = 1
 
@@ -501,7 +502,7 @@ class TestCFBC(TestCase):
         P = PISM.GridParameters(config)
 
         # Domain: [0, 1] * [-dx, dx] * [-1, 0]
-        Lx = 1e3
+        Lx = 0.5
         Mx = N
         dx = (2 * Lx) / (Mx - 1)
 
@@ -558,7 +559,7 @@ class TestCFBC(TestCase):
                 x = grid.x(i)
                 for k, z_sigma in enumerate(Z):
                     z = bed[i, j] + self.H * z_sigma
-                    u[k] = 1.0 / (2.0 * self.B) * x * z * g * (rho_w - rho_i)
+                    u[k] = U = 1 / (4 * self.B) * x**2 * z * g * (rho_w - rho_i)
                 exact.set_column(i, j, u)
 
         return exact
@@ -666,5 +667,5 @@ if __name__ == "__main__":
 
     t = TestCFBC()
     t.setUp()
-    print(t.error_norm(161, 3))
+    print(t.error_norm(41, 2))
     t.tearDown()

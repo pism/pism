@@ -58,6 +58,44 @@ Vector2 BlatterTestCFBC::u_bc(double x, double y, double z) {
   return {u, 0.0};
 }
 
+void BlatterTestCFBC::residual_source_term(const fem::Q1Element3 &element,
+                                           const double *surface,
+                                           Vector2 *residual) {
+  (void) surface;
+
+  // compute x and z coordinates of quadrature points
+  double
+    *x = m_work[0],
+    *z = m_work[1];
+  {
+    double
+      *x_nodal = m_work[2],
+      *z_nodal = m_work[3];
+
+    for (int n = 0; n < fem::q13d::n_chi; ++n) {
+      x_nodal[n] = element.x(n);
+      z_nodal[n] = element.z(n);
+    }
+
+    element.evaluate(x_nodal, x);
+    element.evaluate(z_nodal, z);
+  }
+
+  // loop over all quadrature points
+  for (int q = 0; q < element.n_pts(); ++q) {
+    auto W = element.weight(q);
+
+    double F = m_g * z[q] * (m_rho_w - m_rho_i);
+
+    // loop over all test functions
+    for (int t = 0; t < element.n_chi(); ++t) {
+      const auto &psi = element.chi(q, t);
+
+      residual[t].u += W * psi.val * F;
+    }
+  }
+}
+
 void BlatterTestCFBC::residual_surface(const fem::Q1Element3 &element,
                                        const fem::Q1Element3Face &face,
                                        Vector2 *residual) {
@@ -76,11 +114,11 @@ void BlatterTestCFBC::residual_surface(const fem::Q1Element3 &element,
   for (int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q);
 
+    double F = (1.0 / 8.0) * m_g * pow(x[q], 2) * (m_rho_w - m_rho_i);
+
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
-
-      double F = - 0.25 * m_g * x[q] * (m_rho_w - m_rho_i);
 
       residual[t].u += W * psi * F;
     }
@@ -113,11 +151,11 @@ void BlatterTestCFBC::residual_basal(const fem::Q1Element3 &element,
   for (int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q);
 
+    double F = - (1.0 / 8.0) * m_g * pow(x[q], 2) * (m_rho_w - m_rho_i);
+
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
-
-      double F = 0.25 * m_g * x[q] * (m_rho_w - m_rho_i);
 
       residual[t].u += W * psi * F;
     }

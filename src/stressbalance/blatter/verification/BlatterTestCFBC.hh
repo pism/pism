@@ -39,6 +39,10 @@ private:
 
   Vector2 u_bc(double x, double y, double z);
 
+  void residual_source_term(const fem::Q1Element3 &element,
+                            const double *surface,
+                            Vector2 *residual);
+
   void residual_surface(const fem::Q1Element3 &element,
                         const fem::Q1Element3Face &face,
                         Vector2 *residual);
