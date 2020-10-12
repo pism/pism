@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (C) 2013, 2014, 2016, 2018 the PISM Authors
+# Copyright (C) 2013, 2014, 2016, 2018, 2020 the PISM Authors
 
 # This script sets up the bootstrap file.
 # See also preprocess.sh.
@@ -70,7 +70,7 @@ def create_config():
         "stress_balance.sia.Glen_exponent_doc": "; : n;  Sayag & Worster (2013) give n = 5.9 +- 0.2",
 
         "flow_law.isothermal_Glen.ice_softness": 9.7316e-09,  # vs (e.g.) 4e-25 Pa-3 s-1 for ice
-        "ice_softness_doc": "Pa-n s-1; = A_0 = B_0^(-n) = (2 x 11.4 Pa s^(1/n))^(-n);  Sayag & Worster (2013) give B_0/2 = tilde mu = 11.4 +- 0.25 Pa s^(1/n)"
+        "flow_law.isothermal_Glen.ice_softness_doc": "Pa-n s-1; = A_0 = B_0^(-n) = (2 x 11.4 Pa s^(1/n))^(-n);  Sayag & Worster (2013) give B_0/2 = tilde mu = 11.4 +- 0.25 Pa s^(1/n)"
     }
 
     keys = list(attrs.keys())
