@@ -204,7 +204,8 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
 
       if (next_time > current_time and next_time <= current_time + result.dt + epsilon) {
         result.dt = next_time - current_time;
-        result.reason = pism::printf("hit multiples of %d years", timestep_hit_multiples);
+        result.reason = pism::printf("hit multiples of %d years (overrides %s)",
+                                     timestep_hit_multiples, dt_max.description().c_str());
 
         m_timestep_hit_multiples_last_time = next_time;
       }
