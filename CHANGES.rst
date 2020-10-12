@@ -15,6 +15,8 @@ Changes since v1.2
   compressed NetCDF from rank 0.
 - Support writing compressed NetCDF in parallel with NetCDF 4.7.4 or newer and HDF5 1.10.3
   or newer. Set `output.compression_level` to enable compression.
+- Fix a bug in the code managing time step restrictions (this affected the last time step
+  of runs using `-skip` and runs with `-skip` in which `-max_dt` is active).
 
 Changes from v1.1 to v1.2
 =========================
