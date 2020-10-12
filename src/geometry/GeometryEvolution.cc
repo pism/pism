@@ -982,11 +982,12 @@ void GeometryEvolution::ensure_nonnegativity(const IceModelVec2S &ice_thickness,
 
 void GeometryEvolution::prescribe_groundingline(const IceModelVec2S &old_ice_thickness, Geometry &geometry) {
 
-  IceModelVec2S &H = geometry.ice_thickness;
-  //IceModelVec2S &H = m_impl->ice_thickness; //Does not work, as it has been already updated
+  IceModelVec2S &H   = geometry.ice_thickness,
+                &bed = geometry.bed_elevation,
+                &sl = geometry.sea_level_elevation;
+  IceModelVec2CellType &mask = geometry.cell_type;
 
-  IceModelVec::AccessList list{&old_ice_thickness, &H,
-                               &m_impl->bed_elevation,&m_impl->sea_level,&m_impl->cell_type};
+  IceModelVec::AccessList list{&old_ice_thickness, &H, &bed, &sl, &mask};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -996,10 +997,11 @@ void GeometryEvolution::prescribe_groundingline(const IceModelVec2S &old_ice_thi
       const double
         Hold      = old_ice_thickness(i, j),
         rho_ratio = m_impl->ocean_density/m_impl->ice_density,
-        Hfl       = (m_impl->sea_level(i,j)-m_impl->bed_elevation(i,j)) * rho_ratio;
+        Hfl       = (sl(i,j) - bed(i,j)) * rho_ratio;
+
 
         // prevent grounded parts form becoming afloat
-        if (m_impl->cell_type.grounded(i, j)) {
+        if (mask.grounded(i, j)) {
           if (Hold > Hfl) { 
             H(i, j) = std::max( H(i, j), Hfl );
           }
@@ -1008,8 +1010,8 @@ void GeometryEvolution::prescribe_groundingline(const IceModelVec2S &old_ice_thi
         else if (H(i, j) != Hold) {
 
           //avoid artefacts for floating cells surrounded by grounded neighbors
-          bool floating_lake = (m_impl->cell_type.grounded(i-1,j) && m_impl->cell_type.grounded(i+1,j) &&
-                                m_impl->cell_type.grounded(i,j-1) && m_impl->cell_type.grounded(i,j+1));
+          bool floating_lake = (mask.grounded(i-1,j) && mask.grounded(i+1,j) &&
+                                mask.grounded(i,j-1) && mask.grounded(i,j+1));
 
           //floating ice shelves thickness remains unchanged
           if (floating_lake == false) {
