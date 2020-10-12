@@ -84,7 +84,7 @@ Vector2 blatter_xz_source_surface(double x, double z, double A, double rho, doub
   };
 }
 
-Vector2 blatter_xz_cfbc_exact(double x, double z, double B, double L, double rho_i, double rho_w)
+Vector2 blatter_xz_cfbc_exact(double x, double z, double B, double L, double rho_i, double rho_w, double g)
 {
   return {
     (1.0/2.0)*L*g*z*(rho_i - rho_w)*sin(M_PI*x/L)/(M_PI*B),
@@ -92,7 +92,7 @@ Vector2 blatter_xz_cfbc_exact(double x, double z, double B, double L, double rho
   };
 }
 
-Vector2 blatter_xz_cfbc_source(double x, double z, double B, double L, double rho_i, double rho_w)
+Vector2 blatter_xz_cfbc_source(double x, double z, double L, double rho_i, double rho_w, double g)
 {
   double x0 = M_PI/L;
   return {
@@ -101,7 +101,7 @@ Vector2 blatter_xz_cfbc_source(double x, double z, double B, double L, double rh
   };
 }
 
-Vector2 blatter_xz_cfbc_surface(double x, double z, double B, double L, double rho_i, double rho_w)
+Vector2 blatter_xz_cfbc_surface(double x, double L, double rho_i, double rho_w, double g)
 {
   return {
     (1.0/4.0)*L*g*(rho_i - rho_w)*sin(M_PI*x/L)/M_PI,
@@ -109,7 +109,7 @@ Vector2 blatter_xz_cfbc_surface(double x, double z, double B, double L, double r
   };
 }
 
-Vector2 blatter_xz_cfbc_base(double x, double z, double B, double L, double rho_i, double rho_w)
+Vector2 blatter_xz_cfbc_base(double x, double L, double rho_i, double rho_w, double g)
 {
   return {
     -1.0/4.0*L*g*(rho_i - rho_w)*sin(M_PI*x/L)/M_PI,

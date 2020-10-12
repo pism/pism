@@ -194,7 +194,7 @@ void Blatter::residual_lateral(const fem::Q1Element3 &element,
 
     double
       ice_depth   = s[q] - z[q],
-      p_ice       = m_rho_ice_g *   ice_depth,
+      p_ice       = m_rho_ice_g * ice_depth,
       water_depth = std::max(sea_level[q] - z[q], 0.0),
       p_ocean     = m_rho_ocean_g * water_depth;
 

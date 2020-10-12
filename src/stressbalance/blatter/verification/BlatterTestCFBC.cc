@@ -23,6 +23,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/blatter/util/DataAccess.hh"
+#include "manufactured_solutions.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -40,6 +41,8 @@ BlatterTestCFBC::BlatterTestCFBC(IceGrid::ConstPtr grid, int Mz, int n_levels,
   m_rho_i = m_config->get_number("constants.ice.density");
 
   m_rho_w = m_config->get_number("constants.sea_water.density");
+
+  m_L = 2.0 * m_grid->Lx();
 }
 
 bool BlatterTestCFBC::dirichlet_node(const DMDALocalInfo &info,
@@ -49,13 +52,9 @@ bool BlatterTestCFBC::dirichlet_node(const DMDALocalInfo &info,
 }
 
 Vector2 BlatterTestCFBC::u_bc(double x, double y, double z) {
-  (void) x;
   (void) y;
-  (void) z;
 
-  double u = 1.0 / (2.0 * m_B) * x * z * m_g * (m_rho_w - m_rho_i);
-
-  return {u, 0.0};
+  return blatter_xz_cfbc_exact(x, z, m_B, m_L, m_rho_i, m_rho_w, m_g);
 }
 
 void BlatterTestCFBC::residual_source_term(const fem::Q1Element3 &element,
@@ -85,13 +84,13 @@ void BlatterTestCFBC::residual_source_term(const fem::Q1Element3 &element,
   for (int q = 0; q < element.n_pts(); ++q) {
     auto W = element.weight(q);
 
-    double F = m_g * z[q] * (m_rho_w - m_rho_i);
+    auto F = blatter_xz_cfbc_source(x[q], z[q], m_L, m_rho_i, m_rho_w, m_g);
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       const auto &psi = element.chi(q, t);
 
-      residual[t].u += W * psi.val * F;
+      residual[t] += W * psi.val * F;
     }
   }
 }
@@ -114,13 +113,13 @@ void BlatterTestCFBC::residual_surface(const fem::Q1Element3 &element,
   for (int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q);
 
-    double F = (1.0 / 8.0) * m_g * pow(x[q], 2) * (m_rho_w - m_rho_i);
+    auto F = -1.0 * blatter_xz_cfbc_surface(x[q], m_L, m_rho_i, m_rho_w, m_g);
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      residual[t].u += W * psi * F;
+      residual[t] += W * psi * F;
     }
   }
 }
@@ -151,16 +150,15 @@ void BlatterTestCFBC::residual_basal(const fem::Q1Element3 &element,
   for (int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q);
 
-    double F = - (1.0 / 8.0) * m_g * pow(x[q], 2) * (m_rho_w - m_rho_i);
+    auto F = -1.0 * blatter_xz_cfbc_base(x[q], m_L, m_rho_i, m_rho_w, m_g);
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      residual[t].u += W * psi * F;
+      residual[t] += W * psi * F;
     }
   }
-
 }
 
 void BlatterTestCFBC::jacobian_basal(const fem::Q1Element3Face &face,

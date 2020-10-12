@@ -26,7 +26,7 @@ namespace pism {
 namespace stressbalance {
 
 /*!
- * Implements Dirichlet BC for an X-Z flow line setup testing the implementation of lateral (ice margin) boundary conditions.
+ * Implements an X-Z flow line setup testing the implementation of lateral (ice margin) boundary conditions.
  */
 class BlatterTestCFBC : public Blatter {
 public:
@@ -63,6 +63,7 @@ private:
   double m_g;
   double m_rho_i;
   double m_rho_w;
+  double m_L;
 };
 
 } // end of namespace stressbalance

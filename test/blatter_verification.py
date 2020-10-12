@@ -15,6 +15,9 @@ import PISM.util
 
 import numpy as np
 
+# Keep petsc4py from suppressing error messages
+PISM.PETSc.Sys.popErrorHandler()
+
 ctx = PISM.Context()
 config = ctx.config
 
@@ -30,9 +33,9 @@ config.set_number("stress_balance.blatter.Glen_exponent", 3.0)
 config.set_number("constants.ice.density", 910.0)
 config.set_number("constants.standard_gravity", 9.81)
 
-def expt(xs, ys):
+def expt(ns, errors):
     "Compute the convergence rate using a polynomial fit."
-    return -np.polyfit(np.log(xs), np.log(ys), 1)[0]
+    return -np.polyfit(np.log(ns), np.log(errors), 1)[0]
 
 class TestXY(TestCase):
     """2D (x-y) verification test using a manufactured solution.
@@ -249,7 +252,8 @@ class TestXZ(TestCase):
         self.opt = PISM.PETSc.Options()
 
         self.opts = {"-snes_monitor": "",
-                     "-pc_type": "mg"
+                     "-pc_type": "mg",
+                     "-pc_mg_levels": "1", # added here to make tearDown clean it up
                      }
 
         for k, v in self.opts.items():
@@ -453,9 +457,6 @@ class TestXZ(TestCase):
 class TestCFBC(TestCase):
     """Constant viscosity 2D (x-z) verification test checking the implementation of CFBC.
 
-    u = 1/4 * x * z * g * (rho_w - rho_i)
-    v = 0
-
     on a square 0 <= x <= 1, -1 <= z <= 0 with sea level at z = 0 (fully submerged).
 
     Dirichet BC at x = 0, periodic in the Y direction, lateral BC at x = 1. No basal drag.
@@ -465,20 +466,14 @@ class TestCFBC(TestCase):
         "Set PETSc options"
 
         self.H = 1e3
+        self.L = 1.0
 
         self.opt = PISM.PETSc.Options()
 
-        self.opts = {"-snes_monitor": "",
-                     "-ksp_monitor": "",
-                     "-pc_type": "mg"
-                     }
+        self.opts = {"-snes_monitor": ""}
 
         for k, v in self.opts.items():
             self.opt.setValue(k, v)
-
-        # the magnitude of the regularization constant affects the accuracy near the
-        # "dome"
-        config.set_number("flow_law.Schoof_regularizing_velocity", 1e-5)
 
         # constant viscocity
         n = 1.0
@@ -502,7 +497,7 @@ class TestCFBC(TestCase):
         P = PISM.GridParameters(config)
 
         # Domain: [0, 1] * [-dx, dx] * [-1, 0]
-        Lx = 0.5
+        Lx = 0.5 * self.L
         Mx = N
         dx = (2 * Lx) / (Mx - 1)
 
@@ -530,7 +525,8 @@ class TestCFBC(TestCase):
         enthalpy.set(1e5)
 
         yield_stress = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
-
+        # this value is not important: we use a compensatory term at the base instead of
+        # the sliding law
         yield_stress.set(0.0)
 
         geometry.bed_elevation.set(-self.H)
@@ -551,7 +547,7 @@ class TestCFBC(TestCase):
 
         rho_i = config.get_number("constants.ice.density")
         rho_w = config.get_number("constants.sea_water.density")
-        g = config.get_number("constants.standard_gravity")
+        g     = config.get_number("constants.standard_gravity")
 
         u = np.zeros_like(Z)
         with PISM.vec.Access([bed, exact]):
@@ -559,24 +555,21 @@ class TestCFBC(TestCase):
                 x = grid.x(i)
                 for k, z_sigma in enumerate(Z):
                     z = bed[i, j] + self.H * z_sigma
-                    u[k] = U = 1 / (4 * self.B) * x**2 * z * g * (rho_w - rho_i)
+                    u[k] = PISM.blatter_xz_cfbc_exact(x, z, self.B, self.L, rho_i, rho_w, g).u
                 exact.set_column(i, j, u)
 
         return exact
 
-    def error_norm(self, N, n_mg):
+    def error_norm(self, N):
         "Return the infinity norm of errors for the u component."
         geometry, enthalpy, yield_stress = self.inputs(N)
-
-        # set the number of multigrid levels
-        self.opt.setValue("-pc_mg_levels", n_mg)
 
         grid = enthalpy.grid()
 
         blatter_Mz = N
-        # do not pad the vertical grid
+        # no geometric multigrid here
         n_levels = 0
-        coarsening_factor = 4
+        coarsening_factor = 1
 
         model = PISM.BlatterTestCFBC(grid, blatter_Mz, n_levels, coarsening_factor)
 
@@ -605,6 +598,7 @@ class TestCFBC(TestCase):
 
         # compute the error
         u_error = PISM.IceModelVec3(grid, "error", PISM.WITHOUT_GHOSTS, u_model_z)
+        u_error.set_attrs("exact", "error", "m / s", "m / year", "", 0)
         u_error.copy_from(u_exact)
         u_error.add(-1.0, model.velocity_u_sigma())
 
@@ -617,11 +611,8 @@ class TestCFBC(TestCase):
 
         # refinement path
         Ns = [11, 21]
-        # number of MG levels to use for a particular grid size, assuming the coarsening
-        # factor of 4
-        mg_levels = [1, 2]
 
-        norms = [self.error_norm(N, n_mg) for (N, n_mg) in zip(Ns, mg_levels)]
+        norms = [self.error_norm(N) for N in Ns]
 
         # Compute the exponent for the convergence rate
         expt_u = expt(Ns, norms)
@@ -633,25 +624,24 @@ class TestCFBC(TestCase):
 
     def plot(self):
         Ns = [11, 21, 41, 81]
-        mg_levels = [1, 2, 3, 4]
 
         try:
             self.setUp()
-            norms = [self.error_norm(N, n_mg) for (N, n_mg) in zip(Ns, mg_levels)]
+            norms = [self.error_norm(N) for N in Ns]
         finally:
             self.tearDown()
 
-        # the domain is 100km long and 1km high
-        dxs = 100e3 / (np.array(Ns) - 1)
+        dxs = self.L / (np.array(Ns) - 1)
 
         p = np.polyfit(np.log(dxs), np.log(norms), 1)
         fit = np.exp(np.polyval(p, np.log(dxs)))
 
         from bokeh.plotting import figure, show, output_file
 
-        output_file("test-xz.html")
-        f = figure(title = "Blatter-Pattyn stress balance: verification test XZ",
-                   x_axis_type="log", y_axis_type="log", x_axis_label="dx", y_axis_label="max error")
+        output_file("test-xz-cfbc.html")
+        f = figure(title = "Blatter-Pattyn stress balance: verification test XZ-CFBC",
+                   x_axis_type="log", y_axis_type="log", x_axis_label="dx",
+                   y_axis_label="max error")
         f.scatter(dxs, norms)
         f.line(dxs, norms, legend_label="max error", line_width=2)
         f.line(dxs, fit, line_dash="dashed", line_color="red", line_width=2,
@@ -662,10 +652,7 @@ class TestCFBC(TestCase):
 
 if __name__ == "__main__":
 
-    # TestXY().plot()
-    # TestXZ().plot()
-
-    t = TestCFBC()
-    t.setUp()
-    print(t.error_norm(41, 2))
-    t.tearDown()
+    for test in [TestXY(),
+                 TestXZ(),
+                 TestCFBC()]:
+        test.plot()
