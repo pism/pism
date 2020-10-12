@@ -20,6 +20,16 @@ if (SPHINX_EXECUTABLE)
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS pism_config.nc)
 
+  find_program(SPHINX_AUTOBUILD_EXECUTABLE sphinx-autobuild)
+  mark_as_advanced(SPHINX_AUTOBUILD_EXECUTABLE)
+
+  if (SPHINX_AUTOBUILD_EXECUTABLE)
+    add_custom_target (manual_autobuild
+      COMMAND ${SPHINX_AUTOBUILD_EXECUTABLE} --port 8080 -B ${CMAKE_CURRENT_SOURCE_DIR} -D pism_config_file=${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${CMAKE_CURRENT_BINARY_DIR}/manual-tmp
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      DEPENDS pism_config.nc)
+  endif()
+
   if (Pism_DOC_DIR)
     install (DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/html"
       DESTINATION ${Pism_DOC_DIR}
