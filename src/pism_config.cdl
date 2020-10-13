@@ -400,7 +400,7 @@ netcdf pism_config {
     pism_config:basal_yield_stress.ice_free_bedrock_units = "Pascal";
 
     pism_config:basal_yield_stress.model = "mohr_coulomb";
-    pism_config:basal_yield_stress.model_choices = "constant,mohr_coulomb";
+    pism_config:basal_yield_stress.model_choices = "constant,mohr_coulomb,mohr_coulomb_iterphi";
     pism_config:basal_yield_stress.model_doc = "The basal yield stress model to use when sliding is active.";
     pism_config:basal_yield_stress.model_option = "yield_stress";
     pism_config:basal_yield_stress.model_type = "keyword";

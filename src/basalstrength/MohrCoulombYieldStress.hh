@@ -37,32 +37,12 @@ public:
 
   void set_till_friction_angle(const IceModelVec2S &input);
 private:
-  void restart_impl(const File &input_file, int record);
-  void bootstrap_impl(const File &input_file, const YieldStressInputs &inputs);
-  void init_impl(const YieldStressInputs &inputs);
-
-  void define_model_state_impl(const File &output) const;
-  void write_model_state_impl(const File &output) const;
 
   DiagnosticList diagnostics_impl() const;
 
-  MaxTimestep max_timestep_impl(double t) const;
-  void update_impl(const YieldStressInputs &inputs, double t, double dt);
-
-  void finish_initialization(const YieldStressInputs &inputs);
 private:
   void till_friction_angle(const IceModelVec2S &bed_topography,
                            IceModelVec2S &result);
-
-  //virtual MaxTimestep max_timestep_impl(double t) const;
-  //virtual void update_impl(const YieldStressInputs &inputs, double t, double dt);
-
-  //void topg_to_phi(const IceModelVec2S &bed_topography);
-  //void tauc_to_phi(const IceModelVec2CellType &mask);
-
-  void iterative_phi_step(const IceModelVec2S &ice_surface_elevation,
-                          const IceModelVec2S &bed_topography,
-                          const IceModelVec2CellType &mask);
 
 protected:
   void till_friction_angle(const IceModelVec2S &basal_yield_stress,
@@ -71,11 +51,21 @@ protected:
                            const IceModelVec2CellType &cell_type,
                            IceModelVec2S &result);
 
-  IceModelVec2S m_till_phi;
+  void bootstrap_impl(const File &input_file, const YieldStressInputs &inputs);
 
-  bool m_iterative_phi;
-  IceModelVec2S m_target_usurf,m_diff_usurf,m_usurf,m_diff_mask;
-  double m_last_time,m_last_inverse_time,dt_phi_inv;
+  void update_impl(const YieldStressInputs &inputs, double t, double dt);
+
+  void restart_impl(const File &input_file, int record);
+  void init_impl(const YieldStressInputs &inputs);
+
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
+
+  void finish_initialization(const YieldStressInputs &inputs);
+
+  MaxTimestep max_timestep_impl(double t) const;
+
+  IceModelVec2S m_till_phi;
 
   IceModelVec2T::Ptr m_delta;
 };

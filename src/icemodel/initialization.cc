@@ -22,6 +22,7 @@
 #include "IceModel.hh"
 #include "pism/basalstrength/ConstantYieldStress.hh"
 #include "pism/basalstrength/MohrCoulombYieldStress.hh"
+#include "pism/basalstrength/OptTillphiYieldStress.hh"
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/frontretreat/util/IcebergRemover.hh"
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
@@ -631,6 +632,8 @@ void IceModel::allocate_basal_yield_stress() {
       m_basal_yield_stress_model.reset(new ConstantYieldStress(m_grid));
     } else if (yield_stress_model == "mohr_coulomb") {
       m_basal_yield_stress_model.reset(new MohrCoulombYieldStress(m_grid));
+    } else if (yield_stress_model == "mohr_coulomb_iterphi") {
+      m_basal_yield_stress_model.reset(new OptTillphiYieldStress(m_grid));
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
