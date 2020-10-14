@@ -9,16 +9,16 @@
 5. [X] Replace "bed" with "ice lower surface elevation"
 6. [ ] Document the whole thing.
 7. [X] Make the code match PISM's notation for grid and physical dimensions (Mx, Lx, etc)
-8. [ ] Think about stress boundary conditions (shelves and grounded margins).
+8. [X] Think about stress boundary conditions (shelves and grounded margins).
 9. [X] Make sure that the the units are set correctly (i.e. scaling).
-10. [ ] Allow prescribing Dirichlet boundary conditions other than no-slip at the base.
-11. [ ] Disable no-slip conditions at the base.
-12. [ ] Think about grid sequencing to compute the initial guess.
-13. [ ] Use GeometryCalculator to determine if "floating" or "grounded"
+10. [X] Allow prescribing Dirichlet boundary conditions other than no-slip at the base.
+11. [X] Disable no-slip conditions at the base.
+12. [X] Think about grid sequencing to compute the initial guess.
+13. [X] Use GeometryCalculator to determine if "floating" or "grounded"
 14. [X] Think about fields that we will need to save to restart the model.
 15. [X] Implement the computation of the surface gradient using gridded data.
-16. [ ] Determine if the Jacobian really is symmetric in our (more general) case.
-17. [ ] Write the code checking if grid dimensions are compatible with
+16. [X] Determine if the Jacobian really is symmetric in our (more general) case.
+17. [X] Write the code checking if grid dimensions are compatible with
     the chosen number of coarsenings. (This is to avoid ugly PETSC
     ERROR tracebacks.)
 18. [X] Consider switching element types at the margin. Yes, there are lots of cases.

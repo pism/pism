@@ -118,6 +118,7 @@ case is `q=1`, in which case if `\beta=\tau_c/u_{\text{threshold}}` then the law
 form
 
 .. math::
+   :label: eq-sliding-linear
 
    \boldsymbol{\tau}_b = - \beta \mathbf{u}
 

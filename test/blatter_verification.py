@@ -43,7 +43,7 @@ class TestXY(TestCase):
     u = exp(x) * sin(2 * pi * y)
     v = exp(x) * cos(2 * pi * y)
 
-    on [0, 1] * [0, 1] with Dirichlet BC at x = +- 1, y = +- 1.
+    on [0, 1] * [0, 1] with Dirichlet BC at x = {0,1}, y = {0,1}.
 
     Flat bed, no basal drag, constant ice thickness, isothermal Glen flow law with n == 3.
 
