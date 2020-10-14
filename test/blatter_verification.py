@@ -590,11 +590,7 @@ class TestCFBC(TestCase):
         u_model.set_attrs("model", "modeled velocity", "m / s", "m / year", "", 0)
         u_model.copy_from(model.velocity_u_sigma())
 
-        u_model.dump("vel-{}-model.nc".format(N))
-
         u_exact = self.exact_solution(grid, geometry.bed_elevation, u_model_z)
-
-        u_exact.dump("vel-{}-exact.nc".format(N))
 
         # compute the error
         u_error = PISM.IceModelVec3(grid, "error", PISM.WITHOUT_GHOSTS, u_model_z)
@@ -602,12 +598,10 @@ class TestCFBC(TestCase):
         u_error.copy_from(u_exact)
         u_error.add(-1.0, model.velocity_u_sigma())
 
-        u_error.dump("vel-{}-error.nc".format(N))
-
         return u_error.norm(PISM.PETSc.NormType.NORM_INFINITY)
 
     def test(self):
-        "Test that the convergence rate for the XZ test is at least quadratic"
+        "Test that the convergence rate for the XZ-CFBC test is at least quadratic"
 
         # refinement path
         Ns = [11, 21]
