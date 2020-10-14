@@ -106,7 +106,6 @@ protected:
                                     IceModelVec2S &area_specific_volume_change,
                                     IceModelVec2S &conservation_error);
 
-
   virtual void set_no_model_mask_impl(const IceModelVec2Int &mask);
 
   // note: cells with area_specific_volume > 0 do not experience changes due to surface and basal

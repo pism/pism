@@ -55,7 +55,6 @@ add_library (pism
   energy/utilities.cc  
   geometry/Geometry.cc
   geometry/GeometryEvolution.cc
-  geometry/GeometryEvolutionConfined.cc
   geometry/grounded_cell_fraction.cc
   geometry/part_grid_threshold_thickness.cc
   icemodel/IceModel.cc
