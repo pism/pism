@@ -50,7 +50,6 @@
 #include "pism/util/MaxTimestep.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/geometry/GeometryEvolution.hh"
-#include "pism/geometry/GeometryEvolutionConfined.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/basalstrength/YieldStress.hh"
 
@@ -330,9 +329,6 @@ protected:
 
   enum ConsistencyFlag {REMOVE_ICEBERGS, DONT_REMOVE_ICEBERGS};
   void enforce_consistency_of_geometry(ConsistencyFlag flag);
-
-  virtual void enforce_grounded_icearea(const IceModelVec2S &old_ice_thickness);
-  //                                      const IceModelVec2CellType &old_mask);
 
   virtual void front_retreat_step();
 

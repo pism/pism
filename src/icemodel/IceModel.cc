@@ -325,60 +325,6 @@ void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
   }
 }
 
-void IceModel::enforce_grounded_icearea(const IceModelVec2S &old_ice_thickness) {
-//                                        const IceModelVec2CellType &old_mask) {
-
-  IceModelVec2S &H   = m_geometry.ice_thickness,
-                &bed = m_geometry.bed_elevation,
-                &sl = m_geometry.sea_level_elevation;
-  IceModelVec2CellType &mask = m_geometry.cell_type;
-
-  double ocean_density = m_config->get_number("constants.sea_water.density");
-  double ice_density   = m_config->get_number("constants.ice.density");
-
-  IceModelVec::AccessList list{&old_ice_thickness, &H, &bed, &sl, &mask};
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      const double
-        Hold      = old_ice_thickness(i, j),
-        //rho_ratio = m_impl->ocean_density/m_impl->ice_density,
-        rho_ratio = ocean_density/ice_density,
-        Hfl       = (sl(i,j) - bed(i,j)) * rho_ratio;
-
-
-        // prevent grounded parts form becoming afloat
-        if (mask.grounded(i, j)) {
-        //if (old_mask.grounded(i, j)) {
-          if (Hold > Hfl) { 
-            H(i, j) = std::max( H(i, j), Hfl );
-          }
-        }
-
-        else if (H(i, j) != Hold) {
-
-          //avoid artefacts for floating cells surrounded by grounded neighbors
-          bool floating_lake = (mask.grounded(i-1,j) && mask.grounded(i+1,j) &&
-                                mask.grounded(i,j-1) && mask.grounded(i,j+1));
-
-
-          //floating ice shelves thickness remains unchanged
-          if (floating_lake == false) {
-            H(i, j) = Hold;
-          }
-        }
-
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-}
-
-
 stressbalance::Inputs IceModel::stress_balance_inputs() {
   stressbalance::Inputs result;
   if (m_config->get_flag("geometry.update.use_basal_melt_rate")) {
@@ -565,20 +511,6 @@ void IceModel::step(bool do_mass_continuity,
   // FIXME: thickness B.C. mask should be separate
   IceModelVec2Int &thickness_bc_mask = m_ssa_dirichlet_bc_mask;
 
-  bool prescribe_gl  = m_config->get_flag("geometry.update.prescribe_groundingline");
-  //if (prescribe_gl) {
-        IceModelVec2S
-          &old_Hgr  = m_work2d[2];
-        //IceModelVec2CellType  
-        //  &old_mgr  = m_work2d[3];
-        {
-          old_Hgr.copy_from(m_geometry.ice_thickness);
-          //old_mgr.copy_from(m_geometry.cell_type);
-        }
-  //}
-
-
-
   if (do_mass_continuity) {
     profiling.begin("mass_transport");
     {
@@ -646,13 +578,6 @@ void IceModel::step(bool do_mass_continuity,
                                            m_surface->mass_flux(),
                                            m_basal_melt_rate);
     m_geometry_evolution->apply_mass_fluxes(m_geometry);
-
-    // for iterative tillphi optimization
-    if (prescribe_gl) {
-      //m_geometry_evolution->prescribe_groundingline(old_Hgr,m_geometry);
-      //enforce_grounded_icearea(old_Hgr,old_mgr);
-      enforce_grounded_icearea(old_Hgr);
-    }
 
     // add removed icebergs to discharge due to calving
     {
