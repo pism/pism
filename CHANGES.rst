@@ -15,6 +15,9 @@ Changes since v1.2
   compressed NetCDF from rank 0.
 - Support writing compressed NetCDF in parallel with NetCDF 4.7.4 or newer and HDF5 1.10.3
   or newer. Set `output.compression_level` to enable compression.
+- Stop with an error message if some values of a variable read from a file match the
+  `_FillValue` attribute (PISM expects input files to contain data at all grid points
+  within the domain).
 
 Changes from v1.1 to v1.2
 =========================

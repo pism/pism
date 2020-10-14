@@ -477,14 +477,25 @@ static void regrid_vec_generic(const File &file, const IceGrid &grid,
 
     // Replace missing values if the _FillValue attribute is present,
     // and if we have missing values to replace.
-    if (fill_missing) {
-      std::vector<double> attribute = file.read_double_attribute(variable_name, "_FillValue");
+    {
+      auto attribute = file.read_double_attribute(variable_name, "_FillValue");
       if (attribute.size() == 1) {
-        const double fill_value = attribute[0],
-          epsilon = 1e-12;
-        for (unsigned int i = 0; i < buffer.size(); ++i) {
-          if (fabs(buffer[i] - fill_value) < epsilon) {
-            buffer[i] = default_value;
+        double
+          fill_value = attribute[0],
+          epsilon    = 1e-12;
+        if (fill_missing) {
+          for (size_t i = 0; i < buffer.size(); ++i) {
+            if (fabs(buffer[i] - fill_value) < epsilon) {
+              buffer[i] = default_value;
+            }
+          }
+        } else {
+          for (size_t i = 0; i < buffer.size(); ++i) {
+            if (fabs(buffer[i] - fill_value) < epsilon) {
+              throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                            "Some values of '%s' in '%s' match the _FillValue attribute.",
+                                            variable_name.c_str(), file.filename().c_str());
+            }
           }
         }
       }
@@ -681,6 +692,21 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
 
   // Convert data:
   size_t size = grid.xm() * grid.ym() * nlevels;
+
+  // stop if some values match the _FillValue attribute
+  {
+    auto att = file.read_double_attribute(var.name, "_FillValue");
+    if (att.size() == 1) {
+      double fill_value = att[0];
+      for (size_t k = 0; k < size; ++k) {
+        if (output[k] == fill_value) {
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "Some values of the variable '%s' in '%s' match the _FillValue attribute.",
+                                        var.name.c_str(), file.filename().c_str());
+        }
+      }
+    }
+  }
 
   units::Converter(variable.unit_system(),
                    input_units, internal_units).convert_doubles(output, size);
