@@ -63,9 +63,6 @@ public:
 
   const IceModelVec2S& conservation_error() const;
 
-  void prescribe_groundingline(const IceModelVec2S &old_ice_thickness, Geometry &geometry);
-
-
   // diagnostic
   const IceModelVec2Stag& flux_staggered() const;
   const IceModelVec2S& flux_divergence() const;

@@ -500,7 +500,13 @@ void IceModel::allocate_geometry_evolution() {
 
   m_log->message(2, "# Allocating the geometry evolution model...\n");
 
-  m_geometry_evolution.reset(new GeometryEvolution(m_grid));
+  if (m_config->get_flag("geometry.update.prescribe_groundingline")) {
+    m_geometry_evolution.reset(new GeometryEvolutionConfined(m_grid));
+    m_log->message(2,
+             "# Allocating a derived version of GeometryEvolution that ensures grounded ice remaining grounded...\n");
+  } else {
+   m_geometry_evolution.reset(new GeometryEvolution(m_grid));
+  }
 
   m_submodels["geometry_evolution"] = m_geometry_evolution.get();
 }

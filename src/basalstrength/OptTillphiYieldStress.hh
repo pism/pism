@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifndef _PISMOPTTILLPHIYIELDSTRESS_H_
-#define _PISMOPTTILLPHIYYIELDSTRESS_H_
+#define _PISMOPTTILLPHIYIELDSTRESS_H_
 
 #include "YieldStress.hh"
 #include "MohrCoulombYieldStress.hh"

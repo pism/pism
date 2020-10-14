@@ -50,6 +50,7 @@
 #include "pism/util/MaxTimestep.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/geometry/GeometryEvolution.hh"
+#include "pism/geometry/GeometryEvolutionConfined.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/basalstrength/YieldStress.hh"
 
