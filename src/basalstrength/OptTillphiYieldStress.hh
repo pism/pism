@@ -36,8 +36,6 @@ public:
   OptTillphiYieldStress(IceGrid::ConstPtr g);
   virtual ~OptTillphiYieldStress();
 
-  //void set_till_friction_angle(const IceModelVec2S &input);
-
 private:
 
   DiagnosticList diagnostics_impl() const;
@@ -54,15 +52,8 @@ protected:
 
   void update_impl(const YieldStressInputs &inputs, double t, double dt);
 
-
-  //void restart_impl(const File &input_file, int record);
+  void restart_impl(const File &input_file, int record);
   //void init_impl(const YieldStressInputs &inputs);
-
-  //void define_model_state_impl(const File &output) const;
-  //void write_model_state_impl(const File &output) const;
-
-  //void finish_initialization(const YieldStressInputs &inputs);
-
 
   MaxTimestep max_timestep_impl(double t) const;
 

@@ -1068,11 +1068,23 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
   loop.check();
 }
 
-
-
-//void GeometryEvolution::enforce_grounded_icearea(const IceModelVec2S &old_ice_thickness) {
-//                                        const IceModelVec2CellType &old_mask) {
-
+/*!
+ * Prevents ice thickness at grounded locations from decreasing enough to make it floating
+ * and prevents changes in ice thickness of floating ice 
+ * (except for locations with four grounded neighbors)
+ *
+ * Correct `thickness_change` so that applying it will 
+ * a) keep grounded ice from becoming floating and 
+ * b) prevent changes of the thickness of floating ice and ice free ocean.
+ *
+ * Compute the `conservation_error`, i.e. the amount of ice that is added to ensure
+ * the two previously mentioned conditions.
+ *
+ * @param[in] geometry (ice_thickness (m), bed_elevation (m), sea_level_elevation (m), cell_type)
+ * @param[in,out] thickness_change "proposed" thickness change (m)
+ * @param[out] conservation_error computed conservation error (m)
+ *
+ */
 void GeometryEvolution::ensure_grounded_icearea(const Geometry &geometry,
                                                       IceModelVec2S &thickness_change,
                                                       IceModelVec2S &conservation_error) {

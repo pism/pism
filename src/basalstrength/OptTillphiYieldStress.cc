@@ -37,7 +37,7 @@ namespace pism {
 
 //! \file OptTillphiYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
 
-/*! \file MohrCoulombYieldStress.cc
+/*! \file OptTillphiYieldStress.cc is derived from \file MohrCoulombYieldStress.cc
 The output variable of this submodel is `tauc`, the pseudo-plastic yield stress
 field that is used in the ShallowStressBalance objects.  This quantity is
 computed by the Mohr-Coulomb criterion [\ref SchoofTill], but using an empirical
@@ -64,13 +64,10 @@ OptTillphiYieldStress::OptTillphiYieldStress(IceGrid::ConstPtr grid)
 
   m_name = "Mohr-Coulomb yield stress model to iteratively optimize till friction angle";
 
-  //! Optimzation of till friction angle for given target surface elevation, analogous to
-  // Pollard et al. (2012), TC 6(5), "A simple inverse method for the distribution of basal
-  // sliding coefficients under ice sheets, applied to Antarctica"
-
-  //m_iterative_phi = m_config->get_flag("basal_yield_stress.mohr_coulomb.iterative_phi.enabled");
-
-  //if (m_iterative_phi) {
+  /*! Optimzation of till friction angle for given target surface elevation, analogous to
+      Pollard et al. (2012), TC 6(5), "A simple inverse method for the distribution of basal
+      sliding coefficients under ice sheets, applied to Antarctica"
+  */
 
     m_usurf.create(m_grid, "usurf",
               WITH_GHOSTS);
@@ -96,47 +93,48 @@ OptTillphiYieldStress::OptTillphiYieldStress(IceGrid::ConstPtr grid)
     m_diff_mask.set_attrs("internal",
                  "mask for till phi iteration",
                  "", "", "", 0);
-  //} else {
-  //  m_till_phi.set_time_independent(true);
-  //}
 
-  /*
-  auto delta_file = m_config->get_string("basal_yield_stress.mohr_coulomb.delta.file");
-
-  if (not delta_file.empty()) {
-    ForcingOptions opt(*m_grid->ctx(), "basal_yield_stress.mohr_coulomb.delta");
-
-    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
-
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
-
-    m_delta = IceModelVec2T::ForcingField(m_grid,
-                                          file,
-                                          "mohr_coulomb_delta",
-                                          "", // no standard name
-                                          buffer_size,
-                                          evaluations_per_year,
-                                          periodic, LINEAR);
-    m_delta->set_attrs("", "minimum effective pressure on till as a fraction of overburden pressure",
-                       "1", "1", "", 0);
-  
-  }
-  */
 }
 
 OptTillphiYieldStress::~OptTillphiYieldStress() {
   // empty
 }
 
-/*
+
 void OptTillphiYieldStress::restart_impl(const File &input_file, int record) {
+
   MohrCoulombYieldStress::restart_impl(input_file, record);
+
+  auto iterative_phi_file = m_config->get_string("basal_yield_stress.mohr_coulomb.iterative_phi.file");
+
+  if (not iterative_phi_file.empty()) {
+
+      m_log->message(2, "* Initializing the iterative till friction angle optimization...\n");
+
+      m_usurf.regrid(iterative_phi_file, CRITICAL);
+      m_target_usurf.copy_from(m_usurf);
+      m_log->message(2, "* Read target surface elevation...\n");
+
+  } else {
+
+      m_log->message(2, "* No file set to read target surface elevation from... take '%s'\n", 
+                           input_file.filename().c_str());
+      m_usurf.regrid(input_file, CRITICAL);
+      m_target_usurf.copy_from(m_usurf); 
+  }
+
+
+  dt_phi_inv = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dt","seconds");
+
+  double start_time = m_grid->ctx()->time()->start();
+  m_last_time = start_time,
+  m_last_inverse_time = start_time;
+
 }
-*/
+
 
 //! Initialize the pseudo-plastic till mechanical model.
+//! Target surface elevation and initial iteration time are set.
 void OptTillphiYieldStress::bootstrap_impl(const File &input_file,
                                             const YieldStressInputs &inputs) {
 
@@ -144,7 +142,8 @@ void OptTillphiYieldStress::bootstrap_impl(const File &input_file,
 
   
   //Optimization scheme for till friction angle anlogous to Pollard et al. (2012) /////////
-  m_iterative_phi = m_config->get_flag("basal_yield_stress.mohr_coulomb.iterative_phi.enabled");
+
+  //m_iterative_phi = m_config->get_flag("basal_yield_stress.mohr_coulomb.iterative_phi.enabled");
 
   auto iterative_phi_file = m_config->get_string("basal_yield_stress.mohr_coulomb.iterative_phi.file");
 
@@ -172,9 +171,9 @@ void OptTillphiYieldStress::bootstrap_impl(const File &input_file,
   m_last_inverse_time = start_time;
 
 
-  iterative_phi_step(inputs.geometry->ice_surface_elevation,
-                       inputs.geometry->bed_elevation,
-                       inputs.geometry->cell_type);
+  //iterative_phi_step(inputs.geometry->ice_surface_elevation,
+  //                     inputs.geometry->bed_elevation,
+  //                     inputs.geometry->cell_type);
 
   
   // regrid if requested, regardless of how initialized
@@ -187,14 +186,13 @@ void OptTillphiYieldStress::bootstrap_impl(const File &input_file,
 /*
 void OptTillphiYieldStress::init_impl(const YieldStressInputs &inputs) {
   MohrCoulombYieldStress::init_impl(inputs);
-}
-*/
-/*!
- * Finish initialization after bootstrapping or initializing using constants.
- */
-/*
-void OptTillphiYieldStress::finish_initialization(const YieldStressInputs &inputs) {
-  MohrCoulombYieldStress::finish_initialization(inputs);
+
+  dt_phi_inv = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dt","seconds");
+
+  double start_time = m_grid->ctx()->time()->start();
+  m_last_time = start_time,
+  m_last_inverse_time = start_time;
+
 }
 */
 
@@ -212,26 +210,10 @@ MaxTimestep OptTillphiYieldStress::max_timestep_impl(double t) const {
   return MaxTimestep(name());
    
   //MohrCoulombYieldStress::max_timestep_impl(t);
-  //FIXME: Add max timestep according to dt_phi_inv
-
-}
-/*
-void OptTillphiYieldStress::set_till_friction_angle(const IceModelVec2S &input) {
-  m_till_phi.copy_from(input);
-}
-
-void OptTillphiYieldStress::define_model_state_impl(const File &output) const {
-  m_basal_yield_stress.define(output);
-  m_till_phi.define(output);
+  //! FIXME: Add max timestep according to dt_phi_inv
 
 }
 
-void OptTillphiYieldStress::write_model_state_impl(const File &output) const {
-  m_basal_yield_stress.write(output);
-  m_till_phi.write(output);
-
-}
-*/
 //! Update the till friction angle and the till yield stress for use in the pseudo-plastic
 //! till basal stress model. See also IceBasalResistancePlasticLaw.
 
@@ -240,24 +222,24 @@ void OptTillphiYieldStress::update_impl(const YieldStressInputs &inputs,
   (void) t;
   (void) dt;
 
-  //if (m_iterative_phi) {
 
-    double dt_inverse = t - m_last_inverse_time;
+  double dt_inverse = t - m_last_inverse_time;
 
-    if (dt_inverse > dt_phi_inv) {
+  if (dt_inverse > dt_phi_inv) {
 
       iterative_phi_step(inputs.geometry->ice_surface_elevation,
                          inputs.geometry->bed_elevation,
                          inputs.geometry->cell_type);
 
       m_last_inverse_time = t;
-    }
-    m_last_time = t;
-  //}
+  }
+  m_last_time = t;
 
   MohrCoulombYieldStress::update_impl(inputs, t, dt);
   
 }
+
+//! Perform an iteration to adjust the till friction angle according to misfit of surface elevation.
 
 void OptTillphiYieldStress::iterative_phi_step(const IceModelVec2S &ice_surface_elevation,
                                                 const IceModelVec2S &bed_topography,
