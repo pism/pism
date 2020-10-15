@@ -2338,6 +2338,89 @@ netcdf pism_config {
     pism_config:surface.ismip6.reference_file_option = "surface_ismip6_reference_file";
     pism_config:surface.ismip6.reference_file_type = "string";
 
+    pism_config:surface.itm.air_temp_all_refreeze = 268.65;
+    pism_config:surface.itm.air_temp_all_refreeze_doc = "threshold temperature below which all meltwater refreezes to ice";
+    pism_config:surface.itm.air_temp_all_refreeze_type = "number";
+    pism_config:surface.itm.air_temp_all_refreeze_units = "Kelvin";
+
+    pism_config:surface.itm.air_temp_no_refreeze = 278;
+    pism_config:surface.itm.air_temp_no_refreeze_doc = "threshold temperature above which no meltwater refreezes to ice";
+    pism_config:surface.itm.air_temp_no_refreeze_type = "number";
+    pism_config:surface.itm.air_temp_no_refreeze_units = "Kelvin";
+
+    pism_config:surface.itm.anomaly = "no";
+    pism_config:surface.itm.anomaly_doc = "if yes, bare ice albedo is applied everywhere between start day and end day with a frequency on frequency years, set frequeqncy larger simulation time in order to apply albedo forcing only once";
+    pism_config:surface.itm.anomaly_type = "flag";
+
+    pism_config:surface.itm.anomaly_start_day = 152;
+    pism_config:surface.itm.anomaly_start_day_doc = "day of the year when albedo forcing starts if surface.itm.anomaly = yes, 152 is 1st of June";
+    pism_config:surface.itm.anomaly_start_day_type = "integer";
+    pism_config:surface.itm.anomaly_start_day_units = "ordinal day number";
+
+    pism_config:surface.itm.anomaly_end_day = 253;
+    pism_config:surface.itm.anomaly_end_day_doc = "day of the year when albedo forcing ends if surface.itm.anomaly = yes, 253 is 31st of August";
+    pism_config:surface.itm.anomaly_end_day_type = "integer";
+    pism_config:surface.itm.anomaly_end_day_units = "ordinal day number";
+
+    pism_config:surface.itm.anomaly_frequency = 1;
+    pism_config:surface.itm.anomaly_frequency_doc = "albedo forcing is applied every frequency years";
+    pism_config:surface.itm.anomaly_frequency_type = "integer";
+    pism_config:surface.itm.anomaly_frequency_units = "yr-1";
+
+    pism_config:surface.itm.background_melting = "yes";
+    pism_config:surface.itm.background_melting_doc = "if yes, that we use pdd positive temperatures instead of just air temperatures in the itm equation";
+    pism_config:surface.itm.background_melting_type = "flag";
+
+    pism_config:surface.itm.background_melting_temp = 266.65;
+    pism_config:surface.itm.background_melting_temp_doc = "threshold temperature below which no melting occurs";
+    pism_config:surface.itm.background_melting_temp_type = "number";
+    pism_config:surface.itm.background_melting_temp_units = "Kelvin";
+
+    pism_config:surface.itm.daily_cycle = "yes";
+    pism_config:surface.itm.daily_cycle_doc = "if set to yes, the insolation melt module takes the diurnal cycle into account (see Krebs-Kanzow 2018)";
+    pism_config:surface.itm.daily_cycle_type = "flag";
+
+    pism_config:surface.itm.max_evals_per_year = 52;
+    pism_config:surface.itm.max_evals_per_year_doc = "maximum number of times the ITM scheme will ask for air temperature and precipitation to build location-dependent time series for computing melt and snow accumulation; the default means the ITM uses weekly samples of the annual cycle; see also surface.pdd.std_dev";
+    pism_config:surface.itm.max_evals_per_year_type = "integer";
+    pism_config:surface.itm.max_evals_per_year_units = "count";
+
+    pism_config:surface.itm.itm_c = -35.0;
+    pism_config:surface.itm.itm_c_doc = "factor in melt calculation";
+    pism_config:surface.itm.itm_c_type = "number";
+    pism_config:surface.itm.itm_c_units = "W m-2";
+
+    pism_config:surface.itm.itm_lambda = 10.0;
+    pism_config:surface.itm.itm_lambda_doc = "factor in melt calculation";
+    pism_config:surface.itm.itm_lambda_type = "number";
+    pism_config:surface.itm.itm_lambda_units = "W m-2 K-1";
+
+    pism_config:surface.itm.melt_conversion_factor = 1.;
+    pism_config:surface.itm.melt_conversion_factor_doc = "conversion factor between melt of snow and ice in itm scheme";
+    pism_config:surface.itm.melt_conversion_factor_type = "number";
+    pism_config:surface.itm.melt_conversion_factor_units = "1";
+
+    pism_config:surface.itm.method = "daily";
+    pism_config:surface.itm.method_choices = "daily,not_daily,albedo_forcing";
+    pism_config:surface.itm.method_doc = "itm implementation method";
+    pism_config:surface.itm.method_option = "itm_method";
+    pism_config:surface.itm.method_type = "keyword";
+
+    pism_config:surface.itm.refreeze = 0.6;
+    pism_config:surface.itm.refreeze_doc = "EISMINT-Greenland value :cite:`RitzEISMINT`";
+    pism_config:surface.itm.refreeze_type = "number";
+    pism_config:surface.itm.refreeze_units = "1";
+
+    pism_config:surface.itm.snow_depth_crit = 0.02;
+    pism_config:surface.itm.snow_depth_crit_doc = "scale of snow depth for albedo calculation, see Krapp et al. 2017, Table 3 (2.8 cm was just too arbitrary, so 3.5 cm is the center of the interval consistent with optimal solutions (see 3.4 parameter sensitivity)";
+    pism_config:surface.itm.snow_depth_crit_type = "number";
+    pism_config:surface.itm.snow_depth_crit_units = "m";
+
+    pism_config:surface.itm.solar_constant = 1367.;
+    pism_config:surface.itm.solar_constant_doc = "constant for solar radiation";
+    pism_config:surface.itm.solar_constant_type = "number";
+    pism_config:surface.itm.solar_constant_units = "W m-2";
+
     pism_config:surface.models = "given";
     pism_config:surface.models_doc = "Comma-separated list of surface models and modifiers.";
     pism_config:surface.models_option = "surface";
