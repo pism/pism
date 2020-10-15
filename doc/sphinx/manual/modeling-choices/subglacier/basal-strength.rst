@@ -351,7 +351,9 @@ In each iteration step `\dtinv`, with maximal steps of `\dphiup=1^{\circ}` and
    &\mathrm{if}\,\; \frac{\Delta h_{\mathrm{obs}\,(x,y,T+\dtinv)}}{\dtinv} > \dhdtconv
 
 As diagnostic fields for the optimization simulation output variables can be called 
-:opt:`-extra_vars tillphi,diff_usurf,diff_mask`. 
+:opt:`-extra_vars tillphi,diff_usurf,diff_mask`. :opt:`diff_usurf` indicates the mismatch to observed 
+modern surface elevation `\Delta h_{\mathrm{obs}} and :opt:`diff_mask` the area, where the till friction
+angle is iteratively adjusted or where the convergence criterion is hit.
 
 
 

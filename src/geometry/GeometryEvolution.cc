@@ -397,6 +397,7 @@ void GeometryEvolution::apply_mass_fluxes(Geometry &geometry) const {
 #endif
 
       H(i, j) = H_new;
+
     }
   } catch (...) {
     loop.failed();
@@ -1094,7 +1095,7 @@ void GeometryEvolution::ensure_grounded_icearea(const Geometry &geometry,
                       &bed = geometry.bed_elevation,
                       &sl = geometry.sea_level_elevation;
   const IceModelVec2CellType &mask = geometry.cell_type;
-  //IceModelVec2S &dH   = thickness_change,
+
 
   double ocean_density = m_config->get_number("constants.sea_water.density");
   double ice_density   = m_config->get_number("constants.ice.density");
@@ -1112,46 +1113,37 @@ void GeometryEvolution::ensure_grounded_icearea(const Geometry &geometry,
         rho_ratio = ocean_density/ice_density,
         Hfl       = (sl(i,j) - bed(i,j)) * rho_ratio,
         Hnew      = H(i,j) + thickness_change(i,j);
-
-
-        // prevent grounded parts form becoming afloat, assuming that mask has not been updated yet
-        if (mask.grounded(i, j)) {
-        //if (old_mask.grounded(i, j)) {
-          //FIXME: Is this redundant?
-          //if (Hold > Hfl) { 
-          if (H(i, j) > Hfl) {
-
-            if (Hnew < Hfl) {
-            //if(H-Hfl+dH<0.0)
-               thickness_change(i, j) = H(i, j) - Hfl;
-               conservation_error(i, j) += - (Hnew - Hfl);  //-(H-Hfl+dH)=-(Hnew-Hfl)
-            }
-            //H(i, j) = std::max( H(i, j), Hfl );
-          }
-        }
+        //Hnmb      = (H(i, j) + dH_SMB(i, j)) + dH_BMB(i, j);
 
         //if (H + dH < 0.0) {
         //  thickness_change(i, j)    = H;
         //  conservation_error(i, j) += - (H + dH);
         //}
 
+        // prevent grounded parts form becoming afloat, assuming that mask has not been updated yet
+        //if (mask.grounded(i, j)) { //if (H(i, j) > Hfl)
+        if (H(i, j) >= Hfl) {
+          if (Hnew < Hfl) { //if(H-Hfl + dH < 0.0)
+               thickness_change(i, j) = -(H(i, j) - Hfl);
+               conservation_error(i, j) += - (Hnew - Hfl);  //-(H-Hfl + dH) = -( Hnew - Hfl)
+          }
+          //H(i, j) = std::max( H(i, j), Hfl );
+
+        }
         //else if (H(i, j) != Hold) {
-        else if (H(i, j) != Hnew) { //H+dH-H<0
+        else if (H(i, j) != Hnew) { //if (H-H + dH < 0) 
 
           //avoid artefacts for floating cells surrounded by grounded neighbors
           bool floating_lake = (mask.grounded(i-1,j) && mask.grounded(i+1,j) &&
                                 mask.grounded(i,j-1) && mask.grounded(i,j+1));
-
 
           //floating ice shelves thickness remains unchanged
           if (floating_lake == false) {
             //H(i, j) = Hold;
             thickness_change(i, j) = 0.0;
             conservation_error(i, j) += -(Hnew - H(i,j));
-
           }
         }
-
     }
   } catch (...) {
     loop.failed();
